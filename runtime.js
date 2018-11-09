@@ -86,7 +86,7 @@ class WrappedFunction extends HashObject {
         if ( this.check_if_argument_valid(argument) ) {
             return this.function_instance.call(
                 // js::this, context, callee, argument
-                T.None, context, this, argument
+                T.Null, context, this, argument
             )
         } else {
             throw Error('Invalid Argument')
@@ -199,6 +199,25 @@ function InitObjectFunction () {
             }
         )
     }
+    WrappedFunctionPrototype.data = {
+        is_abstract_of: new WrappedFunction(
+            {}, // object::HashObject
+            function (context, callee, argument) {
+                var object = argument.get('object')
+                if ( object.interface.instance_of === context.self ) {
+                    return true
+                } else {
+                    let current_class = object.instance_of.inherit
+                    while ( current_class ) {
+                        if ( current_class === context.self ) {
+                            return WrappedBool(true)
+                        }
+                    }
+                    return WrappedBool(false)
+                }
+            }
+        )
+    }
 }
 
 
@@ -279,7 +298,7 @@ function InitArrayPrimitive () {
 
 
 function InitRuntime () {
-    T.None = new HashObject()
+    T.Null = new HashObject()
     InitObjectFunction()
     InitArrayPrimitive()
 }
