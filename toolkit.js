@@ -28,37 +28,58 @@ class Concept {
 }
 
 
-var I = x => x
+var $ = f => new Concept(f)
+var $I = x => x
 var $n = Concept.intersect
 var $u = Concept.union
 var $_ = Concept.complement
-var Any = new Concept(() => true)
-var None = new Concept(() => false)
-var Num = new Concept(x => typeof x == 'number')
-var Str = new Concept(x => typeof x == 'string')
-var Hash = new Concept(x => x instanceof Object)
-var Iterable = new Concept(x => typeof x[Symbol.iterator] == 'function')
+var Any = $(() => true)
+var None = $(() => false)
+var Empty = $(x => typeof x == 'undefined')
+var Num = $(x => typeof x == 'number')
+var Str = $(x => typeof x == 'string')
+var Bool = $(x => typeof x == 'boolean')
+var Hash = $(x => x instanceof Object)
+var Iterable = $(function (x) {
+    return typeof x != 'undefined' && typeof x[Symbol.iterator] == 'function'
+})
+var Optional = function (concept) { return $u(concept, Empty) }
+var ArrayOf = function (concept) {
+    return $(function (array) {
+        return (
+            (array instanceof Array)
+                && forall(array, x=>concept.contains(x))
+        )
+    })
+}
+var Enum = function (...str_list) {
+    assert(str_list.is(ArrayOf(Str)) )
+    var set = new Set(str_list)
+    return $(function (item) {
+        return Str.contains(item) && set.has(item)
+    })
+}
 Object.prototype.is = function (concept) { return concept.contains(this) }
 Object.prototype.is_not = function (concept) { return !this.is(concept) }
 Function.prototype.contains = function (obj) { return obj instanceof this }
 Array.prototype.contains = function (obj) { return this.indexOf(obj) != -1 }
 
 
-function check(callee, concept_table) {
+function check(callee, args, concept_table) {
     var parameters = callee.get_parameters()
     var parameter_to_index = {}
     var index = 0
     for ( let parameter of parameters ) {
-        parameter_to_index[paramter] = index
+        parameter_to_index[parameter] = index
         index++
     }
     if ( concept_table.is(Hash) ) {
-        for ( let parameter of Object.keys(type_table) ) {
-	    var argument = callee.arguments[parameter_to_index[parameter]]
+        for ( let parameter of Object.keys(concept_table) ) {
+	    var argument = args[parameter_to_index[parameter]]
             var concept = concept_table[parameter]
-            if (argument.is_not(concept)) {
+            if (!concept.contains(argument)) {
 	        throw Error(
-                    `Invalid argument ${parameter} in function ${callee.name}`
+                    `Invalid argument '${parameter}' in function ${callee.name}`
                 )
             }
         }
@@ -77,7 +98,7 @@ function check(callee, concept_table) {
 
 
 function map (to_be_mapped, f) {
-    check(map, { to_be_mapped: Object, f: Function })
+    check(map, arguments, { to_be_mapped: Object, f: Function })
     if( to_be_mapped.is(Iterable) ) {
 	let iterable = to_be_mapped
 	let result = []
@@ -98,23 +119,36 @@ function map (to_be_mapped, f) {
 }
 
 
-function mapval (hash, f) {
-    check(mapval, { hash: Hash, f: Function })
+function mapkey (hash, f) {
+    check(mapkey, arguments, { hash: Hash, f: Function })
     var result = {}
     for ( let key of Object.keys(hash) ) {
-        let value = hash[key]
-        result[key] = f(value)
+        let new_key = f(key, value)
+        if ( !result.has(new_key) ) {
+            result[new_key] = hash[key]
+        } else {
+            throw Error('mapkey(): Key conflict detected')
+        }        
     }
     return result
 }
 
 
-function* cat (...iterables) {
-    // TODO
-    //check(cat, Iterable)
+function mapval (hash, f) {
+    check(mapval, arguments, { hash: Hash, f: Function })
+    var result = {}
+    for ( let key of Object.keys(hash) ) {
+        let value = hash[key]
+        result[key] = f(value, key)
+    }
+    return result
+}
+
+
+function *cat (...iterables) {
+    assert(iterables.is(Iterable))
     for( let iterable of iterables ) {
-	check_type([[iterable, ['object', 'string']]])
-	check_iterable(iterable)
+        assert(iterable.is(Iterable))
 	for ( let element of iterable ) {
 	    yield element	
 	}
@@ -122,6 +156,86 @@ function* cat (...iterables) {
 }
 
 
+function list (iterable) {
+    check(list, arguments, { iterable: Iterable })
+    var result = []
+    for ( let element of iterable ) {
+        result.push(element)
+    }
+    return result
+}
+
+
+function filter (to_be_filtered, f) {
+    check(filter, arguments, { to_be_filtered: Hash })
+    if (to_be_filtered.is(Iterable)) {
+        let iterable = to_be_filtered
+        let result = []
+        for ( let element of iterable ) {
+            if ( f(element) ) {
+                result.push(element)
+            }
+        }
+        return result
+    } else {
+        let hash = to_be_filtered
+        let result = {}
+        for ( let key of Object.keys(hash) ) {
+            if ( f(key, hash[key]) ) {
+                result[key] = hash[key]
+            }
+        }
+        return result
+    }
+}
+
+
+function pick (hash, key, condition) {
+    check(pick, arguments, { hash: Hash, key: Str, f: $u(Function, Concept) })
+    if ( hash.has(key)
+         && ( (condition.is(Function) && condition(hash[key]))
+              || (condition.is(Concept) && condition.contains(hash[key])) ) ) {
+        return hash[key]
+    } else {
+        return null
+    }
+}
+
+
+function pour (target, source) {
+    check(pour, arguments, { target: Hash, source: Hash })
+    for ( let key of Object.keys(source) ) {
+        target[key] = source[key]
+    }
+}
+
+
+function fold (iterable, initial, f) {
+    check(
+        fold, arguments,
+        { iterable: Iterable, initial: Any, f: Function }
+    )
+    var value = initial
+    for ( let element of iterable ) {
+        value = f(element, value)
+    }
+    return value
+}
+
+
+function forall (iterable, f) {
+    check(forall, arguments, { iterable: Iterable, f: Function })
+    return fold(iterable, true, (e,v) => v && f(e))
+}
+
+
+function exists (iterable, f) {
+    check(forall, arguments, { iterable: Iterable, f: Function })
+    return fold(iterable, false, (e,v) => v || f(e))
+}
+
+
+Object.prototype.has = function (prop) { return this.hasOwnProperty(prop) }
 Function.prototype.get_parameters = function () {
     /* https://stackoverflow.com/questions/1007981/how-to-get-thistion-parameter-names-values-dynamically */
     var STRIP_COMMENTS = /(\/\/.*$)|(\/\*[\s\S]*?\*\/)|(\s*=[^,\)]*(('(?:\\'|[^'\r\n])*')|("(?:\\"|[^"\r\n])*"))|(\s*=[^,\)]*))/mg;
@@ -133,5 +247,3 @@ Function.prototype.get_parameters = function () {
             .match(ARGUMENT_NAMES)
     ) || []
 }
-
-
