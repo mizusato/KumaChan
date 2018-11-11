@@ -8,6 +8,9 @@ function assert (bool) {
 }
 
 
+class NullObject {}
+
+
 class Concept {
     constructor (contains) {
         assert(typeof contains == 'function')
@@ -25,6 +28,10 @@ class Concept {
     static complement (A) {
         return new Concept(x => !A.contains(x))
     }
+
+    static contains (x) {
+        return (typeof x.contains == 'function')
+    }
 }
 
 
@@ -40,6 +47,8 @@ var Num = $(x => typeof x == 'number')
 var Str = $(x => typeof x == 'string')
 var Bool = $(x => typeof x == 'boolean')
 var Hash = $(x => x instanceof Object)
+var Null = new NullObject()
+Null.contains = x => x === Null
 var Iterable = $(function (x) {
     return typeof x != 'undefined' && typeof x[Symbol.iterator] == 'function'
 })
@@ -97,25 +106,27 @@ function check(callee, args, concept_table) {
 }
 
 
-function map (to_be_mapped, f) {
+function* map_lazy (to_be_mapped, f) {
     check(map, arguments, { to_be_mapped: Object, f: Function })
     if( to_be_mapped.is(Iterable) ) {
 	let iterable = to_be_mapped
-	let result = []
 	let index = 0
 	for ( let I of iterable ) {
-	    result.push(f(I, index))
+	    yield f(I, index)
 	    index += 1
 	}
-	return result
     } else {
 	let hash = to_be_mapped
-	let result = []
 	for ( let key of Object.keys(hash) ) {
-	    result.push(f(key, hash[key]))
+	    yield f(key, hash[key])
 	}
-	return result
     }
+}
+
+
+function map (to_be_mapped, f) {
+    check(map, arguments, { to_be_mapped: Object, f: Function })
+    return list(map_lazy(to_be_mapped, f))
 }
 
 
@@ -190,15 +201,29 @@ function filter (to_be_filtered, f) {
 }
 
 
-function pick (hash, key, condition) {
-    check(pick, arguments, { hash: Hash, key: Str, f: $u(Function, Concept) })
-    if ( hash.has(key)
-         && ( (condition.is(Function) && condition(hash[key]))
-              || (condition.is(Concept) && condition.contains(hash[key])) ) ) {
-        return hash[key]
+function pick (hash, key, concept, f) {
+    check(
+        pick, arguments,
+        { hash: Hash, key: Str, concept: Concept, f: Function }
+    )
+    if (hash.is(Null)) return Null;
+    if ( hash.has(key) && concept.contains(hash[key]) ) {
+        return f(hash[key])
     } else {
-        return null
+        return Null
     }
+}
+
+
+function take_by_order (...operation_list) {    
+    assert(operation_list.is(ArrayOf(Function)) )
+    for ( let f of operation_list ) {
+        let result = f()
+        if ( result !== Null ) {
+            return result
+        }
+    }
+    throw Error('take_by_order(): All operations produce Null result')
 }
 
 
