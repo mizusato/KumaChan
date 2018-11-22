@@ -14,12 +14,30 @@ class Concept {
         this.contains = contains
     }
 
-    static intersect (A, B) {
-        return new Concept(x => A.contains(x) && B.contains(x))
+    static intersect (...concepts) {
+        return new Concept(function (x) {
+            var result = true
+            for(let concept of concepts) {
+                if (!concept.contains(x)) {
+                    result = false
+                    return result
+                }
+            }
+            return result
+        })
     }
 
-    static union (A, B) {
-        return new Concept(x => A.contains(x) || B.contains(x))
+    static union (...concepts) {
+        return new Concept(function (x) {
+            var result = false
+            for(let concept of concepts) {
+                if (concept.contains(x)) {
+                    result = true
+                    return result
+                }
+            }
+            return result
+        })
     }
 
     static complement (A) {
@@ -37,6 +55,8 @@ const $I = x => x
 const $n = Concept.intersect
 const $u = Concept.union
 const $_ = Concept.complement
+const $1 = y => $(x => x === y)
+const $f = (...elements) => $(x => exists(elements, e => e === x))
 
 const Any = $(() => true)
 const Void = $(() => false)
@@ -47,6 +67,7 @@ const Str = $(x => typeof x == 'string')
 const Bool = $(x => typeof x == 'boolean')
 const Hash = $(x => x instanceof Object)
 const Optional = (concept, defval) => pour({defval: defval},$u(concept, Empty))
+const SetEquivalent = (target, concept) => target.contains = concept.contains
 
 const NA = { contains: x => x === this }
 const Iterable = $(
@@ -57,12 +78,22 @@ const ArrayOf = (
         array => Array.contains(array) && forall(array, x=>concept.contains(x))
     )
 )
-const Enum = function (...str_list) {
-    assert( str_list.is(ArrayOf(Str)) )
+const HashOf = (
+    concept => $(
+        hash => Hash.contains(hash)
+            && forall(Object.keys(hash), key=>concept.contains(hash[key]))
+    )
+)
+function Enum (...str_list) {
+    assert( ArrayOf(Str).contains(str_list) )
     var set = new Set(str_list)
     return $(function (item) {
         return Str.contains(item) && set.has(item)
     })
+}
+function Struct (hash) {
+    check(Struct, arguments, { hash: HashOf(Concept) })
+    return $(x => forall(Object.keys(hash), key => hash[key].contains(x[key])))
 }
 
 
@@ -244,6 +275,9 @@ function exists (iterable, f) {
 
 
 Object.prototype.has = function (prop) { return this.hasOwnProperty(prop) }
+Object.prototype.made_by = function (manufacturer) {
+    return this.manufacturer === manufacturer
+}
 Function.prototype.get_parameters = function () {
     /* https://stackoverflow.com/questions/1007981/how-to-get-thistion-parameter-names-values-dynamically */
     var STRIP_COMMENTS = /(\/\/.*$)|(\/\*[\s\S]*?\*\/)|(\s*=[^,\)]*(('(?:\\'|[^'\r\n])*')|("(?:\\"|[^"\r\n])*"))|(\s*=[^,\)]*))/mg;
