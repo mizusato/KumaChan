@@ -225,7 +225,7 @@ SetEquivalent(
         prototype: $n(
             Struct({
                 order: $(array => array.length == 1),
-                return_value: BoolObject
+                return_value: $1(BoolObject)
             }),
             $(proto => proto.parameter[proto.order[0]].is(Struct({
                 constraint: $1(AnyConcept),
