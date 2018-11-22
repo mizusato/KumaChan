@@ -32,48 +32,46 @@ class Concept {
 }
 
 
-const $ = f => new Concept(f)
-const $I = x => x
-const $n = Concept.intersect
-const $u = Concept.union
-const $_ = Concept.complement
-
-const Any = $(() => true)
-const Void = $(() => false)
-
-const Empty = $(x => typeof x == 'undefined')
-const Num = $(x => typeof x == 'number')
-const Str = $(x => typeof x == 'string')
-const Bool = $(x => typeof x == 'boolean')
-const Hash = $(x => x instanceof Object)
-const Optional = (concept, defval) => pour({defval: defval},$u(concept, Empty))
-
-const NA = { contains: x => x === this }
-const Iterable = $(
-    x => typeof x != 'undefined' && typeof x[Symbol.iterator] == 'function'
-)
-const ArrayOf = (
-    concept => $(
-        array => Array.contains(array) && forall(array, x=>concept.contains(x))
-    )
-)
-const Enum = function (...str_list) {
-    assert( str_list.is(ArrayOf(Str)) )
+var $ = f => new Concept(f)
+var $I = x => x
+var $n = Concept.intersect
+var $u = Concept.union
+var $_ = Concept.complement
+var Any = $(() => true)
+var Void = $(() => false)
+var Empty = $(x => typeof x == 'undefined')
+var Num = $(x => typeof x == 'number')
+var Str = $(x => typeof x == 'string')
+var Bool = $(x => typeof x == 'boolean')
+var Hash = $(x => x instanceof Object)
+var NA = {}
+NA.contains = x => x === NA
+var Iterable = $(function (x) {
+    return typeof x != 'undefined' && typeof x[Symbol.iterator] == 'function'
+})
+var Optional = function (concept) { return $u(concept, Empty) }
+var ArrayOf = function (concept) {
+    return $(function (array) {
+        return (
+            (array instanceof Array)
+                && forall(array, x=>concept.contains(x))
+        )
+    })
+}
+var Enum = function (...str_list) {
+    assert(str_list.is(ArrayOf(Str)) )
     var set = new Set(str_list)
     return $(function (item) {
         return Str.contains(item) && set.has(item)
     })
 }
-
-
 Object.prototype.is = function (concept) { return concept.contains(this) }
 Object.prototype.is_not = function (concept) { return !this.is(concept) }
 Function.prototype.contains = function (obj) { return obj instanceof this }
+Array.prototype.contains = function (obj) { return this.indexOf(obj) != -1 }
 
 
 function check(callee, args, concept_table) {
-    assert(Function.contains(callee))
-    assert(Hash.contains(concept_table))
     var parameters = callee.get_parameters()
     var parameter_to_index = {}
     var index = 0
@@ -81,41 +79,32 @@ function check(callee, args, concept_table) {
         parameter_to_index[parameter] = index
         index++
     }
-    for ( let parameter of Object.keys(concept_table) ) {
-	var argument = args[parameter_to_index[parameter]]
-        var concept = concept_table[parameter]
-        if (!concept.contains(argument)) {
-	    throw Error(
-                `Invalid argument '${parameter}' in function ${callee.name}`
-            )
+    if ( concept_table.is(Hash) ) {
+        for ( let parameter of Object.keys(concept_table) ) {
+	    var argument = args[parameter_to_index[parameter]]
+            var concept = concept_table[parameter]
+            if (!concept.contains(argument)) {
+	        throw Error(
+                    `Invalid argument '${parameter}' in function ${callee.name}`
+                )
+            }
         }
-        /*
-        if (Empty.contains(argument) && concept.has('defval')) {
-            args[parameter_to_index[parameter]] = concept.defval
-        }
-        */
-    }
-}
-
-
-function check_hash(callee, argument, constraint) {
-    check(
-        check_hash, arguments,
-        { callee: Function, argument: Hash, constraint: Hash }
-    )
-    for ( let name of Object.keys(constraint) ) {
-        if (!constraint[name].contains(argument[name])) {
-            throw Error(`Invalid argument ${name} in function ${callee.name}`)
-        }
-        if (Empty.contains(argument[name]) && constraint[name].has('defval')) {
-            argument[name] = constraint[name].defval
+    } else {
+        let concept = concept_table
+        for ( let i=0; i<callee.arguments.length; i++ ) {
+            let argument = arguments[i]
+            if (argument.is_not(concept)) {
+	        throw Error(
+                    `Invalid argument #${i} in function ${callee.name}`
+                )
+            }
         }
     }
 }
 
 
 function* map_lazy (to_be_mapped, f) {
-    check(map_lazy, arguments, { to_be_mapped: Object, f: Function })
+    check(map, arguments, { to_be_mapped: Object, f: Function })
     if( to_be_mapped.is(Iterable) ) {
 	let iterable = to_be_mapped
 	let index = 0
@@ -209,12 +198,37 @@ function filter (to_be_filtered, f) {
 }
 
 
+function pick (hash, key, concept, f) {
+    check(
+        pick, arguments,
+        { hash: Hash, key: Str, concept: Concept, f: Function }
+    )
+    if (hash.is(NA)) return NA;
+    if ( hash.has(key) && concept.contains(hash[key]) ) {
+        return f(hash[key])
+    } else {
+        return NA
+    }
+}
+
+
+function take (...operation_list) {    
+    assert(operation_list.is(ArrayOf(Function)) )
+    for ( let f of operation_list ) {
+        let result = f()
+        if ( result !== NA ) {
+            return result
+        }
+    }
+    throw Error('take(): All operations produce N/A result')
+}
+
+
 function pour (target, source) {
     check(pour, arguments, { target: Hash, source: Hash })
     for ( let key of Object.keys(source) ) {
         target[key] = source[key]
     }
-    return target
 }
 
 
@@ -238,7 +252,7 @@ function forall (iterable, f) {
 
 
 function exists (iterable, f) {
-    check(exists, arguments, { iterable: Iterable, f: Function })
+    check(forall, arguments, { iterable: Iterable, f: Function })
     return fold(iterable, false, (e,v) => v || f(e))
 }
 
