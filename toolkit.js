@@ -93,7 +93,7 @@ function Enum (...str_list) {
 }
 function Struct (hash) {
     check(Struct, arguments, { hash: HashOf(Concept) })
-    return $(x => forall(Object.keys(hash), key => hash[key].contains(x[key])))
+    return $(x => forall(Object.keys(hash), key => x.has(key) && hash[key].contains(x[key])))
 }
 
 

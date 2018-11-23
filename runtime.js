@@ -1,6 +1,11 @@
 'use strict';
 
 
+/**
+ * Exceptions Definition
+ */
+
+
 class RuntimeException extends Error {    
     static gen_err_msg (err_type, func_name, err_msg) {
         return `[Runtime Exception] ${err_type}: ${func_name}: ${err_msg}`
@@ -26,9 +31,18 @@ class InvalidReturnValue extends RuntimeException {}
 class KeyError extends RuntimeException {}
 
 
+/**
+ * Enumerations Definition
+ */
+
+
 const CopyPolicy = Enum('reference', 'value')
 
-// --------------------------------------------------------------------------- 
+
+/**
+ * Basic Object Definition
+ */
+
 
 function HashObject (argument = {}) {
     assert(Hash.contains(argument))
@@ -52,14 +66,19 @@ const Atomic = $n(HashObject, $(x => x.is_atomic))
 const NonAtomic = $n(HashObject, $(x => !x.is_atomic))
 
 
-// --------------------------------------------------------------------------- 
+/**
+ * Global Object Definition
+ */
 
 
 const K = HashObject()
 K.global = K
 
+// TODO: primitive type refactor
 
-// --------------------------------------------------------------------------- 
+/**
+ * Boolean Value Definition
+ */
 
 
 const True = K.data.True = HashObject({ is_atomic: true })
@@ -89,7 +108,9 @@ function ExtBoolObject(value = 'unknown') {
 SetEquivalent(ExtBoolObject, $f(True, False, Unknown))
 
 
-// --------------------------------------------------------------------------- 
+/**
+ * String & Number Definition
+ */
 
 
 function StringObject (string = '') {
@@ -131,7 +152,9 @@ function NumberObject (number = 0) {
 SetMakerConcept(NumberObject)
 
 
-// --------------------------------------------------------------------------- 
+/**
+ * List Definition
+ */
 
 
 function ListObject (list = []) {
@@ -150,30 +173,33 @@ function ListObject (list = []) {
 SetMakerConcept(ListObject)
 
 
-// --------------------------------------------------------------------------- 
+/**
+ * Concept Definition
+ */
 
 
 const AnyConcept = K.Any = HashObject({ is_atomic: true })
+const BoolConcept = K.Bool = HashObject()
 
 
-function ConceptObject ( concept_function_instance ) {
-    check()
-    var object = HashObject()
-    object.config.contains = concept_function_instance
+function ConceptObject ( f ) {
+    check(ConceptObject, arguments, { f: Function })
+    return pour(HashObject(), {
+        config: {
+            contains: ConceptFunctionInstance('', f)
+        }
+    })
 }
 
 
-var BoolConcept = K.Bool = HashObject()
-
-
-ConceptObject = $u(
+SetEquivalent(ConceptObject, $u(
     $f(AnyConcept, BoolConcept),
-    $n(HashObject, Struct({
+    $n(NonAtomic, Struct({
         config: Struct({
             contains: ConceptFunctionInstance
         })
     }))
-)
+))
 
 
 const Parameter = Struct({
@@ -294,6 +320,9 @@ SetEquivalent(
 )
 
 
+const ConceptConcept = K.Concept = ConceptObject(x => x.is(ConceptObject))
+
+
 BoolConcept.config.contains = ConceptFunctionInstance(
     'Bool', x => BoolObject.contains(x)
 )
@@ -318,18 +347,6 @@ const StringConcept = K.String = pour(HashObject(), {
 })
 
 
-const ConceptConcept = K.Concept = pour(HashObject(), {
-    config: {
-        contains: ConceptFunctionInstance(
-            'Concept',
-            x => x.is($u($1(AnyConcept), $n(NonAtomic, Struct({
-                config: Struct({
-                    contains: ConceptFunctionInstance
-                })
-            }))))
-        )
-    }
-})
 
 
 function FunctionObject (function_instances) {
