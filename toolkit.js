@@ -173,7 +173,7 @@ function mapkey (hash, f) {
     check(mapkey, arguments, { hash: Hash, f: Function })
     var result = {}
     for ( let key of Object.keys(hash) ) {
-        let new_key = f(key, value)
+        let new_key = f(key, hash[key])
         if ( !result.has(new_key) ) {
             result[new_key] = hash[key]
         } else {

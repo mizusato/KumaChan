@@ -21,6 +21,8 @@ class RuntimeException extends Error {
 
 
 class InvalidOperation extends RuntimeException {}
+class InvalidArgument extends RuntimeException {}
+class InvalidReturnValue extends RuntimeException {}
 class KeyError extends RuntimeException {}
 
 
@@ -46,6 +48,8 @@ function HashObject (argument = {}) {
 
 
 HashObject.contains = (x => x.is_hash_object === true)
+const Atomic = $n(HashObject, $(x => x.is_atomic))
+const NonAtomic = $n(HashObject, $(x => !x.is_atomic))
 
 
 // --------------------------------------------------------------------------- 
@@ -108,7 +112,7 @@ function SetMakerConcept (manufacturer) {
 }
 
 
-SetMakerConcept(String)
+SetMakerConcept(StringObject)
 
 
 function NumberObject (number = 0) {
@@ -117,13 +121,14 @@ function NumberObject (number = 0) {
         is_hash_object: true,
         is_atomic: true,
         default_copy_policy: 'value',
-        number: number
+        number: number,
+        manufacturer: NumberObject
     }
     return object
 }
 
 
-SetMakerConcept(Number)
+SetMakerConcept(NumberObject)
 
 
 // --------------------------------------------------------------------------- 
@@ -158,8 +163,11 @@ function ConceptObject ( concept_function_instance ) {
 }
 
 
+var BoolConcept = K.Bool = HashObject()
+
+
 ConceptObject = $u(
-    $1(AnyConcept),
+    $f(AnyConcept, BoolConcept),
     $n(HashObject, Struct({
         config: Struct({
             contains: ConceptFunctionInstance
@@ -174,23 +182,73 @@ const Parameter = Struct({
 })
 
 
-const FunctionPrototype = $n(Struct({
-    parameters: HashOf(Parameter),
-    order: ArrayOf(Str),
-    return_value: ConceptObject
-}), d => forall(d.order, name => parameters.has(name)) )
+const FunctionPrototype = $n(
+    Struct({
+        parameters: HashOf(Parameter),
+        order: ArrayOf(Str),
+        return_value: ConceptObject
+    }),
+    $(proto => forall(proto.order, name => proto.parameters.has(name)))
+)
 
 
-function FunctionInstanceObject (context, prototype, js_function) {
-    check(FunctionInstance, arguments, {
+function FunctionInstanceObject (name, context, prototype, js_function) {
+    check(FunctionInstanceObject, arguments, {
+        name: Str,
         context: HashObject,
         prototype: FunctionPrototype,
         js_function: Function
     })
     return pour(HashObject(), {
+        name: name,
         context: context,
         prototype: prototype,
-        js_function: js_function
+        js_function: js_function,
+        manufacturer: FunctionInstanceObject,
+        call: function (argument) {
+            let f_name = `${this.name}()`
+            let proto = this.prototype
+            argument = mapkey(argument, function (key) {
+                let n = Number(key)
+                if (!Number.isNaN(n)) {
+                    let str_name = proto.order[n]
+                    InvalidArgument.assert(
+                        typeof str_name != 'undefined',
+                        f_name, `redundant argument ${key}`
+                    )
+                    InvalidArgument.assert(
+                        !argument.has(str_name),
+                        f_name, `missing argument ${key}`
+                    )
+                    return str_name
+                } else {
+                    return key
+                }
+            })
+            map(proto.order, function (name) {
+                let parameter = proto.parameters[name]
+                if ( parameter.constraint !== AnyConcept ) {
+                    InvalidArgument.assert(
+                        True === parameter.constraint.config.contains.call({
+                            '0': argument[name]
+                        }),
+                        f_name, `invalid argument ${name}`
+                    )
+                }
+                // TODO: copy value
+            })
+            let return_value = js_function(this.context, argument)
+            if (proto.return_value !== AnyConcept
+                && !this.return_value_promised) {
+                InvalidReturnValue.assert(
+                    True === proto.return_value.config.contains.call({
+                        '0': return_value
+                    }),
+                    f_name, `invalid return value`
+                )
+            }
+            return return_value
+        }
     })
 }
 
@@ -206,13 +264,13 @@ const ConceptFunctionPrototype = {
         }
     },
     order: ['object'],
-    return_value: BoolObject
+    return_value: BoolConcept
 }
 
 
-function ConceptFunctionInstance (js_concept_function) {
-    return FunctionInstance(
-        K, ConceptFunctionPrototype, function (context, argument) {
+function ConceptFunctionInstance (name, js_concept_function) {
+    return FunctionInstanceObject(
+        name, K, ConceptFunctionPrototype, function (context, argument) {
             return BoolObject(js_concept_function(argument.object))
         }
     )
@@ -225,15 +283,53 @@ SetEquivalent(
         prototype: $n(
             Struct({
                 order: $(array => array.length == 1),
-                return_value: $1(BoolObject)
+                return_value: $1(BoolConcept)
             }),
-            $(proto => proto.parameter[proto.order[0]].is(Struct({
+            $(proto => proto.parameters[proto.order[0]].is(Struct({
                 constraint: $1(AnyConcept),
                 pass_policy: $1('reference')
             })))
         )
     }))
 )
+
+
+BoolConcept.config.contains = ConceptFunctionInstance(
+    'Bool', x => BoolObject.contains(x)
+)
+BoolConcept.config.contains.return_value_promised = true
+
+
+const NumberConcept = K.Number = pour(HashObject(), {
+    config: {
+        contains: ConceptFunctionInstance(
+            'Number', x => NumberObject.contains(x)
+        )
+    }
+})
+
+
+const StringConcept = K.String = pour(HashObject(), {
+    config: {
+        contains: ConceptFunctionInstance(
+            'String', x => StringObject.contains(x)
+        )
+    }
+})
+
+
+const ConceptConcept = K.Concept = pour(HashObject(), {
+    config: {
+        contains: ConceptFunctionInstance(
+            'Concept',
+            x => x.is($u($1(AnyConcept), $n(NonAtomic, Struct({
+                config: Struct({
+                    contains: ConceptFunctionInstance
+                })
+            }))))
+        )
+    }
+})
 
 
 function FunctionObject (function_instances) {
