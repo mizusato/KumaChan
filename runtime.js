@@ -2,7 +2,7 @@
 
 
 /**
- * Exceptions Definition
+ *  Exception Definition
  */
 
 
@@ -33,7 +33,25 @@ class InvalidReturnValue extends RuntimeException {}
 class KeyError extends RuntimeException {}
 
 
+/**
+ *  Enumeration Definition
+ */
+
+
 const CopyPolicy = Enum('reference', 'value')
+
+
+/**
+ *  Object Type Definition
+ * 
+ *  Object ┬ Hash
+ *         ┴ Simple ┬ List
+ *                  ┴ Primitive ┬ String
+ *                              ┼ Number
+ *                              ┴ Bool
+ *
+ *  Note: non-hash object is called simple object.
+ */
 
 
 const StringObject = $(x => typeof x == 'string')
@@ -69,7 +87,7 @@ const ObjectObject = $u(SimpleObject, HashObject)
 
 
 /**
- * Global Object Definition
+ *  Global Object Definition
  */
 
 
@@ -79,7 +97,14 @@ K.global = G
 
 
 /**
- * Concept Definition
+ *  Concept & Function Instance Definition
+ *  
+ *  We have to deal AnyConcept and BoolConcept especially.
+ *  It's because a Concept is defined by its checker function,
+ *  so we have to build a Function Instance before building a concept,
+ *  and it is necessary to build a Function Prototype before building
+ *  this Function Instance, the prototype can be described as
+ *  f: (object::Any) -> Bool, which requires the definition of Any and Bool.
  */
 
 
@@ -241,6 +266,7 @@ function PortEquivalent(hash_object, concept, f_name) {
 }
 
 
+PortEquivalent(AnyConcept, ObjectObject, 'Any_Checker')
 PortEquivalent(BoolConcept, BoolObject, 'Bool_Checker')
 BoolConcept.config.contains.return_value_promised = true
 
@@ -257,9 +283,15 @@ const ConceptConcept = K.Concept = PortConcept(ConceptObject, 'Concept_Checker')
 const NumberConcept = K.Number = PortConcept(NumberObject, 'Number_Checker')
 const StringConcept = K.String = PortConcept(StringObject, 'String_Checker')
 const PrimitiveConcept = K.Primitive = PortConcept(PrimitiveObject, 'Primitive_Checker')
+const ListConcept = K.List = PortConcept(ListObject, 'List_Checker')
 const SimpleConcept = K.Simple = PortConcept(SimpleObject, 'Simple_Checker')
 const HashConcept = K.Hash = PortConcept(HashObject, 'Hash_Checker')
-const ObjectConcept = K.Object = PortConcept(ObjectObject, 'Object_Checker')
+const ObjectConcept = K.Object = K.Any
+
+
+/**
+ *  Function Definition
+ */
 
 
 function FunctionObject (function_instances) {

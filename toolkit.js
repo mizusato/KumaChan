@@ -266,7 +266,7 @@ function pour (target, source) {
     for ( let key of Object.keys(source) ) {
         target[key] = source[key]
     }
-    if ( target.__proto__ !== source.__proto__ ) {
+    if ( source.__proto__ !== Object.prototype ) {
         target.__proto__ = source.__proto__
     }
     return target
