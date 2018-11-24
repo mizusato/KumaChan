@@ -20,6 +20,8 @@ class RuntimeException extends Error {
                     error_message
                 )
             )
+        } else {
+            return true
         }
     }
 }
@@ -31,39 +33,39 @@ class InvalidReturnValue extends RuntimeException {}
 class KeyError extends RuntimeException {}
 
 
-/**
- * Enumerations Definition
- */
-
-
 const CopyPolicy = Enum('reference', 'value')
 
 
-/**
- * Basic Object Definition
- */
+const StringObject = $(x => typeof x == 'string')
+const NumberObject = $(x => typeof x == 'number')
+const BoolObject = $(x => typeof x == 'boolean')
+const PrimitiveObject = $u(StringObject, NumberObject, BoolObject)
 
 
-function HashObject (argument = {}) {
-    assert(Hash.contains(argument))
-    check_hash(HashObject, argument, { is_atomic: Optional(Bool, false) })
-    var object = {
-        is_hash_object: true,
-        is_atomic: argument.is_atomic,
-        default_copy_policy: 'reference',
-        manufacturer: HashObject
-    }
-    if (!argument.is_atomic) {
-        object.data = {}
-        object.config = {}
-    }
-    return object
+function ListObject() {
+    return pour([], { maker: ListObject })
 }
 
 
-HashObject.contains = (x => x.is_hash_object === true)
-const Atomic = $n(HashObject, $(x => x.is_atomic))
-const NonAtomic = $n(HashObject, $(x => !x.is_atomic))
+SetMakerConcept(ListObject)
+
+
+const SimpleObject = $u(PrimitiveObject, ListObject)
+
+
+function HashObject () {
+    return {
+        data: {},
+        config: {},
+        maker: HashObject
+    }
+}
+
+
+SetMakerConcept(HashObject)
+
+
+const ObjectObject = $u(SimpleObject, HashObject)
 
 
 /**
@@ -71,106 +73,9 @@ const NonAtomic = $n(HashObject, $(x => !x.is_atomic))
  */
 
 
-const K = HashObject()
-K.global = K
-
-// TODO: primitive type refactor
-
-/**
- * Boolean Value Definition
- */
-
-
-const True = K.data.True = HashObject({ is_atomic: true })
-const False = K.data.False = HashObject({ is_atomic: true })
-const Unknown = K.data.Unknown = HashObject({ is_atomic: true })
-
-
-function BoolObject(bool = false) {
-    assert(Bool.contains(bool))
-    return bool && True || False
-}
-
-
-SetEquivalent(BoolObject, $f(True, False))
-
-
-function ExtBoolObject(value = 'unknown') {
-    assert($u(Bool, $1('unknown')).contains(value))
-    if (value == 'unknown') {
-        return Unknown
-    } else {
-        return BoolObject(value)
-    }
-}
-
-
-SetEquivalent(ExtBoolObject, $f(True, False, Unknown))
-
-
-/**
- * String & Number Definition
- */
-
-
-function StringObject (string = '') {
-    assert(Str.contains(string))
-    var object = {
-        is_hash_object: true,
-        is_atomic: true,
-        default_copy_policy: 'value',
-        string: string,
-        manufacturer: StringObject
-    }
-    return object
-}
-
-
-function SetMakerConcept (manufacturer) {
-    SetEquivalent(
-        manufacturer, $n(HashObject, $(x => x.made_by(manufacturer)))
-    )
-}
-
-
-SetMakerConcept(StringObject)
-
-
-function NumberObject (number = 0) {
-    assert(Num.contains(number))
-    var object = {
-        is_hash_object: true,
-        is_atomic: true,
-        default_copy_policy: 'value',
-        number: number,
-        manufacturer: NumberObject
-    }
-    return object
-}
-
-
-SetMakerConcept(NumberObject)
-
-
-/**
- * List Definition
- */
-
-
-function ListObject (list = []) {
-    assert(ArrayOf(HashObject).contains(list))
-    var object = {
-        is_hash_object: true,
-        is_atomic: true,
-        default_copy_policy: 'value',
-        list: list,
-        manufacturer: ListObject
-    }
-    return object
-}
-
-
-SetMakerConcept(ListObject)
+const G = HashObject()
+const K = G.data
+K.global = G
 
 
 /**
@@ -178,15 +83,15 @@ SetMakerConcept(ListObject)
  */
 
 
-const AnyConcept = K.Any = HashObject({ is_atomic: true })
+const AnyConcept = K.Any = HashObject()
 const BoolConcept = K.Bool = HashObject()
 
 
-function ConceptObject ( f ) {
+function ConceptObject (f_name, f) {
     check(ConceptObject, arguments, { f: Function })
     return pour(HashObject(), {
         config: {
-            contains: ConceptFunctionInstance('', f)
+            contains: ConceptFunctionInstance(f_name, f)
         }
     })
 }
@@ -194,7 +99,7 @@ function ConceptObject ( f ) {
 
 SetEquivalent(ConceptObject, $u(
     $f(AnyConcept, BoolConcept),
-    $n(NonAtomic, Struct({
+    $n(HashObject, Struct({
         config: Struct({
             contains: ConceptFunctionInstance
         })
@@ -226,55 +131,58 @@ function FunctionInstanceObject (name, context, prototype, js_function) {
         js_function: Function
     })
     return pour(HashObject(), {
-        name: name,
+        name: name || '[Anonymous]',
         context: context,
         prototype: prototype,
         js_function: js_function,
-        manufacturer: FunctionInstanceObject,
-        call: function (argument) {
-            let f_name = `${this.name}()`
-            let proto = this.prototype
-            argument = mapkey(argument, function (key) {
-                let n = Number(key)
-                if (!Number.isNaN(n)) {
-                    let str_name = proto.order[n]
-                    InvalidArgument.assert(
-                        typeof str_name != 'undefined',
-                        f_name, `redundant argument ${key}`
+        maker: FunctionInstanceObject,
+        __proto__: once(FunctionInstanceObject, {
+            apply: function (...args) {
+                return this.call(fold(args, {}, (e, v, i) => (v[i] = e, v)) )
+            },
+            call: function (argument) {
+                let debug_name = `${this.name}()`
+                let proto = this.prototype
+                let parameters = proto.parameters
+                let order = proto.order
+                let context = this.context
+                let f = this.js_function
+                mapkey(argument, key => InvalidArgument.assert(
+                    !(key.is(NumStr) && order.has_no(key)),
+                    debug_name, `redundant argument ${key}`
+                ))
+                mapkey(argument, key => InvalidArgument.assert(
+                    !(key.is(NumStr) && argument.has(order[key])),
+                    debug_name, `conflict argument ${key}`
+                ))
+                map(order, (key, index) => InvalidArgument.assert(
+                    argument.has(index) || argument.has(key),
+                    debug_name, `missing argument ${key}`
+                ))
+                argument = mapkey(argument, key => key.is(NumStr)? order[key]: key)
+                map(order, function (key) {
+                    let parameter = parameters[key]
+                    if ( parameter.constraint !== AnyConcept ) {
+                        let contains = parameter.constraint.config.contains
+                        InvalidArgument.assert(
+                            contains.apply(argument[key]), debug_name,
+                            `illegal value ${argument[key]} for argument ${key}`
+                        )
+                    }
+                    // TODO: copy value
+                })
+                let value = f(this.context, argument)
+                let value_set = proto.return_value
+                if (value_set !== AnyConcept && !this.return_value_promised) {
+                    let contains = value_set.config.contains
+                    InvalidReturnValue.assert(
+                        contains.apply(value),
+                        debug_name, `invalid return value ${value}`
                     )
-                    InvalidArgument.assert(
-                        !argument.has(str_name),
-                        f_name, `missing argument ${key}`
-                    )
-                    return str_name
-                } else {
-                    return key
                 }
-            })
-            map(proto.order, function (name) {
-                let parameter = proto.parameters[name]
-                if ( parameter.constraint !== AnyConcept ) {
-                    InvalidArgument.assert(
-                        True === parameter.constraint.config.contains.call({
-                            '0': argument[name]
-                        }),
-                        f_name, `invalid argument ${name}`
-                    )
-                }
-                // TODO: copy value
-            })
-            let return_value = js_function(this.context, argument)
-            if (proto.return_value !== AnyConcept
-                && !this.return_value_promised) {
-                InvalidReturnValue.assert(
-                    True === proto.return_value.config.contains.call({
-                        '0': return_value
-                    }),
-                    f_name, `invalid return value`
-                )
+                return value
             }
-            return return_value
-        }
+        })
     })
 }
 
@@ -286,7 +194,7 @@ const ConceptFunctionPrototype = {
     parameters: {
         object: {
             constraint: AnyConcept,
-            pass_policy: 'reference'            
+            pass_policy: 'reference'
         }
     },
     order: ['object'],
@@ -296,8 +204,8 @@ const ConceptFunctionPrototype = {
 
 function ConceptFunctionInstance (name, js_concept_function) {
     return FunctionInstanceObject(
-        name, K, ConceptFunctionPrototype, function (context, argument) {
-            return BoolObject(js_concept_function(argument.object))
+        name, G, ConceptFunctionPrototype, function (context, argument) {
+            return js_concept_function(argument.object)
         }
     )
 }
@@ -320,33 +228,38 @@ SetEquivalent(
 )
 
 
-const ConceptConcept = K.Concept = ConceptObject(x => x.is(ConceptObject))
+function PortEquivalent(hash_object, concept, f_name) {
+    check(
+        PortEquivalent, arguments,
+        { hash_object: HashObject, concept: Concept, f_name: Str }
+    )
+    hash_object.config.contains = (
+        ConceptFunctionInstance(
+            f_name, x => x.is(concept)
+        )   
+    )
+}
 
 
-BoolConcept.config.contains = ConceptFunctionInstance(
-    'Bool', x => BoolObject.contains(x)
-)
+PortEquivalent(BoolConcept, BoolObject, 'Bool_Checker')
 BoolConcept.config.contains.return_value_promised = true
 
 
-const NumberConcept = K.Number = pour(HashObject(), {
-    config: {
-        contains: ConceptFunctionInstance(
-            'Number', x => NumberObject.contains(x)
-        )
-    }
-})
+function PortConcept(concept, f_name) {
+    check(PortConcept, arguments, { concept: Concept, f_name: Str })
+    var r = HashObject()
+    PortEquivalent(r, concept, f_name)
+    return r
+}
 
 
-const StringConcept = K.String = pour(HashObject(), {
-    config: {
-        contains: ConceptFunctionInstance(
-            'String', x => StringObject.contains(x)
-        )
-    }
-})
-
-
+const ConceptConcept = K.Concept = PortConcept(ConceptObject, 'Concept_Checker')
+const NumberConcept = K.Number = PortConcept(NumberObject, 'Number_Checker')
+const StringConcept = K.String = PortConcept(StringObject, 'String_Checker')
+const PrimitiveConcept = K.Primitive = PortConcept(PrimitiveObject, 'Primitive_Checker')
+const SimpleConcept = K.Simple = PortConcept(SimpleObject, 'Simple_Checker')
+const HashConcept = K.Hash = PortConcept(HashObject, 'Hash_Checker')
+const ObjectConcept = K.Object = PortConcept(ObjectObject, 'Object_Checker')
 
 
 function FunctionObject (function_instances) {

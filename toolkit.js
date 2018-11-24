@@ -61,13 +61,16 @@ const $f = (...elements) => $(x => exists(elements, e => e === x))
 const Any = $(() => true)
 const Void = $(() => false)
 
-const Empty = $(x => typeof x == 'undefined')
+const NoValue = $(x => typeof x == 'undefined')
 const Num = $(x => typeof x == 'number')
 const Str = $(x => typeof x == 'string')
 const Bool = $(x => typeof x == 'boolean')
 const Hash = $(x => x instanceof Object)
-const Optional = (concept, defval) => pour({defval: defval},$u(concept, Empty))
+const Optional = (concept, defval) => pour({defval: defval},$u(concept, NoValue))
 const SetEquivalent = (target, concept) => target.contains = concept.contains
+const SetMakerConcept = (maker) => maker.contains = (x => x.maker === maker)
+
+const NumStr = $n(Str, $(x => !Number.isNaN(Number(x))) )
 
 const NA = { contains: x => x === this }
 const Iterable = $(
@@ -102,6 +105,21 @@ Object.prototype.is_not = function (concept) { return !this.is(concept) }
 Function.prototype.contains = function (obj) { return obj instanceof this }
 
 
+const once = (function () {
+    let cache = {}
+    function once (caller, value) {
+        check(once, arguments, { caller: Function, value: Any })
+        if ( cache.has(caller.name) ) {
+            return cache[caller.name]
+        } else {
+            cache[caller.name] = value
+            return value
+        }
+    }
+    return once
+})()
+
+
 function check(callee, args, concept_table) {
     assert(Function.contains(callee))
     assert(Hash.contains(concept_table))
@@ -121,7 +139,7 @@ function check(callee, args, concept_table) {
             )
         }
         /*
-        if (Empty.contains(argument) && concept.has('defval')) {
+        if (NoValue.contains(argument) && concept.has('defval')) {
             args[parameter_to_index[parameter]] = concept.defval
         }
         */
@@ -138,7 +156,7 @@ function check_hash(callee, argument, constraint) {
         if (!constraint[name].contains(argument[name])) {
             throw Error(`Invalid argument ${name} in function ${callee.name}`)
         }
-        if (Empty.contains(argument[name]) && constraint[name].has('defval')) {
+        if (NoValue.contains(argument[name]) && constraint[name].has('defval')) {
             argument[name] = constraint[name].defval
         }
     }
@@ -174,11 +192,14 @@ function mapkey (hash, f) {
     var result = {}
     for ( let key of Object.keys(hash) ) {
         let new_key = f(key, hash[key])
+        result[new_key] = hash[key]
+        /*
         if ( !result.has(new_key) ) {
             result[new_key] = hash[key]
         } else {
             throw Error('mapkey(): Key conflict detected')
-        }        
+        } 
+        */
     }
     return result
 }
@@ -245,6 +266,9 @@ function pour (target, source) {
     for ( let key of Object.keys(source) ) {
         target[key] = source[key]
     }
+    if ( target.__proto__ !== source.__proto__ ) {
+        target.__proto__ = source.__proto__
+    }
     return target
 }
 
@@ -255,8 +279,10 @@ function fold (iterable, initial, f) {
         { iterable: Iterable, initial: Any, f: Function }
     )
     var value = initial
+    var index = 0
     for ( let element of iterable ) {
-        value = f(element, value)
+        value = f(element, value, index)
+        index++
     }
     return value
 }
@@ -275,9 +301,9 @@ function exists (iterable, f) {
 
 
 Object.prototype.has = function (prop) { return this.hasOwnProperty(prop) }
-Object.prototype.made_by = function (manufacturer) {
-    return this.manufacturer === manufacturer
-}
+Array.prototype.has = function (index) { return typeof this[index] != 'undefined' }
+Object.prototype.has_no = function (prop) { return !this.has(prop) }
+Array.prototype.has_no = function (index) { return !this.has(index) }
 Function.prototype.get_parameters = function () {
     /* https://stackoverflow.com/questions/1007981/how-to-get-thistion-parameter-names-values-dynamically */
     var STRIP_COMMENTS = /(\/\/.*$)|(\/\*[\s\S]*?\*\/)|(\s*=[^,\)]*(('(?:\\'|[^'\r\n])*')|("(?:\\"|[^"\r\n])*"))|(\s*=[^,\)]*))/mg;
