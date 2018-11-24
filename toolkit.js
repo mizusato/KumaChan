@@ -216,6 +216,14 @@ function mapval (hash, f) {
 }
 
 
+function *rev (array) {
+    check(rev, arguments, { array: Array })
+    for ( let i=array.length-1; i>=0; i-- ) {
+        yield array[i]
+    }
+}
+
+
 function *cat (...iterables) {
     assert(iterables.is(Iterable))
     for( let iterable of iterables ) {

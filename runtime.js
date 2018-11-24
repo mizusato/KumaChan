@@ -30,6 +30,7 @@ class RuntimeException extends Error {
 class InvalidOperation extends RuntimeException {}
 class InvalidArgument extends RuntimeException {}
 class InvalidReturnValue extends RuntimeException {}
+class NoMatchingPattern extends RuntimeException {}
 class KeyError extends RuntimeException {}
 
 
@@ -148,6 +149,70 @@ const FunctionPrototype = $n(
 )
 
 
+function CheckArgument(prototype, argument, debug_name = '') {
+    /**
+     *  Check if argument is valid.
+     *  If valid, returns normalized argument object.
+     *  Normalize: Index Number -> Key; Execute Value Copy
+     */
+    check(
+        CheckArgument, arguments,
+        { prototype: FunctionPrototype, argument: Hash }
+    )
+    let proto = prototype
+    let parameters = proto.parameters
+    let order = proto.order
+    mapkey(argument, key => InvalidArgument.assert(
+        !(key.is(NumStr) && order.has_no(key)),
+        debug_name, `redundant argument ${key}`
+    ))
+    mapkey(argument, key => InvalidArgument.assert(
+        !(key.is(NumStr) && argument.has(order[key])),
+        debug_name, `conflict argument ${key}`
+    ))
+    map(order, (key, index) => InvalidArgument.assert(
+        argument.has(index) || argument.has(key),
+        debug_name, `missing argument ${key}`
+    ))
+    argument = mapkey(
+        argument,
+        key => key.is(NumStr)? order[key]: key
+    )
+    map(order, function (key) {
+        let parameter = parameters[key]
+        if ( parameter.constraint !== AnyConcept ) {
+            let contains = parameter.constraint.config.contains
+            InvalidArgument.assert(
+                contains.apply(argument[key]), debug_name,
+                `illegal argument ${key}`
+            )
+        }
+    })
+    // TODO: argument pass policy
+    return argument
+}
+
+
+function CheckReturnValue (prototype, value, debug_name = '') {
+    /**
+     *  Check if return value is legal.
+     *  If legal, returns the raw return value.
+     */
+    check(
+        CheckReturnValue, arguments,
+        { prototype: FunctionPrototype, value: Any }
+    )
+    let value_set = proto.return_value
+    if (value_set !== AnyConcept && !this.return_value_promised) {
+        InvalidReturnValue.assert(
+            value_set.config.contains.apply(value),
+            debug_name, `invalid return value ${value}`
+        )
+    }
+    return value
+}
+
+
 function FunctionInstanceObject (name, context, prototype, js_function) {
     check(FunctionInstanceObject, arguments, {
         name: Str,
@@ -163,49 +228,20 @@ function FunctionInstanceObject (name, context, prototype, js_function) {
         maker: FunctionInstanceObject,
         __proto__: once(FunctionInstanceObject, {
             apply: function (...args) {
+                assert(ArrayOf(ObjectObject).contains(args))
                 return this.call(fold(args, {}, (e, v, i) => (v[i] = e, v)) )
             },
             call: function (argument) {
+                assert(HashOf(ObjectObject).contains(argument))
                 let debug_name = `${this.name}()`
                 let proto = this.prototype
-                let parameters = proto.parameters
-                let order = proto.order
                 let context = this.context
                 let f = this.js_function
-                mapkey(argument, key => InvalidArgument.assert(
-                    !(key.is(NumStr) && order.has_no(key)),
-                    debug_name, `redundant argument ${key}`
-                ))
-                mapkey(argument, key => InvalidArgument.assert(
-                    !(key.is(NumStr) && argument.has(order[key])),
-                    debug_name, `conflict argument ${key}`
-                ))
-                map(order, (key, index) => InvalidArgument.assert(
-                    argument.has(index) || argument.has(key),
-                    debug_name, `missing argument ${key}`
-                ))
-                argument = mapkey(argument, key => key.is(NumStr)? order[key]: key)
-                map(order, function (key) {
-                    let parameter = parameters[key]
-                    if ( parameter.constraint !== AnyConcept ) {
-                        let contains = parameter.constraint.config.contains
-                        InvalidArgument.assert(
-                            contains.apply(argument[key]), debug_name,
-                            `illegal value ${argument[key]} for argument ${key}`
-                        )
-                    }
-                    // TODO: copy value
-                })
-                let value = f(this.context, argument)
-                let value_set = proto.return_value
-                if (value_set !== AnyConcept && !this.return_value_promised) {
-                    let contains = value_set.config.contains
-                    InvalidReturnValue.assert(
-                        contains.apply(value),
-                        debug_name, `invalid return value ${value}`
-                    )
-                }
-                return value
+                return CheckReturnValue(
+                    proto, f(
+                        context, CheckArgument(proto, argument, debug_name)
+                    ), debug_name
+                )
             }
         })
     })
@@ -227,10 +263,11 @@ const ConceptFunctionPrototype = {
 }
 
 
-function ConceptFunctionInstance (name, js_concept_function) {
+function ConceptFunctionInstance (name, f) {
+    check(ConceptFunctionInstance, arguments, { name: Str, f: Function })
     return FunctionInstanceObject(
         name, G, ConceptFunctionPrototype, function (context, argument) {
-            return js_concept_function(argument.object)
+            return f(argument.object)
         }
     )
 }
@@ -294,6 +331,37 @@ const ObjectConcept = K.Object = K.Any
  */
 
 
-function FunctionObject (function_instances) {
-
+function FunctionObject (name, instances) {
+    check(FunctionObject, arguments, {
+        name: Str,
+        instances: $n(
+            ArrayOf(FunctionInstance),
+            $(array => array.length > 0)
+        )
+    })
+    return {
+        name: name,
+        instances: instances,
+        __proto__: once(FunctionObject, {
+            add: function (instance) {
+                assert(FunctionInstanceObject.contains(instance))
+                this.instances.push(instance)
+            }
+            call: function (argument) {
+                assert(HashOf(ObjectObject).contains(argument))
+                for(let instance of rev(this.instances)) {
+                    try {
+                        let arg = CheckArgument(instance.prototype, argument)
+                        return instance.call(arg)
+                    } catch (InvalidArgument) {
+                        continue
+                    }
+                }
+                NoMatchingPattern.assert(
+                    false, `${name}()`,
+                    'invalid call: cannot find matching function prototype'
+                )
+            }
+        })
+    }
 }
