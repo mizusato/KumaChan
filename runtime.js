@@ -46,6 +46,16 @@ const CopyAction = {
     default: x => K.copy.apply(x),
     native: x => x
 }
+const CopyFlag = {
+    reference: '&',
+    value: '*',
+    default: '',
+    native: '~'
+}
+const CopyFlagValue = fold(
+    Object.keys(CopyFlag), {},
+    (key,v) => (v[CopyFlag[key]] = key, v)
+)
 
 
 /**
@@ -129,11 +139,12 @@ const AnyConcept = K.Any = HashObject()
 const BoolConcept = K.Bool = HashObject()
 
 
-function ConceptObject (f_name, f) {
+function ConceptObject (concept_name, f) {
     check(ConceptObject, arguments, { f: Function })
     return pour(HashObject(), {
         config: {
-            contains: ConceptFunctionInstance(f_name, f)
+            name: concept_name,
+            contains: ConceptFunctionInstance(`${concept_name}::Checker`, f)
         }
     })
 }
@@ -143,6 +154,7 @@ SetEquivalent(ConceptObject, $u(
     $f(AnyConcept, BoolConcept),
     $n(HashObject, Struct({
         config: Struct({
+            name: StringObject,
             contains: ConceptFunctionInstance
         })
     }))
@@ -161,8 +173,87 @@ const FunctionPrototype = $n(
         order: ArrayOf(Str),
         return_value: ConceptObject
     }),
-    $(proto => forall(proto.order, name => proto.parameters.has(name)))
+    $( proto => forall(proto.order, key => proto.parameters.has(key)) )
 )
+
+
+FunctionPrototype.represent = function repr_prototype (prototype) {
+    check(repr_prototype, arguments, { prototype: FunctionPrototype })
+    function repr_parameter (key, parameter) {
+        check(repr_parameter, arguments, { key: Str, parameter: Parameter })
+        let type = parameter.constraint.config.name
+        let flags = CopyFlag[parameter.pass_policy]
+        return `${type} ${flags}${key}`
+    }
+    function opt (string, non_empty_callback) {
+        check(opt, arguments, { string: Str, non_empty_callback: Function })
+        return string && non_empty_callback(string) || ''
+    }
+    let order = prototype.order
+    let parameters = prototype.parameters
+    let retval_constraint = prototype.return_value
+    let necessary = Enum.apply({}, order)
+    return '(' + join(filter([
+        join(map(
+            order,
+            key => repr_parameter(key, parameters[key])
+        ), ', '),
+        opt(join(map(
+            filter(parameters, key => key.is_not(necessary)),
+            (key, val) => repr_parameter(key, val)
+        ), ', '), s => `[${s}]`),
+    ], x => x), ', ') + ') -> ' + `${retval_constraint.config.name}`
+}
+
+
+FunctionPrototype.parse = function parse_prototype (string) {
+    const pattern = /\((.*)\) -> (.*)/
+    const sub_pattern = /(.*), *[(.*)]/
+    check(parse_prototype, arguments, { string: Regex(pattern) })
+    let str = {
+        parameters: string.match(pattern)[1].trim(),
+        return_value: string.match(pattern)[2].trim()
+    }
+    let has_optional = str.parameters.match(sub_pattern)
+    str.parameters = {
+        necessary: has_optional? has_optional[1].trim(): str.parameters,
+        all: str.parameters
+    }
+    function check_concept (string) {
+        if ( K.has(string) && K[string].is(ConceptObject) ) {
+            return K[string]
+        } else {
+            throw Error('prototype parsing error: invalid constraint')
+        }
+    }
+    function parse_parameter (string) {
+        const pattern = /([^ ]*) *([\*\&\~]?)(.+)/
+        check(parse_parameter, arguments, { string: Regex(pattern) })
+        let str = {
+            constraint: string.match(pattern)[1].trim(),
+            pass_policy: string.match(pattern)[2].trim()
+        }
+        let name = string.match(pattern)[3]
+        return { key: name, value: mapval(str, function (s, item) {
+            return ({
+                constraint: () => check_concept(s),
+                pass_policy: () => CopyFlagValue[s] || 'default'
+            })[item]()
+        }) }
+    }
+    let trim_all = x => map_lazy(x, y => y.trim())
+    return {
+        order: map(map(
+            trim_all(str.parameters.necessary.split(',')),
+            s => parse_parameter(s)
+        ), p => p.key),
+        parameters: fold(map(
+            trim_all(str.parameters.all.split(',')),
+            s => parse_parameter(s)
+        ), {}, (e,v) => (v[e.key]=e.value, v)),
+        return_value: check_concept(str.return_value)
+    }
+}
 
 
 function CheckArgument(prototype, argument, debug_name = '') {
@@ -261,6 +352,10 @@ function FunctionInstanceObject (name, context, prototype, js_function) {
                     proto, f(context, arg),
                     this.return_value_promised, debug_name
                 )
+            },
+            toString: function () {
+                let proto_repr = FunctionPrototype.represent(this.prototype)
+                return `${this.name} ${proto_repr}`
             }
         })
     })
@@ -309,48 +404,47 @@ SetEquivalent(
 )
 
 
-function PortEquivalent(hash_object, concept, f_name) {
+function PortEquivalent(hash_object, concept, name) {
     check(
         PortEquivalent, arguments,
-        { hash_object: HashObject, concept: Concept, f_name: Str }
+        { hash_object: HashObject, concept: Concept, name: Str }
     )
-    hash_object.config.contains = (
-        ConceptFunctionInstance(
-            f_name, x => x.is(concept)
-        )   
-    )
+    pour(hash_object.config, {
+        name: name,
+        contains: ConceptFunctionInstance(
+            `${name}::Checker`, x => x.is(concept)
+        )
+    })
 }
 
 
-PortEquivalent(AnyConcept, ObjectObject, 'Any_Checker')
-PortEquivalent(BoolConcept, BoolObject, 'Bool_Checker')
+PortEquivalent(AnyConcept, ObjectObject, 'Any')
+PortEquivalent(BoolConcept, BoolObject, 'Bool')
 BoolConcept.config.contains.return_value_promised = true
 
 
-function PortConcept(concept, f_name) {
-    check(PortConcept, arguments, { concept: Concept, f_name: Str })
-    var r = HashObject()
-    PortEquivalent(r, concept, f_name)
-    return r
+function PortConcept(concept, name) {
+    check(PortConcept, arguments, { concept: Concept, name: Str })
+    return ConceptObject(name, x => x.is(concept))
 }
 
 
-const ConceptConcept = K.Concept = PortConcept(ConceptObject, 'Concept_Checker')
-const NumberConcept = K.Number = PortConcept(NumberObject, 'Number_Checker')
-const StringConcept = K.String = PortConcept(StringObject, 'String_Checker')
-const PrimitiveConcept = K.Primitive = PortConcept(PrimitiveObject, 'Primitive_Checker')
-const NonPrimitiveConcept = K.NonPrimitive = PortConcept(NonPrimitiveObject, 'NonPrimitive_Checker')
-const ListConcept = K.List = PortConcept(ListObject, 'List_Checker')
-const AtomicConcept = K.Atomic = PortConcept(AtomicObject, 'Atomic_Checker')
-const SimpleConcept = K.Simple = PortConcept(SimpleObject, 'Simple_Checker')
-const HashConcept = K.Hash = PortConcept(HashObject, 'Hash_Checker')
+const ConceptConcept = K.Concept = PortConcept(ConceptObject, 'Concept')
+const NumberConcept = K.Number = PortConcept(NumberObject, 'Number')
+const StringConcept = K.String = PortConcept(StringObject, 'String')
+const PrimitiveConcept = K.Primitive = PortConcept(PrimitiveObject, 'Primitive')
+const NonPrimitiveConcept = K.NonPrimitive = PortConcept(NonPrimitiveObject, 'NonPrimitive')
+const ListConcept = K.List = PortConcept(ListObject, 'List')
+const AtomicConcept = K.Atomic = PortConcept(AtomicObject, 'Atomic')
+const SimpleConcept = K.Simple = PortConcept(SimpleObject, 'Simple')
+const HashConcept = K.Hash = PortConcept(HashObject, 'Hash')
 const ObjectConcept = K.Object = K.Any
 
 
 const VoidValue = K.VoidValue = AtomicObject()
 const VoidObject = () => VoidValue
 SetEquivalent(VoidObject, $1(VoidValue))
-const VoidConcept = K.Void = PortConcept(VoidObject, 'Void_Checker')
+const VoidConcept = K.Void = PortConcept(VoidObject, 'Void')
 
 
 /**
@@ -396,14 +490,17 @@ function FunctionObject (name, instances) {
                     false, `${this.name}()`,
                     'invalid call: cannot find matching function prototype'
                 )
+            },
+            toString: function() {
+                return join(map(this.instances, I => I.toString()), '\n')
             }
         })
     }
 }
 
 
-const FunctionInstanceConcept = K.FunctionInstance = PortConcept(FunctionInstanceObject, 'FunctionInstance_Checker')
-const FunctionConcept = K.Function = PortConcept(FunctionObject, 'Function_Checker')
+const FunctionInstanceConcept = K.FunctionInstance = PortConcept(FunctionInstanceObject, 'FunctionInstance')
+const FunctionConcept = K.Function = PortConcept(FunctionObject, 'Function')
 
 
 K.ref_copy = FunctionObject('ref_copy', [

@@ -70,6 +70,7 @@ const SetEquivalent = (target, concept) => target.contains = concept.contains
 const SetMakerConcept = (maker) => maker.contains = (x => x.maker === maker)
 
 const NumStr = $n(Str, $(x => !Number.isNaN(Number(x))) )
+const Regex = regex => $n( Str, $(s => s.match(regex)) )
 
 const NA = { contains: x => x === this }
 const Iterable = $(
@@ -241,6 +242,12 @@ function list (iterable) {
         result.push(element)
     }
     return result
+}
+
+
+function join (iterable, separator) {
+    check(join, arguments, { iterable: Iterable, separator: Str })
+    return list(iterable).join(separator)
 }
 
 
