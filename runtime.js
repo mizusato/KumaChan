@@ -53,6 +53,7 @@ const CopyAction = {
  * 
  *  Object ┬ Hash
  *         ┴ Simple ┬ List
+ *                  ┼ Atomic
  *                  ┴ Primitive ┬ String
  *                              ┼ Number
  *                              ┴ Bool
@@ -76,7 +77,15 @@ function ListObject() {
 SetMakerConcept(ListObject)
 
 
-const SimpleObject = $u(PrimitiveObject, ListObject)
+function AtomicObject() {
+    return pour({}, { maker: AtomicObject })
+}
+
+
+SetMakerConcept(AtomicObject)
+
+
+const SimpleObject = $u(PrimitiveObject, ListObject, AtomicObject)
 
 
 function HashObject () {
@@ -332,12 +341,13 @@ const StringConcept = K.String = PortConcept(StringObject, 'String_Checker')
 const PrimitiveConcept = K.Primitive = PortConcept(PrimitiveObject, 'Primitive_Checker')
 const NonPrimitiveConcept = K.NonPrimitive = PortConcept(NonPrimitiveObject, 'NonPrimitive_Checker')
 const ListConcept = K.List = PortConcept(ListObject, 'List_Checker')
+const AtomicConcept = K.Atomic = PortConcept(AtomicObject, 'Atomic_Checker')
 const SimpleConcept = K.Simple = PortConcept(SimpleObject, 'Simple_Checker')
 const HashConcept = K.Hash = PortConcept(HashObject, 'Hash_Checker')
 const ObjectConcept = K.Object = K.Any
 
 
-const VoidValue = K.VoidValue = HashObject()
+const VoidValue = K.VoidValue = AtomicObject()
 const VoidObject = () => VoidValue
 SetEquivalent(VoidObject, $1(VoidValue))
 const VoidConcept = K.Void = PortConcept(VoidObject, 'Void_Checker')
