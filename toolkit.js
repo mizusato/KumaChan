@@ -51,7 +51,6 @@ class Concept {
 
 
 const $ = f => new Concept(f)
-const $I = x => x
 const $n = Concept.intersect
 const $u = Concept.union
 const $_ = Concept.complement

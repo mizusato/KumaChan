@@ -8,7 +8,7 @@
 
 class RuntimeException extends Error {    
     static gen_err_msg (err_type, func_name, err_msg) {
-        return `[Runtime Exception] ${err_type}: ${func_name}: ${err_msg}`
+        return `[Runtime Exception] ${func_name}: ${err_type}: ${err_msg}`
     }    
     static assert (bool, function_name, error_message) {
         if (!bool) {
@@ -39,7 +39,13 @@ class KeyError extends RuntimeException {}
  */
 
 
-const CopyPolicy = Enum('reference', 'value')
+const CopyPolicy = Enum('reference', 'value', 'default', 'native')
+const CopyAction = {
+    reference: x => K.ref_copy.apply(x),
+    value: x => K.val_copy.apply(x),
+    default: x => K.copy.apply(x),
+    native: x => x
+}
 
 
 /**
@@ -59,6 +65,7 @@ const StringObject = $(x => typeof x == 'string')
 const NumberObject = $(x => typeof x == 'number')
 const BoolObject = $(x => typeof x == 'boolean')
 const PrimitiveObject = $u(StringObject, NumberObject, BoolObject)
+const NonPrimitiveObject = $_(PrimitiveObject)
 
 
 function ListObject() {
@@ -178,22 +185,24 @@ function CheckArgument(prototype, argument, debug_name = '') {
         argument,
         key => key.is(NumStr)? order[key]: key
     )
-    map(order, function (key) {
-        let parameter = parameters[key]
-        if ( parameter.constraint !== AnyConcept ) {
+    map(parameters, function (key, parameter) {
+        if ( argument.has(key) && parameter.constraint !== AnyConcept ) {
             let contains = parameter.constraint.config.contains
             InvalidArgument.assert(
-                contains.apply(argument[key]), debug_name,
-                `illegal argument ${key}`
-            )
+                contains.apply(argument[key]),
+                debug_name, `illegal argument ${key}`
+            )            
         }
     })
-    // TODO: argument pass policy
+    argument = mapval(
+        argument,
+        (val, key) => CopyAction[parameters[key].pass_policy](val)
+    )
     return argument
 }
 
 
-function CheckReturnValue (prototype, value, debug_name = '') {
+function CheckReturnValue (prototype, value, promised = false, debug_name = '') {
     /**
      *  Check if return value is legal.
      *  If legal, returns the raw return value.
@@ -202,8 +211,8 @@ function CheckReturnValue (prototype, value, debug_name = '') {
         CheckReturnValue, arguments,
         { prototype: FunctionPrototype, value: Any }
     )
-    let value_set = proto.return_value
-    if (value_set !== AnyConcept && !this.return_value_promised) {
+    let value_set = prototype.return_value
+    if (value_set !== AnyConcept && !promised) {
         InvalidReturnValue.assert(
             value_set.config.contains.apply(value),
             debug_name, `invalid return value ${value}`
@@ -237,10 +246,11 @@ function FunctionInstanceObject (name, context, prototype, js_function) {
                 let proto = this.prototype
                 let context = this.context
                 let f = this.js_function
+                let arg = CheckArgument(proto, argument, debug_name)
+                arg.argument = pour(HashObject(), { data: arg })
                 return CheckReturnValue(
-                    proto, f(
-                        context, CheckArgument(proto, argument, debug_name)
-                    ), debug_name
+                    proto, f(context, arg),
+                    this.return_value_promised, debug_name
                 )
             }
         })
@@ -255,7 +265,7 @@ const ConceptFunctionPrototype = {
     parameters: {
         object: {
             constraint: AnyConcept,
-            pass_policy: 'reference'
+            pass_policy: 'native'
         }
     },
     order: ['object'],
@@ -283,7 +293,7 @@ SetEquivalent(
             }),
             $(proto => proto.parameters[proto.order[0]].is(Struct({
                 constraint: $1(AnyConcept),
-                pass_policy: $1('reference')
+                pass_policy: $f('reference', 'native')
             })))
         )
     }))
@@ -320,10 +330,17 @@ const ConceptConcept = K.Concept = PortConcept(ConceptObject, 'Concept_Checker')
 const NumberConcept = K.Number = PortConcept(NumberObject, 'Number_Checker')
 const StringConcept = K.String = PortConcept(StringObject, 'String_Checker')
 const PrimitiveConcept = K.Primitive = PortConcept(PrimitiveObject, 'Primitive_Checker')
+const NonPrimitiveConcept = K.NonPrimitive = PortConcept(NonPrimitiveObject, 'NonPrimitive_Checker')
 const ListConcept = K.List = PortConcept(ListObject, 'List_Checker')
 const SimpleConcept = K.Simple = PortConcept(SimpleObject, 'Simple_Checker')
 const HashConcept = K.Hash = PortConcept(HashObject, 'Hash_Checker')
 const ObjectConcept = K.Object = K.Any
+
+
+const VoidValue = K.VoidValue = HashObject()
+const VoidObject = () => VoidValue
+SetEquivalent(VoidObject, $1(VoidValue))
+const VoidConcept = K.Void = PortConcept(VoidObject, 'Void_Checker')
 
 
 /**
@@ -335,7 +352,7 @@ function FunctionObject (name, instances) {
     check(FunctionObject, arguments, {
         name: Str,
         instances: $n(
-            ArrayOf(FunctionInstance),
+            ArrayOf(FunctionInstanceObject),
             $(array => array.length > 0)
         )
     })
@@ -346,22 +363,165 @@ function FunctionObject (name, instances) {
             add: function (instance) {
                 assert(FunctionInstanceObject.contains(instance))
                 this.instances.push(instance)
-            }
+            },
+            apply: function (...args) {
+                assert(ArrayOf(ObjectObject).contains(args))
+                return this.call(fold(args, {}, (e, v, i) => (v[i] = e, v)) )
+            },
             call: function (argument) {
                 assert(HashOf(ObjectObject).contains(argument))
                 for(let instance of rev(this.instances)) {
                     try {
                         let arg = CheckArgument(instance.prototype, argument)
                         return instance.call(arg)
-                    } catch (InvalidArgument) {
-                        continue
+                    } catch (err) {
+                        if (err instanceof InvalidArgument) {
+                            continue
+                        } else {
+                            throw err
+                        }
                     }
                 }
                 NoMatchingPattern.assert(
-                    false, `${name}()`,
+                    false, `${this.name}()`,
                     'invalid call: cannot find matching function prototype'
                 )
             }
         })
     }
 }
+
+
+const FunctionInstanceConcept = K.FunctionInstance = PortConcept(FunctionInstanceObject, 'FunctionInstance_Checker')
+const FunctionConcept = K.Function = PortConcept(FunctionObject, 'Function_Checker')
+
+
+K.ref_copy = FunctionObject('ref_copy', [
+    FunctionInstanceObject('NonPrimitive::ref_copy', G, {
+        parameters: {
+            self: {
+                constraint: NonPrimitiveConcept,
+                pass_policy: 'native'
+            }
+        },
+        order: ['self'],
+        return_value: NonPrimitiveConcept
+    }, (c,a) => a.self)
+])
+
+
+K.val_copy = FunctionObject('val_copy', [
+    FunctionInstanceObject('Primitive::val_copy', G, {
+        parameters: {
+            self: {
+                constraint: PrimitiveConcept,
+                pass_policy: 'native'
+            }
+        },
+        order: ['self'],
+        return_value: PrimitiveConcept
+    }, (c,a) => a.self),
+    FunctionInstanceObject('List::val_copy', G, {
+        parameters: {
+            self: {
+                constraint: ListConcept,
+                pass_policy: 'native'
+            }
+        },
+        order: ['self'],
+        return_value: ListConcept
+    }, (c,a) => map(a.self, e => K.copy.apply(e)) )
+])
+
+
+K.copy = FunctionObject('copy', [
+    FunctionInstanceObject('Any::copy', G, {
+        parameters: {
+            self: {
+                constraint: AnyConcept,
+                pass_policy: 'native'
+            }
+        },
+        order: ['self'],
+        return_value: AnyConcept
+    }, (c,a) => a.self)
+])
+
+
+K.is = FunctionObject('is', [
+    FunctionInstanceObject('Any::is', G, {
+        parameters: {
+            self: {
+                constraint: AnyConcept,
+                pass_policy: 'native'
+            },
+            concept: {
+                constraint: ConceptConcept,
+                pass_policy: 'native'
+            }
+        },
+        order: ['self', 'concept'],
+        return_value: BoolConcept
+    }, (c,a) => a.concept.config.contains.apply(a.self) )
+])
+
+
+K.has_data = FunctionObject('has_data', [
+    FunctionInstanceObject('Hash::has_data', G, {
+        parameters: {
+            self: {
+                constraint: HashConcept,
+                pass_policy: 'native'
+            },
+            key: {
+                constraint: StringConcept,
+                pass_policy: 'native'
+            }
+        },
+        order: ['self', 'key'],
+        return_value: BoolConcept
+    }, (c,a) => a.self.data.has(a.key))
+])
+
+
+K.get_data = FunctionObject('get_data', [
+    FunctionInstanceObject('Hash::get_data', G, {
+        parameters: {
+            self: {
+                constraint: HashConcept,
+                pass_policy: 'native'
+            },
+            key: {
+                constraint: StringConcept,
+                pass_policy: 'native'
+            }
+        },
+        order: ['self', 'key'],
+        return_value: AnyConcept
+    }, (c,a) => (
+        KeyError.assert(a.self.data.has(a.key), 'Hash::get_data', `'${a.key}'`)
+            && a.self.data[a.key]
+    ))
+])
+
+
+K.set_data = FunctionObject('set_data', [
+    FunctionInstanceObject('Hash::set_data', G, {
+        parameters: {
+            self: {
+                constraint: HashConcept,
+                pass_policy: 'native'
+            },
+            key: {
+                constraint: StringConcept,
+                pass_policy: 'native'
+            },
+            value: {
+                constraint: AnyConcept,
+                pass_policy: 'native'
+            }
+        },
+        order: ['self', 'key', 'value'],
+        return_value: VoidConcept
+    }, (c,a) => (a.self.data[a.key] = a.value, VoidValue))
+])
