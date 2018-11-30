@@ -8,7 +8,7 @@
 
 class RuntimeException extends Error {    
     static gen_err_msg (err_type, func_name, err_msg) {
-        return `[Runtime Exception] ${func_name}: ${err_type}: ${err_msg}`
+        return `${func_name}: ${err_type}: ${err_msg}`
     }    
     static assert (bool, function_name, error_message) {
         if (!bool) {
@@ -127,7 +127,16 @@ const ObjectObject = $u(SimpleObject, HashObject)
 
 
 const NullScope = AtomicObject('NullScope')
+
+
 SetEquivalent(NullScope, $1(NullScope))
+
+
+const NotNullScope = $n(HashObject, Struct({
+    config: Struct({
+        context: $u( NullScope, $(x => NotNullScope.contains(x)) )
+    })
+}))
 
 
 function Scope (context) {
@@ -139,9 +148,6 @@ function Scope (context) {
 }
 
 
-const NotNullScope = $n(HashObject, Struct({
-    config: Struct({ context: MaybeSelf(NullScope) })
-}))
 SetEquivalent(Scope, $u(NullScope, NotNullScope))
 
 
@@ -299,6 +305,14 @@ function CheckArgument(prototype, argument, debug_name = '') {
     let proto = prototype
     let parameters = proto.parameters
     let order = proto.order
+    /*
+      [TODO]
+    let _ = suppose_items([
+        () => a,
+        () => b
+    ])
+    if ( _.is(Failed) ) { return _ }
+    */
     mapkey(argument, key => InvalidArgument.assert(
         !(key.is(NumStr) && order.has_no(key)),
         debug_name, `redundant argument ${key}`
@@ -321,7 +335,7 @@ function CheckArgument(prototype, argument, debug_name = '') {
             InvalidArgument.assert(
                 contains.apply(argument[key]),
                 debug_name, `illegal argument ${key}`
-            )            
+            )        
         }
     })
     argument = mapval(
@@ -377,7 +391,6 @@ function FunctionInstanceObject (name, context, prototype, js_function) {
                 let context = this.context
                 let f = this.js_function
                 let arg = CheckArgument(proto, argument, debug_name)
-                arg.argument = pour(HashObject(), { data: arg })
                 return CheckReturnValue(
                     proto, f(Scope(context), arg),
                     this.return_value_promised, debug_name
