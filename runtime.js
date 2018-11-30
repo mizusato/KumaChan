@@ -32,6 +32,7 @@ class InvalidArgument extends RuntimeException {}
 class InvalidReturnValue extends RuntimeException {}
 class NoMatchingPattern extends RuntimeException {}
 class KeyError extends RuntimeException {}
+class NameConflict extends RuntimeException {}
 
 
 /**
@@ -87,8 +88,15 @@ function ListObject() {
 SetMakerConcept(ListObject)
 
 
-function AtomicObject() {
-    return pour({}, { maker: AtomicObject })
+const AtomicNameSet = new Set()
+
+
+function AtomicObject(name) {    
+    NameConflict.assert(
+        !AtomicNameSet.has(name),
+        'AtomicObject()', 'atomic object name ${name} is in use'
+    )
+    return pour({}, { name: name, maker: AtomicObject })
 }
 
 
@@ -118,9 +126,31 @@ const ObjectObject = $u(SimpleObject, HashObject)
  */
 
 
-const G = HashObject()
+const NullScope = AtomicObject('NullScope')
+SetEquivalent(NullScope, $1(NullScope))
+
+
+function Scope (context) {
+    return pour(HashObject(), {
+        config: {
+            context: context
+        }
+    })
+}
+
+
+const NotNullScope = $n(HashObject, Struct({
+    config: Struct({ context: MaybeSelf(NullScope) })
+}))
+SetEquivalent(Scope, $u(NullScope, NotNullScope))
+
+
+const G = Scope(NullScope)
 const K = G.data
 K.global = G
+
+
+const NaObject = K['N/A'] = AtomicObject('N/A')
 
 
 /**
@@ -325,7 +355,7 @@ function CheckReturnValue (prototype, value, promised = false, debug_name = '') 
 function FunctionInstanceObject (name, context, prototype, js_function) {
     check(FunctionInstanceObject, arguments, {
         name: Str,
-        context: HashObject,
+        context: Scope,
         prototype: FunctionPrototype,
         js_function: Function
     })
@@ -349,7 +379,7 @@ function FunctionInstanceObject (name, context, prototype, js_function) {
                 let arg = CheckArgument(proto, argument, debug_name)
                 arg.argument = pour(HashObject(), { data: arg })
                 return CheckReturnValue(
-                    proto, f(context, arg),
+                    proto, f(Scope(context), arg),
                     this.return_value_promised, debug_name
                 )
             },
@@ -380,7 +410,7 @@ const ConceptFunctionPrototype = {
 function ConceptFunctionInstance (name, f) {
     check(ConceptFunctionInstance, arguments, { name: Str, f: Function })
     return FunctionInstanceObject(
-        name, G, ConceptFunctionPrototype, function (context, argument) {
+        name, G, ConceptFunctionPrototype, function (scope, argument) {
             return f(argument.object)
         }
     )
@@ -441,7 +471,7 @@ const HashConcept = K.Hash = PortConcept(HashObject, 'Hash')
 const ObjectConcept = K.Object = K.Any
 
 
-const VoidValue = K.VoidValue = AtomicObject()
+const VoidValue = K.VoidValue = AtomicObject('VoidValue')
 const VoidObject = () => VoidValue
 SetEquivalent(VoidObject, $1(VoidValue))
 const VoidConcept = K.Void = PortConcept(VoidObject, 'Void')
@@ -503,132 +533,76 @@ const FunctionInstanceConcept = K.FunctionInstance = PortConcept(FunctionInstanc
 const FunctionConcept = K.Function = PortConcept(FunctionObject, 'Function')
 
 
-K.ref_copy = FunctionObject('ref_copy', [
-    FunctionInstanceObject('NonPrimitive::ref_copy', G, {
-        parameters: {
-            self: {
-                constraint: NonPrimitiveConcept,
-                pass_policy: 'native'
-            }
-        },
-        order: ['self'],
-        return_value: NonPrimitiveConcept
-    }, (c,a) => a.self)
-])
+function CreateInstance (name_and_proto, js_function) {
+    let name = name_and_proto.split(' ')[0]
+    let prototype = name_and_proto.slice(name.length, name_and_proto.length)
+    return FunctionInstanceObject(
+        name, G, FunctionPrototype.parse(prototype), js_function
+    )
+}
 
 
-K.val_copy = FunctionObject('val_copy', [
-    FunctionInstanceObject('Primitive::val_copy', G, {
-        parameters: {
-            self: {
-                constraint: PrimitiveConcept,
-                pass_policy: 'native'
-            }
-        },
-        order: ['self'],
-        return_value: PrimitiveConcept
-    }, (c,a) => a.self),
-    FunctionInstanceObject('List::val_copy', G, {
-        parameters: {
-            self: {
-                constraint: ListConcept,
-                pass_policy: 'native'
-            }
-        },
-        order: ['self'],
-        return_value: ListConcept
-    }, (c,a) => map(a.self, e => K.copy.apply(e)) )
-])
+pour(K, {
+    is: FunctionObject('is', [
+        CreateInstance(
+            'Any::is (Any ~self, Concept ~concept) -> Bool',
+            (s, a) => a.concept.config.contains.apply(a.self)
+        )
+    ])
+})
 
 
-K.copy = FunctionObject('copy', [
-    FunctionInstanceObject('Any::copy', G, {
-        parameters: {
-            self: {
-                constraint: AnyConcept,
-                pass_policy: 'native'
-            }
-        },
-        order: ['self'],
-        return_value: AnyConcept
-    }, (c,a) => a.self)
-])
+pour(K, {
+    ref_copy: FunctionObject('ref_copy', [
+        CreateInstance (
+            'NonPrimitive::ref_copy (NonPrimitive ~self) -> NonPrimitive',
+            (s, a) => a.self
+        )
+    ]),
+    val_copy: FunctionObject('val_copy', [
+        CreateInstance (
+            'Primitive::val_copy (Primitive ~self) -> Primitive',
+            (s, a) => a.self
+        ),
+        CreateInstance (
+            'List::val_copy (List ~self) -> List',
+            (s, a) => map(a.self, e => K.copy.apply(e))
+        )
+    ]),
+    copy: FunctionObject('copy', [
+        CreateInstance (
+            'Any::copy (Any ~self) -> Any',
+            (s, a) => a.self
+        )
+    ])
+})
 
 
-K.is = FunctionObject('is', [
-    FunctionInstanceObject('Any::is', G, {
-        parameters: {
-            self: {
-                constraint: AnyConcept,
-                pass_policy: 'native'
-            },
-            concept: {
-                constraint: ConceptConcept,
-                pass_policy: 'native'
-            }
-        },
-        order: ['self', 'concept'],
-        return_value: BoolConcept
-    }, (c,a) => a.concept.config.contains.apply(a.self) )
-])
-
-
-K.has_data = FunctionObject('has_data', [
-    FunctionInstanceObject('Hash::has_data', G, {
-        parameters: {
-            self: {
-                constraint: HashConcept,
-                pass_policy: 'native'
-            },
-            key: {
-                constraint: StringConcept,
-                pass_policy: 'native'
-            }
-        },
-        order: ['self', 'key'],
-        return_value: BoolConcept
-    }, (c,a) => a.self.data.has(a.key))
-])
-
-
-K.get_data = FunctionObject('get_data', [
-    FunctionInstanceObject('Hash::get_data', G, {
-        parameters: {
-            self: {
-                constraint: HashConcept,
-                pass_policy: 'native'
-            },
-            key: {
-                constraint: StringConcept,
-                pass_policy: 'native'
-            }
-        },
-        order: ['self', 'key'],
-        return_value: AnyConcept
-    }, (c,a) => (
-        KeyError.assert(a.self.data.has(a.key), 'Hash::get_data', `'${a.key}'`)
-            && a.self.data[a.key]
-    ))
-])
-
-
-K.set_data = FunctionObject('set_data', [
-    FunctionInstanceObject('Hash::set_data', G, {
-        parameters: {
-            self: {
-                constraint: HashConcept,
-                pass_policy: 'native'
-            },
-            key: {
-                constraint: StringConcept,
-                pass_policy: 'native'
-            },
-            value: {
-                constraint: AnyConcept,
-                pass_policy: 'native'
-            }
-        },
-        order: ['self', 'key', 'value'],
-        return_value: VoidConcept
-    }, (c,a) => (a.self.data[a.key] = a.value, VoidValue))
-])
+pour(K, {
+    has_data: FunctionObject('has_data', [
+        CreateInstance (
+            'Hash::has_data (Hash ~self, String ~key) -> Bool',
+            (s, a) => a.self.data.has(a.key)
+        )
+    ]),
+    get_data: FunctionObject('get_data', [
+        CreateInstance (
+            'Hash::get_data (Hash ~self, String ~key) -> Any',
+            (s, a) => KeyError.assert(
+                a.self.data.has(a.key), 'Hash::get_data', `'${a.key}'`
+            ) && a.self.data[a.key]
+        )
+    ]),
+    find_data: FunctionObject('find_data', [
+        CreateInstance (
+            'Hash::find_data (Hash ~self, String ~key) -> Any',
+            (s, a) => a.self.data.has(a.key) && a.self.data[a.key] || NaObject
+        )
+    ]),
+    set_data: FunctionObject('set_data', [
+        CreateInstance (
+            'Hash::set_data (Hash ~self, String ~key, Any ~value) -> Void',
+            (s, a) => (a.self.data[a.key] = a.value, VoidValue)
+        )
+    ])
+})

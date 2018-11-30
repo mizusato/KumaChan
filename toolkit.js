@@ -1,6 +1,11 @@
 'use strict';
 
 
+function Export (f) {
+    window[f.name] = f
+}
+
+
 function assert (bool) {
     if(!bool) {
         throw Error('Assertion Error')
@@ -59,6 +64,11 @@ const $f = (...elements) => $(x => exists(elements, e => e === x))
 
 const Any = $(() => true)
 const Void = $(() => false)
+function MaybeSelf(concept) {
+    var wrapped = $(x => concept.contains(x))
+    wrapped.maybe_self = true
+    return wrapped
+}
 
 const NoValue = $(x => typeof x == 'undefined')
 const Num = $(x => typeof x == 'number')
@@ -96,7 +106,18 @@ function Enum (...str_list) {
 }
 function Struct (hash) {
     check(Struct, arguments, { hash: HashOf(Concept) })
-    return $(x => forall(Object.keys(hash), key => x.has(key) && hash[key].contains(x[key])))
+    return $(
+        x => forall(
+            Object.keys(hash),
+            key => x.has(key) && (
+                hash[key].contains(x[key]) || (
+                    hash[key].maybe_self?
+                        Struct(hash).contains(x[key]):
+                        false
+                )
+            )
+        )
+    )
 }
 
 
