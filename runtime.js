@@ -6,33 +6,45 @@
  */
 
 
-class RuntimeException extends Error {    
-    static gen_err_msg (err_type, func_name, err_msg) {
-        return `${func_name}: ${err_type}: ${err_msg}`
-    }    
-    static assert (bool, function_name, error_message) {
-        if (!bool) {
-            throw new this(
-                this.gen_err_msg(
-                    (this.name == 'RuntimeException')?
-                        'Error': this.name.replace(/([a-z])([A-Z])/, '$1 $2'),
-                    function_name,
-                    error_message
+class RuntimeError extends Error {}
+class InvalidOperation extends RuntimeError {}
+class InvalidArgument extends RuntimeError {}
+class InvalidReturnValue extends RuntimeError {}
+class NoMatchingPattern extends RuntimeError {}
+class KeyError extends RuntimeError {}
+class NameConflict extends RuntimeError {}
+
+
+function ErrorProducer (err_class, f_name) {
+    check(ErrorProducer, arguments, {
+        err_class: $(x => x.prototype instanceof Error),
+        f_name: Str
+    })
+    return {
+        if: function (bool, err_msg) {
+            check(this.if, arguments, { bool: Bool, err_msg: Str })
+            if ( bool ) {
+                let err_type = err_class.name.replace(
+                    /([a-z])([A-Z])/, '$1 $2'
                 )
-            )
-        } else {
-            return true
+                throw new err_class(`${f_name}: ${err_type}: ${err_msg}`)
+            }
+        },
+        unless: function (bool, err_msg) {
+            check(this.unless, arguments, { bool: Bool, err_msg: Str })
+            return this.if(!bool, err_msg)
+        },
+        throw: function (err_msg) {
+            return this.if(true, err_msg)
+        },
+        if_failed: function (result) {
+            check(this.if_failed, arguments, { result: Result })
+            if ( result.is(Failed) ) {
+                this.if(true, result.message)
+            }
         }
     }
 }
-
-
-class InvalidOperation extends RuntimeException {}
-class InvalidArgument extends RuntimeException {}
-class InvalidReturnValue extends RuntimeException {}
-class NoMatchingPattern extends RuntimeException {}
-class KeyError extends RuntimeException {}
-class NameConflict extends RuntimeException {}
 
 
 /**
@@ -91,11 +103,9 @@ SetMakerConcept(ListObject)
 const AtomicNameSet = new Set()
 
 
-function AtomicObject(name) {    
-    NameConflict.assert(
-        !AtomicNameSet.has(name),
-        'AtomicObject()', 'atomic object name ${name} is in use'
-    )
+function AtomicObject(name) {
+    let err = ErrorProducer(NameConflict, 'AtomicObject()')
+    err.if(AtomicNameSet.has(name), 'atomic object name ${name} is in use')
     return pour({}, { name: name, maker: AtomicObject })
 }
 
@@ -110,12 +120,20 @@ function HashObject () {
     return {
         data: {},
         config: {},
-        maker: HashObject
     }
 }
 
 
-SetMakerConcept(HashObject)
+pour(HashObject, {
+    create_by_data: data => pour(HashObject(), { data: data }),
+    create_by_config: config => pour(HashObject(), { config: config })
+})
+
+
+SetEquivalent(HashObject, Struct({
+    data: Hash,
+    config: Hash
+}))
 
 
 const ObjectObject = $u(SimpleObject, HashObject)
@@ -139,8 +157,11 @@ const NotNullScope = $n(HashObject, Struct({
 }))
 
 
-function Scope (context) {
+function Scope (context, data = {}) {
+    assert(Scope.contains(context))
+    assert(Hash.contains(data))
     return pour(HashObject(), {
+        data: data,
         config: {
             context: context
         }
@@ -292,77 +313,68 @@ FunctionPrototype.parse = function parse_prototype (string) {
 }
 
 
-function CheckArgument(prototype, argument, debug_name = '') {
-    /**
-     *  Check if argument is valid.
-     *  If valid, returns normalized argument object.
-     *  Normalize: Index Number -> Key; Execute Value Copy
-     */
-    check(
-        CheckArgument, arguments,
-        { prototype: FunctionPrototype, argument: Hash }
-    )
+FunctionPrototype.check_argument = function (prototype, argument) {
+    check( FunctionPrototype.check_argument, arguments, {
+        prototype: FunctionPrototype, argument: Hash
+    })
     let proto = prototype
     let parameters = proto.parameters
     let order = proto.order
-    /*
-      [TODO]
-    let _ = suppose_items([
-        () => a,
-        () => b
-    ])
-    if ( _.is(Failed) ) { return _ }
-    */
-    mapkey(argument, key => InvalidArgument.assert(
-        !(key.is(NumStr) && order.has_no(key)),
-        debug_name, `redundant argument ${key}`
-    ))
-    mapkey(argument, key => InvalidArgument.assert(
-        !(key.is(NumStr) && argument.has(order[key])),
-        debug_name, `conflict argument ${key}`
-    ))
-    map(order, (key, index) => InvalidArgument.assert(
-        argument.has(index) || argument.has(key),
-        debug_name, `missing argument ${key}`
-    ))
-    argument = mapkey(
-        argument,
-        key => key.is(NumStr)? order[key]: key
+    return need (
+        cat(
+            map_lazy(Object.keys(argument), key => suppose(
+                !(key.is(NumStr) && order.has_no(key)),
+                `redundant argument ${key}`
+            )),
+            map_lazy(Object.keys(argument), key => suppose(
+                !(key.is(NumStr) && argument.has(order[key])),
+                `conflict argument ${key}`
+            )),
+            map_lazy(order, (key, index) => suppose(
+                argument.has(index) || argument.has(key),
+                `missing argument ${key}`
+            )),
+            lazy(function () {
+                let arg = mapkey(
+                    argument,
+                    key => key.is(NumStr)? order[key]: key
+                )
+                return map_lazy(parameters, (key, p) => suppose(
+                    !arg.has(key)
+                        || (p.constraint === AnyConcept
+                            && ObjectObject.contains(arg[key]))
+                        || p.constraint.config.contains.apply(arg[key]),
+                    `illegal argument '${key}'`
+                ))
+            })
+        )
     )
-    map(parameters, function (key, parameter) {
-        if ( argument.has(key) && parameter.constraint !== AnyConcept ) {
-            let contains = parameter.constraint.config.contains
-            InvalidArgument.assert(
-                contains.apply(argument[key]),
-                debug_name, `illegal argument ${key}`
-            )        
-        }
-    })
-    argument = mapval(
-        argument,
-        (val, key) => CopyAction[parameters[key].pass_policy](val)
-    )
-    return argument
 }
 
 
-function CheckReturnValue (prototype, value, promised = false, debug_name = '') {
-    /**
-     *  Check if return value is legal.
-     *  If legal, returns the raw return value.
-     */
-    check(
-        CheckReturnValue, arguments,
-        { prototype: FunctionPrototype, value: Any }
+FunctionPrototype.normalize_argument = function (prototype, argument) {
+    check( FunctionPrototype.normalize_argument, arguments, {
+        prototype: FunctionPrototype, argument: Hash
+    })
+    return mapval(
+        mapkey(argument, key => key.is(NumStr)? prototype.order[key]: key),
+        (val, key) => CopyAction[prototype.parameters[key].pass_policy](val)
     )
-    let value_set = prototype.return_value
-    if (value_set !== AnyConcept && !promised) {
-        InvalidReturnValue.assert(
-            value_set.config.contains.apply(value),
-            debug_name, `invalid return value ${value}`
+}
+
+
+FunctionPrototype.check_return_value = function (prototype, value) {
+    check( FunctionPrototype.check_return_value, arguments, {
+        prototype: FunctionPrototype, value: Any
+    })
+    if (prototype.return_value !== AnyConcept) {
+        return suppose(
+            prototype.return_value.config.contains.apply(value),
+            `invalid return value ${value}`
         )
+    } else {
+        return OK
     }
-    return value
 }
 
 
@@ -386,15 +398,23 @@ function FunctionInstanceObject (name, context, prototype, js_function) {
             },
             call: function (argument) {
                 assert(HashOf(ObjectObject).contains(argument))
-                let debug_name = `${this.name}()`
+                let err = ErrorProducer(InvalidArgument, `${this.name}()`)
                 let proto = this.prototype
                 let context = this.context
                 let f = this.js_function
-                let arg = CheckArgument(proto, argument, debug_name)
-                return CheckReturnValue(
-                    proto, f(Scope(context), arg),
-                    this.return_value_promised, debug_name
-                )
+                let p = FunctionPrototype
+                err.if_failed(p.check_argument(proto, argument))
+                let normalized_argument = p.normalize_argument(proto, argument)
+                let scope = Scope(context, {
+                    argument: HashObject.create_by_data(normalized_argument)
+                })
+                scope.data.scope = scope
+                pour(scope.data, normalized_argument)
+                let value = f(scope)
+                if (!this.return_value_promised) {
+                    err.if_failed(p.check_return_value(proto, value))
+                }
+                return value
             },
             toString: function () {
                 let proto_repr = FunctionPrototype.represent(this.prototype)
@@ -423,8 +443,8 @@ const ConceptFunctionPrototype = {
 function ConceptFunctionInstance (name, f) {
     check(ConceptFunctionInstance, arguments, { name: Str, f: Function })
     return FunctionInstanceObject(
-        name, G, ConceptFunctionPrototype, function (scope, argument) {
-            return f(argument.object)
+        name, G, ConceptFunctionPrototype, function (scope) {
+            return f(scope.data.argument.data.object)
         }
     )
 }
@@ -503,9 +523,10 @@ function FunctionObject (name, instances) {
             $(array => array.length > 0)
         )
     })
-    return {
+    return pour(HashObject(), {
         name: name,
         instances: instances,
+        maker: FunctionObject,
         __proto__: once(FunctionObject, {
             add: function (instance) {
                 assert(FunctionInstanceObject.contains(instance))
@@ -518,28 +539,25 @@ function FunctionObject (name, instances) {
             call: function (argument) {
                 assert(HashOf(ObjectObject).contains(argument))
                 for(let instance of rev(this.instances)) {
-                    try {
-                        let arg = CheckArgument(instance.prototype, argument)
-                        return instance.call(arg)
-                    } catch (err) {
-                        if (err instanceof InvalidArgument) {
-                            continue
-                        } else {
-                            throw err
-                        }
+                    let p = FunctionPrototype
+                    let check = p.check_argument(instance.prototype, argument)
+                    if ( check === OK ) {
+                        return instance.call(argument)
                     }
                 }
-                NoMatchingPattern.assert(
-                    false, `${this.name}()`,
-                    'invalid call: cannot find matching function prototype'
-                )
+                let err = ErrorProducer(NoMatchingPattern, `${this.name}()`)
+                let msg = 'invalid call: matching function prototype not found'
+                err.throw(msg)
             },
             toString: function() {
                 return join(map(this.instances, I => I.toString()), '\n')
             }
         })
-    }
+    })
 }
+
+
+SetMakerConcept(FunctionObject)
 
 
 const FunctionInstanceConcept = K.FunctionInstance = PortConcept(FunctionInstanceObject, 'FunctionInstance')
@@ -550,7 +568,9 @@ function CreateInstance (name_and_proto, js_function) {
     let name = name_and_proto.split(' ')[0]
     let prototype = name_and_proto.slice(name.length, name_and_proto.length)
     return FunctionInstanceObject(
-        name, G, FunctionPrototype.parse(prototype), js_function
+        name, G, FunctionPrototype.parse(prototype), function (scope) {
+            return js_function (scope.data.argument.data)
+        }
     )
 }
 
@@ -559,7 +579,7 @@ pour(K, {
     is: FunctionObject('is', [
         CreateInstance(
             'Any::is (Any ~self, Concept ~concept) -> Bool',
-            (s, a) => a.concept.config.contains.apply(a.self)
+            a => a.concept.config.contains.apply(a.self)
         )
     ])
 })
@@ -569,23 +589,23 @@ pour(K, {
     ref_copy: FunctionObject('ref_copy', [
         CreateInstance (
             'NonPrimitive::ref_copy (NonPrimitive ~self) -> NonPrimitive',
-            (s, a) => a.self
+            a => a.self
         )
     ]),
     val_copy: FunctionObject('val_copy', [
         CreateInstance (
             'Primitive::val_copy (Primitive ~self) -> Primitive',
-            (s, a) => a.self
+            a => a.self
         ),
         CreateInstance (
             'List::val_copy (List ~self) -> List',
-            (s, a) => map(a.self, e => K.copy.apply(e))
+            a => map(a.self, e => K.copy.apply(e))
         )
     ]),
     copy: FunctionObject('copy', [
         CreateInstance (
             'Any::copy (Any ~self) -> Any',
-            (s, a) => a.self
+            a => a.self
         )
     ])
 })
@@ -595,27 +615,27 @@ pour(K, {
     has_data: FunctionObject('has_data', [
         CreateInstance (
             'Hash::has_data (Hash ~self, String ~key) -> Bool',
-            (s, a) => a.self.data.has(a.key)
+            a => a.self.data.has(a.key)
         )
     ]),
     get_data: FunctionObject('get_data', [
         CreateInstance (
             'Hash::get_data (Hash ~self, String ~key) -> Any',
-            (s, a) => KeyError.assert(
-                a.self.data.has(a.key), 'Hash::get_data', `'${a.key}'`
-            ) && a.self.data[a.key]
+            a => a.self.data.has(a.key)
+                && a.self.data[a.key]
+                || ErrorProducer(KeyError, 'Hash::get_data').throw(`${a.key}`)
         )
     ]),
     find_data: FunctionObject('find_data', [
         CreateInstance (
             'Hash::find_data (Hash ~self, String ~key) -> Any',
-            (s, a) => a.self.data.has(a.key) && a.self.data[a.key] || NaObject
+            a => a.self.data.has(a.key) && a.self.data[a.key] || NaObject
         )
     ]),
     set_data: FunctionObject('set_data', [
         CreateInstance (
             'Hash::set_data (Hash ~self, String ~key, Any ~value) -> Void',
-            (s, a) => (a.self.data[a.key] = a.value, VoidValue)
+            a => (a.self.data[a.key] = a.value, VoidValue)
         )
     ])
 })

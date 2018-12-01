@@ -69,7 +69,7 @@ const Optional = (concept, defval) => pour({defval: defval},$u(concept, NoValue)
 const SetEquivalent = (target, concept) => target.contains = concept.contains
 const SetMakerConcept = (maker) => maker.contains = (x => x.maker === maker)
 
-const NumStr = $n(Str, $(x => !Number.isNaN(Number(x))) )
+const NumStr = $n(Str, $(x => !Number.isNaN(parseInt(x))) )
 const Regex = regex => $n( Str, $(s => s.match(regex)) )
 
 const NA = { contains: x => x === this }
@@ -124,6 +124,48 @@ const once = (function () {
     }
     return once
 })()
+
+
+function Failed (message) {
+    return {
+        message: message,
+        maker: Failed
+    }
+}
+
+
+SetMakerConcept(Failed)
+
+
+const OK = { name: 'OK', contains: x => x === OK }
+
+
+const Result = $u(OK, Failed)
+
+
+function suppose (bool, message) {
+    check(suppose, arguments, { bool: Bool, message: Str })
+    if (bool) {
+        return OK
+    } else {
+        return Failed(message)
+    }
+}
+
+
+function need (items) {
+    assert(items.is(Iterable))
+    for ( let item of items ) {
+        assert( $u(Result, Function).contains(item) )
+        let result = (item.is(Result))? item: item()
+        if ( result.is(Failed) ) {
+            return result
+        } else {
+            continue
+        }
+    }
+    return OK
+}
 
 
 function check(callee, args, concept_table) {
@@ -237,6 +279,16 @@ function *cat (...iterables) {
 	for ( let element of iterable ) {
 	    yield element	
 	}
+    }
+}
+
+
+function *lazy (f) {
+    assert(Function.contains(f))
+    let iterable = f()
+    assert(iterable.is(Iterable))
+    for ( let I of iterable ) {
+        yield I
     }
 }
 
