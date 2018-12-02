@@ -198,11 +198,56 @@ const BoolConcept = K.Bool = HashObject()
 
 function ConceptObject (concept_name, f) {
     check(ConceptObject, arguments, { f: Function })
-    return pour(HashObject(), {
-        config: {
-            name: concept_name,
-            contains: ConceptFunctionInstance(`${concept_name}::Checker`, f)
-        }
+    return HashObject.create_by_config({
+        name: concept_name,
+        contains: ConceptFunctionInstance(`${concept_name}::Checker`, f)
+    })
+}
+
+
+function UnionConceptObject (concept1, concept2) {
+    check(UnionConceptObject, arguments, {
+        concept1: ConceptObject,
+        concept2: ConceptObject
+    })
+    let name = `(${concept1.config.name} | ${concept2.config.name})`
+    let f = x => exists(
+        map_lazy([concept1, concept2], c => c.config.contains),
+        f => f.apply(x) === true
+    )
+    return HashObject.create_by_config({
+        name: name,
+        contains: ConceptFunctionInstance(`${name}::Checker`, f)
+    })
+}
+
+
+function IntersectConceptObject (concept1, concept2) {
+    check(IntersectConceptObject, arguments, {
+        concept1: ConceptObject,
+        concept2: ConceptObject
+    })
+    let name = `(${concept1.config.name} & ${concept2.config.name})`
+    let f = x => forall(
+        map_lazy([concept1, concept2], c => c.config.contains),
+        f => f.apply(x) === true
+    )
+    return HashObject.create_by_config({
+        name: name,
+        contains: ConceptFunctionInstance(`${name}::Checker`, f)
+    })
+}
+
+
+function ComplementConceptObject (concept) {
+    check(ComplementConceptObject, arguments, {
+        concept: ConceptObject,
+    })
+    let name = `!${concept.config.name}`
+    let f = x => concept.config.contains.apply(x) === false
+    return HashObject.create_by_config({
+        name: name,
+        contains: ConceptFunctionInstance(`${name}::Checker`, f)
     })
 }
 
@@ -581,6 +626,32 @@ pour(K, {
             'Any::is (Any ~self, Concept ~concept) -> Bool',
             a => a.concept.config.contains.apply(a.self)
         )
+    ]),
+    union: FunctionObject('union', [
+        CreateInstance(
+            'union (Concept ~concept1, Concept ~concept2) -> Concept',
+            a => UnionConceptObject(a.concept1, a.concept2)            
+        )
+    ]),
+    intersect: FunctionObject('intersect', [
+        CreateInstance(
+            'intersect (Concept ~concept1, Concept ~concept2) -> Concept',
+            a => IntersectConceptObject(a.concept1, a.concept2)
+        )
+    ]),
+    complement: FunctionObject('complement', [
+        CreateInstance(
+            'complement (Concept ~concept) -> Concept',
+            a => ComplementConceptObject(a.concept)
+        )
+    ]),
+    difference: FunctionObject('difference', [
+        CreateInstance(
+            'difference (Concept ~concept1, Concept ~concept2) -> Concept',
+            a => IntersectConceptObject(
+                a.concept1, ComplementConceptObject(a.concept2)
+            )
+        )
     ])
 })
 
@@ -606,6 +677,102 @@ pour(K, {
         CreateInstance (
             'Any::copy (Any ~self) -> Any',
             a => a.self
+        )
+    ])
+})
+
+
+pour(K, {
+    plus: FunctionObject('plus', [
+        CreateInstance (
+            'plus (Number ~p, Number ~q) -> Number',
+            a => a.p + a.q
+        ),
+        CreateInstance (
+            'plus (String ~string1, String string2) -> String',
+            a => a.string1 + a.string2
+        )
+    ]),
+    minus: FunctionObject('minus', [
+        CreateInstance (
+            'minus (Number ~p, Number ~q) -> Number',
+            a => a.p - a.q
+        ),
+        CreateInstance (
+            'minus (Number ~x) -> Number',
+            a => -a.x
+        )
+    ]),
+    multiply: FunctionObject('multiply', [
+        CreateInstance (
+            'multiply (Number ~p, Number ~q) -> Number',
+            a => a.p * a.q
+        )
+    ]),
+    divide: FunctionObject('divide', [
+        CreateInstance (
+            'divide (Number ~p, Number ~q) -> Number',
+            a => a.p / a.q
+        )
+    ]),
+    power: FunctionObject('power', [
+        CreateInstance (
+            'power (Number ~p, Number ~q) -> Number',
+            a => Math.pow(a.p, a.q)
+        )
+    ]),
+    is_finite: FunctionObject('is_finite', [
+        CreateInstance (
+            'Number::is_finite (Number ~self) -> Bool',
+            a => Number.isFinite(a.self)
+        )
+    ]),
+    is_NaN: FunctionObject('is_NaN', [
+        CreateInstance (
+            'Number::is_NaN (Number ~self) -> Bool',
+            a => Number.isNaN(a.self)
+        )
+    ]),
+    exp: FunctionObject('exp', [
+        CreateInstance (
+            'exp (Number ~x) -> Number',
+            a => Math.exp(a.x)
+        )
+    ]),
+    log: FunctionObject('log', [
+        CreateInstance (
+            'log (Number ~x) -> Number',
+            a => Math.log(a.x)
+        )
+    ]),
+    floor: FunctionObject('floor', [
+        CreateInstance (
+            'floor (Number ~x) -> Number',
+            a => Math.floor(a.x)
+        )
+    ]),
+    ceil: FunctionObject('ceil', [
+        CreateInstance (
+            'ceil (Number ~x) -> Number',
+            a => Math.ceil(a.x)
+        )
+    ]),
+    round: FunctionObject('round', [
+        CreateInstance (
+            'round (Number ~x) -> Number',
+            a => Math.round(a.x)
+        )
+    ]),
+    sin: FunctionObject('sin', [
+        CreateInstance (
+            'sin (Number ~x) -> Number',
+            a => Math.sin(a.x)
+        )
+    ]),
+    atan2: FunctionObject('atan2', [
+        CreateInstance (
+            'atan2 (Number ~y, Number ~x) -> Number',
+            a => Math.atan2(a.y, a.x)
         )
     ])
 })
