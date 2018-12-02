@@ -92,7 +92,7 @@ const PrimitiveObject = $u(StringObject, NumberObject, BoolObject)
 const NonPrimitiveObject = $_(PrimitiveObject)
 
 
-function ListObject() {
+function ListObject () {
     return pour([], { maker: ListObject })
 }
 
@@ -103,7 +103,7 @@ SetMakerConcept(ListObject)
 const AtomicNameSet = new Set()
 
 
-function AtomicObject(name) {
+function AtomicObject (name) {
     let err = ErrorProducer(NameConflict, 'AtomicObject()')
     err.if(AtomicNameSet.has(name), 'atomic object name ${name} is in use')
     return pour({}, { name: name, maker: AtomicObject })
@@ -444,6 +444,7 @@ function FunctionInstanceObject (name, context, prototype, js_function) {
             call: function (argument) {
                 assert(HashOf(ObjectObject).contains(argument))
                 let err = ErrorProducer(InvalidArgument, `${this.name}()`)
+                let err_r = ErrorProducer(InvalidReturnValue, `${this.name}()`)
                 let proto = this.prototype
                 let context = this.context
                 let f = this.js_function
@@ -457,7 +458,7 @@ function FunctionInstanceObject (name, context, prototype, js_function) {
                 pour(scope.data, normalized_argument)
                 let value = f(scope)
                 if (!this.return_value_promised) {
-                    err.if_failed(p.check_return_value(proto, value))
+                    err_r.if_failed(p.check_return_value(proto, value))
                 }
                 return value
             },
@@ -539,6 +540,10 @@ function PortConcept(concept, name) {
 
 const ConceptConcept = K.Concept = PortConcept(ConceptObject, 'Concept')
 const NumberConcept = K.Number = PortConcept(NumberObject, 'Number')
+const IntConcept = K.Int = PortConcept(Int, 'Int')
+const UnsignedIntConcept = K.UnsignedInt = PortConcept(UnsignedInt, 'UnsignedInt')
+const IndexConcept = K.Index = K.UnsignedInt
+const SizeConcept = K.Size = K.UnsignedInt
 const StringConcept = K.String = PortConcept(StringObject, 'String')
 const PrimitiveConcept = K.Primitive = PortConcept(PrimitiveObject, 'Primitive')
 const NonPrimitiveConcept = K.NonPrimitive = PortConcept(NonPrimitiveObject, 'NonPrimitive')
@@ -576,7 +581,7 @@ function FunctionObject (name, instances) {
             add: function (instance) {
                 assert(FunctionInstanceObject.contains(instance))
                 this.instances.push(instance)
-            },
+            },            
             apply: function (...args) {
                 assert(ArrayOf(ObjectObject).contains(args))
                 return this.call(fold(args, {}, (e, v, i) => (v[i] = e, v)) )
@@ -594,7 +599,15 @@ function FunctionObject (name, instances) {
                 let msg = 'invalid call: matching function prototype not found'
                 err.throw(msg)
             },
-            toString: function() {
+            has_method_of: function (object) {
+                return exists(
+                    map_lazy(this.instances, I => I.prototype),
+                    p => (p.order.length > 0)
+                        && (p.parameters[p.order[0]]
+                            .constraint.config.contains.apply(object))
+                )
+            },
+            toString: function () {
                 return join(map(this.instances, I => I.toString()), '\n')
             }
         })
@@ -603,6 +616,13 @@ function FunctionObject (name, instances) {
 
 
 SetMakerConcept(FunctionObject)
+
+
+const HasMethod = (...names) => $(
+    x => assert(x.is(ObjectObject))
+        && forall(names, name => K.has(name) && K[name].is(FunctionObject)
+                  && K[name].has_method_of(x))
+)
 
 
 const FunctionInstanceConcept = K.FunctionInstance = PortConcept(FunctionInstanceObject, 'FunctionInstance')
@@ -715,9 +735,9 @@ pour(K, {
             a => a.p / a.q
         )
     ]),
-    power: FunctionObject('power', [
+    pow: FunctionObject('pow', [
         CreateInstance (
-            'power (Number ~p, Number ~q) -> Number',
+            'pow (Number ~p, Number ~q) -> Number',
             a => Math.pow(a.p, a.q)
         )
     ]),
@@ -773,6 +793,113 @@ pour(K, {
         CreateInstance (
             'atan2 (Number ~y, Number ~x) -> Number',
             a => Math.atan2(a.y, a.x)
+        )
+    ])
+})
+
+
+const HasSlice = HasMethod('at', 'length')
+
+
+function SliceObject (object, start, end) {
+    check(SliceObject, arguments, {
+        object: HasSlice, start: Int, end: Int
+    })
+    let err = ErrorProducer(KeyError, 'Slice::Creator')
+    let length = K.length.apply(object)
+    let normalize = index => (index < 0)? length+index: index
+    start = normalize(start)
+    end = normalize(end)
+    // todo end == infinity
+    err.if(start > end, 'start position greater than end position')
+    err.unless(0 <= start && start < length, 'invalid start position')
+    err.unless(0 <= end && end <= length, 'invalid end position')
+    return pour(HashObject(), {
+        data: {
+            object: object,
+            start: start,
+            end: end
+        },
+        config: {
+            name: 'Slice'
+        }
+    })
+}
+
+
+SetEquivalent(SliceObject, $n(HashObject, Struct({
+    config: Struct({
+        name: $1('Slice')
+    })
+})))
+
+
+const SliceConcept = K.Slice = PortConcept(SliceObject, 'Slice')
+const HasSliceConcept = K.HasSlice = PortConcept(HasSlice, 'HasIndex')
+
+
+const UCS2Char = $n(Str, $(x => x.length == 1))
+const CharConcept = K.Char = PortConcept(UCS2Char, 'Char')
+
+
+pour(K, {
+    at: FunctionObject('at', [
+        CreateInstance (
+            'List::at (List ~self, Index ~index) -> Any',
+            a => a.index < a.self.length
+                && a.self[a.index]
+                || ErrorProducer(KeyError, 'List::at').throw(`${a.index}`)
+        ),
+        CreateInstance (
+            'String::at (String ~self, Index ~index) -> Char',
+            a => a.index < a.self.length
+                && a.self[a.index]
+                || ErrorProducer(KeyError, 'String::at').throw(`${a.index}`)
+        ),
+        CreateInstance (
+            'Slice::at (Slice ~self, Index ~index) -> Any',
+            a => a.index < K.length.apply(a.self)
+                && K.at.apply(a.self.data.object, a.self.data.start+a.index)
+                || ErrorProducer(KeyError, 'Slice::at').throw(`${a.index}`)
+        )
+    ]),
+    real_at: FunctionObject('real_at', [
+        CreateInstance (
+            'String::real_at (String ~self, Index ~index) -> String',
+            a => a.self.realCharAt(a.index)
+              || ErrorProducer(KeyError, 'String::real_at').throw(`${a.index}`)
+        )
+    ]),
+    length: FunctionObject('length', [
+        CreateInstance (
+            'List::length (List ~self) -> Size',
+            a => a.self.length
+        ),
+        CreateInstance (
+            'String::length (String ~self) -> Size',
+            a => a.self.length
+        ),
+        CreateInstance (
+            'Slice::length (Slice ~self) -> Size',
+            a => (a.self.data.end - a.self.data.start)
+        )
+    ]),
+    genuine_length: FunctionObject('genuine_length', [
+        CreateInstance (
+            'String::genuine_length (String ~self) -> Size',
+            a => a.self.genuineLength()
+        )
+    ]),
+    slice: FunctionObject('slice', [
+        CreateInstance (
+            'HasSlice::slice (HasSlice ~self, Int ~start, Int ~end) -> Slice',
+            a => SliceObject(a.self, a.start, a.end)
+        )
+    ]),
+    append: FunctionObject('append', [
+        CreateInstance (
+            'List::append (List ~self, Any ~element) -> Void',
+            a => (a.self.push(a.element), VoidValue)
         )
     ])
 })

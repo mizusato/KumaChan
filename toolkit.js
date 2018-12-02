@@ -5,6 +5,7 @@ function assert (bool) {
     if(!bool) {
         throw Error('Assertion Error')
     }
+    return true
 }
 
 
@@ -62,6 +63,8 @@ const Void = $(() => false)
 
 const NoValue = $(x => typeof x == 'undefined')
 const Num = $(x => typeof x == 'number')
+const Int = $n( Num, $(x => Number.isInteger(x)) )
+const UnsignedInt = $n( Int, $(x => x >= 0) )
 const Str = $(x => typeof x == 'string')
 const Bool = $(x => typeof x == 'boolean')
 const Hash = $(x => x instanceof Object)
@@ -293,6 +296,19 @@ function *lazy (f) {
 }
 
 
+function take_at (iterable, index, default_value) {
+    check(take_at, arguments, { iterable: Iterable })
+    let count = 0;
+    for (let I of iterable) {
+        if (count == index) {
+            return I
+        }
+        count++
+    }
+    return default_value
+}
+
+
 function list (iterable) {
     check(list, arguments, { iterable: Iterable })
     var result = []
@@ -376,6 +392,12 @@ Object.prototype.has = function (prop) { return this.hasOwnProperty(prop) }
 Array.prototype.has = function (index) { return typeof this[index] != 'undefined' }
 Object.prototype.has_no = function (prop) { return !this.has(prop) }
 Array.prototype.has_no = function (index) { return !this.has(index) }
+String.prototype.realCharAt = function (index) {
+    return take_at(this, index, '')
+}
+String.prototype.genuineLength = function () {
+    return fold(this, 0, (e,v) => v+1)
+}
 Function.prototype.get_parameters = function () {
     /* https://stackoverflow.com/questions/1007981/how-to-get-thistion-parameter-names-values-dynamically */
     var STRIP_COMMENTS = /(\/\/.*$)|(\/\*[\s\S]*?\*\/)|(\s*=[^,\)]*(('(?:\\'|[^'\r\n])*')|("(?:\\"|[^"\r\n])*"))|(\s*=[^,\)]*))/mg;
