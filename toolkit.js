@@ -232,6 +232,17 @@ function* map_lazy (to_be_mapped, f) {
 }
 
 
+function take_if (iterable, f) {
+    check(take_if, arguments, { iterable: Iterable, f: Function })
+    for ( let I of iterable ) {
+        if (f(I)) {
+            return I
+        }
+    }
+    return NA
+}
+
+
 function map (to_be_mapped, f) {
     check(map, arguments, { to_be_mapped: Object, f: Function })
     return list(map_lazy(to_be_mapped, f))

@@ -174,6 +174,7 @@ SetEquivalent(Scope, $u(NullScope, NotNullScope))
 
 const G = Scope(NullScope)
 const K = G.data
+const scope = G
 K.global = G
 
 
@@ -828,8 +829,10 @@ function SliceObject (object, start, end) {
 
 
 SetEquivalent(SliceObject, $n(HashObject, Struct({
-    config: Struct({
-        name: $1('Slice')
+    data: Struct({
+        object: HasSlice,
+        start: UnsignedInt,
+        end: UnsignedInt
     })
 })))
 
