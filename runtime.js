@@ -48,22 +48,25 @@ function ErrorProducer (err_class, f_name) {
 
 
 /**
- *  Enumeration Definition
+ *  Enumerations Definition
  */
 
 
-const CopyPolicy = Enum('reference', 'value', 'default', 'native')
+const CopyPolicy = Enum('dirty', 'value', 'immutable')
 const CopyAction = {
-    reference: x => K.ref_copy.apply(x),
-    value: x => K.val_copy.apply(x),
-    default: x => K.copy.apply(x),
-    native: x => x
+    dirty: x => assert(x.is(MutableObject)) && x,
+    value: x => K.val_copy.apply(x), // TODO: instances of val_copy() must be pure
+    immutable: x => x.is(CompoundObject)? {
+        data: x.data,
+        config: pour(pour({}, x.config), {
+            immutable: true
+        })
+    }: x
 }
 const CopyFlag = {
-    reference: '&',
+    dirty: '&',
     value: '*',
-    default: '',
-    native: '~'
+    immutable: ''
 }
 const CopyFlagValue = fold(
     Object.keys(CopyFlag), {},
@@ -71,18 +74,25 @@ const CopyFlagValue = fold(
 )
 
 
+const AffectRange = Enum('global', 'nearby', 'upper', 'local')
+
+
 /**
  *  Object Type Definition
  * 
- *  Object ┬ Hash
- *         ┴ Simple ┬ List
- *                  ┼ Atomic
- *                  ┴ Primitive ┬ String
- *                              ┼ Number
- *                              ┴ Bool
+ *  Object (Any) ┬ Compound ┬ Hash
+ *               │          ┴ List
+ *               ┴ Atomic ┬ FunctionInstance
+ *                        ┼ Singleton
+ *                        ┴ Primitive ┬ String
+ *                                    ┼ Number
+ *                                    ┴ Bool
  *
- *  Note: non-hash object is called simple object.
+ *  Note: atomic objects are immutable.
  */
+
+
+/* Primitive Definition */
 
 
 const StringObject = $(x => typeof x == 'string')
@@ -92,79 +102,124 @@ const PrimitiveObject = $u(StringObject, NumberObject, BoolObject)
 const NonPrimitiveObject = $_(PrimitiveObject)
 
 
-function ListObject () {
-    return pour([], { maker: ListObject })
+/* Singleton Definition */
+
+
+const SingletonNameSet = new Set()
+
+
+function SingletonObject (name) {
+    let err = ErrorProducer(NameConflict, 'SingletonObject()')
+    err.if(SingletonNameSet.has(name), 'singleton name ${name} is in use')
+    let singleton = {}
+    return pour(singleton, {
+        data: {
+            name: name,
+            checker: ConceptChecker(
+                `Singleton(${name}).checker`,
+                a => a.object === singleton
+            )
+        },
+        contains: x => x === singleton,
+        maker: SingletonObject
+    })
 }
 
 
-SetMakerConcept(ListObject)
+SetMakerConcept(SingletonObject)
 
 
-const AtomicNameSet = new Set()
+/* Atomic Definition */
 
 
-function AtomicObject (name) {
-    let err = ErrorProducer(NameConflict, 'AtomicObject()')
-    err.if(AtomicNameSet.has(name), 'atomic object name ${name} is in use')
-    return pour({}, { name: name, maker: AtomicObject })
-}
+const AtomicObject = $u(
+    SigletonObject, PrimitiveObject,
+    $(x => x.is(FunctionInstanceObject))
+)
 
 
-SetMakerConcept(AtomicObject)
+/* Hash Definition */
 
 
-const SimpleObject = $u(PrimitiveObject, ListObject, AtomicObject)
-
-
-function HashObject () {
+function HashObject (hash = {}) {
+    assert(hash.is(Hash))
     return {
-        data: {},
-        config: {},
+        data: hash,
+        config: { immutable: false },
     }
 }
 
 
-pour(HashObject, {
-    create_by_data: data => pour(HashObject(), { data: data }),
-    create_by_config: config => pour(HashObject(), { config: config })
-})
-
-
 SetEquivalent(HashObject, Struct({
     data: Hash,
-    config: Hash
+    config: Struct({ immutable: Bool })
 }))
 
 
-const ObjectObject = $u(SimpleObject, HashObject)
+/* List Definition */
+
+
+function ListObject (list = []) {
+    assert(list.is(Array))
+    return {
+        data: list,
+        config: { immutable: false }
+    }
+}
+
+
+SetEquivalent(ListObject, Struct({
+    data: Array,
+    config: Struct({ immutable: Bool })
+}))
+
+
+const ListObjectOf = concept => $n(ListObject, $(l => l.data.is(ArrayOf(concept))))
+
+
+/* Compound Definition */
+
+
+const CompoundObject = $u(HashObject, ListObject)
+
+
+/* Object (Any) Definition */
+
+
+const ObjectObject = $u(CompoundObject, AtomicObject)
 
 
 /**
- *  Global Object Definition
+ * Mutable and Immutable Definition
  */
 
 
-const NullScope = AtomicObject('NullScope')
+const MutableObject = $n(CompoundObject, $(x => !x.config.immutable))
+const ImmutableObject = $_(MutableObject)
+
+
+/**
+ *  Scope Definition
+ */
+
+
+const NullScope = SingletonObject('NullScope')
 
 
 SetEquivalent(NullScope, $1(NullScope))
 
 
 const NotNullScope = $n(HashObject, Struct({
-    config: Struct({
-        context: $u( NullScope, $(x => NotNullScope.contains(x)) )
-    })
+    context: $u( NullScope, $(x => x.is(NotNullScope)) )
 }))
 
 
 function Scope (context, data = {}) {
-    assert(Scope.contains(context))
-    assert(Hash.contains(data))
+    assert(context.is(Scope))
+    assert(data.is(Hash))
     return pour(HashObject(), {
         data: data,
-        config: {
-            context: context
-        }
+        context: context
     })
 }
 
@@ -172,13 +227,14 @@ function Scope (context, data = {}) {
 SetEquivalent(Scope, $u(NullScope, NotNullScope))
 
 
+/**
+ *  Global Object Definition
+ */
+
+
 const G = Scope(NullScope)
 const K = G.data
-const scope = G
-K.global = G
-
-
-const NaObject = K['N/A'] = AtomicObject('N/A')
+K.scope = G
 
 
 /**
@@ -199,9 +255,9 @@ const BoolConcept = K.Bool = HashObject()
 
 function ConceptObject (concept_name, f) {
     check(ConceptObject, arguments, { f: Function })
-    return HashObject.create_by_config({
+    return HashObject({
         name: concept_name,
-        contains: ConceptFunctionInstance(`${concept_name}::Checker`, f)
+        checker: ConceptChecker(`${concept_name}.checker`, f)
     })
 }
 
@@ -211,14 +267,14 @@ function UnionConceptObject (concept1, concept2) {
         concept1: ConceptObject,
         concept2: ConceptObject
     })
-    let name = `(${concept1.config.name} | ${concept2.config.name})`
+    let name = `(${concept1.data.name} | ${concept2.data.name})`
     let f = x => exists(
-        map_lazy([concept1, concept2], c => c.config.contains),
+        map_lazy([concept1, concept2], c => c.data.checker),
         f => f.apply(x) === true
     )
-    return HashObject.create_by_config({
+    return HashObject({
         name: name,
-        contains: ConceptFunctionInstance(`${name}::Checker`, f)
+        checker: ConceptChecker(`${name}.checker`, f)
     })
 }
 
@@ -228,14 +284,14 @@ function IntersectConceptObject (concept1, concept2) {
         concept1: ConceptObject,
         concept2: ConceptObject
     })
-    let name = `(${concept1.config.name} & ${concept2.config.name})`
+    let name = `(${concept1.data.name} & ${concept2.data.name})`
     let f = x => forall(
-        map_lazy([concept1, concept2], c => c.config.contains),
+        map_lazy([concept1, concept2], c => c.data.checker),
         f => f.apply(x) === true
     )
-    return HashObject.create_by_config({
+    return HashObject({
         name: name,
-        contains: ConceptFunctionInstance(`${name}::Checker`, f)
+        checker: ConceptChecker(`${name}.checker`, f)
     })
 }
 
@@ -244,21 +300,22 @@ function ComplementConceptObject (concept) {
     check(ComplementConceptObject, arguments, {
         concept: ConceptObject,
     })
-    let name = `!${concept.config.name}`
-    let f = x => concept.config.contains.apply(x) === false
-    return HashObject.create_by_config({
+    let name = `!${concept.data.name}`
+    let f = x => concept.data.checker.apply(x) === false
+    return HashObject({
         name: name,
-        contains: ConceptFunctionInstance(`${name}::Checker`, f)
+        checker: ConceptChecker(`${name}.checker`, f)
     })
 }
 
 
+// ConceptObject = {Any, Bool} | ((Hash | Singleton) & ${ data: ${ ... } })
 SetEquivalent(ConceptObject, $u(
     $f(AnyConcept, BoolConcept),
-    $n(HashObject, Struct({
-        config: Struct({
+    $n($u(HashObject, SingletonObject), Struct({
+        data: Struct({
             name: StringObject,
-            contains: ConceptFunctionInstance
+            checker: ConceptChecker
         })
     }))
 ))
@@ -272,6 +329,7 @@ const Parameter = Struct({
 
 const FunctionPrototype = $n(
     Struct({
+        affect_range: AffectRange,
         parameters: HashOf(Parameter),
         order: ArrayOf(Str),
         return_value: ConceptObject
@@ -284,7 +342,7 @@ FunctionPrototype.represent = function repr_prototype (prototype) {
     check(repr_prototype, arguments, { prototype: FunctionPrototype })
     function repr_parameter (key, parameter) {
         check(repr_parameter, arguments, { key: Str, parameter: Parameter })
-        let type = parameter.constraint.config.name
+        let type = parameter.constraint.data.name
         let flags = CopyFlag[parameter.pass_policy]
         return `${type} ${flags}${key}`
     }
@@ -292,11 +350,12 @@ FunctionPrototype.represent = function repr_prototype (prototype) {
         check(opt, arguments, { string: Str, non_empty_callback: Function })
         return string && non_empty_callback(string) || ''
     }
+    let affect = prototype.affect_range
     let order = prototype.order
     let parameters = prototype.parameters
     let retval_constraint = prototype.return_value
     let necessary = Enum.apply({}, order)
-    return '(' + join(filter([
+    return affect + ' ' + '(' + join(filter([
         join(map(
             order,
             key => repr_parameter(key, parameters[key])
@@ -305,7 +364,7 @@ FunctionPrototype.represent = function repr_prototype (prototype) {
             filter(parameters, key => key.is_not(necessary)),
             (key, val) => repr_parameter(key, val)
         ), ', '), s => `[${s}]`),
-    ], x => x), ', ') + ') -> ' + `${retval_constraint.config.name}`
+    ], x => x), ', ') + ') -> ' + `${retval_constraint.data.name}`
 }
 
 
@@ -346,6 +405,7 @@ FunctionPrototype.parse = function parse_prototype (string) {
     }
     let trim_all = x => map_lazy(x, y => y.trim())
     return {
+        affect_range: string.split(' ')[0],
         order: map(map(
             trim_all(str.parameters.necessary.split(',')),
             s => parse_parameter(s)
@@ -389,7 +449,7 @@ FunctionPrototype.check_argument = function (prototype, argument) {
                     !arg.has(key)
                         || (p.constraint === AnyConcept
                             && ObjectObject.contains(arg[key]))
-                        || p.constraint.config.contains.apply(arg[key]),
+                        || p.constraint.data.checker.apply(arg[key]),
                     `illegal argument '${key}'`
                 ))
             })
@@ -415,7 +475,7 @@ FunctionPrototype.check_return_value = function (prototype, value) {
     })
     if (prototype.return_value !== AnyConcept) {
         return suppose(
-            prototype.return_value.config.contains.apply(value),
+            prototype.return_value.data.checker.apply(value),
             `invalid return value ${value}`
         )
     } else {
@@ -431,7 +491,7 @@ function FunctionInstanceObject (name, context, prototype, js_function) {
         prototype: FunctionPrototype,
         js_function: Function
     })
-    return pour(HashObject(), {
+    return {
         name: name || '[Anonymous]',
         context: context,
         prototype: prototype,
@@ -439,11 +499,11 @@ function FunctionInstanceObject (name, context, prototype, js_function) {
         maker: FunctionInstanceObject,
         __proto__: once(FunctionInstanceObject, {
             apply: function (...args) {
-                assert(ArrayOf(ObjectObject).contains(args))
+                assert(args.is(ArrayOf(ObjectObject)))
                 return this.call(fold(args, {}, (e, v, i) => (v[i] = e, v)) )
             },
             call: function (argument) {
-                assert(HashOf(ObjectObject).contains(argument))
+                assert(argument.is(HashOf(ObjectObject)))
                 let err = ErrorProducer(InvalidArgument, `${this.name}()`)
                 let err_r = ErrorProducer(InvalidReturnValue, `${this.name}()`)
                 let proto = this.prototype
@@ -453,7 +513,7 @@ function FunctionInstanceObject (name, context, prototype, js_function) {
                 err.if_failed(p.check_argument(proto, argument))
                 let normalized_argument = p.normalize_argument(proto, argument)
                 let scope = Scope(context, {
-                    argument: HashObject.create_by_data(normalized_argument)
+                    argument: HashObject(normalized_argument)
                 })
                 scope.data.scope = scope
                 pour(scope.data, normalized_argument)
@@ -468,7 +528,7 @@ function FunctionInstanceObject (name, context, prototype, js_function) {
                 return `${this.name} ${proto_repr}`
             }
         })
-    })
+    }
 }
 
 
@@ -476,10 +536,11 @@ SetMakerConcept(FunctionInstanceObject)
 
 
 const ConceptFunctionPrototype = {
+    affect_range: 'local',
     parameters: {
         object: {
             constraint: AnyConcept,
-            pass_policy: 'native'
+            pass_policy: 'immutable'
         }
     },
     order: ['object'],
@@ -487,8 +548,8 @@ const ConceptFunctionPrototype = {
 }
 
 
-function ConceptFunctionInstance (name, f) {
-    check(ConceptFunctionInstance, arguments, { name: Str, f: Function })
+function ConceptChecker (name, f) {
+    check(ConceptChecker, arguments, { name: Str, f: Function })
     return FunctionInstanceObject(
         name, G, ConceptFunctionPrototype, function (scope) {
             return f(scope.data.argument.data.object)
@@ -498,16 +559,17 @@ function ConceptFunctionInstance (name, f) {
 
 
 SetEquivalent(
-    ConceptFunctionInstance,
+    ConceptChecker,
     $n(FunctionInstanceObject, Struct({
         prototype: $n(
             Struct({
+                affect_range: 'local',
                 order: $(array => array.length == 1),
                 return_value: $1(BoolConcept)
             }),
             $(proto => proto.parameters[proto.order[0]].is(Struct({
                 constraint: $1(AnyConcept),
-                pass_policy: $f('reference', 'native')
+                pass_policy: $1('immutable')
             })))
         )
     }))
@@ -519,10 +581,10 @@ function PortEquivalent(hash_object, concept, name) {
         PortEquivalent, arguments,
         { hash_object: HashObject, concept: Concept, name: Str }
     )
-    pour(hash_object.config, {
+    pour(hash_object.data, {
         name: name,
-        contains: ConceptFunctionInstance(
-            `${name}::Checker`, x => x.is(concept)
+        checker: ConceptChecker(
+            `${name}.checker`, x => x.is(concept)
         )
     })
 }
@@ -530,35 +592,7 @@ function PortEquivalent(hash_object, concept, name) {
 
 PortEquivalent(AnyConcept, ObjectObject, 'Any')
 PortEquivalent(BoolConcept, BoolObject, 'Bool')
-BoolConcept.config.contains.return_value_promised = true
-
-
-function PortConcept(concept, name) {
-    check(PortConcept, arguments, { concept: Concept, name: Str })
-    return ConceptObject(name, x => x.is(concept))
-}
-
-
-const ConceptConcept = K.Concept = PortConcept(ConceptObject, 'Concept')
-const NumberConcept = K.Number = PortConcept(NumberObject, 'Number')
-const IntConcept = K.Int = PortConcept(Int, 'Int')
-const UnsignedIntConcept = K.UnsignedInt = PortConcept(UnsignedInt, 'UnsignedInt')
-const IndexConcept = K.Index = K.UnsignedInt
-const SizeConcept = K.Size = K.UnsignedInt
-const StringConcept = K.String = PortConcept(StringObject, 'String')
-const PrimitiveConcept = K.Primitive = PortConcept(PrimitiveObject, 'Primitive')
-const NonPrimitiveConcept = K.NonPrimitive = PortConcept(NonPrimitiveObject, 'NonPrimitive')
-const ListConcept = K.List = PortConcept(ListObject, 'List')
-const AtomicConcept = K.Atomic = PortConcept(AtomicObject, 'Atomic')
-const SimpleConcept = K.Simple = PortConcept(SimpleObject, 'Simple')
-const HashConcept = K.Hash = PortConcept(HashObject, 'Hash')
-const ObjectConcept = K.Object = K.Any
-
-
-const VoidValue = K.VoidValue = AtomicObject('VoidValue')
-const VoidObject = () => VoidValue
-SetEquivalent(VoidObject, $1(VoidValue))
-const VoidConcept = K.Void = PortConcept(VoidObject, 'Void')
+BoolConcept.data.checker.return_value_promised = true
 
 
 /**
@@ -575,48 +609,58 @@ function FunctionObject (name, instances) {
         )
     })
     return pour(HashObject(), {
-        name: name,
-        instances: instances,
-        maker: FunctionObject,
+        data: {
+            name: name,
+            instances: ListObject(instances)
+        },
         __proto__: once(FunctionObject, {
+            get_instances: function () {
+                return this.data.instances.data
+            }
             add: function (instance) {
-                assert(FunctionInstanceObject.contains(instance))
-                this.instances.push(instance)
+                assert(instance.is(FunctionInstanceObject))
+                this.get_instances().push(instance)
             },            
             apply: function (...args) {
-                assert(ArrayOf(ObjectObject).contains(args))
+                assert(args.is(ArrayOf(ObjectObject)))
                 return this.call(fold(args, {}, (e, v, i) => (v[i] = e, v)) )
             },
             call: function (argument) {
-                assert(HashOf(ObjectObject).contains(argument))
-                for(let instance of rev(this.instances)) {
+                assert(argument.is(HashOf(ObjectObject)))
+                for(let instance of rev(this.get_instances())) {
                     let p = FunctionPrototype
                     let check = p.check_argument(instance.prototype, argument)
                     if ( check === OK ) {
                         return instance.call(argument)
                     }
                 }
-                let err = ErrorProducer(NoMatchingPattern, `${this.name}()`)
+                let err = ErrorProducer(NoMatchingPattern, `${this.data.name}()`)
                 let msg = 'invalid call: matching function prototype not found'
                 err.throw(msg)
             },
             has_method_of: function (object) {
                 return exists(
-                    map_lazy(this.instances, I => I.prototype),
+                    map_lazy(this.get_instances(), I => I.prototype),
                     p => (p.order.length > 0)
                         && (p.parameters[p.order[0]]
-                            .constraint.config.contains.apply(object))
+                            .constraint.data.checker.apply(object))
                 )
             },
             toString: function () {
-                return join(map(this.instances, I => I.toString()), '\n')
+                return join(map(this.get_instances(), I => I.toString()), '\n')
             }
         })
     })
 }
 
 
-SetMakerConcept(FunctionObject)
+// FunctionObject = Hash & ${ data: ${ name: Str, instances: ListObjectOf(FunctionInstanceObject) } }
+SetEquivalent(FunctionObject, $n(HashObject, Struct({
+    data: Struct({
+        name: Str,
+        instances: ListObjectOf(FunctionInstanceObject)
+    })
+})))
 
 
 const HasMethod = (...names) => $(
@@ -624,10 +668,6 @@ const HasMethod = (...names) => $(
         && forall(names, name => K.has(name) && K[name].is(FunctionObject)
                   && K[name].has_method_of(x))
 )
-
-
-const FunctionInstanceConcept = K.FunctionInstance = PortConcept(FunctionInstanceObject, 'FunctionInstance')
-const FunctionConcept = K.Function = PortConcept(FunctionObject, 'Function')
 
 
 function CreateInstance (name_and_proto, js_function) {
@@ -640,6 +680,55 @@ function CreateInstance (name_and_proto, js_function) {
     )
 }
 
+
+/**
+ *  Port Native Concepts
+ */
+
+
+function PortConcept(concept, name) {
+    check(PortConcept, arguments, { concept: Concept, name: Str })
+    return ConceptObject(name, x => x.is(concept))
+}
+
+
+// Bool: has been defined
+const NumberConcept = K.Number = PortConcept(NumberObject, 'Number')
+const IntConcept = K.Int = PortConcept(Int, 'Int')
+const UnsignedIntConcept = K.UnsignedInt = PortConcept(UnsignedInt, 'UnsignedInt')
+const IndexConcept = K.Index = K.UnsignedInt
+const SizeConcept = K.Size = K.UnsignedInt
+const StringConcept = K.String = PortConcept(StringObject, 'String')
+const PrimitiveConcept = K.Primitive = PortConcept(PrimitiveObject, 'Primitive')
+const NonPrimitiveConcept = K.NonPrimitive = PortConcept(NonPrimitiveObject, 'NonPrimitive')
+
+
+const FunctionInstanceConcept = K.FunctionInstance = PortConcept(FunctionInstanceObject, 'FunctionInstance')
+const SingletonConcept = FunctionObject('Singleton', [
+    CreateInstance (
+        'local Singleton (String name) -> Singleton',
+        a => SingletonObject(a.name)
+    )
+])
+PortEquivalent(SingletonConcept, SingletonObject, 'Singleton')
+
+
+const NA = K['N/A'] = SingletonObject('N/A')
+const Void = K['Void'] = SingletonObject('Void')
+
+const ListConcept = K.List = PortConcept(ListObject, 'List')
+const HashConcept = K.Hash = PortConcept(HashObject, 'Hash')
+
+const FunctionConcept = K.Function = PortConcept(FunctionObject, 'Function')
+const ConceptConcept = K.Concept = PortConcept(ConceptObject, 'Concept')
+
+const AtomicConcept = K.Atomic = PortConcept(AtomicObject, 'Atomic')
+const CompoundConcept = K.Compound = PortConcept(CompoundObject, 'Compound')
+
+const ObjectConcept = K.Object = PortConcept(ObjectObject, 'Object')
+// Any: has been defined
+
+//// TODO:
 
 pour(K, {
     is: FunctionObject('is', [
