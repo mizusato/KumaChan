@@ -28,7 +28,7 @@ function ErrorProducer (err_class, f_name) {
             check(this.if, arguments, { bool: Bool, err_msg: Str })
             if ( bool ) {
                 let err_type = err_class.name.replace(
-                    /([a-z])([A-Z])/, '$1 $2'
+                    /([a-z])([A-Z])/g, '$1 $2'
                 )
                 throw new err_class(`${f_name}: ${err_type}: ${err_msg}`)
             }
@@ -66,7 +66,7 @@ const CopyFlag = {
     dirty: '&',
     immutable: '',
     value: '*',
-    promise: '~'
+    promised: '~'
 }
 const CopyFlagValue = fold(
     Object.keys(CopyFlag), {},
@@ -121,7 +121,7 @@ function SingletonObject (name) {
             name: name,
             checker: ConceptChecker(
                 `Singleton(${name})`,
-                a => a.object === singleton
+                object => object === singleton
             )
         },
         contains: x => x === singleton,
@@ -434,7 +434,7 @@ FunctionPrototype.parse = function parse_prototype (string) {
         }
     }
     function parse_parameter (string) {
-        const pattern = /([^ ]*) *([\*\&]?)(.+)/
+        const pattern = /([^ ]*) *([\*\&\~]?)(.+)/
         check(parse_parameter, arguments, { string: Regex(pattern) })
         let str = {
             constraint: string.match(pattern)[1].trim(),
