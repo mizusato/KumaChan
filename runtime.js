@@ -55,16 +55,18 @@ function ErrorProducer (err_class, f_name) {
  */
 
 
-const CopyPolicy = Enum('dirty', 'immutable', 'value')
+const CopyPolicy = Enum('dirty', 'immutable', 'value', 'promised')
 const CopyAction = {
     dirty: x => assert(x.is(MutableObject)) && x,
     immutable: x => Im(x),
-    value: x => K.val_copy.apply(x) // TODO: instances of val_copy() must be pure
+    value: x => K.val_copy.apply(x),
+    promised: x => x  // promise that we won't modify x
 }
 const CopyFlag = {
     dirty: '&',
+    immutable: '',
     value: '*',
-    immutable: ''
+    promise: '~'
 }
 const CopyFlagValue = fold(
     Object.keys(CopyFlag), {},
@@ -73,7 +75,7 @@ const CopyFlagValue = fold(
 
 
 const EffectRange = Enum('global', 'nearby', 'local')
-const Restrictions = Enum('pure')
+const Restriction = Enum('pure')
 const RestrictionChecker = {
     pure: f => f.is(PureFunctionInstance)
 }
@@ -135,7 +137,7 @@ SetMakerConcept(SingletonObject)
 
 
 const AtomicObject = $u(
-    SigletonObject, PrimitiveObject,
+    SingletonObject, PrimitiveObject,
     $(x => x.is(FunctionInstanceObject)),
     $(x => x.is(FunctionObject))
 )
@@ -237,10 +239,15 @@ function Im (object) {
 
 /**
  *  Scope Definition
+ *
+ *  Since the constructor of singleton requires ConceptChecker,
+ *  and ConceptChecker requires definition of global scope
+ *  we must handle NullScope especially
  */
 
 
-const NullScope = SingletonObject('NullScope')
+
+const NullScope = {} // SingletonObject('NullScope')
 
 
 SetEquivalent(NullScope, $1(NullScope))
@@ -290,11 +297,14 @@ const AnyConcept = HashObject()
 const BoolConcept = HashObject()
 
 
-function ConceptObject (concept_name, f) {
-    check(ConceptObject, arguments, { f: Function })
+function ConceptObject (concept_name, f, promised) {
+    check(ConceptObject, arguments, {
+        concept_name: Str, f: Function, promised: Optional(Bool)
+    })
+    promised = Boolean(promised)
     return HashObject.immutable({
         name: concept_name,
-        checker: ConceptChecker(`${concept_name}`, f)
+        checker: ConceptChecker(`${concept_name}`, f, promised)
     })
 }
 
@@ -309,10 +319,7 @@ function UnionConceptObject (concept1, concept2) {
         map_lazy([concept1, concept2], c => c.data.checker),
         f => f.apply(x) === true
     )
-    return HashObject.immutable({
-        name: name,
-        checker: ConceptChecker(`${name}`, f)
-    })
+    return ConceptObject(name, f, true)
 }
 
 
@@ -326,10 +333,7 @@ function IntersectConceptObject (concept1, concept2) {
         map_lazy([concept1, concept2], c => c.data.checker),
         f => f.apply(x) === true
     )
-    return HashObject.immutable({
-        name: name,
-        checker: ConceptChecker(`${name}`, f)
-    })
+    return ConceptObject(name, f, true)
 }
 
 
@@ -339,10 +343,7 @@ function ComplementConceptObject (concept) {
     })
     let name = `!${concept.data.name}`
     let f = x => concept.data.checker.apply(x) === false
-    return HashObject.immutable({
-        name: name,
-        checker: ConceptChecker(`${name}`, f)
-    })
+    return ConceptObject(name, f, true)
 }
 
 
@@ -569,7 +570,10 @@ function FunctionInstanceObject (name, context, prototype, js_function) {
             },
             toString: function () {
                 let proto_repr = FunctionPrototype.represent(this.prototype)
-                return `${this.name} ${proto_repr}`
+                let split = proto_repr.split(' ')
+                let effect = split.shift()
+                let rest = split.join(' ')
+                return `${effect} ${this.name} ${rest}`
             }
         })
     }
@@ -580,27 +584,32 @@ SetMakerConcept(FunctionInstanceObject)
 
 
 const PureFunctionInstance = $n(Struct({
-    effect_range: 'local',
+    prototype: Struct({
+        effect_range: $1('local'),
+    })
 }), $(f => forall(f.prototype.parameters, p => p.pass_policy != 'dirty')) )
 
 
-const ConceptFunctionPrototype = {
+const ConceptFunctionPrototype = promised => ({
     effect_range: 'local',
     parameters: {
         object: {
             constraint: AnyConcept,
-            pass_policy: 'immutable'
+            pass_policy: promised? 'promised': 'immutable'
         }
     },
     order: ['object'],
     return_value: BoolConcept
-}
+})
 
 
-function ConceptChecker (name, f) {
-    check(ConceptChecker, arguments, { name: Str, f: Function })
-    return FunctionInstanceObject(
-        `${name}.checker`, G, ConceptFunctionPrototype, function (scope) {
+function ConceptChecker (name, f, promised) {
+    check(ConceptChecker, arguments, {
+        name: Str, f: Function, promised: Optional(Bool)
+    })
+    promised = Boolean(promised)
+    return FunctionInstanceObject(`${name}.checker`, G,
+        ConceptFunctionPrototype(promised), function (scope) {
             return f(scope.data.argument.data.object)
         }
     )
@@ -612,17 +621,22 @@ SetEquivalent(
     $n(FunctionInstanceObject, Struct({
         prototype: $n(
             Struct({
-                effect_range: 'local',
+                effect_range: $1('local'),
                 order: $(array => array.length == 1),
                 return_value: $1(BoolConcept)
             }),
             $(proto => proto.parameters[proto.order[0]].is(Struct({
                 constraint: $1(AnyConcept),
-                pass_policy: $1('immutable')
+                pass_policy: $f('immutable', 'promised')
             })))
         )
     }))
 )
+
+
+/* Fix NullScope */
+NullScope.data = SingletonObject('NullScope').data
+NullScope.maker = SingletonObject
 
 
 function PortEquivalent(hash_object, concept, name) {
@@ -646,8 +660,10 @@ BoolConcept.data.checker.return_value_promised = true
 
 
 function CreateInstance (name_and_proto, js_function) {
-    let name = name_and_proto.split(' ')[0]
-    let prototype = name_and_proto.slice(name.length, name_and_proto.length)
+    let name = name_and_proto.split(' ')[1]
+    let prototype = join(
+        filter(name_and_proto.split(' '), (s,index) => index != 1), ' '
+    )
     return FunctionInstanceObject(
         name, G, FunctionPrototype.parse(prototype), function (scope) {
             return js_function (scope.data.argument.data)
@@ -672,12 +688,12 @@ function FunctionObject (name, instances, restrictions, equivalent_concept) {
         equivalent_concept: Optional(ConceptObject)
     })
     restrictions = restrictions || []
-    concept_name = (
+    let concept_name = (
         equivalent_concept?
         equivalent_concept.data.name:
         'no equivalent concept'
     )
-    concept_checker = (
+    let concept_checker = (
         equivalent_concept?
         equivalent_concept.data.checker:
         'no concept checker'
@@ -694,7 +710,7 @@ function FunctionObject (name, instances, restrictions, equivalent_concept) {
         data: {
             name: concept_name,
             checker: concept_checker
-        }
+        },
         __proto__: once(FunctionObject, {
             has_restriction: function (restriction) {
                 return this.restrictions.indexOf(restriction) != -1
@@ -736,7 +752,7 @@ function FunctionObject (name, instances, restrictions, equivalent_concept) {
                         return instance.call(argument)
                     }
                 }
-                let err = ErrorProducer(NoMatchingPattern, `${this.data.name}()`)
+                let err = ErrorProducer(NoMatchingPattern, `${this.name}()`)
                 let msg = 'invalid call: matching function prototype not found'
                 msg += '\n' + 'available instances are:' + '\n'
                 msg += this.toString()
@@ -773,18 +789,13 @@ const HasMethod = (...names) => $(
  */
 
 
-function PortConcept(concept, name) {
-    check(PortConcept, arguments, { concept: Concept, name: Str })
-    return ConceptObject(name, x => x.is(concept))
+function PortConcept(concept, name, promised) {
+    check(PortConcept, arguments, {
+        concept: Concept, name: Str, promised: Optional(Bool)
+    })
+    promised = Boolean(promised)
+    return ConceptObject(name, x => x.is(concept), promised)
 }
-
-
-const SingletonConcept = FunctionObject('Singleton', [
-    CreateInstance (
-        'local Singleton (String name) -> Singleton',
-        a => SingletonObject(a.name)
-    )
-], [], PortConcept(SingletonObject, 'Singleton'))
 
 
 pour(K, {
@@ -795,14 +806,15 @@ pour(K, {
     Bool: BoolConcept,
     /* primitive */
     Number: PortConcept(NumberObject, 'Number'),
-    Int: PortConcept(Int, 'Int')
-    UnsignedInt: PortConcept(UnsignedInt, 'UnsignedInt')
+    Int: PortConcept(Int, 'Int'),
+    UnsignedInt: PortConcept(UnsignedInt, 'UnsignedInt'),
     String: PortConcept(StringObject, 'String'),
     Primitive: PortConcept(PrimitiveObject, 'Primitive'),
     /* non-primitive atomic */
     FunctionInstance: PortConcept(FunctionInstanceObject, 'FunctionInstance'),
     Function: PortConcept(FunctionObject, 'Function'),
-    Singleton: SingletonConcept,
+    // should be defined after K.String
+    // Singleton: SingletonConcept,
     'N/A': SingletonObject('N/A'),
     'Void': SingletonObject('Void'),
     Atomic: PortConcept(AtomicObject, 'Atomic'),
@@ -811,13 +823,24 @@ pour(K, {
     Hash: PortConcept(HashObject, 'Hash'),
     Compound: PortConcept(CompoundObject, 'Compound'),
     /* mutable or not */
-    ImHash: PortConcept(ImHashObject, 'ImHash'),
-    MutHash: PortConcept(MutHashObject, 'MutHash'),
-    ImList: PortConcept(ImListObject, 'ImList'),
-    MutList: PortConcept(MutListObject, 'MutList'),
-    Immutable: PortConcept(ImmutableObject, 'Immutable')
-    Mutable: PortConcept(MutableObject, 'Mutable')
+    ImHash: PortConcept(ImHashObject, 'ImHash', true),
+    MutHash: PortConcept(MutHashObject, 'MutHash', true),
+    ImList: PortConcept(ImListObject, 'ImList', true),
+    MutList: PortConcept(MutListObject, 'MutList', true),
+    Immutable: PortConcept(ImmutableObject, 'Immutable', true),
+    Mutable: PortConcept(MutableObject, 'Mutable', true)
 })
+
+
+
+
+
+HashObject({
+    name: 'Immutable',
+    checker: ConceptChecker
+})
+
+
 
 
 /* concept alias */
@@ -830,6 +853,18 @@ pour(K, {
 })
 
 
+/* singleton */
+
+
+K.Singleton = PortConcept(SingletonObject, 'Singleton')
+K.Singleton = FunctionObject('Singleton', [
+    CreateInstance (
+        'local Singleton (String name) -> Singleton',
+        a => SingletonObject(a.name)
+    )
+], [], K.Singleton)
+
+
 /**
  *  Fundamental Functions Definition
  */
@@ -838,7 +873,7 @@ pour(K, {
 pour(K, {
     is: FunctionObject('is', [
         CreateInstance(
-            'local Any::is (Any self, Concept concept) -> Bool',
+            'local Any::is (Any ~self, Concept concept) -> Bool',
             a => a.concept.data.checker.apply(a.self)
         )
     ]),
@@ -883,7 +918,7 @@ pour(K, {
                 CopyAction.dirty(a.self):
                 CopyAction.immutable(a.self)
         )
-    ])
+    ]),
     val_copy: FunctionObject('val_copy', [
         CreateInstance (
             'local Primitive::val_copy (Primitive self) -> Primitive',
@@ -895,7 +930,7 @@ pour(K, {
                 map(a.self.data, e => CopyAction.immutable(e))
             )
         )
-    ], ['pure']),
+    ], ['pure'])
 })
 
 
@@ -1018,7 +1053,7 @@ function SliceObject (object, start, end) {
 
 SetEquivalent(SliceObject, $n(ImHashObject, Struct({
     data: Struct({
-        object: $n(Immutable, HasSlice),
+        object: $n(ImmutableObject, HasSlice),
         start: UnsignedInt,
         end: UnsignedInt,
         length: UnsignedInt
@@ -1046,7 +1081,7 @@ pour(K, {
     at: FunctionObject('at', [
         CreateInstance (
             'local ImList::at (ImList self, Index index) -> Immutable',
-            ListOperations.at
+            a => Im(ListOperations.at(a))
         ),
         CreateInstance (
             'local MutList::at (MutList &self, Index index) -> Object',
@@ -1059,7 +1094,7 @@ pour(K, {
                 || ErrorProducer(RangeError, 'String::at').throw(`${a.index}`)
         ),
         CreateInstance (
-            'Slice::at (Slice self, Index index) -> Immutable',
+            'local Slice::at (Slice self, Index index) -> Immutable',
             function (a) {
                 let current_obj_length = K.length.apply(a.self.data.object)
                 let slice_length = K.length.apply(a.self)
@@ -1132,37 +1167,37 @@ const HashOperations = {
 pour(K, {
     has: FunctionObject('has', [
         CreateInstance (
-            'Hash::has (Hash self, String key) -> Bool',
+            'local Hash::has (Hash self, String key) -> Bool',
             a => a.self.data.has(a.key)
         )
     ]),
     get: FunctionObject('get', [
         CreateInstance (
-            'ImHash::get (ImHash self, String key) -> Immutable',
-            HashOperations.get
+            'local ImHash::get (ImHash self, String key) -> Immutable',
+            a => Im(HashOperations.get(a))
         ),
         CreateInstance (
-            'MutHash::get (MutHash &self, String key) -> Object',
+            'local MutHash::get (MutHash &self, String key) -> Object',
             HashOperations.get
         )
     ]),
     find: FunctionObject('find', [
         CreateInstance (
-            'ImHash::find (ImHash self, String key) -> Immutable',
-            HashOperations.find
+            'local ImHash::find (ImHash self, String key) -> Immutable',
+            a => Im(HashOperations.find(a))
         ),
         CreateInstance (
-            'MutHash::find (MutHash &self, String key) -> Object',
+            'local MutHash::find (MutHash &self, String key) -> Object',
             HashOperations.find
         )
     ]),
     set: FunctionObject('set', [
         CreateInstance (
-            'MutHash::set (MutHash &self, String key, Immutable value) -> Void',
+            'local MutHash::set (MutHash &self, String key, Immutable value) -> Void',
             HashOperations.set
         ),
         CreateInstance (
-            'MutHash::set (MutHash &self, String key, Mutable &value) -> Void',
+            'local MutHash::set (MutHash &self, String key, Mutable &value) -> Void',
             HashOperations.set
         )
     ])

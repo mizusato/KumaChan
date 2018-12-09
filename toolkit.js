@@ -68,7 +68,7 @@ const UnsignedInt = $n( Int, $(x => x >= 0) )
 const Str = $(x => typeof x == 'string')
 const Bool = $(x => typeof x == 'boolean')
 const Hash = $(x => x instanceof Object)
-const Optional = (concept, defval) => pour({defval: defval},$u(concept, NoValue))
+const Optional = concept => $u(NoValue, concept)
 const SetEquivalent = (target, concept) => target.contains = concept.contains
 const SetMakerConcept = (maker) => maker.contains = (x => x.maker === maker)
 
@@ -337,14 +337,16 @@ function join (iterable, separator) {
 
 
 function filter (to_be_filtered, f) {
-    check(filter, arguments, { to_be_filtered: Hash })
+    check(filter, arguments, { to_be_filtered: Object })
     if (to_be_filtered.is(Iterable)) {
         let iterable = to_be_filtered
         let result = []
+        let index = 0
         for ( let element of iterable ) {
-            if ( f(element) ) {
+            if ( f(element, index) ) {
                 result.push(element)
             }
+            index++
         }
         return result
     } else {
@@ -387,15 +389,21 @@ function fold (iterable, initial, f) {
 }
 
 
-function forall (iterable, f) {
-    check(forall, arguments, { iterable: Iterable, f: Function })
-    return fold(iterable, true, (e,v) => v && f(e))
+function forall (to_be_checked, f) {
+    check(forall, arguments, { to_be_checked: Object, f: Function })
+    if (to_be_checked.is(Iterable)) {
+        let iterable = to_be_checked
+        return fold(iterable, true, (e,v) => v && f(e))
+    } else {
+        let hash = to_be_checked
+        return fold(Object.keys(hash), true, (k,v) => v && f(hash[k]))
+    }
 }
 
 
-function exists (iterable, f) {
-    check(exists, arguments, { iterable: Iterable, f: Function })
-    return fold(iterable, false, (e,v) => v || f(e))
+function exists (to_be_checked, f) {
+    check(exists, arguments, { to_be_checked: Object, f: Function })
+    return !forall(to_be_checked, x => !f(x))
 }
 
 
