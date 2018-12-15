@@ -70,6 +70,7 @@ const Bool = $(x => typeof x == 'boolean')
 const Hash = $(x => x instanceof Object)
 const Optional = concept => $u(NoValue, concept)
 const SetEquivalent = (target, concept) => target.contains = concept.contains
+const MadeBy = (maker) => $(x => x.maker === maker)
 const SetMakerConcept = (maker) => maker.contains = (x => x.maker === maker)
 
 const NumStr = $n(Str, $(x => !Number.isNaN(parseInt(x))) )

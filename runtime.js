@@ -10,11 +10,11 @@ class RuntimeError extends Error {}
 class InvalidOperation extends RuntimeError {}
 class InvalidArgument extends RuntimeError {}
 class InvalidReturnValue extends RuntimeError {}
+class InvalidDefinition extends RuntimeError {}
 class NoMatchingPattern extends RuntimeError {}
 class KeyError extends RuntimeError {}
 class RangeError extends RuntimeError {}
 class NameConflict extends RuntimeError {}
-class InvalidFunctionInstance extends RuntimeError {}
 class DataViewOutOfDate extends RuntimeError {}
 
 
@@ -33,8 +33,8 @@ function ErrorProducer (err_class, f_name) {
                 throw new err_class(`${f_name}: ${err_type}: ${err_msg}`)
             }
         },
-        unless: function (bool, err_msg) {
-            check(this.unless, arguments, { bool: Bool, err_msg: Str })
+        assert: function (bool, err_msg) {
+            check(this.assert, arguments, { bool: Bool, err_msg: Str })
             return this.if(!bool, err_msg)
         },
         throw: function (err_msg) {
@@ -51,34 +51,53 @@ function ErrorProducer (err_class, f_name) {
 
 
 /**
- *  Enumerations Definition
+ *  Pass Policy Definition
+ * 
+ *  - dirty: pass argument as a mutable reference
+ *           (the argument must be mutable)
+ *  - immutable: pass argument as an immutable reference
+ *               (the argument can be mutable or immutable)
  */
 
 
-const CopyPolicy = Enum('dirty', 'immutable', 'value', 'promised')
-const CopyAction = {
+const PassPolicy = Enum('dirty', 'immutable')
+const PassAction = {
     dirty: x => assert(x.is(MutableObject)) && x,
-    immutable: x => Im(x),
-    value: x => K.val_copy.apply(x),
-    promised: x => x  // promise that we won't modify x
+    immutable: x => ImRef(x)
 }
-const CopyFlag = {
+const PassFlag = {
     dirty: '&',
-    immutable: '',
-    value: '*',
-    promised: '~'
+    immutable: ''
 }
-const CopyFlagValue = fold(
-    Object.keys(CopyFlag), {},
-    (key, v) => (v[CopyFlag[key]] = key, v)
+const PassFlagValue = fold(
+    Object.keys(PassFlag), {},
+    (key, v) => (v[PassFlag[key]] = key, v)
 )
 
 
-const EffectRange = Enum('global', 'nearby', 'local')
-const Restriction = Enum('pure')
-const RestrictionChecker = {
-    pure: f => f.is(PureFunctionInstance)
-}
+/**
+ *  Effect Range Definition
+ * 
+ *  The effect range of a function determines the range of scope chain
+ *  that can be affected by the function.
+ *  
+ *  |  value  | Global (r) | Global (w) | Upper (r) | Upper (w) | Inner (rw) |
+ *     global       O            O            O          O            O
+ *     nearby       O            X            O          O            O
+ *     local        O            X            O          X            O
+ *     *pure     *Solid          X         *Solid        X            O
+ *           (runtime-cache)           (runtime-cache)
+ *               
+ *  Note: Pure function cannot have a parameter with 'dirty' (mutable) pass policy
+ *  Note: Pure function can only refer the objects in its inner scope or
+ *        solid object outside its inner scope. When a reference of a object
+ *        outside the inner scope was used (e.g. passed to a function call),
+ *        the object would be cached. The cached value would be used the next time
+ *        we call the pure function. These mechanics guarantees purity. 
+ */
+
+
+const EffectRange = Enum('global', 'nearby', 'local', 'pure')
 
 
 /**
@@ -88,12 +107,12 @@ const RestrictionChecker = {
  *               │          ┴ List
  *               ┴ Atomic ┬ FunctionInstance
  *                        ┼ Function
- *                        ┼ Singleton
+ *                        ┼ Concept
  *                        ┴ Primitive ┬ String
  *                                    ┼ Number
  *                                    ┴ Bool
  *
- *  Note: atomic objects are immutable.
+ *  Note: atomic object must be totally immutable.
  */
 
 
@@ -106,51 +125,35 @@ const BoolObject = $(x => typeof x == 'boolean')
 const PrimitiveObject = $u(StringObject, NumberObject, BoolObject)
 
 
-/* Singleton Definition */
-
-
-const SingletonNameSet = new Set()
-
-
-function SingletonObject (name) {
-    let err = ErrorProducer(NameConflict, 'SingletonObject()')
-    err.if(SingletonNameSet.has(name), 'singleton name ${name} is in use')
-    let singleton = {}
-    return pour(singleton, {
-        data: {
-            name: name,
-            checker: ConceptChecker(
-                `Singleton(${name})`,
-                object => object === singleton
-            )
-        },
-        contains: x => x === singleton,
-        maker: SingletonObject
-    })
-}
-
-
-SetMakerConcept(SingletonObject)
-
-
 /* Atomic Definition */
 
 
 const AtomicObject = $u(
-    SingletonObject, PrimitiveObject,
+    PrimitiveObject,
     $(x => x.is(FunctionInstanceObject)),
-    $(x => x.is(FunctionObject))
+    $(x => x.is(FunctionObject)),
+    $(x => x.is(ConceptObject))
 )
 
 
 /* Hash Definition */
 
 
-function HashObject (hash = {}) {
+const Config = {
+    default: {
+        immutable: false,
+        frozen: false
+    },
+    from: object => pour({}, object.config)
+}
+
+
+function HashObject (hash = {}, config = Config.default) {
     assert(hash.is(Hash))
+    assert(config.is(Hash))
     return {
         data: hash,
-        config: { immutable: false },
+        config: config
         maker: HashObject
     }
 }
@@ -159,24 +162,20 @@ function HashObject (hash = {}) {
 SetMakerConcept(HashObject)
 
 
-HashObject.immutable = hash => pour(
-    HashObject(hash),
-    { config: { immutable: true } }
-)
-
-
 const ImHashObject = $n(HashObject, $(x => x.config.immutable))
 const MutHashObject = $n(HashObject, $(x => !x.config.immutable))
+const FzHashObject = $n(ImHashObject, $(x => x.config.frozen))
 
 
 /* List Definition */
 
 
-function ListObject (list = []) {
+function ListObject (list = [], config = Config.default) {
     assert(list.is(Array))
+    assert(config.is(Hash))
     return {
         data: list,
-        config: { immutable: false },
+        config: config,
         maker: ListObject
     }
 }
@@ -185,20 +184,9 @@ function ListObject (list = []) {
 SetMakerConcept(ListObject)
 
 
-ListObject.immutable = list => pour(
-    ListObject(list),
-    { config: { immutable: true } }
-)
-
-
 const ImListObject = $n(ListObject, $(x => x.config.immutable))
 const MutListObject = $n(ListObject, $(x => !x.config.immutable))
-
-
-const ListObjectOf = concept => $n(
-    ListObject,
-    $(l => l.data.is(ArrayOf(concept)))
-)
+const FzListObject = $n(ImListObject, $(x => x.config.frozen))
 
 
 /* Compound Definition */
@@ -214,7 +202,7 @@ const ObjectObject = $u(CompoundObject, AtomicObject)
 
 
 /**
- * Mutable and Immutable Definition
+ *  Mutable and Immutable Definition
  */
 
 
@@ -222,14 +210,76 @@ const MutableObject = $n(CompoundObject, $(x => !x.config.immutable))
 const ImmutableObject = $_(MutableObject)
 
 
-function Im (object) {
+/**
+ *  Frozen and Solid Definition
+ */
+
+const FrozenObject = $u(FzHashObject, FzListObject)
+const SolidObject = $u(AtomicObject, FrozenObject)
+
+
+/**
+ *  Immutably Refer, Clone and Freeze
+ */
+
+
+function ImRef (object) {
     if ( object.is(MutableObject) ) {
-        return {
-            data: object.data,
-            config: pour(pour({}, object.config), {
+        return HashObject(
+            object.data,
+            pour(Config.from(object), {
                 immutable: true
-            }),
-            maker: object.maker
+            })
+        )
+    } else {
+        return object
+    }
+}
+
+
+function Clone (object) {
+    if ( object.is(CompoundObject) ) {
+        if ( object.is(HashObject) ) {
+            return HashObject(
+                mapval(object.data, v => Clone(v)),
+                pour(Config.from(object), {
+                    immutable: false,
+                    frozen: false
+                })
+            )
+        } else if ( object.is(ListObject) ) {
+            return HashObject(
+                map(object.data, v => Clone(v)),
+                pour(Config.from(object), {
+                    immutable: false,
+                    frozen: false
+                })
+            )
+        }
+    } else {
+        return object
+    }
+}
+
+
+function Freeze (object) {
+    if ( object.is(CompoundObject) ) {
+        if ( object.is(HashObject) ) {
+            return HashObject(
+                mapval(object.data, v => Freeze(v)),
+                pour(Config.from(object), {
+                    immutable: true,
+                    frozen: true
+                })
+            )
+        } else if ( object.is(ListObject) )
+            return ListObject(
+                map(object.data, v => Freeze(v)),
+                pour(Config.from(object), {
+                    immutable: true,
+                    frozen: true
+                })
+            )
         }
     } else {
         return object
@@ -244,7 +294,6 @@ function Im (object) {
  *  and ConceptChecker requires definition of global scope
  *  we must handle NullScope especially
  */
-
 
 
 const NullScope = {} // SingletonObject('NullScope')
@@ -293,20 +342,24 @@ K.scope = G
  */
 
 
-const AnyConcept = HashObject()
-const BoolConcept = HashObject()
+const AnyConcept = { name: 'Any' }
+const BoolConcept = { name: 'Bool' }
 
 
-function ConceptObject (concept_name, f, promised) {
-    check(ConceptObject, arguments, {
-        concept_name: Str, f: Function, promised: Optional(Bool)
-    })
-    promised = Boolean(promised)
-    return HashObject.immutable({
-        name: concept_name,
-        checker: ConceptChecker(`${concept_name}`, f, promised)
-    })
+function ConceptObject (name, f) {
+    check(ConceptObject, arguments, { name: Str, f: Function })
+    return {
+        name: name,
+        checker: ConceptChecker(`${name}`, f, promised),
+        maker: ConceptObject
+    }
 }
+
+
+SetEquivalent(
+    ConceptObject,
+    $u( $f(AnyConcept, BoolConcept), MadeBy(ConceptObject) )
+)
 
 
 function UnionConceptObject (concept1, concept2) {
@@ -314,12 +367,12 @@ function UnionConceptObject (concept1, concept2) {
         concept1: ConceptObject,
         concept2: ConceptObject
     })
-    let name = `(${concept1.data.name} | ${concept2.data.name})`
+    let name = `(${concept1.name} | ${concept2.name})`
     let f = x => exists(
-        map_lazy([concept1, concept2], c => c.data.checker),
+        map_lazy([concept1, concept2], c => c.checker),
         f => f.apply(x) === true
     )
-    return ConceptObject(name, f, true)
+    return ConceptObject(name, f)
 }
 
 
@@ -328,12 +381,12 @@ function IntersectConceptObject (concept1, concept2) {
         concept1: ConceptObject,
         concept2: ConceptObject
     })
-    let name = `(${concept1.data.name} & ${concept2.data.name})`
+    let name = `(${concept1.name} & ${concept2.name})`
     let f = x => forall(
-        map_lazy([concept1, concept2], c => c.data.checker),
+        map_lazy([concept1, concept2], c => c.checker),
         f => f.apply(x) === true
     )
-    return ConceptObject(name, f, true)
+    return ConceptObject(name, f)
 }
 
 
@@ -341,34 +394,54 @@ function ComplementConceptObject (concept) {
     check(ComplementConceptObject, arguments, {
         concept: ConceptObject,
     })
-    let name = `!${concept.data.name}`
-    let f = x => concept.data.checker.apply(x) === false
-    return ConceptObject(name, f, true)
+    let name = `!${concept.name}`
+    let f = x => concept.checker.apply(x) === false
+    return ConceptObject(name, f)
 }
 
 
-//  ConceptObject = {Any, Bool} 
-//                    | ( Immutable
-//                          & (Hash | Singleton | Function)
-//                          & ${ data: ${ ... } } )
-SetEquivalent(ConceptObject, $u(
-    $f(AnyConcept, BoolConcept),
-    $n(
-        ImmutableObject,
-        $u(HashObject, SingletonObject, FunctionObject),
-        Struct({
-            data: Struct({
-                name: StringObject,
-                checker: ConceptChecker
-            })
-        })
+/* Singleton Definition */
+
+
+const SingletonOfName = {}
+
+
+function SingletonObject (name) {
+    let err = ErrorProducer(NameConflict, 'SingletonObject()')
+    err.if(SingletonOfName.has(name), 'singleton name ${name} is in use')
+    let singleton = {}
+    pour(singleton, ConceptObject(
+        `Singleton<'${name}'>`,
+        object => object === singleton
     )
+    pour(singleton, {
+        contains: x => x === singleton,
+        singleton_name: name
+    })
+    SingletonOfName[name] = singleton
+    return singleton
+}
+
+
+SetEquivalent(SingletonObject, $n(
+    ConceptObject,
+    $(x => x.has(singleton_name)),
+    $(x => x === SingletonOfName[x.singleton_name])
 ))
+
+
+/* Fix NullScope */
+
+
+pour(NullScope, SingletonObject('NullScope'))
+
+
+/* Function Prototype Definition */
 
 
 const Parameter = Struct({
     constraint: ConceptObject,
-    pass_policy: CopyPolicy
+    pass_policy: PassPolicy
 })
 
 
@@ -381,87 +454,6 @@ const FunctionPrototype = $n(
     }),
     $( proto => forall(proto.order, key => proto.parameters.has(key)) )
 )
-
-
-FunctionPrototype.represent = function repr_prototype (prototype) {
-    check(repr_prototype, arguments, { prototype: FunctionPrototype })
-    function repr_parameter (key, parameter) {
-        check(repr_parameter, arguments, { key: Str, parameter: Parameter })
-        let type = parameter.constraint.data.name
-        let flags = CopyFlag[parameter.pass_policy]
-        return `${type} ${flags}${key}`
-    }
-    function opt (string, non_empty_callback) {
-        check(opt, arguments, { string: Str, non_empty_callback: Function })
-        return string && non_empty_callback(string) || ''
-    }
-    let effect = prototype.effect_range
-    let order = prototype.order
-    let parameters = prototype.parameters
-    let retval_constraint = prototype.return_value
-    let necessary = Enum.apply({}, order)
-    return effect + ' ' + '(' + join(filter([
-        join(map(
-            order,
-            key => repr_parameter(key, parameters[key])
-        ), ', '),
-        opt(join(map(
-            filter(parameters, key => key.is_not(necessary)),
-            (key, val) => repr_parameter(key, val)
-        ), ', '), s => `[${s}]`),
-    ], x => x), ', ') + ') -> ' + `${retval_constraint.data.name}`
-}
-
-
-FunctionPrototype.parse = function parse_prototype (string) {
-    const pattern = /\((.*)\) -> (.*)/
-    const sub_pattern = /(.*), *[(.*)]/
-    check(parse_prototype, arguments, { string: Regex(pattern) })
-    let str = {
-        parameters: string.match(pattern)[1].trim(),
-        return_value: string.match(pattern)[2].trim()
-    }
-    let has_optional = str.parameters.match(sub_pattern)
-    str.parameters = {
-        necessary: has_optional? has_optional[1].trim(): str.parameters,
-        all: str.parameters
-    }
-    function check_concept (string) {
-        if ( K.has(string) && K[string].is(ConceptObject) ) {
-            return K[string]
-        } else {
-            throw Error('prototype parsing error: invalid constraint')
-        }
-    }
-    function parse_parameter (string) {
-        const pattern = /([^ ]*) *([\*\&\~]?)(.+)/
-        check(parse_parameter, arguments, { string: Regex(pattern) })
-        let str = {
-            constraint: string.match(pattern)[1].trim(),
-            pass_policy: string.match(pattern)[2].trim()
-        }
-        let name = string.match(pattern)[3]
-        return { key: name, value: mapval(str, function (s, item) {
-            return ({
-                constraint: () => check_concept(s),
-                pass_policy: () => CopyFlagValue[s]
-            })[item]()
-        }) }
-    }
-    let trim_all = x => map_lazy(x, y => y.trim())
-    return {
-        effect_range: string.split(' ')[0],
-        order: map(map(
-            trim_all(str.parameters.necessary.split(',')),
-            s => parse_parameter(s)
-        ), p => p.key),
-        parameters: fold(map(
-            trim_all(str.parameters.all.split(',')),
-            s => parse_parameter(s)
-        ), {}, (e,v) => (v[e.key]=e.value, v)),
-        return_value: check_concept(str.return_value)
-    }
-}
 
 
 FunctionPrototype.check_argument = function (prototype, argument) {
@@ -509,7 +501,7 @@ FunctionPrototype.normalize_argument = function (prototype, argument) {
     })
     return mapval(
         mapkey(argument, key => key.is(NumStr)? prototype.order[key]: key),
-        (val, key) => CopyAction[prototype.parameters[key].pass_policy](val)
+        (val, key) => PassAction[prototype.parameters[key].pass_policy](val)
     )
 }
 
@@ -529,6 +521,9 @@ FunctionPrototype.check_return_value = function (prototype, value) {
 }
 
 
+/* Function Instance Definition */
+
+
 function FunctionInstanceObject (name, context, prototype, js_function) {
     check(FunctionInstanceObject, arguments, {
         name: Str,
@@ -536,6 +531,13 @@ function FunctionInstanceObject (name, context, prototype, js_function) {
         prototype: FunctionPrototype,
         js_function: Function
     })
+    if ( prototype.effect_range == 'pure' ) {
+        let err = ErrorProducer(InvalidDefinition, 'FunctionInstance::Creator')
+        err.assert(
+            forall(prototype.parameters, p => p.pass_policy != 'dirty'),
+            'pure function cannot have dirty parameter'
+        )
+    }
     return {
         name: name || '[Anonymous]',
         context: context,
@@ -556,12 +558,17 @@ function FunctionInstanceObject (name, context, prototype, js_function) {
                 let f = this.js_function
                 let p = FunctionPrototype
                 err.if_failed(p.check_argument(proto, argument))
-                let normalized_argument = p.normalize_argument(proto, argument)
+                let normalized = p.normalize_argument(proto, argument)
                 let scope = Scope(context, {
-                    argument: HashObject(normalized_argument)
+                    argument: HashObject(normalized),
+                    argument_info: HashObject({
+                        immutable: HashObject(
+                            mapval(normalized, v=>v.config.immutable)
+                        )
+                    })
                 })
                 scope.data.scope = scope
-                pour(scope.data, normalized_argument)
+                pour(scope.data, normalized)
                 let value = f(scope)
                 if (!this.return_value_promised) {
                     err_r.if_failed(p.check_return_value(proto, value))
@@ -583,80 +590,61 @@ function FunctionInstanceObject (name, context, prototype, js_function) {
 SetMakerConcept(FunctionInstanceObject)
 
 
-const PureFunctionInstance = $n(Struct({
-    prototype: Struct({
-        effect_range: $1('local'),
-    })
-}), $(f => forall(f.prototype.parameters, p => p.pass_policy != 'dirty')) )
+/* Concept Checker Definition */
 
 
-const ConceptFunctionPrototype = promised => ({
-    effect_range: 'local',
+const ConceptCheckerPrototype = {
+    effect_range: 'pure',
     parameters: {
         object: {
             constraint: AnyConcept,
-            pass_policy: promised? 'promised': 'immutable'
+            pass_policy: 'immutable'
         }
     },
     order: ['object'],
     return_value: BoolConcept
-})
+}
 
 
-function ConceptChecker (name, f, promised) {
-    check(ConceptChecker, arguments, {
-        name: Str, f: Function, promised: Optional(Bool)
-    })
-    promised = Boolean(promised)
-    return FunctionInstanceObject(`${name}.checker`, G,
-        ConceptFunctionPrototype(promised), function (scope) {
-            return f(scope.data.argument.data.object)
-        }
+function ConceptChecker (name, f) {
+    check(ConceptChecker, arguments, { name: Str, f: Function })
+    return FunctionInstanceObject(
+        `${name}::Checker`, G, ConceptCheckerPrototype,
+        scope => f(scope.data.argument.data.object)
     )
 }
 
 
 SetEquivalent(
     ConceptChecker,
-    $n(FunctionInstanceObject, Struct({
-        prototype: $n(
+    $n(FunctionInstanceObject, $(f => f.prototype.is(
+        $n(
             Struct({
-                effect_range: $1('local'),
+                effect_range: $f('pure', 'local'),
                 order: $(array => array.length == 1),
                 return_value: $1(BoolConcept)
             }),
             $(proto => proto.parameters[proto.order[0]].is(Struct({
                 constraint: $1(AnyConcept),
-                pass_policy: $f('immutable', 'promised')
+                pass_policy: $1('immutable')
             })))
         )
-    }))
+    )))
 )
 
 
-/* Fix NullScope */
-NullScope.data = SingletonObject('NullScope').data
-NullScope.maker = SingletonObject
-
-
-function PortEquivalent(hash_object, concept, name) {
+function PortEquivalent(object, concept, name) {
     check(
         PortEquivalent, arguments,
-        { hash_object: HashObject, concept: Concept, name: Str }
+        { object: Object, concept: Concept, name: Str }
     )
-    pour(hash_object.data, {
-        name: name,
-        checker: ConceptChecker(
-            `${name}`, x => x.is(concept)
-        )
-    })
-    hash_object.config.immutable = true
+    pour(object, ConceptObject(name, x => x.is(concept)))
 }
 
 
 PortEquivalent(AnyConcept, ObjectObject, 'Any')
 PortEquivalent(BoolConcept, BoolObject, 'Bool')
-BoolConcept.data.checker.return_value_promised = true
+BoolConcept.checker.return_value_promised = true
 
 
 function CreateInstance (name_and_proto, js_function) {
@@ -677,17 +665,15 @@ function CreateInstance (name_and_proto, js_function) {
  */
 
 
-function FunctionObject (name, instances, restrictions, equivalent_concept) {
+function FunctionObject (name, instances, equivalent_concept) {
     check(FunctionObject, arguments, {
         name: Str,
         instances: $n(
             ArrayOf(FunctionInstanceObject),
             $(array => array.length > 0)
         ),
-        restrictions: Optional(ArrayOf(Restriction)),
         equivalent_concept: Optional(ConceptObject)
     })
-    restrictions = restrictions || []
     let concept_name = (
         equivalent_concept?
         equivalent_concept.data.name:
@@ -698,45 +684,22 @@ function FunctionObject (name, instances, restrictions, equivalent_concept) {
         equivalent_concept.data.checker:
         'no concept checker'
     )
-    assert(forall(instances, I => forall(
-        restrictions,
-        r => RestrictionChecker[r](I)
-    )))
     return {
         name: name,
         instances: instances,
-        restrictions: restrictions,
         maker: FunctionObject,
         data: {
             name: concept_name,
             checker: concept_checker
         },
         __proto__: once(FunctionObject, {
-            has_restriction: function (restriction) {
-                return this.restrictions.indexOf(restriction) != -1
-            },
-            is_valid_instance (instance) {
-                return forall(
-                    this.restrictions,
-                    r => RestrictionChecker[r](instance)
-                )
-            },
-            check_valid_instance (instance) {
-                return need(map_lazy(this.restrictions, r => suppose(
-                    RestrictionChecker[r](instance),
-                    `restriction ${r} not satisfied`
-                )))
-            },
             added: function (instance) {
                 assert(instance.is(FunctionInstanceObject))
-                let err = ErrorProducer(InvalidFunctionInstance, 'Function')
-                err.if_failed(check_valid_instance(instance))
                 let new_list = map(this.instances, x=>x)
                 new_list.push(instance)
                 return FunctionObject(
                     this.name,
-                    new_list,
-                    this.restrictions
+                    new_list
                 )
             },            
             apply: function (...args) {
@@ -862,7 +825,7 @@ K.Singleton = FunctionObject('Singleton', [
         'local Singleton (String name) -> Singleton',
         a => SingletonObject(a.name)
     )
-], [], K.Singleton)
+], K.Singleton)
 
 
 /**
@@ -915,8 +878,8 @@ pour(K, {
         CreateInstance (
             'local Any::copy (Any &self) -> Object',
             a => a.self.is(MutableObject)?
-                CopyAction.dirty(a.self):
-                CopyAction.immutable(a.self)
+                PassAction.dirty(a.self):
+                PassAction.immutable(a.self)
         )
     ]),
     val_copy: FunctionObject('val_copy', [
@@ -927,10 +890,10 @@ pour(K, {
         CreateInstance (
             'local List::val_copy (List self) -> List',
             a => ListObject(
-                map(a.self.data, e => CopyAction.immutable(e))
+                map(a.self.data, e => ImRef(e))
             )
         )
-    ], ['pure'])
+    ])
 })
 
 
@@ -1018,7 +981,7 @@ pour(K, {
 })
 
 
-const HasSlice = $( x => Im(x).is(HasMethod('at', 'length')) )
+const HasSlice = $( x => ImRef(x).is(HasMethod('at', 'length')) )
 
 
 function SliceObject (object, start, end) {
@@ -1033,8 +996,8 @@ function SliceObject (object, start, end) {
     if ( end == 0 ) { end = length }
     // todo end == infinity
     err.if(start > end, 'start position greater than end position')
-    err.unless(0 <= start && start < length, 'invalid start position')
-    err.unless(0 <= end && end <= length, 'invalid end position')
+    err.assert(0 <= start && start < length, 'invalid start position')
+    err.assert(0 <= end && end <= length, 'invalid end position')
     return pour(HashObject(), {
         data: {
             object: object,
@@ -1081,7 +1044,7 @@ pour(K, {
     at: FunctionObject('at', [
         CreateInstance (
             'local ImList::at (ImList self, Index index) -> Immutable',
-            a => Im(ListOperations.at(a))
+            a => ImRef(ListOperations.at(a))
         ),
         CreateInstance (
             'local MutList::at (MutList &self, Index index) -> Object',
@@ -1174,7 +1137,7 @@ pour(K, {
     get: FunctionObject('get', [
         CreateInstance (
             'local ImHash::get (ImHash self, String key) -> Immutable',
-            a => Im(HashOperations.get(a))
+            a => ImRef(HashOperations.get(a))
         ),
         CreateInstance (
             'local MutHash::get (MutHash &self, String key) -> Object',
@@ -1184,7 +1147,7 @@ pour(K, {
     find: FunctionObject('find', [
         CreateInstance (
             'local ImHash::find (ImHash self, String key) -> Immutable',
-            a => Im(HashOperations.find(a))
+            a => ImRef(HashOperations.find(a))
         ),
         CreateInstance (
             'local MutHash::find (MutHash &self, String key) -> Object',
@@ -1202,3 +1165,86 @@ pour(K, {
         )
     ])
 })
+
+
+FunctionPrototype.represent = function repr_prototype (prototype) {
+    check(repr_prototype, arguments, { prototype: FunctionPrototype })
+    function repr_parameter (key, parameter) {
+        check(repr_parameter, arguments, { key: Str, parameter: Parameter })
+        let type = parameter.constraint.data.name
+        let flags = PassFlag[parameter.pass_policy]
+        return `${type} ${flags}${key}`
+    }
+    function opt (string, non_empty_callback) {
+        check(opt, arguments, { string: Str, non_empty_callback: Function })
+        return string && non_empty_callback(string) || ''
+    }
+    let effect = prototype.effect_range
+    let order = prototype.order
+    let parameters = prototype.parameters
+    let retval_constraint = prototype.return_value
+    let necessary = Enum.apply({}, order)
+    return effect + ' ' + '(' + join(filter([
+        join(map(
+            order,
+            key => repr_parameter(key, parameters[key])
+        ), ', '),
+        opt(join(map(
+            filter(parameters, key => key.is_not(necessary)),
+            (key, val) => repr_parameter(key, val)
+        ), ', '), s => `[${s}]`),
+    ], x => x), ', ') + ') -> ' + `${retval_constraint.data.name}`
+}
+
+
+FunctionPrototype.parse = function parse_prototype (string) {
+    const pattern = /\((.*)\) -> (.*)/
+    const sub_pattern = /(.*), *[(.*)]/
+    check(parse_prototype, arguments, { string: Regex(pattern) })
+    let str = {
+        parameters: string.match(pattern)[1].trim(),
+        return_value: string.match(pattern)[2].trim()
+    }
+    let has_optional = str.parameters.match(sub_pattern)
+    str.parameters = {
+        necessary: has_optional? has_optional[1].trim(): str.parameters,
+        all: str.parameters
+    }
+    function check_concept (string) {
+        if ( K.has(string) && K[string].is(ConceptObject) ) {
+            return K[string]
+        } else {
+            throw Error('prototype parsing error: invalid constraint')
+        }
+    }
+    function parse_parameter (string) {
+        const pattern = /([^ ]*) *([\*\&\~]?)(.+)/
+        check(parse_parameter, arguments, { string: Regex(pattern) })
+        let str = {
+            constraint: string.match(pattern)[1].trim(),
+            pass_policy: string.match(pattern)[2].trim()
+        }
+        let name = string.match(pattern)[3]
+        return { key: name, value: mapval(str, function (s, item) {
+            return ({
+                constraint: () => check_concept(s),
+                pass_policy: () => PassFlagValue[s]
+            })[item]()
+        }) }
+    }
+    let trim_all = x => map_lazy(x, y => y.trim())
+    return {
+        effect_range: string.split(' ')[0],
+        order: map(map(
+            trim_all(str.parameters.necessary.split(',')),
+            s => parse_parameter(s)
+        ), p => p.key),
+        parameters: fold(map(
+            trim_all(str.parameters.all.split(',')),
+            s => parse_parameter(s)
+        ), {}, (e,v) => (v[e.key]=e.value, v)),
+        return_value: check_concept(str.return_value)
+    }
+}
+
+
