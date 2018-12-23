@@ -98,6 +98,7 @@ function Enum (...str_list) {
         return Str.contains(item) && set.has(item)
     })
 }
+const one_of = Enum
 function Struct (concept_of) {
     check(Struct, arguments, { concept_of: HashOf(Concept) })
     return $(
