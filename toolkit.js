@@ -188,7 +188,7 @@ function check(callee, args, concept_table) {
         var concept = concept_table[parameter]
         if (!concept.contains(argument)) {
 	    throw Error(
-                `Invalid argument '${parameter}' in function ${callee.name}`
+                `Invalid argument '${parameter}' in function ${callee.name}()`
             )
         }
         /*
@@ -395,10 +395,10 @@ function forall (to_be_checked, f) {
     check(forall, arguments, { to_be_checked: Object, f: Function })
     if (to_be_checked.is(Iterable)) {
         let iterable = to_be_checked
-        return fold(iterable, true, (e,v) => v && f(e))
+        return Boolean(fold(iterable, true, (e,v) => v && f(e)))
     } else {
         let hash = to_be_checked
-        return fold(Object.keys(hash), true, (k,v) => v && f(hash[k]))
+        return Boolean(fold(Object.keys(hash), true, (k,v) => v && f(hash[k])))
     }
 }
 
@@ -409,7 +409,31 @@ function exists (to_be_checked, f) {
 }
 
 
+function find (container, f) {
+    check(find, arguments, { container: Object, f: Function })
+    if (container.is(Iterable)) {
+        let iterable = container
+        for ( let I of iterable ) {
+            if (f(I)) {
+                return I
+                break
+            }
+        }
+    } else {
+        let hash = container
+        for ( let key of Object.keys(hash) ) {
+            if (f(hash[key])) {
+                return key
+                break
+            }
+        }
+    }
+    return NA
+}
+
+
 Object.prototype.has = function (prop) { return this.hasOwnProperty(prop) }
+Object.prototype.has_ = Object.prototype.has
 Array.prototype.has = function (index) { return typeof this[index] != 'undefined' }
 Object.prototype.has_no = function (prop) { return !this.has(prop) }
 Array.prototype.has_no = function (index) { return !this.has(index) }
