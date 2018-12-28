@@ -12,7 +12,7 @@ class NoMatchingPattern extends RuntimeError {}
 class KeyError extends RuntimeError {}
 class IndexError extends RuntimeError {}
 class NameConflict extends RuntimeError {}
-class DataViewOutOfDate extends RuntimeError {}
+class ForbiddenCall extends RuntimeError {}
 
 
 function ErrorProducer (err_class, f_name) {
@@ -76,6 +76,7 @@ Detail.Config.get_flags = function (object) {
 
 
 Detail.Hash.get_prototype = () => ({
+    mapper: mapval,
     has: function (key) {
         return Object.prototype.has.call(this.data, key)
     },
@@ -122,6 +123,7 @@ Detail.Hash.get_prototype = () => ({
 
 
 Detail.List.get_prototype = () => ({
+    mapper: map,
     length: function () { return this.data.length },
     at: function (index) {
         let err = ErrorProducer(IndexError, 'List::at')

@@ -1,6 +1,9 @@
 'use strict';
 
 
+const LF = '\n'
+
+
 function assert (bool) {
     if(!bool) {
         throw Error('Assertion Error')
@@ -60,6 +63,7 @@ const $f = (...elements) => $(x => exists(elements, e => e === x))
 
 const Any = $(() => true)
 const Void = $(() => false)
+const Otherwise = Any  // for transform()
 
 const NoValue = $(x => typeof x == 'undefined')
 const Num = $(x => typeof x == 'number')
@@ -76,7 +80,7 @@ const SetMakerConcept = (maker) => maker.contains = (x => x.maker === maker)
 const NumStr = $n(Str, $(x => !Number.isNaN(parseInt(x))) )
 const Regex = regex => $n( Str, $(s => s.match(regex)) )
 
-const NA = { contains: x => x === this }
+const NotFound = { contains: x => x === this }  // for find()
 const Iterable = $(
     x => typeof x != 'undefined' && typeof x[Symbol.iterator] == 'function'
 )
@@ -234,17 +238,6 @@ function* map_lazy (to_be_mapped, f) {
 }
 
 
-function take_if (iterable, f) {
-    check(take_if, arguments, { iterable: Iterable, f: Function })
-    for ( let I of iterable ) {
-        if (f(I)) {
-            return I
-        }
-    }
-    return NA
-}
-
-
 function map (to_be_mapped, f) {
     check(map, arguments, { to_be_mapped: Object, f: Function })
     return list(map_lazy(to_be_mapped, f))
@@ -338,6 +331,11 @@ function join (iterable, separator) {
 }
 
 
+function join_lines (...lines) {
+    return join(lines, LF);
+}
+
+
 function filter (to_be_filtered, f) {
     check(filter, arguments, { to_be_filtered: Object })
     if (to_be_filtered.is(Iterable)) {
@@ -391,6 +389,44 @@ function fold (iterable, initial, f) {
 }
 
 
+function chain (...functions) {
+    return ( x => fold(functions, x, (f,v) => f(v)) )
+}
+
+
+function transform (object, situations) {
+    check(transform, arguments, {
+        object: Any,
+        situations: ArrayOf(Struct({
+            when_it_is: Concept,
+            use: Function
+        }))
+    })
+    for (let s of situations) {
+        let concept = s.when_it_is
+        let f = s.use
+        if ( concept.contains(object) ) {
+            return f(object)
+        }
+    }
+    throw Error('transform(): cannot find proper transformation')
+}
+
+
+function* reduce (initial, next_of, terminate_when) {
+    check(reduce, arguments, {
+        initial: Any,
+        next_of: Function,
+        terminate_when: Concept
+    })
+    let current = initial
+    while ( !terminate_when.contains(current) ) {
+        yield current
+        current = next_of(current)
+    }
+}
+
+
 function forall (to_be_checked, f) {
     check(forall, arguments, { to_be_checked: Object, f: Function })
     if (to_be_checked.is(Iterable)) {
@@ -422,16 +458,17 @@ function find (container, f) {
     } else {
         let hash = container
         for ( let key of Object.keys(hash) ) {
-            if (f(hash[key])) {
-                return key
+            if (f(hash[key], key)) {
+                return { key: key, value: hash[key] }
                 break
             }
         }
     }
-    return NA
+    return NotFound
 }
 
 
+Object.prototype.transform_by = function (f) { return f(this) }
 Object.prototype.has = function (prop) { return this.hasOwnProperty(prop) }
 Object.prototype.has_ = Object.prototype.has
 Array.prototype.has = function (index) { return typeof this[index] != 'undefined' }
