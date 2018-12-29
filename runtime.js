@@ -271,7 +271,7 @@ function Scope (context, data = {}) {
         maker: Scope,
         __proto__: once(Scope, {
             upward_iterator: function () {
-                return reduce(this, x => x.context, NullScope)
+                return iterate(this, x => x.context, NullScope)
             }
         })
     }

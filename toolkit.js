@@ -1,6 +1,8 @@
 'use strict';
 
 
+const TAB = '\t'
+const CR = '\r'
 const LF = '\n'
 
 
@@ -221,7 +223,7 @@ function check_hash(callee, argument, constraint) {
 
 
 function* map_lazy (to_be_mapped, f) {
-    check(map_lazy, arguments, { to_be_mapped: Object, f: Function })
+    check(map_lazy, arguments, { to_be_mapped: $u(Object,Str), f: Function })
     if( to_be_mapped.is(Iterable) ) {
 	let iterable = to_be_mapped
 	let index = 0
@@ -239,7 +241,7 @@ function* map_lazy (to_be_mapped, f) {
 
 
 function map (to_be_mapped, f) {
-    check(map, arguments, { to_be_mapped: Object, f: Function })
+    check(map, arguments, { to_be_mapped: $u(Object,Str), f: Function })
     return list(map_lazy(to_be_mapped, f))
 }
 
@@ -299,6 +301,24 @@ function *lazy (f) {
     for ( let I of iterable ) {
         yield I
     }
+}
+
+
+function* take_while (iterable, f) {
+    let index = 0
+    for ( let I of iterable ) {
+        if (f(I, index)) {
+            yield I
+        } else {
+            break
+        }
+        index++
+    }
+}
+
+
+function* map_while (iterable, condition, f) {
+    take_while(map_lazy(iterable, f), condition)
 }
 
 
@@ -413,8 +433,8 @@ function transform (object, situations) {
 }
 
 
-function* reduce (initial, next_of, terminate_when) {
-    check(reduce, arguments, {
+function* iterate (initial, next_of, terminate_when) {
+    check(iterate, arguments, {
         initial: Any,
         next_of: Function,
         terminate_when: Concept
@@ -465,6 +485,21 @@ function find (container, f) {
         }
     }
     return NotFound
+}
+
+
+function* lookahead (iterable, empty_value) {
+    let it = iterable[Symbol.iterator]()
+    let current = it.next()
+    let next = it.next()
+    while ( !current.done ) {
+        yield {
+            current: current.value,
+            next: next.done? empty_value: next.value
+        }
+        current = next
+        next = it.next()
+    }
 }
 
 
