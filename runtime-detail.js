@@ -183,7 +183,7 @@ Detail.Concept.Complement = function (concept, new_name) {
         concept: ConceptObject,
         new_name: Optional(Str)
     })
-    let name = new_name || `!${concept.name}`
+    let name = new_name || `~${concept.name}`
     let f = (x, info) => (
         false === concept.checker.apply(
             info.is_immutable? x: ForceMutable(x)

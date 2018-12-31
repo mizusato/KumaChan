@@ -1,198 +1,127 @@
-const Strings = {
-    Blank: one_of('　', ' ', TAB, CR, LF)
+const Char = {
+    Digit: Regex(/^[0-9]$/),
+    NonZero: Regex(/^[1-9]$/),
+    NotDigit: Regex(/^[^0-9]$/),
+    Alphabet: Regex(/^[A-Za-z]$/),
+    DoubleQuote: $1('"'),
+    SingleQuote: $1("'"),
+    Dot: $1('.'),
+    Space: one_of('　', ' '),
+    NotSpace: $_(one_of('　', ' ')),
+    Any: $u(Str, $(s => s.length >= 1)),
+    CompactOperator: one_of.apply({}, map('()[]{}:,.*^', x=>x))
 }
 
 
-const Repeat = Enum('once', 'more', 'maybe_once', 'maybe_more')
-
-
-function Unit (char_set, repeat = '', next_char = Any, process = (x => x)) {
-    let object = {
-        char_set: char_set,
-        next_char: next_char,
-        process: process,
-        repeat: ({
-            '': 'once',
-            '?': 'maybe_once',
-            '+': 'more',
-            '*': 'maybe_more'
-        })[repeat]
-    }
-    assert(object.is(Unit))
-    return object
-}
-
-
-SetEquivalent(Unit, Struct({
-    char_set: Concept,
-    next_char: Concept,
-    repeat: Repeat,
-    process: Function
-}))
-
-
-function Pattern (category, name, units) {
-    check(Pattern, arguments, {
-        category: Str, name: Str, units: ArrayOf(Unit)
+Pattern.PrefixOperator = function (name, operator) {
+    check(Pattern.PrefixOperator, arguments, {
+        name: Str, operator: Str
     })
-    assert(units.length > 0)
-    return {
-        category: category,
-        name: name,
-        match: function (iterable) {
-            assert(iterable.is(Iterable))
-            let iterator = lookahead(iterable, '')
-            let repeat = val => $(unit => unit.repeat == val)
-            let links = map(units, unit => transform(unit, [
-                { when_it_is: repeat('once'), use: unit => ([
-                    { to: 'next', unit: unit }                        
-                ])},
-                { when_it_is: repeat('maybe_once'), use: unit => ([
-                    { to: 'next', unit: unit },
-                    { to: 'next', unit: null }
-                ])},
-                { when_it_is: repeat('more'), use: unit => ([
-                    { to: 'self', unit: unit },
-                    { to: 'next', unit: unit }
-                ])},
-                { when_it_is: repeat('maybe_more'), use: unit => ([
-                    { to: 'self', unit: unit },
-                    { to: 'next', unit: null }
-                ])}
-            ]))
-            function check_ok (unit, I) {
-                if (I.done) { return false }
-                let char = I.value.current
-                let next = I.value.next
-                let char_ok = unit.char_set.contains(char)
-                let next_ok = unit.next_char.contains(next)
-                let ok = char_ok && next_ok
-                return ok
-            }
-            let cache = []
-            function get_at (n) {
-                if (n < cache.length) {
-                    return cache[n]
-                } else {
-                    for (let i=cache.length; i<=n; i++) {
-                        cache[i] = iterator.next()
-                    }
-                    return cache[n]
-                }
-            }
-            let FINAL = links.length
-            function run_machine (state = 0, count = 0) {
-                if (state == FINAL) {
-                    return count
-                }
-                let I = get_at(count)
-                let r = find(map_lazy(links[state], function (link) {
-                    let target = ({
-                        self: state,
-                        next: (state + 1)
-                    })[link.to]
-                    if ( link.unit != null ) {
-                        let ok = check_ok(link.unit, I)
-                        return ok? run_machine(target, count+1): null
-                    } else {
-                        return run_machine(target, count)
-                    }
-                }), x => x != null)
-                if ( r != NotFound ) {
-                    return r
-                } else {
-                    return 0
-                }
-            }
-            let read_count = run_machine()
-            let matched_string = cache.transform_by(chain(
-                x => take_while(x, (_, index) => index < read_count),
-                x => map(x, I => I.value.current),
-                x => join(x, '')
-            ))
-            return matched_string
-        }
-    }
+    return Pattern('Operator', name, map(operator, (char, index) => Unit(
+        $1(char), '', (index < operator.length-1)? Any: Char.NotSpace
+    )))
 }
 
 
-const num = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-const non_zero = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
-const int_pattern = Pattern('Number', 'Int', [
-    Unit(one_of.apply(null, non_zero)),
-    Unit(one_of.apply(null, num), '*')
-])
-
-
-function Matcher () {
-    return {
-        try_to_match: function (iterator) {
-        }
-    }
+Pattern.InfixOperator = function (name, operator) {
+    check(Pattern.InfixOperator, arguments, {
+        name: Str, operator: Str
+    })
+    return Pattern('Operator', name, map(operator, (char, index) => Unit(
+        $1(char), '', (index < operator.length-1)? Any: Char.Space
+    )))
 }
 
 
-function StringProcessor (string) {
-    let chars = map(string, x => x)
-    let pos = 0
-    let iterator = function* () {
-        for (let i=pos; i<chars.length; i++) {
-            yield chars[i]
-        }
-    }
-    return {
-        terminated: () => (pos == chars.length),
-        match: function (matcher) {
-            let match = matcher.try_to_match(iterator)
-            pos += match.length
-            return match
-        }
-    }
+Pattern.CompactOperator = function (name, operator) {
+    check(Pattern.InfixOperator, arguments, {
+        name: Str, operator: Str
+    })
+    return Pattern('Operator', name, map(operator, (char, index) => Unit(
+        $1(char)
+    )))
 }
 
 
-const TOKEN_ORDER = [
-    'string',
-    'extend_string',
-    'comment',
-    'space',
-    'line_feed',
-    'symbol',
-    'identifier'
+const Tokens = [
+    Pattern('String', 'RawString', [
+        Unit(Char.SingleQuote),
+        Unit($_(Char.SingleQuote), '*'),
+        Unit(Char.SingleQuote)
+    ]),
+    Pattern('String', 'FormatString', [
+        Unit(Char.DoubleQuote),
+        Unit($_(Char.DoubleQuote), '*'),
+        Unit(Char.DoubleQuote)
+    ]),
+    Pattern('Comment', 'Comment', [
+        Unit($1('/')),
+        Unit($1('*')),
+        Unit($_($1('/')), '*'),
+        Unit($1('*')),
+        Unit($1('/'))
+    ]),
+    Pattern('Blank', 'Space', [
+        Unit($u(Char.Space, one_of(CR, TAB)), '+')
+    ]),
+    Pattern('Blank', 'Linefeed', [
+        Unit($1(LF), '+')
+    ]),
+    /**
+     * chars used by compact operators must be
+     * registered at Char.CompactOperator
+     */
+    Pattern.CompactOperator('(', '('),
+    Pattern.CompactOperator(')', ')'),
+    Pattern.CompactOperator('[', '['),
+    Pattern.CompactOperator(']', ']'),
+    Pattern.CompactOperator('{', '{'),
+    Pattern.CompactOperator('}', '}'),
+    Pattern.CompactOperator(',', ','),
+    Pattern.CompactOperator(':', ':'),
+    Pattern.CompactOperator('.', '.'),
+    Pattern.PrefixOperator('Not', '!'),
+    Pattern.InfixOperator('Or', '||'),
+    Pattern.InfixOperator('And', '&&'),
+    Pattern.PrefixOperator('Complement', '~'),
+    Pattern.InfixOperator('Union', '|'),
+    Pattern.InfixOperator('Intersect', '&'),
+    Pattern.PrefixOperator('Negative', '-'),
+    Pattern.InfixOperator('Minus', '-'),
+    Pattern.PrefixOperator('Positive', '+'),
+    Pattern.InfixOperator('Plus', '+'),
+    Pattern.CompactOperator('Times', '*'),
+    Pattern.InfixOperator('Over', '/'),
+    Pattern.PrefixOperator('Parameter', '%'),
+    Pattern.InfixOperator('Modulo', '%'),
+    Pattern.CompactOperator('Power', '^'),
+    Pattern.InfixOperator('Assign', '='),
+    Pattern.InfixOperator('Equal', '=='),
+    Pattern.InfixOperator('NotEqual', '!='),
+    Pattern.InfixOperator('LessThan', '<'),
+    Pattern.InfixOperator('GreaterThan', '>'),
+    Pattern.InfixOperator('LessThanOrEqual', '<='),
+    Pattern.InfixOperator('GreaterThanOrEqual', '>='),
+    Pattern.InfixOperator('PushLeft', '<<'),
+    Pattern.InfixOperator('PushRight', '>>'),
+    Pattern('Number', 'Exponent', [
+        Unit(Char.Digit, '+'),
+        Unit(Char.Dot),
+        Unit(Char.Digit, '+'),
+        Unit(one_of('E', 'e')),
+        Unit(one_of('+', '-'), '?'),
+        Unit(Char.Digit, '+')
+    ]),
+    Pattern('Number', 'Float', [
+        Unit(Char.Digit, '+'),
+        Unit(Char.Dot),
+        Unit(Char.Digit, '+')        
+    ]),
+    Pattern('Number', 'Integer', [
+        Unit(Char.Digit, '+')
+    ]),
+    Pattern('Identifier', 'Identifier', [
+        Unit(Char.NotDigit),
+        Unit($n(Char.NotSpace, $_(Char.CompactOperator)), '*')
+    ])
 ]
-
-
-const TOKEN = {
-    string: {
-        pattern: /^'([^']*)'/,
-        extract: 1
-    },
-    extend_string: {
-        pattern: /^"[^"]*"/,
-        extract: 1
-    },
-    comment: {
-        pattern: /^\/\*(.*)\*\//,
-        extract: 1
-    },
-    space: {
-        pattern: /^[ \t\r　]+/,
-        extract: 0
-    },
-    line_feed: {
-        pattern: /^\n+/,
-        extract: 0
-    },
-    symbol: {
-        pattern: (
-            /^(<<|>>|<=|>=|\&\&|\|\||[\+\-\*\/%^!~\&\|><=\{\}\[\]\(\)\.\,])/
-        ),
-        extract: 0
-    },
-    identifier: {
-        pattern: (
-/^[^0-9\~\&\- \t\r\n　\*\.\,\{\[\('"\)\]\}\/][^ \t\r\n　\*\.\,\{\[\('"\)\]\}\/]*/
-        ),
-        extract: 0
-    }
-}
