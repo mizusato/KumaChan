@@ -385,7 +385,9 @@ function filter (to_be_filtered, f) {
 function pour (target, source) {
     check(pour, arguments, { target: Hash, source: Hash })
     for ( let key of Object.keys(source) ) {
-        target[key] = source[key]
+        if (key != 'contains') {
+            target[key] = source[key]
+        }
     }
     if ( source.__proto__ !== Object.prototype ) {
         target.__proto__ = source.__proto__
