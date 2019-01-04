@@ -270,8 +270,38 @@ function Scope (context, data = {}) {
         context: context,
         maker: Scope,
         __proto__: once(Scope, {
+            has: function (key) {
+                return Object.prototype.has.call(this.data, key)
+            },
+            get: function (key) {
+                assert(this.has(key))
+                return this.data[key]
+            },
             upward_iterator: function () {
                 return iterate(this, x => x.context, NullScope)
+            },
+            lookup: function (name, range) {
+                check(this.__proto__.lookup, arguments, {
+                    name: Str, range: EffectRange
+                })
+                let result = find(map_lazy(
+                    this.upward_iterator(),
+                    (scope, index) => ({
+                        layer: index,
+                        object: scope.has(name)? scope.get(name): null
+                    })
+                ), x => x.object != null)
+                if (result != NotFound) {
+                    if (result.layer > 0 && range == 'local') {
+                        return ImRef(result.object)
+                    } else {
+                        return result.object
+                    }
+                } else {
+                    ErrorProducer(ObjectNotFound, 'Scope::Lookup').throw(
+                        `there is no object named '${name}'`
+                    )
+                }
             }
         })
     }

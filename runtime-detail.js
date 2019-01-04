@@ -13,6 +13,7 @@ class KeyError extends RuntimeError {}
 class IndexError extends RuntimeError {}
 class NameConflict extends RuntimeError {}
 class ForbiddenCall extends RuntimeError {}
+class ObjectNotFound extends RuntimeError {}
 
 
 function ErrorProducer (err_class, f_name) {
