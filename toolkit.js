@@ -356,19 +356,31 @@ function join_lines (...lines) {
 }
 
 
+function* filter_lazy (iterable, f) {
+    check(filter_lazy, arguments, {
+        iterable: Iterable,
+        f: Function
+    })
+    let index = 0
+    let count = 0
+    for ( let element of iterable ) {
+        if ( f(element, index, count) ) {
+            yield element
+            count++
+        }
+        index++
+    }
+}
+
+
 function filter (to_be_filtered, f) {
-    check(filter, arguments, { to_be_filtered: Object })
+    check(filter, arguments, {
+        to_be_filtered: Object,
+        f: Function
+    })
     if (to_be_filtered.is(Iterable)) {
         let iterable = to_be_filtered
-        let result = []
-        let index = 0
-        for ( let element of iterable ) {
-            if ( f(element, index) ) {
-                result.push(element)
-            }
-            index++
-        }
-        return result
+        return list(filter_lazy(iterable, f))
     } else {
         let hash = to_be_filtered
         let result = {}
@@ -494,13 +506,16 @@ function* lookahead (iterable, empty_value) {
     let it = iterable[Symbol.iterator]()
     let current = it.next()
     let next = it.next()
+    let third = it.next()
     while ( !current.done ) {
         yield {
             current: current.value,
-            next: next.done? empty_value: next.value
+            next: next.done? empty_value: next.value,
+            third: third.done? empty_value: third.value
         }
         current = next
-        next = it.next()
+        next = third
+        third = it.next()
     }
 }
 
@@ -509,6 +524,11 @@ Object.prototype.transform_by = function (f) { return f(this) }
 Object.prototype.has = function (prop) { return this.hasOwnProperty(prop) }
 Object.prototype.has_ = Object.prototype.has
 Array.prototype.has = function (index) { return typeof this[index] != 'undefined' }
+Array.prototype.added = function (element) {
+    let r = list(this)
+    r.push(element)
+    return r
+}
 Object.prototype.has_no = function (prop) { return !this.has(prop) }
 Array.prototype.has_no = function (index) { return !this.has(index) }
 String.prototype.realCharAt = function (index) {

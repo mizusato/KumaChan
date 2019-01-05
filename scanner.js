@@ -119,6 +119,29 @@ function Pattern (category, name, units) {
 SetMakerConcept(Pattern)
 
 
+const Token = name => Struct({
+    matched: Struct({
+        name: $1(name)
+    })
+})
+
+
+pour(Token, {
+    Null: $(x => x === Token.Null),
+    Valid: Struct({
+        position: Struct({ row: Num, col: Num }),
+        matched: Struct({
+            category: Str,
+            name: Str,
+            string: Str
+        })
+    })
+})
+
+
+SetEquivalent(Token, $u(Token.Null, Token.Valid))
+
+
 function Matcher (patterns) {
     return {
         match: function (iterator) {

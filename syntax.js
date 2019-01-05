@@ -92,7 +92,7 @@ const Tokens = [
     Pattern.InfixOperator('Plus', '+'),
     Pattern.CompactOperator('Times', '*'),
     Pattern.InfixOperator('Over', '/'),
-    Pattern.PrefixOperator('Parameter', '%'),
+    //Pattern.PrefixOperator('Parameter', '%'),  // ugly, use dot
     Pattern.InfixOperator('Modulo', '%'),
     Pattern.CompactOperator('Power', '^'),
     Pattern.InfixOperator('Assign', '='),
@@ -125,3 +125,46 @@ const Tokens = [
         Unit($n(Char.NotSpace, $_(Char.CompactOperator)), '*')
     ])
 ]
+
+
+const Syntax = {
+    Program: {
+        derivations: [ [ 'Simple' ] ]
+    },
+    Simple: {
+        derivations: [ [ 'Identifier', 'SimpleNext' ] ]
+    },
+    SimpleNext: {
+        derivations: [
+            [ 'Plus', 'Identifier', 'SimpleNext' ],
+            [ 'Times', 'Identifier', 'SimpleNext' ],
+            []
+        ]
+    },
+    /*
+    {
+        name: 'Simple',
+        reducers: [
+            {
+                condition: iterator => true,
+                operation: iterator => tokens
+            }
+        ]
+    },
+    */
+    /*
+    {
+        name: 'Argument',
+        derviations: [
+            [ '(', 'Simple', 'NextArg', ')' ]
+        ]
+    },
+    {
+        name: 'NextArg',
+        derivations: [
+            [ ',', 'Simple', 'NextArg' ],
+            []
+        ]
+    }
+    */
+}
