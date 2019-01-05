@@ -56,24 +56,23 @@ function build_tree (syntax, root, tokens) {
     function match_part (part, pos) {
         let SyntaxPart = $(part => syntax.has(part))
         let TokenPart = $(part => true)
-        console.log(part)
-        console.log(pos)
-        return (pos < tokens.length)? transform(part, [
+        let token = (pos < tokens.length)? tokens[pos]: ''
+        return transform(part, [
             { when_it_is: SyntaxPart,
               use: part => match_item(syntax[part], pos) },
             { when_it_is: TokenPart,
-              use: part => (tokens[pos].is(Token(part)) && {
+              use: part => (token.is(Token(part)) && {
                   ok: true,
                   amount: 1,
-                  children: tokens[pos]
+                  children: token
               } || { ok: false }) }
-        ]): { ok: false }
+        ])
     }
     function match_derivation (derivation, pos) {
         let initial = { amount: 0, children: [], ok: true }
         return fold(derivation, initial, function (part, state) {
-            console.log(state)
-            let { amount, children } = state
+            let { ok, amount, children } = state
+            if ( !ok ) { return state }
             let p = pos + amount
             let match = match_part(part, p)
             return {
@@ -129,7 +128,7 @@ function parse_simple (iterator) {
 
 /**
 
-列表 -> 去重 ->  { .每個元素.数值*3 }
+列表 >> 去重 ->  { .每個元素.数值*3 }
 数值 >> 平方 >> 開立方 >> { f(.x) + g(.x) }
 
 数值 >> { __ + 1 } >> { __ * 5 }
