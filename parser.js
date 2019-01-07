@@ -3,13 +3,20 @@ function get_tokens (string) {
     let raw = CodeScanner(string).match(Matcher(Tokens))
     return raw.transform_by(chain(
         x => map_lazy(x, t => assert(t.is(Token.Valid)) && t),
+        x => remove_comment(x),
         x => remove_space(x),
         x => add_call_operator(x),
         x => add_get_operator(x),
         x => remove_linefeed(x),
+        x => eliminate_ambiguity(x),
         x => map_lazy(x, t => assert(t.is(Token.Valid)) && t),
         x => list(x)
     ))
+}
+
+
+function remove_comment (tokens) {
+    return filter_lazy(tokens, token => token.matched.name != 'Comment')
 }
 
 
@@ -25,36 +32,51 @@ function remove_linefeed (tokens) {
 
 function add_call_operator (tokens) {
     return insert(tokens, Token.Null, function (token, next) {
-        let this_is_id = token.is(Token('Identifier'))
+        let this_is_id = token.is(Token('Name'))
         let this_is_rp = token.is(Token(')'))
         let next_is_lp = next.is(Token('('))
         let need_insert = (this_is_id || this_is_rp) && next_is_lp
-        return need_insert? {
-            position: token.position,
-            matched: {
-                category: 'Operator',
-                name: 'Call',
-                string: '@'
-            }
-        }: Nothing
+        return (
+            need_insert?
+            Token.create_from(token, 'Operator', 'Call', '@'): Nothing
+        )
     })
 }
 
 
 function add_get_operator (tokens) {
     return insert(tokens, Token.Null, function (token, next) {
-        let this_is_id = token.is(Token('Identifier'))
+        let this_is_id = token.is(Token('Name'))
         let next_is_lb = next.is(Token('['))
         let need_insert = (this_is_id && next_is_lb)
-        return need_insert? {
-            position: token.position,
-            matched: {
-                category: 'Operator',
-                name: 'Get',
-                string: '#'
-            }
-        }: Nothing
+        return (
+            need_insert?
+            Token.create_from(token, 'Operator', 'Get', '#'): Nothing
+        )
     })
+}
+
+
+function eliminate_ambiguity (tokens) {
+    function transform (item) {
+        let { left, current, right } = item
+        let token = current
+        let mapper = {
+            '.': function () {
+                let left_is_id = left.is(Token('Name'))
+                let name = left_is_id? 'Access': 'Parameter'
+                return Token.create_from(token, 'Operator', name)
+            },
+            Name: function () {
+                let left_is_dot = left.is(Token('.'))
+                let name = left_is_dot? 'Member': 'Identifier'
+                return Token.create_from(token, 'Name', name)
+            }
+        }
+        let name = token.matched.name
+        return mapper.has(name)? mapper[name](): token
+    }
+    return map_lazy(lookaside(tokens, Token.Null), transform)
 }
 
 
@@ -83,11 +105,12 @@ function build_tree (syntax, root, tokens) {
         let token = (pos < tokens.length)? tokens[pos]: ''
         return transform(part, [
             { when_it_is: SyntaxPart,
-              use: part => match_item(syntax[part], pos) },
+              use: part => match_item(part, pos) },
             { when_it_is: TokenPart,
               use: part => (token.is(Token(part)) && {
                   ok: true,
                   amount: 1,
+                  name: part,
                   children: token
               } || { ok: false }) }
         ])
@@ -101,7 +124,7 @@ function build_tree (syntax, root, tokens) {
                 let match = match_part(part, p)
                 let proceed = match.ok? match.amount: 0
                 let new_child = match.ok? {
-                    name: part,
+                    name: match.name,
                     children: match.children
                 }: Nothing
                 return {
@@ -109,12 +132,13 @@ function build_tree (syntax, root, tokens) {
                     amount: amount + proceed,
                     children: children.added(new_child)
                 }
-            })(): state
+            })(): Break
         })
     }
-    function match_item (item, pos) {
+    function match_item (item_name, pos) {
         let ReduceItem = $(x => x.has('reducers'))
         let DeriveItem = $(x => x.has('derivations'))
+        let item = syntax[item_name]
         let iterator = iterator_at(pos)
         let matches = transform(item, [
             { when_it_is: ReduceItem, use: item => (
@@ -123,27 +147,38 @@ function build_tree (syntax, root, tokens) {
                 map_lazy(item.derivations, d => match_derivation(d, pos))) }
         ])
         let match = find(matches, match => match.ok)
-        return (match != NotFound)? match: { ok: false }
+        match = (match != NotFound)? match: { ok: false }
+        match.name = item_name
+        return match
     }
-    let match = match_item(syntax[root], 0)
+    let match = match_item(root, 0)
     let finish = (match.amount == tokens.length)
-    let tree = finish? match: { ok: false, amount: 0, children: [] } 
-    tree.name = root
+    let tree = finish? match: { ok: false, amount: 0, name: root, children: [] }
     assert(tree.is(SyntaxTreeRoot))
     return tree
 }
 
 
 function parse_simple (iterator) {
-    let input = lookahead(iterator())
+    let initial = { output: [], operators: [] }
+    let final = fold(iterator(), initial, function (token, state) {
+        let output = state.output
+        let operators = state.operators
+
+        
+    })
+    /*
+    let input = lookahead(iterator(), Token.Null)
     let output = []
     let operators = []    
     let item = input.next()
     while (!item.done) {
-        let token = item.current.value
+        let token = item.value.current
+        let next = item.value.next
         
         item = input.next()
     }
+    */
 }
 
 
@@ -171,7 +206,7 @@ f(x, y) >> { g(u, v, __) }
 函数(甲, 乙) >> { 函数(丙, 丁, __) }
 
 Expression:
-    Identifier
+    Name
     Literal String
     Number
     Calculation Operator

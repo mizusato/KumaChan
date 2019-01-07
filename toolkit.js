@@ -82,6 +82,7 @@ const SetMakerConcept = (maker) => maker.contains = (x => x.maker === maker)
 const NumStr = $n(Str, $(x => !Number.isNaN(parseInt(x))) )
 const Regex = regex => $n( Str, $(s => s.match(regex)) )
 
+const Break = { contains: x => x === this }  // for fold()
 const NotFound = { contains: x => x === this }  // for find()
 const Nothing = { contains: x => x === this }  // for insert() and added()
 const Iterable = $(
@@ -417,8 +418,13 @@ function fold (iterable, initial, f) {
     var value = initial
     var index = 0
     for ( let element of iterable ) {
-        value = f(element, value, index)
-        index++
+        let new_value = f(element, value, index)
+        if (new_value != Break) {
+            value = new_value
+            index++
+        } else {
+            break
+        }
     }
     return value
 }
@@ -518,6 +524,25 @@ function* lookahead (iterable, empty_value) {
         current = next
         next = third
         third = it.next()
+    }
+}
+
+
+function* lookaside (iterable, empty_value) {
+    assert(iterable.is(Iterable))
+    let it = iterable[Symbol.iterator]()
+    let left = { value: empty_value, done: false }
+    let current = it.next()
+    let right = it.next()
+    while ( !current.done ) {
+        yield {
+            left: left.value,
+            current: current.value,
+            right: right.done? empty_value: right.value
+        }
+        left = current
+        current = right
+        right = it.next()
     }
 }
 

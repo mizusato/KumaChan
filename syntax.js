@@ -120,11 +120,57 @@ const Tokens = [
     Pattern('Number', 'Integer', [
         Unit(Char.Digit, '+')
     ]),
-    Pattern('Identifier', 'Identifier', [
+    Pattern('Name', 'Name', [
         Unit(Char.NotDigit),
         Unit($n(Char.NotSpace, $_(Char.CompactOperator)), '*')
     ])
 ]
+
+
+const SimpleOperandInfo = {
+    Exponent: { type: 'float' },
+    Float: { type: 'float' },
+    Integer: { type: 'integer' },
+    Identifier: { type: 'identifier' },
+    Member: { type: 'member' },
+    RawString: { type: 'string-raw' },
+    FormatString: { type: 'string-format' },
+    // argument list (...) is also an oprand
+    argument: { type: 'argument' },
+    // key of get operation [...] is also an oprand
+    key: { type: 'key' }
+}
+
+
+const SimpleOperatorInfo = {
+    '(': { type: 'parentheses', which: 'left' },
+    ')': { type: 'parentheses', which: 'right' },
+    '[': { type: 'parentheses', which: 'left' },
+    ']': { type: 'parentheses', which: 'right' },
+    Parameter: { type: 'prefix' },
+    Access: { type: 'infix', priority: 99, assoc: 'left' },
+    Call: { type: 'infix', priority: 95, assoc: 'left' },
+    Get: { type: 'infix', priority: 95, assoc: 'left' },
+    Plus: { type: 'infix', priority: 50, assoc: 'left' },
+    Negative: { type: 'prefix' },
+    Minus: { type: 'infix', priority: 50, assoc: 'left' },
+    Times: { type: 'infix', priority: 80, assoc: 'left' },
+    Over: { type: 'infix', priority: 70, assoc: 'left' },
+    Modulo: { type: 'infix', priority: 75, assoc: 'left' },
+    Power: { type: 'infix', priority: 85, assoc: 'right' },
+    Equal: { type: 'infix', priority: 30, assoc: 'left' },
+    NotEqual: { type: 'infix', priority: 20, assoc: 'left' },
+    GreaterThan: { type: 'infix', priority: 20, assoc: 'left' },
+    GreaterThanOrEqual: { type: 'infix', priority: 20, assoc: 'left' },
+    LessThan: { type: 'infix', priority: 20, assoc: 'left' },
+    LessThanOrEqual: { type: 'infix', priority: 20, assoc: 'left' },
+    Not: { type: 'prefix' },
+    And: { type: 'infix', priority: 40, assoc: 'left' },
+    Or: { type: 'infix', priority: 30, assoc: 'left' },
+    Complement: { type: 'prefix' },
+    Intersect: { type: 'infix', priority: 40, assoc: 'left' },
+    Union: { type: 'infix', priority: 30, assoc: 'left' }
+}
 
 
 const Syntax = {
@@ -139,6 +185,11 @@ const Syntax = {
             [ 'Plus', 'Identifier', 'SimpleNext' ],
             [ 'Times', 'Identifier', 'SimpleNext' ],
             []
+        ]
+    },
+    ArgumentList: {
+        reducers: [
+            tokens => {}
         ]
     },
     /*

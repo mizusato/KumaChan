@@ -138,7 +138,27 @@ pour(Token, {
             name: Str,
             string: Str
         })
-    })
+    }),
+    Operator: $n(
+        $(x => x.is(Token.Valid)),
+        $(t => t.matched.category == 'Operator')
+    ),
+    create_from: function (token, category, name, string) {
+        check(Token.create_from, arguments, {
+            token: Token.Valid,
+            category: Str,
+            name: Str,
+            string: Optional(Str)
+        })
+        return {
+            position: token.position,
+            matched: {
+                category: category,
+                name: name,
+                string: string || token.matched.string
+            }
+        }
+    }
 })
 
 
