@@ -73,7 +73,7 @@ const Int = $n( Num, $(x => Number.isInteger(x)) )
 const UnsignedInt = $n( Int, $(x => x >= 0) )
 const Str = $(x => typeof x == 'string')
 const Bool = $(x => typeof x == 'boolean')
-const Hash = $(x => x instanceof Object)
+const Hash = $(x => x instanceof Object && !(x instanceof Array))
 const Optional = concept => $u(NoValue, concept)
 const SetEquivalent = (target, concept) => target.contains = concept.contains
 const MadeBy = (maker) => $(x => x.maker === maker)
@@ -83,6 +83,7 @@ const NumStr = $n(Str, $(x => !Number.isNaN(parseInt(x))) )
 const Regex = regex => $n( Str, $(s => s.match(regex)) )
 
 const NotFound = { contains: x => x === this }  // for find()
+const Nothing = { contains: x => x === this }  // for insert() and added()
 const Iterable = $(
     x => typeof x != 'undefined' && typeof x[Symbol.iterator] == 'function'
 )
@@ -503,6 +504,7 @@ function find (container, f) {
 
 
 function* lookahead (iterable, empty_value) {
+    assert(iterable.is(Iterable))
     let it = iterable[Symbol.iterator]()
     let current = it.next()
     let next = it.next()
@@ -520,13 +522,28 @@ function* lookahead (iterable, empty_value) {
 }
 
 
+function* insert (iterable, empty_value, f) {
+    assert(iterable.is(Iterable))
+    assert(f.is(Function))
+    for( let look of lookahead(iterable, empty_value)) {
+        yield look.current
+        let add = f(look.current, look.next)
+        if (add != Nothing) {
+            yield add
+        }
+    }
+}
+
+
 Object.prototype.transform_by = function (f) { return f(this) }
 Object.prototype.has = function (prop) { return this.hasOwnProperty(prop) }
 Object.prototype.has_ = Object.prototype.has
 Array.prototype.has = function (index) { return typeof this[index] != 'undefined' }
 Array.prototype.added = function (element) {
     let r = list(this)
-    r.push(element)
+    if (element != Nothing) {
+        r.push(element)
+    }
     return r
 }
 Object.prototype.has_no = function (prop) { return !this.has(prop) }

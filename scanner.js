@@ -129,7 +129,10 @@ const Token = name => Struct({
 pour(Token, {
     Null: $(x => x === Token.Null),
     Valid: Struct({
-        position: Struct({ row: Num, col: Num }),
+        position: Struct({
+            row: Int,
+            col: Int
+        }),
         matched: Struct({
             category: Str,
             name: Str,

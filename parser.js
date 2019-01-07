@@ -5,6 +5,7 @@ function get_tokens (string) {
         x => map_lazy(x, t => assert(t.is(Token.Valid)) && t),
         x => remove_space(x),
         x => add_call_operator(x),
+        x => add_get_operator(x),
         x => remove_linefeed(x),
         x => map_lazy(x, t => assert(t.is(Token.Valid)) && t),
         x => list(x)
@@ -22,27 +23,50 @@ function remove_linefeed (tokens) {
 }
 
 
-function* add_call_operator (tokens) {
-    for ( let look of lookahead(tokens, Token.Null) ) {
-        let token = look.current
-        yield token
-        /* check if there should be a call operator */
-        let next = look.next
+function add_call_operator (tokens) {
+    return insert(tokens, Token.Null, function (token, next) {
         let this_is_id = token.is(Token('Identifier'))
         let this_is_rp = token.is(Token(')'))
         let next_is_lp = next.is(Token('('))
-        if ( (this_is_id || this_is_rp) && next_is_lp ) {
-            yield {
-                position: token.position,
-                matched: {
-                    category: 'Operator',
-                    name: 'Call',
-                    string: '@'
-                }
+        let need_insert = (this_is_id || this_is_rp) && next_is_lp
+        return need_insert? {
+            position: token.position,
+            matched: {
+                category: 'Operator',
+                name: 'Call',
+                string: '@'
             }
-        }
-    }
+        }: Nothing
+    })
 }
+
+
+function add_get_operator (tokens) {
+    return insert(tokens, Token.Null, function (token, next) {
+        let this_is_id = token.is(Token('Identifier'))
+        let next_is_lb = next.is(Token('['))
+        let need_insert = (this_is_id && next_is_lb)
+        return need_insert? {
+            position: token.position,
+            matched: {
+                category: 'Operator',
+                name: 'Get',
+                string: '#'
+            }
+        }: Nothing
+    })
+}
+
+
+const EmptySyntaxTree = Struct({ ok: $1(false) })
+const SyntaxTreeNode = $u(EmptySyntaxTree, Struct({
+    name: Str,
+    children: $u(Token.Valid, ArrayOf($(x => x.is(SyntaxTreeNode))))
+}))
+const SyntaxTreeRoot = $n(SyntaxTreeNode, Struct({
+    ok: Bool,
+    amount: Int
+}))
 
 
 function build_tree (syntax, root, tokens) {
@@ -72,44 +96,41 @@ function build_tree (syntax, root, tokens) {
         let initial = { amount: 0, children: [], ok: true }
         return fold(derivation, initial, function (part, state) {
             let { ok, amount, children } = state
-            if ( !ok ) { return state }
-            let p = pos + amount
-            let match = match_part(part, p)
-            return {
-                ok: match.ok,
-                amount: (match.ok?
-                    amount + match.amount:
-                    amount
-                ),
-                children: (match.ok?
-                    children.added(match.children):
-                    children
-                )
-            }
+            return ok? (function () {
+                let p = pos + amount
+                let match = match_part(part, p)
+                let proceed = match.ok? match.amount: 0
+                let new_child = match.ok? {
+                    name: part,
+                    children: match.children
+                }: Nothing
+                return {
+                    ok: match.ok,
+                    amount: amount + proceed,
+                    children: children.added(new_child)
+                }
+            })(): state
         })
     }
     function match_item (item, pos) {
         let ReduceItem = $(x => x.has('reducers'))
         let DeriveItem = $(x => x.has('derivations'))
         let iterator = iterator_at(pos)
-        return transform(item, [
-            { when_it_is: ReduceItem, use: function (item) {
-                let f = find(map_lazy(item.reducers, reducer => ({
-                    ok: reducer.condition(iterator),
-                    operation: reducer.operation
-                })), x => x.ok)
-                return (f != NotFound)? f(iterator): { ok: false }
-            } },
-            { when_it_is: DeriveItem, use: function (item) {
-                let match = find(map_lazy(item.derivations,
-                    d => match_derivation(d, pos)
-                ), match => match.ok)
-                return (match != NotFound)? match: { ok: false }
-            } }
+        let matches = transform(item, [
+            { when_it_is: ReduceItem, use: item => (
+                map_lazy(item.reducers, reducer => reducer(iterator))) },
+            { when_it_is: DeriveItem, use: item => (
+                map_lazy(item.derivations, d => match_derivation(d, pos))) }
         ])
+        let match = find(matches, match => match.ok)
+        return (match != NotFound)? match: { ok: false }
     }
     let match = match_item(syntax[root], 0)
-    return (match.amount == tokens.length)? match: { ok: false }
+    let finish = (match.amount == tokens.length)
+    let tree = finish? match: { ok: false, amount: 0, children: [] } 
+    tree.name = root
+    assert(tree.is(SyntaxTreeRoot))
+    return tree
 }
 
 
