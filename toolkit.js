@@ -571,6 +571,13 @@ Array.prototype.added = function (element) {
     }
     return r
 }
+Array.prototype.added_front = function (element) {
+    if (element != Nothing) {
+        return list(cat([element], this))
+    } else {
+        return list(this)
+    }
+}
 Object.prototype.has_no = function (prop) { return !this.has(prop) }
 Array.prototype.has_no = function (index) { return !this.has(index) }
 String.prototype.realCharAt = function (index) {

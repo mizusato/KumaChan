@@ -1,3 +1,25 @@
+class ParserError extends Error {
+    assert (condition) {
+        this.if(!condition)
+    }
+    if (condition) {
+        if (condition) { this.throw() }
+    }
+    throw () {
+        throw this
+    }
+}
+
+
+function parser_error (token, info) {
+    check(parser_error, arguments, { token: Token.Valid, info: Str })
+    let p = token.position
+    return new ParserError(
+        `row ${p.row}, column ${p.col}: ${info}`
+    )
+}
+
+
 function get_tokens (string) {
     check(get_tokens, arguments, { string: Str })
     let raw = CodeScanner(string).match(Matcher(Tokens))
@@ -91,14 +113,7 @@ const SyntaxTreeRoot = $n(SyntaxTreeNode, Struct({
 }))
 
 
-function build_tree (syntax, root, tokens) {
-    function iterator_at (pos) {
-        return function* iterator () {
-            for (let i=pos; i<tokens.length; i++) {
-                yield tokens[i]
-            }
-        }
-    }
+function build_tree (syntax, root, tokens, pos = 0) {
     function match_part (part, pos) {
         let SyntaxPart = $(part => syntax.has(part))
         let TokenPart = $(part => true)
@@ -139,10 +154,9 @@ function build_tree (syntax, root, tokens) {
         let ReduceItem = $(x => x.has('reducers'))
         let DeriveItem = $(x => x.has('derivations'))
         let item = syntax[item_name]
-        let iterator = iterator_at(pos)
         let matches = transform(item, [
             { when_it_is: ReduceItem, use: item => (
-                map_lazy(item.reducers, reducer => reducer(iterator))) },
+                map_lazy(item.reducers, r => (r())(syntax, tokens, pos))) },
             { when_it_is: DeriveItem, use: item => (
                 map_lazy(item.derivations, d => match_derivation(d, pos))) }
         ])
@@ -151,7 +165,7 @@ function build_tree (syntax, root, tokens) {
         match.name = item_name
         return match
     }
-    let match = match_item(root, 0)
+    let match = match_item(root, pos)
     let finish = (match.amount == tokens.length)
     let tree = finish? match: { ok: false, amount: 0, name: root, children: [] }
     assert(tree.is(SyntaxTreeRoot))
@@ -159,26 +173,99 @@ function build_tree (syntax, root, tokens) {
 }
 
 
-function parse_simple (iterator) {
+function parse_simple (syntax, tokens, pos) {
+    function* converge () {
+        let offset = 0
+        while (pos+offset < tokens.length) {
+            let p = pos + offset
+            let token = tokens[p]
+            let left = (p-1 >= 0)? tokens[p-1]: { name: null }
+            let name = token.matched.name
+            let left_name = left.matched.name
+            let is_args = (name == '(' && left_name == 'Call')
+            let is_key = (name == '[' && left_name == 'Get')
+            if ( is_args || is_key ) {
+                let type = is_args? 'args': 'key'
+                let syntax_item = (
+                    { arg: 'Arguments', key: 'Key' }
+                )[type]
+                let err_msg = (
+                    { arg: 'bad argument list', key: 'bad key' }
+                )[type]
+                let match = build_tree(syntax, syntax_item, tokens, p)
+                let err = parser_error(token, err_msg)
+                err.assert(match.ok)
+                yield { type: 'tree', value: match }
+                offset += match.amount
+            } else {
+                yield { type: 'token', value: token }
+                offset += 1
+            }
+        }
+    }
     let initial = { output: [], operators: [] }
-    let final = fold(iterator(), initial, function (token, state) {
+    fold(converge(), initial, function (element, state) {
+        let info = (operator => SimpleOperator[operator.matched.name])
         let output = state.output
         let operators = state.operators
-
-        
+        let empty = () => (operators.length == 0)
+        let top = () => (
+            assert(operators.length > 0)
+            && operators[operators.length-1]
+        )
+        let add_to_output = (operand => ({
+            output: output.added(operand),
+            operators: operators
+        }))
+        let push = (operator => ({
+            output: output,
+            operators: operators.added(operator)
+        }))
+        let pop = () => pop_and_push(Nothing)
+        let pop_and_push = function (new_operator) {
+            let err = parser_error(by_operator, 'missing operand')
+            let operator = top()
+            let type = info(operator).type
+            let count = ({ prefix: 1, infix: 2 })[type]
+            let check = err.assert(output.length >= count)
+            let take_out = output.slice(output.length-count, output.length)
+            let remaining = output.slice(0, output.length-count)
+            let poped = operators.slice(0, operators.length-1)
+            let reduced = {
+                name: 'ExprUnit',
+                children: take_out.added_front(operator)
+            }
+            return {
+                output: remaining.added(reduced),
+                operators: poped.added(new_operator)
+            }
+        }
+        let put_operator = function (operator) {
+            return (empty())? push(operator): (function() {
+                let input = operator
+                let stack = top()
+                let input_info = info(input)
+                let stack_info = info(stack)
+                let assoc = input_info.assoc
+                let should_pop = ({
+                    left: input_info.priority <= stack_info.priority,
+                    right: input_info.priority < stack_info.priority
+                })[assoc]
+                return should_pop? pop_and_push(input): push(input)
+            })()
+        }
+        let panic = token => parser_error(token, 'bad operator').throw()
+        let TreeElement = $(x => x.type == 'tree')
+        let TokenElement = $(x => x.type == 'token')
+        return transform(element, [
+            { when_it_is: TreeElement, use: add_to_output },
+            { when_it_is: TokenElement, use: token => transform(token, [
+                { when_it_is: SimpleOperand, use: add_to_output },
+                { when_it_is: SimpleOperator, use: put_operator },
+                { when_it_is: Otherwise, use: panic }
+            ]) }
+        ])
     })
-    /*
-    let input = lookahead(iterator(), Token.Null)
-    let output = []
-    let operators = []    
-    let item = input.next()
-    while (!item.done) {
-        let token = item.value.current
-        let next = item.value.next
-        
-        item = input.next()
-    }
-    */
 }
 
 

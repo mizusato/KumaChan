@@ -98,10 +98,10 @@ const Tokens = [
     Pattern.InfixOperator('Assign', '='),
     Pattern.InfixOperator('Equal', '=='),
     Pattern.InfixOperator('NotEqual', '!='),
-    Pattern.InfixOperator('LessThan', '<'),
-    Pattern.InfixOperator('GreaterThan', '>'),
-    Pattern.InfixOperator('LessThanOrEqual', '<='),
-    Pattern.InfixOperator('GreaterThanOrEqual', '>='),
+    Pattern.InfixOperator('Less', '<'),
+    Pattern.InfixOperator('Greater', '>'),
+    Pattern.InfixOperator('LessEqual', '<='),
+    Pattern.InfixOperator('GreaterEqual', '>='),
     Pattern.InfixOperator('PushLeft', '<<'),
     Pattern.InfixOperator('PushRight', '>>'),
     Pattern('Number', 'Exponent', [
@@ -127,58 +127,98 @@ const Tokens = [
 ]
 
 
-const SimpleOperandInfo = {
-    Exponent: { type: 'float' },
-    Float: { type: 'float' },
-    Integer: { type: 'integer' },
-    Identifier: { type: 'identifier' },
-    Member: { type: 'member' },
-    RawString: { type: 'string-raw' },
-    FormatString: { type: 'string-format' },
-    // argument list (...) is also an oprand
-    argument: { type: 'argument' },
-    // key of get operation [...] is also an oprand
-    key: { type: 'key' }
+const SimpleOperand = $n(
+    Token.Valid,
+    $(token => token.matched.name.is(one_of(
+        'Exponent', 'Float', 'Integer',
+        'RawString', 'FormatString',
+        'Identifier', 'Member'
+    ))
+))
+
+
+const SimpleOperator = {
+    Parameter:    { type: 'prefix', priority: 100, assoc: 'right' },
+    Access:       { type: 'infix',  priority: 99,  assoc: 'left'  },
+    Call:         { type: 'infix',  priority: 98,  assoc: 'left'  },
+    Get:          { type: 'infix',  priority: 98,  assoc: 'left'  },
+    Plus:         { type: 'infix',  priority: 50,  assoc: 'left'  },
+    Negative:     { type: 'prefix', priority: 85,  assoc: 'right' },
+    Minus:        { type: 'infix',  priority: 50,  assoc: 'left'  },
+    Times:        { type: 'infix',  priority: 80,  assoc: 'left'  },
+    Over:         { type: 'infix',  priority: 70,  assoc: 'left'  },
+    Modulo:       { type: 'infix',  priority: 75,  assoc: 'left'  },
+    Power:        { type: 'infix',  priority: 90,  assoc: 'right' },
+    Equal:        { type: 'infix',  priority: 30,  assoc: 'left'  },
+    NotEqual:     { type: 'infix',  priority: 20,  assoc: 'left'  },
+    Greater:      { type: 'infix',  priority: 20,  assoc: 'left'  },
+    GreaterEqual: { type: 'infix',  priority: 20,  assoc: 'left'  },
+    Less:         { type: 'infix',  priority: 20,  assoc: 'left'  },
+    LessEqual:    { type: 'infix',  priority: 20,  assoc: 'left'  },
+    Not:          { type: 'prefix', priority: 85,  assoc: 'right' },
+    And:          { type: 'infix',  priority: 40,  assoc: 'left'  },
+    Or:           { type: 'infix',  priority: 30,  assoc: 'left'  },
+    Complement:   { type: 'prefix', priority: 85,  assoc: 'right' },
+    Intersect:    { type: 'infix',  priority: 40,  assoc: 'left'  },
+    Union:        { type: 'infix',  priority: 30,  assoc: 'left'  }
 }
 
 
-const SimpleOperatorInfo = {
-    '(': { type: 'parentheses', which: 'left' },
-    ')': { type: 'parentheses', which: 'right' },
-    '[': { type: 'parentheses', which: 'left' },
-    ']': { type: 'parentheses', which: 'right' },
-    Parameter: { type: 'prefix' },
-    Access: { type: 'infix', priority: 99, assoc: 'left' },
-    Call: { type: 'infix', priority: 95, assoc: 'left' },
-    Get: { type: 'infix', priority: 95, assoc: 'left' },
-    Plus: { type: 'infix', priority: 50, assoc: 'left' },
-    Negative: { type: 'prefix' },
-    Minus: { type: 'infix', priority: 50, assoc: 'left' },
-    Times: { type: 'infix', priority: 80, assoc: 'left' },
-    Over: { type: 'infix', priority: 70, assoc: 'left' },
-    Modulo: { type: 'infix', priority: 75, assoc: 'left' },
-    Power: { type: 'infix', priority: 85, assoc: 'right' },
-    Equal: { type: 'infix', priority: 30, assoc: 'left' },
-    NotEqual: { type: 'infix', priority: 20, assoc: 'left' },
-    GreaterThan: { type: 'infix', priority: 20, assoc: 'left' },
-    GreaterThanOrEqual: { type: 'infix', priority: 20, assoc: 'left' },
-    LessThan: { type: 'infix', priority: 20, assoc: 'left' },
-    LessThanOrEqual: { type: 'infix', priority: 20, assoc: 'left' },
-    Not: { type: 'prefix' },
-    And: { type: 'infix', priority: 40, assoc: 'left' },
-    Or: { type: 'infix', priority: 30, assoc: 'left' },
-    Complement: { type: 'prefix' },
-    Intersect: { type: 'infix', priority: 40, assoc: 'left' },
-    Union: { type: 'infix', priority: 30, assoc: 'left' }
-}
+SetEquivalent(SimpleOperator, $(
+    token => SimpleOperator.has(token.matched.name)
+))
 
 
 const Syntax = {
     Program: {
-        derivations: [ [ 'Simple' ] ]
+        derivations: [
+            ['Simple']
+        ]
     },
     Simple: {
-        derivations: [ [ 'Identifier', 'SimpleNext' ] ]
+        reducers: [
+            () => parse_simple
+        ]
+    },
+    Arguments: {
+        derivations: [
+            [ '(', ')' ],
+            [ '(', 'KeyArgument', 'NextKeyArgument', ')' ],
+            [ '(', 'Argument', 'NextArgument', 'NextKeyArgument', ')' ]
+        ]
+    },
+    Key: {
+        derivations: [
+            [ '[', 'Simple', ']' ]
+        ]
+    },
+    Argument: {
+        derivations: [
+            ['Simple']
+        ]
+    },
+    NextArgument: {
+        derivations: [
+            [',', 'Simple', 'NextArgument' ],
+            []
+        ]
+    },
+    KeyArgument: {
+        derivations: [
+            ['Identifier', ':', 'Simple' ]
+        ]
+    },
+    NextKeyArgument: {
+        derivations: [
+            ['Identifier', ':', 'Simple', 'NextKeyArgument'],
+            []
+        ]
+    }
+    /*
+    Simple: {
+        derivations: [
+            [ 'Identifier', 'SimpleNext' ]
+        ]
     },
     SimpleNext: {
         derivations: [
@@ -187,35 +227,5 @@ const Syntax = {
             []
         ]
     },
-    ArgumentList: {
-        reducers: [
-            tokens => {}
-        ]
-    },
-    /*
-    {
-        name: 'Simple',
-        reducers: [
-            {
-                condition: iterator => true,
-                operation: iterator => tokens
-            }
-        ]
-    },
-    */
-    /*
-    {
-        name: 'Argument',
-        derviations: [
-            [ '(', 'Simple', 'NextArg', ')' ]
-        ]
-    },
-    {
-        name: 'NextArg',
-        derivations: [
-            [ ',', 'Simple', 'NextArg' ],
-            []
-        ]
-    }
     */
 }
