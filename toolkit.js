@@ -560,6 +560,15 @@ function* insert (iterable, empty_value, f) {
 }
 
 
+function* count (n) {
+    let i = 0
+    while (i < n) {
+        yield i
+        i += 1
+    }
+}
+
+
 Object.prototype.transform_by = function (f) { return f(this) }
 Object.prototype.has = function (prop) { return this.hasOwnProperty(prop) }
 Object.prototype.has_ = Object.prototype.has

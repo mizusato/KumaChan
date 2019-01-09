@@ -133,12 +133,15 @@ function eliminate_ambiguity (tokens) {
 }
 
 
-const EmptySyntaxTree = Struct({ ok: $1(false) })
+const SyntaxTreeEmpty = Struct({
+    name: Str,
+    children: $n(Array, $(a => a.length == 0))
+})
 const SyntaxTreeLeaf = Struct({
     name: Str,
     children: Token.Valid
 })
-const SyntaxTreeNode = $u(EmptySyntaxTree, SyntaxTreeLeaf, Struct({
+const SyntaxTreeNode = $u(SyntaxTreeLeaf, Struct({
     name: Str,
     children: ArrayOf( $u(SyntaxTreeLeaf, $(x => x.is(SyntaxTreeNode))) )
 }))
@@ -146,6 +149,43 @@ const SyntaxTreeRoot = $n(SyntaxTreeNode, Struct({
     ok: Bool,
     amount: Int
 }))
+
+
+function print_tree (tree, deepth = 0, is_last = []) {
+    let indent_increment = 2
+    let repeat = function (string, n, f = (i => '')) {
+        return join(map_lazy(count(n), i => f(i) || string), '')
+    }
+    let base = repeat(' ', indent_increment)
+    let indent = repeat(base, deepth,
+        i => (
+            (is_last[i-1] || i == 0)?
+            repeat(' ', indent_increment):
+            '|'+repeat(' ', indent_increment-1)
+        )
+    )
+    let node_name = `|--> [${tree.name}]`
+    let node_children = transform(tree, [
+        { when_it_is: SyntaxTreeLeaf,
+          use: tree => (' ' + tree.children.matched.string) },
+        { when_it_is: SyntaxTreeEmpty,
+          use: tree => (' ' + '[]') },
+        { when_it_is: Otherwise,
+          use: function (tree) {
+              let last_index = tree.children.length-1
+              let subtree_str = tree.children.transform_by(chain(
+                  x => map_lazy(x, (child, index) => print_tree(
+                      child, deepth+1,
+                      is_last.added(index == last_index)
+                  )),
+                  x => join(x, LF)
+              ))
+              return (LF + subtree_str)
+          }
+        }
+    ])
+    return (indent + node_name + node_children)
+}
 
 
 function build_leaf (token) {
