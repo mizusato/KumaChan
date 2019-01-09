@@ -79,6 +79,7 @@ const Tokens = [
     Pattern.CompactOperator('}', '}'),
     Pattern.CompactOperator(',', ','),
     Pattern.CompactOperator(':', ':'),
+    Pattern.CompactOperator('..', '..'),
     Pattern.CompactOperator('.', '.'),
     Pattern.PrefixOperator('Not', '!'),
     Pattern.InfixOperator('Or', '||'),
@@ -98,12 +99,12 @@ const Tokens = [
     Pattern.InfixOperator('Assign', '='),
     Pattern.InfixOperator('Equal', '=='),
     Pattern.InfixOperator('NotEqual', '!='),
+    Pattern.InfixOperator('PushLeft', '<<'),
+    Pattern.InfixOperator('PushRight', '>>'),
     Pattern.InfixOperator('Less', '<'),
     Pattern.InfixOperator('Greater', '>'),
     Pattern.InfixOperator('LessEqual', '<='),
     Pattern.InfixOperator('GreaterEqual', '>='),
-    Pattern.InfixOperator('PushLeft', '<<'),
-    Pattern.InfixOperator('PushRight', '>>'),
     Pattern('Number', 'Exponent', [
         Unit(Char.Digit, '+'),
         Unit(Char.Dot),
@@ -138,6 +139,7 @@ const SimpleOperand = $n(
 
 
 const SimpleOperator = {
+    Sentinel:     { type: 'N/A',    priority: -1,  assoc: 'left'  },
     Parameter:    { type: 'prefix', priority: 100, assoc: 'right' },
     Access:       { type: 'infix',  priority: 99,  assoc: 'left'  },
     Call:         { type: 'infix',  priority: 98,  assoc: 'left'  },
@@ -178,6 +180,11 @@ const Syntax = {
     Simple: {
         reducers: [
             () => parse_simple
+        ]
+    },
+    WrappedSimple: {
+        derivations: [
+            [ '(', 'Simple', ')' ]
         ]
     },
     Arguments: {

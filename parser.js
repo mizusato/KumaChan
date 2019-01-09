@@ -1,22 +1,42 @@
-class ParserError extends Error {
-    assert (condition) {
-        this.if(!condition)
-    }
-    if (condition) {
-        if (condition) { this.throw() }
-    }
-    throw () {
-        throw this
-    }
-}
+class ParserError extends Error {}
 
 
-function parser_error (token, info) {
-    check(parser_error, arguments, { token: Token.Valid, info: Str })
-    let p = token.position
-    return new ParserError(
-        `row ${p.row}, column ${p.col}: ${info}`
+function parser_error (element, info) {
+    check(parser_error, arguments, {
+        element: Any, // $u(Token.Valid, SyntaxTreeNode),
+        info: Str 
+    })
+    function get_pos (tree) {
+        let Leaf = $(x => x.is(SyntaxTreeLeaf))
+        let is_leaf = tree.is(Leaf)
+        assert(is_leaf || tree.children.length > 0)
+        return (
+            (is_leaf)?
+            tree.children.position:
+            get_pos(tree.children[0])
+        )
+    }
+    let p = (
+        (element.is(Token.Valid))?
+        element.position:
+        get_pos(element)
     )
+    return {
+        err: new ParserError(
+            `row ${p.row}, column ${p.col}: ${info}`
+        ),
+        __proto__: once(parser_error, {
+            assert: function (condition) {
+                this.if(!condition)
+            },
+            if: function (condition) {
+                if (condition) { this.throw() }
+            },
+            throw: function () {
+                throw this.err
+            }
+        })
+    }
 }
 
 
@@ -38,7 +58,18 @@ function get_tokens (string) {
 
 
 function remove_comment (tokens) {
-    return filter_lazy(tokens, token => token.matched.name != 'Comment')
+    let Current = name => $(look => look.current.is(Token(name)))
+    let Left = name => $(look => look.left.is(Token(name)))
+    let InlineCommentElement = $u(
+        Current('..'),
+        $n(Left('..'), Current('Name'))
+    )
+    return tokens.transform_by(chain(
+        x => filter_lazy(x, t => t.is_not(Token('Comment'))),
+        x => lookaside(x, Token.Null),
+        x => filter(x, look => look.is_not(InlineCommentElement)),
+        x => map_lazy(x, look => look.current)
+    ))
 }
 
 
@@ -103,14 +134,24 @@ function eliminate_ambiguity (tokens) {
 
 
 const EmptySyntaxTree = Struct({ ok: $1(false) })
-const SyntaxTreeNode = $u(EmptySyntaxTree, Struct({
+const SyntaxTreeLeaf = Struct({
     name: Str,
-    children: $u(Token.Valid, ArrayOf($(x => x.is(SyntaxTreeNode))))
+    children: Token.Valid
+})
+const SyntaxTreeNode = $u(EmptySyntaxTree, SyntaxTreeLeaf, Struct({
+    name: Str,
+    children: ArrayOf( $u(SyntaxTreeLeaf, $(x => x.is(SyntaxTreeNode))) )
 }))
 const SyntaxTreeRoot = $n(SyntaxTreeNode, Struct({
     ok: Bool,
     amount: Int
 }))
+
+
+function build_leaf (token) {
+    assert(token.is(Token.Valid))
+    return { amount: 1, name: token.matched.name, children: token }
+}
 
 
 function build_tree (syntax, root, tokens, pos = 0) {
@@ -166,10 +207,8 @@ function build_tree (syntax, root, tokens, pos = 0) {
         return match
     }
     let match = match_item(root, pos)
-    let finish = (match.amount == tokens.length)
-    let tree = finish? match: { ok: false, amount: 0, name: root, children: [] }
-    assert(tree.is(SyntaxTreeRoot))
-    return tree
+    //assert(match.is(SyntaxTreeRoot))
+    return match
 }
 
 
@@ -179,97 +218,155 @@ function parse_simple (syntax, tokens, pos) {
         while (pos+offset < tokens.length) {
             let p = pos + offset
             let token = tokens[p]
-            let left = (p-1 >= 0)? tokens[p-1]: { name: null }
-            let name = token.matched.name
-            let left_name = left.matched.name
-            let is_args = (name == '(' && left_name == 'Call')
-            let is_key = (name == '[' && left_name == 'Get')
+            let left = (p-1 >= 0)? tokens[p-1]: Token.Null
+            let is_args = ( token.is(Token('(')) && left.is(Token('Call')) )
+            let is_key = ( token.is(Token('[')) && left.is(Token('Get')) )
+            let is_par = ( token.is(Token('(')) && left.is_not(Token('Call')) )
             if ( is_args || is_key ) {
                 let type = is_args? 'args': 'key'
                 let syntax_item = (
-                    { arg: 'Arguments', key: 'Key' }
+                    { args: 'Arguments', key: 'Key' }
                 )[type]
                 let err_msg = (
-                    { arg: 'bad argument list', key: 'bad key' }
+                    { args: 'bad argument list', key: 'bad key' }
                 )[type]
                 let match = build_tree(syntax, syntax_item, tokens, p)
                 let err = parser_error(token, err_msg)
                 err.assert(match.ok)
-                yield { type: 'tree', value: match }
+                yield match
+                offset += match.amount
+            } else if ( is_par ) {
+                let syntax_item = 'WrappedSimple'
+                let err_msg = 'missing )'
+                let match = build_tree(syntax, syntax_item, tokens, p)
+                let err = parser_error(token, err_msg)
+                err.assert(match.ok)
+                yield match
                 offset += match.amount
             } else {
-                yield { type: 'token', value: token }
-                offset += 1
+                let left_is_operand = left.is($u(SimpleOperand, Token(')')))
+                let this_is_operand = token.is($u(SimpleOperand, Token('(')))
+                if ( left_is_operand && this_is_operand ) {
+                    break
+                } else {
+                    yield build_leaf(token)
+                    offset += 1
+                }
             }
         }
     }
+    let sentinel = {
+        position: { row: -1, col: -1 },
+        matched: { category: 'Operator', name: 'Sentinel', string: '' }
+    }
+    let input = cat(converge(), [{ name: 'Sentinel', children: sentinel }])
     let initial = { output: [], operators: [] }
-    fold(converge(), initial, function (element, state) {
-        let info = (operator => SimpleOperator[operator.matched.name])
-        let output = state.output
+    let info = (operator => SimpleOperator[operator.matched.name])
+    function empty (state) {
         let operators = state.operators
-        let empty = () => (operators.length == 0)
-        let top = () => (
-            assert(operators.length > 0)
-            && operators[operators.length-1]
-        )
-        let add_to_output = (operand => ({
-            output: output.added(operand),
-            operators: operators
-        }))
-        let push = (operator => ({
+        return operators.length == 0
+    }
+    function top (state) {
+        let operators = state.operators
+        assert(operators.length > 0)
+        return operators[operators.length-1]
+    }
+    function pop (state) {
+        let operators = state.operators
+        let output = state.output
+        let operator = top(state)
+        let err = parser_error(operator, 'missing operand')
+        let type = info(operator).type
+        let count = ({ prefix: 1, infix: 2 })[type]
+        err.assert(output.length >= count)
+        let take_out = output.slice(output.length-count, output.length)
+        let remaining = output.slice(0, output.length-count)
+        let poped = operators.slice(0, operators.length-1)
+        let children = take_out.added_front(build_leaf(operator))
+        let reduced = {
+            name: 'SimpleUnit',
+            children: children,
+            amount: fold(children, 0, (tree, sum) => sum+tree.amount)
+        }
+        return {
+            output: remaining.added(reduced),
+            operators: poped
+        }
+    }
+    function push (state, operator) {
+        let operators = state.operators
+        let output = state.output
+        return {
             output: output,
             operators: operators.added(operator)
-        }))
-        let pop = () => pop_and_push(Nothing)
-        let pop_and_push = function (new_operator) {
-            let err = parser_error(by_operator, 'missing operand')
-            let operator = top()
-            let type = info(operator).type
-            let count = ({ prefix: 1, infix: 2 })[type]
-            let check = err.assert(output.length >= count)
-            let take_out = output.slice(output.length-count, output.length)
-            let remaining = output.slice(0, output.length-count)
-            let poped = operators.slice(0, operators.length-1)
-            let reduced = {
-                name: 'ExprUnit',
-                children: take_out.added_front(operator)
-            }
-            return {
-                output: remaining.added(reduced),
-                operators: poped.added(new_operator)
-            }
         }
-        let put_operator = function (operator) {
-            return (empty())? push(operator): (function() {
-                let input = operator
-                let stack = top()
-                let input_info = info(input)
-                let stack_info = info(stack)
-                let assoc = input_info.assoc
-                let should_pop = ({
-                    left: input_info.priority <= stack_info.priority,
-                    right: input_info.priority < stack_info.priority
-                })[assoc]
-                return should_pop? pop_and_push(input): push(input)
-            })()
+    }
+    function append (state, operand) {
+        let operators = state.operators
+        let output = state.output
+        let element = operand.is(Token)? build_leaf(operand): operand
+        return {
+            output: output.added(element),
+            operators: operators
         }
-        let panic = token => parser_error(token, 'bad operator').throw()
-        let TreeElement = $(x => x.type == 'tree')
-        let TokenElement = $(x => x.type == 'token')
-        return transform(element, [
+    }
+    function put (state, operator) {
+        let operators = state.operators
+        let output = state.output
+        return (empty(state))? push(state, operator): (function() {
+            let input = operator
+            let stack = top(state)
+            let input_info = info(input)
+            let stack_info = info(stack)
+            let assoc = input_info.assoc
+            let should_pop = ({
+                left: input_info.priority <= stack_info.priority,
+                right: input_info.priority < stack_info.priority
+            })[assoc]
+            return should_pop? put(pop(state), operator): push(state, input)
+        })()
+    }
+    let final = fold(input, initial, function (element, state) {
+        console.log(state)
+        let TreeElement = $_(SyntaxTreeLeaf)
+        let LeafElement = SyntaxTreeLeaf
+        let add_to_output = (operand => append(state, operand))
+        let put_operator = (operator => put(state, operator))
+        let terminate = (t => put(state, sentinel))
+        let should_break = (!empty(state) && top(state) == sentinel)
+        return should_break? Break: transform(element, [
             { when_it_is: TreeElement, use: add_to_output },
-            { when_it_is: TokenElement, use: token => transform(token, [
+            { when_it_is: LeafElement, use: l => transform(l.children, [
                 { when_it_is: SimpleOperand, use: add_to_output },
                 { when_it_is: SimpleOperator, use: put_operator },
-                { when_it_is: Otherwise, use: panic }
+                { when_it_is: Otherwise, use: terminate }
             ]) }
         ])
     })
+    let top_of = stack => (stack.length > 0)? stack[stack.length-1]: null
+    let operators_top = top_of(final.operators)
+    let output_top = top_of(final.output)
+    let operator_err = parser_error(operators_top, 'missing operand')
+    let output_err = parser_error(output_top, 'missing operator')
+    operator_err.if(final.operators.length > 1)
+    output_err.if(final.output.length > 1)
+    return (output_top != null)? {
+        ok: true,
+        amount: output_top.amount,
+        name: 'Simple',
+        children: [output_top]
+    }: { ok: false }
 }
 
 
 /**
+
+f(x, y, z) + 1 let
+
+let 是否需要做什么 = ..如果 x => {
+    ..属於 A: ..取決於 a == b, ..是否成立
+    ..属於 B: ..取決於 c < d   ..是否成立
+}
 
 列表 >> 去重 ->  { .每個元素.数值*3 }
 数值 >> 平方 >> 開立方 >> { f(.x) + g(.x) }
@@ -284,7 +381,7 @@ local 模長 (向量 v) {
     return [v.x, v.y] -> { __^2 } >> sum >> sqrt
 }
 
-列表 -> { create({ tag: 'div', text: .元素.內容 }) }
+列表 -> { tag: 'div', text: .元素.內容 } >> create
 
 9 >> { __*3 }
 
