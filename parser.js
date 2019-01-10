@@ -6,130 +6,122 @@ function parser_error (element, info) {
         element: Any, // $u(Token.Valid, SyntaxTreeNode),
         info: Str 
     })
-    function get_pos (tree) {
-        let Leaf = $(x => x.is(SyntaxTreeLeaf))
-        let is_leaf = tree.is(Leaf)
-        assert(is_leaf || tree.children.length > 0)
-        return (
-            (is_leaf)?
-            tree.children.position:
-            get_pos(tree.children[0])
-        )
+    function get_message () {
+        function get_token (tree) {
+            assert(tree.is_not(SyntaxTreeEmpty))
+            return transform(tree, [
+                { when_it_is: SyntaxTreeLeaf, use: t => t.children },
+                { when_it_is: Otherwise, use: t => get_token(t.children[0]) } 
+            ])
+        }
+        let token = transform(element, [
+            { when_it_is: Token.Valid, use: x => x },
+            { when_it_is: Otherwise, use: x => get_token(x) }
+        ])
+        let { row, col } = token.position
+        return `row ${row}, column ${col}: ${token.matched.name}: ${info}`
     }
-    let p = (
-        (element.is(Token.Valid))?
-        element.position:
-        get_pos(element)
-    )
     return {
-        err: new ParserError(
-            `row ${p.row}, column ${p.col}: ${info}`
-        ),
-        __proto__: once(parser_error, {
-            assert: function (condition) {
-                this.if(!condition)
-            },
-            if: function (condition) {
-                if (condition) { this.throw() }
-            },
-            throw: function () {
-                throw this.err
-            }
-        })
+        assert: function (condition) {
+            this.if(!condition)
+        },
+        if: function (condition) {
+            if (condition) { this.throw() }
+        },
+        throw: function () {
+            throw ( new ParserError(get_message()) )
+        }
     }
 }
 
 
 function get_tokens (string) {
     check(get_tokens, arguments, { string: Str })
+    function assert_valid (tokens) {
+        return map_lazy(tokens, t => (assert(t.is(Token.Valid)) && t))
+    }
+    function remove_comment (tokens) {
+        /* remove ordinary comment and inline comment */
+        let Current = name => $(look => look.current.is(Token(name)))
+        let Left = name => $(look => look.left.is(Token(name)))
+        let InlineCommentElement = $u(
+            Current('..'),
+            $n(Left('..'), Current('Name'))
+        )
+        return tokens.transform_by(chain(
+            x => filter_lazy(x, t => t.is_not(Token('Comment'))),
+            x => lookaside(x, Token.Null),
+            x => filter_lazy(x, look => look.is_not(InlineCommentElement)),
+            x => map_lazy(x, look => look.current)
+        ))
+    }
+    function remove_space (tokens) {
+        /**
+         *  note: linefeed won't be removed by this function.
+         *        therefore, the effect of add_call_operator()
+         *        and add_get_operator() cannot cross lines.
+         */
+        return filter_lazy(tokens, token => token.matched.name != 'Space')
+    }
+    function add_call_operator (tokens) {
+        return insert(tokens, Token.Null, function (token, next) {
+            let this_is_id = token.is(Token('Name'))
+            let this_is_rp = token.is(Token(')'))
+            let next_is_lp = next.is(Token('('))
+            let need_insert = (this_is_id || this_is_rp) && next_is_lp
+            return (
+                need_insert?
+                Token.create_from(token, 'Operator', 'Call', '@'): Nothing
+            )
+        })
+    }
+    function add_get_operator (tokens) {
+        return insert(tokens, Token.Null, function (token, next) {
+            let this_is_id = token.is(Token('Name'))
+            let next_is_lb = next.is(Token('['))
+            let need_insert = (this_is_id && next_is_lb)
+            return (
+                need_insert?
+                Token.create_from(token, 'Operator', 'Get', '#'): Nothing
+            )
+        })
+    }
+    function remove_linefeed (tokens) {
+        return filter_lazy(tokens, token => token.matched.name != 'Linefeed')
+    }
+    function eliminate_ambiguity (tokens) {
+        function transform (item) {
+            let { left, current, right } = item
+            let token = current
+            let mapper = {
+                '.': function () {
+                    let left_is_name = left.is(Token('Name'))
+                    let name = left_is_name? 'Access': 'Parameter'
+                    return Token.create_from(token, 'Operator', name)
+                },
+                Name: function () {
+                    let left_is_dot = left.is(Token('.'))
+                    let name = left_is_dot? 'Member': 'Identifier'
+                    return Token.create_from(token, 'Name', name)
+                }
+            }
+            let name = token.matched.name
+            return mapper.has(name)? mapper[name](): token
+        }
+        return map_lazy(lookaside(tokens, Token.Null), transform)
+    }
     let raw = CodeScanner(string).match(Matcher(Tokens))
     return raw.transform_by(chain(
-        x => map_lazy(x, t => assert(t.is(Token.Valid)) && t),
-        x => remove_comment(x),
-        x => remove_space(x),
-        x => add_call_operator(x),
-        x => add_get_operator(x),
-        x => remove_linefeed(x),
-        x => eliminate_ambiguity(x),
-        x => map_lazy(x, t => assert(t.is(Token.Valid)) && t),
-        x => list(x)
+        assert_valid,
+        remove_comment,
+        remove_space,
+        add_call_operator,
+        add_get_operator,
+        remove_linefeed,
+        eliminate_ambiguity,
+        assert_valid,
+        list
     ))
-}
-
-
-function remove_comment (tokens) {
-    let Current = name => $(look => look.current.is(Token(name)))
-    let Left = name => $(look => look.left.is(Token(name)))
-    let InlineCommentElement = $u(
-        Current('..'),
-        $n(Left('..'), Current('Name'))
-    )
-    return tokens.transform_by(chain(
-        x => filter_lazy(x, t => t.is_not(Token('Comment'))),
-        x => lookaside(x, Token.Null),
-        x => filter(x, look => look.is_not(InlineCommentElement)),
-        x => map_lazy(x, look => look.current)
-    ))
-}
-
-
-function remove_space (tokens) {
-    return filter_lazy(tokens, token => token.matched.name != 'Space')
-}
-
-
-function remove_linefeed (tokens) {
-    return filter_lazy(tokens, token => token.matched.name != 'Linefeed')
-}
-
-
-function add_call_operator (tokens) {
-    return insert(tokens, Token.Null, function (token, next) {
-        let this_is_id = token.is(Token('Name'))
-        let this_is_rp = token.is(Token(')'))
-        let next_is_lp = next.is(Token('('))
-        let need_insert = (this_is_id || this_is_rp) && next_is_lp
-        return (
-            need_insert?
-            Token.create_from(token, 'Operator', 'Call', '@'): Nothing
-        )
-    })
-}
-
-
-function add_get_operator (tokens) {
-    return insert(tokens, Token.Null, function (token, next) {
-        let this_is_id = token.is(Token('Name'))
-        let next_is_lb = next.is(Token('['))
-        let need_insert = (this_is_id && next_is_lb)
-        return (
-            need_insert?
-            Token.create_from(token, 'Operator', 'Get', '#'): Nothing
-        )
-    })
-}
-
-
-function eliminate_ambiguity (tokens) {
-    function transform (item) {
-        let { left, current, right } = item
-        let token = current
-        let mapper = {
-            '.': function () {
-                let left_is_id = left.is(Token('Name'))
-                let name = left_is_id? 'Access': 'Parameter'
-                return Token.create_from(token, 'Operator', name)
-            },
-            Name: function () {
-                let left_is_dot = left.is(Token('.'))
-                let name = left_is_dot? 'Member': 'Identifier'
-                return Token.create_from(token, 'Name', name)
-            }
-        }
-        let name = token.matched.name
-        return mapper.has(name)? mapper[name](): token
-    }
-    return map_lazy(lookaside(tokens, Token.Null), transform)
 }
 
 
@@ -161,46 +153,40 @@ function print_tree (tree, deepth = 0, is_last = [true]) {
         i => (
             is_last[i]?
             repeat(' ', indent_increment):
-            '│'+repeat(' ', indent_increment-1)
+            ('│'+repeat(' ', indent_increment-1))
         )
     )
-    let node_name = `${tree.name}`
     let pointer = (
         ((is_last[deepth])? '└': '├')
         + repeat('─', indent_increment-1)
         + ((tree.children.length > 0)? '┬': '─')
         + '─'
     )
+    let node_name = `${tree.name}`
     let node_children = transform(tree, [
-        { when_it_is: SyntaxTreeEmpty,
-          use: tree => (' ' + '[]') },
-        { when_it_is: SyntaxTreeLeaf,
-          use: function (tree) {
-              let string = tree.children.matched.string
-              return (string == tree.name)?
-                     '': (': ' + tree.children.matched.string )
-          }
-        },
-        { when_it_is: Otherwise,
-          use: function (tree) {
-              let last_index = tree.children.length-1
-              let subtree_str = tree.children.transform_by(chain(
-                  x => map_lazy(x, (child, index) => print_tree(
-                      child, deepth+1,
-                      is_last.added(index == last_index)
-                  )),
-                  x => join(x, LF)
-              ))
-              return (LF + subtree_str)
-          }
-        }
+        { when_it_is: SyntaxTreeEmpty, use: t => (' ' + '[]') },
+        { when_it_is: SyntaxTreeLeaf, use: function (tree) {
+            let string = tree.children.matched.string
+            return (string == tree.name)? '': `: ${string}`
+        } },
+        { when_it_is: Otherwise, use: function (tree) {
+            let last_index = tree.children.length-1
+            let subtree_string = tree.children.transform_by(chain(
+                x => map_lazy(x, (child, index) => print_tree(
+                    child, deepth+1,
+                    is_last.added(index == last_index)
+                )),
+                x => join(x, LF)
+            ))
+            return (LF + subtree_string)
+        } }
     ])
     return (indent + pointer + node_name + node_children)
 }
 
 
 function build_leaf (token) {
-    assert(token.is(Token.Valid))
+    check(build_leaf, arguments, { token: Token.Valid })
     return { amount: 1, name: token.matched.name, children: token }
 }
 
@@ -264,6 +250,14 @@ function build_tree (syntax, root, tokens, pos = 0) {
 
 
 function parse_simple (syntax, tokens, pos) {
+    /**
+     *  parse simple experssion using shunting yard algorithm
+     *
+     *  1. invoke converge() to parse argument list and key expression
+     *  2. define operations on output & operator stack 
+     *  3. run the shunting yard algorithm
+     *  4. get final state of stacks and return result
+     */
     function* converge () {
         let offset = 0
         while (pos+offset < tokens.length) {
@@ -311,7 +305,6 @@ function parse_simple (syntax, tokens, pos) {
         matched: { category: 'Operator', name: 'Sentinel', string: '' }
     }
     let input = cat(converge(), [{ name: 'Sentinel', children: sentinel }])
-    let initial = { output: [], operators: [] }
     let info = (operator => SimpleOperator[operator.matched.name])
     function empty (state) {
         let operators = state.operators
@@ -377,6 +370,16 @@ function parse_simple (syntax, tokens, pos) {
             return should_pop? put(pop(state), operator): push(state, input)
         })()
     }
+    function get_result (state) {
+        let operators = state.operators
+        let output = state.output
+        let output_first = output[0] || null
+        let err = parser_error(output_first, 'missing operator')
+        err.if(output.length > 1)  // 1 = final result
+        assert(output.length == 1 && operators.length == 1)
+        return output_first
+    }
+    let initial = { output: [], operators: [] }
     let final = fold(input, initial, function (element, state) {
         console.log(state)
         let TreeElement = $_(SyntaxTreeLeaf)
@@ -394,63 +397,17 @@ function parse_simple (syntax, tokens, pos) {
             ]) }
         ])
     })
-    let top_of = stack => (stack.length > 0)? stack[stack.length-1]: null
-    let operators_top = top_of(final.operators)
-    let output_top = top_of(final.output)
-    let operator_err = parser_error(operators_top, 'missing operand')
-    let output_err = parser_error(output_top, 'missing operator')
-    operator_err.if(final.operators.length > 1)
-    output_err.if(final.output.length > 1)
-    return (output_top != null)? {
-        ok: true,
-        amount: output_top.amount,
-        name: 'Simple',
-        children: [output_top]
-    }: { ok: false }
+    let EmptyState = Struct({
+        output: $(x => x.length == 0),
+        operators: $(x => x.length == 1)
+    })
+    return (final.is(EmptyState))? { ok: false }: (function() {
+        let result = get_result(final)
+        return {
+            ok: true,
+            amount: result.amount,
+            name: 'Simple',
+            children: [result]
+        }
+    })()
 }
-
-
-/**
-
-f(x, y, z) + 1 let
-
-let 是否需要做什么 = ..如果 x => {
-    ..属於 A: ..取決於 a == b, ..是否成立
-    ..属於 B: ..取決於 c < d   ..是否成立
-}
-
-列表 >> 去重 ->  { .每個元素.数值*3 }
-数值 >> 平方 >> 開立方 >> { f(.x) + g(.x) }
-
-数值 >> { __ + 1 } >> { __ * 5 }
-
-local 模長 (向量 v) {
-    return [v.x, v.y] -> 平方 >> 求和 >> 開方
-}
-
-local 模長 (向量 v) {
-    return [v.x, v.y] -> { __^2 } >> sum >> sqrt
-}
-
-列表 -> { tag: 'div', text: .元素.內容 } >> create
-
-9 >> { __*3 }
-
-f(x, y) >> { g(u, v, __) }
-
-函数(甲, 乙) >> { 函数(丙, 丁, __) }
-
-Expression:
-    Name
-    Literal String
-    Number
-    Calculation Operator
-    Simple Expression
-    List
-    Hash
-    Structure Expression
-    Lambda
-    Map Operator
-    Chain Expression
-    Function
-*/

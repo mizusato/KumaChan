@@ -191,7 +191,7 @@ const Syntax = {
         derivations: [
             [ '(', ')' ],
             [ '(', 'KeyArgument', 'NextKeyArgument', ')' ],
-            [ '(', 'Argument', 'NextArgument', 'NextKeyArgument', ')' ]
+            [ '(', 'Argument', 'NextArgument', ')' ]
         ]
     },
     Key: {
@@ -217,7 +217,7 @@ const Syntax = {
     },
     NextKeyArgument: {
         derivations: [
-            ['Identifier', ':', 'Simple', 'NextKeyArgument'],
+            [',', 'Identifier', ':', 'Simple', 'NextKeyArgument'],
             []
         ]
     }
