@@ -191,7 +191,7 @@ const Syntax = mapval({
     ],
     NextCommand: ['Command NextCommand', ''],
     
-    Let: '~let Assign',
+    Let: '~let Id = Expr',
     Assign: 'LeftVal = Expr',
     LeftVal: 'Id MemberNext KeyNext',
     MemberNext: ['. Member MemberNext', ''],
@@ -235,11 +235,11 @@ const Syntax = mapval({
         '.{ Simple }'
     ],
     
-    ParaList: '( Para NextPara )',
+    ParaList: ['( )', '( Para NextPara )'],
     Para: 'Id : Concept',
     NextPara: [', Para NextPara', ''],
     Target: '-> Concept',
-    Body: 'Program',
+    Body: '{ Program }',
     
     FuncFlag: ['~g :', '~f :'],
     FuncExpr: [
@@ -251,8 +251,8 @@ const Syntax = mapval({
     
     Effect: ['~global', '~local'],
     FuncDef: [
-        'Effect Id ParaList Target Body',
-        'Effect Id ParaList Body'
+        'Effect Id : ParaList Target Body',
+        'Effect Id : ParaList -> Body'
     ],
     
     Simple: { reducers: [ () => parse_simple ] },

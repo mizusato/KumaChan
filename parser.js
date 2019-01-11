@@ -201,10 +201,10 @@ function build_tree (syntax, root, tokens, pos = 0) {
             { when_it_is: SyntaxPart, use: part => match_item(part, pos) },
             { when_it_is: KeywordPart, use: function (part) {
                 let keyword = part.slice(1, part.length)
-                let valid = token.is(Token.Valid)
+                let valid = token.is(Token('Identifier'))
                 return (valid && token.matched.string == keyword)? {
-                    ok: true, amount: keyword.length,
-                    name: part, children: token
+                    ok: true, amount: 1,
+                    name: 'Keyword', children: token
                 }: { ok: false }
             } },
             { when_it_is: TokenPart, use: function (part) {
@@ -248,6 +248,7 @@ function build_tree (syntax, root, tokens, pos = 0) {
         let match = find(matches, match => match.ok)
         match = (match != NotFound)? match: { ok: false }
         match.name = item_name
+        //console.log(pos, item_name, match.ok)
         return match
     }
     let match = match_item(root, pos)
@@ -298,7 +299,7 @@ function parse_simple (syntax, tokens, pos) {
             } else {
                 let left_is_operand = left.is($u(SimpleOperand, Token(')')))
                 let this_is_operand = token.is($u(SimpleOperand, Token('(')))
-                if ( left_is_operand && this_is_operand ) {
+                if ( left_is_operand && this_is_operand && offset > 0 ) {
                     break
                 } else {
                     yield build_leaf(token)
@@ -392,9 +393,8 @@ function parse_simple (syntax, tokens, pos) {
         let LeafElement = SyntaxTreeLeaf
         let add_to_output = (operand => append(state, operand))
         let put_operator = (operator => put(state, operator))
-        let terminate = (t => put(state, sentinel))
-        let should_break = (!empty(state) && top(state) == sentinel)
-        return should_break? Break: transform(element, [
+        let terminate = (t => BreakWith(put(state, sentinel)) )
+        return transform(element, [
             { when_it_is: TreeElement, use: add_to_output },
             { when_it_is: LeafElement, use: l => transform(l.children, [
                 { when_it_is: SimpleOperand, use: add_to_output },

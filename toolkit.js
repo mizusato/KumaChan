@@ -83,6 +83,11 @@ const NumStr = $n(Str, $(x => !Number.isNaN(parseInt(x))) )
 const Regex = regex => $n( Str, $(s => s.match(regex)) )
 
 const Break = { contains: x => x === this }  // for fold()
+function BreakWith (value) {
+    return { value: value, maker: BreakWith }
+}
+SetMakerConcept(BreakWith)
+
 const NotFound = { contains: x => x === this }  // for find()
 const Nothing = { contains: x => x === this }  // for insert() and added()
 const Iterable = $(
@@ -419,11 +424,14 @@ function fold (iterable, initial, f) {
     var index = 0
     for ( let element of iterable ) {
         let new_value = f(element, value, index)
-        if (new_value != Break) {
+        if (Break.contains(new_value)) {
+            break
+        } else if (BreakWith.contains(new_value)) {
+            value = new_value.value
+            break
+        } else {
             value = new_value
             index++
-        } else {
-            break
         }
     }
     return value
