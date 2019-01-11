@@ -194,18 +194,25 @@ function build_leaf (token) {
 function build_tree (syntax, root, tokens, pos = 0) {
     function match_part (part, pos) {
         let SyntaxPart = $(part => syntax.has(part))
-        let TokenPart = $(part => true)
-        let token = (pos < tokens.length)? tokens[pos]: ''
+        let KeywordPart = $(part => part.startsWith('~'))
+        let TokenPart = Otherwise
+        let token = (pos < tokens.length)? tokens[pos]: Token.Null
         return transform(part, [
-            { when_it_is: SyntaxPart,
-              use: part => match_item(part, pos) },
-            { when_it_is: TokenPart,
-              use: part => (token.is(Token(part)) && {
-                  ok: true,
-                  amount: 1,
-                  name: part,
-                  children: token
-              } || { ok: false }) }
+            { when_it_is: SyntaxPart, use: part => match_item(part, pos) },
+            { when_it_is: KeywordPart, use: function (part) {
+                let keyword = part.slice(1, part.length)
+                let valid = token.is(Token.Valid)
+                return (valid && token.matched.string == keyword)? {
+                    ok: true, amount: keyword.length,
+                    name: part, children: token
+                }: { ok: false }
+            } },
+            { when_it_is: TokenPart, use: function (part) {
+                return token.is(Token(part))? {
+                    ok: true, amount: 1,
+                    name: part, children: token
+                }: { ok: false }
+            } }
         ])
     }
     function match_derivation (derivation, pos) {
@@ -270,7 +277,7 @@ function parse_simple (syntax, tokens, pos) {
             if ( is_args || is_key ) {
                 let type = is_args? 'args': 'key'
                 let syntax_item = (
-                    { args: 'Arguments', key: 'Key' }
+                    { args: 'ArgList', key: 'Key' }
                 )[type]
                 let err_msg = (
                     { args: 'bad argument list', key: 'bad key' }
@@ -281,7 +288,7 @@ function parse_simple (syntax, tokens, pos) {
                 yield match
                 offset += match.amount
             } else if ( is_par ) {
-                let syntax_item = 'WrappedSimple'
+                let syntax_item = 'Wrapped'
                 let err_msg = 'missing )'
                 let match = build_tree(syntax, syntax_item, tokens, p)
                 let err = parser_error(token, err_msg)
@@ -381,7 +388,6 @@ function parse_simple (syntax, tokens, pos) {
     }
     let initial = { output: [], operators: [] }
     let final = fold(input, initial, function (element, state) {
-        console.log(state)
         let TreeElement = $_(SyntaxTreeLeaf)
         let LeafElement = SyntaxTreeLeaf
         let add_to_output = (operand => append(state, operand))

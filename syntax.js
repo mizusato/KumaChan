@@ -79,6 +79,8 @@ const Tokens = [
     Pattern.CompactOperator('}', '}'),
     Pattern.CompactOperator(',', ','),
     Pattern.CompactOperator(':', ':'),
+    Pattern.CompactOperator('.{', '.{'),
+    Pattern.CompactOperator('.[', '.['),
     Pattern.CompactOperator('..', '..'),
     Pattern.CompactOperator('.', '.'),
     Pattern.PrefixOperator('Not', '!'),
@@ -87,6 +89,8 @@ const Tokens = [
     Pattern.PrefixOperator('Complement', '~'),
     Pattern.InfixOperator('Union', '|'),
     Pattern.InfixOperator('Intersect', '&'),
+    Pattern.InfixOperator('->', '->'),
+    Pattern.InfixOperator('<-', '<-'),
     Pattern.PrefixOperator('Negative', '-'),
     Pattern.InfixOperator('Minus', '-'),
     Pattern.PrefixOperator('Positive', '+'),
@@ -96,11 +100,11 @@ const Tokens = [
     //Pattern.PrefixOperator('Parameter', '%'),  // ugly, use dot
     Pattern.InfixOperator('Modulo', '%'),
     Pattern.CompactOperator('Power', '^'),
-    Pattern.InfixOperator('Assign', '='),
+    Pattern.InfixOperator('=', '='),
     Pattern.InfixOperator('Equal', '=='),
     Pattern.InfixOperator('NotEqual', '!='),
-    Pattern.InfixOperator('PushLeft', '<<'),
-    Pattern.InfixOperator('PushRight', '>>'),
+    Pattern.InfixOperator('<<', '<<'),
+    Pattern.InfixOperator('>>', '>>'),
     Pattern.InfixOperator('Less', '<'),
     Pattern.InfixOperator('Greater', '>'),
     Pattern.InfixOperator('LessEqual', '<='),
@@ -171,68 +175,105 @@ SetEquivalent(SimpleOperator, $(
 ))
 
 
-const Syntax = {
-    Program: {
-        derivations: [
-            ['Simple']
-        ]
-    },
-    Simple: {
-        reducers: [
-            () => parse_simple
-        ]
-    },
-    WrappedSimple: {
-        derivations: [
-            [ '(', 'Simple', ')' ]
-        ]
-    },
-    Arguments: {
-        derivations: [
-            [ '(', ')' ],
-            [ '(', 'KeyArgument', 'NextKeyArgument', ')' ],
-            [ '(', 'Argument', 'NextArgument', ')' ]
-        ]
-    },
-    Key: {
-        derivations: [
-            [ '[', 'Simple', ']' ]
-        ]
-    },
-    Argument: {
-        derivations: [
-            ['Simple']
-        ]
-    },
-    NextArgument: {
-        derivations: [
-            [',', 'Simple', 'NextArgument' ],
-            []
-        ]
-    },
-    KeyArgument: {
-        derivations: [
-            ['Identifier', ':', 'Simple' ]
-        ]
-    },
-    NextKeyArgument: {
-        derivations: [
-            [',', 'Identifier', ':', 'Simple', 'NextKeyArgument'],
-            []
-        ]
-    }
-    /*
-    Simple: {
-        derivations: [
-            [ 'Identifier', 'SimpleNext' ]
-        ]
-    },
-    SimpleNext: {
-        derivations: [
-            [ 'Plus', 'Identifier', 'SimpleNext' ],
-            [ 'Times', 'Identifier', 'SimpleNext' ],
-            []
-        ]
-    },
-    */
-}
+const Syntax = mapval({
+    
+    Id: 'Identifier',
+    Concept: 'Identifier',
+    
+    Module: 'Program',
+    Program: 'Command NextCommand',
+    Command: [
+        'FuncDef',
+        'Let',
+        'Return',
+        'Assign',
+        'Expr'
+    ],
+    NextCommand: ['Command NextCommand', ''],
+    
+    Let: '~let Assign',
+    Assign: 'LeftVal = Expr',
+    LeftVal: 'Id MemberNext KeyNext',
+    MemberNext: ['. Member MemberNext', ''],
+    KeyNext: ['Key KeyNext', ''],
+    
+    Return: '~return Expr',
+    
+    Expr: [
+        'FuncExpr',
+        'MapExpr'
+    ],
+    
+    MapExpr: 'MapOperand MapNext',
+    MapNext: ['MapOperator MapOperand MapNext', ''],
+    MapOperator: [
+        '->', '<-',
+        '>>', '<<'
+    ],
+    MapOperand: [
+        'Hash', 'HashLambda',
+        'List', 'ListLambda',
+        'SimpleLambda', 'Simple'
+    ],
+    
+    ItemList: 'Item NextItem',
+    Item: 'Expr',
+    NextItem: [', Item NextItem', ''],
+    
+    PairList: 'Pair NextPair',
+    Pair: 'Id : Expr',
+    NextPair: [', Pair NextPair', ''],
+    
+    Hash: ['{ }', '{ PairList }'],
+    List: ['[ ]', '[ ItemList ]'],
+    
+    HashLambda: '.{ PairList }',
+    ListLambda: '.[ ItemList ]',
+    
+    SimpleLambda: [
+        '.{ SimpleLambda }',
+        '.{ Simple }'
+    ],
+    
+    ParaList: '( Para NextPara )',
+    Para: 'Id : Concept',
+    NextPara: [', Para NextPara', ''],
+    Target: '-> Concept',
+    Body: 'Program',
+    
+    FuncFlag: ['~g :', '~f :'],
+    FuncExpr: [
+        'FuncFlag ParaList Target Body',
+        'FuncFlag ParaList -> Body',
+        'ParaList Target Body',
+        'ParaList -> Body',
+    ],
+    
+    Effect: ['~global', '~local'],
+    FuncDef: [
+        'Effect Id ParaList Target Body',
+        'Effect Id ParaList Body'
+    ],
+    
+    Simple: { reducers: [ () => parse_simple ] },
+    Wrapped: '( Simple )',
+    Key: '[ Simple ]',
+    ArgList: [
+        '( )',
+        '( KeyArg NextKeyArg )',
+        '( Arg NextArg )'
+    ],
+    Arg: 'Simple',
+    NextArg: [', Arg NextArg', ''],
+    KeyArg: 'Id : Simple',
+    NextKeyArg: [', KeyArg NextKeyArg', '']
+    
+}, function (rule) {
+    let split = (string => string? string.split(' '): [])
+    let derivations = (array => ({ derivations: array }))
+    return transform(rule, [
+        { when_it_is: Str, use: d => derivations([split(d)]) },
+        { when_it_is: Array, use: r => derivations(map(r, d => split(d))) },
+        { when_it_is: Otherwise, use: r => r }
+    ])
+})
