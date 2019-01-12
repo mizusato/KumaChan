@@ -1,3 +1,6 @@
+'use strict';
+
+
 class ParserError extends Error {}
 
 
@@ -19,7 +22,7 @@ function parser_error (element, info) {
             { when_it_is: Otherwise, use: x => get_token(x) }
         ])
         let { row, col } = token.position
-        return `row ${row}, column ${col}: ${token.matched.name}: ${info}`
+        return `row ${row}, column ${col}: '${token.matched.name}': ${info}`
     }
     return {
         assert: function (condition) {
@@ -37,6 +40,38 @@ function parser_error (element, info) {
 
 function get_tokens (string) {
     check(get_tokens, arguments, { string: Str })
+    function check_parentheses (tokens) {
+        let right_of = {
+            '(' : ')', '[' : ']', '.[': ']', '{' : '}', '.{' : '}'
+        }
+        let left = $u.apply({}, map(['(','[','{','.[','.{'], x => Token(x)))
+        let right = $u.apply({}, map([')',']','}'], x => Token(x)))
+        let all = $u(left, right)
+        let parentheses = filter_lazy(tokens, token => token.is(all))
+        function check_error (stack) {
+            let msg = 'missing coressponding parentheses'
+            if (stack.length > 0) {
+                parser_error(stack.top().token, msg).throw()
+            }
+        }
+        check_error(fold(parentheses, [], function (token, stack) {
+            let name = token.matched.name
+            let pos = token.position
+            let element = { name: name, pos: pos, token: token }
+            let pushed = stack.added(element)
+            let poped = stack.slice(0, stack.length-1)
+            let empty = $(stack => stack.length == 0)
+            let corresponding = $(stack => right_of[stack.top().name] == name)
+            return transform(token, [
+                { when_it_is: left, use: t => pushed },
+                { when_it_is: right, use: t => transform(stack, [
+                    { when_it_is: empty, use: s => BreakWith(pushed) },
+                    { when_it_is: corresponding, use: s => poped },
+                    { when_it_is: Otherwise, use: s => Break }
+                ])}
+            ])
+        }))
+    }
     function assert_valid (tokens) {
         return map_lazy(tokens, t => (assert(t.is(Token.Valid)) && t))
     }
@@ -89,36 +124,40 @@ function get_tokens (string) {
     function remove_linefeed (tokens) {
         return filter_lazy(tokens, token => token.matched.name != 'Linefeed')
     }
-    function eliminate_ambiguity (tokens) {
-        function transform (item) {
-            let { left, current, right } = item
-            let token = current
-            let mapper = {
-                '.': function () {
-                    let left_is_name = left.is(Token('Name'))
-                    let name = left_is_name? 'Access': 'Parameter'
-                    return Token.create_from(token, 'Operator', name)
-                },
-                Name: function () {
-                    let left_is_dot = left.is(Token('.'))
-                    let name = left_is_dot? 'Member': 'Identifier'
-                    return Token.create_from(token, 'Name', name)
-                }
+    function eliminate_ambiguity (name) {
+        let mapper = ({
+            '.': function (left, token, right) {
+                let left_is_name = left.is(Token('Name'))
+                let name = left_is_name? 'Access': 'Parameter'
+                return Token.create_from(token, 'Operator', name)
+            },
+            Name: function (left, token, right) {
+                let left_is_dot = left.is(Token('Access'))
+                let name = left_is_dot? 'Member': 'Identifier'
+                return Token.create_from(token, 'Name', name)
             }
-            let name = token.matched.name
-            return mapper.has(name)? mapper[name](): token
+        })[name]
+        return function (tokens) {
+            function transform (item) {
+                let { left, current, right } = item
+                let token = current
+                let current_name = token.matched.name
+                return (name == current_name)?
+                       mapper(left, token, right): token
+            }
+            return map_lazy(lookaside(tokens, Token.Null), transform)
         }
-        return map_lazy(lookaside(tokens, Token.Null), transform)
     }
-    let raw = CodeScanner(string).match(Matcher(Tokens))
+    let raw = list(CodeScanner(string).match(Matcher(Tokens)))
+    check_parentheses(assert_valid(raw))
     return raw.transform_by(chain(
-        assert_valid,
         remove_comment,
         remove_space,
         add_call_operator,
         add_get_operator,
         remove_linefeed,
-        eliminate_ambiguity,
+        eliminate_ambiguity('.'),
+        eliminate_ambiguity('Name'),
         assert_valid,
         list
     ))
@@ -202,16 +241,16 @@ function build_tree (syntax, root, tokens, pos = 0) {
             { when_it_is: KeywordPart, use: function (part) {
                 let keyword = part.slice(1, part.length)
                 let valid = token.is(Token('Identifier'))
-                return (valid && token.matched.string == keyword)? {
+                return (valid && token.matched.string == keyword) && {
                     ok: true, amount: 1,
                     name: 'Keyword', children: token
-                }: { ok: false }
+                } || { ok: false }
             } },
             { when_it_is: TokenPart, use: function (part) {
-                return token.is(Token(part))? {
+                return token.is(Token(part)) && {
                     ok: true, amount: 1,
                     name: part, children: token
-                }: { ok: false }
+                } || { ok: false }
             } }
         ])
     }
@@ -416,4 +455,17 @@ function parse_simple (syntax, tokens, pos) {
             children: [result]
         }
     })()
+}
+
+
+function parse (string) {
+    console.log('parsing...')
+    let tokens = get_tokens(string)
+    let match = build_tree(Syntax, 'Module', tokens)
+    let stuck_info = 'parser stuck: please check syntax'
+    let stuck_err = parser_error(tokens[match.amount], stuck_info)
+    stuck_err.if(match.amount < tokens.length)
+    console.log('done')
+    let tree = match
+    return tree
 }

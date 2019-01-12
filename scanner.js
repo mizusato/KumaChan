@@ -1,3 +1,6 @@
+'use strict';
+
+
 class ScanningError extends Error {}
 
 

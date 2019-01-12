@@ -82,14 +82,15 @@ const SetMakerConcept = (maker) => maker.contains = (x => x.maker === maker)
 const NumStr = $n(Str, $(x => !Number.isNaN(parseInt(x))) )
 const Regex = regex => $n( Str, $(s => s.match(regex)) )
 
-const Break = { contains: x => x === this }  // for fold()
+const SingletonContains = function(x) { return x === this }
+const Break = { contains: SingletonContains }  // for fold()
 function BreakWith (value) {
     return { value: value, maker: BreakWith }
 }
 SetMakerConcept(BreakWith)
 
-const NotFound = { contains: x => x === this }  // for find()
-const Nothing = { contains: x => x === this }  // for insert() and added()
+const NotFound = { contains: SingletonContains }  // for find()
+const Nothing = { contains: SingletonContains }  // for insert() and added()
 const Iterable = $(
     x => typeof x != 'undefined' && typeof x[Symbol.iterator] == 'function'
 )
@@ -597,6 +598,10 @@ Array.prototype.added_front = function (element) {
 }
 Object.prototype.has_no = function (prop) { return !this.has(prop) }
 Array.prototype.has_no = function (index) { return !this.has(index) }
+Array.prototype.top = function () {
+    assert(this.length > 0)
+    return this[this.length-1]
+}
 String.prototype.realCharAt = function (index) {
     return take_at(this, index, '')
 }

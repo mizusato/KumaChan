@@ -1,3 +1,6 @@
+'use strict';
+
+
 const Char = {
     Digit: Regex(/^[0-9]$/),
     NonZero: Regex(/^[1-9]$/),
@@ -187,10 +190,10 @@ const Syntax = mapval({
         'Let',
         'Return',
         'Assign',
-        'Expr'
+        'MapExpr'
     ],
     NextCommand: ['Command NextCommand', ''],
-    
+
     Let: '~let Id = Expr',
     Assign: 'LeftVal = Expr',
     LeftVal: 'Id MemberNext KeyNext',
@@ -205,7 +208,11 @@ const Syntax = mapval({
     ],
     
     MapExpr: 'MapOperand MapNext',
-    MapNext: ['MapOperator MapOperand MapNext', ''],
+    MapNext: [
+        'MapOperator FuncExpr',
+        'MapOperator MapOperand MapNext',
+        ''
+    ],
     MapOperator: [
         '->', '<-',
         '>>', '<<'
