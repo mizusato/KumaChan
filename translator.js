@@ -46,46 +46,114 @@ function children_hash (tree) {
 }
 
 
-function translate_next(tree, current_part, next_part, separator, f, depth=0) {
+function iterate_next (tree, next_part) {
+    return iterate(tree, t => children_hash(t)[next_part], SyntaxTreeEmpty)
+}
+
+
+function translate_next(tree, current_part, next_part, separator, f) {
     check(translate_next, arguments, {
         current_part: Str, next_part: Str, separator: Str, f: Function
     })
-    let HasNext = (next_part => $(function (tree) {
-        let h = children_hash(tree)
-        return h[next_part] && h[next_part].is_not(SyntaxTreeEmpty)
-    }))
-    let Last = (next_part => $(function (tree) {
-        let h = children_hash(tree)
-        return h[next_part] && h[next_part].is(SyntaxTreeEmpty)
-    }))
-    let Empty = $(tree => tree.is(SyntaxTreeEmpty))
-    let has_next = HasNext(next_part)
-    let last = Last(next_part)
-    let empty = Empty
-    let h = children_hash(tree)
-    let call_next = (
-        (tree, depth) => translate_next(
-            tree, current_part, next_part, separator, f, depth
-        )
-    )
-    return transform(tree, [
-        { when_it_is: has_next,
-          use: () => `${f(h[current_part], depth)}` + separator
-                    + `${call_next(h[next_part], depth+1)}` },
-        { when_it_is: last,
-          use: () => `${f(h[current_part], depth)}` },
-        { when_it_is: empty,
-          use: () => '' }
-    ])
+    let link = (x => join(x, separator))
+    return link(map_lazy(
+        iterate_next(tree, next_part),
+        (t, i) => f(children_hash(t)[current_part], i)
+    ))
 }
 
 
 let Translate = {
+    Concept: use_first,
+    Id: function (tree) {
+        let id_id = $(tree => children_hash(tree).Identifier)
+        let str_id = $(tree => children_hash(tree).RawString)
+        let string = transform(tree, [
+            { when_it_is: id_id, use: tree => string_of(tree.children[0]) },
+            { when_it_is: str_id, use: function (tree) {
+                let wrapped = string_of(tree.children[0])
+                let content = wrapped.slice(1, wrapped.length-1)
+                return content
+            } }
+        ])
+        let escaped = escape_raw(string)
+        return `'${escaped}'`
+    },
+    Assign: function (tree) {
+        let h = children_hash(tree)
+        let LeftVal = children_hash(h.LeftVal)
+        let head = translate(LeftVal.Id)
+        let members = map_lazy(
+            iterate_next(LeftVal.MemberNext, 'MemberNext'),
+            t => translate(children_hash(t).Member)
+        )
+        let keys = map_lazy(
+            iterate_next(LeftVal.KeyNext, 'KeyNext'),
+            t => translate(children_hash(t).Key)
+        )
+        let total = list(cat(members, keys))
+        let read = (total.length > 0)? total.slice(0, total.length-1): []
+        let write = (total.length > 0)? total[total.length-1]: head
+        let value = translate(h.Expr)
+        return (total.length > 0)? (function() {
+            let read_str = fold(read, `id(${head})`, function (key, reduced) {
+                return `get(${reduced}, ${key})`
+            })
+            return `set(${read_str}, ${write}, ${value})`
+        })(): `scope.replace(${write}, ${value})`
+    },
+    Let: function (tree) {
+        let h = children_hash(tree)
+        return `scope.emplace(${translate(h.Id)}, ${translate(h.Expr)})`
+    },
+    Return: function (tree) {
+        let h = children_hash(tree)
+        return `return ${translate(h.Expr)}`
+    },
+    Hash: function (tree) {
+        let h = children_hash(tree)
+        let content = (h.has('PairList'))? translate_next(
+            h.PairList, 'Pair', 'NextPair', ', ', function (tree) {
+                let h = children_hash(tree)
+                return `${translate(h.Id)}: ${translate(h.Expr)}`
+            }
+        ): ''
+        return `{${content}}`
+    },
+    List: function (tree) {
+        let h = children_hash(tree)
+        let content = (h.has('ItemList'))? translate_next(
+            h.ItemList, 'Item', 'NextItem', ', ',
+            (tree) => `${use_first(tree)}`
+        ): ''
+        return `[${content}]`
+    },
+    Expr: use_first,
+    MapOperand: use_first,
+    MapOperator: function (tree) {
+        let name = string_of(tree.children[0])
+        let escaped = escape_raw(name)
+        return `(id('operator::${escaped}'))`
+    },
+    MapExpr: function (tree) {
+        let first_operand = use_first(tree)
+        let h = children_hash(tree)
+        let items = map(iterate_next(tree, 'MapNext'), children_hash)
+        let shifted = items.slice(1, items.length)
+        return fold(shifted, first_operand, function(h, reduced_string) {
+            let operator_string = translate(h.MapOperator)
+            let operand = (h.FuncExpr)? h.FuncExpr: h.MapOperand
+            let operand_string = translate(operand)
+            return `${operator_string}(${reduced_string}, ${operand_string})`
+        })
+    },
+    /* ---------------------- */
     Simple: use_first,
     SimpleUnit: function (tree) {
         let args = tree.children.slice(1, tree.children.length)
         let operator = tree.children[0].children
         let op_name = operator.matched.name
+        if (op_name == 'Parameter') { return translate(args[0]) }
         let func_name = ({
             Call: 'call',
             Get: 'get',
@@ -97,12 +165,24 @@ let Translate = {
         return `${func_name}(${arg_list_str})`
     },
     ArgList: function (tree) {
-        let list = translate_next(
-            tree, 'Arg', 'NextArg', ', ', function(t, i) {
-                return `'${i}': ${use_first(t)}`
-            }
-        )
-        return `{ ${list} }`
+        let key_list = $(tree => children_hash(tree).has('KeyArg'))
+        let index_list = $(tree => children_hash(tree).has('Arg'))
+        let empty_list = Otherwise
+        let list_str = transform(tree, [
+            { when_it_is: key_list, use: tree => (translate_next(
+                tree, 'KeyArg', 'NextKeyArg', ', ', function(t) {
+                    let h = children_hash(t)
+                    return `${translate(h.Id)}: ${translate(h.Simple)}`
+                }
+            ))},
+            { when_it_is: index_list, use: tree => (translate_next(
+                tree, 'Arg', 'NextArg', ', ', function(t, i) {
+                    return `'${i}': ${use_first(t)}`
+                }
+            ))},
+            { when_it_is: empty_list, use: tree => '' }
+        ])
+        return `{${list_str}}`
     },
     Key: function (tree) {
         let h = children_hash(tree)

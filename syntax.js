@@ -180,7 +180,7 @@ SetEquivalent(SimpleOperator, $(
 
 const Syntax = mapval({
     
-    Id: 'Identifier',
+    Id: ['Identifier', 'RawString'],
     Concept: 'Identifier',
     
     Module: 'Program',
@@ -197,8 +197,8 @@ const Syntax = mapval({
     Let: '~let Id = Expr',
     Assign: 'LeftVal = Expr',
     LeftVal: 'Id MemberNext KeyNext',
-    MemberNext: ['. Member MemberNext', ''],
-    KeyNext: ['Key KeyNext', ''],
+    MemberNext: ['Access Member MemberNext', ''],
+    KeyNext: ['Get Key KeyNext', ''],
     
     Return: '~return Expr',
     
