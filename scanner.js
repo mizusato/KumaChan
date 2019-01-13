@@ -183,6 +183,22 @@ pour(Token, {
                 string: string || token.matched.string
             }
         }
+    },
+    pos_compare: function (x, y) {
+        let key_order = ['row', 'col']
+        return (function compare (i) {
+            let L = x[key_order[i]]
+            let R = y[key_order[i]]
+            if (L != R) {
+                return (L - R)
+            } else {
+                if (i+1 < key_order.length) {
+                    return compare(i+1)
+                } else {
+                    return 0
+                }
+            }
+        })(0)
     }
 })
 

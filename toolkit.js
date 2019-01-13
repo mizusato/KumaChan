@@ -292,13 +292,18 @@ function *rev (array) {
 
 
 function *cat (...iterables) {
-    assert(iterables.is(Iterable))
     for( let iterable of iterables ) {
         assert(iterable.is(Iterable))
-	for ( let element of iterable ) {
-	    yield element	
-	}
+        for ( let element of iterable ) {
+            yield element	
+        }
     }
+}
+
+
+function concat (iterable_of_iterable) {
+    check(concat, arguments, { iterable_of_iterable: Iterable })
+    return cat.apply({}, iterable_of_iterable)
 }
 
 

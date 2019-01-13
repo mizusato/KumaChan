@@ -63,6 +63,63 @@ function translate_next(tree, current_part, next_part, separator, f) {
 }
 
 
+function find_parameters (tree) {
+    function crush (tree) {
+        let Parameter = $(function (tree) {
+            return (
+                (tree.name == 'SimpleUnit')
+                && assert(tree.children[0].is(SyntaxTreeLeaf))
+                && tree.children[0].children.is(Token('Parameter'))
+            )
+        })
+        let FuncTree = $(tree => tree.name.is(one_of(
+            'FuncExpr', 'HashLambda', 'ListLambda', 'SimpleLambda'
+        )))
+        let Drop = $(function (x) { return x === this })
+        let drop = (t => Drop)
+        return (tree.children).transform_by(chain(
+            x => map_lazy(x, t => transform(t, [
+                { when_it_is: SyntaxTreeEmpty, use: drop },
+                { when_it_is: SyntaxTreeLeaf, use: drop },
+                { when_it_is: FuncTree, use: drop },
+                { when_it_is: Parameter, use: t => [t] },
+                { when_it_is: Otherwise, use: t => crush(t) }
+            ])),
+            x => filter(x, (y => y.is_not(Drop))),
+            x => concat(x),
+            x => list(x)
+        ))
+    }
+    let linear_list = map(crush(tree), function (simple_unit) {
+        let h = children_hash(simple_unit)
+        assert(h.has('Identifier'))
+        let id_token = h.Identifier.children
+        return {
+            pos: id_token.position,
+            name: id_token.matched.string
+        }
+    })
+    let parameters = linear_list.transform_by(chain(
+        x => fold(x, {}, function (item, hash) {
+            let name = item.name
+            if (hash[name]) {
+                let r = Token.pos_compare(item.pos, hash[name].pos)
+                if (r == -1) {
+                    hash[name] = item
+                }
+            } else {
+                hash[name] = item
+            }
+            return hash
+        }),
+        x => map(x, (key, value) => value),
+        x => x.sort((x,y) => Token.pos_compare(x.pos, y.pos)),
+        x => map(x, item => item.name)
+    ))
+    return parameters
+}
+
+
 let Translate = {
     Native: use_first,
     NativeCode: function (leaf) {
