@@ -5,29 +5,46 @@ class ScanningError extends Error {}
 
 
 const Repeat = Enum('once', 'more', 'maybe_once', 'maybe_more')
+const RepeatFlagValue = {
+    '': 'once',
+    '?': 'maybe_once',
+    '+': 'more',
+    '*': 'maybe_more'
+}
 
 
 function Unit (char_set, repeat = '', next_char = Any) {
     let object = {
         char_set: char_set,
         next_char: next_char,
-        repeat: ({
-            '': 'once',
-            '?': 'maybe_once',
-            '+': 'more',
-            '*': 'maybe_more'
-        })[repeat]
+        repeat: RepeatFlagValue[repeat]
     }
     assert(object.is(Unit))
     return object
 }
 
 
-SetEquivalent(Unit, Struct({
-    char_set: Concept,
-    next_char: Concept,
-    repeat: Repeat
-}))
+function CustomUnit (checker, repeat) {
+    let object = {
+        checker: checker,
+        repeat: RepeatFlagValue[repeat]
+    }
+    assert(object.is(Unit))
+    return object    
+}
+
+
+SetEquivalent(Unit, $u(
+    Struct({
+        char_set: Concept,
+        next_char: Concept,
+        repeat: Repeat
+    }),
+    Struct({
+        checker: Function,
+        repeat: Repeat
+    })
+))
 
 
 function Pattern (category, name, units) {
@@ -64,10 +81,15 @@ function Pattern (category, name, units) {
                 if (I.done) { return false }
                 let char = I.value.current
                 let next = I.value.next
-                let char_ok = unit.char_set.contains(char)
-                let next_ok = unit.next_char.contains(next)
-                let ok = char_ok && next_ok
-                return ok
+                let third = I.value.third
+                if (unit.has('checker')) {
+                    return unit.checker(char, next, third)
+                } else {
+                    let char_ok = unit.char_set.contains(char)
+                    let next_ok = unit.next_char.contains(next)
+                    let ok = char_ok && next_ok
+                    return ok
+                }
             }
             let cache = []
             function get_at (n) {

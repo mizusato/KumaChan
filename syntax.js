@@ -57,10 +57,17 @@ const Tokens = [
         Unit($_(Char.DoubleQuote), '*'),
         Unit(Char.DoubleQuote)
     ]),
+    Pattern('NativeCode', 'NativeCode', [
+        Unit($1('/')),
+        Unit($1('~')),
+        CustomUnit((char, next) => `${char}${next}` != '~/', '*'),
+        Unit($1('~')),
+        Unit($1('/'))
+    ]),
     Pattern('Comment', 'Comment', [
         Unit($1('/')),
         Unit($1('*')),
-        Unit($_($1('/')), '*'),
+        CustomUnit((char, next) => `${char}${next}` != '*/', '*'),
         Unit($1('*')),
         Unit($1('/'))
     ]),
@@ -182,10 +189,12 @@ const Syntax = mapval({
     
     Id: ['Identifier', 'RawString'],
     Concept: 'Identifier',
+    Native: 'NativeCode',
     
     Module: 'Program',
     Program: 'Command NextCommand',
     Command: [
+        'Native',
         'FuncDef',
         'Let',
         'Return',
@@ -203,6 +212,7 @@ const Syntax = mapval({
     Return: '~return Expr',
     
     Expr: [
+        'Native',
         'FuncExpr',
         'MapExpr'
     ],

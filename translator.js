@@ -64,6 +64,13 @@ function translate_next(tree, current_part, next_part, separator, f) {
 
 
 let Translate = {
+    Native: use_first,
+    NativeCode: function (leaf) {
+        let string = string_of(leaf)
+        let content = string.slice(2, string.length-2).trim()
+        return `${content}`
+    },
+    /* ---------------------- */
     Concept: use_first,
     Id: function (tree) {
         let id_id = $(tree => children_hash(tree).Identifier)
@@ -147,6 +154,8 @@ let Translate = {
             return `${operator_string}(${reduced_string}, ${operand_string})`
         })
     },
+    /* ---------------------- */
+    
     /* ---------------------- */
     Simple: use_first,
     SimpleUnit: function (tree) {
