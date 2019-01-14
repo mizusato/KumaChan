@@ -126,6 +126,19 @@ function function_string (body) {
 }
 
 
+function translate_lambda (tree, get_val) {
+    let parameters = tree.transform_by(chain(
+        x => find_parameters(x),
+        x => map_lazy(x, name => `'${escape_raw(name)}'`),
+        x => join(x, ', ')
+    ))
+    let parameter_list = `[${parameters}]`
+    let value = get_val(tree)
+    let func = function_string(`return ${value}`)
+    return `Lambda(scope, ${parameter_list}, ${func})`
+}
+
+
 let Translate = {
     RawCode: function (leaf) {
         let string = string_of(leaf)
@@ -218,16 +231,16 @@ let Translate = {
     },
     /* ---------------------- */
     SimpleLambda: function (tree) {
-        let parameters = tree.transform_by(chain(
-            x => find_parameters(x),
-            x => map_lazy(x, name => `'${escape_raw(name)}'`),
-            x => join(x, ', ')
-        ))
-        let parameter_list = `[${parameters}]`
-        let h = children_hash(tree)
-        let value = translate(h.Simple || h.SimpleLambda)
-        let func = function_string(`return ${value}`)
-        return `Lambda(scope, ${parameter_list}, ${func})`
+        return translate_lambda(tree, function (tree) {
+            let h = children_hash(tree)
+            return translate(h.Simple || h.SimpleLambda)
+        })
+    },
+    HashLambda: function (tree) {
+        return translate_lambda(tree, t => Translate.Hash(t))
+    },
+    ListLambda: function (tree) {
+        return translate_lambda(tree, t => Translate.List(t))
     },
     /* ---------------------- */
     Wrapped: function (tree) {
