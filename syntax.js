@@ -125,7 +125,7 @@ const Tokens = [
         Unit(Char.Digit, '+')
     ]),
     Pattern('Name', 'Name', [
-        Unit($n(Char.NotDigit, Chat.NotSpace, $_(Char.ForbiddenInId)),
+        Unit($n(Char.NotDigit, Char.NotSpace, $_(Char.ForbiddenInId))),
         Unit($n(Char.NotSpace, $_(Char.ForbiddenInId)), '*')
     ])
 ]
