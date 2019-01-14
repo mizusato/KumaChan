@@ -187,7 +187,7 @@ const Syntax = mapval({
     Program: 'Command NextCommand',
     Command: [
         'RawCode',
-        'FuncDef',
+        'FunDef',
         'Let',
         'Return',
         'Assign',
@@ -205,13 +205,13 @@ const Syntax = mapval({
     
     Expr: [
         'RawCode',
-        'FuncExpr',
+        'FunExpr',
         'MapExpr'
     ],
     
     MapExpr: 'MapOperand MapNext',
     MapNext: [
-        'MapOperator FuncExpr',
+        'MapOperator FunExpr',
         'MapOperator MapOperand MapNext',
         ''
     ],
@@ -255,11 +255,11 @@ const Syntax = mapval({
     Target: ['-> Concept', '->', ''],
     Body: '{ Program }',
     
-    FuncFlag: ['~g :', '~f :', ''],
-    FuncExpr: 'FuncFlag ParaList Target Body',
+    FunFlag: ['~g :', '~f :', ''],
+    FunExpr: 'FunFlag ParaList Target Body',
     
     Effect: ['~global', '~local'],
-    FuncDef: 'Effect Id Call ParaList Target Body',
+    FunDef: 'Effect Id Call ParaList Target Body',
     //                   ↑  call operator will be inserted automatically
     
     Simple: { reducers: [ () => parse_simple ] },

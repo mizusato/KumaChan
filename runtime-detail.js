@@ -17,6 +17,8 @@ class IndexError extends RuntimeError {}
 class NameConflict extends RuntimeError {}
 class ForbiddenCall extends RuntimeError {}
 class ObjectNotFound extends RuntimeError {}
+class VariableConflict extends RuntimeError {}
+class InvalidAssignment extends RuntimeError {}
 
 
 function ErrorProducer (err_class, f_name) {
@@ -60,6 +62,7 @@ const Detail = {
     Config: {},
     Hash: {},
     List: {},
+    Scope: {},
     Concept: {},
     Prototype: {},
     Argument: {},
@@ -79,7 +82,7 @@ Detail.Config.get_flags = function (object) {
 }
 
 
-Detail.Hash.get_prototype = () => ({
+Detail.Hash.Prototype = {
     mapper: mapval,
     has: function (key) {
         return Object.prototype.has.call(this.data, key)
@@ -123,10 +126,10 @@ Detail.Hash.get_prototype = () => ({
         )
         return `${flags}{${join(list, ', ')}}`
     }
-})
+}
 
 
-Detail.List.get_prototype = () => ({
+Detail.List.Prototype = {
     mapper: map,
     length: function () { return this.data.length },
     at: function (index) {
@@ -149,7 +152,64 @@ Detail.List.get_prototype = () => ({
         let list = map(this.data, x => ObjectObject.represent(x))
         return `${flag}[${join(list, ', ')}]`
     }
-})
+}
+
+
+Detail.Scope.Prototype = {
+    has: function (key) {
+        return Object.prototype.has.call(this.data, key)
+    },
+    get: function (key) {
+        assert(this.has(key))
+        return this.data[key]
+    },
+    set: function (key, value) {
+        assert(value.is(ObjectObject))
+        this.data[key] = value
+    },
+    emplace: function (key, value) {
+        let err = ErrorProducer(VariableConflict, 'Scope::Emplace')
+        err.if(this.has(key), `variable ${key} already declared`)
+        this.set(key, value)
+    },
+    replace: function (key, value) {
+        let err = ErrorProducer(InvalidAssignment, 'Scope::Replace')
+        err.if(!this.has(key), `variable ${key} not declared`)
+        this.set(key, value)
+    },
+    upward_iterator: function () {
+        return iterate(this, x => x.context, NullScope)
+    },
+    lookup: function (name) {
+        check(this.__proto__.lookup, arguments, { name: Str })
+        let range = this.range
+        let result = find(map_lazy(
+            this.upward_iterator(),
+            (scope, index) => ({
+                layer: index,
+                object: scope.has(name)? scope.get(name): null
+            })
+        ), x => x.object != null)
+        if (result != NotFound) {
+            if (result.layer > 0 && range == 'local') {
+                return ImRef(result.object)
+            } else {
+                return result.object
+            }
+        } else {
+            ErrorProducer(ObjectNotFound, 'Scope::Lookup').throw(
+                `there is no object named '${name}'`
+            )
+        }
+    },
+    try_to_lookup: function (name) {
+        try {
+            return this.lookup(name)
+        } catch (ObjectNotFound) {
+            return NotFound
+        }
+    }
+}
 
 
 Detail.Concept.Union = function (concept1, concept2, new_name) {

@@ -73,7 +73,7 @@ function find_parameters (tree) {
             )
         })
         let FuncTree = $(tree => tree.name.is(one_of(
-            'FuncExpr', 'HashLambda', 'ListLambda', 'SimpleLambda'
+            'FunDef', 'FunExpr', 'HashLambda', 'ListLambda', 'SimpleLambda'
         )))
         let Drop = $(function (x) { return x === this })
         let drop = (t => Drop)
@@ -232,7 +232,7 @@ let Translate = {
         let shifted = items.slice(1, items.length)
         return fold(shifted, first_operand, function(h, reduced_string) {
             let operator_string = translate(h.MapOperator)
-            let operand = (h.FuncExpr)? h.FuncExpr: h.MapOperand
+            let operand = (h.FunExpr)? h.FunExpr: h.MapOperand
             let operand_string = translate(operand)
             return `${operator_string}(${reduced_string}, ${operand_string})`
         })
@@ -272,21 +272,32 @@ let Translate = {
         ): ''
         return `[${parameters}]`
     },
-    FuncExpr: function (tree) {
+    Target: function (tree) {
         let h = children_hash(tree)
-        let flag = h.FuncFlag
+        return (h.has('Concept'))? translate(h.Concept): 'AnyConcept'
+    },
+    FunExpr: function (tree) {
+        let h = children_hash(tree)
+        let flag = h.FunFlag
         let is_global = (
             flag.is_not(SyntaxTreeEmpty)
             && string_of(flag.children[0]) == 'g'
         )
-        let range = is_global? `'global'`: `'local'`
+        let effect = is_global? `'global'`: `'local'`
         let paras = translate(h.ParaList)
-        let Target = children_hash(h.Target)
-        let value = (
-            Target.has('Concept')? translate(Target.Concept): 'AnyConcept'
-        )
+        let target = translate(h.Target)
         let func = function_string(translate(h.Body))
-        return `FunInst(scope, ${range}, ${paras}, ${value}, ${func})`
+        return `FunInst(scope, ${effect}, ${paras}, ${target}, ${func})`
+    },
+    FunDef: function (tree) {
+        let h = children_hash(tree)
+        let effect_raw = string_of(h.Effect.children[0])
+        let effect = `'${effect_raw}'`
+        let name = translate(h.Id)
+        let paras = translate(h.ParaList)
+        let target = translate(h.Target)
+        let func = function_string(translate(h.Body))
+        return `define(scope, ${name}, ${effect}, ${paras}, ${target}, ${func})`
     },
     /* ---------------------- */
     Wrapped: function (tree) {

@@ -49,14 +49,14 @@ const EffectRange = Enum('global', 'local')
  * 
  *  Object (Any) ┬ Compound ┬ Hash
  *               │          ┴ List
- *               ┴ Atomic ┬ Function
- *                        ┼ Overload
- *                        ┼ Concept
- *                        ┴ Primitive ┬ String
- *                                    ┼ Number
- *                                    ┴ Bool
+ *               ┴ Atomic ┬ Concept
+ *                        ┼ Primitive ┬ String
+ *                        │           ┼ Number
+ *                        │           ┴ Bool
+ *                        ┴ Functional ┬ Function
+ *                                     ┴ Overload
  *
- *  Note: atomic object must be totally immutable.
+ *  Note: atomic object must be immutable.
  */
 
 
@@ -72,10 +72,15 @@ const PrimitiveObject = $u(StringObject, NumberObject, BoolObject)
 /* Atomic Definition */
 
 
+const FunctionalObject = $u(
+    $(x => x.is(FunctionObject)),
+    $(x => x.is(OverloadObject))
+)
+
+
 const AtomicObject = $u(
     PrimitiveObject,
-    $(x => x.is(FunctionObject)),
-    $(x => x.is(OverloadObject)),
+    FunctionalObject,
     $(x => x.is(ConceptObject))
 )
 
@@ -105,7 +110,7 @@ function HashObject (hash = {}, config = Config.default) {
         data: hash,
         config: config,
         maker: HashObject,
-        __proto__: once(HashObject, Detail.Hash.get_prototype())
+        __proto__: once(HashObject, Detail.Hash.Prototype)
     }
 }
 
@@ -127,7 +132,7 @@ function ListObject (list = [], config = Config.default) {
         data: list,
         config: config,
         maker: ListObject,
-        __proto__: once(ListObject, Detail.List.get_prototype())
+        __proto__: once(ListObject, Detail.List.Prototype)
     }
 }
 
@@ -271,40 +276,7 @@ function Scope (context, range, data = {}) {
         context: context,
         range: range,  // effect range of function
         maker: Scope,
-        __proto__: once(Scope, {
-            has: function (key) {
-                return Object.prototype.has.call(this.data, key)
-            },
-            get: function (key) {
-                assert(this.has(key))
-                return this.data[key]
-            },
-            upward_iterator: function () {
-                return iterate(this, x => x.context, NullScope)
-            },
-            lookup: function (name) {
-                check(this.__proto__.lookup, arguments, { name: Str })
-                let range = this.range
-                let result = find(map_lazy(
-                    this.upward_iterator(),
-                    (scope, index) => ({
-                        layer: index,
-                        object: scope.has(name)? scope.get(name): null
-                    })
-                ), x => x.object != null)
-                if (result != NotFound) {
-                    if (result.layer > 0 && range == 'local') {
-                        return ImRef(result.object)
-                    } else {
-                        return result.object
-                    }
-                } else {
-                    ErrorProducer(ObjectNotFound, 'Scope::Lookup').throw(
-                        `there is no object named '${name}'`
-                    )
-                }
-            }
-        })
+        __proto__: once(Scope, Detail.Scope.Prototype)
     }
 }
 
@@ -447,7 +419,13 @@ function FunctionObject (name, context, prototype, js_function) {
                     )
                 })
                 scope.data['scope'] = HashObject(scope.data)
-                scope.data[name] = this
+                /**
+                 *  it is not good to bind the name of function to the scope 
+                 *  because the function name in the scope could override
+                 *  the previous overridden Overload, which is dumped in
+                 *  the outer wrapper scope created by define() (runtime-tools)
+                 */
+                // scope.data[name] = this
                 pour(scope.data, final)
                 /* invoke js function */
                 let value = f(scope)
@@ -689,9 +667,9 @@ function OverloadObject (name, instances) {
         __proto__: once(OverloadObject, {
             added: function (instance) {
                 assert(instance.is(FunctionObject))
-                let new_list = map(instances, x=>x)
+                let new_list = map(this.instances, x => x)
                 new_list.push(instance)
-                return OverloadObject(name, new_list)
+                return OverloadObject(this.name, new_list)
             },            
             apply: function (...args) {
                 assert(args.is(ArrayOf(ObjectObject)))

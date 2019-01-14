@@ -1,6 +1,11 @@
 'use strict';
 
 
+function Lookup (scope) {
+    return (string => scope.lookup(string))
+}
+
+
 function FormatString (string, id_ref) {
     check(FormatString, arguments, { string: Str, id_ref: Function })
     return string.replace(/\${([^}]+)}/g, (_, arg) => id_ref(arg))
@@ -27,7 +32,7 @@ function Lambda (context, parameter_names, f) {
 }
 
 
-function FunInst (context, range, parameters, value, f) {
+function FunInst (context, effect, parameters, target, f, name = '[Anonymous]') {
     // create a function instance
     let normalized = map(parameters, array => ({
         name: array[0],
@@ -35,26 +40,40 @@ function FunInst (context, range, parameters, value, f) {
         pass_policy: array[2]
     }))
     let proto = {
-        effect_range: range,
+        effect_range: effect,
         parameters: normalized,
-        value_constraint: value
+        value_constraint: target
     }
-    return FunctionObject('[Anonymous]', context, proto, f)
+    return FunctionObject(name, context, proto, f)
 }
 
 
-function Lookup (scope) {
-    return (string => scope.lookup(string))
+function define (scope, name, effect, parameters, target, f) {
+    let create_at = (
+        scope => FunInst(scope, effect, parameters, target, f, name)
+    )
+    let existing = scope.try_to_lookup(name)
+    if ( existing.is(OverloadObject) ) {
+        // the new function should have access to the overridden old function
+        let wrapper_scope = Scope(scope, effect)
+        wrapper_scope.set(name, existing)
+        scope.set(name, existing.added(create_at(wrapper_scope)))
+    } else {
+        scope.emplace(name, OverloadObject(name, [create_at(scope)]))
+    }
 }
 
 
-function apply (function_object) {
+function apply (functional) {
+    assert(functional.is(FunctionalObject))
     return function(...args) {
-        return function_object.apply.apply(function_object, args)
+        return functional.apply.apply(functional, args)
     }
 }
 
 
-function call (function_object, argument) {
-    return function_object.call(argument)
+function call (functional, argument) {
+    assert(FunctionalObject.contains(functional))
+    assert(Hash.contains(argument))
+    return functional.call(argument)
 }
