@@ -121,12 +121,12 @@ function find_parameters (tree) {
 
 
 function function_string (body) {
-    let head = `var id = GetId(scope);`
+    let head = `var id = Lookup(scope);`
     return `(function (scope) { ${head} ${body} })`
 }
 
 
-function translate_lambda (tree, get_val) {
+function translate_lambda (tree, type, get_val) {
     let parameters = tree.transform_by(chain(
         x => find_parameters(x),
         x => map_lazy(x, name => `'${escape_raw(name)}'`),
@@ -134,7 +134,8 @@ function translate_lambda (tree, get_val) {
     ))
     let parameter_list = `[${parameters}]`
     let value = get_val(tree)
-    let func = function_string(`return ${value}`)
+    let is_expr = (type == 'expr')
+    let func = function_string(is_expr? `return ${value}`: value)
     return `Lambda(scope, ${parameter_list}, ${func})`
 }
 
@@ -161,6 +162,13 @@ let Translate = {
         let escaped = escape_raw(string)
         return `'${escaped}'`
     },
+    Module: use_first,
+    Program: function (tree) {
+        return translate_next(
+            tree, 'Command', 'NextCommand', '; ', cmd => translate(cmd)
+        )
+    },
+    Command: use_first,
     Assign: function (tree) {
         let h = children_hash(tree)
         let LeftVal = children_hash(h.LeftVal)
@@ -195,8 +203,8 @@ let Translate = {
     Hash: function (tree) {
         let h = children_hash(tree)
         let content = (h.has('PairList'))? translate_next(
-            h.PairList, 'Pair', 'NextPair', ', ', function (tree) {
-                let h = children_hash(tree)
+            h.PairList, 'Pair', 'NextPair', ', ', function (pair) {
+                let h = children_hash(pair)
                 return `${translate(h.Id)}: ${translate(h.Expr)}`
             }
         ): ''
@@ -206,7 +214,7 @@ let Translate = {
         let h = children_hash(tree)
         let content = (h.has('ItemList'))? translate_next(
             h.ItemList, 'Item', 'NextItem', ', ',
-            (tree) => `${use_first(tree)}`
+            (item) => `${use_first(item)}`
         ): ''
         return `ListObject([${content}])`
     },
@@ -231,16 +239,54 @@ let Translate = {
     },
     /* ---------------------- */
     SimpleLambda: function (tree) {
-        return translate_lambda(tree, function (tree) {
+        return translate_lambda(tree, 'expr', function (tree) {
             let h = children_hash(tree)
             return translate(h.Simple || h.SimpleLambda)
         })
     },
     HashLambda: function (tree) {
-        return translate_lambda(tree, t => Translate.Hash(t))
+        return translate_lambda(tree, 'expr', t => Translate.Hash(t))
     },
     ListLambda: function (tree) {
-        return translate_lambda(tree, t => Translate.List(t))
+        return translate_lambda(tree, 'expr', t => Translate.List(t))
+    },
+    BodyLambda: function (tree) {
+        return translate_lambda(tree, 'body', t => Translate.Body(t))
+    },
+    Body: function (tree) {
+        let h = children_hash(tree)
+        let program = translate(h.Program)
+        return `${program}; return VoidObject`
+    },
+    ParaList: function (tree) {
+        let h = children_hash(tree)
+        let parameters = (h.has('Para'))? translate_next(
+            tree, 'Para', 'NextPara', ', ', function (para) {
+                let h = children_hash(para)
+                let name = translate(h.Id)
+                let constraint = translate(h.Concept)
+                let is_immutable = h.PassFlag.is(SyntaxTreeEmpty)
+                let pass_policy = is_immutable? `'immutable'`: `'dirty'`
+                return `[${name},${constraint},${pass_policy}]`
+            }
+        ): ''
+        return `[${parameters}]`
+    },
+    FuncExpr: function (tree) {
+        let h = children_hash(tree)
+        let flag = h.FuncFlag
+        let is_global = (
+            flag.is_not(SyntaxTreeEmpty)
+            && string_of(flag.children[0]) == 'g'
+        )
+        let range = is_global? `'global'`: `'local'`
+        let paras = translate(h.ParaList)
+        let Target = children_hash(h.Target)
+        let value = (
+            Target.has('Concept')? translate(Target.Concept): 'AnyConcept'
+        )
+        let func = function_string(translate(h.Body))
+        return `FunInst(scope, ${range}, ${paras}, ${value}, ${func})`
     },
     /* ---------------------- */
     Wrapped: function (tree) {
@@ -269,14 +315,14 @@ let Translate = {
         let empty_list = Otherwise
         let list_str = transform(tree, [
             { when_it_is: key_list, use: tree => (translate_next(
-                tree, 'KeyArg', 'NextKeyArg', ', ', function(t) {
-                    let h = children_hash(t)
+                tree, 'KeyArg', 'NextKeyArg', ', ', function(key_arg) {
+                    let h = children_hash(key_arg)
                     return `${translate(h.Id)}: ${translate(h.Simple)}`
                 }
             ))},
             { when_it_is: index_list, use: tree => (translate_next(
-                tree, 'Arg', 'NextArg', ', ', function(t, i) {
-                    return `'${i}': ${use_first(t)}`
+                tree, 'Arg', 'NextArg', ', ', function(arg, i) {
+                    return `'${i}': ${use_first(arg)}`
                 }
             ))},
             { when_it_is: empty_list, use: tree => '' }

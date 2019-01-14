@@ -31,8 +31,9 @@ Pattern.PrefixOperator = function (name, operator) {
 
 Pattern.Operator = function (name, operator) {
     check(Pattern.Operator, arguments, {
-        name: Str, operator: Str
+        name: Str, operator: Optional(Str)
     })
+    operator = operator || name
     return Pattern('Operator', name, map(operator, (char, index) => Unit(
         $1(char)
     )))
@@ -70,26 +71,29 @@ const Tokens = [
     Pattern('Blank', 'Linefeed', [
         Unit($1(LF), '+')
     ]),
-    Pattern.Operator('(', '('),
-    Pattern.Operator(')', ')'),
-    Pattern.Operator('[', '['),
-    Pattern.Operator(']', ']'),
-    Pattern.Operator('{', '{'),
-    Pattern.Operator('}', '}'),
-    Pattern.Operator(',', ','),
-    Pattern.Operator(':', ':'),
-    Pattern.Operator('.{', '.{'),
-    Pattern.Operator('.[', '.['),
-    Pattern.Operator('..', '..'),
-    Pattern.Operator('.', '.'),
+    Pattern.Operator('('),
+    Pattern.Operator(')'),
+    Pattern.Operator('['),
+    Pattern.Operator(']'),
+    Pattern.Operator('{'),
+    Pattern.Operator('}'),
+    Pattern.Operator(','),
+    Pattern.Operator(':'),
+    Pattern.Operator('.{'),
+    Pattern.Operator('..{'),
+    Pattern.Operator('...{'),
+    Pattern.Operator('.['),
+    Pattern.Operator('..['),
+    Pattern.Operator('..'),  // ..Identifier = Inline Comment
+    Pattern.Operator('.'),
     Pattern.PrefixOperator('Not', '!'),
     Pattern.Operator('Or', '||'),
     Pattern.Operator('And', '&&'),
     Pattern.PrefixOperator('Complement', '~'),
     Pattern.Operator('Union', '|'),
     Pattern.Operator('Intersect', '&'),
-    Pattern.Operator('->', '->'),
-    Pattern.Operator('<-', '<-'),
+    Pattern.Operator('->'),
+    Pattern.Operator('<-'),
     Pattern.PrefixOperator('Negative', '-'),
     Pattern.Operator('Minus', '-'),
     //Pattern.PrefixOperator('Positive', '+'),
@@ -99,11 +103,11 @@ const Tokens = [
     //Pattern.PrefixOperator('Parameter', '%'),  // ugly, use dot
     Pattern.Operator('Modulo', '%'),
     Pattern.Operator('Power', '^'),
-    Pattern.Operator('=', '='),
+    Pattern.Operator('='),
     Pattern.Operator('Equal', '=='),
     Pattern.Operator('NotEqual', '!='),
-    Pattern.Operator('<<', '<<'),
-    Pattern.Operator('>>', '>>'),
+    Pattern.Operator('<<'),
+    Pattern.Operator('>>'),
     Pattern.Operator('Less', '<'),
     Pattern.Operator('Greater', '>'),
     Pattern.Operator('LessEqual', '<='),
@@ -218,7 +222,7 @@ const Syntax = mapval({
     MapOperand: [
         'Hash', 'HashLambda',
         'List', 'ListLambda',
-        'SimpleLambda', 'Simple'
+        'SimpleLambda', 'BodyLambda', 'Simple'
     ],
     
     ItemList: 'Item NextItem',
@@ -232,19 +236,23 @@ const Syntax = mapval({
     Hash: ['{ }', '{ PairList }'],
     List: ['[ ]', '[ ItemList ]'],
     
-    HashLambda: '.{ PairList }',
-    ListLambda: '.[ ItemList ]',
+    HashLambda: ['.{ }', '..{ PairList }'],
+    ListLambda: ['.[ ]', '..[ ItemList ]'],
     
     SimpleLambda: [
         '.{ SimpleLambda }',
-        '.{ Simple }'
+        '.[ SimpleLambda }',
+        '.{ Simple }',
+        '.[ Simple ]'
     ],
+    
+    BodyLambda: '...{ Program }',
     
     ParaList: ['( )', '( Para NextPara )'],
     Para: 'Concept PassFlag Id',
-    PassFlag: ['Intersect', ''],  // Intersect: &
     NextPara: [', Para NextPara', ''],
-    Target: ['-> Concept', ''],
+    PassFlag: ['Intersect', ''],  // Intersect: &
+    Target: ['-> Concept', '->', ''],
     Body: '{ Program }',
     
     FuncFlag: ['~g :', '~f :', ''],

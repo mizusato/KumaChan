@@ -41,11 +41,13 @@ function parser_error (element, info) {
 function get_tokens (string) {
     check(get_tokens, arguments, { string: Str })
     function check_parentheses (tokens) {
+        let union = (...list) => $u.apply({}, map(list, x => Token(x)))
         let right_of = {
-            '(' : ')', '[' : ']', '.[': ']', '{' : '}', '.{' : '}'
+            '(' : ')', '[' : ']', '{' : '}', '.[': ']', '.{' : '}',
+            '..[': ']', '..{': '}', '...{': '}'
         }
-        let left = $u.apply({}, map(['(','[','{','.[','.{'], x => Token(x)))
-        let right = $u.apply({}, map([')',']','}'], x => Token(x)))
+        let left = union('(', '[', '{', '.[', '.{', '..[', '..{', '...{')
+        let right = union(')', ']', '}')
         let all = $u(left, right)
         let parentheses = filter_lazy(tokens, token => token.is(all))
         function check_error (stack) {

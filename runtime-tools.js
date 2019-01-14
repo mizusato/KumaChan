@@ -27,7 +27,23 @@ function Lambda (context, parameter_names, f) {
 }
 
 
-function GetId (scope) {
+function FunInst (context, range, parameters, value, f) {
+    // create a function instance
+    let normalized = map(parameters, array => ({
+        name: array[0],
+        constraint: array[1],
+        pass_policy: array[2]
+    }))
+    let proto = {
+        effect_range: range,
+        parameters: normalized,
+        value_constraint: value
+    }
+    return FunctionObject('[Anonymous]', context, proto, f)
+}
+
+
+function Lookup (scope) {
     return (string => scope.lookup(string))
 }
 
