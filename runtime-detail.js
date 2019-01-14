@@ -373,9 +373,13 @@ Detail.Object.represent = function (object) {
     check(Detail.Object.represent, arguments, {
         object: ObjectObject
     })
-    if ( object.is(StringObject) ) {
-        return `"${object}"`
+    if ( object.is(PrimitiveObject) ) {
+        if ( object.is(StringObject) ) {
+            return `"${object}"`
+        } else {
+            return `${object}`
+        }
     } else {
-        return `${object}`
+        return `<${GetType(object)}>`
     }
 }

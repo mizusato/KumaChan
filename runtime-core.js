@@ -161,7 +161,7 @@ function GetType(object) {
     let non_primitive = {
         Function: $(x => FunctionObject.contains(x)),
         Concept: $(x => ConceptObject.contains(x)),
-        Chain: $(x => OverloadObject.contains(x)),
+        Overload: $(x => OverloadObject.contains(x)),
         List: ListObject,
         Hash: HashObject
     }
@@ -262,12 +262,14 @@ const NullScope = {}  // SingletonObject('NullScope')
 SetEquivalent(NullScope, $1(NullScope))
 
 
-function Scope (context, data = {}) {
+function Scope (context, range, data = {}) {
     assert(context.is(Scope))
+    assert(range.is(EffectRange))
     assert(Hash.contains(data))
     return {
         data: data,
         context: context,
+        range: range,  // effect range of function
         maker: Scope,
         __proto__: once(Scope, {
             has: function (key) {
@@ -280,10 +282,9 @@ function Scope (context, data = {}) {
             upward_iterator: function () {
                 return iterate(this, x => x.context, NullScope)
             },
-            lookup: function (name, range) {
-                check(this.__proto__.lookup, arguments, {
-                    name: Str, range: EffectRange
-                })
+            lookup: function (name) {
+                check(this.__proto__.lookup, arguments, { name: Str })
+                let range = this.range
                 let result = find(map_lazy(
                     this.upward_iterator(),
                     (scope, index) => ({
@@ -316,9 +317,9 @@ SetEquivalent(Scope, $u(NullScope, MadeBy(Scope)) )
  */
 
 
-const G = Scope(NullScope)
+const G = Scope(NullScope, 'global')
 const K = G.data
-K.scope = G
+K.scope = HashObject(K)
 
 
 /**
@@ -417,10 +418,13 @@ function FunctionObject (name, context, prototype, js_function) {
                     err_f: ForbiddenCall,
                 }, ErrorType => ErrorProducer(ErrorType, `${name}`))
                 /* shortcuts */
-                let { Proto, Range, proto, range, f, context } = {
-                    Proto: Prototype, Range: EffectRange,
-                    proto: this.prototype, range: this.effect_range,
-                    f: this.js_function, context: this.context
+                let Proto = Prototype
+                let Range = EffectRange
+                let { proto, range, f, context } = {
+                    proto:   this.prototype,
+                    range:   this.prototype.effect_range,
+                    f:       this.js_function,
+                    context: this.context
                 }
                 /* check effect range of caller */
                 err_f.if(
@@ -433,7 +437,7 @@ function FunctionObject (name, context, prototype, js_function) {
                 /* create new scope */
                 let normalized = Proto.normalize_argument(proto, argument)
                 let final = Proto.set_mutability(proto, normalized)
-                let scope = Scope(context, {
+                let scope = Scope(context, range, {
                     callee: this,
                     argument: HashObject(final),
                     argument_info: HashObject(

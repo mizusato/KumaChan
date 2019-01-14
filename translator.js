@@ -120,6 +120,12 @@ function find_parameters (tree) {
 }
 
 
+function function_string (body) {
+    let head = `var id = GetId(scope);`
+    return `(function (scope) { ${head} ${body} })`
+}
+
+
 let Translate = {
     RawCode: function (leaf) {
         let string = string_of(leaf)
@@ -212,10 +218,22 @@ let Translate = {
     },
     /* ---------------------- */
     SimpleLambda: function (tree) {
-        let parameters = find_parameters(tree)
-        
+        let parameters = tree.transform_by(chain(
+            x => find_parameters(x),
+            x => map_lazy(x, name => `'${escape_raw(name)}'`),
+            x => join(x, ', ')
+        ))
+        let parameter_list = `[${parameters}]`
+        let h = children_hash(tree)
+        let value = translate(h.Simple || h.SimpleLambda)
+        let func = function_string(`return ${value}`)
+        return `Lambda(scope, ${parameter_list}, ${func})`
     },
     /* ---------------------- */
+    Wrapped: function (tree) {
+        let h = children_hash(tree)
+        return translate(h.Simple)
+    },
     Simple: use_first,
     SimpleUnit: function (tree) {
         let args = tree.children.slice(1, tree.children.length)
@@ -226,7 +244,7 @@ let Translate = {
             Call: 'call',
             Get: 'get',
             Access: 'access'
-        })[op_name] || `(id('operator::${op_name.toLowerCase()}'))`
+        })[op_name] || `(apply(id('operator::${op_name.toLowerCase()}')))`
         let arg_str_list = map(args, a => translate(a))
         if (op_name == 'Access') { arg_str_list.push('scope') }
         let arg_list_str = join(arg_str_list, ', ')

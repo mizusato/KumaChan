@@ -173,11 +173,11 @@ function suppose (bool, message) {
 
 
 function need (items) {
-    assert(items.is(Iterable))
+    assert(Iterable.contains(items))
     for ( let item of items ) {
         assert( $u(Result, Function).contains(item) )
-        let result = (item.is(Result))? item: item()
-        if ( result.is(Failed) ) {
+        let result = (Result.contains(item))? item: item()
+        if ( Failed.contains(result) ) {
             return result
         } else {
             continue
@@ -232,18 +232,18 @@ function check_hash(callee, argument, constraint) {
 
 function* map_lazy (to_be_mapped, f) {
     check(map_lazy, arguments, { to_be_mapped: $u(Object,Str), f: Function })
-    if( to_be_mapped.is(Iterable) ) {
-	let iterable = to_be_mapped
-	let index = 0
-	for ( let I of iterable ) {
-	    yield f(I, index)
-	    index += 1
-	}
+    if( Iterable.contains(to_be_mapped) ) {
+        let iterable = to_be_mapped
+        let index = 0
+        for ( let I of iterable ) {
+            yield f(I, index)
+            index += 1
+        }
     } else {
-	let hash = to_be_mapped
-	for ( let key of Object.keys(hash) ) {
-	    yield f(key, hash[key])
-	}
+        let hash = to_be_mapped
+        for ( let key of Object.keys(hash) ) {
+            yield f(key, hash[key])
+        }
     }
 }
 
@@ -293,7 +293,7 @@ function *rev (array) {
 
 function *cat (...iterables) {
     for( let iterable of iterables ) {
-        assert(iterable.is(Iterable))
+        assert(Iterable.contains(iterable))
         for ( let element of iterable ) {
             yield element	
         }
@@ -310,7 +310,7 @@ function concat (iterable_of_iterable) {
 function *lazy (f) {
     assert(Function.contains(f))
     let iterable = f()
-    assert(iterable.is(Iterable))
+    assert(Iterable.contains(iterable))
     for ( let I of iterable ) {
         yield I
     }
@@ -391,7 +391,7 @@ function filter (to_be_filtered, f) {
         to_be_filtered: Object,
         f: Function
     })
-    if (to_be_filtered.is(Iterable)) {
+    if (Iterable.contains(to_be_filtered)) {
         let iterable = to_be_filtered
         return list(filter_lazy(iterable, f))
     } else {
@@ -484,7 +484,7 @@ function* iterate (initial, next_of, terminate_when) {
 
 function forall (to_be_checked, f) {
     check(forall, arguments, { to_be_checked: Object, f: Function })
-    if (to_be_checked.is(Iterable)) {
+    if (Iterable.contains(to_be_checked)) {
         let iterable = to_be_checked
         return Boolean(fold(iterable, true, (e,v) => v && f(e)))
     } else {
@@ -502,7 +502,7 @@ function exists (to_be_checked, f) {
 
 function find (container, f) {
     check(find, arguments, { container: Object, f: Function })
-    if (container.is(Iterable)) {
+    if (Iterable.contains(container)) {
         let iterable = container
         for ( let I of iterable ) {
             if (f(I)) {
@@ -524,7 +524,7 @@ function find (container, f) {
 
 
 function* lookahead (iterable, empty_value) {
-    assert(iterable.is(Iterable))
+    assert(Iterable.contains(iterable))
     let it = iterable[Symbol.iterator]()
     let current = it.next()
     let next = it.next()
@@ -543,7 +543,7 @@ function* lookahead (iterable, empty_value) {
 
 
 function* lookaside (iterable, empty_value) {
-    assert(iterable.is(Iterable))
+    assert(Iterable.contains(iterable))
     let it = iterable[Symbol.iterator]()
     let left = { value: empty_value, done: false }
     let current = it.next()
@@ -562,8 +562,8 @@ function* lookaside (iterable, empty_value) {
 
 
 function* insert (iterable, empty_value, f) {
-    assert(iterable.is(Iterable))
-    assert(f.is(Function))
+    assert(Iterable.contains(iterable))
+    assert(Function.contains(f))
     for( let look of lookahead(iterable, empty_value)) {
         yield look.current
         let add = f(look.current, look.next)
