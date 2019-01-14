@@ -369,20 +369,18 @@ pour(ConceptObject, Detail.Concept)
 
 
 const Parameter = Struct({
+    name: Str,
     constraint: ConceptObject,
     pass_policy: PassPolicy
 })
 
 
-const Prototype = $n(
-    Struct({
-        effect_range: EffectRange,
-        parameters: HashOf(Parameter),
-        order: ArrayOf(Str),
-        return_value: ConceptObject
-    }),
-    $( proto => forall(proto.order, key => proto.parameters[key]) )
-)
+const Prototype = Struct({
+    effect_range: EffectRange,
+    parameters: ArrayOf(Parameter),
+    value_constraint: ConceptObject
+})
+
 
 
 pour(Prototype, Detail.Prototype)
@@ -454,8 +452,9 @@ function FunctionObject (name, context, prototype, js_function) {
                 let val_str = ObjectObject.represent(value)
                 console.log(`${name}${arg_str} = ${val_str}`)
                 /* special process for BookConcept::Checker */
-                this !== BoolConcept.checker
-                    &&  err_r.if_failed(Proto.check_return_value(proto, value))
+                if (this !== BoolConcept.checker) {
+                    err_r.if_failed(Proto.check_return_value(proto, value))
+                }
                 return value
             },
             toString: function () {
@@ -481,14 +480,12 @@ pour(FunctionObject, Detail.Function)
 
 const ConceptCheckerPrototype = {
     effect_range: 'local',
-    parameters: {
-        object: {
-            constraint: AnyConcept,
-            pass_policy: 'immutable'
-        }
-    },
-    order: ['object'],
-    return_value: BoolConcept
+    parameters: [{
+        name: 'object',
+        constraint: AnyConcept,
+        pass_policy: 'immutable'
+    }],
+    value_constraint: BoolConcept
 }
 
 

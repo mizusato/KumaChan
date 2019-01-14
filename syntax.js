@@ -12,7 +12,10 @@ const Char = {
     Space: one_of('　', ' '),
     NotSpace: $_(one_of('　', ' ')),
     Any: $u(Str, $(s => s.length >= 1)),
-    CompactOperator: one_of.apply({}, map('()[]{}:,.*^', x=>x))
+    ForbiddenInId: one_of.apply({}, map(
+        '`' + `\\'"()[]{}:,.!~&|+-*%^<>=`,
+        // divide "/" is available 
+    x => x))
 }
 
 
@@ -26,18 +29,8 @@ Pattern.PrefixOperator = function (name, operator) {
 }
 
 
-Pattern.InfixOperator = function (name, operator) {
-    check(Pattern.InfixOperator, arguments, {
-        name: Str, operator: Str
-    })
-    return Pattern('Operator', name, map(operator, (char, index) => Unit(
-        $1(char), '', (index < operator.length-1)? Any: Char.Space
-    )))
-}
-
-
-Pattern.CompactOperator = function (name, operator) {
-    check(Pattern.InfixOperator, arguments, {
+Pattern.Operator = function (name, operator) {
+    check(Pattern.Operator, arguments, {
         name: Str, operator: Str
     })
     return Pattern('Operator', name, map(operator, (char, index) => Unit(
@@ -57,7 +50,7 @@ const Tokens = [
         Unit($_(Char.DoubleQuote), '*'),
         Unit(Char.DoubleQuote)
     ]),
-    Pattern('NativeCode', 'NativeCode', [
+    Pattern('RawCode', 'RawCode', [
         Unit($1('/')),
         Unit($1('~')),
         CustomUnit((char, next) => `${char}${next}` != '~/', '*'),
@@ -77,48 +70,44 @@ const Tokens = [
     Pattern('Blank', 'Linefeed', [
         Unit($1(LF), '+')
     ]),
-    /**
-     * chars used by compact operators must be
-     * registered at Char.CompactOperator
-     */
-    Pattern.CompactOperator('(', '('),
-    Pattern.CompactOperator(')', ')'),
-    Pattern.CompactOperator('[', '['),
-    Pattern.CompactOperator(']', ']'),
-    Pattern.CompactOperator('{', '{'),
-    Pattern.CompactOperator('}', '}'),
-    Pattern.CompactOperator(',', ','),
-    Pattern.CompactOperator(':', ':'),
-    Pattern.CompactOperator('.{', '.{'),
-    Pattern.CompactOperator('.[', '.['),
-    Pattern.CompactOperator('..', '..'),
-    Pattern.CompactOperator('.', '.'),
+    Pattern.Operator('(', '('),
+    Pattern.Operator(')', ')'),
+    Pattern.Operator('[', '['),
+    Pattern.Operator(']', ']'),
+    Pattern.Operator('{', '{'),
+    Pattern.Operator('}', '}'),
+    Pattern.Operator(',', ','),
+    Pattern.Operator(':', ':'),
+    Pattern.Operator('.{', '.{'),
+    Pattern.Operator('.[', '.['),
+    Pattern.Operator('..', '..'),
+    Pattern.Operator('.', '.'),
     Pattern.PrefixOperator('Not', '!'),
-    Pattern.InfixOperator('Or', '||'),
-    Pattern.InfixOperator('And', '&&'),
+    Pattern.Operator('Or', '||'),
+    Pattern.Operator('And', '&&'),
     Pattern.PrefixOperator('Complement', '~'),
-    Pattern.InfixOperator('Union', '|'),
-    Pattern.InfixOperator('Intersect', '&'),
-    Pattern.InfixOperator('->', '->'),
-    Pattern.InfixOperator('<-', '<-'),
+    Pattern.Operator('Union', '|'),
+    Pattern.Operator('Intersect', '&'),
+    Pattern.Operator('->', '->'),
+    Pattern.Operator('<-', '<-'),
     Pattern.PrefixOperator('Negative', '-'),
-    Pattern.InfixOperator('Minus', '-'),
-    Pattern.PrefixOperator('Positive', '+'),
-    Pattern.InfixOperator('Plus', '+'),
-    Pattern.CompactOperator('Times', '*'),
-    Pattern.InfixOperator('Over', '/'),
+    Pattern.Operator('Minus', '-'),
+    //Pattern.PrefixOperator('Positive', '+'),
+    Pattern.Operator('Plus', '+'),
+    Pattern.Operator('Times', '*'),
+    Pattern.Operator('Over', '/'),
     //Pattern.PrefixOperator('Parameter', '%'),  // ugly, use dot
-    Pattern.InfixOperator('Modulo', '%'),
-    Pattern.CompactOperator('Power', '^'),
-    Pattern.InfixOperator('=', '='),
-    Pattern.InfixOperator('Equal', '=='),
-    Pattern.InfixOperator('NotEqual', '!='),
-    Pattern.InfixOperator('<<', '<<'),
-    Pattern.InfixOperator('>>', '>>'),
-    Pattern.InfixOperator('Less', '<'),
-    Pattern.InfixOperator('Greater', '>'),
-    Pattern.InfixOperator('LessEqual', '<='),
-    Pattern.InfixOperator('GreaterEqual', '>='),
+    Pattern.Operator('Modulo', '%'),
+    Pattern.Operator('Power', '^'),
+    Pattern.Operator('=', '='),
+    Pattern.Operator('Equal', '=='),
+    Pattern.Operator('NotEqual', '!='),
+    Pattern.Operator('<<', '<<'),
+    Pattern.Operator('>>', '>>'),
+    Pattern.Operator('Less', '<'),
+    Pattern.Operator('Greater', '>'),
+    Pattern.Operator('LessEqual', '<='),
+    Pattern.Operator('GreaterEqual', '>='),
     Pattern('Number', 'Exponent', [
         Unit(Char.Digit, '+'),
         Unit(Char.Dot),
@@ -136,8 +125,8 @@ const Tokens = [
         Unit(Char.Digit, '+')
     ]),
     Pattern('Name', 'Name', [
-        Unit(Char.NotDigit),
-        Unit($n(Char.NotSpace, $_(Char.CompactOperator)), '*')
+        Unit($n(Char.NotDigit, Chat.NotSpace, $_(Char.ForbiddenInId)),
+        Unit($n(Char.NotSpace, $_(Char.ForbiddenInId)), '*')
     ])
 ]
 
@@ -189,12 +178,11 @@ const Syntax = mapval({
     
     Id: ['Identifier', 'RawString'],
     Concept: 'Identifier',
-    Native: 'NativeCode',
     
     Module: 'Program',
     Program: 'Command NextCommand',
     Command: [
-        'Native',
+        'RawCode',
         'FuncDef',
         'Let',
         'Return',
@@ -212,7 +200,7 @@ const Syntax = mapval({
     Return: '~return Expr',
     
     Expr: [
-        'Native',
+        'RawCode',
         'FuncExpr',
         'MapExpr'
     ],
@@ -253,24 +241,18 @@ const Syntax = mapval({
     ],
     
     ParaList: ['( )', '( Para NextPara )'],
-    Para: 'Id : Concept',
+    Para: 'Concept PassFlag Id',
+    PassFlag: ['Intersect', ''],  // Intersect: &
     NextPara: [', Para NextPara', ''],
-    Target: '-> Concept',
+    Target: ['-> Concept', ''],
     Body: '{ Program }',
     
-    FuncFlag: ['~g :', '~f :'],
-    FuncExpr: [
-        'FuncFlag ParaList Target Body',
-        'FuncFlag ParaList -> Body',
-        'ParaList Target Body',
-        'ParaList -> Body',
-    ],
+    FuncFlag: ['~g :', '~f :', ''],
+    FuncExpr: 'FuncFlag ParaList Target Body',
     
     Effect: ['~global', '~local'],
-    FuncDef: [
-        'Effect Id : ParaList Target Body',
-        'Effect Id : ParaList -> Body'
-    ],
+    FuncDef: 'Effect Id Call ParaList Target Body',
+    //                   ↑  call operator will be inserted automatically
     
     Simple: { reducers: [ () => parse_simple ] },
     Wrapped: '( Simple )',

@@ -585,7 +585,6 @@ function* count (n) {
 
 Object.prototype.transform_by = function (f) { return f(this) }
 Object.prototype.has = function (prop) { return this.hasOwnProperty(prop) }
-Object.prototype.has_ = Object.prototype.has
 Array.prototype.has = function (index) { return typeof this[index] != 'undefined' }
 Array.prototype.added = function (element) {
     let r = list(this)

@@ -121,8 +121,7 @@ function find_parameters (tree) {
 
 
 let Translate = {
-    Native: use_first,
-    NativeCode: function (leaf) {
+    RawCode: function (leaf) {
         let string = string_of(leaf)
         let content = string.slice(2, string.length-2).trim()
         return `${content}`
@@ -182,7 +181,7 @@ let Translate = {
                 return `${translate(h.Id)}: ${translate(h.Expr)}`
             }
         ): ''
-        return `{${content}}`
+        return `HashObject({${content}})`
     },
     List: function (tree) {
         let h = children_hash(tree)
@@ -190,7 +189,7 @@ let Translate = {
             h.ItemList, 'Item', 'NextItem', ', ',
             (tree) => `${use_first(tree)}`
         ): ''
-        return `[${content}]`
+        return `ListObject([${content}])`
     },
     Expr: use_first,
     MapOperand: use_first,
@@ -212,7 +211,10 @@ let Translate = {
         })
     },
     /* ---------------------- */
-    
+    SimpleLambda: function (tree) {
+        let parameters = find_parameters(tree)
+        
+    },
     /* ---------------------- */
     Simple: use_first,
     SimpleUnit: function (tree) {
