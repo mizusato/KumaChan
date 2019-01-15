@@ -154,7 +154,7 @@ let Translate = {
         return `${content}`
     },
     /* ---------------------- */
-    Concept: use_first,
+    Constraint: use_first,
     Id: function (tree) {
         let id_id = $(tree => children_hash(tree).Identifier)
         let str_id = $(tree => children_hash(tree).RawString)
@@ -244,10 +244,25 @@ let Translate = {
         let shifted = items.slice(1, items.length)
         return fold(shifted, first_operand, function(h, reduced_string) {
             let operator_string = translate(h.MapOperator)
-            let operand = (h.FunExpr)? h.FunExpr: h.MapOperand
+            let operand = h.FunExpr || h.BodyLambda || h.MapOperand
             let operand_string = translate(operand)
             return `${operator_string}(${reduced_string}, ${operand_string})`
         })
+    },
+    Filter: use_first,
+    FilterList: function (tree) {
+        let conditions = translate_next(
+            tree, 'Filter', 'NextFilter', ' & ', f => `(${translate(f)})`
+        )
+        return `${conditions}`
+    },
+    Concept: function (tree) {
+        let h = children_hash(tree)
+        let parameter = translate(h.Id)
+        let filter = translate(h.FilterList)
+        let f = function_string(`return ${filter}`)
+        let checker = `Lambda(scope, [${parameter}], ${f})`
+        return `Abstract(${checker})`
     },
     /* ---------------------- */
     SimpleLambda: function (tree) {
@@ -276,7 +291,7 @@ let Translate = {
             tree, 'Para', 'NextPara', ', ', function (para) {
                 let h = children_hash(para)
                 let name = translate(h.Id)
-                let constraint = translate(h.Concept)
+                let constraint = translate(h.Constraint)
                 let is_immutable = h.PassFlag.is(SyntaxTreeEmpty)
                 let pass_policy = is_immutable? `'immutable'`: `'dirty'`
                 return `[${name},${constraint},${pass_policy}]`
@@ -286,7 +301,7 @@ let Translate = {
     },
     Target: function (tree) {
         let h = children_hash(tree)
-        return (h.has('Concept'))? translate(h.Concept): 'AnyConcept'
+        return (h.has('Constraint'))? translate(h.Constraint): 'AnyConcept'
     },
     FunExpr: function (tree) {
         let h = children_hash(tree)

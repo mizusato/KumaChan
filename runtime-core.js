@@ -316,10 +316,13 @@ const BoolConcept = {}  // ConceptObject('Bool', x => x.is(BoolObject))
 
 
 function ConceptObject (name, f) {
-    check(ConceptObject, arguments, { name: Str, f: Function })
+    check(ConceptObject, arguments, {
+        name: Str, f: $u(Function, FunctionalObject)
+    })
+    let checker = (f.is(Function))? ConceptChecker(`${name}`, f): f
     return {
         name: name,
-        checker: ConceptChecker(`${name}`, f),
+        checker: checker,
         maker: ConceptObject,
         __proto__: once(ConceptObject, {
             toString: function () {

@@ -12,6 +12,14 @@ function FormatString (string, id_ref) {
 }
 
 
+function Abstract (checker, name) {
+    check(Abstract, arguments, {
+        checker: FunctionalObject, name: Optional(Str)
+    })
+    return ConceptObject(name || '{Temp}', checker)
+}
+
+
 function Lambda (context, parameter_names, f) {
     check(Lambda, arguments, {
         context: Scope, parameter_names: ArrayOf(Str), f: Function

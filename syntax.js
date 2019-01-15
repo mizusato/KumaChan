@@ -98,7 +98,7 @@ const Tokens = [
     Pattern.Operator('.{'),
     Pattern.Operator('..{'),
     Pattern.Operator('...{'),
-    Pattern.Operator('.['),
+    // Pattern.Operator('.['),
     Pattern.Operator('..['),
     Pattern.Operator('..'),  // ..Identifier = Inline Comment
     Pattern.Operator('.'),
@@ -202,7 +202,7 @@ SetEquivalent(SimpleOperator, $(
 const Syntax = mapval({
     
     Id: ['Identifier', 'RawString'],
-    Concept: 'Identifier',
+    Constraint: 'Identifier',
     
     Module: 'Program',
     Program: 'Command NextCommand',
@@ -228,13 +228,22 @@ const Syntax = mapval({
     
     Expr: [
         'RawCode',
+        'Concept',
         'FunExpr',
-        'MapExpr'
+        'BodyLambda',
+        'MapExpr',
     ],
+    
+    Concept: '{ Id That FilterList }',
+    That: ['|', '~that'],
+    FilterList: 'Filter NextFilter',
+    NextFilter: ['Filter NextFilter', ''],
+    Filter: 'Simple',
     
     MapExpr: 'MapOperand MapNext',
     MapNext: [
         'MapOperator FunExpr',
+        'MapOperator BodyLambda',
         'MapOperator MapOperand MapNext',
         ''
     ],
@@ -246,7 +255,8 @@ const Syntax = mapval({
     MapOperand: [
         'Hash', 'HashLambda',
         'List', 'ListLambda',
-        'SimpleLambda', 'BodyLambda', 'Simple'
+        'SimpleLambda',
+        'Simple'
     ],
     
     ItemList: 'Item NextItem',
@@ -260,23 +270,21 @@ const Syntax = mapval({
     Hash: ['{ }', '{ PairList }'],
     List: ['[ ]', '[ ItemList ]'],
     
-    HashLambda: ['.{ }', '..{ PairList }'],
-    ListLambda: ['.[ ]', '..[ ItemList ]'],
+    HashLambda: ['..{ }', '..{ PairList }'],
+    ListLambda: ['..[ ]', '..[ ItemList ]'],
     
     SimpleLambda: [
         '.{ SimpleLambda }',
-        '.[ SimpleLambda }',
-        '.{ Simple }',
-        '.[ Simple ]'
+        '.{ Simple }'
     ],
     
     BodyLambda: '...{ Program }',
     
     ParaList: ['( )', '( Para NextPara )'],
-    Para: 'Concept PassFlag Id',
+    Para: 'Constraint PassFlag Id',
     NextPara: [', Para NextPara', ''],
     PassFlag: ['Intersect', ''],  // Intersect: &
-    Target: ['-> Concept', '->', ''],
+    Target: ['-> Constraint', '->', ''],
     Body: '{ Program }',
     
     FunFlag: ['~g :', '~u: ', '~f :', ''],
