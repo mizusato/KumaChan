@@ -122,7 +122,15 @@ function access (object, name, scope) {
         { when_it_is: OverloadObject, use: o => o.find_method_for(object) },
         { when_it_is: Otherwise, use: x => NotFound }
     ])
-    return (method != NotFound) && wrap(method) || get(object, name)
+    if (method != NotFound) {
+        return wrap(method)
+    } else if (object.is(HashObject)) {
+        return get(object, name)
+    } else {
+        let err = ErrorProducer(ObjectNotFound, 'runtime::access')
+        let repr = ObjectObject.represent(object)
+        err.throw(`unable to find a method called ${name} for ${repr}`)
+    }
 }
 
 
@@ -132,4 +140,10 @@ function assign_outer (scope, key, value) {
     err.if(result.is(NotFound), `variable ${key} not declared`)
     err.if(result.is_immutable, `the scope containing ${key} is immutable`)
     result.scope.replace(key, value)
+}
+
+
+function assert_bool (value) {
+    assert(typeof value == 'boolean')
+    return value
 }

@@ -64,8 +64,8 @@ const $d = (x, y) => $n(x, $_(y))
 const $1 = y => $(x => x === y)
 const $f = (...elements) => $(x => exists(elements, e => e === x))
 
-const Any = $(() => true)
-const Void = $(() => false)
+const Any = $(any => true)
+const Void = $(any => false)
 const Otherwise = Any  // for transform()
 
 const NoValue = $(x => typeof x == 'undefined')

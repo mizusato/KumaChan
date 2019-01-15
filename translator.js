@@ -235,7 +235,7 @@ let Translate = {
         let name = string_of(tree.children[0])
         let normalized = normalize_operator_name(name)
         let escaped = escape_raw(normalized)
-        return `(id('${escaped}'))`
+        return `(apply(id('${escaped}')))`
     },
     MapExpr: function (tree) {
         let first_operand = use_first(tree)
@@ -252,7 +252,8 @@ let Translate = {
     Filter: use_first,
     FilterList: function (tree) {
         let conditions = translate_next(
-            tree, 'Filter', 'NextFilter', ' & ', f => `(${translate(f)})`
+            tree, 'Filter', 'NextFilter', ' && ',
+            f => `assert_bool(${translate(f)})`
         )
         return `${conditions}`
     },

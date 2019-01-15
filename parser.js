@@ -370,14 +370,20 @@ function parse_simple (syntax, tokens, pos) {
         let operators = state.operators
         let output = state.output
         let operator = top(state)
-        let err = parser_error(operator, 'missing operand')
+        let err_op = parser_error(operator, 'missing operand')
         let type = info(operator).type
         let count = ({ prefix: 1, infix: 2 })[type]
-        err.assert(output.length >= count)
+        err_op.assert(output.length >= count)
         let take_out = output.slice(output.length-count, output.length)
         let remaining = output.slice(0, output.length-count)
         let poped = operators.slice(0, operators.length-1)
         let children = take_out.added_front(build_leaf(operator))
+        let err_arg_msg = 'argument list involved in non-call expression'
+        let err_arg = parser_error(operator, err_arg_msg)
+        err_arg.if(
+            operator.is_not(Token('Call'))
+            && exists(children, operand => operand.name == 'ArgList')
+        )
         let reduced = {
             name: 'SimpleUnit',
             children: children,

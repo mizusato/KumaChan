@@ -237,7 +237,7 @@ const Syntax = mapval({
     Concept: '{ Id That FilterList }',
     That: ['|', '~that'],
     FilterList: 'Filter NextFilter',
-    NextFilter: ['Filter NextFilter', ''],
+    NextFilter: [', Filter NextFilter', ''],
     Filter: 'Simple',
     
     MapExpr: 'MapOperand MapNext',

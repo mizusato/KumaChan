@@ -178,7 +178,7 @@ Detail.Scope.Prototype = {
         this.set(key, value)
     },
     upward_iterator: function () {
-        return iterate(this, x => x.context, NullScope)
+        return iterate(this, x => x.context, $1(NullScope))
     },
     find_name: function (name) {
         let get_scope_chain = (() => this.upward_iterator())
@@ -239,10 +239,7 @@ Detail.Concept.Union = function (concept1, concept2, new_name) {
         new_name: Optional(Str)
     })
     let name = new_name || `(${concept1.name} | ${concept2.name})`
-    let f = (x, info) => exists(
-        map_lazy([concept1, concept2], c => c.checker),
-        f => f.apply(info.is_immutable? x: ForceMutable(x)) === true
-    )
+    let f = ( x => exists([concept1, concept2], c => c.checker(x)) )
     return ConceptObject(name, f)
 }
 
@@ -254,10 +251,7 @@ Detail.Concept.Intersect = function (concept1, concept2, new_name) {
         new_name: Optional(Str)
     })
     let name = new_name || `(${concept1.name} & ${concept2.name})`
-    let f = (x, info) => forall(
-        map_lazy([concept1, concept2], c => c.checker),
-        f => f.apply(info.is_immutable? x: ForceMutable(x)) === true
-    )
+    let f = ( x => forall([concept1, concept2], c => c.checker(x)) )
     return ConceptObject(name, f)
 }
 
@@ -268,11 +262,7 @@ Detail.Concept.Complement = function (concept, new_name) {
         new_name: Optional(Str)
     })
     let name = new_name || `~${concept.name}`
-    let f = (x, info) => (
-        false === concept.checker.apply(
-            info.is_immutable? x: ForceMutable(x)
-        ) 
-    )
+    let f = ( x => !concept.checker(x) )
     return ConceptObject(name, f)
 }
 
@@ -318,7 +308,7 @@ Detail.Prototype.check_argument = function (prototype, argument) {
                 return map_lazy(hash, (key, param) => suppose(
                         (param.constraint === AnyConcept
                             && ObjectObject.contains(arg[key]))
-                        || param.constraint.checker.apply(arg[key]),
+                        || param.constraint.checker(arg[key]),
                     `illegal argument '${key}'`
                 ))
             })
@@ -351,7 +341,7 @@ Detail.Prototype.check_return_value = function (prototype, value) {
         prototype: Prototype, value: Any
     })
     return suppose(
-        prototype.value_constraint.checker.apply(value),
+        prototype.value_constraint.checker(value),
         `invalid return value ${value}`
     )
 }
@@ -468,6 +458,6 @@ Detail.Object.represent = function (object) {
 Detail.Function.MethodFor = function (object) {
     return $n(FunctionObject, $(function (f) {
         let p = f.prototype.parameters
-        return (p.length > 0) && (p[0].constraint.checker.apply(object))
+        return (p.length > 0) && (p[0].constraint.checker(object))
     }))
 }

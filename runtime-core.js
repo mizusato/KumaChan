@@ -219,23 +219,6 @@ function ImRef (object) {
 }
 
 
-function ForceMutable (object) {
-    return transform(object, [
-        {
-            when_it_is: ImmutableObject,
-            use: x => (x.maker)(
-                x.data,
-                Config.mutable_from(x)
-            )
-        },
-        {
-            when_it_is: Otherwise,
-            use: x => x
-        }
-    ])
-}
-
-
 function Clone (object) {
     return transform(object, [
         {
@@ -254,18 +237,57 @@ function Clone (object) {
 
 
 /**
- *  Scope Definition
- *
- *  Since the constructor of singleton requires ConceptChecker,
- *  and ConceptChecker requires definition of global scope,
- *  we have to create a null pointer of NullScope here.
+ *  Concept Definition
  */
 
 
-const NullScope = {}  // SingletonObject('NullScope')
+function ConceptObject (name, f) {
+    check(ConceptObject, arguments, {
+        name: Str, f: $u(Function, FunctionalObject)
+    })
+    let raw_checker = (f.is(Function))? f: function (object) {
+        return f.apply(object)
+    }
+    let wrapped_checker = function (object) {
+        let result = raw_checker(object)
+        assert(result.is(BoolObject))
+        return result
+    }
+    return {
+        name: name,
+        checker: wrapped_checker,
+        maker: ConceptObject,
+        __proto__: once(ConceptObject, {
+            toString: function () {
+                return `Concept<'${this.name}'>`
+            }
+        })
+    }
+}
 
 
-SetEquivalent(NullScope, $1(NullScope))
+SetMakerConcept(ConceptObject)
+
+
+pour(ConceptObject, Detail.Concept)
+
+
+function SingletonObject (name) {
+    let singleton = {}
+    pour(singleton, ConceptObject(
+        `Singleton('${name}')`,
+        object => object === singleton
+    ))
+    return singleton
+}
+
+
+/**
+ *  Scope Definition
+ */
+
+
+const NullScope = SingletonObject('NullScope')
 
 
 function Scope (context, range, data = {}) {
@@ -282,7 +304,7 @@ function Scope (context, range, data = {}) {
 }
 
 
-SetEquivalent(Scope, $u(NullScope, MadeBy(Scope)) )
+SetEquivalent(Scope, $u(MadeBy(Scope), $1(NullScope)) )
 
 
 /**
@@ -292,57 +314,25 @@ SetEquivalent(Scope, $u(NullScope, MadeBy(Scope)) )
 
 const G = Scope(NullScope, 'global')
 const K = G.data
-K.scope = HashObject(K)
+K.scope = HashObject(G.data)
+const scope = G
+const id = (name => G.lookup(name))
+
+
+const VoidObject = SingletonObject('Void')
+const NaObject = SingletonObject('N/A')
+
+
+pour(K, {
+    NullScope: NullScope,
+    Void: VoidObject,
+    'N/A': NaObject,
+})
 
 
 /**
- *  Concept & Function Definition
- *  
- *  We have to create null pointers of AnyConcept and BoolConcept previously.
- *  It's because a Concept is defined by its checker function,
- *  so we have to build a Function Instance before building a concept,
- *  and it is necessary to build a Function Prototype before building
- *  this Function Instance, the prototype can be described as
- *  f: (object::Any) -> Bool, which requires the references of Any and Bool.
- *  In addition, when we invoke the checker function of a concept, we
- *  should check whether the return value is a bool value. If the function
- *  were Bool::Checker, infinite recursion would happen. So it is necessary
- *  to disable return value check when the function is Bool::Checker.
+ *  Function Definition
  */
-
-
-const AnyConcept = {}  // ConceptObject('Any', x => x)
-const BoolConcept = {}  // ConceptObject('Bool', x => x.is(BoolObject))
-
-
-function ConceptObject (name, f) {
-    check(ConceptObject, arguments, {
-        name: Str, f: $u(Function, FunctionalObject)
-    })
-    let checker = (f.is(Function))? ConceptChecker(`${name}`, f): f
-    return {
-        name: name,
-        checker: checker,
-        maker: ConceptObject,
-        __proto__: once(ConceptObject, {
-            toString: function () {
-                return `Concept<'${this.name}'>`
-            }
-        })
-    }
-}
-
-
-SetEquivalent(
-    ConceptObject,
-    $u( $f(AnyConcept, BoolConcept), MadeBy(ConceptObject) )
-)
-
-
-pour(ConceptObject, Detail.Concept)
-
-
-/* Function Prototype Definition */
 
 
 const Parameter = Struct({
@@ -359,11 +349,7 @@ const Prototype = Struct({
 })
 
 
-
 pour(Prototype, Detail.Prototype)
-
-
-/* Function Definition */
 
 
 function FunctionObject (name, context, prototype, js_function) {
@@ -440,10 +426,6 @@ function FunctionObject (name, context, prototype, js_function) {
                 let arg_str = Detail.Argument.represent(normalized)
                 let val_str = ObjectObject.represent(value)
                 console.log(`${name}${arg_str} = ${val_str}`)
-                /* special process for BookConcept::Checker */
-                if (this !== BoolConcept.checker) {
-                    err_r.if_failed(Proto.check_return_value(proto, value))
-                }
                 return value
             },
             toString: function () {
@@ -464,197 +446,8 @@ SetMakerConcept(FunctionObject)
 pour(FunctionObject, Detail.Function)
 
 
-/* Concept Checker Definition */
-
-
-const ConceptCheckerPrototype = {
-    effect_range: 'local',
-    parameters: [{
-        name: 'object',
-        constraint: AnyConcept,
-        pass_policy: 'immutable'
-    }],
-    value_constraint: BoolConcept
-}
-
-
-function ConceptChecker (name, f) {
-    check(ConceptChecker, arguments, { name: Str, f: Function })
-    return FunctionObject(
-        `${name}::Checker`, G, ConceptCheckerPrototype,
-        scope => f(
-            scope.data.object,
-            scope.data.argument_info.data.object.data
-        )
-    )
-}
-
-
-SetEquivalent(
-    ConceptChecker,
-    $n(FunctionObject, $(f => f.prototype.is(
-        $n(
-            Struct({
-                effect_range: $1('local'),
-                order: $(array => array.length == 1),
-                return_value: $1(BoolConcept)
-            }),
-            $(proto => proto.parameters[proto.order[0]].is(Struct({
-                constraint: $1(AnyConcept),
-                pass_policy: $1('immutable')
-            })))
-        )
-    )))
-)
-
-
-/* Singleton Definition */
-
-
-const SingletonOfName = {}
-
-
-function SingletonObject (name) {
-    let err = ErrorProducer(NameConflict, 'Singleton::Creator')
-    err.if(
-        Boolean(SingletonOfName[name]),
-        `singleton name ${name} already in use`
-    )
-    let singleton = {}
-    pour(singleton, ConceptObject(
-        `Singleton<'${name}'>`,
-        object => object === singleton
-    ))
-    pour(singleton, {
-        contains: x => x === singleton,
-        singleton_name: name,
-        __proto__: once(SingletonObject, {
-            toString: function () {
-                return `Singleton<'${this.singleton_name}'>`
-            }
-        })
-    })
-    SingletonOfName[name] = singleton
-    return singleton
-}
-
-
-SetEquivalent(SingletonObject, $n(
-    ConceptObject,
-    $(x => typeof x['singleton_name'] == 'string'),
-    $(x => x === SingletonOfName[x.singleton_name])
-))
-
-
-/* Fix NullScope */
-
-
-pour(NullScope, SingletonObject('NullScope'))
-
-
-/* Default Singleton Objects */
-
-
-const VoidObject = SingletonObject('Void')
-const NaObject = SingletonObject('N/A')
-
-
-pour(K, {
-    NullScope: NullScope,
-    Void: VoidObject,
-    'N/A': NaObject,
-})
-
-
 /**
- *  Port Native Concepts
- */
-
-
-function PortEquivalent(object, concept, name) {
-    check(
-        PortEquivalent, arguments,
-        { object: Object, concept: Concept, name: Str }
-    )
-    pour(object, ConceptObject(name, x => x.is(concept)))
-}
-
-
-PortEquivalent(AnyConcept, ObjectObject, 'Any')
-PortEquivalent(BoolConcept, BoolObject, 'Bool')
-
-
-const ImmutableConcept = ConceptObject(
-    'Immutable', (_, info) => info.is_immutable
-)
-const MutableConcept = ConceptObject(
-    'Mutable', (_, info) => !info.is_immutable
-)
-
-function PortConcept(concept, name) {
-    check(PortConcept, arguments, {
-        concept: Concept, name: Str
-    })
-    return ConceptObject(name, x => x.is(concept))
-}
-
-
-pour(PortConcept, {
-    Immutable: (c, n, N) => ConceptObject.Intersect(
-        ImmutableConcept, PortConcept(c, N), n
-    ),
-    Mutable: (c, n, N) => ConceptObject.Intersect(
-        MutableConcept, PortConcept(c, N), n
-    )
-})
-
-
-pour(K, {
-    /* concept */
-    Concept: PortConcept(ConceptObject, 'Concept'),
-    /* special */
-    Any: AnyConcept,
-    Bool: BoolConcept,
-    /* atomic */
-    Atomic: PortConcept(AtomicObject, 'Atomic'),
-    /* primitive */
-    Number: PortConcept(NumberObject, 'Number'),
-    Int: PortConcept(Int, 'Int'),
-    UnsignedInt: PortConcept(UnsignedInt, 'UnsignedInt'),
-    Finite: ConceptObject('Finite', x => x.is(Num) && Number.isFinite(x)),
-    NaN: ConceptObject('NaN', x => x.is(Num) && Number.isNaN(x)),
-    String: PortConcept(StringObject, 'String'),
-    Primitive: PortConcept(PrimitiveObject, 'Primitive'),
-    /* non-primitive atomic */
-    Function: PortConcept(FunctionObject, 'Function'),
-    Overload: PortConcept(OverloadObject, 'Overload'),
-    Singleton: PortConcept(SingletonObject, 'Singleton'),
-    /* compound */
-    Compound: PortConcept(CompoundObject, 'Compound'),
-    List: PortConcept(ListObject, 'List'),
-    Hash: PortConcept(HashObject, 'Hash'),
-    /* mutability, frozen and solid */
-    ImHash: PortConcept.Immutable(HashObject, 'ImHash', 'Hash'),
-    MutHash: PortConcept.Mutable(HashObject, 'MutHash', 'Hash'),
-    ImList: PortConcept.Immutable(ListObject, 'ImList', 'List'),
-    MutList: PortConcept.Mutable(ListObject, 'MutList', 'List'),
-    Immutable: ImmutableConcept,
-    Mutable: MutableConcept
-})
-
-
-/* Concept Alias */
-
-
-pour(K, {
-    Object: K.Any,
-    Index: K.UnsignedInt,
-    Size: K.UnsignedInt
-})
-
-
-/**
- *  Function Chain Definition
+ *  Function Overload Definition
  */
 
 
@@ -722,12 +515,71 @@ SetMakerConcept(OverloadObject)
 
 
 /**
+ *  Port Native Concepts
+ */
+
+
+function PortConcept(concept, name) {
+    check(PortConcept, arguments, {
+        concept: Concept, name: Str
+    })
+    return ConceptObject(name, x => x.is(concept))
+}
+
+
+const AnyConcept = PortConcept(Any, 'Any')
+
+
+pour(K, {
+    /* concept */
+    Concept: PortConcept(ConceptObject, 'Concept'),
+    /* special */
+    Any: AnyConcept,
+    Bool: PortConcept(Bool, 'Bool'),
+    /* atomic */
+    Atomic: PortConcept(AtomicObject, 'Atomic'),
+    /* primitive */
+    Number: PortConcept(NumberObject, 'Number'),
+    Int: PortConcept(Int, 'Int'),
+    UnsignedInt: PortConcept(UnsignedInt, 'UnsignedInt'),
+    String: PortConcept(StringObject, 'String'),
+    Primitive: PortConcept(PrimitiveObject, 'Primitive'),
+    /* functional */
+    Function: PortConcept(FunctionObject, 'Function'),
+    Overload: PortConcept(OverloadObject, 'Overload'),
+    Functional: PortConcept(FunctionalObject, 'Functional'),
+    /* compound */
+    Compound: PortConcept(CompoundObject, 'Compound'),
+    List: PortConcept(ListObject, 'List'),
+    Hash: PortConcept(HashObject, 'Hash'),
+    /* mutability, frozen and solid */
+    ImHash: PortConcept(ImHashObject, 'ImHash'),
+    MutHash: PortConcept(MutHashObject, 'MutHash'),
+    ImList: PortConcept(ImListObject, 'ImList'),
+    MutList: PortConcept(MutListObject, 'MutList'),
+    Immutable: PortConcept(ImmutableObject, 'Immutable'),
+    Mutable: PortConcept(MutableObject, 'Mutable')
+})
+
+
+/* Concept Alias */
+
+
+pour(K, {
+    Object: K.Any,
+    Index: K.UnsignedInt,
+    Size: K.UnsignedInt
+})
+
+
+/**
  *  Fundamental Functions Definition
  */
 
+
 pour(K, {
     singleton: FunctionObject.create(
-        'global singleton (String name) -> Singleton',
+        'global singleton (String name) -> Concept',
         a => SingletonObject(a.name)
     )
 })
@@ -735,34 +587,85 @@ pour(K, {
 
 pour(K, {
     
-    is: OverloadObject('is', FunctionObject.converge([
-        'local Immutable::is (Immutable object, Concept concept) -> Bool',
-        'local Mutable::is (Mutable &object, Concept concept) -> Bool',    
-    ], a => a.concept.checker.apply(a.object) )),
+    'call': OverloadObject('call', list(cat(
+        FunctionObject.converge([
+            'local call (Functional f, ImHash argument_table) -> Any',
+            'local call (Functional f, MutHash &argument_table) -> Any'
+        ], a => a.f.call(a.argument_table.data)),
+        [
+            FunctionObject.create(
+                'local call (Functional f) -> Functional',
+                a => OverloadObject('call_by', FunctionObject.converge([
+                    'local call_by (ImHash argument_table) -> Any',
+                    'local call_by (MutHash &argument_table) -> Any',
+                ], b => a.f.call(b.argument_table.data))
+            ))
+        ]
+    ))),
     
-    union: OverloadObject('union', [ FunctionObject.create(
-        'local union (Concept c1, Concept c2) -> Concept',
-        a => ConceptObject.Union(a.c1, a.c2)            
-    )]),
+    '>>': OverloadObject('>>', FunctionObject.converge([
+        'local pass_to_right (Immutable object, Functional f) -> Any',
+        'local pass_to_right (Mutable &object, Functional f) -> Any',    
+    ], a => a.f.apply(a.object) )),
+    
+    '<<': OverloadObject('<<', FunctionObject.converge([
+        'local pass_to_left (Functional f, Immutable object) -> Any',
+        'local pass_to_left (Functional f, Mutable &object) -> Any',    
+    ], a => a.f.apply(a.object) )),
      
-    intersect: OverloadObject('intersect', [ FunctionObject.create(
-        'local intersect (Concept c1, Concept c2) -> Concept',
-        a => ConceptObject.Intersect(a.c1, a.c2)
-    )]),
-     
-    complement: OverloadObject('complement', [ FunctionObject.create(
-        'local complement (Concept c) -> Concept',
-        a => ConceptObject.Complement(a.c)
-    )])
+    'operator_by': OverloadObject('operator_by', FunctionObject.converge([
+        'local pass_to_left (Functional f, Immutable object) -> Any',
+        'local pass_to_left (Functional f, Mutable &object) -> Any',    
+    ], a => a.f.apply(a.object) ))
     
 })
 
 
 pour(K, {
     
-    type_of: OverloadObject('type_of', [
+    operator_is: OverloadObject('operator_is', FunctionObject.converge([
+        'local is (Immutable object, Concept concept) -> Bool',
+        'local is (Mutable &object, Concept concept) -> Bool',    
+    ], a => a.concept.checker(a.object) )),
+    
+    '|': OverloadObject('|', [ FunctionObject.create(
+        'local union (Concept c1, Concept c2) -> Concept',
+        a => ConceptObject.Union(a.c1, a.c2)            
+    )]),
+     
+    '&': OverloadObject('&', [ FunctionObject.create(
+        'local intersect (Concept c1, Concept c2) -> Concept',
+        a => ConceptObject.Intersect(a.c1, a.c2)
+    )]),
+     
+    '~': OverloadObject('~', [ FunctionObject.create(
+        'local complement (Concept c) -> Concept',
+        a => ConceptObject.Complement(a.c)
+    )]),
+    
+    '||': OverloadObject('||', [ FunctionObject.create(
+        'local or (Bool v1, Bool v2) -> Bool',
+         a => a.v1 || a.v2
+    )]),
+    
+    '&&': OverloadObject('&&', [ FunctionObject.create(
+        'local and (Bool v1, Bool v2) -> Bool',
+        a => a.v1 && a.v2
+    )]),
+     
+    '!': OverloadObject('!', [ FunctionObject.create(
+        'local not (Bool v) -> Concept',
+        a => !a.v
+    )])
+     
+})
+
+
+pour(K, {
+    
+    type: OverloadObject('type', [
         FunctionObject.create (
-            'local type_of (Any object) -> String',
+            'local type (Any object) -> String',
             a => GetType(a.object)
         )
     ]),
@@ -818,22 +721,22 @@ pour(K, {
     
     at: OverloadObject('at', [
         FunctionObject.create (
-            'local ImList::at (ImList self, Index index) -> Immutable',
+            'local at (ImList self, Index index) -> Immutable',
             a => ImRef(a.self.at(a.index))
         ),
         FunctionObject.create (
-            'local MutList::at (MutList &self, Index index) -> Object',
+            'local at (MutList &self, Index index) -> Object',
             a => a.self.at(a.index)
         )
     ]),
      
     append: OverloadObject('append', FunctionObject.converge([
-        'local MutList::append (MutList &self, Immutable element) -> Void',
-        'local MutList::append (MutList &self, Mutable &element) -> Void'
+        'local append (MutList &self, Immutable element) -> Void',
+        'local append (MutList &self, Mutable &element) -> Void'
     ], a => a.self.append(a.element) )),
     
     length: OverloadObject('length', [ FunctionObject.create (
-        'local List::length (List self) -> Size',
+        'local length (List self) -> Size',
         a => a.self.length()
     )])
 
@@ -844,45 +747,36 @@ pour(K, {
     
     has: OverloadObject('has', [
         FunctionObject.create (
-            'local Hash::has (Hash self, String key) -> Bool',
+            'local has (Hash self, String key) -> Bool',
             a => a.self.has(a.key)
         )
     ]),
     
     get: OverloadObject('get', [
         FunctionObject.create (
-            'local ImHash::get (ImHash self, String key) -> Immutable',
+            'local get (ImHash self, String key) -> Immutable',
             a => ImRef(a.self.get(a.key))
         ),
         FunctionObject.create (
-            'local MutHash::get (MutHash &self, String key) -> Object',
+            'local get (MutHash &self, String key) -> Object',
             a => a.self.get(a.key)
-        ),
-        /* List also have a get function, which calls at() */
-        FunctionObject.create (
-            'local ImList::get (ImList self, Index index) -> Immutable',
-            a => ImRef(a.self.at(a.index))
-        ),
-        FunctionObject.create (
-            'local MutList::get (MutList &self, Index index) -> Object',
-            a => a.self.at(a.index)
         )
     ]),
     
     fetch: OverloadObject('fetch', [
         FunctionObject.create (
-            'local ImHash::fetch (ImHash self, String key) -> Immutable',
+            'local fetch (ImHash self, String key) -> Immutable',
             a => ImRef(a.self.fetch(a.key))
         ),
         FunctionObject.create (
-            'local MutHash::fetch (MutHash &self, String key) -> Object',
+            'local fetch (MutHash &self, String key) -> Object',
             a => a.self.fetch(a.key)
         )
     ]),
     
     set: OverloadObject('set', FunctionObject.converge([
-        'local MutHash::set (MutHash &self, String key, Immutable value) -> Void',
-        'local MutHash::set (MutHash &self, String key, Mutable &value) -> Void'
+        'local set (MutHash &self, String key, Immutable value) -> Void',
+        'local set (MutHash &self, String key, Mutable &value) -> Void'
     ], a => a.self.set(a.key, a.value) ))
     
 })
@@ -890,59 +784,112 @@ pour(K, {
 
 pour(K, {
     
-    plus: OverloadObject('plus', [
+    '+': OverloadObject('+', [
         FunctionObject.create (
             'local plus (Number p, Number q) -> Number',
             a => a.p + a.q
         ),
         FunctionObject.create (
-            'local plus (String s1, String s2) -> String',
+            'local string_concat (String s1, String s2) -> String',
             a => a.s1 + a.s2
         )
     ]),
     
-    minus: OverloadObject('minus', [
+    '-': OverloadObject('-', [
         FunctionObject.create (
             'local minus (Number p, Number q) -> Number',
             a => a.p - a.q
         ),
-        FunctionObject.create (
-            'local minus (Number x) -> Number',
-            a => -a.x
-        ),
         FunctionObject.create(
-            'local minus (Concept c1, Concept c2) -> Concept',
+            'local difference (Concept c1, Concept c2) -> Concept',
             a => ConceptObject.Intersect(
                 a.c1, ConceptObject.Complement(a.c2)
             )
         )
     ]),
     
-    multiply: OverloadObject('multiply', [
+    operator_negate: OverloadObject('operator_negate', [
+        FunctionObject.create (
+            'local negate (Number x) -> Number',
+            a => -a.x
+        ),
+    ]),
+     
+    '*': OverloadObject('*', [
         FunctionObject.create (
             'local multiply (Number p, Number q) -> Number',
             a => a.p * a.q
         )
     ]),
     
-    divide: OverloadObject('divide', [
+    '/': OverloadObject('/', [
         FunctionObject.create (
-            'local divide (Number p, Number q) -> Number',
+            'local over (Number p, Number q) -> Number',
             a => a.p / a.q
         )
     ]),
     
-    mod: OverloadObject('mod', [
+    '%': OverloadObject('%', [
         FunctionObject.create (
-            'local mod (Number p, Number q) -> Number',
+            'local modulo (Number p, Number q) -> Number',
             a => a.p % a.q
         )
     ]),
     
-    pow: OverloadObject('pow', [
+    '^': OverloadObject('^', [
         FunctionObject.create (
-            'local pow (Number p, Number q) -> Number',
+            'local power (Number p, Number q) -> Number',
             a => Math.pow(a.p, a.q)
+        )
+    ]),
+    
+    '<': OverloadObject('<', [
+        FunctionObject.create (
+            'local less_than (Number p, Number q) -> Bool',
+            a => a.p < a.q
+        )
+    ]),
+    
+    '>': OverloadObject('>', [
+        FunctionObject.create (
+            'local greater_than (Number p, Number q) -> Bool',
+            a => a.p > a.q
+        )
+    ]),
+    
+    '>=': OverloadObject('>=', [
+        FunctionObject.create (
+            'local greater_than_or_equal (Number p, Number q) -> Bool',
+            a => a.p >= a.q
+        )
+    ]),
+    
+    '<=': OverloadObject('<=', [
+        FunctionObject.create (
+            'local less_than_or_equal (Number p, Number q) -> Bool',
+            a => a.p <= a.q
+        )
+    ]),
+    
+    '==': OverloadObject('==', [
+        FunctionObject.create (
+            'local equal (Number p, Number q) -> Bool',
+            a => a.p == a.q
+        ),
+        FunctionObject.create (
+            'local string_equal (String s1, String s2) -> Bool',
+            a => a.s1 == a.s2
+        )
+    ]),
+    
+    '!=': OverloadObject('!=', [
+        FunctionObject.create (
+            'local not_equal (Number p, Number q) -> Bool',
+            a => a.p != a.q
+        ),
+        FunctionObject.create (
+            'local string_not_equal (String s1, String s2) -> Bool',
+            a => a.s1 != a.s2
         )
     ]),
     
