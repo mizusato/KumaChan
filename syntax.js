@@ -9,6 +9,7 @@ const Char = {
     DoubleQuote: $1('"'),
     SingleQuote: $1("'"),
     Dot: $1('.'),
+    Semicolon: $1(';'),
     Space: one_of('　', ' '),
     NotSpace: $_(one_of('　', ' ')),
     Any: $u(Str, $(s => s.length >= 1)),
@@ -70,6 +71,9 @@ const Tokens = [
     ]),
     Pattern('Blank', 'Linefeed', [
         Unit($1(LF), '+')
+    ]),
+    Pattern('Blank', 'Linefeed', [
+        Unit(Char.Semicolon, '+')
     ]),
     Pattern.Operator('('),
     Pattern.Operator(')'),
@@ -191,12 +195,14 @@ const Syntax = mapval({
         'Let',
         'Return',
         'Assign',
+        'Outer',
         'MapExpr'
     ],
     NextCommand: ['Command NextCommand', ''],
 
     Let: '~let Id = Expr',
     Assign: 'LeftVal = Expr',
+    Outer: '~outer Id = Expr',
     LeftVal: 'Id MemberNext KeyNext',
     MemberNext: ['Access Member MemberNext', ''],
     KeyNext: ['Get Key KeyNext', ''],
@@ -255,10 +261,10 @@ const Syntax = mapval({
     Target: ['-> Concept', '->', ''],
     Body: '{ Program }',
     
-    FunFlag: ['~g :', '~f :', ''],
+    FunFlag: ['~g :', '~u: ', '~f :', ''],
     FunExpr: 'FunFlag ParaList Target Body',
     
-    Effect: ['~global', '~local'],
+    Effect: ['~global', '~upper', '~local'],
     FunDef: 'Effect Id Call ParaList Target Body',
     //                   ↑  call operator will be inserted automatically
     

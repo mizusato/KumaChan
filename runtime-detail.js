@@ -180,22 +180,42 @@ Detail.Scope.Prototype = {
     upward_iterator: function () {
         return iterate(this, x => x.context, NullScope)
     },
+    find_name: function (name) {
+        let get_scope_chain = (() => this.upward_iterator())
+        let range = this.range
+        /**
+         *  upper_max indicates the most out scope
+         *  that can be modified by function whose EffectRange = 'upper'
+         *  for example:
+         *     0      1      2
+         *  [upper, local, global] => upper_max = 1
+         *  [upper, upper, local, global] => upper_max = 2
+         */
+        let upper_max = fold(get_scope_chain(), 0, (scope, index) => (
+            scope.range == 'upper' && index + 1 || Break
+        ))
+        let is_immutable = function (layer) {
+            let outside_local = (range == 'local' && layer > 0)
+            let outside_upper = (range == 'upper' && layer > upper_max)
+            return (outside_local || outside_upper)
+        }
+        return (get_scope_chain()).transform_by(chain(
+            x => map_lazy(x, (scope, index) => ({
+                is_immutable: is_immutable(index),
+                layer: index,
+                scope: scope,
+                object: scope.has(name)? scope.get(name): null
+            })),
+            x => find(x, item => item.object != null)
+        ))
+    },
     lookup: function (name) {
         check(this.__proto__.lookup, arguments, { name: Str })
-        let range = this.range
-        let result = find(map_lazy(
-            this.upward_iterator(),
-            (scope, index) => ({
-                layer: index,
-                object: scope.has(name)? scope.get(name): null
-            })
-        ), x => x.object != null)
+        let result = this.find_name(name)
         if (result != NotFound) {
-            if (result.layer > 0 && range == 'local') {
-                return ImRef(result.object)
-            } else {
-                return result.object
-            }
+            let object = result.object
+            let immutable = result.is_immutable
+            return (immutable)? ImRef(object): object
         } else {
             ErrorProducer(ObjectNotFound, 'Scope::Lookup').throw(
                 `there is no object named '${name}'`
@@ -446,8 +466,8 @@ Detail.Object.represent = function (object) {
 
 
 Detail.Function.MethodFor = function (object) {
-    return $n(Function, $(function (f) {
-        let p = f.parameters
-        return (p.length > 0) && (p[0].constraint.contains(object))
+    return $n(FunctionObject, $(function (f) {
+        let p = f.prototype.parameters
+        return (p.length > 0) && (p[0].constraint.checker.apply(object))
     }))
 }

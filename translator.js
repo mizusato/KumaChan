@@ -196,6 +196,10 @@ let Translate = {
         let h = children_hash(tree)
         return `scope.emplace(${translate(h.Id)}, ${translate(h.Expr)})`
     },
+    Outer: function (tree) {
+        let h = children_hash(tree)
+        return `assign_outer(scope, ${translate(h.Id)}, ${translate(h.Expr)})`
+    },
     Return: function (tree) {
         let h = children_hash(tree)
         return `return ${translate(h.Expr)}`
@@ -278,12 +282,18 @@ let Translate = {
     },
     FunExpr: function (tree) {
         let h = children_hash(tree)
-        let flag = h.FunFlag
-        let is_global = (
-            flag.is_not(SyntaxTreeEmpty)
-            && string_of(flag.children[0]) == 'g'
+        let Flag = h.FunFlag
+        let flag = (
+            (Flag.is_not(SyntaxTreeEmpty))
+            && string_of(Flag.children[0])
+            || ''
         )
-        let effect = is_global? `'global'`: `'local'`
+        let effect = ({
+            g: `'global'`,
+            u: `'upper'`,
+            f: `'local'`,
+            '': `'local'`
+        })[flag]
         let paras = translate(h.ParaList)
         let target = translate(h.Target)
         let func = function_string(translate(h.Body))

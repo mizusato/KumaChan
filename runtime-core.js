@@ -33,15 +33,16 @@ const PassFlagValue = fold(
  *  that can be affected by the function, which indicates
  *  the magnitude of side-effect.
  *  
- *  |  value  | Outside Scope | Local Scope |
- *  |---------|---------------|-------------|
- *  |  global |  full-access  | full-access |
- *  |  local  |   read-only   | full-access |
- *
+ *  |  value  | Local Scope | Upper Scope | Other Scope |
+ *  |---------|-------------|-------------|-------------|
+ *  |  global | full-access | full-access | full-access |
+ *  |  upper  | full-access | full-access |  read-only  |
+ *  |  local  | full-access |  read-only  |  read-only  |
+ * 
  */
 
 
-const EffectRange = Enum('global', 'local')
+const EffectRange = Enum('global', 'upper', 'local')
 
 
 /**

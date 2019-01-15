@@ -60,6 +60,7 @@ const $ = f => new Concept(f)
 const $n = Concept.intersect
 const $u = Concept.union
 const $_ = Concept.complement
+const $d = (x, y) => $n(x, $_(y))
 const $1 = y => $(x => x === y)
 const $f = (...elements) => $(x => exists(elements, e => e === x))
 
@@ -83,14 +84,16 @@ const NumStr = $n(Str, $(x => !Number.isNaN(parseInt(x))) )
 const Regex = regex => $n( Str, $(s => s.match(regex)) )
 
 const SingletonContains = function(x) { return x === this }
-const Break = { contains: SingletonContains }  // for fold()
+const Break = { contains: SingletonContains, _name: 'Break' }  // for fold()
 function BreakWith (value) {
     return { value: value, maker: BreakWith }
 }
 SetMakerConcept(BreakWith)
 
-const NotFound = { contains: SingletonContains }  // for find()
-const Nothing = { contains: SingletonContains }  // for insert() and added()
+// special value for find()
+const NotFound = { contains: SingletonContains, _name: 'NotFound' }
+// special value for insert() and added()
+const Nothing = { contains: SingletonContains, _name: 'Nothing' }  
 const Iterable = $(
     x => typeof x != 'undefined' && typeof x[Symbol.iterator] == 'function'
 )

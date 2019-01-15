@@ -80,7 +80,7 @@ function call (functional, argument) {
 
 
 function get (object, name) {
-    let e = ErrorProducer(InvalidOperation, 'get()')
+    let e = ErrorProducer(InvalidOperation, 'runtime::get')
     return transform(object, [
         { when_it_is: HashObject,
           use: h => assert(name.is(Str)) && h.get(name) },
@@ -94,15 +94,14 @@ function get (object, name) {
 
 function access (object, name, scope) {
     function wrap (method) {
-        // context, effect, parameters, target, f
-        let name = `<${GetType(object)}>.${name}`
+        let f_name = `<${GetType(object)}>.${name}`
         let p = method.prototype.parameters
         let shifted = p.slice(1, p.length)
         let wrapper_proto = pour(pour({}, method.prototype), {
             parameters: shifted
         })
         let first_parameter = p[0].name
-        return Function(name, scope, wrapper_proto, function (scope) {
+        return FunctionObject(f_name, scope, wrapper_proto, function (scope) {
             let extended_arg = {}
             extended_arg[first_parameter] = object
             pour(extended_arg, scope.data.argument.data)
@@ -116,4 +115,13 @@ function access (object, name, scope) {
         { when_it_is: Otherwise, use: x => NotFound }
     ])
     return (method != NotFound) && wrap(method) || get(object, name)
+}
+
+
+function assign_outer (scope, key, value) {
+    let err = ErrorProducer(InvalidAssignment, 'runtime::assign_outer')
+    let result = scope.find_name(key)
+    err.if(result.is(NotFound), `variable ${key} not declared`)
+    err.if(result.is_immutable, `the scope containing ${key} is immutable`)
+    result.scope.replace(key, value)
 }

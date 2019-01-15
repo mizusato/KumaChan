@@ -123,19 +123,18 @@ function get_tokens (string) {
             )
         })
     }
-    function remove_linefeed (tokens) {
-        return filter_lazy(tokens, token => token.matched.name != 'Linefeed')
-    }
     function eliminate_ambiguity (name) {
         let mapper = ({
             '.': function (left, token, right) {
-                let left_is_name = left.is(Token('Name'))
-                let name = left_is_name? 'Access': 'Parameter'
+                let par = $u(Token(')'), Token(']'), Token('}'))
+                let left_is_op = left.is($d(Token.Operator, par))
+                let left_is_lf = left.is(Token('Linefeed'))
+                let name = (left_is_op || left_is_lf)? 'Parameter': 'Access'
                 return Token.create_from(token, 'Operator', name)
             },
             Name: function (left, token, right) {
-                let left_is_dot = left.is(Token('Access'))
-                let name = left_is_dot? 'Member': 'Identifier'
+                let left_is_access = left.is(Token('Access'))
+                let name = left_is_access? 'Member': 'Identifier'
                 return Token.create_from(token, 'Name', name)
             }
         })[name]
@@ -150,6 +149,9 @@ function get_tokens (string) {
             return map_lazy(lookaside(tokens, Token.Null), transform)
         }
     }
+    function remove_linefeed (tokens) {
+        return filter_lazy(tokens, token => token.matched.name != 'Linefeed')
+    }
     let raw = list(CodeScanner(string).match(Matcher(Tokens)))
     check_parentheses(assert_valid(raw))
     return raw.transform_by(chain(
@@ -157,9 +159,9 @@ function get_tokens (string) {
         remove_space,
         add_call_operator,
         add_get_operator,
-        remove_linefeed,
         eliminate_ambiguity('.'),
         eliminate_ambiguity('Name'),
+        remove_linefeed,
         assert_valid,
         list
     ))
@@ -430,6 +432,7 @@ function parse_simple (syntax, tokens, pos) {
     }
     let initial = { output: [], operators: [] }
     let final = fold(input, initial, function (element, state) {
+        // console.log(state)
         let TreeElement = $_(SyntaxTreeLeaf)
         let LeafElement = SyntaxTreeLeaf
         let add_to_output = (operand => append(state, operand))
