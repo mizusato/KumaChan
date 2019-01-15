@@ -22,10 +22,22 @@ const Char = {
 
 Pattern.PrefixOperator = function (name, operator) {
     check(Pattern.PrefixOperator, arguments, {
-        name: Str, operator: Str
+        name: Str, operator: Optional(Str)
     })
+    operator = operator || name
     return Pattern('Operator', name, map(operator, (char, index) => Unit(
         $1(char), '', (index < operator.length-1)? Any: Char.NotSpace
+    )))
+}
+
+
+Pattern.TextOperator = function (name, operator) {
+    check(Pattern.PrefixOperator, arguments, {
+        name: Str, operator: Optional(Str)
+    })
+    operator = operator || name
+    return Pattern('Operator', name, map(operator, (char, index) => Unit(
+        $1(char), '', (index < operator.length-1)? Any: Char.Space
     )))
 }
 
@@ -90,32 +102,36 @@ const Tokens = [
     Pattern.Operator('..['),
     Pattern.Operator('..'),  // ..Identifier = Inline Comment
     Pattern.Operator('.'),
-    Pattern.PrefixOperator('Not', '!'),
-    Pattern.Operator('Or', '||'),
-    Pattern.Operator('And', '&&'),
-    Pattern.PrefixOperator('Complement', '~'),
-    Pattern.Operator('Union', '|'),
-    Pattern.Operator('Intersect', '&'),
+    // name of simple operator starts with a capital alphabet
+    Pattern.PrefixOperator('!'),
+    Pattern.Operator('||'),
+    Pattern.Operator('&&'),
+    Pattern.PrefixOperator('~'),
+    Pattern.Operator('|'),
+    Pattern.Operator('&'),
     Pattern.Operator('->'),
     Pattern.Operator('<-'),
-    Pattern.PrefixOperator('Negative', '-'),
-    Pattern.Operator('Minus', '-'),
+    Pattern.PrefixOperator('Negate', '-'),
+    Pattern.Operator('-'),
     //Pattern.PrefixOperator('Positive', '+'),
-    Pattern.Operator('Plus', '+'),
-    Pattern.Operator('Times', '*'),
-    Pattern.Operator('Over', '/'),
+    Pattern.Operator('+'),
+    Pattern.Operator('*'),
+    Pattern.Operator('/'),
     //Pattern.PrefixOperator('Parameter', '%'),  // ugly, use dot
-    Pattern.Operator('Modulo', '%'),
-    Pattern.Operator('Power', '^'),
+    Pattern.Operator('%'),
+    Pattern.Operator('^'),
     Pattern.Operator('='),
-    Pattern.Operator('Equal', '=='),
-    Pattern.Operator('NotEqual', '!='),
+    Pattern.Operator('=='),
+    Pattern.Operator('!='),
     Pattern.Operator('<<'),
     Pattern.Operator('>>'),
-    Pattern.Operator('Less', '<'),
-    Pattern.Operator('Greater', '>'),
-    Pattern.Operator('LessEqual', '<='),
-    Pattern.Operator('GreaterEqual', '>='),
+    Pattern.Operator('<'),
+    Pattern.Operator('>'),
+    Pattern.Operator('<='),
+    Pattern.Operator('>='),
+    Pattern.TextOperator('Is', 'is'),
+    Pattern.TextOperator('By', 'by'),
+    Pattern.TextOperator('~', 'not'),
     Pattern('Number', 'Exponent', [
         Unit(Char.Digit, '+'),
         Unit(Char.Dot),
@@ -150,30 +166,31 @@ const SimpleOperand = $n(
 
 
 const SimpleOperator = {
-    Sentinel:     { type: 'N/A',    priority: -1,  assoc: 'left'  },
-    Parameter:    { type: 'prefix', priority: 100, assoc: 'right' },
-    Access:       { type: 'infix',  priority: 99,  assoc: 'left'  },
-    Call:         { type: 'infix',  priority: 98,  assoc: 'left'  },
-    Get:          { type: 'infix',  priority: 98,  assoc: 'left'  },
-    Plus:         { type: 'infix',  priority: 50,  assoc: 'left'  },
-    Negative:     { type: 'prefix', priority: 85,  assoc: 'right' },
-    Minus:        { type: 'infix',  priority: 50,  assoc: 'left'  },
-    Times:        { type: 'infix',  priority: 80,  assoc: 'left'  },
-    Over:         { type: 'infix',  priority: 70,  assoc: 'left'  },
-    Modulo:       { type: 'infix',  priority: 75,  assoc: 'left'  },
-    Power:        { type: 'infix',  priority: 90,  assoc: 'right' },
-    Equal:        { type: 'infix',  priority: 30,  assoc: 'left'  },
-    NotEqual:     { type: 'infix',  priority: 20,  assoc: 'left'  },
-    Greater:      { type: 'infix',  priority: 20,  assoc: 'left'  },
-    GreaterEqual: { type: 'infix',  priority: 20,  assoc: 'left'  },
-    Less:         { type: 'infix',  priority: 20,  assoc: 'left'  },
-    LessEqual:    { type: 'infix',  priority: 20,  assoc: 'left'  },
-    Not:          { type: 'prefix', priority: 85,  assoc: 'right' },
-    And:          { type: 'infix',  priority: 40,  assoc: 'left'  },
-    Or:           { type: 'infix',  priority: 30,  assoc: 'left'  },
-    Complement:   { type: 'prefix', priority: 85,  assoc: 'right' },
-    Intersect:    { type: 'infix',  priority: 40,  assoc: 'left'  },
-    Union:        { type: 'infix',  priority: 30,  assoc: 'left'  }
+    Sentinel:  { type: 'N/A',    priority: -1,  assoc: 'left'  },
+    Parameter: { type: 'prefix', priority: 100, assoc: 'right' },
+    Access:    { type: 'infix',  priority: 99,  assoc: 'left'  },
+    Call:      { type: 'infix',  priority: 98,  assoc: 'left'  },
+    Get:       { type: 'infix',  priority: 98,  assoc: 'left'  },
+    Is:        { type: 'infix',  priority: 10,  assoc: 'left'  },
+    Negate:    { type: 'prefix', priority: 85,  assoc: 'right' },
+    '+':       { type: 'infix',  priority: 50,  assoc: 'left'  },
+    '-':       { type: 'infix',  priority: 50,  assoc: 'left'  },
+    '*':       { type: 'infix',  priority: 80,  assoc: 'left'  },
+    '/':       { type: 'infix',  priority: 70,  assoc: 'left'  },
+    '%':       { type: 'infix',  priority: 75,  assoc: 'left'  },
+    '^':       { type: 'infix',  priority: 90,  assoc: 'right' },
+    '==':      { type: 'infix',  priority: 30,  assoc: 'left'  },
+    '!=':      { type: 'infix',  priority: 20,  assoc: 'left'  },
+    '>':       { type: 'infix',  priority: 20,  assoc: 'left'  },
+    '>=':      { type: 'infix',  priority: 20,  assoc: 'left'  },
+    '<':       { type: 'infix',  priority: 20,  assoc: 'left'  },
+    '<=':      { type: 'infix',  priority: 20,  assoc: 'left'  },
+    '!':       { type: 'prefix', priority: 85,  assoc: 'right' },
+    '&&':      { type: 'infix',  priority: 40,  assoc: 'left'  },
+    '||':      { type: 'infix',  priority: 30,  assoc: 'left'  },
+    '~':       { type: 'prefix', priority: 85,  assoc: 'right' },
+    '&':       { type: 'infix',  priority: 40,  assoc: 'left'  },
+    '|':       { type: 'infix',  priority: 30,  assoc: 'left'  }
 }
 
 
@@ -223,7 +240,8 @@ const Syntax = mapval({
     ],
     MapOperator: [
         '->', '<-',
-        '>>', '<<'
+        '>>', '<<',
+        'By'
     ],
     MapOperand: [
         'Hash', 'HashLambda',

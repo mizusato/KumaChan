@@ -1,6 +1,13 @@
 'use strict';
 
 
+function normalize_operator_name (name) {
+    check(normalize_operator_name, arguments, { name: Str })
+    let prefix = name[0].is(Char.Alphabet)? 'operator_': ''
+    return (prefix + name.toLowerCase())
+}
+
+
 function escape_raw (string) {
     check(escape_raw, arguments, { string: Str })
     function f (char) {
@@ -226,8 +233,9 @@ let Translate = {
     MapOperand: use_first,
     MapOperator: function (tree) {
         let name = string_of(tree.children[0])
-        let escaped = escape_raw(name)
-        return `(id('operator::${escaped}'))`
+        let normalized = normalize_operator_name(name)
+        let escaped = escape_raw(normalized)
+        return `(id('${escaped}'))`
     },
     MapExpr: function (tree) {
         let first_operand = use_first(tree)
@@ -320,11 +328,12 @@ let Translate = {
         let operator = tree.children[0].children
         let op_name = operator.matched.name
         if (op_name == 'Parameter') { return translate(args[0]) }
+        let normal = (name => escape_raw(normalize_operator_name(name)))
         let func_name = ({
             Call: 'call',
             Get: 'get',
             Access: 'access'
-        })[op_name] || `(apply(id('operator::${op_name.toLowerCase()}')))`
+        })[op_name] || `(apply(id('${normal(op_name)}')))`
         let arg_str_list = map(args, a => translate(a))
         if (op_name == 'Access') { arg_str_list.push('scope') }
         let arg_list_str = join(arg_str_list, ', ')
