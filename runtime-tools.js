@@ -77,3 +77,43 @@ function call (functional, argument) {
     assert(Hash.contains(argument))
     return functional.call(argument)
 }
+
+
+function get (object, name) {
+    let e = ErrorProducer(InvalidOperation, 'get()')
+    return transform(object, [
+        { when_it_is: HashObject,
+          use: h => assert(name.is(Str)) && h.get(name) },
+        { when_it_is: ListObject,
+          use: l => assert(name.is(Num)) && l.at(name) },
+        { when_it_is: Otherwise,
+          use: x => e.throw(`except Hash or List: ${GetType(object)} given`) }
+    ])
+}
+
+
+function access (object, name, scope) {
+    function wrap (method) {
+        // context, effect, parameters, target, f
+        let name = `<${GetType(object)}>.${name}`
+        let p = method.prototype.parameters
+        let shifted = p.slice(1, p.length)
+        let wrapper_proto = pour(pour({}, method.prototype), {
+            parameters: shifted
+        })
+        let first_parameter = p[0].name
+        return Function(name, scope, wrapper_proto, function (scope) {
+            let extended_arg = {}
+            extended_arg[first_parameter] = object
+            pour(extended_arg, scope.data.argument.data)
+            return method.call(extended_arg)
+        })
+    }
+    let maybe_method = scope.try_to_lookup(name)
+    let method = transform(maybe_method, [
+        { when_it_is: FunctionObject.MethodFor(object), use: f => f },
+        { when_it_is: OverloadObject, use: o => o.find_method_for(object) },
+        { when_it_is: Otherwise, use: x => NotFound }
+    ])
+    return (method != NotFound) && wrap(method) || get(object, name)
+}

@@ -33,10 +33,10 @@ const PassFlagValue = fold(
  *  that can be affected by the function, which indicates
  *  the magnitude of side-effect.
  *  
- *  |  value  | Outside Scope | Local Scope | Invoke Others |
- *  |---------|---------------|-------------|---------------|
- *  |  global |  full-access  | full-access |      all      |
- *  |  local  |   read-only   | full-access |  local-only   |
+ *  |  value  | Outside Scope | Local Scope |
+ *  |---------|---------------|-------------|
+ *  |  global |  full-access  | full-access |
+ *  |  local  |   read-only   | full-access |
  *
  */
 
@@ -369,6 +369,16 @@ function FunctionObject (name, context, prototype, js_function) {
         prototype: Prototype,
         js_function: Function
     })
+    fold(prototype.parameters, {}, function (parameter, appeared) {
+        let err = ErrorProducer(RedundantParameter, 'Function::create()')
+        let name = parameter.name
+        err.if(
+            appeared[name] !== undefined,
+            `parameter ${name} defined more than once`
+        )
+        appeared[name] = true
+        return appeared
+    })
     return {
         name: name || '[Anonymous]',
         context: context,
@@ -384,10 +394,9 @@ function FunctionObject (name, context, prototype, js_function) {
                 assert(HashOf(ObjectObject).contains(argument))
                 /* define error producers */
                 let name = this.name
-                let { err_a, err_r, err_f } = mapval({
+                let { err_a, err_r } = mapval({
                     err_a: InvalidArgument,
                     err_r: InvalidReturnValue,
-                    err_f: ForbiddenCall,
                 }, ErrorType => ErrorProducer(ErrorType, `${name}`))
                 /* shortcuts */
                 let Proto = Prototype
@@ -398,12 +407,6 @@ function FunctionObject (name, context, prototype, js_function) {
                     f:       this.js_function,
                     context: this.context
                 }
-                /* check effect range of caller */
-                err_f.if(
-                    range == 'global'
-                    && caller.prototype.effect_range == 'local',
-                    'local function cannot call global function'
-                )
                 /* check if argument valid */
                 err_a.if_failed(Proto.check_argument(proto, argument))
                 /* create new scope */
@@ -420,7 +423,7 @@ function FunctionObject (name, context, prototype, js_function) {
                 })
                 scope.data['scope'] = HashObject(scope.data)
                 /**
-                 *  it is not good to bind the name of function to the scope 
+                 *  it is not good to bind the name of function to the scope
                  *  because the function name in the scope could override
                  *  the previous overridden Overload, which is dumped in
                  *  the outer wrapper scope created by define() (runtime-tools)
@@ -697,12 +700,10 @@ function OverloadObject (name, instances) {
                 ))
                 return match.instance.call(argument)
             },
-            has_method_of: function (object) {
-                return exists(
-                    map_lazy(this.instances, I => I.prototype),
-                    p => (p.order.length > 0)
-                        && (p.parameters[p.order[0]]
-                            .constraint.data.checker.apply(object))
+            find_method_for: function (object) {
+                return find(
+                    this.instances,
+                    I => I.is(FunctionObject.MethodFor(object))
                 )
             },
             toString: function () {
@@ -714,13 +715,6 @@ function OverloadObject (name, instances) {
 
 
 SetMakerConcept(OverloadObject)
-
-
-const HasMethod = (...names) => $(
-    x => assert(x.is(ObjectObject))
-        && forall(names, name => G.has(name) && K[name].is(OverloadObject)
-                  && K[name].has_method_of(x))
-)
 
 
 /**

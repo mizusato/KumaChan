@@ -7,6 +7,7 @@
 
 
 class RuntimeError extends Error {}
+class RedundantParameter extends RuntimeError {}
 class InvalidOperation extends RuntimeError {}
 class InvalidArgument extends RuntimeError {}
 class InvalidReturnValue extends RuntimeError {}
@@ -15,7 +16,6 @@ class NoMatchingPattern extends RuntimeError {}
 class KeyError extends RuntimeError {}
 class IndexError extends RuntimeError {}
 class NameConflict extends RuntimeError {}
-class ForbiddenCall extends RuntimeError {}
 class ObjectNotFound extends RuntimeError {}
 class VariableConflict extends RuntimeError {}
 class InvalidAssignment extends RuntimeError {}
@@ -442,4 +442,12 @@ Detail.Object.represent = function (object) {
     } else {
         return `<${GetType(object)}>`
     }
+}
+
+
+Detail.Function.MethodFor = function (object) {
+    return $n(Function, $(function (f) {
+        let p = f.parameters
+        return (p.length > 0) && (p[0].constraint.contains(object))
+    }))
 }

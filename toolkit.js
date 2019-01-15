@@ -430,6 +430,7 @@ function fold (iterable, initial, f) {
     var index = 0
     for ( let element of iterable ) {
         let new_value = f(element, value, index)
+        assert(new_value !== undefined)
         if (Break.contains(new_value)) {
             break
         } else if (BreakWith.contains(new_value)) {
