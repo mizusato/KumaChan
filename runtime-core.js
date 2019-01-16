@@ -13,7 +13,7 @@
 
 const PassPolicy = Enum('dirty', 'immutable')
 const PassAction = {
-    dirty: x => assert(x.is(MutableObject)) && x,
+    dirty: x => assert(is(x, MutableObject)) && x,
     immutable: x => ImRef(x)
 }
 const PassFlag = {
@@ -74,15 +74,15 @@ const PrimitiveObject = $u(StringObject, NumberObject, BoolObject)
 
 
 const FunctionalObject = $u(
-    $(x => x.is(FunctionObject)),
-    $(x => x.is(OverloadObject))
+    $(x => is(x, FunctionObject)),
+    $(x => is(x, OverloadObject))
 )
 
 
 const AtomicObject = $u(
     PrimitiveObject,
     FunctionalObject,
-    $(x => x.is(ConceptObject))
+    $(x => is(x, ConceptObject))
 )
 
 
@@ -127,7 +127,7 @@ const MutHashObject = $n(HashObject, $(x => !x.config.immutable))
 
 
 function ListObject (list = [], config = Config.default) {
-    assert(list.is(Array))
+    assert(is(list, List))
     assert(Hash.contains(config))
     return {
         data: list,
@@ -243,14 +243,14 @@ function Clone (object) {
 
 function ConceptObject (name, f) {
     check(ConceptObject, arguments, {
-        name: Str, f: $u(Function, FunctionalObject)
+        name: Str, f: $u(Fun, FunctionalObject)
     })
-    let raw_checker = (f.is(Function))? f: function (object) {
+    let raw_checker = (is(f, Fun))? f: function (object) {
         return f.apply(object)
     }
     let wrapped_checker = function (object) {
         let result = raw_checker(object)
-        assert(result.is(BoolObject))
+        assert(is(result, BoolObject))
         return result
     }
     return {
@@ -291,8 +291,8 @@ const NullScope = SingletonObject('NullScope')
 
 
 function Scope (context, range, data = {}) {
-    assert(context.is(Scope))
-    assert(range.is(EffectRange))
+    assert(is(context, Scope))
+    assert(is(range, EffectRange))
     assert(Hash.contains(data))
     return {
         data: data,
@@ -344,7 +344,7 @@ const Parameter = Struct({
 
 const Prototype = Struct({
     effect_range: EffectRange,
-    parameters: ArrayOf(Parameter),
+    parameters: ListOf(Parameter),
     value_constraint: ConceptObject
 })
 
@@ -357,7 +357,7 @@ function FunctionObject (name, context, prototype, js_function) {
         name: Str,
         context: Scope,
         prototype: Prototype,
-        js_function: Function
+        js_function: Fun
     })
     fold(prototype.parameters, {}, function (parameter, appeared) {
         let err = ErrorProducer(RedundantParameter, 'Function::create()')
@@ -377,7 +377,7 @@ function FunctionObject (name, context, prototype, js_function) {
         maker: FunctionObject,
         __proto__: once(FunctionObject, {
             apply: function (...args) {
-                assert(args.is(ArrayOf(ObjectObject)))
+                assert(is(args, ListOf(ObjectObject)))
                 return this.call(fold(args, {}, (e, v, i) => (v[i] = e, v)) )
             },
             call: function (argument, caller) {
@@ -407,7 +407,7 @@ function FunctionObject (name, context, prototype, js_function) {
                     argument: HashObject(final),
                     argument_info: HashObject(
                         mapval(normalized, v => HashObject({
-                            is_immutable: v.is(ImmutableObject)
+                            is_immutable: is(v, ImmutableObject)
                         }))
                     )
                 })
@@ -455,7 +455,7 @@ function OverloadObject (name, instances) {
     check(OverloadObject, arguments, {
         name: Str,
         instances: $n(
-            ArrayOf(FunctionObject),
+            ListOf(FunctionObject),
             $(array => array.length > 0)
         ),
         equivalent_concept: Optional(ConceptObject)
@@ -466,13 +466,13 @@ function OverloadObject (name, instances) {
         maker: OverloadObject,
         __proto__: once(OverloadObject, {
             added: function (instance) {
-                assert(instance.is(FunctionObject))
+                assert(is(instance, FunctionObject))
                 let new_list = map(this.instances, x => x)
                 new_list.push(instance)
                 return OverloadObject(this.name, new_list)
             },            
             apply: function (...args) {
-                assert(args.is(ArrayOf(ObjectObject)))
+                assert(is(args, ListOf(ObjectObject)))
                 return this.call(fold(args, {}, (e, v, i) => (v[i] = e, v)) )
             },
             call: function (argument) {
@@ -483,7 +483,7 @@ function OverloadObject (name, instances) {
                         proto, argument
                     )
                 )
-                let match = this.instances.transform_by(chain(
+                let match = apply_on(this.instances, chain(
                     x => rev(x),
                     x => map_lazy(x, f => ({
                         instance: f,
@@ -500,7 +500,7 @@ function OverloadObject (name, instances) {
             find_method_for: function (object) {
                 return find(
                     this.instances,
-                    I => I.is(FunctionObject.MethodFor(object))
+                    I => is(I, FunctionObject.MethodFor(object))
                 )
             },
             toString: function () {
@@ -523,7 +523,7 @@ function PortConcept(concept, name) {
     check(PortConcept, arguments, {
         concept: Concept, name: Str
     })
-    return ConceptObject(name, x => x.is(concept))
+    return ConceptObject(name, x => is(x, concept))
 }
 
 

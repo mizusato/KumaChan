@@ -3,7 +3,7 @@
 
 function normalize_operator_name (name) {
     check(normalize_operator_name, arguments, { name: Str })
-    let prefix = name[0].is(Char.Alphabet)? 'operator_': ''
+    let prefix = is(name[0], Char.Alphabet)? 'operator_': ''
     return (prefix + name.toLowerCase())
 }
 
@@ -60,7 +60,7 @@ function iterate_next (tree, next_part) {
 
 function translate_next(tree, current_part, next_part, separator, f) {
     check(translate_next, arguments, {
-        current_part: Str, next_part: Str, separator: Str, f: Function
+        current_part: Str, next_part: Str, separator: Str, f: Fun
     })
     let link = (x => join(x, separator))
     return link(map_lazy(
@@ -75,16 +75,16 @@ function find_parameters (tree) {
         let Parameter = $(function (tree) {
             return (
                 (tree.name == 'SimpleUnit')
-                && assert(tree.children[0].is(SyntaxTreeLeaf))
-                && tree.children[0].children.is(Token('Parameter'))
+                && assert(is(tree.children[0], SyntaxTreeLeaf))
+                && is(tree.children[0].children, Token('Parameter'))
             )
         })
-        let FuncTree = $(tree => tree.name.is(one_of(
+        let FuncTree = $(tree => is(tree.name, one_of(
             'FunDef', 'FunExpr', 'HashLambda', 'ListLambda', 'SimpleLambda'
         )))
         let Drop = $(function (x) { return x === this })
         let drop = (t => Drop)
-        return (tree.children).transform_by(chain(
+        return apply_on(tree.children, chain(
             x => map_lazy(x, t => transform(t, [
                 { when_it_is: SyntaxTreeEmpty, use: drop },
                 { when_it_is: SyntaxTreeLeaf, use: drop },
@@ -92,21 +92,21 @@ function find_parameters (tree) {
                 { when_it_is: Parameter, use: t => [t] },
                 { when_it_is: Otherwise, use: t => crush(t) }
             ])),
-            x => filter(x, (y => y.is_not(Drop))),
+            x => filter(x, (y => is_not(y, Drop))),
             x => concat(x),
             x => list(x)
         ))
     }
     let linear_list = map(crush(tree), function (simple_unit) {
         let h = children_hash(simple_unit)
-        assert(h.has('Identifier'))
+        assert(has(h, 'Identifier'))
         let id_token = h.Identifier.children
         return {
             pos: id_token.position,
             name: id_token.matched.string
         }
     })
-    let parameters = linear_list.transform_by(chain(
+    let parameters = apply_on(linear_list, chain(
         x => fold(x, {}, function (item, hash) {
             let name = item.name
             if (hash[name]) {
@@ -134,7 +134,7 @@ function function_string (body) {
 
 
 function translate_lambda (tree, type, get_val) {
-    let parameters = tree.transform_by(chain(
+    let parameters = apply_on(tree, chain(
         x => find_parameters(x),
         x => map_lazy(x, name => `'${escape_raw(name)}'`),
         x => join(x, ', ')
@@ -213,7 +213,7 @@ let Translate = {
     },
     Hash: function (tree) {
         let h = children_hash(tree)
-        let content = (h.has('PairList'))? translate_next(
+        let content = (has(h, 'PairList'))? translate_next(
             h.PairList, 'Pair', 'NextPair', ', ', function (pair) {
                 let h = children_hash(pair)
                 return `${translate(h.Id)}: ${translate(h.Expr)}`
@@ -223,7 +223,7 @@ let Translate = {
     },
     List: function (tree) {
         let h = children_hash(tree)
-        let content = (h.has('ItemList'))? translate_next(
+        let content = (has(h, 'ItemList'))? translate_next(
             h.ItemList, 'Item', 'NextItem', ', ',
             (item) => `${use_first(item)}`
         ): ''
@@ -288,12 +288,12 @@ let Translate = {
     },
     ParaList: function (tree) {
         let h = children_hash(tree)
-        let parameters = (h.has('Para'))? translate_next(
+        let parameters = (has(h, 'Para'))? translate_next(
             tree, 'Para', 'NextPara', ', ', function (para) {
                 let h = children_hash(para)
                 let name = translate(h.Id)
                 let constraint = translate(h.Constraint)
-                let is_immutable = h.PassFlag.is(SyntaxTreeEmpty)
+                let is_immutable = is(h.PassFlag, SyntaxTreeEmpty)
                 let pass_policy = is_immutable? `'immutable'`: `'dirty'`
                 return `[${name},${constraint},${pass_policy}]`
             }
@@ -302,13 +302,13 @@ let Translate = {
     },
     Target: function (tree) {
         let h = children_hash(tree)
-        return (h.has('Constraint'))? translate(h.Constraint): 'AnyConcept'
+        return (has(h, 'Constraint'))? translate(h.Constraint): 'AnyConcept'
     },
     FunExpr: function (tree) {
         let h = children_hash(tree)
         let Flag = h.FunFlag
         let flag = (
-            (Flag.is_not(SyntaxTreeEmpty))
+            (is_not(Flag, SyntaxTreeEmpty))
             && string_of(Flag.children[0])
             || ''
         )
@@ -356,8 +356,8 @@ let Translate = {
         return `${func_name}(${arg_list_str})`
     },
     ArgList: function (tree) {
-        let key_list = $(tree => children_hash(tree).has('KeyArg'))
-        let index_list = $(tree => children_hash(tree).has('Arg'))
+        let key_list = $(tree => has(children_hash(tree), 'KeyArg'))
+        let index_list = $(tree => has(children_hash(tree), 'Arg'))
         let empty_list = Otherwise
         let list_str = transform(tree, [
             { when_it_is: key_list, use: tree => (translate_next(
@@ -406,5 +406,6 @@ let Translate = {
 
 
 function translate (tree) {
+    assert(!has(tree, 'ok') || tree.ok == true)
     return Translate[tree.name](tree)
 }

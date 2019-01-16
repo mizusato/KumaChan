@@ -74,7 +74,10 @@ const Int = $n( Num, $(x => Number.isInteger(x)) )
 const UnsignedInt = $n( Int, $(x => x >= 0) )
 const Str = $(x => typeof x == 'string')
 const Bool = $(x => typeof x == 'boolean')
+const JsObject = $(x => x instanceof Object)
 const Hash = $(x => x instanceof Object && !(x instanceof Array))
+const Fun = $(object => object instanceof Function)
+const List = $(object => object instanceof Array)
 const Optional = concept => $u(NoValue, concept)
 const SetEquivalent = (target, concept) => target.contains = concept.contains
 const MadeBy = (maker) => $(x => x.maker === maker)
@@ -97,9 +100,9 @@ const Nothing = { contains: SingletonContains, _name: 'Nothing' }
 const Iterable = $(
     x => typeof x != 'undefined' && typeof x[Symbol.iterator] == 'function'
 )
-const ArrayOf = (
+const ListOf = (
     concept => $(
-        array => Array.contains(array) && forall(array, x=>concept.contains(x))
+        array => List.contains(array) && forall(array, x=>concept.contains(x))
     )
 )
 const HashOf = (
@@ -109,7 +112,7 @@ const HashOf = (
     )
 )
 function Enum (...str_list) {
-    assert( ArrayOf(Str).contains(str_list) )
+    assert( ListOf(Str).contains(str_list) )
     var set = new Set(str_list)
     return $(function (item) {
         return Str.contains(item) && set.has(item)
@@ -121,23 +124,28 @@ function Struct (concept_of) {
     return $(
         x => forall(
             Object.keys(concept_of),
-            key => x.has(key)
+            key => has(x, key)
                 && concept_of[key].contains(x[key])
         )
     )
 }
 
 
-Object.prototype.is = function (concept) { return concept.contains(this) }
-Object.prototype.is_not = function (concept) { return !this.is(concept) }
-Function.prototype.contains = function (obj) { return obj instanceof this }
+function is (object, concept) {
+    return concept.contains(object)
+}
+
+
+function is_not (object, concept) {
+    return !is(object, concept)
+}
 
 
 const once = (function () {
     let cache = {}
     function once (caller, value) {
-        check(once, arguments, { caller: Function, value: Any })
-        if ( cache.has(caller.name) ) {
+        check(once, arguments, { caller: Fun, value: Any })
+        if ( has(cache, caller.name) ) {
             return cache[caller.name]
         } else {
             cache[caller.name] = value
@@ -178,7 +186,7 @@ function suppose (bool, message) {
 function need (items) {
     assert(Iterable.contains(items))
     for ( let item of items ) {
-        assert( $u(Result, Function).contains(item) )
+        assert( $u(Result, Fun).contains(item) )
         let result = (Result.contains(item))? item: item()
         if ( Failed.contains(result) ) {
             return result
@@ -191,9 +199,9 @@ function need (items) {
 
 
 function check(callee, args, concept_table) {
-    assert(Function.contains(callee))
+    assert(Fun.contains(callee))
     assert(Hash.contains(concept_table))
-    var parameters = callee.get_parameters()
+    var parameters = get_function_parameters(callee)
     var parameter_to_index = {}
     var index = 0
     for ( let parameter of parameters ) {
@@ -209,7 +217,7 @@ function check(callee, args, concept_table) {
             )
         }
         /*
-        if (NoValue.contains(argument) && concept.has('defval')) {
+        if (NoValue.contains(argument) && has(concept, 'defval')) {
             args[parameter_to_index[parameter]] = concept.defval
         }
         */
@@ -220,13 +228,13 @@ function check(callee, args, concept_table) {
 function check_hash(callee, argument, constraint) {
     check(
         check_hash, arguments,
-        { callee: Function, argument: Hash, constraint: Hash }
+        { callee: Fun, argument: Hash, constraint: Hash }
     )
     for ( let name of Object.keys(constraint) ) {
         if (!constraint[name].contains(argument[name])) {
             throw Error(`Invalid argument ${name} in function ${callee.name}`)
         }
-        if (NoValue.contains(argument[name]) && constraint[name].has('defval')) {
+        if (NoValue.contains(argument[name]) && has(constraint[name], 'defval')) {
             argument[name] = constraint[name].defval
         }
     }
@@ -234,7 +242,7 @@ function check_hash(callee, argument, constraint) {
 
 
 function* map_lazy (to_be_mapped, f) {
-    check(map_lazy, arguments, { to_be_mapped: $u(Object,Str), f: Function })
+    check(map_lazy, arguments, { to_be_mapped: $u(JsObject,Str), f: Fun })
     if( Iterable.contains(to_be_mapped) ) {
         let iterable = to_be_mapped
         let index = 0
@@ -252,19 +260,19 @@ function* map_lazy (to_be_mapped, f) {
 
 
 function map (to_be_mapped, f) {
-    check(map, arguments, { to_be_mapped: $u(Object,Str), f: Function })
+    check(map, arguments, { to_be_mapped: $u(JsObject,Str), f: Fun })
     return list(map_lazy(to_be_mapped, f))
 }
 
 
 function mapkey (hash, f) {
-    check(mapkey, arguments, { hash: Hash, f: Function })
+    check(mapkey, arguments, { hash: Hash, f: Fun })
     var result = {}
     for ( let key of Object.keys(hash) ) {
         let new_key = f(key, hash[key])
         result[new_key] = hash[key]
         /*
-        if ( !result.has(new_key) ) {
+        if ( !has(result, new_key) ) {
             result[new_key] = hash[key]
         } else {
             throw Error('mapkey(): Key conflict detected')
@@ -276,7 +284,7 @@ function mapkey (hash, f) {
 
 
 function mapval (hash, f) {
-    check(mapval, arguments, { hash: Hash, f: Function })
+    check(mapval, arguments, { hash: Hash, f: Fun })
     var result = {}
     for ( let key of Object.keys(hash) ) {
         let value = hash[key]
@@ -287,7 +295,7 @@ function mapval (hash, f) {
 
 
 function *rev (array) {
-    check(rev, arguments, { array: Array })
+    check(rev, arguments, { array: List })
     for ( let i=array.length-1; i>=0; i-- ) {
         yield array[i]
     }
@@ -311,7 +319,7 @@ function concat (iterable_of_iterable) {
 
 
 function *lazy (f) {
-    assert(Function.contains(f))
+    assert(Fun.contains(f))
     let iterable = f()
     assert(Iterable.contains(iterable))
     for ( let I of iterable ) {
@@ -375,7 +383,7 @@ function join_lines (...lines) {
 function* filter_lazy (iterable, f) {
     check(filter_lazy, arguments, {
         iterable: Iterable,
-        f: Function
+        f: Fun
     })
     let index = 0
     let count = 0
@@ -391,8 +399,8 @@ function* filter_lazy (iterable, f) {
 
 function filter (to_be_filtered, f) {
     check(filter, arguments, {
-        to_be_filtered: Object,
-        f: Function
+        to_be_filtered: JsObject,
+        f: Fun
     })
     if (Iterable.contains(to_be_filtered)) {
         let iterable = to_be_filtered
@@ -427,7 +435,7 @@ function pour (target, source) {
 function fold (iterable, initial, f) {
     check(
         fold, arguments,
-        { iterable: Iterable, initial: Any, f: Function }
+        { iterable: Iterable, initial: Any, f: Fun }
     )
     var value = initial
     var index = 0
@@ -456,9 +464,9 @@ function chain (...functions) {
 function transform (object, situations) {
     check(transform, arguments, {
         object: Any,
-        situations: ArrayOf(Struct({
+        situations: ListOf(Struct({
             when_it_is: Concept,
-            use: Function
+            use: Fun
         }))
     })
     for (let s of situations) {
@@ -475,7 +483,7 @@ function transform (object, situations) {
 function* iterate (initial, next_of, terminate_when) {
     check(iterate, arguments, {
         initial: Any,
-        next_of: Function,
+        next_of: Fun,
         terminate_when: Concept
     })
     let current = initial
@@ -487,7 +495,7 @@ function* iterate (initial, next_of, terminate_when) {
 
 
 function forall (to_be_checked, f) {
-    check(forall, arguments, { to_be_checked: Object, f: Function })
+    check(forall, arguments, { to_be_checked: JsObject, f: Fun })
     if (Iterable.contains(to_be_checked)) {
         let iterable = to_be_checked
         return Boolean(fold(iterable, true, (e,v) => v && f(e)))
@@ -499,13 +507,13 @@ function forall (to_be_checked, f) {
 
 
 function exists (to_be_checked, f) {
-    check(exists, arguments, { to_be_checked: Object, f: Function })
+    check(exists, arguments, { to_be_checked: JsObject, f: Fun })
     return !forall(to_be_checked, x => !f(x))
 }
 
 
 function find (container, f) {
-    check(find, arguments, { container: Object, f: Function })
+    check(find, arguments, { container: JsObject, f: Fun })
     if (Iterable.contains(container)) {
         let iterable = container
         for ( let I of iterable ) {
@@ -567,7 +575,7 @@ function* lookaside (iterable, empty_value) {
 
 function* insert (iterable, empty_value, f) {
     assert(Iterable.contains(iterable))
-    assert(Function.contains(f))
+    assert(Fun.contains(f))
     for( let look of lookahead(iterable, empty_value)) {
         yield look.current
         let add = f(look.current, look.next)
@@ -587,40 +595,41 @@ function* count (n) {
 }
 
 
-Object.prototype.transform_by = function (f) { return f(this) }
-Object.prototype.has = function (prop) { return this.hasOwnProperty(prop) }
-Array.prototype.has = function (index) { return typeof this[index] != 'undefined' }
-Array.prototype.added = function (element) {
-    let r = list(this)
+function apply_on (object, f) {
+    return f(object)
+}
+
+
+function has (struct, key) {
+    return (typeof struct[key] != 'undefined')
+}
+
+
+function added (iterable, element) {
+    check(added, arguments, { iterable: Iterable, element: Any })
+    let r = list(iterable)
     if (element != Nothing) {
         r.push(element)
     }
     return r
 }
-Array.prototype.added_front = function (element) {
+
+
+function added_front (iterable, element) {
+    check(added_front, arguments, { iterable: Iterable, element: Any })
     if (element != Nothing) {
-        return list(cat([element], this))
+        return list(cat([element], iterable))
     } else {
-        return list(this)
+        return list(iterable)
     }
 }
-Object.prototype.has_no = function (prop) { return !this.has(prop) }
-Array.prototype.has_no = function (index) { return !this.has(index) }
-Array.prototype.top = function () {
-    assert(this.length > 0)
-    return this[this.length-1]
-}
-String.prototype.realCharAt = function (index) {
-    return take_at(this, index, '')
-}
-String.prototype.genuineLength = function () {
-    return fold(this, 0, (e,v) => v+1)
-}
-Function.prototype.get_parameters = function () {
+
+
+function get_function_parameters (f) {
     /* https://stackoverflow.com/questions/1007981/how-to-get-thistion-parameter-names-values-dynamically */
     var STRIP_COMMENTS = /(\/\/.*$)|(\/\*[\s\S]*?\*\/)|(\s*=[^,\)]*(('(?:\\'|[^'\r\n])*')|("(?:\\"|[^"\r\n])*"))|(\s*=[^,\)]*))/mg;
     var ARGUMENT_NAMES = /([^\s,]+)/g;
-    var str = this.toString().replace(STRIP_COMMENTS, '')
+    var str = f.toString().replace(STRIP_COMMENTS, '')
     return (
         str
             .slice(str.indexOf('(')+1, str.indexOf(')'))

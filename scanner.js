@@ -19,7 +19,7 @@ function Unit (char_set, repeat = '', next_char = Any) {
         next_char: next_char,
         repeat: RepeatFlagValue[repeat]
     }
-    assert(object.is(Unit))
+    assert(is(object, Unit))
     return object
 }
 
@@ -29,7 +29,7 @@ function CustomUnit (checker, repeat) {
         checker: checker,
         repeat: RepeatFlagValue[repeat]
     }
-    assert(object.is(Unit))
+    assert(is(object, Unit))
     return object    
 }
 
@@ -41,7 +41,7 @@ SetEquivalent(Unit, $u(
         repeat: Repeat
     }),
     Struct({
-        checker: Function,
+        checker: Fun,
         repeat: Repeat
     })
 ))
@@ -49,7 +49,7 @@ SetEquivalent(Unit, $u(
 
 function Pattern (category, name, units) {
     check(Pattern, arguments, {
-        category: Str, name: Str, units: ArrayOf(Unit)
+        category: Str, name: Str, units: ListOf(Unit)
     })
     assert(units.length > 0)
     return {
@@ -57,7 +57,7 @@ function Pattern (category, name, units) {
         category: category,
         name: name,
         match: function (iterable) {
-            assert(iterable.is(Iterable))
+            assert(is(iterable, Iterable))
             let iterator = lookahead(iterable, '')
             let repeat = val => $(unit => unit.repeat == val)
             let links = map(units, unit => transform(unit, [
@@ -82,7 +82,7 @@ function Pattern (category, name, units) {
                 let char = I.value.current
                 let next = I.value.next
                 let third = I.value.third
-                if (unit.has('checker')) {
+                if (has(unit, 'checker')) {
                     return unit.checker(char, next, third)
                 } else {
                     let char_ok = unit.char_set.contains(char)
@@ -130,7 +130,7 @@ function Pattern (category, name, units) {
             if (read_count == null) {
                 return null
             }
-            let matched_string = cache.transform_by(chain(
+            let matched_string = apply_on(cache, chain(
                 x => take_while(x, (_, index) => index < read_count),
                 x => map(x, I => I.value.current),
                 x => join(x, '')
@@ -165,7 +165,7 @@ pour(Token, {
         })
     }),
     Operator: $n(
-        $(x => x.is(Token.Valid)),
+        $(x => is(x, Token.Valid)),
         $(t => t.matched.category == 'Operator')
     ),
     create_from: function (token, category, name, string) {

@@ -157,7 +157,7 @@ const Tokens = [
 
 const SimpleOperand = $n(
     Token.Valid,
-    $(token => token.matched.name.is(one_of(
+    $(token => is(token.matched.name, one_of(
         'Exponent', 'Float', 'Integer',
         'RawString', 'FormatString',
         'Identifier', 'Member'
@@ -195,7 +195,7 @@ const SimpleOperator = {
 
 
 SetEquivalent(SimpleOperator, $(
-    token => SimpleOperator.has(token.matched.name)
+    token => has(SimpleOperator, token.matched.name)
 ))
 
 
@@ -312,7 +312,7 @@ const Syntax = mapval({
     let derivations = (array => ({ derivations: array }))
     return transform(rule, [
         { when_it_is: Str, use: d => derivations([split(d)]) },
-        { when_it_is: Array, use: r => derivations(map(r, d => split(d))) },
+        { when_it_is: List, use: r => derivations(map(r, d => split(d))) },
         { when_it_is: Otherwise, use: r => r }
     ])
 })

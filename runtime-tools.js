@@ -7,7 +7,7 @@ function Lookup (scope) {
 
 
 function FormatString (string, id_ref) {
-    check(FormatString, arguments, { string: Str, id_ref: Function })
+    check(FormatString, arguments, { string: Str, id_ref: Fun })
     return string.replace(/\${([^}]+)}/g, (_, arg) => id_ref(arg))
 }
 
@@ -22,7 +22,7 @@ function Abstract (checker, name) {
 
 function Lambda (context, parameter_names, f) {
     check(Lambda, arguments, {
-        context: Scope, parameter_names: ArrayOf(Str), f: Function
+        context: Scope, parameter_names: ListOf(Str), f: Fun
     })
     // if no parameter provided by user, assume a parameter called "__"
     let normalized = (parameter_names.length > 0)? parameter_names: ['__']
@@ -61,7 +61,7 @@ function define (scope, name, effect, parameters, target, f) {
         scope => FunInst(scope, effect, parameters, target, f, name)
     )
     let existing = scope.try_to_lookup(name)
-    if ( existing.is(OverloadObject) ) {
+    if ( is(existing, OverloadObject) ) {
         // the new function should have access to the overridden old function
         let wrapper_scope = Scope(scope, effect)
         wrapper_scope.set(name, existing)
@@ -73,7 +73,7 @@ function define (scope, name, effect, parameters, target, f) {
 
 
 function apply (functional) {
-    assert(functional.is(FunctionalObject))
+    assert(is(functional, FunctionalObject))
     return function(...args) {
         return functional.apply.apply(functional, args)
     }
@@ -91,9 +91,9 @@ function get (object, name) {
     let e = ErrorProducer(InvalidOperation, 'runtime::get')
     return transform(object, [
         { when_it_is: HashObject,
-          use: h => assert(name.is(Str)) && h.get(name) },
+          use: h => assert(is(name, Str)) && h.get(name) },
         { when_it_is: ListObject,
-          use: l => assert(name.is(Num)) && l.at(name) },
+          use: l => assert(is(name, Num)) && l.at(name) },
         { when_it_is: Otherwise,
           use: x => e.throw(`except Hash or List: ${GetType(object)} given`) }
     ])
@@ -124,7 +124,7 @@ function access (object, name, scope) {
     ])
     if (method != NotFound) {
         return wrap(method)
-    } else if (object.is(HashObject)) {
+    } else if (is(object, HashObject)) {
         return get(object, name)
     } else {
         let err = ErrorProducer(ObjectNotFound, 'runtime::access')
@@ -137,7 +137,7 @@ function access (object, name, scope) {
 function assign_outer (scope, key, value) {
     let err = ErrorProducer(InvalidAssignment, 'runtime::assign_outer')
     let result = scope.find_name(key)
-    err.if(result.is(NotFound), `variable ${key} not declared`)
+    err.if(is(result, NotFound), `variable ${key} not declared`)
     err.if(result.is_immutable, `the scope containing ${key} is immutable`)
     result.scope.replace(key, value)
 }

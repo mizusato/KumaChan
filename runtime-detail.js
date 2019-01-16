@@ -45,7 +45,7 @@ function ErrorProducer (err_class, f_name) {
         },
         if_failed: function (result) {
             check(this.if_failed, arguments, { result: Result })
-            if ( result.is(Failed) ) {
+            if ( is(result, Failed) ) {
                 this.if(true, result.message)
             }
         }
@@ -75,8 +75,8 @@ Detail.Config.get_flags = function (object) {
     check(Detail.Config.get_flags, arguments, {
         object: ObjectObject
     })
-    let flag = { frozen: '[Fz]', immutable: '[Im]' }
-    let order = ['frozen', 'immutable']
+    let flag = { immutable: '[Im]' }
+    let order = ['immutable']
     let has = filter(order, k => object.config[k])
     return (has.length > 0)? flag[has[0]] : ''
 }
@@ -85,7 +85,7 @@ Detail.Config.get_flags = function (object) {
 Detail.Hash.Prototype = {
     mapper: mapval,
     has: function (key) {
-        return Object.prototype.has.call(this.data, key)
+        return has(this.data, key)
     },
     get: function (key) {
         let err = ErrorProducer(KeyError, 'Hash::get')
@@ -157,14 +157,14 @@ Detail.List.Prototype = {
 
 Detail.Scope.Prototype = {
     has: function (key) {
-        return Object.prototype.has.call(this.data, key)
+        return has(this.data, key)
     },
     get: function (key) {
         assert(this.has(key))
         return this.data[key]
     },
     set: function (key, value) {
-        assert(value.is(ObjectObject))
+        assert(is(value, ObjectObject))
         this.data[key] = value
     },
     emplace: function (key, value) {
@@ -199,7 +199,7 @@ Detail.Scope.Prototype = {
             let outside_upper = (range == 'upper' && layer > upper_max)
             return (outside_local || outside_upper)
         }
-        return (get_scope_chain()).transform_by(chain(
+        return apply_on(get_scope_chain(), chain(
             x => map_lazy(x, (scope, index) => ({
                 is_immutable: is_immutable(index),
                 layer: index,
@@ -282,28 +282,27 @@ Detail.Prototype.check_argument = function (prototype, argument) {
     let proto = prototype
     let parameters = proto.parameters
     let hash = Prototype.get_param_hash(proto)
-    // argument = { is: 123 } => argument.is() will fail
-    let has = key => Object.prototype.has.call(argument, key)
+    let arg_has = (key => has(argument, key))
     map(argument, arg => assert(ObjectObject.contains(arg)))
     return need (
-        cat(
+        cat(    
             map_lazy(Object.keys(argument), key => suppose(
-                !(key.is(NumStr) && !parameters[key])
-                && !(key.is_not(NumStr) && !hash[key]),
+                !(is(key, NumStr) && !parameters[key])
+                && !(is_not(key, NumStr) && !hash[key]),
                 `redundant argument ${key}`
             )),
             map_lazy(Object.keys(argument), key => suppose(
-                !(key.is(NumStr) && has(parameters[key].name)),
+                !(is(key, NumStr) && arg_has(parameters[key].name)),
                 `conflict argument ${key}`
             )),
             map_lazy(parameters, (parameter, index) => suppose(
-                has(index) || has(parameter.name),
+                arg_has(index) || arg_has(parameter.name),
                 `missing argument ${parameter.name}`
             )),
             lazy(function () {
                 let arg = mapkey(
                     argument,
-                    key => key.is(NumStr)? parameters[key].name: key
+                    key => is(key, NumStr)? parameters[key].name: key
                 )
                 return map_lazy(hash, (key, param) => suppose(
                         (param.constraint === AnyConcept
@@ -323,7 +322,7 @@ Detail.Prototype.normalize_argument = function (prototype, argument) {
     })
     return mapkey(
         argument,
-        key => key.is(NumStr)? prototype.parameters[key].name: key
+        key => is(key, NumStr)? prototype.parameters[key].name: key
     )
 }
 
@@ -416,7 +415,7 @@ Detail.Argument.represent = function (argument) {
 
 Detail.Function.create = function (name_and_proto, js_function) {
     check(Detail.Function.create, arguments, {
-        name_and_proto: Str, js_function: Function
+        name_and_proto: Str, js_function: Fun
     })
     let name = name_and_proto.split(' ')[1]
     let prototype = join(
@@ -432,8 +431,8 @@ Detail.Function.create = function (name_and_proto, js_function) {
 
 Detail.Function.converge = function (proto_list, f) {
     check(Detail.Function.converge, arguments, {
-        proto_list: ArrayOf(Str),
-        f: Function
+        proto_list: ListOf(Str),
+        f: Fun
     })
     return map(proto_list, p => Detail.Function.create(p, f))
 }
@@ -443,8 +442,8 @@ Detail.Object.represent = function (object) {
     check(Detail.Object.represent, arguments, {
         object: ObjectObject
     })
-    if ( object.is(PrimitiveObject) ) {
-        if ( object.is(StringObject) ) {
+    if ( is(object, PrimitiveObject) ) {
+        if ( is(object, StringObject) ) {
             return `"${object}"`
         } else {
             return `${object}`
