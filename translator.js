@@ -78,10 +78,10 @@ function find_parameters (tree) {
     function crush (tree) {
         let Parameter = $(function (tree) {
             return (
-                is(tree.name, one_of('SimpleUnit', 'LambdaPara'))
+                (tree.name == 'SimpleUnit')
                 && assert(is(tree.children[0], SyntaxTreeLeaf))
                 && is(tree.children[0].children, Token('Parameter'))
-            )
+            ) || (tree.name == 'LambdaPara')
         })
         let FuncTree = $(tree => is(tree.name, one_of(
             'FunDef', 'FunExpr', 'HashLambda', 'ListLambda', 'SimpleLambda'
@@ -101,8 +101,8 @@ function find_parameters (tree) {
             x => list(x)
         ))
     }
-    let linear_list = map(crush(tree), function (simple_unit) {
-        let h = children_hash(simple_unit)
+    let linear_list = map(crush(tree), function (para_unit) {
+        let h = children_hash(para_unit)
         assert(has(h, 'Identifier'))
         let id_token = h.Identifier.children
         return {
