@@ -290,14 +290,16 @@ function SingletonObject (name) {
  */
 
 
-const IteratorFunctionObject = $(
-    x => is(x, FunctionObject) && x.prototype.parameters.length == 0
-)
+const ParameterCount = (n => $( x => (
+    is(x, FunctionObject)
+    && x.prototype.parameters.length == n
+)))
 
 
-const MapperObject = $(
-    x => is(x, FunctionalObject) && x.prototype.parameters.length == 1
-)
+const IteratorFunctionObject = ParameterCount(0)
+const MapperObject = ParameterCount(1)
+const FilterObject = ParameterCount(1)
+const FolderObject = ParameterCount(2)
 
 
 function IteratorObject (f) {
@@ -307,8 +309,17 @@ function IteratorObject (f) {
     let next = (is(f, Fun))? f: function () {
         return f.apply()
     }
+    let wrapped_next = (function () {
+        let done = false
+        return function () {
+            let value = next()
+            assert(!(done && value != DoneObject))
+            done = (value == DoneObject)? true: false
+            return value
+        }
+    })()
     return {
-        next: next,
+        next: wrapped_next,
         maker: IteratorObject,
         __proto__: once(IteratorObject, {
             toString: function () {
@@ -594,6 +605,7 @@ pour(K, {
     Functional: PortConcept(FunctionalObject, 'Functional'),
     IteratorFunction: PortConcept(IteratorFunctionObject, 'IteratorFunction'),
     Mapper: PortConcept(MapperObject, 'Mapper'),
+    Filter: PortConcept(FilterObject, 'Filter'),
     /* compound */
     Compound: PortConcept(CompoundObject, 'Compound'),
     List: PortConcept(ListObject, 'List'),
@@ -635,21 +647,33 @@ pour(K, {
 
 pour(K, {
     
-    'call': OverloadObject('call', list(cat(
-        FunctionObject.converge([
+    'call': OverloadObject('call', [
+        FunctionObject.create(
             'local call (Functional f, ImHash argument_table) -> Any',
-            'local call (Functional f, MutHash &argument_table) -> Any'
-        ], a => a.f.call(a.argument_table.data)),
-        [
-            FunctionObject.create(
-                'local call (Functional f) -> Functional',
-                a => OverloadObject('call_by', FunctionObject.converge([
+            a => a.f.call(mapval(a.argument_table.data, ImRef))
+        ),
+        FunctionObject.create(
+            'local call (Functional f, MutHash &argument_table) -> Any',
+            a => a.f.call(a.argument_table.data)
+        ),
+        FunctionObject.create(
+            'local call (Functional f) -> Functional',
+            a => OverloadObject('call_by', [
+                FunctionObject.create(
                     'local call_by (ImHash argument_table) -> Any',
+                    b => a.f.call(mapval(b.argument_table.data, ImRef))
+                ),
+                FunctionObject.create(
                     'local call_by (MutHash &argument_table) -> Any',
-                ], b => a.f.call(b.argument_table.data))
-            ))
-        ]
-    ))),
+                    b => a.f.call(b.argument_table.data)
+                )
+            ])
+        ),
+        FunctionObject.create(
+            'local call (IteratorFunction f) -> Any',
+            a => a.f.apply()
+        )
+    ]),
     
     '>>': OverloadObject('>>', FunctionObject.converge([
         'local pass_to_right (Immutable object, Functional f) -> Any',
@@ -659,6 +683,11 @@ pour(K, {
     '<<': OverloadObject('<<', FunctionObject.converge([
         'local pass_to_left (Functional f, Immutable object) -> Any',
         'local pass_to_left (Functional f, Mutable &object) -> Any',    
+    ], a => a.f.apply(a.object) )),
+    
+    operator_to: OverloadObject('operator_to', FunctionObject.converge([
+        'local pass_to_right (Immutable object, Functional f) -> Any',
+        'local pass_to_right (Mutable &object, Functional f) -> Any',    
     ], a => a.f.apply(a.object) )),
      
     operator_by: OverloadObject('operator_by', FunctionObject.converge([
@@ -699,21 +728,34 @@ pour(K, {
     })(),
      
     map: OverloadObject('map', list(cat([
-            FunctionObject.create(
-                'local map (Iterator iterator, Mapper f) -> Iterator',
-                a => IteratorObject(function () {
-                    let value = a.iterator.next()
-                    if (value != DoneObject) {
-                        return a.f.apply(value)
-                    } else {
-                        return DoneObject
-                    }
-                })
+        FunctionObject.create(
+            'local map (Iterator iterator, Mapper f) -> Iterator',
+            a => IteratorObject(function () {
+                let value = a.iterator.next()
+                if (value != DoneObject) {
+                    return a.f.apply(value)
+                } else {
+                    return DoneObject
+                }
+            })
+        ),
+        FunctionObject.create(
+            'local map (Iterator iterator) -> Function',
+            a => FunctionObject.create(
+                'local map_by (Mapper f) -> Iterator',
+                b => K.map.apply(a.iterator, b.f)
             )
-        ], FunctionObject.converge([
+        )], FunctionObject.converge([
             'local map_list (ImList list, Mapper f) -> Iterator',
             'local map_list (MutList &list, Mapper f) -> Iterator'
-        ], a => K.map.apply(K.get_iterator.apply(a.list), a.f))
+        ], a => K.map.apply(K.get_iterator.apply(a.list), a.f)),
+        FunctionObject.converge([
+            'local map_list (ImList list) -> Function',
+            'local map_list (MutList &list) -> Function',
+        ], a => FunctionObject.create(
+            'local map_list_by (Mapper f) -> Iterator',
+            b => K.map.apply(a.list, b.f)
+        ))
     ))),
      
     list: OverloadObject('list', [
@@ -727,7 +769,58 @@ pour(K, {
                 }
             })()))
         )
-    ])
+    ]),
+     
+    count: OverloadObject('count', [
+        FunctionObject.create(
+            'local count (UnsignedInt n) -> Iterator',
+            a => IteratorObject((function () {
+                let i = 0
+                return (() => (i < a.n)? i++: DoneObject)
+            })())
+        ),
+        FunctionObject.create(
+            'local count () -> Iterator',
+            a => IteratorObject((function () {
+                let limit = Number.MAX_SAFE_INTEGER
+                let i = 0 
+                return (() => assert(i < limit) && i++)
+            })())
+        )
+    ]),
+     
+    filter: OverloadObject('filter', list(cat([
+        FunctionObject.create(
+            'local filter (Iterator iterator, Filter f) -> Iterator',
+            a => IteratorObject(function () {
+                let value = a.iterator.next()
+                while (value != DoneObject) {
+                    if (a.f.apply(value)) {
+                        return value
+                    }
+                    value = a.iterator.next()
+                }
+                return DoneObject
+            })
+        ),
+        FunctionObject.create(
+            'local filter (Iterator iterator) -> Function',
+            a => FunctionObject.create(
+                'local filter_by (Filter f) -> Iterator',
+                b => K.filter.apply(a.iterator, b.f)
+            )
+        )], FunctionObject.converge([
+            'local filter_list (ImList list, Filter f) -> Iterator',
+            'local filter_list (MutList &list, Filter f) -> Iterator'
+        ], a => K.filter.apply(K.get_iterator.apply(a.list), a.f)),
+        FunctionObject.converge([
+            'local filter_list (ImList list) -> Function',
+            'local filter_list (MutList &list) -> Function',
+        ], a => FunctionObject.create(
+            'local filter_list_by (Filter f) -> Iterator',
+            b => K.filter.apply(a.list, b.f)
+        ))
+    )))
     
 })
 

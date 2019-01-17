@@ -392,11 +392,15 @@ Detail.Prototype.parse = function (string) {
             })[item]()
         }))
     }
+    function safe_split (s) {
+        let array = s.split(',')
+        return (array.length == 1 && array[0].trim() == '')? []: array
+    }
     let trim_all = x => map_lazy(x, y => y.trim())
     return {
         effect_range: string.split(' ')[0],
         parameters: map(
-            trim_all(str.parameters.split(',')),
+            trim_all(safe_split(str.parameters)),
             s => parse_parameter(s)
         ),
         value_constraint: assert_concept(str.return_value)

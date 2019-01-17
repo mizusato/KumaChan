@@ -240,22 +240,20 @@ const Syntax = mapval({
     
     MapExpr: 'MapOperand MapNext',
     MapNext: [
-        'MapOperator FunExpr',
-        'MapOperator BodyLambda',
         'MapOperator MapOperand MapNext',
         ''
     ],
     MapOperator: [
         '->', '<-',
         '>>', '<<',
-        '~by'
+        '~by', '~to'
     ],
     MapOperand: [
         'Hash', 'HashLambda',
         'List', 'ListLambda',
         'SimpleLambda',
         'BodyLambda',
-        'FuncExpr',
+        'FunExpr',
         'Concept',
         'Struct',
         'Simple'
@@ -293,7 +291,7 @@ const Syntax = mapval({
     Target: ['-> Constraint', '->', ''],
     Body: '{ Program }',
     
-    FunFlag: ['~g :', '~u: ', '~f :', ''],
+    FunFlag: ['~g :', '~u: ', '~f :'],
     FunExpr: 'FunFlag ParaList Target Body',
     
     Effect: ['~global', '~upper', '~local'],
