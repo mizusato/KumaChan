@@ -178,7 +178,7 @@ Detail.Scope.Prototype = {
         this.set(key, value)
     },
     upward_iterator: function () {
-        return iterate(this, x => x.context, $1(NullScope))
+        return iterate(this, x => x.context, NullScope)
     },
     find_name: function (name) {
         let get_scope_chain = (() => this.upward_iterator())

@@ -51,6 +51,7 @@ const EffectRange = Enum('global', 'upper', 'local')
  *  Object (Any) ┬ Compound ┬ Hash
  *               │          ┴ List
  *               ┴ Atomic ┬ Concept
+ *                        ┼ Iterator
  *                        ┼ Primitive ┬ String
  *                        │           ┼ Number
  *                        │           ┴ Bool
@@ -82,7 +83,8 @@ const FunctionalObject = $u(
 const AtomicObject = $u(
     PrimitiveObject,
     FunctionalObject,
-    $(x => is(x, ConceptObject))
+    $(x => is(x, ConceptObject)),
+    $(x => is(x, IteratorObject))
 )
 
 
@@ -165,8 +167,9 @@ pour(ObjectObject, Detail.Object)
 
 function GetType(object) {
     let non_primitive = {
-        Function: $(x => FunctionObject.contains(x)),
         Concept: $(x => ConceptObject.contains(x)),
+        Iterator: $(x => IteratorObject.contains(x)),
+        Function: $(x => FunctionObject.contains(x)),
         Overload: $(x => OverloadObject.contains(x)),
         List: ListObject,
         Hash: HashObject
@@ -283,11 +286,48 @@ function SingletonObject (name) {
 
 
 /**
+ *  Iterator Definition
+ */
+
+
+const IteratorFunctionObject = $(
+    x => is(x, FunctionObject) && x.prototype.parameters.length == 0
+)
+
+
+const MapperObject = $(
+    x => is(x, FunctionalObject) && x.prototype.parameters.length == 1
+)
+
+
+function IteratorObject (f) {
+    check(IteratorObject, arguments, {
+        f: $u(Fun, IteratorFunctionObject)
+    })
+    let next = (is(f, Fun))? f: function () {
+        return f.apply()
+    }
+    return {
+        next: next,
+        maker: IteratorObject,
+        __proto__: once(IteratorObject, {
+            toString: function () {
+                return `<Iterator>`
+            }
+        })
+    }
+}
+
+
+SetMakerConcept(IteratorObject)
+
+
+/**
  *  Scope Definition
  */
 
 
-const NullScope = SingletonObject('NullScope')
+const NullScope = { contains: SingletonContains, _name: 'NullScope' }
 
 
 function Scope (context, range, data = {}) {
@@ -304,7 +344,7 @@ function Scope (context, range, data = {}) {
 }
 
 
-SetEquivalent(Scope, $u(MadeBy(Scope), $1(NullScope)) )
+SetEquivalent(Scope, $u(MadeBy(Scope), NullScope) )
 
 
 /**
@@ -321,12 +361,14 @@ const id = (name => G.lookup(name))
 
 const VoidObject = SingletonObject('Void')
 const NaObject = SingletonObject('N/A')
+const DoneObject = SingletonObject('Done')
 
 
 pour(K, {
     NullScope: NullScope,
     Void: VoidObject,
     'N/A': NaObject,
+    Done: DoneObject
 })
 
 
@@ -527,18 +569,20 @@ function PortConcept(concept, name) {
 }
 
 
+/* Any should be ObjectObject, assert when calling FunctionObject */
 const AnyConcept = PortConcept(Any, 'Any')
 
 
 pour(K, {
-    /* concept */
-    Concept: PortConcept(ConceptObject, 'Concept'),
-    /* special */
+    /* any */
     Any: AnyConcept,
-    Bool: PortConcept(Bool, 'Bool'),
     /* atomic */
     Atomic: PortConcept(AtomicObject, 'Atomic'),
+    /* concept */
+    Concept: PortConcept(ConceptObject, 'Concept'),
+    Iterator: PortConcept(IteratorObject, 'Iterator'),
     /* primitive */
+    Bool: PortConcept(BoolObject, 'Bool'),
     Number: PortConcept(NumberObject, 'Number'),
     Int: PortConcept(Int, 'Int'),
     UnsignedInt: PortConcept(UnsignedInt, 'UnsignedInt'),
@@ -548,6 +592,8 @@ pour(K, {
     Function: PortConcept(FunctionObject, 'Function'),
     Overload: PortConcept(OverloadObject, 'Overload'),
     Functional: PortConcept(FunctionalObject, 'Functional'),
+    IteratorFunction: PortConcept(IteratorFunctionObject, 'IteratorFunction'),
+    Mapper: PortConcept(MapperObject, 'Mapper'),
     /* compound */
     Compound: PortConcept(CompoundObject, 'Compound'),
     List: PortConcept(ListObject, 'List'),
@@ -615,10 +661,73 @@ pour(K, {
         'local pass_to_left (Functional f, Mutable &object) -> Any',    
     ], a => a.f.apply(a.object) )),
      
-    'operator_by': OverloadObject('operator_by', FunctionObject.converge([
+    operator_by: OverloadObject('operator_by', FunctionObject.converge([
         'local pass_to_left (Functional f, Immutable object) -> Any',
-        'local pass_to_left (Functional f, Mutable &object) -> Any',    
-    ], a => a.f.apply(a.object) ))
+        'local pass_to_left (Functional f, Mutable &object) -> Any'    
+    ], a => a.f.apply(a.object) )),
+    
+    next: OverloadObject('next', [
+        FunctionObject.create(
+            'local next (Iterator iterator) -> Any',
+            a => a.iterator.next()
+        )
+    ]),
+     
+    get_iterator: (function () {
+        function get (list, f) {
+            return IteratorObject((function () {
+                let index = 0
+                return function () {
+                    if (index < list.length) {
+                        return f(list[index++])
+                    } else {
+                        return DoneObject
+                    }
+                }
+            })())
+        }
+        return OverloadObject('get_iterator', [
+            FunctionObject.create(
+                'local get_iterator (ImList list) -> Iterator',
+                a => get(a.list.data, ImRef)
+            ),
+            FunctionObject.create(
+                'local get_iterator (MutList &list) -> Iterator',
+                a => get(a.list.data, x => x)
+            )
+        ])
+    })(),
+     
+    map: OverloadObject('map', list(cat([
+            FunctionObject.create(
+                'local map (Iterator iterator, Mapper f) -> Iterator',
+                a => IteratorObject(function () {
+                    let value = a.iterator.next()
+                    if (value != DoneObject) {
+                        return a.f.apply(value)
+                    } else {
+                        return DoneObject
+                    }
+                })
+            )
+        ], FunctionObject.converge([
+            'local map_list (ImList list, Mapper f) -> Iterator',
+            'local map_list (MutList &list, Mapper f) -> Iterator'
+        ], a => K.map.apply(K.get_iterator.apply(a.list), a.f))
+    ))),
+     
+    list: OverloadObject('list', [
+        FunctionObject.create(
+            'local list (Iterator iterator) -> List',
+            a => ListObject(list((function* () {
+                let value = a.iterator.next()
+                while (value != DoneObject) {
+                    yield value
+                    value = a.iterator.next()
+                }
+            })()))
+        )
+    ])
     
 })
 
