@@ -265,6 +265,11 @@ let Translate = {
         let checker = `Lambda(scope, [${parameter}], ${f})`
         return `Abstract(${checker})`
     },
+    Struct: function (tree) {
+        let h = children_hash(tree)
+        let hash_object = translate(h.Hash)
+        return `Structure(${hash_object})`
+    },
     /* ---------------------- */
     SimpleLambda: function (tree) {
         return translate_lambda(tree, 'expr', function (tree) {

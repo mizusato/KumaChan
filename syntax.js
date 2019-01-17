@@ -228,9 +228,6 @@ const Syntax = mapval({
     
     Expr: [
         'RawCode',
-        'Concept',
-        'FunExpr',
-        'BodyLambda',
         'MapExpr',
     ],
     
@@ -239,6 +236,8 @@ const Syntax = mapval({
     FilterList: 'Filter NextFilter',
     NextFilter: [', Filter NextFilter', ''],
     Filter: 'Simple',
+    
+    Struct: '~struct Hash',
     
     MapExpr: 'MapOperand MapNext',
     MapNext: [
@@ -256,6 +255,10 @@ const Syntax = mapval({
         'Hash', 'HashLambda',
         'List', 'ListLambda',
         'SimpleLambda',
+        'BodyLambda',
+        'FuncExpr',
+        'Concept',
+        'Struct',
         'Simple'
     ],
     

@@ -20,6 +20,26 @@ function Abstract (checker, name) {
 }
 
 
+function Structure (hash_object) {
+    check(Structure, arguments, { hash_object: HashObject })
+    let err = ErrorProducer(InvalidDefinition, 'runtime::structure')
+    err.if_failed(need(map_lazy(
+        hash_object.data,
+        (key, value) => suppose(
+            is(value, ConceptObject), `${key} is not Concept`
+        )
+    )))
+    let converted = mapval(
+        hash_object.data,
+        concept_object => $(object => concept_object.checker(object))
+    )
+    let struct = Struct(converted)
+    let struct_object = $n( HashObject, $(x => is(x.data, struct)) )
+    let key_list = join(map(converted, key => key), ', ')
+    return PortConcept(struct_object, `struct {${key_list}}`)
+}
+
+
 function Lambda (context, parameter_names, f) {
     check(Lambda, arguments, {
         context: Scope, parameter_names: ListOf(Str), f: Fun
