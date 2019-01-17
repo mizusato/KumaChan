@@ -578,10 +578,12 @@ pour(K, {
 
 
 pour(K, {
-    singleton: FunctionObject.create(
-        'global singleton (String name) -> Concept',
-        a => SingletonObject(a.name)
-    )
+    singleton: OverloadObject('singleton', [
+        FunctionObject.create(
+            'global singleton (String name) -> Concept',
+            a => SingletonObject(a.name)
+        )
+    ])
 })
 
 
@@ -627,6 +629,24 @@ pour(K, {
         'local is (Immutable object, Concept concept) -> Bool',
         'local is (Mutable &object, Concept concept) -> Bool',    
     ], a => a.concept.checker(a.object) )),
+     
+    Is: OverloadObject('Is', [
+        FunctionObject.create(
+            'local Is (Concept concept) -> Functional',
+            a => OverloadObject(`Is('${a.concept.name}')`,
+                FunctionObject.converge([
+                'local checker (Immutable object) -> Bool',
+                'local checker (Mutable &object) -> Bool'
+            ], b => a.concept.checker(b.object) ))
+        )
+    ]),
+     
+    IsNot: OverloadObject('IsNot', [
+        FunctionObject.create(
+            'local IsNot (Concept concept) -> Functional',
+            a => K.Is.apply(ConceptObject.Complement(a.concept))
+        )
+    ]),
     
     '|': OverloadObject('|', [ FunctionObject.create(
         'local union (Concept c1, Concept c2) -> Concept',

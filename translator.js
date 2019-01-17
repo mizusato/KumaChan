@@ -3,6 +3,10 @@
 
 function normalize_operator_name (name) {
     check(normalize_operator_name, arguments, { name: Str })
+    /**
+     *  if the operator is SimpleOperator, 'name' is name of token
+     *  if the operator is MapOperator, 'name' is matched string of token
+     */
     let prefix = is(name[0], Char.Alphabet)? 'operator_': ''
     return (prefix + name.toLowerCase())
 }

@@ -130,7 +130,6 @@ const Tokens = [
     Pattern.Operator('<='),
     Pattern.Operator('>='),
     Pattern.TextOperator('Is', 'is'),
-    Pattern.TextOperator('By', 'by'),
     Pattern.TextOperator('~', 'not'),
     Pattern('Number', 'Exponent', [
         Unit(Char.Digit, '+'),
@@ -249,7 +248,7 @@ const Syntax = mapval({
     MapOperator: [
         '->', '<-',
         '>>', '<<',
-        'By'
+        '~by'
     ],
     MapOperand: [
         'Hash', 'HashLambda',
