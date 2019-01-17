@@ -775,6 +775,28 @@ pour(K, {
             b => K.map.apply(a.list, b.f)
         ))
     ))),
+    
+    '->': OverloadObject('->', list(cat([
+        FunctionObject.create(
+            'local map_by_right (Iterator iterator, Mapper f) -> Iterator',
+            a => K.map.apply(iterator, f)
+        )],
+        FunctionObject.converge([
+            'local map_by_right (ImList list, Mapper f) -> Iterator',
+            'local map_by_right (MutList &list, Mapper f) -> Iterator'
+        ], a => K.map.apply(a.list, a.f))
+    ))),
+     
+    '<-': OverloadObject('<-', list(cat([
+        FunctionObject.create(
+            'local map_by_left (Mapper f, Iterator iterator) -> Iterator',
+            a => K.map.apply(iterator, f)
+        )],
+        FunctionObject.converge([
+            'local map_by_left (Mapper f, ImList list) -> Iterator',
+            'local map_by_left (Mapper f, MutList &list) -> Iterator'
+        ], a => K.map.apply(a.list, a.f))
+    ))),
      
     list: OverloadObject('list', [
         FunctionObject.create(

@@ -101,8 +101,9 @@ function apply (functional) {
 
 
 function call (functional, argument) {
-    assert(FunctionalObject.contains(functional))
-    assert(Hash.contains(argument))
+    let e = ErrorProducer(InvalidOperation, 'runtime::call')
+    e.assert(is(functional, FunctionalObject), 'calling non-functional')
+    assert(is(argument, Hash))
     return functional.call(argument)
 }
 
@@ -123,7 +124,8 @@ function get (object, name) {
 
 function set (object, name, value) {
     let e = ErrorProducer(InvalidOperation, 'runtime::set')
-    e.if(is(object, ImmutableObject), 'set element value of immutable object')
+    let msg = 'changing element value of immutable compound object'
+    e.if(is(object, ImmutableObject), msg)
     transform(object, [
         { when_it_is: HashObject,
           use: h => assert(is(name, Str)) && h.set(name, value) },

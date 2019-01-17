@@ -283,7 +283,11 @@ const Syntax = mapval({
     
     BodyLambda: '...{ Program }',
     
-    LambdaParaList: ['( LambdaPara NextLambdaPara ) ->', ''],
+    LambdaParaList: [
+        '( LambdaPara NextLambdaPara ) ->',
+        'LambdaPara ->',
+        ''
+    ],
     LambdaPara: ['Identifier'],
     NextLambdaPara: [', LambdaPara NextLambdaPara', ''],
     
