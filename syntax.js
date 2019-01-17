@@ -103,6 +103,7 @@ const Tokens = [
     Pattern.Operator('..'),  // ..Identifier = Inline Comment
     Pattern.Operator('.'),
     // name of simple operator starts with a capital alphabet
+    Pattern.Operator('!='),
     Pattern.PrefixOperator('!'),
     Pattern.Operator('||'),
     Pattern.Operator('&&'),
@@ -120,9 +121,8 @@ const Tokens = [
     //Pattern.PrefixOperator('Parameter', '%'),  // ugly, use dot
     Pattern.Operator('%'),
     Pattern.Operator('^'),
-    Pattern.Operator('='),
     Pattern.Operator('=='),
-    Pattern.Operator('!='),
+    Pattern.Operator('='),
     Pattern.Operator('<<'),
     Pattern.Operator('>>'),
     Pattern.Operator('<'),

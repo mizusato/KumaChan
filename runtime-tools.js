@@ -120,6 +120,19 @@ function get (object, name) {
 }
 
 
+function set (object, name, value) {
+    let e = ErrorProducer(InvalidOperation, 'runtime::set')
+    transform(object, [
+        { when_it_is: HashObject,
+          use: h => assert(is(name, Str)) && h.set(name, value) },
+        { when_it_is: ListObject,
+          use: l => assert(is(name, Num)) && l.change(name, value) },
+        { when_it_is: Otherwise,
+          use: x => e.throw(`except Hash or List: ${GetType(object)} given`) }
+    ])
+}
+
+
 function access (object, name, scope) {
     function wrap (method) {
         let f_name = `<${GetType(object)}>.${name}`

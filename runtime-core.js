@@ -376,6 +376,8 @@ const DoneObject = SingletonObject('Done')
 
 
 pour(K, {
+    true: true,
+    false: false,
     NullScope: NullScope,
     Void: VoidObject,
     'N/A': NaObject,
@@ -1095,23 +1097,23 @@ pour(K, {
     
     '==': OverloadObject('==', [
         FunctionObject.create (
-            'local equal (Number p, Number q) -> Bool',
-            a => a.p == a.q
+            'local equal (Any left, Any right) -> Bool',
+            a => false
         ),
         FunctionObject.create (
-            'local string_equal (String s1, String s2) -> Bool',
-            a => a.s1 == a.s2
+            'local equal (Compound left, Compound right) -> Bool',
+            a => a.left.data === a.right.data
+        ),
+        FunctionObject.create (
+            'local equal (Atomic left, Atomic right) -> Bool',
+            a => a.left === a.right
         )
     ]),
     
     '!=': OverloadObject('!=', [
         FunctionObject.create (
-            'local not_equal (Number p, Number q) -> Bool',
-            a => a.p != a.q
-        ),
-        FunctionObject.create (
-            'local string_not_equal (String s1, String s2) -> Bool',
-            a => a.s1 != a.s2
+            'local not_equal (Any left, Any right) -> Bool',
+            a => !(K['=='].apply(a.left, a.right))
         )
     ]),
     

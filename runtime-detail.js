@@ -138,6 +138,11 @@ Detail.List.Prototype = {
         assert(typeof this.data[index] != 'undefined')
         return this.data[index]
     },
+    change: function (index, value) {
+        let err = ErrorProducer(IndexError, 'List::change')
+        err.assert(index < this.data.length, `${index}`)
+        this.data[index] = value
+    },
     append: function (element) {
         this.data.push(element)
         return VoidObject
