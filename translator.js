@@ -74,7 +74,7 @@ function find_parameters (tree) {
     function crush (tree) {
         let Parameter = $(function (tree) {
             return (
-                (tree.name == 'SimpleUnit')
+                is(tree.name, one_of('SimpleUnit', 'LambdaPara'))
                 && assert(is(tree.children[0], SyntaxTreeLeaf))
                 && is(tree.children[0].children, Token('Parameter'))
             )

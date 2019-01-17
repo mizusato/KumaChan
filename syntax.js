@@ -274,11 +274,15 @@ const Syntax = mapval({
     ListLambda: ['..[ ]', '..[ ItemList ]'],
     
     SimpleLambda: [
-        '.{ SimpleLambda }',
+        '.{ LambdaParaList SimpleLambda }',
         '.{ Simple }'
     ],
     
     BodyLambda: '...{ Program }',
+    
+    LambdaParaList: ['LambdaPara NextLambdaPara ->', ''],
+    LambdaPara: ['Parameter Identifier'],
+    NextLambdaPara: ['LambdaPara NextLambdaPara', ''],
     
     ParaList: ['( )', '( Para NextPara )'],
     Para: 'Constraint PassFlag Id',
