@@ -659,6 +659,14 @@ pour(K, {
             a => a.f.call(a.argument_table.data)
         ),
         FunctionObject.create(
+            'local call (Functional f, ImList argument_list) -> Any',
+            a => a.f.apply.apply(a.f, map(a.argument_list.data, ImRef))
+        ),
+        FunctionObject.create(
+            'local call (Functional f, MutList &argument_list) -> Any',
+            a => a.f.apply.apply(a.f, a.argument_list.data)
+        ),
+        FunctionObject.create(
             'local call (Functional f) -> Functional',
             a => OverloadObject('call_by', [
                 FunctionObject.create(
@@ -668,6 +676,14 @@ pour(K, {
                 FunctionObject.create(
                     'local call_by (MutHash &argument_table) -> Any',
                     b => a.f.call(b.argument_table.data)
+                ),
+                FunctionObject.create(
+                    'local call_by (ImList argument_list) -> Any',
+                    b => a.f.apply.apply(a.f, map(b.argument_list.data, ImRef))
+                ),
+                FunctionObject.create(
+                    'local call_by (MutList &argument_list) -> Any',
+                    b => a.f.apply.apply(a.f, b.argument_list.data)
                 )
             ])
         ),

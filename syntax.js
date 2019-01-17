@@ -268,7 +268,10 @@ const Syntax = mapval({
     NextPair: [', Pair NextPair', ''],
     
     Hash: ['{ }', '{ PairList }'],
-    List: ['[ ]', '[ ItemList ]'],
+    List: [
+        '[ ]', 'Get [ ]',  // Get operator may be inserted by get_tokens()
+        '[ ItemList ]', 'Get [ ItemList ]'
+    ],
     
     HashLambda: ['..{ }', '..{ PairList }'],
     ListLambda: ['..[ ]', '..[ ItemList ]'],
@@ -287,12 +290,16 @@ const Syntax = mapval({
     ParaList: ['( )', '( Para NextPara )'],
     Para: 'Constraint PassFlag Id',
     NextPara: [', Para NextPara', ''],
-    PassFlag: ['Intersect', ''],  // Intersect: &
+    PassFlag: ['&', ''],
     Target: ['-> Constraint', '->', ''],
     Body: '{ Program }',
     
-    FunFlag: ['~g :', '~u: ', '~f :'],
-    FunExpr: 'FunFlag ParaList Target Body',
+    FunFlag: ['~g :', '~h: ', '~f :', '~global :', '~upper :', '~local :'],
+    NoFlag: ['Call', ''],
+    FunExpr: [
+        'FunFlag ParaList Target Body',
+        'NoFlag ParaList Target Body'
+    ],
     
     Effect: ['~global', '~upper', '~local'],
     FunDef: 'Effect Id Call ParaList Target Body',

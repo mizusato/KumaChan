@@ -109,11 +109,12 @@ function call (functional, argument) {
 
 function get (object, name) {
     let e = ErrorProducer(InvalidOperation, 'runtime::get')
+    let f = (is(object, ImmutableObject))? ImRef: (x => x)
     return transform(object, [
         { when_it_is: HashObject,
-          use: h => assert(is(name, Str)) && h.get(name) },
+          use: h => assert(is(name, Str)) && f(h.get(name)) },
         { when_it_is: ListObject,
-          use: l => assert(is(name, Num)) && l.at(name) },
+          use: l => assert(is(name, Num)) && f(l.at(name)) },
         { when_it_is: Otherwise,
           use: x => e.throw(`except Hash or List: ${GetType(object)} given`) }
     ])
@@ -122,6 +123,7 @@ function get (object, name) {
 
 function set (object, name, value) {
     let e = ErrorProducer(InvalidOperation, 'runtime::set')
+    e.if(is(object, ImmutableObject), 'set element value of immutable object')
     transform(object, [
         { when_it_is: HashObject,
           use: h => assert(is(name, Str)) && h.set(name, value) },

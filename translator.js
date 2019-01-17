@@ -316,17 +316,18 @@ let Translate = {
     FunExpr: function (tree) {
         let h = children_hash(tree)
         let Flag = h.FunFlag
-        let flag = (
-            (is_not(Flag, SyntaxTreeEmpty))
-            && string_of(Flag.children[0])
-            || ''
-        )
-        let effect = ({
-            g: `'global'`,
-            u: `'upper'`,
-            f: `'local'`,
-            '': `'local'`
-        })[flag]
+        let effect = Flag? (function() {
+            let h = children_hash(Flag)
+            let flag = string_of(h.Keyword)
+            return ({
+                global: `'global'`,
+                g: `'global'`,
+                upper: `'upper'`,
+                h: `'upper'`,
+                local: `'local'`,
+                f: `'local'`,
+            })[flag]
+        })(): `'local'`
         let paras = translate(h.ParaList)
         let target = translate(h.Target)
         let func = function_string(translate(h.Body))
