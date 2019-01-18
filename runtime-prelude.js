@@ -301,6 +301,27 @@ pour(K, {
                 })
             }
         )
+    ]),
+     
+    zip: OverloadObject('zip', [
+        FunctionObject.create (
+            'local zip (IterableHash *hash) -> Iterator',
+            a => (function () {
+                let iterator_hash = mapval(
+                    a.hash.data,
+                    x => K.get_iterator.apply(x)
+                )
+                return IteratorObject(function () {
+                    let value_hash = mapval(iterator_hash, it => it.next())
+                    let values = map_lazy(value_hash, (k, v) => v)
+                    if ( forall(values, v => v != DoneObject) ) {
+                        return HashObject(value_hash)
+                    } else {
+                        return DoneObject
+                    }
+                })
+            })()
+        )
     ])
     
 })
