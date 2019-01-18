@@ -233,6 +233,47 @@ pour(K, {
             'local filter_list_by (Filter f) -> Iterator',
             b => K.filter.apply(a.list, b.f)
         ))
+    ))),
+     
+    create_iterator: OverloadObject('create_iterator', [
+        FunctionObject.create(
+            'local create_iterator (IteratorFunction f) -> Iterator',
+            a => IteratorObject(a.f)
+        )
+    ]),
+     
+    fold: OverloadObject('fold', list(cat([
+        FunctionObject.create(
+            'local fold (Iterator iterator, Any initial, Reducer f) ->  Any',
+            a => fold((function* () {
+                let value = a.iterator.next()
+                while (value != DoneObject) {
+                    yield value
+                    value = a.iterator.next()
+                }
+            })(), a.initial, (e, v) => a.f.apply(e,v))
+        ),
+        FunctionObject.create(
+            'local fold_from (Any initial) -> Functional',
+            a => OverloadObject('fold', list(cat([
+                FunctionObject.create(
+                    'local fold (Iterator iterator) -> Function',
+                    b => FunctionObject.create(
+                        'local fold_by (Reducer f) -> Any',
+                        c => K.fold.apply(b.iterator, a.initial, c.f)
+                    )
+                )], FunctionObject.converge([
+                    'local fold (ImList list) -> Function',
+                    'local fold (MutList &list) -> Function'
+                ], b => FunctionObject.create(
+                    'local fold_by (Reducer f) -> Any',
+                    c => K.fold.apply(b.list, a.initial, c.f)
+                ))
+            )))
+        )], FunctionObject.converge([
+            'local fold_list (ImList list, Any initial, Reducer f) -> Any',
+            'local fold_list (MutList &list, Any initial, Reducer f) -> Any'
+        ], a => K.fold.apply(K.get_iterator.apply(a.list), a.initial, a.f) )
     )))
     
 })

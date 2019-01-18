@@ -299,7 +299,7 @@ const ParameterCount = (n => $( x => (
 const IteratorFunctionObject = ParameterCount(0)
 const MapperObject = ParameterCount(1)
 const FilterObject = ParameterCount(1)
-const FolderObject = ParameterCount(2)
+const ReducerObject = ParameterCount(2)
 
 
 function IteratorObject (f) {
@@ -376,12 +376,14 @@ const DoneObject = SingletonObject('Done')
 
 
 pour(K, {
-    true: true,
-    false: false,
-    NullScope: NullScope,
     Void: VoidObject,
     'N/A': NaObject,
-    Done: DoneObject
+    Done: DoneObject,
+    true: true,
+    false: false,
+    CR: CR,
+    LF: LF,
+    TAB: TAB
 })
 
 
@@ -608,6 +610,7 @@ pour(K, {
     IteratorFunction: PortConcept(IteratorFunctionObject, 'IteratorFunction'),
     Mapper: PortConcept(MapperObject, 'Mapper'),
     Filter: PortConcept(FilterObject, 'Filter'),
+    Reducer: PortConcept(ReducerObject, 'Reducer'),
     /* compound */
     Compound: PortConcept(CompoundObject, 'Compound'),
     List: PortConcept(ListObject, 'List'),

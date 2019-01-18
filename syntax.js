@@ -298,7 +298,7 @@ const Syntax = mapval({
     Target: ['-> Constraint', '->', ''],
     Body: '{ Program }',
     
-    FunFlag: ['~g :', '~h: ', '~f :', '~global :', '~upper :', '~local :'],
+    FunFlag: ['~g :', '~h :', '~f :', '~global :', '~upper :', '~local :'],
     NoFlag: ['Call', ''],
     FunExpr: [
         'FunFlag ParaList Target Body',
