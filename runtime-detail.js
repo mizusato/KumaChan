@@ -13,6 +13,7 @@ class InvalidArgument extends RuntimeError {}
 class InvalidReturnValue extends RuntimeError {}
 class InvalidDefinition extends RuntimeError {}
 class NoMatchingPattern extends RuntimeError {}
+class NoMatchingCase extends RuntimeError {}
 class KeyError extends RuntimeError {}
 class IndexError extends RuntimeError {}
 class NameConflict extends RuntimeError {}
@@ -447,7 +448,7 @@ Detail.Function.converge = function (proto_list, f) {
 }
 
 
-Detail.Object.represent = function (object) {
+Detail.Object.represent = function represent_object (object) {
     check(Detail.Object.represent, arguments, {
         object: ObjectObject
     })

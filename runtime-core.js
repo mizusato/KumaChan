@@ -277,6 +277,13 @@ SetMakerConcept(ConceptObject)
 pour(ConceptObject, Detail.Concept)
 
 
+/* Any should be ObjectObject, assert when calling FunctionObject */
+const AnyConcept = PortConcept(Any, 'Any')
+
+
+/* Singleton Definition */
+
+
 function SingletonObject (name) {
     let singleton = {}
     pour(singleton, ConceptObject(
@@ -396,6 +403,34 @@ pour(K, {
     LF: LF,
     TAB: TAB
 })
+
+
+/**
+ *  Pair & Case Object Definition
+ */
+
+
+const PairObject = $n(HashObject, $(x => is(x.data, Struct({
+    key: Any, value: Any
+}))))
+
+
+const PairListObject = $n(
+    ListObject, $(x => forall(x.data, e => is(e, PairObject)))
+)
+
+
+const CaseObject = $n(HashObject, $(x => is(x.data, Struct({
+    key: $u(ConceptObject, FilterObject, BoolObject), value: Any
+}))))
+
+
+const CaseListObject = $n(
+    ListObject, $(x => forall(x.data, e => is(e, CaseObject)))
+)
+
+
+K.Otherwise = AnyConcept
 
 
 /**
@@ -616,10 +651,6 @@ function PortConcept(concept, name) {
 }
 
 
-/* Any should be ObjectObject, assert when calling FunctionObject */
-const AnyConcept = PortConcept(Any, 'Any')
-
-
 pour(K, {
     /* any */
     Any: AnyConcept,
@@ -651,7 +682,12 @@ pour(K, {
     Compound: PortConcept(CompoundObject, 'Compound'),
     List: PortConcept(ListObject, 'List'),
     Hash: PortConcept(HashObject, 'Hash'),
-    /* mutability, frozen and solid */
+    /* pair and case */
+    Pair: PortConcept(PairObject, 'Pair'),
+    PairList: PortConcept(PairListObject, 'PairList'),
+    Case: PortConcept(CaseObject, 'Case'),
+    CaseList: PortConcept(CaseListObject, 'CaseList'),
+    /* mutability */
     ImHash: PortConcept(ImHashObject, 'ImHash'),
     MutHash: PortConcept(MutHashObject, 'MutHash'),
     ImList: PortConcept(ImListObject, 'ImList'),

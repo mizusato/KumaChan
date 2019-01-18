@@ -320,6 +320,18 @@ let Translate = {
         let iterator = Translate.IteratorExpr(tree)
         return `K.list.apply(${iterator})`
     },
+    PairListExpr: function (tree) {
+        let content = translate_next(
+            tree, 'AdvPair', 'NextAdvPair', ', ',
+            function (pair) {
+                let h = children_hash(pair)
+                let k = translate(h.MapOperand)
+                let v = translate(h.Expr)
+                return `HashObject({key: ${k}, value: ${v}})`
+            }
+        )
+        return `ListObject([${content}])`
+    },
     /* ---------------------- */
     SimpleLambda: function (tree) {
         return translate_lambda(tree, 'expr', function (tree) {

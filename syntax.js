@@ -123,6 +123,7 @@ const Tokens = [
     Pattern.Operator('%'),
     Pattern.Operator('^'),
     Pattern.Operator('=='),
+    Pattern.Operator('=>'),
     Pattern.Operator('='),
     Pattern.Operator('<<'),
     Pattern.Operator('>>'),
@@ -207,13 +208,12 @@ const Syntax = mapval({
     Module: 'Program',
     Program: 'Command NextCommand',
     Command: [
-        'RawCode',
         'FunDef',
         'Let',
         'Return',
         'Assign',
         'Outer',
-        'MapExpr'
+        'Expr'
     ],
     NextCommand: ['Command NextCommand', ''],
 
@@ -227,8 +227,7 @@ const Syntax = mapval({
     Return: '~return Expr',
     
     Expr: [
-        'RawCode',
-        'MapExpr',
+        'MapExpr'
     ],
     
     Concept: '{ Id That FilterList }',
@@ -249,6 +248,10 @@ const Syntax = mapval({
     ListExprArg: ['Id ~in Simple'],
     NextListExprArg: [', ListExprArg NextListExprArg', ''],
     
+    PairListExpr: ['[ AdvPair NextAdvPair ]'],
+    NextAdvPair: [', AdvPair NextAdvPair', ''],
+    AdvPair: 'MapOperand : Expr',
+    
     Struct: '~struct Hash',
     
     MapExpr: 'MapOperand MapNext',
@@ -260,11 +263,13 @@ const Syntax = mapval({
         '->', '<-',
         '>>', '<<',
         '~to', '~by',
-        '**'
+        '**', '=>'
     ],
     MapOperand: [
+        'RawCode',
         'Hash', 'HashLambda',
         'List', 'ListLambda',
+        'PairListExpr',
         'SimpleLambda',
         'BodyLambda',
         'IteratorExpr',

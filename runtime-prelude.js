@@ -324,6 +324,28 @@ pour(K, {
         )
     ]),
      
+    keys: OverloadObject('keys', [
+        FunctionObject.create (
+            'local keys (PairList pairs) -> List',
+            a => ListObject(map(a.pairs.data, x => x.get('key')))
+        ),
+        FunctionObject.create (
+            'local keys (Hash hash) -> List',
+            a => ListObject(map(a.hash.data, (k, v) => k))
+        )
+    ]),
+     
+    values: OverloadObject('values', [
+        FunctionObject.create (
+            'local values (PairList *pairs) -> List',
+            a => ListObject(map(a.pairs.data, x => x.get('value')))
+        ),
+        FunctionObject.create (
+            'local values (Hash *hash) -> List',
+            a => ListObject(map(a.hash.data, (k, v) => v))
+        )
+    ]),
+     
     mapkey: OverloadObject('mapkey', [
         FunctionObject.create (
             'local mapkey (Hash *hash, Mapper f) -> Hash',
@@ -357,6 +379,43 @@ pour(K, {
                 'local mapval_by (Mapper f) -> Hash',
                 b => K.mapval.apply(a.hash, b.f)
             )
+        )
+    ]),
+     
+    '=>': OverloadObject('=>', [
+        FunctionObject.create (
+            'local switch (Any *object, CaseList *case_list) -> Any',
+            function (a) {
+                let err = ErrorProducer(InvalidReturnValue, 'switch')
+                let msg = 'filter function should return boolean value'
+                let require_bool = (
+                    x => (err.assert(is(x, BoolObject), msg), x)
+                )
+                let object = a.object
+                let case_list = a.case_list
+                let match = find(map_lazy(case_list.data, function (pair) {
+                    let key = pair.get('key')
+                    let value = pair.get('value')
+                    let ok = transform(key, [
+                        { when_it_is: FilterObject,
+                          use: f => require_bool(f.apply(object)) },
+                        { when_it_is: ConceptObject,
+                          use: c => c.checker(object) },
+                        { when_it_is: BoolObject,
+                          use: b => b }
+                    ])
+                    return {
+                        ok: ok,
+                        value: value
+                    }
+                }), x => x.ok)
+                if (match != NotFound) {
+                    return match.value
+                } else {
+                    let err = ErrorProducer(NoMatchingCase, 'switch')
+                    err.throw('cannot find a matching case')
+                }
+            }
         )
     ])
     
