@@ -110,6 +110,10 @@ pour(K, {
             FunctionObject.create(
                 'local get_iterator (MutList &list) -> Iterator',
                 a => get(a.list.data, x => x)
+            ),
+            FunctionObject.create(
+                'local get_iterator (Iterator iterator) -> Iterator',
+                a => a.iterator
             )
         ])
     })(),
@@ -168,6 +172,12 @@ pour(K, {
     ))),
      
     list: OverloadObject('list', [
+        FunctionObject.create(
+            'local list (Hash *hash) -> List',
+            a => ListObject(
+                map(a.hash.data, (k, v) => HashObject({ key: k, value: v }))
+            )
+        ),
         FunctionObject.create(
             'local list (Iterator iterator) -> List',
             a => ListObject(list((function* () {
@@ -274,7 +284,25 @@ pour(K, {
             'local fold_list (ImList list, Any initial, Reducer f) -> Any',
             'local fold_list (MutList &list, Any initial, Reducer f) -> Any'
         ], a => K.fold.apply(K.get_iterator.apply(a.list), a.initial, a.f) )
-    )))
+    ))),
+     
+    '**': OverloadObject('**', [
+        FunctionObject.create (
+            'local cart (Iterable *x, Iterable *y) -> Iterator',
+            function (a) {
+                let [x, y] = map([a.x, a.y], t => K.get_iterator.apply(t))
+                return IteratorObject(function () {
+                    let u = x.next()
+                    let v = y.next()
+                    if (u != DoneObject && v != DoneObject) {
+                        return ListObject([u, v])
+                    } else {
+                        return DoneObject
+                    }
+                })
+            }
+        )
+    ])
     
 })
 

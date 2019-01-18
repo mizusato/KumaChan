@@ -138,29 +138,22 @@ function set (object, name, value) {
 
 
 function access (object, name, scope) {
-    function wrap (method) {
-        let f_name = `<${GetType(object)}>.${name}`
-        let p = method.prototype.parameters
-        let shifted = p.slice(1, p.length)
-        let wrapper_proto = pour(pour({}, method.prototype), {
-            parameters: shifted
-        })
-        let first_parameter = p[0].name
-        return FunctionObject(f_name, scope, wrapper_proto, function (scope) {
-            let extended_arg = {}
-            extended_arg[first_parameter] = object
-            pour(extended_arg, scope.data.argument.data)
-            return method.call(extended_arg)
-        })
+    function wrap (f) {
+        check(wrap, arguments, { f: FunctionObject })
+        return OverloadObject(f.name, [f])
+    }
+    function find_on (overload) {
+        check(find_on, arguments, { overload: OverloadObject })
+        return overload.find_method_for(object)
     }
     let maybe_method = scope.try_to_lookup(name)
     let method = transform(maybe_method, [
-        { when_it_is: FunctionObject.MethodFor(object), use: f => f },
-        { when_it_is: OverloadObject, use: o => o.find_method_for(object) },
+        { when_it_is: FunctionObject, use: f => find_on(wrap(f)) },
+        { when_it_is: OverloadObject, use: o => find_on(o) },
         { when_it_is: Otherwise, use: x => NotFound }
     ])
     if (method != NotFound) {
-        return wrap(method)
+        return method
     } else if (is(object, HashObject)) {
         return get(object, name)
     } else {

@@ -303,7 +303,11 @@ let Translate = {
                 let name = translate(h.Id)
                 let constraint = translate(h.Constraint)
                 let is_immutable = is(h.PassFlag, SyntaxTreeEmpty)
-                let pass_policy = is_immutable? `'immutable'`: `'dirty'`
+                let pass_policy = is_immutable? `'immutable'`: ({
+                    '&': `'dirty'`,
+                    '*': `'natural'`,
+                })[string_of(h.PassFlag.children[0])]
+                assert(is(pass_policy, Str))
                 return `[${name},${constraint},${pass_policy}]`
             }
         ): ''

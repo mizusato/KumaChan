@@ -383,7 +383,7 @@ Detail.Prototype.parse = function (string) {
         }
     }
     function parse_parameter (string) {
-        const pattern = /([^ ]*) *([\*\&\~]?)(.+)/
+        const pattern = /([^ ]*) *([\*\&]?)(.+)/
         check(parse_parameter, arguments, { string: Regex(pattern) })
         let str = {
             constraint: string.match(pattern)[1].trim(),

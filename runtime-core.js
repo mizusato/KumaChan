@@ -11,13 +11,15 @@
  */
 
 
-const PassPolicy = Enum('dirty', 'immutable')
+const PassPolicy = Enum('dirty', 'immutable', 'natural')
 const PassAction = {
     dirty: x => assert(is(x, MutableObject)) && x,
+    natural: x => x,
     immutable: x => ImRef(x)
 }
 const PassFlag = {
     dirty: '&',
+    natural: '*',
     immutable: ''
 }
 const PassFlagValue = fold(
@@ -333,6 +335,9 @@ function IteratorObject (f) {
 SetMakerConcept(IteratorObject)
 
 
+const IterableObject = $u(ListObject, IteratorObject)
+
+
 /**
  *  Scope Definition
  */
@@ -555,10 +560,31 @@ function OverloadObject (name, instances) {
                 return match.instance.call(argument)
             },
             find_method_for: function (object) {
-                return find(
+                let name = `<${GetType(object)}>.${this.name}`
+                let found = filter(
                     this.instances,
                     I => is(I, FunctionObject.MethodFor(object))
                 )
+                let methods = map(found, function (method) {
+                    // create wrappers
+                    let p = method.prototype.parameters
+                    let shifted = p.slice(1, p.length)
+                    let proto = pour(pour({}, method.prototype), {
+                        parameters: shifted
+                    })
+                    let first_parameter = p[0].name
+                    return FunctionObject(name, scope, proto, function (scope) {
+                        let extended_arg = {}
+                        pour(extended_arg, scope.data.argument.data)
+                        extended_arg[first_parameter] = object
+                        return method.call(extended_arg)
+                    })
+                })
+                if (methods.length > 0) {
+                    return OverloadObject('name', methods)
+                } else {
+                    return NotFound
+                }
             },
             toString: function () {
                 return join(map(this.instances, I => I.toString()), '\n')
@@ -596,6 +622,8 @@ pour(K, {
     /* concept */
     Concept: PortConcept(ConceptObject, 'Concept'),
     Iterator: PortConcept(IteratorObject, 'Iterator'),
+    /* iterable */
+    Iterable: PortConcept(IterableObject, 'Iterable'),
     /* primitive */
     Bool: PortConcept(BoolObject, 'Bool'),
     Number: PortConcept(NumberObject, 'Number'),

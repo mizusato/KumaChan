@@ -116,6 +116,7 @@ const Tokens = [
     Pattern.Operator('-'),
     //Pattern.PrefixOperator('Positive', '+'),
     Pattern.Operator('+'),
+    Pattern.Operator('**'),
     Pattern.Operator('*'),
     Pattern.Operator('/'),
     //Pattern.PrefixOperator('Parameter', '%'),  // ugly, use dot
@@ -246,7 +247,8 @@ const Syntax = mapval({
     MapOperator: [
         '->', '<-',
         '>>', '<<',
-        '~to', '~by'
+        '~to', '~by',
+        '**'
     ],
     MapOperand: [
         'Hash', 'HashLambda',
@@ -294,7 +296,7 @@ const Syntax = mapval({
     ParaList: ['( )', '( Para NextPara )'],
     Para: 'Constraint PassFlag Id',
     NextPara: [', Para NextPara', ''],
-    PassFlag: ['&', ''],
+    PassFlag: ['&', '*', ''],
     Target: ['-> Constraint', '->', ''],
     Body: '{ Program }',
     
