@@ -390,8 +390,8 @@ pour(K, {
     Void: VoidObject,
     'N/A': NaObject,
     Done: DoneObject,
-    true: true,
-    false: false,
+    True: true,
+    False: false,
     CR: CR,
     LF: LF,
     TAB: TAB

@@ -43,10 +43,10 @@ function get_tokens (string) {
     function check_parentheses (tokens) {
         let union = (...list) => $u.apply({}, map(list, x => Token(x)))
         let right_of = {
-            '(' : ')', '[' : ']', '{' : '}'/*, '.[': ']'*/, '.{' : '}',
+            '(' : ')', '[' : ']', '{' : '}', '.[': ']', '.{' : '}',
             '..[': ']', '..{': '}', '...{': '}'
         }
-        let left = union('(', '[', '{'/*,'.['*/, '.{', '..[', '..{', '...{')
+        let left = union('(', '[', '{', '.[', '.{', '..[', '..{', '...{')
         let right = union(')', ']', '}')
         let all = $u(left, right)
         let parentheses = filter_lazy(tokens, token => is(token, all))

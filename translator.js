@@ -264,8 +264,8 @@ let Translate = {
     Concept: function (tree) {
         let h = children_hash(tree)
         let parameter = translate(h.Id)
-        let filter = translate(h.FilterList)
-        let f = function_string(`return ${filter}`)
+        let filter_list = translate(h.FilterList)
+        let f = function_string(`return ${filter_list}`)
         let checker = `Lambda(scope, [${parameter}], ${f})`
         return `Abstract(${checker})`
     },
@@ -273,6 +273,52 @@ let Translate = {
         let h = children_hash(tree)
         let hash_object = translate(h.Hash)
         return `Structure(${hash_object})`
+    },
+    ListExprArgList: function (tree) {
+        let table_content = translate_next(
+            tree, 'ListExprArg', 'NextListExprArg', ', ',
+            function (arg) {
+                let h = children_hash(arg)
+                return `${translate(h.Id)}: ${translate(h.Simple)}`
+            }
+        )
+        let bind_code = translate_next(
+            tree, 'ListExprArg', 'NextListExprArg', '; ',
+            function (arg) {
+                let h = children_hash(arg)
+                let name = translate(h.Id)
+                assert(name != `'__'`)
+                return `scope.emplace(${name}, get(id('__'), ${name}))`
+            }
+        )
+        return {
+            bind_code: bind_code,
+            iterables: `HashObject({${table_content}})`
+        }
+    },
+    ListExprFilterList: function (tree) {
+        let h = children_hash(tree)
+        return (h.FilterList)? translate(h.FilterList): 'true'
+    },
+    IteratorExpr: function (tree) {
+        let h = children_hash(tree)
+        let expr = use_first(h.MapOperand)
+        let arg_list = translate(h.ListExprArgList)
+        let parameters = arg_list.parameters
+        let bind_code = arg_list.bind_code
+        let iterables = arg_list.iterables
+        let filter_list = translate(h.ListExprFilterList)
+        let f = function_string(`${bind_code}; return ${filter_list}`)
+        let filter_lambda = `Lambda(scope, [], ${f})`
+        let g = function_string(`${bind_code}; return ${expr}`)
+        let mapper = `Lambda(scope, [], ${g})`
+        let zipped = `K.zip.apply(${iterables})`
+        let filtered = `K.filter.apply(${zipped}, ${filter_lambda})`
+        return `K.map.apply(${filtered}, ${mapper})`
+    },
+    ListExpr: function (tree) {
+        let iterator = Translate.IteratorExpr(tree)
+        return `K.list.apply(${iterator})`
     },
     /* ---------------------- */
     SimpleLambda: function (tree) {

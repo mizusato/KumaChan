@@ -167,6 +167,8 @@ function access (object, name, scope) {
 function assign_outer (scope, key, value) {
     let err = ErrorProducer(InvalidAssignment, 'runtime::assign_outer')
     let result = scope.find_name(key)
+    err.if(result.scope === scope, `${key} is not an outer variable`)
+    err.if(result.scope === K, `global scope is read-only`)
     err.if(is(result, NotFound), `variable ${key} not declared`)
     err.if(result.is_immutable, `the scope containing ${key} is immutable`)
     result.scope.replace(key, value)

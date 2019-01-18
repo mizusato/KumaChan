@@ -98,7 +98,7 @@ const Tokens = [
     Pattern.Operator('.{'),
     Pattern.Operator('..{'),
     Pattern.Operator('...{'),
-    // Pattern.Operator('.['),
+    Pattern.Operator('.['),
     Pattern.Operator('..['),
     Pattern.Operator('..'),  // ..Identifier = Inline Comment
     Pattern.Operator('.'),
@@ -237,6 +237,18 @@ const Syntax = mapval({
     NextFilter: [', Filter NextFilter', ''],
     Filter: 'Simple',
     
+    For: [':', '~for'],
+    IteratorExpr: [
+        '.[ MapOperand For ListExprArgList ListExprFilterList ]'
+    ],
+    ListExpr: [
+        '[ MapOperand For ListExprArgList ListExprFilterList ]'
+    ],
+    ListExprFilterList: [', FilterList', ''],
+    ListExprArgList: ['ListExprArg NextListExprArg'],
+    ListExprArg: ['Id ~in Simple'],
+    NextListExprArg: [', ListExprArg NextListExprArg', ''],
+    
     Struct: '~struct Hash',
     
     MapExpr: 'MapOperand MapNext',
@@ -255,6 +267,8 @@ const Syntax = mapval({
         'List', 'ListLambda',
         'SimpleLambda',
         'BodyLambda',
+        'IteratorExpr',
+        'ListExpr',
         'FunExpr',
         'Concept',
         'Struct',
