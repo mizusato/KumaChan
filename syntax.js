@@ -246,7 +246,7 @@ const Syntax = mapval({
     MapOperator: [
         '->', '<-',
         '>>', '<<',
-        '~by', '~to'
+        '~to', '~by'
     ],
     MapOperand: [
         'Hash', 'HashLambda',

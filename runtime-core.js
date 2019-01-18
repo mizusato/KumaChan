@@ -833,9 +833,13 @@ pour(K, {
         FunctionObject.create(
             'local filter (Iterator iterator, Filter f) -> Iterator',
             a => IteratorObject(function () {
+                let err = ErrorProducer(InvalidReturnValue, 'filter')
+                let msg = 'filter function should return boolean value'
                 let value = a.iterator.next()
                 while (value != DoneObject) {
-                    if (a.f.apply(value)) {
+                    let ok = a.f.apply(value)
+                    err.assert(is(ok, BoolObject), msg)
+                    if (ok) {
                         return value
                     }
                     value = a.iterator.next()
