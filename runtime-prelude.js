@@ -62,25 +62,33 @@ pour(K, {
         )
     ]),
     
-    '>>': OverloadObject('>>', FunctionObject.converge([
-        'local pass_to_right (Immutable object, Functional f) -> Any',
-        'local pass_to_right (Mutable &object, Functional f) -> Any',    
-    ], a => a.f.apply(a.object) )),
+    '>>': OverloadObject('>>', [
+        FunctionObject.create(
+            'local pass_to_right (Any *object, Functional f) -> Any',
+            a => a.f.apply(a.object)
+        )
+    ]),
     
-    '<<': OverloadObject('<<', FunctionObject.converge([
-        'local pass_to_left (Functional f, Immutable object) -> Any',
-        'local pass_to_left (Functional f, Mutable &object) -> Any',    
-    ], a => a.f.apply(a.object) )),
+    '<<': OverloadObject('<<', [
+        FunctionObject.create(
+            'local pass_to_left (Functional f, Any *object) -> Any',
+            a => a.f.apply(a.object)
+        )
+    ]),
     
-    operator_to: OverloadObject('operator_to', FunctionObject.converge([
-        'local pass_to_right (Immutable object, Functional f) -> Any',
-        'local pass_to_right (Mutable &object, Functional f) -> Any',    
-    ], a => a.f.apply(a.object) )),
+    operator_to: OverloadObject('operator_to', [
+        FunctionObject.create(
+            'local pass_to_right (Any *object, Functional f) -> Any',
+            a => a.f.apply(a.object)
+        )
+    ]),
      
-    operator_by: OverloadObject('operator_by', FunctionObject.converge([
-        'local pass_to_left (Functional f, Immutable object) -> Any',
-        'local pass_to_left (Functional f, Mutable &object) -> Any'    
-    ], a => a.f.apply(a.object) )),
+    operator_by: OverloadObject('operator_by', [
+        FunctionObject.create(
+            'local pass_to_left (Functional f, Any *object) -> Any',
+            a => a.f.apply(a.object)
+        )
+    ]),
     
     next: OverloadObject('next', [
         FunctionObject.create(
@@ -118,58 +126,44 @@ pour(K, {
         ])
     })(),
      
-    map: OverloadObject('map', list(cat([
+    map: OverloadObject('map', [
         FunctionObject.create(
-            'local map (Iterator iterator, Mapper f) -> Iterator',
-            a => IteratorObject(function () {
-                let value = a.iterator.next()
-                if (value != DoneObject) {
-                    return a.f.apply(value)
-                } else {
-                    return DoneObject
-                }
-            })
+            'local map (Iterable *iterable, Mapper f) -> Iterator',
+            a => (function () {
+                let iterator = K.get_iterator.apply(a.iterable)
+                let f = (x => a.f.apply(x))
+                return IteratorObject(function () {
+                    let value = iterator.next()
+                    if (value != DoneObject) {
+                        return f(value)
+                    } else {
+                        return DoneObject
+                    }
+                })
+            })()
         ),
         FunctionObject.create(
-            'local map (Iterator iterator) -> Function',
+            'local map (Iterable *iterable) -> Function',
             a => FunctionObject.create(
                 'local map_by (Mapper f) -> Iterator',
-                b => K.map.apply(a.iterator, b.f)
+                b => K.map.apply(a.iterable, b.f)
             )
-        )], FunctionObject.converge([
-            'local map_list (ImList list, Mapper f) -> Iterator',
-            'local map_list (MutList &list, Mapper f) -> Iterator'
-        ], a => K.map.apply(K.get_iterator.apply(a.list), a.f)),
-        FunctionObject.converge([
-            'local map_list (ImList list) -> Function',
-            'local map_list (MutList &list) -> Function',
-        ], a => FunctionObject.create(
-            'local map_list_by (Mapper f) -> Iterator',
-            b => K.map.apply(a.list, b.f)
-        ))
-    ))),
+        )
+    ]),
     
-    '->': OverloadObject('->', list(cat([
+    '->': OverloadObject('->', [
         FunctionObject.create(
-            'local map_by_right (Iterator iterator, Mapper f) -> Iterator',
-            a => K.map.apply(iterator, f)
-        )],
-        FunctionObject.converge([
-            'local map_by_right (ImList list, Mapper f) -> Iterator',
-            'local map_by_right (MutList &list, Mapper f) -> Iterator'
-        ], a => K.map.apply(a.list, a.f))
-    ))),
+            'local map_by_right (Iterable *iterable, Mapper f) -> Iterator',
+            a => K.map.apply(a.iterable, a.f)
+        )
+    ]),
      
-    '<-': OverloadObject('<-', list(cat([
+    '<-': OverloadObject('<-', [
         FunctionObject.create(
-            'local map_by_left (Mapper f, Iterator iterator) -> Iterator',
-            a => K.map.apply(iterator, f)
-        )],
-        FunctionObject.converge([
-            'local map_by_left (Mapper f, ImList list) -> Iterator',
-            'local map_by_left (Mapper f, MutList &list) -> Iterator'
-        ], a => K.map.apply(a.list, a.f))
-    ))),
+            'local map_by_left (Mapper f, Iterable *iterable) -> Iterator',
+            a => K.map.apply(a.iterable, a.f)
+        )
+    ]),
      
     list: OverloadObject('list', [
         FunctionObject.create(
@@ -208,42 +202,36 @@ pour(K, {
         )
     ]),
      
-    filter: OverloadObject('filter', list(cat([
+    filter: OverloadObject('filter', [
         FunctionObject.create(
-            'local filter (Iterator iterator, Filter f) -> Iterator',
-            a => IteratorObject(function () {
+            'local filter (Iterable *iterable, Filter f) -> Iterator',
+            a => (function () {
                 let err = ErrorProducer(InvalidReturnValue, 'filter')
                 let msg = 'filter function should return boolean value'
-                let value = a.iterator.next()
-                while (value != DoneObject) {
-                    let ok = a.f.apply(value)
-                    err.assert(is(ok, BoolObject), msg)
-                    if (ok) {
-                        return value
+                let iterator = K.get_iterator.apply(a.iterable)
+                let f = (x => a.f.apply(x))
+                return IteratorObject(function () {
+                    let value = iterator.next()
+                    while (value != DoneObject) {
+                        let ok = f(value)
+                        err.assert(is(ok, BoolObject), msg)
+                        if (ok) {
+                            return value
+                        }
+                        value = iterator.next()
                     }
-                    value = a.iterator.next()
-                }
-                return DoneObject
-            })
+                    return DoneObject
+                })
+            })()
         ),
         FunctionObject.create(
-            'local filter (Iterator iterator) -> Function',
+            'local filter (Iterable *iterable) -> Function',
             a => FunctionObject.create(
                 'local filter_by (Filter f) -> Iterator',
-                b => K.filter.apply(a.iterator, b.f)
+                b => K.filter.apply(a.iterable, b.f)
             )
-        )], FunctionObject.converge([
-            'local filter_list (ImList list, Filter f) -> Iterator',
-            'local filter_list (MutList &list, Filter f) -> Iterator'
-        ], a => K.filter.apply(K.get_iterator.apply(a.list), a.f)),
-        FunctionObject.converge([
-            'local filter_list (ImList list) -> Function',
-            'local filter_list (MutList &list) -> Function',
-        ], a => FunctionObject.create(
-            'local filter_list_by (Filter f) -> Iterator',
-            b => K.filter.apply(a.list, b.f)
-        ))
-    ))),
+        )
+    ]),
      
     create_iterator: OverloadObject('create_iterator', [
         FunctionObject.create(
@@ -252,39 +240,29 @@ pour(K, {
         )
     ]),
      
-    fold: OverloadObject('fold', list(cat([
+    fold: OverloadObject('fold', [
         FunctionObject.create(
-            'local fold (Iterator iterator, Any initial, Reducer f) ->  Any',
+            'local fold (Iterable *iterable, Any *initial, Reducer f) ->  Any',
             a => fold((function* () {
-                let value = a.iterator.next()
+                let iterator = K.get_iterator.apply(a.iterable)
+                let value = iterator.next()
                 while (value != DoneObject) {
                     yield value
-                    value = a.iterator.next()
+                    value = iterator.next()
                 }
             })(), a.initial, (e, v) => a.f.apply(e,v))
         ),
         FunctionObject.create(
-            'local fold_from (Any initial) -> Functional',
-            a => OverloadObject('fold', list(cat([
-                FunctionObject.create(
-                    'local fold (Iterator iterator) -> Function',
-                    b => FunctionObject.create(
-                        'local fold_by (Reducer f) -> Any',
-                        c => K.fold.apply(b.iterator, a.initial, c.f)
-                    )
-                )], FunctionObject.converge([
-                    'local fold (ImList list) -> Function',
-                    'local fold (MutList &list) -> Function'
-                ], b => FunctionObject.create(
+            'local fold_from (Any *initial) -> Function',
+            a => FunctionObject.create(
+                'local fold (Iterable *iterable) -> Function',
+                b => FunctionObject.create(
                     'local fold_by (Reducer f) -> Any',
-                    c => K.fold.apply(b.list, a.initial, c.f)
-                ))
-            )))
-        )], FunctionObject.converge([
-            'local fold_list (ImList list, Any initial, Reducer f) -> Any',
-            'local fold_list (MutList &list, Any initial, Reducer f) -> Any'
-        ], a => K.fold.apply(K.get_iterator.apply(a.list), a.initial, a.f) )
-    ))),
+                    c => K.fold.apply(b.iterable, a.initial, c.f)
+                )
+            )
+        )
+    ]),
      
     '**': OverloadObject('**', [
         FunctionObject.create (
@@ -309,19 +287,20 @@ pour(K, {
 
 pour(K, {
     
-    operator_is: OverloadObject('operator_is', FunctionObject.converge([
-        'local is (Immutable object, Concept concept) -> Bool',
-        'local is (Mutable &object, Concept concept) -> Bool',    
-    ], a => a.concept.checker(a.object) )),
+    operator_is: OverloadObject('operator_is', [
+        FunctionObject.create(
+            'local is (Any *object, Concept concept) -> Bool',
+            a => a.concept.checker(a.object)
+        )
+    ]),
      
     Is: OverloadObject('Is', [
         FunctionObject.create(
-            'local Is (Concept concept) -> Functional',
-            a => OverloadObject(`Is('${a.concept.name}')`,
-                FunctionObject.converge([
-                'local checker (Immutable object) -> Bool',
-                'local checker (Mutable &object) -> Bool'
-            ], b => a.concept.checker(b.object) ))
+            'local Is (Concept concept) -> Function',
+            a => FunctionObject(
+                'local checker (Any *object) -> Bool',
+                b => a.concept.checker(b.object)
+            )
         )
     ]),
      
@@ -374,15 +353,19 @@ pour(K, {
         )
     ]),
 
-    Im: OverloadObject('Im', FunctionObject.converge([
-        'local Im (Immutable object) -> Immutable',
-        'local Im (Mutable &object) -> Immutable'
-    ], a => ImRef(a.object) )),
+    Im: OverloadObject('Im', [
+        FunctionObject.create (
+            'local Im (Any *object) -> Immutable',
+            a => ImRef(a.object)
+        )
+    ]),
      
-    Id: OverloadObject('Id', FunctionObject.converge([
-        'local Id (Immutable object) -> Immutable',
-        'local Id (Mutable &object) -> Mutable'
-    ], a => a.object )),
+    Id: OverloadObject('Id', [
+        FunctionObject.create (
+            'local Id (Any *object) -> Any',
+            a => a.object
+        )
+    ]),
 
     copy: OverloadObject('copy', [
         FunctionObject.create (
@@ -434,15 +417,19 @@ pour(K, {
         )
     ]),
      
-    append: OverloadObject('append', FunctionObject.converge([
-        'local append (MutList &self, Immutable element) -> Void',
-        'local append (MutList &self, Mutable &element) -> Void'
-    ], a => a.self.append(a.element) )),
+    append: OverloadObject('append', [
+        FunctionObject.create (
+            'local append (MutList &self, Any *element) -> Void',
+            a => a.self.append(a.element)
+        )
+    ]),
     
-    length: OverloadObject('length', [ FunctionObject.create (
-        'local length (List self) -> Size',
-        a => a.self.length()
-    )])
+    length: OverloadObject('length', [
+        FunctionObject.create (
+            'local length (List self) -> Size',
+            a => a.self.length()
+        )
+    ])
 
 })
 
@@ -478,10 +465,12 @@ pour(K, {
         )
     ]),
     
-    set: OverloadObject('set', FunctionObject.converge([
-        'local set (MutHash &self, String key, Immutable value) -> Void',
-        'local set (MutHash &self, String key, Mutable &value) -> Void'
-    ], a => a.self.set(a.key, a.value) ))
+    set: OverloadObject('set', [
+        FunctionObject.create(
+            'local set (MutHash &self, String key, Any *value) -> Void',
+            a => a.self.set(a.key, a.value)
+        )
+    ])
     
 })
 
