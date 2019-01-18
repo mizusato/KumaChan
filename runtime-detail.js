@@ -238,36 +238,42 @@ Detail.Scope.Prototype = {
 }
 
 
-Detail.Concept.Union = function (concept1, concept2, new_name) {
-    check(Detail.Concept.Union, arguments, {
-        concept1: ConceptObject,
-        concept2: ConceptObject,
-        new_name: Optional(Str)
+Detail.Concept.UnionAll = function (concepts) {
+    check(Detail.Concept.UnionAll, arguments, {
+        concepts: ListOf(ConceptObject)
     })
-    let name = new_name || `(${concept1.name} | ${concept2.name})`
-    let f = ( x => exists([concept1, concept2], c => c.checker(x)) )
+    let name = `(${join(map_lazy(concepts, c => c.name), ' | ')})`
+    let f = ( x => exists(concepts, c => c.checker(x)) )
     return ConceptObject(name, f)
 }
 
 
-Detail.Concept.Intersect = function (concept1, concept2, new_name) {
-    check(Detail.Concept.Intersect, arguments, {
-        concept1: ConceptObject,
-        concept2: ConceptObject,
-        new_name: Optional(Str)
+Detail.Concept.IntersectAll = function (concepts) {
+    check(Detail.Concept.IntersectAll, arguments, {
+        concepts: ListOf(ConceptObject)
     })
-    let name = new_name || `(${concept1.name} & ${concept2.name})`
-    let f = ( x => forall([concept1, concept2], c => c.checker(x)) )
+    let name = `(${join(map_lazy(concepts, c => c.name), ' & ')})`
+    let f = ( x => forall(concepts, c => c.checker(x)) )
     return ConceptObject(name, f)
 }
 
 
-Detail.Concept.Complement = function (concept, new_name) {
+
+Detail.Concept.Union = function (concept1, concept2) {
+    return ConceptObject.UnionAll([concept1, concept2])
+}
+
+
+Detail.Concept.Intersect = function (concept1, concept2) {
+    return ConceptObject.IntersectAll([concept1, concept2])
+}
+
+
+Detail.Concept.Complement = function (concept) {
     check(Detail.Concept.Complement, arguments, {
-        concept: ConceptObject,
-        new_name: Optional(Str)
+        concept: ConceptObject
     })
-    let name = new_name || `~${concept.name}`
+    let name = `~${concept.name}`
     let f = ( x => !concept.checker(x) )
     return ConceptObject(name, f)
 }

@@ -434,7 +434,7 @@ pour(K, {
     Is: OverloadObject('Is', [
         FunctionObject.create (
             'local Is (Concept concept) -> Function',
-            a => FunctionObject(
+            a => FunctionObject.create (
                 'local checker (Any *object) -> Bool',
                 b => a.concept.checker(b.object)
             )
@@ -445,6 +445,27 @@ pour(K, {
         FunctionObject.create (
             'local IsNot (Concept concept) -> Functional',
             a => K.Is.apply(ConceptObject.Complement(a.concept))
+        )
+    ]),
+     
+    union: OverloadObject('union', [
+        FunctionObject.create (
+            'local union (ConceptList concepts) -> Concept',
+            a => ConceptObject.UnionAll(a.concepts.data)
+        )
+    ]),
+
+    intersect: OverloadObject('intersect', [
+        FunctionObject.create (
+            'local intersect (ConceptList concepts) -> Concept',
+            a => ConceptObject.IntersectAll(a.concepts.data)
+        )
+    ]),
+          
+    complement: OverloadObject('complement', [
+        FunctionObject.create (
+            'local complement (Concept concept) -> Concept',
+            a => ConceptObject.Complement(a.concept)
         )
     ]),
     

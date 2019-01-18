@@ -277,8 +277,9 @@ SetMakerConcept(ConceptObject)
 pour(ConceptObject, Detail.Concept)
 
 
-/* Any should be ObjectObject, assert when calling FunctionObject */
-const AnyConcept = PortConcept(Any, 'Any')
+const ConceptListObject = $n(
+    ListObject, $(x => is(x.data, ListOf(ConceptObject)))
+)
 
 
 /* Singleton Definition */
@@ -428,9 +429,6 @@ const CaseObject = $n(HashObject, $(x => is(x.data, Struct({
 const CaseListObject = $n(
     ListObject, $(x => forall(x.data, e => is(e, CaseObject)))
 )
-
-
-K.Otherwise = AnyConcept
 
 
 /**
@@ -651,6 +649,10 @@ function PortConcept(concept, name) {
 }
 
 
+/* Any should be ObjectObject, assert when calling FunctionObject */
+const AnyConcept = PortConcept(Any, 'Any')
+
+
 pour(K, {
     /* any */
     Any: AnyConcept,
@@ -659,6 +661,7 @@ pour(K, {
     /* concept */
     Concept: PortConcept(ConceptObject, 'Concept'),
     Iterator: PortConcept(IteratorObject, 'Iterator'),
+    ConceptList: PortConcept(ConceptListObject, 'ConceptList'),
     /* iterable */
     Iterable: PortConcept(IterableObject, 'Iterable'),
     IterableList: PortConcept(ListOfIterableObject, 'IterableList'),
@@ -702,6 +705,7 @@ pour(K, {
 
 pour(K, {
     Object: K.Any,
+    Otherwise: K.Any,
     Index: K.UnsignedInt,
     Size: K.UnsignedInt
 })
