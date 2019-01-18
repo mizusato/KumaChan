@@ -322,6 +322,42 @@ pour(K, {
                 })
             })()
         )
+    ]),
+     
+    mapkey: OverloadObject('mapkey', [
+        FunctionObject.create (
+            'local mapkey (Hash *hash, Mapper f) -> Hash',
+            (function () {
+                let err = ErrorProducer(InvalidReturnValue, 'mapkey')
+                let msg = 'mapper function of mapkey() should return string'
+                return a => HashObject(mapkey(a.hash.data, function (key) {
+                    let new_key = a.f.apply(key)
+                    err.assert(is(new_key, StringObject), msg)
+                    return new_key
+                }))
+            })()
+        ),
+        FunctionObject.create (
+            'local mapkey (Hash *hash) -> Function',
+            a => FunctionObject.create (
+                'local mapkey_by (Mapper f) -> Hash',
+                b => K.mapkey.apply(a.hash, b.f)
+            )
+        )
+    ]),
+     
+    mapval: OverloadObject('mapval', [
+        FunctionObject.create (
+            'local mapval (Hash *hash, Mapper f) -> Hash',
+            a => HashObject(mapval(a.hash.data, v => a.f.apply(v)))
+        ),
+        FunctionObject.create (
+            'local mapval (Hash *hash) -> Function',
+            a => FunctionObject.create (
+                'local mapval_by (Mapper f) -> Hash',
+                b => K.mapval.apply(a.hash, b.f)
+            )
+        )
     ])
     
 })
