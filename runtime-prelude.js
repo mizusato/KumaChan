@@ -8,7 +8,7 @@
 
 pour(K, {
     singleton: OverloadObject('singleton', [
-        FunctionObject.create(
+        FunctionObject.create (
             'global singleton (String name) -> Concept',
             a => SingletonObject(a.name)
         )
@@ -19,79 +19,79 @@ pour(K, {
 pour(K, {
     
     'call': OverloadObject('call', [
-        FunctionObject.create(
+        FunctionObject.create (
             'local call (Functional f, ImHash argument_table) -> Any',
             a => a.f.call(mapval(a.argument_table.data, ImRef))
         ),
-        FunctionObject.create(
+        FunctionObject.create (
             'local call (Functional f, MutHash &argument_table) -> Any',
             a => a.f.call(a.argument_table.data)
         ),
-        FunctionObject.create(
+        FunctionObject.create (
             'local call (Functional f, ImList argument_list) -> Any',
             a => a.f.apply.apply(a.f, map(a.argument_list.data, ImRef))
         ),
-        FunctionObject.create(
+        FunctionObject.create (
             'local call (Functional f, MutList &argument_list) -> Any',
             a => a.f.apply.apply(a.f, a.argument_list.data)
         ),
-        FunctionObject.create(
+        FunctionObject.create (
             'local call (Functional f) -> Functional',
             a => OverloadObject('call_by', [
-                FunctionObject.create(
+                FunctionObject.create (
                     'local call_by (ImHash argument_table) -> Any',
                     b => a.f.call(mapval(b.argument_table.data, ImRef))
                 ),
-                FunctionObject.create(
+                FunctionObject.create (
                     'local call_by (MutHash &argument_table) -> Any',
                     b => a.f.call(b.argument_table.data)
                 ),
-                FunctionObject.create(
+                FunctionObject.create (
                     'local call_by (ImList argument_list) -> Any',
                     b => a.f.apply.apply(a.f, map(b.argument_list.data, ImRef))
                 ),
-                FunctionObject.create(
+                FunctionObject.create (
                     'local call_by (MutList &argument_list) -> Any',
                     b => a.f.apply.apply(a.f, b.argument_list.data)
                 )
             ])
         ),
-        FunctionObject.create(
+        FunctionObject.create (
             'local call (IteratorFunction f) -> Any',
             a => a.f.apply()
         )
     ]),
     
     '>>': OverloadObject('>>', [
-        FunctionObject.create(
+        FunctionObject.create (
             'local pass_to_right (Any *object, Functional f) -> Any',
             a => a.f.apply(a.object)
         )
     ]),
     
     '<<': OverloadObject('<<', [
-        FunctionObject.create(
+        FunctionObject.create (
             'local pass_to_left (Functional f, Any *object) -> Any',
             a => a.f.apply(a.object)
         )
     ]),
     
     operator_to: OverloadObject('operator_to', [
-        FunctionObject.create(
+        FunctionObject.create (
             'local pass_to_right (Any *object, Functional f) -> Any',
             a => a.f.apply(a.object)
         )
     ]),
      
     operator_by: OverloadObject('operator_by', [
-        FunctionObject.create(
+        FunctionObject.create (
             'local pass_to_left (Functional f, Any *object) -> Any',
             a => a.f.apply(a.object)
         )
     ]),
     
     next: OverloadObject('next', [
-        FunctionObject.create(
+        FunctionObject.create (
             'local next (Iterator iterator) -> Any',
             a => a.iterator.next()
         )
@@ -111,15 +111,15 @@ pour(K, {
             })())
         }
         return OverloadObject('get_iterator', [
-            FunctionObject.create(
+            FunctionObject.create (
                 'local get_iterator (ImList list) -> Iterator',
                 a => get(a.list.data, ImRef)
             ),
-            FunctionObject.create(
+            FunctionObject.create (
                 'local get_iterator (MutList &list) -> Iterator',
                 a => get(a.list.data, x => x)
             ),
-            FunctionObject.create(
+            FunctionObject.create (
                 'local get_iterator (Iterator iterator) -> Iterator',
                 a => a.iterator
             )
@@ -127,7 +127,7 @@ pour(K, {
     })(),
      
     map: OverloadObject('map', [
-        FunctionObject.create(
+        FunctionObject.create (
             'local map (Iterable *iterable, Mapper f) -> Iterator',
             a => (function () {
                 let iterator = K.get_iterator.apply(a.iterable)
@@ -142,9 +142,9 @@ pour(K, {
                 })
             })()
         ),
-        FunctionObject.create(
+        FunctionObject.create (
             'local map (Iterable *iterable) -> Function',
-            a => FunctionObject.create(
+            a => FunctionObject.create (
                 'local map_by (Mapper f) -> Iterator',
                 b => K.map.apply(a.iterable, b.f)
             )
@@ -152,27 +152,27 @@ pour(K, {
     ]),
     
     '->': OverloadObject('->', [
-        FunctionObject.create(
+        FunctionObject.create (
             'local map_by_right (Iterable *iterable, Mapper f) -> Iterator',
             a => K.map.apply(a.iterable, a.f)
         )
     ]),
      
     '<-': OverloadObject('<-', [
-        FunctionObject.create(
+        FunctionObject.create (
             'local map_by_left (Mapper f, Iterable *iterable) -> Iterator',
             a => K.map.apply(a.iterable, a.f)
         )
     ]),
      
     list: OverloadObject('list', [
-        FunctionObject.create(
+        FunctionObject.create (
             'local list (Hash *hash) -> List',
             a => ListObject(
                 map(a.hash.data, (k, v) => HashObject({ key: k, value: v }))
             )
         ),
-        FunctionObject.create(
+        FunctionObject.create (
             'local list (Iterator iterator) -> List',
             a => ListObject(list((function* () {
                 let value = a.iterator.next()
@@ -183,16 +183,37 @@ pour(K, {
             })()))
         )
     ]),
+    
+    cat: OverloadObject('cat', [
+        FunctionObject.create (
+            'local cat (IterableList *list) -> Iterator',
+            a => (function () {
+                let iterators = map(a.list.data, x => K.get_iterator.apply(x))
+                let i = 0
+                return IteratorObject(function () {
+                    while (i < iterators.length) {
+                        let value = iterators[i].next()
+                        if (value != DoneObject) {
+                            return value
+                        } else {
+                            i += 1
+                        }
+                    }
+                    return DoneObject
+                })
+            })()
+        )
+    ]),
      
     count: OverloadObject('count', [
-        FunctionObject.create(
+        FunctionObject.create (
             'local count (UnsignedInt n) -> Iterator',
             a => IteratorObject((function () {
                 let i = 0
                 return (() => (i < a.n)? i++: DoneObject)
             })())
         ),
-        FunctionObject.create(
+        FunctionObject.create (
             'local count () -> Iterator',
             a => IteratorObject((function () {
                 let limit = Number.MAX_SAFE_INTEGER
@@ -203,7 +224,7 @@ pour(K, {
     ]),
      
     filter: OverloadObject('filter', [
-        FunctionObject.create(
+        FunctionObject.create (
             'local filter (Iterable *iterable, Filter f) -> Iterator',
             a => (function () {
                 let err = ErrorProducer(InvalidReturnValue, 'filter')
@@ -224,9 +245,9 @@ pour(K, {
                 })
             })()
         ),
-        FunctionObject.create(
+        FunctionObject.create (
             'local filter (Iterable *iterable) -> Function',
-            a => FunctionObject.create(
+            a => FunctionObject.create (
                 'local filter_by (Filter f) -> Iterator',
                 b => K.filter.apply(a.iterable, b.f)
             )
@@ -234,14 +255,14 @@ pour(K, {
     ]),
      
     create_iterator: OverloadObject('create_iterator', [
-        FunctionObject.create(
+        FunctionObject.create (
             'local create_iterator (IteratorFunction f) -> Iterator',
             a => IteratorObject(a.f)
         )
     ]),
      
     fold: OverloadObject('fold', [
-        FunctionObject.create(
+        FunctionObject.create (
             'local fold (Iterable *iterable, Any *initial, Reducer f) ->  Any',
             a => fold((function* () {
                 let iterator = K.get_iterator.apply(a.iterable)
@@ -252,11 +273,11 @@ pour(K, {
                 }
             })(), a.initial, (e, v) => a.f.apply(e,v))
         ),
-        FunctionObject.create(
+        FunctionObject.create (
             'local fold_from (Any *initial) -> Function',
-            a => FunctionObject.create(
+            a => FunctionObject.create (
                 'local fold (Iterable *iterable) -> Function',
-                b => FunctionObject.create(
+                b => FunctionObject.create (
                     'local fold_by (Reducer f) -> Any',
                     c => K.fold.apply(b.iterable, a.initial, c.f)
                 )
@@ -288,14 +309,14 @@ pour(K, {
 pour(K, {
     
     operator_is: OverloadObject('operator_is', [
-        FunctionObject.create(
+        FunctionObject.create (
             'local is (Any *object, Concept concept) -> Bool',
             a => a.concept.checker(a.object)
         )
     ]),
      
     Is: OverloadObject('Is', [
-        FunctionObject.create(
+        FunctionObject.create (
             'local Is (Concept concept) -> Function',
             a => FunctionObject(
                 'local checker (Any *object) -> Bool',
@@ -305,38 +326,38 @@ pour(K, {
     ]),
      
     IsNot: OverloadObject('IsNot', [
-        FunctionObject.create(
+        FunctionObject.create (
             'local IsNot (Concept concept) -> Functional',
             a => K.Is.apply(ConceptObject.Complement(a.concept))
         )
     ]),
     
-    '|': OverloadObject('|', [ FunctionObject.create(
+    '|': OverloadObject('|', [ FunctionObject.create (
         'local union (Concept c1, Concept c2) -> Concept',
         a => ConceptObject.Union(a.c1, a.c2)            
     )]),
      
-    '&': OverloadObject('&', [ FunctionObject.create(
+    '&': OverloadObject('&', [ FunctionObject.create (
         'local intersect (Concept c1, Concept c2) -> Concept',
         a => ConceptObject.Intersect(a.c1, a.c2)
     )]),
      
-    '~': OverloadObject('~', [ FunctionObject.create(
+    '~': OverloadObject('~', [ FunctionObject.create (
         'local complement (Concept c) -> Concept',
         a => ConceptObject.Complement(a.c)
     )]),
     
-    '||': OverloadObject('||', [ FunctionObject.create(
+    '||': OverloadObject('||', [ FunctionObject.create (
         'local or (Bool v1, Bool v2) -> Bool',
          a => a.v1 || a.v2
     )]),
     
-    '&&': OverloadObject('&&', [ FunctionObject.create(
+    '&&': OverloadObject('&&', [ FunctionObject.create (
         'local and (Bool v1, Bool v2) -> Bool',
         a => a.v1 && a.v2
     )]),
      
-    '!': OverloadObject('!', [ FunctionObject.create(
+    '!': OverloadObject('!', [ FunctionObject.create (
         'local not (Bool v) -> Concept',
         a => !a.v
     )])
@@ -391,11 +412,11 @@ pour(K, {
     ]),
     
     clone: OverloadObject('clone', [
-        FunctionObject.create(
+        FunctionObject.create (
             'local clone (Atomic object) -> Atomic',
             a => a.object
         ),
-        FunctionObject.create(
+        FunctionObject.create (
             'local clone (Compound object) -> Mutable',
             a => Clone(a.object)
         )
@@ -466,7 +487,7 @@ pour(K, {
     ]),
     
     set: OverloadObject('set', [
-        FunctionObject.create(
+        FunctionObject.create (
             'local set (MutHash &self, String key, Any *value) -> Void',
             a => a.self.set(a.key, a.value)
         )
@@ -493,7 +514,7 @@ pour(K, {
             'local minus (Number p, Number q) -> Number',
             a => a.p - a.q
         ),
-        FunctionObject.create(
+        FunctionObject.create (
             'local difference (Concept c1, Concept c2) -> Concept',
             a => ConceptObject.Intersect(
                 a.c1, ConceptObject.Complement(a.c2)

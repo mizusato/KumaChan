@@ -336,6 +336,12 @@ SetMakerConcept(IteratorObject)
 
 
 const IterableObject = $u(ListObject, IteratorObject)
+const ListOfIterableObject = $n(
+    ListObject, $(x => is(x.data, ListOf(IterableObject)))
+)
+const HashOfIterableObject = $n(
+    HashObject, $(x => is(x.data, HashOf(IterableObject)))
+)
 
 
 /**
@@ -624,6 +630,8 @@ pour(K, {
     Iterator: PortConcept(IteratorObject, 'Iterator'),
     /* iterable */
     Iterable: PortConcept(IterableObject, 'Iterable'),
+    IterableList: PortConcept(ListOfIterableObject, 'IterableList'),
+    IterableHash: PortConcept(HashOfIterableObject, 'IterableHash'),
     /* primitive */
     Bool: PortConcept(BoolObject, 'Bool'),
     Number: PortConcept(NumberObject, 'Number'),
