@@ -56,13 +56,13 @@ function Lambda (context, parameter_names, f) {
     let normalized = (parameter_names.length > 0)? parameter_names: ['__']
     let parameters = map(normalized, name => ({
         name: name,
-        pass_policy: 'immutable',
-        constraint: AnyConcept
+        pass_policy: 'natural',
+        constraint: K.Any
     }))
     let proto = {
         effect_range: 'local',
         parameters: parameters,
-        value_constraint: AnyConcept
+        value_constraint: K.Any
     }
     return FunctionObject('<Lambda>', context, proto, f)
 }
@@ -110,20 +110,45 @@ function apply (functional) {
 
 function call (functional, argument) {
     let e = ErrorProducer(InvalidOperation, 'runtime::call')
-    e.assert(is(functional, FunctionalObject), 'calling non-functional')
     assert(is(argument, Hash))
-    return functional.call(argument)
+    if ( is(functional, Fun) ) {
+        e.assert(
+            forall(Object.keys(argument), k => is(k, NumStr)),
+            'cannot pass named argument to raw function'
+        )
+        let pairs = map(argument, (k,v) => ({ key: k, value: v }))
+        pairs.sort((x,y) => Number(x.k) - Number(y.k))
+        return functional.apply(null, map(pairs, p => K.raw.apply(p.value)))
+    } else {
+        e.assert(is(functional, FunctionalObject), 'calling non-functional')
+        return functional.call(argument)
+    }
+}
+
+
+function assert_key (name, err) {
+    err.assert(is(name, Str), 'hash key must be string')
+    return true
+}
+
+
+function assert_index (name, err) {
+    err.assert(is(name, UnsignedInt), 'list index must be non-negative integer')
+    return true
 }
 
 
 function get (object, name) {
     let e = ErrorProducer(InvalidOperation, 'runtime::get')
-    let f = (is(object, ImmutableObject))? ImRef: (x => x)
     return transform(object, [
         { when_it_is: HashObject,
-          use: h => assert(is(name, Str)) && f(h.get(name)) },
+          use: h => assert_key(name, e) && K.get.apply(object, name) },
         { when_it_is: ListObject,
-          use: l => assert(is(name, Num)) && f(l.at(name)) },
+          use: l => assert_index(name, e) && K.at.apply(object, name) },
+        { when_it_is: RawHashObject,
+          use: h => assert_key(name, e) && K.get.apply(object, name) },
+        { when_it_is: RawListObject,
+          use: l => assert_index(name, e) && K.at.apply(object, name) },
         { when_it_is: Otherwise,
           use: x => e.throw(`except Hash or List: ${GetType(object)} given`) }
     ])
@@ -136,16 +161,50 @@ function set (object, name, value) {
     e.if(is(object, ImmutableObject), msg)
     transform(object, [
         { when_it_is: HashObject,
-          use: h => assert(is(name, Str)) && h.set(name, value) },
+          use: h => assert_key(name, e) && K.set.apply(h, name, value) },
         { when_it_is: ListObject,
-          use: l => assert(is(name, Num)) && l.change(name, value) },
+          use: l => assert_index(name, e) && K.change.apply(l, name, value) },
+        { when_it_is: RawHashObject,
+          use: h => assert_key(name, e) && K.set.apply(h, name, value) },
+        { when_it_is: RawListObject,
+          use: l => assert_index(name, e) && K.change.apply(l, name, value) },
         { when_it_is: Otherwise,
           use: x => e.throw(`except Hash or List: ${GetType(object)} given`) }
     ])
 }
 
 
+function access_raw (object, name) {
+    let find_function = function (js_object, name) {
+        if(typeof js_object[name] == 'function') {
+            return js_object[name]
+        } else {
+            return NotFound
+        }
+    }
+    let proto = object.__proto__
+    let method = find_function(object, name)
+    // make method have higer priority than data member
+    try {
+        method = (method == NotFound)? find_function(proto, name): method
+    } catch (err) {
+        // TypeError: 'Illegal invocation' may occur
+        if (!(err instanceof TypeError)) { throw err }
+    }
+    if (method != NotFound) {
+        return function () {
+            return method.apply(object, map(arguments, x => x))
+        }
+    } else {
+        return object[name]
+    }
+}
+
+
 function access (object, name, scope) {
+    if (is(object, RawHashObject)) {
+        return access_raw(object, name)
+    }
     function wrap (f) {
         check(wrap, arguments, { f: FunctionObject })
         return OverloadObject(f.name, [f])

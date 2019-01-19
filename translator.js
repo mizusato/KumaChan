@@ -377,7 +377,7 @@ let Translate = {
     },
     Target: function (tree) {
         let h = children_hash(tree)
-        return (has(h, 'Constraint'))? translate(h.Constraint): 'AnyConcept'
+        return (has(h, 'Constraint'))? translate(h.Constraint): 'K.Any'
     },
     FunExpr: function (tree) {
         let h = children_hash(tree)

@@ -7,7 +7,8 @@
  *  - dirty: pass argument as a mutable reference
  *           (the argument must be mutable)
  *  - immutable: pass argument as an immutable reference
- *               (the argument can be mutable or immutable)
+ *               (the argument can be mutable or immutable, but not raw)
+ *  - natural: pass argument as is
  */
 
 
@@ -52,8 +53,8 @@ const EffectRange = Enum('global', 'upper', 'local')
  * 
  *  Object (Any) ┬ Compound ┬ Hash
  *               │          ┴ List
- *               ┴ Atomic ┬ Concept
- *                        ┼ Iterator
+ *               ┼ Atomic ┬ Concept
+ *               ┴ Raw    ┼ Iterator
  *                        ┼ Primitive ┬ String
  *                        │           ┼ Number
  *                        │           ┴ Bool
@@ -153,12 +154,66 @@ const MutListObject = $n(ListObject, $(x => !x.config.immutable))
 
 
 const CompoundObject = $u(HashObject, ListObject)
+const ImCompoundObject = $u(ImHashObject, ImListObject)
+const MutCompoundObject = $u(MutHashObject, MutListObject)
+
+
+/* Raw Definition */
+
+
+const CookedObject = $u(CompoundObject, AtomicObject)
+const RawObject = $_(CookedObject)
+const RawHashObject = $n(RawObject, StrictHash)
+const RawListObject = $n(RawObject, List)
+const RawCompoundObject = $u(RawListObject, RawHashObject)
+const RawFunctionObject = $n(RawObject, Fun)
+const NullObject = $1(null)
+const UndefinedObject = $1(undefined)
+const SymbolObject = $(x => typeof x == 'symbol')
+const CompatibleObject = $u(PrimitiveObject, RawObject)
+const RawableObject = $u(MutCompoundObject, FunctionalObject, CompatibleObject)
+
+
+function RawCompound (compound) {
+    check(RawCompound, arguments, { compound: CompoundObject })
+    let err = ErrorProducer(InvalidOperation, 'RawCompound')
+    let msg = 'unable to raw immutable compound object'
+    err.assert(is(compound, MutCompoundObject), msg)
+    function raw_element (e) {
+        return transform(e, [
+            { when_it_is: CompoundObject, use: c => RawCompound(c) },
+            { when_it_is: RawableObject, use: r => r },
+            { when_it_is: Otherwise, use: o => err.throw('rawing non-rawable') }
+        ])
+    }
+    return transform(compound, [
+        { when_it_is: HashObject, use: h => mapval(h.data, raw_element) },
+        { when_it_is: ListObject, use: l => map(l.data, raw_element) }
+    ])
+}
+
+
+function CookCompound (raw_compound) {
+    check(CookCompound, arguments, { raw_compound: RawCompoundObject })
+    function cook_element (e) {
+        return transform(e, [
+            { when_it_is: RawCompoundObject, use: c => CookCompound(c) },
+            { when_it_is: Otherwise, use: o => o }
+        ])
+    }
+    return transform(raw_compound, [
+        { when_it_is: StrictHash,
+          use: h => HashObject(mapval(h, cook_element)) },
+        { when_it_is: List,
+          use: l => ListObject(map(l, cook_element)) }
+    ])
+}
 
 
 /* Object (Any) Definition */
 
 
-const ObjectObject = $u(CompoundObject, AtomicObject)
+const ObjectObject = $u(CompoundObject, AtomicObject, RawObject)
 
 
 pour(ObjectObject, Detail.Object)
@@ -174,12 +229,16 @@ function GetType(object) {
         Function: $(x => FunctionObject.contains(x)),
         Overload: $(x => OverloadObject.contains(x)),
         List: ListObject,
-        Hash: HashObject
+        Hash: HashObject,
+        Raw: RawObject
     }
     let checker = {
         'string': () => 'String',
         'number': () => 'Number',
         'boolean': () => 'Bool',
+        'undefined': () => 'Raw',
+        'function': () => 'Raw',
+        'symbol': () => 'Raw',
         'object': function (object) {
             let r = find(
                 non_primitive,
@@ -198,7 +257,10 @@ function GetType(object) {
  */
 
 
-const MutableObject = $n(CompoundObject, $(x => !x.config.immutable))
+const MutableObject = $u(
+    $n(CompoundObject, $(x => !x.config.immutable)),
+    RawObject
+)
 const ImmutableObject = $_(MutableObject)
 
 
@@ -209,6 +271,12 @@ const ImmutableObject = $_(MutableObject)
 
 function ImRef (object) {
     return transform(object, [
+        {
+            when_it_is: RawObject,
+            use: x => ErrorProducer(InvalidOperation, 'ImRef').throw(
+                'unable to make immutable reference for raw object'
+            )
+        },
         {
             when_it_is: MutableObject,
             use: x => (x.maker)(
@@ -234,7 +302,7 @@ function Clone (object) {
             )
         },
         {
-            when_it_is: AtomicObject,
+            when_it_is: $u(AtomicObject, RawObject),
             use: x => x
         }
     ])
@@ -398,8 +466,10 @@ pour(K, {
     Void: VoidObject,
     'N/A': NaObject,
     Done: DoneObject,
-    True: true,
-    False: false,
+    true: true,
+    false: false,
+    null: null,
+    undefined: undefined,
     CR: CR,
     LF: LF,
     TAB: TAB
@@ -649,13 +719,10 @@ function PortConcept(concept, name) {
 }
 
 
-/* Any should be ObjectObject, assert when calling FunctionObject */
-const AnyConcept = PortConcept(Any, 'Any')
-
-
 pour(K, {
     /* any */
-    Any: AnyConcept,
+    Any: PortConcept(Any, 'Any'),  // Any should be ObjectObject,
+                                   // assert when calling FunctionObject
     /* atomic */
     Atomic: PortConcept(AtomicObject, 'Atomic'),
     /* concept */
@@ -695,8 +762,22 @@ pour(K, {
     MutHash: PortConcept(MutHashObject, 'MutHash'),
     ImList: PortConcept(ImListObject, 'ImList'),
     MutList: PortConcept(MutListObject, 'MutList'),
+    ImCompound: PortConcept(ImCompoundObject, 'ImCompound'),
+    MutCompound: PortConcept(MutCompoundObject, 'MutCompound'),
     Immutable: PortConcept(ImmutableObject, 'Immutable'),
-    Mutable: PortConcept(MutableObject, 'Mutable')
+    Mutable: PortConcept(MutableObject, 'Mutable'),
+    /* raw object */
+    Cooked: PortConcept(CookedObject, 'Cooked'),
+    Raw: PortConcept(RawObject, 'Raw'),
+    RawHash: PortConcept(RawHashObject, 'RawHash'),
+    RawList: PortConcept(RawListObject, 'RawList'),
+    RawCompound: PortConcept(RawCompoundObject, 'RawCompound'),
+    RawFunction: PortConcept(RawFunctionObject, 'RawFunction'),
+    Null: PortConcept(NullObject, 'Null'),
+    Undefined: PortConcept(UndefinedObject, 'Undefined'),
+    Symbol: PortConcept(SymbolObject, 'Symbol'),
+    Compatible: PortConcept(CompatibleObject, 'Compatible'),
+    Rawable: PortConcept(RawableObject, 'Rawable')
 })
 
 

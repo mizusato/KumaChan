@@ -210,9 +210,9 @@ Detail.Scope.Prototype = {
                 is_immutable: is_immutable(index),
                 layer: index,
                 scope: scope,
-                object: scope.has(name)? scope.get(name): null
+                object: scope.has(name)? scope.get(name): NotFound
             })),
-            x => find(x, item => item.object != null)
+            x => find(x, item => item.object != NotFound)
         ))
     },
     lookup: function (name) {
@@ -317,7 +317,7 @@ Detail.Prototype.check_argument = function (prototype, argument) {
                     key => is(key, NumStr)? parameters[key].name: key
                 )
                 return map_lazy(hash, (key, param) => suppose(
-                        (param.constraint === AnyConcept
+                        (param.constraint === K.Any
                             && ObjectObject.contains(arg[key]))
                         || param.constraint.checker(arg[key]),
                     `illegal argument '${key}'`

@@ -75,13 +75,14 @@ const UnsignedInt = $n( Int, $(x => x >= 0) )
 const Str = $(x => typeof x == 'string')
 const Bool = $(x => typeof x == 'boolean')
 const JsObject = $(x => x instanceof Object)
-const Hash = $(x => x instanceof Object && !(x instanceof Array))
 const Fun = $(object => object instanceof Function)
 const List = $(object => object instanceof Array)
+const Hash = $n( $(x => x instanceof Object), $_(List) )
+const StrictHash = $n( $(x => x instanceof Object), $_($u(List, Fun)) )
 const Optional = concept => $u(NoValue, concept)
 const SetEquivalent = (target, concept) => target.contains = concept.contains
-const MadeBy = (maker) => $(x => x.maker === maker)
-const SetMakerConcept = (maker) => maker.contains = (x => x.maker === maker)
+const MadeBy = (maker) => $n(JsObject, $(x => x.maker === maker))
+const SetMakerConcept = (maker) => maker.contains = MadeBy(maker).contains
 
 const NumStr = $n(Str, $(x => !Number.isNaN(parseInt(x))) )
 const Regex = regex => $n( Str, $(s => s.match(regex)) )
@@ -600,8 +601,8 @@ function apply_on (object, f) {
 }
 
 
-function has (struct, key) {
-    return (typeof struct[key] != 'undefined')
+function has (hash, key) {
+    return Object.prototype.hasOwnProperty.call(hash, key)
 }
 
 

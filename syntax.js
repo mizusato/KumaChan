@@ -14,7 +14,7 @@ const Char = {
     NotSpace: $_(one_of('　', ' ')),
     Any: $u(Str, $(s => s.length >= 1)),
     ForbiddenInId: one_of.apply({}, map(
-        '`' + `\\'"()[]{}:,.!~&|+-*%^<>=`,
+        '`' + `\\'"()[]{}:,.;!~&|+-*%^<>=`,
         // divide "/" is available 
     x => x))
 }

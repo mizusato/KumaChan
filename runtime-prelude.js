@@ -527,16 +527,27 @@ pour(K, {
 
 pour(K, {
     
+    raw_type: OverloadObject('raw_type', [
+        FunctionObject.create (
+            'local raw_type (Any *object) -> String',
+            a => transform(a.object, [
+                { when_it_is: List, use: x => 'array' },
+                { when_it_is: NullObject, use: x => 'null' },
+                { when_it_is: Otherwise, use: x => (typeof x) }
+            ])
+        )
+    ]),
+    
     type: OverloadObject('type', [
         FunctionObject.create (
-            'local type (Any object) -> String',
+            'local type (Any *object) -> String',
             a => GetType(a.object)
         )
     ]),
 
     Im: OverloadObject('Im', [
         FunctionObject.create (
-            'local Im (Any *object) -> Immutable',
+            'local Im (Cooked *object) -> Immutable',
             a => ImRef(a.object)
         )
     ]),
@@ -573,12 +584,40 @@ pour(K, {
     
     clone: OverloadObject('clone', [
         FunctionObject.create (
+            'local clone (Raw &object) -> Raw',
+            a => a.object
+        ),
+        FunctionObject.create (
             'local clone (Atomic object) -> Atomic',
             a => a.object
         ),
         FunctionObject.create (
             'local clone (Compound object) -> Mutable',
             a => Clone(a.object)
+        )
+    ]),
+     
+    raw: OverloadObject('raw', [
+        FunctionObject.create (
+            'local raw (Functional f) -> RawFunction',
+            a => function () {
+                return a.f.apply.apply(a.f, map(arguments, x => x))
+            }
+        ),
+        FunctionObject.create (
+            'local raw (Compatible *value) -> Compatible',
+            a => a.value
+        ),
+        FunctionObject.create (
+            'local raw (MutCompound &compound) -> RawCompound',
+            a => RawCompound(a.compound)
+        )
+    ]),
+    
+    cook: OverloadObject('cook', [
+        FunctionObject.create (
+            'local cook (RawCompound &raw_compound) -> MutCompound',
+            a => CookCompound(a.raw_compound)
         )
     ])
     
@@ -589,16 +628,44 @@ pour(K, {
     
     at: OverloadObject('at', [
         FunctionObject.create (
+            'local at (RawList &self, Index index) -> Any',
+            function (a) {
+                let err = ErrorProducer(IndexError, 'RawList::at')
+                err.assert(a.index < a.self.length, `${a.index}`)
+                return a.self[a.index]
+            }
+        ),
+        FunctionObject.create (
             'local at (ImList self, Index index) -> Immutable',
             a => ImRef(a.self.at(a.index))
         ),
         FunctionObject.create (
-            'local at (MutList &self, Index index) -> Object',
+            'local at (MutList &self, Index index) -> Any',
             a => a.self.at(a.index)
         )
     ]),
      
+    change: OverloadObject('change', [
+        FunctionObject.create (
+            'local change (RawList &self, Index index, Any *new_value) -> Void',
+            function (a) {
+                let err = ErrorProducer(IndexError, 'RawList::change')
+                err.assert(a.index < a.self.length, `${a.index}`)
+                a.self[a.index] = a.new_value
+                return VoidObject
+            }
+        ),
+        FunctionObject.create (
+            'local change (MutList &self, Index index, Any *new_value) -> Void',
+            a => a.self.change(a.index, a.new_value)
+        )
+    ]),
+     
     append: OverloadObject('append', [
+        FunctionObject.create (
+            'local append (RawList &self, Any *element) -> Void',
+            a => (a.self.push(a.element), VoidObject)
+        ),
         FunctionObject.create (
             'local append (MutList &self, Any *element) -> Void',
             a => a.self.append(a.element)
@@ -606,6 +673,10 @@ pour(K, {
     ]),
     
     length: OverloadObject('length', [
+        FunctionObject.create (
+            'local length (RawList &self) -> Size',
+            a => a.self.length
+        ),
         FunctionObject.create (
             'local length (List self) -> Size',
             a => a.self.length()
@@ -619,6 +690,10 @@ pour(K, {
     
     has: OverloadObject('has', [
         FunctionObject.create (
+            'local hash (RawHash &self, String key) -> Bool',
+            a => has(a.self, a.key)
+        ),
+        FunctionObject.create (
             'local has (Hash self, String key) -> Bool',
             a => a.self.has(a.key)
         )
@@ -626,27 +701,43 @@ pour(K, {
     
     get: OverloadObject('get', [
         FunctionObject.create (
+            'local get (RawHash &self, String key) -> Any',
+            function (a) {
+                let err = ErrorProducer(KeyError, 'RawHash::get')
+                err.assert(has(a.self, a.key), `${a.key}`)
+                return a.self[a.key]
+            }
+        ),
+        FunctionObject.create (
             'local get (ImHash self, String key) -> Immutable',
             a => ImRef(a.self.get(a.key))
         ),
         FunctionObject.create (
-            'local get (MutHash &self, String key) -> Object',
+            'local get (MutHash &self, String key) -> Any',
             a => a.self.get(a.key)
         )
     ]),
     
     fetch: OverloadObject('fetch', [
         FunctionObject.create (
+            'local fetch (RawHash &self, String key) -> Any',
+            a => has(a.self, a.key)? a.self[a.key]: NaObject
+        ),
+        FunctionObject.create (
             'local fetch (ImHash self, String key) -> Immutable',
             a => ImRef(a.self.fetch(a.key))
         ),
         FunctionObject.create (
-            'local fetch (MutHash &self, String key) -> Object',
+            'local fetch (MutHash &self, String key) -> Any',
             a => a.self.fetch(a.key)
         )
     ]),
     
     set: OverloadObject('set', [
+        FunctionObject.create (
+            'local set (RawHash &self, String key, Any *value) -> Void',
+            a => (a.self[a.key] = a.value, VoidObject)
+        ),
         FunctionObject.create (
             'local set (MutHash &self, String key, Any *value) -> Void',
             a => a.self.set(a.key, a.value)
