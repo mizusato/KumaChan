@@ -40,6 +40,14 @@ function Structure (hash_object) {
 }
 
 
+function FiniteSet (list) {
+    check(FiniteSet, arguments, { list: ListObject })
+    return ConceptObject('{Finite}', function (object) {
+        return exists(list.data, e => e === object)
+    })
+}
+
+
 function Lambda (context, parameter_names, f) {
     check(Lambda, arguments, {
         context: Scope, parameter_names: ListOf(Str), f: Fun

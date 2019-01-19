@@ -254,6 +254,19 @@ pour(K, {
         )
     ]),
      
+    create_concept: OverloadObject('create_concept', [
+        FunctionObject.create (
+            'local create_concept (Filter f) -> Concept',
+            a => ConceptObject('{Temp}', function (object) {
+                let err = ErrorProducer(InvalidReturnValue, 'create_concept')
+                let msg = 'filter function should return boolean value'
+                let ok = a.f.apply(object)
+                err.assert(is(ok, BoolObject), msg)
+                return ok
+            })
+        )
+    ]),
+     
     create_iterator: OverloadObject('create_iterator', [
         FunctionObject.create (
             'local create_iterator (IteratorFunction f) -> Iterator',
@@ -415,6 +428,16 @@ pour(K, {
                     let err = ErrorProducer(NoMatchingCase, 'switch')
                     err.throw('cannot find a matching case')
                 }
+            }
+        ),
+        FunctionObject.create (
+            'local switch_string (String key, Hash *hash) -> Any',
+            function (a) {
+                let err = ErrorProducer(NoMatchingCase, 'switch')
+                let hash = a.hash.data
+                let key = a.key
+                err.assert(has(hash, key), `cannot find key '${key}' in hash`)
+                return hash[key]
             }
         )
     ])

@@ -233,6 +233,10 @@ let Translate = {
         ): ''
         return `ListObject([${content}])`
     },
+    FiniteSet: function (tree) {
+        let list = Translate.List(tree)
+        return `FiniteSet(${list})`
+    },
     Expr: use_first,
     MapOperand: use_first,
     MapOperator: function (tree) {

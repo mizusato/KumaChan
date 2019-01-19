@@ -253,6 +253,7 @@ const Syntax = mapval({
     AdvPair: 'MapOperand : Expr',
     
     Struct: '~struct Hash',
+    FiniteSet: '{ ItemList }',
     
     MapExpr: 'MapOperand MapNext',
     MapNext: [
@@ -267,6 +268,7 @@ const Syntax = mapval({
     ],
     MapOperand: [
         'RawCode',
+        'FiniteSet',
         'Hash', 'HashLambda',
         'List', 'ListLambda',
         'PairListExpr',
