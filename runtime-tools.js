@@ -8,6 +8,7 @@ function Lookup (scope) {
 
 function FormatString (string, id_ref) {
     check(FormatString, arguments, { string: Str, id_ref: Fun })
+    // TODO: need enhancement
     return string.replace(/\${([^}]+)}/g, (_, arg) => id_ref(arg))
 }
 
@@ -245,4 +246,104 @@ function assign_outer (scope, key, value) {
 function assert_bool (value) {
     assert(typeof value == 'boolean')
     return value
+}
+
+
+function add_module (name) {
+    check(add_module, arguments, { name: Str })
+    let err = ErrorProducer(NameConflict, 'runtime::add_module')
+    let table = KumaExport.ModuleExport
+    err.if(has(table, name), `module name ${name} already used`)
+    table[name] = {}
+    return table[name]
+}
+
+
+function use_module (scope, name, alias) {
+    check(use_module, arguments, { scope: Scope, name: Str, alias: Str })
+    let err = ErrorProducer(ObjectNotFound, 'runtime::use_module')
+    let table = KumaExport.ModuleExport
+    err.assert(has(table, name), `there is no module named ${name}`)
+    scope.emplace(alias, ImRef(HashObject(table[name])))
+}
+
+
+function use_modules (scope, module_list) {
+    map(module_list, item => use_module(scope, item.name, item.alias))
+}
+
+
+function import_module (scope, name) {
+    check(import_module, arguments, { scope: Scope, name: Str })
+    let err = ErrorProducer(ObjectNotFound, 'runtime::import_module')
+    let table = KumaExport.ModuleExport
+    err.assert(has(table, name), `there is no module named ${name}`)
+    map(table[name], function (key, value) {
+        let s = scope.data
+        let s_is_overload = has(s, key) && is(s[key], OverloadObject)
+        let v_is_overload = is(value, OverloadObject)
+        if ( s_is_overload && v_is_overload ) {
+            s[key] = s[key].concated(value)
+        } else {
+            s[key] = value
+        }
+    })
+}
+
+
+function import_modules (scope, names) {
+    map(names, name => import_module(scope, name))
+}
+
+
+function export_name (export_object, scope, name, alias) {
+    check(export_name, arguments, {
+        export_object: Hash,
+        scope: Scope,
+        name: Str,
+        alias: Str
+    })
+    let f_name = 'runtime::export_name'
+    let err = ErrorProducer(ObjectNotFound, f_name)
+    err.assert(has(scope.data, name), `variable ${name} not found in scope`)
+    err = ErrorProducer(NameConflict, f_name)
+    err.if(has(export_object, alias), `name ${alias} already exported`)
+    err = ErrorProducer(InvalidOperation, f_name)
+    err.if(is(scope.data[name], RawObject), `cannot export raw object ${name}`)
+    export_object[alias] = ImRef(scope.data[name])
+}
+
+
+function export_names (export_object, scope, name_list) {
+    map(name_list, x => export_name(export_object, scope, x.name, x.alias))
+}
+
+
+let global = (typeof window == 'undefined')? global: window
+
+
+global.KumaExport = {
+    G: G,
+    K: K,
+    Scope: Scope,
+    HashObject: HashObject,
+    ListObject: ListObject,
+    Lookup: Lookup,
+    FormatString: FormatString,
+    Abstract: Abstract,
+    Structure: Structure,
+    FiniteSet: FiniteSet,
+    Lambda: Lambda,
+    FunInst: FunInst,
+    define: define,
+    apply: apply,
+    call: call,
+    access: access,
+    assign_outer: assign_outer,
+    assert_bool: assert_bool,
+    ModuleExport: {},
+    add_module: add_module,
+    use_modules: use_modules,
+    import_modules: import_modules,
+    export_names: export_names
 }

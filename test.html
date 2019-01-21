@@ -12,6 +12,33 @@
     <script type="text/javascript" src="runtime-core.js"></script>
     <script type="text/javascript" src="runtime-prelude.js"></script>
     <script type="text/javascript" src="runtime-tools.js"></script>
+    <script type="text/kumachan" src="modules/calc.k"></script>
+    <script type="text/javascript">
+      function init () {
+          function load (file) {
+              let xhr = new XMLHttpRequest()
+              console.log(`loading ${file}`)
+              xhr.open('GET', file)
+              xhr.send()
+              xhr.addEventListener('readystatechange', function (ev) {
+                  if (this.readyState == 4 && this.status == 200) {
+                      let k_code = this.responseText
+                      console.log(`parsing ${file}`)
+                      let tree = parse(k_code)
+                      //console.log(print_tree(tree))
+                      let code = translate(tree)
+                      let script = document.createElement('script')
+                      script.type = 'text/javascript'
+                      script.innerText = code
+                      document.head.appendChild(script)
+                  }
+              })
+          }
+          let tags = document.querySelectorAll('script[type="text/kumachan"]')
+          map(tags, tag => load(tag.src))
+      }
+      window.addEventListener('DOMContentLoaded', init)
+    </script>
   </head>
   <body>
     <h1>Test Page</h1>

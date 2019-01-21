@@ -14,7 +14,7 @@ const Char = {
     NotSpace: $_(one_of('　', ' ')),
     Any: $u(Str, $(s => s.length >= 1)),
     ForbiddenInId: one_of.apply({}, map(
-        '`' + `\\'"()[]{}:,.;!~&|+-*%^<>=`,
+        CR + LF + '`' + `\\'"()[]{}:,.;!~&|+-*%^<>=`,
         // divide "/" is available 
     x => x))
 }
@@ -205,9 +205,16 @@ const Syntax = mapval({
     Id: ['Identifier', 'RawString'],
     Constraint: 'Identifier',
     
-    Module: 'Program',
+    Module: 'ModuleName ExportList Program',
+    ModuleName: '~module Id',
+    ExportList: ['Export NextExport', ''],
+    Export: '~export AsList',
+    NextExport: ['Export NextExport', ''],
+    
     Program: 'Command NextCommand',
     Command: [
+        'Use',
+        'Import',
         'FunDef',
         'Let',
         'Return',
@@ -216,7 +223,15 @@ const Syntax = mapval({
         'Expr'
     ],
     NextCommand: ['Command NextCommand', ''],
-
+    
+    Use: '~use AsList',
+    As: ['Id ~as Id', 'Id'],
+    AsList: ['As NextAs', '( As NextAs )'],
+    NextAs: [', As NextAs', ''],
+    Import: '~import IdList',
+    IdList: ['Id NextId', '( Id NextId )'],
+    NextId: [', Id NextId', ''],
+    
     Let: '~let Id = Expr',
     Assign: 'LeftVal = Expr',
     Outer: '~outer Id = Expr',

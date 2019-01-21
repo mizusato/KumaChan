@@ -7,12 +7,36 @@
 
 
 pour(K, {
+    
+    str: OverloadObject('str', [
+        FunctionObject.create (
+            'local str (Bool bool) -> String',
+            a => a.bool? 'true': 'false'
+        ),
+        FunctionObject.create (
+            'local str (Number number) -> String',
+            a => a.number.toString()
+        ),
+        FunctionObject.create (
+            'local str (String string) -> String',
+            a => a.string
+        )
+    ]),
+    
+    print: OverloadObject('print', [
+        FunctionObject.create (
+            'global print (String string) -> Void',
+            a => (console.log(a.string), VoidObject)
+        )
+    ]),
+    
     singleton: OverloadObject('singleton', [
         FunctionObject.create (
             'global singleton (String name) -> Concept',
             a => SingletonObject(a.name)
         )
     ])
+    
 })
 
 
@@ -876,6 +900,13 @@ pour(K, {
         FunctionObject.create (
             'local round (Number x) -> Number',
             a => Math.round(a.x)
+        )
+    ]),
+     
+    random: OverloadObject('random', [
+        FunctionObject.create (
+            'local random () -> Number',
+            a => Math.random()
         )
     ])
     

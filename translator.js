@@ -1,6 +1,14 @@
 'use strict';
 
 
+const UsingExports = [
+    'G', 'K', 'Scope', 'HashObject', 'ListObject', 'Lookup', 'FormatString',
+    'Abstract', 'Structure', 'FiniteSet', 'Lambda', 'FunInst',
+    'define', 'apply', 'call', 'access', 'assign_outer', 'assert_bool',
+    'add_module', 'use_modules', 'import_modules', 'export_names'
+]
+
+
 function normalize_operator_name (name) {
     check(normalize_operator_name, arguments, { name: Str })
     /**
@@ -173,10 +181,71 @@ let Translate = {
         let escaped = escape_raw(string)
         return `'${escaped}'`
     },
-    Module: use_first,
+    Module: function (tree) {
+        let h = children_hash(tree)
+        let prepare = join(map(
+            UsingExports,
+            name => `var ${name} = KumaExport.${name};`
+        ), ' ')
+        let scope = `var scope = Scope(G, 'local'); var id = Lookup(scope);`
+        let module_name = translate(h.ModuleName)
+        let content = translate(h.Program)
+        let body = `${prepare} ${scope} ${module_name} ${content}`
+        let exports = translate(h.ExportList)
+        return `(function () { ${body}; ${exports} })()`
+    },
+    ModuleName: function (tree) {
+        let h = children_hash(tree)
+        let name = `var module_name = ${translate(h.Id)};`
+        let add = `var export_object = add_module(module_name);`
+        return `${name} ${add}`
+    },
+    AsList: function (tree) {
+        let content = translate_next(
+            tree, 'As', 'NextAs', ', ',
+            function (item) {
+                let name = translate(item.children[0])
+                let alias = (
+                    (item.children.length > 1)?
+                    translate(item.children[2]): name
+                )
+                return `{ name: ${name}, alias: ${alias} }`
+            }
+        )
+        return `[${content}]`
+    },
+    IdList: function (tree) {
+        let content = translate_next(
+            tree, 'Id', 'NextId', ', ', id => translate(id)
+        )
+        return `[${content}]`
+    },
+    Use: function (tree) {
+        let h = children_hash(tree)
+        let module_list = translate(h.AsList)
+        return `use_modules(scope, ${module_list})`
+    },
+    Import: function (tree) {
+        let h = children_hash(tree)
+        let module_list = translate(h.IdList)
+        return `import_modules(scope, ${module_list})`
+    },
+    Export: function (tree) {
+        let h = children_hash(tree)
+        let name_list = translate(h.AsList)
+        return `export_names(export_object, scope, ${name_list})`
+    },
+    ExportList: function (tree) {
+        let h = children_hash(tree)
+        return (h.Export)? translate_next(
+            tree, 'Export', 'NextExport', '; ',
+            exp => translate(exp)
+        ): ''
+    },
     Program: function (tree) {
         return translate_next(
-            tree, 'Command', 'NextCommand', '; ', cmd => translate(cmd)
+            tree, 'Command', 'NextCommand', '; ',
+            cmd => translate(cmd)
         )
     },
     Command: use_first,

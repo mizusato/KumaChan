@@ -468,8 +468,6 @@ pour(K, {
     Done: DoneObject,
     true: true,
     false: false,
-    null: null,
-    undefined: undefined,
     CR: CR,
     LF: LF,
     TAB: TAB
@@ -641,7 +639,16 @@ function OverloadObject (name, instances) {
                 let new_list = map(this.instances, x => x)
                 new_list.push(instance)
                 return OverloadObject(this.name, new_list)
-            },            
+            },
+            concated: function (another) {
+                assert(is(another, OverloadObject))
+                let new_name = (
+                    (this.name == another.name)? 
+                    this.name: `${this.name} ++ ${another.name}`
+                )
+                let new_list = list(cat(this.instances, another.instances))
+                return OverloadObject(new_name, new_list)
+            },
             apply: function (...args) {
                 assert(is(args, ListOf(ObjectObject)))
                 return this.call(fold(args, {}, (e, v, i) => (v[i] = e, v)) )
