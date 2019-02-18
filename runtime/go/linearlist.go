@@ -18,8 +18,8 @@ type LinearList struct {
 }
 
 
-func MakeList() LinearList {
-    return LinearList {
+func MakeList() *LinearList {
+    return &LinearList {
         data: make([]Object, LIST_INIT_SIZE*2+1),
         head: LIST_INIT_SIZE,
         tail: LIST_INIT_SIZE,
