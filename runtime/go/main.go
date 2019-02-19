@@ -39,7 +39,6 @@ func main() {
         l.prepend(IntegerObject(i))
         l.pop()
     }
-    */
     l := MakeList()
     l.append(IntegerObject(0))
     l.append(IntegerObject(1))
@@ -60,4 +59,17 @@ func main() {
     l.remove(l.length()-1)
     fmt.Println(l.first())
     fmt.Println(l.last())
+    */
+    h := MakeHash()
+    for i := 0; i < 80; i++ {
+        h.emplace(strconv.Itoa(i), IntegerObject(i))
+    }
+    h.drop("1")
+    h.replace("3", StringObject("three"))
+    h.drop("0")
+    fmt.Println(h.count())
+    pairs := h.pairs()
+    for _, p := range pairs {
+        fmt.Printf("%v: %v\n", p.key, p.value)
+    }
 }

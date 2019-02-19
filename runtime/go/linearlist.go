@@ -172,8 +172,8 @@ func (l *LinearList) insert_right(position int, element Object) {
 
 
 func (l *LinearList) remove(position int) {
-	l.assert_index(position)
-	for i := l.head + position; i < l.tail-1; i++ {
+    l.assert_index(position)
+    for i := l.head + position; i < l.tail-1; i++ {
         l.data[i] = l.data[i+1]
     }
     l.data[l.tail-1] = nil
