@@ -6,6 +6,8 @@ const (
     Number
     Bool
     String
+    Function
+    Singleton
     List
     Hash
 )
@@ -26,6 +28,51 @@ func (n IntegerObject) get_type() Type { return Integer }
 func (x NumberObject) get_type() Type { return Number }
 func (t BoolObject) get_type() Type { return Bool }
 func (s StringObject) get_type() Type { return String }
+
+
+type FunctionObject interface {
+    call(arguments HashTable) Object
+}
+
+
+var singleton_names = make([]string, 0, 50)
+
+
+type SingletonObject struct {
+    index int
+}
+
+
+func (v SingletonObject) get_type() Type { return Singleton }
+
+
+func (v SingletonObject) get_name() string {
+    if v.index < 0 {
+        switch v.index {
+        case -1:
+            return "Void"
+        case -2:
+            return "N/A"
+        case -3:
+            return "Done"
+        default:
+            panic("unregistered built-in singleton object")
+        }
+    } else {
+        return singleton_names[v.index]
+    }
+}
+
+
+func CreateValue(name string) SingletonObject {
+    singleton_names = append(singleton_names, name)
+    return SingletonObject{ index: len(singleton_names)-1 }
+}
+
+
+var VoidObject = SingletonObject{ index: -1 }
+var NaObject = SingletonObject{ index: -2 }
+var DoneObject = SingletonObject{ index: -3 }
 
 
 const MODIFY_IMMUTABLE = "try to modify immutable object"
