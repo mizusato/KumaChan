@@ -33,8 +33,13 @@ func (l *LinearList) length() int {
 }
 
 
+func (l *LinearList) has(index int) bool {
+    return 0 <= index && index < l.length()
+}
+
+
 func (l *LinearList) assert_index(n int) {
-    if !(0 <= n && n < l.length()) {
+    if !(l.has(n)) {
         panic("linear list index error")
     }
 }

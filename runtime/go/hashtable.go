@@ -178,7 +178,9 @@ func (a *ArrayTable) drop(key string) {
 
 
 func (a *ArrayTable) pairs() []Pair {
-    return a.data
+    copied := make([]Pair, len(a.data))
+    copy(copied, a.data)
+    return copied
 }
 
 
