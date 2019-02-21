@@ -146,9 +146,37 @@ func (l *LinearList) pop() {
 }
 
 
+func (l *LinearList) insert_before(position int, element Object) {
+    l.assert_index(position)
+    if position == 0 {
+        l.prepend(element)
+    } else {
+        if position < l.length()/2 {
+            l.insert_right(position-1, element)
+        } else {
+            l.insert_left(position, element)
+        }
+    }
+}
+
+
+func (l *LinearList) insert_after(position int, element Object) {
+    l.assert_index(position)
+    if position == l.length()-1 {
+        l.append(element)
+    } else {
+        if position < l.length()/2 {
+            l.insert_right(position, element)
+        } else {
+            l.insert_left(position+1, element)
+        }
+    }
+}
+
+
 func (l *LinearList) insert_left(position int, element Object) {
     l.assert_index(position)
-    if (l.length() == 0) {
+    if l.length() == 0 {
         l.append(element)
     } else {
         var last_element = l.data[l.tail-1]
@@ -163,7 +191,7 @@ func (l *LinearList) insert_left(position int, element Object) {
 
 func (l *LinearList) insert_right(position int, element Object) {
     l.assert_index(position)
-    if (l.length() == 0) {
+    if l.length() == 0 {
         l.prepend(element)
     } else {
         var first_element = l.data[l.head]

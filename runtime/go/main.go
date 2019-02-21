@@ -60,6 +60,10 @@ func main() {
     fmt.Println(l.first())
     fmt.Println(l.last())
     */
+    /*
+    var t *LinearList
+    t = nil
+    fmt.Println(t)
     h := MakeHash()
     for i := 0; i < 80; i++ {
         h.emplace(strconv.Itoa(i), IntegerObject(i))
@@ -72,4 +76,21 @@ func main() {
     for _, p := range pairs {
         fmt.Printf("%v: %v\n", p.key, p.value)
     }
+    */
+    var g = CreateScope(nil, Global)
+    var m = CreateScope(g, Local)
+    g.declare("x", IntegerObject(999))
+    fmt.Println(m.lookup("x"))
+    m.declare("x", NumberObject(1.0))
+    fmt.Println(m.lookup("x"))
+    m.assign("x", StringObject("abc"))
+    fmt.Println(m.lookup("x"))
+    var u = CreateScope(m, Upper)
+    var u1 = CreateScope(u, Upper)
+    u1.assign("x", StringObject("0xFFFF"))
+    fmt.Println(u.lookup("x"))
+    fmt.Println(m.lookup("x"))
+    //var t = CreateScope(g, Global)
+    //var v = CreateScope(t, Upper)
+    //v.assign("x", StringObject("ppp"))
 }
