@@ -56,6 +56,14 @@ func (t BoolObject) get_type() Type { return Bool }
 func (s StringObject) get_type() Type { return String }
 
 
+/* Abstract Definition */
+
+
+type AbstractObject interface {
+    checker(Object) bool
+}
+
+
 /* NonSolid Definition */
 
 
