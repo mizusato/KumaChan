@@ -7,6 +7,7 @@ const (
     Store
     Args
     Call
+    Ret
     Invoke
 )
 

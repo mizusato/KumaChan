@@ -19,6 +19,7 @@ const (
     /* abstract */
     Singleton  // various special values
     Concept    // abstract set (wrapper of boolean function)
+    Signature  // abstract of Functions
     Format     // abstract of Data (struct definition)
     Class      // abstract of Instances
     Category   // a group of abstract objects
