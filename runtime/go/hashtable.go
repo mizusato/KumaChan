@@ -1,5 +1,6 @@
 const LINEAR_HASH_MAX = 10
 const KEY_ERROR = "hash table key error"
+const OVERFLOW_ERROR = "hash table linear implementation limit exceeded"
 
 
 type Pair struct {
@@ -98,21 +99,20 @@ func (m *MapTable) count() int {
 
 
 type ArrayTable struct {
-    data []Pair
+    data [LINEAR_HASH_MAX+1]Pair
+    size int
 }
 
 
 func MakeArrayTable() *ArrayTable {
-    return &ArrayTable {
-        data: make([]Pair, 0, LINEAR_HASH_MAX + 1),
-    }
+    return &ArrayTable{ size: 0 }
 }
 
 
 func (a *ArrayTable) has(key string) bool {
     found := false
-    for _, pair := range a.data {
-        if pair.key == key {
+    for i := 0; i < a.size; i++ {
+        if a.data[i].key == key {
             found = true
             break
         }
@@ -122,9 +122,9 @@ func (a *ArrayTable) has(key string) bool {
 
 
 func (a *ArrayTable) get(key string) Object {
-    for _, pair := range a.data {
-        if pair.key == key {
-            return pair.value
+    for i := 0; i < a.size; i++ {
+        if a.data[i].key == key {
+            return a.data[i].value
         }
     }
     panic(KEY_ERROR)
@@ -132,13 +132,18 @@ func (a *ArrayTable) get(key string) Object {
 
 
 func (a *ArrayTable) set(key string, value Object) {
-    for i, _ := range a.data {
+    for i := 0; i < a.size; i++ {
         if a.data[i].key == key {
             a.data[i].value = value
             return
         }
     }
-    a.data = append(a.data, Pair{ key: key, value: value })
+    if a.size < LINEAR_HASH_MAX+1 {
+        a.data[a.size] = Pair{ key: key, value: value }
+        a.size += 1
+    } else {
+        panic(OVERFLOW_ERROR)
+    }
 }
 
 
@@ -146,13 +151,18 @@ func (a *ArrayTable) emplace(key string, value Object) {
     if a.has(key) {
         panic(KEY_ERROR)
     } else {
-        a.data = append(a.data, Pair{ key: key, value: value })
+        if a.size < LINEAR_HASH_MAX+1 {
+            a.data[a.size] = Pair{ key: key, value: value }
+            a.size += 1
+        } else {
+            panic(OVERFLOW_ERROR)
+        }
     }
 }
 
 
 func (a *ArrayTable) replace(key string, value Object) {
-    for i, _ := range a.data {
+    for i := 0; i < a.size; i++ {
         if a.data[i].key == key {
             a.data[i].value = value
             return
@@ -163,13 +173,12 @@ func (a *ArrayTable) replace(key string, value Object) {
 
 
 func (a *ArrayTable) drop(key string) {
-    length := len(a.data)
-    last := a.data[length-1]
-    for i, _ := range a.data {
+    last := a.data[a.size-1]
+    for i := 0; i < a.size; i++ {
         if a.data[i].key == key {
             a.data[i] = last
-            a.data[length-1] = Pair{}
-            a.data = a.data[:length-1]
+            a.data[a.size-1] = Pair{}
+            a.size -= 1
             return
         }
     }
@@ -178,14 +187,14 @@ func (a *ArrayTable) drop(key string) {
 
 
 func (a *ArrayTable) pairs() []Pair {
-    copied := make([]Pair, len(a.data))
-    copy(copied, a.data)
+    copied := make([]Pair, a.size)
+    copy(copied, a.data[:])
     return copied
 }
 
 
 func (a *ArrayTable) count() int {
-    return len(a.data)
+    return a.size
 }
 
 

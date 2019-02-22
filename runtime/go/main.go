@@ -60,23 +60,32 @@ func main() {
     fmt.Println(l.first())
     fmt.Println(l.last())
     */
-    /*
     var t *LinearList
     t = nil
     fmt.Println(t)
     h := MakeHash()
-    for i := 0; i < 80; i++ {
+    for i := 0; i < 8; i++ {
         h.emplace(strconv.Itoa(i), IntegerObject(i))
     }
     h.drop("1")
     h.replace("3", StringObject("three"))
     h.drop("0")
+    h.emplace("pi", NumberObject(355.0/113))
     fmt.Println(h.count())
+    fmt.Println(h.get("pi"))
     pairs := h.pairs()
     for _, p := range pairs {
         fmt.Printf("%v: %v\n", p.key, p.value)
     }
-    */
+    fmt.Println("")
+    for i := 10; i < 20; i++ {
+        h.emplace(strconv.Itoa(i), NumberObject(float64(i)/2))
+    }
+    pairs = h.pairs()
+    for _, p := range pairs {
+        fmt.Printf("%v: %v\n", p.key, p.value)
+    }
+    /*
     var g = CreateScope(nil, Global)
     var m = CreateScope(g, Local)
     g.declare("x", IntegerObject(999))
@@ -90,6 +99,7 @@ func main() {
     u1.assign("x", StringObject("0xFFFF"))
     fmt.Println(u.lookup("x"))
     fmt.Println(m.lookup("x"))
+    */
     //var t = CreateScope(g, Global)
     //var v = CreateScope(t, Upper)
     //v.assign("x", StringObject("ppp"))
