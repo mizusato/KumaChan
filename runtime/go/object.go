@@ -13,6 +13,7 @@ const (
     /* functional */
     Function   // callable with definite prototype
     Overload   // a list of functions, call by pattern matching
+    Binding    // a Function or Overload with context or argument binding
     /* iterator */
     Iterator   // wrapped function with prototype of [] => Object
     /* abstract */

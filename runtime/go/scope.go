@@ -9,8 +9,8 @@ const (
 
 
 type Scope struct {
-    data HashTable
     affect EffectRange
+    data HashTable
     context *Scope
 }
 

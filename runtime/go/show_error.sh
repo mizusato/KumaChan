@@ -1,6 +1,9 @@
 #!/bin/bash
 
 
+RC=0
+
+
 repeat() { printf "$1"'%.s' $(eval "echo {1.."$(($2))"}"); }
 
 
@@ -11,6 +14,7 @@ while read line; do
     c=$(echo "$x" | sed 's/::.*//')
     err=$(echo "$x" | sed 's/[^:]*:://')
     if [[ "$n" =~ ^[0-9]+$ ]]; then
+        RC=1
         echo '--------------------------'
         spaces=$(repeat '\ ' $(expr "$c" - 1))
         bar="${spaces}$(echo -e '\e[1m\e[31m^\e[0m')"
@@ -24,3 +28,5 @@ while read line; do
         echo "$line"
     fi
 done
+
+exit $RC
