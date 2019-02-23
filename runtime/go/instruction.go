@@ -1,34 +1,48 @@
 type Instruction uint32
 
 
+/**
+ *  Instruction: 32 bits
+ *  
+ *  ------------------------------------
+ *  | 04 | 04 |           24           |
+ *  ------------------------------------
+ *    op  type          address
+ */
+
+
+func (inst Instruction) parse() (Operation, AddrType, Address) {
+    return Operation(inst >> 28),
+           AddrType(inst << 4 >> 28),
+           Address(inst << 8 >> 8)    
+}
+
+
 type Operation uint32
 const (
     Load Operation = iota
     Store
     Args
     Call
-    Ret
     Invoke
+    Ret
 )
 
 
-type SourceType uint32
+type AddrType uint32
 const (
-    IntAddr SourceType = iota
-    NumAddr
-    StrAddr
-    BinAddr
-    IdAddr
+    /* load */
+    IntConst AddrType = iota
+    NumConst
+    StrConst
+    BinConst
     BoolVal
-)
-
-
-type DestType uint32
-const (
-    ArgNext DestType = iota
-    FunPtr
-    NewVar
-    OldVar
+    VarLookup
+    /* store */
+    ArgNext
+    FunId
+    VarDeclare
+    VarAssign
 )
 
 

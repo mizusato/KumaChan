@@ -6,7 +6,7 @@ type Type int
 
 const (
     /* prmitive */
-    Integer Type = iota
+    Int Type = iota
     Number     // floating point number
     Bool       // true or false
     String     // immutable string
@@ -46,13 +46,13 @@ type Object interface {
 /* Primitive Definition */
 
 
-type IntegerObject int
+type IntObject int
 type NumberObject float64
 type BoolObject bool
 type StringObject string
 
 
-func (n IntegerObject) get_type() Type { return Integer }
+func (n IntObject) get_type() Type { return Int }
 func (x NumberObject) get_type() Type { return Number }
 func (t BoolObject) get_type() Type { return Bool }
 func (s StringObject) get_type() Type { return String }
@@ -61,8 +61,26 @@ func (s StringObject) get_type() Type { return String }
 /* Abstract Definition */
 
 
+type ConceptObject struct {
+    checker func(Object) bool
+}
+
+
+func (c ConceptObject) get_type() Type { return Concept }
+
+
+func (c ConceptObject) check(object Object) bool {
+    return c.checker(object)
+}
+
+
+func CreateConcept(f func(Object) bool) ConceptObject {
+    return ConceptObject{ checker: f }
+}
+
+
 type AbstractObject interface {
-    checker(Object) bool
+    check(Object) bool
 }
 
 
@@ -71,6 +89,17 @@ type AbstractObject interface {
 
 type NonSolid interface {
     is_immutable() bool
+}
+
+
+func is_solid(object Object) bool {
+    _, ok := object.(NonSolid)
+    return !ok
+}
+
+
+func is_not_solid(object Object) bool {
+    return !is_solid(object)
 }
 
 

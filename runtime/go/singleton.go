@@ -32,6 +32,20 @@ func (v SingletonObject) get_name() string {
 }
 
 
+func (v SingletonObject) check(x Object) bool {
+    s, ok := x.(SingletonObject)
+    if ok {
+        if s.id == v.id {
+            return true
+        } else {
+            return false
+        }
+    } else {
+        return false
+    }
+}
+
+
 func CreateValue(name string) SingletonObject {
     singleton_names = append(singleton_names, name)
     return SingletonObject{ id: len(singleton_names)-1 }
