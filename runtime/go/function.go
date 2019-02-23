@@ -103,6 +103,7 @@ type FunctionObject struct {
     fun int
     context *Scope
     prototype Prototype
+    native_body func(*Scope) Object
 }
 func (f *FunctionObject) get_type() Type { return Function }
 func (f *FunctionObject) create_scope_by_default(args *Arguments) (

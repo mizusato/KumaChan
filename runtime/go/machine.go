@@ -7,7 +7,7 @@ type Machine struct {
     call_stack CallStack
     arg_stack ArgStack
     global_scope *Scope
-    tmp Object
+    tmp Object  // vitural register
 }
 
 
@@ -96,6 +96,20 @@ func (stack *ArgStack) top() *ArgFrame {
 }
 
 
+func (stack *ArgStack) get_args() *Arguments {
+    // TODO: assert current != -1
+    return &(stack.top().args)
+}
+
+
+func (stack *ArgStack) set_callee(object *Object) {
+    // TODO: check
+    callable, ok := object.(CallableObject)
+    top := stack.top()
+    top.f = callable
+}
+
+
 func CreateMachine(modules []Module) *Machine {
     if len(modules) == 0 { panic("no module available") }
     if len(modules[0].functions) == 0 { panic("entry module has no function") }
@@ -149,6 +163,10 @@ func run(machine *Machine) {
                 } else {
                     machine.tmp = BoolObject(true)
                 }
+            /*
+            case FunId:
+                TODO()
+            */
             case VarLookup:
                 identifier := module.constants.str_values[addr]
                 value := scope.lookup(identifier)
@@ -161,12 +179,69 @@ func run(machine *Machine) {
                 panic(printf("invalid instruction %x", inst))
             }
         case Store:
+            switch t {
+            case ArgNext:
+                args := machine.arg_stack.get_args()
+                if !args.is_full() {
+                    args.append(machine.tmp)
+                } else {
+                    panic("argument quantity limit exceeded")
+                }
+            case Callee:
+                machine.arg_stack.set_callee(machine.tmp)
+            case VarDeclare:
+                // TODO: reduce repeat
+                identifier := module.constants.str_values[addr]
+                // TODO: check
+                scope.declare(identifier, machine.tmp)
+            case VarAssign:
+                // ..
+                identifier := module.constants.str_values[addr]
+                // ..
+                // assignment may be forbidden
+                scope.assign(identifier, machine.tmp)
+            }
         case Args:
-            module.arg_stack.push()
+            machine.arg_stack.push()
         case Call:
+            // TODO
         case Invoke:
-            //module.arg_stack.top().args
+            args := machine.arg_stack.get_args()
+            f := InternalFunction(addr)
+            switch f {
+            case f_list:
+                machine.tmp = CreateList()
+            case f_hash:
+                machine.tmp = CreateHash()
+            case f_element:
+                if args.quantity == 2 {
+                    list, ok := args.values[0].(*ListObject)
+                    element := args.values[1]
+                    if ok {
+                        list.append(element)
+                    } else {
+                        panic("element(): invalid argument")
+                    }
+                } else {
+                    panic("element(): wrong argument quantity")
+                }                
+            case f_pair:
+                if args.quantity == 3 {
+                    hash, ok0 := args.values[0].(*HashObject)
+                    key, ok1 := args.values[1].(StringObject)
+                    value := args.values[2]
+                    if ok0 && ok1 {
+                        hash.set(string(key), value)
+                    } else {
+                        panic("pair(): invalid argument")
+                    }
+                } else {
+                    panic("pair(): wrong argument quantity")
+                }
+            }
+            machine.args_stack.pop()
         case Ret:
+            // TODO
         }
     }
     

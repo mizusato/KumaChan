@@ -37,13 +37,24 @@ const (
     StrConst
     BinConst
     BoolVal
+    FunId
     VarLookup
     /* store */
     ArgNext
-    FunId
+    Callee
     VarDeclare
     VarAssign
 )
 
 
 type Address uint32
+
+
+type InternalFunction uint32
+const (
+    f_list InternalFunction = iota
+    f_hash
+    f_element
+    f_pair
+)
+
