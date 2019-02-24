@@ -171,3 +171,8 @@ func (o1 *OverloadObject) concated(o2 *OverloadObject) *OverloadObject {
         functions: append(o1.functions, o2.functions...),
     }
 }
+
+
+func (o *OverloadObject) get_quantity() int {
+    return len(o.functions)
+}

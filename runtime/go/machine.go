@@ -150,6 +150,7 @@ type ArgFrame struct {
     args Arguments
     call_type CallType
     emplace_fisished bool
+    checking bool
     checked_arg_quantity int
     remaining_fun_quantity int
 }
@@ -227,19 +228,46 @@ func CreateMachine(modules []Module) *Machine {
 
 func run(machine *Machine) {
     var fatal = err_producer(machine)
-    var current_frame *CallFrame = machine.call_stack.top()
-    var mod = current_frame.mod
-    var fun = current_frame.fun
-    var ptr = current_frame.ptr
-    var scope = current_frame.scope
-    var module *Module = &(machine.modules[current_frame.mod])
-    var function *FunData = &(module.functions[current_frame.fun])
-    var instructions []Instruction = function.body
-    var length = len(function.body)
+    var current_frame *CallFrame
+    var mod int
+    var fun int
+    var ptr int
+    var scope *Scope
+    var module *Module
+    var function *FunData
+    var instructions []Instruction
+    var length int = 1
     
     for ptr < length {
-        inst := instructions[ptr]
-        // TODO
+        arg_top := machine.arg_stack.top()
+        if arg_top.emplace_finished && !arg_top.checking {
+            // TODO: all checked / check needed
+            switch callee := arg_top.f.(type) {
+            case *FunctionObject:
+                // TODO
+            case *OverloadObject:
+                // TODO
+            case *ArgBind:
+                // TODO
+            case *CtxBind:
+                // TODO
+            case *ClassObject:
+                // TODO
+            default:
+                fatal.throw("invalid callee")
+            }
+        }
+        
+        current_frame = machine.call_stack.top()
+        mod = current_frame.mod
+        fun = current_frame.fun
+        ptr = current_frame.ptr
+        scope = current_frame.scope
+        module *Module = &(machine.modules[mod])
+        function *FunData = &(module.functions[fun])
+        instructions []Instruction = function.body
+        length = len(function.body)
+        inst := instructions[ptr]        
         op, t, addr := inst.parse()
         switch op {
         case Load:
@@ -314,6 +342,13 @@ func run(machine *Machine) {
                 f, ok := machine.tmp.(CallableObject)
                 fatal.assert(ok, "invalid callee object")
                 machine.arg_stack.set_callee(f)
+                o, is_overload := f.(*OverloadObject)
+                top := machine.arg_stack.top()
+                if is_overload {
+                    top.remaining_fun_quantity = o.get_quantity()
+                } else {
+                    top.remaining_fun_quantity = 0
+                }
             case VarDeclare:
                 identifier := module.get_str(addr)
                 fatal.assert(!scope.has(identifier), printf(
@@ -332,6 +367,7 @@ func run(machine *Machine) {
         case Call:
             top := machine.arg_stack.top()
             top.emplace_finished = true
+            top.checking = false
         case Invoke:
             args := machine.arg_stack.get_args()
             f := InternalFunction(addr)
@@ -405,6 +441,7 @@ func run(machine *Machine) {
                 machine.call_stack.pop()
                 if bool(v) {
                     arg_frame.checked_arg_quantity++
+                    arg_frame.checking = false
                 } else {
                     n := arg_frame.checked_arg_quantity
                     cur := machine.call_stack.top()
