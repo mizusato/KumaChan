@@ -1,6 +1,6 @@
 func main() {
     /*
-    n := Object(IntObject(3))
+    n := Object(IntegerObject(3))
     x := Object(NumberObject(1.2) + NumberObject(2.4))
     fmt.Println(n)
     fmt.Println(x)
@@ -8,7 +8,7 @@ func main() {
     /*
     l := make_list()
     for i:=0; i<1000; i++ {
-        l.append(IntObject(i))
+        l.append(IntegerObject(i))
     }
     fmt.Println(l.length())
     for i:=0; i<100; i++ {
@@ -16,7 +16,7 @@ func main() {
     }
     fmt.Println(l.length())
     for i:=0; i<1000; i++ {
-        l.prepend(IntObject(i))
+        l.prepend(IntegerObject(i))
     }
     fmt.Println(l.length())
     for i:=0; i<500; i++ {
@@ -29,24 +29,24 @@ func main() {
     */
     /*
     l := make_list()
-    l.append(IntObject(-6))
-    l.append(IntObject(-5))
-    l.append(IntObject(-4))
-    l.append(IntObject(-3))
-    l.append(IntObject(-2))
-    l.append(IntObject(-1))
+    l.append(IntegerObject(-6))
+    l.append(IntegerObject(-5))
+    l.append(IntegerObject(-4))
+    l.append(IntegerObject(-3))
+    l.append(IntegerObject(-2))
+    l.append(IntegerObject(-1))
     for i:=0; i < 10000; i++ {
-        l.prepend(IntObject(i))
+        l.prepend(IntegerObject(i))
         l.pop()
     }
     l := MakeList()
-    l.append(IntObject(0))
-    l.append(IntObject(1))
-    l.append(IntObject(2))
-    l.append(IntObject(3))
-    l.append(IntObject(4))
-    l.append(IntObject(5))
-    l.append(IntObject(6))
+    l.append(IntegerObject(0))
+    l.append(IntegerObject(1))
+    l.append(IntegerObject(2))
+    l.append(IntegerObject(3))
+    l.append(IntegerObject(4))
+    l.append(IntegerObject(5))
+    l.append(IntegerObject(6))
     fmt.Println(l.length())
     l.insert_left(3, NumberObject(355.0/113.0))
     l.insert_right(4, StringObject("7/2"))
@@ -66,7 +66,7 @@ func main() {
     fmt.Println(t)
     h := MakeHash()
     for i := 0; i < 8; i++ {
-        h.emplace(strconv.Itoa(i), IntObject(i))
+        h.emplace(strconv.Itoa(i), IntegerObject(i))
     }
     h.drop("1")
     h.replace("3", StringObject("three"))
@@ -90,7 +90,7 @@ func main() {
     /*
     var g = CreateScope(nil, Global)
     var m = CreateScope(g, Local)
-    g.declare("x", IntObject(999))
+    g.declare("x", IntegerObject(999))
     fmt.Println(m.lookup("x"))
     m.declare("x", NumberObject(1.0))
     fmt.Println(m.lookup("x"))

@@ -78,7 +78,7 @@ func (s *Scope) lookup(variable string) Object {
 } 
 
 
-func (s *Scope) assign(variable string, new_value Object) {
+func (s *Scope) assign(variable string, new_value Object) string {
     var found = false
     var scope = s
     var is_mutable = true
@@ -93,10 +93,17 @@ func (s *Scope) assign(variable string, new_value Object) {
     if found {
         if is_mutable {
             scope.data.replace(variable, new_value)
+            return ""
         } else {
-            panic("trying to modify immutable scope")
+            return printf(
+                "trying to modify variable %v that is in immutable scope",
+                variable,
+            )
         }
     } else {
-        panic("trying to assgin new value to undeclared variable")
+        return printf(
+            "trying to assgin new value to undeclared variable %v",
+            variable,
+        )
     }
 }

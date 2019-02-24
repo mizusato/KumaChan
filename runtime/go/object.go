@@ -6,7 +6,7 @@ type Type int
 
 const (
     /* prmitive */
-    Int Type = iota
+    Integer Type = iota
     Number     // floating point number
     Bool       // true or false
     String     // immutable string
@@ -46,13 +46,13 @@ type Object interface {
 /* Primitive Definition */
 
 
-type IntObject int
+type IntegerObject int
 type NumberObject float64
 type BoolObject bool
 type StringObject string
 
 
-func (n IntObject) get_type() Type { return Int }
+func (n IntegerObject) get_type() Type { return Integer }
 func (x NumberObject) get_type() Type { return Number }
 func (t BoolObject) get_type() Type { return Bool }
 func (s StringObject) get_type() Type { return String }
@@ -61,26 +61,59 @@ func (s StringObject) get_type() Type { return String }
 /* Abstract Definition */
 
 
-type ConceptObject struct {
+type ScriptConcept struct {
+    checker *FunctionObject
+}
+
+
+func (c ScriptConcept) get_type() Type { return Concept }
+func (c ScriptConcept) get_concept() ConceptObject { return c }
+func (c ScriptConcept) __is_concept() {}
+
+
+type NativeConcept struct {
     checker func(Object) bool
 }
 
 
-func (c ConceptObject) get_type() Type { return Concept }
+func (c NativeConcept) get_type() Type { return Concept }
+func (c NativeConcept) get_concept() ConceptObject { return c }
+func (c NativeConcept) __is_concept() {}
 
 
-func (c ConceptObject) check(object Object) bool {
-    return c.checker(object)
+func CreateConcept(f func(Object) bool) NativeConcept {
+    return NativeConcept{ checker: f }
 }
 
 
-func CreateConcept(f func(Object) bool) ConceptObject {
-    return ConceptObject{ checker: f }
+type ConceptObject interface {
+    __is_concept()
 }
 
 
 type AbstractObject interface {
-    check(Object) bool
+    get_concept() ConceptObject
+}
+
+
+type CategoryObject struct {
+    abstract_objects *HashTable
+}
+
+
+func (c *CategoryObject) get_type() Type { return Category }
+func (c *CategoryObject) get(key string) AbstractObject {
+    if c.abstract_objects.has(key) {        
+        object := c.abstract_objects.get(key)
+        abstract, ok := object.(AbstractObject)
+        if ok {
+            return abstract
+        } else {
+            panic("non-abstract object in category")
+        }
+    } else {
+        return nil
+    }
 }
 
 

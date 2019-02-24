@@ -22,7 +22,7 @@ type Operation uint32
 const (
     Load Operation = iota
     Store
-    Args
+    Push
     Call
     Invoke
     Ret
@@ -32,12 +32,12 @@ const (
 type AddrType uint32
 const (
     /* load */
-    IntConst AddrType = iota
-    NumConst
-    StrConst
-    BinConst
+    IntAddr AddrType = iota
+    NumAddr
+    StrAddr
+    BinAddr
     BoolVal
-    FunId
+    FunAddr
     VarLookup
     /* store */
     ArgNext

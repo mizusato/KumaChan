@@ -10,11 +10,8 @@ type ClassObject struct {
 }
 
 
-func (c *ClassObject) create_scope_by_default(args *Arguments) (
-    *Scope, *FunctionObject, error,
-) {
-    return c.constructor.create_scope_by_default(args)
-}
+func (c *ClassObject) get_type() Type { return Class }
+func (c *ClassObject) __is_callable() {}
 
 
 type ImplementObject struct {
