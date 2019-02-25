@@ -421,6 +421,7 @@ func run(machine *Machine) {
                     fatal.assert(c.checker(cur.value), "invalid return value")
                     machine.tmp = cur.value
                     machine.call_stack.pop()
+                // TODO: Union / Intersect / Not
                 default:
                     fatal.throw("cannot extract checker from unknown concept")
                 }
