@@ -25,7 +25,7 @@
                       let k_code = this.responseText
                       console.log(`parsing ${file}`)
                       let tree = parse(k_code)
-                      //console.log(print_tree(tree))
+                      console.log(print_tree(tree))
                       let code = translate(tree)
                       let script = document.createElement('script')
                       script.type = 'text/javascript'

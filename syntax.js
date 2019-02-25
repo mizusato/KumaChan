@@ -347,7 +347,7 @@ const Syntax = mapval({
     FunDef: 'Effect Id Call ParaList Target Body',
     //                   ↑  call operator will be inserted automatically
     
-    Simple: { reducers: [ () => parse_simple ] },
+    Simple: () => parse_simple,
     Wrapped: '( Simple )',
     Key: '[ Simple ]',
     ArgList: [

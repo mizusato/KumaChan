@@ -209,7 +209,7 @@ function print_tree (tree, deepth = 0, is_last = [true]) {
         + ((tree.children.length > 0)? '┬': '─')
         + '─'
     )
-    let node_name = `${tree.name}`
+    let node_name = tree.time? `${tree.name} (${tree.time})`: `${tree.name}`
     let node_children = transform(tree, [
         { when_it_is: SyntaxTreeEmpty, use: t => (' ' + '[]') },
         { when_it_is: SyntaxTreeLeaf, use: function (tree) {
@@ -238,69 +238,78 @@ function build_leaf (token) {
 }
 
 
-function build_tree (syntax, root, tokens, pos = 0) {
-    function match_part (part, pos) {
-        let SyntaxPart = $(part => has(syntax, part))
-        let KeywordPart = $(part => part.startsWith('~'))
-        let TokenPart = Otherwise
-        let token = (pos < tokens.length)? tokens[pos]: Token.Null
-        return transform(part, [
-            { when_it_is: SyntaxPart, use: part => match_item(part, pos) },
-            { when_it_is: KeywordPart, use: function (part) {
-                let keyword = part.slice(1, part.length)
-                let valid = is(token, Token('Identifier'))
-                return (valid && token.matched.string == keyword) && {
-                    ok: true, amount: 1,
-                    name: 'Keyword', children: token
-                } || { ok: false }
-            } },
-            { when_it_is: TokenPart, use: function (part) {
-                return is(token, Token(part)) && {
-                    ok: true, amount: 1,
-                    name: part, children: token
-                } || { ok: false }
-            } }
-        ])
-    }
-    function match_derivation (derivation, pos) {
-        let initial = { amount: 0, children: [], ok: true }
-        return fold(derivation, initial, function (part, state) {
-            let { ok, amount, children } = state
-            return ok? (function () {
+// DFS
+function match_item (syntax, tokens, item_name, pos) {
+    let item = syntax[item_name]
+    if (is(item, Fun)) {
+        let t0 = performance.now()
+        let match = (item())(syntax, tokens, pos)
+        let t1 = performance.now()
+        if (match != null) {
+            match.name = item_name
+            match.time = (t1-t0).toFixed(0)
+            return match
+        }
+    } else if(has(item, 'derivations')) {
+        for (let i=0; i<item.derivations.length; i++) {
+            let d = item.derivations[i]
+            let t0 = performance.now()
+            let match = null
+            let amount = 0
+            let children = []
+            let failed = false
+            for (let i=0; i<d.length; i++) {
+                let part = d[i]
                 let p = pos + amount
-                let match = match_part(part, p)
-                let proceed = match.ok? match.amount: 0
-                let new_child = match.ok? {
-                    name: match.name,
-                    children: match.children
-                }: Nothing
-                return {
-                    ok: match.ok,
-                    amount: amount + proceed,
-                    children: added(children, new_child)
+                let token = (p < tokens.length)? tokens[p]: Token.Null
+                let i_match = null
+                if (has(syntax, part)) {
+                    i_match = match_item(syntax, tokens, part, p)
+                } else if (part.startsWith('~')) {
+                    let keyword = part.slice(1, part.length)
+                    let valid = is(token, Token('Identifier'))
+                    if (valid && token.matched.string == keyword) {
+                        i_match = {
+                            amount: 1,
+                            name: 'Keyword',
+                            children: token
+                        }
+                    }
+                } else {
+                    if (is(token, Token(part))) {
+                        i_match = {
+                            amount: 1,
+                            name: part, children: token
+                        }   
+                    }
                 }
-            })(): Break
-        })
+                if (i_match != null) {
+                    amount += i_match.amount
+                    children.push(i_match)
+                } else {
+                    failed = true
+                    break
+                }
+            }
+            match = failed? null: { amount: amount, children: children }
+            let t1 = performance.now()
+            if (match != null) {
+                match.name = item_name
+                match.time = (t1-t0).toFixed(0)
+                return match
+            }
+        }
+        return null
+    } else {
+        assert(false)
     }
-    function match_item (item_name, pos) {
-        let ReduceItem = $(x => has(x, 'reducers'))
-        let DeriveItem = $(x => has(x, 'derivations'))
-        let item = syntax[item_name]
-        let matches = transform(item, [
-            { when_it_is: ReduceItem, use: item => (
-                map_lazy(item.reducers, r => (r())(syntax, tokens, pos))) },
-            { when_it_is: DeriveItem, use: item => (
-                map_lazy(item.derivations, d => match_derivation(d, pos))) }
-        ])
-        let match = find(matches, match => match.ok)
-        match = (match != NotFound)? match: { ok: false }
-        match.name = item_name
-        //console.log(pos, item_name, match.ok)
-        return match
-    }
-    let match = match_item(root, pos)
+}
+
+
+function build_tree (syntax, root, tokens, pos = 0) {
+    let match = match_item(syntax, tokens, root, pos)
     //assert(is(match, SyntaxTreeRoot))
-    return match
+    return (match != null)? match: { ok: false, amount: 0 }
 }
 
 
@@ -332,7 +341,7 @@ function parse_simple (syntax, tokens, pos) {
                 )[type]
                 let match = build_tree(syntax, syntax_item, tokens, p)
                 let err = parser_error(token, err_msg)
-                err.assert(match.ok)
+                err.assert(match != null)
                 yield match
                 offset += match.amount
             } else if ( is_par ) {
@@ -340,7 +349,7 @@ function parse_simple (syntax, tokens, pos) {
                 let err_msg = 'missing )'
                 let match = build_tree(syntax, syntax_item, tokens, p)
                 let err = parser_error(token, err_msg)
-                err.assert(match.ok)
+                err.assert(match != null)
                 yield match
                 offset += match.amount
             } else {
@@ -461,10 +470,9 @@ function parse_simple (syntax, tokens, pos) {
         output: $(x => x.length == 0),
         operators: $(x => x.length == 1)
     })
-    return (is(final, EmptyState))? { ok: false }: (function() {
+    return (is(final, EmptyState))? null: (function() {
         let result = get_result(final)
         return {
-            ok: true,
             amount: result.amount,
             name: 'Simple',
             children: [result]
