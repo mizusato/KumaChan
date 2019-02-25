@@ -209,7 +209,11 @@ function print_tree (tree, deepth = 0, is_last = [true]) {
         + ((tree.children.length > 0)? '┬': '─')
         + '─'
     )
-    let node_name = tree.time? `${tree.name} (${tree.time})`: `${tree.name}`
+    let node_name = (
+        is(tree.time, Num)?
+        `${tree.name} (${tree.time.toFixed(0)})`:
+        `${tree.name}`
+    )
     let node_children = transform(tree, [
         { when_it_is: SyntaxTreeEmpty, use: t => (' ' + '[]') },
         { when_it_is: SyntaxTreeLeaf, use: function (tree) {
@@ -238,6 +242,141 @@ function build_leaf (token) {
 }
 
 
+function match_part (syntax, tokens, part_name, pos) {
+    let t_enter = performance.now()
+    let stack = [{
+        tree: {
+            name: '[root]',
+            children: [],
+            amount: 0
+        },
+        pos: pos,
+        parent: -1,
+        deriv_index: 0
+    }]
+    let cur = 0
+    for (let i=0; i<1000; i++) {
+        stack.push({
+            tree: {
+                name: null,
+                children: null,
+                amount: -1
+            },
+            pos: -1,
+            parent: -1,
+            deriv_index: -1
+        })
+    }
+    
+    function push(name, parent) {
+        let top = stack[++cur]
+        top.tree.name = name
+        top.tree.children = []
+        top.tree.amount = 0
+        top.parent = parent
+        top.deriv_index = 0
+        top.push_time = performance.now()
+    }
+    
+    function pop() {
+        let top = stack[cur]
+        stack[top.parent].tree.amount += top.tree.amount
+        stack[top.parent].tree.children.push({
+            name: top.tree.name,
+            amount: top.tree.amount,
+            children: top.tree.children,
+            time: (performance.now() - top.push_time)
+        })
+        cur--
+    }
+    
+    function rollback() {
+        let top = stack[cur]
+        stack[top.parent].deriv_index++
+        cur = top.parent
+    }
+    
+    push(part_name, 0)
+    
+    let i = 0
+    let max = 0
+    
+    while (cur > 0) {
+        let top = stack[cur]
+        if (top.parent >= 0) {
+            top.pos = stack[top.parent].pos + stack[top.parent].tree.amount
+        }
+        let token = (top.pos < tokens.length)? tokens[top.pos]: Token.Null
+        let part = top.tree.name
+        if (has(syntax, part)) {
+            let item = syntax[part]
+            if (is(item, Fun)) {
+                let match = (item())(syntax, tokens, top.pos)
+                if (match != null) {
+                    top.tree.amount = match.amount
+                    top.tree.children = match.children
+                    pop()
+                } else {
+                    rollback()
+                }
+            } else {
+                let derivations = item.derivations
+                if (top.deriv_index < derivations.length) {
+                    let built = top.tree.children.length
+                    let required = derivations[top.deriv_index].length
+                    if (built == required) {
+                        pop()
+                    } else {
+                        top.tree.children = []
+                        top.tree.amount = 0
+                        let d = derivations[top.deriv_index]
+                        if (d.length > 0) {
+                            let parent = cur
+                            for (let part of rev(d)) {
+                                push(part, parent)
+                            }
+                        } else {
+                            pop()
+                        }
+                    }
+                } else {
+                    rollback()
+                }
+            }
+        } else if (part.startsWith('~')) {
+            let keyword = part.slice(1, part.length)
+            let valid = is(token, Token('Identifier'))
+            if (valid && token.matched.string == keyword) {
+                top.tree.name = 'Keyword'
+                top.tree.amount = 1
+                top.tree.children = token
+                pop()
+            } else {
+                rollback()
+            }
+        } else if (is(token, Token(part))) {
+            top.tree.amount = 1
+            top.tree.children = token
+            pop()
+        } else {
+            rollback()
+        }
+        if (cur > max) { max = cur }
+        i++
+        //console.log(i++, cur, RawCompound(Clone(CookCompound(stack.slice(0,11)))))
+    }
+    console.log("max", max)
+    console.log("loop", i)
+    console.log("out-time", performance.now()-t_enter)
+    let root = stack[0]
+    if (root.tree.children.length > 0) {
+        return root.tree.children[0]
+    } else {
+        return null
+    }
+}
+
+
 // DFS
 function match_item (syntax, tokens, item_name, pos) {
     let item = syntax[item_name]
@@ -247,7 +386,7 @@ function match_item (syntax, tokens, item_name, pos) {
         let t1 = performance.now()
         if (match != null) {
             match.name = item_name
-            match.time = (t1-t0).toFixed(0)
+            match.time = t1-t0
             return match
         }
     } else if(has(item, 'derivations')) {
@@ -295,7 +434,7 @@ function match_item (syntax, tokens, item_name, pos) {
             let t1 = performance.now()
             if (match != null) {
                 match.name = item_name
-                match.time = (t1-t0).toFixed(0)
+                match.time = t1-t0
                 return match
             }
         }
@@ -307,7 +446,7 @@ function match_item (syntax, tokens, item_name, pos) {
 
 
 function build_tree (syntax, root, tokens, pos = 0) {
-    let match = match_item(syntax, tokens, root, pos)
+    let match = match_part(syntax, tokens, root, pos)
     //assert(is(match, SyntaxTreeRoot))
     return (match != null)? match: { ok: false, amount: 0 }
 }

@@ -24,7 +24,10 @@
                   if (this.readyState == 4 && this.status == 200) {
                       let k_code = this.responseText
                       console.log(`parsing ${file}`)
+                      let t0 = performance.now()
                       let tree = parse(k_code)
+                      let t1 = performance.now()
+                      console.log("time", t1-t0)
                       console.log(print_tree(tree))
                       let code = translate(tree)
                       let script = document.createElement('script')
