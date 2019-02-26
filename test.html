@@ -28,12 +28,15 @@
                       let tree = parse(k_code)
                       let t1 = performance.now()
                       console.log("time", t1-t0)
+                      console.log(tree)
+                      /*
                       console.log(print_tree(tree))
                       let code = translate(tree)
                       let script = document.createElement('script')
                       script.type = 'text/javascript'
                       script.innerText = code
                       document.head.appendChild(script)
+                      */
                   }
               })
           }

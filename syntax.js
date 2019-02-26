@@ -200,6 +200,12 @@ SetEquivalent(SimpleOperator, $(
 ))
 
 
+const KeywordList = ['module', 'export', 'use', 'as', 'import', 'let', 'outer', 'return', 'that', 'for', 'in', 'struct', 'to', 'by', 'f', 'g', 'h', 'global', 'upper', 'local']
+
+
+const TokenList = list(new Set(map(Tokens, t => t.name)))
+
+
 const Syntax = mapval({
     
     Id: ['Identifier', 'RawString'],
@@ -347,7 +353,8 @@ const Syntax = mapval({
     FunDef: 'Effect Id Call ParaList Target Body',
     //                   ↑  call operator will be inserted automatically
     
-    Simple: () => parse_simple,
+    //Simple: () => parse_simple,
+    Simple: 'Identifier',
     Wrapped: '( Simple )',
     Key: '[ Simple ]',
     ArgList: [
@@ -369,3 +376,22 @@ const Syntax = mapval({
         { when_it_is: Otherwise, use: r => r }
     ])
 })
+
+
+const PartList = list(cat(
+    Object.keys(Syntax), map(KeywordList, x => '~'+x), TokenList,
+    ['Call','Get','Identifier']
+))
+
+
+assert(fold(PartList, {}, function (name,state) {
+    if (state === false) {
+        return false
+    } else if(state[name]) {
+        console.log(name)
+        return false
+    } else {
+        state[name] = true
+        return state
+    }
+}))

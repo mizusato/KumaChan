@@ -242,8 +242,171 @@ function build_leaf (token) {
 }
 
 
-function match_part (syntax, tokens, part_name, pos) {
+function wipe_list(list) {
+    while(list.length > 0) {
+        list.pop()
+    }
+}
+
+
+function copy_list(dest, source) {
+    for(let element of source) {
+        dest.push(element)
+    }
+}
+
+
+let f_count = count
+
+
+function match_part (syntax, part_list, tokens, part_name, pos) {
+    let N = 32
+    let buffer = new Int32Array(new ArrayBuffer(10000*N*4))
+    let saved = new Int32Array(new ArrayBuffer(100000*N*4))
+    let names = list(cat([null], part_list))
+    let id_of_name = fold(names, {}, (e,v,i) => (v[e]=i, v))
+    let key = {
+        name: 0,
+        amount: 1,
+        parent: 2,
+        pos: 3,
+        deriv: 4,
+        n: 5,
+    }
+    let offset = 6
+    let cur = 0
+    let count = 0
+    
+    function watch() {
+        let l = []
+        for(let i=0; i<=cur; i++) {
+            l.push({
+                name: names[buffer[i*N + key.name]],
+                amount: buffer[i*N + key.amount],
+                parent: buffer[i*N + key.parent],
+                pos: buffer[i*N + key.pos],
+                deriv: buffer[i*N + key.deriv],
+                children: map(f_count(buffer[i*N + key.n]), j => buffer[i*N + offset + j])
+            })
+        }
+        return l
+    }
+    
+    function push(name, parent) {
+        cur += 1
+        let top = N*(cur)
+        buffer[top + key.name] = id_of_name[name]
+        buffer[top + key.amount] = 0
+        buffer[top + key.parent] = parent
+        buffer[top + key.pos] = -1
+        buffer[top + key.deriv] = 0
+        buffer[top + key.n] = 0
+    }
+    
+    function pop() {
+        let top = N*cur
+        let parent = N*buffer[top + key.parent]
+        if (top != 0) {
+            buffer[parent + key.amount] += buffer[top + key.amount]
+            buffer[parent + offset + buffer[parent + key.n]] = count
+            buffer[parent + key.n] += 1
+        }
+        let new_saved = N*count
+        saved[new_saved + key.name] = buffer[top + key.name]
+        saved[new_saved + key.amount] = buffer[top + key.amount]
+        saved[new_saved + key.n] = buffer[top + key.n]
+        let i = 0
+        while(i < buffer[top + key.n]) {
+            saved[new_saved + offset + i] = buffer[top + offset + i]
+            i++
+        }
+        count += 1
+        cur -= 1
+    }
+    
+    function rollback() {
+        let i_parent = buffer[N*cur + key.parent]
+        buffer[N*i_parent + key.deriv] += 1
+        cur = i_parent
+    }
+    
+    buffer[0 + key.name] = 0
+    buffer[key.amount] = 0
+    buffer[key.parent] = -1
+    buffer[key.pos] = pos
+    buffer[key.deriv] = 0
+    buffer[key.n] = 0
+    
+    push(part_name, cur)
+    
+    let i = 0
+    
+    while(cur > 0) {
+        var top = N*cur
+        var parent = N*buffer[top + key.parent]
+        var pos = buffer[top + key.pos]
+        if (pos == -1) {
+            pos = buffer[parent + key.pos] + buffer[parent + key.amount]
+            buffer[top + key.pos] = pos
+        }
+        var token = (pos < tokens.length)? tokens[pos]: Token.Null
+        var part = names[buffer[top + key.name]]
+        assert(part != null)
+        var item = syntax[part]
+        var deriv = buffer[top + key.deriv]
+        if (typeof item != 'undefined') {
+            assert(typeof item.derivations != 'undefined')
+            if (deriv < item.derivations.length) {
+                if (buffer[top + key.n] == item.derivations[deriv].length) {
+                    pop()
+                } else {
+                    buffer[top + key.n] = 0
+                    buffer[top + key.amount] = 0
+                    var d = item.derivations[deriv]
+                    if (d.length > 0) {
+                        var push_parent = cur
+                        var j = d.length-1
+                        while (j >= 0) {
+                            push(d[j], push_parent)
+                            j--
+                        }
+                    } else {
+                        pop()
+                    }
+                }                
+            } else {
+                rollback()
+            }
+        } else if (part.startsWith('~')) {
+            var keyword = part.slice(1, part.length)
+            if (token != Token.Null && token.matched.string == keyword) {
+                //console.log("matched keyword", keyword)
+                buffer[parent + key.amount] += 1
+                buffer[parent + offset + buffer[parent + key.n]] = -pos
+                buffer[parent + key.n] += 1
+                cur -= 1
+            } else {
+                rollback()
+            }
+        } else if (token != Token.Null && token.matched.name == part) {
+            buffer[parent + key.amount] += 1
+            buffer[parent + offset + buffer[parent + key.n]] = -pos
+            buffer[parent + key.n] += 1
+            cur -= 1
+        } else {
+            rollback()
+        }
+        i++
+        //console.log(i, cur, watch())
+    }
+    
+    return { count: count, array: saved }
+}
+
+
+function match_part1 (syntax, tokens, part_name, pos) {
     let t_enter = performance.now()
+    let output = []
     let stack = [{
         tree: {
             name: '[root]',
@@ -255,11 +418,15 @@ function match_part (syntax, tokens, part_name, pos) {
         deriv_index: 0
     }]
     let cur = 0
+    let count = 0
+    for (let i=0; i<10000; i++) {
+        output.push([])
+    }
     for (let i=0; i<1000; i++) {
         stack.push({
             tree: {
                 name: null,
-                children: null,
+                children: [],
                 amount: -1
             },
             pos: -1,
@@ -271,7 +438,7 @@ function match_part (syntax, tokens, part_name, pos) {
     function push(name, parent) {
         let top = stack[++cur]
         top.tree.name = name
-        top.tree.children = []
+        wipe_list(top.tree.children)
         top.tree.amount = 0
         top.parent = parent
         top.deriv_index = 0
@@ -281,12 +448,21 @@ function match_part (syntax, tokens, part_name, pos) {
     function pop() {
         let top = stack[cur]
         stack[top.parent].tree.amount += top.tree.amount
+        stack[top.parent].tree.children.push(count)
+        
+
+        copy_list(output[count], top.tree.children)
+        count++
+        wipe_list(top.tree.children)
+        
+        /*
         stack[top.parent].tree.children.push({
             name: top.tree.name,
             amount: top.tree.amount,
             children: top.tree.children,
             time: (performance.now() - top.push_time)
         })
+        */
         cur--
     }
     
@@ -310,9 +486,10 @@ function match_part (syntax, tokens, part_name, pos) {
         let part = top.tree.name
         if (has(syntax, part)) {
             let item = syntax[part]
-            if (is(item, Fun)) {
+            if (typeof item == 'function') {
                 let match = (item())(syntax, tokens, top.pos)
                 if (match != null) {
+                    assert(false)
                     top.tree.amount = match.amount
                     top.tree.children = match.children
                     pop()
@@ -327,7 +504,7 @@ function match_part (syntax, tokens, part_name, pos) {
                     if (built == required) {
                         pop()
                     } else {
-                        top.tree.children = []
+                        wipe_list(top.tree.children)
                         top.tree.amount = 0
                         let d = derivations[top.deriv_index]
                         if (d.length > 0) {
@@ -345,18 +522,17 @@ function match_part (syntax, tokens, part_name, pos) {
             }
         } else if (part.startsWith('~')) {
             let keyword = part.slice(1, part.length)
-            let valid = is(token, Token('Identifier'))
-            if (valid && token.matched.string == keyword) {
+            if (token != Token.Null && token.matched.string == keyword) {
                 top.tree.name = 'Keyword'
                 top.tree.amount = 1
-                top.tree.children = token
+                top.tree.children.push(token)
                 pop()
             } else {
                 rollback()
             }
-        } else if (is(token, Token(part))) {
+        } else if (token != Token.Null && token.matched.name == part) {
             top.tree.amount = 1
-            top.tree.children = token
+            top.tree.children.push(token)
             pop()
         } else {
             rollback()
@@ -368,12 +544,14 @@ function match_part (syntax, tokens, part_name, pos) {
     console.log("max", max)
     console.log("loop", i)
     console.log("out-time", performance.now()-t_enter)
+    /*
     let root = stack[0]
     if (root.tree.children.length > 0) {
         return root.tree.children[0]
     } else {
         return null
-    }
+    }*/
+    return { count: count, output: output }
 }
 
 
@@ -446,9 +624,11 @@ function match_item (syntax, tokens, item_name, pos) {
 
 
 function build_tree (syntax, root, tokens, pos = 0) {
-    let match = match_part(syntax, tokens, root, pos)
+    let match = match_part(syntax, PartList, tokens, root, pos)
     //assert(is(match, SyntaxTreeRoot))
-    return (match != null)? match: { ok: false, amount: 0 }
+    // TODO: check amount
+    return match
+    //return (match != null)? match: { ok: false, amount: 0 }
 }
 
 
