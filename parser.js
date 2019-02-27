@@ -292,6 +292,7 @@ function match_part (syntax, part_list, tokens, part_name, pos) {
         return l
     }
     
+    /*
     function push(name, parent) {
         cur += 1
         let top = N*(cur)
@@ -329,72 +330,137 @@ function match_part (syntax, part_list, tokens, part_name, pos) {
         buffer[N*i_parent + key.deriv] += 1
         cur = i_parent
     }
+    */
     
-    buffer[0 + key.name] = 0
+    buffer[N*0 + key.name] = 0
     buffer[key.amount] = 0
     buffer[key.parent] = -1
     buffer[key.pos] = pos
     buffer[key.deriv] = 0
     buffer[key.n] = 0
-    
-    push(part_name, cur)
+
+    cur += 1
+    buffer[N*cur + key.name] = id_of_name[part_name]
+    buffer[N + key.amount] = 0
+    buffer[N + key.parent] = 0
+    buffer[N + key.pos] = pos
+    buffer[N + key.deriv] = 0
+    buffer[N + key.n] = 0
     
     let i = 0
     
-    while(cur > 0) {
-        var top = N*cur
-        var parent = N*buffer[top + key.parent]
+    while (cur > 0) {
+        var top = N * cur
+        var parent = N * buffer[top + key.parent]
         var pos = buffer[top + key.pos]
         if (pos == -1) {
             pos = buffer[parent + key.pos] + buffer[parent + key.amount]
             buffer[top + key.pos] = pos
         }
-        var token = (pos < tokens.length)? tokens[pos]: Token.Null
-        var part = names[buffer[top + key.name]]
-        assert(part != null)
-        var item = syntax[part]
+        //var token = (pos < tokens.length)? tokens[pos]: Token.Null
+        //var part = names[buffer[top + key.name]]
+        assert(names[buffer[top + key.name]] != null)
+        var item = (syntax[names[buffer[top + key.name]]])
         var deriv = buffer[top + key.deriv]
         if (typeof item != 'undefined') {
             assert(typeof item.derivations != 'undefined')
             if (deriv < item.derivations.length) {
                 if (buffer[top + key.n] == item.derivations[deriv].length) {
-                    pop()
+                    // pop
+                    buffer[parent + key.amount] += buffer[top + key.amount]
+                    buffer[parent + offset + buffer[parent + key.n]] = count
+                    buffer[parent + key.n] += 1
+                    var new_saved = N*count
+                    saved[new_saved + key.name] = buffer[top + key.name]
+                    saved[new_saved + key.amount] = buffer[top + key.amount]
+                    saved[new_saved + key.n] = buffer[top + key.n]
+                    var j = 0
+                    while(j < buffer[top + key.n]) {
+                        saved[new_saved + offset + j] = (
+                            buffer[top + offset + j]
+                        )
+                        j++
+                    }
+                    count += 1
+                    cur -= 1
                 } else {
                     buffer[top + key.n] = 0
                     buffer[top + key.amount] = 0
                     var d = item.derivations[deriv]
                     if (d.length > 0) {
                         var push_parent = cur
-                        var j = d.length-1
-                        while (j >= 0) {
-                            push(d[j], push_parent)
-                            j--
+                        var k = 0
+                        while (k < d.length) {
+                            // push(part: d[k], parent: push_parent)
+                            var new_top = top + N*(k+1)
+                            buffer[new_top + key.name] = (
+                                id_of_name[d[d.length-k-1]]
+                            )
+                            buffer[new_top + key.amount] = 0
+                            buffer[new_top + key.parent] = push_parent
+                            buffer[new_top + key.pos] = -1
+                            buffer[new_top + key.deriv] = 0
+                            buffer[new_top + key.n] = 0
+                            k++
                         }
+                        cur += d.length
                     } else {
-                        pop()
+                        // pop
+                        buffer[parent + key.amount] += buffer[top + key.amount]
+                        buffer[parent + offset + buffer[parent + key.n]] = count
+                        buffer[parent + key.n] += 1
+                        var new_saved = N*count
+                        saved[new_saved + key.name] = buffer[top + key.name]
+                        saved[new_saved + key.amount] = buffer[top + key.amount]
+                        saved[new_saved + key.n] = buffer[top + key.n]
+                        var j = 0
+                        while(j < buffer[top + key.n]) {
+                            saved[new_saved + offset + j] = (
+                                buffer[top + offset + j]
+                            )
+                            j++
+                        }
+                        count += 1
+                        cur -= 1
                     }
                 }                
             } else {
-                rollback()
+                // rollback
+                buffer[parent + key.deriv] += 1
+                cur = buffer[top + key.parent]
             }
-        } else if (part.startsWith('~')) {
-            var keyword = part.slice(1, part.length)
-            if (token != Token.Null && token.matched.string == keyword) {
-                //console.log("matched keyword", keyword)
+        } else if ((names[buffer[top + key.name]])[0] == '~') {
+            var kw_ok = false
+            if (pos < tokens.length) {
+                kw_ok = true
+                var u = 1
+                while (u < (names[buffer[top + key.name]]).length) {
+                    kw_ok = kw_ok && ((names[buffer[top + key.name]])[u] ==  tokens[pos].matched.string[u-1])
+                    if (!kw_ok) { break }
+                    u++
+                }
+            }
+            if (kw_ok) {
+                // pop token
                 buffer[parent + key.amount] += 1
                 buffer[parent + offset + buffer[parent + key.n]] = -pos
                 buffer[parent + key.n] += 1
                 cur -= 1
             } else {
-                rollback()
+                // rollback
+                buffer[parent + key.deriv] += 1
+                cur = buffer[top + key.parent]
             }
-        } else if (token != Token.Null && token.matched.name == part) {
+        } else if (pos < tokens.length && tokens[pos].matched.name == names[buffer[top + key.name]]) {
+            // pop token
             buffer[parent + key.amount] += 1
             buffer[parent + offset + buffer[parent + key.n]] = -pos
             buffer[parent + key.n] += 1
             cur -= 1
         } else {
-            rollback()
+            // rollback
+            buffer[parent + key.deriv] += 1
+            cur = buffer[top + key.parent]
         }
         i++
         //console.log(i, cur, watch())
