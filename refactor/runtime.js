@@ -11,16 +11,17 @@
     let _ = (x => x)  // placeholder for l10n
     
     class RuntimeError extends Error {}
-    class NameError extends Error {}
-    class AccessError extends Error {}
+    class NameError extends RuntimeError {}
+    class AccessError extends RuntimeError {}
+    class CallError extends RuntimeError {}
     
     class ErrorProducer {
-        constructor (error, emitter = '') {
+        constructor (error, info = '') {
             this.error = error
-            this.emitter = emitter
+            this.info = info
         }
         throw (msg) {
-            throw new error(emitter? (emitter + ': ' + msg): msg)
+            throw new this.error(this.info? (this.info + ': ' + msg): msg)
         }
         assert (value, msg) {
             if (!value) {
@@ -126,7 +127,8 @@
     }
 
     let Checker = Symbol('Checker')
-    let DataKey = Symbol('WrapperData')
+    let WrapperInfo = Symbol('WrapperInfo')
+    let Symbols = { Checker, WrapperInfo }
 
     function is (value, abstraction) {
         return abstraction[Checker](value)
@@ -208,8 +210,8 @@
         }),
         String: ES.String,
         Function: category(ES.Function, {
-            Wrapped: Ins(ES.Function, $(x => has(DataKey, x))),
-            Simple: Ins(ES.Function, $(x => !has(DataKey, x)))
+            Wrapped: Ins(ES.Function, $(x => has(WrapperInfo, x))),
+            Simple: Ins(ES.Function, $(x => !has(WrapperInfo, x)))
         }),
         Abstract: category(
             $(
@@ -223,6 +225,7 @@
                 Singleton: $(x => x instanceof Singleton),
                 Enum: $(x => x instanceof Enum),
                 Schema: $(x => x instanceof Schema)
+                // TODO: Capsule
             }
         ),
         Container: category(null, {
@@ -242,13 +245,16 @@
                         && Object.getPrototypeOf(x.ptr) === Object.prototype
                 ))
             })
-        }),
-        Instance: $(x => x instanceof Instance),
-        Reference: $(x => x instanceof Reference)
+        })
+        // TODO: Instance: $(x => x instanceof Instance)
     }
     
-    let NonSolid = Uni(Type.Container, Type.Instance)
+    // TODO
+    //let NonSolid = Uni(Type.Container, Type.Instance)
+    let NonSolid = Type.Container
     let Solid = Not(NonSolid)
+    let Immutable = $(x => x instanceof Reference || is(x, Solid))
+    let Mutable = $(x => !(x instanceof Reference && is(x, NonSolid)))
     
     class Reference {
         constructor (object) {
@@ -296,7 +302,7 @@
             assert(forall(Object.values(table), v => is(v, Type.Abstract)))
             assert(is(requirement, Type.Function))
             this[Checker] = (x => (
-                is(x, Type.Hash)
+                is(x, Type.Container.Hash)
                     && forall(Object.keys(table), k => is(x[k], table[k]))
                     && requirement(x)
             ))
@@ -326,7 +332,7 @@
         constructor (context, affect = 'local', data = {}) {
             assert(context === null || context instanceof Scope)
             assert(is(affect, EffectRange))
-            assert(is(data, Type.Hash))
+            assert(is(data, Type.Container.Hash))
             this.context = context
             this.affect = affect
             this.data = data
@@ -381,6 +387,8 @@
         }
     }
     
+    let Global = new Scope(null)
+    
     let name_err = new ErrorProducer(NameError)
     let access_err = new ErrorProducer(AccessError)
     
@@ -411,15 +419,96 @@
         )
         access_err.assert(
             info.is_mutable,
-            F('variable {name} belongs to immutable scope', {name})
+            F(_('variable {name} belongs to immutable scope'), {name})
         )
         info.scope.assign(name, new_value)
     }
     
-    let Symbols = { DataKey, Checker }
+    let err_msg_arg_quantity = (
+        (r, g) => F(_('{r} arguments required but {g} given'), {r, g})
+    )
+    let err_msg_invalid_arg = (
+        name => F(_('invalid argument {name}'), {name})
+    )
+    let err_msg_immutable_dirty = (
+        name => F(
+            _('immutable reference passed as dirty argument {name}'), {name}
+        )
+    )
+    
+    function wrap(context, proto, raw_function, info = '') {
+        assert(context instanceof Scope)
+        assert(is(proto, Prototype))
+        assert(is(raw_function, ES.Function))
+        assert(is(info, Type.String))
+        let err = new ErrorProducer(CallError, info)
+        let invoke = function (args, use_context = context) {
+            let r = proto.parameters.length
+            let g = args.length
+            // check if argument quantity correct
+            let ok = (r == g)
+            err.assert(ok, !ok && err_msg_arg_quantity(r, g))
+            // generate finally processed arguments
+            let processed = {}
+            for (let i=0; i<proto.parameters.length; i++) {
+                let parameter = proto.parameters[i]
+                let name = parameter.name
+                let arg = args[i]
+                // check if the argument matches constraint
+                let ok = is(arg, parameter.constraint)
+                err.assert(ok, !ok && err_msg_invalid_arg(name))
+                // cannot pass immutable reference as dirty argument
+                ok = !(parameter.pass_policy == 'dirty' && is(arg, Immutable))
+                err.assert(ok, !ok && err_msg_immutable_dirty(name))
+                // if pass policy is immutable, take a reference
+                processed[name] = (
+                    (parameter.pass_policy == 'immutable')?
+                    ImRef(arg): arg
+                )
+            }
+            // TODO: add frame to call stack (add info for debugging)
+            let scope = new Scope(use_context, proto.affect, processed)
+            let value = (
+                Function.prototype.call.call(raw_function, null, scope)
+            )
+            // check the return value
+            err.assert(is(value, proto.value), _('invalid return value'))
+            // TODO: remove frame from call stack
+            return value
+        }
+        let wrapped =((...args) => invoke(args))
+        wrapped[WrapperInfo] = { context, proto, info, invoke, raw_function }
+        return wrapped
+    }
+    
+    pour(Global.data, {
+        Nil: Nil,
+        Void: Void,
+        Done: Done,
+        undefined: undefined,
+        Undefined: Type.Undefined,
+        null: null,
+        Null: Type.Null,
+        Symbol: Type.Symbol,
+        Bool: Type.Bool,
+        Number: Type.Number,
+        Int: Type.Number.Int,
+        Abstract: Type.Abstract,
+        List: Type.Container.List,
+        ImList: Type.Container.List.Immutable,
+        MutList: Type.Container.List.Mutable,
+        Hash: Type.Container.Hash,
+        ImHash: Type.Container.Hash.Immutable,
+        MutHash: Type.Container.Hash.Mutable,
+        Solid: Solid,
+        NonSolid: NonSolid,
+        Mutable: Mutable,
+        Immutable: Immutable
+    })
+    
     let export_object = {
-        Concept, is, has, $, Uni, Ins, Not, Category, Singleton, Type, Symbols,
-        Nil, Void, Done, struct
+        is, has, $, Uni, Ins, Not, Type, Symbols, ImRef,
+        Global, var_lookup, var_declare, var_assign, wrap
     }
     let export_name = 'KumaChan'
     let global_scope = (typeof window == 'undefined')? global: window
