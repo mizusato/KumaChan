@@ -1,7 +1,37 @@
 (function() {
+    
+    function format (string, table) {
+        return string.replace(/{([^}]+)}/g, (matched, p0) => {
+            return (typeof table[p0] != 'undefined')? table[p0]: p0
+        })
+    }
+    
+    let F = format
+    
+    let _ = (x => x)  // placeholder for l10n
+    
+    class RuntimeError extends Error {}
+    class NameError extends Error {}
+    class AccessError extends Error {}
+    
+    class ErrorProducer {
+        constructor (error, emitter = '') {
+            this.error = error
+            this.emitter = emitter
+        }
+        throw (msg) {
+            throw new error(emitter? (emitter + ': ' + msg): msg)
+        }
+        assert (value, msg) {
+            if (!value) {
+                this.throw(msg)
+            }
+            return value
+        }
+    }
 
     function assert (value) {
-        if(!value) { throw new Error('Assertion Error') }
+        if(!value) { throw new RuntimeError('Assertion Error') }
         return value
     }
 
@@ -164,7 +194,6 @@
     }
 
     let Type = {
-        Any: $(x => true),
         Undefined: ES.Undefined,
         Null: ES.Null,
         Symbol: ES.Symbol,
@@ -197,10 +226,22 @@
             }
         ),
         Container: category(null, {
-            List: $(x => x instanceof Array),
-            Hash: Ins(ES.Object, $(
-                x => Object.getPrototypeOf(x) === Object.prototype
-            ))
+            List: category(null, {
+                Mutable: $(x => x instanceof Array),
+                Immutable: $(
+                    x => x instanceof Reference && x.ptr instanceof Array
+                )
+            }),
+            Hash: category(null, {
+                Mutable: Ins(ES.Object, $(
+                    x => Object.getPrototypeOf(x) === Object.prototype
+                )),
+                Immutable: $(x => (
+                    (x instanceof Reference)
+                        && is(x.ptr, ES.Object)
+                        && Object.getPrototypeOf(x.ptr) === Object.prototype
+                ))
+            })
         }),
         Instance: $(x => x instanceof Instance),
         Reference: $(x => x instanceof Reference)
@@ -212,7 +253,7 @@
     class Reference {
         constructor (object) {
             assert(is(object, NonSolid))
-            this.point_to = object
+            this.ptr = object
         }
     }
     
@@ -338,6 +379,41 @@
                 object: scope.has(variable)? scope.data[variable]: NotFound
             })), info => info.object != NotFound)
         }
+    }
+    
+    let name_err = new ErrorProducer(NameError)
+    let access_err = new ErrorProducer(AccessError)
+    
+    function var_lookup(scope, name) {
+        assert(scope instanceof Scope)
+        let value = scope.lookup(name)
+        name_err.assert(
+            value != NotFound, 
+            F(_('variable {name} not found'), {name})
+        )
+        return value
+    }
+    
+    function var_declare(scope, name, initial_value) {
+        assert(scope instanceof Scope)
+        name_err.assert(
+            !scope.has(name),
+            F(_('variable {name} already declared'), {name})
+        )
+        scope.declare(name, initial_value)
+    }
+    
+    function var_assign(scope, name, new_value) {
+        let info = scope.find(name)
+        name_err.assert(
+            info != NotFound,
+            F(_('variable {name} not declared'), {name})
+        )
+        access_err.assert(
+            info.is_mutable,
+            F('variable {name} belongs to immutable scope', {name})
+        )
+        info.scope.assign(name, new_value)
     }
     
     let Symbols = { DataKey, Checker }
