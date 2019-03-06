@@ -82,6 +82,20 @@
             index += 1
         }
     }
+    
+    function join (iterable, separator) {
+        let string = ''
+        let first = true
+        for (let I of iterable) {
+            if (first) {
+                first = false
+            } else {
+                string += separator
+            }
+            string += I
+        }
+        return string
+    }
 
     let NotFound = { tip: 'Object Not Found' }
     
@@ -124,6 +138,13 @@
 
     function chain (functions) {
         return ( x => fold(functions, x, (f, v) => f(v)) )
+    }
+    
+    function *count (n) {
+        let i = 0
+        while (i < n) {
+            yield i
+        }
     }
 
     let Checker = Symbol('Checker')
@@ -229,22 +250,10 @@
             }
         ),
         Container: category(null, {
-            List: category(null, {
-                Mutable: $(x => x instanceof Array),
-                Immutable: $(
-                    x => x instanceof Reference && x.ptr instanceof Array
-                )
-            }),
-            Hash: category(null, {
-                Mutable: Ins(ES.Object, $(
-                    x => Object.getPrototypeOf(x) === Object.prototype
-                )),
-                Immutable: $(x => (
-                    (x instanceof Reference)
-                        && is(x.ptr, ES.Object)
-                        && Object.getPrototypeOf(x.ptr) === Object.prototype
-                ))
-            })
+            List: $(x => x instanceof Array),
+            Hash: Ins(ES.Object, $(
+                x => Object.getPrototypeOf(x) === Object.prototype
+            ))
         })
         // TODO: Instance: $(x => x instanceof Instance)
     }
@@ -253,17 +262,6 @@
     //let NonSolid = Uni(Type.Container, Type.Instance)
     let NonSolid = Type.Container
     let Solid = Not(NonSolid)
-    let Immutable = $(x => x instanceof Reference || is(x, Solid))
-    let Mutable = $(x => !(x instanceof Reference && is(x, NonSolid)))
-    
-    class Reference {
-        constructor (object) {
-            assert(is(object, NonSolid))
-            this.ptr = object
-        }
-    }
-    
-    let ImRef = (x => is(x, Solid) && x || new Reference(x))
 
     class Singleton {
         constructor (description) {
@@ -336,6 +334,19 @@
             this.context = context
             this.affect = affect
             this.data = data
+            this.ACL = new WeakMap()
+        }
+        register_immutable (object) {
+            if (typeof object == 'object') {
+                this.ACL.set(object, 1)
+            }
+        }
+        check_immutable (object) {
+            if (typeof object == 'object') {
+                return (this.ACL.get(object) === 1)
+            } else {
+                return true
+            }
         }
         has (variable) {
             return has(variable, this.data)
@@ -353,11 +364,10 @@
             if (info == NotFound) {
                 return NotFound
             } else {
-                if (info.is_mutable) {
-                    return info.object
-                } else {
-                    return ImRef(info.object)
+                if (!info.is_mutable) {
+                    this.register_immutable(info.object)
                 }
+                return info.object
             }
         }
         find (variable) {
@@ -436,49 +446,89 @@
         )
     )
     
-    function wrap(context, proto, raw_function, info = '') {
+    let alphabet = 'abcdefghijklmnopqrstuvwxyz'
+    
+    function give_arity(f, n) {
+        let para_list = join(filter(alphabet, (e,i) => i < n), ',')
+        let g = new Function(para_list, 'return this.apply(null, arguments)')
+        return g.bind(f)
+    }
+    
+    function wrap (context, proto, raw, desc = '') {
         assert(context instanceof Scope)
         assert(is(proto, Prototype))
-        assert(is(raw_function, ES.Function))
-        assert(is(info, Type.String))
-        let err = new ErrorProducer(CallError, info)
-        let invoke = function (args, use_context = context) {
+        assert(is(raw, ES.Function))
+        assert(is(desc, Type.String))
+        let err = new ErrorProducer(CallError, desc)
+        let invoke = function (args, caller_scope, use_context = context) {
+            // check if argument quantity correct
             let r = proto.parameters.length
             let g = args.length
-            // check if argument quantity correct
             let ok = (r == g)
             err.assert(ok, !ok && err_msg_arg_quantity(r, g))
-            // generate finally processed arguments
-            let processed = {}
+            // generate scope
+            let scope = new Scope(use_context, proto.affect)
+            // check if arguments valid
             for (let i=0; i<proto.parameters.length; i++) {
                 let parameter = proto.parameters[i]
-                let name = parameter.name
                 let arg = args[i]
+                let name = parameter.name
                 // check if the argument matches constraint
                 let ok = is(arg, parameter.constraint)
                 err.assert(ok, !ok && err_msg_invalid_arg(name))
                 // cannot pass immutable reference as dirty argument
-                ok = !(parameter.pass_policy == 'dirty' && is(arg, Immutable))
-                err.assert(ok, !ok && err_msg_immutable_dirty(name))
-                // if pass policy is immutable, take a reference
-                processed[name] = (
-                    (parameter.pass_policy == 'immutable')?
-                    ImRef(arg): arg
-                )
+                if (caller_scope != null) {
+                    let is_dirty = parameter.pass_policy == 'dirty'
+                    let is_immutable = caller_scope.check_immutable(arg)
+                    let ok = !(is_dirty && is_immutable)
+                    err.assert(ok, !ok && err_msg_immutable_dirty(name))
+                }
+                // if pass policy is immutable, register it
+                if (parameter.pass_policy == 'immutable') {
+                    scope.register_immutable(arg)
+                }
+                // inject argument to scope
+                scope.data[name] = arg
             }
             // TODO: add frame to call stack (add info for debugging)
-            let scope = new Scope(use_context, proto.affect, processed)
             let value = (
-                Function.prototype.call.call(raw_function, null, scope)
+                Function.prototype.call.call(raw, null, scope)
             )
             // check the return value
             err.assert(is(value, proto.value), _('invalid return value'))
             // TODO: remove frame from call stack
             return value
         }
-        let wrapped =((...args) => invoke(args))
-        wrapped[WrapperInfo] = { context, proto, info, invoke, raw_function }
+        // wrap function
+        let wrapped = give_arity(
+            ((...args) => invoke(args, null)),
+            proto.parameters.length
+        )
+        wrapped[WrapperInfo] = { context, invoke, proto, raw, desc }
         return wrapped
+    }
+    
+    function bind_context (f, context) {
+        assert(is(f, Type.Function.Wrapped))
+        let info = f[WrapperInfo]
+        let g = give_arity(
+            ((...args) => info.invoke(args, null, context)),
+            info.proto.parameters.length
+        )
+        let invoke = function (args, caller_scope, use_context = null) {
+            assert(use_context === null)
+            return info.invoke(args, caller_scope, context)
+        }
+        g[WrapperInfo] = { original: f, invoke: invoke }
+        return g
+    }
+    
+    function call (f, context, args) {
+        if (is(f, Type.Function.Wrapped)) {
+            return f[WrapperInfo].invoke(args, context)
+        } else {
+            return Function.prototype.apply.call(f, null, args)
+        }
     }
     
     pour(Global.data, {
@@ -495,19 +545,13 @@
         Int: Type.Number.Int,
         Abstract: Type.Abstract,
         List: Type.Container.List,
-        ImList: Type.Container.List.Immutable,
-        MutList: Type.Container.List.Mutable,
         Hash: Type.Container.Hash,
-        ImHash: Type.Container.Hash.Immutable,
-        MutHash: Type.Container.Hash.Mutable,
         Solid: Solid,
         NonSolid: NonSolid,
-        Mutable: Mutable,
-        Immutable: Immutable
     })
     
     let export_object = {
-        is, has, $, Uni, Ins, Not, Type, Symbols, ImRef,
+        is, has, $, Uni, Ins, Not, Type, Symbols,
         Global, var_lookup, var_declare, var_assign, wrap
     }
     let export_name = 'KumaChan'
