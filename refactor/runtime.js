@@ -1,6 +1,11 @@
 (function() {
+
+    /**
+     *  String Format Tool
+     */
     
     function format (string, table) {
+        // Avoid using ES6 template string for l10n propose.
         return string.replace(/{([^}]+)}/g, (matched, p0) => {
             return (typeof table[p0] != 'undefined')? table[p0]: p0
         })
@@ -9,6 +14,10 @@
     let F = format
     
     let _ = (x => x)  // placeholder for l10n
+
+    /**
+     *  Error Definition & Handling
+     */
     
     class RuntimeError extends Error {}
     class NameError extends RuntimeError {}
@@ -36,11 +45,16 @@
         return value
     }
 
+    /**
+     *  Toolkit Functions
+     */
+
     function pour (o1, o2) {
         return Object.assign(o1, o2)
     }
     
     function list (iterable) {
+        // convert iterable to array
         let result = []
         for (let I of iterable) {
             result.push(I)
@@ -109,6 +123,7 @@
     }
     
     function *iterate (initial, next_of, terminate) {
+        // apply next_of() on value until terminal condition satisfied
         let value = initial
         while (!terminate(value)) {
             yield value
@@ -117,6 +132,7 @@
     }
     
     function fold (iterable, initial, f, terminate) {
+        // reduce() with a terminal condition 
         let index = 0
         let value = initial
         for (let I of iterable) {
@@ -129,10 +145,12 @@
     }
     
     function forall (iterable, f) {
+        // ∀ I ∈ iterable, f(I) == true
         return fold(iterable, true, ((e,v) => v && f(e)), (v => v == false))
     }
     
     function exists (iterable, f) {
+        // ∃ I ∈ iterable, f(I) == true
         return fold(iterable, false, ((e,v) => v || f(e)), (v => v == true))
     }
 
@@ -147,9 +165,26 @@
         }
     }
 
+    /**
+     *  Symbol Definition
+     */
+
     let Checker = Symbol('Checker')
     let WrapperInfo = Symbol('WrapperInfo')
     let Symbols = { Checker, WrapperInfo }
+
+    /**
+     *  Abstraction Mechanics
+     *
+     *  An object A that satisfies (typeof A[Checker] == 'function')
+     *    is called an "abstraction object" or "abstract set".
+     *  The function A[Checker]() should take one argument x
+     *    and return a boolean value which indicates whether x ∈ A.
+     *  In this programming language, data types are implemented by
+     *    abstraction objects. A data type is just an abstraction object,
+     *    therefore data type checking is performed at runtime,
+     *    by calling the [Checker]() function of the abstraction object.
+     */
 
     function is (value, abstraction) {
         return abstraction[Checker](value)
@@ -158,6 +193,17 @@
     function has(key, object) {
         return Object.prototype.hasOwnProperty.call(object, key)
     }
+
+    /**
+     *  Concept Object
+     *
+     *  The so-called "concept objects" are the simplest kind of
+     *    abstraction objects, which only contains a [Checker]() function.
+     *  In other words, concept objects do not contain any extra information
+     *    except its abstraction information.
+     *  Any abstraction object can do operations such as intersect,
+     *    union, complement with others, and produce a new concept object.
+     */
     
     class Concept {
         constructor (checker) {
@@ -170,24 +216,27 @@
     }
 
     function union (abstracts) {
+        // (∪ A_i), for A_i in abstracts
         assert(forall(abstracts, a => typeof a[Checker] == 'function'))
         return new Concept(x => exists(abstracts, a => a[Checker](x)))
     }
     
     function intersect (abstracts) {
+        // (∩ A_i), for A_i in abstracts
         assert(forall(abstracts, a => typeof a[Checker] == 'function'))
         return new Concept(x => forall(abstracts, a => a[Checker](x)))
     }
     
     function complement (abstraction) {
+        // (∁ A)
         assert(typeof abstraction[Checker] == 'function')
         return new Concept(x => !abstraction[Checker](x))
     }
 
-    let $ = (f => new Concept(f))
-    let Uni = ((...args) => union(args))
-    let Ins = ((...args) => intersect(args))
-    let Not = (arg => complement(arg))
+    let $ = (f => new Concept(f))             // create concept from f(x)
+    let Uni = ((...args) => union(args))      // (A,B,...) => A ∪ B ∪ ... 
+    let Ins = ((...args) => intersect(args))  // (A,B,...) => A ∩ B ∩ ...
+    let Not = (arg => complement(arg))        //  A => ∁ A
 
     class Category {
         constructor (abstraction, branches) {
@@ -204,7 +253,7 @@
     }
     
     let category = ((a, b) => new Category(a, b))
-    
+
     let ES = {
         Undefined: $(x => typeof x == 'undefined'),
         Null: $(x => x === null),
@@ -309,6 +358,10 @@
 
     let struct = (table => new Schema(table))
 
+    /**
+     *  Function & Scope
+     */
+
     let PassPolicy = one_of('immutable', 'natural', 'dirty')
     let EffectRange = one_of('local', 'upper', 'global')
 
@@ -397,8 +450,6 @@
         }
     }
     
-    let Global = new Scope(null)
-    
     let name_err = new ErrorProducer(NameError)
     let access_err = new ErrorProducer(AccessError)
     
@@ -468,7 +519,7 @@
             err.assert(ok, !ok && err_msg_arg_quantity(r, g))
             // generate scope
             let scope = new Scope(use_context, proto.affect)
-            // check if arguments valid
+            // check arguments
             for (let i=0; i<proto.parameters.length; i++) {
                 let parameter = proto.parameters[i]
                 let arg = args[i]
@@ -476,7 +527,7 @@
                 // check if the argument matches constraint
                 let ok = is(arg, parameter.constraint)
                 err.assert(ok, !ok && err_msg_invalid_arg(name))
-                // cannot pass immutable reference as dirty argument
+                // cannot pass immutable object as dirty argument
                 if (caller_scope != null) {
                     let is_dirty = parameter.pass_policy == 'dirty'
                     let is_immutable = caller_scope.check_immutable(arg)
@@ -530,6 +581,12 @@
             return Function.prototype.apply.call(f, null, args)
         }
     }
+
+    /**
+     *  Global Scope
+     */
+    
+    let Global = new Scope(null)
     
     pour(Global.data, {
         Nil: Nil,
@@ -549,6 +606,10 @@
         Solid: Solid,
         NonSolid: NonSolid,
     })
+
+    /**
+     *  Export
+     */
     
     let export_object = {
         is, has, $, Uni, Ins, Not, Type, Symbols,
