@@ -21,6 +21,7 @@
     
     class RuntimeError extends Error {}
     class NameError extends RuntimeError {}
+    class AssignError extends RuntimeError {}
     class AccessError extends RuntimeError {}
     class CallError extends RuntimeError {}
     
@@ -164,6 +165,15 @@
             yield i
         }
     }
+    
+    let alphabet = 'abcdefghijklmnopqrstuvwxyz'
+    
+    function give_arity(f, n) {
+        // Tool to fix arity of wrapped function
+        let para_list = join(filter(alphabet, (e,i) => i < n), ',')
+        let g = new Function(para_list, 'return this.apply(null, arguments)')
+        return g.bind(f)
+    }
 
     /**
      *  Symbol Definition
@@ -238,6 +248,13 @@
     let Ins = ((...args) => intersect(args))  // (A,B,...) => A ∩ B ∩ ...
     let Not = (arg => complement(arg))        //  A => ∁ A
 
+    /**
+     *  Category Object
+     *
+     *  A collection of abstraction objects can be integrated into
+     *    a "category object", which is also an abstraction object.
+     */
+    
     class Category {
         constructor (abstraction, branches) {
             this[Checker] = (
@@ -254,6 +271,10 @@
     
     let category = ((a, b) => new Category(a, b))
 
+    /**
+     *  ES6 Raw Types Defined by Abstraction Objects
+     */
+
     let ES = {
         Undefined: $(x => typeof x == 'undefined'),
         Null: $(x => x === null),
@@ -264,6 +285,10 @@
         Function: $(x => typeof x == 'function'),
         Object: $(x => typeof x == 'object' && x !== null)
     }
+
+    /**
+     *  Wrapped Types
+     */
 
     let Type = {
         Undefined: ES.Undefined,
@@ -306,11 +331,16 @@
         })
         // TODO: Instance: $(x => x instanceof Instance)
     }
-    
-    // TODO
-    //let NonSolid = Uni(Type.Container, Type.Instance)
-    let NonSolid = Type.Container
-    let Solid = Not(NonSolid)
+
+    /**
+     *  Singleton Object
+     *
+     *  The so-called "singleton object" is just a kind of abstraction
+     *    in this language. If S is a singleton object, it means that
+     *    S = { x | x === S }, i.e. (x ∈ S) if and only if (x === S).
+     *  The singleton object mechanics is used to create special values,
+     *    such as Nil, Void, Done, which are available by default.
+     */
 
     class Singleton {
         constructor (description) {
@@ -327,11 +357,11 @@
     let Void = new Singleton('Void')
     let Done = new Singleton('Done')
 
-    let list_of = (A => Ins(
-        Type.Container.List,
-        $(l => forall(l, e => is(e, A)))
-    ))
-    let StringList = list_of(Type.String)
+    /**
+     *  Enumeration Object
+     *
+     *  An enumeration is just a set of string.
+     */
 
     class Enum {
         constructor (str_list) {
@@ -342,7 +372,19 @@
         }
     }
 
+    let list_of = (A => Ins(
+        Type.Container.List,
+        $(l => forall(l, e => is(e, A)))
+    ))
+    let StringList = list_of(Type.String)
+
     let one_of = ((...items) => new Enum(items))
+
+    /**
+     *  Schema Object
+     *
+     *  A schema is an abstraction of Hash Objects with specified structure.
+     */
 
     class Schema {
         constructor (table, requirement = (x => true)) {
@@ -357,14 +399,63 @@
     }
 
     let struct = (table => new Schema(table))
+    
+    /**
+     *  Access Control of Function & Scope
+     * 
+     *  In some functional programming language, functions are restricted
+     *    to "pure function", which does not produce side-effect.
+     *  But in this language, side-effect is widly permitted, none of
+     *    functions are "pure function". Instead of eliminating side-effect,
+     *    we decrease side-effect by establishing access control.
+     *  If a function never modify an argument, it is possible to
+     *    set this argument to be immutable (read-only).
+     *  Also, if a function never modify the outer scope, it is possible to
+     *    set the outer scope to be immutable (read-only) to the function.
+     *  The mechanics described above is like UNIX file permission,
+     *    an outer scope or an argument can be set to "rwx" or "r-x".
+     *  "Be conservative in what you write, be liberal in what you read."
+     */
 
     /**
-     *  Function & Scope
+     *  Effect Range of Function
+     * 
+     *  The effect range of a function determines the range of scope chain
+     *  that can be affected by the function, which indicates
+     *  the magnitude of side-effect.
+     *  
+     *  |  value  | Local Scope | Upper Scope | Other Scope |
+     *  |---------|-------------|-------------|-------------|
+     *  |  global | full-access | full-access | full-access |
+     *  |  upper  | full-access | full-access |  read-only  |
+     *  |  local  | full-access |  read-only  |  read-only  |
+     * 
+     */
+
+    let EffectRange = one_of('local', 'upper', 'global')
+    
+    /**
+     *  Pass Policy of Parameter
+     *  
+     *  The pass policy of a parameter determines how the function
+     *    process the corresponding argument.
+     *  If pass policy is set to immutable, the function will not be able to
+     *    modify the argument. (e.g. add element to list)
+     * 
+     *  |   value   | Immutable Argument |  Mutable Argument  |
+     *  |-----------|--------------------|--------------------|
+     *  | immutable |    direct pass     | treat as immutable |
+     *  |  natural  |    direct pass     |    direct pass     |
+     *  |   dirty   |     forbidden      |    direct pass     |
+     *
      */
 
     let PassPolicy = one_of('immutable', 'natural', 'dirty')
-    let EffectRange = one_of('local', 'upper', 'global')
-
+    
+    /**
+     *  Parameter & Function Prototype
+     */
+    
     let Parameter = struct({
         name: Type.String,
         pass_policy: PassPolicy,
@@ -378,15 +469,25 @@
         value: Type.Abstract,
         parameters: ParameterList
     })
+    
+    /**
+     *  Scope Object
+     */
 
     class Scope {
         constructor (context, affect = 'local', data = {}) {
             assert(context === null || context instanceof Scope)
             assert(is(affect, EffectRange))
             assert(is(data, Type.Container.Hash))
+            // <context> = upper scope
             this.context = context
+            // <affect> = effect range of the corresponding function
             this.affect = affect
+            // <data> = Hash { VariableName -> VariableValue }
             this.data = data
+            // <assignable> = Set { Non-Constants }
+            this.assignable = new Set() 
+            // <ACL> = WeakMap { Object -> Immutable? 1: undefined }
             this.ACL = new WeakMap()
         }
         register_immutable (object) {
@@ -401,15 +502,22 @@
                 return true
             }
         }
+        check_assignable (variable) {
+            return this.assignable.has(variable)
+        }
         has (variable) {
             return has(variable, this.data)
         }
-        declare (variable, initial_value) {
+        declare (variable, initial_value, is_assignable = false) {
             assert(!this.has(variable))
             this.data[variable] = initial_value
+            if (is_assignable) {
+                this.assignable.add(variable)
+            }
         }
         assign (variable, new_value) {
             assert(this.has(variable))
+            assert(this.assignable.has(variable))
             this.data[variable] = new_value
         }
         lookup (variable) {
@@ -445,12 +553,18 @@
                 scope: scope,
                 depth: depth,
                 is_mutable: depth <= mutable_depth,
+                is_assignable: scope.check_assignable(variable),
                 object: scope.has(variable)? scope.data[variable]: NotFound
             })), info => info.object != NotFound)
         }
     }
     
+    /**
+     *  Scope Operation Functions with Error Producer
+     */
+    
     let name_err = new ErrorProducer(NameError)
+    let assign_err = new ErrorProducer(AssignError)
     let access_err = new ErrorProducer(AccessError)
     
     function var_lookup(scope, name) {
@@ -478,12 +592,20 @@
             info != NotFound,
             F(_('variable {name} not declared'), {name})
         )
+        assign_err.assert(
+            info.is_assignable,
+            F(_('variable {name} is not re-assignable'), {name})
+        )
         access_err.assert(
             info.is_mutable,
             F(_('variable {name} belongs to immutable scope'), {name})
         )
         info.scope.assign(name, new_value)
     }
+    
+    /**
+     *  Function Wrapper
+     */
     
     let err_msg_arg_quantity = (
         (r, g) => F(_('{r} arguments required but {g} given'), {r, g})
@@ -496,14 +618,6 @@
             _('immutable reference passed as dirty argument {name}'), {name}
         )
     )
-    
-    let alphabet = 'abcdefghijklmnopqrstuvwxyz'
-    
-    function give_arity(f, n) {
-        let para_list = join(filter(alphabet, (e,i) => i < n), ',')
-        let g = new Function(para_list, 'return this.apply(null, arguments)')
-        return g.bind(f)
-    }
     
     function wrap (context, proto, raw, desc = '') {
         assert(context instanceof Scope)
@@ -603,8 +717,6 @@
         Abstract: Type.Abstract,
         List: Type.Container.List,
         Hash: Type.Container.Hash,
-        Solid: Solid,
-        NonSolid: NonSolid,
     })
 
     /**
