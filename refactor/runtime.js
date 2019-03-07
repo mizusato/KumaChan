@@ -647,9 +647,10 @@
         )
     )
     
-    function wrap (context, proto, raw, vals, desc = '') {
+    function wrap (context, proto, vals, desc, raw) {
         assert(context instanceof Scope)
         assert(is(proto, Prototype))
+        assert(is(vals, Uni(Type.Null, Type.Container.Hash)))
         assert(is(raw, ES.Function))
         assert(is(desc, Type.String))
         let err = new ErrorProducer(CallError, desc)
@@ -662,7 +663,9 @@
             // generate scope
             let scope = new Scope(use_context, proto.affect)
             // inject static values
-            list(mapkv(vals, (k, v) => scope.declare(k, v)))
+            if (vals != null) {
+                list(mapkv(vals, (k, v) => scope.declare(k, v)))
+            }
             // check arguments
             for (let i=0; i<proto.parameters.length; i++) {
                 let parameter = proto.parameters[i]
@@ -685,21 +688,19 @@
                 // inject argument to scope
                 scope.declare(name, arg)
             }
-            // TODO: add frame to call stack (add info for debugging)
             let value = (
                 Function.prototype.call.call(raw, null, scope)
             )
             // check the return value
             err.assert(is(value, proto.value), _('invalid return value'))
-            // TODO: remove frame from call stack
-            return value
+            return { value, scope }
         }
         // wrap function
         let wrapped = give_arity(
             ((...args) => invoke(args, null)),
             proto.parameters.length
         )
-        wrapped[WrapperInfo] = { context, invoke, proto, raw, vals, desc }
+        wrapped[WrapperInfo] = { context, invoke, proto, vals, desc, raw }
         return wrapped
     }
     
@@ -717,12 +718,89 @@
         g[WrapperInfo] = { original: f, invoke: invoke }
         return g
     }
+
+    let NonBinding = Ins(Type.Function.Wrapped, $(
+        f => !has(f[WrapperInfo], 'original')
+    ))
     
     function call (f, context, args) {
         if (is(f, Type.Function.Wrapped)) {
-            return f[WrapperInfo].invoke(args, context)
+            // TODO: add frame to call stack (add info for debugging)
+            // TODO: remove frame from call stack
+            return (f[WrapperInfo].invoke(args, context)).value
         } else {
             return Function.prototype.apply.call(f, null, args)
+        }
+    }
+
+    /**
+     *  Class & Instance
+     */
+
+    class Class {
+        constructor (impls, init, extend, methods) {
+            pour(this, { init, extend, methods })
+            assert(is(init, NonBinding))
+            assert(is(extend, NonBinding))
+            let I = init[WrapperInfo]
+            let J = extend[WrapperInfo]
+            this.impls = impls
+            this.construct = wrap(I.context, I.proto, I.vals, I.desc, (s => {
+                let args = list(
+                    map(I.proto.parameters, p => var_lookup(s, p.name))
+                )
+                let scope = (I.invoke(args)).scope
+                let bounded = mapval(methods, f => bind_context(f, scope))
+                let exposed = []
+                let self = new Instance(this, scope, bounded, exposed)
+                let expose = (instance => {
+                    if (instance instanceof Instance) {
+                        exposed.push(instance)
+                    } else {
+                        (new ErrorProducer(
+                            CallError, J.desc
+                        )).throw(_('unable to expose non-instance object'))
+                    }
+                })
+                let delta = (J.invoke([self, expose], scope)).scope
+                for (let variable of Object.keys(delta.data)) {
+                    if (variable != 'self' && variable != 'expose') {
+                        scope.declare(variable, delta.data[variable])
+                    }
+                }
+                for (let name of Object.keys(bounded)) {
+                    if (!scope.has(name)) {
+                        scope.declare(name, bounded[name])
+                    }
+                }
+                // TODO: check if implement specified interfaces
+                //       class also treated as a kind of interface
+                return self
+            }))
+            this[Checker] = (object => {
+                if (object instanceof Instance) {
+                    if (object.abstraction === this) {
+                        return true
+                    } else {
+                        /*
+                        return exists(object.abstraction.impls, interface_ => {
+                            // TODO
+                        })
+                        */
+                    }
+                } else {
+                    return false
+                }
+            })
+        }
+    }
+
+    class Instance {
+        constructor (class_object, scope, methods, exposed_internal) {
+            this.abstraction = class_object
+            this.scope = scope
+            this.methods = methods
+            this.exposed = exposed_internal
         }
     }
 
