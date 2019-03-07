@@ -689,7 +689,7 @@
                 scope.declare(name, arg)
             }
             let value = (
-                Function.prototype.call.call(raw, null, scope)
+                Function.prototype.call.call(raw, null, scope, caller_scope)
             )
             // check the return value
             err.assert(is(value, proto.value), _('invalid return value'))
@@ -720,7 +720,7 @@
     }
 
     let NonBinding = Ins(Type.Function.Wrapped, $(
-        f => !has(f[WrapperInfo], 'original')
+        f => !has('oringinal', f[WrapperInfo])
     ))
     
     function call (f, context, args) {
@@ -737,57 +737,79 @@
      *  Class & Instance
      */
 
+    let exp_err = new ErrorProducer(CallError, 'expose()')
+
+    function add_exposed_internal(object, object_list, method_hash, existing) {
+        exp_err.assert(
+            object instanceof Instance,
+            _('unable to expose non-instance object')
+        )
+        object_list.push(object)
+        for (let name of Object.keys(object.methods)) {
+            exp_err.assert(
+                !has(name, method_hash) && !has(name, existing),
+                F(_('conflict method name: {name}'), {name})
+            )
+            method_hash[name] = object.methods[name]
+        }        
+    }
+
+    function is_direct_instance_of (class_, instance) {
+        assert(is(class_ instanceof Class))
+        assert(is(instance instanceof Instance))
+        return (instance.abstraction === class_)
+    }
+
+    function is_instance_of (class_, instance) {
+        assert(is(class_ instanceof Class))
+        assert(is(instance instanceof Instance))
+        if (is_direct_instance_of(class_, instance)) {
+            return true
+        } else {
+            return exists (
+                instance.exposed,
+                E => is_instance_of(E.class_, instance)
+            )
+        }
+    }
+
     class Class {
-        constructor (impls, init, extend, methods) {
-            pour(this, { init, extend, methods })
+        constructor (impls, init, methods, desc) {
+            pour(this, { impls, init, methods, desc })
             assert(is(init, NonBinding))
-            assert(is(extend, NonBinding))
             let I = init[WrapperInfo]
-            let J = extend[WrapperInfo]
-            this.impls = impls
-            this.construct = wrap(I.context, I.proto, I.vals, I.desc, (s => {
-                let args = list(
-                    map(I.proto.parameters, p => var_lookup(s, p.name))
-                )
-                let scope = (I.invoke(args)).scope
-                let bounded = mapval(methods, f => bind_context(f, scope))
-                let exposed = []
-                let self = new Instance(this, scope, bounded, exposed)
-                let expose = (instance => {
-                    if (instance instanceof Instance) {
-                        exposed.push(instance)
-                    } else {
-                        (new ErrorProducer(
-                            CallError, J.desc
-                        )).throw(_('unable to expose non-instance object'))
-                    }
-                })
-                let delta = (J.invoke([self, expose], scope)).scope
-                for (let variable of Object.keys(delta.data)) {
-                    if (variable != 'self' && variable != 'expose') {
-                        scope.declare(variable, delta.data[variable])
-                    }
+            this.construct = wrap(
+                null, I.proto, I.vals, I.desc, (s, caller_scope) => {
+                    let instance_scope_created = false
+                    let args = list(map(
+                        I.proto.parameters,
+                        p => var_lookup(s, p.name)
+                    ))
+                    // context for initializer (constructor)
+                    let init_context = new Scope(I.context, I.proto.affect)
+                    let exposed = []   // list of exposed object
+                    let bounded = {}   // methods of the instance
+                    // expose() can be called in constructor
+                    // to expose interfaces of internal objects
+                    init_context.declare('expose', (instance => {
+                        if (!instance_scope_created) {
+                            add_exposed_interal(
+                                instance, exposed, bounded, methods
+                            )
+                        }
+                    }))
+                    let scope = I.invoke(args, caller_scope, init_context)
+                    instance_scope_created = true
+                    // add interface of this class
+                    pour(bounded, mapval(methods, f => bind_context(f, scope)))
+                    let self = new Instance(this, scope, bounded, exposed)
+                    // TODO: check if implement all interfaces
+                    return self
                 }
-                for (let name of Object.keys(bounded)) {
-                    if (!scope.has(name)) {
-                        scope.declare(name, bounded[name])
-                    }
-                }
-                // TODO: check if implement specified interfaces
-                //       class also treated as a kind of interface
-                return self
-            }))
+            )
             this[Checker] = (object => {
                 if (object instanceof Instance) {
-                    if (object.abstraction === this) {
-                        return true
-                    } else {
-                        /*
-                        return exists(object.abstraction.impls, interface_ => {
-                            // TODO
-                        })
-                        */
-                    }
+                    return is_instance_of(this, object)
                 } else {
                     return false
                 }
