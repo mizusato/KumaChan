@@ -87,6 +87,12 @@
         }
         return mapped
     }
+
+    function *mapkv (object, f) {
+        for (let key of Object.keys(object)) {
+            yield f(key, object[key])
+        }
+    }
     
     function *filter (iterable, f) {
         let index = 0
@@ -96,6 +102,16 @@
             }
             index += 1
         }
+    }
+
+    function flth (object, f) {
+        let result = {}
+        for (let key of Object.keys(object)) {
+            if (f(key, object[key])) {
+                result[key] = object[key]
+            }
+        }
+        return result
     }
     
     function join (iterable, separator) {
@@ -166,6 +182,18 @@
         }
     }
     
+    function no_repeat (iterable) {
+        let s = new Set()
+        for (let I of iterable) {
+            if (!s.has(I)) {
+                s.add(I)
+            } else {
+                return false
+            }
+        }
+        return true
+    }
+
     let alphabet = 'abcdefghijklmnopqrstuvwxyz'
     
     function give_arity(f, n) {
@@ -464,11 +492,11 @@
 
     let ParameterList = list_of(Parameter)
 
-    let Prototype = struct({
+    let Prototype = Ins(struct({
         affect: EffectRange,
         value: Type.Abstract,
         parameters: ParameterList
-    })
+    }), $( proto => no_repeat(map(proto.parameters, p => p.name)) ))
     
     /**
      *  Scope Object
@@ -619,7 +647,7 @@
         )
     )
     
-    function wrap (context, proto, raw, desc = '') {
+    function wrap (context, proto, raw, vals, desc = '') {
         assert(context instanceof Scope)
         assert(is(proto, Prototype))
         assert(is(raw, ES.Function))
@@ -633,6 +661,8 @@
             err.assert(ok, !ok && err_msg_arg_quantity(r, g))
             // generate scope
             let scope = new Scope(use_context, proto.affect)
+            // inject static values
+            list(mapkv(vals, (k, v) => scope.declare(k, v)))
             // check arguments
             for (let i=0; i<proto.parameters.length; i++) {
                 let parameter = proto.parameters[i]
@@ -653,7 +683,7 @@
                     scope.register_immutable(arg)
                 }
                 // inject argument to scope
-                scope.data[name] = arg
+                scope.declare(name, arg)
             }
             // TODO: add frame to call stack (add info for debugging)
             let value = (
@@ -669,7 +699,7 @@
             ((...args) => invoke(args, null)),
             proto.parameters.length
         )
-        wrapped[WrapperInfo] = { context, invoke, proto, raw, desc }
+        wrapped[WrapperInfo] = { context, invoke, proto, raw, vals, desc }
         return wrapped
     }
     
