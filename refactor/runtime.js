@@ -600,6 +600,10 @@
                 return info.object
             }
         }
+        try_to_lookup (variable) {
+            assert(typeof variable == 'string')
+            return (this.has(variable))? variable: null
+        }
         find (variable) {
             assert(typeof variable == 'string')
             let affect = this.affect
@@ -883,6 +887,12 @@
                     scope.try_to_declare('self', self, true)
                     scope.try_to_declare('expose', expose, true)
                     I.raw(scope, caller_scope)
+                    if (scope.try_to_lookup('self') === self) {
+                        scope.unset('self')
+                    }
+                    if (scope.try_to_lookup('expose') === expose) {
+                        scope.unset('expose')
+                    }
                     // TODO: check if implement all interfaces
                     return self
                 }
