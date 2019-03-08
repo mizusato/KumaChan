@@ -42,7 +42,7 @@
     }
 
     function assert (value) {
-        if(!value) { throw new RuntimeError('Assertion Error') }
+        if(!value) { throw new RuntimeError('Assertion Failed') }
         return value
     }
 
@@ -61,6 +61,12 @@
             result.push(I)
         }
         return result
+    }
+
+    function *rev (list) {
+        for (let i=list.length-1; i>=0; i--) {
+            yield list[i]
+        }
     }
     
     function *map (iterable, f) {
@@ -104,7 +110,7 @@
         }
     }
 
-    function flth (object, f) {
+    function flkv (object, f) {
         let result = {}
         for (let key of Object.keys(object)) {
             if (f(key, object[key])) {
@@ -112,6 +118,14 @@
             }
         }
         return result
+    }
+
+    function *cat (...iterables) {
+        for (let iterable of iterables) {
+            for (let I of iterable) {
+                yield I
+            }
+        }
     }
     
     function join (iterable, separator) {
@@ -228,7 +242,7 @@
         return abstraction[Checker](value)
     }
 
-    function has(key, object) {
+    function has (key, object) {
         return Object.prototype.hasOwnProperty.call(object, key)
     }
 
@@ -275,6 +289,7 @@
     let Uni = ((...args) => union(args))      // (A,B,...) => A ∪ B ∪ ... 
     let Ins = ((...args) => intersect(args))  // (A,B,...) => A ∩ B ∩ ...
     let Not = (arg => complement(arg))        //  A => ∁ A
+    let Any = $(x => true)
 
     /**
      *  Category Object
@@ -284,13 +299,10 @@
      */
     
     class Category {
-        constructor (abstraction, branches) {
-            this[Checker] = (
-                (abstraction == null)?
-                    (union(Object.values(branches)))[Checker]:
-                    abstraction[Checker]
-            )
-            pour(this, branches)
+        constructor (precondition, branches) {
+            this.concept = Ins(precondition, union(Object.values(branches)))
+            this[Checker] = this.concept[Checker]
+            pour(this, mapval(branches, A => Ins(precondition, A)) )
         }
         get [Symbol.toStringTag]() {
             return 'Category'
@@ -333,8 +345,15 @@
         }),
         String: ES.String,
         Function: category(ES.Function, {
-            Wrapped: Ins(ES.Function, $(x => has(WrapperInfo, x))),
-            Simple: Ins(ES.Function, $(x => !has(WrapperInfo, x)))
+            Simple: $(f => !has(WrapperInfo, f)),
+            Wrapped: category(
+                $(f => has(WrapperInfo, f)),
+                {
+                    Sole: $(f => has('context', f[WrapperInfo])),
+                    Overload: $(f => has('functions', f[WrapperInfo])),
+                    Binding: $(f => has('original', f[WrapperInfo]))
+                }
+            )
         }),
         Abstract: category(
             $(
@@ -351,11 +370,9 @@
                 // TODO: Capsule
             }
         ),
-        Container: category(null, {
+        Container: category(ES.Object, {
             List: $(x => x instanceof Array),
-            Hash: Ins(ES.Object, $(
-                x => Object.getPrototypeOf(x) === Object.prototype
-            ))
+            Hash: $(x => Object.getPrototypeOf(x) === Object.prototype)
         })
         // TODO: Instance: $(x => x instanceof Instance)
     }
@@ -531,24 +548,48 @@
             }
         }
         check_assignable (variable) {
+            assert(typeof variable == 'string')
             return this.assignable.has(variable)
         }
         has (variable) {
+            assert(typeof variable == 'string')
             return has(variable, this.data)
         }
         declare (variable, initial_value, is_assignable = false) {
+            assert(typeof variable == 'string')
             assert(!this.has(variable))
             this.data[variable] = initial_value
             if (is_assignable) {
                 this.assignable.add(variable)
             }
         }
+        try_to_declare (variable, initial_value, is_assignable = false) {
+            assert(typeof variable == 'string')
+            if (!this.has(variable)) {
+                this.declare(variable, initial_value, is_assignable)
+            }
+        }
         assign (variable, new_value) {
+            assert(typeof variable == 'string')
             assert(this.has(variable))
             assert(this.assignable.has(variable))
             this.data[variable] = new_value
         }
+        force_declare (variable, initial_value) {
+            assert(typeof variable == 'string')
+            if (this.has(variable)) {
+                this.assign(variable, initial_value)
+            } else {
+                this.declare(variable, initial_value, true)
+            }
+        }
+        unset (variable) {
+            assert(typeof variable == 'string')
+            assert(this.has(variable))
+            delete this.data[variable]
+        }
         lookup (variable) {
+            assert(typeof variable == 'string')
             let info = this.find(variable)
             if (info == NotFound) {
                 return NotFound
@@ -560,6 +601,7 @@
             }
         }
         find (variable) {
+            assert(typeof variable == 'string')
             let affect = this.affect
             let mutable_depth = 0
             if (affect == 'local') {
@@ -646,6 +688,48 @@
             _('immutable reference passed as dirty argument {name}'), {name}
         )
     )
+
+    function check_args (args, proto, caller_scope, get_err_msg = false) {
+        // IMPORTANT: return string, "OK" = valid
+        let r = proto.parameters.length
+        let g = args.length
+        // check if argument quantity correct
+        if (r != g) {
+            return get_err_msg? err_msg_arg_quantity(r, g): 'NG'
+        }
+        // check constraints
+        for (let i=0; i<proto.parameters.length; i++) {
+            let parameter = proto.parameters[i]
+            let arg = args[i]
+            let name = parameter.name
+            // check if the argument matches constraint
+            if( !is(arg, parameter.constraint) ) {
+                return get_err_msg? err_msg_invalid_arg(name): 'NG'
+            }
+            // cannot pass immutable object as dirty argument
+            if (caller_scope != null) {
+                let is_dirty = parameter.pass_policy == 'dirty'
+                let is_immutable = caller_scope.check_immutable(arg)
+                if (is_dirty && is_immutable) {
+                    return get_err_msg? err_msg_immutable_dirty(name): 'NG'
+                }
+            }            
+        }
+        return 'OK'
+    }
+
+    function inject_args (args, proto, scope) {
+        for (let i=0; i<proto.parameters.length; i++) {
+            let parameter = proto.parameters[i]
+            let arg = args[i]
+            // if pass policy is immutable, register the argument
+            if (parameter.pass_policy == 'immutable') {
+                scope.register_immutable(arg)
+            }
+            // inject argument to scope
+            scope.declare(parameter.name, arg)
+        }
+    }
     
     function wrap (context, proto, vals, desc, raw) {
         assert(context instanceof Scope)
@@ -654,54 +738,67 @@
         assert(is(raw, ES.Function))
         assert(is(desc, Type.String))
         let err = new ErrorProducer(CallError, desc)
-        let invoke = function (args, caller_scope, use_context = context) {
-            // check if argument quantity correct
-            let r = proto.parameters.length
-            let g = args.length
-            let ok = (r == g)
-            err.assert(ok, !ok && err_msg_arg_quantity(r, g))
+        let invoke = (args, caller_scope, use_ctx = null, check = true) => {
+            // check arguments
+            if (check) {
+                let result = check_args(args, proto, caller_scope, true)
+                if (result != 'OK') {
+                    err.throw(result)
+                }
+            }
             // generate scope
-            let scope = new Scope(use_context, proto.affect)
-            // inject static values
+            let scope = new Scope(
+                (use_ctx !== null)? use_ctx: context,
+                proto.affect
+            )
+            inject_args(args, proto, scope)
             if (vals != null) {
                 list(mapkv(vals, (k, v) => scope.declare(k, v)))
             }
-            // check arguments
-            for (let i=0; i<proto.parameters.length; i++) {
-                let parameter = proto.parameters[i]
-                let arg = args[i]
-                let name = parameter.name
-                // check if the argument matches constraint
-                let ok = is(arg, parameter.constraint)
-                err.assert(ok, !ok && err_msg_invalid_arg(name))
-                // cannot pass immutable object as dirty argument
-                if (caller_scope != null) {
-                    let is_dirty = parameter.pass_policy == 'dirty'
-                    let is_immutable = caller_scope.check_immutable(arg)
-                    let ok = !(is_dirty && is_immutable)
-                    err.assert(ok, !ok && err_msg_immutable_dirty(name))
-                }
-                // if pass policy is immutable, register it
-                if (parameter.pass_policy == 'immutable') {
-                    scope.register_immutable(arg)
-                }
-                // inject argument to scope
-                scope.declare(name, arg)
-            }
-            let value = (
-                Function.prototype.call.call(raw, null, scope, caller_scope)
-            )
-            // check the return value
+            // call raw function
+            let value = raw(scope, caller_scope)
+            // check value
             err.assert(is(value, proto.value), _('invalid return value'))
-            return { value, scope }
+            return value
         }
         // wrap function
         let wrapped = give_arity(
             ((...args) => invoke(args, null)),
             proto.parameters.length
         )
+        // IMPORTANT: the [WrapperInfo] object should not be mutated
         wrapped[WrapperInfo] = { context, invoke, proto, vals, desc, raw }
         return wrapped
+    }
+
+    let FunctionList = list_of(Type.Function.Wrapped.Sole)
+
+    function overload (functions) {
+        assert(is(functions, FunctionList))
+        let invoke = function (args, caller_scope, use_context = null) {
+            for (let f of rev(functions)) {
+                let info = f[WrapperInfo]
+                if (check_args(args, info.proto, caller_scope) === 'OK') {
+                    return info.invoke(args, caller_scope, use_context)
+                }                
+            }
+        }
+        let o = ((...args) => invoke(args, null))
+        o[WrapperInfo] = { functions, invoke }
+        return o
+    }
+
+    function overload_added (f, o) {
+        assert(is(o, Type.Function.Wrapped.Overload))
+        return overload([...o[WrapperInfo].functions, f])
+    }
+
+    function overload_concated (o2, o1) {
+        assert(is(o2, Type.Function.Wrapped.Overload))
+        assert(is(o1, Type.Function.Wrapped.Overload))
+        return overload(list(
+            cat(o1[WrapperInfo].functions, o2[WrapperInfo].functions)
+        ))
     }
     
     function bind_context (f, context) {
@@ -723,11 +820,11 @@
         f => !has('oringinal', f[WrapperInfo])
     ))
     
-    function call (f, context, args) {
+    function call (f, caller_scope, args) {
         if (is(f, Type.Function.Wrapped)) {
             // TODO: add frame to call stack (add info for debugging)
             // TODO: remove frame from call stack
-            return (f[WrapperInfo].invoke(args, context)).value
+            return f[WrapperInfo].invoke(args, caller_scope)
         } else {
             return Function.prototype.apply.call(f, null, args)
         }
@@ -739,18 +836,19 @@
 
     let exp_err = new ErrorProducer(CallError, 'expose()')
 
-    function add_exposed_internal(object, object_list, method_hash, existing) {
+    function add_exposed_internal(internal, instance) {
+        // expose interface of internal object
         exp_err.assert(
-            object instanceof Instance,
+            internal instanceof Instance,
             _('unable to expose non-instance object')
         )
-        object_list.push(object)
-        for (let name of Object.keys(object.methods)) {
+        instance.exposed.push(internal)
+        for (let name of Object.keys(internal.methods)) {
             exp_err.assert(
-                !has(name, method_hash) && !has(name, existing),
+                !has(name, instance.methods),
                 F(_('conflict method name: {name}'), {name})
             )
-            method_hash[name] = object.methods[name]
+            instance.methods[name] = internal.methods[name]
         }        
     }
 
@@ -779,30 +877,12 @@
             assert(is(init, NonBinding))
             let I = init[WrapperInfo]
             this.construct = wrap(
-                null, I.proto, I.vals, I.desc, (s, caller_scope) => {
-                    let instance_scope_created = false
-                    let args = list(map(
-                        I.proto.parameters,
-                        p => var_lookup(s, p.name)
-                    ))
-                    // context for initializer (constructor)
-                    let init_context = new Scope(I.context, I.proto.affect)
-                    let exposed = []   // list of exposed object
-                    let bounded = {}   // methods of the instance
-                    // expose() can be called in constructor
-                    // to expose interfaces of internal objects
-                    init_context.declare('expose', (instance => {
-                        if (!instance_scope_created) {
-                            add_exposed_interal(
-                                instance, exposed, bounded, methods
-                            )
-                        }
-                    }))
-                    let scope = I.invoke(args, caller_scope, init_context)
-                    instance_scope_created = true
-                    // add interface of this class
-                    pour(bounded, mapval(methods, f => bind_context(f, scope)))
-                    let self = new Instance(this, scope, bounded, exposed)
+                null, I.proto, I.vals, I.desc, (scope, caller_scope) => {
+                    let self = new Instance(this, scope, methods)
+                    let expose = (I => add_exposed_interal(I, self))
+                    scope.try_to_declare('self', self, true)
+                    scope.try_to_declare('expose', expose, true)
+                    I.raw(scope, caller_scope)
                     // TODO: check if implement all interfaces
                     return self
                 }
@@ -818,11 +898,14 @@
     }
 
     class Instance {
-        constructor (class_object, scope, methods, exposed_internal) {
+        constructor (class_object, scope, methods) {
             this.abstraction = class_object
             this.scope = scope
-            this.methods = methods
-            this.exposed = exposed_internal
+            this.exposed = []
+            this.methods = mapval(methods, f => bind_context(f, scope))
+            for (let name of this.methods) {
+                this.scope.declare(name, this.methods[name])
+            }
         }
     }
 

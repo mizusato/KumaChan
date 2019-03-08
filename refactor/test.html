@@ -7,7 +7,8 @@
     <script type="text/javascript">
       let K = KumaChan
       let p = { affect: 'local', value: K.Global.data.Int, parameters: [ { name: 'x', constraint: K.Global.data.Int, pass_policy: 'immutable' }, { name: 'y', constraint: K.Global.data.Int, pass_policy: 'immutable' } ] }
-      K.wrap(K.Global, p, null, 'test()', scope => (console.log(scope),0))
+      let f = K.wrap(K.Global, p, null, 'test()', scope => (console.log(scope),0))
+      console.log(f(1,2))
     </script>
   </head>
   <body>
