@@ -24,6 +24,7 @@
     class AssignError extends RuntimeError {}
     class AccessError extends RuntimeError {}
     class CallError extends RuntimeError {}
+    class InitError extends RuntimeError {}
     
     class ErrorProducer {
         constructor (error, info = '') {
@@ -177,12 +178,16 @@
     
     function forall (iterable, f) {
         // ∀ I ∈ iterable, f(I) == true
-        return fold(iterable, true, ((e,v) => v && f(e)), (v => v == false))
+        return fold(
+            iterable, true, ((e,v,i) => v && f(e,i)), (v => v == false)
+        )
     }
     
     function exists (iterable, f) {
         // ∃ I ∈ iterable, f(I) == true
-        return fold(iterable, false, ((e,v) => v || f(e)), (v => v == true))
+        return fold(
+            iterable, false, ((e,v,i) => v || f(e,i)), (v => v == true)
+        )
     }
 
     function chain (functions) {
@@ -223,7 +228,8 @@
 
     let Checker = Symbol('Checker')
     let WrapperInfo = Symbol('WrapperInfo')
-    let Symbols = { Checker, WrapperInfo }
+    let BranchInfo = Symbol('BranchInfo')
+    let Symbols = { Checker, WrapperInfo, BranchInfo }
 
     /**
      *  Abstraction Mechanics
@@ -300,12 +306,39 @@
     
     class Category {
         constructor (precondition, branches) {
-            this.concept = Ins(precondition, union(Object.values(branches)))
-            this[Checker] = this.concept[Checker]
-            pour(this, mapval(branches, A => Ins(precondition, A)) )
+            let concept = Ins(precondition, union(Object.values(branches)))
+            this[Checker] = concept[Checker]
+            pour(this, mapval(branches, A => {
+                if (A instanceof Category) {
+                    return new Category(
+                        Ins(precondition, A[BranchInfo].precondition),
+                        A[BranchInfo].branches
+                    )
+                } else {
+                    return Ins(precondition, A)
+                }
+            }))
+            this[BranchInfo] = { precondition, branches }
         }
         get [Symbol.toStringTag]() {
             return 'Category'
+        }
+        static get_branch (object, category) {
+            assert(is(object, category[BranchInfo].precondition))
+            let branches = category[BranchInfo].branches
+            for (let b of Object.keys(branches)) {
+                if (is(object, branches[b])) {
+                    if (branches[b] instanceof Category) {
+                        return Array.concat(
+                            [b],
+                            Category.get_branch(object, branches[b])
+                        )
+                    } else {
+                        return [b]
+                    }
+                }
+            }
+            assert(false)
         }
     }
     
@@ -335,17 +368,10 @@
         Null: ES.Null,
         Symbol: ES.Symbol,
         Bool: ES.Boolean,
-        Number: category(ES.Number, {
-            Int: $(
-                x => Number.isInteger(x) && assert(Number.isSafeInteger(x))
-            ),
-            Safe: $(x => Number.isSafeInteger(x)),
-            Finite: $(x => Number.isFinite(x)),
-            NaN: $(x => Number.isNaN(x))
-        }),
+        Number: ES.Number,
         String: ES.String,
         Function: category(ES.Function, {
-            Simple: $(f => !has(WrapperInfo, f)),
+            Raw: $(f => !has(WrapperInfo, f)),
             Wrapped: category(
                 $(f => has(WrapperInfo, f)),
                 {
@@ -366,15 +392,40 @@
                 Category: $(x => x instanceof Category),
                 Singleton: $(x => x instanceof Singleton),
                 Enum: $(x => x instanceof Enum),
-                Schema: $(x => x instanceof Schema)
-                // TODO: Capsule
+                Schema: $(x => x instanceof Schema),
+                Class: $(x => x instanceof Class),
+                Signature: $(x => x instanceof Signature),
+                Interface: $(x => x instanceof Interface)
             }
         ),
         Container: category(ES.Object, {
             List: $(x => x instanceof Array),
             Hash: $(x => Object.getPrototypeOf(x) === Object.prototype)
-        })
-        // TODO: Instance: $(x => x instanceof Instance)
+        }),
+        Instance: $(x => x instanceof Instance)
+    }
+    
+    let UserlandTypeRename = {
+        Sole: 'Function',
+        Binding: 'Function',
+        Raw: 'Function(ES)',
+    }
+    
+    function get_type(object) {
+        let type = 'Unknown'
+        for (let T of Object.keys(Type)) {
+            if (is(object, Type[T])) {
+                if (Type[T] instanceof Category) {
+                    let l = Category.get_branch(object, Type[T])
+                    type = l[l.length-1]
+                    break
+                } else {
+                    type = T
+                    break
+                }
+            }
+        }
+        return UserlandTypeRename[type] || type
     }
 
     /**
@@ -384,7 +435,7 @@
      *    in this language. If S is a singleton object, it means that
      *    S = { x | x === S }, i.e. (x ∈ S) if and only if (x === S).
      *  The singleton object mechanics is used to create special values,
-     *    such as Nil, Void, Done, which are available by default.
+     *    such as Nil and Void, which are available by default.
      */
 
     class Singleton {
@@ -400,7 +451,6 @@
 
     let Nil = new Singleton('Nil')
     let Void = new Singleton('Void')
-    let Done = new Singleton('Done')
 
     /**
      *  Enumeration Object
@@ -422,6 +472,11 @@
         $(l => forall(l, e => is(e, A)))
     ))
     let StringList = list_of(Type.String)
+    
+    let hash_of = (A => Ins(
+        Type.Container.Hash,
+        $(h => forall(Object.keys(h), k => is(h[k], A)))
+    ))
 
     let one_of = ((...items) => new Enum(items))
 
@@ -842,6 +897,7 @@
 
     function add_exposed_internal(internal, instance) {
         // expose interface of internal object
+        assert(!instance.init_finished)
         exp_err.assert(
             internal instanceof Instance,
             _('unable to expose non-instance object')
@@ -877,8 +933,12 @@
 
     class Class {
         constructor (impls, init, methods, desc) {
-            pour(this, { impls, init, methods, desc })
+            assert(is(impls, list_of(
+                $(A => A instanceof Class || A instanceof Interface)
+            )))
             assert(is(init, NonBinding))
+            // these properties should not be mutated
+            pour(this, { impls, init, methods, desc })
             let I = init[WrapperInfo]
             this.construct = wrap(
                 null, I.proto, I.vals, I.desc, (scope, caller_scope) => {
@@ -893,7 +953,28 @@
                     if (scope.try_to_lookup('expose') === expose) {
                         scope.unset('expose')
                     }
+                    for (let I of impls) {
+                        if (I instanceof Class) {
+                            if (exists(self.exposed, J => is(J, I))) {
+                                continue
+                            } else {
+                                (new ErrorProducer(InitError, desc)).throw(
+                                    F(_('{self} does not expose instance of {req}'), { self: desc, req: I.desc })
+                                )
+                            }
+                        } else {
+                            assert(I instanceof Interface)
+                            if (is(self, I)) {
+                                continue
+                            } else {
+                                (new ErrorProducer(InitError, desc)).throw(
+                                    F(_('{self} does not implement {req}'), { self: desc, req: I.desc })
+                                )
+                            }
+                        }
+                    }
                     // TODO: check if implement all interfaces
+                    self.init_finished = true
                     return self
                 }
             )
@@ -905,10 +986,14 @@
                 }
             })
         }
+        get [Symbol.toStringTag]() {
+            return 'Class'
+        }
     }
 
     class Instance {
         constructor (class_object, scope, methods) {
+            // these properties should not be mutated
             this.abstraction = class_object
             this.scope = scope
             this.exposed = []
@@ -916,6 +1001,66 @@
             for (let name of this.methods) {
                 this.scope.declare(name, this.methods[name])
             }
+            this.init_finished = false
+        }
+        get [Symbol.toStringTag]() {
+            return 'Instance'
+        }
+    }
+    
+    let Input = list_of(Type.Abstract)
+    let Ouput = Type.Abstract
+    
+    class Signature {
+        constructor (input, ouput) {
+            assert(is(input, FunInput))
+            assert(is(output, Output))
+            // these properties should not be mutated
+            this.input = input
+            this.output = output
+            this[Checker] = (f => {
+                if (is(f, Type.Function.Binding)) {
+                    f = f[WrapperInfo].original
+                }
+                if (is(f, Type.Function.Sole)) {
+                    let proto = f[WrapperInfo].proto
+                    return (proto.value === this.output) && (
+                        proto.parameters.length == this.input.length
+                    ) && forall(
+                        this.input,
+                        (I,i) => proto.parameters[i].constraint === I
+                    )
+                } else {
+                    return false
+                }
+            })
+        }
+        get [Symbol.toStringTag]() {
+            return 'Signature'
+        }
+    }
+    
+    let MethodTable = hash_of(Signature)
+    
+    class Interface {
+        constructor (method_table, desc) {
+            assert(is(method_table, MethodTable))
+            assert(is(desc, Type.String))
+            // these properties should not be mutated
+            this.method_table = method_table
+            this.desc = desc
+            this[Checker] = (instance => {
+                if (instance instanceof Instance) {
+                    return forall(Object.keys(this.method_table), name => (
+                        is(instance.methods[name], this.method_table[name])
+                    ))
+                } else {
+                    return false
+                }
+            })
+        }
+        get [Symbol.toStringTag]() {
+            return 'Interface'
         }
     }
 
@@ -928,15 +1073,26 @@
     pour(Global.data, {
         Nil: Nil,
         Void: Void,
-        Done: Done,
         undefined: undefined,
         Undefined: Type.Undefined,
         null: null,
         Null: Type.Null,
         Symbol: Type.Symbol,
         Bool: Type.Bool,
-        Number: Type.Number,
-        Int: Type.Number.Int,
+        Number: category(Type.Number, {
+            Safe: $(x => Number.isSafeInteger(x)),
+            Finite: $(x => Number.isFinite(x)),
+            NaN: $(x => Number.isNaN(x))
+        }),
+        Int: Ins(Type.Number, $(
+            x => Number.isInteger(x) && assert(Number.isSafeInteger(x))
+        )),
+        String: Type.String,
+        Function: Uni(
+            Type.Function.Wrapped.Sole,
+            Type.Function.Wrapped.Binding
+        ),
+        Overload: Type.Function.Overload,
         Abstract: Type.Abstract,
         List: Type.Container.List,
         Hash: Type.Container.Hash,
@@ -948,7 +1104,8 @@
     
     let export_object = {
         is, has, $, Uni, Ins, Not, Type, Symbols,
-        Global, var_lookup, var_declare, var_assign, wrap
+        Global, var_lookup, var_declare, var_assign, wrap,
+        get_type
     }
     let export_name = 'KumaChan'
     let global_scope = (typeof window == 'undefined')? global: window
