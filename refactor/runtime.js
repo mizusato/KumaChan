@@ -919,7 +919,7 @@
             this.construct = wrap(
                 null, I.proto, I.vals, I.desc, (scope, caller_scope) => {
                     let self = new Instance(this, scope, methods)
-                    let expose = (I => add_exposed_interal(I, self))
+                    let expose = (I => (add_exposed_interal(I, self), I))
                     scope.try_to_declare('self', self, true)
                     scope.try_to_declare('expose', expose, true)
                     I.raw(scope, caller_scope)
