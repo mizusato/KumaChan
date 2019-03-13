@@ -1,19 +1,24 @@
 (function() {
 
     /**
-     *  String Format Tool
+     *  Error Messages
      */
-    
-    function format (string, table) {
-        // Avoid using ES6 template string for l10n propose.
-        return string.replace(/{([^}]+)}/g, (matched, p0) => {
-            return (typeof table[p0] != 'undefined')? table[p0]: p0
-        })
+
+    let MSG = {
+        variable_not_found: name => `variable ${name} not found`,
+        variable_declared: name => `variable ${name} already declared`,
+        variable_not_declared: name => `variable ${name} not declared`,
+        variable_const: name => `variable ${name} is not re-assignable`,
+        variable_immutable: name => `outer variable ${name} is immutable`,
+        arg_wrong_quantity: (r, g) => `${r} arguments required but ${g} given`,
+        arg_invalid: name => `invalid argument ${name}`,
+        arg_immutable: name => `immutable value for dirty argument ${name}`,
+        retval_invalid: 'invalid return value',
+        expose_non_instance: 'unable to expose non-instance object',
+        method_name_conflict: name => `conflict method name: ${name}`,
+        impl_not_exposing: C => `instance does not expose instance of ${C}`,
+        impl_not_matching: I => `instance does not implement ${I}`
     }
-    
-    let F = format
-    
-    let _ = (x => x)  // placeholder for l10n
 
     /**
      *  Error Definition & Handling
@@ -699,36 +704,21 @@
     function var_lookup(scope, name) {
         assert(scope instanceof Scope)
         let value = scope.lookup(name)
-        name_err.assert(
-            value != NotFound, 
-            F(_('variable {name} not found'), {name})
-        )
+        name_err.assert(value != NotFound, MSG.variable_not_found(name))
         return value
     }
     
     function var_declare(scope, name, initial_value) {
         assert(scope instanceof Scope)
-        name_err.assert(
-            !scope.has(name),
-            F(_('variable {name} already declared'), {name})
-        )
+        name_err.assert(!scope.has(name), MSG.variable_declared(name))
         scope.declare(name, initial_value)
     }
     
     function var_assign(scope, name, new_value) {
         let info = scope.find(name)
-        name_err.assert(
-            info != NotFound,
-            F(_('variable {name} not declared'), {name})
-        )
-        assign_err.assert(
-            info.is_assignable,
-            F(_('variable {name} is not re-assignable'), {name})
-        )
-        access_err.assert(
-            info.is_mutable,
-            F(_('variable {name} belongs to immutable scope'), {name})
-        )
+        name_err.assert(info != NotFound, MSG.variable_not_declared(name))
+        assign_err.assert(info.is_assignable, MSG.variable_const(name))
+        access_err.assert(info.is_mutable, MSG.variable_immutable(name))
         info.scope.assign(name, new_value)
     }
     
@@ -736,25 +726,13 @@
      *  Function Wrapper
      */
     
-    let err_msg_arg_quantity = (
-        (r, g) => F(_('{r} arguments required but {g} given'), {r, g})
-    )
-    let err_msg_invalid_arg = (
-        name => F(_('invalid argument {name}'), {name})
-    )
-    let err_msg_immutable_dirty = (
-        name => F(
-            _('immutable reference passed as dirty argument {name}'), {name}
-        )
-    )
-
     function check_args (args, proto, caller_scope, get_err_msg = false) {
         // IMPORTANT: return string, "OK" = valid
         let r = proto.parameters.length
         let g = args.length
         // check if argument quantity correct
         if (r != g) {
-            return get_err_msg? err_msg_arg_quantity(r, g): 'NG'
+            return get_err_msg? MSG.arg_wrong_quantity(r, g): 'NG'
         }
         // check constraints
         for (let i=0; i<proto.parameters.length; i++) {
@@ -763,14 +741,14 @@
             let name = parameter.name
             // check if the argument matches constraint
             if( !is(arg, parameter.constraint) ) {
-                return get_err_msg? err_msg_invalid_arg(name): 'NG'
+                return get_err_msg? MSG.arg_invalid(name): 'NG'
             }
             // cannot pass immutable object as dirty argument
             if (caller_scope != null) {
                 let is_dirty = parameter.pass_policy == 'dirty'
                 let is_immutable = caller_scope.check_immutable(arg)
                 if (is_dirty && is_immutable) {
-                    return get_err_msg? err_msg_immutable_dirty(name): 'NG'
+                    return get_err_msg? MSG.arg_immutable(name): 'NG'
                 }
             }            
         }
@@ -817,7 +795,7 @@
             // call raw function
             let value = raw(scope, caller_scope)
             // check value
-            err.assert(is(value, proto.value), _('invalid return value'))
+            err.assert(is(value, proto.value), MSG.err_retval_invalid)
             return value
         }
         // wrap function
@@ -898,15 +876,12 @@
     function add_exposed_internal(internal, instance) {
         // expose interface of internal object
         assert(!instance.init_finished)
-        exp_err.assert(
-            internal instanceof Instance,
-            _('unable to expose non-instance object')
-        )
+        exp_err.assert(internal instanceof Instance, MSG.expose_non_instance)
         instance.exposed.push(internal)
         for (let name of Object.keys(internal.methods)) {
             exp_err.assert(
                 !has(name, instance.methods),
-                F(_('conflict method name: {name}'), {name})
+                MSG.method_name_conflict(name)
             )
             instance.methods[name] = internal.methods[name]
         }        
@@ -940,6 +915,7 @@
             // these properties should not be mutated
             pour(this, { impls, init, methods, desc })
             let I = init[WrapperInfo]
+            let err = new ErrorProducer(InitError, desc)
             this.construct = wrap(
                 null, I.proto, I.vals, I.desc, (scope, caller_scope) => {
                     let self = new Instance(this, scope, methods)
@@ -955,22 +931,16 @@
                     }
                     for (let I of impls) {
                         if (I instanceof Class) {
-                            if (exists(self.exposed, J => is(J, I))) {
-                                continue
-                            } else {
-                                (new ErrorProducer(InitError, desc)).throw(
-                                    F(_('{self} does not expose instance of {req}'), { self: desc, req: I.desc })
-                                )
-                            }
+                            err.assert(
+                                exists(self.exposed, J => is(J, I)),
+                                MSG.impl_not_exposing(I.desc)
+                            )
                         } else {
                             assert(I instanceof Interface)
-                            if (is(self, I)) {
-                                continue
-                            } else {
-                                (new ErrorProducer(InitError, desc)).throw(
-                                    F(_('{self} does not implement {req}'), { self: desc, req: I.desc })
-                                )
-                            }
+                            err.assert(
+                                I.check(self),
+                                MSG.impl_not_matching(I.desc)
+                            )
                         }
                     }
                     // TODO: check if implement all interfaces
@@ -1051,13 +1021,20 @@
             this.desc = desc
             this[Checker] = (instance => {
                 if (instance instanceof Instance) {
-                    return forall(Object.keys(this.method_table), name => (
-                        is(instance.methods[name], this.method_table[name])
-                    ))
+                    return exists(instance.abstraction.impls, x => x === this)
                 } else {
                     return false
                 }
             })
+        }
+        check (instance) {
+            if (instance instanceof Instance) {
+                return forall(Object.keys(this.method_table), name => (
+                    is(instance.methods[name], this.method_table[name])
+                ))
+            } else {
+                return false
+            }
         }
         get [Symbol.toStringTag]() {
             return 'Interface'
