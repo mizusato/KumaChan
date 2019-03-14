@@ -6,10 +6,11 @@
     <script type="text/javascript" src="runtime.js"></script>
     <script type="text/javascript">
       let K = KumaChan
-      let p = { affect: 'local', value: K.Global.data.Int, parameters: [ { name: 'x', constraint: K.Global.data.Int, pass_policy: 'immutable' }, { name: 'y', constraint: K.Global.data.Int, pass_policy: 'immutable' } ] }
+      let G = K.G
+      let p = { affect: 'local', value: G.Int, parameters: [ { name: 'x', constraint: G.Int, pass_policy: 'immutable' }, { name: 'y', constraint: G.Int, pass_policy: 'immutable' } ] }
       let f = K.wrap(K.Global, p, null, 'test()', scope => (console.log(scope),0))
       console.log(f(1,2))
-      let F = new KumaChan.Signature([KumaChan.Global.data.Int,KumaChan.Global.data.Int],KumaChan.Global.data.Int)
+      let F = K.sig([KumaChan.Global.data.Int,KumaChan.Global.data.Int],KumaChan.Global.data.Int)
       KumaChan.is(f,F)
     </script>
   </head>

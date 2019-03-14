@@ -1,3 +1,6 @@
+'use strict';
+
+
 (function() {
 
     /**
@@ -17,7 +20,10 @@
         expose_non_instance: 'unable to expose non-instance object',
         method_name_conflict: name => `conflict method name: ${name}`,
         impl_not_exposing: C => `instance does not expose instance of ${C}`,
-        impl_not_matching: I => `instance does not implement ${I}`
+        impl_not_matching: I => `instance does not implement ${I}`,
+        method_not_matching: name => (
+            `method ${name}() does not match required signature`
+        )
     }
 
     /**
@@ -272,6 +278,7 @@
         constructor (checker) {
             assert(typeof checker == 'function')
             this[Checker] = checker
+            Object.freeze(this)
         }
         get [Symbol.toStringTag]() {
             return 'Concept'
@@ -323,7 +330,8 @@
                     return Ins(precondition, A)
                 }
             }))
-            this[BranchInfo] = { precondition, branches }
+            this[BranchInfo] = Object.freeze({ precondition, branches })
+            Object.freeze(this)
         }
         get [Symbol.toStringTag]() {
             return 'Category'
@@ -448,6 +456,7 @@
             assert(typeof description == 'string')
             this.description = description
             this[Checker] = (x => x === this)
+            Object.freeze(this)
         }
         get [Symbol.toStringTag]() {
             return `Singleton<${this.description}>`
@@ -468,7 +477,8 @@
             assert(is(str_list, StringList))
             let item_set = new Set(str_list)
             this[Checker] = (x => item_set.has(x))
-            this.item_list = list(map(str_list, x => x))
+            this.item_list = Object.freeze(list(map(str_list, x => x)))
+            Object.freeze(this)
         }
     }
 
@@ -500,6 +510,7 @@
                     && forall(Object.keys(table), k => is(x[k], table[k]))
                     && requirement(x)
             ))
+            Object.freeze(this)
         }
     }
 
@@ -594,6 +605,7 @@
             this.assignable = new Set() 
             // <ACL> = WeakMap { Object -> Immutable? 1: undefined }
             this.ACL = new WeakMap()
+            Object.freeze(this)
         }
         register_immutable (object) {
             if (typeof object == 'object') {
@@ -803,15 +815,16 @@
             ((...args) => invoke(args, null)),
             proto.parameters.length
         )
-        // IMPORTANT: the [WrapperInfo] object should not be mutated
-        wrapped[WrapperInfo] = { context, invoke, proto, vals, desc, raw }
+        wrapped[WrapperInfo] = Object.freeze(
+            { context, invoke, proto, vals, desc, raw }
+        )
         return wrapped
     }
 
-    let FunctionList = list_of(Type.Function.Wrapped.Sole)
+    let SoleList = list_of(Type.Function.Wrapped.Sole)
 
     function overload (functions) {
-        assert(is(functions, FunctionList))
+        assert(is(functions, SoleList))
         let invoke = function (args, caller_scope, use_context = null) {
             for (let f of rev(functions)) {
                 let info = f[WrapperInfo]
@@ -821,7 +834,8 @@
             }
         }
         let o = ((...args) => invoke(args, null))
-        o[WrapperInfo] = { functions, invoke }
+        functions = Object.freeze(functions)
+        o[WrapperInfo] = Object.freeze({ functions, invoke })
         return o
     }
 
@@ -908,23 +922,29 @@
         }
     }
 
+    let MethodTable = hash_of(Type.Function.Wrapped)
+    let GeneralInterface = Uni(Type.Abstract.Class, Type.Abstract.Interface)
+    let GeneralList = list_of(GeneralInterface)
+
     class Class {
         constructor (impls, init, methods, desc) {
-            assert(is(impls, list_of(
-                $(A => A instanceof Class || A instanceof Interface)
-            )))
-            init = cancel_binding(init)
-            // these properties should not be mutated
-            pour(this, { impls, init, methods, desc })
-            let I = init[WrapperInfo]
+            assert(is(impls, GeneralList))
+            assert(is(init, Type.Function.Wrapped))
+            assert(is(methods, MethodTable))
+            assert(is(desc, Type.String))
+            this.impls = Object.freeze(impls)
+            this.init = cancel_binding(init)
+            this.methods = Object.freeze(methods)
+            this.desc = desc
+            let F = init[WrapperInfo]
             let err = new ErrorProducer(InitError, desc)
-            this.construct = wrap(
-                null, I.proto, I.vals, I.desc, (scope, caller_scope) => {
+            this.create = wrap(
+                F.context, F.proto, F.vals, F.desc, (scope, caller_scope) => {
                     let self = new Instance(this, scope, methods)
                     let expose = (I => (add_exposed_interal(I, self), I))
                     scope.try_to_declare('self', self, true)
                     scope.try_to_declare('expose', expose, true)
-                    I.raw(scope, caller_scope)
+                    F.raw(scope, caller_scope)
                     if (scope.try_to_lookup('self') === self) {
                         scope.unset('self')
                     }
@@ -934,29 +954,29 @@
                     for (let I of impls) {
                         if (I instanceof Class) {
                             err.assert(
-                                exists(self.exposed, J => is(J, I)),
+                                is_instance_of(I, self),
                                 MSG.impl_not_exposing(I.desc)
                             )
-                        } else {
-                            assert(I instanceof Interface)
+                        } else if (I instanceof Interface) {
+                            let result = I.check_and_apply_defaults(self)
                             err.assert(
-                                I.check(self),
-                                MSG.impl_not_matching(I.desc)
+                                result == 'OK',
+                                MSG.impl_not_matching(I.desc) + ': ' + result
                             )
                         }
                     }
-                    // TODO: check if implement all interfaces
-                    self.init_finished = true
+                    self.init_finish()
                     return self
                 }
             )
             this[Checker] = (object => {
                 if (object instanceof Instance) {
-                    return is_instance_of(this, object)
+                    return exists(object.abstractions.impls, I => I === this)
                 } else {
                     return false
                 }
             })
+            Object.freeze(this)
         }
         get [Symbol.toStringTag]() {
             return 'Class'
@@ -965,7 +985,6 @@
 
     class Instance {
         constructor (class_object, scope, methods) {
-            // these properties should not be mutated
             this.abstraction = class_object
             this.scope = scope
             this.exposed = []
@@ -974,6 +993,12 @@
                 this.scope.declare(name, this.methods[name])
             }
             this.init_finished = false
+            Object.freeze(this)
+        }
+        init_finish () {
+            Object.freeze(this.exposed)
+            Object.freeze(this.methods)
+            this.init_finished = true
         }
         get [Symbol.toStringTag]() {
             return 'Instance'
@@ -996,8 +1021,7 @@
         constructor (input, output) {
             assert(is(input, Input))
             assert(is(output, Output))
-            // these properties should not be mutated
-            this.input = input
+            this.input = Object.freeze(input)
             this.output = output
             this[Checker] = (f => {
                 f = cancel_binding(f)
@@ -1013,24 +1037,27 @@
                     return false
                 }
             })
+            Object.freeze(this)
         }
         get [Symbol.toStringTag]() {
             return 'Signature'
         }
     }
+
+    function sig (input, output) {
+        return new Signature(input, output)
+    }
     
-    let MethodTable = hash_of(Signature)
-    let MethodHash = hash_of(Function.Wrapped)
+    let SignTable = hash_of(Type.Abstract.Signature)
     
     class Interface {
-        constructor (method_table, desc, defaults = {}) {
-            assert(is(method_table, MethodTable))
+        constructor (sign_table, defaults = {}, desc = '') {
+            assert(is(sign_table, SignTable))
+            assert(is(defaults, MethodTable))
             assert(is(desc, Type.String))
-            assert(is(defaults, Type.Container.Hash))
-            // these properties should not be mutated
-            this.method_table = method_table
+            this.sign_table = Object.freeze(sign_table)
+            this.defaults = Object.freeze(defaults)
             this.desc = desc
-            this.defaults = defaults
             this[Checker] = (instance => {
                 if (instance instanceof Instance) {
                     return exists(instance.abstraction.impls, x => x === this)
@@ -1038,19 +1065,65 @@
                     return false
                 }
             })
+            Object.freeze(this)
+        }
+        check_and_apply_defaults (instance) {
+            assert(instance instanceof Instance)
+            let has_defaults = (this.defaults.length > 0)
+            let interface_scope = has_defaults? new Scope(null): null
+            for (let name of Object.keys(this.sign_table)) {
+                let method = instance.methods[name]                
+                if (is(method, this.sign_table[name])) {
+                    if (has_defaults) {
+                        interface_scope.declare(name, bind_context())
+                    }
+                } else {
+                    return MSG.method_not_matching(name)
+                }
+            }
+            for (let name of Object.keys(this.defaults)) {
+                assert(has(name, this.sign_table))
+                if (!has(name, instance.methods)) {
+                    instance.methods[name] = bind_context(
+                        this.defaults[name], interface_scope
+                    )
+                }
+            }            
+            return 'OK'
         }
         check (instance) {
             if (instance instanceof Instance) {
-                return forall(Object.keys(this.method_table), name => (
-                    is(instance.methods[name], this.method_table[name])
+                return forall(Object.keys(this.sign_table), name => (
+                    is(instance.methods[name], this.sign_table[name])
                 ))
             } else {
                 return false
             }
         }
+        apply_defaults (instance) {
+            assert(!instance.init_finished)
+            let scope = new Scope(null)
+            
+        }
         get [Symbol.toStringTag]() {
             return 'Interface'
         }
+    }
+
+    function create_interface (desc, table) {
+        let sign_table = mapval(table, v => {
+            if (is(v, Type.Function.Wrapped)) {
+                let proto = v[WrapperInfo].proto
+                return new Signature(
+                    list(map(proto.parameters, p => p.constraint)),
+                    proto.value
+                )  
+            } else {
+                return v
+            }
+        })
+        let defaults = flkv(table, (k,v) => is(v, Type.Function.Wrapped))
+        return new Interface(sign_table, defaults, desc)
     }
 
     /**
@@ -1058,6 +1131,7 @@
      */
     
     let Global = new Scope(null)
+    let G = Global.data
     
     pour(Global.data, {
         Nil: Nil,
@@ -1093,8 +1167,8 @@
     
     let export_object = {
         is, has, $, Uni, Ins, Not, Type, Symbols,
-        Global, var_lookup, var_declare, var_assign, wrap,
-        get_type, Signature
+        Global, G, var_lookup, var_declare, var_assign, wrap,
+        get_type, sig, create_interface
     }
     let export_name = 'KumaChan'
     let global_scope = (typeof window == 'undefined')? global: window
