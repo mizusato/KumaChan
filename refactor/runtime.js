@@ -4,6 +4,12 @@
 (function() {
 
     /**
+     *  Global Scope (Uninitialized)
+     */
+
+    let Global = null
+
+    /**
      *  Error Messages
      */
 
@@ -585,6 +591,25 @@
         value: Type.Abstract,
         parameters: ParameterList
     }), $( proto => no_repeat(map(proto.parameters, p => p.name)) ))
+
+    let FlagValue = { '*': 'natural', '&': 'dirty' }
+
+    function parse_decl (string) {
+        let match = string.match(/([^ ]+) ([^\(]+)\(([^\)]*)\) -> (.+)/)
+        let [_, affect, name, params_str, value_str] = match
+        let parameters = list(map(params_str.split(','), para_str => {
+            para_str = para_str.trim()
+            let match = para_str.match(/([^ ]+) (\*|\&)?(.+)/)
+            let [_, type_str, policy_str, name] = match
+            let constraint = Global.lookup(type_str)
+            let pass_policy = policy_str? FlagValue[policy_str]: 'immutable'
+            return { name, constraint, pass_policy }
+        }))
+        let value = Global.lookup(value_str)
+        let proto = { affect, parameters, value }
+        assert(is(proto, Prototype))
+        return { name, proto }
+    }
     
     /**
      *  Scope Object
@@ -815,9 +840,9 @@
             ((...args) => invoke(args, null)),
             proto.parameters.length
         )
-        wrapped[WrapperInfo] = Object.freeze(
-            { context, invoke, proto, vals, desc, raw }
-        )
+        wrapped[WrapperInfo] = Object.freeze({
+            context, invoke, proto, vals, desc, raw
+        })
         return wrapped
     }
 
@@ -881,6 +906,16 @@
         } else {
             return Function.prototype.apply.call(f, null, args)
         }
+    }
+
+    function fun (decl_string, body) {
+        let parsed = parse_decl(decl_string)
+        return wrap(Global, parsed.proto, null, parsed.name, scope => {
+            return body.apply(
+                null,
+                parsed.proto.parameters.map(p => scope.lookup(p.name))
+            )
+        })
     }
 
     /**
@@ -1127,10 +1162,10 @@
     }
 
     /**
-     *  Global Scope
+     *  Initialize Global Scope
      */
     
-    let Global = new Scope(null)
+    Global = new Scope(null)
     let G = Global.data
     
     pour(Global.data, {
@@ -1168,7 +1203,7 @@
     let export_object = {
         is, has, $, Uni, Ins, Not, Type, Symbols,
         Global, G, var_lookup, var_declare, var_assign, wrap,
-        get_type, sig, create_interface
+        get_type, sig, create_interface, parse_decl, fun
     }
     let export_name = 'KumaChan'
     let global_scope = (typeof window == 'undefined')? global: window

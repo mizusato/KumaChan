@@ -7,11 +7,13 @@
     <script type="text/javascript">
       let K = KumaChan
       let G = K.G
+      let fun = K.fun
       let p = { affect: 'local', value: G.Int, parameters: [ { name: 'x', constraint: G.Int, pass_policy: 'immutable' }, { name: 'y', constraint: G.Int, pass_policy: 'immutable' } ] }
       let f = K.wrap(K.Global, p, null, 'test()', scope => (console.log(scope),0))
       console.log(f(1,2))
       let F = K.sig([KumaChan.Global.data.Int,KumaChan.Global.data.Int],KumaChan.Global.data.Int)
       KumaChan.is(f,F)
+      K.parse_decl('local f(Int x, Hash &y, List *z) -> String')
     </script>
   </head>
   <body>
