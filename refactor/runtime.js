@@ -1002,20 +1002,20 @@
     }
 
     function is_direct_instance_of (class_, instance) {
-        assert(is(class_ instanceof Class))
-        assert(is(instance instanceof Instance))
+        assert(class_ instanceof Class)
+        assert(instance instanceof Instance)
         return (instance.abstraction === class_)
     }
 
     function is_instance_of (class_, instance) {
-        assert(is(class_ instanceof Class))
-        assert(is(instance instanceof Instance))
+        assert(class_ instanceof Class)
+        assert(instance instanceof Instance)
         if (is_direct_instance_of(class_, instance)) {
             return true
         } else {
             return exists (
                 instance.exposed,
-                E => is_instance_of(E.class_, instance)
+                e => is_instance_of(class_, e)
             )
         }
     }
@@ -1039,7 +1039,7 @@
             this.create = wrap(
                 F.context, F.proto, F.vals, F.desc, scope => {
                     let self = new Instance(this, scope, methods)
-                    let expose = (I => (add_exposed_interal(I, self), I))
+                    let expose = (I => (add_exposed_internal(I, self), I))
                     scope.try_to_declare('self', self, true)
                     scope.try_to_declare('expose', expose, true)
                     F.raw(scope)
@@ -1069,7 +1069,10 @@
             )
             this[Checker] = (object => {
                 if (object instanceof Instance) {
-                    return exists(object.abstractions.impls, I => I === this)
+                    return (
+                        object.abstraction === this
+                        || exists(object.abstraction.impls, I => I === this)
+                    )
                 } else {
                     return false
                 }
