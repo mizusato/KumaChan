@@ -14,6 +14,7 @@
      */
 
     let MSG = {
+        schema_invalid_default: f => `invalid default value for field ${f}`,
         variable_not_found: name => `variable ${name} not found`,
         variable_declared: name => `variable ${name} already declared`,
         variable_not_declared: name => `variable ${name} not declared`,
@@ -37,6 +38,7 @@
      */
     
     class RuntimeError extends Error {}
+    class SchemaError extends Error {}
     class NameError extends RuntimeError {}
     class AssignError extends RuntimeError {}
     class AccessError extends RuntimeError {}
@@ -487,6 +489,9 @@
             this.item_list = Object.freeze(list(map(str_list, x => x)))
             Object.freeze(this)
         }
+        get [Symbol.toStringTag]() {
+            return 'Enum'
+        }
     }
 
     let list_of = (A => Ins(
@@ -509,19 +514,53 @@
      */
 
     class Schema {
-        constructor (table, requirement = (x => true)) {
+        constructor (table, defaults = null, requirement = (x => true)) {
             assert(forall(Object.values(table), v => is(v, Type.Abstract)))
+            assert(is(defaults, Uni(Type.Null, Type.Container.Hash)))
             assert(is(requirement, Type.Function))
-            this[Checker] = (x => (
-                is(x, Type.Container.Hash)
-                    && forall(Object.keys(table), k => is(x[k], table[k]))
-                    && requirement(x)
-            ))
+            this.table = table
+            this.requirement = requirement
+            if (defaults != null) {
+                this.defaults = Object.freeze(defaults)
+                let err = new ErrorProducer(SchemaError)
+                for (let key of Object.keys(this.defaults)) {
+                    assert(has(key, this.table))
+                    err.assert(
+                        is(this.defaults[key], this.table[key]),
+                        MSG.schema_invalid_default(key)
+                    )
+                }
+            }
+            this[Checker] = (x => {
+                if(!is(x, Type.Container.Hash)) { return false }
+                if (this.defaults == null) {
+                    return (forall(
+                        Object.keys(this.table),
+                        k => is(x[k], this.table[k])
+                    ) && this.requirement(x))
+                } else {
+                    for (let key of Object.keys(this.table)) {
+                        if (has(key, x)) {
+                            if(!is(x[key], this.table[key])) {
+                                return false
+                            }
+                        } else if(has(key, this.defaults)) {
+                            x[key] = this.defaults[key]
+                        } else {
+                            return false
+                        }
+                    }
+                    return this.requirement(x)
+                }
+            })
             Object.freeze(this)
+        }
+        get [Symbol.toStringTag]() {
+            return 'Schema'
         }
     }
 
-    let struct = (table => new Schema(table))
+    let struct = ((table, def, req) => new Schema(table, def, req))
     
     /**
      *  Access Control of Function & Scope
@@ -1202,7 +1241,7 @@
      */
     
     let export_object = {
-        is, has, $, Uni, Ins, Not, Type, Symbols,
+        is, has, $, Uni, Ins, Not, Type, Symbols, struct,
         Global, G, var_lookup, var_declare, var_assign, wrap,
         get_type, sig, create_interface, parse_decl, fun
     }
