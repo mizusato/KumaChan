@@ -1174,12 +1174,15 @@
             let has_defaults = (Object.keys(this.defaults).length > 0)
             let interface_scope = has_defaults? new Scope(null): null
             for (let name of Object.keys(this.sign_table)) {
-                let method = instance.methods[name]
-                if (method && is(method, this.sign_table[name])) {
+                let has_this = has(name, instance.methods)
+                let method = instance.methods[name] || null
+                let ok_existing = has_this && is(method, this.sign_table[name])
+                let ok_defaults = !has_this && has(name, this.defaults)
+                if (ok_existing || ok_defaults) {
                     if (has_defaults) {
                         interface_scope.declare(name, method)
                     }
-                } else if (!has(name, this.defaults)) {
+                } else {
                     return MSG.method_not_matching(name)
                 }
             }
