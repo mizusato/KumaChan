@@ -270,6 +270,7 @@
     }
 
     function has (key, object) {
+        assert(typeof key == 'string' || typeof key == 'symbol')
         return Object.prototype.hasOwnProperty.call(object, key)
     }
 
@@ -638,7 +639,8 @@
     function parse_decl (string) {
         let match = string.match(/([^ ]+) ([^\( ]+) *\(([^\)]*)\) -> (.+)/)
         let [_, affect, name, params_str, value_str] = match
-        let parameters = list(map(params_str.split(','), para_str => {
+        let has_p = params_str.trim().length > 0
+        let parameters = has_p? (list(map(params_str.split(','), para_str => {
             para_str = para_str.trim()
             let match = para_str.match(/([^ ]+) (\*|\&)?(.+)/)
             let [_, type_str, policy_str, name] = match
@@ -646,7 +648,7 @@
             policy_str = policy_str || ''
             let pass_policy = FlagValue[policy_str]
             return { name, constraint, pass_policy }
-        }))
+        }))): []
         let value = Global.lookup(value_str)
         let proto = { affect, parameters, value }
         assert(is(proto, Prototype))
@@ -971,7 +973,10 @@
         return wrap(Global, parsed.proto, null, parsed.name, scope => {
             return body.apply(
                 null,
-                parsed.proto.parameters.map(p => scope.lookup(p.name))
+                list(cat([scope], map(
+                    parsed.proto.parameters,
+                    p => scope.lookup(p.name)
+                )))
             )
         })
     }
@@ -1075,6 +1080,10 @@
             return 'Class'
         }
     }
+    
+    function create_class(desc, impls, init, methods) {
+        return new Class(impls, init, methods, desc)
+    }
 
     class Instance {
         constructor (class_object, scope, methods) {
@@ -1082,16 +1091,16 @@
             this.scope = scope
             this.exposed = []
             this.methods = mapval(methods, f => bind_context(f, scope))
-            for (let name of this.methods) {
+            for (let name of Object.keys(this.methods)) {
                 this.scope.declare(name, this.methods[name])
             }
             this.init_finished = false
-            Object.freeze(this)
         }
         init_finish () {
+            this.init_finished = true
             Object.freeze(this.exposed)
             Object.freeze(this.methods)
-            this.init_finished = true
+            Object.freeze(this)
         }
         get [Symbol.toStringTag]() {
             return 'Instance'
@@ -1117,6 +1126,7 @@
             this.input = Object.freeze(input)
             this.output = output
             this[Checker] = (f => {
+                if (!is(f, Type.Function.Wrapped)) { return false }
                 f = cancel_binding(f)
                 if (is(f, Type.Function.Wrapped.Sole)) {
                     return check_sole(f, this.input, this.output)
@@ -1126,9 +1136,8 @@
                         functions,
                         f => check_sole(f, this.input, this.output)
                     )
-                } else {
-                    return false
                 }
+                assert(false)
             })
             Object.freeze(this)
         }
@@ -1162,15 +1171,15 @@
         }
         check_and_apply_defaults (instance) {
             assert(instance instanceof Instance)
-            let has_defaults = (this.defaults.length > 0)
+            let has_defaults = (Object.keys(this.defaults).length > 0)
             let interface_scope = has_defaults? new Scope(null): null
             for (let name of Object.keys(this.sign_table)) {
-                let method = instance.methods[name]                
-                if (is(method, this.sign_table[name])) {
+                let method = instance.methods[name]
+                if (method && is(method, this.sign_table[name])) {
                     if (has_defaults) {
-                        interface_scope.declare(name, bind_context())
+                        interface_scope.declare(name, method)
                     }
-                } else {
+                } else if (!has(name, this.defaults)) {
                     return MSG.method_not_matching(name)
                 }
             }
@@ -1227,6 +1236,7 @@
     let G = Global.data
     
     pour(Global.data, {
+        Any: Any,
         Nil: Nil,
         Void: Void,
         undefined: undefined,
@@ -1262,7 +1272,7 @@
         is, has, $, Uni, Ins, Not, Type, Symbols, get_type,
         Global, G, var_lookup, var_declare, var_assign,
         wrap, parse_decl, fun, overload, overload_added, overload_concated,
-        sig, create_interface
+        sig, create_interface, create_class
     }
     let export_name = 'KumaChan'
     let global_scope = (typeof window == 'undefined')? global: window
