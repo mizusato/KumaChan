@@ -24,6 +24,7 @@
         arg_invalid: name => `invalid argument ${name}`,
         arg_immutable: name => `immutable value for dirty argument ${name}`,
         retval_invalid: 'invalid return value',
+        no_matching_function: 'invalid arguments: no matching function',
         expose_non_instance: 'unable to expose non-instance object',
         method_name_conflict: name => `conflict method name: ${name}`,
         impl_not_exposing: C => `instance does not expose instance of ${C}`,
@@ -429,8 +430,7 @@
     
     let UserlandTypeRename = {
         Sole: 'Function',
-        Binding: 'Function',
-        Bare: 'Function(ES)',
+        Binding: 'Function'
     }
     
     function get_type(object) {
@@ -632,17 +632,19 @@
         parameters: ParameterList
     }), $( proto => no_repeat(map(proto.parameters, p => p.name)) ))
 
-    let FlagValue = { '*': 'natural', '&': 'dirty' }
+    let PassFlag = { natural: '*', dirty: '&', immutable: '' }
+    let FlagValue = { '*': 'natural', '&': 'dirty', '': 'immutable' }
 
     function parse_decl (string) {
-        let match = string.match(/([^ ]+) ([^\(]+)\(([^\)]*)\) -> (.+)/)
+        let match = string.match(/([^ ]+) ([^\( ]+) *\(([^\)]*)\) -> (.+)/)
         let [_, affect, name, params_str, value_str] = match
         let parameters = list(map(params_str.split(','), para_str => {
             para_str = para_str.trim()
             let match = para_str.match(/([^ ]+) (\*|\&)?(.+)/)
             let [_, type_str, policy_str, name] = match
             let constraint = Global.lookup(type_str)
-            let pass_policy = policy_str? FlagValue[policy_str]: 'immutable'
+            policy_str = policy_str || ''
+            let pass_policy = FlagValue[policy_str]
             return { name, constraint, pass_policy }
         }))
         let value = Global.lookup(value_str)
@@ -650,6 +652,18 @@
         assert(is(proto, Prototype))
         return { name, proto }
     }
+    
+    /*
+    function represent_decl (proto_desc, desc) {
+        let params = join(map(
+            proto_desc.parameters,
+            p => `${p.constraint} ${PassFlag[p.pass_policy]}${p.name}`
+        ), ', ')
+        return (
+            `${proto_desc.affect} (${params}) -> ${proto_desc.value} (${desc})`
+        )
+    }
+    */
     
     /**
      *  Scope Object
@@ -888,19 +902,23 @@
 
     let SoleList = list_of(Type.Function.Wrapped.Sole)
 
-    function overload (functions) {
+    function overload (functions, desc = '') {
         assert(is(functions, SoleList))
-        let invoke = function (args, caller_scope, use_context = null) {
+        assert(is(desc, Type.String))
+        let only1 = (functions.length == 1)
+        let invoke = !only1? ((args, caller_scope, use_context = null) => {
             for (let f of rev(functions)) {
                 let info = f[WrapperInfo]
                 if (check_args(args, info.proto, caller_scope) === 'OK') {
                     return info.invoke(args, caller_scope, use_context)
-                }                
+                }
             }
-        }
+            let err = new ErrorProducer(CallError, desc)
+            err.throw(MSG.no_matching_function)
+        }): functions[0][WrapperInfo].invoke
         let o = ((...args) => invoke(args, null))
         functions = Object.freeze(functions)
-        o[WrapperInfo] = Object.freeze({ functions, invoke })
+        o[WrapperInfo] = Object.freeze({ functions, invoke, desc })
         return o
     }
 
@@ -1241,9 +1259,10 @@
      */
     
     let export_object = {
-        is, has, $, Uni, Ins, Not, Type, Symbols, struct,
-        Global, G, var_lookup, var_declare, var_assign, wrap,
-        get_type, sig, create_interface, parse_decl, fun
+        is, has, $, Uni, Ins, Not, Type, Symbols, get_type,
+        Global, G, var_lookup, var_declare, var_assign,
+        wrap, parse_decl, fun, overload, overload_added, overload_concated,
+        sig, create_interface
     }
     let export_name = 'KumaChan'
     let global_scope = (typeof window == 'undefined')? global: window

@@ -5,17 +5,14 @@
     <title>Test Page</title>
     <script type="text/javascript" src="runtime.js"></script>
     <script type="text/javascript">
-      let K = KumaChan
-      let G = K.G
-      let fun = K.fun
-      let is = K.is
-      let p = { affect: 'local', value: G.Int, parameters: [ { name: 'x', constraint: G.Int, pass_policy: 'immutable' }, { name: 'y', constraint: G.Int, pass_policy: 'immutable' } ] }
-      let f = K.wrap(K.Global, p, null, 'test()', scope => (console.log(scope),0))
+      Object.assign(window, KumaChan)
+      let f = fun('local f (Int x, Int y) -> Int', (x,y) => x+y)
       console.log(f(1,2))
-      let F = K.sig([KumaChan.Global.data.Int,KumaChan.Global.data.Int],KumaChan.Global.data.Int)
-      console.log(KumaChan.is(f,F))
-      K.parse_decl('local f(Int x, Hash &y, List *z) -> String');
-      (fun('local f(List &x, Int y) -> Void', (x,y) => (x.push(y),G.Void) ))([],1)
+      let F = sig([G.Int, G.Int], G.Int)
+      console.log(is(f,F))
+      let g = fun('local f(List &x, Int y) -> Void', (x,y) => (x.push(y),G.Void) )
+      console.log(is(g, sig([G.List, G.String], G.Void)))
+      console.log(g([],1))
     </script>
   </head>
   <body>
