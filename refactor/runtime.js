@@ -376,7 +376,7 @@
         Number: ES.Number,
         String: ES.String,
         Function: category(ES.Function, {
-            Raw: $(f => !has(WrapperInfo, f)),
+            Bare: $(f => !has(WrapperInfo, f)),
             Wrapped: category(
                 $(f => has(WrapperInfo, f)),
                 {
@@ -413,11 +413,11 @@
     let UserlandTypeRename = {
         Sole: 'Function',
         Binding: 'Function',
-        Raw: 'Function(ES)',
+        Bare: 'Function(ES)',
     }
     
     function get_type(object) {
-        let type = 'Unknown'
+        let type = 'Raw'
         for (let T of Object.keys(Type)) {
             if (is(object, Type[T])) {
                 if (Type[T] instanceof Category) {
@@ -840,10 +840,11 @@
     
     function bind_context (f, context) {
         assert(is(f, Type.Function.Wrapped))
+        f = cancel_binding(f)
         let info = f[WrapperInfo]
         let g = give_arity(
             ((...args) => info.invoke(args, null, context)),
-            info.proto.parameters.length
+            info.proto? info.proto.parameters.length: 0
         )
         let invoke = function (args, caller_scope, use_context = null) {
             assert(use_context === null)
@@ -853,10 +854,11 @@
         return g
     }
 
-    let NonBinding = Ins(Type.Function.Wrapped, $(
-        f => !has('oringinal', f[WrapperInfo])
-    ))
-    
+    function cancel_binding (f) {
+        assert(is(f, Type.Function.Wrapped))
+        return f[WrapperInfo].original || f
+    }
+
     function call (f, caller_scope, args) {
         if (is(f, Type.Function.Wrapped)) {
             // TODO: add frame to call stack (add info for debugging)
@@ -911,7 +913,7 @@
             assert(is(impls, list_of(
                 $(A => A instanceof Class || A instanceof Interface)
             )))
-            assert(is(init, NonBinding))
+            init = cancel_binding(init)
             // these properties should not be mutated
             pour(this, { impls, init, methods, desc })
             let I = init[WrapperInfo]
@@ -979,26 +981,33 @@
     }
     
     let Input = list_of(Type.Abstract)
-    let Ouput = Type.Abstract
+    let Output = Type.Abstract
+
+    function check_sole(f, input, output) {
+        let proto = f[WrapperInfo].proto
+        return (proto.value === output) && (
+            proto.parameters.length == input.length
+        ) && forall(
+            input, (I,i) => proto.parameters[i].constraint === I
+        )
+    }
     
     class Signature {
-        constructor (input, ouput) {
-            assert(is(input, FunInput))
+        constructor (input, output) {
+            assert(is(input, Input))
             assert(is(output, Output))
             // these properties should not be mutated
             this.input = input
             this.output = output
             this[Checker] = (f => {
-                if (is(f, Type.Function.Binding)) {
-                    f = f[WrapperInfo].original
-                }
-                if (is(f, Type.Function.Sole)) {
-                    let proto = f[WrapperInfo].proto
-                    return (proto.value === this.output) && (
-                        proto.parameters.length == this.input.length
-                    ) && forall(
-                        this.input,
-                        (I,i) => proto.parameters[i].constraint === I
+                f = cancel_binding(f)
+                if (is(f, Type.Function.Wrapped.Sole)) {
+                    return check_sole(f, this.input, this.output)
+                } else if (is(f, Type.Function.Wrapped.Overload)) {
+                    let functions = f[WrapperInfo].functions
+                    return exists(
+                        functions,
+                        f => check_sole(f, this.input, this.output)
                     )
                 } else {
                     return false
@@ -1011,14 +1020,17 @@
     }
     
     let MethodTable = hash_of(Signature)
+    let MethodHash = hash_of(Function.Wrapped)
     
     class Interface {
-        constructor (method_table, desc) {
+        constructor (method_table, desc, defaults = {}) {
             assert(is(method_table, MethodTable))
             assert(is(desc, Type.String))
+            assert(is(defaults, Type.Container.Hash))
             // these properties should not be mutated
             this.method_table = method_table
             this.desc = desc
+            this.defaults = defaults
             this[Checker] = (instance => {
                 if (instance instanceof Instance) {
                     return exists(instance.abstraction.impls, x => x === this)
@@ -1082,7 +1094,7 @@
     let export_object = {
         is, has, $, Uni, Ins, Not, Type, Symbols,
         Global, var_lookup, var_declare, var_assign, wrap,
-        get_type
+        get_type, Signature
     }
     let export_name = 'KumaChan'
     let global_scope = (typeof window == 'undefined')? global: window
