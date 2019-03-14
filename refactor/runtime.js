@@ -186,6 +186,7 @@
         let value = initial
         for (let I of iterable) {
             value = f(I, value, index)
+            index += 1
             if (terminate && terminate(value)) {
                 break
             }
@@ -830,9 +831,9 @@
                 list(mapkv(vals, (k, v) => scope.declare(k, v)))
             }
             // call raw function
-            let value = raw(scope, caller_scope)
+            let value = raw(scope)
             // check value
-            err.assert(is(value, proto.value), MSG.err_retval_invalid)
+            err.assert(is(value, proto.value), MSG.retval_invalid)
             return value
         }
         // wrap function
@@ -974,12 +975,12 @@
             let F = init[WrapperInfo]
             let err = new ErrorProducer(InitError, desc)
             this.create = wrap(
-                F.context, F.proto, F.vals, F.desc, (scope, caller_scope) => {
+                F.context, F.proto, F.vals, F.desc, scope => {
                     let self = new Instance(this, scope, methods)
                     let expose = (I => (add_exposed_interal(I, self), I))
                     scope.try_to_declare('self', self, true)
                     scope.try_to_declare('expose', expose, true)
-                    F.raw(scope, caller_scope)
+                    F.raw(scope)
                     if (scope.try_to_lookup('self') === self) {
                         scope.unset('self')
                     }
