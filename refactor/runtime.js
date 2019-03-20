@@ -873,13 +873,20 @@
         return 'OK'
     }
 
-    function inject_args (args, proto, scope) {
+    function inject_args (args, proto, scope, caller_scope) {
         for (let i=0; i<proto.parameters.length; i++) {
             let parameter = proto.parameters[i]
             let arg = args[i]
             // if pass policy is immutable, register the argument
             if (parameter.pass_policy == 'immutable') {
                 scope.register_immutable(arg)
+            } else if (parameter.pass_policy == 'natural') {
+                if (caller_scope != null) {
+                    let arg_is_immutable = caller_scope.check_immutable(arg)
+                    if (arg_is_immutable) {
+                        scope.register_immutable(arg)
+                    }
+                }
             }
             // inject argument to scope
             scope.declare(parameter.name, arg)
@@ -906,7 +913,7 @@
                 (use_ctx !== null)? use_ctx: context,
                 proto.affect
             )
-            inject_args(args, proto, scope)
+            inject_args(args, proto, scope, caller_scope)
             if (vals != null) {
                 list(mapkv(vals, (k, v) => scope.declare(k, v)))
             }
