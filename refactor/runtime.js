@@ -801,13 +801,16 @@
             let scope_chain = iterate(
                 this, scope => scope.context, scope => scope == null
             )
-            return find(map(scope_chain, (scope, depth) => ({
-                scope: scope,
-                depth: depth,
-                is_mutable: depth <= mutable_depth,
-                is_assignable: scope.check_assignable(variable),
-                object: scope.has(variable)? scope.data[variable]: NotFound
-            })), info => info.object != NotFound)
+            return find(map(scope_chain, (scope, depth) => {
+                let object = (
+                    scope.has(variable)? scope.data[variable]: NotFound
+                )
+                let is_mutable = (
+                    depth <= mutable_depth && !scope.check_immutable(object)
+                )
+                let is_assignable = scope.check_assignable(variable)
+                return { scope, depth, object, is_mutable, is_assignable }
+            }), info => info.object != NotFound)
         }
     }
     
@@ -1149,14 +1152,16 @@
     let GeneralList = list_of(GeneralInterface)
 
     class Class {
-        constructor (impls, init, methods, desc) {
+        constructor (impls, init, methods, static_methods, desc) {
             assert(is(impls, GeneralList))
             assert(is(init, Type.Function.Wrapped))
             assert(is(methods, MethodTable))
+            assert(is(static_methods, MethodTable))
             assert(is(desc, Type.String))
             this.impls = Object.freeze(impls)
             this.init = cancel_binding(init)
             this.methods = Object.freeze(methods)
+            this.static_methods = Object.freeze(static_methods)
             this.desc = desc
             this.methods_info = Object.freeze(get_methods_info(this))
             this.super_classes = Object.freeze(get_super_classes(this))
@@ -1206,8 +1211,8 @@
         }
     }
     
-    function create_class(desc, impls, init, methods) {
-        return new Class(impls, init, methods, desc)
+    function create_class(desc, impls, init, methods, static_methods = {}) {
+        return new Class(impls, init, methods, static_methods, desc)
     }
 
     class Instance {
