@@ -62,7 +62,7 @@
             Type.Function.Wrapped.Sole,
             Type.Function.Wrapped.Binding
         ),
-        Overload: Type.Function.Overload,
+        Overload: Type.Function.Wrapped.Overload,
         Abstract: Type.Abstract,
         List: Type.Container.List,
         Hash: Type.Container.Hash,
@@ -72,14 +72,17 @@
      *  Export
      */
 
+    let export_name = 'KumaChan'
     let export_object = {
         is, has, $, Uni, Ins, Not, Type, Symbols, get_type,
         Global, G, var_lookup, var_declare, var_assign,
         wrap, parse_decl, fun, overload, overload_added, overload_concated,
         sig, create_interface, create_class
     }
-    let export_name = 'KumaChan'
-    let global_scope = (typeof window == 'undefined')? global: window
-    global_scope[export_name] = export_object
-
+    if (typeof window != 'undefined') {
+        window[export_name] = export_object
+    } else {
+        module.exports = export_object
+    }
+    
 })()
