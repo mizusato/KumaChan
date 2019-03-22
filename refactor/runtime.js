@@ -33,7 +33,7 @@
         ),
         method_invalid: (name, C, I) => (
             `class ${C} does not implement ${I} (invalid method ${name})`
-        ),  
+        ),
         exposing_non_instance: 'unable to expose non-instance object',
         not_exposing: C => `created instance does not expose instance of ${C}`,
     }
@@ -41,9 +41,9 @@
     /**
      *  Error Definition & Handling
      */
-    
+
     class RuntimeError extends Error {}
-    class SchemaError extends Error {}
+    class SchemaError extends RuntimeError {}
     class NameError extends RuntimeError {}
     class AssignError extends RuntimeError {}
     class AccessError extends RuntimeError {}
@@ -51,6 +51,7 @@
     class ClassError extends RuntimeError {}
     class InitError extends RuntimeError {}
     
+
     class ErrorProducer {
         constructor (error, info = '') {
             this.error = error
@@ -79,7 +80,7 @@
     function pour (o1, o2) {
         return Object.assign(o1, o2)
     }
-    
+
     function list (iterable) {
         // convert iterable to array
         let result = []
@@ -98,7 +99,7 @@
             yield list[i]
         }
     }
-    
+
     function *map (iterable, f) {
         let index = 0
         for (let I of iterable) {
@@ -137,7 +138,7 @@
             return run(mapkv(something, f))
         }
     }
-    
+
     function *filter (iterable, f) {
         let index = 0
         for (let I of iterable) {
@@ -173,7 +174,7 @@
             }
         }
     }
-    
+
     function join (iterable, separator) {
         let string = ''
         let first = true
@@ -189,7 +190,7 @@
     }
 
     let NotFound = { tip: 'Object Not Found' }
-    
+
     function find (iterable, f) {
         for (let I of iterable) {
             if (f(I)) {
@@ -198,7 +199,7 @@
         }
         return NotFound
     }
-    
+
     function *iterate (initial, next_of, terminate) {
         // apply next_of() on value until terminal condition satisfied
         let value = initial
@@ -207,9 +208,9 @@
             value = next_of(value)
         }
     }
-    
+
     function fold (iterable, initial, f, terminate) {
-        // reduce() with a terminal condition 
+        // reduce() with a terminal condition
         let index = 0
         let value = initial
         for (let I of iterable) {
@@ -221,14 +222,14 @@
         }
         return value
     }
-    
+
     function forall (iterable, f) {
         // ∀ I ∈ iterable, f(I) == true
         return fold(
             iterable, true, ((e,v,i) => v && f(e,i)), (v => v == false)
         )
     }
-    
+
     function exists (iterable, f) {
         // ∃ I ∈ iterable, f(I) == true
         return fold(
@@ -239,14 +240,14 @@
     function chain (functions) {
         return ( x => fold(functions, x, (f, v) => f(v)) )
     }
-    
+
     function *count (n) {
         let i = 0
         while (i < n) {
             yield i
         }
     }
-    
+
     function no_repeat (iterable) {
         let s = new Set()
         for (let I of iterable) {
@@ -260,7 +261,7 @@
     }
 
     let alphabet = 'abcdefghijklmnopqrstuvwxyz'
-    
+
     function give_arity(f, n) {
         // Tool to fix arity of wrapped function
         let para_list = join(filter(alphabet, (e,i) => i < n), ',')
@@ -309,7 +310,7 @@
      *  Any abstraction object can do operations such as intersect,
      *    union, complement with others, and produce a new concept object.
      */
-    
+
     class Concept {
         constructor (checker) {
             assert(typeof checker == 'function')
@@ -326,13 +327,13 @@
         assert(forall(abstracts, a => typeof a[Checker] == 'function'))
         return new Concept(x => exists(abstracts, a => a[Checker](x)))
     }
-    
+
     function intersect (abstracts) {
         // (∩ A_i), for A_i in abstracts
         assert(forall(abstracts, a => typeof a[Checker] == 'function'))
         return new Concept(x => forall(abstracts, a => a[Checker](x)))
     }
-    
+
     function complement (abstraction) {
         // (∁ A)
         assert(typeof abstraction[Checker] == 'function')
@@ -340,7 +341,7 @@
     }
 
     let $ = (f => new Concept(f))             // create concept from f(x)
-    let Uni = ((...args) => union(args))      // (A,B,...) => A ∪ B ∪ ... 
+    let Uni = ((...args) => union(args))      // (A,B,...) => A ∪ B ∪ ...
     let Ins = ((...args) => intersect(args))  // (A,B,...) => A ∩ B ∩ ...
     let Not = (arg => complement(arg))        //  A => ∁ A
     let Any = $(x => true)
@@ -351,7 +352,7 @@
      *  A collection of abstraction objects can be integrated into
      *    a "category object", which is also an abstraction object.
      */
-    
+
     class Category {
         constructor (precondition, branches) {
             let concept = Ins(precondition, union(Object.values(branches)))
@@ -390,7 +391,7 @@
             assert(false)
         }
     }
-    
+
     let category = ((a, b) => new Category(a, b))
 
     /**
@@ -453,12 +454,12 @@
         }),
         Instance: $(x => x instanceof Instance)
     }
-    
+
     let UserlandTypeRename = {
         Sole: 'Function',
         Binding: 'Function'
     }
-    
+
     function get_type(object) {
         let type = 'Raw'
         for (let T of Object.keys(Type)) {
@@ -525,7 +526,7 @@
         $(l => forall(l, e => is(e, A)))
     ))
     let StringList = list_of(Type.String)
-    
+
     let hash_of = (A => Ins(
         Type.Container.Hash,
         $(h => forall(Object.keys(h), k => is(h[k], A)))
@@ -587,10 +588,10 @@
     }
 
     let struct = ((table, def, req) => new Schema(table, def, req))
-    
+
     /**
      *  Access Control of Function & Scope
-     * 
+     *
      *  In some functional programming language, functions are restricted
      *    to "pure function", which does not produce side-effect.
      *  But in this language, side-effect is widly permitted, none of
@@ -607,29 +608,29 @@
 
     /**
      *  Effect Range of Function
-     * 
+     *
      *  The effect range of a function determines the range of scope chain
      *  that can be affected by the function, which indicates
      *  the magnitude of side-effect.
-     *  
+     *
      *  |  value  | Local Scope | Upper Scope | Other Scope |
      *  |---------|-------------|-------------|-------------|
      *  |  global | full-access | full-access | full-access |
      *  |  upper  | full-access | full-access |  read-only  |
      *  |  local  | full-access |  read-only  |  read-only  |
-     * 
+     *
      */
 
     let EffectRange = one_of('local', 'upper', 'global')
-    
+
     /**
      *  Pass Policy of Parameter
-     *  
+     *
      *  The pass policy of a parameter determines how the function
      *    process the corresponding argument.
      *  If pass policy is set to immutable, the function will not be able to
      *    modify the argument. (e.g. add element to list)
-     * 
+     *
      *  |   value   | Immutable Argument |  Mutable Argument  |
      *  |-----------|--------------------|--------------------|
      *  | immutable |    direct pass     | treat as immutable |
@@ -639,11 +640,11 @@
      */
 
     let PassPolicy = one_of('immutable', 'natural', 'dirty')
-    
+
     /**
      *  Parameter & Function Prototype
      */
-    
+
     let Parameter = struct({
         name: Type.String,
         pass_policy: PassPolicy,
@@ -679,7 +680,7 @@
         assert(is(proto, Prototype))
         return { name, proto }
     }
-    
+
     /*
     function represent_decl (proto_desc, desc) {
         let params = join(map(
@@ -691,7 +692,7 @@
         )
     }
     */
-    
+
     /**
      *  Scope Object
      */
@@ -708,7 +709,7 @@
             // <data> = Hash { VariableName -> VariableValue }
             this.data = data
             // <assignable> = Set { Non-Constants }
-            this.assignable = new Set() 
+            this.assignable = new Set()
             // <ACL> = WeakMap { Object -> Immutable? 1: undefined }
             this.ACL = new WeakMap()
             Object.freeze(this)
@@ -813,28 +814,28 @@
             }), info => info.object != NotFound)
         }
     }
-    
+
     /**
      *  Scope Operation Functions with Error Producer
      */
-    
+
     let name_err = new ErrorProducer(NameError)
     let assign_err = new ErrorProducer(AssignError)
     let access_err = new ErrorProducer(AccessError)
-    
+
     function var_lookup(scope, name) {
         assert(scope instanceof Scope)
         let value = scope.lookup(name)
         name_err.assert(value != NotFound, MSG.variable_not_found(name))
         return value
     }
-    
+
     function var_declare(scope, name, initial_value) {
         assert(scope instanceof Scope)
         name_err.assert(!scope.has(name), MSG.variable_declared(name))
         scope.declare(name, initial_value)
     }
-    
+
     function var_assign(scope, name, new_value) {
         let info = scope.find(name)
         name_err.assert(info != NotFound, MSG.variable_not_declared(name))
@@ -842,11 +843,11 @@
         access_err.assert(info.is_mutable, MSG.variable_immutable(name))
         info.scope.assign(name, new_value)
     }
-    
+
     /**
      *  Function Wrapper
      */
-    
+
     function check_args (args, proto, caller_scope, get_err_msg = false) {
         // IMPORTANT: return string, "OK" = valid
         let r = proto.parameters.length
@@ -871,7 +872,7 @@
                 if (is_dirty && is_immutable) {
                     return get_err_msg? MSG.arg_immutable(name): 'NG'
                 }
-            }            
+            }
         }
         return 'OK'
     }
@@ -895,7 +896,7 @@
             scope.declare(parameter.name, arg)
         }
     }
-    
+
     function wrap (context, proto, vals, desc, raw) {
         assert(context instanceof Scope)
         assert(is(proto, Prototype))
@@ -971,7 +972,7 @@
             cat(o1[WrapperInfo].functions, o2[WrapperInfo].functions)
         ))
     }
-    
+
     function bind_context (f, context) {
         assert(is(f, Type.Function.Wrapped))
         f = cancel_binding(f)
@@ -1058,7 +1059,7 @@
         )
         return { conflict_if, missing_if, invalid_if }
     }
-    
+
     let only_classes = (x => filter(x, y => y instanceof Class))
     let only_interfaces = (x => filter(x, y => y instanceof Interface))
 
@@ -1210,7 +1211,7 @@
             return 'Class'
         }
     }
-    
+
     function create_class(desc, impls, init, methods, static_methods = {}) {
         return new Class(impls, init, methods, static_methods, desc)
     }
@@ -1236,7 +1237,7 @@
             return 'Instance'
         }
     }
-    
+
     let Input = list_of(Type.Abstract)
     let Output = Type.Abstract
 
@@ -1248,7 +1249,7 @@
             input, (I,i) => proto.parameters[i].constraint === I
         )
     }
-    
+
     class Signature {
         constructor (input, output) {
             assert(is(input, Input))
@@ -1279,9 +1280,9 @@
     function sig (input, output) {
         return new Signature(input, output)
     }
-    
+
     let SignTable = hash_of(Type.Abstract.Signature)
-    
+
     class Interface {
         constructor (sign_table, defaults = {}, desc = '') {
             assert(is(sign_table, SignTable))
@@ -1317,7 +1318,7 @@
                 return new Signature(
                     list(map(proto.parameters, p => p.constraint)),
                     proto.value
-                )  
+                )
             } else {
                 return v
             }
@@ -1329,10 +1330,10 @@
     /**
      *  Initialize Global Scope
      */
-    
+
     Global = new Scope(null)
     let G = Global.data
-    
+
     pour(Global.data, {
         Any: Any,
         Nil: Nil,
@@ -1365,7 +1366,7 @@
     /**
      *  Export
      */
-    
+
     let export_object = {
         is, has, $, Uni, Ins, Not, Type, Symbols, get_type,
         Global, G, var_lookup, var_declare, var_assign,
@@ -1375,5 +1376,5 @@
     let export_name = 'KumaChan'
     let global_scope = (typeof window == 'undefined')? global: window
     global_scope[export_name] = export_object
-    
+
 })()
