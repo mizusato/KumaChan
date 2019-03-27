@@ -19,7 +19,7 @@ type Token struct {
 
 var Id2Name = [...]string {
     "String", "Raw", "Comment", "Blank", "LF",
-    "Exp", "Dec", "Int", "Hex", "Oct", "Bin",
+    "Hex", "Oct", "Bin", "Exp", "Dec", "Int",
     "(", ")", "[", "]", "{", "}",
     ".[", "..[", "...[", ".{", "..{", "...{",
     ".", ",", "::", ":",
@@ -31,6 +31,7 @@ var Id2Name = [...]string {
 }
 
 var Name2Id map[string]Id   // initialize in Init()
+
 
 const Blanks = ` \t\r　`
 const Symbols = `\{\}\[\]\(\)\.\,\:\<\>\=\!~\&\|\\\+\-\*\/%`
@@ -44,12 +45,12 @@ var Tokens = [...]Token {
     Token { Name: "Comment", Pattern: r(`\.\.[^\[\{][^`+Blanks+`]*`) },
     Token { Name: "Blank",   Pattern: r(`[`+Blanks+`]+`) },
     Token { Name: "LF",      Pattern: r(`\n+`) },
-    Token { Name: "Exp",     Pattern: r(`\d+(\.\d+)?[Ee][\+\-]?\d+`) },
-    Token { Name: "Dec",     Pattern: r(`\d+\.\d+`) },
-    Token { Name: "Int",     Pattern: r(`\d+`) },
     Token { Name: "Hex",     Pattern: r(`0x[0-9A-Fa-f]+`) },
     Token { Name: "Oct",     Pattern: r(`\\[0-7]+`) },
     Token { Name: "Bin",     Pattern: r(`\\\([01]+\)`) },
+    Token { Name: "Exp",     Pattern: r(`\d+(\.\d+)?[Ee][\+\-]?\d+`) },
+    Token { Name: "Dec",     Pattern: r(`\d+\.\d+`) },
+    Token { Name: "Int",     Pattern: r(`\d+`) },
     Token { Name: "(",       Pattern: r(`\(`) },
     Token { Name: ")",       Pattern: r(`\)`) },
     Token { Name: "[",       Pattern: r(`\[`) },
