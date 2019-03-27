@@ -74,6 +74,7 @@ func MatchToken (code Code, pos int) (amount int, id syntax.Id) {
 
 func Scan (code Code) (TokenSequence, RowColInfo) {
     var BlankId = syntax.Name2Id["Blank"]
+    var CommentId = syntax.Name2Id["Comment"]
     var tokens = make(TokenSequence, 0, 10000)
     var info = GetInfo(code)
     var length = len(code)
@@ -83,6 +84,7 @@ func Scan (code Code) (TokenSequence, RowColInfo) {
         amount, id := MatchToken(code, pos)
         if amount == 0 { break }
         if id == BlankId { pos += amount; continue }
+        if id == CommentId { pos += amount; continue }
         tokens = append(tokens, Token {
             Id: id,
             Pos: pos,
