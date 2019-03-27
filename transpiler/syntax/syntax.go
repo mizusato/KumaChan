@@ -33,6 +33,7 @@ var Id2Name = [...]string {
 var Name2Id map[string]Id   // initialize in Init()
 
 
+const LF = `\n`
 const Blanks = ` \t\r　`
 const Symbols = `\{\}\[\]\(\)\.\,\:\<\>\=\!~\&\|\\\+\-\*\/%`
 
@@ -44,7 +45,7 @@ var Tokens = [...]Token {
     Token { Name: "Comment", Pattern: r(`//[^\n]*`) },
     Token { Name: "Comment", Pattern: r(`\.\.[^\[\{][^`+Blanks+`]*`) },
     Token { Name: "Blank",   Pattern: r(`[`+Blanks+`]+`) },
-    Token { Name: "LF",      Pattern: r(`\n+`) },
+    Token { Name: "LF",      Pattern: r(LF+`+`) },
     Token { Name: "Hex",     Pattern: r(`0x[0-9A-Fa-f]+`) },
     Token { Name: "Oct",     Pattern: r(`\\[0-7]+`) },
     Token { Name: "Bin",     Pattern: r(`\\\([01]+\)`) },
@@ -91,7 +92,7 @@ var Tokens = [...]Token {
     Token { Name: "*",       Pattern: r(`\*`) },
     Token { Name: "/",       Pattern: r(`\/`) },
     Token { Name: "%",       Pattern: r(`%`) },
-    Token { Name: "Name",    Pattern: r(`[^`+Symbols+Blanks+`]+`) },
+    Token { Name: "Name",    Pattern: r(`[^`+Symbols+Blanks+LF+`]+`) },
 }
 
 
