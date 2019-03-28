@@ -54,7 +54,7 @@ var Tokens = [...]Token {
     Token { Name: "Raw",     Pattern: r(`/~([^~]|[^/]|~[^/]|[^~]/)*~/`) },
     Token { Name: "Comment", Pattern: r(`/\*([^\*]|[^/]|\*[^/]|[^\*]/)*\*/`) },
     Token { Name: "Comment", Pattern: r(`//[^\n]*`) },
-    Token { Name: "Comment", Pattern: r(`\.\.[^\[\{][^`+Blanks+`]*`) },
+    Token { Name: "Comment", Pattern: r(`\.\.[^\[\{][^`+Blanks+LF+`]*`) },
     Token { Name: "Blank",   Pattern: r(`[`+Blanks+`]+`) },
     Token { Name: "LF",      Pattern: r(LF+`+`) },
     Token { Name: "Hex",     Pattern: r(`0x[0-9A-Fa-f]+`) },
@@ -109,55 +109,148 @@ var Tokens = [...]Token {
 }
 
 
+type EscapeItem struct {
+    escaped  string
+    real     string
+}
+
+var Escape = [...]EscapeItem {
+    EscapeItem { escaped: "_exc", real: "!" },
+    EscapeItem { escaped: "_bar1", real: "|" },
+    EscapeItem { escaped: "_bar2", real: "||" },
+}
+
 var SyntaxDefinition = [...]string {
 
-    "program = expr", // TODO: commands
+    "program = module | expr",
 
+    "module = module_declare exports commands",
+    "module_declare = @module name!",
     "name = Name | String",
+    "exports? = export exports",
+    "export = @export as_list!",
+    "as_list = as_item as_list_tail",
+    "as_list_tail? = , as_item! as_list_tail",
+    "as_item = name @as name! | name",
+
+    "commands? = command commands",
+    "command = cmd_module cmd_scope cmd_set cmd_def cmd_expr",
+    "cmd_expr = expr",
+
+    "cmd_module = cmd_use | cmd_import",
+    "cmd_use = @use as_list",
+    "cmd_import = @import name_list",
+    "name_list = name name_list_tail",
+    "name_list_tail? = , name! name_list_tail",
+
+    "cmd_scope = cmd_let | cmd_var | cmd_reset | cmd_unset",
+    "cmd_let = @let name = expr",
+    "cmd_var = @var name = expr",
+    "cmd_reset = @reset name = expr",
+    "cmd_unset = @unset name",
+
+    "cmd_set = @set left_val = expr",
+    "left_val = operand_base get_list",
+    "get_list = get get_list_tail",
+    "get_list_tail? = get get_list_tail",
+
+    "cmd_def = function | abs_def",
+    "abs_def = category | struct | enum | concept | class | interface",
+
+    "function = proto {! body }!",
+    "proto = affect name paralist_strict! ret",
+    "affect = @local | @upper | @global",
+    "ret? = -> type",
+    "body = static_block commands",
+    "static_block? = @static { commands }",
+
+    "category = @category name { branches! }!",
+    "branches? = branch branches",
+    "branch = abs_def",
+
+    "struct = @struct name { field_list condition }",
+    "field_list = field field_list_tail",
+    "field_list_tail? = field! field_list_tail",
+    "field = type name! field_default",
+    "field_default? = = expr",
+    "condition = @require expr",
+
+    "enum = @enum name = enum_litreal",
+
+    "concept = @concept name = expr",
+
+    "class = @class name { initializers! methods }",
+    "initializers? = initializer initializers",
+    "initializer = @init paralist_strict! {! body! }!",
+    "methods? = method methods",
+    "method = method_proto {! body }!",
+    "method_proto = method_type name paralist_strict! ret",
+    "method_type? = &",
+
+    "interface = @interface name { members }",
+    "members? = member members",
+    "member = method_proto | method",
 
     "expr = operand expr_tail",
     "expr_tail? = operator oprand! expr_tail",
-    "operator = ",  // TODO
 
-    "operand = operand_base operand_ext",
-    "operand_base = ( expr! )! | function | literal | dot_para | identifier",
-    "operand_ext? = get | call",
-    "get = #get [ expr ]",
-    "call = #call arglist | -> name #call arglist",
-    "arglist = ( expr_list ) extra_arg",
-    "extra_arg? = --> expr!",
-    "expr_list? = expr expr_list_tail",
-    "expr_list_tail? = , expr! expr_list_tail",
+    "operator = op_group1 | op_group2 | op_group3 | op_group4",
+    "op_group1 = >= | <= | != | == | => | = ",
+    "op_group2 = -> | << | >> | > | < ",
+    `op_group3 = _exc | && | _bar2 | ~ | & | _bar1 | \ `,
+    "op_group4 = + | - | * | / | % | ^ ",
 
-    "function = fun_expr | lambda | bool_lambda",
-    "fun_expr = paralist ->! {! body! }!",
-    "lambda = .{ paralist ->! expr! }! | .{ expr! }!",
-    "bool_lambda = ..{ paralist ->! expr! }! | ..{ expr! }!",
+    "operand = operand_base operand_tail",
+    "operand_base = ( expr! )! | lambda | literal | dot_para | identifier",
+    "operand_tail? = get operand_tail | call operand_tail",
+    "get = get_expr | get_name",
+    "call = call_self | call_method",
+    "get_expr = #get [ expr! ]!",
+    "get_name = . name!",
+    "call_self = #call arglist!",
+    "call_method = -> name #call args! | -> name extra_arg!",
+    "args = ( arglist )! extra_arg",
+    "extra_arg? = -> lambda",
+    "arglist? = exprlist",
+    "exprlist = expr exprlist_tail",
+    "exprlist_tail? = , expr! exprlist_tail",
 
-    "paralist = ( ) | ( name_list ) | ( typed_list )",
-    "name_list = name name_list_tail",
-    "name_list_tail? = , name! name_list_tail",
-    "typed_list = type name! typed_list_tail",
+    "lambda = lambda_full | lambda_simple | lambda_bool",
+    "lambda_full = paralist ->! ret_lambda {! body! }!",
+    "lambda_simple = .{ paralist ->! expr! }! | .{ expr! }!",
+    "lambda_bool = ..{ paralist ->! expr! }! | ..{ expr! }!",
+    "ret_lambda? = type",
+
+    "paralist = name | ( ) | ( name_list! )! | ( typed_list! )!",
+    "paralist_strict = ( ) | ( typed_list! )!",
+    "typed_list = type policy name! typed_list_tail",
     "typed_list_tail? = , type! name! typed_list_tail",
 
     "type = type_base type_ext",
-    "type_ext? = < type_args >",
+    "type_ext? = < type_args! >!",
     "type_base = name type_base_tail",
     "type_base_tail? = . name! type_base_tail",
     "type_args = type type_args_tail",
     "type_args_tail? = , type! type_args_tail",
+    "policy? = & | *",
 
     "identifier = Name",
     "dot_para = . Name",
-    "literal = hash | list | primitive",
+    "literal = hash | list | concept_literal | enum_literal | primitive",
 
-    "hash = { } | { hash_item hash_tail }",
+    "hash = { } | { hash_item! hash_tail }!",
     "hash_tail? = , hash_item! hash_tail",
     "hash_item = name : expr",
 
-    "list = [ ] | [ list_item list_tail ]",
+    "list = [ ] | [ list_item! list_tail ]!",
     "list_tail? = , list_item! list_tail",
     "list_item = expr",
+
+    "concept_literal = { name _bar1 filters! }!",
+    "filters = exprlist",
+
+    "enum_litreal = { enum_items }!",
+    "enum_items = exprlist",
 
     "primitive = string | number | bool",
     "string = String",
