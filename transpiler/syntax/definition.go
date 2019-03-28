@@ -82,12 +82,12 @@ var Tokens = [...]Token {
 
 
 var Keywords = [...]string {
-    "@module", "@export", "@as", "@use", "@import",
+    "@module", "@export", "@import", "@use", "@as",
     "@let", "@var", "@reset", "@unset", "@set",
     "@local", "@upper", "@global", "@static",
     "@category", "@struct", "@require", "@enum", "@concept",
     "@class", "@init", "@interface",
-    "@true", "@false",
+    "@in", "@true", "@false",
 }
 
 
@@ -129,7 +129,7 @@ var SyntaxDefinition = [...]string {
     "abs_def = category | struct | enum | concept | class | interface",
 
     "function = proto {! body }!",
-    "proto = affect name paralist_strict! ret",
+    "proto = affect name Call paralist_strict! ret",
     "affect = @local | @upper | @global",
     "ret? = -> type",
     "body = static_block commands",
@@ -207,7 +207,8 @@ var SyntaxDefinition = [...]string {
 
     "identifier = Name",
     "dot_para = . Name",
-    "literal = hash | list | concept_literal | enum_literal | primitive",
+    "literal = primitive | advanced_literal | hash | list",
+    "advanced_literal = comprehension | concept_literal | enum_literal",
 
     "hash = { } | { hash_item! hash_tail }!",
     "hash_tail? = , hash_item! hash_tail",
@@ -216,6 +217,13 @@ var SyntaxDefinition = [...]string {
     "list = [ ] | [ list_item! list_tail ]!",
     "list_tail? = , list_item! list_tail",
     "list_item = expr",
+
+    "comprehension = .[ comp_rule! ]! | [ comp_rule ]!",
+    "comp_rule = expr _bar1! in_list! comp_filter",
+    "comp_filter? = expr",
+    "in_list = in_item in_list_tail",
+    "in_list_tail? = , in_item! in_list_tail",
+    "in_item = name @in expr",
 
     "concept_literal = { name _bar1 filters! }!",
     "filters = exprlist",
