@@ -86,7 +86,7 @@ func IsRightParOrName (token *Token) bool {
 }
 
 
-func Try2InsertExtra (tokens []Token, current Token) []Token {
+func Try2InsertExtra (tokens TokenSequence, current Token) TokenSequence {
     var current_name = syntax.Id2Name[current.Id]
     if current_name == "(" {
         return append(tokens, Token {
@@ -108,6 +108,7 @@ func Try2InsertExtra (tokens []Token, current Token) []Token {
 func Scan (code Code) (TokenSequence, RowColInfo) {
     var BlankId = syntax.Name2Id["Blank"]
     var CommentId = syntax.Name2Id["Comment"]
+    var LFId = syntax.Name2Id["LF"]
     var tokens = make(TokenSequence, 0, 10000)
     var info = GetInfo(code)
     var length = len(code)
@@ -131,8 +132,14 @@ func Scan (code Code) (TokenSequence, RowColInfo) {
         previous_ptr = &current
         pos += amount
     }
+    var clear = make(TokenSequence, 0, 10000)
+    for _, token := range tokens {
+        if token.Id != LFId {
+            clear = append(clear, token)
+        }
+    }
     if (pos < length) {
         panic(fmt.Sprintf("invalid token at %+v", info[pos]))
     }
-    return tokens, info
+    return clear, info
 }

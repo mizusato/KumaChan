@@ -6,7 +6,7 @@ func r (pattern string) Regexp { return regexp.MustCompile(`^` + pattern) }
 
 const LF = `\n`
 const Blanks = ` \t\r　`
-const Symbols = `\{\}\[\]\(\)\.\,\:\<\>\=\!~\&\|\\\+\-\*\/%`
+const Symbols = `;\{\}\[\]\(\)\.\,\:\<\>\=\!~\&\|\\\+\-\*\/%`
 
 var EscapeMap = map[string]string {
     "_exc":   "!",
@@ -25,6 +25,7 @@ var Tokens = [...]Token {
     Token { Name: "Comment", Pattern: r(`\.\.[^\[\{][^`+Blanks+LF+`]*`) },
     Token { Name: "Blank",   Pattern: r(`[`+Blanks+`]+`) },
     Token { Name: "LF",      Pattern: r(LF+`+`) },
+    Token { Name: "LF",      Pattern: r(`;`) },
     Token { Name: "Hex",     Pattern: r(`0x[0-9A-Fa-f]+`) },
     Token { Name: "Oct",     Pattern: r(`\\[0-7]+`) },
     Token { Name: "Bin",     Pattern: r(`\\\([01]+\)`) },
