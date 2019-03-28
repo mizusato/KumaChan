@@ -9,9 +9,9 @@ const Blanks = ` \t\r　`
 const Symbols = `\{\}\[\]\(\)\.\,\:\<\>\=\!~\&\|\\\+\-\*\/%`
 
 var EscapeMap = map[string]string {
-    "_exc": "!",
-    "_bar1": "|",
-    "_bar": "||",
+    "_exc":   "!",
+    "_bar1":  "|",
+    "_bar2":  "||",
 }
 
 var Extra = [...]string { "Call", "Get" }
@@ -52,8 +52,9 @@ var Tokens = [...]Token {
     Token { Name: "!=",      Pattern: r(`\!\=`) },
     Token { Name: "==",      Pattern: r(`\=\=`) },
     Token { Name: "=>",      Pattern: r(`\=\>`) },
-    Token { Name: "-->",      Pattern: r(`\-\-\>`) },
-    Token { Name: "<--",      Pattern: r(`\<\-\-`) },
+    Token { Name: "=",       Pattern: r(`\=`) },
+    Token { Name: "-->",     Pattern: r(`\-\-\>`) },
+    Token { Name: "<--",     Pattern: r(`\<\-\-`) },
     Token { Name: "->",      Pattern: r(`\-\>`) },
     Token { Name: "<-",      Pattern: r(`\<\-`) },
     Token { Name: "<<",      Pattern: r(`\<\<`) },
@@ -144,7 +145,7 @@ var SyntaxDefinition = [...]string {
     "field_default? = = expr",
     "condition = @require expr",
 
-    "enum = @enum name = enum_litreal",
+    "enum = @enum name = enum_literal",
 
     "concept = @concept name = expr",
 
@@ -161,7 +162,7 @@ var SyntaxDefinition = [...]string {
     "member = method_proto | method",
 
     "expr = operand expr_tail",
-    "expr_tail? = operator oprand! expr_tail",
+    "expr_tail? = operator operand! expr_tail",
 
     "operator = op_group1 | op_group2 | op_group3 | op_group4",
     "op_group1 = >= | <= | != | == | => | = ",
@@ -175,7 +176,7 @@ var SyntaxDefinition = [...]string {
     "get = get_expr | get_name",
     "call = call_self | call_method",
     "get_expr = Get [ expr! ]!",
-    "get_name = . name!",
+    "get_name = Get . name!",
     "call_self = Call arglist!",
     "call_method = -> name Call args! | -> name extra_arg!",
     "args = ( arglist )! extra_arg",
@@ -218,7 +219,7 @@ var SyntaxDefinition = [...]string {
     "concept_literal = { name _bar1 filters! }!",
     "filters = exprlist",
 
-    "enum_litreal = { enum_items }!",
+    "enum_literal = { enum_items }!",
     "enum_items = exprlist",
 
     "primitive = string | number | bool",

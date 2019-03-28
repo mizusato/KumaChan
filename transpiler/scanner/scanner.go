@@ -72,12 +72,46 @@ func MatchToken (code Code, pos int) (amount int, id syntax.Id) {
 }
 
 
+func IsRightParOrName (token *Token) bool {
+    if token != nil {
+        var name = syntax.Id2Name[token.Id]
+        if name == ")" || name == "Name" {
+            return true
+        } else {
+            return false
+        }
+    } else {
+        return false
+    }
+}
+
+
+func Try2InsertExtra (tokens []Token, current Token) []Token {
+    var current_name = syntax.Id2Name[current.Id]
+    if current_name == "(" {
+        return append(tokens, Token {
+            Id:       syntax.Name2Id["Call"],
+            Pos:      current.Pos,
+            Content:  []rune(""),
+        })
+    } else if current_name == "[" || current_name == "." {
+        return append(tokens, Token {
+            Id:       syntax.Name2Id["Get"],
+            Pos:      current.Pos,
+            Content:  []rune(""),
+        })
+    }
+    return tokens
+}
+
+
 func Scan (code Code) (TokenSequence, RowColInfo) {
     var BlankId = syntax.Name2Id["Blank"]
     var CommentId = syntax.Name2Id["Comment"]
     var tokens = make(TokenSequence, 0, 10000)
     var info = GetInfo(code)
     var length = len(code)
+    var previous_ptr *Token
     var pos = 0
     for pos < length {
         // fmt.Printf("pos %v\n", pos)
@@ -85,12 +119,16 @@ func Scan (code Code) (TokenSequence, RowColInfo) {
         if amount == 0 { break }
         if id == BlankId { pos += amount; continue }
         if id == CommentId { pos += amount; continue }
-        // TODO: insert Call and Get
-        tokens = append(tokens, Token {
+        var current = Token {
             Id: id,
             Pos: pos,
             Content: code[pos:pos+amount],
-        })
+        }
+        if IsRightParOrName(previous_ptr) {
+            tokens = Try2InsertExtra(tokens, current)
+        }
+        tokens = append(tokens, current)
+        previous_ptr = &current
         pos += amount
     }
     if (pos < length) {

@@ -68,6 +68,7 @@ func Alloc () {
     Id2Name = make([]string, 0, 1000)
     Name2Id = make(map[string]Id)
     Id2Keyword = make(map[Id][]rune)
+    Rules = make(map[Id]Rule)
 }
 
 func AssignId2Name (name string) Id {
@@ -101,7 +102,8 @@ func AssignId2Keywords () {
 func AssignId2Rules () {
     for i, def := range SyntaxDefinition {
         var t = strings.Split(def, "=")
-        var rule_name = strings.TrimRight(t[0], "?")
+        var u = strings.Trim(t[0], " ")
+        var rule_name = strings.TrimRight(u, "?")
         AssignId2Name(rule_name)
         if (i == 0) {
             EntryPointName = rule_name

@@ -15,7 +15,7 @@ func check (err error) {
 }
 
 
-func main () {
+func test_scanner () {
     syntax.Init()
     var code_bytes, err = ioutil.ReadAll(os.Stdin)
     check(err)
@@ -29,5 +29,9 @@ func main () {
             string(token.Content),
         )
     }
-    fmt.Println("change the world")
+}
+
+
+func main () {
+    test_scanner()
 }
