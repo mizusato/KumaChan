@@ -1,15 +1,6 @@
 package syntax
 
-
-import "regexp"
 import "strings"
-
-type Regexp = *regexp.Regexp
-
-func r (pattern string) Regexp {
-    return regexp.MustCompile(`^` + pattern)
-}
-
 
 type Id int
 
@@ -18,256 +9,153 @@ type Token struct {
     Pattern  Regexp
 }
 
-
-var Id2Name = [...]string {
-    // Token
-    "String", "Raw", "Comment", "Blank", "LF",
-    "Hex", "Oct", "Bin", "Exp", "Dec", "Int",
-    "(", ")", "[", "]", "{", "}",
-    ".[", "..[", "...[", ".{", "..{", "...{",
-    ".", ",", "::", ":",
-    ">=", "<=", "!=", "==", "=>", "=",
-    "-->", "<--", "->", "<-", "<<", ">>", ">", "<",
-    "!", "&&", "||", "~", "&", "|", `\`,
-    "+", "-", "*", "/", "%", "^",
-    "Name",
-    // Inserted
-    "#call", "#get",
-    // Keyword
-    "@true", "@false",
-    // Item
-    "program", "expr",  // TODO
+type Rule struct {
+    id        Id
+    emptable  bool
+    branches  []Branch
 }
 
-var Name2Id map[string]Id   // initialize in Init()
-
-var Keywords map[Id][]rune // initialize in Init()
-
-
-const LF = `\n`
-const Blanks = ` \t\r　`
-const Symbols = `\{\}\[\]\(\)\.\,\:\<\>\=\!~\&\|\\\+\-\*\/%`
-
-var Tokens = [...]Token {
-    Token { Name: "String",  Pattern: r(`'[^']*'`), },
-    Token { Name: "String",  Pattern: r(`"[^"]*"`), },
-    Token { Name: "Raw",     Pattern: r(`/~([^~]|[^/]|~[^/]|[^~]/)*~/`) },
-    Token { Name: "Comment", Pattern: r(`/\*([^\*]|[^/]|\*[^/]|[^\*]/)*\*/`) },
-    Token { Name: "Comment", Pattern: r(`//[^\n]*`) },
-    Token { Name: "Comment", Pattern: r(`\.\.[^\[\{][^`+Blanks+LF+`]*`) },
-    Token { Name: "Blank",   Pattern: r(`[`+Blanks+`]+`) },
-    Token { Name: "LF",      Pattern: r(LF+`+`) },
-    Token { Name: "Hex",     Pattern: r(`0x[0-9A-Fa-f]+`) },
-    Token { Name: "Oct",     Pattern: r(`\\[0-7]+`) },
-    Token { Name: "Bin",     Pattern: r(`\\\([01]+\)`) },
-    Token { Name: "Exp",     Pattern: r(`\d+(\.\d+)?[Ee][\+\-]?\d+`) },
-    Token { Name: "Dec",     Pattern: r(`\d+\.\d+`) },
-    Token { Name: "Int",     Pattern: r(`\d+`) },
-    Token { Name: "(",       Pattern: r(`\(`) },
-    Token { Name: ")",       Pattern: r(`\)`) },
-    Token { Name: "[",       Pattern: r(`\[`) },
-    Token { Name: "]",       Pattern: r(`\]`) },
-    Token { Name: "{",       Pattern: r(`\{`) },
-    Token { Name: "}",       Pattern: r(`\}`) },
-    Token { Name: ".[",      Pattern: r(`\.\[`) },
-    Token { Name: "..[",     Pattern: r(`\.\.\[`) },
-    Token { Name: "...[",    Pattern: r(`\.\.\.\[`) },
-    Token { Name: ".{",      Pattern: r(`\.\{`) },
-    Token { Name: "..{",     Pattern: r(`\.\.\{`) },
-    Token { Name: "...{",    Pattern: r(`\.\.\.\{`) },
-    Token { Name: ".",       Pattern: r(`\.`) },
-    Token { Name: ",",       Pattern: r(`\,`) },
-    Token { Name: "::",      Pattern: r(`\:\:`) },
-    Token { Name: ":",       Pattern: r(`\:`) },
-    Token { Name: ">=",      Pattern: r(`\>\=`) },
-    Token { Name: "<=",      Pattern: r(`\<\=`) },
-    Token { Name: "!=",      Pattern: r(`\!\=`) },
-    Token { Name: "==",      Pattern: r(`\=\=`) },
-    Token { Name: "=>",      Pattern: r(`\=\>`) },
-    Token { Name: "-->",      Pattern: r(`\-\-\>`) },
-    Token { Name: "<--",      Pattern: r(`\<\-\-`) },
-    Token { Name: "->",      Pattern: r(`\-\>`) },
-    Token { Name: "<-",      Pattern: r(`\<\-`) },
-    Token { Name: "<<",      Pattern: r(`\<\<`) },
-    Token { Name: ">>",      Pattern: r(`\>\>`) },
-    Token { Name: "<",       Pattern: r(`\<`) },
-    Token { Name: ">",       Pattern: r(`\>`) },
-    Token { Name: "!",       Pattern: r(`\!`) },
-    Token { Name: "&&",      Pattern: r(`\&\&`) },
-    Token { Name: "||",      Pattern: r(`\|\|`) },
-    Token { Name: "~",       Pattern: r(`~`) },
-    Token { Name: "&",       Pattern: r(`\&`) },
-    Token { Name: "|",       Pattern: r(`\|`) },
-    Token { Name: `\`,       Pattern: r(`\\`) },
-    Token { Name: "+",       Pattern: r(`\+`) },
-    Token { Name: "-",       Pattern: r(`\-`) },
-    Token { Name: "*",       Pattern: r(`\*`) },
-    Token { Name: "/",       Pattern: r(`\/`) },
-    Token { Name: "%",       Pattern: r(`%`) },
-    Token { Name: "^",       Pattern: r(`\^`) },
-    Token { Name: "Name",    Pattern: r(`[^`+Symbols+Blanks+LF+`]+`) },
+type Branch struct {
+    parts  []Part
 }
 
+type PartType int
 
-type EscapeItem struct {
-    escaped  string
-    real     string
+const (
+    MatchKeyword  PartType  =  iota
+    MatchToken
+    Recursive
+)
+
+type Part struct {
+    id        Id
+    partype   PartType
+    required  bool
 }
 
-var Escape = [...]EscapeItem {
-    EscapeItem { escaped: "_exc", real: "!" },
-    EscapeItem { escaped: "_bar1", real: "|" },
-    EscapeItem { escaped: "_bar2", real: "||" },
-}
-
-var SyntaxDefinition = [...]string {
-
-    "program = module | expr",
-
-    "module = module_declare exports commands",
-    "module_declare = @module name!",
-    "name = Name | String",
-    "exports? = export exports",
-    "export = @export as_list!",
-    "as_list = as_item as_list_tail",
-    "as_list_tail? = , as_item! as_list_tail",
-    "as_item = name @as name! | name",
-
-    "commands? = command commands",
-    "command = cmd_module cmd_scope cmd_set cmd_def cmd_expr",
-    "cmd_expr = expr",
-
-    "cmd_module = cmd_use | cmd_import",
-    "cmd_use = @use as_list",
-    "cmd_import = @import name_list",
-    "name_list = name name_list_tail",
-    "name_list_tail? = , name! name_list_tail",
-
-    "cmd_scope = cmd_let | cmd_var | cmd_reset | cmd_unset",
-    "cmd_let = @let name = expr",
-    "cmd_var = @var name = expr",
-    "cmd_reset = @reset name = expr",
-    "cmd_unset = @unset name",
-
-    "cmd_set = @set left_val = expr",
-    "left_val = operand_base get_list",
-    "get_list = get get_list_tail",
-    "get_list_tail? = get get_list_tail",
-
-    "cmd_def = function | abs_def",
-    "abs_def = category | struct | enum | concept | class | interface",
-
-    "function = proto {! body }!",
-    "proto = affect name paralist_strict! ret",
-    "affect = @local | @upper | @global",
-    "ret? = -> type",
-    "body = static_block commands",
-    "static_block? = @static { commands }",
-
-    "category = @category name { branches! }!",
-    "branches? = branch branches",
-    "branch = abs_def",
-
-    "struct = @struct name { field_list condition }",
-    "field_list = field field_list_tail",
-    "field_list_tail? = field! field_list_tail",
-    "field = type name! field_default",
-    "field_default? = = expr",
-    "condition = @require expr",
-
-    "enum = @enum name = enum_litreal",
-
-    "concept = @concept name = expr",
-
-    "class = @class name { initializers! methods }",
-    "initializers? = initializer initializers",
-    "initializer = @init paralist_strict! {! body! }!",
-    "methods? = method methods",
-    "method = method_proto {! body }!",
-    "method_proto = method_type name paralist_strict! ret",
-    "method_type? = &",
-
-    "interface = @interface name { members }",
-    "members? = member members",
-    "member = method_proto | method",
-
-    "expr = operand expr_tail",
-    "expr_tail? = operator oprand! expr_tail",
-
-    "operator = op_group1 | op_group2 | op_group3 | op_group4",
-    "op_group1 = >= | <= | != | == | => | = ",
-    "op_group2 = -> | << | >> | > | < ",
-    `op_group3 = _exc | && | _bar2 | ~ | & | _bar1 | \ `,
-    "op_group4 = + | - | * | / | % | ^ ",
-
-    "operand = operand_base operand_tail",
-    "operand_base = ( expr! )! | lambda | literal | dot_para | identifier",
-    "operand_tail? = get operand_tail | call operand_tail",
-    "get = get_expr | get_name",
-    "call = call_self | call_method",
-    "get_expr = #get [ expr! ]!",
-    "get_name = . name!",
-    "call_self = #call arglist!",
-    "call_method = -> name #call args! | -> name extra_arg!",
-    "args = ( arglist )! extra_arg",
-    "extra_arg? = -> lambda",
-    "arglist? = exprlist",
-    "exprlist = expr exprlist_tail",
-    "exprlist_tail? = , expr! exprlist_tail",
-
-    "lambda = lambda_full | lambda_simple | lambda_bool",
-    "lambda_full = paralist ->! ret_lambda {! body! }!",
-    "lambda_simple = .{ paralist ->! expr! }! | .{ expr! }!",
-    "lambda_bool = ..{ paralist ->! expr! }! | ..{ expr! }!",
-    "ret_lambda? = type",
-
-    "paralist = name | ( ) | ( name_list! )! | ( typed_list! )!",
-    "paralist_strict = ( ) | ( typed_list! )!",
-    "typed_list = type policy name! typed_list_tail",
-    "typed_list_tail? = , type! name! typed_list_tail",
-
-    "type = type_base type_ext",
-    "type_ext? = < type_args! >!",
-    "type_base = name type_base_tail",
-    "type_base_tail? = . name! type_base_tail",
-    "type_args = type type_args_tail",
-    "type_args_tail? = , type! type_args_tail",
-    "policy? = & | *",
-
-    "identifier = Name",
-    "dot_para = . Name",
-    "literal = hash | list | concept_literal | enum_literal | primitive",
-
-    "hash = { } | { hash_item! hash_tail }!",
-    "hash_tail? = , hash_item! hash_tail",
-    "hash_item = name : expr",
-
-    "list = [ ] | [ list_item! list_tail ]!",
-    "list_tail? = , list_item! list_tail",
-    "list_item = expr",
-
-    "concept_literal = { name _bar1 filters! }!",
-    "filters = exprlist",
-
-    "enum_litreal = { enum_items }!",
-    "enum_items = exprlist",
-
-    "primitive = string | number | bool",
-    "string = String",
-    "number = Hex | Exp | Dec | Int",
-    "bool = @true | @false",
-
-}
-
-
-func Init () {
-    Name2Id = make(map[string]Id)
-    Keywords = make(map[Id][]rune)
-    for id, name := range Id2Name {
-        Name2Id[name] = Id(id)
-        if strings.HasPrefix(name, "@") {
-            var rlist = []rune(name)
-            Keywords[Id(id)] = rlist[1:]
+func GetPartType (name string) PartType {
+    var is_keyword = strings.HasPrefix(name, "@")
+    if is_keyword {
+        return MatchKeyword
+    } else {
+        var t = name[0:1]
+        if strings.ToUpper(t) == t {
+            // the name starts with capital letter
+            return MatchToken
+        } else {
+            // the name starts with small letter
+            return Recursive
         }
     }
+}
+
+func EscapePartName (name string) string {
+    if strings.HasPrefix(name, "_") && EscapeMap[name] != "" {
+        return EscapeMap[name]
+    } else {
+        return name
+    }
+}
+
+
+var Id2Name []string
+var Name2Id map[string]Id
+var Id2Keyword map[Id][]rune
+var Rules map[Id]Rule
+var EntryPointName string
+
+func Alloc () {
+    Id2Name = make([]string, 0, 1000)
+    Name2Id = make(map[string]Id)
+    Id2Keyword = make(map[Id][]rune)
+}
+
+func AssignId2Name (name string) Id {
+    // TODO: check repeat
+    var id = Id(len(Id2Name))
+    Name2Id[name] = id
+    Id2Name = append(Id2Name, name)
+    return id
+}
+
+func AssignId2Extra () {
+    for _, token_name := range Extra {
+        AssignId2Name(token_name)
+    }
+}
+
+func AssignId2Tokens () {
+    for _, token := range Tokens {
+        AssignId2Name(token.Name)
+    }
+}
+
+func AssignId2Keywords () {
+    for _, name := range Keywords {
+        var keyword = []rune(strings.TrimLeft(name, "@"))
+        var id = AssignId2Name(name)
+        Id2Keyword[id] = keyword
+    }
+}
+
+func AssignId2Rules () {
+    for i, def := range SyntaxDefinition {
+        var t = strings.Split(def, "=")
+        var rule_name = strings.TrimRight(t[0], "?")
+        AssignId2Name(rule_name)
+        if (i == 0) {
+            EntryPointName = rule_name
+        }
+    }
+}
+
+func ParseRules () {
+    for _, def := range SyntaxDefinition {
+        var pivot = strings.Index(def, "=")
+        if (pivot == -1) { panic(def + ": invalid rule: missing =") }
+        // name = ...
+        var str_name = strings.Trim(def[:pivot], " ")
+        var name = strings.TrimRight(str_name, "?")
+        var emptable = strings.HasSuffix(str_name, "?")
+        var id, exists = Name2Id[name]
+        if (!exists) { panic("undefined rule name: " + name) }
+        // ... = branches
+        var str_branches = strings.Trim(def[pivot+1:], " ")
+        if (str_branches == "") { panic(name + ": missing rule definition") }
+        var strlist_branches = strings.Split(str_branches, " | ")
+        var n_branches = len(strlist_branches)
+        var strlist2_branches = make([][]string, n_branches)
+        for i, str_branch := range strlist_branches {
+            strlist2_branches[i] = strings.Split(str_branch, " ")
+        }
+        var branches = make([]Branch, n_branches)
+        for i, strlist_branch := range strlist2_branches {
+            branches[i].parts = make([]Part, len(strlist_branch))
+            for j, str_part := range strlist_branch {
+                // extract part name
+                var required = strings.HasSuffix(str_part, "!")
+                var part_name = strings.TrimRight(str_part, "!")
+                part_name = EscapePartName(part_name)
+                // add to list if it is a keyword
+                var part_type = GetPartType(part_name)
+                var id, exists = Name2Id[part_name]
+                if (!exists) { panic("undefined part: " + part_name) }
+                branches[i].parts[j] = Part {
+                    id: id, required: required, partype: part_type,
+                }
+            }
+        }
+        Rules[id] = Rule {
+            branches: branches, emptable: emptable, id: id,
+        }
+    }
+}
+
+func Init () {
+    Alloc()
+    AssignId2Extra()
+    AssignId2Tokens()
+    AssignId2Keywords()
+    AssignId2Rules()
+    ParseRules()
 }

@@ -85,6 +85,7 @@ func Scan (code Code) (TokenSequence, RowColInfo) {
         if amount == 0 { break }
         if id == BlankId { pos += amount; continue }
         if id == CommentId { pos += amount; continue }
+        // TODO: insert Call and Get
         tokens = append(tokens, Token {
             Id: id,
             Pos: pos,
