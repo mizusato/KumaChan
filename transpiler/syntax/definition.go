@@ -12,6 +12,7 @@ var EscapeMap = map[string]string {
     "_exc":   "!",
     "_bar1":  "|",
     "_bar2":  "||",
+    "_at":    "@",
 }
 
 var Extra = [...]string { "Call", "Get" }
@@ -48,6 +49,7 @@ var Tokens = [...]Token {
     Token { Name: ",",       Pattern: r(`\,`) },
     Token { Name: "::",      Pattern: r(`\:\:`) },
     Token { Name: ":",       Pattern: r(`\:`) },
+    Token { Name: "@",       Pattern: r(`@`) },
     Token { Name: ">=",      Pattern: r(`\>\=`) },
     Token { Name: "<=",      Pattern: r(`\<\=`) },
     Token { Name: "!=",      Pattern: r(`\!\=`) },
@@ -84,8 +86,9 @@ var Tokens = [...]Token {
 var Keywords = [...]string {
     "@module", "@export", "@import", "@use", "@as",
     "@if", "@elif", "@else", "@while", "@for", "@in", "@break", "@continue",
-    "@let", "@var", "@reset", "@unset", "@set",
-    "@local", "@upper", "@global", "@static",
+    "@let", "@var", "@reset", "@unset", "@outer",
+    "@set", "@throw", "@assert", "@require",
+    "@local", "@upper", "@global", "@static", "@handle", "@unless", "@finally",
     "@category", "@struct", "@require", "@enum", "@concept",
     "@class", "@init", "@interface",
     "@true", "@false",
@@ -106,7 +109,7 @@ var SyntaxDefinition = [...]string {
     "as_item = name @as name! | name",
 
     "commands? = command commands",
-    "command = cmd_flow cmd_module cmd_scope cmd_set cmd_def cmd_expr",
+    "command = cmd_flow cmd_module cmd_scope cmd_set cmd_err cmd_def cmd_expr",
     "cmd_expr = expr",
 
     "cmd_flow = cmd_if | cmd_while | cmd_for",
@@ -131,16 +134,23 @@ var SyntaxDefinition = [...]string {
     "name_list = name name_list_tail",
     "name_list_tail? = , name! name_list_tail",
 
-    "cmd_scope = cmd_let | cmd_var | cmd_reset | cmd_unset",
+    "cmd_scope = cmd_let | cmd_var | cmd_reset | cmd_unset | cmd_outer",
     "cmd_let = @let name = expr",
     "cmd_var = @var name = expr",
     "cmd_reset = @reset name = expr",
     "cmd_unset = @unset name",
+    "cmd_outer = @outer name = expr",
 
     "cmd_set = @set left_val = expr",
     "left_val = operand_base get_list",
     "get_list = get get_list_tail",
     "get_list_tail? = get get_list_tail",
+
+    "cmd_err = cmd_throw | cmd_assert | cmd_require",
+    "cmd_throw = @throw expr",
+    "cmd_assert = @assert expr",
+    "cmd_require = @require name require_args { expr }",
+    "require_args? = Call ( exprlist )",
 
     "cmd_def = function | abs_def",
     "abs_def = category | struct | enum | concept | class | interface",
@@ -149,8 +159,15 @@ var SyntaxDefinition = [...]string {
     "proto = affect name Call paralist_strict! ret",
     "affect = @local | @upper | @global",
     "ret? = -> type",
-    "body = static_body commands",
-    "static_body? = @static { commands }",
+    "body = static_head commands handle_tail",
+    "static_head? = @static block",
+    "handle_tail? = _at @handle name handle_block finally",
+    "handle_block = { handle_cmds }!",
+    "handle_cmds? = handle_cmd handle_cmds",
+    "handle_cmd = unless | command",
+    "unless = @unless name unless_para { body }",
+    "unless_para? = Call ( paralist )",
+    "finally = _at @finally block",
 
     "category = @category name { branches! }!",
     "branches? = branch branches",
