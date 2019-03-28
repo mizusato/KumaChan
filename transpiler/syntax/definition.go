@@ -83,11 +83,12 @@ var Tokens = [...]Token {
 
 var Keywords = [...]string {
     "@module", "@export", "@import", "@use", "@as",
+    "@if", "@elif", "@else", "@while", "@for", "@in", "@break", "@continue",
     "@let", "@var", "@reset", "@unset", "@set",
     "@local", "@upper", "@global", "@static",
     "@category", "@struct", "@require", "@enum", "@concept",
     "@class", "@init", "@interface",
-    "@in", "@true", "@false",
+    "@true", "@false",
 }
 
 
@@ -105,8 +106,24 @@ var SyntaxDefinition = [...]string {
     "as_item = name @as name! | name",
 
     "commands? = command commands",
-    "command = cmd_module cmd_scope cmd_set cmd_def cmd_expr",
+    "command = cmd_flow cmd_module cmd_scope cmd_set cmd_def cmd_expr",
     "cmd_expr = expr",
+
+    "cmd_flow = cmd_if | cmd_while | cmd_for",
+    "cmd_if = @if expr block elifs else",
+    "elifs? = elif elifs",
+    "elif = @elif expr block",
+    "else? = @else expr block",
+    "cmd_while = @while expr loop_block",
+    "cmd_for = @for for_para @in expr loop_block",
+    "for_para = for_value | for_key , for_value",
+    "for_key = name",
+    "for_value = name",
+    "block = { commands }!",
+    "loop_block = { loop_cmds }!",
+    "loop_cmds? = loop_cmd loop_cmds",
+    "loop_cmd = loop_control | command",
+    "loop_control = @break | @continue",
 
     "cmd_module = cmd_use | cmd_import",
     "cmd_use = @use as_list",
@@ -132,8 +149,8 @@ var SyntaxDefinition = [...]string {
     "proto = affect name Call paralist_strict! ret",
     "affect = @local | @upper | @global",
     "ret? = -> type",
-    "body = static_block commands",
-    "static_block? = @static { commands }",
+    "body = static_body commands",
+    "static_body? = @static { commands }",
 
     "category = @category name { branches! }!",
     "branches? = branch branches",
