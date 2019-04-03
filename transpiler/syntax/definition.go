@@ -145,7 +145,7 @@ var SyntaxDefinition = [...]string {
     "cmd_assert = @assert expr!",
     "cmd_require = @require name! require_args { expr! }!",
     "require_args? = Call ( exprlist )",
-    "cmd_try = @try command!",
+    "cmd_try = @try name : command!",
     /* Module Related Commands @ Group 2 */
     "cmd_module = cmd_use | cmd_import",
     "cmd_use = @use as_list",
@@ -241,7 +241,7 @@ var SyntaxDefinition = [...]string {
     "call = call_self | call_method",
     "get_expr = Get [ expr! ]!",
     "get_name = Get . name!",
-    "call_self = Call arglist!",
+    "call_self = Call args!",
     "call_method = -> name Call args! | -> name extra_arg!",
     "args = ( arglist )! extra_arg",
     "extra_arg? = -> bb_expr",
@@ -252,7 +252,7 @@ var SyntaxDefinition = [...]string {
 
     /* Lambda */
     "lambda = lambda_full | lambda_simple | lambda_bool | lambda_nopl",
-    "lambda_full = lambda_header paralist ->! ret_lambda {! body! }!",
+    "lambda_full = lambda_header paralist -> ret_lambda {! body! }!",
     "lambda_header? = fun_type",
     "ret_lambda? = type",
     "lambda_simple = .{ paralist ->! expr! }! | .{ expr! }!",
@@ -287,7 +287,7 @@ var SyntaxDefinition = [...]string {
     "list_item_extra? = : expr",
     /* List/Iterator Comprehension */
     "comprehension = .[ comp_rule! ]! | [ comp_rule ]!",
-    "comp_rule = expr _bar1! in_list! opt_filters",
+    "comp_rule = expr _bar1 in_list! opt_filters",
     "opt_filters? = exprlist",
     "in_list = in_item in_list_tail",
     "in_list_tail? = , in_item! in_list_tail",

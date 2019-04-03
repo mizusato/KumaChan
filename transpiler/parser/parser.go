@@ -46,11 +46,11 @@ func BuildRawTree (tokens scanner.TokenSequence) RawTree {
         Tried:   0,         Index:   0,
         Pos:     0,         Amount:  0,
     }
-    var tree = make(RawTree, 0, 10000)
+    var tree = make(RawTree, 0, 100000)
     tree = append(tree, Root)
     var ptr = 0
-    for {
-        PrintRawTree(tree)
+    loop: for {
+        // PrintRawTree(tree)
         var node = &tree[ptr]
         var id = node.Part.Id
         var partype = node.Part.Partype
@@ -72,6 +72,7 @@ func BuildRawTree (tokens scanner.TokenSequence) RawTree {
             }
         case syntax.MatchToken:
             var pos = node.Pos
+            if pos >= len(tokens) { node.Status = Failed; break }
             if tokens[pos].Id == id {
                 node.Status = Success
                 node.Amount = 1
@@ -79,6 +80,7 @@ func BuildRawTree (tokens scanner.TokenSequence) RawTree {
                 node.Status = Failed
             }
         case syntax.MatchKeyword:
+            if node.Pos >= len(tokens) { node.Status = Failed; break }
             var keyword = syntax.Id2Keyword[id]
             var token = tokens[node.Pos]
             if token.Id != NameId {
@@ -104,7 +106,7 @@ func BuildRawTree (tokens scanner.TokenSequence) RawTree {
         default:
             panic("invalid part type")
         }
-        if node.Part.Required && node.Amount == 0 {
+        if node.Part.Required && node.Length == 0 && node.Amount == 0 {
             if node.Status == Success || node.Status == Failed {
                 // TODO
                 panic(syntax.Id2Name[id] + " expected")
@@ -128,19 +130,19 @@ func BuildRawTree (tokens scanner.TokenSequence) RawTree {
                 })
                 j += 1
             }
-            ptr += num_parts
+            ptr = len(tree) - 1
             tree[ptr].Pos = node.Pos
             node.Status = Pending
         case Failed:
             var parent_ptr = node.Parent
-            if parent_ptr < 0 { break }
+            if parent_ptr < 0 { break loop }
             var parent = &tree[parent_ptr]
             parent.Status = BranchFailed
-            tree = tree[0: parent_ptr+1]
+            tree = tree[0: ptr-(node.Index)]
             ptr = parent_ptr
         case Success:
             var parent_ptr = node.Parent
-            if parent_ptr < 0 { break }
+            if parent_ptr < 0 { break loop }
             var parent = &tree[parent_ptr]
             parent.Children[parent.Length] = ptr
             parent.Length += 1

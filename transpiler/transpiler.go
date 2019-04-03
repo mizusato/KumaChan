@@ -42,9 +42,9 @@ func test () {
         }
         var children_str = strings.Join(children, ",")
         fmt.Printf(
-            "#%v %v [%v] pos=%+v, amount=%v\n",
+            "#%v %v [%v] pos=%v, amount=%v\n",
             i, syntax.Id2Name[node.Part.Id], children_str,
-            info[node.Pos], node.Amount,
+            node.Pos, node.Amount,
         )
     }
 }
