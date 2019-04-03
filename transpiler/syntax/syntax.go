@@ -2,6 +2,8 @@ package syntax
 
 import "strings"
 
+const MAX_NUM_PARTS = 20
+
 type Id int
 
 type Token struct {
@@ -10,13 +12,13 @@ type Token struct {
 }
 
 type Rule struct {
-    id        Id
-    emptable  bool
-    branches  []Branch
+    Id        Id
+    Emptable  bool
+    Branches  []Branch
 }
 
 type Branch struct {
-    parts  []Part
+    Parts  []Part
 }
 
 type PartType int
@@ -28,9 +30,9 @@ const (
 )
 
 type Part struct {
-    id        Id
-    partype   PartType
-    required  bool
+    Id        Id
+    Partype   PartType
+    Required  bool
 }
 
 func GetPartType (name string) PartType {
@@ -62,7 +64,7 @@ var Id2Name []string
 var Name2Id map[string]Id
 var Id2Keyword map[Id][]rune
 var Rules map[Id]Rule
-var EntryPointName string
+var RootName string
 
 func Alloc () {
     Id2Name = make([]string, 0, 1000)
@@ -94,6 +96,7 @@ func AssignId2Tokens () {
 func AssignId2Keywords () {
     for _, name := range Keywords {
         var keyword = []rune(strings.TrimLeft(name, "@"))
+        if len(keyword) == 0 { panic("empty keyword") }
         var id = AssignId2Name(name)
         Id2Keyword[id] = keyword
     }
@@ -106,7 +109,7 @@ func AssignId2Rules () {
         var rule_name = strings.TrimRight(u, "?")
         AssignId2Name(rule_name)
         if (i == 0) {
-            EntryPointName = rule_name
+            RootName = rule_name
         }
     }
 }
@@ -132,7 +135,9 @@ func ParseRules () {
         }
         var branches = make([]Branch, n_branches)
         for i, strlist_branch := range strlist2_branches {
-            branches[i].parts = make([]Part, len(strlist_branch))
+            var num_parts = len(strlist_branch)
+            branches[i].Parts = make([]Part, num_parts)
+            if num_parts > MAX_NUM_PARTS { panic(name + ": too many parts") }
             for j, str_part := range strlist_branch {
                 // extract part name
                 var required = strings.HasSuffix(str_part, "!")
@@ -142,13 +147,13 @@ func ParseRules () {
                 var part_type = GetPartType(part_name)
                 var id, exists = Name2Id[part_name]
                 if (!exists) { panic("undefined part: " + part_name) }
-                branches[i].parts[j] = Part {
-                    id: id, required: required, partype: part_type,
+                branches[i].Parts[j] = Part {
+                    Id: id, Required: required, Partype: part_type,
                 }
             }
         }
         Rules[id] = Rule {
-            branches: branches, emptable: emptable, id: id,
+            Branches: branches, Emptable: emptable, Id: id,
         }
     }
 }
