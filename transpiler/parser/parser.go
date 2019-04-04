@@ -30,9 +30,9 @@ type TreeNode struct {
     Children  [M]int        //  pointers of children
     Length    int           //  number of children
     Status    NodeStatus    //  current status
-    Tried     int           //  number of tried branch
+    Tried     int           //  number of tried branches
     Index     int           //  index of the Part in the branch (reversed)
-    Pos       int           //  position in TokenSequence
+    Pos       int           //  beginning position in TokenSequence
     Amount    int           //  number of tokens that matched by the node
 }
 
@@ -180,11 +180,10 @@ func BuildRawTree (tokens scanner.TokenSequence) RawTree {
             panic("invalid status")
         }
     }
-    /*
-    if Root.Amount < len(tokens) {
-        panic("parser stuck at " + strconv.Itoa(Root.Amount))
+    if tree[0].Amount < len(tokens) {
+        PrintRawTree(tree)
+        panic("parser stuck at " + strconv.Itoa(tree[0].Amount))
     }
-    */
     return tree
 }
 
