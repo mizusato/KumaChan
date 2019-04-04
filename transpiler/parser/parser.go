@@ -53,14 +53,13 @@ func BuildRawTree (tokens scanner.TokenSequence) RawTree {
         Partype:   syntax.Recursive,
         Required:  true,
     }
-    var Root = TreeNode {
+    var tree = make(RawTree, 0, 100000)
+    tree = append(tree, TreeNode {
         Part:    RootPart,  Parent:  -1,
         Length:  0,         Status:  Initial,
         Tried:   0,         Index:   0,
         Pos:     0,         Amount:  0,
-    }
-    var tree = make(RawTree, 0, 100000)
-    tree = append(tree, Root)
+    })
     var ptr = 0
     loop: for {
         /*
@@ -75,21 +74,24 @@ func BuildRawTree (tokens scanner.TokenSequence) RawTree {
             if node.Status == Initial {
                 node.Status = BranchFailed
             }
+            // derivation through a branch failed
             if node.Status == BranchFailed {
                 var rule = syntax.Rules[id]
                 var num_branches = len(rule.Branches)
+                // check if all branches have been tried
                 if node.Tried == num_branches {
+                    // if tried, switch to a final status
                     if rule.Emptable {
                         node.Status = Success
+                        node.Length = 0
                     } else {
                         node.Status = Failed
                     }
                 }
             }
         case syntax.MatchToken:
-            var pos = node.Pos
-            if pos >= len(tokens) { node.Status = Failed; break }
-            if tokens[pos].Id == id {
+            if node.Pos >= len(tokens) { node.Status = Failed; break }
+            if tokens[node.Pos].Id == id {
                 node.Status = Success
                 node.Amount = 1
             } else {
@@ -97,44 +99,45 @@ func BuildRawTree (tokens scanner.TokenSequence) RawTree {
             }
         case syntax.MatchKeyword:
             if node.Pos >= len(tokens) { node.Status = Failed; break }
-            var keyword = syntax.Id2Keyword[id]
+            if tokens[node.Pos].Id != NameId { node.Status = Failed; break }
             var token = tokens[node.Pos]
-            if token.Id != NameId {
-                node.Status = Failed
-                break
-            }
-            if len(token.Content) != len(keyword) {
-                node.Status = Failed
-                break
-            }
+            var text = token.Content
+            var keyword = syntax.Id2Keyword[id]
+            if len(text) != len(keyword) { node.Status = Failed; break }
             var equal = true
             for i, char := range keyword {
-                if char != token.Content[i] {
+                if char != text[i] {
                     equal = false
+                    break
                 }
             }
-            if !equal {
-                node.Status = Failed
-            } else {
+            if equal {
                 node.Status = Success
                 node.Amount = 1
+            } else {
+                node.Status = Failed
             }
         default:
             panic("invalid part type")
         }
-        if node.Part.Required && node.Length == 0 && node.Amount == 0 {
-            if node.Status == Success || node.Status == Failed {
-                // TODO
+        // if node is in final status
+        if node.Status == Success || node.Status == Failed {
+            // if partype is Recursive, empty match <=> node.Length == 0
+            // if partype is otherwise, empty match <=> node.Amount == 0
+            // if node.part is required, it should not be empty
+            if node.Part.Required && node.Length == 0 && node.Amount == 0 {
                 PrintRawTree(tree)
                 panic(syntax.Id2Name[id] + " expected")
             }
         }
         switch node.Status {
         case BranchFailed:
+            // status == BranchFailed  =>  partype == Recursive
             var rule = syntax.Rules[id]
             var next = rule.Branches[node.Tried]
-            node.Tried += 1
-            node.Length = 0
+            node.Tried += 1   // increment the number of tried branches
+            node.Length = 0   // clear invalid children
+            // derive through the next branch
             var num_parts = len(next.Parts)
             var j = 0
             for i := num_parts-1; i >= 0; i-- {
@@ -154,11 +157,12 @@ func BuildRawTree (tokens scanner.TokenSequence) RawTree {
             var parent_ptr = node.Parent
             if parent_ptr < 0 { break loop }
             var parent = &tree[parent_ptr]
-            parent.Status = BranchFailed
-            tree = tree[0: ptr-(node.Index)]
-            ptr = parent_ptr
+            parent.Status = BranchFailed      // notify failure to parent node
+            tree = tree[0: ptr-(node.Index)]  // clear invalid nodes
+            ptr = parent_ptr  // go back to parent node
         case Success:
             if partype == syntax.Recursive {
+                // calcuate the number of tokens matched by the node
                 node.Amount = 0
                 for i := 0; i < node.Length; i++ {
                     node.Amount += tree[node.Children[i]].Amount
@@ -170,9 +174,13 @@ func BuildRawTree (tokens scanner.TokenSequence) RawTree {
             parent.Children[parent.Length] = ptr
             parent.Length += 1
             if node.Index > 0 {
+                // if node.part is NOT the last part in the branch,
+                // go to the node corresponding to the next part
                 ptr -= 1
                 tree[ptr].Pos = node.Pos + node.Amount
             } else {
+                // if node.part is the last part in the branch
+                // notify success to the parent node and go to it
                 ptr = parent_ptr
                 tree[ptr].Status = Success
             }
@@ -180,9 +188,11 @@ func BuildRawTree (tokens scanner.TokenSequence) RawTree {
             panic("invalid status")
         }
     }
-    if tree[0].Amount < len(tokens) {
+    // check if all the tokens have been matched
+    var root_node = tree[0]
+    if root_node.Amount < len(tokens) {
         PrintRawTree(tree)
-        panic("parser stuck at " + strconv.Itoa(tree[0].Amount))
+        panic("parser stuck at " + strconv.Itoa(root_node.Amount))
     }
     return tree
 }
@@ -201,9 +211,9 @@ func PrintTreeNode (ptr int, node TreeNode) {
     }
     var children_str = strings.Join(children, ", ")
     fmt.Printf(
-        "(%v) %v [%v] parent=%v, status=%v, tried=%v, pos=%+v, amount=%v\n",
+        "(%v) %v [%v] parent=%v, status=%v, tried=%v, index=%v, pos=%+v, amount=%v\n",
         ptr, syntax.Id2Name[node.Part.Id], children_str,
-        node.Parent, node.Status, node.Tried, node.Pos, node.Amount,
+        node.Parent, node.Status, node.Tried, node.Index, node.Pos, node.Amount,
     )
 }
 
@@ -280,7 +290,7 @@ func PrintTreeRecursively (
 }
 
 func PrintTree (tree Tree) {
-    var buf strings.Builder
+    var buf StrBuf
     var is_last = make([]bool, 0, 1000)
     is_last = append(is_last, true)
     PrintTreeRecursively(&buf, tree, 0, 0, is_last)

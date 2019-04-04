@@ -103,7 +103,7 @@ var Keywords = [...]string {
 var SyntaxDefinition = [...]string {
 
     /* Root */
-    "program = module | expr",
+    "program = module | command",
 
     /* Module */
     "module = module_declare exports commands",
@@ -252,14 +252,16 @@ var SyntaxDefinition = [...]string {
 
     /* Lambda */
     "lambda = lambda_full | lambda_simple | lambda_bool | lambda_nopl",
-    "lambda_full = lambda_header @lambda paralist -> ret_lambda {! body! }!",
-    "lambda_header? = fun_type",
+    "lambda_full = header_lambda paralist_lambda -> ret_lambda {! body! }!",
+    "header_lambda = fun_type_lambda @lambda",
+    "fun_type_lambda? = fun_type",
     "ret_lambda? = type",
     "lambda_simple = .{ paralist ->! expr! }! | .{ expr! }!",
     "lambda_bool = ..{ paralist ->! expr! }! | ..{ expr! }!",
     "lambda_nopl = ...{ body! }!",
     /* Parameter List */
-    "paralist = name | ( ) | ( namelist )! | ( typed_namelist! )!",
+    "paralist = ( ) | ( namelist ) | ( typed_namelist! )!",
+    "paralist_lambda = name | Call paralist",
     "paralist_strict = ( ) | ( typed_namelist! )!",
     "typed_namelist = type policy name! typed_namelist_tail",
     "typed_namelist_tail? = , type! name! typed_namelist_tail",
