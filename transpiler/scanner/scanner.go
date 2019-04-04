@@ -19,8 +19,8 @@ type TokenSequence = []Token
 
 
 type Point struct {
-    row int
-    col int
+    Row int
+    Col int
 }
 
 type RowColInfo = []Point
@@ -52,7 +52,7 @@ func GetInfo (code Code) RowColInfo {
             row += 1
             col = 0
         }
-        info = append(info, Point { row: row, col: col })
+        info = append(info, Point { Row: row, Col: col })
     }
     return info
 }

@@ -3,11 +3,8 @@ package main;
 
 import "os"
 import "fmt"
-import "strings"
-import "strconv"
 import "io/ioutil"
 import "./syntax"
-import "./scanner"
 import "./parser"
 
 
@@ -24,29 +21,19 @@ func test () {
     check(err)
     var code_string = string(code_bytes)
     var code = []rune(code_string)
-    var tokens, info = scanner.Scan(code)
-    for _, token := range tokens {
+    var tree = parser.BuildTree(code)
+    fmt.Printf("\n")
+    for _, token := range tree.Tokens {
         fmt.Printf(
             "#%+v [%v:%v]: %v\n",
-            info[token.Pos], token.Id, syntax.Id2Name[token.Id],
+            tree.Info[token.Pos], token.Id, syntax.Id2Name[token.Id],
             string(token.Content),
         )
     }
     fmt.Printf("\n")
-    var raw_tree = parser.BuildRawTree(tokens)
+    parser.PrintRawTree(tree.Nodes)
     fmt.Printf("\n")
-    for i, node := range raw_tree {
-        var children = make([]string, 0, 20)
-        for i := 0; i < node.Length; i++ {
-            children = append(children, strconv.Itoa(node.Children[i]))
-        }
-        var children_str = strings.Join(children, ",")
-        fmt.Printf(
-            "#%v %v [%v] pos=%v, amount=%v\n",
-            i, syntax.Id2Name[node.Part.Id], children_str,
-            node.Pos, node.Amount,
-        )
-    }
+    parser.PrintTree(tree)
 }
 
 

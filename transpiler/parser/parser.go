@@ -3,8 +3,15 @@ package parser
 import "fmt"
 import "strings"
 import "strconv"
+import "unicode/utf8"
 import "../syntax"
 import "../scanner"
+
+type StrBuf = strings.Builder
+
+func strlen (s string) int {
+    return utf8.RuneCountInString(s)
+}
 
 
 type NodeStatus int
@@ -17,7 +24,7 @@ const (
 )
 
 const M = syntax.MAX_NUM_PARTS
-type RawTreeNode struct {
+type TreeNode struct {
     Part      syntax.Part   //  { Id, Partype, Required }
     Parent    int           //  pointer of parent node
     Children  [M]int        //  pointers of children
@@ -29,7 +36,13 @@ type RawTreeNode struct {
     Amount    int           //  number of tokens that matched by the node
 }
 
-type RawTree = []RawTreeNode
+type RawTree = []TreeNode
+
+type Tree struct {
+    Tokens  scanner.TokenSequence
+    Info    scanner.RowColInfo
+    Nodes   RawTree
+}
 
 
 func BuildRawTree (tokens scanner.TokenSequence) RawTree {
@@ -40,7 +53,7 @@ func BuildRawTree (tokens scanner.TokenSequence) RawTree {
         Partype:   syntax.Recursive,
         Required:  true,
     }
-    var Root = RawTreeNode {
+    var Root = TreeNode {
         Part:    RootPart,  Parent:  -1,
         Length:  0,         Status:  Initial,
         Tried:   0,         Index:   0,
@@ -50,7 +63,10 @@ func BuildRawTree (tokens scanner.TokenSequence) RawTree {
     tree = append(tree, Root)
     var ptr = 0
     loop: for {
-        // PrintRawTree(tree)
+        /*
+        fmt.Println("-------------------------------")
+        PrintRawTree(tree)
+        */
         var node = &tree[ptr]
         var id = node.Part.Id
         var partype = node.Part.Partype
@@ -109,6 +125,7 @@ func BuildRawTree (tokens scanner.TokenSequence) RawTree {
         if node.Part.Required && node.Length == 0 && node.Amount == 0 {
             if node.Status == Success || node.Status == Failed {
                 // TODO
+                PrintRawTree(tree)
                 panic(syntax.Id2Name[id] + " expected")
             }
         }
@@ -122,7 +139,7 @@ func BuildRawTree (tokens scanner.TokenSequence) RawTree {
             var j = 0
             for i := num_parts-1; i >= 0; i-- {
                 var part = next.Parts[i]
-                tree = append(tree, RawTreeNode {
+                tree = append(tree, TreeNode {
                     Part:    part,   Parent:  ptr,
                     Length:  0,      Status:  Initial,
                     Tried:   0,      Index:   j,
@@ -141,17 +158,17 @@ func BuildRawTree (tokens scanner.TokenSequence) RawTree {
             tree = tree[0: ptr-(node.Index)]
             ptr = parent_ptr
         case Success:
-            var parent_ptr = node.Parent
-            if parent_ptr < 0 { break loop }
-            var parent = &tree[parent_ptr]
-            parent.Children[parent.Length] = ptr
-            parent.Length += 1
             if partype == syntax.Recursive {
                 node.Amount = 0
                 for i := 0; i < node.Length; i++ {
                     node.Amount += tree[node.Children[i]].Amount
                 }
             }
+            var parent_ptr = node.Parent
+            if parent_ptr < 0 { break loop }
+            var parent = &tree[parent_ptr]
+            parent.Children[parent.Length] = ptr
+            parent.Length += 1
             if node.Index > 0 {
                 ptr -= 1
                 tree[ptr].Pos = node.Pos + node.Amount
@@ -163,11 +180,22 @@ func BuildRawTree (tokens scanner.TokenSequence) RawTree {
             panic("invalid status")
         }
     }
-
+    /*
+    if Root.Amount < len(tokens) {
+        panic("parser stuck at " + strconv.Itoa(Root.Amount))
+    }
+    */
     return tree
 }
 
-func PrintRawTreeNode (ptr int, node RawTreeNode) {
+func BuildTree (code scanner.Code) Tree {
+    var tokens, info = scanner.Scan(code)
+    var nodes = BuildRawTree(tokens)
+    return Tree { Tokens: tokens, Info: info, Nodes: nodes }
+}
+
+
+func PrintTreeNode (ptr int, node TreeNode) {
     var children = make([]string, 0, 20)
     for i := 0; i < node.Length; i++ {
         children = append(children, strconv.Itoa(node.Children[i]))
@@ -181,8 +209,81 @@ func PrintRawTreeNode (ptr int, node RawTreeNode) {
 }
 
 func PrintRawTree (tree RawTree) {
-    fmt.Println("------------------------------")
     for i, n := range tree {
-        PrintRawTreeNode(i, n)
+        PrintTreeNode(i, n)
     }
+}
+
+
+func Repeat (n int, f func(int)) {
+    for i := 0; i < n; i++ {
+        f(i)
+    }
+}
+
+func Fill (buf *StrBuf, n int, s string, blank string) {
+    buf.WriteString(s)
+    Repeat(n-strlen(s), func (_ int) {
+        buf.WriteString(blank)
+    })
+}
+
+func PrintTreeRecursively (
+    buf *StrBuf, tree Tree, ptr int, depth int, is_last []bool,
+) {
+    const INC = 2
+    const SPACE = " "
+    var node = &tree.Nodes[ptr]
+    Repeat(depth+1, func (i int) {
+        if depth > 0 && i < depth {
+            if is_last[i] {
+                Fill(buf, INC, "", SPACE)
+            } else {
+                Fill(buf, INC, "│", SPACE)
+            }
+        } else {
+            if is_last[depth] {
+                Fill(buf, INC, "└", "─")
+            } else {
+                Fill(buf, INC, "├", "─")
+            }
+        }
+    })
+    if node.Length > 0 {
+        buf.WriteString("┬─")
+    } else {
+        buf.WriteString("──")
+    }
+    fmt.Fprintf(buf, "[%v]", syntax.Id2Name[node.Part.Id])
+    buf.WriteRune(' ')
+    switch node.Part.Partype {
+    case syntax.MatchToken:
+        var token = tree.Tokens[node.Pos]
+        fmt.Fprintf(buf, "'%v'", string(token.Content))
+        buf.WriteRune(' ')
+        var point = tree.Info[tree.Tokens[node.Pos].Pos]
+        fmt.Fprintf(buf, "at <%v,%v>", point.Row, point.Col)
+        buf.WriteRune('\n')
+    case syntax.MatchKeyword:
+        buf.WriteRune('\n')
+    case syntax.Recursive:
+        if node.Length == 0 {
+            buf.WriteString("(empty)")
+        }
+        buf.WriteRune('\n')
+        for i := 0; i < node.Length; i++ {
+            var child = node.Children[i]
+            is_last = append(is_last, i == node.Length-1)
+            PrintTreeRecursively(buf, tree, child, depth+1, is_last)
+            is_last = is_last[0: len(is_last)-1]
+        }
+    }
+}
+
+func PrintTree (tree Tree) {
+    var buf strings.Builder
+    var is_last = make([]bool, 0, 1000)
+    is_last = append(is_last, true)
+    PrintTreeRecursively(&buf, tree, 0, 0, is_last)
+    fmt.Println(buf.String())
 }

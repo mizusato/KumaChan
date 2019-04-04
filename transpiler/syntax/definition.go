@@ -118,9 +118,9 @@ var SyntaxDefinition = [...]string {
     /* Commands */
     "commands? = command commands",
     "command = cmd_group1 | cmd_group2 | cmd_group3",
-    "cmd_group1 = cmd_flow cmd_return cmd_err",
-    "cmd_group2 = cmd_module cmd_scope cmd_def",
-    "cmd_group3 = cmd_set cmd_exec",
+    "cmd_group1 = cmd_flow | cmd_return | cmd_err",
+    "cmd_group2 = cmd_module | cmd_scope | cmd_def",
+    "cmd_group3 = cmd_set | cmd_exec",
     /* Flow Control Commands @ Group 1 */
     "cmd_flow = cmd_if | cmd_while | cmd_for",
     "cmd_if = @if expr! block! elifs else",
@@ -200,7 +200,7 @@ var SyntaxDefinition = [...]string {
     "condition = @require expr",
     /* Enum */
     "enum = @enum name enum_literal",
-    "enum_literal = { enum_items }!",
+    "enum_literal = { enum_items }",
     "enum_items = exprlist",
     /* Concept */
     "concept = @concept name expr",
