@@ -1,4 +1,4 @@
-package main;
+package main
 
 
 import "os"
@@ -6,6 +6,7 @@ import "fmt"
 import "io/ioutil"
 import "./syntax"
 import "./parser"
+import "./transpiler"
 
 
 func check (err error) {
@@ -17,6 +18,7 @@ func check (err error) {
 
 func test () {
     syntax.Init()
+    transpiler.Init()
     var code_bytes, err = ioutil.ReadAll(os.Stdin)
     check(err)
     var code_string = string(code_bytes)
@@ -34,6 +36,8 @@ func test () {
     parser.PrintBareTree(tree.Nodes)
     fmt.Printf("\n")
     parser.PrintTree(tree)
+    var js = transpiler.Transpile(&tree, 0)
+    fmt.Println(js)
 }
 
 

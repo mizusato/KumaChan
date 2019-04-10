@@ -321,4 +321,3 @@ function get_type(object) {
     }
     return UserlandTypeRename[type] || type
 }
-

@@ -279,6 +279,11 @@ function var_assign(scope, name, new_value) {
          let value = raw(scope)
          // check value
          err.assert(is(value, proto.value), MSG.retval_invalid)
+         if (caller_scope != null) {
+             if (scope.check_immutable(value)) {
+                 caller_scope.register_immutable(value)
+             }
+         }
          return value
      }
      // wrap function

@@ -6,5 +6,5 @@ runtime:
 	runtime/build.py runtime/runtime.js > build/dev/runtime.js
 
 transpiler:
-	go build -o build/dev/transpiler transpiler/transpiler.go
+	go build -o build/dev/transpiler transpiler/main.go
 

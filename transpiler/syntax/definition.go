@@ -158,8 +158,9 @@ var SyntaxDefinition = [...]string {
     "namelist_tail? = , name! namelist_tail",
     /* Scope Related Commands @ Group 2 */
     "cmd_scope = cmd_let | cmd_var | cmd_reset",
-    "cmd_let = @let name = expr",
-    "cmd_var = @var name = expr",
+    "cmd_let = @let name var_type = expr",
+    "cmd_var = @var name var_type = expr",
+    "var_type? = : type",
     "cmd_reset = @reset name = expr",
     /* Definition Commands @ Group 2 */
     "cmd_def = function | abs_def",
@@ -270,14 +271,9 @@ var SyntaxDefinition = [...]string {
     "paralist_strict = ( ) | ( typed_namelist! )!",
     "typed_namelist = type policy name! typed_namelist_tail",
     "typed_namelist_tail? = , type! name! typed_namelist_tail",
-    /* Type Expression */
-    "type = type_base type_ext",
-    "type_ext? = < type_args! >!",
-    "type_base = name type_base_tail",
-    "type_base_tail? = Get . name! type_base_tail",
-    "type_args = type type_args_tail",
-    "type_args_tail? = , type! type_args_tail",
     "policy? = & | *",
+    /* Type Expression */
+    "type = name | { expr! }!",
 
     /* Literals */
     "literal = primitive | adv_literal",

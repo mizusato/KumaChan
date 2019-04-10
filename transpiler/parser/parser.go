@@ -204,7 +204,7 @@ func BuildTree (code scanner.Code) Tree {
 }
 
 
-func PrintTreeNode (ptr int, node TreeNode) {
+func PrintTreeNode (ptr int, node *TreeNode) {
     var children = make([]string, 0, 20)
     for i := 0; i < node.Length; i++ {
         children = append(children, strconv.Itoa(node.Children[i]))
@@ -218,8 +218,8 @@ func PrintTreeNode (ptr int, node TreeNode) {
 }
 
 func PrintBareTree (tree BareTree) {
-    for i, n := range tree {
-        PrintTreeNode(i, n)
+    for i := 0; i < len(tree); i++ {
+        PrintTreeNode(i, &tree[i])
     }
 }
 
