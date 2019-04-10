@@ -36,16 +36,16 @@ type TreeNode struct {
     Amount    int           //  number of tokens that matched by the node
 }
 
-type RawTree = []TreeNode
+type BareTree = []TreeNode
 
 type Tree struct {
     Tokens  scanner.TokenSequence
     Info    scanner.RowColInfo
-    Nodes   RawTree
+    Nodes   BareTree
 }
 
 
-func BuildRawTree (tokens scanner.TokenSequence) RawTree {
+func BuildBareTree (tokens scanner.TokenSequence) BareTree {
     var NameId = syntax.Name2Id["Name"]
     var RootId = syntax.Name2Id[syntax.RootName]
     var RootPart = syntax.Part {
@@ -53,7 +53,7 @@ func BuildRawTree (tokens scanner.TokenSequence) RawTree {
         Partype:   syntax.Recursive,
         Required:  true,
     }
-    var tree = make(RawTree, 0, 100000)
+    var tree = make(BareTree, 0, 100000)
     tree = append(tree, TreeNode {
         Part:    RootPart,  Parent:  -1,
         Length:  0,         Status:  Initial,
@@ -64,7 +64,7 @@ func BuildRawTree (tokens scanner.TokenSequence) RawTree {
     loop: for {
         /*
         fmt.Println("-------------------------------")
-        PrintRawTree(tree)
+        PrintBareTree(tree)
         */
         var node = &tree[ptr]
         var id = node.Part.Id
@@ -126,7 +126,7 @@ func BuildRawTree (tokens scanner.TokenSequence) RawTree {
             // if partype is otherwise, empty match <=> node.Amount == 0
             // if node.part is required, it should not be empty
             if node.Part.Required && node.Length == 0 && node.Amount == 0 {
-                PrintRawTree(tree)
+                PrintBareTree(tree)
                 panic(syntax.Id2Name[id] + " expected")
             }
         }
@@ -191,7 +191,7 @@ func BuildRawTree (tokens scanner.TokenSequence) RawTree {
     // check if all the tokens have been matched
     var root_node = tree[0]
     if root_node.Amount < len(tokens) {
-        PrintRawTree(tree)
+        PrintBareTree(tree)
         panic("parser stuck at " + strconv.Itoa(root_node.Amount))
     }
     return tree
@@ -199,7 +199,7 @@ func BuildRawTree (tokens scanner.TokenSequence) RawTree {
 
 func BuildTree (code scanner.Code) Tree {
     var tokens, info = scanner.Scan(code)
-    var nodes = BuildRawTree(tokens)
+    var nodes = BuildBareTree(tokens)
     return Tree { Tokens: tokens, Info: info, Nodes: nodes }
 }
 
@@ -217,7 +217,7 @@ func PrintTreeNode (ptr int, node TreeNode) {
     )
 }
 
-func PrintRawTree (tree RawTree) {
+func PrintBareTree (tree BareTree) {
     for i, n := range tree {
         PrintTreeNode(i, n)
     }

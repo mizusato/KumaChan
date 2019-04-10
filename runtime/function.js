@@ -374,10 +374,10 @@ function call (f, caller_scope, args) {
 
 function fun (decl_string, body) {
     let parsed = parse_decl(decl_string)
-    return wrap(Global, parsed.proto, null, parsed.name, scope => {
+    return wrap(Global, parsed.proto, null, parsed.name, (scope, expose) => {
         return body.apply(
             null,
-            list(cat([scope], map(
+            list(cat([scope, expose], map(
                 parsed.proto.parameters,
                 p => scope.lookup(p.name)
             )))
@@ -424,4 +424,3 @@ function overload_concated (o2, o1) {
         cat(o1[WrapperInfo].functions, o2[WrapperInfo].functions)
     ))
 }
-

@@ -87,7 +87,7 @@ function get_methods_info (class_) {
 
 function get_super_classes (class_) {
     // get all [ S ∈ Class | C ⊂ S ] in which C is the argument class_
-    function *_get_super_classes (class_) {
+    function _get_super_classes (class_) {
         return cat(
             [class_], flat(map(
                 only_classes(class_.impls), super_class => (
@@ -165,14 +165,7 @@ class Class {
                 let self = new Instance(this, scope, methods)
                 let expose = (I => (add_exposed_internal(I, self), I))
                 scope.try_to_declare('self', self, true)
-                scope.try_to_declare('expose', expose, true)
-                F.raw(scope)
-                if (scope.try_to_lookup('self') === self) {
-                    scope.unset('self')
-                }
-                if (scope.try_to_lookup('expose') === expose) {
-                    scope.unset('expose')
-                }
+                F.raw(scope, expose)
                 for (let I of impls) {
                     if (I instanceof Class) {
                         err.assert(
@@ -331,4 +324,3 @@ function create_interface (desc, table) {
     let defaults = flkv(table, (k,v) => is(v, Type.Function.Wrapped))
     return new Interface(sign_table, defaults, desc)
 }
-

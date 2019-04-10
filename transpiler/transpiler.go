@@ -31,7 +31,7 @@ func test () {
         )
     }
     fmt.Printf("\n")
-    parser.PrintRawTree(tree.Nodes)
+    parser.PrintBareTree(tree.Nodes)
     fmt.Printf("\n")
     parser.PrintTree(tree)
 }
