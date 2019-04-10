@@ -8,16 +8,16 @@ const LF = `\n`
 const Blanks = ` \t\r　`
 const Symbols = `;\{\}\[\]\(\)\.\,\:\<\>\=\!~\&\|\\\+\-\*\/%`
 
-var EscapeMap = map[string]string {
+var EscapeMap = map [string] string {
     "_exc":   "!",
     "_bar1":  "|",
     "_bar2":  "||",
     "_at":    "@",
 }
 
-var Extra = [...]string { "Call", "Get" }
+var Extra = [...] string { "Call", "Get" }
 
-var Tokens = [...]Token {
+var Tokens = [...] Token {
     Token { Name: "String",  Pattern: r(`'[^']*'`), },
     Token { Name: "String",  Pattern: r(`"[^"]*"`), },
     Token { Name: "Raw",     Pattern: r(`/~([^~]|[^/]|~[^/]|[^~]/)*~/`) },
@@ -84,7 +84,7 @@ var Tokens = [...]Token {
 }
 
 
-var Keywords = [...]string {
+var Keywords = [...] string {
     "@module", "@export", "@import", "@use", "@as",
     "@if", "@elif", "@else", "@switch", "@case", "@while", "@for", "@in",
     "@break", "@continue", "@return",
@@ -97,11 +97,40 @@ var Keywords = [...]string {
     "@category", "@struct", "@require", "@enum", "@concept",
     "@class", "@init", "@interface", "@expose",
     "@true", "@false",
-    "@is", "@has", "@not", "@yield", "@await",
+    "@is", "@not", "@yield", "@await",
 }
 
 
-var SyntaxDefinition = [...]string {
+var Operators = [...] Operator {
+    /* Oriented */
+    Operator { Match: "<<",   Name: "pull",    Priority: 20,  Assoc: Right },
+    Operator { Match: ">>",   Name: "push",    Priority: 20,  Assoc: Left  },
+    Operator { Match: "=>",   Name: "derive",  Priority: 20,  Assoc: Left  },
+    /* Comparison */
+    Operator { Match: "<",    Name: "lt",      Priority: 30,  Assoc: Left  },
+    Operator { Match: ">",    Name: "gt",      Priority: 30,  Assoc: Left  },
+    Operator { Match: "<=",   Name: "lte",     Priority: 30,  Assoc: Left  },
+    Operator { Match: ">=",   Name: "gte",     Priority: 30,  Assoc: Left  },
+    Operator { Match: "==",   Name: "eq",      Priority: 30,  Assoc: Left  },
+    Operator { Match: "!=",   Name: "neq",     Priority: 30,  Assoc: Left  },
+    /* Logic */
+    Operator { Match: "@is",  Name: "_is",     Priority: 10,  Assoc: Left  },
+    Operator { Match: "&&",   Name: "_and",    Priority: 60,  Assoc: Left  },
+    Operator { Match: "||",   Name: "_or",     Priority: 50,  Assoc: Left  },
+    Operator { Match: "&",    Name: "_ins",    Priority: 60,  Assoc: Left  },
+    Operator { Match: "|",    Name: "_uni",    Priority: 50,  Assoc: Left  },
+    Operator { Match: `\`,    Name: "_diff",   Priority: 40,  Assoc: Left  },
+    /* Arithmetic */
+    Operator { Match: "+",    Name: "plus",    Priority: 70,  Assoc: Left  },
+    Operator { Match: "-",    Name: "minus",   Priority: 70,  Assoc: Left  },
+    Operator { Match: "*",    Name: "minus",   Priority: 80,  Assoc: Left  },
+    Operator { Match: "/",    Name: "divide",  Priority: 80,  Assoc: Left  },
+    Operator { Match: "%",    Name: "modulo",  Priority: 80,  Assoc: Left  },
+    Operator { Match: "^",    Name: "power",   Priority: 90,  Assoc: Right },
+}
+
+
+var SyntaxDefinition = [...] string {
 
     /* Root */
     "program = module | command",
@@ -228,12 +257,11 @@ var SyntaxDefinition = [...]string {
     "expr = operand expr_tail",
     "expr_tail? = operator operand! expr_tail",
     /* Operators (Infix) */
-    "operator = op_group1 | op_group2 | op_group3 | op_group4 | op_group5",
-    "op_group1 = >= | <= | != | == | => | = ",
-    "op_group2 = << | >> | > | < ",
-    `op_group3 = && | _bar2 | & | _bar1 | \ `,
-    "op_group4 = + | - | * | / | % | ^ ",
-    "op_group5 = @is | @has",
+    "operator = op_oriented | op_compare | op_logic | op_arith",
+    "op_oriented = << | >> | => ",
+    "op_compare = < | > | <= | >= | == | != ",
+    `op_logic = @is | && | _bar2 | & | _bar1 | \ `,
+    "op_arith = + | - | * | / | % | ^ ",
     /* Operators (Prefix) */
     "unary? = @not | - | _exc | ~ | @yield | @await | @expose",
     /* Operand */
@@ -273,7 +301,7 @@ var SyntaxDefinition = [...]string {
     "typed_namelist_tail? = , type! name! typed_namelist_tail",
     "policy? = & | *",
     /* Type Expression */
-    "type = name | { expr! }!",
+    "type = name | ( expr! )!",
 
     /* Literals */
     "literal = primitive | adv_literal",

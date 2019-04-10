@@ -19,3 +19,17 @@ func EscapeRawString (raw []rune) string {
     buf.WriteRune('"')
     return buf.String()
 }
+
+
+func FlatSubTree (tree Tree, ptr int, extract string, next string) []int {
+    var sequence = make([]int, 0)
+    for tree.Nodes[ptr].Length > 0 {
+        var children = Children(tree, ptr)
+        var extract_ptr, exists = children[extract]
+        if !exists { panic("cannot extract part " + next) }
+        sequence = append(sequence, extract_ptr)
+        ptr, exists = children[next]
+        if !exists { panic("next part " + next + " not found") }
+    }
+    return sequence
+}

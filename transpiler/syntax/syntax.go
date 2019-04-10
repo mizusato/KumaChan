@@ -11,6 +11,19 @@ type Token struct {
     Pattern  Regexp
 }
 
+type LeftRight int
+const (
+    Left  LeftRight = iota
+    Right
+)
+
+type Operator struct {
+    Match     string
+    Name      string
+    Priority  int
+    Assoc     LeftRight
+}
+
 type Rule struct {
     Id        Id
     Emptable  bool
@@ -63,13 +76,15 @@ func EscapePartName (name string) string {
 var Id2Name []string
 var Name2Id map[string]Id
 var Id2Keyword map[Id][]rune
+var Id2Operator map[Id]Operator
 var Rules map[Id]Rule
 var RootName string
 
-func Alloc () {
+func Allocate () {
     Id2Name = make([]string, 0, 1000)
     Name2Id = make(map[string]Id)
     Id2Keyword = make(map[Id][]rune)
+    Id2Operator = make(map[Id]Operator)
     Rules = make(map[Id]Rule)
 }
 
@@ -110,6 +125,17 @@ func AssignId2Rules () {
         AssignId2Name(rule_name)
         if (i == 0) {
             RootName = rule_name
+        }
+    }
+}
+
+func ConvertOperatorInfo () {
+    for _, operator := range Operators {
+        var id, exists = Name2Id[operator.Match]
+        if exists {
+            Id2Operator[id] = operator
+        } else {
+            panic("match for operator " + operator.Name + " does not exist")
         }
     }
 }
@@ -159,10 +185,11 @@ func ParseRules () {
 }
 
 func Init () {
-    Alloc()
+    Allocate()
     AssignId2Extra()
     AssignId2Tokens()
     AssignId2Keywords()
     AssignId2Rules()
+    ConvertOperatorInfo()
     ParseRules()
 }
