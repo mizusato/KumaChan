@@ -28,7 +28,17 @@ func TranspileFirstChild (tree Tree, ptr int) string {
         return Transpile(tree, node.Children[0])
     } else {
         parser.PrintTreeNode(ptr, node)
-        panic("unable to transplie recursively: this node has no child")
+        panic("unable to transpile first child: this node has no child")
+    }
+}
+
+func TranspileLastChild (tree Tree, ptr int) string {
+    var node = &tree.Nodes[ptr]
+    if node.Length > 0 {
+        return Transpile(tree, node.Children[node.Length-1])
+    } else {
+        parser.PrintTreeNode(ptr, node)
+        panic("unable to transpile last child: this node has no child")
     }
 }
 

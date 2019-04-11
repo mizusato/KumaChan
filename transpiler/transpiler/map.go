@@ -4,6 +4,55 @@ import "strings"
 import "../syntax"
 
 
+func TranspileOperationSequence (tree Tree, ptr int) [][]string {
+    if tree.Nodes[ptr].Part.Id != syntax.Name2Id["operand_tail"] {
+        panic("invalid usage of TranspileOperationSequence()")
+    }
+    var operations = make([][]string, 0, 20)
+    for tree.Nodes[ptr].Length > 0 {
+        // operand_tail? = get operand_tail | call operand_tail
+        var operation_ptr = tree.Nodes[ptr].Children[0]
+        var next_ptr = tree.Nodes[ptr].Children[1]
+        var op_node = &tree.Nodes[operation_ptr]
+        if op_node.Part.Id == syntax.Name2Id["get"] {
+            // get = get_expr | get_name
+            var params = Children(tree, op_node.Children[0])
+            // get_expr = Get [ expr! ]! nil_flag
+            // get_name = Get . name! nil_flag
+            var key string
+            var _, is_get_expr = params["expr"]
+            if is_get_expr {
+                key = Transpile(tree, params["expr"])
+            } else {
+                key = Transpile(tree, params["name"])
+            }
+            operations = append(operations, []string {
+                "g", key, Transpile(tree, params["nil_flag"]),
+            })
+        } else {
+            // call = call_self | call_method
+            var child_ptr = op_node.Children[0]
+            var params = Children(tree, child_ptr)
+            // call_self = Call args
+            // call_method = -> name method_args
+            var args = TranspileLastChild(tree, child_ptr)
+            var name_ptr, is_method_call = params["name"]
+            if is_method_call {
+                operations = append(operations, []string {
+                    "m", Transpile(tree, name_ptr), args,
+                })
+            } else {
+                operations = append(operations, []string {
+                    "c", args,
+                })
+            }
+        }
+        ptr = next_ptr
+    }
+    return operations
+}
+
+
 var TransMapByName = map[string]TransFunction {
 
     "program": TranspileFirstChild,
@@ -57,9 +106,53 @@ var TransMapByName = map[string]TransFunction {
         return do_transpile(-len(reduced))
     },
     "operand": func (tree Tree, ptr int) string {
+        // operand = unary operand_base operand_tail
         var children = Children(tree, ptr)
-        var base = children["operand_base"]
-        return Transpile(tree, base)
+        var unary_ptr = children["unary"]
+        var base_ptr = children["operand_base"]
+        var tail_ptr = children["operand_tail"]
+        var base = Transpile(tree, base_ptr)
+        var operations = TranspileOperationSequence(tree, tail_ptr)
+        var buf strings.Builder
+        var reduce func (int)
+        reduce = func (i int) {
+            if i == -1 {
+                buf.WriteString(base)
+                return
+            }
+            var op = operations[i]
+            buf.WriteString(op[0])
+            buf.WriteRune('(')
+            reduce(i-1)
+            for j := 1; j < len(op); j++ {
+                buf.WriteRune(',')
+                buf.WriteString(op[j])
+            }
+            buf.WriteRune(')')
+        }
+        if NotEmpty(tree, unary_ptr) {
+            buf.WriteString(Transpile(tree, unary_ptr))
+        }
+        buf.WriteRune('(')
+        reduce(len(operations)-1)
+        buf.WriteRune(')')
+        return buf.String()
+    },
+    "unary": func (tree Tree, ptr int) string {
+        var child_ptr = tree.Nodes[ptr].Children[0]
+        var child_node = &tree.Nodes[child_ptr]
+        switch name := syntax.Id2Name[child_node.Part.Id]; name {
+        case "@not", "~":
+            return `o("~")`
+        case "-":
+            return `o("-")`
+        case "!":
+            return `o("!")`
+        case "@yield", "@await", "@expose":
+            return strings.TrimLeft(name, "@")
+        default:
+            panic("cannot transpile unknown unary operator " + name)
+        }
     },
     "operand_base": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
@@ -91,29 +184,91 @@ var TransMapByName = map[string]TransFunction {
         return buf.String()
     },
 
+    "name": func (tree Tree, ptr int) string {
+        var node = &tree.Nodes[ptr]
+        var child = &tree.Nodes[node.Children[0]]
+        if child.Part.Id == syntax.Name2Id["String"] {
+            return TransMap[syntax.Name2Id["string"]](tree, ptr)
+        } else {
+            return EscapeRawString(GetTokenContent(tree, ptr))
+        }
+    },
+    "nil_flag": func (tree Tree, ptr int) string {
+        if NotEmpty(tree, ptr) {
+            return "true"
+        } else {
+            return "false"
+        }
+    },
+
+    "method_args": func (tree Tree, ptr int) string {
+        // TODO: fix bug
+        // fmt.Println(tree.Nodes[ptr].Length)
+        if tree.Nodes[ptr].Length == 0 {
+            return "[]"
+        }
+        var children = Children(tree, ptr)
+        var extra_ptr, is_only_extra = children["extra"]
+        if is_only_extra {
+            var buf strings.Builder
+            buf.WriteRune('[')
+            buf.WriteString(Transpile(tree, extra_ptr))
+            buf.WriteRune(']')
+            return buf.String()
+        } else {
+            var args_ptr, exists = children["args"]
+            if !exists { panic("transpiler: expect args in methods_args") }
+            return Transpile(tree, args_ptr)
+        }
+    },
+    "args": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var buf strings.Builder
+        buf.WriteRune('[')
+        var arglist_ptr = children["arglist"]
+        var has_arglist = NotEmpty(tree, arglist_ptr)
+        if has_arglist {
+            buf.WriteString(Transpile(tree, arglist_ptr))
+        }
+        var extra_ptr = children["extra_arg"]
+        var has_extra = NotEmpty(tree, extra_ptr)
+        if has_extra {
+            if has_arglist {
+                buf.WriteRune(',')
+            }
+            buf.WriteString(Transpile(tree, extra_ptr))
+        }
+        buf.WriteRune(']')
+        return buf.String()
+    },
+    "extra_arg": TranspileLastChild,
+    "arglist": TranspileFirstChild,
+    "exprlist": func (tree Tree, ptr int) string {
+        var ptrs = FlatSubTree(tree, ptr, "expr", "exprlist_tail")
+        var buf strings.Builder
+        for i, item_ptr := range ptrs {
+            buf.WriteString(Transpile(tree, item_ptr))
+            if i < len(ptrs)-1 {
+                buf.WriteRune(',')
+            }
+        }
+        return buf.String()
+    },
+
     "identifier": func (tree Tree, ptr int) string {
-        // node.pos is also token.pos because identifier = Name
-        var token_pos = tree.Nodes[ptr].Pos
-        var token = &tree.Tokens[token_pos]
-        return VarLookup(token.Content)
+        return VarLookup(GetTokenContent(tree, ptr))
     },
 
     "literal": TranspileFirstChild,
     /* Primitive Values */
     "primitive": TranspileFirstChild,
     "string": func (tree Tree, ptr int) string {
-        // node.pos is also token.pos because string = String
-        var token_pos = tree.Nodes[ptr].Pos
-        var token = &tree.Tokens[token_pos]
-        var content = token.Content
+        var content = GetTokenContent(tree, ptr)
         var trimed = content[1:len(content)-1]
         return EscapeRawString(trimed)
     },
     "number": func (tree Tree, ptr int) string {
-        // node.pos is also token.pos because number = Hex | Exp | Dec | Int
-        var token_pos = tree.Nodes[ptr].Pos
-        var token = &tree.Tokens[token_pos]
-        return string(token.Content)
+        return string(GetTokenContent(tree, ptr))
     },
     "bool": func (tree Tree, ptr int) string {
         var child_ptr = tree.Nodes[ptr].Children[0]

@@ -43,6 +43,11 @@ func EscapeRawString (raw []rune) string {
 }
 
 
+func NotEmpty (tree Tree, ptr int) bool {
+    return tree.Nodes[ptr].Length > 0
+}
+
+
 func FlatSubTree (tree Tree, ptr int, extract string, next string) []int {
     var sequence = make([]int, 0)
     for tree.Nodes[ptr].Length > 0 {
@@ -54,6 +59,18 @@ func FlatSubTree (tree Tree, ptr int, extract string, next string) []int {
         if !exists { panic("next part " + next + " not found") }
     }
     return sequence
+}
+
+
+func GetTokenContent (tree Tree, ptr int) []rune {
+    var node = &tree.Nodes[ptr]
+    if node.Part.Partype == syntax.Recursive {
+        node = &tree.Nodes[node.Children[0]]
+    }
+    if node.Part.Partype != syntax.MatchToken {
+        panic("trying to get token content of non-token node")
+    }
+    return tree.Tokens[node.Pos].Content
 }
 
 
