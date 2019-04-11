@@ -17,11 +17,8 @@ func LazyValueWrapper (expr string) string {
 
 func VarLookup (variable_name []rune) string {
     var buf strings.Builder
-    buf.WriteString(Runtime)
-    buf.WriteString("lookup")
+    buf.WriteString("v")
     buf.WriteRune('(')
-    buf.WriteString("scope")
-    buf.WriteRune(',')
     buf.WriteString(EscapeRawString(variable_name))
     buf.WriteRune(')')
     return buf.String()
