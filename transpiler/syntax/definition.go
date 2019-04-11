@@ -6,7 +6,7 @@ func r (pattern string) Regexp { return regexp.MustCompile(`^` + pattern) }
 
 const LF = `\n`
 const Blanks = ` \t\r　`
-const Symbols = `;\{\}\[\]\(\)\.\,\:\<\>\=\!~\&\|\\\+\-\*\/%`
+const Symbols = `;\{\}\[\]\(\)\.\,\:\<\>\=\!~\&\|\\\+\-\*\/%\^`
 
 var EscapeMap = map [string] string {
     "_exc":   "!",
@@ -101,6 +101,13 @@ var Keywords = [...] string {
 }
 
 
+/**
+ *  Operator Info
+ *
+ *  If the 'Name' field starts with "_", the operator will be non-overloadable.
+ *  If the 'Name' field starts with "*", the operator will be lazily-evaluated.
+ *  The value of the 'Priority' field must be non-negative.
+ */
 var Operators = [...] Operator {
     /* Oriented */
     Operator { Match: "<<",   Name: "pull",    Priority: 20,  Assoc: Right },
@@ -115,15 +122,15 @@ var Operators = [...] Operator {
     Operator { Match: "!=",   Name: "neq",     Priority: 30,  Assoc: Left  },
     /* Logic */
     Operator { Match: "@is",  Name: "_is",     Priority: 10,  Assoc: Left  },
-    Operator { Match: "&&",   Name: "_and",    Priority: 60,  Assoc: Left  },
-    Operator { Match: "||",   Name: "_or",     Priority: 50,  Assoc: Left  },
-    Operator { Match: "&",    Name: "_ins",    Priority: 60,  Assoc: Left  },
-    Operator { Match: "|",    Name: "_uni",    Priority: 50,  Assoc: Left  },
-    Operator { Match: `\`,    Name: "_diff",   Priority: 40,  Assoc: Left  },
+    Operator { Match: "&&",   Name: "*and",    Priority: 60,  Assoc: Left  },
+    Operator { Match: "||",   Name: "*or",     Priority: 50,  Assoc: Left  },
+    Operator { Match: "&",    Name: "ins",     Priority: 60,  Assoc: Left  },
+    Operator { Match: "|",    Name: "uni",     Priority: 50,  Assoc: Left  },
+    Operator { Match: `\`,    Name: "diff",    Priority: 40,  Assoc: Left  },
     /* Arithmetic */
     Operator { Match: "+",    Name: "plus",    Priority: 70,  Assoc: Left  },
     Operator { Match: "-",    Name: "minus",   Priority: 70,  Assoc: Left  },
-    Operator { Match: "*",    Name: "minus",   Priority: 80,  Assoc: Left  },
+    Operator { Match: "*",    Name: "times",   Priority: 80,  Assoc: Left  },
     Operator { Match: "/",    Name: "divide",  Priority: 80,  Assoc: Left  },
     Operator { Match: "%",    Name: "modulo",  Priority: 80,  Assoc: Left  },
     Operator { Match: "^",    Name: "power",   Priority: 90,  Assoc: Right },

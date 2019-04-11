@@ -18,10 +18,12 @@ const (
 )
 
 type Operator struct {
-    Match     string
-    Name      string
-    Priority  int
-    Assoc     LeftRight
+    Match         string
+    Name          string
+    Priority      int
+    Assoc         LeftRight
+    LazyEval      bool
+    CanOverload   bool
 }
 
 type Rule struct {
@@ -133,7 +135,22 @@ func ConvertOperatorInfo () {
     for _, operator := range Operators {
         var id, exists = Name2Id[operator.Match]
         if exists {
-            Id2Operator[id] = operator
+            var match = operator.Match
+            var raw_name = operator.Name
+            var priority = operator.Priority
+            var assoc = operator.Assoc
+            var lazy_eval = strings.HasPrefix(raw_name, "*")
+            var can_overload = !strings.HasPrefix(raw_name, "_")
+            var name string
+            if lazy_eval || !can_overload {
+                name = raw_name[1:]
+            } else {
+                name = raw_name
+            }
+            Id2Operator[id] = Operator {
+                Match: match, Name: name, Priority: priority, Assoc: assoc,
+                LazyEval: lazy_eval, CanOverload: can_overload,
+            }
         } else {
             panic("match for operator " + operator.Name + " does not exist")
         }

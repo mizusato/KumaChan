@@ -4,6 +4,30 @@ import "strings"
 import "../syntax"
 
 
+func LazyValueWrapper (expr string) string {
+    var buf strings.Builder
+    buf.WriteRune('(')
+    buf.WriteString("() => (")
+    buf.WriteString(expr)
+    buf.WriteString(")")
+    buf.WriteRune(')')
+    return buf.String()
+}
+
+
+func VarLookup (variable_name []rune) string {
+    var buf strings.Builder
+    buf.WriteString(Runtime)
+    buf.WriteString("lookup")
+    buf.WriteRune('(')
+    buf.WriteString("scope")
+    buf.WriteRune(',')
+    buf.WriteString(EscapeRawString(variable_name))
+    buf.WriteRune(')')
+    return buf.String()
+}
+
+
 func EscapeRawString (raw []rune) string {
     // example: ['a', '"', 'b', 'c', '\', 'n'] -> `"a\"bc\\n"`
     var buf strings.Builder
@@ -33,6 +57,18 @@ func FlatSubTree (tree Tree, ptr int, extract string, next string) []int {
         if !exists { panic("next part " + next + " not found") }
     }
     return sequence
+}
+
+
+func GetOperatorInfo (tree Tree, ptr int) syntax.Operator {
+    if tree.Nodes[ptr].Part.Id != syntax.Name2Id["operator"] {
+        panic("unable to get operator info of non-operator")
+    }
+    var group_ptr = tree.Nodes[ptr].Children[0]
+    var group = &tree.Nodes[group_ptr]
+    var token_node = &tree.Nodes[group.Children[0]]
+    var op_id = token_node.Part.Id
+    return syntax.Id2Operator[op_id]
 }
 
 

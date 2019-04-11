@@ -1,6 +1,5 @@
 package transpiler
 
-import "fmt"
 import "strings"
 import "../syntax"
 
@@ -17,29 +16,45 @@ var TransMapByName = map[string]TransFunction {
 
     "expr": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
-        var operands = FlatSubTree(tree, ptr, "operand", "expr_tail")
+        var operand_ptrs = FlatSubTree(tree, ptr, "operand", "expr_tail")
         var tail = children["expr_tail"]
-        var operators = FlatSubTree(tree, tail, "operator", "expr_tail")
-        var operator_objects = make([]syntax.Operator, 0, len(operators))
-        for _, operator := range operators {
-            var group_ptr = tree.Nodes[operator].Children[0]
-            var group = &tree.Nodes[group_ptr]
-            var token_node = &tree.Nodes[group.Children[0]]
-            var op_id = token_node.Part.Id
-            var object = syntax.Id2Operator[op_id]
-            operator_objects = append(operator_objects, object)
+        var operator_ptrs = FlatSubTree(tree, tail, "operator", "expr_tail")
+        var operators = make([]syntax.Operator, len(operator_ptrs))
+        for i, operator_ptr := range operator_ptrs {
+            operators[i] = GetOperatorInfo(tree, operator_ptr)
         }
-        fmt.Printf("%v\n", ReduceExpression(operator_objects))
-        var output strings.Builder
-        for i, operand := range operands {
-            output.WriteString(Transpile(tree, operand))
-            if i < len(operators) {
-                output.WriteString(" (")
-                output.WriteString(Transpile(tree, operators[i]))
-                output.WriteString(") ")
+        var reduced = ReduceExpression(operators)
+        var do_transpile func(int) string
+        do_transpile = func (operand_index int) string {
+            if operand_index >= 0 {
+                return Transpile(tree, operand_ptrs[operand_index])
+            } else {
+                var reduced_index = -(operand_index) - 1
+                var sub_expr [3]int = reduced[reduced_index]
+                var operand1 = do_transpile(sub_expr[0])
+                var operand2 = do_transpile(sub_expr[1])
+                var operator = Transpile(tree, operator_ptrs[sub_expr[2]])
+                var operator_info = operators[sub_expr[2]]
+                var lazy_eval = operator_info.LazyEval
+                var buf strings.Builder
+                buf.WriteString(operator)
+                buf.WriteRune('(')
+                if lazy_eval {
+                    buf.WriteString(LazyValueWrapper(operand1))
+                } else {
+                    buf.WriteString(operand1)
+                }
+                buf.WriteRune(',')
+                if lazy_eval {
+                    buf.WriteString(LazyValueWrapper(operand2))
+                } else {
+                    buf.WriteString(operand2)
+                }
+                buf.WriteRune(')')
+                return buf.String()
             }
         }
-        return output.String()
+        return do_transpile(-len(reduced))
     },
     "operand": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
@@ -56,11 +71,27 @@ var TransMapByName = map[string]TransFunction {
         }
     },
     "operator": func (tree Tree, ptr int) string {
-        var group_ptr = tree.Nodes[ptr].Children[0]
-        var group = &tree.Nodes[group_ptr]
-        var token_node = &tree.Nodes[group.Children[0]]
-        var op_id = token_node.Part.Id
-        return syntax.Id2Operator[op_id].Name
+        var info = GetOperatorInfo(tree, ptr)
+        var name = info.Name
+        var buf strings.Builder
+        if info.CanOverload {
+            buf.WriteString(VarLookup([]rune("operator_" + name)))
+        } else {
+            if name == "is" {
+                buf.WriteString(Runtime)
+                buf.WriteString("is")
+            } else {
+                panic("unknown non-overloadable operator: " + name)
+            }
+        }
+        return buf.String()
+    },
+
+    "identifier": func (tree Tree, ptr int) string {
+        // node.pos is also token.pos because identifier = Name
+        var token_pos = tree.Nodes[ptr].Pos
+        var token = &tree.Tokens[token_pos]
+        return VarLookup(token.Content)
     },
 
     "literal": TranspileFirstChild,
