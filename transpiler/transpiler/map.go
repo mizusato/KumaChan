@@ -202,17 +202,14 @@ var TransMapByName = map[string]TransFunction {
     },
 
     "method_args": func (tree Tree, ptr int) string {
-        // TODO: fix bug
-        // fmt.Println(tree.Nodes[ptr].Length)
-        if tree.Nodes[ptr].Length == 0 {
-            return "[]"
-        }
         var children = Children(tree, ptr)
-        var extra_ptr, is_only_extra = children["extra"]
+        var extra_ptr, is_only_extra = children["extra_arg"]
         if is_only_extra {
             var buf strings.Builder
             buf.WriteRune('[')
-            buf.WriteString(Transpile(tree, extra_ptr))
+            if tree.Nodes[extra_ptr].Length > 0 {
+                buf.WriteString(Transpile(tree, extra_ptr))
+            }
             buf.WriteRune(']')
             return buf.String()
         } else {

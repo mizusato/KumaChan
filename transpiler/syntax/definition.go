@@ -284,7 +284,7 @@ var SyntaxDefinition = [...] string {
     "nil_flag? = ?",
     "call_self = Call args",
     "call_method = -> name method_args",
-    "method_args? = Call args | extra_arg",
+    "method_args = Call args | extra_arg",
     "args = ( arglist )! extra_arg",
     "extra_arg? = -> lambda | -> adv_literal | = expr!",
     "arglist? = exprlist",
