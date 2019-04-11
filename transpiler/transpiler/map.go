@@ -1,5 +1,6 @@
 package transpiler
 
+import "fmt"
 import "strings"
 import "../syntax"
 
@@ -19,6 +20,16 @@ var TransMapByName = map[string]TransFunction {
         var operands = FlatSubTree(tree, ptr, "operand", "expr_tail")
         var tail = children["expr_tail"]
         var operators = FlatSubTree(tree, tail, "operator", "expr_tail")
+        var operator_objects = make([]syntax.Operator, 0, len(operators))
+        for _, operator := range operators {
+            var group_ptr = tree.Nodes[operator].Children[0]
+            var group = &tree.Nodes[group_ptr]
+            var token_node = &tree.Nodes[group.Children[0]]
+            var op_id = token_node.Part.Id
+            var object = syntax.Id2Operator[op_id]
+            operator_objects = append(operator_objects, object)
+        }
+        fmt.Printf("%v\n", ReduceExpression(operator_objects))
         var output strings.Builder
         for i, operand := range operands {
             output.WriteString(Transpile(tree, operand))
