@@ -72,11 +72,15 @@ var TransMapByName = map[string]TransFunction {
     },
     "operator": func (tree Tree, ptr int) string {
         var info = GetOperatorInfo(tree, ptr)
-        var name = info.Name
         var buf strings.Builder
         if info.CanOverload {
-            buf.WriteString(VarLookup([]rune("operator_" + name)))
+            buf.WriteString("o")
+            buf.WriteRune('(')
+            buf.WriteString(EscapeRawString([]rune(info.Match)))
+            buf.WriteRune(')')
+            // buf.WriteString(VarLookup([]rune("operator_" + name)))
         } else {
+            var name = info.Name
             if name == "is" {
                 buf.WriteString(Runtime)
                 buf.WriteString("is")
