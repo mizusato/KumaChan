@@ -204,17 +204,41 @@ func BuildTree (code scanner.Code) Tree {
 }
 
 
+func GetANSIColor (n int) int {
+    return 31 + n % 6
+}
+
+
 func PrintTreeNode (ptr int, node *TreeNode) {
-    var children = make([]string, 0, 20)
+    var buf strings.Builder
+    fmt.Fprintf(&buf, "\033[1m\033[%vm", GetANSIColor(ptr))
+    fmt.Fprintf(&buf, "(%v)", ptr)
+    fmt.Fprintf(&buf, "\033[0m")
+    buf.WriteRune(' ')
+    fmt.Fprintf(&buf, "\033[1m")
+    buf.WriteString(syntax.Id2Name[node.Part.Id])
+    fmt.Fprintf(&buf, "\033[0m")
+    buf.WriteRune(' ')
+    buf.WriteRune('[')
     for i := 0; i < node.Length; i++ {
-        children = append(children, strconv.Itoa(node.Children[i]))
+        var child_ptr = node.Children[i]
+        fmt.Fprintf(&buf, "\033[1m\033[%vm", GetANSIColor(child_ptr))
+        fmt.Fprintf(&buf, "%v", child_ptr)
+        fmt.Fprintf(&buf, "\033[0m")
+        if i != node.Length-1 {
+            buf.WriteString(", ")
+        }
     }
-    var children_str = strings.Join(children, ", ")
-    fmt.Printf(
-        "(%v) %v [%v] parent=%v, status=%v, tried=%v, index=%v, pos=%+v, amount=%v\n",
-        ptr, syntax.Id2Name[node.Part.Id], children_str,
-        node.Parent, node.Status, node.Tried, node.Index, node.Pos, node.Amount,
+    buf.WriteRune(']')
+    fmt.Fprintf(
+        &buf, " <\033[1m\033[%vm%v\033[0m> ",
+        GetANSIColor(node.Parent), node.Parent,
     )
+    fmt.Fprintf(
+        &buf, "status=%v, tried=%v, index=%v, pos=%+v, amount=%v\n",
+        node.Status, node.Tried, node.Index, node.Pos, node.Amount,
+    )
+    fmt.Print(buf.String())
 }
 
 func PrintBareTree (tree BareTree) {
@@ -263,7 +287,10 @@ func PrintTreeRecursively (
     } else {
         buf.WriteString("──")
     }
+    fmt.Fprintf(buf, "\033[1m\033[%vm", GetANSIColor(depth))
     fmt.Fprintf(buf, "[%v]", syntax.Id2Name[node.Part.Id])
+    fmt.Fprintf(buf, "\033[0m")
+    fmt.Fprintf(buf, "\033[%vm", GetANSIColor(depth))
     buf.WriteRune(' ')
     switch node.Part.Partype {
     case syntax.MatchToken:
@@ -272,13 +299,16 @@ func PrintTreeRecursively (
         buf.WriteRune(' ')
         var point = tree.Info[tree.Tokens[node.Pos].Pos]
         fmt.Fprintf(buf, "at <%v,%v>", point.Row, point.Col)
+        fmt.Fprintf(buf, "\033[0m")
         buf.WriteRune('\n')
     case syntax.MatchKeyword:
+        fmt.Fprintf(buf, "\033[0m")
         buf.WriteRune('\n')
     case syntax.Recursive:
         if node.Length == 0 {
             buf.WriteString("(empty)")
         }
+        fmt.Fprintf(buf, "\033[0m")
         buf.WriteRune('\n')
         for i := 0; i < node.Length; i++ {
             var child = node.Children[i]

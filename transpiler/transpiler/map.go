@@ -130,12 +130,15 @@ var TransMapByName = map[string]TransFunction {
             }
             buf.WriteRune(')')
         }
-        if NotEmpty(tree, unary_ptr) {
+        var has_unary = NotEmpty(tree, unary_ptr)
+        if has_unary {
             buf.WriteString(Transpile(tree, unary_ptr))
+            buf.WriteRune('(')
         }
-        buf.WriteRune('(')
         reduce(len(operations)-1)
-        buf.WriteRune(')')
+        if has_unary {
+            buf.WriteRune(')')
+        }
         return buf.String()
     },
     "unary": func (tree Tree, ptr int) string {
@@ -148,8 +151,8 @@ var TransMapByName = map[string]TransFunction {
             return `o("-")`
         case "!":
             return `o("!")`
-        case "@yield", "@await", "@expose":
-            return strings.TrimLeft(name, "@")
+        case "@expose":
+            return "expose"
         default:
             panic("cannot transpile unknown unary operator " + name)
         }
@@ -175,7 +178,6 @@ var TransMapByName = map[string]TransFunction {
         } else {
             var name = info.Name
             if name == "is" {
-                buf.WriteString(Runtime)
                 buf.WriteString("is")
             } else {
                 panic("unknown non-overloadable operator: " + name)

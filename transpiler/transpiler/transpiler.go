@@ -18,7 +18,7 @@ func Transpile (tree Tree, ptr int) string {
     if exists {
         return f(tree, ptr)
     } else {
-        panic("trans map for " + syntax.Id2Name[id] + " does not exist")
+        panic("transpiler map for " + syntax.Id2Name[id] + " does not exist")
     }
 }
 

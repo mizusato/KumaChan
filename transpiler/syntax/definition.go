@@ -155,7 +155,7 @@ var SyntaxDefinition = [...] string {
     /* Commands */
     "commands? = command commands",
     "command = cmd_group1 | cmd_group2 | cmd_group3",
-    "cmd_group1 = cmd_flow | cmd_return | cmd_err",
+    "cmd_group1 = cmd_flow | cmd_yield | cmd_await | cmd_return | cmd_err",
     "cmd_group2 = cmd_module | cmd_scope | cmd_def",
     "cmd_group3 = cmd_set | cmd_exec",
     /* Flow Control Commands @ Group 1 */
@@ -177,6 +177,10 @@ var SyntaxDefinition = [...] string {
     "loop_cmds? = loop_cmd loop_cmds",
     "loop_cmd = loop_control | command",
     "loop_control = @break | @continue",
+    /* Yield Command @ Group 1 */
+    "cmd_yield = @yield name = expr! | @yield expr!",
+    /* Await Command @ Group 1 */
+    "cmd_await = @await name = expr! | @await expr!",
     /* Return Command @ Group 1 */
     "cmd_return = @return expr",
     /* Error Related Commands @ Group 1 */
@@ -270,7 +274,7 @@ var SyntaxDefinition = [...] string {
     `op_logic = @is | && | _bar2 | & | _bar1 | \ `,
     "op_arith = + | - | * | / | % | ^ ",
     /* Operators (Prefix) */
-    "unary? = @not | - | _exc | ~ | @yield | @await | @expose",
+    "unary? = @not | - | _exc | ~ | @expose",
     /* Operand */
     "operand = unary operand_base operand_tail",
     "operand_base = ( expr! )! | lambda | literal | dot_para | identifier",
