@@ -81,7 +81,8 @@
         is, has, $, Uni, Ins, Not, Type, Symbols, get_type,
         Global, G, scope_kit, var_declare, var_assign, var_lookup,
         wrap, parse_decl, fun, overload, overload_added, overload_concated,
-        sig, create_interface, create_class
+        sig, create_interface, create_class,
+        call, call_method
     }
     if (typeof window != 'undefined') {
         window[export_name] = export_object

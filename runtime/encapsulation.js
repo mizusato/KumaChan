@@ -200,7 +200,7 @@ class Class {
     }
 }
 
-function create_class(desc, impls, init, methods, static_methods = {}) {
+function create_class (desc, impls, init, methods, static_methods = {}) {
     return new Class(impls, init, methods, static_methods, desc)
 }
 
@@ -228,6 +228,23 @@ class Instance {
     }
     get [Symbol.toStringTag]() {
         return 'Instance'
+    }
+}
+
+let method_err = new ErrorProducer(MethodError)
+
+function call_method (object, caller_scope, method_name, args) {
+    if (object instanceof Instance) {
+        // method on instance
+        let method = object.methods[method_name]
+        method_err.assert(method, method || MSG.method_not_found(method_name))
+        return call(method, args)
+    } else {
+        // UFCS
+        let method = caller_scope.lookup(method_name)
+        let found = method != NotFound && is(method, Type.Function)
+        method_err.assert(found, found || MSG.method_not_found(method_name))
+        return call(method, [object, ...args])
     }
 }
 

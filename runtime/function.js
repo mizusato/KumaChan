@@ -241,10 +241,10 @@ function scope_kit (scope) {
      assert(is(raw, ES.Function))
      assert(is(desc, Type.String))
      let err = new ErrorProducer(CallError, desc)
-     let invoke = (args, caller_scope, use_ctx = null, check = true) => {
+     let invoke = (args, use_ctx = null, check = true) => {
          // check arguments
          if (check) {
-             let result = check_args(args, proto, caller_scope, true)
+             let result = check_args(args, proto, true)
              if (result != 'OK') {
                  err.throw(result)
              }
@@ -254,13 +254,13 @@ function scope_kit (scope) {
              (use_ctx !== null)? use_ctx: context,
              proto.affect
          )
-         inject_args(args, proto, scope, caller_scope)
+         inject_args(args, proto, scope)
          if (vals != null) {
              list(mapkv(vals, (k, v) => scope.declare(k, v)))
          }
-         // call raw function
+         // call the raw function
          let value = raw(scope)
-         // check value
+         // check the returned value
          err.assert(is(value, proto.value), MSG.retval_invalid)
          return value
      }
@@ -275,7 +275,7 @@ function scope_kit (scope) {
      return wrapped
  }
 
-function check_args (args, proto, caller_scope, get_err_msg = false) {
+function check_args (args, proto, get_err_msg = false) {
     // IMPORTANT: return string, "OK" = valid
     let r = proto.parameters.length
     let g = args.length
@@ -293,18 +293,16 @@ function check_args (args, proto, caller_scope, get_err_msg = false) {
             return get_err_msg? MSG.arg_invalid(name): 'NG'
         }
         // cannot pass immutable object as dirty argument
-        if (caller_scope != null) {
-            let is_dirty = parameter.pass_policy == 'dirty'
-            let is_immutable = IsIm(arg)
-            if (is_dirty && is_immutable) {
-                return get_err_msg? MSG.arg_immutable(name): 'NG'
-            }
+        let is_dirty = parameter.pass_policy == 'dirty'
+        let is_immutable = IsIm(arg)
+        if (is_dirty && is_immutable) {
+            return get_err_msg? MSG.arg_immutable(name): 'NG'
         }
     }
     return 'OK'
 }
 
-function inject_args (args, proto, scope, caller_scope) {
+function inject_args (args, proto, scope) {
     for (let i=0; i<proto.parameters.length; i++) {
         let parameter = proto.parameters[i]
         let arg = args[i]
@@ -336,12 +334,12 @@ function bind_context (f, context) {
     f = cancel_binding(f)
     let info = f[WrapperInfo]
     let g = give_arity(
-        ((...args) => info.invoke(args, null, context)),
+        ((...args) => info.invoke(args, context)),
         info.proto? info.proto.parameters.length: 0
     )
-    let invoke = function (args, caller_scope, use_context = null) {
+    let invoke = function (args, use_context = null) {
         assert(use_context === null)
-        return info.invoke(args, caller_scope, context)
+        return info.invoke(args, context)
     }
     g[WrapperInfo] = { original: f, invoke: invoke }
     return g
@@ -352,13 +350,17 @@ function cancel_binding (f) {
     return f[WrapperInfo].original || f
 }
 
-function call (f, caller_scope, args) {
+function call (f, args) {
     if (is(f, Type.Function.Wrapped)) {
         // TODO: add frame to call stack (add info for debugging)
+        return f[WrapperInfo].invoke(args)
         // TODO: remove frame from call stack
-        return f[WrapperInfo].invoke(args, caller_scope)
-    } else {
+    } else if (is(f, Type.Abstract.Class)) {
+        return call(f.create, args)
+    } else if (typeof f == 'function') {
         return Function.prototype.apply.call(f, null, args)
+    } else {
+        (new ErrorProducer(CallError)).throw('calling non-callable object')
     }
 }
 
