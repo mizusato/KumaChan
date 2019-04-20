@@ -184,10 +184,14 @@ class Class {
             }
         )
         this[Checker] = (object => {
-            return exists(
-                object.abstraction.super_classes,
-                super_class => super_class === this
-            )
+            if (object instanceof Instance) {
+                return exists(
+                    object.abstraction.super_classes,
+                    super_class => super_class === this
+                )
+            } else {
+                return false
+            }
         })
         Object.freeze(this)
     }

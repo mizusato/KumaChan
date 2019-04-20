@@ -10,7 +10,8 @@
     let Checker = Symbol('Checker')
     let WrapperInfo = Symbol('WrapperInfo')
     let BranchInfo = Symbol('BranchInfo')
-    let Symbols = { Checker, WrapperInfo, BranchInfo }
+    let ImPtr = Symbol('ImPtr')
+    let Symbols = { Checker, WrapperInfo, BranchInfo, ImPtr }
 
     /**
      *  Global Scope (Uninitialized)
@@ -21,6 +22,8 @@
     /**
      *  Expand Modules
      */
+
+    '<include> access.js';
 
     '<include> error.js';
 
@@ -74,8 +77,9 @@
 
     let export_name = 'KumaChan'
     let export_object = {
+        Im, IsRef, DeRef, IsIm, IsMut,
         is, has, $, Uni, Ins, Not, Type, Symbols, get_type,
-        Global, G, var_lookup, var_declare, var_assign,
+        Global, G, scope_kit, var_declare, var_assign, var_lookup,
         wrap, parse_decl, fun, overload, overload_added, overload_concated,
         sig, create_interface, create_class
     }
@@ -84,5 +88,5 @@
     } else {
         module.exports = export_object
     }
-    
+
 })()

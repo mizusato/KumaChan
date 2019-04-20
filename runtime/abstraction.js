@@ -19,12 +19,19 @@
 var Type;
 
 function is (value, abstraction) {
-    return abstraction[Checker](value)
+    // immutable reference object should be de-referenced here
+    if (IsRef(value)) {
+        return abstraction[Checker](DeRef(value))
+    } else {
+        return abstraction[Checker](value)
+    }
 }
+
+let hasOwnProperty = Object.prototype.hasOwnProperty
 
 function has (key, object) {
     assert(typeof key == 'string' || typeof key == 'symbol')
-    return Object.prototype.hasOwnProperty.call(object, key)
+    return hasOwnProperty.call(object, key)
 }
 
 

@@ -6,6 +6,9 @@
     <script type="text/javascript" src="build/dev/runtime.js"></script>
     <script type="text/javascript">
       Object.assign(window, KumaChan)
+      var_declare = (scope, name, value) => KumaChan.var_declare(scope)(name,value)
+      var_assign = (scope, name, value) => KumaChan.var_assign(scope)(name,value)
+      var_lookup = (scope, name) => KumaChan.var_lookup(scope)(name)
       let f = fun('local f (Int x, Int y) -> Int', (_,__,x,y) => x+y)
       console.log(f(1,2))
       let F = sig([G.Int, G.Int], G.Int)

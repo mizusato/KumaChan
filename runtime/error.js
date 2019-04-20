@@ -55,4 +55,3 @@ function assert (value) {
     if(!value) { throw new RuntimeError('Assertion Failed') }
     return value
 }
-

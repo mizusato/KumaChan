@@ -1,18 +1,5 @@
 /**
- *  Access Control of Function & Scope
- *
- *  In some functional programming language, functions are restricted
- *    to "pure function", which does not produce side-effect.
- *  But in this language, side-effect is widly permitted, none of
- *    functions are "pure function". Instead of eliminating side-effect,
- *    we decrease side-effect by establishing access control.
- *  If a function never modify an argument, it is possible to
- *    set this argument to be immutable (read-only).
- *  Also, if a function never modify the outer scope, it is possible to
- *    set the outer scope to be immutable (read-only) to the function.
- *  The mechanics described above is like UNIX file permission,
- *    an outer scope or an argument can be set to "rwx" or "r-x".
- *  "Be conservative in what you write, be liberal in what you read."
+ *  Function & Scope
  */
 
 
@@ -111,21 +98,7 @@ class Scope {
         this.data = data
         // <assignable> = Set { Non-Constants }
         this.assignable = new Set()
-        // <ACL> = WeakMap { Object -> Immutable? 1: undefined }
-        this.ACL = new WeakMap()
         Object.freeze(this)
-    }
-    register_immutable (object) {
-        if (typeof object == 'object') {
-            this.ACL.set(object, 1)
-        }
-    }
-    check_immutable (object) {
-        if (typeof object == 'object') {
-            return (this.ACL.get(object) === 1)
-        } else {
-            return true
-        }
     }
     check_assignable (variable) {
         assert(typeof variable == 'string')
@@ -174,15 +147,8 @@ class Scope {
         if (info == NotFound) {
             return NotFound
         } else {
-            if (!info.is_mutable) {
-                this.register_immutable(info.object)
-            }
-            return info.object
+            return info.is_mutable? info.object: Im(info.object)
         }
-    }
-    try_to_lookup (variable) {
-        assert(typeof variable == 'string')
-        return (this.has(variable))? variable: null
     }
     find (variable) {
         assert(typeof variable == 'string')
@@ -208,7 +174,7 @@ class Scope {
                 scope.has(variable)? scope.data[variable]: NotFound
             )
             let is_mutable = (
-                depth <= mutable_depth && !scope.check_immutable(object)
+                depth <= mutable_depth && IsMut(object)
             )
             let is_assignable = scope.check_assignable(variable)
             return { scope, depth, object, is_mutable, is_assignable }
@@ -225,25 +191,42 @@ let name_err = new ErrorProducer(NameError)
 let assign_err = new ErrorProducer(AssignError)
 let access_err = new ErrorProducer(AccessError)
 
-function var_lookup(scope, name) {
+function var_lookup(scope) {
     assert(scope instanceof Scope)
-    let value = scope.lookup(name)
-    name_err.assert(value != NotFound, MSG.variable_not_found(name))
-    return value
+    return function lookup (name) {
+        let value = scope.lookup(name)
+        name_err.assert(value != NotFound, MSG.variable_not_found(name))
+        return value
+    }
 }
 
-function var_declare(scope, name, initial_value) {
+function var_declare(scope) {
     assert(scope instanceof Scope)
-    name_err.assert(!scope.has(name), MSG.variable_declared(name))
-    scope.declare(name, initial_value)
+    return function declare (name, initial_value, is_assignable = false) {
+        name_err.assert(!scope.has(name), MSG.variable_declared(name))
+        scope.declare(name, initial_value, is_assignable)
+    }
 }
 
-function var_assign(scope, name, new_value) {
-    let info = scope.find(name)
-    name_err.assert(info != NotFound, MSG.variable_not_declared(name))
-    assign_err.assert(info.is_assignable, MSG.variable_const(name))
-    access_err.assert(info.is_mutable, MSG.variable_immutable(name))
-    info.scope.assign(name, new_value)
+function var_assign(scope) {
+    assert(scope instanceof Scope)
+    return function assign (name, new_value) {
+        let info = scope.find(name)
+        name_err.assert(info != NotFound, MSG.variable_not_declared(name))
+        assign_err.assert(info.is_assignable, MSG.variable_const(name))
+        access_err.assert(info.is_mutable, MSG.variable_immutable(name))
+        info.scope.assign(name, new_value)
+        return Void
+    }
+}
+
+
+function scope_kit (scope) {
+    return {
+        id: var_lookup(scope),
+        reset: var_assign(scope),
+        declare: var_declare(scope)
+    }
 }
 
 
@@ -279,11 +262,6 @@ function var_assign(scope, name, new_value) {
          let value = raw(scope)
          // check value
          err.assert(is(value, proto.value), MSG.retval_invalid)
-         if (caller_scope != null) {
-             if (scope.check_immutable(value)) {
-                 caller_scope.register_immutable(value)
-             }
-         }
          return value
      }
      // wrap function
@@ -317,7 +295,7 @@ function check_args (args, proto, caller_scope, get_err_msg = false) {
         // cannot pass immutable object as dirty argument
         if (caller_scope != null) {
             let is_dirty = parameter.pass_policy == 'dirty'
-            let is_immutable = caller_scope.check_immutable(arg)
+            let is_immutable = IsIm(arg)
             if (is_dirty && is_immutable) {
                 return get_err_msg? MSG.arg_immutable(name): 'NG'
             }
@@ -332,14 +310,7 @@ function inject_args (args, proto, scope, caller_scope) {
         let arg = args[i]
         // if pass policy is immutable, register the argument
         if (parameter.pass_policy == 'immutable') {
-            scope.register_immutable(arg)
-        } else if (parameter.pass_policy == 'natural') {
-            if (caller_scope != null) {
-                let arg_is_immutable = caller_scope.check_immutable(arg)
-                if (arg_is_immutable) {
-                    scope.register_immutable(arg)
-                }
-            }
+            arg = Im(arg)
         }
         // inject argument to scope
         scope.declare(parameter.name, arg)
