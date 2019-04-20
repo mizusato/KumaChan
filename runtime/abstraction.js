@@ -216,10 +216,10 @@ class Schema {
                         if(!is(x[key], this.table[key])) {
                             return false
                         }
-                    } else if(has(key, this.defaults)) {
-                        x[key] = this.defaults[key]
                     } else {
-                        return false
+                        if(!has(key, this.defaults)) {
+                            return false
+                        }
                     }
                 }
                 return this.requirement(x)

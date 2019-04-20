@@ -308,6 +308,20 @@ function inject_args (args, proto, scope, caller_scope) {
     for (let i=0; i<proto.parameters.length; i++) {
         let parameter = proto.parameters[i]
         let arg = args[i]
+        // apply default values of schema
+        if (parameter.constraint instanceof Schema) {
+            assert(is(arg, Type.Container.Hash))
+            let schema = parameter.constraint
+            if (schema.defaults != null) {
+                let defaults_applied = mapval(arg, x => x)
+                for (let key of Object.keys(schema.defaults)) {
+                    if (!has(key, arg)) {
+                        defaults_applied[key] = schema.defaults[key]
+                    }
+                }
+                arg = defaults_applied
+            }
+        }
         // if pass policy is immutable, register the argument
         if (parameter.pass_policy == 'immutable') {
             arg = Im(arg)
