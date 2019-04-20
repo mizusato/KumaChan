@@ -95,7 +95,7 @@ var Keywords = [...] string {
     "@throw", "@assert", "@require", "@try",
     "@handle", "@unless", "@failed", "@finally",
     "@xml",
-    "@category", "@struct", "@require", "@enum", "@concept",
+    "@category", "@struct", "@require", "@one", "@of",
     "@class", "@init", "@interface", "@expose",
     "@true", "@false",
     "@is", "@not", "@yield", "@await",
@@ -206,7 +206,7 @@ var SyntaxDefinition = [...] string {
     "cmd_reset = @reset name = expr",
     /* Definition Commands @ Group 2 */
     "cmd_def = function | abs_def",
-    "abs_def = category | struct | enum | concept | class | interface",
+    "abs_def = category | struct | class | interface",
     /* Set Command @ Group 3 */
     "cmd_set = @set left_val = expr",
     "left_val = operand_base gets!",
@@ -244,12 +244,10 @@ var SyntaxDefinition = [...] string {
     "field = type name! field_default",
     "field_default? = = expr",
     "condition = @require expr",
-    /* Enum */
-    "enum = @enum name enum_literal",
-    "enum_literal = { enum_items }",
-    "enum_items = exprlist",
+    /* Finite */
+    "finite_literal = @one @of { finite_items }! | { expr }",
+    "finite_items? = exprlist",
     /* Concept */
-    "concept = @concept name expr",
     "concept_literal = { name _bar1 filters! }!",
     "filters = exprlist",
     /* Class */
@@ -318,7 +316,7 @@ var SyntaxDefinition = [...] string {
     /* Literals */
     "literal = primitive | adv_literal",
     "adv_literal = xml | comprehension | abs_literal | pairlist | list | hash",
-    "abs_literal = concept_literal | enum_literal",
+    "abs_literal = concept_literal | finite_literal",
     /* Key-Value Pair List */
     "pairlist = ..[ ] | ..[ pair! pairlist_tail ]!",
     "pairlist_tail? = , pair! pairlist_tail",

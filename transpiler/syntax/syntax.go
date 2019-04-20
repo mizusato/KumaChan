@@ -182,6 +182,10 @@ func ParseRules () {
             branches[i].Parts = make([]Part, num_parts)
             if num_parts > MAX_NUM_PARTS { panic(name + ": too many parts") }
             for j, str_part := range strlist_branch {
+                // check if valid
+                if str_part == "" {
+                    panic("redundant blank in definition of " + str_name)
+                }
                 // extract part name
                 var required = strings.HasSuffix(str_part, "!")
                 var part_name = strings.TrimRight(str_part, "!")
