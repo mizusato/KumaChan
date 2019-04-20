@@ -39,7 +39,7 @@ func TranspileOperationSequence (tree Tree, ptr int) [][]string {
             var name_ptr, is_method_call = params["name"]
             if is_method_call {
                 operations = append(operations, []string {
-                    "m", Transpile(tree, name_ptr), args,
+                    "m", "scope", Transpile(tree, name_ptr), args,
                 })
             } else {
                 operations = append(operations, []string {
