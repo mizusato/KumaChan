@@ -88,11 +88,7 @@ var TransMapByName = map[string]TransFunction {
                 var buf strings.Builder
                 buf.WriteString(operator)
                 buf.WriteRune('(')
-                if lazy_eval {
-                    buf.WriteString(LazyValueWrapper(operand1))
-                } else {
-                    buf.WriteString(operand1)
-                }
+                buf.WriteString(operand1)
                 buf.WriteRune(',')
                 if lazy_eval {
                     buf.WriteString(LazyValueWrapper(operand2))
@@ -172,9 +168,9 @@ var TransMapByName = map[string]TransFunction {
         if info.CanOverload {
             buf.WriteString("o")
             buf.WriteRune('(')
-            buf.WriteString(EscapeRawString([]rune(info.Match)))
+            var name = strings.TrimPrefix(info.Match, "@")
+            buf.WriteString(EscapeRawString([]rune(name)))
             buf.WriteRune(')')
-            // buf.WriteString(VarLookup([]rune("operator_" + name)))
         } else {
             var name = info.Name
             if name == "is" {
@@ -187,13 +183,7 @@ var TransMapByName = map[string]TransFunction {
     },
 
     "name": func (tree Tree, ptr int) string {
-        var node = &tree.Nodes[ptr]
-        var child = &tree.Nodes[node.Children[0]]
-        if child.Part.Id == syntax.Name2Id["String"] {
-            return TransMap[syntax.Name2Id["string"]](tree, ptr)
-        } else {
-            return EscapeRawString(GetTokenContent(tree, ptr))
-        }
+        return EscapeRawString(GetTokenContent(tree, ptr))
     },
     "nil_flag": func (tree Tree, ptr int) string {
         if NotEmpty(tree, ptr) {

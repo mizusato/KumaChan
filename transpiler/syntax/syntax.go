@@ -139,14 +139,11 @@ func ConvertOperatorInfo () {
             var raw_name = operator.Name
             var priority = operator.Priority
             var assoc = operator.Assoc
-            var lazy_eval = strings.HasPrefix(raw_name, "*")
+            var lazy_eval = strings.HasSuffix(raw_name, "*")
             var can_overload = !strings.HasPrefix(raw_name, "_")
-            var name string
-            if lazy_eval || !can_overload {
-                name = raw_name[1:]
-            } else {
-                name = raw_name
-            }
+            var name = raw_name
+            name = strings.TrimPrefix(name, "_")
+            name = strings.TrimSuffix(name, "*")
             Id2Operator[id] = Operator {
                 Match: match, Name: name, Priority: priority, Assoc: assoc,
                 LazyEval: lazy_eval, CanOverload: can_overload,

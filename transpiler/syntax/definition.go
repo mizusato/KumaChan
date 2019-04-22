@@ -98,7 +98,7 @@ var Keywords = [...] string {
     "@category", "@struct", "@require", "@one", "@of",
     "@class", "@init", "@interface", "@expose",
     "@true", "@false",
-    "@is", "@not", "@yield", "@await",
+    "@is", "@or", "@not", "@yield", "@await",
 }
 
 
@@ -106,14 +106,15 @@ var Keywords = [...] string {
  *  Operator Info
  *
  *  If the 'Name' field starts with "_", the operator will be non-overloadable.
- *  If the 'Name' field starts with "*", the operator will be lazily-evaluated.
+ *  If the 'Name' field ends with "*", the operator will be lazily-evaluated.
  *  The value of the 'Priority' field must be non-negative.
  */
 var Operators = [...] Operator {
-    /* Oriented */
+    /* Pull, Push, Derive, Otherwise */
     Operator { Match: "<<",   Name: "pull",    Priority: 20,  Assoc: Right },
     Operator { Match: ">>",   Name: "push",    Priority: 20,  Assoc: Left  },
-    Operator { Match: "=>",   Name: "derive",  Priority: 20,  Assoc: Left  },
+    Operator { Match: "=>",   Name: "drv*",   Priority: 20,  Assoc: Left  },
+    Operator { Match: "@or",  Name: "ow*",    Priority: 20,  Assoc: Left  },
     /* Comparison */
     Operator { Match: "<",    Name: "lt",      Priority: 30,  Assoc: Left  },
     Operator { Match: ">",    Name: "gt",      Priority: 30,  Assoc: Left  },
@@ -123,8 +124,8 @@ var Operators = [...] Operator {
     Operator { Match: "!=",   Name: "neq",     Priority: 30,  Assoc: Left  },
     /* Logic */
     Operator { Match: "@is",  Name: "_is",     Priority: 10,  Assoc: Left  },
-    Operator { Match: "&&",   Name: "*and",    Priority: 60,  Assoc: Left  },
-    Operator { Match: "||",   Name: "*or",     Priority: 50,  Assoc: Left  },
+    Operator { Match: "&&",   Name: "and*",    Priority: 60,  Assoc: Left  },
+    Operator { Match: "||",   Name: "or*",     Priority: 50,  Assoc: Left  },
     Operator { Match: "&",    Name: "ins",     Priority: 60,  Assoc: Left  },
     Operator { Match: "|",    Name: "uni",     Priority: 50,  Assoc: Left  },
     Operator { Match: `\`,    Name: "diff",    Priority: 40,  Assoc: Left  },
@@ -146,7 +147,7 @@ var SyntaxDefinition = [...] string {
     /* Module */
     "module = module_declare exports commands",
     "module_declare = @module name!",
-    "name = Name | String",
+    "name = Name",
     "exports? = export exports",
     "export = @export as_list!",
     "as_list = as_item as_list_tail",
@@ -245,7 +246,7 @@ var SyntaxDefinition = [...] string {
     "field_default? = = expr",
     "condition = @require expr",
     /* Finite */
-    "finite_literal = @one @of { finite_items }! | { expr }",
+    "finite_literal = @one @of { finite_items }! | { finite_items }",
     "finite_items? = exprlist",
     /* Concept */
     "concept_literal = { name _bar1 filters! }!",
@@ -268,8 +269,8 @@ var SyntaxDefinition = [...] string {
     "expr = operand expr_tail",
     "expr_tail? = operator operand! expr_tail",
     /* Operators (Infix) */
-    "operator = op_oriented | op_compare | op_logic | op_arith",
-    "op_oriented = << | >> | => ",
+    "operator = op_group1 | op_compare | op_logic | op_arith",
+    "op_group1 = << | >> | => | @or",
     "op_compare = < | > | <= | >= | == | != ",
     `op_logic = @is | && | _bar2 | & | _bar1 | \ `,
     "op_arith = + | - | * | / | % | ^ ",
