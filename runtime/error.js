@@ -21,7 +21,10 @@ let MSG = {
     ),
     exposing_non_instance: 'unable to expose non-instance object',
     not_exposing: C => `created instance does not expose instance of ${C}`,
-    method_not_found: name => `method ${name}() does not exist`
+    method_not_found: name => `method ${name}() does not exist`,
+    instance_immutable: M => (
+        `unable to call dirty method ${M} on immutable instance`
+    )
 }
 
 

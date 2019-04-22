@@ -26,7 +26,7 @@
       let X = create_class('X',[D,I],fun('local init() -> Any',(s,expose)=> { let d = D.create(); expose(d); } ),  { v: fun('local v () -> Int', s=>999) } )
       let x = call(X,[])
       console.log(x)
-      console.log(x.methods.v(), x.methods.q())
+      console.log(call_method(x,Global,'v',[]), x.methods.q())
     </script>
   </head>
   <body>

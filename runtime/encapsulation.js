@@ -238,6 +238,10 @@ function call_method (object, caller_scope, method_name, args) {
         // method on instance
         let method = object.methods[method_name]
         method_err.assert(method, method || MSG.method_not_found(method_name))
+        let ok = !(IsRef(object) && method[WrapperInfo].proto.affect != 'local')
+        method_err.assert(
+            ok, ok || MSG.instance_immutable(method[WrapperInfo.desc])
+        )
         return call(method, args)
     } else {
         // UFCS
