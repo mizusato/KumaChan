@@ -62,6 +62,7 @@
             x => Number.isInteger(x) && assert(Number.isSafeInteger(x))
         )),
         String: Type.String,
+        Callable: Uni(Type.Function, Type.Abstract.Class),
         Function: Uni(
             Type.Function.Wrapped.Sole,
             Type.Function.Wrapped.Binding

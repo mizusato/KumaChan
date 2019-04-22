@@ -12,7 +12,7 @@ let operators = {
     /* Pull, Push, Derive, Otherwise */
     '<<': f (
         'operator_pull',
-        'local pull (Function f, Any *x) -> Any',
+        'local pull (Callable f, Any *x) -> Any',
             (f, x) => f(x),
         'local pull (String s, Any *x) -> String',
             (s, x) => str_format(s, x)
@@ -24,13 +24,13 @@ let operators = {
     ),
     '=>': f (
         'operator_derive',
-        'local derive (Bool p, Function ok) -> Any',
+        'local derive (Bool p, Callable ok) -> Any',
             (p, ok) => p? ok(): Nil
     ),
     'or': f (
         'operator_otherwise',
         'local otherwise (Any *x, Any *fallback) -> Any',
-            (x, fallback) => (x !== Nil)? x: fallback
+            (x, fallback) => (x !== Nil)? x: fallback()
     ),
     /* Comparsion */
     '<': f (
@@ -72,12 +72,12 @@ let operators = {
     /* Logic */
     '&&': f (
         'operator_and',
-        'local and (Bool p, Function q) -> Bool',
+        'local and (Bool p, Callable q) -> Bool',
         (p, q) => !p? false: lazy_bool(q(), 'operator_and', 'q')
     ),
     '||': f (
         'operator_or',
-        'local or (Bool p, Function q) -> Bool',
+        'local or (Bool p, Callable q) -> Bool',
         (p, q) => p? true: lazy_bool(q(), 'operator_or', 'q')
     ),
     '!': f (
