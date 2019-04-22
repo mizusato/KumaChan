@@ -11,6 +11,7 @@
     let WrapperInfo = Symbol('WrapperInfo')
     let BranchInfo = Symbol('BranchInfo')
     let ImPtr = Symbol('ImPtr')
+    let Solid = Symbol('Solid')
     let Symbols = { Checker, WrapperInfo, BranchInfo, ImPtr }
 
     /**
@@ -67,6 +68,7 @@
         ),
         Overload: Type.Function.Wrapped.Overload,
         Abstract: Type.Abstract,
+        Concept: Type.Abstract.Concept,
         List: Type.Container.List,
         Hash: Type.Container.Hash,
     })

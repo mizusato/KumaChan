@@ -70,6 +70,7 @@ function parse_decl (string) {
         let match = para_str.match(/([^ ]+) (\*|\&)?(.+)/)
         let [_, type_str, policy_str, name] = match
         let constraint = Global.lookup(type_str)
+        assert(constraint != NotFound)
         policy_str = policy_str || ''
         let pass_policy = FlagValue[policy_str]
         return { name, constraint, pass_policy }
@@ -250,6 +251,7 @@ function var_assign(scope) {
              list(mapkv(vals, (k, v) => scope.declare(k, v)))
          }
          // call the raw function
+         // TODO: add frame to call stack (add info for debugging)
          let value = raw(scope)
          // check the returned value
          err.assert(is(value, proto.value), MSG.retval_invalid)
@@ -343,9 +345,7 @@ function cancel_binding (f) {
 
 function call (f, args) {
     if (is(f, Type.Function.Wrapped)) {
-        // TODO: add frame to call stack (add info for debugging)
         return f[WrapperInfo].invoke(args)
-        // TODO: remove frame from call stack
     } else if (is(f, Type.Abstract.Class)) {
         return call(f.create, args)
     } else if (typeof f == 'function') {
@@ -375,7 +375,7 @@ function fun (decl_string, body) {
 
 let SoleList = list_of(Type.Function.Wrapped.Sole)
 
-function overload (functions, desc = '') {
+function overload (functions, desc) {
     assert(is(functions, SoleList))
     assert(is(desc, Type.String))
     let only1 = (functions.length == 1)
@@ -395,15 +395,24 @@ function overload (functions, desc = '') {
     return o
 }
 
-function overload_added (f, o) {
+function overload_added (f, o, desc) {
     assert(is(o, Type.Function.Wrapped.Overload))
-    return overload([...o[WrapperInfo].functions, f])
+    return overload([...o[WrapperInfo].functions, f], desc)
 }
 
-function overload_concated (o2, o1) {
+function overload_concated (o2, o1, desc) {
     assert(is(o2, Type.Function.Wrapped.Overload))
     assert(is(o1, Type.Function.Wrapped.Overload))
     return overload(list(
         cat(o1[WrapperInfo].functions, o2[WrapperInfo].functions)
+    ), desc)
+}
+
+function f (desc, ...args) {
+    assert(args.length % 2 == 0)
+    let functions = list(map(
+        iterate(0, i => i+2, i => !(i < args.length)),
+        i => fun(args[i], args[i+1])
     ))
+    return overload(functions, desc)
 }

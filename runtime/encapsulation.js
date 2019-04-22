@@ -193,6 +193,7 @@ class Class {
                 return false
             }
         })
+        this[Solid] = true
         Object.freeze(this)
     }
     get [Symbol.toStringTag]() {
@@ -280,6 +281,7 @@ class Signature {
             }
             assert(false)
         })
+        this[Solid] = true
         Object.freeze(this)
     }
     static check_sole (f, input, output) {
@@ -327,6 +329,7 @@ class Interface {
                 return false
             }
         })
+        this[Solid] = true
         Object.freeze(this)
     }
     get [Symbol.toStringTag]() {

@@ -16,7 +16,8 @@
 
 
  function Im (object) {
-     if (typeof object == 'object' && object !== null && !object[ImPtr]) {
+     if (typeof object == 'object' && object !== null
+        && !object[Solid] && !object[ImPtr]) {
          // create immutable reference
          let ref = Object.create(null)
          ref[ImPtr] = object

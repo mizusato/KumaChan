@@ -50,6 +50,7 @@ class Concept {
     constructor (checker) {
         assert(typeof checker == 'function')
         this[Checker] = checker
+        this[Solid] = true
         Object.freeze(this)
     }
     get [Symbol.toStringTag]() {
@@ -104,6 +105,7 @@ class Category {
             }
         }))
         this[BranchInfo] = Object.freeze({ precondition, branches })
+        this[Solid] = true
         Object.freeze(this)
     }
     get [Symbol.toStringTag]() {
@@ -146,6 +148,7 @@ class Singleton {
         assert(typeof description == 'string')
         this.description = description
         this[Checker] = (x => x === this)
+        this[Solid] = true
         Object.freeze(this)
     }
     get [Symbol.toStringTag]() {
@@ -169,6 +172,7 @@ class Enum {
         let item_set = new Set(str_list)
         this[Checker] = (x => item_set.has(x))
         this.item_list = Object.freeze(list(map(str_list, x => x)))
+        this[Solid] = true
         Object.freeze(this)
     }
     get [Symbol.toStringTag]() {
@@ -225,6 +229,7 @@ class Schema {
                 return this.requirement(x)
             }
         })
+        this[Solid] = true
         Object.freeze(this)
     }
     get [Symbol.toStringTag]() {
