@@ -86,6 +86,19 @@ func GetOperatorInfo (tree Tree, ptr int) syntax.Operator {
 }
 
 
+func BareFunction (content string) string {
+    var buf strings.Builder
+    buf.WriteString("(function (scope) { ")
+    buf.WriteString("var {c,m,o,is,id,dl,rt,v} = ")
+    buf.WriteString(Runtime)
+    buf.WriteString("helpers(scope)")
+    buf.WriteString("; ")
+    buf.WriteString(content)
+    buf.WriteString("})")
+    return buf.String()
+}
+
+
 func ReduceExpression (operators []syntax.Operator) [][3]int {
     /**
      *  Reduce Expression using the Shunting Yard Algorithm

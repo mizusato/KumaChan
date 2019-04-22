@@ -221,15 +221,6 @@ function var_assign(scope) {
 }
 
 
-function scope_kit (scope) {
-    return {
-        id: var_lookup(scope),
-        reset: var_assign(scope),
-        declare: var_declare(scope)
-    }
-}
-
-
 /**
  *  Function Wrapper
  */
@@ -369,10 +360,10 @@ function fun (decl_string, body) {
     return wrap(Global, parsed.proto, null, parsed.name, (scope, expose) => {
         return body.apply(
             null,
-            list(cat([scope, expose], map(
-                parsed.proto.parameters,
-                p => scope.lookup(p.name)
-            )))
+            list(cat(
+                map(parsed.proto.parameters, p => scope.lookup(p.name)),
+                [scope, expose]
+            ))
         )
     })
 }

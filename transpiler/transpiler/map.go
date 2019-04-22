@@ -39,7 +39,7 @@ func TranspileOperationSequence (tree Tree, ptr int) [][]string {
             var name_ptr, is_method_call = params["name"]
             if is_method_call {
                 operations = append(operations, []string {
-                    "m", "scope", Transpile(tree, name_ptr), args,
+                    "m", Transpile(tree, name_ptr), args,
                 })
             } else {
                 operations = append(operations, []string {
@@ -57,6 +57,35 @@ var TransMapByName = map[string]TransFunction {
 
     "program": TranspileFirstChild,
 
+    "eval": func (tree Tree, ptr int) string {
+        var command = TranspileFirstChild(tree, ptr)
+        var buf strings.Builder
+        buf.WriteString(BareFunction("return " + command))
+        buf.WriteRune('(')
+        buf.WriteString(Runtime)
+        buf.WriteString("Global")
+        buf.WriteRune(')')
+        return buf.String()
+    },
+
+    "commands": func (tree Tree, ptr int) string {
+        var commands = FlatSubTree(tree, ptr, "command", "commands")
+        var ReturnId = syntax.Name2Id["cmd_return"]
+        var has_return = false
+        var buf strings.Builder
+        for _, command := range commands {
+            if !has_return && tree.Nodes[command].Part.Id == ReturnId {
+                has_return = true
+            }
+            buf.WriteString(Transpile(tree, command))
+            buf.WriteString("; ")
+        }
+        if !has_return {
+            // return Void
+            buf.WriteString("return v; ")
+        }
+        return buf.String()
+    },
     "command": TranspileFirstChild,
     "cmd_group1": TranspileFirstChild,
     "cmd_group2": TranspileFirstChild,

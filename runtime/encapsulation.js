@@ -233,7 +233,7 @@ class Instance {
 
 let method_err = new ErrorProducer(MethodError)
 
-function call_method (object, caller_scope, method_name, args) {
+function call_method (caller_scope, object, method_name, args) {
     if (object instanceof Instance) {
         // method on instance
         let method = object.methods[method_name]

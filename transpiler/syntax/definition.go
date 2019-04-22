@@ -142,7 +142,7 @@ var Operators = [...] Operator {
 var SyntaxDefinition = [...] string {
 
     /* Root */
-    "program = module | command",
+    "program = module | eval",
 
     /* Module */
     "module = module_declare exports commands",
@@ -153,6 +153,9 @@ var SyntaxDefinition = [...] string {
     "as_list = as_item as_list_tail",
     "as_list_tail? = , as_item! as_list_tail",
     "as_item = name @as name! | name",
+
+    /* Eval */
+    "eval = command",
 
     /* Commands */
     "commands? = command commands",
