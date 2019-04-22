@@ -212,7 +212,7 @@ class Schema {
             if (this.defaults == null) {
                 return (forall(
                     Object.keys(this.table),
-                    k => is(x[k], this.table[k])
+                    k => has(k, x) && is(x[k], this.table[k])
                 ) && this.requirement(x))
             } else {
                 for (let key of Object.keys(this.table)) {
@@ -298,6 +298,7 @@ Type = {
     Container: category(ES.Object, {
         List: $(x => x instanceof Array),
         Hash: $(x => Object.getPrototypeOf(x) === Object.prototype)
+        // TODO: Map
     }),
     Instance: $(x => x instanceof Instance)
 }

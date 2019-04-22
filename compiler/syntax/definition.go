@@ -319,12 +319,10 @@ var SyntaxDefinition = [...] string {
 
     /* Literals */
     "literal = primitive | adv_literal",
-    "adv_literal = xml | comprehension | abs_literal | pairlist | list | hash",
+    "adv_literal = xml | comprehension | abs_literal | list | hash",
     "abs_literal = concept_literal | finite_literal",
-    /* Key-Value Pair List */
-    "pairlist = ..[ ] | ..[ pair! pairlist_tail ]!",
-    "pairlist_tail? = , pair! pairlist_tail",
-    "pair = expr : expr",
+    // TODO: new Map([[k1,v1],[k2,v2]]) Literal
+    // TODO: when expression: when { cond1: val1, cond2: val2 }
     /* Hash Table */
     "hash = { } | { hash_item! hash_tail }!",
     "hash_tail? = , hash_item! hash_tail",

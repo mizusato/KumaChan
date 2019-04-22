@@ -7,6 +7,15 @@ function lazy_bool (arg, desc, name) {
     return arg
 }
 
+function lazy_hash (arg, desc, name) {
+    if (!is(arg, Type.Container.Hash)) {
+        (new ErrorProducer(CallError, desc)).throw(
+            MSG.arg_invalid(name)
+        )
+    }
+    return arg
+}
+
 
 let operators = {
     /* Pull, Push, Derive, Otherwise */
@@ -24,6 +33,11 @@ let operators = {
     ),
     '=>': f (
         'operator_derive',
+        'local derive (String key, Callable table) -> Any',
+            (key, table) => {
+                table = lazy_hash(table(), 'derive', 'table')
+                return has(key, table)? table[key]: Nil
+            },
         'local derive (Bool p, Callable ok) -> Any',
             (p, ok) => p? ok(): Nil
     ),

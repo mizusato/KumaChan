@@ -357,6 +357,7 @@ function call (f, args) {
 
 function fun (decl_string, body) {
     let parsed = parse_decl(decl_string)
+    assert(is(body, Type.Function.Bare))
     return wrap(Global, parsed.proto, null, parsed.name, (scope, expose) => {
         return body.apply(
             null,
