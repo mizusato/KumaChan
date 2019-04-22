@@ -82,7 +82,7 @@ var TransMapByName = map[string]TransFunction {
         }
         if !has_return {
             // return Void
-            buf.WriteString("return v; ")
+            buf.WriteString("return v;")
         }
         return buf.String()
     },
@@ -278,6 +278,56 @@ var TransMapByName = map[string]TransFunction {
     },
 
     "literal": TranspileFirstChild,
+    "adv_literal": TranspileFirstChild,
+    /* Hash Table */
+    "hash": func (tree Tree, ptr int) string {
+        if tree.Nodes[ptr].Length == 2 {
+            return "{}"
+        }
+        var items = FlatSubTree(tree, ptr, "hash_item", "hash_tail")
+        var buf strings.Builder
+        buf.WriteRune('{')
+        for i, item := range items {
+            buf.WriteString(Transpile(tree, item))
+            if i != len(items)-1 {
+                buf.WriteString(", ")
+            }
+        }
+        buf.WriteRune('}')
+        return buf.String()
+    },
+    "hash_item": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var name = children["name"]
+        var expr, has_expr = children["expr"]
+        var buf strings.Builder
+        buf.WriteString(Transpile(tree, name))
+        buf.WriteString(": ")
+        if has_expr {
+            buf.WriteString(Transpile(tree, expr))
+        } else {
+            buf.WriteString(VarLookup(GetTokenContent(tree, name)))
+        }
+        return buf.String()
+    },
+    /* Linear List */
+    "list": func (tree Tree, ptr int) string {
+        if tree.Nodes[ptr].Length == 2 {
+            return "[]"
+        }
+        var items = FlatSubTree(tree, ptr, "list_item", "list_tail")
+        var buf strings.Builder
+        buf.WriteRune('[')
+        for i, item := range items {
+            buf.WriteString(Transpile(tree, item))
+            if i != len(items)-1 {
+                buf.WriteString(", ")
+            }
+        }
+        buf.WriteRune(']')
+        return buf.String()
+    },
+    "list_item": TranspileFirstChild,
     /* Primitive Values */
     "primitive": TranspileFirstChild,
     "string": func (tree Tree, ptr int) string {

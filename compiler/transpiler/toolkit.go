@@ -34,6 +34,8 @@ func EscapeRawString (raw []rune) string {
             buf.WriteString(`\\`)
         } else if char == '"' {
             buf.WriteString(`\"`)
+        } else if char == '\n' {
+            buf.WriteString(`\n`)
         } else {
             buf.WriteRune(char)
         }
@@ -94,7 +96,7 @@ func BareFunction (content string) string {
     buf.WriteString("helpers(scope)")
     buf.WriteString("; ")
     buf.WriteString(content)
-    buf.WriteString("})")
+    buf.WriteString(" })")
     return buf.String()
 }
 

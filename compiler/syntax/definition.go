@@ -332,8 +332,7 @@ var SyntaxDefinition = [...] string {
     /* Linear List */
     "list = [ ] | [ list_item! list_tail ]!",
     "list_tail? = , list_item! list_tail",
-    "list_item = expr list_item_extra",
-    "list_item_extra? = : expr",
+    "list_item = expr",
     /* List/Iterator Comprehension */
     "comprehension = .[ comp_rule! ]! | [ comp_rule ]!",
     "comp_rule = expr _bar1 in_list! opt_filters",
