@@ -26,7 +26,7 @@ let str_format = f (
                 let key = p1
                 let ok = has(key, h)
                 format_err.assert(ok, ok || MSG.format_invalid_key(key))
-                return str(h[key])
+                return str(Im(h[key]))
             })
         },
     'local str_format (String s, List l) -> String',
@@ -38,7 +38,7 @@ let str_format = f (
                 let ok = (0 <= index && index < l.length)
                 format_err.assert(ok, ok || MSG.format_invalid_index(index))
                 used += 1
-                return str(l[index])
+                return str(Im(l[index]))
             })
             let ok = (used == l.length)
             format_err.assert(ok, ok || MSG.format_not_all_converted)
@@ -192,11 +192,17 @@ function call_operator (name) {
 }
 
 
+let wrapped_is = fun (
+    'local is (Any *x, Abstract A) -> Bool',
+        (x, A) => is(x, A)
+)
+
+
 let helpers = scope => ({
     c: call,
     m: (obj, name, args) => call_method(scope, obj, name, args),
     o: call_operator,
-    is: is,
+    is: wrapped_is,
     id: var_lookup(scope),
     dl: var_declare(scope),
     rt: var_assign(scope),
