@@ -279,6 +279,38 @@ var TransMapByName = map[string]TransFunction {
 
     "literal": TranspileFirstChild,
     "adv_literal": TranspileFirstChild,
+    /* Map */
+    "map": func (tree Tree, ptr int) string {
+        if tree.Nodes[ptr].Length == 3 {
+            return "(new Map())"
+        }
+        var items = FlatSubTree(tree, ptr, "map_item", "map_tail")
+        var buf strings.Builder
+        buf.WriteRune('(')
+        buf.WriteString("new Map")
+        buf.WriteString("([")
+        for i, item := range items {
+            buf.WriteString(Transpile(tree, item))
+            if i != len(items)-1 {
+                buf.WriteString(", ")
+            }
+        }
+        buf.WriteString("])")
+        buf.WriteRune(')')
+        return buf.String()
+    },
+    "map_item": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var key = TranspileFirstChild(tree, children["map_key"])
+        var value = Transpile(tree, children["expr"])
+        var buf strings.Builder
+        buf.WriteRune('[')
+        buf.WriteString(key)
+        buf.WriteString(", ")
+        buf.WriteString(value)
+        buf.WriteRune(']')
+        return buf.String()
+    },
     /* Hash Table */
     "hash": func (tree Tree, ptr int) string {
         if tree.Nodes[ptr].Length == 2 {

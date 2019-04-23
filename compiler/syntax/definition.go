@@ -94,7 +94,7 @@ var Keywords = [...] string {
     "@local", "@upper", "@global", "@static",
     "@throw", "@assert", "@require", "@try",
     "@handle", "@unless", "@failed", "@finally",
-    "@xml",
+    "@xml", "@map",
     "@category", "@struct", "@require", "@one", "@of",
     "@class", "@init", "@interface", "@expose",
     "@true", "@false",
@@ -319,14 +319,17 @@ var SyntaxDefinition = [...] string {
 
     /* Literals */
     "literal = primitive | adv_literal",
-    "adv_literal = xml | comprehension | abs_literal | list | hash",
+    "adv_literal = xml | comprehension | abs_literal | map | list | hash",
     "abs_literal = concept_literal | finite_literal",
-    // TODO: new Map([[k1,v1],[k2,v2]]) Literal
+    "map = @map { } | @map { map_item! map_tail }",
+    "map_tail? = , map_item! map_tail",
+    "map_item = map_key :! expr!",
+    "map_key = expr",
     // TODO: when expression: when { cond1: val1, cond2: val2 }
     /* Hash Table */
     "hash = { } | { hash_item! hash_tail }!",
     "hash_tail? = , hash_item! hash_tail",
-    "hash_item = name : expr | :: name",
+    "hash_item = name :! expr! | :: name!",
     /* Linear List */
     "list = [ ] | [ list_item! list_tail ]!",
     "list_tail? = , list_item! list_tail",

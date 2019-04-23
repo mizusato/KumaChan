@@ -23,6 +23,8 @@ let operators = {
         'operator_pull',
         'local pull (Callable f, Any *x) -> Any',
             (f, x) => f(x),
+        'local pull (Hash &l, Hash *r) -> Hash',
+            (l, r) => Object.assign(l, r),
         'local pull (String s, Any *x) -> String',
             (s, x) => str_format(s, x)
     ),
@@ -33,17 +35,12 @@ let operators = {
     ),
     '=>': f (
         'operator_derive',
-        'local derive (String key, Callable table) -> Any',
-            (key, table) => {
-                table = lazy_hash(table(), 'derive', 'table')
-                return has(key, table)? table[key]: Nil
-            },
         'local derive (Bool p, Callable ok) -> Any',
             (p, ok) => p? ok(): Nil
     ),
     'or': f (
         'operator_otherwise',
-        'local otherwise (Any *x, Any *fallback) -> Any',
+        'local otherwise (Any *x, Callable fallback) -> Any',
             (x, fallback) => (x !== Nil)? x: fallback()
     ),
     /* Comparsion */
@@ -122,8 +119,10 @@ let operators = {
     /* Arithmetic */
     '+': f (
         'operator_plus',
+        'local plus (List *a, List *b) -> List',
+            (a, b) => [...a, ...b],
         'local plus (String a, String b) -> String',
-            (x, y) => x + y,
+            (a, b) => a + b,
         'local plus (Number x, Number y) -> Number',
             (x, y) => x + y
     ),
