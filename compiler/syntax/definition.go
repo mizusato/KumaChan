@@ -113,8 +113,8 @@ var Operators = [...] Operator {
     /* Pull, Push, Derive, Otherwise */
     Operator { Match: "<<",   Name: "pull",    Priority: 20,  Assoc: Right },
     Operator { Match: ">>",   Name: "push",    Priority: 20,  Assoc: Left  },
-    Operator { Match: "=>",   Name: "drv*",   Priority: 20,  Assoc: Left  },
-    Operator { Match: "@or",  Name: "ow*",    Priority: 20,  Assoc: Left  },
+    Operator { Match: "=>",   Name: "drv*",    Priority: 20,  Assoc: Left  },
+    Operator { Match: "@or",  Name: "ow*",     Priority: 20,  Assoc: Left  },
     /* Comparison */
     Operator { Match: "<",    Name: "lt",      Priority: 30,  Assoc: Left  },
     Operator { Match: ">",    Name: "gt",      Priority: 30,  Assoc: Left  },
@@ -301,21 +301,23 @@ var SyntaxDefinition = [...] string {
 
     /* Lambda */
     "lambda = lambda_full | lambda_simple | lambda_bool",
-    "lambda_full = header_lambda paralist_lambda -> ret_lambda {! body! }!",
+    "lambda_full = header_lambda paralist_lambda ret_lambda {! body! }!",
     "header_lambda = fun_type_lambda @lambda",
     "fun_type_lambda? = fun_type",
-    "ret_lambda? = type",
-    "lambda_simple = .{ paralist ->! expr! }! | .{ expr! }!",
-    "lambda_bool = ..{ paralist ->! expr! }! | ..{ expr! }!",
+    "ret_lambda? = -> type | ->",
+    "lambda_simple = .{ paralist_simple expr! }!",
+    "lambda_bool = ..{ paralist_simple expr! }!",
     /* Parameter List */
     "paralist = ( ) | ( namelist ) | ( typed_namelist! )!",
     "paralist_lambda? = name | Call paralist",
+    "paralist_simple? = namelist -->",
     "paralist_strict = ( ) | ( typed_namelist! )!",
     "typed_namelist = type policy name! typed_namelist_tail",
     "typed_namelist_tail? = , type! name! typed_namelist_tail",
     "policy? = & | *",
     /* Type Expression */
-    "type = name | < expr! >!",
+    // TODO: Name . Name ... Name < type >
+    "type = Name",
 
     /* Literals */
     "literal = primitive | adv_literal",
