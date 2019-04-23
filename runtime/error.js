@@ -24,6 +24,13 @@ let MSG = {
     method_not_found: name => `method ${name}() does not exist`,
     instance_immutable: M => (
         `unable to call dirty method ${M} on immutable instance`
+    ),
+    format_invalid_key: key => `key '${key}' does not exist in given hash`,
+    format_invalid_index: index => (
+        `${'${'+(index+1)+'}'} (index ${index}) does not exist in given list`
+    ),
+    format_not_all_converted: (
+        'not all arguments converted during formatting string'
     )
 }
 
@@ -37,6 +44,7 @@ class CallError extends RuntimeError {}
 class MethodError extends RuntimeError {}
 class ClassError extends RuntimeError {}
 class InitError extends RuntimeError {}
+class FormatError extends RuntimeError {}
 
 
 class ErrorProducer {

@@ -7,14 +7,44 @@ function lazy_bool (arg, desc, name) {
     return arg
 }
 
-function lazy_hash (arg, desc, name) {
-    if (!is(arg, Type.Container.Hash)) {
-        (new ErrorProducer(CallError, desc)).throw(
-            MSG.arg_invalid(name)
-        )
-    }
-    return arg
-}
+let str = f (
+    'str',
+    'local str (Number x) -> String',
+        x => Number.prototype.toString.call(x),
+    'local str (String s) -> String',
+        s => s
+)
+
+let format_err = new ErrorProducer(FormatError, 'str_format()')
+
+let str_format = f (
+    'str_format',
+    'local str_format (String s, Hash h) -> String',
+        (s, h) => {
+            h = DeRef(h)
+            return s.replace(/\$\{([^}]+)\}/g, (match, p1) => {
+                let key = p1
+                let ok = has(key, h)
+                format_err.assert(ok, ok || MSG.format_invalid_key(key))
+                return str(h[key])
+            })
+        },
+    'local str_format (String s, List l) -> String',
+        (s, l) => {
+            l = DeRef(l)
+            let used = 0
+            let result = s.replace(/\$\{(\d+)\}/g, (match, p1) => {
+                let index = parseInt(p1) - 1
+                let ok = (0 <= index && index < l.length)
+                format_err.assert(ok, ok || MSG.format_invalid_index(index))
+                used += 1
+                return str(l[index])
+            })
+            let ok = (used == l.length)
+            format_err.assert(ok, ok || MSG.format_not_all_converted)
+            return result
+        }
+)
 
 
 let operators = {
