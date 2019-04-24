@@ -40,14 +40,29 @@ let EffectRange = one_of('local', 'upper', 'global')
 let PassPolicy = one_of('immutable', 'natural', 'dirty')
 
 
+
+let Wrapped = $(x => (
+    (typeof x == 'function')
+    && typeof x[WrapperInfo] == 'object'
+))
+
+let FunctionTypes = {
+    Function: Ins(Wrapped, $(f => has('context', f[WrapperInfo]))),
+    Overload: Ins(Wrapped, $(f => has('functions', f[WrapperInfo]))),
+    Binding: Ins(Wrapped, $(f => has('original', f[WrapperInfo])))
+}
+
+pour(Types, FunctionTypes)
+
+
 /**
  *  Parameter & Function Prototype
  */
 
 let Parameter = struct({
-    name: Type.String,
+    name: Types.String,
     pass_policy: PassPolicy,
-    constraint: Type.Abstract
+    constraint: Type
 })
 
 let ParameterList = list_of(Parameter)
@@ -380,11 +395,11 @@ function overload (functions, desc) {
     assert(is(functions, SoleList))
     assert(is(desc, Type.String))
     let only1 = (functions.length == 1)
-    let invoke = !only1? ((args, caller_scope, use_context = null) => {
+    let invoke = !only1? ((args, use_context = null) => {
         for (let f of rev(functions)) {
             let info = f[WrapperInfo]
-            if (check_args(args, info.proto, caller_scope) === 'OK') {
-                return info.invoke(args, caller_scope, use_context)
+            if (check_args(args, info.proto, false) === 'OK') {
+                return info.invoke(args, use_context)
             }
         }
         let err = new ErrorProducer(CallError, desc)

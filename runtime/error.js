@@ -1,3 +1,18 @@
+class RuntimeError extends Error {}
+
+
+function ensure (bool, msg_type, ...args) {
+    if (bool) { return }
+    let msg = MSG[msg_type]
+    if (typeof msg == 'string') {
+        throw new RuntimeError(msg)
+    } else {
+        assert(typeof msg == 'function')
+        throw new RuntimeError(msg.apply(null, args))
+    }
+}
+
+
 let MSG = {
     schema_invalid_default: f => `invalid default value for field ${f}`,
     variable_not_found: name => `variable ${name} not found`,
@@ -32,39 +47,4 @@ let MSG = {
     format_not_all_converted: (
         'not all arguments converted during formatting string'
     )
-}
-
-
-class RuntimeError extends Error {}
-class SchemaError extends RuntimeError {}
-class NameError extends RuntimeError {}
-class AssignError extends RuntimeError {}
-class AccessError extends RuntimeError {}
-class CallError extends RuntimeError {}
-class MethodError extends RuntimeError {}
-class ClassError extends RuntimeError {}
-class InitError extends RuntimeError {}
-class FormatError extends RuntimeError {}
-
-
-class ErrorProducer {
-    constructor (error, info = '') {
-        this.error = error
-        this.info = info
-    }
-    throw (msg) {
-        throw new this.error(this.info? (this.info + ': ' + msg): msg)
-    }
-    assert (value, msg) {
-        if (!value) {
-            this.throw(msg)
-        }
-        return value
-    }
-}
-
-
-function assert (value) {
-    if(!value) { throw new RuntimeError('Assertion Failed') }
-    return value
 }

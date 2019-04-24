@@ -8,6 +8,7 @@
      */
 
     let Checker = Symbol('Checker')
+    let ValueName = Symbol('ValueName')
     let WrapperInfo = Symbol('WrapperInfo')
     let BranchInfo = Symbol('BranchInfo')
     let ImPtr = Symbol('ImPtr')
@@ -23,14 +24,14 @@
     /**
      *  Expand Modules
      */
-
-    '<include> access.js';
+     
+    '<include> toolkit.js';
 
     '<include> error.js';
 
-    '<include> toolkit.js';
+    '<include> access.js';
 
-    '<include> abstraction.js';
+    '<include> type.js';
 
     '<include> function.js';
 

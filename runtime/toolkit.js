@@ -1,5 +1,33 @@
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
 const NotFound = { tip: 'Object Not Found' }
+const hasOwnProperty = Object.prototype.hasOwnProperty
+
+
+function assert (value) {
+    if(!value) { throw new Error('Assertion Failed') }
+    return value
+}
+
+
+function has (key, object) {
+    assert(typeof key == 'string' || typeof key == 'symbol')
+    return hasOwnProperty.call(object, key)
+}
+
+
+function get_keys (object) {
+    return Object.keys(object)
+}
+
+
+function get_vals (object) {
+    return map(get_keys(object), k => object[k])
+}
+
+
+function get_proto (object) {
+    return Object.getPrototypeOf(object)
+}
 
 
 function pour (o1, o2) {
@@ -14,11 +42,6 @@ function list (iterable) {
         result.push(I)
     }
     return result
-}
-
-
-function run (iterable) {
-    for (let I of iterable) {}
 }
 
 
@@ -64,11 +87,43 @@ function *mapkv (object, f) {
 }
 
 
+function copy (object) {
+    if (object instanceof Array) {
+        return list(map(object, x => x))
+    } else {
+        assert(typeof object == 'object')
+        return mapval(object, x => x)
+    }
+}
+
+
+function equal (o1, o2) {
+    if (o1 instanceof Array && o2 instanceof Array) {
+        return (
+            o1.length == o2.length
+                && forall(o1, (e,i) => e === o2[i])
+        )
+    } else {
+        assert(typeof o1 == 'object' && typeof o2 == 'object')
+        let k1 = Object.keys(o1)
+        let k2 = Object.keys(o2)
+        return (
+            k1.length == k2.length
+                && forall(k1, k => has(k,o2) && o1[k] === o2[k])
+        )
+    }
+}
+
+
 function foreach (something, f) {
     if (typeof something[Symbol.iterator] == 'function') {
-        return run(map(something, f))
+        for (let I of something) {
+            f(I)
+        }
     } else {
-        return run(mapkv(something, f))
+        for (let key of Object.keys(something)) {
+            f(key, something[key])
+        }
     }
 }
 
@@ -211,4 +266,3 @@ function give_arity(f, n) {
     let g = new Function(para_list, 'return this.apply(null, arguments)')
     return g.bind(f)
 }
-
