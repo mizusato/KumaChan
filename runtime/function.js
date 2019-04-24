@@ -61,37 +61,45 @@ pour(Types, FunctionTypes)
 
 let Parameter = struct({
     name: Types.String,
+    type: Type,
     pass_policy: PassPolicy,
-    constraint: Type
-})
+}, null, $( p => assert(Object.isFrozen(p)) ))
 
-let ParameterList = list_of(Parameter)
-
-let Prototype = Ins(struct({
+let Prototype = struct({
     affect: EffectRange,
-    value: Type.Abstract,
-    parameters: ParameterList
-}), $( proto => no_repeat(map(proto.parameters, p => p.name)) ))
+    value: Type,
+    parameters: Types.Array.of(Parameter)
+}, null, $(
+    proto => (
+        assert(Object.isFrozen(proto))
+        && no_repeat(map(proto.parameters, p => p.name))
+    )
+))
 
 let PassFlag = { natural: '*', dirty: '&', immutable: '' }
 let FlagValue = { '*': 'natural', '&': 'dirty', '': 'immutable' }
 
 function parse_decl (string) {
-    let match = string.match(/([^ ]+) ([^\( ]+) *\(([^\)]*)\) -> (.+)/)
+    let match = string.match(/([^ ]+) ([^( ]+) *\(([^)]*)\) -> (.+)/)
     let [_, affect, name, params_str, value_str] = match
     let has_p = params_str.trim().length > 0
     let parameters = has_p? (list(map(params_str.split(','), para_str => {
         para_str = para_str.trim()
-        let match = para_str.match(/([^ ]+) (\*|\&)?(.+)/)
+        let match = para_str.match(/([^ ]+) (\*|&)?(.+)/)
         let [_, type_str, policy_str, name] = match
-        let constraint = Global.lookup(type_str)
-        assert(constraint != NotFound)
+        assert(has(type_str, Types))
+        let type = Types[type_str]
         policy_str = policy_str || ''
         let pass_policy = FlagValue[policy_str]
-        return { name, constraint, pass_policy }
+        let parameter = { name, type, pass_policy }
+        Object.freeze(parameter)
+        return parameter
     }))): []
-    let value = Global.lookup(value_str)
+    Object.freeze(parameters)
+    assert(has(value_str, Types))
+    let value = Types[value_str]
     let proto = { affect, parameters, value }
+    Object.freeze(proto)
     assert(is(proto, Prototype))
     return { name, proto }
 }
@@ -105,7 +113,7 @@ class Scope {
     constructor (context, affect = 'local', data = {}) {
         assert(context === null || context instanceof Scope)
         assert(is(affect, EffectRange))
-        assert(is(data, Type.Container.Hash))
+        assert(is(data, Types.Hash))
         // <context> = upper scope
         this.context = context
         // <affect> = effect range of the corresponding function
@@ -117,15 +125,15 @@ class Scope {
         Object.freeze(this)
     }
     check_assignable (variable) {
-        assert(typeof variable == 'string')
+        assert(is(variable, Types.String))
         return this.assignable.has(variable)
     }
     has (variable) {
-        assert(typeof variable == 'string')
+        assert(is(variable, Types.String))
         return has(variable, this.data)
     }
     declare (variable, initial_value, is_assignable = false) {
-        assert(typeof variable == 'string')
+        assert(is(variable, Types.String))
         assert(!this.has(variable))
         this.data[variable] = initial_value
         if (is_assignable) {
@@ -133,19 +141,19 @@ class Scope {
         }
     }
     try_to_declare (variable, initial_value, is_assignable = false) {
-        assert(typeof variable == 'string')
+        assert(is(variable, Types.String))
         if (!this.has(variable)) {
             this.declare(variable, initial_value, is_assignable)
         }
     }
     assign (variable, new_value) {
-        assert(typeof variable == 'string')
+        assert(is(variable, Types.String))
         assert(this.has(variable))
         assert(this.assignable.has(variable))
         this.data[variable] = new_value
     }
     force_declare (variable, initial_value) {
-        assert(typeof variable == 'string')
+        assert(is(variable, Types.String))
         if (this.has(variable)) {
             this.assign(variable, initial_value)
         } else {
@@ -153,12 +161,12 @@ class Scope {
         }
     }
     unset (variable) {
-        assert(typeof variable == 'string')
+        assert(is(variable, Types.String))
         assert(this.has(variable))
         delete this.data[variable]
     }
     lookup (variable) {
-        assert(typeof variable == 'string')
+        assert(is(variable, Types.String))
         let info = this.find(variable)
         if (info == NotFound) {
             return NotFound
@@ -167,7 +175,7 @@ class Scope {
         }
     }
     find (variable) {
-        assert(typeof variable == 'string')
+        assert(is(variable, Types.String))
         let affect = this.affect
         let mutable_depth = 0
         if (affect == 'local') {
@@ -200,18 +208,14 @@ class Scope {
 
 
 /**
- *  Scope Operation Functions with Error Producer
+ *  Scope Operation Functions with Error Handling
  */
-
-let name_err = new ErrorProducer(NameError)
-let assign_err = new ErrorProducer(AssignError)
-let access_err = new ErrorProducer(AccessError)
 
 function var_lookup(scope) {
     assert(scope instanceof Scope)
     return function lookup (name) {
         let value = scope.lookup(name)
-        name_err.assert(value != NotFound, MSG.variable_not_found(name))
+        ensure(value != NotFound, 'variable_not_found', name)
         return value
     }
 }
@@ -219,8 +223,9 @@ function var_lookup(scope) {
 function var_declare(scope) {
     assert(scope instanceof Scope)
     return function declare (name, initial_value, is_assignable = false) {
-        name_err.assert(!scope.has(name), MSG.variable_declared(name))
+        ensure(!scope.has(name), 'variable_declared', name)
         scope.declare(name, initial_value, is_assignable)
+        return Void
     }
 }
 
@@ -228,9 +233,9 @@ function var_assign(scope) {
     assert(scope instanceof Scope)
     return function assign (name, new_value) {
         let info = scope.find(name)
-        name_err.assert(info != NotFound, MSG.variable_not_declared(name))
-        assign_err.assert(info.is_assignable, MSG.variable_const(name))
-        access_err.assert(info.is_mutable, MSG.variable_immutable(name))
+        ensure(info != NotFound, 'variable_not_declared', name)
+        ensure(info.is_assignable, 'variable_cannot_reset', name)
+        ensure(info.is_mutable, 'variable_immutable', name)
         info.scope.assign(name, new_value)
         return Void
     }
@@ -241,92 +246,80 @@ function var_assign(scope) {
  *  Function Wrapper
  */
 
+ let arg_check_failed_msg = new Map([
+     [1, 'arg_wrong_quantity'],
+     [2, 'arg_invalid'],
+     [3, 'arg_immutable']
+ ])
+
  function wrap (context, proto, vals, desc, raw) {
      assert(context instanceof Scope)
      assert(is(proto, Prototype))
-     assert(is(vals, Uni(Type.Null, Type.Container.Hash)))
+     assert(vals === null || vals instanceof Scope)
      assert(is(raw, ES.Function))
-     assert(is(desc, Type.String))
-     let err = new ErrorProducer(CallError, desc)
+     assert(is(desc, Types.String))
      let invoke = (args, use_ctx = null, check = true) => {
          // check arguments
          if (check) {
-             let result = check_args(args, proto, true)
-             if (result != 'OK') {
-                 err.throw(result)
-             }
+             let result = check_args(args, proto)
+             ensure(result.ok, arg_check_failed_msg[result.err], result.info)
          }
          // generate scope
-         let scope = new Scope(
-             (use_ctx !== null)? use_ctx: context,
-             proto.affect
-         )
+         let scope = new Scope(use_ctx || context, proto.affect)
          inject_args(args, proto, scope)
          if (vals != null) {
-             list(mapkv(vals, (k, v) => scope.declare(k, v)))
+             foreach(vals.data, (k, v) => scope.declare(k, v))
          }
          // call the raw function
-         // TODO: add frame to call stack (add info for debugging)
+         call_stack.push(desc)
          let value = raw(scope)
-         // check the returned value
-         err.assert(is(value, proto.value), MSG.retval_invalid)
+         ensure(is(value, proto.value), 'retval_invalid')
+         call_stack.pop()
+         // return the value after type check
          return value
      }
-     // wrap function
-     let wrapped = give_arity(
-         ((...args) => invoke(args, null)),
-         proto.parameters.length
-     )
-     wrapped[WrapperInfo] = Object.freeze({
-         context, invoke, proto, vals, desc, raw
-     })
+     let arity = proto.parameters.length
+     let wrapped = give_arity((...args) => invoke(args), arity)
+     let info = { context, invoke, proto, vals, desc, raw }
+     Object.freeze(info)
+     wrapped[WrapperInfo] = info
+     Object.freeze(wrapped)
      return wrapped
  }
 
-function check_args (args, proto, get_err_msg = false) {
-    // IMPORTANT: return string, "OK" = valid
-    let r = proto.parameters.length
-    let g = args.length
+function check_args (args, proto) {
+    let arity = proto.parameters.length
     // check if argument quantity correct
-    if (r != g) {
-        return get_err_msg? MSG.arg_wrong_quantity(r, g): 'NG'
+    if (arity != args.length) {
+        return { ok: false, err: 1, info: arity }
     }
-    // check constraints
-    for (let i=0; i<proto.parameters.length; i++) {
+    // check types
+    for (let i=0; i<arity; i++) {
         let parameter = proto.parameters[i]
         let arg = args[i]
         let name = parameter.name
-        // check if the argument matches constraint
-        if( !is(arg, parameter.constraint) ) {
-            return get_err_msg? MSG.arg_invalid(name): 'NG'
+        // check if the argument is of required type
+        if( !is(arg, parameter.type) ) {
+            return { ok: false, err: 2, info: name }
         }
         // cannot pass immutable object as dirty argument
         let is_dirty = parameter.pass_policy == 'dirty'
         let is_immutable = IsIm(arg)
         if (is_dirty && is_immutable) {
-            return get_err_msg? MSG.arg_immutable(name): 'NG'
+            return { ok: false, err: 3, info: name }
         }
     }
-    return 'OK'
+    return { ok: true }
 }
 
 function inject_args (args, proto, scope) {
-    for (let i=0; i<proto.parameters.length; i++) {
+    let arity = proto.parameters.length
+    for (let i=0; i<arity; i++) {
         let parameter = proto.parameters[i]
         let arg = args[i]
         // apply default values of schema
-        if (parameter.constraint instanceof Schema) {
-            assert(is(arg, Type.Container.Hash))
-            let schema = parameter.constraint
-            if (schema.defaults != null) {
-                let defaults_applied = mapval(arg, x => x)
-                for (let key of Object.keys(schema.defaults)) {
-                    if (!has(key, arg)) {
-                        defaults_applied[key] = schema.defaults[key]
-                    }
-                }
-                arg = defaults_applied
-            }
+        if (is(parameter.type, Schema)) {
+            arg = parameter.type.patch(IsRef(arg)? DeRef(arg): arg)
         }
         // if pass policy is immutable, register the argument
         if (parameter.pass_policy == 'immutable') {
@@ -338,35 +331,37 @@ function inject_args (args, proto, scope) {
 }
 
 function bind_context (f, context) {
-    assert(is(f, Type.Function.Wrapped))
+    assert(is(f, Wrapped))
+    assert(context instanceof Scope)
     f = cancel_binding(f)
-    let info = f[WrapperInfo]
-    let g = give_arity(
-        ((...args) => info.invoke(args, context)),
-        info.proto? info.proto.parameters.length: 0
-    )
+    let f_invoke = f[WrapperInfo].invoke
     let invoke = function (args, use_context = null) {
         assert(use_context === null)
-        return info.invoke(args, context)
+        return f_invoke(args, context)
     }
-    g[WrapperInfo] = { original: f, invoke: invoke }
-    return g
+    let binding = ((...args) => invoke(args))
+    let info = { original: f, invoke: invoke }
+    Object.freeze(info)
+    binding[WrapperInfo] = info
+    Object.freeze(binding)
+    return binding
 }
 
 function cancel_binding (f) {
-    assert(is(f, Type.Function.Wrapped))
+    assert(is(f, Wrapped))
     return f[WrapperInfo].original || f
 }
 
 function call (f, args) {
-    if (is(f, Type.Function.Wrapped)) {
+    if (is(f, Wrapped)) {
         return f[WrapperInfo].invoke(args)
-    } else if (is(f, Type.Abstract.Class)) {
+    } else if (is(f, Types.Class)) {
         return call(f.create, args)
-    } else if (typeof f == 'function') {
+    } else if (is(f, ES.Function)) {
         return Function.prototype.apply.call(f, null, args)
     } else {
-        (new ErrorProducer(CallError)).throw('calling non-callable object')
+        // TODO: error hint about f
+        ensure(false, 'non_callable')
     }
 }
 

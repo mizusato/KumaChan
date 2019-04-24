@@ -100,8 +100,8 @@ let operators = {
         'operator_equal',
         'local equal (Any *l, Any *r) -> Bool',
             (l, r) => {
-                l = IsRef(l)? DeRef(l): l
-                r = IsRef(r)? DeRef(r): r
+                l = NoRef(l)
+                r = NoRef(r)
                 return (l === r)
             }
     ),

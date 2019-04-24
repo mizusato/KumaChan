@@ -301,6 +301,20 @@ class Schema {
         this[Solid] = true
         Object.freeze(this)
     }
+    patch (hash) {
+        // apply default values to hash
+        assert(is(hash, Types.Hash))
+        if (this.defaults == null) {
+            return hash
+        }
+        let new_hash = copy(hash)
+        for (let key of get_keys(this.defaults)) {
+            if (!has(key, new_hash)) {
+                new_hash[key] = this.defaults[key]
+            }
+        }
+        return new_hash
+    }
     get [Symbol.toStringTag]() {
         return 'Schema'
     }

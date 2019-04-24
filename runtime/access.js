@@ -29,16 +29,24 @@
      }
  }
 
+
  function IsRef (object) {
      return Boolean(
          typeof object == 'object' && object !== null && object[ImPtr]
      )
  }
 
+
  function DeRef (object) {
      assert(IsRef(object))
      return object[ImPtr]
  }
+
+
+ function NoRef (object) {
+     return IsRef(object)? object[ImPtr]: object
+ }
+
 
  function IsIm (object) {
      if (typeof object != 'object' || object === null) {
@@ -48,6 +56,7 @@
          return IsRef(object)
      }
  }
+
 
  function IsMut (object) {
      return !IsIm(object)
