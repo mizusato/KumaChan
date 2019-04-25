@@ -42,7 +42,7 @@
 
     '<include> function.js';
 
-    '<include> encapsulation.js';
+    '<include> oo.js';
 
     /**
      *  Initialize Global Scope

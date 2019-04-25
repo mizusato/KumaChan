@@ -1,4 +1,6 @@
-let MSG = {
+const INDENT = '    '
+
+const MSG = {
     schema_invalid_default: f => `invalid default value for field ${f}`,
     variable_not_found: name => `variable ${name} not found`,
     variable_declared: name => `variable ${name} already declared`,
@@ -18,14 +20,26 @@ let MSG = {
         'invalid arguments: no matching function'
         + LF + 'available functions are:' + available
     ),
-    method_conflict: (A1, name, A2) => (
-        `exposed method conflict: ${A1} and ${A2} both have method ${name}`
+    method_conflict: (name, X1, X2) => (
+        'method conflict:'
+        + LF + INDENT + X1
+        + LF + 'and'
+        + LF + INDENT + X2
+        + LF + 'both have method: ' + name
     ),
     method_missing: (name, C, I) => (
-        `class ${C} does not implement ${I} (missing method ${name})`
+        'the class'
+        + LF + INDENT + C
+        + LF + 'does not implement'
+        + LF + INDENT + I
+        + LF + `(missing method ${name})`
     ),
     method_invalid: (name, C, I) => (
-        `class ${C} does not implement ${I} (invalid method ${name})`
+        'the class'
+        + LF + INDENT + C
+        + LF + 'does not implement'
+        + LF + INDENT + I
+        + LF + `(invalid method ${name})`
     ),
     exposing_non_instance: 'unable to expose non-instance object',
     not_exposing: C => `created instance does not expose instance of ${C}`,

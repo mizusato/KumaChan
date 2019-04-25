@@ -1,21 +1,25 @@
 /**
- *  Encapsulation (Class, Instance, Signature, Interface)
+ *  OOP Implementation (Class, Instance, Interface)
  */
+
+
+let OO_Types = {
+    Class: $(x => x instanceof Class),
+    Instance: $(x => x instanceof Instance),
+    Interface: $(x => x instanceof Interface)
+}
+
+pour(Types, OO_Types)
 
 
  /**
   *  Tool Functions
   */
 
-let exp_err = new ErrorProducer(CallError, '::expose()')
-
 function add_exposed_internal(internal, instance) {
     // expose interface of internal object
     assert(!instance.init_finished)
-    exp_err.assert(
-        internal instanceof Instance,
-        MSG.exposing_non_instance
-    )
+    ensure(is(internal, Types.Instance), 'exposing_non_instance')
     instance.exposed.push(internal)
     foreach(internal.methods, (name, method) => {
         assert(!has(name, instance.methods))
@@ -46,11 +50,11 @@ function class_error_tools (class_) {
     return { conflict_if, missing_if, invalid_if }
 }
 
-let only_classes = (x => filter(x, y => y instanceof Class))
-let only_interfaces = (x => filter(x, y => y instanceof Interface))
+let only_class = x => filter(x, y => is(y, Types.Class))
+let only_interface = x => filter(x, y => is(y, Types.Interface))
 
 function get_methods_info (class_) {
-    assert(class_ instanceof Class)
+    assert(is(class_, Types.Class))
     let { conflict_if, missing_if, invalid_if } = class_error_tools(class_)
     // create empty info: { name -> { method, from: class or interface } }
     let info = {}
@@ -59,26 +63,40 @@ function get_methods_info (class_) {
         info[name] = { method: method, from: class_ }
     })
     // add exposed methods (inherited methods)
-    foreach(only_classes(class_.impls), super_class => {
+    foreach(only_class(class_.impls), super_class => {
         foreach(super_class.methods_info, (name, method_info) => {
-            conflict_if(has(name, info), info[name], name, method_info)
+            ensure (
+                !has(name, info), 'method_conflict',
+                name, info[name].from.desc, method_info.from.desc
+            )
             info[name] = { method: method_info.method, from: super_class }
         })
     })
-    foreach(only_interfaces(class_.impls), I => {
+    foreach(only_interface(class_.impls), I => {
         // add interface methods (default implementations)
         foreach(I.defaults, (name, method) => {
             if (!has(name, info)) {
+                // if there is no existing method with this name, apply default
                 info[name] = { method: method, from: I }
             } else {
-                let is_default = (info[name].from instanceof Interface)
-                conflict_if(is_default, info[name], name, { from: I })
+                // if such a method exists, it cannot be from another interface
+                let from_class = is(info[name].from, Types.Class)
+                ensure (
+                    from_class, 'method_conflict',
+                    name, info[name].from.desc, I.desc
+                )
             }
         })
         // check if implement the interface I
-        foreach(I.sign_table, (name, signature) => {
-            missing_if(!has(name, info), name, I)
-            invalid_if(!is(info[name].method, signature), name, I)
+        foreach(I.proto_table, (name, proto) => {
+            ensure (
+                has(name, info), 'method_missing',
+                name, class_.desc, I.desc
+            )
+            ensure (
+                match_proto(info[name].method, proto), 'method_invalid',
+                name, class_.desc, I.desc
+            )
         })
     })
     // output the final info
@@ -103,7 +121,7 @@ function get_super_interfaces (class_) {
     // get all [ I ∈ Interface | C ⊂ I ] in which C is the argument class_
     return list(flat(map(
         class_.impls,
-        I => (I instanceof Class)? I.super_interfaces: [I]
+        S => is(S, Types.Class)? S.super_interfaces: [S]
     )))
 }
 

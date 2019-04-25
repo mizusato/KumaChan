@@ -394,6 +394,8 @@ function fun (decl_string, body) {
 function overload (functions, name) {
     assert(is(functions, Types.TypedList.of(Types.Function)))
     assert(is(name, Types.String))
+    functions = copy(functions)
+    Object.freeze(functions)
     let desc = 'overload: ' + name
     let only1 = (functions.length == 1)
     let invoke = null
@@ -428,7 +430,7 @@ function overload (functions, name) {
                 pop_call()
             } else {
                 let n = i
-                let available = map(iterate(0, i => i+1, i => i == n, i => {
+                let available = map(iterate(0, i => i+1, i => !(i < n)), i => {
                     let r = result_list[i]
                     return (
                         info_list[i].desc
@@ -436,36 +438,37 @@ function overload (functions, name) {
                             arg_msg[r.err], r.info. args.length
                         )
                     )
-                }))
+                })
                 ensure(false, 'no_matching_function', available)
             }
         }
     }
     let o = ((...args) => invoke(args, null))
-    functions = Object.freeze(functions)
-    o[WrapperInfo] = Object.freeze({ functions, invoke, desc })
+    let info = Object.freeze({ functions, invoke, desc })
+    Object.freeze(info)
+    o[WrapperInfo] = info
     Object.freeze(o)
     return o
 }
 
-function overload_added (f, o, desc) {
-    assert(is(o, Type.Function.Wrapped.Overload))
-    return overload([...o[WrapperInfo].functions, f], desc)
+function overload_added (f, o, name) {
+    assert(is(o, Types.Overload))
+    return overload([...o[WrapperInfo].functions, f], name)
 }
 
-function overload_concated (o2, o1, desc) {
-    assert(is(o2, Type.Function.Wrapped.Overload))
-    assert(is(o1, Type.Function.Wrapped.Overload))
+function overload_concated (o2, o1, name) {
+    assert(is(o2, Types.Overload))
+    assert(is(o1, Types.Overload))
     return overload(list(
         cat(o1[WrapperInfo].functions, o2[WrapperInfo].functions)
-    ), desc)
+    ), name)
 }
 
-function f (desc, ...args) {
+function f (name, ...args) {
     assert(args.length % 2 == 0)
     let functions = list(map(
         iterate(0, i => i+2, i => !(i < args.length)),
         i => fun(args[i], args[i+1])
     ))
-    return overload(functions, desc)
+    return overload(functions, name)
 }

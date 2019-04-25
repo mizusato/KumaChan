@@ -1,5 +1,4 @@
 const TRACE_DEPTH = 10
-const INDENT = '    '
 let CallType = one_of(1, 2, 3)
 
 let call_stack = []
@@ -47,6 +46,7 @@ function produce_error (msg) {
 function get_msg (msg_type, args) {
     assert(typeof msg_type == 'string')
     assert(args instanceof Array)
+    assert(forall(args, arg => typeof arg == 'string'))
     let msg = MSG[msg_type]
     if (typeof msg == 'string') {
         return msg
