@@ -61,6 +61,19 @@ function *map (iterable, f) {
 }
 
 
+function *take (iterable, n) {
+    let index = 0
+    for (let I of iterable) {
+        if (index < n) {
+            yield I
+            index += 1
+        } else {
+            break
+        }
+    }
+}
+
+
 function mapkey (object, f) {
     let mapped = {}
     for (let key of Object.keys(object)) {
@@ -265,4 +278,14 @@ function give_arity(f, n) {
     let para_list = join(filter(ALPHABET, (e,i) => i < n), ',')
     let g = new Function(para_list, 'return this.apply(null, arguments)')
     return g.bind(f)
+}
+
+
+function get_summary (string, n = 60) {
+    let t = string.substring(0, n).replace('\n', ' ').trim()
+    if (string.length <= n) {
+        return t
+    } else {
+        return (t + '...')
+    }
 }

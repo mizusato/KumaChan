@@ -40,7 +40,6 @@ let EffectRange = one_of('local', 'upper', 'global')
 let PassPolicy = one_of('immutable', 'natural', 'dirty')
 
 
-
 let Wrapped = $(x => (
     (typeof x == 'function')
     && typeof x[WrapperInfo] == 'object'
@@ -319,7 +318,7 @@ function inject_args (args, proto, scope) {
         let arg = args[i]
         // apply default values of schema
         if (is(parameter.type, Schema)) {
-            arg = parameter.type.patch(IsRef(arg)? DeRef(arg): arg)
+            arg = parameter.type.patch(NoRef(arg))
         }
         // if pass policy is immutable, register the argument
         if (parameter.pass_policy == 'immutable') {
@@ -352,15 +351,23 @@ function cancel_binding (f) {
     return f[WrapperInfo].original || f
 }
 
-function call (f, args) {
+function call (f, args, file = null, row = -1, col = -1) {
+    if (is(f, Types.Class)) {
+        f = f.create
+    }
+    let call_type = file? 1: 3
     if (is(f, Wrapped)) {
-        return f[WrapperInfo].invoke(args)
-    } else if (is(f, Types.Class)) {
-        return call(f.create, args)
+        push_call(call_type, f.desc, file, row, col)
+        let value = f[WrapperInfo].invoke(args)
+        pop_call()
+        return value
     } else if (is(f, ES.Function)) {
-        return Function.prototype.apply.call(f, null, args)
+        push_call(call_type, get_summary(f.toString()))
+        let value = f.apply(args)
+        pop_call()
+        return value
     } else {
-        // TODO: error hint about f
+        push_call(call_type, '*** Non-Callable Object', file)
         ensure(false, 'non_callable')
     }
 }
@@ -368,7 +375,7 @@ function call (f, args) {
 function fun (decl_string, body) {
     let parsed = parse_decl(decl_string)
     assert(is(body, Type.Function.Bare))
-    return wrap(Global, parsed.proto, null, parsed.name, (scope, expose) => {
+    return wrap(Global, parsed.proto, null, decl_string, (scope, expose) => {
         return body.apply(
             null,
             list(cat(
@@ -384,25 +391,60 @@ function fun (decl_string, body) {
  *  Overload Tools
  */
 
-let SoleList = list_of(Type.Function.Wrapped.Sole)
-
-function overload (functions, desc) {
-    assert(is(functions, SoleList))
-    assert(is(desc, Type.String))
+function overload (functions, name) {
+    assert(is(functions, Types.TypedList.of(Types.Function)))
+    assert(is(name, Types.String))
+    let desc = 'overload: ' + name
     let only1 = (functions.length == 1)
-    let invoke = !only1? ((args, use_context = null) => {
-        for (let f of rev(functions)) {
-            let info = f[WrapperInfo]
-            if (check_args(args, info.proto, false) === 'OK') {
-                return info.invoke(args, use_context)
+    let invoke = null
+    if (only1) {
+        invoke = (args, use_ctx = null) => {
+            let info = functions[0][WrapperInfo]
+            push_call(2, info.desc)
+            let value = info.invoke(args, use_ctx)
+            pop_call()
+            return value
+        }
+    } else {
+        invoke = (args, use_ctx = null) => {
+            let info_list = []
+            let result_list = []
+            let ok = false
+            let info = null
+            let i = 0
+            for (let f of rev(functions)) {
+                info_list.push(f[WrapperInfo])
+                result_list.push(check_args(args, info.proto))
+                if (result_list[i].ok) {
+                    info = info_list[i]
+                    ok = true
+                    break
+                }
+                i += 1
+            }
+            if (ok) {
+                push_call(2, info.desc)
+                let value = info.invoke(args, use_ctx)
+                pop_call()
+            } else {
+                let n = i
+                let available = map(iterate(0, i => i+1, i => i == n, i => {
+                    let r = result_list[i]
+                    return (
+                        info_list[i].desc
+                        + LF + INDENT + get_msg (
+                            arg_msg[r.err], r.info. args.length
+                        )
+                    )
+                }))
+                ensure(false, 'no_matching_function', available)
             }
         }
-        let err = new ErrorProducer(CallError, desc)
-        err.throw(MSG.no_matching_function)
-    }): functions[0][WrapperInfo].invoke
+    }
     let o = ((...args) => invoke(args, null))
     functions = Object.freeze(functions)
     o[WrapperInfo] = Object.freeze({ functions, invoke, desc })
+    Object.freeze(o)
     return o
 }
 

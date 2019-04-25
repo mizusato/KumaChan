@@ -14,7 +14,10 @@ let MSG = {
     retval_invalid: 'invalid return value',
     retval_not_type: 'return value of type template should be a type',
     non_callable: 'unable to call non-callable object',
-    no_matching_function: 'invalid arguments: no matching function',
+    no_matching_function: available => (
+        'invalid arguments: no matching function'
+        + LF + 'available functions are:' + available
+    ),
     method_conflict: (A1, name, A2) => (
         `exposed method conflict: ${A1} and ${A2} both have method ${name}`
     ),

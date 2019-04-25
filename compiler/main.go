@@ -23,7 +23,7 @@ func test () {
     check(err)
     var code_string = string(code_bytes)
     var code = []rune(code_string)
-    var tree = parser.BuildTree(code, "eval")
+    var tree = parser.BuildTree(code, "<eval>")
     fmt.Printf("\n")
     for _, token := range tree.Tokens {
         fmt.Printf(

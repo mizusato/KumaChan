@@ -4,6 +4,13 @@
 (function() {
 
     /**
+     *  Special Chars
+     */
+    const LF = '\n'
+    const CR = '\r'
+    const TAB = '\t'
+
+    /**
      *  Symbols Definition
      */
 
@@ -24,7 +31,7 @@
     /**
      *  Expand Modules
      */
-     
+
     '<include> toolkit.js';
 
     '<include> error.js';
