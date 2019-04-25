@@ -46,6 +46,7 @@ let Wrapped = $(x => (
 ))
 
 let FunctionTypes = {
+    Wrapped: Wrapped,
     Function: Ins(Wrapped, $(f => has('context', f[WrapperInfo]))),
     Overload: Ins(Wrapped, $(f => has('functions', f[WrapperInfo]))),
     Binding: Ins(Wrapped, $(f => has('original', f[WrapperInfo])))
@@ -357,8 +358,9 @@ function call (f, args, file = null, row = -1, col = -1) {
     }
     let call_type = file? 1: 3
     if (is(f, Wrapped)) {
-        push_call(call_type, f.desc, file, row, col)
-        let value = f[WrapperInfo].invoke(args)
+        let info = f[WrapperInfo]
+        push_call(call_type, info.desc, file, row, col)
+        let value = info.invoke(args)
         pop_call()
         return value
     } else if (is(f, ES.Function)) {

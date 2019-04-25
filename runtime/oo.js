@@ -6,14 +6,17 @@
 let OO_Types = {
     Class: $(x => x instanceof Class),
     Instance: $(x => x instanceof Instance),
-    Interface: $(x => x instanceof Interface)
+    Interface: $(x => x instanceof Interface),
+    OO_Abstract: $(x => x instanceof Class || x instanceof Interface)
 }
 
 pour(Types, OO_Types)
 
+let only_class = x => filter(x, y => is(y, Types.Class))
+let only_interface = x => filter(x, y => is(y, Types.Interface))
 
  /**
-  *  Tool Functions
+  *  Toolkit Functions
   */
 
 function add_exposed_internal(internal, instance) {
@@ -26,32 +29,6 @@ function add_exposed_internal(internal, instance) {
         instance.methods[name] = method
     })
 }
-
-function class_error_tools (class_) {
-    let err = new ErrorProducer(ClassError, '::create_class()')
-    let msg_conflict = (info1, name, info2) => (
-        MSG.method_conflict(info1.from.desc, name, info2.from.desc)
-    )
-    let conflict_if = ((bool, i1, name, i2) => err.assert(
-        !bool, bool && msg_conflict(i1, name, i2)
-    ))
-    let msg_missing = (name, I) => (
-        MSG.method_missing(name, class_.desc, I.desc)
-    )
-    let missing_if = (bool, name, I) => err.assert(
-        !bool, bool && msg_missing(name, I)
-    )
-    let msg_invalid = (name, I) => (
-        MSG.method_invalid(name, class_.desc, I.desc)
-    )
-    let invalid_if = (bool, name, I) => err.assert(
-        !bool, bool && msg_invalid(name, I)
-    )
-    return { conflict_if, missing_if, invalid_if }
-}
-
-let only_class = x => filter(x, y => is(y, Types.Class))
-let only_interface = x => filter(x, y => is(y, Types.Interface))
 
 function get_methods_info (class_) {
     assert(is(class_, Types.Class))
@@ -88,113 +65,120 @@ function get_methods_info (class_) {
             }
         })
         // check if implement the interface I
-        foreach(I.proto_table, (name, proto) => {
+        foreach(I.method_table, (name, protos) => {
             ensure (
                 has(name, info), 'method_missing',
                 name, class_.desc, I.desc
             )
             ensure (
-                match_proto(info[name].method, proto), 'method_invalid',
+                match_protos(info[name].method, protos), 'method_invalid',
                 name, class_.desc, I.desc
             )
         })
     })
     // output the final info
+    Object.freeze(info)
     return info
 }
 
 function get_super_classes (class_) {
     // get all [ S ∈ Class | C ⊂ S ] in which C is the argument class_
-    function _get_super_classes (class_) {
-        return cat(
-            [class_], flat(map(
-                only_classes(class_.impls), super_class => (
-                    _get_super_classes(super_class)
-                )
-            ))
-        )
-    }
-    return list(_get_super_classes(class_))
+    let all = cat([class_], flat(map(
+            only_classes(class_.impls),
+            super_class => super_class.super_classes
+    )))
+    Object.freeze(all)
+    return all
 }
 
 function get_super_interfaces (class_) {
     // get all [ I ∈ Interface | C ⊂ I ] in which C is the argument class_
-    return list(flat(map(
+    let all = list(flat(map(
         class_.impls,
         S => is(S, Types.Class)? S.super_interfaces: [S]
     )))
+    Object.freeze(all)
+    return all
 }
 
-function apply_defaults (interface_, instance) {
-    let defaults = interface_.defaults
-    if (defaults.length == 0) { return }
-    // create the context scope for default implementations
+function apply_implemented (interface_, instance) {
+    // apply implemented methods of interface
+    let implemented = interface_.implemented
+    if (implemented.length == 0) { return }
+    // create the context scope for implemented methods
     let interface_scope = new Scope(null)
-    // filter methods
-    let names = list(mapkv(interface_.sign_table, name => name))
-    let f_implemented = (name => has(name, instance.methods))
-    let f_not_implemented = (name => !has(name, instance.methods))
-    let implemented = list(filter(names, f_implemented))
-    let not_implemented = list(filter(names, f_not_implemented))
-    // add implemented methods to the context scope
-    foreach(implemented, name => {
+    // add blank methods to the interface scope
+    foreach(interface_.method_table, (name, _) => {
+        assert(has(name, instance.methods))
         interface_scope.declare(name, instance.methods[name])
     })
-    // for each default implementation
-    foreach(not_implemented, name => {
-        assert(has(name, defaults))
-        // create a method
-        let method = bind_context(defaults[name], interface_scope)
+    // for each implemented method
+    foreach(implemented, (name, method) => {
+        assert(!has(name, interface_.method_table))
+        // create a binding
+        let binding = bind_context(method, interface_scope)
         // add to the context scope
-        interface_scope.declare(name, method)
+        interface_scope.declare(name, binding)
         // add to the instance
-        instance.methods[name] = method
+        instance.methods[name] = binding
     })
+}
+
+function match_protos (method, protos) {
+    // TODO
+    // don't forget to cancel binding
 }
 
 
 /**
  *  Class Object
  */
-
-let MethodTable = hash_of(Type.Function.Wrapped)
-let GeneralInterface = Uni(Type.Abstract.Class, Type.Abstract.Interface)
-let GeneralList = list_of(GeneralInterface)
-
 class Class {
-    constructor (impls, init, methods, static_methods, desc) {
-        assert(is(impls, GeneralList))
-        assert(is(init, Type.Function.Wrapped))
-        assert(is(methods, MethodTable))
-        assert(is(static_methods, MethodTable))
-        assert(is(desc, Type.String))
-        this.impls = Object.freeze(impls)
+    constructor (name, impls, init, methods, data = {}, def_point = null) {
+        assert(is(name, Types.String))
+        assert(is(impls, Types.TypedList.of(Types.OO_Abstract)))
+        assert(is(init, Types.Function))
+        assert(is(methods, Types.TypedHash.of(Types.Overload)))
+        assert(is(data, Types.Hash))
+        this.name = name
+        if (def_point != null) {
+            let { file, row, col } = def_point
+            this.desc = `class ${name} at ${file} (row ${row}, column ${col})`
+        } else {
+            this.desc = `class ${name} at (Built-in)`
+        }
         this.init = cancel_binding(init)
-        this.methods = Object.freeze(methods)
-        this.static_methods = Object.freeze(static_methods)
-        this.desc = desc
-        this.methods_info = Object.freeze(get_methods_info(this))
-        this.super_classes = Object.freeze(get_super_classes(this))
-        this.super_interfaces = Object.freeze(get_super_interfaces(this))
+        this.impls = copy(impls)
+        this.methods = copy(methods)
+        this.data = copy(data)
+        Object.freeze(this.impls)
+        Object.freeze(this.methods)
+        Object.freeze(this.data)
+        this.methods_info = get_methods_info(this)
+        this.super_classes = get_super_classes(this)
+        this.super_interfaces = get_super_interfaces(this)
         let F = init[WrapperInfo]
-        let err = new ErrorProducer(InitError, desc)
         this.create = wrap(
             F.context, F.proto, F.vals, F.desc, scope => {
                 let self = new Instance(this, scope, methods)
-                let expose = (I => (add_exposed_internal(I, self), I))
+                let expose = fun (
+                    'local expose (Instance *internal) -> Instance',
+                    internal => {
+                        add_exposed_internal(internal, self)
+                        return internal
+                    }
+                )
                 scope.try_to_declare('self', self, true)
                 F.raw(scope, expose)
                 for (let I of impls) {
-                    if (I instanceof Class) {
-                        err.assert(
-                            exists(
-                                self.exposed,
-                                instance => (instance.abstraction === I)
-                            ),
-                            MSG.not_exposing(I.desc)
+                    if (is(I, Types.Class)) {
+                        let ok = exists(
+                            self.exposed,
+                            internal => internal.class_ === I
                         )
+                        ensure(ok, 'not_exposing', I.desc)
                     } else if (I instanceof Interface) {
-                        apply_defaults(I, self)
+                        apply_implemented(I, self)
                     }
                 }
                 self.init_finish()
@@ -202,14 +186,8 @@ class Class {
             }
         )
         this[Checker] = (object => {
-            if (object instanceof Instance) {
-                return exists(
-                    object.abstraction.super_classes,
-                    super_class => super_class === this
-                )
-            } else {
-                return false
-            }
+            if (!is(object, Types.Instance)) { return false }
+            return exists(object.class_.super_classes, S => S === this)
         })
         this[Solid] = true
         Object.freeze(this)
@@ -219,8 +197,9 @@ class Class {
     }
 }
 
-function create_class (desc, impls, init, methods, static_methods = {}) {
-    return new Class(impls, init, methods, static_methods, desc)
+function create_class (name, impls, init, methods, data, def_point) {
+    // TODO
+    return new Class(name, impls, init, methods, data, def_point)
 }
 
 
@@ -229,8 +208,8 @@ function create_class (desc, impls, init, methods, static_methods = {}) {
  */
 
 class Instance {
-    constructor (class_object, scope, methods) {
-        this.abstraction = class_object
+    constructor (class_, scope, methods) {
+        this.class_ = class_
         this.scope = scope
         this.exposed = []
         this.methods = mapval(methods, f => bind_context(f, scope))
@@ -250,73 +229,32 @@ class Instance {
     }
 }
 
-let method_err = new ErrorProducer(MethodError)
 
-function call_method (caller_scope, object, method_name, args) {
-    if (object instanceof Instance) {
-        // method on instance
-        let method = object.methods[method_name]
-        method_err.assert(method, method || MSG.method_not_found(method_name))
-        let ok = !(IsRef(object) && method[WrapperInfo].proto.affect != 'local')
-        method_err.assert(
-            ok, ok || MSG.instance_immutable(method[WrapperInfo.desc])
-        )
-        return call(method, args)
+function call_method (
+    caller_scope, object, method_name, args, file = null, row = -1, col = -1
+) {
+    if (is(object, Types.Instance)) {
+        // find the method on the instance object
+        let instance = NoRef(object)
+        let method = instance.methods[method_name]
+        ensure(method, 'method_not_found', method_name)
+        // forbid call of dirty method on immutable reference
+        let info = method[WrapperInfo]
+        let ok = !(info.proto.affect != 'local' && IsRef(object))
+        if (!ok) {
+            push_call(1, info.desc, file, row, col)
+            ensure(false, 'instance_immutable')
+        }
+        // call the method
+        return call(method, args, file, row, col)
     } else {
-        // UFCS
+        // UFCS: find the method in the caller scope
         let method = caller_scope.lookup(method_name)
-        let found = method != NotFound && is(method, Type.Function)
-        method_err.assert(found, found || MSG.method_not_found(method_name))
-        return call(method, [object, ...args])
+        let found = (method != NotFound && is(method, ES.Function))
+        ensure(found, 'method_not_found', method_name)
+        // call the method
+        return call(method, [object, ...args], file, row, col)
     }
-}
-
-
-/**
- *  Signature Object
- */
-
-let Input = list_of(Type.Abstract)
-let Output = Type.Abstract
-
-class Signature {
-    constructor (input, output) {
-        assert(is(input, Input))
-        assert(is(output, Output))
-        this.input = Object.freeze(input)
-        this.output = output
-        this[Checker] = (f => {
-            if (!is(f, Type.Function.Wrapped)) { return false }
-            f = cancel_binding(f)
-            if (is(f, Type.Function.Wrapped.Sole)) {
-                return Signature.check_sole(f, this.input, this.output)
-            } else if (is(f, Type.Function.Wrapped.Overload)) {
-                let functions = f[WrapperInfo].functions
-                return exists(
-                    functions,
-                    f => check_sole(f, this.input, this.output)
-                )
-            }
-            assert(false)
-        })
-        this[Solid] = true
-        Object.freeze(this)
-    }
-    static check_sole (f, input, output) {
-        let proto = f[WrapperInfo].proto
-        return (proto.value === output) && (
-            proto.parameters.length == input.length
-        ) && forall(
-            input, (I,i) => proto.parameters[i].constraint === I
-        )
-    }
-    get [Symbol.toStringTag]() {
-        return 'Signature'
-    }
-}
-
-function sig (input, output) {
-    return new Signature(input, output)
 }
 
 
@@ -324,28 +262,25 @@ function sig (input, output) {
  *  Interface Object
  */
 
-let SignTable = hash_of(Type.Abstract.Signature)
-
 class Interface {
-    constructor (sign_table, defaults = {}, desc = '') {
-        assert(is(sign_table, SignTable))
-        assert(is(defaults, MethodTable))
-        assert(is(desc, Type.String))
-        assert(forall(Object.keys(defaults), name => (
-            has(name, sign_table) && is(defaults[name], sign_table[name])
-        )))
-        this.sign_table = Object.freeze(sign_table)
-        this.defaults = Object.freeze(defaults)
-        this.desc = desc
-        this[Checker] = (instance => {
-            if (instance instanceof Instance) {
-                return exists(
-                    instance.abstraction.super_interfaces,
-                    I => (I === this)
-                )
-            } else {
-                return false
-            }
+    constructor (name, method_table, implemented = {}, def_point = null) {
+        assert(is(name, Types.String))
+        assert(is(method_table, Types.TypedHash.of(Prototype)))
+        assert(is(implemented, Types.TypedHash.of(Types.Overload)))
+        this.name = name
+        if (def_point != null) {
+            let { f, row, col } = def_point
+            this.desc = `interface ${name} at ${f} (row ${row}, column ${col})`
+        } else {
+            this.desc = `interface ${name} at (Built-in)`
+        }
+        this.method_table = copy(method_table)
+        this.implemented = copy(implemented)
+        Object.freeze(this.method_table)
+        Object.freeze(this.implemented)
+        this[Checker] = (object => {
+            if (!is(object, Types.Instance)) { return false }
+            return exists(object.class_.super_interfaces, I => I === this)
         })
         this[Solid] = true
         Object.freeze(this)
@@ -355,7 +290,9 @@ class Interface {
     }
 }
 
-function create_interface (desc, table) {
+function create_interface (name, table) {
+    // TODO
+    /*
     let sign_table = mapval(table, v => {
         if (is(v, Type.Function.Wrapped)) {
             let proto = v[WrapperInfo].proto
@@ -369,4 +306,5 @@ function create_interface (desc, table) {
     })
     let defaults = flkv(table, (k,v) => is(v, Type.Function.Wrapped))
     return new Interface(sign_table, defaults, desc)
+    */
 }
