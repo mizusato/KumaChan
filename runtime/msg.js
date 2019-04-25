@@ -8,7 +8,11 @@ let MSG = {
     arg_wrong_quantity: (r, g) => `${r} arguments required but ${g} given`,
     arg_invalid: name => `invalid argument ${name}`,
     arg_immutable: name => `immutable value for dirty argument ${name}`,
+    arg_not_type: name => (
+        `argument for template parameter ${name} is not a type`
+    ),
     retval_invalid: 'invalid return value',
+    retval_not_type: 'return value of type template should be a type',
     non_callable: 'unable to call non-callable object',
     no_matching_function: 'invalid arguments: no matching function',
     method_conflict: (A1, name, A2) => (

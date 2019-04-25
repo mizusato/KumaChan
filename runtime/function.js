@@ -68,7 +68,7 @@ let Parameter = struct({
 let Prototype = struct({
     affect: EffectRange,
     value: Type,
-    parameters: Types.Array.of(Parameter)
+    parameters: Types.TypedList.of(Parameter)
 }, null, $(
     proto => (
         assert(Object.isFrozen(proto))
@@ -246,7 +246,7 @@ function var_assign(scope) {
  *  Function Wrapper
  */
 
- let arg_check_failed_msg = new Map([
+ let arg_msg = new Map([
      [1, 'arg_wrong_quantity'],
      [2, 'arg_invalid'],
      [3, 'arg_immutable']
@@ -262,7 +262,7 @@ function var_assign(scope) {
          // check arguments
          if (check) {
              let result = check_args(args, proto)
-             ensure(result.ok, arg_check_failed_msg[result.err], result.info)
+             ensure(result.ok, arg_msg[result.err], result.info, args.length)
          }
          // generate scope
          let scope = new Scope(use_ctx || context, proto.affect)

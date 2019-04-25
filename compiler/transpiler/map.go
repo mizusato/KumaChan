@@ -1,6 +1,7 @@
 package transpiler
 
 import "strings"
+import "strconv"
 import "../syntax"
 
 
@@ -8,6 +9,7 @@ func TranspileOperationSequence (tree Tree, ptr int) [][]string {
     if tree.Nodes[ptr].Part.Id != syntax.Name2Id["operand_tail"] {
         panic("invalid usage of TranspileOperationSequence()")
     }
+    var file_name = GetFileName(tree)
     var operations = make([][]string, 0, 20)
     for tree.Nodes[ptr].Length > 0 {
         // operand_tail? = get operand_tail | call operand_tail
@@ -31,6 +33,9 @@ func TranspileOperationSequence (tree Tree, ptr int) [][]string {
             })
         } else {
             // call = call_self | call_method
+            var call_point = GetRowColInfo(tree, operation_ptr)
+            var row = strconv.Itoa(call_point.Row)
+            var col = strconv.Itoa(call_point.Col)
             var child_ptr = op_node.Children[0]
             var params = Children(tree, child_ptr)
             // call_self = Call args
@@ -40,10 +45,11 @@ func TranspileOperationSequence (tree Tree, ptr int) [][]string {
             if is_method_call {
                 operations = append(operations, []string {
                     "m", Transpile(tree, name_ptr), args,
+                    file_name, row, col,
                 })
             } else {
                 operations = append(operations, []string {
-                    "c", args,
+                    "c", args, file_name, row, col,
                 })
             }
         }
@@ -93,6 +99,7 @@ var TransMapByName = map[string]TransFunction {
     "cmd_exec": TranspileChild("expr"),
 
     "expr": func (tree Tree, ptr int) string {
+        var file_name = GetFileName(tree)
         var children = Children(tree, ptr)
         var operand_ptrs = FlatSubTree(tree, ptr, "operand", "expr_tail")
         var tail = children["expr_tail"]
@@ -106,27 +113,38 @@ var TransMapByName = map[string]TransFunction {
         do_transpile = func (operand_index int) string {
             if operand_index >= 0 {
                 return Transpile(tree, operand_ptrs[operand_index])
-            } else {
-                var reduced_index = -(operand_index) - 1
-                var sub_expr [3]int = reduced[reduced_index]
-                var operand1 = do_transpile(sub_expr[0])
-                var operand2 = do_transpile(sub_expr[1])
-                var operator = Transpile(tree, operator_ptrs[sub_expr[2]])
-                var operator_info = operators[sub_expr[2]]
-                var lazy_eval = operator_info.LazyEval
-                var buf strings.Builder
-                buf.WriteString(operator)
-                buf.WriteRune('(')
-                buf.WriteString(operand1)
-                buf.WriteRune(',')
-                if lazy_eval {
-                    buf.WriteString(LazyValueWrapper(operand2))
-                } else {
-                    buf.WriteString(operand2)
-                }
-                buf.WriteRune(')')
-                return buf.String()
             }
+            var reduced_index = -(operand_index) - 1
+            var sub_expr [3]int = reduced[reduced_index]
+            var operand1 = do_transpile(sub_expr[0])
+            var operand2 = do_transpile(sub_expr[1])
+            var operator_ptr = operator_ptrs[sub_expr[2]]
+            var operator = Transpile(tree, operator_ptr)
+            var operator_info = operators[sub_expr[2]]
+            var lazy_eval = operator_info.LazyEval
+            var call_point = GetRowColInfo(tree, operator_ptr)
+            var buf strings.Builder
+            buf.WriteString("c")
+            buf.WriteRune('(')
+            buf.WriteString(operator)
+            buf.WriteString(", ")
+            buf.WriteRune('[')
+            buf.WriteString(operand1)
+            buf.WriteString(", ")
+            if lazy_eval {
+                buf.WriteString(LazyValueWrapper(operand2))
+            } else {
+                buf.WriteString(operand2)
+            }
+            buf.WriteRune(']')
+            buf.WriteString(", ")
+            buf.WriteString(file_name)
+            buf.WriteString(", ")
+            buf.WriteString(strconv.Itoa(call_point.Row))
+            buf.WriteString(", ")
+            buf.WriteString(strconv.Itoa(call_point.Col))
+            buf.WriteRune(')')
+            return buf.String()
         }
         return do_transpile(-len(reduced))
     },
@@ -157,11 +175,24 @@ var TransMapByName = map[string]TransFunction {
         }
         var has_unary = NotEmpty(tree, unary_ptr)
         if has_unary {
-            buf.WriteString(Transpile(tree, unary_ptr))
+            var unary = Transpile(tree, unary_ptr)
+            buf.WriteString("c")
             buf.WriteRune('(')
+            buf.WriteString(unary)
+            buf.WriteString(", ")
+            buf.WriteRune('[')
         }
         reduce(len(operations)-1)
         if has_unary {
+            buf.WriteRune(']')
+            var file_name = GetFileName(tree)
+            var call_point = GetRowColInfo(tree, unary_ptr)
+            buf.WriteString(", ")
+            buf.WriteString(file_name)
+            buf.WriteString(", ")
+            buf.WriteString(strconv.Itoa(call_point.Row))
+            buf.WriteString(", ")
+            buf.WriteString(strconv.Itoa(call_point.Col))
             buf.WriteRune(')')
         }
         return buf.String()

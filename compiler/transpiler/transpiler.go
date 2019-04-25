@@ -1,5 +1,6 @@
 package transpiler
 
+import "../scanner"
 import "../syntax"
 import "../parser"
 
@@ -67,6 +68,14 @@ func Children (tree Tree, ptr int) map[string]int {
         hash[name] = child_ptr
     }
     return hash
+}
+
+func GetFileName (tree Tree) string {
+    return EscapeRawString([]rune(tree.File))
+}
+
+func GetRowColInfo (tree Tree, ptr int) scanner.Point {
+    return tree.Info[tree.Tokens[tree.Nodes[ptr].Pos].Pos]
 }
 
 func Init () {

@@ -126,26 +126,33 @@ let Types = {
  *    was passed in the next inflation, the cached type will be returned.
  */
 class TypeTemplate {
-    constructor (parameter_count, inflater) {
-        assert(is(parameter_count, Types.Int))
+    constructor (arity, inflater) {
+        assert(is(arity, Types.Int))
         assert(is(inflater, ES.Function))
-        this.n = parameter_count
+        this.arity = arity
         this.inflater = inflater
         this.cache = []
-        this[Checker] = (x => exists(this.cache, item => item.type === x))
         this[Solid] = true
         Object.freeze(this)
     }
     inflate (args) {
-        assert(is(args, Types.List))
-        assert(forall(args, arg => is(arg, Type)))
-        assert(args.length == this.n)
         let cached = find(this.cache, item => equal(item.args, args))
         if (cached != NotFound) {
             return cached.type
         } else {
+            let arity = this.arity
+            let quantity_ok = (args.length == arity)
+            ensure(quantity_ok, 'arg_wrong_quantity', arity, args.length)
+            for (let i=0; i<arity; i++) {
+                let is_type = is(args[i], Type)
+                ensure(is_type, 'arg_not_type', is_type || (
+                    this.inflater[WrapperInfo]?
+                        this.inflater[WrapperInfo].proto.parameters[i].name:
+                        `#${i}`
+                ))
+            }
             let type = this.inflater.apply(null, args)
-            assert(is(type, Type))
+            ensure(is(type, Type), 'retval_not_type')
             this.cache.push({
                 args: copy(args),
                 type: type
@@ -169,15 +176,15 @@ let template = (f => new TypeTemplate(f.length, f))
  *  Basic Generic Types
  */
 
-/* Array<T> = List & { l | for all element in l, element ∈ T } */
-Types.Array = template (
+/* TypedList<T> = List & { l | for all element in l, element ∈ T } */
+Types.TypedList = template (
     T => Ins(Types.List, $(
         l => forall(l, e => is(e, T))
     ))
 )
 
-/* StrMap<T> = Hash & { h | for all element in h, element ∈ T } */
-Types.StrMap = template (
+/* TypedHash<T> = Hash & { h | for all element in h, element ∈ T } */
+Types.TypedHash = template (
     T => Ins(Types.Hash, $(
         h => forall(get_keys(h), k => is(h[k], T))
     ))
@@ -209,11 +216,11 @@ let Void = create_value('Void')
 
 
 /**
- *  Enum: An encapsulation of StrMap<Singleton>
+ *  Enum: An encapsulation of TypedHash<Singleton>
  */
 class Enum {
     constructor (item_names, desc) {
-        assert(is(item_names, Types.Array.of(Types.String)))
+        assert(is(item_names, Types.TypedList.of(Types.String)))
         this.items = {}
         this.values = []
         foreach(item_names, name => {
@@ -261,7 +268,7 @@ let one_of = ((...objects) => new Finite(objects))
  */
 class Schema {
     constructor (table, defaults = null, requirement = (x => true)) {
-        assert(is(table, Types.StrMap.of(Type)))
+        assert(is(table, Types.TypedHash.of(Type)))
         assert(is(defaults, Uni(ES.Null, Types.Hash)))
         assert(is(requirement, ES.Function))
         this.table = copy(table)
