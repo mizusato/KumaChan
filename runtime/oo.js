@@ -306,7 +306,7 @@ function call_method (
 
 let ProtoTable = Types.TypedHash.of(Types.TypedList.of(Prototype))
 let RawProtoTable = Types.TypedList.of(struct({
-    name: Tyeps.String,
+    name: Types.String,
     proto: Prototype
 }))
 
@@ -359,11 +359,12 @@ function build_proto_table (raw_table) {
 }
 
 let validate_interface = fun (
-    'function validate_interface (blank: Hash, implemented: Hash)',
+    'function validate_interface (blank: Hash, implemented: Hash) -> Void',
     (blank, implemented) => {
         for (let method of Object.keys(blank)) {
             ensure(!has(method, implement), 'interface_invalid', method)
         }
+        return Void
     }
 )
 

@@ -1,7 +1,7 @@
 'use strict';
 
 
-(function (window, module) {
+(function () {
 
     '<include> toolkit.js';
     '<include> msg.js';
@@ -25,4 +25,4 @@
         module.exports = export_object
     }
 
-})(window, module)
+})()

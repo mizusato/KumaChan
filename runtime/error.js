@@ -1,10 +1,9 @@
 const TRACE_DEPTH = 10
-let CallType = one_of(1, 2, 3)
 
 let call_stack = []
 
 function push_call (call_type, desc, file = null, row = -1, col = -1) {
-    assert(is(call_type, CallType))
+    assert(exists([1,2,3], i => call_type === i))
     call_stack.push({ call_type, desc, file, row, col })
 }
 

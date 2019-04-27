@@ -26,16 +26,14 @@ pour(Types, FunctionTypes)
 let Parameter = struct({
     name: Types.String,
     type: Type
-}, null, $( p => assert(Object.isFrozen(p)) ))
+}, null, p => assert(Object.isFrozen(p)) )
 
 let Prototype = struct({
     value_type: Type,
     parameters: Types.TypedList.of(Parameter)
-}, null, $(
-    proto => (
-        assert(Object.isFrozen(proto))
-        && no_repeat(map(proto.parameters, p => p.name))
-    )
+}, null, proto => (
+    assert(Object.isFrozen(proto))
+    && no_repeat(map(proto.parameters, p => p.name))
 ))
 
 function parse_decl (string) {
@@ -154,7 +152,7 @@ class Scope {
  ])
 
  function wrap (context, proto, vals, desc, raw) {
-     assert(context instanceof Scope)
+     assert(context === null || context instanceof Scope)
      assert(is(proto, Prototype))
      assert(vals === null || vals instanceof Scope)
      assert(is(raw, Types.ES_Function))
@@ -213,7 +211,7 @@ function inject_args (args, proto, scope) {
         let parameter = proto.parameters[i]
         let arg = args[i]
         // apply default values of schema
-        if (is(parameter.type, Schema)) {
+        if (is(parameter.type, Types.Schema)) {
             arg = parameter.type.patch(arg)
         }
         // inject argument to scope
@@ -271,7 +269,7 @@ function fun (decl_string, body) {
     let parsed = parse_decl(decl_string)
     assert(is(body, Types.ES_Function))
     assert(!is(body, Types.Wrapped))
-    return wrap(Global, parsed.proto, null, decl_string, (scope, expose) => {
+    return wrap(null, parsed.proto, null, decl_string, (scope, expose) => {
         return body.apply(
             null,
             list(cat(
@@ -312,7 +310,7 @@ function overload (functions, name) {
             let i = 0
             for (let f of rev(functions)) {
                 info_list.push(f[WrapperInfo])
-                result_list.push(check_args(args, info.proto))
+                result_list.push(check_args(args, info_list[i].proto))
                 if (result_list[i].ok) {
                     info = info_list[i]
                     ok = true
@@ -324,6 +322,7 @@ function overload (functions, name) {
                 push_call(2, info.desc)
                 let value = info.invoke(args, use_ctx)
                 pop_call()
+                return value
             } else {
                 let n = i
                 let available = map(count(n), i => {

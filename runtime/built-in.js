@@ -6,7 +6,8 @@ let Global = new Scope(null)
 let G = Global.data
 
 pour(Types, {
-    Callable: Uni(Type.ES_Function, Types.TypeTemplate, Types.Class)
+    Callable: Uni(Types.ES_Function, Types.TypeTemplate, Types.Class),
+    Iterable: $(x => typeof x[Symbbol.iterator] == 'function')
 })
 
 pour(Global.data, {
@@ -22,8 +23,10 @@ pour(Global.data, {
     Function: Types.Function,
     Binding: Types.Binding,
     Overload: Types.Overload,
+    Callable: Types.Callable,
     List: Types.List,
     Hash: Types.Hash,
+    Iterable: Types.Iterable,
     es: {
         undefined: undefined,
         null: null,
@@ -49,8 +52,6 @@ let str = f (
         s => s
 )
 
-let format_err = new ErrorProducer(FormatError, 'str_format()')
-
 let str_format = f (
     'str_format',
     'function str_format (s: String, h: Hash) -> String',
@@ -59,6 +60,7 @@ let str_format = f (
             return s.replace(/\$\{([^}]+)\}/g, (match, p1) => {
                 let key = p1
                 let ok = has(key, h)
+                ensure(ok, 'format_invalid_key', key)
                 format_err.assert(ok, ok || MSG.format_invalid_key(key))
                 return str(Im(h[key]))
             })
@@ -70,6 +72,7 @@ let str_format = f (
             let result = s.replace(/\$\{(\d+)\}/g, (match, p1) => {
                 let index = parseInt(p1) - 1
                 let ok = (0 <= index && index < l.length)
+                ensure(ok, 'format_invalid_index', index)
                 format_err.assert(ok, ok || MSG.format_invalid_index(index))
                 used += 1
                 return str(Im(l[index]))
@@ -243,7 +246,7 @@ function call_operator (name) {
 
 
 let wrapped_is = fun (
-    'local is (x: Any, T: Type) -> Bool',
+    'function is (x: Any, T: Type) -> Bool',
         (x, A) => is(x, A)
 )
 

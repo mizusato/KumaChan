@@ -28,6 +28,7 @@ class SimpleType {
 
 /* shorthand */
 let $ = f => new SimpleType(f)
+let Any = $(x => true)
 
 
 /**
@@ -97,14 +98,13 @@ let ES = {
  */
 let Types = {
     Type: Type,
-    TypeTemplate: $(x => x instanceof TypeTemplate),
     Bool: ES.Boolean,
     Number: ES.Number,
     String: ES.String,
     Int: $(x => Number.isInteger(x) && assert(Number.isSafeInteger(x))),
     List: $(x => x instanceof Array),
     Hash: Ins(ES.Object, $(x => get_proto(x) === Object.prototype)),
-    Any: $(x => true)
+    Any: Any
 }
 
 
@@ -163,6 +163,8 @@ class TypeTemplate {
     }
 }
 
+Types.TypeTemplate = $(x => x instanceof TypeTemplate)
+
 /* shorthand */
 let template = (f => new TypeTemplate(f.length, f))
 
@@ -207,6 +209,8 @@ Types.Singleton = $(x => typeof x[ValueName] == 'string')
 
 let Nil = create_value('Nil')
 let Void = create_value('Void')
+Types.Nil = Nil
+Types.Void = Void
 
 
 /**
@@ -251,9 +255,10 @@ class Finite {
     }
 }
 
+Types.Finite = $(x => x instanceof Finite)
+
 // shorthand
 let one_of = ((...objects) => new Finite(objects))
-
 
 /**
  *  Schema: Data format constraints on Hash.
@@ -317,6 +322,8 @@ class Schema {
         return 'Schema'
     }
 }
+
+Types.Schema = $(x => x instanceof Schema)
 
 // shorthand
 let struct = ((table, def, req) => new Schema(table, def, req))
