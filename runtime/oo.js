@@ -234,23 +234,15 @@ function call_method (
     caller_scope, object, method_name, args, file = null, row = -1, col = -1
 ) {
     if (is(object, Types.Instance)) {
-        // find the method on the instance object
-        let instance = NoRef(object)
-        let method = instance.methods[method_name]
+        // OO: find the method on the instance object
+        let method = object.methods[method_name]
         ensure(method, 'method_not_found', method_name)
-        // forbid call of dirty method on immutable reference
-        let info = method[WrapperInfo]
-        let ok = !(info.proto.affect != 'local' && IsRef(object))
-        if (!ok) {
-            push_call(1, info.desc, file, row, col)
-            ensure(false, 'instance_immutable')
-        }
         // call the method
         return call(method, args, file, row, col)
     } else {
         // UFCS: find the method in the caller scope
         let method = caller_scope.lookup(method_name)
-        let found = (method != NotFound && is(method, ES.Function))
+        let found = (method != NotFound && is(method, Types.ES_Function))
         ensure(found, 'method_not_found', method_name)
         // call the method
         return call(method, [object, ...args], file, row, col)

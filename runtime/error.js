@@ -37,7 +37,7 @@ class RuntimeError extends Error {}
 function produce_error (msg) {
     let trace = collect_stack()
     let err = new RuntimeError (
-        msg + LF + LF + join(take(trace, TRACE_DEPTH), LF)
+        msg + LF + LF + join(take(rev(trace), TRACE_DEPTH), LF)
     )
     err.trace = trace
     throw err

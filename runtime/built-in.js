@@ -1,3 +1,37 @@
+/**
+ *  Initialize Global Scope
+ */
+
+let Global = new Scope(null)
+let G = Global.data
+
+pour(Types, {
+    Callable: Uni(Type.ES_Function, Types.TypeTemplate, Types.Class)
+})
+
+pour(Global.data, {
+    Type: Type,
+    Any: Types.Any,
+    Object: Types.Any,
+    Nil: Nil,
+    Void: Void,
+    Bool: Types.Bool,
+    Number: Types.Number,
+    Int: Types.Int,
+    String: Types.String,
+    Function: Types.Function,
+    Binding: Types.Binding,
+    Overload: Types.Overload,
+    List: Types.List,
+    Hash: Types.Hash,
+    es: {
+        undefined: undefined,
+        null: null,
+        Symbol: ES.Symbol
+    },
+})
+
+
 function lazy_bool (arg, desc, name) {
     if (typeof arg != 'boolean') {
         (new ErrorProducer(CallError, desc)).throw(
@@ -149,7 +183,16 @@ let operators = {
     /* Arithmetic */
     '+': f (
         'operator_plus',
-        'local plus (List *a, List *b) -> List',
+        'local plus (Hash a, Hash b) -> Hash',
+            (a, b) => Object.assign({}, a, b),
+        'local plus (Iterable a, Iterable b) -> Iterable',
+            (a, b) => {
+                return (function* ()  {
+                    for (let I of a) { yield I }
+                    for (let I of b) { yield I }
+                })()
+            },
+        'local plus (List a, List b) -> List',
             (a, b) => [...a, ...b],
         'local plus (String a, String b) -> String',
             (a, b) => a + b,

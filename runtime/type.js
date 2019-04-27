@@ -8,6 +8,8 @@
  *  In other words, a type object is no more than an encapsulation of a
  *    single-argument boolean-value function.
  */
+const Checker = Symbol('Checker')
+const ValueName = Symbol('ValueName')
 
 
 /**
@@ -44,18 +46,13 @@ let Type = $(x => (
  *  Shorthand for Type Checking
  */
 function is (value, type) {
-    // immutable reference object should be de-referenced here
     assert(Type[Checker](type))
-    if (IsRef(value)) {
-        return type[Checker](DeRef(value))
-    } else {
-        return type[Checker](value)
-    }
+    return type[Checker](value)
 }
 
 
 /**
- *  Union Operator for Types
+ *  Basic Operators for Types
  */
 function union (types) {
     // (∪ T), for T in types
@@ -63,18 +60,12 @@ function union (types) {
     return new SimpleType(x => exists(types, t => t[Checker](x)))
 }
 
-/**
- *  Intersect Operator for Types
- */
 function intersect (types) {
     // (∩ T), for T in types
     assert(forall(types, t => is(t, Type)))
     return new SimpleType(x => forall(types, t => t[Checker](x)))
 }
 
-/**
- *  Complement Operator for Types
- */
 function complement (type) {
     // (∁ T)
     assert(is(type, Type))
@@ -107,6 +98,7 @@ let ES = {
  */
 let Types = {
     Type: Type,
+    TypeTemplate: $(x => x instanceof TypeTemplate),
     Bool: ES.Boolean,
     Number: ES.Number,
     String: ES.String,
@@ -120,10 +112,12 @@ let Types = {
 /**
  *  TypeTemplate: Implementation of Generics
  *
- *  A type template is a function-like object, which can be inflated by
- *    fixed number of arguments (types) and returns a new type.
- *  The arguments and returned type will be cached. When the same arguments
- *    was passed in the next inflation, the cached type will be returned.
+ *  A type template is a function-like type object, which can be inflated by
+ *    a fixed number of arguments (types) and returns a new type.
+ *  The arguments and returned type will be cached. If the same arguments
+ *    are provided in the next inflation, the cached type will be returned.
+ *  For any object x and type template TT, x ∈ TT if and only if there exists
+ *    a cached type T of TT that satisfies x ∈ T.
  */
 class TypeTemplate {
     constructor (arity, inflater) {
@@ -132,7 +126,7 @@ class TypeTemplate {
         this.arity = arity
         this.inflater = inflater
         this.cache = []
-        this[Solid] = true
+        this[Checker] = (x => exists(this.cache, item => is(x, item.type)))
         Object.freeze(this)
     }
     inflate (args) {
@@ -145,9 +139,10 @@ class TypeTemplate {
             ensure(quantity_ok, 'arg_wrong_quantity', arity, args.length)
             for (let i=0; i<arity; i++) {
                 let is_type = is(args[i], Type)
+                let inflater_info = this.inflater[WrapperInfo]
                 ensure(is_type, 'arg_not_type', is_type || (
-                    this.inflater[WrapperInfo]?
-                        this.inflater[WrapperInfo].proto.parameters[i].name:
+                    inflater_info?
+                        inflater_info.proto.parameters[i].name:
                         `#${i}`
                 ))
             }

@@ -1,6 +1,9 @@
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
 const NotFound = { tip: 'Object Not Found' }
 const hasOwnProperty = Object.prototype.hasOwnProperty
+const CR = '\r'
+const LF = '\n'
+const TAB = '\t'
 
 
 function assert (value) {

@@ -2,11 +2,11 @@ const INDENT = '    '
 
 const MSG = {
     schema_invalid_default: f => `invalid default value for field ${f}`,
+    variable_not_declared: name => `variable ${name} not declared`,
     variable_not_found: name => `variable ${name} not found`,
     variable_declared: name => `variable ${name} already declared`,
-    variable_not_declared: name => `variable ${name} not declared`,
-    variable_cannot_reset: name => `variable ${name} is not re-assignable`,
-    variable_immutable: name => `outer variable ${name} is immutable`,
+    variable_invalid: name => `invalid value assigned to variable ${name}`,
+    variable_fixed: name => `cannot reset fixed variable ${name}`,
     arg_wrong_quantity: (r, g) => `${r} arguments required but ${g} given`,
     arg_invalid: name => `invalid argument ${name}`,
     arg_immutable: name => `immutable value for dirty argument ${name}`,
@@ -44,7 +44,6 @@ const MSG = {
     exposing_non_instance: 'unable to expose non-instance object',
     not_exposing: C => `created instance does not expose instance of ${C}`,
     method_not_found: name => `method ${name}() does not exist`,
-    instance_immutable: 'unable to call dirty method on immutable instance',
     format_invalid_key: key => `key '${key}' does not exist in given hash`,
     format_invalid_index: index => (
         `${'${'+(index+1)+'}'} (index ${index}) does not exist in given list`
