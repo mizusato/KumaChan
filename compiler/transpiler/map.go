@@ -201,7 +201,9 @@ var TransMapByName = map[string]TransFunction {
         var child_ptr = tree.Nodes[ptr].Children[0]
         var child_node = &tree.Nodes[child_ptr]
         switch name := syntax.Id2Name[child_node.Part.Id]; name {
-        case "@not", "~":
+        case "@not":
+            return `o("not")`
+        case "~":
             return `o("~")`
         case "-":
             return `o("-")`

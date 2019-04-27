@@ -133,8 +133,10 @@ function equal (o1, o2) {
 
 function foreach (something, f) {
     if (typeof something[Symbol.iterator] == 'function') {
+        let i = 0
         for (let I of something) {
-            f(I)
+            f(I, i)
+            i += 1
         }
     } else {
         for (let key of Object.keys(something)) {

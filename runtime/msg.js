@@ -20,6 +20,9 @@ const MSG = {
         'invalid arguments: no matching function'
         + LF + 'available functions are:' + available
     ),
+    superset_invalid: i => (
+        `superset #${i} is invalid (should be Class or Interface)`
+    ),
     method_conflict: (name, X1, X2) => (
         'method conflict:'
         + LF + INDENT + X1
@@ -40,6 +43,9 @@ const MSG = {
         + LF + 'does not implement'
         + LF + INDENT + I
         + LF + `(invalid method ${name})`
+    ),
+    interface_invalid: name => (
+        `invalid interface definition: implemented blank method ${name}`
     ),
     exposing_non_instance: 'unable to expose non-instance object',
     not_exposing: C => `created instance does not expose instance of ${C}`,

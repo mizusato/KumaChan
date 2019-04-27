@@ -19,7 +19,6 @@ class SimpleType {
     constructor (checker) {
         assert(typeof checker == 'function')
         this[Checker] = checker
-        this[Solid] = true
         Object.freeze(this)
     }
     get [Symbol.toStringTag]() {
@@ -125,6 +124,7 @@ class TypeTemplate {
         assert(is(inflater, ES.Function))
         this.arity = arity
         this.inflater = inflater
+        this.inflate = this.inflate.bind(this)
         this.cache = []
         this[Checker] = (x => exists(this.cache, item => is(x, item.type)))
         Object.freeze(this)
@@ -199,7 +199,6 @@ function create_value (name) {
     let value = Object.create(null)
     value[ValueName] = name
     value[Checker] = (x => x === value)
-    value[Solid] = true
     Object.freeze(value)
     return value
 }
@@ -226,7 +225,6 @@ class Enum {
         Object.freeze(this.items)
         Object.freeze(this.values)
         this[Checker] = (x => exists(this.values, v => v === x))
-        this[Solid] = true
         Object.freeze(this)
     }
     get [Symbol.toStringTag]() {
@@ -246,7 +244,6 @@ class Finite {
         this.objects = copy(objects)
         Object.freeze(this.objects)
         this[Checker] = (x => exists(this.objects, object === x))
-        this[Solid] = true
         Object.freeze(this)
     }
     get [Symbol.toStringTag]() {
@@ -300,7 +297,6 @@ class Schema {
             assert(is(result, Types.Bool))
             return result
         })
-        this[Solid] = true
         Object.freeze(this)
     }
     patch (hash) {

@@ -43,9 +43,9 @@ function lazy_bool (arg, desc, name) {
 
 let str = f (
     'str',
-    'local str (Number x) -> String',
+    'function str (x: Number) -> String',
         x => Number.prototype.toString.call(x),
-    'local str (String s) -> String',
+    'function str (s: String) -> String',
         s => s
 )
 
@@ -53,7 +53,7 @@ let format_err = new ErrorProducer(FormatError, 'str_format()')
 
 let str_format = f (
     'str_format',
-    'local str_format (String s, Hash h) -> String',
+    'function str_format (s: String, h: Hash) -> String',
         (s, h) => {
             h = DeRef(h)
             return s.replace(/\$\{([^}]+)\}/g, (match, p1) => {
@@ -63,7 +63,7 @@ let str_format = f (
                 return str(Im(h[key]))
             })
         },
-    'local str_format (String s, List l) -> String',
+    'function str_format (s: String, l: List) -> String',
         (s, l) => {
             l = DeRef(l)
             let used = 0
@@ -85,54 +85,54 @@ let operators = {
     /* Pull, Push, Derive, Otherwise */
     '<<': f (
         'operator_pull',
-        'local pull (Callable f, Any *x) -> Any',
+        'function pull (f: Callable, x: Any) -> Any',
             (f, x) => f(x),
-        'local pull (Hash &l, Hash *r) -> Hash',
+        'function pull (l: Hash, r: Hash) -> Hash',
             (l, r) => Object.assign(l, r),
-        'local pull (String s, Any *x) -> String',
+        'function pull (s: String, x: Any) -> String',
             (s, x) => str_format(s, x)
     ),
     '>>': f (
         'operator_push',
-        'local push (Any *l, Any *r) -> Any',
+        'function push (l: Any, r: Any) -> Any',
             (l, r) => operators['<<'](r, l)
     ),
     '=>': f (
         'operator_derive',
-        'local derive (Bool p, Callable ok) -> Any',
+        'function derive (p: Bool, ok: Callable) -> Any',
             (p, ok) => p? ok(): Nil
     ),
     'or': f (
         'operator_otherwise',
-        'local otherwise (Any *x, Callable fallback) -> Any',
+        'function otherwise (x: Any, fallback: Callable) -> Any',
             (x, fallback) => (x !== Nil)? x: fallback()
     ),
     /* Comparsion */
     '<': f (
         'operator_less_than',
-        'local less_than (String a, String b) -> Bool',
+        'function less_than (a: String, b: String) -> Bool',
             (a, b) => a < b,
-        'local less_than (Number x, Number y) -> Bool',
+        'function less_than (x: Number, y: Number) -> Bool',
             (x, y) => x < y
     ),
     '>': f (
         'operator_greater_than',
-        'local greater_than (Any *l, Any *r) -> Bool',
+        'function greater_than (l: Any, r: Any) -> Bool',
             (l, r) => operators['<'](r, l)
     ),
     '<=': f (
         'operator_less_than_or_equal',
-        'local less_than_or_equal (Any *l, Any *r) -> Bool',
+        'function less_than_or_equal (l: Any, r: Any) -> Bool',
             (l, r) => !operators['<'](r, l)
     ),
     '>=': f (
         'operator_greater_than_or_equal',
-        'local greater_than_or_equal (Any *l, Any *r) -> Bool',
+        'function greater_than_or_equal (l: Any, r: Any) -> Bool',
             (l, r) => !operators['<'](l, r)
     ),
     '==': f (
         'operator_equal',
-        'local equal (Any *l, Any *r) -> Bool',
+        'function equal (l: Any, r: Any) -> Bool',
             (l, r) => {
                 l = NoRef(l)
                 r = NoRef(r)
@@ -141,89 +141,96 @@ let operators = {
     ),
     '!=': f (
         'operator_not_equal',
-        'local not_equal (Any *l, Any *r) -> Bool',
+        'function not_equal (l: Any, r: Any) -> Bool',
             (l, r) => !operators['=='](l, r)
     ),
     /* Logic */
     '&&': f (
         'operator_and',
-        'local and (Bool p, Callable q) -> Bool',
-        (p, q) => !p? false: lazy_bool(q(), 'operator_and', 'q')
+        'function and (p: Bool, q: Callable) -> Bool',
+            (p, q) => !p? false: lazy_bool(q(), 'operator_and', 'q')
     ),
     '||': f (
         'operator_or',
-        'local or (Bool p, Callable q) -> Bool',
-        (p, q) => p? true: lazy_bool(q(), 'operator_or', 'q')
+        'function or (p: Bool, q: Callable) -> Bool',
+            (p, q) => p? true: lazy_bool(q(), 'operator_or', 'q')
     ),
     '!': f (
         'operator_not',
-        'local not (Bool p) -> Bool',
-        p => !p
+        'function not (p: Bool) -> Bool',
+            p => !p
     ),
     '&': f (
         'operator_intersect',
-        'local intersect (Abstract A, Abstract B) -> Concept',
-        (A, B) => Ins(A, B)
+        'function intersect (A: Type, B: Type) -> Type',
+            (A, B) => Ins(A, B)
     ),
     '|': f (
         'operator_union',
-        'local union (Abstract A, Abstract B) -> Concept',
-        (A, B) => Uni(A, B)
+        'function union (A: Type, B: Type) -> Type',
+            (A, B) => Uni(A, B)
     ),
     '~': f (
         'operator_complement',
-        'local complement (Abstract A) -> Concept',
-        A => Not(A)
+        'function complement (A: Type) -> Type',
+            A => Not(A)
     ),
     '\\': f (
         'operator_difference',
-        'local difference (Abstract A, Abstract B) -> Concept',
-        (A, B) => Ins(A, Not(B))
+        'function difference (A: Type, B: Type) -> Type',
+            (A, B) => Ins(A, Not(B))
+    ),
+    'not': f (
+        'operator_keyword_not',
+        'function keyword_not (p: Bool) -> Bool',
+            p => !p,
+        'function keyword_not (A: Type) -> Type',
+            A => Not(A)
     ),
     /* Arithmetic */
     '+': f (
         'operator_plus',
-        'local plus (Hash a, Hash b) -> Hash',
+        'function plus (a: Hash, b: Hash) -> Hash',
             (a, b) => Object.assign({}, a, b),
-        'local plus (Iterable a, Iterable b) -> Iterable',
+        'function plus (a: Iterable, b: Iterable) -> Iterable',
             (a, b) => {
                 return (function* ()  {
                     for (let I of a) { yield I }
                     for (let I of b) { yield I }
                 })()
             },
-        'local plus (List a, List b) -> List',
+        'function plus (a: List, b: List) -> List',
             (a, b) => [...a, ...b],
-        'local plus (String a, String b) -> String',
+        'function plus (a: String, b: String) -> String',
             (a, b) => a + b,
-        'local plus (Number x, Number y) -> Number',
+        'function plus (x: Number, y: Number) -> Number',
             (x, y) => x + y
     ),
     '-': f (
         'operator_minus',
-        'local minus (Number x) -> Number',
+        'function minus (x: Number) -> Number',
             x => -x,
-        'local minus (Number x, Number y) -> Number',
+        'function minus (x: Number, y: Number) -> Number',
             (x, y) => x - y
     ),
     '*': f (
         'operator_times',
-        'local times (Number x, Number y) -> Number',
+        'function times (x: Number, y: Number) -> Number',
             (x, y) => x * y
     ),
     '/': f (
         'operator_divide',
-        'local divide (Number x, Number y) -> Number',
+        'function divide (x: Number, y: Number) -> Number',
             (x, y) => x / y
     ),
     '%': f (
         'operator_modulo',
-        'local modulo (Number x, Number y) -> Number',
+        'function modulo (x: Number, y: Number) -> Number',
             (x, y) => x % y
     ),
     '^': f (
         'operator_power',
-        'local power (Number x, Number y) -> Number',
+        'function power (x: Number, y: Number) -> Number',
             (x, y) => Math.pow(x, y)
     )
 }
@@ -236,18 +243,27 @@ function call_operator (name) {
 
 
 let wrapped_is = fun (
-    'local is (Any *x, Abstract A) -> Bool',
+    'local is (x: Any, T: Type) -> Bool',
         (x, A) => is(x, A)
 )
 
 
+function bind_method_call (scope) {
+    return (obj, name, args, file, row, col) => {
+        return call_method(scope, obj, name, args, file, row, col)
+    }
+}
+
+
 let helpers = scope => ({
     c: call,
-    m: (obj, name, args) => call_method(scope, obj, name, args),
+    m: bind_method_call(scope),
     o: call_operator,
     is: wrapped_is,
-    id: var_lookup(scope),
-    dl: var_declare(scope),
-    rt: var_assign(scope),
+    id: scope.lookup.bind(scope),
+    dl: scope.declare.bind(scope),
+    rt: scope.reset.bind(scope),
+    cl: create_class,
+    it: create_interface,
     v: Void
 })

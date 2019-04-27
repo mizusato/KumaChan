@@ -246,6 +246,8 @@ function cancel_binding (f) {
 function call (f, args, file = null, row = -1, col = -1) {
     if (is(f, Types.Class)) {
         f = f.create
+    } else if (is(f, Types.TypeTemplate)) {
+        f = f.inflate
     }
     let call_type = file? 1: 3
     if (is(f, Wrapped)) {

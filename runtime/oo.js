@@ -1,24 +1,20 @@
 /**
  *  OOP Implementation (Class, Instance, Interface)
  */
-
-
 let OO_Types = {
     Class: $(x => x instanceof Class),
     Instance: $(x => x instanceof Instance),
     Interface: $(x => x instanceof Interface),
     OO_Abstract: $(x => x instanceof Class || x instanceof Interface)
 }
-
 pour(Types, OO_Types)
 
 let only_class = x => filter(x, y => is(y, Types.Class))
 let only_interface = x => filter(x, y => is(y, Types.Interface))
 
  /**
-  *  Toolkit Functions
+  *  External Helper Functions
   */
-
 function add_exposed_internal(internal, instance) {
     // expose interface of internal object
     assert(!instance.init_finished)
@@ -65,7 +61,7 @@ function get_methods_info (class_) {
             }
         })
         // check if implement the interface I
-        foreach(I.method_table, (name, protos) => {
+        foreach(I.proto_table, (name, protos) => {
             ensure (
                 has(name, info), 'method_missing',
                 name, class_.desc, I.desc
@@ -84,8 +80,8 @@ function get_methods_info (class_) {
 function get_super_classes (class_) {
     // get all [ S ∈ Class | C ⊂ S ] in which C is the argument class_
     let all = cat([class_], flat(map(
-            only_classes(class_.impls),
-            super_class => super_class.super_classes
+        only_classes(class_.impls),
+        super_class => super_class.super_classes
     )))
     Object.freeze(all)
     return all
@@ -108,13 +104,13 @@ function apply_implemented (interface_, instance) {
     // create the context scope for implemented methods
     let interface_scope = new Scope(null)
     // add blank methods to the interface scope
-    foreach(interface_.method_table, (name, _) => {
+    foreach(interface_.proto_table, (name, _) => {
         assert(has(name, instance.methods))
         interface_scope.declare(name, instance.methods[name])
     })
     // for each implemented method
     foreach(implemented, (name, method) => {
-        assert(!has(name, interface_.method_table))
+        assert(!has(name, interface_.proto_table))
         // create a binding
         let binding = bind_context(method, interface_scope)
         // add to the context scope
@@ -124,9 +120,35 @@ function apply_implemented (interface_, instance) {
     })
 }
 
+function compare_proto (proto1, proto2) {
+    // do type check before calling this function
+    if (proto1.parameters.length !== proto2.parameters.length) {
+        return false
+    }
+    if (proto1.value_type !== proto2.value_type) {
+        return false
+    }
+    return forall (
+        proto1.parameters,
+        (p, i) => (p.type === proto2.parameters[i].type)
+    )
+}
+
 function match_protos (method, protos) {
-    // TODO
-    // don't forget to cancel binding
+    assert(is(method, Types.Wrapped))
+    assert(is(protos, Types.List))
+    method = cancel_binding(method)
+    info = method[WrapperInfo]
+    assert(protos.length > 0)
+    let ok = true
+    for (let proto of protos) {
+        assert(is(proto, Prototype))
+        if(!compare_proto(info.proto, proto)) {
+            ok = false
+            break
+        }
+    }
+    return ok
 }
 
 
@@ -168,7 +190,7 @@ class Class {
                         return internal
                     }
                 )
-                scope.try_to_declare('self', self, true)
+                scope.try_to_declare('self', self)
                 F.raw(scope, expose)
                 for (let I of impls) {
                     if (is(I, Types.Class)) {
@@ -189,7 +211,6 @@ class Class {
             if (!is(object, Types.Instance)) { return false }
             return exists(object.class_.super_classes, S => S === this)
         })
-        this[Solid] = true
         Object.freeze(this)
     }
     get [Symbol.toStringTag]() {
@@ -197,8 +218,38 @@ class Class {
     }
 }
 
-function create_class (name, impls, init, methods, data, def_point) {
-    // TODO
+let RawMethodTable = Types.TypedList.of(struct({
+    name: Types.String,
+    f: Types.Function
+}))
+
+let check_superset = fun (
+    'function check_superset (impls: List) -> Void',
+    impls => {
+        foreach(impls, (superset, i) => {
+            ensure(is(superset, OO_Abstract), 'superset_invalid', i)
+        })
+        return Void
+    }
+)
+
+function build_method_table (raw_table) {
+    assert(is(raw_table, RawMethodTable))
+    let reduced = {}
+    foreach(raw_table, item => {
+        let { name, f } = item
+        if (!has(name, methods)) {
+            reduced[name] = [f]
+        } else {
+            reduced[name].push(f)
+        }
+    })
+    return mapval(reduced, (f_list, name) => overload(f_list, name))
+}
+
+function create_class (name, impls, init, raw_methods, data, def_point) {
+    call(check_superset, [impls], def_point.file, def_point.row, def_point.col)
+    let methods = build_method_table(raw_methods)
     return new Class(name, impls, init, methods, data, def_point)
 }
 
@@ -206,7 +257,6 @@ function create_class (name, impls, init, methods, data, def_point) {
 /**
  *  Instance Object
  */
-
 class Instance {
     constructor (class_, scope, methods) {
         this.class_ = class_
@@ -217,6 +267,9 @@ class Instance {
             this.scope.declare(name, method)
         })
         this.init_finished = false
+        this.data = {
+            class: class_
+        }
     }
     init_finish () {
         this.init_finished = true
@@ -250,14 +303,20 @@ function call_method (
 }
 
 
+
+let ProtoTable = Types.TypedHash.of(Types.TypedList.of(Prototype))
+let RawProtoTable = Types.TypedList.of(struct({
+    name: Tyeps.String,
+    proto: Prototype
+}))
+
 /**
  *  Interface Object
  */
-
 class Interface {
-    constructor (name, method_table, implemented = {}, def_point = null) {
+    constructor (name, proto_table, implemented = {}, def_point = null) {
         assert(is(name, Types.String))
-        assert(is(method_table, Types.TypedHash.of(Prototype)))
+        assert(is(proto_table, ProtoTable))
         assert(is(implemented, Types.TypedHash.of(Types.Overload)))
         this.name = name
         if (def_point != null) {
@@ -266,15 +325,20 @@ class Interface {
         } else {
             this.desc = `interface ${name} at (Built-in)`
         }
-        this.method_table = copy(method_table)
+        this.proto_table = mapval(proto_table, l => Object.freeze(copy(l)))
         this.implemented = copy(implemented)
-        Object.freeze(this.method_table)
+        Object.freeze(this.proto_table)
         Object.freeze(this.implemented)
         this[Checker] = (object => {
             if (!is(object, Types.Instance)) { return false }
             return exists(object.class_.super_interfaces, I => I === this)
         })
-        this[Solid] = true
+        this.data = {
+            Impl: $(object => {
+                if(!is(object, Types.Class)) { return false }
+                return exists(object.get_super_interfaces, I => I === this)
+            })
+        }
         Object.freeze(this)
     }
     get [Symbol.toStringTag]() {
@@ -282,21 +346,34 @@ class Interface {
     }
 }
 
-function create_interface (name, table) {
-    // TODO
-    /*
-    let sign_table = mapval(table, v => {
-        if (is(v, Type.Function.Wrapped)) {
-            let proto = v[WrapperInfo].proto
-            return new Signature(
-                list(map(proto.parameters, p => p.constraint)),
-                proto.value
-            )
+function build_proto_table (raw_table) {
+    assert(is(raw_table, RawProtoTable))
+    let proto_table = {}
+    foreach(raw_table, item => {
+        if (!has(item.name, proto_table)) {
+            proto_table[name] = [item.proto]
         } else {
-            return v
+            proto_table[name].push(item.proto)
         }
     })
-    let defaults = flkv(table, (k,v) => is(v, Type.Function.Wrapped))
-    return new Interface(sign_table, defaults, desc)
-    */
+}
+
+let validate_interface = fun (
+    'function validate_interface (blank: Hash, implemented: Hash)',
+    (blank, implemented) => {
+        for (let method of Object.keys(blank)) {
+            ensure(!has(method, implement), 'interface_invalid', method)
+        }
+    }
+)
+
+function create_interface (name, raw_proto_table, raw_implemented, def_point) {
+    // TODO
+    let proto_table = build_proto_table(raw_proto_table)
+    let implemented = build_method_table(raw_implemented)
+    call (
+        validate_interface, [name, proto_table, implemented],
+        def_point.file, def_point.row, def_point.col
+    )
+    return new Interface(name, proto_table, implemented, def_point)
 }
