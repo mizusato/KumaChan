@@ -18,6 +18,9 @@ pour(Global.data, {
     Void: Void,
     Bool: Types.Bool,
     Number: Types.Number,
+    NaN: Types.NaN,
+    Infinite: Types.Infinite,
+    MayNotNumber: Types.MayNotNumber,
     Int: Types.Int,
     String: Types.String,
     Function: Types.Function,
@@ -193,34 +196,34 @@ let operators = {
             (a, b) => [...a, ...b],
         'function operator.plus (a: String, b: String) -> String',
             (a, b) => a + b,
-        'function operator.plus (x: Number, y: Number) -> Number',
+        'function operator.plus (x: Number, y: Number) -> MayNotNumber',
             (x, y) => x + y
     ),
     '-': f (
         'operator.minus',
         'function operator.minus (x: Number) -> Number',
             x => -x,
-        'function operator.minus (x: Number, y: Number) -> Number',
+        'function operator.minus (x: Number, y: Number) -> MayNotNumber',
             (x, y) => x - y
     ),
     '*': f (
         'operator.times',
-        'function operator.times (x: Number, y: Number) -> Number',
+        'function operator.times (x: Number, y: Number) -> MayNotNumber',
             (x, y) => x * y
     ),
     '/': f (
         'operator.divide',
-        'function operator.divide (x: Number, y: Number) -> Number',
+        'function operator.divide (x: Number, y: Number) -> MayNotNumber',
             (x, y) => x / y
     ),
     '%': f (
         'operator.modulo',
-        'function operator.modulo (x: Number, y: Number) -> Number',
+        'function operator.modulo (x: Number, y: Number) -> MayNotNumber',
             (x, y) => x % y
     ),
     '^': f (
         'operator.power',
-        'function operator.power (x: Number, y: Number) -> Number',
+        'function operator.power (x: Number, y: Number) -> MayNotNumber',
             (x, y) => Math.pow(x, y)
     )
 }
