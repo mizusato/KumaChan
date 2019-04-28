@@ -1,6 +1,6 @@
 package transpiler
 
-import "../scanner"
+import "strconv"
 import "../syntax"
 import "../parser"
 
@@ -74,11 +74,26 @@ func GetFileName (tree Tree) string {
     return EscapeRawString([]rune(tree.File))
 }
 
-func GetRowColInfo (tree Tree, ptr int) scanner.Point {
-    return tree.Info[tree.Tokens[tree.Nodes[ptr].Pos].Pos]
+func GetRowColInfo (tree Tree, ptr int) (string, string) {
+    var point = tree.Info[tree.Tokens[tree.Nodes[ptr].Pos].Pos]
+    return strconv.Itoa(point.Row), strconv.Itoa(point.Col)
+}
+
+func ApplyRules () {
+    var rules = []map[string]TransFunction {
+        Expressions, Containers, Functions,
+    }
+    for _, item := range rules {
+        for key, value := range item {
+            var _, exists = TransMapByName[key]
+            if exists { panic("duplicate transpilation rule for " + key) }
+            TransMapByName[key] = value
+        }
+    }
 }
 
 func Init () {
+    ApplyRules()
     for name, value := range TransMapByName {
         TransMap[syntax.Name2Id[name]] = value
     }

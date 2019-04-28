@@ -1,7 +1,6 @@
 package transpiler
 
 import "strings"
-import "strconv"
 import "../syntax"
 
 
@@ -9,13 +8,14 @@ func TranspileOperationSequence (tree Tree, ptr int) [][]string {
     if tree.Nodes[ptr].Part.Id != syntax.Name2Id["operand_tail"] {
         panic("invalid usage of TranspileOperationSequence()")
     }
-    var file_name = GetFileName(tree)
+    var file = GetFileName(tree)
     var operations = make([][]string, 0, 20)
     for tree.Nodes[ptr].Length > 0 {
         // operand_tail? = get operand_tail | call operand_tail
         var operation_ptr = tree.Nodes[ptr].Children[0]
         var next_ptr = tree.Nodes[ptr].Children[1]
         var op_node = &tree.Nodes[operation_ptr]
+        var row, col = GetRowColInfo(tree, operation_ptr)
         if op_node.Part.Id == syntax.Name2Id["get"] {
             // get = get_expr | get_name
             var params = Children(tree, op_node.Children[0])
@@ -30,12 +30,10 @@ func TranspileOperationSequence (tree Tree, ptr int) [][]string {
             }
             operations = append(operations, []string {
                 "g", key, Transpile(tree, params["nil_flag"]),
+                file, row, col,
             })
         } else {
             // call = call_self | call_method
-            var call_point = GetRowColInfo(tree, operation_ptr)
-            var row = strconv.Itoa(call_point.Row)
-            var col = strconv.Itoa(call_point.Col)
             var child_ptr = op_node.Children[0]
             var params = Children(tree, child_ptr)
             // call_self = Call args
@@ -45,11 +43,11 @@ func TranspileOperationSequence (tree Tree, ptr int) [][]string {
             if is_method_call {
                 operations = append(operations, []string {
                     "m", Transpile(tree, name_ptr), args,
-                    file_name, row, col,
+                    file, row, col,
                 })
             } else {
                 operations = append(operations, []string {
-                    "c", args, file_name, row, col,
+                    "c", args, file, row, col,
                 })
             }
         }
@@ -59,10 +57,10 @@ func TranspileOperationSequence (tree Tree, ptr int) [][]string {
 }
 
 
-var Expr = map[string]TransFunction {
+var Expressions = map[string]TransFunction {
     // expr = operand expr_tail
     "expr": func (tree Tree, ptr int) string {
-        var file_name = GetFileName(tree)
+        var file = GetFileName(tree)
         var children = Children(tree, ptr)
         var operand_ptrs = FlatSubTree(tree, ptr, "operand", "expr_tail")
         var tail = children["expr_tail"]
@@ -85,7 +83,7 @@ var Expr = map[string]TransFunction {
             var operator = Transpile(tree, operator_ptr)
             var operator_info = operators[sub_expr[2]]
             var lazy_eval = operator_info.LazyEval
-            var call_point = GetRowColInfo(tree, operator_ptr)
+            var row, col = GetRowColInfo(tree, operator_ptr)
             var buf strings.Builder
             buf.WriteString("c")
             buf.WriteRune('(')
@@ -101,11 +99,9 @@ var Expr = map[string]TransFunction {
             }
             buf.WriteRune(']')
             buf.WriteString(", ")
-            buf.WriteString(file_name)
-            buf.WriteString(", ")
-            buf.WriteString(strconv.Itoa(call_point.Row))
-            buf.WriteString(", ")
-            buf.WriteString(strconv.Itoa(call_point.Col))
+            WriteList(&buf, []string {
+                file, row, col,
+            })
             buf.WriteRune(')')
             return buf.String()
         }
@@ -131,7 +127,7 @@ var Expr = map[string]TransFunction {
             buf.WriteRune('(')
             reduce(i-1)
             for j := 1; j < len(op); j++ {
-                buf.WriteRune(',')
+                buf.WriteString(", ")
                 buf.WriteString(op[j])
             }
             buf.WriteRune(')')
@@ -148,14 +144,12 @@ var Expr = map[string]TransFunction {
         reduce(len(operations)-1)
         if has_unary {
             buf.WriteRune(']')
-            var file_name = GetFileName(tree)
-            var call_point = GetRowColInfo(tree, unary_ptr)
+            var file = GetFileName(tree)
+            var row, col = GetRowColInfo(tree, unary_ptr)
             buf.WriteString(", ")
-            buf.WriteString(file_name)
-            buf.WriteString(", ")
-            buf.WriteString(strconv.Itoa(call_point.Row))
-            buf.WriteString(", ")
-            buf.WriteString(strconv.Itoa(call_point.Col))
+            WriteList(&buf, []string {
+                file, row, col,
+            })
             buf.WriteRune(')')
         }
         return buf.String()
@@ -249,7 +243,7 @@ var Expr = map[string]TransFunction {
         var has_extra = NotEmpty(tree, extra_ptr)
         if has_extra {
             if has_arglist {
-                buf.WriteRune(',')
+                buf.WriteString(", ")
             }
             buf.WriteString(Transpile(tree, extra_ptr))
         }
@@ -267,7 +261,7 @@ var Expr = map[string]TransFunction {
         for i, item_ptr := range ptrs {
             buf.WriteString(Transpile(tree, item_ptr))
             if i < len(ptrs)-1 {
-                buf.WriteRune(',')
+                buf.WriteString(", ")
             }
         }
         return buf.String()

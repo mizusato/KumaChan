@@ -222,13 +222,17 @@ var SyntaxDefinition = [...] string {
     "function = fun_header name Call paralist_strict! ret {! body }!",
     "fun_header = @function | fun_type",
     "fun_type = @generator | @async",
-    "paralist_strict = ( ) | ( typed_namelist! )!",
-    "typed_namelist = name :! type! typed_namelist_tail",
-    "typed_namelist_tail? = , name :! type! typed_namelist_tail",
+    "paralist_strict = ( ) | ( typed_list! )!",
+    "typed_list = typed_list_item typed_list_tail",
+    "typed_list_tail? = , typed_list_item! typed_list_tail",
+    "typed_list_item = name :! type!",
     "ret? = -> type",
-    /* Type Expression */
-    // TODO: Name . Name ... Name < type >
-    "type = Name",
+    "type = identifier type_gets type_arglist | ( expr )",
+    "type_gets? = type_get type_gets",
+    "type_get = Get . name",
+    "type_arglist? = < typelist! >!",
+    "typelist = type typelist_tail",
+    "typelist_tail? = , type! typelist_tail",
     "body = static_head commands handle_tail",
     "static_head? = @static block",
     "handle_tail? = _at @handle name handle_block finally",
@@ -242,7 +246,7 @@ var SyntaxDefinition = [...] string {
 
     /* Type Object Definition */
     /* Generics */
-    "generic_params = < typed_namelist! >!",
+    "generic_params = < typed_list! >!",
     /* Schema */
     "struct = @struct name generic_params { field_list condition }",
     "field_list = field field_list_tail",
@@ -306,7 +310,7 @@ var SyntaxDefinition = [...] string {
     "lambda_block = header_lambda paralist_block ret_lambda {! body! }!",
     "header_lambda = @lambda | fun_type",
     "paralist_block? = name | Call paralist",
-    "paralist = ( ) | ( namelist ) | ( typed_namelist! )!",
+    "paralist = ( ) | ( namelist ) | ( typed_list! )!",
     "ret_lambda? = -> type | ->",
     "lambda_inline = .{ paralist_inline expr! }!",
     "paralist_inline? = namelist -->",

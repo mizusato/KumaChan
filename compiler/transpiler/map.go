@@ -45,34 +45,15 @@ var TransMapByName = map[string]TransFunction {
     "cmd_group1": TranspileFirstChild,
     "cmd_group2": TranspileFirstChild,
     "cmd_group3": TranspileFirstChild,
+    // cmd_def = function | abs_def
+    "cmd_def": TranspileFirstChild,
     // cmd_exec = expr
     "cmd_exec": TranspileFirstChild,
-
-    /* Rules About Expressions */
-    "expr": Expr["expr"],
-    "operand": Expr["operand"],
-    "unary": Expr["operand_unary"],
-    "operand_base": Expr["operand_base"],
-    "operator": Expr["operator"],
-    "nil_flag": Expr["nil_flag"],
-    "method_args": Expr["method_args"],
-    "args": Expr["args"],
-    "extra_arg": Expr["extra_arg"],
-    "arglist": Expr["arglist"],
-    "exprlist": Expr["exprlist"],
 
     // literal = primitive | adv_literal
     "literal": TranspileFirstChild,
     // adv_literal = xml | comprehension | abs_literal | map | list | hash
     "adv_literal": TranspileFirstChild,
-
-    /* Rules About Containers */
-    "map": Containers["map"],
-    "map_item": Containers["map_item"],
-    "hash": Containers["hash"],
-    "hash_item": Containers["hash_item"],
-    "list": Containers["list"],
-    "list_item": Containers["list_item"],
 
     /* Trivial Things */
     "name": func (tree Tree, ptr int) string {

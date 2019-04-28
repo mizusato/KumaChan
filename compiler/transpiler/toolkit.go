@@ -101,6 +101,16 @@ func BareFunction (content string) string {
 }
 
 
+func WriteList (buf *strings.Builder, strlist []string) {
+    for i, item := range strlist {
+        buf.WriteString(item)
+        if i != len(strlist)-1 {
+            buf.WriteString(", ")
+        }
+    }
+}
+
+
 func ReduceExpression (operators []syntax.Operator) [][3]int {
     /**
      *  Reduce Expression using the Shunting Yard Algorithm
