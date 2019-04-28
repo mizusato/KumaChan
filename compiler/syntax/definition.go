@@ -315,6 +315,7 @@ var SyntaxDefinition = [...] string {
     "literal = primitive | adv_literal",
     "adv_literal = xml | comprehension | abs_literal | map | list | hash",
     "abs_literal = type_literal | finite_literal",
+    // TODO: generics and array
     "map = @map { } | @map { map_item! map_tail }",
     "map_tail? = , map_item! map_tail",
     "map_item = map_key :! expr!",
