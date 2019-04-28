@@ -87,12 +87,11 @@ var Functions = map[string]TransFunction {
             return t
         }
     },
-    // type_arglist? = < typelist >
-    "type_arglist": func (tree Tree, ptr int) string {
-        var children = Children(tree, ptr)
-        // typelist = type typelist_tail
-        var list_ptr = children["typelist"]
-        var types = FlatSubTree(tree, list_ptr, "type", "typelist_tail")
+    // type_arglist? = Call < typelist >
+    "type_arglist": TranspileChild("typelist"),
+    // typelist = type typelist_tail
+    "typelist": func (tree Tree, ptr int) string {
+        var types = FlatSubTree(tree, ptr, "type", "typelist_tail")
         var buf strings.Builder
         buf.WriteRune('[')
         for i, T := range types {

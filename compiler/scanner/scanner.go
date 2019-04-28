@@ -75,7 +75,7 @@ func MatchToken (code Code, pos int) (amount int, id syntax.Id) {
 func IsRightParOrName (token *Token) bool {
     if token != nil {
         var name = syntax.Id2Name[token.Id]
-        if name == ")" || name == "Name" {
+        if name == ")" || name == "]" || name == ">" || name == "Name" {
             return true
         } else {
             return false
@@ -87,8 +87,15 @@ func IsRightParOrName (token *Token) bool {
 
 
 func Try2InsertExtra (tokens TokenSequence, current Token) TokenSequence {
+    /*
+     *  A blank magic to distinguish
+     *      let t = f(g*h)(x)
+     *  between
+     *      let t = f
+     *      (g*h)(x)
+     */
     var current_name = syntax.Id2Name[current.Id]
-    if current_name == "(" {
+    if current_name == "(" || current_name == "<" {
         return append(tokens, Token {
             Id:       syntax.Name2Id["Call"],
             Pos:      current.Pos,

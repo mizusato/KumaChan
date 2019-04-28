@@ -48,6 +48,8 @@ type Tree struct {
 
 func BuildBareTree (tokens scanner.TokenSequence) BareTree {
     var NameId = syntax.Name2Id["Name"]
+    var CallId = syntax.Name2Id["Call"]
+    var GetId = syntax.Name2Id["Get"]
     var RootId = syntax.Name2Id[syntax.RootName]
     var RootPart = syntax.Part {
         Id:        RootId,
@@ -92,9 +94,17 @@ func BuildBareTree (tokens scanner.TokenSequence) BareTree {
             }
         case syntax.MatchToken:
             if node.Pos >= len(tokens) { node.Status = Failed; break }
-            if tokens[node.Pos].Id == id {
+            var token_id = tokens[node.Pos].Id
+            if token_id == id {
                 node.Status = Success
                 node.Amount = 1
+            } else if token_id == CallId || token_id == GetId {
+                if tokens[node.Pos+1].Id == id {
+                    node.Status = Success
+                    node.Amount = 2
+                } else {
+                    node.Status = Failed
+                }
             } else {
                 node.Status = Failed
             }

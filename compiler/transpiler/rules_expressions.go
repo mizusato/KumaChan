@@ -173,16 +173,9 @@ var Expressions = map[string]TransFunction {
             panic("cannot transpile unknown unary operator " + name)
         }
     },
-    // operand_base = ( expr! )! | lambda | literal | dot_para | identifier
-    "operand_base": func (tree Tree, ptr int) string {
-        var children = Children(tree, ptr)
-        var wrapped_expr, exists = children["expr"]
-        if exists {
-            return Transpile(tree, wrapped_expr)
-        } else {
-            return TranspileFirstChild(tree, ptr)
-        }
-    },
+    // operand_base = wrapped | lambda | literal | dot_para | identifier
+    "operand_base": TranspileFirstChild,
+    "wrapped": TranspileChild("expr"),
     // operator = op_group1 | op_compare | op_logic | op_arith
     "operator": func (tree Tree, ptr int) string {
         var info = GetOperatorInfo(tree, ptr)
@@ -229,9 +222,11 @@ var Expressions = map[string]TransFunction {
             return Transpile(tree, args_ptr)
         }
     },
-    // args = ( arglist )! extra_arg
+    // args = ( arglist )! extra_arg | < typelist >
     "args": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
+        var typelist, exists = children["typelist"]
+        if exists { return Transpile(tree, typelist) }
         var buf strings.Builder
         buf.WriteRune('[')
         var arglist_ptr = children["arglist"]
