@@ -9,7 +9,7 @@ const MSG = {
     variable_fixed: name => `cannot reset fixed variable ${name}`,
     arg_wrong_quantity: (r, g) => `${r} arguments required but ${g} given`,
     arg_invalid: name => `invalid argument ${name}`,
-    arg_immutable: name => `immutable value for dirty argument ${name}`,
+    arg_require_bool: name => `lazy argument ${name} requires a boolean value`,
     arg_not_type: name => (
         `argument for template parameter ${name} is not a type`
     ),
@@ -18,7 +18,8 @@ const MSG = {
     non_callable: 'unable to call non-callable object',
     no_matching_function: available => (
         'invalid arguments: no matching function'
-        + LF + 'available functions are:' + available
+        + LF + LF + 'Available functions are: '
+        + LF + LF + available
     ),
     superset_invalid: i => (
         `superset #${i} is invalid (should be Class or Interface)`

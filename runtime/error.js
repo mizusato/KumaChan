@@ -13,16 +13,16 @@ function pop_call () {
 
 function collect_stack () {
     let info_list = list(map(call_stack, frame => {
-        let point = 'unknown'
+        let point = 'from <unknown>'
         if (frame.call_type == 1) {
             // userland
-            point = `at ${frame.file} (row ${frame.row}, column ${frame.col})`
+            point = `from ${frame.file} (row ${frame.row}, column ${frame.col})`
         } else if (frame.call_type == 2) {
             // overload
-            point = 'at (Overload)'
+            point = 'from <overload>'
         } else if (frame.call_type == 3) {
             // built-in
-            point = 'at (Built-in)'
+            point = 'from <built-in>'
         }
         return (frame.desc + LF + INDENT + point)
     }))
@@ -31,12 +31,17 @@ function collect_stack () {
 }
 
 
-class RuntimeError extends Error {}
+class RuntimeError extends Error {
+    constructor (msg) {
+        super(msg)
+        this.name = "RuntimeError"
+    }
+}
 
 function produce_error (msg) {
     let trace = collect_stack()
     let err = new RuntimeError (
-        msg + LF + LF + join(take(rev(trace), TRACE_DEPTH), LF)
+        msg + LF + LF + join(take(rev(trace), TRACE_DEPTH), LF) + LF
     )
     err.trace = trace
     throw err

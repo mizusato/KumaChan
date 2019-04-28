@@ -161,7 +161,10 @@ class Scope {
          // check arguments
          if (check) {
              let result = check_args(args, proto)
-             ensure(result.ok, arg_msg[result.err], result.info, args.length)
+             ensure(
+                 result.ok, arg_msg.get(result.err),
+                 result.info, args.length.toString()
+             )
          }
          // generate scope
          let scope = new Scope(use_ctx || context)
@@ -169,11 +172,8 @@ class Scope {
          if (vals != null) {
              foreach(vals.data, (k, v) => scope.declare(k, v))
          }
-         // call the raw function
-         call_stack.push(desc)
          let value = raw(scope)
          ensure(is(value, proto.value_type), 'retval_invalid')
-         call_stack.pop()
          // return the value after type check
          return value
      }
@@ -190,7 +190,7 @@ function check_args (args, proto) {
     let arity = proto.parameters.length
     // check if argument quantity correct
     if (arity != args.length) {
-        return { ok: false, err: 1, info: arity }
+        return { ok: false, err: 1, info: arity.toString() }
     }
     // check types
     for (let i=0; i<arity; i++) {
@@ -269,7 +269,8 @@ function fun (decl_string, body) {
     let parsed = parse_decl(decl_string)
     assert(is(body, Types.ES_Function))
     assert(!is(body, Types.Wrapped))
-    return wrap(null, parsed.proto, null, decl_string, (scope, expose) => {
+    let desc = decl_string.replace(/^function */, '')
+    return wrap(null, parsed.proto, null, desc, (scope, expose) => {
         return body.apply(
             null,
             list(cat(
@@ -290,7 +291,7 @@ function overload (functions, name) {
     assert(is(name, Types.String))
     functions = copy(functions)
     Object.freeze(functions)
-    let desc = 'overload: ' + name
+    let desc = `${name}[${functions.length}]`
     let only1 = (functions.length == 1)
     let invoke = null
     if (only1) {
@@ -325,15 +326,16 @@ function overload (functions, name) {
                 return value
             } else {
                 let n = i
-                let available = map(count(n), i => {
+                let available = join(map(count(n), i => {
                     let r = result_list[i]
                     return (
                         info_list[i].desc
-                        + LF + INDENT + get_msg (
-                            arg_msg[r.err], r.info. args.length
-                        )
+                        + '  (' + get_msg (
+                            arg_msg.get(r.err),
+                            [r.info, args.length.toString()]
+                        ) + ')'
                     )
-                })
+                }), LF)
                 ensure(false, 'no_matching_function', available)
             }
         }

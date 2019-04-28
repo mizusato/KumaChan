@@ -247,7 +247,7 @@ class Finite {
         assert(is(objects, Types.List))
         this.objects = copy(objects)
         Object.freeze(this.objects)
-        this[Checker] = (x => exists(this.objects, object === x))
+        this[Checker] = (x => exists(this.objects, object => object === x))
         Object.freeze(this)
     }
     get [Symbol.toStringTag]() {

@@ -7,7 +7,7 @@ let G = Global.data
 
 pour(Types, {
     Callable: Uni(Types.ES_Function, Types.TypeTemplate, Types.Class),
-    Iterable: $(x => typeof x[Symbbol.iterator] == 'function')
+    Iterable: $(x => typeof x[Symbol.iterator] == 'function')
 })
 
 pour(Global.data, {
@@ -36,204 +36,193 @@ pour(Global.data, {
 
 
 function lazy_bool (arg, desc, name) {
-    if (typeof arg != 'boolean') {
-        (new ErrorProducer(CallError, desc)).throw(
-            MSG.arg_invalid(name)
-        )
-    }
+    ensure(is(arg, Types.Bool), 'arg_require_bool', name)
     return arg
 }
 
-let str = f (
-    'str',
-    'function str (x: Number) -> String',
-        x => Number.prototype.toString.call(x),
-    'function str (s: String) -> String',
-        s => s
-)
-
-let str_format = f (
-    'str_format',
-    'function str_format (s: String, h: Hash) -> String',
+let string_format = f (
+    'string_format',
+    'function string_format (s: String, h: Hash) -> String',
         (s, h) => {
-            h = DeRef(h)
             return s.replace(/\$\{([^}]+)\}/g, (match, p1) => {
                 let key = p1
                 let ok = has(key, h)
                 ensure(ok, 'format_invalid_key', key)
-                format_err.assert(ok, ok || MSG.format_invalid_key(key))
-                return str(Im(h[key]))
+                return call(operators['str'], [h[key]])
             })
         },
-    'function str_format (s: String, l: List) -> String',
+    'function string_format (s: String, l: List) -> String',
         (s, l) => {
-            l = DeRef(l)
             let used = 0
             let result = s.replace(/\$\{(\d+)\}/g, (match, p1) => {
                 let index = parseInt(p1) - 1
                 let ok = (0 <= index && index < l.length)
                 ensure(ok, 'format_invalid_index', index)
-                format_err.assert(ok, ok || MSG.format_invalid_index(index))
                 used += 1
-                return str(Im(l[index]))
+                return call(operators['str'], [l[index]])
             })
             let ok = (used == l.length)
-            format_err.assert(ok, ok || MSG.format_not_all_converted)
+            ensure(ok, 'format_not_all_converted')
             return result
         }
 )
 
 
 let operators = {
+    'str': f (
+        'operator.str',
+        'function operator.str (p: Bool) -> String',
+            p => p? 'true': 'false',
+        'function operator.str (x: Number) -> String',
+            x => Number.prototype.toString.call(x),
+        'function operator.str (s: String) -> String',
+            s => s
+    ),
     /* Pull, Push, Derive, Otherwise */
     '<<': f (
-        'operator_pull',
-        'function pull (f: Callable, x: Any) -> Any',
+        'operator.pull',
+        'function operator.pull (f: Callable, x: Any) -> Any',
             (f, x) => f(x),
-        'function pull (l: Hash, r: Hash) -> Hash',
+        'function operator.pull (l: Hash, r: Hash) -> Hash',
             (l, r) => Object.assign(l, r),
-        'function pull (s: String, x: Any) -> String',
-            (s, x) => str_format(s, x)
+        'function operator.pull (s: String, x: Any) -> String',
+            (s, x) => call(string_format, [s, x])
     ),
     '>>': f (
-        'operator_push',
-        'function push (l: Any, r: Any) -> Any',
+        'operator.push',
+        'function operator.push (l: Any, r: Any) -> Any',
             (l, r) => operators['<<'](r, l)
     ),
     '=>': f (
-        'operator_derive',
-        'function derive (p: Bool, ok: Callable) -> Any',
+        'operator.derive',
+        'function operator.derive (p: Bool, ok: Callable) -> Any',
             (p, ok) => p? ok(): Nil
     ),
     'or': f (
-        'operator_otherwise',
-        'function otherwise (x: Any, fallback: Callable) -> Any',
+        'operator.otherwise',
+        'function operator.otherwise (x: Any, fallback: Callable) -> Any',
             (x, fallback) => (x !== Nil)? x: fallback()
     ),
     /* Comparsion */
     '<': f (
-        'operator_less_than',
-        'function less_than (a: String, b: String) -> Bool',
+        'operator.less_than',
+        'function operator.less_than (a: String, b: String) -> Bool',
             (a, b) => a < b,
-        'function less_than (x: Number, y: Number) -> Bool',
+        'function operator.less_than (x: Number, y: Number) -> Bool',
             (x, y) => x < y
     ),
     '>': f (
-        'operator_greater_than',
-        'function greater_than (l: Any, r: Any) -> Bool',
+        'operator.greater_than',
+        'function operator.greater_than (l: Any, r: Any) -> Bool',
             (l, r) => operators['<'](r, l)
     ),
     '<=': f (
-        'operator_less_than_or_equal',
-        'function less_than_or_equal (l: Any, r: Any) -> Bool',
+        'operator.less_than_or_equal',
+        'function operator.less_than_or_equal (l: Any, r: Any) -> Bool',
             (l, r) => !operators['<'](r, l)
     ),
     '>=': f (
-        'operator_greater_than_or_equal',
-        'function greater_than_or_equal (l: Any, r: Any) -> Bool',
+        'operator.greater_than_or_equal',
+        'function operator.greater_than_or_equal (l: Any, r: Any) -> Bool',
             (l, r) => !operators['<'](l, r)
     ),
     '==': f (
-        'operator_equal',
-        'function equal (l: Any, r: Any) -> Bool',
-            (l, r) => {
-                l = NoRef(l)
-                r = NoRef(r)
-                return (l === r)
-            }
+        'operator.equal',
+        'function operator.equal (l: Any, r: Any) -> Bool',
+            (l, r) => (l === r)
     ),
     '!=': f (
-        'operator_not_equal',
-        'function not_equal (l: Any, r: Any) -> Bool',
+        'operator.not_equal',
+        'function operator.not_equal (l: Any, r: Any) -> Bool',
             (l, r) => !operators['=='](l, r)
     ),
     /* Logic */
     '&&': f (
-        'operator_and',
-        'function and (p: Bool, q: Callable) -> Bool',
-            (p, q) => !p? false: lazy_bool(q(), 'operator_and', 'q')
+        'operator.and',
+        'function operator.and (p: Bool, q: Callable) -> Bool',
+            (p, q) => !p? false: lazy_bool(q(), 'operator.and', 'q')
     ),
     '||': f (
-        'operator_or',
-        'function or (p: Bool, q: Callable) -> Bool',
-            (p, q) => p? true: lazy_bool(q(), 'operator_or', 'q')
+        'operator.or',
+        'function operator.or (p: Bool, q: Callable) -> Bool',
+            (p, q) => p? true: lazy_bool(q(), 'operator.or', 'q')
     ),
     '!': f (
-        'operator_not',
-        'function not (p: Bool) -> Bool',
+        'operator.not',
+        'function operator.not (p: Bool) -> Bool',
             p => !p
     ),
     '&': f (
-        'operator_intersect',
-        'function intersect (A: Type, B: Type) -> Type',
+        'operator.intersect',
+        'function operator.intersect (A: Type, B: Type) -> Type',
             (A, B) => Ins(A, B)
     ),
     '|': f (
-        'operator_union',
-        'function union (A: Type, B: Type) -> Type',
+        'operator.union',
+        'function operator.union (A: Type, B: Type) -> Type',
             (A, B) => Uni(A, B)
     ),
     '~': f (
-        'operator_complement',
-        'function complement (A: Type) -> Type',
+        'operator.complement',
+        'function operator.complement (A: Type) -> Type',
             A => Not(A)
     ),
     '\\': f (
-        'operator_difference',
-        'function difference (A: Type, B: Type) -> Type',
+        'operator.difference',
+        'function operator.difference (A: Type, B: Type) -> Type',
             (A, B) => Ins(A, Not(B))
     ),
     'not': f (
-        'operator_keyword_not',
-        'function keyword_not (p: Bool) -> Bool',
+        'operator.keyword_not',
+        'function operator.keyword_not (p: Bool) -> Bool',
             p => !p,
-        'function keyword_not (A: Type) -> Type',
+        'function operator.keyword_not (A: Type) -> Type',
             A => Not(A)
     ),
     /* Arithmetic */
     '+': f (
-        'operator_plus',
-        'function plus (a: Hash, b: Hash) -> Hash',
+        'operator.plus',
+        'function operator.plus (a: Hash, b: Hash) -> Hash',
             (a, b) => Object.assign({}, a, b),
-        'function plus (a: Iterable, b: Iterable) -> Iterable',
+        'function operator.plus (a: Iterable, b: Iterable) -> Iterable',
             (a, b) => {
                 return (function* ()  {
                     for (let I of a) { yield I }
                     for (let I of b) { yield I }
                 })()
             },
-        'function plus (a: List, b: List) -> List',
+        'function operator.plus (a: List, b: List) -> List',
             (a, b) => [...a, ...b],
-        'function plus (a: String, b: String) -> String',
+        'function operator.plus (a: String, b: String) -> String',
             (a, b) => a + b,
-        'function plus (x: Number, y: Number) -> Number',
+        'function operator.plus (x: Number, y: Number) -> Number',
             (x, y) => x + y
     ),
     '-': f (
-        'operator_minus',
-        'function minus (x: Number) -> Number',
+        'operator.minus',
+        'function operator.minus (x: Number) -> Number',
             x => -x,
-        'function minus (x: Number, y: Number) -> Number',
+        'function operator.minus (x: Number, y: Number) -> Number',
             (x, y) => x - y
     ),
     '*': f (
-        'operator_times',
-        'function times (x: Number, y: Number) -> Number',
+        'operator.times',
+        'function operator.times (x: Number, y: Number) -> Number',
             (x, y) => x * y
     ),
     '/': f (
-        'operator_divide',
-        'function divide (x: Number, y: Number) -> Number',
+        'operator.divide',
+        'function operator.divide (x: Number, y: Number) -> Number',
             (x, y) => x / y
     ),
     '%': f (
-        'operator_modulo',
-        'function modulo (x: Number, y: Number) -> Number',
+        'operator.modulo',
+        'function operator.modulo (x: Number, y: Number) -> Number',
             (x, y) => x % y
     ),
     '^': f (
-        'operator_power',
-        'function power (x: Number, y: Number) -> Number',
+        'operator.power',
+        'function operator.power (x: Number, y: Number) -> Number',
             (x, y) => Math.pow(x, y)
     )
 }
