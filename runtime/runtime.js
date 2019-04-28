@@ -13,7 +13,8 @@
 
     let export_name = 'KumaChan'
     let export_object = {
-        Global, G, fun, f, operators,
+        scope: { Global, Eval },
+        fun, f, operators,
         wrap, overload, overload_added, overload_concated,
         create_interface, create_class,
         call, call_method,

@@ -7,6 +7,7 @@ const MSG = {
     variable_declared: name => `variable ${name} already declared`,
     variable_invalid: name => `invalid value assigned to variable ${name}`,
     variable_fixed: name => `cannot reset fixed variable ${name}`,
+    static_conflict: name => `static value conflict with argument ${name}`,
     arg_wrong_quantity: (r, g) => `${r} arguments required but ${g} given`,
     arg_invalid: name => `invalid argument ${name}`,
     arg_require_bool: name => `lazy argument ${name} requires a boolean value`,

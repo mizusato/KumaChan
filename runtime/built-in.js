@@ -3,7 +3,7 @@
  */
 
 let Global = new Scope(null)
-let G = Global.data
+let Eval = new Scope(Global)
 
 pour(Types, {
     Callable: Uni(Types.ES_Function, Types.TypeTemplate, Types.Class),

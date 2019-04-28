@@ -69,7 +69,7 @@ var TransMapByName = map[string]TransFunction {
         buf.WriteString(BareFunction("return " + command))
         buf.WriteRune('(')
         buf.WriteString(Runtime)
-        buf.WriteString("Global")
+        buf.WriteString("scope.Eval")
         buf.WriteRune(')')
         return buf.String()
     },

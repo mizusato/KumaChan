@@ -161,7 +161,7 @@ class Scope {
          // check arguments
          if (check) {
              let result = check_args(args, proto)
-             ensure(
+             ensure (
                  result.ok, arg_msg.get(result.err),
                  result.info, args.length.toString()
              )
@@ -170,7 +170,7 @@ class Scope {
          let scope = new Scope(use_ctx || context)
          inject_args(args, proto, scope)
          if (vals != null) {
-             foreach(vals.data, (k, v) => scope.declare(k, v))
+             inject_vals(vals, scope, desc)
          }
          let value = raw(scope)
          ensure(is(value, proto.value_type), 'retval_invalid')
@@ -215,8 +215,18 @@ function inject_args (args, proto, scope) {
             arg = parameter.type.patch(arg)
         }
         // inject argument to scope
-        scope.declare(parameter.name, arg)
+        scope.declare(parameter.name, arg, false, parameter.type)
     }
+}
+
+function inject_vals (vals, scope, desc) {
+    assert(vals instanceof Scope)
+    assert(scope instanceof Scope)
+    assert(is(desc, Types.String))
+    foreach(vals.data, (k, v) => {
+        ensure(!scope.has(k), 'static_conflict', k)
+        scope.declare(k, v)
+    })
 }
 
 function bind_context (f, context) {

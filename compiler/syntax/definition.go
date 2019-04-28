@@ -89,14 +89,14 @@ var Keywords = [...] string {
     "@if", "@elif", "@else", "@switch", "@case", "@while", "@for", "@in",
     "@break", "@continue", "@return",
     "@let", "@var", "@reset",
-    "@exec", "@set",
-    "@lazy", "@async", "@lambda",
-    "@local", "@upper", "@global", "@static",
-    "@throw", "@assert", "@require", "@try",
+    "@set", "@do", "@nothing",
+    "@function", "@generator", "@async", "@lambda",
+    "@static",
+    "@throw", "@assert", "@ensure", "@try",
     "@handle", "@unless", "@failed", "@finally",
     "@xml", "@map",
-    "@category", "@struct", "@require", "@one", "@of",
-    "@class", "@init", "@interface", "@expose",
+    "@struct", "@require", "@one", "@of",
+    "@class", "@init", "@data", "@interface", "@expose",
     "@true", "@false",
     "@is", "@or", "@not", "@yield", "@await",
 }
@@ -190,11 +190,11 @@ var SyntaxDefinition = [...] string {
     /* Return Command @ Group 1 */
     "cmd_return = @return expr",
     /* Error Related Commands @ Group 1 */
-    "cmd_err = cmd_throw | cmd_assert | cmd_require | cmd_try",
+    "cmd_err = cmd_throw | cmd_assert | cmd_ensure | cmd_try",
     "cmd_throw = @throw expr!",
     "cmd_assert = @assert expr!",
-    "cmd_require = @require name! require_args { expr! }!",
-    "require_args? = Call ( exprlist )",
+    "cmd_ensure = @ensure name! ensure_args { expr! }!",
+    "ensure_args? = Call ( exprlist )",
     "cmd_try = @try name : command!",
     /* Module Related Commands @ Group 2 */
     "cmd_module = cmd_use | cmd_import",
@@ -210,21 +210,25 @@ var SyntaxDefinition = [...] string {
     "cmd_reset = @reset name = expr",
     /* Definition Commands @ Group 2 */
     "cmd_def = function | abs_def",
-    "abs_def = category | struct | class | interface",
+    "abs_def = struct | class | interface",
     /* Set Command @ Group 3 */
     "cmd_set = @set left_val = expr",
     "left_val = operand_base gets!",
     "gets? = get gets",
     /* Exec Command @ Group 3 */
-    "cmd_exec = @exec expr | expr",
+    "cmd_exec = expr",
 
     /* Function Definition */
-    "function = proto {! body }!",
-    "proto = fun_header name Call paralist_strict! ret",
-    "fun_header = affect | fun_type | fun_type affect",
-    "fun_type = @lazy | @async",
-    "affect = @local | @upper | @global",
+    "function = fun_header name Call paralist_strict! ret {! body }!",
+    "fun_header = @function | fun_type",
+    "fun_type = @generator | @async",
+    "paralist_strict = ( ) | ( typed_namelist! )!",
+    "typed_namelist = name :! type! typed_namelist_tail",
+    "typed_namelist_tail? = , name :! type! typed_namelist_tail",
     "ret? = -> type",
+    /* Type Expression */
+    // TODO: Name . Name ... Name < type >
+    "type = Name",
     "body = static_head commands handle_tail",
     "static_head? = @static block",
     "handle_tail? = _at @handle name handle_block finally",
@@ -236,33 +240,30 @@ var SyntaxDefinition = [...] string {
     "failed = @failed name { commands }",
     "finally = _at @finally block",
 
-    /* Abstraction Object Definition */
-    /* Category */
-    "category = @category name { branches! }!",
-    "branches? = branch branches",
-    "branch = abs_def | function",
+    /* Type Object Definition */
+    /* Generics */
+    "generic_params = < typed_namelist! >!",
     /* Schema */
-    "struct = @struct name { field_list condition }",
+    "struct = @struct name generic_params { field_list condition }",
     "field_list = field field_list_tail",
-    "field_list_tail? = field! field_list_tail",
-    "field = type name! field_default",
+    "field_list_tail? = , field! field_list_tail",
+    "field = name :! type! field_default",
     "field_default? = = expr",
-    "condition = @require expr",
+    "condition = , @require expr",
     /* Finite */
-    "finite_literal = @one @of { finite_items }! | { finite_items }",
-    "finite_items? = exprlist",
-    /* Concept */
-    "concept_literal = { name _bar1 filters! }!",
+    "finite_literal = @one @of { exprlist_opt }! | { exprlist }",
+    "exprlist_opt? = exprlist",
+    /* SimpleType */
+    "type_literal = { name _bar1 filters! }!",
     "filters = exprlist",
     /* Class */
-    "class = @class name supers { initializers! methods }",
+    "class = @class name generic_params supers { initializer methods } data",
     "supers? = @is exprlist",
-    "initializers? = initializer initializers",
-    "initializer = @init paralist_strict! {! body! }!",
+    "initializer = @init Call paralist_strict! {! body! }!",
     "methods? = method methods",
     "method = method_proto {! body }!",
-    "method_proto = method_type name paralist_strict! ret",
-    "method_type? = &",
+    "method_proto = name Call paralist_strict! ret",
+    "data? = @data hash",
     /* Interface */
     "interface = @interface name { members }",
     "members? = member members",
@@ -301,29 +302,19 @@ var SyntaxDefinition = [...] string {
     "exprlist_tail? = , expr! exprlist_tail",
 
     /* Lambda */
-    "lambda = lambda_full | lambda_simple | lambda_bool",
-    "lambda_full = header_lambda paralist_lambda ret_lambda {! body! }!",
-    "header_lambda = fun_type_lambda @lambda",
-    "fun_type_lambda? = fun_type",
-    "ret_lambda? = -> type | ->",
-    "lambda_simple = .{ paralist_simple expr! }!",
-    "lambda_bool = ..{ paralist_simple expr! }!",
-    /* Parameter List */
+    "lambda = lambda_block | lambda_inline",
+    "lambda_block = header_lambda paralist_block ret_lambda {! body! }!",
+    "header_lambda = @lambda | fun_type",
+    "paralist_block? = name | Call paralist",
     "paralist = ( ) | ( namelist ) | ( typed_namelist! )!",
-    "paralist_lambda? = name | Call paralist",
-    "paralist_simple? = namelist -->",
-    "paralist_strict = ( ) | ( typed_namelist! )!",
-    "typed_namelist = type policy name! typed_namelist_tail",
-    "typed_namelist_tail? = , type! name! typed_namelist_tail",
-    "policy? = & | *",
-    /* Type Expression */
-    // TODO: Name . Name ... Name < type >
-    "type = Name",
+    "ret_lambda? = -> type | ->",
+    "lambda_inline = .{ paralist_inline expr! }!",
+    "paralist_inline? = namelist -->",
 
     /* Literals */
     "literal = primitive | adv_literal",
     "adv_literal = xml | comprehension | abs_literal | map | list | hash",
-    "abs_literal = concept_literal | finite_literal",
+    "abs_literal = type_literal | finite_literal",
     "map = @map { } | @map { map_item! map_tail }",
     "map_tail? = , map_item! map_tail",
     "map_item = map_key :! expr!",
