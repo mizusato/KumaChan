@@ -278,7 +278,8 @@ var SyntaxDefinition = [...] string {
     `op_logic = @is | && | _bar2 | & | _bar1 | \ `,
     "op_arith = + | - | * | / | % | ^ ",
     /* Operators (Prefix) */
-    "unary? = @not | - | _exc | ~ | @expose",
+    "unary? = @not opt_call | - | _exc | ~ | @expose opt_call",
+    "opt_call? = Call",
     /* Operand */
     "operand = unary operand_base operand_tail",
     "operand_base = ( expr! )! | lambda | literal | dot_para | identifier",

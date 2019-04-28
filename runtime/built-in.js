@@ -182,8 +182,6 @@ let operators = {
     /* Arithmetic */
     '+': f (
         'operator.plus',
-        'function operator.plus (a: Hash, b: Hash) -> Hash',
-            (a, b) => Object.assign({}, a, b),
         'function operator.plus (a: Iterable, b: Iterable) -> Iterable',
             (a, b) => {
                 return (function* ()  {
