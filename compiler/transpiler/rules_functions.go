@@ -87,20 +87,22 @@ var Functions = map[string]TransFunction {
             return t
         }
     },
-    // type_arglist? = Call < typelist >
-    "type_arglist": TranspileChild("typelist"),
-    // typelist = type typelist_tail
-    "typelist": func (tree Tree, ptr int) string {
-        var types = FlatSubTree(tree, ptr, "type", "typelist_tail")
+    // type_args? = Call < type_arglist! >!
+    "type_args": TranspileChild("type_arglist"),
+    // type_arglist = type_arg type_arglist_tail
+    "type_arglist": func (tree Tree, ptr int) string {
+        var args = FlatSubTree(tree, ptr, "type_arg", "type_arglist_tail")
         var buf strings.Builder
         buf.WriteRune('[')
-        for i, T := range types {
-            buf.WriteString(Transpile(tree, T))
-            if i != len(types)-1 {
+        for i, arg := range args {
+            buf.WriteString(Transpile(tree, arg))
+            if i != len(args)-1 {
                 buf.WriteString(", ")
             }
         }
         buf.WriteRune(']')
         return buf.String()
     },
+    // type_arg = type | primitive
+    "type_arg": TranspileFirstChild,
 }

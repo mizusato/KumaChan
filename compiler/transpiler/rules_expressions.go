@@ -225,7 +225,7 @@ var Expressions = map[string]TransFunction {
     // args = ( arglist )! extra_arg | < typelist >
     "args": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
-        var typelist, exists = children["typelist"]
+        var typelist, exists = children["type_arglist"]
         if exists { return Transpile(tree, typelist) }
         var buf strings.Builder
         buf.WriteRune('[')

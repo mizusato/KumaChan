@@ -67,6 +67,11 @@ func Children (tree Tree, ptr int) map[string]int {
         var name = syntax.Id2Name[tree.Nodes[child_ptr].Part.Id]
         hash[name] = child_ptr
     }
+    /**
+     *  IMPORTANT:
+     *      If hash[item] does not exist, 0 will be returned.
+     *      This behaviour may cause infinite recursion.
+     */
     return hash
 }
 

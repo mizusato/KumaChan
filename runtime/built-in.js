@@ -7,7 +7,13 @@ let Eval = new Scope(Global)
 
 pour(Types, {
     Callable: Uni(Types.ES_Function, Types.TypeTemplate, Types.Class),
-    Iterable: $(x => typeof x[Symbol.iterator] == 'function')
+    Iterable: $(x => typeof x[Symbol.iterator] == 'function'),
+    Arity: template(fun(
+        'function Arity (n: Int) -> Type',
+        n => Ins(Types.Function, $(
+            f => f[WrapperInfo].proto.parameters.length == n
+        ))
+    ))
 })
 
 pour(Global.data, {
@@ -27,6 +33,7 @@ pour(Global.data, {
     Binding: Types.Binding,
     Overload: Types.Overload,
     Callable: Types.Callable,
+    Arity: Types.Arity,
     List: Types.List,
     Hash: Types.Hash,
     Iterable: Types.Iterable,
