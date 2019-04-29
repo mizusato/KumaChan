@@ -43,6 +43,7 @@ type Tree struct {
     Info    scanner.RowColInfo
     Nodes   BareTree
     File    string
+    Mock    []string
 }
 
 

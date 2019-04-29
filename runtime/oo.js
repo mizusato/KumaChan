@@ -184,7 +184,7 @@ class Class {
             F.context, F.proto, F.vals, F.desc, scope => {
                 let self = new Instance(this, scope, methods)
                 let expose = fun (
-                    'local expose (Instance *internal) -> Instance',
+                    'function expose (internal: Instance) -> Instance',
                     internal => {
                         add_exposed_internal(internal, self)
                         return internal

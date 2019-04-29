@@ -151,6 +151,13 @@ class Scope {
      [2, 'arg_invalid']
  ])
 
+ function get_vals (f, context) {
+     assert(is(f, Types.ES_Function))
+      let scope = new Scope(context)
+      f(scope)
+      return copy(scope.data)
+ }
+
  function wrap (context, proto, vals, desc, raw) {
      assert(context === null || context instanceof Scope)
      assert(is(proto, Prototype))

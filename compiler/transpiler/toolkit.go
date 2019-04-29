@@ -88,15 +88,40 @@ func GetOperatorInfo (tree Tree, ptr int) syntax.Operator {
 }
 
 
-func BareFunction (content string) string {
-    var buf strings.Builder
-    buf.WriteString("(function (scope) { ")
-    buf.WriteString("var {c,m,o,is,id,dl,rt,v} = ")
+func WriteHelpers (buf *strings.Builder) {
+    buf.WriteString("let {c,m,o,is,id,dl,rt,w,gv,v} = ")
     buf.WriteString(Runtime)
     buf.WriteString("helpers(scope)")
     buf.WriteString("; ")
+}
+
+
+func BareFunction (content string) string {
+    var buf strings.Builder
+    buf.WriteString("(function (scope, expose) { ")
+    WriteHelpers(&buf)
     buf.WriteString(content)
     buf.WriteString(" })")
+    return buf.String()
+}
+
+
+func Commands (tree Tree, ptr int, add_return bool) string {
+    var commands = FlatSubTree(tree, ptr, "command", "commands")
+    var ReturnId = syntax.Name2Id["cmd_return"]
+    var buf strings.Builder
+    var has_return = false
+    for _, command := range commands {
+        if !has_return && tree.Nodes[command].Part.Id == ReturnId {
+            has_return = true
+        }
+        buf.WriteString(Transpile(tree, command))
+        buf.WriteString("; ")
+    }
+    if add_return && !has_return {
+        // return Void
+        buf.WriteString("return v;")
+    }
     return buf.String()
 }
 

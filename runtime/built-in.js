@@ -4,6 +4,8 @@
 
 let Global = new Scope(null)
 let Eval = new Scope(Global)
+let default_scopes = { Global, Eval }
+Object.freeze(default_scopes)
 
 pour(Types, {
     Callable: Uni(Types.ES_Function, Types.TypeTemplate, Types.Class),
@@ -236,7 +238,7 @@ let operators = {
 }
 
 
-function call_operator (name) {
+function get_operator (name) {
     assert(has(name, operators))
     return operators[name]
 }
@@ -255,14 +257,16 @@ function bind_method_call (scope) {
 }
 
 
-let helpers = scope => ({
+let get_helpers = scope => ({
     c: call,
     m: bind_method_call(scope),
-    o: call_operator,
+    o: get_operator,
     is: wrapped_is,
     id: scope.lookup.bind(scope),
     dl: scope.declare.bind(scope),
     rt: scope.reset.bind(scope),
+    w: (proto, vals, desc, raw) => wrap(scope, proto, vals, desc, raw),
+    gv: f => get_vals(f, scope),
     cl: create_class,
     it: create_interface,
     v: Void

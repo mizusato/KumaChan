@@ -21,25 +21,6 @@ var TransMapByName = map[string]TransFunction {
         return buf.String()
     },
 
-    // commands? = command commands
-    "commands": func (tree Tree, ptr int) string {
-        var commands = FlatSubTree(tree, ptr, "command", "commands")
-        var ReturnId = syntax.Name2Id["cmd_return"]
-        var has_return = false
-        var buf strings.Builder
-        for _, command := range commands {
-            if !has_return && tree.Nodes[command].Part.Id == ReturnId {
-                has_return = true
-            }
-            buf.WriteString(Transpile(tree, command))
-            buf.WriteString("; ")
-        }
-        if !has_return {
-            // return Void
-            buf.WriteString("return v;")
-        }
-        return buf.String()
-    },
     // command = cmd_group1 | cmd_group2 | cmd_group3
     "command": TranspileFirstChild,
     "cmd_group1": TranspileFirstChild,
