@@ -6,12 +6,6 @@ const LF = '\n'
 const TAB = '\t'
 
 
-function assert (value) {
-    if(!value) { throw new Error('Assertion Failed') }
-    return value
-}
-
-
 function has (key, object) {
     assert(typeof key == 'string' || typeof key == 'symbol')
     return hasOwnProperty.call(object, key)
@@ -288,7 +282,7 @@ function give_arity(f, n) {
 
 
 function get_summary (string, n = 60) {
-    let t = string.substring(0, n).replace('\n', ' ').trim()
+    let t = string.substring(0, n).replace(/[\n \t]+/g, ' ').trim()
     if (string.length <= n) {
         return t
     } else {

@@ -255,7 +255,7 @@ function call (f, args, file = null, row = -1, col = -1) {
     if (is(f, Types.Class)) {
         f = f.create
     } else if (is(f, Types.TypeTemplate)) {
-        f = f.inflate
+        f = f.of
     }
     let call_type = file? 1: 3
     if (is(f, Wrapped)) {
@@ -265,8 +265,8 @@ function call (f, args, file = null, row = -1, col = -1) {
         pop_call()
         return value
     } else if (is(f, Types.ES_Function)) {
-        push_call(call_type, get_summary(f.toString()))
-        let value = f.apply(args)
+        push_call(call_type, get_summary(f.toString()), file, row, col)
+        let value = f.apply(null, args)
         pop_call()
         return value
     } else {

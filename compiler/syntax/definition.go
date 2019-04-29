@@ -107,6 +107,7 @@ var Keywords = [...] string {
  *
  *  If the 'Name' field starts with "_", the operator will be non-overloadable.
  *  If the 'Name' field ends with "*", the operator will be lazily-evaluated.
+ *  These prefixes and suffixes will be normailized by NormalizeOperatorInfo().
  *  The value of the 'Priority' field must be non-negative.
  */
 var Operators = [...] Operator {

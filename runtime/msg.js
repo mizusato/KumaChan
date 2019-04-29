@@ -11,11 +11,11 @@ const MSG = {
     arg_wrong_quantity: (r, g) => `${r} arguments required but ${g} given`,
     arg_invalid: name => `invalid argument ${name}`,
     arg_require_bool: name => `lazy argument ${name} requires a boolean value`,
-    arg_not_type: name => (
-        `argument for template parameter ${name} is not a type`
+    arg_invalid_inflate: name => (
+        `invalid template argument: ${name} is neither a type nor a primitive`
     ),
     retval_invalid: 'invalid return value',
-    retval_not_type: 'return value of type template should be a type',
+    retval_invalid_inflate: 'return value of type template should be a type',
     non_callable: 'unable to call non-callable object',
     no_matching_function: available => (
         'invalid arguments: no matching function'

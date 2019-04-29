@@ -13,12 +13,13 @@
 
     let export_name = 'KumaChan'
     let export_object = {
-        scope: { Global, Eval },
+        is, Uni, Ins, Not,
         fun, f, operators,
         wrap, overload, overload_added, overload_concated,
         create_interface, create_class,
         call, call_method,
-        helpers
+        helpers,
+        scope: { Global, Eval }
     }
     if (typeof window != 'undefined') {
         window[export_name] = export_object

@@ -47,6 +47,11 @@ function produce_error (msg) {
     throw err
 }
 
+function assert (value) {
+    if(!value) { produce_error('Assertion Failed') }
+    return value
+}
+
 function get_msg (msg_type, args) {
     assert(typeof msg_type == 'string')
     assert(args instanceof Array)

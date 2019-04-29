@@ -131,7 +131,7 @@ func AssignId2Rules () {
     }
 }
 
-func ConvertOperatorInfo () {
+func NormalizeOperatorInfo () {
     for _, operator := range Operators {
         var id, exists = Name2Id[operator.Match]
         if exists {
@@ -208,6 +208,6 @@ func Init () {
     AssignId2Tokens()
     AssignId2Keywords()
     AssignId2Rules()
-    ConvertOperatorInfo()
+    NormalizeOperatorInfo()
     ParseRules()
 }

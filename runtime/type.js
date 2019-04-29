@@ -79,7 +79,7 @@ let Not = (arg => complement(arg))        //  A => ∁ A
 
 
 /**
- *  ES6 Raw Types
+ *  ES6 Raw Types (Modified from Original Definition)
  */
 let ES = {
     Undefined: $(x => typeof x == 'undefined'),
@@ -113,6 +113,7 @@ let Types = {
     MayNotNumber: $(x => typeof x == 'number'),
     String: ES.String,
     Int: $(x => Number.isInteger(x) && assert(Number.isSafeInteger(x))),
+    Primitive: Uni(ES.Number, ES.String, ES.Boolean),
     List: $(x => x instanceof Array),
     Hash: Ins(ES.Object, $(x => get_proto(x) === Object.prototype)),
     Any: Any
@@ -123,7 +124,7 @@ let Types = {
  *  TypeTemplate: Implementation of Generics
  *
  *  A type template is a function-like type object, which can be inflated by
- *    a fixed number of arguments (types) and returns a new type.
+ *    a fixed number of arguments (types or primitives) and returns a new type.
  *  The arguments and returned type will be cached. If the same arguments
  *    are provided in the next inflation, the cached type will be returned.
  *  For any object x and type template TT, x ∈ TT if and only if there exists
@@ -135,8 +136,11 @@ class TypeTemplate {
         assert(is(inflater, ES.Function))
         this.arity = arity
         this.inflater = inflater
-        this.inflate = this.inflate.bind(this)
         this.cache = []
+        let inflate = this.inflate.bind(this)
+        this.of = function inflate_template (...args) {
+            return inflate(args)
+        }
         this[Checker] = (x => exists(this.cache, item => is(x, item.type)))
         Object.freeze(this)
     }
@@ -147,27 +151,27 @@ class TypeTemplate {
         } else {
             let arity = this.arity
             let quantity_ok = (args.length == arity)
-            ensure(quantity_ok, 'arg_wrong_quantity', arity, args.length)
+            ensure (
+                quantity_ok, 'arg_wrong_quantity',
+                arity.toString(), args.length.toString()
+            )
             for (let i=0; i<arity; i++) {
-                let is_type = is(args[i], Type)
+                let is_type = is(args[i], Types.Primitive) || is(args[i], Type)
                 let inflater_info = this.inflater[WrapperInfo]
-                ensure(is_type, 'arg_not_type', is_type || (
+                ensure(is_type, 'arg_invalid_inflate', is_type || (
                     inflater_info?
                         inflater_info.proto.parameters[i].name:
                         `#${i}`
                 ))
             }
             let type = this.inflater.apply(null, args)
-            ensure(is(type, Type), 'retval_not_type')
+            ensure(is(type, Type), 'retval_invalid_inflate')
             this.cache.push({
                 args: copy(args),
                 type: type
             })
             return type
         }
-    }
-    of (...types) {
-        return this.inflate(types)
     }
     get [Symbol.toStringTag]() {
         return 'TypeTemplate'
@@ -181,19 +185,17 @@ let template = (f => new TypeTemplate(f.length, f))
 
 
 /**
- *  Basic Generic Types
+ *  Typed Container Types for Internal Use (Don't Export them to Built-In)
  */
-
-/* TypedList<T> = List & { l | for all element in l, element ∈ T } */
 Types.TypedList = template (
-    T => Ins(Types.List, $(
+    /* TypedList<T> = List & { l | for all element in l, element ∈ T } */
+    T => assert(is(T, Type)) && Ins(Types.List, $(
         l => forall(l, e => is(e, T))
     ))
 )
-
-/* TypedHash<T> = Hash & { h | for all element in h, element ∈ T } */
 Types.TypedHash = template (
-    T => Ins(Types.Hash, $(
+    /* TypedHash<T> = Hash & { h | for all element in h, element ∈ T } */
+    T => assert(is(T, Type)) && Ins(Types.Hash, $(
         h => forall(get_keys(h), k => is(h[k], T))
     ))
 )
