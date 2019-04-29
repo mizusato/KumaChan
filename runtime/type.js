@@ -121,84 +121,18 @@ let Types = {
 
 
 /**
- *  TypeTemplate: Implementation of Generics
- *
- *  A type template is a function-like type object, which can be inflated by
- *    a fixed number of arguments (types or primitives) and returns a new type.
- *  The arguments and returned type will be cached. If the same arguments
- *    are provided in the next inflation, the cached type will be returned.
- *  For any object x and type template TT, x ∈ TT if and only if there exists
- *    a cached type T of TT that satisfies x ∈ T.
- */
-class TypeTemplate {
-    constructor (arity, inflater) {
-        assert(is(arity, Types.Int))
-        assert(is(inflater, ES.Function))
-        this.arity = arity
-        this.inflater = inflater
-        this.cache = []
-        let inflate = this.inflate.bind(this)
-        this.of = function inflate_template (...args) {
-            return inflate(args)
-        }
-        this[Checker] = (x => exists(this.cache, item => is(x, item.type)))
-        Object.freeze(this)
-    }
-    inflate (args) {
-        let cached = find(this.cache, item => equal(item.args, args))
-        if (cached != NotFound) {
-            return cached.type
-        } else {
-            let arity = this.arity
-            let quantity_ok = (args.length == arity)
-            ensure (
-                quantity_ok, 'arg_wrong_quantity',
-                arity.toString(), args.length.toString()
-            )
-            for (let i=0; i<arity; i++) {
-                let is_type = is(args[i], Types.Primitive) || is(args[i], Type)
-                let inflater_info = this.inflater[WrapperInfo]
-                ensure(is_type, 'arg_invalid_inflate', is_type || (
-                    inflater_info?
-                        inflater_info.proto.parameters[i].name:
-                        `#${i}`
-                ))
-            }
-            let type = this.inflater.apply(null, args)
-            ensure(is(type, Type), 'retval_invalid_inflate')
-            this.cache.push({
-                args: copy(args),
-                type: type
-            })
-            return type
-        }
-    }
-    get [Symbol.toStringTag]() {
-        return 'TypeTemplate'
-    }
-}
-
-Types.TypeTemplate = $(x => x instanceof TypeTemplate)
-
-/* shorthand */
-let template = (f => new TypeTemplate(f.length, f))
-
-
-/**
  *  Typed Container Types for Internal Use (Don't Export them to Built-In)
  */
-Types.TypedList = template (
-    /* TypedList<T> = List & { l | for all element in l, element ∈ T } */
-    T => assert(is(T, Type)) && Ins(Types.List, $(
+let TypedList = {
+    of: T => assert(is(T, Type)) && Ins(Types.List, $(
         l => forall(l, e => is(e, T))
     ))
-)
-Types.TypedHash = template (
-    /* TypedHash<T> = Hash & { h | for all element in h, element ∈ T } */
-    T => assert(is(T, Type)) && Ins(Types.Hash, $(
+}
+let TypedHash = {
+    of: T => assert(is(T, Type)) && Ins(Types.Hash, $(
         h => forall(get_keys(h), k => is(h[k], T))
     ))
-)
+}
 
 
 /**
@@ -231,7 +165,7 @@ Types.Void = Void
  */
 class Enum {
     constructor (item_names, desc) {
-        assert(is(item_names, Types.TypedList.of(Types.String)))
+        assert(is(item_names, TypedList.of(Types.String)))
         this.items = {}
         this.values = []
         foreach(item_names, name => {
@@ -278,7 +212,7 @@ let one_of = ((...objects) => new Finite(objects))
  */
 class Schema {
     constructor (table, defaults = null, requirement = (x => true)) {
-        assert(is(table, Types.TypedHash.of(Type)))
+        assert(is(table, TypedHash.of(Type)))
         assert(is(defaults, Uni(ES.Null, Types.Hash)))
         assert(is(requirement, ES.Function))
         this.table = copy(table)

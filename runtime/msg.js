@@ -12,7 +12,7 @@ const MSG = {
     arg_invalid: name => `invalid argument ${name}`,
     arg_require_bool: name => `lazy argument ${name} requires a boolean value`,
     arg_invalid_inflate: name => (
-        `invalid template argument: ${name} is neither a type nor a primitive`
+        `invalid template argument ${name}: neither a type nor a primitive`
     ),
     retval_invalid: 'invalid return value',
     retval_invalid_inflate: 'return value of type template should be a type',

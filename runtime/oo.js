@@ -158,9 +158,9 @@ function match_protos (method, protos) {
 class Class {
     constructor (name, impls, init, methods, data = {}, def_point = null) {
         assert(is(name, Types.String))
-        assert(is(impls, Types.TypedList.of(Types.OO_Abstract)))
+        assert(is(impls, TypedList.of(Types.OO_Abstract)))
         assert(is(init, Types.Function))
-        assert(is(methods, Types.TypedHash.of(Types.Overload)))
+        assert(is(methods, TypedHash.of(Types.Overload)))
         assert(is(data, Types.Hash))
         this.name = name
         if (def_point != null) {
@@ -218,7 +218,7 @@ class Class {
     }
 }
 
-let RawMethodTable = Types.TypedList.of(struct({
+let RawMethodTable = TypedList.of(struct({
     name: Types.String,
     f: Types.Function
 }))
@@ -304,8 +304,8 @@ function call_method (
 
 
 
-let ProtoTable = Types.TypedHash.of(Types.TypedList.of(Prototype))
-let RawProtoTable = Types.TypedList.of(struct({
+let ProtoTable = TypedHash.of(TypedList.of(Prototype))
+let RawProtoTable = TypedList.of(struct({
     name: Types.String,
     proto: Prototype
 }))
@@ -317,7 +317,7 @@ class Interface {
     constructor (name, proto_table, implemented = {}, def_point = null) {
         assert(is(name, Types.String))
         assert(is(proto_table, ProtoTable))
-        assert(is(implemented, Types.TypedHash.of(Types.Overload)))
+        assert(is(implemented, TypedHash.of(Types.Overload)))
         this.name = name
         if (def_point != null) {
             let { f, row, col } = def_point

@@ -2,6 +2,12 @@
  *  Function & Scope
  */
 const WrapperInfo = Symbol('WrapperInfo')
+const BareFuncDesc = Symbol('BareFuncDesc')
+
+function inject_desc (f, desc) {
+    f[BareFuncDesc] = `Runtime.${desc}`
+    return f
+}
 
 let Wrapped = $(x => (
     (typeof x == 'function')
@@ -30,7 +36,7 @@ let Parameter = struct({
 
 let Prototype = struct({
     value_type: Type,
-    parameters: Types.TypedList.of(Parameter)
+    parameters: TypedList.of(Parameter)
 }, null, proto => (
     assert(Object.isFrozen(proto))
     && no_repeat(map(proto.parameters, p => p.name))
@@ -262,7 +268,7 @@ function call (f, args, file = null, row = -1, col = -1) {
     if (is(f, Types.Class)) {
         f = f.create
     } else if (is(f, Types.TypeTemplate)) {
-        f = f.of
+        f = f.inflate
     }
     let call_type = file? 1: 3
     if (is(f, Wrapped)) {
@@ -272,7 +278,8 @@ function call (f, args, file = null, row = -1, col = -1) {
         pop_call()
         return value
     } else if (is(f, Types.ES_Function)) {
-        push_call(call_type, get_summary(f.toString()), file, row, col)
+        let desc = f[BareFuncDesc] || get_summary(f.toString())
+        push_call(call_type, desc, file, row, col)
         let value = f.apply(null, args)
         pop_call()
         return value
@@ -304,7 +311,7 @@ function fun (decl_string, body) {
  */
 
 function overload (functions, name) {
-    assert(is(functions, Types.TypedList.of(Types.Function)))
+    assert(is(functions, TypedList.of(Types.Function)))
     assert(is(name, Types.String))
     functions = copy(functions)
     Object.freeze(functions)

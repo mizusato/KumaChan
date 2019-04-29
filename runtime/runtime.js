@@ -8,6 +8,7 @@
     '<include> error.js';
     '<include> type.js';
     '<include> function.js';
+    '<include> generics.js';
     '<include> oo.js';
     '<include> built-in.js';
 
