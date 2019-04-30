@@ -123,16 +123,20 @@ func Commands (tree Tree, ptr int, add_return bool) string {
     var ReturnId = syntax.Name2Id["cmd_return"]
     var buf strings.Builder
     var has_return = false
-    for _, command := range commands {
+    for i, command := range commands {
         if !has_return && tree.Nodes[command].Part.Id == ReturnId {
             has_return = true
         }
         buf.WriteString(Transpile(tree, command))
-        buf.WriteString("; ")
+        if i != len(commands)-1 {
+            buf.WriteString("; ")
+        } else {
+            buf.WriteString(";")
+        }
     }
     if add_return && !has_return {
         // return Void
-        buf.WriteString("return v;")
+        buf.WriteString(" return v;")
     }
     return buf.String()
 }

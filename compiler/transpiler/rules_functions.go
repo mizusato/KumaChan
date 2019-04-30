@@ -83,7 +83,7 @@ var Functions = map[string]TransFunction {
             buf.WriteString(commands)
             buf.WriteString(" } ")
             buf.WriteString(catch_and_finally)
-            buf.WriteString("return v;")
+            buf.WriteString(" return v;")
             return buf.String()
         } else {
             return commands
@@ -109,14 +109,21 @@ var Functions = map[string]TransFunction {
         buf.WriteString("); ")
         buf.WriteString(Transpile(tree, children["handle_cmds"]))
         buf.WriteString(" throw error;")
-        buf.WriteString(" }; ")
+        buf.WriteString(" }")
         var finally_ptr = children["finally"]
         if NotEmpty(tree, finally_ptr) {
-            buf.WriteString("finally { ")
+            buf.WriteString(" finally { ")
             buf.WriteString(Transpile(tree, finally_ptr))
-            buf.WriteString(" }")
+            buf.WriteString(" };")
+        } else {
+            buf.WriteString(";")
         }
         return buf.String()
+    },
+    // finally? = _at @finally { commands }
+    "finally": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        return Commands(tree, children["commands"], false)
     },
     // handle_cmds? = handle_cmd handle_cmds
     "handle_cmds": func (tree Tree, ptr int) string {
