@@ -52,7 +52,7 @@ func NotEmpty (tree Tree, ptr int) bool {
 
 func FlatSubTree (tree Tree, ptr int, extract string, next string) []int {
     var sequence = make([]int, 0)
-    for tree.Nodes[ptr].Length > 0 {
+    for NotEmpty(tree, ptr) {
         var children = Children(tree, ptr)
         var extract_ptr, exists = children[extract]
         if !exists { panic("cannot extract part " + next) }
@@ -76,6 +76,15 @@ func GetTokenContent (tree Tree, ptr int) []rune {
 }
 
 
+func GetWholeContent (tree Tree, ptr int) []rune {
+    var pos = tree.Nodes[ptr].Pos
+    var amount = tree.Nodes[ptr].Amount
+    var begin_token = tree.Tokens[pos]
+    var end_token = tree.Tokens[pos+amount-1]
+    return tree.Code[begin_token.Pos : end_token.Pos+len(end_token.Content)]
+}
+
+
 func GetOperatorInfo (tree Tree, ptr int) syntax.Operator {
     if tree.Nodes[ptr].Part.Id != syntax.Name2Id["operator"] {
         panic("unable to get operator info of non-operator")
@@ -88,10 +97,13 @@ func GetOperatorInfo (tree Tree, ptr int) syntax.Operator {
 }
 
 
-func WriteHelpers (buf *strings.Builder) {
+func WriteHelpers (buf *strings.Builder, scope_name string) {
     buf.WriteString("let {c,m,o,id,dl,rt,w,gv,v} = ")
     buf.WriteString(Runtime)
-    buf.WriteString("helpers(scope)")
+    buf.WriteString(".helpers")
+    buf.WriteRune('(')
+    buf.WriteString(scope_name)
+    buf.WriteRune(')')
     buf.WriteString("; ")
 }
 
@@ -99,7 +111,7 @@ func WriteHelpers (buf *strings.Builder) {
 func BareFunction (content string) string {
     var buf strings.Builder
     buf.WriteString("(function (scope, expose) { ")
-    WriteHelpers(&buf)
+    WriteHelpers(&buf, "scope")
     buf.WriteString(content)
     buf.WriteString(" })")
     return buf.String()

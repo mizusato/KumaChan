@@ -1,5 +1,27 @@
 const TRACE_DEPTH = 10
 
+class RuntimeError extends Error {
+    constructor (msg) {
+        super(msg)
+        this.name = "RuntimeError"
+    }
+}
+
+class UserlandEnsureFailed extends Error {
+    constructor (name) {
+        super(`validation for '${name}' failed`)
+        this.name = "EnsureFailed"
+    }
+}
+
+class UserlandTryFailed extends Error {
+    constructor (name) {
+        super(`try of action '${name}' failed`)
+        this.name = "TryFailed"
+    }
+}
+
+
 let call_stack = []
 
 function push_call (call_type, desc, file = null, row = -1, col = -1) {
@@ -30,14 +52,6 @@ function collect_stack () {
     return info_list
 }
 
-
-class RuntimeError extends Error {
-    constructor (msg) {
-        super(msg)
-        this.name = "RuntimeError"
-    }
-}
-
 function produce_error (msg) {
     let trace = collect_stack()
     let err = new RuntimeError (
@@ -50,6 +64,10 @@ function produce_error (msg) {
 function assert (value) {
     if(!value) { produce_error('Assertion Failed') }
     return value
+}
+
+function panic (msg) {
+    produce_error(`panic: ${msg}`)
 }
 
 function get_msg (msg_type, args) {

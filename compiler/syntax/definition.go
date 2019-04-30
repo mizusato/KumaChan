@@ -92,7 +92,7 @@ var Keywords = [...] string {
     "@set", "@do", "@nothing",
     "@function", "@generator", "@async", "@lambda",
     "@static", "@mock",
-    "@throw", "@assert", "@ensure", "@try",
+    "@throw", "@assert", "@ensure", "@try", "@to",
     "@handle", "@unless", "@failed", "@finally",
     "@xml", "@map",
     "@struct", "@require", "@one", "@of",
@@ -189,7 +189,8 @@ var SyntaxDefinition = [...] string {
     "cmd_assert = @assert expr!",
     "cmd_ensure = @ensure name! ensure_args { expr! }!",
     "ensure_args? = Call ( exprlist )",
-    "cmd_try = @try name : command!",
+    "cmd_try = @try opt_to name : command!",
+    "opt_to? = @to",
     /* Module Related Commands @ Group 2 */
     "cmd_module = cmd_use | cmd_import",
     "cmd_use = @use as_list",
@@ -236,8 +237,8 @@ var SyntaxDefinition = [...] string {
     "handle_cmd = unless | failed | command",
     "unless = @unless name unless_para { commands }",
     "unless_para? = Call ( namelist )",
-    "failed = @failed name { commands }",
-    "finally = _at @finally block",
+    "failed = @failed opt_to name { commands }",
+    "finally = _at @finally { commands }",
 
     /* Type Object Definition */
     /* Generics */

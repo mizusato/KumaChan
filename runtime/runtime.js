@@ -16,7 +16,8 @@
     let export_object = {
         is, Uni, Ins, Not,
         fun, f, operators,
-        wrap, get_vals, overload, overload_added, overload_concated,
+        wrap, get_vals, new_scope,
+        overload, overload_added, overload_concated,
         create_interface, create_class,
         call, call_method,
         RuntimeError,

@@ -39,6 +39,7 @@ type TreeNode struct {
 type BareTree = []TreeNode
 
 type Tree struct {
+    Code    scanner.Code
     Tokens  scanner.TokenSequence
     Info    scanner.RowColInfo
     Nodes   BareTree
@@ -212,7 +213,9 @@ func BuildBareTree (tokens scanner.TokenSequence) BareTree {
 func BuildTree (code scanner.Code, file_name string) Tree {
     var tokens, info = scanner.Scan(code)
     var nodes = BuildBareTree(tokens)
-    return Tree { Tokens: tokens, Info: info, Nodes: nodes, File: file_name }
+    return Tree {
+        Code: code, Tokens: tokens, Info: info, Nodes: nodes, File: file_name,
+    }
 }
 
 

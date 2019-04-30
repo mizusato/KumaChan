@@ -16,7 +16,7 @@ var TransMapByName = map[string]TransFunction {
         buf.WriteString(BareFunction("return " + command))
         buf.WriteRune('(')
         buf.WriteString(Runtime)
-        buf.WriteString("scope.Eval")
+        buf.WriteString(".scope.Eval")
         buf.WriteRune(')')
         return buf.String()
     },
@@ -39,6 +39,19 @@ var TransMapByName = map[string]TransFunction {
     /* Trivial Things */
     "name": func (tree Tree, ptr int) string {
         return EscapeRawString(GetTokenContent(tree, ptr))
+    },
+    "namelist": func (tree Tree, ptr int) string {
+        var names = FlatSubTree(tree, ptr, "name", "namelist_tail")
+        var buf strings.Builder
+        buf.WriteRune('[')
+        for i, name := range names {
+            buf.WriteString(Transpile(tree, name))
+            if i != len(names)-1 {
+                buf.WriteString(", ")
+            }
+        }
+        buf.WriteRune(']')
+        return buf.String()
     },
     "identifier": func (tree Tree, ptr int) string {
         return VarLookup(GetTokenContent(tree, ptr))

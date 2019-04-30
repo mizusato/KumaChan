@@ -5,7 +5,7 @@ import "../syntax"
 import "../parser"
 
 
-const Runtime = "KumaChan."
+const Runtime = "KumaChan"
 
 
 type Tree = *parser.Tree
@@ -15,6 +15,7 @@ var TransMap = make(map[syntax.Id]TransFunction)
 
 func Transpile (tree Tree, ptr int) string {
     var id = tree.Nodes[ptr].Part.Id
+    // fmt.Printf("transpile: %v\n", syntax.Id2Name[id])
     var f, exists = TransMap[id]
     if exists {
         return f(tree, ptr)

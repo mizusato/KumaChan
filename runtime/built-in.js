@@ -258,6 +258,34 @@ function bind_method_call (scope) {
 }
 
 
+function ensure_failed (e, name, args) {
+    e.type = 1
+    e.info = { name, args }
+    throw new UserlandEnsureFailed(name)
+}
+
+function try_failed (e, name) {
+    e.type = 2
+    e.info = { name }
+    throw new UserlandTryFailed(name)
+}
+
+function inject_ensure_args (scope, names, e) {
+    assert(scope instanceof Scope)
+    assert(is(names, TypedList.of(Types.String)))
+    assert(is(e.args, Types.List))
+    foreach(names, (name, i) => {
+        if (i < e.args.length) {
+            scope.declare(name, e.args[i])
+        } else {
+            scope.declare(name, Nil)
+        }
+    })
+}
+
+inject_desc(inject_ensure_args, 'inject_ensure_args')
+
+
 let get_helpers = scope => ({
     c: call,
     m: bind_method_call(scope),
@@ -269,5 +297,8 @@ let get_helpers = scope => ({
     gv: f => get_vals(f, scope),
     cl: create_class,
     it: create_interface,
+    ef: ensure_failed,
+    tf: try_failed,
+    ie: inject_ensure_args,
     v: Void
 })

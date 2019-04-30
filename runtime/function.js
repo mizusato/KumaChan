@@ -32,15 +32,12 @@ pour(Types, FunctionTypes)
 let Parameter = struct({
     name: Types.String,
     type: Type
-}, null, p => assert(Object.isFrozen(p)) )
+})
 
 let Prototype = struct({
     value_type: Type,
     parameters: TypedList.of(Parameter)
-}, null, proto => (
-    assert(Object.isFrozen(proto))
-    && no_repeat(map(proto.parameters, p => p.name))
-))
+}, null, proto => no_repeat(map(proto.parameters, p => p.name)) )
 
 function parse_decl (string) {
     let match = string.match(/function +([^( ]+) +\(([^)]*)\) *-> *(.+)/)
@@ -154,6 +151,10 @@ class Scope {
     }
 }
 
+function new_scope (context) {
+    return new Scope(context)
+}
+
 
 /**
  *  Function Wrapper
@@ -199,6 +200,9 @@ class Scope {
      }
      let arity = proto.parameters.length
      let wrapped = give_arity((...args) => invoke(args), arity)
+     foreach(proto.parameters, p => Object.freeze(p))
+     Object.freeze(proto.parameters)
+     Object.freeze(proto)
      let info = { context, invoke, proto, vals, desc, raw }
      Object.freeze(info)
      wrapped[WrapperInfo] = info
