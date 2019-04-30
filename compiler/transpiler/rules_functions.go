@@ -74,22 +74,22 @@ var Functions = map[string]TransFunction {
             commands_ptr = mock_commands_ptr
         }
         var commands = Commands(tree, commands_ptr, true)
-        // handle_hook? = _at @handle name { handle_cmds }! finally
         var handle_ptr = children["handle_hook"]
         if NotEmpty(tree, handle_ptr) {
             var catch_and_finally = Transpile(tree, handle_ptr)
             var buf strings.Builder
-            buf.WriteString("let e = {};")
+            buf.WriteString("let e = {}; ")
             buf.WriteString("try { ")
             buf.WriteString(commands)
-            buf.WriteString(" }")
+            buf.WriteString(" } ")
             buf.WriteString(catch_and_finally)
-            buf.WriteString(" return v;")
+            buf.WriteString("return v;")
             return buf.String()
         } else {
             return commands
         }
     },
+    // handle_hook? = _at @handle name { handle_cmds }! finally
     "handle_hook": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
         var buf strings.Builder
@@ -97,14 +97,19 @@ var Functions = map[string]TransFunction {
         buf.WriteString("if (error instanceof ")
         buf.WriteString(Runtime)
         buf.WriteString(".RuntimeError")
-        buf.WriteString(") { throw error; }")
+        buf.WriteString(") { throw error; };")
         buf.WriteString(" let handle_scope = ")
         buf.WriteString(Runtime)
-        buf.WriteString(".new_scope(scope);")
+        buf.WriteString(".new_scope(scope); ")
         WriteHelpers(&buf, "handle_scope")
+        buf.WriteString("dl(")
+        buf.WriteString(Transpile(tree, children["name"]))
+        buf.WriteString(", ")
+        buf.WriteString("error")
+        buf.WriteString("); ")
         buf.WriteString(Transpile(tree, children["handle_cmds"]))
         buf.WriteString(" throw error;")
-        buf.WriteString(" }")
+        buf.WriteString(" }; ")
         var finally_ptr = children["finally"]
         if NotEmpty(tree, finally_ptr) {
             buf.WriteString("finally { ")

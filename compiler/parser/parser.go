@@ -68,8 +68,10 @@ func BuildBareTree (tokens scanner.TokenSequence) BareTree {
     var ptr = 0
     loop: for {
         /*
-        fmt.Println("-------------------------------")
-        PrintBareTree(tree)
+            fmt.Println("")
+            PrintBareTree(tree)
+            fmt.Println("-------------------------------")
+            fmt.Println("")
         */
         var node = &tree[ptr]
         var id = node.Part.Id

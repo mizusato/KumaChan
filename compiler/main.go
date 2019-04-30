@@ -5,6 +5,7 @@ import "os"
 import "fmt"
 import "io/ioutil"
 import "./syntax"
+import "./scanner"
 import "./parser"
 import "./transpiler"
 
@@ -23,15 +24,17 @@ func test () {
     check(err)
     var code_string = string(code_bytes)
     var code = []rune(code_string)
-    var tree = parser.BuildTree(code, "<eval>")
+    var tokens, info = scanner.Scan(code)
     fmt.Printf("\n")
-    for _, token := range tree.Tokens {
+    for i, token := range tokens {
         fmt.Printf(
-            "#%+v [%v:%v]: %v\n",
-            tree.Info[token.Pos], token.Id, syntax.Id2Name[token.Id],
+            "#%v %+v [%v:%v]: %v\n",
+            i, info[token.Pos], token.Id, syntax.Id2Name[token.Id],
             string(token.Content),
         )
     }
+    fmt.Printf("\n")
+    var tree = parser.BuildTree(code, "<eval>")
     fmt.Printf("\n")
     parser.PrintBareTree(tree.Nodes)
     fmt.Printf("\n")

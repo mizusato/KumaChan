@@ -49,7 +49,7 @@ type Part struct {
 }
 
 func GetPartType (name string) PartType {
-    var is_keyword = strings.HasPrefix(name, "@")
+    var is_keyword = strings.HasPrefix(name, "@") && len(name) > 1
     if is_keyword {
         return MatchKeyword
     } else {

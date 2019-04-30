@@ -238,7 +238,7 @@ var SyntaxDefinition = [...] string {
     "unless = @unless name unless_para { commands }",
     "unless_para? = Call ( namelist )",
     "failed = @failed opt_to name { commands }",
-    "finally = _at @finally { commands }",
+    "finally? = _at @finally { commands }",
 
     /* Type Object Definition */
     /* Generics */
