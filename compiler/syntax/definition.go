@@ -53,7 +53,9 @@ var Tokens = [...] Token {
     Token { Name: "?",       Pattern: r(`\?`) },
     Token { Name: ">=",      Pattern: r(`\>\=`) },
     Token { Name: "<=",      Pattern: r(`\<\=`) },
+    Token { Name: "!==",     Pattern: r(`\!\=\=`) },
     Token { Name: "!=",      Pattern: r(`\!\=`) },
+    Token { Name: "===",     Pattern: r(`\=\=\=`) },
     Token { Name: "==",      Pattern: r(`\=\=`) },
     Token { Name: "=>",      Pattern: r(`\=\>`) },
     Token { Name: "=",       Pattern: r(`\=`) },
@@ -115,6 +117,8 @@ var Operators = [...] Operator {
     Operator { Match: ">=",   Priority: 30,  Assoc: Left,   Lazy: false  },
     Operator { Match: "==",   Priority: 30,  Assoc: Left,   Lazy: false  },
     Operator { Match: "!=",   Priority: 30,  Assoc: Left,   Lazy: false  },
+    Operator { Match: "===",  Priority: 30,  Assoc: Left,   Lazy: false  },
+    Operator { Match: "!==",  Priority: 30,  Assoc: Left,   Lazy: false  },
     /* Logic */
     Operator { Match: "@is",  Priority: 10,  Assoc: Left,   Lazy: false  },
     Operator { Match: "&&",   Priority: 60,  Assoc: Left,   Lazy: true  },
@@ -275,7 +279,7 @@ var SyntaxDefinition = [...] string {
     /* Operators (Infix) */
     "operator = op_group1 | op_compare | op_logic | op_arith",
     "op_group1 = << | >> | => | @or",
-    "op_compare = < | > | <= | >= | == | != ",
+    "op_compare = < | > | <= | >= | == | != | === | !== ",
     `op_logic = @is | && | _bar2 | & | _bar1 | \ `,
     "op_arith = + | - | * | / | % | ^ ",
     /* Operators (Prefix) */

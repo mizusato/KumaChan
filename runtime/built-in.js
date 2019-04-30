@@ -1,24 +1,18 @@
-/**
- *  Initialize Global Scope
- */
-
-let Global = new Scope(null)
-let Eval = new Scope(Global)
-let default_scopes = { Global, Eval }
-Object.freeze(default_scopes)
-
 pour(Types, {
     Callable: Uni(Types.ES_Function, Types.TypeTemplate, Types.Class),
     Iterable: $(x => typeof x[Symbol.iterator] == 'function'),
     Arity: template(fun(
         'function Arity (n: Int) -> Type',
-        n => Ins(Types.Function, $(
-            f => f[WrapperInfo].proto.parameters.length == n
-        ))
+            n => Ins(Types.Function, $(
+                f => f[WrapperInfo].proto.parameters.length == n
+            ))
     ))
 })
 
-pour(Global.data, {
+Object.freeze(Types)
+
+
+let Global = new Scope(null, {
     Type: Type,
     Any: Types.Any,
     Object: Types.Any,
@@ -45,6 +39,10 @@ pour(Global.data, {
         Symbol: ES.Symbol
     },
 }, true)
+
+let Eval = new Scope(Global)
+let default_scopes = { Global, Eval }
+Object.freeze(default_scopes)
 
 
 function lazy_bool (arg, desc, name) {
@@ -152,6 +150,17 @@ let operators = {
         'operator.not_equal',
         'function operator.not_equal (l: Any, r: Any) -> Bool',
             (l, r) => !operators['=='](l, r)
+    ),
+    // TODO: == can be overloaded by EquailityRedefined interface
+    '===': f (
+        'operator.original_equal',
+        'function operator.original_equal (l: Any, r: Any) -> Bool',
+            (l, r) => (l === r)
+    ),
+    '!==': f (
+        'operator.original_not_equal',
+        'function operator.original_not_equal (l: Any, r: Any) -> Bool',
+            (l, r) => !operators['==='](l, r)
     ),
     /* Logic */
     '&&': f (

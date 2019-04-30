@@ -1,5 +1,6 @@
 package transpiler
 
+import "fmt"
 import "strings"
 
 
@@ -142,13 +143,19 @@ var Functions = map[string]TransFunction {
         var children = Children(tree, ptr)
         var name = Transpile(tree, children["name"])
         var params = Transpile(tree, children["unless_para"])
+        var file = tree.File
+        var row, col = GetRowColInfo(tree, ptr)
         var buf strings.Builder
         buf.WriteString("if (e.type === 1 && e.name === ")
         buf.WriteString(name)
         buf.WriteString(") { ")
-        buf.WriteString("ie(handle_scope, ")
-        buf.WriteString(params)
-        buf.WriteString(", e);")
+        buf.WriteString("call(")
+        WriteList(&buf, []string {
+            "ie",
+            fmt.Sprintf("[handle_scope, %v, e]", params),
+            file, row, col,
+        })
+        buf.WriteString(");")
         buf.WriteString(Commands(tree, children["commands"], false))
         buf.WriteString(" }")
         return buf.String()

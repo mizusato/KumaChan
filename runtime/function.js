@@ -94,8 +94,8 @@ class Scope {
         assert(is(variable, Types.String))
         assert(is(is_fixed, Types.Bool))
         assert(is(type, Type))
-        ensure(!this.has(name), 'variable_declared', name)
-        ensure(is(initial_value, type), 'variable_invalid', name)
+        ensure(!this.has(variable), 'variable_declared', variable)
+        ensure(is(initial_value, type), 'variable_invalid', variable)
         this.data[variable] = initial_value
         if (!is_fixed) {
             this.types_of_non_fixed[variable] = type

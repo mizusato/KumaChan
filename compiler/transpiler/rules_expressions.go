@@ -10,7 +10,7 @@ func TranspileOperationSequence (tree Tree, ptr int) [][]string {
     }
     var file = GetFileName(tree)
     var operations = make([][]string, 0, 20)
-    for tree.Nodes[ptr].Length > 0 {
+    for NotEmpty(tree, ptr) {
         // operand_tail? = get operand_tail | call operand_tail
         var operation_ptr = tree.Nodes[ptr].Children[0]
         var next_ptr = tree.Nodes[ptr].Children[1]
