@@ -1,5 +1,6 @@
 package transpiler
 
+import "fmt"
 import "strings"
 import "../syntax"
 
@@ -84,26 +85,17 @@ var Expressions = map[string]TransFunction {
             var operator_info = operators[sub_expr[2]]
             var lazy_eval = operator_info.Lazy
             var row, col = GetRowColInfo(tree, operator_ptr)
-            var buf strings.Builder
-            buf.WriteString("c")
-            buf.WriteRune('(')
-            buf.WriteString(operator)
-            buf.WriteString(", ")
-            buf.WriteRune('[')
-            buf.WriteString(operand1)
-            buf.WriteString(", ")
+            var real_operand2 string
             if lazy_eval {
-                buf.WriteString(LazyValueWrapper(operand2))
+                real_operand2 = LazyValueWrapper(operand2)
             } else {
-                buf.WriteString(operand2)
+                real_operand2 = operand2
             }
-            buf.WriteRune(']')
-            buf.WriteString(", ")
-            WriteList(&buf, []string {
+            return fmt.Sprintf(
+                "c(%v, [%v, %v], %v, %v, %v)",
+                operator, operand1, real_operand2,
                 file, row, col,
-            })
-            buf.WriteRune(')')
-            return buf.String()
+            )
         }
         return do_transpile(-len(reduced))
     },

@@ -1,5 +1,6 @@
 package transpiler
 
+import "fmt"
 import "strings"
 
 
@@ -30,13 +31,7 @@ var Containers = map[string]TransFunction {
         // map_key = expr
         var key = TranspileFirstChild(tree, children["map_key"])
         var value = Transpile(tree, children["expr"])
-        var buf strings.Builder
-        buf.WriteRune('[')
-        buf.WriteString(key)
-        buf.WriteString(", ")
-        buf.WriteString(value)
-        buf.WriteRune(']')
-        return buf.String()
+        return fmt.Sprintf("[%v, %v]", key, value)
     },
     // hash = { } | { hash_item! hash_tail }!
     "hash": func (tree Tree, ptr int) string {

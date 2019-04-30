@@ -16,6 +16,13 @@ var Functions = map[string]TransFunction {
         var body_ptr = children["body"]
         var body = Transpile(tree, body_ptr)
         var body_children = Children(tree, body_ptr)
+        var desc_buf = make([]rune, 0, 120)
+        desc_buf = append(desc_buf, GetWholeContent(tree, name_ptr)...)
+        desc_buf = append(desc_buf, ' ')
+        desc_buf = append(desc_buf, GetWholeContent(tree, params_ptr)...)
+        desc_buf = append(desc_buf, []rune(" -> ")...)
+        desc_buf = append(desc_buf, GetWholeContent(tree, type_ptr)...)
+        var desc = EscapeRawString(desc_buf)
         // static_commands? = @static { commands }
         var static_ptr = body_children["static_commands"]
         var vals = "null"
@@ -23,32 +30,16 @@ var Functions = map[string]TransFunction {
             var static_commands_ptr = Children(tree, static_ptr)["commands"]
             var static_commands = Commands(tree, static_commands_ptr, true)
             var static_executor = BareFunction(static_commands)
-            vals = "gv(" + static_executor + ")"
+            vals = fmt.Sprintf("gv(%v)", static_executor)
         }
-        var buf strings.Builder
-        buf.WriteString("w")
-        buf.WriteRune('(')
-        buf.WriteString("{ ")
-        buf.WriteString("parameters: ")
-        buf.WriteString(parameters)
-        buf.WriteString(", ")
-        buf.WriteString("value_type: ")
-        buf.WriteString(value_type)
-        buf.WriteString(" }")
-        buf.WriteString(", ")
-        buf.WriteString(vals)
-        buf.WriteString(", ")
-        var desc = make([]rune, 0, 120)
-        desc = append(desc, GetWholeContent(tree, name_ptr)...)
-        desc = append(desc, ' ')
-        desc = append(desc, GetWholeContent(tree, params_ptr)...)
-        desc = append(desc, []rune(" -> ")...)
-        desc = append(desc, GetWholeContent(tree, type_ptr)...)
-        buf.WriteString(EscapeRawString(desc))
-        buf.WriteString(", ")
-        buf.WriteString(BareFunction(body))
-        buf.WriteRune(')')
-        return buf.String()
+        return fmt.Sprintf(
+            "w(%v, %v, %v, %v)",
+            fmt.Sprintf(
+                "{ parameters: %v, value_type: %v }",
+                parameters, value_type,
+            ),
+            vals, desc, BareFunction(body),
+        )
     },
     // body = { static_commands commands mock_hook handle_hook }!
     "body": func (tree Tree, ptr int) string {
@@ -95,27 +86,20 @@ var Functions = map[string]TransFunction {
         var children = Children(tree, ptr)
         var buf strings.Builder
         buf.WriteString("catch (error) { ")
-        buf.WriteString("if (error instanceof ")
-        buf.WriteString(Runtime)
-        buf.WriteString(".RuntimeError")
-        buf.WriteString(") { throw error; };")
-        buf.WriteString(" let handle_scope = ")
-        buf.WriteString(Runtime)
-        buf.WriteString(".new_scope(scope); ")
+        fmt.Fprintf(&buf, "if (error instanceof %v.RuntimeError)", Runtime)
+        buf.WriteString(" { throw error; }; ")
+        fmt.Fprintf(&buf, "let handle_scope = %v.new_scope(scope); ", Runtime)
         WriteHelpers(&buf, "handle_scope")
-        buf.WriteString("dl(")
-        buf.WriteString(Transpile(tree, children["name"]))
-        buf.WriteString(", ")
-        buf.WriteString("error")
-        buf.WriteString("); ")
+        fmt.Fprintf(&buf, "dl(%v, error); ", Transpile(tree, children["name"]))
         buf.WriteString(Transpile(tree, children["handle_cmds"]))
         buf.WriteString(" throw error;")
         buf.WriteString(" }")
         var finally_ptr = children["finally"]
         if NotEmpty(tree, finally_ptr) {
-            buf.WriteString(" finally { ")
-            buf.WriteString(Transpile(tree, finally_ptr))
-            buf.WriteString(" };")
+            fmt.Fprintf(
+                &buf, " finally { %v };",
+                Transpile(tree, finally_ptr),
+            )
         } else {
             buf.WriteString(";")
         }
@@ -146,9 +130,8 @@ var Functions = map[string]TransFunction {
         var file = tree.File
         var row, col = GetRowColInfo(tree, ptr)
         var buf strings.Builder
-        buf.WriteString("if (e.type === 1 && e.name === ")
-        buf.WriteString(name)
-        buf.WriteString(") { ")
+        fmt.Fprintf(&buf, "if (e.type === 1 && e.name === %v)", name)
+        buf.WriteString(" { ")
         buf.WriteString("call(")
         WriteList(&buf, []string {
             "ie",

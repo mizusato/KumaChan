@@ -1,17 +1,12 @@
 package transpiler
 
+import "fmt"
 import "strings"
 import "../syntax"
 
 
 func LazyValueWrapper (expr string) string {
-    var buf strings.Builder
-    buf.WriteRune('(')
-    buf.WriteString("() => (")
-    buf.WriteString(expr)
-    buf.WriteString(")")
-    buf.WriteRune(')')
-    return buf.String()
+    return fmt.Sprintf("(() => (%v))", expr)
 }
 
 
@@ -98,13 +93,11 @@ func GetOperatorInfo (tree Tree, ptr int) syntax.Operator {
 
 
 func WriteHelpers (buf *strings.Builder, scope_name string) {
-    buf.WriteString("let {c,m,o,id,dl,rt,w,gv,v} = ")
-    buf.WriteString(Runtime)
-    buf.WriteString(".helpers")
-    buf.WriteRune('(')
-    buf.WriteString(scope_name)
-    buf.WriteRune(')')
-    buf.WriteString("; ")
+    fmt.Fprintf(
+        buf,
+        "let {c,m,o,id,dl,rt,w,gv,v} = %v.helpers(%v); ",
+        Runtime, scope_name,
+    )
 }
 
 

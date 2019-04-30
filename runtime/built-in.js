@@ -268,12 +268,14 @@ function bind_method_call (scope) {
 
 
 function ensure_failed (e, name, args) {
+    // TODO: record throw position
     e.type = 1
     e.info = { name, args }
     throw new UserlandEnsureFailed(name)
 }
 
 function try_failed (e, name) {
+    // TODO: record throw position
     e.type = 2
     e.info = { name }
     throw new UserlandTryFailed(name)
