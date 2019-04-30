@@ -15,7 +15,7 @@ var EscapeMap = map [string] string {
     "_at":    "@",
 }
 
-var Extra = [...] string { "Call", "Get" }
+var Extra = [...] string { "Call", "Get", "Void" }
 
 var Tokens = [...] Token {
     Token { Name: "String",  Pattern: r(`'[^']*'`), },
@@ -83,6 +83,7 @@ var Tokens = [...] Token {
     Token { Name: "Name",    Pattern: r(`[^`+Symbols+Blanks+LF+`]+`) },
     //    { Name: "Call",    [ Inserted by Scanner ] },
     //    { Name: "Get",     [ Inserted by Scanner ] },
+    //    { Name: "Void",    [ Inserted by Scanner ] },
 }
 
 
@@ -186,7 +187,7 @@ var SyntaxDefinition = [...] string {
     /* Await Command @ Group 1 */
     "cmd_await = @await name = expr! | @await expr!",
     /* Return Command @ Group 1 */
-    "cmd_return = @return expr",
+    "cmd_return = @return Void | @return expr",
     /* Error Related Commands @ Group 1 */
     "cmd_err = cmd_throw | cmd_assert | cmd_ensure | cmd_try",
     "cmd_throw = @throw expr!",

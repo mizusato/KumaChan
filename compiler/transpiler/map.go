@@ -1,5 +1,6 @@
 package transpiler
 
+import "fmt"
 import "strings"
 import "../syntax"
 
@@ -30,6 +31,16 @@ var TransMapByName = map[string]TransFunction {
     "cmd_def": TranspileFirstChild,
     // cmd_exec = expr
     "cmd_exec": TranspileFirstChild,
+    // cmd_return = @return Void | @return expr
+    "cmd_return": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var expr, exists = children["expr"]
+        if exists {
+            return fmt.Sprintf("return %v", Transpile(tree, expr))
+        } else {
+            return "return v"
+        }
+    },
 
     // literal = primitive | adv_literal
     "literal": TranspileFirstChild,

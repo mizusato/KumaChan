@@ -86,6 +86,15 @@ func IsRightParOrName (token *Token) bool {
 }
 
 
+func IsReturnKeyword (token *Token) bool {
+    var NameId = syntax.Name2Id["Name"]
+    if token != nil {
+        return (token.Id == NameId && string(token.Content) == "return")
+    } else {
+        return false
+    }
+}
+
 func Try2InsertExtra (tokens TokenSequence, current Token) TokenSequence {
     /*
      *  A blank magic to distinguish
@@ -116,6 +125,7 @@ func Scan (code Code) (TokenSequence, RowColInfo) {
     var BlankId = syntax.Name2Id["Blank"]
     var CommentId = syntax.Name2Id["Comment"]
     var LFId = syntax.Name2Id["LF"]
+    var RCBId = syntax.Name2Id["}"]
     var tokens = make(TokenSequence, 0, 10000)
     var info = GetInfo(code)
     var length = len(code)
@@ -130,10 +140,20 @@ func Scan (code Code) (TokenSequence, RowColInfo) {
         var current = Token {
             Id: id,
             Pos: pos,
-            Content: code[pos:pos+amount],
+            Content: code[pos : pos+amount],
         }
         if IsRightParOrName(previous_ptr) {
             tokens = Try2InsertExtra(tokens, current)
+        }
+        if current.Id == LFId || current.Id == RCBId {
+            /* tell from "return [LF] expr" and "return expr" */
+            if IsReturnKeyword(previous_ptr) {
+                tokens = append(tokens, Token {
+                    Id:       syntax.Name2Id["Void"],
+                    Pos:      current.Pos,
+                    Content:  []rune(""),
+                })
+            }
         }
         tokens = append(tokens, current)
         previous_ptr = &current

@@ -117,8 +117,14 @@ func Commands (tree Tree, ptr int, add_return bool) string {
     var buf strings.Builder
     var has_return = false
     for i, command := range commands {
-        if !has_return && tree.Nodes[command].Part.Id == ReturnId {
-            has_return = true
+        if !has_return {
+            var group = tree.Nodes[command].Children[0]
+            if group == 0 { panic("invalid command") }
+            var real = tree.Nodes[group].Children[0]
+            if real == 0 { panic("invalid command") }
+            if tree.Nodes[real].Part.Id == ReturnId {
+                has_return = true
+            }
         }
         buf.WriteString(Transpile(tree, command))
         if i != len(commands)-1 {
