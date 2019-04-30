@@ -82,7 +82,7 @@ var Expressions = map[string]TransFunction {
             var operator_ptr = operator_ptrs[sub_expr[2]]
             var operator = Transpile(tree, operator_ptr)
             var operator_info = operators[sub_expr[2]]
-            var lazy_eval = operator_info.LazyEval
+            var lazy_eval = operator_info.Lazy
             var row, col = GetRowColInfo(tree, operator_ptr)
             var buf strings.Builder
             buf.WriteString("c")
@@ -180,20 +180,11 @@ var Expressions = map[string]TransFunction {
     "operator": func (tree Tree, ptr int) string {
         var info = GetOperatorInfo(tree, ptr)
         var buf strings.Builder
-        if info.CanOverload {
-            buf.WriteString("o")
-            buf.WriteRune('(')
-            var name = strings.TrimPrefix(info.Match, "@")
-            buf.WriteString(EscapeRawString([]rune(name)))
-            buf.WriteRune(')')
-        } else {
-            var name = info.Name
-            if name == "is" {
-                buf.WriteString("is")
-            } else {
-                panic("unknown non-overloadable operator: " + name)
-            }
-        }
+        buf.WriteString("o")
+        buf.WriteRune('(')
+        var name = strings.TrimPrefix(info.Match, "@")
+        buf.WriteString(EscapeRawString([]rune(name)))
+        buf.WriteRune(')')
         return buf.String()
     },
     // nil_flag? = ?

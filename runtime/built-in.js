@@ -44,7 +44,7 @@ pour(Global.data, {
         null: null,
         Symbol: ES.Symbol
     },
-})
+}, true)
 
 
 function lazy_bool (arg, desc, name) {
@@ -81,6 +81,11 @@ let string_format = f (
 
 
 let operators = {
+    'is': f (
+        'operator.is',
+        'function operator.is (x: Any, T: Type) -> Bool',
+            (x, A) => is(x, A)
+    ),
     'str': f (
         'operator.str',
         'function operator.str (p: Bool) -> String',
@@ -237,17 +242,13 @@ let operators = {
     )
 }
 
+Object.freeze(operators)
+
 
 function get_operator (name) {
     assert(has(name, operators))
     return operators[name]
 }
-
-
-let wrapped_is = fun (
-    'function is (x: Any, T: Type) -> Bool',
-        (x, A) => is(x, A)
-)
 
 
 function bind_method_call (scope) {
@@ -261,7 +262,6 @@ let get_helpers = scope => ({
     c: call,
     m: bind_method_call(scope),
     o: get_operator,
-    is: wrapped_is,
     id: inject_desc(scope.lookup.bind(scope), 'lookup_variable'),
     dl: inject_desc(scope.declare.bind(scope), 'declare_variable'),
     rt: inject_desc(scope.reset.bind(scope), 'reset_variable'),

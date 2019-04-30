@@ -18,12 +18,10 @@ const (
 )
 
 type Operator struct {
-    Match         string
-    Name          string
-    Priority      int
-    Assoc         LeftRight
-    LazyEval      bool
-    CanOverload   bool
+    Match      string
+    Priority   int
+    Assoc      LeftRight
+    Lazy       bool
 }
 
 type Rule struct {
@@ -131,26 +129,17 @@ func AssignId2Rules () {
     }
 }
 
-func NormalizeOperatorInfo () {
+func ProcessOperatorInfo () {
     for _, operator := range Operators {
         var id, exists = Name2Id[operator.Match]
-        if exists {
-            var match = operator.Match
-            var raw_name = operator.Name
-            var priority = operator.Priority
-            var assoc = operator.Assoc
-            var lazy_eval = strings.HasSuffix(raw_name, "*")
-            var can_overload = !strings.HasPrefix(raw_name, "_")
-            var name = raw_name
-            name = strings.TrimPrefix(name, "_")
-            name = strings.TrimSuffix(name, "*")
-            Id2Operator[id] = Operator {
-                Match: match, Name: name, Priority: priority, Assoc: assoc,
-                LazyEval: lazy_eval, CanOverload: can_overload,
-            }
-        } else {
-            panic("match for operator " + operator.Name + " does not exist")
+        if !exists {
+            panic("match for operator " + operator.Match + " does not exist")
         }
+        if operator.Priority < 0 {
+            // priority must be non-negative
+            panic("operator " + operator.Match + " has a negative priority")
+        }
+        Id2Operator[id] = operator
     }
 }
 
@@ -208,6 +197,6 @@ func Init () {
     AssignId2Tokens()
     AssignId2Keywords()
     AssignId2Rules()
-    NormalizeOperatorInfo()
+    ProcessOperatorInfo()
     ParseRules()
 }

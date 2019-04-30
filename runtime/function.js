@@ -71,13 +71,17 @@ function parse_decl (string) {
  */
 
 class Scope {
-    constructor (context, data = {}) {
+    constructor (context, data = {}, readonly = false) {
         assert(context === null || context instanceof Scope)
         assert(is(data, Types.Hash))
         this.context = context
         this.data = data
         this.cache = {}
         this.types_of_non_fixed = {}
+        this.readonly = readonly
+        if (readonly) {
+            Object.freeze(this.data)
+        }
         Object.freeze(this)
     }
     is_fixed (variable) {
@@ -89,6 +93,7 @@ class Scope {
         return has(variable, this.data)
     }
     declare (variable, initial_value, is_fixed = true, type = Any) {
+        assert(!this.readonly)
         assert(is(variable, Types.String))
         assert(is(is_fixed, Types.Bool))
         assert(is(type, Type))
@@ -100,6 +105,7 @@ class Scope {
         }
     }
     reset (variable, new_value) {
+        assert(!this.readonly)
         assert(is(variable, Types.String))
         ensure(this.has(variable), 'variable_not_declared', variable)
         ensure(!this.is_fixed(variable), 'variable_fixed', variable)
@@ -114,6 +120,7 @@ class Scope {
         return value
     }
     try_to_declare (variable, initial_value, is_fixed = true, type = null) {
+        assert(!this.readonly)
         assert(is(variable, Types.String))
         if (!this.has(variable)) {
             this.declare(variable, initial_value, is_fixed, type)

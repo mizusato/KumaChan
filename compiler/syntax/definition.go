@@ -102,41 +102,33 @@ var Keywords = [...] string {
 }
 
 
-/**
- *  Operator Info
- *
- *  If the 'Name' field starts with "_", the operator will be non-overloadable.
- *  If the 'Name' field ends with "*", the operator will be lazily-evaluated.
- *  These prefixes and suffixes will be normailized by NormalizeOperatorInfo().
- *  The value of the 'Priority' field must be non-negative.
- */
 var Operators = [...] Operator {
     /* Pull, Push, Derive, Otherwise */
-    Operator { Match: "<<",   Name: "pull",    Priority: 20,  Assoc: Right },
-    Operator { Match: ">>",   Name: "push",    Priority: 20,  Assoc: Left  },
-    Operator { Match: "=>",   Name: "drv*",    Priority: 20,  Assoc: Left  },
-    Operator { Match: "@or",  Name: "ow*",     Priority: 20,  Assoc: Left  },
+    Operator { Match: "<<",   Priority: 20,  Assoc: Right,  Lazy: false },
+    Operator { Match: ">>",   Priority: 20,  Assoc: Left,   Lazy: false  },
+    Operator { Match: "=>",   Priority: 20,  Assoc: Left,   Lazy: true  },
+    Operator { Match: "@or",  Priority: 20,  Assoc: Left,   Lazy: true  },
     /* Comparison */
-    Operator { Match: "<",    Name: "lt",      Priority: 30,  Assoc: Left  },
-    Operator { Match: ">",    Name: "gt",      Priority: 30,  Assoc: Left  },
-    Operator { Match: "<=",   Name: "lte",     Priority: 30,  Assoc: Left  },
-    Operator { Match: ">=",   Name: "gte",     Priority: 30,  Assoc: Left  },
-    Operator { Match: "==",   Name: "eq",      Priority: 30,  Assoc: Left  },
-    Operator { Match: "!=",   Name: "neq",     Priority: 30,  Assoc: Left  },
+    Operator { Match: "<",    Priority: 30,  Assoc: Left,   Lazy: false  },
+    Operator { Match: ">",    Priority: 30,  Assoc: Left,   Lazy: false  },
+    Operator { Match: "<=",   Priority: 30,  Assoc: Left,   Lazy: false  },
+    Operator { Match: ">=",   Priority: 30,  Assoc: Left,   Lazy: false  },
+    Operator { Match: "==",   Priority: 30,  Assoc: Left,   Lazy: false  },
+    Operator { Match: "!=",   Priority: 30,  Assoc: Left,   Lazy: false  },
     /* Logic */
-    Operator { Match: "@is",  Name: "_is",     Priority: 10,  Assoc: Left  },
-    Operator { Match: "&&",   Name: "and*",    Priority: 60,  Assoc: Left  },
-    Operator { Match: "||",   Name: "or*",     Priority: 50,  Assoc: Left  },
-    Operator { Match: "&",    Name: "ins",     Priority: 60,  Assoc: Left  },
-    Operator { Match: "|",    Name: "uni",     Priority: 50,  Assoc: Left  },
-    Operator { Match: `\`,    Name: "diff",    Priority: 40,  Assoc: Left  },
+    Operator { Match: "@is",  Priority: 10,  Assoc: Left,   Lazy: false  },
+    Operator { Match: "&&",   Priority: 60,  Assoc: Left,   Lazy: true  },
+    Operator { Match: "||",   Priority: 50,  Assoc: Left,   Lazy: true  },
+    Operator { Match: "&",    Priority: 60,  Assoc: Left,   Lazy: false  },
+    Operator { Match: "|",    Priority: 50,  Assoc: Left,   Lazy: false  },
+    Operator { Match: `\`,    Priority: 40,  Assoc: Left,   Lazy: false  },
     /* Arithmetic */
-    Operator { Match: "+",    Name: "plus",    Priority: 70,  Assoc: Left  },
-    Operator { Match: "-",    Name: "minus",   Priority: 70,  Assoc: Left  },
-    Operator { Match: "*",    Name: "times",   Priority: 80,  Assoc: Left  },
-    Operator { Match: "/",    Name: "divide",  Priority: 80,  Assoc: Left  },
-    Operator { Match: "%",    Name: "modulo",  Priority: 80,  Assoc: Left  },
-    Operator { Match: "^",    Name: "power",   Priority: 90,  Assoc: Right },
+    Operator { Match: "+",    Priority: 70,  Assoc: Left,   Lazy: false  },
+    Operator { Match: "-",    Priority: 70,  Assoc: Left,   Lazy: false  },
+    Operator { Match: "*",    Priority: 80,  Assoc: Left,   Lazy: false  },
+    Operator { Match: "/",    Priority: 80,  Assoc: Left,   Lazy: false  },
+    Operator { Match: "%",    Priority: 80,  Assoc: Left,   Lazy: false  },
+    Operator { Match: "^",    Priority: 90,  Assoc: Right,  Lazy: false },
 }
 
 
