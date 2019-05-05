@@ -151,6 +151,24 @@ func WriteList (buf *strings.Builder, strlist []string) {
 }
 
 
+func GetKey (tree Tree, ptr int) (string, string) {
+    if tree.Nodes[ptr].Part.Id != syntax.Name2Id["get"] {
+        panic("invalid usage of GetKey()")
+    }
+    // get = get_expr | get_name
+    var params = Children(tree, tree.Nodes[ptr].Children[0])
+    // get_expr = Get [ expr! ]! nil_flag
+    // get_name = Get . name! nil_flag
+    var nil_flag = Transpile(tree, params["nil_flag"])
+    var _, is_get_expr = params["expr"]
+    if is_get_expr {
+        return Transpile(tree, params["expr"]), nil_flag
+    } else {
+        return Transpile(tree, params["name"]), nil_flag
+    }
+}
+
+
 func ReduceExpression (operators []syntax.Operator) [][3]int {
     /**
      *  Reduce Expression using the Shunting Yard Algorithm

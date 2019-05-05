@@ -18,19 +18,11 @@ func TranspileOperationSequence (tree Tree, ptr int) [][]string {
         var op_node = &tree.Nodes[operation_ptr]
         var row, col = GetRowColInfo(tree, operation_ptr)
         if op_node.Part.Id == syntax.Name2Id["get"] {
-            // get = get_expr | get_name
-            var params = Children(tree, op_node.Children[0])
             // get_expr = Get [ expr! ]! nil_flag
             // get_name = Get . name! nil_flag
-            var key string
-            var _, is_get_expr = params["expr"]
-            if is_get_expr {
-                key = Transpile(tree, params["expr"])
-            } else {
-                key = Transpile(tree, params["name"])
-            }
+            var key, nil_flag = GetKey(tree, operation_ptr)
             operations = append(operations, []string {
-                "g", key, Transpile(tree, params["nil_flag"]),
+                "g", key, nil_flag,
                 file, row, col,
             })
         } else {
