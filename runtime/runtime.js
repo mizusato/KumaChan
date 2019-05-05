@@ -20,7 +20,7 @@
         overload, overload_added, overload_concated,
         create_interface, create_class,
         call, call_method,
-        RuntimeError,
+        RuntimeError, panic, create_error,
         helpers: get_helpers,
         scope: default_scopes
     }

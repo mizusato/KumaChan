@@ -80,6 +80,7 @@ var Tokens = [...] Token {
     Token { Name: "/",       Pattern: r(`\/`) },
     Token { Name: "%",       Pattern: r(`%`) },
     Token { Name: "^",       Pattern: r(`\^`) },
+    Token { Name: "EsId",    Pattern: r(`__[^`+Symbols+Blanks+LF+`]+`) },
     Token { Name: "Name",    Pattern: r(`[^`+Symbols+Blanks+LF+`]+`) },
     //    { Name: "Call",    [ Inserted by Scanner ] },
     //    { Name: "Get",     [ Inserted by Scanner ] },
@@ -89,14 +90,14 @@ var Tokens = [...] Token {
 
 var Keywords = [...] string {
     "@module", "@export", "@import", "@use", "@as",
-    "@if", "@else", "@switch", "@case", "@while", "@for", "@in",
+    "@if", "@else", "@elif", "@switch", "@case", "@while", "@for", "@in",
     "@break", "@continue", "@return",
     "@let", "@var", "@reset",
     "@set", "@do", "@nothing",
     "@function", "@generator", "@async", "@lambda",
     "@static", "@mock",
     "@throw", "@assert", "@ensure", "@try", "@to",
-    "@handle", "@unless", "@failed", "@finally",
+    "@handle", "@unless", "@failed", "@finally", "@panic",
     "@xml", "@map",
     "@struct", "@require", "@one", "@of",
     "@class", "@init", "@data", "@interface", "@expose",
@@ -160,14 +161,14 @@ var SyntaxDefinition = [...] string {
     "command = cmd_group1 | cmd_group2 | cmd_group3",
     "cmd_group1 = cmd_flow | cmd_yield | cmd_await | cmd_return | cmd_err",
     "cmd_group2 = cmd_module | cmd_scope | cmd_def",
-    "cmd_group3 = cmd_set | cmd_exec",
+    "cmd_group3 = cmd_pass | cmd_set | cmd_exec",
     /* Flow Control Commands @ Group 1 */
     "cmd_flow = cmd_if | cmd_switch | cmd_while | cmd_for | cmd_loop_ctrl",
     "block = { commands }!",
     "cmd_loop_ctrl = @break | @continue",
     "cmd_if = @if expr! block! elifs else",
     "elifs? = elif elifs",
-    "elif = @else @if expr! block!",
+    "elif = @else @if expr! block! | @elif expr! block!",
     "else? = @else expr! block!",
     "cmd_switch = @switch switch_content",
     "switch_content = { switch_branches! }! | expr { switch_branches! }!",
@@ -189,13 +190,14 @@ var SyntaxDefinition = [...] string {
     /* Return Command @ Group 1 */
     "cmd_return = @return Void | @return expr",
     /* Error Related Commands @ Group 1 */
-    "cmd_err = cmd_throw | cmd_assert | cmd_ensure | cmd_try",
+    "cmd_err = cmd_throw | cmd_assert | cmd_ensure | cmd_try | cmd_panic",
     "cmd_throw = @throw expr!",
     "cmd_assert = @assert expr!",
     "cmd_ensure = @ensure name! ensure_args { expr! }!",
     "ensure_args? = Call ( exprlist )",
-    "cmd_try = @try opt_to name : command!",
+    "cmd_try = @try opt_to name { commands }!",
     "opt_to? = @to",
+    "cmd_panic = @panic expr",
     /* Module Related Commands @ Group 2 */
     "cmd_module = cmd_use | cmd_import",
     "cmd_use = @use as_list",
@@ -211,6 +213,8 @@ var SyntaxDefinition = [...] string {
     /* Definition Commands @ Group 2 */
     "cmd_def = function | abs_def",
     "abs_def = struct | class | interface",
+    /* Pass Command @ Group 3 */
+    "cmd_pass = @do @nothing",
     /* Set Command @ Group 3 */
     "cmd_set = @set left_val = expr",
     "left_val = operand_base gets!",
@@ -291,7 +295,7 @@ var SyntaxDefinition = [...] string {
     "wrapped = ( expr! )!",
     "operand_tail? = get operand_tail | call operand_tail",
     "dot_para = . Name",
-    "identifier = Name",
+    "identifier = Name | EsId",
     "get = get_expr | get_name",
     "call = call_self | call_method",
     "get_expr = Get [ expr! ]! nil_flag",

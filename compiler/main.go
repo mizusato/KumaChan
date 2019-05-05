@@ -39,7 +39,7 @@ func test () {
     parser.PrintBareTree(tree.Nodes)
     fmt.Printf("\n")
     parser.PrintTree(tree)
-    var js = transpiler.Transpile(&tree, 0)
+    var js = transpiler.Transpile(&tree, -1)
     fmt.Println(js)
 }
 

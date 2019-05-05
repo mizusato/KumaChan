@@ -21,6 +21,8 @@ class UserlandTryFailed extends Error {
     }
 }
 
+class UserlandError extends Error {}
+
 
 let call_stack = []
 
@@ -68,6 +70,10 @@ function assert (value) {
 
 function panic (msg) {
     produce_error(`panic: ${msg}`)
+}
+
+function create_error (msg) {
+    return new UserlandError(msg)
 }
 
 function get_msg (msg_type, args) {

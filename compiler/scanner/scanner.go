@@ -75,7 +75,8 @@ func MatchToken (code Code, pos int) (amount int, id syntax.Id) {
 func IsRightParOrName (token *Token) bool {
     if token != nil {
         var name = syntax.Id2Name[token.Id]
-        if name == ")" || name == "]" || name == ">" || name == "Name" {
+        if ( name == ")" || name == "]" || name == ">" ||
+             name == "Name" || name == "EsId" ) {
             return true
         } else {
             return false

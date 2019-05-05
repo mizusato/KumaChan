@@ -120,7 +120,7 @@ function apply_implemented (interface_, instance) {
     })
 }
 
-function compare_proto (proto1, proto2) {
+function proto_equal (proto1, proto2) {
     // do type check before calling this function
     if (proto1.parameters.length !== proto2.parameters.length) {
         return false
@@ -138,17 +138,19 @@ function match_protos (method, protos) {
     assert(is(method, Types.Wrapped))
     assert(is(protos, Types.List))
     method = cancel_binding(method)
-    info = method[WrapperInfo]
-    assert(protos.length > 0)
-    let ok = true
-    for (let proto of protos) {
-        assert(is(proto, Prototype))
-        if(!compare_proto(info.proto, proto)) {
-            ok = false
-            break
-        }
+    let info = []
+    if (is(method, Types.Function)) {
+        info = [method[WrapperInfo]]
+    } else {
+        info = method[WrapperInfo].functions.map(f => f[WrapperInfo])
     }
-    return ok
+    assert(protos.length > 0)
+    return exists(
+        info,
+        I => exists(
+            protos, proto => proto_equal(proto, I.proto)
+        )
+    )
 }
 
 
@@ -289,17 +291,17 @@ function call_method (
     if (is(object, Types.Instance)) {
         // OO: find the method on the instance object
         let method = object.methods[method_name]
-        ensure(method, 'method_not_found', method_name)
-        // call the method
-        return call(method, args, file, row, col)
-    } else {
-        // UFCS: find the method in the caller scope
-        let method = caller_scope.lookup(method_name)
-        let found = (method != NotFound && is(method, Types.ES_Function))
-        ensure(found, 'method_not_found', method_name)
-        // call the method
-        return call(method, [object, ...args], file, row, col)
+        if (method) {
+            // if exists, call the method
+            return call(method, args, file, row, col)
+        }
     }
+    // UFCS: find the method in the caller scope
+    let method = caller_scope.lookup(method_name)
+    let found = (method != NotFound && is(method, Types.ES_Function))
+    ensure(found, 'method_not_found', method_name)
+    // call the method
+    return call(method, [object, ...args], file, row, col)
 }
 
 

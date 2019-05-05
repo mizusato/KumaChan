@@ -14,6 +14,15 @@ type TransFunction = func(Tree, int) string
 var TransMap = make(map[syntax.Id]TransFunction)
 
 func Transpile (tree Tree, ptr int) string {
+    // hash returned by Children() is of type map[string]int,
+    // which will return 0 if non-existing key requested.
+    // so we use -1 to indicate root node instead
+    if ptr == 0 {
+        panic("invalid usage of Transpile(): please use ptr=-1 for root node")
+    }
+    if ptr == -1 {
+        ptr = 0
+    }
     var id = tree.Nodes[ptr].Part.Id
     // fmt.Printf("transpile: %v\n", syntax.Id2Name[id])
     var f, exists = TransMap[id]
@@ -68,11 +77,6 @@ func Children (tree Tree, ptr int) map[string]int {
         var name = syntax.Id2Name[tree.Nodes[child_ptr].Part.Id]
         hash[name] = child_ptr
     }
-    /**
-     *  IMPORTANT:
-     *      If hash[item] does not exist, 0 will be returned.
-     *      This behaviour may cause infinite recursion.
-     */
     return hash
 }
 

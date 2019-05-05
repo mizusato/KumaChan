@@ -65,7 +65,14 @@ var TransMapByName = map[string]TransFunction {
         return buf.String()
     },
     "identifier": func (tree Tree, ptr int) string {
-        return VarLookup(GetTokenContent(tree, ptr))
+        var children = Children(tree, ptr)
+        var _, is_es = children["EsId"]
+        var content = GetTokenContent(tree, ptr)
+        if is_es {
+            return string(content[2:])
+        } else {
+            return VarLookup(content)
+        }
     },
     "primitive": TranspileFirstChild,
     "string": func (tree Tree, ptr int) string {
