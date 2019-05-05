@@ -90,10 +90,7 @@ func GetRowColInfo (tree Tree, ptr int) (string, string) {
 }
 
 func ApplyRules () {
-    var rules = []map[string]TransFunction {
-        Expressions, Containers, Functions,
-    }
-    for _, item := range rules {
+    for _, item := range Rules {
         for key, value := range item {
             var _, exists = TransMapByName[key]
             if exists { panic("duplicate transpilation rule for " + key) }

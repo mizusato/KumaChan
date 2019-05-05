@@ -298,6 +298,7 @@ inject_desc(inject_ensure_args, 'inject_ensure_args')
 
 
 let get_helpers = scope => ({
+    a: Types.Any,
     c: call,
     m: bind_method_call(scope),
     o: get_operator,

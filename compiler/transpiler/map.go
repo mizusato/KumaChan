@@ -5,6 +5,11 @@ import "strings"
 import "../syntax"
 
 
+var Rules = []map[string]TransFunction {
+    Expressions, Containers, Functions, CommandsMap,
+}
+
+
 var TransMapByName = map[string]TransFunction {
 
     // program = module | eval
@@ -15,10 +20,7 @@ var TransMapByName = map[string]TransFunction {
         var command = TranspileFirstChild(tree, ptr)
         var buf strings.Builder
         buf.WriteString(BareFunction("return " + command))
-        buf.WriteRune('(')
-        buf.WriteString(Runtime)
-        buf.WriteString(".scope.Eval")
-        buf.WriteRune(')')
+        fmt.Fprintf(&buf, "(%v.scope.Eval)", Runtime)
         return buf.String()
     },
 
@@ -27,20 +29,6 @@ var TransMapByName = map[string]TransFunction {
     "cmd_group1": TranspileFirstChild,
     "cmd_group2": TranspileFirstChild,
     "cmd_group3": TranspileFirstChild,
-    // cmd_def = function | abs_def
-    "cmd_def": TranspileFirstChild,
-    // cmd_exec = expr
-    "cmd_exec": TranspileFirstChild,
-    // cmd_return = @return Void | @return expr
-    "cmd_return": func (tree Tree, ptr int) string {
-        var children = Children(tree, ptr)
-        var expr, exists = children["expr"]
-        if exists {
-            return fmt.Sprintf("return %v", Transpile(tree, expr))
-        } else {
-            return "return v"
-        }
-    },
 
     // literal = primitive | adv_literal
     "literal": TranspileFirstChild,
@@ -65,14 +53,7 @@ var TransMapByName = map[string]TransFunction {
         return buf.String()
     },
     "identifier": func (tree Tree, ptr int) string {
-        var children = Children(tree, ptr)
-        var _, is_es = children["EsId"]
-        var content = GetTokenContent(tree, ptr)
-        if is_es {
-            return string(content[2:])
-        } else {
-            return VarLookup(content)
-        }
+        return VarLookup(GetTokenContent(tree, ptr))
     },
     "primitive": TranspileFirstChild,
     "string": func (tree Tree, ptr int) string {

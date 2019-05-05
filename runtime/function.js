@@ -169,7 +169,7 @@ function new_scope (context) {
      assert(is(f, Types.ES_Function))
       let scope = new Scope(context)
       f(scope)
-      return copy(scope.data)
+      return scope
  }
 
  function wrap (context, proto, vals, desc, raw) {
