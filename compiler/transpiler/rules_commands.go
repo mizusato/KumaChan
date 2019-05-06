@@ -27,7 +27,12 @@ var CommandsMap = map[string]TransFunction {
         var name = Transpile(tree, children["name"])
         var T = Transpile(tree, children["var_type"])
         var value = Transpile(tree, children["expr"])
-        return fmt.Sprintf("dl(%v, %v, true, %v)", name, value, T)
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
+        return fmt.Sprintf(
+            "c(dl, [%v, %v, true, %v], %v, %v, %v)",
+            name, value, T, file, row, col,
+        )
     },
     // cmd_var = @var name var_type = expr
     "cmd_var": func (tree Tree, ptr int) string {
@@ -35,14 +40,24 @@ var CommandsMap = map[string]TransFunction {
         var name = Transpile(tree, children["name"])
         var T = Transpile(tree, children["var_type"])
         var value = Transpile(tree, children["expr"])
-        return fmt.Sprintf("dl(%v, %v, false, %v)", name, value, T)
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
+        return fmt.Sprintf(
+            "c(dl, [%v, %v, false, %v], %v, %v, %v)",
+            name, value, T, file, row, col,
+        )
     },
     // cmd_reset = @reset name = expr
     "cmd_reset": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
         var name = Transpile(tree, children["name"])
         var value = Transpile(tree, children["expr"])
-        return fmt.Sprintf("rt(%v, %v)", name, value)
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
+        return fmt.Sprintf(
+            "c(rt, [%v, %v], %v, %v, %v)",
+            name, value, file, row, col,
+        )
     },
     // var_type? = : type
     "var_type": func (tree Tree, ptr int) string {

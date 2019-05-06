@@ -100,6 +100,7 @@ class Scope {
         if (!is_fixed) {
             this.types_of_non_fixed[variable] = type
         }
+        return Void
     }
     reset (variable, new_value) {
         assert(!this.readonly)
@@ -109,6 +110,7 @@ class Scope {
         let type_ok = is(new_value, this.types_of_non_fixed[variable])
         ensure(type_ok, 'variable_invalid', variable)
         this.data[variable] = new_value
+        return Void
     }
     lookup (variable) {
         assert(is(variable, Types.String))

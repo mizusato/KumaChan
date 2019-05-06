@@ -1,4 +1,7 @@
+let IndexType = Ins(Types.Int, $(x => x >= 0))
+
 pour(Types, {
+    Object: Types.Any,
     Callable: Uni(Types.ES_Function, Types.TypeTemplate, Types.Class),
     Iterable: $(x => typeof x[Symbol.iterator] == 'function'),
     Arity: template(fun(
@@ -6,7 +9,9 @@ pour(Types, {
             n => Ins(Types.Function, $(
                 f => f[WrapperInfo].proto.parameters.length == n
             ))
-    ))
+    )),
+    Index: IndexType,
+    Size: IndexType
 })
 
 Object.freeze(Types)
@@ -15,7 +20,7 @@ Object.freeze(Types)
 let Global = new Scope(null, {
     Type: Type,
     Any: Types.Any,
-    Object: Types.Any,
+    Object: Types.Object,
     Nil: Nil,
     Void: Void,
     Bool: Types.Bool,
@@ -49,6 +54,34 @@ function lazy_bool (arg, desc, name) {
     ensure(is(arg, Types.Bool), 'arg_require_bool', name)
     return arg
 }
+
+let get_data = f (
+    'get_data',
+    'function get_data (nil: Nil, k: Any, nf: Bool) -> Object',
+        () => Nil,
+    'function get_data (l: List, i: Index, nf: Bool) -> Object',
+        (l, i, nf) => (i < l.length)? l[i]: (ensure(nf, 'index_error', i), Nil),
+    'function get_data (h: Hash, k: String, nf: Bool) -> Object',
+        (h, k, nf) => has(k, h)? h[k]: (ensure(nf, 'key_error', k), Nil)
+)
+
+let set_data = f (
+    'set_data',
+    'function set_data (nil: Nil, k: Any, v: Any) -> Void',
+        () => Void,
+    'function set_data (l: List, i: Index, v: Any) -> Void',
+        (l, i, v) => {
+            ensure(i < l.length, 'index_error', i)
+            l[i] = v
+            return Void
+        },
+    'function set_data (h: Hash, k: String, v: Any) -> Void',
+        (h, k, v) => {
+            h[k] = v
+            return Void
+        }
+)
+
 
 let string_format = f (
     'string_format',
@@ -305,8 +338,10 @@ let get_helpers = scope => ({
     id: inject_desc(scope.lookup.bind(scope), 'lookup_variable'),
     dl: inject_desc(scope.declare.bind(scope), 'declare_variable'),
     rt: inject_desc(scope.reset.bind(scope), 'reset_variable'),
-    w: (proto, vals, desc, raw) => wrap(scope, proto, vals, desc, raw),
+    g: (o, k, nf, f, r, c) => call(get_data, [o, k, nf], f, r, c),
+    s: set_data,
     gv: f => get_vals(f, scope),
+    w: (proto, vals, desc, raw) => wrap(scope, proto, vals, desc, raw),
     cl: create_class,
     it: create_interface,
     ef: ensure_failed,

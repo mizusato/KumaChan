@@ -58,5 +58,7 @@ const MSG = {
     ),
     format_not_all_converted: (
         'not all arguments converted during formatting string'
-    )
+    ),
+    key_error: key => `key "${key}" does not exist`,
+    index_error: index => `index ${index} out of range`
 }

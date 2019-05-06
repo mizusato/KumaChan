@@ -95,7 +95,7 @@ func GetOperatorInfo (tree Tree, ptr int) syntax.Operator {
 func WriteHelpers (buf *strings.Builder, scope_name string) {
     fmt.Fprintf(
         buf,
-        "let {a,c,m,o,id,dl,rt,w,gv,v} = %v.helpers(%v); ",
+        "let {a,c,m,o,id,dl,rt,g,s,gv,w,v} = %v.helpers(%v); ",
         Runtime, scope_name,
     )
 }
