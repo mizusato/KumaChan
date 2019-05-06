@@ -53,6 +53,7 @@ var TransMapByName = map[string]TransFunction {
         return buf.String()
     },
     "identifier": func (tree Tree, ptr int) string {
+        // depended by CommandsMap["reset"]
         return VarLookup(GetTokenContent(tree, ptr))
     },
     "primitive": TranspileFirstChild,

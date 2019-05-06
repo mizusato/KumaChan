@@ -162,6 +162,7 @@ var Expressions = map[string]TransFunction {
     "wrapped": TranspileChild("expr"),
     // operator = op_group1 | op_compare | op_logic | op_arith
     "operator": func (tree Tree, ptr int) string {
+        // depended by CommandsMap["set_op"]
         var info = GetOperatorInfo(tree, ptr)
         var buf strings.Builder
         buf.WriteString("__.o")

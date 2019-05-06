@@ -81,7 +81,10 @@ func GetWholeContent (tree Tree, ptr int) []rune {
 
 
 func GetOperatorInfo (tree Tree, ptr int) syntax.Operator {
-    if tree.Nodes[ptr].Part.Id != syntax.Name2Id["operator"] {
+    var Id = tree.Nodes[ptr].Part.Id
+    var OpId = syntax.Name2Id["operator"]
+    var SopId = syntax.Name2Id["set_op"]
+    if Id != OpId && Id != SopId {
         panic("unable to get operator info of non-operator")
     }
     var group_ptr = tree.Nodes[ptr].Children[0]

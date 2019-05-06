@@ -49,15 +49,28 @@ var CommandsMap = map[string]TransFunction {
     },
     // cmd_reset = @reset name = expr
     "cmd_reset": func (tree Tree, ptr int) string {
-        var children = Children(tree, ptr)
-        var name = Transpile(tree, children["name"])
-        var value = Transpile(tree, children["expr"])
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
+        var children = Children(tree, ptr)
+        var name_ptr = children["name"]
+        var name = Transpile(tree, name_ptr)
+        var value = Transpile(tree, children["expr"])
+        var op_ptr = children["set_op"]
+        if NotEmpty(tree, op_ptr) {
+            value = fmt.Sprintf(
+                "__.c(%v, [%v, %v], %v, %v, %v)",
+                Transpile(tree, op_ptr),
+                TransMapByName["identifier"](tree, name_ptr),
+                value, file, row, col,
+            )
+        }
         return fmt.Sprintf(
             "__.c(rt, [%v, %v], %v, %v, %v)",
             name, value, file, row, col,
         )
+    },
+    "set_op": func (tree Tree, ptr int) string {
+        return TransMapByName["operator"](tree, ptr)
     },
     // var_type? = : type
     "var_type": func (tree Tree, ptr int) string {
@@ -93,6 +106,18 @@ var CommandsMap = map[string]TransFunction {
         var object = t
         var row, col = GetRowColInfo(tree, ptr)
         var set_key, _ = GetKey(tree, tail)
+        var op_ptr = children["set_op"]
+        if NotEmpty(tree, op_ptr) {
+            var operator = Transpile(tree, op_ptr)
+            var previous = fmt.Sprintf(
+                "__.g(%v, %v, %v, %v, %v, %v)",
+                object, set_key, "false", file, row, col,
+            )
+            value = fmt.Sprintf(
+                "__.c(%v, [%v, %v], %v, %v, %v)",
+                operator, previous, value, file, row, col,
+            )
+        }
         return fmt.Sprintf(
             "__.c(__.s, [%v, %v, %v], %v, %v, %v)",
             object, set_key, value, file, row, col,

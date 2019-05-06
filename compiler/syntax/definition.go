@@ -208,14 +208,15 @@ var SyntaxDefinition = [...] string {
     "cmd_let = @let name var_type = expr",
     "cmd_var = @var name var_type = expr",
     "var_type? = : type",
-    "cmd_reset = @reset name = expr",
+    "cmd_reset = @reset name set_op = expr",
+    "set_op? = op_arith",
     /* Definition Commands @ Group 2 */
     "cmd_def = function | abs_def",
     "abs_def = struct | class | interface",
     /* Pass Command @ Group 3 */
     "cmd_pass = @do @nothing",
     /* Set Command @ Group 3 */
-    "cmd_set = @set left_val = expr",
+    "cmd_set = @set left_val set_op = expr",
     "left_val = operand_base gets!",
     "gets? = get gets",
     /* Exec Command @ Group 3 */
