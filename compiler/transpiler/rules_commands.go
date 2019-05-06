@@ -1,7 +1,8 @@
 package transpiler
 
 import "fmt"
-// import "strings"
+import "strings"
+import "../syntax"
 
 
 var CommandsMap = map[string]TransFunction {
@@ -122,5 +123,75 @@ var CommandsMap = map[string]TransFunction {
             "__.c(__.s, [%v, %v, %v], %v, %v, %v)",
             object, set_key, value, file, row, col,
         )
+    },
+    // cmd_flow = cmd_if | cmd_switch | cmd_while | cmd_for | cmd_loop_ctrl
+    "cmd_flow": TranspileFirstChild,
+    // block = { commands }!
+    "block": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var commands = Commands(tree, children["commands"], false)
+        var ProgramId = syntax.Name2Id["program"]
+        var BodyId = syntax.Name2Id["body"]
+        var BlockId = syntax.Name2Id["block"]
+        var depth = 0
+        var node = tree.Nodes[ptr]
+        for node.Part.Id != BodyId && node.Part.Id != ProgramId {
+            if node.Part.Id == BlockId {
+                depth += 1
+            }
+            node = tree.Nodes[node.Parent]
+        }
+        var upper string
+        if depth-1 > 0 {
+            upper = fmt.Sprintf("scope%v", depth-1)
+        } else {
+            upper = "scope"
+        }
+        var current = fmt.Sprintf("scope%v", depth)
+        var buf strings.Builder
+        buf.WriteString("{ ")
+        fmt.Fprintf(
+            &buf, "let %v = %v.new_scope(%v); ",
+            current, Runtime, upper,
+        )
+        WriteHelpers(&buf, current)
+        buf.WriteString(commands)
+        buf.WriteString(" }")
+        return buf.String()
+    },
+    // cmd_if = @if expr! block! elifs else
+    "cmd_if": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var condition = Transpile(tree, children["expr"])
+        var block = Transpile(tree, children["block"])
+        var elifs = Transpile(tree, children["elifs"])
+        var else_ = Transpile(tree, children["else"])
+        return fmt.Sprintf("if (%v) %v%v%v", condition, block, elifs, else_)
+    },
+    // elifs? = elif elifs
+    "elifs": func (tree Tree, ptr int) string {
+        var elif_ptrs = FlatSubTree(tree, ptr, "elif", "elifs")
+        var buf strings.Builder
+        for _, elif_ptr := range elif_ptrs {
+            buf.WriteString(Transpile(tree, elif_ptr))
+        }
+        return buf.String()
+    },
+    // elif = @else @if expr! block! | @elif expr! block!
+    "elif": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var condition = Transpile(tree, children["expr"])
+        var block = Transpile(tree, children["block"])
+        return fmt.Sprintf(" else if (%v) %v", condition, block)
+    },
+    // else? = @else block!
+    "else": func (tree Tree, ptr int) string {
+        if NotEmpty(tree, ptr) {
+            var children = Children(tree, ptr)
+            var block = Transpile(tree, children["block"])
+            return fmt.Sprintf(" else %v", block)
+        } else {
+            return ""
+        }
     },
 }

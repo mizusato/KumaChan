@@ -18,8 +18,18 @@ var TransMapByName = map[string]TransFunction {
     // eval = command
     "eval": func (tree Tree, ptr int) string {
         var command = TranspileFirstChild(tree, ptr)
+        var command_ptr = tree.Nodes[ptr].Children[0]
+        var group_ptr = tree.Nodes[command_ptr].Children[0]
+        var real_cmd_ptr = tree.Nodes[group_ptr].Children[0]
+        var FlowId = syntax.Name2Id["cmd_flow"]
+        var body string
+        if tree.Nodes[real_cmd_ptr].Part.Id == FlowId {
+            body = fmt.Sprintf("%v; return __.v;", command)
+        } else {
+            body = fmt.Sprintf("return %v", command)
+        }
         var buf strings.Builder
-        buf.WriteString(BareFunction("return " + command))
+        buf.WriteString(BareFunction(body))
         fmt.Fprintf(&buf, "(%v.scope.Eval)", Runtime)
         return buf.String()
     },

@@ -43,6 +43,10 @@ let Global = new Scope(null, {
         null: null,
         Symbol: ES.Symbol
     },
+    print: fun (
+        'function print (s: String) -> Void',
+        s => (console.log(s), Void)
+    )
 }, true)
 
 let Eval = new Scope(Global)
