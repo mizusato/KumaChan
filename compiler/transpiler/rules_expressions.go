@@ -22,7 +22,7 @@ func TranspileOperationSequence (tree Tree, ptr int) [][]string {
             // get_name = Get . name! nil_flag
             var key, nil_flag = GetKey(tree, operation_ptr)
             operations = append(operations, []string {
-                "g", key, nil_flag,
+                "__.g", key, nil_flag,
                 file, row, col,
             })
         } else {
@@ -40,7 +40,7 @@ func TranspileOperationSequence (tree Tree, ptr int) [][]string {
                 })
             } else {
                 operations = append(operations, []string {
-                    "c", args, file, row, col,
+                    "__.c", args, file, row, col,
                 })
             }
         }
@@ -84,7 +84,7 @@ var Expressions = map[string]TransFunction {
                 real_operand2 = operand2
             }
             return fmt.Sprintf(
-                "c(%v, [%v, %v], %v, %v, %v)",
+                "__.c(%v, [%v, %v], %v, %v, %v)",
                 operator, operand1, real_operand2,
                 file, row, col,
             )
@@ -144,13 +144,13 @@ var Expressions = map[string]TransFunction {
         var child_node = &tree.Nodes[child_ptr]
         switch name := syntax.Id2Name[child_node.Part.Id]; name {
         case "@not":
-            return `o("not")`
+            return `__.o("not")`
         case "~":
-            return `o("~")`
+            return `__.o("~")`
         case "-":
-            return `o("-")`
+            return `__.o("-")`
         case "!":
-            return `o("!")`
+            return `__.o("!")`
         case "@expose":
             return "expose"
         default:
@@ -164,7 +164,7 @@ var Expressions = map[string]TransFunction {
     "operator": func (tree Tree, ptr int) string {
         var info = GetOperatorInfo(tree, ptr)
         var buf strings.Builder
-        buf.WriteString("o")
+        buf.WriteString("__.o")
         buf.WriteRune('(')
         var name = strings.TrimPrefix(info.Match, "@")
         buf.WriteString(EscapeRawString([]rune(name)))

@@ -16,7 +16,7 @@ var CommandsMap = map[string]TransFunction {
         if exists {
             return fmt.Sprintf("return %v", Transpile(tree, expr))
         } else {
-            return "return v"
+            return "return __.v"
         }
     },
     // cmd_scope = cmd_let | cmd_var | cmd_reset
@@ -30,7 +30,7 @@ var CommandsMap = map[string]TransFunction {
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
         return fmt.Sprintf(
-            "c(dl, [%v, %v, true, %v], %v, %v, %v)",
+            "__.c(dl, [%v, %v, true, %v], %v, %v, %v)",
             name, value, T, file, row, col,
         )
     },
@@ -43,7 +43,7 @@ var CommandsMap = map[string]TransFunction {
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
         return fmt.Sprintf(
-            "c(dl, [%v, %v, false, %v], %v, %v, %v)",
+            "__.c(dl, [%v, %v, false, %v], %v, %v, %v)",
             name, value, T, file, row, col,
         )
     },
@@ -55,7 +55,7 @@ var CommandsMap = map[string]TransFunction {
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
         return fmt.Sprintf(
-            "c(rt, [%v, %v], %v, %v, %v)",
+            "__.c(rt, [%v, %v], %v, %v, %v)",
             name, value, file, row, col,
         )
     },
@@ -64,7 +64,7 @@ var CommandsMap = map[string]TransFunction {
         if NotEmpty(tree, ptr) {
             return TranspileLastChild(tree, ptr)
         } else {
-            return "a"   // Types.Any
+            return "__.a"   // Types.Any
         }
     },
     // cmd_set = @set left_val = expr
@@ -86,7 +86,7 @@ var CommandsMap = map[string]TransFunction {
             var row, col = GetRowColInfo(tree, get)
             var key, nil_flag = GetKey(tree, get)
             t = fmt.Sprintf(
-                "g(%v, %v, %v, %v, %v, %v)",
+                "__.g(%v, %v, %v, %v, %v, %v)",
                 t, key, nil_flag, file, row, col,
             )
         }
@@ -94,7 +94,7 @@ var CommandsMap = map[string]TransFunction {
         var row, col = GetRowColInfo(tree, ptr)
         var set_key, _ = GetKey(tree, tail)
         return fmt.Sprintf(
-            "c(s, [%v, %v, %v], %v, %v, %v)",
+            "__.c(__.s, [%v, %v, %v], %v, %v, %v)",
             object, set_key, value, file, row, col,
         )
     },

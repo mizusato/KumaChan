@@ -330,22 +330,29 @@ function inject_ensure_args (scope, names, e) {
 inject_desc(inject_ensure_args, 'inject_ensure_args')
 
 
-let get_helpers = scope => ({
+let global_helpers = {
     a: Types.Any,
     c: call,
-    m: bind_method_call(scope),
     o: get_operator,
-    id: inject_desc(scope.lookup.bind(scope), 'lookup_variable'),
-    dl: inject_desc(scope.declare.bind(scope), 'declare_variable'),
-    rt: inject_desc(scope.reset.bind(scope), 'reset_variable'),
     g: (o, k, nf, f, r, c) => call(get_data, [o, k, nf], f, r, c),
     s: set_data,
-    gv: f => get_vals(f, scope),
-    w: (proto, vals, desc, raw) => wrap(scope, proto, vals, desc, raw),
     cl: create_class,
     it: create_interface,
     ef: ensure_failed,
     tf: try_failed,
     ie: inject_ensure_args,
     v: Void
+}
+
+Object.freeze(global_helpers)
+
+
+let get_helpers = scope => ({
+    m: bind_method_call(scope),
+    id: inject_desc(scope.lookup.bind(scope), 'lookup_variable'),
+    dl: inject_desc(scope.declare.bind(scope), 'declare_variable'),
+    rt: inject_desc(scope.reset.bind(scope), 'reset_variable'),
+    gv: f => get_vals(f, scope),
+    w: (proto, vals, desc, raw) => wrap(scope, proto, vals, desc, raw),
+    __: global_helpers
 })

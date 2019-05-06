@@ -75,7 +75,7 @@ var Functions = map[string]TransFunction {
             buf.WriteString(commands)
             buf.WriteString(" } ")
             buf.WriteString(catch_and_finally)
-            buf.WriteString(" return v;")
+            buf.WriteString(" return __.v;")
             return buf.String()
         } else {
             return commands
@@ -132,7 +132,7 @@ var Functions = map[string]TransFunction {
         var buf strings.Builder
         fmt.Fprintf(&buf, "if (e.type === 1 && e.name === %v)", name)
         buf.WriteString(" { ")
-        buf.WriteString("call(")
+        buf.WriteString("__.c(")
         WriteList(&buf, []string {
             "ie",
             fmt.Sprintf("[handle_scope, %v, e]", params),
@@ -156,9 +156,8 @@ var Functions = map[string]TransFunction {
         var children = Children(tree, ptr)
         var name = Transpile(tree, children["name"])
         var buf strings.Builder
-        buf.WriteString("if (e.type === 2 && e.name === ")
-        buf.WriteString(name)
-        buf.WriteString(") { ")
+        fmt.Fprintf(&buf, "if (e.type === 2 && e.name === %v)", name)
+        buf.WriteString(" { ")
         buf.WriteString(Commands(tree, children["commands"], false))
         buf.WriteString(" }")
         return buf.String()
@@ -217,7 +216,7 @@ var Functions = map[string]TransFunction {
             var key = TranspileLastChild(tree, get)
             var row, col = GetRowColInfo(tree, get)
             var buf strings.Builder
-            buf.WriteString("g")
+            buf.WriteString("__.g")
             buf.WriteRune('(')
             WriteList(&buf, []string {
                 t, key, "false", file, row, col,
@@ -230,7 +229,7 @@ var Functions = map[string]TransFunction {
             var args = Transpile(tree, args_ptr)
             var row, col = GetRowColInfo(tree, args_ptr)
             var buf strings.Builder
-            buf.WriteString("c")
+            buf.WriteString("__.c")
             buf.WriteRune('(')
             WriteList(&buf, []string {
                 t, args, file, row, col,
