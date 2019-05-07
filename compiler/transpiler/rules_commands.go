@@ -194,4 +194,37 @@ var CommandsMap = map[string]TransFunction {
             return ""
         }
     },
+    // cmd_switch = @switch { cases default }!
+    "cmd_switch": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var cases = Transpile(tree, children["cases"])
+        var default_ = Transpile(tree, children["default"])
+        return fmt.Sprintf("if (false) { void(0) }%v%v", cases, default_)
+    },
+    // cases? = case cases
+    "cases": func (tree Tree, ptr int) string {
+        var case_ptrs = FlatSubTree(tree, ptr, "case", "cases")
+        var buf strings.Builder
+        for _, case_ptr := range case_ptrs {
+            buf.WriteString(Transpile(tree, case_ptr))
+        }
+        return buf.String()
+    },
+    // case = @case expr! block!
+    "case": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var condition = Transpile(tree, children["expr"])
+        var block = Transpile(tree, children["block"])
+        return fmt.Sprintf(" else if (%v) %v", condition, block)
+    },
+    // default? = @default block!
+    "default": func (tree Tree, ptr int) string {
+        if NotEmpty(tree, ptr) {
+            var children = Children(tree, ptr)
+            var block = Transpile(tree, children["block"])
+            return fmt.Sprintf(" else %v", block)
+        } else {
+            return ""
+        }
+    },
 }

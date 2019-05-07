@@ -119,7 +119,7 @@ var Expressions = map[string]TransFunction {
         var has_unary = NotEmpty(tree, unary_ptr)
         if has_unary {
             var unary = Transpile(tree, unary_ptr)
-            buf.WriteString("c")
+            buf.WriteString("__.c")
             buf.WriteRune('(')
             buf.WriteString(unary)
             buf.WriteString(", ")
