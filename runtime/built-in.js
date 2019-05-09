@@ -87,6 +87,15 @@ let set_data = f (
 )
 
 
+let for_loop = f (
+    'for_loop',
+    'function for_loop (h: Hash) -> Iterable',
+        h => mapkv(h, (k, v) => ({ key: k, value: v })),
+    'function for_loop (i: Iterable) -> Iterable',
+        i => map(i, (e, i) => ({ key: i, value: e }))
+)
+
+
 let string_format = f (
     'string_format',
     'function string_format (s: String, h: Hash) -> String',
@@ -345,6 +354,7 @@ let global_helpers = {
     ef: ensure_failed,
     tf: try_failed,
     ie: inject_ensure_args,
+    f: for_loop,
     v: Void
 }
 

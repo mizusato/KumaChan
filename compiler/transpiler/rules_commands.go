@@ -133,6 +133,7 @@ var CommandsMap = map[string]TransFunction {
         var ProgramId = syntax.Name2Id["program"]
         var BodyId = syntax.Name2Id["body"]
         var BlockId = syntax.Name2Id["block"]
+        var ForId = syntax.Name2Id["cmd_for"]
         var depth = 0
         var node = tree.Nodes[ptr]
         for node.Part.Id != BodyId && node.Part.Id != ProgramId {
@@ -155,6 +156,11 @@ var CommandsMap = map[string]TransFunction {
             current, Runtime, upper,
         )
         WriteHelpers(&buf, current)
+        var parent_node = tree.Nodes[tree.Nodes[ptr].Parent]
+        if parent_node.Part.Id == ForId {
+            buf.WriteString("if (l.key) { dl(l.key, I.key) }; ")
+            buf.WriteString("if (l.value) { dl(l.value, I.value) }; ")
+        }
         buf.WriteString(commands)
         buf.WriteString(" }")
         return buf.String()
@@ -227,4 +233,45 @@ var CommandsMap = map[string]TransFunction {
             return ""
         }
     },
+    // cmd_for = @for for_params! @in expr! block!
+    "cmd_for": func (tree Tree, ptr int) string {
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
+        var children = Children(tree, ptr)
+        var params = Transpile(tree, children["for_params"])
+        var expr = Transpile(tree, children["expr"])
+        var block = Transpile(tree, children["block"])
+        return fmt.Sprintf(
+            "for (let I of __.c(__.f, [%v], %v, %v, %v)) { %v %v; }",
+            expr, file, row, col, params, block,
+        )
+    },
+    // for_params = for_params_list | for_params_hash | for_params_value
+    "for_params": TranspileFirstChild,
+    // for_params_list = for_value [ for_index! ]!
+    "for_params_list": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var value = Transpile(tree, children["for_value"])
+        var key = Transpile(tree, children["for_index"])
+        return fmt.Sprintf("let l = { key: %v, value: %v };", key, value)
+    },
+    // for_params_hash = { for_key :! for_value! }!
+    "for_params_hash": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var key = Transpile(tree, children["for_key"])
+        var value = Transpile(tree, children["for_value"])
+        return fmt.Sprintf("let l = { key: %v, value: %v };", key, value)
+    },
+    // for_params_value = for_value
+    "for_params_value": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var value = Transpile(tree, children["for_value"])
+        return fmt.Sprintf("let l = { value: %v };", value)
+    },
+    // for_value = name
+    "for_value": TranspileFirstChild,
+    // for_index = name
+    "for_index": TranspileFirstChild,
+    // for_key = name
+    "for_key": TranspileFirstChild,
 }
