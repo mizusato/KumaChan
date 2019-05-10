@@ -11,10 +11,31 @@ pour(Types, {
             ))
     )),
     Index: IndexType,
-    Size: IndexType
+    Size: IndexType,
+    Error: $(x => x instanceof Error)
 })
 
 Object.freeze(Types)
+
+
+let print = f (
+    'print',
+    'function print (p: Bool) -> Void',
+        x => (console.log(x.toString()), Void),
+    'function print (x: Number) -> Void',
+        x => (console.log(x.toString()), Void),
+    'function print (s: String) -> Void',
+        s => (console.log(s), Void)
+)
+
+
+let wrapped_create_error = f (
+    'create_error',
+    'function create_error (msg: String) -> Error',
+        msg => create_error(msg),
+    'function create_error (name: String, msg: String) -> Error',
+        (name, msg) => create_error(msg, name)
+)
 
 
 let Global = new Scope(null, {
@@ -38,15 +59,14 @@ let Global = new Scope(null, {
     List: Types.List,
     Hash: Types.Hash,
     Iterable: Types.Iterable,
+    Error: Types.Error,
     es: {
         undefined: undefined,
         null: null,
         Symbol: ES.Symbol
     },
-    print: fun (
-        'function print (s: String) -> Void',
-            s => (console.log(s), Void)
-    )
+    print: print,
+    create_error: wrapped_create_error
 }, true)
 
 let Eval = new Scope(Global)
@@ -319,18 +339,35 @@ function require_bool (value) {
 }
 
 
-function ensure_failed (e, name, args) {
-    // TODO: record throw position
-    e.type = 1
-    e.info = { name, args }
-    throw new UserlandEnsureFailed(name)
+let wrapped_assert = fun (
+    'function assert (p: Bool) -> Void',
+        p => (assert(p), Void)
+)
+
+let wrapped_panic = fun (
+    'function panic (msg: String) -> Void',
+        msg => panic(msg)
+)
+
+let wrapped_throw = fun (
+    'function throw (e: Error) -> Void',
+        e => { throw e }
+)
+
+function ensure_failed (e, name, args, file, row, col) {
+    if (e) {
+        e.type = 1
+        pour(e, { name, args })
+    }
+    throw new EnsureFailed(name, file, row, col)
 }
 
-function try_failed (e, name) {
-    // TODO: record throw position
-    e.type = 2
-    e.info = { name }
-    throw new UserlandTryFailed(name)
+function try_failed (e, error, name) {
+    if (e) {
+        e.type = 2
+        e.name = name
+    }
+    throw error
 }
 
 function inject_ensure_args (scope, names, e) {
@@ -346,7 +383,13 @@ function inject_ensure_args (scope, names, e) {
     })
 }
 
-inject_desc(inject_ensure_args, 'inject_ensure_args')
+function uncaught_error (error) {
+    if (error instanceof RuntimeError) {
+        throw error
+    } else {
+        produce_error(`Uncaught ${error.name}: ${error.message}`)
+    }
+}
 
 
 let global_helpers = {
@@ -359,7 +402,11 @@ let global_helpers = {
     it: create_interface,
     ef: ensure_failed,
     tf: try_failed,
-    ie: inject_ensure_args,
+    ie: inject_desc(inject_ensure_args, 'inject_ensure_args'),
+    pa: wrapped_panic,
+    as: wrapped_assert,
+    th: wrapped_throw,
+    ue: uncaught_error,
     f: for_loop,
     rb: inject_desc(require_bool, 'require_boolean_value'),
     v: Void

@@ -70,7 +70,7 @@ var Functions = map[string]TransFunction {
         if NotEmpty(tree, handle_ptr) {
             var catch_and_finally = Transpile(tree, handle_ptr)
             var buf strings.Builder
-            buf.WriteString("let e = {}; ")
+            buf.WriteString("var e = {}; ")
             buf.WriteString("try { ")
             buf.WriteString(commands)
             buf.WriteString(" } ")
@@ -92,7 +92,7 @@ var Functions = map[string]TransFunction {
         WriteHelpers(&buf, "handle_scope")
         fmt.Fprintf(&buf, "dl(%v, error); ", Transpile(tree, children["name"]))
         buf.WriteString(Transpile(tree, children["handle_cmds"]))
-        buf.WriteString(" throw error;")
+        buf.WriteString(" return __.v;")
         buf.WriteString(" }")
         var finally_ptr = children["finally"]
         if NotEmpty(tree, finally_ptr) {
@@ -127,14 +127,14 @@ var Functions = map[string]TransFunction {
         var children = Children(tree, ptr)
         var name = Transpile(tree, children["name"])
         var params = Transpile(tree, children["unless_para"])
-        var file = tree.File
+        var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
         var buf strings.Builder
         fmt.Fprintf(&buf, "if (e.type === 1 && e.name === %v)", name)
         buf.WriteString(" { ")
         buf.WriteString("__.c(")
         WriteList(&buf, []string {
-            "ie",
+            "__.ie",
             fmt.Sprintf("[handle_scope, %v, e]", params),
             file, row, col,
         })

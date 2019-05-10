@@ -315,4 +315,73 @@ var CommandsMap = map[string]TransFunction {
             return "continue"
         }
     },
+    // cmd_err = cmd_throw | cmd_assert | cmd_ensure | cmd_try | cmd_panic
+    "cmd_err": TranspileFirstChild,
+    // cmd_throw = @throw expr!
+    "cmd_throw": func (tree Tree, ptr int) string {
+        var expr = TranspileLastChild(tree, ptr)
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
+        return fmt.Sprintf(
+            "__.c(__.th, [%v], %v, %v, %v)",
+            expr, file, row, col,
+        )
+    },
+    // cmd_assert = @assert expr!
+    "cmd_assert": func (tree Tree, ptr int) string {
+        var expr = TranspileLastChild(tree, ptr)
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
+        return fmt.Sprintf(
+            "__.c(__.as, [%v], %v, %v, %v)",
+            expr, file, row, col,
+        )
+    },
+    // cmd_panic = @panic expr!
+    "cmd_panic": func (tree Tree, ptr int) string {
+        var expr = TranspileLastChild(tree, ptr)
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
+        return fmt.Sprintf(
+            "__.c(__.pa, [%v], %v, %v, %v)",
+            expr, file, row, col,
+        )
+    },
+    // cmd_ensure = @ensure name! ensure_args { expr! }!
+    "cmd_ensure": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var name = Transpile(tree, children["name"])
+        var args = Transpile(tree, children["ensure_args"])
+        var expr_ptr = children["expr"]
+        var expr = Transpile(tree, expr_ptr)
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
+        var e_row, e_col = GetRowColInfo(tree, expr_ptr)
+        return fmt.Sprintf(
+            "if (!(__.c(__.rb, [%v], %v, %v, %v))) " +
+                "{ __.ef(e, %v, %v, %v, %v, %v) }",
+            expr, file, e_row, e_col,
+            name, args, file, row, col,
+        )
+    },
+    // ensure_args? = Call ( exprlist )
+    "ensure_args": func (tree Tree, ptr int) string {
+        if NotEmpty(tree, ptr) {
+            var children = Children(tree, ptr)
+            var exprlist = Transpile(tree, children["exprlist"])
+            return fmt.Sprintf("[%v]", exprlist)
+        } else {
+            return "[]"
+        }
+    },
+    // cmd_try = @try opt_to name { commands }!
+    "cmd_try": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var name = Transpile(tree, children["name"])
+        var commands = Commands(tree, children["commands"], false)
+        return fmt.Sprintf(
+            "try { %v } catch (err) { __.tf(e, err, %v) }",
+            commands, name,
+        )
+    },
 }

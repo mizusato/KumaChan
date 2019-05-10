@@ -189,14 +189,14 @@ var SyntaxDefinition = [...] string {
     /* Return Command @ Group 1 */
     "cmd_return = @return Void | @return expr",
     /* Error Related Commands @ Group 1 */
-    "cmd_err = cmd_throw | cmd_assert | cmd_ensure | cmd_try | cmd_panic",
+    "cmd_err = cmd_throw | cmd_assert | cmd_panic | cmd_ensure | cmd_try",
     "cmd_throw = @throw expr!",
     "cmd_assert = @assert expr!",
+    "cmd_panic = @panic expr!",
     "cmd_ensure = @ensure name! ensure_args { expr! }!",
     "ensure_args? = Call ( exprlist )",
     "cmd_try = @try opt_to name { commands }!",
     "opt_to? = @to",
-    "cmd_panic = @panic expr",
     /* Module Related Commands @ Group 2 */
     "cmd_module = cmd_use | cmd_import",
     "cmd_use = @use as_list",

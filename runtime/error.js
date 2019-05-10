@@ -7,21 +7,22 @@ class RuntimeError extends Error {
     }
 }
 
-class UserlandEnsureFailed extends Error {
-    constructor (name) {
-        super(`validation for '${name}' failed`)
+class EnsureFailed extends Error {
+    constructor (name, file, row, col) {
+        super (
+            `validation for '${name}' failed`
+            + ` at ${file} (row ${row}, column ${col})`
+        )
         this.name = "EnsureFailed"
     }
 }
 
-class UserlandTryFailed extends Error {
-    constructor (name) {
-        super(`try of action '${name}' failed`)
-        this.name = "TryFailed"
+class CustomError extends Error {
+    constructor (message, name) {
+        super(message)
+        this.name = name
     }
 }
-
-class UserlandError extends Error {}
 
 
 let call_stack = []
@@ -72,8 +73,8 @@ function panic (msg) {
     produce_error(`panic: ${msg}`)
 }
 
-function create_error (msg) {
-    return new UserlandError(msg)
+function create_error (msg, name = 'CustomError') {
+    return new CustomError(msg, name)
 }
 
 function get_msg (msg_type, args) {

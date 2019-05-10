@@ -26,13 +26,18 @@ var TransMapByName = map[string]TransFunction {
             var group_ptr = tree.Nodes[command_ptr].Children[0]
             var concrete_cmd_ptr = tree.Nodes[group_ptr].Children[0]
             var FlowId = syntax.Name2Id["cmd_flow"]
+            var ErrId = syntax.Name2Id["cmd_err"]
+            var concrete = tree.Nodes[concrete_cmd_ptr].Part.Id
             var body string
-            if tree.Nodes[concrete_cmd_ptr].Part.Id == FlowId {
+            if concrete == FlowId || concrete == ErrId {
                 body = fmt.Sprintf("%v; return __.v;", command)
             } else {
                 body = fmt.Sprintf("return %v", command)
             }
-            buf.WriteString(BareFunction(body))
+            var wrapped_body = fmt.Sprintf (
+                "var e; try { %v } catch (u) { __.ue(u) }", body,
+            )
+            buf.WriteString(BareFunction(wrapped_body))
             fmt.Fprintf(&buf, "(%v.scope.Eval)", Runtime)
             if i != len(cmd_ptrs)-1 {
                 buf.WriteString(", ")
