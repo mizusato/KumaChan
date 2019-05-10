@@ -305,4 +305,14 @@ var CommandsMap = map[string]TransFunction {
             condition, file, row, col, block,
         )
     },
+    // cmd_loop_ctrl = @break | @continue
+    "cmd_loop_ctrl": func (tree Tree, ptr int) string {
+        var child_ptr = tree.Nodes[ptr].Children[0]
+        var id = tree.Nodes[child_ptr].Part.Id
+        if id == syntax.Name2Id["break"] {
+            return "break"
+        } else {
+            return "continue"
+        }
+    },
 }
