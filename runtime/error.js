@@ -18,9 +18,10 @@ class EnsureFailed extends Error {
 }
 
 class CustomError extends Error {
-    constructor (message, name) {
-        super(message)
+    constructor (message, name, data) {
+        super(message + LF + LF + stringify_trace(get_trace()) + LF)
         this.name = name
+        this.data = data
     }
 }
 
@@ -36,7 +37,7 @@ function pop_call () {
     call_stack.pop()
 }
 
-function collect_stack () {
+function get_trace () {
     let info_list = list(map(call_stack, frame => {
         let point = 'from <unknown>'
         if (frame.call_type == 1) {
@@ -51,14 +52,22 @@ function collect_stack () {
         }
         return (frame.desc + LF + INDENT + point)
     }))
-    call_stack = []
     return info_list
 }
 
+function clear_stack () {
+    call_stack = []
+}
+
+function stringify_trace (trace) {
+    return join(take(rev(trace), TRACE_DEPTH), LF)
+}
+
 function produce_error (msg) {
-    let trace = collect_stack()
+    let trace = get_trace()
+    clear_stack()
     let err = new RuntimeError (
-        msg + LF + LF + join(take(rev(trace), TRACE_DEPTH), LF) + LF
+        msg + LF + LF + stringify_trace(trace) + LF
     )
     err.trace = trace
     throw err
@@ -73,8 +82,8 @@ function panic (msg) {
     produce_error(`panic: ${msg}`)
 }
 
-function create_error (msg, name = 'CustomError') {
-    return new CustomError(msg, name)
+function create_error (msg, name = 'CustomError', data = {}) {
+    return new CustomError(msg, name, data)
 }
 
 function get_msg (msg_type, args) {

@@ -92,7 +92,7 @@ var Functions = map[string]TransFunction {
         WriteHelpers(&buf, "handle_scope")
         fmt.Fprintf(&buf, "dl(%v, error); ", Transpile(tree, children["name"]))
         buf.WriteString(Transpile(tree, children["handle_cmds"]))
-        buf.WriteString(" return __.v;")
+        buf.WriteString(" throw error;")
         buf.WriteString(" }")
         var finally_ptr = children["finally"]
         if NotEmpty(tree, finally_ptr) {

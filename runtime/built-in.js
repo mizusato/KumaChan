@@ -29,12 +29,14 @@ let print = f (
 )
 
 
-let wrapped_create_error = f (
-    'create_error',
-    'function create_error (msg: String) -> Error',
+let custom_error = f (
+    'custom_error',
+    'function custom_error (msg: String) -> Error',
         msg => create_error(msg),
-    'function create_error (name: String, msg: String) -> Error',
-        (name, msg) => create_error(msg, name)
+    'function custom_error (name: String, msg: String) -> Error',
+        (name, msg) => create_error(msg, name),
+    'function custom_error (name: String, msg: String, data: Hash) -> Error',
+        (name, msg, data) => create_error(msg, name, data)
 )
 
 
@@ -66,7 +68,7 @@ let Global = new Scope(null, {
         Symbol: ES.Symbol
     },
     print: print,
-    create_error: wrapped_create_error
+    custom_error: custom_error
 }, true)
 
 let Eval = new Scope(Global)
@@ -351,7 +353,14 @@ let wrapped_panic = fun (
 
 let wrapped_throw = fun (
     'function throw (e: Error) -> Void',
-        e => { throw e }
+        e => {
+            if (e instanceof CustomError) {
+                e.trace = get_trace()
+                throw e
+            } else {
+                throw e
+            }
+        }
 )
 
 function ensure_failed (e, name, args, file, row, col) {
@@ -383,14 +392,6 @@ function inject_ensure_args (scope, names, e) {
     })
 }
 
-function uncaught_error (error) {
-    if (error instanceof RuntimeError) {
-        throw error
-    } else {
-        produce_error(`Uncaught ${error.name}: ${error.message}`)
-    }
-}
-
 
 let global_helpers = {
     a: Types.Any,
@@ -406,7 +407,6 @@ let global_helpers = {
     pa: wrapped_panic,
     as: wrapped_assert,
     th: wrapped_throw,
-    ue: uncaught_error,
     f: for_loop,
     rb: inject_desc(require_bool, 'require_boolean_value'),
     v: Void
