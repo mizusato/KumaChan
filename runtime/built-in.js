@@ -45,7 +45,7 @@ let Global = new Scope(null, {
     },
     print: fun (
         'function print (s: String) -> Void',
-        s => (console.log(s), Void)
+            s => (console.log(s), Void)
     )
 }, true)
 
@@ -313,6 +313,12 @@ function bind_method_call (scope) {
 }
 
 
+function require_bool (value) {
+    ensure(is(value, Types.Bool), 'not_bool')
+    return value
+}
+
+
 function ensure_failed (e, name, args) {
     // TODO: record throw position
     e.type = 1
@@ -355,6 +361,7 @@ let global_helpers = {
     tf: try_failed,
     ie: inject_ensure_args,
     f: for_loop,
+    rb: inject_desc(require_bool, 'require_boolean_value'),
     v: Void
 }
 

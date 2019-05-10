@@ -168,11 +168,17 @@ var CommandsMap = map[string]TransFunction {
     // cmd_if = @if expr! block! elifs else
     "cmd_if": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
-        var condition = Transpile(tree, children["expr"])
+        var expr_ptr = children["expr"]
+        var condition = Transpile(tree, expr_ptr)
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, expr_ptr)
         var block = Transpile(tree, children["block"])
         var elifs = Transpile(tree, children["elifs"])
         var else_ = Transpile(tree, children["else"])
-        return fmt.Sprintf("if (%v) %v%v%v", condition, block, elifs, else_)
+        return fmt.Sprintf(
+            "if (__.c(__.rb, [%v], %v, %v, %v)) %v%v%v",
+            condition, file, row, col, block, elifs, else_,
+        )
     },
     // elifs? = elif elifs
     "elifs": func (tree Tree, ptr int) string {
@@ -186,9 +192,15 @@ var CommandsMap = map[string]TransFunction {
     // elif = @else @if expr! block! | @elif expr! block!
     "elif": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
-        var condition = Transpile(tree, children["expr"])
+        var expr_ptr = children["expr"]
+        var condition = Transpile(tree, expr_ptr)
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, expr_ptr)
         var block = Transpile(tree, children["block"])
-        return fmt.Sprintf(" else if (%v) %v", condition, block)
+        return fmt.Sprintf(
+            " else if (__.c(__.rb, [%v], %v, %v, %v)) %v",
+            condition, file, row, col, block,
+        )
     },
     // else? = @else block!
     "else": func (tree Tree, ptr int) string {
@@ -219,9 +231,15 @@ var CommandsMap = map[string]TransFunction {
     // case = @case expr! block!
     "case": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
-        var condition = Transpile(tree, children["expr"])
+        var expr_ptr = children["expr"]
+        var condition = Transpile(tree, expr_ptr)
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, expr_ptr)
         var block = Transpile(tree, children["block"])
-        return fmt.Sprintf(" else if (%v) %v", condition, block)
+        return fmt.Sprintf(
+            " else if (__.c(__.rb, [%v], %v, %v, %v)) %v",
+            condition, file, row, col, block,
+        )
     },
     // default? = @default block!
     "default": func (tree Tree, ptr int) string {
@@ -274,4 +292,17 @@ var CommandsMap = map[string]TransFunction {
     "for_index": TranspileFirstChild,
     // for_key = name
     "for_key": TranspileFirstChild,
+    // cmd_while = @while expr! block!
+    "cmd_while": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var expr_ptr = children["expr"]
+        var condition = Transpile(tree, expr_ptr)
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, expr_ptr)
+        var block = Transpile(tree, children["block"])
+        return fmt.Sprintf(
+            "while (__.c(__.rb, [%v], %v, %v, %v)) %v",
+            condition, file, row, col, block,
+        )
+    },
 }

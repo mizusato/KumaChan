@@ -103,13 +103,23 @@ class Scope {
         return Void
     }
     reset (variable, new_value) {
-        assert(!this.readonly)
         assert(is(variable, Types.String))
-        ensure(this.has(variable), 'variable_not_declared', variable)
-        ensure(!this.is_fixed(variable), 'variable_fixed', variable)
-        let type_ok = is(new_value, this.types_of_non_fixed[variable])
+        let scope = this
+        while (scope !== null) {
+            if (scope.has(variable)) {
+                break
+            } else if (has(variable, scope.cache)) {
+                scope = scope.cache[variable]
+                assert(scope.has(variable))
+                break
+            }
+            scope = scope.context
+        }
+        ensure(scope !== null, 'variable_not_declared', variable)
+        ensure(!scope.is_fixed(variable), 'variable_fixed', variable)
+        let type_ok = is(new_value, scope.types_of_non_fixed[variable])
         ensure(type_ok, 'variable_invalid', variable)
-        this.data[variable] = new_value
+        scope.data[variable] = new_value
         return Void
     }
     lookup (variable) {

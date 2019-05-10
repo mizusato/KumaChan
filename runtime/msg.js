@@ -60,5 +60,6 @@ const MSG = {
         'not all arguments converted during formatting string'
     ),
     key_error: key => `key "${key}" does not exist`,
-    index_error: index => `index ${index} out of range`
+    index_error: index => `index ${index} out of range`,
+    not_bool: 'given expression does not evaluate to a boolean value'
 }
