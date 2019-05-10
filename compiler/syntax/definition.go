@@ -153,7 +153,7 @@ var SyntaxDefinition = [...] string {
     "as_item = name @as name! | name",
 
     /* Eval */
-    "eval = command",
+    "eval = commands",
 
     /* Commands */
     "commands? = command commands",

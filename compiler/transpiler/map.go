@@ -15,22 +15,30 @@ var TransMapByName = map[string]TransFunction {
     // program = module | eval
     "program": TranspileFirstChild,
 
-    // eval = command
+    // eval = commands
     "eval": func (tree Tree, ptr int) string {
-        var command = TranspileFirstChild(tree, ptr)
-        var command_ptr = tree.Nodes[ptr].Children[0]
-        var group_ptr = tree.Nodes[command_ptr].Children[0]
-        var real_cmd_ptr = tree.Nodes[group_ptr].Children[0]
-        var FlowId = syntax.Name2Id["cmd_flow"]
-        var body string
-        if tree.Nodes[real_cmd_ptr].Part.Id == FlowId {
-            body = fmt.Sprintf("%v; return __.v;", command)
-        } else {
-            body = fmt.Sprintf("return %v", command)
-        }
+        var cmds_ptr = tree.Nodes[ptr].Children[0]
+        var cmd_ptrs = FlatSubTree(tree, cmds_ptr, "command", "commands")
         var buf strings.Builder
-        buf.WriteString(BareFunction(body))
-        fmt.Fprintf(&buf, "(%v.scope.Eval)", Runtime)
+        buf.WriteRune('(')
+        for i, command_ptr := range cmd_ptrs {
+            var command = TranspileFirstChild(tree, command_ptr)
+            var group_ptr = tree.Nodes[command_ptr].Children[0]
+            var concrete_cmd_ptr = tree.Nodes[group_ptr].Children[0]
+            var FlowId = syntax.Name2Id["cmd_flow"]
+            var body string
+            if tree.Nodes[concrete_cmd_ptr].Part.Id == FlowId {
+                body = fmt.Sprintf("%v; return __.v;", command)
+            } else {
+                body = fmt.Sprintf("return %v", command)
+            }
+            buf.WriteString(BareFunction(body))
+            fmt.Fprintf(&buf, "(%v.scope.Eval)", Runtime)
+            if i != len(cmd_ptrs)-1 {
+                buf.WriteString(", ")
+            }
+        }
+        buf.WriteRune(')')
         return buf.String()
     },
 
