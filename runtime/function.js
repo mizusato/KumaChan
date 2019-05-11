@@ -40,6 +40,13 @@ let Prototype = struct({
 }, null, proto => no_repeat(map(proto.parameters, p => p.name)) )
 
 function parse_decl (string) {
+    function parse_template_arg (arg_str) {
+        if (arg_str == 'true') { return true }
+        if (arg_str == 'false') { return false }
+        if (!Number.isNaN(Number(arg_str))) { return Number(arg_str) }
+        assert(has(arg_str, Types))
+        return Types[arg_str]
+    }
     let match = string.match(/function +([^( ]+) +\(([^)]*)\) *-> *(.+)/)
     let [_, name, params_str, value_str] = match
     let has_p = params_str.trim().length > 0
@@ -47,8 +54,20 @@ function parse_decl (string) {
         para_str = para_str.trim()
         let match = para_str.match(/([^ :]+) *: *(.+)/)
         let [_, name, type_str] = match
-        assert(has(type_str, Types))
-        let type = Types[type_str]
+        let type = null
+        match = type_str.match(/([^<]+)<([^>]+)>/)
+        if (match != null) {
+            let template_str = match[1]
+            let args_str = match[2]
+            let arg_strs = args_str.split(',').map(a => a.trim())
+            let args = arg_strs.map(parse_template_arg)
+            assert(has(template_str, Types))
+            // note: template.inflate() already bound, apply(null, ...) is OK
+            type = Types[template_str].inflate.apply(null, args)
+        } else {
+            assert(has(type_str, Types))
+            type = Types[type_str]
+        }
         let parameter = { name, type }
         Object.freeze(parameter)
         return parameter

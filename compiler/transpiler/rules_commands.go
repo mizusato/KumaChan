@@ -400,4 +400,8 @@ var CommandsMap = map[string]TransFunction {
             commands, name,
         )
     },
+    // cmd_pass = @do @nothing
+    "cmd_pass": func (tree Tree, ptr int) string {
+        return "__.v"
+    },
 }
