@@ -30,11 +30,12 @@ var TransMapByName = map[string]TransFunction {
             var concrete = tree.Nodes[concrete_cmd_ptr].Part.Id
             var body string
             if concrete == FlowId || concrete == ErrId {
-                body = fmt.Sprintf("var e; %v; return __.v;", command)
+                body = fmt.Sprintf("%v; return __.v;", command)
             } else {
-                body = fmt.Sprintf("var e; return %v", command)
+                body = fmt.Sprintf("return %v", command)
             }
-            buf.WriteString(BareFunction(body))
+            var prepend = "let e = null; __.cs(); "
+            buf.WriteString(BareFunction(prepend + body))
             fmt.Fprintf(&buf, "(%v.scope.Eval)", Runtime)
             if i != len(cmd_ptrs)-1 {
                 buf.WriteString(", ")

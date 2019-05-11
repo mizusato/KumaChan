@@ -196,7 +196,7 @@ function new_scope (context) {
              let result = check_args(args, proto)
              ensure (
                  result.ok, arg_msg.get(result.err),
-                 result.info, args.length.toString()
+                 result.info, args.length
              )
          }
          // generate scope
@@ -211,7 +211,17 @@ function new_scope (context) {
          return value
      }
      let arity = proto.parameters.length
-     let wrapped = give_arity((...args) => invoke(args), arity)
+     let wrapped = give_arity((...args) => {
+         let ptr = get_call_stack_pointer()
+         try {
+             return invoke(args)
+         } catch (error) {
+             if (!(error instanceof RuntimeError)) {
+                 restore_call_stack(ptr)
+             }
+             throw error
+         }
+     }, arity)
      foreach(proto.parameters, p => Object.freeze(p))
      Object.freeze(proto.parameters)
      Object.freeze(proto)
@@ -226,7 +236,7 @@ function check_args (args, proto) {
     let arity = proto.parameters.length
     // check if argument quantity correct
     if (arity != args.length) {
-        return { ok: false, err: 1, info: arity.toString() }
+        return { ok: false, err: 1, info: arity }
     }
     // check types
     for (let i=0; i<arity; i++) {
@@ -379,7 +389,7 @@ function overload (functions, name) {
                         info_list[i].desc
                         + '  (' + get_msg (
                             arg_msg.get(r.err),
-                            [r.info, args.length.toString()]
+                            [r.info, args.length]
                         ) + ')'
                     )
                 }), LF)

@@ -85,6 +85,15 @@ let get_data = f (
     'get_data',
     'function get_data (nil: Nil, k: Any, nf: Bool) -> Object',
         () => Nil,
+    'function get_data (e: Error, k: String, nf: Bool) -> Object',
+        (e, k, nf) => {
+            if (is(e.data, Types.Hash) && has(k, e.data)) {
+                return e.data[k]
+            } else {
+                ensure(nf, 'key_error', k)
+                return Nil
+            }
+        },
     'function get_data (l: List, i: Index, nf: Bool) -> Object',
         (l, i, nf) => (i < l.length)? l[i]: (ensure(nf, 'index_error', i), Nil),
     'function get_data (h: Hash, k: String, nf: Bool) -> Object',
@@ -95,6 +104,14 @@ let set_data = f (
     'set_data',
     'function set_data (nil: Nil, k: Any, v: Any) -> Void',
         () => Void,
+    'function set_data (e: Error, k: String, v: Any) -> Void',
+        (e, k, v) => {
+            if (!is(e.data, Types.Hash)) {
+                e.data = {}
+            }
+            e.data[k] = v
+            return Void
+        },
     'function set_data (l: List, i: Index, v: Any) -> Void',
         (l, i, v) => {
             ensure(i < l.length, 'index_error', i)
@@ -407,6 +424,9 @@ let global_helpers = {
     pa: wrapped_panic,
     as: wrapped_assert,
     th: wrapped_throw,
+    gp: get_call_stack_pointer,
+    rs: restore_call_stack,
+    cs: clear_call_stack,
     f: for_loop,
     rb: inject_desc(require_bool, 'require_boolean_value'),
     v: Void

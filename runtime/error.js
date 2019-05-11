@@ -19,9 +19,11 @@ class EnsureFailed extends Error {
 
 class CustomError extends Error {
     constructor (message, name, data) {
-        super(message + LF + LF + stringify_trace(get_trace()) + LF)
+        let trace = get_trace()
+        super(message + LF + LF + stringify_trace(trace) + LF)
         this.name = name
         this.data = data
+        this.trace = trace
     }
 }
 
@@ -55,7 +57,7 @@ function get_trace () {
     return info_list
 }
 
-function clear_stack () {
+function clear_call_stack () {
     call_stack = []
 }
 
@@ -63,9 +65,17 @@ function stringify_trace (trace) {
     return join(take(rev(trace), TRACE_DEPTH), LF)
 }
 
+function get_call_stack_pointer () {
+    return call_stack.length - 1
+}
+
+function restore_call_stack (pointer) {
+    call_stack = call_stack.slice(0, pointer+1)
+}
+
 function produce_error (msg) {
     let trace = get_trace()
-    clear_stack()
+    clear_call_stack()
     let err = new RuntimeError (
         msg + LF + LF + stringify_trace(trace) + LF
     )
@@ -89,7 +99,6 @@ function create_error (msg, name = 'CustomError', data = {}) {
 function get_msg (msg_type, args) {
     assert(typeof msg_type == 'string')
     assert(args instanceof Array)
-    assert(forall(args, arg => typeof arg == 'string'))
     let msg = MSG[msg_type]
     if (typeof msg == 'string') {
         return msg

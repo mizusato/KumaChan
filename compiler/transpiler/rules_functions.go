@@ -70,7 +70,7 @@ var Functions = map[string]TransFunction {
         if NotEmpty(tree, handle_ptr) {
             var catch_and_finally = Transpile(tree, handle_ptr)
             var buf strings.Builder
-            buf.WriteString("var e = {}; ")
+            buf.WriteString("let e = { pointer: __.gp() }; ")
             buf.WriteString("try { ")
             buf.WriteString(commands)
             buf.WriteString(" } ")
@@ -86,10 +86,11 @@ var Functions = map[string]TransFunction {
         var children = Children(tree, ptr)
         var buf strings.Builder
         buf.WriteString("catch (error) { ")
-        fmt.Fprintf(&buf, "if (error instanceof %v.RuntimeError)", Runtime)
-        buf.WriteString(" { throw error; }; ")
         fmt.Fprintf(&buf, "let handle_scope = %v.new_scope(scope); ", Runtime)
         WriteHelpers(&buf, "handle_scope")
+        buf.WriteString("__.rs(e.pointer); ")
+        fmt.Fprintf(&buf, "if (error instanceof %v.RuntimeError)", Runtime)
+        buf.WriteString(" { throw error; }; ")
         fmt.Fprintf(&buf, "dl(%v, error); ", Transpile(tree, children["name"]))
         buf.WriteString(Transpile(tree, children["handle_cmds"]))
         buf.WriteString(" throw error;")
