@@ -45,5 +45,17 @@ func test () {
 
 
 func main () {
-    test()
+    if len(os.Args) > 1 && os.Args[1] == "--eval" {
+        syntax.Init()
+        transpiler.Init()
+        var code_bytes, err = ioutil.ReadAll(os.Stdin)
+        check(err)
+        var code_string = string(code_bytes)
+        var code = []rune(code_string)
+        var tree = parser.BuildTree(code, "<eval>")
+        var js = transpiler.Transpile(&tree, -1)
+        fmt.Print(js)
+    } else {
+        test()
+    }
 }
