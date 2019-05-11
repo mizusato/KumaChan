@@ -30,6 +30,8 @@ let built_in_types = {
     Infinite: Types.Infinite,
     MayNotNumber: Types.MayNotNumber,
     Int: Types.Int,
+    Index: Types.Index,
+    Size: Types.Size,
     String: Types.String,
     Function: Types.Function,
     Binding: Types.Binding,
