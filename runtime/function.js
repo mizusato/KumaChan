@@ -102,6 +102,33 @@ class Scope {
         }
         return Void
     }
+    define_function (name, f) {
+        assert(is(name, Types.String))
+        assert(is(f, Types.Function))
+        let existing = this.find(name)
+        if (existing != NotFound) {
+            if (is(existing, Types.Function)) {
+                let g = overload([existing, f], name)
+                if (this.has(name)) {
+                    this.reset(name, g)
+                } else {
+                    this.declare(name, g, false)
+                }
+            } else if (is(existing, Types.Overload)) {
+                let g = overload_added(f, existing, name)
+                if (this.has(name)) {
+                    this.reset(name, g)
+                } else {
+                    this.declare(name, g, false)
+                }
+            } else {
+                this.declare(name, f, false)
+            }
+        } else {
+            this.declare(name, f, false)
+        }
+        return Void
+    }
     reset (variable, new_value) {
         assert(is(variable, Types.String))
         let scope = this

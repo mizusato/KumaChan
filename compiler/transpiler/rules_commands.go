@@ -7,7 +7,23 @@ import "../syntax"
 
 var CommandsMap = map[string]TransFunction {
     // cmd_def = function | abs_def
-    "cmd_def": TranspileFirstChild,
+    "cmd_def": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var fun_ptr, is_fun = children["function"]
+        if is_fun {
+            var f = Transpile(tree, fun_ptr)
+            var f_children = Children(tree, fun_ptr)
+            var name = Transpile(tree, f_children["name"])
+            var file = GetFileName(tree)
+            var row, col = GetRowColInfo(tree, ptr)
+            return fmt.Sprintf(
+                "__.c(df, [%v, %v], %v, %v, %v)",
+                name, f, file, row, col,
+            )
+        } else {
+            return TranspileFirstChild(tree, ptr)
+        }
+    },
     // cmd_exec = expr
     "cmd_exec": TranspileFirstChild,
     // cmd_return = @return Void | @return expr

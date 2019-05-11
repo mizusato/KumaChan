@@ -112,7 +112,7 @@ let Types = {
     Infinite: ES.Infinite,
     MayNotNumber: $(x => typeof x == 'number'),
     String: ES.String,
-    Int: $(x => Number.isInteger(x) && assert(Number.isSafeInteger(x))),
+    Int: $(x => Number.isInteger(x) && Number.isSafeInteger(x)),
     Primitive: Uni(ES.Number, ES.String, ES.Boolean),
     List: $(x => x instanceof Array),
     Hash: Ins(ES.Object, $(x => get_proto(x) === Object.prototype)),
