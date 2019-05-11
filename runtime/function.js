@@ -223,19 +223,22 @@ function new_scope (context) {
      [2, 'arg_invalid']
  ])
 
- function get_vals (f, context) {
+ function get_static (f, context) {
      assert(is(f, Types.ES_Function))
       let scope = new Scope(context)
       f(scope)
       return scope
  }
 
- function wrap (context, proto, vals, desc, raw) {
+ function wrap (context, proto, replace, desc, raw) {
      assert(context === null || context instanceof Scope)
      assert(is(proto, Prototype))
-     assert(vals === null || vals instanceof Scope)
+     assert(replace === null || replace instanceof Scope)
      assert(is(raw, Types.ES_Function))
      assert(is(desc, Types.String))
+     if (replace !== null) {
+         context = replace
+     }
      let invoke = (args, use_ctx = null, check = true) => {
          // check arguments
          if (check) {
@@ -248,9 +251,6 @@ function new_scope (context) {
          // generate scope
          let scope = new Scope(use_ctx || context)
          inject_args(args, proto, scope)
-         if (vals != null) {
-             inject_vals(vals, scope, desc)
-         }
          let value = raw(scope)
          ensure(is(value, proto.value_type), 'retval_invalid')
          // return the value after type check
@@ -271,7 +271,7 @@ function new_scope (context) {
      foreach(proto.parameters, p => Object.freeze(p))
      Object.freeze(proto.parameters)
      Object.freeze(proto)
-     let info = { context, invoke, proto, vals, desc, raw }
+     let info = { context, invoke, proto, desc, raw }
      Object.freeze(info)
      wrapped[WrapperInfo] = info
      Object.freeze(wrapped)
@@ -309,16 +309,6 @@ function inject_args (args, proto, scope) {
         // inject argument to scope
         scope.declare(parameter.name, arg, false, parameter.type)
     }
-}
-
-function inject_vals (vals, scope, desc) {
-    assert(vals instanceof Scope)
-    assert(scope instanceof Scope)
-    assert(is(desc, Types.String))
-    foreach(vals.data, (k, v) => {
-        ensure(!scope.has(k), 'static_conflict', k)
-        scope.declare(k, v)
-    })
 }
 
 function bind_context (f, context) {

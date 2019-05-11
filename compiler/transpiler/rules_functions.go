@@ -30,7 +30,7 @@ var Functions = map[string]TransFunction {
             var static_commands_ptr = Children(tree, static_ptr)["commands"]
             var static_commands = Commands(tree, static_commands_ptr, true)
             var static_executor = BareFunction(static_commands)
-            vals = fmt.Sprintf("gv(%v)", static_executor)
+            vals = fmt.Sprintf("gs(%v)", static_executor)
         }
         return fmt.Sprintf(
             "w(%v, %v, %v, %v)",

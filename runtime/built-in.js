@@ -60,7 +60,7 @@ let get_helpers = scope => ({
     dl: inject_desc(scope.declare.bind(scope), 'declare_variable'),
     rt: inject_desc(scope.reset.bind(scope), 'reset_variable'),
     df: inject_desc(scope.define_function.bind(scope), 'define_function'),
-    gv: f => get_vals(f, scope),
+    gs: f => get_static(f, scope),
     w: (proto, vals, desc, raw) => wrap(scope, proto, vals, desc, raw),
     __: global_helpers
 })
