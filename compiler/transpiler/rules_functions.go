@@ -7,6 +7,7 @@ import "strings"
 var Functions = map[string]TransFunction {
     // function = fun_header name Call paralist_strict! type {! body }!
     "function": func (tree Tree, ptr int) string {
+        // TODO: function transpiler should be split out for reuse
         var children = Children(tree, ptr)
         var name_ptr = children["name"]
         var params_ptr = children["paralist_strict"]
@@ -25,6 +26,7 @@ var Functions = map[string]TransFunction {
         var desc = EscapeRawString(desc_buf)
         // static_commands? = @static { commands }
         var static_ptr = body_children["static_commands"]
+        // TODO: rename vals to static_scope
         var vals = "null"
         if NotEmpty(tree, static_ptr) {
             var static_commands_ptr = Children(tree, static_ptr)["commands"]

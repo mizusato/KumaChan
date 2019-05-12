@@ -258,12 +258,11 @@ function new_scope (context) {
      }
      let arity = proto.parameters.length
      let wrapped = give_arity((...args) => {
-         let ptr = get_call_stack_pointer()
          try {
              return invoke(args)
          } catch (error) {
              if (!(error instanceof RuntimeError)) {
-                 restore_call_stack(ptr)
+                 clear_call_stack()
              }
              throw error
          }
