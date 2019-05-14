@@ -121,7 +121,7 @@ let Types = {
         let p_ok = (p !== Object.prototype && p !== null)
         if (!p_ok) { return false }
         return forall(
-            [Error, Function, Class, Instance, Interface, TypeTemplate],
+            [Array, Error, Function, Class, Instance, Interface, TypeTemplate],
             T => !(x instanceof T)
         )
     })),

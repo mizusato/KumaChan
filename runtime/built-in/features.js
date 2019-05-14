@@ -68,6 +68,10 @@ let for_loop = f (
 
 let string_format = f (
     'string_format',
+    'function string_format (s: String, v: Any) -> String',
+        (s, v) => {
+            return s.replace('${}', call(operators['str'], v))
+        },
     'function string_format (s: String, h: Hash) -> String',
         (s, h) => {
             return s.replace(/\$\{([^}]+)\}/g, (match, p1) => {

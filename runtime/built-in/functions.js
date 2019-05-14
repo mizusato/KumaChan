@@ -44,6 +44,8 @@ let built_in_functions = {
     ),
     filter: f (
         'filter',
+        'function filter (i: Iterable, T: Type) -> Iterator',
+            (i, T) => filter(i, e => is(e, T)),
         'function filter (i: Iterable, f: Arity<1>) -> Iterator',
             (i, f) => filter(i, e => {
                 let ok = call(f, [e])

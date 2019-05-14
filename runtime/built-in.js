@@ -3,6 +3,7 @@
 '<include> built-in/features.js';
 '<include> built-in/functions.js';
 '<include> built-in/operators.js';
+'<include> built-in/constants.js';
 
 
 let global_scope_data = {}
@@ -15,6 +16,7 @@ let built_in_additional = {
 }
 pour(global_scope_data, built_in_types)
 pour(global_scope_data, built_in_functions)
+pour(global_scope_data, built_in_constants)
 pour(global_scope_data, built_in_additional)
 let Global = new Scope(null, global_scope_data, true)
 
