@@ -347,10 +347,17 @@ function call (f, args, file = null, row = -1, col = -1) {
         return value
     } else if (is(f, Types.ES_Function)) {
         let desc = f[BareFuncDesc] || get_summary(f.toString())
-        push_call(call_type, desc, file, row, col)
-        let value = f.apply(null, args)
-        pop_call()
-        return value
+        try {
+            push_call(call_type, desc, file, row, col)
+            let value = f.apply(null, args)
+            pop_call()
+            return value
+        } catch (e) {
+            if (!(e instanceof RuntimeError)) {
+                clear_call_stack()
+            }
+            throw e
+        }
     } else {
         push_call(call_type, '*** Non-Callable Object', file)
         ensure(false, 'non_callable')

@@ -12,8 +12,16 @@ function k_eval (command, context, filename, callback) {
             try {
                 callback(null, eval(stdout))
             } catch (error) {
-                console.log(error.message)
-                callback(null)
+                if (
+                    error instanceof KumaChan.RuntimeError
+                    || error instanceof KumaChan.CustomError
+                ) {
+                    console.log(error.message)
+                    callback(null)
+                } else {
+                    callback(null)
+                    throw error
+                }
             }
         } else {
             console.log(error.message)

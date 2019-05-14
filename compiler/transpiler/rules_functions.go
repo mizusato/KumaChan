@@ -5,9 +5,10 @@ import "strings"
 
 
 var Functions = map[string]TransFunction {
-    // function = fun_header name Call paralist_strict! type {! body }!
-    "function": func (tree Tree, ptr int) string {
-        // TODO: function transpiler should be split out for reuse
+    // function = f_sync | f_async | generator
+    "function": TranspileFirstChild,
+    // f_sync = @function name Call paralist_strict! -> type body
+    "f_sync": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
         var name_ptr = children["name"]
         var params_ptr = children["paralist_strict"]
@@ -15,32 +16,31 @@ var Functions = map[string]TransFunction {
         var type_ptr = children["type"]
         var value_type = Transpile(tree, type_ptr)
         var body_ptr = children["body"]
-        var body = Transpile(tree, body_ptr)
-        var body_children = Children(tree, body_ptr)
-        var desc_buf = make([]rune, 0, 120)
-        desc_buf = append(desc_buf, GetWholeContent(tree, name_ptr)...)
-        desc_buf = append(desc_buf, ' ')
-        desc_buf = append(desc_buf, GetWholeContent(tree, params_ptr)...)
-        desc_buf = append(desc_buf, []rune(" -> ")...)
-        desc_buf = append(desc_buf, GetWholeContent(tree, type_ptr)...)
-        var desc = EscapeRawString(desc_buf)
-        // static_commands? = @static { commands }
-        var static_ptr = body_children["static_commands"]
-        // TODO: rename vals to static_scope
-        var vals = "null"
-        if NotEmpty(tree, static_ptr) {
-            var static_commands_ptr = Children(tree, static_ptr)["commands"]
-            var static_commands = Commands(tree, static_commands_ptr, true)
-            var static_executor = BareFunction(static_commands)
-            vals = fmt.Sprintf("gs(%v)", static_executor)
-        }
-        return fmt.Sprintf(
-            "w(%v, %v, %v, %v)",
-            fmt.Sprintf(
-                "{ parameters: %v, value_type: %v }",
-                parameters, value_type,
-            ),
-            vals, desc, BareFunction(body),
+        var desc = Desc (
+            GetWholeContent(tree, name_ptr),
+            GetWholeContent(tree, params_ptr),
+            GetWholeContent(tree, type_ptr),
+        )
+        return Function (
+            tree, body_ptr, F_Sync,
+            desc, parameters, value_type,
+        )
+    },
+    // generator = @generator name Call paralist_strict! body
+    "generator": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var name_ptr = children["name"]
+        var params_ptr = children["paralist_strict"]
+        var parameters = Transpile(tree, params_ptr)
+        var body_ptr = children["body"]
+        var desc = Desc (
+            GetWholeContent(tree, name_ptr),
+            GetWholeContent(tree, params_ptr),
+            []rune("Iterator"),
+        )
+        return Function (
+            tree, body_ptr, F_Generator,
+            desc, parameters, "__.it",
         )
     },
     // body = { static_commands commands mock_hook handle_hook }!

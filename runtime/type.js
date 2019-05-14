@@ -116,6 +116,16 @@ let Types = {
     Primitive: Uni(ES.Number, ES.String, ES.Boolean),
     List: $(x => x instanceof Array),
     Hash: Ins(ES.Object, $(x => get_proto(x) === Object.prototype)),
+    ES_Object: Ins(ES.Object, $(x => {
+        let p = get_proto(x)
+        let p_ok = (p !== Object.prototype && p !== null)
+        if (!p_ok) { return false }
+        return forall(
+            [Error, Function, Class, Instance, Interface, TypeTemplate],
+            T => !(x instanceof T)
+        )
+    })),
+    ES_Key: Uni(ES.String, ES.Symbol),
     Any: Any
 }
 

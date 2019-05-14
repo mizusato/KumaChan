@@ -3,7 +3,18 @@ let IndexType = Ins(Types.Int, $(x => x >= 0))
 pour(Types, {
     Object: Types.Any,
     Callable: Uni(Types.ES_Function, Types.TypeTemplate, Types.Class),
-    Iterable: $(x => typeof x[Symbol.iterator] == 'function'),
+    Iterable: $(x => x && typeof x[Symbol.iterator] == 'function'),
+    Iterator: $(x => {
+        let is_iterable = typeof x[Symbol.iterator] == 'function'
+        if (is_iterable) {
+            return (
+                x[Symbol.toStringTag] == 'Generator'
+                || x[Symbol.iterator]() === x
+            )
+        } else {
+            return false
+        }
+    }),
     Arity: template(fun(
         'function Arity (n: Int) -> Type',
             n => Ins(Types.Function, $(

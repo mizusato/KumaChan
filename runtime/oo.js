@@ -296,6 +296,12 @@ function call_method (
             return call(method, args, file, row, col)
         }
     }
+    if (is(object, Types.ES_Object)) {
+        let method = object[method_name]
+        if (is(method, ES.Function)) {
+            return call(method.bind(object), args, file, row, col)
+        }
+    }
     // UFCS: find the method in the caller scope
     let method = caller_scope.lookup(method_name)
     let found = (method != NotFound && is(method, Types.ES_Function))

@@ -183,9 +183,9 @@ var SyntaxDefinition = [...] string {
     "for_index = name",
     "for_key = name",
     /* Yield Command @ Group 1 */
-    "cmd_yield = @yield name = expr! | @yield expr!",
+    "cmd_yield = @yield name var_type = expr! | @yield expr!",
     /* Await Command @ Group 1 */
-    "cmd_await = @await name = expr! | @await expr!",
+    "cmd_await = @await name var_type = expr! | @await expr!",
     /* Return Command @ Group 1 */
     "cmd_return = @return Void | @return expr",
     /* Error Related Commands @ Group 1 */
@@ -223,9 +223,10 @@ var SyntaxDefinition = [...] string {
     "cmd_exec = expr",
 
     /* Function Definition */
-    "function = fun_header name Call paralist_strict! -> type body",
-    "fun_header = @function | fun_type",
-    "fun_type = @generator | @async",
+    "function = f_sync | f_async | generator",
+    "f_sync = @function name Call paralist_strict! -> type body",
+    "f_async = @async name Call paralist_strict! -> type body",
+    "generator = @generator name Call paralist_strict! body",
     "paralist_strict = ( ) | ( typed_list! )!",
     "typed_list = typed_list_item typed_list_tail",
     "typed_list_tail? = , typed_list_item! typed_list_tail",
@@ -313,7 +314,7 @@ var SyntaxDefinition = [...] string {
     /* Lambda */
     "lambda = lambda_block | lambda_inline",
     "lambda_block = header_lambda paralist_block ret_lambda body!",
-    "header_lambda = @lambda | fun_type",
+    "header_lambda = @lambda | @async | @generator",
     "paralist_block? = name | Call paralist",
     "paralist = ( ) | ( namelist ) | ( typed_list! )!",
     "ret_lambda? = -> type | ->",

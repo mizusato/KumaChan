@@ -29,8 +29,8 @@ let global_helpers = {
     o: get_operator,
     g: (o, k, nf, f, r, c) => call(get_data, [o, k, nf], f, r, c),
     s: set_data,
-    cl: create_class,
-    it: create_interface,
+    cc: create_class,
+    ci: create_interface,
     ef: ensure_failed,
     tf: try_failed,
     ie: inject_desc(inject_ensure_args, 'inject_ensure_args'),
@@ -42,6 +42,7 @@ let global_helpers = {
     cs: clear_call_stack,
     f: for_loop,
     rb: inject_desc(require_bool, 'require_boolean_value'),
+    it: Types.Iterator,
     v: Void
 }
 

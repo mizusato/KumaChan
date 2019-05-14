@@ -7,6 +7,8 @@ function require_bool (value) {
 
 let get_data = f (
     'get_data',
+    'function get_data (o: ES_Object, k: ES_Key, nf: Bool) -> Object',
+        (o, k, nf) => (k in o)? o[k]: (ensure(nf, 'key_error', k), Nil),
     'function get_data (nil: Nil, k: Any, nf: Bool) -> Object',
         () => Nil,
     'function get_data (e: Error, k: String, nf: Bool) -> Object',
@@ -26,6 +28,11 @@ let get_data = f (
 
 let set_data = f (
     'set_data',
+    'function set_data (o: ES_Object, k: ES_Key, v: Any) -> Void',
+        (o, k, v) => {
+            o[k] = v
+            return Void
+        },
     'function set_data (nil: Nil, k: Any, v: Any) -> Void',
         () => Void,
     'function set_data (e: Error, k: String, v: Any) -> Void',

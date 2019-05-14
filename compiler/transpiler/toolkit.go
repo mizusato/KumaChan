@@ -5,6 +5,14 @@ import "strings"
 import "../syntax"
 
 
+type FunType int
+const (
+    F_Sync FunType = iota
+    F_Async
+    F_Generator
+)
+
+
 func LazyValueWrapper (expr string) string {
     return fmt.Sprintf("(() => (%v))", expr)
 }
@@ -114,6 +122,16 @@ func BareFunction (content string) string {
 }
 
 
+func BareGenerator (content string) string {
+    var buf strings.Builder
+    buf.WriteString("(function* (scope, expose) { ")
+    WriteHelpers(&buf, "scope")
+    buf.WriteString(content)
+    buf.WriteString(" })")
+    return buf.String()
+}
+
+
 func Commands (tree Tree, ptr int, add_return bool) string {
     var commands = FlatSubTree(tree, ptr, "command", "commands")
     var ReturnId = syntax.Name2Id["cmd_return"]
@@ -141,6 +159,52 @@ func Commands (tree Tree, ptr int, add_return bool) string {
         buf.WriteString(" return __.v;")
     }
     return buf.String()
+}
+
+
+func Function (
+    tree Tree, body_ptr int, fun_type FunType,
+    desc string, parameters string, value_type string,
+) string {
+    var body = Transpile(tree, body_ptr)
+    var body_children = Children(tree, body_ptr)
+    // static_commands? = @static { commands }
+    var static_ptr = body_children["static_commands"]
+    var static_scope = "null"
+    if NotEmpty(tree, static_ptr) {
+        var static_commands_ptr = Children(tree, static_ptr)["commands"]
+        var static_commands = Commands(tree, static_commands_ptr, true)
+        var static_executor = BareFunction(static_commands)
+        static_scope = fmt.Sprintf("gs(%v)", static_executor)
+    }
+    var raw string
+    switch fun_type {
+    case F_Sync:
+        raw = BareFunction(body)
+    case F_Generator:
+        raw = BareGenerator(body)
+    default:
+        panic("invalid FunType")
+    }
+    return fmt.Sprintf(
+        "w(%v, %v, %v, %v)",
+        fmt.Sprintf(
+            "{ parameters: %v, value_type: %v }",
+            parameters, value_type,
+        ),
+        static_scope, desc, raw,
+    )
+}
+
+
+func Desc (name []rune, parameters []rune, value_type []rune) string {
+    var desc_buf = make([]rune, 0, 120)
+    desc_buf = append(desc_buf, name...)
+    desc_buf = append(desc_buf, ' ')
+    desc_buf = append(desc_buf, parameters...)
+    desc_buf = append(desc_buf, []rune(" -> ")...)
+    desc_buf = append(desc_buf, value_type...)
+    return EscapeRawString(desc_buf)
 }
 
 

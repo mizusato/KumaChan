@@ -10,6 +10,7 @@ var CommandsMap = map[string]TransFunction {
     "cmd_def": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
         var fun_ptr, is_fun = children["function"]
+        fun_ptr = tree.Nodes[fun_ptr].Children[0]
         if is_fun {
             var f = Transpile(tree, fun_ptr)
             var f_children = Children(tree, fun_ptr)
@@ -63,6 +64,25 @@ var CommandsMap = map[string]TransFunction {
             "__.c(dl, [%v, %v, false, %v], %v, %v, %v)",
             name, value, T, file, row, col,
         )
+    },
+    // cmd_yield = @yield name var_type = expr! | @yield expr!
+    "cmd_yield": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var name_ptr, is_decl = children["name"]
+        var T_ptr = children["var_type"]
+        var value = Transpile(tree, children["expr"])
+        if is_decl {
+            var name = Transpile(tree, name_ptr)
+            var T = Transpile(tree, T_ptr)
+            var file = GetFileName(tree)
+            var row, col = GetRowColInfo(tree, ptr)
+            return fmt.Sprintf(
+                "__.c(dl, [%v, (yield %v), false, %v], %v, %v, %v)",
+                name, value, T, file, row, col,
+            )
+        } else {
+            return fmt.Sprintf("((yield %v), __.v)", value)
+        }
     },
     // cmd_reset = @reset name = expr
     "cmd_reset": func (tree Tree, ptr int) string {
