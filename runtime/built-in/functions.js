@@ -17,27 +17,57 @@ let built_in_functions = {
         'function custom_error (name: String, msg: String, data: Hash) -> Error',
             (name, msg, data) => create_error(msg, name, data)
     ),
+    count: f (
+        'count',
+        'function count (n: Size) -> Iterator',
+            n => count(n),
+        'function count (start: Index, amount: Size) -> Iterator',
+            (start, amount) => map(count(amount), i => start + i)
+    ),
+    range: fun (
+        'function range (begin: Index, end: Index) -> Iterator',
+            (begin, end) => {
+                ensure(begin <= end, 'invalid_range', begin, end)
+                return (function* () {
+                    for (let i = begin; i < end; i++) {
+                        yield i
+                    }
+                })()
+            }
+    ),
     map: f (
         'map',
-        'function map (i: Iterable, f: Arity<1>) -> Iterable',
+        'function map (i: Iterable, f: Arity<1>) -> Iterator',
             (i, f) => map(i, e => call(f, [e])),
-        'function map (i: Iterable, f: Arity<2>) -> Iterable',
+        'function map (i: Iterable, f: Arity<2>) -> Iterator',
             (i, f) => map(i, (e, n) => call(f, [e, n]))
     ),
     filter: f (
         'filter',
-        'function filter (i: Iterable, f: Arity<1>) -> Iterable',
+        'function filter (i: Iterable, f: Arity<1>) -> Iterator',
             (i, f) => filter(i, e => {
                 let ok = call(f, [e])
                 ensure(is(ok, Types.Bool), 'filter_not_bool')
                 return ok
             }),
-        'function filter (i: Iterable, f: Arity<2>) -> Iterable',
+        'function filter (i: Iterable, f: Arity<2>) -> Iterator',
             (i, f) => filter(i, (e, n) => {
                 let ok = call(f, [e, n])
                 ensure(is(ok, Types.Bool), 'filter_not_bool')
                 return ok
             })
+    ),
+    reversed: fun (
+        'function reversed (i: Iterable) -> Iterator',
+            i => (function* () {
+                let cache = []
+                for (let e of i) {
+                    cache.push(e)
+                }
+                for (let e of rev(cache)) {
+                    yield e
+                }
+            })()
     ),
     collect: fun (
         'function collect (i: Iterable) -> List',

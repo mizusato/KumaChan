@@ -52,5 +52,8 @@ let built_in_types = {
     List: Types.List,
     Hash: Types.Hash,
     Iterable: Types.Iterable,
-    Error: Types.Error
+    Iterator: Types.Iterator,
+    Error: Types.Error,
+    ES_Object: Types.ES_Object,
+    ES_Key: Types.ES_Key
 }
