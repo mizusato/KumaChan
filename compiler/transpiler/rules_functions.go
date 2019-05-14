@@ -43,6 +43,51 @@ var Functions = map[string]TransFunction {
             desc, parameters, "__.it",
         )
     },
+    // lambda = lambda_block | lambda_inline
+    "lambda": TranspileFirstChild,
+    // lambda_block = lambda_sync | lambda_async | lambda_generator
+    "lambda_block": TranspileFirstChild,
+    // lambda_sync = @lambda paralist_block ret_lambda body!
+    "lambda_sync": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var paralist_ptr = children["paralist_block"]
+        var parameters = Transpile(tree, paralist_ptr)
+        var ret_ptr = children["ret_lambda"]
+        var value_type = Transpile(tree, ret_ptr)
+        var body_ptr = children["body"]
+        var value_type_desc string
+        if value_type == "__.a" {
+            value_type_desc = "Object"
+        } else {
+            var t = string(GetWholeContent(tree, ret_ptr))
+            t = strings.TrimPrefix(t, "->")
+            t = strings.TrimLeft(t, " ")
+            value_type_desc = t
+        }
+        var desc = Desc (
+            []rune("**lambda"),
+            GetWholeContent(tree, paralist_ptr),
+            []rune(value_type_desc),
+        )
+        return Function (
+            tree, body_ptr, F_Sync,
+            desc, parameters, value_type,
+        )
+    },
+    // ret_lambda? = -> type | ->
+    "ret_lambda": func (tree Tree, ptr int) string {
+        if NotEmpty(tree, ptr) {
+            var children = Children(tree, ptr)
+            var type_ptr, type_specified = children["type"]
+            if type_specified {
+                return Transpile(tree, type_ptr)
+            } else {
+                return "__.a"
+            }
+        } else {
+            return "__.a"
+        }
+    },
     // body = { static_commands commands mock_hook handle_hook }!
     "body": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
@@ -175,6 +220,43 @@ var Functions = map[string]TransFunction {
             return "[]"
         }
     },
+    // paralist_block? = name | Call paralist
+    "paralist_block": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var name_ptr, only_name = children["name"]
+        if only_name {
+            var name = Transpile(tree, name_ptr)
+            return fmt.Sprintf("[{ name: %v, type: __.a }]", name)
+        } else {
+            return Transpile(tree, children["paralist"])
+        }
+    },
+    // paralist = ( ) | ( namelist ) | ( typed_list! )!
+    "paralist": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var namelist_ptr, is_namelist = children["namelist"]
+        var typed_list_ptr, is_typed_list = children["typed_list"]
+        if is_namelist {
+            var name_ptrs = FlatSubTree (
+                tree, namelist_ptr, "name", "namelist_tail",
+            )
+            var buf strings.Builder
+            buf.WriteRune('[')
+            for i, name_ptr := range name_ptrs {
+                var name = Transpile(tree, name_ptr)
+                fmt.Fprintf(&buf, "{ name: %v, type: __.a }", name)
+                if i != len(name_ptrs)-1 {
+                    buf.WriteString(", ")
+                }
+            }
+            buf.WriteRune(']')
+            return buf.String()
+        } else if is_typed_list {
+            return Transpile(tree, typed_list_ptr)
+        } else {
+            return "[]"
+        }
+    },
     // typed_list = typed_list_item typed_list_tail
     "typed_list": func (tree Tree, ptr int) string {
         var items = FlatSubTree(tree, ptr, "typed_list_item", "typed_list_tail")
@@ -194,15 +276,7 @@ var Functions = map[string]TransFunction {
         var children = Children(tree, ptr)
         var name = Transpile(tree, children["name"])
         var type_ = Transpile(tree, children["type"])
-        var buf strings.Builder
-        buf.WriteRune('{')
-        buf.WriteString("name: ")
-        buf.WriteString(name)
-        buf.WriteString(", ")
-        buf.WriteString("type: ")
-        buf.WriteString(type_)
-        buf.WriteRune('}')
-        return buf.String()
+        return fmt.Sprintf("{ name: %v, type: %v }", name, type_)
     },
     // type = identifier type_gets type_args | ( expr )
     "type": func (tree Tree, ptr int) string {

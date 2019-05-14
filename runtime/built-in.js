@@ -26,7 +26,6 @@ Object.freeze(default_scopes)
 
 
 let global_helpers = {
-    a: Types.Any,
     c: call,
     o: get_operator,
     g: (o, k, nf, f, r, c) => call(get_data, [o, k, nf], f, r, c),
@@ -44,6 +43,7 @@ let global_helpers = {
     cs: clear_call_stack,
     f: for_loop,
     rb: inject_desc(require_bool, 'require_boolean_value'),
+    a: Types.Any,
     it: Types.Iterator,
     v: Void
 }

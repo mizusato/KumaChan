@@ -225,7 +225,7 @@ var SyntaxDefinition = [...] string {
     /* Function Definition */
     "function = f_sync | f_async | generator",
     "f_sync = @function name Call paralist_strict! -> type body",
-    "f_async = @async name Call paralist_strict! -> type body",
+    "f_async = @async name Call paralist_strict! body",
     "generator = @generator name Call paralist_strict! body",
     "paralist_strict = ( ) | ( typed_list! )!",
     "typed_list = typed_list_item typed_list_tail",
@@ -313,11 +313,14 @@ var SyntaxDefinition = [...] string {
 
     /* Lambda */
     "lambda = lambda_block | lambda_inline",
-    "lambda_block = header_lambda paralist_block ret_lambda body!",
-    "header_lambda = @lambda | @async | @generator",
+    "lambda_block = lambda_sync | lambda_async | lambda_generator",
+    "lambda_sync = @lambda paralist_block ret_lambda body!",
+    "lambda_async = @async paralist_block opt_arrow body!",
+    "lambda_generator = @generator paralist_block opt_arrow body!",
     "paralist_block? = name | Call paralist",
     "paralist = ( ) | ( namelist ) | ( typed_list! )!",
     "ret_lambda? = -> type | ->",
+    "opt_arrow? = ->",
     "lambda_inline = .{ paralist_inline expr! }!",
     "paralist_inline? = namelist -->",
 
