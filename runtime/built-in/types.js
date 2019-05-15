@@ -15,6 +15,7 @@ pour(Types, {
             return false
         }
     }),
+    Promise: $(x => x instanceof Promise),
     Arity: template(fun(
         'function Arity (n: Int) -> Type',
             n => Ins(Types.Function, $(

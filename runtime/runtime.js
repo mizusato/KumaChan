@@ -15,6 +15,7 @@
     let export_name = 'KumaChan'
     let export_object = {
         is, Uni, Ins, Not, Types,
+        Void, Nil,
         fun, f, operators,
         wrap, get_vals, new_scope,
         overload, overload_added, overload_concated,

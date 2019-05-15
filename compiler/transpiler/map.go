@@ -19,6 +19,9 @@ var TransMapByName = map[string]TransFunction {
     "eval": func (tree Tree, ptr int) string {
         var cmds_ptr = tree.Nodes[ptr].Children[0]
         var cmd_ptrs = FlatSubTree(tree, cmds_ptr, "command", "commands")
+        if len(cmd_ptrs) == 0 {
+            return fmt.Sprintf("%v.Void", Runtime)
+        }
         var buf strings.Builder
         buf.WriteRune('(')
         for i, command_ptr := range cmd_ptrs {

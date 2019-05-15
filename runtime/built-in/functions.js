@@ -17,6 +17,23 @@ let built_in_functions = {
         'function custom_error (name: String, msg: String, data: Hash) -> Error',
             (name, msg, data) => create_error(msg, name, data)
     ),
+    postpone: fun (
+        'function postpone (time: Size, callback: Arity<0>) -> Void',
+            (time, callback) => {
+                let frame = get_top_frame()
+                let pos = ''
+                if (frame != null) {
+                    let { file, row, col } = frame
+                    pos = `at ${file} (row ${row}, column ${col})`
+                }
+                setTimeout (
+                    () => {
+                        call(callback, [], `postpone(${time}) ${pos}`)
+                    }, time
+                )
+                return Void
+            }
+    ),
     count: f (
         'count',
         'function count (n: Size) -> Iterator',

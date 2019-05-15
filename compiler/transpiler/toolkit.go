@@ -80,11 +80,15 @@ func GetTokenContent (tree Tree, ptr int) []rune {
 
 
 func GetWholeContent (tree Tree, ptr int) []rune {
-    var pos = tree.Nodes[ptr].Pos
-    var amount = tree.Nodes[ptr].Amount
-    var begin_token = tree.Tokens[pos]
-    var end_token = tree.Tokens[pos+amount-1]
-    return tree.Code[begin_token.Pos : end_token.Pos+len(end_token.Content)]
+    if NotEmpty(tree, ptr) {
+        var pos = tree.Nodes[ptr].Pos
+        var amount = tree.Nodes[ptr].Amount
+        var begin_token = tree.Tokens[pos]
+        var end_token = tree.Tokens[pos+amount-1]
+        return tree.Code[begin_token.Pos : end_token.Pos+len(end_token.Content)]
+    } else {
+        return []rune("")
+    }
 }
 
 
@@ -201,11 +205,11 @@ func Desc (name []rune, parameters []rune, value_type []rune) string {
     var desc_buf = make([]rune, 0, 120)
     desc_buf = append(desc_buf, name...)
     desc_buf = append(desc_buf, ' ')
-    if parameters[0] != '(' {
+    if len(parameters) == 0 || parameters[0] != '(' {
         desc_buf = append(desc_buf, '(')
     }
     desc_buf = append(desc_buf, parameters...)
-    if parameters[len(parameters)-1] != ')' {
+    if len(parameters) == 0 || parameters[len(parameters)-1] != ')' {
         desc_buf = append(desc_buf, ')')
     }
     desc_buf = append(desc_buf, []rune(" -> ")...)

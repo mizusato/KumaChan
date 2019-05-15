@@ -7,6 +7,10 @@ let Compiler = `${__dirname}/build/dev/compiler --eval`
 
 
 function k_eval (command, context, filename, callback) {
+    if (command.match(/^[ \t\n]*$/) != null) {
+        callback(null)
+        return
+    }
     let p = ChildProcess.exec(Compiler, (error, stdout) => {
         if (error === null) {
             try {

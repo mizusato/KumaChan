@@ -250,6 +250,19 @@ var SyntaxDefinition = [...] string {
     "failed = @failed opt_to name { commands }",
     "finally? = _at @finally { commands }",
 
+    /* Lambda */
+    "lambda = lambda_block | lambda_inline",
+    "lambda_block = lambda_sync | lambda_async | lambda_generator",
+    "lambda_sync = @lambda paralist_block ret_lambda body!",
+    "lambda_async = @async paralist_block opt_arrow body!",
+    "lambda_generator = @generator paralist_block opt_arrow body!",
+    "paralist_block? = name | Call paralist",
+    "paralist = ( ) | ( namelist ) | ( typed_list! )!",
+    "ret_lambda? = -> type | ->",
+    "opt_arrow? = ->",
+    "lambda_inline = .{ paralist_inline expr! }!",
+    "paralist_inline? = namelist --> | ( namelist ) -->",
+
     /* Type Object Definition */
     /* Generics */
     "generic_params = < typed_list! >!",
@@ -310,19 +323,6 @@ var SyntaxDefinition = [...] string {
     "arglist? = exprlist",
     "exprlist = expr exprlist_tail",
     "exprlist_tail? = , expr! exprlist_tail",
-
-    /* Lambda */
-    "lambda = lambda_block | lambda_inline",
-    "lambda_block = lambda_sync | lambda_async | lambda_generator",
-    "lambda_sync = @lambda paralist_block ret_lambda body!",
-    "lambda_async = @async paralist_block opt_arrow body!",
-    "lambda_generator = @generator paralist_block opt_arrow body!",
-    "paralist_block? = name | Call paralist",
-    "paralist = ( ) | ( namelist ) | ( typed_list! )!",
-    "ret_lambda? = -> type | ->",
-    "opt_arrow? = ->",
-    "lambda_inline = .{ paralist_inline expr! }!",
-    "paralist_inline? = namelist --> | ( namelist ) -->",
 
     /* Literals */
     "literal = primitive | adv_literal",

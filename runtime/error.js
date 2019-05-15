@@ -39,12 +39,24 @@ function pop_call () {
     call_stack.pop()
 }
 
+function get_top_frame () {
+    if (call_stack.length > 0) {
+        return call_stack[call_stack.length-1]
+    } else {
+        return null
+    }
+}
+
 function get_trace () {
     let info_list = list(map(call_stack, frame => {
         let point = 'from <unknown>'
         if (frame.call_type == 1) {
             // userland
-            point = `from ${frame.file} (row ${frame.row}, column ${frame.col})`
+            let pos = ''
+            if (frame.row != -1) {
+                pos = `(row ${frame.row}, column ${frame.col})`
+            }
+            point = `from ${frame.file} ${pos}`
         } else if (frame.call_type == 2) {
             // overload
             point = 'from <overload>'

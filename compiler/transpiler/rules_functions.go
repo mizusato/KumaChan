@@ -26,6 +26,23 @@ var Functions = map[string]TransFunction {
             desc, parameters, value_type,
         )
     },
+    // f_async = @async name Call paralist_strict! body
+    "f_async": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var name_ptr = children["name"]
+        var params_ptr = children["paralist_strict"]
+        var parameters = Transpile(tree, params_ptr)
+        var body_ptr = children["body"]
+        var desc = Desc (
+            GetWholeContent(tree, name_ptr),
+            GetWholeContent(tree, params_ptr),
+            []rune("Promise"),
+        )
+        return Function (
+            tree, body_ptr, F_Async,
+            desc, parameters, "__.pm",
+        )
+    },
     // generator = @generator name Call paralist_strict! body
     "generator": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
@@ -272,13 +289,17 @@ var Functions = map[string]TransFunction {
     },
     // paralist_block? = name | Call paralist
     "paralist_block": func (tree Tree, ptr int) string {
-        var children = Children(tree, ptr)
-        var name_ptr, only_name = children["name"]
-        if only_name {
-            var name = Transpile(tree, name_ptr)
-            return fmt.Sprintf("[{ name: %v, type: __.a }]", name)
+        if NotEmpty(tree, ptr) {
+            var children = Children(tree, ptr)
+            var name_ptr, only_name = children["name"]
+            if only_name {
+                var name = Transpile(tree, name_ptr)
+                return fmt.Sprintf("[{ name: %v, type: __.a }]", name)
+            } else {
+                return Transpile(tree, children["paralist"])
+            }
         } else {
-            return Transpile(tree, children["paralist"])
+            return "[]"
         }
     },
     // paralist = ( ) | ( namelist ) | ( typed_list! )!

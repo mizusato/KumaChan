@@ -45,6 +45,7 @@ let global_helpers = {
     rb: inject_desc(require_bool, 'require_boolean_value'),
     a: Types.Any,
     it: Types.Iterator,
+    pm: Types.Promise,
     v: Void
 }
 
