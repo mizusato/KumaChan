@@ -322,7 +322,7 @@ var SyntaxDefinition = [...] string {
     "ret_lambda? = -> type | ->",
     "opt_arrow? = ->",
     "lambda_inline = .{ paralist_inline expr! }!",
-    "paralist_inline? = namelist -->",
+    "paralist_inline? = namelist --> | ( namelist ) -->",
 
     /* Literals */
     "literal = primitive | adv_literal",

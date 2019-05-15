@@ -201,10 +201,85 @@ func Desc (name []rune, parameters []rune, value_type []rune) string {
     var desc_buf = make([]rune, 0, 120)
     desc_buf = append(desc_buf, name...)
     desc_buf = append(desc_buf, ' ')
+    if parameters[0] != '(' {
+        desc_buf = append(desc_buf, '(')
+    }
     desc_buf = append(desc_buf, parameters...)
+    if parameters[len(parameters)-1] != ')' {
+        desc_buf = append(desc_buf, ')')
+    }
     desc_buf = append(desc_buf, []rune(" -> ")...)
     desc_buf = append(desc_buf, value_type...)
     return EscapeRawString(desc_buf)
+}
+
+
+func SearchDotParameters (tree Tree, search_root int) []string {
+    var names = make([]string, 0, 25)
+    var DotParaId = syntax.Name2Id["dot_para"]
+    var LambdaId = syntax.Name2Id["lambda"]
+    var do_search func(int)
+    do_search = func (ptr int) {
+        var node = &tree.Nodes[ptr]
+        var id = node.Part.Id
+        if id == LambdaId && ptr != search_root {
+            return
+        } else if id == DotParaId {
+            // dot_para = . Name
+            var children = Children(tree, ptr)
+            var name = GetTokenContent(tree, children["Name"])
+            names = append(names, string(name))
+        }
+        for i := 0; i < node.Length; i++ {
+            var child = node.Children[i]
+            do_search(child)
+        }
+    }
+    do_search(search_root)
+    var name_set = make(map[string]bool)
+    var normalized = make([]string, 0, 10)
+    for _, name := range names {
+        var _, exists = name_set[name]
+        if !exists {
+            name_set[name] = true
+            normalized = append(normalized, name)
+        }
+    }
+    return normalized
+}
+
+
+func UntypedParameters (names []string) string {
+    var buf strings.Builder
+    buf.WriteRune('[')
+    for i, name := range names {
+        fmt.Fprintf (
+            &buf, "{ name: %v, type: __.a }",
+            EscapeRawString([]rune(name)),
+        )
+        if i != len(names)-1 {
+            buf.WriteString(", ")
+        }
+    }
+    buf.WriteRune(']')
+    return buf.String()
+}
+
+
+func UntypedParameterList (tree Tree, namelist_ptr int) string {
+    var name_ptrs = FlatSubTree(tree, namelist_ptr, "name", "namelist_tail")
+    var names = make([]string, 0, 10)
+    var buf strings.Builder
+    buf.WriteRune('[')
+    for i, name_ptr := range name_ptrs {
+        var name = Transpile(tree, name_ptr)
+        fmt.Fprintf(&buf, "{ name: %v, type: __.a }", name)
+        if i != len(names)-1 {
+            buf.WriteString(", ")
+        }
+    }
+    buf.WriteRune(']')
+    return buf.String()
 }
 
 

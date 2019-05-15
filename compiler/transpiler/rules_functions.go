@@ -65,7 +65,7 @@ var Functions = map[string]TransFunction {
             value_type_desc = t
         }
         var desc = Desc (
-            []rune("**lambda"),
+            []rune("lambda"),
             GetWholeContent(tree, paralist_ptr),
             []rune(value_type_desc),
         )
@@ -87,6 +87,40 @@ var Functions = map[string]TransFunction {
         } else {
             return "__.a"
         }
+    },
+    // lambda_inline = .{ paralist_inline expr! }!
+    "lambda_inline": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var l_ptr = children["paralist_inline"]
+        var parameters string
+        var desc string
+        if NotEmpty(tree, l_ptr) {
+            parameters = Transpile(tree, l_ptr)
+            var l_children = Children(tree, l_ptr)
+            desc = Desc (
+                []rune("lambda"),
+                GetWholeContent(tree, l_children["namelist"]),
+                []rune("Object"),
+            )
+        } else {
+            var names = SearchDotParameters(tree, ptr)
+            parameters = UntypedParameters(names)
+            desc = Desc (
+                []rune("lambda"),
+                []rune(strings.Join(names, ", ")),
+                []rune("Object"),
+            )
+        }
+        var expr = Transpile(tree, children["expr"])
+        var raw = BareFunction(fmt.Sprintf("return %v;", expr))
+        return fmt.Sprintf(
+            "w(%v, %v, %v, %v)",
+            fmt.Sprintf (
+                "{ parameters: %v, value_type: __.a }",
+                parameters,
+            ),
+            "null", desc, raw,
+        )
     },
     // body = { static_commands commands mock_hook handle_hook }!
     "body": func (tree Tree, ptr int) string {
@@ -237,24 +271,21 @@ var Functions = map[string]TransFunction {
         var namelist_ptr, is_namelist = children["namelist"]
         var typed_list_ptr, is_typed_list = children["typed_list"]
         if is_namelist {
-            var name_ptrs = FlatSubTree (
-                tree, namelist_ptr, "name", "namelist_tail",
-            )
-            var buf strings.Builder
-            buf.WriteRune('[')
-            for i, name_ptr := range name_ptrs {
-                var name = Transpile(tree, name_ptr)
-                fmt.Fprintf(&buf, "{ name: %v, type: __.a }", name)
-                if i != len(name_ptrs)-1 {
-                    buf.WriteString(", ")
-                }
-            }
-            buf.WriteRune(']')
-            return buf.String()
+            return UntypedParameterList(tree, namelist_ptr)
         } else if is_typed_list {
             return Transpile(tree, typed_list_ptr)
         } else {
             return "[]"
+        }
+    },
+    // paralist_inline? = namelist -->
+    "paralist_inline": func (tree Tree, ptr int) string {
+        if NotEmpty(tree, ptr) {
+            var children = Children(tree, ptr)
+            var l_ptr = children["namelist"]
+            return UntypedParameterList(tree, l_ptr)
+        } else {
+            panic("trying to transpile empty paralist_inline")
         }
     },
     // typed_list = typed_list_item typed_list_tail
