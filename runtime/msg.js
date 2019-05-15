@@ -62,6 +62,7 @@ const MSG = {
     key_error: key => `key "${key}" does not exist`,
     index_error: index => `index ${index} out of range`,
     not_bool: 'given expression did not evaluate to a boolean value',
+    not_promise: 'expression to await did not evaluate to a Promise or Future',
     filter_not_bool: 'given filter function did not return a boolean value',
     invalid_range: (a, b) => `begin index ${a} is bigger than end index ${b}`
 }

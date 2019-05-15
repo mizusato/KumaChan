@@ -34,6 +34,12 @@ let built_in_functions = {
                 return Void
             }
     ),
+    timeout: fun (
+        'function timeout (time: Size) -> Promise',
+            time => new Promise(resolve => {
+                setTimeout(() => resolve(Nil), time)
+            })
+    ),
     count: f (
         'count',
         'function count (n: Size) -> Iterator',

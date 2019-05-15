@@ -84,6 +84,29 @@ var CommandsMap = map[string]TransFunction {
             return fmt.Sprintf("((yield %v), __.v)", value)
         }
     },
+    // cmd_await = @await name var_type = expr! | @await expr!
+    "cmd_await": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var name_ptr, is_decl = children["name"]
+        var T_ptr = children["var_type"]
+        var expr = Transpile(tree, children["expr"])
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
+        var await = fmt.Sprintf (
+            "(await __.c(__.rp, [%v], %v, %v, %v))",
+            expr, file, row, col,
+        )
+        if is_decl {
+            var name = Transpile(tree, name_ptr)
+            var T = Transpile(tree, T_ptr)
+            return fmt.Sprintf (
+                "__.c(dl, [%v, %v, false, %v], %v, %v, %v)",
+                name, await, T, file, row, col,
+            )
+        } else {
+            return fmt.Sprintf("(%v, __.v)", await)
+        }
+    },
     // cmd_reset = @reset name = expr
     "cmd_reset": func (tree Tree, ptr int) string {
         var file = GetFileName(tree)

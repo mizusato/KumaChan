@@ -126,9 +126,19 @@ func BareFunction (content string) string {
 }
 
 
+func BareAsyncFunction (content string) string {
+    var buf strings.Builder
+    buf.WriteString("(async function (scope) { ")
+    WriteHelpers(&buf, "scope")
+    buf.WriteString(content)
+    buf.WriteString(" })")
+    return buf.String()
+}
+
+
 func BareGenerator (content string) string {
     var buf strings.Builder
-    buf.WriteString("(function* (scope, expose) { ")
+    buf.WriteString("(function* (scope) { ")
     WriteHelpers(&buf, "scope")
     buf.WriteString(content)
     buf.WriteString(" })")
@@ -185,6 +195,8 @@ func Function (
     switch fun_type {
     case F_Sync:
         raw = BareFunction(body)
+    case F_Async:
+        raw = fmt.Sprintf("__.aw(%v)", BareAsyncFunction(body))
     case F_Generator:
         raw = BareGenerator(body)
     default:

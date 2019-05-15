@@ -124,3 +124,27 @@ function ensure (bool, msg_type, ...args) {
     if (bool) { return }
     produce_error(get_msg(msg_type, args))
 }
+
+function async_e_wrap (async_raw_function) {
+    /**
+     *  Explanation: RuntimeError is desgined as unrecoverable fatal error,
+     *      therefore should not be caught by Promise.prototype.catch().
+     */
+    assert(typeof async_raw_function == 'function')
+    return function (scope) {
+        return new Promise((resolve, reject) => {
+            let p = async_raw_function(scope)
+            assert(p instanceof Promise)
+            p.then(value => {
+                resolve(value)
+            }).catch(error => {
+                if (error instanceof RuntimeError) {
+                    // just throw it, preserve the pending state
+                    throw error
+                } else {
+                    reject(error)
+                }
+            })
+        })
+    }
+}

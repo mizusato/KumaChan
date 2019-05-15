@@ -5,6 +5,14 @@ function require_bool (value) {
 }
 
 
+function require_promise (object) {
+    // await should_be_promise_or_future
+    // TODO: Types.Future (Typed Promise)
+    ensure(is(object, Types.Promise), 'not_promise')
+    return object
+}
+
+
 let get_data = f (
     'get_data',
     'function get_data (o: ES_Object, k: ES_Key, nf: Bool) -> Object',
