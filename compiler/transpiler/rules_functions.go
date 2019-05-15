@@ -74,6 +74,22 @@ var Functions = map[string]TransFunction {
             desc, parameters, value_type,
         )
     },
+    // lambda_generator = @generator paralist_block opt_arrow body!
+    "lambda_generator": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var paralist_ptr = children["paralist_block"]
+        var parameters = Transpile(tree, paralist_ptr)
+        var body_ptr = children["body"]
+        var desc = Desc (
+            []rune("lambda"),
+            GetWholeContent(tree, paralist_ptr),
+            []rune("Iterator"),
+        )
+        return Function (
+            tree, body_ptr, F_Generator,
+            desc, parameters, "__.it",
+        )
+    },
     // ret_lambda? = -> type | ->
     "ret_lambda": func (tree Tree, ptr int) string {
         if NotEmpty(tree, ptr) {
