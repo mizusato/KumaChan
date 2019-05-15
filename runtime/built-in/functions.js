@@ -17,7 +17,12 @@ let built_in_functions = {
         'function custom_error (name: String, msg: String, data: Hash) -> Error',
             (name, msg, data) => create_error(msg, name, data)
     ),
-    postpone: fun (
+    postpone: f (
+        'postpone',
+        'function postpone (time: Size) -> Promise',
+            time => new Promise(resolve => {
+                setTimeout(() => resolve(Nil), time)
+            }),
         'function postpone (time: Size, callback: Arity<0>) -> Void',
             (time, callback) => {
                 let frame = get_top_frame()
@@ -33,12 +38,6 @@ let built_in_functions = {
                 )
                 return Void
             }
-    ),
-    timeout: fun (
-        'function timeout (time: Size) -> Promise',
-            time => new Promise(resolve => {
-                setTimeout(() => resolve(Nil), time)
-            })
     ),
     count: f (
         'count',
