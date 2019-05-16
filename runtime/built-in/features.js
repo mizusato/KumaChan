@@ -15,6 +15,8 @@ function require_promise (object) {
 
 let get_data = f (
     'get_data',
+    'function get_data (C: ES_Class, k: ES_Key, nf: Bool) -> Object',
+        (C, k, nf) => (k in C)? C[k]: (ensure(nf, 'key_error', k), Nil),
     'function get_data (o: ES_Object, k: ES_Key, nf: Bool) -> Object',
         (o, k, nf) => (k in o)? o[k]: (ensure(nf, 'key_error', k), Nil),
     'function get_data (nil: Nil, k: Any, nf: Bool) -> Object',

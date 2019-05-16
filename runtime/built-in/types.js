@@ -2,7 +2,7 @@ let IndexType = Ins(Types.Int, $(x => x >= 0))
 
 pour(Types, {
     Object: Types.Any,
-    Callable: Uni(Types.ES_Function, Types.TypeTemplate, Types.Class),
+    Callable: Uni(ES.Function, Types.TypeTemplate, Types.Class),
     Iterable: $(x => x && typeof x[Symbol.iterator] == 'function'),
     Iterator: $(x => {
         let is_iterable = typeof x[Symbol.iterator] == 'function'
@@ -54,7 +54,6 @@ let built_in_types = {
     Hash: Types.Hash,
     Iterable: Types.Iterable,
     Iterator: Types.Iterator,
-    Error: Types.Error,
-    ES_Object: Types.ES_Object,
-    ES_Key: Types.ES_Key
+    Promise: Types.Promise,
+    Error: Types.Error
 }

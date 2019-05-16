@@ -91,6 +91,7 @@ var Keywords = [...] string {
     "@module", "@export", "@import", "@use", "@as",
     "@if", "@else", "@elif", "@switch", "@case", "@default",
     "@while", "@for", "@in", "@break", "@continue", "@return",
+    "@yield", "@await",
     "@let", "@var", "@reset",
     "@set", "@do", "@nothing",
     "@function", "@generator", "@async", "@lambda",
@@ -101,7 +102,7 @@ var Keywords = [...] string {
     "@struct", "@require", "@one", "@of",
     "@class", "@init", "@data", "@interface", "@expose",
     "@true", "@false",
-    "@is", "@or", "@not", "@yield", "@await",
+    "@is", "@or", "@not",
 }
 
 

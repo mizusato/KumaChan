@@ -304,7 +304,7 @@ function call_method (
     }
     // UFCS: find the method in the caller scope
     let method = caller_scope.lookup(method_name)
-    let found = (method !== NotFound && is(method, Types.ES_Function))
+    let found = (method !== NotFound && is(method, ES.Function))
     ensure(found, 'method_not_found', method_name)
     // call the method
     return call(method, [object, ...args], file, row, col)

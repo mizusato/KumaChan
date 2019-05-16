@@ -47,7 +47,7 @@ let Type = $(x => (
  */
 function is (value, type) {
     assert(Type[Checker](type))
-    return type[Checker](value)
+    return Boolean(type[Checker](value))
 }
 
 
@@ -116,7 +116,7 @@ let Types = {
     Primitive: Uni(ES.Number, ES.String, ES.Boolean),
     List: $(x => x instanceof Array),
     Hash: Ins(ES.Object, $(x => get_proto(x) === Object.prototype)),
-    ES_Object: Ins(ES.Object, $(x => {
+    ES_Object: Uni(Ins(ES.Object, $(x => {
         let p = get_proto(x)
         let p_ok = (p !== Object.prototype && p !== null)
         if (!p_ok) { return false }
@@ -124,8 +124,12 @@ let Types = {
             [Array, Error, Function, Class, Instance, Interface, TypeTemplate],
             T => !(x instanceof T)
         )
-    })),
+    })), $(x => x === Function.prototype)),
+    ES_Symbol: ES.Symbol,
     ES_Key: Uni(ES.String, ES.Symbol),
+    ES_Class: Ins(ES.Function, $(
+        f => is(f.prototype, ES.Object) || f === Function
+    )),
     Any: Any
 }
 

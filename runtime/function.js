@@ -9,13 +9,11 @@ function inject_desc (f, desc) {
     return f
 }
 
-let Wrapped = $(x => (
-    (typeof x == 'function')
-    && typeof x[WrapperInfo] == 'object'
-))
+let Wrapped = Ins(ES.Function, $(x => typeof x[WrapperInfo] == 'object'))
+let NotWrapped = Ins(ES.Function, $(x => typeof x[WrapperInfo] != 'object'))
 
 let FunctionTypes = {
-    ES_Function: ES.Function,
+    ES_Function: NotWrapped,
     Wrapped: Wrapped,
     Function: Ins(Wrapped, $(f => has('context', f[WrapperInfo]))),
     Overload: Ins(Wrapped, $(f => has('functions', f[WrapperInfo]))),
@@ -225,7 +223,7 @@ function new_scope (context) {
  ])
 
  function get_static (f, context) {
-     assert(is(f, Types.ES_Function))
+     assert(is(f, ES.Function))
       let scope = new Scope(context)
       f(scope)
       return scope
@@ -235,7 +233,7 @@ function new_scope (context) {
      assert(context === null || context instanceof Scope)
      assert(is(proto, Prototype))
      assert(replace === null || replace instanceof Scope)
-     assert(is(raw, Types.ES_Function))
+     assert(is(raw, ES.Function))
      assert(is(desc, Types.String))
      if (replace !== null) {
          context = replace
@@ -346,7 +344,7 @@ function call (f, args, file = null, row = -1, col = -1) {
         let value = info.invoke(args)
         pop_call()
         return value
-    } else if (is(f, Types.ES_Function)) {
+    } else if (is(f, ES.Function)) {
         let desc = f[BareFuncDesc] || get_summary(f.toString())
         try {
             push_call(call_type, desc, file, row, col)
@@ -367,7 +365,7 @@ function call (f, args, file = null, row = -1, col = -1) {
 
 function fun (decl_string, body) {
     let parsed = parse_decl(decl_string)
-    assert(is(body, Types.ES_Function))
+    assert(is(body, ES.Function))
     assert(!is(body, Types.Wrapped))
     let desc = decl_string.replace(/^function */, '')
     return wrap(null, parsed.proto, null, desc, (scope, expose) => {

@@ -4,20 +4,14 @@
 '<include> built-in/functions.js';
 '<include> built-in/operators.js';
 '<include> built-in/constants.js';
+'<include> built-in/es_compatible.js';
 
 
 let global_scope_data = {}
-let built_in_additional = {
-    es: {
-        undefined: undefined,
-        null: null,
-        Symbol: ES.Symbol
-    }
-}
 pour(global_scope_data, built_in_types)
 pour(global_scope_data, built_in_functions)
 pour(global_scope_data, built_in_constants)
-pour(global_scope_data, built_in_additional)
+pour(global_scope_data, built_in_es_compatible)
 let Global = new Scope(null, global_scope_data, true)
 
 let Eval = new Scope(Global)
