@@ -19,7 +19,7 @@ pour(Types, {
     Arity: template(fun(
         'function Arity (n: Int) -> Type',
             n => Ins(Types.Function, $(
-                f => f[WrapperInfo].proto.parameters.length == n
+                f => f[WrapperInfo].proto.parameters.length === n
             ))
     )),
     Index: IndexType,

@@ -124,7 +124,7 @@ let string_format = f (
                 used += 1
                 return call(operators['str'], [l[index]])
             })
-            let ok = (used == l.length)
+            let ok = (used === l.length)
             ensure(ok, 'format_not_all_converted')
             return result
         }

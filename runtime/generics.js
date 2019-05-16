@@ -20,7 +20,7 @@ class TypeTemplate {
     }
     inflate (...args) {
         let cached = find(this.cache, item => equal(item.args, args))
-        if (cached != NotFound) {
+        if (cached !== NotFound) {
             return cached.type
         } else {
             foreach(args, (arg, i) => {

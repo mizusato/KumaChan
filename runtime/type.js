@@ -228,7 +228,7 @@ class Schema {
         this.table = copy(table)
         Object.freeze(table)
         this.requirement = requirement
-        if (defaults != null) {
+        if (defaults !== null) {
             this.defaults = copy(defaults)
             Object.freeze(this.defaults)
             for (let key of get_keys(this.defaults)) {
@@ -264,7 +264,7 @@ class Schema {
     patch (hash) {
         // apply default values to hash
         assert(is(hash, Types.Hash))
-        if (this.defaults == null) {
+        if (this.defaults === null) {
             return hash
         }
         let new_hash = copy(hash)

@@ -125,7 +125,7 @@ class Scope {
         assert(is(name, Types.String))
         assert(is(f, Types.Function))
         let existing = this.find(name)
-        if (existing != NotFound) {
+        if (existing !== NotFound) {
             if (is(existing, Types.Function)) {
                 let g = overload([existing, f], name)
                 if (this.has(name)) {
@@ -171,7 +171,7 @@ class Scope {
     lookup (variable) {
         assert(is(variable, Types.String))
         let value = this.find(variable)
-        ensure(value != NotFound, 'variable_not_found', variable)
+        ensure(value !== NotFound, 'variable_not_found', variable)
         return value
     }
     try_to_declare (variable, initial_value, is_fixed = true, type = null) {
@@ -186,7 +186,7 @@ class Scope {
         let scope_chain = iterate (
             this,
             scope => scope.context,
-            scope => scope == null
+            scope => scope === null
         )
         return find(map(scope_chain, (scope, depth) => {
             if (has(variable, scope.cache)) {
@@ -205,7 +205,7 @@ class Scope {
             } else {
                 return NotFound
             }
-        }), object => object != NotFound)
+        }), object => object !== NotFound)
     }
 }
 

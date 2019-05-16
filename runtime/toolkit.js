@@ -246,7 +246,10 @@ function fold (iterable, initial, f, terminate) {
 function forall (iterable, f) {
     // ∀ I ∈ iterable, f(I) == true
     return fold(
-        iterable, true, ((e,v,i) => v && f(e,i)), (v => v == false)
+        iterable, true, ((e,v,i) => v && f(e,i)), (v => {
+            assert(typeof v == 'boolean')
+            return (v === false)
+        })
     )
 }
 
@@ -254,7 +257,10 @@ function forall (iterable, f) {
 function exists (iterable, f) {
     // ∃ I ∈ iterable, f(I) == true
     return fold(
-        iterable, false, ((e,v,i) => v || f(e,i)), (v => v == true)
+        iterable, false, ((e,v,i) => v || f(e,i)), (v => {
+            assert(typeof v == 'boolean')
+            return (v === true)
+        })
     )
 }
 

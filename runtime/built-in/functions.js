@@ -27,7 +27,7 @@ let built_in_functions = {
             (time, callback) => {
                 let frame = get_top_frame()
                 let pos = ''
-                if (frame != null) {
+                if (frame !== null) {
                     let { file, row, col } = frame
                     pos = `at ${file} (row ${row}, column ${col})`
                 }

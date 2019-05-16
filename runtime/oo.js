@@ -165,7 +165,7 @@ class Class {
         assert(is(methods, TypedHash.of(Types.Overload)))
         assert(is(data, Types.Hash))
         this.name = name
-        if (def_point != null) {
+        if (def_point !== null) {
             let { file, row, col } = def_point
             this.desc = `class ${name} at ${file} (row ${row}, column ${col})`
         } else {
@@ -304,7 +304,7 @@ function call_method (
     }
     // UFCS: find the method in the caller scope
     let method = caller_scope.lookup(method_name)
-    let found = (method != NotFound && is(method, Types.ES_Function))
+    let found = (method !== NotFound && is(method, Types.ES_Function))
     ensure(found, 'method_not_found', method_name)
     // call the method
     return call(method, [object, ...args], file, row, col)
@@ -327,7 +327,7 @@ class Interface {
         assert(is(proto_table, ProtoTable))
         assert(is(implemented, TypedHash.of(Types.Overload)))
         this.name = name
-        if (def_point != null) {
+        if (def_point !== null) {
             let { f, row, col } = def_point
             this.desc = `interface ${name} at ${f} (row ${row}, column ${col})`
         } else {
