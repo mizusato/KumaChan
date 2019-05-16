@@ -1,4 +1,5 @@
 let built_in_functions = {
+    // Ouput
     print: f (
         'print',
         'function print (p: Bool) -> Void',
@@ -8,6 +9,7 @@ let built_in_functions = {
         'function print (s: String) -> Void',
             s => (console.log(s), Void)
     ),
+    // Error Handling
     custom_error: f (
         'custom_error',
         'function custom_error (msg: String) -> Error',
@@ -17,6 +19,7 @@ let built_in_functions = {
         'function custom_error (name: String, msg: String, data: Hash) -> Error',
             (name, msg, data) => create_error(msg, name, data)
     ),
+    // Async
     postpone: f (
         'postpone',
         'function postpone (time: Size) -> Promise',
@@ -39,6 +42,7 @@ let built_in_functions = {
                 return Void
             }
     ),
+    // Iterator Operations
     count: f (
         'count',
         'function count (n: Size) -> Iterator',
@@ -97,6 +101,87 @@ let built_in_functions = {
         'function collect (i: Iterable) -> List',
             i => list(i)
     ),
+    // List Operations
+    length: f (
+        'length',
+        'function length (l: List) -> Size',
+            l => l.length,
+        'function length (s: String) -> Size',
+            s => s.length
+    ),
+    first: fun (
+        'function first (l: List) -> Object',
+            l => (ensure(l.length > 0, 'empty_list'), l[0])
+    ),
+    last: fun (
+        'function last (l: List) -> Object',
+            l => (ensure(l.length > 0, 'empty_list'), l[l.length-1])
+    ),
+    prepend: fun (
+        'function prepend (l: List, item: Any) -> Void',
+            (l, item) => {
+                l.unshift(item)
+                return Void
+            }
+    ),
+    append: fun (
+        'function append (l: List, item: Any) -> Void',
+            (l, item) => {
+                l.push(item)
+                return Void
+            }
+    ),
+    shift: fun (
+        'function shift (l: List) -> Void',
+            l => {
+                ensure(l.length > 0, 'empty_list')
+                l.shift()
+                return Void
+            }
+    ),
+    pop: fun (
+        'function pop (l: List) -> Void',
+            l => {
+                ensure(l.length > 0, 'empty_list')
+                l.pop()
+                return Void
+            }
+    ),
+    slice: fun (
+        'function slice (l: List, low: Index, high: Index) -> List',
+            (l, low, high) => {
+                ensure(low <= high, 'invalid_slice', low, high)
+                ensure(high < l.length, 'index_error', high)
+                return l.slice(low, high)
+            }
+    ),
+    splice: fun (
+        'function splice (l: List, i: Index, amount: Size) -> Void',
+            (l, i, amount) => {
+                ensure(i < l.length, 'index_error', i)
+                ensure(i+amount < l.length, 'invalid_splice', amount)
+                l.splice(i, amount)
+                return Void
+            }
+    ),
+    insert: fun (
+        'function insert (l: List, i: Index, item: Any) -> Void',
+            (l, i, item) => {
+                ensure(i < l.length, 'index_error', i)
+                if (i == l.length-1) {
+                    l.push(item)
+                    return Void
+                }
+                let target = i+1
+                l.push(Nil)
+                for (let j=l.length-1; j>target; j--) {
+                    l[j] = l[j-1]
+                }
+                l[target] = item
+                return Void
+            }
+    ),
+    // Hash Operations
     get_keys: fun (
         'function get_keys (h: Hash) -> List',
             h => Object.keys(h)

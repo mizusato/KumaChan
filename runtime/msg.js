@@ -65,5 +65,8 @@ const MSG = {
     not_promise: 'expression to await did not evaluate to a Promise or Future',
     not_iterable: i => `comprehension argument #${i} is not iterable`,
     filter_not_bool: 'given filter function did not return a boolean value',
-    invalid_range: (a, b) => `begin index ${a} is bigger than end index ${b}`
+    invalid_range: (a, b) => `begin index ${a} is bigger than end index ${b}`,
+    empty_list: 'invalid element access on empty list',
+    invalid_slice: (a, b) => `invalid slice index pair (${a}, ${b})`,
+    invalid_splice: a => `invalid splice amount ${a}`
 }
