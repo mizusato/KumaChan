@@ -71,6 +71,19 @@ function *take (iterable, n) {
 }
 
 
+function *zip (it_list, f) {
+    let iterators = it_list.map(iterable => iterable[Symbol.iterator]())
+    while (true) {
+        let results = iterators.map(it => it.next())
+        if (exists(results, r => r.done)) {
+            break
+        } else {
+            yield f(results.map(r => r.value))
+        }
+    }
+}
+
+
 function mapkey (object, f) {
     let mapped = {}
     for (let key of Object.keys(object)) {

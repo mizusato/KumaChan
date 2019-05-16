@@ -84,4 +84,87 @@ var Containers = map[string]TransFunction {
     },
     // list_item = expr
     "list_item": TranspileFirstChild,
+    // comprehension = .[ comp_rule! ]! | [ comp_rule ]!
+    "comprehension": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var _, is_iterator = children[".["]
+        var rule = Transpile(tree, children["comp_rule"])
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
+        var f string
+        if is_iterator {
+            f = "__.ic"
+        } else {
+            f = "__.lc"
+        }
+        return fmt.Sprintf (
+            "__.c(%v, [%v], %v, %v, %v)",
+            f, rule, file, row, col,
+        )
+    },
+    // comp_rule = expr _bar1 in_list! opt_filters
+    "comp_rule": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var val_expr = Transpile(tree, children["expr"])
+        var list_ptr = children["in_list"]
+        // in_list = in_item in_list_tail
+        var item_ptrs = FlatSubTree(tree, list_ptr, "in_item", "in_list_tail")
+        var names = make([]string, 0, 10)
+        var iterators = make([]string, 0, 10)
+        for _, item_ptr := range item_ptrs {
+            // in_item = name @in expr
+            var item_children = Children(tree, item_ptr)
+            var name = GetTokenContent(tree, item_children["name"])
+            var expr = Transpile(tree, item_children["expr"])
+            names = append(names, string(name))
+            iterators = append(iterators, expr)
+        }
+        var parameters = UntypedParameters(names)
+        var proto = fmt.Sprintf (
+            "{ parameters: %v, value_type: __.a }",
+            parameters,
+        )
+        var val_raw = BareFunction(fmt.Sprintf("return %v;", val_expr))
+        var val_desc = EscapeRawString([]rune("comprehension.value_function"))
+        var val = fmt.Sprintf (
+            "w(%v, %v, %v, %v)",
+            proto, "null", val_desc, val_raw,
+        )
+        var iterator_list = fmt.Sprintf (
+            "[%v]", strings.Join(iterators, ", "),
+        )
+        var filter_expr = Transpile(tree, children["opt_filters"])
+        var filter_raw = BareFunction(fmt.Sprintf("return %v;", filter_expr))
+        var filter_desc = EscapeRawString([]rune("comprehension.filter"))
+        var filter = fmt.Sprintf (
+            "w(%v, %v, %v, %v)",
+            proto, "null", filter_desc, filter_raw,
+        )
+        return fmt.Sprintf("%v, %v, %v", val, iterator_list, filter)
+    },
+    // opt_filters? = , exprlist
+    "opt_filters": func (tree Tree, ptr int) string {
+        var file = GetFileName(tree)
+        if NotEmpty(tree, ptr) {
+            var children = Children(tree, ptr)
+            var list_ptr = children["exprlist"]
+            var expr_ptrs = FlatSubTree(tree, list_ptr, "expr", "exprlist_tail")
+            var buf strings.Builder
+            buf.WriteRune('(')
+            for i, expr_ptr := range expr_ptrs {
+                var row, col = GetRowColInfo(tree, expr_ptr)
+                fmt.Fprintf (
+                    &buf, "__.c(__.rb, [%v], %v, %v, %v)",
+                    Transpile(tree, expr_ptr), file, row, col,
+                )
+                if i != len(expr_ptrs)-1 {
+                    buf.WriteString(" && ")
+                }
+            }
+            buf.WriteRune(')')
+            return buf.String()
+        } else {
+            return "true"
+        }
+    },
 }
