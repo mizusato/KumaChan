@@ -20,7 +20,6 @@ var Extra = [...] string { "Call", "Get", "Void" }
 var Tokens = [...] Token {
     Token { Name: "String",  Pattern: r(`'[^']*'`), },
     Token { Name: "String",  Pattern: r(`"[^"]*"`), },
-    Token { Name: "Raw",     Pattern: r(`/~([^~]|[^/]|~[^/]|[^~]/)*~/`) },
     Token { Name: "Comment", Pattern: r(`/\*([^\*]|[^/]|\*[^/]|[^\*]/)*\*/`) },
     Token { Name: "Comment", Pattern: r(`//[^\n]*`) },
     Token { Name: "..[",     Pattern: r(`\.\.\[`) },
