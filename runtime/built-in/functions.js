@@ -96,5 +96,35 @@ let built_in_functions = {
     collect: fun (
         'function collect (i: Iterable) -> List',
             i => list(i)
+    ),
+    get_keys: fun (
+        'function get_keys (h: Hash) -> List',
+            h => Object.keys(h)
+    ),
+    get_values: fun (
+        'function get_values (h: Hash) -> List',
+            h => list(map(Object.keys(h), k => h[k]))
+    ),
+    get_entries: fun (
+        'function get_entries (h: Hash) -> List',
+            h => list(map(Object.keys(h), k => ({ key: k, value: h[k] })))
+    ),
+    map_key: f (
+        'map_key',
+        'function map_key (h: Hash, f: Arity<1>) -> Hash',
+            (h, f) => mapkey(h, k => call(f, [k])),
+        'function map_key (h: Hash, f: Arity<2>) -> Hash',
+            (h, f) => mapkey(h, (k, v) => call(f, [k, v]))
+    ),
+    map_value: f (
+        'map_value',
+        'function map_value (h: Hash, f: Arity<1>) -> Hash',
+            (h, f) => mapval(h, v => call(f, [v])),
+        'function map_value (h: Hash, f: Arity<2>) -> Hash',
+            (h, f) => mapval(h, (v, k) => call(f, [v, k]))
+    ),
+    map_entry: fun (
+        'function map_entry (h: Hash, f: Arity<2>) -> Iterator',
+            (h, f) => mapkv(h, (k, v) => call(f, [k, v]))
     )
 }
