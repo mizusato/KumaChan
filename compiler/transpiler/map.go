@@ -86,7 +86,15 @@ var TransMapByName = map[string]TransFunction {
     // identifier = Name
     "identifier": func (tree Tree, ptr int) string {
         // depended by CommandsMap["reset"]
-        return VarLookup(GetTokenContent(tree, ptr))
+        var content = GetTokenContent(tree, ptr)
+        var content_string = string(content)
+        if strings.HasPrefix(content_string, "__") {
+            // ECMAScript Identifier
+            var trimed = strings.TrimPrefix(content_string, "__")
+            return fmt.Sprintf("(%v)", trimed)
+        } else {
+            return VarLookup(GetTokenContent(tree, ptr))
+        }
     },
     // primitive = string | number | bool
     "primitive": TranspileFirstChild,

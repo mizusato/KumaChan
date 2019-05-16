@@ -107,7 +107,7 @@ var Keywords = [...] string {
 
 var Operators = [...] Operator {
     /* Pull, Push, Derive, Otherwise */
-    Operator { Match: "<<",   Priority: 20,  Assoc: Right,  Lazy: false },
+    Operator { Match: "<<",   Priority: 20,  Assoc: Left,   Lazy: false },
     Operator { Match: ">>",   Priority: 20,  Assoc: Left,   Lazy: false  },
     Operator { Match: "=>",   Priority: 20,  Assoc: Left,   Lazy: true  },
     Operator { Match: "@or",  Priority: 20,  Assoc: Left,   Lazy: true  },

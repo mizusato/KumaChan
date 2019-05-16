@@ -44,6 +44,7 @@ function parse_decl (string) {
         if (arg_str == 'true') { return true }
         if (arg_str == 'false') { return false }
         if (!Number.isNaN(Number(arg_str))) { return Number(arg_str) }
+        if (arg_str.match(/^'[^']*'$/) != null) { return arg_str.slice(1, -1) }
         assert(has(arg_str, Types))
         return Types[arg_str]
     }
