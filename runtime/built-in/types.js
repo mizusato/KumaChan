@@ -3,7 +3,9 @@ let IndexType = Ins(Types.Int, $(x => x >= 0))
 pour(Types, {
     Object: Types.Any,
     Callable: Uni(ES.Function, Types.TypeTemplate, Types.Class),
-    Iterable: $(x => x && typeof x[Symbol.iterator] == 'function'),
+    Iterable: $(
+        x => is(x, ES.Object) && typeof x[Symbol.iterator] == 'function'
+    ),
     Iterator: $(x => {
         let is_iterable = typeof x[Symbol.iterator] == 'function'
         if (is_iterable) {
@@ -24,7 +26,8 @@ pour(Types, {
     )),
     Index: IndexType,
     Size: IndexType,
-    Error: $(x => x instanceof Error)
+    Error: $(x => x instanceof Error),
+    NotFound: create_value('NotFound')  // Types.NotFound !== NotFound
 })
 
 Object.freeze(Types)
@@ -55,5 +58,6 @@ let built_in_types = {
     Iterable: Types.Iterable,
     Iterator: Types.Iterator,
     Promise: Types.Promise,
-    Error: Types.Error
+    Error: Types.Error,
+    NotFound: Types.NotFound
 }

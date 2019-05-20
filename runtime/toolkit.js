@@ -209,10 +209,12 @@ function join (iterable, separator) {
 
 
 function find (iterable, f) {
+    let index = 0
     for (let I of iterable) {
-        if (f(I)) {
+        if (f(I, index)) {
             return I
         }
+        index += 1
     }
     return NotFound
 }

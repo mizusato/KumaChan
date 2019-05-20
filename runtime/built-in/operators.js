@@ -7,7 +7,11 @@ let operators = {
     'is': f (
         'operator.is',
         'function operator.is (x: Any, T: Type) -> Bool',
-            (x, A) => is(x, A)
+            (x, A) => {
+                // if T is a custom type, its checker must be f: [Any] --> Bool
+                // this constraint should be enforced by custom type creator
+                return call(A[Checker], [x])
+            }
     ),
     'str': f (
         'operator.str',
@@ -175,6 +179,8 @@ let operators = {
             (x, y) => Math.pow(x, y)
     )
 }
+
+let operator_is = operators['is']
 
 Object.freeze(operators)
 

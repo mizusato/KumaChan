@@ -86,6 +86,7 @@ function restore_call_stack (pointer) {
 }
 
 function produce_error (msg) {
+    // produce a RuntimeError (fatal error)
     let trace = get_trace()
     clear_call_stack()
     let err = new RuntimeError (
@@ -97,7 +98,7 @@ function produce_error (msg) {
 
 function assert (value) {
     if(!value) { produce_error('Assertion Failed') }
-    return value
+    return true
 }
 
 function panic (msg) {

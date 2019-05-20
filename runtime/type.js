@@ -47,7 +47,9 @@ let Type = $(x => (
  */
 function is (value, type) {
     assert(Type[Checker](type))
-    return Boolean(type[Checker](value))
+    let r = type[Checker](value)
+    assert(typeof r == 'boolean')
+    return r
 }
 
 

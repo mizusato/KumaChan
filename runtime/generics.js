@@ -1,5 +1,5 @@
 /**
- *  TypeTemplate: Implementation of Generics (Partially, Incompletely)
+ *  TypeTemplate: Something just like generics but not generics
  *
  *  A type template is a function-like type object, which can be inflated by
  *    a fixed number of arguments (types or primitives) and returns a new type.

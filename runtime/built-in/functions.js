@@ -19,6 +19,11 @@ let built_in_functions = {
         'function custom_error (name: String, msg: String, data: Hash) -> Error',
             (name, msg, data) => create_error(msg, name, data)
     ),
+    // Singleton Value Creator
+    custom_value: fun (
+        'function custom_value (name: String) -> Singleton',
+            name => create_value(name)
+    ),
     // Async
     postpone: f (
         'postpone',
@@ -63,27 +68,45 @@ let built_in_functions = {
     ),
     map: f (
         'map',
-        'function map (i: Iterable, f: Arity<1>) -> Iterator',
-            (i, f) => map(i, e => call(f, [e])),
         'function map (i: Iterable, f: Arity<2>) -> Iterator',
-            (i, f) => map(i, (e, n) => call(f, [e, n]))
+            (i, f) => map(i, (e, n) => call(f, [e, n])),
+        'function map (i: Iterable, f: Arity<1>) -> Iterator',
+            (i, f) => map(i, e => call(f, [e]))
     ),
     filter: f (
         'filter',
         'function filter (i: Iterable, T: Type) -> Iterator',
-            (i, T) => filter(i, e => is(e, T)),
-        'function filter (i: Iterable, f: Arity<1>) -> Iterator',
-            (i, f) => filter(i, e => {
-                let ok = call(f, [e])
-                ensure(is(ok, Types.Bool), 'filter_not_bool')
-                return ok
-            }),
+            (i, T) => filter(i, e => call(operator_is, [e, T])),
         'function filter (i: Iterable, f: Arity<2>) -> Iterator',
             (i, f) => filter(i, (e, n) => {
                 let ok = call(f, [e, n])
                 ensure(is(ok, Types.Bool), 'filter_not_bool')
                 return ok
+            }),
+        'function filter (i: Iterable, f: Arity<1>) -> Iterator',
+            (i, f) => filter(i, e => {
+                let ok = call(f, [e])
+                ensure(is(ok, Types.Bool), 'filter_not_bool')
+                return ok
             })
+    ),
+    find: f (
+        'find',
+        'function find (i: Iterable, T: Type) -> Object',
+            (i, T) => {
+                let r = find(i, e => call(operator_is, [e, T]))
+                return (r !== NotFound)? r: Types.NotFound
+            },
+        'function find (i: Iterable, f: Arity<2>) -> Object',
+            (i, f) => {
+                let r = find(i, (e, n) => call(f, [e, n]))
+                return (r !== NotFound)? r: Types.NotFound
+            },
+        'function find (i: Iterable, f: Arity<1>) -> Object',
+            (i, f) => {
+                let r = find(i, e => call(f, [e]))
+                return (r !== NotFound)? r: Types.NotFound
+            }
     ),
     reversed: fun (
         'function reversed (i: Iterable) -> Iterator',
