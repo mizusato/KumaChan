@@ -122,10 +122,11 @@ let Types = {
         let p = get_proto(x)
         let p_ok = (p !== Object.prototype && p !== null)
         if (!p_ok) { return false }
-        return forall(
-            [Array, Error, Function, Class, Instance, Interface, TypeTemplate],
-            T => !(x instanceof T)
-        )
+        return forall([
+            Array, Error, Function,
+            Class, Instance, Interface,
+            TypeTemplate, Schema, Structure
+        ], T => !(x instanceof T))
     })), $(x => x === Function.prototype)),
     ES_Symbol: ES.Symbol,
     ES_Key: Uni(ES.String, ES.Symbol),
@@ -224,41 +225,23 @@ Types.Finite = $(x => x instanceof Finite)
 let one_of = ((...objects) => new Finite(objects))
 
 /**
- *  Schema: Data format constraints on Hash.
+ *  HashFormat: Data format constraints on Hash. (for Internal Use)
  */
-class Schema {
-    constructor (table, defaults = null, requirement = (x => true)) {
+class HashFormat {
+    constructor (table, requirement = (x => true)) {
         assert(is(table, TypedHash.of(Type)))
-        assert(is(defaults, Uni(ES.Null, Types.Hash)))
         assert(is(requirement, ES.Function))
         this.table = copy(table)
         Object.freeze(table)
         this.requirement = requirement
-        if (defaults !== null) {
-            this.defaults = copy(defaults)
-            Object.freeze(this.defaults)
-            for (let key of get_keys(this.defaults)) {
-                assert(has(key, this.table))
-                let defval = this.defaults[key]
-                let type = this.table[key]
-                ensure(is(defval, type), 'schema_invalid_default', key)
-            }
-        } else {
-            this.defaults = null
-        }
         this[Checker] = (x => {
-            if(!is(x, Types.Hash)) { return false }
-            let defaults = this.defaults || {}
+            if (!is(x, Types.Hash)) { return false }
             for (let key of get_keys(this.table)) {
                 let required_type = this.table[key]
-                if (has(key, x)) {
-                    if(!is(x[key], required_type)) {
-                        return false
-                    }
+                if (has(key, x) && is(x[key], required_type)) {
+                    continue
                 } else {
-                    if(!has(key, defaults)) {
-                        return false
-                    }
+                    return false
                 }
             }
             let result = this.requirement(x)
@@ -267,26 +250,10 @@ class Schema {
         })
         Object.freeze(this)
     }
-    patch (hash) {
-        // apply default values to hash
-        assert(is(hash, Types.Hash))
-        if (this.defaults === null) {
-            return hash
-        }
-        let new_hash = copy(hash)
-        for (let key of get_keys(this.defaults)) {
-            if (!has(key, new_hash)) {
-                new_hash[key] = this.defaults[key]
-            }
-        }
-        return new_hash
-    }
     get [Symbol.toStringTag]() {
-        return 'Schema'
+        return 'HashFormat'
     }
 }
 
-Types.Schema = $(x => x instanceof Schema)
-
 // shorthand
-let struct = ((table, def, req) => new Schema(table, def, req))
+let format = ((table, def, req) => new HashFormat(table, def, req))

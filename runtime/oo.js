@@ -220,7 +220,7 @@ class Class {
     }
 }
 
-let RawMethodTable = TypedList.of(struct({
+let RawMethodTable = TypedList.of(format({
     name: Types.String,
     f: Types.Function
 }))
@@ -313,7 +313,7 @@ function call_method (
 
 
 let ProtoTable = TypedHash.of(TypedList.of(Prototype))
-let RawProtoTable = TypedList.of(struct({
+let RawProtoTable = TypedList.of(format({
     name: Types.String,
     proto: Prototype
 }))

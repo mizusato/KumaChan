@@ -30,6 +30,8 @@ let get_data = f (
                 return Nil
             }
         },
+    'function get_data (s: Structure, k: String, nf: Bool) -> Object',
+        s => (ensure(!nf, 'struct_nil_flag'), s.get(k)),
     'function get_data (l: List, i: Index, nf: Bool) -> Object',
         (l, i, nf) => (i < l.length)? l[i]: (ensure(nf, 'index_error', i), Nil),
     'function get_data (h: Hash, k: String, nf: Bool) -> Object',
@@ -51,6 +53,11 @@ let set_data = f (
                 e.data = {}
             }
             e.data[k] = v
+            return Void
+        },
+    'function set_data (s: Structure, k: String, v: Any) -> Void',
+        (s, k, v) => {
+            s.set(k, v)
             return Void
         },
     'function set_data (l: List, i: Index, v: Any) -> Void',

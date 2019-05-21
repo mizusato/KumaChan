@@ -1,7 +1,6 @@
 const INDENT = '    '
 
 const MSG = {
-    schema_invalid_default: f => `invalid default value for field ${f}`,
     variable_not_declared: name => `variable ${name} not declared`,
     variable_not_found: name => `variable ${name} not found`,
     variable_declared: name => `variable ${name} already declared`,
@@ -59,7 +58,7 @@ const MSG = {
     format_not_all_converted: (
         'not all arguments converted during formatting string'
     ),
-    key_error: key => `key "${key}" does not exist`,
+    key_error: key => `key '${key}' does not exist`,
     index_error: index => `index ${index} out of range`,
     not_bool: 'given expression did not evaluate to a boolean value',
     not_promise: 'expression to await did not evaluate to a Promise or Future',
@@ -68,5 +67,24 @@ const MSG = {
     invalid_range: (a, b) => `begin index ${a} is bigger than end index ${b}`,
     empty_list: 'invalid element access on empty list',
     invalid_slice: (a, b) => `invalid slice index pair (${a}, ${b})`,
-    invalid_splice: a => `invalid splice amount ${a}`
+    invalid_splice: a => `invalid splice amount ${a}`,
+    invalid_struct_init_key: k => (
+        `invalid structure initialization: invalid key ${k}`
+    ),
+    invalid_struct_init_req: (
+        'invalid structure initialization: requirement not satisfied'
+    ),
+    schema_invalid_default: f => `invalid default value for field ${f}`,
+    struct_key_error: k => `field '${k}' does not exist on the structure`,
+    struct_key_invalid: k => (
+        `given value for field '${k}' violated the schema of this field`
+    ),
+    struct_req_violated: k => (
+        `given value for field '${k}' violated the schema requirement`
+    ),
+    struct_inconsistent: k => (
+        `inconsistency: value of field '${k}' became violating the schema`
+    ),
+    struct_nil_flag: 'unable to use nil flag on Structure objects',
+    different_schema: 'cannot apply operator on structures of different schema'
 }

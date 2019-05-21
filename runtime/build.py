@@ -15,11 +15,11 @@ def process(file_path, indent = ''):
         if match:
             module_indent = match.group(1)
             module_file = match.group(2)
-            process(path.join(dirname, module_file), module_indent)
+            process(path.join(dirname, module_file), indent + module_indent)
         else:
             print(indent + line, end='')
     f.close()
-   
+
 
 def main():
     entry_file = sys.argv[1]

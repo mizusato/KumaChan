@@ -37,7 +37,7 @@ var TransMapByName = map[string]TransFunction {
             } else {
                 body = fmt.Sprintf("return %v", command)
             }
-            var prepend = "let e = null; __.cs(); "
+            var prepend = "let e = null; __.ccs(); "
             buf.WriteString(BareFunction(prepend + body))
             fmt.Fprintf(&buf, "(%v.scope.Eval)", Runtime)
             if i != len(cmd_ptrs)-1 {

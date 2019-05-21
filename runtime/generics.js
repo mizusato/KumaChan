@@ -10,7 +10,7 @@
  */
 class TypeTemplate {
     constructor (inflater) {
-        assert(is(inflater, Types.Wrapped))
+        assert(is(inflater, Types.Function))
         this.inflater = inflater
         this.cache = []
         this.inflate = this.inflate.bind(this)
@@ -41,7 +41,32 @@ class TypeTemplate {
     }
 }
 
-Types.TypeTemplate = $(x => x instanceof TypeTemplate)
+
+class ClassTemplate {
+    constructor (inflater) {
+        this.type_template = new TypeTemplate(inflater)
+        this.inflated = new WeakSet()
+        this[Checker] = (
+            x => is(x, Types.Instance) && this.inflated.has(x.class_)
+        )
+        Object.freeze(this)
+    }
+    inflate (...args) {
+        let C = this.type_template.inflate.apply(null, args)
+        assert(is(C, Types.Class))
+        this.inflated.add(C)
+        return C
+    }
+}
+
+
+Types.ClassTemplate = $(x => x instanceof ClassTemplate)
+Types.TypeTemplate = Uni(
+    Types.ClassTemplate,
+    $(x => x instanceof TypeTemplate)
+)
+
 
 /* shorthand */
-let template = (f => new TypeTemplate(f))
+let template = ((p,r) => new TypeTemplate(fun(p,r)))
+let class_template = ((p,r) => new ClassTemplate(fun(p,r)))

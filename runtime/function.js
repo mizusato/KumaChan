@@ -27,15 +27,15 @@ pour(Types, FunctionTypes)
  *  Parameter & Function Prototype
  */
 
-let Parameter = struct({
+let Parameter = format({
     name: Types.String,
     type: Type
 })
 
-let Prototype = struct({
+let Prototype = format({
     value_type: Type,
     parameters: TypedList.of(Parameter)
-}, null, proto => no_repeat(map(proto.parameters, p => p.name)) )
+}, proto => no_repeat(map(proto.parameters, p => p.name)) )
 
 function parse_decl (string) {
     function parse_template_arg (arg_str) {
@@ -299,13 +299,7 @@ function inject_args (args, proto, scope) {
     let arity = proto.parameters.length
     for (let i=0; i<arity; i++) {
         let parameter = proto.parameters[i]
-        let arg = args[i]
-        // apply default values of schema
-        if (is(parameter.type, Types.Schema)) {
-            arg = parameter.type.patch(arg)
-        }
-        // inject argument to scope
-        scope.declare(parameter.name, arg, false, parameter.type)
+        scope.declare(parameter.name, args[i], false, parameter.type)
     }
 }
 

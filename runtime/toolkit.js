@@ -128,6 +128,7 @@ function equal (o1, o2) {
         )
     } else {
         assert(typeof o1 == 'object' && typeof o2 == 'object')
+        assert(o1 !== null && o2 !== null)
         let k1 = Object.keys(o1)
         let k2 = Object.keys(o2)
         return (

@@ -15,6 +15,8 @@ let operators = {
     ),
     'str': f (
         'operator.str',
+        `function operator.str (s: StructOperand<'str'>) -> String`,
+            s => apply_unary('str', s),
         'function operator.str (p: Bool) -> String',
             p => p? 'true': 'false',
         'function operator.str (x: Number) -> String',
@@ -50,6 +52,8 @@ let operators = {
     /* Comparsion */
     '<': f (
         'operator.less_than',
+        `function operator.less_than (s1: StructOperand<'<'>, s2: StructOperand<'<'>) -> Bool`,
+            (s1, s2) => apply_operator('<', s1, s2),
         'function operator.less_than (a: String, b: String) -> Bool',
             (a, b) => a < b,
         'function operator.less_than (x: Number, y: Number) -> Bool',
@@ -72,6 +76,8 @@ let operators = {
     ),
     '==': f (
         'operator.equal',
+        `function operator.equal (s1: StructOperand<'=='>, s2: StructOperand<'=='>) -> Bool`,
+            (s1, s2) => apply_operator('==', s1, s2),
         'function operator.equal (l: Any, r: Any) -> Bool',
             (l, r) => (l === r)
     ),
@@ -137,6 +143,8 @@ let operators = {
     /* Arithmetic */
     '+': f (
         'operator.plus',
+        `function operator.plus (s1: StructOperand<'+'>, s2: StructOperand<'+'>) -> Object`,
+            (s1, s2) => apply_operator('+', s1, s2),
         'function operator.plus (a: Iterable, b: Iterable) -> Iterable',
             (a, b) => {
                 return (function* ()  {
@@ -153,6 +161,10 @@ let operators = {
     ),
     '-': f (
         'operator.minus',
+        `function operator.minus (s: StructOperand<'negate'>) -> Object`,
+            s => apply_unary('negate', s),
+        `function operator.minus (s1: StructOperand<'-'>, s2: StructOperand<'-'>) -> Object`,
+            (s1, s2) => apply_operator('-', s1, s2),
         'function operator.minus (x: Number) -> Number',
             x => -x,
         'function operator.minus (x: Number, y: Number) -> MayNotNumber',
@@ -160,21 +172,29 @@ let operators = {
     ),
     '*': f (
         'operator.times',
+        `function operator.times (s1: StructOperand<'*'>, s2: StructOperand<'*'>) -> Object`,
+            (s1, s2) => apply_operator('*', s1, s2),
         'function operator.times (x: Number, y: Number) -> MayNotNumber',
             (x, y) => x * y
     ),
     '/': f (
         'operator.divide',
+        `function operator.divide (s1: StructOperand<'/'>, s2: StructOperand<'/'>) -> Object`,
+            (s1, s2) => apply_operator('/', s1, s2),
         'function operator.divide (x: Number, y: Number) -> MayNotNumber',
             (x, y) => x / y
     ),
     '%': f (
         'operator.modulo',
+        `function operator.modulo (s1: StructOperand<'%'>, s2: StructOperand<'%'>) -> Object`,
+            (s1, s2) => apply_operator('%', s1, s2),
         'function operator.modulo (x: Number, y: Number) -> MayNotNumber',
             (x, y) => x % y
     ),
     '^': f (
         'operator.power',
+        `function operator.power (s1: StructOperand<'^'>, s2: StructOperand<'^'>) -> Object`,
+            (s1, s2) => apply_operator('^', s1, s2),
         'function operator.power (x: Number, y: Number) -> MayNotNumber',
             (x, y) => Math.pow(x, y)
     )

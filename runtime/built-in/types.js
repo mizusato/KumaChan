@@ -1,7 +1,13 @@
+'<include> misc/structure.js';
+
+
 let IndexType = Ins(Types.Int, $(x => x >= 0))
 
 pour(Types, {
     Object: Types.Any,
+    Schema: SchemaType,
+    Structure: StructureType,
+    StructOperand: StructOperand,
     Callable: Uni(ES.Function, Types.TypeTemplate, Types.Class),
     Iterable: $(
         x => is(x, ES.Object) && typeof x[Symbol.iterator] == 'function'
@@ -18,12 +24,12 @@ pour(Types, {
         }
     }),
     Promise: $(x => x instanceof Promise),
-    Arity: template(fun(
+    Arity: template (
         'function Arity (n: Int) -> Type',
             n => Ins(Types.Function, $(
                 f => f[WrapperInfo].proto.parameters.length === n
             ))
-    )),
+    ),
     Index: IndexType,
     Size: IndexType,
     Error: $(x => x instanceof Error),
