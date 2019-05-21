@@ -166,7 +166,7 @@ var Functions = map[string]TransFunction {
             "{ parameters: %v, value_type: __.a }",
             parameters,
         )
-        return fmt.Sprintf(
+        return fmt.Sprintf (
             "w(%v, %v, %v, %v)",
             proto, "null", desc, raw,
         )

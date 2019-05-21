@@ -52,13 +52,31 @@ var CommandsMap = map[string]TransFunction {
             name, value, T, file, row, col,
         )
     },
-    // cmd_type = @type name = expr
+    // cmd_type = @type name generic_params = expr
     "cmd_type": func (tree Tree, ptr int) string {
-        var children = Children(tree, ptr)
-        var name = Transpile(tree, children["name"])
-        var value = Transpile(tree, children["expr"])
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
+        var children = Children(tree, ptr)
+        var name = Transpile(tree, children["name"])
+        var name_raw = GetTokenContent(tree, children["name"])
+        var gp_ptr = children["generic_params"]
+        var value string
+        if NotEmpty(tree, gp_ptr) {
+            var parameters, desc = GenericParameters(tree, gp_ptr, name_raw)
+            var expr = Transpile(tree, children["expr"])
+            var raw = BareFunction(fmt.Sprintf("return %v;", expr))
+            var proto = fmt.Sprintf (
+                "{ parameters: %v, value_type: __.t }",
+                parameters,
+            )
+            var f = fmt.Sprintf (
+                "w(%v, %v, %v, %v)",
+                proto, "null", desc, raw,
+            )
+            value = fmt.Sprintf("__.ctt(%v)", f)
+        } else {
+            value = Transpile(tree, children["expr"])
+        }
         return fmt.Sprintf(
             "__.c(dl, [%v, %v, true, __.t], %v, %v, %v)",
             name, value, file, row, col,

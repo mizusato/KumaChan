@@ -284,13 +284,12 @@ func UntypedParameters (names []string) string {
 
 func UntypedParameterList (tree Tree, namelist_ptr int) string {
     var name_ptrs = FlatSubTree(tree, namelist_ptr, "name", "namelist_tail")
-    var names = make([]string, 0, 10)
     var buf strings.Builder
     buf.WriteRune('[')
     for i, name_ptr := range name_ptrs {
         var name = Transpile(tree, name_ptr)
         fmt.Fprintf(&buf, "{ name: %v, type: __.a }", name)
-        if i != len(names)-1 {
+        if i != len(name_ptrs)-1 {
             buf.WriteString(", ")
         }
     }
@@ -299,7 +298,32 @@ func UntypedParameterList (tree Tree, namelist_ptr int) string {
 }
 
 
+func GenericParameters (tree Tree, gp_ptr int, name []rune) (string, string) {
+    var GpId = syntax.Name2Id["generic_params"]
+    if tree.Nodes[gp_ptr].Part.Id != GpId || !NotEmpty(tree, gp_ptr) {
+        panic("invalid usage of GenericParameters()")
+    }
+    var children = Children(tree, gp_ptr)
+    var parameters string
+    var desc string
+    var typed_ptr, exists = children["typed_list"]
+    if exists {
+        parameters = Transpile(tree, typed_ptr)
+        desc = Desc(name, GetWholeContent(tree, typed_ptr), []rune("Type"))
+    } else {
+        var l_ptr = children["namelist"]
+        parameters = UntypedParameterList(tree, l_ptr)
+        desc = Desc(name, GetWholeContent(tree, l_ptr), []rune("Type"))
+    }
+    return parameters, desc
+}
+
+
 func Filters (tree Tree, exprlist_ptr int) string {
+    var ExprListId = syntax.Name2Id["exprlist"]
+    if tree.Nodes[exprlist_ptr].Part.Id != ExprListId {
+        panic("invalid usage of Filters()")
+    }
     var file = GetFileName(tree)
     var expr_ptrs = FlatSubTree(tree, exprlist_ptr, "expr", "exprlist_tail")
     var buf strings.Builder

@@ -326,6 +326,7 @@ function cancel_binding (f) {
 }
 
 function call (f, args, file = null, row = -1, col = -1) {
+    assert(is(args, Types.List))
     if (is(f, Types.Class)) {
         f = f.create
     } else if (is(f, Types.TypeTemplate)) {

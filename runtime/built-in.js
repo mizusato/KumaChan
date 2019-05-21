@@ -28,6 +28,8 @@ let global_helpers = {
     ci: create_interface,
     cs: create_schema,
     ct: inject_desc(f => $(x => call(f, [x])), 'create_simple_type'),
+    ctt: inject_desc(f => new TypeTemplate(f), 'create_type_template'),
+    cct: inject_desc(f => new ClassTemplate(f), 'create_class_template'),
     cf: one_of,
     ef: ensure_failed,
     tf: try_failed,

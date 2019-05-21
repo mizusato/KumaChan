@@ -27,6 +27,8 @@ var Tokens = [...] Token {
     Token { Name: "..{",     Pattern: r(`\.\.\{`) },
     Token { Name: "...{",    Pattern: r(`\.\.\.\{`) },
     Token { Name: "Comment", Pattern: r(`\.\.[^\[\{][^`+Blanks+LF+`]*`) },
+    Token { Name: "<<",      Pattern: r(`\<\<[`+Blanks+`]`) },
+    Token { Name: ">>",      Pattern: r(`[`+Blanks+`]\>\>`) },
     Token { Name: "Blank",   Pattern: r(`[`+Blanks+`]+`) },
     Token { Name: "LF",      Pattern: r(LF+`+`) },
     Token { Name: "LF",      Pattern: r(`;`) },
@@ -62,8 +64,6 @@ var Tokens = [...] Token {
     Token { Name: "<--",     Pattern: r(`\<\-\-`) },
     Token { Name: "->",      Pattern: r(`\-\>`) },
     Token { Name: "<-",      Pattern: r(`\<\-`) },
-    Token { Name: "<<",      Pattern: r(`\<\<`) },
-    Token { Name: ">>",      Pattern: r(`\>\>`) },
     Token { Name: "<",       Pattern: r(`\<`) },
     Token { Name: ">",       Pattern: r(`\>`) },
     Token { Name: "!",       Pattern: r(`\!`) },
@@ -208,7 +208,7 @@ var SyntaxDefinition = [...] string {
     /* Scope Related Commands @ Group 2 */
     "cmd_scope = cmd_let | cmd_type | cmd_var | cmd_reset",
     "cmd_let = @let name var_type = expr",
-    "cmd_type = @type name = expr",
+    "cmd_type = @type name generic_params = expr",
     "cmd_var = @var name var_type = expr",
     "var_type? = : type",
     "cmd_reset = @reset name set_op = expr",
@@ -267,7 +267,7 @@ var SyntaxDefinition = [...] string {
 
     /* Type Object Definition */
     /* Generics */
-    "generic_params = < typed_list! >! | < namelist! >!",
+    "generic_params = < namelist > | < typed_list! >!",
     /* Schema */
     "schema = @struct name generic_params { field_list schema_config }",
     "field_list = field field_list_tail",
