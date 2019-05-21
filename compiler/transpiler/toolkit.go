@@ -299,6 +299,26 @@ func UntypedParameterList (tree Tree, namelist_ptr int) string {
 }
 
 
+func Filters (tree Tree, exprlist_ptr int) string {
+    var file = GetFileName(tree)
+    var expr_ptrs = FlatSubTree(tree, exprlist_ptr, "expr", "exprlist_tail")
+    var buf strings.Builder
+    buf.WriteRune('(')
+    for i, expr_ptr := range expr_ptrs {
+        var row, col = GetRowColInfo(tree, expr_ptr)
+        fmt.Fprintf (
+            &buf, "__.c(__.rb, [%v], %v, %v, %v)",
+            Transpile(tree, expr_ptr), file, row, col,
+        )
+        if i != len(expr_ptrs)-1 {
+            buf.WriteString(" && ")
+        }
+    }
+    buf.WriteRune(')')
+    return buf.String()
+}
+
+
 func WriteList (buf *strings.Builder, strlist []string) {
     for i, item := range strlist {
         buf.WriteString(item)

@@ -162,13 +162,13 @@ var Functions = map[string]TransFunction {
         }
         var expr = Transpile(tree, children["expr"])
         var raw = BareFunction(fmt.Sprintf("return %v;", expr))
+        var proto = fmt.Sprintf (
+            "{ parameters: %v, value_type: __.a }",
+            parameters,
+        )
         return fmt.Sprintf(
             "w(%v, %v, %v, %v)",
-            fmt.Sprintf (
-                "{ parameters: %v, value_type: __.a }",
-                parameters,
-            ),
-            "null", desc, raw,
+            proto, "null", desc, raw,
         )
     },
     // body = { static_commands commands mock_hook handle_hook }!

@@ -52,6 +52,18 @@ var CommandsMap = map[string]TransFunction {
             name, value, T, file, row, col,
         )
     },
+    // cmd_type = @type name = expr
+    "cmd_type": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var name = Transpile(tree, children["name"])
+        var value = Transpile(tree, children["expr"])
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
+        return fmt.Sprintf(
+            "__.c(dl, [%v, %v, true, __.t], %v, %v, %v)",
+            name, value, file, row, col,
+        )
+    },
     // cmd_var = @var name var_type = expr
     "cmd_var": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)

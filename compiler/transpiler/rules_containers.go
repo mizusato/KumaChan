@@ -144,25 +144,9 @@ var Containers = map[string]TransFunction {
     },
     // opt_filters? = , exprlist
     "opt_filters": func (tree Tree, ptr int) string {
-        var file = GetFileName(tree)
         if NotEmpty(tree, ptr) {
             var children = Children(tree, ptr)
-            var list_ptr = children["exprlist"]
-            var expr_ptrs = FlatSubTree(tree, list_ptr, "expr", "exprlist_tail")
-            var buf strings.Builder
-            buf.WriteRune('(')
-            for i, expr_ptr := range expr_ptrs {
-                var row, col = GetRowColInfo(tree, expr_ptr)
-                fmt.Fprintf (
-                    &buf, "__.c(__.rb, [%v], %v, %v, %v)",
-                    Transpile(tree, expr_ptr), file, row, col,
-                )
-                if i != len(expr_ptrs)-1 {
-                    buf.WriteString(" && ")
-                }
-            }
-            buf.WriteRune(')')
-            return buf.String()
+            return Filters(tree, children["exprlist"])
         } else {
             return "true"
         }

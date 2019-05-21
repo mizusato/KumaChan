@@ -91,15 +91,17 @@ var Keywords = [...] string {
     "@if", "@else", "@elif", "@switch", "@case", "@default",
     "@while", "@for", "@in", "@break", "@continue", "@return",
     "@yield", "@await",
-    "@let", "@var", "@reset",
+    "@let", "@type", "@var", "@reset",
     "@set", "@do", "@nothing",
     "@function", "@generator", "@async", "@lambda",
     "@static", "@mock", "@handle",
     "@throw", "@assert", "@ensure", "@try", "@to",
     "@unless", "@failed", "@finally", "@panic",
     "@where", "@xml", "@map",
-    "@struct", "@require", "@one", "@of",
+    "@struct", "@config", "@require", "@operator",
+    "@one", "@of",
     "@class", "@init", "@data", "@interface", "@expose",
+    "@str",
     "@true", "@false",
     "@is", "@or", "@not",
 }
@@ -204,15 +206,15 @@ var SyntaxDefinition = [...] string {
     "namelist = name namelist_tail",
     "namelist_tail? = , name! namelist_tail",
     /* Scope Related Commands @ Group 2 */
-    "cmd_scope = cmd_let | cmd_var | cmd_reset",
+    "cmd_scope = cmd_let | cmd_type | cmd_var | cmd_reset",
     "cmd_let = @let name var_type = expr",
+    "cmd_type = @type name = expr",
     "cmd_var = @var name var_type = expr",
     "var_type? = : type",
     "cmd_reset = @reset name set_op = expr",
     "set_op? = op_arith",
     /* Definition Commands @ Group 2 */
-    "cmd_def = function | abs_def",
-    "abs_def = struct | class | interface",
+    "cmd_def = function | schema | class | interface",
     /* Pass Command @ Group 3 */
     "cmd_pass = @do @nothing",
     /* Set Command @ Group 3 */
@@ -265,19 +267,23 @@ var SyntaxDefinition = [...] string {
 
     /* Type Object Definition */
     /* Generics */
-    "generic_params = < typed_list! >!",
+    "generic_params = < typed_list! >! | < namelist! >!",
     /* Schema */
-    "struct = @struct name generic_params { field_list condition }",
+    "schema = @struct name generic_params { field_list schema_config }",
     "field_list = field field_list_tail",
     "field_list_tail? = , field! field_list_tail",
     "field = name :! type! field_default",
     "field_default? = = expr",
-    "condition = , @require expr",
+    "schema_config? = , @config { schema_req schema_op_defs }",
+    "schema_req? = @require (! name! )! opt_arrow {! body! }!",
+    "schema_op_defs? = schema_op_def schema_op_defs",
+    "schema_op_def = @operator schema_op (! namelist! )! opt_arrow {! body! }!",
+    "schema_op = @str | < | + | - | * | / | %",
     /* Finite */
     "finite_literal = @one @of { exprlist_opt }! | { exprlist }",
     "exprlist_opt? = exprlist",
     /* SimpleType */
-    "type_literal = { name _bar1 filters! }!",
+    "simple_type_literal = { name _bar1 filters! }!",
     "filters = exprlist",
     /* Class */
     "class = @class name generic_params supers { initializer methods } data",
@@ -302,7 +308,7 @@ var SyntaxDefinition = [...] string {
     `op_logic = @is | && | _bar2 | & | _bar1 | \ `,
     "op_arith = + | - | * | / | % | ^ ",
     /* Operators (Prefix) */
-    "unary? = @not | - | _exc | ~ | @expose",
+    "unary? = @not | @str | - | _exc | ~ | @expose",
     /* Operand */
     "operand = unary operand_base operand_tail",
     "operand_base = wrapped | lambda | literal | dot_para | identifier",
@@ -326,8 +332,8 @@ var SyntaxDefinition = [...] string {
 
     /* Literals */
     "literal = primitive | adv_literal",
-    "adv_literal = xml | comprehension | abs_literal | map | list | hash",
-    "abs_literal = type_literal | finite_literal",
+    "adv_literal = xml | comprehension | type_literal | map | list | hash",
+    "type_literal = simple_type_literal | finite_literal",
     // TODO: generics and array
     "map = @map { } | @map { map_item! map_tail }",
     "map_tail? = , map_item! map_tail",

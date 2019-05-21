@@ -122,11 +122,11 @@ let Types = {
         let p = get_proto(x)
         let p_ok = (p !== Object.prototype && p !== null)
         if (!p_ok) { return false }
-        return forall([
-            Array, Error, Function,
-            Class, Instance, Interface,
-            TypeTemplate, Schema, Structure
-        ], T => !(x instanceof T))
+        if (is(x, Type)) { return false }
+        return forall(
+            [Array, Error, Function, Instance, Structure],
+            T => !(x instanceof T)
+        )
     })), $(x => x === Function.prototype)),
     ES_Symbol: ES.Symbol,
     ES_Key: Uni(ES.String, ES.Symbol),

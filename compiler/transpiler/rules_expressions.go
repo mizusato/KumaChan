@@ -142,19 +142,12 @@ var Expressions = map[string]TransFunction {
     "unary": func (tree Tree, ptr int) string {
         var child_ptr = tree.Nodes[ptr].Children[0]
         var child_node = &tree.Nodes[child_ptr]
-        switch name := syntax.Id2Name[child_node.Part.Id]; name {
-        case "@not":
-            return `__.o("not")`
-        case "~":
-            return `__.o("~")`
-        case "-":
-            return `__.o("-")`
-        case "!":
-            return `__.o("!")`
-        case "@expose":
+        var name = syntax.Id2Name[child_node.Part.Id]
+        if name == "@expose" {
             return "expose"
-        default:
-            panic("cannot transpile unknown unary operator " + name)
+        } else {
+            var t = strings.TrimPrefix(name, "@")
+            return fmt.Sprintf("__.o(%v)", EscapeRawString([]rune(t)))
         }
     },
     // operand_base = wrapped | lambda | literal | dot_para | identifier
