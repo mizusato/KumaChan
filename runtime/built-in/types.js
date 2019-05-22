@@ -1,4 +1,5 @@
 '<include> misc/structure.js';
+'<include> misc/enum.js';
 
 
 let IndexType = Ins(Types.Int, $(x => x >= 0))
@@ -8,6 +9,7 @@ pour(Types, {
     Schema: SchemaType,
     Structure: StructureType,
     StructOperand: StructOperand,
+    Enum: EnumType,
     Callable: Uni(ES.Function, Types.TypeTemplate, Types.Class),
     Iterable: $(
         x => is(x, ES.Object) && typeof x[Symbol.iterator] == 'function'

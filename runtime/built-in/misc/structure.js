@@ -33,6 +33,9 @@ class Structure {
          *  So you should not catch RuntimeError because they are fatal errors.
          */
     }
+    get [Symbol.toStringTag]() {
+        return 'Structure'
+    }
 }
 
 class Schema {
@@ -107,6 +110,9 @@ class Schema {
     get_operator (name) {
         assert(this.defined_operator(name))
         return this.operators[name]
+    }
+    get [Symbol.toStringTag]() {
+        return 'Schema'
     }
 }
 

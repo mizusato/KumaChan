@@ -178,32 +178,6 @@ Types.Void = Void
 
 
 /**
- *  Enum: An encapsulation of TypedHash<Singleton>
- */
-class Enum {
-    constructor (item_names, desc) {
-        assert(is(item_names, TypedList.of(Types.String)))
-        this.items = {}
-        this.values = []
-        foreach(item_names, name => {
-            let item = create_value(`${name} (${desc})`)
-            this.items[name] = item
-            this.values.push(item)
-        })
-        Object.freeze(this.items)
-        Object.freeze(this.values)
-        this[Checker] = (x => exists(this.values, v => v === x))
-        Object.freeze(this)
-    }
-    get [Symbol.toStringTag]() {
-        return 'Enum'
-    }
-}
-
-Types.Enum = $(x => x instanceof Enum)
-
-
-/**
  *  Finite Set: Types that only contains a specific list of objects.
  */
 class Finite {

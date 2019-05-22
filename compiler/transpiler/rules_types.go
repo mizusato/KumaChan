@@ -62,4 +62,23 @@ var Types = map[string]TransFunction {
         buf.WriteRune(')')
         return buf.String()
     },
+    // enum = @enum name {! namelist! }!
+    "enum": func (tree Tree, ptr int) string {
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
+        var children = Children(tree, ptr)
+        var e_name = Transpile(tree, children["name"])
+        var l_ptr = children["namelist"]
+        var name_ptrs = FlatSubTree(tree, l_ptr, "name", "namelist_tail")
+        var names = make([]string, 0, 16)
+        for _, name_ptr := range name_ptrs {
+            names = append(names, Transpile(tree, name_ptr))
+        }
+        var names_str = strings.Join(names, ", ")
+        var enum = fmt.Sprintf("__.ce(%v, [%v])", e_name, names_str)
+        return fmt.Sprintf (
+            "__.c(dl, [%v, %v, true, __.t], %v, %v, %v)",
+            e_name, enum, file, row, col,
+        )
+    },
 }

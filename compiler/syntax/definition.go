@@ -99,7 +99,7 @@ var Keywords = [...] string {
     "@unless", "@failed", "@finally", "@panic",
     "@where", "@xml", "@map",
     "@struct", "@config", "@require", "@operator",
-    "@one", "@of",
+    "@one", "@of", "@enum",
     "@class", "@init", "@data", "@interface", "@expose",
     "@str",
     "@true", "@false",
@@ -214,7 +214,7 @@ var SyntaxDefinition = [...] string {
     "cmd_reset = @reset name set_op = expr",
     "set_op? = op_arith",
     /* Definition Commands @ Group 2 */
-    "cmd_def = function | schema | class | interface",
+    "cmd_def = function | schema | enum | class | interface",
     /* Pass Command @ Group 3 */
     "cmd_pass = @do @nothing",
     /* Set Command @ Group 3 */
@@ -269,16 +269,18 @@ var SyntaxDefinition = [...] string {
     /* Generics */
     "generic_params = < namelist > | < typed_list! >!",
     /* Schema */
-    "schema = @struct name generic_params { field_list schema_config }",
+    "schema = @struct name generic_params { field_list schema_config }!",
     "field_list = field field_list_tail",
     "field_list_tail? = , field! field_list_tail",
     "field = name :! type! field_default",
     "field_default? = = expr",
-    "schema_config? = , @config { schema_req schema_op_defs }",
+    "schema_config? = , @config { schema_req schema_op_defs }!",
     "schema_req? = @require (! name! )! opt_arrow {! body! }!",
     "schema_op_defs? = schema_op_def schema_op_defs",
     "schema_op_def = @operator schema_op (! namelist! )! opt_arrow {! body! }!",
     "schema_op = @str | < | + | - | * | / | %",
+    /* Enum */
+    "enum = @enum name {! namelist! }!",
     /* Finite */
     "finite_literal = @one @of { exprlist_opt }! | { exprlist }",
     "exprlist_opt? = exprlist",

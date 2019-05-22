@@ -31,6 +31,7 @@ let global_helpers = {
     ctt: inject_desc(f => new TypeTemplate(f), 'create_type_template'),
     cct: inject_desc(f => new ClassTemplate(f), 'create_class_template'),
     cf: one_of,
+    ce: inject_desc((n, ns) => new Enum(n, ns), 'create_enum'),
     ef: ensure_failed,
     tf: try_failed,
     ie: inject_desc(inject_ensure_args, 'inject_ensure_args'),
