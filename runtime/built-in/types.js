@@ -66,6 +66,10 @@ let built_in_types = {
     Iterable: Types.Iterable,
     Iterator: Types.Iterator,
     Promise: Types.Promise,
+    Schema: Types.Schema,
+    Structure: Types.Structure,
+    StrcutOperand: Types.StructOperand,
+    Enum: Types.Enum,
     Error: Types.Error,
     NotFound: Types.NotFound
 }
