@@ -134,7 +134,7 @@ let SchemaType = $(x => x instanceof Schema)
 let StructureType = $(x => x instanceof Structure)
 let StructOperand = template (
     'function DefinedOperator (name: String) -> Type',
-        name => $(x => is(x, Types.Structure) && x.defined_operator(name))
+        name => Ins(Types.Structure, $(s => s.schema.defined_operator(name)))
 )
 
 function create_schema (name, table, defaults, config) {
@@ -151,7 +151,7 @@ function new_structure (schema, hash) {
 function get_common_schema (s1, s2) {
     assert(is(s1, StructureType))
     assert(is(s2, StructureType))
-    esnure(s1.schema === s2.schema, 'different_schema')
+    ensure(s1.schema === s2.schema, 'different_schema')
     return s1.schema
 }
 

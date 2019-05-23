@@ -279,7 +279,7 @@ var SyntaxDefinition = [...] string {
     "schema = @struct name generic_params { field_list schema_config }!",
     "field_list = field field_list_tail",
     "field_list_tail? = , field! field_list_tail",
-    "field = name :! type! field_default",
+    "field = name : type! field_default",
     "field_default? = = expr",
     "schema_config? = , @config { schema_req schema_op_defs }!",
     "schema_req? = @require (! name! )! opt_arrow body!",

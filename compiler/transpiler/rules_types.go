@@ -131,7 +131,7 @@ var Types = map[string]TransFunction {
             var desc = Desc (
                 []rune("schema_requirement"), name_raw, []rune("Bool"),
             )
-            var parameters = fmt.Sprintf("[{ name: %v, type: __a }]", name)
+            var parameters = fmt.Sprintf("[{ name: %v, type: __.a }]", name)
             return Function(tree, body_ptr, F_Sync, desc, parameters, "__.b")
         } else {
             return "null"
