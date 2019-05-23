@@ -341,9 +341,10 @@ var SyntaxDefinition = [...] string {
     "exprlist_tail? = , expr! exprlist_tail",
 
     /* Literals */
-    "literal = primitive | adv_literal | iife",
+    "literal = primitive | adv_literal | iife | struct",
     "adv_literal = xml | comprehension | type_literal | map | list | hash",
     "type_literal = simple_type_literal | finite_literal",
+    "struct = type hash",
     // TODO: generics and array
     "map = @map { } | @map { map_item! map_tail }",
     "map_tail? = , map_item! map_tail",

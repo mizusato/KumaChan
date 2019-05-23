@@ -58,6 +58,19 @@ var TransMapByName = map[string]TransFunction {
     "literal": TranspileFirstChild,
     // adv_literal = xml | comprehension | abs_literal | map | list | hash
     "adv_literal": TranspileFirstChild,
+    // struct = type hash
+    "struct": func (tree Tree, ptr int) string {
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
+        var children = Children(tree, ptr)
+        var type_ = Transpile(tree, children["type"])
+        var hash = Transpile(tree, children["hash"])
+        return fmt.Sprintf (
+            "__.c(__.ns, [%v, %v], %v, %v, %v)",
+            type_, hash, file, row, col,
+        )
+    },
+
 
     /* Trivial Things */
     // name = Name

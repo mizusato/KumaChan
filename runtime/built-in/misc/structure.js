@@ -3,10 +3,12 @@ class Structure {
         assert(is(schema, Types.Schema))
         assert(is(data, Types.Hash))
         this.schema = schema
-        this.data = data
+        this.data = copy(data)
         let result = this.schema.check_all(this.data)
         if (!result.ok) {
-            if (result.why == 'key') {
+            if (result.why == 'miss') {
+                ensure(false, 'invalid_struct_init_miss', result.key)
+            } else if (result.why == 'key') {
                 ensure(false, 'invalid_struct_init_key', result.key)
             } else {
                 ensure(false, 'invalid_struct_init_req')
@@ -24,14 +26,16 @@ class Structure {
     set (key, value) {
         let s = this.schema
         ensure(s.has_key(key), 'struct_key_error', key)
+        let old_value = this.data[key]
         this.data[key] = value
-        ensure(s.check_key(this.data, key), 'struct_key_invalid', key)
-        ensure(s.check_requirement(this.data), 'struct_req_violated', key)
-        /**
-         *  If above errors were caught, since assginment of the new value
-         *  already finished, unexpected behaviour would happen.
-         *  So you should not catch RuntimeError because they are fatal errors.
-         */
+        if (!s.check_key(this.data, key)) {
+            this.data[key] = old_value
+            ensure(false, 'struct_key_invalid', key)
+        }
+        if (!s.check_requirement(this.data)) {
+            this.data[key] = old_value
+            ensure(false, 'struct_req_violated', key)
+        }
     }
     get [Symbol.toStringTag]() {
         return 'Structure'
@@ -84,10 +88,14 @@ class Schema {
         let table = this.table
         for (let k of Object.keys(table)) {
             let T = table[k]
-            if (has(k, hash) && is(hash[k], T)) {
-                continue
+            if (has(k, hash)) {
+                if (is(hash[k], T)) {
+                    continue
+                } else {
+                    return { ok: false, why: 'key', key: k }
+                }
             } else {
-                return { ok: false, why: 'key', key: key }
+                return { ok: false, why: 'miss', key: k }
             }
         }
         if (this.check_requirement(hash)) {
@@ -132,6 +140,12 @@ let StructOperand = template (
 function create_schema (name, table, defaults, config) {
     let { req, ops } = config
     return new Schema(name, table, defaults, req, ops)
+}
+
+function new_structure (schema, hash) {
+    ensure(is(schema, Types.Schema), 'not_schema')
+    assert(is(hash, Types.Hash))
+    return schema.create(hash)
 }
 
 function get_common_schema (s1, s2) {
