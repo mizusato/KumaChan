@@ -282,9 +282,10 @@ var SyntaxDefinition = [...] string {
     "field = name :! type! field_default",
     "field_default? = = expr",
     "schema_config? = , @config { schema_req schema_op_defs }!",
-    "schema_req? = @require (! name! )! opt_arrow {! body! }!",
+    "schema_req? = @require (! name! )! opt_arrow body!",
     "schema_op_defs? = schema_op_def schema_op_defs",
-    "schema_op_def = @operator schema_op (! namelist! )! opt_arrow {! body! }!",
+    "schema_op_def = @operator schema_op schema_op_fun",
+    "schema_op_fun = (! namelist! )! opt_arrow body!",
     "schema_op = @str | < | + | - | * | / | %",
     /* Enum */
     "enum = @enum name {! namelist! }!",

@@ -320,6 +320,65 @@ func GenericParameters (tree Tree, gp_ptr int, name []rune) (string, string) {
 }
 
 
+func TypeTemplate (
+    tree Tree, gp_ptr int, name_ptr int, expr string, is_class bool,
+) string {
+    var name_raw = GetTokenContent(tree, name_ptr)
+    var parameters, desc = GenericParameters(tree, gp_ptr, name_raw)
+    var raw = BareFunction(fmt.Sprintf("return %v;", expr))
+    var proto = fmt.Sprintf("{ parameters: %v, value_type: __.t }", parameters)
+    var f = fmt.Sprintf("w(%v, %v, %v, %v)", proto, "null", desc, raw)
+    if is_class {
+        return fmt.Sprintf("__.cct(%v)", f)
+    } else {
+        return fmt.Sprintf("__.ctt(%v)", f)
+    }
+}
+
+
+func FieldList (tree Tree, ptr int) (string, string) {
+    var FieldListId = syntax.Name2Id["field_list"]
+    if tree.Nodes[ptr].Part.Id != FieldListId {
+        panic("invalid usage of FieldList()")
+    }
+    var names = make([]string, 0, 16)
+    var types = make([]string, 0, 16)
+    var defaults = make([]string, 0, 16)
+    // field_list = field field_list_tail
+    var field_ptrs = FlatSubTree(tree, ptr, "field", "field_list_tail")
+    for _, field_ptr := range field_ptrs {
+        // field = name :! type! field_default
+        var children = Children(tree, field_ptr)
+        var name = Transpile(tree, children["name"])
+        var type_ = Transpile(tree, children["type"])
+        var default_ string
+        var default_ptr = children["field_default"]
+        if NotEmpty(tree, default_ptr) {
+            // field_default? = = expr
+            default_ = TranspileLastChild(tree, default_ptr)
+        } else {
+            default_ = ""
+        }
+        names = append(names, name)
+        types = append(types, type_)
+        defaults = append(defaults, default_)
+    }
+    var field_items = make([]string, 0, 16)
+    var default_items = make([]string, 0, 16)
+    for i := 0; i < len(names); i++ {
+        var field_item = fmt.Sprintf("%v: %v", names[i], types[i])
+        field_items = append(field_items, field_item)
+        if defaults[i] != "" {
+            var default_item = fmt.Sprintf("%v: %v", names[i], defaults[i])
+            default_items = append(default_items, default_item)
+        }
+    }
+    var t = fmt.Sprintf("{ %v }", strings.Join(field_items, ", "))
+    var d = fmt.Sprintf("{ %v }", strings.Join(default_items, ", "))
+    return t, d
+}
+
+
 func Filters (tree Tree, exprlist_ptr int) string {
     var ExprListId = syntax.Name2Id["exprlist"]
     if tree.Nodes[exprlist_ptr].Part.Id != ExprListId {

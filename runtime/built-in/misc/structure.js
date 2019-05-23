@@ -39,13 +39,19 @@ class Structure {
 }
 
 class Schema {
-    constructor (table, defaults = {}, requirement = null, operators = {}) {
+    constructor (name, table, defaults = {}, req = null, ops = {}) {
+        let requirement = req
+        let operators = ops
+        assert(is(name, Types.String))
         assert(is(table, TypedHash.of(Type)))
-        assert(is(defaults, Hash))
+        assert(is(defaults, Types.Hash))
         assert(forall(Object.keys(defaults), k => has(k, table)))
         assert(is(requirement, Uni(ES.Null, Types.Function)))
-        assert(requirement[WrapperInfo].proto.value_type === Types.Bool)
+        if (requirement != null) {
+            assert(requirement[WrapperInfo].proto.value_type === Types.Bool)
+        }
         assert(is(operators, TypedHash.of(Types.Function)))
+        this.name = name
         this.table = copy(table)
         this.defaults = copy(defaults)
         this.requirement = requirement
@@ -54,7 +60,7 @@ class Schema {
         Object.freeze(this.defaults)
         Object.freeze(this.operators)
         this.create = fun (
-            'function create_structure (h: Hash) -> Stucture',
+            'function create_structure (h: Hash) -> Structure',
                 h => new Structure(this, h)
         )
         this[Checker] = x => (x instanceof Structure && x.schema === this)
@@ -123,8 +129,9 @@ let StructOperand = template (
         name => $(x => is(x, Types.Structure) && x.defined_operator(name))
 )
 
-function create_schema (table, defaults, requirement, operators) {
-    return new Schema(table, defaults, requirement, operators)
+function create_schema (name, table, defaults, config) {
+    let { req, ops } = config
+    return new Schema(name, table, defaults, req, ops)
 }
 
 function get_common_schema (s1, s2) {

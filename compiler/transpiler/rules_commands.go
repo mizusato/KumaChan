@@ -57,25 +57,15 @@ var CommandsMap = map[string]TransFunction {
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
         var children = Children(tree, ptr)
-        var name = Transpile(tree, children["name"])
-        var name_raw = GetTokenContent(tree, children["name"])
+        var name_ptr = children["name"]
         var gp_ptr = children["generic_params"]
+        var name = Transpile(tree, name_ptr)
+        var expr = Transpile(tree, children["expr"])
         var value string
         if NotEmpty(tree, gp_ptr) {
-            var parameters, desc = GenericParameters(tree, gp_ptr, name_raw)
-            var expr = Transpile(tree, children["expr"])
-            var raw = BareFunction(fmt.Sprintf("return %v;", expr))
-            var proto = fmt.Sprintf (
-                "{ parameters: %v, value_type: __.t }",
-                parameters,
-            )
-            var f = fmt.Sprintf (
-                "w(%v, %v, %v, %v)",
-                proto, "null", desc, raw,
-            )
-            value = fmt.Sprintf("__.ctt(%v)", f)
+            value = TypeTemplate(tree, gp_ptr, name_ptr, expr, false)
         } else {
-            value = Transpile(tree, children["expr"])
+            value = expr
         }
         return fmt.Sprintf(
             "__.c(dl, [%v, %v, true, __.t], %v, %v, %v)",
