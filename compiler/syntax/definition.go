@@ -267,7 +267,7 @@ var SyntaxDefinition = [...] string {
 
     /* Type Object Definition */
     /* Generics */
-    "generic_params = < namelist > | < typed_list! >!",
+    "generic_params? = < namelist > | < typed_list! >!",
     /* Schema */
     "schema = @struct name generic_params { field_list schema_config }!",
     "field_list = field field_list_tail",
