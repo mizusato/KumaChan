@@ -62,6 +62,8 @@ var Functions = map[string]TransFunction {
     },
     // lambda = lambda_block | lambda_inline
     "lambda": TranspileFirstChild,
+    // iife = invoke | iterator | promise
+    "iife": TranspileFirstChild,
     // lambda_block = lambda_sync | lambda_async | lambda_generator
     "lambda_block": TranspileFirstChild,
     // lambda_sync = @lambda paralist_block ret_lambda body!
@@ -91,6 +93,16 @@ var Functions = map[string]TransFunction {
             desc, parameters, value_type,
         )
     },
+    // invoke = @invoke body
+    "invoke": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var body_ptr = children["body"]
+        var desc = Desc([]rune("IIFE"), []rune("()"), []rune("Object"))
+        var f = Function(tree, body_ptr, F_Sync, desc, "[]", "__.a")
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
+        return fmt.Sprintf("__.c(%v, [], %v, %v, %v)", f, file, row, col)
+    },
     // lambda_async = @async paralist_block opt_arrow body!
     "lambda_async": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
@@ -107,6 +119,16 @@ var Functions = map[string]TransFunction {
             desc, parameters, "__.pm",
         )
     },
+    // promise = @promise body
+    "promise": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var body_ptr = children["body"]
+        var desc = Desc([]rune("IIFE"), []rune("()"), []rune("Promise"))
+        var f = Function(tree, body_ptr, F_Async, desc, "[]", "__.pm")
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
+        return fmt.Sprintf("__.c(%v, [], %v, %v, %v)", f, file, row, col)
+    },
     // lambda_generator = @generator paralist_block opt_arrow body!
     "lambda_generator": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
@@ -122,6 +144,16 @@ var Functions = map[string]TransFunction {
             tree, body_ptr, F_Generator,
             desc, parameters, "__.it",
         )
+    },
+    // iterator = @iterator body
+    "iterator": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var body_ptr = children["body"]
+        var desc = Desc([]rune("IIFE"), []rune("()"), []rune("Iterator"))
+        var f = Function(tree, body_ptr, F_Generator, desc, "[]", "__.it")
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
+        return fmt.Sprintf("__.c(%v, [], %v, %v, %v)", f, file, row, col)
     },
     // ret_lambda? = -> type | ->
     "ret_lambda": func (tree Tree, ptr int) string {

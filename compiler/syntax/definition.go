@@ -94,6 +94,7 @@ var Keywords = [...] string {
     "@let", "@type", "@var", "@reset",
     "@set", "@do", "@nothing",
     "@function", "@generator", "@async", "@lambda",
+    "@invoke", "@iterator", "@promise",
     "@static", "@mock", "@handle",
     "@throw", "@assert", "@ensure", "@try", "@to",
     "@unless", "@failed", "@finally", "@panic",
@@ -265,6 +266,12 @@ var SyntaxDefinition = [...] string {
     "lambda_inline = .{ paralist_inline expr! }!",
     "paralist_inline? = namelist --> | ( namelist ) -->",
 
+    /* IIFE */
+    "iife = invoke | iterator | promise",
+    "invoke = @invoke body",
+    "iterator = @iterator body",
+    "promise = @promise body",
+
     /* Type Object Definition */
     /* Generics */
     "generic_params? = < namelist > | < typed_list! >!",
@@ -333,7 +340,7 @@ var SyntaxDefinition = [...] string {
     "exprlist_tail? = , expr! exprlist_tail",
 
     /* Literals */
-    "literal = primitive | adv_literal",
+    "literal = primitive | adv_literal | iife",
     "adv_literal = xml | comprehension | type_literal | map | list | hash",
     "type_literal = simple_type_literal | finite_literal",
     // TODO: generics and array
