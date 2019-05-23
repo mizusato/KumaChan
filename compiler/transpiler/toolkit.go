@@ -234,11 +234,12 @@ func SearchDotParameters (tree Tree, search_root int) []string {
     var names = make([]string, 0, 25)
     var DotParaId = syntax.Name2Id["dot_para"]
     var LambdaId = syntax.Name2Id["lambda"]
+    var IIFE_Id = syntax.Name2Id["iife"]
     var do_search func(int)
     do_search = func (ptr int) {
         var node = &tree.Nodes[ptr]
         var id = node.Part.Id
-        if id == LambdaId && ptr != search_root {
+        if (id == LambdaId || id == IIFE_Id) && ptr != search_root {
             return
         } else if id == DotParaId {
             // dot_para = . Name
