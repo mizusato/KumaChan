@@ -13,9 +13,36 @@ class TypeTemplate {
         assert(is(inflater, Types.Function))
         this.inflater = inflater
         this.cache = []
+        this.inflated = {
+            classes: new Set(),
+            schema: new Set(),
+            interfaces: new Set(),
+            others: new Set()
+        }
         this.inflate = this.inflate.bind(this)
         inject_desc(this.inflate, 'inflate_template')
-        this[Checker] = (x => exists(this.cache, item => is(x, item.type)))
+        this[Checker] = (x => {
+            if (is(x, Types.Instance)) {
+                if (this.inflated.classes.has(x.class_)) {
+                    return true
+                } else if (this.inflated.interfaces.size == 0) {
+                    return false
+                }
+                let is_inflated = I => this.inflated.interfaces.has(I)
+                if (exists(x.class_.super_interfaces, is_inflated)) {
+                    return true
+                } else if (this.inflated.others.size == 0) {
+                    return false
+                }
+            } else if (is(x, Types.Structure)) {
+                if (this.inflated.schema.has(x.schema)) {
+                    return true
+                } else if (this.inflated.others.size == 0) {
+                    return false
+                }
+            }
+            exists(this.cache, item => is(x, item.type))
+        })
         Object.freeze(this)
     }
     inflate (...args) {
@@ -33,6 +60,15 @@ class TypeTemplate {
                 args: copy(args),
                 type: type
             })
+            if (is(type, Types.Class)) {
+                this.inflated.classes.add(type)
+            } else if (is(type, Types.Schema)) {
+                this.inflated.schema.add(type)
+            } else if (is(type, Types.Interface)) {
+                this.inflated.interfaces.add(type)
+            } else {
+                this.inflated.others.add(type)
+            }
             return type
         }
     }
@@ -41,32 +77,7 @@ class TypeTemplate {
     }
 }
 
-
-class ClassTemplate {
-    constructor (inflater) {
-        this.type_template = new TypeTemplate(inflater)
-        this.inflated = new WeakSet()
-        this[Checker] = (
-            x => is(x, Types.Instance) && this.inflated.has(x.class_)
-        )
-        Object.freeze(this)
-    }
-    inflate (...args) {
-        let C = this.type_template.inflate.apply(null, args)
-        assert(is(C, Types.Class))
-        this.inflated.add(C)
-        return C
-    }
-}
-
-
-Types.ClassTemplate = $(x => x instanceof ClassTemplate)
-Types.TypeTemplate = Uni(
-    Types.ClassTemplate,
-    $(x => x instanceof TypeTemplate)
-)
-
+Types.TypeTemplate = $(x => x instanceof TypeTemplate)
 
 /* shorthand */
 let template = ((p,r) => new TypeTemplate(fun(p,r)))
-let class_template = ((p,r) => new ClassTemplate(fun(p,r)))

@@ -30,7 +30,6 @@ let global_helpers = {
     ns: inject_desc(new_structure, 'initialize_structure'),
     ct: inject_desc(f => $(x => call(f, [x])), 'create_simple_type'),
     ctt: inject_desc(f => new TypeTemplate(f), 'create_type_template'),
-    cct: inject_desc(f => new ClassTemplate(f), 'create_class_template'),
     cf: one_of,
     ce: inject_desc((n, ns) => new Enum(n, ns), 'create_enum'),
     ef: ensure_failed,
