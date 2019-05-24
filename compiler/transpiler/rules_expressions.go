@@ -138,13 +138,15 @@ var Expressions = map[string]TransFunction {
         }
         return buf.String()
     },
-    // unary? = @not opt_call | - | _exc | ~ | @expose opt_call
+    // unary? = @not | @str | - | @negate | _exc | ~ | @expose
     "unary": func (tree Tree, ptr int) string {
         var child_ptr = tree.Nodes[ptr].Children[0]
         var child_node = &tree.Nodes[child_ptr]
         var name = syntax.Id2Name[child_node.Part.Id]
         if name == "@expose" {
             return "expose"
+        } else if name == "-" {
+            return `__.o("negate")`
         } else {
             var t = strings.TrimPrefix(name, "@")
             return fmt.Sprintf("__.o(%v)", EscapeRawString([]rune(t)))

@@ -102,7 +102,7 @@ var Keywords = [...] string {
     "@struct", "@config", "@require", "@operator",
     "@one", "@of", "@enum",
     "@class", "@init", "@data", "@interface", "@expose",
-    "@str",
+    "@str", "@negate",
     "@true", "@false",
     "@is", "@or", "@not",
 }
@@ -286,7 +286,7 @@ var SyntaxDefinition = [...] string {
     "schema_op_defs? = schema_op_def schema_op_defs",
     "schema_op_def = @operator schema_op schema_op_fun",
     "schema_op_fun = (! namelist! )! opt_arrow body!",
-    "schema_op = @str | < | + | - | * | / | %",
+    "schema_op = @str | < | + | - | * | / | % | @negate",
     /* Enum */
     "enum = @enum name {! namelist! }!",
     /* Finite */
@@ -318,7 +318,7 @@ var SyntaxDefinition = [...] string {
     `op_logic = @is | && | _bar2 | & | _bar1 | \ `,
     "op_arith = + | - | * | / | % | ^ ",
     /* Operators (Prefix) */
-    "unary? = @not | @str | - | _exc | ~ | @expose",
+    "unary? = @not | @str | - | @negate | _exc | ~ | @expose",
     /* Operand */
     "operand = unary operand_base operand_tail",
     "operand_base = wrapped | lambda | literal | dot_para | identifier",

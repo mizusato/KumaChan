@@ -24,6 +24,13 @@ let operators = {
         'function operator.str (s: String) -> String',
             s => s
     ),
+    'negate': f (
+        'operator.negate',
+        `function operator.negate (s: StructOperand<'negate'>) -> Object`,
+            s => apply_unary('negate', s),
+        'function operator.negate (x: Number) -> Number',
+            x => -x
+    ),
     /* Pull, Push, Derive, Otherwise */
     '<<': f (
         'operator.pull',
@@ -137,8 +144,8 @@ let operators = {
         'operator.keyword_not',
         'function operator.keyword_not (p: Bool) -> Bool',
             p => !p,
-        'function operator.keyword_not (A: Type) -> Type',
-            A => Not(A)
+        'function operator.keyword_not (T: Type) -> Type',
+            T => Not(T)
     ),
     /* Arithmetic */
     '+': f (
@@ -161,12 +168,8 @@ let operators = {
     ),
     '-': f (
         'operator.minus',
-        `function operator.minus (s: StructOperand<'negate'>) -> Object`,
-            s => apply_unary('negate', s),
         `function operator.minus (s1: StructOperand<'-'>, s2: StructOperand<'-'>) -> Object`,
             (s1, s2) => apply_operator('-', s1, s2),
-        'function operator.minus (x: Number) -> Number',
-            x => -x,
         'function operator.minus (x: Number, y: Number) -> MayNotNumber',
             (x, y) => x - y
     ),

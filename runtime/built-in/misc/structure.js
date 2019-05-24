@@ -63,12 +63,12 @@ class Schema {
         Object.freeze(this.table)
         Object.freeze(this.defaults)
         Object.freeze(this.operators)
-        this.create = fun (
-            'function create_structure (h: Hash) -> Structure',
-                h => new Structure(this, h)
-        )
         this[Checker] = x => (x instanceof Structure && x.schema === this)
         Object.freeze(this)
+    }
+    create (hash) {
+        assert(is(hash, Types.Hash))
+        return new Structure(this, hash)
     }
     has_key (key) {
         return has(key, this.table)
@@ -86,6 +86,7 @@ class Schema {
     check_all (hash) {
         assert(is(hash, Types.Hash))
         let table = this.table
+        let defaults = this.defaults
         for (let k of Object.keys(table)) {
             let T = table[k]
             if (has(k, hash)) {
@@ -94,6 +95,8 @@ class Schema {
                 } else {
                     return { ok: false, why: 'key', key: k }
                 }
+            } else if (has(k, defaults)) {
+                continue
             } else {
                 return { ok: false, why: 'miss', key: k }
             }
@@ -108,7 +111,13 @@ class Schema {
         assert(is(hash, Types.Hash))
         assert(is(key, Types.String))
         assert(has(key, this.table))
-        return (has(key, hash) && is(hash[key], this.table[key]))
+        if (has(key, hash)) {
+            return is(hash[key], this.table[key])
+        } else if (has(key, this.defaults)) {
+            return is(this.defaults[key], this.table[key])
+        } else {
+            assert(false)
+        }
     }
     check_requirement (hash) {
         assert(is(hash, Types.Hash))
@@ -141,6 +150,7 @@ function create_schema (name, table, defaults, config) {
     let { req, ops } = config
     return new Schema(name, table, defaults, req, ops)
 }
+
 
 function new_structure (schema, hash) {
     ensure(is(schema, Types.Schema), 'not_schema')
