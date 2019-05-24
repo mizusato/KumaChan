@@ -63,7 +63,7 @@ var CommandsMap = map[string]TransFunction {
         var expr = Transpile(tree, children["expr"])
         var value string
         if NotEmpty(tree, gp_ptr) {
-            value = TypeTemplate(tree, gp_ptr, name_ptr, expr, false)
+            value = TypeTemplate(tree, gp_ptr, name_ptr, expr)
         } else {
             value = expr
         }

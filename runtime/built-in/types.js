@@ -40,6 +40,7 @@ Object.freeze(Types)
 
 let built_in_types = {
     Type: Type,
+    TypeTemplate: Types.TypeTemplate,
     Any: Types.Any,
     Object: Types.Object,
     Nil: Nil,
@@ -63,12 +64,12 @@ let built_in_types = {
     Iterable: Types.Iterable,
     Iterator: Types.Iterator,
     Promise: Types.Promise,
+    NotFound: Types.NotFound,
     Schema: Types.Schema,
     Structure: Types.Structure,
     StructOperand: Types.StructOperand,
     Enum: Types.Enum,
-    Error: Types.Error,
-    NotFound: Types.NotFound
+    Error: Types.Error
 }
 
 assert(forall(mapkv(built_in_types, (_, T) => T), T => is(T, Type)))

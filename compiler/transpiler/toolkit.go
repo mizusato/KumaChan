@@ -320,19 +320,13 @@ func GenericParameters (tree Tree, gp_ptr int, name []rune) (string, string) {
 }
 
 
-func TypeTemplate (
-    tree Tree, gp_ptr int, name_ptr int, expr string, is_class bool,
-) string {
+func TypeTemplate (tree Tree, gp_ptr int, name_ptr int, expr string) string {
     var name_raw = GetTokenContent(tree, name_ptr)
     var parameters, desc = GenericParameters(tree, gp_ptr, name_raw)
     var raw = BareFunction(fmt.Sprintf("return %v;", expr))
     var proto = fmt.Sprintf("{ parameters: %v, value_type: __.t }", parameters)
     var f = fmt.Sprintf("w(%v, %v, %v, %v)", proto, "null", desc, raw)
-    if is_class {
-        return fmt.Sprintf("__.cct(%v)", f)
-    } else {
-        return fmt.Sprintf("__.ctt(%v)", f)
-    }
+    return fmt.Sprintf("__.ctt(%v)", f)
 }
 
 

@@ -98,7 +98,7 @@ var Types = map[string]TransFunction {
         )
         var value string
         if NotEmpty(tree, gp_ptr) {
-            value = TypeTemplate(tree, gp_ptr, name_ptr, schema, false)
+            value = TypeTemplate(tree, gp_ptr, name_ptr, schema)
         } else {
             value = schema
         }
