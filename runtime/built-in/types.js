@@ -6,9 +6,6 @@ let IndexType = Ins(Types.Int, $(x => x >= 0))
 
 pour(Types, {
     Object: Types.Any,
-    Schema: SchemaType,
-    Structure: StructureType,
-    StructOperand: StructOperand,
     Enum: EnumType,
     Callable: Uni(ES.Function, Types.TypeTemplate, Types.Class),
     Iterable: $(
@@ -68,8 +65,10 @@ let built_in_types = {
     Promise: Types.Promise,
     Schema: Types.Schema,
     Structure: Types.Structure,
-    StrcutOperand: Types.StructOperand,
+    StructOperand: Types.StructOperand,
     Enum: Types.Enum,
     Error: Types.Error,
     NotFound: Types.NotFound
 }
+
+assert(forall(mapkv(built_in_types, (_, T) => T), T => is(T, Type)))
