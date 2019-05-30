@@ -85,24 +85,27 @@ let operators = {
         'operator.equal',
         `function operator.equal (s1: StructOperand<'=='>, s2: StructOperand<'=='>) -> Bool`,
             (s1, s2) => apply_operator('==', s1, s2),
-        'function operator.equal (l: Any, r: Any) -> Bool',
-            (l, r) => (l === r)
+        'function operator.equal (p: Bool, q: Bool) -> Bool',
+            (p, q) => (p === q),
+        'function operator.equal (a: String, b: String) -> Bool',
+            (a, b) => (a === b),
+        'function operator.equal (x: Number, y: Number) -> Bool',
+            (x, y) => (x === y)
     ),
     '!=': f (
         'operator.not_equal',
         'function operator.not_equal (l: Any, r: Any) -> Bool',
             (l, r) => !operators['=='](l, r)
     ),
-    // TODO: == can be overloaded by EquailityRedefined interface
-    '===': f (
-        'operator.original_equal',
-        'function operator.original_equal (l: Any, r: Any) -> Bool',
+    '~~': f (
+        'operator.equivalent',
+        'function operator.equivalent (l: Any, r: Any) -> Bool',
             (l, r) => (l === r)
     ),
-    '!==': f (
-        'operator.original_not_equal',
-        'function operator.original_not_equal (l: Any, r: Any) -> Bool',
-            (l, r) => !operators['==='](l, r)
+    '!~': f (
+        'operator.not_equivalent',
+        'function operator.not_equivalent (l: Any, r: Any) -> Bool',
+            (l, r) => (l !== r)
     ),
     /* Logic */
     '&&': f (
