@@ -101,7 +101,7 @@ var TransMapByName = map[string]TransFunction {
         // depended by CommandsMap["reset"]
         var content = GetTokenContent(tree, ptr)
         var content_string = string(content)
-        if strings.HasPrefix(content_string, "__") {
+        if strings.HasPrefix(content_string, "__") && content_string != "__" {
             // ECMAScript Identifier
             var trimed = strings.TrimPrefix(content_string, "__")
             return fmt.Sprintf("(%v)", trimed)

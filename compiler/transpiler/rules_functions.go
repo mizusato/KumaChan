@@ -255,7 +255,7 @@ var Functions = map[string]TransFunction {
         buf.WriteString(" { throw error; }; ")
         fmt.Fprintf(&buf, "dl(%v, error); ", Transpile(tree, children["name"]))
         buf.WriteString(Transpile(tree, children["handle_cmds"]))
-        buf.WriteString(" throw error;")
+        buf.WriteString(" throw __.c2f(error);")
         buf.WriteString(" }")
         var finally_ptr = children["finally"]
         if NotEmpty(tree, finally_ptr) {

@@ -126,6 +126,14 @@ function ensure (bool, msg_type, ...args) {
     produce_error(get_msg(msg_type, args))
 }
 
+function convert_to_fatal (error) {
+    if (error instanceof EnsureFailed || error instanceof CustomError) {
+        return new RuntimeError(`Uncaught ${error.name}: ${error.message}`)
+    } else {
+        return error
+    }
+}
+
 function async_e_wrap (async_raw_function) {
     /**
      *  Explanation: RuntimeError is desgined as unrecoverable fatal error,

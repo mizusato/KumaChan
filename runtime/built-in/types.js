@@ -55,7 +55,7 @@ let built_in_types = {
     Size: Types.Size,
     String: Types.String,
     Function: Types.Function,
-    Binding: Types.Binding,
+    Method: Types.Binding,  // rename it
     Overload: Types.Overload,
     Callable: Types.Callable,
     Arity: Types.Arity,

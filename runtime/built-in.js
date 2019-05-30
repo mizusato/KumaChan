@@ -30,7 +30,7 @@ let global_helpers = {
     ns: inject_desc(new_structure, 'initialize_structure'),
     ct: inject_desc(f => $(x => call(f, [x])), 'create_simple_type'),
     ctt: inject_desc(f => new TypeTemplate(f), 'create_type_template'),
-    cf: one_of,
+    cf: one_of,  // create Finite
     ce: inject_desc((n, ns) => new Enum(n, ns), 'create_enum'),
     ef: ensure_failed,
     tf: try_failed,
@@ -38,6 +38,7 @@ let global_helpers = {
     pa: wrapped_panic,
     as: wrapped_assert,
     th: wrapped_throw,
+    c2f: convert_to_fatal,
     gp: get_call_stack_pointer,
     rs: restore_call_stack,
     ccs: clear_call_stack,
