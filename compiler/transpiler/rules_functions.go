@@ -7,8 +7,9 @@ import "strings"
 var Functions = map[string]TransFunction {
     // function = f_sync | f_async | generator
     "function": TranspileFirstChild,
-    // f_sync = @function name Call paralist_strict! -> type body
+    // f_sync = @function name Call paralist_strict! ->! type! body!
     "f_sync": func (tree Tree, ptr int) string {
+        // depended by OO["method"]
         var children = Children(tree, ptr)
         var name_ptr = children["name"]
         var params_ptr = children["paralist_strict"]

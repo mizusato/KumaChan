@@ -227,7 +227,7 @@ var SyntaxDefinition = [...] string {
 
     /* Function Definition */
     "function = f_sync | f_async | generator",
-    "f_sync = @function name Call paralist_strict! -> type body",
+    "f_sync = @function name Call paralist_strict! ->! type! body!",
     "f_async = @async name Call paralist_strict! body",
     "generator = @generator name Call paralist_strict! body",
     "paralist_strict = ( ) | ( typed_list! )!",
@@ -286,7 +286,7 @@ var SyntaxDefinition = [...] string {
     "schema_op_defs? = schema_op_def schema_op_defs",
     "schema_op_def = @operator schema_op schema_op_fun",
     "schema_op_fun = (! namelist! )! opt_arrow body!",
-    "schema_op = @str | == | < | + | - | * | / | % | @negate",
+    "schema_op = @str | == | < | + | - | * | / | % | ^ | @negate",
     /* Enum */
     "enum = @enum name {! namelist! }!",
     /* Finite */
@@ -296,17 +296,22 @@ var SyntaxDefinition = [...] string {
     "simple_type_literal = { name _bar1 filters! }!",
     "filters = exprlist",
     /* Class */
-    "class = @class name generic_params supers { initializer methods } data",
+    "class = @class name generic_params supers { init methods class_opt }",
     "supers? = @is exprlist",
-    "initializer = @init Call paralist_strict! body!",
+    "init = @init Call paralist_strict! body!",
     "methods? = method methods",
-    "method = method_proto body!",
-    "method_proto = name Call paralist_strict! -> type",
+    "method = name Call paralist_strict! ->! type! body!",
+    "class_opt = class_op_defs data",
+    "class_op_defs? = class_op_def class_op_defs",
+    "class_op_def = @operator class_op class_op_fun",
+    "class_op_fun = (! namelist! )! opt_arrow body!",
+    "class_op = @str | == | < | << | >> | + | - | * | / | % | ^ | @negate",
     "data? = @data hash",
     /* Interface */
     "interface = @interface name { members }",
     "members? = member members",
     "member = method_proto | method",
+    "method_proto = name Call paralist_strict! -> type",
 
     /* Expression */
     "expr = operand expr_tail",

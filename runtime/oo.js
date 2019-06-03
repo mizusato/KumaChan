@@ -158,11 +158,14 @@ function match_protos (method, protos) {
  *  Class Object
  */
 class Class {
-    constructor (name, impls, init, methods, data = {}, def_point = null) {
+    constructor (
+        name, impls, init, methods, ops = {}, data = {}, def_point = null
+    ) {
         assert(is(name, Types.String))
         assert(is(impls, TypedList.of(Types.OO_Abstract)))
         assert(is(init, Types.Function))
         assert(is(methods, TypedHash.of(Types.Overload)))
+        assert(is(ops, TypedHash.of(Types.Function)))
         assert(is(data, Types.Hash))
         this.name = name
         if (def_point !== null) {
@@ -174,9 +177,11 @@ class Class {
         this.init = cancel_binding(init)
         this.impls = copy(impls)
         this.methods = copy(methods)
+        this.ops = copy(ops)
         this.data = copy(data)
         Object.freeze(this.impls)
         Object.freeze(this.methods)
+        Object.freeze(this.ops)
         Object.freeze(this.data)
         this.methods_info = get_methods_info(this)
         this.super_classes = get_super_classes(this)
@@ -249,10 +254,11 @@ function build_method_table (raw_table) {
     return mapval(reduced, (f_list, name) => overload(f_list, name))
 }
 
-function create_class (name, impls, init, raw_methods, data, def_point) {
+function create_class (name, impls, init, raw_methods, options, def_point) {
+    let { ops, data } = options
     call(check_superset, [impls], def_point.file, def_point.row, def_point.col)
     let methods = build_method_table(raw_methods)
-    return new Class(name, impls, init, methods, data, def_point)
+    return new Class(name, impls, init, methods, ops, data, def_point)
 }
 
 
