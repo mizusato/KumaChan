@@ -127,24 +127,34 @@ func Scan (code Code) (TokenSequence, RowColInfo) {
     var CommentId = syntax.Name2Id["Comment"]
     var LFId = syntax.Name2Id["LF"]
     var RCBId = syntax.Name2Id["}"]
+    var LtId = syntax.Name2Id["<"]
     var tokens = make(TokenSequence, 0, 10000)
     var info = GetInfo(code)
     var length = len(code)
     var previous_ptr *Token
+    var has_blank_between_prev = false
     var pos = 0
     for pos < length {
         // fmt.Printf("pos %v\n", pos)
         amount, id := MatchToken(code, pos)
         if amount == 0 { break }
-        if id == BlankId { pos += amount; continue }
         if id == CommentId { pos += amount; continue }
+        if id == BlankId {
+            pos += amount
+            has_blank_between_prev = true
+            continue
+        }
         var current = Token {
             Id: id,
             Pos: pos,
             Content: code[pos : pos+amount],
         }
         if IsRightParOrName(previous_ptr) {
-            tokens = Try2InsertExtra(tokens, current)
+            /* tell from "a [LF] (b+c).d" and "a(b+c).d" */
+            if !(id == LtId && has_blank_between_prev) {
+                /* tell from "S<T>" and "s < t" */
+                tokens = Try2InsertExtra(tokens, current)
+            }
         }
         if current.Id == LFId || current.Id == RCBId {
             /* tell from "return [LF] expr" and "return expr" */
@@ -158,6 +168,7 @@ func Scan (code Code) (TokenSequence, RowColInfo) {
         }
         tokens = append(tokens, current)
         previous_ptr = &current
+        if has_blank_between_prev { has_blank_between_prev = false }
         pos += amount
     }
     var clear = make(TokenSequence, 0, 10000)
