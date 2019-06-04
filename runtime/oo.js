@@ -154,6 +154,25 @@ function match_protos (method, protos) {
     )
 }
 
+function get_common_class (a, b) {
+    assert(is(a, Types.Instance))
+    assert(is(b, Types.Instance))
+    let A = a.class_
+    let B = b.class_
+    if (A === B) {
+        // A = B
+        return A
+    } else if (exists(A.super_classes, S => S === B)) {
+        // A ⊂ B
+        return B
+    } else if (exists(B.super_classes, S => S === A)) {
+        // B ⊂ A
+        return A
+    } else {
+        ensure(false, 'no_common_class')
+    }
+}
+
 
 /**
  *  Class Object

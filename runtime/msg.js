@@ -91,7 +91,10 @@ const MSG = {
     struct_nil_flag: 'unable to use nil flag on Structure objects',
     enum_nil_flag: 'unable to use nil flag on Enum objects',
     different_schema: (
-        'cannot apply operator on structures of different schema'
+        'cannot apply infix operator on structures of different schema'
     ),
-    not_schema: 'cannot create new structure by a non-schema object'
+    not_schema: 'cannot create new structure by a non-schema object',
+    no_common_class: (
+        'cannot apply infix operator on instances with no common class'
+    )
 }
