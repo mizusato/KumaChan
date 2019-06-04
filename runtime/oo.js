@@ -12,9 +12,10 @@ pour(Types, OO_Types)
 let only_class = x => filter(x, y => is(y, Types.Class))
 let only_interface = x => filter(x, y => is(y, Types.Interface))
 
- /**
-  *  External Helper Functions
-  */
+
+/**
+ *  External Helper Functions
+ */
 function add_exposed_internal(internal, instance) {
     // expose interface of internal object
     assert(!instance.init_finished)
@@ -28,7 +29,6 @@ function add_exposed_internal(internal, instance) {
 
 function get_methods_info (class_) {
     assert(is(class_, Types.Class))
-    let { conflict_if, missing_if, invalid_if } = class_error_tools(class_)
     // create empty info: { name -> { method, from: class or interface } }
     let info = {}
     // add own methods
@@ -80,7 +80,7 @@ function get_methods_info (class_) {
 function get_super_classes (class_) {
     // get all [ S ∈ Class | C ⊂ S ] in which C is the argument class_
     let all = cat([class_], flat(map(
-        only_classes(class_.impls),
+        only_class(class_.impls),
         super_class => super_class.super_classes
     )))
     Object.freeze(all)
@@ -188,7 +188,7 @@ class Class {
         this.super_interfaces = get_super_interfaces(this)
         let F = init[WrapperInfo]
         this.create = wrap(
-            F.context, F.proto, F.vals, F.desc, scope => {
+            F.context, F.proto, null, F.desc, scope => {
                 let self = new Instance(this, scope, methods)
                 let expose = fun (
                     'function expose (internal: Instance) -> Instance',
@@ -252,7 +252,7 @@ function build_method_table (raw_table) {
     let reduced = {}
     foreach(raw_table, item => {
         let { name, f } = item
-        if (!has(name, methods)) {
+        if (!has(name, reduced)) {
             reduced[name] = [f]
         } else {
             reduced[name].push(f)

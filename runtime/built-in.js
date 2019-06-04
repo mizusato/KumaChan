@@ -49,6 +49,7 @@ let global_helpers = {
     t: Type,
     it: Types.Iterator,
     pm: Types.Promise,
+    i: Types.Instance,
     rp: inject_desc(require_promise, 'require_promise'),
     aw: async_e_wrap,
     ic: iterator_comprehension,

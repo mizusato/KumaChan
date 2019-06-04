@@ -6,7 +6,7 @@ import "../syntax"
 
 
 var Rules = []map[string]TransFunction {
-    Expressions, Containers, Functions, CommandsMap, Types,
+    Expressions, Containers, Functions, CommandsMap, Types, OO,
 }
 
 

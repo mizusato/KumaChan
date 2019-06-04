@@ -18,7 +18,7 @@ var OO = map[string]TransFunction {
         var methods = Transpile(tree, children["methods"])
         var options = Transpile(tree, children["class_opt"])
         var def_point = fmt.Sprintf (
-            "{ file: %vrow: %v, col: %v }",
+            "{ file: %v, row: %v, col: %v }",
             file, row, col,
         )
         var class = fmt.Sprintf (
@@ -50,21 +50,18 @@ var OO = map[string]TransFunction {
         var children = Children(tree, ptr)
         var params_ptr = children["paralist_strict"]
         var parameters = Transpile(tree, params_ptr)
-        var type_ptr = children["type"]
-        var value_type = Transpile(tree, type_ptr)
         var body_ptr = children["body"]
         var class_ptr = tree.Nodes[ptr].Parent
         var class_children = Children(tree, class_ptr)
         var name_ptr = class_children["name"]
-        var class_name = GetTokenContent(tree, name_ptr)
         var desc = Desc (
-            append(class_name, []rune(".Initializer")...),
+            GetTokenContent(tree, name_ptr),
             GetWholeContent(tree, params_ptr),
-            GetWholeContent(tree, type_ptr),
+            []rune("Instance"),
         )
         return Function (
             tree, body_ptr, F_Sync,
-            desc, parameters, value_type,
+            desc, parameters, "__.i",
         )
     },
     // methods? = method methods

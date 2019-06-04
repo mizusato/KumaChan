@@ -173,7 +173,7 @@ class Scope {
         ensure(value !== NotFound, 'variable_not_found', variable)
         return value
     }
-    try_to_declare (variable, initial_value, is_fixed = true, type = null) {
+    try_to_declare (variable, initial_value, is_fixed, type) {
         assert(!this.readonly)
         assert(is(variable, Types.String))
         if (!this.has(variable)) {

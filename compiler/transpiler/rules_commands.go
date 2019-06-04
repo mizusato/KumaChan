@@ -6,7 +6,7 @@ import "../syntax"
 
 
 var CommandsMap = map[string]TransFunction {
-    // cmd_def = function | abs_def
+    // cmd_def = function | schema | enum | class | interface
     "cmd_def": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
         var fun_ptr, is_fun = children["function"]

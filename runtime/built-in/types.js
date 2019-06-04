@@ -77,6 +77,9 @@ let built_in_types = {
     Schema: Types.Schema,
     Structure: Types.Structure,
     Operand: Types.Operand,
+    Class: Types.Class,
+    Instance: Types.Instance,
+    Interface: Types.Interface,
     Enum: Types.Enum,
     Error: Types.Error
 }
