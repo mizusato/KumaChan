@@ -36,14 +36,26 @@ var OO = map[string]TransFunction {
             name, value, file, row, col,
         )
     },
-    // supers? = @is exprlist
+    // supers? = @is typelist
     "supers": func (tree Tree, ptr int) string {
         if NotEmpty(tree, ptr) {
             var children = Children(tree, ptr)
-            return fmt.Sprintf("[%v]", Transpile(tree, children["exprlist"]))
+            return fmt.Sprintf("[%v]", Transpile(tree, children["typelist"]))
         } else {
             return "[]"
         }
+    },
+    // typelist = type typelist_tail
+    "typelist": func (tree Tree, ptr int) string {
+        var type_ptrs = FlatSubTree(tree, ptr, "type", "typelist_tail")
+        var buf strings.Builder
+        for i, type_ptr := range type_ptrs {
+            buf.WriteString(Transpile(tree, type_ptr))
+            if i != len(type_ptrs)-1 {
+                buf.WriteString(", ")
+            }
+        }
+        return buf.String()
     },
     // init = @init Call paralist_strict! body!
     "init": func (tree Tree, ptr int) string {

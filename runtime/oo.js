@@ -38,9 +38,10 @@ function get_methods_info (class_) {
     // add exposed methods (inherited methods)
     foreach(only_class(class_.impls), super_class => {
         foreach(super_class.methods_info, (name, method_info) => {
+            let ok = !has(name, info)
             ensure (
-                !has(name, info), 'method_conflict',
-                name, info[name].from.desc, method_info.from.desc
+                ok, 'method_conflict',
+                name, ok || info[name].from.desc, method_info.from.desc
             )
             info[name] = { method: method_info.method, from: super_class }
         })
@@ -79,10 +80,10 @@ function get_methods_info (class_) {
 
 function get_super_classes (class_) {
     // get all [ S ∈ Class | C ⊂ S ] in which C is the argument class_
-    let all = cat([class_], flat(map(
+    let all = list(cat([class_], flat(map(
         only_class(class_.impls),
         super_class => super_class.super_classes
-    )))
+    ))))
     Object.freeze(all)
     return all
 }
@@ -241,7 +242,7 @@ let check_superset = fun (
     'function check_superset (impls: List) -> Void',
     impls => {
         foreach(impls, (superset, i) => {
-            ensure(is(superset, OO_Abstract), 'superset_invalid', i)
+            ensure(is(superset, Types.OO_Abstract), 'superset_invalid', i)
         })
         return Void
     }
@@ -316,7 +317,7 @@ function call_method (
         }
     }
     // UFCS: find the method in the caller scope
-    let method = caller_scope.lookup(method_name)
+    let method = caller_scope.find(method_name)
     let found = (method !== NotFound && is(method, ES.Function))
     ensure(found, 'method_not_found', method_name)
     // call the method

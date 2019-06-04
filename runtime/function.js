@@ -308,12 +308,13 @@ function bind_context (f, context) {
     assert(context instanceof Scope)
     f = cancel_binding(f)
     let f_invoke = f[WrapperInfo].invoke
+    let desc = f[WrapperInfo].desc
     let invoke = function (args, use_ctx = null) {
         assert(use_ctx === null)
         return f_invoke(args, context)
     }
     let binding = ((...args) => invoke(args))
-    let info = { original: f, invoke: invoke }
+    let info = { original: f, invoke, desc }
     Object.freeze(info)
     binding[WrapperInfo] = info
     Object.freeze(binding)

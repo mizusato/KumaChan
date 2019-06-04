@@ -307,7 +307,9 @@ var SyntaxDefinition = [...] string {
     "filters = exprlist",
     /* Class */
     "class = @class name generic_params supers { init methods class_opt }",
-    "supers? = @is exprlist",
+    "supers? = @is typelist",
+    "typelist = type typelist_tail",
+    "typelist_tail? = , type typelist_tail",
     "init = @init Call paralist_strict! body!",
     "methods? = method methods",
     "method = name Call paralist_strict! ->! type! body!",
