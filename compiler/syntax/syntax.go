@@ -22,6 +22,7 @@ type Operator struct {
     Priority   int
     Assoc      LeftRight
     Lazy       bool
+    CanRedef   bool
 }
 
 type Rule struct {
@@ -138,6 +139,12 @@ func ProcessOperatorInfo () {
         if operator.Priority < 0 {
             // priority must be non-negative
             panic("operator " + operator.Match + " has a negative priority")
+        }
+        for _, redefinable := range RedefinableOperators {
+            if operator.Match == redefinable {
+                operator.CanRedef = true
+                break
+            }
         }
         Id2Operator[id] = operator
     }

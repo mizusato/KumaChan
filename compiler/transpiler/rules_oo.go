@@ -90,4 +90,19 @@ var OO = map[string]TransFunction {
     "method": func (tree Tree, ptr int) string {
         return Functions["f_sync"](tree, ptr)
     },
+    // class_opt = operator_defs data
+    "class_opt": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var ops = Transpile(tree, children["operator_defs"])
+        var data = Transpile(tree, children["data"])
+        return fmt.Sprintf("{ ops: %v, data: %v }", ops, data)
+    },
+    // data? = @data hash
+    "data": func (tree Tree, ptr int) string {
+        if NotEmpty(tree, ptr) {
+            return TranspileLastChild(tree, ptr)
+        } else {
+            return "{}"
+        }
+    },
 }

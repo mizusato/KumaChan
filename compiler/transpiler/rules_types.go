@@ -2,7 +2,6 @@ package transpiler
 
 import "fmt"
 import "strings"
-import "../syntax"
 
 
 var Types = map[string]TransFunction {
@@ -114,7 +113,7 @@ var Types = map[string]TransFunction {
             return fmt.Sprintf (
                 "{ req: %v, ops: %v }",
                 Transpile(tree, children["schema_req"]),
-                Transpile(tree, children["schema_op_defs"]),
+                Transpile(tree, children["operator_defs"]),
             )
         } else {
             return "{ req: null, ops: {} }"
@@ -136,44 +135,5 @@ var Types = map[string]TransFunction {
         } else {
             return "null"
         }
-    },
-    // schema_op_defs? = schema_op_def schema_op_defs
-    "schema_op_defs": func (tree Tree, ptr int) string {
-        if NotEmpty(tree, ptr) {
-            var ds = FlatSubTree(tree, ptr, "schema_op_def", "schema_op_defs")
-            var buf strings.Builder
-            buf.WriteString("{ ")
-            for i, def_ptr := range ds {
-                // schema_op_def = @operator schema_op schema_op_fun
-                // schema_op = @str | < | + | - | * | / | %
-                var children = Children(tree, def_ptr)
-                var op_ptr = tree.Nodes[children["schema_op"]].Children[0]
-                var op_match = syntax.Id2Name[tree.Nodes[op_ptr].Part.Id]
-                var op_name = strings.TrimPrefix(op_match, "@")
-                var op_fun = Transpile(tree, children["schema_op_fun"])
-                var op_escaped = EscapeRawString([]rune(op_name))
-                fmt.Fprintf(&buf, "%v: %v", op_escaped, op_fun)
-                if i != len(ds)-1 {
-                    buf.WriteString(", ")
-                }
-            }
-            buf.WriteString(" }")
-            return buf.String()
-        } else {
-            return "{}"
-        }
-    },
-    // schema_op_fun = (! namelist! )! opt_arrow body!
-    "schema_op_fun": func (tree Tree, ptr int) string {
-        var children = Children(tree, ptr)
-        var namelist_ptr = children["namelist"]
-        var body_ptr = children["body"]
-        var parameters = UntypedParameterList(tree, namelist_ptr)
-        var desc = Desc (
-            []rune("schema_operator"),
-            GetWholeContent(tree, namelist_ptr),
-            []rune("Object"),
-        )
-        return Function(tree, body_ptr, F_Sync, desc, parameters, "__.a")
     },
 }

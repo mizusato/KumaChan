@@ -116,6 +116,14 @@ let string_format = f (
         (s, v) => {
             return s.replace('${}', call(operators['str'], [v]))
         },
+    'function string_format (s: String, t: Structure) -> String',
+        (s, t) => {
+            return s.replace(/\$\{([^}]+)\}/g, (match, p1) => {
+                let key = p1
+                ensure(t.schema.has_key(key), 'format_invalid_key', key)
+                return call(operators['str'], [t.get(key)])
+            })
+        },
     'function string_format (s: String, h: Hash) -> String',
         (s, h) => {
             return s.replace(/\$\{([^}]+)\}/g, (match, p1) => {

@@ -39,30 +39,40 @@ var Containers = map[string]TransFunction {
             return "{}"
         }
         var items = FlatSubTree(tree, ptr, "hash_item", "hash_tail")
+        var names = make(map[string]bool)
         var buf strings.Builder
-        buf.WriteRune('{')
+        buf.WriteString("{ ")
         for i, item := range items {
-            buf.WriteString(Transpile(tree, item))
+            // hash_item = name :! expr! | string :! expr! | :: name!
+            var children = Children(tree, item)
+            var name_ptr, has_name = children["name"]
+            var expr_ptr, has_expr = children["expr"]
+            var name string
+            if has_name {
+                name = Transpile(tree, name_ptr)
+            } else {
+                name = Transpile(tree, children["string"])
+            }
+            var _, exists = names[name]
+            if exists {
+                // this check requires `Transpile(tree, name_ptr)`
+                // and `Transpile(tree, children["string"])`
+                // using the same quotes, which is promised by EscapeRawString()
+                panic("duplicate hash key " + name)
+            }
+            names[name] = true
+            var expr string
+            if has_expr {
+                expr = Transpile(tree, expr_ptr)
+            } else {
+                expr = VarLookup(GetTokenContent(tree, name_ptr))
+            }
+            fmt.Fprintf(&buf, "%v: %v", name, expr)
             if i != len(items)-1 {
                 buf.WriteString(", ")
             }
         }
-        buf.WriteRune('}')
-        return buf.String()
-    },
-    // hash_item = name :! expr! | :: name!
-    "hash_item": func (tree Tree, ptr int) string {
-        var children = Children(tree, ptr)
-        var name = children["name"]
-        var expr, has_expr = children["expr"]
-        var buf strings.Builder
-        buf.WriteString(Transpile(tree, name))
-        buf.WriteString(": ")
-        if has_expr {
-            buf.WriteString(Transpile(tree, expr))
-        } else {
-            buf.WriteString(VarLookup(GetTokenContent(tree, name)))
-        }
+        buf.WriteString(" }")
         return buf.String()
     },
     // list = [ ] | [ list_item! list_tail ]!

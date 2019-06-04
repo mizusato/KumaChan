@@ -86,6 +86,7 @@ var Tokens = [...] Token {
 }
 
 
+/* Conditional Keywords */
 var Keywords = [...] string {
     "@module", "@export", "@import", "@use", "@as",
     "@if", "@else", "@elif", "@switch", "@case", "@default",
@@ -108,6 +109,7 @@ var Keywords = [...] string {
 }
 
 
+/* Infix Operators */
 var Operators = [...] Operator {
     /* Pull, Push, Derive, Otherwise */
     Operator { Match: "<<",   Priority: 20,  Assoc: Left,   Lazy: false },
@@ -137,6 +139,14 @@ var Operators = [...] Operator {
     Operator { Match: "/",    Priority: 80,  Assoc: Left,   Lazy: false  },
     Operator { Match: "%",    Priority: 80,  Assoc: Left,   Lazy: false  },
     Operator { Match: "^",    Priority: 90,  Assoc: Right,  Lazy: false },
+}
+
+
+var RedefinableOperators = []string {
+    "@str", "@negate",
+    "==", "<",
+    "<<", ">>",
+    "+", "-", "*", "/", "%", "^",
 }
 
 
@@ -281,12 +291,12 @@ var SyntaxDefinition = [...] string {
     "field_list_tail? = , field! field_list_tail",
     "field = name : type! field_default",
     "field_default? = = expr",
-    "schema_config? = , @config { schema_req schema_op_defs }!",
+    "schema_config? = , @config { schema_req operator_defs }!",
     "schema_req? = @require (! name! )! opt_arrow body!",
-    "schema_op_defs? = schema_op_def schema_op_defs",
-    "schema_op_def = @operator schema_op schema_op_fun",
-    "schema_op_fun = (! namelist! )! opt_arrow body!",
-    "schema_op = @str | == | < | + | - | * | / | % | ^ | @negate",
+    "operator_defs? = operator_def operator_defs",
+    "operator_def = @operator general_op operator_def_fun",
+    "general_op = operator | unary",
+    "operator_def_fun = (! namelist! )! opt_arrow body!",
     /* Enum */
     "enum = @enum name {! namelist! }!",
     /* Finite */
@@ -301,11 +311,7 @@ var SyntaxDefinition = [...] string {
     "init = @init Call paralist_strict! body!",
     "methods? = method methods",
     "method = name Call paralist_strict! ->! type! body!",
-    "class_opt = class_op_defs data",
-    "class_op_defs? = class_op_def class_op_defs",
-    "class_op_def = @operator class_op class_op_fun",
-    "class_op_fun = (! namelist! )! opt_arrow body!",
-    "class_op = @str | == | < | << | >> | + | - | * | / | % | ^ | @negate",
+    "class_opt = operator_defs data",
     "data? = @data hash",
     /* Interface */
     "interface = @interface name { members }",
@@ -359,7 +365,7 @@ var SyntaxDefinition = [...] string {
     /* Hash Table */
     "hash = { } | { hash_item! hash_tail }!",
     "hash_tail? = , hash_item! hash_tail",
-    "hash_item = name :! expr! | :: name!",
+    "hash_item = name :! expr! | string :! expr! | :: name!",
     /* Linear List */
     "list = [ ] | [ list_item! list_tail ]!",
     "list_tail? = , list_item list_tail",

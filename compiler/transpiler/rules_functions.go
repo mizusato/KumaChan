@@ -452,4 +452,47 @@ var Functions = map[string]TransFunction {
     },
     // type_arg = type | primitive
     "type_arg": TranspileFirstChild,
+    // operator_defs? = operator_def operator_defs
+    "operator_defs": func (tree Tree, ptr int) string {
+        if Empty(tree, ptr) { return "{}" }
+        var def_ptrs = FlatSubTree(tree, ptr, "operator_def", "operator_defs")
+        var defined = make(map[string]bool)
+        var buf strings.Builder
+        buf.WriteString("{ ")
+        for i, def_ptr := range def_ptrs {
+            // operator_def = @operator general_op operator_def_fun
+            var children = Children(tree, def_ptr)
+            var op_ptr = children["general_op"]
+            var op_name, can_redef = GetGeneralOperatorName(tree, op_ptr)
+            if !can_redef {
+                panic("cannot overload non-redefinable operator " + op_name)
+            }
+            var _, exists = defined[op_name]
+            if exists {
+                panic("duplicate definition of operator " + op_name)
+            }
+            defined[op_name] = true
+            var op_escaped = EscapeRawString([]rune(op_name))
+            var op_fun = Transpile(tree, children["operator_def_fun"])
+            fmt.Fprintf(&buf, "%v: %v", op_escaped, op_fun)
+            if i != len(def_ptrs)-1 {
+                buf.WriteString(", ")
+            }
+        }
+        buf.WriteString(" }")
+        return buf.String()
+    },
+    // operator_def_fun = (! namelist! )! opt_arrow body!
+    "operator_def_fun": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var namelist_ptr = children["namelist"]
+        var body_ptr = children["body"]
+        var parameters = UntypedParameterList(tree, namelist_ptr)
+        var desc = Desc (
+            []rune("redefined_operator"),
+            GetWholeContent(tree, namelist_ptr),
+            []rune("Object"),
+        )
+        return Function(tree, body_ptr, F_Sync, desc, parameters, "__.a")
+    },
 }

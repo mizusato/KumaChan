@@ -30,6 +30,8 @@ func VarLookup (variable_name []rune) string {
 
 func EscapeRawString (raw []rune) string {
     // example: ['a', '"', 'b', 'c', '\', 'n'] -> `"a\"bc\\n"`
+    // Containers["hash"] requires this function to be consistent when
+    //     checking duplicate keys.
     var buf strings.Builder
     buf.WriteRune('"')
     for _, char := range raw {
@@ -50,6 +52,11 @@ func EscapeRawString (raw []rune) string {
 
 func NotEmpty (tree Tree, ptr int) bool {
     return tree.Nodes[ptr].Length > 0
+}
+
+
+func Empty (tree Tree, ptr int) bool {
+    return !NotEmpty(tree, ptr)
 }
 
 
@@ -104,6 +111,33 @@ func GetOperatorInfo (tree Tree, ptr int) syntax.Operator {
     var token_node = &tree.Nodes[group.Children[0]]
     var op_id = token_node.Part.Id
     return syntax.Id2Operator[op_id]
+}
+
+
+func GetGeneralOperatorName (tree Tree, ptr int) (string, bool) {
+    var Id = tree.Nodes[ptr].Part.Id
+    if Id != syntax.Name2Id["general_op"] {
+        panic("invalid usage of GetGeneralOperatorName()")
+    }
+    // general_op = operator | unary
+    var children = Children(tree, ptr)
+    var infix, is_infix = children["operator"]
+    if is_infix {
+        var info = GetOperatorInfo(tree, infix)
+        return strings.TrimPrefix(info.Match, "@"), info.CanRedef
+    } else {
+        var unary = children["unary"]
+        var child = tree.Nodes[unary].Children[0]
+        var match = syntax.Id2Name[tree.Nodes[child].Part.Id]
+        var can_redef = false
+        for _, redefinable := range syntax.RedefinableOperators {
+            if match == redefinable {
+                can_redef = true
+                break
+            }
+        }
+        return strings.TrimPrefix(match, "@"), can_redef
+    }
 }
 
 
