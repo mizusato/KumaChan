@@ -28,4 +28,4 @@ class Enum {
     }
 }
 
-let EnumType = $(x => x instanceof Enum)
+Types.Enum = $(x => x instanceof Enum)

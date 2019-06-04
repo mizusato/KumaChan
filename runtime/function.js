@@ -54,7 +54,7 @@ function parse_decl (string) {
         let match = para_str.match(/([^ :]+) *: *(.+)/)
         let [_, name, type_str] = match
         let type = null
-        match = type_str.match(/([^<]+)<([^>]+)>/)
+        match = type_str.match(/([^<]+)<(.+)>/)
         if (match != null) {
             let template_str = match[1]
             let args_str = match[2]

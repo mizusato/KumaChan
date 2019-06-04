@@ -3,6 +3,31 @@ function lazy_bool (arg, desc, name) {
     return arg
 }
 
+
+function apply_operator (name, a, b) {
+    assert(is(name, Types.String))
+    if (is(a, Types.Structure)) {
+        let s = get_common_schema(a, b)
+        return call(s.get_operator(name), [a, b])
+    } else {
+        assert(is(a, Types.Instance))
+        let c = get_common_class(a, b)
+        return call(c.get_operator(name), [a, b])
+    }
+}
+
+
+function apply_unary (name, a) {
+    assert(is(name, Types.String))
+    if (is(a, Types.Structure)) {
+        return call(a.schema.get_operator(name), [a])
+    } else {
+        assert(is(a, Types.Instance))
+        return call(a.class_.get_operator(name), [a])
+    }
+}
+
+
 let operators = {
     'is': f (
         'operator.is',
@@ -15,8 +40,8 @@ let operators = {
     ),
     'str': f (
         'operator.str',
-        `function operator.str (s: StructOperand<'str'>) -> String`,
-            s => apply_unary('str', s),
+        `function operator.str (o: Operand<'str'>) -> String`,
+            o => apply_unary('str', o),
         'function operator.str (p: Bool) -> String',
             p => p? 'true': 'false',
         'function operator.str (x: Number) -> String',
@@ -26,16 +51,18 @@ let operators = {
     ),
     'negate': f (
         'operator.negate',
-        `function operator.negate (s: StructOperand<'negate'>) -> Object`,
-            s => apply_unary('negate', s),
+        `function operator.negate (o: Operand<'negate'>) -> Object`,
+            o => apply_unary('negate', o),
         'function operator.negate (x: Number) -> Number',
             x => -x
     ),
     /* Pull, Push, Derive, Otherwise */
     '<<': f (
         'operator.pull',
+        `function operator.pull (a: Operand<'<<'>, b: Operand<'<<'>) -> Any`,
+            (a, b) => apply_operator('<<', a, b),
         'function operator.pull (f: Callable, x: Any) -> Any',
-            (f, x) => f(x),
+            (f, x) => call(f, [x]),
         'function operator.pull (l: Hash, r: Hash) -> Hash',
             (l, r) => Object.assign(l, r),
         'function operator.pull (s: String, x: Any) -> String',
@@ -43,8 +70,10 @@ let operators = {
     ),
     '>>': f (
         'operator.push',
-        'function operator.push (l: Any, r: Any) -> Any',
-            (l, r) => operators['<<'](r, l)
+        `function operator.push (a: Operand<'>>'>, b: Operand<'>>'>) -> Any`,
+            (a, b) => apply_operator('>>', a, b),
+        'function operator.push (x: Any, f: Callable) -> Any',
+            (x, f) => call(f, [x])
     ),
     '=>': f (
         'operator.derive',
@@ -59,8 +88,8 @@ let operators = {
     /* Comparsion */
     '<': f (
         'operator.less_than',
-        `function operator.less_than (s1: StructOperand<'<'>, s2: StructOperand<'<'>) -> Bool`,
-            (s1, s2) => apply_operator('<', s1, s2),
+        `function operator.less_than (a: Operand<'<'>, b: Operand<'<'>) -> Bool`,
+            (a, b) => apply_operator('<', a, b),
         'function operator.less_than (a: String, b: String) -> Bool',
             (a, b) => a < b,
         'function operator.less_than (x: Number, y: Number) -> Bool',
@@ -83,8 +112,8 @@ let operators = {
     ),
     '==': f (
         'operator.equal',
-        `function operator.equal (s1: StructOperand<'=='>, s2: StructOperand<'=='>) -> Bool`,
-            (s1, s2) => apply_operator('==', s1, s2),
+        `function operator.equal (a: Operand<'=='>, b: Operand<'=='>) -> Bool`,
+            (a, b) => apply_operator('==', a, b),
         'function operator.equal (p: Bool, q: Bool) -> Bool',
             (p, q) => (p === q),
         'function operator.equal (a: String, b: String) -> Bool',
@@ -153,8 +182,8 @@ let operators = {
     /* Arithmetic */
     '+': f (
         'operator.plus',
-        `function operator.plus (s1: StructOperand<'+'>, s2: StructOperand<'+'>) -> Object`,
-            (s1, s2) => apply_operator('+', s1, s2),
+        `function operator.plus (a: Operand<'+'>, b: Operand<'+'>) -> Object`,
+            (a, b) => apply_operator('+', a, b),
         'function operator.plus (a: Iterable, b: Iterable) -> Iterable',
             (a, b) => {
                 return (function* ()  {
@@ -171,36 +200,36 @@ let operators = {
     ),
     '-': f (
         'operator.minus',
-        `function operator.minus (s1: StructOperand<'-'>, s2: StructOperand<'-'>) -> Object`,
-            (s1, s2) => apply_operator('-', s1, s2),
+        `function operator.minus (a: Operand<'-'>, b: Operand<'-'>) -> Object`,
+            (a, b) => apply_operator('-', a, b),
         'function operator.minus (x: Number, y: Number) -> MayNotNumber',
             (x, y) => x - y
     ),
     '*': f (
         'operator.times',
-        `function operator.times (s1: StructOperand<'*'>, s2: StructOperand<'*'>) -> Object`,
-            (s1, s2) => apply_operator('*', s1, s2),
+        `function operator.times (a: Operand<'*'>, b: Operand<'*'>) -> Object`,
+            (a, b) => apply_operator('*', a, b),
         'function operator.times (x: Number, y: Number) -> MayNotNumber',
             (x, y) => x * y
     ),
     '/': f (
         'operator.divide',
-        `function operator.divide (s1: StructOperand<'/'>, s2: StructOperand<'/'>) -> Object`,
-            (s1, s2) => apply_operator('/', s1, s2),
+        `function operator.divide (a: Operand<'/'>, b: Operand<'/'>) -> Object`,
+            (a, b) => apply_operator('/', a, b),
         'function operator.divide (x: Number, y: Number) -> MayNotNumber',
             (x, y) => x / y
     ),
     '%': f (
         'operator.modulo',
-        `function operator.modulo (s1: StructOperand<'%'>, s2: StructOperand<'%'>) -> Object`,
-            (s1, s2) => apply_operator('%', s1, s2),
+        `function operator.modulo (a: Operand<'%'>, b: Operand<'%'>) -> Object`,
+            (a, b) => apply_operator('%', a, b),
         'function operator.modulo (x: Number, y: Number) -> MayNotNumber',
             (x, y) => x % y
     ),
     '^': f (
         'operator.power',
-        `function operator.power (s1: StructOperand<'^'>, s2: StructOperand<'^'>) -> Object`,
-            (s1, s2) => apply_operator('^', s1, s2),
+        `function operator.power (a: Operand<'^'>, b: Operand<'^'>) -> Object`,
+            (a, b) => apply_operator('^', a, b),
         'function operator.power (x: Number, y: Number) -> MayNotNumber',
             (x, y) => Math.pow(x, y)
     )

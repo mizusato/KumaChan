@@ -4,9 +4,18 @@
 
 let IndexType = Ins(Types.Int, $(x => x >= 0))
 
+let OperandType = template (
+    'function Operand (op: String) -> Type',
+        op => Uni (
+            Ins(Types.Structure, $(s => s.schema.defined_operator(op))),
+            Ins(Types.Instance, $(i => i.class_.defined_operator(op)))
+        )
+)
+
+
 pour(Types, {
     Object: Types.Any,
-    Enum: EnumType,
+    Operand: OperandType,
     Callable: Uni(ES.Function, Types.TypeTemplate, Types.Class),
     Iterable: $(
         x => is(x, ES.Object) && typeof x[Symbol.iterator] == 'function'
@@ -67,7 +76,7 @@ let built_in_types = {
     NotFound: Types.NotFound,
     Schema: Types.Schema,
     Structure: Types.Structure,
-    StructOperand: Types.StructOperand,
+    Operand: Types.Operand,
     Enum: Types.Enum,
     Error: Types.Error
 }

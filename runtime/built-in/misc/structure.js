@@ -141,10 +141,6 @@ class Schema {
 
 Types.Schema = $(x => x instanceof Schema)
 Types.Structure = $(x => x instanceof Structure)
-Types.StructOperand = template (
-    'function StructOperand (op: String) -> Type',
-        op => Ins(Types.Structure, $(s => s.schema.defined_operator(op)))
-)
 
 function create_schema (name, table, defaults, config) {
     let { req, ops } = config
@@ -162,15 +158,4 @@ function get_common_schema (s1, s2) {
     assert(is(s2, Types.Structure))
     ensure(s1.schema === s2.schema, 'different_schema')
     return s1.schema
-}
-
-function apply_operator (name, s1, s2) {
-    assert(is(name, Types.String))
-    let s = get_common_schema(s1, s2)
-    return call(s.get_operator(name), [s1, s2])
-}
-
-function apply_unary (name, s) {
-    assert(is(name, Types.String))
-    return call(s.schema.get_operator(name), [s])
 }

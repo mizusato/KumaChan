@@ -220,6 +220,13 @@ class Class {
         })
         Object.freeze(this)
     }
+    defined_operator (name) {
+        return has(name, this.ops)
+    }
+    get_operator (name) {
+        assert(this.defined_operator(name))
+        return this.ops[name]
+    }
     get [Symbol.toStringTag]() {
         return 'Class'
     }
