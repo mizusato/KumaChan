@@ -247,6 +247,13 @@ class Class {
         assert(this.defined_operator(name))
         return this.ops[name]
     }
+    has (key) {
+        return has(key, this.data)
+    }
+    get (key) {
+        assert(this.has(key))
+        return this.data[key]
+    }
     get [Symbol.toStringTag]() {
         return 'Class'
     }

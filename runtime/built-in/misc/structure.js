@@ -16,6 +16,9 @@ class Structure {
         }
         Object.freeze(this)
     }
+    has (key) {
+        return this.schema.has_key(key)
+    }
     get (key) {
         let s = this.schema
         ensure(s.has_key(key), 'struct_key_error', key)

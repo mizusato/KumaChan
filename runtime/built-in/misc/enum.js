@@ -19,8 +19,11 @@ class Enum {
         this[Checker] = (x => is(x, Types.Singleton) && this.map.has(x))
         Object.freeze(this)
     }
+    has (key) {
+        return has(key, this.hash)
+    }
     get (key) {
-        ensure(has(key, this.hash), 'key_error', key)
+        ensure(this.has(key), 'key_error', key)
         return this.hash[key]
     }
     get [Symbol.toStringTag]() {

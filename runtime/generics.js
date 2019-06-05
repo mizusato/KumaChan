@@ -41,7 +41,7 @@ class TypeTemplate {
                     return false
                 }
             }
-            exists(this.cache, item => is(x, item.type))
+            return exists(this.cache, item => is(x, item.type))
         })
         Object.freeze(this)
     }

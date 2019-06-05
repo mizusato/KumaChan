@@ -88,8 +88,6 @@ const MSG = {
     struct_inconsistent: k => (
         `inconsistency: value of field '${k}' became violating the schema`
     ),
-    struct_nil_flag: 'unable to use nil flag on Structure objects',
-    enum_nil_flag: 'unable to use nil flag on Enum objects',
     different_schema: (
         'cannot apply infix operator on structures of different schema'
     ),
