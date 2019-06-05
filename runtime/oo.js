@@ -48,7 +48,7 @@ function get_methods_info (class_) {
     })
     foreach(only_interface(class_.impls), I => {
         // add interface methods (default implementations)
-        foreach(I.defaults, (name, method) => {
+        foreach(I.implemented, (name, method) => {
             if (!has(name, info)) {
                 // if there is no existing method with this name, apply default
                 info[name] = { method: method, from: I }
@@ -252,26 +252,25 @@ class Class {
     }
 }
 
-let RawMethodTable = TypedList.of(format({
+let RawTable = TypedList.of(format({
     name: Types.String,
-    f: Types.Function
+    f: Uni(Types.Function, Prototype)
 }))
 
-let check_superset = fun (
-    'function check_superset (impls: List) -> Void',
-    impls => {
-        foreach(impls, (superset, i) => {
-            ensure(is(superset, Types.OO_Abstract), 'superset_invalid', i)
-        })
-        return Void
-    }
-)
+function check_impls (impls) {
+    foreach(impls, (superset, i) => {
+        ensure(is(superset, Types.OO_Abstract), 'superset_invalid', i)
+    })
+}
 
 function build_method_table (raw_table) {
-    assert(is(raw_table, RawMethodTable))
+    assert(is(raw_table, RawTable))
     let reduced = {}
     foreach(raw_table, item => {
         let { name, f } = item
+        if (!is(f, Types.Function)) {
+            return
+        }
         if (!has(name, reduced)) {
             reduced[name] = [f]
         } else {
@@ -283,7 +282,7 @@ function build_method_table (raw_table) {
 
 function create_class (name, impls, init, raw_methods, options, def_point) {
     let { ops, data } = options
-    call(check_superset, [impls], def_point.file, def_point.row, def_point.col)
+    check_impls(impls)
     let methods = build_method_table(raw_methods)
     return new Class(name, impls, init, methods, ops, data, def_point)
 }
@@ -321,6 +320,8 @@ class Instance {
 function call_method (
     caller_scope, object, method_name, args, file = null, row = -1, col = -1
 ) {
+    assert(caller_scope instanceof Scope || caller_scope === null)
+    assert(is(method_name, Types.String))
     if (is(object, Types.Instance)) {
         // OO: find the method on the instance object
         let method = object.methods[method_name]
@@ -336,6 +337,7 @@ function call_method (
         }
     }
     // UFCS: find the method in the caller scope
+    ensure(caller_scope !== null, 'method_not_found', method_name)
     let method = caller_scope.find(method_name)
     let found = (method !== NotFound && is(method, ES.Function))
     ensure(found, 'method_not_found', method_name)
@@ -346,10 +348,7 @@ function call_method (
 
 
 let ProtoTable = TypedHash.of(TypedList.of(Prototype))
-let RawProtoTable = TypedList.of(format({
-    name: Types.String,
-    proto: Prototype
-}))
+
 
 /**
  *  Interface Object
@@ -388,34 +387,31 @@ class Interface {
 }
 
 function build_proto_table (raw_table) {
-    assert(is(raw_table, RawProtoTable))
+    assert(is(raw_table, RawTable))
     let proto_table = {}
     foreach(raw_table, item => {
+        if (is(item.f, Types.Function)) {
+            return
+        }
         if (!has(item.name, proto_table)) {
-            proto_table[name] = [item.proto]
+            proto_table[item.name] = [item.f]
         } else {
-            proto_table[name].push(item.proto)
+            proto_table[item.name].push(item.f)
         }
     })
+    return proto_table
 }
 
-let validate_interface = fun (
-    'function validate_interface (blank: Hash, implemented: Hash) -> Void',
-    (blank, implemented) => {
-        for (let method of Object.keys(blank)) {
-            ensure(!has(method, implement), 'interface_invalid', method)
-        }
-        return Void
+function validate_interface (blank, implemented) {
+    for (let method of Object.keys(blank)) {
+        ensure(!has(method, implemented), 'interface_invalid', method)
     }
-)
+}
 
-function create_interface (name, raw_proto_table, raw_implemented, def_point) {
+function create_interface (name, raw_table, def_point) {
     // TODO
-    let proto_table = build_proto_table(raw_proto_table)
-    let implemented = build_method_table(raw_implemented)
-    call (
-        validate_interface, [name, proto_table, implemented],
-        def_point.file, def_point.row, def_point.col
-    )
+    let proto_table = build_proto_table(raw_table)
+    let implemented = build_method_table(raw_table)
+    validate_interface(proto_table, implemented)
     return new Interface(name, proto_table, implemented, def_point)
 }

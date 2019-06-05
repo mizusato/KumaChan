@@ -22,8 +22,8 @@ var OO = map[string]TransFunction {
             file, row, col,
         )
         var class = fmt.Sprintf (
-            "__.cc(%v, %v, %v, %v, %v, %v)",
-            name, impls, init, methods, options, def_point,
+            "__.c(__.cc, [%v, %v, %v, %v, %v, %v], %v, %v, %v)",
+            name, impls, init, methods, options, def_point, file, row, col,
         )
         var value string
         if NotEmpty(tree, gp_ptr) {

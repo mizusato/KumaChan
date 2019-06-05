@@ -12,10 +12,32 @@ let OperandType = template (
         )
 )
 
+let GetterType = template (
+    'function Getter (Key: Type, Val: Type) -> Interface',
+        (KT, VT) => create_interface('Getter', [
+            { name: 'get', f: { parameters: [
+                { name: 'key', type: KT },
+                { name: 'nf', type: Types.Bool }
+            ], value_type: VT }}
+        ], null)
+)
+
+let SetterType = template (
+    'function Setter (Key: Type, Val: Type) -> Interface',
+        (KT, VT) => create_interface('Setter', [
+            { name: 'set', f: { parameters: [
+                { name: 'key', type: KT },
+                { name: 'value', type: VT }
+            ], value_type: Void } }
+        ], null)
+)
+
 
 pour(Types, {
     Object: Types.Any,
     Operand: OperandType,
+    Getter: GetterType,
+    Setter: SetterType,
     Callable: Uni(ES.Function, Types.TypeTemplate, Types.Class),
     Iterable: $(
         x => is(x, ES.Object) && typeof x[Symbol.iterator] == 'function'
@@ -80,6 +102,8 @@ let built_in_types = {
     Class: Types.Class,
     Instance: Types.Instance,
     Interface: Types.Interface,
+    Getter: Types.Getter,
+    Setter: Types.Setter,
     Enum: Types.Enum,
     Error: Types.Error
 }

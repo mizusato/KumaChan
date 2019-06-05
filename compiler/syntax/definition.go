@@ -316,7 +316,7 @@ var SyntaxDefinition = [...] string {
     "class_opt = operator_defs data",
     "data? = @data hash",
     /* Interface */
-    "interface = @interface name { members }",
+    "interface = @interface name generic_params { members }",
     "members? = member members",
     "member = method_proto | method",
     "method_proto = name Call paralist_strict! -> type",

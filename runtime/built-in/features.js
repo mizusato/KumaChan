@@ -15,6 +15,8 @@ function require_promise (object) {
 
 let get_data = f (
     'get_data',
+    'function get_data (g: Getter, k: Any, nf: Bool) -> Object',
+        (g, k, nf) => call_method(null, g, 'get', [k, nf]),
     'function get_data (C: ES_Class, k: ES_Key, nf: Bool) -> Object',
         (C, k, nf) => (k in C)? C[k]: (ensure(nf, 'key_error', k), Nil),
     'function get_data (o: ES_Object, k: ES_Key, nf: Bool) -> Object',
@@ -42,6 +44,8 @@ let get_data = f (
 
 let set_data = f (
     'set_data',
+    'function set_data (s: Setter, k: Any, v: Any) -> Void',
+        (s, k, v) => call_method(null, s, 'set', [k, v]),
     'function set_data (o: ES_Object, k: ES_Key, v: Any) -> Void',
         (o, k, v) => {
             o[k] = v
