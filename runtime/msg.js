@@ -29,24 +29,24 @@ const MSG = {
         + LF + INDENT + X1
         + LF + 'and'
         + LF + INDENT + X2
-        + LF + 'both have method: ' + name
+        + LF + `both have method: ${name}()`
     ),
     method_missing: (name, C, I) => (
         'the class'
         + LF + INDENT + C
         + LF + 'does not implement'
         + LF + INDENT + I
-        + LF + `(missing method ${name})`
+        + LF + `(missing method ${name}())`
     ),
     method_invalid: (name, C, I) => (
         'the class'
         + LF + INDENT + C
         + LF + 'does not implement'
         + LF + INDENT + I
-        + LF + `(invalid method ${name})`
+        + LF + `(invalid method ${name}())`
     ),
     interface_invalid: name => (
-        `invalid interface definition: implemented blank method ${name}`
+        `invalid interface: blank method ${name}() should not be implemented`
     ),
     exposing_non_instance: 'unable to expose non-instance object',
     not_exposing: C => `created instance does not expose instance of ${C}`,

@@ -367,8 +367,8 @@ class Interface {
         assert(is(implemented, TypedHash.of(Types.Overload)))
         this.name = name
         if (def_point !== null) {
-            let { f, row, col } = def_point
-            this.desc = `interface ${name} at ${f} (row ${row}, column ${col})`
+            let { file, row, col } = def_point
+            this.desc = `interface ${name} at ${file} (row ${row}, column ${col})`
         } else {
             this.desc = `interface ${name} at (Built-in)`
         }

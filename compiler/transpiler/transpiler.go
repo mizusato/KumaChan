@@ -1,5 +1,6 @@
 package transpiler
 
+import "fmt"
 import "strconv"
 import "../syntax"
 import "../parser"
@@ -29,7 +30,12 @@ func Transpile (tree Tree, ptr int) string {
     if exists {
         return f(tree, ptr)
     } else {
-        panic("transplation rule for " + syntax.Id2Name[id] + " does not exist")
+        panic (
+            fmt.Sprintf (
+                "transpilation rule for %v does not exist",
+                syntax.Id2Name[id],
+            ),
+        )
     }
 }
 

@@ -318,8 +318,9 @@ var SyntaxDefinition = [...] string {
     /* Interface */
     "interface = @interface name generic_params { members }",
     "members? = member members",
-    "member = method_proto | method",
-    "method_proto = name Call paralist_strict! -> type",
+    "member = method_implemented | method_blank",
+    "method_implemented = name Call paralist_strict! ->! type! body",
+    "method_blank = name Call paralist_strict! -> type",
 
     /* Expression */
     "expr = operand expr_tail",
