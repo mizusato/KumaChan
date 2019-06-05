@@ -32,16 +32,12 @@ const MSG = {
         + LF + `both have method: ${name}()`
     ),
     method_missing: (name, C, I) => (
-        'the class'
-        + LF + INDENT + C
-        + LF + 'does not implement'
+        `The ${C}` + LF + 'does not implement'
         + LF + INDENT + I
         + LF + `(missing method ${name}())`
     ),
     method_invalid: (name, C, I) => (
-        'the class'
-        + LF + INDENT + C
-        + LF + 'does not implement'
+        `The ${C}` + LF + 'does not implement'
         + LF + INDENT + I
         + LF + `(invalid method ${name}())`
     ),
