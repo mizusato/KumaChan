@@ -88,7 +88,7 @@ var Tokens = [...] Token {
 
 /* Conditional Keywords */
 var Keywords = [...] string {
-    "@module", "@export", "@import", "@use", "@as",
+    "@module", "@export", "@include", "@import", "@use", "@as",
     "@if", "@else", "@elif", "@switch", "@case", "@default",
     "@while", "@for", "@in", "@break", "@continue", "@return",
     "@yield", "@await",
@@ -152,18 +152,18 @@ var RedefinableOperators = []string {
 
 var SyntaxDefinition = [...] string {
 
-    /* Root */
-    "program = module | eval",
-
     /* Module */
-    "module = module_declare exports commands",
-    "module_declare = @module name!",
+    "module = @module name! export includes commands",
     "name = Name",
-    "exports? = export exports",
-    "export = @export as_list!",
+    "export? = @export namelist!",
+    "includes? = include includes",
+    "include = @include string",
     "as_list = as_item as_list_tail",
     "as_list_tail? = , as_item! as_list_tail",
     "as_item = name @as name! | name",
+
+    /* Included */
+    "included = commands",
 
     /* Eval */
     "eval = commands",

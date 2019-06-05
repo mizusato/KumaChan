@@ -12,10 +12,10 @@ class Array<T> is Getter<Index, T>, Setter<Index, T> {
         return element
         @handle error {
             unless nil_allowed {
-                throw custom_error('index ${} out of range' << i)
+                panic 'array index out of range'
             }
             unless consistent {
-                throw custom_error ('element violated its type constraint')
+                panic 'requested array element became incorrect type'
             }
         }
     }
@@ -24,7 +24,7 @@ class Array<T> is Getter<Index, T>, Setter<Index, T> {
         set list[i] = value
         @handle error {
             unless index_valid {
-                throw custom_error('index ${} out of range' << i)
+                panic 'array index out of range'
             }
         }
     }

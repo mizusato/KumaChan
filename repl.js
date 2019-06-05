@@ -3,7 +3,7 @@
 let KumaChan = require(`${__dirname}/build/dev/runtime.js`)
 let ChildProcess = require('child_process')
 let REPL = require('repl')
-let Compiler = `${__dirname}/build/dev/compiler --eval`
+let Compiler = `${__dirname}/build/dev/compiler eval`
 
 
 function k_eval (command, context, filename, callback) {

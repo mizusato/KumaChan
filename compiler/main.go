@@ -18,8 +18,6 @@ func check (err error) {
 
 
 func test () {
-    syntax.Init()
-    transpiler.Init()
     var code_bytes, err = ioutil.ReadAll(os.Stdin)
     check(err)
     var code_string = string(code_bytes)
@@ -34,7 +32,7 @@ func test () {
         )
     }
     fmt.Printf("\n")
-    var tree = parser.BuildTree(code, "<eval>")
+    var tree = parser.BuildTree("eval", code, "<eval>")
     fmt.Printf("\n")
     parser.PrintBareTree(tree.Nodes)
     fmt.Printf("\n")
@@ -45,15 +43,22 @@ func test () {
 
 
 func main () {
-    if len(os.Args) > 1 && os.Args[1] == "--eval" {
-        syntax.Init()
-        transpiler.Init()
-        var code_bytes, err = ioutil.ReadAll(os.Stdin)
-        check(err)
-        var code_string = string(code_bytes)
-        var code = []rune(code_string)
-        var tree = parser.BuildTree(code, "<eval>")
-        var js = transpiler.Transpile(&tree, -1)
+    syntax.Init()
+    transpiler.Init()
+    if len(os.Args) > 1 {
+        var mode = os.Args[1]
+        var js = ""
+        if mode == "eval" {
+            js = transpiler.TranspileFile(os.Stdin, "<eval>", "eval")
+        } else if mode == "module" {
+            var path = os.Args[2]
+            var file, err = os.Open(path)
+            if err != nil {
+                panic(fmt.Sprintf("error opening %v: %v", path, err))
+            }
+            js = transpiler.TranspileFile(file, path, "module")
+            file.Close()
+        }
         fmt.Print(js)
     } else {
         test()

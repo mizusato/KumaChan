@@ -48,11 +48,11 @@ type Tree struct {
 }
 
 
-func BuildBareTree (tokens scanner.TokenSequence) BareTree {
+func BuildBareTree (root syntax.Id, tokens scanner.TokenSequence) BareTree {
     var NameId = syntax.Name2Id["Name"]
     var CallId = syntax.Name2Id["Call"]
     var GetId = syntax.Name2Id["Get"]
-    var RootId = syntax.Name2Id[syntax.RootName]
+    var RootId = root
     var RootPart = syntax.Part {
         Id:        RootId,
         Partype:   syntax.Recursive,
@@ -212,11 +212,14 @@ func BuildBareTree (tokens scanner.TokenSequence) BareTree {
     return tree
 }
 
-func BuildTree (code scanner.Code, file_name string) Tree {
+func BuildTree (root string, code scanner.Code, file_name string) Tree {
     var tokens, info = scanner.Scan(code)
-    var nodes = BuildBareTree(tokens)
+    var RootId, exists = syntax.Name2Id[root]
+    if (!exists) { panic(fmt.Sprintf("invalid root part name '%v'", root)) }
+    var nodes = BuildBareTree(RootId, tokens)
     return Tree {
-        Code: code, Tokens: tokens, Info: info, Nodes: nodes, File: file_name,
+        Code: code, Tokens: tokens,
+        Info: info, Nodes: nodes, File: file_name,
     }
 }
 

@@ -79,7 +79,7 @@ var Name2Id map[string]Id
 var Id2Keyword map[Id][]rune
 var Id2Operator map[Id]Operator
 var Rules map[Id]Rule
-var RootName string
+// var RootName string
 
 func Allocate () {
     Id2Name = make([]string, 0, 1000)
@@ -119,14 +119,16 @@ func AssignId2Keywords () {
 }
 
 func AssignId2Rules () {
-    for i, def := range SyntaxDefinition {
+    for _, def := range SyntaxDefinition {
         var t = strings.Split(def, "=")
         var u = strings.Trim(t[0], " ")
         var rule_name = strings.TrimRight(u, "?")
         AssignId2Name(rule_name)
+        /*
         if (i == 0) {
             RootName = rule_name
         }
+        */
     }
 }
 

@@ -2,6 +2,8 @@ package transpiler
 
 import "fmt"
 import "strconv"
+import "io"
+import "io/ioutil"
 import "../syntax"
 import "../parser"
 
@@ -103,6 +105,14 @@ func ApplyRules () {
             TransMapByName[key] = value
         }
     }
+}
+
+func TranspileFile (file io.Reader, name string, root string) string {
+    var content, err = ioutil.ReadAll(file)
+    if err != nil { panic(fmt.Sprintf("error reading %v: %v", name, err)) }
+    var code = []rune(string(content))
+    var tree = parser.BuildTree(root, code, name)
+    return Transpile(&tree, -1)
 }
 
 func Init () {

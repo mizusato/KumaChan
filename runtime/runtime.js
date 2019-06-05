@@ -11,6 +11,7 @@
     '<include> oo.js';
     '<include> generics.js';
     '<include> built-in.js';
+    '<include> module.js';
 
     let export_name = 'KumaChan'
     let export_object = {
@@ -23,7 +24,8 @@
         call, call_method,
         RuntimeError, CustomError, panic, create_error,
         helpers: get_helpers,
-        scope: default_scopes
+        scope: default_scopes,
+        register_module
     }
     Object.freeze(export_object)
     if (typeof window != 'undefined') {

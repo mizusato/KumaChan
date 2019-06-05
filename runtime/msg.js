@@ -90,5 +90,9 @@ const MSG = {
     not_schema: 'cannot create new structure by a non-schema object',
     no_common_class: (
         'cannot apply infix operator on instances with no common class'
+    ),
+    module_conflict: mod => `conflicting module name ${mod}`,
+    missing_export: (mod, exp) => (
+        `exported variable '${exp}' does not exist in module ${mod}`
     )
 }
