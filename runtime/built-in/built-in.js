@@ -1,10 +1,10 @@
-'<include> built-in/types.js';
-'<include> built-in/exceptions.js';
-'<include> built-in/features.js';
-'<include> built-in/functions.js';
-'<include> built-in/operators.js';
-'<include> built-in/constants.js';
-'<include> built-in/es_compatible.js';
+'<include> types.js';
+'<include> exceptions.js';
+'<include> features.js';
+'<include> functions.js';
+'<include> operators.js';
+'<include> constants.js';
+'<include> es_compatible.js';
 
 
 let global_scope_data = {}

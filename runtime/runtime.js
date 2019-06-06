@@ -11,7 +11,7 @@
     '<include> oo.js';
     '<include> generics.js';
     '<include> module.js';
-    '<include> built-in.js';
+    '<include> built-in/built-in.js';
 
     let export_name = 'KumaChan'
     let export_object = {
