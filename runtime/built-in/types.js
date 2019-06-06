@@ -21,13 +21,18 @@ let RepresentableType = Uni (
     OperandType.inflate('str')
 )
 
+let MaybeType = template (
+    'function Maybe (T: Type) -> Type',
+        T => Uni(Nil, T)
+)
+
 let GetterType = template (
     'function Getter (Key: Type, Val: Type) -> Interface',
         (KT, VT) => create_interface('Getter', [
             { name: 'get', f: { parameters: [
                 { name: 'key', type: KT },
                 { name: 'nf', type: Types.Bool }
-            ], value_type: VT }}
+            ], value_type: MaybeType.inflate(VT) }}
         ], null)
 )
 
@@ -64,6 +69,7 @@ let ArityType = template (
 pour(Types, {
     Object: Types.Any,
     Operand: OperandType,
+    Maybe: MaybeType,
     Getter: GetterType,
     Setter: SetterType,
     Callable: Uni(ES.Function, Types.TypeTemplate, Types.Class),
@@ -88,6 +94,7 @@ let built_in_types = {
     Any: Types.Any,
     Object: Types.Object,
     Nil: Nil,
+    Maybe: Types.Maybe,
     Void: Void,
     Bool: Types.Bool,
     Number: Types.Number,

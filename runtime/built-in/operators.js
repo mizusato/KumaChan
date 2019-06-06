@@ -202,7 +202,7 @@ let operators = {
         'operator.plus',
         `function operator.plus (a: Operand<'+'>, b: Operand<'+'>) -> Object`,
             (a, b) => apply_operator('+', a, b),
-        'function operator.plus (a: Iterable, b: Iterable) -> Iterable',
+        'function operator.plus (a: Iterator, b: Iterator) -> Iterable',
             (a, b) => {
                 return (function* ()  {
                     for (let I of a) { yield I }

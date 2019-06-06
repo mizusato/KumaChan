@@ -11,7 +11,7 @@ class Array<T> is Getter<Index, T>, Setter<Index, T> {
             }
         }
     }
-    get (i: Index, nf: Bool) -> T {
+    get (i: Index, nf: Bool) -> Maybe<T> {
         if not (i < len(list)) {
             ensure nil_allowed { nf }
             return Nil
@@ -55,5 +55,8 @@ class Array<T> is Getter<Index, T>, Setter<Index, T> {
                 yield array[i]
             }
         }
+    }
+    operator + (a1, a2) {
+        return Array<T>(iter(a1) + iter(a2))
     }
 }
