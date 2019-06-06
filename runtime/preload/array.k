@@ -1,9 +1,18 @@
 class Array<T> is Getter<Index, T>, Setter<Index, T> {
     init (source: Iterable) {
-        let list = collect(source)
+        let list = []
+        for element[i] in source {
+            ensure valid(i) { element is T }
+            list -> append(element)
+        }
+        @handle error {
+            unless valid(i) {
+                panic MSG.array_invalid_init(i)
+            }
+        }
     }
     get (i: Index, nf: Bool) -> T {
-        if not (i < length(list)) {
+        if not (i < len(list)) {
             ensure nil_allowed { nf }
             return Nil
         }
@@ -12,26 +21,39 @@ class Array<T> is Getter<Index, T>, Setter<Index, T> {
         return element
         @handle error {
             unless nil_allowed {
-                panic 'array index out of range'
+                panic MSG.array_out_of_range(i, len(list))
             }
             unless consistent {
-                panic 'requested array element became incorrect type'
+                panic MSG.array_inconsistent(i)
             }
         }
     }
     set (i: Index, value: T) -> Void {
-        ensure index_valid { i < length(list) }
+        ensure index_valid { i < len(list) }
         set list[i] = value
         @handle error {
             unless index_valid {
-                panic 'array index out of range'
+                panic MSG.array_out_of_range(i, len(list))
             }
         }
+    }
+    length () -> Size {
+        return len(list)
     }
     append (value: T) -> Void {
         list -> append(value)
     }
     prepend (value: T) -> Void {
         list -> prepend(value)
+    }
+    operator len (array) {
+        return array -> length()
+    }
+    operator iter (array) {
+        return iterator {
+            for i in count(len(array)) {
+                yield array[i]
+            }
+        }
     }
 }

@@ -4,12 +4,21 @@
 
 let IndexType = Ins(Types.Int, $(x => x >= 0))
 
+let PrimitiveType = Uni(Types.String, Types.Number, Types.Bool)
+
 let OperandType = template (
     'function Operand (op: String) -> Type',
         op => Uni (
             Ins(Types.Structure, $(s => s.schema.defined_operator(op))),
-            Ins(Types.Instance, $(i => i.class_.defined_operator(op)))
+            Ins(Types.Instance, $(
+                i => exists(i.class_.super_classes, C => C.defined_operator(op))
+            ))
         )
+)
+
+let RepresentableType = Uni (
+    PrimitiveType,
+    OperandType.inflate('str')
 )
 
 let GetterType = template (
@@ -32,6 +41,25 @@ let SetterType = template (
         ], null)
 )
 
+let IteratorType = $(x => {
+    let is_iterable = typeof x[Symbol.iterator] == 'function'
+    if (is_iterable) {
+        return (
+            x[Symbol.toStringTag] == 'Generator'
+            || x[Symbol.iterator]() === x
+        )
+    } else {
+        return false
+    }
+})
+
+let ArityType = template (
+    'function Arity (n: Int) -> Type',
+        n => Ins(Types.Function, $(
+            f => f[WrapperInfo].proto.parameters.length === n
+        ))
+)
+
 
 pour(Types, {
     Object: Types.Any,
@@ -39,29 +67,14 @@ pour(Types, {
     Getter: GetterType,
     Setter: SetterType,
     Callable: Uni(ES.Function, Types.TypeTemplate, Types.Class),
-    Iterable: $(
-        x => is(x, ES.Object) && typeof x[Symbol.iterator] == 'function'
-    ),
-    Iterator: $(x => {
-        let is_iterable = typeof x[Symbol.iterator] == 'function'
-        if (is_iterable) {
-            return (
-                x[Symbol.toStringTag] == 'Generator'
-                || x[Symbol.iterator]() === x
-            )
-        } else {
-            return false
-        }
-    }),
+    Iterable: Uni(ES.Iterable, OperandType.inflate('iter')),
+    Iterator: IteratorType,
     Promise: $(x => x instanceof Promise),
-    Arity: template (
-        'function Arity (n: Int) -> Type',
-            n => Ins(Types.Function, $(
-                f => f[WrapperInfo].proto.parameters.length === n
-            ))
-    ),
+    Arity: ArityType,
     Index: IndexType,
     Size: IndexType,
+    Primitive: PrimitiveType,
+    Representable: RepresentableType,
     Error: $(x => x instanceof Error),
     NotFound: create_value('NotFound')  // Types.NotFound !== NotFound
 })
@@ -80,11 +93,13 @@ let built_in_types = {
     Number: Types.Number,
     NaN: Types.NaN,
     Infinite: Types.Infinite,
-    MayNotNumber: Types.MayNotNumber,
+    GeneralNumber: Types.GeneralNumber,
     Int: Types.Int,
     Index: Types.Index,
     Size: Types.Size,
     String: Types.String,
+    Primitive: Types.Primitive,
+    Representable: Types.Representable,
     Function: Types.Function,
     Method: Types.Binding,  // rename it
     Overload: Types.Overload,

@@ -6,7 +6,7 @@ func r (pattern string) Regexp { return regexp.MustCompile(`^` + pattern) }
 
 const LF = `\n`
 const Blanks = ` \t\r　`
-const Symbols = `;\{\}\[\]\(\)\.\,\:@\?\<\>\=\!~\&\|\\\+\-\*\/%\^`
+const Symbols = `;\{\}\[\]\(\)\.\,\:@\?\<\>\=\!~\&\|\\\+\-\*\/%\^'"` + "`"
 
 var EscapeMap = map [string] string {
     "_exc":   "!",
@@ -99,11 +99,11 @@ var Keywords = [...] string {
     "@static", "@mock", "@handle",
     "@throw", "@assert", "@ensure", "@try", "@to",
     "@unless", "@failed", "@finally", "@panic",
-    "@where", "@map",
+    "@where",
     "@struct", "@config", "@require", "@operator",
     "@one", "@of", "@enum",
     "@class", "@init", "@data", "@interface", "@expose",
-    "@str", "@negate",
+    "@str", "@len", "@iter", "@negate",
     "@true", "@false",
     "@is", "@or", "@not",
 }
@@ -143,7 +143,7 @@ var Operators = [...] Operator {
 
 
 var RedefinableOperators = []string {
-    "@str", "@negate",
+    "@str", "@len", "@iter", "@negate",
     "==", "<",
     "<<", ">>",
     "+", "-", "*", "/", "%", "^",
@@ -334,7 +334,7 @@ var SyntaxDefinition = [...] string {
     `op_logic = @is | && | _bar2 | & | _bar1 | \ `,
     "op_arith = + | - | * | / | % | ^ ",
     /* Operators (Prefix) */
-    "unary? = @not | @str | - | @negate | _exc | ~ | @expose",
+    "unary? = @not | @str | @len | @iter | - | @negate | _exc | ~ | @expose",
     /* Operand */
     "operand = unary operand_base operand_tail",
     "operand_base = wrapped | lambda | literal | dot_para | identifier",
@@ -358,14 +358,12 @@ var SyntaxDefinition = [...] string {
 
     /* Literals */
     "literal = primitive | adv_literal | iife | struct",
-    "adv_literal = comprehension | type_literal | map | list | hash",
+    "adv_literal = comprehension | type_literal | list | hash",
     "type_literal = simple_type_literal | finite_literal",
-    "struct = type hash",
-    // TODO: generics and array
-    "map = @map { } | @map { map_item! map_tail }",
-    "map_tail? = , map_item! map_tail",
-    "map_item = map_key :! expr!",
-    "map_key = expr",
+    "struct = type struct_hash",
+    "struct_hash = { struct_hash_item struct_hash_tail }!",
+    "struct_hash_tail? = , struct_hash_item struct_hash_tail",
+    "struct_hash_item = name : expr! | :: name!",
     // TODO: when expression: when { cond1: val1, cond2: val2 }
     /* Hash Table */
     "hash = { } | { hash_item! hash_tail }!",

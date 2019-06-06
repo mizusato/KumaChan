@@ -138,7 +138,7 @@ var Expressions = map[string]TransFunction {
         }
         return buf.String()
     },
-    // unary? = @not | @str | - | @negate | _exc | ~ | @expose
+    // unary? = @not | @str | @len | @iter | - | @negate | _exc | ~ | @expose
     "unary": func (tree Tree, ptr int) string {
         var child_ptr = tree.Nodes[ptr].Children[0]
         var child_node = &tree.Nodes[child_ptr]

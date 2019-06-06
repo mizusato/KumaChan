@@ -69,22 +69,22 @@ let built_in_functions = {
     map: f (
         'map',
         'function map (i: Iterable, f: Arity<2>) -> Iterator',
-            (i, f) => map(i, (e, n) => call(f, [e, n])),
+            (i, f) => map(iter(i), (e, n) => call(f, [e, n])),
         'function map (i: Iterable, f: Arity<1>) -> Iterator',
-            (i, f) => map(i, e => call(f, [e]))
+            (i, f) => map(iter(i), e => call(f, [e]))
     ),
     filter: f (
         'filter',
         'function filter (i: Iterable, T: Type) -> Iterator',
-            (i, T) => filter(i, e => call(operator_is, [e, T])),
+            (i, T) => filter(iter(i), e => call(operator_is, [e, T])),
         'function filter (i: Iterable, f: Arity<2>) -> Iterator',
-            (i, f) => filter(i, (e, n) => {
+            (i, f) => filter(iter(i), (e, n) => {
                 let ok = call(f, [e, n])
                 ensure(is(ok, Types.Bool), 'filter_not_bool')
                 return ok
             }),
         'function filter (i: Iterable, f: Arity<1>) -> Iterator',
-            (i, f) => filter(i, e => {
+            (i, f) => filter(iter(i), e => {
                 let ok = call(f, [e])
                 ensure(is(ok, Types.Bool), 'filter_not_bool')
                 return ok
@@ -94,44 +94,37 @@ let built_in_functions = {
         'find',
         'function find (i: Iterable, T: Type) -> Object',
             (i, T) => {
-                let r = find(i, e => call(operator_is, [e, T]))
+                let r = find(iter(i), e => call(operator_is, [e, T]))
                 return (r !== NotFound)? r: Types.NotFound
             },
         'function find (i: Iterable, f: Arity<2>) -> Object',
             (i, f) => {
-                let r = find(i, (e, n) => call(f, [e, n]))
+                let r = find(iter(i), (e, n) => call(f, [e, n]))
                 return (r !== NotFound)? r: Types.NotFound
             },
         'function find (i: Iterable, f: Arity<1>) -> Object',
             (i, f) => {
-                let r = find(i, e => call(f, [e]))
+                let r = find(iter(i), e => call(f, [e]))
                 return (r !== NotFound)? r: Types.NotFound
             }
     ),
     reversed: fun (
         'function reversed (i: Iterable) -> Iterator',
             i => (function* () {
-                let cache = []
-                for (let e of i) {
-                    cache.push(e)
+                let buf = []
+                for (let e of iter(i)) {
+                    buf.push(e)
                 }
-                for (let e of rev(cache)) {
+                for (let e of rev(buf)) {
                     yield e
                 }
             })()
     ),
     collect: fun (
         'function collect (i: Iterable) -> List',
-            i => list(i)
+            i => list(iter(i))
     ),
     // List Operations
-    length: f (
-        'length',
-        'function length (l: List) -> Size',
-            l => l.length,
-        'function length (s: String) -> Size',
-            s => s.length
-    ),
     first: fun (
         'function first (l: List) -> Object',
             l => (ensure(l.length > 0, 'empty_list'), l[0])

@@ -87,19 +87,22 @@ let ES = {
     Undefined: $(x => typeof x == 'undefined'),
     Null: $(x => x === null),
     Boolean: $(x => typeof x == 'boolean'),
-    Number: $(
-        x => (
-            typeof x == 'number'
-                && !Number.isNaN(x)
-                && Number.isFinite(x)
-        )
-    ),
+    Number: $(x => (
+        typeof x == 'number'
+            && !Number.isNaN(x)
+            && Number.isFinite(x)
+    )),
     NaN: $(x => Number.isNaN(x)),
     Infinite: $(x => !Number.isFinite(x) && !Number.isNaN(x)),
     String: $(x => typeof x == 'string'),
     Symbol: $(x => typeof x == 'symbol'),
     Function: $(x => typeof x == 'function'),
     Object: $(x => typeof x == 'object' && x !== null),
+    Iterable: $(x => (
+        typeof x == 'object'
+            && x !== null
+            && typeof x[Symbol.iterator] == 'function'
+    ))
 }
 
 
@@ -112,7 +115,7 @@ let Types = {
     Number: ES.Number,
     NaN: ES.NaN,
     Infinite: ES.Infinite,
-    MayNotNumber: $(x => typeof x == 'number'),
+    GeneralNumber: $(x => typeof x == 'number'),
     String: ES.String,
     Int: $(x => Number.isInteger(x) && Number.isSafeInteger(x)),
     Primitive: Uni(ES.Number, ES.String, ES.Boolean),
@@ -133,6 +136,7 @@ let Types = {
     ES_Class: Ins(ES.Function, $(
         f => is(f.prototype, ES.Object) || f === Function
     )),
+    ES_Iterable: ES.Iterable,
     Any: Any
 }
 

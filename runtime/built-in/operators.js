@@ -23,7 +23,9 @@ function apply_unary (name, a) {
         return call(a.schema.get_operator(name), [a])
     } else {
         assert(is(a, Types.Instance))
-        return call(a.class_.get_operator(name), [a])
+        let C = find(a.class_.super_classes, C => C.defined_operator(name))
+        assert(C !== NotFound)
+        return call(C.get_operator(name), [a])
     }
 }
 
@@ -48,6 +50,22 @@ let operators = {
             x => Number.prototype.toString.call(x),
         'function operator.str (s: String) -> String',
             s => s
+    ),
+    'len': f (
+        'operator.len',
+        `function operator.len (o: Operand<'len'>) -> Size`,
+            o => apply_unary('len', o),
+        'function operator.len (l: List) -> Size',
+            l => l.length,
+        'function operator.len (s: String) -> Size',
+            s => s.length
+    ),
+    'iter': f (
+        'operator.iter',
+        `function operator.iter (o: Operand<'iter'>) -> Iterator`,
+            o => apply_unary('iter', o),
+        'function operator.iter (i: ES_Iterable) -> Iterator',
+            l => l[Symbol.iterator]()
     ),
     'negate': f (
         'operator.negate',
@@ -195,49 +213,59 @@ let operators = {
             (a, b) => [...a, ...b],
         'function operator.plus (a: String, b: String) -> String',
             (a, b) => a + b,
-        'function operator.plus (x: Number, y: Number) -> MayNotNumber',
+        'function operator.plus (x: Number, y: Number) -> GeneralNumber',
             (x, y) => x + y
     ),
     '-': f (
         'operator.minus',
         `function operator.minus (a: Operand<'-'>, b: Operand<'-'>) -> Object`,
             (a, b) => apply_operator('-', a, b),
-        'function operator.minus (x: Number, y: Number) -> MayNotNumber',
+        'function operator.minus (x: Number, y: Number) -> GeneralNumber',
             (x, y) => x - y
     ),
     '*': f (
         'operator.times',
         `function operator.times (a: Operand<'*'>, b: Operand<'*'>) -> Object`,
             (a, b) => apply_operator('*', a, b),
-        'function operator.times (x: Number, y: Number) -> MayNotNumber',
+        'function operator.times (x: Number, y: Number) -> GeneralNumber',
             (x, y) => x * y
     ),
     '/': f (
         'operator.divide',
         `function operator.divide (a: Operand<'/'>, b: Operand<'/'>) -> Object`,
             (a, b) => apply_operator('/', a, b),
-        'function operator.divide (x: Number, y: Number) -> MayNotNumber',
+        'function operator.divide (x: Number, y: Number) -> GeneralNumber',
             (x, y) => x / y
     ),
     '%': f (
         'operator.modulo',
         `function operator.modulo (a: Operand<'%'>, b: Operand<'%'>) -> Object`,
             (a, b) => apply_operator('%', a, b),
-        'function operator.modulo (x: Number, y: Number) -> MayNotNumber',
+        'function operator.modulo (x: Number, y: Number) -> GeneralNumber',
             (x, y) => x % y
     ),
     '^': f (
         'operator.power',
         `function operator.power (a: Operand<'^'>, b: Operand<'^'>) -> Object`,
             (a, b) => apply_operator('^', a, b),
-        'function operator.power (x: Number, y: Number) -> MayNotNumber',
+        'function operator.power (x: Number, y: Number) -> GeneralNumber',
             (x, y) => Math.pow(x, y)
     )
 }
 
+Object.freeze(operators)
+
+
 let operator_is = operators['is']
 
-Object.freeze(operators)
+function str (value) {
+    return call(operators['str'], [value])
+}
+
+function iter (value) {
+    return call(operators['iter'], [value])
+}
+
 
 function get_operator (name) {
     assert(has(name, operators))

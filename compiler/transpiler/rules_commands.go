@@ -209,15 +209,17 @@ var CommandsMap = map[string]TransFunction {
     "block": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
         var commands = Commands(tree, children["commands"], false)
-        var ProgramId = syntax.Name2Id["program"]
         var BodyId = syntax.Name2Id["body"]
         var BlockId = syntax.Name2Id["block"]
         var ForId = syntax.Name2Id["cmd_for"]
         var depth = 0
         var node = tree.Nodes[ptr]
-        for node.Part.Id != BodyId && node.Part.Id != ProgramId {
+        for node.Part.Id != BodyId {
             if node.Part.Id == BlockId {
                 depth += 1
+            }
+            if node.Parent < 0 {
+                break
             }
             node = tree.Nodes[node.Parent]
         }

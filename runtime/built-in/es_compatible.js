@@ -5,6 +5,7 @@ let built_in_es_compatible = {
         Key: Types.ES_Key,
         Class: Types.ES_Class,
         Function: Types.ES_Function,
+        Iterable: Types.ES_Iterable
     },
     es: {
         undefined: undefined,

@@ -372,6 +372,7 @@ func FieldList (tree Tree, ptr int) (string, string) {
     var names = make([]string, 0, 16)
     var types = make([]string, 0, 16)
     var defaults = make([]string, 0, 16)
+    var names_hash = make(map[string]bool)
     // field_list = field field_list_tail
     var field_ptrs = FlatSubTree(tree, ptr, "field", "field_list_tail")
     for _, field_ptr := range field_ptrs {
@@ -379,6 +380,11 @@ func FieldList (tree Tree, ptr int) (string, string) {
         var children = Children(tree, field_ptr)
         var name = Transpile(tree, children["name"])
         var type_ = Transpile(tree, children["type"])
+        var _, exists = names_hash[name]
+        if exists {
+            panic("duplicate Schema field " + name)
+        }
+        names_hash[name] = true
         var default_ string
         var default_ptr = children["field_default"]
         if NotEmpty(tree, default_ptr) {

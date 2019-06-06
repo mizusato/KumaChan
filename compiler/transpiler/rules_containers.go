@@ -5,34 +5,6 @@ import "strings"
 
 
 var Containers = map[string]TransFunction {
-    // map = @map { } | @map { map_item! map_tail }
-    "map": func (tree Tree, ptr int) string {
-        if tree.Nodes[ptr].Length == 3 {
-            return "(new Map())"
-        }
-        var items = FlatSubTree(tree, ptr, "map_item", "map_tail")
-        var buf strings.Builder
-        buf.WriteRune('(')
-        buf.WriteString("new Map")
-        buf.WriteString("([")
-        for i, item := range items {
-            buf.WriteString(Transpile(tree, item))
-            if i != len(items)-1 {
-                buf.WriteString(", ")
-            }
-        }
-        buf.WriteString("])")
-        buf.WriteRune(')')
-        return buf.String()
-    },
-    // map_item = map_key :! expr!
-    "map_item": func (tree Tree, ptr int) string {
-        var children = Children(tree, ptr)
-        // map_key = expr
-        var key = TranspileFirstChild(tree, children["map_key"])
-        var value = Transpile(tree, children["expr"])
-        return fmt.Sprintf("[%v, %v]", key, value)
-    },
     // hash = { } | { hash_item! hash_tail }!
     "hash": func (tree Tree, ptr int) string {
         if tree.Nodes[ptr].Length == 2 {

@@ -112,17 +112,50 @@ var TransMapByName = map[string]TransFunction {
     "literal": TranspileFirstChild,
     // adv_literal = xml | comprehension | abs_literal | map | list | hash
     "adv_literal": TranspileFirstChild,
-    // struct = type hash
+    // struct = type struct_hash
     "struct": func (tree Tree, ptr int) string {
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
         var children = Children(tree, ptr)
         var type_ = Transpile(tree, children["type"])
-        var hash = Transpile(tree, children["hash"])
+        var hash = Transpile(tree, children["struct_hash"])
         return fmt.Sprintf (
             "__.c(__.ns, [%v, %v], %v, %v, %v)",
             type_, hash, file, row, col,
         )
+    },
+    // struct_hash = { struct_hash_item struct_hash_tail }!
+    "struct_hash": func (tree Tree, ptr int) string {
+        var item_ptrs = FlatSubTree (
+            tree, ptr, "struct_hash_item", "struct_hash_tail",
+        )
+        var names = make(map[string]bool)
+        var buf strings.Builder
+        buf.WriteString("{ ")
+        for i, item_ptr := range item_ptrs {
+            // struct_hash_item = name : expr! | :: name!
+            var children = Children(tree, item_ptr)
+            var name_ptr = children["name"]
+            var name = Transpile(tree, name_ptr)
+            var expr_ptr, has_expr = children["expr"]
+            var _, exists = names[name]
+            if exists {
+                panic("duplicate Structure field " + name)
+            }
+            names[name] = true
+            var expr string
+            if has_expr {
+                expr = Transpile(tree, expr_ptr)
+            } else {
+                expr = VarLookup(GetTokenContent(tree, name_ptr))
+            }
+            fmt.Fprintf(&buf, "%v: %v", name, expr)
+            if i != len(item_ptrs)-1 {
+                buf.WriteString(", ")
+            }
+        }
+        buf.WriteString(" }")
+        return buf.String()
     },
 
 

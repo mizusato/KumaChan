@@ -89,7 +89,7 @@ let for_loop = f (
     'function for_loop (h: Hash) -> Iterable',
         h => mapkv(h, (k, v) => ({ key: k, value: v })),
     'function for_loop (i: Iterable) -> Iterable',
-        i => map(i, (e, i) => ({ key: i, value: e }))
+        i => map(iter(i), (e, i) => ({ key: i, value: e }))
 )
 
 
@@ -99,6 +99,7 @@ let iterator_comprehension = fun (
             foreach(l, (element, index) => {
                 ensure(is(element, Types.Iterable), 'not_iterable', index+1)
             })
+            l = l.map(element => iter(element))
             return (function* () {
                 for (let values of zip(l, x => x)) {
                     let ok = call(f, values)
@@ -120,16 +121,18 @@ let list_comprehension = fun (
 
 let string_format = f (
     'string_format',
-    'function string_format (s: String, v: Any) -> String',
+    'function string_format (s: String, v: Representable) -> String',
         (s, v) => {
-            return s.replace('${}', call(operators['str'], [v]))
+            return s.replace('${}', str(v))
         },
     'function string_format (s: String, t: Structure) -> String',
         (s, t) => {
             return s.replace(/\$\{([^}]+)\}/g, (match, p1) => {
                 let key = p1
                 ensure(t.schema.has_key(key), 'format_invalid_key', key)
-                return call(operators['str'], [t.get(key)])
+                let value = t.get(key)
+                ensure(is(value, Types.Representable), 'not_repr', p1)
+                return str(value)
             })
         },
     'function string_format (s: String, h: Hash) -> String',
@@ -138,7 +141,9 @@ let string_format = f (
                 let key = p1
                 let ok = has(key, h)
                 ensure(ok, 'format_invalid_key', key)
-                return call(operators['str'], [h[key]])
+                let value = h[key]
+                ensure(is(value, Types.Representable), 'not_repr', p1)
+                return str(value)
             })
         },
     'function string_format (s: String, l: List) -> String',
@@ -149,7 +154,9 @@ let string_format = f (
                 let ok = (0 <= index && index < l.length)
                 ensure(ok, 'format_invalid_index', index)
                 used += 1
-                return call(operators['str'], [l[index]])
+                let value = l[index]
+                ensure(is(value, Types.Representable), 'not_repr', p1)
+                return str(value)
             })
             let ok = (used === l.length)
             ensure(ok, 'format_not_all_converted')
