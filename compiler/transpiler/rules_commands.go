@@ -436,7 +436,7 @@ var CommandsMap = map[string]TransFunction {
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
         var e_row, e_col = GetRowColInfo(tree, expr_ptr)
-        return fmt.Sprintf(
+        return fmt.Sprintf (
             "if (!(__.c(__.rb, [%v], %v, %v, %v))) " +
                 "{ __.ef(e, %v, %v, %v, %v, %v) }",
             expr, file, e_row, e_col,
@@ -466,5 +466,68 @@ var CommandsMap = map[string]TransFunction {
     // cmd_pass = @do @nothing
     "cmd_pass": func (tree Tree, ptr int) string {
         return "__.v"
+    },
+    // cmd_module = cmd_import
+    "cmd_module": TranspileFirstChild,
+    // cmd_import = import_all | import_names | import_module
+    "cmd_import": TranspileFirstChild,
+    // import_names = @import as_list @from name
+    "import_names": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var module_name = Transpile(tree, children["name"])
+        var configs = Transpile(tree, children["as_list"])
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
+        return fmt.Sprintf (
+            "__.c(ins, [%v, %v], %v, %v, %v)",
+            module_name, configs, file, row, col,
+        )
+    },
+    // import_module = @import as_item
+    "import_module": func (tree Tree, ptr int) string {
+        var config = TranspileLastChild(tree, ptr)
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
+        return fmt.Sprintf (
+            "__.c(im, [%v], %v, %v, %v)",
+            config, file, row, col,
+        )
+    },
+    // import_all = @import * @from name
+    "import_all": func (tree Tree, ptr int) string {
+        var name = TranspileLastChild(tree, ptr)
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
+        return fmt.Sprintf (
+            "__.c(ia, [%v], %v, %v, %v)",
+            name, file, row, col,
+        )
+    },
+    // as_list = as_item as_list_tail
+    "as_list": func (tree Tree, ptr int) string {
+        var item_ptrs = FlatSubTree(tree, ptr, "as_item", "as_list_tail")
+        var buf strings.Builder
+        buf.WriteRune('[')
+        for i, item_ptr := range item_ptrs {
+            buf.WriteString(Transpile(tree, item_ptr))
+            if i != len(item_ptrs)-1 {
+                buf.WriteString(", ")
+            }
+        }
+        buf.WriteRune(']')
+        return buf.String()
+    },
+    // as_item = name @as name! | name
+    "as_item": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var _, has_alias = children["@as"]
+        if has_alias {
+            var name = TranspileFirstChild(tree, ptr)
+            var alias = TranspileLastChild(tree, ptr)
+            return fmt.Sprintf("[%v, %v]", name, alias)
+        } else {
+            var name = TranspileFirstChild(tree, ptr)
+            return fmt.Sprintf("[%v, %v]", name, name)
+        }
     },
 }

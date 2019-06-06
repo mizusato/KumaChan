@@ -304,9 +304,6 @@ class Instance {
         this.scope = scope
         this.exposed = []
         this.methods = mapval(methods, f => bind_context(f, scope))
-        foreach(this.methods, (name, method) => {
-            this.scope.declare(name, method)
-        })
         this.init_finished = false
         this.data = {
             class: class_

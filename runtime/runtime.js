@@ -10,8 +10,8 @@
     '<include> function.js';
     '<include> oo.js';
     '<include> generics.js';
-    '<include> built-in.js';
     '<include> module.js';
+    '<include> built-in.js';
 
     let export_name = 'KumaChan'
     let export_object = {

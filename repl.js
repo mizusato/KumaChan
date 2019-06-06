@@ -3,7 +3,22 @@
 let KumaChan = require(`${__dirname}/build/dev/runtime.js`)
 let ChildProcess = require('child_process')
 let REPL = require('repl')
-let Compiler = `${__dirname}/build/dev/compiler eval`
+let Compiler = mode => `${__dirname}/build/dev/compiler ${mode}`
+
+function load_modules () {
+    let args = process.argv.map(a => a)
+    args.shift()
+    args.shift()
+    if (args[0] == 'load') {
+        for (let i=1; i<args.length; i++) {
+            let module_path = args[i]
+            console.log(`loading module ${module_path}`)
+            let cmd = `${Compiler('module')} ${module_path}`
+            let stdout = ChildProcess.execSync(cmd)
+            eval(String(stdout))
+        }
+    }
+}
 
 
 function k_eval (command, context, filename, callback) {
@@ -11,7 +26,7 @@ function k_eval (command, context, filename, callback) {
         callback(null)
         return
     }
-    let p = ChildProcess.exec(Compiler, (error, stdout) => {
+    let p = ChildProcess.exec(Compiler('eval'), (error, stdout) => {
         if (error === null) {
             try {
                 callback(null, eval(stdout))
@@ -36,5 +51,6 @@ function k_eval (command, context, filename, callback) {
     p.stdin.end()
 }
 
+load_modules()
 let instance = REPL.start({ prompt: '>> ', eval: k_eval })
 instance.context.KumaChan = KumaChan

@@ -88,7 +88,7 @@ var Tokens = [...] Token {
 
 /* Conditional Keywords */
 var Keywords = [...] string {
-    "@module", "@export", "@include", "@import", "@use", "@as",
+    "@module", "@export", "@include", "@import", "@from", "@as",
     "@if", "@else", "@elif", "@switch", "@case", "@default",
     "@while", "@for", "@in", "@break", "@continue", "@return",
     "@yield", "@await",
@@ -158,9 +158,8 @@ var SyntaxDefinition = [...] string {
     "export? = @export namelist!",
     "includes? = include includes",
     "include = @include string",
-    "as_list = as_item as_list_tail",
-    "as_list_tail? = , as_item! as_list_tail",
-    "as_item = name @as name! | name",
+    "namelist = name namelist_tail",
+    "namelist_tail? = , name! namelist_tail",
 
     /* Included */
     "included = commands",
@@ -211,11 +210,14 @@ var SyntaxDefinition = [...] string {
     "cmd_try = @try opt_to name { commands }!",
     "opt_to? = @to",
     /* Module Related Commands @ Group 2 */
-    "cmd_module = cmd_use | cmd_import",
-    "cmd_use = @use as_list",
-    "cmd_import = @import namelist",
-    "namelist = name namelist_tail",
-    "namelist_tail? = , name! namelist_tail",
+    "cmd_module = cmd_import",
+    "cmd_import = import_all | import_names | import_module",
+    "import_names = @import as_list @from name",
+    "import_module = @import as_item",
+    "import_all = @import * @from name",
+    "as_list = as_item as_list_tail",
+    "as_list_tail? = , as_item! as_list_tail",
+    "as_item = name @as name! | name",
     /* Scope Related Commands @ Group 2 */
     "cmd_scope = cmd_let | cmd_type | cmd_var | cmd_reset",
     "cmd_let = @let name var_type = expr",

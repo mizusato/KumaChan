@@ -73,5 +73,8 @@ let get_helpers = scope => ({
     df: inject_desc(scope.define_function.bind(scope), 'define_function'),
     gs: f => get_static(f, scope),
     w: (proto, vals, desc, raw) => wrap(scope, proto, vals, desc, raw),
+    ins: inject_desc((m, c) => import_names(scope, m, c), 'import'),
+    im: inject_desc(c => import_module(scope, c), 'import'),
+    ia: inject_desc(m => import_all(scope, m), 'import'),
     __: global_helpers
 })

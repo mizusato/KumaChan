@@ -105,7 +105,8 @@ let built_in_types = {
     Getter: Types.Getter,
     Setter: Types.Setter,
     Enum: Types.Enum,
-    Error: Types.Error
+    Error: Types.Error,
+    Module: Types.Module
 }
 
 assert(forall(mapkv(built_in_types, (_, T) => T), T => is(T, Type)))

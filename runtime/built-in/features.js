@@ -15,8 +15,6 @@ function require_promise (object) {
 
 let get_data = f (
     'get_data',
-    'function get_data (g: Getter, k: Any, nf: Bool) -> Object',
-        (g, k, nf) => call_method(null, g, 'get', [k, nf]),
     'function get_data (C: ES_Class, k: ES_Key, nf: Bool) -> Object',
         (C, k, nf) => (k in C)? C[k]: (ensure(nf, 'key_error', k), Nil),
     'function get_data (o: ES_Object, k: ES_Key, nf: Bool) -> Object',
@@ -32,10 +30,14 @@ let get_data = f (
         },
     'function get_data (nil: Nil, k: Any, nf: Bool) -> Object',
         () => Nil,
+    'function get_data (M: Module, k: String, nf: Bool) -> Object',
+        (M, k, nf) => M.has(k)? M.get(k): (ensure(nf, 'key_error', k), Nil),
     'function get_data (C: Class, k: String, nf: Bool) -> Object',
         (C, k, nf) => C.has(k)? C.get(k): (ensure(nf, 'key_error', k), Nil),
     'function get_data (e: Enum, k: String, nf: Bool) -> Object',
         (e, k, nf) => e.has(k)? e.get(k): (ensure(nf, 'key_error', k), Nil),
+    'function get_data (g: Getter, k: Any, nf: Bool) -> Object',
+        (g, k, nf) => call_method(null, g, 'get', [k, nf]),
     'function get_data (s: Structure, k: String, nf: Bool) -> Object',
         (s, k, nf) => s.has(k)? s.get(k): (ensure(nf, 'key_error', k), Nil),
     'function get_data (l: List, i: Index, nf: Bool) -> Object',

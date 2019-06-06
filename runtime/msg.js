@@ -54,7 +54,7 @@ const MSG = {
     format_not_all_converted: (
         'not all arguments converted during formatting string'
     ),
-    key_error: key => `key '${key}' does not exist`,
+    key_error: key => `key error: requested key '${key}' does not exist`,
     index_error: index => `index ${index} out of range`,
     not_bool: 'given expression did not evaluate to a boolean value',
     not_promise: 'expression to await did not evaluate to a Promise or Future',
@@ -94,5 +94,12 @@ const MSG = {
     module_conflict: mod => `conflicting module name ${mod}`,
     missing_export: (mod, exp) => (
         `exported variable '${exp}' does not exist in module ${mod}`
-    )
+    ),
+    import_conflict: alias => (
+        `invalid import: variable '${alias}' already declared`
+    ),
+    import_conflict_mod: (mod, alias) => (
+        `cannot import module ${mod} as '${alias}': variable already declared`
+    ),
+    module_not_exist: mod => `module ${mod} does not exist`
 }
