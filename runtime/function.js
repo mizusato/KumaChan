@@ -180,7 +180,7 @@ class Scope {
             this.declare(variable, initial_value, is_fixed, type)
         }
     }
-    find (variable) {
+    find (variable, only_func = false) {
         assert(is(variable, Types.String))
         let scope_chain = iterate (
             this,
@@ -194,13 +194,21 @@ class Scope {
                 if (depth > 2) {
                     this.cache[variable] = cached_scope
                 }
-                return cached_scope.data[variable]
+                let value = cached_scope.data[variable]
+                if (!(only_func && !is(value, ES.Function))) {
+                    return value
+                }
             }
             if (scope.has(variable)) {
                 if (depth > 2) {
                     this.cache[variable] = scope
                 }
-                return scope.data[variable]
+                let value = scope.data[variable]
+                if (!(only_func && !is(value, ES.Function))) {
+                    return value
+                } else {
+                    return NotFound
+                }
             } else {
                 return NotFound
             }
@@ -354,7 +362,7 @@ function call (f, args, file = null, row = -1, col = -1) {
             throw e
         }
     } else {
-        push_call(call_type, '*** Non-Callable Object', file)
+        push_call(call_type, '*** Non-Callable Object', file, row, col)
         ensure(false, 'non_callable')
     }
 }
