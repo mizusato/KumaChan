@@ -48,8 +48,6 @@ let get_data = f (
 
 let set_data = f (
     'set_data',
-    'function set_data (s: Setter, k: Any, v: Any) -> Void',
-        (s, k, v) => call_method(null, s, 'set', [k, v]),
     'function set_data (o: ES_Object, k: ES_Key, v: Any) -> Void',
         (o, k, v) => {
             o[k] = v
@@ -65,6 +63,8 @@ let set_data = f (
         },
     'function set_data (nil: Nil, k: Any, v: Any) -> Void',
         () => Void,
+    'function set_data (s: Setter, k: Any, v: Any) -> Void',
+        (s, k, v) => call_method(null, s, 'set', [k, v]),
     'function set_data (s: Structure, k: String, v: Any) -> Void',
         (s, k, v) => {
             s.set(k, v)

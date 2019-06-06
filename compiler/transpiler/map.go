@@ -57,14 +57,16 @@ var TransMapByName = map[string]TransFunction {
         var raw_path = strings.Trim(s, `'"`)
         var path = filepath.Dir(tree.File) + "/" + raw_path
         var f, err = os.Open(path)
-        if err != nil { panic(fmt.Sprintf("error opening %v: %v", path, err)) }
+        if err != nil { panic(fmt.Sprintf("error: %v: %v", path, err)) }
         defer f.Close()
         return TranspileFile(f, path, "included")
     },
-    // included = commands
+    // included = includes commands
     "included": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
-        return Commands(tree, children["commands"], false)
+        var includes = Transpile(tree, children["includes"])
+        var commands = Commands(tree, children["commands"], false)
+        return fmt.Sprintf("%v %v", includes, commands)
     },
 
     // eval = commands

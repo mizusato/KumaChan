@@ -305,9 +305,6 @@ class Instance {
         this.exposed = []
         this.methods = mapval(methods, f => bind_context(f, scope))
         this.init_finished = false
-        this.data = {
-            class: class_
-        }
     }
     init_finish () {
         this.init_finished = true

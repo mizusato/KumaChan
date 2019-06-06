@@ -54,7 +54,7 @@ func main () {
             var path = os.Args[2]
             var file, err = os.Open(path)
             if err != nil {
-                panic(fmt.Sprintf("error opening %v: %v", path, err))
+                panic(fmt.Sprintf("error: %v: %v", path, err))
             }
             js = transpiler.TranspileFile(file, path, "module")
             file.Close()

@@ -99,7 +99,7 @@ var Keywords = [...] string {
     "@static", "@mock", "@handle",
     "@throw", "@assert", "@ensure", "@try", "@to",
     "@unless", "@failed", "@finally", "@panic",
-    "@where", "@xml", "@map",
+    "@where", "@map",
     "@struct", "@config", "@require", "@operator",
     "@one", "@of", "@enum",
     "@class", "@init", "@data", "@interface", "@expose",
@@ -162,7 +162,7 @@ var SyntaxDefinition = [...] string {
     "namelist_tail? = , name! namelist_tail",
 
     /* Included */
-    "included = commands",
+    "included = includes commands",
 
     /* Eval */
     "eval = commands",
@@ -358,7 +358,7 @@ var SyntaxDefinition = [...] string {
 
     /* Literals */
     "literal = primitive | adv_literal | iife | struct",
-    "adv_literal = xml | comprehension | type_literal | map | list | hash",
+    "adv_literal = comprehension | type_literal | map | list | hash",
     "type_literal = simple_type_literal | finite_literal",
     "struct = type hash",
     // TODO: generics and array
@@ -382,19 +382,6 @@ var SyntaxDefinition = [...] string {
     "in_list = in_item in_list_tail",
     "in_list_tail? = , in_item! in_list_tail",
     "in_item = name @in expr",
-    /* XML Expression */
-    "xml = @xml { xml_elements }!",
-    "xml_elements? = xml_element xml_elements",
-    "xml_element = xml_tag | xml_inner_expr",
-    "xml_inner_expr = { expr! }! | identifier | primitive | adv_literal",
-    "xml_tag = < xml_name xml_props xml_tag_tail",
-    "xml_name = Name xml_name_tail",
-    "xml_name_tail? = - Name xml_name_tail",
-    "xml_props? = xml_prop xml_props",
-    "xml_prop = xml_name =! xml_inner_expr!",
-    "xml_tag_tail = xml_tag_tail_empty | xml_tag_tail_full",
-    "xml_tag_tail_empty = / >!",
-    "xml_tag_tail_full = >! xml_elements <! /! name! >!",
     /* Primitive Values */
     "primitive = string | number | bool",
     "string = String",
