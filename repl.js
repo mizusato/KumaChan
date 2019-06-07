@@ -29,7 +29,12 @@ function k_eval (command, context, filename, callback) {
     let p = ChildProcess.exec(Compiler('eval'), (error, stdout) => {
         if (error === null) {
             try {
-                callback(null, eval(stdout))
+                let value = eval(stdout)
+                if (value !== KumaChan.Void) {
+                    callback(null, value)
+                } else {
+                    callback(null)
+                }
             } catch (error) {
                 if (
                     error instanceof KumaChan.RuntimeError
