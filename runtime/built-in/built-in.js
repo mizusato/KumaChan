@@ -4,7 +4,7 @@
 '<include> functions.js';
 '<include> operators.js';
 '<include> constants.js';
-'<include> es_compatible.js';
+'<include> es.js';
 
 
 let global_scope_data = {}

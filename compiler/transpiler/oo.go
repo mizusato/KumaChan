@@ -4,7 +4,7 @@ import "fmt"
 import "strings"
 
 
-var OO = map[string]TransFunction {
+var OO_Map = map[string]TransFunction {
     // class = @class name generic_params supers { init methods class_opt }
     "class": func (tree Tree, ptr int) string {
         var file = GetFileName(tree)
@@ -97,7 +97,7 @@ var OO = map[string]TransFunction {
     },
     // method = name Call paralist_strict! ->! type! body!
     "method": func (tree Tree, ptr int) string {
-        return Functions["f_sync"](tree, ptr)
+        return TransMapByName["f_sync"](tree, ptr)
     },
     // class_opt = operator_defs data
     "class_opt": func (tree Tree, ptr int) string {

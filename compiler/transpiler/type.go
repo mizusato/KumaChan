@@ -4,7 +4,7 @@ import "fmt"
 import "strings"
 
 
-var Types = map[string]TransFunction {
+var TypeMap = map[string]TransFunction {
     // type_literal = simple_type_literal | finite_literal
     "type_literal": TranspileFirstChild,
     // simple_type_literal = { name _bar1 filters! }!

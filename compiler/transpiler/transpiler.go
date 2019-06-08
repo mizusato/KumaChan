@@ -10,10 +10,15 @@ import "../parser"
 
 const Runtime = "KumaChan"
 
-
 type Tree = *parser.Tree
 type TransFunction = func(Tree, int) string
 
+var Rules = []map[string]TransFunction {
+    RootMap, CommandMap, FunctionMap,
+    TypeMap, OO_Map, ExpressionMap, LiteralMap,
+}
+
+var TransMapByName = make(map[string]TransFunction)
 var TransMap = make(map[syntax.Id]TransFunction)
 
 func Transpile (tree Tree, ptr int) string {
@@ -97,6 +102,14 @@ func GetRowColInfo (tree Tree, ptr int) (string, string) {
     return strconv.Itoa(point.Row), strconv.Itoa(point.Col)
 }
 
+func TranspileFile (file io.Reader, name string, root string) string {
+    var content, err = ioutil.ReadAll(file)
+    if err != nil { panic(fmt.Sprintf("error reading %v: %v", name, err)) }
+    var code = []rune(string(content))
+    var tree = parser.BuildTree(root, code, name)
+    return Transpile(&tree, -1)
+}
+
 func ApplyRules () {
     for _, item := range Rules {
         for key, value := range item {
@@ -105,14 +118,6 @@ func ApplyRules () {
             TransMapByName[key] = value
         }
     }
-}
-
-func TranspileFile (file io.Reader, name string, root string) string {
-    var content, err = ioutil.ReadAll(file)
-    if err != nil { panic(fmt.Sprintf("error reading %v: %v", name, err)) }
-    var code = []rune(string(content))
-    var tree = parser.BuildTree(root, code, name)
-    return Transpile(&tree, -1)
 }
 
 func Init () {

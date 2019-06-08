@@ -4,7 +4,7 @@ import "fmt"
 import "strings"
 
 
-var Functions = map[string]TransFunction {
+var FunctionMap = map[string]TransFunction {
     // function = f_sync | f_async | generator
     "function": TranspileFirstChild,
     // f_sync = @function name Call paralist_strict! ->! type! body!

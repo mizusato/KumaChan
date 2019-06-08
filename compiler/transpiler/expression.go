@@ -50,7 +50,7 @@ func TranspileOperationSequence (tree Tree, ptr int) [][]string {
 }
 
 
-var Expressions = map[string]TransFunction {
+var ExpressionMap = map[string]TransFunction {
     // expr = operand expr_tail
     "expr": func (tree Tree, ptr int) string {
         var file = GetFileName(tree)
@@ -154,7 +154,26 @@ var Expressions = map[string]TransFunction {
     },
     // operand_base = wrapped | lambda | literal | dot_para | identifier
     "operand_base": TranspileFirstChild,
+    // wrapped = ( expr! )!
     "wrapped": TranspileChild("expr"),
+    // dot_para = . Name
+    "dot_para": func (tree Tree, ptr int) string {
+        var last_ptr = tree.Nodes[ptr].Children[tree.Nodes[ptr].Length-1]
+        return VarLookup(GetTokenContent(tree, last_ptr))
+    },
+    // identifier = Name
+    "identifier": func (tree Tree, ptr int) string {
+        // depended by Command["reset"]
+        var content = GetTokenContent(tree, ptr)
+        var content_string = string(content)
+        if strings.HasPrefix(content_string, "__") && content_string != "__" {
+            // ECMAScript Identifier
+            var trimed = strings.TrimPrefix(content_string, "__")
+            return fmt.Sprintf("(%v)", trimed)
+        } else {
+            return VarLookup(GetTokenContent(tree, ptr))
+        }
+    },
     // operator = op_group1 | op_compare | op_logic | op_arith
     "operator": func (tree Tree, ptr int) string {
         // depended by CommandsMap["set_op"]

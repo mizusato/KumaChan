@@ -155,7 +155,7 @@ var RedefinableOperators = []string {
 
 var SyntaxDefinition = [...] string {
 
-    /* Module */
+    /*** Root ***/
     "module = @module name! export includes commands",
     "name = Name",
     "export? = @export namelist!",
@@ -163,14 +163,12 @@ var SyntaxDefinition = [...] string {
     "include = @include string",
     "namelist = name namelist_tail",
     "namelist_tail? = , name! namelist_tail",
-
     /* Included */
     "included = includes commands",
-
     /* Eval */
     "eval = commands",
 
-    /* Commands */
+    /*** Command ***/
     "commands? = command commands",
     "command = cmd_group1 | cmd_group2 | cmd_group3",
     "cmd_group1 = cmd_flow | cmd_yield | cmd_await | cmd_return | cmd_err",
@@ -240,7 +238,7 @@ var SyntaxDefinition = [...] string {
     /* Exec Command @ Group 3 */
     "cmd_exec = expr",
 
-    /* Function Definition */
+    /*** Function ***/
     "function = f_sync | f_async | generator",
     "f_sync = @function name Call paralist_strict! ->! type! body!",
     "f_async = @async name Call paralist_strict! body",
@@ -267,7 +265,6 @@ var SyntaxDefinition = [...] string {
     "unless_para? = Call ( namelist )",
     "failed = @failed opt_to name { commands }",
     "finally? = _at @finally { commands }",
-
     /* Lambda */
     "lambda = lambda_block | lambda_inline",
     "lambda_block = lambda_sync | lambda_async | lambda_generator",
@@ -280,16 +277,15 @@ var SyntaxDefinition = [...] string {
     "opt_arrow? = ->",
     "lambda_inline = .{ paralist_inline expr! }!",
     "paralist_inline? = namelist --> | ( namelist ) -->",
-
     /* IIFE */
     "iife = invoke | iterator | promise",
     "invoke = @invoke body",
     "iterator = @iterator body",
     "promise = @promise body",
 
-    /* Type Object Definition */
-    /* Generics */
+    /*** Type ***/
     "generic_params? = < namelist > | < typed_list! >!",
+    "type_literal = simple_type_literal | finite_literal",
     /* Schema */
     "schema = @struct name generic_params { field_list schema_config }!",
     "field_list = field field_list_tail",
@@ -310,6 +306,8 @@ var SyntaxDefinition = [...] string {
     /* SimpleType */
     "simple_type_literal = { name _bar1 filters! }!",
     "filters = exprlist",
+
+    /*** Object-Oriented ***/
     /* Class */
     "class = @class name generic_params supers { init methods class_opt }",
     "supers? = @is typelist",
@@ -327,7 +325,7 @@ var SyntaxDefinition = [...] string {
     "method_implemented = name Call paralist_strict! ->! type! body",
     "method_blank = name Call paralist_strict! -> type",
 
-    /* Expression */
+    /*** Expression ***/
     "expr = operand expr_tail",
     "expr_tail? = operator operand! expr_tail",
     /* Operators (Infix) */
@@ -359,10 +357,14 @@ var SyntaxDefinition = [...] string {
     "exprlist = expr exprlist_tail",
     "exprlist_tail? = , expr! exprlist_tail",
 
-    /* Literals */
+    /*** Literal ***/
     "literal = primitive | adv_literal",
-    "adv_literal = comp | type_literal | list | hash | iife | struct",
-    "type_literal = simple_type_literal | finite_literal",
+    "adv_literal = comp | type_literal | list | hash | brace_literal",
+    "brace_literal = when | iife | struct",
+    "when = @when { when_list }!",
+    "when_list = when_item when_list_tail",
+    "when_item = expr : expr",
+    "when_list_tail? = , when_item when_list_tail",
     "struct = type struct_hash",
     "struct_hash = { struct_hash_item struct_hash_tail }!",
     "struct_hash_tail? = , struct_hash_item struct_hash_tail",
@@ -383,7 +385,7 @@ var SyntaxDefinition = [...] string {
     "in_list = in_item in_list_tail",
     "in_list_tail? = , in_item! in_list_tail",
     "in_item = name @in expr",
-    /* Primitive Values */
+    /* Primitive */
     "primitive = string | number | bool",
     "string = String | MulStr",
     "number = Hex | Exp | Dec | Int",

@@ -2,9 +2,16 @@ package transpiler
 
 import "fmt"
 import "strings"
+import "../syntax"
 
 
-var Containers = map[string]TransFunction {
+var LiteralMap = map[string]TransFunction {
+    // literal = primitive | adv_literal
+    "literal": TranspileFirstChild,
+    // adv_literal = comp | type_literal | list | hash | brace_literal
+    "adv_literal": TranspileFirstChild,
+    // brace_literal = when | iife | struct
+    "brace_literal": TranspileFirstChild,
     // hash = { } | { hash_item! hash_tail }!
     "hash": func (tree Tree, ptr int) string {
         if tree.Nodes[ptr].Length == 2 {
@@ -66,8 +73,8 @@ var Containers = map[string]TransFunction {
     },
     // list_item = expr
     "list_item": TranspileFirstChild,
-    // comprehension = .[ comp_rule! ]! | [ comp_rule ]!
-    "comprehension": func (tree Tree, ptr int) string {
+    // comp = .[ comp_rule! ]! | [ comp_rule ]!
+    "comp": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
         var _, is_iterator = children[".["]
         var rule = Transpile(tree, children["comp_rule"])
@@ -131,6 +138,79 @@ var Containers = map[string]TransFunction {
             return Filters(tree, children["exprlist"])
         } else {
             return "true"
+        }
+    },
+    // struct = type struct_hash
+    "struct": func (tree Tree, ptr int) string {
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
+        var children = Children(tree, ptr)
+        var type_ = Transpile(tree, children["type"])
+        var hash = Transpile(tree, children["struct_hash"])
+        return fmt.Sprintf (
+            "__.c(__.ns, [%v, %v], %v, %v, %v)",
+            type_, hash, file, row, col,
+        )
+    },
+    // struct_hash = { struct_hash_item struct_hash_tail }!
+    "struct_hash": func (tree Tree, ptr int) string {
+        var item_ptrs = FlatSubTree (
+            tree, ptr, "struct_hash_item", "struct_hash_tail",
+        )
+        var names = make(map[string]bool)
+        var buf strings.Builder
+        buf.WriteString("{ ")
+        for i, item_ptr := range item_ptrs {
+            // struct_hash_item = name : expr! | :: name!
+            var children = Children(tree, item_ptr)
+            var name_ptr = children["name"]
+            var name = Transpile(tree, name_ptr)
+            var expr_ptr, has_expr = children["expr"]
+            var _, exists = names[name]
+            if exists {
+                panic("duplicate Structure field " + name)
+            }
+            names[name] = true
+            var expr string
+            if has_expr {
+                expr = Transpile(tree, expr_ptr)
+            } else {
+                expr = VarLookup(GetTokenContent(tree, name_ptr))
+            }
+            fmt.Fprintf(&buf, "%v: %v", name, expr)
+            if i != len(item_ptrs)-1 {
+                buf.WriteString(", ")
+            }
+        }
+        buf.WriteString(" }")
+        return buf.String()
+    },
+    // primitive = string | number | bool
+    "primitive": TranspileFirstChild,
+    // string = String
+    "string": func (tree Tree, ptr int) string {
+        var MulId = syntax.Name2Id["MulStr"]
+        var child = tree.Nodes[tree.Nodes[ptr].Children[0]]
+        var content = GetTokenContent(tree, ptr)
+        var trimed []rune
+        if child.Part.Id == MulId {
+            trimed = content[3:len(content)-3]
+        } else {
+            trimed = content[1:len(content)-1]
+        }
+        return EscapeRawString(trimed)
+    },
+    // number = Hex | Exp | Dec | Int
+    "number": func (tree Tree, ptr int) string {
+        return string(GetTokenContent(tree, ptr))
+    },
+    // bool = @true | @false
+    "bool": func (tree Tree, ptr int) string {
+        var child_ptr = tree.Nodes[ptr].Children[0]
+        if tree.Nodes[child_ptr].Part.Id == syntax.Name2Id["@true"] {
+            return "true"
+        } else {
+            return "false"
         }
     },
 }

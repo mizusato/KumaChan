@@ -5,7 +5,15 @@ import "strings"
 import "../syntax"
 
 
-var CommandsMap = map[string]TransFunction {
+var CommandMap = map[string]TransFunction {
+    // command = cmd_group1 | cmd_group2 | cmd_group3
+    "command": TranspileFirstChild,
+    // cmd_group1 = cmd_flow | cmd_yield | cmd_await | cmd_return | cmd_err
+    "cmd_group1": TranspileFirstChild,
+    // cmd_group2 = cmd_module | cmd_scope | cmd_def
+    "cmd_group2": TranspileFirstChild,
+    // cmd_group3 = cmd_pass | cmd_set | cmd_exec
+    "cmd_group3": TranspileFirstChild,
     // cmd_def = function | schema | enum | class | interface
     "cmd_def": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
