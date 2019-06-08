@@ -92,7 +92,7 @@ const MSG = {
     not_schema: 'cannot create new structure by a non-schema object',
     no_common_class: op => (
         (`unable to find a common class of both
-        instances that defined operator ${op}`).replace('\n', '')
+        instances that defined operator ${op}`).replace(/\n[\t ]*/g, ' ')
     ),
     module_conflict: mod => `conflicting module name ${mod}`,
     missing_export: (mod, exp) => (
