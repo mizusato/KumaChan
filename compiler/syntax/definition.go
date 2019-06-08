@@ -112,10 +112,10 @@ var Keywords = [...] string {
 /* Infix Operators */
 var Operators = [...] Operator {
     /* Pull, Push, Derive, Otherwise */
-    Operator { Match: "<<",   Priority: 20,  Assoc: Left,   Lazy: false },
+    Operator { Match: "<<",   Priority: 20,  Assoc: Left,   Lazy: false  },
     Operator { Match: ">>",   Priority: 20,  Assoc: Left,   Lazy: false  },
-    Operator { Match: "=>",   Priority: 20,  Assoc: Left,   Lazy: true  },
-    Operator { Match: "@or",  Priority: 20,  Assoc: Left,   Lazy: true  },
+    Operator { Match: "=>",   Priority: 20,  Assoc: Left,   Lazy: true   },
+    Operator { Match: "@or",  Priority: 20,  Assoc: Left,   Lazy: true   },
     /* Comparison */
     Operator { Match: "<",    Priority: 50,  Assoc: Left,   Lazy: false  },
     Operator { Match: ">",    Priority: 50,  Assoc: Left,   Lazy: false  },
@@ -127,8 +127,8 @@ var Operators = [...] Operator {
     Operator { Match: "!~",   Priority: 50,  Assoc: Left,   Lazy: false  },
     /* Logic */
     Operator { Match: "@is",  Priority: 60,  Assoc: Left,   Lazy: false  },
-    Operator { Match: "&&",   Priority: 40,  Assoc: Left,   Lazy: true  },
-    Operator { Match: "||",   Priority: 30,  Assoc: Left,   Lazy: true  },
+    Operator { Match: "&&",   Priority: 40,  Assoc: Left,   Lazy: true   },
+    Operator { Match: "||",   Priority: 30,  Assoc: Left,   Lazy: true   },
     Operator { Match: "&",    Priority: 90,  Assoc: Left,   Lazy: false  },
     Operator { Match: "|",    Priority: 80,  Assoc: Left,   Lazy: false  },
     Operator { Match: `\`,    Priority: 70,  Assoc: Left,   Lazy: false  },
@@ -138,7 +138,7 @@ var Operators = [...] Operator {
     Operator { Match: "*",    Priority: 80,  Assoc: Left,   Lazy: false  },
     Operator { Match: "/",    Priority: 80,  Assoc: Left,   Lazy: false  },
     Operator { Match: "%",    Priority: 80,  Assoc: Left,   Lazy: false  },
-    Operator { Match: "^",    Priority: 90,  Assoc: Right,  Lazy: false },
+    Operator { Match: "^",    Priority: 90,  Assoc: Right,  Lazy: false  },
 }
 
 
