@@ -11,7 +11,7 @@ function apply_operator (name, a, b) {
         return call(s.get_operator(name), [a, b])
     } else {
         assert(is(a, Types.Instance))
-        let c = get_common_class(a, b)
+        let c = get_common_class(a, b, name)
         return call(c.get_operator(name), [a, b])
     }
 }

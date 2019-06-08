@@ -85,7 +85,7 @@ function restore_call_stack (pointer) {
     call_stack = call_stack.slice(0, pointer+1)
 }
 
-function produce_error (msg) {
+function produce_error (msg, is_internal = false) {
     // produce a RuntimeError (fatal error)
     let trace = get_trace()
     clear_call_stack()
@@ -93,11 +93,12 @@ function produce_error (msg) {
         msg + LF + LF + stringify_trace(trace) + LF
     )
     err.trace = trace
+    err.is_internal = is_internal
     throw err
 }
 
 function assert (value) {
-    if(!value) { produce_error('Assertion Failed') }
+    if(!value) { produce_error('Assertion Failed', true) }
     return true
 }
 

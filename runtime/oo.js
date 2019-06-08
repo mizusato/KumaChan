@@ -154,23 +154,40 @@ function match_protos (method, protos) {
     )
 }
 
-function get_common_class (a, b) {
+function get_common_class (a, b, op) {
     assert(is(a, Types.Instance))
     assert(is(b, Types.Instance))
-    let A = a.class_
-    let B = b.class_
-    if (A === B) {
-        // A = B
-        return A
-    } else if (exists(A.super_classes, S => S === B)) {
-        // A ⊂ B
-        return B
-    } else if (exists(B.super_classes, S => S === A)) {
-        // B ⊂ A
-        return A
-    } else {
-        ensure(false, 'no_common_class')
+    assert(is(op, Types.String))
+    let search = (A, B) => {
+        if (A === B) {
+            // A = B
+            if (A.defined_operator(op)) {
+                return A
+            } else {
+                for (let i = 1; i < A.super_classes.length; i += 1) {
+                    if (A.super_classes[i].defined_operator(op)) {
+                        return A.super_classes[i]
+                    }
+                }
+                return NotFound
+            }
+        } else {
+            let A1 = find(A.super_classes, (S, i) => (i > 0 && S === B))
+            if (A1 !== NotFound) {
+                // A ⊂ B
+                return search(A1, B)
+            }
+            let B1 = find(B.super_classes, (S, i) => (i > 0 && S === A))
+            if (B1 !== NotFound) {
+                // B ⊂ A
+                return search(A, B1)
+            }
+            return NotFound
+        }
     }
+    let result = search(a.class_, b.class_)
+    ensure(result !== NotFound, 'no_common_class', op)
+    return result
 }
 
 

@@ -90,8 +90,9 @@ const MSG = {
         'cannot apply infix operator on structures of different schema'
     ),
     not_schema: 'cannot create new structure by a non-schema object',
-    no_common_class: (
-        'cannot apply infix operator on instances with no common class'
+    no_common_class: op => (
+        (`unable to find a common class of both
+        instances that defined operator ${op}`).replace('\n', '')
     ),
     module_conflict: mod => `conflicting module name ${mod}`,
     missing_export: (mod, exp) => (
