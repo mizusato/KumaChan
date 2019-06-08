@@ -12,6 +12,39 @@ var LiteralMap = map[string]TransFunction {
     "adv_literal": TranspileFirstChild,
     // brace_literal = when | iife | struct
     "brace_literal": TranspileFirstChild,
+    // when = @when { when_list }!
+    "when": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var list = Transpile(tree, children["when_list"])
+        return fmt.Sprintf("((function(){ %v })())", list)
+    },
+    // when_list = when_item when_list_tail
+    "when_list": func (tree Tree, ptr int) string {
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
+        var item_ptrs = FlatSubTree(tree, ptr, "when_item", "when_list_tail")
+        var buf strings.Builder
+        buf.WriteString("if (false) { __.v } ")
+        for _, item_ptr := range item_ptrs {
+            // when_item = expr : expr
+            var row, col = GetRowColInfo(tree, item_ptr)
+            var condition = TranspileFirstChild(tree, item_ptr)
+            var value = TranspileLastChild(tree, item_ptr)
+            var condition_bool = fmt.Sprintf (
+                "__.c(__.rb, [%v], %v, %v, %v)",
+                condition, file, row, col,
+            )
+            fmt.Fprintf (
+                &buf, "else if (%v) { return %v }",
+                condition_bool, value,
+            )
+        }
+        fmt.Fprintf (
+            &buf, "else { __.c(__.wf, [], %v, %v, %v) }",
+            file, row, col,
+        )
+        return buf.String()
+    },
     // hash = { } | { hash_item! hash_tail }!
     "hash": func (tree Tree, ptr int) string {
         if tree.Nodes[ptr].Length == 2 {

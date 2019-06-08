@@ -53,6 +53,7 @@ let global_helpers = {
     aw: async_e_wrap,
     ic: iterator_comprehension,
     lc: list_comprehension,
+    wf: when_expr_failed,
     v: Void
 }
 

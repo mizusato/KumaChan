@@ -105,5 +105,8 @@ const MSG = {
         `cannot import module ${mod} as '${alias}': variable already declared`
     ),
     module_not_exist: mod => `module ${mod} does not exist`,
-    not_repr: p => 'string format parameter ${' + p + '} is not representable'
+    not_repr: p => 'string format parameter ${' + p + '} is not representable',
+    when_expr_failed: (
+        'all conditions evaluated to false in this when expression'
+    )
 }

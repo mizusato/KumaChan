@@ -13,6 +13,11 @@ function require_promise (object) {
 }
 
 
+function when_expr_failed () {
+    ensure(false, 'when_expr_failed')
+}
+
+
 let get_data = f (
     'get_data',
     'function get_data (C: ES_Class, k: ES_Key, nf: Bool) -> Object',
