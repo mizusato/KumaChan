@@ -32,6 +32,8 @@ let get_data = f (
         () => Nil,
     'function get_data (M: Module, k: String, nf: Bool) -> Object',
         (M, k, nf) => M.has(k)? M.get(k): (ensure(nf, 'key_error', k), Nil),
+    'function get_data (I: Interface, k: String, nf: Bool) -> Object',
+        (I, k, nf) => (k == 'Impl')? I.Impl: (ensure(nf, 'key_error', k), Nil),
     'function get_data (C: Class, k: String, nf: Bool) -> Object',
         (C, k, nf) => C.has(k)? C.get(k): (ensure(nf, 'key_error', k), Nil),
     'function get_data (e: Enum, k: String, nf: Bool) -> Object',

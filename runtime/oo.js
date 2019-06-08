@@ -374,12 +374,10 @@ class Interface {
             if (!is(object, Types.Instance)) { return false }
             return exists(object.class_.super_interfaces, I => I === this)
         })
-        this.data = {
-            Impl: $(object => {
-                if(!is(object, Types.Class)) { return false }
-                return exists(object.get_super_interfaces, I => I === this)
-            })
-        }
+        this.Impl = $(object => {
+            if(!is(object, Types.Class)) { return false }
+            return exists(object.super_interfaces, I => I === this)
+        })
         Object.freeze(this)
     }
     get [Symbol.toStringTag]() {
