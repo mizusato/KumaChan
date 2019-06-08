@@ -37,8 +37,9 @@ function k_eval (command, context, filename, callback) {
                 }
             } catch (error) {
                 if (
-                    error instanceof KumaChan.RuntimeError
-                    || error instanceof KumaChan.CustomError
+                    error instanceof KumaChan.CustomError
+                    || ( (error instanceof KumaChan.RuntimeError)
+                    && !(error.is_internal) )
                 ) {
                     console.log(error.message)
                     callback(null)
