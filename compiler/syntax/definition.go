@@ -18,8 +18,9 @@ var EscapeMap = map [string] string {
 var Extra = [...] string { "Call", "Get", "Void" }
 
 var Tokens = [...] Token {
-    Token { Name: "String",  Pattern: r(`'[^']*'`), },
-    Token { Name: "String",  Pattern: r(`"[^"]*"`), },
+    Token { Name: "MulStr",  Pattern: r(`'''([^']|'[^']|''[^'])+'''`) },
+    Token { Name: "String",  Pattern: r(`'[^'\n]*'`) },
+    Token { Name: "String",  Pattern: r(`"[^"\n]*"`) },
     Token { Name: "Comment", Pattern: r(`/\*([^\*]|[^/]|\*[^/]|[^\*]/)*\*/`) },
     Token { Name: "Comment", Pattern: r(`//[^\n]*`) },
     Token { Name: "..[",     Pattern: r(`\.\.\[`) },
@@ -27,6 +28,8 @@ var Tokens = [...] Token {
     Token { Name: "..{",     Pattern: r(`\.\.\{`) },
     Token { Name: "...{",    Pattern: r(`\.\.\.\{`) },
     Token { Name: "Comment", Pattern: r(`\.\.[^\[\{][^`+Blanks+LF+`]*`) },
+    Token { Name: "<<<",     Pattern: r(`\<\<\<[`+Blanks+`]`) },
+    Token { Name: ">>>",     Pattern: r(`[`+Blanks+`]\>\>\>`) },
     Token { Name: "<<",      Pattern: r(`\<\<[`+Blanks+`]`) },
     Token { Name: ">>",      Pattern: r(`[`+Blanks+`]\>\>`) },
     Token { Name: "Blank",   Pattern: r(`[`+Blanks+`]+`) },
@@ -99,7 +102,7 @@ var Keywords = [...] string {
     "@static", "@mock", "@handle",
     "@throw", "@assert", "@ensure", "@try", "@to",
     "@unless", "@failed", "@finally", "@panic",
-    "@where",
+    "@where", "@when",
     "@struct", "@config", "@require", "@operator",
     "@one", "@of", "@enum",
     "@class", "@init", "@data", "@interface", "@expose",
@@ -357,8 +360,8 @@ var SyntaxDefinition = [...] string {
     "exprlist_tail? = , expr! exprlist_tail",
 
     /* Literals */
-    "literal = primitive | adv_literal | iife | struct",
-    "adv_literal = comprehension | type_literal | list | hash",
+    "literal = primitive | adv_literal",
+    "adv_literal = comp | type_literal | list | hash | iife | struct",
     "type_literal = simple_type_literal | finite_literal",
     "struct = type struct_hash",
     "struct_hash = { struct_hash_item struct_hash_tail }!",
@@ -374,7 +377,7 @@ var SyntaxDefinition = [...] string {
     "list_tail? = , list_item list_tail",
     "list_item = expr",
     /* List/Iterator Comprehension */
-    "comprehension = .[ comp_rule! ]! | [ comp_rule ]!",
+    "comp = .[ comp_rule! ]! | [ comp_rule ]!",
     "comp_rule = expr , @for in_list! opt_filters",
     "opt_filters? = , @where exprlist",
     "in_list = in_item in_list_tail",
@@ -382,7 +385,7 @@ var SyntaxDefinition = [...] string {
     "in_item = name @in expr",
     /* Primitive Values */
     "primitive = string | number | bool",
-    "string = String",
+    "string = String | MulStr",
     "number = Hex | Exp | Dec | Int",
     "bool = @true | @false",
 

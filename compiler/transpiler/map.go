@@ -200,8 +200,15 @@ var TransMapByName = map[string]TransFunction {
     "primitive": TranspileFirstChild,
     // string = String
     "string": func (tree Tree, ptr int) string {
+        var MulId = syntax.Name2Id["MulStr"]
+        var child = tree.Nodes[tree.Nodes[ptr].Children[0]]
         var content = GetTokenContent(tree, ptr)
-        var trimed = content[1:len(content)-1]
+        var trimed []rune
+        if child.Part.Id == MulId {
+            trimed = content[3:len(content)-3]
+        } else {
+            trimed = content[1:len(content)-1]
+        }
         return EscapeRawString(trimed)
     },
     // number = Hex | Exp | Dec | Int
