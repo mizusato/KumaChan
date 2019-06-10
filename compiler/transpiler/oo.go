@@ -15,6 +15,7 @@ var OO_Map = map[string]TransFunction {
         var name = Transpile(tree, name_ptr)
         var impls = Transpile(tree, children["supers"])
         var init = Transpile(tree, children["init"])
+        var pfs = Transpile(tree, children["pfs"])
         var methods = Transpile(tree, children["methods"])
         var options = Transpile(tree, children["class_opt"])
         var def_point = fmt.Sprintf (
@@ -22,8 +23,8 @@ var OO_Map = map[string]TransFunction {
             file, row, col,
         )
         var class = fmt.Sprintf (
-            "__.c(__.cc, [%v, %v, %v, %v, %v, %v], %v, %v, %v)",
-            name, impls, init, methods, options, def_point, file, row, col,
+            "__.c(__.cc, [%v, %v, %v, %v, %v, %v, %v], %v, %v, %v)",
+            name, impls, init, pfs, methods, options, def_point, file, row, col,
         )
         var value string
         if NotEmpty(tree, gp_ptr) {
@@ -76,28 +77,13 @@ var OO_Map = map[string]TransFunction {
             desc, parameters, "__.i",
         )
     },
+    // pfs? = pf pfs
+    "pfs": func (tree Tree, ptr int) string {
+        return MethodTable(tree, ptr, "pf", "pfs")
+    },
     // methods? = method methods
     "methods": func (tree Tree, ptr int) string {
-        if NotEmpty(tree, ptr) {
-            var method_ptrs = FlatSubTree(tree, ptr, "method", "methods")
-            var buf strings.Builder
-            for i, method_ptr := range method_ptrs {
-                var children = Children(tree, method_ptr)
-                var name = Transpile(tree, children["name"])
-                var method = Transpile(tree, method_ptr)
-                fmt.Fprintf(&buf, "{ name: %v, f: %v }", name, method)
-                if i != len(method_ptrs)-1 {
-                    buf.WriteString(", ")
-                }
-            }
-            return fmt.Sprintf("[ %v ]", buf.String())
-        } else {
-            return "[]"
-        }
-    },
-    // method = name Call paralist_strict! ->! type! body!
-    "method": func (tree Tree, ptr int) string {
-        return TransMapByName["f_sync"](tree, ptr)
+        return MethodTable(tree, ptr, "method", "methods")
     },
     // class_opt = operator_defs data
     "class_opt": func (tree Tree, ptr int) string {

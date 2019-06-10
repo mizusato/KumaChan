@@ -105,7 +105,7 @@ var Keywords = [...] string {
     "@where", "@when", "@otherwise",
     "@struct", "@config", "@require", "@operator",
     "@one", "@of", "@enum",
-    "@class", "@init", "@data", "@interface", "@expose",
+    "@class", "@init", "@private", "@data", "@interface", "@expose",
     "@str", "@len", "@iter", "@negate",
     "@true", "@false",
     "@is", "@or", "@not",
@@ -254,7 +254,6 @@ var SyntaxDefinition = [...] string {
     "type_arglist = type_arg type_arglist_tail",
     "type_arglist_tail? = , type_arg! type_arglist_tail",
     "type_arg = type | primitive",
-    // note: the rule name "body" has sth to do with Block()
     "body = { static_commands commands mock_hook handle_hook }!",
     "static_commands? = @static { commands }",
     "mock_hook? = _at @mock name! { commands }",
@@ -297,7 +296,6 @@ var SyntaxDefinition = [...] string {
     "field_list_tail? = , field! field_list_tail",
     "field = name : type! field_default",
     "field_default? = = expr",
-    // note: the rule name "schema_config" is depended by operator_defs
     "schema_config? = , @config { schema_req operator_defs }!",
     "schema_req? = @require (! name! )! opt_arrow body!",
     /* Enum */
@@ -311,11 +309,13 @@ var SyntaxDefinition = [...] string {
 
     /*** Object-Oriented ***/
     /* Class */
-    "class = @class name generic_params supers { init methods class_opt }",
+    "class = @class name generic_params supers { init pfs methods class_opt }",
     "supers? = @is typelist",
     "typelist = type typelist_tail",
     "typelist_tail? = , type typelist_tail",
     "init = @init Call paralist_strict! body!",
+    "pfs? = pf pfs",
+    "pf = @private name Call paralist_strict! ->! type! body!",
     "methods? = method methods",
     "method = name Call paralist_strict! ->! type! body!",
     "class_opt = operator_defs data",
@@ -374,7 +374,6 @@ var SyntaxDefinition = [...] string {
     "struct_hash = { struct_hash_item struct_hash_tail }!",
     "struct_hash_tail? = , struct_hash_item struct_hash_tail",
     "struct_hash_item = name : expr! | :: name!",
-    // TODO: when expression: when { cond1: val1, cond2: val2 }
     /* Hash Table */
     "hash = { } | { hash_item! hash_tail }!",
     "hash_tail? = , hash_item! hash_tail",

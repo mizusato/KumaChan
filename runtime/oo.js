@@ -196,11 +196,13 @@ function get_common_class (a, b, op) {
  */
 class Class {
     constructor (
-        name, impls, init, methods, ops = {}, data = {}, def_point = null
+        name, impls, init, pfs, methods,
+        ops = {}, data = {}, def_point = null
     ) {
         assert(is(name, Types.String))
         assert(is(impls, TypedList.of(Types.OO_Abstract)))
         assert(is(init, Types.Function))
+        assert(is(pfs, TypedHash.of(Types.Overload)))
         assert(is(methods, TypedHash.of(Types.Overload)))
         assert(is(ops, TypedHash.of(Types.Function)))
         assert(is(data, Types.Hash))
@@ -213,10 +215,12 @@ class Class {
         }
         this.init = cancel_binding(init)
         this.impls = copy(impls)
+        this.pfs = copy(pfs)
         this.methods = copy(methods)
         this.ops = copy(ops)
         this.data = copy(data)
         Object.freeze(this.impls)
+        Object.freeze(this.pfs)
         Object.freeze(this.methods)
         Object.freeze(this.ops)
         Object.freeze(this.data)
@@ -226,7 +230,11 @@ class Class {
         let F = init[WrapperInfo]
         this.create = wrap(
             F.context, F.proto, null, F.desc, scope => {
-                let self = new Instance(this, scope, methods)
+                let self = new Instance(this, scope)
+                foreach(this.pfs, (name, pf) => {
+                    scope.try_to_declare(name, bind_context(pf, scope))
+                })
+                scope.try_to_declare('self', self)
                 let expose = fun (
                     'function expose (internal: Instance) -> Instance',
                     internal => {
@@ -234,7 +242,6 @@ class Class {
                         return internal
                     }
                 )
-                scope.try_to_declare('self', self)
                 F.raw(scope, expose)
                 for (let I of impls) {
                     if (is(I, Types.Class)) {
@@ -304,11 +311,18 @@ function build_method_table (raw_table) {
     return mapval(reduced, (f_list, name) => overload(f_list, name))
 }
 
-function create_class (name, impls, init, raw_methods, options, def_point) {
+function create_class (
+    name, impls, init, raw_pfs, raw_methods,
+    options, def_point
+) {
     let { ops, data } = options
     check_impls(impls)
+    let pfs = build_method_table(raw_pfs)
     let methods = build_method_table(raw_methods)
-    return new Class(name, impls, init, methods, ops, data, def_point)
+    return new Class (
+        name, impls, init, pfs, methods,
+        ops, data, def_point
+    )
 }
 
 
@@ -316,11 +330,11 @@ function create_class (name, impls, init, raw_methods, options, def_point) {
  *  Instance Object
  */
 class Instance {
-    constructor (class_, scope, methods) {
+    constructor (class_, scope) {
         this.class_ = class_
         this.scope = scope
         this.exposed = []
-        this.methods = mapval(methods, f => bind_context(f, scope))
+        this.methods = mapval(class_.methods, f => bind_context(f, scope))
         this.init_finished = false
     }
     init_finish () {

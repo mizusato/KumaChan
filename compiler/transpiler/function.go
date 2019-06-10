@@ -10,7 +10,7 @@ var FunctionMap = map[string]TransFunction {
     "function": TranspileFirstChild,
     // f_sync = @function name Call paralist_strict! ->! type! body!
     "f_sync": func (tree Tree, ptr int) string {
-        // depended by OO["method"]
+        // depended by MethodTable()
         var children = Children(tree, ptr)
         var name_ptr = children["name"]
         var params_ptr = children["paralist_strict"]
@@ -207,6 +207,7 @@ var FunctionMap = map[string]TransFunction {
     },
     // body = { static_commands commands mock_hook handle_hook }!
     "body": func (tree Tree, ptr int) string {
+        // note: the rule name "body" has sth to do with Block()
         var children = Children(tree, ptr)
         // mock_hook? = _at @mock name! { commands }
         var mock_ptr = children["mock_hook"]

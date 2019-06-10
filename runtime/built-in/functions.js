@@ -147,6 +147,13 @@ let built_in_functions = {
                 return Void
             }
     ),
+    push: fun (
+        'function push (l: List, item: Any) -> Void',
+            (l, item) => {
+                l.push(item)
+                return Void
+            }
+    ),
     shift: fun (
         'function shift (l: List) -> Void',
             l => {

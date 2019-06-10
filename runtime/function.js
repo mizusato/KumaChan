@@ -90,7 +90,7 @@ class Scope {
         assert(context === null || context instanceof Scope)
         assert(is(data, Types.Hash))
         this.context = context
-        this.data = data
+        this.data = copy(data)
         this.cache = {}
         this.types_of_non_fixed = {}
         this.readonly = readonly
