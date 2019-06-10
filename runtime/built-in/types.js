@@ -3,8 +3,17 @@
 
 
 let IndexType = Ins(Types.Int, $(x => x >= 0))
-
 let PrimitiveType = Uni(Types.String, Types.Number, Types.Bool)
+let ArityType = template (
+    'function Arity (n: Int) -> Type',
+        n => Ins(Types.Function, $(
+            f => f[WrapperInfo].proto.parameters.length === n
+        ))
+)
+let MaybeType = template (
+    'function Maybe (T: Type) -> Type',
+        T => Uni(Nil, T)
+)
 
 let OperandType = template (
     'function Operand (op: String) -> Type',
@@ -15,17 +24,10 @@ let OperandType = template (
             ))
         )
 )
-
 let RepresentableType = Uni (
     PrimitiveType,
     OperandType.inflate('str')
 )
-
-let MaybeType = template (
-    'function Maybe (T: Type) -> Type',
-        T => Uni(Nil, T)
-)
-
 let GetterType = template (
     'function Getter (Key: Type, Val: Type) -> Interface',
         (KT, VT) => create_interface('Getter', [
@@ -35,7 +37,6 @@ let GetterType = template (
             ], value_type: MaybeType.inflate(VT) }}
         ], null)
 )
-
 let SetterType = template (
     'function Setter (Key: Type, Val: Type) -> Interface',
         (KT, VT) => create_interface('Setter', [
@@ -58,12 +59,11 @@ let IteratorType = $(x => {
     }
 })
 
-let ArityType = template (
-    'function Arity (n: Int) -> Type',
-        n => Ins(Types.Function, $(
-            f => f[WrapperInfo].proto.parameters.length === n
-        ))
-)
+let PromiseType = $(x => x instanceof Promise)
+let PromiserType = create_interface('Promiser', [
+    { name: 'promise', f: { parameters: [], value_type: PromiseType } }
+], null)
+let AwaitableType = Uni(PromiseType, PromiserType)
 
 
 pour(Types, {
@@ -79,7 +79,9 @@ pour(Types, {
         OperandType.inflate('enum')
     ),
     Iterator: IteratorType,
-    Promise: $(x => x instanceof Promise),
+    Promise: PromiseType,
+    Promiser: PromiserType,
+    Awaitable: AwaitableType,
     Arity: ArityType,
     Index: IndexType,
     Size: IndexType,
@@ -121,6 +123,8 @@ let built_in_types = {
     Iterable: Types.Iterable,
     Iterator: Types.Iterator,
     Promise: Types.Promise,
+    Promiser: Types.Promiser,
+    Awaitable: Types.Awaitable,
     NotFound: Types.NotFound,
     Schema: Types.Schema,
     Struct: Types.Struct,

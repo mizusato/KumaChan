@@ -16,5 +16,8 @@ let MSG = {
     },
     map_invalid_remove: .{
         'cannot remove non-existing element from map'
+    },
+    future_invalid_value: .{
+        'resolved future value violated its type constraint'
     }
 }

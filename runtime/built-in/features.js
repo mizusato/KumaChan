@@ -6,10 +6,13 @@ function require_bool (value) {
 
 
 function require_promise (object) {
-    // await should_be_promise_or_future
-    // TODO: Types.Future (Typed Promise)
-    ensure(is(object, Types.Promise), 'not_promise')
-    return object
+    // await should_be_promise_or_awaitable
+    if (is(object, Types.Promise)) {
+        return object
+    } else {
+        ensure(is(object, Types.Promiser), 'not_awaitable')
+        return call_method(null, object, 'promise', [])
+    }
 }
 
 
