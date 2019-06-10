@@ -146,10 +146,10 @@ var Operators = [...] Operator {
 
 
 var RedefinableOperators = []string {
-    "@str", "@len", "@iter", "@negate",
+    "@str", "@len", "@iter", "@enum",
     "==", "<",
     "<<", ">>",
-    "+", "-", "*", "/", "%", "^",
+    "@negate", "+", "-", "*", "/", "%", "^",
 }
 
 
@@ -282,6 +282,11 @@ var SyntaxDefinition = [...] string {
     "invoke = @invoke body",
     "iterator = @iterator body",
     "promise = @promise body",
+    /* Operator Overloading */
+    "operator_defs? = operator_def operator_defs",
+    "operator_def = @operator general_op operator_def_fun",
+    "general_op = operator | unary",
+    "operator_def_fun = (! namelist! )! opt_arrow body!",
 
     /*** Type ***/
     "generic_params? = < namelist > | < typed_list! >!",
@@ -292,12 +297,9 @@ var SyntaxDefinition = [...] string {
     "field_list_tail? = , field! field_list_tail",
     "field = name : type! field_default",
     "field_default? = = expr",
+    // note: the rule name "schema_config" is depended by operator_defs
     "schema_config? = , @config { schema_req operator_defs }!",
     "schema_req? = @require (! name! )! opt_arrow body!",
-    "operator_defs? = operator_def operator_defs",
-    "operator_def = @operator general_op operator_def_fun",
-    "general_op = operator | unary",
-    "operator_def_fun = (! namelist! )! opt_arrow body!",
     /* Enum */
     "enum = @enum name {! namelist! }!",
     /* Finite */
@@ -335,7 +337,10 @@ var SyntaxDefinition = [...] string {
     `op_logic = @is | && | _bar2 | & | _bar1 | \ `,
     "op_arith = + | - | * | / | % | ^ ",
     /* Operators (Prefix) */
-    "unary? = @not | @str | @len | @iter | - | @negate | _exc | ~ | @expose",
+    "unary? = unary_group1 | unary_group2 | unary_group3",
+    "unary_group1 = @not | - | @negate | _exc | ~ ",
+    "unary_group2 = @str | @len | @iter | @enum",
+    "unary_group3 = @expose",
     /* Operand */
     "operand = unary operand_base operand_tail",
     "operand_base = wrapped | lambda | literal | dot_para | identifier",

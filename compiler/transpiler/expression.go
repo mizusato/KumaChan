@@ -138,10 +138,11 @@ var ExpressionMap = map[string]TransFunction {
         }
         return buf.String()
     },
-    // unary? = @not | @str | @len | @iter | - | @negate | _exc | ~ | @expose
+    // unary? = unary_group1 | unary_group2 | unary_group3
     "unary": func (tree Tree, ptr int) string {
-        var child_ptr = tree.Nodes[ptr].Children[0]
-        var child_node = &tree.Nodes[child_ptr]
+        var group_ptr = tree.Nodes[ptr].Children[0]
+        var real_child_ptr = tree.Nodes[group_ptr].Children[0]
+        var child_node = &tree.Nodes[real_child_ptr]
         var name = syntax.Id2Name[child_node.Part.Id]
         if name == "@expose" {
             return "expose"

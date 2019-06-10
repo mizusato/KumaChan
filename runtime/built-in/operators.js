@@ -6,7 +6,7 @@ function lazy_bool (arg, desc, name) {
 
 function apply_operator (name, a, b) {
     assert(is(name, Types.String))
-    if (is(a, Types.Structure)) {
+    if (is(a, Types.Struct)) {
         let s = get_common_schema(a, b)
         return call(s.get_operator(name), [a, b])
     } else {
@@ -19,7 +19,7 @@ function apply_operator (name, a, b) {
 
 function apply_unary (name, a) {
     assert(is(name, Types.String))
-    if (is(a, Types.Structure)) {
+    if (is(a, Types.Struct)) {
         return call(a.schema.get_operator(name), [a])
     } else {
         assert(is(a, Types.Instance))
@@ -66,6 +66,17 @@ let operators = {
             o => apply_unary('iter', o),
         'function operator.iter (i: ES_Iterable) -> Iterator',
             l => l[Symbol.iterator]()
+    ),
+    'enum': f (
+        'operator.enum',
+        `function operator.enum (o: Operand<'enum'>) -> List`,
+            o => apply_unary('enum', o),
+        'function operator.enum (s: Struct) -> List',
+            s => s.keys(),
+        'function operator.enum (s: Enum) -> List',
+            s => s.keys(),
+        'function operator_enum (h: Hash) -> List',
+            h => Object.keys(h)
     ),
     'negate': f (
         'operator.negate',
@@ -132,6 +143,8 @@ let operators = {
         'operator.equal',
         `function operator.equal (a: Operand<'=='>, b: Operand<'=='>) -> Bool`,
             (a, b) => apply_operator('==', a, b),
+        'function operator.equal (T1: Type, T2: Type) -> Bool',
+            (T1, T2) => (T1 === T2),
         'function operator.equal (p: Bool, q: Bool) -> Bool',
             (p, q) => (p === q),
         'function operator.equal (a: String, b: String) -> Bool',
@@ -264,6 +277,10 @@ function str (value) {
 
 function iter (value) {
     return call(operators['iter'], [value])
+}
+
+function enum_ (value) {
+    return call(operators['enum'], [value])
 }
 
 

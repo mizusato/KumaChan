@@ -127,7 +127,7 @@ let Types = {
         if (!p_ok) { return false }
         if (is(x, Type)) { return false }
         return forall(
-            [Array, Error, Function, Instance, Structure],
+            [Array, Error, Function, Instance, Struct],
             T => !(x instanceof T)
         )
     })), $(x => x === Function.prototype)),

@@ -127,7 +127,8 @@ func GetGeneralOperatorName (tree Tree, ptr int) (string, bool) {
         return strings.TrimPrefix(info.Match, "@"), info.CanRedef
     } else {
         var unary = children["unary"]
-        var child = tree.Nodes[unary].Children[0]
+        var group = tree.Nodes[unary].Children[0]
+        var child = tree.Nodes[group].Children[0]
         var match = syntax.Id2Name[tree.Nodes[child].Part.Id]
         var can_redef = false
         for _, redefinable := range syntax.RedefinableOperators {

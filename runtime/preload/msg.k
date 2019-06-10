@@ -7,5 +7,14 @@ let MSG = {
     },
     array_inconsistent: .{
         'requested array element (at index ${}) became invalid type' << .index
+    },
+    map_value_not_found: .{
+        'requested key does not exist on this map'
+    },
+    map_inconsistent: .{
+        'requested map value became invalid type'
+    },
+    map_invalid_remove: .{
+        'cannot remove non-existing element from map'
     }
 }

@@ -1,6 +1,7 @@
 module Preload
 
-export Array
+export Array, Map
 
 include 'msg.k'
 include 'array.k'
+include 'map.k'

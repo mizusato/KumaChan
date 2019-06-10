@@ -34,7 +34,7 @@ class TypeTemplate {
                 } else if (this.inflated.others.size == 0) {
                     return false
                 }
-            } else if (is(x, Types.Structure)) {
+            } else if (is(x, Types.Struct)) {
                 if (this.inflated.schema.has(x.schema)) {
                     return true
                 } else if (this.inflated.others.size == 0) {

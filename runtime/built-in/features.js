@@ -45,7 +45,7 @@ let get_data = f (
         (e, k, nf) => e.has(k)? e.get(k): (ensure(nf, 'key_error', k), Nil),
     'function get_data (g: Getter, k: Any, nf: Bool) -> Object',
         (g, k, nf) => call_method(null, g, 'get', [k, nf]),
-    'function get_data (s: Structure, k: String, nf: Bool) -> Object',
+    'function get_data (s: Struct, k: String, nf: Bool) -> Object',
         (s, k, nf) => s.has(k)? s.get(k): (ensure(nf, 'key_error', k), Nil),
     'function get_data (l: List, i: Index, nf: Bool) -> Object',
         (l, i, nf) => (i < l.length)? l[i]: (ensure(nf, 'index_error', i), Nil),
@@ -72,7 +72,7 @@ let set_data = f (
         () => Void,
     'function set_data (s: Setter, k: Any, v: Any) -> Void',
         (s, k, v) => call_method(null, s, 'set', [k, v]),
-    'function set_data (s: Structure, k: String, v: Any) -> Void',
+    'function set_data (s: Struct, k: String, v: Any) -> Void',
         (s, k, v) => {
             s.set(k, v)
             return Void
@@ -93,8 +93,19 @@ let set_data = f (
 
 let for_loop = f (
     'for_loop',
-    'function for_loop (h: Hash) -> Iterable',
-        h => mapkv(h, (k, v) => ({ key: k, value: v })),
+    'function for_loop (h: Enumerable) -> Iterable',
+        h => map(enum_(h), k => {
+            if (is(h, Types.Hash)) {
+                return { key: k, value: h[k] }
+            } else if (is(h, Types.Enum) || is(h, Types.Struct)) {
+                return { key: k, value: h.get(k) }
+            } else if (is(h, Types.Getter)) {
+                let v = call_method(null, h, 'get', [k, false])
+                return { key: k, value: v }
+            } else {
+                return { key: k, value: Nil }
+            }
+        }),
     'function for_loop (i: Iterable) -> Iterable',
         i => map(iter(i), (e, i) => ({ key: i, value: e }))
 )
@@ -132,7 +143,7 @@ let string_format = f (
         (s, v) => {
             return s.replace('${}', str(v))
         },
-    'function string_format (s: String, t: Structure) -> String',
+    'function string_format (s: String, t: Struct) -> String',
         (s, t) => {
             return s.replace(/\$\{([^}]+)\}/g, (match, p1) => {
                 let key = p1

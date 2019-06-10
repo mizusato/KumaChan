@@ -48,7 +48,7 @@ const MSG = {
     not_exposing: C => `created instance does not expose instance of ${C}`,
     method_not_found: name => `method ${name}() does not exist`,
     format_invalid_key: key => (
-        `key '${key}' does not exist in given Hash or Structure`
+        `key '${key}' does not exist in given Hash or Struct`
     ),
     format_invalid_index: index => (
         `${'${'+(index+1)+'}'} (index ${index}) does not exist in given list`

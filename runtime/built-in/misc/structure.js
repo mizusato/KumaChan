@@ -1,4 +1,4 @@
-class Structure {
+class Struct {
     constructor (schema, data) {
         assert(is(schema, Types.Schema))
         assert(is(data, Types.Hash))
@@ -40,8 +40,11 @@ class Structure {
             ensure(false, 'struct_req_violated', key)
         }
     }
+    keys () {
+        return this.schema.get_keys()
+    }
     get [Symbol.toStringTag]() {
-        return 'Structure'
+        return 'Struct'
     }
 }
 
@@ -66,15 +69,18 @@ class Schema {
         Object.freeze(this.table)
         Object.freeze(this.defaults)
         Object.freeze(this.operators)
-        this[Checker] = x => (x instanceof Structure && x.schema === this)
+        this[Checker] = x => (x instanceof Struct && x.schema === this)
         Object.freeze(this)
     }
     create (hash) {
         assert(is(hash, Types.Hash))
-        return new Structure(this, hash)
+        return new Struct(this, hash)
     }
     has_key (key) {
         return has(key, this.table)
+    }
+    get_keys () {
+        return Object.keys(this.table)
     }
     get_value (hash, key) {
         assert(this.has_key(key))
@@ -143,7 +149,7 @@ class Schema {
 }
 
 Types.Schema = $(x => x instanceof Schema)
-Types.Structure = $(x => x instanceof Structure)
+Types.Struct = $(x => x instanceof Struct)
 
 function create_schema (name, table, defaults, config) {
     let { req, ops } = config
@@ -157,8 +163,8 @@ function new_structure (schema, hash) {
 }
 
 function get_common_schema (s1, s2) {
-    assert(is(s1, Types.Structure))
-    assert(is(s2, Types.Structure))
+    assert(is(s1, Types.Struct))
+    assert(is(s2, Types.Struct))
     ensure(s1.schema === s2.schema, 'different_schema')
     return s1.schema
 }

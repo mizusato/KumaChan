@@ -348,7 +348,7 @@ var CommandMap = map[string]TransFunction {
         var params = Transpile(tree, children["for_params"])
         var expr = Transpile(tree, children["expr"])
         var block = Transpile(tree, children["block"])
-        return fmt.Sprintf(
+        return fmt.Sprintf (
             "for (let I of __.c(__.f, [%v], %v, %v, %v)) { %v %v; }",
             expr, file, row, col, params, block,
         )

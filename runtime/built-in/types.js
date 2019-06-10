@@ -9,7 +9,7 @@ let PrimitiveType = Uni(Types.String, Types.Number, Types.Bool)
 let OperandType = template (
     'function Operand (op: String) -> Type',
         op => Uni (
-            Ins(Types.Structure, $(s => s.schema.defined_operator(op))),
+            Ins(Types.Struct, $(s => s.schema.defined_operator(op))),
             Ins(Types.Instance, $(
                 i => exists(i.class_.super_classes, C => C.defined_operator(op))
             ))
@@ -74,6 +74,10 @@ pour(Types, {
     Setter: SetterType,
     Callable: Uni(ES.Function, Types.TypeTemplate, Types.Class),
     Iterable: Uni(ES.Iterable, OperandType.inflate('iter')),
+    Enumerable: Uni (
+        Types.Hash, Types.Struct, Types.Enum,
+        OperandType.inflate('enum')
+    ),
     Iterator: IteratorType,
     Promise: $(x => x instanceof Promise),
     Arity: ArityType,
@@ -119,7 +123,7 @@ let built_in_types = {
     Promise: Types.Promise,
     NotFound: Types.NotFound,
     Schema: Types.Schema,
-    Structure: Types.Structure,
+    Struct: Types.Struct,
     Operand: Types.Operand,
     Class: Types.Class,
     Instance: Types.Instance,

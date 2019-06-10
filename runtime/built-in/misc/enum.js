@@ -26,6 +26,9 @@ class Enum {
         ensure(this.has(key), 'key_error', key)
         return this.hash[key]
     }
+    keys () {
+        return Object.keys(this.hash)
+    }
     get [Symbol.toStringTag]() {
         return 'Enum'
     }
