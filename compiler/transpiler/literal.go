@@ -26,9 +26,16 @@ var LiteralMap = map[string]TransFunction {
         var buf strings.Builder
         buf.WriteString("if (false) { __.v } ")
         for _, item_ptr := range item_ptrs {
-            // when_item = expr : expr
+            // when_item = expr : expr | @otherwise : expr
             var row, col = GetRowColInfo(tree, item_ptr)
-            var condition = TranspileFirstChild(tree, item_ptr)
+            var children = Children(tree, item_ptr)
+            var condition string
+            var _, is_otherwise = children["@otherwise"]
+            if is_otherwise {
+                condition = "true"
+            } else {
+                condition = TranspileFirstChild(tree, item_ptr)
+            }
             var value = TranspileLastChild(tree, item_ptr)
             var condition_bool = fmt.Sprintf (
                 "__.c(__.rb, [%v], %v, %v, %v)",
