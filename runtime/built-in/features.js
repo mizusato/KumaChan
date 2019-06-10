@@ -93,14 +93,14 @@ let set_data = f (
 
 let for_loop = f (
     'for_loop',
-    'function for_loop (h: Enumerable) -> Iterable',
-        h => map(enum_(h), k => {
-            if (is(h, Types.Hash)) {
-                return { key: k, value: h[k] }
-            } else if (is(h, Types.Enum) || is(h, Types.Struct)) {
-                return { key: k, value: h.get(k) }
-            } else if (is(h, Types.Getter)) {
-                let v = call_method(null, h, 'get', [k, false])
+    'function for_loop (e: Enumerable) -> Iterable',
+        e => map(enum_(e), k => {
+            if (is(e, Types.Hash)) {
+                return { key: k, value: e[k] }
+            } else if (is(e, Types.Enum) || is(e, Types.Struct)) {
+                return { key: k, value: e.get(k) }
+            } else if (is(e, Types.Getter)) {
+                let v = call_method(null, e, 'get', [k, false])
                 return { key: k, value: v }
             } else {
                 return { key: k, value: Nil }
