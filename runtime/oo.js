@@ -20,6 +20,8 @@ function add_exposed_internal(internal, instance) {
     // expose interface of internal object
     assert(!instance.init_finished)
     ensure(is(internal, Types.Instance), 'exposing_non_instance')
+    let declared = exists(instance.class_.impls, I => I === internal.class_)
+    ensure(declared, 'exposing_undeclared', internal.class_.desc)
     instance.exposed.push(internal)
     foreach(internal.methods, (name, method) => {
         assert(!has(name, instance.methods))
@@ -194,6 +196,18 @@ function get_common_class (a, b, op) {
 }
 
 
+function check_class_operators (class_) {
+    let { ops, super_classes } = class_
+    for (let op of Object.keys(ops)) {
+        for (let S of super_classes) {
+            if (S === class_) { continue }
+            let has_conflict = S.defined_operator(op)
+            ensure(!has_conflict, 'operator_conflict', op, class_.desc, S.desc)
+        }
+    }
+}
+
+
 /**
  *  Class Object
  */
@@ -230,6 +244,7 @@ class Class {
         this.methods_info = get_methods_info(this)
         this.super_classes = get_super_classes(this)
         this.super_interfaces = get_super_interfaces(this)
+        check_class_operators(this)
         let F = init[WrapperInfo]
         this.create = wrap(
             F.context, F.proto, null, F.desc, scope => {
@@ -396,7 +411,8 @@ class Interface {
         this.name = name
         if (def_point !== null) {
             let { file, row, col } = def_point
-            this.desc = `interface ${name} at ${file} (row ${row}, column ${col})`
+            let pos = `${file} (row ${row}, column ${col})`
+            this.desc = `interface ${name} at ${pos}`
         } else {
             this.desc = `interface ${name} at (Built-in)`
         }

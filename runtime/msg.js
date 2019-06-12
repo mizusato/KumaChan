@@ -41,11 +41,20 @@ const MSG = {
         + LF + INDENT + I
         + LF + `(invalid method ${name}())`
     ),
+    operator_conflict: (op, C1, C2) => (
+        `operator ${op} defined in ${C1}`
+        + LF + `conflicts with the operator ${op} defined in`
+        + LF + INDENT + C2
+    ),
     interface_invalid: name => (
         `invalid interface: blank method ${name}() should not be implemented`
     ),
     exposing_non_instance: 'unable to expose non-instance object',
-    not_exposing: C => `created instance does not expose instance of ${C}`,
+    exposing_undeclared: C => (
+        'unable to expose instance of undeclared base class:'
+        + LF + INDENT + C
+    ),
+    not_exposing: C => `created instance did not expose instance of ${C}`,
     method_not_found: name => `method ${name}() does not exist`,
     format_invalid_key: key => (
         `key '${key}' does not exist in given Hash or Struct`
