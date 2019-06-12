@@ -416,11 +416,13 @@ func FieldList (tree Tree, ptr int) (string, string) {
 
 func MethodTable (tree Tree, ptr int, extract string, next string) string {
     if NotEmpty(tree, ptr) {
+        // argument 'extract' can be "method" or "pf"
         var method_ptrs = FlatSubTree(tree, ptr, extract, next)
         var buf strings.Builder
         for i, method_ptr := range method_ptrs {
             var children = Children(tree, method_ptr)
             var name = Transpile(tree, children["name"])
+            // call another rule function here
             var method = TransMapByName["f_sync"](tree, method_ptr)
             fmt.Fprintf(&buf, "{ name: %v, f: %v }", name, method)
             if i != len(method_ptrs)-1 {
