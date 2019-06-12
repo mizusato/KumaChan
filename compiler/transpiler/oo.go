@@ -149,7 +149,7 @@ var OO_Map = map[string]TransFunction {
     "method_implemented": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
         var name = Transpile(tree, children["name"])
-        var method = TransMapByName["method"](tree, ptr)
+        var method = TransMapByName["f_sync"](tree, ptr)
         return fmt.Sprintf (
             "{ name: %v, f: %v }",
             name, method,

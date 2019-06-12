@@ -101,9 +101,12 @@ function get_super_interfaces (class_) {
 function apply_implemented (interface_, instance) {
     // apply implemented methods of interface
     let implemented = interface_.implemented
-    if (implemented.length == 0) { return }
+    let keys = Object.keys(implemented)
+    if (keys.length == 0) { return }
+    let sample = implemented[keys[0]]
+    let context = sample[WrapperInfo].functions[0][WrapperInfo].context
     // create the context scope for implemented methods
-    let interface_scope = new Scope(null)
+    let interface_scope = new Scope(context)
     // add blank methods to the interface scope
     foreach(interface_.proto_table, (name, _) => {
         assert(has(name, instance.methods))
