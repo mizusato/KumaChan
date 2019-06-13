@@ -91,7 +91,6 @@ class Scope {
         assert(is(data, Types.Hash))
         this.context = context
         this.data = copy(data)
-        this.cache = {}
         this.types_of_non_fixed = {}
         this.readonly = readonly
         if (readonly) {
@@ -153,10 +152,6 @@ class Scope {
         while (scope !== null) {
             if (scope.has(variable)) {
                 break
-            } else if (has(variable, scope.cache)) {
-                scope = scope.cache[variable]
-                assert(scope.has(variable))
-                break
             }
             scope = scope.context
         }
@@ -188,27 +183,25 @@ class Scope {
             scope => scope === null
         )
         return find(map(scope_chain, (scope, depth) => {
-            if (has(variable, scope.cache)) {
-                let cached_scope = scope.cache[variable]
-                assert(cached_scope.has(variable))
-                if (depth > 2) {
-                    this.cache[variable] = cached_scope
-                }
-                let value = cached_scope.data[variable]
-                if (!(only_func && !is(value, ES.Function))) {
-                    return value
-                }
-            }
             if (scope.has(variable)) {
-                if (depth > 2) {
-                    this.cache[variable] = scope
-                }
                 let value = scope.data[variable]
-                if (!(only_func && !is(value, ES.Function))) {
-                    return value
-                } else {
+                // requesting function, but not function, lookup upper scope
+                if (only_func && !is(value, ES.Function)) {
                     return NotFound
                 }
+                // got a fixed variable
+                if (scope.is_fixed(variable)) {
+                    return value
+                }
+                // got a non-fixed variable, check consistency
+                if (!only_func) {
+                    // function called by UFCS becoming inconsistent
+                    // is a rare case, and we don't have call point here
+                    // therefore UFCS won't be checked
+                    let ok = is(value, scope.types_of_non_fixed[variable])
+                    ensure(ok, 'variable_inconsistent', variable)
+                }
+                return value
             } else {
                 return NotFound
             }

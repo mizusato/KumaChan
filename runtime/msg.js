@@ -6,6 +6,9 @@ const MSG = {
     variable_declared: name => `variable ${name} already declared`,
     variable_invalid: name => `invalid value assigned to variable ${name}`,
     variable_fixed: name => `cannot reset fixed variable ${name}`,
+    variable_inconsistent: name => (
+        `the value of variable ${name} violated its type constraint`
+    ),
     static_conflict: name => `static value conflict with argument ${name}`,
     arg_wrong_quantity: (r, g) => `${r} arguments required but ${g} given`,
     arg_invalid: name => `invalid argument ${name}`,
