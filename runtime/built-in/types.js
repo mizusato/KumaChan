@@ -19,9 +19,7 @@ let OperandType = template (
     'function Operand (op: String) -> Type',
         op => Uni (
             Ins(Types.Struct, $(s => s.schema.defined_operator(op))),
-            Ins(Types.Instance, $(
-                i => exists(i.class_.super_classes, C => C.defined_operator(op))
-            ))
+            Ins(Types.Instance, $(i => i.class_.defined_operator(op)))
         )
 )
 let RepresentableType = Uni (

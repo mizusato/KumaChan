@@ -11,8 +11,8 @@ function apply_operator (name, a, b) {
         return call(s.get_operator(name), [a, b])
     } else {
         assert(is(a, Types.Instance))
-        let c = get_common_class(a, b, name)
-        return call(c.get_operator(name), [a, b])
+        let f = get_common_operator(a, b, name)
+        return call(f, [a, b])
     }
 }
 
@@ -23,9 +23,8 @@ function apply_unary (name, a) {
         return call(a.schema.get_operator(name), [a])
     } else {
         assert(is(a, Types.Instance))
-        let C = find(a.class_.super_classes, C => C.defined_operator(name))
-        assert(C !== NotFound)
-        return call(C.get_operator(name), [a])
+        assert(a.class_.defined_operator(name))
+        return call(a.class_.get_operator(name), [a])
     }
 }
 
@@ -83,7 +82,7 @@ let operators = {
         `function operator.negate (o: Operand<'negate'>) -> Object`,
             o => apply_unary('negate', o),
         'function operator.negate (x: Number) -> Number',
-            x => -x
+            x => 0 - x
     ),
     /* Pull, Push, Derive, Otherwise */
     '<<': f (
@@ -143,8 +142,6 @@ let operators = {
         'operator.equal',
         `function operator.equal (a: Operand<'=='>, b: Operand<'=='>) -> Bool`,
             (a, b) => apply_operator('==', a, b),
-        'function operator.equal (T1: Type, T2: Type) -> Bool',
-            (T1, T2) => (T1 === T2),
         'function operator.equal (p: Bool, q: Bool) -> Bool',
             (p, q) => (p === q),
         'function operator.equal (a: String, b: String) -> Bool',
@@ -158,14 +155,14 @@ let operators = {
             (l, r) => !operators['=='](l, r)
     ),
     '~~': f (
-        'operator.equivalent',
+        'operator.same',
         'function operator.equivalent (l: Any, r: Any) -> Bool',
-            (l, r) => (l === r)
+            (l, r) => (Number.isNaN(l) && Number.isNaN(r)) || (l === r)
     ),
     '!~': f (
-        'operator.not_equivalent',
+        'operator.not_same',
         'function operator.not_equivalent (l: Any, r: Any) -> Bool',
-            (l, r) => (l !== r)
+            (l, r) => !operators['~~'](l, r)
     ),
     /* Logic */
     '&&': f (

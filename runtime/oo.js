@@ -43,9 +43,9 @@ function get_methods_info (class_) {
             let ok = !has(name, info)
             ensure (
                 ok, 'method_conflict',
-                name, ok || info[name].from.desc, method_info.from.desc
+                name, ok || info[name].from.desc, super_class.desc
             )
-            info[name] = { method: method_info.method, from: super_class }
+            info[name] = copy(method_info)
         })
     })
     foreach(only_interface(class_.impls), I => {
@@ -76,6 +76,25 @@ function get_methods_info (class_) {
         })
     })
     // output the final info
+    Object.freeze(info)
+    return info
+}
+
+function get_operators_info (class_) {
+    let info = {}
+    foreach(class_.ops, (op, f) => {
+        info[op] = { f, from: class_ }
+    })
+    foreach(only_class(class_.impls), super_class => {
+        foreach(super_class.operators_info, (op, super_info) => {
+            let ok = !has(op, info)
+            ensure (
+                ok, 'operator_conflict',
+                op, ok || info[op].from.desc, super_class.desc
+            )
+            info[op] = copy(super_info)
+        })
+    })
     Object.freeze(info)
     return info
 }
@@ -159,52 +178,16 @@ function match_protos (method, protos) {
     )
 }
 
-function get_common_class (a, b, op) {
+function get_common_operator (a, b, op) {
     assert(is(a, Types.Instance))
     assert(is(b, Types.Instance))
     assert(is(op, Types.String))
-    let search = (A, B) => {
-        if (A === B) {
-            // A = B
-            if (A.defined_operator(op)) {
-                return A
-            } else {
-                for (let i = 1; i < A.super_classes.length; i += 1) {
-                    if (A.super_classes[i].defined_operator(op)) {
-                        return A.super_classes[i]
-                    }
-                }
-                return NotFound
-            }
-        } else {
-            let A1 = find(A.super_classes, (S, i) => (i > 0 && S === B))
-            if (A1 !== NotFound) {
-                // A ⊂ B
-                return search(A1, B)
-            }
-            let B1 = find(B.super_classes, (S, i) => (i > 0 && S === A))
-            if (B1 !== NotFound) {
-                // B ⊂ A
-                return search(A, B1)
-            }
-            return NotFound
-        }
-    }
-    let result = search(a.class_, b.class_)
-    ensure(result !== NotFound, 'no_common_class', op)
-    return result
-}
-
-
-function check_class_operators (class_) {
-    let { ops, super_classes } = class_
-    for (let op of Object.keys(ops)) {
-        for (let S of super_classes) {
-            if (S === class_) { continue }
-            let has_conflict = S.defined_operator(op)
-            ensure(!has_conflict, 'operator_conflict', op, class_.desc, S.desc)
-        }
-    }
+    let A = a.class_
+    let B = b.class_
+    let X = A.operators_info[op].from
+    let Y = B.operators_info[op].from
+    ensure(X === Y, 'no_common_class', op)
+    return A.operators_info[op].f
 }
 
 
@@ -242,9 +225,9 @@ class Class {
         Object.freeze(this.ops)
         Object.freeze(this.data)
         this.methods_info = get_methods_info(this)
+        this.operators_info = get_operators_info(this)
         this.super_classes = get_super_classes(this)
         this.super_interfaces = get_super_interfaces(this)
-        check_class_operators(this)
         let F = init[WrapperInfo]
         this.create = wrap(
             F.context, F.proto, null, F.desc, scope => {
@@ -283,11 +266,11 @@ class Class {
         Object.freeze(this)
     }
     defined_operator (name) {
-        return has(name, this.ops)
+        return has(name, this.operators_info)
     }
     get_operator (name) {
         assert(this.defined_operator(name))
-        return this.ops[name]
+        return this.operators_info[name].f
     }
     has (key) {
         return has(key, this.data)
