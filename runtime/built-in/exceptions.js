@@ -3,9 +3,16 @@ let wrapped_assert = fun (
         p => (assert(p), Void)
 )
 
-let wrapped_panic = fun (
+let wrapped_panic = f (
+    'panic',
+    'function panic (e: Error) -> Void',
+        e => {
+            throw new RuntimeError('panic: ' + e.message)
+        },
     'function panic (msg: String) -> Void',
-        msg => panic(msg)
+        msg => {
+            panic(msg)
+        }
 )
 
 let wrapped_throw = fun (

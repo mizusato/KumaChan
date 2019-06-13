@@ -129,7 +129,7 @@ function ensure (bool, msg_type, ...args) {
 
 function convert_to_fatal (error) {
     if (error instanceof EnsureFailed || error instanceof CustomError) {
-        return new RuntimeError(`Uncaught ${error.name}: ${error.message}`)
+        return new RuntimeeError(`Unhandled ${error.name}: ${error.message}`)
     } else {
         return error
     }

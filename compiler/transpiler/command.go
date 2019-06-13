@@ -219,23 +219,28 @@ var CommandMap = map[string]TransFunction {
         var commands = Commands(tree, children["commands"], false)
         var BodyId = syntax.Name2Id["body"]
         var BlockId = syntax.Name2Id["block"]
+        var HandleId = syntax.Name2Id["handle_hook"]
         var ForId = syntax.Name2Id["cmd_for"]
         var depth = 0
-        var node = tree.Nodes[ptr]
-        for node.Part.Id != BodyId {
+        var node = &tree.Nodes[ptr]
+        for node.Part.Id != BodyId && node.Part.Id != HandleId {
             if node.Part.Id == BlockId {
                 depth += 1
             }
             if node.Parent < 0 {
                 break
             }
-            node = tree.Nodes[node.Parent]
+            node = &tree.Nodes[node.Parent]
         }
         var upper string
         if depth-1 > 0 {
             upper = fmt.Sprintf("scope%v", depth-1)
         } else {
-            upper = "scope"
+            if node.Part.Id == HandleId {
+                upper = "handle_scope"
+            } else {
+                upper = "scope"
+            }
         }
         var current = fmt.Sprintf("scope%v", depth)
         var buf strings.Builder
