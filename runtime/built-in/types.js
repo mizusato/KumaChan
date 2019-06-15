@@ -70,7 +70,7 @@ pour(Types, {
     Maybe: MaybeType,
     Getter: GetterType,
     Setter: SetterType,
-    Callable: Uni(ES.Function, Types.TypeTemplate, Types.Class),
+    Callable: Uni(ES.Function, Types.TypeTemplate, Types.Class, Types.Schema),
     Iterable: Uni(ES.Iterable, OperandType.inflate('iter')),
     Enumerable: Uni (
         Types.Hash, Types.Struct, Types.Enum,

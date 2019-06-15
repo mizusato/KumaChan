@@ -92,8 +92,8 @@ var TypeMap = map[string]TransFunction {
         var config = Transpile(tree, children["schema_config"])
         var table, defaults = FieldList(tree, children["field_list"])
         var schema = fmt.Sprintf (
-            "__.cs(%v, %v, %v, %v)",
-            name, table, defaults, config,
+            "__.c(__.cs, [%v, %v, %v, %v], %v, %v, %v)",
+            name, table, defaults, config, file, row, col,
         )
         var value string
         if NotEmpty(tree, gp_ptr) {

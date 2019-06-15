@@ -3,7 +3,7 @@ class Struct {
         assert(is(schema, Types.Schema))
         assert(is(data, Types.Hash))
         this.schema = schema
-        this.data = copy(data)
+        this.data = data
         let result = this.schema.check_all(this.data)
         if (!result.ok) {
             if (result.why == 'miss') {
@@ -61,6 +61,11 @@ class Schema {
             assert(requirement[WrapperInfo].proto.value_type === Types.Bool)
         }
         assert(is(operators, TypedHash.of(Types.Function)))
+        foreach(table, (field, T) => {
+            if (has(field, defaults)) {
+                ensure(is(defaults[field], T), 'schema_invalid_default', field)
+            }
+        })
         this.name = name
         this.table = copy(table)
         this.defaults = copy(defaults)
@@ -69,10 +74,14 @@ class Schema {
         Object.freeze(this.table)
         Object.freeze(this.defaults)
         Object.freeze(this.operators)
+        this.create_struct_from_another = fun (
+            'function create_struct_from_another (s: Struct) -> Struct',
+                s => this.create_struct(s.data)
+        )
         this[Checker] = x => (x instanceof Struct && x.schema === this)
         Object.freeze(this)
     }
-    create (hash) {
+    create_struct (hash) {
         assert(is(hash, Types.Hash))
         return new Struct(this, hash)
     }
@@ -153,13 +162,16 @@ Types.Struct = $(x => x instanceof Struct)
 
 function create_schema (name, table, defaults, config) {
     let { req, ops } = config
+    foreach(table, (name, constraint) => {
+        ensure(is(constraint, Type), 'schema_invalid_field', name)
+    })
     return new Schema(name, table, defaults, req, ops)
 }
 
 function new_structure (schema, hash) {
     ensure(is(schema, Types.Schema), 'not_schema')
     assert(is(hash, Types.Hash))
-    return schema.create(hash)
+    return schema.create_struct(hash)
 }
 
 function get_common_schema (s1, s2) {

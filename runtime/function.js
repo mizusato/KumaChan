@@ -330,10 +330,12 @@ function cancel_binding (f) {
 
 function call (f, args, file = null, row = -1, col = -1) {
     assert(is(args, Types.List))
-    if (is(f, Types.Class)) {
-        f = f.create
-    } else if (is(f, Types.TypeTemplate)) {
+    if (is(f, Types.TypeTemplate)) {
         f = f.inflate
+    } else if (is(f, Types.Class)) {
+        f = f.create
+    } else if (is(f, Types.Schema)) {
+        f = f.create_struct_from_another
     }
     let call_type = file? 1: 3
     if (is(f, Wrapped)) {
