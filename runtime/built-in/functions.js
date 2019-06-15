@@ -16,8 +16,8 @@ let built_in_functions = {
             msg => create_error(msg),
         'function custom_error (name: String, msg: String) -> Error',
             (name, msg) => create_error(msg, name),
-        'function custom_error (name: String, msg: String, data: Hash) -> Error',
-            (name, msg, data) => create_error(msg, name, data)
+        'function custom_error (name: String, msg: String, data: Hash) -> Error'
+            ,(name, msg, data) => create_error(msg, name, data)
     ),
     // Singleton Value Creator
     custom_value: fun (
@@ -99,13 +99,79 @@ let built_in_functions = {
             },
         'function find (i: Iterable, f: Arity<2>) -> Object',
             (i, f) => {
-                let r = find(iter(i), (e, n) => call(f, [e, n]))
+                let r = find(iter(i), (e, n) => {
+                    let c = call(f, [e, n])
+                    ensure(is(c, Types.Bool), 'cond_not_bool')
+                    return c
+                })
                 return (r !== NotFound)? r: Types.NotFound
             },
         'function find (i: Iterable, f: Arity<1>) -> Object',
             (i, f) => {
-                let r = find(iter(i), e => call(f, [e]))
+                let r = find(iter(i), e => {
+                    let c = call(f, [e])
+                    ensure(is(c, Types.Bool), 'cond_not_bool')
+                    return c
+                })
                 return (r !== NotFound)? r: Types.NotFound
+            }
+    ),
+    fold: f (
+        'fold',
+        'function fold (i: Iterable, initial: Any, f: Arity<3>) -> Object',
+            (i, initial, f) => fold(iter(i), initial, (e, v, n) => {
+                return call(f, [e, v, n])
+            }),
+        'function fold (i: Iterable, initial: Any, f: Arity<2>) -> Object',
+            (i, initial, f) => fold(iter(i), initial, (e,v) => {
+                return call(f, [e, v])
+            })
+    ),
+    every: f (
+        'every',
+        'function every (i: Iterable, f: Arity<2>) -> Bool',
+            (i, f) => forall(iter(i), (e, i) => {
+                let v = call(f, [e, i])
+                ensure(is(v, Types.Bool), 'cond_not_bool')
+                return v
+            }),
+        'function every (i: Iterable, f: Arity<1>) -> Bool',
+            (i, f) => forall(iter(i), e => {
+                let v = call(f, [e])
+                ensure(is(v, Types.Bool), 'cond_not_bool')
+                return v
+            })
+    ),
+    some: f (
+        'some',
+        'function some (i: Iterable, f: Arity<2>) -> Bool',
+            (i, f) => exists(iter(i), (e, i) => {
+                let v = call(f, [e, i])
+                ensure(is(v, Types.Bool), 'cond_not_bool')
+                return v
+            }),
+        'function some (i: Iterable, f: Arity<1>) -> Bool',
+            (i, f) => exists(iter(i), e => {
+                let v = call(f, [e])
+                ensure(is(v, Types.Bool), 'cond_not_bool')
+                return v
+            })
+    ),
+    join: fun (
+        'function join (i: Iterable, sep: String) -> String',
+            (i, sep) => {
+                let string = ''
+                let first = true
+                for (let e of i) {
+                    ensure(is(e, Types.String), 'element_not_string')
+                    if (first) {
+                        first = false
+                    } else {
+                        string += sep
+                    }
+                    string += e
+                }
+                return string
             }
     ),
     reversed: fun (
@@ -204,6 +270,19 @@ let built_in_functions = {
                 return Void
             }
     ),
+    index_of: fun (
+        'function index_of (l: List, f: Arity<1>) -> Maybe<Index>',
+            (l, f) => {
+                for (let i = 0; i < l.length; i += 1) {
+                    let c = call(f, [l[i]])
+                    ensure(is(c, Types.Bool), 'cond_not_bool')
+                    if (c) {
+                        return i
+                    }
+                }
+                return Nil
+            }
+    ),
     // Hash Operations
     get_keys: fun (
         'function get_keys (h: Hash) -> List',
@@ -234,5 +313,13 @@ let built_in_functions = {
     map_entry: fun (
         'function map_entry (h: Hash, f: Arity<2>) -> Iterator',
             (h, f) => mapkv(h, (k, v) => call(f, [k, v]))
+    ),
+    // Copy
+    copy: f (
+        'copy',
+        'function copy (l: List) -> List',
+            l => copy(l),
+        'function copy (h: Hash) -> Hash',
+            h => copy(h)
     )
 }

@@ -46,14 +46,7 @@ function parse_decl (string) {
         assert(has(arg_str, Types))
         return Types[arg_str]
     }
-    let match = string.match(/function +([^( ]+) +\(([^)]*)\) *-> *(.+)/)
-    let [_, name, params_str, value_str] = match
-    let has_p = params_str.trim().length > 0
-    let parameters = has_p? (list(map(params_str.split(','), para_str => {
-        para_str = para_str.trim()
-        let match = para_str.match(/([^ :]+) *: *(.+)/)
-        let [_, name, type_str] = match
-        let type = null
+    function parse_type (type_str) {
         match = type_str.match(/([^<]+)<(.+)>/)
         if (match != null) {
             let template_str = match[1]
@@ -62,18 +55,26 @@ function parse_decl (string) {
             let args = arg_strs.map(parse_template_arg)
             assert(has(template_str, Types))
             // note: template.inflate() already bound, apply(null, ...) is OK
-            type = Types[template_str].inflate.apply(null, args)
+            return Types[template_str].inflate.apply(null, args)
         } else {
             assert(has(type_str, Types))
-            type = Types[type_str]
+            return Types[type_str]
         }
+    }
+    let match = string.match(/function +([^( ]+) +\(([^)]*)\) *-> *(.+)/)
+    let [_, name, params_str, value_str] = match
+    let has_p = params_str.trim().length > 0
+    let parameters = has_p? (list(map(params_str.split(','), para_str => {
+        para_str = para_str.trim()
+        let match = para_str.match(/([^ :]+) *: *(.+)/)
+        let [_, name, type_str] = match
+        let type = parse_type(type_str)
         let parameter = { name, type }
         Object.freeze(parameter)
         return parameter
     }))): []
     Object.freeze(parameters)
-    assert(has(value_str, Types))
-    let value_type = Types[value_str]
+    let value_type = parse_type(value_str)
     let proto = { parameters, value_type }
     Object.freeze(proto)
     assert(is(proto, Prototype))
