@@ -43,7 +43,7 @@ class Array<T> is Getter<Index, T>, Setter<Index, T>, SliceGetter {
             reset lo = 0
         }
         if hi is SliceIndexDefault {
-            reset hi = len(list)
+            reset hi = L
         }
         ensure index_valid { lo <= hi }
         ensure index_in_range { hi <= L }

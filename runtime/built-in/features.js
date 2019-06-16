@@ -101,7 +101,7 @@ let get_slice = f (
         (l, lo, hi) => {
             lo = (lo === Types.SliceIndexDefault)? 0: lo
             hi = (hi === Types.SliceIndexDefault)? l.length: hi
-            ensure(lo <= hi, 'invalid_slice', lo, hi)
+            ensure(lo <= hi, 'invalid_slice')
             ensure(hi <= l.length, 'slice_index_error', hi)
             return l.slice(lo, hi)
         }
