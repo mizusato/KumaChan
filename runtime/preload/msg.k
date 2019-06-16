@@ -8,6 +8,12 @@ let MSG = {
     array_inconsistent: .{
         'requested array element (at index ${}) became invalid type' << .index
     },
+    array_invalid_slice: .{
+        'invalid slice index: lower bound is bigger than higher bound'
+    },
+    array_slice_out_of_range: .{
+        'slice index out of range (hi=${1}, length=${2})' << [.hi, .index]
+    },
     map_value_not_found: .{
         'requested key does not exist on this map'
     },

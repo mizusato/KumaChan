@@ -38,7 +38,28 @@ class Array<T> is Getter<Index, T>, Setter<Index, T>, SliceGetter {
         }
     }
     slice (lo: SliceIndex, hi: SliceIndex) -> Object {
-        return Array<T>(list[lo:hi])
+        let L = len(list)
+        if lo is SliceIndexDefault {
+            reset lo = 0
+        }
+        if hi is SliceIndexDefault {
+            reset hi = len(list)
+        }
+        ensure index_valid { lo <= hi }
+        ensure index_in_range { hi <= L }
+        return Array<T> << iterator {
+            for i in range(lo, hi) {
+                yield list[i]
+            }
+        }
+        @handle error {
+            unless index_valid {
+                panic MSG.array_invalid_slice()
+            }
+            unless index_in_range {
+                panic MSG.array_slice_out_of_range(hi, L)
+            }
+        }
     }
     length () -> Size {
         return len(list)
