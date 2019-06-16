@@ -19,11 +19,6 @@ let built_in_functions = {
         'function custom_error (name: String, msg: String, data: Hash) -> Error'
             ,(name, msg, data) => create_error(msg, name, data)
     ),
-    // Singleton Value Creator
-    custom_value: fun (
-        'function custom_value (name: String) -> Singleton',
-            name => create_value(name)
-    ),
     // Async
     postpone: f (
         'postpone',
@@ -236,19 +231,11 @@ let built_in_functions = {
                 return Void
             }
     ),
-    slice: fun (
-        'function slice (l: List, low: Index, high: Index) -> List',
-            (l, low, high) => {
-                ensure(low <= high, 'invalid_slice', low, high)
-                ensure(high < l.length, 'index_error', high)
-                return l.slice(low, high)
-            }
-    ),
     splice: fun (
         'function splice (l: List, i: Index, amount: Size) -> Void',
             (l, i, amount) => {
                 ensure(i < l.length, 'index_error', i)
-                ensure(i+amount < l.length, 'invalid_splice', amount)
+                ensure(i+amount <= l.length, 'invalid_splice', amount)
                 l.splice(i, amount)
                 return Void
             }

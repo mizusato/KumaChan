@@ -17,7 +17,29 @@ func TranspileOperationSequence (tree Tree, ptr int) [][]string {
         var next_ptr = tree.Nodes[ptr].Children[1]
         var op_node = &tree.Nodes[operation_ptr]
         var row, col = GetRowColInfo(tree, operation_ptr)
-        if op_node.Part.Id == syntax.Name2Id["get"] {
+        switch syntax.Id2Name[op_node.Part.Id] {
+        case "slice":
+            // slice = Get [ low_bound : high_bound ]!
+            var children = Children(tree, operation_ptr)
+            var lo_ptr = children["low_bound"]
+            var hi_ptr = children["high_bound"]
+            var lo string
+            var hi string
+            if NotEmpty(tree, lo_ptr) {
+                lo = TranspileFirstChild(tree, lo_ptr)
+            } else {
+                lo = "__.sid"
+            }
+            if NotEmpty(tree, hi_ptr) {
+                hi = TranspileFirstChild(tree, hi_ptr)
+            } else {
+                hi = "__.sid"
+            }
+            operations = append(operations, [] string {
+                "__.sl", lo, hi,
+                file, row, col,
+            })
+        case "get":
             // get_expr = Get [ expr! ]! nil_flag
             // get_name = Get . name! nil_flag
             var key, nil_flag = GetKey(tree, operation_ptr)
@@ -25,7 +47,7 @@ func TranspileOperationSequence (tree Tree, ptr int) [][]string {
                 "__.g", key, nil_flag,
                 file, row, col,
             })
-        } else {
+        case "call":
             // call = call_self | call_method
             var child_ptr = op_node.Children[0]
             var params = Children(tree, child_ptr)

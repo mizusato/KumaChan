@@ -93,6 +93,20 @@ let set_data = f (
         }
 )
 
+let get_slice = f (
+    'get_slice',
+    'function get_slice (o: SliceGetter, lo: SliceIndex, hi:SliceIndex) -> Any',
+        (o, lo, hi) => call_method(null, o, 'slice', [lo, hi]),
+    'function get_slice (l: List, lo: SliceIndex, hi: SliceIndex) -> List',
+        (l, lo, hi) => {
+            lo = (lo === Types.SliceIndexDefault)? 0: lo
+            hi = (hi === Types.SliceIndexDefault)? l.length: hi
+            ensure(lo <= hi, 'invalid_slice', lo, hi)
+            ensure(hi <= l.length, 'slice_index_error', hi)
+            return l.slice(lo, hi)
+        }
+)
+
 
 let for_loop = f (
     'for_loop',

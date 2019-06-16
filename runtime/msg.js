@@ -79,6 +79,7 @@ const MSG = {
     invalid_range: (a, b) => `begin index ${a} is bigger than end index ${b}`,
     empty_list: 'invalid element access on empty list',
     invalid_slice: (a, b) => `invalid slice index pair (${a}, ${b})`,
+    slice_index_error: index => `slice index ${index} out of range`,
     invalid_splice: a => `invalid splice amount ${a}`,
     invalid_struct_init_miss: k => (
         `invalid structure initialization: missing field '${k}'`

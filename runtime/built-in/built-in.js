@@ -49,6 +49,8 @@ let global_helpers = {
     it: Types.Iterator,
     pm: Types.Promise,
     i: Types.Instance,
+    sid: Types.SliceIndexDefault,
+    sl: (o, lo, hi, f, r, c) => call(get_slice, [o, lo, hi], f, r, c),
     rp: inject_desc(require_promise, 'require_promise'),
     aw: async_e_wrap,
     ic: iterator_comprehension,

@@ -3,6 +3,15 @@
 
 
 let IndexType = Ins(Types.Int, $(x => x >= 0))
+let SliceIndexDefaultType = create_value('slice_index')
+let SliceIndexType = Uni(IndexType, SliceIndexDefaultType)
+let SliceGetterType = create_interface('SliceGetter', [
+    { name: 'slice', f: { parameters: [
+        { name: 'low', type: SliceIndexType },
+        { name: 'high', type: SliceIndexType }
+    ], value_type: Types.Any } }
+], null)
+
 let PrimitiveType = Uni(Types.String, Types.Number, Types.Bool)
 let ArityType = template (
     'function Arity (n: Int) -> Type',
@@ -83,6 +92,9 @@ pour(Types, {
     Arity: ArityType,
     Index: IndexType,
     Size: IndexType,
+    SliceIndexDefault: SliceIndexDefaultType,
+    SliceIndex: SliceIndexType,
+    SliceGetter: SliceGetterType,
     Primitive: PrimitiveType,
     Representable: RepresentableType,
     Error: $(x => x instanceof Error),
@@ -108,6 +120,9 @@ let built_in_types = {
     Int: Types.Int,
     Index: Types.Index,
     Size: Types.Size,
+    SliceIndex: Types.SliceIndex,
+    SliceIndexDefault: Types.SliceIndexDefault,
+    SliceGetter: Types.SliceGetter,
     String: Types.String,
     Primitive: Types.Primitive,
     Representable: Types.Representable,

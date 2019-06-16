@@ -1,4 +1,4 @@
-class Array<T> is Getter<Index, T>, Setter<Index, T> {
+class Array<T> is Getter<Index, T>, Setter<Index, T>, SliceGetter {
     init (source: Iterable) {
         let list = []
         for element[i] in source {
@@ -36,6 +36,9 @@ class Array<T> is Getter<Index, T>, Setter<Index, T> {
                 panic MSG.array_out_of_range(i, len(list))
             }
         }
+    }
+    slice (lo: SliceIndex, hi: SliceIndex) -> Object {
+        return Array<T>(list[lo:hi])
     }
     length () -> Size {
         return len(list)
