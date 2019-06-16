@@ -60,12 +60,23 @@ var CommandMap = map[string]TransFunction {
             name, value, T, file, row, col,
         )
     },
-    // cmd_type = @type name generic_params = expr
+    // cmd_type = @type name = @singleton | @type name generic_params = expr
     "cmd_type": func (tree Tree, ptr int) string {
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
         var children = Children(tree, ptr)
         var name_ptr = children["name"]
+        var _, is_singleton = children["@singleton"]
+        if is_singleton {
+            var name = Transpile(tree, name_ptr)
+            var singleton = fmt.Sprintf (
+                "__.cv(%v)", name,
+            )
+            return fmt.Sprintf(
+                "__.c(dl, [%v, %v, true, __.t], %v, %v, %v)",
+                name, singleton, file, row, col,
+            )
+        }
         var gp_ptr = children["generic_params"]
         var name = Transpile(tree, name_ptr)
         var expr = Transpile(tree, children["expr"])

@@ -95,7 +95,7 @@ var Keywords = [...] string {
     "@if", "@else", "@elif", "@switch", "@case", "@default",
     "@while", "@for", "@in", "@break", "@continue", "@return",
     "@yield", "@await",
-    "@let", "@type", "@var", "@reset",
+    "@let", "@type", "@singleton", "@var", "@reset",
     "@set", "@do", "@nothing",
     "@function", "@generator", "@async", "@lambda",
     "@invoke", "@iterator", "@promise",
@@ -222,7 +222,7 @@ var SyntaxDefinition = [...] string {
     /* Scope Related Commands @ Group 2 */
     "cmd_scope = cmd_let | cmd_type | cmd_var | cmd_reset",
     "cmd_let = @let name var_type = expr",
-    "cmd_type = @type name generic_params = expr",
+    "cmd_type = @type name = @singleton | @type name generic_params = expr",
     "cmd_var = @var name var_type = expr",
     "var_type? = : type",
     "cmd_reset = @reset name set_op = expr",

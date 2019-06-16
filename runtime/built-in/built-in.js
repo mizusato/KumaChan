@@ -50,6 +50,7 @@ let global_helpers = {
     pm: Types.Promise,
     i: Types.Instance,
     sid: Types.SliceIndexDefault,
+    cv: create_value,
     sl: (o, lo, hi, f, r, c) => call(get_slice, [o, lo, hi], f, r, c),
     rp: inject_desc(require_promise, 'require_promise'),
     aw: async_e_wrap,

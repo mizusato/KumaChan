@@ -166,6 +166,7 @@ let TypedHash = {
  */
 
 function create_value (name) {
+    assert(is(name, Types.String))
     let value = Object.create(null)
     value[ValueName] = name
     value[Checker] = (x => x === value)
