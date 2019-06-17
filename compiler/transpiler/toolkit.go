@@ -110,7 +110,11 @@ func GetOperatorInfo (tree Tree, ptr int) syntax.Operator {
     var group = &tree.Nodes[group_ptr]
     var token_node = &tree.Nodes[group.Children[0]]
     var op_id = token_node.Part.Id
-    return syntax.Id2Operator[op_id]
+    var info, exists = syntax.Id2Operator[op_id]
+    if !exists {
+        panic("undefined operator " + syntax.Id2Name[op_id])
+    }
+    return info
 }
 
 

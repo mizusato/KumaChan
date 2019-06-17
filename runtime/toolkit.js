@@ -139,6 +139,14 @@ function equal (o1, o2) {
 }
 
 
+function set_equal (s1, s2) {
+    assert(s1 instanceof Set)
+    assert(s2 instanceof Set)
+    if (s1.size != s2.size) { return false }
+    return forall(s1, e => s2.has(e))
+}
+
+
 function foreach (something, f) {
     if (typeof something[Symbol.iterator] == 'function') {
         let i = 0

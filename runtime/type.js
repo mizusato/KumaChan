@@ -53,25 +53,127 @@ function is (value, type) {
 }
 
 
+class CompoundType {
+    constructor (op, args) {
+        this.op = op
+        this.args = args
+        assert(exists([0,1,2,3], v => op == v))
+        assert(args instanceof Array)
+        assert(forall(args, arg => is(arg, Type)))
+        if (op == 2 || op == 3) { assert(args.length == 1) }
+        this.atomic_args = extract_atomic_args(args)
+        Object.freeze(this.args)
+        Object.freeze(this.atomic_args)
+        if (op == 0) {
+            this[Checker] = x => forall(this.args, T => T[Checker](x))
+        } else if (op == 1) {
+            this[Checker] = x => exists(this.args, T => T[Checker](x))
+        } else if (op == 2) {
+            this[Checker] = x => !(this.args[0][Checker](x))
+        } else {
+            this[Checker] = this.args[0][Checker]
+        }
+        Object.freeze(this)
+    }
+    evaluate (value_map) {
+        assert(value_map instanceof Map)
+        if (this.op == 0) {
+            // intersect
+            return forall(this.args, T => evaluate_type(T, value_map))
+        } else if (this.op == 1) {
+            // union
+            return exists(this.args, T => evaluate_type(T, value_map))
+        } else if (this.op == 2) {
+            // complement
+            return !(evaluate_type(this.args[0], value_map))
+        } else if (this.op == 3) {
+            // just wrap it
+            return evaluate_type(this.args[0], value_map)
+        }
+    }
+}
+
+
+function extract_atomic_args (args) {
+    return new Set((function* () {
+        for (let T of args) {
+            if (T instanceof CompoundType) {
+                for (let arg of T.atomic_args) {
+                    yield arg
+                }
+            } else {
+                yield T
+            }
+        }
+    })())
+}
+
+
+function evaluate_type (T, value_map) {
+    if (T instanceof CompoundType) {
+        return T.evaluate(value_map)
+    } else {
+        assert(value_map.has(T))
+        return Boolean(value_map.get(T))
+    }
+}
+
+
+function type_equivalent (T1, T2) {
+    assert(is(T1, Type) && is(T2, Type))
+    if (!(T1 instanceof CompoundType)) {
+        T1 = new CompoundType(3, [T1])
+    }
+    if (!(T2 instanceof CompoundType)) {
+        T2 = new CompoundType(3, [T2])
+    }
+    if (!set_equal(T1.atomic_args, T2.atomic_args)) {
+        return false
+    }
+    let args = list(T1.atomic_args)
+    let L = args.length
+    let N = 1 << L
+    assert(Number.isSafeInteger(N))
+    let value_map = new Map()
+    for (let arg of args) {
+        value_map.set(arg, false)
+    }
+    let i = 0
+    let j = 0
+    while (i < N) {
+        if (T1.evaluate(value_map) != T2.evaluate(value_map)) {
+            return false
+        }
+        for (j = 0; j < L; j++) {
+            if (value_map.get(args[j]) == false) {
+                value_map.set(args[j], true)
+                break
+            } else {
+                value_map.set(args[j], false)
+            }
+        }
+        i += 1
+    }
+    return true
+}
+
+
 /**
  *  Basic Operators for Types
  */
-function union (types) {
-    // (∪ T), for T in types
-    assert(forall(types, t => is(t, Type)))
-    return new SimpleType(x => exists(types, t => t[Checker](x)))
-}
-
 function intersect (types) {
     // (∩ T), for T in types
-    assert(forall(types, t => is(t, Type)))
-    return new SimpleType(x => forall(types, t => t[Checker](x)))
+    return new CompoundType(0, types)
+}
+
+function union (types) {
+    // (∪ T), for T in types
+    return new CompoundType(1, types)
 }
 
 function complement (type) {
     // (∁ T)
-    assert(is(type, Type))
-    return new SimpleType(x => !type[Checker](x))
+    return new CompoundType(2, [type])
 }
 
 /* shorthand */

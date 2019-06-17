@@ -164,6 +164,16 @@ let operators = {
         'function operator.not_equivalent (l: Any, r: Any) -> Bool',
             (l, r) => !operators['~~'](l, r)
     ),
+    '<=>': f (
+        'operator.type_equal',
+        'function operator.type_equal (L: Type, R: Type) -> Bool',
+            (L, R) => type_equivalent(L, R)
+    ),
+    '<!=>': f (
+        'operator.type_not_equal',
+        'function operator.type_not_equal (L: Type, R: Type) -> Bool',
+            (L, R) => !operators['<=>'](L, R)
+    ),
     /* Logic */
     '&&': f (
         'operator.and',
