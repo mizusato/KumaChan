@@ -104,7 +104,7 @@ var Keywords = [...] string {
     "@throw", "@assert", "@ensure", "@try", "@to",
     "@unless", "@failed", "@finally", "@panic",
     "@where", "@when", "@otherwise",
-    "@struct", "@config", "@require", "@operator",
+    "@struct", "@config", "@operator",
     "@one", "@of", "@enum",
     "@class", "@init", "@private", "@data", "@interface", "@expose",
     "@str", "@len", "@iter", "@negate",
@@ -294,13 +294,12 @@ var SyntaxDefinition = [...] string {
     "generic_params? = < namelist > | < typed_list! >!",
     "type_literal = simple_type_literal | finite_literal",
     /* Schema */
-    "schema = @struct name generic_params { field_list schema_config }!",
+    "schema = @struct name generic_params { field_list }! schema_config",
     "field_list = field field_list_tail",
     "field_list_tail? = , field! field_list_tail",
     "field = name : type! field_default",
     "field_default? = = expr",
-    "schema_config? = , @config { schema_req operator_defs }!",
-    "schema_req? = @require (! name! )! opt_arrow body!",
+    "schema_config? = @config { operator_defs }!",
     /* Enum */
     "enum = @enum name {! namelist! }!",
     /* Finite */

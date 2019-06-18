@@ -81,7 +81,7 @@ var TypeMap = map[string]TransFunction {
             e_name, enum, file, row, col,
         )
     },
-    // schema = @struct name generic_params { field_list schema_config }!
+    // schema = @struct name generic_params { field_list }! schema_config
     "schema": func (tree Tree, ptr int) string {
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
@@ -106,35 +106,17 @@ var TypeMap = map[string]TransFunction {
             name, value, file, row, col,
         )
     },
-    // schema_config? = , @config { schema_req schema_op_defs }!
+    // sschema_config? = , @config { operator_defs }!
     "schema_config": func (tree Tree, ptr int) string {
         // note: the rule name "schema_config" is depended by operator_defs
         if NotEmpty(tree, ptr) {
             var children = Children(tree, ptr)
             return fmt.Sprintf (
-                "{ req: %v, ops: %v }",
-                Transpile(tree, children["schema_req"]),
+                "{ ops: %v }",
                 Transpile(tree, children["operator_defs"]),
             )
         } else {
-            return "{ req: null, ops: {} }"
-        }
-    },
-    // schema_req? = @require (! name! )! opt_arrow body!
-    "schema_req": func (tree Tree, ptr int) string {
-        if NotEmpty(tree, ptr) {
-            var children = Children(tree, ptr)
-            var name_ptr = children["name"]
-            var body_ptr = children["body"]
-            var name = Transpile(tree, name_ptr)
-            var name_raw = GetTokenContent(tree, name_ptr)
-            var desc = Desc (
-                []rune("schema_requirement"), name_raw, []rune("Bool"),
-            )
-            var parameters = fmt.Sprintf("[{ name: %v, type: __.a }]", name)
-            return Function(tree, body_ptr, F_Sync, desc, parameters, "__.b")
-        } else {
-            return "null"
+            return "{ ops: {} }"
         }
     },
 }

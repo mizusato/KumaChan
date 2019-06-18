@@ -1,10 +1,11 @@
 class Struct {
-    constructor (schema, data) {
+    constructor (schema, data, is_view = false) {
         assert(is(schema, Types.Schema))
         assert(is(data, Types.Hash))
         this.schema = schema
-        this.data = data
-        let result = this.schema.check_all(this.data)
+        this.data = is_view? data: copy(data)
+        Object.freeze(this)
+        let result = this.schema.check_all(this.data, is_view)
         if (!result.ok) {
             if (result.why == 'miss') {
                 ensure(false, 'invalid_struct_init_miss', result.key)
@@ -14,31 +15,25 @@ class Struct {
                 ensure(false, 'invalid_struct_init_req')
             }
         }
-        Object.freeze(this)
+    }
+    create_view (schema) {
+        return new Struct(schema, this.data, true)
     }
     has (key) {
         return this.schema.has_key(key)
     }
     get (key) {
-        let s = this.schema
-        ensure(s.has_key(key), 'struct_key_error', key)
-        let ok = s.check_key(this.data, key) && s.check_requirement(this.data)
+        ensure(has(key, this.data), 'struct_field_missing', key)
+        let value = this.data[key]
+        let ok = this.schema.check(key, value)
         ensure(ok, 'struct_inconsistent', key)
-        return s.get_value(this.data, key)
+        return value
     }
     set (key, value) {
-        let s = this.schema
-        ensure(s.has_key(key), 'struct_key_error', key)
-        let old_value = this.data[key]
+        ensure(has(key, this.data), 'struct_field_missing', key)
+        let ok = this.schema.check(key, value)
+        ensure(ok, 'struct_field_invalid', key)
         this.data[key] = value
-        if (!s.check_key(this.data, key)) {
-            this.data[key] = old_value
-            ensure(false, 'struct_key_invalid', key)
-        }
-        if (!s.check_requirement(this.data)) {
-            this.data[key] = old_value
-            ensure(false, 'struct_req_violated', key)
-        }
     }
     keys () {
         return this.schema.get_keys()
@@ -49,41 +44,28 @@ class Struct {
 }
 
 class Schema {
-    constructor (name, table, defaults = {}, req = null, ops = {}) {
-        let requirement = req
-        let operators = ops
+    constructor (name, table, defaults = {}, operators = {}) {
         assert(is(name, Types.String))
         assert(is(table, TypedHash.of(Type)))
         assert(is(defaults, Types.Hash))
         assert(forall(Object.keys(defaults), k => has(k, table)))
-        assert(is(requirement, Uni(ES.Null, Types.Function)))
-        if (requirement != null) {
-            assert(requirement[WrapperInfo].proto.value_type === Types.Bool)
-        }
         assert(is(operators, TypedHash.of(Types.Function)))
-        foreach(table, (field, T) => {
-            if (has(field, defaults)) {
-                ensure(is(defaults[field], T), 'schema_invalid_default', field)
-            }
+        foreach(defaults, (field, value) => {
+            ensure(is(value, table[field]), 'schema_invalid_default', field)
         })
         this.name = name
         this.table = copy(table)
         this.defaults = copy(defaults)
-        this.requirement = requirement
         this.operators = copy(operators)
         Object.freeze(this.table)
         Object.freeze(this.defaults)
         Object.freeze(this.operators)
         this.create_struct_from_another = fun (
             'function create_struct_from_another (s: Struct) -> Struct',
-                s => this.create_struct(s.data)
+                s => s.create_view(this)
         )
         this[Checker] = x => (x instanceof Struct && x.schema === this)
         Object.freeze(this)
-    }
-    create_struct (hash) {
-        assert(is(hash, Types.Hash))
-        return new Struct(this, hash)
     }
     has_key (key) {
         return has(key, this.table)
@@ -91,17 +73,7 @@ class Schema {
     get_keys () {
         return Object.keys(this.table)
     }
-    get_value (hash, key) {
-        assert(this.has_key(key))
-        if (has(key, hash)) {
-            return hash[key]
-        } else if (has(key, this.defaults)) {
-            return this.defaults[key]
-        } else {
-            assert(false)
-        }
-    }
-    check_all (hash) {
+    check_all (hash, is_view) {
         assert(is(hash, Types.Hash))
         let table = this.table
         let defaults = this.defaults
@@ -113,37 +85,18 @@ class Schema {
                 } else {
                     return { ok: false, why: 'key', key: k }
                 }
-            } else if (has(k, defaults)) {
+            } else if (!is_view && has(k, defaults)) {
+                hash[k] = defaults[k]
                 continue
             } else {
                 return { ok: false, why: 'miss', key: k }
             }
         }
-        if (this.check_requirement(hash)) {
-            return { ok: true }
-        } else {
-            return { ok: false, why: 'req' }
-        }
+        return { ok: true }
     }
-    check_key (hash, key) {
-        assert(is(hash, Types.Hash))
-        assert(is(key, Types.String))
+    check (key, value) {
         assert(has(key, this.table))
-        if (has(key, hash)) {
-            return is(hash[key], this.table[key])
-        } else if (has(key, this.defaults)) {
-            return is(this.defaults[key], this.table[key])
-        } else {
-            assert(false)
-        }
-    }
-    check_requirement (hash) {
-        assert(is(hash, Types.Hash))
-        if (this.requirement !== null) {
-            return call(this.requirement, [hash])
-        } else {
-            return true
-        }
+        return is(value, this.table[key])
     }
     defined_operator (name) {
         return has(name, this.operators)
@@ -161,17 +114,17 @@ Types.Schema = $(x => x instanceof Schema)
 Types.Struct = $(x => x instanceof Struct)
 
 function create_schema (name, table, defaults, config) {
-    let { req, ops } = config
+    let { ops } = config
     foreach(table, (name, constraint) => {
         ensure(is(constraint, Type), 'schema_invalid_field', name)
     })
-    return new Schema(name, table, defaults, req, ops)
+    return new Schema(name, table, defaults, ops)
 }
 
 function new_structure (schema, hash) {
     ensure(is(schema, Types.Schema), 'not_schema')
     assert(is(hash, Types.Hash))
-    return schema.create_struct(hash)
+    return new Struct(schema, hash)
 }
 
 function get_common_schema (s1, s2) {

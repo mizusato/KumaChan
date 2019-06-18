@@ -92,15 +92,12 @@ const MSG = {
     ),
     schema_invalid_field: f => `constraint given for field ${f} is not a type`,
     schema_invalid_default: f => `invalid default value for field '${f}'`,
-    struct_key_error: k => `field '${k}' does not exist on the structure`,
-    struct_key_invalid: k => (
-        `given value for field '${k}' violated the schema`
-    ),
-    struct_req_violated: k => (
-        `given value for field '${k}' violated the requirement of the schema`
+    struct_field_missing: k => `field '${k}' does not exist on the struct`,
+    struct_field_invalid: k => (
+        `given value for field '${k}' violated the schema of the struct`
     ),
     struct_inconsistent: k => (
-        `inconsistency: value of field '${k}' became violating the schema`
+        `the value of field '${k}' became violating the schema`
     ),
     different_schema: (
         'cannot apply infix operator on structures of different schema'
