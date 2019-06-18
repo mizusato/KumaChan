@@ -87,9 +87,6 @@ const MSG = {
     invalid_struct_init_key: k => (
         `invalid structure initialization: invalid value for field '${k}'`
     ),
-    invalid_struct_init_req: (
-        'invalid structure initialization: requirement not satisfied'
-    ),
     schema_invalid_field: f => `constraint given for field ${f} is not a type`,
     schema_invalid_default: f => `invalid default value for field '${f}'`,
     struct_field_missing: k => `field '${k}' does not exist on the struct`,
@@ -99,6 +96,7 @@ const MSG = {
     struct_inconsistent: k => (
         `the value of field '${k}' became violating the schema`
     ),
+    struct_nil_flag: 'cannot use nil flag on struct field',
     different_schema: (
         'cannot apply infix operator on structures of different schema'
     ),

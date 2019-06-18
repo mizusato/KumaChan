@@ -23,14 +23,14 @@ class Struct {
         return this.schema.has_key(key)
     }
     get (key) {
-        ensure(has(key, this.data), 'struct_field_missing', key)
+        ensure(this.has(key), 'struct_field_missing', key)
         let value = this.data[key]
         let ok = this.schema.check(key, value)
         ensure(ok, 'struct_inconsistent', key)
         return value
     }
     set (key, value) {
-        ensure(has(key, this.data), 'struct_field_missing', key)
+        ensure(this.has(key), 'struct_field_missing', key)
         let ok = this.schema.check(key, value)
         ensure(ok, 'struct_field_invalid', key)
         this.data[key] = value
