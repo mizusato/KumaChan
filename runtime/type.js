@@ -29,6 +29,7 @@ class SimpleType {
 /* shorthand */
 let $ = f => new SimpleType(f)
 let Any = $(x => true)
+let Never = $(x => false)
 
 
 /**
@@ -55,20 +56,44 @@ function is (value, type) {
 
 class CompoundType {
     constructor (op, args) {
-        this.op = op
-        this.args = args
         assert(exists([0,1,2,3], v => op == v))
         assert(args instanceof Array)
         assert(forall(args, arg => is(arg, Type)))
         if (op == 2 || op == 3) { assert(args.length == 1) }
-        this.atomic_args = extract_atomic_args(args)
+        this.op = op
+        this.args = copy(args)
+        if (this.op == 0) {
+            this.args = this.args.filter(T => !is_any(T))
+            if (exists(this.args, T => is_never(T))) {
+                this.op = 3
+                this.args = [Never]
+            }
+        }
+        if (this.op == 1) {
+            this.args = this.args.filter(T => !is_never(T))
+            if (exists(this.args, T => is_any(T))) {
+                this.op = 3
+                this.args = [Any]
+            }
+        }
+        if (this.op == 2) {
+            let arg = this.args[0]
+            if (is_any(arg)) {
+                this.op = 3
+                this.args = [Never]
+            } else if (is_never(arg)) {
+                this.op = 3
+                this.args = [Any]
+            }
+        }
+        this.atomic_args = extract_atomic_args(this.args)
         Object.freeze(this.args)
         Object.freeze(this.atomic_args)
-        if (op == 0) {
+        if (this.op == 0) {
             this[Checker] = x => forall(this.args, T => T[Checker](x))
-        } else if (op == 1) {
+        } else if (this.op == 1) {
             this[Checker] = x => exists(this.args, T => T[Checker](x))
-        } else if (op == 2) {
+        } else if (this.op == 2) {
             this[Checker] = x => !(this.args[0][Checker](x))
         } else {
             this[Checker] = this.args[0][Checker]
@@ -91,6 +116,22 @@ class CompoundType {
             return evaluate_type(this.args[0], value_map)
         }
     }
+}
+
+
+function is_any (T) {
+    return (
+        (T === Any)
+        || (T instanceof CompoundType && T.op == 3 && T.args[0] === Any)
+    )
+}
+
+
+function is_never (T) {
+    return (
+        (T === Never)
+        || (T instanceof CompoundType && T.op == 3 && T.args[0] === Never)
+    )
 }
 
 
@@ -132,7 +173,7 @@ function type_equivalent (T1, T2) {
     }
     let args = list(T1.atomic_args)
     let L = args.length
-    let N = 1 << L
+    let N = Math.pow(2, L)
     assert(Number.isSafeInteger(N))
     let value_map = new Map()
     for (let arg of args) {
@@ -239,7 +280,8 @@ let Types = {
         f => is(f.prototype, ES.Object) || f === Function
     )),
     ES_Iterable: ES.Iterable,
-    Any: Any
+    Any: Any,
+    Never: Never
 }
 
 

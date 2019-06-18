@@ -108,6 +108,7 @@ let built_in_types = {
     Type: Type,
     TypeTemplate: Types.TypeTemplate,
     Any: Types.Any,
+    Never: Types.Never,
     Object: Types.Object,
     Nil: Nil,
     Maybe: Types.Maybe,

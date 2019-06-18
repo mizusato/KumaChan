@@ -5,18 +5,18 @@ let wrapped_assert = fun (
 
 let wrapped_panic = f (
     'panic',
-    'function panic (e: Error) -> Void',
+    'function panic (e: Error) -> Never',
         e => {
             throw new RuntimeError('panic: ' + e.message)
         },
-    'function panic (msg: String) -> Void',
+    'function panic (msg: String) -> Never',
         msg => {
             panic(msg)
         }
 )
 
 let wrapped_throw = fun (
-    'function throw (e: Error) -> Void',
+    'function throw (e: Error) -> Never',
         e => {
             if (e instanceof CustomError) {
                 e.trace = get_trace()
