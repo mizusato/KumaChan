@@ -27,7 +27,6 @@ var Tokens = [...] Token {
     Token { Name: "...[",    Pattern: r(`\.\.\.\[`) },
     Token { Name: "..{",     Pattern: r(`\.\.\{`) },
     Token { Name: "...{",    Pattern: r(`\.\.\.\{`) },
-    Token { Name: "Comment", Pattern: r(`\.\.[^\[\{][^`+Blanks+LF+`]*`) },
     Token { Name: "<<<",     Pattern: r(`\<\<\<[`+Blanks+`]`) },
     Token { Name: ">>>",     Pattern: r(`[`+Blanks+`]\>\>\>`) },
     Token { Name: "<<",      Pattern: r(`\<\<[`+Blanks+`]`) },
