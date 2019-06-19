@@ -147,15 +147,15 @@ function apply_implemented (interface_, instance) {
 
 function proto_equal (proto1, proto2) {
     // do type check before calling this function
-    if (proto1.parameters.length !== proto2.parameters.length) {
+    if (proto1.parameters.length != proto2.parameters.length) {
         return false
     }
-    if (proto1.value_type !== proto2.value_type) {
+    if (!type_equivalent(proto1.value_type, proto2.value_type)) {
         return false
     }
     return forall (
         proto1.parameters,
-        (p, i) => (p.type === proto2.parameters[i].type)
+        (p, i) => type_equivalent(p.type, proto2.parameters[i].type)
     )
 }
 

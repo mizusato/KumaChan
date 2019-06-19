@@ -16,28 +16,29 @@ class TypeTemplate {
         this.inflated = {
             classes: new Set(),
             schema: new Set(),
-            interfaces: new Set(),
-            others: new Set()
+            interfaces: new Set()
         }
+        this.info = { only_classified: true }
         this.inflate = this.inflate.bind(this)
         inject_desc(this.inflate, 'inflate_template')
         this[Checker] = (x => {
             if (is(x, Types.Instance)) {
-                if (this.inflated.classes.has(x.class_)) {
+                let is_inflated_class = C => this.inflated.classes.has(C)
+                if (exists(x.class_.super_classes, is_inflated_class)) {
                     return true
                 } else if (this.inflated.interfaces.size == 0) {
                     return false
                 }
-                let is_inflated = I => this.inflated.interfaces.has(I)
-                if (exists(x.class_.super_interfaces, is_inflated)) {
+                let is_inflated_interface = I => this.inflated.interfaces.has(I)
+                if (exists(x.class_.super_interfaces, is_inflated_interface)) {
                     return true
-                } else if (this.inflated.others.size == 0) {
+                } else if (this.info.only_classified) {
                     return false
                 }
             } else if (is(x, Types.Struct)) {
                 if (this.inflated.schema.has(x.schema)) {
                     return true
-                } else if (this.inflated.others.size == 0) {
+                } else if (this.info.only_classified) {
                     return false
                 }
             }
@@ -46,7 +47,15 @@ class TypeTemplate {
         Object.freeze(this)
     }
     inflate (...args) {
-        let cached = find(this.cache, item => equal(item.args, args))
+        let cached = find(this.cache, item => {
+            return equal(item.args, args, (A, B) => {
+                if (is(A, Type) && is(B, Type)) {
+                    return type_equivalent(A, B)
+                } else {
+                    return A === B
+                }
+            })
+        })
         if (cached !== NotFound) {
             return cached.type
         } else {
@@ -62,12 +71,12 @@ class TypeTemplate {
             })
             if (is(type, Types.Class)) {
                 this.inflated.classes.add(type)
-            } else if (is(type, Types.Schema)) {
-                this.inflated.schema.add(type)
             } else if (is(type, Types.Interface)) {
                 this.inflated.interfaces.add(type)
+            } else if (is(type, Types.Schema)) {
+                this.inflated.schema.add(type)
             } else {
-                this.inflated.others.add(type)
+                this.info.only_classified = false
             }
             return type
         }

@@ -120,11 +120,11 @@ function copy (object) {
 }
 
 
-function equal (o1, o2) {
+function equal (o1, o2, cmp = (x, y) => (x === y)) {
     if (o1 instanceof Array && o2 instanceof Array) {
         return (
             o1.length == o2.length
-                && forall(o1, (e,i) => e === o2[i])
+                && forall(o1, (e,i) => cmp(e, o2[i]))
         )
     } else {
         assert(typeof o1 == 'object' && typeof o2 == 'object')
@@ -133,7 +133,7 @@ function equal (o1, o2) {
         let k2 = Object.keys(o2)
         return (
             k1.length == k2.length
-                && forall(k1, k => has(k,o2) && o1[k] === o2[k])
+                && forall(k1, k => has(k,o2) && cmp(o1[k], o2[k]))
         )
     }
 }

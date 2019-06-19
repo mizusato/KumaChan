@@ -162,6 +162,9 @@ function evaluate_type (T, value_map) {
 
 function type_equivalent (T1, T2) {
     assert(is(T1, Type) && is(T2, Type))
+    if (T1 === T2) {
+        return true
+    }
     if (!(T1 instanceof CompoundType)) {
         T1 = new CompoundType(3, [T1])
     }
