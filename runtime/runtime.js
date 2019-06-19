@@ -13,21 +13,17 @@
     '<include> module.js';
     '<include> built-in/built-in.js';
 
-    let export_name = 'KumaChan'
+    const export_name = 'KumaChan'
+
     let export_object = {
-        is, Uni, Ins, Not, Types,
-        Void, Nil,
-        fun, f, operators,
-        wrap, get_vals, new_scope,
-        overload, overload_added, overload_concated,
-        create_interface, create_class,
-        call, call_method,
-        RuntimeError, CustomError, panic, create_error,
-        helpers: get_helpers,
-        scope: default_scopes,
-        register_module
+        Void,
+        RuntimeError, CustomError,
+        Global, Eval, new_scope,
+        register_module,
+        get_helpers
     }
     Object.freeze(export_object)
+
     if (typeof window != 'undefined') {
         window[export_name] = export_object
     } else {
@@ -35,4 +31,3 @@
     }
 
 })()
-

@@ -149,7 +149,7 @@ func GetGeneralOperatorName (tree Tree, ptr int) (string, bool) {
 func WriteHelpers (buf *strings.Builder, scope_name string) {
     fmt.Fprintf(
         buf,
-        "let {m,id,dl,rt,df,gs,w,im,ins,ia,__} = %v.helpers(%v); ",
+        "let {m,id,dl,rt,df,gs,w,im,ins,ia,__} = %v.get_helpers(%v); ",
         Runtime, scope_name,
     )
 }

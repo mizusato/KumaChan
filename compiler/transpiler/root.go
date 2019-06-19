@@ -103,7 +103,7 @@ var RootMap = map[string]TransFunction {
             }
             var prepend = "let e = null; __.ccs(); "
             buf.WriteString(BareFunction(prepend + body))
-            fmt.Fprintf(&buf, "(%v.scope.Eval)", Runtime)
+            fmt.Fprintf(&buf, "(%v.Eval)", Runtime)
             if i != len(cmd_ptrs)-1 {
                 buf.WriteString(", ")
             }
