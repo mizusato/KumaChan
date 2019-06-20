@@ -3,7 +3,7 @@ const TRACE_DEPTH = 10
 class RuntimeError extends Error {
     constructor (msg) {
         super(msg)
-        this.name = "RuntimeError"
+        this.name = 'RuntimeError'
     }
 }
 
@@ -85,7 +85,7 @@ function restore_call_stack (pointer) {
     call_stack = call_stack.slice(0, pointer+1)
 }
 
-function produce_error (msg, is_internal = false) {
+function produce_error (msg) {
     // produce a RuntimeError (fatal error)
     let trace = get_trace()
     clear_call_stack()
@@ -93,13 +93,7 @@ function produce_error (msg, is_internal = false) {
         msg + LF + LF + stringify_trace(trace) + LF
     )
     err.trace = trace
-    err.is_internal = is_internal
     throw err
-}
-
-function assert (value) {
-    if(!value) { produce_error('Assertion Failed', true) }
-    return true
 }
 
 function panic (msg) {
@@ -129,9 +123,17 @@ function ensure (bool, msg_type, ...args) {
 
 function convert_to_fatal (error) {
     if (error instanceof EnsureFailed || error instanceof CustomError) {
-        return new RuntimeeError(`Unhandled ${error.name}: ${error.message}`)
+        return new RuntimeError(`Unhandled ${error.name}: ${error.message}`)
     } else {
-        return error
+        let msg = ''
+        if (error instanceof AssertionFailed) {
+            msg = 'Internal Assertion Failed'
+        } else {
+            msg = `Internal ${error.name}: ${error.message}`
+        }
+        let e = new RuntimeError(msg)
+        e.is_internal = true
+        return e
     }
 }
 

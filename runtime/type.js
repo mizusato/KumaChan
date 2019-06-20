@@ -263,7 +263,7 @@ let Types = {
     Infinite: ES.Infinite,
     GeneralNumber: $(x => typeof x == 'number'),
     String: ES.String,
-    Int: $(x => Number.isInteger(x) && Number.isSafeInteger(x)),
+    Int: $(x => Number.isSafeInteger(x)),
     Primitive: Uni(ES.Number, ES.String, ES.Boolean),
     List: $(x => x instanceof Array),
     Hash: Ins(ES.Object, $(x => get_proto(x) === Object.prototype)),
@@ -298,7 +298,7 @@ let TypedList = {
 }
 let TypedHash = {
     of: T => assert(is(T, Type)) && Ins(Types.Hash, $(
-        h => forall(get_keys(h), k => is(h[k], T))
+        h => forall(Object.keys(h), k => is(h[k], T))
     ))
 }
 
@@ -362,7 +362,7 @@ class HashFormat {
         this.requirement = requirement
         this[Checker] = (x => {
             if (!is(x, Types.Hash)) { return false }
-            for (let key of get_keys(this.table)) {
+            for (let key of Object.keys(this.table)) {
                 let required_type = this.table[key]
                 if (has(key, x) && is(x[key], required_type)) {
                     continue

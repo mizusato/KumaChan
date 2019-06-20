@@ -3,8 +3,9 @@
 
 (function () {
 
-    '<include> toolkit.js';
     '<include> msg.js';
+    '<include> assertion.js';
+    '<include> toolkit.js';
     '<include> error.js';
     '<include> type.js';
     '<include> function.js';

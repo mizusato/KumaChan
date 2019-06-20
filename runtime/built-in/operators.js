@@ -55,16 +55,14 @@ let operators = {
         `function operator.len (o: Operand<'len'>) -> Size`,
             o => apply_unary('len', o),
         'function operator.len (l: List) -> Size',
-            l => l.length,
-        'function operator.len (s: String) -> Size',
-            s => s.length
+            l => l.length
     ),
     'iter': f (
         'operator.iter',
         `function operator.iter (o: Operand<'iter'>) -> Iterator`,
             o => apply_unary('iter', o),
         'function operator.iter (i: ES_Iterable) -> Iterator',
-            l => l[Symbol.iterator]()
+            i => i[Symbol.iterator]()
     ),
     'enum': f (
         'operator.enum',
