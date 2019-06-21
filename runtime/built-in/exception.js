@@ -1,6 +1,6 @@
 let wrapped_assert = fun (
     'function assert (p: Bool) -> Void',
-        p => (assert(p), Void)
+        p => p? Void: panic('Assertion Failed')
 )
 
 let wrapped_panic = f (

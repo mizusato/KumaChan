@@ -1,5 +1,5 @@
 '<include> types.js';
-'<include> exceptions.js';
+'<include> exception.js';
 '<include> features.js';
 '<include> functions.js';
 '<include> operators.js';
