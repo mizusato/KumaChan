@@ -16,7 +16,7 @@ class Enum {
         })
         Object.freeze(this.hash)
         Object.freeze(this.items)
-        this[Checker] = (x => is(x, Types.Singleton) && this.map.has(x))
+        this[Checker] = (x => is(x, Singleton) && this.map.has(x))
         Object.freeze(this)
     }
     has (key) {

@@ -1,3 +1,8 @@
+/**
+ *  Error Message Templates
+ */
+
+
 const INDENT = '    '
 
 const MSG = {

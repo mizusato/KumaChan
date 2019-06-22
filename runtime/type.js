@@ -6,14 +6,14 @@
  *  A type object T contains a [Checker] function that takes an argument x,
  *    and returns a boolean value which indicates whether x ∈ T.
  *  In other words, a type object is no more than an encapsulation of a
- *    single-argument boolean-value function.
+ *    single-parameter boolean-valued function.
  */
 const Checker = Symbol('Checker')
 const ValueName = Symbol('ValueName')
 
 
 /**
- *  SimpleType: The most simplist type object, containing no extra data.
+ *  Simplist type object containing no extra data.
  */
 class SimpleType {
     constructor (checker) {
@@ -28,12 +28,15 @@ class SimpleType {
 
 /* shorthand */
 let $ = f => new SimpleType(f)
+/* universe set Ω */
 let Any = $(x => true)
+/* empty set ∅ */
 let Never = $(x => false)
 
 
 /**
- *  Type: Definition of type objects. Type is also a type.
+ *  `Type` is the definition of type object,
+ *     which is also a type object.
  */
 let Type = $(x => (
     (x !== null)
@@ -44,7 +47,7 @@ let Type = $(x => (
 
 
 /**
- *  Shorthand for Type Checking
+ *  Definition of value ∈ type
  */
 function is (value, type) {
     assert(Type[Checker](type))
@@ -54,8 +57,28 @@ function is (value, type) {
 }
 
 
+/**
+ *  Definition of intersect ⋂, union ⋃, and complement ∁
+ *
+ *  An instance of CompoundType is called compound type, meanwhile
+ *    a type that isn't a compound type is called an atomic type.
+ *  The propose to define this class is to provide a mechanics to
+ *    determine if two types are logical equivalent, such as
+ *    ∁(Ω, A ∪ B) ⇔ ∁(Ω, A) ∩ ∁(Ω, B) but ⇎ ∁(Ω, A) ∪ ∁(Ω, B),
+ *  Above equivalency checking is possible because through extracting
+ *    all atomic types depended by the compound type, we can treat
+ *    the compond type as a propositional formula and evaluate it
+ *    over a truth table of all atomic types depended by it.
+ */
 class CompoundType {
     constructor (op, args) {
+        /**
+         *  Opcode Definition:
+         *    0. intersect: ⋂ T, for T in args
+         *    1. union: ⋃ T, for T in args
+         *    2. complement: ∁(Ω, T), where T = args[0]
+         *    3. wrap: equivalence of T, where T = args[0]
+         */
         assert(exists([0,1,2,3], v => op == v))
         assert(args instanceof Array)
         assert(forall(args, arg => is(arg, Type)))
@@ -63,14 +86,18 @@ class CompoundType {
         this.op = op
         this.args = copy(args)
         if (this.op == 0) {
+            // ∀ T, T ∩ Ω = T
             this.args = this.args.filter(T => !is_any(T))
+            // ∀ T, T ∩ ∅ = ∅
             if (exists(this.args, T => is_never(T))) {
                 this.op = 3
                 this.args = [Never]
             }
         }
         if (this.op == 1) {
+            // ∀ T, T ∪ ∅ = T
             this.args = this.args.filter(T => !is_never(T))
+            // ∀ T, T ∪ Ω = Ω
             if (exists(this.args, T => is_any(T))) {
                 this.op = 3
                 this.args = [Any]
@@ -79,9 +106,11 @@ class CompoundType {
         if (this.op == 2) {
             let arg = this.args[0]
             if (is_any(arg)) {
+                // ∁(Ω, Ω) = ∅
                 this.op = 3
                 this.args = [Never]
             } else if (is_never(arg)) {
+                // C(Ω, ∅) = Ω
                 this.op = 3
                 this.args = [Any]
             }
@@ -101,6 +130,7 @@ class CompoundType {
         Object.freeze(this)
     }
     evaluate (value_map) {
+        // evaluate the type using a truth table of its atomic arguments
         assert(value_map instanceof Map)
         if (this.op == 0) {
             // intersect
@@ -138,6 +168,7 @@ function is_never (T) {
 function extract_atomic_args (args) {
     return new Set((function* () {
         for (let T of args) {
+            assert(is(T, Type))
             if (T instanceof CompoundType) {
                 for (let arg of T.atomic_args) {
                     yield arg
@@ -152,8 +183,10 @@ function extract_atomic_args (args) {
 
 function evaluate_type (T, value_map) {
     if (T instanceof CompoundType) {
+        // evaluate recursively
         return T.evaluate(value_map)
     } else {
+        // read from the truth table
         assert(value_map.has(T))
         return Boolean(value_map.get(T))
     }
@@ -162,18 +195,22 @@ function evaluate_type (T, value_map) {
 
 function type_equivalent (T1, T2) {
     assert(is(T1, Type) && is(T2, Type))
+    // optimization
     if (T1 === T2) {
         return true
     }
+    // wrap atomic types
     if (!(T1 instanceof CompoundType)) {
         T1 = new CompoundType(3, [T1])
     }
     if (!(T2 instanceof CompoundType)) {
         T2 = new CompoundType(3, [T2])
     }
+    // check if T1 and T2 have same dependencies
     if (!set_equal(T1.atomic_args, T2.atomic_args)) {
         return false
     }
+    // prepare the truth table
     let args = list(T1.atomic_args)
     let L = args.length
     let N = Math.pow(2, L)
@@ -182,12 +219,14 @@ function type_equivalent (T1, T2) {
     for (let arg of args) {
         value_map.set(arg, false)
     }
+    // iterate over the truth table
     let i = 0
     let j = 0
     while (i < N) {
         if (T1.evaluate(value_map) != T2.evaluate(value_map)) {
             return false
         }
+        // do a binary addition
         for (j = 0; j < L; j++) {
             if (value_map.get(args[j]) == false) {
                 value_map.set(args[j], true)
@@ -203,15 +242,15 @@ function type_equivalent (T1, T2) {
 
 
 /**
- *  Basic Operators for Types
+ *  Basic Type Operators
  */
 function intersect (types) {
-    // (∩ T), for T in types
+    // (⋂ T), for T in types
     return new CompoundType(0, types)
 }
 
 function union (types) {
-    // (∪ T), for T in types
+    // (⋃ T), for T in types
     return new CompoundType(1, types)
 }
 
@@ -223,7 +262,50 @@ function complement (type) {
 /* shorthand */
 let Uni = ((...args) => union(args))      // (A,B,...) => A ∪ B ∪ ...
 let Ins = ((...args) => intersect(args))  // (A,B,...) => A ∩ B ∩ ...
-let Not = (arg => complement(arg))        //  A => ∁ A
+let Not = (arg => complement(arg))        //  A => ∁(Ω, A)
+
+
+/**
+ *  Singleton Type
+ *
+ *  A singleton type S is defined by S = { x | x === S },
+ *    i.e. (x ∈ S) if and only if (x === S).
+ *  Singleton types may be used as unique special values or enum values,
+ *    such as Nil, Void and FoobarEnum.Foo.
+ */
+function create_value (name) {
+    assert(typeof name == 'string')
+    // use a null prototype to disable == conversion with primitive values
+    let value = Object.create(null)
+    value[ValueName] = name
+    value[Checker] = (x => x === value)
+    Object.freeze(value)
+    return value
+}
+
+let Singleton = $(x => typeof x[ValueName] == 'string')
+let Nil = create_value('Nil')
+let Void = create_value('Void')
+
+
+/**
+ *  Collection type that only contains a specific list of objects.
+ */
+class FiniteSetType {
+    constructor (objects) {
+        assert(objects instanceof Array)
+        this.objects = copy(objects)
+        Object.freeze(this.objects)
+        this[Checker] = (x => exists(this.objects, object => object === x))
+        Object.freeze(this)
+    }
+    get [Symbol.toStringTag]() {
+        return 'FiniteSetType'
+    }
+}
+
+// shorthand
+let one_of = ((...objects) => new FiniteSetType(objects))
 
 
 /**
@@ -235,8 +317,8 @@ let ES = {
     Boolean: $(x => typeof x == 'boolean'),
     Number: $(x => (
         typeof x == 'number'
-            && !Number.isNaN(x)
-            && Number.isFinite(x)
+            && !Number.isNaN(x)    // NaN is called "not a number"
+            && Number.isFinite(x)  // Inifinite breaks the number system
     )),
     NaN: $(x => Number.isNaN(x)),
     Infinite: $(x => !Number.isFinite(x) && !Number.isNaN(x)),
@@ -256,18 +338,23 @@ let ES = {
  *  Basic Types
  */
 let Types = {
-    Type: Type,
+    /* Special Types */
+    Type, Any, Never, Nil, Void,
+    /* Primitive Value Types */
+    String: ES.String,
     Bool: ES.Boolean,
     Number: ES.Number,
     NaN: ES.NaN,
     Infinite: ES.Infinite,
-    GeneralNumber: $(x => typeof x == 'number'),
-    String: ES.String,
     Int: $(x => Number.isSafeInteger(x)),
+    GeneralNumber: $(x => typeof x == 'number'),
     Primitive: Uni(ES.Number, ES.String, ES.Boolean),
+    /* Basic Container Types */
     List: $(x => x instanceof Array),
     Hash: Ins(ES.Object, $(x => get_proto(x) === Object.prototype)),
+    /* ECMAScript Compatible Types */
     ES_Object: Uni(Ins(ES.Object, $(x => {
+        // objects that aren't in control of our runtime
         let p = get_proto(x)
         let p_ok = (p !== Object.prototype && p !== null)
         if (!p_ok) { return false }
@@ -282,77 +369,29 @@ let Types = {
     ES_Class: Ins(ES.Function, $(
         f => is(f.prototype, ES.Object) || f === Function
     )),
-    ES_Iterable: ES.Iterable,
-    Any: Any,
-    Never: Never
+    ES_Iterable: ES.Iterable
+    // this list will keep growing until the init of runtime is finished
 }
 
 
 /**
- *  Typed Container Types for Internal Use (Don't Export them to Built-In)
+ *  Typed Container/Structure Types for Internal Use
+ *
+ *  These types are fragile and cost a lot,
+ *    therefore should be only used by internal runtime code.
  */
 let TypedList = {
     of: T => assert(is(T, Type)) && Ins(Types.List, $(
         l => forall(l, e => is(e, T))
     ))
 }
+
 let TypedHash = {
     of: T => assert(is(T, Type)) && Ins(Types.Hash, $(
         h => forall(Object.keys(h), k => is(h[k], T))
     ))
 }
 
-
-/**
- *  Singleton Object
- *
- *  A sinlgeton object S is a type, defined by S = { x | x === S },
- *    i.e. (x ∈ S) if and only if (x === S).
- *  Singleton objects are used to create special values and enum values,
- *    such as Nil, Void and FoobarEnum.Foo.
- */
-
-function create_value (name) {
-    assert(is(name, Types.String))
-    let value = Object.create(null)
-    value[ValueName] = name
-    value[Checker] = (x => x === value)
-    Object.freeze(value)
-    return value
-}
-
-Types.Singleton = $(x => typeof x[ValueName] == 'string')
-
-let Nil = create_value('Nil')
-let Void = create_value('Void')
-Types.Nil = Nil
-Types.Void = Void
-
-
-/**
- *  Finite Set: Types that only contains a specific list of objects.
- */
-class Finite {
-    constructor (objects) {
-        assert(is(objects, Types.List))
-        this.objects = copy(objects)
-        Object.freeze(this.objects)
-        this[Checker] = (x => exists(this.objects, object => object === x))
-        Object.freeze(this)
-    }
-    get [Symbol.toStringTag]() {
-        return 'Finite'
-    }
-}
-
-Types.Finite = $(x => x instanceof Finite)
-
-// shorthand
-let one_of = ((...objects) => new Finite(objects))
-
-/**
- *  HashFormat: Data format constraints on Hash. (for Internal Use)
- */
 class HashFormat {
     constructor (table, requirement = (x => true)) {
         assert(is(table, TypedHash.of(Type)))
