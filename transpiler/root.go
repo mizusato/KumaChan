@@ -4,7 +4,7 @@ import "os"
 import "fmt"
 import "strings"
 import "path/filepath"
-import "../syntax"
+import "../parser/syntax"
 
 
 var RootMap = map[string]TransFunction {

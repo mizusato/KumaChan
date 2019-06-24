@@ -2,7 +2,7 @@ package transpiler
 
 import "fmt"
 import "strings"
-import "../syntax"
+import "../parser/syntax"
 
 
 var LiteralMap = map[string]TransFunction {

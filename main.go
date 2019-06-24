@@ -4,8 +4,8 @@ package main
 import "os"
 import "fmt"
 import "io/ioutil"
-import "./syntax"
-import "./scanner"
+import "./parser/syntax"
+import "./parser/scanner"
 import "./parser"
 import "./transpiler"
 

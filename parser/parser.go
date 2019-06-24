@@ -4,8 +4,8 @@ import "fmt"
 import "strings"
 import "strconv"
 import "unicode/utf8"
-import "../syntax"
-import "../scanner"
+import "./syntax"
+import "./scanner"
 
 type StrBuf = strings.Builder
 

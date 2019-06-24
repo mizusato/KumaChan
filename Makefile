@@ -6,7 +6,7 @@ K_COMPILER_BIN = build/dev/compiler
 K_RUNTIME_JS = build/dev/runtime.js
 
 compiler:
-	go build -o $(K_COMPILER_BIN) compiler/main.go
+	go build -o $(K_COMPILER_BIN) main.go
 
 runtime: compiler
 	./bundle.py runtime/runtime.js \
@@ -21,7 +21,7 @@ runtime: compiler
 dev: compiler runtime
 
 dist: dev
-	cp $(K_COMPILER_BIN) build/dist/kumachan-build
+	cp $(K_COMPILER_BIN) build/dist/kumachan
 	terser -c -m -- $(K_RUNTIME_JS) > build/dist/kumachan-runtime.js
 
 clean:

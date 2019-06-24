@@ -4,7 +4,7 @@ import "fmt"
 import "strconv"
 import "io"
 import "io/ioutil"
-import "../syntax"
+import "../parser/syntax"
 import "../parser"
 
 
