@@ -15,6 +15,7 @@ class Struct {
                 ensure(false, 'invalid_struct_init_req')
             }
         }
+        this.call_guard()
     }
     create_view (schema) {
         return new Struct(schema, this.data, true)
@@ -27,6 +28,7 @@ class Struct {
         let value = this.data[key]
         let ok = this.schema.check(key, value)
         ensure(ok, 'struct_inconsistent', key)
+        this.call_guard()
         return value
     }
     set (key, value) {
@@ -34,9 +36,12 @@ class Struct {
         let ok = this.schema.check(key, value)
         ensure(ok, 'struct_field_invalid', key)
         this.data[key] = value
+        this.call_guard()
     }
-    keys () {
-        return this.schema.get_keys()
+    call_guard () {
+        if (this.schema.guard !== null) {
+            call(this.schema.guard, [copy(this.data)])
+        }
     }
     get [Symbol.toStringTag]() {
         return 'Struct'
@@ -44,11 +49,12 @@ class Struct {
 }
 
 class Schema {
-    constructor (name, table, defaults = {}, operators = {}) {
+    constructor (name, table, defaults = {}, guard = null, operators = {}) {
         assert(is(name, Types.String))
         assert(is(table, TypedHash.of(Type)))
         assert(is(defaults, Types.Hash))
         assert(forall(Object.keys(defaults), k => has(k, table)))
+        assert(guard === null || is(guard, Types.Function))
         assert(is(operators, TypedHash.of(Types.Function)))
         foreach(defaults, (field, value) => {
             ensure(is(value, table[field]), 'schema_invalid_default', field)
@@ -56,6 +62,7 @@ class Schema {
         this.name = name
         this.table = copy(table)
         this.defaults = copy(defaults)
+        this.guard = guard
         this.operators = copy(operators)
         Object.freeze(this.table)
         Object.freeze(this.defaults)
@@ -86,6 +93,7 @@ class Schema {
                     return { ok: false, why: 'key', key: k }
                 }
             } else if (!is_view && has(k, defaults)) {
+                // side effect
                 hash[k] = defaults[k]
                 continue
             } else {
@@ -114,14 +122,14 @@ Types.Schema = $(x => x instanceof Schema)
 Types.Struct = $(x => x instanceof Struct)
 
 function create_schema (name, table, defaults, config) {
-    let { ops } = config
+    let { guard, ops } = config
     foreach(table, (name, constraint) => {
         ensure(is(constraint, Type), 'schema_invalid_field', name)
     })
-    return new Schema(name, table, defaults, ops)
+    return new Schema(name, table, defaults, guard, ops)
 }
 
-function new_structure (schema, hash) {
+function new_struct (schema, hash) {
     ensure(is(schema, Types.Schema), 'not_schema')
     assert(is(hash, Types.Hash))
     return new Struct(schema, hash)

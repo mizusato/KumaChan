@@ -1,5 +1,5 @@
-'<include> misc/structure.js';
-'<include> misc/enum.js';
+'<include> structure.js';
+'<include> enum.js';
 
 
 let IndexType = Ins(Types.Int, $(x => x >= 0))
@@ -65,6 +65,17 @@ let IteratorType = $(x => {
         return false
     }
 })
+let EntryListType = create_schema('EntryList', {
+    keys: Types.List,
+    values: Types.List
+}, {}, { guard: fun (
+    'function struct_guard (fields: Hash) -> Void',
+    fields => {
+        let ok = (fields.keys.length == fields.values.length)
+        ensure(ok, 'bad_entry_list')
+        return Void
+    }
+) })
 
 let PromiseType = $(x => x instanceof Promise)
 let PromiserType = create_interface('Promiser', [
@@ -80,11 +91,12 @@ pour(Types, {
     Getter: GetterType,
     Setter: SetterType,
     Callable: Uni(ES.Function, Types.TypeTemplate, Types.Class, Types.Schema),
-    Iterable: Uni(ES.Iterable, OperandType.inflate('iter')),
+    Iterable: Uni(ES.Iterable, Types.Enum, OperandType.inflate('iter')),
     Enumerable: Uni (
         Types.Hash, Types.Struct, Types.Enum,
         OperandType.inflate('enum')
     ),
+    EntryList: EntryListType,
     Iterator: IteratorType,
     Promise: PromiseType,
     Promiser: PromiserType,
@@ -134,6 +146,8 @@ let built_in_types = {
     Arity: Types.Arity,
     List: Types.List,
     Hash: Types.Hash,
+    Enumerable: Types.Enumerable,
+    EntryList: Types.EntryList,
     Iterable: Types.Iterable,
     Iterator: Types.Iterator,
     Promise: Types.Promise,

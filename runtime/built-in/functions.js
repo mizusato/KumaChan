@@ -42,7 +42,7 @@ let built_in_functions = {
                 return Void
             }
     ),
-    // Iterator Operations
+    // Iterable Object Operations
     count: f (
         'count',
         'function count (n: Size) -> Iterator',
@@ -187,6 +187,41 @@ let built_in_functions = {
         'function collect (i: Iterable) -> List',
             i => list(iter(i))
     ),
+    // Enumerable Object Operations
+    get_keys: fun (
+        'function get_keys (e: Enumerable) -> List',
+            e => copy(enum_(e).get('keys'))
+    ),
+    get_values: fun (
+        'function get_values (e: Enumerable) -> List',
+            e => copy(enum_(e).get('values'))
+    ),
+    get_entries: fun (
+        'function get_entries (e: Enumerable) -> List',
+            e => list((function* () {
+                let entry_list = enum_(e)
+                let keys = entry_list.get('keys')
+                let values = entry_list.get('values')
+                assert(keys.length == values.length)
+                let L = keys.length
+                for (let i = 0; i < L; i += 1) {
+                    yield { key: keys[i], value: values[i] }
+                }
+            })())
+    ),
+    map_entry: fun (
+        'function map_entry (e: Enumerable, f: Arity<2>) -> Iterator',
+            (e, f) => (function* () {
+                let entry_list = enum_(e)
+                let keys = entry_list.get('keys')
+                let values = entry_list.get('values')
+                assert(keys.length == values.length)
+                let L = keys.length
+                for (let i = 0; i < L; i += 1) {
+                    yield call(f, [keys[i], values[i]])
+                }
+            })()
+    ),
     // List Operations
     first: fun (
         'function first (l: List) -> Object',
@@ -273,18 +308,7 @@ let built_in_functions = {
             }
     ),
     // Hash Operations
-    get_keys: fun (
-        'function get_keys (h: Hash) -> List',
-            h => Object.keys(h)
-    ),
-    get_values: fun (
-        'function get_values (h: Hash) -> List',
-            h => list(map(Object.keys(h), k => h[k]))
-    ),
-    get_entries: fun (
-        'function get_entries (h: Hash) -> List',
-            h => list(map(Object.keys(h), k => ({ key: k, value: h[k] })))
-    ),
+
     map_key: f (
         'map_key',
         'function map_key (h: Hash, f: Arity<1>) -> Hash',
@@ -298,10 +322,6 @@ let built_in_functions = {
             (h, f) => mapval(h, v => call(f, [v])),
         'function map_value (h: Hash, f: Arity<2>) -> Hash',
             (h, f) => mapval(h, (v, k) => call(f, [v, k]))
-    ),
-    map_entry: fun (
-        'function map_entry (h: Hash, f: Arity<2>) -> Iterator',
-            (h, f) => mapkv(h, (k, v) => call(f, [k, v]))
     ),
     // Copy
     copy: f (

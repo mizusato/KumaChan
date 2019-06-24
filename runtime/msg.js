@@ -106,6 +106,9 @@ const MSG = {
         'cannot apply infix operator on structures of different schema'
     ),
     not_schema: 'cannot create new structure by a non-schema object',
+    bad_entry_list: (
+        'bad entry list: the number of keys != the number of values'
+    ),
     no_common_class: op => (
         (`unable to find a common class of both
         instances that defined operator ${op}`).replace(/\n[\t ]*/g, ' ')

@@ -1,4 +1,4 @@
-'<include> types.js';
+'<include> types/types.js';
 '<include> exception.js';
 '<include> features.js';
 '<include> functions.js';
@@ -24,7 +24,7 @@ let global_helpers = {
     cc: inject_desc(create_class, 'create_class'),
     ci: inject_desc(create_interface, 'create_interface'),
     cs: inject_desc(create_schema, 'create_schema'),
-    ns: inject_desc(new_structure, 'initialize_structure'),
+    ns: inject_desc(new_struct, 'initialize_structure'),
     ct: inject_desc(f => $(x => call(f, [x])), 'create_simple_type'),
     ctt: inject_desc(f => new TypeTemplate(f), 'create_type_template'),
     cf: one_of,  // create FiniteSetType
@@ -47,6 +47,7 @@ let global_helpers = {
     it: Types.Iterator,
     pm: Types.Promise,
     i: Types.Instance,
+    h: Types.Hash,
     sid: Types.SliceIndexDefault,
     cv: create_value,
     sl: (o, lo, hi, f, r, c) => call(get_slice, [o, lo, hi], f, r, c),

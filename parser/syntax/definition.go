@@ -104,7 +104,7 @@ var Keywords = [...] string {
     "@throw", "@assert", "@ensure", "@try", "@to",
     "@unless", "@failed", "@finally", "@panic",
     "@where", "@when", "@otherwise",
-    "@struct", "@config", "@operator",
+    "@struct", "@config", "@operator", "@guard",
     "@one", "@of", "@enum",
     "@class", "@init", "@private", "@data", "@interface", "@expose",
     "@str", "@len", "@iter", "@negate",
@@ -299,7 +299,8 @@ var SyntaxDefinition = [...] string {
     "field_list_tail? = , field! field_list_tail",
     "field = name : type! field_default",
     "field_default? = = expr",
-    "schema_config? = @config { operator_defs }!",
+    "schema_config? = @config { struct_guard operator_defs }!",
+    "struct_guard? = @guard body!",
     /* Enum */
     "enum = @enum name {! namelist! }!",
     /* Finite */

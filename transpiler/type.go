@@ -106,17 +106,28 @@ var TypeMap = map[string]TransFunction {
             name, value, file, row, col,
         )
     },
-    // sschema_config? = , @config { operator_defs }!
+    // schema_config? = @config { struct_guard operator_defs }!
     "schema_config": func (tree Tree, ptr int) string {
         // note: the rule name "schema_config" is depended by operator_defs
-        if NotEmpty(tree, ptr) {
-            var children = Children(tree, ptr)
-            return fmt.Sprintf (
-                "{ ops: %v }",
-                Transpile(tree, children["operator_defs"]),
-            )
-        } else {
-            return "{ ops: {} }"
-        }
+        if Empty(tree, ptr) { return "{ guard: null, ops: {} }" }
+        var children = Children(tree, ptr)
+        return fmt.Sprintf (
+            "{ guard: %v, ops: %v }",
+            Transpile(tree, children["struct_guard"]),
+            Transpile(tree, children["operator_defs"]),
+        )
+    },
+    // struct_guard? = @guard body!
+    "struct_guard": func (tree Tree, ptr int) string {
+        if Empty(tree, ptr) { return "null" }
+        var children = Children(tree, ptr)
+        var body_ptr = children["body"]
+        var parameters = "[{ name: 'fields', type: __.h }]"
+        var desc = Desc (
+            []rune("struct_guard"),
+            []rune("(fields: Hash)"),
+            []rune("Void"),
+        )
+        return Function(tree, body_ptr, F_Sync, desc, parameters, "__.v")
     },
 }

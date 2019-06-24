@@ -61,19 +61,29 @@ let operators = {
         'operator.iter',
         `function operator.iter (o: Operand<'iter'>) -> Iterator`,
             o => apply_unary('iter', o),
+        'function operator.iter (e: Enum) -> Iterator',
+            e => e.iterate_items(),
         'function operator.iter (i: ES_Iterable) -> Iterator',
             i => i[Symbol.iterator]()
     ),
     'enum': f (
         'operator.enum',
-        `function operator.enum (o: Operand<'enum'>) -> List`,
+        `function operator.enum (o: Operand<'enum'>) -> EntryList`,
             o => apply_unary('enum', o),
-        'function operator.enum (s: Struct) -> List',
-            s => s.keys(),
-        'function operator.enum (s: Enum) -> List',
-            s => s.keys(),
-        'function operator_enum (h: Hash) -> List',
-            h => Object.keys(h)
+        'function operator.enum (e: Enum) -> EntryList',
+            e => {
+                let keys = e.keys()
+                return new_struct(Types.EntryList, {
+                    keys, values: keys.map(k => e.get(k))
+                })
+            },
+        'function operator_enum (h: Hash) -> EntryList',
+            h => {
+                let keys = Object.keys(h)
+                return new Struct(Types.EntryList, {
+                    keys, values: keys.map(k => h[k])
+                })
+            }
     ),
     'negate': f (
         'operator.negate',

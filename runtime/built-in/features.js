@@ -111,18 +111,18 @@ let get_slice = f (
 let for_loop = f (
     'for_loop',
     'function for_loop (e: Enumerable) -> Iterable',
-        e => map(enum_(e), k => {
-            if (is(e, Types.Hash)) {
-                return { key: k, value: e[k] }
-            } else if (is(e, Types.Enum) || is(e, Types.Struct)) {
-                return { key: k, value: e.get(k) }
-            } else if (is(e, Types.Getter)) {
-                let v = call_method(null, e, 'get', [k, false])
-                return { key: k, value: v }
-            } else {
-                return { key: k, value: Nil }
-            }
-        }),
+        e => {
+            let list = enum_(e)
+            let keys = list.get('keys')
+            let values = list.get('values')
+            return (function* () {
+                assert(keys.length == values.length)
+                let L = keys.length
+                for (let i = 0; i < L; i += 1) {
+                    yield { key: keys[i], value: values[i] }
+                }
+            })()
+        },
     'function for_loop (i: Iterable) -> Iterable',
         i => map(iter(i), (e, i) => ({ key: i, value: e }))
 )

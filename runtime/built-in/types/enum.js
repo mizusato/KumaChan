@@ -29,6 +29,9 @@ class Enum {
     keys () {
         return Object.keys(this.hash)
     }
+    iterate_items () {
+        return map(this.items, x => x)
+    }
     get [Symbol.toStringTag]() {
         return 'Enum'
     }

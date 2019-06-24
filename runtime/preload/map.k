@@ -43,13 +43,16 @@ class Map<K, V> is Getter<K, V>, Setter<K, V> {
     size () -> Size {
         return map.size
     }
-    entries () -> List {
-        return [ { key: e[0], value: e[1] }, for e in map->entries() ]
-    }
-    map_entry (f: Arity<2>) -> Iterator {
-        return .[ f(e[0], e[1]), for e in map->entries() ]
+    for_each_entry (f: Arity<2>) -> Void {
+        map -> forEach -> .{ (v, k, _) --> f(k, v) }
     }
     operator enum (instance) {
-        return instance -> map_entry -> .{ (k, v) --> k } -> collect
+        let keys = []
+        let values = []
+        instance -> for_each_entry -> lambda(key, value) {
+            keys -> append(key)
+            values -> append(value)
+        }
+        return EntryList { ::keys, ::values }
     }
 }
