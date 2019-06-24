@@ -1,21 +1,31 @@
 /**
- *  OOP Implementation (Class, Instance, Interface)
+ *  OOP Implementation: Class & Interface
+ *
+ *  In this language, the term 'object' does not have to mean
+ *    an instance of a class, and anything manipulatable is called an 'object'.
+ *  An instance of a class is called an 'Instance Object' or 'Instance',
+ *    which is just one kind of 'object'.
+ *  Note that instance objects in this language are fully encapsulated,
+ *    calling public methods is the only way to manipulate internal data of
+ *    instance objects.
  */
-let OO_Types = {
+pour(Types, {
     Class: $(x => x instanceof Class),
     Instance: $(x => x instanceof Instance),
     Interface: $(x => x instanceof Interface),
-    OO_Abstract: $(x => x instanceof Class || x instanceof Interface)
-}
-pour(Types, OO_Types)
+})
 
+let OO_Abstract = Uni(Types.Class, Types.Interface)
+
+
+/**
+ *  Helper Functions
+ */
 let only_class = x => filter(x, y => is(y, Types.Class))
 let only_interface = x => filter(x, y => is(y, Types.Interface))
 
 
-/**
- *  External Helper Functions
- */
+
 function add_exposed_internal(internal, instance) {
     // expose interface of internal object
     assert(!instance.init_finished)
@@ -200,7 +210,7 @@ class Class {
         ops = {}, data = {}, def_point = null
     ) {
         assert(is(name, Types.String))
-        assert(is(impls, TypedList.of(Types.OO_Abstract)))
+        assert(is(impls, TypedList.of(OO_Abstract)))
         assert(is(init, Types.Function))
         assert(is(pfs, TypedHash.of(Types.Overload)))
         assert(is(methods, TypedHash.of(Types.Overload)))
@@ -291,7 +301,7 @@ let RawTable = TypedList.of(format({
 
 function check_impls (impls) {
     foreach(impls, (superset, i) => {
-        ensure(is(superset, Types.OO_Abstract), 'superset_invalid', i)
+        ensure(is(superset, OO_Abstract), 'superset_invalid', i)
     })
 }
 
