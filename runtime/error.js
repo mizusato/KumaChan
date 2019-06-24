@@ -95,6 +95,7 @@ function get_trace () {
 }
 
 function clear_call_stack () {
+    // Note: before throwing a RuntimeError this function should be called
     call_stack = []
 }
 
@@ -177,6 +178,7 @@ function convert_to_fatal (error) {
          *    3. both `return` command and `throw` command not called in
          *         the handle hook.
          */
+        clear_call_stack()
         return new RuntimeError(`Unhandled ${error.name}: ${error.message}`)
     } else {
         /**
@@ -190,6 +192,7 @@ function convert_to_fatal (error) {
         } else {
             msg = `Internal ${error.name}: ${error.message}`
         }
+        clear_call_stack()
         let e = new RuntimeError(msg)
         // inform the REPL to print the internal JS call stack backtrace
         e.is_internal = true

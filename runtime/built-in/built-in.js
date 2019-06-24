@@ -74,7 +74,7 @@ let get_helpers = scope => ({
     rt: inject_desc(scope.reset.bind(scope), 'reset_variable'),
     df: inject_desc(scope.define_function.bind(scope), 'define_function'),
     gs: f => get_static(f, scope),
-    w: (proto, vals, desc, raw) => wrap(scope, proto, vals, desc, raw),
+    w: (proto, replace, desc, raw) => wrap(replace || scope, proto, desc, raw),
     ins: inject_desc((m, c) => import_names(scope, m, c), 'import'),
     im: inject_desc(c => import_module(scope, c), 'import'),
     ia: inject_desc(m => import_all(scope, m), 'import'),

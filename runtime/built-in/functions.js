@@ -179,7 +179,9 @@ let built_in_functions = {
                 for (let e of rev(buf)) {
                     yield e
                 }
-            })()
+            })(),
+        'function reversed (l: List) -> Iterator',
+            l => rev(l)
     ),
     collect: fun (
         'function collect (i: Iterable) -> List',

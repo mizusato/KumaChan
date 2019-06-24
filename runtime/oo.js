@@ -230,7 +230,7 @@ class Class {
         this.super_interfaces = get_super_interfaces(this)
         let F = init[WrapperInfo]
         this.create = wrap(
-            F.context, F.proto, null, F.desc, scope => {
+            F.context, F.proto, F.desc, scope => {
                 let self = new Instance(this, scope)
                 foreach(this.pfs, (name, pf) => {
                     scope.try_to_declare(name, bind_context(pf, scope))

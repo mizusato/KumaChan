@@ -1,32 +1,42 @@
 /**
  *  Function & Scope
+ *
+ *  In order to provide runtime type check for functions
+ *    and change the behaviour of variable declaration,
+ *    it is necessary to wrap ordinary JavaScript functions
+ *    into Wrapped Functions and define our own scope objects.
+ *  A Wrapped Function is also a valid JavaScript function,
+ *    but a [WrapperInfo] object is added to it.
  */
 const WrapperInfo = Symbol('WrapperInfo')
 const BareFuncDesc = Symbol('BareFuncDesc')
 
+let Wrapped = Ins(ES.Function, $(x => typeof x[WrapperInfo] == 'object'))
+let Bare = Ins(ES.Function, $(x => typeof x[WrapperInfo] != 'object'))
+let ArgError = new Map([
+    [1, 'arg_wrong_quantity'],
+    [2, 'arg_invalid']
+])
+
+pour(Types, {
+    ES_Function: Bare,
+    Wrapped: Wrapped,
+    Function: Ins(Wrapped, $(f => has('context', f[WrapperInfo]))),
+    Overload: Ins(Wrapped, $(f => has('functions', f[WrapperInfo]))),
+    Binding: Ins(Wrapped, $(f => has('pointer', f[WrapperInfo])))
+})
+
 function inject_desc (f, desc) {
+    // inject description for bare JavaScript functions
+    // this description text will be shown in call stack backtrace
     f[BareFuncDesc] = `Runtime.${desc}`
     return f
 }
 
-let Wrapped = Ins(ES.Function, $(x => typeof x[WrapperInfo] == 'object'))
-let NotWrapped = Ins(ES.Function, $(x => typeof x[WrapperInfo] != 'object'))
-
-let FunctionTypes = {
-    ES_Function: NotWrapped,
-    Wrapped: Wrapped,
-    Function: Ins(Wrapped, $(f => has('context', f[WrapperInfo]))),
-    Overload: Ins(Wrapped, $(f => has('functions', f[WrapperInfo]))),
-    Binding: Ins(Wrapped, $(f => has('original', f[WrapperInfo])))
-}
-
-pour(Types, FunctionTypes)
-
 
 /**
- *  Parameter & Function Prototype
+ *  Definition of Parameter & Function Prototype
  */
-
 let Parameter = format({
     name: Types.String,
     type: Type
@@ -37,64 +47,32 @@ let Prototype = format({
     parameters: TypedList.of(Parameter)
 }, proto => no_repeat(map(proto.parameters, p => p.name)) )
 
-function parse_decl (string) {
-    function parse_template_arg (arg_str) {
-        if (arg_str == 'true') { return true }
-        if (arg_str == 'false') { return false }
-        if (!Number.isNaN(Number(arg_str))) { return Number(arg_str) }
-        if (arg_str.match(/^'[^']*'$/) != null) { return arg_str.slice(1, -1) }
-        assert(has(arg_str, Types))
-        return Types[arg_str]
-    }
-    function parse_type (type_str) {
-        match = type_str.match(/([^<]+)<(.+)>/)
-        if (match != null) {
-            let template_str = match[1]
-            let args_str = match[2]
-            let arg_strs = args_str.split(',').map(a => a.trim())
-            let args = arg_strs.map(parse_template_arg)
-            assert(has(template_str, Types))
-            // note: template.inflate() already bound, apply(null, ...) is OK
-            return Types[template_str].inflate.apply(null, args)
-        } else {
-            assert(has(type_str, Types))
-            return Types[type_str]
-        }
-    }
-    let match = string.match(/function +([^( ]+) +\(([^)]*)\) *-> *(.+)/)
-    let [_, name, params_str, value_str] = match
-    let has_p = params_str.trim().length > 0
-    let parameters = has_p? (list(map(params_str.split(','), para_str => {
-        para_str = para_str.trim()
-        let match = para_str.match(/([^ :]+) *: *(.+)/)
-        let [_, name, type_str] = match
-        let type = parse_type(type_str)
-        let parameter = { name, type }
-        Object.freeze(parameter)
-        return parameter
-    }))): []
-    Object.freeze(parameters)
-    let value_type = parse_type(value_str)
-    let proto = { parameters, value_type }
-    Object.freeze(proto)
-    assert(is(proto, Prototype))
-    return { name, proto }
-}
-
 
 /**
  *  Scope Object
+ *
+ *  There are two kinds of variables can be declared in a scope,
+ *    1. fixed variable: defined by `let NAME [:TYPE] = VALUE`
+ *    2. non-fixed variable: defined by `var NAME [:TYPE] = VALUE`
+ *  The value of fixed variable cannot be changed to another value,
+ *    but it does NOT mean it's a constant, because the inner structure of
+ *    the value actually can be changed, for example, the command
+ *    `let hash = { 'a': 0 }; set hash['a'] = 1` is legal, but the command
+ *    `let num = 0; reset num = 1` is illegal.
  */
-
 class Scope {
-    constructor (context, data = {}, readonly = false) {
+    constructor (context, data = {}, read_only = false) {
         assert(context === null || context instanceof Scope)
         assert(is(data, Types.Hash))
+        // upper scope
         this.context = context
+        // variables in this scope
         this.data = copy(data)
+        // types of non-fixed variables
         this.types_of_non_fixed = {}
-        this.readonly = readonly
-        if (readonly) {
+        // is it read-only? (e.g. the global scope is read-only)
+        this.read_only = read_only
+        if (read_only) {
             Object.freeze(this.data)
         }
         Object.freeze(this)
@@ -108,7 +86,7 @@ class Scope {
         return has(variable, this.data)
     }
     declare (variable, initial_value, is_fixed = true, type = Any) {
-        assert(!this.readonly)
+        assert(!this.read_only)
         assert(is(variable, Types.String))
         assert(is(is_fixed, Types.Bool))
         assert(is(type, Type))
@@ -121,6 +99,7 @@ class Scope {
         return Void
     }
     define_function (name, f) {
+        // overload functions with a common name
         assert(is(name, Types.String))
         assert(is(f, Types.Function))
         let existing = this.find(name)
@@ -170,7 +149,7 @@ class Scope {
         return value
     }
     try_to_declare (variable, initial_value, is_fixed, type) {
-        assert(!this.readonly)
+        assert(!this.read_only)
         assert(is(variable, Types.String))
         if (!this.has(variable)) {
             this.declare(variable, initial_value, is_fixed, type)
@@ -210,75 +189,86 @@ class Scope {
     }
 }
 
-function new_scope (context) {
-    return new Scope(context)
+/* shorthand */
+let new_scope = context => new Scope(context)
+
+
+/**
+ *  Wraps a bare function
+ *
+ *  @param context Scope
+ *  @param proto Prototype
+ *  @param desc string
+ *  @param raw Bare
+ *  @return Function
+ */
+function wrap (context, proto, desc, raw) {
+    assert(context === null || context instanceof Scope)
+    assert(is(proto, Prototype))
+    assert(is(raw, Bare))
+    assert(is(desc, Types.String))
+    let invoke = (args, use_ctx = null, check = true) => {
+        // arguments may have been checked by overload
+        if (check) {
+            let result = check_args(args, proto)
+            ensure (
+                result.ok, ArgError.get(result.err),
+                result.info, args.length
+            )
+        }
+        // generate scope
+        let scope = new Scope(use_ctx || context)
+        inject_args(args, proto, scope)
+        let value = raw(scope)
+        ensure(is(value, proto.value_type), 'retval_invalid')
+        // return the value after type check
+        return value
+    }
+    let wrapped = give_arity((...args) => {
+        try {
+            return invoke(args)
+        } catch (error) {
+            if (!(error instanceof RuntimeError)) {
+                clear_call_stack()
+            }
+            throw error
+        }
+    }, proto.parameters.length)
+    foreach(proto.parameters, p => Object.freeze(p))
+    Object.freeze(proto.parameters)
+    Object.freeze(proto)
+    let info = { context, invoke, proto, desc, raw }
+    Object.freeze(info)
+    wrapped[WrapperInfo] = info
+    Object.freeze(wrapped)
+    return wrapped
 }
 
 
 /**
- *  Function Wrapper
+ *  Creates a scope for static variables
+ *
+ *  @param f function
+ *  @param context Scope
+ *  @return Scope
  */
+function get_static (f, context) {
+    assert(is(f, Bare))
+    let scope = new Scope(context)
+    f(scope) // execute the static block
+    return scope
+}
 
- let arg_msg = new Map([
-     [1, 'arg_wrong_quantity'],
-     [2, 'arg_invalid']
- ])
 
- function get_static (f, context) {
-     assert(is(f, ES.Function))
-      let scope = new Scope(context)
-      f(scope)
-      return scope
- }
-
- function wrap (context, proto, replace, desc, raw) {
-     assert(context === null || context instanceof Scope)
-     assert(is(proto, Prototype))
-     assert(replace === null || replace instanceof Scope)
-     assert(is(raw, ES.Function))
-     assert(is(desc, Types.String))
-     if (replace !== null) {
-         context = replace
-     }
-     let invoke = (args, use_ctx = null, check = true) => {
-         // check arguments
-         if (check) {
-             let result = check_args(args, proto)
-             ensure (
-                 result.ok, arg_msg.get(result.err),
-                 result.info, args.length
-             )
-         }
-         // generate scope
-         let scope = new Scope(use_ctx || context)
-         inject_args(args, proto, scope)
-         let value = raw(scope)
-         ensure(is(value, proto.value_type), 'retval_invalid')
-         // return the value after type check
-         return value
-     }
-     let arity = proto.parameters.length
-     let wrapped = give_arity((...args) => {
-         try {
-             return invoke(args)
-         } catch (error) {
-             if (!(error instanceof RuntimeError)) {
-                 clear_call_stack()
-             }
-             throw error
-         }
-     }, arity)
-     foreach(proto.parameters, p => Object.freeze(p))
-     Object.freeze(proto.parameters)
-     Object.freeze(proto)
-     let info = { context, invoke, proto, desc, raw }
-     Object.freeze(info)
-     wrapped[WrapperInfo] = info
-     Object.freeze(wrapped)
-     return wrapped
- }
-
+/**
+ *  Checks if arguments are valid according to a function prototype
+ *
+ *  @param args array
+ *  @param proto Prototype
+ *  @return { ok: boolean, err: key of `ArgError`, info: any }
+ */
 function check_args (args, proto) {
+    // no type assertion here, because only called by `wrap()` and `overload()`
     let arity = proto.parameters.length
     // check if argument quantity correct
     if (arity != args.length) {
@@ -297,7 +287,16 @@ function check_args (args, proto) {
     return { ok: true }
 }
 
+
+/**
+ *  Injects arguments to specified scope
+ *
+ *  @param args array
+ *  @param proto Prototype
+ *  @param scope Scope
+ */
 function inject_args (args, proto, scope) {
+    // no type assertion here, because only called by `wrap()`
     let arity = proto.parameters.length
     for (let i=0; i<arity; i++) {
         let parameter = proto.parameters[i]
@@ -305,85 +304,14 @@ function inject_args (args, proto, scope) {
     }
 }
 
-function bind_context (f, context) {
-    assert(is(f, Wrapped))
-    assert(context instanceof Scope)
-    f = cancel_binding(f)
-    let f_invoke = f[WrapperInfo].invoke
-    let desc = f[WrapperInfo].desc
-    let invoke = function (args, use_ctx = null) {
-        assert(use_ctx === null)
-        return f_invoke(args, context)
-    }
-    let binding = ((...args) => invoke(args))
-    let info = { original: f, invoke, desc }
-    Object.freeze(info)
-    binding[WrapperInfo] = info
-    Object.freeze(binding)
-    return binding
-}
-
-function cancel_binding (f) {
-    assert(is(f, Wrapped))
-    return f[WrapperInfo].original || f
-}
-
-function call (f, args, file = null, row = -1, col = -1) {
-    assert(is(args, Types.List))
-    if (is(f, Types.TypeTemplate)) {
-        f = f.inflate
-    } else if (is(f, Types.Class)) {
-        f = f.create
-    } else if (is(f, Types.Schema)) {
-        f = f.create_struct_from_another
-    }
-    let call_type = file? 1: 3
-    if (is(f, Wrapped)) {
-        let info = f[WrapperInfo]
-        push_call(call_type, info.desc, file, row, col)
-        let value = info.invoke(args)
-        pop_call()
-        return value
-    } else if (is(f, ES.Function)) {
-        let desc = f[BareFuncDesc] || get_summary(f.toString())
-        try {
-            push_call(call_type, desc, file, row, col)
-            let value = f.apply(null, args)
-            pop_call()
-            return value
-        } catch (e) {
-            if (!(e instanceof RuntimeError)) {
-                clear_call_stack()
-            }
-            throw e
-        }
-    } else {
-        push_call(call_type, '*** Non-Callable Object', file, row, col)
-        ensure(false, 'non_callable')
-    }
-}
-
-function fun (decl_string, body) {
-    let parsed = parse_decl(decl_string)
-    assert(is(body, ES.Function))
-    assert(!is(body, Types.Wrapped))
-    let desc = decl_string.replace(/^function */, '')
-    return wrap(null, parsed.proto, null, desc, (scope, expose) => {
-        return body.apply(
-            null,
-            list(cat(
-                map(parsed.proto.parameters, p => scope.lookup(p.name)),
-                [scope, expose]
-            ))
-        )
-    })
-}
-
 
 /**
- *  Overload Tools
+ *  Overloads some wrapped functions into a single wrapped function
+ *
+ *  @param functions Wrapped[]
+ *  @param name string
+ *  @return Overload
  */
-
 function overload (functions, name) {
     assert(is(functions, TypedList.of(Types.Function)))
     assert(is(name, Types.String))
@@ -393,6 +321,7 @@ function overload (functions, name) {
     let only1 = (functions.length == 1)
     let invoke = null
     if (only1) {
+        // this special handling makes error message more clear
         invoke = (args, use_ctx = null) => {
             let info = functions[0][WrapperInfo]
             push_call(2, info.desc)
@@ -429,7 +358,7 @@ function overload (functions, name) {
                     return (
                         info_list[i].desc
                         + '  (' + get_msg (
-                            arg_msg.get(r.err),
+                            ArgError.get(r.err),
                             [r.info, args.length]
                         ) + ')'
                     )
@@ -446,11 +375,29 @@ function overload (functions, name) {
     return o
 }
 
+
+/**
+ *  Creates a new overload with a new function added to the old one
+ *
+ *  @param f Function
+ *  @param o Overload
+ *  @param name string
+ *  @return Overload
+ */
 function overload_added (f, o, name) {
     assert(is(o, Types.Overload))
     return overload([...o[WrapperInfo].functions, f], name)
 }
 
+
+/**
+ *  Creates a new overload from `o1` concatenated with `o2`
+ *
+ *  @param o2 Overload
+ *  @param o1 Overload
+ *  @param name string
+ *  @return Overload
+ */
 function overload_concated (o2, o1, name) {
     assert(is(o2, Types.Overload))
     assert(is(o1, Types.Overload))
@@ -459,7 +406,175 @@ function overload_concated (o2, o1, name) {
     ), name)
 }
 
+
+/**
+ *  Creates a function binding pointing to `f` with replaced context
+ *
+ *  @param f Wrapped
+ *  @param context Scope
+ *  @return Binding
+ */
+function bind_context (f, context) {
+    assert(is(f, Wrapped))
+    assert(context instanceof Scope)
+    f = cancel_binding(f)
+    let f_invoke = f[WrapperInfo].invoke
+    let desc = f[WrapperInfo].desc
+    let invoke = function (args, use_ctx = null) {
+        assert(use_ctx === null)
+        return f_invoke(args, context)
+    }
+    let binding = ((...args) => invoke(args))
+    let info = { invoke, desc, pointer: f, bound: context }
+    Object.freeze(info)
+    binding[WrapperInfo] = info
+    Object.freeze(binding)
+    return binding
+}
+
+
+/**
+ *  Deref `f` if it is a binding
+ *
+ *  @param f Wrapped
+ *  @return Wrapped
+ */
+function cancel_binding (f) {
+    assert(is(f, Wrapped))
+    return f[WrapperInfo].pointer || f
+}
+
+
+/**
+ *  Call a function or other callable object, add debug info to the call stack
+ *
+ *  @param f Callable
+ *  @param args array
+ *  @param file string
+ *  @param row integer
+ *  @param col integer
+ */
+function call (f, args, file = null, row = -1, col = -1) {
+    assert(is(args, Types.List))
+    if (is(f, Types.TypeTemplate)) {
+        f = f.inflate
+    } else if (is(f, Types.Class)) {
+        f = f.create
+    } else if (is(f, Types.Schema)) {
+        f = f.create_struct_from_another
+    }
+    let call_type = file? 1: 3   // call type is defined in `error.js`
+    if (is(f, Wrapped)) {
+        let info = f[WrapperInfo]
+        push_call(call_type, info.desc, file, row, col)
+        let value = info.invoke(args)
+        pop_call()
+        return value
+    } else if (is(f, ES.Function)) {
+        let desc = f[BareFuncDesc] || get_summary(f.toString())
+        try {
+            push_call(call_type, desc, file, row, col)
+            let value = f.apply(null, args)
+            pop_call()
+            return value
+        } catch (e) {
+            if (!(e instanceof RuntimeError)) {
+                clear_call_stack()
+            }
+            throw e
+        }
+    } else {
+        push_call(call_type, '*** Non-Callable Object', file, row, col)
+        ensure(false, 'non_callable')
+    }
+}
+
+
+/**
+ *  Function Declaration Parser for Built-in Functions
+ *
+ *  @param string function FUNC_NAME (NAME1: TYPE1, NAME2: TYPE2, ...) -> TYPE
+ *  @return { name: String, proto: Prototype }
+ */
+function parse_decl (string) {
+    function parse_template_arg (arg_str) {
+        if (arg_str == 'true') { return true }
+        if (arg_str == 'false') { return false }
+        if (!Number.isNaN(Number(arg_str))) { return Number(arg_str) }
+        if (arg_str.match(/^'[^']*'$/) != null) { return arg_str.slice(1, -1) }
+        assert(has(arg_str, Types))
+        return Types[arg_str]
+    }
+    function parse_type (type_str) {
+        // Note: Type names are resolved by `Types[TYPE_NAME]`
+        match = type_str.match(/([^<]+)<(.+)>/)
+        if (match != null) {
+            let template_str = match[1]
+            let args_str = match[2]
+            let arg_strs = args_str.split(',').map(a => a.trim())
+            let args = arg_strs.map(parse_template_arg)
+            assert(has(template_str, Types))
+            // note: template.inflate() already bound, apply(null, ...) is OK
+            return Types[template_str].inflate.apply(null, args)
+        } else {
+            assert(has(type_str, Types))
+            return Types[type_str]
+        }
+    }
+    let match = string.match(/function +([^( ]+) +\(([^)]*)\) *-> *(.+)/)
+    let [_, name, params_str, value_str] = match
+    let has_p = params_str.trim().length > 0
+    let parameters = has_p? (list(map(params_str.split(','), para_str => {
+        para_str = para_str.trim()
+        let match = para_str.match(/([^ :]+) *: *(.+)/)
+        let [_, name, type_str] = match
+        let type = parse_type(type_str)
+        let parameter = { name, type }
+        Object.freeze(parameter)
+        return parameter
+    }))): []
+    Object.freeze(parameters)
+    let value_type = parse_type(value_str)
+    let proto = { parameters, value_type }
+    Object.freeze(proto)
+    assert(is(proto, Prototype))
+    return { name, proto }
+}
+
+
+/**
+ *  Built-in Function Creator
+ *
+ *  @param decl_string string
+ *  @param body function (ARG1, ARG, ...) => RETURN_VALUE
+ *  @return Function
+ */
+function fun (decl_string, body) {
+    let parsed = parse_decl(decl_string)
+    assert(is(body, ES.Function))
+    assert(!is(body, Types.Wrapped))
+    let desc = decl_string.replace(/^function */, '')
+    return wrap(null, parsed.proto, desc, (scope, expose) => {
+        return body.apply(
+            null,
+            list(cat(
+                map(parsed.proto.parameters, p => scope.lookup(p.name)),
+                [scope, expose]
+            ))
+        )
+    })
+}
+
+
+/**
+ *  Built-in Overload Creator
+ *
+ *  @param name string
+ *  @param args array of (string | function)
+ *  @return Overload
+ */
 function f (name, ...args) {
+    // see usage at `built-in/functions.js`
     assert(args.length % 2 == 0)
     let functions = list(map(
         count(args.length/2),
