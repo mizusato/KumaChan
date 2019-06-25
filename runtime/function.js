@@ -155,7 +155,7 @@ class Scope {
             this.declare(variable, initial_value, is_fixed, type)
         }
     }
-    find (variable, only_func = false) {
+    find (variable) {
         assert(is(variable, Types.String))
         let scope_chain = iterate (
             this,
@@ -165,27 +165,45 @@ class Scope {
         return find(map(scope_chain, (scope, depth) => {
             if (scope.has(variable)) {
                 let value = scope.data[variable]
-                // requesting function, but not function, lookup upper scope
-                if (only_func && !is(value, ES.Function)) {
-                    return NotFound
-                }
                 // got a fixed variable
                 if (scope.is_fixed(variable)) {
                     return value
                 }
                 // got a non-fixed variable, check consistency
-                if (!only_func) {
-                    // function called by UFCS becoming inconsistent
-                    // is a rare case, and we don't have call point here
-                    // therefore UFCS won't be checked
-                    let ok = is(value, scope.types_of_non_fixed[variable])
-                    ensure(ok, 'variable_inconsistent', variable)
-                }
+                let ok = is(value, scope.types_of_non_fixed[variable])
+                ensure(ok, 'variable_inconsistent', variable)
                 return value
             } else {
                 return NotFound
             }
         }), object => object !== NotFound)
+    }
+    find_func (variable) {
+        // used by `call_method()` in `oo.js`
+        assert(is(variable, Types.String))
+        let scope_chain = iterate (
+            this,
+            scope => scope.context,
+            scope => scope === null
+        )
+        return find(map(scope_chain, (scope, depth) => {
+            if (scope.has(variable)) {
+                let value = scope.data[variable]
+                // not function, lookup upper scope
+                if (!is(value, ES.Function)) {
+                    return { value: NotFound }
+                }
+                // got a fixed variable
+                if (scope.is_fixed(variable)) {
+                    return { value, ok: true }
+                }
+                // got a non-fixed variable, check consistency
+                let ok = is(value, scope.types_of_non_fixed[variable])
+                return { value, ok }
+            } else {
+                return { value: NotFound }
+            }
+        }), result => result.value !== NotFound)
     }
 }
 

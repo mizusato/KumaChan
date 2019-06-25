@@ -381,9 +381,14 @@ function call_method (
     }
     // UFCS: find the method in the caller scope
     ensure(caller_scope !== null, 'method_not_found', method_name)
-    let method = caller_scope.find(method_name, true)
-    ensure(method !== NotFound, 'method_not_found', method_name)
+    let result = caller_scope.find_func(method_name)
+    ensure(result.value !== NotFound, 'method_not_found', method_name)
+    let method = result.value
     assert(is(method, ES.Function))
+    if (!result.ok) {
+        push_call(1, 'INCONSISTENT_FUNCTION', file, row, col)
+        ensure(false, 'variable_inconsistent', method_name)
+    }
     // call the method
     return call(method, [object, ...args], file, row, col)
 }
