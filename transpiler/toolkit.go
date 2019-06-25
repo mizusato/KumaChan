@@ -18,13 +18,13 @@ func LazyValueWrapper (expr string) string {
 }
 
 
-func VarLookup (variable_name []rune) string {
-    var buf strings.Builder
-    buf.WriteString("id")
-    buf.WriteRune('(')
-    buf.WriteString(EscapeRawString(variable_name))
-    buf.WriteRune(')')
-    return buf.String()
+func VarLookup (tree Tree, ptr int) string {
+    var file = GetFileName(tree)
+    var row, col = GetRowColInfo(tree, ptr)
+    return fmt.Sprintf (
+        "__.c(id, [%v], %v, %v, %v)",
+        EscapeRawString(GetTokenContent(tree, ptr)), file, row, col,
+    )
 }
 
 

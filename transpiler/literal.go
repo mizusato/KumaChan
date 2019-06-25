@@ -84,7 +84,7 @@ var LiteralMap = map[string]TransFunction {
             if has_expr {
                 expr = Transpile(tree, expr_ptr)
             } else {
-                expr = VarLookup(GetTokenContent(tree, name_ptr))
+                expr = VarLookup(tree, name_ptr)
             }
             fmt.Fprintf(&buf, "%v: %v", name, expr)
             if i != len(items)-1 {
@@ -215,7 +215,7 @@ var LiteralMap = map[string]TransFunction {
             if has_expr {
                 expr = Transpile(tree, expr_ptr)
             } else {
-                expr = VarLookup(GetTokenContent(tree, name_ptr))
+                expr = VarLookup(tree, name_ptr)
             }
             fmt.Fprintf(&buf, "%v: %v", name, expr)
             if i != len(item_ptrs)-1 {

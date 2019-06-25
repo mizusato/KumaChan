@@ -159,7 +159,7 @@ var CommandMap = map[string]TransFunction {
             value = fmt.Sprintf(
                 "__.c(%v, [%v, %v], %v, %v, %v)",
                 Transpile(tree, op_ptr),
-                TransMapByName["identifier"](tree, name_ptr),
+                VarLookup(tree, name_ptr),
                 value, file, row, col,
             )
         }

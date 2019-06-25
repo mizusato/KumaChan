@@ -182,11 +182,11 @@ var ExpressionMap = map[string]TransFunction {
     // dot_para = . Name
     "dot_para": func (tree Tree, ptr int) string {
         var last_ptr = tree.Nodes[ptr].Children[tree.Nodes[ptr].Length-1]
-        return VarLookup(GetTokenContent(tree, last_ptr))
+        return VarLookup(tree, last_ptr)
     },
     // identifier = Name
     "identifier": func (tree Tree, ptr int) string {
-        // depended by Command["reset"]
+        // depended by CommandMap["reset"]
         var content = GetTokenContent(tree, ptr)
         var content_string = string(content)
         if strings.HasPrefix(content_string, "__") && content_string != "__" {
@@ -194,7 +194,7 @@ var ExpressionMap = map[string]TransFunction {
             var trimed = strings.TrimPrefix(content_string, "__")
             return fmt.Sprintf("(%v)", trimed)
         } else {
-            return VarLookup(GetTokenContent(tree, ptr))
+            return VarLookup(tree, ptr)
         }
     },
     // operator = op_group1 | op_compare | op_logic | op_arith
