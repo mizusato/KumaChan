@@ -186,7 +186,6 @@ var ExpressionMap = map[string]TransFunction {
     },
     // identifier = Name
     "identifier": func (tree Tree, ptr int) string {
-        // depended by CommandMap["reset"]
         var content = GetTokenContent(tree, ptr)
         var content_string = string(content)
         if strings.HasPrefix(content_string, "__") && content_string != "__" {
