@@ -56,6 +56,16 @@ function register_module (module_name, export_names, init) {
     modules[module_name] = new Module(module_name, exported)
 }
 
+function register_simple_module (name, export_object) {
+    assert(is(export_object, Types.Hash))
+    let keys = Object.keys(export_object)
+    register_module(name, keys, scope => {
+        foreach(export_object, (name, value) => {
+            scope.declare(name, value)
+        })
+    })
+}
+
 
 let ImportConfig = Ins(Types.List, $(
     x => x.length == 2 && forall(x, y => is(y, Types.String))

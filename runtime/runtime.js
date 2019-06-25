@@ -13,6 +13,7 @@
     '<include> generics.js';
     '<include> module.js';
     '<include> built-in/built-in.js';
+    '<include> modules/ES.js';
 
     const export_name = 'KumaChan'
 

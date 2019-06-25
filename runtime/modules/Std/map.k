@@ -1,9 +1,9 @@
 class Map<K, V> is Getter<K, V>, Setter<K, V> {
     init () {
         static {
-            let ES_Map = es.new(__Map)
+            let CreateMap = ES.new(__Map)
         }
-        let map = ES_Map()
+        let map = CreateMap()
     }
     has (key: K) -> Bool {
         return map->has(key)

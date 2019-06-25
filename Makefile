@@ -13,7 +13,7 @@ runtime: compiler
 		> $(K_RUNTIME_JS)
 	echo ";(function(Runtime) { let KumaChan = Runtime;" \
 		>> $(K_RUNTIME_JS)
-	$(K_COMPILER_BIN) module runtime/preload/preload.k \
+	$(K_COMPILER_BIN) module runtime/modules/Std/Std.k \
 		>> $(K_RUNTIME_JS)
 	echo "})((typeof KumaChan != 'undefined')? KumaChan: module.exports)" \
 		>> $(K_RUNTIME_JS)

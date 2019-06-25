@@ -4,14 +4,12 @@
 '<include> functions.js';
 '<include> operators.js';
 '<include> constants.js';
-'<include> es.js';
 
 
 let global_scope_data = {}
 pour(global_scope_data, built_in_types)
 pour(global_scope_data, built_in_functions)
 pour(global_scope_data, built_in_constants)
-pour(global_scope_data, built_in_es_compatible)
 let Global = new Scope(null, global_scope_data, true)
 let Eval = new Scope(Global)
 
