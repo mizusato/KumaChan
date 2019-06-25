@@ -4,7 +4,7 @@
 
 
 /* Depth Limit of Stack Backtrace */
-const TRACE_DEPTH = 10
+const TRACE_DEPTH = 16
 
 /* Unrecoverable Fatal Error */
 class RuntimeError extends Error {
