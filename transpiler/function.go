@@ -2,7 +2,6 @@ package transpiler
 
 import "fmt"
 import "strings"
-import "../parser/syntax"
 
 
 var FunctionMap = map[string]TransFunction {
@@ -457,9 +456,6 @@ var FunctionMap = map[string]TransFunction {
     // operator_defs? = operator_def operator_defs
     "operator_defs": func (tree Tree, ptr int) string {
         if Empty(tree, ptr) { return "{}" }
-        var SchemaConfigId = syntax.Name2Id["schema_config"]
-        var parent_ptr = tree.Nodes[ptr].Parent
-        var is_schema = tree.Nodes[parent_ptr].Part.Id == SchemaConfigId
         var def_ptrs = FlatSubTree(tree, ptr, "operator_def", "operator_defs")
         var defined = make(map[string]bool)
         var buf strings.Builder
@@ -471,9 +467,6 @@ var FunctionMap = map[string]TransFunction {
             var op_name, can_redef = GetGeneralOperatorName(tree, op_ptr)
             if !can_redef {
                 panic("cannot overload non-redefinable operator " + op_name)
-            }
-            if is_schema && op_name == "enum" {
-                panic("cannot overload enum operator on struct schema")
             }
             if defined[op_name] {
                 panic("duplicate definition of operator " + op_name)

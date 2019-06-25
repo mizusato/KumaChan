@@ -108,7 +108,6 @@ var TypeMap = map[string]TransFunction {
     },
     // schema_config? = @config { struct_guard operator_defs }!
     "schema_config": func (tree Tree, ptr int) string {
-        // note: the rule name "schema_config" is depended by operator_defs
         if Empty(tree, ptr) { return "{ guard: null, ops: {} }" }
         var children = Children(tree, ptr)
         return fmt.Sprintf (
