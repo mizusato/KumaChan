@@ -107,9 +107,7 @@ let operators = {
     '>>': f (
         'operator.push',
         `function operator.push (a: Operand<'>>'>, b: Operand<'>>'>) -> Any`,
-            (a, b) => apply_operator('>>', a, b),
-        'function operator.push (x: Any, f: Callable) -> Any',
-            (x, f) => call(f, [x])
+            (a, b) => apply_operator('>>', a, b)
     ),
     '=>': f (
         'operator.derive',
