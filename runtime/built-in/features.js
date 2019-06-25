@@ -108,9 +108,8 @@ let get_slice = f (
 )
 
 
-let for_loop = f (
-    'for_loop',
-    'function for_loop (e: Enumerable) -> Iterable',
+let for_loop_e = fun (
+    'function for_loop_enumerate (e: Enumerable) -> Iterator',
         e => {
             let list = enum_(e)
             let keys = list.get('keys')
@@ -122,8 +121,12 @@ let for_loop = f (
                     yield { key: keys[i], value: values[i] }
                 }
             })()
-        },
-    'function for_loop (i: Iterable) -> Iterable',
+        }
+)
+
+
+let for_loop_i = fun (
+    'function for_loop_iterate (i: Iterable) -> Iterator',
         i => map(iter(i), (e, i) => ({ key: i, value: e }))
 )
 

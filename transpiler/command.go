@@ -361,12 +361,26 @@ var CommandMap = map[string]TransFunction {
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
         var children = Children(tree, ptr)
-        var params = Transpile(tree, children["for_params"])
+        var params_ptr = children["for_params"]
+        var params = Transpile(tree, params_ptr)
         var expr = Transpile(tree, children["expr"])
         var block = Transpile(tree, children["block"])
+        var c = tree.Nodes[params_ptr].Children[0]
+        var params_type = syntax.Id2Name[tree.Nodes[c].Part.Id]
+        var loop_type string
+        switch params_type {
+        case "for_params_list":
+            loop_type = "fi"
+        case "for_params_hash":
+            loop_type = "fe"
+        case "for_params_value":
+            loop_type = "fi"
+        default:
+            panic("impossible switch branch")
+        }
         return fmt.Sprintf (
-            "for (let I of __.c(__.f, [%v], %v, %v, %v)) { %v %v; }",
-            expr, file, row, col, params, block,
+            "for (let I of __.c(__.%v, [%v], %v, %v, %v)) { %v %v; }",
+            loop_type, expr, file, row, col, params, block,
         )
     },
     // for_params = for_params_list | for_params_hash | for_params_value

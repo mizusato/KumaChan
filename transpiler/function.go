@@ -487,9 +487,6 @@ var FunctionMap = map[string]TransFunction {
             }
         }
         buf.WriteString(" }")
-        if defined["iter"] && defined["enum"] {
-            panic("cannot define both iter operator and enum operator")
-        }
         return buf.String()
     },
     // operator_def_fun = (! namelist! )! opt_arrow body!
