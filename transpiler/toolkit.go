@@ -157,7 +157,7 @@ func WriteHelpers (buf *strings.Builder, scope_name string) {
 
 func BareFunction (content string) string {
     var buf strings.Builder
-    buf.WriteString("(function (scope, expose) { ")
+    buf.WriteString("(function (scope, mount) { ")
     WriteHelpers(&buf, "scope")
     buf.WriteString(content)
     buf.WriteString(" })")

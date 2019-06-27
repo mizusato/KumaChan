@@ -11,8 +11,9 @@ const MSG = {
     variable_declared: name => `variable ${name} already declared`,
     variable_invalid: name => `invalid value assigned to variable ${name}`,
     variable_fixed: name => `cannot reset fixed variable ${name}`,
-    variable_inconsistent: name => (
+    variable_inconsistent: (name, p) => (
         `the value of variable ${name} violated its type constraint`
+        + (p? `, called through UFCS at ${p}`: '')
     ),
     static_conflict: name => `static value conflict with argument ${name}`,
     arg_wrong_quantity: (r, g) => `${r} arguments required but ${g} given`,
@@ -23,7 +24,7 @@ const MSG = {
     ),
     retval_invalid: 'invalid return value',
     retval_invalid_inflate: 'return value of type template should be a type',
-    non_callable: 'unable to call non-callable object',
+    non_callable: p => `unable to call non-callable object at ${p}`,
     no_matching_function: available => (
         'invalid arguments: no matching function'
         + LF + LF + 'Available functions are: '
@@ -57,13 +58,16 @@ const MSG = {
     interface_invalid: name => (
         `invalid interface: blank method ${name}() should not be implemented`
     ),
-    exposing_non_instance: 'unable to expose non-instance object',
-    exposing_undeclared: C => (
-        'unable to expose instance of undeclared base class:'
+    mounting_non_instance: 'unable to mount non-instance object',
+    mounting_undeclared: C => (
+        'unable to mount instance of undeclared base class:'
         + LF + INDENT + C
     ),
-    not_exposing: C => `created instance did not expose instance of ${C}`,
-    method_not_found: name => `method ${name}() does not exist`,
+    mounting_mounted: 'an instance of the same base class is already mounted',
+    not_mounting: C => `created instance did not mount an instance of ${C}`,
+    method_not_found: (name, p) => (
+        `method ${name}() does not exist, called at ${p}`
+    ),
     format_invalid_key: key => (
         `key '${key}' does not exist in given Hash or Struct`
     ),

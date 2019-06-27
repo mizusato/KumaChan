@@ -178,7 +178,7 @@ class Scope {
             }
         }), object => object !== NotFound)
     }
-    find_func (variable) {
+    find_function (variable) {
         // used by `call_method()` in `oo.js`
         assert(is(variable, Types.String))
         let scope_chain = iterate (
@@ -186,7 +186,7 @@ class Scope {
             scope => scope.context,
             scope => scope === null
         )
-        return find(map(scope_chain, (scope, depth) => {
+        let result = find(map(scope_chain, (scope, depth) => {
             if (scope.has(variable)) {
                 let value = scope.data[variable]
                 // not function, lookup upper scope
@@ -204,6 +204,7 @@ class Scope {
                 return { value: NotFound }
             }
         }), result => result.value !== NotFound)
+        return (result !== NotFound)? result: { value: NotFound }
     }
 }
 
@@ -502,8 +503,7 @@ function call (f, args, file = null, row = -1, col = -1) {
             throw e
         }
     } else {
-        push_call(call_type, '*** Non-Callable Object', file, row, col)
-        ensure(false, 'non_callable')
+        ensure(false, 'non_callable', `${file} (row ${row}, column ${col})`)
     }
 }
 

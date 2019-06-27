@@ -166,8 +166,8 @@ var ExpressionMap = map[string]TransFunction {
         var real_child_ptr = tree.Nodes[group_ptr].Children[0]
         var child_node = &tree.Nodes[real_child_ptr]
         var name = syntax.Id2Name[child_node.Part.Id]
-        if name == "@expose" {
-            return "expose"
+        if name == "@mount" {
+            return "mount"
         } else if name == "-" {
             return `__.o("negate")`
         } else {

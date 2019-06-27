@@ -100,7 +100,7 @@ var Keywords = [...] string {
     "@where", "@when", "@otherwise",
     "@struct", "@config", "@operator", "@guard",
     "@one", "@of", "@enum",
-    "@class", "@init", "@private", "@data", "@interface", "@expose",
+    "@class", "@init", "@mount", "@private", "@data", "@interface",
     "@str", "@len", "@iter", "@negate",
     "@true", "@false",
     "@is", "@or", "@not",
@@ -337,7 +337,7 @@ var SyntaxDefinition = [...] string {
     "unary? = unary_group1 | unary_group2 | unary_group3",
     "unary_group1 = @not | - | @negate | _exc | ~ ",
     "unary_group2 = @str | @len | @iter | @enum",
-    "unary_group3 = @expose",
+    "unary_group3 = @mount",
     /* Operand */
     "operand = unary operand_base operand_tail",
     "operand_base = wrapped | lambda | literal | dot_para | identifier",
