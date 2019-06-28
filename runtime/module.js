@@ -1,3 +1,12 @@
+/**
+ *  Module System
+ *
+ *  All registered modules are put in a global registry,
+ *    therefore module names are global identifiers,
+ *    two modules cannot have a same name.
+ */
+
+
 let modules = {}
 
 class Module {
@@ -67,11 +76,13 @@ function register_simple_module (name, export_object) {
 }
 
 
+// ImportConfig: [NAME, ALIAS]
 let ImportConfig = Ins(Types.List, $(
     x => x.length == 2 && forall(x, y => is(y, Types.String))
 ))
 
 function import_module (scope, config) {
+    // import MODULE
     assert(scope instanceof Scope)
     assert(is(config, ImportConfig))
     let [name, alias] = config
@@ -82,6 +93,7 @@ function import_module (scope, config) {
 }
 
 function import_names (scope, module_name, configs) {
+    // import NAME1, NAME2, ... from MODULE
     assert(scope instanceof Scope)
     assert(is(module_name, Types.String))
     assert(is(configs, TypedList.of(ImportConfig)))
@@ -99,6 +111,7 @@ function import_names (scope, module_name, configs) {
 }
 
 function import_all (scope, module_name) {
+    // import * from MODULE
     assert(scope instanceof Scope)
     assert(is(module_name, Types.String))
     ensure(has(module_name, modules), 'module_not_exist', module_name)
