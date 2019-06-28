@@ -1,4 +1,4 @@
-.PHONY: runtime compiler dist
+.PHONY: runtime compiler test dist
 
 default: dev
 
@@ -18,7 +18,10 @@ runtime: compiler
 	echo "})((typeof KumaChan != 'undefined')? KumaChan: module.exports)" \
 		>> $(K_RUNTIME_JS)
 
-dev: compiler runtime
+test: compiler runtime
+	./test.js
+
+dev: compiler runtime test
 
 dist: dev
 	cp $(K_COMPILER_BIN) build/dist/kumachan
