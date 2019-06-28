@@ -48,8 +48,14 @@ function eval_test (code) {
             process.exit(-1)
         }
         try {
-            eval(stdout)
-            resolve({ ok: true })
+            let result = eval(stdout)
+            if (result instanceof Promise) {
+                result
+                    .then(_ => { resolve({ ok: true }) })
+                    .catch(error => { reject({ ok: false, error }) })
+            } else {
+                resolve({ ok: true })
+            }
         } catch (error) {
             resolve({ ok: false, error })
         }

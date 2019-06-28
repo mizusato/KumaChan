@@ -1,6 +1,7 @@
 {
     "sequence": [
         "Primitive",
-        "Type"
+        "Type",
+        "Async"
     ]
 }
