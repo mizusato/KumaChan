@@ -294,6 +294,7 @@ let Void = create_value('Void')
 class FiniteSetType {
     constructor (objects) {
         assert(objects instanceof Array)
+        assert(objects.length > 0)
         this.objects = copy(objects)
         Object.freeze(this.objects)
         this[Checker] = (x => exists(this.objects, object => object === x))

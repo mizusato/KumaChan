@@ -35,19 +35,10 @@ var TypeMap = map[string]TransFunction {
         var children = Children(tree, ptr)
         return Filters(tree, children["exprlist"])
     },
-    // finite_literal = @one @of { exprlist_opt }! | { exprlist }
+    // finite_literal = @one @of { exprlist }! | { exprlist }
     "finite_literal": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
-        var exprlist_ptr, ok = children["exprlist"]
-        if !ok {
-            // exprlist_opt? = exprlist
-            var opt_ptr = children["exprlist_opt"]
-            if NotEmpty(tree, opt_ptr) {
-                exprlist_ptr = tree.Nodes[opt_ptr].Children[0]
-            } else {
-                return "__.cf()"
-            }
-        }
+        var exprlist_ptr = children["exprlist"]
         var expr_ptrs = FlatSubTree(tree, exprlist_ptr, "expr", "exprlist_tail")
         var buf strings.Builder
         buf.WriteString("__.cf")

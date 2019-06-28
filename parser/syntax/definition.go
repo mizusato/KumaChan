@@ -297,9 +297,8 @@ var SyntaxDefinition = [...] string {
     "struct_guard? = @guard body!",
     /* Enum */
     "enum = @enum name {! namelist! }!",
-    /* Finite */
-    "finite_literal = @one @of { exprlist_opt }! | { exprlist }",
-    "exprlist_opt? = exprlist",
+    /* Finite Set */
+    "finite_literal = @one @of { exprlist }! | { exprlist }",
     /* SimpleType */
     "simple_type_literal = { name _bar1 filters! }!",
     "filters = exprlist",
