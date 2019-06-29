@@ -25,5 +25,11 @@ register_simple_module('ES', {
                 }
                 return inject_desc(C, 'es_constructor')
             }
+    ),
+    instance_of: fun (
+        'function instance_of (F: ES_Class) -> Type',
+            F => {
+                return $(x => x instanceof F)
+            }
     )
 })
