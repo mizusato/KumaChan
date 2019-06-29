@@ -20,6 +20,7 @@
     let export_object = {
         CustomError, RuntimeError, AssertionFailed,
         Global, Eval, new_scope,
+        call_by_js, inject_desc,
         Void,
         register_module,
         get_helpers

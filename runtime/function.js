@@ -26,12 +26,21 @@ pour(Types, {
     Binding: Ins(Wrapped, $(f => has('pointer', f[WrapperInfo])))
 })
 
+function call_by_js (f, args) {
+    assert(is(f, Wrapped))
+    assert(is(args, Types.List))
+    return f.apply(null, args)
+}
+
 function inject_desc (f, desc) {
+    assert(is(f, Bare))
     // inject description for bare JavaScript functions
     f[BareFuncDesc] = `Runtime.${desc}`
     // the injected description text will be shown in call stack backtrace
     return f
 }
+
+inject_desc(call_by_js, 'call_by_js')
 
 
 /**
@@ -244,7 +253,7 @@ function wrap (context, proto, desc, raw) {
         return value
     }
     let wrapped = give_arity (
-        (...args) => invoke(args),
+        (...args) => call(wrapped, args, '<JS>'),
         proto.parameters.length
     )
     foreach(proto.parameters, p => Object.freeze(p))
@@ -338,9 +347,13 @@ function overload (functions, name) {
         invoke = (args, use_ctx = null) => {
             let info = functions[0][WrapperInfo]
             push_call(2, info.desc)
-            let value = info.invoke(args, use_ctx)
-            pop_call()
-            return value
+            try {
+                return info.invoke(args, use_ctx)
+            } catch (e) {
+                throw e
+            } finally {
+                pop_call()
+            }
         }
     } else {
         invoke = (args, use_ctx = null) => {
@@ -361,9 +374,13 @@ function overload (functions, name) {
             }
             if (ok) {
                 push_call(2, info.desc)
-                let value = info.invoke(args, use_ctx)
-                pop_call()
-                return value
+                try {
+                    return info.invoke(args, use_ctx)
+                } catch (e) {
+                    throw e
+                } finally {
+                    pop_call()
+                }
             } else {
                 let n = i
                 let available = join(map(count(n), i => {
@@ -380,7 +397,7 @@ function overload (functions, name) {
             }
         }
     }
-    let o = (...args) => invoke(args)
+    let o = (...args) => call(o, args, '<JS>')
     let info = Object.freeze({ functions, invoke, desc })
     Object.freeze(info)
     o[WrapperInfo] = info
@@ -437,7 +454,7 @@ function bind_context (f, context) {
         assert(use_ctx === null)
         return f_invoke(args, context)
     }
-    let binding = ((...args) => invoke(args))
+    let binding = (...args) => call(binding, args, '<JS>')
     let info = { invoke, desc, pointer: f, bound: context }
     Object.freeze(info)
     binding[WrapperInfo] = info
@@ -459,7 +476,7 @@ function cancel_binding (f) {
 
 
 /**
- *  Call a function or other callable object, add debug info to the call stack
+ *  Calls a callable object, put debug info onto the call stack
  *
  *  @param f Callable
  *  @param args array
