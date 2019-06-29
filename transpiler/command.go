@@ -358,6 +358,7 @@ var CommandMap = map[string]TransFunction {
     },
     // cmd_for = @for for_params! @in expr! block!
     "cmd_for": func (tree Tree, ptr int) string {
+        // note: rule name "cmd_for" is depended by CommandMap["block"]
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
         var children = Children(tree, ptr)

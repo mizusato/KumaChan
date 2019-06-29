@@ -43,7 +43,7 @@ function eval_test (code) {
     let promise = new Promise((res, rej) => { resolve = res })
     let p = ChildProcess.exec(Compiler('eval'), (error, stdout) => {
         if (error != null) {
-            console.log('The following error occured during compiling:')
+            print(`${Bold}${Red} Error occured during compiling:${Reset}`)
             console.log(error)
             process.exit(-1)
         }
@@ -96,7 +96,7 @@ async function main () {
                 ) {
                     print(error.message)
                 } else {
-                    print(error)
+                    console.log(error)
                 }
             }
             total += 1

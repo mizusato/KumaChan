@@ -13,11 +13,11 @@ let built_in_functions = {
     custom_error: f (
         'custom_error',
         'function custom_error (msg: String) -> Error',
-            msg => create_error(msg),
+            msg => new CustomError(msg),
         'function custom_error (name: String, msg: String) -> Error',
-            (name, msg) => create_error(msg, name),
+            (name, msg) => new CustomError(msg, name),
         'function custom_error (name: String, msg: String, data: Hash) -> Error'
-            ,(name, msg, data) => create_error(msg, name, data)
+            ,(name, msg, data) => new CustomError(msg, name, data)
     ),
     // Async
     postpone: f (

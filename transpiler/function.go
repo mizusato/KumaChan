@@ -206,7 +206,7 @@ var FunctionMap = map[string]TransFunction {
     },
     // body = { static_commands commands mock_hook handle_hook }!
     "body": func (tree Tree, ptr int) string {
-        // note: the rule name "body" has sth to do with Block()
+        // note: the rule name "body" is depended by CommandMap["block"]
         var children = Children(tree, ptr)
         // mock_hook? = _at @mock name! { commands }
         var mock_ptr = children["mock_hook"]
@@ -234,7 +234,7 @@ var FunctionMap = map[string]TransFunction {
         if NotEmpty(tree, handle_ptr) {
             var catch_and_finally = Transpile(tree, handle_ptr)
             var buf strings.Builder
-            buf.WriteString("let e = { pointer: __.gp() }; ")
+            buf.WriteString("let e = {}; ")
             buf.WriteString("try { ")
             buf.WriteString(commands)
             buf.WriteString(" } ")
@@ -247,18 +247,17 @@ var FunctionMap = map[string]TransFunction {
     },
     // handle_hook? = _at @handle name { handle_cmds }! finally
     "handle_hook": func (tree Tree, ptr int) string {
+        // note: the rule name "handle_hook" is depended by CommandMap["block"]
         var children = Children(tree, ptr)
         var buf strings.Builder
         buf.WriteString("catch (error) { ")
         fmt.Fprintf(&buf, "let handle_scope = %v.new_scope(scope); ", Runtime)
         WriteHelpers(&buf, "handle_scope")
-        buf.WriteString("__.rs(e.pointer); ")
-        fmt.Fprintf(&buf, "if (error instanceof %v.RuntimeError)", Runtime)
-        buf.WriteString(" { throw error; }; ")
+        buf.WriteString("__.enh(error); ")
         fmt.Fprintf(&buf, "dl(%v, error); ", Transpile(tree, children["name"]))
         buf.WriteString(Transpile(tree, children["handle_cmds"]))
-        buf.WriteString(" throw __.c2f(error);")
-        buf.WriteString(" }")
+        buf.WriteString(" __.exh(error); ")
+        buf.WriteString("}")
         var finally_ptr = children["finally"]
         if NotEmpty(tree, finally_ptr) {
             fmt.Fprintf(

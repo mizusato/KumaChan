@@ -18,9 +18,9 @@
     const export_name = 'KumaChan'
 
     let export_object = {
-        Void,
-        RuntimeError, CustomError,
+        CustomError, RuntimeError, AssertionFailed,
         Global, Eval, new_scope,
+        Void,
         register_module,
         get_helpers
     }

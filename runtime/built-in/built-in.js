@@ -1,6 +1,5 @@
 '<include> types/types.js';
-'<include> exception.js';
-'<include> features.js';
+'<include> features/features.js';
 '<include> functions.js';
 '<include> operators.js';
 '<include> constants.js';
@@ -33,10 +32,9 @@ let global_helpers = {
     pa: wrapped_panic,
     as: wrapped_assert,
     th: wrapped_throw,
-    c2f: convert_to_fatal,
-    gp: get_call_stack_pointer,
-    rs: restore_call_stack,
-    ccs: clear_call_stack,
+    enh: enter_handle_hook,
+    exh: exit_handle_hook,
+    aw: async_e_wrap,
     fi: for_loop_i,
     fe: for_loop_e,
     rb: inject_desc(require_bool, 'require_boolean_value'),
@@ -51,7 +49,6 @@ let global_helpers = {
     cv: create_value,
     sl: (o, lo, hi, f, r, c) => call(get_slice, [o, lo, hi], f, r, c),
     rp: inject_desc(require_promise, 'require_promise'),
-    aw: async_e_wrap,
     ic: iterator_comprehension,
     lc: list_comprehension,
     wf: when_expr_failed,

@@ -101,7 +101,7 @@ var RootMap = map[string]TransFunction {
             } else {
                 body = fmt.Sprintf("return %v", command)
             }
-            var prepend = "let e = null; __.ccs(); "
+            var prepend = "let e = null; "
             buf.WriteString(BareFunction(prepend + body))
             fmt.Fprintf(&buf, "(%v.Eval)", Runtime)
             if i != len(cmd_ptrs)-1 {

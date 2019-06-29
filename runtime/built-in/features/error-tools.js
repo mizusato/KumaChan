@@ -3,6 +3,7 @@ let wrapped_assert = fun (
         p => p? Void: panic('Assertion Failed')
 )
 
+
 let wrapped_panic = f (
     'panic',
     'function panic (e: Error) -> Never',
@@ -14,6 +15,7 @@ let wrapped_panic = f (
             panic(msg)
         }
 )
+
 
 let wrapped_throw = fun (
     'function throw (e: Error) -> Never',
@@ -27,6 +29,7 @@ let wrapped_throw = fun (
         }
 )
 
+
 function ensure_failed (e, name, args, file, row, col) {
     if (e) {
         e.type = 1
@@ -35,6 +38,7 @@ function ensure_failed (e, name, args, file, row, col) {
     throw new EnsureFailed(name, file, row, col)
 }
 
+
 function try_failed (e, error, name) {
     if (e) {
         e.type = 2
@@ -42,6 +46,7 @@ function try_failed (e, error, name) {
     }
     throw error
 }
+
 
 function inject_ensure_args (scope, names, e) {
     assert(scope instanceof Scope)

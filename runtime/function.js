@@ -28,8 +28,8 @@ pour(Types, {
 
 function inject_desc (f, desc) {
     // inject description for bare JavaScript functions
-    // this description text will be shown in call stack backtrace
     f[BareFuncDesc] = `Runtime.${desc}`
+    // the injected description text will be shown in call stack backtrace
     return f
 }
 
@@ -243,16 +243,10 @@ function wrap (context, proto, desc, raw) {
         // return the value after type check
         return value
     }
-    let wrapped = give_arity((...args) => {
-        try {
-            return invoke(args)
-        } catch (error) {
-            if (!(error instanceof RuntimeError)) {
-                clear_call_stack()
-            }
-            throw error
-        }
-    }, proto.parameters.length)
+    let wrapped = give_arity (
+        (...args) => invoke(args),
+        proto.parameters.length
+    )
     foreach(proto.parameters, p => Object.freeze(p))
     Object.freeze(proto.parameters)
     Object.freeze(proto)
@@ -386,7 +380,7 @@ function overload (functions, name) {
             }
         }
     }
-    let o = ((...args) => invoke(args, null))
+    let o = (...args) => invoke(args)
     let info = Object.freeze({ functions, invoke, desc })
     Object.freeze(info)
     o[WrapperInfo] = info
@@ -482,25 +476,26 @@ function call (f, args, file = null, row = -1, col = -1) {
     } else if (is(f, Types.Schema)) {
         f = f.create_struct_from_another
     }
-    let call_type = file? 1: 3   // call type is defined in `error.js`
+    let call_type = file? CALL_FROM_SCRIPT: CALL_FROM_BUILT_IN
     if (is(f, Wrapped)) {
         let info = f[WrapperInfo]
         push_call(call_type, info.desc, file, row, col)
-        let value = info.invoke(args)
-        pop_call()
-        return value
+        try {
+            return info.invoke(args)
+        } catch (e) {
+            throw e
+        } finally {
+            pop_call()
+        }
     } else if (is(f, ES.Function)) {
         let desc = f[BareFuncDesc] || get_summary(f.toString())
+        push_call(call_type, desc, file, row, col)
         try {
-            push_call(call_type, desc, file, row, col)
-            let value = f.apply(null, args)
-            pop_call()
-            return value
+            return f.apply(null, args)
         } catch (e) {
-            if (!(e instanceof RuntimeError)) {
-                clear_call_stack()
-            }
             throw e
+        } finally {
+            pop_call()
         }
     } else {
         ensure(false, 'non_callable', `${file} (row ${row}, column ${col})`)
