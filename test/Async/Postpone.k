@@ -1,4 +1,4 @@
 promise {
-    await postpone(250)
+    await postpone(50)
     return 'resolved'
 }

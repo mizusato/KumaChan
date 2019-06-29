@@ -328,9 +328,12 @@ let ES = {
     Function: $(x => typeof x == 'function'),
     Object: $(x => typeof x == 'object' && x !== null),
     Iterable: $(x => (
-        typeof x == 'object'
-            && x !== null
-            && typeof x[Symbol.iterator] == 'function'
+        typeof x == 'string'
+            || (
+                typeof x == 'object'
+                    && x !== null
+                    && typeof x[Symbol.iterator] == 'function'
+            )
     ))
 }
 
