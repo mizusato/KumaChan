@@ -75,7 +75,7 @@ class Array<T> is Getter<Index, T>, Setter<Index, T>, SliceGetter {
     }
     operator iter (array) {
         return iterator {
-            for i in count(len(array)) {
+            for i in seq(len(array)) {
                 yield array[i]
             }
         }
