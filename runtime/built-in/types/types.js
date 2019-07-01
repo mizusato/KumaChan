@@ -11,6 +11,16 @@ let SliceGetterType = create_interface('SliceGetter', [
         { name: 'high', type: SliceIndexType }
     ], value_type: Types.Any } }
 ], null)
+let CharType = Ins(Types.String, $(x => {
+    let i = 0
+    for (let _ of x) {
+        if (i > 0) {
+            return false
+        }
+        i += 1
+    }
+    return (i == 1)
+}))
 
 let PrimitiveType = Uni(Types.String, Types.Number, Types.Bool)
 let ArityType = template (
@@ -107,6 +117,7 @@ pour(Types, {
     SliceIndexDefault: SliceIndexDefaultType,
     SliceIndex: SliceIndexType,
     SliceGetter: SliceGetterType,
+    Char: CharType,
     Primitive: PrimitiveType,
     Representable: RepresentableType,
     Error: $(x => x instanceof Error),
@@ -136,6 +147,7 @@ let built_in_types = {
     SliceIndex: Types.SliceIndex,
     SliceIndexDefault: Types.SliceIndexDefault,
     SliceGetter: Types.SliceGetter,
+    Char: Types.Char,
     String: Types.String,
     Primitive: Types.Primitive,
     Representable: Types.Representable,

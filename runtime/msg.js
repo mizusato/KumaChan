@@ -6,6 +6,7 @@
 const INDENT = '    '
 
 const MSG = {
+    invalid_code_point: index => `invalid code point 0x${index}`,
     variable_not_declared: name => `variable ${name} not declared`,
     variable_not_found: name => `variable ${name} not found`,
     variable_declared: name => `variable ${name} already declared`,
@@ -85,7 +86,9 @@ const MSG = {
     filter_not_bool: 'given filter function did not return a boolean value',
     cond_not_bool: 'given condition function did not return a boolean value',
     element_not_string: 'non-string element was found in the iterable object',
-    invalid_range: (a, b) => `begin index ${a} is bigger than end index ${b}`,
+    invalid_range: (a, b) => (
+        `invalid range: begin index ${a} is bigger than end index ${b}`
+    ),
     empty_list: 'invalid element access on empty list',
     invalid_slice: 'invalid slice: lower bound is bigger than higher bound',
     slice_index_error: index => `slice index ${index} out of range`,

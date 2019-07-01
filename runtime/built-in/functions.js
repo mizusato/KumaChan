@@ -42,20 +42,64 @@ let built_in_functions = {
                 return Void
             }
     ),
+    // String Operations
+    utf8_size: fun (
+        'function utf8_size (s: String) -> Size',
+            s => fold(map(s, c => c.codePointAt(0)), 0, (code_point, sum) => {
+                if ((code_point & 0xFFFFFF80) == 0) {
+                    return sum + 1
+                } else if ((code_point & 0xFFFFF800) == 0) {
+                    return sum + 2
+                } else if ((code_point & 0xFFFF0000) == 0) {
+                    return sum + 3
+                } else if ((code_point & 0xFFE00000) == 0) {
+                    return sum + 4
+                } else {
+                    assert(false)
+                }
+            })
+    ),
+    ord: fun (
+        'function ord (c: Char) -> Index',
+            c => c.codePointAt(0)
+    ),
+    chr: fun (
+        'function chr (i: Index) -> Char',
+            i => {
+                try {
+                    return String.fromCodePoint(i)
+                } catch (e) {
+                    if (e instanceof RangeError) {
+                        ensure(false, 'invalid_code_point', i.toString(16))
+                    }
+                    throw e
+                }
+            }
+    ),
     // Iterable Object Operations
-    count: f (
-        'count',
-        'function count (n: Size) -> Iterator',
+    seq: f (
+        'seq',
+        'function seq (n: Size) -> Iterator',
             n => count(n),
-        'function count (start: Index, amount: Size) -> Iterator',
+        'function seq (start: Index, amount: Size) -> Iterator',
             (start, amount) => map(count(amount), i => start + i)
     ),
-    range: fun (
+    range: f (
+        'range',
         'function range (begin: Index, end: Index) -> Iterator',
             (begin, end) => {
                 ensure(begin <= end, 'invalid_range', begin, end)
                 return (function* () {
-                    for (let i = begin; i < end; i++) {
+                    for (let i = begin; i < end; i += 1) {
+                        yield i
+                    }
+                })()
+            },
+        'function range (begin: Index, end: Index, step: Size) -> Iterator',
+            (begin, end, step) => {
+                ensure(begin <= end, 'invalid_range', begin, end)
+                return (function* () {
+                    for (let i = begin; i < end; i += step) {
                         yield i
                     }
                 })()
@@ -110,6 +154,10 @@ let built_in_functions = {
                 })
                 return (r !== NotFound)? r: Types.NotFound
             }
+    ),
+    count: fun (
+        'function count (i: Iterable) -> Size',
+            i => fold(iter(i), 0, (_, v) => v+1)
     ),
     fold: f (
         'fold',
@@ -308,7 +356,6 @@ let built_in_functions = {
             }
     ),
     // Hash Operations
-
     map_key: f (
         'map_key',
         'function map_key (h: Hash, f: Arity<1>) -> Hash',
