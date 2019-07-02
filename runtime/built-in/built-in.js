@@ -51,7 +51,7 @@ let global_helpers = {
     rp: inject_desc(require_promise, 'require_promise'),
     ic: iterator_comprehension,
     lc: list_comprehension,
-    wf: when_expr_failed,
+    wf: inject_desc(when_expr_failed, 'when_expr_no_match'),
     v: Void
 }
 

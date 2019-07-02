@@ -369,7 +369,7 @@ func TypeTemplate (tree Tree, gp_ptr int, name_ptr int, expr string) string {
 }
 
 
-func FieldList (tree Tree, ptr int) (string, string) {
+func FieldList (tree Tree, ptr int) (string, string, string) {
     var FieldListId = syntax.Name2Id["field_list"]
     if tree.Nodes[ptr].Part.Id != FieldListId {
         panic("invalid usage of FieldList()")
@@ -377,13 +377,19 @@ func FieldList (tree Tree, ptr int) (string, string) {
     var names = make([]string, 0, 16)
     var types = make([]string, 0, 16)
     var defaults = make([]string, 0, 16)
+    var contains = make([]string, 0, 16)
     var names_hash = make(map[string]bool)
     // field_list = field field_list_tail
     var field_ptrs = FlatSubTree(tree, ptr, "field", "field_list_tail")
     for _, field_ptr := range field_ptrs {
-        // field = name :! type! field_default
+        // field = name : type! field_default | @fields @of type!
         var children = Children(tree, field_ptr)
-        var name = Transpile(tree, children["name"])
+        var name_ptr, has_name = children["name"]
+        if !has_name {
+            contains = append(contains, Transpile(tree, children["type"]))
+            continue
+        }
+        var name = Transpile(tree, name_ptr)
         var type_ = Transpile(tree, children["type"])
         var _, exists = names_hash[name]
         if exists {
@@ -414,7 +420,8 @@ func FieldList (tree Tree, ptr int) (string, string) {
     }
     var t = fmt.Sprintf("{ %v }", strings.Join(field_items, ", "))
     var d = fmt.Sprintf("{ %v }", strings.Join(default_items, ", "))
-    return t, d
+    var c = fmt.Sprintf("[%v]", strings.Join(contains, ", "))
+    return t, d, c
 }
 
 

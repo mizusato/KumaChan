@@ -121,10 +121,23 @@ class Schema {
 Types.Schema = $(x => x instanceof Schema)
 Types.Struct = $(x => x instanceof Struct)
 
-function create_schema (name, table, defaults, config) {
+function create_schema (name, table, defaults, contains, config) {
+    assert(is(contains, TypedList.of(Types.Schema)))
     let { guard, ops } = config
     foreach(table, (name, constraint) => {
         ensure(is(constraint, Type), 'schema_invalid_field', name)
+    })
+    table = copy(table)
+    defaults = copy(defaults)
+    foreach(contains, schema => {
+        foreach(schema.table, (name, type) => {
+            ensure(!has(name, table), 'schema_field_conflict', name)
+            table[name] = type
+            if (has(name, schema.defaults)) {
+                assert(!has(name, defaults))
+                defaults[name] = schema.defaults[name]
+            }
+        })
     })
     return new Schema(name, table, defaults, guard, ops)
 }

@@ -78,14 +78,14 @@ let IteratorType = $(x => {
 let EntryListType = create_schema('EntryList', {
     keys: Types.List,
     values: Types.List
-}, {}, { guard: fun (
+}, {}, [], { guard: fun (
     'function struct_guard (fields: Hash) -> Void',
     fields => {
         let ok = (fields.keys.length == fields.values.length)
         ensure(ok, 'bad_entry_list')
         return Void
     }
-) })
+)})
 
 let PromiseType = $(x => x instanceof Promise)
 let PromiserType = create_interface('Promiser', [

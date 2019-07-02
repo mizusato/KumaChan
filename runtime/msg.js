@@ -101,6 +101,7 @@ const MSG = {
     ),
     schema_invalid_field: f => `constraint given for field ${f} is not a type`,
     schema_invalid_default: f => `invalid default value for field '${f}'`,
+    schema_field_conflict: f => `field '${f}' was defined twice or more`,
     struct_field_missing: k => `field '${k}' does not exist on the struct`,
     struct_field_invalid: k => (
         `given value for field '${k}' violated the schema of the struct`

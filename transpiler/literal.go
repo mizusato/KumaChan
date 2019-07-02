@@ -192,8 +192,11 @@ var LiteralMap = map[string]TransFunction {
             type_, hash, file, row, col,
         )
     },
-    // struct_hash = { struct_hash_item struct_hash_tail }!
+    // struct_hash = { } | { struct_hash_item struct_hash_tail }!
     "struct_hash": func (tree Tree, ptr int) string {
+        if tree.Nodes[ptr].Length == 2 {
+            return "{}"
+        }
         var item_ptrs = FlatSubTree (
             tree, ptr, "struct_hash_item", "struct_hash_tail",
         )
