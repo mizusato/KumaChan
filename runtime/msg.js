@@ -83,6 +83,7 @@ const MSG = {
     not_bool: 'given expression did not evaluate to a boolean value',
     not_awaitable: 'expression to await did not evaluate to a awaitable value',
     not_iterable: i => `comprehension argument #${i} is not iterable`,
+    element_not_iterable: 'flat(): non-iterable element appeared in sequence',
     filter_not_bool: 'given filter function did not return a boolean value',
     cond_not_bool: 'given condition function did not return a boolean value',
     element_not_string: 'non-string element was found in the iterable object',

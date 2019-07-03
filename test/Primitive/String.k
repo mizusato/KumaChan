@@ -1,5 +1,7 @@
 invoke {
     assert '123' + '456' == '123456'
+    assert 'aBcD' -> to_lower_case() == 'abcd'
+    assert 'aBcD' -> to_upper_case() == 'ABCD'
     let CHARS = ['1', 'A', 'あ', '大', '𣾜', '📞']
     let CODES = [49, 65, 12354, 22823, 147356, 128222]
     let list = collect('1Aあ大𣾜📞')

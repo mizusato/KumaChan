@@ -76,6 +76,14 @@ let built_in_functions = {
                 }
             }
     ),
+    to_lower_case: fun (
+        'function to_lower_case (s: String) -> String',
+            s => s.toLowerCase()
+    ),
+    to_upper_case: fun (
+        'function to_upper_case (s: String) -> String',
+            s => s.toUpperCase()
+    ),
     // Iterable Object Operations
     seq: f (
         'seq',
@@ -83,6 +91,14 @@ let built_in_functions = {
             n => count(n),
         'function seq (start: Index, amount: Size) -> Iterator',
             (start, amount) => map(count(amount), i => start + i)
+    ),
+    repeat: fun (
+        'function repeat (object: Any, n: Size) -> Iterator',
+            (object, n) => (function* () {
+                for (let i = 0; i < n; i++) {
+                    yield object
+                }
+            })()
     ),
     range: f (
         'range',
@@ -230,6 +246,17 @@ let built_in_functions = {
             })(),
         'function reversed (l: List) -> Iterator',
             l => rev(l)
+    ),
+    flat: fun (
+        'function flat (i: Iterable) -> Iterator',
+            i => (function* () {
+                for (let e of iter(i)) {
+                    ensure(is(e, Types.Iterable), 'element_not_iterable')
+                    for (let ee of iter(e)) {
+                        yield ee
+                    }
+                }
+            })()
     ),
     collect: fun (
         'function collect (i: Iterable) -> List',
