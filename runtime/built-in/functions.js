@@ -373,6 +373,8 @@ let built_in_functions = {
     // Copy
     copy: f (
         'copy',
+        'function copy (s: Struct) -> Struct',
+            s => new_struct(s.schema, copy(s.data)),
         'function copy (l: List) -> List',
             l => copy(l),
         'function copy (h: Hash) -> Hash',

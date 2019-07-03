@@ -79,4 +79,9 @@ invoke {
     assert s1 is not Box<String>
     assert b is Box<String>
     assert b is Box
+    let b1 = copy(b)
+    assert b1 is Box<String>
+    set b1.value = '000'
+    assert b1.value == '000'
+    assert b.value == '789'
 }
