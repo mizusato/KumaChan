@@ -102,10 +102,11 @@ async function main () {
             total += 1
         }
     }
-    print('')
     if (passed == total) {
-        print(`${Bold}Test Finished, ${Green}All Passed.${Reset}`)
+        display(`${Bold}Test Finished, ${Green}All Passed.${Reset}`)
+        print('')
     } else {
+        print('')
         print(`${Bold}Test Finished, ${Red}${passed}/${total} Passed.${Reset}`)
         process.exit(1)
     }
