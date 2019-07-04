@@ -41,7 +41,7 @@ class FunSig {
 function create_fun_sig (args, ret) {
     assert(is(args, Types.List))
     foreach(args, (T, i) => {
-        ensure(is(T, Type), 'signature_invalid_arg', i)
+        ensure(is(T, Type), 'signature_invalid_arg', i+1)
     })
     ensure(is(ret, Type), 'signature_invalid_ret')
     let normalized = [ret, ...args]
