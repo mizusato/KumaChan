@@ -395,63 +395,6 @@ var FunctionMap = map[string]TransFunction {
         var type_ = Transpile(tree, children["type"])
         return fmt.Sprintf("{ name: %v, type: %v }", name, type_)
     },
-    // type = identifier type_gets type_args | ( expr )
-    "type": func (tree Tree, ptr int) string {
-        var file = GetFileName(tree)
-        var children = Children(tree, ptr)
-        var expr, exists = children["expr"]
-        if exists { return Transpile(tree, expr) }
-        var id = Transpile(tree, children["identifier"])
-        var gets_ptr = children["type_gets"]
-        var gets = FlatSubTree(tree, gets_ptr, "type_get", "type_gets")
-        var t = id
-        for _, get := range gets {
-            // type_get = . name
-            var key = TranspileLastChild(tree, get)
-            var row, col = GetRowColInfo(tree, get)
-            var buf strings.Builder
-            buf.WriteString("__.g")
-            buf.WriteRune('(')
-            WriteList(&buf, []string {
-                t, key, "false", file, row, col,
-            })
-            buf.WriteRune(')')
-            t = buf.String()
-        }
-        var args_ptr = children["type_args"]
-        if NotEmpty(tree, args_ptr) {
-            var args = Transpile(tree, args_ptr)
-            var row, col = GetRowColInfo(tree, args_ptr)
-            var buf strings.Builder
-            buf.WriteString("__.c")
-            buf.WriteRune('(')
-            WriteList(&buf, []string {
-                t, args, file, row, col,
-            })
-            buf.WriteRune(')')
-            return buf.String()
-        } else {
-            return t
-        }
-    },
-    // type_args? = Call < type_arglist! >!
-    "type_args": TranspileChild("type_arglist"),
-    // type_arglist = type_arg type_arglist_tail
-    "type_arglist": func (tree Tree, ptr int) string {
-        var args = FlatSubTree(tree, ptr, "type_arg", "type_arglist_tail")
-        var buf strings.Builder
-        buf.WriteRune('[')
-        for i, arg := range args {
-            buf.WriteString(Transpile(tree, arg))
-            if i != len(args)-1 {
-                buf.WriteString(", ")
-            }
-        }
-        buf.WriteRune(']')
-        return buf.String()
-    },
-    // type_arg = type | primitive
-    "type_arg": TranspileFirstChild,
     // operator_defs? = operator_def operator_defs
     "operator_defs": func (tree Tree, ptr int) string {
         if Empty(tree, ptr) { return "{}" }

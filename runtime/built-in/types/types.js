@@ -1,5 +1,6 @@
 '<include> structure.js';
 '<include> enum.js';
+'<include> signature.js';
 
 
 let IndexType = Ins(Types.Int, $(x => x >= 0))

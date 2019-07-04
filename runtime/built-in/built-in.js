@@ -24,8 +24,9 @@ let global_helpers = {
     ns: inject_desc(new_struct, 'initialize_structure'),
     ct: inject_desc(f => $(x => call(f, [x])), 'create_simple_type'),
     ctt: inject_desc(f => new TypeTemplate(f), 'create_type_template'),
-    cf: one_of,  // create FiniteSetType
+    cft: one_of,  // create FiniteSetType
     ce: inject_desc((n, ns) => new Enum(n, ns), 'create_enum'),
+    cfs: inject_desc(create_fun_sig, 'create_function_signature'),
     ef: ensure_failed,
     tf: try_failed,
     ie: inject_desc(inject_ensure_args, 'inject_ensure_args'),

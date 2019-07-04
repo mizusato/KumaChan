@@ -136,5 +136,11 @@ const MSG = {
     not_repr: p => 'string format parameter ${' + p + '} is not representable',
     when_expr_failed: (
         'all conditions evaluated to false in this when expression'
+    ),
+    signature_invalid_arg: i => (
+        `invalid function signature: non-type object given for parameter #${i}`
+    ),
+    signature_invalid_ret: (
+        'invalid function signature: non-type object given for return value'
     )
 }

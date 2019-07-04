@@ -23,7 +23,7 @@
         call_by_js, inject_desc,
         Void,
         register_module,
-        get_helpers
+        get_helpers,
     }
     Object.freeze(export_object)
 

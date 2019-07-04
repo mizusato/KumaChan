@@ -360,8 +360,7 @@ let Types = {
     ES_Object: Uni(Ins(ES.Object, $(x => {
         // objects that aren't in control of our runtime
         let p = get_proto(x)
-        let p_ok = (p !== Object.prototype && p !== null)
-        if (!p_ok) { return false }
+        if (get_proto(x) === Object.prototype) { return false }
         if (is(x, Type)) { return false }
         return forall(
             [Array, Error, Function, Instance, Struct],
@@ -426,3 +425,96 @@ class HashFormat {
 
 // shorthand
 let format = ((table, def, req) => new HashFormat(table, def, req))
+
+
+
+class ObjectRegistry {
+    constructor () {
+        let self = {
+            map: new Map(),   // value --> id
+            next_id: 0
+        }
+        this.get_id = this.get_id.bind(self)
+        Object.freeze(this)
+    }
+    get_id (value) {
+        if (this.map.has(value)) {
+            return this.map.get(value)
+        } else {
+            if (is(value, Type)) {
+                for (let item of this.map) {
+                    let [T, id] = item
+                    if (is(T, Type) && type_equivalent(T, value)) {
+                        this.map.set(value, id)
+                        return id
+                    }
+                }
+            }
+            let id = this.next_id
+            this.map.set(value, id)
+            this.next_id = id + 1
+            assert(is(this.next_id, Types.Int))
+            return id
+        }
+    }
+}
+
+
+class VectorMapCache {
+    constructor () {
+        let self = {
+            registry: new ObjectRegistry(),
+            groups: new Map(),
+            hash: this.hash
+        }
+        this.set = this.set.bind(self)
+        this.find = this.find.bind(self)
+        Object.freeze(this)
+    }
+    hash (id_vector) {
+        assert(!(this instanceof VectorMapCache))
+        assert(is(id_vector, TypedList.of(Types.Int)))
+        let L = id_vector.length
+        let value = L % 10
+        let offset = 10
+        for (let i = 0; i < L && i < 10; i += 1) {
+            value += offset * (id_vector[i] % 10)
+            offset *= 10
+        }
+        return value
+    }
+    set (vector, value) {
+        assert(is(vector, Types.List))
+        let id_vector = vector.map(element => this.registry.get_id(element))
+        let h = this.hash(id_vector)
+        if (this.groups.has(h)) {
+            let group = this.groups.get(h)
+            assert(is(group, Types.List))
+            for (let item of group) {
+                let [iv, _] = item
+                assert(!equal(iv, id_vector))
+            }
+            group.push([id_vector, value])
+        } else {
+            this.groups.set(h, [[id_vector, value]])
+        }
+    }
+    find (vector) {
+        assert(is(vector, Types.List))
+        let id_vector = vector.map(element => this.registry.get_id(element))
+        let h = this.hash(id_vector)
+        if (this.groups.has(h)) {
+            let group = this.groups.get(h)
+            assert(is(group, Types.List))
+            for (let item of group) {
+                let [iv, value] = item
+                if (equal(iv, id_vector)) {
+                    return value
+                }
+            }
+            return NotFound
+        } else {
+            return NotFound
+        }
+    }
+}

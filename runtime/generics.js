@@ -11,75 +11,61 @@
 class TypeTemplate {
     constructor (inflater) {
         assert(is(inflater, Types.Function))
-        this.inflater = inflater
-        this.cache = []
-        this.inflated = {
-            classes: new Set(),
-            schema: new Set(),
-            interfaces: new Set()
-        }
-        this.info = { only_classified: true }
-        this.inflate = this.inflate.bind(this)
-        inject_desc(this.inflate, 'inflate_template')
-        this[Checker] = (x => {
-            if (is(x, Types.Instance)) {
-                let is_inflated_class = C => this.inflated.classes.has(C)
-                if (exists(x.class_.super_classes, is_inflated_class)) {
-                    return true
-                } else if (this.inflated.interfaces.size == 0) {
-                    return false
-                }
-                let is_inflated_interface = I => this.inflated.interfaces.has(I)
-                if (exists(x.class_.super_interfaces, is_inflated_interface)) {
-                    return true
-                } else if (this.info.only_classified) {
-                    return false
-                }
-            } else if (is(x, Types.Struct)) {
-                if (this.inflated.schema.has(x.schema)) {
-                    return true
-                } else if (this.info.only_classified) {
-                    return false
-                }
+        let self = {
+            inflater,
+            cache: new VectorMapCache(),
+            inflated: {
+                classes: new Set(),
+                interfaces: new Set(),
+                schemas: new Set(),
+                others: new Set()
             }
-            return exists(this.cache, item => is(x, item.type))
-        })
+        }
+        this.inflate = this.inflate.bind(self)
+        inject_desc(this.inflate, 'inflate_template')
+        this[Checker] = this.check.bind(self)
         Object.freeze(this)
     }
-    inflate (...args) {
-        let cached = find(this.cache, item => {
-            return equal(item.args, args, (A, B) => {
-                if (is(A, Type) && is(B, Type)) {
-                    return type_equivalent(A, B)
-                } else {
-                    return A === B
-                }
-            })
-        })
-        if (cached !== NotFound) {
-            return cached.type
-        } else {
-            foreach(args, (arg, i) => {
-                let is_type = is(arg, Type) || is(arg, Types.Primitive)
-                ensure(is_type, 'arg_invalid_inflate', `#${i+1}`)
-            })
-            let type = call(this.inflater, args)
-            ensure(is(type, Type), 'retval_invalid_inflate')
-            this.cache.push({
-                args: copy(args),
-                type: type
-            })
-            if (is(type, Types.Class)) {
-                this.inflated.classes.add(type)
-            } else if (is(type, Types.Interface)) {
-                this.inflated.interfaces.add(type)
-            } else if (is(type, Types.Schema)) {
-                this.inflated.schema.add(type)
-            } else {
-                this.info.only_classified = false
+    check (x) {
+        assert(!(this instanceof TypeTemplate))
+        let { classes, interfaces, schemas, others } = this.inflated
+        if (is(x, Types.Instance)) {
+            if (exists(x.class_.super_classes, C => classes.has(C))) {
+                return true
             }
-            return type
+            if (exists(x.class_.super_interfaces, I => interfaces.has(I))) {
+                return true
+            }
+        } else if (is(x, Types.Struct)) {
+            if (schemas.has(x.schema)) {
+                return true
+            }
         }
+        return exists(others, T => is(x, T))
+    }
+    inflate (...args) {
+        assert(is(args, Types.List))
+        let cached = this.cache.find(args)
+        if (cached !== NotFound) {
+            return cached
+        }
+        foreach(args, (arg, i) => {
+            let valid = is(arg, Type) || is(arg, Types.Primitive)
+            ensure(valid, 'arg_invalid_inflate', `#${i+1}`)
+        })
+        let type = call(this.inflater, args)
+        ensure(is(type, Type), 'retval_invalid_inflate')
+        this.cache.set(args, type)
+        if (is(type, Types.Class)) {
+            this.inflated.classes.add(type)
+        } else if (is(type, Types.Interface)) {
+            this.inflated.interfaces.add(type)
+        } else if (is(type, Types.Schema)) {
+            this.inflated.schemas.add(type)
+        } else {
+            this.inflated.others.add(type)
+        }
+        return type
     }
     get [Symbol.toStringTag]() {
         return 'TypeTemplate'

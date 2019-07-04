@@ -46,18 +46,6 @@ var OO_Map = map[string]TransFunction {
             return "[]"
         }
     },
-    // typelist = type typelist_tail
-    "typelist": func (tree Tree, ptr int) string {
-        var type_ptrs = FlatSubTree(tree, ptr, "type", "typelist_tail")
-        var buf strings.Builder
-        for i, type_ptr := range type_ptrs {
-            buf.WriteString(Transpile(tree, type_ptr))
-            if i != len(type_ptrs)-1 {
-                buf.WriteString(", ")
-            }
-        }
-        return buf.String()
-    },
     // init = @init Call paralist_strict! body!
     "init": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)

@@ -5,6 +5,102 @@ import "strings"
 
 
 var TypeMap = map[string]TransFunction {
+    // type = fun_sig | type_expr | ( expr )!
+    "type": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var expr, is_expr = children["expr"]
+        if is_expr {
+            return Transpile(tree, expr)
+        } else {
+            return TranspileFirstChild(tree, ptr)
+        }
+    },
+    // fun_sig = @$ < opt_typelist >! <! type! >!
+    "fun_sig": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var l_ptr = children["opt_typelist"]
+        var args string
+        if Empty(tree, l_ptr) {
+            args = "[]"
+        } else {
+            // opt_typelist = typelist
+            args = fmt.Sprintf("[%v]", TranspileFirstChild(tree, l_ptr))
+        }
+        var ret = Transpile(tree, children["type"])
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
+        return fmt.Sprintf (
+            "__.c(__.cfs, [%v, %v], %v, %v, %v)",
+            args, ret, file, row, col,
+        )
+    },
+    // typelist = type typelist_tail
+    "typelist": func (tree Tree, ptr int) string {
+        var type_ptrs = FlatSubTree(tree, ptr, "type", "typelist_tail")
+        var buf strings.Builder
+        for i, type_ptr := range type_ptrs {
+            buf.WriteString(Transpile(tree, type_ptr))
+            if i != len(type_ptrs)-1 {
+                buf.WriteString(", ")
+            }
+        }
+        return buf.String()
+    },
+    // type_expr = identifier type_gets type_args
+    "type_expr": func (tree Tree, ptr int) string {
+        var file = GetFileName(tree)
+        var children = Children(tree, ptr)
+        var id = Transpile(tree, children["identifier"])
+        var gets_ptr = children["type_gets"]
+        var gets = FlatSubTree(tree, gets_ptr, "type_get", "type_gets")
+        var t = id
+        for _, get := range gets {
+            // type_get = . name
+            var key = TranspileLastChild(tree, get)
+            var row, col = GetRowColInfo(tree, get)
+            var buf strings.Builder
+            buf.WriteString("__.g")
+            buf.WriteRune('(')
+            WriteList(&buf, []string {
+                t, key, "false", file, row, col,
+            })
+            buf.WriteRune(')')
+            t = buf.String()
+        }
+        var args_ptr = children["type_args"]
+        if NotEmpty(tree, args_ptr) {
+            var args = Transpile(tree, args_ptr)
+            var row, col = GetRowColInfo(tree, args_ptr)
+            var buf strings.Builder
+            buf.WriteString("__.c")
+            buf.WriteRune('(')
+            WriteList(&buf, []string {
+                t, args, file, row, col,
+            })
+            buf.WriteRune(')')
+            return buf.String()
+        } else {
+            return t
+        }
+    },
+    // type_args? = Call < type_arglist! >!
+    "type_args": TranspileChild("type_arglist"),
+    // type_arglist = type_arg type_arglist_tail
+    "type_arglist": func (tree Tree, ptr int) string {
+        var args = FlatSubTree(tree, ptr, "type_arg", "type_arglist_tail")
+        var buf strings.Builder
+        buf.WriteRune('[')
+        for i, arg := range args {
+            buf.WriteString(Transpile(tree, arg))
+            if i != len(args)-1 {
+                buf.WriteString(", ")
+            }
+        }
+        buf.WriteRune(']')
+        return buf.String()
+    },
+    // type_arg = type | primitive
+    "type_arg": TranspileFirstChild,
     // type_literal = simple_type_literal | finite_literal
     "type_literal": TranspileFirstChild,
     // simple_type_literal = { name _bar1 filters! }!
@@ -41,7 +137,7 @@ var TypeMap = map[string]TransFunction {
         var exprlist_ptr = children["exprlist"]
         var expr_ptrs = FlatSubTree(tree, exprlist_ptr, "expr", "exprlist_tail")
         var buf strings.Builder
-        buf.WriteString("__.cf")
+        buf.WriteString("__.cft")
         buf.WriteRune('(')
         for i, expr_ptr := range expr_ptrs {
             var expr = Transpile(tree, expr_ptr)
