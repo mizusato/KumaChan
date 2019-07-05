@@ -65,15 +65,17 @@ function build_proto_table (raw_table) {
  */
 class Class {
     constructor (
-        name, impls, init, pfs, methods,
+        name, impls, init, creators, pfs, methods,
         ops = {}, data = {}, def_point = null
     ) {
         // class NAME
         assert(is(name, Types.String))
         // is IMPLS {
         assert(is(impls, TypedList.of(OO_Abstract)))
-        // INIT (...) { ... }
+        // init (...) { ... }
         assert(is(init, Types.Function))
+        // create (...) { ... } create (...) { ... } ...
+        assert(is(creators, TypedList.of(Types.Function)))
         // private PF1 (...) { ... } private PF2 (...) { ... } ...
         assert(is(pfs, TypedHash.of(Types.Overload)))
         // METHOD1 (...) { ... } METHOD2 (...) { ... } ...
@@ -87,9 +89,10 @@ class Class {
             let { file, row, col } = def_point
             this.desc = `class ${name} at ${file} (row ${row}, column ${col})`
         } else {
-            this.desc = `class ${name} at (Built-in)`
+            this.desc = `class ${name} (built-in)`
         }
-        this.init = cancel_binding(init)
+        this.init = init
+        this.creators = Object.freeze(copy(creators))
         this.impls = Object.freeze(copy(impls))
         this.pfs = Object.freeze(copy(pfs))
         this.methods = Object.freeze(copy(methods))
@@ -99,7 +102,7 @@ class Class {
         this.operators_info = get_operators_info(this)
         this.super_classes = get_super_classes(this)
         this.super_interfaces = get_super_interfaces(this)
-        this.create = wrap_initializer(this)
+        this.create = get_integrated_constructor(this)
         this[Checker] = (object => {
             if (!is(object, Types.Instance)) { return false }
             return exists(object.class_.super_classes, S => S === this)
@@ -130,12 +133,13 @@ function create_class (
     name, impls, init, raw_pfs, raw_methods,
     options, def_point
 ) {
+    let [ init_main, creators ] = init
     let { ops, data } = options
     check_impls(impls)
     let pfs = build_method_table(raw_pfs)
     let methods = build_method_table(raw_methods)
     return new Class (
-        name, impls, init, pfs, methods,
+        name, impls, init_main, creators, pfs, methods,
         ops, data, def_point
     )
 }
@@ -237,6 +241,26 @@ function wrap_initializer (class_) {
         // return the initialized instance
         return self
     })
+}
+
+
+/**
+ *  Integrate the main initializer and alternative creators of a class
+ *
+ *  @param class_ Class
+ *  @return Overload
+ */
+function get_integrated_constructor (class_) {
+    let init = wrap_initializer(class_)
+    let creators = class_.creators.map(creator => {
+        creator = creator[WrapperInfo]
+        return wrap(creator.context, creator.proto, creator.desc, scope => {
+            let created = creator.raw(scope)
+            ensure(is(created, class_), 'creator_returned_invalid')
+            return created
+        })
+    })
+    return overload([...creators, init], class_.name)
 }
 
 
@@ -392,7 +416,7 @@ class Interface {
             let pos = `${file} (row ${row}, column ${col})`
             this.desc = `interface ${name} at ${pos}`
         } else {
-            this.desc = `interface ${name} at (Built-in)`
+            this.desc = `interface ${name} (built-in)`
         }
         this.proto_table = mapval(proto_table, l => Object.freeze(copy(l)))
         this.implemented = copy(implemented)

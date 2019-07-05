@@ -69,6 +69,7 @@ const MSG = {
     method_not_found: (name, p) => (
         `method ${name}() does not exist, called at ${p}`
     ),
+    creator_returned_invalid: 'the creator returned an invalid instance',
     format_invalid_key: key => (
         `key '${key}' does not exist in given Hash or Struct`
     ),

@@ -46,24 +46,34 @@ var OO_Map = map[string]TransFunction {
             return "[]"
         }
     },
-    // init = @init Call paralist_strict! body!
+    // init = @init Call paralist_strict! body! creators
     "init": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
-        var params_ptr = children["paralist_strict"]
-        var parameters = Transpile(tree, params_ptr)
-        var body_ptr = children["body"]
-        var class_ptr = tree.Nodes[ptr].Parent
+        var class_ptr = tree.Nodes[ptr].Parent  // note: access of parent node
         var class_children = Children(tree, class_ptr)
-        var name_ptr = class_children["name"]
-        var desc = Desc (
-            GetTokenContent(tree, name_ptr),
-            GetWholeContent(tree, params_ptr),
-            []rune("Instance"),
-        )
-        return Function (
-            tree, body_ptr, F_Sync,
-            desc, parameters, "__.i",
-        )
+        var name = GetTokenContent(tree, class_children["name"])
+        var main = InitFunction(tree, ptr, name)
+        var alternatives = Transpile(tree, children["creators"])
+        return fmt.Sprintf("[%v, %v]", main, alternatives)
+    },
+    // creators? = creator creators
+    "creators": func (tree Tree, ptr int) string {
+        var init_ptr = tree.Nodes[ptr].Parent  // note: access of parent node
+        var class_ptr = tree.Nodes[init_ptr].Parent
+        var class_children = Children(tree, class_ptr)
+        var name = GetTokenContent(tree, class_children["name"])
+        var creator_ptrs = FlatSubTree(tree, ptr, "creator", "creators")
+        var buf strings.Builder
+        buf.WriteRune('[')
+        for i, creator_ptr := range creator_ptrs {
+            // creator = @create Call paralist_strict! body!
+            buf.WriteString(InitFunction(tree, creator_ptr, name))
+            if i != len(creator_ptrs)-1 {
+                buf.WriteString(", ")
+            }
+        }
+        buf.WriteRune(']')
+        return buf.String()
     },
     // pfs? = pf pfs
     "pfs": func (tree Tree, ptr int) string {

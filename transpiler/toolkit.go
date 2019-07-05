@@ -74,6 +74,19 @@ func FlatSubTree (tree Tree, ptr int, extract string, next string) []int {
 }
 
 
+func TranspileSubTree (tree Tree, ptr int, item string, next string) string {
+    var item_ptrs = FlatSubTree(tree, ptr, item, next)
+    var buf strings.Builder
+    for i, item_ptr := range item_ptrs {
+        buf.WriteString(Transpile(tree, item_ptr))
+        if i != len(item_ptrs)-1 {
+            buf.WriteString(", ")
+        }
+    }
+    return buf.String()
+}
+
+
 func GetTokenContent (tree Tree, ptr int) []rune {
     var node = &tree.Nodes[ptr]
     if node.Part.Partype == syntax.Recursive {
@@ -248,6 +261,23 @@ func Function (
             parameters, value_type,
         ),
         static_scope, desc, raw,
+    )
+}
+
+
+func InitFunction (tree Tree, ptr int, name []rune) string {
+    var children = Children(tree, ptr)
+    var params_ptr = children["paralist_strict"]
+    var parameters = Transpile(tree, params_ptr)
+    var body_ptr = children["body"]
+    var desc = Desc (
+        name,
+        GetWholeContent(tree, params_ptr),
+        []rune("Instance"),
+    )
+    return Function (
+        tree, body_ptr, F_Sync,
+        desc, parameters, "__.i",
     )
 }
 
