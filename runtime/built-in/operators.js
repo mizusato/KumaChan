@@ -23,7 +23,6 @@ function apply_unary (name, a) {
         return call(a.schema.get_operator(name), [a])
     } else {
         assert(is(a, Types.Instance))
-        assert(a.class_.defined_operator(name))
         return call(a.class_.get_operator(name), [a])
     }
 }
@@ -37,6 +36,21 @@ let operators = {
                 // if T is a custom type, its checker must be f: [Any] --> Bool
                 // this constraint should be enforced by custom type creator
                 return call(A[Checker], [x])
+            }
+    ),
+    'as': f (
+        'operator.as',
+        `function operator.as (x: Operand<'as'>, T: Type) -> Object`,
+            (x, T) => {
+                let y = null
+                if (is(x, Types.Struct)) {
+                    y = call(x.schema.get_operator('as'), [x, T])
+                } else {
+                    assert(is(x, Types.Instance))
+                    y = call(x.class_.get_operator('as'), [x, T])
+                }
+                ensure(is(y, T), 'invalid_cast')
+                return y
             }
     ),
     'str': f (

@@ -135,12 +135,13 @@ const MSG = {
     module_not_exist: mod => `module ${mod} does not exist`,
     not_repr: p => 'string format parameter ${' + p + '} is not representable',
     when_expr_failed: (
-        'all conditions evaluated to false in this when expression'
+        'all conditions evaluated to false in when expression'
     ),
     signature_invalid_arg: i => (
         `invalid function signature: non-type object given for parameter #${i}`
     ),
     signature_invalid_ret: (
         'invalid function signature: non-type object given for return value'
-    )
+    ),
+    invalid_cast: 'invalid type cast: object was cast to non-desired type'
 }

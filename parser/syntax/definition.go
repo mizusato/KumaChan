@@ -127,6 +127,7 @@ var Operators = [...] Operator {
     Operator { Match: "<!=>", Priority: 50,  Assoc: Left,   Lazy: false  },
     /* Logic */
     Operator { Match: "@is",  Priority: 60,  Assoc: Left,   Lazy: false  },
+    Operator { Match: "@as",  Priority: 60,  Assoc: Left,   Lazy: false  },
     Operator { Match: "&&",   Priority: 40,  Assoc: Left,   Lazy: true   },
     Operator { Match: "||",   Priority: 30,  Assoc: Left,   Lazy: true   },
     Operator { Match: "&",    Priority: 90,  Assoc: Left,   Lazy: false  },
@@ -143,7 +144,7 @@ var Operators = [...] Operator {
 
 
 var RedefinableOperators = []string {
-    "@str", "@len", "@iter", "@enum",
+    "@as", "@str", "@len", "@iter", "@enum",
     "==", "<",
     "<<", ">>",
     "@negate", "+", "-", "*", "/", "%", "^",
@@ -333,7 +334,7 @@ var SyntaxDefinition = [...] string {
     "operator = op_group1 | op_compare | op_logic | op_arith",
     "op_group1 = << | >> | => | @or",
     "op_compare = < | > | <= | >= | == | != | ~~ | !~ | <=> | <!=> ",
-    `op_logic = @is | && | _bar2 | & | _bar1 | \ `,
+    `op_logic = @is | @as | && | _bar2 | & | _bar1 | \ `,
     "op_arith = + | - | * | / | % | ^ ",
     /* Operators (Prefix) */
     "unary? = unary_group1 | unary_group2 | unary_group3",
