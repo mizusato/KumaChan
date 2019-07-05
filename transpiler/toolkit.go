@@ -322,19 +322,24 @@ func UntypedParameters (names []string) string {
 }
 
 
-func UntypedParameterList (tree Tree, namelist_ptr int) string {
+func TypedParameterList (tree Tree, namelist_ptr int, type_ string) string {
     var name_ptrs = FlatSubTree(tree, namelist_ptr, "name", "namelist_tail")
     var buf strings.Builder
     buf.WriteRune('[')
     for i, name_ptr := range name_ptrs {
         var name = Transpile(tree, name_ptr)
-        fmt.Fprintf(&buf, "{ name: %v, type: __.a }", name)
+        fmt.Fprintf(&buf, "{ name: %v, type: %v }", name, type_)
         if i != len(name_ptrs)-1 {
             buf.WriteString(", ")
         }
     }
     buf.WriteRune(']')
     return buf.String()
+}
+
+
+func UntypedParameterList (tree Tree, namelist_ptr int) string {
+    return TypedParameterList(tree, namelist_ptr, "__.a")
 }
 
 
@@ -352,7 +357,7 @@ func GenericParameters (tree Tree, gp_ptr int, name []rune) (string, string) {
         desc = Desc(name, GetWholeContent(tree, typed_ptr), []rune("Type"))
     } else {
         var l_ptr = children["namelist"]
-        parameters = UntypedParameterList(tree, l_ptr)
+        parameters = TypedParameterList(tree, l_ptr, "__.t")
         desc = Desc(name, GetWholeContent(tree, l_ptr), []rune("Type"))
     }
     return parameters, desc

@@ -65,17 +65,10 @@ let SetterType = template (
         ], null)
 )
 
-let IteratorType = $(x => {
-    let is_iterable = typeof x[Symbol.iterator] == 'function'
-    if (is_iterable) {
-        return (
-            x[Symbol.toStringTag] == 'Generator'
-            || x[Symbol.iterator]() === x
-        )
-    } else {
-        return false
-    }
-})
+let IteratorType = $(x => (
+    typeof x.next == 'function'
+    && typeof x[Symbol.iterator] == 'function'
+))
 let EntryListType = create_schema('EntryList', {
     keys: Types.List,
     values: Types.List
