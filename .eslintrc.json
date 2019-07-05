@@ -1,0 +1,21 @@
+{
+    "parserOptions": {
+        "ecmaVersion": 2018,
+        "sourceType": "module",
+        "ecmaFeatures": {
+            "jsx": true,
+            "impliedStrict": true
+        }
+    },
+    "extends": "eslint:recommended",
+    "rules": {
+        "linebreak-style": ["error", "unix"],
+        "indent": "off",
+        "quotes": "off",
+        "semi": "off",
+        "no-extra-semi": "off",
+        "no-undef": "off",
+        "no-unused-vars": "off",
+        "no-console": "off"
+    }
+}
