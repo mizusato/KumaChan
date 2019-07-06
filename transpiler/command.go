@@ -546,17 +546,7 @@ var CommandMap = map[string]TransFunction {
     },
     // as_list = as_item as_list_tail
     "as_list": func (tree Tree, ptr int) string {
-        var item_ptrs = FlatSubTree(tree, ptr, "as_item", "as_list_tail")
-        var buf strings.Builder
-        buf.WriteRune('[')
-        for i, item_ptr := range item_ptrs {
-            buf.WriteString(Transpile(tree, item_ptr))
-            if i != len(item_ptrs)-1 {
-                buf.WriteString(", ")
-            }
-        }
-        buf.WriteRune(']')
-        return buf.String()
+        return TranspileSubTree(tree, ptr, "as_item", "as_list_tail")
     },
     // as_item = name @as name! | name
     "as_item": func (tree Tree, ptr int) string {

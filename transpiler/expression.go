@@ -234,11 +234,11 @@ var ExpressionMap = map[string]TransFunction {
             return Transpile(tree, args_ptr)
         }
     },
-    // args = ( arglist )! extra_arg | < typelist >
+    // args = ( arglist )! extra_arg | < type_arglist >
     "args": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
-        var typelist, exists = children["type_arglist"]
-        if exists { return Transpile(tree, typelist) }
+        var type_arglist, exists = children["type_arglist"]
+        if exists { return Transpile(tree, type_arglist) }
         var buf strings.Builder
         buf.WriteRune('[')
         var arglist_ptr = children["arglist"]
@@ -263,11 +263,11 @@ var ExpressionMap = map[string]TransFunction {
     "arglist": TranspileFirstChild,
     // exprlist = expr exprlist_tail
     "exprlist": func (tree Tree, ptr int) string {
-        var ptrs = FlatSubTree(tree, ptr, "expr", "exprlist_tail")
+        var expr_ptrs = FlatSubTree(tree, ptr, "expr", "exprlist_tail")
         var buf strings.Builder
-        for i, item_ptr := range ptrs {
-            buf.WriteString(Transpile(tree, item_ptr))
-            if i < len(ptrs)-1 {
+        for i, expr_ptr := range expr_ptrs {
+            buf.WriteString(Transpile(tree, expr_ptr))
+            if i != len(expr_ptrs)-1 {
                 buf.WriteString(", ")
             }
         }

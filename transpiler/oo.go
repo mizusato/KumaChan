@@ -39,11 +39,10 @@ var OO_Map = map[string]TransFunction {
     },
     // supers? = @is typelist
     "supers": func (tree Tree, ptr int) string {
-        if NotEmpty(tree, ptr) {
-            var children = Children(tree, ptr)
-            return fmt.Sprintf("[%v]", Transpile(tree, children["typelist"]))
-        } else {
+        if Empty(tree, ptr) {
             return "[]"
+        } else {
+            return TranspileLastChild(tree, ptr)
         }
     },
     // init = @init Call paralist_strict! body! creators
@@ -129,17 +128,7 @@ var OO_Map = map[string]TransFunction {
     // members? = member members
     "members": func (tree Tree, ptr int) string {
         if Empty(tree, ptr) { return "[]" }
-        var member_ptrs = FlatSubTree(tree, ptr, "member", "members")
-        var buf strings.Builder
-        buf.WriteRune('[')
-        for i, member_ptr := range member_ptrs {
-            buf.WriteString(Transpile(tree, member_ptr))
-            if i != len(member_ptrs)-1 {
-                buf.WriteString(", ")
-            }
-        }
-        buf.WriteRune(']')
-        return buf.String()
+        return TranspileSubTree(tree, ptr, "member", "members")
     },
     // member = method_implemented | method_blank
     "member": TranspileFirstChild,

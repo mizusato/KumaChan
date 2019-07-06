@@ -36,17 +36,7 @@ var RootMap = map[string]TransFunction {
     },
     // namelist = name namelist_tail
     "namelist": func (tree Tree, ptr int) string {
-        var names = FlatSubTree(tree, ptr, "name", "namelist_tail")
-        var buf strings.Builder
-        buf.WriteRune('[')
-        for i, name := range names {
-            buf.WriteString(Transpile(tree, name))
-            if i != len(names)-1 {
-                buf.WriteString(", ")
-            }
-        }
-        buf.WriteRune(']')
-        return buf.String()
+        return TranspileSubTree(tree, ptr, "name", "namelist_tail")
     },
     // includes? = include includes
     "includes": func (tree Tree, ptr int) string {

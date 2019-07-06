@@ -77,12 +77,14 @@ func FlatSubTree (tree Tree, ptr int, extract string, next string) []int {
 func TranspileSubTree (tree Tree, ptr int, item string, next string) string {
     var item_ptrs = FlatSubTree(tree, ptr, item, next)
     var buf strings.Builder
+    buf.WriteRune('[')
     for i, item_ptr := range item_ptrs {
         buf.WriteString(Transpile(tree, item_ptr))
         if i != len(item_ptrs)-1 {
             buf.WriteString(", ")
         }
     }
+    buf.WriteRune(']')
     return buf.String()
 }
 

@@ -23,8 +23,8 @@ var TypeMap = map[string]TransFunction {
         if Empty(tree, l_ptr) {
             args = "[]"
         } else {
-            // opt_typelist = typelist
-            args = fmt.Sprintf("[%v]", TranspileFirstChild(tree, l_ptr))
+            // opt_typelist? = typelist
+            args = TranspileFirstChild(tree, l_ptr)
         }
         var ret = Transpile(tree, children["type"])
         var file = GetFileName(tree)
@@ -36,15 +36,7 @@ var TypeMap = map[string]TransFunction {
     },
     // typelist = type typelist_tail
     "typelist": func (tree Tree, ptr int) string {
-        var type_ptrs = FlatSubTree(tree, ptr, "type", "typelist_tail")
-        var buf strings.Builder
-        for i, type_ptr := range type_ptrs {
-            buf.WriteString(Transpile(tree, type_ptr))
-            if i != len(type_ptrs)-1 {
-                buf.WriteString(", ")
-            }
-        }
-        return buf.String()
+        return TranspileSubTree(tree, ptr, "type", "typelist_tail")
     },
     // type_expr = identifier type_gets type_args
     "type_expr": func (tree Tree, ptr int) string {
@@ -87,17 +79,7 @@ var TypeMap = map[string]TransFunction {
     "type_args": TranspileChild("type_arglist"),
     // type_arglist = type_arg type_arglist_tail
     "type_arglist": func (tree Tree, ptr int) string {
-        var args = FlatSubTree(tree, ptr, "type_arg", "type_arglist_tail")
-        var buf strings.Builder
-        buf.WriteRune('[')
-        for i, arg := range args {
-            buf.WriteString(Transpile(tree, arg))
-            if i != len(args)-1 {
-                buf.WriteString(", ")
-            }
-        }
-        buf.WriteRune(']')
-        return buf.String()
+        return TranspileSubTree(tree, ptr, "type_arg", "type_arglist_tail")
     },
     // type_arg = type | primitive
     "type_arg": TranspileFirstChild,
@@ -134,20 +116,15 @@ var TypeMap = map[string]TransFunction {
     // finite_literal = @one @of { exprlist }! | { exprlist }
     "finite_literal": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
-        var exprlist_ptr = children["exprlist"]
-        var expr_ptrs = FlatSubTree(tree, exprlist_ptr, "expr", "exprlist_tail")
-        var buf strings.Builder
-        buf.WriteString("__.cft")
-        buf.WriteRune('(')
-        for i, expr_ptr := range expr_ptrs {
-            var expr = Transpile(tree, expr_ptr)
-            buf.WriteString(expr)
-            if i != len(expr_ptrs)-1 {
-                buf.WriteString(", ")
-            }
-        }
-        buf.WriteRune(')')
-        return buf.String()
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
+        return fmt.Sprintf (
+            "__.c(__.cft, %v, %v, %v, %v)",
+            TranspileSubTree (
+                tree, children["exprlist"], "expr", "exprlist_tail",
+            ),
+            file, row, col,
+        )
     },
     // enum = @enum name {! namelist! }!
     "enum": func (tree Tree, ptr int) string {

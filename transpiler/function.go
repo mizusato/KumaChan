@@ -376,17 +376,7 @@ var FunctionMap = map[string]TransFunction {
     },
     // typed_list = typed_list_item typed_list_tail
     "typed_list": func (tree Tree, ptr int) string {
-        var items = FlatSubTree(tree, ptr, "typed_list_item", "typed_list_tail")
-        var buf strings.Builder
-        buf.WriteRune('[')
-        for i, item := range items {
-            buf.WriteString(Transpile(tree, item))
-            if i != len(items)-1 {
-                buf.WriteString(", ")
-            }
-        }
-        buf.WriteRune(']')
-        return buf.String()
+        return TranspileSubTree(tree, ptr, "typed_list_item", "typed_list_tail")
     },
     // typed_list_item = name :! type!
     "typed_list_item": func (tree Tree, ptr int) string {

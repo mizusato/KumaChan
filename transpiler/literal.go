@@ -98,18 +98,9 @@ var LiteralMap = map[string]TransFunction {
     "list": func (tree Tree, ptr int) string {
         if tree.Nodes[ptr].Length == 2 {
             return "[]"
+        } else {
+            return TranspileSubTree(tree, ptr, "list_item", "list_tail")
         }
-        var items = FlatSubTree(tree, ptr, "list_item", "list_tail")
-        var buf strings.Builder
-        buf.WriteRune('[')
-        for i, item := range items {
-            buf.WriteString(Transpile(tree, item))
-            if i != len(items)-1 {
-                buf.WriteString(", ")
-            }
-        }
-        buf.WriteRune(']')
-        return buf.String()
     },
     // list_item = expr
     "list_item": TranspileFirstChild,
