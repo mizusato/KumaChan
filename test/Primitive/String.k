@@ -1,4 +1,7 @@
 invoke {
+    assert '' is String
+    assert "" is String
+    assert '"' + "'" is String
     assert '123' + '456' == '123456'
     assert 'aBcD' -> to_lower_case() == 'abcd'
     assert 'aBcD' -> to_upper_case() == 'ABCD'
@@ -13,4 +16,10 @@ invoke {
         assert char == chr(CODES[i])
     }
     assert utf8_size('1Aあ大𣾜📞') == 16
+    let s = '''
+        Heredoc St'ri"ng
+        ''
+        Multi-Line
+    '''
+    assert s is String
 }
