@@ -344,6 +344,7 @@ let ES = {
 let Types = {
     /* Special Types */
     Type, Any, Never, Nil, Void,
+    Object: Any,
     /* Primitive Value Types */
     String: ES.String,
     Bool: ES.Boolean,
