@@ -1,47 +1,4 @@
 let built_in_functions = {
-    // Ouput
-    print: f (
-        'print',
-        'function print (p: Bool) -> Void',
-            x => (console.log(x.toString()), Void),
-        'function print (x: Number) -> Void',
-            x => (console.log(x.toString()), Void),
-        'function print (s: String) -> Void',
-            s => (console.log(s), Void)
-    ),
-    // Error Handling
-    custom_error: f (
-        'custom_error',
-        'function custom_error (msg: String) -> Error',
-            msg => new CustomError(msg),
-        'function custom_error (name: String, msg: String) -> Error',
-            (name, msg) => new CustomError(msg, name),
-        'function custom_error (name: String, msg: String, data: Hash) -> Error'
-            ,(name, msg, data) => new CustomError(msg, name, data)
-    ),
-    // Async
-    postpone: f (
-        'postpone',
-        'function postpone (time: Size) -> Promise',
-            time => new Promise(resolve => {
-                setTimeout(() => resolve(Nil), time)
-            }),
-        'function postpone (time: Size, callback: Arity<0>) -> Void',
-            (time, callback) => {
-                let frame = get_top_frame()
-                let pos = ''
-                if (frame !== null) {
-                    let { file, row, col } = frame
-                    pos = `at ${file} (row ${row}, column ${col})`
-                }
-                setTimeout (
-                    () => {
-                        call(callback, [], `postpone(${time}) ${pos}`)
-                    }, time
-                )
-                return Void
-            }
-    ),
     // String Operations
     utf8_size: fun (
         'function utf8_size (s: String) -> Size',
@@ -71,8 +28,9 @@ let built_in_functions = {
                 } catch (e) {
                     if (e instanceof RangeError) {
                         ensure(false, 'invalid_code_point', i.toString(16))
+                    } else {
+                        throw e
                     }
-                    throw e
                 }
             }
     ),
@@ -406,5 +364,74 @@ let built_in_functions = {
             l => copy(l),
         'function copy (h: Hash) -> Hash',
             h => copy(h)
+    ),
+    // Ouput
+    print: f (
+        'print',
+        'function print (p: Bool) -> Void',
+            x => (console.log(x.toString()), Void),
+        'function print (x: Number) -> Void',
+            x => (console.log(x.toString()), Void),
+        'function print (s: String) -> Void',
+            s => (console.log(s), Void)
+    ),
+    // Error Handling
+    custom_error: f (
+        'custom_error',
+        'function custom_error (msg: String) -> Error',
+            msg => new CustomError(msg),
+        'function custom_error (name: String, msg: String) -> Error',
+            (name, msg) => new CustomError(msg, name),
+        'function custom_error (name: String, msg: String, data: Hash) -> Error'
+            ,(name, msg, data) => new CustomError(msg, name, data)
+    ),
+    // Async
+    postpone: f (
+        'postpone',
+        'function postpone (time: Size) -> Promise',
+            time => new Promise(resolve => {
+                setTimeout(() => resolve(Nil), time)
+            }),
+        'function postpone (time: Size, callback: Arity<0>) -> Void',
+            (time, callback) => {
+                let frame = get_top_frame()
+                let pos = ''
+                if (frame !== null) {
+                    let { file, row, col } = frame
+                    pos = `at ${file} (row ${row}, column ${col})`
+                }
+                setTimeout (
+                    () => {
+                        call(callback, [], `postpone(${time}) ${pos}`)
+                    }, time
+                )
+                return Void
+            }
+    ),
+    create_promise: fun (
+        'function create_promise (f: Arity<2>) -> Promise',
+            f => {
+                return new Promise((resolve, reject) => {
+                    let wrapped_resolve = fun (
+                        'function resolve (value: Any) -> Void',
+                            value => {
+                                resolve(value)
+                                return Void
+                            }
+                    )
+                    let wrapped_reject = fun (
+                        'function reject (error: Error) -> Void',
+                            error => {
+                                if (is_fatal(error)) {
+                                    throw error
+                                } else {
+                                    reject(error)
+                                    return Void
+                                }
+                            }
+                    )
+                    call(f, [wrapped_resolve, wrapped_reject])
+                })
+            }
     )
 }

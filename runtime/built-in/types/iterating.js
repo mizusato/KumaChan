@@ -1,7 +1,12 @@
-Types.Iterator = $(x => (
-    typeof x.next == 'function'
-    && typeof x[Symbol.iterator] == 'function'
-))
+Types.Iterator = Ins (
+    ES.Iterable, ES.Object,
+    $(x => typeof x.next == 'function')
+)
+
+Types.AsyncIterator = Ins (
+    ES.AsyncIterable,
+    $(x => typeof x.next == 'function')
+)
 
 Types.EntryList = create_schema('EntryList', {
     keys: Types.List,
@@ -18,6 +23,11 @@ Types.EntryList = create_schema('EntryList', {
 Types.Iterable = Uni (
     ES.Iterable, Types.Enum,
     Types.Operand.inflate('iter')
+)
+
+Types.AsyncIterable = Uni (
+    ES.AsyncIterable,
+    Types.Operand.inflate('async_iter')
 )
 
 Types.Enumerable = Uni (

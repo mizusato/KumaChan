@@ -20,6 +20,7 @@ let global_helpers = {
     /* Features */
     fi: for_loop_i,
     fe: for_loop_e,
+    fa: for_loop_a,
     g: (o, k, nf, f, r, c) => call(get_data, [o, k, nf], f, r, c),
     s: set_data,
     sl: (o, lo, hi, f, r, c) => call(get_slice, [o, lo, hi], f, r, c),
@@ -47,6 +48,7 @@ let global_helpers = {
     enh: enter_handle_hook,
     exh: exit_handle_hook,
     aw: async_e_wrap,
+    agw: async_gen_e_wrap,
     pa: wrapped_panic,
     as: wrapped_assert,
     th: wrapped_throw,
@@ -59,6 +61,7 @@ let global_helpers = {
     i: Types.Instance,
     pm: Types.Promise,
     it: Types.Iterator,
+    ait: Types.AsyncIterator,
     sid: Types.SliceIndexDefault
 }
 

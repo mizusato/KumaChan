@@ -257,7 +257,7 @@ var ExpressionMap = map[string]TransFunction {
         buf.WriteRune(']')
         return buf.String()
     },
-    // extra_arg? = -> lambda | -> adv_literal
+    // extra_arg? = -> lambda
     "extra_arg": TranspileLastChild,
     // arglist? = exprlist
     "arglist": TranspileFirstChild,

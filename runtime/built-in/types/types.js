@@ -43,8 +43,10 @@ let built_in_types = {
     Arity: Types.Arity,
     /* Iterating */
     Iterator: Types.Iterator,
-    EntryList: Types.EntryList,
+    AsyncIterator: Types.AsyncIterator,
     Iterable: Types.Iterable,
+    AsyncIterable: Types.AsyncIterable,
+    EntryList: Types.EntryList,
     Enumerable: Types.Enumerable,
     /* Misc */
     Enum: Types.Enum,

@@ -80,6 +80,13 @@ let operators = {
         'function operator.iter (i: ES_Iterable) -> Iterator',
             i => i[Symbol.iterator]()
     ),
+    'async_iter': f (
+        'operator.async_iter',
+        `function operator.async_iter (o: Operand<'async_iter'>) -> AsyncIterator`,
+            o => apply_unary('async_iter', o),
+        'function operator.async_iter (ai: ES_AsyncIterable) -> AsyncIterator',
+            ai => ai[Symbol.asyncIterator]()
+    ),
     'enum': f (
         'operator.enum',
         `function operator.enum (o: Operand<'enum'>) -> EntryList`,
@@ -304,6 +311,10 @@ function str (value) {
 
 function iter (value) {
     return call(operators['iter'], [value])
+}
+
+function async_iter (value) {
+    return call(operators['async_iter'], [value])
 }
 
 function enum_ (value) {

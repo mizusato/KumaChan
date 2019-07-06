@@ -10,6 +10,7 @@ const (
     F_Sync FunType = iota
     F_Async
     F_Generator
+    F_AsyncGenerator
 )
 
 
@@ -200,6 +201,16 @@ func BareGenerator (content string) string {
 }
 
 
+func BareAsyncGenerator (content string) string {
+    var buf strings.Builder
+    buf.WriteString("(async function* (scope) { ")
+    WriteHelpers(&buf, "scope")
+    buf.WriteString(content)
+    buf.WriteString(" })")
+    return buf.String()
+}
+
+
 func Commands (tree Tree, ptr int, add_return bool) string {
     var commands = FlatSubTree(tree, ptr, "command", "commands")
     var ReturnId = syntax.Name2Id["cmd_return"]
@@ -253,6 +264,8 @@ func Function (
         raw = fmt.Sprintf("__.aw(%v)", BareAsyncFunction(body))
     case F_Generator:
         raw = BareGenerator(body)
+    case F_AsyncGenerator:
+        raw = fmt.Sprintf("__.agw(%v)", BareAsyncGenerator(body))
     default:
         panic("invalid FunType")
     }

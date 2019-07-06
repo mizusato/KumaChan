@@ -8,7 +8,7 @@ import "../parser/syntax"
 var CommandMap = map[string]TransFunction {
     // command = cmd_group1 | cmd_group2 | cmd_group3
     "command": TranspileFirstChild,
-    // cmd_group1 = cmd_flow | cmd_yield | cmd_await | cmd_return | cmd_err
+    // cmd_group1 = cmd_flow | cmd_pause | cmd_err | cmd_return
     "cmd_group1": TranspileFirstChild,
     // cmd_group2 = cmd_module | cmd_scope | cmd_def
     "cmd_group2": TranspileFirstChild,
@@ -104,6 +104,8 @@ var CommandMap = map[string]TransFunction {
             name, value, T, file, row, col,
         )
     },
+    // cmd_pause = cmd_yield | cmd_async_for | cmd_await
+    "cmd_pause": TranspileFirstChild,
     // cmd_yield = @yield name var_type = expr! | @yield expr!
     "cmd_yield": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
@@ -232,6 +234,7 @@ var CommandMap = map[string]TransFunction {
         var BlockId = syntax.Name2Id["block"]
         var HandleId = syntax.Name2Id["handle_hook"]
         var ForId = syntax.Name2Id["cmd_for"]
+        var AsyncForId = syntax.Name2Id["cmd_async_for"]
         var depth = 0
         var node = &tree.Nodes[ptr]
         for node.Part.Id != BodyId && node.Part.Id != HandleId {
@@ -262,7 +265,8 @@ var CommandMap = map[string]TransFunction {
         )
         WriteHelpers(&buf, current)
         var parent_node = tree.Nodes[tree.Nodes[ptr].Parent]
-        if parent_node.Part.Id == ForId {
+        var parent_part_id = parent_node.Part.Id
+        if parent_part_id == ForId || parent_part_id == AsyncForId {
             buf.WriteString("if (l.key) { dl(l.key, I.key) }; ")
             buf.WriteString("if (l.value) { dl(l.value, I.value) }; ")
         }
@@ -382,6 +386,20 @@ var CommandMap = map[string]TransFunction {
         return fmt.Sprintf (
             "for (let I of __.c(__.%v, [%v], %v, %v, %v)) { %v %v; }",
             loop_type, expr, file, row, col, params, block,
+        )
+    },
+    // cmd_async_for = @await name @in expr! block!
+    "cmd_async_for": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var item_name = Transpile(tree, children["name"])
+        var expr = Transpile(tree, children["expr"])
+        var block = Transpile(tree, children["block"])
+        var params = fmt.Sprintf("let l = { value: %v };", item_name)
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
+        return fmt.Sprintf (
+            "for await (let I of __.c(__.fa, [%v], %v, %v, %v)) { %v %v; }",
+            expr, file, row, col, params, block,
         )
     },
     // for_params = for_params_list | for_params_hash | for_params_value

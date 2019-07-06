@@ -101,7 +101,7 @@ var Keywords = [...] string {
     "@struct", "@fields", "@config", "@operator", "@guard",
     "@one", "@of", "@enum", "@$",
     "@class", "@init", "@mount", "@create", "@private", "@data", "@interface",
-    "@str", "@len", "@iter", "@negate",
+    "@str", "@len", "@iter", "@async_iter", "@negate",
     "@true", "@false",
     "@is", "@or", "@not",
 }
@@ -144,7 +144,7 @@ var Operators = [...] Operator {
 
 
 var RedefinableOperators = []string {
-    "@as", "@str", "@len", "@iter", "@enum",
+    "@as", "@str", "@len", "@iter", "@async_iter", "@enum",
     "==", "<",
     "<<", ">>",
     "@negate", "+", "-", "*", "/", "%", "^",
@@ -169,7 +169,7 @@ var SyntaxDefinition = [...] string {
     /*** Command ***/
     "commands? = command commands",
     "command = cmd_group1 | cmd_group2 | cmd_group3",
-    "cmd_group1 = cmd_flow | cmd_yield | cmd_await | cmd_return | cmd_err",
+    "cmd_group1 = cmd_flow | cmd_pause | cmd_err | cmd_return",
     "cmd_group2 = cmd_module | cmd_scope | cmd_def",
     "cmd_group3 = cmd_pass | cmd_set | cmd_exec",
     /* Flow Control Commands @ Group 1 */
@@ -193,12 +193,11 @@ var SyntaxDefinition = [...] string {
     "for_value = name",
     "for_index = name",
     "for_key = name",
-    /* Yield Command @ Group 1 */
+    /* Pause Commands @ Group 1 */
+    "cmd_pause = cmd_yield | cmd_async_for | cmd_await",
     "cmd_yield = @yield name var_type = expr! | @yield expr!",
-    /* Await Command @ Group 1 */
     "cmd_await = @await name var_type = expr! | @await expr!",
-    /* Return Command @ Group 1 */
-    "cmd_return = @return Void | @return expr",
+    "cmd_async_for = @await name @in expr! block!",
     /* Error Related Commands @ Group 1 */
     "cmd_err = cmd_throw | cmd_assert | cmd_panic | cmd_ensure | cmd_try",
     "cmd_throw = @throw expr!",
@@ -208,6 +207,8 @@ var SyntaxDefinition = [...] string {
     "ensure_args? = Call ( exprlist )",
     "cmd_try = @try opt_to name { commands }!",
     "opt_to? = @to",
+    /* Return Command @ Group 1 */
+    "cmd_return = @return Void | @return expr",
     /* Module Related Commands @ Group 2 */
     "cmd_module = cmd_import",
     "cmd_import = import_all | import_names | import_module",
@@ -237,10 +238,11 @@ var SyntaxDefinition = [...] string {
     "cmd_exec = expr",
 
     /*** Function ***/
-    "function = f_sync | f_async | generator",
+    "function = generator | f_sync | async_generator | f_async",
     "f_sync = @function name Call paralist_strict! ->! type! body!",
     "f_async = @async name Call paralist_strict! body",
     "generator = @generator name Call paralist_strict! body",
+    "async_generator = @async @generator name Call paralist_strict! body",
     "paralist_strict = ( ) | ( typed_list! )!",
     "typed_list = typed_list_item typed_list_tail",
     "typed_list_tail? = , typed_list_item! typed_list_tail",
@@ -269,10 +271,7 @@ var SyntaxDefinition = [...] string {
     "finally? = _at @finally { commands }",
     /* Lambda */
     "lambda = lambda_block | lambda_inline",
-    "lambda_block = lambda_sync | lambda_async | lambda_generator",
-    "lambda_sync = @lambda paralist_block ret_lambda body!",
-    "lambda_async = @async paralist_block opt_arrow body!",
-    "lambda_generator = @generator paralist_block opt_arrow body!",
+    "lambda_block = @lambda paralist_block ret_lambda body!",
     "paralist_block? = name | Call paralist",
     "paralist = ( ) | ( namelist ) | ( typed_list! )!",
     "ret_lambda? = -> type | ->",
@@ -280,10 +279,11 @@ var SyntaxDefinition = [...] string {
     "lambda_inline = .{ paralist_inline expr! }!",
     "paralist_inline? = namelist --> | ( namelist ) -->",
     /* IIFE */
-    "iife = invoke | iterator | promise",
+    "iife = invoke | iterator | promise | async_iterator",
     "invoke = @invoke body",
     "iterator = @iterator body",
     "promise = @promise body",
+    "async_iterator = @async @iterator body!",
     /* Operator Overloading */
     "operator_defs? = operator_def operator_defs",
     "operator_def = @operator general_op operator_def_fun",
@@ -341,11 +341,11 @@ var SyntaxDefinition = [...] string {
     /* Operators (Prefix) */
     "unary? = unary_group1 | unary_group2 | unary_group3",
     "unary_group1 = @not | - | @negate | _exc | ~ ",
-    "unary_group2 = @str | @len | @iter | @enum",
+    "unary_group2 = @str | @len | @iter | @async_iter | @enum",
     "unary_group3 = @mount",
     /* Operand */
     "operand = unary operand_base operand_tail",
-    "operand_base = wrapped | lambda | literal | dot_para | identifier",
+    "operand_base = wrapped | literal | dot_para | identifier",
     "wrapped = ( expr! )!",
     "operand_tail? = slice operand_tail | get operand_tail | call operand_tail",
     "dot_para = . Name",
@@ -362,7 +362,7 @@ var SyntaxDefinition = [...] string {
     "call_method = -> name method_args",
     "method_args = Call args | extra_arg",
     "args = ( arglist )! extra_arg | < type_arglist >",
-    "extra_arg? = -> lambda | -> adv_literal",
+    "extra_arg? = -> lambda",
     "arglist? = exprlist",
     "exprlist = expr exprlist_tail",
     "exprlist_tail? = , expr! exprlist_tail",
@@ -370,7 +370,7 @@ var SyntaxDefinition = [...] string {
     /*** Literal ***/
     "literal = primitive | adv_literal",
     "adv_literal = fun_sig | comp | type_literal | list | hash | brace_literal",
-    "brace_literal = when | iife | struct",
+    "brace_literal = when | iife | lambda | struct",
     "when = @when { when_list }!",
     "when_list = when_item when_list_tail",
     "when_item = @otherwise : expr | expr : expr",

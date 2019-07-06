@@ -196,7 +196,7 @@ function exit_handle_hook (error) {
 
 
 /**
- *  Prevents fatal errors from being caught by `Promise.prototype.catch()`
+ *  Wrappers to prevent fatal errors from being caught by promise.catch(...)
  */
 function async_e_wrap (async_raw_function) {
     assert(typeof async_raw_function == 'function')
@@ -214,5 +214,24 @@ function async_e_wrap (async_raw_function) {
                 }
             })
         })
+    }
+}
+
+function async_gen_e_wrap (raw_ag) {
+    assert(typeof raw_ag == 'function')
+    return async function* (scope) {
+        try {
+            for await (let element of raw_ag(scope)) {
+                yield element
+            }
+        } catch (error) {
+            if (is_fatal(error)) {
+                await new Promise(() => {
+                    throw error
+                })
+            } else {
+                throw error
+            }
+        }
     }
 }

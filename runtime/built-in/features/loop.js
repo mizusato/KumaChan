@@ -19,3 +19,13 @@ let for_loop_i = fun (
     'function for_loop_iterate (i: Iterable) -> Iterator',
         i => map(iter(i), (e, i) => ({ key: i, value: e }))
 )
+
+
+let for_loop_a = fun (
+    'function for_loop_async (ai: AsyncIterable) -> AsyncIterator',
+        ai => (async function* () {
+            for await (let e of async_iter(ai)) {
+                yield { key: Nil, value: e }
+            }
+        })()
+)

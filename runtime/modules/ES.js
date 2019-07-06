@@ -6,6 +6,7 @@ register_simple_module('ES', {
     Class: Types.ES_Class,
     Function: Types.ES_Function,
     Iterable: Types.ES_Iterable,
+    AsyncIterable: Types.ES_AsyncIterable,
     /* empty values */
     undefined: undefined,
     null: null,

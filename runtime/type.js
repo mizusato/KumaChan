@@ -334,6 +334,11 @@ let ES = {
                     && x !== null
                     && typeof x[Symbol.iterator] == 'function'
             )
+    )),
+    AsyncIterable: $(x => (
+        typeof x == 'object'
+            && x !== null
+            && typeof x[Symbol.asyncIterator] == 'function'
     ))
 }
 
@@ -373,7 +378,8 @@ let Types = {
     ES_Class: Ins(ES.Function, $(
         f => is(f.prototype, ES.Object) || f === Function
     )),
-    ES_Iterable: ES.Iterable
+    ES_Iterable: ES.Iterable,
+    ES_AsyncIterable: ES.AsyncIterable
     // this list will keep growing until the init of runtime is finished
 }
 
