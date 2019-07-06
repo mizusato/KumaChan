@@ -14,10 +14,19 @@ let Eval = new Scope(Global)
 
 
 let global_helpers = {
+    /* Core */
     c: call,
     o: get_operator,
+    /* Features */
+    fi: for_loop_i,
+    fe: for_loop_e,
     g: (o, k, nf, f, r, c) => call(get_data, [o, k, nf], f, r, c),
     s: set_data,
+    sl: (o, lo, hi, f, r, c) => call(get_slice, [o, lo, hi], f, r, c),
+    ic: iterator_comprehension,
+    lc: list_comprehension,
+    /* Object Builders */
+    cv: create_value,
     cc: inject_desc(create_class, 'create_class'),
     ci: inject_desc(create_interface, 'create_interface'),
     cs: inject_desc(create_schema, 'create_schema'),
@@ -27,33 +36,30 @@ let global_helpers = {
     cft: inject_desc(one_of, 'create_finite_set_type'),
     ce: inject_desc((n, ns) => new Enum(n, ns), 'create_enum'),
     cfs: inject_desc(create_fun_sig, 'create_function_signature'),
+    /* Guards */
+    rb: inject_desc(require_bool, 'require_boolean_value'),
+    rp: inject_desc(require_promise, 'require_promise'),
+    wf: inject_desc(when_expr_failed, 'when_expr_no_match'),
+    /* Error Handling */
+    ie: inject_desc(inject_ensure_args, 'inject_ensure_args'),
     ef: ensure_failed,
     tf: try_failed,
-    ie: inject_desc(inject_ensure_args, 'inject_ensure_args'),
-    pa: wrapped_panic,
-    as: wrapped_assert,
-    th: wrapped_throw,
     enh: enter_handle_hook,
     exh: exit_handle_hook,
     aw: async_e_wrap,
-    fi: for_loop_i,
-    fe: for_loop_e,
-    rb: inject_desc(require_bool, 'require_boolean_value'),
+    pa: wrapped_panic,
+    as: wrapped_assert,
+    th: wrapped_throw,
+    /* Types */
     a: Types.Any,
     b: Types.Bool,
-    t: Type,
-    it: Types.Iterator,
-    pm: Types.Promise,
-    i: Types.Instance,
+    v: Types.Void,
+    t: Types.Type,
     h: Types.Hash,
-    sid: Types.SliceIndexDefault,
-    cv: create_value,
-    sl: (o, lo, hi, f, r, c) => call(get_slice, [o, lo, hi], f, r, c),
-    rp: inject_desc(require_promise, 'require_promise'),
-    ic: iterator_comprehension,
-    lc: list_comprehension,
-    wf: inject_desc(when_expr_failed, 'when_expr_no_match'),
-    v: Void
+    i: Types.Instance,
+    pm: Types.Promise,
+    it: Types.Iterator,
+    sid: Types.SliceIndexDefault
 }
 
 Object.freeze(global_helpers)
