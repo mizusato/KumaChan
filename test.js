@@ -40,7 +40,8 @@ function print (info) {
 
 function eval_test (code) {
     let resolve = null
-    let promise = new Promise((res, rej) => { resolve = res })
+    let reject = null
+    let promise = new Promise((res, rej) => { resolve = res, reject = rej })
     let p = ChildProcess.exec(Compiler('eval'), (error, stdout) => {
         if (error != null) {
             print(`${Bold}${Red} Error occured during compiling:${Reset}`)

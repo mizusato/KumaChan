@@ -1,4 +1,4 @@
-class Future<T> is Promiser {
+class Future<T> {
     init (raw: Promise) {
         let type_error = custom_error('TypeError', MSG.future_invalid_value())
         let wrapped = promise {
@@ -9,7 +9,10 @@ class Future<T> is Promiser {
             return value
         }
     }
-    promise () -> Promise {
+    get_wrapped () -> Promise {
         return wrapped
+    }
+    operator prms (f) {
+        return f -> get_wrapped()
     }
 }

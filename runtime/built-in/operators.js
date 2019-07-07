@@ -71,6 +71,13 @@ let operators = {
         'function operator.len (l: List) -> Size',
             l => l.length
     ),
+    'prms': f (
+        'operator.prms',
+        `function operator.prms (o: Operand<'prms'>) -> Promise`,
+            o => apply_unary('prms', o),
+        'function operator.prms (p: Promise) -> Promise',
+            p => p
+    ),
     'iter': f (
         'operator.iter',
         `function operator.iter (o: Operand<'iter'>) -> Iterator`,
@@ -307,6 +314,10 @@ let operator_is = operators['is']
 
 function str (value) {
     return call(operators['str'], [value])
+}
+
+function prms (value) {
+    return call(operators['prms'], [value])
 }
 
 function iter (value) {

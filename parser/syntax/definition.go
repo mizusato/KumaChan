@@ -101,7 +101,7 @@ var Keywords = [...] string {
     "@struct", "@fields", "@config", "@operator", "@guard",
     "@one", "@of", "@enum", "@$",
     "@class", "@init", "@mount", "@create", "@private", "@data", "@interface",
-    "@str", "@len", "@iter", "@async_iter", "@negate",
+    "@str", "@len", "@prms", "@iter", "@async_iter", "@negate",
     "@true", "@false",
     "@is", "@or", "@not",
 }
@@ -144,7 +144,7 @@ var Operators = [...] Operator {
 
 
 var RedefinableOperators = []string {
-    "@as", "@str", "@len", "@iter", "@async_iter", "@enum",
+    "@as", "@str", "@len", "@prms", "@iter", "@async_iter", "@enum",
     "==", "<",
     "<<", ">>",
     "@negate", "+", "-", "*", "/", "%", "^",
@@ -336,10 +336,11 @@ var SyntaxDefinition = [...] string {
     `op_logic = @is | @as | && | _bar2 | & | _bar1 | \ `,
     "op_arith = + | - | * | / | % | ^ ",
     /* Operators (Prefix) */
-    "unary? = unary_group1 | unary_group2 | unary_group3",
+    "unary? = unary_group1 | unary_group2 | unary_group3 | unary_group4",
     "unary_group1 = @not | - | @negate | _exc | ~ ",
-    "unary_group2 = @str | @len | @iter | @async_iter | @enum",
-    "unary_group3 = @mount",
+    "unary_group2 = @str | @len",
+    "unary_group3 = @prms | @iter | @async_iter | @enum",
+    "unary_group4 = @mount",
     /* Operand */
     "operand = unary operand_base operand_tail",
     "operand_base = wrapped | literal | dot_para | identifier",

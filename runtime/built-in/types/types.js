@@ -64,7 +64,6 @@ let built_in_types = {
     SliceGetter: Types.SliceGetter,
     /* Async */
     Promise: Types.Promise,
-    Promiser: Types.Promiser,
     Awaitable: Types.Awaitable,
     /* Others */
     NotFound: Types.NotFound,

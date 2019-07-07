@@ -47,8 +47,6 @@ let global_helpers = {
     tf: try_failed,
     enh: enter_handle_hook,
     exh: exit_handle_hook,
-    aw: async_e_wrap,
-    agw: async_gen_e_wrap,
     pa: wrapped_panic,
     as: wrapped_assert,
     th: wrapped_throw,

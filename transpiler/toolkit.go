@@ -261,11 +261,11 @@ func Function (
     case F_Sync:
         raw = BareFunction(body)
     case F_Async:
-        raw = fmt.Sprintf("__.aw(%v)", BareAsyncFunction(body))
+        raw = BareAsyncFunction(body)
     case F_Generator:
         raw = BareGenerator(body)
     case F_AsyncGenerator:
-        raw = fmt.Sprintf("__.agw(%v)", BareAsyncGenerator(body))
+        raw = BareAsyncGenerator(body)
     default:
         panic("invalid FunType")
     }
