@@ -5,11 +5,12 @@ import "strings"
 
 
 var FunctionMap = map[string]TransFunction {
-    // function = function = generator | f_sync | async_generator | f_async
+    // function = f_sync
     "function": TranspileFirstChild,
     // f_sync = @function name Call paralist_strict! ->! type! body!
     "f_sync": func (tree Tree, ptr int) string {
-        // depended by MethodTable()
+        // the rule name "f_sync" is depended by OO_Map["method_implemented"]
+        // the rule name "f_sync" is also depended by MethodTable()
         var children = Children(tree, ptr)
         var name_ptr = children["name"]
         var params_ptr = children["paralist_strict"]
@@ -27,61 +28,8 @@ var FunctionMap = map[string]TransFunction {
             desc, parameters, value_type,
         )
     },
-    // f_async = @async name Call paralist_strict! body
-    "f_async": func (tree Tree, ptr int) string {
-        var children = Children(tree, ptr)
-        var name_ptr = children["name"]
-        var params_ptr = children["paralist_strict"]
-        var parameters = Transpile(tree, params_ptr)
-        var body_ptr = children["body"]
-        var desc = Desc (
-            GetWholeContent(tree, name_ptr),
-            GetWholeContent(tree, params_ptr),
-            []rune("Promise"),
-        )
-        return Function (
-            tree, body_ptr, F_Async,
-            desc, parameters, "__.pm",
-        )
-    },
-    // generator = @generator name Call paralist_strict! body
-    "generator": func (tree Tree, ptr int) string {
-        var children = Children(tree, ptr)
-        var name_ptr = children["name"]
-        var params_ptr = children["paralist_strict"]
-        var parameters = Transpile(tree, params_ptr)
-        var body_ptr = children["body"]
-        var desc = Desc (
-            GetWholeContent(tree, name_ptr),
-            GetWholeContent(tree, params_ptr),
-            []rune("Iterator"),
-        )
-        return Function (
-            tree, body_ptr, F_Generator,
-            desc, parameters, "__.it",
-        )
-    },
-    // async_generator = @async @generator name Call paralist_strict! body
-    "async_generator": func (tree Tree, ptr int) string {
-        var children = Children(tree, ptr)
-        var name_ptr = children["name"]
-        var params_ptr = children["paralist_strict"]
-        var parameters = Transpile(tree, params_ptr)
-        var body_ptr = children["body"]
-        var desc = Desc (
-            GetWholeContent(tree, name_ptr),
-            GetWholeContent(tree, params_ptr),
-            []rune("AsyncIterator"),
-        )
-        return Function (
-            tree, body_ptr, F_AsyncGenerator,
-            desc, parameters, "__.ait",
-        )
-    },
     // lambda = lambda_block | lambda_inline
     "lambda": TranspileFirstChild,
-    // iife = invoke | iterator | promise
-    "iife": TranspileFirstChild,
     // lambda_block = @lambda paralist_block ret_lambda body!
     "lambda_block": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
@@ -108,46 +56,6 @@ var FunctionMap = map[string]TransFunction {
             tree, body_ptr, F_Sync,
             desc, parameters, value_type,
         )
-    },
-    // invoke = @invoke body
-    "invoke": func (tree Tree, ptr int) string {
-        var children = Children(tree, ptr)
-        var body_ptr = children["body"]
-        var desc = Desc([]rune("IIFE"), []rune("()"), []rune("Object"))
-        var f = Function(tree, body_ptr, F_Sync, desc, "[]", "__.a")
-        var file = GetFileName(tree)
-        var row, col = GetRowColInfo(tree, ptr)
-        return fmt.Sprintf("__.c(%v, [], %v, %v, %v)", f, file, row, col)
-    },
-    // promise = @promise body
-    "promise": func (tree Tree, ptr int) string {
-        var children = Children(tree, ptr)
-        var body_ptr = children["body"]
-        var desc = Desc([]rune("IIFE"), []rune("()"), []rune("Promise"))
-        var f = Function(tree, body_ptr, F_Async, desc, "[]", "__.pm")
-        var file = GetFileName(tree)
-        var row, col = GetRowColInfo(tree, ptr)
-        return fmt.Sprintf("__.c(%v, [], %v, %v, %v)", f, file, row, col)
-    },
-    // iterator = @iterator body
-    "iterator": func (tree Tree, ptr int) string {
-        var children = Children(tree, ptr)
-        var body_ptr = children["body"]
-        var desc = Desc([]rune("IIFE"), []rune("()"), []rune("Iterator"))
-        var f = Function(tree, body_ptr, F_Generator, desc, "[]", "__.it")
-        var file = GetFileName(tree)
-        var row, col = GetRowColInfo(tree, ptr)
-        return fmt.Sprintf("__.c(%v, [], %v, %v, %v)", f, file, row, col)
-    },
-    // async_iterator = @async @iterator body!
-    "async_iterator": func (tree Tree, ptr int) string {
-        var children = Children(tree, ptr)
-        var body_ptr = children["body"]
-        var desc = Desc([]rune("IIFE"), []rune("()"), []rune("AsyncIterator"))
-        var f = Function(tree, body_ptr, F_AsyncGenerator, desc, "[]", "__.ait")
-        var file = GetFileName(tree)
-        var row, col = GetRowColInfo(tree, ptr)
-        return fmt.Sprintf("__.c(%v, [], %v, %v, %v)", f, file, row, col)
     },
     // ret_lambda? = -> type | ->
     "ret_lambda": func (tree Tree, ptr int) string {
@@ -196,6 +104,48 @@ var FunctionMap = map[string]TransFunction {
             "w(%v, %v, %v, %v)",
             proto, "null", desc, raw,
         )
+    },
+    // iife = invoke | iterator | promise | async_iterator
+    "iife": TranspileFirstChild,
+    // invoke = @invoke body
+    "invoke": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var body_ptr = children["body"]
+        var desc = Desc([]rune("IIFE"), []rune("()"), []rune("Object"))
+        var f = Function(tree, body_ptr, F_Sync, desc, "[]", "__.a")
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
+        return fmt.Sprintf("__.c(%v, [], %v, %v, %v)", f, file, row, col)
+    },
+    // promise = @promise body
+    "promise": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var body_ptr = children["body"]
+        var desc = Desc([]rune("IIFE"), []rune("()"), []rune("Promise"))
+        var f = Function(tree, body_ptr, F_Async, desc, "[]", "__.pm")
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
+        return fmt.Sprintf("__.c(%v, [], %v, %v, %v)", f, file, row, col)
+    },
+    // iterator = @iterator body
+    "iterator": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var body_ptr = children["body"]
+        var desc = Desc([]rune("IIFE"), []rune("()"), []rune("Iterator"))
+        var f = Function(tree, body_ptr, F_Generator, desc, "[]", "__.it")
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
+        return fmt.Sprintf("__.c(%v, [], %v, %v, %v)", f, file, row, col)
+    },
+    // async_iterator = @async @iterator body!
+    "async_iterator": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var body_ptr = children["body"]
+        var desc = Desc([]rune("IIFE"), []rune("()"), []rune("AsyncIterator"))
+        var f = Function(tree, body_ptr, F_AsyncGenerator, desc, "[]", "__.ait")
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
+        return fmt.Sprintf("__.c(%v, [], %v, %v, %v)", f, file, row, col)
     },
     // body = { static_commands commands mock_hook handle_hook }!
     "body": func (tree Tree, ptr int) string {

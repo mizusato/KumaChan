@@ -92,7 +92,7 @@ var Keywords = [...] string {
     "@yield", "@await",
     "@let", "@type", "@singleton", "@var", "@reset",
     "@set", "@do", "@nothing",
-    "@function", "@generator", "@async", "@lambda",
+    "@function", "@async", "@lambda",
     "@invoke", "@iterator", "@promise",
     "@static", "@mock", "@handle",
     "@throw", "@assert", "@ensure", "@try", "@to",
@@ -238,11 +238,8 @@ var SyntaxDefinition = [...] string {
     "cmd_exec = expr",
 
     /*** Function ***/
-    "function = generator | f_sync | async_generator | f_async",
+    "function = f_sync",
     "f_sync = @function name Call paralist_strict! ->! type! body!",
-    "f_async = @async name Call paralist_strict! body",
-    "generator = @generator name Call paralist_strict! body",
-    "async_generator = @async @generator name Call paralist_strict! body",
     "paralist_strict = ( ) | ( typed_list! )!",
     "typed_list = typed_list_item typed_list_tail",
     "typed_list_tail? = , typed_list_item! typed_list_tail",
