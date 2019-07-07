@@ -40,8 +40,7 @@ function print (info) {
 
 function eval_test (code) {
     let resolve = null
-    let reject = null
-    let promise = new Promise((res, rej) => { resolve = res, reject = rej })
+    let promise = new Promise((res, rej) => { resolve = res })
     let p = ChildProcess.exec(Compiler('eval'), (error, stdout) => {
         if (error != null) {
             print(`${Bold}${Red} Error occured during compiling:${Reset}`)
@@ -51,9 +50,22 @@ function eval_test (code) {
         try {
             let result = eval(stdout)
             if (result instanceof Promise) {
+                let settled = false
                 result
-                    .then(_ => { resolve({ ok: true }) })
-                    .catch(error => { reject({ ok: false, error }) })
+                    .then(_ => {
+                        settled = true
+                        resolve({ ok: true })
+                    })
+                    .catch(error => {
+                        setteld = true
+                        resolve({ ok: false, error })
+                    })
+                setTimeout(() => {
+                    if (!settled) {
+                        let error = new Error('Test Case Timed Out')
+                        resolve({ ok: false, error })
+                    }
+                }, 1000)
             } else {
                 resolve({ ok: true })
             }

@@ -1,7 +1,7 @@
 /**
  *  Error Handling Mechanics
  */
-const TRACE_DEPTH = 16
+const TRACE_DEPTH = 24
 const CALL_FROM_SCRIPT = 1
 const CALL_FROM_OVERLOAD = 2
 const CALL_FROM_BUILT_IN = 3

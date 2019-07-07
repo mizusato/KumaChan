@@ -406,23 +406,26 @@ let built_in_functions = {
             ,(name, msg, data) => new CustomError(msg, name, data)
     ),
     // Async
-    postpone: f (
-        'postpone',
+    postpone: fun (
         'function postpone (time: Size) -> Promise',
             time => new Promise(resolve => {
                 setTimeout(() => resolve(Nil), time)
-            }),
-        'function postpone (time: Size, callback: Arity<0>) -> Void',
+            })
+    ),
+    set_timeout: fun (
+        'function set_timeout (time: Size, callback: Arity<0>) -> Void',
             (time, callback) => {
                 let frame = get_top_frame()
                 let pos = ''
                 if (frame !== null) {
                     let { file, row, col } = frame
-                    pos = `at ${file} (row ${row}, column ${col})`
+                    if (file !== null) {
+                        pos = `at ${file} (row ${row}, column ${col})`
+                    }
                 }
                 setTimeout (
                     () => {
-                        call(callback, [], `postpone(${time}) ${pos}`)
+                        call(callback, [], `set_timeout(${time}) ${pos}`)
                     }, time
                 )
                 return Void
@@ -473,24 +476,23 @@ let built_in_functions = {
             }
     ),
     finally: fun (
-        'function finally (a: Awaitable, f: Arity<0>) -> Promise',
+        'function finally (a: Awaitable, f: Arity<1>) -> Promise',
             (a, f) => {
                 let p = prms(a)
                 return new Promise((resolve, reject) => {
-                    p.then(_ => {
+                    p.then(value => {
                         try {
-                            let ret = call(f, [])
+                            let ret = call(f, [value])
                             try_to_forward_promise(ret, resolve, reject)
                         } catch (error) {
                             reject(error)
                         }
-                    })
-                    p.catch(error => {
+                    }, error => {
                         if (is_fatal(error)) {
                             reject(error)
                         } else {
                             try {
-                                let ret = call(f, [])
+                                let ret = call(f, [error])
                                 try_to_forward_promise(ret, resolve, reject)
                             } catch (error) {
                                 reject(error)
