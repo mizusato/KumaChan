@@ -2,13 +2,13 @@ promise {
     function delayed_value (x: Any, error: Bool) -> Promise {
         return create_promise << lambda(resolve, reject) {
             let e = custom_error('rejected')
-            set_timeout(50, lambda {
+            set_timeout(50) -> lambda {
                 if error {
                     reject(e)
                 } else {
                     resolve(x)
                 }
-            })
+            }
         }
     }
     await x = create_promise << lambda(resolve, reject) {
