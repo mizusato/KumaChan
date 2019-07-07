@@ -379,7 +379,7 @@ var CommandMap = map[string]TransFunction {
         case "for_params_hash":
             loop_type = "fe"
         case "for_params_value":
-            loop_type = "fi"
+            loop_type = "fv"
         default:
             panic("impossible switch branch")
         }

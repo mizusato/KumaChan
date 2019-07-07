@@ -105,7 +105,7 @@ let operators = {
                     keys, values: keys.map(k => e.get(k))
                 })
             },
-        'function operator_enum (h: Hash) -> EntryList',
+        'function operator.enum (h: Hash) -> EntryList',
             h => {
                 let keys = Object.keys(h)
                 return new Struct(Types.EntryList, {

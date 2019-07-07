@@ -6,14 +6,14 @@ class Map<K, V> is Getter<K, V>, Setter<K, V> {
         let map = CreateMap()
     }
     has (key: K) -> Bool {
-        return map->has(key)
+        return map -> has(key)
     }
     get (key: K, nf: Bool) -> Maybe<V> {
-        if not map->has(key) {
+        if not (map -> has(key)) {
             ensure nil_allowed { nf }
             return Nil
         }
-        let value = map->get(key)
+        let value = map -> get(key)
         ensure consistent { value is V }
         return value
         @handle error {
@@ -26,11 +26,11 @@ class Map<K, V> is Getter<K, V>, Setter<K, V> {
         }
     }
     set (key: K, value: V) -> Void {
-        map->set(key, value)
+        map -> set(key, value)
     }
     remove (key: K) -> Void {
-        ensure key_exists { map->has(key) }
-        map->delete(key)
+        ensure key_exists { map -> has(key) }
+        map -> delete(key)
         @handle error {
             unless key_exists {
                 panic MSG.map_invalid_remove()
@@ -38,7 +38,7 @@ class Map<K, V> is Getter<K, V>, Setter<K, V> {
         }
     }
     clear () -> Void {
-        map->clear()
+        map -> clear()
     }
     size () -> Size {
         return map.size

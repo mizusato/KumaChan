@@ -156,7 +156,7 @@ var SyntaxDefinition = [...] string {
     /*** Root ***/
     "module = @module name! export includes commands",
     "name = Name",
-    "export? = @export namelist!",
+    "export? = @export { namelist! }! | @export namelist!",
     "includes? = include includes",
     "include = @include string",
     "namelist = name namelist_tail",

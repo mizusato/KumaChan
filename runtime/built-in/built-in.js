@@ -20,6 +20,7 @@ let global_helpers = {
     /* Features */
     fi: for_loop_i,
     fe: for_loop_e,
+    fv: for_loop_v,
     fa: for_loop_a,
     g: (o, k, nf, f, r, c) => call(get_data, [o, k, nf], f, r, c),
     s: set_data,

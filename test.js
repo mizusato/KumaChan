@@ -65,7 +65,7 @@ function eval_test (code) {
                         let error = new Error('Test Case Timed Out')
                         resolve({ ok: false, error })
                     }
-                }, 1000)
+                }, 500)
             } else {
                 resolve({ ok: true })
             }

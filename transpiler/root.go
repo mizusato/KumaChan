@@ -22,10 +22,10 @@ var RootMap = map[string]TransFunction {
             Runtime, module_name, export_names, init,
         )
     },
-    // export? = @export namelist!
+    // export? = @export { namelist! }! | @export namelist!
     "export": func (tree Tree, ptr int) string {
         if NotEmpty(tree, ptr) {
-            return TranspileLastChild(tree, ptr)
+            return TranspileChild("namelist")(tree, ptr)
         } else {
             return "[]"
         }

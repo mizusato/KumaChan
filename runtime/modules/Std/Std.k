@@ -1,9 +1,14 @@
 module Std
 
-export Array, Map, Future
+export {
+    Map, Set,
+    Array, Future, Stream, AsyncStream
+}
 
-include 'import.k'
-include 'msg.k'
-include 'array.k'
-include 'map.k'
-include 'future.k'
+include 'imports.k'
+include 'message.k'
+include 'containers/map.k'
+include 'containers/set.k'
+include 'wrappers/array.k'
+include 'wrappers/future.k'
+include 'wrappers/stream.k'

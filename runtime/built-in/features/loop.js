@@ -21,6 +21,9 @@ let for_loop_i = fun (
 )
 
 
+let for_loop_v = overload([for_loop_e, for_loop_i], 'for_loop_v')
+
+
 let for_loop_a = fun (
     'function for_loop_async (ai: AsyncIterable) -> AsyncIterator',
         ai => (async function* () {
