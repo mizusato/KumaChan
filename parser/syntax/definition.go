@@ -154,9 +154,10 @@ var RedefinableOperators = []string {
 var SyntaxDefinition = [...] string {
 
     /*** Root ***/
-    "module = @module name! export includes commands",
+    "module = @module name! export imports includes commands",
     "name = Name",
     "export? = @export { namelist! }! | @export namelist!",
+    "imports? = cmd_import imports",
     "includes? = include includes",
     "include = @include string",
     "namelist = name namelist_tail",

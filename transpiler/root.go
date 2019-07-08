@@ -8,14 +8,15 @@ import "../parser/syntax"
 
 
 var RootMap = map[string]TransFunction {
-    // module = @module name! export includes commands
+    // module = @module name! export imports includes commands
     "module": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
         var module_name = Transpile(tree, children["name"])
         var export_names = Transpile(tree, children["export"])
+        var imports = Transpile(tree, children["imports"])
         var includes = Transpile(tree, children["includes"])
         var commands = Commands(tree, children["commands"], false)
-        var content = fmt.Sprintf("%v %v", includes, commands)
+        var content = fmt.Sprintf("%v %v %v", imports, includes, commands)
         var init = BareFunction(content)
         return fmt.Sprintf (
             "%v.register_module(%v, %v, %v)",
@@ -24,11 +25,19 @@ var RootMap = map[string]TransFunction {
     },
     // export? = @export { namelist! }! | @export namelist!
     "export": func (tree Tree, ptr int) string {
-        if NotEmpty(tree, ptr) {
-            return TranspileChild("namelist")(tree, ptr)
-        } else {
-            return "[]"
+        if Empty(tree, ptr) { return "[]" }
+        return TranspileChild("namelist")(tree, ptr)
+    },
+    // imports? = cmd_import imports
+    "imports": func (tree Tree, ptr int) string {
+        if Empty(tree, ptr) { return "" }
+        var im_ptrs = FlatSubTree(tree, ptr, "cmd_import", "imports")
+        var buf strings.Builder
+        for _, im_ptr := range im_ptrs {
+            buf.WriteString(Transpile(tree, im_ptr))
+            buf.WriteString("; ")
         }
+        return buf.String()
     },
     // name = Name
     "name": func (tree Tree, ptr int) string {

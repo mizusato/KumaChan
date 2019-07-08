@@ -5,7 +5,8 @@ export {
     Array, Future, Stream, AsyncStream
 }
 
-include 'imports.k'
+import ES
+
 include 'message.k'
 include 'containers/map.k'
 include 'containers/set.k'
