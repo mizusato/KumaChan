@@ -19,8 +19,8 @@ var RootMap = map[string]TransFunction {
         var content = fmt.Sprintf("%v %v %v", imports, includes, commands)
         var init = BareFunction(content)
         return fmt.Sprintf (
-            "%v.register_module(%v, %v, %v)",
-            Runtime, module_name, export_names, init,
+            "%v.%v(%v, %v, %v)",
+            RUNTIME, R_REG_MODULE, module_name, export_names, init,
         )
     },
     // export? = @export { namelist! }! | @export namelist!
@@ -83,7 +83,7 @@ var RootMap = map[string]TransFunction {
         var cmds_ptr = tree.Nodes[ptr].Children[0]
         var cmd_ptrs = FlatSubTree(tree, cmds_ptr, "command", "commands")
         if len(cmd_ptrs) == 0 {
-            return fmt.Sprintf("%v.Void", Runtime)
+            return fmt.Sprintf("%v.%v", RUNTIME, R_VOID)
         }
         var buf strings.Builder
         buf.WriteRune('(')
@@ -96,13 +96,13 @@ var RootMap = map[string]TransFunction {
             var concrete = tree.Nodes[concrete_cmd_ptr].Part.Id
             var body string
             if concrete == FlowId || concrete == ErrId {
-                body = fmt.Sprintf("%v; return __.v;", command)
+                body = fmt.Sprintf("%v; return %v;", command, G(T_VOID))
             } else {
                 body = fmt.Sprintf("return %v", command)
             }
-            var prepend = "let e = null; "
+            var prepend = fmt.Sprintf("let %v = null; ", ERROR_DUMP)
             buf.WriteString(BareFunction(prepend + body))
-            fmt.Fprintf(&buf, "(%v.Eval)", Runtime)
+            fmt.Fprintf(&buf, "(%v.%v)", RUNTIME, R_EVAL_SCOPE)
             if i != len(cmd_ptrs)-1 {
                 buf.WriteString(", ")
             }

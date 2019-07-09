@@ -26,8 +26,8 @@ var CommandMap = map[string]TransFunction {
             var file = GetFileName(tree)
             var row, col = GetRowColInfo(tree, ptr)
             return fmt.Sprintf(
-                "__.c(df, [%v, %v], %v, %v, %v)",
-                name, f, file, row, col,
+                "%v(%v, [%v, %v], %v, %v, %v)",
+                G(CALL), L_ADD_FUN, name, f, file, row, col,
             )
         } else {
             return TranspileFirstChild(tree, ptr)
@@ -42,7 +42,7 @@ var CommandMap = map[string]TransFunction {
         if exists {
             return fmt.Sprintf("return %v", Transpile(tree, expr))
         } else {
-            return "return __.v"
+            return fmt.Sprintf("return %v", G(T_VOID))
         }
     },
     // cmd_scope = cmd_let | cmd_var | cmd_reset
@@ -56,8 +56,8 @@ var CommandMap = map[string]TransFunction {
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
         return fmt.Sprintf(
-            "__.c(dl, [%v, %v, true, %v], %v, %v, %v)",
-            name, value, T, file, row, col,
+            "%v(%v, [%v, %v, true, %v], %v, %v, %v)",
+            G(CALL), L_VAR_DECL, name, value, T, file, row, col,
         )
     },
     // cmd_type = @type name = @singleton | @type name generic_params = expr
@@ -70,11 +70,12 @@ var CommandMap = map[string]TransFunction {
         if is_singleton {
             var name = Transpile(tree, name_ptr)
             var singleton = fmt.Sprintf (
-                "__.cv(%v)", name,
+                "%v(%v)", G(C_SINGLETON), name,
             )
             return fmt.Sprintf(
-                "__.c(dl, [%v, %v, true, __.t], %v, %v, %v)",
-                name, singleton, file, row, col,
+                "%v(%v, [%v, %v, true, %v], %v, %v, %v)",
+                G(CALL), L_VAR_DECL, name, singleton, G(T_TYPE),
+                file, row, col,
             )
         }
         var gp_ptr = children["generic_params"]
@@ -87,8 +88,8 @@ var CommandMap = map[string]TransFunction {
             value = expr
         }
         return fmt.Sprintf(
-            "__.c(dl, [%v, %v, true, __.t], %v, %v, %v)",
-            name, value, file, row, col,
+            "%v(%v, [%v, %v, true, %v], %v, %v, %v)",
+            G(CALL), L_VAR_DECL, name, value, G(T_TYPE), file, row, col,
         )
     },
     // cmd_var = @var name var_type = expr
@@ -100,8 +101,8 @@ var CommandMap = map[string]TransFunction {
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
         return fmt.Sprintf(
-            "__.c(dl, [%v, %v, false, %v], %v, %v, %v)",
-            name, value, T, file, row, col,
+            "%v(%v, [%v, %v, false, %v], %v, %v, %v)",
+            G(CALL), L_VAR_DECL, name, value, T, file, row, col,
         )
     },
     // cmd_pause = cmd_yield | cmd_async_for | cmd_await
@@ -118,11 +119,11 @@ var CommandMap = map[string]TransFunction {
             var file = GetFileName(tree)
             var row, col = GetRowColInfo(tree, ptr)
             return fmt.Sprintf(
-                "__.c(dl, [%v, (yield %v), false, %v], %v, %v, %v)",
-                name, value, T, file, row, col,
+                "%v(%v, [%v, (yield %v), false, %v], %v, %v, %v)",
+                G(CALL), L_VAR_DECL, name, value, T, file, row, col,
             )
         } else {
-            return fmt.Sprintf("((yield %v), __.v)", value)
+            return fmt.Sprintf("((yield %v), %v)", value, G(T_VOID))
         }
     },
     // cmd_await = @await name var_type = expr! | @await expr!
@@ -134,18 +135,18 @@ var CommandMap = map[string]TransFunction {
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
         var await = fmt.Sprintf (
-            "(await __.c(__.rp, [%v], %v, %v, %v))",
-            expr, file, row, col,
+            "(await %v(%v, [%v], %v, %v, %v))",
+            G(CALL), G(REQ_PROMISE), expr, file, row, col,
         )
         if is_decl {
             var name = Transpile(tree, name_ptr)
             var T = Transpile(tree, T_ptr)
             return fmt.Sprintf (
-                "__.c(dl, [%v, %v, false, %v], %v, %v, %v)",
-                name, await, T, file, row, col,
+                "%v(%v, [%v, %v, false, %v], %v, %v, %v)",
+                G(CALL), L_VAR_DECL, name, await, T, file, row, col,
             )
         } else {
-            return fmt.Sprintf("(%v, __.v)", await)
+            return fmt.Sprintf("(%v, %v)", await, G(T_VOID))
         }
     },
     // cmd_reset = @reset name = expr
@@ -159,15 +160,16 @@ var CommandMap = map[string]TransFunction {
         var op_ptr = children["set_op"]
         if NotEmpty(tree, op_ptr) {
             value = fmt.Sprintf(
-                "__.c(%v, [%v, %v], %v, %v, %v)",
+                "%v(%v, [%v, %v], %v, %v, %v)",
+                G(CALL),
                 Transpile(tree, op_ptr),
                 VarLookup(tree, name_ptr),
                 value, file, row, col,
             )
         }
         return fmt.Sprintf(
-            "__.c(rt, [%v, %v], %v, %v, %v)",
-            name, value, file, row, col,
+            "%v(%v, [%v, %v], %v, %v, %v)",
+            G(CALL), L_VAR_RESET, name, value, file, row, col,
         )
     },
     "set_op": func (tree Tree, ptr int) string {
@@ -178,7 +180,7 @@ var CommandMap = map[string]TransFunction {
         if NotEmpty(tree, ptr) {
             return TranspileLastChild(tree, ptr)
         } else {
-            return "__.a"   // Types.Any
+            return G(T_ANY)
         }
     },
     // cmd_set = @set left_val = expr
@@ -200,8 +202,8 @@ var CommandMap = map[string]TransFunction {
             var row, col = GetRowColInfo(tree, get)
             var key, nil_flag = GetKey(tree, get)
             t = fmt.Sprintf(
-                "__.g(%v, %v, %v, %v, %v, %v)",
-                t, key, nil_flag, file, row, col,
+                "%v(%v, %v, %v, %v, %v, %v)",
+                G(GET), t, key, nil_flag, file, row, col,
             )
         }
         var object = t
@@ -211,17 +213,17 @@ var CommandMap = map[string]TransFunction {
         if NotEmpty(tree, op_ptr) {
             var operator = Transpile(tree, op_ptr)
             var previous = fmt.Sprintf(
-                "__.g(%v, %v, %v, %v, %v, %v)",
-                object, set_key, "false", file, row, col,
+                "%v(%v, %v, %v, %v, %v, %v)",
+                G(GET), object, set_key, "false", file, row, col,
             )
             value = fmt.Sprintf(
-                "__.c(%v, [%v, %v], %v, %v, %v)",
-                operator, previous, value, file, row, col,
+                "%v(%v, [%v, %v], %v, %v, %v)",
+                G(CALL), operator, previous, value, file, row, col,
             )
         }
         return fmt.Sprintf(
-            "__.c(__.s, [%v, %v, %v], %v, %v, %v)",
-            object, set_key, value, file, row, col,
+            "%v(%v, [%v, %v, %v], %v, %v, %v)",
+            G(CALL), G(SET), object, set_key, value, file, row, col,
         )
     },
     // cmd_flow = cmd_if | cmd_switch | cmd_while | cmd_for | cmd_loop_ctrl
@@ -260,15 +262,21 @@ var CommandMap = map[string]TransFunction {
         var buf strings.Builder
         buf.WriteString("{ ")
         fmt.Fprintf(
-            &buf, "let %v = %v.new_scope(%v); ",
-            current, Runtime, upper,
+            &buf, "let %v = %v.%v(%v); ",
+            current, RUNTIME, R_NEW_SCOPE, upper,
         )
         WriteHelpers(&buf, current)
         var parent_node = tree.Nodes[tree.Nodes[ptr].Parent]
         var parent_part_id = parent_node.Part.Id
         if parent_part_id == ForId || parent_part_id == AsyncForId {
-            buf.WriteString("if (l.key) { dl(l.key, I.key) }; ")
-            buf.WriteString("if (l.value) { dl(l.value, I.value) }; ")
+            fmt.Fprintf (
+                &buf, "if (l.key) { %v(l.key, I.key) }; ",
+                L_VAR_DECL,
+            )
+            fmt.Fprintf (
+                &buf, "if (l.value) { %v(l.value, I.value) }; ",
+                L_VAR_DECL,
+            )
         }
         buf.WriteString(commands)
         buf.WriteString(" }")
@@ -284,9 +292,10 @@ var CommandMap = map[string]TransFunction {
         var block = Transpile(tree, children["block"])
         var elifs = Transpile(tree, children["elifs"])
         var else_ = Transpile(tree, children["else"])
-        return fmt.Sprintf(
-            "if (__.c(__.rb, [%v], %v, %v, %v)) %v%v%v",
-            condition, file, row, col, block, elifs, else_,
+        return fmt.Sprintf (
+            "if (%v(%v, [%v], %v, %v, %v)) %v%v%v",
+            G(CALL), G(REQ_BOOL), condition, file, row, col,
+            block, elifs, else_,
         )
     },
     // elifs? = elif elifs
@@ -307,8 +316,8 @@ var CommandMap = map[string]TransFunction {
         var row, col = GetRowColInfo(tree, expr_ptr)
         var block = Transpile(tree, children["block"])
         return fmt.Sprintf(
-            " else if (__.c(__.rb, [%v], %v, %v, %v)) %v",
-            condition, file, row, col, block,
+            " else if (%v(%v, [%v], %v, %v, %v)) %v",
+            G(CALL), G(REQ_BOOL), condition, file, row, col, block,
         )
     },
     // else? = @else block!
@@ -346,8 +355,8 @@ var CommandMap = map[string]TransFunction {
         var row, col = GetRowColInfo(tree, expr_ptr)
         var block = Transpile(tree, children["block"])
         return fmt.Sprintf(
-            " else if (__.c(__.rb, [%v], %v, %v, %v)) %v",
-            condition, file, row, col, block,
+            " else if (%v(%v, [%v], %v, %v, %v)) %v",
+            G(CALL), G(REQ_BOOL), condition, file, row, col, block,
         )
     },
     // default? = @default block!
@@ -375,17 +384,17 @@ var CommandMap = map[string]TransFunction {
         var loop_type string
         switch params_type {
         case "for_params_list":
-            loop_type = "fi"
+            loop_type = G(FOR_LOOP_ITER)
         case "for_params_hash":
-            loop_type = "fe"
+            loop_type = G(FOR_LOOP_ENUM)
         case "for_params_value":
-            loop_type = "fv"
+            loop_type = G(FOR_LOOP_VALUE)
         default:
             panic("impossible switch branch")
         }
         return fmt.Sprintf (
-            "for (let I of __.c(__.%v, [%v], %v, %v, %v)) { %v %v; }",
-            loop_type, expr, file, row, col, params, block,
+            "for (let I of %v(%v, [%v], %v, %v, %v)) { %v %v; }",
+            G(CALL), loop_type, expr, file, row, col, params, block,
         )
     },
     // cmd_async_for = @await name @in expr! block!
@@ -398,8 +407,8 @@ var CommandMap = map[string]TransFunction {
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
         return fmt.Sprintf (
-            "for await (let I of __.c(__.fa, [%v], %v, %v, %v)) { %v %v; }",
-            expr, file, row, col, params, block,
+            "for await (let I of %v(%v, [%v], %v, %v, %v)) { %v %v; }",
+            G(CALL), G(FOR_LOOP_ASYNC), expr, file, row, col, params, block,
         )
     },
     // for_params = for_params_list | for_params_hash | for_params_value
@@ -438,9 +447,9 @@ var CommandMap = map[string]TransFunction {
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, expr_ptr)
         var block = Transpile(tree, children["block"])
-        return fmt.Sprintf(
-            "while (__.c(__.rb, [%v], %v, %v, %v)) %v",
-            condition, file, row, col, block,
+        return fmt.Sprintf (
+            "while (%v(%v, [%v], %v, %v, %v)) %v",
+            G(CALL), G(REQ_BOOL), condition, file, row, col, block,
         )
     },
     // cmd_loop_ctrl = @break | @continue
@@ -460,9 +469,9 @@ var CommandMap = map[string]TransFunction {
         var expr = TranspileLastChild(tree, ptr)
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
-        return fmt.Sprintf(
-            "__.c(__.th, [%v], %v, %v, %v)",
-            expr, file, row, col,
+        return fmt.Sprintf (
+            "%v(%v, [%v], %v, %v, %v)",
+            G(CALL), G(THROW), expr, file, row, col,
         )
     },
     // cmd_assert = @assert expr!
@@ -470,9 +479,9 @@ var CommandMap = map[string]TransFunction {
         var expr = TranspileLastChild(tree, ptr)
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
-        return fmt.Sprintf(
-            "__.c(__.as, [%v], %v, %v, %v)",
-            expr, file, row, col,
+        return fmt.Sprintf (
+            "%v(%v, [%v], %v, %v, %v)",
+            G(CALL), G(ASSERT), expr, file, row, col,
         )
     },
     // cmd_panic = @panic expr!
@@ -480,9 +489,9 @@ var CommandMap = map[string]TransFunction {
         var expr = TranspileLastChild(tree, ptr)
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
-        return fmt.Sprintf(
-            "__.c(__.pa, [%v], %v, %v, %v)",
-            expr, file, row, col,
+        return fmt.Sprintf (
+            "%v(%v, [%v], %v, %v, %v)",
+            G(CALL), G(PANIC), expr, file, row, col,
         )
     },
     // cmd_ensure = @ensure name! ensure_args { expr! }!
@@ -496,10 +505,10 @@ var CommandMap = map[string]TransFunction {
         var row, col = GetRowColInfo(tree, ptr)
         var e_row, e_col = GetRowColInfo(tree, expr_ptr)
         return fmt.Sprintf (
-            "if (!(__.c(__.rb, [%v], %v, %v, %v))) " +
-                "{ __.ef(e, %v, %v, %v, %v, %v) }",
-            expr, file, e_row, e_col,
-            name, args, file, row, col,
+            "if (!(%v(%v, [%v], %v, %v, %v))) " +
+                "{ %v(%v, %v, %v, %v, %v, %v) }",
+            G(CALL), G(REQ_BOOL), expr, file, e_row, e_col,
+            G(ENSURE_FAILED), ERROR_DUMP, name, args, file, row, col,
         )
     },
     // ensure_args? = Call ( exprlist )
@@ -518,13 +527,13 @@ var CommandMap = map[string]TransFunction {
         var name = Transpile(tree, children["name"])
         var commands = Commands(tree, children["commands"], false)
         return fmt.Sprintf(
-            "try { %v } catch (err) { __.tf(e, err, %v) }",
-            commands, name,
+            "try { %v } catch (%v) { %v(%v, %v, %v) }",
+            commands, TRY_ERROR, G(TRY_FAILED), ERROR_DUMP, TRY_ERROR, name,
         )
     },
     // cmd_pass = @do @nothing
     "cmd_pass": func (tree Tree, ptr int) string {
-        return "__.v"
+        return G(T_VOID)
     },
     // cmd_module = cmd_import
     "cmd_module": TranspileFirstChild,
@@ -538,8 +547,8 @@ var CommandMap = map[string]TransFunction {
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
         return fmt.Sprintf (
-            "__.c(ins, [%v, %v], %v, %v, %v)",
-            module_name, configs, file, row, col,
+            "%v(%v, [%v, %v], %v, %v, %v)",
+            G(CALL), L_IMPORT_VAR, module_name, configs, file, row, col,
         )
     },
     // import_module = @import as_item
@@ -548,8 +557,8 @@ var CommandMap = map[string]TransFunction {
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
         return fmt.Sprintf (
-            "__.c(im, [%v], %v, %v, %v)",
-            config, file, row, col,
+            "%v(%v, [%v], %v, %v, %v)",
+            G(CALL), L_IMPORT_MOD, config, file, row, col,
         )
     },
     // import_all = @import * @from name
@@ -558,8 +567,8 @@ var CommandMap = map[string]TransFunction {
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
         return fmt.Sprintf (
-            "__.c(ia, [%v], %v, %v, %v)",
-            name, file, row, col,
+            "%v(%v, [%v], %v, %v, %v)",
+            G(CALL), L_IMPORT_ALL, name, file, row, col,
         )
     },
     // as_list = as_item as_list_tail

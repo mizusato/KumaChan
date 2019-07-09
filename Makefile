@@ -9,7 +9,7 @@ compiler:
 	go build -o $(K_COMPILER_BIN) main.go
 
 runtime: compiler
-	./bundle.py runtime/runtime.js \
+	./bundle.py runtime/runtime.js transpiler/CONST.go \
 		> $(K_RUNTIME_JS)
 	echo ";(function(Runtime) { let KumaChan = Runtime;" \
 		>> $(K_RUNTIME_JS)

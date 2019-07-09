@@ -24,7 +24,7 @@ var LiteralMap = map[string]TransFunction {
         var row, col = GetRowColInfo(tree, ptr)
         var item_ptrs = FlatSubTree(tree, ptr, "when_item", "when_list_tail")
         var buf strings.Builder
-        buf.WriteString("if (false) { __.v } ")
+        buf.WriteString("if (false) { void(0) } ")
         for _, item_ptr := range item_ptrs {
             // when_item = expr : expr | @otherwise : expr
             var row, col = GetRowColInfo(tree, item_ptr)
@@ -38,8 +38,8 @@ var LiteralMap = map[string]TransFunction {
             }
             var value = TranspileLastChild(tree, item_ptr)
             var condition_bool = fmt.Sprintf (
-                "__.c(__.rb, [%v], %v, %v, %v)",
-                condition, file, row, col,
+                "%v(%v, [%v], %v, %v, %v)",
+                G(CALL), G(REQ_BOOL), condition, file, row, col,
             )
             fmt.Fprintf (
                 &buf, "else if (%v) { return %v }",
@@ -47,8 +47,8 @@ var LiteralMap = map[string]TransFunction {
             )
         }
         fmt.Fprintf (
-            &buf, "else { __.c(__.wf, [], %v, %v, %v) }",
-            file, row, col,
+            &buf, "else { %v(%v, [], %v, %v, %v) }",
+            G(CALL), G(WHEN_FAILED), file, row, col,
         )
         return buf.String()
     },
@@ -113,13 +113,13 @@ var LiteralMap = map[string]TransFunction {
         var row, col = GetRowColInfo(tree, ptr)
         var f string
         if is_iterator {
-            f = "__.ic"
+            f = G(ITER_COMP)
         } else {
-            f = "__.lc"
+            f = G(LIST_COMP)
         }
         return fmt.Sprintf (
-            "__.c(%v, [%v], %v, %v, %v)",
-            f, rule, file, row, col,
+            "%v(%v, [%v], %v, %v, %v)",
+            G(CALL), f, rule, file, row, col,
         )
     },
     // comp_rule = expr _bar1 in_list! opt_filters
@@ -141,14 +141,14 @@ var LiteralMap = map[string]TransFunction {
         }
         var parameters = UntypedParameters(names)
         var proto = fmt.Sprintf (
-            "{ parameters: %v, value_type: __.a }",
-            parameters,
+            "{ parameters: %v, value_type: %v }",
+            parameters, G(T_ANY),
         )
         var val_raw = BareFunction(fmt.Sprintf("return %v;", val_expr))
         var val_desc = EscapeRawString([]rune("comprehension.value_function"))
         var val = fmt.Sprintf (
-            "w(%v, %v, %v, %v)",
-            proto, "null", val_desc, val_raw,
+            "%v(%v, %v, %v, %v)",
+            L_WRAP, proto, "null", val_desc, val_raw,
         )
         var iterator_list = fmt.Sprintf (
             "[%v]", strings.Join(iterators, ", "),
@@ -157,8 +157,8 @@ var LiteralMap = map[string]TransFunction {
         var filter_raw = BareFunction(fmt.Sprintf("return %v;", filter_expr))
         var filter_desc = EscapeRawString([]rune("comprehension.filter"))
         var filter = fmt.Sprintf (
-            "w(%v, %v, %v, %v)",
-            proto, "null", filter_desc, filter_raw,
+            "%v(%v, %v, %v, %v)",
+            L_WRAP, proto, "null", filter_desc, filter_raw,
         )
         return fmt.Sprintf("%v, %v, %v", val, iterator_list, filter)
     },
@@ -179,8 +179,8 @@ var LiteralMap = map[string]TransFunction {
         var type_ = Transpile(tree, children["type"])
         var hash = Transpile(tree, children["struct_hash"])
         return fmt.Sprintf (
-            "__.c(__.ns, [%v, %v], %v, %v, %v)",
-            type_, hash, file, row, col,
+            "%v(%v, [%v, %v], %v, %v, %v)",
+            G(CALL), G(C_STRUCT), type_, hash, file, row, col,
         )
     },
     // struct_hash = { } | { struct_hash_item struct_hash_tail }!

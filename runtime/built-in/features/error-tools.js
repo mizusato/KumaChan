@@ -32,8 +32,9 @@ let wrapped_throw = fun (
 
 function ensure_failed (e, name, args, file, row, col) {
     if (e) {
-        e.type = 1
-        pour(e, { name, args })
+        e[DUMP_TYPE] = DUMP_ENSURE
+        e[DUMP_NAME] = name
+        e[DUMP_ARGS] = args
     }
     throw new EnsureFailed(name, file, row, col)
 }
@@ -41,8 +42,8 @@ function ensure_failed (e, name, args, file, row, col) {
 
 function try_failed (e, error, name) {
     if (e) {
-        e.type = 2
-        e.name = name
+        e[DUMP_TYPE] = DUMP_TRY
+        e[DUMP_NAME] = name
     }
     throw error
 }
@@ -51,10 +52,10 @@ function try_failed (e, error, name) {
 function inject_ensure_args (scope, names, e) {
     assert(scope instanceof Scope)
     assert(is(names, TypedList.of(Types.String)))
-    assert(is(e.args, Types.List))
+    assert(is(e[DUMP_ARGS], Types.List))
     foreach(names, (name, i) => {
-        if (i < e.args.length) {
-            scope.declare(name, e.args[i])
+        if (i < e[DUMP_ARGS].length) {
+            scope.declare(name, e[DUMP_ARGS][i])
         } else {
             scope.declare(name, Nil)
         }

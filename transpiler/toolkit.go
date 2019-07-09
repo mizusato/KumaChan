@@ -23,7 +23,8 @@ func VarLookup (tree Tree, ptr int) string {
     var file = GetFileName(tree)
     var row, col = GetRowColInfo(tree, ptr)
     return fmt.Sprintf (
-        "__.c(id, [%v], %v, %v, %v)",
+        "%v(%v, [%v], %v, %v, %v)",
+        G(CALL), L_VAR_LOOKUP,
         EscapeRawString(GetTokenContent(tree, ptr)), file, row, col,
     )
 }
@@ -163,18 +164,22 @@ func GetGeneralOperatorName (tree Tree, ptr int) (string, bool) {
 
 
 func WriteHelpers (buf *strings.Builder, scope_name string) {
-    fmt.Fprintf(
+    fmt.Fprintf (
         buf,
-        "let {m,id,dl,rt,df,gs,w,im,ins,ia,__} = %v.get_helpers(%v); ",
-        Runtime, scope_name,
+        "let {%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v} = %v.%v(%v); ",
+        L_METHOD_CALL, L_VAR_LOOKUP, L_VAR_DECL, L_VAR_RESET,
+        L_ADD_FUN, L_OP_MOUNT, L_STATIC_SCOPE, L_WRAP,
+        L_IMPORT_VAR, L_IMPORT_MOD, L_IMPORT_ALL,
+        L_GLOBAL_HELPERS,
+        RUNTIME, R_GET_HELPERS, scope_name,
     )
 }
 
 
 func BareFunction (content string) string {
     var buf strings.Builder
-    buf.WriteString("(function (scope, mount) { ")
-    WriteHelpers(&buf, "scope")
+    fmt.Fprintf(&buf, "(function (%v) { ", SCOPE)
+    WriteHelpers(&buf, SCOPE)
     buf.WriteString(content)
     buf.WriteString(" })")
     return buf.String()
@@ -183,8 +188,8 @@ func BareFunction (content string) string {
 
 func BareAsyncFunction (content string) string {
     var buf strings.Builder
-    buf.WriteString("(async function (scope) { ")
-    WriteHelpers(&buf, "scope")
+    fmt.Fprintf(&buf, "(async function (%v) { ", SCOPE)
+    WriteHelpers(&buf, SCOPE)
     buf.WriteString(content)
     buf.WriteString(" })")
     return buf.String()
@@ -193,8 +198,8 @@ func BareAsyncFunction (content string) string {
 
 func BareGenerator (content string) string {
     var buf strings.Builder
-    buf.WriteString("(function* (scope) { ")
-    WriteHelpers(&buf, "scope")
+    fmt.Fprintf(&buf, "(function* (%v) { ", SCOPE)
+    WriteHelpers(&buf, SCOPE)
     buf.WriteString(content)
     buf.WriteString(" })")
     return buf.String()
@@ -203,8 +208,8 @@ func BareGenerator (content string) string {
 
 func BareAsyncGenerator (content string) string {
     var buf strings.Builder
-    buf.WriteString("(async function* (scope) { ")
-    WriteHelpers(&buf, "scope")
+    fmt.Fprintf(&buf, "(async function* (%v) { ", SCOPE)
+    WriteHelpers(&buf, SCOPE)
     buf.WriteString(content)
     buf.WriteString(" })")
     return buf.String()
@@ -235,7 +240,7 @@ func Commands (tree Tree, ptr int, add_return bool) string {
     }
     if add_return && !has_return {
         // return Void
-        buf.WriteString(" return __.v;")
+        fmt.Fprintf(&buf, " return %v;", G(T_VOID))
     }
     return buf.String()
 }
@@ -254,7 +259,7 @@ func Function (
         var static_commands_ptr = Children(tree, static_ptr)["commands"]
         var static_commands = Commands(tree, static_commands_ptr, true)
         var static_executor = BareFunction(static_commands)
-        static_scope = fmt.Sprintf("gs(%v)", static_executor)
+        static_scope = fmt.Sprintf("%v(%v)", L_STATIC_SCOPE, static_executor)
     }
     var raw string
     switch fun_type {
@@ -270,7 +275,8 @@ func Function (
         panic("invalid FunType")
     }
     return fmt.Sprintf(
-        "w(%v, %v, %v, %v)",
+        "%v(%v, %v, %v, %v)",
+        L_WRAP,
         fmt.Sprintf(
             "{ parameters: %v, value_type: %v }",
             parameters, value_type,
@@ -292,7 +298,7 @@ func InitFunction (tree Tree, ptr int, name []rune) string {
     )
     return Function (
         tree, body_ptr, F_Sync,
-        desc, parameters, "__.i",
+        desc, parameters, G(T_INSTANCE),
     )
 }
 
@@ -355,8 +361,9 @@ func UntypedParameters (names []string) string {
     buf.WriteRune('[')
     for i, name := range names {
         fmt.Fprintf (
-            &buf, "{ name: %v, type: __.a }",
+            &buf, "{ name: %v, type: %v }",
             EscapeRawString([]rune(name)),
+            G(T_ANY),
         )
         if i != len(names)-1 {
             buf.WriteString(", ")
@@ -384,7 +391,7 @@ func TypedParameterList (tree Tree, namelist_ptr int, type_ string) string {
 
 
 func UntypedParameterList (tree Tree, namelist_ptr int) string {
-    return TypedParameterList(tree, namelist_ptr, "__.a")
+    return TypedParameterList(tree, namelist_ptr, G(T_ANY))
 }
 
 
@@ -402,7 +409,7 @@ func GenericParameters (tree Tree, gp_ptr int, name []rune) (string, string) {
         desc = Desc(name, GetWholeContent(tree, typed_ptr), []rune("Type"))
     } else {
         var l_ptr = children["namelist"]
-        parameters = TypedParameterList(tree, l_ptr, "__.t")
+        parameters = TypedParameterList(tree, l_ptr, G(T_TYPE))
         desc = Desc(name, GetWholeContent(tree, l_ptr), []rune("Type"))
     }
     return parameters, desc
@@ -413,9 +420,15 @@ func TypeTemplate (tree Tree, gp_ptr int, name_ptr int, expr string) string {
     var name_raw = GetTokenContent(tree, name_ptr)
     var parameters, desc = GenericParameters(tree, gp_ptr, name_raw)
     var raw = BareFunction(fmt.Sprintf("return %v;", expr))
-    var proto = fmt.Sprintf("{ parameters: %v, value_type: __.t }", parameters)
-    var f = fmt.Sprintf("w(%v, %v, %v, %v)", proto, "null", desc, raw)
-    return fmt.Sprintf("__.ctt(%v)", f)
+    var proto = fmt.Sprintf (
+        "{ parameters: %v, value_type: %v }",
+        parameters, G(T_TYPE),
+    )
+    var f = fmt.Sprintf (
+        "%v(%v, %v, %v, %v)",
+        L_WRAP, proto, "null", desc, raw,
+    )
+    return fmt.Sprintf("%v(%v)", G(C_TEMPLATE), f)
 }
 
 
@@ -509,8 +522,8 @@ func Filters (tree Tree, exprlist_ptr int) string {
     for i, expr_ptr := range expr_ptrs {
         var row, col = GetRowColInfo(tree, expr_ptr)
         fmt.Fprintf (
-            &buf, "__.c(__.rb, [%v], %v, %v, %v)",
-            Transpile(tree, expr_ptr), file, row, col,
+            &buf, "%v(%v, [%v], %v, %v, %v)",
+            G(CALL), G(REQ_BOOL), Transpile(tree, expr_ptr), file, row, col,
         )
         if i != len(expr_ptrs)-1 {
             buf.WriteString(" && ")

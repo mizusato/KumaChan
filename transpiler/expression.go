@@ -28,15 +28,15 @@ func TranspileOperationSequence (tree Tree, ptr int) [][]string {
             if NotEmpty(tree, lo_ptr) {
                 lo = TranspileFirstChild(tree, lo_ptr)
             } else {
-                lo = "__.sid"
+                lo = G(T_SLICE_INDEX_DEF)
             }
             if NotEmpty(tree, hi_ptr) {
                 hi = TranspileFirstChild(tree, hi_ptr)
             } else {
-                hi = "__.sid"
+                hi = G(T_SLICE_INDEX_DEF)
             }
             operations = append(operations, [] string {
-                "__.sl", lo, hi,
+                G(SLICE), lo, hi,
                 file, row, col,
             })
         case "get":
@@ -44,7 +44,7 @@ func TranspileOperationSequence (tree Tree, ptr int) [][]string {
             // get_name = Get . name! nil_flag
             var key, nil_flag = GetKey(tree, operation_ptr)
             operations = append(operations, []string {
-                "__.g", key, nil_flag,
+                G(GET), key, nil_flag,
                 file, row, col,
             })
         case "call":
@@ -57,12 +57,12 @@ func TranspileOperationSequence (tree Tree, ptr int) [][]string {
             var name_ptr, is_method_call = params["name"]
             if is_method_call {
                 operations = append(operations, []string {
-                    "m", Transpile(tree, name_ptr), args,
+                    L_METHOD_CALL, Transpile(tree, name_ptr), args,
                     file, row, col,
                 })
             } else {
                 operations = append(operations, []string {
-                    "__.c", args, file, row, col,
+                    G(CALL), args, file, row, col,
                 })
             }
         }
@@ -106,8 +106,8 @@ var ExpressionMap = map[string]TransFunction {
                 real_operand2 = operand2
             }
             return fmt.Sprintf(
-                "__.c(%v, [%v, %v], %v, %v, %v)",
-                operator, operand1, real_operand2,
+                "%v(%v, [%v, %v], %v, %v, %v)",
+                G(CALL), operator, operand1, real_operand2,
                 file, row, col,
             )
         }
@@ -141,7 +141,7 @@ var ExpressionMap = map[string]TransFunction {
         var has_unary = NotEmpty(tree, unary_ptr)
         if has_unary {
             var unary = Transpile(tree, unary_ptr)
-            buf.WriteString("__.c")
+            buf.WriteString(G(CALL))
             buf.WriteRune('(')
             buf.WriteString(unary)
             buf.WriteString(", ")
@@ -167,12 +167,23 @@ var ExpressionMap = map[string]TransFunction {
         var child_node = &tree.Nodes[real_child_ptr]
         var name = syntax.Id2Name[child_node.Part.Id]
         if name == "@mount" {
-            return "mount"
+            var file = GetFileName(tree)
+            var row, col = GetRowColInfo(tree, ptr)
+            return fmt.Sprintf (
+                "%v(%v, [], %v, %v, %v)",
+                G(CALL), L_OP_MOUNT, file, row, col,
+            )
         } else if name == "-" {
-            return `__.o("negate")`
+            return fmt.Sprintf (
+                `%v("negate")`,
+                G(OPERATOR),
+            )
         } else {
             var t = strings.TrimPrefix(name, "@")
-            return fmt.Sprintf("__.o(%v)", EscapeRawString([]rune(t)))
+            return fmt.Sprintf (
+                "%v(%v)",
+                G(OPERATOR), EscapeRawString([]rune(t)),
+            )
         }
     },
     // operand_base = wrapped | lambda | literal | dot_para | identifier
@@ -201,7 +212,7 @@ var ExpressionMap = map[string]TransFunction {
         // depended by CommandsMap["set_op"]
         var info = GetOperatorInfo(tree, ptr)
         var buf strings.Builder
-        buf.WriteString("__.o")
+        buf.WriteString(G(OPERATOR))
         buf.WriteRune('(')
         var name = strings.TrimPrefix(info.Match, "@")
         buf.WriteString(EscapeRawString([]rune(name)))

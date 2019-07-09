@@ -15,53 +15,53 @@ let Eval = new Scope(Global)
 
 let global_helpers = {
     /* Core */
-    c: call,
-    o: get_operator,
+    [CALL]: call,
+    [OPERATOR]: get_operator,
     /* Features */
-    fi: for_loop_i,
-    fe: for_loop_e,
-    fv: for_loop_v,
-    fa: for_loop_a,
-    g: (o, k, nf, f, r, c) => call(get_data, [o, k, nf], f, r, c),
-    s: set_data,
-    sl: (o, lo, hi, f, r, c) => call(get_slice, [o, lo, hi], f, r, c),
-    ic: iterator_comprehension,
-    lc: list_comprehension,
+    [FOR_LOOP_ITER]: for_loop_i,
+    [FOR_LOOP_ENUM]: for_loop_e,
+    [FOR_LOOP_VALUE]: for_loop_v,
+    [FOR_LOOP_ASYNC]: for_loop_a,
+    [GET]: (o, k, nf, f, r, c) => call(get_data, [o, k, nf], f, r, c),
+    [SET]: set_data,
+    [SLICE]: (o, lo, hi, f, r, c) => call(get_slice, [o, lo, hi], f, r, c),
+    [ITER_COMP]: iterator_comprehension,
+    [LIST_COMP]: list_comprehension,
     /* Object Builders */
-    cv: create_value,
-    cc: inject_desc(create_class, 'create_class'),
-    ci: inject_desc(create_interface, 'create_interface'),
-    cs: inject_desc(create_schema, 'create_schema'),
-    ns: inject_desc(new_struct, 'initialize_structure'),
-    ct: inject_desc(f => $(x => call(f, [x])), 'create_simple_type'),
-    ctt: inject_desc(f => new TypeTemplate(f), 'create_type_template'),
-    cft: inject_desc(one_of, 'create_finite_set_type'),
-    ce: inject_desc((n, ns) => new Enum(n, ns), 'create_enum'),
-    cfs: inject_desc(create_fun_sig, 'create_function_signature'),
+    [C_SINGLETON]: create_value,
+    [C_CLASS]: inject_desc(create_class, 'create_class'),
+    [C_INTERFACE]: inject_desc(create_interface, 'create_interface'),
+    [C_SCHEMA]: inject_desc(create_schema, 'create_schema'),
+    [C_STRUCT]: inject_desc(new_struct, 'initialize_structure'),
+    [C_TYPE]: inject_desc(f => $(x => call(f, [x])), 'create_simple_type'),
+    [C_TEMPLATE]: inject_desc(f => new TypeTemplate(f), 'create_type_template'),
+    [C_FINITE]: inject_desc(one_of, 'create_finite_set_type'),
+    [C_ENUM]: inject_desc((n, ns) => new Enum(n, ns), 'create_enum'),
+    [C_FUN_SIG]: inject_desc(create_fun_sig, 'create_function_signature'),
     /* Guards */
-    rb: inject_desc(require_bool, 'require_boolean_value'),
-    rp: inject_desc(require_promise, 'require_promise'),
-    wf: inject_desc(when_expr_failed, 'when_expr_no_match'),
+    [REQ_BOOL]: inject_desc(require_bool, 'require_boolean_value'),
+    [REQ_PROMISE]: inject_desc(require_promise, 'require_promise'),
+    [WHEN_FAILED]: inject_desc(when_expr_failed, 'when_expr_no_match'),
     /* Error Handling */
-    ie: inject_desc(inject_ensure_args, 'inject_ensure_args'),
-    ef: ensure_failed,
-    tf: try_failed,
-    enh: enter_handle_hook,
-    exh: exit_handle_hook,
-    pa: wrapped_panic,
-    as: wrapped_assert,
-    th: wrapped_throw,
+    [INJECT_E_ARGS]: inject_desc(inject_ensure_args, 'inject_ensure_args'),
+    [ENSURE_FAILED]: ensure_failed,
+    [TRY_FAILED]: try_failed,
+    [ENTER_H_HOOK]: enter_handle_hook,
+    [EXIT_H_HOOK]: exit_handle_hook,
+    [PANIC]: wrapped_panic,
+    [ASSERT]: wrapped_assert,
+    [THROW]: wrapped_throw,
     /* Types */
-    a: Types.Any,
-    b: Types.Bool,
-    v: Types.Void,
-    t: Types.Type,
-    h: Types.Hash,
-    i: Types.Instance,
-    pm: Types.Promise,
-    it: Types.Iterator,
-    ait: Types.AsyncIterator,
-    sid: Types.SliceIndexDefault
+    [T_ANY]: Types.Any,
+    [T_BOOL]: Types.Bool,
+    [T_VOID]: Types.Void,
+    [T_TYPE]: Types.Type,
+    [T_HASH]: Types.Hash,
+    [T_PROMISE]: Types.Promise,
+    [T_INSTANCE]: Types.Instance,
+    [T_ITERATOR]: Types.Iterator,
+    [T_ASYNC_ITERATOR]: Types.AsyncIterator,
+    [T_SLICE_INDEX_DEF]: Types.SliceIndexDefault
 }
 
 Object.freeze(global_helpers)
@@ -73,16 +73,23 @@ function bind_method_call (scope) {
     }
 }
 
+function bind_wrap (scope) {
+    return (proto, replace, desc, raw) => {
+        return wrap(replace || scope, proto, desc, raw)
+    }
+}
+
 let get_helpers = scope => ({
-    m: bind_method_call(scope),
-    id: inject_desc(scope.lookup.bind(scope), 'lookup_variable'),
-    dl: inject_desc(scope.declare.bind(scope), 'declare_variable'),
-    rt: inject_desc(scope.reset.bind(scope), 'reset_variable'),
-    df: inject_desc(scope.define_function.bind(scope), 'define_function'),
-    gs: f => get_static(f, scope),
-    w: (proto, replace, desc, raw) => wrap(replace || scope, proto, desc, raw),
-    ins: inject_desc((m, c) => import_names(scope, m, c), 'import'),
-    im: inject_desc(c => import_module(scope, c), 'import'),
-    ia: inject_desc(m => import_all(scope, m), 'import'),
-    __: global_helpers
+    [L_METHOD_CALL]: bind_method_call(scope),
+    [L_STATIC_SCOPE]: f => get_static(f, scope),
+    [L_WRAP]: bind_wrap(scope),
+    [L_VAR_LOOKUP]: inject_desc(scope.lookup.bind(scope), 'lookup_variable'),
+    [L_VAR_DECL]: inject_desc(scope.declare.bind(scope), 'declare_variable'),
+    [L_VAR_RESET]: inject_desc(scope.reset.bind(scope), 'reset_variable'),
+    [L_ADD_FUN]: inject_desc(scope.add_function.bind(scope), 'add_function'),
+    [L_OP_MOUNT]: inject_desc(scope.mount.bind(scope), 'call_mount_operator'),
+    [L_IMPORT_VAR]: inject_desc((m, c) => import_names(scope, m, c), 'import'),
+    [L_IMPORT_MOD]: inject_desc(c => import_module(scope, c), 'import'),
+    [L_IMPORT_ALL]: inject_desc(m => import_all(scope, m), 'import'),
+    [L_GLOBAL_HELPERS]: global_helpers
 })

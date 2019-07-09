@@ -232,8 +232,9 @@ function wrap_initializer (class_) {
             return another
         }
         inject_desc(mount, 'mount')
+        scope.define_mount(mount)
         // invoke the initializer
-        init.raw(scope, mount)
+        init.raw(scope)
         // do some necessary work
         self.finish_init()
         // inject self reference

@@ -23,8 +23,10 @@ var OO_Map = map[string]TransFunction {
             file, row, col,
         )
         var class = fmt.Sprintf (
-            "__.c(__.cc, [%v, %v, %v, %v, %v, %v, %v], %v, %v, %v)",
-            name, impls, init, pfs, methods, options, def_point, file, row, col,
+            "%v(%v, [%v, %v, %v, %v, %v, %v, %v], %v, %v, %v)",
+            G(CALL), G(C_CLASS),
+            name, impls, init, pfs, methods, options, def_point,
+            file, row, col,
         )
         var value string
         if NotEmpty(tree, gp_ptr) {
@@ -33,8 +35,9 @@ var OO_Map = map[string]TransFunction {
             value = class
         }
         return fmt.Sprintf (
-            "__.c(dl, [%v, %v, true, __.t], %v, %v, %v)",
-            name, value, file, row, col,
+            "%v(%v, [%v, %v, true, %v], %v, %v, %v)",
+            G(CALL), L_VAR_DECL, name, value, G(T_TYPE),
+            file, row, col,
         )
     },
     // supers? = @is typelist
@@ -111,8 +114,9 @@ var OO_Map = map[string]TransFunction {
             file, row, col,
         )
         var interface_ = fmt.Sprintf (
-            "__.c(__.ci, [%v, %v, %v], %v, %v, %v)",
-            name, members, def_point, file, row, col,
+            "%v(%v, [%v, %v, %v], %v, %v, %v)",
+            G(CALL), G(C_INTERFACE), name, members, def_point,
+            file, row, col,
         )
         var value string
         if NotEmpty(tree, gp_ptr) {
@@ -121,8 +125,8 @@ var OO_Map = map[string]TransFunction {
             value = interface_
         }
         return fmt.Sprintf (
-            "__.c(dl, [%v, %v, true, __.t], %v, %v, %v)",
-            name, value, file, row, col,
+            "%v(%v, [%v, %v, true, %v], %v, %v, %v)",
+            G(CALL), L_VAR_DECL, name, value, G(T_TYPE), file, row, col,
         )
     },
     // members? = member members

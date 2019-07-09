@@ -39,7 +39,7 @@ var FunctionMap = map[string]TransFunction {
         var value_type = Transpile(tree, ret_ptr)
         var body_ptr = children["body"]
         var value_type_desc string
-        if value_type == "__.a" {
+        if value_type == G(T_ANY) {
             value_type_desc = "Object"
         } else {
             var t = string(GetWholeContent(tree, ret_ptr))
@@ -65,10 +65,10 @@ var FunctionMap = map[string]TransFunction {
             if type_specified {
                 return Transpile(tree, type_ptr)
             } else {
-                return "__.a"
+                return G(T_ANY)
             }
         } else {
-            return "__.a"
+            return G(T_ANY)
         }
     },
     // lambda_inline = .{ paralist_inline expr! }!
@@ -97,12 +97,12 @@ var FunctionMap = map[string]TransFunction {
         var expr = Transpile(tree, children["expr"])
         var raw = BareFunction(fmt.Sprintf("return %v;", expr))
         var proto = fmt.Sprintf (
-            "{ parameters: %v, value_type: __.a }",
-            parameters,
+            "{ parameters: %v, value_type: %v }",
+            parameters, G(T_ANY),
         )
         return fmt.Sprintf (
-            "w(%v, %v, %v, %v)",
-            proto, "null", desc, raw,
+            "%v(%v, %v, %v, %v)",
+            L_WRAP, proto, "null", desc, raw,
         )
     },
     // iife = invoke | iterator | promise | async_iterator
@@ -112,40 +112,42 @@ var FunctionMap = map[string]TransFunction {
         var children = Children(tree, ptr)
         var body_ptr = children["body"]
         var desc = Desc([]rune("IIFE"), []rune("()"), []rune("Object"))
-        var f = Function(tree, body_ptr, F_Sync, desc, "[]", "__.a")
+        var f = Function(tree, body_ptr, F_Sync, desc, "[]", G(T_ANY))
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
-        return fmt.Sprintf("__.c(%v, [], %v, %v, %v)", f, file, row, col)
+        return fmt.Sprintf("%v(%v, [], %v, %v, %v)", G(CALL), f, file, row, col)
     },
     // promise = @promise body
     "promise": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
         var body_ptr = children["body"]
         var desc = Desc([]rune("IIFE"), []rune("()"), []rune("Promise"))
-        var f = Function(tree, body_ptr, F_Async, desc, "[]", "__.pm")
+        var f = Function(tree, body_ptr, F_Async, desc, "[]", G(T_PROMISE))
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
-        return fmt.Sprintf("__.c(%v, [], %v, %v, %v)", f, file, row, col)
+        return fmt.Sprintf("%v(%v, [], %v, %v, %v)", G(CALL), f, file, row, col)
     },
     // iterator = @iterator body
     "iterator": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
         var body_ptr = children["body"]
         var desc = Desc([]rune("IIFE"), []rune("()"), []rune("Iterator"))
-        var f = Function(tree, body_ptr, F_Generator, desc, "[]", "__.it")
+        var f = Function(tree, body_ptr, F_Generator, desc, "[]", G(T_ITERATOR))
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
-        return fmt.Sprintf("__.c(%v, [], %v, %v, %v)", f, file, row, col)
+        return fmt.Sprintf("%v(%v, [], %v, %v, %v)", G(CALL), f, file, row, col)
     },
     // async_iterator = @async @iterator body!
     "async_iterator": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
         var body_ptr = children["body"]
         var desc = Desc([]rune("IIFE"), []rune("()"), []rune("AsyncIterator"))
-        var f = Function(tree, body_ptr, F_AsyncGenerator, desc, "[]", "__.ait")
+        var f = Function (
+            tree, body_ptr, F_AsyncGenerator, desc, "[]", G(T_ASYNC_ITERATOR),
+        )
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
-        return fmt.Sprintf("__.c(%v, [], %v, %v, %v)", f, file, row, col)
+        return fmt.Sprintf("%v(%v, [], %v, %v, %v)", G(CALL), f, file, row, col)
     },
     // body = { static_commands commands mock_hook handle_hook }!
     "body": func (tree Tree, ptr int) string {
@@ -177,12 +179,12 @@ var FunctionMap = map[string]TransFunction {
         if NotEmpty(tree, handle_ptr) {
             var catch_and_finally = Transpile(tree, handle_ptr)
             var buf strings.Builder
-            buf.WriteString("let e = {}; ")
+            fmt.Fprintf(&buf, "let %v = {}; ", ERROR_DUMP)
             buf.WriteString("try { ")
             buf.WriteString(commands)
             buf.WriteString(" } ")
             buf.WriteString(catch_and_finally)
-            buf.WriteString(" return __.v;")
+            fmt.Fprintf(&buf, " return %v;", G(T_VOID))
             return buf.String()
         } else {
             return commands
@@ -192,14 +194,18 @@ var FunctionMap = map[string]TransFunction {
     "handle_hook": func (tree Tree, ptr int) string {
         // note: the rule name "handle_hook" is depended by CommandMap["block"]
         var children = Children(tree, ptr)
+        var error_name = Transpile(tree, children["name"])
         var buf strings.Builder
-        buf.WriteString("catch (error) { ")
-        fmt.Fprintf(&buf, "let handle_scope = %v.new_scope(scope); ", Runtime)
-        WriteHelpers(&buf, "handle_scope")
-        buf.WriteString("__.enh(error); ")
-        fmt.Fprintf(&buf, "dl(%v, error); ", Transpile(tree, children["name"]))
+        fmt.Fprintf(&buf, "catch (%v) { ", H_HOOK_ERROR)
+        fmt.Fprintf (
+            &buf, "let %v = %v.%v(scope); ",
+            H_HOOK_SCOPE, RUNTIME, R_NEW_SCOPE,
+        )
+        WriteHelpers(&buf, H_HOOK_SCOPE)
+        fmt.Fprintf(&buf, "%v(%v); ", G(ENTER_H_HOOK), H_HOOK_ERROR)
+        fmt.Fprintf(&buf, "%v(%v, %v); ", L_VAR_DECL, error_name, H_HOOK_ERROR)
         buf.WriteString(Transpile(tree, children["handle_cmds"]))
-        buf.WriteString(" __.exh(error); ")
+        fmt.Fprintf(&buf, " %v(%v); ", G(EXIT_H_HOOK), H_HOOK_ERROR)
         buf.WriteString("}")
         var finally_ptr = children["finally"]
         if NotEmpty(tree, finally_ptr) {
@@ -237,12 +243,16 @@ var FunctionMap = map[string]TransFunction {
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
         var buf strings.Builder
-        fmt.Fprintf(&buf, "if (e.type === 1 && e.name === %v)", name)
+        fmt.Fprintf (
+            &buf, "if (%v.%v === '%v' && %v.%v === %v)",
+            ERROR_DUMP, DUMP_TYPE, DUMP_ENSURE, ERROR_DUMP, DUMP_NAME, name,
+        )
         buf.WriteString(" { ")
-        buf.WriteString("__.c(")
+        buf.WriteString(G(CALL))
+        buf.WriteString("(")
         WriteList(&buf, []string {
-            "__.ie",
-            fmt.Sprintf("[handle_scope, %v, e]", params),
+            G(INJECT_E_ARGS),
+            fmt.Sprintf("[%v, %v, %v]", H_HOOK_SCOPE, params, ERROR_DUMP),
             file, row, col,
         })
         buf.WriteString(");")
@@ -263,7 +273,10 @@ var FunctionMap = map[string]TransFunction {
         var children = Children(tree, ptr)
         var name = Transpile(tree, children["name"])
         var buf strings.Builder
-        fmt.Fprintf(&buf, "if (e.type === 2 && e.name === %v)", name)
+        fmt.Fprintf (
+            &buf, "if (%v.%v === '%v' && %v.%v === %v)",
+            ERROR_DUMP, DUMP_TYPE, DUMP_TRY, ERROR_DUMP, DUMP_NAME, name,
+        )
         buf.WriteString(" { ")
         buf.WriteString(Commands(tree, children["commands"], false))
         buf.WriteString(" }")
@@ -286,7 +299,7 @@ var FunctionMap = map[string]TransFunction {
             var name_ptr, only_name = children["name"]
             if only_name {
                 var name = Transpile(tree, name_ptr)
-                return fmt.Sprintf("[{ name: %v, type: __.a }]", name)
+                return fmt.Sprintf("[{ name: %v, type: %v }]", name, G(T_ANY))
             } else {
                 return Transpile(tree, children["paralist"])
             }
@@ -368,6 +381,6 @@ var FunctionMap = map[string]TransFunction {
             GetWholeContent(tree, namelist_ptr),
             []rune("Object"),
         )
-        return Function(tree, body_ptr, F_Sync, desc, parameters, "__.a")
+        return Function(tree, body_ptr, F_Sync, desc, parameters, G(T_ANY))
     },
 }

@@ -81,6 +81,8 @@ class Scope {
         this.types_of_non_fixed = {}
         // is it read-only? (e.g. the global scope is read-only)
         this.read_only = read_only
+        // bound operator functions
+        this.operators = {}
         if (read_only) {
             Object.freeze(this.data)
         }
@@ -107,7 +109,7 @@ class Scope {
         }
         return Void
     }
-    define_function (name, f) {
+    add_function (name, f) {
         // overload functions with a common name
         assert(is(name, Types.String))
         assert(is(f, Types.Function))
@@ -134,6 +136,16 @@ class Scope {
             this.declare(name, f, false)
         }
         return Void
+    }
+    define_mount (f) {
+        assert(is(f, ES.Function))
+        this.operators.mount = f
+    }
+    mount (i) {
+        let s = find(this.iter_scope_chain(), s => s.operators.mount != null)
+        ensure(s !== NotFound, 'invalid_mount')
+        assert(is(s.operators.mount, ES.Function))
+        return s.operators.mount
     }
     reset (variable, new_value) {
         assert(is(variable, Types.String))
@@ -164,14 +176,16 @@ class Scope {
             this.declare(variable, initial_value, is_fixed, type)
         }
     }
-    find (variable) {
-        assert(is(variable, Types.String))
-        let scope_chain = iterate (
+    iter_scope_chain () {
+        return iterate (
             this,
             scope => scope.context,
             scope => scope === null
         )
-        return find(map(scope_chain, (scope, depth) => {
+    }
+    find (variable) {
+        assert(is(variable, Types.String))
+        return find(map(this.iter_scope_chain(), (scope, depth) => {
             if (scope.has(variable)) {
                 let value = scope.data[variable]
                 // got a fixed variable
@@ -190,12 +204,7 @@ class Scope {
     find_function (variable) {
         // used by `call_method()` in `oo.js`
         assert(is(variable, Types.String))
-        let scope_chain = iterate (
-            this,
-            scope => scope.context,
-            scope => scope === null
-        )
-        let result = find(map(scope_chain, (scope, depth) => {
+        let result = find(map(this.iter_scope_chain(), (scope, depth) => {
             if (scope.has(variable)) {
                 let value = scope.data[variable]
                 // not function, lookup upper scope

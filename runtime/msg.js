@@ -59,6 +59,7 @@ const MSG = {
     interface_invalid: name => (
         `invalid interface: blank method ${name}() should not be implemented`
     ),
+    invalid_mount: 'mount operator is only available inside initializer',
     mounting_non_instance: 'unable to mount non-instance object',
     mounting_undeclared: C => (
         'unable to mount instance of undeclared base class:'

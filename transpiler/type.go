@@ -30,8 +30,8 @@ var TypeMap = map[string]TransFunction {
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
         return fmt.Sprintf (
-            "__.c(__.cfs, [%v, %v], %v, %v, %v)",
-            args, ret, file, row, col,
+            "%v(%v, [%v, %v], %v, %v, %v)",
+            G(CALL), G(C_FUN_SIG), args, ret, file, row, col,
         )
     },
     // typelist = type typelist_tail
@@ -51,7 +51,7 @@ var TypeMap = map[string]TransFunction {
             var key = TranspileLastChild(tree, get)
             var row, col = GetRowColInfo(tree, get)
             var buf strings.Builder
-            buf.WriteString("__.g")
+            buf.WriteString(G(GET))
             buf.WriteRune('(')
             WriteList(&buf, []string {
                 t, key, "false", file, row, col,
@@ -64,7 +64,7 @@ var TypeMap = map[string]TransFunction {
             var args = Transpile(tree, args_ptr)
             var row, col = GetRowColInfo(tree, args_ptr)
             var buf strings.Builder
-            buf.WriteString("__.c")
+            buf.WriteString(G(CALL))
             buf.WriteRune('(')
             WriteList(&buf, []string {
                 t, args, file, row, col,
@@ -90,10 +90,13 @@ var TypeMap = map[string]TransFunction {
         var children = Children(tree, ptr)
         var name = GetTokenContent(tree, children["name"])
         var p_name = Transpile(tree, children["name"])
-        var parameters = fmt.Sprintf("[{ name: %v, type: __.a }]", p_name)
+        var parameters = fmt.Sprintf (
+            "[{ name: %v, type: %v }]",
+            p_name, G(T_ANY),
+        )
         var proto = fmt.Sprintf (
-            "{ parameters: %v, value_type: __.b }",
-            parameters,
+            "{ parameters: %v, value_type: %v }",
+            parameters, G(T_BOOL),
         )
         var desc = Desc (
             []rune("lambda.type_checker"),
@@ -103,10 +106,10 @@ var TypeMap = map[string]TransFunction {
         var checker_expr = Transpile(tree, children["filters"])
         var raw = BareFunction(fmt.Sprintf("return %v;", checker_expr))
         var checker = fmt.Sprintf (
-            "w(%v, %v, %v, %v)",
-            proto, "null", desc, raw,
+            "%v(%v, %v, %v, %v)",
+            L_WRAP, proto, "null", desc, raw,
         )
-        return fmt.Sprintf("__.ct(%v)", checker)
+        return fmt.Sprintf("%v(%v)", G(C_TYPE), checker)
     },
     // filters = exprlist
     "filters": func (tree Tree, ptr int) string {
@@ -119,7 +122,8 @@ var TypeMap = map[string]TransFunction {
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
         return fmt.Sprintf (
-            "__.c(__.cft, %v, %v, %v, %v)",
+            "%v(%v, %v, %v, %v, %v)",
+            G(CALL), G(C_FINITE),
             TranspileSubTree (
                 tree, children["exprlist"], "expr", "exprlist_tail",
             ),
@@ -139,10 +143,10 @@ var TypeMap = map[string]TransFunction {
             names = append(names, Transpile(tree, name_ptr))
         }
         var names_str = strings.Join(names, ", ")
-        var enum = fmt.Sprintf("__.ce(%v, [%v])", e_name, names_str)
+        var enum = fmt.Sprintf("%v(%v, [%v])", G(C_ENUM), e_name, names_str)
         return fmt.Sprintf (
-            "__.c(dl, [%v, %v, true, __.t], %v, %v, %v)",
-            e_name, enum, file, row, col,
+            "%v(%v, [%v, %v, true, %v], %v, %v, %v)",
+            G(CALL), L_VAR_DECL, e_name, enum, G(T_TYPE), file, row, col,
         )
     },
     // schema = @struct name generic_params { field_list }! schema_config
@@ -156,8 +160,9 @@ var TypeMap = map[string]TransFunction {
         var config = Transpile(tree, children["schema_config"])
         var table, defaults, contains = FieldList(tree, children["field_list"])
         var schema = fmt.Sprintf (
-            "__.c(__.cs, [%v, %v, %v, %v, %v], %v, %v, %v)",
-            name, table, defaults, contains, config, file, row, col,
+            "%v(%v, [%v, %v, %v, %v, %v], %v, %v, %v)",
+            G(CALL), G(C_SCHEMA), name, table, defaults, contains, config,
+            file, row, col,
         )
         var value string
         if NotEmpty(tree, gp_ptr) {
@@ -166,8 +171,8 @@ var TypeMap = map[string]TransFunction {
             value = schema
         }
         return fmt.Sprintf (
-            "__.c(dl, [%v, %v, true, __.t], %v, %v, %v)",
-            name, value, file, row, col,
+            "%v(%v, [%v, %v, true, %v], %v, %v, %v)",
+            G(CALL), L_VAR_DECL, name, value, G(T_TYPE), file, row, col,
         )
     },
     // schema_config? = @config { struct_guard operator_defs }!
@@ -185,12 +190,15 @@ var TypeMap = map[string]TransFunction {
         if Empty(tree, ptr) { return "null" }
         var children = Children(tree, ptr)
         var body_ptr = children["body"]
-        var parameters = "[{ name: 'fields', type: __.h }]"
+        var parameters = fmt.Sprintf (
+            "[{ name: 'fields', type: %v }]",
+            G(T_HASH),
+        )
         var desc = Desc (
             []rune("struct_guard"),
             []rune("(fields: Hash)"),
             []rune("Void"),
         )
-        return Function(tree, body_ptr, F_Sync, desc, parameters, "__.v")
+        return Function(tree, body_ptr, F_Sync, desc, parameters, G(T_VOID))
     },
 }

@@ -8,8 +8,6 @@ import "../parser/syntax"
 import "../parser"
 
 
-const Runtime = "KumaChan"
-
 type Tree = *parser.Tree
 type TransFunction = func(Tree, int) string
 
