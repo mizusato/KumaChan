@@ -11,6 +11,11 @@ Types.Arity = template (
 )
 Types.Callable = Uni(ES.Function, Types.TypeTemplate, Types.Class, Types.Schema)
 
+Types.Impl = template (
+    'function Impl (i: Interface) -> Type',
+        i => i.Impl
+)
+
 Types.Operand = template (
     'function Operand (op: String) -> Type',
         op => Uni (

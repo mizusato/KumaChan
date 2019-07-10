@@ -80,6 +80,7 @@ const MSG = {
     format_not_all_converted: (
         'not all arguments converted during formatting string'
     ),
+    get_from_nil: 'unable to perform get operation on Nil without nil flag',
     key_error: key => `key error: requested key '${key}' does not exist`,
     index_error: index => `index ${index} out of range`,
     not_bool: 'given expression did not evaluate to a boolean value',

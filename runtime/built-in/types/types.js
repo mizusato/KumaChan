@@ -56,9 +56,12 @@ let built_in_types = {
     Class: Types.Class,
     Instance: Types.Instance,
     Interface: Types.Interface,
+    Impl: Types.Impl,
     /* Getter, Setter */
     Getter: Types.Getter,
     Setter: Types.Setter,
+    GeneralGetter: Types.GeneralGetter,
+    GeneralSetter: Types.GeneralSetter,
     SliceIndex: Types.SliceIndex,
     SliceIndexDefault: Types.SliceIndexDefault,
     SliceGetter: Types.SliceGetter,

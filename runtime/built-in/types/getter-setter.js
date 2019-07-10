@@ -18,6 +18,29 @@ Types.Setter = template (
         ], null)
 )
 
+Types.GeneralGetter = Uni (
+    Types.Hash,
+    Types.List,
+    Types.Struct,
+    Types.Getter,
+    Types.Enum,
+    Types.Class,
+    Types.Module,
+    Types.Nil,
+    Types.Error,
+    Types.ES_Object,
+    Types.ES_Class
+)
+
+Types.GeneralSetter = Uni (
+    Types.Hash,
+    Types.List,
+    Types.Struct,
+    Types.Setter,
+    Types.Error,
+    Types.ES_Object
+)
+
 Types.SliceIndexDefault = create_value('SliceIndexDefault')
 
 Types.SliceIndex = Uni(Types.Index, Types.SliceIndexDefault)

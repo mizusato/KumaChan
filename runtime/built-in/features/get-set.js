@@ -14,11 +14,9 @@ let get_data = f (
             }
         },
     'function get_data (nil: Nil, k: Any, nf: Bool) -> Object',
-        () => Nil,
+        (_, __, nf) => (ensure(nf, 'get_from_nil'), Nil),
     'function get_data (M: Module, k: String, nf: Bool) -> Object',
         (M, k, nf) => M.has(k)? M.get(k): (ensure(nf, 'key_error', k), Nil),
-    'function get_data (I: Interface, k: String, nf: Bool) -> Object',
-        (I, k, nf) => (k == 'Impl')? I.Impl: (ensure(nf, 'key_error', k), Nil),
     'function get_data (C: Class, k: String, nf: Bool) -> Object',
         (C, k, nf) => C.has(k)? C.get(k): (ensure(nf, 'key_error', k), Nil),
     'function get_data (e: Enum, k: String, nf: Bool) -> Object',
@@ -48,8 +46,6 @@ let set_data = f (
             e.data[k] = v
             return Void
         },
-    'function set_data (nil: Nil, k: Any, v: Any) -> Void',
-        () => Void,
     'function set_data (s: Setter, k: Any, v: Any) -> Void',
         (s, k, v) => call_method(null, s, 'set', [k, v]),
     'function set_data (s: Struct, k: String, v: Any) -> Void',
