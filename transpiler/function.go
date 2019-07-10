@@ -198,8 +198,8 @@ var FunctionMap = map[string]TransFunction {
         var buf strings.Builder
         fmt.Fprintf(&buf, "catch (%v) { ", H_HOOK_ERROR)
         fmt.Fprintf (
-            &buf, "let %v = %v.%v(scope); ",
-            H_HOOK_SCOPE, RUNTIME, R_NEW_SCOPE,
+            &buf, "let %v = %v.%v(%v); ",
+            H_HOOK_SCOPE, RUNTIME, R_NEW_SCOPE, SCOPE,
         )
         WriteHelpers(&buf, H_HOOK_SCOPE)
         fmt.Fprintf(&buf, "%v(%v); ", G(ENTER_H_HOOK), H_HOOK_ERROR)

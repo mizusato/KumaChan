@@ -12,7 +12,7 @@ const (
 
 
 const (
-    SCOPE = "scope"
+    SCOPE = "_scope"
     ERROR_DUMP = "_e"
     DUMP_TYPE = "type"
     DUMP_NAME = "name"
@@ -26,17 +26,17 @@ const (
 
 
 const (
-    L_METHOD_CALL = "m"
-    L_STATIC_SCOPE = "gs"
-    L_WRAP = "w"
-    L_VAR_LOOKUP = "id"
-    L_VAR_DECL = "dl"
-    L_VAR_RESET = "rt"
-    L_ADD_FUN = "df"
-    L_OP_MOUNT = "mnt"
-    L_IMPORT_VAR = "ins"
-    L_IMPORT_MOD = "im"
-    L_IMPORT_ALL = "ia"
+    L_METHOD_CALL = "_m"
+    L_STATIC_SCOPE = "_s"
+    L_WRAP = "_w"
+    L_VAR_LOOKUP = "_id"
+    L_VAR_DECL = "_dl"
+    L_VAR_RESET = "_rt"
+    L_ADD_FUN = "_df"
+    L_OP_MOUNT = "_mt"
+    L_IMPORT_VAR = "_in"
+    L_IMPORT_MOD = "_im"
+    L_IMPORT_ALL = "_ia"
     L_GLOBAL_HELPERS = "__"
 )
 
@@ -56,8 +56,8 @@ const (
     C_SINGLETON = "cv"
     C_CLASS = "cc"
     C_INTERFACE = "ci"
-    C_SCHEMA = "cs"
-    C_STRUCT = "ns"
+    C_SCHEMA = "csh"
+    C_STRUCT = "cst"
     C_TYPE = "ct"
     C_TEMPLATE = "ctt"
     C_FINITE = "cft"

@@ -250,15 +250,15 @@ var CommandMap = map[string]TransFunction {
         }
         var upper string
         if depth-1 > 0 {
-            upper = fmt.Sprintf("scope%v", depth-1)
+            upper = fmt.Sprintf("%v%v", SCOPE, depth-1)
         } else {
             if node.Part.Id == HandleId {
-                upper = "handle_scope"
+                upper = H_HOOK_SCOPE
             } else {
-                upper = "scope"
+                upper = SCOPE
             }
         }
-        var current = fmt.Sprintf("scope%v", depth)
+        var current = fmt.Sprintf("%v%v", SCOPE, depth)
         var buf strings.Builder
         buf.WriteString("{ ")
         fmt.Fprintf(
