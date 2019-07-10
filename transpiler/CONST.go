@@ -1,6 +1,15 @@
+/**
+ *  This file contains some constants that are shared between
+ *    the transpiler and the runtime js library.
+ *  These contants are defined here, synchronized with the runtime
+ *    through the `bundle.py` script.
+ */
 package transpiler
 
 
+/**
+ *  Names of runtime module and its properties
+ */
 const (
     RUNTIME = "KumaChan"
     R_VOID = "Void"
@@ -11,6 +20,9 @@ const (
 )
 
 
+/**
+ *  Names of intermediate objects
+ */
 const (
     SCOPE = "_scope"
     ERROR_DUMP = "_e"
@@ -25,6 +37,9 @@ const (
 )
 
 
+/**
+ *  Names of local helper functions
+ */
 const (
     L_METHOD_CALL = "_m"
     L_STATIC_SCOPE = "_s"
@@ -41,6 +56,9 @@ const (
 )
 
 
+/**
+ *  Names of global helper functions
+ */
 const (
     CALL = "c"
     OPERATOR = "o"
@@ -73,7 +91,7 @@ const (
     EXIT_H_HOOK = "exh"
     PANIC = "pa"
     ASSERT = "as"
-    THROW = "throw"
+    THROW = "th"
     T_ANY = "a"
     T_BOOL = "b"
     T_VOID = "v"
