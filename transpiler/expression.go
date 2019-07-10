@@ -73,7 +73,7 @@ func TranspileOperationSequence (tree Tree, ptr int) [][]string {
 
 
 var ExpressionMap = map[string]TransFunction {
-    // expr = operand expr_tail
+    // expr = lower_unary operand expr_tail | operand expr_tail
     "expr": func (tree Tree, ptr int) string {
         var file = GetFileName(tree)
         var children = Children(tree, ptr)
@@ -111,7 +111,35 @@ var ExpressionMap = map[string]TransFunction {
                 file, row, col,
             )
         }
-        return do_transpile(-len(reduced))
+        var main_part = do_transpile(-len(reduced))
+        var low_ptr, has_lower_unary = children["lower_unary"]
+        if has_lower_unary {
+            var low = Transpile(tree, low_ptr)
+            var row, col = GetRowColInfo(tree, low_ptr)
+            return fmt.Sprintf (
+                "%v(%v, [%v], %v, %v, %v)",
+                G(CALL), low, main_part, file, row, col,
+            )
+        } else {
+            return main_part
+        }
+    },
+    // lower_unary = @mount | @push
+    "lower_unary": func (tree Tree, ptr int) string {
+        var child = tree.Nodes[ptr].Children[0]
+        var name = syntax.Id2Name[tree.Nodes[child].Part.Id]
+        if name == "@mount" {
+            var file = GetFileName(tree)
+            var row, col = GetRowColInfo(tree, ptr)
+            return fmt.Sprintf (
+                "%v(%v, [], %v, %v, %v)",
+                G(CALL), L_OP_MOUNT, file, row, col,
+            )
+        } else if name == "@push" {
+            panic("not implemented")
+        } else {
+            panic("unknown lower-unary operator " + name)
+        }
     },
     // operand = unary operand_base operand_tail
     "operand": func (tree Tree, ptr int) string {
@@ -166,14 +194,7 @@ var ExpressionMap = map[string]TransFunction {
         var real_child_ptr = tree.Nodes[group_ptr].Children[0]
         var child_node = &tree.Nodes[real_child_ptr]
         var name = syntax.Id2Name[child_node.Part.Id]
-        if name == "@mount" {
-            var file = GetFileName(tree)
-            var row, col = GetRowColInfo(tree, ptr)
-            return fmt.Sprintf (
-                "%v(%v, [], %v, %v, %v)",
-                G(CALL), L_OP_MOUNT, file, row, col,
-            )
-        } else if name == "-" {
+        if name == "-" {
             return fmt.Sprintf (
                 `%v("negate")`,
                 G(OPERATOR),

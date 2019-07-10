@@ -100,7 +100,8 @@ var Keywords = [...] string {
     "@where", "@when", "@otherwise",
     "@struct", "@fields", "@config", "@operator", "@guard",
     "@one", "@of", "@enum", "@$",
-    "@class", "@init", "@mount", "@create", "@private", "@data", "@interface",
+    "@mount", "@push",
+    "@class", "@init", "@create", "@private", "@data", "@interface",
     "@str", "@len", "@prms", "@iter", "@async_iter", "@negate",
     "@true", "@false",
     "@is", "@or", "@not",
@@ -328,7 +329,8 @@ var SyntaxDefinition = [...] string {
     "method_blank = name Call paralist_strict! -> type",
 
     /*** Expression ***/
-    "expr = operand expr_tail",
+    "expr = lower_unary operand expr_tail | operand expr_tail",
+    "lower_unary = @mount | @push",
     "expr_tail? = operator operand! expr_tail",
     /* Operators (Infix) */
     "operator = op_group1 | op_compare | op_logic | op_arith",
@@ -337,11 +339,10 @@ var SyntaxDefinition = [...] string {
     `op_logic = @is | @as | && | _bar2 | & | _bar1 | \ `,
     "op_arith = + | - | * | / | % | ^ ",
     /* Operators (Prefix) */
-    "unary? = unary_group1 | unary_group2 | unary_group3 | unary_group4",
+    "unary? = unary_group1 | unary_group2 | unary_group3",
     "unary_group1 = @not | - | @negate | _exc | ~ ",
     "unary_group2 = @str | @len",
     "unary_group3 = @prms | @iter | @async_iter | @enum",
-    "unary_group4 = @mount",
     /* Operand */
     "operand = unary operand_base operand_tail",
     "operand_base = wrapped | literal | dot_para | identifier",
