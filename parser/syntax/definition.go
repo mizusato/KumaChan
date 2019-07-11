@@ -145,7 +145,8 @@ var Operators = [...] Operator {
 
 
 var RedefinableOperators = []string {
-    "@as", "@str", "@len", "@prms", "@iter", "@async_iter", "@enum",
+    "@as", "@str", "@len",
+    "@prms", "@iter", "@async_iter", "@enum",
     "==", "<",
     "<<", ">>",
     "@negate", "+", "-", "*", "/", "%", "^",
