@@ -14,17 +14,23 @@ let MSG = {
     array_invalid_init: .{
         'invalid array: invalid element was found at index ${}' << .index
     },
-    array_out_of_range: .{
+    array_invalid_index: .{
         'index out of range (index=${1}, length=${2})' << [.index, .length]
     },
     array_inconsistent: .{
-        'requested array element (at index ${}) became invalid type' << .index
+        'requested array element (at index ${}) is of invalid type' << .index
     },
     array_invalid_slice: .{
         'invalid slice: lower bound is bigger than higher bound'
     },
-    array_slice_out_of_range: .{
-        'slice index out of range (hi=${1}, length=${2})' << [.hi, .index]
+    array_invalid_slice_index: .{
+        'slice index out of range (high=${1}, length=${2})' << [.high, .index]
+    },
+    array_slice_inconsistent: .{
+        'inconsistent slice: length of underlying array has changed'
+    },
+    array_unsupported: .{
+        '${} is not supported on this array' << .operation
     },
     future_invalid_value: .{
         'resolved future value violated its type constraint'

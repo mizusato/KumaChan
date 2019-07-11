@@ -1,27 +1,85 @@
-class Array<T> is Getter<Index, T>, Setter<Index, T>, SliceGetter {
-    init (source: Iterable) {
-        let list = []
-        for element[i] in source {
-            ensure valid(i) { element is T }
-            list -> append(element)
+struct ArrayData {
+    get: $<Index><Object>,
+    set: $<Index, Object><Void>,
+    length: $<><Size>,
+    prepend: Maybe<$<Object><Void>> = Nil,
+    append: Maybe<$<Object><Void>> = Nil,
+    shift: Maybe<$<><Void>> = Nil,
+    pop: Maybe<$<><Void>> = Nil
+}
+
+interface Array_ {}
+
+type ArrayType = Impl<Array_>
+
+
+class Array<T> is Array_, Getter<Index, T>, Setter<Index, T>, SliceGetter {
+    init (data: ArrayData) {
+        reset data = copy(data)
+    }
+    create (i: Iterable) {
+        let list = [ x, for x in i ]
+        return Array<T>(list)
+    }
+    create (l: List) {
+        for v[i] in l {
+            ensure type_correct(i) { v is T }
         }
+        return Array<T>(ArrayData {
+            get: lambda (i: Index) -> Object {
+                return l[i]
+            },
+            set: lambda (i: Index, v: Object) -> Void {
+                set l[i] = v
+            },
+            length: lambda -> Size {
+                return len(l)
+            },
+            prepend: lambda (v: Object) -> Void {
+                l -> prepend(v)
+            },
+            append: lambda (v: Object) -> Void {
+                l -> append(v)
+            },
+            shift: lambda -> Void {
+                l -> shift()
+            },
+            pop: lambda -> Void {
+                l -> pop()
+            }
+        })
         @handle error {
-            unless valid(i) {
+            unless type_correct (i) {
                 panic MSG.array_invalid_init(i)
             }
         }
     }
+    create (another: Array_) {
+        for v[i] in another {
+            ensure type_correct(i) { v is T }
+        }
+        return Array<T>(another -> unwrap())
+        @handle error {
+            unless type_correct (i) {
+                panic MSG.array_invalid_init(i)
+            }
+        }
+    }
+    unwrap () -> ArrayData {
+        return copy(data)
+    }
     get (i: Index, nf: Bool) -> Maybe<T> {
-        if not (i < len(list)) {
-            ensure nil_allowed { nf }
+        let L = data.length()
+        if not (i < L) {
+            ensure index_valid { nf }
             return Nil
         }
-        let element = list[i]
+        let element = data.get(i)
         ensure consistent { element is T }
         return element
         @handle error {
-            unless nil_allowed {
-                panic MSG.array_out_of_range(i, len(list))
+            unless index_valid {
+                panic MSG.array_invalid_index(i, L)
             }
             unless consistent {
                 panic MSG.array_inconsistent(i)
@@ -29,46 +87,88 @@ class Array<T> is Getter<Index, T>, Setter<Index, T>, SliceGetter {
         }
     }
     set (i: Index, value: T) -> Void {
-        ensure index_valid { i < len(list) }
-        set list[i] = value
+        let L = data.length()
+        ensure index_valid { i < L }
+        data.set(i, value)
         @handle error {
             unless index_valid {
-                panic MSG.array_out_of_range(i, len(list))
+                panic MSG.array_invalid_index(i, L)
             }
         }
     }
     slice (lo: SliceIndex, hi: SliceIndex) -> Object {
-        let L = len(list)
-        if lo is SliceIndexDefault {
-            reset lo = 0
-        }
-        if hi is SliceIndexDefault {
-            reset hi = L
-        }
-        ensure index_valid { lo <= hi }
-        ensure index_in_range { hi <= L }
-        return Array<T> << iterator {
-            for i in range(lo, hi) {
-                yield list[i]
+        let L = data.length()
+        let Default = SliceIndexDefault
+        if lo is Default { reset lo = 0 }
+        if hi is Default { reset hi = L }
+        ensure slice_valid { lo <= hi }
+        ensure index_valid { hi <= L }
+        let check_consistent = lambda {
+            if data.length() != L {
+                panic MSG.array_slice_inconsistent()
             }
         }
+        return Array<T>(ArrayData {
+            get: lambda (i: Index) -> Object {
+                check_consistent()
+                return data.get(lo + i)
+            },
+            set: lambda (i: Index, v: Object) -> Void {
+                check_consistent()
+                data.set((lo + i), v)
+            },
+            length: lambda -> Size {
+                check_consistent()
+                return (hi - lo)
+            }
+        })
         @handle error {
-            unless index_valid {
+            unless slice_valid {
                 panic MSG.array_invalid_slice()
             }
-            unless index_in_range {
-                panic MSG.array_slice_out_of_range(hi, L)
+            unless index_valid {
+                panic MSG.array_invalid_slice_index(hi, L)
             }
         }
     }
     length () -> Size {
-        return len(list)
+        return data.length()
     }
     append (value: T) -> Void {
-        list -> append(value)
+        ensure supported { data.append is not Nil }
+        data.append(value)
+        @handle error {
+            unless supported {
+                panic MSG.array_unsupported('append()')
+            }
+        }
     }
     prepend (value: T) -> Void {
-        list -> prepend(value)
+        ensure supported { data.prepend is not Nil }
+        data.prepend(value)
+        @handle error {
+            unless supported {
+                panic MSG.array_unsupported('prepend()')
+            }
+        }
+    }
+    shift () -> Void {
+        ensure supported { data.shift is not Nil }
+        data.shift()
+        @handle error {
+            unless supported {
+                panic MSG.array_unsupported('shift()')
+            }
+        }
+    }
+    pop () -> Void {
+        ensure supported { data.pop is not Nil }
+        data.pop()
+        @handle error {
+            unless supported {
+                panic MSG.array_unsupported('pop()')
+            }
+        }
     }
     operator len (array) {
         return array -> length()
@@ -81,6 +181,6 @@ class Array<T> is Getter<Index, T>, Setter<Index, T>, SliceGetter {
         }
     }
     operator + (a1, a2) {
-        return Array<T>(iter(a1) + iter(a2))
+        return Array<T>((iter a1) + (iter a2))
     }
 }

@@ -2,7 +2,9 @@ module Std
 
 export {
     Map, Set,
-    Array, Future, Stream, AsyncStream
+    Array, ArrayType, ArrayData,
+    Future,
+    Stream, AsyncStream
 }
 
 import ES
