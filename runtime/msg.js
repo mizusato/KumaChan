@@ -59,6 +59,12 @@ const MSG = {
     interface_invalid: name => (
         `invalid interface: blank method ${name}() should not be implemented`
     ),
+    pf_conflict: name => (
+        `unable to declare private function ${name}: conflict with arguments`
+    ),
+    self_conflict: (
+        `unable to declare 'self' reference: variable name already used`
+    ),
     invalid_mount: 'mount operator is only available inside initializer',
     mounting_non_instance: 'unable to mount non-instance object',
     mounting_undeclared: C => (

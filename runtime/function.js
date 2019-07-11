@@ -27,7 +27,7 @@ pour(Types, {
 })
 
 function call_by_js (f, args) {
-    assert(is(f, Wrapped))
+    assert(is(f, Types.Wrapped))
     assert(is(args, Types.List))
     return f.apply(null, args)
 }
@@ -339,7 +339,7 @@ function inject_args (args, proto, scope) {
 /**
  *  Overloads some wrapped functions into a single wrapped function
  *
- *  @param functions Wrapped[]
+ *  @param functions Function[]
  *  @param name string
  *  @return Overload
  */
@@ -407,7 +407,7 @@ function overload (functions, name) {
         }
     }
     let o = (...args) => call(o, args, '<JS>')
-    let info = Object.freeze({ functions, invoke, desc })
+    let info = Object.freeze({ functions, invoke, name, desc })
     Object.freeze(info)
     o[WrapperInfo] = info
     Object.freeze(o)
@@ -454,7 +454,7 @@ function overload_concated (o2, o1, name) {
  *  @return Binding
  */
 function bind_context (f, context) {
-    assert(is(f, Wrapped))
+    assert(is(f, Types.Wrapped))
     assert(context instanceof Scope)
     f = cancel_binding(f)
     let f_invoke = f[WrapperInfo].invoke
@@ -473,13 +473,38 @@ function bind_context (f, context) {
 
 
 /**
+ *  Creates a new function as `f` embraced into another context
+ *
+ *  @param f Wrapped
+ *  @param context Scope
+ *  @return Wrapped
+ */
+function embrace_in_context (f, context) {
+    assert(is(f, Types.Wrapped))
+    assert(context instanceof Scope)
+    f = cancel_binding(f)
+    if (is(f, Types.Overload)) {
+        return overload(f[WrapperInfo].functions.map(F => {
+            F = F[WrapperInfo]
+            return wrap(context, F.proto, F.desc, F.raw)
+        }), f[WrapperInfo].name)
+    } else if(is(f, Types.Function)) {
+        let F = f[WrapperInfo]
+        return wrap(context, F.proto, F.desc, F.raw)
+    } else {
+        assert(false)
+    }
+}
+
+
+/**
  *  Deref `f` if it is a binding
  *
  *  @param f Wrapped
  *  @return Wrapped
  */
 function cancel_binding (f) {
-    assert(is(f, Wrapped))
+    assert(is(f, Types.Wrapped))
     return f[WrapperInfo].pointer || f
 }
 
@@ -503,7 +528,7 @@ function call (f, args, file = null, row = -1, col = -1) {
         f = f.create_struct_from_another
     }
     let call_type = file? CALL_FROM_SCRIPT: CALL_FROM_BUILT_IN
-    if (is(f, Wrapped)) {
+    if (is(f, Types.Wrapped)) {
         let info = f[WrapperInfo]
         push_call(call_type, info.desc, file, row, col)
         try {

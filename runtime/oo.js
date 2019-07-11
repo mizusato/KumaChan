@@ -224,7 +224,8 @@ function wrap_initializer (class_) {
         let self = new Instance(class_, scope)
         // inject private functions
         foreach(class_.pfs, (name, pf) => {
-            scope.try_to_declare(name, bind_context(pf, scope))
+            ensure(!scope.has(name), 'pf_conflict', name)
+            scope.declare(name, embrace_in_context(pf, scope))
         })
         // create mount() for this instance
         let mount = another => {
@@ -238,7 +239,8 @@ function wrap_initializer (class_) {
         // do some necessary work
         self.finish_init()
         // inject self reference
-        scope.try_to_declare('self', self)
+        ensure(!scope.has('self'), 'self_conflict')
+        scope.declare('self', self)
         // return the initialized instance
         return self
     })
