@@ -40,10 +40,6 @@ Types.Representable = Uni (
     Types.Primitive,
     Types.Operand.inflate('str')
 )
-Types.Comparable = Uni (
-    Types.Number,
-    Types.Operand.inflate('<')
-)
 
 Types.Error = $(x => x instanceof Error)
 
