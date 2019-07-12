@@ -32,6 +32,7 @@ let built_in_types = {
     Char: Types.Char,
     String: Types.String,
     Representable: Types.Representable,
+    Comparable: Types.Comparable,
     Primitive: Types.Primitive,
     /* Container */
     List: Types.List,

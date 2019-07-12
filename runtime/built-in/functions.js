@@ -339,7 +339,7 @@ let built_in_functions = {
                     return Void
                 }
                 let target = i+1
-                l.push(Nil)
+                l.push(l[l.length-1])
                 for (let j=l.length-1; j>target; j--) {
                     l[j] = l[j-1]
                 }

@@ -456,10 +456,13 @@ var CommandMap = map[string]TransFunction {
     "cmd_loop_ctrl": func (tree Tree, ptr int) string {
         var child_ptr = tree.Nodes[ptr].Children[0]
         var id = tree.Nodes[child_ptr].Part.Id
-        if id == syntax.Name2Id["break"] {
+        var name = syntax.Id2Name[id]
+        if name == "@break" {
             return "break"
-        } else {
+        } else if name == "@continue" {
             return "continue"
+        } else {
+            panic("impossible branch")
         }
     },
     // cmd_err = cmd_throw | cmd_assert | cmd_ensure | cmd_try | cmd_panic

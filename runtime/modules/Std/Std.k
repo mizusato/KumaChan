@@ -4,7 +4,8 @@ export {
     Map, Set,
     Array, ArrayType, ArrayData,
     Future,
-    Stream, AsyncStream
+    Stream, AsyncStream,
+    sort
 }
 
 import ES
@@ -15,3 +16,4 @@ include 'containers/set.k'
 include 'wrappers/array.k'
 include 'wrappers/future.k'
 include 'wrappers/stream.k'
+include 'tools/sort.k'

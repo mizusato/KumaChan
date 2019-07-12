@@ -37,5 +37,8 @@ let MSG = {
     },
     stream_invalid_value: .{
         'some element being yielded by the stream violated its type constraint'
+    },
+    sort_compare_invalid: .{
+        'non-boolean value returned by given compare() function'
     }
 }
