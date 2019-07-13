@@ -375,6 +375,11 @@ let built_in_functions = {
         'function map_value (h: Hash, f: Arity<2>) -> Hash',
             (h, f) => mapval(h, (v, k) => call(f, [v, k]))
     ),
+    // OO
+    get_class: fun (
+        'function get_class (i: Instance) -> Class',
+            i => i.class_
+    ),
     // Copy
     copy: f (
         'copy',

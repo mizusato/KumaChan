@@ -7,4 +7,7 @@ invoke {
     assert Id <=> Id
     assert 'foobar' is one of { 'foobar', 'baz' }
     assert 'BAZ' is not one of { 'foobar', 'baz' }
+    type X = { not(not Number), Number | String }
+    assert Number is X
+    assert String | Number is X
 }

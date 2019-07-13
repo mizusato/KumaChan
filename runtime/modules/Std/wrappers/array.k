@@ -54,17 +54,6 @@ class Array<T> is Array_, Getter<Index, T>, Setter<Index, T>, SliceGetter {
             }
         }
     }
-    create (another: Array_) {
-        for v[i] in another {
-            ensure type_correct(i) { v is T }
-        }
-        return Array<T>(another -> unwrap())
-        @handle error {
-            unless type_correct (i) {
-                panic MSG.array_invalid_init(i)
-            }
-        }
-    }
     unwrap () -> ArrayData {
         return copy(data)
     }
@@ -182,5 +171,44 @@ class Array<T> is Array_, Getter<Index, T>, Setter<Index, T>, SliceGetter {
     }
     operator + (a1, a2) {
         return Array<T>((iter a1) + (iter a2))
+    }
+    operator == (a1, a2) {
+        let T = get_class(a1).ElementType
+        assert T <=> get_class(a2).ElementType
+        ensure type_valid { T is EqualityDefined }
+        let L = len(a1)
+        if L != len(a2) {
+            return false
+        }
+        for i in seq(L) {
+            if a1[i] != a2[i] {
+                return false
+            }
+        }
+        return true
+        @handle error {
+            unless type_valid {
+                panic MSG.array_equal_type_invalid()
+            }
+        }
+    }
+    operator as (self, T) {
+        ensure cast_valid { T is ArrayType }
+        let E = T.ElementType
+        for value[i] in self {
+            ensure type_correct(i) { value is E }
+        }
+        return Array<E>(self -> unwrap())
+        @handle error {
+            unless cast_valid {
+                panic MSG.array_cast_invalid()
+            }
+            unless type_correct (i) {
+                panic MSG.array_cast_type_incorrect(i)
+            }
+        }
+    }
+    data {
+        ElementType: T
     }
 }

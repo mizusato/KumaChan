@@ -23,6 +23,13 @@ Types.Operand = template (
             Ins(Types.Instance, $(i => i.class_.defined_operator(op)))
         )
 )
+Types.OpImpl = template (
+    'function OpImpl (op: String) -> Type',
+        op => Uni (
+            Ins(Types.Schema, $(s => s.defined_operator(op))),
+            Ins(Types.Class, $(c => c.defined_operator(op)))
+        )
+)
 
 Types.Index = Ins(Types.Int, $(x => x >= 0))
 Types.Size = Types.Index
@@ -36,9 +43,18 @@ Types.Char = Ins(Types.String, $(x => {
     }
     return (i == 1)
 }))
+
 Types.Representable = Uni (
     Types.Primitive,
     Types.Operand.inflate('str')
+)
+
+Types.EqualityDefined = Uni (
+    one_of (
+        Types.Bool, Types.String,
+        Types.Number, Types.Int, Types.Index
+    ),
+    Types.OpImpl.inflate('==')
 )
 
 Types.Error = $(x => x instanceof Error)

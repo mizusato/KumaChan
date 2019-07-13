@@ -1,3 +1,11 @@
+function swap (a: Array, i: Index, j: Index) -> Void {
+    if i == j { return }
+    let t = a[i]
+    set a[i] = a[j]
+    set a[j] = t
+}
+
+
 function i_sort (a: Array, compare: Arity<2>) -> Void {
     let L = len(a)
     if L == 0 { return }
@@ -34,20 +42,18 @@ function sort (a: Array, compare: Arity<2>) -> Void {
     }
     let p = __Math.floor(__Math.random() * L)
     let pivot = a[p]
-    set a[p] = a[0]
-    set a[0] = pivot
+    swap(a, p, 0)
     var m = 1
     for i in range(1, L) {
         let big = compare(pivot, a[i])
         ensure compare_valid { big is Bool }
         if not big {
-            let t = a[i]
-            set a[i] = a[m]
-            set a[m] = t
+            swap(a, i, m)
             reset m += 1
         }
     }
-    let lo = a[:m]
+    swap(a, 0, m-1)
+    let lo = a[:m-1]
     let hi = a[m:]
     sort(lo, compare)
     sort(hi, compare)

@@ -297,7 +297,16 @@ class FiniteSetType {
         assert(objects.length > 0)
         this.objects = copy(objects)
         Object.freeze(this.objects)
-        this[Checker] = (x => exists(this.objects, object => object === x))
+        this[Checker] = x => {
+            if (is(x, Type)) {
+                return exists (
+                    this.objects,
+                    o => is(o, Type) && type_equivalent(o, x)
+                )
+            } else {
+                return exists(this.objects, o => o === x)
+            }
+        }
         Object.freeze(this)
     }
     get [Symbol.toStringTag]() {
@@ -434,7 +443,9 @@ class HashFormat {
 let format = ((table, def, req) => new HashFormat(table, def, req))
 
 
-
+/**
+ *  Object Id Assigner (used by VectorMapCache)
+ */
 class ObjectRegistry {
     constructor () {
         let self = {
@@ -467,6 +478,12 @@ class ObjectRegistry {
 }
 
 
+/**
+ *  Cache for map: [Object, Object, ...] --> Object
+ *
+ *  This class is used by TypeTemplate and FunSig
+ *    to store their caches.
+ */
 class VectorMapCache {
     constructor () {
         let self = {

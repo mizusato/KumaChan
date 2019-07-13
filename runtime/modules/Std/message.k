@@ -32,6 +32,15 @@ let MSG = {
     array_unsupported: .{
         '${} is not supported on this array' << .operation
     },
+    array_equal_type_invalid: .{
+        'cannot check array equality by an equality-undefined element type'
+    },
+    array_cast_invalid: .{
+        'bad array cast: cannot cast an array to a non-array type'
+    },
+    array_cast_type_incorrect: .{
+        'bad array cast: invalid element found at index ${}' << .index
+    },
     future_invalid_value: .{
         'resolved future value violated its type constraint'
     },

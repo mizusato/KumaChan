@@ -71,6 +71,8 @@ let built_in_types = {
     /* Others */
     NotFound: Types.NotFound,
     Operand: Types.Operand,
+    OpImpl: Types.OpImpl,
+    EqualityDefined: Types.EqualityDefined,
     Error: Types.Error,
     Module: Types.Module
 }
