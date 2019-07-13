@@ -158,6 +158,16 @@ class Array<T> is Getter<Index, T>, Setter<Index, T>, SliceGetter {
     sort (compare: Arity<2>) -> Void {
         i_sort(self, compare)
     }
+    reverse () -> Void {
+        let L = len(self)
+        var hi = L-1
+        var lo = 0
+        while lo < hi {
+            swap(self, lo, hi)
+            reset lo += 1
+            reset hi -= 1
+        }
+    }
     operator len (array) {
         return array -> length()
     }
