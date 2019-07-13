@@ -14,6 +14,7 @@ let built_in_types = {
     /* Special */
     Type: Types.Type,
     TypeTemplate: Types.TypeTemplate,
+    TypeType: Types.TypeType,
     Any: Types.Any,
     Never: Types.Never,
     Object: Types.Object,

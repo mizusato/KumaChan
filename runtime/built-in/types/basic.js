@@ -1,3 +1,8 @@
+Types.TypeType = template (
+    'function TypeType (TT: TypeTemplate) -> Type',
+        TT => Ins(Types.Type, $(x => TT.has_inflated(x)))
+)
+
 Types.Maybe = template (
     'function Maybe (T: Type) -> Type',
         T => Uni(Nil, T)

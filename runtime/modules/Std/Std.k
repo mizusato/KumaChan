@@ -2,7 +2,7 @@ module Std
 
 export {
     Map, Set,
-    Array, ArrayType, ArrayData,
+    Array, ArrayData,
     Future,
     Stream, AsyncStream
 }

@@ -8,12 +8,8 @@ struct ArrayData {
     pop: Maybe<$<><Void>> = Nil
 }
 
-interface Array_ {}
 
-type ArrayType = Impl<Array_>
-
-
-class Array<T> is Array_, Getter<Index, T>, Setter<Index, T>, SliceGetter {
+class Array<T> is Getter<Index, T>, Setter<Index, T>, SliceGetter {
     init (data: ArrayData) {
         reset data = copy(data)
     }
@@ -196,7 +192,7 @@ class Array<T> is Array_, Getter<Index, T>, Setter<Index, T>, SliceGetter {
         }
     }
     operator as (self, T) {
-        ensure cast_valid { T is ArrayType }
+        ensure cast_valid { T is TypeType<Array> }
         let E = T.ElementType
         for value[i] in self {
             ensure type_correct(i) { value is E }

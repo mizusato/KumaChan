@@ -18,11 +18,13 @@ class TypeTemplate {
                 classes: new Set(),
                 interfaces: new Set(),
                 schemas: new Set(),
-                others: new Set()
+                others: new Set(),
+                all: new Set()
             }
         }
         this.inflate = this.inflate.bind(self)
         inject_desc(this.inflate, 'inflate_template')
+        this.has_inflated = this.has_inflated.bind(self)
         this[Checker] = this.check.bind(self)
         Object.freeze(this)
     }
@@ -65,7 +67,12 @@ class TypeTemplate {
         } else {
             this.inflated.others.add(type)
         }
+        this.inflated.all.add(type)
         return type
+    }
+    has_inflated (type) {
+        assert(is(type, Types.Type))
+        return this.inflated.all.has(type)
     }
     get [Symbol.toStringTag]() {
         return 'TypeTemplate'
