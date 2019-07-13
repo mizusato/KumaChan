@@ -71,6 +71,24 @@ let operators = {
         'function operator.len (l: List) -> Size',
             l => l.length
     ),
+    'copy': f (
+        'copy',
+        `function copy (o: Operand<'copy'>) -> Object`,
+            o => {
+                assert(is(o, Types.Instance))
+                let copied = apply_unary('copy', o)
+                ensure(is(copied, Types.Instance), 'invalid_copy')
+                ensure(copied.class_ === o.class_, 'invalid_copy')
+                ensure(copied === o, 'did_not_copy')
+                return copied
+            },
+        'function copy (s: Struct) -> Struct',
+            s => new_struct(s.schema, copy(s.data)),
+        'function copy (l: List) -> List',
+            l => copy(l),
+        'function copy (h: Hash) -> Hash',
+            h => copy(h)
+    ),
     'prms': f (
         'operator.prms',
         `function operator.prms (o: Operand<'prms'>) -> Promise`,

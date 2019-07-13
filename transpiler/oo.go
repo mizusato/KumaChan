@@ -87,6 +87,7 @@ var OO_Map = map[string]TransFunction {
     },
     // class_opt = operator_defs data
     "class_opt": func (tree Tree, ptr int) string {
+        // rule name depended by FunctionMap["operator_defs"]
         var children = Children(tree, ptr)
         var ops = Transpile(tree, children["operator_defs"])
         var data = Transpile(tree, children["data"])

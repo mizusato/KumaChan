@@ -102,7 +102,7 @@ var Keywords = [...] string {
     "@one", "@of", "@enum", "@$",
     "@mount", "@push",
     "@class", "@init", "@create", "@private", "@data", "@interface",
-    "@str", "@len", "@prms", "@iter", "@async_iter", "@negate",
+    "@str", "@len", "@copy", "@prms", "@iter", "@async_iter", "@negate",
     "@true", "@false",
     "@is", "@or", "@not",
 }
@@ -145,7 +145,7 @@ var Operators = [...] Operator {
 
 
 var RedefinableOperators = []string {
-    "@as", "@str", "@len",
+    "@as", "@str", "@len", "@copy",
     "@prms", "@iter", "@async_iter", "@enum",
     "==", "<",
     "<<", ">>",
@@ -342,7 +342,7 @@ var SyntaxDefinition = [...] string {
     /* Operators (Prefix) */
     "unary? = unary_group1 | unary_group2 | unary_group3",
     "unary_group1 = @not | - | @negate | _exc | ~ ",
-    "unary_group2 = @str | @len",
+    "unary_group2 = @str | @len | @copy",
     "unary_group3 = @prms | @iter | @async_iter | @enum",
     /* Operand */
     "operand = unary operand_base operand_tail",

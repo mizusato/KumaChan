@@ -152,5 +152,9 @@ const MSG = {
     signature_invalid_ret: (
         'invalid function signature: non-type object given for return value'
     ),
-    invalid_cast: 'invalid type cast: object was cast to non-desired type'
+    invalid_cast: 'invalid type cast: object was cast to non-desired type',
+    invalid_copy: (
+        'bad copy: new object must be an instance of the class of old one'
+    ),
+    did_not_copy: 'bad copy: new object is the same as old one'
 }
