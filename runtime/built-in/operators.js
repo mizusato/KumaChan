@@ -79,7 +79,7 @@ let operators = {
                 let copied = apply_unary('copy', o)
                 ensure(is(copied, Types.Instance), 'invalid_copy')
                 ensure(copied.class_ === o.class_, 'invalid_copy')
-                ensure(copied === o, 'did_not_copy')
+                ensure(copied !== o, 'did_not_copy')
                 return copied
             },
         'function copy (s: Struct) -> Struct',
