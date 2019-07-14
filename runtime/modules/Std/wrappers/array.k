@@ -1,9 +1,10 @@
 struct ArrayData {
     get: $<Index><Object>,
-    set: $<Index, Object><Void>,
+    set: $<Index,Object><Void>,
     length: $<><Size>,
     prepend: Maybe<$<Object><Void>> = Nil,
     append: Maybe<$<Object><Void>> = Nil,
+    insert: Maybe<$<Index,Object><Void>> = Nil,
     shift: Maybe<$<><Void>> = Nil,
     pop: Maybe<$<><Void>> = Nil
 }
@@ -36,6 +37,9 @@ class Array<T> is Getter<Index, T>, Setter<Index, T>, SliceGetter {
             },
             append: lambda (v: Object) -> Void {
                 l -> append(v)
+            },
+            insert: lambda (i: Index, v: Object) -> Void {
+                l -> insert(i, v)
             },
             shift: lambda -> Void {
                 l -> shift()
@@ -134,6 +138,15 @@ class Array<T> is Getter<Index, T>, Setter<Index, T>, SliceGetter {
         @handle error {
             unless supported {
                 panic MSG.array_unsupported('prepend()')
+            }
+        }
+    }
+    insert (after: Index, value: T) -> Void {
+        ensure supported { data.insert is not Nil }
+        data.insert(after, value)
+        @handle error {
+            unless supported {
+                panic MSG.array_unsupported('insert()')
             }
         }
     }
