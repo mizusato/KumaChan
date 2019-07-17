@@ -19,4 +19,10 @@ invoke {
     s -> clear()
     assert s -> size() == 0
     assert !(s -> has(5))
+    let s1 = copy(s)
+    assert s1 is Set<Int>
+    s1 -> add(9)
+    assert s1 -> has(9)
+    assert not (s -> has(9))
+    assert s -> size() == 0
 }

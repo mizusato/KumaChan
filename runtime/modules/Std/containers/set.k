@@ -36,4 +36,14 @@ class Set<T> {
             values: elements
         }
     }
+    operator copy (instance) {
+        let copied = Set<T>()
+        for element in instance {
+            copied -> add(element)
+        }
+        return copied
+    }
+    data {
+        ElementType: T
+    }
 }

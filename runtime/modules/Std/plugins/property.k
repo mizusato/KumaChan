@@ -11,7 +11,7 @@ struct Property {
 
 class PropertyCollection is Getter<String, Object>, Setter<String, Object> {
     init (properties: Map<String, PropertyBody>) {
-        do nothing
+        reset properties = copy(properties)
     }
     create (property_list: List) {
         let map = Map<String, PropertyBody>()

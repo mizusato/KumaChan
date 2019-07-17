@@ -55,4 +55,15 @@ class Map<K, V> is Getter<K, V>, Setter<K, V> {
         }
         return EntryList { ::keys, ::values }
     }
+    operator copy (instance) {
+        let copied = Map<K, V>()
+        for { k: v } in instance {
+            set copied[k] = v
+        }
+        return copied
+    }
+    data {
+        KeyType: K,
+        ValueType: V
+    }
 }
