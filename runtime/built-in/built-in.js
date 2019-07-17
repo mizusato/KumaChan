@@ -33,7 +33,7 @@ let global_helpers = {
     [C_INTERFACE]: inject_desc(create_interface, 'create_interface'),
     [C_SCHEMA]: inject_desc(create_schema, 'create_schema'),
     [C_STRUCT]: inject_desc(new_struct, 'initialize_structure'),
-    [C_TYPE]: inject_desc(f => $(x => call(f, [x])), 'create_simple_type'),
+    [C_TYPE]: inject_desc(f => $(f), 'create_simple_type'),
     [C_TEMPLATE]: inject_desc(f => new TypeTemplate(f), 'create_type_template'),
     [C_FINITE]: inject_desc(one_of, 'create_finite_set_type'),
     [C_ENUM]: inject_desc((n, ns) => new Enum(n, ns), 'create_enum'),

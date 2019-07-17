@@ -483,6 +483,8 @@ class ObjectRegistry {
  *
  *  This class is used by TypeTemplate and FunSig
  *    to store their caches.
+ *  Important: this implementation is naive now, but won't be
+ *    improved, because the whole JavaScript-based runtime is also naive.
  */
 class VectorMapCache {
     constructor () {
@@ -500,10 +502,10 @@ class VectorMapCache {
         assert(is(id_vector, TypedList.of(Types.Int)))
         let L = id_vector.length
         let value = L % 10
-        let offset = 10
-        for (let i = 0; i < L && i < 10; i += 1) {
-            value += offset * (id_vector[i] % 10)
-            offset *= 10
+        let offset = 100
+        for (let i = 0; i < L && i < 7; i += 1) {
+            value += offset * (id_vector[i] % 97)
+            offset *= 100
         }
         return value
     }
