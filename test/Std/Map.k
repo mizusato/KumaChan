@@ -21,4 +21,10 @@ invoke {
     m -> clear()
     assert m -> size() == 0
     assert m[2]? is Nil
+    let m1 = copy(m)
+    assert m1 is Map<Int,String>
+    set m1[9] = '9'
+    assert m1[9] == '9'
+    assert m[9]? is Nil
+    assert m -> size() == 0
 }
