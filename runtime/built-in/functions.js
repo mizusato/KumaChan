@@ -88,6 +88,35 @@ let built_in_functions = {
         'function to_upper_case (s: String) -> String',
             s => s.toUpperCase()
     ),
+    match: fun (
+        'function match (s: String, regexp: String) -> Maybe<List>',
+            (s, regexp) => {
+                let m = s.match(new RegExp(regexp, 'su'))
+                return (m != null)? list(m): Nil
+            }
+    ),
+    match_all: fun (
+        'function match_all (s: String, regexp: String) -> Iterator',
+        (s, regexp) => (function* () {
+            let r = new RegExp(regexp, 'sgu')
+            let m = null
+            while ((m = r.exec(s)) !== null) {
+                yield list(m)
+            }
+        })()
+    ),
+    replace: fun (
+        'function replace (s: String, regex: String, f: Function) -> String',
+            (s, regexp, f) => {
+                let r = new RegExp(regexp, 'sgu')
+                return s.replace(r, (...args) => {
+                    let n = args.length - 3
+                    let t = call(f, args.slice(0, args.length-2))
+                    ensure(is(t, Types.String), 'replace_not_string')
+                    return t
+                })
+            }
+    ),
     // Iterable Object Operations
     seq: f (
         'seq',

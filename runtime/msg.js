@@ -155,5 +155,8 @@ const MSG = {
     invalid_copy: (
         'bad copy: new object must be an instance of the class of old one'
     ),
-    did_not_copy: 'bad copy: new object is the same as old one'
+    did_not_copy: 'bad copy: new object is the same as old one',
+    replace_not_string: (
+        'bad string replace: given function returned a non-string value'
+    )
 }
