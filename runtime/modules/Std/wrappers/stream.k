@@ -2,7 +2,7 @@ class Stream<T> {
     init (i: Iterable) {
         let type_error = custom_error('TypeError', MSG.stream_invalid_value())
         let wrapped = iterator {
-            for e in iter(i) {
+            for e in i {
                 if e is not T {
                     panic type_error
                 }
@@ -23,7 +23,7 @@ class AsyncStream<T> {
     init (ai: AsyncIterable) {
         let type_error = custom_error('TypeError', MSG.stream_invalid_value())
         let wrapped = async iterator {
-            await e in iter(ai) {
+            await e in ai {
                 if e is not T {
                     panic type_error
                 }

@@ -38,9 +38,6 @@ let MSG = {
     array_cast_invalid: .{
         'bad array cast: cannot cast an array to a non-array type'
     },
-    array_cast_type_incorrect: .{
-        'bad array cast: invalid element found at index ${}' << .index
-    },
     future_invalid_value: .{
         'resolved future value violated its type constraint'
     },

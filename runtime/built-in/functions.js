@@ -19,6 +19,23 @@ function try_to_forward_promise (value, resolve, reject) {
 
 
 let built_in_functions = {
+    // Number Operations
+    rand: fun (
+        'function rand () -> Number',
+            () => Math.random()
+    ),
+    floor: fun (
+        'function floor (x: Number) -> Number',
+            x => Math.floor(x)
+    ),
+    ceil: fun (
+        'function ceil (x: Number) -> Number',
+            x => Math.ceil(x)
+    ),
+    round: fun (
+        'function round (x: Number) -> Number',
+            x => Math.round(x)
+    ),
     // String Operations
     utf8_size: fun (
         'function utf8_size (s: String) -> Size',

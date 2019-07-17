@@ -217,16 +217,10 @@ class Array<T> is Getter<Index, T>, Setter<Index, T>, SliceGetter {
     operator as (self, T) {
         ensure cast_valid { T is TypeType<Array> }
         let E = T.ElementType
-        for value[i] in self {
-            ensure type_correct(i) { value is E }
-        }
         return Array<E>(self -> unwrap())
         @handle error {
             unless cast_valid {
                 panic MSG.array_cast_invalid()
-            }
-            unless type_correct (i) {
-                panic MSG.array_cast_type_incorrect(i)
             }
         }
     }
@@ -280,7 +274,7 @@ function qi_sort (a: Array, compare: Arity<2>) -> Void {
         i_sort(a, compare)
         return
     }
-    let p = __Math.floor(__Math.random() * L)
+    let p = floor(rand() * L)
     let pivot = a[p]
     swap(a, p, 0)
     var m = 1

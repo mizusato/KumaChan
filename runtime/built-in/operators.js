@@ -208,12 +208,12 @@ let operators = {
     ),
     '~~': f (
         'operator.same',
-        'function operator.equivalent (l: Any, r: Any) -> Bool',
+        'function operator.same (l: Any, r: Any) -> Bool',
             (l, r) => (Number.isNaN(l) && Number.isNaN(r)) || (l === r)
     ),
     '!~': f (
         'operator.not_same',
-        'function operator.not_equivalent (l: Any, r: Any) -> Bool',
+        'function operator.not_same (l: Any, r: Any) -> Bool',
             (l, r) => !operators['~~'](l, r)
     ),
     '<=>': f (

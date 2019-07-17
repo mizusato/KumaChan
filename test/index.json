@@ -3,6 +3,7 @@
         "Primitive",
         "Type",
         "Error",
-        "Async"
+        "Async",
+        "Std"
     ]
 }
