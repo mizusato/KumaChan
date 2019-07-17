@@ -19,6 +19,15 @@ function try_to_forward_promise (value, resolve, reject) {
 
 
 let built_in_functions = {
+    // Date & Time
+    get_local_unix_time: fun (
+        'function get_local_unix_time () -> Int',
+            () => Date.now()
+    ),
+    get_local_timezone_offset: fun (
+        'function get_local_timezone_offset () -> Int',
+            () => -((new Date()).getTimezoneOffset()) / 60
+    ),
     // Number Operations
     rand: fun (
         'function rand () -> Number',
@@ -92,6 +101,17 @@ let built_in_functions = {
             (object, n) => (function* () {
                 for (let i = 0; i < n; i++) {
                     yield object
+                }
+            })()
+    ),
+    concat: fun (
+        'function concat (i1: Iterable, i2: Iterable) -> Iterator',
+            (i1, i2) => (function* () {
+                for (let e of iter(i1)) {
+                    yield e
+                }
+                for (let e of iter(i2)) {
+                    yield e
                 }
             })()
     ),
