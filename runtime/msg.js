@@ -143,9 +143,8 @@ const MSG = {
     ),
     module_not_exist: mod => `module ${mod} does not exist`,
     not_repr: p => 'string format parameter ${' + p + '} is not representable',
-    when_expr_failed: (
-        'all conditions evaluated to false in when expression'
-    ),
+    when_expr_failed: 'all conditions evaluated to false in when expression',
+    switch_cmd_failed: 'all conditions evaluated to false in switch command',
     signature_invalid_arg: i => (
         `invalid function signature: non-type object given for parameter #${i}`
     ),

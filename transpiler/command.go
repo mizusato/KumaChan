@@ -335,7 +335,10 @@ var CommandMap = map[string]TransFunction {
         var children = Children(tree, ptr)
         var cases = Transpile(tree, children["cases"])
         var default_ = Transpile(tree, children["default"])
-        return fmt.Sprintf("if (false) { void(0) }%v%v", cases, default_)
+        return fmt.Sprintf (
+            "if (false) { void(0) }%v%v",
+            cases, default_,
+        )
     },
     // cases? = case cases
     "cases": func (tree Tree, ptr int) string {
@@ -366,7 +369,12 @@ var CommandMap = map[string]TransFunction {
             var block = Transpile(tree, children["block"])
             return fmt.Sprintf(" else %v", block)
         } else {
-            return ""
+            var file = GetFileName(tree)
+            var row, col = GetRowColInfo(tree, ptr)
+            return fmt.Sprintf (
+                " else { %v(%v, [], %v, %v, %v) }",
+                G(CALL), G(SWITCH_FAILED), file, row, col,
+            )
         }
     },
     // cmd_for = @for for_params! @in expr! block!

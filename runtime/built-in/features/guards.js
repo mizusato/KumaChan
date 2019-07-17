@@ -15,3 +15,8 @@ function require_promise (object) {
 function when_expr_failed () {
     ensure(false, 'when_expr_failed')
 }
+
+
+function switch_cmd_failed () {
+    ensure(false, 'switch_cmd_failed')
+}

@@ -42,6 +42,7 @@ let global_helpers = {
     [REQ_BOOL]: inject_desc(require_bool, 'require_boolean_value'),
     [REQ_PROMISE]: inject_desc(require_promise, 'require_promise'),
     [WHEN_FAILED]: inject_desc(when_expr_failed, 'when_expr_no_match'),
+    [SWITCH_FAILED]: inject_desc(switch_cmd_failed, 'switch_cmd_no_match'),
     /* Error Handling */
     [INJECT_E_ARGS]: inject_desc(inject_ensure_args, 'inject_ensure_args'),
     [ENSURE_FAILED]: ensure_failed,

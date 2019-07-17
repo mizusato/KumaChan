@@ -84,6 +84,7 @@ const (
     REQ_BOOL = "rb"
     REQ_PROMISE = "rp"
     WHEN_FAILED = "wf"
+    SWITCH_FAILED = "sf"
     INJECT_E_ARGS = "ie"
     ENSURE_FAILED = "ef"
     TRY_FAILED = "tf"
