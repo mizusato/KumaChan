@@ -169,7 +169,7 @@ class Array<T> is Getter<Index, T>, Setter<Index, T>, SliceGetter {
         }
     }
     sort (compare: Arity<2>) -> Void {
-        i_sort(self, compare)
+        qi_sort(self, compare)
     }
     reverse () -> Void {
         let L = len(self)
