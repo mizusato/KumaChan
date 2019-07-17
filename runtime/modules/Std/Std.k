@@ -4,7 +4,8 @@ export {
     Map, Set,
     Array, ArrayData,
     Future,
-    Stream, AsyncStream
+    Stream, AsyncStream,
+    Property, PropertyCollection
 }
 
 import ES
@@ -15,3 +16,4 @@ include 'containers/set.k'
 include 'wrappers/array.k'
 include 'wrappers/future.k'
 include 'wrappers/stream.k'
+include 'plugins/property.k'

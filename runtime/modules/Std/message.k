@@ -46,5 +46,17 @@ let MSG = {
     },
     sort_compare_invalid: .{
         'non-boolean value returned by given compare() function'
+    },
+    property_invalid: .{
+        'non-property object was found in given property list'
+    },
+    property_conflict: .{
+        'property name "${}" was used by more than one property' << .name
+    },
+    property_not_exist: .{
+        'property "${}" does not exist on the object' << .name
+    },
+    property_read_only: .{
+        'unable to set value of read-only property "${}"' << .name
     }
 }
