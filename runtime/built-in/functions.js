@@ -29,6 +29,10 @@ let built_in_functions = {
             () => -((new Date()).getTimezoneOffset()) / 60
     ),
     // Number Operations
+    abs: fun (
+        'function abs (x: Number) -> Number',
+            x => Math.abs(x)
+    ),
     rand: fun (
         'function rand () -> Number',
             () => Math.random()
