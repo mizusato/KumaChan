@@ -11,7 +11,14 @@ func InternalError (msg string) {
 
 func Error (tree *Tree, ptr int, msg string) {
     var node = &tree.Nodes[ptr]
-    var point = tree.Info[node.Pos]
+    var p int
+    if node.Pos >= len(tree.Tokens) {
+        p = len(tree.Tokens)-1
+    } else {
+        p = node.Pos
+    }
+    var token = &tree.Tokens[p]
+    var point = tree.Info[token.Pos]
     var file = tree.File
     fmt.Fprintf (
         os.Stderr, "%v at %v (row %v, column %v)\n",
