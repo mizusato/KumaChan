@@ -196,6 +196,7 @@ class Array<T> is Getter<Index, T>, Setter<Index, T>, SliceGetter {
     }
     operator == (a1, a2) {
         let T = get_class(a1).ElementType
+        assert T ~~ get_class(a2).ElementType
         ensure type_valid { T is EqualityDefined }
         let L = len(a1)
         if L != len(a2) {
