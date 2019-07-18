@@ -91,14 +91,27 @@ let built_in_functions = {
     match: fun (
         'function match (s: String, regexp: String) -> Maybe<List>',
             (s, regexp) => {
-                let m = s.match(new RegExp(regexp, 'su'))
+                let r = null
+                try {
+                    r = new RegExp(regexp, 'su')
+                } catch (e) {
+                    ensure(!(e instanceof SyntaxError), 'regexp_invalid')
+                    throw e
+                }
+                let m = s.match(r)
                 return (m != null)? list(m): Nil
             }
     ),
     match_all: fun (
         'function match_all (s: String, regexp: String) -> Iterator',
         (s, regexp) => (function* () {
-            let r = new RegExp(regexp, 'sgu')
+            let r = null
+            try {
+                r = new RegExp(regexp, 'sgu')
+            } catch (e) {
+                ensure(!(e instanceof SyntaxError), 'regexp_invalid')
+                throw e
+            }
             let m = null
             while ((m = r.exec(s)) !== null) {
                 yield list(m)
@@ -108,7 +121,13 @@ let built_in_functions = {
     replace: fun (
         'function replace (s: String, regex: String, f: Function) -> String',
             (s, regexp, f) => {
-                let r = new RegExp(regexp, 'sgu')
+                let r = null
+                try {
+                    r = new RegExp(regexp, 'sgu')
+                } catch (e) {
+                    ensure(!(e instanceof SyntaxError), 'regexp_invalid')
+                    throw e
+                }
                 return s.replace(r, (...args) => {
                     let n = args.length - 3
                     let t = call(f, args.slice(0, args.length-2))

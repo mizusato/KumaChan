@@ -158,5 +158,6 @@ const MSG = {
     did_not_copy: 'bad copy: new object is the same as old one',
     replace_not_string: (
         'bad string replace: given function returned a non-string value'
-    )
+    ),
+    regexp_invalid: 'invalid regular expression'
 }
