@@ -40,12 +40,25 @@ func Error (tree *Tree, ptr int, msg string) {
         os.Stderr, "%vFile:%v %v%v%v\n",
         Bold, Reset, Blue, file, Reset,
     )
+    var cp = l
     for i, line := range lines {
         var row = point.Row - SiblingOffset + i
         if row < 1 {
             row = 1
         }
-        fmt.Fprintf(os.Stderr, "%v | %v\n", row, line)
+        fmt.Fprintf(os.Stderr, "%v | ", row)
+        for _, char := range []rune(line) {
+            if cp == token.Pos {
+                fmt.Fprintf(os.Stderr, "%v%v", Red, Bold)
+            }
+            fmt.Fprintf(os.Stderr, "%v", string([]rune{char}))
+            if cp == token.Pos {
+                fmt.Fprintf(os.Stderr, "%v", Reset)
+            }
+            cp += 1
+        }
+        fmt.Fprintf(os.Stderr, "\n")
+        cp += 1
     }
     fmt.Fprintf (
         os.Stderr, "%v%v at (row %v, column %v) in %v%v\n",
