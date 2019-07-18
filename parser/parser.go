@@ -1,17 +1,8 @@
 package parser
 
 import "fmt"
-import "strings"
-import "strconv"
-import "unicode/utf8"
 import "./syntax"
 import "./scanner"
-
-type StrBuf = strings.Builder
-
-func strlen (s string) int {
-    return utf8.RuneCountInString(s)
-}
 
 
 type NodeStatus int
@@ -48,7 +39,10 @@ type Tree struct {
 }
 
 
-func BuildBareTree (root syntax.Id, tokens scanner.TokenSequence) BareTree {
+func BuildBareTree (
+    root syntax.Id,
+    tokens scanner.TokenSequence,
+) (BareTree, int, string) {
     var NameId = syntax.Name2Id["Name"]
     var CallId = syntax.Name2Id["Call"]
     var GetId = syntax.Name2Id["Get"]
@@ -67,12 +61,6 @@ func BuildBareTree (root syntax.Id, tokens scanner.TokenSequence) BareTree {
     })
     var ptr = 0
     loop: for {
-        /*
-            fmt.Println("")
-            PrintBareTree(tree)
-            fmt.Println("-------------------------------")
-            fmt.Println("")
-        */
         var node = &tree[ptr]
         var id = node.Part.Id
         var partype = node.Part.Partype
@@ -133,7 +121,7 @@ func BuildBareTree (root syntax.Id, tokens scanner.TokenSequence) BareTree {
                 node.Status = Failed
             }
         default:
-            panic("invalid part type")
+            InternalError("invalid part type")
         }
         // if node is in final status
         if node.Status == Success || node.Status == Failed {
@@ -142,7 +130,10 @@ func BuildBareTree (root syntax.Id, tokens scanner.TokenSequence) BareTree {
             // if node.part is required, it should not be empty
             if node.Part.Required && node.Length == 0 && node.Amount == 0 {
                 PrintBareTree(tree)
-                panic(syntax.Id2Name[id] + " expected")
+                return tree, ptr, fmt.Sprintf (
+                    "error parsing code: syntax unit '%v' expected",
+                    syntax.Id2Name[id],
+                )
             }
         }
         switch node.Status {
@@ -200,149 +191,32 @@ func BuildBareTree (root syntax.Id, tokens scanner.TokenSequence) BareTree {
                 tree[ptr].Status = Success
             }
         default:
-            panic("invalid status")
+            InternalError("invalid status")
         }
     }
     // check if all the tokens have been matched
     var root_node = tree[0]
     if root_node.Amount < len(tokens) {
         PrintBareTree(tree)
-        panic("parser stuck at " + strconv.Itoa(root_node.Amount))
+        return tree, ptr, "error parsing code: parser stuck"
     }
-    return tree
+    return tree, -1, ""
 }
+
 
 func BuildTree (root string, code scanner.Code, file_name string) Tree {
     var tokens, info = scanner.Scan(code)
     var RootId, exists = syntax.Name2Id[root]
-    if (!exists) { panic(fmt.Sprintf("invalid root part name '%v'", root)) }
-    var nodes = BuildBareTree(RootId, tokens)
-    return Tree {
+    if (!exists) {
+        InternalError(fmt.Sprintf("invalid root syntax unit '%v'", root))
+    }
+    var nodes, err_ptr, err_desc = BuildBareTree(RootId, tokens)
+    var tree = Tree {
         Code: code, Tokens: tokens,
         Info: info, Nodes: nodes, File: file_name,
     }
-}
-
-
-func GetANSIColor (n int) int {
-    return 31 + n % 6
-}
-
-
-func PrintTreeNode (ptr int, node *TreeNode) {
-    var buf strings.Builder
-    fmt.Fprintf(&buf, "\033[1m\033[%vm", GetANSIColor(ptr))
-    fmt.Fprintf(&buf, "(%v)", ptr)
-    fmt.Fprintf(&buf, "\033[0m")
-    buf.WriteRune(' ')
-    fmt.Fprintf(&buf, "\033[1m")
-    buf.WriteString(syntax.Id2Name[node.Part.Id])
-    fmt.Fprintf(&buf, "\033[0m")
-    buf.WriteRune(' ')
-    buf.WriteRune('[')
-    for i := 0; i < node.Length; i++ {
-        var child_ptr = node.Children[i]
-        fmt.Fprintf(&buf, "\033[1m\033[%vm", GetANSIColor(child_ptr))
-        fmt.Fprintf(&buf, "%v", child_ptr)
-        fmt.Fprintf(&buf, "\033[0m")
-        if i != node.Length-1 {
-            buf.WriteString(", ")
-        }
+    if err_ptr != -1 {
+        Error(&tree, err_ptr, err_desc)
     }
-    buf.WriteRune(']')
-    fmt.Fprintf(
-        &buf, " <\033[1m\033[%vm%v\033[0m> ",
-        GetANSIColor(node.Parent), node.Parent,
-    )
-    fmt.Fprintf(
-        &buf, "status=%v, tried=%v, index=%v, pos=%+v, amount=%v\n",
-        node.Status, node.Tried, node.Index, node.Pos, node.Amount,
-    )
-    fmt.Print(buf.String())
-}
-
-func PrintBareTree (tree BareTree) {
-    for i := 0; i < len(tree); i++ {
-        PrintTreeNode(i, &tree[i])
-    }
-}
-
-
-func Repeat (n int, f func(int)) {
-    for i := 0; i < n; i++ {
-        f(i)
-    }
-}
-
-func Fill (buf *StrBuf, n int, s string, blank string) {
-    buf.WriteString(s)
-    Repeat(n-strlen(s), func (_ int) {
-        buf.WriteString(blank)
-    })
-}
-
-func PrintTreeRecursively (
-    buf *StrBuf, tree Tree, ptr int, depth int, is_last []bool,
-) {
-    const INC = 2
-    const SPACE = " "
-    var node = &tree.Nodes[ptr]
-    Repeat(depth+1, func (i int) {
-        if depth > 0 && i < depth {
-            if is_last[i] {
-                Fill(buf, INC, "", SPACE)
-            } else {
-                Fill(buf, INC, "│", SPACE)
-            }
-        } else {
-            if is_last[depth] {
-                Fill(buf, INC, "└", "─")
-            } else {
-                Fill(buf, INC, "├", "─")
-            }
-        }
-    })
-    if node.Length > 0 {
-        buf.WriteString("┬─")
-    } else {
-        buf.WriteString("──")
-    }
-    fmt.Fprintf(buf, "\033[1m\033[%vm", GetANSIColor(depth))
-    fmt.Fprintf(buf, "[%v]", syntax.Id2Name[node.Part.Id])
-    fmt.Fprintf(buf, "\033[0m")
-    fmt.Fprintf(buf, "\033[%vm", GetANSIColor(depth))
-    buf.WriteRune(' ')
-    switch node.Part.Partype {
-    case syntax.MatchToken:
-        var token = tree.Tokens[node.Pos]
-        fmt.Fprintf(buf, "'%v'", string(token.Content))
-        buf.WriteRune(' ')
-        var point = tree.Info[tree.Tokens[node.Pos].Pos]
-        fmt.Fprintf(buf, "at <%v,%v>", point.Row, point.Col)
-        fmt.Fprintf(buf, "\033[0m")
-        buf.WriteRune('\n')
-    case syntax.MatchKeyword:
-        fmt.Fprintf(buf, "\033[0m")
-        buf.WriteRune('\n')
-    case syntax.Recursive:
-        if node.Length == 0 {
-            buf.WriteString("(empty)")
-        }
-        fmt.Fprintf(buf, "\033[0m")
-        buf.WriteRune('\n')
-        for i := 0; i < node.Length; i++ {
-            var child = node.Children[i]
-            is_last = append(is_last, i == node.Length-1)
-            PrintTreeRecursively(buf, tree, child, depth+1, is_last)
-            is_last = is_last[0: len(is_last)-1]
-        }
-    }
-}
-
-func PrintTree (tree Tree) {
-    var buf StrBuf
-    var is_last = make([]bool, 0, 1000)
-    is_last = append(is_last, true)
-    PrintTreeRecursively(&buf, tree, 0, 0, is_last)
-    fmt.Println(buf.String())
+    return tree
 }
