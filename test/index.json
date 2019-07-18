@@ -4,6 +4,7 @@
         "Type",
         "Error",
         "Async",
-        "Std"
+        "Std",
+        "Math"
     ]
 }

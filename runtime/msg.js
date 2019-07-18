@@ -159,5 +159,17 @@ const MSG = {
     replace_not_string: (
         'bad string replace: given function returned a non-string value'
     ),
-    regexp_invalid: 'invalid regular expression'
+    regexp_invalid: 'invalid regular expression',
+    sqrt_of_negative: (
+        'unable to find the real square root of a negative number'
+    ),
+    log_of_non_positive: (
+        'unable to find the real logarithm of a non-positive number'
+    ),
+    asin_out_of_domain: (
+        'given argument exceeded the domain of arcsin function'
+    ),
+    acos_out_of_domain: (
+        'given argument exceeded the domain of arccos function'
+    )
 }

@@ -15,6 +15,7 @@
     '<include> module.js';
     '<include> built-in/built-in.js';
     '<include> modules/ES.js';
+    '<include> modules/Math.js';
 
     let export_object = {
         CustomError, RuntimeError, AssertionFailed,
