@@ -48,7 +48,7 @@ function k_eval (command, context, filename, callback) {
                 }
             }
         } else {
-            console.log(error.message)
+            console.log(error.message.replace(/^Command failed[^\n]*\n/, ''))
             callback(null)
         }
     })
