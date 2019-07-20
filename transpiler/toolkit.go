@@ -265,6 +265,14 @@ func Function (
     var static_ptr = body_children["static_commands"]
     var static_scope = "null"
     if NotEmpty(tree, static_ptr) {
+        var parent_ptr = tree.Nodes[body_ptr].Parent
+        var parent_name = syntax.Id2Name[tree.Nodes[parent_ptr].Part.Id]
+        if parent_name == "method" || parent_name == "method_implemented" {
+            parser.Error (
+                tree, static_ptr,
+                "static block is not available in method definition",
+            )
+        }
         var static_commands_ptr = Children(tree, static_ptr)["commands"]
         var static_commands = Commands(tree, static_commands_ptr, true)
         var static_executor = BareFunction(static_commands)
@@ -515,6 +523,7 @@ func FieldList (tree Tree, ptr int) (string, string, string) {
 func MethodTable (tree Tree, ptr int, extract string, next string) string {
     if NotEmpty(tree, ptr) {
         // argument 'extract' can be "method" or "pf"
+        // note: the rule name "method" is depended by Function()
         var method_ptrs = FlatSubTree(tree, ptr, extract, next)
         var buf strings.Builder
         for i, method_ptr := range method_ptrs {

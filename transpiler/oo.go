@@ -139,6 +139,7 @@ var OO_Map = map[string]TransFunction {
     "member": TranspileFirstChild,
     // method_implemented = name Call paralist_strict! ->! type! body
     "method_implemented": func (tree Tree, ptr int) string {
+        // note: the rule name "method_implemented" is depended by Function()
         var children = Children(tree, ptr)
         var name = Transpile(tree, children["name"])
         var method = TransMapByName["f_sync"](tree, ptr)
