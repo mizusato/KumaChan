@@ -261,9 +261,7 @@ var ExpressionMap = map[string]TransFunction {
             buf.WriteRune(']')
             return buf.String()
         } else {
-            var args_ptr, exists = children["args"]
-            if !exists { panic("transpiler: expect args in methods_args") }
-            return Transpile(tree, args_ptr)
+            return Transpile(tree, children["args"])
         }
     },
     // args = ( arglist )! extra_arg | < type_arglist >

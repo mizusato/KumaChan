@@ -2,6 +2,7 @@ package transpiler
 
 import "fmt"
 import "strings"
+import "../parser"
 import "../parser/syntax"
 
 
@@ -77,7 +78,13 @@ var LiteralMap = map[string]TransFunction {
                 // this check requires `Transpile(tree, name_ptr)`
                 // and `Transpile(tree, children["string"])`
                 // using the same quotes, which is promised by EscapeRawString()
-                panic("duplicate hash key " + name)
+                parser.Error (
+                    tree, item,
+                    fmt.Sprintf (
+                        "duplicate hash key %v",
+                        name,
+                    ),
+                )
             }
             names[name] = true
             var expr string
@@ -130,13 +137,23 @@ var LiteralMap = map[string]TransFunction {
         // in_list = in_item in_list_tail
         var item_ptrs = FlatSubTree(tree, list_ptr, "in_item", "in_list_tail")
         var names = make([]string, 0, 10)
+        var occurred = make(map[string]bool)
         var iterators = make([]string, 0, 10)
         for _, item_ptr := range item_ptrs {
             // in_item = name @in expr
             var item_children = Children(tree, item_ptr)
-            var name = GetTokenContent(tree, item_children["name"])
+            var name = string(GetTokenContent(tree, item_children["name"]))
             var expr = Transpile(tree, item_children["expr"])
-            names = append(names, string(name))
+            if occurred[name] {
+                parser.Error (
+                    tree, item_ptr, fmt.Sprintf (
+                        `duplicate parameter "%v"`,
+                        name,
+                    ),
+                )
+            }
+            occurred[name] = true
+            names = append(names, name)
             iterators = append(iterators, expr)
         }
         var parameters = UntypedParameters(names)
@@ -202,7 +219,12 @@ var LiteralMap = map[string]TransFunction {
             var expr_ptr, has_expr = children["expr"]
             var _, exists = names[name]
             if exists {
-                panic("duplicate Structure field " + name)
+                parser.Error (
+                    tree, item_ptr, fmt.Sprintf (
+                        "duplicate struct field %v",
+                        name,
+                    ),
+                )
             }
             names[name] = true
             var expr string

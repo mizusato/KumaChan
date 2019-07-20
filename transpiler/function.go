@@ -2,6 +2,7 @@ package transpiler
 
 import "fmt"
 import "strings"
+import "../parser"
 import "../parser/syntax"
 
 
@@ -333,7 +334,29 @@ var FunctionMap = map[string]TransFunction {
     },
     // typed_list = typed_list_item typed_list_tail
     "typed_list": func (tree Tree, ptr int) string {
-        return TranspileSubTree(tree, ptr, "typed_list_item", "typed_list_tail")
+        var l = FlatSubTree(tree, ptr, "typed_list_item", "typed_list_tail")
+        var occurred = make(map[string]bool)
+        var buf strings.Builder
+        buf.WriteRune('[')
+        for i, item_ptr := range l {
+            var item_children = Children(tree, item_ptr)
+            var name = Transpile(tree, item_children["name"])
+            if occurred[name] {
+                parser.Error (
+                    tree, item_ptr, fmt.Sprintf (
+                        "duplicate parameter %v",
+                        name,
+                    ),
+                )
+            }
+            occurred[name] = true
+            buf.WriteString(Transpile(tree, item_ptr))
+            if i != len(l)-1 {
+                buf.WriteString(",")
+            }
+        }
+        buf.WriteRune(']')
+        return buf.String()
     },
     // typed_list_item = name :! type!
     "typed_list_item": func (tree Tree, ptr int) string {
@@ -365,13 +388,26 @@ var FunctionMap = map[string]TransFunction {
             var op_ptr = children["general_op"]
             var op_name, can_redef = GetGeneralOperatorName(tree, op_ptr)
             if !can_redef {
-                panic("cannot overload non-redefinable operator " + op_name)
+                parser.Error (
+                    tree, def_ptr, fmt.Sprintf (
+                        "cannot overload non-redefinable operator %v",
+                        op_name,
+                    ),
+                )
             }
             if is_schema && op_name == "copy" {
-                panic("cannot overload copy operator on struct")
+                parser.Error (
+                    tree, def_ptr,
+                    "cannot overload copy operator on struct",
+                )
             }
             if defined[op_name] {
-                panic("duplicate definition of operator " + op_name)
+                parser.Error (
+                    tree, def_ptr, fmt.Sprintf (
+                        "duplicate definition of operator %v",
+                        op_name,
+                    ),
+                )
             }
             defined[op_name] = true
             var op_escaped = EscapeRawString([]rune(op_name))

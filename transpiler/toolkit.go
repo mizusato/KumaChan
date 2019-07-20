@@ -2,6 +2,7 @@ package transpiler
 
 import "fmt"
 import "strings"
+import "../parser"
 import "../parser/syntax"
 
 
@@ -376,10 +377,20 @@ func UntypedParameters (names []string) string {
 
 func TypedParameterList (tree Tree, namelist_ptr int, type_ string) string {
     var name_ptrs = FlatSubTree(tree, namelist_ptr, "name", "namelist_tail")
+    var occurred = make(map[string]bool)
     var buf strings.Builder
     buf.WriteRune('[')
     for i, name_ptr := range name_ptrs {
         var name = Transpile(tree, name_ptr)
+        if occurred[name] {
+            parser.Error (
+                tree, name_ptr, fmt.Sprintf (
+                    "duplicate parameter %v",
+                    name,
+                ),
+            )
+        }
+        occurred[name] = true
         fmt.Fprintf(&buf, "{ name: %v, type: %v }", name, type_)
         if i != len(name_ptrs)-1 {
             buf.WriteString(", ")
@@ -456,7 +467,12 @@ func FieldList (tree Tree, ptr int) (string, string, string) {
         var type_ = Transpile(tree, children["type"])
         var _, exists = names_hash[name]
         if exists {
-            panic("duplicate Schema field " + name)
+            parser.Error (
+                tree, field_ptr, fmt.Sprintf (
+                    "duplicate schema field %v",
+                    name,
+                ),
+            )
         }
         names_hash[name] = true
         var default_ string

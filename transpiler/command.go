@@ -2,6 +2,7 @@ package transpiler
 
 import "fmt"
 import "strings"
+import "../parser"
 import "../parser/syntax"
 
 
@@ -426,6 +427,14 @@ var CommandMap = map[string]TransFunction {
         var children = Children(tree, ptr)
         var value = Transpile(tree, children["for_value"])
         var key = Transpile(tree, children["for_index"])
+        if key == value {
+            parser.Error (
+                tree, ptr, fmt.Sprintf (
+                    "duplicate parameter name %v in for statement",
+                    key,
+                ),
+            )
+        }
         return fmt.Sprintf("let l = { key: %v, value: %v };", key, value)
     },
     // for_params_hash = { for_key :! for_value! }!
