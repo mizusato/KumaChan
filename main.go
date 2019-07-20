@@ -22,7 +22,7 @@ func test () {
     check(err)
     var code_string = string(code_bytes)
     var code = []rune(code_string)
-    var tokens, info = scanner.Scan(code)
+    var tokens, info, _ = scanner.Scan(code)
     fmt.Printf("\n")
     for i, token := range tokens {
         fmt.Printf(

@@ -33,6 +33,7 @@ type Tree struct {
     Code    scanner.Code
     Tokens  scanner.TokenSequence
     Info    scanner.RowColInfo
+    Semi    scanner.SemiInfo
     Nodes   BareTree
     File    string
     Mock    []string
@@ -205,15 +206,15 @@ func BuildBareTree (
 
 
 func BuildTree (root string, code scanner.Code, file_name string) Tree {
-    var tokens, info = scanner.Scan(code)
+    var tokens, info, semi = scanner.Scan(code)
     var RootId, exists = syntax.Name2Id[root]
     if (!exists) {
         InternalError(fmt.Sprintf("invalid root syntax unit '%v'", root))
     }
     var nodes, err_ptr, err_desc = BuildBareTree(RootId, tokens)
     var tree = Tree {
-        Code: code, Tokens: tokens,
-        Info: info, Nodes: nodes, File: file_name,
+        Code: code, Tokens: tokens, Info: info, Semi: semi,
+        Nodes: nodes, File: file_name,
     }
     if err_ptr != -1 {
         Error(&tree, err_ptr, err_desc)

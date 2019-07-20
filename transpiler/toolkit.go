@@ -220,8 +220,9 @@ func BareAsyncGenerator (content string) string {
 func Commands (tree Tree, ptr int, add_return bool) string {
     var commands = FlatSubTree(tree, ptr, "command", "commands")
     var ReturnId = syntax.Name2Id["cmd_return"]
-    var buf strings.Builder
     var has_return = false
+    var prev_row = -1
+    var buf strings.Builder
     for i, command := range commands {
         if !has_return {
             var group = tree.Nodes[command].Children[0]
@@ -232,6 +233,13 @@ func Commands (tree Tree, ptr int, add_return bool) string {
                 has_return = true
             }
         }
+        var node = &tree.Nodes[command]
+        var token = tree.Tokens[node.Pos]
+        var row = tree.Info[token.Pos].Row
+        if row == prev_row && !tree.Semi[node.Pos] {
+            parser.Error(tree, command, "semicolon expected")
+        }
+        prev_row = row
         buf.WriteString(Transpile(tree, command))
         if i != len(commands)-1 {
             buf.WriteString("; ")

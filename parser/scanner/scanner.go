@@ -26,6 +26,9 @@ type Point struct {
 type RowColInfo = []Point
 
 
+type SemiInfo = map[int]bool
+
+
 type RuneListReader struct {
 	src []rune
 	pos int
@@ -122,13 +125,14 @@ func Try2InsertExtra (tokens TokenSequence, current Token) TokenSequence {
 }
 
 
-func Scan (code Code) (TokenSequence, RowColInfo) {
+func Scan (code Code) (TokenSequence, RowColInfo, SemiInfo) {
     var BlankId = syntax.Name2Id["Blank"]
     var CommentId = syntax.Name2Id["Comment"]
     var LFId = syntax.Name2Id["LF"]
     var RCBId = syntax.Name2Id["}"]
     var LtId = syntax.Name2Id["<"]
     var tokens = make(TokenSequence, 0, 10000)
+    var semi = make(SemiInfo)
     var info = GetInfo(code)
     var length = len(code)
     var previous_ptr *Token
@@ -175,10 +179,12 @@ func Scan (code Code) (TokenSequence, RowColInfo) {
     for _, token := range tokens {
         if token.Id != LFId {
             clear = append(clear, token)
+        } else {
+            semi[len(clear)] = true
         }
     }
     if (pos < length) {
         panic(fmt.Sprintf("invalid token at %+v", info[pos]))
     }
-    return clear, info
+    return clear, info, semi
 }

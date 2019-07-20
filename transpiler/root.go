@@ -4,6 +4,7 @@ import "os"
 import "fmt"
 import "strings"
 import "path/filepath"
+import "../parser"
 import "../parser/syntax"
 
 
@@ -85,9 +86,17 @@ var RootMap = map[string]TransFunction {
         if len(cmd_ptrs) == 0 {
             return fmt.Sprintf("%v.%v", RUNTIME, R_VOID)
         }
+        var prev_row = -1
         var buf strings.Builder
         buf.WriteRune('(')
         for i, command_ptr := range cmd_ptrs {
+            var node = &tree.Nodes[command_ptr]
+            var token = tree.Tokens[node.Pos]
+            var row = tree.Info[token.Pos].Row
+            if row == prev_row && !tree.Semi[node.Pos] {
+                parser.Error(tree, command_ptr, "semicolon expected")
+            }
+            prev_row = row
             var command = TranspileFirstChild(tree, command_ptr)
             var group_ptr = tree.Nodes[command_ptr].Children[0]
             var concrete_cmd_ptr = tree.Nodes[group_ptr].Children[0]
