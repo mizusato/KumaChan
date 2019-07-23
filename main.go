@@ -3,6 +3,7 @@ package main
 
 import "os"
 import "fmt"
+import "io"
 import "io/ioutil"
 import "./parser/syntax"
 import "./parser/scanner"
@@ -17,28 +18,49 @@ func check (err error) {
 }
 
 
-func test () {
-    var code_bytes, err = ioutil.ReadAll(os.Stdin)
+func parser_debug (file io.Reader, name string, root string) {
+    var code_bytes, err = ioutil.ReadAll(file)
     check(err)
     var code_string = string(code_bytes)
     var code = []rune(code_string)
-    var tokens, info, _ = scanner.Scan(code)
-    fmt.Printf("\n")
+    var tokens, info, semi = scanner.Scan(code)
+    fmt.Println("Tokens:")
     for i, token := range tokens {
         fmt.Printf(
-            "#%v %+v [%v:%v]: %v\n",
-            i, info[token.Pos], token.Id, syntax.Id2Name[token.Id],
+            "(%v) at [%v, %v] %v: %v\n",
+            i, info[token.Pos].Row, info[token.Pos].Col,
+            syntax.Id2Name[token.Id],
             string(token.Content),
         )
     }
-    fmt.Printf("\n")
-    var tree = parser.BuildTree("eval", code, "<eval>")
-    fmt.Printf("\n")
-    parser.PrintBareTree(tree.Nodes)
-    fmt.Printf("\n")
+    var RootId, exists = syntax.Name2Id[root]
+    if !exists {
+        panic("invalid root syntax unit " + root)
+    }
+    var nodes, err_ptr, err_desc = parser.BuildBareTree(RootId, tokens)
+    fmt.Println("------------------------------------------------------")
+    fmt.Println("AST Nodes:")
+    parser.PrintBareTree(nodes)
+    var tree = parser.Tree {
+        Code: code, Tokens: tokens, Info: info, Semi: semi,
+        Nodes: nodes, File: name,
+    }
+    fmt.Println("------------------------------------------------------")
+    fmt.Println("AST:")
     parser.PrintTree(tree)
-    var js = transpiler.Transpile(&tree, -1)
-    fmt.Println(js)
+    if err_ptr != -1 {
+        parser.Error(&tree, err_ptr, err_desc)
+    }
+}
+
+
+func PrintHelpInfo () {
+    fmt.Printf (
+        "Usage:\n\t" +
+        "%v eval [--debug]\n\t" +
+        "%v module FILE [--debug]\n",
+        os.Args[0], os.Args[0],
+    )
 }
 
 
@@ -47,20 +69,33 @@ func main () {
     transpiler.Init()
     if len(os.Args) > 1 {
         var mode = os.Args[1]
-        var js = ""
         if mode == "eval" {
-            js = transpiler.TranspileFile(os.Stdin, "<eval>", "eval")
+            var only_debug = len(os.Args) > 2 && os.Args[2] == "--debug"
+            if only_debug {
+                parser_debug(os.Stdin, "<eval>", "eval")
+            } else {
+                fmt.Print(transpiler.TranspileFile(os.Stdin, "<eval>", "eval"))
+            }
         } else if mode == "module" {
+            if len(os.Args) <= 2 {
+                PrintHelpInfo()
+            }
             var path = os.Args[2]
             var file, err = os.Open(path)
             if err != nil {
                 panic(fmt.Sprintf("error: %v: %v", path, err))
             }
-            js = transpiler.TranspileFile(file, path, "module")
+            var only_debug = len(os.Args) > 3 && os.Args[3] == "--debug"
+            if only_debug {
+                parser_debug(file, path, "module")
+            } else {
+                fmt.Print(transpiler.TranspileFile(file, path, "module"))
+            }
             file.Close()
+        } else {
+            PrintHelpInfo()
         }
-        fmt.Print(js)
     } else {
-        test()
+        PrintHelpInfo()
     }
 }
