@@ -52,6 +52,7 @@ const (
     L_IMPORT_VAR = "_in"
     L_IMPORT_MOD = "_im"
     L_IMPORT_ALL = "_ia"
+    L_MATCH = "_mp"
     L_GLOBAL_HELPERS = "__"
 )
 

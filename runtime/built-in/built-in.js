@@ -80,6 +80,12 @@ function bind_wrap (scope) {
     }
 }
 
+function bind_match_pattern (scope) {
+    return (is_fixed, pattern, value) => {
+        return match_pattern(scope, is_fixed, pattern, value)
+    }
+}
+
 let get_helpers = scope => ({
     [L_METHOD_CALL]: bind_method_call(scope),
     [L_STATIC_SCOPE]: f => get_static(f, scope),
@@ -92,5 +98,6 @@ let get_helpers = scope => ({
     [L_IMPORT_VAR]: inject_desc((m, c) => import_names(scope, m, c), 'import'),
     [L_IMPORT_MOD]: inject_desc(c => import_module(scope, c), 'import'),
     [L_IMPORT_ALL]: inject_desc(m => import_all(scope, m), 'import'),
+    [L_MATCH]: inject_desc(bind_match_pattern(scope), 'match_pattern'),
     [L_GLOBAL_HELPERS]: global_helpers
 })

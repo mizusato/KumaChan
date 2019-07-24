@@ -106,6 +106,28 @@ var CommandMap = map[string]TransFunction {
             G(CALL), L_VAR_DECL, name, value, T, file, row, col,
         )
     },
+    // pattern = pattern_key | pattern_index
+    "pattern": TranspileFirstChild,
+    // pattern_key = { sub_pattern_list! }! nil_flag
+    "pattern_key": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var allow_nil = Transpile(tree, children["nil_flag"])
+        var items = SubPatternList(tree, children["sub_pattern_list"], false)
+        return fmt.Sprintf (
+            "{ is_final: false, extract: null, allow_nil: %v, items: %v }",
+            allow_nil, items,
+        )
+    },
+    // pattern_index = [ sub_pattern_list! ]! nil_flag
+    "pattern_index": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var allow_nil = Transpile(tree, children["nil_flag"])
+        var items = SubPatternList(tree, children["sub_pattern_list"], true)
+        return fmt.Sprintf (
+            "{ is_final: false, extract: null, allow_nil: %v, items: %v }",
+            allow_nil, items,
+        )
+    },
     // cmd_pause = cmd_yield | cmd_async_for | cmd_await
     "cmd_pause": TranspileFirstChild,
     // cmd_yield = @yield name var_type = expr! | @yield expr!

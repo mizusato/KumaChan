@@ -223,12 +223,19 @@ var SyntaxDefinition = [...] string {
     "as_item = name @as name! | name",
     /* Scope Related Commands @ Group 2 */
     "cmd_scope = cmd_let | cmd_type | cmd_var | cmd_reset",
-    "cmd_let = @let name var_type = expr",
+    "cmd_let = @let name var_type = expr | @let pattern = expr",
     "cmd_type = @type name = @singleton | @type name generic_params = expr",
-    "cmd_var = @var name var_type = expr",
+    "cmd_var = @var name var_type = expr | @var pattern = expr",
     "var_type? = : type",
     "cmd_reset = @reset name set_op = expr",
     "set_op? = op_arith",
+    "pattern = pattern_key | pattern_index",
+    "pattern_key = { sub_pattern_list! }! nil_flag",
+    "pattern_index = [ sub_pattern_list! ]! nil_flag",
+    "sub_pattern_list = sub_pattern sub_pattern_list_tail",
+    "sub_pattern_list_tail? = , sub_pattern! sub_pattern_list_tail",
+    "sub_pattern = name nil_flag extract | pattern extract",
+    "extract? = : name | : ( expr )!",
     /* Definition Commands @ Group 2 */
     "cmd_def = function | schema | enum | class | interface",
     /* Pass Command @ Group 3 */

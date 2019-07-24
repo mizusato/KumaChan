@@ -167,10 +167,10 @@ func GetGeneralOperatorName (tree Tree, ptr int) (string, bool) {
 func WriteHelpers (buf *strings.Builder, scope_name string) {
     fmt.Fprintf (
         buf,
-        "let {%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v} = %v.%v(%v); ",
+        "let {%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v} = %v.%v(%v); ",
         L_METHOD_CALL, L_VAR_LOOKUP, L_VAR_DECL, L_VAR_RESET,
         L_ADD_FUN, L_OP_MOUNT, L_STATIC_SCOPE, L_WRAP,
-        L_IMPORT_VAR, L_IMPORT_MOD, L_IMPORT_ALL,
+        L_IMPORT_VAR, L_IMPORT_MOD, L_IMPORT_ALL, L_MATCH,
         L_GLOBAL_HELPERS,
         RUNTIME, R_GET_HELPERS, scope_name,
     )
@@ -592,6 +592,68 @@ func GetKey (tree Tree, ptr int) (string, string) {
     } else {
         return Transpile(tree, params["name"]), nil_flag
     }
+}
+
+
+func SubPatternList (tree Tree, ptr int, use_index bool) string {
+    if tree.Nodes[ptr].Part.Id != syntax.Name2Id["sub_pattern_list"] {
+        panic("invalid usage of SubPatternList()")
+    }
+    var TranspileExtract = func (ptr int, default_ string) string {
+        // extract? = : name | : ( expr )!
+        if Empty(tree, ptr) {
+            if default_ == "" {
+                parser.Error(tree, ptr, "invalid nested match")
+            }
+            return default_
+        }
+        var children = Children(tree, ptr)
+        var expr_ptr, is_expr = children["expr"]
+        if is_expr {
+            return Transpile(tree, expr_ptr)
+        } else {
+            return VarLookup(tree, children["name"])
+        }
+    }
+    // sub_pattern_list = sub_pattern sub_pattern_list_tail
+    var sub_ptrs = FlatSubTree (
+        tree, ptr, "sub_pattern", "sub_pattern_list_tail",
+    )
+    var buf strings.Builder
+    buf.WriteRune('[')
+    for i, sub_ptr := range sub_ptrs {
+        // sub_pattern = name nil_flag extract | pattern extract
+        var children = Children(tree, sub_ptr)
+        var nested_ptr, is_nested = children["pattern"]
+        if is_nested {
+            var extract = TranspileExtract(children["extract"], "")
+            var nested = Transpile(tree, nested_ptr)
+            fmt.Fprintf (
+                &buf, "Object.assign(%v, { extract: %v })",
+                nested, extract,
+            )
+        } else {
+            var target = Transpile(tree, children["name"])
+            var default_ string
+            if use_index {
+                default_ = fmt.Sprintf("%v", i)
+            } else {
+                default_ = VarLookup(tree, children["name"])
+            }
+            var allow_nil = Transpile(tree, children["nil_flag"])
+            var extract = TranspileExtract(children["extract"], default_)
+            fmt.Fprintf (
+                &buf,
+                "{ is_final: true, extract: %v, target: %v, allow_nil: %v }",
+                extract, target, allow_nil,
+            )
+        }
+        if i != len(sub_ptrs)-1 {
+            buf.WriteString(", ")
+        }
+    }
+    buf.WriteRune(']')
+    return buf.String()
 }
 
 

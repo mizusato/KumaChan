@@ -171,5 +171,8 @@ const MSG = {
     ),
     acos_out_of_domain: (
         'given argument exceeded the domain of arccos function'
+    ),
+    match_non_getter: (
+        'pattern matching is only available for GeneralGetter objects'
     )
 }
