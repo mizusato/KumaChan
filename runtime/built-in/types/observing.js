@@ -2,7 +2,7 @@ class Observer {
     constructor (init) {
         assert(is(init, Types.Arity.inflate(0)))
         this.init = init
-        Object.frezee(this)
+        Object.freeze(this)
     }
     subscribe (sub) {
         assert(is(sub, Types.Subscriber))
@@ -31,12 +31,13 @@ class Observer {
         new_context.define_push(inject_desc(push, 'operator_push'))
         let unsub = call(embrace_in_context(this.init, new_context), [])
         return fun (
-            'function cancel_subscription () -> Void',
+            'function cancel_subscription () -> Object',
                 () => {
-                    if (is(unsub, Types.Arity.inflate(0))) {
-                        call(unsub, [])
-                    }
+                    ensure(is(unsub, Types.Arity.inflate(0)), 'invalid_unsub')
+                    ensure(!closed, 'redundant_unsub')
+                    let value = call(unsub, [])
                     closed = true
+                    return value
                 }
         )
     }

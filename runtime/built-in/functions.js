@@ -140,7 +140,16 @@ let built_in_functions = {
                 })
             }
     ),
-    // Iterable Object Operations
+    // Operations on Iterables and Observables
+    subscribe: f (
+        'subscribe',
+        'function subscribe (o: Observable, s: Subscriber) -> Arity<0>',
+            (o, s) => o.subscribe(s),
+        'function subscribe (o: Observable, f: Arity<1>) -> Arity<0>',
+            (o, f) => o.subscribe(new_struct(Types.Subscriber, {
+                next: f
+            }))
+    ),
     seq: f (
         'seq',
         'function seq (n: Size) -> Iterator',

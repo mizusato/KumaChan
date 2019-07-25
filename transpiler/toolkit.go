@@ -167,9 +167,9 @@ func GetGeneralOperatorName (tree Tree, ptr int) (string, bool) {
 func WriteHelpers (buf *strings.Builder, scope_name string) {
     fmt.Fprintf (
         buf,
-        "let {%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v} = %v.%v(%v); ",
+        "let {%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v} = %v.%v(%v); ",
         L_METHOD_CALL, L_VAR_LOOKUP, L_VAR_DECL, L_VAR_RESET,
-        L_ADD_FUN, L_OP_MOUNT, L_STATIC_SCOPE, L_WRAP,
+        L_ADD_FUN, L_OP_MOUNT, L_OP_PUSH, L_STATIC_SCOPE, L_WRAP,
         L_IMPORT_VAR, L_IMPORT_MOD, L_IMPORT_ALL, L_MATCH,
         L_GLOBAL_HELPERS,
         RUNTIME, R_GET_HELPERS, scope_name,

@@ -50,6 +50,11 @@ let built_in_types = {
     AsyncIterable: Types.AsyncIterable,
     EntryList: Types.EntryList,
     Enumerable: Types.Enumerable,
+    /* Observing */
+    Observer: Types.Observer,
+    Observable: Types.Observable,
+    Complete: Types.Complete,
+    Subscriber: Types.Subscriber,
     /* Misc */
     Enum: Types.Enum,
     Schema: Types.Schema,
