@@ -179,10 +179,9 @@ const MSG = {
     match_nil: (
         'cannot perform (sub-)pattren matching on Nil without nil flag'
     ),
-    push_observer_closed: 'invalid push: observer already closed',
+    push_observer_closed: 'invalid push: observation already completed',
     push_no_error_handler: (
         'invalid push: no error handler registered on current subscriber'
     ),
-    invalid_unsub: 'this observer cannot be unsubscribed',
-    redundant_unsub: 'subscription already cancelled'
+    redundant_unsub: 'subscription already canceled'
 }

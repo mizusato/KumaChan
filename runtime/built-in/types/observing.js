@@ -6,38 +6,44 @@ class Observer {
     }
     subscribe (sub) {
         assert(is(sub, Types.Subscriber))
-        let closed = false
         let old_context = this.init[WrapperInfo].context
         let new_context = new Scope(old_context)
+        new_context.define_push(inject_desc(x => push(x), 'operator_push'))
+        let init = embrace_in_context(this.init, new_context)
         let complete = sub.get('complete')
         let error = sub.get('error')
         let next = sub.get('next')
+        let closed = false
+        let close = () => {
+            closed = true
+            if (complete !== Nil) {
+                call(complete, [])
+            }
+        }
         let push = object => {
-            ensure(!closed, 'observer_closed')
+            ensure(!closed, 'push_observer_closed')
             if (is(object, Types.Complete)) {
-                closed = true
-                if (complete !== Nil) {
-                    call(complete, [])
-                }
+                close()
             } else if (is(object, Types.Error)) {
                 closed = true
-                ensure(error !== Nil, 'no_error_handler')
+                ensure(error !== Nil, 'push_no_error_handler')
                 call(error, [object])
             } else {
                 call(next, [object])
             }
             return object
         }
-        new_context.define_push(inject_desc(push, 'operator_push'))
-        let unsub = call(embrace_in_context(this.init, new_context), [])
+        let unsub = call(init, [])
         return fun (
-            'function cancel_subscription () -> Object',
+            'function cancel_subscription () -> Bool',
                 () => {
-                    ensure(is(unsub, Types.Arity.inflate(0)), 'invalid_unsub')
+                    if (!is(unsub, Types.Arity.inflate(0))) {
+                        return false
+                    }
                     ensure(!closed, 'redundant_unsub')
-                    let value = call(unsub, [])
-                    closed = true
-                    return value
+                    call(unsub, [])
+                    close()
+                    return true
                 }
         )
     }
