@@ -4,3 +4,4 @@
 '<include> loop.js';
 '<include> comprehension.js';
 '<include> string-format.js';
+'<include> pattern.js';

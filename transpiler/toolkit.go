@@ -603,7 +603,7 @@ func SubPatternList (tree Tree, ptr int, use_index bool) string {
         // extract? = : name | : ( expr )!
         if Empty(tree, ptr) {
             if default_ == "" {
-                parser.Error(tree, ptr, "invalid nested match")
+                parser.Error(tree, ptr, "colon expected")
             }
             return default_
         }
@@ -612,7 +612,7 @@ func SubPatternList (tree Tree, ptr int, use_index bool) string {
         if is_expr {
             return Transpile(tree, expr_ptr)
         } else {
-            return VarLookup(tree, children["name"])
+            return Transpile(tree, children["name"])
         }
     }
     // sub_pattern_list = sub_pattern sub_pattern_list_tail
@@ -626,7 +626,13 @@ func SubPatternList (tree Tree, ptr int, use_index bool) string {
         var children = Children(tree, sub_ptr)
         var nested_ptr, is_nested = children["pattern"]
         if is_nested {
-            var extract = TranspileExtract(children["extract"], "")
+            var default_ string
+            if use_index {
+                default_ = fmt.Sprintf("%v", i)
+            } else {
+                default_ = ""
+            }
+            var extract = TranspileExtract(children["extract"], default_)
             var nested = Transpile(tree, nested_ptr)
             fmt.Fprintf (
                 &buf, "Object.assign(%v, { extract: %v })",
@@ -638,7 +644,7 @@ func SubPatternList (tree Tree, ptr int, use_index bool) string {
             if use_index {
                 default_ = fmt.Sprintf("%v", i)
             } else {
-                default_ = VarLookup(tree, children["name"])
+                default_ = Transpile(tree, children["name"])
             }
             var allow_nil = Transpile(tree, children["nil_flag"])
             var extract = TranspileExtract(children["extract"], default_)

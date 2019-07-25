@@ -173,6 +173,9 @@ const MSG = {
         'given argument exceeded the domain of arccos function'
     ),
     match_non_getter: (
-        'pattern matching is only available for GeneralGetter objects'
+        'cannot perform (sub-)pattern matching on a non-GeneralGetter object'
+    ),
+    match_nil: (
+        'cannot perform (sub-)pattren matching on Nil without nil flag'
     )
 }

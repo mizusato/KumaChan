@@ -48,14 +48,22 @@ var CommandMap = map[string]TransFunction {
     },
     // cmd_scope = cmd_let | cmd_var | cmd_reset
     "cmd_scope": TranspileFirstChild,
-    // cmd_let = @let name var_type = expr
+    // cmd_let = @let name var_type = expr | @let pattern = expr
     "cmd_let": func (tree Tree, ptr int) string {
-        var children = Children(tree, ptr)
-        var name = Transpile(tree, children["name"])
-        var T = Transpile(tree, children["var_type"])
-        var value = Transpile(tree, children["expr"])
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
+        var children = Children(tree, ptr)
+        var value = Transpile(tree, children["expr"])
+        var pattern_ptr, use_pattern = children["pattern"]
+        if use_pattern {
+            var pattern = Transpile(tree, pattern_ptr)
+            return fmt.Sprintf (
+                "%v(%v, [%v, %v, %v], %v, %v, %v)",
+                G(CALL), L_MATCH, "true", pattern, value, file, row, col,
+            )
+        }
+        var name = Transpile(tree, children["name"])
+        var T = Transpile(tree, children["var_type"])
         return fmt.Sprintf(
             "%v(%v, [%v, %v, true, %v], %v, %v, %v)",
             G(CALL), L_VAR_DECL, name, value, T, file, row, col,
@@ -93,15 +101,23 @@ var CommandMap = map[string]TransFunction {
             G(CALL), L_VAR_DECL, name, value, G(T_TYPE), file, row, col,
         )
     },
-    // cmd_var = @var name var_type = expr
+    // cmd_var = @var name var_type = expr | @var pattern = expr
     "cmd_var": func (tree Tree, ptr int) string {
-        var children = Children(tree, ptr)
-        var name = Transpile(tree, children["name"])
-        var T = Transpile(tree, children["var_type"])
-        var value = Transpile(tree, children["expr"])
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
-        return fmt.Sprintf(
+        var children = Children(tree, ptr)
+        var value = Transpile(tree, children["expr"])
+        var pattern_ptr, use_pattern = children["pattern"]
+        if use_pattern {
+            var pattern = Transpile(tree, pattern_ptr)
+            return fmt.Sprintf (
+                "%v(%v, [%v, %v, %v], %v, %v, %v)",
+                G(CALL), L_MATCH, "false", pattern, value, file, row, col,
+            )
+        }
+        var name = Transpile(tree, children["name"])
+        var T = Transpile(tree, children["var_type"])
+        return fmt.Sprintf (
             "%v(%v, [%v, %v, false, %v], %v, %v, %v)",
             G(CALL), L_VAR_DECL, name, value, T, file, row, col,
         )

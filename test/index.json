@@ -2,6 +2,7 @@
     "sequence": [
         "Primitive",
         "Type",
+        "Feature",
         "Error",
         "Async",
         "Std",
