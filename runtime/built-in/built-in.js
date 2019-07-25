@@ -38,6 +38,7 @@ let global_helpers = {
     [C_FINITE]: inject_desc(one_of, 'create_finite_set_type'),
     [C_ENUM]: inject_desc((n, ns) => new Enum(n, ns), 'create_enum'),
     [C_FUN_SIG]: inject_desc(create_fun_sig, 'create_function_signature'),
+    [C_OBSERVER]: create_observer,
     /* Guards */
     [REQ_BOOL]: inject_desc(require_bool, 'require_boolean_value'),
     [REQ_PROMISE]: inject_desc(require_promise, 'require_promise'),
@@ -95,6 +96,7 @@ let get_helpers = scope => ({
     [L_VAR_RESET]: inject_desc(scope.reset.bind(scope), 'reset_variable'),
     [L_ADD_FUN]: inject_desc(scope.add_function.bind(scope), 'add_function'),
     [L_OP_MOUNT]: inject_desc(scope.mount.bind(scope), 'call_mount_operator'),
+    [L_OP_PUSH]: inject_desc(scope.push.bind(scope), 'call_push_operator'),
     [L_IMPORT_VAR]: inject_desc((m, c) => import_names(scope, m, c), 'import'),
     [L_IMPORT_MOD]: inject_desc(c => import_module(scope, c), 'import'),
     [L_IMPORT_ALL]: inject_desc(m => import_all(scope, m), 'import'),

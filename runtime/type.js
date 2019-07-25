@@ -378,7 +378,7 @@ let Types = {
         if (get_proto(x) === Object.prototype) { return false }
         if (is(x, Type)) { return false }
         return forall(
-            [Array, Error, Function, Promise, Instance, Struct],
+            [Array, Error, Function, Promise, Instance, Struct, Observer],
             T => !(x instanceof T)
         )
     })), $(x => x === Function.prototype)),

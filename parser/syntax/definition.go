@@ -93,7 +93,7 @@ var Keywords = [...] string {
     "@let", "@type", "@singleton", "@var", "@reset", "@_",
     "@set", "@do", "@nothing",
     "@function", "@async", "@lambda",
-    "@invoke", "@iterator", "@promise",
+    "@invoke", "@iterator", "@promise", "@observer",
     "@static", "@mock", "@handle",
     "@throw", "@assert", "@ensure", "@try", "@to",
     "@unless", "@failed", "@finally", "@panic",
@@ -102,7 +102,8 @@ var Keywords = [...] string {
     "@one", "@of", "@enum", "@$",
     "@mount", "@push",
     "@class", "@init", "@create", "@private", "@data", "@interface",
-    "@str", "@len", "@copy", "@prms", "@iter", "@async_iter", "@negate",
+    "@str", "@len", "@copy", "@negate",
+    "@prms", "@iter", "@obsv", "@async_iter",
     "@true", "@false",
     "@is", "@or", "@not",
 }
@@ -146,7 +147,7 @@ var Operators = [...] Operator {
 
 var RedefinableOperators = []string {
     "@as", "@str", "@len", "@copy",
-    "@prms", "@iter", "@async_iter", "@enum",
+    "@prms", "@iter", "@obsv", "@async_iter", "@enum",
     "==", "<",
     "<<", ">>",
     "@negate", "+", "-", "*", "/", "%", "^",
@@ -350,7 +351,7 @@ var SyntaxDefinition = [...] string {
     "unary? = unary_group1 | unary_group2 | unary_group3",
     "unary_group1 = @not | - | @negate | _exc | ~ ",
     "unary_group2 = @str | @len | @copy",
-    "unary_group3 = @prms | @iter | @async_iter | @enum",
+    "unary_group3 = @prms | @iter | @obsv | @async_iter | @enum",
     /* Operand */
     "operand = unary operand_base operand_tail",
     "operand_base = wrapped | literal | dot_para | identifier",
@@ -377,12 +378,13 @@ var SyntaxDefinition = [...] string {
 
     /*** Literal ***/
     "literal = primitive | adv_literal",
-    "adv_literal = fun_sig | comp | type_literal | list | hash | brace_literal",
-    "brace_literal = when | iife | lambda | struct",
+    "adv_literal = fun_sig | comp | type_literal | list | hash | brace",
+    "brace = when | iife | observer | lambda | struct",
     "when = @when { when_list }!",
     "when_list = when_item when_list_tail",
     "when_item = @otherwise : expr | expr : expr",
     "when_list_tail? = , when_item when_list_tail",
+    "observer = @observer body",
     "struct = type struct_hash",
     "struct_hash = { } | { struct_hash_item struct_hash_tail }!",
     "struct_hash_tail? = , struct_hash_item struct_hash_tail",

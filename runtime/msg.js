@@ -65,6 +65,7 @@ const MSG = {
     self_conflict: (
         `unable to declare 'self' reference: variable name already used`
     ),
+    invalid_push: 'push operator is only available inside observer',
     invalid_mount: 'mount operator is only available inside initializer',
     mounting_non_instance: 'unable to mount non-instance object',
     mounting_undeclared: C => (
@@ -177,5 +178,9 @@ const MSG = {
     ),
     match_nil: (
         'cannot perform (sub-)pattren matching on Nil without nil flag'
+    ),
+    push_observer_closed: 'invalid push: observer already closed',
+    push_no_error_handler: (
+        'invalid push: no error handler registered on current subscriber'
     )
 }

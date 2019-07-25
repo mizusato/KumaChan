@@ -128,15 +128,18 @@ var ExpressionMap = map[string]TransFunction {
     "lower_unary": func (tree Tree, ptr int) string {
         var child = tree.Nodes[ptr].Children[0]
         var name = syntax.Id2Name[tree.Nodes[child].Part.Id]
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
         if name == "@mount" {
-            var file = GetFileName(tree)
-            var row, col = GetRowColInfo(tree, ptr)
             return fmt.Sprintf (
                 "%v(%v, [], %v, %v, %v)",
                 G(CALL), L_OP_MOUNT, file, row, col,
             )
         } else if name == "@push" {
-            panic("not implemented")
+            return fmt.Sprintf (
+                "%v(%v, [], %v, %v, %v)",
+                G(CALL), L_OP_PUSH, file, row, col,
+            )
         } else {
             panic("unknown lower-unary operator " + name)
         }

@@ -81,7 +81,7 @@ class Scope {
         this.types_of_non_fixed = {}
         // is it read-only? (e.g. the global scope is read-only)
         this.read_only = read_only
-        // bound operator functions
+        // context-depended operators
         this.operators = {}
         if (read_only) {
             Object.freeze(this.data)
@@ -141,11 +141,21 @@ class Scope {
         assert(is(f, ES.Function))
         this.operators.mount = f
     }
+    define_push (f) {
+        assert(is(f, ES.Function))
+        this.operators.push = f
+    }
     mount (i) {
         let s = find(this.iter_scope_chain(), s => s.operators.mount != null)
         ensure(s !== NotFound, 'invalid_mount')
         assert(is(s.operators.mount, ES.Function))
         return s.operators.mount
+    }
+    push (object) {
+        let s = find(this.iter_scope_chain(), s => s.operators.push != null)
+        ensure(s !== NotFound, 'invalid_push')
+        assert(is(s.operators.push, ES.Function))
+        return s.operators.push
     }
     reset (variable, new_value) {
         assert(is(variable, Types.String))

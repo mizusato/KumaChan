@@ -105,6 +105,13 @@ let operators = {
         'function operator.iter (i: ES_Iterable) -> Iterator',
             i => i[Symbol.iterator]()
     ),
+    'obsv': f (
+        'operator.obsv',
+        `function operator.obsv (o: Operand<'obsv'>) -> Observer`,
+            o => apply_unary('obsv', o),
+        'function operator.obsv (o: Observer) -> Observer',
+            o => o
+    ),
     'async_iter': f (
         'operator.async_iter',
         `function operator.async_iter (o: Operand<'async_iter'>) -> AsyncIterator`,
@@ -340,6 +347,10 @@ function prms (value) {
 
 function iter (value) {
     return call(operators['iter'], [value])
+}
+
+function obsv (value) {
+    return call(operators['obsv'], [value])
 }
 
 function async_iter (value) {

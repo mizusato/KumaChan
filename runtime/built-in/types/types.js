@@ -5,6 +5,7 @@
 '<include> basic.js';
 '<include> getter-setter.js';
 '<include> iterating.js';
+'<include> observing.js';
 '<include> async.js';
 
 Object.freeze(Types)

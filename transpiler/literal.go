@@ -9,10 +9,10 @@ import "../parser/syntax"
 var LiteralMap = map[string]TransFunction {
     // literal = primitive | adv_literal
     "literal": TranspileFirstChild,
-    // adv_literal = comp | type_literal | list | hash | brace_literal
+    // adv_literal = comp | type_literal | list | hash | brace
     "adv_literal": TranspileFirstChild,
-    // brace_literal = when | iife | struct
-    "brace_literal": TranspileFirstChild,
+    // brace = when | iife | struct
+    "brace": TranspileFirstChild,
     // when = @when { when_list }!
     "when": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
@@ -52,6 +52,14 @@ var LiteralMap = map[string]TransFunction {
             G(CALL), G(WHEN_FAILED), file, row, col,
         )
         return buf.String()
+    },
+    // observer = @observer body
+    "observer": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var body_ptr = children["body"]
+        var desc = Desc([]rune("observer"), []rune("()"), []rune("Object"))
+        var f = Function(tree, body_ptr, F_Sync, desc, "[]", G(T_ANY))
+        return fmt.Sprintf("%v(%v)", G(C_OBSERVER), f)
     },
     // hash = { } | { hash_item! hash_tail }!
     "hash": func (tree Tree, ptr int) string {
