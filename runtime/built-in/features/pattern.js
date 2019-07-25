@@ -1,5 +1,6 @@
 let FinalPattern = format({
     is_final: one_of(true),
+    ignore: Types.Bool,
     extract: Types.Any,
     target: Types.String,
     allow_nil: Types.Bool
@@ -26,6 +27,7 @@ function match_pattern (scope, is_fixed, pattern, value) {
         }
     }
     for (let item of pattern.items) {
+        if (item.is_final && item.ignore) { continue }
         let v = all_nil? Nil: (
             call(get_data, [value, item.extract, item.allow_nil])
         )

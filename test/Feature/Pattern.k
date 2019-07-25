@@ -12,4 +12,6 @@ invoke {
     assert U == 'a' && V is Nil && W == 'c'
     var [P,Q:(5),R?:(6),S,T] = [0,1,2,3,4,5]
     assert P == 0 && Q == 5 && R is Nil && S == 3 && T == 4
+    let [a,_,b,c] = [0,1,2,3]
+    assert a == 0 && b == 2 && c == 3
 }

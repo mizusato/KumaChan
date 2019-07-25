@@ -90,7 +90,7 @@ var Keywords = [...] string {
     "@if", "@else", "@elif", "@switch", "@case", "@default",
     "@while", "@for", "@in", "@break", "@continue", "@return",
     "@yield", "@await",
-    "@let", "@type", "@singleton", "@var", "@reset",
+    "@let", "@type", "@singleton", "@var", "@reset", "@_",
     "@set", "@do", "@nothing",
     "@function", "@async", "@lambda",
     "@invoke", "@iterator", "@promise",
@@ -234,7 +234,7 @@ var SyntaxDefinition = [...] string {
     "pattern_index = [ sub_pattern_list! ]! nil_flag",
     "sub_pattern_list = sub_pattern sub_pattern_list_tail",
     "sub_pattern_list_tail? = , sub_pattern! sub_pattern_list_tail",
-    "sub_pattern = name nil_flag extract | pattern extract",
+    "sub_pattern = @_ | name nil_flag extract | pattern extract",
     "extract? = : name | : ( expr )!",
     /* Definition Commands @ Group 2 */
     "cmd_def = function | schema | enum | class | interface",

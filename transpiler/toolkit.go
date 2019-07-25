@@ -622,8 +622,20 @@ func SubPatternList (tree Tree, ptr int, use_index bool) string {
     var buf strings.Builder
     buf.WriteRune('[')
     for i, sub_ptr := range sub_ptrs {
-        // sub_pattern = name nil_flag extract | pattern extract
+        // sub_pattern = @_ | name nil_flag extract | pattern extract
         var children = Children(tree, sub_ptr)
+        var _, is_empty = children["@_"]
+        if is_empty {
+            fmt.Fprintf (
+                &buf,
+                "{ is_final: true, ignore: true, %v }",
+                "extract: null, target: '', allow_nil: false",
+            )
+            if i != len(sub_ptrs)-1 {
+                buf.WriteString(", ")
+            }
+            continue
+        }
         var nested_ptr, is_nested = children["pattern"]
         if is_nested {
             var default_ string
@@ -650,8 +662,8 @@ func SubPatternList (tree Tree, ptr int, use_index bool) string {
             var extract = TranspileExtract(children["extract"], default_)
             fmt.Fprintf (
                 &buf,
-                "{ is_final: true, extract: %v, target: %v, allow_nil: %v }",
-                extract, target, allow_nil,
+                "{ %v, extract: %v, target: %v, allow_nil: %v }",
+                "is_final: true, ignore: false", extract, target, allow_nil,
             )
         }
         if i != len(sub_ptrs)-1 {
