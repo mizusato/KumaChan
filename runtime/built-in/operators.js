@@ -281,13 +281,6 @@ let operators = {
         'operator.plus',
         `function operator.plus (a: Operand<'+'>, b: Operand<'+'>) -> Object`,
             (a, b) => apply_operator('+', a, b),
-        'function operator.plus (a: Iterator, b: Iterator) -> Iterable',
-            (a, b) => {
-                return (function* ()  {
-                    for (let I of a) { yield I }
-                    for (let I of b) { yield I }
-                })()
-            },
         'function operator.plus (a: List, b: List) -> List',
             (a, b) => [...a, ...b],
         'function operator.plus (a: String, b: String) -> String',

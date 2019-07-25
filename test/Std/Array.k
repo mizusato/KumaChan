@@ -1,6 +1,11 @@
 invoke {
     import Array from Std
     let a = Array<Int>([1,2,3,4])
+    let t = Array<Int>([5])
+    let u = a+t
+    assert u is Array<Int>
+    assert len(u) == 5
+    assert u[0] == 1 && u[len(u)-1] == 5
     let b = a as Array<Number>
     set a[0] = -1
     // [-1, 2, 3, 4]

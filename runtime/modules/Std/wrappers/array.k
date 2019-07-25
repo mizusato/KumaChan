@@ -192,7 +192,7 @@ class Array<T> is Getter<Index, T>, Setter<Index, T>, SliceGetter {
         }
     }
     operator + (a1, a2) {
-        return Array<T>((iter a1) + (iter a2))
+        return Array<T>(concat(a1, a2))
     }
     operator == (a1, a2) {
         let T = get_class(a1).ElementType
