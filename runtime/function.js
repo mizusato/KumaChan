@@ -628,12 +628,12 @@ function fun (decl_string, body) {
     assert(is(body, ES.Function))
     assert(!is(body, Types.Wrapped))
     let desc = decl_string.replace(/^function */, '')
-    return wrap(null, parsed.proto, desc, (scope, expose) => {
+    return wrap(null, parsed.proto, desc, scope => {
         return body.apply(
             null,
             list(cat(
                 map(parsed.proto.parameters, p => scope.lookup(p.name)),
-                [scope, expose]
+                [scope]
             ))
         )
     })

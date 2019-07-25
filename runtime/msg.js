@@ -179,7 +179,6 @@ const MSG = {
     match_nil: (
         'cannot perform (sub-)pattren matching on Nil without nil flag'
     ),
-    push_observer_closed: 'invalid push: observation already completed',
     push_no_error_handler: (
         'invalid push: no error handler registered on current subscriber'
     ),

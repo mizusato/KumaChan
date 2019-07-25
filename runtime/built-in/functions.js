@@ -148,6 +148,13 @@ let built_in_functions = {
         'function subscribe (o: Observable, f: Arity<1>) -> Arity<0>',
             (o, f) => o.subscribe(new_struct(Types.Subscriber, {
                 next: f
+            })),
+        'function subscribe (o: Observable, f: Arity<0>) -> Arity<0>',
+            (o, f) => o.subscribe(new_struct(Types.Subscriber, {
+                next: fun (
+                    'function callback (_: Any) -> Object',
+                        _ => call(f, [])
+                )
             }))
     ),
     seq: f (
@@ -199,6 +206,24 @@ let built_in_functions = {
     ),
     map: f (
         'map',
+        'function map (o: Observable, f: Arity<2>) -> Observer',
+            (o, f) => observer(push => {
+                let i = 0
+                return obsv(o).subscribe(subs({
+                    next: x => {
+                        push(call(f, [x, i]))
+                        i += 1
+                    },
+                    error: e => push(e),
+                    complete: () => push(Types.Complete)
+                }))
+            }),
+        'function map (o: Observable, f: Arity<1>) -> Observer',
+            (o, f) => observer(push => obsv(o).subscribe(subs({
+                next: x => push(call(f, [x])),
+                error: e => push(e),
+                complete: () => push(Types.Complete)
+            }))),
         'function map (i: Iterable, f: Arity<2>) -> Iterator',
             (i, f) => map(iter(i), (e, n) => call(f, [e, n])),
         'function map (i: Iterable, f: Arity<1>) -> Iterator',
@@ -506,23 +531,27 @@ let built_in_functions = {
             })
     ),
     set_timeout: fun (
-        'function set_timeout (time: Size, callback: Arity<0>) -> Void',
-            (time, callback) => {
-                let frame = get_top_frame()
-                let pos = ''
-                if (frame !== null) {
-                    let { file, row, col } = frame
-                    if (file !== null) {
-                        pos = `at ${file} (row ${row}, column ${col})`
-                    }
+        'function set_timeout (time: Size) -> Observer',
+            time => observer(push => {
+                let t = setTimeout(() => {
+                    push(Nil)
+                    push(Types.Complete)
+                }, time)
+                return () => {
+                    clearTimeout(t)
                 }
-                setTimeout (
-                    () => {
-                        call(callback, [], `set_timeout(${time}) ${pos}`)
-                    }, time
-                )
-                return Void
-            }
+            })
+    ),
+    set_interval: fun (
+        'function set_interval (time: Size) -> Observer',
+            time => observer(push => {
+                let i = setInterval(() => {
+                    push(Nil)
+                }, time)
+                return () => {
+                    clearInterval(i)
+                }
+            })
     ),
     create_promise: fun (
         'function create_promise (f: Arity<2>) -> Promise',

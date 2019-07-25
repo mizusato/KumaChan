@@ -21,7 +21,8 @@ class Observer {
             }
         }
         let push = object => {
-            ensure(!closed, 'push_observer_closed')
+            // ensure(!closed, 'push_observer_closed')
+            if (closed) { return object }
             if (is(object, Types.Complete)) {
                 close()
             } else if (is(object, Types.Error)) {
@@ -35,15 +36,15 @@ class Observer {
         }
         let unsub = call(init, [])
         return fun (
-            'function cancel_subscription () -> Bool',
+            'function cancel_subscription () -> Void',
                 () => {
                     if (!is(unsub, Types.Arity.inflate(0))) {
-                        return false
+                        return Void
                     }
                     ensure(!closed, 'redundant_unsub')
                     call(unsub, [])
                     close()
-                    return true
+                    return Void
                 }
         )
     }
@@ -53,6 +54,45 @@ Types.Observer = $(x => x instanceof Observer)
 Types.Observable = Uni(Types.Observer, Types.Operand.inflate('obsv'))
 
 let create_observer = f => new Observer(f)
+
+let observer = f => create_observer (
+    fun (
+        'function observer () -> Object',
+            scope => {
+                let p = scope.push.bind(scope)
+                let ret = f(object => call(call(p, []), [object]))
+                if (is(ret, ES.Function)) {
+                    return fun (
+                        'function unsubscribe () -> Void',
+                            _ => {
+                                ret()
+                                return Void
+                            }
+                    )
+                } else {
+                    return Void
+                }
+            }
+    )
+)
+
+let subs = hooks => {
+    let { next, error, complete } = hooks
+    return new_struct(Types.Subscriber, {
+        next: fun (
+            'function next (x: Any) -> Void',
+                x => (next(x), Void)
+        ),
+        error: fun (
+            'function error (e: Error) -> Void',
+                e => (error(e), Void)
+        ),
+        complete: fun (
+            'function complete () -> Void',
+                () => (complete(), Void)
+        )
+    })
+}
 
 
 Types.Complete = create_value('Complete')
