@@ -183,5 +183,5 @@ const MSG = {
     push_no_error_handler: (
         'invalid push: no error handler registered on current subscriber'
     ),
-    redundant_unsub: 'subscription already canceled'
+    redundant_unsub: 'redundant unsubscribe: observation already completed'
 }
