@@ -199,6 +199,40 @@ let built_in_functions = {
                 }
             })()
     ),
+    merge: fun (
+        'function merge (o1: Observable, o2: Observable) -> Observer',
+            (o1, o2) => observer(push => {
+                let f1 = false
+                let f2 = false
+                let unsub1 = obsv(o1).subscribe(subs({
+                    next: x => push(x),
+                    error: e => {
+                        unsub2()
+                        push(e)
+                    },
+                    complete: () => {
+                        f1 = true
+                        if (f2) {
+                            push(Complete)
+                        }
+                    }
+                }))
+                let unsub2 = obsv(o2).subscribe(subs({
+                    next: x => push(x),
+                    error: e => {
+                        unsub1()
+                        push(e)
+                    },
+                    complete: () => {
+                        f2 = true
+                        if (f1) {
+                            push(Complete)
+                        }
+                    }
+                }))
+                return () => { unsub1(); unsub2() }
+            })
+    ),
     range: f (
         'range',
         'function range (begin: Index, end: Index) -> Iterator',
