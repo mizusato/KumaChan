@@ -320,6 +320,30 @@ let built_in_functions = {
     ),
     fold: f (
         'fold',
+        'function fold (o: Observable, base: Any, f: Arity<3>) -> Observer',
+            (o, base, f) => observer(push => {
+                let v = base
+                let n = 0
+                return obsv(o).subscribe(subs({
+                    next: x => {
+                        v = push(call(f, [x, v, n]))
+                        n += 1
+                    },
+                    error: e => push(e),
+                    complete: () => push(Complete)
+                }))
+            }),
+        'function fold (o: Observable, base: Any, f: Arity<2>) -> Observer',
+                (o, base, f) => observer(push => {
+                    let v = base
+                    return obsv(o).subscribe(subs({
+                        next: x => {
+                            v = push(call(f, [x, v]))
+                        },
+                        error: e => push(e),
+                        complete: () => push(Complete)
+                    }))
+                }),
         'function fold (i: Iterable, initial: Any, f: Arity<3>) -> Object',
             (i, initial, f) => fold(iter(i), initial, (e, v, n) => {
                 return call(f, [e, v, n])
