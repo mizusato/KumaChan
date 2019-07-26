@@ -5,6 +5,7 @@ export {
     Array, ArrayData,
     Future,
     Stream, AsyncStream,
+    Source,
     Property, PropertyCollection
 }
 
@@ -16,4 +17,5 @@ include 'containers/set.k'
 include 'wrappers/array.k'
 include 'wrappers/future.k'
 include 'wrappers/stream.k'
+include 'wrappers/source.k'
 include 'plugins/property.k'
