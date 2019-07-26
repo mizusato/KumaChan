@@ -144,13 +144,13 @@ let built_in_functions = {
     subscribe: f (
         'subscribe',
         'function subscribe (o: Observable, s: Subscriber) -> Arity<0>',
-            (o, s) => o.subscribe(s),
+            (o, s) => obsv(o).subscribe(s),
         'function subscribe (o: Observable, f: Arity<1>) -> Arity<0>',
-            (o, f) => o.subscribe(new_struct(Types.Subscriber, {
+            (o, f) => obsv(o).subscribe(new_struct(Types.Subscriber, {
                 next: f
             })),
         'function subscribe (o: Observable, f: Arity<0>) -> Arity<0>',
-            (o, f) => o.subscribe(new_struct(Types.Subscriber, {
+            (o, f) => obsv(o).subscribe(new_struct(Types.Subscriber, {
                 next: fun (
                     'function callback (_: Any) -> Object',
                         _ => call(f, [])
