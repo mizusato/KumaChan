@@ -495,6 +495,47 @@ let built_in_functions = {
                 }
             })()
     ),
+    tap: f (
+        'tap',
+        'function tap (o: Observable, f: Arity<2>) -> Observer',
+            (o, f) => observer(push => {
+                let i = 0
+                return obsv(o).subscribe(subs({
+                    next: x => {
+                        call(f, [x, i])
+                        push(x)
+                        i += 1
+                    },
+                    error: e => push(e),
+                    complete: () => push(Complete)
+                }))
+            }),
+        'function tap (o: Observable, f: Arity<1>) -> Observer',
+            (o, f) => observer(push => obsv(o).subscribe(subs({
+                next: x => {
+                    call(f, [x])
+                    push(x)
+                },
+                error: e => push(e),
+                complete: () => push(Complete)
+            }))),
+        'function tap (i: Iterable, f: Arity<2>) -> Iterator',
+            (i, f) => (function* () {
+                let n = 0
+                for (let e of iter(i)) {
+                    call(f, [e, n])
+                    yield e
+                    n += 1
+                }
+            })(),
+        'function tap (i: Iterable, f: Arity<1>) -> Iterator',
+            (i, f) => (function* () {
+                for (let e of iter(i)) {
+                    call(f, [e])
+                    yield e
+                }
+            })()
+    ),
     collect: fun (
         'function collect (i: Iterable) -> List',
             i => list(iter(i))
