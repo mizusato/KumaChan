@@ -465,7 +465,26 @@ let built_in_functions = {
         'function reversed (l: List) -> Iterator',
             l => rev(l)
     ),
-    flat: fun (
+    flat: f (
+        'flat',
+        'function flat (o: Observable) -> Observer',
+            o => observer(push => {
+                let unsub = []
+                unsub.push(obsv(o).subscribe(subs({
+                    next: x => {
+                        let ok = is(x, Types.Observable)
+                        ensure(ok, 'value_not_observable')
+                        unsub.push(obsv(x).subscribe(subs({
+                            next: y => push(y),
+                            error: e => push(e),
+                            complete: () => Void
+                        })))
+                    },
+                    error: e => push(e),
+                    complete: () => Void
+                })))
+                return () => foreach(unsub, u => u())
+            }),
         'function flat (i: Iterable) -> Iterator',
             i => (function* () {
                 for (let e of iter(i)) {
