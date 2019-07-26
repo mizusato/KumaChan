@@ -172,7 +172,23 @@ let built_in_functions = {
                 }
             })()
     ),
-    concat: fun (
+    concat: f (
+        'concat',
+        'function concat (o1: Observable, o2: Observable) -> Observer',
+            (o1, o2) => observer(push => {
+                let unsub = obsv(o1).subscribe(subs({
+                    next: x => push(x),
+                    error: e => push(e),
+                    complete: () => {
+                        unsub = obsv(o2).subscribe(subs({
+                            next: x => push(x),
+                            error: e => push(e),
+                            complete: () => push(Types.Complete)
+                        }))
+                    }
+                }))
+                return () => unsub()
+            }),
         'function concat (i1: Iterable, i2: Iterable) -> Iterator',
             (i1, i2) => (function* () {
                 for (let e of iter(i1)) {

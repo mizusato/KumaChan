@@ -27,7 +27,11 @@ class Observer {
                 close()
             } else if (is(object, Types.Error)) {
                 closed = true
-                ensure(error !== Nil, 'push_no_error_handler')
+                // ensure(error !== Nil, 'push_no_error_handler')
+                if (error == Nil) {
+                    let { name, message } = object
+                    crash(`UnhandledObserverError: ${name}: ${message}`)
+                }
                 call(error, [object])
             } else {
                 call(next, [object])
@@ -41,7 +45,8 @@ class Observer {
                     if (!is(unsub, Types.Arity.inflate(0))) {
                         return Void
                     }
-                    ensure(!closed, 'redundant_unsub')
+                    // ensure(!closed, 'redundant_unsub')
+                    if (closed) { return Void }
                     call(unsub, [])
                     close()
                     return Void
