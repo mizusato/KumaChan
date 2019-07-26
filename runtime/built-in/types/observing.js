@@ -23,7 +23,7 @@ class Observer {
         let push = object => {
             // ensure(!closed, 'push_observer_closed')
             if (closed) { return object }
-            if (is(object, Types.Complete)) {
+            if (is(object, Complete)) {
                 close()
             } else if (is(object, Types.Error)) {
                 closed = true
@@ -55,10 +55,22 @@ class Observer {
     }
 }
 
+let create_observer = f => new Observer(f)
+
 Types.Observer = $(x => x instanceof Observer)
 Types.Observable = Uni(Types.Observer, Types.Operand.inflate('obsv'))
 
-let create_observer = f => new Observer(f)
+let Complete = create_value('Complete')
+Types.Complete = Complete
+Types.Subscriber = create_schema('Subscriber', {
+    next: Types.Arity.inflate(1),
+    error: Types.Maybe.inflate(Types.Arity.inflate(1)),
+    complete: Types.Maybe.inflate(Types.Arity.inflate(0))
+}, {
+    error: Nil,
+    complete: Nil
+}, [], {})
+
 
 let observer = f => create_observer (
     fun (
@@ -81,6 +93,7 @@ let observer = f => create_observer (
     )
 )
 
+
 let subs = hooks => {
     let { next, error, complete } = hooks
     return new_struct(Types.Subscriber, {
@@ -98,15 +111,3 @@ let subs = hooks => {
         )
     })
 }
-
-
-Types.Complete = create_value('Complete')
-
-Types.Subscriber = create_schema('Subscriber', {
-    next: Types.Arity.inflate(1),
-    error: Types.Maybe.inflate(Types.Arity.inflate(1)),
-    complete: Types.Maybe.inflate(Types.Arity.inflate(0))
-}, {
-    error: Nil,
-    complete: Nil
-}, [], {})

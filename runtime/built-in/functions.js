@@ -183,7 +183,7 @@ let built_in_functions = {
                         unsub = obsv(o2).subscribe(subs({
                             next: x => push(x),
                             error: e => push(e),
-                            complete: () => push(Types.Complete)
+                            complete: () => push(Complete)
                         }))
                     }
                 }))
@@ -231,14 +231,14 @@ let built_in_functions = {
                         i += 1
                     },
                     error: e => push(e),
-                    complete: () => push(Types.Complete)
+                    complete: () => push(Complete)
                 }))
             }),
         'function map (o: Observable, f: Arity<1>) -> Observer',
             (o, f) => observer(push => obsv(o).subscribe(subs({
                 next: x => push(call(f, [x])),
                 error: e => push(e),
-                complete: () => push(Types.Complete)
+                complete: () => push(Complete)
             }))),
         'function map (i: Iterable, f: Arity<2>) -> Iterator',
             (i, f) => map(iter(i), (e, n) => call(f, [e, n])),
@@ -247,8 +247,34 @@ let built_in_functions = {
     ),
     filter: f (
         'filter',
-        'function filter (i: Iterable, T: Type) -> Iterator',
-            (i, T) => filter(iter(i), e => call(operator_is, [e, T])),
+        'function filter (o: Observable, f: Arity<2>) -> Observer',
+            (o, f) => observer(push => {
+                let i = 0
+                return obsv(o).subscribe(subs({
+                    next: x => {
+                        let ok = call(f, [x, i])
+                        ensure(is(ok, Types.Bool), 'filter_not_bool')
+                        if (ok) {
+                            push(x)
+                        }
+                        i += 1
+                    },
+                    error: e => push(e),
+                    complete: () => push(Complete)
+                }))
+            }),
+        'function filter (o: Observable, f: Arity<1>) -> Observer',
+            (o, f) => observer(push => obsv(o).subscribe(subs({
+                next: x => {
+                    let ok = call(f, [x])
+                    ensure(is(ok, Types.Bool), 'filter_not_bool')
+                    if (ok) {
+                        push(x)
+                    }
+                },
+                error: e => push(e),
+                complete: () => push(Complete)
+            }))),
         'function filter (i: Iterable, f: Arity<2>) -> Iterator',
             (i, f) => filter(iter(i), (e, n) => {
                 let ok = call(f, [e, n])
@@ -551,7 +577,7 @@ let built_in_functions = {
             time => observer(push => {
                 let t = setTimeout(() => {
                     push(Nil)
-                    push(Types.Complete)
+                    push(Complete)
                 }, time)
                 return () => {
                     clearTimeout(t)
