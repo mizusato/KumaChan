@@ -288,6 +288,73 @@ let built_in_functions = {
                 return ok
             })
     ),
+    take: f (
+        'take',
+        'function take (o: Observable, f: Arity<2>) -> Observer',
+            (o, f) => observer(push => {
+                let i = 0
+                let unsub = obsv(o).subscribe(subs({
+                    next: x => {
+                        let ok = call(f, [x, i])
+                        ensure(is(ok, Types.Bool), 'filter_not_bool')
+                        if (ok) {
+                            push(x)
+                        } else {
+                            unsub()
+                            push(Complete)
+                        }
+                        i += 1
+                    },
+                    error: e => push(e),
+                    complete: () => push(Complete)
+                }))
+                return unsub
+            }),
+        'function take (o: Observable, f: Arity<1>) -> Observer',
+            (o, f) => observer(push => {
+                let unsub = obsv(o).subscribe(subs({
+                    next: x => {
+                        let ok = call(f, [x])
+                        ensure(is(ok, Types.Bool), 'filter_not_bool')
+                        if (ok) {
+                            push(x)
+                        } else {
+                            unsub()
+                            push(Complete)
+                        }
+                    },
+                    error: e => push(e),
+                    complete: () => push(Complete)
+                }))
+                return unsub
+            }),
+        'function take (i: Iterable, f: Arity<2>) -> Iterator',
+            (i, f) => (function* () {
+                let n = 0
+                for (let e of iter(i)) {
+                    let ok = call(f, [e, n])
+                    ensure(is(ok, Types.Bool), 'filter_not_bool')
+                    if (ok) {
+                        yield e
+                        n += 1
+                    } else {
+                        break
+                    }
+                }
+            })(),
+        'function take (i: Iterable, f: Arity<1>) -> Iterator',
+            (i, f) => (function* () {
+                for (let e of iter(i)) {
+                    let ok = call(f, [e])
+                    ensure(is(ok, Types.Bool), 'filter_not_bool')
+                    if (ok) {
+                        yield e
+                    } else {
+                        break
+                    }
+                }
+            })()
+    ),
     find: f (
         'find',
         'function find (i: Iterable, T: Type) -> Object',
