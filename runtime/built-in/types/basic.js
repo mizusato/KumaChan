@@ -38,6 +38,7 @@ Types.OpImpl = template (
 
 Types.Index = Ins(Types.Int, $(x => x >= 0))
 Types.Size = Types.Index
+Types.PosInt = Ins(Types.Int, $(x => x > 0))
 Types.Char = Ins(Types.String, $(x => {
     let i = 0
     for (let _ of x) {

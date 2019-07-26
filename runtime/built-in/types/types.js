@@ -31,6 +31,7 @@ let built_in_types = {
     Int: Types.Int,
     Index: Types.Index,
     Size: Types.Size,
+    PosInt: Types.PosInt,
     Char: Types.Char,
     String: Types.String,
     Representable: Types.Representable,

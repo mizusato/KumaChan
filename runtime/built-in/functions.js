@@ -568,23 +568,95 @@ let built_in_functions = {
     ),
     flat: f (
         'flat',
-        'function flat (o: Observable) -> Observer',
-            o => observer(push => {
-                let unsub = []
-                unsub.push(obsv(o).subscribe(subs({
-                    next: x => {
+        'function flat (o: Observable, limit: PosInt) -> Observer',
+            (o, limit) => observer(push => {
+                let source_complete = false
+                let stopped = false
+                let waiting = []
+                let unsub = new Set()
+                let unsub_source = obsv(o).subscribe(subs({
+                    next: function next_callback (x) {
+                        if (stopped) { return }
                         let ok = is(x, Types.Observable)
                         ensure(ok, 'value_not_observable')
-                        unsub.push(obsv(x).subscribe(subs({
-                            next: y => push(y),
-                            error: e => push(e),
-                            complete: () => Void
-                        })))
+                        if (unsub.size < limit) {
+                            let unsub_i = obsv(x).subscribe(subs({
+                                next: y => push(y),
+                                error: e => {
+                                    stop()
+                                    push(e)
+                                },
+                                complete: () => {
+                                    unsub.delete(unsub_i)
+                                    if (waiting.length > 0) {
+                                        next_callback(waiting.shift())
+                                    } else if (source_complete) {
+                                        if (unsub.size == 0) {
+                                            push(Complete)
+                                        }
+                                    }
+                                }
+                            }))
+                            unsub.add(unsub_i)
+                        } else {
+                            waiting.push(x)
+                        }
                     },
-                    error: e => push(e),
-                    complete: () => Void
-                })))
-                return () => foreach(unsub, u => u())
+                    error: e => {
+                        stop()
+                        push(e)
+                    },
+                    complete: () => {
+                        source_complete = true
+                    }
+                }))
+                let stop = () => {
+                    unsub_source()
+                    foreach(unsub, u => u())
+                    waiting = []
+                    stopped = true
+                }
+                return stop
+            }),
+        'function flat (o: Observable) -> Observer',
+            o => observer(push => {
+                let source_complete = false
+                let stopped = false
+                let unsub = new Set()
+                let unsub_source = obsv(o).subscribe(subs({
+                    next: x => {
+                        if (stopped) { return }
+                        let ok = is(x, Types.Observable)
+                        ensure(ok, 'value_not_observable')
+                        let unsub_i = obsv(x).subscribe(subs({
+                            next: y => push(y),
+                            error: e => {
+                                stop()
+                                push(e)
+                            },
+                            complete: () => {
+                                unsub.delete(unsub_i)
+                                if (source_complete && unsub.size == 0) {
+                                    push(Complete)
+                                }
+                            }
+                        }))
+                        unsub.add(unsub_i)
+                    },
+                    error: e => {
+                        stop()
+                        push(e)
+                    },
+                    complete: () => {
+                        source_complete = true
+                    }
+                }))
+                let stop = () => {
+                    unsub_source()
+                    foreach(unsub, u => u())
+                    stopped = true
+                }
+                return stop
             }),
         'function flat (i: Iterable) -> Iterator',
             i => (function* () {
