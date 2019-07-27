@@ -639,6 +639,51 @@ pour(built_in_functions, {
         'function zip (i1: Iterable, i2: Iterable) -> Iterator',
             (i1, i2) => zip([i1, i2], x => x)
     ),
+    debounce: f (
+        'debounce',
+        'function debounce (o: Observable, f: Arity<1>) -> Observer',
+            (o, f) => observer(push => {
+                let timeout = null
+                let waiting = false
+                let end = false
+                let reset = () => {
+                    if (timeout !== null) {
+                        clearTimeout(timeout)
+                    }
+                }
+                let unsub = obsv(o).subscribe(subs({
+                    next: x => {
+                        reset()
+                        let dur = call(f, [x])
+                        if (!is(dur, Types.Size)) {
+                            if (typeof unsub != 'undefined') { unsub() }
+                            ensure(false, 'debounce_invalid_duration')
+                        }
+                        waiting = true
+                        timeout = setTimeout(() => {
+                            push(x)
+                            if (end) {
+                                push(Complete)
+                            }
+                            waiting = false
+                        }, dur)
+                    },
+                    error: e => { reset(); push(e) },
+                    complete: () => {
+                        end = true
+                        if (!waiting) {
+                            push(Complete)
+                        }
+                    }
+                }))
+                return unsub
+            }),
+        'function debounce (o: Observable, dur: Size) -> Observer',
+            (o, dur) => call(built_in_functions.debounce, [o, fun (
+                'function dur (_: Any) -> Size',
+                    _ => dur
+            )])
+    ),
     collect: fun (
         'function collect (i: Iterable) -> List',
             i => list(iter(i))

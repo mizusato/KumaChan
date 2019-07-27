@@ -180,5 +180,8 @@ const MSG = {
     match_nil: (
         'cannot perform (sub-)pattren matching on Nil without nil flag'
     ),
-    invalid_unsub: 'unable to unsubscribe a non-unsubscrible observer'
+    invalid_unsub: 'unable to unsubscribe a non-unsubscrible observer',
+    debounce_invalid_duration: (
+        'debounce(): invalid duration returned by given function'
+    )
 }
