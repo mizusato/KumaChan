@@ -451,7 +451,10 @@ pour(built_in_functions, {
                     next: function next_callback (x) {
                         if (stopped) { return }
                         let ok = is(x, Types.Observable)
-                        ensure(ok, 'value_not_observable')
+                        if (!ok) {
+                            stop()
+                            ensure(false, 'value_not_observable')
+                        }
                         if (unsub.size < limit) {
                             let unsub_i = obsv(x).subscribe(subs({
                                 next: y => push(y),
@@ -496,7 +499,10 @@ pour(built_in_functions, {
                     next: x => {
                         if (stopped) { return }
                         let ok = is(x, Types.Observable)
-                        ensure(ok, 'value_not_observable')
+                        if (!ok) {
+                            stop()
+                            ensure(false, 'value_not_observable')
+                        }
                         let unsub_i = obsv(x).subscribe(subs({
                             next: y => push(y),
                             error: e => { stop(); push(e) },
@@ -680,7 +686,38 @@ pour(built_in_functions, {
             }),
         'function debounce (o: Observable, dur: Size) -> Observer',
             (o, dur) => call(built_in_functions.debounce, [o, fun (
-                'function dur (_: Any) -> Size',
+                'function get_duration (_: Any) -> Size',
+                    _ => dur
+            )])
+    ),
+    throttle: f (
+        'throttle',
+        'function throttle (o: Observable, f: Arity<1>) -> Observer',
+            (o, f) => observer(push => {
+                let lock = false
+                let unsub = obsv(o).subscribe(subs({
+                    next: x => {
+                        if (!lock) {
+                            let dur = call(f, [x])
+                            if (!is(dur, Types.Size)) {
+                                if (typeof unsub != 'undefined') { unsub() }
+                                ensure(false, 'throttle_invalid_duration')
+                            }
+                            lock = true
+                            setTimeout(() => {
+                                lock = false
+                            }, dur)
+                            push(x)
+                        }
+                    },
+                    error: e => { push(e) },
+                    complete: () => { push(Complete) }
+                }))
+                return unsub
+            }),
+        'function throttle (o: Observable, dur: Size) -> Observer',
+            (o, dur) => call(built_in_functions.throttle, [o, fun (
+                'function get_duration (_: Any) -> Size',
                     _ => dur
             )])
     ),

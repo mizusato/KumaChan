@@ -183,5 +183,8 @@ const MSG = {
     invalid_unsub: 'unable to unsubscribe a non-unsubscrible observer',
     debounce_invalid_duration: (
         'debounce(): invalid duration returned by given function'
+    ),
+    throttle_invalid_duration: (
+        'throttle(): invalid duration returned by given function'
     )
 }
