@@ -41,6 +41,19 @@ pour(built_in_functions, {
         'function to_upper_case (s: String) -> String',
             s => s.toUpperCase()
     ),
+    split: fun (
+        'function split (s: String, regexp: String) -> List',
+            (s, regexp) => {
+                let r = null
+                try {
+                    r = new RegExp(regexp, 'su')
+                } catch (e) {
+                    ensure(!(e instanceof SyntaxError), 'regexp_invalid')
+                    throw e
+                }
+                return s.split(r)
+            }
+    ),
     match: fun (
         'function match (s: String, regexp: String) -> Maybe<List>',
             (s, regexp) => {
