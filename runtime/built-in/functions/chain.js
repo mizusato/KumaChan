@@ -600,7 +600,7 @@ pour(built_in_functions, {
                     complete: () => {
                         f1 = true
                         if (f2 || q1.length == 0) {
-                            if (!f2) { unsub2() }
+                            if (!f2) { unsub2(); stoppd = true; q2 = [] }
                             push(Complete)
                         }
                     }
@@ -622,7 +622,7 @@ pour(built_in_functions, {
                     complete: () => {
                         f2 = true
                         if (f1 || q2.length == 0) {
-                            if (!f1) { unsub1() }
+                            if (!f1) { unsub1(); stopped = true; q1 = [] }
                             push(Complete)
                         }
                     }
