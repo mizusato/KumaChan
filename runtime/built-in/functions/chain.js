@@ -15,6 +15,14 @@ pour(built_in_functions, {
                 )
             }))
     ),
+    iter2obsv: fun (
+        'function iter2obsv (i: Iterable) -> Observer',
+            i => observer(push => {
+                for (let e of iter(i)) {
+                    push(e)
+                }
+            }),
+    ),
     seq: f (
         'seq',
         'function seq (n: Size) -> Iterator',
@@ -471,6 +479,7 @@ pour(built_in_functions, {
                 let stop = () => {
                     unsub_source()
                     foreach(unsub, u => u())
+                    unsub.clear()
                     waiting = []
                     stopped = true
                 }
@@ -512,6 +521,7 @@ pour(built_in_functions, {
                 let stop = () => {
                     unsub_source()
                     foreach(unsub, u => u())
+                    unsub.clear()
                     stopped = true
                 }
                 return stop
@@ -566,6 +576,49 @@ pour(built_in_functions, {
                     yield e
                 }
             })()
+    ),
+    zip: f (
+        'zip',
+        'function zip (o1: Observable, o2: Observable) -> Observer',
+            (o1, o2) => observer(push => {
+                let q1 = []
+                let q2 = []
+                let stopped = false
+                let unsub1 = obsv(o1).subscribe(subs({
+                    next: x => {
+                        if (stopped) { return }
+                        if (q2.length > 0) {
+                            push([x, q2.shift()])
+                        } else {
+                            q1.push(x)
+                        }
+                    },
+                    error: e => { stop(); push(e) },
+                    complete: () => { unsub2(); push(Complete) }
+                }))
+                let unsub2 = obsv(o2).subscribe(subs({
+                    next: x => {
+                        if (stopped) { return }
+                        if (q1.length > 0) {
+                            push([q1.shift(), x])
+                        } else {
+                            q2.push(x)
+                        }
+                    },
+                    error: e => { stop(); push(e) },
+                    complete: () => { unsub1(); push(Complete) }
+                }))
+                let stop = () => {
+                    unsub1()
+                    unsub2()
+                    q1 = []
+                    q2 = []
+                    stopped = true
+                }
+                return stop
+            }),
+        'function zip (i1: Iterable, i2: Iterable) -> Iterator',
+            (i1, i2) => zip([i1, i2], x => x)
     ),
     collect: fun (
         'function collect (i: Iterable) -> List',
