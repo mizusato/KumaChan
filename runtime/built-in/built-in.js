@@ -1,6 +1,6 @@
 '<include> types/types.js';
 '<include> features/features.js';
-'<include> functions.js';
+'<include> functions/functions.js';
 '<include> operators.js';
 '<include> constants.js';
 
