@@ -21,6 +21,7 @@ pour(built_in_functions, {
                 for (let e of iter(i)) {
                     push(e)
                 }
+                push(Complete)
             }),
     ),
     seq: f (
@@ -70,10 +71,15 @@ pour(built_in_functions, {
             (o1, o2) => observer(push => {
                 let f1 = false
                 let f2 = false
+                let nosub2 = false
                 let unsub1 = obsv(o1).subscribe(subs({
                     next: x => push(x),
                     error: e => {
-                        unsub2()
+                        if (typeof unsub2 == 'undefined') {
+                            unsub2()
+                        } else {
+                            nosub2 = true
+                        }
                         push(e)
                     },
                     complete: () => {
@@ -83,7 +89,7 @@ pour(built_in_functions, {
                         }
                     }
                 }))
-                let unsub2 = obsv(o2).subscribe(subs({
+                let unsub2 = !nosub2? obsv(o2).subscribe(subs({
                     next: x => push(x),
                     error: e => {
                         unsub1()
@@ -95,7 +101,7 @@ pour(built_in_functions, {
                             push(Complete)
                         }
                     }
-                }))
+                })): () => Void
                 return () => { unsub1(); unsub2() }
             })
     ),
@@ -436,10 +442,11 @@ pour(built_in_functions, {
         'flat',
         'function flat (o: Observable, limit: PosInt) -> Observer',
             (o, limit) => observer(push => {
-                let source_complete = false
-                let stopped = false
-                let waiting = []
                 let unsub = new Set()
+                let waiting = []
+                let stopped = false
+                let stop = () => Void
+                let source_complete = false
                 let unsub_source = obsv(o).subscribe(subs({
                     next: function next_callback (x) {
                         if (stopped) { return }
@@ -448,10 +455,7 @@ pour(built_in_functions, {
                         if (unsub.size < limit) {
                             let unsub_i = obsv(x).subscribe(subs({
                                 next: y => push(y),
-                                error: e => {
-                                    stop()
-                                    push(e)
-                                },
+                                error: e => { stop(); push(e) },
                                 complete: () => {
                                     unsub.delete(unsub_i)
                                     if (waiting.length > 0) {
@@ -468,15 +472,12 @@ pour(built_in_functions, {
                             waiting.push(x)
                         }
                     },
-                    error: e => {
-                        stop()
-                        push(e)
-                    },
+                    error: e => { stop(); push(e) },
                     complete: () => {
                         source_complete = true
                     }
                 }))
-                let stop = () => {
+                stop = () => {
                     unsub_source()
                     foreach(unsub, u => u())
                     unsub.clear()
@@ -487,9 +488,10 @@ pour(built_in_functions, {
             }),
         'function flat (o: Observable) -> Observer',
             o => observer(push => {
-                let source_complete = false
-                let stopped = false
                 let unsub = new Set()
+                let stopped = false
+                let stop = () => Void
+                let source_complete = false
                 let unsub_source = obsv(o).subscribe(subs({
                     next: x => {
                         if (stopped) { return }
@@ -497,10 +499,7 @@ pour(built_in_functions, {
                         ensure(ok, 'value_not_observable')
                         let unsub_i = obsv(x).subscribe(subs({
                             next: y => push(y),
-                            error: e => {
-                                stop()
-                                push(e)
-                            },
+                            error: e => { stop(); push(e) },
                             complete: () => {
                                 unsub.delete(unsub_i)
                                 if (source_complete && unsub.size == 0) {
@@ -510,15 +509,12 @@ pour(built_in_functions, {
                         }))
                         unsub.add(unsub_i)
                     },
-                    error: e => {
-                        stop()
-                        push(e)
-                    },
+                    error: e => { stop(); push(e) },
                     complete: () => {
                         source_complete = true
                     }
                 }))
-                let stop = () => {
+                stop = () => {
                     unsub_source()
                     foreach(unsub, u => u())
                     unsub.clear()
@@ -583,32 +579,55 @@ pour(built_in_functions, {
             (o1, o2) => observer(push => {
                 let q1 = []
                 let q2 = []
+                let f1 = false
+                let f2 = false
                 let stopped = false
+                let stop = () => Void
                 let unsub1 = obsv(o1).subscribe(subs({
                     next: x => {
                         if (stopped) { return }
                         if (q2.length > 0) {
                             push([x, q2.shift()])
+                            if (q2.length == 0 && f2) {
+                                unsub1()
+                                push(Complete)
+                            }
                         } else {
                             q1.push(x)
                         }
                     },
                     error: e => { stop(); push(e) },
-                    complete: () => { unsub2(); push(Complete) }
+                    complete: () => {
+                        f1 = true
+                        if (f2 || q1.length == 0) {
+                            if (!f2) { unsub2() }
+                            push(Complete)
+                        }
+                    }
                 }))
                 let unsub2 = obsv(o2).subscribe(subs({
                     next: x => {
                         if (stopped) { return }
                         if (q1.length > 0) {
                             push([q1.shift(), x])
+                            if (q1.length == 0 && f1) {
+                                unsub2()
+                                push(Complete)
+                            }
                         } else {
                             q2.push(x)
                         }
                     },
                     error: e => { stop(); push(e) },
-                    complete: () => { unsub1(); push(Complete) }
+                    complete: () => {
+                        f2 = true
+                        if (f1 || q2.length == 0) {
+                            if (!f1) { unsub1() }
+                            push(Complete)
+                        }
+                    }
                 }))
-                let stop = () => {
+                stop = () => {
                     unsub1()
                     unsub2()
                     q1 = []

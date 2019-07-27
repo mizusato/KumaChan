@@ -179,5 +179,6 @@ const MSG = {
     ),
     match_nil: (
         'cannot perform (sub-)pattren matching on Nil without nil flag'
-    )
+    ),
+    invalid_unsub: 'unable to unsubscribe a non-unsubscrible observer'
 }

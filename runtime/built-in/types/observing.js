@@ -14,17 +14,14 @@ class Observer {
         let error = sub.get('error')
         let next = sub.get('next')
         let closed = false
-        let close = () => {
-            closed = true
-            if (complete !== Nil) {
-                call(complete, [])
-            }
-        }
         let push = object => {
             // ensure(!closed, 'push_observer_closed')
             if (closed) { return object }
             if (is(object, Complete)) {
-                close()
+                closed = true
+                if (complete !== Nil) {
+                    call(complete, [])
+                }
             } else if (is(object, Types.Error)) {
                 closed = true
                 // ensure(error !== Nil, 'push_no_error_handler')
@@ -42,13 +39,11 @@ class Observer {
         return fun (
             'function cancel_subscription () -> Void',
                 () => {
-                    if (!is(unsub, Types.Arity.inflate(0))) {
-                        return Void
-                    }
                     // ensure(!closed, 'redundant_unsub')
                     if (closed) { return Void }
+                    ensure(is(unsub, Types.Arity.inflate(0)), 'invalid_unsub')
                     call(unsub, [])
-                    close()
+                    closed = true
                     return Void
                 }
         )
