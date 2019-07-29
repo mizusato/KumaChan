@@ -58,7 +58,7 @@ Types.Representable = Uni (
 Types.EqualityDefined = Uni (
     one_of (
         Types.Bool, Types.String,
-        Types.Number, Types.Int, Types.Index
+        Types.Number, Types.Int, Types.Index, Types.PosInt
     ),
     Types.OpImpl.inflate('==')
 )
