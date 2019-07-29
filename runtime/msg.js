@@ -186,5 +186,8 @@ const MSG = {
     ),
     throttle_invalid_duration: (
         'throttle(): invalid duration returned by given function'
+    ),
+    invalid_tree_node_inflater: (
+        'invalid tree node inflater: should be a $<Hash,List><?>'
     )
 }

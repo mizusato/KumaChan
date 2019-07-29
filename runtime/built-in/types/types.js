@@ -7,6 +7,7 @@
 '<include> iterating.js';
 '<include> observing.js';
 '<include> async.js';
+'<include> tree.js';
 
 Object.freeze(Types)
 
@@ -56,6 +57,8 @@ let built_in_types = {
     Observable: Types.Observable,
     Complete: Types.Complete,
     Subscriber: Types.Subscriber,
+    /* Tree */
+    TreeNodeInflater: Types.TreeNodeInflater,
     /* Misc */
     Enum: Types.Enum,
     Schema: Types.Schema,

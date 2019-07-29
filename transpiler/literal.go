@@ -61,6 +61,62 @@ var LiteralMap = map[string]TransFunction {
         var f = Function(tree, body_ptr, F_Sync, desc, "[]", G(T_ANY))
         return fmt.Sprintf("%v(%v)", G(C_OBSERVER), f)
     },
+    // tree = _tree tree_node! | @tree { tree_node! }!
+    "tree": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        return Transpile(tree, children["tree_node"])
+    },
+    // tree_node = type { node_props node_children }!
+    "tree_node": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var inflater = Transpile(tree, children["type"])
+        var node_props = Transpile(tree, children["node_props"])
+        var node_children = Transpile(tree, children["node_children"])
+        var file = GetFileName(tree)
+        var row, col = GetRowColInfo(tree, ptr)
+        return fmt.Sprintf (
+            "%v(%v, [%v, %v, %v], %v, %v, %v)",
+            G(CALL), G(C_TREE_NODE), inflater, node_props, node_children,
+            file, row, col,
+        )
+    },
+    // node_props? = node_prop node_props
+    "node_props": func (tree Tree, ptr int) string {
+        if Empty(tree, ptr) { return "{}" }
+        var prop_ptrs = FlatSubTree(tree, ptr, "node_prop", "node_props")
+        var occurred = make(map[string]bool)
+        var buf strings.Builder
+        buf.WriteString("{ ")
+        for i, prop_ptr := range prop_ptrs {
+            // node_prop = name = expr
+            var children = Children(tree, prop_ptr)
+            var name = Transpile(tree, children["name"])
+            if occurred[name] {
+                parser.Error (
+                    tree, prop_ptr,
+                    fmt.Sprintf (
+                        "duplicate prop %v",
+                        name,
+                    ),
+                )
+            }
+            occurred[name] = true
+            var value = Transpile(tree, children["expr"])
+            fmt.Fprintf(&buf, "%v: %v", name, value)
+            if i != len(prop_ptrs)-1 {
+                buf.WriteString(", ")
+            }
+        }
+        buf.WriteString(" }")
+        return buf.String()
+    },
+    // node_children? = node_child node_children
+    "node_children": func (tree Tree, ptr int) string {
+        if Empty(tree, ptr) { return "[]" }
+        return TranspileSubTree(tree, ptr, "node_child", "node_children")
+    },
+    // node_child = tree_node | = expr
+    "node_child": TranspileLastChild,
     // hash = { } | { hash_item! hash_tail }!
     "hash": func (tree Tree, ptr int) string {
         if tree.Nodes[ptr].Length == 2 {

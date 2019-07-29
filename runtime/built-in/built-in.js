@@ -38,6 +38,7 @@ let global_helpers = {
     [C_FINITE]: inject_desc(one_of, 'create_finite_set_type'),
     [C_ENUM]: inject_desc((n, ns) => new Enum(n, ns), 'create_enum'),
     [C_FUN_SIG]: inject_desc(create_fun_sig, 'create_function_signature'),
+    [C_TREE_NODE]: inject_desc(inflate_tree_node, 'inflate_tree_node'),
     [C_OBSERVER]: create_observer,
     /* Guards */
     [REQ_BOOL]: inject_desc(require_bool, 'require_boolean_value'),

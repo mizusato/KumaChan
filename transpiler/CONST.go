@@ -83,6 +83,7 @@ const (
     C_FINITE = "cft"
     C_ENUM = "ce"
     C_FUN_SIG = "cfs"
+    C_TREE_NODE = "ctn"
     C_OBSERVER = "co"
     REQ_BOOL = "rb"
     REQ_PROMISE = "rp"
