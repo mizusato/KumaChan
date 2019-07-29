@@ -1,16 +1,19 @@
 let SignatureCache = new VectorMapCache()
+let TypePlaceholder = create_value('TypePlaceholder')
+Types.TypePlaceholder = TypePlaceholder
 
 
 function match_signature (args, ret, proto) {
     assert(is(args, TypedList.of(Type)))
     assert(is(ret, Type))
     assert(is(proto, Prototype))
-    if (!type_equivalent(ret, proto.value_type)) {
+    let VT = proto.value_type
+    if (ret !== TypePlaceholder && !type_equivalent(ret, VT)) {
         return false
     }
     let param_types = proto.parameters.map(p => p.type)
-    return equal(args, param_types, (a, b) => {
-        return type_equivalent(a, b)
+    return equal(args, param_types, (A, P) => {
+        return (A === TypePlaceholder || type_equivalent(A, P))
     })
 }
 
@@ -23,6 +26,8 @@ class FunSig {
         this[Checker] = (x => {
             if (is(x, Types.Binding)) {
                 x = cancel_binding(x)
+            } else if (is(x, Types.Class)) {
+                x = x.create
             }
             if (is(x, Types.Function)) {
                 return match_signature(args, ret, x[WrapperInfo].proto)

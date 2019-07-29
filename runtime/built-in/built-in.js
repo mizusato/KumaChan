@@ -63,7 +63,8 @@ let global_helpers = {
     [T_INSTANCE]: Types.Instance,
     [T_ITERATOR]: Types.Iterator,
     [T_ASYNC_ITERATOR]: Types.AsyncIterator,
-    [T_SLICE_INDEX_DEF]: Types.SliceIndexDefault
+    [T_SLICE_INDEX_DEF]: Types.SliceIndexDefault,
+    [T_PLACEHOLDER]: Types.TypePlaceholder
 }
 
 Object.freeze(global_helpers)

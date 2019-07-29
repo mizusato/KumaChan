@@ -15,24 +15,32 @@ var TypeMap = map[string]TransFunction {
             return TranspileFirstChild(tree, ptr)
         }
     },
-    // fun_sig = @$ < opt_typelist >! <! type! >!
+    // fun_sig = @$ Call < opt_type_list >! <! opt_type! >!
     "fun_sig": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
-        var l_ptr = children["opt_typelist"]
-        var args string
-        if Empty(tree, l_ptr) {
-            args = "[]"
-        } else {
-            // opt_typelist? = typelist
-            args = TranspileFirstChild(tree, l_ptr)
-        }
-        var ret = Transpile(tree, children["type"])
+        var args = Transpile(tree, children["opt_type_list"])
+        var ret = Transpile(tree, children["opt_type"])
         var file = GetFileName(tree)
         var row, col = GetRowColInfo(tree, ptr)
         return fmt.Sprintf (
             "%v(%v, [%v, %v], %v, %v, %v)",
             G(CALL), G(C_FUN_SIG), args, ret, file, row, col,
         )
+    },
+    // opt_type_list? = opt_type opt_type_list_tail
+    "opt_type_list": func (tree Tree, ptr int) string {
+        if Empty(tree, ptr) { return "[]" }
+        return TranspileSubTree(tree, ptr, "opt_type", "opt_type_list_tail")
+    },
+    // opt_type = ? | type
+    "opt_type": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var type_ptr, has_type = children["type"]
+        if has_type {
+            return Transpile(tree, type_ptr)
+        } else {
+            return G(T_PLACEHOLDER)
+        }
     },
     // typelist = type typelist_tail
     "typelist": func (tree Tree, ptr int) string {

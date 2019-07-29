@@ -106,6 +106,7 @@ const (
     T_ITERATOR = "it"
     T_ASYNC_ITERATOR = "ait"
     T_SLICE_INDEX_DEF = "sid"
+    T_PLACEHOLDER = "tp"
 )
 
 
