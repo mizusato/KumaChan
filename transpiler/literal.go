@@ -88,9 +88,16 @@ var LiteralMap = map[string]TransFunction {
         var buf strings.Builder
         buf.WriteString("{ ")
         for i, prop_ptr := range prop_ptrs {
-            // node_prop = name = expr
+            // node_prop = name = expr! | string = expr!
             var children = Children(tree, prop_ptr)
-            var name = Transpile(tree, children["name"])
+            var name_ptr, has_name = children["name"]
+            var name string
+            // note: see comments in LiteralMap["hash"]
+            if has_name {
+                name = Transpile(tree, name_ptr)
+            } else {
+                name = Transpile(tree, children["string"])
+            }
             if occurred[name] {
                 parser.Error (
                     tree, prop_ptr,

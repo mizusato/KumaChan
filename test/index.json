@@ -5,6 +5,7 @@
         "Feature",
         "Error",
         "Async",
+        "Extra",
         "Std",
         "Math"
     ]

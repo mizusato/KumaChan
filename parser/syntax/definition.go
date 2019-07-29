@@ -392,7 +392,7 @@ var SyntaxDefinition = [...] string {
     "tree = _tree tree_node! | @tree { tree_node! }!",
     "tree_node = type { node_props node_children }!",
     "node_props? = node_prop node_props",
-    "node_prop = name = expr",
+    "node_prop = name = expr! | string = expr!",
     "node_children? = node_child node_children",
     "node_child = tree_node | = expr",
     "struct = type struct_hash",
