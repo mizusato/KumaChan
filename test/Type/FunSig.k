@@ -1,4 +1,22 @@
 invoke {
+    function f (x: Int) -> Int {
+        return x + 1
+    }
+    function f (x: String) -> String {
+        return x + '1'
+    }
+    class F {
+        init (x: String) {
+            do nothing
+        }
+        create (x: Int) {
+            return F(str(x))
+        }
+    }
+    assert f is $<Int><Int>
+    assert f is $<String><String>
+    assert F is $<Int><?>
+    assert F is $<String><?>
     assert lambda{} is $<><Any>
     assert lambda(x){} is $<Any><Any>
     assert lambda(x){} is not $<><Any>

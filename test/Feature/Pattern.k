@@ -14,4 +14,6 @@ invoke {
     assert P == 0 && Q == 5 && R is Nil && S == 3 && T == 4
     let [a,_,b,c] = [0,1,2,3]
     assert a == 0 && b == 2 && c == 3
+    var [A,B,_,C] = [5,6,7,8]
+    assert A == 5 && B == 6 && C == 8
 }

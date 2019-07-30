@@ -1,7 +1,9 @@
 {
     "sequence": [
         "Primitive",
+        "Expression",
         "Type",
+        "Function",
         "Feature",
         "Error",
         "Async",
