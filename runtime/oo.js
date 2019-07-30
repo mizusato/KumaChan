@@ -484,7 +484,7 @@ function apply_implemented (interface_, instance, add_method) {
         // add to the context scope
         interface_scope.declare(name, binding)
         // add to the instance
-        add_method([name], binding)
+        add_method(name, binding)
     })
 }
 
