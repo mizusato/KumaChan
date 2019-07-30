@@ -261,6 +261,25 @@ pour(built_in_functions, {
                 }
             })()
     ),
+    until: fun (
+        'function until (o: Observable, signal: Observable) -> Observer',
+            (o, signal) => observer(push => {
+                let unsub = () => Void
+                let unsub_signal = () => Void
+                let unsub_all = () => { unsub(); unsub_signal() }
+                unsub = obsv(o).subscribe(subs({
+                    next: x => push(x),
+                    error: e => { unsub_signal(); push(e) },
+                    complete: () => { unsub_signal(); push(Complete) }
+                }))
+                unsub_signal = obsv(signal).subscribe(subs({
+                    next: _ => { unsub_all(); push(Complete) },
+                    error: e => { unsub(); push(e) },
+                    complete: () => Void
+                }))
+                return unsub_all
+            })
+    ),
     find: f (
         'find',
         'function find (i: Iterable, T: Type) -> Object',
