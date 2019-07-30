@@ -73,6 +73,8 @@ invoke {
     struct Box<T> {
         value: T
     }
+    assert Box<Int> ~~ Box<Int>
+    assert Box<Int> !~ Box<String>
     let b = Box<String>(s1)
     assert b.value == '789'
     assert b is not StringBox
