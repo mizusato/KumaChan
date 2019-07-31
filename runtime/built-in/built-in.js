@@ -42,9 +42,11 @@ let global_helpers = {
     [C_OBSERVER]: create_observer,
     /* Guards */
     [REQ_BOOL]: inject_desc(require_bool, 'require_boolean_value'),
+    [REQ_TYPE]: inject_desc(require_type, 'require_type_object'),
     [REQ_PROMISE]: inject_desc(require_promise, 'require_promise'),
-    [WHEN_FAILED]: inject_desc(when_expr_failed, 'when_expr_no_match'),
-    [SWITCH_FAILED]: inject_desc(switch_cmd_failed, 'switch_cmd_no_match'),
+    [WHEN_FAILED]: inject_desc(when_expr_failed, 'when_expr_failed'),
+    [MATCH_FAILED]: inject_desc(match_expr_failed, 'match_expr_failed'),
+    [SWITCH_FAILED]: inject_desc(switch_cmd_failed, 'switch_cmd_failed'),
     /* Error Handling */
     [INJECT_E_ARGS]: inject_desc(inject_ensure_args, 'inject_ensure_args'),
     [ENSURE_FAILED]: ensure_failed,

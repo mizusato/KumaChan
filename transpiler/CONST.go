@@ -34,6 +34,7 @@ const (
     TRY_ERROR = "_t_err"
     H_HOOK_ERROR = "_h_err"
     H_HOOK_SCOPE = "_h_scope"
+    MATCH_TARGET = "_m_target"
 )
 
 
@@ -86,8 +87,10 @@ const (
     C_TREE_NODE = "ctn"
     C_OBSERVER = "co"
     REQ_BOOL = "rb"
+    REQ_TYPE = "rt"
     REQ_PROMISE = "rp"
     WHEN_FAILED = "wf"
+    MATCH_FAILED = "mf"
     SWITCH_FAILED = "sf"
     INJECT_E_ARGS = "ie"
     ENSURE_FAILED = "ef"

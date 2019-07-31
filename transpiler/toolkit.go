@@ -595,6 +595,105 @@ func GetKey (tree Tree, ptr int) (string, string) {
 }
 
 
+func CondBranch (cond string, file string, row string, col string) string {
+    return cond
+}
+
+
+func MatchBranch (raw string, file string, row string, col string) string {
+    var T = fmt.Sprintf (
+        "%v(%v, [%v], %v, %v, %v)",
+        G(CALL), G(REQ_TYPE), raw,
+        file, row, col,
+    )
+    return fmt.Sprintf (
+        "%v(%v(%v), [%v, %v], %v, %v, %v)",
+        G(CALL), G(OPERATOR), "\"is\"", MATCH_TARGET, T,
+        file, row, col,
+    )
+}
+
+
+func Cases (
+    tree Tree, ptr int, f func(string,string,string,string)string,
+) string {
+    // cases = case more_cases
+    if tree.Nodes[ptr].Part.Id != syntax.Name2Id["cases"] {
+        panic("invalid usage of Cases()")
+    }
+    var file = GetFileName(tree)
+    var row, col = GetRowColInfo(tree, ptr)
+    var case_ptrs = FlatSubTree(tree, ptr, "case", "more_cases")
+    var buf strings.Builder
+    buf.WriteString("if (false) { void(0) }")
+    for _, case_ptr := range case_ptrs {
+        // case = @otherwise block! | expr! block!
+        var children = Children(tree, case_ptr)
+        var _, is_default = children["@otherwise"]
+        if is_default {
+            var block = Transpile(tree, children["block"])
+            fmt.Fprintf(&buf, " else if(true) %v", block)
+        } else {
+            var expr_ptr = children["expr"]
+            var file = GetFileName(tree)
+            var row, col = GetRowColInfo(tree, expr_ptr)
+            var condition = f(Transpile(tree, expr_ptr), file, row, col)
+            var block = Transpile(tree, children["block"])
+            fmt.Fprintf (
+                &buf, " else if (%v(%v, [%v], %v, %v, %v)) %v",
+                G(CALL), G(REQ_BOOL), condition, file, row, col, block,
+            )
+        }
+    }
+    fmt.Fprintf (
+        &buf, " else { %v(%v, [], %v, %v, %v) }",
+        G(CALL), G(SWITCH_FAILED), file, row, col,
+    )
+    return buf.String()
+}
+
+
+func BranchList (
+    tree Tree, ptr int, f func(string,string,string,string)string, err string,
+) string {
+    // branch_list = branch! branch_list_tail
+    if tree.Nodes[ptr].Part.Id != syntax.Name2Id["branch_list"] {
+        panic("invalid usage of BranchList()")
+    }
+    var file = GetFileName(tree)
+    var row, col = GetRowColInfo(tree, ptr)
+    var item_ptrs = FlatSubTree(tree, ptr, "branch", "branch_list_tail")
+    var buf strings.Builder
+    buf.WriteString("if (false) { void(0) }")
+    for _, item_ptr := range item_ptrs {
+        // branch = @otherwise :! expr! | expr! :! expr!
+        var row, col = GetRowColInfo(tree, item_ptr)
+        var children = Children(tree, item_ptr)
+        var condition string
+        var _, is_otherwise = children["@otherwise"]
+        if is_otherwise {
+            condition = "true"
+        } else {
+            condition = f(TranspileFirstChild(tree, item_ptr), file, row, col)
+        }
+        var value = TranspileLastChild(tree, item_ptr)
+        var condition_bool = fmt.Sprintf (
+            "%v(%v, [%v], %v, %v, %v)",
+            G(CALL), G(REQ_BOOL), condition, file, row, col,
+        )
+        fmt.Fprintf (
+            &buf, " else if (%v) { return %v }",
+            condition_bool, value,
+        )
+    }
+    fmt.Fprintf (
+        &buf, " else { %v(%v, [], %v, %v, %v) }",
+        G(CALL), err, file, row, col,
+    )
+    return buf.String()
+}
+
+
 func SubPatternList (tree Tree, ptr int, use_index bool) string {
     if tree.Nodes[ptr].Part.Id != syntax.Name2Id["sub_pattern_list"] {
         panic("invalid usage of SubPatternList()")

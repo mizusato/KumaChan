@@ -5,6 +5,13 @@ function require_bool (value) {
 }
 
 
+function require_type (value) {
+    // match x { require_type(T): expr, ... }
+    ensure(is(value, Types.Type), 'not_type')
+    return value
+}
+
+
 function require_promise (object) {
     // await should_be_awaitable
     ensure(is(object, Types.Awaitable), 'not_awaitable')
@@ -14,6 +21,11 @@ function require_promise (object) {
 
 function when_expr_failed () {
     ensure(false, 'when_expr_failed')
+}
+
+
+function match_expr_failed () {
+    ensure(false, 'match_expr_failed')
 }
 
 

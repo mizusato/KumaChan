@@ -13,45 +13,32 @@ var LiteralMap = map[string]TransFunction {
     "adv_literal": TranspileFirstChild,
     // brace = when | iife | struct
     "brace": TranspileFirstChild,
-    // when = @when { when_list }!
+    // when = @when {! branch_list }!
     "when": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
-        var list = Transpile(tree, children["when_list"])
-        return fmt.Sprintf("((function(){ %v })())", list)
-    },
-    // when_list = when_item when_list_tail
-    "when_list": func (tree Tree, ptr int) string {
-        var file = GetFileName(tree)
-        var row, col = GetRowColInfo(tree, ptr)
-        var item_ptrs = FlatSubTree(tree, ptr, "when_item", "when_list_tail")
-        var buf strings.Builder
-        buf.WriteString("if (false) { void(0) } ")
-        for _, item_ptr := range item_ptrs {
-            // when_item = expr : expr | @otherwise : expr
-            var row, col = GetRowColInfo(tree, item_ptr)
-            var children = Children(tree, item_ptr)
-            var condition string
-            var _, is_otherwise = children["@otherwise"]
-            if is_otherwise {
-                condition = "true"
-            } else {
-                condition = TranspileFirstChild(tree, item_ptr)
-            }
-            var value = TranspileLastChild(tree, item_ptr)
-            var condition_bool = fmt.Sprintf (
-                "%v(%v, [%v], %v, %v, %v)",
-                G(CALL), G(REQ_BOOL), condition, file, row, col,
-            )
-            fmt.Fprintf (
-                &buf, "else if (%v) { return %v }",
-                condition_bool, value,
-            )
-        }
-        fmt.Fprintf (
-            &buf, "else { %v(%v, [], %v, %v, %v) }",
-            G(CALL), G(WHEN_FAILED), file, row, col,
+        return fmt.Sprintf (
+            "((function(){ %v })())",
+            BranchList (
+                tree, children["branch_list"],
+                CondBranch, G(WHEN_FAILED),
+            ),
         )
-        return buf.String()
+    },
+    // match = @match expr {! branch_list }!
+    "match": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var declare_target = fmt.Sprintf (
+            "let %v = %v;",
+            MATCH_TARGET, Transpile(tree, children["expr"]),
+        )
+        return fmt.Sprintf (
+            "((function(){ %v %v })())",
+            declare_target,
+            BranchList (
+                tree, children["branch_list"],
+                MatchBranch, G(MATCH_FAILED),
+            ),
+        )
     },
     // observer = @observer body
     "observer": func (tree Tree, ptr int) string {

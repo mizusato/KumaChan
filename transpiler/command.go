@@ -369,52 +369,25 @@ var CommandMap = map[string]TransFunction {
             return ""
         }
     },
-    // cmd_switch = @switch { cases default }!
-    "cmd_switch": func (tree Tree, ptr int) string {
+    // cmd_switch = switch_if | switch_match
+    "cmd_switch": TranspileFirstChild,
+    // switch_if = @switch @if { cases! }!
+    "switch_if": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
-        var cases = Transpile(tree, children["cases"])
-        var default_ = Transpile(tree, children["default"])
+        return Cases(tree, children["cases"], CondBranch)
+    },
+    // switch_match = @switch @match expr {! cases! }!
+    "switch_match": func (tree Tree, ptr int) string {
+        var children = Children(tree, ptr)
+        var declare_target = fmt.Sprintf (
+            "let %v = %v;",
+            MATCH_TARGET, Transpile(tree, children["expr"]),
+        )
         return fmt.Sprintf (
-            "if (false) { void(0) }%v%v",
-            cases, default_,
+            "{ %v %v }",
+            declare_target,
+            Cases(tree, children["cases"], MatchBranch),
         )
-    },
-    // cases? = case cases
-    "cases": func (tree Tree, ptr int) string {
-        var case_ptrs = FlatSubTree(tree, ptr, "case", "cases")
-        var buf strings.Builder
-        for _, case_ptr := range case_ptrs {
-            buf.WriteString(Transpile(tree, case_ptr))
-        }
-        return buf.String()
-    },
-    // case = @case expr! block!
-    "case": func (tree Tree, ptr int) string {
-        var children = Children(tree, ptr)
-        var expr_ptr = children["expr"]
-        var condition = Transpile(tree, expr_ptr)
-        var file = GetFileName(tree)
-        var row, col = GetRowColInfo(tree, expr_ptr)
-        var block = Transpile(tree, children["block"])
-        return fmt.Sprintf(
-            " else if (%v(%v, [%v], %v, %v, %v)) %v",
-            G(CALL), G(REQ_BOOL), condition, file, row, col, block,
-        )
-    },
-    // default? = @default block!
-    "default": func (tree Tree, ptr int) string {
-        if NotEmpty(tree, ptr) {
-            var children = Children(tree, ptr)
-            var block = Transpile(tree, children["block"])
-            return fmt.Sprintf(" else %v", block)
-        } else {
-            var file = GetFileName(tree)
-            var row, col = GetRowColInfo(tree, ptr)
-            return fmt.Sprintf (
-                " else { %v(%v, [], %v, %v, %v) }",
-                G(CALL), G(SWITCH_FAILED), file, row, col,
-            )
-        }
     },
     // cmd_for = @for for_params! @in expr! block!
     "cmd_for": func (tree Tree, ptr int) string {

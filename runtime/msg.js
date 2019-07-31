@@ -91,6 +91,7 @@ const MSG = {
     key_error: key => `key error: requested key '${key}' does not exist`,
     index_error: index => `index ${index} out of range`,
     not_bool: 'given expression did not evaluate to a boolean value',
+    not_type: 'given expression did not evaluate to a type object',
     not_awaitable: 'expression to await did not evaluate to a awaitable value',
     not_iterable: i => `comprehension argument #${i} is not iterable`,
     element_not_iterable: 'flat(): non-iterable element appeared in sequence',
@@ -145,8 +146,9 @@ const MSG = {
     ),
     module_not_exist: mod => `module ${mod} does not exist`,
     not_repr: p => 'string format parameter ${' + p + '} is not representable',
-    when_expr_failed: 'all conditions evaluated to false in when expression',
-    switch_cmd_failed: 'all conditions evaluated to false in switch command',
+    when_expr_failed: 'unable to find correct branch in this when expression',
+    match_expr_failed: 'unable to find correct branch in this match expression',
+    switch_cmd_failed: 'unable to find correct branch in this switch command',
     signature_invalid_arg: i => (
         `invalid function signature: non-type object given for parameter #${i}`
     ),

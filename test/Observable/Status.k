@@ -2,16 +2,16 @@ promise {
     enum Status { Running, Error, Complete }
     let make_status = lambda (s: Status) {
         return observer {
-            switch {
-            case s is Status.Running {
-                push(1)
-            }
-            case s is Status.Error {
-                push(custom_error('Oops!'))
-            }
-            case s is Status.Complete {
-                push(Complete)
-            }
+            switch match s {
+                Status.Running {
+                    push 1
+                }
+                Status.Error {
+                    push custom_error('Oops!')
+                }
+                Status.Complete {
+                    push Complete
+                }
             }
         }
     }
