@@ -17,7 +17,8 @@ invoke {
             let value2 = get_value(need_error)
         }
         return value + value1 + value2
-        @handle error {
+        ...
+        handle error {
             unless positive {
                 return -1
             }

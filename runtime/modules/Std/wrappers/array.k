@@ -48,7 +48,8 @@ class Array<T> is Getter<Index, T>, Setter<Index, T>, SliceGetter {
                 l -> pop()
             }
         })
-        @handle error {
+        ...
+        handle error {
             unless type_correct (i) {
                 panic MSG.array_invalid_init(i)
             }
@@ -66,7 +67,8 @@ class Array<T> is Getter<Index, T>, Setter<Index, T>, SliceGetter {
         let element = data.get(i)
         ensure consistent { element is T }
         return element
-        @handle error {
+        ...
+        handle error {
             unless index_valid {
                 panic MSG.array_invalid_index(i, L)
             }
@@ -79,7 +81,8 @@ class Array<T> is Getter<Index, T>, Setter<Index, T>, SliceGetter {
         let L = data.length()
         ensure index_valid { i < L }
         data.set(i, value)
-        @handle error {
+        ...
+        handle error {
             unless index_valid {
                 panic MSG.array_invalid_index(i, L)
             }
@@ -111,7 +114,8 @@ class Array<T> is Getter<Index, T>, Setter<Index, T>, SliceGetter {
                 return (hi - lo)
             }
         })
-        @handle error {
+        ...
+        handle error {
             unless slice_valid {
                 panic MSG.array_invalid_slice()
             }
@@ -126,7 +130,8 @@ class Array<T> is Getter<Index, T>, Setter<Index, T>, SliceGetter {
     append (value: T) -> Void {
         ensure supported { data.append is not Nil }
         data.append(value)
-        @handle error {
+        ...
+        handle error {
             unless supported {
                 panic MSG.array_unsupported('append()')
             }
@@ -135,7 +140,8 @@ class Array<T> is Getter<Index, T>, Setter<Index, T>, SliceGetter {
     prepend (value: T) -> Void {
         ensure supported { data.prepend is not Nil }
         data.prepend(value)
-        @handle error {
+        ...
+        handle error {
             unless supported {
                 panic MSG.array_unsupported('prepend()')
             }
@@ -144,7 +150,8 @@ class Array<T> is Getter<Index, T>, Setter<Index, T>, SliceGetter {
     insert (after: Index, value: T) -> Void {
         ensure supported { data.insert is not Nil }
         data.insert(after, value)
-        @handle error {
+        ...
+        handle error {
             unless supported {
                 panic MSG.array_unsupported('insert()')
             }
@@ -153,7 +160,8 @@ class Array<T> is Getter<Index, T>, Setter<Index, T>, SliceGetter {
     shift () -> Void {
         ensure supported { data.shift is not Nil }
         data.shift()
-        @handle error {
+        ...
+        handle error {
             unless supported {
                 panic MSG.array_unsupported('shift()')
             }
@@ -162,7 +170,8 @@ class Array<T> is Getter<Index, T>, Setter<Index, T>, SliceGetter {
     pop () -> Void {
         ensure supported { data.pop is not Nil }
         data.pop()
-        @handle error {
+        ...
+        handle error {
             unless supported {
                 panic MSG.array_unsupported('pop()')
             }
@@ -208,7 +217,8 @@ class Array<T> is Getter<Index, T>, Setter<Index, T>, SliceGetter {
             }
         }
         return true
-        @handle error {
+        ...
+        handle error {
             unless type_valid {
                 panic MSG.array_equal_type_invalid()
             }
@@ -218,7 +228,8 @@ class Array<T> is Getter<Index, T>, Setter<Index, T>, SliceGetter {
         ensure cast_valid { T is TypeType<Array> }
         let E = T.ElementType
         return Array<E>(self -> unwrap())
-        @handle error {
+        ...
+        handle error {
             unless cast_valid {
                 panic MSG.array_cast_invalid()
             }
@@ -261,7 +272,8 @@ function i_sort (a: Array, compare: Arity<2>) -> Void {
             }
         }
     }
-    @handle error {
+    ...
+    handle error {
         unless compare_valid {
             panic MSG.sort_compare_invalid()
         }
@@ -291,7 +303,8 @@ function qi_sort (a: Array, compare: Arity<2>) -> Void {
     let hi = a[m:]
     qi_sort(lo, compare)
     qi_sort(hi, compare)
-    @handle error {
+    ...
+    handle error {
         unless compare_valid {
             panic MSG.sort_compare_invalid()
         }

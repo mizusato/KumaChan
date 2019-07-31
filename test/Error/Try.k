@@ -7,7 +7,8 @@ invoke {
             raise_error()
         }
         return 'impossible'
-        @handle error {
+        ...
+        handle error {
             failed to do_sth {
                 return 'caught'
             }

@@ -21,7 +21,8 @@ class PropertyCollection is Getter<String, Object>, Setter<String, Object> {
             set map[item.name] = copy PropertyBody(item)
         }
         return PropertyCollection(map)
-        @handle error {
+        ...
+        handle error {
             unless type_correct {
                 panic MSG.property_invalid()
             }
@@ -41,7 +42,8 @@ class PropertyCollection is Getter<String, Object>, Setter<String, Object> {
                 return Nil
             }
         }
-        @handle error {
+        ...
+        handle error {
             unless property_exists (name) {
                 panic MSG.property_not_exist(name)
             }
@@ -51,7 +53,8 @@ class PropertyCollection is Getter<String, Object>, Setter<String, Object> {
         ensure exists { properties->has(name) }
         ensure writable { properties[name].set is not Nil }
         properties[name].set(value)
-        @handle error {
+        ...
+        handle error {
             unless exists {
                 panic MSG.property_not_exist(name)
             }

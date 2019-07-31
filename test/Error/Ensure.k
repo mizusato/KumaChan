@@ -2,7 +2,8 @@ invoke {
     function test () -> String {
         ensure ok { 1+1 == 3 }
         return 'impossible'
-        @handle error {
+        ...
+        handle error {
             unless ok {
                 return 'caught'
             }

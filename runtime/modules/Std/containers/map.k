@@ -16,7 +16,8 @@ class Map<K, V> is Getter<K, V>, Setter<K, V> {
         let value = map -> get(key)
         ensure consistent { value is V }
         return value
-        @handle error {
+        ...
+        handle error {
             unless nil_allowed {
                 panic MSG.map_value_not_found()
             }
@@ -31,7 +32,8 @@ class Map<K, V> is Getter<K, V>, Setter<K, V> {
     remove (key: K) -> Void {
         ensure key_exists { map -> has(key) }
         map -> delete(key)
-        @handle error {
+        ...
+        handle error {
             unless key_exists {
                 panic MSG.map_invalid_remove()
             }

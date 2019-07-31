@@ -14,7 +14,8 @@ class Set<T> {
     remove (element: T) -> Void {
         ensure element_exists { set -> has(element) }
         set -> delete(element)
-        @handle error {
+        ...
+        handle error {
             unless element_exists {
                 panic MSG.set_invalid_remove()
             }

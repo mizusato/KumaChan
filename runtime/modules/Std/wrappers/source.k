@@ -6,7 +6,8 @@ class Source<T> {
                 next: lambda (x) {
                     ensure valid { x is T }
                     push x
-                    @handle error {
+                    ...
+                    handle error {
                         unless valid {
                             unsub()
                             panic type_error
