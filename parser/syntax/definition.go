@@ -283,7 +283,7 @@ var SyntaxDefinition = [...] string {
     "unless = @unless name unless_para { commands }",
     "unless_para? = Call ( namelist )",
     "failed = @failed opt_to name { commands }",
-    "finally? = _at @finally { commands }",
+    "finally? = @finally { commands }",
     /* Lambda */
     "lambda = lambda_block | lambda_inline",
     "lambda_block = @lambda paralist_block ret_lambda body!",
