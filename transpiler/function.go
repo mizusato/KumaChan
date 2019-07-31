@@ -155,7 +155,7 @@ var FunctionMap = map[string]TransFunction {
     "body": func (tree Tree, ptr int) string {
         // note: the rule name "body" is depended by CommandMap["block"]
         var children = Children(tree, ptr)
-        // mock_hook? = _at @mock name! { commands }
+        // mock_hook? = ... @mock name! { commands }
         var mock_ptr = children["mock_hook"]
         var should_mock = false
         var mock_commands_ptr = -1
@@ -192,7 +192,7 @@ var FunctionMap = map[string]TransFunction {
             return commands
         }
     },
-    // handle_hook? = _at @handle name { handle_cmds }! finally
+    // handle_hook? = ... @handle name { handle_cmds }! finally
     "handle_hook": func (tree Tree, ptr int) string {
         // note: the rule name "handle_hook" is depended by CommandMap["block"]
         var children = Children(tree, ptr)
@@ -220,7 +220,7 @@ var FunctionMap = map[string]TransFunction {
         }
         return buf.String()
     },
-    // finally? = _at @finally { commands }
+    // finally? = @finally { commands }
     "finally": func (tree Tree, ptr int) string {
         var children = Children(tree, ptr)
         return Commands(tree, children["commands"], false)
