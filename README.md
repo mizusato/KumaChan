@@ -49,7 +49,7 @@ $ cat << EOF > /tmp/test.k
 module main
 print('Change The World')
 EOF
-$ ./run.sh /tmp/test.k
+$ ./run.js /tmp/test.k
 ```
 
 ## Syntax Highlighting
