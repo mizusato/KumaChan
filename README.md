@@ -2,11 +2,13 @@
 
 KumaChan (ja. くまちゃん) is an experimental programming language, and is still under development.
 
-## Yet  Another Programming Language?
+## Yet Another Programming Language?
 
 I have been using JavaScript for several years and can't tolerate the BAD DESIGN of it anymore, so I created a new language.
 
-However, the new language does NOT intend to be a substitution of JavaScript. It's designed for GUI (aka. client-side) programming only, and does NOT intend to be used on server-side.
+However, the new language does NOT intend to be a substitution of JavaScript. It's designed for GUI (aka. client-side) programming only, and does NOT intend to be used on server-side. Its design focuses more on abstraction ability rather than performance.
+
+For more details, see [documentation](https://mizusato.gitbook.io/kumachan-documentation/).
 
 ## Development Progress
 
@@ -18,7 +20,41 @@ Rewriting the `runtime` using Golang may cause difficulty when developing Web ap
 
 But using JavaScript implementation of the `runtime` in production also requires a rewrite of the current code, because the current implementation is too naive to be used in production, and is not integrated with Webpack ecosystem.
 
-Currently I am working on the rewriting of `runtime`. After I finished the new `runtime`, I am going to integrate GTK2 with it using [go-gtk](https://github.com/mattn/go-gtk) to enable desktop GUI programming for this language.
+Currently I am working on the rewriting of `runtime`. After I finished the new `runtime`, I am going to integrate GTK2 with it using [go-gtk](https://github.com/mattn/go-gtk) to enable desktop GUI programming for this language. I hope it can start the age of declarative programming for native desktop GUI.
+
+## Usage
+
+### Build
+
+Make sure you have `make`, `bash`, `golang`, `python3` and `nodejs` installed on your system before building.
+
+```console
+$ git clone https://notabug.org/mizusato/KumaChan
+$ cd KumaChan
+$ make
+```
+
+### Run the REPL
+
+```console
+$ ./repl.js
+```
+
+### Run a script file
+
+Note: shebang is NOT supported currently.
+
+```console
+$ cat << EOF > /tmp/test.k
+module main
+print('Change The World')
+EOF
+$ ./run.sh /tmp/test.k
+```
+
+## Syntax Highlighting
+
+There is a plugin called `language-kumachan` for the Atom Editor. It is still naive, therefore incorrect hightlight could happen.
 
 ## LICENSE
 
