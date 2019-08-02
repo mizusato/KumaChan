@@ -191,5 +191,8 @@ const MSG = {
     ),
     invalid_tree_node_inflater: (
         'invalid tree node inflater: should be a $<Hash,List><?>'
+    ),
+    scanf_not_found: (
+        'using read() requires you to have "node-scanf" module installed'
     )
 }

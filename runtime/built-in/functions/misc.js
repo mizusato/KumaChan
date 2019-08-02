@@ -4,6 +4,32 @@ pour(built_in_functions, {
         'function get_class (i: Instance) -> Class',
             i => i.class_
     ),
+    // Input
+    read: fun (
+        'function read (format: String) -> Object',
+            format => {
+                try {
+                    require.resolve('scanf')
+                } catch (e) {
+                    if (e.code == 'MODULE_NOT_FOUND') {
+                        ensure(false, 'scanf_not_found')
+                    }
+                }
+                let result = require('scanf')(format)
+                let normalize = x => {
+                    if (x === null || Number.isNaN(x)) {
+                        return Nil
+                    } else {
+                        return x
+                    }
+                } 
+                if (is(result, Types.List)) {
+                    return result.map(normalize)
+                } else {
+                    return normalize(result)
+                }
+            }
+    ),
     // Ouput
     print: f (
         'print',
