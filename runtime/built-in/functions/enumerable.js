@@ -20,6 +20,10 @@ pour(built_in_functions, {
                 }
             })())
     ),
+    has_key: fun (
+        'function has_key (h: Hash, k: String) -> Bool',
+            (h, k) => has(k, h)
+    ),
     map_key: f (
         'map_key',
         'function map_key (h: Hash, f: Arity<1>) -> Hash',
