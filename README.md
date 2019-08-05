@@ -54,7 +54,7 @@ $ ./run.js /tmp/test.k
 
 ## Syntax Highlighting
 
-There is a plugin called `language-kumachan` for the Atom Editor. It is still naive, therefore incorrect hightlight could happen.
+There is a plugin called `language-kumachan` for the Atom Editor. It is still naive, therefore incorrect highlight could happen.
 
 ## LICENSE
 
