@@ -85,8 +85,12 @@ const MSG = {
         `${'${'+(index+1)+'}'} (index ${index}) does not exist in given list`
     ),
     format_not_all_converted: (
-        'not all arguments converted during formatting string'
+        'not all elements in list converted during formatting string'
     ),
+    format_none_converted: (
+        'none of entries in struct/hash converted during formatting string'
+    ),
+    format_empty_list: 'unable to format string by empty list',
     get_from_nil: 'unable to perform get operation on Nil without nil flag',
     key_error: key => `key error: requested key '${key}' does not exist`,
     index_error: index => `index ${index} out of range`,
