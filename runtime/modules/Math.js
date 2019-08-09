@@ -23,6 +23,14 @@ register_simple_module('Math', {
                 return Math.log(x)
             }
     ),
+    rad2deg: fun (
+        'function rad2deg (x: Number) -> Number',
+            x => 180 * x / Math.PI
+    ),
+    deg2rad: fun (
+        'function deg2rad (x: Number) -> Number',
+            x => Math.PI * x / 180
+    ),
     sin: fun (
         'function sin (x: Number) -> Number',
             x => Math.sin(x)

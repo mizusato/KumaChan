@@ -9,6 +9,8 @@ invoke {
     assert float_equal(cbrt(-8), -2)
     assert float_equal(exp(10), E^10)
     assert float_equal(log(exp(10)), 10)
+    assert float_equal(rad2deg(PI/3), 60)
+    assert float_equal(PI/3, deg2rad(60))
     assert float_equal(sin(PI/3), sqrt(3)/2)
     assert float_equal(cos(PI/3), 1/2)
     assert float_equal(tan(PI/3), sqrt(3))
