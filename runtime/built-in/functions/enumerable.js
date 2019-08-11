@@ -20,9 +20,17 @@ pour(built_in_functions, {
                 }
             })())
     ),
-    has_key: fun (
-        'function has_key (h: Hash, k: String) -> Bool',
+    has: fun (
+        'function has (h: Hash, k: String) -> Bool',
             (h, k) => has(k, h)
+    ),
+    delete: fun (
+        'function delete (h: Hash, k: String) -> Void',
+            (h, k) => {
+                ensure(has(k, h), 'hash_invalid_delete')
+                delete h[k]
+                return Void
+            }
     ),
     map_key: f (
         'map_key',

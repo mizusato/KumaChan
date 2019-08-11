@@ -91,6 +91,7 @@ const MSG = {
         'none of entries in struct/hash converted during formatting string'
     ),
     format_empty_list: 'unable to format string by empty list',
+    hash_invalid_delete: 'deleting a non-existing entry of hash',
     get_from_nil: 'unable to perform get operation on Nil without nil flag',
     key_error: key => `key error: requested key '${key}' does not exist`,
     index_error: index => `index ${index} out of range`,
