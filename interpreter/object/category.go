@@ -34,6 +34,6 @@ const (
     OC_NeverType
 )
 
-func (obj Object) is (oc ObjectCategory) bool {
+func (obj Object) Is (oc ObjectCategory) bool {
     return obj.__Category == oc
 }

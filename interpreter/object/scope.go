@@ -22,15 +22,15 @@ type Identifier uint64
 type Variable struct {
     __Fixed   bool
     __Type    Object
-    __Object  Object
+    __Value   Object
 }
 
 type ValEntry struct {
-    __Name   Identifier
-    __Value  Variable
+    __Name  Identifier
+    __Val   Variable
 }
 
 type RefEntry struct {
-    __Name        Identifier
-    __Reference   *Variable
+    __Name  Identifier
+    __Ref   *Variable
 }
