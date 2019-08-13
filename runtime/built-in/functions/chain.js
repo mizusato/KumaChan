@@ -475,11 +475,17 @@ pour(built_in_functions, {
                             ensure(false, 'value_not_observable')
                         }
                         if (unsub.size < limit) {
+                            let sync = true
+                            let sync_complete = false
                             let unsub_i = obsv(x).subscribe(subs({
                                 next: y => push(y),
                                 error: e => { stop(); push(e) },
                                 complete: () => {
-                                    unsub.delete(unsub_i)
+                                    if (!sync) {
+                                        unsub.delete(unsub_i)
+                                    } else {
+                                        sync_complete = true
+                                    }
                                     if (waiting.length > 0) {
                                         next_callback(waiting.shift())
                                     } else if (source_complete) {
@@ -489,7 +495,10 @@ pour(built_in_functions, {
                                     }
                                 }
                             }))
-                            unsub.add(unsub_i)
+                            sync = false
+                            if (!sync_complete) {
+                                unsub.add(unsub_i)
+                            }
                         } else {
                             waiting.push(x)
                         }
@@ -522,17 +531,26 @@ pour(built_in_functions, {
                             stop()
                             ensure(false, 'value_not_observable')
                         }
+                        let sync = true
+                        let sync_complete = false
                         let unsub_i = obsv(x).subscribe(subs({
                             next: y => push(y),
                             error: e => { stop(); push(e) },
                             complete: () => {
-                                unsub.delete(unsub_i)
+                                if (!sync) {
+                                    unsub.delete(unsub_i)
+                                } else {
+                                    sync_complete = true
+                                }
                                 if (source_complete && unsub.size == 0) {
                                     push(Complete)
                                 }
                             }
                         }))
-                        unsub.add(unsub_i)
+                        sync = false
+                        if (!sync_complete) {
+                            unsub.add(unsub_i)
+                        }
                     },
                     error: e => { stop(); push(e) },
                     complete: () => {
