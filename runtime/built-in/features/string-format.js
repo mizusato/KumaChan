@@ -36,17 +36,17 @@ let string_format = f (
     'function string_format (s: String, l: List) -> String',
         (s, l) => {
             ensure(l.length != 0, 'format_empty_list')
-            let used = 0
+            let used = l.map(_ => false)
             let result = s.replace(/\$\{(\d+)\}/g, (match, p1) => {
                 let index = parseInt(p1) - 1
                 let ok = (0 <= index && index < l.length)
                 ensure(ok, 'format_invalid_index', index)
-                used += 1
+                used[index] = true
                 let value = l[index]
                 ensure(is(value, Types.Representable), 'not_repr', p1)
                 return str(value)
             })
-            let ok = (used === l.length)
+            let ok = forall(used, i => i === true)
             ensure(ok, 'format_not_all_converted')
             return result
         }
