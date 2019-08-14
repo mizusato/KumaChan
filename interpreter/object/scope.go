@@ -1,7 +1,6 @@
 package object
 
 type Scope struct {
-    __Bitmap           uint64
     __Context          *Scope
     __Immutable        bool
     __InlineValsCount  uint8
@@ -17,12 +16,10 @@ type Scope struct {
 const VAL_INLINE_MAX = 8
 const REF_INLINE_MAX = 4
 
-type Identifier uint64
-
 type Variable struct {
-    __Fixed   bool
-    __Type    Object
-    __Value   Object
+    __IsFixed       bool    // defined by 'let' or 'var'
+    __Value         Object  // current value of variable
+    __NonFixedType  Object  // if defined by 'var', a type should be stored
 }
 
 type ValEntry struct {

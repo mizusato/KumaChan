@@ -1,13 +1,15 @@
 package object
 
+type EnqueFunction = func(Object, []Object, func())
+
 type ObjectContext struct {
     __NextSingletonId   uint64
-    __EnqueCallback     func(Object,[]Object)
+    __EnqueCallback     EnqueFunction
 }
 
-func NewObjectContext (enque_callback func(Object,[]Object)) *ObjectContext {
+func NewObjectContext (enque EnqueFunction) *ObjectContext {
     return &ObjectContext {
         __NextSingletonId: 4,
-        __EnqueCallback: enque_callback,
+        __EnqueCallback: enque,
     }
 }

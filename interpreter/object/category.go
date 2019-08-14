@@ -27,9 +27,10 @@ const (
     OC_Enum
     OC_NativeType
     OC_FiniteSetType
-    OC_CompoundType
     OC_GenericType
     OC_SignatureType
+    OC_SubType
+    OC_CompoundType
     OC_AnyType
     OC_NeverType
 )
