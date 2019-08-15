@@ -25,14 +25,13 @@ const (
     OC_Schema
     OC_Struct
     OC_Enum
+    OC_AnyType
+    OC_NeverType
     OC_NativeType
-    OC_FiniteSetType
     OC_GenericType
     OC_SignatureType
     OC_SubType
     OC_CompoundType
-    OC_AnyType
-    OC_NeverType
 )
 
 func (obj Object) Is (oc ObjectCategory) bool {

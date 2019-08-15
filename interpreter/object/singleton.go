@@ -1,7 +1,5 @@
 package object
 
-import ."../assertion"
-
 var Nil = Object {
     __Category: OC_Singleton,
     __Inline64: 0,
@@ -22,13 +20,10 @@ var Complete = Object {
     __Inline64: 3,
 }
 
-func NewSingleton (context *ObjectContext) Object {
-    var id = context.__NextSingletonId
-    var new_id = id + 1
-    Assert(new_id > id, "Singleton: run out of singleton object id")
-    context.__NextSingletonId = new_id
+func NewSingleton (context *ObjectContext, name string) Object {
+    var id = context.__GetAtomicTypeId(name)
     return Object {
         __Category: OC_Singleton,
-        __Inline64: id,
+        __Inline64: uint64(id),
     }
 }
