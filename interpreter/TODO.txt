@@ -21,3 +21,5 @@ Those caveats of type system will be fixed in the new implementation.
                but type Foo<T> = invoke { class Bar { ... }; return Bar } is NOT
         - implement this feature by assign a common ID to the
                relationship between GenericType and class/... when compiling
+    - FiniteSetType is no longer atomic. {A, B, C, ...} should be a sugar of
+        IsExactly<A> | IsExactly<B> | IsExactly<C> | ...
