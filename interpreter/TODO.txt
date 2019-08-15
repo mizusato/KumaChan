@@ -34,6 +34,8 @@ Those caveats of type system will be fixed in the new implementation.
         - implement this feature by assign a common ID to the
                relationship between GenericType and class/... when compiling
         - forbid meaningless direct use of GenericType, e.g. "x is Maybe"
+    - SignatureType (function signature) can be regarded as a special kind of
+        GentericType, thus the restrictions on GenericType also applies to it
     - FiniteSetType is no longer atomic. {A, B, C, ...} should be a sugar of
         IsExactly<A> | IsExactly<B> | IsExactly<C> | ...
 
