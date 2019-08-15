@@ -1,5 +1,7 @@
 package object
 
+import ."../assertion"
+
 var Nil = Object {
     __Category: OC_Singleton,
     __Inline64: 0,
@@ -23,9 +25,7 @@ var Complete = Object {
 func NewSingleton (context *ObjectContext) Object {
     var id = context.__NextSingletonId
     var new_id = id + 1
-    if new_id < id {
-        panic("run out of singleton object id")
-    }
+    Assert(new_id > id, "Singleton: run out of singleton object id")
     context.__NextSingletonId = new_id
     return Object {
         __Category: OC_Singleton,

@@ -1,5 +1,7 @@
 package object
 
+import ."../assertion"
+
 type Identifier int
 
 type IdPool struct {
@@ -20,6 +22,7 @@ func (pool *IdPool) GetId (str string) Identifier {
         return id
     } else {
         var id = len(pool.__Id2Str)
+        Assert(id+1 > id, "IdPool: run out of identifier pool")
         pool.__Id2Str = append(pool.__Id2Str, str)
         pool.__Str2Id[str] = Identifier(id)
         return Identifier(id)
@@ -27,8 +30,9 @@ func (pool *IdPool) GetId (str string) Identifier {
 }
 
 func (pool *IdPool) GetString (id Identifier) string {
-    if !(0 <= int(id) && int(id) < len(pool.__Id2Str)) {
-        panic("trying to get string of invalid identifier")
-    }
+    Assert (
+        0 <= int(id) && int(id) < len(pool.__Id2Str),
+        "IdPool: unable to get string of invalid identifier",
+    )
     return pool.__Id2Str[int(id)]
 }
