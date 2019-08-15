@@ -1,0 +1,23 @@
+1. Scope
+
+Prevent closures from capturing the whole scope. Capture individual variables instead.
+
+----------------------------------------
+
+2. Type System
+
+The initial implementation of KumaChan runtime allows side-effect
+    during type checking, and type template (mechanics of generics) can
+    cause memory leak. Definition of a type can change over time.
+Those caveats of type system will be fixed in the new implementation.
+    - Change "SimpleType" to "SubType", restrict condition expressions.
+    - Assign a unique ID (uint64) for each atomic type
+    - Assign a name for each type ID
+    - Use normal form of propositional formula instead of iterating truth table
+    - Change "TypeTemplate" to "GenericType"
+    - Restrict arguments of GenericType to global variables and constants
+    - GenericType *itself* only works for class, interface, and schema
+        - e.g. class Foo<T> { .. } is of Foo type,
+               but type Foo<T> = invoke { class Bar { ... }; return Bar } is NOT
+        - implement this feature by assign a common ID to the
+               relationship between GenericType and class/... when compiling
