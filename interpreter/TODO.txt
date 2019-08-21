@@ -45,3 +45,4 @@ Those caveats of type system will be fixed in the new implementation.
 
 - Support nested loop semantics in list comprehension
 - Support SubModule definition
+- Support replace-current-frame call: return exec f()
