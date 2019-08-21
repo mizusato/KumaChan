@@ -3,14 +3,30 @@ package object
 import ."../assertion"
 
 type TypeId int
-type EnqueFunction = func(Object, []Object, func())
 
-type ObjectContext struct {
-    __AtomicTypeNames   []string
-    __EnqueCallback     EnqueFunction
+type CallbackPriority int
+const (
+    Low  CallbackPriority = iota
+    High
+)
+
+type Callback struct {
+    IsGroup    bool
+    Argc       int
+    Argv       [MAX_ARGS]Object
+    Callee     Object
+    Callees    []Object
+    Feedback   func()
 }
 
-func NewObjectContext (enque EnqueFunction) *ObjectContext {
+type CallbackEnquer = func(Callback, CallbackPriority)
+
+type ObjectContext struct {
+    __AtomicTypeNames      []string
+    __EnqueCallback        CallbackEnquer
+}
+
+func NewObjectContext (enque CallbackEnquer) *ObjectContext {
     return &ObjectContext {
         __AtomicTypeNames: []string {"Nil","Void","NotFound","Complete"},
         __EnqueCallback: enque,
