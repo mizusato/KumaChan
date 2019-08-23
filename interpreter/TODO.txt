@@ -4,7 +4,17 @@ Prevent closures from capturing the entire scope. Capture individual variables i
 
 ----------------------------------------
 
-2. Class & Schema
+2. Function
+
+Upgrade UFCS to pipeline: F(x) -> (G())(arg2, arg3) <=> (G())(F(x), arg2, arg3)
+Separate:
+    - Get/Set Syntax: object[key]
+    - Method/Field Syntax: object.field
+    - UFCS/Pipeline Syntax: object -> f(arg2, arg3)
+
+----------------------------------------
+
+3. Class & Schema
 
 - Support both "self" (the instance itslf) and "Self" (the class itself) in instance scopes
 - Support "MaybeSelf" field type in schema definition
@@ -13,35 +23,52 @@ Prevent closures from capturing the entire scope. Capture individual variables i
 
 ----------------------------------------
 
-3. Type System
+4. Type System
 
 The initial implementation of KumaChan runtime allows side-effect
     during type checking, and type template (mechanics of generics) can
     cause memory leak. Definition of a type can change over time.
 Those caveats of type system will be fixed in the new implementation.
-    - Change "SimpleType" to "SubType", restrict condition expressions.
-    - SubType can only be subset of primitive types or immutable struct types
+    - Remove "SimpleType"
     - Assign a unique ID (uint64) for each atomic type
     - Assign a name for each type ID
-    - Use normal form of propositional formula instead of iterating truth table
+    - Dump entire truth table in CompoundType to generate a type fingerprint
     - Change "TypeTemplate" to "GenericType"
     - Restrict arguments of GenericType to global types and primitive constants
     - Global types are types defined in the global scope (built-in),
         or types defined in module scopes by the "type T = .." statement
-    - GenericType *itself* only works for class, interface, and schema
-        - e.g. class Foo<T> { .. } is of Foo type,
+    - GenericType *itself* only works for:
+        - class
+        - interface
+        - schema
+        - built-in generic types (promise, array, iterator...)
+            - e.g. class Foo<T> { .. } is of Foo type,
                but type Foo<T> = invoke { class Bar { .. }; return Bar } is NOT
-        - implement this feature by assign a common ID to the
+            - implement this feature by assign a common ID to the
                relationship between GenericType and class/... when compiling
-        - forbid meaningless direct use of GenericType, e.g. "x is Maybe"
+    - Forbid meaningless direct use of GenericType, e.g. "x is Maybe"
     - SignatureType (function signature) can be regarded as a special kind of
         GentericType, thus the restrictions on GenericType also applies to it
     - FiniteSetType is no longer atomic. {A, B, C, ...} should be a sugar of
         IsExactly<A> | IsExactly<B> | IsExactly<C> | ...
+    - Also, Enum is no longer atomic
+    - Enable subset/superset check:
+        - Int is Subset<Int|String>
+        - SomeClass is Subset<SomeInterface>
+    - Built-in generic types has a special initialize/cast syntax:
+        - tuple2<Int,Int> {1,2}; tuple{1,2}; tuple<Int,String>(another)
+        - array<Int> {1,2,3}; array<Int>(another)
+        - map<String,Int> { 'a': 1, 'b': 2, 'c': 3 }; map<String,Int>(another)
+        - iterator<T> { BODY }; iterator { BODY }; iterator<T>(another)
+        - async iterator<T> { BODY }; async iterator<T>(another)
+        - source<T> { BODY }; source<T>(another)
+        - promise<T> { BODY }; promise<T>(another)
+        - error<T>('ErrorCategory', payload)
+    - Above cast is based on subset/superset check
 
 ----------------------------------------
 
-4. Misc
+5. Misc
 
 - Support nested loop semantics in list comprehension
 - Support SubModule definition
