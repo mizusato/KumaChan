@@ -17,7 +17,6 @@ Separate:
 3. Class & Schema
 
 - Support both "self" (the instance itslf) and "Self" (the class itself) in instance scopes
-- Support "MaybeSelf" field type in schema definition
 - Support immutable structs (syntax: "immutable S { FIELD1: TYPE1, ... }")
 - Support schema definition in enum and struct destruct in switch match statement
 
@@ -29,41 +28,37 @@ The initial implementation of KumaChan runtime allows side-effect
     during type checking, and type template (mechanics of generics) can
     cause memory leak. Definition of a type can change over time.
 Those caveats of type system will be fixed in the new implementation.
-    - Remove "SimpleType"
+    - Implement SimpleType using native function (no side-effect)
     - Assign a unique ID (uint64) for each atomic type
     - Assign a name for each type ID
-    - Dump entire truth table in CompoundType to generate a type fingerprint
-    - Change "TypeTemplate" to "GenericType"
-    - Restrict arguments of GenericType to global types and primitive constants
+    - Make CompoundType only support union and intersection (no complement)
+    - Normalize a CompoundType to a union of intersections and atomic types
+    - Restrict arguments of TypeTemplate to global types
     - Global types are types defined in the global scope (built-in),
         or types defined in module scopes by the "type T = .." statement
-    - GenericType *itself* only works for:
-        - class
-        - interface
-        - schema
+    - Default inflation of TypeTemplate (TT<>) only works for:
+        - class (inject a empty interface)
+        - interface (inject a empty base interface)
         - built-in generic types (promise, array, iterator...)
-            - e.g. class Foo<T> { .. } is of Foo type,
-               but type Foo<T> = invoke { class Bar { .. }; return Bar } is NOT
-            - implement this feature by assign a common ID to the
-               relationship between GenericType and class/... when compiling
-    - Forbid meaningless direct use of GenericType, e.g. "x is Maybe"
+            - e.g. class Foo<T> { .. } is of Foo<> type,
+               but use of Foo<> of "type Foo<T> = invoke { ... }" is invalid
     - SignatureType (function signature) can be regarded as a special kind of
         GentericType, thus the restrictions on GenericType also applies to it
     - FiniteSetType is no longer atomic. {A, B, C, ...} should be a sugar of
         IsExactly<A> | IsExactly<B> | IsExactly<C> | ...
-    - Also, Enum is no longer atomic
+    - IsExactly<T> = {T} (OneElementType<T>)
+    - Enum is no longer atomic
     - Enable subset/superset check:
         - Int is Subset<Int|String>
         - SomeClass is Subset<SomeInterface>
     - Built-in generic types has a special initialize/cast syntax:
-        - tuple2<Int,Int> {1,2}; tuple{1,2}; tuple<Int,String>(another)
-        - array<Int> {1,2,3}; array<Int>(another)
+        - array<Int> {1,2,3}; array<Int>(another); array_view<Primitive>(int_array)
         - map<String,Int> { 'a': 1, 'b': 2, 'c': 3 }; map<String,Int>(another)
         - iterator<T> { BODY }; iterator { BODY }; iterator<T>(another)
         - async iterator<T> { BODY }; async iterator<T>(another)
         - source<T> { BODY }; source<T>(another)
         - promise<T> { BODY }; promise<T>(another)
-        - error<T>('ErrorCategory', payload)
+        - error<T>(payload)
     - Above cast is based on subset/superset check
 
 ----------------------------------------
