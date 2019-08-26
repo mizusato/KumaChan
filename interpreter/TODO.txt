@@ -64,9 +64,9 @@ Those caveats of type system will be fixed in the new implementation.
         - Iterator<>
             - iterator<T> { BODY }; iterator { BODY }
             - another as Iterator<T>; Iterator<T> from another
-        - AsyncIterator<>
-            - async iterator<T> { BODY }; async iterator { BODY }
-            - another as AsyncIterator<T>; AsyncIterator<T> from another
+        - Stream<> (AsyncIterator<>)
+            - stream<T> { BODY }; stream { BODY }
+            - another as Stream<T>; Stream<T> from another
         - Source<>
             - source<T> { BODY }; source { BODY }
             - another as Source<T>; Source<T> from another
@@ -76,7 +76,7 @@ Those caveats of type system will be fixed in the new implementation.
         - Error<>
             - FooBarFailed as Error<T>; Error<T> from BazInvalid { ... }
     - Above cast is based on subset/superset check
-    - (duck VALUE) operator to inform the compiler to use duck typing
+    - Above types are classes which are wrappers of native objects
 
 ----------------------------------------
 
