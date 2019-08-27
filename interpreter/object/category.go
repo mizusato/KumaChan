@@ -7,12 +7,14 @@ const (
     OC_Bool
     OC_Byte            // uint8
     OC_Int             // int
-    OC_Float           // float64
+    OC_IEEE754         // float64
     OC_BigInt
     OC_BigFloat
     OC_String          // immutable
     // native
     OC_NativeObject
+    // function
+    OC_Function
     // struct
     OC_Schema          // callable(cast): SCHEMA(struct)
     OC_Struct
@@ -20,10 +22,12 @@ const (
     OC_Class           // callable(construct): CLASS(arg1, ...)
     OC_Interface
     OC_Instance
-    // misc
-    OC_Module
-    OC_Function
+    // generics
     OC_TypeTemplate    // { __Inflater: Object, __HasDefault: bool, ... }
+    OC_FunctionTemplate
+    // module
+    OC_Module
+    // misc types
     OC_OneElementType
     OC_SimpleType      // consists of a func(Object)bool
     OC_SignatureType
