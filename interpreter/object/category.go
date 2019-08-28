@@ -16,7 +16,7 @@ const (
     // function
     OC_Function
     // struct
-    OC_Schema          // callable(cast): SCHEMA(struct)
+    OC_Schema
     OC_Struct
     // OO
     OC_Class           // callable(construct): CLASS(arg1, ...)
