@@ -23,15 +23,14 @@ const (
     OC_Interface
     OC_Instance
     // generics
-    OC_TypeTemplate    // { __Inflater: Object, __HasDefault: bool, ... }
+    OC_TypeTemplate
     OC_FunctionTemplate
+    // misc types
+    OC_PlainType      // consists of a func(Object)bool
+    OC_CompoundType    // union of atomic/intersection types (may be a enum)
+    OC_FunctionSignature
     // module
     OC_Module
-    // misc types
-    OC_OneElementType
-    OC_SimpleType      // consists of a func(Object)bool
-    OC_SignatureType
-    OC_CompoundType    // union of atomic/intersection types (may be a enum)
 )
 
 func (obj Object) Is (oc ObjectCategory) bool {

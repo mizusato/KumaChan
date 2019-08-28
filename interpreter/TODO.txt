@@ -29,7 +29,9 @@ The initial implementation of KumaChan runtime allows side-effect
     during type checking, and type template (mechanics of generics) can
     cause memory leak. Definition of a type can change over time.
 Those caveats of type system will be fixed in the new implementation.
-    - Implement SimpleType using native function (no side-effect)
+    - Use <- (belongs to) instead of 'is' operator; add < (subset operator)
+    - Use : instead of 'is' in class definition
+    - Implement PlainType using native function (no side-effect)
     - Assign a unique ID (uint64) for each atomic type
     - Assign a name for each type ID
     - Make CompoundType only support union and intersection (no complement)
@@ -37,48 +39,44 @@ Those caveats of type system will be fixed in the new implementation.
     - Restrict arguments of TypeTemplate to global types
     - Global types are types defined in the global scope (built-in),
         or types defined in module scopes by the "type T = .." statement
-    - Default inflation of TypeTemplate (TT<>) only works for:
-        - class (inject a empty interface)
-        - interface (inject a empty base interface)
-        - built-in generic types (promise, array, iterator...)
-        - e.g. Array<> and SomeClass<> are valid, but Maybe<> is invalid
-    - SignatureType (function signature) can be regarded as a special kind of
-        GentericType, thus the restrictions on GenericType also applies to it
     - Placeholders in function signature (e.g. $<?><?>) should not be supported
-    - FiniteSetType is no longer atomic. {A, B, C, ...} should be a sugar of
-        IsExactly<A> | IsExactly<B> | IsExactly<C> | ...
-    - IsExactly<T> = {T} (OneElementType<T>)
-    - Enum is no longer atomic
+    - Remove FiniteSetType.
+    - Enum is no longer atomic, just a union type
     - Enable subset/superset check:
         - Int is Subset<Int|String>
         - SomeClass is Subset<SomeInterface>
     - A built-in generic type may have a literal, or can be created by type cast
-        - Array<>, ArrayView<>
+        - Tuple2<T1,T2>; Tuple3<T1,T2,T3>; Tuple4<T1,T2,T3,T4>
+            - tuple { 1, '1' }; Tuple3<Int,Int,String>(1,2,'3')
+        - Array<T>, ArrayView<T>
             - array<Int> {1,2,3}; array<Int>(iterable)
             - array1 as ArrayView<Int>; ArrayView<Int> from array2
             - const array<Int> {1,2,3}
-        - Map<>, MapView<>
+        - Map<K,V>, MapView<K,V>
             - map<String,Int> { 'a': 1, 'b': 2, 'c': 3 }
             - map1 as MapView<Primitive>; MapView<Primitive> from map1
             - const map<Int,Int> { 0: 1, 1: 2, 2: 4 }
-        - Iterator<>
+        - Iterator<T>
             - iterator<T> { BODY }; iterator { BODY }
             - another as Iterator<T>; Iterator<T> from another
-        - Stream<> (AsyncIterator<>)
+        - Stream<T> (AsyncIterator<T>)
             - stream<T> { BODY }; stream { BODY }
             - another as Stream<T>; Stream<T> from another
-        - Source<>
+        - Source<T>
             - source<T> { BODY }; source { BODY }
             - another as Source<T>; Source<T> from another
-        - Promise<>
+        - Promise<T>
             - promise<T> { BODY }; promise { BODY }
             - another as Promise<T>; Promise<T> from another
-        - Error<>
+        - Error<T>
             - FooBarFailed as Error<T>; Error<T> from BazInvalid { ... }
     - Above cast is based on subset/superset check
     - Above types are classes which are wrappers of native objects
     - Support Function Template:
         - function map<T,U>(i: Iterator<T>, f: $<T><U>) -> Iterator<U> { ... }
+    - Implement restrictions on function template parameters by subtype check
+        - 'func Foo<T: R>() ...' means ensuring T < R and assuming T = R in '...'
+        - 'class Foo<T>: .. ...' means assuming T = Any in '...'
 
 ----------------------------------------
 

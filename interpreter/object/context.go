@@ -22,6 +22,7 @@ type Callback struct {
 type CallbackEnquer = func(Callback, CallbackPriority)
 
 type ObjectContext struct {
+    // TODO: add mutex
     __AtomicTypeNames      []string
     __EnqueCallback        CallbackEnquer
 }
