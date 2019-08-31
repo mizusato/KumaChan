@@ -1,29 +1,42 @@
 package object
 
+import ."../assertion"
+
 var Nil = Object {
     __Category: OC_Singleton,
-    __Inline64: 0,
+    __Inline: 0,
 }
 
 var Void = Object {
     __Category: OC_Singleton,
-    __Inline64: 1,
+    __Inline: 1,
 }
 
 var NotFound = Object {
     __Category: OC_Singleton,
-    __Inline64: 2,
+    __Inline: 2,
 }
 
 var Complete = Object {
     __Category: OC_Singleton,
-    __Inline64: 3,
+    __Inline: 3,
+}
+
+func __InitDefaultSingletonTypes (context *ObjectContext) {
+    context.__RegisterSingleton("Nil")
+    context.__RegisterSingleton("Void")
+    context.__RegisterSingleton("NotFound")
+    context.__RegisterSingleton("Complete")
 }
 
 func NewSingleton (context *ObjectContext, name string) Object {
-    var id = context.__GetAtomicTypeId(name)
-    return Object {
-        __Category: OC_Singleton,
-        __Inline64: uint64(id),
-    }
+    return context.__RegisterSingleton(name)
+}
+
+func GetSingletonTypeInfo (context *ObjectContext, object Object) *TypeInfo {
+    Assert (
+        object.__Category == OC_Singleton,
+        "invalid usage of GetSingletonTypeInfo()",
+    )
+    return context.__GetSingletonTypeInfo(AtomicTypeId(object.__Inline))
 }

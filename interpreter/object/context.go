@@ -1,8 +1,9 @@
 package object
 
+import "sync"
 import ."../assertion"
 
-type TypeId int
+type AtomicTypeId uint64
 
 type CallbackPriority int
 const (
@@ -22,29 +23,70 @@ type Callback struct {
 type CallbackEnquer = func(Callback, CallbackPriority)
 
 type ObjectContext struct {
-    // TODO: add mutex
-    __AtomicTypeNames      []string
+    __Mutex                sync.Mutex
+    __NextAtomicTypeId     AtomicTypeId
+    __SingletonTypeInfo    map[AtomicTypeId]*TypeInfo
+    __NativeClassList      []NativeClass
     __EnqueCallback        CallbackEnquer
 }
 
 func NewObjectContext (enque CallbackEnquer) *ObjectContext {
-    return &ObjectContext {
-        __AtomicTypeNames: []string {"Nil","Void","NotFound","Complete"},
+    var ctx = &ObjectContext {
+        __SingletonTypeInfo: make(map[AtomicTypeId]*TypeInfo),
+        __NativeClassList: make([]NativeClass, 0),
         __EnqueCallback: enque,
+    }
+    __InitDefaultSingletonTypes(ctx)
+    return ctx
+}
+
+func (ctx *ObjectContext) __GetNewAtomicTypeId() AtomicTypeId {
+    ctx.__Mutex.Lock()
+    defer ctx.__Mutex.Unlock()
+    var id = ctx.__NextAtomicTypeId
+    Assert(id+1 > id, "ObjectContext: run out of atomic type id")
+    ctx.__NextAtomicTypeId = id + 1
+    return id
+}
+
+func (ctx *ObjectContext) __RegisterSingleton(name string) Object {
+    var id = ctx.__GetNewAtomicTypeId()
+    ctx.__Mutex.Lock()
+    defer ctx.__Mutex.Unlock()
+    var t = &TypeInfo {
+        __Kind: TK_Singleton,
+        __Name: name,
+        T_Singleton: T_Singleton {
+            __Id: id,
+        },
+    }
+    ctx.__SingletonTypeInfo[id] = t
+    return Object {
+        __Category: OC_Singleton,
+        __Inline: uint64(id),
     }
 }
 
-func (ctx *ObjectContext) __GetAtomicTypeId (name string) TypeId {
-    var id = len(ctx.__AtomicTypeNames)
-    Assert(id+1 > id, "ObjectContext: run out of atomic type id")
-    ctx.__AtomicTypeNames = append(ctx.__AtomicTypeNames, name)
-    return TypeId(id)
+func (ctx *ObjectContext) __GetSingletonTypeInfo(id AtomicTypeId) *TypeInfo {
+    ctx.__Mutex.Lock()
+    defer ctx.__Mutex.Unlock()
+    var t, exists = ctx.__SingletonTypeInfo[id]
+    Assert(exists, "ObjectContext: invalid singleton type id")
+    return t
 }
 
-func (ctx *ObjectContext) GetAtomicTypeName (id TypeId) string {
-    Assert (
-        0 <= int(id) && int(id) < len(ctx.__AtomicTypeNames),
-        "ObjectContext: unable to get the type name of an invalid id",
-    )
-    return ctx.__AtomicTypeNames[int(id)]
+func (ctx *ObjectContext) __RegisterNativeClass (
+    name      string,
+    methods   NativeClassMethodList,
+) *NativeClass {
+    ctx.__Mutex.Lock()
+    defer ctx.__Mutex.Unlock()
+    var id = len(ctx.__NativeClassList)
+    Assert(id+1 > id, "ObjectContext: run out of native class id")
+    ctx.__NativeClassList = append(ctx.__NativeClassList, NativeClass {
+        __Name: name,
+        __Id: NativeClassId(id),
+        __Methods: methods,
+    })
+    return &ctx.__NativeClassList[id]
 }

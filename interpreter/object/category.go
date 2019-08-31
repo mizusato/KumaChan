@@ -2,7 +2,7 @@ package object
 
 type ObjectCategory int
 const (
-    OC_Singleton ObjectCategory = 0
+    OC_Singleton ObjectCategory = iota
     // primitive
     OC_Bool
     OC_Byte            // uint8
@@ -26,13 +26,13 @@ const (
     OC_TypeTemplate
     OC_FunctionTemplate
     // misc types
-    OC_PlainType      // consists of a func(Object)bool
+    OC_PlainType       // consists of a func(Object)bool
     OC_CompoundType    // union of atomic/intersection types (may be a enum)
     OC_FunctionSignature
     // module
     OC_Module
 )
 
-func (obj Object) Is (oc ObjectCategory) bool {
-    return obj.__Category == oc
+func (obj Object) Type() ObjectCategory {
+    return obj.__Category
 }
