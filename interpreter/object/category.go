@@ -33,6 +33,6 @@ const (
     OC_Module
 )
 
-func (obj Object) Type() ObjectCategory {
+func (obj Object) Category() ObjectCategory {
     return obj.__Category
 }

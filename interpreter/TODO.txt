@@ -46,7 +46,7 @@ Those caveats of type system will be fixed in the new implementation.
         - Int is Subset<Int|String>
         - SomeClass is Subset<SomeInterface>
     - A built-in generic type may have a literal, or can be created by type cast
-        - Tuple2<T1,T2>; Tuple3<T1,T2,T3>; Tuple4<T1,T2,T3,T4>
+        - Tuple2<T1,T2>; Tuple3<T1,T2,T3>; Tuple4<T1,T2,T3,T4>; Tuple5
             - tuple { 1, '1' }; Tuple3<Int,Int,String>(1,2,'3')
         - Array<T>
             - array<Int> {1,2,3}; array<Int>(iterable)

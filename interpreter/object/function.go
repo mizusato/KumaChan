@@ -1,7 +1,7 @@
 package object
 
 const MAX_ARGS = 8
-const MAX_TEMPLATE_ARGS = 4
+const MAX_TEMPLATE_ARGS = 5
 
 type Result struct {
     Type   ResultType

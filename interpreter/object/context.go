@@ -24,6 +24,7 @@ type CallbackEnquer = func(Callback, CallbackPriority)
 
 type ObjectContext struct {
     __Mutex                sync.Mutex
+    __IdPool               *IdPool
     __NextAtomicTypeId     AtomicTypeId
     __SingletonTypeInfo    map[AtomicTypeId]*TypeInfo
     __NativeClassList      []NativeClass
@@ -32,12 +33,25 @@ type ObjectContext struct {
 
 func NewObjectContext (enque CallbackEnquer) *ObjectContext {
     var ctx = &ObjectContext {
-        __SingletonTypeInfo: make(map[AtomicTypeId]*TypeInfo),
-        __NativeClassList: make([]NativeClass, 0),
-        __EnqueCallback: enque,
+        __IdPool:             NewIdPool(),
+        __SingletonTypeInfo:  make(map[AtomicTypeId]*TypeInfo),
+        __NativeClassList:    make([]NativeClass, 0),
+        __EnqueCallback:      enque,
     }
     __InitDefaultSingletonTypes(ctx)
     return ctx
+}
+
+func (ctx *ObjectContext) GetId(name string) Identifier {
+    ctx.__Mutex.Lock()
+    defer ctx.__Mutex.Unlock()
+    return ctx.__IdPool.GetId(name)
+}
+
+func (ctx *ObjectContext) GetName(id Identifier) string {
+    ctx.__Mutex.Lock()
+    defer ctx.__Mutex.Unlock()
+    return ctx.__IdPool.GetString(id)
 }
 
 func (ctx *ObjectContext) __GetNewAtomicTypeId() AtomicTypeId {

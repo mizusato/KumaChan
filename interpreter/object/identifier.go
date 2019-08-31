@@ -16,7 +16,7 @@ func NewIdPool () *IdPool {
     }
 }
 
-func (pool *IdPool) GetId (str string) Identifier {
+func (pool *IdPool) GetId(str string) Identifier {
     var id, exists = pool.__Str2Id[str]
     if exists {
         return id
@@ -29,7 +29,7 @@ func (pool *IdPool) GetId (str string) Identifier {
     }
 }
 
-func (pool *IdPool) GetString (id Identifier) string {
+func (pool *IdPool) GetString(id Identifier) string {
     Assert (
         0 <= int(id) && int(id) < len(pool.__Id2Str),
         "IdPool: unable to get string of invalid identifier",
