@@ -74,7 +74,7 @@ func (rq *RingQueue) Get(index int) (Object, bool) {
     var length = rq.__Length
     var capacity = rq.__Capacity
     if index < length {
-        var p = (head+index) % capacity
+        var p = (head + index) % capacity
         var vc ValChunk = nil
         var rc RefChunk = nil
         if v_size > 0 {
@@ -101,7 +101,7 @@ func (rq *RingQueue) Set(index int, new_object Object) {
     var vc, rc = rq.__Unbox(new_object)
     Assert(len(vc) == v_size, __SizeInconsistent)
     Assert(len(rc) == r_size, __SizeInconsistent)
-    var p = (head+index) % capacity
+    var p = (head + index) % capacity
     if v_size > 0 {
         copy(v_data[p*v_size : (p+1)*v_size], vc)
     }
@@ -226,8 +226,11 @@ func (rq *RingQueue) __WipeRefAt(index int) {
     Assert(index < rq.__Length, "RingQueue: index out of range")
     var r_size = rq.__RefSize
     var r_data = rq.__RefData
+    var head = rq.__Head
+    var capacity = rq.__Capacity
+    var p = (head + index) % capacity
     if r_size > 0 {
-        var to_wipe = r_data[index*r_size: (index+1)*r_size]
+        var to_wipe = r_data[p*r_size: (p+1)*r_size]
         for i, ref := range to_wipe {
             if ref != nil {
                 to_wipe[i] = nil
@@ -238,11 +241,8 @@ func (rq *RingQueue) __WipeRefAt(index int) {
 
 func (rq *RingQueue) Pop() {
     Assert(rq.__Length > 0, "RingQueue: invalid pop")
-    var head = rq.__Head
     var length = rq.__Length
-    var capacity = rq.__Capacity
-    var last = (head+length-1+capacity) % capacity
-    rq.__WipeRefAt(last)
+    rq.__WipeRefAt(length-1)
     rq.__Length -= 1
 }
 
@@ -250,9 +250,27 @@ func (rq *RingQueue) Shift() {
     Assert(rq.__Length > 0, "RingQueue: invalid shift")
     var head = rq.__Head
     var capacity = rq.__Capacity
-    rq.__WipeRefAt(head)
+    rq.__WipeRefAt(0)
     rq.__Length -= 1
     rq.__Head = (head + 1) % capacity
+}
+
+const DefaultValSize = 2
+const DefaultRefSize = 1
+
+func DefaultBoxer (vals ValChunk, refs RefChunk) Object {
+    Assert(len(vals) == 2, "DefaultBoxer: invalid value chunk")
+    Assert(len(refs) == 1, "DefaultBoxer: invalid ref chunk")
+    return Object {
+        __Category: ObjectCategory(vals[0]),
+        __Inline: vals[1],
+        __Pointer: refs[0],
+    }
+}
+
+func DefaultUnboxer (object Object) (ValChunk, RefChunk) {
+    return ValChunk { uint64(object.__Category), object.__Inline },
+           RefChunk { object.__Pointer }
 }
 
 

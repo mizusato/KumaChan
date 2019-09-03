@@ -40,3 +40,7 @@ func GetSingletonTypeInfo (context *ObjectContext, object Object) *TypeInfo {
     )
     return context.__GetSingletonTypeInfo(AtomicTypeId(object.__Inline))
 }
+
+func GetSingletonTypeName (context *ObjectContext, object Object) string {
+    return GetSingletonTypeInfo(context, object).__Name
+}
