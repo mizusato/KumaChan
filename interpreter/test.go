@@ -64,6 +64,7 @@ func TestRingQueue2 (ctx *ObjectContext) {
 
 func TestRingQueue3 (ctx *ObjectContext) {
     fmt.Println("** Test Critial Mutation")
+    // TODO: should also use string to test __WipeRefAt()
     var q = RQ()
     for i := 0; i < InitialCapacity; i++ {
         q.Append(NewInt(i))
