@@ -1,6 +1,6 @@
 package object
 
-type ObjectCategory int
+type ObjectCategory uint64
 const (
     OC_Singleton ObjectCategory = iota
     // primitive
