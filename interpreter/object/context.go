@@ -51,7 +51,7 @@ func (ctx *ObjectContext) __RegisterSingleton(name string) Object {
     var t = &TypeInfo {
         __Kind: TK_Singleton,
         __Name: name,
-        T_Singleton: T_Singleton {
+        __T_Singleton: T_Singleton {
             __Id: id,
         },
     }

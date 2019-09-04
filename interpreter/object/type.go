@@ -14,16 +14,16 @@ const (
 )
 
 type TypeInfo struct {
-    __Kind   TypeKind
-    __Name   string
-    T_Category
-    T_PlainSubSet
-    T_Singleton
-    T_Schema
-    T_Class
-    T_Interface
-    T_Singnature
-    T_Compound
+    __Kind            TypeKind
+    __Name            string
+    __T_Category      T_Category
+    __T_PlainSubSet   T_PlainSubSet
+    __T_Singleton     T_Singleton
+    __T_Schema        T_Schema
+    __T_Class         T_Class
+    __T_Interface     T_Interface
+    __T_Singnature    T_Singnature
+    __T_Compound      T_Compound
 }
 
 
