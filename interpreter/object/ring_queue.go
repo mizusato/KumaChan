@@ -1,16 +1,13 @@
 package object
 
-import "sync"
-import "unsafe"
+import "fmt"
+import "strings"
 import ."../assertion"
 
-const InitialCapacity = 8
-const ChunkGrowthRate = 2
-const __SizeInconsistent = "RingQueue: inconsistent size parameters"
-const __InvalidIndex = "RingQueue: invalid index"
-
-type ValChunk = []uint64
-type RefChunk = []unsafe.Pointer
+const RingQueueInitialCapacity = 8
+const RingQueueGrowthRate = 2
+const __RingQueueSizeInconsistent = "RingQueue: inconsistent size parameters"
+const __RingQueueInvalidIndex = "RingQueue: invalid index"
 
 type Boxer = func(ValChunk, RefChunk) Object
 type Unboxer = func(Object) (ValChunk, RefChunk)
@@ -44,14 +41,14 @@ func NewRingQueue (
         __Unbox: unbox,
     }
     if val_size > 0 {
-        rq.__ValData = GetValChunk(InitialCapacity * val_size)
+        rq.__ValData = GetValChunk(RingQueueInitialCapacity * val_size)
     }
     if ref_size > 0 {
-        rq.__RefData = GetRefChunk(InitialCapacity * ref_size)
+        rq.__RefData = GetRefChunk(RingQueueInitialCapacity * ref_size)
     }
     rq.__Head = 0
     rq.__Length = 0
-    rq.__Capacity = InitialCapacity
+    rq.__Capacity = RingQueueInitialCapacity
     return rq
 }
 
@@ -60,12 +57,12 @@ func (rq *RingQueue) Length() int {
 }
 
 func (rq *RingQueue) Has(index int) bool {
-    Assert(index >= 0, __InvalidIndex)
+    Assert(index >= 0, __RingQueueInvalidIndex)
     return index < rq.__Length
 }
 
 func (rq *RingQueue) Get(index int) (Object, bool) {
-    Assert(index >= 0, __InvalidIndex)
+    Assert(index >= 0, __RingQueueInvalidIndex)
     var v_size = rq.__ValSize
     var r_size = rq.__RefSize
     var v_data = rq.__ValData
@@ -90,7 +87,7 @@ func (rq *RingQueue) Get(index int) (Object, bool) {
 }
 
 func (rq *RingQueue) Set(index int, new_object Object) {
-    Assert(index >= 0, __InvalidIndex)
+    Assert(index >= 0, __RingQueueInvalidIndex)
     Assert(index < rq.__Length, "RingQueue: index out of range")
     var v_size = rq.__ValSize
     var r_size = rq.__RefSize
@@ -99,8 +96,8 @@ func (rq *RingQueue) Set(index int, new_object Object) {
     var head = rq.__Head
     var capacity = rq.__Capacity
     var vc, rc = rq.__Unbox(new_object)
-    Assert(len(vc) == v_size, __SizeInconsistent)
-    Assert(len(rc) == r_size, __SizeInconsistent)
+    Assert(len(vc) == v_size, __RingQueueSizeInconsistent)
+    Assert(len(rc) == r_size, __RingQueueSizeInconsistent)
     var p = (head + index) % capacity
     if v_size > 0 {
         copy(v_data[p*v_size : (p+1)*v_size], vc)
@@ -113,7 +110,7 @@ func (rq *RingQueue) Set(index int, new_object Object) {
 func (rq *RingQueue) __Grow() {
     Assert(rq.__Length == rq.__Capacity, "RingQueue: invalid grow")
     var cap = rq.__Capacity
-    var new_cap = rq.__Capacity * ChunkGrowthRate
+    var new_cap = rq.__Capacity * RingQueueGrowthRate
     var head = rq.__Head
     var v_size = rq.__ValSize
     var r_size = rq.__RefSize
@@ -168,8 +165,8 @@ func (rq *RingQueue) Append(element Object) {
     var cap = rq.__Capacity
     var tail = (head + length) % cap
     var vc, rc = rq.__Unbox(element)
-    Assert(len(vc) == v_size, __SizeInconsistent)
-    Assert(len(rc) == r_size, __SizeInconsistent)
+    Assert(len(vc) == v_size, __RingQueueSizeInconsistent)
+    Assert(len(rc) == r_size, __RingQueueSizeInconsistent)
     if v_size > 0 {
         var span = v_size
         var self = v_data
@@ -201,8 +198,8 @@ func (rq *RingQueue) Prepend(element Object) {
         head_ = rq.__Head
     }
     var vc, rc = rq.__Unbox(element)
-    Assert(len(vc) == v_size, __SizeInconsistent)
-    Assert(len(rc) == r_size, __SizeInconsistent)
+    Assert(len(vc) == v_size, __RingQueueSizeInconsistent)
+    Assert(len(rc) == r_size, __RingQueueSizeInconsistent)
     if v_size > 0 {
         var span = v_size
         var self = v_data
@@ -222,7 +219,7 @@ func (rq *RingQueue) Prepend(element Object) {
 }
 
 func (rq *RingQueue) __WipeRefAt(index int) {
-    Assert(index >= 0, __InvalidIndex)
+    Assert(index >= 0, __RingQueueInvalidIndex)
     Assert(index < rq.__Length, "RingQueue: index out of range")
     var r_size = rq.__RefSize
     var r_data = rq.__RefData
@@ -255,8 +252,20 @@ func (rq *RingQueue) Shift() {
     rq.__Head = (head + 1) % capacity
 }
 
-const DefaultValSize = 2
-const DefaultRefSize = 1
+func (rq *RingQueue) Represent(ctx *ObjectContext) string {
+    var buf strings.Builder
+    var length = rq.Length()
+    fmt.Fprintf(&buf, "(%v) {", length)
+    for i := 0; i < length; i++ {
+        var obj, _ = rq.Get(i)
+        fmt.Fprintf(&buf, "%v", Represent(obj, ctx))
+        if i != length-1 {
+            fmt.Fprintf(&buf, ", ")
+        }
+    }
+    fmt.Fprintf(&buf, "}")
+    return buf.String()
+}
 
 func DefaultBoxer (vals ValChunk, refs RefChunk) Object {
     Assert(len(vals) == 2, "DefaultBoxer: invalid value chunk")
@@ -273,51 +282,45 @@ func DefaultUnboxer (object Object) (ValChunk, RefChunk) {
            RefChunk { object.__Pointer }
 }
 
-
-var ValChunkPools = make(map[int]sync.Pool)
-var RefChunkPools = make(map[int]sync.Pool)
-
-func GetValChunk (size int) ValChunk {
-    var pool, exists = ValChunkPools[size]
-    if !exists {
-        pool = sync.Pool {
-            New: func() interface{} {
-                return make(ValChunk, size)
-            },
-        }
-        ValChunkPools[size] = pool
+func InlineBoxer (oc ObjectCategory) Boxer {
+    return func (vals ValChunk, _ RefChunk) Object {
+        Assert(len(vals) == 1, "InlineBoxer: invalid chunk")
+        return Object { __Category: oc, __Inline: vals[0] }
     }
-    return pool.Get().(ValChunk)
 }
 
-func RecycleValChunk (chunk ValChunk) {
-    var size = len(chunk)
-    var pool, exists = ValChunkPools[size]
-    Assert(exists, "RingQueue: invalid chunk recycle")
-    pool.Put(chunk)
+func InlineUnboxer (oc ObjectCategory) Unboxer {
+    return func (object Object) (ValChunk, RefChunk) {
+        Assert(object.__Category == oc, "InlineUnboxer: invalid object")
+        Assert(object.__Pointer == nil, "InlineUnboxer: bad object")
+        return ValChunk { object.__Inline }, nil
+    }
 }
 
-func GetRefChunk (size int) RefChunk {
-    var pool, exists = RefChunkPools[size]
-    if !exists {
-        pool = sync.Pool {
-            New: func() interface{} {
-                return make(RefChunk, size)
-            },
-        }
-        RefChunkPools[size] = pool
+func PointerBoxer (oc ObjectCategory) Boxer {
+    return func (_ ValChunk, refs RefChunk) Object {
+        Assert(len(refs) == 1, "PointerBoxer: invalid chunk")
+        Assert(refs[0] != nil, "PointerBoxer: nil pointer occurred")
+        return Object { __Category: oc, __Pointer: refs[0] }
     }
-    return pool.Get().(RefChunk)
 }
 
-func RecycleRefChunk (chunk RefChunk) {
-    for i, _ := range chunk {
-        if chunk[i] != nil {
-            chunk[i] = nil
-        }
+func PointerUnboxer (oc ObjectCategory) Unboxer {
+    return func (object Object) (ValChunk, RefChunk) {
+        Assert(object.__Category == oc, "PointerUnboxer: invalid object")
+        Assert(object.__Pointer != nil, "PointerUnboxer: bad object")
+        return nil, RefChunk { object.__Pointer }
     }
-    var size = len(chunk)
-    var pool, exists = RefChunkPools[size]
-    Assert(exists, "RingQueue: invalid chunk recycle")
-    pool.Put(chunk)
+}
+
+func NewInlineRingQueue (oc ObjectCategory) *RingQueue {
+    return NewRingQueue(1, 0, InlineBoxer(oc), InlineUnboxer(oc))
+}
+
+func NewPointerRingQueue (oc ObjectCategory) *RingQueue {
+    return NewRingQueue(0, 1, PointerBoxer(oc), PointerUnboxer(oc))
+}
+
+func NewVariantRingQueue () *RingQueue {
+    return NewRingQueue(2, 1, DefaultBoxer, DefaultUnboxer)
 }
