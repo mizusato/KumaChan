@@ -5,38 +5,19 @@ import ."../assertion"
 
 type AtomicTypeId uint64
 
-type CallbackPriority int
-const (
-    Low  CallbackPriority = iota
-    High
-)
-
-type Callback struct {
-    IsGroup    bool
-    Argc       int
-    Argv       [MAX_ARGS]Object
-    Callee     Object
-    Callees    []Object
-    Feedback   func()
-}
-
-type CallbackEnquer = func(Callback, CallbackPriority)
-
 type ObjectContext struct {
     __Mutex                sync.Mutex
     __IdPool               *IdPool
     __NextAtomicTypeId     AtomicTypeId
     __SingletonTypeInfo    map[AtomicTypeId]*TypeInfo
     __NativeClassList      []NativeClass
-    __EnqueCallback        CallbackEnquer
 }
 
-func NewObjectContext (enque CallbackEnquer) *ObjectContext {
+func NewObjectContext () *ObjectContext {
     var ctx = &ObjectContext {
         __IdPool:             NewIdPool(),
         __SingletonTypeInfo:  make(map[AtomicTypeId]*TypeInfo),
         __NativeClassList:    make([]NativeClass, 0),
-        __EnqueCallback:      enque,
     }
     __InitDefaultSingletonTypes(ctx)
     return ctx

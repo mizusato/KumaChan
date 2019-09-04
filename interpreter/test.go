@@ -91,7 +91,7 @@ func TestRingQueue4 (ctx *ObjectContext) {
 }
 
 func main () {
-    var obj_ctx = NewObjectContext(nil)
+    var obj_ctx = NewObjectContext()
     var s1 = NewSingleton(obj_ctx, "ABC")
     var s2 = NewSingleton(obj_ctx, "Foobar")
     fmt.Printf("%+v\n%+v\n%+v\n", Nil, s1, s2)
@@ -107,3 +107,20 @@ func main () {
     TestRingQueue3(obj_ctx)
     TestRingQueue4(obj_ctx)
 }
+
+/*
+type CallbackPriority int
+const (
+    Low  CallbackPriority = iota
+    High
+)
+
+type Callback struct {
+    IsGroup    bool
+    Argc       int
+    Argv       [MAX_ARGS]Object
+    Callee     Object
+    Callees    []Object
+    Feedback   func(bool)
+}
+*/
