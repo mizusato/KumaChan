@@ -33,10 +33,9 @@ func TestRingQueueBasicOperations (t *testing.T) {
     q.Prepend(NewInt(5))
     RequireEqual(t, q.Represent(ctx), "(3) {[Int 5], [Int 6], [Int 7]}")
 }
-/*
-func TestRingQueue2 (ctx *ObjectContext) {
-    fmt.Println("** Test Variant Object")
-    var q = NewRingQueue()
+
+func TestRingQueueVariousObjects (t *testing.T) {
+    var q = NewVariantRingQueue()
     q.Append(Nil)
     q.Append(NewBool(true))
     q.Append(NewInt(2))
@@ -45,68 +44,176 @@ func TestRingQueue2 (ctx *ObjectContext) {
     q.Prepend(NewString("-1"))
     q.Prepend(Complete)
     q.Prepend(NewString("-2"))
-    PQ(q)
+    RequireEqual (
+        t, q.Represent(ctx),
+        `(8) {[String "-2"], [Singleton Complete], [String "-1"], [IEEE754 0], [IEEE754 0.5], [Singleton Nil], [Bool true], [Int 2]}`,
+    )
 }
 
-func TestRingQueue3 (ctx *ObjectContext) {
-    fmt.Println("** Test Critial Mutation")
-    // TODO: should also use string to test __WipeRefAt()
-    var q = NewRingQueue()
-    for i := 0; i < RingQueueInitialCapacity; i++ {
-        q.Append(NewInt(i))
+func TestRingQueueCriticalMutation (t *testing.T) {
+    var q = NewVariantRingQueue()
+    for i := 0; i < RingQueueInitialCapacity; i += 1 {
+        q.Append(NewString(strconv.Itoa(i)))
     }
-    PQ(q)
-    fmt.Println("shift")
-    q.Shift(); PQ(q)
-    fmt.Println("prepend")
-    q.Prepend(NewInt(-1)); PQ(q)
-    fmt.Println("pop")
-    q.Pop(); PQ(q)
-    fmt.Println("append")
-    q.Append(NewInt(100)); PQ(q)
+    q.Pop()
+    q.Append(NewInt(777))
+    q.Shift()
+    q.Prepend(NewInt(-777))
+    q.Shift()
+    q.Pop()
+    q.Append(NewString("777"))
+    q.Prepend(NewString("-777"))
+    RequireEqual (
+        t, q.Represent(ctx),
+        `(8) {[String "-777"], [String "1"], [String "2"], [String "3"], [String "4"], [String "5"], [String "6"], [String "777"]}`,
+    )
 }
 
-func TestRingQueue4 (ctx *ObjectContext) {
-    fmt.Println("** Test Grow")
-    var q = NewRingQueue()
-    for i := 0; i < RingQueueInitialCapacity*2+1; i++ {
+func TestRingQueueGrowth (t *testing.T) {
+    var q = NewVariantRingQueue()
+    for i := 0; i < RingQueueInitialCapacity*2+1; i += 1 {
         q.Append(NewInt(i))
         q.Prepend(NewInt(-i))
     }
-    PQ(q)
+    RequireEqual (
+        t, q.Represent(ctx),
+        `(34) {[Int -16], [Int -15], [Int -14], [Int -13], [Int -12], [Int -11], [Int -10], [Int -9], [Int -8], [Int -7], [Int -6], [Int -5], [Int -4], [Int -3], [Int -2], [Int -1], [Int 0], [Int 0], [Int 1], [Int 2], [Int 3], [Int 4], [Int 5], [Int 6], [Int 7], [Int 8], [Int 9], [Int 10], [Int 11], [Int 12], [Int 13], [Int 14], [Int 15], [Int 16]}`,
+    )
 }
-*/
-/*
-** Test Basic Operations
-(3) {[Int 1], [Int 2], [Int 3]}
-pop 3
-(2) {[Int 1], [Int 2]}
-prepend 0
-(3) {[Int 0], [Int 1], [Int 2]}
-shift 0
-(2) {[Int 1], [Int 2]}
-shift 1
-(1) {[Int 2]}
-shift 2
-(0) {}
-append 7
-(1) {[Int 7]}
-prepend 6
-(2) {[Int 6], [Int 7]}
-prepend 5
-(3) {[Int 5], [Int 6], [Int 7]}
-** Test Variant Object
-(8) {[String "-2"], [Singleton Complete], [String "-1"], [IEEE754 0], [IEEE754 0.5], [Singleton Nil], [Bool true], [Int 2]}
-** Test Critial Mutation
-(8) {[Int 0], [Int 1], [Int 2], [Int 3], [Int 4], [Int 5], [Int 6], [Int 7]}
-shift
-(7) {[Int 1], [Int 2], [Int 3], [Int 4], [Int 5], [Int 6], [Int 7]}
-prepend
-(8) {[Int -1], [Int 1], [Int 2], [Int 3], [Int 4], [Int 5], [Int 6], [Int 7]}
-pop
-(7) {[Int -1], [Int 1], [Int 2], [Int 3], [Int 4], [Int 5], [Int 6]}
-append
-(8) {[Int -1], [Int 1], [Int 2], [Int 3], [Int 4], [Int 5], [Int 6], [Int 100]}
-** Test Grow
-(34) {[Int -16], [Int -15], [Int -14], [Int -13], [Int -12], [Int -11], [Int -10], [Int -9], [Int -8], [Int -7], [Int -6], [Int -5], [Int -4], [Int -3], [Int -2], [Int -1], [Int 0], [Int 0], [Int 1], [Int 2], [Int 3], [Int 4], [Int 5], [Int 6], [Int 7], [Int 8], [Int 9], [Int 10], [Int 11], [Int 12], [Int 13], [Int 14], [Int 15], [Int 16]}
-*/
+
+func TestRingQueueHeadAtStart (t *testing.T) {
+    var q = NewVariantRingQueue()
+    for i := 0; i < RingQueueInitialCapacity; i += 1 {
+        q.Prepend(NewInt(-i))
+    }
+    q.Pop()
+    q.Append(NewIEEE754(1.618))
+    q.Shift()
+    q.Prepend(NewIEEE754(13.37))
+    RequireEqual (
+        t, q.Represent(ctx),
+        "(8) {[IEEE754 13.37], [Int -6], [Int -5], [Int -4], [Int -3], [Int -2], [Int -1], [IEEE754 1.618]}",
+    )
+}
+
+func TestRingQueueHeadAtMiddle (t *testing.T) {
+    var q = NewVariantRingQueue()
+    var cap = RingQueueInitialCapacity
+    for i := 0; i < cap / 2; i += 1 {
+        q.Append(NewInt(i))
+    }
+    q.Shift()
+    for i := 0; i < (cap - (cap/2 - 1)); i += 1 {
+        q.Append(NewInt(-i))
+    }
+    RequireEqual (
+        t, q.Represent(ctx),
+        "(8) {[Int 1], [Int 2], [Int 3], [Int 0], [Int -1], [Int -2], [Int -3], [Int -4]}",
+    )
+}
+
+func TestRingQueueHeadAtEnd (t *testing.T) {
+    var q = NewVariantRingQueue()
+    var cap = RingQueueInitialCapacity
+    for i := 0; i < cap; i += 1 {
+        q.Append(NewInt(i))
+    }
+    for i := 0; i < cap-1; i += 1 {
+        q.Shift()
+    }
+    for i := 0; i < cap-1; i += 1 {
+        q.Append(NewInt(-i))
+    }
+    RequireEqual (
+        t, q.Represent(ctx),
+        "(8) {[Int 7], [Int 0], [Int -1], [Int -2], [Int -3], [Int -4], [Int -5], [Int -6]}",
+    )
+}
+
+func TestRingQueueForwardWalking (t *testing.T) {
+    var q = NewVariantRingQueue()
+    q.Append(NewInt(-1))
+    for i := 0; i < 100; i += 1 {
+        q.Append(NewInt(i))
+        q.Shift()
+    }
+    RequireEqual (
+        t, q.Represent(ctx),
+        "(1) {[Int 99]}",
+    )
+}
+
+func TestRingQueueBackwardWalking (t *testing.T) {
+    var q = NewVariantRingQueue()
+    q.Prepend(NewInt(-1))
+    for i := 0; i < 100; i += 1 {
+        q.Prepend(NewInt(i))
+        q.Pop()
+    }
+    RequireEqual (
+        t, q.Represent(ctx),
+        "(1) {[Int 99]}",
+    )
+}
+
+func TestRingQueueBulkInsertion (t *testing.T) {
+    var q = NewVariantRingQueue()
+    var N = 10000
+    for i := 0; i < N; i += 1 {
+        q.Append(NewInt(i+1))
+        q.Prepend(NewInt(-(i+1)))
+    }
+    for i := 0; i < N-1; i += 1 {
+        q.Shift()
+        q.Pop()
+    }
+    RequireEqual (
+        t, q.Represent(ctx),
+        "(2) {[Int -1], [Int 1]}",
+    )
+}
+
+func TestRingQueueUnusedPointerWipe (t *testing.T) {
+    var q = NewVariantRingQueue()
+    q.Append(NewString("a"))
+    q.Append(NewString("b"))
+    q.Pop()
+    if q.__RefData[q.__Head + 1] != nil {
+        t.Fail()
+    }
+    q.Append(NewString("c"))
+    q.Shift()
+    if q.__RefData[q.__Head - 1] != nil {
+        t.Fail()
+    }
+}
+
+func TestRingQueueInline (t *testing.T) {
+    var q = NewInlineRingQueue(OC_Int)
+    q.Append(NewInt(1))
+    q.Append(NewInt(2))
+    q.Prepend(NewInt(0))
+    q.Prepend(NewInt(-1))
+    q.Prepend(NewInt(-2))
+    q.Pop()
+    q.Shift()
+    RequireEqual (
+        t, q.Represent(ctx),
+        "(3) {[Int -1], [Int 0], [Int 1]}",
+    )
+}
+
+func TestRingQueuePointer (t *testing.T) {
+    var q = NewPointerRingQueue(OC_String)
+    q.Append(NewString("1"))
+    q.Append(NewString("2"))
+    q.Prepend(NewString("0"))
+    q.Prepend(NewString("-1"))
+    q.Prepend(NewString("-2"))
+    q.Pop()
+    q.Shift()
+    RequireEqual (
+        t, q.Represent(ctx),
+        `(3) {[String "-1"], [String "0"], [String "1"]}`,
+    )
+}
