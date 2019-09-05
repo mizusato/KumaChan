@@ -1,5 +1,8 @@
 package object
 
+import "runtime"
+import ."../assertion"
+
 type Scope struct {
     __Context         *Scope
     __Vals            ValObjectChunk
@@ -7,26 +10,107 @@ type Scope struct {
     __MountOperator   *Function
     __PushOperator    *Function
     __Info            *ScopeInfo
+    __Recycled        bool
 }
 
 type ScopeInfo struct {
-    Variables  []VariableInfo
+    Context    *ScopeInfo
+    Variables  map[Identifier] VariableInfo
 }
 
 type VariableInfo struct {
-    Depth      int
     Type       *TypeInfo
     IsMutable  bool
-    IsRef      bool
+    IsVal      bool
     Offset     int
 }
 
+func (info *ScopeInfo) GetValsRefsCount() (int, int) {
+    Assert(info.Variables != nil, "ScopeInfo: bad scope info")
+    var v = 0
+    var r = 0
+    for _, variable := range info.Variables {
+        if variable.IsVal {
+            v += 1
+        } else {
+            r += 1
+        }
+    }
+    return v, r
+}
+
 func NewScope (info *ScopeInfo, context *Scope) *Scope {
-    var s = &Scope { __Info: info, __Context: context }
-    // TODO: setFinalizer()
+    var v_count, r_count = info.GetValsRefsCount()
+    var s = &Scope {
+        __Context: context,
+        __Info: info,
+        __Vals: GetValObjectChunk(v_count),
+        __Refs: GetRefObjectChunk(r_count),
+    }
+    runtime.SetFinalizer(s, func (s *Scope) {
+        s.Recycle()
+    })
     return s
 }
 
+func (s *Scope) Recycle() {
+    if !s.__Recycled {
+        RecycleValObjectChunk(s.__Vals)
+        RecycleRefObjectChunk(s.__Refs)
+        *s = Scope { __Recycled: true }
+    }
+}
+
+func (s *Scope) __EnsureNotRecycled() {
+    Assert(!s.__Recycled, "Scope: invalid use of recycled scope")
+}
+
 func (s *Scope) GetContext() *Scope {
+    s.__EnsureNotRecycled()
     return s.__Context
+}
+
+func (s *Scope) DeclareVal(object Object) {
+    s.__EnsureNotRecycled()
+    s.__Vals = append(s.__Vals, object)
+}
+
+func (s *Scope) DeclareRefByVal(object Object) {
+    s.__EnsureNotRecycled()
+    s.__Refs = append(s.__Refs, &object)
+}
+
+func (s *Scope) __DeclareRef(object_ref *Object) {
+    s.__EnsureNotRecycled()
+    s.__Refs = append(s.__Refs, object_ref)
+}
+
+func (s *Scope) GetValAtOffset(n int) Object {
+    s.__EnsureNotRecycled()
+    return s.__Vals[n]
+}
+
+func (s *Scope) GetValOfRefAtOffset(n int) Object {
+    s.__EnsureNotRecycled()
+    return *(s.__Refs[n])
+}
+
+func (s *Scope) SetValAtOffset(n int, object Object) {
+    s.__EnsureNotRecycled()
+    s.__Vals[n] = object
+}
+
+func (s *Scope) SetRefByValAtOffset(n int, object Object) {
+    s.__EnsureNotRecycled()
+    *(s.__Refs[n]) = object
+}
+
+func (s *Scope) CaptureValAtOffset(n int, closure *Scope) {
+    s.__EnsureNotRecycled()
+    closure.DeclareVal(s.__Vals[n])
+}
+
+func (s *Scope) CaptureRefAtOffset(n int, closure *Scope) {
+    s.__EnsureNotRecycled()
+    closure.__DeclareRef(s.__Refs[n])
 }

@@ -4,7 +4,7 @@ import "fmt"
 import "strings"
 import ."../assertion"
 
-const RingQueueInitialCapacity = 8  // test tightly depends on this value
+const RingQueueInitialCapacity = 8  // should > 0. tightly depended by test
 const RingQueueGrowthRate = 2
 const __RingQueueSizeInconsistent = "RingQueue: inconsistent size parameters"
 const __RingQueueInvalidIndex = "RingQueue: invalid index"

@@ -86,6 +86,7 @@ func ValObjectChunkPool (size int) *sync.Pool {
 }
 
 func GetValObjectChunk (required_size int) ValObjectChunk {
+    if required_size == 0 { return nil }
     var size = __RoundUp(required_size)
     return ValObjectChunkPool(size).Get().(ValObjectChunk)
 }
@@ -112,6 +113,7 @@ func RefObjectChunkPool (size int) *sync.Pool {
 }
 
 func GetRefObjectChunk (required_size int) RefObjectChunk {
+    if required_size == 0 { return nil }
     var size = __RoundUp(required_size)
     return RefObjectChunkPool(size).Get().(RefObjectChunk)
 }
