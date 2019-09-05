@@ -1,23 +1,32 @@
 package object
 
-const SCOPE_INLINE_MAX = 16
-
 type Scope struct {
-    __Context          *Scope
-    __InlineCount      int
-    __InlineVals       [SCOPE_INLINE_MAX] __VariableEntry
-    __Vals             map[Identifier] __Variable
-    __Refs             map[Identifier] *__Variable
-    __MountOperator    *Function
-    __PushOperator     *Function
+    __Context         *Scope
+    __Vals            ValObjectChunk
+    __Refs            RefObjectChunk
+    __MountOperator   *Function
+    __PushOperator    *Function
+    __Info            *ScopeInfo
 }
 
-type __Variable struct {
-    __Value   Object
-    __Type    *TypeInfo
+type ScopeInfo struct {
+    Variables  []VariableInfo
 }
 
-type __VariableEntry struct {
-    __Name    Identifier
-    __Value   __Variable
+type VariableInfo struct {
+    Depth      int
+    Type       *TypeInfo
+    IsMutable  bool
+    IsRef      bool
+    Offset     int
+}
+
+func NewScope (info *ScopeInfo, context *Scope) *Scope {
+    var s = &Scope { __Info: info, __Context: context }
+    // TODO: setFinalizer()
+    return s
+}
+
+func (s *Scope) GetContext() *Scope {
+    return s.__Context
 }

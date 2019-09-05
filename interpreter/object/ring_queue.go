@@ -116,7 +116,7 @@ func (rq *RingQueue) __Grow() {
     var r_size = rq.__RefSize
     if v_size > 0 {
         var span = v_size
-        var old_data = &rq.__ValData
+        var old_data = &(rq.__ValData)
         var new_data = GetValChunk(new_cap * span)
         var recycle = RecycleValChunk
         /* same logic (1) */
@@ -129,7 +129,7 @@ func (rq *RingQueue) __Grow() {
     }
     if r_size > 0 {
         var span = r_size
-        var old_data = &rq.__RefData
+        var old_data = &(rq.__RefData)
         var new_data = GetRefChunk(new_cap * span)
         var recycle = RecycleRefChunk
         /* same logic (1) */
