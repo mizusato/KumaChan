@@ -25,7 +25,9 @@ type NativeFunction struct {
 }
 
 type UserlandFunction struct {
-    __BodyId   int
+    __BodyId     int
+    __Context    *Scope
+    __ScopeInfo  ScopeInfo
     // TODO
 }
 
