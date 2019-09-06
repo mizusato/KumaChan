@@ -1,6 +1,5 @@
 package main
 
-
 import "os"
 import "fmt"
 import "io"
@@ -8,15 +7,12 @@ import "io/ioutil"
 import "./parser/syntax"
 import "./parser/scanner"
 import "./parser"
-import "./transpiler"
-
 
 func check (err error) {
     if (err != nil) {
         panic(err)
     }
 }
-
 
 func parser_debug (file io.Reader, name string, root string) {
     var code_bytes, err = ioutil.ReadAll(file)
@@ -53,49 +49,7 @@ func parser_debug (file io.Reader, name string, root string) {
     }
 }
 
-
-func PrintHelpInfo () {
-    fmt.Printf (
-        "Usage:\n\t" +
-        "%v eval [--debug]\n\t" +
-        "%v module FILE [--debug]\n",
-        os.Args[0], os.Args[0],
-    )
-}
-
-
 func main () {
     syntax.Init()
-    transpiler.Init()
-    if len(os.Args) > 1 {
-        var mode = os.Args[1]
-        if mode == "eval" {
-            var only_debug = len(os.Args) > 2 && os.Args[2] == "--debug"
-            if only_debug {
-                parser_debug(os.Stdin, "<eval>", "eval")
-            } else {
-                fmt.Print(transpiler.TranspileFile(os.Stdin, "<eval>", "eval"))
-            }
-        } else if mode == "module" {
-            if len(os.Args) <= 2 {
-                PrintHelpInfo()
-            }
-            var path = os.Args[2]
-            var file, err = os.Open(path)
-            if err != nil {
-                panic(fmt.Sprintf("error: %v: %v", path, err))
-            }
-            var only_debug = len(os.Args) > 3 && os.Args[3] == "--debug"
-            if only_debug {
-                parser_debug(file, path, "module")
-            } else {
-                fmt.Print(transpiler.TranspileFile(file, path, "module"))
-            }
-            file.Close()
-        } else {
-            PrintHelpInfo()
-        }
-    } else {
-        PrintHelpInfo()
-    }
+    parser_debug(os.Stdin, "<eval>", "eval")
 }
