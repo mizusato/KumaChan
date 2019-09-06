@@ -12,6 +12,7 @@ type ResultKind int
 const (
     Return ResultKind = iota
     Throw
+    Panic
 )
 
 type Function struct {
