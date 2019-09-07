@@ -81,7 +81,7 @@ var Id2Operator map[Id]Operator
 var Rules map[Id]Rule
 // var RootName string
 
-func Allocate () {
+func __Allocate () {
     Id2Name = make([]string, 0, 1000)
     Name2Id = make(map[string]Id)
     Id2Keyword = make(map[Id][]rune)
@@ -89,7 +89,7 @@ func Allocate () {
     Rules = make(map[Id]Rule)
 }
 
-func AssignId2Name (name string) Id {
+func __AssignId2Name (name string) Id {
     // TODO: check repeat
     var id = Id(len(Id2Name))
     Name2Id[name] = id
@@ -97,33 +97,33 @@ func AssignId2Name (name string) Id {
     return id
 }
 
-func AssignId2Extra () {
+func __AssignId2Extra () {
     for _, token_name := range Extra {
-        AssignId2Name(token_name)
+        __AssignId2Name(token_name)
     }
 }
 
-func AssignId2Tokens () {
+func __AssignId2Tokens () {
     for _, token := range Tokens {
-        AssignId2Name(token.Name)
+        __AssignId2Name(token.Name)
     }
 }
 
-func AssignId2Keywords () {
+func __AssignId2Keywords () {
     for _, name := range Keywords {
         var keyword = []rune(strings.TrimLeft(name, "@"))
         if len(keyword) == 0 { panic("empty keyword") }
-        var id = AssignId2Name(name)
+        var id = __AssignId2Name(name)
         Id2Keyword[id] = keyword
     }
 }
 
-func AssignId2Rules () {
+func __AssignId2Rules () {
     for _, def := range SyntaxDefinition {
         var t = strings.Split(def, "=")
         var u = strings.Trim(t[0], " ")
         var rule_name = strings.TrimRight(u, "?")
-        AssignId2Name(rule_name)
+        __AssignId2Name(rule_name)
         /*
         if (i == 0) {
             RootName = rule_name
@@ -132,7 +132,7 @@ func AssignId2Rules () {
     }
 }
 
-func ProcessOperatorInfo () {
+func __ProcessOperatorInfo () {
     for _, operator := range Operators {
         var id, exists = Name2Id[operator.Match]
         if !exists {
@@ -152,7 +152,7 @@ func ProcessOperatorInfo () {
     }
 }
 
-func ParseRules () {
+func __ParseRules () {
     for _, def := range SyntaxDefinition {
         var pivot = strings.Index(def, "=")
         if (pivot == -1) { panic(def + ": invalid rule: missing =") }
@@ -200,12 +200,15 @@ func ParseRules () {
     }
 }
 
+var __InitCalled = false
+
 func Init () {
-    Allocate()
-    AssignId2Extra()
-    AssignId2Tokens()
-    AssignId2Keywords()
-    AssignId2Rules()
-    ProcessOperatorInfo()
-    ParseRules()
+    if __InitCalled { return }; __InitCalled = true
+    __Allocate()
+    __AssignId2Extra()
+    __AssignId2Tokens()
+    __AssignId2Keywords()
+    __AssignId2Rules()
+    __ProcessOperatorInfo()
+    __ParseRules()
 }
