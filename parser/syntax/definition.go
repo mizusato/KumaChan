@@ -119,6 +119,7 @@ var Operators = [...] Operator {
     /* Comparison */
     Operator { Match: "<",    Priority: 50,  Assoc: Left,   Lazy: false  },
     Operator { Match: ">",    Priority: 50,  Assoc: Left,   Lazy: false  },
+    Operator { Match: "<-",   Priority: 50,  Assoc: Left,   Lazy: false  },
     Operator { Match: "<=",   Priority: 50,  Assoc: Left,   Lazy: false  },
     Operator { Match: ">=",   Priority: 50,  Assoc: Left,   Lazy: false  },
     Operator { Match: "==",   Priority: 50,  Assoc: Left,   Lazy: false  },
@@ -296,7 +297,7 @@ var SyntaxDefinition = [...] string {
         // operand -> Group: Operand
         "operator = op_fallback | op_compare | op_logic | op_arith",
           "op_fallback = ?? ",
-          "op_compare = < | > | <= | >= | == | != | ~~ | !~ ",
+          "op_compare = < | > | <- | <= | >= | == | != | ~~ | !~ ",
           `op_logic = && | _bar2 `,
           "op_arith = + | - | * | / | % | ^ ",
     /* Group: Operand */
