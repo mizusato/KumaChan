@@ -138,7 +138,7 @@ var Operators = [...] Operator {
 }
 
 
-var RedefinableOperators = []string {
+var RedefinableOperators = [] string {
     "==", "<",
     "@negate", "+", "-", "*", "/", "%", "^",
 }
