@@ -7,6 +7,7 @@ import "io/ioutil"
 import "./parser/syntax"
 import "./parser/scanner"
 import "./parser"
+import "./transformer"
 
 func check (err error) {
     if (err != nil) {
@@ -51,5 +52,6 @@ func parser_debug (file io.Reader, name string, root string) {
 
 func main () {
     syntax.Init()
+    transformer.Init()
     parser_debug(os.Stdin, "<eval>", "eval")
 }
