@@ -106,7 +106,7 @@ var Keywords = [...] string {
     "@set", "@do", "@nothing",
     
     "@mount", "@push",
-    "@when", "@match", "@tree", "@lambda", "@invoke",
+    "@$", "@when", "@match", "@tree", "@lambda", "@invoke",
     "@true", "@false", 
     
 }
@@ -147,7 +147,8 @@ var RedefinableOperators = []string {
 var SyntaxDefinition = [...] string {
     /* Group: Root */
     "eval = imports decls commands",
-    "module = @module name! export imports decls commands",
+    "module = shebang @module! name! export imports decls commands",
+      "shebang? = Pragma",
       "name = Name",
       "export? = @export { namelist! }! | @export namelist!",
         "namelist = name namelist_tail",
@@ -320,8 +321,13 @@ var SyntaxDefinition = [...] string {
                 "struct = { } | { struct_item struct_tail }!",
                   "struct_tail? = , struct_item struct_tail",
                   "struct_item = name = expr! | name!",
-          "misc_expr = type_expr | when | match | lambda | iife | tree",
+          "misc_expr = type_expr | text | when | match | lambda | iife | tree",
             "type_expr = @type { type }",
+            "text = @$ segment more_segment",
+              "segment = { segment_tag segment_content! }!",
+                "segment_tag? = name : ",
+                "segment_content = string | expr",
+              "more_segment? = segment more_segment",
             "when = @when {! branch_list }!",
               "branch_list = branch! branch_list_tail",
               "branch_list_tail? = , branch! branch_list_tail",
