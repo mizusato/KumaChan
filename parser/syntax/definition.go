@@ -100,7 +100,7 @@ var Keywords = [...] string {
     
     "@if", "@else", "@switch", "@otherwise",
     "@while", "@for", "@in", "@break", "@continue",
-    "@return", "@yield", "@await",
+    "@return", "@exec", "@yield", "@await",
     "@assert", "@throw", "@panic", "@ensure", "@try", "@to",
     "@let",  "@initial", "@reset",
     "@set", "@do", "@nothing",
@@ -260,7 +260,8 @@ var SyntaxDefinition = [...] string {
               "value = name",
         "cmd_loop_ctrl = @break | @continue",
       "cmd_group2 = cmd_return | cmd_pause | cmd_abrupt | cmd_guard",
-        "cmd_return = @return Void | @return expr",
+        "cmd_return = @return Void | @return tail_call | @return expr",
+          "tail_call = @exec operand_body plain_call",
         "cmd_pause = cmd_yield | cmd_async_for | cmd_await",
           "cmd_yield = @yield pattern = expr! | @yield expr!",
             "pattern = name | { namelist }! | [ namelist ]!",

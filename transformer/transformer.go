@@ -12,10 +12,6 @@ type Context = map[string]interface{}
 
 type Node struct {
     Kind  NodeKind
-    // N_Module
-    // N_Decls
-    // N_Commands
-    // ... TODO
 }
 
 type NodeKind int
@@ -26,7 +22,7 @@ const (
     // ... TODO
 )
 
-type Transformer = func(Tree, Pointer, Context) Node
+type Transformer = func(Tree, Pointer, Context) *Node
 
 var __Rules = []map[string]Transformer {
     // TODO
@@ -34,7 +30,7 @@ var __Rules = []map[string]Transformer {
 var __TransformMapByName = make(map[string]Transformer)
 var __TransformMap = make(map[syntax.Id]Transformer)
 
-func Transform (tree Tree, ptr Pointer, ctx Context) Node {
+func Transform (tree Tree, ptr Pointer, ctx Context) *Node {
     // hash returned by Children() is of type map[string]int,
     // which will return 0 if non-existing key requested.
     // so we use -1 to indicate root node instead
@@ -59,7 +55,7 @@ func Transform (tree Tree, ptr Pointer, ctx Context) Node {
     }
 }
 
-func TransformFirstChild (tree Tree, ptr Pointer, ctx Context) Node {
+func TransformFirstChild (tree Tree, ptr Pointer, ctx Context) *Node {
     var node = &tree.Nodes[ptr]
     if node.Length > 0 {
         return Transform(tree, node.Children[0], ctx)
@@ -69,7 +65,7 @@ func TransformFirstChild (tree Tree, ptr Pointer, ctx Context) Node {
     }
 }
 
-func TransformLastChild (tree Tree, ptr Pointer, ctx Context) Node {
+func TransformLastChild (tree Tree, ptr Pointer, ctx Context) *Node {
     var node = &tree.Nodes[ptr]
     if node.Length > 0 {
         return Transform(tree, node.Children[node.Length-1], ctx)

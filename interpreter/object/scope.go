@@ -9,15 +9,12 @@ type Scope struct {
     __Refs            RefObjectChunk
     __MountOperator   *Function
     __PushOperator    *Function
-    __Info            *ScopeInfo
     __Recycled        bool
 }
 
 type ScopeInfo struct {
     Context    *ScopeInfo
     Variables  map[Identifier] VariableInfo
-    ValsCount  int
-    RefsCount  int
 }
 
 type VariableInfo struct {
@@ -27,27 +24,12 @@ type VariableInfo struct {
     Offset     int
 }
 
-func (info *ScopeInfo) GetValsRefsCount() {
-    Assert(info.Variables != nil, "ScopeInfo: bad scope info")
-    var v = 0
-    var r = 0
-    for _, variable := range info.Variables {
-        if variable.IsVal {
-            v += 1
-        } else {
-            r += 1
-        }
-    }
-    info.ValsCount = v
-    info.RefsCount = r
-}
 
-func NewScope (info *ScopeInfo, context *Scope) *Scope {
+func NewScope (v_count int, r_count int, context *Scope) *Scope {
     var s = &Scope {
         __Context: context,
-        __Info: info,
-        __Vals: GetValObjectChunk(info.ValsCount),
-        __Refs: GetRefObjectChunk(info.RefsCount),
+        __Vals: GetValObjectChunk(v_count),
+        __Refs: GetRefObjectChunk(r_count),
     }
     runtime.SetFinalizer(s, func (s *Scope) {
         s.Recycle()

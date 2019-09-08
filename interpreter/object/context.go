@@ -1,7 +1,10 @@
 package object
 
-import "sync"
-import ."../assertion"
+import (
+	"unsafe"
+	"sync"
+	."../assertion"
+)
 
 type AtomicTypeId uint64
 
@@ -48,13 +51,13 @@ func (ctx *ObjectContext) __RegisterSingleton(name string) Object {
     var id = ctx.__GetNewAtomicTypeId()
     ctx.__Mutex.Lock()
     defer ctx.__Mutex.Unlock()
-    var t = &TypeInfo {
-        __Kind: TK_Singleton,
-        __Name: name,
-        __T_Singleton: &T_Singleton {
-            __Id: id,
+    var t = (*TypeInfo)(unsafe.Pointer((&T_Singleton {
+        __TypeInfo: TypeInfo {
+            __Kind: TK_Singleton,
+            __Name: name,
         },
-    }
+        __Id: id,
+    })))
     ctx.__SingletonTypeInfo[id] = t
     return Object {
         __Category: OC_Singleton,

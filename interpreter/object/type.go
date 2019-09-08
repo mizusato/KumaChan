@@ -15,16 +15,10 @@ const (
 type TypeInfo struct {
     __Kind            TypeKind
     __Name            string
-    __T_Plain         *T_Plain
-    __T_Singleton     *T_Singleton
-    __T_Schema        *T_Schema
-    __T_Class         *T_Class
-    __T_Interface     *T_Interface
-    __T_Singnature    *T_Singnature
-    __T_Compound      *T_Compound
 }
 
 type T_Plain struct {
+    __TypeInfo   TypeInfo
     __Id         AtomicTypeId
     __Category   ObjectCategory
     __Checker    func(Object)bool
@@ -32,10 +26,12 @@ type T_Plain struct {
 }
 
 type T_Singleton struct {
+    __TypeInfo   TypeInfo
     __Id         AtomicTypeId
 }
 
 type T_Schema struct {
+    __TypeInfo      TypeInfo
     __Id            AtomicTypeId
     __Bases         [] *TypeInfo
     __Supers        [] *TypeInfo
@@ -46,6 +42,7 @@ type T_Schema struct {
 }
 
 type T_Class struct {
+    __TypeInfo          TypeInfo
     __Id                AtomicTypeId
     __BaseClasses       [] *TypeInfo
     __BaseInterfaces    [] *TypeInfo
@@ -56,21 +53,25 @@ type T_Class struct {
 }
 
 type __MethodInfo struct {
+    __TypeInfo  TypeInfo
     __From      *TypeInfo
     __Function  *Function
     __Offset    int
 }
 
 type T_Interface struct {
+    __TypeInfo   TypeInfo
     __Id         AtomicTypeId
     // TODO
 }
 
 type T_Singnature struct {
+    __TypeInfo   TypeInfo
     __Id         AtomicTypeId
     // TODO
 }
 
 type T_Compound struct {
+    __TypeInfo  TypeInfo
     // TODO
 }
