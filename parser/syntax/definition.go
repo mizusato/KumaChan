@@ -88,7 +88,7 @@ var Tokens = [...] Token {
 /* Conditional Keywords */
 var Keywords = [...] string {
     
-    "@module", "@export", "@import", "@from", "@as",
+    "@module", "@export", "@import", "@as", "@include",
     
     "@type", "@new", "@singleton",
     "@function", "@static", "@mock",
@@ -148,7 +148,8 @@ var RedefinableOperators = [] string {
 var SyntaxDefinition = [...] string {
     /* Group: Root */
     "eval = imports decls commands",
-    "module = shebang @module! name! export imports decls commands",
+    "included = decls",
+    "module = shebang @module! name! export imports includes decls commands",
       "shebang? = Pragma",
       "name = Name",
       "export? = @export { namelist! }! | @export namelist!",
@@ -161,6 +162,8 @@ var SyntaxDefinition = [...] string {
           "imported_names? = . * | . { alias_list! }!",
             "alias_list = alias alias_list_tail",
             "alias_list_tail? = , alias! alias_list_tail",
+      "includes? = include includes",
+        "include = @include string",
       // decls -> Group: Declaration
       "commands? = command commands",
         // command -> Group: Command
