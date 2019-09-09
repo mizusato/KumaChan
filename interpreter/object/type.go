@@ -40,7 +40,6 @@ type T_Schema struct {
     __Immutable     bool
     __Fields        map[Identifier] *TypeInfo
     __DefaultVals   map[Identifier] Object
-    __Operators     map[CustomOperator] *Function
 }
 
 type T_Class struct {
@@ -51,7 +50,6 @@ type T_Class struct {
     __SuperClasses      [] *TypeInfo
     __SuperInterfaces   [] *TypeInfo
     __Methods           map[Identifier] __MethodInfo
-    __Operators         map[CustomOperator] *Function
 }
 
 type __MethodInfo struct {

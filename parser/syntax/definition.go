@@ -6,7 +6,7 @@ func r (pattern string) Regexp { return regexp.MustCompile(`^` + pattern) }
 
 const LF = `\n`
 const Blanks = ` \t\r　`
-const Symbols = `;\{\}\[\]\(\)\.\,\:@\?\<\>\=\!~\&\|\\\+\-\*\/%\^'"` + "`"
+const Symbols = `;\{\}\[\]\(\)\.\,\:#@\?\<\>\=\!~\&\|\\\+\-\*\/%\^'"` + "`"
 
 var EscapeMap = map [string] string {
     "_exc":   "!",
@@ -188,7 +188,8 @@ var SyntaxDefinition = [...] string {
                       "typelist = type typelist_tail",
                       "typelist_tail? = , type! typelist_tail",
                   "fun_sig = [ -> type! ]! | [ typelist! ->! type! ]!",
-        "function = f_overload | f_single",
+        "function = opt_pragma f_overload | opt_pragma f_single",
+          "opt_pragma? = Pragma",
           "f_single = @function name type_params paralist! ->! type! body!",
             "paralist = ( ) | ( typed_list! )!",
               "typed_list = typed_list_item typed_list_tail",
@@ -279,7 +280,7 @@ var SyntaxDefinition = [...] string {
                 "exprlist_tail? = , expr! exprlist_tail",
                 // expr -> Group: Expression
           "cmd_try = @try opt_to name { commands }!",
-      "cmd_group3 = cmd_scope | cmd_set | cmd_side_effect | cmd_pass",
+      "cmd_group3 = cmd_scope | cmd_set | cmd_pass | cmd_side_effect",
         "cmd_scope = cmd_let | cmd_initial | cmd_reset",
           "cmd_let = @let pattern = expr!",
           "cmd_initial = @initial name = var_type expr!",
@@ -289,8 +290,8 @@ var SyntaxDefinition = [...] string {
         "cmd_set = @set left_val set_op = expr",
           "left_val = operand_body",
           // operand_body -> Group: Operand
-        "cmd_side_effect = expr",
         "cmd_pass = @do @nothing",
+        "cmd_side_effect = expr",
     /* Group: Expression */
     "expr = lower_unary operand expr_tail | operand expr_tail",
       "lower_unary = @mount | @push",
