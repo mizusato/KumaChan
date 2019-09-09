@@ -107,10 +107,9 @@ func (rq *RingQueue) Set(index int, new_object Object) {
     }
 }
 
-func (rq *RingQueue) __Grow() {
-    Assert(rq.__Length == rq.__Capacity, "RingQueue: invalid grow")
-    var cap = rq.__Capacity
-    var new_cap = rq.__Capacity * RingQueueGrowthRate
+func (rq *RingQueue) __ChangeCapacity(new_cap int) {
+    Assert(new_cap >= rq.__Length, "RingQueue: invalid capacity change")
+    var length = rq.__Length
     var head = rq.__Head
     var v_size = rq.__ValSize
     var r_size = rq.__RefSize
@@ -120,8 +119,8 @@ func (rq *RingQueue) __Grow() {
         var new_data = GetValChunk(new_cap * span)
         var recycle = RecycleValChunk
         /* same logic (1) */
-        for i := 0; i < cap; i++ {
-            var p = (head + i) % cap
+        for i := 0; i < length; i++ {
+            var p = (head + i) % length
             copy(new_data[i*span:(i+1)*span], (*old_data)[p*span:(p+1)*span])
         }
         recycle(*old_data)
@@ -133,16 +132,30 @@ func (rq *RingQueue) __Grow() {
         var new_data = GetRefChunk(new_cap * span)
         var recycle = RecycleRefChunk
         /* same logic (1) */
-        for i := 0; i < cap; i++ {
-            var p = (head + i) % cap
+        for i := 0; i < length; i++ {
+            var p = (head + i) % length
             copy(new_data[i*span:(i+1)*span], (*old_data)[p*span:(p+1)*span])
         }
         recycle(*old_data)
         *old_data = new_data
     }
     rq.__Head = 0
-    rq.__Length = cap
     rq.__Capacity = new_cap
+}
+
+func (rq *RingQueue) __Grow() {
+    var len = rq.__Length
+    var cap = rq.__Capacity
+    var new_cap = cap * RingQueueGrowthRate
+    Assert(len == cap, "RingQueue: invalid grow")
+    rq.__ChangeCapacity(new_cap)
+}
+
+func (rq *RingQueue) __Shrink() {
+    var len = rq.__Length
+    var new_cap = rq.__Capacity / RingQueueGrowthRate
+    Assert(len <= new_cap, "RingQueue: invalid shrink",)
+    rq.__ChangeCapacity(new_cap)
 }
 
 func (rq *RingQueue) __CheckCapacity() {
@@ -151,6 +164,16 @@ func (rq *RingQueue) __CheckCapacity() {
     Assert(length <= capacity, "RingQueue: invalid state")
     if length == capacity {
         rq.__Grow()
+    }
+}
+
+func (rq *RingQueue) __CheckWaste() {
+    var length = rq.__Length
+    var capacity = rq.__Capacity
+    Assert(length <= capacity, "RingQueue: invalid state")
+    if capacity > RingQueueInitialCapacity &&
+           length < capacity / (2*RingQueueGrowthRate) {
+        rq.__Shrink()
     }
 }
 
