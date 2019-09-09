@@ -9,6 +9,8 @@ const (
     TK_Class
     TK_Interface
     TK_Singnature
+    TK_TypeTemplate
+    TK_FunctionTemplate
     TK_Compound
 )
 
@@ -66,6 +68,18 @@ type T_Interface struct {
 }
 
 type T_Singnature struct {
+    __TypeInfo   TypeInfo
+    __Id         AtomicTypeId
+    // TODO
+}
+
+type T_TypeTemplate struct {
+    __TypeInfo   TypeInfo
+    __Id         AtomicTypeId
+    // TODO
+}
+
+type T_FunctionTemplate struct {
     __TypeInfo   TypeInfo
     __Id         AtomicTypeId
     // TODO
