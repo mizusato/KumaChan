@@ -26,8 +26,6 @@ var Tokens = [...] Token {
     Token { Name: "Comment", Pattern: r(`/\*([^\*]|[^/]|\*[^/]|[^\*]/)*\*/`) },
     Token { Name: "Comment", Pattern: r(`//[^\n]*`) },
     Token { Name: "Pragma",  Pattern: r(`#[^\n]*`) },
-    Token { Name: "<<",      Pattern: r(`\<\<`) },
-    Token { Name: ">>",      Pattern: r(`\>\>`) },
     Token { Name: "Blank",   Pattern: r(`[`+Blanks+`]+`) },
     Token { Name: "LF",      Pattern: r(LF+`+`) },
     Token { Name: "LF",      Pattern: r(`;+`) },

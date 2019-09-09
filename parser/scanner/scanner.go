@@ -63,8 +63,8 @@ func GetInfo (code Code) RowColInfo {
 
 func MatchToken (code Code, pos int) (amount int, id syntax.Id) {
     for _, token := range syntax.Tokens {
-        reader := &RuneListReader { src: code, pos: pos }
-        loc := token.Pattern.FindReaderIndex(reader)
+        var reader = RuneListReader { src: code, pos: pos }
+        var loc = token.Pattern.FindReaderIndex(&reader)
         // fmt.Printf("Try %v\n", token.Name)
         if loc != nil {
             if (loc[0] != 0) { panic("invalid token pattern") }
@@ -78,8 +78,7 @@ func MatchToken (code Code, pos int) (amount int, id syntax.Id) {
 func IsRightParOrName (token *Token) bool {
     if token != nil {
         var name = syntax.Id2Name[token.Id]
-        if ( name == ")" || name == "]" || name == ">" ||
-             name == "Name" || name == "EsId" ) {
+        if ( name == ")" || name == "]" || name == ">" || name == "Name") {
             return true
         } else {
             return false
@@ -101,9 +100,9 @@ func IsReturnKeyword (token *Token) bool {
 
 func Try2InsertExtra (tokens TokenSequence, current Token) TokenSequence {
     /*
-     *  A blank magic to distinguish
+     *  A black magic to distinguish
      *      let t = f(g*h)(x)
-     *  between
+     *  from
      *      let t = f
      *      (g*h)(x)
      */
