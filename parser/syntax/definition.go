@@ -85,9 +85,9 @@ var Tokens = [...] Token {
 
 /* Conditional Keywords */
 var Keywords = [...] string {
-    
+
     "@module", "@export", "@import", "@as", "@include",
-    
+
     "@type", "@new", "@singleton",
     "@function", "@static", "@mock",
     "@handle", "@unless", "@failed", "@finally",
@@ -95,18 +95,18 @@ var Keywords = [...] string {
     "@struct", "@immutable", "@operator", "@negate", "@not",
     "@class", "@init", "@create", "@private",
     "@interface",
-    
+
     "@if", "@else", "@switch", "@otherwise",
     "@while", "@for", "@in", "@break", "@continue",
     "@return", "@exec", "@yield", "@await",
     "@assert", "@throw", "@panic", "@ensure", "@try", "@to",
     "@let",  "@initial", "@reset",
     "@set", "@do", "@nothing",
-    
+
     "@mount", "@push",
     "@$", "@when", "@match", "@tree", "@lambda", "@invoke",
-    "@true", "@false", 
-    
+    "@true", "@false",
+
 }
 
 
@@ -210,11 +210,12 @@ var SyntaxDefinition = [...] string {
             "f_item_list = f_item f_item_list_tail",
               "f_item_list_tail? = , f_item! f_item_list_tail",
               "f_item = paralist! ->! type! body!",
-        "enum = @enum name {! enum_item enum_tail }!",
+        "enum = opt_im @enum name {! enum_item enum_tail }!",
+          "opt_im? = @immutable",
           "enum_tail? = , enum_item! enum_tail",
-          "enum_item = schema | name",
-        "schema = schema_kind name type_params bases {! field_list! oplist }!",
-          "schema_kind = @struct | @immutable",
+          "enum_item = simple_schema | name",
+            "simple_schema = name { field_list! }!",
+        "schema = opt_im @struct name type_params bases {! field_list! }!",
           "bases? = : typelist!",
           "field_list = field field_list_tail",
             "field_list_tail? = , field! field_list_tail",
