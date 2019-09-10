@@ -3,7 +3,7 @@ package object
 import (
 	"unsafe"
 	"sync"
-	."../assertion"
+	."kumachan/interpreter/assertion"
 )
 
 type AtomicTypeId uint64

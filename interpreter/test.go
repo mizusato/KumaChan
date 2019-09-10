@@ -1,7 +1,7 @@
 package main
 
 import "fmt"
-import ."./object"
+import ."kumachan/interpreter/object"
 
 var ctx = NewObjectContext()
 

@@ -2,7 +2,7 @@ package object
 
 import "fmt"
 import "strings"
-import ."../assertion"
+import ."kumachan/interpreter/assertion"
 
 const RingQueueInitialCapacity = 8  // should > 0. tightly depended by test
 const RingQueueGrowthRate = 2

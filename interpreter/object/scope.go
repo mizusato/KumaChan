@@ -1,7 +1,7 @@
 package object
 
 import "runtime"
-import ."../assertion"
+import ."kumachan/interpreter/assertion"
 
 type Scope struct {
     __Context         *Scope

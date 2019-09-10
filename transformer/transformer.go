@@ -3,8 +3,8 @@ package transformer
 import "fmt"
 import "strconv"
 import "strings"
-import "../parser/syntax"
-import "../parser"
+import "kumachan/parser/syntax"
+import "kumachan/parser"
 
 type Tree = *parser.Tree
 type Pointer = int

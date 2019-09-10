@@ -1,6 +1,6 @@
 package object
 
-import ."../assertion"
+import ."kumachan/interpreter/assertion"
 
 var Nil = Object {
     __Category: OC_Singleton,

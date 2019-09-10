@@ -3,7 +3,7 @@ package parser
 import "fmt"
 import "strings"
 import "unicode/utf8"
-import "./syntax"
+import "kumachan/parser/syntax"
 
 
 func Strlen (s string) int {

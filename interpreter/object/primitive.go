@@ -1,7 +1,7 @@
 package object
 
 import "unsafe"
-import ."../assertion"
+import ."kumachan/interpreter/assertion"
 
 const __InvalidUnwrap = "Primitive: unable to unwrap object of wrong category"
 const __UnwrapNil = "Primitive: nil pointer occurred during unwrapping"

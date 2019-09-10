@@ -3,7 +3,7 @@ package scanner
 
 import "io"
 import "fmt"
-import "../syntax"
+import "kumachan/parser/syntax"
 
 
 type Code = []rune

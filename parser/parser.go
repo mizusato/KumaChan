@@ -1,8 +1,8 @@
 package parser
 
 import "fmt"
-import "./syntax"
-import "./scanner"
+import "kumachan/parser/syntax"
+import "kumachan/parser/scanner"
 
 
 type NodeStatus int

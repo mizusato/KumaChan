@@ -4,10 +4,10 @@ import "os"
 import "fmt"
 import "io"
 import "io/ioutil"
-import "./parser/syntax"
-import "./parser/scanner"
-import "./parser"
-import "./transformer"
+import "kumachan/parser/syntax"
+import "kumachan/parser/scanner"
+import "kumachan/parser"
+import "kumachan/transformer"
 
 func check (err error) {
     if (err != nil) {

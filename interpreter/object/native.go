@@ -1,7 +1,7 @@
 package object
 
 import "unsafe"
-import ."../assertion"
+import ."kumachan/interpreter/assertion"
 
 type NativeClassId int
 type NativeClassMethod = func(unsafe.Pointer, [MAX_ARGS]Object) Result
