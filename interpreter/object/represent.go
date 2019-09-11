@@ -29,8 +29,6 @@ func RepresentCategory (oc ObjectCategory) string {
         return "Struct"
     case OC_Instance:
         return "Instance"
-    case OC_Module:
-        return "Module"
     default:
         panic("invalid object category")
     }

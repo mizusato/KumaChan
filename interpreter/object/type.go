@@ -1,5 +1,7 @@
 package object
 
+import ."kumachan/interpreter/assertion"
+
 type TypeId int
 
 type TypeKind int
@@ -64,4 +66,19 @@ type T_Singnature struct {
 type T_Compound struct {
     __TypeInfo  TypeInfo
     // TODO
+}
+
+func GetTypeObject (id int) Object {
+    return Object {
+        __Category: OC_Type,
+        __Inline: uint64(id),
+    }
+}
+
+func UnwrapType (object Object) int {
+    Assert (
+        object.__Category == OC_Type,
+        "Type: unable to unwrap object of wrong category",
+    )
+    return int(object.__Inline)
 }

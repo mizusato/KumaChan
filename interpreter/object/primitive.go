@@ -9,13 +9,14 @@ const __UnwrapNil = "Primitive: nil pointer occurred during unwrapping"
 func NewInt (x int) Object {
     return Object {
         __Category: OC_Int,
-        __Inline: *(*uint64)(unsafe.Pointer(&x)),
+        __Inline: uint64(*(*uint)(unsafe.Pointer(&x))),
     }
 }
 
 func UnwrapInt (o Object) int {
     Assert(o.__Category == OC_Int, __InvalidUnwrap)
-    return *(*int)(unsafe.Pointer(&o.__Inline))
+    var t = uint(o.__Inline)
+    return *(*int)(unsafe.Pointer(&t))
 }
 
 func NewIEEE754 (x float64) Object {

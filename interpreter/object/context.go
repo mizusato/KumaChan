@@ -1,9 +1,8 @@
 package object
 
-import (
-	"sync"
-	."kumachan/interpreter/assertion"
-)
+import "sync"
+import ."kumachan/interpreter/assertion"
+
 
 type ObjectContext struct {
     __Mutex                sync.Mutex
@@ -19,6 +18,7 @@ func NewObjectContext () *ObjectContext {
         __NativeClassList:    make([] NativeClass, 0),
     }
     __InitDefaultSingletonTypes(ctx)
+	__InitDefaultPlainTypes(ctx)
     return ctx
 }
 

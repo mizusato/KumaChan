@@ -1,30 +1,23 @@
 package object
 
-var Nil = Object {
-    __Category: OC_Type,
-    __Inline: 0,
-}
+import ."kumachan/interpreter/assertion"
 
-var Void = Object {
-    __Category: OC_Type,
-    __Inline: 1,
-}
+const __SingletonInvalidInit = "Singleton: invalid default type initialization"
 
-var NotFound = Object {
-    __Category: OC_Type,
-    __Inline: 2,
-}
-
-var Complete = Object {
-    __Category: OC_Type,
-    __Inline: 3,
-}
+var Nil = GetTypeObject(0)
+var Void = GetTypeObject(1)
+var NotFound = GetTypeObject(2)
+var Complete = GetTypeObject(3)
 
 func __InitDefaultSingletonTypes (context *ObjectContext) {
-    NewSingleton(context, "Nil")
-    NewSingleton(context, "Void")
-    NewSingleton(context, "NotFound")
-    NewSingleton(context, "Complete")
+    var Nil_ = NewSingleton(context, "Nil")
+    var Void_ = NewSingleton(context, "Void")
+    var NotFound_ = NewSingleton(context, "NotFound")
+    var Complete_ = NewSingleton(context, "Complete")
+    Assert(Nil_ == Nil, __SingletonInvalidInit)
+    Assert(Void_ == Void, __SingletonInvalidInit)
+    Assert(NotFound_ == NotFound, __SingletonInvalidInit)
+    Assert(Complete_ == Complete, __SingletonInvalidInit)
 }
 
 func NewSingleton (context *ObjectContext, name string) Object {
@@ -33,8 +26,5 @@ func NewSingleton (context *ObjectContext, name string) Object {
         __Name: name,
     }
     context.__RegisterType(T)
-    return Object {
-        __Category: OC_Type,
-        __Inline: uint64(T.__Id),
-    }
+    return GetTypeObject(T.__Id)
 }
