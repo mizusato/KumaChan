@@ -46,7 +46,7 @@ func TestRingQueueVariousObjects (t *testing.T) {
     q.Prepend(NewString("-2"))
     RequireEqual (
         t, q.Represent(ctx),
-        `(8) {[String "-2"], [Singleton Complete], [String "-1"], [IEEE754 0], [IEEE754 0.5], [Singleton Nil], [Bool true], [Int 2]}`,
+        `(8) {[String "-2"], [Type Complete], [String "-1"], [IEEE754 0], [IEEE754 0.5], [Type Nil], [Bool true], [Int 2]}`,
     )
 }
 

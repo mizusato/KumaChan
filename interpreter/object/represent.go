@@ -5,8 +5,8 @@ import "strconv"
 
 func RepresentCategory (oc ObjectCategory) string {
     switch oc {
-    case OC_Singleton:
-        return "Singleton"
+    case OC_Type:
+        return "Type"
     case OC_Bool:
         return "Bool"
     case OC_Byte:
@@ -25,26 +25,10 @@ func RepresentCategory (oc ObjectCategory) string {
         return "NativeObject"
     case OC_Function:
         return "Function"
-    case OC_Schema:
-        return "Schema"
     case OC_Struct:
         return "Struct"
-    case OC_Class:
-        return "Class"
-    case OC_Interface:
-        return "Interface"
     case OC_Instance:
         return "Instance"
-    case OC_TypeTemplate:
-        return "TypeTemplate"
-    case OC_FunctionTemplate:
-        return "FunctionTemplate"
-    case OC_PlainType:
-        return "PlainType"
-    case OC_CompoundType:
-        return "CompoundType"
-    case OC_FunctionSignature:
-        return "FunctionSignature"
     case OC_Module:
         return "Module"
     default:
@@ -56,8 +40,8 @@ func Represent (object Object, context *ObjectContext) string {
     var category = RepresentCategory(object.__Category)
     var description = "..."
     switch object.__Category {
-    case OC_Singleton:
-        description = GetSingletonTypeName(context, object)
+    case OC_Type:
+        description = context.GetType(int(object.__Inline)).__Name
     case OC_Int:
         description = fmt.Sprintf("%v", UnwrapInt(object))
     case OC_IEEE754:

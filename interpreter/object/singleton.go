@@ -1,46 +1,40 @@
 package object
 
-import ."kumachan/interpreter/assertion"
-
 var Nil = Object {
-    __Category: OC_Singleton,
+    __Category: OC_Type,
     __Inline: 0,
 }
 
 var Void = Object {
-    __Category: OC_Singleton,
+    __Category: OC_Type,
     __Inline: 1,
 }
 
 var NotFound = Object {
-    __Category: OC_Singleton,
+    __Category: OC_Type,
     __Inline: 2,
 }
 
 var Complete = Object {
-    __Category: OC_Singleton,
+    __Category: OC_Type,
     __Inline: 3,
 }
 
 func __InitDefaultSingletonTypes (context *ObjectContext) {
-    context.__RegisterSingleton("Nil")
-    context.__RegisterSingleton("Void")
-    context.__RegisterSingleton("NotFound")
-    context.__RegisterSingleton("Complete")
+    NewSingleton(context, "Nil")
+    NewSingleton(context, "Void")
+    NewSingleton(context, "NotFound")
+    NewSingleton(context, "Complete")
 }
 
 func NewSingleton (context *ObjectContext, name string) Object {
-    return context.__RegisterSingleton(name)
-}
-
-func GetSingletonTypeInfo (context *ObjectContext, object Object) *TypeInfo {
-    Assert (
-        object.__Category == OC_Singleton,
-        "invalid usage of GetSingletonTypeInfo()",
-    )
-    return context.__GetSingletonTypeInfo(AtomicTypeId(object.__Inline))
-}
-
-func GetSingletonTypeName (context *ObjectContext, object Object) string {
-    return GetSingletonTypeInfo(context, object).__Name
+    var T = & TypeInfo {
+        __Kind: TK_Singleton,
+        __Name: name,
+    }
+    context.__RegisterType(T)
+    return Object {
+        __Category: OC_Type,
+        __Inline: uint64(T.__Id),
+    }
 }
