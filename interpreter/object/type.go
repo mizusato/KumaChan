@@ -1,5 +1,7 @@
 package object
 
+type TypeId int
+
 type TypeKind int
 const (
     TK_Uninitialized TypeKind = iota

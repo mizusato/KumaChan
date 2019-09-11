@@ -18,10 +18,13 @@ type ScopeInfo struct {
 }
 
 type VariableInfo struct {
-    Type       *TypeInfo
+    Type       int
     IsMutable  bool
     IsVal      bool
     Offset     int
+    IsArg      bool
+    IsTypeArg  bool
+    ArgIndex   int
 }
 
 

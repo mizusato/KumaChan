@@ -16,24 +16,14 @@ const (
 )
 
 type Function struct {
-    __Kind              FunctionKind
-    __NativeFunction    NativeFunction
-    __UserlandFunction  UserlandFunction
-}
-
-type NativeFunction struct {
-    __Native   func([MAX_ARGS]Object) Result
-}
-
-type UserlandFunction struct {
-    __BodyId     int
+    __InfoId     int
     __Context    *Scope
-    __ScopeInfo  ScopeInfo
-    // TODO
+    __Type       int
+    __TypeArgs   [MAX_TEMPLATE_ARGS] int
 }
 
-type FunctionKind int
-const (
-    Native FunctionKind = iota
-    Userland
-)
+type FunctionInfo struct {
+    __IsNative       bool
+    __Native         func([MAX_ARGS]Object) Result
+    __ScopeInfo      ScopeInfo
+}
