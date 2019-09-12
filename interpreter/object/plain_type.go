@@ -98,6 +98,7 @@ func __NewCategoryType (context *ObjectContext, oc ObjectCategory) Object {
         __TypeInfo: TypeInfo {
             __Kind: TK_Plain,
             __Name: RepresentCategory(oc),
+            __IsInitialized: true,
         },
         __Category: oc,
         __Checker: func (object Object) bool {
