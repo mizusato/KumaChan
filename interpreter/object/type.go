@@ -6,20 +6,21 @@ type TypeId int
 
 type TypeKind int
 const (
-    TK_Uninitialized TypeKind = iota
+    TK_Singleton TypeKind = iota
     TK_Plain
-    TK_Singleton
+    TK_Function
     TK_Schema
     TK_Class
     TK_Interface
-    TK_Singnature
-    TK_Compound
+    TK_Trait
+    TK_Union
 )
 
 type TypeInfo struct {
     __Kind            TypeKind
     __Id              int
     __Name            string
+    __IsInitialized   bool
 }
 
 type T_Plain struct {

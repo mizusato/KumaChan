@@ -24,6 +24,7 @@ func NewSingleton (context *ObjectContext, name string) Object {
     var T = & TypeInfo {
         __Kind: TK_Singleton,
         __Name: name,
+        __IsInitialized: true,
     }
     context.__RegisterType(T)
     return GetTypeObject(T.__Id)
