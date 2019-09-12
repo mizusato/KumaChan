@@ -9,11 +9,11 @@ const (
     TK_Singleton TypeKind = iota
     TK_Plain
     TK_Function
+    TK_Trait
+    TK_Union
     TK_Schema
     TK_Class
     TK_Interface
-    TK_Trait
-    TK_Union
 )
 
 type TypeInfo struct {
@@ -28,6 +28,21 @@ type T_Plain struct {
     __Category   ObjectCategory
     __Checker    func(Object)bool
     __Parent     int
+}
+
+type T_Function struct {
+    __TypeInfo   TypeInfo
+    // TODO
+}
+
+type T_Union struct {
+    __TypeInfo   TypeInfo
+    __Elements   [] int
+}
+
+type T_Trait struct {
+    __TypeInfo   TypeInfo
+    __Elements   [] int
 }
 
 type T_Schema struct {
@@ -56,16 +71,6 @@ type __MethodInfo struct {
 
 type T_Interface struct {
     __TypeInfo   TypeInfo
-    // TODO
-}
-
-type T_Singnature struct {
-    __TypeInfo   TypeInfo
-    // TODO
-}
-
-type T_Compound struct {
-    __TypeInfo  TypeInfo
     // TODO
 }
 
