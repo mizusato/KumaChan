@@ -53,6 +53,10 @@ func (ctx *ObjectContext) GetType(id int) *TypeInfo {
     return ctx.__TypeInfoList[id]
 }
 
+func (ctx *ObjectContext) GetTypeName(id int) string {
+    return ctx.GetType(id).__Name
+}
+
 func (ctx *ObjectContext) __RegisterNativeClass (
     name      string,
     methods   NativeClassMethodList,

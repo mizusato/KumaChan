@@ -315,7 +315,7 @@ var SyntaxDefinition = [...] string {
                 "struct = { } | { struct_item struct_tail }!",
                   "struct_tail? = , struct_item struct_tail",
                   "struct_item = name = expr! | name!",
-          "assume = [ type ]! (! expr! )!",
+          "assume = [ type ]! nil_flag (! expr! )!",
           "misc_expr = type_expr | text | when | match | lambda | iife | tree",
             "type_expr = @type { type }",
             "text = @$ segment more_segment",

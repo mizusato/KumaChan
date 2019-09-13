@@ -31,8 +31,13 @@ type T_Plain struct {
 }
 
 type T_Function struct {
-    __TypeInfo   TypeInfo
-    // TODO
+    __TypeInfo    TypeInfo
+    __Items       [] T_Function_Item
+}
+
+type T_Function_Item struct {
+    __Parameters    [] int
+    __ReturnValue   int
 }
 
 type T_Union struct {
