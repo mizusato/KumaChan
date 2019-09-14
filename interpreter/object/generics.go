@@ -65,16 +65,18 @@ type GenericUnionType struct {
 
 type GenericTraitType struct {
     __GenericType  GenericType
-    __Elements     [] *TypeExpr
+    __Constraints  [] *TypeExpr
 }
 
 type GenericSchemaType struct {
     __GenericType     GenericType
+    __Immutable       bool
     __BaseList        [] *TypeExpr
-    __OwnFieldList    map[Identifier] GenericSchemaField
+    __OwnFieldList    [] GenericSchemaField
 }
 
 type GenericSchemaField struct {
+    __Name           Identifier
     __Type           *TypeExpr
     __HasDefault     bool
     __DefaultValue   Object
@@ -94,7 +96,7 @@ type GenericClassMethod struct {
 
 type GenericInterfaceType struct {
     __GenericType  GenericType
-    // TODO
+    __MethodList   [] *TypeExpr
 }
 
 
@@ -169,6 +171,7 @@ func (G *GenericType) Inflate(ctx *ObjectContext, args []int) int {
         return t
     }
     var T *TypeInfo = nil
+    var name = G.GetInflatedName(ctx, args)
     switch G.__Kind {
     case GT_Union:
         var union = (*GenericUnionType)(unsafe.Pointer(G))
@@ -176,15 +179,31 @@ func (G *GenericType) Inflate(ctx *ObjectContext, args []int) int {
         for i, element_expr := range union.__Elements {
             elements[i] = element_expr.Evaluate(ctx)
         }
-        var name = G.GetInflatedName(ctx, args)
         T = (*TypeInfo)(unsafe.Pointer(&T_Union {
             __TypeInfo: TypeInfo {
                 __Kind: TK_Union,
                 __Name: name,
-                __IsInitialized: true,
+                __Initialized: true,
             },
             __Elements: elements,
         }))
+    case GT_Trait:
+        var trait = (*GenericTraitType)(unsafe.Pointer(G))
+        var constraints = make([]int, len(trait.__Constraints))
+        for i, constraint_expr := range trait.__Constraints {
+            constraints[i] = constraint_expr.Evaluate(ctx)
+        }
+        T = (*TypeInfo)(unsafe.Pointer(&T_Trait {
+            __TypeInfo: TypeInfo {
+                __Kind: TK_Trait,
+                __Name: name,
+                __Initialized: true,
+            },
+            __Constraints: constraints,
+        }))
+    case GT_Schema:
+        // var schema = (*GenericSchemaType)(unsafe.Pointer(G))
+        // TODO
     }
     ctx.__RegisterInflatedType(T, G.__Id, args)
     return T.__Id

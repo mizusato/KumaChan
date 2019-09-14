@@ -17,10 +17,10 @@ const (
 )
 
 type TypeInfo struct {
-    __Kind            TypeKind
-    __Id              int
-    __Name            string
-    __IsInitialized   bool
+    __Kind          TypeKind
+    __Id            int
+    __Name          string
+    __Initialized   bool
 }
 
 type T_Plain struct {
@@ -46,17 +46,24 @@ type T_Union struct {
 }
 
 type T_Trait struct {
-    __TypeInfo   TypeInfo
-    __Elements   [] int
+    __TypeInfo     TypeInfo
+    __Constraints  [] int
 }
 
 type T_Schema struct {
     __TypeInfo      TypeInfo
+    __Immutable     bool
     __Bases         [] int
     __Supers        [] int
-    __Immutable     bool
-    __Fields        map[Identifier] int
-    __DefaultVals   map[Identifier] Object
+    __Fields        [] SchemaField
+}
+
+type SchemaField struct {
+    __Name           Identifier
+    __Type           int
+    __HasDefault     bool
+    __DefaultValue   Object
+    __From           int
 }
 
 type T_Class struct {
