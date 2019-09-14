@@ -62,7 +62,7 @@ type SchemaField struct {
     __Name           Identifier
     __Type           int
     __HasDefault     bool
-    __DefaultValue   Object
+    __DefaultValue   *Object
     __From           int
 }
 

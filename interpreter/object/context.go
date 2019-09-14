@@ -44,6 +44,7 @@ func (ctx *ObjectContext) GetName(id Identifier) string {
 func (ctx *ObjectContext) __RegisterType(T *TypeInfo) {
     ctx.__Mutex.Lock()
     defer ctx.__Mutex.Unlock()
+    Assert(T != nil, "ObjectContext: invalid TypeInfo: nil")
     var id = len(ctx.__TypeInfoList)
     Assert(id+1 > id, "ObjectContext: run out of type id")
     T.__Id = id

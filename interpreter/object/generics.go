@@ -1,6 +1,7 @@
 package object
 
 import "fmt"
+import "sort"
 import "unsafe"
 import "strings"
 
@@ -79,7 +80,7 @@ type GenericSchemaField struct {
     __Name           Identifier
     __Type           *TypeExpr
     __HasDefault     bool
-    __DefaultValue   Object
+    __DefaultValue   *Object
 }
 
 type GenericClassType struct {
@@ -166,45 +167,95 @@ func (G *GenericType) GetInflatedName(ctx *ObjectContext, args []int) string {
 }
 
 func (G *GenericType) Inflate(ctx *ObjectContext, args []int) int {
+    // validating types is not the responsibility of this method
     var t, exists = ctx.GetInflatedType(G.__Id, args)
     if exists {
         return t
     }
     var T *TypeInfo = nil
     var name = G.GetInflatedName(ctx, args)
+    var register = func (T_concrete unsafe.Pointer) {
+        T = (*TypeInfo)(T_concrete)
+        ctx.__RegisterInflatedType(T, G.__Id, args)
+    }
     switch G.__Kind {
     case GT_Union:
-        var union = (*GenericUnionType)(unsafe.Pointer(G))
-        var elements = make([]int, len(union.__Elements))
-        for i, element_expr := range union.__Elements {
-            elements[i] = element_expr.Evaluate(ctx)
-        }
-        T = (*TypeInfo)(unsafe.Pointer(&T_Union {
+        var g_union = (*GenericUnionType)(unsafe.Pointer(G))
+        var union = &T_Union {
             __TypeInfo: TypeInfo {
                 __Kind: TK_Union,
                 __Name: name,
-                __Initialized: true,
+                __Initialized: false,
             },
-            __Elements: elements,
-        }))
-    case GT_Trait:
-        var trait = (*GenericTraitType)(unsafe.Pointer(G))
-        var constraints = make([]int, len(trait.__Constraints))
-        for i, constraint_expr := range trait.__Constraints {
-            constraints[i] = constraint_expr.Evaluate(ctx)
+            // __Elements: nil
         }
-        T = (*TypeInfo)(unsafe.Pointer(&T_Trait {
+        register(unsafe.Pointer(union))
+        var elements = make([]int, len(g_union.__Elements))
+        for i, element_expr := range g_union.__Elements {
+            elements[i] = element_expr.Evaluate(ctx)
+        }
+        sort.Ints(elements)
+        union.__Elements = elements
+        T.__Initialized = true
+    case GT_Trait:
+        var g_trait = (*GenericTraitType)(unsafe.Pointer(G))
+        var trait = &T_Trait {
             __TypeInfo: TypeInfo {
                 __Kind: TK_Trait,
                 __Name: name,
-                __Initialized: true,
+                __Initialized: false,
             },
-            __Constraints: constraints,
-        }))
+            // __Constraints: nil
+        }
+        register(unsafe.Pointer(trait))
+        var constraints = make([]int, len(g_trait.__Constraints))
+        for i, constraint_expr := range g_trait.__Constraints {
+            constraints[i] = constraint_expr.Evaluate(ctx)
+        }
+        sort.Ints(constraints)
+        trait.__Constraints = constraints
+        T.__Initialized = true
     case GT_Schema:
-        // var schema = (*GenericSchemaType)(unsafe.Pointer(G))
-        // TODO
+        var g_schema = (*GenericSchemaType)(unsafe.Pointer(G))
+        var schema = &T_Schema {
+            __TypeInfo: TypeInfo {
+                __Kind: TK_Schema,
+                __Name: name,
+                __Initialized: false,
+            },
+            __Immutable: g_schema.__Immutable,
+            // Bases, Supers, Fields = nil
+        }
+        register(unsafe.Pointer(schema))
+        var bases = make([]int, len(g_schema.__BaseList))
+        for i, base_expr := range g_schema.__BaseList {
+            bases[i] = base_expr.Evaluate(ctx)
+        }
+        sort.Ints(bases)
+        var supers = []int { T.__Id }
+        var fields = make([]SchemaField, 0)
+        for _, field := range g_schema.__OwnFieldList {
+            fields = append(fields, field.Evaluate(ctx, T.__Id))
+        }
+        schema.__Bases = bases
+        schema.__Supers = supers
+        schema.__Fields = fields
+        if len(bases) == 0 {
+            T.__Initialized = true
+        }
+        // non-trivial supers and non-own fields will be added while validating
     }
-    ctx.__RegisterInflatedType(T, G.__Id, args)
     return T.__Id
+}
+
+func (field *GenericSchemaField) Evaluate (
+    ctx *ObjectContext, from int,
+) SchemaField {
+    return SchemaField {
+        __Name: field.__Name,
+        __Type: field.__Type.Evaluate(ctx),
+        __HasDefault: field.__HasDefault,
+        __DefaultValue: field.__DefaultValue,
+        __From: from,
+    }
 }
