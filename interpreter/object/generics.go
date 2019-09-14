@@ -38,6 +38,7 @@ type InflationTypeExpr struct {
 
 type GenericType struct {
     __Kind         GenericTypeKind
+    __Id           int
     __Name         string
     __Parameters   [] GenericTypeParameter
 }
@@ -148,17 +149,43 @@ func (e *TypeExpr) Evaluate(ctx *ObjectContext) int {
 
 
 func (G *GenericType) GetInflatedName(ctx *ObjectContext, args []int) string {
-    var arg_names = make([]string, len(args))
-    for i, arg := range args {
-        arg_names[i] = ctx.GetTypeName(arg)
+    if len(args) == 0 {
+        return G.__Name
+    } else {
+        var arg_names = make([]string, len(args))
+        for i, arg := range args {
+            arg_names[i] = ctx.GetTypeName(arg)
+        }
+        return fmt.Sprintf (
+            "%v[%v]",
+            G.__Name, strings.Join(arg_names, ", "),
+        )
     }
-    return fmt.Sprintf (
-        "%v[%v]",
-        G.__Name, strings.Join(arg_names, ", "),
-    )
 }
 
 func (G *GenericType) Inflate(ctx *ObjectContext, args []int) int {
-    // TODO
-    return len(args)
+    var t, exists = ctx.GetInflatedType(G.__Id, args)
+    if exists {
+        return t
+    }
+    var T *TypeInfo = nil
+    switch G.__Kind {
+    case GT_Union:
+        var union = (*GenericUnionType)(unsafe.Pointer(G))
+        var elements = make([]int, len(union.__Elements))
+        for i, element_expr := range union.__Elements {
+            elements[i] = element_expr.Evaluate(ctx)
+        }
+        var name = G.GetInflatedName(ctx, args)
+        T = (*TypeInfo)(unsafe.Pointer(&T_Union {
+            __TypeInfo: TypeInfo {
+                __Kind: TK_Union,
+                __Name: name,
+                __IsInitialized: true,
+            },
+            __Elements: elements,
+        }))
+    }
+    ctx.__RegisterInflatedType(T, G.__Id, args)
+    return T.__Id
 }

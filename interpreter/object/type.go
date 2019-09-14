@@ -9,8 +9,8 @@ const (
     TK_Singleton TypeKind = iota
     TK_Plain
     TK_Function
-    TK_Trait
     TK_Union
+    TK_Trait
     TK_Schema
     TK_Class
     TK_Interface

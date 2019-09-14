@@ -1,6 +1,9 @@
 package object
 
+import "fmt"
 import "sync"
+import "strconv"
+import "strings"
 import ."kumachan/interpreter/assertion"
 
 
@@ -9,13 +12,17 @@ type ObjectContext struct {
     __IdPool               *IdPool
 	__TypeInfoList         [] *TypeInfo
     __NativeClassList      [] NativeClass
+    __InflatedTypes        map[string] int
+    __NextGenericTypeId    int
 }
 
 func NewObjectContext () *ObjectContext {
     var ctx = &ObjectContext {
-        __IdPool:             NewIdPool(),
-        __TypeInfoList:       make([] *TypeInfo, 0),
-        __NativeClassList:    make([] NativeClass, 0),
+        __IdPool:              NewIdPool(),
+        __TypeInfoList:        make([] *TypeInfo, 0),
+        __NativeClassList:     make([] NativeClass, 0),
+        __InflatedTypes:       make(map[string] int),
+        __NextGenericTypeId:   0,
     }
     __InitDefaultSingletonTypes(ctx)
 	__InitDefaultPlainTypes(ctx)
@@ -57,6 +64,37 @@ func (ctx *ObjectContext) GetTypeName(id int) string {
     return ctx.GetType(id).__Name
 }
 
+func (ctx *ObjectContext) __DistributeGenericTypeId() int {
+    ctx.__Mutex.Lock()
+    defer ctx.__Mutex.Unlock()
+    var id = ctx.__NextGenericTypeId
+    Assert(id+1 > id, "ObjectContext: run out generic type id")
+    ctx.__NextGenericTypeId += 1
+    return id
+}
+
+func (ctx *ObjectContext) __RegisterInflatedType(T *TypeInfo, g int, args []int) {
+    ctx.__RegisterType(T)
+    ctx.__Mutex.Lock()
+    defer ctx.__Mutex.Unlock()
+    var key = GetInflatedTypeKey(g, args)
+    var _, exists = ctx.__InflatedTypes[key]
+    Assert(!exists, "ObjectContext: duplicate registration of an inflated type")
+    ctx.__InflatedTypes[key] = T.__Id
+}
+
+func (ctx *ObjectContext) GetInflatedType(g int, args []int) (int, bool) {
+    ctx.__Mutex.Lock()
+    defer ctx.__Mutex.Unlock()
+    var key = GetInflatedTypeKey(g, args)
+    var id, exists = ctx.__InflatedTypes[key]
+    if exists {
+        return id, true
+    } else {
+        return -1, false
+    }
+}
+
 func (ctx *ObjectContext) __RegisterNativeClass (
     name      string,
     methods   NativeClassMethodList,
@@ -71,4 +109,12 @@ func (ctx *ObjectContext) __RegisterNativeClass (
         __Methods: methods,
     })
     return &ctx.__NativeClassList[id]
+}
+
+func GetInflatedTypeKey(g int, args []int) string {
+    var arg_id_list = make([]string, len(args))
+    for i, arg := range args {
+        arg_id_list[i] = strconv.Itoa(arg)
+    }
+    return fmt.Sprintf("%v[%v]", g, strings.Join(arg_id_list,","))
 }
