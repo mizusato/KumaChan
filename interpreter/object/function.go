@@ -16,7 +16,7 @@ const (
 )
 
 type Function struct {
-    __InfoId     int
+    __FunInfo    int
     __Context    *Scope
     __Type       int
     __TypeArgs   [MAX_TEMPLATE_ARGS] int

@@ -13,6 +13,7 @@ type TypeExpr struct {
 type TypeExprKind int
 const (
     TE_Final TypeExprKind = iota
+    TE_Argument
     TE_Function
     TE_Inflation
 )
@@ -20,6 +21,10 @@ const (
 type FinalTypeExpr struct {
     __TypeExpr  TypeExpr
     __Type      int
+}
+
+type ArgumentTypeExpr struct {
+    __Index  int
 }
 
 type FunctionTypeExpr struct {
@@ -53,12 +58,18 @@ type GenericTypeParameter struct {
 
 type GenericTypeKind int
 const (
-    GT_Union GenericTypeKind = iota
+    GT_Function GenericTypeKind = iota
+    GT_Union
     GT_Trait
     GT_Schema
     GT_Class
     GT_Interface
 )
+
+type GenericFunctionType struct {
+    __GenericType  GenericType
+    __Signature    *TypeExpr
+}
 
 type GenericUnionType struct {
     __GenericType  GenericType
@@ -88,37 +99,48 @@ type GenericClassType struct {
     __GenericType         GenericType
     __BaseClassList       [] *TypeExpr
     __BaseInterfaceList   [] *TypeExpr
-    __OwnMethodList       map[Identifier] *GenericClassMethod
+    __OwnMethodList       [] GenericClassMethod
 }
 
 type GenericClassMethod struct {
-    __Type       *TypeExpr
-    __Function   *Function
+    __Name      Identifier
+    __Type      *TypeExpr
+    __FunInfo   int
 }
 
 type GenericInterfaceType struct {
     __GenericType  GenericType
-    __MethodList   [] *TypeExpr
+    __MethodList   [] GenericInterfaceMethod
 }
 
+type GenericInterfaceMethod struct {
+    __Name   Identifier
+    __Type   *TypeExpr
+}
 
-func (e *TypeExpr) Evaluate(ctx *ObjectContext) int {
+func (e *TypeExpr) Evaluate(ctx *ObjectContext, args []int) int {
     switch e.__Kind {
     case TE_Final:
         return (*FinalTypeExpr)(unsafe.Pointer(e)).__Type
+    case TE_Argument:
+        return args[(*ArgumentTypeExpr)(unsafe.Pointer(e)).__Index]
     case TE_Function:
         var f_expr = (*FunctionTypeExpr)(unsafe.Pointer(e))
         var items = make([]T_Function_Item, len(f_expr.__Items))
         var item_names = make([]string, len(items))
+        var fingerprint = make([]int, 0)
         for i, f := range f_expr.__Items {
             var params = make([]int, len(f.__Parameters))
             var param_names = make([]string, len(params))
             for j, ei := range f.__Parameters {
-                params[j] = ei.Evaluate(ctx)
+                params[j] = ei.Evaluate(ctx, args)
                 param_names[j] = ctx.GetTypeName(params[j])
+                fingerprint = append(fingerprint, params[j])
             }
-            var retval = f.__ReturnValue.Evaluate(ctx)
+            var retval = f.__ReturnValue.Evaluate(ctx, args)
             var retval_name = ctx.GetTypeName(retval)
+            fingerprint = append(fingerprint, retval)
+            fingerprint = append(fingerprint, -1)
             var name = fmt.Sprintf (
                 "%v -> %v",
                 strings.Join(param_names, ", "), retval_name,
@@ -137,13 +159,13 @@ func (e *TypeExpr) Evaluate(ctx *ObjectContext) int {
             },
             __Items: items,
         }))
-        ctx.__RegisterType(T)
+        ctx.__RegisterInflatedType(T, -1, fingerprint)
         return T.__Id
     case TE_Inflation:
         var inf_expr = (*InflationTypeExpr)(unsafe.Pointer(e))
         var args = make([]int, len(inf_expr.__Arguments))
         for i, arg_expr := range inf_expr.__Arguments {
-            args[i] = arg_expr.Evaluate(ctx)
+            args[i] = arg_expr.Evaluate(ctx, args)
         }
         var template = inf_expr.__Template
         return template.Inflate(ctx, args)
@@ -180,6 +202,12 @@ func (G *GenericType) Inflate(ctx *ObjectContext, args []int) int {
         ctx.__RegisterInflatedType(T, G.__Id, args)
     }
     switch G.__Kind {
+    case GT_Function:
+        var g_function = (*GenericFunctionType)(unsafe.Pointer(G))
+        var signature = g_function.__Signature.Evaluate(ctx, args)
+        var F = ctx.GetType(signature)
+        Assert(F.__Kind == TK_Function, "Generics: bad signature")
+        return signature
     case GT_Union:
         var g_union = (*GenericUnionType)(unsafe.Pointer(G))
         var union = &T_Union {
@@ -193,7 +221,7 @@ func (G *GenericType) Inflate(ctx *ObjectContext, args []int) int {
         register(unsafe.Pointer(union))
         var elements = make([]int, len(g_union.__Elements))
         for i, element_expr := range g_union.__Elements {
-            elements[i] = element_expr.Evaluate(ctx)
+            elements[i] = element_expr.Evaluate(ctx, args)
         }
         sort.Ints(elements)
         union.__Elements = elements
@@ -211,7 +239,7 @@ func (G *GenericType) Inflate(ctx *ObjectContext, args []int) int {
         register(unsafe.Pointer(trait))
         var constraints = make([]int, len(g_trait.__Constraints))
         for i, constraint_expr := range g_trait.__Constraints {
-            constraints[i] = constraint_expr.Evaluate(ctx)
+            constraints[i] = constraint_expr.Evaluate(ctx, args)
         }
         sort.Ints(constraints)
         trait.__Constraints = constraints
@@ -225,35 +253,46 @@ func (G *GenericType) Inflate(ctx *ObjectContext, args []int) int {
                 __Initialized: false,
             },
             __Immutable: g_schema.__Immutable,
-            // Bases, Supers, Fields = nil
+            // Bases, Supers, Fields, OffsetTable = nil
         }
         register(unsafe.Pointer(schema))
         var bases = make([]int, len(g_schema.__BaseList))
         for i, base_expr := range g_schema.__BaseList {
-            bases[i] = base_expr.Evaluate(ctx)
+            bases[i] = base_expr.Evaluate(ctx, args)
         }
         sort.Ints(bases)
         var supers = []int { T.__Id }
         for _, base := range bases {
             var B = ctx.GetType(base)
-            Assert(B.__Kind == TK_Schema, "Generics: invalid base schema")
+            Assert(B.__Kind == TK_Schema, "Generics: bad base schema")
             Assert(B.__Initialized, "Generics: circular inheritance")
             var Base = (*T_Schema)(unsafe.Pointer(B))
             for _, super_of_base := range Base.__Supers {
                 supers = append(supers, super_of_base)
             }
         }
+        var offset_table = make(map[Identifier] int)
         var fields = make([]SchemaField, 0)
         for _, field := range g_schema.__OwnFieldList {
-            fields = append(fields, field.Evaluate(ctx, T.__Id))
+            var offset = len(fields)
+            var name = field.__Name
+            var _, exists = offset_table[name]
+            Assert(!exists, "Generics: duplicate schema field")
+            offset_table[name] = offset
+            fields = append(fields, field.Evaluate(ctx, args, T.__Id))
         }
         for _, super := range supers {
             if super != T.__Id {
                 var S = ctx.GetType(super)
-                Assert(S.__Kind == TK_Schema, "Generics: invalid super schema")
+                Assert(S.__Kind == TK_Schema, "Generics: bad super schema")
                 Assert(S.__Initialized, "Generics: circular inheritance")
                 var Super = (*T_Schema)(unsafe.Pointer(S))
                 for _, field := range Super.__Fields {
+                    var offset = len(fields)
+                    var name = field.__Name
+                    var _, exists = offset_table[name]
+                    Assert(!exists, "Generics: duplicate schema field")
+                    offset_table[name] = offset
                     fields = append(fields, field)
                 }
             }
@@ -261,17 +300,18 @@ func (G *GenericType) Inflate(ctx *ObjectContext, args []int) int {
         schema.__Bases = bases
         schema.__Supers = supers
         schema.__Fields = fields
+        schema.__OffsetTable = offset_table
         T.__Initialized = true
     }
     return T.__Id
 }
 
 func (field *GenericSchemaField) Evaluate (
-    ctx *ObjectContext, from int,
+    ctx *ObjectContext, args []int, from int,
 ) SchemaField {
     return SchemaField {
         __Name: field.__Name,
-        __Type: field.__Type.Evaluate(ctx),
+        __Type: field.__Type.Evaluate(ctx, args),
         __HasDefault: field.__HasDefault,
         __DefaultValue: field.__DefaultValue,
         __From: from,

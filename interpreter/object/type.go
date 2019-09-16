@@ -56,6 +56,7 @@ type T_Schema struct {
     __Bases         [] int
     __Supers        [] int
     __Fields        [] SchemaField
+    __OffsetTable   map[Identifier] int
 }
 
 type SchemaField struct {
@@ -82,8 +83,8 @@ type __MethodInfo struct {
 }
 
 type T_Interface struct {
-    __TypeInfo   TypeInfo
-    // TODO
+    __TypeInfo      TypeInfo
+    __MethodTypes   [] int
 }
 
 func GetTypeObject (id int) Object {

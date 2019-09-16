@@ -74,7 +74,9 @@ func (ctx *ObjectContext) __DistributeGenericTypeId() int {
     return id
 }
 
-func (ctx *ObjectContext) __RegisterInflatedType(T *TypeInfo, g int, args []int) {
+func (ctx *ObjectContext) __RegisterInflatedType (
+    T *TypeInfo, g int, args []int,
+) {
     ctx.__RegisterType(T)
     ctx.__Mutex.Lock()
     defer ctx.__Mutex.Unlock()
