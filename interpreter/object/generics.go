@@ -4,6 +4,7 @@ import "fmt"
 import "sort"
 import "unsafe"
 import "strings"
+import ."kumachan/interpreter/assertion"
 
 type TypeExpr struct {
     __Kind TypeExprKind
@@ -233,17 +234,34 @@ func (G *GenericType) Inflate(ctx *ObjectContext, args []int) int {
         }
         sort.Ints(bases)
         var supers = []int { T.__Id }
+        for _, base := range bases {
+            var B = ctx.GetType(base)
+            Assert(B.__Kind == TK_Schema, "Generics: invalid base schema")
+            Assert(B.__Initialized, "Generics: circular inheritance")
+            var Base = (*T_Schema)(unsafe.Pointer(B))
+            for _, super_of_base := range Base.__Supers {
+                supers = append(supers, super_of_base)
+            }
+        }
         var fields = make([]SchemaField, 0)
         for _, field := range g_schema.__OwnFieldList {
             fields = append(fields, field.Evaluate(ctx, T.__Id))
         }
+        for _, super := range supers {
+            if super != T.__Id {
+                var S = ctx.GetType(super)
+                Assert(S.__Kind == TK_Schema, "Generics: invalid super schema")
+                Assert(S.__Initialized, "Generics: circular inheritance")
+                var Super = (*T_Schema)(unsafe.Pointer(S))
+                for _, field := range Super.__Fields {
+                    fields = append(fields, field)
+                }
+            }
+        }
         schema.__Bases = bases
         schema.__Supers = supers
         schema.__Fields = fields
-        if len(bases) == 0 {
-            T.__Initialized = true
-        }
-        // non-trivial supers and non-own fields will be added while validating
+        T.__Initialized = true
     }
     return T.__Id
 }
