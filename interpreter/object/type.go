@@ -6,7 +6,8 @@ type TypeId int
 
 type TypeKind int
 const (
-    TK_Singleton TypeKind = iota
+    TK_Placeholder TypeKind = iota
+    TK_Singleton
     TK_Plain
     TK_Function
     TK_Union
@@ -21,6 +22,11 @@ type TypeInfo struct {
     __Id            int
     __Name          string
     __Initialized   bool
+}
+
+type T_Placeholder struct {
+    __TypeInfo    TypeInfo
+    __UpperBound  int
 }
 
 type T_Plain struct {

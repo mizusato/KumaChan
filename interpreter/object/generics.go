@@ -53,7 +53,7 @@ type GenericType struct {
 type GenericTypeParameter struct {
     __Name            string
     __HasUpperBound   bool
-    __UpperBound      int
+    __UpperBound      *TypeExpr
 }
 
 type GenericTypeKind int
@@ -151,16 +151,21 @@ func (e *TypeExpr) Evaluate(ctx *ObjectContext, args []int) int {
             }
             item_names[i] = name
         }
-        var name = fmt.Sprintf("[%v]", strings.Join(item_names, " | "))
-        var T = (*TypeInfo)(unsafe.Pointer(&T_Function {
-            __TypeInfo: TypeInfo {
-                __Kind: TK_Function,
-                __Name: name,
-            },
-            __Items: items,
-        }))
-        ctx.__RegisterInflatedType(T, -1, fingerprint)
-        return T.__Id
+        var cache, exists = ctx.GetInflatedType(-1, fingerprint)
+        if exists {
+            return cache
+        } else {
+            var name = fmt.Sprintf("[%v]", strings.Join(item_names, " | "))
+            var T = (*TypeInfo)(unsafe.Pointer(&T_Function {
+                __TypeInfo: TypeInfo {
+                    __Kind: TK_Function,
+                    __Name: name,
+                },
+                __Items: items,
+            }))
+            ctx.__RegisterInflatedType(T, -1, fingerprint)
+            return T.__Id
+        }
     case TE_Inflation:
         var inf_expr = (*InflationTypeExpr)(unsafe.Pointer(e))
         var args = make([]int, len(inf_expr.__Arguments))
@@ -187,6 +192,32 @@ func (G *GenericType) GetInflatedName(ctx *ObjectContext, args []int) string {
             G.__Name, strings.Join(arg_names, ", "),
         )
     }
+}
+
+func (G *GenericType) GetArgPlaceholders(ctx *ObjectContext) []int {
+    var args = make([]int, len(G.__Parameters))
+    var T_args = make([]*T_Placeholder, len(args))
+    for i, parameter := range G.__Parameters {
+        var T_arg = &T_Placeholder {
+            __TypeInfo: TypeInfo {
+                __Kind: TK_Placeholder,
+                __Name: parameter.__Name,
+                __Initialized: false,
+            },
+            __UpperBound: -1,
+        }
+        ctx.__RegisterType((*TypeInfo)(unsafe.Pointer(T_arg)))
+        args[i] = T_arg.__TypeInfo.__Id
+        T_args[i] = T_arg
+    }
+    for i, T_arg := range T_args {
+        var parameter = G.__Parameters[i]
+        if parameter.__HasUpperBound {
+            T_arg.__UpperBound = parameter.__UpperBound.Evaluate(ctx, args)
+            T_arg.__TypeInfo.__Initialized = true
+        }
+    }
+    return args
 }
 
 func (G *GenericType) Inflate(ctx *ObjectContext, args []int) int {
