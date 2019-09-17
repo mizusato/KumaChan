@@ -7,7 +7,8 @@ import "strings"
 import ."kumachan/interpreter/assertion"
 
 type TypeExpr struct {
-    __Kind TypeExprKind
+    __Kind       TypeExprKind
+    __Position   int
 }
 
 type TypeExprKind int
@@ -48,6 +49,8 @@ type GenericType struct {
     __Id           int
     __Name         string
     __Parameters   [] GenericTypeParameter
+    __Checked      bool
+    __Position     int
 }
 
 type GenericTypeParameter struct {
@@ -118,6 +121,45 @@ type GenericInterfaceMethod struct {
     __Type   *TypeExpr
 }
 
+func (e *TypeExpr) IsValidBound() (bool, *TypeExpr, *GenericType) {
+    switch e.__Kind {
+    case TE_Final:
+        return true, nil, nil
+    case TE_Argument:
+        return true, nil, nil
+    case TE_Function:
+        var f_expr = (*FunctionTypeExpr)(unsafe.Pointer(e))
+        var ok = true
+        var te *TypeExpr
+        var gt *GenericType
+        for _, f := range f_expr.__Items {
+            for _, p := range f.__Parameters {
+                ok, te, gt = p.IsValidBound()
+                if !ok { break }
+            }
+            ok, te, gt = f.__ReturnValue.IsValidBound()
+            if !ok { break }
+        }
+        return ok, te, gt
+    case TE_Inflation:
+        var inf_expr = (*InflationTypeExpr)(unsafe.Pointer(e))
+        if inf_expr.__Template.__Checked {
+            var ok = true
+            var te *TypeExpr
+            var gt *GenericType
+            for _, arg_expr := range inf_expr.__Arguments {
+                ok, te, gt = arg_expr.IsValidBound()
+                if !ok { break }
+            }
+            return ok, te, gt
+        } else {
+            return false, e, inf_expr.__Template
+        }
+    default:
+        panic("impossible branch")
+    }
+}
+
 func (e *TypeExpr) Evaluate(ctx *ObjectContext, args []int) int {
     switch e.__Kind {
     case TE_Final:
@@ -174,8 +216,9 @@ func (e *TypeExpr) Evaluate(ctx *ObjectContext, args []int) int {
         }
         var template = inf_expr.__Template
         return template.Inflate(ctx, args)
+    default:
+        panic("impossible branch")
     }
-    return 0
 }
 
 
@@ -192,6 +235,18 @@ func (G *GenericType) GetInflatedName(ctx *ObjectContext, args []int) string {
             G.__Name, strings.Join(arg_names, ", "),
         )
     }
+}
+
+func (G *GenericType) IsArgBoundsValid() (bool, *TypeExpr, *GenericType) {
+    var ok = true
+    var te *TypeExpr
+    var gt *GenericType
+    for _, parameter := range G.__Parameters {
+        if parameter.__HasUpperBound {
+            ok, te, gt = parameter.__UpperBound.IsValidBound()
+        }
+    }
+    return ok, te, gt
 }
 
 func (G *GenericType) GetArgPlaceholders(ctx *ObjectContext) []int {
