@@ -31,6 +31,7 @@ type TypeInfo struct {
 type T_Placeholder struct {
     __TypeInfo    TypeInfo
     __UpperBound  int
+    __LowerBound  int
 }
 
 type T_Plain struct {
@@ -131,12 +132,60 @@ func (T *TypeInfo) IsSubTypeOf(U *TypeInfo, ctx *ObjectContext) Triple {
     TK_Class
     TK_Interface
     */
-    if T.__Kind == TK_Placeholder {
-        var B = ctx.GetType((*T_Placeholder)(unsafe.Pointer(T)).__UpperBound)
-        return B.IsSubTypeOf(U, ctx)
-    }
-    // TODO: LowerBound
     switch T.__Kind {
+    case TK_Placeholder:
+        if U.__Kind == TK_Placeholder {
+            if T.__Id == U.__Id {
+                return True
+            } else {
+                // TODO: make naming better
+                var Tpl = (*T_Placeholder)(unsafe.Pointer(T))
+                var Tu *TypeInfo
+                var TuId int
+                if Tpl.__UpperBound != -1 {
+                    Tu = ctx.GetType(Tpl.__UpperBound)
+                    if Tu.__Kind == TK_Placeholder {
+                        TuId = Tu.__Id
+                    } else {
+                        TuId = -1
+                    }
+                } else {
+                    TuId = T.__Id
+                }
+                var Upl = (*T_Placeholder)(unsafe.Pointer(U))
+                var Ul *TypeInfo
+                var UlId int
+                if Upl.__LowerBound != -1 {
+                    Ul = ctx.GetType(Upl.__LowerBound)
+                    if Ul.__Kind == TK_Placeholder {
+                        UlId = Ul.__Id
+                    } else {
+                        UlId = -1
+                    }
+                } else {
+                    UlId = U.__Id
+                }
+                if TuId != -1 && UlId != -1 {
+                    if TuId == UlId {
+                        return True
+                    } else {
+                        return False
+                    }
+                } else if TuId == -1 && UlId == -1 {
+                    return Tu.IsSubTypeOf(Ul, ctx)
+                } else {
+                    return False
+                }
+            }
+        } else {
+            var Tpl = (*T_Placeholder)(unsafe.Pointer(T))
+            if Tpl.__UpperBound != -1 {
+                var Tu = ctx.GetType(Tpl.__UpperBound)
+                return Tu.IsSubTypeOf(U, ctx)
+            } else {
+                return False
+            }
+        }
     case TK_Singleton:
         if U.__Kind == TK_Singleton {
             if T.__Id == U.__Id {

@@ -55,8 +55,8 @@ type GenericType struct {
 
 type GenericTypeParameter struct {
     __Name            string
-    __HasUpperBound   bool
     __UpperBound      *TypeExpr
+    __LowerBound      *TypeExpr
 }
 
 type GenericTypeKind int
@@ -242,14 +242,20 @@ func (G *GenericType) IsArgBoundsValid() (bool, *TypeExpr, *GenericType) {
     var te *TypeExpr
     var gt *GenericType
     for _, parameter := range G.__Parameters {
-        if parameter.__HasUpperBound {
+        if parameter.__UpperBound != nil {
             ok, te, gt = parameter.__UpperBound.IsValidBound()
+            if !ok { break }
+        }
+        if parameter.__LowerBound != nil {
+            ok, te, gt = parameter.__LowerBound.IsValidBound()
+            if !ok { break }
         }
     }
     return ok, te, gt
 }
 
 func (G *GenericType) GetArgPlaceholders(ctx *ObjectContext) []int {
+    // TODO: should forbid [T < G[T]] and [T, U < G[T]]
     var args = make([]int, len(G.__Parameters))
     var T_args = make([]*T_Placeholder, len(args))
     for i, parameter := range G.__Parameters {
@@ -260,17 +266,21 @@ func (G *GenericType) GetArgPlaceholders(ctx *ObjectContext) []int {
                 __Initialized: false,
             },
             __UpperBound: -1,
+            __LowerBound: -1,
         }
         ctx.__RegisterType((*TypeInfo)(unsafe.Pointer(T_arg)))
         args[i] = T_arg.__TypeInfo.__Id
         T_args[i] = T_arg
     }
-    for i, T_arg := range T_args {
+    for i, _ := range T_args {
         var parameter = G.__Parameters[i]
-        if parameter.__HasUpperBound {
-            T_arg.__UpperBound = parameter.__UpperBound.Evaluate(ctx, args)
-            T_arg.__TypeInfo.__Initialized = true
+        if parameter.__UpperBound != nil {
+            T_args[i].__UpperBound = parameter.__UpperBound.Evaluate(ctx, args)
         }
+        if parameter.__LowerBound != nil {
+            T_args[i].__LowerBound = parameter.__LowerBound.Evaluate(ctx, args)
+        }
+        T_args[i].__TypeInfo.__Initialized = true
     }
     return args
 }
