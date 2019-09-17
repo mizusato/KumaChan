@@ -289,6 +289,7 @@ func (G *GenericType) Inflate(ctx *ObjectContext, args []int) int {
     }
     switch G.__Kind {
     case GT_Function:
+        // note: this branch has its own return statement
         var g_function = (*GenericFunctionType)(unsafe.Pointer(G))
         var signature = g_function.__Signature.Evaluate(ctx, args)
         var F = ctx.GetType(signature)
@@ -301,6 +302,9 @@ func (G *GenericType) Inflate(ctx *ObjectContext, args []int) int {
                 __Kind: TK_Union,
                 __Name: name,
                 __Initialized: false,
+                __FromGeneric: true,
+                __GenericId: G.__Id,
+                __GenericArgs: args,
             },
             // __Elements: nil
         }
@@ -311,7 +315,7 @@ func (G *GenericType) Inflate(ctx *ObjectContext, args []int) int {
         }
         sort.Ints(elements)
         union.__Elements = elements
-        T.__Initialized = true
+        union.__TypeInfo.__Initialized = true
     case GT_Trait:
         var g_trait = (*GenericTraitType)(unsafe.Pointer(G))
         var trait = &T_Trait {
@@ -319,6 +323,9 @@ func (G *GenericType) Inflate(ctx *ObjectContext, args []int) int {
                 __Kind: TK_Trait,
                 __Name: name,
                 __Initialized: false,
+                __FromGeneric: true,
+                __GenericId: G.__Id,
+                __GenericArgs: args,
             },
             // __Constraints: nil
         }
@@ -329,7 +336,7 @@ func (G *GenericType) Inflate(ctx *ObjectContext, args []int) int {
         }
         sort.Ints(constraints)
         trait.__Constraints = constraints
-        T.__Initialized = true
+        trait.__TypeInfo.__Initialized = true
     case GT_Schema:
         var g_schema = (*GenericSchemaType)(unsafe.Pointer(G))
         var schema = &T_Schema {
@@ -337,17 +344,21 @@ func (G *GenericType) Inflate(ctx *ObjectContext, args []int) int {
                 __Kind: TK_Schema,
                 __Name: name,
                 __Initialized: false,
+                __FromGeneric: true,
+                __GenericId: G.__Id,
+                __GenericArgs: args,
             },
             __Immutable: g_schema.__Immutable,
             // Bases, Supers, Fields, OffsetTable = nil
         }
         register(unsafe.Pointer(schema))
+        var this_id = schema.__TypeInfo.__Id
         var bases = make([]int, len(g_schema.__BaseList))
         for i, base_expr := range g_schema.__BaseList {
             bases[i] = base_expr.Evaluate(ctx, args)
         }
         sort.Ints(bases)
-        var supers = []int { T.__Id }
+        var supers = []int { this_id }
         for _, base := range bases {
             var B = ctx.GetType(base)
             Assert(B.__Kind == TK_Schema, "Generics: bad base schema")
@@ -365,10 +376,10 @@ func (G *GenericType) Inflate(ctx *ObjectContext, args []int) int {
             var _, exists = offset_table[name]
             Assert(!exists, "Generics: duplicate schema field")
             offset_table[name] = offset
-            fields = append(fields, field.Evaluate(ctx, args, T.__Id))
+            fields = append(fields, field.Evaluate(ctx, args, this_id))
         }
         for _, super := range supers {
-            if super != T.__Id {
+            if super != this_id {
                 var S = ctx.GetType(super)
                 Assert(S.__Kind == TK_Schema, "Generics: bad super schema")
                 Assert(S.__Initialized, "Generics: circular inheritance")
@@ -387,7 +398,34 @@ func (G *GenericType) Inflate(ctx *ObjectContext, args []int) int {
         schema.__Supers = supers
         schema.__Fields = fields
         schema.__OffsetTable = offset_table
-        T.__Initialized = true
+        schema.__TypeInfo.__Initialized = true
+    case GT_Class:
+        // TODO
+    case GT_Interface:
+        var g_interface = (*GenericInterfaceType)(unsafe.Pointer(G))
+        var interface_ = &T_Interface {
+            __TypeInfo: TypeInfo {
+                __Kind: TK_Interface,
+                __Name: name,
+                __Initialized: false,
+                __FromGeneric: true,
+                __GenericId: G.__Id,
+                __GenericArgs: args,
+            },
+            // MethodTypes = nil
+        }
+        register(unsafe.Pointer(interface_))
+        var method_types = make(map[Identifier] int)
+        for _, method := range g_interface.__MethodList {
+            var name = method.__Name
+            var _, exists = method_types[name]
+            Assert(!exists, "Generics: duplicate interface method")
+            method_types[name] = method.__Type.Evaluate(ctx, args)
+        }
+        interface_.__MethodTypes = method_types
+        interface_.__TypeInfo.__Initialized = true
+    default:
+        panic("impossible branch")
     }
     return T.__Id
 }

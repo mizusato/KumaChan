@@ -22,6 +22,9 @@ type TypeInfo struct {
     __Id            int
     __Name          string
     __Initialized   bool
+    __FromGeneric   bool
+    __GenericId     int
+    __GenericArgs   [] int
 }
 
 type T_Placeholder struct {
@@ -75,14 +78,14 @@ type SchemaField struct {
 
 type T_Class struct {
     __TypeInfo          TypeInfo
+    __Methods           map[Identifier] MethodInfo
     __BaseClasses       [] int
     __BaseInterfaces    [] int
     __SuperClasses      [] int
     __SuperInterfaces   [] int
-    __Methods           map[Identifier] __MethodInfo
 }
 
-type __MethodInfo struct {
+type MethodInfo struct {
     __From      int
     __Offset    int
     __Function  *Function
@@ -90,7 +93,7 @@ type __MethodInfo struct {
 
 type T_Interface struct {
     __TypeInfo      TypeInfo
-    __MethodTypes   [] int
+    __MethodTypes   map[Identifier] int
 }
 
 func GetTypeObject (id int) Object {
