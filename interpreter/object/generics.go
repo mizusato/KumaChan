@@ -400,7 +400,82 @@ func (G *GenericType) Inflate(ctx *ObjectContext, args []int) int {
         schema.__OffsetTable = offset_table
         schema.__TypeInfo.__Initialized = true
     case GT_Class:
-        // TODO
+        var g_class = (*GenericClassType)(unsafe.Pointer(G))
+        var class = &T_Class {
+            __TypeInfo: TypeInfo {
+                __Kind: TK_Class,
+                __Name: name,
+                __Initialized: false,
+                __FromGeneric: true,
+                __GenericId: G.__Id,
+                __GenericArgs: args,
+            },
+            // Methods, {Base,Super}{Classes,Interfaces} = nil
+         }
+         register(unsafe.Pointer(class))
+         var this_id = class.__TypeInfo.__Id
+         var base_classes = make([]int, len(g_class.__BaseClassList))
+         for i, base_class_expr := range g_class.__BaseClassList {
+             base_classes[i] = base_class_expr.Evaluate(ctx, args)
+         }
+         sort.Ints(base_classes)
+         var base_interfaces = make([]int, len(g_class.__BaseInterfaceList))
+         for i, base_interface_expr := range g_class.__BaseInterfaceList {
+             base_interfaces[i] = base_interface_expr.Evaluate(ctx, args)
+         }
+         sort.Ints(base_interfaces)
+         var super_classes = []int { this_id }
+         var offset_table = []int { 0 }
+         for i, base_class := range base_classes {
+             var B = ctx.GetType(base_class)
+             Assert(B.__Kind == TK_Class, "Generics: bad base class")
+             Assert(B.__Initialized, "Generics: circular inheritance")
+             var Base = (*T_Class)(unsafe.Pointer(B))
+             for _, super_of_base := range Base.__SuperClasses {
+                 offset_table = append(offset_table, i)
+                 super_classes = append(super_classes, super_of_base)
+             }
+         }
+         var methods = make(map[Identifier]MethodInfo)
+         for _, own_method := range g_class.__OwnMethodList {
+             var name = own_method.__Name
+             var _, exists = methods[name]
+             Assert(!exists, "Generics: duplicate method name")
+             methods[name] = MethodInfo {
+                 __Type: own_method.__Type.Evaluate(ctx, args),
+                 __From: this_id,
+                 __Offset: 0,
+                 __FunInfo: own_method.__FunInfo,
+             }
+         }
+         var super_interfaces = append([]int {}, base_interfaces...)
+         for i, super_class := range super_classes {
+             if super_class != this_id {
+                 var S = ctx.GetType(super_class)
+                 Assert(S.__Kind == TK_Class, "Generics: bad super class")
+                 Assert(S.__Initialized, "Generics: circular inheritance")
+                 var Super = (*T_Class)(unsafe.Pointer(S))
+                 for _, sup_i := range Super.__SuperInterfaces {
+                     super_interfaces = append(super_interfaces, sup_i)
+                 }
+                 for name, sup_m := range Super.__Methods {
+                     var _, exists = methods[name]
+                     Assert(!exists, "Generics: duplicate method name")
+                     methods[name] = MethodInfo {
+                         __Type: sup_m.__Type,
+                         __From: sup_m.__From,
+                         __Offset: offset_table[i],
+                         __FunInfo: sup_m.__FunInfo,
+                     }
+                 }
+             }
+         }
+         class.__Methods = methods
+         class.__BaseClasses = base_classes
+         class.__BaseInterfaces = base_interfaces
+         class.__SuperClasses = super_classes
+         class.__SuperInterfaces = super_interfaces
+         class.__TypeInfo.__Initialized = true
     case GT_Interface:
         var g_interface = (*GenericInterfaceType)(unsafe.Pointer(G))
         var interface_ = &T_Interface {

@@ -86,9 +86,10 @@ type T_Class struct {
 }
 
 type MethodInfo struct {
+    __Type      int
     __From      int
     __Offset    int
-    __Function  *Function
+    __FunInfo   int
 }
 
 type T_Interface struct {
