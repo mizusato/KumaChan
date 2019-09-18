@@ -36,8 +36,8 @@ var Tokens = [...] Token {
     Token { Name: "Oct",     Pattern: r(`\\[0-7]+`) },
     Token { Name: "Bin",     Pattern: r(`\\\([01]+\)`) },
     Token { Name: "Exp",     Pattern: r(`\d+(\.\d+)?[Ee][\+\-]?\d+`) },
-    Token { Name: "Dec",     Pattern: r(`\d+\.\d+`) },
-    Token { Name: "Int",     Pattern: r(`\d+`) },
+    Token { Name: "Float",   Pattern: r(`\d+\.\d+`) },
+    Token { Name: "Dec",     Pattern: r(`\d+`) },
     Token { Name: "(",       Pattern: r(`\(`) },
     Token { Name: ")",       Pattern: r(`\)`) },
     Token { Name: "[",       Pattern: r(`\[`) },
@@ -70,13 +70,15 @@ var Tokens = [...] Token {
     Token { Name: "!",       Pattern: r(`\!`) },     // Flag: force
     Token { Name: "|->",     Pattern: r(`\|\-\>`) }, // Tree
     Token { Name: "~",       Pattern: r(`~`) },
+    Token { Name: "&&",      Pattern: r(`\&\&`) },   // Bitwise AND
     Token { Name: "&",       Pattern: r(`\&`) },     // Type Intersection
+    Token { Name: "||",      Pattern: r(`\|\|`) },   // Bitwise OR
     Token { Name: "|",       Pattern: r(`\|`) },     // Type Union
     Token { Name: `\`,       Pattern: r(`\\`) },
-    Token { Name: "++",      Pattern: r(`\+\+`) },   // Bitwise OR
+    Token { Name: "++",      Pattern: r(`\+\+`) },
     Token { Name: "+",       Pattern: r(`\+`) },
     Token { Name: "-",       Pattern: r(`\-`) },
-    Token { Name: "**",      Pattern: r(`\*\*`) },   // Bitwise AND
+    Token { Name: "**",      Pattern: r(`\*\*`) },
     Token { Name: "*",       Pattern: r(`\*`) },
     Token { Name: "/",       Pattern: r(`\/`) },
     Token { Name: "%",       Pattern: r(`%`) },
@@ -134,9 +136,9 @@ var Operators = [...] Operator {
     /* Bitwise */
     Operator { Match: "<<",   Priority: 40,  Assoc: Left,   Lazy: false  },
     Operator { Match: ">>",   Priority: 40,  Assoc: Left,   Lazy: false  },
-    Operator { Match: "**",   Priority: 35,  Assoc: Left,   Lazy: false  },
+    Operator { Match: "&&",   Priority: 35,  Assoc: Left,   Lazy: false  },
     Operator { Match: "^^",   Priority: 30,  Assoc: Left,   Lazy: false  },
-    Operator { Match: "++",   Priority: 25,  Assoc: Left,   Lazy: false  },
+    Operator { Match: "||",   Priority: 25,  Assoc: Left,   Lazy: false  },
     /* Logic */
     Operator { Match: "@and", Priority: 20,  Assoc: Left,   Lazy: true   },
     Operator { Match: "@or",  Priority: 10,  Assoc: Left,   Lazy: true   },
@@ -309,7 +311,7 @@ var SyntaxDefinition = [...] string {
         "operator = op_nil | op_compare | op_bitwise | op_logic | op_arith",
           "op_nil = ?? ",
           "op_compare = < | > | <- | <= | >= | == | != | ~~ | !~ ",
-          "op_bitwise = _exc2 | ** | ++ | ^^ | >> | << ",
+          "op_bitwise = << | >> | && | ^^ | _bar2 ",
           "op_logic = @and | @or ",
           "op_arith = + | - | * | / | % | ^ ",
     /* Group: Operand */
@@ -325,9 +327,10 @@ var SyntaxDefinition = [...] string {
               "ret_weak? = : type",
               "body_flex = => body | => expr!",
             "wrapped = ( expr! )!",
-          "primitive = string | number | bool",
+          "primitive = string | int | float | bool",
             "string = String",
-            "number = Hex | Exp | Dec | Int",
+            "int = Dec | Hex | Oct | Bin",
+            "float = Float | Exp",
             "bool = @Yes | @No",
           "new = @new type new_args",
             "new_args? = literal | Call ( arglist )!",
