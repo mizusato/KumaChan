@@ -9,7 +9,8 @@ const Blanks = ` \t\r　`
 const Symbols = `;\{\}\[\]\(\)\.\,\:#@\?\<\>\=\!~\&\|\\\+\-\*\/%\^'"` + "`"
 
 var EscapeMap = map [string] string {
-    "_exc":   "!",
+    "_exc1":  "!",
+    "_exc2":  "!!",
     "_bar1":  "|",
     "_bar2":  "||",
     "_at":    "@",
@@ -49,34 +50,37 @@ var Tokens = [...] Token {
     Token { Name: "::",      Pattern: r(`\:\:`) },
     Token { Name: ":",       Pattern: r(`\:`) },
     Token { Name: "@",       Pattern: r(`@`) },
-    Token { Name: "??",      Pattern: r(`\?\?`) },
-    Token { Name: "?",       Pattern: r(`\?`) },
+    Token { Name: "??",      Pattern: r(`\?\?`) },   // Nil Coalescing
+    Token { Name: "?",       Pattern: r(`\?`) },     // Flag: optional
     Token { Name: ">=",      Pattern: r(`\>\=`) },
     Token { Name: "<=",      Pattern: r(`\<\=`) },
     Token { Name: "==",      Pattern: r(`\=\=`) },
     Token { Name: "!=",      Pattern: r(`\!\=`) },
-    Token { Name: "~~",      Pattern: r(`\~\~`) },
-    Token { Name: "!~",      Pattern: r(`\!\~`) },
+    Token { Name: "~~",      Pattern: r(`\~\~`) },   // Reference Equal
+    Token { Name: "!~",      Pattern: r(`\!\~`) },   // Reference Unequal
     Token { Name: "=>",      Pattern: r(`\=\>`) },
     Token { Name: "=",       Pattern: r(`\=`) },
     Token { Name: "->",      Pattern: r(`\-\>`) },
-    Token { Name: "<-",      Pattern: r(`\<\-`) },
+    Token { Name: "<-",      Pattern: r(`\<\-`) },   // Element of (a Type)
+    Token { Name: "<<",      Pattern: r(`\<\<`) },   // Bitwise SHL
+    Token { Name: ">>",      Pattern: r(`\>\>`) },   // Bitwise SHR
     Token { Name: "<",       Pattern: r(`\<`) },
     Token { Name: ">",       Pattern: r(`\>`) },
-    Token { Name: "!",       Pattern: r(`\!`) },
-    Token { Name: "&&",      Pattern: r(`\&\&`) },
-    Token { Name: "|->",     Pattern: r(`\|\-\>`) },
-    Token { Name: "||",      Pattern: r(`\|\|`) },
+    Token { Name: "!!",      Pattern: r(`\!\!`) },   // Bitwise NOT
+    Token { Name: "!",       Pattern: r(`\!`) },     // Flag: force
+    Token { Name: "|->",     Pattern: r(`\|\-\>`) }, // Tree
     Token { Name: "~",       Pattern: r(`~`) },
-    Token { Name: "&",       Pattern: r(`\&`) },
-    Token { Name: "|",       Pattern: r(`\|`) },
+    Token { Name: "&",       Pattern: r(`\&`) },     // Type Intersection
+    Token { Name: "|",       Pattern: r(`\|`) },     // Type Union
     Token { Name: `\`,       Pattern: r(`\\`) },
+    Token { Name: "++",      Pattern: r(`\+\+`) },   // Bitwise OR
     Token { Name: "+",       Pattern: r(`\+`) },
     Token { Name: "-",       Pattern: r(`\-`) },
-    Token { Name: "**",      Pattern: r(`\*\*`) },
+    Token { Name: "**",      Pattern: r(`\*\*`) },   // Bitwise AND
     Token { Name: "*",       Pattern: r(`\*`) },
     Token { Name: "/",       Pattern: r(`\/`) },
     Token { Name: "%",       Pattern: r(`%`) },
+    Token { Name: "^^",      Pattern: r(`\^\^`) },   // Bitwise XOR
     Token { Name: "^",       Pattern: r(`\^`) },
     Token { Name: "Name",    Pattern: r(`[^`+Symbols+Blanks+LF+`]+`) },
     //    { Name: "Call",    [ Inserted by Scanner ] },
@@ -104,7 +108,7 @@ var Keywords = [...] string {
     "@let",  "@initial", "@reset",
     "@set", "@do", "@nothing",
 
-    "@mount", "@push", "@not",
+    "@mount", "@push", "@not", "@and", "@or",
     "@$", "@type", "@new",
     "@when", "@match", "@tree", "@invoke",
     "@with",
@@ -115,7 +119,7 @@ var Keywords = [...] string {
 
 /* Infix Operators */
 var Operators = [...] Operator {
-    /* Fallback */
+    /* Nil Coalescing */
     Operator { Match: "??",   Priority: 60,  Assoc: Left,   Lazy: true   },
     /* Comparison */
     Operator { Match: "<",    Priority: 50,  Assoc: Left,   Lazy: false  },
@@ -127,9 +131,15 @@ var Operators = [...] Operator {
     Operator { Match: "!=",   Priority: 50,  Assoc: Left,   Lazy: false  },
     Operator { Match: "~~",   Priority: 50,  Assoc: Left,   Lazy: false  },
     Operator { Match: "!~",   Priority: 50,  Assoc: Left,   Lazy: false  },
+    /* Bitwise */
+    Operator { Match: "<<",   Priority: 40,  Assoc: Left,   Lazy: false  },
+    Operator { Match: ">>",   Priority: 40,  Assoc: Left,   Lazy: false  },
+    Operator { Match: "**",   Priority: 35,  Assoc: Left,   Lazy: false  },
+    Operator { Match: "^^",   Priority: 30,  Assoc: Left,   Lazy: false  },
+    Operator { Match: "++",   Priority: 25,  Assoc: Left,   Lazy: false  },
     /* Logic */
-    Operator { Match: "&&",   Priority: 40,  Assoc: Left,   Lazy: true   },
-    Operator { Match: "||",   Priority: 30,  Assoc: Left,   Lazy: true   },
+    Operator { Match: "@and", Priority: 20,  Assoc: Left,   Lazy: true   },
+    Operator { Match: "@or",  Priority: 10,  Assoc: Left,   Lazy: true   },
     /* Arithmetic */
     Operator { Match: "+",    Priority: 70,  Assoc: Left,   Lazy: false  },
     Operator { Match: "-",    Priority: 70,  Assoc: Left,   Lazy: false  },
@@ -296,15 +306,16 @@ var SyntaxDefinition = [...] string {
       "lower_unary = @mount | @push",
       "expr_tail? = operator operand! expr_tail",
         // operand -> Group: Operand
-        "operator = op_fallback | op_compare | op_logic | op_arith",
-          "op_fallback = ?? ",
+        "operator = op_nil | op_compare | op_bitwise | op_logic | op_arith",
+          "op_nil = ?? ",
           "op_compare = < | > | <- | <= | >= | == | != | ~~ | !~ ",
-          `op_logic = && | _bar2 `,
+          "op_bitwise = _exc2 | ** | ++ | ^^ | >> | << ",
+          "op_logic = @and | @or ",
           "op_arith = + | - | * | / | % | ^ ",
     /* Group: Operand */
     "operand = operand_body plain_calls with pipelines",
       "operand_body = unary operand_base operand_tail",
-        "unary? = @not | _exc | - ",
+        "unary? = @not | _exc2 | - ",
         "operand_base = par | primitive | new | cast | misc_expr | var",
           "par = lambda | wrapped",
             "lambda = paralist_weak ret_weak body_flex",
@@ -331,7 +342,7 @@ var SyntaxDefinition = [...] string {
                   "struct_items? = struct_item struct_items",
                   "struct_item = name =! expr!",
           "cast = [ type ]! cast_flag (! expr! )!",
-            "cast_flag? = ? | _exc",
+            "cast_flag? = ? | _exc1",
           "misc_expr = type_expr | text | when | match | lambda | iife | tree",
             "type_expr = @type { type }",
             "text = Text | TxBegin first_segment more_segment TxEnd!",
