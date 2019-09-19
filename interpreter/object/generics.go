@@ -122,12 +122,17 @@ type GenericInterfaceMethod struct {
     __Type   *TypeExpr
 }
 
-func (e *TypeExpr) IsValidBound() (bool, *TypeExpr, *GenericType) {
+func (e *TypeExpr) IsValidBound(depth int) (bool, *TypeExpr, *GenericType) {
     switch e.__Kind {
     case TE_Final:
         return true, nil, nil
     case TE_Argument:
-        return true, nil, nil
+        // should forbid [T < G[T]] and [T, U < G[T]]
+        if depth == 0 {
+            return true, nil, nil
+        } else {
+            return false, e, nil
+        }
     case TE_Function:
         var f_expr = (*FunctionTypeExpr)(unsafe.Pointer(e))
         var ok = true
@@ -135,12 +140,12 @@ func (e *TypeExpr) IsValidBound() (bool, *TypeExpr, *GenericType) {
         var gt *GenericType
         for _, f := range f_expr.__Items {
             for _, p := range f.__Parameters {
-                ok, te, gt = p.IsValidBound()
+                ok, te, gt = p.IsValidBound(depth+1)
                 if !ok { break }
             }
-            ok, te, gt = f.__ReturnValue.IsValidBound()
+            ok, te, gt = f.__ReturnValue.IsValidBound(depth+1)
             if !ok { break }
-            ok, te, gt = f.__Exception.IsValidBound()
+            ok, te, gt = f.__Exception.IsValidBound(depth+1)
             if !ok { break }
         }
         return ok, te, gt
@@ -151,7 +156,7 @@ func (e *TypeExpr) IsValidBound() (bool, *TypeExpr, *GenericType) {
             var te *TypeExpr
             var gt *GenericType
             for _, arg_expr := range inf_expr.__Arguments {
-                ok, te, gt = arg_expr.IsValidBound()
+                ok, te, gt = arg_expr.IsValidBound(depth+1)
                 if !ok { break }
             }
             return ok, te, gt
@@ -252,11 +257,11 @@ func (G *GenericType) IsArgBoundsValid() (bool, *TypeExpr, *GenericType) {
     var gt *GenericType
     for _, parameter := range G.__Parameters {
         if parameter.__UpperBound != nil {
-            ok, te, gt = parameter.__UpperBound.IsValidBound()
+            ok, te, gt = parameter.__UpperBound.IsValidBound(0)
             if !ok { break }
         }
         if parameter.__LowerBound != nil {
-            ok, te, gt = parameter.__LowerBound.IsValidBound()
+            ok, te, gt = parameter.__LowerBound.IsValidBound(0)
             if !ok { break }
         }
     }
@@ -264,7 +269,6 @@ func (G *GenericType) IsArgBoundsValid() (bool, *TypeExpr, *GenericType) {
 }
 
 func (G *GenericType) GetArgPlaceholders(ctx *ObjectContext) []int {
-    // TODO: should forbid [T < G[T]] and [T, U < G[T]]
     var args = make([]int, len(G.__Parameters))
     var T_args = make([]*T_Placeholder, len(args))
     for i, parameter := range G.__Parameters {

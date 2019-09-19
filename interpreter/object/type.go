@@ -172,7 +172,6 @@ func (T *TypeInfo) IsSubTypeOf(U *TypeInfo, ctx *ObjectContext) Triple {
             if T.__Id == U.__Id {
                 return True
             } else {
-                // TODO: make naming better
                 var Tpl = (*T_Placeholder)(unsafe.Pointer(T))
                 var Tu *TypeInfo
                 var TuId int
