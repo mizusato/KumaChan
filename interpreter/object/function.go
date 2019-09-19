@@ -18,12 +18,13 @@ const (
 type Function struct {
     __FunInfo    int
     __Context    *Scope
-    __Type       int
+    __Template   int
     __TypeArgs   [MAX_TEMPLATE_ARGS] int
 }
 
 type FunctionInfo struct {
-    __IsNative       bool
-    __Native         func([MAX_ARGS]Object) Result
-    __ScopeInfo      ScopeInfo
+    __IsNative    bool
+    __Native      func([MAX_ARGS]Object) Result
+    __ByteCode    int
+    __ScopeInfo   ScopeInfo
 }

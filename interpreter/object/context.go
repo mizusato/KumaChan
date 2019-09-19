@@ -10,19 +10,19 @@ import ."kumachan/interpreter/assertion"
 type ObjectContext struct {
     __Mutex                sync.Mutex
     __IdPool               *IdPool
-	__TypeInfoList         [] *TypeInfo
     __NativeClassList      [] NativeClass
+	__TypeInfoList         [] *TypeInfo
+    __GenericTypeList      [] *GenericType
     __InflatedTypes        map[string] int
-    __NextGenericTypeId    int
 }
 
 func NewObjectContext () *ObjectContext {
     var ctx = &ObjectContext {
         __IdPool:              NewIdPool(),
-        __TypeInfoList:        make([] *TypeInfo, 0),
         __NativeClassList:     make([] NativeClass, 0),
+        __TypeInfoList:        make([] *TypeInfo, 0),
+        __GenericTypeList:     make([] *GenericType, 0),
         __InflatedTypes:       make(map[string] int),
-        __NextGenericTypeId:   0,
     }
     __InitDefaultSingletonTypes(ctx)
 	__InitDefaultPlainTypes(ctx)
@@ -65,13 +65,24 @@ func (ctx *ObjectContext) GetTypeName(id int) string {
     return ctx.GetType(id).__Name
 }
 
-func (ctx *ObjectContext) __DistributeGenericTypeId() int {
+func (ctx *ObjectContext) __RegisterGenericType(G *GenericType) {
     ctx.__Mutex.Lock()
     defer ctx.__Mutex.Unlock()
-    var id = ctx.__NextGenericTypeId
+    Assert(G != nil, "ObjectContext: invalid generic type: nil")
+    var id = len(ctx.__GenericTypeList)
     Assert(id+1 > id, "ObjectContext: run out generic type id")
-    ctx.__NextGenericTypeId += 1
-    return id
+    G.__Id = id
+    ctx.__GenericTypeList = append(ctx.__GenericTypeList, G)
+}
+
+func (ctx *ObjectContext) GetGenericType(id int) *GenericType {
+    ctx.__Mutex.Lock()
+    defer ctx.__Mutex.Unlock()
+    Assert (
+		0 <= id && id < len(ctx.__GenericTypeList),
+		"ObjectContext: invalid type id",
+	)
+    return ctx.__GenericTypeList[id]
 }
 
 func (ctx *ObjectContext) __RegisterInflatedType (
