@@ -36,6 +36,7 @@ type FunctionTypeExpr struct {
 type FunctionTypeExprItem struct {
     __Parameters   [] *TypeExpr
     __ReturnValue  *TypeExpr
+    __Exception    *TypeExpr
 }
 
 type InflationTypeExpr struct {
@@ -139,6 +140,8 @@ func (e *TypeExpr) IsValidBound() (bool, *TypeExpr, *GenericType) {
             }
             ok, te, gt = f.__ReturnValue.IsValidBound()
             if !ok { break }
+            ok, te, gt = f.__Exception.IsValidBound()
+            if !ok { break }
         }
         return ok, te, gt
     case TE_Inflation:
@@ -181,15 +184,21 @@ func (e *TypeExpr) Evaluate(ctx *ObjectContext, args []int) int {
             }
             var retval = f.__ReturnValue.Evaluate(ctx, args)
             var retval_name = ctx.GetTypeName(retval)
+            var exception = f.__Exception.Evaluate(ctx, args)
+            var exception_name = ctx.GetTypeName(exception)
             fingerprint = append(fingerprint, retval)
+            fingerprint = append(fingerprint, exception)
             fingerprint = append(fingerprint, -1)
             var name = fmt.Sprintf (
-                "%v -> %v",
-                strings.Join(param_names, ", "), retval_name,
+                "%v -> %v(%v)",
+                strings.Join(param_names, ", "),
+                retval_name,
+                exception_name,
             )
             items[i] = T_Function_Item {
                 __Parameters: params,
                 __ReturnValue: retval,
+                __Exception: exception,
             }
             item_names[i] = name
         }

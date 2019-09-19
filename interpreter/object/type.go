@@ -49,6 +49,7 @@ type T_Function struct {
 type T_Function_Item struct {
     __Parameters    [] int
     __ReturnValue   int
+    __Exception     int
 }
 
 type T_Union struct {
