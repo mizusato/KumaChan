@@ -78,16 +78,19 @@ type GenericFunctionType struct {
 type GenericUnionType struct {
     __GenericType  GenericType
     __Elements     [] *TypeExpr
+    // TODO: element should be singleton or final schema/class
 }
 
 type GenericTraitType struct {
     __GenericType  GenericType
     __Constraints  [] *TypeExpr
+    // TODO: element should be non-final schema or interface
 }
 
 type GenericSchemaType struct {
     __GenericType     GenericType
     __Immutable       bool
+    __Extensible      bool
     __BaseList        [] *TypeExpr
     __OwnFieldList    [] GenericSchemaField
 }
@@ -101,6 +104,7 @@ type GenericSchemaField struct {
 
 type GenericClassType struct {
     __GenericType         GenericType
+    __Extensible          bool
     __BaseClassList       [] *TypeExpr
     __BaseInterfaceList   [] *TypeExpr
     __OwnMethodList       [] GenericClassMethod
@@ -288,10 +292,16 @@ func (G *GenericType) GetArgPlaceholders(ctx *ObjectContext) []int {
     for i, _ := range T_args {
         var parameter = G.__Parameters[i]
         if parameter.__UpperBound != nil {
-            T_args[i].__UpperBound = parameter.__UpperBound.Evaluate(ctx, args)
+            var B = parameter.__UpperBound.Evaluate(ctx, args)
+            if B != T_args[i].__TypeInfo.__Id {
+                T_args[i].__UpperBound = B
+            }
         }
         if parameter.__LowerBound != nil {
-            T_args[i].__LowerBound = parameter.__LowerBound.Evaluate(ctx, args)
+            var B = parameter.__LowerBound.Evaluate(ctx, args)
+            if B != T_args[i].__TypeInfo.__Id {
+                T_args[i].__LowerBound = B
+            }
         }
         T_args[i].__TypeInfo.__Initialized = true
     }
@@ -372,6 +382,7 @@ func (G *GenericType) Inflate(ctx *ObjectContext, args []int) int {
                 __GenericArgs: args,
             },
             __Immutable: g_schema.__Immutable,
+            __Extensible: g_schema.__Extensible,
             // Bases, Supers, Fields, OffsetTable = nil
         }
         register(unsafe.Pointer(schema))
@@ -433,6 +444,7 @@ func (G *GenericType) Inflate(ctx *ObjectContext, args []int) int {
                 __GenericId: G.__Id,
                 __GenericArgs: args,
             },
+            __Extensible: g_class.__Extensible,
             // Methods, {Base,Super}{Classes,Interfaces} = nil
          }
          register(unsafe.Pointer(class))

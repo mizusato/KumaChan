@@ -70,6 +70,7 @@ type T_Trait struct {
 type T_Schema struct {
     __TypeInfo      TypeInfo
     __Immutable     bool
+    __Extensible    bool
     __Bases         [] int
     __Supers        [] int
     __Fields        [] SchemaField
@@ -86,6 +87,7 @@ type SchemaField struct {
 
 type T_Class struct {
     __TypeInfo          TypeInfo
+    __Extensible        bool
     __Methods           map[Identifier] MethodInfo
     __BaseClasses       [] int
     __BaseInterfaces    [] int
@@ -294,23 +296,58 @@ func (T *TypeInfo) IsSubTypeOf(U *TypeInfo, ctx *ObjectContext) Triple {
     }
 }
 
+func (T *TypeInfo) CanHaveProperSubType(ctx *ObjectContext) bool {
+    switch T.__Kind {
+    case TK_Placeholder:
+        var T_as_Placeholder =(*T_Placeholder)(unsafe.Pointer(T))
+        if T_as_Placeholder.__LowerBound != -1 {
+            var T_lower = ctx.GetType(T_as_Placeholder.__LowerBound)
+            if T_lower.__Kind != TK_Placeholder {
+                return T_lower.CanHaveProperSubType(ctx)
+            } else {
+                // unimplemented branch
+                // [T < U, U < T] should be forbidden if implemented
+                return true
+            }
+        } else {
+            return true
+        }
+    case TK_Object:
+        return true
+    case TK_Never, TK_Singleton, TK_Function:
+        return false
+    case TK_Schema:
+        return (*T_Schema)(unsafe.Pointer(T)).__Extensible
+    case TK_Class:
+        return (*T_Class)(unsafe.Pointer(T)).__Extensible
+    default:  // Plain, Union, Trait, Interface
+        return true
+    }
+}
+
 func (U *T_Union) HasSubType(T *TypeInfo, ctx *ObjectContext) Triple {
     var super_exists = false
+    var T_is_atomic = !(T.CanHaveProperSubType(ctx))
     for _, element := range U.__Elements {
         var E = ctx.GetType(element)
         if T.IsSubTypeOf(E, ctx) == True {
             if !super_exists {
                 super_exists = true
             } else {
+                // contained by more than 1 type
                 return False
             }
         }
     }
     if super_exists {
         // there exists only 1 super type
-        return True
+        if T_is_atomic {
+            return True
+        } else {
+            return Unknown
+        }
     } else {
-        if T.__Kind == TK_Singleton {
+        if T_is_atomic {
             return False
         } else {
             return Unknown
