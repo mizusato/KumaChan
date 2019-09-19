@@ -7,25 +7,25 @@ import ."kumachan/interpreter/assertion"
 const __PlainTypeInvalidInit = "PlainType: invalid default type initialization"
 
 // category types
-var O_Type = GetTypeObject(4)
-var O_Bool = GetTypeObject(5)
-var O_Byte = GetTypeObject(6)
-var O_Int = GetTypeObject(7)
-var O_IEEE754 = GetTypeObject(8)
-var O_BigInt = GetTypeObject(9)
-var O_BigFloat = GetTypeObject(10)
-var O_String = GetTypeObject(11)
-var O_NativeObject = GetTypeObject(12)
-var O_Function = GetTypeObject(13)
-var O_Struct = GetTypeObject(14)
-var O_Instance = GetTypeObject(15)
+var O_Type = GetTypeObject(6)
+var O_Bool = GetTypeObject(7)
+var O_Byte = GetTypeObject(8)
+var O_Int = GetTypeObject(9)
+var O_IEEE754 = GetTypeObject(10)
+var O_BigInt = GetTypeObject(11)
+var O_BigFloat = GetTypeObject(12)
+var O_String = GetTypeObject(13)
+var O_NativeObject = GetTypeObject(14)
+var O_Function = GetTypeObject(15)
+var O_Struct = GetTypeObject(16)
+var O_Instance = GetTypeObject(17)
 // subtypes of Int
-var O_Size = GetTypeObject(16)
+var O_Size = GetTypeObject(18)
 // subtypes of IEEE754
-var O_Float = GetTypeObject(17)
-var O_FloatSize = GetTypeObject(18)
+var O_Float = GetTypeObject(19)
+var O_FloatSize = GetTypeObject(20)
 // subtypes of String
-var O_Char = GetTypeObject(19)
+var O_Char = GetTypeObject(21)
 
 func __InitDefaultPlainTypes (context *ObjectContext) {
     var O_Type_ = __NewCategoryType(context, OC_Type)

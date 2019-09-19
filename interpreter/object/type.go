@@ -3,11 +3,16 @@ package object
 import "unsafe"
 import ."kumachan/interpreter/assertion"
 
+var O_Object = GetTypeObject(4)
+var O_Never = GetTypeObject(5)
+
 type TypeId int
 
 type TypeKind int
 const (
     TK_Placeholder TypeKind = iota
+    TK_Object
+    TK_Never
     TK_Singleton
     TK_Plain
     TK_Function
@@ -100,6 +105,29 @@ type T_Interface struct {
     __MethodTypes   map[Identifier] int
 }
 
+func __InitSpecialTypes (ctx *ObjectContext) {
+    var T_Object = &TypeInfo {
+        __Kind: TK_Object,
+        __Name: "Object",
+        __Initialized: true,
+    }
+    var T_Never = &TypeInfo {
+        __Kind: TK_Never,
+        __Name: "Never",
+        __Initialized: true,
+    }
+    ctx.__RegisterType(T_Object)
+    Assert (
+        T_Object.__Id == UnwrapType(O_Object),
+        "Type: invalid default special type initialization",
+    )
+    ctx.__RegisterType(T_Never)
+    Assert (
+        T_Never.__Id == UnwrapType(O_Never),
+        "Type: invalid default special type initialization",
+    )
+}
+
 func GetTypeObject (id int) Object {
     return Object {
         __Category: OC_Type,
@@ -133,7 +161,12 @@ func (T *TypeInfo) IsSubTypeOf(U *TypeInfo, ctx *ObjectContext) Triple {
     TK_Class
     TK_Interface
     */
+    if U.__Kind == TK_Object {
+        return True
+    }
     switch T.__Kind {
+    case TK_Never:
+        return True
     case TK_Placeholder:
         if U.__Kind == TK_Placeholder {
             if T.__Id == U.__Id {

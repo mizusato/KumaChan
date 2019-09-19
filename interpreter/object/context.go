@@ -25,6 +25,7 @@ func NewObjectContext () *ObjectContext {
         __InflatedTypes:       make(map[string] int),
     }
     __InitDefaultSingletonTypes(ctx)
+    __InitSpecialTypes(ctx)
 	__InitDefaultPlainTypes(ctx)
     return ctx
 }
