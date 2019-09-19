@@ -153,20 +153,13 @@ const (
 )
 
 func (T *TypeInfo) IsSubTypeOf(U *TypeInfo, ctx *ObjectContext) Triple {
-    // TODO: Any Type, Never Type
-    /*
-    TK_Placeholder
-    TK_Function
-    TK_Union
-    TK_Trait
-    TK_Schema
-    TK_Class
-    TK_Interface
-    */
     if U.__Kind == TK_Object {
         return True
     }
     switch T.__Kind {
+    case TK_Object:
+        // the situation of True is handled above (when U is the Object type)
+        return False
     case TK_Never:
         return True
     case TK_Placeholder:
@@ -286,6 +279,47 @@ func (T *TypeInfo) IsSubTypeOf(U *TypeInfo, ctx *ObjectContext) Triple {
             }
         } else {
             return False
+        }
+    case TK_Union:
+        var T_as_Union = (*T_Union)(unsafe.Pointer(T))
+        if U.__Kind == TK_Union {
+            if T.__Id == U.__Id {
+                return True
+            } else {
+                var U_as_Union = (*T_Union)(unsafe.Pointer(U))
+                var T_elements = T_as_Union.__Elements
+                var U_elements = U_as_Union.__Elements
+                if len(T_elements) < len(U_elements) {
+                    var ok = true
+                    for i, element := range T_elements {
+                        if U_elements[i] != element {
+                            ok = false
+                            break
+                        }
+                    }
+                    if ok {
+                        return True
+                    } else {
+                        return Unknown
+                    }
+                } else {
+                    return Unknown
+                }
+            }
+        } else {
+            var all_contained = true
+            for _, element := range T_as_Union.__Elements {
+                var E = ctx.GetType(element)
+                if E.IsSubTypeOf(U, ctx) != True {
+                    all_contained = false
+                    break
+                }
+            }
+            if all_contained {
+                return True
+            } else {
+                return Unknown
+            }
         }
     default:
         panic("impossible branch")

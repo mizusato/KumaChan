@@ -78,9 +78,7 @@ type GenericFunctionType struct {
 type GenericUnionType struct {
     __GenericType  GenericType
     __Elements     [] *TypeExpr
-    // TODO: elements should:
-    //           1. only contain singletons and final schemas/classes
-    //           2. contain some singletons and only 1 other type
+    // TODO: a union should not reference itself
 }
 
 type GenericTraitType struct {
