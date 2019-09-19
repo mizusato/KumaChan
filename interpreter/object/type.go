@@ -172,49 +172,55 @@ func (T *TypeInfo) IsSubTypeOf(U *TypeInfo, ctx *ObjectContext) Triple {
             if T.__Id == U.__Id {
                 return True
             } else {
-                var Tpl = (*T_Placeholder)(unsafe.Pointer(T))
-                var Tu *TypeInfo
-                var TuId int
-                if Tpl.__UpperBound != -1 {
-                    Tu = ctx.GetType(Tpl.__UpperBound)
-                    if Tu.__Kind == TK_Placeholder {
-                        TuId = Tu.__Id
+                var T_as_Placeholder = (*T_Placeholder)(unsafe.Pointer(T))
+                var T_upper *TypeInfo
+                var T_upper_id int
+                if T_as_Placeholder.__UpperBound != -1 {
+                    T_upper = ctx.GetType(T_as_Placeholder.__UpperBound)
+                    if T_upper.__Kind == TK_Placeholder {
+                        // placeholder bound
+                        T_upper_id = T_upper.__Id
                     } else {
-                        TuId = -1
+                        // non-placeholder bound
+                        T_upper_id = -1
                     }
                 } else {
-                    TuId = T.__Id
+                    // placeholder bound (self)
+                    T_upper_id = T.__Id
                 }
-                var Upl = (*T_Placeholder)(unsafe.Pointer(U))
-                var Ul *TypeInfo
-                var UlId int
-                if Upl.__LowerBound != -1 {
-                    Ul = ctx.GetType(Upl.__LowerBound)
-                    if Ul.__Kind == TK_Placeholder {
-                        UlId = Ul.__Id
+                var U_as_Placeholder = (*T_Placeholder)(unsafe.Pointer(U))
+                var U_lower *TypeInfo
+                var U_lower_id int
+                if U_as_Placeholder.__LowerBound != -1 {
+                    U_lower = ctx.GetType(U_as_Placeholder.__LowerBound)
+                    if U_lower.__Kind == TK_Placeholder {
+                        // placeholder bound
+                        U_lower_id = U_lower.__Id
                     } else {
-                        UlId = -1
+                        // non-placeholder bound
+                        U_lower_id = -1
                     }
                 } else {
-                    UlId = U.__Id
+                    // placeholder bound (self)
+                    U_lower_id = U.__Id
                 }
-                if TuId != -1 && UlId != -1 {
-                    if TuId == UlId {
+                if T_upper_id != -1 && U_lower_id != -1 {
+                    if T_upper_id == U_lower_id {
                         return True
                     } else {
                         return False
                     }
-                } else if TuId == -1 && UlId == -1 {
-                    return Tu.IsSubTypeOf(Ul, ctx)
+                } else if T_upper_id == -1 && U_lower_id == -1 {
+                    return T_upper.IsSubTypeOf(U_lower, ctx)
                 } else {
                     return False
                 }
             }
         } else {
-            var Tpl = (*T_Placeholder)(unsafe.Pointer(T))
-            if Tpl.__UpperBound != -1 {
-                var Tu = ctx.GetType(Tpl.__UpperBound)
-                return Tu.IsSubTypeOf(U, ctx)
+            var T_as_Placeholder = (*T_Placeholder)(unsafe.Pointer(T))
+            if T_as_Placeholder.__UpperBound != -1 {
+                var T_upper = ctx.GetType(T_as_Placeholder.__UpperBound)
+                return T_upper.IsSubTypeOf(U, ctx)
             } else {
                 return False
             }
