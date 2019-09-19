@@ -78,7 +78,9 @@ type GenericFunctionType struct {
 type GenericUnionType struct {
     __GenericType  GenericType
     __Elements     [] *TypeExpr
-    // TODO: element should be singleton or final schema/class
+    // TODO: elements should:
+    //           1. only contain singletons and final schemas/classes
+    //           2. contain some singletons and only 1 other type
 }
 
 type GenericTraitType struct {
@@ -239,21 +241,6 @@ func (e *TypeExpr) Evaluate(ctx *ObjectContext, args []int) int {
     }
 }
 
-
-func (G *GenericType) GetInflatedName(ctx *ObjectContext, args []int) string {
-    if len(args) == 0 {
-        return G.__Name
-    } else {
-        var arg_names = make([]string, len(args))
-        for i, arg := range args {
-            arg_names[i] = ctx.GetTypeName(arg)
-        }
-        return fmt.Sprintf (
-            "%v[%v]",
-            G.__Name, strings.Join(arg_names, ", "),
-        )
-    }
-}
 
 func (G *GenericType) IsArgBoundsValid() (bool, *TypeExpr, *GenericType) {
     var ok = true
@@ -538,6 +525,21 @@ func (G *GenericType) Inflate(ctx *ObjectContext, args []int) int {
         panic("impossible branch")
     }
     return T.__Id
+}
+
+func (G *GenericType) GetInflatedName(ctx *ObjectContext, args []int) string {
+    if len(args) == 0 {
+        return G.__Name
+    } else {
+        var arg_names = make([]string, len(args))
+        for i, arg := range args {
+            arg_names[i] = ctx.GetTypeName(arg)
+        }
+        return fmt.Sprintf (
+            "%v[%v]",
+            G.__Name, strings.Join(arg_names, ", "),
+        )
+    }
 }
 
 func (field *GenericSchemaField) Evaluate (

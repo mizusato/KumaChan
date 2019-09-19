@@ -241,24 +241,20 @@ func (T *TypeInfo) IsSubTypeOf(U *TypeInfo, ctx *ObjectContext) Triple {
         }
     case TK_Plain:
         if U.__Kind == TK_Plain {
-            var Tp = (*T_Plain)(unsafe.Pointer(T))
-            var Up = (*T_Plain)(unsafe.Pointer(U))
-            if Tp.__Category == Up.__Category {
-                if Up.__Parent == -1 {
+            var T_as_Plain = (*T_Plain)(unsafe.Pointer(T))
+            var U_as_Plain = (*T_Plain)(unsafe.Pointer(U))
+            if T_as_Plain.__Category == U_as_Plain.__Category {
+                if U_as_Plain.__Parent == -1 {
                     return True
                 } else {
-                    var current = Tp
-                    for current != nil {
-                        if current.__Parent == U.__Id {
+                    var current = T_as_Plain.__Parent
+                    for current != -1 {
+                        var C = ctx.GetType(current)
+                        Assert(C.__Kind == TK_Plain, "Type: bad parent type")
+                        if current == U.__Id {
                             return True
                         }
-                        if current.__Parent != -1 {
-                            var next = ctx.GetType(current.__Parent)
-                            Assert(next.__Kind == TK_Plain, "Type: bad parent")
-                            current = (*T_Plain)(unsafe.Pointer(next))
-                        } else {
-                            current = nil
-                        }
+                        current = (*T_Plain)(unsafe.Pointer(C)).__Parent
                     }
                     return False
                 }
