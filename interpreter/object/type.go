@@ -299,27 +299,22 @@ func (T *TypeInfo) IsSubTypeOf(U *TypeInfo, ctx *ObjectContext) Triple {
                     }
                     if ok {
                         return True
-                    } else {
-                        return Unknown
                     }
-                } else {
-                    return Unknown
                 }
             }
+        }
+        var all_contained = true
+        for _, element := range T_as_Union.__Elements {
+            var E = ctx.GetType(element)
+            if E.IsSubTypeOf(U, ctx) != True {
+                all_contained = false
+                break
+            }
+        }
+        if all_contained {
+            return True
         } else {
-            var all_contained = true
-            for _, element := range T_as_Union.__Elements {
-                var E = ctx.GetType(element)
-                if E.IsSubTypeOf(U, ctx) != True {
-                    all_contained = false
-                    break
-                }
-            }
-            if all_contained {
-                return True
-            } else {
-                return Unknown
-            }
+            return Unknown
         }
     default:
         panic("impossible branch")
