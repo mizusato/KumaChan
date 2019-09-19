@@ -287,19 +287,12 @@ func (T *TypeInfo) IsSubTypeOf(U *TypeInfo, ctx *ObjectContext) Triple {
                 return True
             } else {
                 var U_as_Union = (*T_Union)(unsafe.Pointer(U))
-                var T_elements = T_as_Union.__Elements
-                var U_elements = U_as_Union.__Elements
-                if len(T_elements) < len(U_elements) {
-                    var ok = true
-                    for i, element := range T_elements {
-                        if U_elements[i] != element {
-                            ok = false
-                            break
-                        }
-                    }
-                    if ok {
-                        return True
-                    }
+                var ok = __DoSortedIntSlicesHaveContainingRelationship (
+                    T_as_Union.__Elements,
+                    U_as_Union.__Elements,
+                )
+                if ok {
+                    return True
                 }
             }
         }
