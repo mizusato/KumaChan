@@ -84,7 +84,7 @@ type GenericUnionType struct {
 type GenericTraitType struct {
     __GenericType  GenericType
     __Constraints  [] *TypeExpr
-    // TODO: element should be non-final schema or interface
+    // TODO: element should be non-final class or interface
 }
 
 type GenericSchemaType struct {
@@ -180,7 +180,7 @@ func (e *TypeExpr) Evaluate(ctx *ObjectContext, args []int) int {
         return args[(*ArgumentTypeExpr)(unsafe.Pointer(e)).__Index]
     case TE_Function:
         var f_expr = (*FunctionTypeExpr)(unsafe.Pointer(e))
-        var items = make([]T_Function_Item, len(f_expr.__Items))
+        var items = make([]FunctionTypeItem, len(f_expr.__Items))
         var item_names = make([]string, len(items))
         var fingerprint = make([]int, 0)
         for i, f := range f_expr.__Items {
@@ -204,7 +204,7 @@ func (e *TypeExpr) Evaluate(ctx *ObjectContext, args []int) int {
                 retval_name,
                 exception_name,
             )
-            items[i] = T_Function_Item {
+            items[i] = FunctionTypeItem {
                 __Parameters: params,
                 __ReturnValue: retval,
                 __Exception: exception,
