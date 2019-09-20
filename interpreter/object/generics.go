@@ -25,7 +25,8 @@ type FinalTypeExpr struct {
 }
 
 type ArgumentTypeExpr struct {
-    __Index  int
+    __TypeExpr   TypeExpr
+    __Index      int
 }
 
 type FunctionTypeExpr struct {
@@ -50,7 +51,7 @@ type GenericType struct {
     __Id           int
     __Name         string
     __Parameters   [] GenericTypeParameter
-    __Checked      bool
+    __Validated    bool
     __Position     int
 }
 
@@ -126,50 +127,50 @@ type GenericInterfaceMethod struct {
     __Type   *TypeExpr
 }
 
-func (e *TypeExpr) IsValidBound(depth int) (bool, *TypeExpr, *GenericType) {
+func (e *TypeExpr) IsValidBound(depth int) (bool, *TypeExpr) {
     switch e.__Kind {
     case TE_Final:
-        return true, nil, nil
+        return true, nil
     case TE_Argument:
         // should forbid [T < G[T]] and [T, U < G[T]]
         if depth == 0 {
-            return true, nil, nil
+            return true, nil
         } else {
-            return false, e, nil
+            return false, e
         }
     case TE_Function:
         var f_expr = (*FunctionTypeExpr)(unsafe.Pointer(e))
         var ok = true
         var te *TypeExpr
-        var gt *GenericType
         for _, f := range f_expr.__Items {
             for _, p := range f.__Parameters {
-                ok, te, gt = p.IsValidBound(depth+1)
+                ok, te = p.IsValidBound(depth+1)
                 if !ok { break }
             }
-            ok, te, gt = f.__ReturnValue.IsValidBound(depth+1)
+            ok, te = f.__ReturnValue.IsValidBound(depth+1)
             if !ok { break }
-            ok, te, gt = f.__Exception.IsValidBound(depth+1)
+            ok, te = f.__Exception.IsValidBound(depth+1)
             if !ok { break }
         }
-        return ok, te, gt
+        return ok, te
     case TE_Inflation:
         var inf_expr = (*InflationTypeExpr)(unsafe.Pointer(e))
-        if inf_expr.__Template.__Checked {
-            var ok = true
-            var te *TypeExpr
-            var gt *GenericType
-            for _, arg_expr := range inf_expr.__Arguments {
-                ok, te, gt = arg_expr.IsValidBound(depth+1)
-                if !ok { break }
-            }
-            return ok, te, gt
-        } else {
-            return false, e, inf_expr.__Template
+        var ok = true
+        var te *TypeExpr
+        for _, arg_expr := range inf_expr.__Arguments {
+            ok, te = arg_expr.IsValidBound(depth+1)
+            if !ok { break }
         }
+        return ok, te
     default:
         panic("impossible branch")
     }
+}
+
+func (e *TypeExpr) Try2Evaluate(ctx *ObjectContext, args []int) (
+    int, *InflationError,
+) {
+    panic("unimplemented")
 }
 
 func (e *TypeExpr) Evaluate(ctx *ObjectContext, args []int) int {
@@ -240,21 +241,20 @@ func (e *TypeExpr) Evaluate(ctx *ObjectContext, args []int) int {
 }
 
 
-func (G *GenericType) IsArgBoundsValid() (bool, *TypeExpr, *GenericType) {
+func (G *GenericType) IsArgBoundsValid() (bool, *TypeExpr) {
     var ok = true
     var te *TypeExpr
-    var gt *GenericType
     for _, parameter := range G.__Parameters {
         if parameter.__UpperBound != nil {
-            ok, te, gt = parameter.__UpperBound.IsValidBound(0)
+            ok, te = parameter.__UpperBound.IsValidBound(0)
             if !ok { break }
         }
         if parameter.__LowerBound != nil {
-            ok, te, gt = parameter.__LowerBound.IsValidBound(0)
+            ok, te = parameter.__LowerBound.IsValidBound(0)
             if !ok { break }
         }
     }
-    return ok, te, gt
+    return ok, te
 }
 
 func (G *GenericType) GetArgPlaceholders(ctx *ObjectContext) []int {
@@ -276,6 +276,7 @@ func (G *GenericType) GetArgPlaceholders(ctx *ObjectContext) []int {
     }
     for i, _ := range T_args {
         var parameter = G.__Parameters[i]
+        // TODO: change Evaluate to Try2Evaluate
         if parameter.__UpperBound != nil {
             var B = parameter.__UpperBound.Evaluate(ctx, args)
             if B != T_args[i].__TypeInfo.__Id {
@@ -291,6 +292,153 @@ func (G *GenericType) GetArgPlaceholders(ctx *ObjectContext) []int {
         T_args[i].__TypeInfo.__Initialized = true
     }
     return args
+}
+
+func (G *GenericType) Validate() {
+    panic("unimplemented")
+}
+
+type InflationError struct {
+    __Kind      InflationErrorKind
+    __Expr      *TypeExpr
+    __Template  *GenericType
+}
+
+type InflationErrorKind int
+const (
+    IEK_TemplateNotValidated InflationErrorKind = iota
+    IEK_WrongArgQuantity
+    IEK_InvalidArg
+)
+
+type IE_WrongArgQuantity struct {
+    __InflationError  InflationError
+    __Given           int
+    __Required        int
+}
+
+type IE_InvalidArg struct {
+    __InflationError  InflationError
+    __Arg             int
+    __Bound           int
+    __IsUpper         bool
+}
+
+func CheckArgs (
+    ctx    *ObjectContext,
+    args   [] int,
+    G      *GenericType,
+    expr   *TypeExpr,
+    chk    [] *TypeExpr,
+) *InflationError {
+    if len(chk) != len(G.__Parameters) {
+        return (*InflationError)(unsafe.Pointer(&IE_WrongArgQuantity {
+            __InflationError: InflationError {
+                __Kind: IEK_WrongArgQuantity,
+                __Template: G,
+                __Expr: expr,
+            },
+            __Given: len(chk),
+            __Required: len(G.__Parameters),
+        }))
+    }
+    var need_eval = make([]bool, len(chk))
+    var has_bound = make([]bool, len(chk))
+    var used_by_other = make([]bool, len(chk))
+    for i, parameter := range G.__Parameters {
+        var L = parameter.__LowerBound
+        var U = parameter.__UpperBound
+        if L != nil {
+            if L.__Kind == TE_Argument {
+                var L_as_Arg = (*ArgumentTypeExpr)(unsafe.Pointer(L))
+                used_by_other[L_as_Arg.__Index] = true
+            }
+            has_bound[i] = true
+        }
+        if U != nil {
+            if U.__Kind == TE_Argument {
+                var U_as_Arg = (*ArgumentTypeExpr)(unsafe.Pointer(U))
+                used_by_other[U_as_Arg.__Index] = true
+            }
+            has_bound[i] = true
+        }
+    }
+    for i := 0; i < len(chk); i += 1 {
+        need_eval[i] = has_bound[i] || used_by_other[i]
+    }
+    var chk_evaluated = make([]int, len(chk))
+    for i, e := range chk {
+        if need_eval[i] {
+            var id, err = e.Try2Evaluate(ctx, args)
+            if err != nil {
+                return err
+            }
+            chk_evaluated[i] = id
+        } else {
+            chk_evaluated[i] = -1
+        }
+    }
+    var check_bound = func(bound int, checked int, upper bool) *InflationError {
+        var B = ctx.GetType(bound)
+        var A = ctx.GetType(checked)
+        var ok bool
+        if upper {
+            ok = (A.IsSubTypeOf(B, ctx) == True)
+        } else {
+            ok = (B.IsSubTypeOf(A, ctx) == True)
+        }
+        if ok {
+            return nil
+        } else {
+            return (*InflationError)(unsafe.Pointer(&IE_InvalidArg {
+                __InflationError: InflationError {
+                    __Kind: IEK_InvalidArg,
+                    __Template: G,
+                    __Expr: expr,
+                },
+                __Bound: bound,
+                __Arg: checked,
+                __IsUpper: upper,
+            }))
+        }
+    }
+    for i, parameter := range G.__Parameters {
+        var L = parameter.__LowerBound
+        var U = parameter.__UpperBound
+        if L != nil {
+            var bound, err = L.Try2Evaluate(ctx, chk_evaluated)
+            if err != nil {
+                return err
+            }
+            err = check_bound(bound, chk_evaluated[i], false)
+            if err != nil {
+                return err
+            }
+        }
+        if U != nil {
+            var bound, err = U.Try2Evaluate(ctx, chk_evaluated)
+            if err != nil {
+                return err
+            }
+            err = check_bound(bound, chk_evaluated[i], true)
+            if err != nil {
+                return err
+            }
+        }
+        if !need_eval[i] {
+            var chk_i = chk[i]
+            if chk_i.__Kind == TE_Inflation {
+                var ie = (*InflationTypeExpr)(unsafe.Pointer(chk_i))
+                var G_inner = ie.__Template
+                var chk_inner = ie.__Arguments
+                var err = CheckArgs(ctx, args, G_inner, chk_i, chk_inner)
+                if err != nil {
+                    return err
+                }
+            }
+        }
+    }
+    return nil
 }
 
 func (G *GenericType) Inflate(ctx *ObjectContext, args []int) int {
