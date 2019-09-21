@@ -120,6 +120,7 @@ type GenericClassMethod struct {
 type GenericInterfaceType struct {
     __GenericType  GenericType
     __MethodList   [] GenericInterfaceMethod
+    // TODO: empty interface should not be allowed
 }
 
 type GenericInterfaceMethod struct {
@@ -192,9 +193,9 @@ type VE_InflationError struct {
 
 type VE_InterfaceNotImplemented struct {
     __ValidationError  ValidationError
-    __Class            *GenericType
     __Interface        *GenericType
     __BadMethod        Identifier
+    __IsMissing        bool
 }
 
 type InflationError struct {
@@ -601,6 +602,34 @@ func (G *GenericType) Validate(ctx *ObjectContext) *ValidationError {
             __FieldName: name,
         }))
     }
+    var method_conflict = func (
+        C1 *GenericType, C2 *GenericType, name Identifier,
+    ) *ValidationError {
+        return (*ValidationError)(unsafe.Pointer(&VE_MethodConflict {
+            __ValidationError: ValidationError {
+                __Kind: VEK_MethodConflict,
+                __Template: G,
+            },
+            __Class1: C1,
+            __Class2: C2,
+            __MethodName: name,
+        }))
+    }
+    var interface_not_implemented = func (
+        I *GenericType, method Identifier, missing bool,
+    ) *ValidationError {
+        return (*ValidationError)(unsafe.Pointer(
+            &VE_InterfaceNotImplemented {
+                __ValidationError: ValidationError {
+                    __Kind: VEK_InterfaceNotImplemented,
+                    __Template: G,
+                },
+                __Interface: I,
+                __BadMethod: method,
+                __IsMissing: missing,
+            },
+        ))
+    }
     var inflation_error = func (err *InflationError) *ValidationError {
         return (*ValidationError)(unsafe.Pointer(&VE_InflationError {
             __ValidationError: ValidationError {
@@ -676,7 +705,100 @@ func (G *GenericType) Validate(ctx *ObjectContext) *ValidationError {
             }
         }
     } else if G.__Kind == GT_Class {
-        // TODO
+        var G_as_Class = (*GenericClassType)(unsafe.Pointer(G))
+        var supers = [][2]int { [2]int { G.__Id, 0 } }
+        var add_base_to_supers func(*TypeExpr, int) *ValidationError
+        add_base_to_supers = func (base *TypeExpr, depth int) *ValidationError {
+            if base.__Kind != TE_Inflation {
+                return invalid_super(base)
+            }
+            var base_as_inf_expr = (*InflationTypeExpr)(unsafe.Pointer(base))
+            var B = base_as_inf_expr.__Template
+            if B.__Kind != GT_Class {
+                return invalid_super(base)
+            }
+            var B_as_Class = (*GenericClassType)(unsafe.Pointer(B))
+            if !(B_as_Class.__Extensible) {
+                return not_extensible(B)
+            }
+            var current = B.__Id
+            for _, super := range supers {
+                var existing = super[0]
+                if existing == current {
+                    var existing_depth = super[1]
+                    if existing_depth == depth {
+                        return duplicate_super(existing)
+                    } else {
+                        return circular_inheritance(existing)
+                    }
+                }
+            }
+            supers = append(supers, [2]int{ current, depth })
+            for _, base_of_base := range B_as_Class.__BaseClassList {
+                var err = add_base_to_supers(base_of_base, depth+1)
+                if err != nil {
+                    return err
+                }
+            }
+            return nil
+        }
+        for _, base := range G_as_Class.__BaseClassList {
+            var err = add_base_to_supers(base, 1)
+            if err != nil {
+                return err
+            }
+        }
+        var occurred_methods = make(map[Identifier] *GenericType)
+        var own_method_types = make(map[Identifier] *TypeExpr)
+        for _, super := range supers {
+            var S = ctx.GetGenericType(super[0])
+            Assert(S.__Kind == GT_Class, "Generics: invalid generic class")
+            var S_as_Class = (*GenericClassType)(unsafe.Pointer(S))
+            for _, method := range S_as_Class.__OwnMethodList {
+                var name = method.__Name
+                var existing, exists = occurred_methods[name]
+                if exists {
+                    return method_conflict(existing, S, name)
+                } else {
+                    occurred_methods[name] = S
+                    if super[0] == G.__Id {
+                        own_method_types[name] = method.__Type
+                    }
+                }
+            }
+        }
+        // Check if all interfaces are implemented by TypeExprEqual()
+        for _, base := range G_as_Class.__BaseInterfaceList {
+            if base.__Kind != TE_Inflation {
+                return invalid_super(base)
+            }
+            var base_as_inf_expr = (*InflationTypeExpr)(unsafe.Pointer(base))
+            var B = base_as_inf_expr.__Template
+            if B.__Kind != GT_Interface {
+                return invalid_super(base)
+            }
+            var B_as_Interface = (*GenericInterfaceType)(unsafe.Pointer(B))
+            Assert (
+                len(B_as_Interface.__MethodList) > 0,
+                "Generics: empty interface is not valid",
+            )
+            for _, method := range B_as_Interface.__MethodList {
+                var name = method.__Name
+                var given_T, exists = own_method_types[name]
+                if !exists {
+                    return interface_not_implemented(B, name, true)
+                } else {
+                    var required_T = method.__Type
+                    var ok = TypeExprEqual (
+                        given_T, required_T,
+                        base_as_inf_expr.__Arguments,
+                    )
+                    if !ok {
+                        return interface_not_implemented(B, name, false)
+                    }
+                }
+            }
+        }
     }
     // Evaluate bounds and generate placeholders by GetArgPlaceholders()
     // note: bounds of all types must be pre-validated by IsArgBoundsValid()
@@ -695,8 +817,6 @@ func (G *GenericType) Validate(ctx *ObjectContext) *ValidationError {
             return inflation_error(err)
         }
     }
-    // Check if all interfaces are implemented by TypeExprEqual()
-    // TODO
     panic("unimplemented")
 }
 
