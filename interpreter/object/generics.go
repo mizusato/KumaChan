@@ -127,6 +127,32 @@ type GenericInterfaceMethod struct {
     __Type   *TypeExpr
 }
 
+type InflationError struct {
+    __Kind      InflationErrorKind
+    __Expr      *TypeExpr
+    __Template  *GenericType
+}
+
+type InflationErrorKind int
+const (
+    IEK_TemplateNotValidated InflationErrorKind = iota
+    IEK_WrongArgQuantity
+    IEK_InvalidArg
+)
+
+type IE_WrongArgQuantity struct {
+    __InflationError  InflationError
+    __Given           int
+    __Required        int
+}
+
+type IE_InvalidArg struct {
+    __InflationError  InflationError
+    __Arg             int
+    __Bound           int
+    __IsUpper         bool
+}
+
 func (e *TypeExpr) IsValidBound(depth int) (bool, *TypeExpr) {
     switch e.__Kind {
     case TE_Final:
@@ -170,7 +196,59 @@ func (e *TypeExpr) IsValidBound(depth int) (bool, *TypeExpr) {
 func (e *TypeExpr) Try2Evaluate(ctx *ObjectContext, args []int) (
     int, *InflationError,
 ) {
-    panic("unimplemented")
+    switch e.__Kind {
+    case TE_Final:
+        return e.Evaluate(ctx, args), nil
+    case TE_Argument:
+        return e.Evaluate(ctx, args), nil
+    case TE_Function:
+        var f_expr = (*FunctionTypeExpr)(unsafe.Pointer(e))
+        var items = make([]FunctionTypeItem, len(f_expr.__Items))
+        for i, f := range f_expr.__Items {
+            var params = make([]int, len(f.__Parameters))
+            for j, ei := range f.__Parameters {
+                var param, err = ei.Try2Evaluate(ctx, args)
+                if err != nil {
+                    return -1, err
+                }
+                params[j] = param
+            }
+            var retval, err1 = f.__ReturnValue.Try2Evaluate(ctx, args)
+            if err1 != nil {
+                return -1, err1
+            }
+            var exception, err2 = f.__Exception.Try2Evaluate(ctx, args)
+            if err2 != nil {
+                return -1, err2
+            }
+            items[i] = FunctionTypeItem {
+                __Parameters: params,
+                __ReturnValue: retval,
+                __Exception: exception,
+            }
+        }
+        return GetFunctionType(ctx, items), nil
+    case TE_Inflation:
+        var inf_expr = (*InflationTypeExpr)(unsafe.Pointer(e))
+        var to_be_checked = inf_expr.__Arguments
+        var template = inf_expr.__Template
+        if !(template.__Validated) {
+            return -1, &InflationError {
+                __Kind: IEK_TemplateNotValidated,
+                __Expr: e,
+                __Template: template,
+            }
+        } else {
+            var err = CheckArgs(ctx, args, template, e, to_be_checked)
+            if err != nil {
+                return -1, err
+            } else {
+                return e.Evaluate(ctx, args), nil
+            }
+        }
+    default:
+        panic("impossible branch")
+    }
 }
 
 func (e *TypeExpr) Evaluate(ctx *ObjectContext, args []int) int {
@@ -182,61 +260,78 @@ func (e *TypeExpr) Evaluate(ctx *ObjectContext, args []int) int {
     case TE_Function:
         var f_expr = (*FunctionTypeExpr)(unsafe.Pointer(e))
         var items = make([]FunctionTypeItem, len(f_expr.__Items))
-        var item_names = make([]string, len(items))
-        var fingerprint = make([]int, 0)
         for i, f := range f_expr.__Items {
             var params = make([]int, len(f.__Parameters))
-            var param_names = make([]string, len(params))
             for j, ei := range f.__Parameters {
                 params[j] = ei.Evaluate(ctx, args)
-                param_names[j] = ctx.GetTypeName(params[j])
-                fingerprint = append(fingerprint, params[j])
             }
             var retval = f.__ReturnValue.Evaluate(ctx, args)
-            var retval_name = ctx.GetTypeName(retval)
             var exception = f.__Exception.Evaluate(ctx, args)
-            var exception_name = ctx.GetTypeName(exception)
-            fingerprint = append(fingerprint, retval)
-            fingerprint = append(fingerprint, exception)
-            fingerprint = append(fingerprint, -1)
-            var name = fmt.Sprintf (
-                "%v -> %v(%v)",
-                strings.Join(param_names, ", "),
-                retval_name,
-                exception_name,
-            )
             items[i] = FunctionTypeItem {
                 __Parameters: params,
                 __ReturnValue: retval,
                 __Exception: exception,
             }
-            item_names[i] = name
         }
-        var cache, exists = ctx.GetInflatedType(-1, fingerprint)
-        if exists {
-            return cache
-        } else {
-            var name = fmt.Sprintf("[%v]", strings.Join(item_names, " | "))
-            var T = (*TypeInfo)(unsafe.Pointer(&T_Function {
-                __TypeInfo: TypeInfo {
-                    __Kind: TK_Function,
-                    __Name: name,
-                },
-                __Items: items,
-            }))
-            ctx.__RegisterInflatedType(T, -1, fingerprint)
-            return T.__Id
-        }
+        return GetFunctionType(ctx, items)
     case TE_Inflation:
         var inf_expr = (*InflationTypeExpr)(unsafe.Pointer(e))
+        var template = inf_expr.__Template
+        Assert (
+            template.__Validated,
+            "Generics: unable to inflate non-validated generic type",
+        )
         var args = make([]int, len(inf_expr.__Arguments))
         for i, arg_expr := range inf_expr.__Arguments {
             args[i] = arg_expr.Evaluate(ctx, args)
         }
-        var template = inf_expr.__Template
         return template.Inflate(ctx, args)
     default:
         panic("impossible branch")
+    }
+}
+
+
+func GetFunctionType(ctx *ObjectContext, items []FunctionTypeItem) int {
+    var fingerprint = make([]int, 0)
+    for _, item := range items {
+        for _, parameter := range item.__Parameters {
+            fingerprint = append(fingerprint, parameter)
+        }
+        fingerprint = append(fingerprint, item.__ReturnValue)
+        fingerprint = append(fingerprint, item.__Exception)
+        fingerprint = append(fingerprint, -1)
+    }
+    var cached, exists = ctx.GetInflatedType(-1, fingerprint)
+    if exists {
+        return cached
+    } else {
+        var item_names = make([]string, len(items))
+        for i, item := range items {
+            var param_names = make([]string, len(item.__Parameters))
+            for j, parameter := range item.__Parameters {
+                param_names[j] = ctx.GetTypeName(parameter)
+            }
+            var retval_name = ctx.GetTypeName(item.__ReturnValue)
+            var exception_name = ctx.GetTypeName(item.__Exception)
+            item_names[i] = fmt.Sprintf (
+                "%v -> %v(%v)",
+                strings.Join(param_names, ","),
+                retval_name,
+                exception_name,
+            )
+        }
+        var name = fmt.Sprintf("[ %v ]", strings.Join(item_names, " | "))
+        var T = (*TypeInfo)(unsafe.Pointer(&T_Function {
+            __TypeInfo: TypeInfo {
+                __Kind: TK_Function,
+                __Name: name,
+                __Initialized: true,
+            },
+            __Items: items,
+        }))
+        ctx.__RegisterInflatedType(T, -1, fingerprint)
+        return T.__Id
     }
 }
 
@@ -257,7 +352,9 @@ func (G *GenericType) IsArgBoundsValid() (bool, *TypeExpr) {
     return ok, te
 }
 
-func (G *GenericType) GetArgPlaceholders(ctx *ObjectContext) []int {
+func (G *GenericType) GetArgPlaceholders(ctx *ObjectContext) (
+    []int, *InflationError,
+) {
     var args = make([]int, len(G.__Parameters))
     var T_args = make([]*T_Placeholder, len(args))
     for i, parameter := range G.__Parameters {
@@ -276,52 +373,31 @@ func (G *GenericType) GetArgPlaceholders(ctx *ObjectContext) []int {
     }
     for i, _ := range T_args {
         var parameter = G.__Parameters[i]
-        // TODO: change Evaluate to Try2Evaluate
         if parameter.__UpperBound != nil {
-            var B = parameter.__UpperBound.Evaluate(ctx, args)
+            var B, err = parameter.__UpperBound.Try2Evaluate(ctx, args)
+            if err != nil {
+                return nil, err
+            }
             if B != T_args[i].__TypeInfo.__Id {
                 T_args[i].__UpperBound = B
             }
         }
         if parameter.__LowerBound != nil {
-            var B = parameter.__LowerBound.Evaluate(ctx, args)
+            var B, err = parameter.__LowerBound.Try2Evaluate(ctx, args)
+            if err != nil {
+                return nil, err
+            }
             if B != T_args[i].__TypeInfo.__Id {
                 T_args[i].__LowerBound = B
             }
         }
         T_args[i].__TypeInfo.__Initialized = true
     }
-    return args
+    return args, nil
 }
 
 func (G *GenericType) Validate() {
     panic("unimplemented")
-}
-
-type InflationError struct {
-    __Kind      InflationErrorKind
-    __Expr      *TypeExpr
-    __Template  *GenericType
-}
-
-type InflationErrorKind int
-const (
-    IEK_TemplateNotValidated InflationErrorKind = iota
-    IEK_WrongArgQuantity
-    IEK_InvalidArg
-)
-
-type IE_WrongArgQuantity struct {
-    __InflationError  InflationError
-    __Given           int
-    __Required        int
-}
-
-type IE_InvalidArg struct {
-    __InflationError  InflationError
-    __Arg             int
-    __Bound           int
-    __IsUpper         bool
 }
 
 func CheckArgs (
