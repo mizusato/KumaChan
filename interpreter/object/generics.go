@@ -120,7 +120,6 @@ type GenericClassMethod struct {
 type GenericInterfaceType struct {
     __GenericType  GenericType
     __MethodList   [] GenericInterfaceMethod
-    // TODO: empty interface should not be allowed
 }
 
 type GenericInterfaceMethod struct {
