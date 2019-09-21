@@ -601,6 +601,15 @@ func (G *GenericType) Validate(ctx *ObjectContext) *ValidationError {
             __FieldName: name,
         }))
     }
+    var inflation_error = func (err *InflationError) *ValidationError {
+        return (*ValidationError)(unsafe.Pointer(&VE_InflationError {
+            __ValidationError: ValidationError {
+                __Kind: VEK_InflationError,
+                __Template: G,
+            },
+            __InflationError: err,
+        }))
+    }
     // Check for Hierarchy Consistency
     if G.__Kind == GT_Schema {
         var G_as_Schema = (*GenericSchemaType)(unsafe.Pointer(G))
@@ -669,13 +678,23 @@ func (G *GenericType) Validate(ctx *ObjectContext) *ValidationError {
     } else if G.__Kind == GT_Class {
         // TODO
     }
-    // Check parameter bounds by CheckArgs()
-    // TODO
     // Evaluate bounds and generate placeholders by GetArgPlaceholders()
     // note: bounds of all types must be pre-validated by IsArgBoundsValid()
-    // TODO
+    var args, err = G.GetArgPlaceholders(ctx)
+    if err != nil {
+        return inflation_error(err)
+    }
     // Validate each inner type expression in the template
-    // TODO
+    var inner_types = make([]*TypeExpr, 0)
+    switch G.__Kind {
+        // TODO
+    }
+    for _, e := range inner_types {
+        var err = e.Check(ctx, args)
+        if err != nil {
+            return inflation_error(err)
+        }
+    }
     // Check if all interfaces are implemented by TypeExprEqual()
     // TODO
     panic("unimplemented")
