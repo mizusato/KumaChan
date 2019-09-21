@@ -143,6 +143,8 @@ const (
     VEK_MethodConflict
     VEK_InflationError
     VEK_InterfaceNotImplemented
+    VEK_BadUnion
+    VEK_TraitInvalidConstraint
 )
 
 type VE_CircularInheritance struct {
@@ -195,6 +197,16 @@ type VE_InterfaceNotImplemented struct {
     __Interface        *GenericType
     __BadMethod        Identifier
     __IsMissing        bool
+}
+
+type VE_BadUnion struct {
+    __ValidationError  ValidationError
+    __BadExpr          *TypeExpr
+}
+
+type VE_TraitInvalidConstraint struct {
+    __ValidationError  ValidationError
+    __Constraint       *TypeExpr
 }
 
 type InflationError struct {
@@ -299,6 +311,41 @@ func TypeExprEqual (e1 *TypeExpr, e2 *TypeExpr, args []*TypeExpr) bool {
         default:
             panic("impossible branch")
         }
+    }
+}
+
+func (e *TypeExpr) AreAllTemplatesValidated() (bool, *TypeExpr) {
+    switch e.__Kind {
+    case TE_Final:
+        return true, nil
+    case TE_Argument:
+        return true, nil
+    case TE_Function:
+        var f_expr = (*FunctionTypeExpr)(unsafe.Pointer(e))
+        var ok = true
+        var te *TypeExpr
+        for _, f := range f_expr.__Items {
+            for _, p := range f.__Parameters {
+                ok, te = p.AreAllTemplatesValidated()
+                if !ok { break }
+            }
+            ok, te = f.__ReturnValue.AreAllTemplatesValidated()
+            if !ok { break }
+            ok, te = f.__Exception.AreAllTemplatesValidated()
+            if !ok { break }
+        }
+        return ok, te
+    case TE_Inflation:
+        var inf_expr = (*InflationTypeExpr)(unsafe.Pointer(e))
+        var ok = true
+        var te *TypeExpr
+        for _, arg_expr := range inf_expr.__Arguments {
+            ok, te = arg_expr.AreAllTemplatesValidated()
+            if !ok { break }
+        }
+        return ok, te
+    default:
+        panic("impossible branch")
     }
 }
 
@@ -629,6 +676,24 @@ func (G *GenericType) Validate(ctx *ObjectContext) *ValidationError {
             },
         ))
     }
+    var invalid_union = func (e *TypeExpr) *ValidationError {
+        return (*ValidationError)(unsafe.Pointer(&VE_BadUnion {
+            __ValidationError: ValidationError {
+                __Kind: VEK_BadUnion,
+                __Template: G,
+            },
+            __BadExpr: e,
+        }))
+    }
+    var invalid_trait = func (e *TypeExpr) *ValidationError {
+        return (*ValidationError)(unsafe.Pointer(&VE_TraitInvalidConstraint {
+            __ValidationError: ValidationError {
+                __Kind: VEK_TraitInvalidConstraint,
+                __Template: G,
+            },
+            __Constraint: e,
+        }))
+    }
     var inflation_error = func (err *InflationError) *ValidationError {
         return (*ValidationError)(unsafe.Pointer(&VE_InflationError {
             __ValidationError: ValidationError {
@@ -795,6 +860,34 @@ func (G *GenericType) Validate(ctx *ObjectContext) *ValidationError {
                     if !ok {
                         return interface_not_implemented(B, name, false)
                     }
+                }
+            }
+        }
+    }
+    // Check unions and traits
+    if G.__Kind == GT_Union {
+        var G_as_Union = (*GenericUnionType)(unsafe.Pointer(G))
+        for _, element := range G_as_Union.__Elements {
+            var ok, bad_expr = element.AreAllTemplatesValidated()
+            if !ok {
+                return invalid_union(bad_expr)
+            }
+        }
+    } else if G.__Kind == GT_Trait {
+        var G_as_Trait = (*GenericTraitType)(unsafe.Pointer(G))
+        for _, constraint := range G_as_Trait.__Constraints {
+            if constraint.__Kind != TE_Inflation {
+                return invalid_trait(constraint)
+            }
+            var inf_expr = (*InflationTypeExpr)(unsafe.Pointer(constraint))
+            var template = inf_expr.__Template
+            var k = template.__Kind
+            if k != GT_Interface && k != GT_Class {
+                return invalid_trait(constraint)
+            } else if k == GT_Class {
+                var class = (*GenericClassType)(unsafe.Pointer(template))
+                if !(class.__Extensible) {
+                    return invalid_trait(constraint)
                 }
             }
         }
