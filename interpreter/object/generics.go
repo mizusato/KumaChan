@@ -79,13 +79,11 @@ type GenericFunctionType struct {
 type GenericUnionType struct {
     __GenericType  GenericType
     __Elements     [] *TypeExpr
-    // TODO: a union should not reference itself
 }
 
 type GenericTraitType struct {
     __GenericType  GenericType
     __Constraints  [] *TypeExpr
-    // TODO: element should be non-final class or interface
 }
 
 type GenericSchemaType struct {
@@ -899,17 +897,65 @@ func (G *GenericType) Validate(ctx *ObjectContext) *ValidationError {
         return inflation_error(err)
     }
     // Validate each inner type expression in the template
-    var inner_types = make([]*TypeExpr, 0)
     switch G.__Kind {
-        // TODO
-    }
-    for _, e := range inner_types {
-        var err = e.Check(ctx, args)
+    case GT_Function:
+        var G_as_Function = (*GenericFunctionType)(unsafe.Pointer(G))
+        var err = G_as_Function.__Signature.Check(ctx, args)
         if err != nil {
             return inflation_error(err)
         }
+    case GT_Union:
+        var G_as_Union = (*GenericUnionType)(unsafe.Pointer(G))
+        for _, element := range G_as_Union.__Elements {
+            var err = element.Check(ctx, args)
+            if err != nil {
+                return inflation_error(err)
+            }
+        }
+    case GT_Trait:
+        var G_as_Trait = (*GenericTraitType)(unsafe.Pointer(G))
+        for _, constraint := range G_as_Trait.__Constraints {
+            var err = constraint.Check(ctx, args)
+            if err != nil {
+                return inflation_error(err)
+            }
+        }
+    case GT_Schema:
+        var G_as_Schema = (*GenericSchemaType)(unsafe.Pointer(G))
+        for _, base := range G_as_Schema.__BaseList {
+            var err = base.Check(ctx, args)
+            if err != nil {
+                return inflation_error(err)
+            }
+        }
+        for _, field := range G_as_Schema.__OwnFieldList {
+            var err = field.__Type.Check(ctx, args)
+            if err != nil {
+                return inflation_error(err)
+            }
+        }
+    case GT_Class:
+        var G_as_Class = (*GenericClassType)(unsafe.Pointer(G))
+        for _, base_class := range G_as_Class.__BaseClassList {
+            var err = base_class.Check(ctx, args)
+            if err != nil {
+                return inflation_error(err)
+            }
+        }
+        for _, base_interface := range G_as_Class.__BaseInterfaceList {
+            var err = base_interface.Check(ctx, args)
+            if err != nil {
+                return inflation_error(err)
+            }
+        }
+        for _, method := range G_as_Class.__OwnMethodList {
+            var err = method.__Type.Check(ctx, args)
+            if err != nil {
+                return inflation_error(err)
+            }
+        }
     }
-    panic("unimplemented")
+    return nil
 }
 
 func CheckArgs (
