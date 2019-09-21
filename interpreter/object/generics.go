@@ -127,6 +127,76 @@ type GenericInterfaceMethod struct {
     __Type   *TypeExpr
 }
 
+type ValidationError struct {
+    __Kind      ValidationErrorKind
+    __Template  *GenericType
+}
+
+type ValidationErrorKind int
+const (
+    VEK_CircularInheritance ValidationErrorKind = iota
+    VEK_DuplicateSuperType
+    VEK_InvalidSuperType
+    VEK_DeriveNonExtensible
+    VEK_DeriveWrongMutability
+    VEK_FieldConflict
+    VEK_MethodConflict
+    VEK_InflationError
+    VEK_InterfaceNotImplemented
+)
+
+type VE_CircularInheritance struct {
+    __ValidationError  ValidationError
+    __CircularType     *GenericType
+}
+
+type VE_DuplicateSuperType struct {
+    __ValidationError  ValidationError
+    __DuplicateType    *GenericType
+}
+
+type VE_InvalidSuperType struct {
+    __ValidationError  ValidationError
+    __InvalidSuper     *TypeExpr
+}
+
+type VE_DeriveNonExtensible struct {
+    __ValidationError    ValidationError
+    __NonExtensibleType  *GenericType
+}
+
+type VE_DeriveWrongMutability struct {
+    __ValidationError  ValidationError
+    __WrongSchema      *GenericType
+    __NeedImmutable    bool
+}
+
+type VE_FieldConflict struct {
+    __ValidationError  ValidationError
+    __Schema1          *GenericType
+    __Schema2          *GenericType
+    __FieldName        Identifier
+}
+
+type VE_MethodConflict struct {
+    __ValidationError  ValidationError
+    __Class1           *GenericType
+    __Class2           *GenericType
+    __MethodName       Identifier
+}
+
+type VE_InflationError struct {
+    __ValidationError  ValidationError
+    __InflationError   *InflationError
+}
+
+type VE_InterfaceNotImplemented struct {
+    __ValidationError  ValidationError
+    __Class            *GenericType
+    __Interface        *GenericType
+    __BadMethod        Identifier
+}
+
 type InflationError struct {
     __Kind      InflationErrorKind
     __Expr      *TypeExpr
@@ -471,7 +541,143 @@ func (G *GenericType) GetArgPlaceholders(ctx *ObjectContext) (
     return args, nil
 }
 
-func (G *GenericType) Validate() {
+func (G *GenericType) Validate(ctx *ObjectContext) *ValidationError {
+    var invalid_super = func (e *TypeExpr) *ValidationError {
+        return (*ValidationError)(unsafe.Pointer(&VE_InvalidSuperType {
+            __ValidationError: ValidationError {
+                __Kind: VEK_InvalidSuperType,
+                __Template: G,
+            },
+            __InvalidSuper: e,
+        }))
+    }
+    var duplicate_super = func (super int) *ValidationError {
+        return (*ValidationError)(unsafe.Pointer(&VE_DuplicateSuperType {
+            __ValidationError: ValidationError {
+                __Kind: VEK_DuplicateSuperType,
+                __Template: G,
+            },
+            __DuplicateType: ctx.GetGenericType(super),
+        }))
+    }
+    var circular_inheritance = func (super int) *ValidationError {
+        return (*ValidationError)(unsafe.Pointer(&VE_CircularInheritance {
+            __ValidationError: ValidationError {
+                __Kind: VEK_CircularInheritance,
+                __Template: G,
+            },
+            __CircularType: ctx.GetGenericType(super),
+        }))
+    }
+    var not_extensible = func (S *GenericType) *ValidationError {
+        return (*ValidationError)(unsafe.Pointer(&VE_DeriveNonExtensible {
+            __ValidationError: ValidationError {
+                __Kind: VEK_DeriveNonExtensible,
+                __Template: G,
+            },
+            __NonExtensibleType: S,
+        }))
+    }
+    var wrong_mutability = func (S *GenericType, im bool) *ValidationError {
+        return (*ValidationError)(unsafe.Pointer(&VE_DeriveWrongMutability {
+            __ValidationError: ValidationError {
+                __Kind: VEK_DeriveWrongMutability,
+                __Template: G,
+            },
+            __WrongSchema: S,
+            __NeedImmutable: im,
+        }))
+    }
+    var field_conflict = func (
+        S1 *GenericType, S2 *GenericType, name Identifier,
+    ) *ValidationError {
+        return (*ValidationError)(unsafe.Pointer(&VE_FieldConflict {
+            __ValidationError: ValidationError {
+                __Kind: VEK_FieldConflict,
+                __Template: G,
+            },
+            __Schema1: S1,
+            __Schema2: S2,
+            __FieldName: name,
+        }))
+    }
+    // Check for Hierarchy Consistency
+    if G.__Kind == GT_Schema {
+        var G_as_Schema = (*GenericSchemaType)(unsafe.Pointer(G))
+        var supers = [][2]int { [2]int { G.__Id, 0 } }
+        var add_base_to_supers func(*TypeExpr, int) *ValidationError
+        add_base_to_supers = func (base *TypeExpr, depth int) *ValidationError {
+            if base.__Kind != TE_Inflation {
+                return invalid_super(base)
+            }
+            var base_as_inf_expr = (*InflationTypeExpr)(unsafe.Pointer(base))
+            var B = base_as_inf_expr.__Template
+            if B.__Kind != GT_Schema {
+                return invalid_super(base)
+            }
+            var B_as_Schema = (*GenericSchemaType)(unsafe.Pointer(B))
+            if !(B_as_Schema.__Extensible) {
+                return not_extensible(B)
+            }
+            var required_mutability = G_as_Schema.__Immutable
+            var given_mutability = B_as_Schema.__Immutable
+            if required_mutability != given_mutability {
+                return wrong_mutability(B, required_mutability)
+            }
+            var current = B.__Id
+            for _, super := range supers {
+                var existing = super[0]
+                if existing == current {
+                    var existing_depth = super[1]
+                    if existing_depth == depth {
+                        return duplicate_super(existing)
+                    } else {
+                        return circular_inheritance(existing)
+                    }
+                }
+            }
+            supers = append(supers, [2]int{ current, depth })
+            for _, base_of_base := range B_as_Schema.__BaseList {
+                var err = add_base_to_supers(base_of_base, depth+1)
+                if err != nil {
+                    return err
+                }
+            }
+            return nil
+        }
+        for _, base := range G_as_Schema.__BaseList {
+            var err = add_base_to_supers(base, 1)
+            if err != nil {
+                return err
+            }
+        }
+        var occurred_fields = make(map[Identifier] *GenericType)
+        for _, super := range supers {
+            var S = ctx.GetGenericType(super[0])
+            Assert(S.__Kind == GT_Schema, "Generics: invalid generic schema")
+            var S_as_Schema = (*GenericSchemaType)(unsafe.Pointer(S))
+            for _, field := range S_as_Schema.__OwnFieldList {
+                var name = field.__Name
+                var existing, exists = occurred_fields[name]
+                if exists {
+                    return field_conflict(existing, S, name)
+                } else {
+                    occurred_fields[name] = S
+                }
+            }
+        }
+    } else if G.__Kind == GT_Class {
+        // TODO
+    }
+    // Check parameter bounds by CheckArgs()
+    // TODO
+    // Evaluate bounds and generate placeholders by GetArgPlaceholders()
+    // note: bounds of all types must be pre-validated by IsArgBoundsValid()
+    // TODO
+    // Validate each inner type expression in the template
+    // TODO
+    // Check if all interfaces are implemented by TypeExprEqual()
+    // TODO
     panic("unimplemented")
 }
 
