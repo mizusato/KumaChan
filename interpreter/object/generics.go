@@ -153,6 +153,85 @@ type IE_InvalidArg struct {
     __IsUpper         bool
 }
 
+func TypeExprEqual (e1 *TypeExpr, e2 *TypeExpr, args []*TypeExpr) bool {
+    if e2.__Kind == TE_Argument {
+        var e2_as_arg = (*ArgumentTypeExpr)(unsafe.Pointer(e2))
+        e2 = args[e2_as_arg.__Index]
+    }
+    if e1.__Kind != e2.__Kind {
+        return false
+    } else {
+        var kind = e1.__Kind
+        switch kind {
+        case TE_Final:
+            var final1 = (*FinalTypeExpr)(unsafe.Pointer(e1))
+            var final2 = (*FinalTypeExpr)(unsafe.Pointer(e2))
+            return final1.__Type == final2.__Type
+        case TE_Argument:
+            var a1 = (*ArgumentTypeExpr)(unsafe.Pointer(e1))
+            var a2 = (*ArgumentTypeExpr)(unsafe.Pointer(e2))
+            return a1.__Index == a2.__Index
+        case TE_Function:
+            var f1 = (*FunctionTypeExpr)(unsafe.Pointer(e1))
+            var f2 = (*FunctionTypeExpr)(unsafe.Pointer(e2))
+            if len(f1.__Items) == len(f2.__Items) {
+                var LI = len(f1.__Items)
+                for i := 0; i < LI; i += 1 {
+                    var I1 = f1.__Items[i]
+                    var I2 = f2.__Items[i]
+                    if len(I1.__Parameters) == len(I2.__Parameters) {
+                        var LP = len(I1.__Parameters)
+                        for j := 0; j < LP; j += 1 {
+                            var P1 = I1.__Parameters[i]
+                            var P2 = I2.__Parameters[i]
+                            if !(TypeExprEqual(P1, P2, args)) {
+                                return false
+                            }
+                        }
+                        var R1 = I1.__ReturnValue
+                        var R2 = I2.__ReturnValue
+                        if !(TypeExprEqual(R1, R2, args)) {
+                            return false
+                        }
+                        var E1 = I1.__Exception
+                        var E2 = I2.__Exception
+                        if !(TypeExprEqual(E1, E2, args)) {
+                            return false
+                        }
+                    } else {
+                        return false
+                    }
+                }
+                return true
+            } else {
+                return false
+            }
+        case TE_Inflation:
+            var inf1 = (*InflationTypeExpr)(unsafe.Pointer(e1))
+            var inf2 = (*InflationTypeExpr)(unsafe.Pointer(e2))
+            if inf1.__Template.__Id == inf2.__Template.__Id {
+                if len(inf1.__Arguments) == len(inf2.__Arguments) {
+                    var L = len(inf1.__Arguments)
+                    for i := 0; i < L; i += 1 {
+                        var a1 = inf1.__Arguments[i]
+                        var a2 = inf2.__Arguments[i]
+                        if !(TypeExprEqual(a1, a2, args)) {
+                            return false
+                        }
+                    }
+                    return true
+                } else {
+                    return false
+                }
+            } else {
+                return false
+            }
+        default:
+            panic("impossible branch")
+        }
+    }
+}
+
 func (e *TypeExpr) IsValidBound(depth int) (bool, *TypeExpr) {
     switch e.__Kind {
     case TE_Final:
@@ -193,61 +272,57 @@ func (e *TypeExpr) IsValidBound(depth int) (bool, *TypeExpr) {
     }
 }
 
-func (e *TypeExpr) Try2Evaluate(ctx *ObjectContext, args []int) (
-    int, *InflationError,
-) {
+func (e *TypeExpr) Check(ctx *ObjectContext, args []int) *InflationError {
     switch e.__Kind {
     case TE_Final:
-        return e.Evaluate(ctx, args), nil
+        return nil
     case TE_Argument:
-        return e.Evaluate(ctx, args), nil
+        return nil
     case TE_Function:
         var f_expr = (*FunctionTypeExpr)(unsafe.Pointer(e))
-        var items = make([]FunctionTypeItem, len(f_expr.__Items))
-        for i, f := range f_expr.__Items {
-            var params = make([]int, len(f.__Parameters))
-            for j, ei := range f.__Parameters {
-                var param, err = ei.Try2Evaluate(ctx, args)
+        for _, f := range f_expr.__Items {
+            for _, ei := range f.__Parameters {
+                var err = ei.Check(ctx, args)
                 if err != nil {
-                    return -1, err
+                    return err
                 }
-                params[j] = param
             }
-            var retval, err1 = f.__ReturnValue.Try2Evaluate(ctx, args)
+            var err1 = f.__ReturnValue.Check(ctx, args)
             if err1 != nil {
-                return -1, err1
+                return err1
             }
-            var exception, err2 = f.__Exception.Try2Evaluate(ctx, args)
+            var err2 = f.__Exception.Check(ctx, args)
             if err2 != nil {
-                return -1, err2
-            }
-            items[i] = FunctionTypeItem {
-                __Parameters: params,
-                __ReturnValue: retval,
-                __Exception: exception,
+                return err2
             }
         }
-        return GetFunctionType(ctx, items), nil
+        return nil
     case TE_Inflation:
         var inf_expr = (*InflationTypeExpr)(unsafe.Pointer(e))
         var to_be_checked = inf_expr.__Arguments
         var template = inf_expr.__Template
         if !(template.__Validated) {
-            return -1, &InflationError {
+            return &InflationError {
                 __Kind: IEK_TemplateNotValidated,
                 __Expr: e,
                 __Template: template,
             }
         } else {
-            var err = CheckArgs(ctx, args, template, e, to_be_checked)
-            if err != nil {
-                return -1, err
-            } else {
-                return e.Evaluate(ctx, args), nil
-            }
+            return CheckArgs(ctx, args, template, e, to_be_checked)
         }
     default:
         panic("impossible branch")
+    }
+}
+
+func (e *TypeExpr) Try2Evaluate(ctx *ObjectContext, args []int) (
+    int, *InflationError,
+) {
+    var err = e.Check(ctx, args)
+    if err != nil {
+        return -1, err
+    } else {
+        return e.Evaluate(ctx, args), nil
     }
 }
 
