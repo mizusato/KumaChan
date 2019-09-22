@@ -89,7 +89,10 @@ func __Allocate () {
 }
 
 func __AssignId2Name (name string) Id {
-    // TODO: check repeat
+    var _, exists = Name2Id[name]
+    if !exists {
+        panic("redundant declaration for syntax part name " + name)
+    }
     var id = Id(len(Id2Name))
     Name2Id[name] = id
     Id2Name = append(Id2Name, name)
@@ -123,11 +126,6 @@ func __AssignId2Rules () {
         var u = strings.Trim(t[0], " ")
         var rule_name = strings.TrimRight(u, "?")
         __AssignId2Name(rule_name)
-        /*
-        if (i == 0) {
-            RootName = rule_name
-        }
-        */
     }
 }
 
