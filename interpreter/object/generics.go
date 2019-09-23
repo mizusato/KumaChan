@@ -6,6 +6,31 @@ import "unsafe"
 import "strings"
 import ."kumachan/interpreter/assertion"
 
+/**
+ *  There are 6 kinds of generic type that can be defined by user:
+ *      1. Union Type (flat distinct union)
+ *          e.g. union Maybe[T] = T | Nil
+ *      2. Trait Type (intersection of classes/interfaces)
+ *          e.g. trait GetterSetter[K,V] = Getter[K,V] & Setter[K,V]
+ *      3. Schema Type (definition of struct) 
+ *          e.g. struct Complex { real: Float, imag: Float }
+ *               * this example has no type parameter,
+ *                 but is also a generic type. (regarded as Complex[])
+ *      4. Class Type
+ *          e.g. class Array[T] implements Getter[Size, T], ...
+ *      5. Interface Type
+ *          e.g. interface Getter[K,V] { get(key: K) -> V }
+ *      6. Function Type (along with function/method declaration)
+ *          e.g. function map[F,T](i:Iterable[F], f:[F->T]) -> Iterator[T] ...
+ *   A generic type is also called a template.
+ *   Instantiating a generic type is also called inflating it.
+ *   To get a concrete type (*TypeInfo), inflating is required.
+ *   Before inflating a generic type, its type declaration must be
+ *       validated. See `generics_validate.go` for more information.
+ *   It is impossible to compare two generic types without inflating them,
+ *       in other words, only concrete types can be compared.
+ */
+
 type TypeExpr struct {
     __Kind       TypeExprKind
     __Position   int
