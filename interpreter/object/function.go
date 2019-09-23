@@ -10,9 +10,9 @@ type Result struct {
 
 type ResultKind int
 const (
-    Return ResultKind = iota
-    Throw
-    Panic
+    RK_Return ResultKind = iota
+    RK_Throw
+    RK_Panic
 )
 
 type Function struct {
@@ -20,6 +20,7 @@ type Function struct {
     __Context    *Scope
     __Template   int
     __TypeArgs   [MAX_TEMPLATE_ARGS] int
+    __PausePos   int
 }
 
 type FunctionInfo struct {
@@ -28,3 +29,4 @@ type FunctionInfo struct {
     __ByteCode    int
     __ScopeInfo   ScopeInfo
 }
+

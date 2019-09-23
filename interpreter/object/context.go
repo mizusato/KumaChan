@@ -10,7 +10,6 @@ import ."kumachan/interpreter/assertion"
 type ObjectContext struct {
     __Mutex                sync.Mutex
     __IdPool               *IdPool
-    __NativeClassList      [] NativeClass
 	__TypeInfoList         [] *TypeInfo
     __GenericTypeList      [] *GenericType
     __InflatedTypes        map[string] int
@@ -19,7 +18,6 @@ type ObjectContext struct {
 func NewObjectContext () *ObjectContext {
     var ctx = &ObjectContext {
         __IdPool:              NewIdPool(),
-        __NativeClassList:     make([] NativeClass, 0),
         __TypeInfoList:        make([] *TypeInfo, 0),
         __GenericTypeList:     make([] *GenericType, 0),
         __InflatedTypes:       make(map[string] int),
@@ -108,22 +106,6 @@ func (ctx *ObjectContext) GetInflatedType(g int, args []int) (int, bool) {
     } else {
         return -1, false
     }
-}
-
-func (ctx *ObjectContext) __RegisterNativeClass (
-    name      string,
-    methods   NativeClassMethodList,
-) *NativeClass {
-    ctx.__Mutex.Lock()
-    defer ctx.__Mutex.Unlock()
-    var id = len(ctx.__NativeClassList)
-    Assert(id+1 > id, "ObjectContext: run out of native class id")
-    ctx.__NativeClassList = append(ctx.__NativeClassList, NativeClass {
-        __Name: name,
-        __Id: NativeClassId(id),
-        __Methods: methods,
-    })
-    return &ctx.__NativeClassList[id]
 }
 
 func GetInflatedTypeKey(g int, args []int) string {
