@@ -27,19 +27,19 @@ var GeneratorPauseClass = NativeClass {
         }))
     },
     Methods: map[string] NativeMethod {
-        "is_yield": func (self unsafe.Pointer, _ []Object) Object {
+        "is_yield": func (self Self, argv Argv, ctx Ctx) Object {
             var pause_kind = (*GeneratorPauseObject)(self).__Data.__Kind
             return NewBool(pause_kind == GPK_Yield)
         },
-        "is_await": func (self unsafe.Pointer, _ []Object) Object {
+        "is_await": func (self Self, argv Argv, ctx Ctx) Object {
             var pause_kind = (*GeneratorPauseObject)(self).__Data.__Kind
             return NewBool(pause_kind == GPK_Await)
         },
-        "is_return": func (self unsafe.Pointer, _ []Object) Object {
+        "is_return": func (self Self, argv Argv, ctx Ctx) Object {
             var pause_kind = (*GeneratorPauseObject)(self).__Data.__Kind
             return NewBool(pause_kind == GPK_Return)
         },
-        "value": func (self unsafe.Pointer, _ []Object) Object {
+        "value": func (self Self, argv Argv, ctx Ctx) Object {
             return (*GeneratorPauseObject)(self).__Data.__Value
         },
     },

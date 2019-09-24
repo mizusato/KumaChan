@@ -3,7 +3,10 @@ package object
 import "unsafe"
 import ."kumachan/interpreter/assertion"
 
-type NativeMethod = func(unsafe.Pointer, []Object) Object
+type Self = unsafe.Pointer
+type Argv = [] Object
+type Ctx = *ObjectContext
+type NativeMethod = func(Self, Argv, Ctx) Object
 
 type NativeObject struct {
     __ClassInContext *NativeClassInContext
@@ -62,10 +65,12 @@ func (obj *NativeObject) HasMethod(method Identifier) bool {
     return exists    
 }
 
-func (obj *NativeObject) Call(method Identifier, argv []Object) Object {
+func (obj *NativeObject) Call (
+    method Identifier, argv []Object, ctx *ObjectContext,
+) Object {
     var f, exists = obj.__ClassInContext.__MethodsInContext[method]
     Assert(exists, "Native: called method does not exist on object")
-    return f((unsafe.Pointer)(obj), argv)
+    return f((unsafe.Pointer)(obj), argv, ctx)
 }
 
 func NewNativeObject (n *NativeObject) Object {
