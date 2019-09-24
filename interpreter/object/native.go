@@ -17,10 +17,10 @@ type NativeClass struct {
 
 type NativeClassInContext struct {
     __MethodsInContext  map[Identifier] NativeMethod
-    __NativeClass       NativeClass
+    __NativeClass       *NativeClass
 }
 
-func UseNativeClass (c NativeClass, ctx *ObjectContext) *NativeClassInContext {
+func UseNativeClass (c *NativeClass, ctx *ObjectContext) *NativeClassInContext {
     var methods = make(map[Identifier] NativeMethod)
     for name, f := range c.Methods {
         methods[ctx.GetId(name)] = f
@@ -39,6 +39,14 @@ func (class *NativeClassInContext) New(options interface{}) *NativeObject {
 
 func (obj *NativeObject) GetClassName() string {
     return obj.__ClassInContext.__NativeClass.Name
+}
+
+func (obj *NativeObject) CastTo(class *NativeClass) unsafe.Pointer {
+    Assert (
+        obj.__ClassInContext.__NativeClass == class,
+        "Native: invalid cast between native objects",
+    )
+    return unsafe.Pointer(obj)
 }
 
 func (obj *NativeObject) EnumerateMethods() []Identifier {
