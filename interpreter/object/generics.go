@@ -62,7 +62,7 @@ type FunctionTypeExpr struct {
 type FunctionTypeExprItem struct {
     __Parameters   [] *TypeExpr
     __ReturnValue  *TypeExpr
-    __Exception    *TypeExpr
+    __Exception    *TypeExpr  // TODO
 }
 
 type InflationTypeExpr struct {
