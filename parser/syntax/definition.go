@@ -43,7 +43,7 @@ var Tokens = [...] Token {
     Token { Name: "{",       Pattern: r(`\{`) },
     Token { Name: "}",       Pattern: r(`\}`) },
     Token { Name: "...",     Pattern: r(`\.\.\.`) }, // Delimiter
-    Token { Name: "..",     Pattern: r(`\.\.`) },    // Sequence
+    Token { Name: "..",      Pattern: r(`\.\.`) },   // Sequence
     Token { Name: ".",       Pattern: r(`\.`) },
     Token { Name: ",",       Pattern: r(`\,`) },
     Token { Name: "::",      Pattern: r(`\:\:`) },   // Module Namespace
@@ -167,6 +167,7 @@ var SugarableOperators = [] string {
 var SyntaxDefinition = [...] string {
     /* Group: Root */
     "eval = resolve imports decls commands handle_hook",
+    "module_header = shebang export resolve",
     "module = shebang export resolve imports decls commands handle_hook",
       "shebang? = Pragma",
       "export? = @export { namelist! }! | @export namelist!",
