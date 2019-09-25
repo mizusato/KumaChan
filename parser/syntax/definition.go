@@ -14,7 +14,6 @@ var EscapeMap = map [string] string {
     "_bar1":  "|",
     "_bar2":  "||",
     "_at":    "@",
-    "_tree":  "|->",
 }
 
 
@@ -43,20 +42,21 @@ var Tokens = [...] Token {
     Token { Name: "]",       Pattern: r(`\]`) },
     Token { Name: "{",       Pattern: r(`\{`) },
     Token { Name: "}",       Pattern: r(`\}`) },
-    Token { Name: "...",     Pattern: r(`\.\.\.`) },
+    Token { Name: "...",     Pattern: r(`\.\.\.`) }, // Delimiter
+    Token { Name: "..",     Pattern: r(`\.\.`) },    // Sequence
     Token { Name: ".",       Pattern: r(`\.`) },
     Token { Name: ",",       Pattern: r(`\,`) },
-    Token { Name: "::",      Pattern: r(`\:\:`) },
+    Token { Name: "::",      Pattern: r(`\:\:`) },   // Module Namespace
     Token { Name: ":",       Pattern: r(`\:`) },
-    Token { Name: "@",       Pattern: r(`@`) },
+    Token { Name: "@",       Pattern: r(`@`) },      // Class/Schema Attribute
     Token { Name: "??",      Pattern: r(`\?\?`) },   // Nil Coalescing
     Token { Name: "?",       Pattern: r(`\?`) },     // Flag: optional
     Token { Name: ">=",      Pattern: r(`\>\=`) },
     Token { Name: "<=",      Pattern: r(`\<\=`) },
     Token { Name: "==",      Pattern: r(`\=\=`) },
     Token { Name: "!=",      Pattern: r(`\!\=`) },
-    Token { Name: "~~",      Pattern: r(`\~\~`) },   // Reference Equal
-    Token { Name: "!~",      Pattern: r(`\!\~`) },   // Reference Unequal
+    Token { Name: "~~",      Pattern: r(`\~\~`) },   // Shallow Equal
+    Token { Name: "!~",      Pattern: r(`\!\~`) },   // Shallow Unequal
     Token { Name: "=>",      Pattern: r(`\=\>`) },
     Token { Name: "=",       Pattern: r(`\=`) },
     Token { Name: "->",      Pattern: r(`\-\>`) },
@@ -67,22 +67,24 @@ var Tokens = [...] Token {
     Token { Name: ">",       Pattern: r(`\>`) },
     Token { Name: "!!",      Pattern: r(`\!\!`) },   // Bitwise NOT
     Token { Name: "!",       Pattern: r(`\!`) },     // Flag: force
-    Token { Name: "|->",     Pattern: r(`\|\-\>`) }, // Tree
-    Token { Name: "~",       Pattern: r(`~`) },
+    Token { Name: "~",       Pattern: r(`~`) },      // Continuation
     Token { Name: "&&",      Pattern: r(`\&\&`) },   // Bitwise AND
     Token { Name: "&",       Pattern: r(`\&`) },     // Type Intersection
     Token { Name: "||",      Pattern: r(`\|\|`) },   // Bitwise OR
     Token { Name: "|",       Pattern: r(`\|`) },     // Type Union
-    Token { Name: `\`,       Pattern: r(`\\`) },
-    Token { Name: "++",      Pattern: r(`\+\+`) },
+    Token { Name: `\`,       Pattern: r(`\\`) },     // (Reserved)
+    Token { Name: "++",      Pattern: r(`\+\+`) },   // (Reserved)
     Token { Name: "+",       Pattern: r(`\+`) },
+    Token { Name: "--",      Pattern: r(`\--`) },    // (Reserved)
     Token { Name: "-",       Pattern: r(`\-`) },
-    Token { Name: "**",      Pattern: r(`\*\*`) },
+    Token { Name: "**",      Pattern: r(`\*\*`) },   // (Reserved)
     Token { Name: "*",       Pattern: r(`\*`) },
     Token { Name: "/",       Pattern: r(`\/`) },
+    Token { Name: "%%",      Pattern: r(`%%`) },     // (Reserved)
     Token { Name: "%",       Pattern: r(`%`) },
     Token { Name: "^^",      Pattern: r(`\^\^`) },   // Bitwise XOR
     Token { Name: "^",       Pattern: r(`\^`) },
+    Token { Name: "Callcc",  Pattern: r(`call\/cc`) },
     Token { Name: "Name",    Pattern: r(`[^`+Symbols+Blanks+LF+`]+`) },
     //    { Name: "Call",    [ Inserted by Scanner ] },
     //    { Name: "Get",     [ Inserted by Scanner ] },
@@ -95,24 +97,27 @@ var Keywords = [...] string {
 
     "@resolve", "@export", "@from", "@import", "@as",
 
+    "@section",
     "@singleton", "@union", "@trait",
     "@schema",
     "@class", "@is", "@implements", "@init", "@private",
     "@interface",
+    "@native",
 
     "@function", "@static", "@mock",
     "@handle", "@unless", "@failed", "@finally",
 
     "@if", "@else", "@switch", "@otherwise",
     "@while", "@for", "@in", "@break", "@continue",
-    "@return", "@exec", "@yield",
+    "@yield",
+    "@return", "@tailing",
     "@assert", "@panic", "@ensure", "@unable", "@to",
     "@let",  "@initial", "@reset",
-    "@set", "@do", "@nothing",
+    "@set",
+    "@do", "@nothing",
 
-    "@mount", "@push",  // no async/await anymore. use call/cc instead
-    "@not", "@and", "@or",
-    "@$", "@type", "@new", "@struct", "@seq",
+    "@not", "@and", "@or", "@mount",  // no await anymore. use call/cc instead
+    "@type", "@new", "@struct",
     "@when", "@match", "@invoke",
     "@with",
     "@Yes", "@No",
@@ -184,15 +189,17 @@ var SyntaxDefinition = [...] string {
       "commands? = command commands",
         // command -> Group: Command
     /* Group: Type & Generics */
-    "type = type_ordinary | type_function",
+    "type = type_ordinary | type_function | type_continuation",
       "type_ordinary = module_prefix name type_args",
         "module_prefix? = name :: ",
         "type_args? = [ typelist! ]!",
             "typelist = type typelist_tail",
             "typelist_tail? = , type! typelist_tail",
-        "type_function = [ signature more_signature ]!",
+      "type_function = type_iterator | [ signature more_signature ]!",
         "more_signature? = _bar1 signature! more_signature",
         "signature = -> type! | typelist ->! type!",
+        "type_iterator = * [! type! ]!",
+      "type_continuation = ~ [! type! ]!",
     "type_params? = [ type_param! more_type_param ]!",
       "more_type_param? = , type_param! more_type_param",
         "type_param = name bounds | name",
@@ -202,7 +209,8 @@ var SyntaxDefinition = [...] string {
             "upper_bound = type",
     /* Group: Declaration */
     "decls? = decl decls",
-      "decl = decl_function | decl_type",  // TODO: section
+      "decl = decl_section | decl_function | decl_type | decl_native_type",
+        "decl_section = @section name { decls }!",
         "decl_function = opt_pragma f_overload | opt_pragma f_single",
           "opt_pragma? = Pragma",
           "f_single = @function name type_params paralist! ret body!",
@@ -227,7 +235,6 @@ var SyntaxDefinition = [...] string {
             "f_item_list = f_item f_item_list_tail",
               "f_item_list_tail? = , f_item! f_item_list_tail",
               "f_item = paralist! ->! type! body!",
-        // TODO: native class
         "decl_type = singleton | union | trait | schema | class | interface",
           "singleton = @singleton name! | @singleton {! namelist! }!",
           "union = @union name type_params = type union_tail",
@@ -257,6 +264,10 @@ var SyntaxDefinition = [...] string {
             "method_proto_list = method_proto more_method_protos",
               "more_method_protos? = method_proto more_method_protos",
               "method_proto = name paralist! ret",
+        "decl_native_type = decl_native_class",
+          "decl_native_class = @native name type_params { native_methods }!",
+            "native_methods? = native_method native_methods",
+              "native_method = method_proto",
     /* Group: Command */
     "command = cmd_group1 | cmd_group2 | cmd_group3",
       "cmd_group1 = cmd_branch | cmd_loop | cmd_loop_ctrl",
@@ -286,8 +297,9 @@ var SyntaxDefinition = [...] string {
               "value = name",
         "cmd_loop_ctrl = @break | @continue",
       "cmd_group2 = cmd_return | cmd_yield | cmd_panic | cmd_guard",
-        "cmd_return = @return Void | @return tail_call | @return expr",
-          "tail_call = @exec operand_body plain_call",
+        "cmd_return = return_flags @return return_content",
+          "return_flags? = _at @tailing",
+          "return_content = Void | expr",
         "cmd_yield = @yield expr!",
           "pattern = name | { namelist }! | [ namelist ]!",
         "cmd_panic = @panic expr!",
@@ -313,8 +325,7 @@ var SyntaxDefinition = [...] string {
         "cmd_pass = @do @nothing",
         "cmd_side_effect = expr",
     /* Group: Expression */
-    "expr = lower_unary operand expr_tail | operand expr_tail",
-      "lower_unary = @mount | @push",
+    "expr = operand expr_tail",
       "expr_tail? = operator operand! expr_tail",
         // operand -> Group: Operand
         "operator = op_nil | op_compare | op_bitwise | op_logic | op_arith",
@@ -324,10 +335,10 @@ var SyntaxDefinition = [...] string {
           "op_logic = @and | @or ",
           "op_arith = + | - | * | / | % | ^ ",
     /* Group: Operand */
-    "operand = operand_body plain_calls with pipelines",
-      "operand_body = unary operand_base operand_tail",
-        "unary? = @not | _exc2 | - ",
-        "operand_base = lambda | wrapped | literal | cast | misc | variable",
+    "operand = unary operand_body plain_calls with pipelines",
+      "unary? = @not | _exc2 | - | @mount",
+      "operand_body = operand_base operand_tail",
+        "operand_base = lambda | wrapped | const | cast | callcc | misc | var",
           "lambda = iterator | paralist_weak ret_weak body_flex",
             "iterator = * yield_type => body!",
               "yield_type? = : type!",
@@ -337,13 +348,14 @@ var SyntaxDefinition = [...] string {
             "ret_weak? = : type",
             "body_flex = => body | => expr!",
           "wrapped = ( expr! )!",
-          "literal = string | int | float | bool",
+          "const = string | int | float | bool",
             "string = String",
             "int = Dec | Hex | Oct | Bin",
             "float = Float | Exp",
             "bool = @Yes | @No",
           "cast = [ type ]! cast_flag (! expr! )!",
             "cast_flag? = _exc1",
+          "callcc = Callcc [! type! ]! (! expr! )!",
           "misc = type_expr | text | new | struct | seq | when | match | iife",
             "type_expr = @type { type }",
             "text = Text | TxBegin first_segment more_segments TxEnd!",
@@ -355,9 +367,11 @@ var SyntaxDefinition = [...] string {
 			"struct = @struct type! {! struct_items }!",
 			  "struct_items? = struct_item struct_items",
 			    "struct_item = name :! expr!",
-			"seq = @seq seq_type seq_items",
-			  "seq_type? = [ type! ]!",
-			  "seq_items = { } | { exprlist! }!",
+			"seq = brace_seq | dot_seq",
+			  "brace_seq = * yield_type { seq_items }!",
+                "seq_items? = exprlist",
+			  "dot_seq = .. dot_seq_type seq_items ..!",
+                "dot_seq_type? = type_iterator :",
 	    	"when = @when {! branch_list }!",
               "branch_list = branch branch_list_tail",
               "branch_list_tail? = , branch branch_list_tail",
@@ -367,7 +381,7 @@ var SyntaxDefinition = [...] string {
               "type_branch_list_tail? = , type_branch type_branch_list_tail",
               "type_branch = @otherwise =>! expr! | type! =>! expr!",
             "iife = @invoke body",
-          "variable = module_prefix name",
+          "var = module_prefix name",
         "operand_tail? = tail_operation operand_tail",
           "tail_operation = field_get | slice | get | inflate",
             "field_get = Get . name!",
@@ -383,5 +397,5 @@ var SyntaxDefinition = [...] string {
       "with? = @with struct",
       "pipelines? = pipeline pipelines",
         "pipeline = _bar1 operand_body pipeline_args",
-        "pipeline_args? = Call ( arglist )!",
+        "pipeline_args? = Call ( arglist )! | { arglist }!",
 }

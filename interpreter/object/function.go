@@ -3,18 +3,6 @@ package object
 const MAX_ARGS = 8
 const MAX_TEMPLATE_ARGS = 5
 
-type Result struct {
-    Kind   ResultKind
-    Value  Object
-}
-
-type ResultKind int
-const (
-    RK_Return ResultKind = iota
-    RK_Throw
-    RK_Panic
-)
-
 type Function struct {
     __FunInfo    int
     __Context    *Scope
@@ -25,7 +13,7 @@ type Function struct {
 
 type FunctionInfo struct {
     __IsNative    bool
-    __Native      func([MAX_ARGS]Object) Result
+    __Native      func([MAX_ARGS]Object) Object
     __ByteCode    int
     __ScopeInfo   ScopeInfo
 }
