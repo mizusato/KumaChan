@@ -579,6 +579,22 @@ func (G *GenericType) Validate(ctx *ObjectContext) *ValidationError {
 				return inflation_error(err)
 			}
 		}
+	case GT_Interface:
+		var G_as_Interface = (*GenericInterfaceType)(unsafe.Pointer(G))
+		for _, method := range G_as_Interface.__MethodList {
+			var err = method.__Type.Check(ctx, args)
+			if err != nil {
+				return inflation_error(err)
+			}
+		}
+	case GT_NativeClass:
+		var G_as_NativeClass = (*GenericNativeClassType)(unsafe.Pointer(G))
+		for _, method := range G_as_NativeClass.__MethodList {
+			var err = method.__Type.Check(ctx, args)
+			if err != nil {
+				return inflation_error(err)
+			}
+		}
 	}
 	// Mark validated
 	G.__Validated = true
