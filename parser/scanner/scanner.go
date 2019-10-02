@@ -21,6 +21,7 @@ type TokenSequence = []Token
 type Point struct {
     Row int
     Col int
+    // TODO: SpanStart, SpanEnd
 }
 
 type RowColInfo = []Point
