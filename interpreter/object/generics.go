@@ -62,7 +62,6 @@ type FunctionTypeExpr struct {
 type FunctionTypeExprItem struct {
     __Parameters   [] *TypeExpr
     __ReturnValue  *TypeExpr
-    __Exception    *TypeExpr  // TODO
 }
 
 type InflationTypeExpr struct {
@@ -94,6 +93,7 @@ const (
     GT_Schema
     GT_Class
     GT_Interface
+    GT_NativeClass
 )
 
 type GenericFunctionType struct {
@@ -150,6 +150,11 @@ type GenericInterfaceMethod struct {
     __Type   *TypeExpr
 }
 
+type GenericNativeClassType struct {
+    __GenericType   GenericType
+    __MethodList    [] GenericInterfaceMethod
+}
+
 
 func (e *TypeExpr) Try2Evaluate(ctx *ObjectContext, args []int) (
     int, *InflationError,
@@ -177,11 +182,9 @@ func (e *TypeExpr) Evaluate(ctx *ObjectContext, args []int) int {
                 params[j] = ei.Evaluate(ctx, args)
             }
             var retval = f.__ReturnValue.Evaluate(ctx, args)
-            var exception = f.__Exception.Evaluate(ctx, args)
             items[i] = FunctionTypeItem {
                 __Parameters: params,
                 __ReturnValue: retval,
-                __Exception: exception,
             }
         }
         return GetFunctionType(ctx, items)
@@ -210,7 +213,6 @@ func GetFunctionType(ctx *ObjectContext, items []FunctionTypeItem) int {
             fingerprint = append(fingerprint, parameter)
         }
         fingerprint = append(fingerprint, item.__ReturnValue)
-        fingerprint = append(fingerprint, item.__Exception)
         fingerprint = append(fingerprint, -1)
     }
     var cached, exists = ctx.GetInflatedType(-1, fingerprint)
@@ -224,12 +226,10 @@ func GetFunctionType(ctx *ObjectContext, items []FunctionTypeItem) int {
                 param_names[j] = ctx.GetTypeName(parameter)
             }
             var retval_name = ctx.GetTypeName(item.__ReturnValue)
-            var exception_name = ctx.GetTypeName(item.__Exception)
             item_names[i] = fmt.Sprintf (
-                "%v -> %v(%v)",
+                "%v -> %v",
                 strings.Join(param_names, ","),
                 retval_name,
-                exception_name,
             )
         }
         var name = fmt.Sprintf("[ %v ]", strings.Join(item_names, " | "))
@@ -474,6 +474,29 @@ func (G *GenericType) Inflate(ctx *ObjectContext, args []int) int {
         }
         interface_.__MethodTypes = method_types
         interface_.__TypeInfo.__Initialized = true
+    case GT_NativeClass:
+        var g_native = (*GenericNativeClassType)(unsafe.Pointer(G))
+        var native = &T_NativeClass {
+            __TypeInfo: TypeInfo {
+                __Kind: TK_Interface,
+                __Name: name,
+                __Initialized: false,
+                __FromGeneric: true,
+                __GenericId: G.__Id,
+                __GenericArgs: args,
+            },
+            // MethodTypes = nil
+        }
+        register(unsafe.Pointer(native))
+        var method_types = make(map[Identifier] int)
+        for _, method := range g_native.__MethodList {
+            var name = method.__Name
+            var _, exists = method_types[name]
+            Assert(!exists, "Generics: duplicate native class method")
+            method_types[name] = method.__Type.Evaluate(ctx, args)
+        }
+        native.__MethodTypes = method_types
+        native.__TypeInfo.__Initialized = true
     default:
         panic("impossible branch")
     }

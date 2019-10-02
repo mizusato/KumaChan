@@ -20,6 +20,7 @@ const (
     TK_Schema
     TK_Class
     TK_Interface
+    TK_NativeClass
 )
 
 type TypeInfo struct {
@@ -53,7 +54,6 @@ type T_Function struct {
 type FunctionTypeItem struct {
     __Parameters    [] int
     __ReturnValue   int
-    __Exception     int
 }
 
 type T_Union struct {
@@ -102,6 +102,11 @@ type MethodInfo struct {
 }
 
 type T_Interface struct {
+    __TypeInfo      TypeInfo
+    __MethodTypes   map[Identifier] int
+}
+
+type T_NativeClass struct {
     __TypeInfo      TypeInfo
     __MethodTypes   map[Identifier] int
 }

@@ -607,8 +607,6 @@ func (e *TypeExpr) IsValidBound(depth int) (bool, *TypeExpr) {
 			}
 			ok, te = f.__ReturnValue.IsValidBound(depth+1)
 			if !ok { break }
-			ok, te = f.__Exception.IsValidBound(depth+1)
-			if !ok { break }
 		}
 		return ok, te
 	case TE_Inflation:
@@ -681,11 +679,6 @@ func TypeExprEqual (e1 *TypeExpr, e2 *TypeExpr, args []*TypeExpr) bool {
 						if !(TypeExprEqual(R1, R2, args)) {
 							return false
 						}
-						var E1 = I1.__Exception
-						var E2 = I2.__Exception
-						if !(TypeExprEqual(E1, E2, args)) {
-							return false
-						}
 					} else {
 						return false
 					}
@@ -736,8 +729,6 @@ func (e *TypeExpr) AreAllTemplatesValidated() (bool, *TypeExpr) {
 				if !ok { break }
 			}
 			ok, te = f.__ReturnValue.AreAllTemplatesValidated()
-			if !ok { break }
-			ok, te = f.__Exception.AreAllTemplatesValidated()
 			if !ok { break }
 		}
 		return ok, te
@@ -817,10 +808,6 @@ func (e *TypeExpr) Check(ctx *ObjectContext, args []int) *InflationError {
 			var err1 = f.__ReturnValue.Check(ctx, args)
 			if err1 != nil {
 				return err1
-			}
-			var err2 = f.__Exception.Check(ctx, args)
-			if err2 != nil {
-				return err2
 			}
 		}
 		return nil
