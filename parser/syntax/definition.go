@@ -6,7 +6,7 @@ func r (pattern string) Regexp { return regexp.MustCompile(`^` + pattern) }
 
 const LF = `\n`
 const Blanks = ` \t\r　`
-const Symbols = `;\{\}\[\]\(\)\.\,\:#@\?\<\>\=\!~\&\|\\\+\-\*\/%\^'"` + "`"
+const Symbols = `;\{\}\[\]\(\)\.\,\:\$#@\?\<\>\=\!~\&\|\\\+\-\*\/%\^'"` + "`"
 
 var EscapeMap = map [string] string {
     "_exc1":  "!",
@@ -43,35 +43,34 @@ var Tokens = [...] Token {
     Token { Name: "{",       Pattern: r(`\{`) },
     Token { Name: "}",       Pattern: r(`\}`) },
     Token { Name: "...",     Pattern: r(`\.\.\.`) }, // Delimiter
-    Token { Name: "..",      Pattern: r(`\.\.`) },   // Sequence
+    Token { Name: "..",      Pattern: r(`\.\.`) },   // (Reserved)
     Token { Name: ".",       Pattern: r(`\.`) },
     Token { Name: ",",       Pattern: r(`\,`) },
     Token { Name: "::",      Pattern: r(`\:\:`) },   // Module Namespace
     Token { Name: ":",       Pattern: r(`\:`) },
-    Token { Name: "@",       Pattern: r(`@`) },      // Class/Schema Attribute
+    Token { Name: "$",       Pattern: r(`\$`) },     // Sequence
+    Token { Name: "@",       Pattern: r(`@`) },      // Attached Member
     Token { Name: "??",      Pattern: r(`\?\?`) },   // Nil Coalescing
-    Token { Name: "?",       Pattern: r(`\?`) },     // Flag: optional
+    Token { Name: "?",       Pattern: r(`\?`) },     // (Reserved)
     Token { Name: ">=",      Pattern: r(`\>\=`) },
     Token { Name: "<=",      Pattern: r(`\<\=`) },
     Token { Name: "==",      Pattern: r(`\=\=`) },
     Token { Name: "!=",      Pattern: r(`\!\=`) },
-    Token { Name: "~~",      Pattern: r(`\~\~`) },   // Shallow Equal
-    Token { Name: "!~",      Pattern: r(`\!\~`) },   // Shallow Unequal
     Token { Name: "=>",      Pattern: r(`\=\>`) },
     Token { Name: "=",       Pattern: r(`\=`) },
     Token { Name: "->",      Pattern: r(`\-\>`) },
-    Token { Name: "<-",      Pattern: r(`\<\-`) },   // Element of (a Type)
+    Token { Name: "<-",      Pattern: r(`\<\-`) },   // (Reserved)
     Token { Name: "<<",      Pattern: r(`\<\<`) },   // Bitwise SHL
     Token { Name: ">>",      Pattern: r(`\>\>`) },   // Bitwise SHR
     Token { Name: "<",       Pattern: r(`\<`) },
     Token { Name: ">",       Pattern: r(`\>`) },
     Token { Name: "!!",      Pattern: r(`\!\!`) },   // Bitwise NOT
-    Token { Name: "!",       Pattern: r(`\!`) },     // Flag: force
+    Token { Name: "!",       Pattern: r(`\!`) },     // Type Assertion
     Token { Name: "~",       Pattern: r(`~`) },      // Continuation
     Token { Name: "&&",      Pattern: r(`\&\&`) },   // Bitwise AND
-    Token { Name: "&",       Pattern: r(`\&`) },     // Type Intersection
+    Token { Name: "&",       Pattern: r(`\&`) },     // (Reserved)
     Token { Name: "||",      Pattern: r(`\|\|`) },   // Bitwise OR
-    Token { Name: "|",       Pattern: r(`\|`) },     // Type Union
+    Token { Name: "|",       Pattern: r(`\|`) },     // Pipeline
     Token { Name: `\`,       Pattern: r(`\\`) },     // (Reserved)
     Token { Name: "++",      Pattern: r(`\+\+`) },   // (Reserved)
     Token { Name: "+",       Pattern: r(`\+`) },
@@ -95,29 +94,29 @@ var Tokens = [...] Token {
 /* Conditional Keywords */
 var Keywords = [...] string {
 
-    "@resolve", "@export", "@from", "@import", "@as",
+    "@export", "@resolve", "@from", "@import", "@as",
 
     "@section",
     "@singleton", "@union",
     "@schema",
     "@class", "@is", "@implements", "@init", "@private",
     "@interface", "@native",
-    "@attached",
+    "@attached", "@type",
 	"@trait", "@extends", "@bound", "@intersection",
 
     "@function", "@static", "@mock",
-    "@handle", "@unless", "@failed", "@to", "@finally",
+    "@unless", "@failed", "@to",
 
     "@if", "@else", "@switch", "@otherwise",
     "@while", "@for", "@in", "@break", "@continue",
     "@yield",
-    "@return", "@tailing",
-    "@assert", "@panic", "@ensure",
+    "@return",
+    "@assert", "@panic", "@ensure", "@finally",
     "@let",  "@initial", "@reset",
     "@do", "@nothing",
 
-    "@not", "@and", "@or", "@mount",  // no await anymore. use call/cc instead
-    "@type", "@new", "@struct", "@when", "@match", "@try",
+    "@mount", "@not", "@and", "@or",  // no await anymore. use call/cc instead
+    "@new", "@struct", "@tuple", "@when", "@match", "@try",
     "@with",
     "@Yes", "@No",
 
@@ -131,13 +130,10 @@ var Operators = [...] Operator {
     /* Comparison */
     Operator { Match: "<",    Priority: 50,  Assoc: Left,   Lazy: false  },
     Operator { Match: ">",    Priority: 50,  Assoc: Left,   Lazy: false  },
-    Operator { Match: "<-",   Priority: 50,  Assoc: Left,   Lazy: false  },
     Operator { Match: "<=",   Priority: 50,  Assoc: Left,   Lazy: false  },
     Operator { Match: ">=",   Priority: 50,  Assoc: Left,   Lazy: false  },
     Operator { Match: "==",   Priority: 50,  Assoc: Left,   Lazy: false  },
     Operator { Match: "!=",   Priority: 50,  Assoc: Left,   Lazy: false  },
-    Operator { Match: "~~",   Priority: 50,  Assoc: Left,   Lazy: false  },
-    Operator { Match: "!~",   Priority: 50,  Assoc: Left,   Lazy: false  },
     /* Bitwise */
     Operator { Match: "<<",   Priority: 40,  Assoc: Left,   Lazy: false  },
     Operator { Match: ">>",   Priority: 40,  Assoc: Left,   Lazy: false  },
@@ -194,7 +190,7 @@ var SyntaxDefinition = [...] string {
         "function_t = [ signature more_signature ]!",
           "more_signature? = _bar1 signature! more_signature",
           "signature = -> type! | typelist ->! type!",
-        "generator_t = * [! type! ]!",
+        "generator_t = $ [! type! ]!",
         "continuation_t = ~ [! type! ]!",
     "type_params? = [ type_param! more_type_param ]!",
       "more_type_param? = , type_param! more_type_param",
@@ -202,7 +198,7 @@ var SyntaxDefinition = [...] string {
           "trait = module_prefix name type_args",
     /* Group: Declaration */
     "decls? = decl decls",
-      "decl = section | function | decl_type | attached | decl_trait",
+      "decl = section | function | decl_type | decl_attached | decl_trait",
         "section = @section name { decls }!",
         "function = f_overload | f_single",
           "f_single = @function name type_params paralist! ret body!",
@@ -252,7 +248,7 @@ var SyntaxDefinition = [...] string {
               "protos? = proto protos",
                 "proto = name paralist! ret!",
             "native_class = @native name type_params is {! protos }!",
-        "attached = attached_type | attached_function | attached_value",
+        "decl_attached = attached_type | attached_function | attached_value",
           "attached_type = @attached @type attached_name! =! type!",
             "attached_name = _at type! :! name!",
           "attached_function = @attached attached_name paralist ret body!",
@@ -271,8 +267,8 @@ var SyntaxDefinition = [...] string {
               "attached_c = @attached {! attached_item! more_attached_item }!",
                 "more_attached_item? = , attached_item! more_attached_item",
                 "attached_item = attached_type_item | attached_value_item",
-                  "attached_type_item = @type name :! type!",
-                  "attached_value_item = name :! expr!",
+                  "attached_type_item = @type name :! trait!",
+                  "attached_value_item = name :! type!",
               "union_c = @union {! constraints }!",
 				"constraints? = constraint constraints",
 			  "inter_c = @intersection {! constraints }!",
@@ -336,16 +332,16 @@ var SyntaxDefinition = [...] string {
         // operand -> Group: Operand
         "operator = op_nil | op_compare | op_bitwise | op_logic | op_arith",
           "op_nil = ?? ",
-          "op_compare = < | > | <- | <= | >= | == | != | ~~ | !~ ",
+          "op_compare = < | > | <= | >= | == | != ",
           "op_bitwise = << | >> | && | ^^ | _bar2 ",
           "op_logic = @and | @or ",
           "op_arith = + | - | * | / | % | ^ ",
     /* Group: Operand */
     "operand = unary operand_body accesses calls with pipelines",
       "unary? = @not | _exc2 | - | @mount",
-      "operand_body = lambda | wrapped | literal | cast | callcc | misc | var",
+      "operand_body = lambda | wrapped | cast | callcc | misc | variable",
         "lambda = generator | paralist_weak ret_weak body_flex",
-          "generator = * yield_type => body!",
+          "generator = $ yield_type => body!",
             "yield_type? = : type!",
           "paralist_weak? = name | ( ) | ( weak_param more_weak_params )!",
             "more_weak_params? = , weak_param! more_weak_params",
@@ -353,41 +349,43 @@ var SyntaxDefinition = [...] string {
           "ret_weak? = : type",
           "body_flex = => body | => expr!",
         "wrapped = ( expr! )!",
-        "literal = string | int | float | bool",
-          "string = String",
-          "int = Dec | Hex | Oct | Bin",
-          "float = Float | Exp",
-          "bool = @Yes | @No",
-        "cast = [ type ]! cast_flag (! expr! )!",
+        "cast = cast_flag [ type ]! (! expr! )!",
           "cast_flag? = _exc1",
         "callcc = Callcc [! type! ]! (! expr! )!",
-        "misc = type_expr | text | new | struct | seq | when | match | try",
-          "type_expr = @type { type }",
-          "text = Text | TxBegin first_segment more_segments TxEnd!",
-            "first_segment = segment_tag expr!",
-              "segment_tag? = name : ",
-            "more_segments? = next_segment more_segments",
-              "next_segment = TxInner segment_tag expr!",
-		  "new = @new type!",
-		  "struct = @struct type! {! struct_items }!",
-		    "struct_items? = struct_item struct_items",
-		      "struct_item = name =! expr!",
-		  "seq = brace_seq | dot_seq",
-		    "brace_seq = * { seq_items }!",
+        "misc = type_object | type_related | literal | guard",
+          "type_object = @type { type }",
+          "type_related = new | attached",
+		    "new = @new type!",
+		    "attached = attached_name",
+		  "literal = struct | tuple | seq | text | const",
+		    "struct = @struct type! {! struct_items }!",
+		      "struct_items? = struct_item struct_items",
+		        "struct_item = name =! expr!",
+		    "tuple = @tuple type_params { exprlist! }!",
+		    "seq = $ yield_type { seq_items }",
               "seq_items? = exprlist",
-			"dot_seq = .. seq_items ..!",
-	      "when = @when {! branch_list }!",
-            "branch_list = branch branch_list_tail",
-            "branch_list_tail? = , branch branch_list_tail",
-            "branch = @otherwise :! expr! | expr! :! expr!",
-          "match = @match expr {! type_branch_list }!",
-            "type_branch_list = type_branch type_branch_list_tail",
-            "type_branch_list_tail? = , type_branch type_branch_list_tail",
-            "type_branch = match_key =>! expr!",
-	      "try = @try opt_to name! try_args {! expr! }!",
-            "try_args? = ( exprlist! )!",
-          "var = module_prefix name inflate",
-            "inflate? = [ typelist! ]!",
+            "text = Text | TxBegin first_segment more_segments TxEnd!",
+              "first_segment = segment_tag expr!",
+                "segment_tag? = name : ",
+              "more_segments? = next_segment more_segments",
+                "next_segment = TxInner segment_tag expr!",
+            "const = string | int | float | bool",
+              "string = String",
+              "int = Dec | Hex | Oct | Bin",
+              "float = Float | Exp",
+              "bool = @Yes | @No",
+          "guard = try | when | match",
+            "try = @try opt_to name! try_args {! expr! }!",
+              "try_args? = ( exprlist! )!",
+	        "when = @when {! branch_list }!",
+              "branch_list = branch branch_list_tail",
+              "branch_list_tail? = , branch branch_list_tail",
+              "branch = @otherwise :! expr! | expr! :! expr!",
+            "match = @match expr {! type_branch_list }!",
+              "type_branch_list = type_branch type_branch_list_tail",
+              "type_branch_list_tail? = , type_branch type_branch_list_tail",
+              "type_branch = match_key =>! expr!",
+        "variable = module_prefix name type_args",
       "accesses? = access accesses",
         "access = . name! method_call",
           "method_call? = call | = expr!",
