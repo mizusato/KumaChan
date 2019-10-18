@@ -321,7 +321,7 @@ var SyntaxDefinition = [...] string {
         "lambda = generator | paralist_weak ret_weak body_flex",
           "generator = $ yield_type => body!",
             "yield_type? = : type!",
-          "paralist_weak? = name | ( ) | ( weak_param more_weak_params )!",
+          "paralist_weak? = name | ( ) | ( weak_param more_weak_params )",
             "more_weak_params? = , weak_param! more_weak_params",
             "weak_param = name : type! | name",
           "ret_weak? = : type",
