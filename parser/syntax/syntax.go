@@ -91,7 +91,7 @@ func __Allocate () {
 func __AssignId2Name (name string) Id {
     var existing, exists = Name2Id[name]
     if exists {
-        if name == "Comment" {
+        if name == "Comment" || name == "LF" {
             return existing
         } else {
             panic("redundant declaration for syntax part name " + name)

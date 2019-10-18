@@ -68,7 +68,7 @@ func MatchToken (code Code, pos int) (amount int, id syntax.Id) {
         var loc = token.Pattern.FindReaderIndex(&reader)
         // fmt.Printf("Try %v\n", token.Name)
         if loc != nil {
-            if (loc[0] != 0) { panic("invalid token pattern") }
+            if (loc[0] != 0) { panic("invalid token definition " + token.Name) }
             return loc[1], syntax.Name2Id[token.Name]
         }
     }
