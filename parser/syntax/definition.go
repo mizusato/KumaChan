@@ -84,7 +84,6 @@ var Tokens = [...] Token {
     Token { Name: "%",       Pattern: r(`%`) },
     Token { Name: "^^",      Pattern: r(`\^\^`) },   // Bitwise XOR
     Token { Name: "^",       Pattern: r(`\^`) },
-    Token { Name: "Callcc",  Pattern: r(`call\/cc`) },
     Token { Name: "Name",    Pattern: r(`[^`+Symbols+Blanks+LF+`]+`) },
     //    { Name: "Call",    [ Inserted by Scanner ] },
     //    { Name: "Get",     [ Inserted by Scanner ] },
@@ -95,7 +94,7 @@ var Tokens = [...] Token {
 /* Conditional Keywords */
 var Keywords = [...] string {
 
-    "@export", "@resolve", "@from", "@import", "@as",
+    "@export", "@resolve", "@import", "@as",
 
     "@section",
     "@singleton", "@union",
@@ -115,9 +114,10 @@ var Keywords = [...] string {
     "@let", "@initial", "@reset",
     "@do", "@nothing",
 
-    "@mount", "@not", "@and", "@or",  // no await anymore. use call/cc instead
+    "@not", "@and", "@or", "@super", "@try",
+    "@callcc",
     "@new", "@struct", "@tuple",
-    "@try", "@when", "@match", "@otherwise",
+    "@when", "@match", "@otherwise",
     "@with",
     "@Yes", "@No",
 
@@ -170,12 +170,11 @@ var SyntaxDefinition = [...] string {
           "resolve_alias? = name resolve_version @in!",
             "resolve_version? = ( name! )!",
       "imports? = import imports",
-        "import = @import imported_module imported_names",
-          "imported_module = alias",
-            "alias = name @as name! | name",
-          "imported_names? = { * }! | { alias_list! }!",
+        "import = @import name ::! imported_names",
+          "imported_names = name | * | {! alias_list! }!",
             "alias_list = alias alias_list_tail",
-            "alias_list_tail? = , alias! alias_list_tail",
+              "alias_list_tail? = , alias! alias_list_tail",
+              "alias = name @as name! | name",
       // decls -> Group: Declaration
       "commands? = command commands",
         // command -> Group: Command
@@ -271,7 +270,7 @@ var SyntaxDefinition = [...] string {
       "cmd_group1 = cmd_cond | cmd_loop | cmd_loop_ctrl",
         "cmd_cond = cmd_if",
           "cmd_if = @if wrapped! block! elifs else",
-            "block = { commands }!",
+            "block = { imports commands }!",
             "elifs? = elif elifs",
               "elif = @else @if wrapped! block!",
             "else? = @else block!",
@@ -316,7 +315,7 @@ var SyntaxDefinition = [...] string {
           "op_arith = + | - | * | / | % | ^ ",
     /* Group: Operand */
     "operand = unary operand_body accesses calls with pipelines",
-      "unary? = @not | _exc2 | - | @try | @mount",
+      "unary? = @not | _exc2 | - | @try | @super",
       "operand_body = lambda | wrapped | cast | callcc | misc | variable",
         "lambda = generator | paralist_weak ret_weak body_flex",
           "generator = $ yield_type => body!",
@@ -329,7 +328,7 @@ var SyntaxDefinition = [...] string {
         "wrapped = ( expr! )!",
         "cast = cast_flag [ type ]! wrapped!",
           "cast_flag? = _exc1",
-        "callcc = Callcc [! type! ]! (! expr! )!",
+        "callcc = @callcc [! type! ]! (! expr! )!",
         "misc = type_object | type_related | literal | guard",
           "type_object = @type { type }",
           "type_related = new | attached",
