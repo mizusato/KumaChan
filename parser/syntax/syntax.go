@@ -91,7 +91,7 @@ func __Allocate () {
 func __AssignId2Name (name string) Id {
     var existing, exists = Name2Id[name]
     if exists {
-        if name == "Comment" || name == "LF" {
+        if name == "Comment" {
             return existing
         } else {
             panic("redundant declaration for syntax part name " + name)
@@ -104,7 +104,7 @@ func __AssignId2Name (name string) Id {
 }
 
 func __AssignId2Extra () {
-    for _, token_name := range Extra {
+    for _, token_name := range ExtraTokens {
         __AssignId2Name(token_name)
     }
 }
@@ -116,7 +116,7 @@ func __AssignId2Tokens () {
 }
 
 func __AssignId2Keywords () {
-    for _, name := range Keywords {
+    for _, name := range ConditionalKeywords {
         var keyword = []rune(strings.TrimLeft(name, "@"))
         if len(keyword) == 0 { panic("empty keyword") }
         var id = __AssignId2Name(name)

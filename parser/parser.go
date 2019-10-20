@@ -5,6 +5,8 @@ import "kumachan/parser/syntax"
 import "kumachan/parser/scanner"
 
 
+const CMAX = syntax.MAX_NUM_PARTS
+
 type NodeStatus int
 const (
     Initial NodeStatus = iota
@@ -14,51 +16,45 @@ const (
     Failed
 )
 
-const M = syntax.MAX_NUM_PARTS
 type TreeNode struct {
-    Part      syntax.Part   //  { Id, Partype, Required }
-    Parent    int           //  pointer of parent node
-    Children  [M]int        //  pointers of children
-    Length    int           //  number of children
-    Status    NodeStatus    //  current status
-    Tried     int           //  number of tried branches
-    Index     int           //  index of the Part in the branch (reversed)
-    Pos       int           //  beginning position in TokenSequence
-    Amount    int           //  number of tokens that matched by the node
+    Part      syntax.Part   // { Id, Partype, Required }
+    Parent    int           // pointer of parent node
+    Children  [CMAX]int     // pointers of children
+    Length    int           // number of children
+    Status    NodeStatus    // current status
+    Tried     int           // number of tried branches
+    Index     int           // index of the Part in the branch (reversed)
+    Pos       int           // beginning position in Tokens
+    Amount    int           // number of tokens that matched by the node
+    Span      scanner.Span  // spanning interval in code (rune list)
 }
-
-type BareTree = []TreeNode
 
 type Tree struct {
+    Name    string
+    Nodes   []TreeNode
     Code    scanner.Code
-    Tokens  scanner.TokenSequence
+    Tokens  scanner.Tokens
     Info    scanner.RowColInfo
-    Semi    scanner.SemiInfo
-    Nodes   BareTree
-    File    string
-    Mock    []string
 }
 
 
-func BuildBareTree (
-    root syntax.Id,
-    tokens scanner.TokenSequence,
-) (BareTree, int, string) {
-    var NameId = syntax.Name2Id["Name"]
-    var CallId = syntax.Name2Id["Call"]
-    var GetId = syntax.Name2Id["Get"]
+func BuildTree (root syntax.Id,  tokens scanner.Tokens) ([]TreeNode, *Error) {
+    var Name = syntax.Name2Id["Name"]
+    var NoLF = syntax.Name2Id["NoLF"]
+    var LF = syntax.Name2Id["LF"]
     var RootId = root
     var RootPart = syntax.Part {
         Id:        RootId,
         Partype:   syntax.Recursive,
         Required:  true,
     }
-    var tree = make(BareTree, 0, 100000)
+    var tree = make([]TreeNode, 0, 100000)
     tree = append(tree, TreeNode {
         Part:    RootPart,  Parent:  -1,
         Length:  0,         Status:  Initial,
         Tried:   0,         Index:   0,
         Pos:     0,         Amount:  0,
+        Span: scanner.Span { Start: 0, End: 0 },
     })
     var ptr = 0
     loop: for {
@@ -91,10 +87,13 @@ func BuildBareTree (
             if token_id == id {
                 node.Status = Success
                 node.Amount = 1
-            } else if token_id == CallId || token_id == GetId {
-                if tokens[node.Pos+1].Id == id {
+                node.Span = tokens[node.Pos].Span
+            } else if token_id == NoLF || token_id == LF {
+                var next = node.Pos + 1
+                if next < len(tokens) && tokens[next].Id == id {
                     node.Status = Success
                     node.Amount = 2
+                    node.Span = tokens[node.Pos+1].Span
                 } else {
                     node.Status = Failed
                 }
@@ -103,8 +102,16 @@ func BuildBareTree (
             }
         case syntax.MatchKeyword:
             if node.Pos >= len(tokens) { node.Status = Failed; break }
-            if tokens[node.Pos].Id != NameId { node.Status = Failed; break }
             var token = tokens[node.Pos]
+            var token_id = token.Id
+            var next = node.Pos + 1
+            var use_next = false
+            if next < len(tokens) && (token_id == NoLF || token_id == LF) {
+                token = tokens[next]
+                token_id = token.Id
+                use_next = true
+            }
+            if token_id != Name { node.Status = Failed; break }
             var text = token.Content
             var keyword = syntax.Id2Keyword[id]
             if len(text) != len(keyword) { node.Status = Failed; break }
@@ -117,7 +124,12 @@ func BuildBareTree (
             }
             if equal {
                 node.Status = Success
-                node.Amount = 1
+                if use_next {
+                    node.Amount = 2
+                } else {
+                    node.Amount = 1
+                }
+                node.Span = token.Span
             } else {
                 node.Status = Failed
             }
@@ -130,11 +142,12 @@ func BuildBareTree (
             // if partype is otherwise, empty match <=> node.Amount == 0
             // if node.part is required, it should not be empty
             if node.Part.Required && node.Length == 0 && node.Amount == 0 {
-                PrintBareTree(tree)
-                return tree, ptr, fmt.Sprintf (
-                    "error parsing code: syntax unit '%v' expected",
-                    syntax.Id2Name[id],
-                )
+                // PrintBareTree(tree)
+                return tree, &Error {
+                    HasExpectedPart: true,
+                    ExpectedPart:    id,
+                    NodeIndex:       ptr,
+                }
             }
         }
         switch node.Status {
@@ -169,10 +182,12 @@ func BuildBareTree (
             ptr = parent_ptr  // go back to parent node
         case Success:
             if partype == syntax.Recursive {
-                // calcuate the number of tokens matched by the node
+                // calculate the number of tokens matched by the node
                 node.Amount = 0
                 for i := 0; i < node.Length; i++ {
-                    node.Amount += tree[node.Children[i]].Amount
+                    var child = node.Children[i]
+                    node.Amount += tree[child].Amount
+                    node.Span = node.Span.Merged(tree[child].Span)
                 }
             }
             var parent_ptr = node.Parent
@@ -198,26 +213,26 @@ func BuildBareTree (
     // check if all the tokens have been matched
     var root_node = tree[0]
     if root_node.Amount < len(tokens) {
-        PrintBareTree(tree)
-        return tree, ptr, "error parsing code: parser stuck"
+        // PrintBareTree(tree)
+        return tree, &Error {
+            HasExpectedPart: false,
+            NodeIndex:       ptr,
+        }
     }
-    return tree, -1, ""
+    return tree, nil
 }
 
 
-func BuildTree (root string, code scanner.Code, file_name string) Tree {
-    var tokens, info, semi = scanner.Scan(code)
-    var RootId, exists = syntax.Name2Id[root]
+func Parse (code []rune, root string, name string) (*Tree, *Error) {
+    var tokens, info = scanner.Scan(code)
+    var Root, exists = syntax.Name2Id[root]
     if (!exists) {
         InternalError(fmt.Sprintf("invalid root syntax unit '%v'", root))
     }
-    var nodes, err_ptr, err_desc = BuildBareTree(RootId, tokens)
+    var nodes, err = BuildTree(Root, tokens)
     var tree = Tree {
-        Code: code, Tokens: tokens, Info: info, Semi: semi,
-        Nodes: nodes, File: file_name,
+        Nodes: nodes, Name: name,
+        Code: code, Tokens: tokens, Info: info,
     }
-    if err_ptr != -1 {
-        Error(&tree, err_ptr, err_desc)
-    }
-    return tree
+    return &tree, err
 }

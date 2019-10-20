@@ -88,11 +88,11 @@ func Children (tree Tree, ptr Pointer) map[string]int {
 }
 
 func GetFileName (tree Tree) string {
-    return EscapeRawString([]rune(tree.File))
+    return EscapeRawString([]rune(tree.Name))
 }
 
 func GetRowColInfo (tree Tree, ptr int) (string, string) {
-    var point = tree.Info[tree.Tokens[tree.Nodes[ptr].Pos].Pos]
+    var point = tree.Info[tree.Tokens[tree.Nodes[ptr].Pos].Span.Start]
     return strconv.Itoa(point.Row), strconv.Itoa(point.Col)
 }
 

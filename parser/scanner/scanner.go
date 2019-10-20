@@ -8,42 +8,34 @@ import "kumachan/parser/syntax"
 
 type Code = []rune
 
+type Span struct {
+    Start  int
+    End    int
+}
+
+func (span Span) Merged(another Span) Span {
+    var merged = Span { Start: span.Start, End: another.End }
+    if !(merged.Start <= merged.End) {
+        panic("invalid span merge")
+    }
+    return merged
+}
 
 type Token struct {
     Id       syntax.Id
+    Span     Span
     Content  []rune
-    Pos      int
 }
 
-type TokenSequence = []Token
+type Tokens = []Token
 
 
 type Point struct {
-    Row int
-    Col int
-    // TODO: SpanStart, SpanEnd
+    Row  int
+    Col  int
 }
 
 type RowColInfo = []Point
-
-
-type SemiInfo = map[int]bool
-
-
-type RuneListReader struct {
-	src []rune
-	pos int
-}
-
-func (r *RuneListReader) ReadRune() (rune, int, error) {
-	if r.pos >= len(r.src) {
-		return -1, 0, io.EOF
-	}
-	next := r.src[r.pos]
-	r.pos += 1
-	return next, 1, nil
-}
-
 
 func GetInfo (code Code) RowColInfo {
     var info = make(RowColInfo, 0, 10000)
@@ -62,6 +54,20 @@ func GetInfo (code Code) RowColInfo {
 }
 
 
+type RuneListReader struct {
+    src []rune
+    pos int
+}
+
+func (r *RuneListReader) ReadRune() (rune, int, error) {
+    if r.pos >= len(r.src) {
+        return -1, 0, io.EOF
+    }
+    next := r.src[r.pos]
+    r.pos += 1
+    return next, 1, nil
+}
+
 func MatchToken (code Code, pos int) (amount int, id syntax.Id) {
     for _, token := range syntax.Tokens {
         var reader = RuneListReader { src: code, pos: pos }
@@ -76,115 +82,98 @@ func MatchToken (code Code, pos int) (amount int, id syntax.Id) {
 }
 
 
-func IsRightParOrName (token *Token) bool {
+func __IsLineFeed (token *Token) bool {
     if token != nil {
-        var name = syntax.Id2Name[token.Id]
-        if ( name == ")" || name == "]" || name == ">" || name == "Name") {
-            return true
-        } else {
-            return false
-        }
+        return (token.Id == syntax.Name2Id["LF"])
+    } else {
+        return false
+    }
+}
+
+func __IsReturnKeyword (token *Token) bool {
+    if token != nil {
+        return (token.Id == syntax.Name2Id["Name"] &&
+            string(token.Content) == "return")
+    } else {
+        return false
+    }
+}
+
+func __IsLeftCurlyBrace (token *Token) bool {
+    if token != nil {
+        return (token.Id == syntax.Name2Id["{"])
     } else {
         return false
     }
 }
 
 
-func IsReturnKeyword (token *Token) bool {
-    var NameId = syntax.Name2Id["Name"]
-    if token != nil {
-        return (token.Id == NameId && string(token.Content) == "return")
-    } else {
-        return false
-    }
-}
-
-func Try2InsertExtra (tokens TokenSequence, current Token) TokenSequence {
-    /*
-     *  A black magic to distinguish
-     *      let t = f(g*h)(x)
-     *  from
-     *      let t = f
-     *      (g*h)(x)
-     */
-    var current_name = syntax.Id2Name[current.Id]
-    if current_name == "(" || current_name == "<" {
-        return append(tokens, Token {
-            Id:       syntax.Name2Id["Call"],
-            Pos:      current.Pos,
-            Content:  []rune(""),
-        })
-    } else if current_name == "[" || current_name == "." {
-        return append(tokens, Token {
-            Id:       syntax.Name2Id["Get"],
-            Pos:      current.Pos,
-            Content:  []rune(""),
-        })
-    }
-    return tokens
-}
-
-
-func Scan (code Code) (TokenSequence, RowColInfo, SemiInfo) {
-    var BlankId = syntax.Name2Id["Blank"]
-    var CommentId = syntax.Name2Id["Comment"]
-    var LFId = syntax.Name2Id["LF"]
-    var RCBId = syntax.Name2Id["}"]
-    var LtId = syntax.Name2Id["<"]
-    var tokens = make(TokenSequence, 0, 10000)
-    var semi = make(SemiInfo)
+func Scan (code Code) (Tokens, RowColInfo) {
+    var Comment = syntax.Name2Id["Comment"]
+    var Blank = syntax.Name2Id["Blank"]
+    var LF = syntax.Name2Id["LF"]
+    var LeftParentheses = syntax.Name2Id["("]
+    var LeftBracket = syntax.Name2Id["["]
+    var RightCurlyBrace = syntax.Name2Id["}"]
+    var tokens = make(Tokens, 0, 10000)
     var info = GetInfo(code)
     var length = len(code)
-    var previous_ptr *Token
-    var has_blank_between_prev = false
+    var previous *Token
     var pos = 0
     for pos < length {
-        // fmt.Printf("pos %v\n", pos)
-        amount, id := MatchToken(code, pos)
+        var amount, id = MatchToken(code, pos)
         if amount == 0 { break }
-        if id == CommentId { pos += amount; continue }
-        if id == BlankId {
-            pos += amount
-            has_blank_between_prev = true
-            continue
-        }
+        if id == Comment { pos += amount; continue }
+        if id == Blank { pos += amount; continue }
+        if id == LF && __IsLineFeed(previous) { pos += amount; continue }
+        var span = Span { Start: pos, End: pos + amount }
+        var zero_span = Span { Start: pos, End: pos }
         var current = Token {
-            Id: id,
-            Pos: pos,
-            Content: code[pos : pos+amount],
+            Id:      id,
+            Span:    span,
+            Content: code[span.Start : span.End],
         }
-        if IsRightParOrName(previous_ptr) {
-            /* tell from "a [LF] (b+c).d" and "a(b+c).d" */
-            if !(id == LtId && has_blank_between_prev) {
-                /* tell from "S<T>" and "s < t" */
-                tokens = Try2InsertExtra(tokens, current)
+        if current.Id == LF || current.Id == RightCurlyBrace {
+            /* tell from "return [LF] expr" and "return expr" */
+            if __IsReturnKeyword(previous) {
+                tokens = append(tokens, Token {
+                    Id:      syntax.Name2Id["Void"],
+                    Span:    zero_span,
+                    Content: []rune(""),
+                })
             }
         }
-        if current.Id == LFId || current.Id == RCBId {
-            /* tell from "return [LF] expr" and "return expr" */
-            if IsReturnKeyword(previous_ptr) {
+        /* inject a LF if there is no LF after { */
+        var LF_injected = false
+        if current.Id != LF {
+            if __IsLeftCurlyBrace(previous) || previous == nil {
                 tokens = append(tokens, Token {
-                    Id:       syntax.Name2Id["Void"],
-                    Pos:      current.Pos,
-                    Content:  []rune(""),
+                    Id:      syntax.Name2Id["LF"],
+                    Span:    zero_span,
+                    Content: []rune(""),
+                })
+                LF_injected = true
+            }
+        }
+        /* tell from "a [LF] (b+c).d" and "a(b+c).d" */
+        if current.Id == LeftParentheses || current.Id == LeftBracket {
+            if !(LF_injected || __IsLineFeed(previous)) {
+                tokens = append(tokens, Token {
+                    Id:      syntax.Name2Id["NoLF"],
+                    Span:    zero_span,
+                    Content: []rune(""),
                 })
             }
         }
         tokens = append(tokens, current)
-        previous_ptr = &current
-        if has_blank_between_prev { has_blank_between_prev = false }
+        previous = &current
         pos += amount
-    }
-    var clear = make(TokenSequence, 0, 10000)
-    for _, token := range tokens {
-        if token.Id != LFId {
-            clear = append(clear, token)
-        } else {
-            semi[len(clear)] = true
-        }
     }
     if (pos < length) {
         panic(fmt.Sprintf("invalid token at %+v", info[pos]))
     }
-    return clear, info, semi
+    if len(tokens) > 0 && tokens[len(tokens)-1].Id == LF {
+        tokens = tokens[:len(tokens)-1]
+    }
+    return tokens, info
 }

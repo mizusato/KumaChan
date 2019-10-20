@@ -16,16 +16,20 @@ func check (err error) {
 }
 
 func parser_debug (file io.Reader, name string, root string) {
-    var code_bytes, err = ioutil.ReadAll(file)
-    check(err)
+    var code_bytes, e = ioutil.ReadAll(file)
+    check(e)
     var code_string = string(code_bytes)
     var code = []rune(code_string)
-    var tokens, info, semi = scanner.Scan(code)
+    var tokens, info = scanner.Scan(code)
     fmt.Println("Tokens:")
     for i, token := range tokens {
         fmt.Printf(
-            "(%v) at [%v, %v] %v: %v\n",
-            i, info[token.Pos].Row, info[token.Pos].Col,
+            "(%v) at [%v, %v](%v, %v) %v: %v\n",
+            i,
+            token.Span.Start,
+            token.Span.End,
+            info[token.Span.Start].Row,
+            info[token.Span.Start].Col,
             syntax.Id2Name[token.Id],
             string(token.Content),
         )
@@ -34,19 +38,19 @@ func parser_debug (file io.Reader, name string, root string) {
     if !exists {
         panic("invalid root syntax unit " + root)
     }
-    var nodes, err_ptr, err_desc = parser.BuildBareTree(RootId, tokens)
+    var nodes, err = parser.BuildTree(RootId, tokens)
     fmt.Println("------------------------------------------------------")
     fmt.Println("AST Nodes:")
     parser.PrintBareTree(nodes)
     var tree = parser.Tree {
-        Code: code, Tokens: tokens, Info: info, Semi: semi,
-        Nodes: nodes, File: name,
+        Nodes: nodes, Name: name,
+        Code: code, Tokens: tokens, Info: info,
     }
     fmt.Println("------------------------------------------------------")
     fmt.Println("AST:")
     parser.PrintTree(tree)
-    if err_ptr != -1 {
-        parser.Error(&tree, err_ptr, err_desc)
+    if err != nil {
+        fmt.Println(err.DetailedMessage(&tree))
     }
 }
 

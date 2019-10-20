@@ -62,7 +62,7 @@ func PrintTreeNode (ptr int, node *TreeNode) {
 }
 
 
-func PrintBareTree (tree BareTree) {
+func PrintBareTree (tree []TreeNode) {
     for i := 0; i < len(tree); i++ {
         PrintTreeNode(i, &tree[i])
     }
@@ -103,10 +103,10 @@ func PrintTreeRecursively (
     buf.WriteRune(' ')
     switch node.Part.Partype {
     case syntax.MatchToken:
-        var token = tree.Tokens[node.Pos]
+        var token = tree.Tokens[node.Pos + node.Amount - 1]
         fmt.Fprintf(buf, "'%v'", string(token.Content))
         buf.WriteRune(' ')
-        var point = tree.Info[tree.Tokens[node.Pos].Pos]
+        var point = tree.Info[tree.Tokens[node.Pos].Span.Start]
         fmt.Fprintf(buf, "at <%v,%v>", point.Row, point.Col)
         fmt.Fprintf(buf, "\033[0m")
         buf.WriteRune('\n')

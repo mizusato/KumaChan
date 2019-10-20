@@ -1,8 +1,8 @@
 package parser
 
-import "os"
 import "fmt"
 import "strings"
+import "kumachan/parser/syntax"
 
 const SiblingOffset = 2
 const Bold = "\033[1m"
@@ -11,100 +11,112 @@ const Blue = "\033[34m"
 const Reset = "\033[0m"
 
 
-func InternalError (msg string) {
-    panic(fmt.Sprintf("Internal Parser Error: %v", msg))
+type Error struct {
+    HasExpectedPart  bool
+    ExpectedPart     syntax.Id
+    NodeIndex        int  // may be bigger than the index of last token
 }
 
-
-func Error (tree *Tree, ptr int, msg string) {
-    var node = &tree.Nodes[ptr]
-    var p int
-    if node.Pos >= len(tree.Tokens) {
-        p = len(tree.Tokens)-1
+func (err *Error) Message() string {
+    if err.HasExpectedPart {
+        return fmt.Sprintf (
+            "syntax unit '%v' expected",
+            syntax.Id2Name[err.ExpectedPart],
+        )
     } else {
-        p = node.Pos
+        return "parser stuck"
     }
-    var token = &tree.Tokens[p]
-    var point = tree.Info[token.Pos]
-    var file = tree.File
-    var l, r = GetSiblingRange(tree, p)
-    /*
-    fmt.Fprintf(os.Stderr, "[Debug] (%v, %v)\n", l, r)
-    for i := range tree.Code {
-        fmt.Fprintf(os.Stderr, "[Debug] %v: %v\n", i, string([]rune{tree.Code[i]}))
+}
+
+func (err *Error) DetailedMessage(tree *Tree) string {
+    var node = &tree.Nodes[err.NodeIndex]
+    var token_index int
+    var got string
+    if node.Pos >= len(tree.Tokens) {
+        token_index = len(tree.Tokens)-1
+        got = "EOF"
+    } else {
+        token_index = node.Pos
+        got = syntax.Id2Name[tree.Tokens[token_index].Id]
     }
-    */
+    var token = &tree.Tokens[token_index]
+    var token_span_size = token.Span.End - token.Span.Start
+    for (token_index + 1) < len(tree.Tokens) && token_span_size == 0 {
+        token_index += 1
+        token = &tree.Tokens[token_index]
+        token_span_size = token.Span.End - token.Span.Start
+    }
+    var point = tree.Info[token.Span.Start]
+    var file = tree.Name
+    var l, r = GetSiblingRange(tree, token_index)
     var spot = string(tree.Code[l:r])
     var lines = strings.Split(spot, "\n")
-    fmt.Fprintf (
-        os.Stderr, "%vFile:%v %v%v%v\n",
+    var buf strings.Builder
+    fmt.Fprintf(
+        &buf, "%vFile:%v %v%v%v\n",
         Bold, Reset, Blue, file, Reset,
     )
-    var cp = l
+    var base_row = point.Row - SiblingOffset
+    if base_row < 1 {
+        base_row = 1
+    }
+    var char_ptr = l
     for i, line := range lines {
-        var row = point.Row - SiblingOffset + i
-        if row < 1 {
-            row = 1
-        }
-        fmt.Fprintf(os.Stderr, "%v | ", row)
+        var row = base_row + i
+        fmt.Fprintf(&buf, "%v | ", row)
         for _, char := range []rune(line) {
-            if cp == token.Pos {
-                fmt.Fprintf(os.Stderr, "%v%v", Red, Bold)
+            if char_ptr == token.Span.Start && token_span_size > 0 {
+                fmt.Fprintf(&buf, "%v%v", Red, Bold)
             }
-            fmt.Fprintf(os.Stderr, "%v", string([]rune{char}))
-            if cp == token.Pos {
-                fmt.Fprintf(os.Stderr, "%v", Reset)
+            buf.WriteRune(char)
+            if char_ptr == (token.Span.End - 1) && token_span_size > 0 {
+                fmt.Fprintf(&buf, "%v", Reset)
             }
-            cp += 1
+            char_ptr += 1
         }
-        fmt.Fprintf(os.Stderr, "\n")
-        cp += 1
+        fmt.Fprintf(&buf, "\n")
+        char_ptr += 1
     }
     fmt.Fprintf (
-        os.Stderr, "%v%v at (row %v, column %v) in %v%v\n",
-        Red, msg, point.Row, point.Col, file, Reset,
+        &buf, "%v%v (got '%v') at (row %v, column %v) in %v%v",
+        Red, err.Message(), got, point.Row, point.Col, file, Reset,
     )
-    os.Exit(1)
+    return buf.String()
 }
 
-
-func GetSiblingRange (tree *Tree, token_ptr int) (int, int) {
-    var token = &tree.Tokens[token_ptr]
-    var point = tree.Info[token.Pos]
+func GetSiblingRange (tree *Tree, token_index int) (int, int) {
+    var token = &tree.Tokens[token_index]
+    var point = tree.Info[token.Span.Start]
     var left_bound = point.Row - SiblingOffset
     var right_bound = point.Row + SiblingOffset
-    var p = token.Pos
-    var l = token_ptr
+    var p = token.Span.Start
+    var l = token_index
     var L = p
-    for {
-        if l-1 >= 0 {
-            var left_token = &tree.Tokens[l-1]
-            var left_point = tree.Info[left_token.Pos]
-            if left_point.Row >= left_bound {
-                l -= 1
-                L = left_token.Pos
-            } else {
-                break
-            }
+    for l-1 >= 0 {
+        var left_token = &tree.Tokens[l-1]
+        var left_point = tree.Info[left_token.Span.Start]
+        if left_point.Row >= left_bound {
+            l -= 1
+            L = left_token.Span.Start
         } else {
             break
         }
     }
-    var r = token_ptr
-    var R = p + len(token.Content)
-    for {
-        if r+1 < len(tree.Tokens) {
-            var right_token = &tree.Tokens[r+1]
-            var right_point = tree.Info[right_token.Pos]
-            if right_point.Row <= right_bound {
-                r += 1
-                R = right_token.Pos + len(right_token.Content)
-            } else {
-                break
-            }
+    var r = token_index
+    var R = token.Span.End
+    for r+1 < len(tree.Tokens) {
+        var right_token = &tree.Tokens[r+1]
+        var right_point = tree.Info[right_token.Span.Start]
+        if right_point.Row <= right_bound {
+            r += 1
+            R = right_token.Span.End
         } else {
             break
         }
     }
     return L, R
+}
+
+func InternalError (msg string) {
+    panic(fmt.Sprintf("Internal Parser Error: %v", msg))
 }

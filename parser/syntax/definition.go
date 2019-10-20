@@ -16,9 +16,6 @@ var EscapeMap = map [string] string {
     "_at":    "@",
 }
 
-
-var Extra = [...] string { "Call", "Get", "Void" }
-
 var Tokens = [...] Token {
     Token { Name: "String",  Pattern: r(`'[^']*'`) },
     Token { Name: "Text",    Pattern: r(`"[^"#\[\]]*"`) },
@@ -29,8 +26,7 @@ var Tokens = [...] Token {
     Token { Name: "Comment", Pattern: r(`//[^\n]*`) },
     Token { Name: "Pragma",  Pattern: r(`#[^\n]*`) },
     Token { Name: "Blank",   Pattern: r(`[`+Blanks+`]+`) },
-    Token { Name: "LF",      Pattern: r(LF+`+`) },
-    Token { Name: "LF",      Pattern: r(`;+`) },
+    Token { Name: "LF",      Pattern: r(`[;`+LF+`]+`) },
     Token { Name: "Hex",     Pattern: r(`0x[0-9A-Fa-f]+`) },
     Token { Name: "Oct",     Pattern: r(`\\[0-7]+`) },
     Token { Name: "Bin",     Pattern: r(`\\\([01]+\)`) },
@@ -60,7 +56,7 @@ var Tokens = [...] Token {
     Token { Name: "=>",      Pattern: r(`\=\>`) },
     Token { Name: "=",       Pattern: r(`\=`) },
     Token { Name: "->",      Pattern: r(`\-\>`) },
-    Token { Name: "<-",      Pattern: r(`\<\-`) },   // (Reserved)
+    Token { Name: "<-",      Pattern: r(`\<\-`) },   // Pull from Iterator
     Token { Name: "<<",      Pattern: r(`\<\<`) },   // Bitwise SHL
     Token { Name: ">>",      Pattern: r(`\>\>`) },   // Bitwise SHR
     Token { Name: "<",       Pattern: r(`\<`) },
@@ -85,14 +81,13 @@ var Tokens = [...] Token {
     Token { Name: "^^",      Pattern: r(`\^\^`) },   // Bitwise XOR
     Token { Name: "^",       Pattern: r(`\^`) },
     Token { Name: "Name",    Pattern: r(`[^`+Symbols+Blanks+LF+`]+`) },
-    //    { Name: "Call",    [ Inserted by Scanner ] },
-    //    { Name: "Get",     [ Inserted by Scanner ] },
+    //    { Name: "NoLF",    [ Inserted by Scanner ] },
     //    { Name: "Void",    [ Inserted by Scanner ] },
 }
 
+var ExtraTokens = [...] string {"NoLF", "Void" }
 
-/* Conditional Keywords */
-var Keywords = [...] string {
+var ConditionalKeywords = [...] string {
 
     "@export", "@resolve", "@import", "@as",
 
@@ -182,17 +177,17 @@ var SyntaxDefinition = [...] string {
     "type = type_ordinary | type_attached | type_trait | type_misc",
       "type_ordinary = module_prefix name type_args",
         "module_prefix? = name :: ",
-        "type_args? = [ typelist! ]!",
+        "type_args? = NoLF [ typelist! ]!",
           "typelist = type typelist_tail",
           "typelist_tail? = , type! typelist_tail",
       "type_attached = attached_name",
       "type_trait = [ @trait :! trait! ]!",
-      "type_misc = tuple_t | function_t | generator_t | continuation_t",
+      "type_misc = tuple_t | function_t | iterator_t | continuation_t",
         "tuple_t = [ [ typelist! ]! ]!",
         "function_t = [ signature more_signature ]!",
           "more_signature? = _bar1 signature! more_signature",
           "signature = -> type! | typelist ->! type!",
-        "generator_t = $ [! type! ]!",
+        "iterator_t = $ [! type! ]!",
         "continuation_t = ~ [! type! ]!",
     "type_params? = [ type_param! more_type_param ]!",
       "more_type_param? = , type_param! more_type_param",
@@ -266,7 +261,7 @@ var SyntaxDefinition = [...] string {
 				  "constraints? = constraint constraints",
 			    "inter_c = @intersection {! constraints }!",
     /* Group: Command */
-    "command = cmd_group1 | cmd_group2 | cmd_group3",
+    "command = LF cmd_group1 | LF cmd_group2 | LF cmd_group3",
       "cmd_group1 = cmd_cond | cmd_loop | cmd_loop_ctrl",
         "cmd_cond = cmd_if",
           "cmd_if = @if wrapped! block! elifs else",
@@ -277,12 +272,7 @@ var SyntaxDefinition = [...] string {
         "cmd_loop = cmd_while | cmd_for",
           "cmd_while = @while wrapped! block!",
           "cmd_for = @for for_params! @in wrapped! block!",
-            "for_params = value_with_key | value_with_index | value",
-              "value_with_index = name [ for_index! ]!",
-                "for_index = name",
-              "value_with_key = { for_key :! name! }!",
-                "for_key = name",
-              "value = name",
+            "for_params = { namelist! }! | name",
         "cmd_loop_ctrl = @break | @continue",
       "cmd_group2 = cmd_return | cmd_yield | cmd_panic | cmd_guard",
         "cmd_return = return_flags @return return_content",
@@ -315,10 +305,10 @@ var SyntaxDefinition = [...] string {
           "op_arith = + | - | * | / | % | ^ ",
     /* Group: Operand */
     "operand = unary operand_body accesses calls with pipelines",
-      "unary? = @not | _exc2 | - | @try | @super",
+      "unary? = @not | _exc2 | - | <- | @try | @super",
       "operand_body = lambda | wrapped | cast | callcc | misc | variable",
-        "lambda = generator | paralist_weak ret_weak body_flex",
-          "generator = $ yield_type => body!",
+        "lambda = iterator | paralist_weak ret_weak body_flex",
+          "iterator = $ yield_type => body!",
             "yield_type? = : type!",
           "paralist_weak? = name | ( ) | ( weak_param more_weak_params )",
             "more_weak_params? = , weak_param! more_weak_params",
@@ -328,9 +318,9 @@ var SyntaxDefinition = [...] string {
         "wrapped = ( expr! )!",
         "cast = cast_flag [ type ]! wrapped!",
           "cast_flag? = _exc1",
-        "callcc = @callcc [! type! ]! (! expr! )!",
+        "callcc = @callcc NoLF [! type! ]! (! expr! )!",
         "misc = type_object | type_related | literal | guard",
-          "type_object = @type { type }",
+          "type_object = @type { type! }!",
           "type_related = new | attached",
 		    "new = @new type!",
 		    "attached = attached_name",
@@ -369,11 +359,11 @@ var SyntaxDefinition = [...] string {
       "accesses? = access accesses",
         "access = . name! method_call",
           "method_call? = call | = expr!",
-			"call = Call ( arglist )! | { arglist }!",
+			"call = NoLF ( arglist )! | { arglist }!",
 			  "arglist? = exprlist",
       "calls? = call calls",
       "with? = @with {! struct_items }!",
       "pipelines? = pipeline pipelines",
         "pipeline = _bar1 operand_body pipeline_args",
-        "pipeline_args? = Call ( arglist )! | { arglist }!",
+        "pipeline_args? = NoLF ( arglist )! | { arglist }!",
 }
