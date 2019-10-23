@@ -1,6 +1,8 @@
 package transformer
 
-import "fmt"
+import (
+    "kumachan/transformer/node"
+)
 import "strconv"
 import "strings"
 import "kumachan/parser/syntax"
@@ -10,26 +12,15 @@ type Tree = *parser.Tree
 type Pointer = int
 type Context = map[string]interface{}
 
-type Node struct {
-    Kind  NodeKind
-}
-
-type NodeKind int
-const (
-    NK_Module NodeKind = iota
-    NK_Decls
-    NK_Commands
-    // ... TODO
-)
-
-type Transformer = func(Tree, Pointer, Context) *Node
+type Node = node.Node
+type Transformer = interface{}
 
 var __Rules = []map[string]Transformer {
     // TODO
 }
 var __TransformMapByName = make(map[string]Transformer)
 var __TransformMap = make(map[syntax.Id]Transformer)
-
+/*
 func Transform (tree Tree, ptr Pointer, ctx Context) *Node {
     // hash returned by Children() is of type map[string]int,
     // which will return 0 if non-existing key requested.
@@ -74,7 +65,7 @@ func TransformLastChild (tree Tree, ptr Pointer, ctx Context) *Node {
         panic("unable to transform last child: this node has no child")
     }
 }
-
+*/
 func Children (tree Tree, ptr Pointer) map[string]int {
     var node = &tree.Nodes[ptr]
     var hash = make(map[string]int)
