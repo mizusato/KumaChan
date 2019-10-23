@@ -1,27 +1,29 @@
 package transformer
 
 import (
-    "kumachan/transformer/node"
+    "fmt"
+    "strconv"
 )
-import "strconv"
 import "strings"
-import "kumachan/parser/syntax"
 import "kumachan/parser"
+import "kumachan/parser/syntax"
+import "kumachan/transformer/node"
+
 
 type Tree = *parser.Tree
 type Pointer = int
 type Context = map[string]interface{}
 
 type Node = node.Node
-type Transformer = interface{}
+type Transformer = func (tree Tree, ptr Pointer, ctx Context) interface{}
 
 var __Rules = []map[string]Transformer {
     // TODO
 }
 var __TransformMapByName = make(map[string]Transformer)
 var __TransformMap = make(map[syntax.Id]Transformer)
-/*
-func Transform (tree Tree, ptr Pointer, ctx Context) *Node {
+
+func Transform (tree Tree, ptr Pointer, ctx Context) interface{} {
     // hash returned by Children() is of type map[string]int,
     // which will return 0 if non-existing key requested.
     // so we use -1 to indicate root node instead
@@ -46,7 +48,7 @@ func Transform (tree Tree, ptr Pointer, ctx Context) *Node {
     }
 }
 
-func TransformFirstChild (tree Tree, ptr Pointer, ctx Context) *Node {
+func TransformFirstChild (tree Tree, ptr Pointer, ctx Context) interface{} {
     var node = &tree.Nodes[ptr]
     if node.Length > 0 {
         return Transform(tree, node.Children[0], ctx)
@@ -56,7 +58,7 @@ func TransformFirstChild (tree Tree, ptr Pointer, ctx Context) *Node {
     }
 }
 
-func TransformLastChild (tree Tree, ptr Pointer, ctx Context) *Node {
+func TransformLastChild (tree Tree, ptr Pointer, ctx Context) interface{} {
     var node = &tree.Nodes[ptr]
     if node.Length > 0 {
         return Transform(tree, node.Children[node.Length-1], ctx)
@@ -65,7 +67,7 @@ func TransformLastChild (tree Tree, ptr Pointer, ctx Context) *Node {
         panic("unable to transform last child: this node has no child")
     }
 }
-*/
+
 func Children (tree Tree, ptr Pointer) map[string]int {
     var node = &tree.Nodes[ptr]
     var hash = make(map[string]int)
