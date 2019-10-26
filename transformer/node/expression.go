@@ -1,5 +1,6 @@
 package node
 
+import "math/big"
 
 type Expr struct {
     Node
@@ -113,7 +114,38 @@ type TupleLiteral struct {
 func (impl ConstLiteral) ExprContent() {}
 type ConstLiteral struct {
     Node
-    Value  interface{}
+    Content  ConstContent
+}
+type ConstContent interface { ConstContent() }
+func (impl StringLiteral) ConstContent() {}
+type StringLiteral struct {
+    Node
+    Value  string
+}
+func (impl IntegerLiteral) ConstContent() {}
+type IntegerLiteral struct {
+    Node
+    Value  int
+}
+func (impl FloatLiteral) ConstContent() {}
+type FloatLiteral struct {
+    Node
+    Value  float64
+}
+func (impl BooleanLiteral) ConstContent() {}
+type BooleanLiteral struct {
+    Node
+    Value  bool
+}
+func (impl BigIntLiteral) ConstContent() {}
+type BigIntLiteral struct {
+    Node
+    Value  big.Int
+}
+func (impl BigFloatLiteral) ConstContent() {}
+type BigFloatLiteral struct {
+    Node
+    Value  big.Float
 }
 
 func (impl Text) ExprContent() {}

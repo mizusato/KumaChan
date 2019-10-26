@@ -1,77 +1,20 @@
 package transformer
 
-import (
-    "fmt"
-    "strconv"
-)
+import "runtime"
 import "strings"
 import "kumachan/parser"
 import "kumachan/parser/syntax"
-import "kumachan/transformer/node"
+import ."kumachan/transformer/node"
 
 
 type Tree = *parser.Tree
 type Pointer = int
 type Context = map[string]interface{}
 
-type Node = node.Node
-type Transformer = func (tree Tree, ptr Pointer, ctx Context) interface{}
-
-var __Rules = []map[string]Transformer {
-    // TODO
-}
-var __TransformMapByName = make(map[string]Transformer)
-var __TransformMap = make(map[syntax.Id]Transformer)
-
-func Transform (tree Tree, ptr Pointer, ctx Context) interface{} {
-    // hash returned by Children() is of type map[string]int,
-    // which will return 0 if non-existing key requested.
-    // so we use -1 to indicate root node instead
-    if ptr == 0 {
-        panic("invalid usage of Transform(): please use ptr=-1 for root node")
-    }
-    if ptr == -1 {
-        ptr = 0
-    }
-    var id = tree.Nodes[ptr].Part.Id
-    // fmt.Printf("Transform: %v\n", syntax.Id2Name[id])
-    var f, exists = __TransformMap[id]
-    if exists {
-        return f(tree, ptr, ctx)
-    } else {
-        panic (
-            fmt.Sprintf (
-                "transform rule for %v does not exist",
-                syntax.Id2Name[id],
-            ),
-        )
-    }
-}
-
-func TransformFirstChild (tree Tree, ptr Pointer, ctx Context) interface{} {
-    var node = &tree.Nodes[ptr]
-    if node.Length > 0 {
-        return Transform(tree, node.Children[0], ctx)
-    } else {
-        parser.PrintTreeNode(ptr, node)
-        panic("unable to transform first child: this node has no child")
-    }
-}
-
-func TransformLastChild (tree Tree, ptr Pointer, ctx Context) interface{} {
-    var node = &tree.Nodes[ptr]
-    if node.Length > 0 {
-        return Transform(tree, node.Children[node.Length-1], ctx)
-    } else {
-        parser.PrintTreeNode(ptr, node)
-        panic("unable to transform last child: this node has no child")
-    }
-}
-
 func Children (tree Tree, ptr Pointer) map[string]int {
     var node = &tree.Nodes[ptr]
     var hash = make(map[string]int)
-    for i := node.Length-1; i >= 0; i-- {
+    for i := node.Length-1; i >= 0; i -= 1 {
         // reversed loop: smaller index will override bigger index
         var child_ptr = node.Children[i]
         var name = syntax.Id2Name[tree.Nodes[child_ptr].Part.Id]
@@ -80,19 +23,77 @@ func Children (tree Tree, ptr Pointer) map[string]int {
     return hash
 }
 
-func GetFileName (tree Tree) string {
-    return EscapeRawString([]rune(tree.Name))
+func HasChild (name string, tree Tree, ptr Pointer) bool {
+    var id = syntax.Name2Id[name]
+    var node = &tree.Nodes[ptr]
+    for i := 0; i < node.Length; i += 1 {
+        var child_ptr = node.Children[i]
+        if tree.Nodes[child_ptr].Part.Id == id {
+            return true
+        }
+    }
+    return false
 }
 
-func GetRowColInfo (tree Tree, ptr int) (string, string) {
-    var point = tree.Info[tree.Tokens[tree.Nodes[ptr].Pos].Span.Start]
-    return strconv.Itoa(point.Row), strconv.Itoa(point.Col)
+func FirstLastChild (tree Tree, ptr Pointer) (Pointer, Pointer) {
+    var node = &tree.Nodes[ptr]
+    var first = node.Children[0]
+    var last = node.Children[node.Length-1]
+    return first, last
+}
+
+func FlatSubTree (tree Tree, ptr Pointer, extract string, next string) []int {
+    var sequence = make([]int, 0)
+    for NotEmpty(tree, ptr) {
+        var children = Children(tree, ptr)
+        var extract_ptr, exists = children[extract]
+        if !exists { panic("cannot extract part " + next) }
+        sequence = append(sequence, extract_ptr)
+        ptr, exists = children[next]
+        if !exists { panic("next part " + next + " not found") }
+    }
+    return sequence
+}
+
+func GetChildPointer (tree Tree, parent Pointer) Pointer {
+    var pc, _, _, _ = runtime.Caller(1)
+    var raw_name = runtime.FuncForPC(pc).Name()
+    var t = strings.Split(raw_name, ".")
+    var name = strings.TrimRight(t[len(t)-1], "_")
+    var id = syntax.Name2Id[name]
+    var p = &tree.Nodes[parent]
+    if p.Part.Id == id {
+        return parent
+    } else {
+        for i := 0; i < p.Length; i += 1 {
+            var child_ptr = p.Children[i]
+            var child = &tree.Nodes[child_ptr]
+            if child.Part.Id == id {
+                return child_ptr
+            }
+        }
+        return -1
+    }
+}
+
+func GetNode (tree Tree, ptr Pointer, info interface{}) Node {
+    return Node {
+        Point: tree.Info[tree.Nodes[ptr].Pos],
+        Span: tree.Nodes[ptr].Span,
+        Info: info,
+    }
+}
+
+func GetFileName (tree Tree) string {
+    return tree.Name
+}
+
+func GetTokenContent (tree Tree, ptr int) string {
+    return string(tree.Tokens[tree.Nodes[ptr].Pos].Content)
 }
 
 func EscapeRawString (raw []rune) string {
     // example: ['a', '"', 'b', 'c', '\', 'n'] -> `"a\"bc\\n"`
-    // Containers["hash"] requires this function to be consistent when
-    //     checking duplicate keys.
     var buf strings.Builder
     buf.WriteRune('"')
     for _, char := range raw {
@@ -110,28 +111,12 @@ func EscapeRawString (raw []rune) string {
     return buf.String()
 }
 
-
 func NotEmpty (tree Tree, ptr Pointer) bool {
     return tree.Nodes[ptr].Length > 0
 }
 
-
 func Empty (tree Tree, ptr Pointer) bool {
     return !NotEmpty(tree, ptr)
-}
-
-
-func FlatSubTree (tree Tree, ptr Pointer, extract string, next string) []int {
-    var sequence = make([]int, 0)
-    for NotEmpty(tree, ptr) {
-        var children = Children(tree, ptr)
-        var extract_ptr, exists = children[extract]
-        if !exists { panic("cannot extract part " + next) }
-        sequence = append(sequence, extract_ptr)
-        ptr, exists = children[next]
-        if !exists { panic("next part " + next + " not found") }
-    }
-    return sequence
 }
 
 func ReduceExpression (operators []syntax.Operator) [][3]int {
@@ -215,24 +200,4 @@ func ReduceExpression (operators []syntax.Operator) [][3]int {
     }
     /* Return the Result */
     return reduced
-}
-
-func __ApplyRules () {
-    for _, item := range __Rules {
-        for key, value := range item {
-            var _, exists = __TransformMapByName[key]
-            if exists { panic("duplicate transform rule for " + key) }
-            __TransformMapByName[key] = value
-        }
-    }
-}
-
-var __InitCalled = false
-
-func Init () {
-    if __InitCalled { return }; __InitCalled = true
-    __ApplyRules()
-    for name, value := range __TransformMapByName {
-        __TransformMap[syntax.Name2Id[name]] = value
-    }
 }

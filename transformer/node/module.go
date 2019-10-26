@@ -3,33 +3,41 @@ package node
 
 type Module struct {
     Node
+    FileName  string
     MetaData  ModuleMetaData
     Imports   [] Import
+    Decls     [] Declaration
+    Commands  [] Command
 }
 
 type ModuleMetaData struct {
     Node
-    Shebang     string
-    Exported    map[string] string
-    Resolving   map[string] ModuleSource
+    Exported    [] Identifier
+    Resolving   [] ModuleSource
 }
 
 type ModuleSource struct {
     Node
-    IsBuiltIn  bool
-    Version    string
-    URL        string
+    Alias      Identifier
+    URL        StringLiteral
+    Detail     ModuleDetail
+}
+
+type ModuleDetail struct {
+    Node
+    Version    Identifier
+    Name       Identifier
 }
 
 type Import struct {
     Node
-    FromModule  string
+    FromModule  Identifier
     Names       [] ImportedName
 }
 
 type ImportedName struct {
     Node
-    Name   string
-    Alias  string
+    Name   Identifier
+    Alias  Identifier
 }
 

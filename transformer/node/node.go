@@ -31,3 +31,5 @@ type Identifier struct {
     Node
     Name string
 }
+
+var NullIdentifier = Identifier { Name: "" }
