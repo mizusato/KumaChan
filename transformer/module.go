@@ -12,8 +12,8 @@ func TransformModule (tree Tree) Module {
         FileName:  GetFileName(tree),
         MetaData:  module_metadata(tree, root_ptr),
         Imports:   imports(tree, root_ptr),
-        // Decls:     decls(tree, root_ptr),
-        // Commands:  commands(tree, root_ptr)
+        Decls:     decls(tree, root_ptr),
+        Commands:  commands(tree, root_ptr),
     }
 }
 
@@ -137,7 +137,11 @@ func imported_names (tree Tree, parent Pointer) []ImportedName {
     if HasChild("name", tree, ptr) {
         var n = name(tree, ptr)
         return [] ImportedName {
-            { Name: n, Alias: n },
+            {
+                Node: GetNode(tree, ptr, nil),
+                Name: n,
+                Alias: n,
+            },
         }
     } else if HasChild("*", tree, ptr) {
         return [] ImportedName {}
@@ -163,12 +167,14 @@ func alias (tree Tree, parent Pointer) ImportedName {
     if HasChild("@as", tree, ptr) {
         var first, last = FirstLastChild(tree, ptr)
         return ImportedName {
+            Node: GetNode(tree, ptr, nil),
             Name: name(tree, first),
             Alias: name(tree, last),
         }
     } else {
         var n = name(tree, ptr)
         return ImportedName {
+            Node: GetNode(tree, ptr, nil),
             Name: n,
             Alias: n,
         }
