@@ -55,5 +55,5 @@ func parser_debug (file io.Reader, name string, root string) {
 
 func main () {
     syntax.Init()
-    parser_debug(os.Stdin, "<eval>", "eval")
+    parser_debug(os.Stdin, "[eval]", "module")
 }

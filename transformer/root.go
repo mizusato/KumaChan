@@ -4,6 +4,18 @@ import (
     . "kumachan/transformer/node"
 )
 
+// module_header = shebang module_metadata
+func TransformModuleHeader (tree Tree) Module {
+    var root_ptr = 0
+    return Module {
+        Node:      GetNode(tree, root_ptr, nil),
+        FileName:  GetFileName(tree),
+        MetaData:  module_metadata(tree, root_ptr),
+        Decls:     nil,
+        Commands:  nil,
+    }
+}
+
 // module = shebang module_metadata imports decls commands
 func TransformModule (tree Tree) Module {
     var root_ptr = 0
@@ -18,7 +30,7 @@ func TransformModule (tree Tree) Module {
 }
 
 // module_metadata = export resolve
-func module_metadata (tree Tree, parent int) ModuleMetaData {
+func module_metadata (tree Tree, parent Pointer) ModuleMetaData {
     var ptr = GetChildPointer(tree, parent)
     return ModuleMetaData {
         Node: GetNode(tree, ptr, nil),

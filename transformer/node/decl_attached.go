@@ -34,5 +34,5 @@ type AttachedValue struct {
 type AttachedExpr struct {
     Node
     Type          TypeExpr
-    AttachedName  string
+    AttachedName  Identifier
 }

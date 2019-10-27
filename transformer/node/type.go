@@ -14,8 +14,8 @@ type TypeExprContent interface { TypeExprContent() }
 func (impl OrdinaryTypeExpr) TypeExprContent() {}
 type OrdinaryTypeExpr struct {
     Node
-    Module  string
-    Name    string
+    Module  Identifier
+    Name    Identifier
     Args    [] TypeExpr
 }
 
@@ -46,13 +46,13 @@ type FunctionTypeExpr struct {
 func (impl IteratorTypeExpr) TypeExprContent() {}
 type IteratorTypeExpr struct {
     Node
-    YieldType TypeExpr
+    YieldType  TypeExpr
 }
 
 func (impl ContinuationTypeExpr) TypeExprContent() {}
 type ContinuationTypeExpr struct {
     Node
-    ResumingType TypeExpr
+    ResumingType  TypeExpr
 }
 
 

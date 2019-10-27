@@ -152,7 +152,6 @@ var Operators = [...] Operator {
 
 var SyntaxDefinition = [...] string {
     /* Group: Root */
-    "eval = module_metadata imports decls commands",
     "module_header = shebang module_metadata",
     "module = shebang module_metadata imports decls commands",
       "shebang? = Pragma",
@@ -181,7 +180,7 @@ var SyntaxDefinition = [...] string {
         "module_prefix? = name :: ",
         "type_args? = NoLF [ typelist! ]!",
           "typelist = type typelist_tail",
-          "typelist_tail? = , type! typelist_tail",
+            "typelist_tail? = , type! typelist_tail",
       "type_attached = attached_name",
       "type_trait = [ @trait :! trait! ]!",
       "type_misc = tuple_t | function_t | iterator_t | continuation_t",
@@ -237,7 +236,6 @@ var SyntaxDefinition = [...] string {
               "proto = name paralist! ret!",
         "decl_attached = attached_type | attached_function | attached_value",
           "attached_type = @attached @type attached_name! =! type!",
-            "attached_name = _at type! :! name!",
           "attached_function = @attached attached_name paralist ret body!",
           "attached_value = @attached attached_name =! expr!",
         "decl_trait = @trait name type_params trait_arg trait_bases trait_body",
@@ -326,6 +324,7 @@ var SyntaxDefinition = [...] string {
           "type_related = new | attached",
 		    "new = @new type!",
 		    "attached = attached_name",
+              "attached_name = _at type! :! name!",
 		  "literal = struct | tuple | seq | text | const",
 		    "struct = @struct type! {! struct_items }!",
 		      "struct_items? = struct_item struct_items",
