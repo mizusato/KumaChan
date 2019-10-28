@@ -23,8 +23,8 @@ var Tokens = [...] Token {
     Token { Name: "TxInner", Pattern: r(`\][^"#\[\]]*#\[`) },
     Token { Name: "TxEnd",   Pattern: r(`\][^"#\[\]]*"`) },
     Token { Name: "Comment", Pattern: r(`/\*([^\*]|[^/]|\*[^/]|[^\*]/)*\*/`) },
-    Token { Name: "Comment", Pattern: r(`//[^\n]*`) },
-    Token { Name: "Pragma",  Pattern: r(`#[^\n]*`) },
+    Token { Name: "Comment", Pattern: r(`//[^;`+LF+`]*`) },
+    Token { Name: "Pragma",  Pattern: r(`#[^;`+LF+`]*`) },
     Token { Name: "Blank",   Pattern: r(`[`+Blanks+`]+`) },
     Token { Name: "LF",      Pattern: r(`[;`+LF+`]+`) },
     Token { Name: "Hex",     Pattern: r(`0x[0-9A-Fa-f]+`) },
@@ -151,26 +151,26 @@ var Operators = [...] Operator {
 
 
 var SyntaxDefinition = [...] string {
-    /* Group: Root */
-    "module_header = shebang module_metadata",
-    "module = shebang module_metadata imports decls commands",
-      "shebang? = Pragma",
-      "module_metadata = export resolve",
-        "export? = @export { namelist! }! | @export namelist!",
-          "namelist = name namelist_tail",
-            "namelist_tail? = , name! namelist_tail",
-            "name = Name",
+    /* Group: Module */
+    "module = header export imports decls commands",
+      "header = shebang resolve",
+        "shebang? = Pragma",
         "resolve? = @resolve { resolve_item more_resolve_items }!",
 		  "more_resolve_items? = resolve_item more_resolve_items",
-          "resolve_item = name =! resolve_detail String!",
+          "resolve_item = name =! resolve_detail string!",
             "resolve_detail? = name @in! | ( name! mod_version )! @in!",
               "mod_version? = , name!",
+      "export? = @export { namelist! }! | @export namelist!",
+        "namelist = name namelist_tail",
+          "namelist_tail? = , name! namelist_tail",
+          "name = Name",
       "imports? = import imports",
         "import = @import name ::! imported_names",
           "imported_names = name | * | {! alias_list! }!",
             "alias_list = alias alias_list_tail",
               "alias_list_tail? = , alias! alias_list_tail",
-              "alias = name @as name! | name",
+              "alias = name @as alias_name | name",
+                "alias_name = name!",
       // decls -> Group: Declaration
       "commands? = command commands",
         // command -> Group: Command

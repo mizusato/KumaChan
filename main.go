@@ -1,6 +1,9 @@
 package main
 
-import "os"
+import (
+    "kumachan/transformer/node"
+    "os"
+)
 import "fmt"
 import "io"
 import "io/ioutil"
@@ -55,5 +58,6 @@ func parser_debug (file io.Reader, name string, root string) {
 
 func main () {
     syntax.Init()
+    node.GetNodeInfo("module")
     parser_debug(os.Stdin, "[eval]", "module")
 }

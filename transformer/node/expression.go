@@ -119,8 +119,8 @@ type ConstLiteral struct {
 type ConstContent interface { ConstContent() }
 func (impl StringLiteral) ConstContent() {}
 type StringLiteral struct {
-    Node
-    Value  string
+    Node             `part:"string"`
+    Value  [] rune   `content:"String"`
 }
 func (impl IntegerLiteral) ConstContent() {}
 type IntegerLiteral struct {

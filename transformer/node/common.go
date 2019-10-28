@@ -20,8 +20,8 @@ type Block struct {
 
 // Identifier: used by various nodes
 type Identifier struct {
-    Node
-    Name string
+    Node           `part:"name"`
+    Name [] rune   `content:"Name"`
 }
 
-var NullIdentifier = Identifier { Name: "" }
+var NullIdentifier = Identifier { Name: []rune{} }
