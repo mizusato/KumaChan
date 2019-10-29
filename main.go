@@ -1,7 +1,7 @@
 package main
 
 import (
-    "kumachan/transformer/node"
+    "kumachan/transformer"
     "os"
 )
 import "fmt"
@@ -50,14 +50,17 @@ func parser_debug (file io.Reader, name string, root string) {
     }
     fmt.Println("------------------------------------------------------")
     fmt.Println("AST:")
-    parser.PrintTree(tree)
+    parser.PrintTree(&tree)
     if err != nil {
         fmt.Println(err.DetailedMessage(&tree))
+    } else {
+        fmt.Println("------------------------------------------------------")
+        fmt.Println("Transformed:")
+        fmt.Printf("%+v\n", transformer.Transform(&tree))
     }
 }
 
 func main () {
     syntax.Init()
-    node.GetNodeInfo("module")
     parser_debug(os.Stdin, "[eval]", "module")
 }

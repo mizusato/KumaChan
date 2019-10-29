@@ -48,13 +48,14 @@ func BuildTree (root syntax.Id,  tokens scanner.Tokens) ([]TreeNode, *Error) {
         Partype:   syntax.Recursive,
         Required:  true,
     }
+    var ZeroSpan = scanner.Span { Start: 0, End: 0 }
     var tree = make([]TreeNode, 0, 100000)
     tree = append(tree, TreeNode {
         Part:    RootPart,  Parent:  -1,
         Length:  0,         Status:  Initial,
         Tried:   0,         Index:   0,
         Pos:     0,         Amount:  0,
-        Span: scanner.Span { Start: 0, End: 0 },
+        Span:    ZeroSpan,
     })
     var ptr = 0
     loop: for {
@@ -167,6 +168,7 @@ func BuildTree (root syntax.Id,  tokens scanner.Tokens) ([]TreeNode, *Error) {
                     Length:  0,      Status:  Initial,
                     Tried:   0,      Index:   j,
                     Pos:     -1,     Amount:  0,
+                    Span:    ZeroSpan,
                 })
                 j += 1
             }
@@ -187,7 +189,6 @@ func BuildTree (root syntax.Id,  tokens scanner.Tokens) ([]TreeNode, *Error) {
                 for i := 0; i < node.Length; i++ {
                     var child = node.Children[i]
                     node.Amount += tree[child].Amount
-                    node.Span = node.Span.Merged(tree[child].Span)
                 }
             }
             var parent_ptr = node.Parent
@@ -195,6 +196,11 @@ func BuildTree (root syntax.Id,  tokens scanner.Tokens) ([]TreeNode, *Error) {
             var parent = &tree[parent_ptr]
             parent.Children[parent.Length] = ptr
             parent.Length += 1
+            if parent.Span == ZeroSpan {
+                parent.Span = node.Span
+            } else if node.Span != ZeroSpan {
+                parent.Span = parent.Span.Merged(node.Span)
+            }
             if node.Index > 0 {
                 // if node.part is NOT the last part in the branch,
                 // go to the node corresponding to the next part

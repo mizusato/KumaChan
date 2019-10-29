@@ -1,6 +1,11 @@
 package transformer
 
-import "runtime"
+import (
+    "fmt"
+    "reflect"
+    "runtime"
+    "unsafe"
+)
 import "strings"
 import "kumachan/parser"
 import "kumachan/parser/syntax"
@@ -10,6 +15,113 @@ import ."kumachan/transformer/node"
 type Tree = *parser.Tree
 type Pointer = int
 type Context = map[string]interface{}
+type Transformer = func(Tree, Pointer) reflect.Value
+
+func Transform (tree Tree) Module {
+    var dive func(Tree, Pointer, []syntax.Id) (Pointer, bool)
+    dive = func (tree Tree, ptr Pointer, path []syntax.Id) (Pointer, bool) {
+        if len(path) == 0 {
+            return ptr, true
+        }
+        var parser_node = &tree.Nodes[ptr]
+        var L = parser_node.Length
+        for i := 0; i < L; i += 1 {
+            var child_ptr = parser_node.Children[i]
+            var child = &tree.Nodes[child_ptr]
+            if child.Part.Id == path[0] {
+                return dive(tree, child_ptr, path[1:])
+            }
+        }
+        return -1, false
+    }
+    var transform Transformer
+    transform = func (tree Tree, ptr Pointer) reflect.Value {
+        var parser_node = &tree.Nodes[ptr]
+        var info = GetNodeInfoById(parser_node.Part.Id)
+        var node = reflect.New(info.Type)
+        var meta = node.Elem().FieldByName("Node").Addr().Interface().(*Node)
+        meta.Span = parser_node.Span
+        meta.Point = tree.Info[meta.Span.Start]
+        var transform_dived = func (child_info *NodeChildInfo, f Transformer) {
+            var field_index = child_info.FieldIndex
+            var field = info.Type.Field(field_index)
+            var field_value = node.Elem().Field(field_index)
+            var path = child_info.DivePath
+            var dived_ptr, exists = dive(tree, ptr, path)
+            if exists {
+                field_value.Set(f(tree, dived_ptr))
+            } else {
+                if child_info.Optional {
+                    if field.Type.Kind() == reflect.Slice {
+                        var empty_slice = reflect.MakeSlice(field.Type, 0, 0)
+                        field_value.Set(empty_slice)
+                    }
+                } else {
+                    panic(fmt.Sprintf (
+                        "transform(): `%v` cannot be found as a posterity of `%v`",
+                        syntax.Id2Name[path[0]], syntax.Id2Name[parser_node.Part.Id],
+                    ))
+                }
+            }
+        }
+        var L = parser_node.Length
+        for i := 0; i < L; i += 1 {
+            var child_ptr = parser_node.Children[i]
+            var child = &tree.Nodes[child_ptr]
+            var child_part_id = child.Part.Id
+            var child_info, exists = info.Children[child_part_id]
+            if exists {
+                transform_dived(&child_info, transform)
+                continue
+            }
+            child_info, exists = info.Strings[child_part_id]
+            if exists {
+                transform_dived (
+                    &child_info,
+                    func (tree Tree, dived_ptr Pointer) reflect.Value {
+                        var dived_node = &tree.Nodes[dived_ptr]
+                        if dived_node.Part.Partype == syntax.MatchToken {
+                            var content = GetTokenContent(tree, dived_ptr)
+                            return reflect.ValueOf(content)
+                        } else {
+                            panic(fmt.Sprintf (
+                                "cannot get token content of non-token part %v",
+                                syntax.Id2Name[dived_node.Part.Id],
+                            ))
+                        }
+                    },
+                )
+                continue
+            }
+            list_info, exists := info.Lists[child_part_id]
+            child_info = *(*NodeChildInfo)(unsafe.Pointer(&list_info))
+            if exists {
+                transform_dived (
+                    &child_info,
+                    func (tree Tree, dived_ptr Pointer) reflect.Value {
+                        var item_id = list_info.ItemId
+                        var tail_id = list_info.TailId
+                        var item_ptrs = FlatSubTree(tree, dived_ptr, item_id, tail_id)
+                        var field_index = list_info.FieldIndex
+                        var field = info.Type.Field(field_index)
+                        if field.Type.Kind() != reflect.Slice {
+                            panic("cannot transform list to non-slice field")
+                        }
+                        var N = len(item_ptrs)
+                        var slice = reflect.MakeSlice(field.Type, N, N)
+                        for i, item_ptr := range item_ptrs {
+                            slice.Index(i).Set(transform(tree, item_ptr))
+                        }
+                        return slice
+                    },
+                )
+                continue
+            }
+        }
+        return node.Elem()
+    }
+    return transform(tree, 0).Interface().(Module)
+}
 
 func Children (tree Tree, ptr Pointer) map[string]int {
     var node = &tree.Nodes[ptr]
@@ -42,6 +154,38 @@ func FirstLastChild (tree Tree, ptr Pointer) (Pointer, Pointer) {
     return first, last
 }
 
+func FlatSubTree (
+    tree     Tree,       ptr   Pointer,
+    extract  syntax.Id,  next  syntax.Id,
+) []Pointer {
+    var sequence = make([]int, 0)
+    for NotEmpty(tree, ptr) {
+        var extract_ptr = -1
+        var next_ptr = -1
+        var node = &tree.Nodes[ptr]
+        var L = node.Length
+        for i := 0; i < L; i += 1 {
+            var child_ptr = node.Children[i]
+            var child = &tree.Nodes[child_ptr]
+            if child.Part.Id == extract {
+                extract_ptr = child_ptr
+            }
+            if child.Part.Id == next {
+                next_ptr = child_ptr
+            }
+        }
+        if extract_ptr == -1 {
+            panic("cannot extract part " + syntax.Id2Name[extract])
+        }
+        sequence = append(sequence, extract_ptr)
+        if next_ptr == -1 {
+            panic("next part " + syntax.Id2Name[next] + " not found")
+        }
+        ptr = next_ptr
+    }
+    return sequence
+}
+/*
 func FlatSubTree (tree Tree, ptr Pointer, extract string, next string) []int {
     var sequence = make([]int, 0)
     for NotEmpty(tree, ptr) {
@@ -54,7 +198,7 @@ func FlatSubTree (tree Tree, ptr Pointer, extract string, next string) []int {
     }
     return sequence
 }
-
+*/
 func GetChildPointer (tree Tree, parent Pointer) Pointer {
     var pc, _, _, _ = runtime.Caller(1)
     var raw_name = runtime.FuncForPC(pc).Name()
@@ -80,7 +224,6 @@ func GetNode (tree Tree, ptr Pointer, info interface{}) Node {
     return Node {
         Point: tree.Info[tree.Nodes[ptr].Pos],
         Span: tree.Nodes[ptr].Span,
-        Info: info,
     }
 }
 
@@ -88,8 +231,9 @@ func GetFileName (tree Tree) string {
     return tree.Name
 }
 
-func GetTokenContent (tree Tree, ptr int) string {
-    return string(tree.Tokens[tree.Nodes[ptr].Pos].Content)
+func GetTokenContent (tree Tree, ptr int) []rune {
+    var node = &tree.Nodes[ptr]
+    return tree.Tokens[node.Pos + node.Amount - 1].Content
 }
 
 func EscapeRawString (raw []rune) string {

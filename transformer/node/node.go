@@ -84,12 +84,8 @@ func __Initialize() {
         return mapped
     }
     var get_dive_info = func(tag_value string) (syntax.Id, []syntax.Id) {
-        var t = strings.Split(tag_value, ".")
-        if len(t) == 1 {
-            return get_part_id(tag_value), []syntax.Id{}
-        } else {
-            return get_part_id(t[0]), get_parts_id(t[1:])
-        }
+        var path = strings.Split(tag_value, ".")
+        return get_part_id(path[0]), get_parts_id(path)
     }
     for _, node := range __NodeRegistry {
         var T = reflect.TypeOf(node)
@@ -115,7 +111,7 @@ func __Initialize() {
             var part_id, dive_path = get_dive_info(value)
             switch kind {
             case "part":
-                info.Children[part_id] = NodeChildInfo{
+                info.Children[part_id] = NodeChildInfo {
                     FieldIndex: i,
                     DivePath:   dive_path,
                 }
@@ -201,20 +197,26 @@ func __Initialize() {
     __Initialized = true
 }
 
-func GetNodeInfo(part string) NodeInfo {
+func GetNodeInfoById (part_id syntax.Id) NodeInfo {
     if !__Initialized {
         __Initialize()
-        fmt.Printf("%+v\n", __NodeInfoMap)
     }
+    var info, exists = __NodeInfoMap[part_id]
+    if !exists {
+        panic(fmt.Sprintf (
+            "node info of part `%v` does not exist",
+            syntax.Id2Name[part_id],
+        ))
+    } else {
+        return info
+    }
+}
+
+func GetNodeInfo (part string) NodeInfo {
     var part_id, exists = syntax.Name2Id[part]
     if !exists {
         panic("part " + part + " does not exist")
     } else {
-        var info, exists = __NodeInfoMap[part_id]
-        if !exists {
-            panic("part " + part + " has not been assigned with a node")
-        } else {
-            return info
-        }
+        return GetNodeInfoById(part_id)
     }
 }

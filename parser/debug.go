@@ -71,7 +71,7 @@ func PrintBareTree (tree []TreeNode) {
 
 func PrintTreeRecursively (
     buf *strings.Builder,
-    tree Tree, ptr int, depth int, is_last []bool,
+    tree *Tree, ptr int, depth int, is_last []bool,
 ) {
     const INC = 2
     const SPACE = " "
@@ -106,7 +106,7 @@ func PrintTreeRecursively (
         var token = tree.Tokens[node.Pos + node.Amount - 1]
         fmt.Fprintf(buf, "'%v'", string(token.Content))
         buf.WriteRune(' ')
-        var point = tree.Info[tree.Tokens[node.Pos].Span.Start]
+        var point = tree.Info[token.Span.Start]
         fmt.Fprintf(buf, "at <%v,%v>", point.Row, point.Col)
         fmt.Fprintf(buf, "\033[0m")
         buf.WriteRune('\n')
@@ -129,7 +129,7 @@ func PrintTreeRecursively (
 }
 
 
-func PrintTree (tree Tree) {
+func PrintTree (tree *Tree) {
     var buf strings.Builder
     var is_last = make([]bool, 0, 1000)
     is_last = append(is_last, true)

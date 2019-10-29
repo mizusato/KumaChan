@@ -16,7 +16,7 @@ type Span struct {
 func (span Span) Merged(another Span) Span {
     var merged = Span { Start: span.Start, End: another.End }
     if !(merged.Start <= merged.End) {
-        panic("invalid span merge")
+        panic(fmt.Sprintf("invalid span merge: %+v and %+v", span, another))
     }
     return merged
 }
