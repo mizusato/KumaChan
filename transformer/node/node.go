@@ -39,7 +39,6 @@ var __NodeRegistry = []interface{} {
     // Module
     Module {},
     Resolve {},
-    ResolveDetail {},
     Import {},
     ImportedName {},
     // Expressions

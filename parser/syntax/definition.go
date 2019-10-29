@@ -89,7 +89,7 @@ var ExtraTokens = [...] string {"NoLF", "Void" }
 
 var ConditionalKeywords = [...] string {
 
-    "@export", "@resolve", "@import", "@as",
+    "@export", "@resolve", "@of", "@import", "@as",
 
     "@section",
     "@singleton", "@union",
@@ -157,9 +157,8 @@ var SyntaxDefinition = [...] string {
         "shebang? = Pragma",
         "resolve? = @resolve { resolve_item more_resolve_items }!",
 		  "more_resolve_items? = resolve_item more_resolve_items",
-          "resolve_item = name =! resolve_detail string!",
-            "resolve_detail? = name @in! | ( name! mod_version )! @in!",
-              "mod_version? = , name!",
+          "resolve_item = name =! version string!",
+            "version? = name @of!",
       "export? = @export { namelist! }! | @export namelist!",
         "namelist = name namelist_tail",
           "namelist_tail? = , name! namelist_tail",

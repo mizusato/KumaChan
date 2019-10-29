@@ -12,19 +12,13 @@ type Module struct {
     Commands  [] Command       `list_rec:"commands"`
 }
 
-// resolve_item = name =! resolve_detail string!
+// resolve_item = name =! version string!
+// version? = name @of!
 type Resolve struct {
-    Node                    `part:"resolve_item"`
-    Alias   Identifier      `part:"name"`
-    Source  StringLiteral   `part:"string"`
-    Detail  ResolveDetail   `part:"resolve_detail"`
-}
-
-// resolve_detail? = name @in! | ( name! mod_version )! @in!
-type ResolveDetail struct {
-    Node                  `part:"resolve_detail"`
-    Version  Identifier   `part_opt:"mod_version"`
-    Name     Identifier   `part:"name"`
+    Node                     `part:"resolve_item"`
+    Name     Identifier      `part:"name"`
+    Version  Identifier      `part_opt:"version.name"`
+    Source   StringLiteral   `part:"string"`
 }
 
 // import = import_from import_names | import_from alias
