@@ -18,17 +18,13 @@ type NodeInfo struct {
     Children   map[syntax.Id] NodeChildInfo
     Strings    map[syntax.Id] NodeChildInfo
     Lists      map[syntax.Id] NodeListInfo
-    Fallback   map[syntax.Id] NodeFallbackInfo
-}
-
-type NodeFallbackInfo struct {
-    FieldIndex  int
 }
 
 type NodeChildInfo struct {
     FieldIndex  int
     DivePath    [] syntax.Id
     Optional    bool
+    Fallback    syntax.Id
 }
 
 type NodeListInfo struct {
@@ -103,29 +99,39 @@ func __Initialize() {
             Children: make(map[syntax.Id] NodeChildInfo),
             Strings:  make(map[syntax.Id] NodeChildInfo),
             Lists:    make(map[syntax.Id] NodeListInfo),
-            Fallback: make(map[syntax.Id] NodeFallbackInfo),
         }
         for i := 0; i < T.NumField(); i += 1 {
             var f = T.Field(i)
+            if f.Name == "Node" {
+                continue
+            }
             var kind, value = get_field_tag(f)
             var part_id, dive_path = get_dive_info(value)
+            var fallback = f.Tag.Get("fallback")
+            var fallback_id syntax.Id = -1
+            if fallback != "" {
+                fallback_id = get_part_id(fallback)
+            }
             switch kind {
             case "part":
                 info.Children[part_id] = NodeChildInfo {
                     FieldIndex: i,
                     DivePath:   dive_path,
+                    Fallback:   fallback_id,
                 }
             case "part_opt":
                 info.Children[part_id] = NodeChildInfo {
                     FieldIndex: i,
                     DivePath:   dive_path,
                     Optional:   true,
+                    Fallback:   fallback_id,
                 }
             case "content":
                 var part_id = get_part_id(value)
                 info.Strings[part_id] = NodeChildInfo {
                     FieldIndex: i,
                     DivePath:   dive_path,
+                    Fallback:   fallback_id,
                 }
             case "list":
                 var list_name string
@@ -139,10 +145,12 @@ func __Initialize() {
                 var tail = list_name + "_tail"
                 var item_id = get_part_id(item)
                 var tail_id = get_part_id(tail)
-                info.Lists[part_id] = NodeListInfo{
-                    NodeChildInfo: NodeChildInfo{
+                info.Lists[part_id] = NodeListInfo {
+                    NodeChildInfo: NodeChildInfo {
                         FieldIndex: i,
                         DivePath:   dive_path,
+                        Optional:   true,
+                        Fallback:   fallback_id,
                     },
                     ItemId: item_id,
                     TailId: tail_id,
@@ -155,10 +163,12 @@ func __Initialize() {
                 var item_id = get_part_id(item)
                 var tail = "more_" + item + "s"
                 var tail_id = get_part_id(tail)
-                info.Lists[part_id] = NodeListInfo{
-                    NodeChildInfo: NodeChildInfo{
+                info.Lists[part_id] = NodeListInfo {
+                    NodeChildInfo: NodeChildInfo {
                         FieldIndex: i,
                         DivePath:   dive_path,
+                        Optional:   true,
+                        Fallback:   fallback_id,
                     },
                     ItemId: item_id,
                     TailId: tail_id,
@@ -177,19 +187,14 @@ func __Initialize() {
                     NodeChildInfo: NodeChildInfo{
                         FieldIndex: i,
                         DivePath:   dive_path,
+                        Optional:   true,
+                        Fallback:   fallback_id,
                     },
                     ItemId: item_id,
                     TailId: tail_id,
                 }
             default:
                 // no tag found, do nothing
-            }
-            var fallback = f.Tag.Get("fallback")
-            if fallback != "" {
-                var fallback_id = get_part_id(fallback)
-                info.Fallback[fallback_id] = NodeFallbackInfo {
-                    FieldIndex: i,
-                }
             }
         }
         __NodeInfoMap[node_id] = info

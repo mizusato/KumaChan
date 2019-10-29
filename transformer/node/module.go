@@ -16,7 +16,7 @@ type Module struct {
 type Resolve struct {
     Node                    `part:"resolve_item"`
     Alias   Identifier      `part:"name"`
-    URL     StringLiteral   `part:"string"`
+    Source  StringLiteral   `part:"string"`
     Detail  ResolveDetail   `part:"resolve_detail"`
 }
 
@@ -27,13 +27,14 @@ type ResolveDetail struct {
     Name     Identifier   `part:"name"`
 }
 
-// import = @import name ::! imported_names
-// imported_names = name | * | {! alias_list! }!
+// import = import_from import_names | import_from alias
+// import_from = @import name ::!
+// import_names = * | {! alias_list! }!
 // alias_list = alias alias_list_tail
 type Import struct {
     Node                          `part:"import"`
-    FromModule  Identifier        `part:"name"`
-    Names       [] ImportedName   `list:"alias_list" fallback:"name"`
+    FromModule  Identifier        `part:"import_from.name"`
+    Names       [] ImportedName   `list:"import_names.alias_list" fallback:"alias"`
 }
 
 // alias = name @as alias_name | name

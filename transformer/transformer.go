@@ -51,72 +51,82 @@ func Transform (tree Tree) Module {
             if exists {
                 field_value.Set(f(tree, dived_ptr))
             } else {
-                if child_info.Optional {
+                if child_info.Fallback != -1 {
+                    var fallback_id = child_info.Fallback
+                    var L = parser_node.Length
+                    for i := 0; i < L; i += 1 {
+                        var child_ptr = parser_node.Children[i]
+                        var child_parser_node = &tree.Nodes[child_ptr]
+                        if child_parser_node.Part.Id == fallback_id {
+                            var value = transform(tree, child_ptr)
+                            if field.Type.Kind() == reflect.Slice {
+                                var t = reflect.MakeSlice(field.Type, 1, 1)
+                                t.Index(0).Set(value)
+                                field_value.Set(t)
+                            } else {
+                                field_value.Set(value)
+                            }
+                            break
+                        }
+                    }
+                } else if child_info.Optional {
                     if field.Type.Kind() == reflect.Slice {
                         var empty_slice = reflect.MakeSlice(field.Type, 0, 0)
                         field_value.Set(empty_slice)
                     }
                 } else {
+                    var path_strlist = make([]string, len(path))
+                    for i, segment := range path {
+                        path_strlist[i] = syntax.Id2Name[segment]
+                    }
+                    var path_str = strings.Join(path_strlist, ".")
                     panic(fmt.Sprintf (
-                        "transform(): `%v` cannot be found as a posterity of `%v`",
-                        syntax.Id2Name[path[0]], syntax.Id2Name[parser_node.Part.Id],
+                        "transform(): path `%v` cannot be found in `%v`",
+                        path_str, syntax.Id2Name[parser_node.Part.Id],
                     ))
                 }
             }
         }
-        var L = parser_node.Length
-        for i := 0; i < L; i += 1 {
-            var child_ptr = parser_node.Children[i]
-            var child = &tree.Nodes[child_ptr]
-            var child_part_id = child.Part.Id
-            var child_info, exists = info.Children[child_part_id]
-            if exists {
-                transform_dived(&child_info, transform)
-                continue
-            }
-            child_info, exists = info.Strings[child_part_id]
-            if exists {
-                transform_dived (
-                    &child_info,
-                    func (tree Tree, dived_ptr Pointer) reflect.Value {
-                        var dived_node = &tree.Nodes[dived_ptr]
-                        if dived_node.Part.Partype == syntax.MatchToken {
-                            var content = GetTokenContent(tree, dived_ptr)
-                            return reflect.ValueOf(content)
-                        } else {
-                            panic(fmt.Sprintf (
-                                "cannot get token content of non-token part %v",
-                                syntax.Id2Name[dived_node.Part.Id],
-                            ))
-                        }
-                    },
-                )
-                continue
-            }
-            list_info, exists := info.Lists[child_part_id]
-            child_info = *(*NodeChildInfo)(unsafe.Pointer(&list_info))
-            if exists {
-                transform_dived (
-                    &child_info,
-                    func (tree Tree, dived_ptr Pointer) reflect.Value {
-                        var item_id = list_info.ItemId
-                        var tail_id = list_info.TailId
-                        var item_ptrs = FlatSubTree(tree, dived_ptr, item_id, tail_id)
-                        var field_index = list_info.FieldIndex
-                        var field = info.Type.Field(field_index)
-                        if field.Type.Kind() != reflect.Slice {
-                            panic("cannot transform list to non-slice field")
-                        }
-                        var N = len(item_ptrs)
-                        var slice = reflect.MakeSlice(field.Type, N, N)
-                        for i, item_ptr := range item_ptrs {
-                            slice.Index(i).Set(transform(tree, item_ptr))
-                        }
-                        return slice
-                    },
-                )
-                continue
-            }
+        for _, child_info := range info.Children {
+            transform_dived(&child_info, transform)
+        }
+        for _, child_info := range info.Strings {
+            transform_dived (
+                &child_info,
+                func (tree Tree, dived_ptr Pointer) reflect.Value {
+                    var dived_node = &tree.Nodes[dived_ptr]
+                    if dived_node.Part.Partype == syntax.MatchToken {
+                        var content = GetTokenContent(tree, dived_ptr)
+                        return reflect.ValueOf(content)
+                    } else {
+                        panic(fmt.Sprintf (
+                            "cannot get token content of non-token part %v",
+                            syntax.Id2Name[dived_node.Part.Id],
+                        ))
+                    }
+                },
+            )
+        }
+        for _, list_info := range info.Lists {
+            transform_dived (
+                (*NodeChildInfo)(unsafe.Pointer(&list_info)),
+                func (tree Tree, dived_ptr Pointer) reflect.Value {
+                    var item_id = list_info.ItemId
+                    var tail_id = list_info.TailId
+                    var item_ptrs = FlatSubTree(tree, dived_ptr, item_id, tail_id)
+                    var field_index = list_info.FieldIndex
+                    var field = info.Type.Field(field_index)
+                    if field.Type.Kind() != reflect.Slice {
+                        panic("cannot transform list to non-slice field")
+                    }
+                    var N = len(item_ptrs)
+                    var slice = reflect.MakeSlice(field.Type, N, N)
+                    for i, item_ptr := range item_ptrs {
+                        slice.Index(i).Set(transform(tree, item_ptr))
+                    }
+                    return slice
+                },
+            )
         }
         return node.Elem()
     }
