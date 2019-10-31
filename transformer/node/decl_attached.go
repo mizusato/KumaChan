@@ -2,11 +2,11 @@ package node
 
 
 type AttachedDeclaration interface {
-    Declaration
+    DeclContent
     AttachedDeclaration()
 }
 
-func (impl AttachedType) Declaration() {}
+func (impl AttachedType) DeclContent() {}
 func (impl AttachedType) AttachedDeclaration() {}
 type AttachedType struct {
     Node
@@ -14,7 +14,7 @@ type AttachedType struct {
     Attached  TypeExpr
 }
 
-func (impl AttachedFunction) Declaration() {}
+func (impl AttachedFunction) DeclContent() {}
 func (impl AttachedFunction) AttachedDeclaration() {}
 type AttachedFunction struct {
     Node
@@ -22,7 +22,7 @@ type AttachedFunction struct {
     Attached  FunctionItem
 }
 
-func (impl AttachedValue) Declaration() {}
+func (impl AttachedValue) DeclContent() {}
 func (impl AttachedValue) AttachedDeclaration() {}
 type AttachedValue struct {
     Node

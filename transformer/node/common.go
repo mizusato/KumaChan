@@ -1,10 +1,13 @@
 package node
 
-
-type Declaration interface { Declaration() }
+type Declaration struct {
+    Node                   `part:"decl"`
+    Content  DeclContent   `use:"first"`
+}
+type DeclContent interface { DeclContent() }
 
 // Section: used to group declarations
-func (impl Section) Declaration() {}
+func (impl Section) DeclContent() {}
 type Section struct {
     Node
     Name   Identifier

@@ -1,7 +1,7 @@
 package node
 
 
-func (impl TraitDeclaration) Declaration() {}
+func (impl TraitDeclaration) DeclContent() {}
 type TraitDeclaration struct {
     Node
     Name        string

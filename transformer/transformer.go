@@ -87,6 +87,29 @@ func Transform (tree Tree) Module {
                 }
             }
         }
+        if info.First != -1 {
+            if parser_node.Length > 0 {
+                var field_value = node.Elem().Field(info.First)
+                field_value.Set(transform(tree, parser_node.Children[0]))
+            } else {
+                panic(fmt.Sprintf (
+                    "transform(): cannot get first child of empty node `%v`",
+                    syntax.Id2Name[parser_node.Part.Id],
+                ))
+            }
+        }
+        if info.Last != -1 {
+            var L = parser_node.Length
+            if L > 0 {
+                var field_value = node.Elem().Field(info.Last)
+                field_value.Set(transform(tree, parser_node.Children[L-1]))
+            } else {
+                panic(fmt.Sprintf (
+                    "transform(): cannot get last child of empty node `%v`",
+                    syntax.Id2Name[parser_node.Part.Id],
+                ))
+            }
+        }
         for _, child_info := range info.Children {
             transform_dived(&child_info, transform)
         }

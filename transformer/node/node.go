@@ -18,6 +18,8 @@ type NodeInfo struct {
     Children   map[syntax.Id] NodeChildInfo
     Strings    map[syntax.Id] NodeChildInfo
     Lists      map[syntax.Id] NodeListInfo
+    First      int
+    Last       int
 }
 
 type NodeChildInfo struct {
@@ -41,6 +43,10 @@ var __NodeRegistry = []interface{} {
     Resolve {},
     Import {},
     ImportedName {},
+    // Declarations
+    Declaration {},
+    TypeDeclaration {},
+    SingletonTypes {},
     // Expressions
     StringLiteral {},
 }
@@ -52,7 +58,7 @@ var __Initialized = false
 func __Initialize() {
     var get_field_tag = func(f reflect.StructField) (string, string) {
         var kinds = []string {
-            "first", "last",
+            "use",
             "part", "part_opt", "content",
             "list", "list_more", "list_rec",
         }
@@ -98,6 +104,8 @@ func __Initialize() {
             Children: make(map[syntax.Id] NodeChildInfo),
             Strings:  make(map[syntax.Id] NodeChildInfo),
             Lists:    make(map[syntax.Id] NodeListInfo),
+            First:    -1,
+            Last:     -1,
         }
         for i := 0; i < T.NumField(); i += 1 {
             var f = T.Field(i)
@@ -105,6 +113,16 @@ func __Initialize() {
                 continue
             }
             var kind, value = get_field_tag(f)
+            if kind == "use" {
+                if value == "first" {
+                    info.First = i
+                } else if value == "last" {
+                    info.Last = i
+                } else {
+                    panic(fmt.Sprintf("invalid directive `use:'%v'`", value))
+                }
+                continue
+            }
             var part_id, dive_path = get_dive_info(value)
             var fallback = f.Tag.Get("fallback")
             var fallback_id syntax.Id = -1
@@ -112,6 +130,7 @@ func __Initialize() {
                 fallback_id = get_part_id(fallback)
             }
             switch kind {
+            // case "use": already handled above
             case "part":
                 info.Children[part_id] = NodeChildInfo {
                     FieldIndex: i,

@@ -1,20 +1,21 @@
 package node
 
-
-type TypeDeclaration interface {
-    Declaration
-    TypeDeclaration()
+// decl_type = singleton | union | schema | class | interface
+func (impl TypeDeclaration) DeclContent() {}
+type TypeDeclaration struct {
+    Node                       `part:"decl_type"`
+    Content  TypeDeclContent   `use:"first"`
 }
+type TypeDeclContent interface { TypeDeclContent() }
 
-func (impl SingletonTypes) Declaration() {}
-func (impl SingletonTypes) TypeDeclaration() {}
+// singleton = @singleton namelist
+func (impl SingletonTypes) TypeDeclContent() {}
 type SingletonTypes struct {
-    Node
-    Names  [] string
+    Node                   `part:"singleton"`
+    Names  [] Identifier   `list:"namelist"`
 }
 
-func (impl UnionType) Declaration() {}
-func (impl UnionType) TypeDeclaration() {}
+func (impl UnionType) TypeDeclContent() {}
 type UnionType struct {
     Node
     Name      string
@@ -22,8 +23,7 @@ type UnionType struct {
     Elements  [] TypeExpr
 }
 
-func (impl SchemaType) Declaration() {}
-func (impl SchemaType) TypeDeclaration() {}
+func (impl SchemaType) TypeDeclContent() {}
 type SchemaType struct {
     Node
     Name    string
@@ -33,8 +33,7 @@ type SchemaType struct {
     Fields  [] SchemaField
 }
 
-func (impl ClassType) Declaration() {}
-func (impl ClassType) TypeDeclaration() {}
+func (impl ClassType) TypeDeclContent() {}
 type ClassType struct {
     Node
     Name     string
@@ -47,8 +46,7 @@ type ClassType struct {
     Methods  map[string] FunctionItem
 }
 
-func (impl InterfaceType) Declaration() {}
-func (impl InterfaceType) TypeDeclaration() {}
+func (impl InterfaceType) TypeDeclContent() {}
 type InterfaceType struct {
     Node
     Name     string

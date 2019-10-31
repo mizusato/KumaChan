@@ -1,9 +1,10 @@
 package node
 
 
+// type = type_ordinary | type_attached | type_trait | type_misc
 type TypeExpr struct {
-    Node
-    Content TypeExprContent
+    Node                      `part:"type"`
+    Content TypeExprContent   `use:"first"`
 }
 
 type MaybeTypeExpr interface { MaybeTypeExpr() }
@@ -11,12 +12,15 @@ func (impl TypeExpr) MaybeTypeExpr() {}
 
 type TypeExprContent interface { TypeExprContent() }
 
+// type_ordinary = module_prefix name type_args
+// module_prefix? = name ::
+// type_args? = NoLF [ typelist! ]!
 func (impl OrdinaryTypeExpr) TypeExprContent() {}
 type OrdinaryTypeExpr struct {
-    Node
-    Module  Identifier
-    Name    Identifier
-    Args    [] TypeExpr
+    Node                  `part:"type_ordinary"`
+    Module  Identifier    `part_opt:"module_prefix.name"`
+    Name    Identifier    `part:"name"`
+    Args    [] TypeExpr   `list:"type_args.typelist"`
 }
 
 func (impl AttachedTypeExpr) TypeExprContent() {}

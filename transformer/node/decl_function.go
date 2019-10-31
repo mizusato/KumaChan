@@ -1,7 +1,7 @@
 package node
 
 
-func (impl Function) Declaration() {}
+func (impl Function) DeclContent() {}
 type Function struct {
     Node
     Name   string
