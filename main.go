@@ -3,6 +3,7 @@ package main
 import (
     "kumachan/transformer"
     "os"
+    "reflect"
 )
 import "fmt"
 import "io"
@@ -56,7 +57,8 @@ func parser_debug (file io.Reader, name string, root string) {
     } else {
         fmt.Println("------------------------------------------------------")
         fmt.Println("Transformed:")
-        fmt.Printf("%+v\n", transformer.Transform(&tree))
+        transformer.PrintNode(reflect.ValueOf(transformer.Transform(&tree)))
+        // fmt.Printf("%+v\n", transformer.Transform(&tree))
     }
 }
 

@@ -296,6 +296,98 @@ func Empty (tree Tree, ptr Pointer) bool {
     return !NotEmpty(tree, ptr)
 }
 
+
+func PrintNodeRecursively (
+    buf *strings.Builder,
+    node reflect.Value, name string, depth int, is_last []bool,
+) {
+    const INC = 2
+    const SPACE = " "
+    parser.Repeat(depth+1, func (i int) {
+        if depth > 0 && i < depth {
+            if is_last[i] {
+                parser.Fill(buf, INC, "", SPACE)
+            } else {
+                parser.Fill(buf, INC, "│", SPACE)
+            }
+        } else {
+            if is_last[depth] {
+                parser.Fill(buf, INC, "└", "─")
+            } else {
+                parser.Fill(buf, INC, "├", "─")
+            }
+        }
+    })
+    var T = node.Type()
+    if T.Kind() == reflect.Struct && T.NumField() > 0 {
+        buf.WriteString("┬─")
+    } else if T.Kind() == reflect.Slice && node.Len() > 0 {
+        buf.WriteString("┬─")
+    } else {
+        buf.WriteString("──")
+    }
+    fmt.Fprintf(buf, "\033[1m\033[%vm", parser.GetANSIColor(depth))
+    fmt.Fprintf(buf, "[%v] %v", name, T.String())
+    fmt.Fprintf(buf, "\033[0m")
+    fmt.Fprintf(buf, "\033[%vm", parser.GetANSIColor(depth))
+    buf.WriteRune(' ')
+    var newline = func () {
+        fmt.Fprintf(buf, "\033[0m\n")
+    }
+    switch T.Kind() {
+    case reflect.Interface:
+        PrintNodeRecursively(buf, node.Elem(), name, depth, is_last)
+    case reflect.Slice:
+        if T.AssignableTo(reflect.TypeOf([]rune{})) {
+            fmt.Fprintf(buf, "'%v'", string(node.Interface().([]rune)))
+            newline()
+        } else {
+            var L = node.Len()
+            if L == 0 {
+                buf.WriteString("(empty)")
+            }
+            fmt.Fprintf(buf, "\033[0m")
+            buf.WriteRune('\n')
+            for i := 0; i < L; i += 1 {
+                var child = node.Index(i)
+                is_last = append(is_last, i == L-1)
+                PrintNodeRecursively (
+                    buf, child, fmt.Sprintf("%d", i),
+                    (depth + 1), is_last,
+                )
+                is_last = is_last[:len(is_last)-1]
+            }
+        }
+    case reflect.Struct:
+        var L = node.NumField()
+        newline()
+        for i := 0; i < L; i += 1 {
+            var field = node.Field(i)
+            var field_info = T.Field(i)
+            if field_info.Name == "Node" {
+                continue
+            }
+            is_last = append(is_last, i == L-1)
+            PrintNodeRecursively (
+                buf, field, field_info.Name,
+                (depth + 1), is_last,
+            )
+            is_last = is_last[:len(is_last)-1]
+        }
+    default:
+        newline()
+    }
+}
+
+
+func PrintNode (node reflect.Value) {
+    var buf strings.Builder
+    var is_last = make([]bool, 0, 1000)
+    is_last = append(is_last, true)
+    PrintNodeRecursively(&buf, node, "Module", 0, is_last)
+    fmt.Println(buf.String())
+}
+
 func ReduceExpression (operators []syntax.Operator) [][3]int {
     /**
      *  Reduce Expression using the Shunting Yard Algorithm
