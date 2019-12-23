@@ -40,13 +40,9 @@ var __NodeRegistry = []interface{} {
     Identifier {},
     // Module
     Module {},
-    Resolve {},
-    Import {},
-    ImportedName {},
-    // Declarations
-    Declaration {},
-    TypeDeclaration {},
-    SingletonTypes {},
+    // Commands
+    AbstractCommand {},
+    CmdImport {},
     // Expressions
     StringLiteral {},
 }

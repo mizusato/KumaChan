@@ -301,6 +301,11 @@ func PrintNodeRecursively (
     buf *strings.Builder,
     node reflect.Value, name string, depth int, is_last []bool,
 ) {
+    var T = node.Type()
+    if T.Kind() == reflect.Interface {
+        PrintNodeRecursively(buf, node.Elem(), name, depth, is_last)
+        return
+    }
     const INC = 2
     const SPACE = " "
     parser.Repeat(depth+1, func (i int) {
@@ -318,10 +323,10 @@ func PrintNodeRecursively (
             }
         }
     })
-    var T = node.Type()
     if T.Kind() == reflect.Struct && T.NumField() > 0 {
         buf.WriteString("┬─")
-    } else if T.Kind() == reflect.Slice && node.Len() > 0 {
+    } else if T.Kind() == reflect.Slice && node.Len() > 0 && !(T.AssignableTo(reflect.TypeOf([]rune{}))) {
+        // TODO: fixme: condition expression too long
         buf.WriteString("┬─")
     } else {
         buf.WriteString("──")
@@ -335,8 +340,6 @@ func PrintNodeRecursively (
         fmt.Fprintf(buf, "\033[0m\n")
     }
     switch T.Kind() {
-    case reflect.Interface:
-        PrintNodeRecursively(buf, node.Elem(), name, depth, is_last)
     case reflect.Slice:
         if T.AssignableTo(reflect.TypeOf([]rune{})) {
             fmt.Fprintf(buf, "'%v'", string(node.Interface().([]rune)))

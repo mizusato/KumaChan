@@ -1,7 +1,18 @@
 package node
 
 
+type AbstractCommand struct {
+    Node               `part:"command"`
+    Content  Command   `use:"first"`
+}
 type Command interface { Command() }
+
+func (impl CmdImport) Command() {}
+type CmdImport struct {
+    Node                  `part:"import"`
+    Name  Identifier      `part:"name"`
+    Path  StringLiteral   `part:"string"`
+}
 
 func (impl IfCommand) Command() {}
 type IfCommand struct {

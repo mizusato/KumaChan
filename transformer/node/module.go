@@ -1,8 +1,12 @@
 package node
 
-// module = header export imports decls commands
-// header = shebang resolve
-// export? = @export { namelist! }! | @export namelist!
+type Module struct {
+    Node                           `part:"module"`
+    Name      Identifier           `part:"module_name.name"`
+    Commands  [] AbstractCommand   `list_rec:"commands"`
+}
+
+/*
 type Module struct {
     Node                       `part:"module"`
     Resolved  [] Resolve       `list_more:"header.resolve" item:"resolve_item"`
@@ -11,6 +15,7 @@ type Module struct {
     Decls     [] Declaration   `list_rec:"decls"`
     Commands  [] Command       `list_rec:"commands"`
 }
+*/
 
 // resolve_item = name =! version string!
 // version? = name @of!
