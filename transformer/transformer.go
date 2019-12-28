@@ -73,6 +73,8 @@ func Transform (tree Tree) Module {
                     if field.Type.Kind() == reflect.Slice {
                         var empty_slice = reflect.MakeSlice(field.Type, 0, 0)
                         field_value.Set(empty_slice)
+                    } else if field.Type.Kind() == reflect.Bool {
+                        field_value.Set(reflect.ValueOf(false))
                     }
                 } else {
                     var path_strlist = make([]string, len(path))
@@ -127,6 +129,14 @@ func Transform (tree Tree) Module {
                             syntax.Id2Name[dived_node.Part.Id],
                         ))
                     }
+                },
+            )
+        }
+        for _, child_info := range info.Options {
+            transform_dived (
+                &child_info,
+                func (tree Tree, _ Pointer) reflect.Value {
+                    return reflect.ValueOf(true)
                 },
             )
         }

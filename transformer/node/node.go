@@ -18,6 +18,7 @@ type NodeInfo struct {
     Children   map[syntax.Id] NodeChildInfo
     Strings    map[syntax.Id] NodeChildInfo
     Lists      map[syntax.Id] NodeListInfo
+    Options    map[syntax.Id] NodeChildInfo
     First      int
     Last       int
 }
@@ -41,8 +42,8 @@ var __NodeRegistry = []interface{} {
     // Module
     Module {},
     // Commands
-    AbstractCommand {},
-    CmdImport {},
+    VariousCommand{},
+    Import {},
     // Expressions
     StringLiteral {},
 }
@@ -82,7 +83,11 @@ func __Initialize() {
     }
     var get_dive_info = func(tag_value string) (syntax.Id, []syntax.Id) {
         var path = strings.Split(tag_value, ".")
-        return get_part_id(path[0]), get_parts_id(path)
+        if len(path) == 0 {
+            return (syntax.Id)(-1), []syntax.Id {}
+        } else {
+            return get_part_id(path[0]), get_parts_id(path)
+        }
     }
     for _, node := range __NodeRegistry {
         var T = reflect.TypeOf(node)
@@ -100,6 +105,7 @@ func __Initialize() {
             Children: make(map[syntax.Id] NodeChildInfo),
             Strings:  make(map[syntax.Id] NodeChildInfo),
             Lists:    make(map[syntax.Id] NodeListInfo),
+            Options:  make(map[syntax.Id] NodeChildInfo),
             First:    -1,
             Last:     -1,
         }
@@ -141,11 +147,16 @@ func __Initialize() {
                     Fallback:   fallback_id,
                 }
             case "content":
-                var part_id = get_part_id(value)
                 info.Strings[part_id] = NodeChildInfo {
                     FieldIndex: i,
                     DivePath:   dive_path,
                     Fallback:   fallback_id,
+                }
+            case "option":
+                info.Options[part_id] = NodeChildInfo {
+                    FieldIndex: i,
+                    DivePath:   dive_path,
+                    Optional:   true,
                 }
             case "list":
                 var list_name string

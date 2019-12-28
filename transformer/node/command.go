@@ -1,124 +1,60 @@
 package node
 
 
-type AbstractCommand struct {
+type VariousCommand struct {
     Node               `part:"command"`
     Content  Command   `use:"first"`
 }
 type Command interface { Command() }
 
-func (impl CmdImport) Command() {}
-type CmdImport struct {
+func (impl Import) Command() {}
+type Import struct {
     Node                  `part:"import"`
     Name  Identifier      `part:"name"`
     Path  StringLiteral   `part:"string"`
 }
 
-func (impl IfCommand) Command() {}
-type IfCommand struct {
-    Node
-    Condition  Expr
-    Block      Block
-    Elifs      [] Elif
-    Else       Else
+
+func (impl DeclFunction) Command() {}
+type DeclFunction struct {
+    Node `part:"decl_func"`
 }
 
-func (impl WhileCommand) Command() {}
-type WhileCommand struct {
-    Node
-    Condition  Expr
-    Block      Block
+func (impl DeclConst) Command() {}
+type DeclConst struct {
+    Node `part:"decl_const"`
 }
 
-func (impl ForCommand) Command() {}
-type ForCommand struct {
-    Node
-    LoopVars  [] Identifier
-    Iterator  Expr
-    Block     Block
+func (impl Do) Command() {}
+type Do struct {
+    Node `part:"do"`
 }
 
-func (impl BreakCommand) Command() {}
-type BreakCommand struct {
-    Node
+func (impl DeclType) Command() {}
+type DeclType struct {
+    Node                    `part:"decl_type"`
+    Options   TypeOptions   `part:"type_opts"`
+    TypeDecl  TypeDecl      `part:"single_type" fallback:"union_type"`
 }
 
-func (impl ContinueCommand) Command() {}
-type ContinueCommand struct {
-    Node
+type TypeDecl interface { TypeDecl() }
+
+type SingleType struct {
+    Node                  `part:"single_type"`
+    Name  Identifier      `part:"name"`
+    Para  [] Identifier   `list_more:"type_params" item:"name"`
+    Repr  VariousRepr     `part:"repr"`
 }
 
-func (impl ReturnCommand) Command() {}
-type ReturnCommand struct {
-    Node
-    Value  Expr
+type UnionType struct {
+    Node                   `part:"union_type"`
+    Name   Identifier      `part:"name"`
+    Para   [] Identifier   `list_more:"type_params" item:"name"`
+    Items  [] DeclType     `list_more:"" item:"decl_type"`
 }
 
-func (impl YieldCommand) Command() {}
-type YieldCommand struct {
-    Node
-    Value  Expr
+type TypeOptions struct {
+    Node               `part:"type_opts"`
+    IsExported  bool   `option:"export_opt.@export"`
+    IsOpaque    bool   `option:"opaque_opt.@opaque"`
 }
-
-func (impl PanicCommand) Command() {}
-type PanicCommand struct {
-    Node
-    ErrorValue  Expr
-}
-
-func (impl AssertCommand) Command() {}
-type AssertCommand struct {
-    Node
-    Condition  Expr
-}
-
-func (impl FinallyCommand) Command() {}
-type FinallyCommand struct {
-    Node
-    Block  Block
-}
-
-func (impl LetCommand) Command() {}
-type LetCommand struct {
-    Node
-    Variable Identifier
-    Value    Expr
-}
-
-func (impl InitialCommand) Command()  {}
-type InitialCommand struct {
-    Node
-    Variable     Identifier
-    InitialValue Expr
-}
-
-func (impl ResetCommand) Command() {}
-type ResetCommand struct {
-    Node
-    Variable  Identifier
-    NewValue  Expr
-}
-
-func (impl PassCommand) Command() {}
-type PassCommand struct {
-    Node
-}
-
-func (impl SideEffectCommand) Command() {}
-type SideEffectCommand struct {
-    Node
-    Expr  Expr
-}
-
-
-type Elif struct {
-    Node
-    Condition  Expr
-    Block      Block
-}
-
-type Else struct {
-    Node
-    Block      Block
-}
-

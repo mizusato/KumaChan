@@ -1,69 +1,63 @@
 package node
 
 
-// type = type_ordinary | type_attached | type_trait | type_misc
-type TypeExpr struct {
-    Node                      `part:"type"`
-    Content TypeExprContent   `use:"first"`
+type VariousType struct {
+    Node  `part:"type"`
 }
 
-type MaybeTypeExpr interface { MaybeTypeExpr() }
-func (impl TypeExpr) MaybeTypeExpr() {}
+type Type interface { Type() }
 
-type TypeExprContent interface { TypeExprContent() }
-
-// type_ordinary = module_prefix name type_args
-// module_prefix? = name ::
-// type_args? = NoLF [ typelist! ]!
-func (impl OrdinaryTypeExpr) TypeExprContent() {}
-type OrdinaryTypeExpr struct {
-    Node                  `part:"type_ordinary"`
-    Module  Identifier    `part_opt:"module_prefix.name"`
-    Name    Identifier    `part:"name"`
-    Args    [] TypeExpr   `list:"type_args.typelist"`
+func (impl TypeRef) Type() {}
+type TypeRef struct {
+    Node        `part:"type_ref"`
+    Ref   Ref   `part:"ref"`
 }
 
-func (impl AttachedTypeExpr) TypeExprContent() {}
-type AttachedTypeExpr struct {
-    Node
-    AttachedExpr  AttachedExpr
+func (impl TypeLiteral) Type()  {}
+type TypeLiteral struct {
+    Node                `part:"type_literal"`
+    Repr  VariousRepr   `part:"repr"`
 }
 
-func (impl TraitTypeExpr) TypeExprContent() {}
-type TraitTypeExpr struct {
-    Node
-    Trait  TraitExpr
+type VariousRepr struct {
+    Node         `part:"repr"`
+    Repr  Repr   `use:"first"`
 }
 
-func (impl TupleTypeExpr) TypeExprContent() {}
-type TupleTypeExpr struct {
-    Node
-    ElementTypes  [] TypeExpr
+type Repr interface { Repr() }
+
+func (impl ReprTuple) Repr() {}
+type ReprTuple struct {
+    Node                       `part:"repr_tuple"`
+    Elements  [] VariousType   `list_more:"type"`
 }
 
-func (impl FunctionTypeExpr) TypeExprContent() {}
-type FunctionTypeExpr struct {
-    Node
-    Signatures  [] Signature
+func (impl ReprBundle) Repr() {}
+type ReprBundle struct {
+    Node               `part:"repr_tuple"`
+    Fields  [] Field   `list_more:"field"`
 }
 
-func (impl IteratorTypeExpr) TypeExprContent() {}
-type IteratorTypeExpr struct {
-    Node
-    YieldType  TypeExpr
+type Field struct {
+    Node                `part:"field"`
+    Name  Identifier    `part:"name"`
+    Type  VariousType   `part:"type"`
 }
 
-func (impl ContinuationTypeExpr) TypeExprContent() {}
-type ContinuationTypeExpr struct {
-    Node
-    ResumingType  TypeExpr
+func (impl ReprFunc) Repr() {}
+type ReprFunc struct {
+    Node                  `part:"repr_func"`
+    Input   VariousType   `part:"input_type.type"`
+    Output  VariousType   `part:"output_type.type"`
 }
 
-
-type Signature struct {
-    Node
-    Parameters   [] TypeExpr
-    ReturnValue  TypeExpr
+func (impl ReprNative) Repr() {}
+type ReprNative struct {
+    Node             `part:"repr_func"`
+    Ref  NativeRef   `part:"native"`
 }
 
-
+type NativeRef struct {
+    Node                `part:"native"`
+    Id  StringLiteral   `part:"string"`
+}

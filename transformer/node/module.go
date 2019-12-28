@@ -2,8 +2,8 @@ package node
 
 type Module struct {
     Node                           `part:"module"`
-    Name      Identifier           `part:"module_name.name"`
-    Commands  [] AbstractCommand   `list_rec:"commands"`
+    Name      Identifier        `part:"module_name.name"`
+    Commands  [] VariousCommand `list_rec:"commands"`
 }
 
 /*
@@ -30,6 +30,7 @@ type Resolve struct {
 // import_from = @import name ::!
 // import_names = * | {! alias_list! }!
 // alias_list = alias alias_list_tail
+/*
 type Import struct {
     Node                          `part:"import"`
     FromModule  Identifier        `part:"import_from.name"`
@@ -42,3 +43,4 @@ type ImportedName struct {
     Name   Identifier   `part:"name"`
     Alias  Identifier   `part:"alias_name.name" fallback:"name"`
 }
+*/
