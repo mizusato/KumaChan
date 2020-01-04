@@ -4,7 +4,6 @@ import (
     "fmt"
     "reflect"
     "runtime"
-    "unsafe"
 )
 import "strings"
 import "kumachan/parser"
@@ -142,7 +141,7 @@ func Transform (tree Tree) Module {
         }
         for _, list_info := range info.Lists {
             transform_dived (
-                (*NodeChildInfo)(unsafe.Pointer(&list_info)),
+                &list_info.NodeChildInfo,
                 func (tree Tree, dived_ptr Pointer) reflect.Value {
                     var item_id = list_info.ItemId
                     var tail_id = list_info.TailId

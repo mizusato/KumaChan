@@ -5,7 +5,7 @@ type MaybeType interface { MaybeType() }
 func (impl VariousType) MaybeType() {}
 type VariousType struct {
     Node         `part:"type"`
-    Type  Type   `use:"first"'`
+    Type  Type   `use:"first"`
 }
 type Type interface { Type() }
 
@@ -30,13 +30,13 @@ type Repr interface { Repr() }
 func (impl ReprTuple) Repr() {}
 type ReprTuple struct {
     Node                       `part:"repr_tuple"`
-    Elements  [] VariousType   `list_more:"type"`
+    Elements  [] VariousType   `list_more:"type_list" item:"type"`
 }
 
 func (impl ReprBundle) Repr() {}
 type ReprBundle struct {
-    Node               `part:"repr_tuple"`
-    Fields  [] Field   `list_more:"field"`
+    Node               `part:"repr_bundle"`
+    Fields  [] Field   `list_more:"field_list" item:"field"`
 }
 type Field struct {
     Node                `part:"field"`

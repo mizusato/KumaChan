@@ -37,15 +37,64 @@ type NodeListInfo struct {
 }
 
 var __NodeRegistry = []interface{} {
-    // Common
-    Identifier {},
-    // Module
+    // Root
     Module {},
-    // Commands
-    VariousCommand{},
+    Eval {},
+    // Command
+    VariousCommand {},
     Import {},
-    // Expressions
+    Identifier {},
+    DeclConst {},
+    Do {},
+    DeclFunction {},
+    DeclType {},
+    VariousBody {},
+    NativeRef {},
+    DeclType {},
+    VariousTypeValue {},
+    SingleType {},
+    UnionType {},
+    // Type
+    VariousType {},
+    TypeRef {},
+    TypeLiteral {},
+    VariousRepr {},
+    ReprTuple {},
+    ReprBundle {},
+    Field {},
+    ReprFunc {},
+    ReprNative {},
+    // Expression
+    Expr {},
+    Cast {},
+    Pipe {},
+    VariousTerm {},
+    // Term
+    If {},
+    IfBranch {},
+    Match {},
+    MatchBranch {},
+    Lambda {},
+    VariousPattern {},
+    PatternNone {},
+    PatternTuple {},
+    PatternBundle {},
+    List {},
+    Tuple {},
+    Bundle {},
+    Update {},
+    Member {},
+    FieldValue {},
+    Get {},
+    Block {},
+    Binding {},
+    Text {},
+    Ref {},
+    VariousLiteral {},
+    IntegerLiteral {},
+    FloatLiteral {},
     StringLiteral {},
+    BooleanLiteral {},
 }
 
 var __NodeInfoMap = map[syntax.Id] NodeInfo {}
@@ -60,8 +109,8 @@ func __Initialize() {
             "list", "list_more", "list_rec",
         }
         for _, kind := range kinds {
-            var value = f.Tag.Get(kind)
-            if value != "" {
+            var value, exists = f.Tag.Lookup(kind)
+            if exists {
                 return kind, value
             }
         }
@@ -83,7 +132,7 @@ func __Initialize() {
     }
     var get_dive_info = func(tag_value string) (syntax.Id, []syntax.Id) {
         var path = strings.Split(tag_value, ".")
-        if len(path) == 0 {
+        if len(path) == 1 && path[0] == "" {
             return (syntax.Id)(-1), []syntax.Id {}
         } else {
             return get_part_id(path[0]), get_parts_id(path)

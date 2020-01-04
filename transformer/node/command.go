@@ -2,8 +2,8 @@ package node
 
 
 type VariousCommand struct {
-    Node               `part:"command"`
-    Content  Command   `use:"first"`
+    Node                `part:"command"`
+    Command   Command   `use:"first"`
 }
 type Command interface { Command() }
 
@@ -36,7 +36,7 @@ type DeclFunction struct {
     Node                      `part:"decl_func"`
     IsGlobal  bool            `option:"scope.@global"`
     Name      Identifier      `part:"name"`
-    Params    [] Identifier   `part:"type_params.name"`
+    Params    [] Identifier   `list_more:"type_params" item:"name"`
     Repr      ReprFunc        `part:"repr_func"`
     Body      VariousBody     `part:"body"`
 }
@@ -54,18 +54,13 @@ type NativeRef struct {
 func (impl DeclType) Command() {}
 type DeclType struct {
     Node                         `part:"decl_type"`
-    Options   TypeOptions        `part:"type_opts"`
+    IsOpaque  bool               `option:"opaque_opt.@opaque"`
     Name      Identifier         `part:"name"`
     Params    [] Identifier      `list_more:"type_params" item:"name"`
     TypeDecl  VariousTypeValue   `part:"type_value"`
 }
-type TypeOptions struct {
-    Node               `part:"type_opts"`
-    IsExported  bool   `option:"export_opt.@export"`
-    IsOpaque    bool   `option:"opaque_opt.@opaque"`
-}
 type VariousTypeValue struct {
-    Node                  `part:"type_decl"`
+    Node                  `part:"type_value"`
     TypeDecl  TypeValue   `use:"first"`
 }
 type TypeValue interface { TypeValue() }

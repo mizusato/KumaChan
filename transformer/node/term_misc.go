@@ -3,9 +3,9 @@ package node
 
 func (impl Block) Term() {}
 type Block struct {
-	Node  `part:"block"`
-	Bindings  [] Binding  `list_more:"" item:"binding"`
-	Return    Expr        `part:"return.expr"`
+	Node                   `part:"block"`
+	Bindings  [] Binding   `list_more:"" item:"binding"`
+	Return    Expr         `part:"return.expr"`
 }
 type Binding struct {
 	Node                      `part:"binding"`
