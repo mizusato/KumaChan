@@ -1,14 +1,26 @@
 package node
 
 
-type Ref struct {
-    Node                   `part:"ref"`
-    Module    Identifier   `part_opt:"module_prefix.name"`
-    Id        Identifier   `part:"name"`
-    TypeArgs  [] Type      `list_more:"type_args" item:"type"`
+type MaybeExpr interface { MaybeExpr() }
+func (impl Expr) MaybeExpr() {}
+type Expr struct {
+    Node             `part:"expr"`
+    Casts  [] Cast   `list_rec:"casts"`
+    Pipes  [] Pipe   `list_more:"" item:"pipe"`
 }
 
-type StringLiteral struct {
-    Node             `part:"string"`
-    Value  [] rune   `content:"String"`
+type Cast struct {
+    Node                `part:"cast"`
+    Target  MaybeType   `part_opt:"cast_target.type"`
 }
+
+type Pipe struct {
+    Node                    `part:"pipe"`
+    Terms  [] VariousTerm   `list_more:"" item:"term"`
+}
+
+type VariousTerm struct {
+    Node         `part:"term"`
+    Term  Term   `use:"first"`
+}
+type Term interface { Term() }

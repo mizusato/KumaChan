@@ -186,7 +186,12 @@ func __Initialize() {
                     panic("`item` tag should be specified when using list_more")
                 }
                 var item_id = get_part_id(item)
-                var tail = "more_" + item + "s"
+                var tail string
+                if strings.HasSuffix(item, "ch") {
+                    tail = "more_" + item + "es"
+                } else {
+                    tail = "more_" + item + "s"
+                }
                 var tail_id = get_part_id(tail)
                 info.Lists[part_id] = NodeListInfo {
                     NodeChildInfo: NodeChildInfo {
@@ -206,7 +211,12 @@ func __Initialize() {
                     tail_id = part_id
                 }
                 var list_name = syntax.Id2Name[tail_id]
-                var item = strings.TrimSuffix(list_name, "s")
+                var item string
+                if strings.HasSuffix(list_name, "ches") {
+                    item = strings.TrimSuffix(list_name, "es")
+                } else {
+                    item = strings.TrimSuffix(list_name, "s")
+                }
                 var item_id = get_part_id(item)
                 info.Lists[part_id] = NodeListInfo{
                     NodeChildInfo: NodeChildInfo{
