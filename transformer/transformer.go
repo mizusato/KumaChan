@@ -349,6 +349,9 @@ func PrintNodeRecursively (
         fmt.Fprintf(buf, "\033[0m\n")
     }
     switch T.Kind() {
+    case reflect.Bool:
+        fmt.Fprintf(buf, "(%v)", node.Interface().(bool))
+        newline()
     case reflect.Slice:
         if T.AssignableTo(reflect.TypeOf([]rune{})) {
             fmt.Fprintf(buf, "'%v'", string(node.Interface().([]rune)))
@@ -377,6 +380,9 @@ func PrintNodeRecursively (
             var field = node.Field(i)
             var field_info = T.Field(i)
             if field_info.Name == "Node" {
+                continue
+            }
+            if field_info.Type.Kind() == reflect.Interface && field.IsNil() {
                 continue
             }
             is_last = append(is_last, i == L-1)

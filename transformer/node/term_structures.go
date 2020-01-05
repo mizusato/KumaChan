@@ -22,10 +22,10 @@ type Bundle struct {
 type MaybeUpdate interface { MaybeUpdate() }
 func (impl Update) MaybeUpdate() {}
 type Update struct {
-	Node              `part:"update"`
-	Term  Term        `part:"term"`
-	Base  [] Member   `list_rec:"base_members.members"`
-	Path  [] Member   `list_rec:"members"`
+	Node                `part:"update"`
+	Term  VariousTerm   `part:"term"`
+	Base  [] Member     `list_rec:"base_members.members"`
+	Path  [] Member     `list_rec:"members"`
 }
 type Member struct {
 	Node                   `part:"member"`
@@ -40,7 +40,7 @@ type FieldValue struct {
 
 func (impl Get) Term() {}
 type Get struct {
-	Node              `part:"get"`
-	Base  Term        `part:"term"`
-	Path  [] Member   `list_rec:"members"`
+	Node                `part:"get"`
+	Base  VariousTerm   `part:"term"`
+	Path  [] Member     `list_rec:"members"`
 }

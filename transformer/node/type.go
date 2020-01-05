@@ -53,7 +53,7 @@ type ReprFunc struct {
 
 func (impl ReprNative) Repr() {}
 type ReprNative struct {
-    Node             `part:"repr_func"`
+    Node             `part:"repr_native"`
     Ref  NativeRef   `part:"native"`
 }
 

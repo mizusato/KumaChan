@@ -21,15 +21,15 @@ type Text struct {
 
 func (impl Ref) Term() {}
 type Ref struct {
-	Node                   `part:"ref"`
-	Module    Identifier   `part_opt:"module_prefix.name"`
-	Id        Identifier   `part:"name"`
-	TypeArgs  [] Type      `list_more:"type_args" item:"type"`
+	Node                       `part:"ref"`
+	Module    Identifier       `part_opt:"module_prefix.name"`
+	Id        Identifier       `part:"name"`
+	TypeArgs  [] VariousType   `list_more:"type_args" item:"type"`
 }
 
 func (impl VariousLiteral) Term() {}
 type VariousLiteral struct {
-	Node  `part:"literal"`
+	Node               `part:"literal"`
 	Literal  Literal   `use:"first"`
 }
 type Literal interface { Literal() }

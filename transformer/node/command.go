@@ -53,15 +53,15 @@ type NativeRef struct {
 
 func (impl DeclType) Command() {}
 type DeclType struct {
-    Node                         `part:"decl_type"`
-    IsOpaque  bool               `option:"opaque_opt.@opaque"`
-    Name      Identifier         `part:"name"`
-    Params    [] Identifier      `list_more:"type_params" item:"name"`
-    TypeDecl  VariousTypeValue   `part:"type_value"`
+    Node                          `part:"decl_type"`
+    IsOpaque   bool               `option:"opaque_opt.@opaque"`
+    Name       Identifier         `part:"name"`
+    Params     [] Identifier      `list_more:"type_params" item:"name"`
+    TypeValue  VariousTypeValue   `part:"type_value"`
 }
 type VariousTypeValue struct {
-    Node                  `part:"type_value"`
-    TypeDecl  TypeValue   `use:"first"`
+    Node                   `part:"type_value"`
+    TypeValue  TypeValue   `use:"first"`
 }
 type TypeValue interface { TypeValue() }
 func (impl SingleType) TypeValue() {}
