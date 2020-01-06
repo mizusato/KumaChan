@@ -16,21 +16,8 @@ type Tuple struct {
 func (impl Bundle) Term() {}
 type Bundle struct {
 	Node                      `part:"bundle"`
-	Update    MaybeUpdate     `part_opt:"update"`
+	Update    MaybeUpdate     `part_opt:"update.get"`
 	Records   [] FieldValue   `list_more:"pairlist" item:"pair"`
-}
-type MaybeUpdate interface { MaybeUpdate() }
-func (impl Update) MaybeUpdate() {}
-type Update struct {
-	Node                `part:"update"`
-	Term  VariousTerm   `part:"term"`
-	Base  [] Member     `list_rec:"base_members.members"`
-	Path  [] Member     `list_rec:"members"`
-}
-type Member struct {
-	Node                   `part:"member"`
-	Optional  bool         `option:"opt.?"`
-	Name      Identifier   `part:"name"`
 }
 type FieldValue struct {
 	Node                `part:"pair"`
@@ -38,9 +25,16 @@ type FieldValue struct {
 	Value  MaybeExpr    `part_opt:"expr"`
 }
 
+type MaybeUpdate interface { MaybeUpdate() }
+func (impl Get) MaybeUpdate() {}
 func (impl Get) Term() {}
 type Get struct {
-	Node                `part:"get"`
-	Base  VariousTerm   `part:"term"`
-	Path  [] Member     `list_rec:"members"`
+	Node              `part:"get"`
+	Base  Expr        `part:"expr"`
+	Path  [] Member   `list_rec:"members"`
+}
+type Member struct {
+	Node                   `part:"member"`
+	Optional  bool         `option:"opt.?"`
+	Name      Identifier   `part:"name"`
 }

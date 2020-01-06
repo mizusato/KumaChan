@@ -6,7 +6,7 @@ func (impl Lambda) Term() {}
 type Lambda struct {
 	Node                    `part:"lambda"`
 	Input   VariousPattern  `part:"pattern"`
-	Output  Expr            `part:"expr"`
+	Output  Pipe            `part:"pipe"`
 }
 
 type VariousPattern struct {

@@ -23,7 +23,7 @@ type Match struct {
 }
 type MatchBranch struct {
 	Node                      `part:"match_branch"`
-	Type     VariousType      `part:"type"`
+	Type     ReprTuple        `part:"repr_tuple"`
 	Pattern  VariousPattern   `part:"pattern"`
 	Expr     Expr             `part:"expr"`
 }

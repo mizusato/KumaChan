@@ -82,7 +82,6 @@ var __NodeRegistry = []interface{} {
     List {},
     Tuple {},
     Bundle {},
-    Update {},
     Member {},
     FieldValue {},
     Get {},
