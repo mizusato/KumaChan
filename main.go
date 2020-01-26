@@ -1,6 +1,7 @@
 package main
 
 import (
+    "kumachan/loader"
     "kumachan/transformer"
     "os"
     "reflect"
@@ -62,7 +63,21 @@ func parser_debug (file io.Reader, name string, root string) {
     }
 }
 
+func loader_debug() {
+    if len(os.Args) != 2 {
+        panic("invalid arguments")
+    }
+    var path = os.Args[1]
+    var _, err = loader.LoadModule(path, loader.ErrorContext { ImportPoint: nil })
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+    } else {
+        fmt.Println("Modules loaded, no errors.")
+    }
+}
+
 func main () {
     syntax.Init()
-    parser_debug(os.Stdin, "[eval]", "module")
+    // parser_debug(os.Stdin, "[eval]", "module")
+    loader_debug()
 }
