@@ -68,7 +68,7 @@ func loader_debug() {
         panic("invalid arguments")
     }
     var path = os.Args[1]
-    var _, err = loader.LoadModule(path, loader.ErrorContext { ImportPoint: nil })
+    var _, _, err = loader.LoadEntry(path)
     if err != nil {
         fmt.Fprintf(os.Stderr, "%s\n", err.Error())
     } else {
