@@ -1,0 +1,7 @@
+module OS;
+
+export const Stdin  := (IO::InputStream)  native 'Stdin';
+export const Stdout := (IO::OutputStream) native 'Stdout';
+export const Stderr := (IO::OutputStream) native 'Stderr';
+
+global exit := (&Int.Effect([],[]))  native 'exit';

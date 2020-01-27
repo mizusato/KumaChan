@@ -1,0 +1,20 @@
+module IO;
+
+type InputStream   native 'InputStream';
+type OutputStream  native 'OutputStream';
+type Error {
+    kind: ErrorKind,
+    message: String
+};
+type ErrorKind union {
+    type E_FileNotFound {},
+    type E_PermissionDenied {}
+    // ...
+};
+
+global read-from := (&InputStream.&Int.Effect(Bytes,Error))
+    native 'read-from-input-stream';
+global write-to := (&OutputStream.&Bytes.Effect(Int,Error))
+    native 'write-to-output-stream';
+
+// print-line, ...
