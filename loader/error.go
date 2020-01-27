@@ -1,10 +1,10 @@
 package loader
 
 import (
+	"os"
 	"fmt"
 	"kumachan/parser"
 	."kumachan/error"
-	"os"
 )
 
 

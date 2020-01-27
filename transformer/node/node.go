@@ -2,10 +2,10 @@ package node
 
 import (
     "fmt"
-    "kumachan/parser/scanner"
-    "kumachan/parser/syntax"
     "reflect"
     "strings"
+    "kumachan/parser/scanner"
+    "kumachan/parser/syntax"
 )
 
 type Node struct {

@@ -2,10 +2,10 @@ package error
 
 import (
 	"fmt"
-	"kumachan/parser"
-	"kumachan/transformer/node"
 	"reflect"
 	"strings"
+	"kumachan/parser"
+	"kumachan/transformer/node"
 )
 
 const ERR_MSG_ROW_DELTA = 2
