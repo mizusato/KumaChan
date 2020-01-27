@@ -3,6 +3,7 @@ package node
 
 type MaybeExpr interface { MaybeExpr() }
 func (impl Expr) MaybeExpr() {}
+func (impl Expr) ConstValue() {}
 type Expr struct {
     Node             `part:"expr"`
     Casts  [] Cast   `list_rec:"casts"`

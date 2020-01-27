@@ -69,25 +69,22 @@ type NativeType struct {
 type NativeTypeId string
 const (
 	// Basic Types
-	T_Bool      =  "Bool"
-	T_Byte      =  "Byte"
-	T_Word      =  "Word"
-	T_Dword     =  "Dword"
-	T_Qword     =  "Qword"
+	T_Bool   NativeTypeId   =  "Bool"
+	T_Byte   NativeTypeId   =  "Byte"
+	T_Word   NativeTypeId   =  "Word"
+	T_Dword  NativeTypeId   =  "Dword"
+	T_Qword  NativeTypeId   =  "Qword"
 	// Number Types
-	T_Int  NativeTypeId  =  "Int"
-	T_Float     =  "Float"
-	T_Complex   =  "Complex"
-	T_BigInt    =  "BigInt"
-	T_BigFloat  =  "BigFloat"
+	T_Int       NativeTypeId   =  "Int"
+	T_Float     NativeTypeId   =  "Float"
 	// Collection Types
-	T_Bytes     =  "Bytes"
-	T_Map       =  "Map"
-	T_Stack     =  "Stack"
-	T_Heap      =  "Heap"
-	T_List      =  "List"
+	T_Bytes  NativeTypeId   =  "Bytes"
+	T_Map    NativeTypeId   =  "Map"
+	T_Stack  NativeTypeId   =  "Stack"
+	T_Heap   NativeTypeId   =  "Heap"
+	T_List   NativeTypeId   =  "List"
 	// Effect Type
-	T_Effect    =  "Effect"
+	T_Effect  NativeTypeId   =  "Effect"
 )
 
 

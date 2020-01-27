@@ -20,14 +20,25 @@ type Identifier struct {
 
 func (impl DeclConst) Command() {}
 type DeclConst struct {
-    Node                `part:"decl_const"`
-    Name   Identifier   `part:"name"`
-    Value  Expr         `part:"expr"`
+    Node                       `part:"decl_const"`
+    Name   Identifier          `part:"name"`
+    Value  VariousConstValue   `part:"const_value"`
+}
+type VariousConstValue struct {
+    Node                     `part:"const_value"`
+    ConstValue  ConstValue   `part:"expr" fallback:"native_const"`
+}
+type ConstValue interface { ConstValue() }
+func (impl NativeConst) ConstValue() {}
+type NativeConst struct {
+    Node               `part:"native_const"`
+    Casts  [] Cast     `list_rec:"casts"`
+    Value  NativeRef   `part:"native"`
 }
 
 func (impl Do) Command() {}
 type Do struct {
-    Node `part:"do"`
+    Node           `part:"do"`
     Effect  Expr   `part:"expr"`
 }
 

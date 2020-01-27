@@ -1,0 +1,4 @@
+module LocalConflictError;
+
+import Foo from 'lib1.km';
+import Foo from 'lib2.km';

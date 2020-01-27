@@ -1,0 +1,4 @@
+module ConflictError;
+
+import Lib1 from 'lib1.km';
+import Lib1-1 from 'lib1-1.km';
