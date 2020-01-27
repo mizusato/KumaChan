@@ -20,11 +20,11 @@ type Error struct {
 func (err *Error) Message() string {
     if err.HasExpectedPart {
         return fmt.Sprintf (
-            "syntax unit '%v' expected",
+            "Syntax unit '%v' expected",
             syntax.Id2Name[err.ExpectedPart],
         )
     } else {
-        return "parser stuck"
+        return "Parser stuck"
     }
 }
 
@@ -78,8 +78,8 @@ func (err *Error) DetailedMessage(tree *Tree) string {
         char_ptr += 1
     }
     fmt.Fprintf (
-        &buf, "%v%v (got '%v') at (row %v, column %v) in %v%v",
-        Red, err.Message(), got, point.Row, point.Col, file, Reset,
+        &buf, "%v%v (got '%v') at (row %v, column %v) in %v%v%v",
+        Red, err.Message(), got, point.Row, point.Col, Bold, file, Reset,
     )
     return buf.String()
 }

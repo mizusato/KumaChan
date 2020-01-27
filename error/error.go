@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"kumachan/parser"
 	"kumachan/transformer/node"
+	"reflect"
 	"strings"
 )
 
@@ -19,6 +20,11 @@ func (impl ErrorPoint) MaybeErrorPoint() {}
 type ErrorPoint struct {
 	AST   *parser.Tree
 	Node  node.Node
+}
+
+func GetErrorTypeName(e interface{}) string {
+	var T = reflect.TypeOf(e)
+	return T.String()
 }
 
 func (point ErrorPoint) GenErrMsg(description string) string {
@@ -58,8 +64,8 @@ func (point ErrorPoint) GenErrMsg(description string) string {
 	}
 	fmt.Fprintf (
 		&buf,
-		"%s %vat (row %d, column %d) in %s%v\n",
-		description, Red, coor.Row, coor.Col, file, Reset,
+		"%s %vat (row %d, column %d) in %v%s%v",
+		description, Red, coor.Row, coor.Col, Bold, file, Reset,
 	)
 	return buf.String()
 }

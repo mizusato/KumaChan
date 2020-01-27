@@ -121,6 +121,14 @@ func Transform (tree Tree) Module {
                     var dived_node = &tree.Nodes[dived_ptr]
                     if dived_node.Part.Partype == syntax.MatchToken {
                         var content = GetTokenContent(tree, dived_ptr)
+                        var L = len(content)
+                        if L >= 2 {
+                            if content[0] == '\'' && content[L-1] == '\'' {
+                                content = content[1: L-1]
+                            } else if content[0] == '"' && content[L-1] == '"' {
+                                content = content[1: L-1]
+                            }
+                        }
                         return reflect.ValueOf(content)
                     } else {
                         panic(fmt.Sprintf (
@@ -332,11 +340,15 @@ func PrintNodeRecursively (
             }
         }
     })
+    var RuneList = reflect.TypeOf([]rune{})
     if T.Kind() == reflect.Struct && T.NumField() > 0 {
         buf.WriteString("┬─")
-    } else if T.Kind() == reflect.Slice && node.Len() > 0 && !(T.AssignableTo(reflect.TypeOf([]rune{}))) {
-        // TODO: fixme: condition expression too long
-        buf.WriteString("┬─")
+    } else if T.Kind() == reflect.Slice && !(T.AssignableTo(RuneList)) {
+        if node.Len() > 0 {
+            buf.WriteString("┬─")
+        } else {
+            buf.WriteString("──")
+        }
     } else {
         buf.WriteString("──")
     }
