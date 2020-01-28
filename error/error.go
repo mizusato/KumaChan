@@ -44,7 +44,7 @@ func (point ErrorPoint) GenErrMsg(description string) string {
 	for i, line := range lines {
 		t += (len(line) + 1)
 		if t > len(spot_left) {
-			spot_line = i
+			spot_line = (i + 1)
 			break
 		}
 	}
@@ -59,7 +59,7 @@ func (point ErrorPoint) GenErrMsg(description string) string {
 		Bold, Reset, Blue, file, Reset,
 	)
 	for i, line := range highlighted_lines  {
-		var line_number = coor.Row + (i - spot_line)
+		var line_number = coor.Row + ((i+1) - spot_line)
 		fmt.Fprintf(&buf, "%d | %s\n", line_number, line)
 	}
 	fmt.Fprintf (

@@ -39,7 +39,8 @@ global minus := (&Int.Int)    native 'int-minus-unary';
 global * := (&Int. &Int.Int)  native 'int-times';
 global / := (&Int. &Int.Int)  native 'int-divide';
 global % := (&Int. &Int.Int)  native 'int-modulo';
-global divmod := (&Int. &Int.(Int,Int))  native 'int-divmod';
+global ^ := (&Int. &Int.Int)  native 'int-power';
+global divmod := (&Int. &Int.[Int,Int])  native 'int-divmod';
 // Floating Point Number
 global + := (&Float. &Float.Float)  native 'float-plus';
 global - := (&Float. &Float.Float)  native 'float-minus';
@@ -47,4 +48,55 @@ global minus := (&Float.Float)      native 'float-minus-unary';
 global * := (&Float. &Float.Float)  native 'float-times';
 global / := (&Float. &Float.Float)  native 'float-divide';
 global % := (&Float. &Float.Float)  native 'float-modulo';
-global divmod := (&Float. &Float.(Float,Float))  native 'float-divmod';
+global ^ := (&Float. &Float.Float)  native 'float-power';
+global divmod := (&Float. &Float.[Float,Float])  native 'float-divmod';
+
+global just(T) := (&T.Maybe(T)) &t.[(...)(Just(T)) t];
+global nothing(T) := (&[].Maybe(T)) &[].[(...)(Nothing) []];
+global ?(A,B) := (&[&A.B].&Maybe(A).Maybe(B))
+&f.&a. [(...) match [a] {
+    [Just(A)] a:  (Just(B)) f a,
+    [Nothing] _:  (Nothing) []
+}];
+
+const EmptyList(T) := (List(T)) native 'empty-list';
+global concat(T) := (&[List(T),List(T)].List(T)) native 'list-concat';
+global append(T) := (&T.&List(T).List(T)) native 'list-append';
+global prepend(T) := (&T.&List(T).List(T)) native 'list-prepend';
+global shift(T) := (&List(T).[Maybe(T),List(T)]) native 'list-shift';
+global pop(T) := (&List(T).[List(T),Maybe(T)]) native 'list-pop';
+global map(A,B) := (&[&A.B].&List(A).List(B))  native 'list-map';
+global filter(T) := (&[&T.Bool].&List(T).List(T)) native 'list-filter';
+global reduce(I,A) := (&[A,&[A,I].A].&List(I).A) native 'list-reduce';
+
+const EmptyStack(T) := (Stack(T)) native 'empty-stack';
+global pop(T) := (&Stack(T).[Maybe(T),Stack(T)])  native 'stack-pop';
+global push(T) := (&T.&Stack(T).Stack(T))  native 'stack-push';
+global map(A,B) := (&[&A.B].&Stack(A).Stack(B))
+&f.&stack. let {
+    [top, rest] := pop stack,
+    return match [top] {
+        [Just(A)] top: [push [f top]] [[map f] rest],
+        [Nothing] _  : EmptyStack(B)
+    }
+};
+global filter(T) := (&[&T.Bool].&Stack(T).Stack(T))
+&ok.&stack. let {
+    [top, rest] := pop stack,
+    ok-rest := rest | filter ok,
+    return match [top] {
+        [Just(T)] top: if [top] {
+            [ok]: [push top] ok-rest,
+            else: ok-rest
+        },
+        [Nothing] _: EmptyStack(T)
+    }
+};
+global reduce(I,A) := (&[A,&[A,I].A].&Stack(I).A)
+&[value, f].&stack. let {
+    [top, rest] := pop stack,
+    return match [top] {
+        [Just(I)] top: rest | reduce [f [value top], f],
+        [Nothing] _: EmptyStack(I)
+    }
+};

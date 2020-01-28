@@ -133,6 +133,7 @@ func Scan (code Code) (Tokens, RowColInfo) {
             Span:    span,
             Content: code[span.Start : span.End],
         }
+        // TODO: remove these obsoleted checks
         if current.Id == LF || current.Id == RightCurlyBrace {
             /* tell from "return [LF] expr" and "return expr" */
             if __IsReturnKeyword(previous) {

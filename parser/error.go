@@ -49,6 +49,9 @@ func (err *Error) DetailedMessage(tree *Tree) string {
     var point = tree.Info[token.Span.Start]
     var file = tree.Name
     var l, r = GetSiblingRange(tree, token_index)
+    if tree.Code[l] == '\n' {
+        l = (l + 1)
+    }
     var spot = string(tree.Code[l:r])
     var lines = strings.Split(spot, "\n")
     var buf strings.Builder

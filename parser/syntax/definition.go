@@ -6,7 +6,7 @@ func r (pattern string) Regexp { return regexp.MustCompile(`^` + pattern) }
 
 const LF = `\n`
 const Blanks = ` \t\r　`
-const Symbols = `\{\}\[\]\(\)\.\,\:\;\$#@~\?\&\|\\'"` + "`"
+const Symbols = `\{\}\[\]\(\)\.\,\:\;\$#@~\&\|\\'"` + "`"
 
 var EscapeMap = map [string] string {
     "_bang1":  "!",
@@ -48,10 +48,6 @@ var Tokens = [...] Token {
     Token { Name: "$",       Pattern: r(`\$`) },
     Token { Name: "@@",      Pattern: r(`@@`) },
     Token { Name: "@",       Pattern: r(`@`) },
-    Token { Name: "??",      Pattern: r(`\?\?`) },
-    Token { Name: "?",       Pattern: r(`\?`) },
-    Token { Name: "!!",      Pattern: r(`\!\!`) },
-    Token { Name: "!",       Pattern: r(`\!`) },
     Token { Name: "~~",      Pattern: r(`~~`) },
     Token { Name: "~",       Pattern: r(`~`) },
     Token { Name: "&&",      Pattern: r(`\&\&`) },
@@ -124,7 +120,7 @@ var SyntaxDefinition = [...] string {
             "pattern_tuple = [ ] | [ namelist ]!",
               "namelist = name more_names",
             "pattern_bundle = { } | { namelist }!",
-    "decl_const = export_opt @const name! :=! const_value ;!",
+    "decl_const = export_opt @const name! type_params :=! const_value ;!",
       "export_opt? = @export",
       "const_value = native_const | expr!",
         "native_const = casts native",
@@ -150,11 +146,11 @@ var SyntaxDefinition = [...] string {
       "block = @let { binding! more_bindings return! }!",
         "more_bindings? = , binding! more_bindings",
         "binding = pattern := expr!",
-        "return = @return expr!",
-      "get = @ {! expr! }! members",
+        "return = , @return expr!",
+      "get = _at {! expr! }! members",
         "members? = member members",
           "member = opt . name!",
-            "opt? = ?",
+            "opt? = ~",
       "bundle = { } | { update pairlist }!",
         "pairlist = pair! more_pairs",
           "more_pairs? = , pair! more_pairs",
@@ -163,7 +159,7 @@ var SyntaxDefinition = [...] string {
       "tuple = [ ] | [ exprlist ]!",
         "exprlist = expr! more_exprs",
           "more_exprs? = , expr! more_exprs",
-      "list = _bang1 [ ] | _bang1 [! exprlist ]!",
+      "list = $ { } | $ {! exprlist }!",
       "text = Text",
       "literal = string | int | float | bool",
         "string = String",

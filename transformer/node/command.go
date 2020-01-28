@@ -20,9 +20,10 @@ type Identifier struct {
 
 func (impl DeclConst) Command() {}
 type DeclConst struct {
-    Node                       `part:"decl_const"`
-    Name   Identifier          `part:"name"`
-    Value  VariousConstValue   `part:"const_value"`
+    Node                        `part:"decl_const"`
+    Name    Identifier          `part:"name"`
+    Params  [] Identifier       `list_more:"type_params" item:"name"`
+    Value   VariousConstValue   `part:"const_value"`
 }
 type VariousConstValue struct {
     Node                     `part:"const_value"`
