@@ -76,8 +76,8 @@ global map(A,B) := (&[&A.B].&Stack(A).Stack(B))
 &f.&stack. let {
     [top, rest] := pop stack,
     return match [top] {
-        [Just(A)] top: [push [f top]] [[map f] rest],
-        [Nothing] _  : EmptyStack(B)
+        [Just(A)] [top]:  [push [f top]] [[map f] rest],
+        [Nothing] _    :  EmptyStack(B)
     }
 };
 global filter(T) := (&[&T.Bool].&Stack(T).Stack(T))
@@ -85,7 +85,7 @@ global filter(T) := (&[&T.Bool].&Stack(T).Stack(T))
     [top, rest] := pop stack,
     ok-rest := rest | filter ok,
     return match [top] {
-        [Just(T)] top: if [top] {
+        [Just(T)] [top]: if [top] {
             [ok]: [push top] ok-rest,
             else: ok-rest
         },
@@ -96,7 +96,7 @@ global reduce(I,A) := (&[A,&[A,I].A].&Stack(I).A)
 &[value, f].&stack. let {
     [top, rest] := pop stack,
     return match [top] {
-        [Just(I)] top: rest | reduce [f [value top], f],
-        [Nothing] _: EmptyStack(I)
+        [Just(I)] [top]:  rest | reduce [f [value top], f],
+        [Nothing] _    :  EmptyStack(I)
     }
 };
