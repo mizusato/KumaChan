@@ -9,8 +9,9 @@ import (
 )
 
 type Node struct {
-    Point   scanner.Point
-    Span    scanner.Span
+    Point  scanner.Point
+    Span   scanner.Span
+    UID    uint64
 }
 
 type NodeInfo struct {

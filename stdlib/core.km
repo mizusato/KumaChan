@@ -96,7 +96,7 @@ global reduce(I,A) := (&[A,&[A,I].A].&Stack(I).A)
 &[value, f].&stack. let {
     [top, rest] := pop stack,
     return match [top] {
-        [Just(I)] [top]:  rest | reduce [f [value top], f],
+        [Just(I)] [top]:  rest | reduce [f [value, top], f],
         [Nothing] _    :  EmptyStack(I)
     }
 };
