@@ -1,6 +1,9 @@
 package parser
 
-import "fmt"
+import (
+    "fmt"
+    "strconv"
+)
 import "strings"
 import "kumachan/parser/syntax"
 
@@ -64,9 +67,21 @@ func (err *Error) DetailedMessage(tree *Tree) string {
         base_row = 1
     }
     var char_ptr = l
+    var last_row = base_row + len(lines) - 1
+    var expected_width = len(strconv.Itoa(last_row))
+    var fill_zeros = func(num int) string {
+        var num_str = strconv.Itoa(num)
+        var num_width = len(num_str)
+        var buf strings.Builder
+        buf.WriteString(num_str)
+        for i := num_width; i < expected_width; i += 1 {
+            buf.WriteRune(' ')
+        }
+        return buf.String()
+    }
     for i, line := range lines {
         var row = base_row + i
-        fmt.Fprintf(&buf, "%v | ", row)
+        fmt.Fprintf(&buf, "%s | ", fill_zeros(row))
         for _, char := range []rune(line) {
             if char_ptr == token.Span.Start && token_span_size > 0 {
                 fmt.Fprintf(&buf, "%v%v", Red, Bold)
