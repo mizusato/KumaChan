@@ -30,7 +30,7 @@ func GetErrorTypeName(e interface{}) string {
 func GenCompilationFailedMessage (cause interface{}, errors []string) string {
 	var err_type = GetErrorTypeName((interface{})(cause))
 	return fmt.Sprintf (
-		"\n%v*** Failed to Compile (%s)%v\n*\n%s\n",
+		"%v*** Failed to Compile (%s)%v\n*\n%s",
 		Bold, err_type, Reset, strings.Join(errors, "\n*\n"),
 	)
 }

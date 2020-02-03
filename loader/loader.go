@@ -1,6 +1,7 @@
 package loader
 
 import (
+	"fmt"
 	"os"
 	"io/ioutil"
 	"path/filepath"
@@ -106,6 +107,7 @@ func LoadModule(path string, ctx Context, idx Index) (*Module, *Error) {
 		/* 6.2. Otherwise, load all submodules of current module */
 		/*      and then return the current module. */
 		var imported_map = make(map[string]*Module)
+		ImportStdLib(imported_map)
 		var current_breadcrumbs = append(ctx.BreadCrumbs, Ancestor {
 			ModuleName: module_name,
 			FileInfo:   file_info,
@@ -159,8 +161,46 @@ func LoadModule(path string, ctx Context, idx Index) (*Module, *Error) {
 }
 
 func LoadEntry (path string) (*Module, Index, *Error) {
-	var idx = make(Index)
+	var idx = __StdLibIndex
 	var ctx = MakeEntryContext()
 	var mod, err = LoadModule(path, ctx, idx)
 	return mod, idx, err
+}
+
+var __StdLibModules = []string { "core", "io", "os" }
+var __StdLibIndex = make(map[string] *Module)
+var _ = __Init()
+
+func __Init() interface{} {
+	__StdLibIndex = LoadStdLib()
+	return nil
+}
+
+func LoadStdLib() Index {
+	var exe_path, err = os.Executable()
+	if err != nil { panic(err) }
+	var files = make([]string, len(__StdLibModules))
+	for i, name := range __StdLibModules {
+		files[i] = filepath.Join(filepath.Dir(exe_path), "stdlib", name + ".km")
+	}
+	var idx = make(Index)
+	var ctx = MakeEntryContext()
+	for _, file := range files {
+		var _, err = LoadModule(file, ctx, idx)
+		if err != nil {
+			fmt.Fprintf (
+				os.Stderr,
+				"%v*** Failed to Load Standard Library%v\n*\n%s\n",
+				Bold, Reset, err.Error(),
+			)
+			os.Exit(3)
+		}
+	}
+	return idx
+}
+
+func ImportStdLib (imp_map map[string] *Module) {
+	for name, mod := range __StdLibIndex {
+		imp_map[name] = mod
+	}
 }

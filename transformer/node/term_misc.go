@@ -53,8 +53,8 @@ type StringLiteral struct {
 	Value  [] rune   `content:"String"`
 }
 
-func (impl BooleanLiteral) Literal() {}
-type BooleanLiteral struct {
-	Node          `part:"bool"`
-	Value  bool   `option:"@Yes"`
+func (impl BitLiteral) Literal() {}
+type BitLiteral struct {
+	Node          `part:"bit"`
+	Value  bool   `option:"@True"`
 }

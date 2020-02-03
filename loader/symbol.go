@@ -28,6 +28,22 @@ func (mod *Module) SymbolFromName(name node.Identifier) Symbol {
 	}
 }
 
+var __PreloadCoreSymbols = []string {
+	"Bit", "Byte", "Word", "Dword", "Qword",
+	"Int", "Float",
+	"Bytes", "Map", "Stack", "Heap", "List",
+	"Effect",
+	"Bool", "True", "False", "Maybe", "Just", "Null", "Result", "OK", "NG",
+	"EmptyMap", "EmptyStack", "EmptyHeap", "EmptyList",
+}
+var __PreloadCoreSymbolSet = func() map[string] bool {
+	var set = make(map[string] bool)
+	for _, name := range __PreloadCoreSymbols {
+		set[name] = true
+	}
+	return set
+} ()
+
 func (mod *Module) SymbolFromRef(ref node.Ref) MaybeSymbol {
 	var ref_mod = Id2String(ref.Module)
 	var corresponding, exists = mod.ImpMap[ref_mod]
@@ -37,6 +53,19 @@ func (mod *Module) SymbolFromRef(ref node.Ref) MaybeSymbol {
 			SymbolName: Id2String(ref.Id),
 		}
 	} else {
-		return nil
+		if ref_mod == "" {
+			var sym_name = Id2String(ref.Id)
+			var _, exists = __PreloadCoreSymbolSet[sym_name]
+			if exists {
+				return Symbol {
+					ModuleName: "Core",
+					SymbolName: sym_name,
+				}
+			} else {
+				return nil
+			}
+		} else {
+			return nil
+		}
 	}
 }

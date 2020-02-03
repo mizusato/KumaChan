@@ -191,10 +191,7 @@ func __ParseRules () {
     }
 }
 
-var __InitCalled = false
-
-func Init () {
-    if __InitCalled { return }; __InitCalled = true
+func __Init () interface{} {
     __Allocate()
     __AssignId2Extra()
     __AssignId2Tokens()
@@ -202,4 +199,7 @@ func Init () {
     __AssignId2Rules()
     __ProcessOperatorInfo()
     __ParseRules()
+    return nil
 }
+
+var _ = __Init()

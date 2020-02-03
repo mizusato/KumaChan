@@ -2,6 +2,7 @@ package checker
 
 import (
 	"kumachan/loader"
+	"kumachan/native/types"
 	"kumachan/transformer/node"
 	. "kumachan/error"
 )
@@ -245,7 +246,7 @@ func TypeExprFrom (type_ node.Type, ctx TypeExprContext) (TypeExpr, *TypeExprErr
 			var given_arity = uint(len(t.Ref.TypeArgs))
 			if arity != given_arity { return nil, &TypeExprError {
 				Point: ErrorPoint { AST: ctx.Module.AST, Node: t.Ref.Node },
-				Concrete: E_WrongParameterQuantity{
+				Concrete: E_WrongParameterQuantity {
 					TypeName: s,
 					Required: arity,
 					Given:    given_arity,
@@ -342,7 +343,7 @@ func TypeExprFromRepr (repr node.Repr, ctx TypeExprContext) (TypeExpr, *TypeExpr
 		}, nil
 	case node.ReprNative:
 		var str_id = string(r.Ref.Id.Value)
-		var id, exists = NativeTypes[str_id]
+		var id, exists = types.GetNativeTypeId(str_id)
 		if !exists { return nil, &TypeExprError {
 			Point: ErrorPoint { AST: ctx.Module.AST, Node: r.Node },
 			Concrete: E_NativeTypeNotFound {

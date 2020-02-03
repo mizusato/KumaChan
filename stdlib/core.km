@@ -1,7 +1,7 @@
 module Core;
 
 // Basic Types
-type Bool   native 'Bool';
+type Bit    native 'Bit';
 type Byte   native 'Byte';
 type Word   native 'Word';
 type Dword  native 'Dword';
@@ -22,13 +22,17 @@ type List(T)   native 'List';
 type Effect(T,E)  native 'Effect';
 
 // Basic Sum Types
+type Bool union {
+    type Yes [];
+    type No [];
+};
 type Maybe(T) union {
     type Just [T];
-    type Nothing [];
+    type Null [];
 };
 type Result(T,E) union {
     type OK [T];
-    type Error [E];
+    type NG [E];
 };
 
 // Arithmetic Functions
@@ -52,11 +56,11 @@ global ^ := (&Float. &Float.Float)  native 'float-power';
 global divmod := (&Float. &Float.[Float,Float])  native 'float-divmod';
 
 global just(T) := (&T.Maybe(T)) &t.[(...)(Just(T)) t];
-global nothing(T) := (&[].Maybe(T)) &[].[(...)(Nothing) []];
+global nothing(T) := (&[].Maybe(T)) &[].[(...)(Null) []];
 global ?(A,B) := (&[&A.B].&Maybe(A).Maybe(B))
 &f.&a. [(...) match [a] {
     [Just(A)] a:  (Just(B)) f a,
-    [Nothing] _:  (Nothing) []
+    [Null] _:  (Null) []
 }];
 
 const EmptyList(T) := (List(T)) native 'empty-list';
@@ -77,7 +81,7 @@ global map(A,B) := (&[&A.B].&Stack(A).Stack(B))
     [top, rest] := pop stack,
     return match [top] {
         [Just(A)] [top]:  [push [f top]] [[map f] rest],
-        [Nothing] _    :  EmptyStack(B)
+        [Null] _    :  EmptyStack(B)
     }
 };
 global filter(T) := (&[&T.Bool].&Stack(T).Stack(T))
@@ -89,7 +93,7 @@ global filter(T) := (&[&T.Bool].&Stack(T).Stack(T))
             [ok]: [push top] ok-rest,
             else: ok-rest
         },
-        [Nothing] _: EmptyStack(T)
+        [Null] _: EmptyStack(T)
     }
 };
 global reduce(I,A) := (&[A,&[A,I].A].&Stack(I).A)
@@ -97,6 +101,6 @@ global reduce(I,A) := (&[A,&[A,I].A].&Stack(I).A)
     [top, rest] := pop stack,
     return match [top] {
         [Just(I)] [top]:  rest | reduce [f [value, top], f],
-        [Nothing] _    :  EmptyStack(I)
+        [Null] _    :  EmptyStack(I)
     }
 };

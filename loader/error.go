@@ -21,7 +21,7 @@ type Ancestor struct {
 }
 
 func MakeEntryContext() Context {
-	return Context{
+	return Context {
 		ImportPoint: nil,
 		BreadCrumbs: make([]Ancestor, 0),
 	}

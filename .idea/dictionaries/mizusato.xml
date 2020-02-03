@@ -4,6 +4,7 @@
       <w>arglist</w>
       <w>arith</w>
       <w>cmds</w>
+      <w>divmod</w>
       <w>elif</w>
       <w>elifs</w>
       <w>exprlist</w>
@@ -13,6 +14,7 @@
       <w>paralist</w>
       <w>protos</w>
       <w>ptrs</w>
+      <w>qword</w>
       <w>repr</w>
       <w>resumable</w>
       <w>typelist</w>

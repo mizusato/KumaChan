@@ -69,7 +69,7 @@ var ConditionalKeywords = [...] string {
     "@const", "@do",
     "@if", "@else", "@match", "@default",
     "@let", "@return",
-    "@Yes", "@No",
+    "@True", "@False",
 }
 
 var Operators = [...] Operator {}
@@ -94,7 +94,7 @@ var SyntaxDefinition = [...] string {
     "decl_type = opaque_opt @type name! type_params type_value ;!",
       "opaque_opt? = @opaque",
       "type_value = union_type | single_type",
-        "union_type = @union {! decl_type more_decl_types }!",
+        "union_type = @union {! decl_type! more_decl_types }!",
           "type_params? = ( name! more_names )!",
             "more_names? = , name! more_names",
           "more_decl_types? = decl_type more_decl_types",
@@ -161,9 +161,9 @@ var SyntaxDefinition = [...] string {
           "more_exprs? = , expr! more_exprs",
       "list = $ { } | $ {! exprlist }!",
       "text = Text",
-      "literal = string | int | float | bool",
+      "literal = string | int | float | bit",
         "string = String",
         "int = Int",
         "float = Float",
-        "bool = @Yes | @No",
+        "bit = @True | @False",
 }

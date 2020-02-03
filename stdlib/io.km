@@ -7,9 +7,9 @@ type Error {
     message: String
 };
 type ErrorKind union {
-    type *EndOfFile {},
-    type *FileNotFound {},
-    type *PermissionDenied {}
+    type *EndOfFile {};
+    type *FileNotFound {};
+    type *PermissionDenied {};
     // ...
 };
 

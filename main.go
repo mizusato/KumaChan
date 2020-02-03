@@ -77,7 +77,6 @@ func loader_debug() {
 }
 
 func main () {
-    syntax.Init()
     // parser_debug(os.Stdin, "[eval]", "module")
     loader_debug()
 }
