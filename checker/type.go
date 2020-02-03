@@ -44,8 +44,8 @@ type AnonymousType struct {
 
 type TypeRepr interface { TypeRepr() }
 
-func (impl Nil) TypeRepr() {}
-type Nil struct {}
+func (impl Unit) TypeRepr() {}
+type Unit struct {}
 
 func (impl Tuple) TypeRepr() {}
 type Tuple struct {
@@ -71,7 +71,7 @@ type NativeType struct {
 type NativeTypeId uint
 const (
 	// Basic Types
-	T_Bool   NativeTypeId   =  iota
+	T_Bool  NativeTypeId  =  iota
 	T_Byte
 	T_Word
 	T_Dword

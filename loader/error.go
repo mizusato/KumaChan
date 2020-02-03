@@ -77,11 +77,7 @@ type E_ConflictAlias struct {
 func InflateErrorMessage(e Error, detail string) string {
 	var ctx = e.GetContext()
 	var import_error = ctx.GenErrMsg()
-	var err_type = GetErrorTypeName((interface{})(e))
-	return fmt.Sprintf (
-		"\n%v*** Failed to Compile (%s)%v\n*\n%s\n*\n%s\n",
-		Bold, err_type, Reset, import_error, detail,
-	)
+	return GenCompilationFailedMessage(e, []string { import_error, detail })
 }
 
 func (e E_ReadFileFailed) Error() string {
