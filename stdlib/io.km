@@ -1,4 +1,4 @@
-module IO;
+module I/O;
 
 type InputStream   native 'InputStream';
 type OutputStream  native 'OutputStream';
@@ -7,8 +7,9 @@ type Error {
     message: String
 };
 type ErrorKind union {
-    type E_FileNotFound {},
-    type E_PermissionDenied {}
+    type *EndOfFile {},
+    type *FileNotFound {},
+    type *PermissionDenied {}
     // ...
 };
 

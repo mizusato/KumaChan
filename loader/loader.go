@@ -31,22 +31,26 @@ func ReadFile(path string) ([]byte, os.FileInfo, error) {
 	return content, info, nil
 }
 
-func LoadModule(path string, ctx Context, idx Index) (*Module, Error) {
+func LoadModule(path string, ctx Context, idx Index) (*Module, *Error) {
 	/* 1. Try to read the content of given source file */
 	var file_content, file_info, err1 = ReadFile(path)
-	if err1 != nil { return nil, E_ReadFileFailed {
-		FilePath:  path,
-		Message:   err1.Error(),
-		Context:   ctx,
+	if err1 != nil { return nil, &Error {
+		Context:  ctx,
+		Concrete: E_ReadFileFailed {
+			FilePath:  path,
+			Message:   err1.Error(),
+		},
 	} }
 	/* 2. Try to parse the content and generate an AST */
 	var code_string = string(file_content)
 	var code = []rune(code_string)
 	var ast, err2 = parser.Parse(code, "module", path)
-	if err2 != nil { return nil, E_ParseFailed {
-		PartialAST:   ast,
-		ParserError:  err2,
-		Context:      ctx,
+	if err2 != nil { return nil, &Error {
+		Context:  ctx,
+		Concrete: E_ParseFailed {
+			PartialAST:   ast,
+			ParserError:  err2,
+		},
 	} }
 	/* 3. Transform the AST to typed structures */
 	var module_node = transformer.Transform(ast)
@@ -59,17 +63,21 @@ func LoadModule(path string, ctx Context, idx Index) (*Module, Error) {
 			if os.SameFile(ancestor.FileInfo, file_info) {
 				/* 5.1.1. If it corresponds to the same source file, */
 				/*        throw an error of circular import. */
-				return nil, E_CircularImport {
-					ModuleName: module_name,
-					Context:    ctx,
+				return nil, &Error {
+					Context:  ctx,
+					Concrete: E_CircularImport {
+						ModuleName: module_name,
+					},
 				}
 			} else {
 				/* 5.1.2. Otherwise, throw an error of module name conflict. */
-				return nil, E_NameConflict {
-					ModuleName: module_name,
-					FilePath1:  ancestor.FilePath,
-					FilePath2:  path,
-					Context:    ctx,
+				return nil, &Error {
+					Context:  ctx,
+					Concrete: E_NameConflict {
+						ModuleName: module_name,
+						FilePath1:  ancestor.FilePath,
+						FilePath2:  path,
+					},
 				}
 			}
 		}
@@ -85,11 +93,13 @@ func LoadModule(path string, ctx Context, idx Index) (*Module, Error) {
 			return existing, nil
 		} else {
 			/* 6.1.2. Otherwise, throw an error of module name conflict. */
-			return nil, E_NameConflict {
-				ModuleName:  module_name,
-				FilePath1:   existing.AST.Name,
-				FilePath2:   path,
-				Context:     ctx,
+			return nil, &Error {
+				Context: ctx,
+				Concrete: E_NameConflict {
+					ModuleName: module_name,
+					FilePath1:  existing.AST.Name,
+					FilePath2:  path,
+				},
 			}
 		}
 	} else {
@@ -117,9 +127,11 @@ func LoadModule(path string, ctx Context, idx Index) (*Module, Error) {
 				}
 				var _, exists = imported_map[local_alias]
 				if exists {
-					return nil, E_ConflictAlias {
-						LocalAlias:  local_alias,
-						Context:     imctx,
+					return nil, &Error {
+						Context: imctx,
+						Concrete: E_ConflictAlias {
+							LocalAlias: local_alias,
+						},
 					}
 				}
 				var impath = filepath.Join(filepath.Dir(path), relpath)
@@ -146,7 +158,7 @@ func LoadModule(path string, ctx Context, idx Index) (*Module, Error) {
 	}
 }
 
-func LoadEntry (path string) (*Module, Index, Error) {
+func LoadEntry (path string) (*Module, Index, *Error) {
 	var idx = make(Index)
 	var ctx = MakeEntryContext()
 	var mod, err = LoadModule(path, ctx, idx)

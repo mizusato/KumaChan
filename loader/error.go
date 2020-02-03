@@ -42,77 +42,72 @@ func (ctx Context) GenErrMsg() string {
 	}
 }
 
-type Error interface { error; GetContext() Context }
 
-func (e E_ReadFileFailed) GetContext() Context { return e.Context }
+type Error struct {
+	Context   Context
+	Concrete  ConcreteError
+}
+
+type ConcreteError interface { LoaderError() }
+
+func (e E_ReadFileFailed) LoaderError() {}
 type E_ReadFileFailed struct {
 	FilePath string
 	Message  string
-	Context  Context
 }
-func (e E_ParseFailed) GetContext() Context { return e.Context }
+func (e E_ParseFailed) LoaderError() {}
 type E_ParseFailed struct {
 	PartialAST  *parser.Tree
 	ParserError *parser.Error
-	Context     Context
 }
-func (e E_NameConflict) GetContext() Context { return e.Context }
+func (e E_NameConflict) LoaderError() {}
 type E_NameConflict struct {
 	ModuleName string
 	FilePath1  string
 	FilePath2  string
-	Context    Context
 }
-func (e E_CircularImport) GetContext() Context { return e.Context }
+func (e E_CircularImport) LoaderError() {}
 type E_CircularImport struct {
 	ModuleName string
-	Context    Context
 }
-func (e E_ConflictAlias) GetContext() Context { return e.Context }
+func (e E_ConflictAlias) LoaderError() {}
 type E_ConflictAlias struct {
 	LocalAlias  string
-	Context     Context
 }
 
-func InflateErrorMessage(e Error, detail string) string {
-	var ctx = e.GetContext()
-	var import_error = ctx.GenErrMsg()
-	return GenCompilationFailedMessage(e, []string { import_error, detail })
-}
-
-func (e E_ReadFileFailed) Error() string {
-	return InflateErrorMessage(e, fmt.Sprintf (
-		"%vCannot open source file: %v%s%v",
-		Red, Bold, e.Message, Reset,
-	))
-}
-
-func (e E_ParseFailed) Error() string {
-	return InflateErrorMessage (
-		e, e.ParserError.DetailedMessage(e.PartialAST),
-	)
-}
-
-func (e E_NameConflict) Error() string {
-	return InflateErrorMessage(e, fmt.Sprintf (
-		"%vThe module name %v%s%v is used by both source files %v%s%v and %v%s%v",
-		Red,
-		Bold, e.ModuleName, Reset+Red,
-		Bold, e.FilePath2, Reset+Red,
-		Bold, e.FilePath1, Reset,
-	))
-}
-
-func (e E_CircularImport) Error() string {
-	return InflateErrorMessage(e, fmt.Sprintf (
-		"%vCircular import of module %v%s%v",
-		Red, Bold, e.ModuleName, Reset,
-	))
-}
-
-func (e E_ConflictAlias) Error() string {
-	return InflateErrorMessage(e, fmt.Sprintf (
-		"%vA module named %v%s%v already imported in current module%v",
-		Red, Bold, e.LocalAlias, Reset+Red, Reset,
-	))
+func (err *Error) Error() string {
+	var import_error = err.Context.GenErrMsg()
+	var detail string
+	switch e := err.Concrete.(type) {
+	case E_ReadFileFailed:
+		detail = fmt.Sprintf (
+			"%vCannot open source file: %v%s%v",
+			Red, Bold, e.Message, Reset,
+		)
+	case E_ParseFailed:
+		detail = e.ParserError.DetailedMessage(e.PartialAST)
+	case E_NameConflict:
+		detail = fmt.Sprintf (
+			"%vThe module name %v%s%v is used by both source files %v%s%v and %v%s%v",
+			Red,
+			Bold, e.ModuleName, Reset+Red,
+			Bold, e.FilePath2, Reset+Red,
+			Bold, e.FilePath1, Reset,
+		)
+	case E_CircularImport:
+		detail = fmt.Sprintf (
+			"%vCircular import of module %v%s%v",
+			Red, Bold, e.ModuleName, Reset,
+		)
+	case E_ConflictAlias:
+		detail = fmt.Sprintf (
+			"%vA module named %v%s%v already imported in current module%v",
+			Red, Bold, e.LocalAlias, Reset+Red, Reset,
+		)
+	default:
+		panic("unknown concrete error type")
+	}
+	return GenCompilationFailedMessage(err.Concrete, []string {
+		import_error, detail,
+	})
 }
