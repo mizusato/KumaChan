@@ -69,7 +69,7 @@ func (err *Error) DetailedMessage(tree *Tree) string {
     var char_ptr = l
     var last_row = base_row + len(lines) - 1
     var expected_width = len(strconv.Itoa(last_row))
-    var fill_zeros = func(num int) string {
+    var fill_blanks = func(num int) string {
         var num_str = strconv.Itoa(num)
         var num_width = len(num_str)
         var buf strings.Builder
@@ -81,7 +81,7 @@ func (err *Error) DetailedMessage(tree *Tree) string {
     }
     for i, line := range lines {
         var row = base_row + i
-        fmt.Fprintf(&buf, "%s | ", fill_zeros(row))
+        fmt.Fprintf(&buf, "%s | ", fill_blanks(row))
         for _, char := range []rune(line) {
             if char_ptr == token.Span.Start && token_span_size > 0 {
                 fmt.Fprintf(&buf, "%v%v", Red, Bold)

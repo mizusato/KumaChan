@@ -69,7 +69,7 @@ func (point ErrorPoint) GenErrMsg(description string) string {
 	)
 	var last_line = coor.Row + len(highlighted_lines) - spot_line
 	var expected_width = len(strconv.Itoa(last_line))
-	var fill_zeros = func(num int) string {
+	var fill_blanks = func(num int) string {
 		var num_str = strconv.Itoa(num)
 		var num_width = len(num_str)
 		var buf strings.Builder
@@ -81,7 +81,7 @@ func (point ErrorPoint) GenErrMsg(description string) string {
 	}
 	for i, line := range highlighted_lines  {
 		var line_number = coor.Row + ((i+1) - spot_line)
-		fmt.Fprintf(&buf, "%s | %s\n", fill_zeros(line_number), line)
+		fmt.Fprintf(&buf, "%s | %s\n", fill_blanks(line_number), line)
 	}
 	fmt.Fprintf (
 		&buf,
