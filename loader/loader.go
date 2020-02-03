@@ -151,12 +151,14 @@ func LoadModule(path string, ctx Context, idx Index) (*Module, *Error) {
 				// do nothing
 			}
 		}
-		return &Module {
+		var mod = &Module {
 			Node:      module_node,
 			ImpMap:    imported_map,
 			AST:       ast,
 			FileInfo:  file_info,
-		}, nil
+		}
+		idx[module_name] = mod
+		return mod, nil
 	}
 }
 

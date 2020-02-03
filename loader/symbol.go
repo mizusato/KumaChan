@@ -5,6 +5,8 @@ import (
 	"kumachan/transformer/node"
 )
 
+const CoreModule = "Core"
+
 type MaybeSymbol interface { MaybeSymbol() }
 
 func (impl Symbol) MaybeSymbol() {}
@@ -22,29 +24,23 @@ func Id2String(id node.Identifier) string {
 }
 
 func (mod *Module) SymbolFromName(name node.Identifier) Symbol {
-	return Symbol {
-		ModuleName: Id2String(mod.Node.Name),
-		SymbolName: Id2String(name),
+	var sym_name = Id2String(name)
+	var _, exists = __PreloadCoreSymbolSet[sym_name]
+	if exists {
+		return Symbol{
+			ModuleName: CoreModule,
+			SymbolName: sym_name,
+		}
+	} else {
+		return Symbol{
+			ModuleName: Id2String(mod.Node.Name),
+			SymbolName: sym_name,
+		}
 	}
 }
-
-var __PreloadCoreSymbols = []string {
-	"Bit", "Byte", "Word", "Dword", "Qword",
-	"Int", "Float",
-	"Bytes", "Map", "Stack", "Heap", "List",
-	"Effect",
-	"Bool", "True", "False", "Maybe", "Just", "Null", "Result", "OK", "NG",
-	"EmptyMap", "EmptyStack", "EmptyHeap", "EmptyList",
-}
-var __PreloadCoreSymbolSet = func() map[string] bool {
-	var set = make(map[string] bool)
-	for _, name := range __PreloadCoreSymbols {
-		set[name] = true
-	}
-	return set
-} ()
 
 func (mod *Module) SymbolFromRef(ref node.Ref) MaybeSymbol {
+	var self = Id2String(mod.Node.Name)
 	var ref_mod = Id2String(ref.Module)
 	var corresponding, exists = mod.ImpMap[ref_mod]
 	if exists {
@@ -58,14 +54,46 @@ func (mod *Module) SymbolFromRef(ref node.Ref) MaybeSymbol {
 			var _, exists = __PreloadCoreSymbolSet[sym_name]
 			if exists {
 				return Symbol {
-					ModuleName: "Core",
+					ModuleName: CoreModule,
 					SymbolName: sym_name,
 				}
 			} else {
-				return nil
+				return Symbol {
+					ModuleName: self,
+					SymbolName: sym_name,
+				}
 			}
 		} else {
 			return nil
 		}
+	}
+}
+
+
+var __PreloadCoreSymbols = []string {
+	"Bit", "Byte", "Word", "Dword", "Qword",
+	"Int", "Float",
+	"Bytes", "Map", "Stack", "Heap", "List",
+	"Effect",
+	"String",
+	"Bool", "True", "False", "Maybe", "Just", "Null", "Result", "OK", "NG",
+	"EmptyMap", "EmptyStack", "EmptyHeap", "EmptyList",
+}
+var __PreloadCoreSymbolSet = func() map[string] bool {
+	var set = make(map[string] bool)
+	for _, name := range __PreloadCoreSymbols {
+		set[name] = true
+	}
+	return set
+} ()
+func IsPreloadCoreSymbol (sym Symbol) bool {
+	var _, exists = __PreloadCoreSymbolSet[sym.SymbolName]
+	if exists {
+		if sym.ModuleName != CoreModule {
+			panic("invalid symbol: preload symbol must belong to CoreModule")
+		}
+		return true
+	} else {
+		return false
 	}
 }

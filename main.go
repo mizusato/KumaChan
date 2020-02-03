@@ -1,6 +1,7 @@
 package main
 
 import (
+    "kumachan/checker"
     "kumachan/loader"
     "kumachan/transformer"
     "os"
@@ -63,20 +64,33 @@ func parser_debug (file io.Reader, name string, root string) {
     }
 }
 
-func loader_debug() {
+func loader_debug() (*loader.Module, loader.Index) {
     if len(os.Args) != 2 {
         panic("invalid arguments")
     }
     var path = os.Args[1]
-    var _, _, err = loader.LoadEntry(path)
+    var mod, idx, err = loader.LoadEntry(path)
     if err != nil {
         fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+        os.Exit(127)
     } else {
-        fmt.Println("Modules loaded, no errors.")
+        fmt.Println("Modules loaded, no errors occurred.")
+    }
+    return mod, idx
+}
+
+func checker_debug(mod *loader.Module, idx loader.Index) {
+    var _, err = checker.RegisterTypes(mod, idx)
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+        os.Exit(126)
+    } else {
+        fmt.Println("Types registered, no errors occurred.")
     }
 }
 
 func main () {
     // parser_debug(os.Stdin, "[eval]", "module")
-    loader_debug()
+    var mod, idx = loader_debug()
+    checker_debug(mod, idx)
 }

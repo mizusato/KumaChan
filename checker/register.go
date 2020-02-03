@@ -69,11 +69,11 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 		var type_sym = mod.SymbolFromName(d.Name)
 		// 3.2. Check if the symbol is used
 		var _, exists = raw.DeclMap[type_sym]
-		if exists {
+		if exists || (mod_name != loader.CoreModule && loader.IsPreloadCoreSymbol(type_sym)) {
 			// 3.2.1. If used, throw an error
 			return &TypeDeclError {
-				Point: ErrorPoint { AST: mod.AST, Node: d.Node },
-				Concrete: E_DuplicateTypeDecl{
+				Point: ErrorPoint { AST: mod.AST, Node: d.Name.Node },
+				Concrete: E_DuplicateTypeDecl {
 					TypeName: type_sym,
 				},
 			}
@@ -158,7 +158,6 @@ func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, *Type
 		var mod, mod_exists = idx[name.ModuleName]
 		if !mod_exists { panic("mod " + name.ModuleName + " should exist") }
 		// 3.1. Determine parameters
-		var params = make([]string, len(t.Params))
 		var params_t node.DeclType
 		var root, exists = raw.UnionRootMap[name]
 		if exists {
@@ -168,6 +167,7 @@ func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, *Type
 			// 3.1.2. Otherwise, use the parameters of the type itself
 			params_t = t
 		}
+		var params = make([]string, len(params_t.Params))
 		for i, param := range params_t.Params {
 			params[i] = loader.Id2String(param)
 		}
@@ -317,8 +317,8 @@ func TypeExprFromRepr (repr node.Repr, ctx TypeExprContext) (TypeExpr, *TypeExpr
 				var f_name = loader.Id2String(f.Name)
 				var _, exists = fields[f_name]
 				if exists { return nil, &TypeExprError {
-					Point: ErrorPoint { AST: ctx.Module.AST, Node: f.Node },
-					Concrete: E_DuplicateField{
+					Point: ErrorPoint { AST: ctx.Module.AST, Node: f.Name.Node },
+					Concrete: E_DuplicateField {
 						FieldName: f_name,
 					},
 				} }

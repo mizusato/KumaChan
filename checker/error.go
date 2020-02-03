@@ -100,7 +100,7 @@ func (err *TypeDeclError) Error() string {
 		cause = e
 		errors = append(errors, err.Point.GenErrMsg(fmt.Sprintf (
 			"%vDuplicate type declaration: %v%s%v",
-			Red, Bold, e.TypeName, Reset,
+			Red, Bold, e.TypeName.SymbolName, Reset,
 		)))
 	case E_GenericUnionSubType:
 		cause = e
@@ -112,7 +112,7 @@ func (err *TypeDeclError) Error() string {
 		cause = e.ExprError.Concrete
 		errors = append(errors, err.Point.GenErrMsg(fmt.Sprintf (
 			"%vInvalid definition of type %v%s%v",
-			Red, Bold, e.TypeName, Reset,
+			Red, Bold, e.TypeName.SymbolName, Reset,
 		)))
 		errors = append(errors, e.ExprError.Error())
 	default:

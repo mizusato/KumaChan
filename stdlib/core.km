@@ -21,6 +21,9 @@ type List(T)   native 'List';
 // Effect Type
 type Effect(T,E)  native 'Effect';
 
+// Basic Derived Types
+opaque type String [Bytes];
+
 // Basic Sum Types
 type Bool union {
     type Yes [];

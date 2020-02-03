@@ -1,0 +1,7 @@
+module DuplicateField;
+
+type Foo {
+    Bar: Int,
+    Baz: Int,
+    Bar: String
+};
