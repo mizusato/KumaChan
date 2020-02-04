@@ -122,10 +122,11 @@ func IsLocalType (type_ TypeExpr, mod string) bool {
 	}
 }
 
-func AreTypesRoughlyEqual (type1 TypeExpr, type2 TypeExpr) bool {
+func AreTypesOverloadUnsafe (type1 TypeExpr, type2 TypeExpr) bool {
+	// Are type1 and type2 equal in the context of function overloading
 	switch t1 := type1.(type) {
 	case ParameterType:
-		return false
+		return true  // rough comparison
 	case NamedType:
 		switch t2 := type2.(type) {
 		case NamedType:
@@ -135,7 +136,7 @@ func AreTypesRoughlyEqual (type1 TypeExpr, type2 TypeExpr) bool {
 				if L1 != L2 { panic("type registration went wrong") }
 				var L = L1
 				for i := 0; i < L; i += 1 {
-					if !(AreTypesRoughlyEqual(t1.Args[i], t2.Args[i])) {
+					if !(AreTypesOverloadUnsafe(t1.Args[i], t2.Args[i])) {
 						return false
 					}
 				}
@@ -151,7 +152,7 @@ func AreTypesRoughlyEqual (type1 TypeExpr, type2 TypeExpr) bool {
 		case AnonymousType:
 			switch r1 := t1.Repr.(type) {
 			case Unit:
-				switch _ := t2.Repr.(type) {
+				switch t2.Repr.(type) {
 				case Unit:
 					return true
 				default:
@@ -165,7 +166,7 @@ func AreTypesRoughlyEqual (type1 TypeExpr, type2 TypeExpr) bool {
 					if L1 == L2 {
 						var L = L1
 						for i := 0; i < L; i += 1 {
-							if !(AreTypesRoughlyEqual(r1.Elements[i], r2.Elements[i])) {
+							if !(AreTypesOverloadUnsafe(r1.Elements[i], r2.Elements[i])) {
 								return false
 							}
 						}
@@ -184,7 +185,7 @@ func AreTypesRoughlyEqual (type1 TypeExpr, type2 TypeExpr) bool {
 					if L1 == L2 {
 						for name, f1 := range r1.Fields {
 							var f2, exists = r2.Fields[name]
-							if !exists || !(AreTypesRoughlyEqual(f1, f2)) {
+							if !exists || !(AreTypesOverloadUnsafe(f1, f2)) {
 								return false
 							}
 						}
@@ -198,10 +199,10 @@ func AreTypesRoughlyEqual (type1 TypeExpr, type2 TypeExpr) bool {
 			case Func:
 				switch r2 := t2.Repr.(type) {
 				case Func:
-					if !(AreTypesRoughlyEqual(r1.Input, r2.Input)) {
+					if !(AreTypesOverloadUnsafe(r1.Input, r2.Input)) {
 						return false
 					}
-					if !(AreTypesRoughlyEqual(r1.Output, r2.Output)) {
+					if !(AreTypesOverloadUnsafe(r1.Output, r2.Output)) {
 						return false
 					}
 					return true
