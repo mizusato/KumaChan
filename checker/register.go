@@ -193,7 +193,7 @@ func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, *Type
 		} }
 		// 3.3. Use the generated TypeVal to construct a GenericType
 		//      and register it to the TypeRegistry
-		reg[name] = &GenericType{
+		reg[name] = &GenericType {
 			Arity:     uint(len(params)),
 			IsOpaque:  t.IsOpaque,
 			Value:     val,
