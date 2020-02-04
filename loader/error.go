@@ -62,17 +62,21 @@ type E_ParseFailed struct {
 }
 func (e E_NameConflict) LoaderError() {}
 type E_NameConflict struct {
-	ModuleName string
-	FilePath1  string
-	FilePath2  string
+	ModuleName  string
+	FilePath1   string
+	FilePath2   string
 }
 func (e E_CircularImport) LoaderError() {}
 type E_CircularImport struct {
-	ModuleName string
+	ModuleName  string
 }
 func (e E_ConflictAlias) LoaderError() {}
 type E_ConflictAlias struct {
 	LocalAlias  string
+}
+func (e E_DuplicateImport) LoaderError() {}
+type E_DuplicateImport struct {
+	ModuleName  string
 }
 
 func (err *Error) Error() string {
@@ -101,8 +105,13 @@ func (err *Error) Error() string {
 		)
 	case E_ConflictAlias:
 		detail = fmt.Sprintf (
-			"%vA module named %v%s%v already imported in current module%v",
+			"%vA module already imported as name %v%s%v in current module%v",
 			Red, Bold, e.LocalAlias, Reset+Red, Reset,
+		)
+	case E_DuplicateImport:
+		detail = fmt.Sprintf (
+			"%vDuplicate import of module %v%s%v",
+			Red, Bold, e.ModuleName, Reset,
 		)
 	default:
 		panic("unknown concrete error type")

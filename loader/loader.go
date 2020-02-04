@@ -106,8 +106,9 @@ func LoadModule(path string, ctx Context, idx Index) (*Module, *Error) {
 	} else {
 		/* 6.2. Otherwise, load all submodules of current module */
 		/*      and then return the current module. */
-		var imported_map = make(map[string]*Module)
-		ImportStdLib(imported_map)
+		var imported_map = make(map[string] *Module)
+		var imported_set = make(map[string] bool)
+		ImportStdLib(imported_map, imported_set)
 		var current_breadcrumbs = append(ctx.BreadCrumbs, Ancestor {
 			ModuleName: module_name,
 			FileInfo:   file_info,
@@ -144,6 +145,13 @@ func LoadModule(path string, ctx Context, idx Index) (*Module, *Error) {
 				} else {
 					// Register the imported module
 					var immod_name = string(immod.Node.Name.Name)
+					if imported_set[immod_name] { return nil, &Error {
+						Context: imctx,
+						Concrete: E_DuplicateImport {
+							ModuleName: immod_name,
+						},
+					} }
+					imported_set[immod_name] = true
 					imported_map[local_alias] = immod
 					idx[immod_name] = immod
 				}
@@ -201,8 +209,10 @@ func LoadStdLib() Index {
 	return idx
 }
 
-func ImportStdLib (imp_map map[string] *Module) {
+func ImportStdLib (imp_map map[string]*Module, imp_set map[string]bool) {
 	for name, mod := range __StdLibIndex {
+		var mod_name = Id2String(mod.Node.Name)
 		imp_map[name] = mod
+		imp_set[mod_name] = true
 	}
 }

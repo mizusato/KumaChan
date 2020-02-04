@@ -1,0 +1,4 @@
+module DuplicateError;
+
+import Lib1 from 'lib1.km';
+import Lib1Twice from 'lib1.km';
