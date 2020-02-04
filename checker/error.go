@@ -120,3 +120,12 @@ func (err *TypeDeclError) Error() string {
 	}
 	return GenCompilationFailedMessage(cause, errors)
 }
+
+
+type FunctionError struct {
+	Point     ErrorPoint
+	Concrete  ConcreteFunctionError
+}
+
+type ConcreteFunctionError interface { FunctionError() }
+
