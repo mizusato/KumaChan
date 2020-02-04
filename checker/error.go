@@ -2,8 +2,8 @@ package checker
 
 import (
 	"fmt"
-	"kumachan/loader"
 	. "kumachan/error"
+	"kumachan/loader"
 )
 
 type TypeExprError struct {
@@ -129,3 +129,19 @@ type FunctionError struct {
 
 type ConcreteFunctionError interface { FunctionError() }
 
+func (impl E_SignatureInvalid) FunctionError() {}
+type E_SignatureInvalid struct {
+	FuncName   string
+	TypeError  *TypeExprError
+}
+
+func (E_SignatureNonLocal) FunctionError() {}
+type E_SignatureNonLocal struct {
+	FuncName  string
+}
+
+func (E_InvalidOverload) FunctionError() {}
+type E_InvalidOverload struct {
+	FuncName         string
+	IsLocalConflict  bool
+}
