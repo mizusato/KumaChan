@@ -11,6 +11,7 @@ type GenericType struct {
 	IsOpaque  bool
 	Value     TypeVal
 	Node      node.Node
+	Order     uint
 }
 
 type TypeVal interface { TypeVal() }
