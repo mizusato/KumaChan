@@ -9,6 +9,7 @@ type Lambda struct {
 	Output  Pipe            `part:"pipe"`
 }
 
+func (impl VariousPattern) MaybePattern() {}
 type VariousPattern struct {
 	Node               `part:"pattern"`
 	Pattern  Pattern   `use:"first"`

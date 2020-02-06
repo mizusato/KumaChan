@@ -23,6 +23,7 @@ func (impl Ref) Term() {}
 type Ref struct {
 	Node                       `part:"ref"`
 	Module    Identifier       `part_opt:"module_prefix.name"`
+	Specific  bool             `option:"module_prefix.::"`
 	Id        Identifier       `part:"name"`
 	TypeArgs  [] VariousType   `list_more:"type_args" item:"type"`
 }
@@ -51,10 +52,4 @@ func (impl StringLiteral) Literal() {}
 type StringLiteral struct {
 	Node             `part:"string"`
 	Value  [] rune   `content:"String"`
-}
-
-func (impl BitLiteral) Literal() {}
-type BitLiteral struct {
-	Node          `part:"bit"`
-	Value  bool   `option:"@True"`
 }

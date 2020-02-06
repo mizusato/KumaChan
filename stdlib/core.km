@@ -7,10 +7,6 @@ type Word   native 'Word';
 type Dword  native 'Dword';
 type Qword  native 'Qword';
 
-// Number Types
-type Int       native 'Int';
-type Float     native 'Float';
-
 // Collection Types
 type Bytes     native 'Bytes';
 type Map(K,V)  native 'Map';
@@ -23,6 +19,18 @@ type Effect(T,E)  native 'Effect';
 
 // Basic Derived Types
 opaque type String [Bytes];
+opaque type Int    [Qword];
+opaque type Float  [Qword];
+type Int64   [Qword];
+type Uint64  [Qword];
+type Int32   [Dword];
+type Uint32  [Dword];
+type Int16   [Word];
+type Uint16  [Word];
+type Int8    [Byte];
+type Uint8   [Byte];
+type Float64  [Qword];
+type Float32  [Dword];
 
 // Basic Sum Types
 type Bool union {
@@ -60,10 +68,10 @@ global divmod := (&Float. &Float.[Float,Float])  native 'float-divmod';
 
 global just(T) := (&T.Maybe(T)) &t.[(...)(Just(T)) t];
 global nothing(T) := (&[].Maybe(T)) &[].[(...)(Null) []];
-global ?(A,B) := (&[&A.B].&Maybe(A).Maybe(B))
+global maybe(A,B) := (&[&A.B].&Maybe(A).Maybe(B))
 &f.&a. [(...) match [a] {
-    [Just(A)] a:  (Just(B)) f a,
-    [Null] _:  (Null) []
+    [Just(A)] a: (Just(B)) f a,
+    [Null]: (Null) []
 }];
 
 const EmptyList(T) := (List(T)) native 'empty-list';
@@ -83,8 +91,8 @@ global map(A,B) := (&[&A.B].&Stack(A).Stack(B))
 &f.&stack. let {
     [top, rest] := pop stack,
     return match [top] {
-        [Just(A)] [top]:  [push [f top]] [[map f] rest],
-        [Null] _    :  EmptyStack(B)
+        [Just(A)] [top]: rest | map f | push f top,
+        [Null]: EmptyStack(B)
     }
 };
 global filter(T) := (&[&T.Bool].&Stack(T).Stack(T))
@@ -92,18 +100,15 @@ global filter(T) := (&[&T.Bool].&Stack(T).Stack(T))
     [top, rest] := pop stack,
     ok-rest := rest | filter ok,
     return match [top] {
-        [Just(T)] [top]: if [top] {
-            [ok]: [push top] ok-rest,
-            else: ok-rest
-        },
-        [Null] _: EmptyStack(T)
+        [Just(T)] [top]: if { [ok top]? [ok-rest | push top]: ok-rest },
+        [Null]: EmptyStack(T)
     }
 };
 global reduce(I,A) := (&[A,&[A,I].A].&Stack(I).A)
 &[value, f].&stack. let {
     [top, rest] := pop stack,
     return match [top] {
-        [Just(I)] [top]:  rest | reduce [f [value, top], f],
-        [Null] _    :  EmptyStack(I)
+        [Just(I)] [top]: rest | reduce [f [value, top], f],
+        [Null]:  EmptyStack(I)
     }
 };

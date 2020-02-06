@@ -8,9 +8,6 @@ const (
 	T_Word
 	T_Dword
 	T_Qword
-	// Number Types
-	T_Int
-	T_Float
 	// Collection Types
 	T_Bytes
 	T_Map
@@ -31,8 +28,6 @@ var __NativeTypes = map[string] NativeTypeId {
 	"Word":  T_Word,
 	"Dword": T_Dword,
 	"Qword": T_Qword,
-	"Int":   T_Int,
-	"Float": T_Float,
 	"Bytes": T_Bytes,
 	"Map":   T_Map,
 	"Stack": T_Stack,

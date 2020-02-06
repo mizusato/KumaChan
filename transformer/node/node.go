@@ -73,10 +73,9 @@ var __NodeRegistry = []interface{} {
     Pipe {},
     VariousTerm {},
     // Term
-    If {},
-    IfBranch {},
     Match {},
-    MatchBranch {},
+    Branch{},
+    If {},
     Lambda {},
     VariousPattern {},
     PatternNone {},
@@ -96,7 +95,6 @@ var __NodeRegistry = []interface{} {
     IntegerLiteral {},
     FloatLiteral {},
     StringLiteral {},
-	BitLiteral{},
 }
 
 var __NodeInfoMap = map[syntax.Id] NodeInfo {}

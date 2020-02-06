@@ -6,7 +6,7 @@ func r (pattern string) Regexp { return regexp.MustCompile(`^` + pattern) }
 
 const LF = `\n`
 const Blanks = ` \t\r　`
-const Symbols = `\{\}\[\]\(\)\.\,\:\;\$#@~\&\|\\'"` + "`"
+const Symbols = `\{\}\[\]\(\)\.\,\:\;\$#@~\&\|\?\\'"` + "`"
 
 var EscapeMap = map [string] string {
     "_bang1":  "!",
@@ -40,6 +40,8 @@ var Tokens = [...] Token {
     Token { Name: "..",      Pattern: r(`\.\.`) },
     Token { Name: ".",       Pattern: r(`\.`) },
     Token { Name: ",",       Pattern: r(`\,`) },
+    Token { Name: "?",       Pattern: r(`\?`) },
+    Token { Name: "??",      Pattern: r(`\?\?`) },
     Token { Name: "::",      Pattern: r(`\:\:`) },
     Token { Name: ":=",      Pattern: r(`\:\=`) },
     Token { Name: ":",       Pattern: r(`\:`) },
@@ -64,12 +66,12 @@ var ExtraTokens = [...] string { "NoLF", "Void" }
 
 var ConditionalKeywords = [...] string {
     "@module", "@import", "@from",
-    "@global", "@local", "@export",
     "@type", "@opaque", "@union", "@native",
-    "@const", "@do",
-    "@if", "@else", "@match", "@default",
+    "@global", "@local",
+    "@const", "@export",
+    "@do",
+    "@match", "@else", "@if",
     "@let", "@return",
-    "@True", "@False",
 }
 
 var Operators = [...] Operator {}
@@ -85,7 +87,7 @@ var SyntaxDefinition = [...] string {
           "import = @import name! @from! string! ;!",
           "do = @do expr! ;!",
     "ref = module_prefix name type_args",
-      "module_prefix? = name ::",
+      "module_prefix? = name :: | ::",
       "type_args? = ( type! more_types )",
         "more_types? = , type! more_types",
     "type = type_ref | type_literal",
@@ -132,17 +134,18 @@ var SyntaxDefinition = [...] string {
       "pipe = term more_terms",
         "more_terms? = term more_terms",
       "more_pipes? = _bar1 pipe! more_pipes",
-    "term = lambda | if | match | block | get | bundle | tuple | list | text | literal | ref",
-      "if = @if tuple {! if_branch_list else! }!",
-        "if_branch_list = if_branch! more_if_branches",
-          "more_if_branches? = , if_branch more_if_branches",
-          "if_branch = tuple :! expr!",
-        "else = , @else! :! expr!",
-      "match = @match tuple {! match_branch_list default }!",
-        "match_branch_list = match_branch! more_match_branches",
-          "more_match_branches? = , match_branch more_match_branches",
-          "match_branch = repr_tuple pattern! :! expr!",
-        "default? = , @default! :! expr!",
+    "term = lambda | match | if | block | get | bundle | tuple | list | text | literal | ref",
+      "match = @match tuple {! branch_list else }!",
+        "branch_list = branch! more_branches",
+          "more_branches? = , branch more_branches",
+          "branch = repr_tuple opt_pattern :! branch_value",
+            "opt_pattern? = pattern",
+            "branch_value = ... | expr!",
+        "else? = , @else! :! expr!",
+      "if = @if { if_cond! ?! if_yes! :! if_no! }!",
+        "if_cond = expr!",
+        "if_yes = expr!",
+        "if_no = expr!",
       "block = @let { binding! more_bindings return! }!",
         "more_bindings? = , binding! more_bindings",
         "binding = pattern := expr!",
@@ -150,7 +153,7 @@ var SyntaxDefinition = [...] string {
       "get = _at {! expr! }! members",
         "members? = member members",
           "member = opt . name!",
-            "opt? = ~",
+            "opt? = ?",
       "bundle = { } | { update pairlist }!",
         "pairlist = pair! more_pairs",
           "more_pairs? = , pair! more_pairs",
@@ -161,9 +164,8 @@ var SyntaxDefinition = [...] string {
           "more_exprs? = , expr! more_exprs",
       "list = $ { } | $ {! exprlist }!",
       "text = Text",
-      "literal = string | int | float | bit",
+      "literal = string | int | float",
         "string = String",
         "int = Int",
         "float = Float",
-        "bit = @True | @False",
 }

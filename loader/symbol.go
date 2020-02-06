@@ -51,16 +51,26 @@ func (mod *Module) SymbolFromRef(ref node.Ref) MaybeSymbol {
 	} else {
 		if ref_mod == "" {
 			var sym_name = Id2String(ref.Id)
-			var _, exists = __PreloadCoreSymbolSet[sym_name]
-			if exists {
-				return Symbol {
-					ModuleName: CoreModule,
+			if ref.Specific {
+				// ::Module <=> Module::Module
+				return Symbol{
+					ModuleName: sym_name,
 					SymbolName: sym_name,
 				}
 			} else {
-				return Symbol {
-					ModuleName: self,
-					SymbolName: sym_name,
+				var _, exists = __PreloadCoreSymbolSet[sym_name]
+				if exists {
+					// Core::Int, Core::Float, Core::Effect, ...
+					return Symbol{
+						ModuleName: CoreModule,
+						SymbolName: sym_name,
+					}
+				} else {
+					// Self::SymbolName
+					return Symbol{
+						ModuleName: self,
+						SymbolName: sym_name,
+					}
 				}
 			}
 		} else {
