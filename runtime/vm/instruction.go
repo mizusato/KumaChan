@@ -1,13 +1,16 @@
 package vm
 
 
+type Short = uint8
+type Long = uint16
+
 type Instruction struct {
 	OpCode  OpType
-	Arg0    uint8
-	Arg1    uint16
+	Arg0    Short
+	Arg1    Long
 }
 
-type OpType uint8
+type OpType Short
 const (
 	NOP  OpType  =  iota
 	FUNC    // [Base, FunID]: Create a function value (closure)
@@ -21,8 +24,7 @@ const (
 	STRUCT  // [Size, _]: Create a struct (value of a tuple/bundle type)
 	FILL    // [_, _]: Fill the current value into created struct
 	GET     // [Index, _]: Extract a struct field as new current value
-	SET     // [Index, _]: Stage update of a struct field
-	COMMIT  // [_, _]: Commit the staged update of struct fields
+	SET     // [Index, _]: Immutably update a struct field with current value
 	MATCH   // [_, _]: Match on the current value
 	JIF     // [Index, Addr]: Jump to Addr if Index matches the value
 	JMP     // [_, Addr]: Jump to Addr unconditionally
