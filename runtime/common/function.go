@@ -1,4 +1,4 @@
-package vm
+package common
 
 import (
 	. "kumachan/error"
