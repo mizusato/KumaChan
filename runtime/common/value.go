@@ -126,11 +126,3 @@ func FloatFrom(v Value) float64 {
 	}
 	return x
 }
-
-func BytesFrom(v Value) []byte {
-	return v.(PlainValue).Pointer.([]byte)
-}
-
-func BytesValue(bytes []byte) Value {
-	return PlainValue{ Pointer: bytes }
-}
