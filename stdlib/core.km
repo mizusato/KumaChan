@@ -10,10 +10,11 @@ type Int    native 'Int';
 
 // Collection Types
 type Bytes     native 'Bytes';
-type Map(K,V)  native 'Map';
+type String    native 'String';
+type Array(T)  native 'Array';
 type Stack(T)  native 'Stack';
-type Heap(T)   native 'Heap';
-type List(T)   native 'List';
+type Queue(T)  native 'Queue';
+type Set(T)    native 'Set';
 
 // Effect Type
 type Effect(T,E)  native 'Effect';
@@ -27,10 +28,10 @@ type Int16   [Word];
 type Uint16  [Word];
 type Int8    [Byte];
 type Uint8   [Byte];
+type Char    [Dword];
 type Float64       [Qword];
 opaque type Float  [Float64];
-type Char    [Dword];
-type String  [List(Char)];
+opaque type Map(K,V)  [Set([K,V])];
 
 // Basic Sum Types
 type Bool union {
@@ -44,6 +45,15 @@ type Maybe(T) union {
 type Result(T,E) union {
     type OK [T];
     type NG [E];
+};
+
+// Abstract Collection Types
+type List(T) {
+    length: Int;
+    get: &Int.T;
+};
+type Iterator(T) {
+    next: &[].[Maybe(T),Iterator(T)]
 };
 
 // Arithmetic Functions
