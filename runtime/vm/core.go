@@ -2,8 +2,8 @@ package vm
 
 import (
 	"fmt"
-	"kumachan/runtime/lib"
 	. "kumachan/runtime/common"
+	"kumachan/runtime/lib"
 )
 
 const InitialDataStackCapacity = 32

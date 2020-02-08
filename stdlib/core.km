@@ -6,6 +6,7 @@ type Byte   native 'Byte';
 type Word   native 'Word';
 type Dword  native 'Dword';
 type Qword  native 'Qword';
+type Int    native 'Int';
 
 // Collection Types
 type Bytes     native 'Bytes';
@@ -18,9 +19,6 @@ type List(T)   native 'List';
 type Effect(T,E)  native 'Effect';
 
 // Basic Derived Types
-opaque type String [Bytes];
-opaque type Int    [Qword];
-opaque type Float  [Qword];
 type Int64   [Qword];
 type Uint64  [Qword];
 type Int32   [Dword];
@@ -29,8 +27,10 @@ type Int16   [Word];
 type Uint16  [Word];
 type Int8    [Byte];
 type Uint8   [Byte];
-type Float64  [Qword];
-type Float32  [Dword];
+type Float64       [Qword];
+opaque type Float  [Float64];
+type Char    [Dword];
+type String  [List(Char)];
 
 // Basic Sum Types
 type Bool union {
