@@ -6,8 +6,8 @@ type AVL struct {
 	Value   Value
 	Left    *AVL
 	Right   *AVL
-	Size    int
-	Height  int
+	Size    uint64
+	Height  uint64
 }
 type Compare   func(Value,Value) Ordering
 type Ordering  int
@@ -39,14 +39,14 @@ func Leaf(v Value) *AVL {
 func (node *AVL) IsLeaf() bool {
 	return (node.Left == nil && node.Right == nil)
 }
-func (node *AVL) GetSize() int {
+func (node *AVL) GetSize() uint64 {
 	if node == nil {
 		return 0
 	} else {
 		return node.Size
 	}
 }
-func (node *AVL) GetHeight() int {
+func (node *AVL) GetHeight() uint64 {
 	if node == nil {
 		return 0
 	} else {
