@@ -1,10 +1,9 @@
 package checker
 
 import (
-	"kumachan/loader"
-	"kumachan/native/types"
-	"kumachan/transformer/node"
 	. "kumachan/error"
+	"kumachan/loader"
+	"kumachan/transformer/node"
 )
 
 // Final Registry of Types
@@ -215,12 +214,14 @@ func TypeValFrom (tv node.TypeValue, ctx TypeExprContext) (TypeVal, *TypeExprErr
 		return UnionTypeVal {
 			SubTypes: subtypes,
 		}, nil
-	case node.SingleType:
+	case node.CompoundType:
 		var expr, err = TypeExprFromRepr(v.Repr.Repr, ctx)
 		if err != nil { return nil, err }
 		return SingleTypeVal {
 			Expr: expr,
 		}, nil
+	case node.NativeType:
+		return NativeTypeVal{}, nil
 	default:
 		panic("impossible branch")
 	}
@@ -346,18 +347,6 @@ func TypeExprFromRepr (repr node.Repr, ctx TypeExprContext) (TypeExpr, *TypeExpr
 				Input:  input,
 				Output: output,
 			},
-		}, nil
-	case node.ReprNative:
-		var str_id = string(r.Ref.Id.Value)
-		var id, exists = types.GetNativeTypeId(str_id)
-		if !exists { return nil, &TypeExprError {
-			Point: ErrorPoint { AST: ctx.Module.AST, Node: r.Node },
-			Concrete: E_NativeTypeNotFound {
-				Name: str_id,
-			},
-		} }
-		return AnonymousType {
-			Repr: NativeType { Id: id },
 		}, nil
 	default:
 		panic("impossible branch")

@@ -1,7 +1,7 @@
 module I/O;
 
-type InputStream   native 'InputStream';
-type OutputStream  native 'OutputStream';
+type InputStream   native;
+type OutputStream  native;
 type Error {
     kind: ErrorKind,
     message: String

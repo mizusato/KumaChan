@@ -50,10 +50,3 @@ type ReprFunc struct {
     Input   VariousType   `part:"input_type.type"`
     Output  VariousType   `part:"output_type.type"`
 }
-
-func (impl ReprNative) Repr() {}
-type ReprNative struct {
-    Node             `part:"repr_native"`
-    Ref  NativeRef   `part:"native"`
-}
-

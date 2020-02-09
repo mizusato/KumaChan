@@ -1,23 +1,23 @@
 module Core;
 
 // Basic Types
-type Bit    native 'Bit';
-type Byte   native 'Byte';
-type Word   native 'Word';
-type Dword  native 'Dword';
-type Qword  native 'Qword';
-type Int    native 'Int';
+type Bit    native;
+type Byte   native;
+type Word   native;
+type Dword  native;
+type Qword  native;
+type Int    native;
 
 // Collection Types
-type Bytes     native 'Bytes';
-type String    native 'String';
-type Array(T)  native 'Array';
-type Stack(T)  native 'Stack';
-type Queue(T)  native 'Queue';
-type Set(T)    native 'Set';
+type Bytes     native;
+type String    native;
+type Array(T)  native;
+type Stack(T)  native;
+type Queue(T)  native;
+type Set(T)    native;
 
 // Effect Type
-type Effect(T,E)  native 'Effect';
+type Effect(T,E)  native;
 
 // Basic Derived Types
 type Int64   [Qword];
@@ -49,8 +49,8 @@ type Result(T,E) union {
 
 // Abstract Collection Types
 type List(T) {
-    length: Int;
-    get: &Int.T;
+    length: Int,
+    get: &Int.T
 };
 type Iterator(T) {
     next: &[].[Maybe(T),Iterator(T)]

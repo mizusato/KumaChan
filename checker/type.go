@@ -3,7 +3,6 @@ package checker
 import (
 	"kumachan/loader"
 	"kumachan/transformer/node"
-	"kumachan/native/types"
 )
 
 type GenericType struct {
@@ -25,6 +24,9 @@ func (impl SingleTypeVal) TypeVal() {}
 type SingleTypeVal struct {
 	Expr  TypeExpr
 }
+
+func (impl NativeTypeVal) TypeVal() {}
+type NativeTypeVal struct {}
 
 type TypeExpr interface { TypeExpr() }
 
@@ -63,11 +65,6 @@ func (impl Func) TypeRepr() {}
 type Func struct {
 	Input   TypeExpr
 	Output  TypeExpr
-}
-
-func (impl NativeType) TypeRepr() {}
-type NativeType struct {
-	Id  types.NativeTypeId
 }
 
 
@@ -111,8 +108,6 @@ func IsLocalType (type_ TypeExpr, mod string) bool {
 			if IsLocalType(r.Output, mod) {
 				return true
 			}
-			return false
-		case NativeType:
 			return false
 		default:
 			panic("impossible branch")
@@ -207,14 +202,7 @@ func AreTypesOverloadUnsafe (type1 TypeExpr, type2 TypeExpr) bool {
 					}
 					return true
 				default:
-					return false
-				}
-			case NativeType:
-				switch r2 := t2.Repr.(type) {
-				case NativeType:
-					return r1.Id == r2.Id
-				default:
-					return false
+					return true
 				}
 			default:
 				panic("impossible branch")

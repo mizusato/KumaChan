@@ -21,10 +21,6 @@ func (impl E_TypeNotFound) TypeExprError() {}
 type E_TypeNotFound struct {
 	Name   loader.Symbol
 }
-func (impl E_NativeTypeNotFound) TypeExprError() {}
-type E_NativeTypeNotFound struct {
-	Name   string
-}
 func (impl E_WrongParameterQuantity) TypeExprError() {}
 type E_WrongParameterQuantity struct {
 	TypeName  loader.Symbol
@@ -47,11 +43,6 @@ func (err *TypeExprError) Error() string {
 	case E_TypeNotFound:
 		description = fmt.Sprintf (
 			"%vNo such type: %v%s%v",
-			Red, Bold, e.Name, Reset,
-		)
-	case E_NativeTypeNotFound:
-		description = fmt.Sprintf (
-			"%vNo such native type: %v%s%v",
 			Red, Bold, e.Name, Reset,
 		)
 	case E_WrongParameterQuantity:

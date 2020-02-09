@@ -76,9 +76,13 @@ type VariousTypeValue struct {
     TypeValue  TypeValue   `use:"first"`
 }
 type TypeValue interface { TypeValue() }
-func (impl SingleType) TypeValue() {}
-type SingleType struct {
-    Node                `part:"single_type"`
+func (impl NativeType) TypeValue() {}
+type NativeType struct {
+    Node   `part:"native_type"`
+}
+func (impl CompoundType) TypeValue() {}
+type CompoundType struct {
+    Node                `part:"compound_type"`
     Repr  VariousRepr   `part:"repr"`
 }
 func (impl UnionType) TypeValue() {}

@@ -55,7 +55,8 @@ var __NodeRegistry = []interface{} {
     NativeRef {},
     DeclType {},
     VariousTypeValue {},
-    SingleType {},
+    NativeType {},
+    CompoundType {},
     UnionType {},
     // Type
     VariousType {},
@@ -66,7 +67,6 @@ var __NodeRegistry = []interface{} {
     ReprBundle {},
     Field {},
     ReprFunc {},
-    ReprNative {},
     // Expression
     Expr {},
     Cast {},
