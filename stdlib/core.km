@@ -14,7 +14,9 @@ type String    native;
 type Array(T)  native;
 type Stack(T)  native;
 type Queue(T)  native;
+type Heap(T)   native;
 type Set(T)    native;
+type Map(K,V)  native;
 
 // Effect Type
 type Effect(T,E)  native;
@@ -31,7 +33,6 @@ type Uint8   [Byte];
 type Char    [Dword];
 type Float64       [Qword];
 opaque type Float  [Float64];
-opaque type Map(K,V)  [Set([K,V])];
 
 // Basic Sum Types
 type Bool union {
@@ -83,16 +84,6 @@ global maybe(A,B) := (&[&A.B].&Maybe(A).Maybe(B))
     [Just(A)] a: (Just(B)) f a,
     [Null]: (Null) []
 }];
-
-const EmptyList(T) := (List(T)) native 'empty-list';
-global concat(T) := (&[List(T),List(T)].List(T)) native 'list-concat';
-global append(T) := (&T.&List(T).List(T)) native 'list-append';
-global prepend(T) := (&T.&List(T).List(T)) native 'list-prepend';
-global shift(T) := (&List(T).[Maybe(T),List(T)]) native 'list-shift';
-global pop(T) := (&List(T).[List(T),Maybe(T)]) native 'list-pop';
-global map(A,B) := (&[&A.B].&List(A).List(B))  native 'list-map';
-global filter(T) := (&[&T.Bool].&List(T).List(T)) native 'list-filter';
-global reduce(I,A) := (&[A,&[A,I].A].&List(I).A) native 'list-reduce';
 
 const EmptyStack(T) := (Stack(T)) native 'empty-stack';
 global pop(T) := (&Stack(T).[Maybe(T),Stack(T)])  native 'stack-pop';

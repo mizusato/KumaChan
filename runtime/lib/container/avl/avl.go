@@ -52,6 +52,23 @@ func (node *AVL) GetHeight() uint64 {
 	}
 }
 
+func (node *AVL) Lookup(target Value, cmp order.Compare) (Value, bool) {
+	if node == nil {
+		return nil, false
+	} else {
+		switch cmp(target, node.Value) {
+		case order.Smaller:
+			return node.Left.Lookup(target, cmp)
+		case order.Bigger:
+			return node.Right.Lookup(target, cmp)
+		case order.Equal:
+			return node.Value, true
+		default:
+			panic("impossible branch")
+		}
+	}
+}
+
 func (node *AVL) Inserted(inserted Value, cmp order.Compare) *AVL {
 	if node == nil {
 		return Leaf(inserted)
@@ -59,7 +76,7 @@ func (node *AVL) Inserted(inserted Value, cmp order.Compare) *AVL {
 		var value = node.Value
 		var left = node.Left
 		var right = node.Right
-		switch cmp(inserted, node.Value) {
+		switch cmp(inserted, value) {
 		case order.Smaller:
 			return Node(value, left.Inserted(inserted, cmp), right)
 		case order.Bigger:
@@ -68,6 +85,60 @@ func (node *AVL) Inserted(inserted Value, cmp order.Compare) *AVL {
 			return Node(inserted, left, right)
 		default:
 			panic("impossible branch")
+		}
+	}
+}
+
+func (node *AVL) Deleted(target Value, cmp order.Compare) (Value, *AVL, bool) {
+	if node == nil {
+		return nil, nil, false
+	} else {
+		var value = node.Value
+		var left = node.Left
+		var right = node.Right
+		switch cmp(target, value) {
+		case order.Smaller:
+			var deleted, rest, found = left.Deleted(target, cmp)
+			if found {
+				return deleted, Node(value, rest, right), true
+			} else {
+				return nil, nil, false
+			}
+		case order.Bigger:
+			var deleted, rest, found = right.Deleted(target, cmp)
+			if found {
+				return deleted, Node(value, left, rest), true
+			} else {
+				return nil, nil, false
+			}
+		case order.Equal:
+			if left == nil {
+				return value, right, true
+			} else if right == nil {
+				return value, left, true
+			} else {
+				var prior, rest_left, found = left.DeletedMax()
+				assert(found, "left subtree should not be empty")
+				return value, Node(prior, rest_left, right), true
+			}
+		default:
+			panic("impossible branch")
+		}
+	}
+}
+
+func (node *AVL) DeletedMax() (Value, *AVL, bool) {
+	if node == nil {
+		return nil, nil, false
+	} else {
+		var value = node.Value
+		var left = node.Left
+		var right = node.Right
+		var deleted, rest, found = right.DeletedMax()
+		if found {
+			return deleted, Node(value, left, rest), true
+		} else {
+			return value, left, true
 		}
 	}
 }

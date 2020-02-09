@@ -75,8 +75,12 @@ func (node *LTT) Top() (Value, bool) {
 }
 
 func (node *LTT) Popped(cmp order.Compare) (Value, *LTT, bool) {
-	var merged = node.Left.Merge(node.Right, cmp)
-	return node.Value, merged, (merged != nil)
+	if node != nil {
+		var rest = node.Left.Merge(node.Right, cmp)
+		return node.Value, rest, true
+	} else {
+		return nil, nil, false
+	}
 }
 
 func (node *LTT) Pushed(v Value, cmp order.Compare) *LTT {

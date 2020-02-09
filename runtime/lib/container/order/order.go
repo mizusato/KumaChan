@@ -9,3 +9,18 @@ const (
 	Smaller
 	Bigger
 )
+
+func (cmp Compare) ReversedOrder() Compare {
+	return func(a Value, b Value) Ordering {
+		switch cmp(a, b) {
+		case Smaller:
+			return Bigger
+		case Bigger:
+			return Smaller
+		case Equal:
+			return Equal
+		default:
+			panic("impossible branch")
+		}
+	}
+}
