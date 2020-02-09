@@ -22,9 +22,7 @@ func Node(v Value, left *AVL, right *AVL) *AVL {
 		Size:   1 + left.GetSize() + right.GetSize(),
 		Height: 1 + max(left.GetHeight(), right.GetHeight()),
 	}
-	var _, diff = node.GetBalanceState()
-	assert(diff <= 1, "violation of AVL property")
-	return node
+	return node.balanced()
 }
 func Leaf(v Value) *AVL {
 	return &AVL {
@@ -63,9 +61,9 @@ func (node *AVL) Inserted(inserted Value, cmp order.Compare) *AVL {
 		var right = node.Right
 		switch cmp(inserted, node.Value) {
 		case order.Smaller:
-			return Node(value, left.Inserted(inserted, cmp), right).balanced()
+			return Node(value, left.Inserted(inserted, cmp), right)
 		case order.Bigger:
-			return Node(value, left, right.Inserted(inserted, cmp)).balanced()
+			return Node(value, left, right.Inserted(inserted, cmp))
 		case order.Equal:
 			return Node(inserted, left, right)
 		default:
