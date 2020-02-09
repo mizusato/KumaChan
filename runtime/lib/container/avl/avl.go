@@ -1,7 +1,11 @@
-package lib
+package avl
 
-import . "kumachan/runtime/common"
+import (
+	. "kumachan/runtime/common"
+	"kumachan/runtime/lib/container/order"
+)
 
+/* Functional AVL Tree: Underlying Implementation of Ordered Set and Map */
 type AVL struct {
 	Value   Value
 	Left    *AVL
@@ -9,13 +13,6 @@ type AVL struct {
 	Size    uint64
 	Height  uint64
 }
-type Compare   func(Value,Value) Ordering
-type Ordering  int
-const (
-	Equal  Ordering  =  iota
-	Smaller
-	Bigger
-)
 
 func Node(v Value, left *AVL, right *AVL) *AVL {
 	return &AVL {
@@ -54,7 +51,7 @@ func (node *AVL) GetHeight() uint64 {
 	}
 }
 
-func (node *AVL) Inserted(inserted Value, cmp Compare) *AVL {
+func (node *AVL) Inserted(inserted Value, cmp order.Compare) *AVL {
 	if node == nil {
 		return Leaf(inserted)
 	} else {
@@ -62,11 +59,11 @@ func (node *AVL) Inserted(inserted Value, cmp Compare) *AVL {
 		var left = node.Left
 		var right = node.Right
 		switch cmp(inserted, node.Value) {
-		case Smaller:
+		case order.Smaller:
 			return Node(value, left.Inserted(inserted, cmp), right).balanced()
-		case Bigger:
+		case order.Bigger:
 			return Node(value, left, right.Inserted(inserted, cmp)).balanced()
-		case Equal:
+		case order.Equal:
 			return Node(inserted, left, right)
 		default:
 			panic("impossible branch")
@@ -137,4 +134,13 @@ func (node *AVL) balanced() *AVL {
 			panic("impossible branch")
 		}
 	}
+}
+
+
+func assert(ok bool, msg string) {
+	if !ok { panic(msg) }
+}
+
+func max(a uint64, b uint64) uint64 {
+	if a >= b { return a } else { return b }
 }
