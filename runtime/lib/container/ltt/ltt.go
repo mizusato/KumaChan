@@ -14,11 +14,14 @@ type LTT struct {
 }
 
 func Node(v Value, left *LTT, right *LTT) *LTT {
+	var ld = left.GetDist()
+	var rd = right.GetDist()
+	assert(ld >= rd, "violation of leftist property")
 	return &LTT {
 		Value: v,
 		Left:  left,
 		Right: right,
-		Dist:  (1 + right.GetDist()),
+		Dist:  (1 + rd),
 	}
 }
 func Leaf(v Value) *LTT {
@@ -78,4 +81,9 @@ func (node *LTT) Popped(cmp order.Compare) (Value, *LTT, bool) {
 
 func (node *LTT) Pushed(v Value, cmp order.Compare) *LTT {
 	return node.Merge(Leaf(v), cmp)
+}
+
+
+func assert(ok bool, msg string) {
+	if !ok { panic(msg) }
 }

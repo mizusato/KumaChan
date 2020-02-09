@@ -15,13 +15,16 @@ type AVL struct {
 }
 
 func Node(v Value, left *AVL, right *AVL) *AVL {
-	return &AVL {
+	var node = &AVL {
 		Value:  v,
 		Left:   left,
 		Right:  right,
 		Size:   1 + left.GetSize() + right.GetSize(),
 		Height: 1 + max(left.GetHeight(), right.GetHeight()),
 	}
+	var _, diff = node.GetBalanceState()
+	assert(diff <= 1, "violation of AVL property")
+	return node
 }
 func Leaf(v Value) *AVL {
 	return &AVL {
