@@ -1,10 +1,31 @@
 package container
 
-import . "kumachan/runtime/common"
+import (
+	. "kumachan/runtime/common"
+	"kumachan/runtime/lib/container/order"
+)
 
 type Array struct {
 	Length   uint
 	GetItem  func(uint) Value
+}
+
+func ArrayFrom(values []Value) Array {
+	return Array {
+		Length: uint(len(values)),
+		GetItem: func(i uint) Value {
+			return values[i]
+		},
+	}
+}
+
+func ArrayFromInline(values []uint64) Array {
+	return Array {
+		Length: uint(len(values)),
+		GetItem: func(i uint) Value {
+			return PlainValue { Inline: values[i] }
+		},
+	}
 }
 
 func ArrayFromSeq(seq Seq) Array {
@@ -32,19 +53,9 @@ func ArrayFromSeq(seq Seq) Array {
 			item, rest, exists = rest.Next()
 		}
 		if len(inline_acc) > 0 {
-			return Array {
-				Length:  uint(len(inline_acc)),
-				GetItem: func(i uint) Value {
-					return PlainValue { Inline: inline_acc[i] }
-				},
-			}
+			return ArrayFromInline(inline_acc)
 		} else {
-			return Array {
-				Length: uint(len(variant_acc)),
-				GetItem: func(i uint) Value {
-					return variant_acc[i]
-				},
-			}
+			return ArrayFrom(variant_acc)
 		}
 	} else {
 		return Array { Length: 0 }
@@ -109,3 +120,83 @@ func (array Array) Map(f func(Value)Value) Array {
 		},
 	}
 }
+
+func (array Array) CarefullySlice(low uint, high uint) Array {
+	var L = array.Length
+	if !(low <= high && low < L && high <= L) {
+		panic("invalid slice bounds")
+	}
+	return Array {
+		Length:  (high - low),
+		GetItem: func(i uint) Value {
+			return array.GetItem(i + low)
+		},
+	}
+}
+
+func (array Array) Sort(cmp order.Compare) Seq {
+	var L = array.Length
+	if L == 0 {
+		return EmptySeq {}
+	} else if L == 1 {
+		return SeqOf(array.GetItem(0))
+	} else {
+		var M = (L / 2)
+		var left = array.CarefullySlice(0, M)
+		var right = array.CarefullySlice(M, L)
+		return MergeSortIterator {
+			Left:  left.Sort(cmp),
+			Right: right.Sort(cmp),
+			Cmp:   cmp,
+		}
+	}
+}
+
+type MergeSortIterator struct {
+	Left   Seq
+	Right  Seq
+	Cmp    order.Compare
+}
+
+func (m MergeSortIterator) Next() (Value, Seq, bool) {
+	var left = m.Left
+	var right = m.Right
+	var cmp = m.Cmp
+	var l, l_rest, l_exists = left.Next()
+	var r, r_rest, r_exists = right.Next()
+	if !l_exists && !r_exists {
+		return nil, nil, false
+	} else {
+		var order_preserved bool
+		if l_exists && r_exists {
+			switch cmp(l, r) {
+			case order.Smaller, order.Equal:
+				order_preserved = true
+			case order.Bigger:
+				order_preserved = false
+			default:
+				panic("impossible branch")
+			}
+		} else if l_exists {
+			order_preserved = true
+		} else if r_exists {
+			order_preserved = false
+		} else {
+			panic("impossible branch")
+		}
+		if order_preserved {
+			return l, MergeSortIterator {
+				Left:  l_rest,
+				Right: right,
+				Cmp:   cmp,
+			}, true
+		} else {
+			return r, MergeSortIterator {
+				Left:  left,
+				Right: r_rest,
+				Cmp:   cmp,
+			}, true
+		}
+	}
+}
+

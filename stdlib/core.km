@@ -11,14 +11,14 @@ type Int    native;
 // Container Types
 type Bytes     native;
 type String    native;
+type Seq[T]    native;
 type Array[T]  native;
 type Queue[T]  native;
 type Heap[T]   native;
 type Set[T]    native;
 type Map[K,V]  native;
 
-// Pseudo-Container Types
-type Seq[T]       native;
+// Effect Type
 type Effect[T,E]  native;
 
 // Basic Derived Types

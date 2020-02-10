@@ -1,6 +1,8 @@
 package container
 
-import . "kumachan/runtime/common"
+import (
+	. "kumachan/runtime/common"
+)
 
 type Seq interface {
 	Next() (Value, Seq, bool)
@@ -12,14 +14,17 @@ func (_ EmptySeq) Next() (Value, Seq, bool) {
 }
 
 func SeqFrom(values []Value) Seq {
-	return (Array {
-		Length: uint(len(values)),
-		GetItem: func(i uint) Value {
-			return values[i]
-		},
-	}).Iterate()
+	return ArrayFrom(values).Iterate()
 }
 
-func SeqOf(values ...Value) Seq {
-	return SeqFrom(values)
+func SeqOf(v Value) Seq {
+	return SeqFunc(func() (Value, Seq, bool) {
+		return v, EmptySeq{}, true
+	})
+}
+
+type SeqFunc  func() (Value, Seq, bool)
+
+func (sf SeqFunc) Next() (Value, Seq, bool) {
+	return sf()
 }
