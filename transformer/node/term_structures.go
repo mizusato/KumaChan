@@ -1,9 +1,9 @@
 package node
 
 
-func (impl List) Term() {}
-type List struct {
-	Node             `part:"list"`
+func (impl Seq) Term() {}
+type Seq struct {
+	Node             `part:"seq"`
 	Items  [] Expr   `list_more:"exprlist" item:"expr"`
 }
 

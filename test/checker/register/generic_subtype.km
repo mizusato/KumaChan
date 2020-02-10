@@ -1,5 +1,5 @@
 module GenericSubtype;
 
-type Foo(T) union {
-    type A(U) [U,U];
+type Foo[T] union {
+    type A[U] (U, U);
 };

@@ -1,8 +1,6 @@
-#!/usr/bin/kumachan
-
 module Hello;
 
-do Stdout
+do I/O::Stdout
    | println 'Hello World'
    | then exit 0
    | catch exit 1;

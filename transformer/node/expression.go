@@ -6,13 +6,7 @@ func (impl Expr) MaybeExpr() {}
 func (impl Expr) ConstValue() {}
 type Expr struct {
     Node             `part:"expr"`
-    Casts  [] Cast   `list_rec:"casts"`
     Pipes  [] Pipe   `list_more:"" item:"pipe"`
-}
-
-type Cast struct {
-    Node                `part:"cast"`
-    Target  MaybeType   `part_opt:"cast_target.type"`
 }
 
 type Pipe struct {

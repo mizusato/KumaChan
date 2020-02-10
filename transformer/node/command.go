@@ -32,9 +32,9 @@ type VariousConstValue struct {
 type ConstValue interface { ConstValue() }
 func (impl NativeConst) ConstValue() {}
 type NativeConst struct {
-    Node               `part:"native_const"`
-    Casts  [] Cast     `list_rec:"casts"`
-    Value  NativeRef   `part:"native"`
+    Node                `part:"native_const"`
+    Type   VariousType  `part:"type"`
+    Value  NativeRef    `part:"native"`
 }
 
 func (impl Do) Command() {}

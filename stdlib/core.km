@@ -8,108 +8,71 @@ type Dword  native;
 type Qword  native;
 type Int    native;
 
-// Collection Types
+// Container Types
 type Bytes     native;
 type String    native;
-type Array(T)  native;
-type Stack(T)  native;
-type Queue(T)  native;
-type Heap(T)   native;
-type Set(T)    native;
-type Map(K,V)  native;
+type Array[T]  native;
+type Queue[T]  native;
+type Heap[T]   native;
+type Set[T]    native;
+type Map[K,V]  native;
 
-// Effect Type
-type Effect(T,E)  native;
+// Pseudo-Container Types
+type Seq[T]       native;
+type Effect[T,E]  native;
 
 // Basic Derived Types
-type Int64   [Qword];
-type Uint64  [Qword];
-type Int32   [Dword];
-type Uint32  [Dword];
-type Int16   [Word];
-type Uint16  [Word];
-type Int8    [Byte];
-type Uint8   [Byte];
-type Char    [Dword];
-type Float64       [Qword];
-opaque type Float  [Float64];
+type Int64   (Qword);
+type Uint64  (Qword);
+type Int32   (Dword);
+type Uint32  (Dword);
+type Int16   (Word);
+type Uint16  (Word);
+type Int8    (Byte);
+type Uint8   (Byte);
+type Char    (Dword);
+type Float64       (Qword);
+opaque type Float  (Float64);
 
 // Basic Sum Types
 type Bool union {
-    type Yes [];
-    type No [];
+    type Yes ();
+    type No  ();
 };
-type Maybe(T) union {
-    type Just [T];
-    type Null [];
+type Maybe[T] union {
+    type Just(T);
+    type Nothing();
 };
-type Result(T,E) union {
-    type OK [T];
-    type NG [E];
-};
-
-// Abstract Collection Types
-type List(T) {
-    length: Int,
-    get: &Int.T
-};
-type Iterator(T) {
-    next: &[].[Maybe(T),Iterator(T)]
+type Result[T,E] union {
+    type OK(T);
+    type NG(E);
 };
 
-// Arithmetic Functions
-// Integer
-global + := (&Int. &Int.Int)  native 'int-plus';
-global - := (&Int. &Int.Int)  native 'int-minus';
-global minus := (&Int.Int)    native 'int-minus-unary';
-global * := (&Int. &Int.Int)  native 'int-times';
-global / := (&Int. &Int.Int)  native 'int-divide';
-global % := (&Int. &Int.Int)  native 'int-modulo';
-global ^ := (&Int. &Int.Int)  native 'int-power';
-global divmod := (&Int. &Int.[Int,Int])  native 'int-divmod';
-// Floating Point Number
-global + := (&Float. &Float.Float)  native 'float-plus';
-global - := (&Float. &Float.Float)  native 'float-minus';
-global minus := (&Float.Float)      native 'float-minus-unary';
-global * := (&Float. &Float.Float)  native 'float-times';
-global / := (&Float. &Float.Float)  native 'float-divide';
-global % := (&Float. &Float.Float)  native 'float-modulo';
-global ^ := (&Float. &Float.Float)  native 'float-power';
-global divmod := (&Float. &Float.[Float,Float])  native 'float-divmod';
-
-global just(T) := (&T.Maybe(T)) &t.[(...)(Just(T)) t];
-global nothing(T) := (&[].Maybe(T)) &[].[(...)(Null) []];
-global maybe(A,B) := (&[&A.B].&Maybe(A).Maybe(B))
-&f.&a. [(...) match [a] {
-    [Just(A)] a: (Just(B)) f a,
-    [Null]: (Null) []
-}];
-
-const EmptyStack(T) := (Stack(T)) native 'empty-stack';
-global pop(T) := (&Stack(T).[Maybe(T),Stack(T)])  native 'stack-pop';
-global push(T) := (&T.&Stack(T).Stack(T))  native 'stack-push';
-global map(A,B) := (&[&A.B].&Stack(A).Stack(B))
-&f.&stack. let {
-    [top, rest] := pop stack,
-    return match [top] {
-        [Just(A)] [top]: rest | map f | push f top,
-        [Null]: EmptyStack(B)
-    }
+// Singly-Linked List
+type List[T] union {
+    type Nil  ();
+    type Cons (T, List[T]);
 };
-global filter(T) := (&[&T.Bool].&Stack(T).Stack(T))
-&ok.&stack. let {
-    [top, rest] := pop stack,
-    ok-rest := rest | filter ok,
-    return match [top] {
-        [Just(T)] [top]: if { [ok top]? [ok-rest | push top]: ok-rest },
-        [Null]: EmptyStack(T)
-    }
+
+global map[A,B] := [&(&A -> B) -> &Maybe[A] -> Maybe[B]]
+&fab -> &maybe-a -> match(maybe-a) {
+    case Just a: Just fab(a),
+    case Null  : Null
 };
-global reduce(I,A) := (&[A,&[A,I].A].&Stack(I).A)
-&[value, f].&stack. let {
-    [top, rest] := pop stack,
-    return match [top] {
-        [Just(I)] [top]: rest | reduce [f [value, top], f],
-        [Null]:  EmptyStack(I)
-    }
+global map[A,B] := [&(&A -> B) -> &List[A] -> List[B]]
+&fab -> &list-a -> match(list-a) {
+    case Cons(a, rest): Cons(fab(a), (map fab)(rest)),
+    case Nil: Nil
+};
+
+global filter[T] := [&(&T -> Bool) -> &List[T] -> List[T]]
+&pred -> &list -> match(list) {
+    case Cons(item, rest): if { pred(item)? Cons(item, rest): rest },
+    case Nil: Nil
+};
+
+global reduce[T,A] := [&(A, &(A, T) -> A) -> &List[T] -> List[T]]
+&(init, reducer) -> &list -> match(list) {
+    case Cons(item, rest): rest | reduce(reducer(init, item), reducer),
+    case Nil: Nil
 };

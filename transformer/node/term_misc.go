@@ -10,6 +10,7 @@ type Block struct {
 type Binding struct {
 	Node                      `part:"binding"`
 	Pattern  VariousPattern   `part:"pattern"`
+	Type     MaybeType        `part_opt:"binding_type.type"`
 	Value    Expr             `part:"expr"`
 }
 

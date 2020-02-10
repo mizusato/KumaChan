@@ -1,5 +1,5 @@
 module Duplicate;
 
-type Foo [];
-type Bar [];
-type Foo [Bar];
+type Foo();
+type Bar();
+type Foo(Bar);

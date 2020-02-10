@@ -69,7 +69,6 @@ var __NodeRegistry = []interface{} {
     ReprFunc {},
     // Expression
     Expr {},
-    Cast {},
     Pipe {},
     VariousTerm {},
     // Term
@@ -81,7 +80,7 @@ var __NodeRegistry = []interface{} {
     PatternNone {},
     PatternTuple {},
     PatternBundle {},
-    List {},
+	Seq{},
     Tuple {},
     Bundle {},
     Member {},

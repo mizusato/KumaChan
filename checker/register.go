@@ -41,6 +41,7 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 	var mod_name = loader.Id2String(mod.Node.Name)
 	var _, visited = raw.VisitedMod[mod_name]
 	if visited { return nil }
+	raw.VisitedMod[mod_name] = true
 	// 2. Extract all type declarations in the module,
 	//    and record the root union types of all subtypes
 	var decls = make([]node.DeclType, 0)

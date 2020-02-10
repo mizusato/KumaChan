@@ -82,12 +82,16 @@ func (mod *Module) SymbolFromRef(ref node.Ref) MaybeSymbol {
 
 var __PreloadCoreSymbols = []string {
 	"Bit", "Byte", "Word", "Dword", "Qword",
-	"Int", "Float",
-	"Bytes", "Map", "Stack", "Heap", "List",
-	"Effect",
-	"String",
-	"Bool", "True", "False", "Maybe", "Just", "Null", "Result", "OK", "NG",
-	"EmptyMap", "EmptyStack", "EmptyHeap", "EmptyList",
+	"Int",
+	"Bytes", "String", "Array", "Queue", "Heap", "Set", "Map",
+	"Seq", "Effect",
+	"Int64", "Uint64", "Int32", "Uint32", "Int16", "Uint16", "Int8", "Uint8",
+	"Char",
+	"Float64", "Float",
+	"Bool", "True", "False",
+	"Maybe", "Just", "Nothing",
+	"Result", "OK", "NG",
+	"List",
 }
 var __PreloadCoreSymbolSet = func() map[string] bool {
 	var set = make(map[string] bool)

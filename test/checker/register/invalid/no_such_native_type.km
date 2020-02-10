@@ -1,3 +1,0 @@
-module NoSuchNativeType;
-
-type Baz  native 'covfefe';

@@ -1,6 +1,6 @@
 module Normal;
 
-type Foo [Int];
+type Foo (Int);
 type Bar { data: String };
-type Baz(A,B) [A,B];
-type FooBarBaz [Baz(Foo,Bar)];
+type Baz[A,B] (A, B);
+type FooBarBaz (Baz[Foo,Bar]);

@@ -4,13 +4,12 @@ package node
 func (impl Match) Term() {}
 type Match struct {
 	Node                      `part:"match"`
-	Argument  Tuple           `part:"tuple"`
+	Argument  VariousTerm     `part:"term"`
 	Branches  [] Branch       `list_more:"branch_list" item:"branch"`
-	Default   MaybeExpr       `part_opt:"else.expr"`
 }
 type Branch struct {
 	Node                      `part:"branch"`
-	Type     ReprTuple        `part:"repr_tuple"`
+	Type     MaybeType        `part_opt:"branch_key.type"`
 	Pattern  MaybePattern     `part_opt:"opt_pattern.pattern"`
 	Expr     MaybeExpr        `part_opt:"branch_value.expr"`
 }
