@@ -13,7 +13,6 @@ type Bytes     native;
 type String    native;
 type Seq[T]    native;
 type Array[T]  native;
-type Queue[T]  native;
 type Heap[T]   native;
 type Set[T]    native;
 type Map[K,V]  native;
