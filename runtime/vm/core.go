@@ -3,7 +3,6 @@ package vm
 import (
 	"fmt"
 	. "kumachan/runtime/common"
-	"kumachan/runtime/lib"
 )
 
 const InitialDataStackCapacity = 32
@@ -124,15 +123,13 @@ func CallInNewThread (f FunctionValue, arg Value, m *Machine) Value {
 					assert(current == required, "CALL: missing correct context")
 					var arg = thread.PopValue()
 					thread.PushCall(f, arg)
+				case NativeFunctionValue:
+					var arg = thread.PopValue()
+					var ret = f(arg, m)
+					thread.PushValue(ret)
 				default:
-					panic("CALL: cannot execute on non-function value")
+					panic("CALL: cannot execute on non-callable value")
 				}
-			case NATIVE:
-				var id = inst.GetRegIndex()
-				var f = lib.NativeFunctions[id]
-				var arg = thread.PopValue()
-				var ret = f(arg, m)
-				thread.PushValue(ret)
 			default:
 				panic(fmt.Sprintf("invalid instruction %+v", inst))
 			}

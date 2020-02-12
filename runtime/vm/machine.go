@@ -22,7 +22,14 @@ type CallStackFrame struct {
 	InstPtr   int
 }
 
-func (m *Machine) Call(f FunctionValue, arg Value) Value {
-	return CallInNewThread(f, arg, m)
+func (m *Machine) Call(fv Value, arg Value) Value {
+	switch f := fv.(type) {
+	case FunctionValue:
+		return CallInNewThread(f, arg, m)
+	case NativeFunctionValue:
+		return f(arg, m)
+	default:
+		panic("cannot call a non-callable value")
+	}
 }
 

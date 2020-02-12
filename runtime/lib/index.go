@@ -2,12 +2,6 @@ package lib
 
 import . "kumachan/runtime/common"
 
-type MachineHandle interface {
-	Call(f FunctionValue, arg Value) Value
-}
-
-type NativeFunction  func(arg Value, handle MachineHandle) Value
-
 var NativeFunctionMaps = [] map[string]NativeFunction {
 	ArithmeticFunctions,
 	BitwiseFunctions,

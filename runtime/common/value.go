@@ -30,6 +30,9 @@ type FunctionValue struct {
 	ContextValues  [] Value
 }
 
+func (impl NativeFunctionValue) RuntimeValue() {}
+type NativeFunctionValue  NativeFunction
+
 func Tuple2(a Value, b Value) Value {
 	return ProductValue { Elements: []Value { a, b } }
 }

@@ -33,9 +33,7 @@ const (
 	SET     // [Index, __]: Perform a functional update on a field
 	/* Function Type Operations */
 	CTX      // [_, _]: Use the current struct as the context of a closure
-	CALL     // [_, _]: Call a function (pop func, pop arg, push ret)
-	/* Native Interop */
-	NATIVE   // [RegIndex]: Call a native function (pop arg, push ret)
+	CALL     // [_, _]: Call a (native)function (pop func, pop arg, push ret)
 )
 
 func (inst Instruction) GetRegIndex() int {
