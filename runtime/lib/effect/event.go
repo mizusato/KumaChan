@@ -18,6 +18,7 @@ const (
 	EV_Next  EventKind  =  iota
 	EV_Error
 	EV_Complete
+	EV_Cancel
 )
 
 type EventLoop struct {
@@ -33,13 +34,20 @@ func SpawnEventLoop() *EventLoop {
 		for {
 			select {
 			case event := <- el.EventQueue:
+				if event.Observer.Disposed {
+					continue
+				}
 				switch event.Kind {
 				case EV_Next:
 					event.Observer.Next(event.Payload)
 				case EV_Error:
+					event.Observer.Disposed = true
 					event.Observer.Error(event.Payload)
 				case EV_Complete:
+					event.Observer.Disposed = true
 					event.Observer.Complete()
+				case EV_Cancel:
+					event.Observer.Disposed = true
 				default:
 					panic("unknown event kind")
 				}
@@ -52,6 +60,14 @@ func SpawnEventLoop() *EventLoop {
 
 func (el *EventLoop) Run(effect Effect, ob *Observer) {
 	go (func() {
+		go (func() {
+			<- ob.Context.Done()
+			el.EventQueue <- Event {
+				Kind:     EV_Cancel,
+				Payload:  nil,
+				Observer: ob,
+			}
+		})()
 		effect.Action(el, &Observer {
 			Context: ob.Context,
 			Next: func(v Value) {

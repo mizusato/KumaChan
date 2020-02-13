@@ -3,7 +3,6 @@ package effect
 import (
 	"context"
 	. "kumachan/runtime/common"
-	"sync"
 )
 
 type Effect struct {
@@ -19,6 +18,7 @@ type Observer struct {
 	Next      func(Value)
 	Error     func(Value)
 	Complete  func()
+	Disposed  bool
 }
 
 type Context  context.Context
@@ -32,37 +32,32 @@ func EffectValue(e Effect) Value {
 }
 
 func (e Effect) MergeMap(f func(Value)Value) Effect {
-	return Effect { Action: func(runner EffectRunner, ob *Observer) {
-		var wg sync.WaitGroup
-		var ctx, cancel = context.WithCancel(ob.Context)
-		runner.Run(e, &Observer {
+	return Effect { Action: func(r EffectRunner, ob *Observer) {
+		var ctx, dispose = context.WithCancel(ob.Context)
+		var c = CollectorFrom(ob, ctx, dispose)
+		r.Run(e, &Observer {
 			Context: ctx,
 			Next: func(v Value) {
 				var item = EffectFrom(f(v))
-				wg.Add(1)
-				runner.Run(item, &Observer {
+				c.NewChild()
+				r.Run(item, &Observer {
 					Context: ctx,
 					Next: func(v Value) {
-						ob.Next(v)
+						c.Pass(v)
 					},
 					Error: func(e Value) {
-						cancel()
-						ob.Error(e)
+						c.Throw(e)
 					},
 					Complete: func() {
-						wg.Done()
+						c.DeleteChild()
 					},
 				})
 			},
 			Error: func(e Value) {
-				cancel()
-				ob.Error(e)
+				c.Throw(e)
 			},
 			Complete: func() {
-				go (func() {
-					wg.Wait()
-					ob.Complete()
-				})()
+				c.ParentComplete()
 			},
 		})
 	} }
