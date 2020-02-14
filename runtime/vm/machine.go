@@ -3,11 +3,11 @@ package vm
 import . "kumachan/runtime/common"
 
 type Machine struct {
-	Program      Program
-	GlobalValues [] Value
+	Program       Program
+	GlobalValues  [] Value
 }
 
-type Thread struct {
+type ExecutionContext struct {
 	Machine       *Machine
 	DataStack     DataStack
 	CallStack     CallStack
@@ -25,7 +25,7 @@ type CallStackFrame struct {
 func (m *Machine) Call(fv Value, arg Value) Value {
 	switch f := fv.(type) {
 	case FunctionValue:
-		return CallInNewThread(f, arg, m)
+		return CallInNewContext(f, arg, m)
 	case NativeFunctionValue:
 		return f(arg, m)
 	default:
