@@ -102,14 +102,14 @@ func (node *AVL) Deleted(target Value, cmp order.Compare) (Value, *AVL, bool) {
 			if found {
 				return deleted, Node(value, rest, right), true
 			} else {
-				return nil, nil, false
+				return nil, node, false
 			}
 		case order.Bigger:
 			var deleted, rest, found = right.Deleted(target, cmp)
 			if found {
 				return deleted, Node(value, left, rest), true
 			} else {
-				return nil, nil, false
+				return nil, node, false
 			}
 		case order.Equal:
 			if left == nil {
