@@ -15,8 +15,8 @@ type PlainValue struct {
 
 func (impl SumValue) RuntimeValue() {}
 type SumValue struct {
-	Index Short
-	Value Value
+	Index  Short
+	Value  Value
 }
 
 func (impl ProductValue) RuntimeValue() {}
