@@ -3,7 +3,32 @@ package effect
 import (
 	"context"
 	. "kumachan/runtime/common"
+	"kumachan/runtime/lib/container"
 )
+
+func Merge (seq container.Seq) Effect {
+	return Effect { Action: func(r EffectRunner, ob *Observer) {
+		var ctx, dispose = context.WithCancel(ob.Context)
+		var c = CollectorFrom(ob, ctx, dispose)
+		for v,rest,exists := seq.Next(); exists; v,rest,exists = rest.Next() {
+			var item = EffectFrom(v)
+			c.NewChild()
+			r.Run(item, &Observer {
+				Context: ctx,
+				Next: func(v Value) {
+					c.Pass(v)
+				},
+				Error: func(e Value) {
+					c.Throw(e)
+				},
+				Complete: func() {
+					c.DeleteChild()
+				},
+			})
+		}
+		c.ParentComplete()
+	} }
+}
 
 func (e Effect) MergeMap(f func(Value)Value) Effect {
 	return Effect { Action: func(r EffectRunner, ob *Observer) {
