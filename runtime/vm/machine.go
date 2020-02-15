@@ -1,14 +1,40 @@
 package vm
 
-import . "kumachan/runtime/common"
+import (
+	. "kumachan/runtime/common"
+	"kumachan/runtime/lib/effect"
+	"sync"
+)
+
+const InitialDataStackCapacity = 32
+const InitialCallStackCapacity = 8
 
 type Machine struct {
 	Program       Program
 	GlobalValues  [] Value
+	ContextPool   *sync.Pool
+	EventLoop     *effect.EventLoop
+}
+
+func SpawnMachine(p Program) *Machine {
+	var m = &Machine {
+		Program:      p,
+		GlobalValues: nil,
+		ContextPool:  &sync.Pool { New: func() interface{} {
+			return &ExecutionContext {
+				DataStack: make([]Value, 0, InitialDataStackCapacity),
+				CallStack: make([]CallStackFrame, 0, InitialCallStackCapacity),
+			}
+		} },
+		EventLoop: effect.SpawnEventLoop(),
+	}
+	for _, cmd := range m.Program.Commands {
+		RunCommand(cmd, m)
+	}
+	return m
 }
 
 type ExecutionContext struct {
-	Machine       *Machine
 	DataStack     DataStack
 	CallStack     CallStack
 	WorkingFrame  CallStackFrame
@@ -25,7 +51,7 @@ type CallStackFrame struct {
 func (m *Machine) Call(fv Value, arg Value) Value {
 	switch f := fv.(type) {
 	case FunctionValue:
-		return CallInNewContext(f, arg, m)
+		return CallFunction(f, arg, m)
 	case NativeFunctionValue:
 		return f(arg, m)
 	default:
@@ -33,3 +59,9 @@ func (m *Machine) Call(fv Value, arg Value) Value {
 	}
 }
 
+func (m *Machine) CallAsync(fv Value, arg Value, cb func(Value)) {
+	go (func() {
+		var ret = m.Call(fv, arg)
+		cb(ret)
+	})()
+}

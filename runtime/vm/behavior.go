@@ -1,19 +1,53 @@
 package vm
 
 import (
+	"context"
 	"fmt"
 	. "kumachan/runtime/common"
+	"kumachan/runtime/lib/effect"
 )
 
-const InitialDataStackCapacity = 32
-const InitialCallStackCapacity = 8
 
-func CallInNewContext (f FunctionValue, arg Value, m *Machine) Value {
-	var ec = &ExecutionContext {
-		Machine:   m,
-		DataStack: make([]Value, 0, InitialDataStackCapacity),
-		CallStack: make([]CallStackFrame, 0, InitialCallStackCapacity),
+func RunCommand (cmd Command, m *Machine) {
+	switch cmd.Kind {
+	case CMD_DeclareNative:
+		var nf = NativeFunctionValue(cmd.Native)
+		m.GlobalValues = append(m.GlobalValues, nf)
+	default:
+		var f = FunctionValue {
+			Underlying:    cmd.Function,
+			ContextValues: make([]Value, 0, 0),
+		}
+		switch cmd.Kind {
+		case CMD_DeclareFunction:
+			m.GlobalValues = append(m.GlobalValues, f)
+		case CMD_DeclareConstant:
+			var val = CallFunction(f, nil, m)
+			m.GlobalValues = append(m.GlobalValues, val)
+		case CMD_ActivateEffect:
+			var e = effect.EffectFrom(CallFunction(f, nil, m))
+			m.EventLoop.Run(e, &effect.Observer{
+				Context:  context.Background(),
+				Next:     func(_ Value) {},
+				Error:    func(_ Value) {},
+				Complete: func() {},
+			})
+		default:
+			panic("unknown command kind")
+		}
 	}
+}
+
+
+func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
+	var ec = m.ContextPool.Get().(*ExecutionContext)
+	defer (func() {
+		var err = recover()
+		if err != nil {
+			PrintRuntimeErrorMessage(err, ec)
+			panic(err)
+		}
+	}) ()
 	ec.PushCall(f, arg)
 	for len(ec.CallStack) > 0 {
 		var code = ec.WorkingFrame.Function.Code
@@ -27,7 +61,7 @@ func CallInNewContext (f FunctionValue, arg Value, m *Machine) Value {
 				// do nothing
 			case GLOBAL:
 				var id = inst.GetRegIndex()
-				var gv = ec.Machine.GlobalValues[id]
+				var gv = m.GlobalValues[id]
 				ec.PushValue(gv)
 			case LOAD:
 				var offset = inst.GetOffset()
@@ -136,8 +170,20 @@ func CallInNewContext (f FunctionValue, arg Value, m *Machine) Value {
 		}
 		ec.PopCall()
 	}
-	return ec.PopValue()
+	var ret = ec.PopValue()
+	ec.WorkingFrame = CallStackFrame {}
+	for i, _ := range ec.CallStack {
+		ec.CallStack[i] = CallStackFrame {}
+	}
+	ec.CallStack = ec.CallStack[:0]
+	for i, _ := range ec.DataStack {
+		ec.DataStack[i] = nil
+	}
+	ec.DataStack = ec.DataStack[:0]
+	m.ContextPool.Put(ec)
+	return ret
 }
+
 
 func (ec *ExecutionContext) GetCurrentValue() Value {
 	return ec.DataStack[len(ec.DataStack) - 1]
@@ -200,3 +246,7 @@ func (ec *ExecutionContext) PopCall() {
 	ec.WorkingFrame = popped
 }
 
+
+func assert(ok bool, msg string) {
+	if !ok { panic(msg) }
+}
