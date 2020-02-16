@@ -14,9 +14,10 @@ type Machine struct {
 	GlobalValues  [] Value
 	ContextPool   *sync.Pool
 	EventLoop     *effect.EventLoop
+	MaxNumOfCall  uint
 }
 
-func SpawnMachine(p Program) *Machine {
+func SpawnMachine(p Program, max_call uint) *Machine {
 	var m = &Machine {
 		Program:      p,
 		GlobalValues: nil,
@@ -26,7 +27,8 @@ func SpawnMachine(p Program) *Machine {
 				CallStack: make([]CallStackFrame, 0, InitialCallStackCapacity),
 			}
 		} },
-		EventLoop: effect.SpawnEventLoop(),
+		EventLoop:    effect.SpawnEventLoop(),
+		MaxNumOfCall: max_call,
 	}
 	for _, cmd := range m.Program.Commands {
 		RunCommand(cmd, m)

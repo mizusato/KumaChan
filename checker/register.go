@@ -12,22 +12,22 @@ type TypeRegistry  map[loader.Symbol] *GenericType
 // Intermediate Registry of Types, Used When Defining Types
 type RawTypeRegistry struct {
 	// a map from symbol to type declaration (transformed AST node)
-	DeclMap       map[loader.Symbol] node.DeclType
+	DeclMap        map[loader.Symbol] node.DeclType
 	// a map from subtype to union type (e.g. Just -> Maybe, Null -> Maybe)
 	// (parameters of subtypes are inherited from the out-most union type)
-	UnionRootMap  map[loader.Symbol] loader.Symbol
-	// a map from subtype to corresponding order
-	OrderMap      map[loader.Symbol] uint
+	UnionRootMap   map[loader.Symbol] loader.Symbol
+	// a map from subtypes to their corresponding indexes
+	UnionIndexMap  map[loader.Symbol] uint
 	// a context value to track all visited modules
 	// (same module may appear many times when walking through the hierarchy)
-	VisitedMod    map[string] bool
+	VisitedMod     map[string] bool
 }
 func MakeRawTypeRegistry() RawTypeRegistry {
 	return RawTypeRegistry {
-		DeclMap:      make(map[loader.Symbol] node.DeclType),
-		UnionRootMap: make(map[loader.Symbol] loader.Symbol),
-		OrderMap:     make(map[loader.Symbol]uint),
-		VisitedMod:   make(map[string] bool),
+		DeclMap:       make(map[loader.Symbol] node.DeclType),
+		UnionRootMap:  make(map[loader.Symbol] loader.Symbol),
+		UnionIndexMap: make(map[loader.Symbol]uint),
+		VisitedMod:    make(map[string] bool),
 	}
 }
 func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
@@ -46,7 +46,7 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 	//    and record the root union types of all subtypes
 	var decls = make([]node.DeclType, 0)
 	var root_map = make(map[int]int)
-	var order_map = make(map[int]int)
+	var index_map = make(map[int]int)
 	for _, cmd := range mod.Node.Commands {
 		switch c := cmd.Command.(type) {
 		case node.DeclType:
@@ -55,10 +55,10 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 			var root_of_union, root_of_union_exists = root_map[cur_union_index]
 			switch u := c.TypeValue.TypeValue.(type) {
 			case node.UnionType:
-				for order, item := range u.Items {
+				for index, item := range u.Items {
 					var cur_sub_index = len(decls)
 					decls = append(decls, item)
-					order_map[cur_sub_index] = order
+					index_map[cur_sub_index] = index
 					if root_of_union_exists {
 						root_map[cur_sub_index] = root_of_union
 					} else {
@@ -84,7 +84,7 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 			}
 		} else {
 			// 3.2.2. If not, register the declaration node to DeclMap
-			//        and update UnionRootMap and OrderMap if necessary.
+			//        and update UnionRootMap and UnionIndexMap if necessary.
 			//        If parameters were declared on a subtype,
 			//        throw an error.
 			raw.DeclMap[type_sym] = d
@@ -99,7 +99,7 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 					}
 				}
 				raw.UnionRootMap[type_sym] = mod.SymbolFromName(decls[root].Name)
-				raw.OrderMap[type_sym] = uint(order_map[i])
+				raw.UnionIndexMap[type_sym] = uint(index_map[i])
 			}
 		}
 	}
@@ -194,10 +194,11 @@ func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, *Type
 		// 3.3. Use the generated TypeVal to construct a GenericType
 		//      and register it to the TypeRegistry
 		reg[name] = &GenericType {
-			Arity:     uint(len(params)),
-			IsOpaque:  t.IsOpaque,
-			Value:     val,
-			Node:      t.Node,
+			Arity:      uint(len(params)),
+			IsOpaque:   t.IsOpaque,
+			Value:      val,
+			Node:       t.Node,
+			UnionIndex: raw.UnionIndexMap[name],
 		}
 	}
 	// 4. Return the TypeRegistry

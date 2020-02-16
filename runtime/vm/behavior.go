@@ -26,7 +26,7 @@ func RunCommand (cmd Command, m *Machine) {
 			m.GlobalValues = append(m.GlobalValues, val)
 		case CMD_ActivateEffect:
 			var e = effect.EffectFrom(CallFunction(f, nil, m))
-			m.EventLoop.Run(e, &effect.Observer{
+			m.EventLoop.Run(e, &effect.Observer {
 				Context:  context.Background(),
 				Next:     func(_ Value) {},
 				Error:    func(_ Value) {},
@@ -157,6 +157,8 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 					assert(current == required, "CALL: missing correct context")
 					var arg = ec.PopValue()
 					ec.PushCall(f, arg)
+					var num_call = uint(len(ec.CallStack))
+					assert(num_call < m.MaxNumOfCall, "CALL: maximum call stack size exceeded")
 				case NativeFunctionValue:
 					var arg = ec.PopValue()
 					var ret = f(arg, m)

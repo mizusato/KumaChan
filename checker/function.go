@@ -73,7 +73,7 @@ func CollectFunctions (mod *loader.Module, reg TypeRegistry, store FunctionStore
 			var is_global = decl.IsGlobal
 			if is_global && !(IsLocalType(sig, mod_name)) { return nil, &FunctionError {
 				Point:    ErrorPoint { AST: mod.AST, Node: decl.Repr.Node },
-				Concrete: E_SignatureNonLocal{
+				Concrete: E_SignatureNonLocal {
 					FuncName: name,
 				},
 			} }

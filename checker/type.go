@@ -6,11 +6,11 @@ import (
 )
 
 type GenericType struct {
-	Arity     uint
-	IsOpaque  bool
-	Value     TypeVal
-	Node      node.Node
-	Order     uint
+	Arity       uint
+	IsOpaque    bool
+	Value       TypeVal
+	Node        node.Node
+	UnionIndex  uint
 }
 
 type TypeVal interface { TypeVal() }
