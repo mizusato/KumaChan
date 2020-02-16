@@ -37,7 +37,7 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 	 *  Effect: add all types declared in the module
 	 *          and all modules imported by the module to the registry
 	 */
-	// 1. Check if the module is visited, if visited, do nothing
+	// 1. Check if the module was visited, if visited, do nothing
 	var mod_name = loader.Id2String(mod.Node.Name)
 	var _, visited = raw.VisitedMod[mod_name]
 	if visited { return nil }
