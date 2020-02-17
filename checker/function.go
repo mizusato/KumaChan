@@ -79,7 +79,7 @@ func CollectFunctions (mod *loader.Module, reg TypeRegistry, store FunctionStore
 				Ireg:   reg,
 			}
 			// 3.3. Evaluate the function signature using the created context
-			var sig, err = TypeExprFromRepr(decl.Repr, ctx)
+			var sig, err = TypeFromRepr(decl.Repr, ctx)
 			if err != nil { return nil, &FunctionError {
 				Point:    ErrorPoint { AST: mod.AST, Node: decl.Repr.Node },
 				Concrete: E_SignatureInvalid {

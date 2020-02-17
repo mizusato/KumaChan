@@ -26,7 +26,7 @@ func MakeRawTypeRegistry() RawTypeRegistry {
 	return RawTypeRegistry {
 		DeclMap:       make(map[loader.Symbol] node.DeclType),
 		UnionRootMap:  make(map[loader.Symbol] loader.Symbol),
-		UnionIndexMap: make(map[loader.Symbol]uint),
+		UnionIndexMap: make(map[loader.Symbol] uint),
 		VisitedMod:    make(map[string] bool),
 	}
 }
@@ -206,7 +206,7 @@ func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, *Type
 }
 
 /* Transform: node.TypeValue -> checker.TypeVal */
-func TypeValFrom (tv node.TypeValue, ctx TypeExprContext) (TypeVal, *TypeExprError) {
+func TypeValFrom (tv node.TypeValue, ctx TypeExprContext) (TypeVal, *TypeError) {
 	switch v := tv.(type) {
 	case node.UnionType:
 		var subtypes = make([]loader.Symbol, len(v.Items))
@@ -217,7 +217,7 @@ func TypeValFrom (tv node.TypeValue, ctx TypeExprContext) (TypeVal, *TypeExprErr
 			SubTypes: subtypes,
 		}, nil
 	case node.CompoundType:
-		var expr, err = TypeExprFromRepr(v.Repr.Repr, ctx)
+		var expr, err = TypeFromRepr(v.Repr.Repr, ctx)
 		if err != nil { return nil, err }
 		return SingleTypeVal {
 			Expr: expr,
@@ -229,8 +229,8 @@ func TypeValFrom (tv node.TypeValue, ctx TypeExprContext) (TypeVal, *TypeExprErr
 	}
 }
 
-/* Transform: node.Type -> checker.TypeExpr */
-func TypeExprFrom (type_ node.Type, ctx TypeExprContext) (TypeExpr, *TypeExprError) {
+/* Transform: node.Type -> checker.Type */
+func TypeFrom (type_ node.Type, ctx TypeExprContext) (Type, *TypeError) {
 	switch t := type_.(type) {
 	case node.TypeRef:
 		var ref_mod = string(t.Ref.Module.Name)
@@ -246,14 +246,14 @@ func TypeExprFrom (type_ node.Type, ctx TypeExprContext) (TypeExpr, *TypeExprErr
 		switch s := sym.(type) {
 		case loader.Symbol:
 			var exists, arity = ctx.Ireg.LookupArity(s)
-			if !exists { return nil, &TypeExprError {
+			if !exists { return nil, &TypeError {
 				Point: ErrorPoint { AST: ctx.Module.AST, Node: t.Ref.Id.Node },
 				Concrete: E_TypeNotFound {
 					Name: s,
 				},
 			} }
 			var given_arity = uint(len(t.Ref.TypeArgs))
-			if arity != given_arity { return nil, &TypeExprError {
+			if arity != given_arity { return nil, &TypeError {
 				Point: ErrorPoint { AST: ctx.Module.AST, Node: t.Ref.Node },
 				Concrete: E_WrongParameterQuantity {
 					TypeName: s,
@@ -261,9 +261,9 @@ func TypeExprFrom (type_ node.Type, ctx TypeExprContext) (TypeExpr, *TypeExprErr
 					Given:    given_arity,
 				},
 			} }
-			var args = make([]TypeExpr, arity)
+			var args = make([]Type, arity)
 			for i, arg_node := range t.Ref.TypeArgs {
-				var arg, err = TypeExprFrom(arg_node.Type, ctx)
+				var arg, err = TypeFrom(arg_node.Type, ctx)
 				if err != nil { return nil, err }
 				args[i] = arg
 			}
@@ -272,7 +272,7 @@ func TypeExprFrom (type_ node.Type, ctx TypeExprContext) (TypeExpr, *TypeExprErr
 				Args: args,
 			}, nil
 		default:
-			return nil, &TypeExprError {
+			return nil, &TypeError {
 				Point: ErrorPoint { AST: ctx.Module.AST, Node: t.Ref.Module.Node },
 				Concrete: E_ModuleOfTypeRefNotFound {
 					Name: loader.Id2String(t.Ref.Module),
@@ -280,14 +280,14 @@ func TypeExprFrom (type_ node.Type, ctx TypeExprContext) (TypeExpr, *TypeExprErr
 			}
 		}
 	case node.TypeLiteral:
-		return TypeExprFromRepr(t.Repr.Repr, ctx)
+		return TypeFromRepr(t.Repr.Repr, ctx)
 	default:
 		panic("impossible branch")
 	}
 }
 
-/* Transform: node.Repr -> checker.TypeExpr */
-func TypeExprFromRepr (repr node.Repr, ctx TypeExprContext) (TypeExpr, *TypeExprError) {
+/* Transform: node.Repr -> checker.Type */
+func TypeFromRepr (repr node.Repr, ctx TypeExprContext) (Type, *TypeError) {
 	switch r := repr.(type) {
 	case node.ReprTuple:
 		if len(r.Elements) == 0 {
@@ -297,9 +297,9 @@ func TypeExprFromRepr (repr node.Repr, ctx TypeExprContext) (TypeExpr, *TypeExpr
 				Repr: Unit {},
 			}, nil
 		} else {
-			var elements = make([]TypeExpr, len(r.Elements))
+			var elements = make([]Type, len(r.Elements))
 			for i, el := range r.Elements {
-				var e, err = TypeExprFrom(el.Type, ctx)
+				var e, err = TypeFrom(el.Type, ctx)
 				if err != nil { return nil, err }
 				elements[i] = e
 			}
@@ -309,7 +309,7 @@ func TypeExprFromRepr (repr node.Repr, ctx TypeExprContext) (TypeExpr, *TypeExpr
 				return elements[0], nil
 			} else {
 				return AnonymousType {
-					Repr: Tuple { Elements:elements },
+					Repr: Tuple { Elements: elements },
 				}, nil
 			}
 		}
@@ -321,28 +321,33 @@ func TypeExprFromRepr (repr node.Repr, ctx TypeExprContext) (TypeExpr, *TypeExpr
 				Repr: Unit {},
 			}, nil
 		} else {
-			var fields = make(map[string]TypeExpr)
-			for _, f := range r.Fields {
+			var fields = make(map[string]Type)
+			var index = make(map[string] uint)
+			for i, f := range r.Fields {
 				var f_name = loader.Id2String(f.Name)
 				var _, exists = fields[f_name]
-				if exists { return nil, &TypeExprError {
+				if exists { return nil, &TypeError {
 					Point: ErrorPoint { AST: ctx.Module.AST, Node: f.Name.Node },
 					Concrete: E_DuplicateField {
 						FieldName: f_name,
 					},
 				} }
-				var f_type, err = TypeExprFrom(f.Type.Type, ctx)
+				var f_type, err = TypeFrom(f.Type.Type, ctx)
 				if err != nil { return nil, err }
 				fields[f_name] = f_type
+				index[f_name] = uint(i)
 			}
 			return AnonymousType {
-				Repr: Bundle { Fields: fields },
+				Repr: Bundle {
+					Fields: fields,
+					Index: index,
+				},
 			}, nil
 		}
 	case node.ReprFunc:
-		var input, err1 = TypeExprFrom(r.Input.Type, ctx)
+		var input, err1 = TypeFrom(r.Input.Type, ctx)
 		if err1 != nil { return nil, err1 }
-		var output, err2 = TypeExprFrom(r.Output.Type, ctx)
+		var output, err2 = TypeFrom(r.Output.Type, ctx)
 		if err2 != nil { return nil, err2 }
 		return AnonymousType {
 			Repr: Func {

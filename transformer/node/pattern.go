@@ -1,14 +1,6 @@
 package node
 
 
-func (impl Lambda) Body() {}
-func (impl Lambda) Term() {}
-type Lambda struct {
-	Node                    `part:"lambda"`
-	Input   VariousPattern  `part:"pattern"`
-	Output  Pipe            `part:"pipe"`
-}
-
 func (impl VariousPattern) MaybePattern() {}
 type VariousPattern struct {
 	Node               `part:"pattern"`

@@ -5,6 +5,7 @@ import (
 	"kumachan/transformer/node"
 )
 
+
 type GenericType struct {
 	Arity       uint
 	IsOpaque    bool
@@ -12,63 +13,58 @@ type GenericType struct {
 	Node        node.Node
 	UnionIndex  uint
 }
-
 type TypeVal interface { TypeVal() }
 
 func (impl UnionTypeVal) TypeVal() {}
 type UnionTypeVal struct {
 	SubTypes  [] loader.Symbol
 }
-
 func (impl SingleTypeVal) TypeVal() {}
 type SingleTypeVal struct {
-	Expr  TypeExpr
+	Expr Type
 }
-
 func (impl NativeTypeVal) TypeVal() {}
 type NativeTypeVal struct {}
 
-type TypeExpr interface { TypeExpr() }
 
-func (impl ParameterType) TypeExpr() {}
+type Type interface { CheckerType() }
+
+func (impl ParameterType) CheckerType() {}
 type ParameterType struct {
 	Index  uint
 }
-
-func (impl NamedType) TypeExpr() {}
+func (impl NamedType) CheckerType() {}
 type NamedType struct {
 	Name  loader.Symbol
-	Args  [] TypeExpr
+	Args  [] Type
 }
-
-func (impl AnonymousType) TypeExpr() {}
+func (impl AnonymousType) CheckerType() {}
 type AnonymousType struct {
 	Repr  TypeRepr
 }
+
 
 type TypeRepr interface { TypeRepr() }
 
 func (impl Unit) TypeRepr() {}
 type Unit struct {}
-
 func (impl Tuple) TypeRepr() {}
 type Tuple struct {
-	Elements  [] TypeExpr
+	Elements  [] Type
 }
-
 func (impl Bundle) TypeRepr() {}
 type Bundle struct {
-	Fields  map[string] TypeExpr
+	Fields  map[string] Type
+	Index   map[string] uint
 }
-
 func (impl Func) TypeRepr() {}
 type Func struct {
-	Input   TypeExpr
-	Output  TypeExpr
+	Input   Type
+	Output  Type
 }
 
 
-func IsLocalType (type_ TypeExpr, mod string) bool {
+func IsLocalType (type_ Type, mod string) bool {
 	switch t := type_.(type) {
 	case ParameterType:
 		return false
@@ -117,7 +113,7 @@ func IsLocalType (type_ TypeExpr, mod string) bool {
 	}
 }
 
-func AreTypesOverloadUnsafe (type1 TypeExpr, type2 TypeExpr) bool {
+func AreTypesOverloadUnsafe (type1 Type, type2 Type) bool {
 	// Are type1 and type2 equal in the context of function overloading
 	switch t1 := type1.(type) {
 	case ParameterType:

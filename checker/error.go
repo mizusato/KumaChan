@@ -6,33 +6,34 @@ import (
 	"kumachan/loader"
 )
 
-type TypeExprError struct {
+
+type TypeError struct {
 	Point     ErrorPoint
-	Concrete  ConcreteTypeExprError
+	Concrete  ConcreteTypeError
 }
 
-type ConcreteTypeExprError interface { TypeExprError() }
+type ConcreteTypeError interface { TypeError() }
 
-func (impl E_ModuleOfTypeRefNotFound) TypeExprError() {}
+func (impl E_ModuleOfTypeRefNotFound) TypeError() {}
 type E_ModuleOfTypeRefNotFound struct {
 	Name   string
 }
-func (impl E_TypeNotFound) TypeExprError() {}
+func (impl E_TypeNotFound) TypeError() {}
 type E_TypeNotFound struct {
 	Name   loader.Symbol
 }
-func (impl E_WrongParameterQuantity) TypeExprError() {}
+func (impl E_WrongParameterQuantity) TypeError() {}
 type E_WrongParameterQuantity struct {
 	TypeName  loader.Symbol
 	Required  uint
 	Given     uint
 }
-func (impl E_DuplicateField) TypeExprError() {}
+func (impl E_DuplicateField) TypeError() {}
 type E_DuplicateField struct {
 	FieldName  string
 }
 
-func (err *TypeExprError) Error() string {
+func (err *TypeError) Error() string {
 	var description string
 	switch e := err.Concrete.(type) {
 	case E_ModuleOfTypeRefNotFound:
@@ -80,7 +81,7 @@ type E_GenericUnionSubType struct {
 func (impl E_InvalidTypeDecl) TypeDeclError() {}
 type E_InvalidTypeDecl struct {
 	TypeName   loader.Symbol
-	ExprError  *TypeExprError
+	ExprError  *TypeError
 }
 
 func (err *TypeDeclError) Error() string {
@@ -123,7 +124,7 @@ type ConcreteFunctionError interface { FunctionError() }
 func (impl E_SignatureInvalid) FunctionError() {}
 type E_SignatureInvalid struct {
 	FuncName   string
-	TypeError  *TypeExprError
+	TypeError  *TypeError
 }
 
 func (E_SignatureNonLocal) FunctionError() {}
@@ -136,3 +137,11 @@ type E_InvalidOverload struct {
 	FuncName         string
 	IsLocalConflict  bool
 }
+
+
+type ExprError struct {
+	Point     ErrorPoint
+	Concrete  ConcreteExprError
+}
+
+type ConcreteExprError interface { ExprError() }
