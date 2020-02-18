@@ -8,9 +8,9 @@ import . "kumachan/error"
 
 
 type Expr struct {
-	Type  Type
-	Info  ExprInfo
-	Value ExprVal
+	Type   Type
+	Info   ExprInfo
+	Value  ExprVal
 }
 
 type ExprInfo struct {
@@ -69,6 +69,9 @@ func (impl Text) ExprVal() {}
 type Text struct {
 	Segments  [] TextSegment
 }
+
+func (impl UnitValue) ExprVal() {}
+type UnitValue struct {}
 
 func (impl Block) ExprVal() {}
 type Block struct {

@@ -145,3 +145,10 @@ type ExprError struct {
 }
 
 type ConcreteExprError interface { ExprError() }
+
+func (impl E_NotAssignable) ExprError() {}
+type E_NotAssignable struct {
+	From    string
+	To      string
+	Reason  string
+}

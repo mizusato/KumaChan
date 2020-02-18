@@ -72,8 +72,8 @@ func CollectFunctions (mod *loader.Module, reg TypeRegistry, store FunctionStore
 			for i, p := range decl.Params {
 				params[i] = loader.Id2String(p)
 			}
-			// 3.2. Create a context for evaluating type expressions
-			var ctx = TypeExprContext {
+			// 3.2. Create a context for evaluating types
+			var ctx = TypeContext {
 				Module: mod,
 				Params: params,
 				Ireg:   reg,

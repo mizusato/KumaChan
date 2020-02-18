@@ -115,7 +115,7 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 	return nil
 }
 
-type TypeExprContext struct {
+type TypeContext struct {
 	Module  *loader.Module
 	Params  [] string
 	Ireg    AbstractRegistry
@@ -177,9 +177,9 @@ func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, *Type
 		for i, param := range params_t.Params {
 			params[i] = loader.Id2String(param)
 		}
-		// 3.2. Construct a TypeExprContext and pass it to TypeValFrom()
+		// 3.2. Construct a TypeContext and pass it to TypeValFrom()
 		//      to generate a TypeVal and bubble errors
-		var val, err = TypeValFrom(t.TypeValue.TypeValue, TypeExprContext {
+		var val, err = TypeValFrom(t.TypeValue.TypeValue, TypeContext {
 			Module: mod,
 			Params: params,
 			Ireg:   raw,
@@ -206,7 +206,7 @@ func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, *Type
 }
 
 /* Transform: node.TypeValue -> checker.TypeVal */
-func TypeValFrom (tv node.TypeValue, ctx TypeExprContext) (TypeVal, *TypeError) {
+func TypeValFrom (tv node.TypeValue, ctx TypeContext) (TypeVal, *TypeError) {
 	switch v := tv.(type) {
 	case node.UnionType:
 		var subtypes = make([]loader.Symbol, len(v.Items))
@@ -220,7 +220,7 @@ func TypeValFrom (tv node.TypeValue, ctx TypeExprContext) (TypeVal, *TypeError) 
 		var expr, err = TypeFromRepr(v.Repr.Repr, ctx)
 		if err != nil { return nil, err }
 		return SingleTypeVal {
-			Expr: expr,
+			InnerType: expr,
 		}, nil
 	case node.NativeType:
 		return NativeTypeVal{}, nil
@@ -230,7 +230,7 @@ func TypeValFrom (tv node.TypeValue, ctx TypeExprContext) (TypeVal, *TypeError) 
 }
 
 /* Transform: node.Type -> checker.Type */
-func TypeFrom (type_ node.Type, ctx TypeExprContext) (Type, *TypeError) {
+func TypeFrom (type_ node.Type, ctx TypeContext) (Type, *TypeError) {
 	switch t := type_.(type) {
 	case node.TypeRef:
 		var ref_mod = string(t.Ref.Module.Name)
@@ -287,7 +287,7 @@ func TypeFrom (type_ node.Type, ctx TypeExprContext) (Type, *TypeError) {
 }
 
 /* Transform: node.Repr -> checker.Type */
-func TypeFromRepr (repr node.Repr, ctx TypeExprContext) (Type, *TypeError) {
+func TypeFromRepr (repr node.Repr, ctx TypeContext) (Type, *TypeError) {
 	switch r := repr.(type) {
 	case node.ReprTuple:
 		if len(r.Elements) == 0 {
