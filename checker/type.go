@@ -171,7 +171,6 @@ func IsLocalType (type_ Type, mod string) bool {
 }
 
 func AreTypesOverloadUnsafe (type1 Type, type2 Type) bool {
-	// TODO: pass in context to check union/sub types
 	// Are type1 and type2 equal in the context of function overloading
 	switch t1 := type1.(type) {
 	case ParameterType:

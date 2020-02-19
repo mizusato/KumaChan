@@ -22,6 +22,7 @@ type ExprVal interface { ExprVal() }
 func (impl Sum) ExprVal() {}
 type Sum struct {
 	Value  Expr
+	Index  uint
 }
 
 func (impl Match) ExprVal() {}

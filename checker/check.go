@@ -18,11 +18,8 @@ func ExprFrom (e node.Expr, ctx ExprContext, expected Type) (Expr, *ExprError) {
 }
 
 func ExprFromPipe (p node.Pipe, ctx ExprContext, input Type) (Expr, *ExprError) {
-	if input == nil {
-
-	} else {
-
-	}
+	// TODO
+	// if input == nil { ...
 	return Expr{}, nil
 }
 
@@ -52,7 +49,7 @@ func ExprFromTerm (t node.VariousTerm, ctx ExprContext, expected Type) (Expr, *E
 				el_types[i] = expr.Type
 			}
 			T = AnonymousType { Tuple { Elements: el_types } }
-			v = Product{Values: el_exprs}
+			v = Product { Values: el_exprs }
 		}
 	case node.Bundle:
 
@@ -66,7 +63,6 @@ func ExprFromTerm (t node.VariousTerm, ctx ExprContext, expected Type) (Expr, *E
 }
 
 func AssignTo (expected Type, expr Expr, ctx TypeContext) (Expr, *ExprError) {
-	// TODO
 	if expected == nil {
 		return expr, nil
 	} else if AreTypesEqualInSameCtx(expected, expr.Type) {
@@ -88,9 +84,26 @@ func AssignTo (expected Type, expr Expr, ctx TypeContext) (Expr, *ExprError) {
 		case NamedType:
 			var reg = ctx.Ireg.(TypeRegistry)
 			var gt = reg[T.Name]
+			switch E := expected.(type) {
+			case NamedType:
+				var ge = reg[E.Name]
+				switch tv := ge.Value.(type) {
+				case UnionTypeVal:
+					for index, subtype := range tv.SubTypes {
+						if subtype == T.Name {
+							return Expr {
+								Type: expected,
+								Value: Sum {
+									Value: expr,
+									Index: uint(index),
+								},
+								Info: expr.Info,
+							}, nil
+						}
+					}
+				}
+			}
 			switch tv := gt.Value.(type) {
-			case UnionTypeVal:
-				return Expr{}, throw("")
 			case SingleTypeVal:
 				var inner = tv.InnerType
 				var with_inner = Expr {
@@ -109,13 +122,90 @@ func AssignTo (expected Type, expr Expr, ctx TypeContext) (Expr, *ExprError) {
 						return result, nil
 					}
 				}
-			case NativeTypeVal:
-				return Expr{}, throw("")
 			default:
-				panic("impossible branch")
+				return Expr{}, throw("")
 			}
 		case AnonymousType:
-			// TODO
+			switch rt := T.Repr.(type) {
+			case Tuple:
+				switch E := expected.(type) {
+				case AnonymousType:
+					switch re := E.Repr.(type) {
+					case Tuple:
+						if len(rt.Elements) != len(re.Elements) {
+							return Expr{}, throw("tuple arity not matching")
+						}
+						switch v := expr.Value.(type) {
+						case Product:
+							var L = len(rt.Elements)
+							var items = make([]Expr, L)
+							for i := 0; i < L; i += 1 {
+								var raw_item = v.Values[i]
+								var item_expected = re.Elements[i]
+								var item, err = AssignTo(item_expected, raw_item, ctx)
+								if err != nil { return Expr{}, err }
+								items[i] = item
+							}
+							return Expr {
+								Type: expected,
+								Value: Product {
+									Values: items,
+								},
+								Info: expr.Info,
+							}, nil
+						default:
+							return Expr{}, throw("non-literal tuple cannot be assigned to different tuple type")
+						}
+					default:
+						return Expr{}, throw("")
+					}
+				default:
+					return Expr{}, throw("")
+				}
+			case Bundle:
+				switch E := expected.(type) {
+				case AnonymousType:
+					switch re := E.Repr.(type) {
+					case Bundle:
+						var Lt = len(rt.Fields)
+						var Le = len(re.Fields)
+						if Lt == Le {
+							switch v := expr.Value.(type) {
+							case Product:
+								var L = Lt
+								var fields = make([]Expr, L)
+								for name, index := range re.Index {
+									var field_expected = re.Fields[name]
+									var raw_index, exists = rt.Index[name]
+									if !exists { return Expr{}, throw("missing field " + name) }
+									var raw_field = v.Values[raw_index]
+									var field, err = AssignTo(field_expected, raw_field, ctx)
+									if err != nil { return Expr{}, err }
+									fields[index] = field
+								}
+								return Expr {
+									Type: expected,
+									Value: Product {
+										Values: fields,
+									},
+									Info: expr.Info,
+								}, nil
+							default:
+								return Expr{}, throw("non-literal bundle cannot be assigned to different bundle type")
+							}
+						} else if Lt < Le {
+							// TODO: fill Nothing for Maybe fields
+							panic("not implemented")
+						} else {
+							return Expr{}, throw("")
+						}
+					}
+				default:
+					return Expr{}, throw("")
+				}
+			default:
+				return Expr{}, throw("")
+			}
 		}
 		return Expr{}, nil
 	}
