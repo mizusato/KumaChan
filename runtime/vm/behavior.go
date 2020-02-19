@@ -49,7 +49,7 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 		}
 	}) ()
 	ec.PushCall(f, arg)
-	for len(ec.CallStack) > 0 {
+	outer: for len(ec.CallStack) > 0 {
 		var code = ec.WorkingFrame.Function.Code
 		var base_addr = ec.WorkingFrame.BaseAddr
 		var inst_ptr_ref = &(ec.WorkingFrame.InstPtr)
@@ -152,13 +152,29 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 			case CALL:
 				switch f := ec.PopValue().(type) {
 				case FunctionValue:
+					// check if the function is valid
 					var required = int(f.Underlying.BaseSize.Context)
 					var current = len(f.ContextValues)
 					assert(current == required, "CALL: missing correct context")
 					var arg = ec.PopValue()
+					// tailing call optimization
+					var L = len(code)
+					var next_inst_ptr = *inst_ptr_ref
+					if next_inst_ptr < L {
+						var next = code[next_inst_ptr]
+						if next.OpCode == JMP && next.GetJumpAddr() == L-1 {
+							ec.PopValuesTo(base_addr)
+						}
+					} else {
+						ec.PopValuesTo(base_addr)
+					}
+					// push the function to call stack
 					ec.PushCall(f, arg)
+					// check if call stack size exceeded
 					var num_call = uint(len(ec.CallStack))
 					assert(num_call < m.MaxNumOfCall, "CALL: maximum call stack size exceeded")
+					// work on the pushed new frame
+					continue outer
 				case NativeFunctionValue:
 					var arg = ec.PopValue()
 					var ret = f(arg, m)
