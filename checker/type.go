@@ -16,16 +16,16 @@ type GenericType struct {
 }
 type TypeVal interface { TypeVal() }
 
-func (impl UnionTypeVal) TypeVal() {}
-type UnionTypeVal struct {
+func (impl Union) TypeVal() {}
+type Union struct {
 	SubTypes  [] loader.Symbol
 }
-func (impl SingleTypeVal) TypeVal() {}
-type SingleTypeVal struct {
+func (impl Single) TypeVal() {}
+type Single struct {
 	InnerType  Type
 }
-func (impl NativeTypeVal) TypeVal() {}
-type NativeTypeVal struct {}
+func (impl Native) TypeVal() {}
+type Native struct {}
 
 
 type Type interface { CheckerType() }

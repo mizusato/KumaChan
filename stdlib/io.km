@@ -13,9 +13,9 @@ type ErrorKind union {
     // ...
 };
 
-global read := [&(InputStream, Int) -> Effect[Bytes,Error]]
+global read := [&(InputStream, Int). Effect[Bytes,Error]]
     native 'read-input-stream';
-global write := [&(OutputStream, Bytes) -> Effect[Int,Error]]
+global write := [&(OutputStream, Bytes). Effect[Int,Error]]
     native 'write-output-stream';
 
 // print-line, ...

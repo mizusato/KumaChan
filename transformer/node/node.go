@@ -88,6 +88,8 @@ var __NodeRegistry = []interface{} {
     Get {},
     Block {},
     Binding {},
+    With {},
+    Unbox {},
     Text {},
     Ref {},
     VariousLiteral {},
@@ -235,7 +237,7 @@ func __Initialize() {
                 }
                 var item_id = get_part_id(item)
                 var tail string
-                if strings.HasSuffix(item, "ch") {
+                if strings.HasSuffix(item, "ch") || strings.HasSuffix(item, "x") {
                     tail = "more_" + item + "es"
                 } else {
                     tail = "more_" + item + "s"

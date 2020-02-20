@@ -80,8 +80,20 @@ type Block struct {
 	Value     Expr
 }
 type Binding struct {
-	Name   loader.Symbol
-	Value  Expr
+	Pattern  Pattern
+	Value    Expr
+}
+
+func (impl With) ExprVal() {}
+type With struct {
+	TypeArg  string
+	Context  NamedType
+	Unboxes  [] Unbox
+	Value    Expr
+}
+type Unbox struct {
+	Pattern  Pattern
+	Value    Expr
 }
 
 func (impl Ref) ExprVal() {}

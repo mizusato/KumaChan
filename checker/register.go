@@ -213,17 +213,17 @@ func TypeValFrom (tv node.TypeValue, ctx TypeContext) (TypeVal, *TypeError) {
 		for i, item := range v.Items {
 			subtypes[i] = ctx.Module.SymbolFromName(item.Name)
 		}
-		return UnionTypeVal {
+		return Union{
 			SubTypes: subtypes,
 		}, nil
 	case node.CompoundType:
 		var expr, err = TypeFromRepr(v.Repr.Repr, ctx)
 		if err != nil { return nil, err }
-		return SingleTypeVal {
+		return Single{
 			InnerType: expr,
 		}, nil
 	case node.NativeType:
-		return NativeTypeVal{}, nil
+		return Native{}, nil
 	default:
 		panic("impossible branch")
 	}
