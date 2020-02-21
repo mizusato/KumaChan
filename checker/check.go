@@ -115,7 +115,7 @@ func AssignTo (expected Type, expr Expr, ctx TypeContext) (Expr, *ExprError) {
 			return Expr{}, throw("given type is not a subtype of the expected union type")
 		}
 		// -- behavior of unpacking wrapped inner types --
-		var assign_inner = func(inner Type, g *GenericType, mod string) (Expr, *ExprError) {
+		var assign_inner = func(inner Type, is_opaque bool, mod string) (Expr, *ExprError) {
 			// 1. Create an alternative expression with the inner type
 			var expr_with_inner = Expr {
 				Type:  inner,
@@ -127,7 +127,7 @@ func AssignTo (expected Type, expr Expr, ctx TypeContext) (Expr, *ExprError) {
 			if err != nil { return Expr{}, throw("") }
 			// 3. Check if the module encapsulation is violated
 			var ctx_mod = loader.Id2String(ctx.Module.Node.Name)
-			if g.IsOpaque && ctx_mod != mod {
+			if is_opaque && ctx_mod != mod {
 				return Expr{}, throw("cannot cast out of opaque type")
 			} else {
 				return result, nil
@@ -236,11 +236,12 @@ func AssignTo (expected Type, expr Expr, ctx TypeContext) (Expr, *ExprError) {
 			}
 			switch tv := given_g.Value.(type) {
 			case Single:
-				var given_inner = tv.InnerType
+				var given_inner = FillArgs(tv.InnerType, G.Args)
 				var given_mod = G.Name.ModuleName
+				var given_is_opaque = given_g.IsOpaque
 				// 3.2.1.2. Otherwise, if the given type has an inner type,
 				//          try to unpack the inner type.
-				return assign_inner(given_inner, given_g, given_mod)
+				return assign_inner(given_inner, given_is_opaque, given_mod)
 			}
 		case AnonymousType:
 			// 3.2.2. If the given type is an anonymous type
