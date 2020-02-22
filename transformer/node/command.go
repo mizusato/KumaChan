@@ -23,19 +23,19 @@ type DeclConst struct {
     Node                          `part:"decl_const"`
     IsPublic  bool                `option:"scope.@public"`
     Name      Identifier          `part:"name"`
-    Params    [] Identifier       `list_more:"type_params" item:"name"`
+    Type      VariousType         `part:"type"`
     Value     VariousConstValue   `part:"const_value"`
 }
 type VariousConstValue struct {
     Node                     `part:"const_value"`
-    ConstValue  ConstValue   `part:"expr" fallback:"native_const"`
+    ConstValue  ConstValue   `use:"first"`
 }
 type ConstValue interface { ConstValue() }
-func (impl NativeConst) ConstValue() {}
-type NativeConst struct {
-    Node                `part:"native_const"`
-    Type   VariousType  `part:"type"`
-    Value  NativeRef    `part:"native"`
+func (impl NativeRef) ConstValue() {}
+func (impl NativeRef) Body() {}
+type NativeRef struct {
+    Node                `part:"native"`
+    Id  StringLiteral   `part:"string"`
 }
 
 func (impl Do) Command() {}
@@ -58,11 +58,6 @@ type VariousBody struct {
     Body  Body   `part:"lambda" fallback:"native"`
 }
 type Body interface { Body() }
-func (impl NativeRef) Body() {}
-type NativeRef struct {
-    Node                `part:"native"`
-    Id  StringLiteral   `part:"string"`
-}
 
 func (impl DeclType) Command() {}
 type DeclType struct {

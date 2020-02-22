@@ -139,6 +139,25 @@ type E_InvalidOverload struct {
 }
 
 
+type ConstantError struct {
+	Point     ErrorPoint
+	Concrete  ConcreteConstantError
+}
+
+type ConcreteConstantError interface { ConstantError() }
+
+func (E_DuplicateConstDecl) ConstantError() {}
+type E_DuplicateConstDecl struct {
+	Name  string
+}
+
+func (E_ConstTypeInvalid) ConstantError() {}
+type E_ConstTypeInvalid struct {
+	ConstName  string
+	TypeError  *TypeError
+}
+
+
 type ExprError struct {
 	Point     ErrorPoint
 	Concrete  ConcreteExprError

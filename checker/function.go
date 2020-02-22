@@ -7,11 +7,11 @@ import (
 )
 
 type GenericFunction struct {
-	IsPublic    bool      // Public (a.k.a. exported) or not
-	TypeParams  [] string // Generic Parameters
-	FuncType    Func      // Including Input and Output Types
-	Body        node.Body // Body
-	Node        node.Node // To Generate ErrorPoint
+	Node          node.Node
+	IsPublic      bool
+	TypeParams    [] string
+	DeclaredType  Func
+	Body          node.Body
 }
 
 type FunctionReference struct {
@@ -26,7 +26,7 @@ type FunctionStore map[string] FunctionCollection
 type FunctionCollection  map[string] []FunctionReference
 
 // Procedure to collect all functions in a module hierarchy
-func CollectFunctions (mod *loader.Module, reg TypeRegistry, store FunctionStore) (FunctionCollection, *FunctionError) {
+func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore) (FunctionCollection, *FunctionError) {
 	/**
 	 *  Input: a root module, a type registry and an empty function store
 	 *  Output: collected functions of the root module (or an error)
@@ -98,11 +98,11 @@ func CollectFunctions (mod *loader.Module, reg TypeRegistry, store FunctionStore
 			// 3.5. Construct a representation and a reference of the function
 			var func_type = sig.(AnonymousType).Repr.(Func)
 			var gf = &GenericFunction {
-				IsPublic:   is_public,
-				TypeParams: params,
-				FuncType:   func_type,
-				Body:       decl.Body.Body,
-				Node:       decl.Node,
+				IsPublic:     is_public,
+				TypeParams:   params,
+				DeclaredType: func_type,
+				Body:         decl.Body.Body,
+				Node:         decl.Node,
 			}
 			var ref = FunctionReference {
 				IsImported: false,
@@ -114,7 +114,7 @@ func CollectFunctions (mod *loader.Module, reg TypeRegistry, store FunctionStore
 				// 3.6.1. If in use, try to overload it
 				for _, existing := range collection[name] {
 					var unsafe = AreTypesOverloadUnsafe (
-						AnonymousType { Repr: existing.Function.FuncType },
+						AnonymousType { Repr: existing.Function.DeclaredType},
 						AnonymousType { Repr: func_type },
 					)
 					if unsafe { return nil, &FunctionError {
