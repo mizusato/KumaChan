@@ -1,7 +1,6 @@
 package checker
 
 import (
-	"kumachan/loader"
 	"math/big"
 )
 import . "kumachan/error"
@@ -96,11 +95,7 @@ type Unbox struct {
 	Value    Expr
 }
 
-func (impl Ref) ExprVal() {}
-type Ref struct {
-	Name  loader.Symbol
-	Args  []Type
-}
+// TODO: reference to local bindings and global values
 
 func (impl IntLiteral) ExprVal() {}
 type IntLiteral struct {

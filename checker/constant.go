@@ -45,7 +45,14 @@ func CollectConstants(mod *loader.Module, reg TypeRegistry, store ConstantStore)
 			if exists { return nil, &ConstantError {
 				Point:    ErrorPoint { AST: mod.AST, Node: c.Name.Node },
 				Concrete: E_DuplicateConstDecl {
-					Name: name.String(),
+					Name: name.SymbolName,
+				},
+			} }
+			exists, _ = reg.LookupArity(name)
+			if exists { return nil, &ConstantError {
+				Point: ErrorPoint { AST:  mod.AST, Node: c.Name.Node, },
+				Concrete: E_ConstConflictWithType {
+					Name: name.SymbolName,
 				},
 			} }
 			var ctx = TypeContext {

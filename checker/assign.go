@@ -1,8 +1,8 @@
 package checker
 
-import "kumachan/loader"
-
-// TODO: refactor syntax, infer type parameters during assigning
+import (
+	"kumachan/loader"
+)
 
 func AssignTo(expected Type, expr Expr, ctx TypeContext) (Expr, *ExprError) {
 	if expected == nil {
@@ -18,9 +18,9 @@ func AssignTo(expected Type, expr Expr, ctx TypeContext) (Expr, *ExprError) {
 		// 3.1. Define some inner functions
 		// -- shortcut to produce a "not assignable" error --
 		var throw = func(reason string) *ExprError {
-			return &ExprError{
+			return &ExprError {
 				Point: expr.Info.ErrorPoint,
-				Concrete: E_NotAssignable{
+				Concrete: E_NotAssignable {
 					From:   DescribeType(expr.Type, ctx),
 					To:     DescribeType(expected, ctx),
 					Reason: reason,

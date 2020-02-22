@@ -157,6 +157,11 @@ type E_ConstTypeInvalid struct {
 	TypeError  *TypeError
 }
 
+func (E_ConstConflictWithType) ConstantError() {}
+type E_ConstConflictWithType struct {
+	Name  string
+}
+
 
 type ExprError struct {
 	Point     ErrorPoint
@@ -164,6 +169,11 @@ type ExprError struct {
 }
 
 type ConcreteExprError interface { ExprError() }
+
+func (impl E_DuplicateFieldValue) ExprError() {}
+type E_DuplicateFieldValue struct {
+	Name  string
+}
 
 func (impl E_NotAssignable) ExprError() {}
 type E_NotAssignable struct {
