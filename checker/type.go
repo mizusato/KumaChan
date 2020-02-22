@@ -20,8 +20,8 @@ func (impl Union) TypeVal() {}
 type Union struct {
 	SubTypes  [] loader.Symbol
 }
-func (impl Single) TypeVal() {}
-type Single struct {
+func (impl Wrapped) TypeVal() {}
+type Wrapped struct {
 	InnerType  Type
 }
 func (impl Native) TypeVal() {}

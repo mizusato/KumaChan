@@ -53,25 +53,41 @@ type List[T] union {
     type Cons (T, List[T]);
 };
 
-global map[A,B] := [&(&A.B).&Maybe[A].Maybe[B]]
-&fab. &maybe-a. match(maybe-a) {
-    case Just a: Just fab(a),
-    case Null  : Null()
-};
-global map[A,B] := [&(&A.B).&List[A].List[B]]
-&fab. &list-a. match(list-a) {
-    case Cons(a, rest): Cons(fab(a), (map fab)(rest)),
-    case Nil: Nil()
+public function
+map[A,B] {
+    `(Maybe[A], `A => B) => Maybe[B]:
+    `(maybe-a, f) => match(maybe-a) {
+        case Just a:  Just f(a),
+        case Nothing: Nothing
+    }
 };
 
-global filter[T] := [&(&T.Bool).&List[T].List[T]]
-&pred. &list. match(list) {
-    case Cons(item, rest): if { pred(item)? Cons(item, rest): rest },
-    case Nil: Nil()
+public function
+map[A,B] {
+    `(List[A], `A => B) => List[B]:
+    `(list, f) => match(list) {
+        case Cons(x, xs): Cons(f(x), map(xs, f)),
+        case Nil: Nil
+    }
 };
 
-global reduce[T,A] := [&(A, &(A, T).A).&List[T].List[T]]
-&(init, reducer). &list. match(list) {
-    case Cons(item, rest): rest | reduce(reducer(init, item), reducer),
-    case Nil: Nil()
+public function
+filter[T] {
+    `(List[T], `T => Bool) => List[T]:
+    `(list, f) => match(list) {
+        case Cons(x, xs): let {
+            rest := filter(xs, f),
+            return if { f(x)? Cons(x, rest): rest }
+        },
+        case Nil: Nil
+    }
+};
+
+public function
+reduce[T,A] {
+    `(List[T], A, `(A, T) => A) => A:
+    `(list, acc, f) => match(list) {
+        case Cons(x, xs): reduce(xs, f(acc, x), f),
+        case Nil: Nil
+    }
 };

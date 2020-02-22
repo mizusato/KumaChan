@@ -7,11 +7,11 @@ import (
 )
 
 type GenericFunction struct {
-	IsGlobal    bool        // Global (a.k.a. exported) or not
-	TypeParams  [] string   // Generic Parameters
-	FuncType    Func        // Including Input and Output Types
-	Body        node.Body   // Body
-	Node        node.Node   // To Generate ErrorPoint
+	IsPublic    bool      // Public (a.k.a. exported) or not
+	TypeParams  [] string // Generic Parameters
+	FuncType    Func      // Including Input and Output Types
+	Body        node.Body // Body
+	Node        node.Node // To Generate ErrorPoint
 }
 
 type FunctionReference struct {
@@ -47,12 +47,12 @@ func CollectFunctions (mod *loader.Module, reg TypeRegistry, store FunctionStore
 		// 2.2. Iterate over all functions in imported modules
 		for name, refs := range imp_col {
 			for _, ref := range refs {
-				if !ref.IsImported && ref.Function.IsGlobal {
+				if !ref.IsImported && ref.Function.IsPublic {
 					// 2.2.1. If the function is exported, import it
 					var _, exists = collection[name]
 					if !exists { collection[name] = make([]FunctionReference, 0) }
 					// Note: conflict (unsafe overload) must not happen there,
-					//       since global functions have local types
+					//       since public functions have local types
 					collection[name] = append(collection[name], FunctionReference {
 						Function:   ref.Function,
 						IsImported: true,
@@ -88,8 +88,8 @@ func CollectFunctions (mod *loader.Module, reg TypeRegistry, store FunctionStore
 				},
 			} }
 			// 3.4. If the function is exported, check if it is autognostic
-			var is_global = decl.IsGlobal
-			if is_global && !(IsLocalType(sig, mod_name)) { return nil, &FunctionError {
+			var is_public = decl.IsPublic
+			if is_public && !(IsLocalType(sig, mod_name)) { return nil, &FunctionError {
 				Point:    ErrorPoint { AST: mod.AST, Node: decl.Repr.Node },
 				Concrete: E_SignatureNonLocal {
 					FuncName: name,
@@ -98,7 +98,7 @@ func CollectFunctions (mod *loader.Module, reg TypeRegistry, store FunctionStore
 			// 3.5. Construct a representation and a reference of the function
 			var func_type = sig.(AnonymousType).Repr.(Func)
 			var gf = &GenericFunction {
-				IsGlobal:   is_global,
+				IsPublic:   is_public,
 				TypeParams: params,
 				FuncType:   func_type,
 				Body:       decl.Body.Body,

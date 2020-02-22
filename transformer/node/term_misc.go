@@ -35,6 +35,14 @@ type Unbox struct {
 	Value    Expr           `part:"expr"`
 }
 
+func (impl Infix) Term() {}
+type Infix struct {
+	Node                    `part:"infix"`
+	Operand1  VariousTerm   `part:"operand1.term"`
+	Operand2  VariousTerm   `part:"operand2.term"`
+	Operator  VariousTerm   `part:"operator.term"`
+}
+
 func (impl Text) Term() {}
 type Text struct {
 	Node                `part:"text"`

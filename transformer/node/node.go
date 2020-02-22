@@ -40,7 +40,6 @@ type NodeListInfo struct {
 var __NodeRegistry = []interface{} {
     // Root
     Module {},
-    Eval {},
     // Command
     VariousCommand {},
     Import {},
@@ -56,7 +55,7 @@ var __NodeRegistry = []interface{} {
     DeclType {},
     VariousTypeValue {},
     NativeType {},
-    CompoundType {},
+    WrappedType {},
     UnionType {},
     // Type
     VariousType {},
@@ -80,7 +79,7 @@ var __NodeRegistry = []interface{} {
     PatternNone {},
     PatternTuple {},
     PatternBundle {},
-	Seq{},
+	Seq {},
     Tuple {},
     Bundle {},
     Member {},
@@ -90,6 +89,7 @@ var __NodeRegistry = []interface{} {
     Binding {},
     With {},
     Unbox {},
+    Infix {},
     Text {},
     Ref {},
     VariousLiteral {},

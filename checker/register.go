@@ -216,10 +216,10 @@ func TypeValFrom (tv node.TypeValue, ctx TypeContext) (TypeVal, *TypeError) {
 		return Union{
 			SubTypes: subtypes,
 		}, nil
-	case node.CompoundType:
+	case node.WrappedType:
 		var expr, err = TypeFromRepr(v.Repr.Repr, ctx)
 		if err != nil { return nil, err }
-		return Single{
+		return Wrapped{
 			InnerType: expr,
 		}, nil
 	case node.NativeType:

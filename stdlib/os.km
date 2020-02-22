@@ -1,7 +1,16 @@
 module OS;
 
-export const Stdin  := [I/O::InputStream]   native 'Stdin';
-export const Stdout := [I/O::OutputStream]  native 'Stdout';
-export const Stderr := [I/O::OutputStream]  native 'Stderr';
+public const
+Stdin := [I/O::InputStream] native 'Stdin';
 
-global exit := [&Int. Effect[(),()]]  native 'exit';
+public const
+Stdout := [I/O::OutputStream] native 'Stdout';
+
+public const
+Stderr := [I/O::OutputStream] native 'Stderr';
+
+public function
+exit {
+    `Int => Effect[(),()]:
+    native 'exit'
+};

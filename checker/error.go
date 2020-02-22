@@ -152,3 +152,9 @@ type E_NotAssignable struct {
 	To      string
 	Reason  string
 }
+
+func (impl E_NotConstructable) ExprError() {}
+type E_NotConstructable struct {
+	From    string
+	To      string
+}

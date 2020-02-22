@@ -20,10 +20,11 @@ type Identifier struct {
 
 func (impl DeclConst) Command() {}
 type DeclConst struct {
-    Node                        `part:"decl_const"`
-    Name    Identifier          `part:"name"`
-    Params  [] Identifier       `list_more:"type_params" item:"name"`
-    Value   VariousConstValue   `part:"const_value"`
+    Node                          `part:"decl_const"`
+    IsPublic  bool                `option:"scope.@public"`
+    Name      Identifier          `part:"name"`
+    Params    [] Identifier       `list_more:"type_params" item:"name"`
+    Value     VariousConstValue   `part:"const_value"`
 }
 type VariousConstValue struct {
     Node                     `part:"const_value"`
@@ -46,10 +47,10 @@ type Do struct {
 func (impl DeclFunction) Command() {}
 type DeclFunction struct {
     Node                      `part:"decl_func"`
-    IsGlobal  bool            `option:"scope.@global"`
+    IsPublic  bool            `option:"scope.@public"`
     Name      Identifier      `part:"name"`
     Params    [] Identifier   `list_more:"type_params" item:"name"`
-    Repr      ReprFunc        `part:"repr_func"`
+    Repr      ReprFunc        `part:"signature.repr_func"`
     Body      VariousBody     `part:"body"`
 }
 type VariousBody struct {
@@ -80,9 +81,9 @@ func (impl NativeType) TypeValue() {}
 type NativeType struct {
     Node   `part:"native_type"`
 }
-func (impl CompoundType) TypeValue() {}
-type CompoundType struct {
-    Node                `part:"compound_type"`
+func (impl WrappedType) TypeValue() {}
+type WrappedType struct {
+    Node                `part:"wrapped_type"`
     Repr  VariousRepr   `part:"repr"`
 }
 func (impl UnionType) TypeValue() {}
