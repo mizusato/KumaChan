@@ -6,6 +6,9 @@ import "kumachan/loader"
 var __Maybe = loader.NewSymbol(loader.CoreModule, "Maybe")
 // var __Just uint = 0
 var __Nothing uint = 1
+var __Float = loader.NewSymbol(loader.CoreModule, "Float")
+var __String = loader.NewSymbol(loader.CoreModule, "String")
+var __Array = loader.NewSymbol(loader.CoreModule, "Array")
 
 func IsMaybeType (t Type) bool {
 	switch T := t.(type) {

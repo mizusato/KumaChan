@@ -1,10 +1,6 @@
 package checker
 
-import (
-	"kumachan/loader"
-)
-
-func AssignTo(expected Type, expr Expr, ctx TypeContext) (Expr, *ExprError) {
+func AssignTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError) {
 	if expected == nil {
 		// 1. If the expected type is not specified,
 		//    no further process is required.
@@ -21,8 +17,8 @@ func AssignTo(expected Type, expr Expr, ctx TypeContext) (Expr, *ExprError) {
 			return &ExprError {
 				Point: expr.Info.ErrorPoint,
 				Concrete: E_NotAssignable {
-					From:   DescribeType(expr.Type, ctx),
-					To:     DescribeType(expected, ctx),
+					From:   ctx.DescribeType(expr.Type),
+					To:     ctx.DescribeType(expected),
 					Reason: reason,
 				},
 			}
@@ -59,7 +55,7 @@ func AssignTo(expected Type, expr Expr, ctx TypeContext) (Expr, *ExprError) {
 		// -- behavior of unpacking wrapped inner types --
 		var assign_inner = func(inner Type, is_opaque bool, mod string) (Expr, *ExprError) {
 			// 1. Create an alternative expression with the inner type
-			var expr_with_inner = Expr{
+			var expr_with_inner = Expr {
 				Type:  inner,
 				Value: expr.Value,
 				Info:  expr.Info,
@@ -70,7 +66,7 @@ func AssignTo(expected Type, expr Expr, ctx TypeContext) (Expr, *ExprError) {
 				return Expr{}, throw("")
 			}
 			// 3. Check if the module encapsulation is violated
-			var ctx_mod = loader.Id2String(ctx.Module.Node.Name)
+			var ctx_mod = ctx.GetModuleName()
 			if is_opaque && ctx_mod != mod {
 				return Expr{}, throw("cannot cast out of opaque type")
 			} else {
@@ -169,11 +165,11 @@ func AssignTo(expected Type, expr Expr, ctx TypeContext) (Expr, *ExprError) {
 		switch G := expr.Type.(type) {
 		case NamedType:
 			// 3.2.1. If the given type is a named type
-			var reg = ctx.Ireg.(TypeRegistry)
-			var given_g = reg[G.Name]
+			var types = ctx.ModuleInfo.Types
+			var given_g = types[G.Name]
 			switch E := expected.(type) {
 			case NamedType:
-				var expected_g = reg[E.Name]
+				var expected_g = types[E.Name]
 				switch union := expected_g.Value.(type) {
 				case Union:
 					// 3.2.1.1. If the expected type is a union type,
@@ -186,7 +182,7 @@ func AssignTo(expected Type, expr Expr, ctx TypeContext) (Expr, *ExprError) {
 			case Wrapped:
 				var given_inner = FillArgs(tv.InnerType, G.Args)
 				var given_mod = G.Name.ModuleName
-				var given_is_opaque = given_g.IsOpaque
+				var given_is_opaque = tv.IsOpaque
 				// 3.2.1.2. Otherwise, if the given type has an inner type,
 				//          try to unpack the inner type.
 				return assign_inner(given_inner, given_is_opaque, given_mod)
@@ -220,4 +216,25 @@ func AssignTo(expected Type, expr Expr, ctx TypeContext) (Expr, *ExprError) {
 		// 3.3. If no conversion is available, types are not compatible.
 		return Expr{}, throw("")
 	}
+}
+
+func LiftToMaxType(exprs []Expr, ctx ExprContext) ([]Expr, Type, bool) {
+	var L = len(exprs)
+	var result = make([]Expr, L)
+	for i := 0; i < L; i += 1 {
+		var expected = exprs[i].Type
+		var ok = true
+		for j := 0; j < L; j += 1 {
+			var item, err = AssignTo(expected, exprs[j], ctx)
+			if err != nil {
+				ok = false
+				break
+			}
+			result[j] = item
+		}
+		if ok {
+			return result, expected, true
+		}
+	}
+	return nil, nil, false
 }

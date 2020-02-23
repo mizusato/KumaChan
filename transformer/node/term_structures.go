@@ -1,9 +1,9 @@
 package node
 
 
-func (impl Seq) Term() {}
-type Seq struct {
-	Node             `part:"seq"`
+func (impl Array) Term() {}
+type Array struct {
+	Node             `part:"array"`
 	Items  [] Expr   `list_more:"exprlist" item:"expr"`
 }
 
@@ -16,7 +16,7 @@ type Tuple struct {
 func (impl Bundle) Term() {}
 type Bundle struct {
 	Node                    `part:"bundle"`
-	Update  MaybeUpdate     `part_opt:"update.get"`
+	Update  MaybeUpdate     `part_opt:"update"`
 	Values  [] FieldValue   `list_more:"pairlist" item:"pair"`
 }
 type FieldValue struct {
@@ -24,17 +24,20 @@ type FieldValue struct {
 	Key    Identifier   `part:"name"`
 	Value  MaybeExpr    `part_opt:"expr"`
 }
-
 type MaybeUpdate interface { MaybeUpdate() }
-func (impl Get) MaybeUpdate() {}
+func (impl Update) MaybeUpdate() {}
+type Update struct {
+	Node              `part:"update"`
+	Base  Expr        `part:"expr"`
+}
+
 func (impl Get) Term() {}
 type Get struct {
 	Node              `part:"get"`
 	Base  Expr        `part:"expr"`
-	Path  [] Member   `list_rec:"members"`
+	Path  [] Member   `list_more:"" item:"member"`
 }
 type Member struct {
 	Node                   `part:"member"`
-	Optional  bool         `option:"opt.?"`
 	Name      Identifier   `part:"name"`
 }

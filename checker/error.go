@@ -170,9 +170,41 @@ type ExprError struct {
 
 type ConcreteExprError interface { ExprError() }
 
-func (impl E_DuplicateFieldValue) ExprError() {}
-type E_DuplicateFieldValue struct {
+func (impl E_InvalidInteger) ExprError() {}
+type E_InvalidInteger struct {
+	Value  string
+}
+
+func (impl E_ExprDuplicateField) ExprError() {}
+type E_ExprDuplicateField struct {
 	Name  string
+}
+
+func (impl E_HeterogeneousArray) ExprError() {}
+type E_HeterogeneousArray struct {}
+
+func (impl E_GetFromNonBundle) ExprError() {}
+type E_GetFromNonBundle struct {}
+
+func (impl E_GetFromLiteralBundle) ExprError() {}
+type E_GetFromLiteralBundle struct {}
+
+func (impl E_GetFromOpaqueBundle) ExprError() {}
+type E_GetFromOpaqueBundle struct {}
+
+func (impl E_SetToNonBundle) ExprError() {}
+type E_SetToNonBundle struct {}
+
+func (impl E_SetToLiteralBundle) ExprError() {}
+type E_SetToLiteralBundle struct {}
+
+func (impl E_SetToOpaqueBundle) ExprError() {}
+type E_SetToOpaqueBundle struct {}
+
+func (impl E_FieldDoesNotExist) ExprError() {}
+type E_FieldDoesNotExist struct {
+	Field   string
+	Bundle  string
 }
 
 func (impl E_NotAssignable) ExprError() {}

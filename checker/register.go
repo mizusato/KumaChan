@@ -195,7 +195,6 @@ func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, *Type
 		//      and register it to the TypeRegistry
 		reg[name] = &GenericType {
 			Arity:      uint(len(params)),
-			IsOpaque:   t.IsOpaque,
 			Value:      val,
 			Node:       t.Node,
 			UnionIndex: raw.UnionIndexMap[name],
@@ -219,8 +218,9 @@ func TypeValFrom (tv node.TypeValue, ctx TypeContext) (TypeVal, *TypeError) {
 	case node.WrappedType:
 		var expr, err = TypeFromRepr(v.Repr.Repr, ctx)
 		if err != nil { return nil, err }
-		return Wrapped{
+		return Wrapped {
 			InnerType: expr,
+			IsOpaque:  v.IsOpaque,
 		}, nil
 	case node.NativeType:
 		return Native{}, nil

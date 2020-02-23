@@ -62,7 +62,6 @@ type Body interface { Body() }
 func (impl DeclType) Command() {}
 type DeclType struct {
     Node                          `part:"decl_type"`
-    IsOpaque   bool               `option:"opaque_opt.@opaque"`
     Name       Identifier         `part:"name"`
     Params     [] Identifier      `list_more:"type_params" item:"name"`
     TypeValue  VariousTypeValue   `part:"type_value"`
@@ -78,8 +77,9 @@ type NativeType struct {
 }
 func (impl WrappedType) TypeValue() {}
 type WrappedType struct {
-    Node                `part:"wrapped_type"`
-    Repr  VariousRepr   `part:"repr"`
+    Node                    `part:"wrapped_type"`
+    IsOpaque  bool          `option:"opaque_opt.@opaque"`
+    Repr      VariousRepr   `part:"repr"`
 }
 func (impl UnionType) TypeValue() {}
 type UnionType struct {

@@ -9,7 +9,6 @@ import (
 
 type GenericType struct {
 	Arity       uint
-	IsOpaque    bool
 	Value       TypeVal
 	Node        node.Node
 	UnionIndex  uint
@@ -23,6 +22,7 @@ type Union struct {
 func (impl Wrapped) TypeVal() {}
 type Wrapped struct {
 	InnerType  Type
+	IsOpaque   bool
 }
 func (impl Native) TypeVal() {}
 type Native struct {}

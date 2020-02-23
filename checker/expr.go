@@ -97,6 +97,11 @@ type Unbox struct {
 
 // TODO: reference to local bindings and global values
 
+func (impl Array) ExprVal() {}
+type Array struct {
+	Items  [] Expr
+}
+
 func (impl IntLiteral) ExprVal() {}
 type IntLiteral struct {
 	Value  big.Int
