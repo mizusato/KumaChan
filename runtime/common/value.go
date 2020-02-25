@@ -1,10 +1,12 @@
 package common
 
 import (
+	"kumachan/runtime/common/rx"
 	"math"
 	"math/big"
 )
 
+// TODO: refactor value to interface{}
 type Value interface { RuntimeValue() }
 
 func (impl PlainValue) RuntimeValue() {}
@@ -32,6 +34,15 @@ type FunctionValue struct {
 
 func (impl NativeFunctionValue) RuntimeValue() {}
 type NativeFunctionValue  NativeFunction
+
+
+func EffectFrom(v Value) rx.Effect {
+	return v.(PlainValue).Pointer.(rx.Effect)
+}
+
+func EffectValue(effect rx.Effect) Value {
+	return PlainValue { Pointer: effect }
+}
 
 func Tuple2(a Value, b Value) Value {
 	return ProductValue { Elements: []Value { a, b } }

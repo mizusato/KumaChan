@@ -1,16 +1,14 @@
-package effect
+package rx
 
-import (
-	. "kumachan/runtime/common"
-	"runtime"
-)
+import "runtime"
 
-const EventQueueBufferSize = 4096
+
+const MinimumEventQueueBufferSize = 32768
 
 type Event struct {
-	Kind      EventKind
-	Payload   Value
-	Observer  *Observer
+	Kind     EventKind
+	Payload  Object
+	Observer *Observer
 }
 
 type EventKind  int
@@ -18,36 +16,38 @@ const (
 	EV_Next  EventKind  =  iota
 	EV_Error
 	EV_Complete
-	EV_Cancel
 )
 
 type EventLoop struct {
-	EventQueue  chan Event
+	queue  chan Event
 }
 
 func SpawnEventLoop() *EventLoop {
+	return SpawnEventLoopWithBufferSize(MinimumEventQueueBufferSize)
+}
+
+func SpawnEventLoopWithBufferSize(buf_size uint) *EventLoop {
+	if buf_size < MinimumEventQueueBufferSize {
+		buf_size = MinimumEventQueueBufferSize
+	}
 	var el = &EventLoop {
-		EventQueue: make(chan Event, EventQueueBufferSize),
+		queue: make(chan Event, buf_size),
 	}
 	go (func() {
 		runtime.LockOSThread()
 		for {
 			select {
-			case event := <- el.EventQueue:
-				if event.Observer.Disposed {
+			case event := <- el.queue:
+				if event.Observer.Context.disposed {
 					continue
 				}
 				switch event.Kind {
 				case EV_Next:
 					event.Observer.Next(event.Payload)
 				case EV_Error:
-					event.Observer.Disposed = true
 					event.Observer.Error(event.Payload)
 				case EV_Complete:
-					event.Observer.Disposed = true
 					event.Observer.Complete()
-				case EV_Cancel:
-					event.Observer.Disposed = true
 				default:
 					panic("unknown event kind")
 				}
@@ -60,32 +60,24 @@ func SpawnEventLoop() *EventLoop {
 
 func (el *EventLoop) Run(effect Effect, ob *Observer) {
 	go (func() {
-		go (func() {
-			<- ob.Context.Done()
-			el.EventQueue <- Event {
-				Kind:     EV_Cancel,
-				Payload:  nil,
-				Observer: ob,
-			}
-		})()
-		effect.Action(el, &Observer {
+		effect.Action(el, &Observer{
 			Context: ob.Context,
-			Next: func(v Value) {
-				el.EventQueue <- Event {
+			Next: func(v Object) {
+				el.queue <- Event {
 					Kind:     EV_Next,
 					Payload:  v,
 					Observer: ob,
 				}
 			},
-			Error: func(e Value) {
-				el.EventQueue <- Event {
+			Error: func(e Object) {
+				el.queue <- Event {
 					Kind:     EV_Error,
 					Payload:  e,
 					Observer: ob,
 				}
 			},
 			Complete: func() {
-				el.EventQueue <- Event {
+				el.queue <- Event {
 					Kind:     EV_Complete,
 					Payload:  nil,
 					Observer: ob,

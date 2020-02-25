@@ -1,26 +1,20 @@
-package effect
+package rx
 
-import (
-	"context"
-	. "kumachan/runtime/common"
-	"kumachan/runtime/lib/container"
-)
 
-func Concat (seq container.Seq, concurrent uint) Effect {
+func Concat(effects []Effect, concurrent uint) Effect {
 	if concurrent == 0 { panic("invalid concurrent amount") }
-	return Effect { Action: func(r EffectRunner, ob *Observer) {
-		var ctx, dispose = context.WithCancel(ob.Context)
-		var c = CollectorFrom(ob, ctx, dispose)
+	return Effect{ Action: func(r EffectRunner, ob *Observer) {
+		var ctx, dispose = ob.Context.NewChild()
+		var c = CollectorFrom(ob, dispose)
 		var q = QueueRunnerFrom(r, concurrent)
-		for v,rest,exists := seq.Next(); exists; v,rest,exists = rest.Next() {
-			var item = EffectFrom(v)
+		for _, item := range effects {
 			c.NewChild()
-			q.Run(item, &Observer {
-				Context:  ctx,
-				Next: func(v Value) {
-					c.Pass(v)
+			q.Run(item, &Observer{
+				Context: ctx,
+				Next: func(x Object) {
+					c.Pass(x)
 				},
-				Error: func(e Value) {
+				Error: func(e Object) {
 					c.Throw(e)
 				},
 				Complete: func() {
@@ -32,23 +26,23 @@ func Concat (seq container.Seq, concurrent uint) Effect {
 	} }
 }
 
-func (e Effect) ConcatMap(f func(Value)Value, concurrent uint) Effect {
+func (e Effect) ConcatMap(f func(Object) Effect, concurrent uint) Effect {
 	if concurrent == 0 { panic("invalid concurrent amount") }
-	return Effect { Action: func(r EffectRunner, ob *Observer) {
-		var ctx, dispose = context.WithCancel(ob.Context)
-		var c = CollectorFrom(ob, ctx, dispose)
+	return Effect{ Action: func(r EffectRunner, ob *Observer) {
+		var ctx, dispose = ob.Context.NewChild()
+		var c = CollectorFrom(ob, dispose)
 		var q = QueueRunnerFrom(r, concurrent)
-		r.Run(e, &Observer {
-			Context:  ctx,
-			Next: func(v Value) {
-				var item = EffectFrom(f(v))
+		r.Run(e, &Observer{
+			Context: ctx,
+			Next: func(x Object) {
+				var item = f(x)
 				c.NewChild()
-				q.Run(item, &Observer {
-					Context:  ctx,
-					Next: func(v Value) {
-						c.Pass(v)
+				q.Run(item, &Observer{
+					Context: ctx,
+					Next: func(x Object) {
+						c.Pass(x)
 					},
-					Error: func(e Value) {
+					Error: func(e Object) {
 						c.Throw(e)
 					},
 					Complete: func() {
@@ -56,7 +50,7 @@ func (e Effect) ConcatMap(f func(Value)Value, concurrent uint) Effect {
 					},
 				})
 			},
-			Error: func(e Value) {
+			Error: func(e Object) {
 				c.Throw(e)
 			},
 			Complete: func() {
@@ -68,10 +62,10 @@ func (e Effect) ConcatMap(f func(Value)Value, concurrent uint) Effect {
 
 
 type QueueRunner struct {
-	Raw         EffectRunner
-	Queue       *Queue
-	Running     uint
-	MaxRunning  uint
+	Raw        EffectRunner
+	Queue      *Queue
+	Running    uint
+	MaxRunning uint
 }
 
 func QueueRunnerFrom(r EffectRunner, concurrent uint) *QueueRunner {
@@ -87,10 +81,10 @@ func QueueRunnerFrom(r EffectRunner, concurrent uint) *QueueRunner {
 func (qr *QueueRunner) Run(e Effect, ob *Observer) {
 	if qr.Running < qr.MaxRunning {
 		qr.Running += 1
-		qr.Raw.Run(e, &Observer {
-			Context:  ob.Context,
-			Next:     ob.Next,
-			Error:    ob.Error,
+		qr.Raw.Run(e, &Observer{
+			Context: ob.Context,
+			Next:    ob.Next,
+			Error:   ob.Error,
 			Complete: func() {
 				ob.Complete()
 				qr.Running -= 1
@@ -106,13 +100,13 @@ func (qr *QueueRunner) Run(e Effect, ob *Observer) {
 }
 
 type Queue struct {
-	Data    []QueueItem
+	Data    [] QueueItem
 	NextId  uint64
 }
 
 type QueueItem struct {
-	Id     uint64
-	Value  Effect
+	Id    uint64
+	Value Effect
 }
 
 func NewQueue() *Queue {
@@ -130,7 +124,7 @@ func (q *Queue) Push(e Effect) {
 func (q *Queue) Pop() (Effect, bool) {
 	var L = len(q.Data)
 	if L == 0 {
-		return Effect {}, false
+		return Effect{}, false
 	} else {
 		var popped = q.Data[0]
 		var last_index = L - 1

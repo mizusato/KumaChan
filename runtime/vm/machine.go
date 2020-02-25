@@ -2,7 +2,7 @@ package vm
 
 import (
 	. "kumachan/runtime/common"
-	"kumachan/runtime/lib/effect"
+	"kumachan/runtime/common/rx"
 	"sync"
 )
 
@@ -13,7 +13,7 @@ type Machine struct {
 	Program       Program
 	GlobalValues  [] Value
 	ContextPool   *sync.Pool
-	EventLoop     *effect.EventLoop
+	EventLoop     *rx.EventLoop
 	MaxNumOfCall  uint
 }
 
@@ -27,7 +27,7 @@ func SpawnMachine(p Program, max_call uint) *Machine {
 				CallStack: make([]CallStackFrame, 0, InitialCallStackCapacity),
 			}
 		} },
-		EventLoop:    effect.SpawnEventLoop(),
+		EventLoop:    rx.SpawnEventLoop(),
 		MaxNumOfCall: max_call,
 	}
 	for _, cmd := range m.Program.Commands {

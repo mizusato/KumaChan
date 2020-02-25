@@ -1,10 +1,9 @@
 package vm
 
 import (
-	"context"
 	"fmt"
 	. "kumachan/runtime/common"
-	"kumachan/runtime/lib/effect"
+	"kumachan/runtime/common/rx"
 )
 
 
@@ -25,11 +24,11 @@ func RunCommand (cmd Command, m *Machine) {
 			var val = CallFunction(f, nil, m)
 			m.GlobalValues = append(m.GlobalValues, val)
 		case CMD_ActivateEffect:
-			var e = effect.EffectFrom(CallFunction(f, nil, m))
-			m.EventLoop.Run(e, &effect.Observer {
-				Context:  context.Background(),
-				Next:     func(_ Value) {},
-				Error:    func(_ Value) {},
+			var e = EffectFrom(CallFunction(f, nil, m))
+			m.EventLoop.Run(e, &rx.Observer {
+				Context:  rx.Background(),
+				Next:     func(_ rx.Object) {},
+				Error:    func(_ rx.Object) {},
 				Complete: func() {},
 			})
 		default:
