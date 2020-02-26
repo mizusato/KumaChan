@@ -3,86 +3,88 @@ package rx
 import "runtime"
 
 
-const MinimumEventQueueBufferSize = 32768
+const MinimumEventChannelBufferSize = 32768
 
-type Event struct {
-	Kind     EventKind
-	Payload  Object
-	Observer *Observer
+type event struct {
+	kind      event_kind
+	payload   Object
+	observer  *observer
 }
 
-type EventKind  int
+type event_kind int
 const (
-	EV_Next  EventKind  =  iota
-	EV_Error
-	EV_Complete
+	ev_next  event_kind  =  iota
+	ev_error
+	ev_complete
 )
 
 type EventLoop struct {
-	queue  chan Event
+	channel  chan event
 }
 
 func SpawnEventLoop() *EventLoop {
-	return SpawnEventLoopWithBufferSize(MinimumEventQueueBufferSize)
+	return SpawnEventLoopWithBufferSize(MinimumEventChannelBufferSize)
 }
 
 func SpawnEventLoopWithBufferSize(buf_size uint) *EventLoop {
-	if buf_size < MinimumEventQueueBufferSize {
-		buf_size = MinimumEventQueueBufferSize
+	if buf_size < MinimumEventChannelBufferSize {
+		buf_size = MinimumEventChannelBufferSize
 	}
-	var el = &EventLoop {
-		queue: make(chan Event, buf_size),
-	}
+	var channel = make(chan event, buf_size)
 	go (func() {
 		runtime.LockOSThread()
 		for {
 			select {
-			case event := <- el.queue:
-				if event.Observer.Context.disposed {
-					continue
-				}
-				switch event.Kind {
-				case EV_Next:
-					event.Observer.Next(event.Payload)
-				case EV_Error:
-					event.Observer.Error(event.Payload)
-				case EV_Complete:
-					event.Observer.Complete()
-				default:
-					panic("unknown event kind")
+			case ev := <- channel:
+				switch ev.kind {
+				case ev_next:
+					ev.observer.next(ev.payload)
+				case ev_error:
+					ev.observer.error(ev.payload)
+				case ev_complete:
+					ev.observer.complete()
 				}
 			default:
+				continue
 			}
 		}
 	})()
-	return el
+	return &EventLoop { channel }
 }
 
-func (el *EventLoop) Run(effect Effect, ob *Observer) {
-	go (func() {
-		effect.Action(el, &Observer{
-			Context: ob.Context,
-			Next: func(v Object) {
-				el.queue <- Event {
-					Kind:     EV_Next,
-					Payload:  v,
-					Observer: ob,
-				}
-			},
-			Error: func(e Object) {
-				el.queue <- Event {
-					Kind:     EV_Error,
-					Payload:  e,
-					Observer: ob,
-				}
-			},
-			Complete: func() {
-				el.queue <- Event {
-					Kind:     EV_Complete,
-					Payload:  nil,
-					Observer: ob,
-				}
-			},
-		})
-	})()
+func (el *EventLoop) dispatch(ev event) {
+	el.channel <- ev
+}
+
+
+type TrivialScheduler struct {
+	EventLoop  *EventLoop
+}
+
+func (sched TrivialScheduler) dispatch(ev event) {
+	sched.EventLoop.dispatch(ev)
+}
+
+func (sched TrivialScheduler) run(effect Effect, ob *observer) {
+	var terminated = false
+	effect.action(sched, &observer {
+		context: ob.context,
+		next: func(x Object) {
+			if !terminated && !ob.context.disposed {
+				ob.next(x)
+			}
+		},
+		error: func(e Object) {
+			if !terminated && !ob.context.disposed {
+				terminated = true
+				ob.error(e)
+			}
+		},
+		complete: func() {
+			if !terminated && !ob.context.disposed {
+				terminated = true
+				ob.complete()
+			}
+		},
+	})
 }

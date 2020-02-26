@@ -25,12 +25,9 @@ func RunCommand (cmd Command, m *Machine) {
 			m.GlobalValues = append(m.GlobalValues, val)
 		case CMD_ActivateEffect:
 			var e = EffectFrom(CallFunction(f, nil, m))
-			m.EventLoop.Run(e, &rx.Observer {
-				Context:  rx.Background(),
-				Next:     func(_ rx.Object) {},
-				Error:    func(_ rx.Object) {},
-				Complete: func() {},
-			})
+			var sched = rx.TrivialScheduler { EventLoop: m.EventLoop }
+			var ctx = rx.Background()
+			rx.RunEffect(e, sched, ctx, nil, nil)
 		default:
 			panic("unknown command kind")
 		}

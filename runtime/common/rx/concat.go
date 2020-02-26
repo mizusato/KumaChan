@@ -3,168 +3,172 @@ package rx
 
 func Concat(effects []Effect, concurrent uint) Effect {
 	if concurrent == 0 { panic("invalid concurrent amount") }
-	return Effect{ Action: func(r EffectRunner, ob *Observer) {
-		var ctx, dispose = ob.Context.NewChild()
-		var c = CollectorFrom(ob, dispose)
-		var q = QueueRunnerFrom(r, concurrent)
+	return Effect { func(sched Scheduler, ob *observer) {
+		var ctx, dispose = ob.context.CreateChild()
+		var c = new_collector(ob, dispose)
+		var q_sched = QueueSchedulerFrom(sched, concurrent)
 		for _, item := range effects {
-			c.NewChild()
-			q.Run(item, &Observer{
-				Context: ctx,
-				Next: func(x Object) {
-					c.Pass(x)
+			c.new_child()
+			q_sched.run(item, &observer {
+				context: ctx,
+				next: func(x Object) {
+					c.pass(x)
 				},
-				Error: func(e Object) {
-					c.Throw(e)
+				error: func(e Object) {
+					c.throw(e)
 				},
-				Complete: func() {
-					c.DeleteChild()
+				complete: func() {
+					c.delete_child()
 				},
 			})
 		}
-		c.ParentComplete()
+		c.parent_complete()
 	} }
 }
 
-func (e Effect) ConcatMap(f func(Object) Effect, concurrent uint) Effect {
+func (e Effect) ConcatMap(f func(Object)Effect, concurrent uint) Effect {
 	if concurrent == 0 { panic("invalid concurrent amount") }
-	return Effect{ Action: func(r EffectRunner, ob *Observer) {
-		var ctx, dispose = ob.Context.NewChild()
-		var c = CollectorFrom(ob, dispose)
-		var q = QueueRunnerFrom(r, concurrent)
-		r.Run(e, &Observer{
-			Context: ctx,
-			Next: func(x Object) {
+	return Effect { func(sched Scheduler, ob *observer) {
+		var ctx, dispose = ob.context.CreateChild()
+		var c = new_collector(ob, dispose)
+		var q_sched = QueueSchedulerFrom(sched, concurrent)
+		sched.run(e, &observer {
+			context: ctx,
+			next: func(x Object) {
 				var item = f(x)
-				c.NewChild()
-				q.Run(item, &Observer{
-					Context: ctx,
-					Next: func(x Object) {
-						c.Pass(x)
+				c.new_child()
+				q_sched.run(item, &observer {
+					context: ctx,
+					next: func(x Object) {
+						c.pass(x)
 					},
-					Error: func(e Object) {
-						c.Throw(e)
+					error: func(e Object) {
+						c.throw(e)
 					},
-					Complete: func() {
-						c.DeleteChild()
+					complete: func() {
+						c.delete_child()
 					},
 				})
 			},
-			Error: func(e Object) {
-				c.Throw(e)
+			error: func(e Object) {
+				c.throw(e)
 			},
-			Complete: func() {
-				c.ParentComplete()
+			complete: func() {
+				c.parent_complete()
 			},
 		})
 	} }
 }
 
 
-type QueueRunner struct {
-	Raw        EffectRunner
-	Queue      *Queue
-	Running    uint
-	MaxRunning uint
+type QueueScheduler struct {
+	underlying   Scheduler
+	queue        *queue
+	running      uint
+	max_running  uint
 }
 
-func QueueRunnerFrom(r EffectRunner, concurrent uint) *QueueRunner {
+func QueueSchedulerFrom(sched Scheduler, concurrent uint) *QueueScheduler {
 	if concurrent == 0 { panic("invalid concurrent amount") }
-	return &QueueRunner {
-		Raw:        r,
-		Queue:      NewQueue(),
-		Running:    0,
-		MaxRunning: concurrent,
+	return &QueueScheduler{
+		underlying:  sched,
+		queue:       new_queue(),
+		running:     0,
+		max_running: concurrent,
 	}
 }
 
-func (qr *QueueRunner) Run(e Effect, ob *Observer) {
-	if qr.Running < qr.MaxRunning {
-		qr.Running += 1
-		qr.Raw.Run(e, &Observer{
-			Context: ob.Context,
-			Next:    ob.Next,
-			Error:   ob.Error,
-			Complete: func() {
-				ob.Complete()
-				qr.Running -= 1
-				var next_item, exists = qr.Queue.Pop()
+func (qs *QueueScheduler) run(e Effect, ob *observer) {
+	if qs.running < qs.max_running {
+		qs.running += 1
+		qs.underlying.run(e, &observer{
+			context: ob.context,
+			next:    ob.next,
+			error:   ob.error,
+			complete: func() {
+				ob.complete()
+				qs.running -= 1
+				var next_item, exists = qs.queue.pop()
 				if exists {
-					qr.Run(next_item, ob)
+					qs.run(next_item, ob)
 				}
 			},
 		})
 	} else {
-		qr.Queue.Push(e)
+		qs.queue.push(e)
 	}
 }
 
-type Queue struct {
-	Data    [] QueueItem
-	NextId  uint64
+func (qs *QueueScheduler) dispatch(ev event) {
+	qs.underlying.dispatch(ev)
 }
 
-type QueueItem struct {
-	Id    uint64
-	Value Effect
+type queue struct {
+	data     [] queue_item
+	next_id  uint64
 }
 
-func NewQueue() *Queue {
-	return &Queue {
-		NextId: 0,
-		Data:   make([]QueueItem, 0),
+type queue_item struct {
+	id     uint64
+	value  Effect
+}
+
+func new_queue() *queue {
+	return &queue {
+		next_id: 0,
+		data:    make([]queue_item, 0),
 	}
 }
 
-func (q *Queue) Push(e Effect) {
-	q.Data = append(q.Data, QueueItem { Value: e, Id: q.NextId })
-	q.NextId += 1
+func (q *queue) push(e Effect) {
+	q.data = append(q.data, queue_item{ value: e, id: q.next_id})
+	q.next_id += 1
 }
 
-func (q *Queue) Pop() (Effect, bool) {
-	var L = len(q.Data)
+func (q *queue) pop() (Effect, bool) {
+	var L = len(q.data)
 	if L == 0 {
 		return Effect{}, false
 	} else {
-		var popped = q.Data[0]
+		var popped = q.data[0]
 		var last_index = L - 1
-		var last = q.Data[last_index]
-		q.Data[0] = last
-		q.Data = q.Data[:last_index]
+		var last = q.data[last_index]
+		q.data[0] = last
+		q.data = q.data[:last_index]
 		var node = 0
 		for (node*2 + 1) < last_index {
 			var left = node*2 + 1
 			var right = node*2 + 2
 			if right < last_index {
-				var node_id = q.Data[node].Id
-				var left_id = q.Data[left].Id
-				var right_id = q.Data[right].Id
+				var node_id = q.data[node].id
+				var left_id = q.data[left].id
+				var right_id = q.data[right].id
 				if node_id < left_id && node_id < right_id {
 					break
 				} else if left_id < right_id {
-					var left_data = q.Data[left]
-					q.Data[left] = q.Data[node]
-					q.Data[node] = left_data
+					var left_data = q.data[left]
+					q.data[left] = q.data[node]
+					q.data[node] = left_data
 					node = left
 				} else {
-					var right_data = q.Data[right]
-					q.Data[right] = q.Data[node]
-					q.Data[node] = right_data
+					var right_data = q.data[right]
+					q.data[right] = q.data[node]
+					q.data[node] = right_data
 					node = right
 				}
 			} else {
-				var node_id = q.Data[node].Id
-				var left_id = q.Data[left].Id
+				var node_id = q.data[node].id
+				var left_id = q.data[left].id
 				if node_id < left_id {
 					break
 				} else {
-					var left_data = q.Data[left]
-					q.Data[left] = q.Data[node]
-					q.Data[node] = left_data
+					var left_data = q.data[left]
+					q.data[left] = q.data[node]
+					q.data[node] = left_data
 					node = left
 				}
 			}
 		}
-		return popped.Value, true
+		return popped.value, true
 	}
 }

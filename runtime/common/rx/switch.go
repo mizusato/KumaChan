@@ -1,36 +1,36 @@
 package rx
 
 
-func (e Effect) SwitchMap(f func(Object) Effect) Effect {
-	return Effect{ Action: func(r EffectRunner, ob *Observer) {
-		var ctx, dispose = ob.Context.NewChild()
-		var c = CollectorFrom(ob, dispose)
-		var cur_ctx, cur_dispose = ctx.NewChild()
-		r.Run(e, &Observer{
-			Context: ctx,
-			Next: func(x Object) {
+func (e Effect) SwitchMap(f func(Object)Effect) Effect {
+	return Effect { func(sched Scheduler, ob *observer) {
+		var ctx, dispose = ob.context.CreateChild()
+		var c = new_collector(ob, dispose)
+		var cur_ctx, cur_dispose = ctx.CreateChild()
+		sched.run(e, &observer {
+			context: ctx,
+			next: func(x Object) {
 				var item = f(x)
-				c.NewChild()
+				c.new_child()
 				cur_dispose()
-				cur_ctx, cur_dispose = ctx.NewChild()
-				r.Run(item, &Observer{
-					Context: cur_ctx,
-					Next: func(x Object) {
-						c.Pass(x)
+				cur_ctx, cur_dispose = ctx.CreateChild()
+				sched.run(item, &observer {
+					context: cur_ctx,
+					next: func(x Object) {
+						c.pass(x)
 					},
-					Error: func(e Object) {
-						c.Throw(e)
+					error: func(e Object) {
+						c.throw(e)
 					},
-					Complete: func() {
-						c.DeleteChild()
+					complete: func() {
+						c.delete_child()
 					},
 				})
 			},
-			Error: func(e Object) {
-				c.Throw(e)
+			error: func(e Object) {
+				c.throw(e)
 			},
-			Complete: func() {
-				c.ParentComplete()
+			complete: func() {
+				c.parent_complete()
 			},
 		})
 	} }

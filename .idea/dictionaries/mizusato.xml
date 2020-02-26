@@ -22,6 +22,7 @@
       <w>qword</w>
       <w>repr</w>
       <w>resumable</w>
+      <w>sched</w>
       <w>typelist</w>
       <w>unbox</w>
       <w>unboxes</w>

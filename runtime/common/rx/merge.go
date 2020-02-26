@@ -2,103 +2,103 @@ package rx
 
 
 func Merge(effects []Effect) Effect {
-	return Effect{ Action: func(r EffectRunner, ob *Observer) {
-		var ctx, dispose = ob.Context.NewChild()
-		var c = CollectorFrom(ob, dispose)
+	return Effect { func(sched Scheduler, ob *observer) {
+		var ctx, dispose = ob.context.CreateChild()
+		var c = new_collector(ob, dispose)
 		for _, item := range effects {
-			c.NewChild()
-			r.Run(item, &Observer{
-				Context: ctx,
-				Next: func(x Object) {
-					c.Pass(x)
+			c.new_child()
+			sched.run(item, &observer {
+				context: ctx,
+				next: func(x Object) {
+					c.pass(x)
 				},
-				Error: func(e Object) {
-					c.Throw(e)
+				error: func(e Object) {
+					c.throw(e)
 				},
-				Complete: func() {
-					c.DeleteChild()
+				complete: func() {
+					c.delete_child()
 				},
 			})
 		}
-		c.ParentComplete()
+		c.parent_complete()
 	} }
 }
 
-func (e Effect) MergeMap(f func(Object) Effect) Effect {
-	return Effect{ Action: func(r EffectRunner, ob *Observer) {
-		var ctx, dispose = ob.Context.NewChild()
-		var c = CollectorFrom(ob, dispose)
-		r.Run(e, &Observer{
-			Context: ctx,
-			Next: func(x Object) {
+func (e Effect) MergeMap(f func(Object)Effect) Effect {
+	return Effect { func(sched Scheduler, ob *observer) {
+		var ctx, dispose = ob.context.CreateChild()
+		var c = new_collector(ob, dispose)
+		sched.run(e, &observer {
+			context: ctx,
+			next: func(x Object) {
 				var item = f(x)
-				c.NewChild()
-				r.Run(item, &Observer{
-					Context: ctx,
-					Next: func(x Object) {
-						c.Pass(x)
+				c.new_child()
+				sched.run(item, &observer {
+					context: ctx,
+					next: func(x Object) {
+						c.pass(x)
 					},
-					Error: func(e Object) {
-						c.Throw(e)
+					error: func(e Object) {
+						c.throw(e)
 					},
-					Complete: func() {
-						c.DeleteChild()
+					complete: func() {
+						c.delete_child()
 					},
 				})
 			},
-			Error: func(e Object) {
-				c.Throw(e)
+			error: func(e Object) {
+				c.throw(e)
 			},
-			Complete: func() {
-				c.ParentComplete()
+			complete: func() {
+				c.parent_complete()
 			},
 		})
 	} }
 }
 
 
-type Collector struct {
-	Observer        *Observer
-	Dispose         func()
-	NumChildren     uint
-	NoMoreChildren  bool
+type collector struct {
+	observer          *observer
+	dispose           func()
+	num_children      uint
+	no_more_children  bool
 }
 
-func CollectorFrom (ob *Observer, dispose func()) *Collector {
-	return &Collector {
-		Observer:       ob,
-		Dispose:        dispose,
-		NumChildren:    0,
-		NoMoreChildren: false,
+func new_collector(ob *observer, dispose func()) *collector {
+	return &collector {
+		observer:         ob,
+		dispose:          dispose,
+		num_children:     0,
+		no_more_children: false,
 	}
 }
 
-func (c *Collector) Pass(x Object) {
-	c.Observer.Next(x)
+func (c *collector) pass(x Object) {
+	c.observer.next(x)
 }
 
-func (c *Collector) Throw(e Object) {
-	c.Observer.Error(e)
-	c.Dispose()
+func (c *collector) throw(e Object) {
+	c.observer.error(e)
+	c.dispose()
 }
 
-func (c *Collector) NewChild() {
-	c.NumChildren += 1
+func (c *collector) new_child() {
+	c.num_children += 1
 }
 
-func (c *Collector) DeleteChild() {
-	if c.NumChildren == 0 { panic("something went wrong") }
-	c.NumChildren -= 1
-	if c.NumChildren == 0 && c.NoMoreChildren {
-		c.Observer.Complete()
-		c.Dispose()
+func (c *collector) delete_child() {
+	if c.num_children == 0 { panic("something went wrong") }
+	c.num_children -= 1
+	if c.num_children == 0 && c.no_more_children {
+		c.observer.complete()
+		c.dispose()
 	}
 }
 
-func (c *Collector) ParentComplete() {
-	c.NoMoreChildren = true
-	if c.NumChildren == 0 {
-		c.Observer.Complete()
-		c.Dispose()
+func (c *collector) parent_complete() {
+	c.no_more_children = true
+	if c.num_children == 0 {
+		c.observer.complete()
+		c.dispose()
 	}
 }
