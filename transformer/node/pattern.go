@@ -8,9 +8,9 @@ type VariousPattern struct {
 }
 type Pattern interface { Pattern() }
 
-func (impl PatternNone) Pattern() {}
-type PatternNone struct {
-	Node                `part:"pattern_none"`
+func (impl PatternTrivial) Pattern() {}
+type PatternTrivial struct {
+	Node                `part:"pattern_trivial"`
 	Name   Identifier   `part:"name"`
 }
 

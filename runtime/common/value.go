@@ -6,7 +6,7 @@ import (
 	"math/big"
 )
 
-// TODO: refactor value to interface{}
+
 type Value interface { RuntimeValue() }
 
 func (impl PlainValue) RuntimeValue() {}

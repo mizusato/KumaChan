@@ -72,10 +72,17 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 	for i, d := range decls {
 		// 3.1. Get the symbol of the declared type
 		var type_sym = mod.SymbolFromName(d.Name)
-		// 3.2. Check if the symbol is used
+		// 3.2. Check if the symbol name is valid
+		if type_sym.SymbolName == IgnoreMarker {
+			return &TypeDeclError {
+				Point:    ErrorPoint { AST: mod.AST, Node: d.Name.Node },
+				Concrete: E_InvalidTypeName { type_sym.SymbolName },
+			}
+		}
+		// 3.3. Check if the symbol is used
 		var _, exists = raw.DeclMap[type_sym]
 		if exists || (mod_name != loader.CoreModule && loader.IsPreloadCoreSymbol(type_sym)) {
-			// 3.2.1. If used, throw an error
+			// 3.3.1. If used, throw an error
 			return &TypeDeclError {
 				Point: ErrorPoint { AST: mod.AST, Node: d.Name.Node },
 				Concrete: E_DuplicateTypeDecl {
@@ -83,7 +90,7 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 				},
 			}
 		} else {
-			// 3.2.2. If not, register the declaration node to DeclMap
+			// 3.3.2. If not, register the declaration node to DeclMap
 			//        and update UnionRootMap and UnionIndexMap if necessary.
 			//        If parameters were declared on a subtype,
 			//        throw an error.
@@ -326,6 +333,7 @@ func TypeFromRepr (repr node.Repr, ctx TypeContext) (Type, *TypeError) {
 			for i, f := range r.Fields {
 				var f_name = loader.Id2String(f.Name)
 				var _, exists = fields[f_name]
+				// TODO: check IgnoreMarker
 				if exists { return nil, &TypeError {
 					Point: ErrorPoint { AST: ctx.Module.AST, Node: f.Name.Node },
 					Concrete: E_DuplicateField {

@@ -32,8 +32,8 @@ const (
 	GET     // [Index, __]: Extract the value of a field
 	SET     // [Index, __]: Perform a functional update on a field
 	/* Function Type Operations */
-	CTX      // [_, _]: Use the current struct as the context of a closure
-	CALL     // [_, _]: Call a (native)function (pop func, pop arg, push ret)
+	CTX     // [Rec, _]: Use the current value as the context of a closure
+	CALL    // [___, _]: Call a (native)function (pop func, pop arg, push ret)
 )
 
 func (inst Instruction) GetRegIndex() int {

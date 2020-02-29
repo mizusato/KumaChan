@@ -1,0 +1,3 @@
+module InvalidName;
+
+type _ ();

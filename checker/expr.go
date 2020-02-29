@@ -1,6 +1,7 @@
 package checker
 
 import (
+	"kumachan/loader"
 	"math/big"
 )
 import . "kumachan/error"
@@ -83,19 +84,21 @@ type Binding struct {
 	Value    Expr
 }
 
-func (impl With) ExprVal() {}
-type With struct {
-	TypeArg  string
-	Context  NamedType
-	Unboxes  [] Unbox
-	Value    Expr
-}
-type Unbox struct {
-	Pattern  Pattern
-	Value    Expr
+func (impl RefConst) ExprVal() {}
+type RefConst struct {
+	Name  loader.Symbol
 }
 
-// TODO: reference to local bindings and global values
+func (impl RefFunction) ExprVal() {}
+type RefFunction struct {
+	Name   string
+	Index  uint
+}
+
+func (impl RefLocal) ExprVal() {}
+type RefLocal struct {
+	Name  string
+}
 
 func (impl Array) ExprVal() {}
 type Array struct {

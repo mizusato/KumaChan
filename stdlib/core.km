@@ -53,8 +53,7 @@ type List[T] union {
     type Cons (T, List[T]);
 };
 
-public function
-map[A,B] {
+public function map[A,B] {
     `(Maybe[A], `A => B) => Maybe[B]:
     `(maybe-a, f) => match(maybe-a) {
         case Just a:  Just f(a),
@@ -62,8 +61,7 @@ map[A,B] {
     }
 };
 
-public function
-map[A,B] {
+public function map[A,B] {
     `(List[A], `A => B) => List[B]:
     `(list, f) => match(list) {
         case Cons(x, xs): Cons(f(x), map(xs, f)),
@@ -71,8 +69,7 @@ map[A,B] {
     }
 };
 
-public function
-filter[T] {
+public function filter[T] {
     `(List[T], `T => Bool) => List[T]:
     `(list, f) => match(list) {
         case Cons(x, xs): let {
@@ -83,8 +80,7 @@ filter[T] {
     }
 };
 
-public function
-reduce[T,A] {
+public function reduce[T,A] {
     `(List[T], A, `(A, T) => A) => A:
     `(list, acc, f) => match(list) {
         case Cons(x, xs): reduce(xs, f(acc, x), f),

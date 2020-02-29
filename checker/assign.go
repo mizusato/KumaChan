@@ -1,5 +1,52 @@
 package checker
 
+
+func AssignSemiTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprError) {
+	var throw = func(e ConcreteExprError) (Expr, *ExprError) {
+		return Expr{}, &ExprError {
+			Point:    semi.Info.ErrorPoint,
+			Concrete: e,
+		}
+	}
+	switch given_semi := semi.Value.(type) {
+	case TypedExpr:
+		return AssignTo(expected, Expr(given_semi), ctx)
+	case UntypedLambda:
+		switch E := expected.(type) {
+		case AnonymousType:
+			switch func_repr := E.Repr.(type) {
+			case Func:
+				var lambda = given_semi
+				var input = func_repr.Input
+				var output = func_repr.Output
+				var inner_ctx, err1 = ctx.WithPatternMatching (
+					input, lambda.Input, lambda.InputNode, false,
+				)
+				if err1 != nil { return Expr{}, err1 }
+				var output_semi, err2 = SemiExprFrom(lambda.Output, inner_ctx)
+				if err2 != nil { return Expr{}, err2 }
+				var output_typed, err3 = AssignSemiTo(output, output_semi, ctx)
+				if err3 != nil { return Expr{}, err3 }
+				return Expr {
+					Type:  expected,
+					Info:  semi.Info,
+					Value: Lambda {
+						Input:  lambda.Input,
+						Output: output_typed,
+					},
+				}, nil
+			}
+		}
+		return throw(E_LambdaAssignedToNonFuncType {
+			NonFuncType: ctx.DescribeType(expected),
+		})
+	case UntypedInteger:
+
+	}
+	// TODO
+	return Expr{}, nil
+}
+
 func AssignTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError) {
 	if expected == nil {
 		// 1. If the expected type is not specified,
@@ -8,6 +55,8 @@ func AssignTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError) {
 	} else if AreTypesEqualInSameCtx(expected, expr.Type) {
 		// 2. If the expected type is identical to the given type,
 		//    no further process is required.
+		// TODO: derive the types of type arguments in ctx
+		//       (remove this branch, process in the following else branch)
 		return expr, nil
 	} else {
 		// 3. Otherwise, try some implicit type conversions
@@ -42,9 +91,9 @@ func AssignTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError) {
 						}
 					}
 					// 1.1.2. Otherwise, return a lifted value.
-					return Expr{
+					return Expr {
 						Type:  expected,
-						Value: Sum{Value: expr, Index: uint(index)},
+						Value: Sum { Value: expr, Index: uint(index) },
 						Info:  expr.Info,
 					}, nil
 				}

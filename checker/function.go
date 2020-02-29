@@ -68,6 +68,13 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 			// 3.1. Get the names of the function and its type parameters
 			var decl = c
 			var name = loader.Id2String(decl.Name)
+			if name == IgnoreMarker {
+				// 3.1.1. If the function name is invalid, throw an error.
+				return nil, &FunctionError {
+					Point:    ErrorPoint { AST: mod.AST, Node: decl.Name.Node },
+					Concrete: E_InvalidFunctionName { name },
+				}
+			}
 			var params = make([]string, len(decl.Params))
 			for i, p := range decl.Params {
 				params[i] = loader.Id2String(p)

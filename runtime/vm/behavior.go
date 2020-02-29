@@ -126,6 +126,7 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 					panic("GET: cannot execute on non-product value")
 				}
 			case CTX:
+				var is_recursive = (inst.Arg1 != 0)
 				switch prod := ec.PopValue().(type) {
 				case ProductValue:
 					var ctx = prod.Elements
@@ -133,12 +134,16 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 					case FunctionValue:
 						var required = int(f.Underlying.BaseSize.Context)
 						var given = len(ctx)
+						if is_recursive { given += 1 }
 						assert(given == required, "CTX: invalid context size")
 						assert((len(f.ContextValues) == 0), "CTX: context already injected")
-						ec.PushValue(FunctionValue {
+						if is_recursive { ctx = append(ctx, nil) }
+						var fv = FunctionValue {
 							Underlying:    f.Underlying,
 							ContextValues: ctx,
-						})
+						}
+						if is_recursive { ctx[len(ctx)-1] = fv }
+						ec.PushValue(fv)
 					default:
 						panic("CTX: cannot inject context for non-function value")
 					}

@@ -9,8 +9,7 @@ Stdout := [I/O::OutputStream] native 'Stdout';
 public const
 Stderr := [I/O::OutputStream] native 'Stderr';
 
-public function
-exit {
+public function exit {
     `Int => Effect[(),()]:
     native 'exit'
 };

@@ -41,6 +41,12 @@ func CollectConstants(mod *loader.Module, reg TypeRegistry, store ConstantStore)
 		case node.DeclConst:
 			var decl = c
 			var name = mod.SymbolFromName(decl.Name)
+			if name.SymbolName == IgnoreMarker {
+				return nil, &ConstantError {
+					Point:    ErrorPoint { AST: mod.AST, Node: c.Name.Node },
+					Concrete: E_InvalidConstName { name.SymbolName },
+				}
+			}
 			var _, exists = collection[name]
 			if exists { return nil, &ConstantError {
 				Point:    ErrorPoint { AST: mod.AST, Node: c.Name.Node },

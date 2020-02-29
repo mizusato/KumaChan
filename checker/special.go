@@ -2,6 +2,7 @@ package checker
 
 import "kumachan/loader"
 
+const IgnoreMarker = "_"
 /* should be consistent with stdlib/core.km */
 var __Maybe = loader.NewSymbol(loader.CoreModule, "Maybe")
 // var __Just uint = 0

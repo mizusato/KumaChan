@@ -70,6 +70,10 @@ type TypeDeclError struct {
 
 type ConcreteTypeDeclError interface { TypeDeclError() }
 
+func (impl E_InvalidTypeName) TypeDeclError() {}
+type E_InvalidTypeName struct {
+	Name  string
+}
 func (impl E_DuplicateTypeDecl) TypeDeclError() {}
 type E_DuplicateTypeDecl struct {
 	TypeName  loader.Symbol
@@ -88,6 +92,12 @@ func (err *TypeDeclError) Error() string {
 	var cause interface {}
 	var errors = make([]string, 0)
 	switch e := err.Concrete.(type) {
+	case E_InvalidTypeName:
+		cause = e
+		errors = append(errors, err.Point.GenErrMsg(fmt.Sprintf (
+			"%vInvalid type name: %v%s%v",
+			Red, Bold, e.Name, Reset,
+		)))
 	case E_DuplicateTypeDecl:
 		cause = e
 		errors = append(errors, err.Point.GenErrMsg(fmt.Sprintf (
@@ -121,6 +131,11 @@ type FunctionError struct {
 
 type ConcreteFunctionError interface { FunctionError() }
 
+func (impl E_InvalidFunctionName) FunctionError() {}
+type E_InvalidFunctionName struct {
+	Name  string
+}
+
 func (impl E_SignatureInvalid) FunctionError() {}
 type E_SignatureInvalid struct {
 	FuncName   string
@@ -146,18 +161,23 @@ type ConstantError struct {
 
 type ConcreteConstantError interface { ConstantError() }
 
-func (E_DuplicateConstDecl) ConstantError() {}
+func (impl E_InvalidConstName) ConstantError() {}
+type E_InvalidConstName struct {
+	Name  string
+}
+
+func (impl E_DuplicateConstDecl) ConstantError() {}
 type E_DuplicateConstDecl struct {
 	Name  string
 }
 
-func (E_ConstTypeInvalid) ConstantError() {}
+func (impl E_ConstTypeInvalid) ConstantError() {}
 type E_ConstTypeInvalid struct {
 	ConstName  string
 	TypeError  *TypeError
 }
 
-func (E_ConstConflictWithType) ConstantError() {}
+func (impl E_ConstConflictWithType) ConstantError() {}
 type E_ConstConflictWithType struct {
 	Name  string
 }
@@ -204,7 +224,17 @@ type E_SetToOpaqueBundle struct {}
 func (impl E_FieldDoesNotExist) ExprError() {}
 type E_FieldDoesNotExist struct {
 	Field   string
-	Bundle  string
+	Target  string
+}
+
+func (impl E_EntireValueIgnored) ExprError() {}
+type E_EntireValueIgnored struct {}
+
+func (impl E_TupleSizeNotMatching) ExprError() {}
+type E_TupleSizeNotMatching struct {
+	Required   int
+	Given      int
+	GivenType  string
 }
 
 func (impl E_NotAssignable) ExprError() {}
@@ -218,4 +248,29 @@ func (impl E_NotConstructable) ExprError() {}
 type E_NotConstructable struct {
 	From    string
 	To      string
+}
+
+func (impl E_ExplicitTypeRequired) ExprError() {}
+type E_ExplicitTypeRequired struct {}
+
+func (impl E_DuplicateBinding) ExprError() {}
+type E_DuplicateBinding struct {
+	ValueName  string
+}
+
+func (impl E_MatchingNonTupleType) ExprError() {}
+type E_MatchingNonTupleType struct {}
+
+func (impl E_MatchingOpaqueTupleType) ExprError() {}
+type E_MatchingOpaqueTupleType struct {}
+
+func (impl E_MatchingNonBundleType) ExprError() {}
+type E_MatchingNonBundleType struct {}
+
+func (impl E_MatchingOpaqueBundleType) ExprError() {}
+type E_MatchingOpaqueBundleType struct {}
+
+func (impl E_LambdaAssignedToNonFuncType) ExprError() {}
+type E_LambdaAssignedToNonFuncType struct {
+	NonFuncType  string
 }

@@ -22,19 +22,6 @@ type Binding struct {
 	Value    Expr             `part:"expr"`
 }
 
-func (impl With) Term() {}
-type With struct {
-	Node                `part:"with"`
-	Unboxes  [] Unbox   `list_more:"" item:"unbox"`
-	Return   Expr       `part:"return.expr"`
-}
-type Unbox struct {
-	Node                    `part:"unbox"`
-	Pattern  MaybePattern   `part_opt:"unbox_assign.pattern"`
-	Type     MaybeType      `part_opt:"unbox_assign.binding_type.type"`
-	Value    Expr           `part:"expr"`
-}
-
 func (impl Infix) Term() {}
 type Infix struct {
 	Node                    `part:"infix"`

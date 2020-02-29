@@ -107,6 +107,109 @@ func (ctx ExprContext) WithLocalValues(added map[string]Type) (ExprContext, stri
 	}, ""
 }
 
+func (ctx ExprContext) WithPatternMatching (
+	input    Type,
+	pattern  Pattern,
+	p_node   node.Node,
+	strict   bool,
+) (ExprContext, *ExprError) {
+	var throw = func(e ConcreteExprError) (ExprContext, *ExprError) {
+		return ExprContext{}, &ExprError {
+			Point:    ctx.GetErrorPoint(p_node),
+			Concrete: e,
+		}
+	}
+	var check = func(added map[string]Type) (ExprContext, *ExprError) {
+		var new_ctx, shadowed = ctx.WithLocalValues(added)
+		if shadowed != "" && !strict {
+			return throw(E_DuplicateBinding { shadowed })
+		} else {
+			return new_ctx, nil
+		}
+	}
+	switch p := pattern.(type) {
+	case TrivialPattern:
+		if p.ValueName == IgnoreMarker {
+			if strict {
+				return throw(E_EntireValueIgnored {})
+			} else {
+				return ctx, nil
+			}
+		} else {
+			var added = make(map[string]Type)
+			added[p.ValueName] = input
+			return check(added)
+		}
+	case TuplePattern:
+		switch tuple := UnboxTuple(input, ctx).(type) {
+		case Tuple:
+			var required = len(p.ValueNames)
+			var given = len(tuple.Elements)
+			if given != required {
+				return throw(E_TupleSizeNotMatching {
+					Required:  required,
+					Given:     given,
+					GivenType: ctx.DescribeType(input),
+				})
+			} else {
+				var added = make(map[string]Type)
+				var ignored = 0
+				for i, name := range p.ValueNames {
+					if name == IgnoreMarker {
+						ignored += 1
+					} else {
+						var _, exists = added[name]
+						if exists {
+							return throw(E_DuplicateBinding { name })
+						}
+						added[name] = tuple.Elements[i]
+					}
+				}
+				if ignored == len(p.ValueNames) {
+					return throw(E_EntireValueIgnored{})
+				} else {
+					return check(added)
+				}
+			}
+		case TR_NonTuple:
+			return throw(E_MatchingNonTupleType {})
+		case TR_TupleButOpaque:
+			return throw(E_MatchingOpaqueTupleType {})
+		default:
+			panic("impossible branch")
+		}
+	case BundlePattern:
+		switch bundle := UnboxBundle(input, ctx).(type) {
+		case Bundle:
+			var added = make(map[string]Type)
+			for _, name := range p.ValueNames {
+				if name == IgnoreMarker { panic("something went wrong") }
+				var field_type, exists = bundle.Fields[name]
+				if !exists {
+					throw(E_FieldDoesNotExist {
+						Field:  name,
+						Target: ctx.DescribeType(input),
+					})
+				}
+				_, exists = added[name]
+				if exists {
+					throw(E_DuplicateBinding { name })
+				}
+				added[name] = field_type
+			}
+			return check(added)
+		case BR_NonBundle:
+			return throw(E_MatchingNonBundleType {})
+		case BR_BundleButOpaque:
+			return throw(E_MatchingOpaqueBundleType {})
+		default:
+			panic("impossible branch")
+		}
+	default:
+		panic("impossible branch")
+	}
+}
+
 func (ctx ExprContext) GetErrorPoint(node node.Node) ErrorPoint {
 	return ErrorPoint {
 		AST:  ctx.ModuleInfo.Module.AST,
@@ -114,45 +217,55 @@ func (ctx ExprContext) GetErrorPoint(node node.Node) ErrorPoint {
 	}
 }
 
+func (ctx ExprContext) GetExprInfo(node node.Node) ExprInfo {
+	return ExprInfo { ErrorPoint: ctx.GetErrorPoint(node) }
+}
 
-type SemiExpr interface { SemiExpr() }
+type SemiExpr struct {
+	Info   ExprInfo
+	Value  SemiExprVal
+}
+type SemiExprVal interface { SemiExprVal() }
 
-func (impl TypedExpr) SemiExpr() {}
+func (impl TypedExpr) SemiExprVal() {}
 type TypedExpr Expr
 
-func (impl UntypedLambda) SemiExpr() {}
+func LiftTyped(expr Expr) SemiExpr {
+	return SemiExpr {
+		Info:  expr.Info,
+		Value: TypedExpr(expr),
+	}
+}
+
+func (impl UntypedLambda) SemiExprVal() {}
 type UntypedLambda struct {
-	Node    node.Node
-	Input   Pattern
-	Output  node.Expr
+	Input      Pattern
+	Output     node.Expr
+	InputNode  node.Node
 }
 
-func (impl UntypedInteger) SemiExpr() {}
+func (impl UntypedInteger) SemiExprVal() {}
 type UntypedInteger struct {
-	Node    node.Node
-	Value  *big.Int
+	Value   *big.Int
 }
 
-func (impl SemiTypedTuple) SemiExpr() {}
+func (impl SemiTypedTuple) SemiExprVal() {}
 type SemiTypedTuple struct {
-	Node    node.Node
 	Values  [] SemiExpr
 }
 
-func (impl SemiTypedBundle) SemiExpr() {}
+func (impl SemiTypedBundle) SemiExprVal() {}
 type SemiTypedBundle struct {
-	Node    node.Node
 	Index   map[string] uint
 	Values  [] SemiExpr
 }
 
-func (impl SemiTypedArray) SemiExpr() {}
+func (impl SemiTypedArray) SemiExprVal() {}
 type SemiTypedArray struct {
-	Node   node.Node
 	Items  [] SemiExpr
 }
 
-func (impl SemiSet) SemiExpr() {}
+func (impl SemiSet) SemiExprVal() {}
 type SemiSet struct {
 	Base    Expr
 	Bundle  Bundle
@@ -165,6 +278,7 @@ type SemiSetOp struct {
 }
 
 func SemiExprFromIntLiteral(i node.IntegerLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
+	var info = ctx.GetExprInfo(i.Node)
 	var chars = i.Value
 	var abs_chars []rune
 	if chars[0] == '-' {
@@ -190,20 +304,20 @@ func SemiExprFromIntLiteral(i node.IntegerLiteral, ctx ExprContext) (SemiExpr, *
 		value, ok = big.NewInt(0).SetString(str, 10)
 	}
 	if ok {
-		return UntypedInteger {
-			Node:  i.Node,
-			Value: value,
+		return SemiExpr {
+			Value: UntypedInteger { value },
+			Info:  info,
 		}, nil
 	} else {
-		return nil, &ExprError {
-			Point:    ctx.GetErrorPoint(i.Node),
+		return SemiExpr{}, &ExprError {
+			Point:    info.ErrorPoint,
 			Concrete: E_InvalidInteger { str },
 		}
 	}
 }
 
 func ExprFromFloatLiteral(f node.FloatLiteral, ctx ExprContext) (Expr, *ExprError) {
-	var info = ExprInfo { ErrorPoint: ctx.GetErrorPoint(f.Node) }
+	var info = ctx.GetExprInfo(f.Node)
 	var value, err = strconv.ParseFloat(string(f.Value), 64)
 	if err != nil { panic("invalid float literal got from parser") }
 	return Expr {
@@ -217,7 +331,7 @@ func ExprFromFloatLiteral(f node.FloatLiteral, ctx ExprContext) (Expr, *ExprErro
 }
 
 func ExprFromStringLiteral(s node.StringLiteral, ctx ExprContext) (Expr, *ExprError) {
-	var info = ExprInfo { ErrorPoint: ctx.GetErrorPoint(s.Node) }
+	var info = ctx.GetExprInfo(s.Node)
 	return Expr{
 		Type:  NamedType {
 			Name: __String,
@@ -229,17 +343,17 @@ func ExprFromStringLiteral(s node.StringLiteral, ctx ExprContext) (Expr, *ExprEr
 }
 
 func SemiExprFromTuple(tuple node.Tuple, ctx ExprContext) (SemiExpr, *ExprError) {
-	var info = ExprInfo { ErrorPoint: ctx.GetErrorPoint(tuple.Node) }
+	var info = ctx.GetExprInfo(tuple.Node)
 	var L = len(tuple.Elements)
 	if L == 0 {
-		return TypedExpr(Expr {
+		return LiftTyped(Expr {
 			Type:  AnonymousType { Unit {} },
 			Value: UnitValue {},
 			Info:  info,
 		}), nil
 	} else if L == 1 {
 		var expr, err = SemiExprFrom(tuple.Elements[0], ctx)
-		if err != nil { return nil, err }
+		if err != nil { return SemiExpr{}, err }
 		return expr, nil
 	} else {
 		var el_exprs = make([]SemiExpr, L)
@@ -248,9 +362,9 @@ func SemiExprFromTuple(tuple node.Tuple, ctx ExprContext) (SemiExpr, *ExprError)
 		var typed_count = 0
 		for i, el := range tuple.Elements {
 			var expr, err = SemiExprFrom(el, ctx)
-			if err != nil { return nil, err }
+			if err != nil { return SemiExpr{}, err }
 			el_exprs[i] = expr
-			switch typed := expr.(type) {
+			switch typed := expr.Value.(type) {
 			case TypedExpr:
 				el_typed_exprs[i] = Expr(typed)
 				el_types[i] = typed.Type
@@ -258,35 +372,36 @@ func SemiExprFromTuple(tuple node.Tuple, ctx ExprContext) (SemiExpr, *ExprError)
 			}
 		}
 		if typed_count == L {
-			return TypedExpr(Expr {
+			return LiftTyped(Expr {
 				Type:  AnonymousType { Tuple { el_types } },
 				Value: Product { el_typed_exprs },
 				Info:  info,
 			}), nil
 		} else {
-			return SemiTypedTuple {
-				Node:   tuple.Node,
-				Values: el_exprs,
+			return SemiExpr {
+				Value: SemiTypedTuple { el_exprs },
+				Info: info,
 			}, nil
 		}
 	}
 }
 
 func SemiExprFromBundle(bundle node.Bundle, ctx ExprContext) (SemiExpr, *ExprError) {
+	var info = ctx.GetExprInfo(bundle.Node)
 	switch update := bundle.Update.(type) {
 	case node.Update:
 		var base_semi, err = SemiExprFrom(update.Base, ctx)
-		if err != nil { return nil, err }
-		switch b := base_semi.(type) {
+		if err != nil { return SemiExpr{}, err }
+		switch b := base_semi.Value.(type) {
 		case TypedExpr:
-			if IsBundleLiteral(Expr(b)) { return nil, &ExprError {
+			if IsBundleLiteral(Expr(b)) { return SemiExpr{}, &ExprError {
 				Point:    ctx.GetErrorPoint(update.Base.Node),
 				Concrete: E_SetToLiteralBundle {},
 			} }
 			var L = len(bundle.Values)
 			if !(L >= 1) { panic("something went wrong") }
 			var base = Expr(b)
-			switch target := GetBundleRepr(base.Type, ctx).(type) {
+			switch target := UnboxBundle(base.Type, ctx).(type) {
 			case Bundle:
 				var occurred_names = make(map[string] bool)
 				var ops = make([]SemiSetOp, L)
@@ -294,17 +409,17 @@ func SemiExprFromBundle(bundle node.Bundle, ctx ExprContext) (SemiExpr, *ExprErr
 					var name = loader.Id2String(field.Key)
 					var index, exists = target.Index[name]
 					if !exists {
-						return nil, &ExprError {
+						return SemiExpr{}, &ExprError {
 							Point: ctx.GetErrorPoint(field.Key.Node),
 							Concrete: E_FieldDoesNotExist {
 								Field:  name,
-								Bundle: ctx.DescribeType(AnonymousType{target}),
+								Target: ctx.DescribeType(base.Type),
 							},
 						}
 					}
 					var _, duplicate = occurred_names[name]
 					if duplicate {
-						return nil, &ExprError {
+						return SemiExpr{}, &ExprError {
 							Point:    ctx.GetErrorPoint(field.Key.Node),
 							Concrete: E_ExprDuplicateField { name },
 						}
@@ -312,25 +427,28 @@ func SemiExprFromBundle(bundle node.Bundle, ctx ExprContext) (SemiExpr, *ExprErr
 					occurred_names[name] = true
 					var value_node = DesugarOmittedFieldValue(field)
 					var value, err = SemiExprFrom(value_node, ctx)
-					if err != nil { return nil, err }
+					if err != nil { return SemiExpr{}, err }
 					ops[i] = SemiSetOp {
 						Node:  value_node.Node,
 						Index: index,
 						Value: value,
 					}
 				}
-				return SemiSet {
-					Base:   base,
-					Bundle: target,
-					Ops:    ops,
+				return SemiExpr {
+					Value: SemiSet {
+						Base:   base,
+						Bundle: target,
+						Ops:    ops,
+					},
+					Info: info,
 				}, nil
 			case BR_BundleButOpaque:
-				return nil, &ExprError {
+				return SemiExpr{}, &ExprError {
 					Point:    base.Info.ErrorPoint,
 					Concrete: E_SetToOpaqueBundle {},
 				}
 			case BR_NonBundle:
-				return nil, &ExprError {
+				return SemiExpr{}, &ExprError {
 					Point:    base.Info.ErrorPoint,
 					Concrete: E_SetToNonBundle {},
 				}
@@ -338,21 +456,20 @@ func SemiExprFromBundle(bundle node.Bundle, ctx ExprContext) (SemiExpr, *ExprErr
 				panic("impossible branch")
 			}
 		case SemiTypedBundle:
-			return nil, &ExprError {
+			return SemiExpr{}, &ExprError {
 				Point:    ctx.GetErrorPoint(update.Base.Node),
 				Concrete: E_SetToLiteralBundle {},
 			}
 		default:
-			return nil, &ExprError {
+			return SemiExpr{}, &ExprError {
 				Point:    ctx.GetErrorPoint(update.Base.Node),
 				Concrete: E_SetToNonBundle {},
 			}
 		}
 	default:
-		var info = ExprInfo { ErrorPoint: ctx.GetErrorPoint(bundle.Node) }
 		var L = len(bundle.Values)
 		if L == 0 {
-			return TypedExpr(Expr {
+			return LiftTyped(Expr {
 				Type:  AnonymousType { Unit {} },
 				Value: UnitValue {},
 				Info:  info,
@@ -366,16 +483,16 @@ func SemiExprFromBundle(bundle node.Bundle, ctx ExprContext) (SemiExpr, *ExprErr
 			for i, field := range bundle.Values {
 				var name = loader.Id2String(field.Key)
 				var _, exists = f_index_map[name]
-				if exists { return nil, &ExprError {
+				if exists { return SemiExpr{}, &ExprError {
 					Point:    ctx.GetErrorPoint(field.Key.Node),
 					Concrete: E_ExprDuplicateField { name },
 				} }
 				var value = DesugarOmittedFieldValue(field)
 				var expr, err = SemiExprFrom(value, ctx)
-				if err != nil { return nil, err }
+				if err != nil { return SemiExpr{}, err }
 				f_exprs[i] = expr
 				f_index_map[name] = uint(i)
-				switch typed := expr.(type) {
+				switch typed := expr.Value.(type) {
 				case TypedExpr:
 					f_type_map[name] = typed.Type
 					f_typed_exprs[i] = Expr(typed)
@@ -383,7 +500,7 @@ func SemiExprFromBundle(bundle node.Bundle, ctx ExprContext) (SemiExpr, *ExprErr
 				}
 			}
 			if typed_count == L {
-				return TypedExpr(Expr {
+				return LiftTyped(Expr {
 					Type:  AnonymousType { Bundle {
 						Fields: f_type_map,
 						Index:  f_index_map,
@@ -394,10 +511,12 @@ func SemiExprFromBundle(bundle node.Bundle, ctx ExprContext) (SemiExpr, *ExprErr
 					Info:  info,
 				}), nil
 			} else {
-				return SemiTypedBundle {
-					Node:   bundle.Node,
-					Index:  f_index_map,
-					Values: f_exprs,
+				return SemiExpr {
+					Value: SemiTypedBundle {
+						Index:  f_index_map,
+						Values: f_exprs,
+					},
+					Info: info,
 				}, nil
 			}
 		}
@@ -407,7 +526,7 @@ func SemiExprFromBundle(bundle node.Bundle, ctx ExprContext) (SemiExpr, *ExprErr
 func ExprFromGet(get node.Get, ctx ExprContext) (Expr, *ExprError) {
 	var base_semi, err = SemiExprFrom(get.Base, ctx)
 	if err != nil { return Expr{}, err }
-	switch b := base_semi.(type) {
+	switch b := base_semi.Value.(type) {
 	case TypedExpr:
 		if IsBundleLiteral(Expr(b)) { return Expr{}, &ExprError {
 			Point:    ctx.GetErrorPoint(get.Base.Node),
@@ -417,7 +536,7 @@ func ExprFromGet(get node.Get, ctx ExprContext) (Expr, *ExprError) {
 		if !(L >= 1) { panic("something went wrong") }
 		var base = Expr(b)
 		for _, member := range get.Path {
-			switch bundle := GetBundleRepr(base.Type, ctx).(type) {
+			switch bundle := UnboxBundle(base.Type, ctx).(type) {
 			case Bundle:
 				var key = loader.Id2String(member.Name)
 				var index, exists = bundle.Index[key]
@@ -425,7 +544,7 @@ func ExprFromGet(get node.Get, ctx ExprContext) (Expr, *ExprError) {
 					Point:    ctx.GetErrorPoint(member.Node),
 					Concrete: E_FieldDoesNotExist {
 						Field:  key,
-						Bundle: ctx.DescribeType(AnonymousType{bundle}),
+						Target: ctx.DescribeType(AnonymousType{bundle}),
 					},
 				} }
 				var expr = Expr {
@@ -468,47 +587,6 @@ func ExprFromGet(get node.Get, ctx ExprContext) (Expr, *ExprError) {
 	}
 }
 
-type BundleReprResult interface { BundleReprResult() }
-func (impl Bundle) BundleReprResult() {}
-func (impl BR_NonBundle) BundleReprResult() {}
-type BR_NonBundle struct {}
-func (impl BR_BundleButOpaque) BundleReprResult() {}
-type BR_BundleButOpaque struct {}
-
-func GetBundleRepr(type_ Type, ctx ExprContext) BundleReprResult {
-	switch t := type_.(type) {
-	case NamedType:
-		var g = ctx.ModuleInfo.Types[t.Name]
-		switch gv := g.Value.(type) {
-		case Wrapped:
-			var inner = FillArgs(gv.InnerType, t.Args)
-			switch inner_type := inner.(type) {
-			case AnonymousType:
-				switch inner_repr := inner_type.Repr.(type) {
-				case Bundle:
-					var ctx_mod = ctx.GetModuleName()
-					var type_mod = t.Name.ModuleName
-					if gv.IsOpaque && ctx_mod != type_mod {
-						return BR_BundleButOpaque {}
-					} else {
-						return inner_repr
-					}
-				}
-			}
-		}
-		return BR_NonBundle {}
-	case AnonymousType:
-		switch r := t.Repr.(type) {
-		case Bundle:
-			return r
-		default:
-			return BR_NonBundle {}
-		}
-	default:
-		return BR_NonBundle {}
-	}
-}
-
 func IsBundleLiteral(expr Expr) bool {
 	switch expr.Value.(type) {
 	case Product:
@@ -523,13 +601,14 @@ func IsBundleLiteral(expr Expr) bool {
 	return false
 }
 
+
 func SemiExprFromArray(array node.Array, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ExprInfo { ErrorPoint: ctx.GetErrorPoint(array.Node) }
 	var L = len(array.Items)
 	if L == 0 {
-		return SemiTypedArray {
-			Node:  array.Node,
-			Items: make([]SemiExpr, 0),
+		return SemiExpr {
+			Value: SemiTypedArray { make([]SemiExpr, 0) },
+			Info: info,
 		}, nil
 	} else {
 		var item_exprs = make([]SemiExpr, L)
@@ -537,9 +616,9 @@ func SemiExprFromArray(array node.Array, ctx ExprContext) (SemiExpr, *ExprError)
 		var typed_count = 0
 		for i, item_node := range array.Items {
 			var item, err = SemiExprFrom(item_node, ctx)
-			if err != nil { return nil, err }
+			if err != nil { return SemiExpr{}, err }
 			item_exprs[i] = item
-			switch typed := item.(type) {
+			switch typed := item.Value.(type) {
 			case TypedExpr:
 				item_typed_exprs[i] = Expr(typed)
 				typed_count += 1
@@ -548,7 +627,7 @@ func SemiExprFromArray(array node.Array, ctx ExprContext) (SemiExpr, *ExprError)
 		if typed_count == L {
 			var lifted, item_type, ok = LiftToMaxType(item_typed_exprs, ctx)
 			if ok {
-				return TypedExpr(Expr {
+				return LiftTyped(Expr {
 					Type: NamedType {
 						Name: __Array,
 						Args: []Type { item_type },
@@ -557,24 +636,45 @@ func SemiExprFromArray(array node.Array, ctx ExprContext) (SemiExpr, *ExprError)
 					Info:  info,
 				}), nil
 			} else {
-				return nil, &ExprError {
-					Point:    ctx.GetErrorPoint(array.Node),
+				return SemiExpr{}, &ExprError {
+					Point:    info.ErrorPoint,
 					Concrete: E_HeterogeneousArray {},
 				}
 			}
 		} else {
-			return SemiTypedArray {
-				Node:  array.Node,
-				Items: item_exprs,
+			return SemiExpr {
+				Value: SemiTypedArray { item_exprs },
+				Info:  info,
 			}, nil
 		}
+	}
+}
+
+func PatternFrom(p_node node.Pattern) (Pattern, node.Node) {
+	switch p := p_node.(type) {
+	case node.PatternTrivial:
+		return TrivialPattern { loader.Id2String(p.Name) }, p.Node
+	case node.PatternTuple:
+		var names = make([]string, len(p.Names))
+		for i, identifier := range p.Names {
+			names[i] = loader.Id2String(identifier)
+		}
+		return TuplePattern { names }, p.Node
+	case node.PatternBundle:
+		var names = make([]string, len(p.Names))
+		for i, identifier := range p.Names {
+			names[i] = loader.Id2String(identifier)
+		}
+		return BundlePattern { names }, p.Node
+	default:
+		panic("impossible branch")
 	}
 }
 
 
 func SemiExprFrom(e node.Expr, ctx ExprContext) (SemiExpr, *ExprError) {
 	// TODO
-	return nil, nil
+	return SemiExpr{}, nil
 }
 
 func DesugarOmittedFieldValue(field node.FieldValue) node.Expr {
@@ -590,7 +690,7 @@ func DesugarOmittedFieldValue(field node.FieldValue) node.Expr {
 					Node: field.Node,
 					Term: node.Ref {
 						Node:     field.Node,
-						Module:   node.Identifier{
+						Module:   node.Identifier {
 							Node: field.Node,
 							Name: []rune(""),
 						},

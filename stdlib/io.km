@@ -13,14 +13,12 @@ type ErrorKind union {
     // ...
 };
 
-public function
-read {
+public function read {
     `(InputStream, Int) => Effect[Bytes,Error]:
     native 'read-input-stream'
 };
 
-public function
-write {
+public function write {
     `(OutputStream, Bytes) => Effect[Int,Error]:
     native 'write-output-stream'
 };
