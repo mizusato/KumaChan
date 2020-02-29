@@ -22,12 +22,13 @@ var ArithmeticFunctions = map[string] NativeFunction {
 		var c big.Int
 		return IntValue(c.Mul(IntFrom(a), IntFrom(b)))
 	},
-	"/int": func(arg Value, _ MachineHandle) Value {
+	"quorem": func(arg Value, _ MachineHandle) Value {
 		var a, b = FromTuple2(arg)
-		var c big.Int
-		return IntValue(c.Div(IntFrom(a), IntFrom(b)))
+		var q, m big.Int
+		q.QuoRem(IntFrom(a), IntFrom(b), &m)
+		return Tuple2(IntValue(&q), IntValue(&m))
 	},
-	"divmod-int": func(arg Value, handle MachineHandle) Value {
+	"divmod": func(arg Value, handle MachineHandle) Value {
 		var a, b = FromTuple2(arg)
 		var q, m big.Int
 		q.DivMod(IntFrom(a), IntFrom(b), &m)

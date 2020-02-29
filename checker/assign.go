@@ -141,6 +141,7 @@ func AssignSemiTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprErr
 				}, nil
 			}
 		}
+		return throw(E_BundleAssignedToNonBundleType {})
 	// TODO
 	}
 	// TODO
