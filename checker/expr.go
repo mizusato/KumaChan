@@ -107,7 +107,13 @@ type Array struct {
 
 func (impl IntLiteral) ExprVal() {}
 type IntLiteral struct {
-	Value  big.Int
+	Value  *big.Int
+}
+
+func (impl SmallIntLiteral) ExprVal() {}
+type SmallIntLiteral struct {
+	Kind   string
+	Value  uint64
 }
 
 func (impl FloatLiteral) ExprVal() {}

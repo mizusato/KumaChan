@@ -65,7 +65,7 @@ var ExtraTokens = [...] string { "NoLF", "Void" }
 
 var ConditionalKeywords = [...] string {
     "@module", "@import", "@from",
-    "@type",  "@opaque", "@union", "@native",
+    "@type",  "@protected", "@opaque", "@union", "@native",
     "@private", "@public", "@function", "@=>", "@const", "@do",
     "@match", "@case", "@else", "@if",
     "@let", "@return",
@@ -96,8 +96,8 @@ var SyntaxDefinition = [...] string {
           "type_params? = [ name! more_names ]!",
             "more_names? = , name! more_names",
           "more_decl_types? = decl_type more_decl_types",
-        "wrapped_type = opaque_opt repr!",
-          "opaque_opt? = @opaque",
+        "wrapped_type = wrap_option repr!",
+          "wrap_option? = @protected | @opaque",
           "repr = repr_tuple | repr_bundle | repr_func",
             "repr_tuple = ( ) | ( type_list )!",
               "type_list = type! more_types",

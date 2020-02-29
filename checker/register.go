@@ -227,7 +227,8 @@ func TypeValFrom (tv node.TypeValue, ctx TypeContext) (TypeVal, *TypeError) {
 		if err != nil { return nil, err }
 		return Wrapped {
 			InnerType: expr,
-			IsOpaque:  v.IsOpaque,
+			Protected: v.Protected,
+			Opaque:    v.Opaque,
 		}, nil
 	case node.NativeType:
 		return Native{}, nil

@@ -1,6 +1,5 @@
 package checker
 
-
 func AssignSemiTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprError) {
 	var throw = func(e ConcreteExprError) (Expr, *ExprError) {
 		return Expr{}, &ExprError {
@@ -12,6 +11,9 @@ func AssignSemiTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprErr
 	case TypedExpr:
 		return AssignTo(expected, Expr(given_semi), ctx)
 	case UntypedLambda:
+		if expected == nil {
+			throw(E_ExplicitTypeRequired {})
+		}
 		switch E := expected.(type) {
 		case AnonymousType:
 			switch func_repr := E.Repr.(type) {
@@ -41,7 +43,105 @@ func AssignSemiTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprErr
 			NonFuncType: ctx.DescribeType(expected),
 		})
 	case UntypedInteger:
-
+		var integer = given_semi
+		if expected == nil {
+			return Expr {
+				Type:  NamedType {
+					Name: __Int,
+					Args: make([]Type, 0),
+				},
+				Info:  semi.Info,
+				Value: IntLiteral { integer.Value },
+			}, nil
+		}
+		switch E := expected.(type) {
+		case NamedType:
+			var sym = E.Name
+			var kind, exists = __IntegerTypeMap[sym]
+			if exists {
+				if len(E.Args) > 0 { panic("something went wrong") }
+				var val, ok = AdaptInteger(kind, integer.Value)
+				if ok {
+					return Expr {
+						Type:  expected,
+						Info:  semi.Info,
+						Value: val,
+					}, nil
+				} else {
+					return throw(E_IntegerOverflow { kind })
+				}
+			}
+		}
+		return throw(E_IntegerAssignedToNonIntegerType {})
+	case SemiTypedTuple:
+		var tuple_semi = given_semi
+		switch E := expected.(type) {
+		case AnonymousType:
+			switch tuple := E.Repr.(type) {
+			case Tuple:
+				var required = len(tuple.Elements)
+				var given = len(tuple_semi.Values)
+				if given != required {
+					return throw(E_TupleSizeNotMatching {
+						Required:  required,
+						Given:     given,
+						GivenType: ctx.DescribeType(AnonymousType { tuple }),
+					})
+				}
+				var typed_exprs = make([]Expr, given)
+				for i, el := range tuple_semi.Values {
+					var el_expected = tuple.Elements[i]
+					var typed, err = AssignSemiTo(el_expected, el, ctx)
+					if err != nil { return Expr{}, err }
+					typed_exprs[i] = typed
+				}
+				return Expr {
+					Type:  expected,
+					Info:  semi.Info,
+					Value: Product { typed_exprs },
+				}, nil
+			}
+		}
+		return throw(E_TupleAssignedToNonTupleType {})
+	case SemiTypedBundle:
+		var bundle_semi = given_semi
+		switch E := expected.(type) {
+		case AnonymousType:
+			switch bundle := E.Repr.(type) {
+			case Bundle:
+				var values = make([]Expr, len(bundle.Index))
+				for field_name, index := range bundle.Index {
+					var field_type = bundle.Fields[field_name]
+					var given_index, exists = bundle_semi.Index[field_name]
+					if !exists {
+						return throw(E_MissingField {
+							Field: field_name,
+							Type:  ctx.DescribeType(field_type),
+						})
+					}
+					var given_value = bundle_semi.Values[given_index]
+					var value, err = AssignSemiTo(field_type, given_value, ctx)
+					if err != nil { return Expr{}, err }
+					values[index] = value
+				}
+				for given_field_name, index := range bundle_semi.Index {
+					var _, exists = bundle.Fields[given_field_name]
+					if !exists {
+						var key_node = bundle_semi.KeyNodes[index]
+						return Expr{}, &ExprError {
+							Point:    ctx.GetErrorPoint(key_node),
+							Concrete: E_SurplusField { given_field_name },
+						}
+					}
+				}
+				return Expr {
+					Type:  expected,
+					Info:  semi.Info,
+					Value: Product { values },
+				}, nil
+			}
+		}
+	// TODO
 	}
 	// TODO
 	return Expr{}, nil
@@ -73,7 +173,8 @@ func AssignTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError) {
 			}
 		}
 		// -- behavior of assigning a named type to an union type --
-		var assign_union = func(exp NamedType, given NamedType, union Union) (Expr, *ExprError) {
+		var assign_union func(NamedType, NamedType, Union) (Expr, *ExprError)
+		assign_union = func(exp NamedType, given NamedType, union Union) (Expr, *ExprError) {
 			// 1. Find the given type in the list of subtypes of the union
 			for index, subtype := range union.SubTypes {
 				if subtype == given.Name {
@@ -92,17 +193,40 @@ func AssignTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError) {
 					}
 					// 1.1.2. Otherwise, return a lifted value.
 					return Expr {
-						Type:  expected,
+						Type:  exp,
 						Value: Sum { Value: expr, Index: uint(index) },
 						Info:  expr.Info,
 					}, nil
+				}
+			}
+			var types = ctx.ModuleInfo.Types
+			for index, subtype := range union.SubTypes {
+				var sub_g = types[subtype]
+				switch sub_union := sub_g.Value.(type) {
+				case Union:
+					var sub_exp = NamedType {
+						Name: subtype,
+						Args: exp.Args,
+					}
+					var sub, err = assign_union(sub_exp, given, sub_union)
+					if err != nil {
+						continue
+					} else {
+						return Expr {
+							Type:  exp,
+							Value: Sum { Value: sub, Index: uint(index) },
+							Info:  sub.Info,
+						}, nil
+					}
+				default:
+					continue
 				}
 			}
 			// 1.2. Otherwise, throw an error.
 			return Expr{}, throw("given type is not a subtype of the expected union type")
 		}
 		// -- behavior of unpacking wrapped inner types --
-		var assign_inner = func(inner Type, is_opaque bool, mod string) (Expr, *ExprError) {
+		var assign_inner = func(inner Type, opaque bool, mod string) (Expr, *ExprError) {
 			// 1. Create an alternative expression with the inner type
 			var expr_with_inner = Expr {
 				Type:  inner,
@@ -116,12 +240,13 @@ func AssignTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError) {
 			}
 			// 3. Check if the module encapsulation is violated
 			var ctx_mod = ctx.GetModuleName()
-			if is_opaque && ctx_mod != mod {
+			if opaque && ctx_mod != mod {
 				return Expr{}, throw("cannot cast out of opaque type")
 			} else {
 				return result, nil
 			}
 		}
+		/*
 		// -- behavior of adapting tuple literals --
 		var assign_tuple = func(exp Tuple, given Tuple) (Expr, *ExprError) {
 			// 1. Check if quantities of elements are identical
@@ -148,7 +273,7 @@ func AssignTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError) {
 				// 2.1.2. Collect all adapted elements as a new tuple.
 				return Expr{
 					Type:  expected,
-					Value: Product{Values: items},
+					Value: Product { items },
 					Info:  expr.Info,
 				}, nil
 			default:
@@ -168,7 +293,7 @@ func AssignTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError) {
 						return Expr{}, throw("surplus field " + name)
 					}
 				}
-				var fields = make([]Expr, len(exp.Index))
+				var values = make([]Expr, len(exp.Index))
 				for name, index := range exp.Index {
 					// 1.2. Adapt each expected field
 					var field_exp_type = exp.Fields[name]
@@ -182,34 +307,24 @@ func AssignTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError) {
 						if err != nil {
 							return Expr{}, err
 						}
-						fields[index] = field
+						values[index] = field
 					} else {
-						// 1.2.2. Otherwise, if an expected field is missing
-						if IsMaybeType(field_exp_type) {
-							// 1.2.2.1. If the expected field type is Maybe[T],
-							//          adapt a Nothing value
-							fields[index] = Expr{
-								Type:  field_exp_type,
-								Value: UnitWithIndex(__Nothing, expr.Info),
-								Info:  expr.Info,
-							}
-						} else {
-							// 1.2.2.2. Otherwise, throw an error.
-							return Expr{}, throw("missing field " + name)
-						}
+						// 1.2.2. Otherwise, if an expected field is missing,
+						//        throw an error.
+						return Expr{}, throw("missing field " + name)
 					}
 				}
 				// 1.3. Collect all adapted fields as a new bundle.
-				return Expr{
+				return Expr {
 					Type:  expected,
-					Value: Product{Values: fields},
+					Value: Product { values },
 					Info:  expr.Info,
 				}, nil
 			default:
 				// 2. Otherwise, a non-literal bundle is not adaptable.
 				return Expr{}, throw("non-literal bundle cannot be assigned to different bundle type")
 			}
-		}
+		}*/
 		// 3.2. Determine the conversion behavior according to type details
 		switch G := expr.Type.(type) {
 		case NamedType:
@@ -231,33 +346,29 @@ func AssignTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError) {
 			case Wrapped:
 				var given_inner = FillArgs(tv.InnerType, G.Args)
 				var given_mod = G.Name.ModuleName
-				var given_is_opaque = tv.IsOpaque
+				var given_opaque = tv.Opaque
 				// 3.2.1.2. Otherwise, if the given type has an inner type,
 				//          try to unpack the inner type.
-				return assign_inner(given_inner, given_is_opaque, given_mod)
+				return assign_inner(given_inner, given_opaque, given_mod)
 			}
 		case AnonymousType:
 			// 3.2.2. If the given type is an anonymous type
-			switch repr_given := G.Repr.(type) {
+			switch G.Repr.(type) {
 			case Tuple:
 				switch E := expected.(type) {
 				case AnonymousType:
-					switch repr_expected := E.Repr.(type) {
+					switch E.Repr.(type) {
 					case Tuple:
-						// 3.2.2.1. If types are both tuple type,
-						//          try to adapt the given tuple.
-						return assign_tuple(repr_expected, repr_given)
+						return Expr{}, throw("non-literal tuple cannot be adapt to different tuple type")
 					default:
 					}
 				}
 			case Bundle:
 				switch E := expected.(type) {
 				case AnonymousType:
-					switch re := E.Repr.(type) {
+					switch E.Repr.(type) {
 					case Bundle:
-						// 3.2.2.2. If types are both bundle type,
-						//          try to adapt the given bundle.
-						return assign_bundle(re, repr_given)
+						return Expr{}, throw("non-literal bundle cannot be adapt to different bundle type")
 					}
 				}
 			}

@@ -22,7 +22,8 @@ type Union struct {
 func (impl Wrapped) TypeVal() {}
 type Wrapped struct {
 	InnerType  Type
-	IsOpaque   bool
+	Protected  bool
+	Opaque     bool
 }
 func (impl Native) TypeVal() {}
 type Native struct {}

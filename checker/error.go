@@ -227,6 +227,17 @@ type E_FieldDoesNotExist struct {
 	Target  string
 }
 
+func (impl E_MissingField) ExprError() {}
+type E_MissingField struct {
+	Field  string
+	Type   string
+}
+
+func (impl E_SurplusField) ExprError() {}
+type E_SurplusField struct {
+	Field  string
+}
+
 func (impl E_EntireValueIgnored) ExprError() {}
 type E_EntireValueIgnored struct {}
 
@@ -273,4 +284,24 @@ type E_MatchingOpaqueBundleType struct {}
 func (impl E_LambdaAssignedToNonFuncType) ExprError() {}
 type E_LambdaAssignedToNonFuncType struct {
 	NonFuncType  string
+}
+
+func (impl E_IntegerAssignedToNonIntegerType) ExprError() {}
+type E_IntegerAssignedToNonIntegerType struct {
+	NonIntegerType  string
+}
+
+func (impl E_IntegerOverflow) ExprError() {}
+type E_IntegerOverflow struct {
+	Kind  string
+}
+
+func (impl E_TupleAssignedToNonTupleType) ExprError() {}
+type E_TupleAssignedToNonTupleType struct {
+	NonTupleType  string
+}
+
+func (impl E_BundleAssignedToNonBundleType) ExprError() {}
+type E_BundleAssignedToNonBundleType struct {
+	NonBundleType  string
 }

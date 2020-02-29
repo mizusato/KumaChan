@@ -149,7 +149,7 @@ func (ctx ExprContext) WithPatternMatching (
 				return throw(E_TupleSizeNotMatching {
 					Required:  required,
 					Given:     given,
-					GivenType: ctx.DescribeType(input),
+					GivenType: ctx.DescribeType(AnonymousType { tuple }),
 				})
 			} else {
 				var added = make(map[string]Type)
@@ -166,7 +166,7 @@ func (ctx ExprContext) WithPatternMatching (
 					}
 				}
 				if ignored == len(p.ValueNames) {
-					return throw(E_EntireValueIgnored{})
+					return throw(E_EntireValueIgnored {})
 				} else {
 					return check(added)
 				}
@@ -256,8 +256,9 @@ type SemiTypedTuple struct {
 
 func (impl SemiTypedBundle) SemiExprVal() {}
 type SemiTypedBundle struct {
-	Index   map[string] uint
-	Values  [] SemiExpr
+	Index     map[string] uint
+	Values    [] SemiExpr
+	KeyNodes  [] node.Node
 }
 
 func (impl SemiTypedArray) SemiExprVal() {}
@@ -357,32 +358,20 @@ func SemiExprFromTuple(tuple node.Tuple, ctx ExprContext) (SemiExpr, *ExprError)
 		return expr, nil
 	} else {
 		var el_exprs = make([]SemiExpr, L)
-		var el_typed_exprs = make([]Expr, L)
 		var el_types = make([]Type, L)
-		var typed_count = 0
 		for i, el := range tuple.Elements {
 			var expr, err = SemiExprFrom(el, ctx)
 			if err != nil { return SemiExpr{}, err }
 			el_exprs[i] = expr
 			switch typed := expr.Value.(type) {
 			case TypedExpr:
-				el_typed_exprs[i] = Expr(typed)
 				el_types[i] = typed.Type
-				typed_count += 1
 			}
 		}
-		if typed_count == L {
-			return LiftTyped(Expr {
-				Type:  AnonymousType { Tuple { el_types } },
-				Value: Product { el_typed_exprs },
-				Info:  info,
-			}), nil
-		} else {
-			return SemiExpr {
-				Value: SemiTypedTuple { el_exprs },
-				Info: info,
-			}, nil
-		}
+		return SemiExpr {
+			Value: SemiTypedTuple { el_exprs },
+			Info: info,
+		}, nil
 	}
 }
 
@@ -477,9 +466,7 @@ func SemiExprFromBundle(bundle node.Bundle, ctx ExprContext) (SemiExpr, *ExprErr
 		} else {
 			var f_exprs = make([]SemiExpr, L)
 			var f_index_map = make(map[string]uint, L)
-			var f_type_map = make(map[string]Type, L)
-			var f_typed_exprs = make([]Expr, L)
-			var typed_count = 0
+			var f_key_nodes = make([]node.Node, L)
 			for i, field := range bundle.Values {
 				var name = loader.Id2String(field.Key)
 				var _, exists = f_index_map[name]
@@ -492,33 +479,16 @@ func SemiExprFromBundle(bundle node.Bundle, ctx ExprContext) (SemiExpr, *ExprErr
 				if err != nil { return SemiExpr{}, err }
 				f_exprs[i] = expr
 				f_index_map[name] = uint(i)
-				switch typed := expr.Value.(type) {
-				case TypedExpr:
-					f_type_map[name] = typed.Type
-					f_typed_exprs[i] = Expr(typed)
-					typed_count += 1
-				}
+				f_key_nodes[i] = field.Key.Node
 			}
-			if typed_count == L {
-				return LiftTyped(Expr {
-					Type:  AnonymousType { Bundle {
-						Fields: f_type_map,
-						Index:  f_index_map,
-					} },
-					Value: Product {
-						Values: f_typed_exprs,
-					},
-					Info:  info,
-				}), nil
-			} else {
-				return SemiExpr {
-					Value: SemiTypedBundle {
-						Index:  f_index_map,
-						Values: f_exprs,
-					},
-					Info: info,
-				}, nil
-			}
+			return SemiExpr {
+				Value: SemiTypedBundle {
+					Index:    f_index_map,
+					Values:   f_exprs,
+					KeyNodes: f_key_nodes,
+				},
+				Info: info,
+			}, nil
 		}
 	}
 }

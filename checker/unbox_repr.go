@@ -24,7 +24,7 @@ func Unbox${Repr}(type_ Type, ctx ExprContext) ${Repr}ReprResult {
 				case ${Repr}:
 					var ctx_mod = ctx.GetModuleName()
 					var type_mod = t.Name.ModuleName
-					if gv.IsOpaque && ctx_mod != type_mod {
+					if gv.Opaque && ctx_mod != type_mod {
 						return ${ReprBrief}R_${Repr}ButOpaque {}
 					} else {
 						return inner_repr
@@ -66,7 +66,7 @@ func UnboxTuple(type_ Type, ctx ExprContext) TupleReprResult {
 				case Tuple:
 					var ctx_mod = ctx.GetModuleName()
 					var type_mod = t.Name.ModuleName
-					if gv.IsOpaque && ctx_mod != type_mod {
+					if gv.Opaque && ctx_mod != type_mod {
 						return TR_TupleButOpaque {}
 					} else {
 						return inner_repr
@@ -107,7 +107,7 @@ func UnboxBundle(type_ Type, ctx ExprContext) BundleReprResult {
 				case Bundle:
 					var ctx_mod = ctx.GetModuleName()
 					var type_mod = t.Name.ModuleName
-					if gv.IsOpaque && ctx_mod != type_mod {
+					if gv.Opaque && ctx_mod != type_mod {
 						return BR_BundleButOpaque {}
 					} else {
 						return inner_repr
@@ -148,7 +148,7 @@ func UnboxFunc(type_ Type, ctx ExprContext) FuncReprResult {
 				case Func:
 					var ctx_mod = ctx.GetModuleName()
 					var type_mod = t.Name.ModuleName
-					if gv.IsOpaque && ctx_mod != type_mod {
+					if gv.Opaque && ctx_mod != type_mod {
 						return FR_FuncButOpaque {}
 					} else {
 						return inner_repr
