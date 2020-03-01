@@ -1,6 +1,13 @@
 package node
 
 
+func (impl Cast) Term() {}
+type Cast struct {
+	Node                  `part:"cast"`
+	Target  VariousType   `part:"type"`
+	Expr    Expr          `part:"expr"`
+}
+
 func (impl Lambda) Body() {}
 func (impl Lambda) Term() {}
 type Lambda struct {

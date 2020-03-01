@@ -1,5 +1,6 @@
 package checker
 
+
 func AssignSemiTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprError) {
 	var throw = func(e ConcreteExprError) (Expr, *ExprError) {
 		return Expr{}, &ExprError {
@@ -12,7 +13,7 @@ func AssignSemiTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprErr
 		return AssignTo(expected, Expr(given_semi), ctx)
 	case UntypedLambda:
 		if expected == nil {
-			throw(E_ExplicitTypeRequired {})
+			return throw(E_ExplicitTypeRequired {})
 		}
 		switch E := expected.(type) {
 		case AnonymousType:
@@ -43,17 +44,10 @@ func AssignSemiTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprErr
 			NonFuncType: ctx.DescribeType(expected),
 		})
 	case UntypedInteger:
-		var integer = given_semi
 		if expected == nil {
-			return Expr {
-				Type:  NamedType {
-					Name: __Int,
-					Args: make([]Type, 0),
-				},
-				Info:  semi.Info,
-				Value: IntLiteral { integer.Value },
-			}, nil
+			return throw(E_ExplicitTypeRequired {})
 		}
+		var integer = given_semi
 		switch E := expected.(type) {
 		case NamedType:
 			var sym = E.Name
@@ -75,7 +69,18 @@ func AssignSemiTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprErr
 		return throw(E_IntegerAssignedToNonIntegerType {})
 	case SemiTypedTuple:
 		var tuple_semi = given_semi
-		switch E := expected.(type) {
+		var non_nil_expected Type
+		if expected == nil {
+			non_nil_expected = AnonymousType {
+				Tuple {
+					// Fill with nil
+					Elements: make([]Type, len(tuple_semi.Values)),
+				},
+			}
+		} else {
+			non_nil_expected = expected
+		}
+		switch E := non_nil_expected.(type) {
 		case AnonymousType:
 			switch tuple := E.Repr.(type) {
 			case Tuple:
@@ -104,6 +109,9 @@ func AssignSemiTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprErr
 		}
 		return throw(E_TupleAssignedToNonTupleType {})
 	case SemiTypedBundle:
+		if expected == nil {
+			return throw(E_ExplicitTypeRequired {})
+		}
 		var bundle_semi = given_semi
 		switch E := expected.(type) {
 		case AnonymousType:
@@ -142,7 +150,48 @@ func AssignSemiTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprErr
 			}
 		}
 		return throw(E_BundleAssignedToNonBundleType {})
-	// TODO
+	case SemiTypedArray:
+		if expected == nil {
+			return throw(E_ExplicitTypeRequired {})
+		}
+		var array_semi = given_semi
+		switch E := expected.(type) {
+		case NamedType:
+			if E.Name == __Array {
+				if len(E.Args) != 1 { panic("something went wrong") }
+				var item_type = E.Args[0]
+				var items = make([]Expr, len(array_semi.Items))
+				for i, item_semi := range array_semi.Items {
+					var item, err = AssignSemiTo(item_type, item_semi, ctx)
+					if err != nil { return Expr{}, err }
+					items[i] = item
+				}
+				return Expr {
+					Type:  expected,
+					Info:  semi.Info,
+					Value: Array { items },
+				}, nil
+			}
+		}
+		return throw(E_ArrayAssignedToNonArrayType{})
+	case SemiSet:
+		var set_semi = given_semi
+		var base = set_semi.Base
+		for _, op := range set_semi.Ops {
+			var value, err = AssignSemiTo(op.FieldType, op.Value, ctx)
+			if err != nil { return Expr{}, err }
+			base = Expr {
+				Type:  base.Type,
+				Info:  base.Info,
+				Value: Set{
+					Product:  base,
+					Index:    op.FieldIndex,
+					NewValue: value,
+				},
+			}
+		}
+		var final = base
+		return AssignTo(expected, final, ctx)
 	}
 	// TODO
 	return Expr{}, nil

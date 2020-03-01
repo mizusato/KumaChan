@@ -269,13 +269,12 @@ type SemiTypedArray struct {
 func (impl SemiSet) SemiExprVal() {}
 type SemiSet struct {
 	Base    Expr
-	Bundle  Bundle
 	Ops     [] SemiSetOp
 }
 type SemiSetOp struct {
-	Node   node.Node
-	Index  uint
-	Value  SemiExpr
+	Value       SemiExpr
+	FieldType   Type
+	FieldIndex  uint
 }
 
 func SemiExprFromIntLiteral(i node.IntegerLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
@@ -417,16 +416,16 @@ func SemiExprFromBundle(bundle node.Bundle, ctx ExprContext) (SemiExpr, *ExprErr
 					var value_node = DesugarOmittedFieldValue(field)
 					var value, err = SemiExprFrom(value_node, ctx)
 					if err != nil { return SemiExpr{}, err }
+					var field_type = target.Fields[name]
 					ops[i] = SemiSetOp {
-						Node:  value_node.Node,
-						Index: index,
-						Value: value,
+						FieldIndex: index,
+						FieldType:  field_type,
+						Value:      value,
 					}
 				}
 				return SemiExpr {
 					Value: SemiSet {
 						Base:   base,
-						Bundle: target,
 						Ops:    ops,
 					},
 					Info: info,

@@ -56,6 +56,7 @@ func (ctx *Context) CreateChild() (*Context, Dispose) {
 	}
 	ctx.children[child] = struct{}{}
 	return child, func() {
+		if ctx.disposed { return }
 		delete(ctx.children, child)
 		dispose_recursively(ctx)
 		cancel_raw()

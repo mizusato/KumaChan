@@ -305,3 +305,8 @@ func (impl E_BundleAssignedToNonBundleType) ExprError() {}
 type E_BundleAssignedToNonBundleType struct {
 	NonBundleType  string
 }
+
+func (impl E_ArrayAssignedToNonArrayType) ExprError() {}
+type E_ArrayAssignedToNonArrayType struct {
+	NonArrayType  string
+}

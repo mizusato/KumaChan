@@ -70,6 +70,7 @@ var __NodeRegistry = []interface{} {
     Pipe {},
     VariousTerm {},
     // Term
+    Cast {},
     Match {},
     Branch{},
     If {},
