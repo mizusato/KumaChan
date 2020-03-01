@@ -174,24 +174,7 @@ func AssignSemiTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprErr
 			}
 		}
 		return throw(E_ArrayAssignedToNonArrayType{})
-	case SemiSet:
-		var set_semi = given_semi
-		var base = set_semi.Base
-		for _, op := range set_semi.Ops {
-			var value, err = AssignSemiTo(op.FieldType, op.Value, ctx)
-			if err != nil { return Expr{}, err }
-			base = Expr {
-				Type:  base.Type,
-				Info:  base.Info,
-				Value: Set{
-					Product:  base,
-					Index:    op.FieldIndex,
-					NewValue: value,
-				},
-			}
-		}
-		var final = base
-		return AssignTo(expected, final, ctx)
+	// TODO
 	}
 	// TODO
 	return Expr{}, nil

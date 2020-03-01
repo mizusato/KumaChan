@@ -266,16 +266,6 @@ type SemiTypedArray struct {
 	Items  [] SemiExpr
 }
 
-func (impl SemiSet) SemiExprVal() {}
-type SemiSet struct {
-	Base    Expr
-	Ops     [] SemiSetOp
-}
-type SemiSetOp struct {
-	Value       SemiExpr
-	FieldType   Type
-	FieldIndex  uint
-}
 
 func SemiExprFromIntLiteral(i node.IntegerLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(i.Node)
@@ -392,8 +382,8 @@ func SemiExprFromBundle(bundle node.Bundle, ctx ExprContext) (SemiExpr, *ExprErr
 			switch target := UnboxBundle(base.Type, ctx).(type) {
 			case Bundle:
 				var occurred_names = make(map[string] bool)
-				var ops = make([]SemiSetOp, L)
-				for i, field := range bundle.Values {
+				var current_base = base
+				for _, field := range bundle.Values {
 					var name = loader.Id2String(field.Key)
 					var index, exists = target.Index[name]
 					if !exists {
@@ -414,21 +404,25 @@ func SemiExprFromBundle(bundle node.Bundle, ctx ExprContext) (SemiExpr, *ExprErr
 					}
 					occurred_names[name] = true
 					var value_node = DesugarOmittedFieldValue(field)
-					var value, err = SemiExprFrom(value_node, ctx)
-					if err != nil { return SemiExpr{}, err }
+					var value_semi, err1 = SemiExprFrom(value_node, ctx)
+					if err1 != nil { return SemiExpr{}, err1 }
 					var field_type = target.Fields[name]
-					ops[i] = SemiSetOp {
-						FieldIndex: index,
-						FieldType:  field_type,
-						Value:      value,
+					var value, err2 = AssignSemiTo(field_type, value_semi, ctx)
+					if err2 != nil { return SemiExpr{}, err2 }
+					current_base = Expr {
+						Type:  current_base.Type,
+						Value: Set {
+							Product:  current_base,
+							Index:    index,
+							NewValue: value,
+						},
+						Info:  current_base.Info,
 					}
 				}
+				var final = current_base
 				return SemiExpr {
-					Value: SemiSet {
-						Base:   base,
-						Ops:    ops,
-					},
-					Info: info,
+					Value: TypedExpr(final),
+					Info:  info,
 				}, nil
 			case BR_BundleButOpaque:
 				return SemiExpr{}, &ExprError {
