@@ -23,7 +23,7 @@ func AssignSemiTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprErr
 				var input = func_repr.Input
 				var output = func_repr.Output
 				var inner_ctx, err1 = ctx.WithPatternMatching (
-					input, lambda.Input, lambda.InputNode, false,
+					input, lambda.Input, false,
 				)
 				if err1 != nil { return Expr{}, err1 }
 				var output_semi, err2 = SemiExprFrom(lambda.Output, inner_ctx)

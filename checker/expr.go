@@ -127,18 +127,25 @@ type StringLiteral struct {
 }
 
 
-type Pattern interface { CheckerPattern() }
+type Pattern struct {
+	Point     ErrorPoint
+	Concrete  ConcretePattern
+}
+type ConcretePattern interface { CheckerPattern() }
 func (impl TrivialPattern) CheckerPattern() {}
 type TrivialPattern struct {
 	ValueName  string
+	Point      ErrorPoint
 }
 func (impl TuplePattern) CheckerPattern() {}
 type TuplePattern struct {
 	ValueNames  [] string
+	Points      [] ErrorPoint
 }
 func (impl BundlePattern) CheckerPattern() {}
 type BundlePattern struct {
 	ValueNames  [] string
+	Points      [] ErrorPoint
 }
 
 type TextSegment interface { TextSegment() }
