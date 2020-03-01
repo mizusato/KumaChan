@@ -19,8 +19,13 @@ type ModuleInfo struct {
 type ExprContext struct {
 	ModuleInfo   ModuleInfo
 	TypeParams   [] string
-	TypeArgs     map[uint] Type
+	ArgInfCtx    TypeArgsInferringContext
 	LocalValues  map[string] Type
+}
+
+type TypeArgsInferringContext struct {
+	Enabled   bool
+	Inferred  map[uint] Type  // mutable
 }
 
 type Sym interface { Sym() }
@@ -102,7 +107,7 @@ func (ctx ExprContext) WithAddedLocalValues(added map[string]Type) (ExprContext,
 	return ExprContext {
 		ModuleInfo:  ctx.ModuleInfo,
 		TypeParams:  ctx.TypeParams,
-		TypeArgs:    ctx.TypeArgs,
+		ArgInfCtx:   ctx.ArgInfCtx,
 		LocalValues: merged,
 	}, ""
 }
@@ -699,6 +704,20 @@ func SemiExprFromBlock(block node.Block, ctx ExprContext) (SemiExpr, *ExprError)
 			Returned: ret,
 		},
 	}, nil
+}
+
+func ExprFromCast(cast node.Cast, ctx ExprContext) (Expr, *ExprError) {
+	var type_ctx = ctx.GetTypeContext()
+	var target, err1 = TypeFrom(cast.Target.Type, type_ctx)
+	if err1 != nil { return Expr{}, &ExprError {
+		Point:    ctx.GetErrorPoint(cast.Target.Node),
+		Concrete: E_TypeErrorInExpr { err1 },
+	} }
+	var semi, err2 = SemiExprFrom(cast.Expr, ctx)
+	if err2 != nil { return Expr{}, err2 }
+	var typed, err3 = AssignSemiTo(target, semi, ctx)
+	if err3 != nil { return Expr{}, err3 }
+	return typed, nil
 }
 
 
