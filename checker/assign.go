@@ -151,10 +151,21 @@ func AssignSemiTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprErr
 		}
 		return throw(E_BundleAssignedToNonBundleType {})
 	case SemiTypedArray:
-		if expected == nil {
-			return throw(E_ExplicitTypeRequired {})
-		}
 		var array_semi = given_semi
+		if expected == nil {
+			var cur_item_type Type = nil
+			var items = make([]Expr, len(array_semi.Items))
+			for i, item_semi := range array_semi.Items {
+				var item, err = AssignSemiTo(cur_item_type, item_semi, ctx)
+				if err != nil { return Expr{}, err }
+				items[i] = item
+			}
+			return Expr {
+				Type:  expected,
+				Info:  semi.Info,
+				Value: Array { items },
+			}, nil
+		}
 		switch E := expected.(type) {
 		case NamedType:
 			if E.Name == __Array {
@@ -423,25 +434,4 @@ func AssignTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError) {
 		// 3.3. If no conversion is available, types are not compatible.
 		return Expr{}, throw("")
 	}
-}
-
-func LiftToMaxType(exprs []Expr, ctx ExprContext) ([]Expr, Type, bool) {
-	var L = len(exprs)
-	var result = make([]Expr, L)
-	for i := 0; i < L; i += 1 {
-		var expected = exprs[i].Type
-		var ok = true
-		for j := 0; j < L; j += 1 {
-			var item, err = AssignTo(expected, exprs[j], ctx)
-			if err != nil {
-				ok = false
-				break
-			}
-			result[j] = item
-		}
-		if ok {
-			return result, expected, true
-		}
-	}
-	return nil, nil, false
 }

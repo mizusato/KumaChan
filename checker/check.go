@@ -593,41 +593,15 @@ func SemiExprFromArray(array node.Array, ctx ExprContext) (SemiExpr, *ExprError)
 		}, nil
 	} else {
 		var item_exprs = make([]SemiExpr, L)
-		var item_typed_exprs = make([]Expr, L)
-		var typed_count = 0
 		for i, item_node := range array.Items {
 			var item, err = SemiExprFrom(item_node, ctx)
 			if err != nil { return SemiExpr{}, err }
 			item_exprs[i] = item
-			switch typed := item.Value.(type) {
-			case TypedExpr:
-				item_typed_exprs[i] = Expr(typed)
-				typed_count += 1
-			}
 		}
-		if typed_count == L {
-			var lifted, item_type, ok = LiftToMaxType(item_typed_exprs, ctx)
-			if ok {
-				return LiftTyped(Expr {
-					Type: NamedType {
-						Name: __Array,
-						Args: []Type { item_type },
-					},
-					Value: Array { Items: lifted },
-					Info:  info,
-				}), nil
-			} else {
-				return SemiExpr{}, &ExprError {
-					Point:    info.ErrorPoint,
-					Concrete: E_HeterogeneousArray {},
-				}
-			}
-		} else {
-			return SemiExpr {
-				Value: SemiTypedArray { item_exprs },
-				Info:  info,
-			}, nil
-		}
+		return SemiExpr {
+			Value: SemiTypedArray { item_exprs },
+			Info:  info,
+		}, nil
 	}
 }
 
