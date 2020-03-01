@@ -32,6 +32,10 @@ func (impl E_DuplicateField) TypeError() {}
 type E_DuplicateField struct {
 	FieldName  string
 }
+func (impl E_InvalidFieldName) TypeError() {}
+type E_InvalidFieldName struct {
+	Name  string
+}
 
 func (err *TypeError) Error() string {
 	var description string
@@ -55,6 +59,11 @@ func (err *TypeError) Error() string {
 		description = fmt.Sprintf (
 			"%vDuplicate field: %v%s%v",
 			Red, Bold, e.FieldName, Reset,
+		)
+	case E_InvalidFieldName:
+		description = fmt.Sprintf (
+			"%vInvalid field name: %v%s%v",
+			Red, Bold, e.Name, Reset,
 		)
 	default:
 		panic("unknown concrete error type")
@@ -309,4 +318,12 @@ type E_BundleAssignedToNonBundleType struct {
 func (impl E_ArrayAssignedToNonArrayType) ExprError() {}
 type E_ArrayAssignedToNonArrayType struct {
 	NonArrayType  string
+}
+
+func (impl E_RecursiveMarkUsedOnNonLambda) ExprError() {}
+type E_RecursiveMarkUsedOnNonLambda struct {}
+
+func (impl E_TypeErrorInExpr) ExprError() {}
+type E_TypeErrorInExpr struct {
+	TypeError  *TypeError
 }

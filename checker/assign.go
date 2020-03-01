@@ -174,6 +174,20 @@ func AssignSemiTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprErr
 			}
 		}
 		return throw(E_ArrayAssignedToNonArrayType{})
+	case SemiTypedBlock:
+		var block_semi = given_semi
+		var bindings = block_semi.Bindings
+		var ret_semi = block_semi.Returned
+		var ret_typed, err = AssignSemiTo(expected, ret_semi, ctx)
+		if err != nil { return Expr{}, err }
+		return Expr {
+			Type:  expected,
+			Info:  semi.Info,
+			Value: Block {
+				Bindings: bindings,
+				Returned: ret_typed,
+			},
+		}, nil
 	// TODO
 	}
 	// TODO

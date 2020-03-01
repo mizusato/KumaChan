@@ -68,7 +68,7 @@ var ConditionalKeywords = [...] string {
     "@type",  "@protected", "@opaque", "@union", "@native",
     "@private", "@public", "@function", "@=>", "@const", "@do",
     "@match", "@case", "@else", "@if",
-    "@let", "@return",
+    "@let", "@rec", "@return",
 }
 
 var Operators = [...] Operator {}
@@ -140,7 +140,8 @@ var SyntaxDefinition = [...] string {
         "if_no = expr!",
       "block = @let { binding! more_bindings return! }!",
         "more_bindings? = , binding! more_bindings",
-        "binding = pattern := binding_type expr!",
+        "binding = rec_opt pattern := binding_type expr!",
+          "rec_opt? = @rec :",
           "binding_type? = [ type! ]!",
         "return = , @return expr!",
       "bundle = { } | { update pairlist }!",
@@ -158,7 +159,7 @@ var SyntaxDefinition = [...] string {
         "operand1 = term!",
         "operator = term!",
         "operand2 = term!",
-      "array = & { } | & {! exprlist }!",
+      "array = _at { } | _at {! exprlist }!",
       "text = Text",
       "literal = string | int | float",
         "string = String",

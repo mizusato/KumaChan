@@ -87,7 +87,7 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 	}
 }
 
-func (ctx ExprContext) WithLocalValues(added map[string]Type) (ExprContext, string) {
+func (ctx ExprContext) WithAddedLocalValues(added map[string]Type) (ExprContext, string) {
 	var merged = make(map[string]Type)
 	for name, t := range ctx.LocalValues {
 		var _, exists = added[name]
@@ -119,7 +119,7 @@ func (ctx ExprContext) WithPatternMatching (
 		}
 	}
 	var check = func(added map[string]Type) (ExprContext, *ExprError) {
-		var new_ctx, shadowed = ctx.WithLocalValues(added)
+		var new_ctx, shadowed = ctx.WithAddedLocalValues(added)
 		if shadowed != "" && !strict {
 			return err_result(E_DuplicateBinding {shadowed })
 		} else {
@@ -128,7 +128,7 @@ func (ctx ExprContext) WithPatternMatching (
 	}
 	switch p := pattern.Concrete.(type) {
 	case TrivialPattern:
-		if p.ValueName == IgnoreMarker {
+		if p.ValueName == IgnoreMark {
 			if strict {
 				return err_result(E_EntireValueIgnored {})
 			} else {
@@ -154,7 +154,7 @@ func (ctx ExprContext) WithPatternMatching (
 				var added = make(map[string]Type)
 				var ignored = 0
 				for i, name := range p.ValueNames {
-					if name == IgnoreMarker {
+					if name == IgnoreMark {
 						ignored += 1
 					} else {
 						var _, exists = added[name]
@@ -185,7 +185,7 @@ func (ctx ExprContext) WithPatternMatching (
 		case Bundle:
 			var added = make(map[string]Type)
 			for i, name := range p.ValueNames {
-				if name == IgnoreMarker { panic("something went wrong") }
+				if name == IgnoreMark { panic("something went wrong") }
 				var field_type, exists = bundle.Fields[name]
 				if !exists {
 					return ExprContext{}, &ExprError{
@@ -271,6 +271,12 @@ type SemiTypedBundle struct {
 func (impl SemiTypedArray) SemiExprVal() {}
 type SemiTypedArray struct {
 	Items  [] SemiExpr
+}
+
+func (impl SemiTypedBlock) SemiExprVal() {}
+type SemiTypedBlock struct {
+	Bindings  [] Binding
+	Returned  SemiExpr
 }
 
 
@@ -619,6 +625,82 @@ func SemiExprFromArray(array node.Array, ctx ExprContext) (SemiExpr, *ExprError)
 		}
 	}
 }
+
+func SemiExprFromBlock(block node.Block, ctx ExprContext) (SemiExpr, *ExprError) {
+	var info = ExprInfo { ErrorPoint: ctx.GetErrorPoint(block.Node) }
+	var type_ctx = ctx.GetTypeContext()
+	var current_ctx = ctx
+	var bindings = make([]Binding, len(block.Bindings))
+	for i, b := range block.Bindings {
+		var pattern = PatternFrom(b.Pattern, current_ctx)
+		var t Type
+		switch type_node := b.Type.(type) {
+		case node.VariousType:
+			var some_t, err = TypeFrom(type_node.Type, type_ctx)
+			if err != nil { return SemiExpr{}, &ExprError {
+				Point:    ctx.GetErrorPoint(type_node.Node),
+				Concrete: E_TypeErrorInExpr { err },
+			}}
+			t = some_t
+		default:
+			t = nil
+		}
+		if b.Recursive {
+			if t == nil {
+				return SemiExpr{}, &ExprError {
+					Point:    ctx.GetErrorPoint(b.Value.Node),
+					Concrete: E_ExplicitTypeRequired {},
+				}
+			}
+			var rec_ctx, err1 = current_ctx.WithPatternMatching (
+				t, pattern, true,
+			)
+			if err1 != nil { return SemiExpr{}, err1 }
+			var semi, err2 = SemiExprFrom(b.Value, rec_ctx)
+			if err2 != nil { return SemiExpr{}, err2 }
+			switch semi.Value.(type) {
+			case UntypedLambda:
+				var typed, err = AssignSemiTo(t, semi, rec_ctx)
+				if err != nil { return SemiExpr{}, err }
+				bindings[i] = Binding {
+					Pattern: pattern,
+					Value:   typed,
+				}
+				current_ctx = rec_ctx
+			default:
+				return SemiExpr{}, &ExprError {
+					Point:    semi.Info.ErrorPoint,
+					Concrete: E_RecursiveMarkUsedOnNonLambda {},
+				}
+			}
+		} else {
+			var semi, err1 = SemiExprFrom(b.Value, current_ctx)
+			if err1 != nil { return SemiExpr{}, err1 }
+			var typed, err2 = AssignSemiTo(t, semi, current_ctx)
+			if err2 != nil { return SemiExpr{}, err2 }
+			var final_t = typed.Type
+			var next_ctx, err3 = current_ctx.WithPatternMatching (
+				final_t, pattern, true,
+			)
+			if err3 != nil { return SemiExpr{}, err3 }
+			bindings[i] = Binding {
+				Pattern: pattern,
+				Value:   typed,
+			}
+			current_ctx = next_ctx
+		}
+	}
+	var ret, err = SemiExprFrom(block.Return, current_ctx)
+	if err != nil { return SemiExpr{}, err }
+	return SemiExpr {
+		Info:  info,
+		Value: SemiTypedBlock {
+			Bindings: bindings,
+			Returned: ret,
+		},
+	}, nil
+}
+
 
 func PatternFrom(p_node node.VariousPattern, ctx ExprContext) Pattern {
 	switch p := p_node.Pattern.(type) {

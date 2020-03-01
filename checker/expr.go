@@ -77,7 +77,7 @@ type UnitValue struct {}
 func (impl Block) ExprVal() {}
 type Block struct {
 	Bindings  [] Binding
-	Value     Expr
+	Returned  Expr
 }
 type Binding struct {
 	Pattern  Pattern

@@ -73,7 +73,7 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 		// 3.1. Get the symbol of the declared type
 		var type_sym = mod.SymbolFromName(d.Name)
 		// 3.2. Check if the symbol name is valid
-		if type_sym.SymbolName == IgnoreMarker {
+		if type_sym.SymbolName == IgnoreMark {
 			return &TypeDeclError {
 				Point:    ErrorPoint { AST: mod.AST, Node: d.Name.Node },
 				Concrete: E_InvalidTypeName { type_sym.SymbolName },
@@ -333,8 +333,10 @@ func TypeFromRepr (repr node.Repr, ctx TypeContext) (Type, *TypeError) {
 			var index = make(map[string] uint)
 			for i, f := range r.Fields {
 				var f_name = loader.Id2String(f.Name)
+				if f_name == IgnoreMark {
+
+				}
 				var _, exists = fields[f_name]
-				// TODO: check IgnoreMarker
 				if exists { return nil, &TypeError {
 					Point: ErrorPoint { AST: ctx.Module.AST, Node: f.Name.Node },
 					Concrete: E_DuplicateField {

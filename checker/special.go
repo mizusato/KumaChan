@@ -2,11 +2,11 @@ package checker
 
 import "kumachan/loader"
 
-const IgnoreMarker = "_"
+const IgnoreMark = "_"
 /* should be consistent with stdlib/core.km */
-var __Maybe = CoreSymbol("Maybe")
+// var __Maybe = CoreSymbol("Maybe")
 // var __Just uint = 0
-var __Nothing uint = 1
+// var __Nothing uint = 1
 var __Float = CoreSymbol("Float")
 var __String = CoreSymbol("String")
 var __Array = CoreSymbol("Array")
@@ -43,24 +43,4 @@ var __IntegerTypeMap = (func() map[loader.Symbol]string {
 
 func CoreSymbol(name string) loader.Symbol {
 	return loader.NewSymbol(loader.CoreModule, name)
-}
-
-func IsMaybeType(t Type) bool {
-	switch T := t.(type) {
-	case NamedType:
-		return T.Name == __Maybe
-	default:
-		return false
-	}
-}
-
-func UnitWithIndex (index uint, info ExprInfo) ExprVal {
-	return Sum {
-		Value: Expr {
-			Type: AnonymousType { Unit {} },
-			Value: UnitValue {},
-			Info: info,
-		},
-		Index: index,
-	}
 }

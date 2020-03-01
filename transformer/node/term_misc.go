@@ -23,10 +23,11 @@ type Block struct {
 	Return    Expr         `part:"return.expr"`
 }
 type Binding struct {
-	Node                      `part:"binding"`
-	Pattern  VariousPattern   `part:"pattern"`
-	Type     MaybeType        `part_opt:"binding_type.type"`
-	Value    Expr             `part:"expr"`
+	Node                        `part:"binding"`
+	Recursive  bool             `option:"rec_opt.@rec"`
+	Pattern    VariousPattern   `part:"pattern"`
+	Type       MaybeType        `part_opt:"binding_type.type"`
+	Value      Expr             `part:"expr"`
 }
 
 func (impl Infix) Term() {}
