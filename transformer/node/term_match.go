@@ -4,16 +4,15 @@ package node
 func (impl Match) Term() {}
 type Match struct {
 	Node                      `part:"match"`
-	Argument  VariousTerm     `part:"term"`
+	Argument  Expr            `part:"expr"`
 	Branches  [] Branch       `list_more:"branch_list" item:"branch"`
 }
 type Branch struct {
-	Node                      `part:"branch"`
-	Type     MaybeType        `part_opt:"branch_key.type"`
-	Pattern  MaybePattern     `part_opt:"opt_pattern.pattern"`
-	Expr     MaybeExpr        `part_opt:"branch_value.expr"`
+	Node                    `part:"branch"`
+	Type     MaybeRef       `part_opt:"branch_key.type_ref.ref"`
+	Pattern  MaybePattern   `part_opt:"branch_key.opt_pattern.pattern"`
+	Expr     Expr           `part:"expr"`
 }
-type MaybePattern interface { MaybePattern() }
 
 
 func (impl If) Term() {}

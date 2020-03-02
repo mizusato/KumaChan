@@ -1,5 +1,53 @@
 package checker
 
+
+func UnboxUnion(type_ Type, ctx ExprContext) (Union, []Type, bool) {
+	switch t := type_.(type) {
+	case NamedType:
+		var g = ctx.ModuleInfo.Types[t.Name]
+		switch gv := g.Value.(type) {
+		case Union:
+			return gv, t.Args, true
+		}
+	}
+	return Union{}, nil, false
+}
+
+func UnboxUnionTuple(type_ Type, ctx ExprContext) ([]Union, [][]Type, bool) {
+	switch t := type_.(type) {
+	case NamedType:
+		var g = ctx.ModuleInfo.Types[t.Name]
+		switch gv := g.Value.(type) {
+		case Wrapped:
+			var inner = FillArgs(gv.InnerType, t.Args)
+			switch inner_type := inner.(type) {
+			case AnonymousType:
+				switch tuple := inner_type.Repr.(type) {
+				case Tuple:
+					var union_types = make([]Union, len(tuple.Elements))
+					var union_args = make([][]Type, len(tuple.Elements))
+					for i, el := range tuple.Elements {
+						switch el_t := el.(type) {
+						case NamedType:
+							var el_g = ctx.ModuleInfo.Types[el_t.Name]
+							switch el_gv := el_g.Value.(type) {
+							case Union:
+								union_types[i] = el_gv
+								union_args[i] = el_t.Args
+								continue
+							}
+						}
+						return nil, nil, false
+					}
+					return union_types, union_args, true
+				}
+			}
+		}
+	}
+	return nil, nil, false
+}
+
+
 /**
  *  Generic Template:
  *  (${Repr},${ReprBrief}) = (Tuple,T) | (Bundle,B) | (Func,F)

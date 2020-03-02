@@ -7,20 +7,24 @@ import (
 )
 
 
+// TODO: refactor Value to interface {}, use reflect to call native functions
 type Value interface { RuntimeValue() }
 
+// TODO: remove PlainValue
 func (impl PlainValue) RuntimeValue() {}
 type PlainValue struct {
 	Inline   uint64
 	Pointer  interface{}
 }
 
+// TODO: refactor SumValue = struct { Short; Value }
 func (impl SumValue) RuntimeValue() {}
 type SumValue struct {
 	Index  Short
 	Value  Value
 }
 
+// TODO: refactor ProductValue = []Value
 func (impl ProductValue) RuntimeValue() {}
 type ProductValue struct {
 	Elements  [] Value

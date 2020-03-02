@@ -53,6 +53,9 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 					if !exists { collection[name] = make([]FunctionReference, 0) }
 					// Note: conflict (unsafe overload) must not happen there,
 					//       since public functions have local types
+					// TODO: assume modules with no type declarations
+					//       to be toolkit modules, in which
+					//       encapsulation is disabled
 					collection[name] = append(collection[name], FunctionReference {
 						Function:   ref.Function,
 						IsImported: true,
@@ -121,7 +124,7 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 				// 3.6.1. If in use, try to overload it
 				for _, existing := range collection[name] {
 					var unsafe = AreTypesOverloadUnsafe (
-						AnonymousType { Repr: existing.Function.DeclaredType},
+						AnonymousType { Repr: existing.Function.DeclaredType },
 						AnonymousType { Repr: func_type },
 					)
 					if unsafe { return nil, &FunctionError {

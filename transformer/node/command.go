@@ -13,6 +13,8 @@ type Import struct {
     Name  Identifier      `part:"name"`
     Path  StringLiteral   `part:"string"`
 }
+type MaybeIdentifier interface { MaybeIdentifier() }
+func (impl Identifier) MaybeIdentifier() {}
 type Identifier struct {
     Node           `part:"name"`
     Name [] rune   `content:"Name"`

@@ -66,6 +66,15 @@ type Func struct {
 }
 
 
+func (u Union) GetSubtypeIndex(sym loader.Symbol) (uint, bool) {
+	for index, subtype := range u.SubTypes {
+		if subtype == sym {
+			return uint(index), true
+		}
+	}
+	return -1, false
+}
+
 func DescribeType(type_ Type, ctx TypeContext) string {
 	switch t := type_.(type) {
 	case ParameterType:

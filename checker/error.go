@@ -327,3 +327,25 @@ func (impl E_TypeErrorInExpr) ExprError() {}
 type E_TypeErrorInExpr struct {
 	TypeError  *TypeError
 }
+
+func (impl E_InvalidMatchArgType) ExprError() {}
+type E_InvalidMatchArgType struct {
+	ArgType  string
+}
+
+func (impl E_DuplicateDefaultBranch) ExprError() {}
+type E_DuplicateDefaultBranch struct {}
+
+func (impl E_TypeParametersUnnecessary) ExprError() {}
+type E_TypeParametersUnnecessary struct {}
+
+func (impl E_NotSubtype) ExprError() {}
+type E_NotSubtype struct {
+	Union     string
+	TypeName  string
+}
+
+func (impl E_IncompleteMatch) ExprError() {}
+type E_IncompleteMatch struct {
+	Missing  [] string
+}

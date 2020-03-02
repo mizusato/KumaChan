@@ -44,6 +44,8 @@ type Text struct {
 	Template  [] rune   `content:"Text"`
 }
 
+type MaybeRef interface { MaybeRef() }
+func (impl Ref) MaybeRef() {}
 func (impl Ref) Term() {}
 type Ref struct {
 	Node                       `part:"ref"`

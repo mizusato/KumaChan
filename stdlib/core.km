@@ -39,51 +39,10 @@ type Bool union {
     type No  ();
 };
 type Maybe[T] union {
-    type Just(T);
-    type Nothing();
+    type Just (T);
+    type N/A  ();
 };
 type Result[T,E] union {
-    type OK(T);
-    type NG(E);
-};
-
-// Singly-Linked List
-type List[T] union {
-    type Nil  ();
-    type Cons (T, List[T]);
-};
-
-public function map[A,B] {
-    `(Maybe[A], `A => B) => Maybe[B]:
-    `(maybe-a, f) => match(maybe-a) {
-        case Just a:  Just f(a),
-        case Nothing: Nothing
-    }
-};
-
-public function map[A,B] {
-    `(List[A], `A => B) => List[B]:
-    `(list, f) => match(list) {
-        case Cons(x, xs): Cons(f(x), map(xs, f)),
-        case Nil: Nil
-    }
-};
-
-public function filter[T] {
-    `(List[T], `T => Bool) => List[T]:
-    `(list, f) => match(list) {
-        case Cons(x, xs): let {
-            rest := filter(xs, f),
-            return if { f(x): Cons(x, rest), else: rest }
-        },
-        case Nil: Nil
-    }
-};
-
-public function reduce[T,A] {
-    `(List[T], A, `(A, T) => A) => A:
-    `(list, acc, f) => match(list) {
-        case Cons(x, xs): reduce(xs, f(acc, x), f),
-        case Nil: Nil
-    }
+    type OK (T);
+    type NG (E);
 };

@@ -10,7 +10,7 @@ func AssignSemiTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprErr
 	}
 	switch given_semi := semi.Value.(type) {
 	case TypedExpr:
-		return AssignTo(expected, Expr(given_semi), ctx)
+		return AssignTo(expected, Expr(given_semi), ctx, true)
 	case UntypedLambda:
 		if expected == nil {
 			return throw(E_ExplicitTypeRequired {})
@@ -199,13 +199,37 @@ func AssignSemiTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprErr
 				Returned: ret_typed,
 			},
 		}, nil
+	case SemiTypedMatch:
+		if expected == nil {
+			return throw(E_ExplicitTypeRequired {})
+		}
+		var match_semi = given_semi
+		var branches = make([]Branch, len(match_semi.Branches))
+		for i, branch_semi := range match_semi.Branches {
+			var typed, err = AssignSemiTo(expected, branch_semi.Value, ctx)
+			if err != nil { return Expr{}, err }
+			branches[i] = Branch {
+				IsDefault: branch_semi.IsDefault,
+				Index:     branch_semi.Index,
+				Pattern:   branch_semi.Pattern,
+				Value:     typed,
+			}
+		}
+		return Expr {
+			Type:  expected,
+			Value: Match {
+				Argument: match_semi.Argument,
+				Branches: branches,
+			},
+			Info:  semi.Info,
+		}, nil
 	// TODO
 	}
 	// TODO
 	return Expr{}, nil
 }
 
-func AssignTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError) {
+func AssignTo(expected Type, expr Expr, ctx ExprContext, unbox bool) (Expr, *ExprError) {
 	if expected == nil {
 		// 1. If the expected type is not specified,
 		//    no further process is required.
@@ -231,8 +255,7 @@ func AssignTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError) {
 			}
 		}
 		// -- behavior of assigning a named type to an union type --
-		var assign_union func(NamedType, NamedType, Union) (Expr, *ExprError)
-		assign_union = func(exp NamedType, given NamedType, union Union) (Expr, *ExprError) {
+		var assign_union = func(exp NamedType, given NamedType, union Union) (Expr, *ExprError) {
 			// 1. Find the given type in the list of subtypes of the union
 			for index, subtype := range union.SubTypes {
 				if subtype == given.Name {
@@ -257,29 +280,6 @@ func AssignTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError) {
 					}, nil
 				}
 			}
-			var types = ctx.ModuleInfo.Types
-			for index, subtype := range union.SubTypes {
-				var sub_g = types[subtype]
-				switch sub_union := sub_g.Value.(type) {
-				case Union:
-					var sub_exp = NamedType {
-						Name: subtype,
-						Args: exp.Args,
-					}
-					var sub, err = assign_union(sub_exp, given, sub_union)
-					if err != nil {
-						continue
-					} else {
-						return Expr {
-							Type:  exp,
-							Value: Sum { Value: sub, Index: uint(index) },
-							Info:  sub.Info,
-						}, nil
-					}
-				default:
-					continue
-				}
-			}
 			// 1.2. Otherwise, throw an error.
 			return Expr{}, throw("given type is not a subtype of the expected union type")
 		}
@@ -292,7 +292,7 @@ func AssignTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError) {
 				Info:  expr.Info,
 			}
 			// 2. Try to assign the created expression to the expected type
-			var result, err = AssignTo(expected, expr_with_inner, ctx)
+			var result, err = AssignTo(expected, expr_with_inner, ctx, false)
 			if err != nil {
 				return Expr{}, throw("")
 			}
@@ -400,14 +400,16 @@ func AssignTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError) {
 					return assign_union(E, G, union)
 				}
 			}
-			switch tv := given_g.Value.(type) {
-			case Wrapped:
-				var given_inner = FillArgs(tv.InnerType, G.Args)
-				var given_mod = G.Name.ModuleName
-				var given_opaque = tv.Opaque
-				// 3.2.1.2. Otherwise, if the given type has an inner type,
-				//          try to unpack the inner type.
-				return assign_inner(given_inner, given_opaque, given_mod)
+			if unbox {
+				switch tv := given_g.Value.(type) {
+				case Wrapped:
+					var given_inner = FillArgs(tv.InnerType, G.Args)
+					var given_mod = G.Name.ModuleName
+					var given_opaque = tv.Opaque
+					// 3.2.1.2. Otherwise, if the given type has an
+					//          inner type, try to unbox the inner type.
+					return assign_inner(given_inner, given_opaque, given_mod)
+				}
 			}
 		case AnonymousType:
 			// 3.2.2. If the given type is an anonymous type

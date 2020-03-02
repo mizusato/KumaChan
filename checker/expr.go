@@ -27,13 +27,14 @@ type Sum struct {
 
 func (impl Match) ExprVal() {}
 type Match struct {
-	Matched   Expr
+	Argument  Expr
 	Branches  [] Branch
 }
 type Branch struct {
-	Type    Type
-	Pattern Pattern
-	Value   Expr
+	IsDefault  bool
+	Index      uint
+	Pattern    MaybePattern
+	Value      Expr
 }
 
 func (impl Product) ExprVal() {}
@@ -127,6 +128,8 @@ type StringLiteral struct {
 }
 
 
+type MaybePattern interface { CheckerMaybePattern() }
+func (impl Pattern) CheckerMaybePattern() {}
 type Pattern struct {
 	Point     ErrorPoint
 	Concrete  ConcretePattern

@@ -284,6 +284,18 @@ type SemiTypedBlock struct {
 	Returned  SemiExpr
 }
 
+func (impl SemiTypedMatch) SemiExprVal() {}
+type SemiTypedMatch struct {
+	Argument  Expr
+	Branches  [] SemiTypedBranch
+}
+type SemiTypedBranch struct {
+	IsDefault  bool
+	Index      uint
+	Pattern    MaybePattern
+	Value      SemiExpr
+}
+
 
 func SemiExprFromIntLiteral(i node.IntegerLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(i.Node)
@@ -340,7 +352,7 @@ func ExprFromFloatLiteral(f node.FloatLiteral, ctx ExprContext) (Expr, *ExprErro
 
 func ExprFromStringLiteral(s node.StringLiteral, ctx ExprContext) (Expr, *ExprError) {
 	var info = ctx.GetExprInfo(s.Node)
-	return Expr{
+	return Expr {
 		Type:  NamedType {
 			Name: __String,
 			Args: make([]Type, 0),
@@ -694,6 +706,138 @@ func ExprFromCast(cast node.Cast, ctx ExprContext) (Expr, *ExprError) {
 	return typed, nil
 }
 
+func SemiExprFromMatch(match node.Match, ctx ExprContext) (SemiExpr, *ExprError) {
+	var info = ExprInfo { ErrorPoint: ctx.GetErrorPoint(match.Node) }
+	var arg_semi, err = SemiExprFrom(match.Argument, ctx)
+	if err != nil { return SemiExpr{}, err }
+	var arg_typed, ok = arg_semi.Value.(TypedExpr)
+	if !ok { return SemiExpr{}, &ExprError{
+		Point:    ctx.GetErrorPoint(match.Argument.Node),
+		Concrete: E_ExplicitTypeRequired {},
+	}}
+	var arg_type = arg_typed.Type
+	var union, union_args, is_union = UnboxUnion(arg_type, ctx)
+	if !is_union { return SemiExpr{}, &ExprError {
+		Point:    arg_typed.Info.ErrorPoint,
+		Concrete: E_InvalidMatchArgType {
+			ArgType: ctx.DescribeType(arg_typed.Type),
+		},
+	} }
+	var checked = make(map[loader.Symbol]bool)
+	var has_default = false
+	var branches = make([]SemiTypedBranch, len(match.Branches))
+	for i, branch := range match.Branches {
+		switch t := branch.Type.(type) {
+		case node.Ref:
+			if len(t.TypeArgs) > 0 {
+				return SemiExpr{}, &ExprError {
+					Point:    ctx.GetErrorPoint(t.Node),
+					Concrete: E_TypeParametersUnnecessary {},
+				}
+			}
+			var maybe_type_sym = ctx.ModuleInfo.Module.SymbolFromRef(t)
+			var maybe_pattern = MaybePatternFrom(branch.Pattern, ctx)
+			var type_sym, ok = maybe_type_sym.(loader.Symbol)
+			if !ok { return SemiExpr{}, &ExprError {
+				Point:    ctx.GetErrorPoint(t.Module.Node),
+				Concrete: E_TypeErrorInExpr { &TypeError {
+					Point:    ctx.GetErrorPoint(t.Module.Node),
+					Concrete: E_ModuleOfTypeRefNotFound {
+						Name: loader.Id2String(t.Module),
+					},
+				} },
+			}}
+			var g, exists = ctx.ModuleInfo.Types[type_sym]
+			if !exists { return SemiExpr{}, &ExprError {
+				Point:    ctx.GetErrorPoint(t.Node),
+				Concrete: E_TypeErrorInExpr { &TypeError {
+					Point:    ctx.GetErrorPoint(t.Node),
+					Concrete: E_TypeNotFound {
+						Name: type_sym,
+					},
+				} },
+			} }
+			var index, is_subtype = union.GetSubtypeIndex(type_sym)
+			if !is_subtype { return SemiExpr{}, &ExprError{
+				Point:    ctx.GetErrorPoint(t.Node),
+				Concrete: E_NotSubtype{
+					Union:    ctx.DescribeType(arg_type),
+					TypeName: type_sym.String(),
+				},
+			} }
+			if g.Arity != uint(len(union_args)) {
+				panic("something went wrong")
+			}
+			var subtype = NamedType {
+				Name: type_sym,
+				Args: union_args,
+			}
+			var branch_ctx ExprContext
+			switch pattern := maybe_pattern.(type) {
+			case Pattern:
+				var new_ctx, err = ctx.WithPatternMatching (
+					subtype, pattern, false,
+				)
+				if err != nil { return SemiExpr{}, err }
+				branch_ctx = new_ctx
+			default:
+				branch_ctx = ctx
+			}
+			var semi, err = SemiExprFrom (
+				branch.Expr, branch_ctx,
+			)
+			if err != nil { return SemiExpr{}, err }
+			branches[i] = SemiTypedBranch {
+				IsDefault: false,
+				Index:     index,
+				Pattern:   maybe_pattern,
+				Value:     semi,
+			}
+			checked[type_sym] = true
+		default:
+			if has_default {
+				return SemiExpr{}, &ExprError {
+					Point:    ctx.GetErrorPoint(branch.Node),
+					Concrete: E_DuplicateDefaultBranch {},
+				}
+			}
+			switch branch.Pattern.(type) {
+			case node.VariousPattern:
+				panic("something went wrong")
+			}
+			var semi, err = SemiExprFrom(branch.Expr, ctx)
+			if err != nil { return SemiExpr{}, nil }
+			branches[i] = SemiTypedBranch {
+				IsDefault: true,
+				Index:     -1,
+				Pattern:   Pattern {},
+				Value:     semi,
+			}
+			has_default = true
+		}
+	}
+	if !has_default && len(checked) != len(union.SubTypes) {
+		var missing = make([]string, 0)
+		for _, subtype := range union.SubTypes {
+			if !checked[subtype] {
+				missing = append(missing, subtype.String())
+			}
+		}
+		return SemiExpr{}, &ExprError {
+			Point:    ctx.GetErrorPoint(match.Node),
+			Concrete: E_IncompleteMatch { missing },
+		}
+	} else {
+		return SemiExpr {
+			Value: SemiTypedMatch {
+				Argument: Expr(arg_typed),
+				Branches: branches,
+			},
+			Info: info,
+		}, nil
+	}
+}
+
 
 func PatternFrom(p_node node.VariousPattern, ctx ExprContext) Pattern {
 	switch p := p_node.Pattern.(type) {
@@ -738,8 +882,22 @@ func PatternFrom(p_node node.VariousPattern, ctx ExprContext) Pattern {
 	}
 }
 
+func MaybePatternFrom(p node.MaybePattern, ctx ExprContext) MaybePattern {
+	switch p_node := p.(type) {
+	case node.VariousPattern:
+		return PatternFrom(p_node, ctx)
+	default:
+		return nil
+	}
+}
+
 
 func SemiExprFrom(e node.Expr, ctx ExprContext) (SemiExpr, *ExprError) {
+	// TODO
+	return SemiExpr{}, nil
+}
+
+func SemiExprFromTerm(term node.VariousTerm, ctx ExprContext) (SemiExpr, *ExprError) {
 	// TODO
 	return SemiExpr{}, nil
 }

@@ -67,7 +67,7 @@ var ConditionalKeywords = [...] string {
     "@module", "@import", "@from",
     "@type",  "@protected", "@opaque", "@union", "@native",
     "@private", "@public", "@function", "@=>", "@const", "@do",
-    "@match", "@case", "@else", "@if",
+    "@match", "@case", "@default", "@if", "@else",
     "@let", "@rec", "@return",
 }
 
@@ -96,7 +96,8 @@ var SyntaxDefinition = [...] string {
           "type_params? = [ name! more_names ]!",
             "more_names? = , name! more_names",
           "more_decl_types? = decl_type more_decl_types",
-        "wrapped_type = wrap_option repr!",
+        "wrapped_type = wrap_option repr!", // TODO: replace repr
+                                            //       with optional type
           "wrap_option? = @protected | @opaque",
           "repr = repr_tuple | repr_bundle | repr_func",
             "repr_tuple = ( ) | ( type_list )!",
@@ -127,13 +128,13 @@ var SyntaxDefinition = [...] string {
       "more_pipes? = _bar1 pipe! more_pipes",
     "term = cast | lambda | match | if | block | bundle | get | tuple | infix | array | text | literal | ref",
       "cast = [ type! ]! (! expr! )!",
-      "match = @match term {! branch_list }!",
+      "match = @match ( expr! )! {! branch_list }!",
         "branch_list = branch! more_branches",
           "more_branches? = , branch more_branches",
-          "branch = @case branch_key opt_pattern :! branch_value",
-            "branch_key = @else | type",
-            "opt_pattern? = pattern",
-            "branch_value = ... | expr!",
+          "branch = branch_key :! expr!",
+            "branch_key = @default | @case type_ref! opt_pattern",
+              "opt_pattern? = pattern",
+      // TODO: multi-match
       "if = @if { if_cond! :! if_yes! ,! @else! :! if_no! }!",
         "if_cond = expr!",
         "if_yes = expr!",

@@ -1,6 +1,7 @@
 package node
 
 
+type MaybePattern interface { MaybePattern() }
 func (impl VariousPattern) MaybePattern() {}
 type VariousPattern struct {
 	Node               `part:"pattern"`
