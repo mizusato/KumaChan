@@ -349,3 +349,9 @@ func (impl E_IncompleteMatch) ExprError() {}
 type E_IncompleteMatch struct {
 	Missing  [] string
 }
+
+func (impl E_NonBooleanCondition) ExprError() {}
+type E_NonBooleanCondition struct {
+	Typed  bool
+	Type   string
+}

@@ -255,14 +255,14 @@ func TypeFrom (type_ node.Type, ctx TypeContext) (Type, *TypeError) {
 		case loader.Symbol:
 			var exists, arity = ctx.Ireg.LookupArity(s)
 			if !exists { return nil, &TypeError {
-				Point: ErrorPoint { AST: ctx.Module.AST, Node: t.Ref.Id.Node },
+				Point:    ErrorPoint { AST: ctx.Module.AST, Node: t.Ref.Id.Node },
 				Concrete: E_TypeNotFound {
 					Name: s,
 				},
 			} }
 			var given_arity = uint(len(t.Ref.TypeArgs))
 			if arity != given_arity { return nil, &TypeError {
-				Point: ErrorPoint { AST: ctx.Module.AST, Node: t.Ref.Node },
+				Point:    ErrorPoint { AST: ctx.Module.AST, Node: t.Ref.Node },
 				Concrete: E_WrongParameterQuantity {
 					TypeName: s,
 					Required: arity,

@@ -6,6 +6,7 @@ import (
 	"kumachan/transformer/node"
 	"math/big"
 	"strconv"
+	"strings"
 )
 
 
@@ -595,6 +596,51 @@ func IsBundleLiteral(expr Expr) bool {
 }
 
 
+func ExprFromText(text node.Text, ctx ExprContext) (Expr, *ExprContext) {
+	var info = ExprInfo { ErrorPoint: ctx.GetErrorPoint(text.Node) }
+	var template = text.Template
+	var segments = make([]string, 0)
+	var arity = 0
+	var buf strings.Builder
+	for _, char := range template {
+		if char == TextPlaceholder {
+			var seg = buf.String()
+			buf.Reset()
+			segments = append(segments, seg)
+			arity += 1
+		} else {
+			buf.WriteRune(char)
+		}
+	}
+	var last = buf.String()
+	if last != "" {
+		segments = append(segments, last)
+	}
+	var format = func(args []string) string {
+		var buf strings.Builder
+		for i, seg := range segments {
+			buf.WriteString(seg)
+			if i < arity {
+				buf.WriteString(args[i])
+			}
+		}
+		return buf.String()
+	}
+	var elements = make([]Type, arity)
+	for i := 0; i < arity; i += 1 {
+		elements[i] = NamedType { Name: __String, Args: make([]Type, 0) }
+	}
+	var t Type = AnonymousType { Func {
+		Input:  AnonymousType { Tuple { elements } },
+		Output: NamedType { Name: __String, Args: make([]Type, 0) },
+	} }
+	return Expr {
+		Type:  t,
+		Value: NativeFunction { format },
+		Info:  info,
+	}, nil
+}
+
 func SemiExprFromArray(array node.Array, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ExprInfo { ErrorPoint: ctx.GetErrorPoint(array.Node) }
 	var L = len(array.Items)
@@ -711,10 +757,10 @@ func SemiExprFromMatch(match node.Match, ctx ExprContext) (SemiExpr, *ExprError)
 	var arg_semi, err = SemiExprFrom(match.Argument, ctx)
 	if err != nil { return SemiExpr{}, err }
 	var arg_typed, ok = arg_semi.Value.(TypedExpr)
-	if !ok { return SemiExpr{}, &ExprError{
+	if !ok { return SemiExpr{}, &ExprError {
 		Point:    ctx.GetErrorPoint(match.Argument.Node),
 		Concrete: E_ExplicitTypeRequired {},
-	}}
+	} }
 	var arg_type = arg_typed.Type
 	var union, union_args, is_union = UnboxUnion(arg_type, ctx)
 	if !is_union { return SemiExpr{}, &ExprError {
@@ -835,6 +881,55 @@ func SemiExprFromMatch(match node.Match, ctx ExprContext) (SemiExpr, *ExprError)
 			},
 			Info: info,
 		}, nil
+	}
+}
+
+func SemiExprFromIf(if_node node.If, ctx ExprContext) (SemiExpr, *ExprError) {
+	var info = ExprInfo { ErrorPoint: ctx.GetErrorPoint(if_node.Node) }
+	var cond_semi, err = SemiExprFrom(if_node.Condition, ctx)
+	if err != nil { return SemiExpr{}, err }
+	var cond_typed, ok = cond_semi.Value.(TypedExpr)
+	if !ok { return SemiExpr{}, &ExprError{
+		Point:    ctx.GetErrorPoint(if_node.Condition.Node),
+		Concrete: E_NonBooleanCondition { Typed:false },
+	} }
+	switch T := cond_typed.Type.(type) {
+	case NamedType:
+		if T.Name == __Bool {
+			if len(T.Args) != 0 { panic("something went wrong") }
+			var yes_semi, err1 = SemiExprFrom(if_node.YesBranch, ctx)
+			if err1 != nil { return SemiExpr{}, err1 }
+			var yes_branch = SemiTypedBranch {
+				IsDefault: false,
+				Index:     __Yes,
+				Pattern:   nil,
+				Value:     yes_semi,
+			}
+			var no_semi, err2 = SemiExprFrom(if_node.NoBranch, ctx)
+			if err2 != nil { return SemiExpr{}, err2 }
+			var no_branch = SemiTypedBranch {
+				IsDefault: true,
+				Index:     -1,
+				Pattern:   nil,
+				Value:     no_semi,
+			}
+			return SemiExpr {
+				Info: info,
+				Value: SemiTypedMatch {
+					Argument: Expr(cond_typed),
+					Branches: []SemiTypedBranch {
+						yes_branch, no_branch,
+					},
+				},
+			}, nil
+		}
+	}
+	return SemiExpr{}, &ExprError {
+		Point:    ctx.GetErrorPoint(if_node.Condition.Node),
+		Concrete: E_NonBooleanCondition {
+			Typed: true,
+			Type:  ctx.DescribeType(cond_typed.Type),
+		},
 	}
 }
 

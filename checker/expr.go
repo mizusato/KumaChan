@@ -67,9 +67,9 @@ type Lambda struct {
 	Output  Expr
 }
 
-func (impl Text) ExprVal() {}
-type Text struct {
-	Segments  [] TextSegment
+func (impl NativeFunction) ExprVal() {}
+type NativeFunction struct {
+	Function  interface {}
 }
 
 func (impl UnitValue) ExprVal() {}
@@ -149,15 +149,4 @@ func (impl BundlePattern) CheckerPattern() {}
 type BundlePattern struct {
 	ValueNames  [] string
 	Points      [] ErrorPoint
-}
-
-type TextSegment interface { TextSegment() }
-func (impl PlainSegment) TextSegment() {}
-type PlainSegment struct {
-	Content  [] rune
-}
-func (impl PlaceholderSegment) TextSegment() {}
-type PlaceholderSegment struct {
-	Type Type
-	Key  string
 }

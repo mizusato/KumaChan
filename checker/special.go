@@ -3,7 +3,10 @@ package checker
 import "kumachan/loader"
 
 const IgnoreMark = "_"
+const TextPlaceholder = '#'
 /* should be consistent with stdlib/core.km */
+var __Bool = CoreSymbol("Bool")
+var __Yes uint = 0
 // var __Maybe = CoreSymbol("Maybe")
 // var __Just uint = 0
 // var __Nothing uint = 1
