@@ -1,235 +1,41 @@
 package checker
 
 
-func AssignSemiTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprError) {
-	var throw = func(e ConcreteExprError) (Expr, *ExprError) {
-		return Expr{}, &ExprError {
-			Point:    semi.Info.ErrorPoint,
-			Concrete: e,
+func RequireExplicitType(t Type, info ExprInfo) (struct{}, *ExprError) {
+	if t == nil {
+		return struct{}{}, &ExprError {
+			Point:    info.ErrorPoint,
+			Concrete: E_ExplicitTypeRequired {},
 		}
+	} else {
+		return struct{}{}, nil
 	}
-	switch given_semi := semi.Value.(type) {
-	case TypedExpr:
-		return AssignTo(expected, Expr(given_semi), ctx, true)
-	case UntypedLambda:
-		if expected == nil {
-			return throw(E_ExplicitTypeRequired {})
-		}
-		switch E := expected.(type) {
-		case AnonymousType:
-			switch func_repr := E.Repr.(type) {
-			case Func:
-				var lambda = given_semi
-				var input = func_repr.Input
-				var output = func_repr.Output
-				var inner_ctx, err1 = ctx.WithPatternMatching (
-					input, lambda.Input, false,
-				)
-				if err1 != nil { return Expr{}, err1 }
-				var output_semi, err2 = SemiExprFrom(lambda.Output, inner_ctx)
-				if err2 != nil { return Expr{}, err2 }
-				var output_typed, err3 = AssignSemiTo(output, output_semi, ctx)
-				if err3 != nil { return Expr{}, err3 }
-				return Expr {
-					Type:  expected,
-					Info:  semi.Info,
-					Value: Lambda {
-						Input:  lambda.Input,
-						Output: output_typed,
-					},
-				}, nil
-			}
-		}
-		return throw(E_LambdaAssignedToNonFuncType {
-			NonFuncType: ctx.DescribeType(expected),
-		})
-	case UntypedInteger:
-		if expected == nil {
-			return throw(E_ExplicitTypeRequired {})
-		}
-		var integer = given_semi
-		switch E := expected.(type) {
-		case NamedType:
-			var sym = E.Name
-			var kind, exists = __IntegerTypeMap[sym]
-			if exists {
-				if len(E.Args) > 0 { panic("something went wrong") }
-				var val, ok = AdaptInteger(kind, integer.Value)
-				if ok {
-					return Expr {
-						Type:  expected,
-						Info:  semi.Info,
-						Value: val,
-					}, nil
-				} else {
-					return throw(E_IntegerOverflow { kind })
-				}
-			}
-		}
-		return throw(E_IntegerAssignedToNonIntegerType {})
-	case SemiTypedTuple:
-		var tuple_semi = given_semi
-		var non_nil_expected Type
-		if expected == nil {
-			non_nil_expected = AnonymousType {
-				Tuple {
-					// Fill with nil
-					Elements: make([]Type, len(tuple_semi.Values)),
-				},
-			}
-		} else {
-			non_nil_expected = expected
-		}
-		switch E := non_nil_expected.(type) {
-		case AnonymousType:
-			switch tuple := E.Repr.(type) {
-			case Tuple:
-				var required = len(tuple.Elements)
-				var given = len(tuple_semi.Values)
-				if given != required {
-					return throw(E_TupleSizeNotMatching {
-						Required:  required,
-						Given:     given,
-						GivenType: ctx.DescribeType(AnonymousType { tuple }),
-					})
-				}
-				var typed_exprs = make([]Expr, given)
-				for i, el := range tuple_semi.Values {
-					var el_expected = tuple.Elements[i]
-					var typed, err = AssignSemiTo(el_expected, el, ctx)
-					if err != nil { return Expr{}, err }
-					typed_exprs[i] = typed
-				}
-				return Expr {
-					Type:  expected,
-					Info:  semi.Info,
-					Value: Product { typed_exprs },
-				}, nil
-			}
-		}
-		return throw(E_TupleAssignedToNonTupleType {})
-	case SemiTypedBundle:
-		if expected == nil {
-			return throw(E_ExplicitTypeRequired {})
-		}
-		var bundle_semi = given_semi
-		switch E := expected.(type) {
-		case AnonymousType:
-			switch bundle := E.Repr.(type) {
-			case Bundle:
-				var values = make([]Expr, len(bundle.Index))
-				for field_name, index := range bundle.Index {
-					var field_type = bundle.Fields[field_name]
-					var given_index, exists = bundle_semi.Index[field_name]
-					if !exists {
-						return throw(E_MissingField {
-							Field: field_name,
-							Type:  ctx.DescribeType(field_type),
-						})
-					}
-					var given_value = bundle_semi.Values[given_index]
-					var value, err = AssignSemiTo(field_type, given_value, ctx)
-					if err != nil { return Expr{}, err }
-					values[index] = value
-				}
-				for given_field_name, index := range bundle_semi.Index {
-					var _, exists = bundle.Fields[given_field_name]
-					if !exists {
-						var key_node = bundle_semi.KeyNodes[index]
-						return Expr{}, &ExprError {
-							Point:    ctx.GetErrorPoint(key_node),
-							Concrete: E_SurplusField { given_field_name },
-						}
-					}
-				}
-				return Expr {
-					Type:  expected,
-					Info:  semi.Info,
-					Value: Product { values },
-				}, nil
-			}
-		}
-		return throw(E_BundleAssignedToNonBundleType {})
-	case SemiTypedArray:
-		var array_semi = given_semi
-		if expected == nil {
-			var cur_item_type Type = nil
-			var items = make([]Expr, len(array_semi.Items))
-			for i, item_semi := range array_semi.Items {
-				var item, err = AssignSemiTo(cur_item_type, item_semi, ctx)
-				if err != nil { return Expr{}, err }
-				items[i] = item
-			}
-			return Expr {
-				Type:  expected,
-				Info:  semi.Info,
-				Value: Array { items },
-			}, nil
-		}
-		switch E := expected.(type) {
-		case NamedType:
-			if E.Name == __Array {
-				if len(E.Args) != 1 { panic("something went wrong") }
-				var item_type = E.Args[0]
-				var items = make([]Expr, len(array_semi.Items))
-				for i, item_semi := range array_semi.Items {
-					var item, err = AssignSemiTo(item_type, item_semi, ctx)
-					if err != nil { return Expr{}, err }
-					items[i] = item
-				}
-				return Expr {
-					Type:  expected,
-					Info:  semi.Info,
-					Value: Array { items },
-				}, nil
-			}
-		}
-		return throw(E_ArrayAssignedToNonArrayType{})
-	case SemiTypedBlock:
-		var block_semi = given_semi
-		var bindings = block_semi.Bindings
-		var ret_semi = block_semi.Returned
-		var ret_typed, err = AssignSemiTo(expected, ret_semi, ctx)
-		if err != nil { return Expr{}, err }
-		return Expr {
-			Type:  expected,
-			Info:  semi.Info,
-			Value: Block {
-				Bindings: bindings,
-				Returned: ret_typed,
-			},
-		}, nil
-	case SemiTypedMatch:
-		if expected == nil {
-			return throw(E_ExplicitTypeRequired {})
-		}
-		var match_semi = given_semi
-		var branches = make([]Branch, len(match_semi.Branches))
-		for i, branch_semi := range match_semi.Branches {
-			var typed, err = AssignSemiTo(expected, branch_semi.Value, ctx)
-			if err != nil { return Expr{}, err }
-			branches[i] = Branch {
-				IsDefault: branch_semi.IsDefault,
-				Index:     branch_semi.Index,
-				Pattern:   branch_semi.Pattern,
-				Value:     typed,
-			}
-		}
-		return Expr {
-			Type:  expected,
-			Value: Match {
-				Argument: match_semi.Argument,
-				Branches: branches,
-			},
-			Info:  semi.Info,
-		}, nil
-	// TODO
-	}
-	// TODO
-	return Expr{}, nil
 }
 
-func AssignTo(expected Type, expr Expr, ctx ExprContext, unbox bool) (Expr, *ExprError) {
+func AssignTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprError) {
+	switch semi_value := semi.Value.(type) {
+	case TypedExpr:
+		return AssignTypedTo(expected, Expr(semi_value), ctx, true)
+	case UntypedLambda:
+		return AssignLambdaTo(expected, semi_value, semi.Info, ctx)
+	case UntypedInteger:
+		return AssignIntegerTo(expected, semi_value, semi.Info, ctx)
+	case SemiTypedTuple:
+		return AssignTupleTo(expected, semi_value, semi.Info, ctx)
+	case SemiTypedBundle:
+		return AssignBundleTo(expected, semi_value, semi.Info, ctx)
+	case SemiTypedArray:
+		return AssignArrayTo(expected, semi_value, semi.Info, ctx)
+	case SemiTypedBlock:
+		return AssignBlockTo(expected, semi_value, semi.Info, ctx)
+	case SemiTypedMatch:
+		return AssignMatchTo(expected, semi_value, semi.Info, ctx)
+	default:
+		panic("impossible branch")
+	}
+}
+
+func AssignTypedTo(expected Type, expr Expr, ctx ExprContext, unbox bool) (Expr, *ExprError) {
 	if expected == nil {
 		// 1. If the expected type is not specified,
 		//    no further process is required.
@@ -292,7 +98,7 @@ func AssignTo(expected Type, expr Expr, ctx ExprContext, unbox bool) (Expr, *Exp
 				Info:  expr.Info,
 			}
 			// 2. Try to assign the created expression to the expected type
-			var result, err = AssignTo(expected, expr_with_inner, ctx, false)
+			var result, err = AssignTypedTo(expected, expr_with_inner, ctx, false)
 			if err != nil {
 				return Expr{}, throw("")
 			}
@@ -322,7 +128,7 @@ func AssignTo(expected Type, expr Expr, ctx ExprContext, unbox bool) (Expr, *Exp
 					var raw = v.Values[i]
 					// 2.1.1. Try to adapt each element of the literal
 					//        to the expected item type
-					var item, err = AssignTo(item_exp_type, raw, ctx)
+					var item, err = AssignTypedTo(item_exp_type, raw, ctx)
 					if err != nil {
 						return Expr{}, err
 					}
@@ -361,7 +167,7 @@ func AssignTo(expected Type, expr Expr, ctx ExprContext, unbox bool) (Expr, *Exp
 						//        bundle literal, try to adapt the field
 						//        to its expected type
 						var raw = v.Values[given_index]
-						var field, err = AssignTo(field_exp_type, raw, ctx)
+						var field, err = AssignTypedTo(field_exp_type, raw, ctx)
 						if err != nil {
 							return Expr{}, err
 						}
