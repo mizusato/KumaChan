@@ -209,9 +209,6 @@ type E_ExprDuplicateField struct {
 	Name  string
 }
 
-func (impl E_HeterogeneousArray) ExprError() {}
-type E_HeterogeneousArray struct {}
-
 func (impl E_GetFromNonBundle) ExprError() {}
 type E_GetFromNonBundle struct {}
 
@@ -354,4 +351,43 @@ func (impl E_NonBooleanCondition) ExprError() {}
 type E_NonBooleanCondition struct {
 	Typed  bool
 	Type   string
+}
+
+func (impl E_ModuleNotFound) ExprError() {}
+type E_ModuleNotFound struct {
+	Name  string
+}
+
+func (impl E_TypeOrValueNotFound) ExprError() {}
+type E_TypeOrValueNotFound struct {
+	Symbol  loader.Symbol
+}
+
+func (impl E_TypeParamInExpr) ExprError() {}
+type E_TypeParamInExpr struct {
+	Name  string
+}
+
+func (impl E_ExplicitTypeParamsRequired) ExprError() {}
+type E_ExplicitTypeParamsRequired struct {
+	FuncName   string
+	TypeArity  uint
+}
+
+func (impl E_TypeUsedAsValue) ExprError() {}
+type E_TypeUsedAsValue struct {
+	TypeName  loader.Symbol
+}
+
+func (impl E_FunctionWrongTypeParamsQuantity) ExprError() {}
+type E_FunctionWrongTypeParamsQuantity struct {
+	FuncName  string
+	Given     uint
+	Required  uint
+}
+
+func (impl E_NoneOfFunctionsAssignable) ExprError() {}
+type E_NoneOfFunctionsAssignable struct {
+	To      string
+	Errors  []*ExprError
 }

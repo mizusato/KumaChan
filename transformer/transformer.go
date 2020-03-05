@@ -34,7 +34,11 @@ func Transform (tree Tree) Module {
             var child_ptr = parser_node.Children[i]
             var child = &tree.Nodes[child_ptr]
             if child.Part.Id == path[0] {
-                return dive(tree, child_ptr, path[1:])
+                if child.Part.Partype == syntax.Recursive && child.Length == 0 {
+                    return -1, false
+                } else {
+                    return dive(tree, child_ptr, path[1:])
+                }
             }
         }
         return -1, false

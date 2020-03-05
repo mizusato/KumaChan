@@ -67,8 +67,10 @@ var __NodeRegistry = []interface{} {
     ReprFunc {},
     // Expression
     Expr {},
-    Pipe {},
+	Call {},
     VariousTerm {},
+    Pipeline {},
+    PipeOperator {},
     // Term
     Cast {},
     Match {},

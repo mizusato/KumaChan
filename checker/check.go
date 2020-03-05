@@ -17,13 +17,7 @@ type ModuleInfo struct {
 type ExprContext struct {
 	ModuleInfo   ModuleInfo
 	TypeParams   [] string
-	ArgInfCtx    TypeArgsInferringContext
 	LocalValues  map[string] Type
-}
-
-type TypeArgsInferringContext struct {
-	Enabled   bool
-	Inferred  map[uint] Type  // mutable
 }
 
 type Expr struct {
@@ -146,12 +140,44 @@ func (ctx ExprContext) GetExprInfo(node node.Node) ExprInfo {
 }
 
 
-func Check(e node.Expr, ctx ExprContext) (SemiExpr, *ExprError) {
-	// TODO
-	return SemiExpr{}, nil
+func Check(expr node.Expr, ctx ExprContext) (SemiExpr, *ExprError) {
+	return CheckCall(DesugarExpr(expr), ctx)
 }
 
 func CheckTerm(term node.VariousTerm, ctx ExprContext) (SemiExpr, *ExprError) {
-	// TODO
-	return SemiExpr{}, nil
+	switch t := term.Term.(type) {
+	case node.Cast:
+		return CheckCast(t, ctx)
+	case node.Match:
+		return CheckMatch(t, ctx)
+	case node.If:
+		return CheckIf(t, ctx)
+	case node.Block:
+		return CheckBlock(t, ctx)
+	case node.Tuple:
+		return CheckTuple(t, ctx)
+	case node.Bundle:
+		return CheckBundle(t, ctx)
+	case node.Get:
+		return CheckGet(t, ctx)
+	case node.Array:
+		return CheckArray(t, ctx)
+	case node.Text:
+		return CheckText(t, ctx)
+	case node.VariousLiteral:
+		switch l := t.Literal.(type) {
+		case node.IntegerLiteral:
+			return CheckInteger(l, ctx)
+		case node.FloatLiteral:
+			return CheckFloat(l, ctx)
+		case node.StringLiteral:
+			return CheckString(l, ctx)
+		default:
+			panic("impossible branch")
+		}
+	case node.Ref:
+		return CheckRef(t, ctx)
+	default:
+		panic("impossible branch")
+	}
 }

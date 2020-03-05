@@ -30,10 +30,14 @@ func AssignTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprError) 
 		return AssignBlockTo(expected, semi_value, semi.Info, ctx)
 	case SemiTypedMatch:
 		return AssignMatchTo(expected, semi_value, semi.Info, ctx)
+	case UntypedRef:
+		return AssignRefTo(expected, semi_value, semi.Info, ctx)
 	default:
 		panic("impossible branch")
 	}
 }
+
+// TODO: Add types: TypedAssignContext, TypeInferringContext
 
 func AssignTypedTo(expected Type, expr Expr, ctx ExprContext, unbox bool) (Expr, *ExprError) {
 	if expected == nil {

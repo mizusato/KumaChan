@@ -69,18 +69,18 @@ func CheckInteger(i node.IntegerLiteral, ctx ExprContext) (SemiExpr, *ExprError)
 	}
 }
 
-func CheckFloat(f node.FloatLiteral, ctx ExprContext) (Expr, *ExprError) {
+func CheckFloat(f node.FloatLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(f.Node)
 	var value, err = strconv.ParseFloat(string(f.Value), 64)
 	if err != nil { panic("invalid float literal got from parser") }
-	return Expr {
+	return LiftTyped(Expr {
 		Type:  NamedType {
 			Name: __Float,
 			Args: make([]Type, 0),
 		},
 		Value: FloatLiteral { value },
 		Info:  info,
-	}, nil
+	}), nil
 }
 
 

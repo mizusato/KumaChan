@@ -20,7 +20,7 @@ func CheckLambda(lambda node.Lambda, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ExprInfo { ErrorPoint: ctx.GetErrorPoint(lambda.Node) }
 	var output_expr = node.Expr {
 		Node:  lambda.Node,
-		Pipes: []node.Pipe { lambda.Output },
+		Pipes: []node.Call{lambda.Output },
 	}
 	var input = PatternFrom(lambda.Input, ctx)
 	var output_semi, err = Check(output_expr, ctx)

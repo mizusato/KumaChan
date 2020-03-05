@@ -191,12 +191,12 @@ func CheckBundle(bundle node.Bundle, ctx ExprContext) (SemiExpr, *ExprError) {
 	}
 }
 
-func CheckGet(get node.Get, ctx ExprContext) (Expr, *ExprError) {
+func CheckGet(get node.Get, ctx ExprContext) (SemiExpr, *ExprError) {
 	var base_semi, err = Check(get.Base, ctx)
-	if err != nil { return Expr{}, err }
+	if err != nil { return SemiExpr{}, err }
 	switch b := base_semi.Value.(type) {
 	case TypedExpr:
-		if IsBundleLiteral(Expr(b)) { return Expr{}, &ExprError {
+		if IsBundleLiteral(Expr(b)) { return SemiExpr{}, &ExprError {
 			Point:    ctx.GetErrorPoint(get.Base.Node),
 			Concrete: E_GetFromLiteralBundle {},
 		} }
@@ -208,7 +208,7 @@ func CheckGet(get node.Get, ctx ExprContext) (Expr, *ExprError) {
 			case Bundle:
 				var key = loader.Id2String(member.Name)
 				var index, exists = bundle.Index[key]
-				if !exists { return Expr{}, &ExprError {
+				if !exists { return SemiExpr{}, &ExprError {
 					Point:    ctx.GetErrorPoint(member.Node),
 					Concrete: E_FieldDoesNotExist {
 						Field:  key,
@@ -227,12 +227,12 @@ func CheckGet(get node.Get, ctx ExprContext) (Expr, *ExprError) {
 				}
 				base = expr
 			case BR_BundleButOpaque:
-				return Expr{}, &ExprError {
+				return SemiExpr{}, &ExprError {
 					Point:    base.Info.ErrorPoint,
 					Concrete: E_GetFromOpaqueBundle {},
 				}
 			case BR_NonBundle:
-				return Expr{}, &ExprError {
+				return SemiExpr{}, &ExprError {
 					Point:    base.Info.ErrorPoint,
 					Concrete: E_GetFromNonBundle {},
 				}
@@ -241,14 +241,14 @@ func CheckGet(get node.Get, ctx ExprContext) (Expr, *ExprError) {
 			}
 		}
 		var final = base
-		return final, nil
+		return LiftTyped(final), nil
 	case SemiTypedBundle:
-		return Expr{}, &ExprError {
+		return SemiExpr{}, &ExprError {
 			Point:    ctx.GetErrorPoint(get.Base.Node),
 			Concrete: E_GetFromLiteralBundle {},
 		}
 	default:
-		return Expr{}, &ExprError {
+		return SemiExpr{}, &ExprError {
 			Point:    ctx.GetErrorPoint(get.Base.Node),
 			Concrete: E_GetFromNonBundle {},
 		}
@@ -374,7 +374,7 @@ func DesugarOmittedFieldValue(field node.FieldValue) node.Expr {
 	default:
 		return node.Expr {
 			Node:  field.Node,
-			Pipes: []node.Pipe {{
+			Pipes: []node.Call{{
 				Node:  field.Node,
 				Terms: []node.VariousTerm {{
 					Node: field.Node,

@@ -12,19 +12,19 @@ type StringLiteral struct {
 }
 
 
-func CheckString(s node.StringLiteral, ctx ExprContext) (Expr, *ExprError) {
+func CheckString(s node.StringLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(s.Node)
-	return Expr {
+	return LiftTyped(Expr {
 		Type:  NamedType {
 			Name: __String,
 			Args: make([]Type, 0),
 		},
 		Info:  info,
 		Value: StringLiteral { s.Value },
-	}, nil
+	}), nil
 }
 
-func CheckText(text node.Text, ctx ExprContext) (Expr, *ExprContext) {
+func CheckText(text node.Text, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ExprInfo { ErrorPoint: ctx.GetErrorPoint(text.Node) }
 	var template = text.Template
 	var segments = make([]string, 0)
@@ -62,9 +62,9 @@ func CheckText(text node.Text, ctx ExprContext) (Expr, *ExprContext) {
 		Input:  AnonymousType { Tuple { elements } },
 		Output: NamedType { Name: __String, Args: make([]Type, 0) },
 	} }
-	return Expr {
+	return LiftTyped(Expr {
 		Type:  t,
 		Value: NativeFunction { format },
 		Info:  info,
-	}, nil
+	}), nil
 }
