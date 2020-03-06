@@ -11,9 +11,9 @@ type Cast struct {
 func (impl Lambda) Body() {}
 func (impl Lambda) Term() {}
 type Lambda struct {
-	Node   `part:"lambda"`
-	Input  VariousPattern `part:"pattern"`
-	Output Call           `part:"pipe"`
+	Node                     `part:"lambda"`
+	Input   VariousPattern   `part:"pattern"`
+	Output  Terms            `part:"terms"`
 }
 
 func (impl Block) Term() {}

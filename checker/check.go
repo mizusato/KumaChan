@@ -123,7 +123,6 @@ func (ctx ExprContext) WithAddedLocalValues(added map[string]Type) (ExprContext,
 	return ExprContext {
 		ModuleInfo:  ctx.ModuleInfo,
 		TypeParams:  ctx.TypeParams,
-		ArgInfCtx:   ctx.ArgInfCtx,
 		LocalValues: merged,
 	}, ""
 }

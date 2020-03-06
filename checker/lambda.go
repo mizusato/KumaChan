@@ -19,8 +19,9 @@ type Lambda struct {
 func CheckLambda(lambda node.Lambda, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ExprInfo { ErrorPoint: ctx.GetErrorPoint(lambda.Node) }
 	var output_expr = node.Expr {
-		Node:  lambda.Node,
-		Pipes: []node.Call{lambda.Output },
+		Node:     lambda.Node,
+		Call:     lambda.Output,
+		Pipeline: nil,
 	}
 	var input = PatternFrom(lambda.Input, ctx)
 	var output_semi, err = Check(output_expr, ctx)

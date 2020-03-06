@@ -187,7 +187,6 @@ func GenericFunctionAssignTo (
 		}
 		return AssignTypedTo(expected, f_expr, ctx, true)
 	} else if len(type_args) == 0 {
-		// TODO: refactor this branch to enable deep inferring
 		if expected == nil {
 			return Expr{}, &ExprError {
 				Point:    info.ErrorPoint,
@@ -195,6 +194,8 @@ func GenericFunctionAssignTo (
 			}
 		}
 		var f_raw_type = AnonymousType { f.DeclaredType }
+		// Note: Deep inferring is not required since function types
+		//       are anonymous types. InferArgs() is capable.
 		var inferred = make(map[uint]Type)
 		InferArgs(f_raw_type, expected, inferred)
 		if len(inferred) == type_arity {

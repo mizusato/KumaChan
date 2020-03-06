@@ -10,7 +10,7 @@ type Call struct {
 }
 
 
-func CheckCall(call node.Call, ctx ExprContext) (SemiExpr, *ExprError) {
+func CheckCall(call node.Terms, ctx ExprContext) (SemiExpr, *ExprError) {
 	var L = len(call.Terms)
 	if L == 0 { panic("something went wrong") }
 	if L == 1 {
@@ -41,50 +41,52 @@ func CheckSingleCall(f SemiExpr, arg SemiExpr) (SemiExpr, *ExprError) {
 }
 
 
-func DesugarExpr(expr node.Expr) node.Call {
+func DesugarExpr(expr node.Expr) node.Terms {
 	return DesugarPipeline(expr.Call, expr.Pipeline)
 }
 
-func DesugarPipeline(input node.Call, p node.MaybePipeline) node.Call {
+func DesugarPipeline(left node.Terms, p node.MaybePipeline) node.Terms {
 	var pipeline, ok = p.(node.Pipeline)
 	if !ok {
-		return input
+		return left
 	}
-	var right_terms = pipeline.Call.Terms
-	if len(right_terms) == 0 { panic("something went wrong") }
-	var f = right_terms[0]
-	var rest_args = right_terms[1:]
-	var L = (1 + len(rest_args))
-	var args = make([]node.Expr, L)
-	for i := 0; i < L; i += 1 {
-		if i == 0 {
-			args[i] = node.Expr {
-				Node:     input.Node,
-				Call:     input,
-				Pipeline: nil,
-			}
-		} else {
-			var rest_arg = rest_args[i-1]
-			args[i] = node.Expr {
-				Node:     rest_arg.Node,
-				Call:     node.Call {
-					Terms: []node.VariousTerm { rest_arg },
+	var f = pipeline.Func
+	var maybe_right = pipeline.Args
+	var right, exists = maybe_right.(node.Terms)
+	var arg node.Tuple
+	if exists {
+		arg = node.Tuple {
+			Node:     pipeline.Operator.Node,
+			Elements: []node.Expr {
+				node.Expr {
+					Node:     left.Node,
+					Call:     left,
+					Pipeline: nil,
 				},
+				node.Expr {
+					Node:     right.Node,
+					Call:     right,
+					Pipeline: nil,
+				},
+			},
+		}
+	} else {
+		arg = node.Tuple {
+			Node:     left.Node,
+			Elements: []node.Expr { {
+				Node:     left.Node,
+				Call:     left,
 				Pipeline: nil,
-			}
+			} },
 		}
 	}
-	var args_tuple = node.Tuple {
-		Node:     pipeline.Operator.Node,
-		Elements: args,
-	}
-	var current = node.Call {
+	var current = node.Terms {
 		Node:  pipeline.Node,
 		Terms: []node.VariousTerm {
 			f,
 			node.VariousTerm {
-				Node: args_tuple.Node,
-				Term: args_tuple,
+				Node: arg.Node,
+				Term: arg,
 			},
 		},
 	}

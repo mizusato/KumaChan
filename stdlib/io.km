@@ -3,24 +3,32 @@ module I/O;
 type InputStream   native;
 type OutputStream  native;
 type Error {
-    kind: ErrorKind,
     message: String
-};
-type ErrorKind union {
-    type *EndOfFile {};
-    type *FileNotFound {};
-    type *PermissionDenied {};
-    // ...
 };
 
 public function read {
-    `(InputStream, Int) => Effect[Bytes,Error]:
-    native 'read-input-stream'
+    `InputStream => Effect[Bytes,Error]:
+    native 'read'
 };
 
 public function write {
-    `(OutputStream, Bytes) => Effect[Int,Error]:
-    native 'write-output-stream'
+    `(OutputStream, Effect[Bytes,Error]) => Effect[(),Error]:
+    native 'write'
+};
+
+public function write-bytes {
+    `(OutputStream, Bytes) => Effect[Int, Error]:
+    native 'write-bytes'
+};
+
+public function write-string {
+    `(OutputStream, String) => Effect[(), Error]:
+    native 'write-string'
+};
+
+public function write-line {
+    `(OutputStream, String) => Effect[(), Error]:
+    native 'write-line'
 };
 
 // print-line, ...

@@ -374,9 +374,9 @@ func DesugarOmittedFieldValue(field node.FieldValue) node.Expr {
 	default:
 		return node.Expr {
 			Node:  field.Node,
-			Pipes: []node.Call{{
+			Call:  node.Terms {
 				Node:  field.Node,
-				Terms: []node.VariousTerm {{
+				Terms: []node.VariousTerm { {
 					Node: field.Node,
 					Term: node.Ref {
 						Node:     field.Node,
@@ -388,8 +388,8 @@ func DesugarOmittedFieldValue(field node.FieldValue) node.Expr {
 						Id:       field.Key,
 						TypeArgs: make([]node.VariousType, 0),
 					},
-				}},
-			}},
+				} },
+			},
 		}
 	}
 }

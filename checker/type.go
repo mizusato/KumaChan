@@ -72,7 +72,7 @@ func (u Union) GetSubtypeIndex(sym loader.Symbol) (uint, bool) {
 			return uint(index), true
 		}
 	}
-	return -1, false
+	return BadIndex, false
 }
 
 func DescribeType(type_ Type, ctx TypeContext) string {

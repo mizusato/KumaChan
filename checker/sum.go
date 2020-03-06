@@ -143,7 +143,7 @@ func CheckMatch(match node.Match, ctx ExprContext) (SemiExpr, *ExprError) {
 			if err != nil { return SemiExpr{}, nil }
 			branches[i] = SemiTypedBranch {
 				IsDefault: true,
-				Index:     -1,
+				Index:     BadIndex,
 				Pattern:   Pattern {},
 				Value:     semi,
 			}
@@ -197,7 +197,7 @@ func CheckIf(if_node node.If, ctx ExprContext) (SemiExpr, *ExprError) {
 			if err2 != nil { return SemiExpr{}, err2 }
 			var no_branch = SemiTypedBranch {
 				IsDefault: true,
-				Index:     -1,
+				Index:     BadIndex,
 				Pattern:   nil,
 				Value:     no_semi,
 			}

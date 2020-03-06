@@ -1,7 +1,6 @@
 module Hello;
 
-do I/O::Stdout
-   | println 'Hello World'
-   | then exit 0
-   | catch exit 1;
+do OS::Stdout
+   | print-line  'Hello World'
+   | catch       exit 1;
 

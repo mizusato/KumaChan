@@ -6,12 +6,14 @@ func (impl Expr) MaybeExpr() {}
 func (impl Expr) ConstValue() {}
 type Expr struct {
     Node                      `part:"expr"`
-    Call      Call            `part:"call"`
+    Call      Terms           `part:"terms"`
     Pipeline  MaybePipeline   `part_opt:"pipeline"`
 }
 
-type Call struct {
-    Node                    `part:"call"`
+type MaybeTerms interface { MaybeTerms() }
+func (impl Terms) MaybeTerms() {}
+type Terms struct {
+    Node                    `part:"terms"`
     Terms  [] VariousTerm   `list_more:"" item:"term"`
 }
 
@@ -26,7 +28,8 @@ func (impl Pipeline) MaybePipeline() {}
 type Pipeline struct {
     Node                      `part:"pipeline"`
     Operator  PipeOperator    `part:"pipe_op"`
-    Call      Call            `part:"call"`
+    Func      VariousTerm     `part:"pipe_func.term"`
+    Args      MaybeTerms      `part_opt:"pipe_args.terms"`
     Next      MaybePipeline   `part_opt:"pipeline"`
 }
 
