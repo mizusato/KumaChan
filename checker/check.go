@@ -15,15 +15,17 @@ type ModuleInfo struct {
 }
 
 type ExprContext struct {
-	ModuleInfo   ModuleInfo
-	TypeParams   [] string
-	LocalValues  map[string] Type
+	ModuleInfo     ModuleInfo
+	TypeParams     [] string
+	LocalValues    map[string] Type
+	InferTypeArgs  bool
+	Inferred       map[uint] Type  // mutable
 }
 
 type Expr struct {
 	Type   Type
-	Info   ExprInfo
 	Value  ExprVal
+	Info   ExprInfo
 }
 type ExprInfo struct {
 	ErrorPoint  ErrorPoint
@@ -31,8 +33,8 @@ type ExprInfo struct {
 type ExprVal interface { ExprVal() }
 
 type SemiExpr struct {
-	Info   ExprInfo
 	Value  SemiExprVal
+	Info   ExprInfo
 }
 type SemiExprVal interface { SemiExprVal() }
 func (impl TypedExpr) SemiExprVal() {}
@@ -66,7 +68,23 @@ func (ctx ExprContext) GetTypeContext() TypeContext {
 }
 
 func (ctx ExprContext) DescribeType(t Type) string {
-	return DescribeType(t, ctx.GetTypeContext())
+	return DescribeType(t, ctx.GetTypeContext(), TypeDescOptions {
+		UseContextParamNames: true,
+	})
+}
+
+func (ctx ExprContext) DescribeIncompleteType(t Type) string {
+	return DescribeType(t, ctx.GetTypeContext(), TypeDescOptions {
+		UseContextParamNames: false,
+	})
+}
+
+func (ctx ExprContext) DescribeExpectedType(t Type) string {
+	if ctx.InferTypeArgs {
+		return ctx.DescribeIncompleteType(t)
+	} else {
+		return ctx.DescribeType(t)
+	}
 }
 
 func (ctx ExprContext) GetModuleName() string {
@@ -121,10 +139,21 @@ func (ctx ExprContext) WithAddedLocalValues(added map[string]Type) (ExprContext,
 		merged[name] = t
 	}
 	return ExprContext {
-		ModuleInfo:  ctx.ModuleInfo,
-		TypeParams:  ctx.TypeParams,
-		LocalValues: merged,
+		ModuleInfo:    ctx.ModuleInfo,
+		TypeParams:    ctx.TypeParams,
+		LocalValues:   merged,
+		InferTypeArgs: ctx.InferTypeArgs,
 	}, ""
+}
+
+func (ctx ExprContext) WithTypeArgsInferringEnabled() ExprContext {
+	return ExprContext {
+		ModuleInfo:    ctx.ModuleInfo,
+		TypeParams:    ctx.TypeParams,
+		LocalValues:   ctx.LocalValues,
+		InferTypeArgs: true,
+		Inferred:      make(map[uint] Type),
+	}
 }
 
 func (ctx ExprContext) GetErrorPoint(node node.Node) ErrorPoint {
@@ -176,6 +205,7 @@ func CheckTerm(term node.VariousTerm, ctx ExprContext) (SemiExpr, *ExprError) {
 		}
 	case node.Ref:
 		return CheckRef(t, ctx)
+	// TODO: infix
 	default:
 		panic("impossible branch")
 	}

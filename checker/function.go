@@ -147,6 +147,3 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 	// 5. Return all collected functions of the current module
 	return collection, nil
 }
-
-
-

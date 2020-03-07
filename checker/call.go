@@ -3,6 +3,15 @@ package checker
 import "kumachan/transformer/node"
 
 
+func (impl UndecidedCall) SemiExprVal() {}
+type UndecidedCall struct {
+	Options   [] AvailableCall
+	FuncName  string
+}
+type AvailableCall struct {
+	Expr  Expr
+}
+
 func (impl Call) ExprVal() {}
 type Call struct {
 	Function  Expr
@@ -10,49 +19,99 @@ type Call struct {
 }
 
 
-func CheckCall(call node.Terms, ctx ExprContext) (SemiExpr, *ExprError) {
-	var L = len(call.Terms)
-	if L == 0 { panic("something went wrong") }
-	if L == 1 {
-		return CheckTerm(call.Terms[0], ctx)
-	} else {
-		var semi, err = CheckTerm(call.Terms[0], ctx)
-		if err != nil { return SemiExpr{}, err }
-		return ReduceCall(semi, call.Terms[:L-1], ctx)
-	}
-}
-
-func ReduceCall(arg SemiExpr, terms []node.VariousTerm, ctx ExprContext) (SemiExpr, *ExprError) {
-	var L = len(terms)
-	if L == 0 {
-		return arg, nil
-	} else {
-		var f_node = terms[L-1]
-		var f, err1 = CheckTerm(f_node, ctx)
+func CheckCall(call node.Call, ctx ExprContext) (SemiExpr, *ExprError) {
+	var arg_node, has_arg = call.Arg.(node.Call)
+	if has_arg {
+		var f, err1 = CheckTerm(call.Func, ctx)
 		if err1 != nil { return SemiExpr{}, err1 }
-		var next_arg, err2 = CheckSingleCall(f, arg)
+		var arg, err2 = CheckCall(arg_node, ctx)
 		if err2 != nil { return SemiExpr{}, err2 }
-		return ReduceCall(next_arg, terms[:L-1], ctx)
+		var info = ctx.GetExprInfo(call.Node)
+		return CheckSingleCall(f, arg, info, ctx)
+	} else {
+		return CheckTerm(call.Func, ctx)
 	}
 }
 
-func CheckSingleCall(f SemiExpr, arg SemiExpr) (SemiExpr, *ExprError) {
-	panic("not implemented")  // TODO
+func CheckSingleCall(f SemiExpr, arg SemiExpr, info ExprInfo, ctx ExprContext) (SemiExpr, *ExprError) {
+	switch f_concrete := f.Value.(type) {
+	case TypedExpr:
+		var t = f_concrete.Type
+		switch T := t.(type) {
+		case AnonymousType:
+			switch r := T.Repr.(type) {
+			case Func:
+				var arg_typed, err = AssignTo(r.Input, arg, ctx)
+				if err != nil { return SemiExpr{}, err }
+				return LiftTyped(Expr {
+					Type:  r.Output,
+					Value: Call {
+						Function: Expr(f_concrete),
+						Argument: arg_typed,
+					},
+					Info:  f.Info,
+				}), nil
+			}
+		}
+		return SemiExpr{}, &ExprError {
+			Point:    f.Info.ErrorPoint,
+			Concrete: E_ExprTypeNotCallable {
+				Type: ctx.DescribeType(t),
+			},
+		}
+	case UntypedLambda:
+		return CallUntypedLambda(arg, f_concrete, f.Info, info, ctx)
+	case UntypedRef:
+		return CallUntypedRef(arg, f_concrete, f.Info, info, ctx)
+	case SemiTypedMatch, SemiTypedBlock, UndecidedCall:
+		return SemiExpr{}, &ExprError {
+			Point:    f.Info.ErrorPoint,
+			Concrete: E_ExplicitTypeRequired {},
+		}
+	default:
+		return SemiExpr{}, &ExprError {
+			Point:    f.Info.ErrorPoint,
+			Concrete: E_ExprNotCallable {},
+		}
+	}
 }
 
 
-func DesugarExpr(expr node.Expr) node.Terms {
+func AssignCallTo(expected Type, call UndecidedCall, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
+	var _, err = RequireExplicitType(expected, info)
+	if err != nil { return Expr{}, err }
+	var types_desc = make([]string, 0)
+	for _, option := range call.Options {
+		var expr, err = AssignTypedTo(expected, option.Expr, ctx, false)
+		if err != nil {
+			types_desc = append (
+				types_desc,
+				ctx.DescribeType(option.Expr.Type),
+			)
+			continue
+		} else {
+			return expr, nil
+		}
+	}
+	return Expr{}, &ExprError {
+		Point:    info.ErrorPoint,
+		Concrete: E_NoneOfTypesAssignable { types_desc },
+	}
+}
+
+
+func DesugarExpr(expr node.Expr) node.Call {
 	return DesugarPipeline(expr.Call, expr.Pipeline)
 }
 
-func DesugarPipeline(left node.Terms, p node.MaybePipeline) node.Terms {
+func DesugarPipeline(left node.Call, p node.MaybePipeline) node.Call {
 	var pipeline, ok = p.(node.Pipeline)
 	if !ok {
 		return left
 	}
 	var f = pipeline.Func
-	var maybe_right = pipeline.Args
-	var right, exists = maybe_right.(node.Terms)
+	var maybe_right = pipeline.Arg
+	var right, exists = maybe_right.(node.Call)
 	var arg node.Tuple
 	if exists {
 		arg = node.Tuple {
@@ -80,14 +139,16 @@ func DesugarPipeline(left node.Terms, p node.MaybePipeline) node.Terms {
 			} },
 		}
 	}
-	var current = node.Terms {
+	var current = node.Call {
 		Node:  pipeline.Node,
-		Terms: []node.VariousTerm {
-			f,
-			node.VariousTerm {
+		Func:  f,
+		Arg:   node.Call {
+			Node: arg.Node,
+			Func: node.VariousTerm {
 				Node: arg.Node,
 				Term: arg,
 			},
+			Arg:  nil,
 		},
 	}
 	return DesugarPipeline(current, pipeline.Next)

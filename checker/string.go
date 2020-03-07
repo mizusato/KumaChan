@@ -11,6 +11,24 @@ type StringLiteral struct {
 	Value  [] rune
 }
 
+func (impl StringFormatter) ExprVal() {}
+type StringFormatter struct {
+	Segments  [] string
+	Arity     uint
+}
+func GetFormatterFunction(sf *StringFormatter) func([]string)string {
+	return func(args []string) string {
+		var buf strings.Builder
+		for i, seg := range sf.Segments {
+			buf.WriteString(seg)
+			if uint(i) < sf.Arity {
+				buf.WriteString(args[i])
+			}
+		}
+		return buf.String()
+	}
+}
+
 
 func CheckString(s node.StringLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(s.Node)
@@ -25,10 +43,10 @@ func CheckString(s node.StringLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
 }
 
 func CheckText(text node.Text, ctx ExprContext) (SemiExpr, *ExprError) {
-	var info = ExprInfo { ErrorPoint: ctx.GetErrorPoint(text.Node) }
+	var info = ctx.GetExprInfo(text.Node)
 	var template = text.Template
 	var segments = make([]string, 0)
-	var arity = 0
+	var arity uint = 0
 	var buf strings.Builder
 	for _, char := range template {
 		if char == TextPlaceholder {
@@ -44,18 +62,8 @@ func CheckText(text node.Text, ctx ExprContext) (SemiExpr, *ExprError) {
 	if last != "" {
 		segments = append(segments, last)
 	}
-	var format = func(args []string) string {
-		var buf strings.Builder
-		for i, seg := range segments {
-			buf.WriteString(seg)
-			if i < arity {
-				buf.WriteString(args[i])
-			}
-		}
-		return buf.String()
-	}
 	var elements = make([]Type, arity)
-	for i := 0; i < arity; i += 1 {
+	for i := uint(0); i < arity; i += 1 {
 		elements[i] = NamedType { Name: __String, Args: make([]Type, 0) }
 	}
 	var t Type = AnonymousType { Func {
@@ -64,7 +72,10 @@ func CheckText(text node.Text, ctx ExprContext) (SemiExpr, *ExprError) {
 	} }
 	return LiftTyped(Expr {
 		Type:  t,
-		Value: NativeFunction { format },
+		Value: StringFormatter {
+			Segments: segments,
+			Arity:    arity,
+		},
 		Info:  info,
 	}), nil
 }

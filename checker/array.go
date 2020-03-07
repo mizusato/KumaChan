@@ -15,7 +15,7 @@ type Array struct {
 
 
 func CheckArray(array node.Array, ctx ExprContext) (SemiExpr, *ExprError) {
-	var info = ExprInfo { ErrorPoint: ctx.GetErrorPoint(array.Node) }
+	var info = ctx.GetExprInfo(array.Node)
 	var L = len(array.Items)
 	if L == 0 {
 		return SemiExpr {

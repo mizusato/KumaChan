@@ -21,7 +21,7 @@ type Binding struct {
 
 
 func CheckBlock(block node.Block, ctx ExprContext) (SemiExpr, *ExprError) {
-	var info = ExprInfo { ErrorPoint: ctx.GetErrorPoint(block.Node) }
+	var info = ctx.GetExprInfo(block.Node)
 	var type_ctx = ctx.GetTypeContext()
 	var current_ctx = ctx
 	var bindings = make([]Binding, len(block.Bindings))
@@ -86,13 +86,25 @@ func CheckBlock(block node.Block, ctx ExprContext) (SemiExpr, *ExprError) {
 	}
 	var ret, err = Check(block.Return, current_ctx)
 	if err != nil { return SemiExpr{}, err }
-	return SemiExpr {
-		Info:  info,
-		Value: SemiTypedBlock {
-			Bindings: bindings,
-			Returned: ret,
-		},
-	}, nil
+	var ret_typed, is_typed = ret.Value.(TypedExpr)
+	if is_typed {
+		return LiftTyped(Expr {
+			Type:  ret_typed.Type,
+			Value: Block {
+				Bindings: bindings,
+				Returned: Expr(ret_typed),
+			},
+			Info:  info,
+		}), nil
+	} else {
+		return SemiExpr {
+			Value: SemiTypedBlock {
+				Bindings: bindings,
+				Returned: ret,
+			},
+			Info: info,
+		}, nil
+	}
 }
 
 

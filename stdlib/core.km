@@ -32,6 +32,7 @@ type Uint8   (Byte);
 type Char    (Dword);
 type Float64  native;
 type Float    protected (Float64);
+type Uint     protected (Int);
 
 // Basic Sum Types
 type Bool union {

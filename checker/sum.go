@@ -41,7 +41,7 @@ type Branch struct {
 
 
 func CheckMatch(match node.Match, ctx ExprContext) (SemiExpr, *ExprError) {
-	var info = ExprInfo { ErrorPoint: ctx.GetErrorPoint(match.Node) }
+	var info = ctx.GetExprInfo(match.Node)
 	var arg_semi, err = Check(match.Argument, ctx)
 	if err != nil { return SemiExpr{}, err }
 	var arg_typed, ok = arg_semi.Value.(TypedExpr)
@@ -50,14 +50,14 @@ func CheckMatch(match node.Match, ctx ExprContext) (SemiExpr, *ExprError) {
 		Concrete: E_ExplicitTypeRequired {},
 	} }
 	var arg_type = arg_typed.Type
-	var union, union_args, is_union = UnboxUnion(arg_type, ctx)
+	var union, union_args, is_union = ExtractUnion(arg_type, ctx)
 	if !is_union { return SemiExpr{}, &ExprError {
 		Point:    arg_typed.Info.ErrorPoint,
 		Concrete: E_InvalidMatchArgType {
 			ArgType: ctx.DescribeType(arg_typed.Type),
 		},
 	} }
-	var checked = make(map[loader.Symbol]bool)
+	var checked = make(map[loader.Symbol] bool)
 	var has_default = false
 	var branches = make([]SemiTypedBranch, len(match.Branches))
 	for i, branch := range match.Branches {
@@ -173,7 +173,7 @@ func CheckMatch(match node.Match, ctx ExprContext) (SemiExpr, *ExprError) {
 }
 
 func CheckIf(if_node node.If, ctx ExprContext) (SemiExpr, *ExprError) {
-	var info = ExprInfo { ErrorPoint: ctx.GetErrorPoint(if_node.Node) }
+	var info = ctx.GetExprInfo(if_node.Node)
 	var cond_semi, err = Check(if_node.Condition, ctx)
 	if err != nil { return SemiExpr{}, err }
 	var cond_typed, ok = cond_semi.Value.(TypedExpr)
@@ -223,6 +223,8 @@ func CheckIf(if_node node.If, ctx ExprContext) (SemiExpr, *ExprError) {
 
 
 func AssignMatchTo(expected Type, match SemiTypedMatch, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
+	var _, err = RequireExplicitType(expected, info)
+	if err != nil { return Expr{}, err }
 	var branches = make([]Branch, len(match.Branches))
 	for i, branch_semi := range match.Branches {
 		var typed, err = AssignTo(expected, branch_semi.Value, ctx)
@@ -242,4 +244,52 @@ func AssignMatchTo(expected Type, match SemiTypedMatch, info ExprInfo, ctx ExprC
 		},
 		Info:  info,
 	}, nil
+}
+
+
+
+func ExtractUnion(t Type, ctx ExprContext) (Union, []Type, bool) {
+	switch T := t.(type) {
+	case NamedType:
+		var g = ctx.ModuleInfo.Types[T.Name]
+		switch gv := g.Value.(type) {
+		case Union:
+			return gv, T.Args, true
+		}
+	}
+	return Union{}, nil, false
+}
+
+func ExtractUnionTuple(t Type, ctx ExprContext) ([]Union, [][]Type, bool) {
+	switch T := t.(type) {
+	case NamedType:
+		var g = ctx.ModuleInfo.Types[T.Name]
+		switch gv := g.Value.(type) {
+		case Boxed:
+			var inner = FillTypeArgs(gv.InnerType, T.Args)
+			switch inner_type := inner.(type) {
+			case AnonymousType:
+				switch tuple := inner_type.Repr.(type) {
+				case Tuple:
+					var union_types = make([]Union, len(tuple.Elements))
+					var union_args = make([][]Type, len(tuple.Elements))
+					for i, el := range tuple.Elements {
+						switch el_t := el.(type) {
+						case NamedType:
+							var el_g = ctx.ModuleInfo.Types[el_t.Name]
+							switch el_gv := el_g.Value.(type) {
+							case Union:
+								union_types[i] = el_gv
+								union_args[i] = el_t.Args
+								continue
+							}
+						}
+						return nil, nil, false
+					}
+					return union_types, union_args, true
+				}
+			}
+		}
+	}
+	return nil, nil, false
 }

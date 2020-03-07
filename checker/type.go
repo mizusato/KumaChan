@@ -1,6 +1,7 @@
 package checker
 
 import (
+	"fmt"
 	"kumachan/loader"
 	"kumachan/transformer/node"
 	"strings"
@@ -19,8 +20,8 @@ func (impl Union) TypeVal() {}
 type Union struct {
 	SubTypes  [] loader.Symbol
 }
-func (impl Wrapped) TypeVal() {}
-type Wrapped struct {
+func (impl Boxed) TypeVal() {}
+type Boxed struct {
 	InnerType  Type
 	Protected  bool
 	Opaque     bool
@@ -75,16 +76,29 @@ func (u Union) GetSubtypeIndex(sym loader.Symbol) (uint, bool) {
 	return BadIndex, false
 }
 
-func DescribeType(type_ Type, ctx TypeContext) string {
+type TypeDescOptions struct {
+	UseContextParamNames  bool
+}
+
+func DescribeType(type_ Type, ctx TypeContext, opt TypeDescOptions) string {
 	switch t := type_.(type) {
 	case ParameterType:
-		return ctx.Params[t.Index]
+		if opt.UseContextParamNames {
+			return ctx.Params[t.Index]
+		} else {
+			if t.Index < 7 {
+				// T, U, V, W, X, Y, Z
+				return fmt.Sprintf("$%c", rune('T' + t.Index))
+			} else {
+				return fmt.Sprintf("$%d", t.Index)
+			}
+		}
 	case NamedType:
 		var buf strings.Builder
 		buf.WriteString(t.Name.String())
 		buf.WriteRune('[')
 		for i, arg := range t.Args {
-			buf.WriteString(DescribeType(arg, ctx))
+			buf.WriteString(DescribeType(arg, ctx, opt))
 			if i != len(t.Args)-1 {
 				buf.WriteString(", ")
 			}
@@ -99,7 +113,7 @@ func DescribeType(type_ Type, ctx TypeContext) string {
 			var buf strings.Builder
 			buf.WriteRune('(')
 			for i, el := range r.Elements {
-				buf.WriteString(DescribeType(el, ctx))
+				buf.WriteString(DescribeType(el, ctx, opt))
 				if i != len(r.Elements)-1 {
 					buf.WriteString(", ")
 				}
@@ -112,16 +126,16 @@ func DescribeType(type_ Type, ctx TypeContext) string {
 			for name, field := range r.Fields {
 				buf.WriteString(name)
 				buf.WriteString(": ")
-				buf.WriteString(DescribeType(field, ctx))
+				buf.WriteString(DescribeType(field, ctx, opt))
 			}
 			buf.WriteString(" }")
 			return buf.String()
 		case Func:
 			var buf strings.Builder
-			buf.WriteRune('λ')
-			buf.WriteString(DescribeType(r.Input, ctx))
-			buf.WriteString(" -> ")
-			buf.WriteString(DescribeType(r.Output, ctx))
+			buf.WriteRune('`')
+			buf.WriteString(DescribeType(r.Input, ctx, opt))
+			buf.WriteString(" => ")
+			buf.WriteString(DescribeType(r.Output, ctx, opt))
 			return buf.String()
 		default:
 			panic("impossible branch")

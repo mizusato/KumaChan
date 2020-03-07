@@ -77,11 +77,11 @@ func (impl NativeType) TypeValue() {}
 type NativeType struct {
     Node   `part:"native_type"`
 }
-func (impl WrappedType) TypeValue() {}
-type WrappedType struct {
-    Node                     `part:"wrapped_type"`
-    Protected  bool          `option:"protected_opt.@protected"`
-    Opaque     bool          `option:"protected_opt.@opaque"`
+func (impl BoxedType) TypeValue() {}
+type BoxedType struct {
+    Node                     `part:"boxed_type"`
+    Protected  bool          `option:"box_option.@protected"`
+    Opaque     bool          `option:"box_option.@opaque"`
     Repr       VariousRepr   `part:"repr"`
 }
 func (impl UnionType) TypeValue() {}

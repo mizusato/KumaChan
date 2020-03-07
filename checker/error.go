@@ -369,10 +369,7 @@ type E_TypeParamInExpr struct {
 }
 
 func (impl E_ExplicitTypeParamsRequired) ExprError() {}
-type E_ExplicitTypeParamsRequired struct {
-	FuncName   string
-	TypeArity  uint
-}
+type E_ExplicitTypeParamsRequired struct {}
 
 func (impl E_TypeUsedAsValue) ExprError() {}
 type E_TypeUsedAsValue struct {
@@ -388,6 +385,39 @@ type E_FunctionWrongTypeParamsQuantity struct {
 
 func (impl E_NoneOfFunctionsAssignable) ExprError() {}
 type E_NoneOfFunctionsAssignable struct {
-	To      string
-	Errors  []*ExprError
+	To          string
+	Candidates  [] string
+}
+
+func (impl E_NoneOfFunctionsCallable) ExprError() {}
+type E_NoneOfFunctionsCallable struct {
+	Candidates  [] string
+}
+
+func (impl E_ExprNotCallable) ExprError() {}
+type E_ExprNotCallable struct {}
+
+func (impl E_ExprTypeNotCallable) ExprError() {}
+type E_ExprTypeNotCallable struct {
+	Type  string
+}
+
+func (impl E_NoneOfTypesAssignable) ExprError() {}
+type E_NoneOfTypesAssignable struct {
+	Types  [] string
+}
+
+func (impl E_BoxNonBoxedType) ExprError() {}
+type E_BoxNonBoxedType struct {
+	Type  string
+}
+
+func (impl E_BoxProtectedType) ExprError() {}
+type E_BoxProtectedType struct {
+	Type  string
+}
+
+func (impl E_BoxOpaqueType) ExprError() {}
+type E_BoxOpaqueType struct {
+	Type  string
 }

@@ -5,16 +5,17 @@ type MaybeExpr interface { MaybeExpr() }
 func (impl Expr) MaybeExpr() {}
 func (impl Expr) ConstValue() {}
 type Expr struct {
-    Node                      `part:"expr"`
-    Call      Terms           `part:"terms"`
-    Pipeline  MaybePipeline   `part_opt:"pipeline"`
+    Node                     `part:"expr"`
+    Call     Call            `part:"call"`
+    Pipeline MaybePipeline   `part_opt:"pipeline"`
 }
 
-type MaybeTerms interface { MaybeTerms() }
-func (impl Terms) MaybeTerms() {}
-type Terms struct {
-    Node                    `part:"terms"`
-    Terms  [] VariousTerm   `list_more:"" item:"term"`
+type MaybeCall interface { MaybeCall() }
+func (impl Call) MaybeCall() {}
+type Call struct {
+    Node                 `part:"call"`
+    Func   VariousTerm   `part:"func.term"`
+    Arg    MaybeCall     `part_opt:"arg.call"`
 }
 
 type VariousTerm struct {
@@ -29,7 +30,7 @@ type Pipeline struct {
     Node                      `part:"pipeline"`
     Operator  PipeOperator    `part:"pipe_op"`
     Func      VariousTerm     `part:"pipe_func.term"`
-    Args      MaybeTerms      `part_opt:"pipe_args.terms"`
+    Arg       MaybeCall       `part_opt:"pipe_arg.call"`
     Next      MaybePipeline   `part_opt:"pipeline"`
 }
 

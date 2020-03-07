@@ -221,9 +221,7 @@ func CheckGet(get node.Get, ctx ExprContext) (SemiExpr, *ExprError) {
 						Product: Expr(base),
 						Index:   index,
 					},
-					Info: ExprInfo {
-						ErrorPoint: ctx.GetErrorPoint(member.Node),
-					},
+					Info:  ctx.GetExprInfo(member.Node),
 				}
 				base = expr
 			case BR_BundleButOpaque:
@@ -374,9 +372,9 @@ func DesugarOmittedFieldValue(field node.FieldValue) node.Expr {
 	default:
 		return node.Expr {
 			Node:  field.Node,
-			Call:  node.Terms {
+			Call:  node.Call {
 				Node:  field.Node,
-				Terms: []node.VariousTerm { {
+				Func: node.VariousTerm {
 					Node: field.Node,
 					Term: node.Ref {
 						Node:     field.Node,
@@ -388,7 +386,7 @@ func DesugarOmittedFieldValue(field node.FieldValue) node.Expr {
 						Id:       field.Key,
 						TypeArgs: make([]node.VariousType, 0),
 					},
-				} },
+				},
 			},
 		}
 	}

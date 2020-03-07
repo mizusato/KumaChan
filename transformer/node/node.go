@@ -54,7 +54,7 @@ var __NodeRegistry = []interface{} {
     DeclType {},
     VariousTypeValue {},
     NativeType {},
-    WrappedType {},
+	BoxedType {},
     UnionType {},
     // Type
     VariousType {},
@@ -67,7 +67,7 @@ var __NodeRegistry = []interface{} {
     ReprFunc {},
     // Expression
     Expr {},
-	Terms {},
+    Call {},
     VariousTerm {},
     Pipeline {},
     PipeOperator {},
