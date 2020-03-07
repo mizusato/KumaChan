@@ -6,7 +6,7 @@ type Byte   native;
 type Word   native;
 type Dword  native;
 type Qword  native;
-type Int    native;
+type Integer  native;
 
 // Container Types
 type Bytes     native;
@@ -32,7 +32,7 @@ type Uint8   (Byte);
 type Char    (Dword);
 type Float64  native;
 type Float    protected (Float64);
-type Uint     protected (Int);
+type Natural  protected (Integer);
 
 // Basic Sum Types
 type Bool union {

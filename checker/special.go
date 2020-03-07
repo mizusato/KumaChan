@@ -14,7 +14,8 @@ var __Yes uint = 0
 var __Float = CoreSymbol("Float")
 var __String = CoreSymbol("String")
 var __Array = CoreSymbol("Array")
-var __Int = CoreSymbol("Int")
+var __Integer = CoreSymbol("Integer")
+var __Natural = CoreSymbol("Natural")
 var __Int64 = CoreSymbol("Int64")
 var __Uint64 = CoreSymbol("Uint64")
 var __Qword = CoreSymbol("Qword")
@@ -30,7 +31,7 @@ var __Uint8 = CoreSymbol("Uint8")
 var __Byte = CoreSymbol("Byte")
 var __Bit = CoreSymbol("Bit")
 var __IntegerTypes = []loader.Symbol {
-	__Int,
+	__Integer, __Natural,
 	__Int64, __Uint64, __Qword,
 	__Int32, __Uint32, __Dword, __Char,
 	__Int16, __Uint16, __Word,

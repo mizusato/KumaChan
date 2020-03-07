@@ -116,7 +116,8 @@ func AssignIntegerTo(expected Type, integer UntypedInteger, info ExprInfo, ctx E
 
 func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 	switch expected_kind {
-	case "Int":
+	case "Integer",
+	     "Natural":
 		return IntLiteral { value }, true
 	case "Int64":
 		if value.IsInt64() {
