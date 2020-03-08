@@ -78,6 +78,10 @@ func CheckSingleCall(f SemiExpr, arg SemiExpr, info ExprInfo, ctx ExprContext) (
 	}
 }
 
+func CheckInfix(infix node.Infix, ctx ExprContext) (SemiExpr, *ExprError) {
+	return CheckCall(DesugarInfix(infix), ctx)
+}
+
 
 func AssignCallTo(expected Type, call UndecidedCall, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
 	var _, err = RequireExplicitType(expected, info)
@@ -154,4 +158,41 @@ func DesugarPipeline(left node.Call, p node.MaybePipeline) node.Call {
 		},
 	}
 	return DesugarPipeline(current, pipeline.Next)
+}
+
+func DesugarInfix(infix node.Infix) node.Call {
+	return node.Call {
+		Node: infix.Node,
+		Func: infix.Operator,
+		Arg:  node.Call {
+			Node: infix.Node,
+			Func: node.VariousTerm {
+				Node: infix.Node,
+				Term: node.Tuple {
+					Node:     infix.Node,
+					Elements: []node.Expr {
+						node.Expr {
+							Node:     infix.Operand1.Node,
+							Call:     node.Call {
+								Node: infix.Operand1.Node,
+								Func: infix.Operand1,
+								Arg:  nil,
+							},
+							Pipeline: nil,
+						},
+						node.Expr {
+							Node:     infix.Operand2.Node,
+							Call:     node.Call {
+								Node: infix.Operand2.Node,
+								Func: infix.Operand2,
+								Arg:  nil,
+							},
+							Pipeline: nil,
+						},
+					},
+				},
+			},
+			Arg:  nil,
+		},
+	}
 }

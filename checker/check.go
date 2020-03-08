@@ -205,7 +205,8 @@ func CheckTerm(term node.VariousTerm, ctx ExprContext) (SemiExpr, *ExprError) {
 		}
 	case node.Ref:
 		return CheckRef(t, ctx)
-	// TODO: infix
+	case node.Infix:
+		return CheckInfix(t, ctx)
 	default:
 		panic("impossible branch")
 	}
