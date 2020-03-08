@@ -24,7 +24,7 @@ func RunCommand (cmd Command, m *Machine) {
 			var val = CallFunction(f, nil, m)
 			m.GlobalValues = append(m.GlobalValues, val)
 		case CMD_ActivateEffect:
-			var e = EffectFrom(CallFunction(f, nil, m))
+			var e = (CallFunction(f, nil, m)).(rx.Effect)
 			var sched = rx.TrivialScheduler { EventLoop: m.EventLoop }
 			var ctx = rx.Background()
 			rx.RunEffect(e, sched, ctx, nil, nil)

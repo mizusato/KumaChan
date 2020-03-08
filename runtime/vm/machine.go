@@ -17,7 +17,7 @@ type Machine struct {
 	MaxNumOfCall  uint
 }
 
-func SpawnMachine(p Program, max_call uint) *Machine {
+func CreateMachine(p Program, max_call uint) *Machine {
 	var m = &Machine {
 		Program:      p,
 		GlobalValues: nil,

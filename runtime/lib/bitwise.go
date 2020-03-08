@@ -1,93 +1,119 @@
 package lib
 
-import . "kumachan/runtime/common"
 
-var BitwiseFunctions = map[string] NativeFunction {
-	"&bit": func(arg Value, _ MachineHandle) Value {
-		var a, b = FromTuple2(arg)
-		return BitValue(BitFrom(a) && BitFrom(b))
+func ByteFrom(i interface{}) uint8 {
+	switch x := i.(type) {
+	case uint8:
+		return x
+	case int8:
+		return uint8(x)
+	default:
+		panic("invalid Byte")
+	}
+}
+
+func WordFrom(i interface{}) uint16 {
+	switch x := i.(type) {
+	case uint16:
+		return x
+	case int16:
+		return uint16(x)
+	default:
+		panic("invalid Word")
+	}
+}
+
+func DwordFrom(i interface{}) uint32 {
+	switch x := i.(type) {
+	case uint32:
+		return x
+	case int32:
+		return uint32(x)
+	default:
+		panic("invalid Dword")
+	}
+}
+
+func QwordFrom(i interface{}) uint64 {
+	switch x := i.(type) {
+	case uint64:
+		return x
+	case int64:
+		return uint64(x)
+	default:
+		panic("invalid Qword")
+	}
+}
+
+
+var BitwiseFunctions = map[string] interface{} {
+	"&bit": func(a bool, b bool) bool {
+		return a && b
 	},
-	"|bit": func(arg Value, _ MachineHandle) Value {
-		var a, b = FromTuple2(arg)
-		return BitValue(BitFrom(a) || BitFrom(b))
+	"|bit": func(a bool, b bool) bool {
+		return a || b
 	},
-	"^bit": func(arg Value, _ MachineHandle) Value {
-		return BitValue(!(BitFrom(arg)))
+	"^bit": func(a bool) bool {
+		return !a
 	},
-	"&byte": func(arg Value, _ MachineHandle) Value {
-		var a, b = FromTuple2(arg)
-		return Uint8Value(Uint8From(a) & Uint8From(b))
+	"&byte": func(a interface{}, b interface{}) uint8 {
+		return ByteFrom(a) & ByteFrom(b)
 	},
-	"|byte": func(arg Value, _ MachineHandle) Value {
-		var a, b = FromTuple2(arg)
-		return Uint8Value(Uint8From(a) | Uint8From(b))
+	"|byte": func(a interface{}, b interface{}) uint8 {
+		return ByteFrom(a) | ByteFrom(b)
 	},
-	"^byte": func(arg Value, _ MachineHandle) Value {
-		return Uint8Value(^(Uint8From(arg)))
+	"^byte": func(a interface{}) uint8 {
+		return ^(ByteFrom(a))
 	},
-	"<<byte": func(arg Value, _ MachineHandle) Value {
-		var a, b = FromTuple2(arg)
-		return Uint8Value(Uint8From(a) << Uint8From(b))
+	"<<byte": func(a interface{}, b interface{}) uint8 {
+		return ByteFrom(a) << ByteFrom(b)
 	},
-	">>byte": func(arg Value, _ MachineHandle) Value {
-		var a, b = FromTuple2(arg)
-		return Uint8Value(Uint8From(a) >> Uint8From(b))
+	">>byte": func(a interface{}, b interface{}) uint8 {
+		return ByteFrom(a) >> ByteFrom(b)
 	},
-	"&word": func(arg Value, _ MachineHandle) Value {
-		var a, b = FromTuple2(arg)
-		return Uint16Value(Uint16From(a) & Uint16From(b))
+	"&word": func(a interface{}, b interface{}) uint16 {
+		return WordFrom(a) & WordFrom(b)
 	},
-	"|word": func(arg Value, _ MachineHandle) Value {
-		var a, b = FromTuple2(arg)
-		return Uint16Value(Uint16From(a) | Uint16From(b))
+	"|word": func(a interface{}, b interface{}) uint16 {
+		return WordFrom(a) | WordFrom(b)
 	},
-	"^word": func(arg Value, _ MachineHandle) Value {
-		return Uint16Value(^(Uint16From(arg)))
+	"^word": func(a interface{}) uint16 {
+		return ^(WordFrom(a))
 	},
-	"<<word": func(arg Value, _ MachineHandle) Value {
-		var a, b = FromTuple2(arg)
-		return Uint16Value(Uint16From(a) << Uint8From(b))
+	"<<word": func(a interface{}, b interface{}) uint16 {
+		return WordFrom(a) << ByteFrom(b)
 	},
-	">>word": func(arg Value, _ MachineHandle) Value {
-		var a, b = FromTuple2(arg)
-		return Uint16Value(Uint16From(a) >> Uint8From(b))
+	">>word": func(a interface{}, b interface{}) uint16 {
+		return WordFrom(a) >> ByteFrom(b)
 	},
-	"&dword": func(arg Value, _ MachineHandle) Value {
-		var a, b = FromTuple2(arg)
-		return Uint32Value(Uint32From(a) & Uint32From(b))
+	"&dword": func(a interface{}, b interface{}) uint32 {
+		return DwordFrom(a) & DwordFrom(b)
 	},
-	"|dword": func(arg Value, _ MachineHandle) Value {
-		var a, b = FromTuple2(arg)
-		return Uint32Value(Uint32From(a) | Uint32From(b))
+	"|dword": func(a interface{}, b interface{}) uint32 {
+		return DwordFrom(a) | DwordFrom(b)
 	},
-	"^dword": func(arg Value, _ MachineHandle) Value {
-		return Uint32Value(^(Uint32From(arg)))
+	"^dword": func(a interface{}) uint32 {
+		return ^(DwordFrom(a))
 	},
-	"<<dword": func(arg Value, _ MachineHandle) Value {
-		var a, b = FromTuple2(arg)
-		return Uint32Value(Uint32From(a) << Uint8From(b))
+	"<<dword": func(a interface{}, b interface{}) uint32 {
+		return DwordFrom(a) << ByteFrom(b)
 	},
-	">>dword": func(arg Value, _ MachineHandle) Value {
-		var a, b = FromTuple2(arg)
-		return Uint32Value(Uint32From(a) >> Uint8From(b))
+	">>dword": func(a interface{}, b interface{}) uint32 {
+		return DwordFrom(a) >> ByteFrom(b)
 	},
-	"&qword": func(arg Value, _ MachineHandle) Value {
-		var a, b = FromTuple2(arg)
-		return Uint64Value(Uint64From(a) & Uint64From(b))
+	"&qword": func(a interface{}, b interface{}) uint64 {
+		return QwordFrom(a) & QwordFrom(b)
 	},
-	"|qword": func(arg Value, _ MachineHandle) Value {
-		var a, b = FromTuple2(arg)
-		return Uint64Value(Uint64From(a) | Uint64From(b))
+	"|qword": func(a interface{}, b interface{}) uint64 {
+		return QwordFrom(a) | QwordFrom(b)
 	},
-	"^qword": func(arg Value, _ MachineHandle) Value {
-		return Uint64Value(^(Uint64From(arg)))
+	"^qword": func(a interface{}) uint64 {
+		return ^(QwordFrom(a))
 	},
-	"<<qword": func(arg Value, _ MachineHandle) Value {
-		var a, b = FromTuple2(arg)
-		return Uint64Value(Uint64From(a) << Uint8From(b))
+	"<<qword": func(a interface{}, b interface{}) uint64 {
+		return QwordFrom(a) << ByteFrom(b)
 	},
-	">>qword": func(arg Value, _ MachineHandle) Value {
-		var a, b = FromTuple2(arg)
-		return Uint64Value(Uint64From(a) >> Uint8From(b))
+	">>qword": func(a interface{}, b interface{}) uint64 {
+		return QwordFrom(a) >> ByteFrom(b)
 	},
 }

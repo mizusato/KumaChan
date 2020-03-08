@@ -2,7 +2,8 @@ package lib
 
 import . "kumachan/runtime/common"
 
-var NativeFunctionMaps = [] map[string]NativeFunction {
+
+var NativeFunctionMaps = [] map[string]interface{} {
 	ArithmeticFunctions,
 	BitwiseFunctions,
 }
@@ -10,11 +11,11 @@ var NativeFunctionMaps = [] map[string]NativeFunction {
 var NativeFunctionMap    map[string] NativeFunction
 var NativeFunctionIndex  map[string] int
 var NativeFunctions      [] NativeFunction
-var __ = func() interface{} {
+var _ = func() interface{} {
 	NativeFunctionMap = make(map[string] NativeFunction)
 	for _, category := range NativeFunctionMaps {
 		for name, f := range category {
-			NativeFunctionMap[name] = f
+			NativeFunctionMap[name] = AdaptNativeFunction(f)
 		}
 	}
 	NativeFunctionIndex = make(map[string]int, len(NativeFunctionMap))
@@ -27,4 +28,3 @@ var __ = func() interface{} {
 	}
 	return nil
 } ()
-
