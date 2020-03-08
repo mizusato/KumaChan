@@ -7,6 +7,7 @@ import (
 import "strings"
 import "kumachan/parser/syntax"
 
+
 const SiblingOffset = 2
 const Bold = "\033[1m"
 const Red = "\033[31m"
@@ -102,6 +103,7 @@ func (err *Error) DetailedMessage(tree *Tree) string {
     return buf.String()
 }
 
+
 func GetSiblingRange (tree *Tree, token_index int) (int, int) {
     var token = &tree.Tokens[token_index]
     var point = tree.Info[token.Span.Start]
@@ -134,6 +136,7 @@ func GetSiblingRange (tree *Tree, token_index int) (int, int) {
     }
     return L, R
 }
+
 
 func InternalError (msg string) {
     panic(fmt.Sprintf("Internal Parser Error: %v", msg))

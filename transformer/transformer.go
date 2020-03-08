@@ -3,7 +3,6 @@ package transformer
 import (
     "fmt"
     "reflect"
-    "runtime"
 )
 import "strings"
 import "kumachan/parser"
@@ -15,6 +14,7 @@ type Tree = *parser.Tree
 type Pointer = int
 type Context = map[string]interface{}
 type Transformer = func(Tree, Pointer) reflect.Value
+
 
 func Transform (tree Tree) Module {
     var next_id uint64 = 0
@@ -34,7 +34,7 @@ func Transform (tree Tree) Module {
             var child_ptr = parser_node.Children[i]
             var child = &tree.Nodes[child_ptr]
             if child.Part.Id == path[0] {
-                if child.Part.Partype == syntax.Recursive && child.Length == 0 {
+                if child.Part.PartType == syntax.Recursive && child.Length == 0 {
                     return -1, false
                 } else {
                     return dive(tree, child_ptr, path[1:])
@@ -130,7 +130,7 @@ func Transform (tree Tree) Module {
                 &child_info,
                 func (tree Tree, dived_ptr Pointer) reflect.Value {
                     var dived_node = &tree.Nodes[dived_ptr]
-                    if dived_node.Part.Partype == syntax.MatchToken {
+                    if dived_node.Part.PartType == syntax.MatchToken {
                         var content = GetTokenContent(tree, dived_ptr)
                         var L = len(content)
                         if L >= 2 {
@@ -184,36 +184,6 @@ func Transform (tree Tree) Module {
     return transform(tree, 0).Interface().(Module)
 }
 
-func Children (tree Tree, ptr Pointer) map[string]int {
-    var node = &tree.Nodes[ptr]
-    var hash = make(map[string]int)
-    for i := node.Length-1; i >= 0; i -= 1 {
-        // reversed loop: smaller index will override bigger index
-        var child_ptr = node.Children[i]
-        var name = syntax.Id2Name[tree.Nodes[child_ptr].Part.Id]
-        hash[name] = child_ptr
-    }
-    return hash
-}
-
-func HasChild (name string, tree Tree, ptr Pointer) bool {
-    var id = syntax.Name2Id[name]
-    var node = &tree.Nodes[ptr]
-    for i := 0; i < node.Length; i += 1 {
-        var child_ptr = node.Children[i]
-        if tree.Nodes[child_ptr].Part.Id == id {
-            return true
-        }
-    }
-    return false
-}
-
-func FirstLastChild (tree Tree, ptr Pointer) (Pointer, Pointer) {
-    var node = &tree.Nodes[ptr]
-    var first = node.Children[0]
-    var last = node.Children[node.Length-1]
-    return first, last
-}
 
 func FlatSubTree (
     tree     Tree,       ptr   Pointer,
@@ -246,74 +216,10 @@ func FlatSubTree (
     }
     return sequence
 }
-/*
-func FlatSubTree (tree Tree, ptr Pointer, extract string, next string) []int {
-    var sequence = make([]int, 0)
-    for NotEmpty(tree, ptr) {
-        var children = Children(tree, ptr)
-        var extract_ptr, exists = children[extract]
-        if !exists { panic("cannot extract part " + next) }
-        sequence = append(sequence, extract_ptr)
-        ptr, exists = children[next]
-        if !exists { panic("next part " + next + " not found") }
-    }
-    return sequence
-}
-*/
-func GetChildPointer (tree Tree, parent Pointer) Pointer {
-    var pc, _, _, _ = runtime.Caller(1)
-    var raw_name = runtime.FuncForPC(pc).Name()
-    var t = strings.Split(raw_name, ".")
-    var name = strings.TrimRight(t[len(t)-1], "_")
-    var id = syntax.Name2Id[name]
-    var p = &tree.Nodes[parent]
-    if p.Part.Id == id {
-        return parent
-    } else {
-        for i := 0; i < p.Length; i += 1 {
-            var child_ptr = p.Children[i]
-            var child = &tree.Nodes[child_ptr]
-            if child.Part.Id == id {
-                return child_ptr
-            }
-        }
-        return -1
-    }
-}
-
-func GetNode (tree Tree, ptr Pointer, info interface{}) Node {
-    return Node {
-        Point: tree.Info[tree.Nodes[ptr].Pos],
-        Span: tree.Nodes[ptr].Span,
-    }
-}
-
-func GetFileName (tree Tree) string {
-    return tree.Name
-}
 
 func GetTokenContent (tree Tree, ptr int) []rune {
     var node = &tree.Nodes[ptr]
     return tree.Tokens[node.Pos + node.Amount - 1].Content
-}
-
-func EscapeRawString (raw []rune) string {
-    // example: ['a', '"', 'b', 'c', '\', 'n'] -> `"a\"bc\\n"`
-    var buf strings.Builder
-    buf.WriteRune('"')
-    for _, char := range raw {
-        if char == '\\' {
-            buf.WriteString(`\\`)
-        } else if char == '"' {
-            buf.WriteString(`\"`)
-        } else if char == '\n' {
-            buf.WriteString(`\n`)
-        } else {
-            buf.WriteRune(char)
-        }
-    }
-    buf.WriteRune('"')
-    return buf.String()
 }
 
 func NotEmpty (tree Tree, ptr Pointer) bool {
@@ -420,7 +326,6 @@ func PrintNodeRecursively (
     }
 }
 
-
 func PrintNode (node reflect.Value) {
     var buf strings.Builder
     var is_last = make([]bool, 0, 1000)
@@ -429,7 +334,25 @@ func PrintNode (node reflect.Value) {
     fmt.Println(buf.String())
 }
 
-func ReduceExpression (operators []syntax.Operator) [][3]int {
+
+/**
+ *  The following operator processing techniques are deprecated,
+ *    since prefix expressions dominate the new syntax.
+ */
+
+type Operator struct {
+    Match      string
+    Priority   int
+    Assoc      LeftRight
+    Lazy       bool
+}
+type LeftRight int
+const (
+    Left  LeftRight = iota
+    Right
+)
+
+func ReduceExpression(operators []Operator) [][3]int {
     /**
      *  Reduce Expression using the Shunting Yard Algorithm
      *
@@ -440,7 +363,7 @@ func ReduceExpression (operators []syntax.Operator) [][3]int {
      *  temp = index stack of operators
      *  reduced = [[operand1, operand2, operator], ...]
      */
-    var pusher = syntax.Operator { Priority: -1, Assoc: syntax.Left }
+    var pusher = Operator { Priority: -1, Assoc: Left }
     var N = len(operators)
     var input = make([]int, 0, 2*N+1+1)
     var output = make([]int, 0, N+1)
@@ -470,7 +393,7 @@ func ReduceExpression (operators []syntax.Operator) [][3]int {
             // read the operator stack
             for len(temp) > 0 {
                 // there is an operator on the operator stack
-                var this *syntax.Operator
+                var this *Operator
                 if operator_index >= 0 {
                     // index is non-negative => normal operator
                     this = &operators[operator_index]
@@ -483,7 +406,7 @@ func ReduceExpression (operators []syntax.Operator) [][3]int {
                 var dumped = operators[dumped_op_index]
                 // determine if we should reduce output by the dumped operator
                 var should_reduce bool
-                if (this.Assoc == syntax.Left) {
+                if (this.Assoc == Left) {
                     should_reduce = dumped.Priority >= this.Priority
                 } else {
                     should_reduce = dumped.Priority > this.Priority

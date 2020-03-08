@@ -4,17 +4,20 @@ import "regexp"
 type Regexp = *regexp.Regexp
 func r (pattern string) Regexp { return regexp.MustCompile(`^` + pattern) }
 
-const LF = `\n`
-const Blanks = ` \t\r　`
-const Symbols = `\{\}\[\]\(\)\.\,\:\;\$#@~\&\|\\'"` + "`"
 
-var EscapeMap = map [string] string {
+const IdentifierPartName = "Name"
+var IgnoreTokens = [] string { "Comment", "Blank", "LF" }
+var EscapeMap = map[string] string {
     "_bang1":  "!",
     "_bang2":  "!!",
     "_bar1":   "|",
     "_bar2":   "||",
     "_at":     "@",
 }
+
+const LF = `\n`
+const Blanks = ` \t\r　`
+const Symbols = `\{\}\[\]\(\)\.\,\:\;\$#@~\&\|\\'"` + "`"
 
 var Tokens = [...] Token {
     Token { Name: "String",  Pattern: r(`'[^']*'`) },
@@ -57,11 +60,7 @@ var Tokens = [...] Token {
     Token { Name: "|",       Pattern: r(`\|`) },
     Token { Name: `\`,       Pattern: r(`\\`) },
     Token { Name: "Name",    Pattern: r(`[^`+Symbols+Blanks+LF+`]+`) },
-    //    { Name: "NoLF",    [ Inserted by Scanner ] },
-    //    { Name: "Void",    [ Inserted by Scanner ] },
 }
-
-var ExtraTokens = [...] string { "NoLF", "Void" }
 
 var ConditionalKeywords = [...] string {
     "@module", "@import", "@from",
@@ -70,8 +69,6 @@ var ConditionalKeywords = [...] string {
     "@switch", "@case", "@default", "@if", "@else",
     "@let", "@rec", "@return",
 }
-
-var Operators = [...] Operator {}
 
 var SyntaxDefinition = [...] string {
     "module = shebang module_name! commands",

@@ -6,10 +6,9 @@ import "unicode/utf8"
 import "kumachan/parser/syntax"
 
 
-func Strlen (s string) int {
+func GetUtf8Length(s string) int {
     return utf8.RuneCountInString(s)
 }
-
 
 func GetANSIColor (n int) int {
     return 31 + n % 6
@@ -23,7 +22,7 @@ func Repeat (n int, f func(int)) {
 
 func Fill (buf *strings.Builder, n int, s string, blank string) {
     buf.WriteString(s)
-    Repeat(n-Strlen(s), func (_ int) {
+    Repeat(n-GetUtf8Length(s), func (_ int) {
         buf.WriteString(blank)
     })
 }
@@ -61,13 +60,11 @@ func PrintTreeNode (ptr int, node *TreeNode) {
     fmt.Print(buf.String())
 }
 
-
 func PrintBareTree (tree []TreeNode) {
     for i := 0; i < len(tree); i++ {
         PrintTreeNode(i, &tree[i])
     }
 }
-
 
 func PrintTreeRecursively (
     buf *strings.Builder,
@@ -101,7 +98,7 @@ func PrintTreeRecursively (
     fmt.Fprintf(buf, "\033[0m")
     fmt.Fprintf(buf, "\033[%vm", GetANSIColor(depth))
     buf.WriteRune(' ')
-    switch node.Part.Partype {
+    switch node.Part.PartType {
     case syntax.MatchToken:
         var token = tree.Tokens[node.Pos + node.Amount - 1]
         fmt.Fprintf(buf, "'%v'", string(token.Content))
@@ -127,7 +124,6 @@ func PrintTreeRecursively (
         }
     }
 }
-
 
 func PrintTree (tree *Tree) {
     var buf strings.Builder
