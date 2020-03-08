@@ -1,18 +1,24 @@
 package transformer
 
-import (
-    "fmt"
-    "reflect"
-)
+import "fmt"
+import "reflect"
 import "strings"
 import "kumachan/parser"
 import "kumachan/parser/syntax"
-import ."kumachan/transformer/node"
+import . "kumachan/transformer/node"
 
+/**
+ *  AST Transformer
+ *
+ *  This package is responsible for transforming the AST output
+ *    of the `parser` package into typed and well-structured form
+ *    according to the declarative configurations defined in
+ *    the `node` subpackage.
+ */
 
 type Tree = *parser.Tree
 type Pointer = int
-type Context = map[string]interface{}
+type Context = map[string] interface{}
 type Transformer = func(Tree, Pointer) reflect.Value
 
 
