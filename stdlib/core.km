@@ -21,29 +21,29 @@ type Map[K,V]  native;
 type Effect[T,E]  native;
 
 // Basic Derived Types
-type Int64   (Qword);
-type Uint64  (Qword);
-type Int32   (Dword);
-type Uint32  (Dword);
-type Int16   (Word);
-type Uint16  (Word);
-type Int8    (Byte);
-type Uint8   (Byte);
-type Char    (Dword);
+type Int64   Qword;
+type Uint64  Qword;
+type Int32   Dword;
+type Uint32  Dword;
+type Int16   Word;
+type Uint16  Word;
+type Int8    Byte;
+type Uint8   Byte;
+type Char    Dword;
 type Float64  native;
-type Float    protected (Float64);
-type Natural  protected (Integer);
+type Float    protected Float64;
+type Natural  protected Integer;
 
 // Basic Sum Types
 type Bool union {
-    type Yes ();
-    type No  ();
+    type Yes;
+    type No;
 };
 type Maybe[T] union {
-    type Just (T);
-    type N/A  ();
+    type Just T;
+    type N/A;
 };
 type Result[T,E] union {
-    type OK (T);
-    type NG (E);
+    type OK T;
+    type NG E;
 };

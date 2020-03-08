@@ -219,17 +219,28 @@ func TypeValFrom (tv node.TypeValue, ctx TypeContext) (TypeVal, *TypeError) {
 		for i, item := range v.Items {
 			subtypes[i] = ctx.Module.SymbolFromName(item.Name)
 		}
-		return Union{
+		return Union {
 			SubTypes: subtypes,
 		}, nil
 	case node.BoxedType:
-		var expr, err = TypeFromRepr(v.Repr.Repr, ctx)
-		if err != nil { return nil, err }
-		return Boxed {
-			InnerType: expr,
-			Protected: v.Protected,
-			Opaque:    v.Opaque,
-		}, nil
+		var inner, specified = v.Inner.(node.VariousType)
+		if specified {
+			var inner_type, err = TypeFrom(inner.Type, ctx)
+			if err != nil {
+				return nil, err
+			}
+			return Boxed {
+				InnerType: inner_type,
+				Protected: v.Protected,
+				Opaque:    v.Opaque,
+			}, nil
+		} else {
+			return Boxed {
+				InnerType: AnonymousType { Unit{} },
+				Protected: v.Protected,
+				Opaque:    v.Opaque,
+			}, nil
+		}
 	case node.NativeType:
 		return Native{}, nil
 	default:

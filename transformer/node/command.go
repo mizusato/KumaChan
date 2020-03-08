@@ -82,7 +82,7 @@ type BoxedType struct {
     Node                     `part:"boxed_type"`
     Protected  bool          `option:"box_option.@protected"`
     Opaque     bool          `option:"box_option.@opaque"`
-    Repr       VariousRepr   `part:"repr"`
+    Inner      MaybeType     `part_opt:"inner_type.type"`
 }
 func (impl UnionType) TypeValue() {}
 type UnionType struct {
