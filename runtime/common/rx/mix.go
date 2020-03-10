@@ -1,7 +1,7 @@
 package rx
 
 
-func Concat(effects []Effect, concurrent uint) Effect {
+func Mix(effects []Effect, concurrent uint) Effect {
 	if concurrent == 0 { panic("invalid concurrent amount") }
 	return Effect { func(sched Scheduler, ob *observer) {
 		var ctx, dispose = ob.context.CreateChild()
@@ -26,7 +26,7 @@ func Concat(effects []Effect, concurrent uint) Effect {
 	} }
 }
 
-func (e Effect) ConcatMap(f func(Object)Effect, concurrent uint) Effect {
+func (e Effect) MixMap(f func(Object)Effect, concurrent uint) Effect {
 	if concurrent == 0 { panic("invalid concurrent amount") }
 	return Effect { func(sched Scheduler, ob *observer) {
 		var ctx, dispose = ob.context.CreateChild()
@@ -61,6 +61,15 @@ func (e Effect) ConcatMap(f func(Object)Effect, concurrent uint) Effect {
 }
 
 
+func Concat(effects []Effect) Effect {
+	return Mix(effects, 1)
+}
+
+func (e Effect) ConcatMap(f func(Object)Effect) Effect {
+	return e.MixMap(f, 1)
+}
+
+
 type QueueScheduler struct {
 	underlying   Scheduler
 	queue        *queue
@@ -70,7 +79,7 @@ type QueueScheduler struct {
 
 func QueueSchedulerFrom(sched Scheduler, concurrent uint) *QueueScheduler {
 	if concurrent == 0 { panic("invalid concurrent amount") }
-	return &QueueScheduler{
+	return &QueueScheduler {
 		underlying:  sched,
 		queue:       new_queue(),
 		running:     0,
