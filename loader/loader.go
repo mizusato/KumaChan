@@ -2,19 +2,20 @@ package loader
 
 import (
 	"fmt"
-	"os"
 	"io/ioutil"
-	"path/filepath"
+	. "kumachan/error"
 	"kumachan/parser"
+	"kumachan/parser/ast"
 	"kumachan/transformer"
 	"kumachan/transformer/node"
-	. "kumachan/error"
+	"os"
+	"path/filepath"
 )
 
 
 type Module struct {
 	Node      node.Module
-	AST       *parser.Tree
+	AST       *ast.Tree
 	ImpMap    map[string] *Module
 	FileInfo  os.FileInfo
 }
@@ -201,7 +202,7 @@ func LoadStdLib() Index {
 			fmt.Fprintf (
 				os.Stderr,
 				"%v*** Failed to Load Standard Library%v\n*\n%s\n",
-				Bold, Reset, err.Error(),
+				"\033[1m", "\033[0m", err.Error(),
 			)
 			os.Exit(3)
 		}

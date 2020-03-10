@@ -5,6 +5,7 @@ import "fmt"
 import "kumachan/parser/syntax"
 
 
+const ZERO_COLUMN = 0
 type Code = []rune
 
 type Span struct {
@@ -32,7 +33,7 @@ type Point struct {
     Col  int
 }
 type RowColInfo = []Point
-func GetInfo (code Code) RowColInfo {
+func GetRowColInfo(code Code) RowColInfo {
     var info = make(RowColInfo, 0, 10000)
     var row = 1
     var col = 0
@@ -41,11 +42,35 @@ func GetInfo (code Code) RowColInfo {
             col += 1
         } else {
             row += 1
-            col = 0
+            col = ZERO_COLUMN
         }
         info = append(info, Point { Row: row, Col: col })
     }
     return info
+}
+type RowSpanMap = []Span
+func GetRowSpanMap(code Code) RowSpanMap {
+    var span_map = make([]Span, 0)
+    span_map = append(span_map, Span{})
+    var row = 1
+    var col = 0
+    for i, char := range code {
+        if char != '\n' {
+            col += 1
+        } else {
+            span_map = append(span_map, Span {
+                Start: (i - col),
+                End:   i,
+            })
+            row += 1
+            col = ZERO_COLUMN
+        }
+    }
+    span_map = append(span_map, Span {
+        Start: (len(code) - col),
+        End:   len(code),
+    })
+    return span_map
 }
 
 type RuneListReader struct {
@@ -62,7 +87,7 @@ func (r *RuneListReader) ReadRune() (rune, int, error) {
 }
 
 
-func MatchToken (code Code, pos int) (amount int, id syntax.Id) {
+func MatchToken(code Code, pos int) (amount int, id syntax.Id) {
     for _, token := range syntax.Tokens {
         var reader = RuneListReader { src: code, pos: pos }
         var loc = token.Pattern.FindReaderIndex(&reader)
@@ -75,13 +100,14 @@ func MatchToken (code Code, pos int) (amount int, id syntax.Id) {
     return 0, 0
 }
 
-func Scan (code Code) (Tokens, RowColInfo) {
+func Scan(code Code) (Tokens, RowColInfo, RowSpanMap) {
     var ignore = make(map[syntax.Id] bool)
     for _, ignore_name := range syntax.IgnoreTokens {
         ignore[syntax.Name2Id[ignore_name]] = true
     }
     var tokens = make(Tokens, 0, 10000)
-    var info = GetInfo(code)
+    var info = GetRowColInfo(code)
+    var span_map = GetRowSpanMap(code)
     var length = len(code)
     var pos = 0
     for pos < length {
@@ -100,5 +126,5 @@ func Scan (code Code) (Tokens, RowColInfo) {
     if (pos < length) {
         panic(fmt.Sprintf("invalid token at %+v", info[pos]))
     }
-    return tokens, info
+    return tokens, info, span_map
 }

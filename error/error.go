@@ -5,21 +5,18 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-	"kumachan/parser"
+	"kumachan/parser/ast"
+	"kumachan/parser/scanner"
 	"kumachan/transformer/node"
 )
 
-const ERR_MSG_ROW_DELTA = 2
-const Bold = "\033[1m"
-const Red = "\033[31m"
-const Blue = "\033[34m"
-const Reset = "\033[0m"
 
+const ERR_FOV = 5
 
 type MaybeErrorPoint interface { MaybeErrorPoint() }
 func (impl ErrorPoint) MaybeErrorPoint() {}
 type ErrorPoint struct {
-	AST   *parser.Tree
+	AST   *ast.Tree
 	Node  node.Node
 }
 
@@ -28,48 +25,51 @@ func GetErrorTypeName(e interface{}) string {
 	return T.String()
 }
 
-func GenCompilationFailedMessage (cause interface{}, errors []string) string {
-	var err_type = GetErrorTypeName((interface{})(cause))
-	return fmt.Sprintf (
-		"%v*** Failed to Compile (%s)%v\n*\n%s",
-		Bold, err_type, Reset, strings.Join(errors, "\n*\n"),
-	)
+func MsgFailedToCompile(cause interface{}, err []ErrorMessage) ErrorMessage {
+	var err_type = GetErrorTypeName(cause)
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, fmt.Sprintf (
+		"*** Failed to Compile (%s)", err_type,
+	))
+	msg.WriteText(TS_NORMAL, "\n*\n")
+	msg.WriteAll(JoinErrMsg(err, T(TS_NORMAL, "\n*\n")))
+	return msg
 }
 
-func (point ErrorPoint) GenErrMsg(description string) string {
-	var code = point.AST.Code
-	var file = point.AST.Name
-	var coor = point.Node.Point
-	var delta = ERR_MSG_ROW_DELTA
-	var start, end = __GetErrorPointSiblingRange(point, delta)
-	var span = point.Node.Span
-	var spot_left = string(code[start: span.Start])
-	var spot = string(code[span.Start: span.End])
-	var spot_right = string(code[span.End: end])
-	var whole = string(code[start: end])
-	var lines = strings.Split(whole, "\n")
-	var t = 0
-	var spot_line = 0
-	for i, line := range lines {
-		t += (len(line) + 1)
-		if t > len(spot_left) {
-			spot_line = (i + 1)
-			break
-		}
+func FormatError (
+	code         scanner.Code,
+	info         scanner.RowColInfo,
+	span_map     scanner.RowSpanMap,
+	file_name    string,
+	coordinate   scanner.Point,
+	spot         scanner.Span,
+	fov          uint,
+	highlight    TextStyle,
+	description  ErrorMessage,
+	note         ErrorMessage,
+) ErrorMessage {
+	var nh_rows = make([]scanner.Span, 0)
+	var i = coordinate.Row
+	var j = coordinate.Row
+	for i > 1 && uint(coordinate.Row - i) < (fov/2) {
+		i -= 1
 	}
-	var highlighted = fmt.Sprintf (
-		"%s%v%s%v%s",
-		spot_left, Bold+Red, spot, Reset, spot_right,
-	)
-	var highlighted_lines = strings.Split(highlighted, "\n")
-	var buf strings.Builder
-	fmt.Fprintf (
-		&buf, "%vFile:%v %v%s%v\n",
-		Bold, Reset, Blue, file, Reset,
-	)
-	var last_line = coor.Row + len(highlighted_lines) - spot_line
-	var expected_width = len(strconv.Itoa(last_line))
-	var fill_blanks = func(num int) string {
+	var last_row int
+	if len(code) > 0 {
+		last_row = info[len(code)-1].Row
+	} else {
+		last_row = 1
+	}
+	for j < last_row && uint(j - coordinate.Row) < (fov/2) {
+		j += 1
+	}
+	var start_row = i
+	var end_row = j
+	for r := start_row; r <= end_row; r += 1 {
+		nh_rows = append(nh_rows, span_map[r])
+	}
+	var expected_width = len(strconv.Itoa(last_row))
+	var align = func(num int) string {
 		var num_str = strconv.Itoa(num)
 		var num_width = len(num_str)
 		var buf strings.Builder
@@ -79,52 +79,64 @@ func (point ErrorPoint) GenErrMsg(description string) string {
 		}
 		return buf.String()
 	}
-	for i, line := range highlighted_lines  {
-		var line_number = coor.Row + ((i+1) - spot_line)
-		fmt.Fprintf(&buf, "%s | %s\n", fill_blanks(line_number), line)
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_INFO, "-----")
+	msg.WriteInnerText(TS_INFO, fmt.Sprintf (
+		"(row %d, column %d)",
+		coordinate.Row, coordinate.Col,
+	))
+	msg.WriteText(TS_INFO, file_name)
+	msg.Write(T_LF)
+	var style = TS_NORMAL
+	for i, row := range nh_rows {
+		var current_row = (start_row + i)
+		msg.WriteText(TS_NORMAL, fmt.Sprintf (
+			" %s |", align(current_row),
+		))
+		msg.Write(T_SPACE)
+		var buf strings.Builder
+		for j, char := range code[row.Start: row.End] {
+			var pos = (row.Start + j)
+			if pos == spot.Start {
+				msg.WriteBuffer(style, &buf)
+				style = highlight
+			}
+			if pos == spot.End {
+				msg.WriteBuffer(style, &buf)
+				style = TS_NORMAL
+			}
+			buf.WriteRune(char)
+		}
+		if row.End == spot.Start {
+			msg.WriteBuffer(style, &buf)
+			style = highlight
+		}
+		if row.End == spot.End {
+			msg.WriteBuffer(style, &buf)
+			style = TS_NORMAL
+		}
+		msg.WriteBuffer(style, &buf)
+		msg.Write(T_LF)
 	}
-	fmt.Fprintf (
-		&buf,
-		"%s %vat (row %d, column %d) in %v%s%v",
-		description, Red, coor.Row, coor.Col, Bold, file, Reset,
-	)
-	return buf.String()
+	msg.WriteAll(description)
+	msg.Write(T_LF)
+	if note != nil && len(note) > 0 {
+		msg.WriteAll(note)
+		msg.Write(T_LF)
+	}
+	return msg
 }
 
-func __GetErrorPointSiblingRange(point ErrorPoint, row_delta int) (int, int) {
-	var span = point.Node.Span
-	var code = point.AST.Code
-	var move_cursor = func (
-		initial    int,
-		step       int,
-		milestone  rune,
-		limit      int,
-	) int {
-		if initial == len(code) {
-			return initial
-		}
-		var cur = initial
-		var d = 0
-		for {
-			if code[cur] == milestone {
-				d += 1
-				if d == limit {
-					break
-				}
-			}
-			var next = cur + step
-			if next >= 0 && next < len(code) {
-				cur = next
-			} else {
-				break
-			}
-		}
-		return cur
-	}
-	var l = move_cursor(span.Start, -1, '\n', (row_delta + 1))
-	var r = move_cursor(span.End, 1, '\n', row_delta)
-	if code[l] == '\n' {
-		l = (l + 1)
-	}
-	return l, r
+func FormatErrorAt (
+	point  ErrorPoint,
+	desc   ErrorMessage,
+	note   ErrorMessage,
+) ErrorMessage {
+	var AST = point.AST
+	var Node = point.Node
+	return FormatError (
+		AST.Code,  AST.Info,    AST.SpanMap,
+		AST.Name,  Node.Point,  Node.Span,
+		ERR_FOV,   TS_SPOT,     desc, note,
+	)
 }

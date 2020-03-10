@@ -37,38 +37,42 @@ type E_InvalidFieldName struct {
 	Name  string
 }
 
-func (err *TypeError) Error() string {
-	var description string
+func (err *TypeError) Desc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
 	switch e := err.Concrete.(type) {
 	case E_ModuleOfTypeRefNotFound:
-		description = fmt.Sprintf (
-			"%vNo such module: %v%s%v",
-			Red, Bold, e.Name, Reset,
-		)
+		msg.WriteText(TS_ERROR, "No such module:")
+		msg.WriteEndText(TS_INLINE_CODE, e.Name)
 	case E_TypeNotFound:
-		description = fmt.Sprintf (
-			"%vNo such type: %v%s%v",
-			Red, Bold, e.Name, Reset,
-		)
+		msg.WriteText(TS_ERROR, "No such type:")
+		msg.WriteEndText(TS_INLINE_CODE, e.Name.String())
 	case E_WrongParameterQuantity:
-		description = fmt.Sprintf (
-			"%vWrong parameter quantity: %v%d%v required but %v%d%v given%v",
-			Red, Bold, e.Required, Reset+Red, Bold, e.Given, Reset+Red, Reset,
-		)
+		msg.WriteText(TS_ERROR, "Wrong parameter quantity:")
+		msg.WriteInnerText(TS_INLINE, fmt.Sprint(e.Required))
+		msg.WriteText(TS_ERROR, "required but")
+		msg.WriteInnerText(TS_INLINE, fmt.Sprint(e.Given))
+		msg.WriteText(TS_ERROR, "given")
 	case E_DuplicateField:
-		description = fmt.Sprintf (
-			"%vDuplicate field: %v%s%v",
-			Red, Bold, e.FieldName, Reset,
-		)
+		msg.WriteText(TS_ERROR, "Duplicate field:")
+		msg.WriteEndText(TS_INLINE_CODE, e.FieldName)
 	case E_InvalidFieldName:
-		description = fmt.Sprintf (
-			"%vInvalid field name: %v%s%v",
-			Red, Bold, e.Name, Reset,
-		)
+		msg.WriteText(TS_ERROR, "Invalid field name:")
+		msg.WriteEndText(TS_INLINE_CODE, e.Name)
 	default:
-		panic("unknown concrete error type")
+		panic("unknown error kind")
 	}
-	return err.Point.GenErrMsg(description)
+	return msg
+}
+
+func (err *TypeError) Message() ErrorMessage {
+	return FormatErrorAt(err.Point, err.Desc(), nil)
+}
+
+func (err *TypeError) Error() string {
+	var msg = MsgFailedToCompile(err.Concrete, []ErrorMessage {
+		err.Message(),
+	})
+	return msg.String()
 }
 
 
@@ -93,43 +97,43 @@ type E_GenericUnionSubType struct {
 }
 func (impl E_InvalidTypeDecl) TypeDeclError() {}
 type E_InvalidTypeDecl struct {
-	TypeName   loader.Symbol
-	ExprError  *TypeError
+	TypeName  loader.Symbol
+	Detail    *TypeError
+}
+
+func (err *TypeDeclError) Desc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	switch e := err.Concrete.(type) {
+	case E_InvalidTypeName:
+		msg.WriteText(TS_ERROR, "Invalid type name:")
+		msg.WriteEndText(TS_INLINE_CODE, e.Name)
+	case E_DuplicateTypeDecl:
+		msg.WriteText(TS_ERROR, "Duplicate type declaration:")
+		msg.WriteEndText(TS_INLINE_CODE, e.TypeName.SymbolName)
+	case E_GenericUnionSubType:
+		msg.WriteText(TS_ERROR, "Cannot define generic parameters on a union item")
+	case E_InvalidTypeDecl:
+		msg = e.Detail.Message()
+	default:
+		panic("unknown error kind")
+	}
+	return msg
+}
+
+func (err *TypeDeclError) Message() ErrorMessage {
+	switch e := err.Concrete.(type) {
+	case E_InvalidTypeDecl:
+		return FormatErrorAt(e.Detail.Point, e.Detail.Message(), nil)
+	default:
+		return FormatErrorAt(err.Point, err.Message(), nil)
+	}
 }
 
 func (err *TypeDeclError) Error() string {
-	var cause interface {}
-	var errors = make([]string, 0)
-	switch e := err.Concrete.(type) {
-	case E_InvalidTypeName:
-		cause = e
-		errors = append(errors, err.Point.GenErrMsg(fmt.Sprintf (
-			"%vInvalid type name: %v%s%v",
-			Red, Bold, e.Name, Reset,
-		)))
-	case E_DuplicateTypeDecl:
-		cause = e
-		errors = append(errors, err.Point.GenErrMsg(fmt.Sprintf (
-			"%vDuplicate type declaration: %v%s%v",
-			Red, Bold, e.TypeName.SymbolName, Reset,
-		)))
-	case E_GenericUnionSubType:
-		cause = e
-		errors = append(errors, err.Point.GenErrMsg(fmt.Sprintf (
-			"%vCannot define generic paramters on a subtype of a union type%v",
-			Red, Reset,
-		)))
-	case E_InvalidTypeDecl:
-		cause = e.ExprError.Concrete
-		errors = append(errors, err.Point.GenErrMsg(fmt.Sprintf (
-			"%vInvalid definition of type %v%s%v",
-			Red, Bold, e.TypeName.SymbolName, Reset,
-		)))
-		errors = append(errors, e.ExprError.Error())
-	default:
-		panic("unknown concrete error type")
-	}
-	return GenCompilationFailedMessage(cause, errors)
+	var msg = MsgFailedToCompile(err.Concrete, []ErrorMessage {
+		err.Message(),
+	})
+	return msg.String()
 }
 
 
@@ -148,7 +152,7 @@ type E_InvalidFunctionName struct {
 func (impl E_SignatureInvalid) FunctionError() {}
 type E_SignatureInvalid struct {
 	FuncName   string
-	TypeError  *TypeError
+ 	TypeError  *TypeError
 }
 
 func (E_SignatureNonLocal) FunctionError() {}

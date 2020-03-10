@@ -1,10 +1,10 @@
 package loader
 
 import (
-	"os"
-	"fmt"
+	. "kumachan/error"
 	"kumachan/parser"
-	."kumachan/error"
+	"kumachan/parser/ast"
+	"os"
 )
 
 
@@ -27,18 +27,27 @@ func MakeEntryContext() Context {
 	}
 }
 
-func (ctx Context) GenErrMsg() string {
-	switch p := ctx.ImportPoint.(type) {
-	case ErrorPoint:
-		return p.GenErrMsg(fmt.Sprintf (
-			"%vUnable to import module %v%s%v",
-			Red, Bold, ctx.LocalAlias, Reset,
-		))
-	default:
-		return fmt.Sprintf (
-			"%v*** Unable to load given source file%v",
-			Red+Bold, Reset,
-		)
+func (ctx Context) GetErrorDescription() ErrorMessage {
+	var _, ok = ctx.ImportPoint.(ErrorPoint)
+	if ok {
+		var desc = make(ErrorMessage, 0)
+		desc.WriteText(TS_ERROR, "Unable to import module")
+		desc.Write(T_SPACE)
+		desc.WriteText(TS_INLINE_CODE, ctx.LocalAlias)
+		return desc
+	} else {
+		var msg = make(ErrorMessage, 0)
+		msg.WriteText(TS_ERROR, "*** Unable to load given source file")
+		return msg
+	}
+}
+
+func (ctx Context) GetFullErrorMessage(note ErrorMessage) ErrorMessage {
+	var p, ok = ctx.ImportPoint.(ErrorPoint)
+	if ok {
+		return FormatErrorAt(p, ctx.GetErrorDescription(), note)
+	} else {
+		return ctx.GetErrorDescription()
 	}
 }
 
@@ -57,7 +66,7 @@ type E_ReadFileFailed struct {
 }
 func (e E_ParseFailed) LoaderError() {}
 type E_ParseFailed struct {
-	PartialAST  *parser.Tree
+	PartialAST  *ast.Tree
 	ParserError *parser.Error
 }
 func (e E_NameConflict) LoaderError() {}
@@ -79,44 +88,49 @@ type E_DuplicateImport struct {
 	ModuleName  string
 }
 
-func (err *Error) Error() string {
-	var import_error = err.Context.GenErrMsg()
-	var detail string
+func (err *Error) Note() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_NORMAL, "**\n")
 	switch e := err.Concrete.(type) {
 	case E_ReadFileFailed:
-		detail = fmt.Sprintf (
-			"%vCannot open source file: %v%s%v",
-			Red, Bold, e.Message, Reset,
-		)
+		msg.WriteText(TS_ERROR, "Cannot open source file:")
+		msg.WriteEndText(TS_ERROR, e.Message)
 	case E_ParseFailed:
-		detail = e.ParserError.DetailedMessage(e.PartialAST)
+		msg.WriteAll(e.ParserError.DetailedMessage(e.PartialAST))
 	case E_NameConflict:
-		detail = fmt.Sprintf (
-			"%vThe module name %v%s%v is used by both source files %v%s%v and %v%s%v",
-			Red,
-			Bold, e.ModuleName, Reset+Red,
-			Bold, e.FilePath2, Reset+Red,
-			Bold, e.FilePath1, Reset,
-		)
+		msg.WriteText(TS_ERROR, "The module name")
+		msg.WriteInnerText(TS_INLINE_CODE, e.ModuleName)
+		msg.WriteText(TS_ERROR, "is used by both source files")
+		msg.WriteInnerText(TS_INLINE, e.FilePath2)
+		msg.WriteText(TS_ERROR, "and")
+		msg.WriteEndText(TS_INLINE, e.FilePath1)
 	case E_CircularImport:
-		detail = fmt.Sprintf (
-			"%vCircular import of module %v%s%v",
-			Red, Bold, e.ModuleName, Reset,
-		)
+		msg.WriteText(TS_ERROR, "Circular import of module")
+		msg.WriteEndText(TS_INLINE_CODE, e.ModuleName)
 	case E_ConflictAlias:
-		detail = fmt.Sprintf (
-			"%vA module already imported as name %v%s%v in current module%v",
-			Red, Bold, e.LocalAlias, Reset+Red, Reset,
-		)
+		msg.WriteText(TS_ERROR, "A module already imported as name")
+		msg.WriteInnerText(TS_INLINE_CODE, e.LocalAlias)
+		msg.WriteText(TS_ERROR, "in current module")
 	case E_DuplicateImport:
-		detail = fmt.Sprintf (
-			"%vDuplicate import of module %v%s%v",
-			Red, Bold, e.ModuleName, Reset,
-		)
+		msg.WriteText(TS_ERROR, "Duplicate import of module")
+		msg.WriteInnerText(TS_INLINE_CODE, e.ModuleName)
 	default:
-		panic("unknown concrete error type")
+		panic("unknown error kind")
 	}
-	return GenCompilationFailedMessage(err.Concrete, []string {
-		import_error, detail,
+	return msg
+}
+
+func (err *Error) Desc() ErrorMessage {
+	return err.Context.GetErrorDescription()
+}
+
+func (err *Error) Message() ErrorMessage {
+	return err.Context.GetFullErrorMessage(err.Note())
+}
+
+func (err *Error) Error() string {
+	var msg = MsgFailedToCompile(err.Concrete, []ErrorMessage {
+		err.Message(),
 	})
+	return msg.String()
 }

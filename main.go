@@ -3,6 +3,7 @@ package main
 import (
     "kumachan/checker"
     "kumachan/loader"
+    "kumachan/parser/ast"
     "kumachan/transformer"
     "os"
     "reflect"
@@ -20,12 +21,12 @@ func check (err error) {
     }
 }
 
-func parser_debug (file io.Reader, name string, root string) {
+func debug_parser(file io.Reader, name string, root string) {
     var code_bytes, e = ioutil.ReadAll(file)
     check(e)
     var code_string = string(code_bytes)
     var code = []rune(code_string)
-    var tokens, info = scanner.Scan(code)
+    var tokens, info, _ = scanner.Scan(code)
     fmt.Println("Tokens:")
     for i, token := range tokens {
         fmt.Printf(
@@ -47,7 +48,7 @@ func parser_debug (file io.Reader, name string, root string) {
     fmt.Println("------------------------------------------------------")
     fmt.Println("AST Nodes:")
     parser.PrintBareTree(nodes)
-    var tree = parser.Tree {
+    var tree = ast.Tree{
         Nodes: nodes, Name: name,
         Code: code, Tokens: tokens, Info: info,
     }
@@ -64,7 +65,7 @@ func parser_debug (file io.Reader, name string, root string) {
     }
 }
 
-func loader_debug() (*loader.Module, loader.Index) {
+func debug_loader() (*loader.Module, loader.Index) {
     if len(os.Args) != 2 {
         panic("invalid arguments")
     }
@@ -79,7 +80,7 @@ func loader_debug() (*loader.Module, loader.Index) {
     return mod, idx
 }
 
-func checker_debug(mod *loader.Module, idx loader.Index) {
+func debug_checker(mod *loader.Module, idx loader.Index) {
     var _, err = checker.RegisterTypes(mod, idx)
     if err != nil {
         fmt.Fprintf(os.Stderr, "%s\n", err.Error())
@@ -90,7 +91,7 @@ func checker_debug(mod *loader.Module, idx loader.Index) {
 }
 
 func main () {
-    // parser_debug(os.Stdin, "[eval]", "module")
-    var mod, idx = loader_debug()
-    checker_debug(mod, idx)
+    // debug_parser(os.Stdin, "[eval]", "module")
+    var mod, idx = debug_loader()
+    debug_checker(mod, idx)
 }

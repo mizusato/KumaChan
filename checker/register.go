@@ -194,8 +194,8 @@ func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, *Type
 		if err != nil { return nil, &TypeDeclError {
 			Point: ErrorPoint { AST: mod.AST, Node: t.Name.Node },
 			Concrete: E_InvalidTypeDecl {
-				TypeName:  name,
-				ExprError: err,
+				TypeName: name,
+				Detail:   err,
 			},
 		} }
 		// 3.3. Use the generated TypeVal to construct a GenericType

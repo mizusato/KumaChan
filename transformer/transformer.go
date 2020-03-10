@@ -1,6 +1,9 @@
 package transformer
 
-import "fmt"
+import (
+	"fmt"
+	"kumachan/parser/ast"
+)
 import "reflect"
 import "strings"
 import "kumachan/parser"
@@ -16,7 +19,7 @@ import . "kumachan/transformer/node"
  *    the `node` subpackage.
  */
 
-type Tree = *parser.Tree
+type Tree = *ast.Tree
 type Pointer = int
 type Context = map[string] interface{}
 type Transformer = func(Tree, Pointer) reflect.Value
