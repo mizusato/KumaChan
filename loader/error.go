@@ -3,7 +3,6 @@ package loader
 import (
 	. "kumachan/error"
 	"kumachan/parser"
-	"kumachan/parser/ast"
 	"os"
 )
 
@@ -66,8 +65,7 @@ type E_ReadFileFailed struct {
 }
 func (e E_ParseFailed) LoaderError() {}
 type E_ParseFailed struct {
-	PartialAST  *ast.Tree
-	ParserError *parser.Error
+	ParserError  *parser.Error
 }
 func (e E_NameConflict) LoaderError() {}
 type E_NameConflict struct {
@@ -96,7 +94,7 @@ func (err *Error) Note() ErrorMessage {
 		msg.WriteText(TS_ERROR, "Cannot open source file:")
 		msg.WriteEndText(TS_ERROR, e.Message)
 	case E_ParseFailed:
-		msg.WriteAll(e.ParserError.DetailedMessage(e.PartialAST))
+		msg.WriteAll(e.ParserError.Message())
 	case E_NameConflict:
 		msg.WriteText(TS_ERROR, "The module name")
 		msg.WriteInnerText(TS_INLINE_CODE, e.ModuleName)

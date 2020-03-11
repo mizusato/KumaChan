@@ -119,10 +119,9 @@ func FormatError (
 		msg.Write(T_LF)
 	}
 	msg.WriteAll(description)
-	msg.Write(T_LF)
 	if note != nil && len(note) > 0 {
-		msg.WriteAll(note)
 		msg.Write(T_LF)
+		msg.WriteAll(note)
 	}
 	return msg
 }

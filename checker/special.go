@@ -5,7 +5,7 @@ import "kumachan/loader"
 const IgnoreMark = "_"
 const TextPlaceholder = '#'
 const BadIndex uint = 0xFFF8DFFF
-/* should be consistent with stdlib/core.km */
+/* should be consistent with `stdlib/core.km` */
 var __Bool = CoreSymbol("Bool")
 var __Yes uint = 0
 // var __Maybe = CoreSymbol("Maybe")

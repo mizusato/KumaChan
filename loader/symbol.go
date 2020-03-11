@@ -72,18 +72,16 @@ func (mod *Module) SymbolFromRef(ref node.Ref) MaybeSymbol {
 }
 
 
+/* should be consistent with `stdlib/core.km` */
 var __PreloadCoreSymbols = []string {
-	"Bit", "Byte", "Word", "Dword", "Qword",
-	"Int",
+	"Bit", "Byte", "Word", "Dword", "Qword", "Integer", "Float64",
 	"Bytes", "String", "Seq", "Array", "Heap", "Set", "Map",
 	"Effect",
 	"Int64", "Uint64", "Int32", "Uint32", "Int16", "Uint16", "Int8", "Uint8",
-	"Char",
-	"Float64", "Float",
+	"Char", "Natural", "Float",
 	"Bool", "Yes", "No",
-	"Maybe", "Just", "Nothing",
+	"Maybe", "Just", "N/A",
 	"Result", "OK", "NG",
-	"List",
 }
 var __PreloadCoreSymbolSet = func() map[string] bool {
 	var set = make(map[string] bool)

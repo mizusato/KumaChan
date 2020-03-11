@@ -1,5 +1,11 @@
 module Core;
 
+
+/**
+ *  IMPORTANT: The following type definitions should be kept update
+ *             with `loader/symbol.go` and `checker/special.go`.
+ */
+
 // Basic Types
 type Bit    native;
 type Byte   native;
@@ -7,6 +13,7 @@ type Word   native;
 type Dword  native;
 type Qword  native;
 type Integer  native;
+type Float64  native;
 
 // Container Types
 type Bytes     native;
@@ -20,7 +27,7 @@ type Map[K,V]  native;
 // Effect Type
 type Effect[T,E]  native;
 
-// Basic Derived Types
+// Fixed Integer Types
 type Int64   Qword;
 type Uint64  Qword;
 type Int32   Dword;
@@ -29,10 +36,11 @@ type Int16   Word;
 type Uint16  Word;
 type Int8    Byte;
 type Uint8   Byte;
-type Char    Dword;
-type Float64  native;
-type Float    protected Float64;
+
+// Basic Boxed Types
+type Char     Dword;
 type Natural  protected Integer;
+type Float    protected Float64;
 
 // Basic Sum Types
 type Bool union {

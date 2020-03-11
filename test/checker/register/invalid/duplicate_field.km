@@ -1,7 +1,7 @@
 module DuplicateField;
 
 type Foo {
-    Bar: Int,
-    Baz: Int,
+    Bar: Integer,
+    Baz: Natural,
     Bar: String
 };

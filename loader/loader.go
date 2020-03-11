@@ -46,16 +46,15 @@ func LoadModule(path string, ctx Context, idx Index) (*Module, *Error) {
 	/* 2. Try to parse the content and generate an AST */
 	var code_string = string(file_content)
 	var code = []rune(code_string)
-	var ast, err2 = parser.Parse(code, "module", path)
+	var tree, err2 = parser.Parse(code, "module", path)
 	if err2 != nil { return nil, &Error {
 		Context:  ctx,
 		Concrete: E_ParseFailed {
-			PartialAST:   ast,
-			ParserError:  err2,
+			ParserError: err2,
 		},
 	} }
 	/* 3. Transform the AST to typed structures */
-	var module_node = transformer.Transform(ast)
+	var module_node = transformer.Transform(tree)
 	/* 4. Extract the module name */
 	var module_name = string(module_node.Name.Name)
 	/* 5. Check the module name according to ancestor modules */
@@ -123,7 +122,7 @@ func LoadModule(path string, ctx Context, idx Index) (*Module, *Error) {
 				var relpath = string(c.Path.Value)
 				var imctx = Context {
 					ImportPoint: ErrorPoint {
-						AST:  ast,
+						AST:  tree,
 						Node: c.Node,
 					},
 					LocalAlias:  local_alias,
@@ -161,10 +160,10 @@ func LoadModule(path string, ctx Context, idx Index) (*Module, *Error) {
 			}
 		}
 		var mod = &Module {
-			Node:      module_node,
-			ImpMap:    imported_map,
-			AST:       ast,
-			FileInfo:  file_info,
+			Node:     module_node,
+			ImpMap:   imported_map,
+			AST:      tree,
+			FileInfo: file_info,
 		}
 		idx[module_name] = mod
 		return mod, nil

@@ -123,9 +123,9 @@ func (err *TypeDeclError) Desc() ErrorMessage {
 func (err *TypeDeclError) Message() ErrorMessage {
 	switch e := err.Concrete.(type) {
 	case E_InvalidTypeDecl:
-		return FormatErrorAt(e.Detail.Point, e.Detail.Message(), nil)
+		return e.Detail.Message()
 	default:
-		return FormatErrorAt(err.Point, err.Message(), nil)
+		return FormatErrorAt(err.Point, err.Desc(), nil)
 	}
 }
 

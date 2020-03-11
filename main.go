@@ -1,19 +1,19 @@
 package main
 
 import (
+    "os"
+    "io"
+    "fmt"
+    "reflect"
+    "io/ioutil"
     "kumachan/checker"
     "kumachan/loader"
-    "kumachan/parser/ast"
     "kumachan/transformer"
-    "os"
-    "reflect"
+    "kumachan/parser/syntax"
+    "kumachan/parser/scanner"
+    "kumachan/parser"
 )
-import "fmt"
-import "io"
-import "io/ioutil"
-import "kumachan/parser/syntax"
-import "kumachan/parser/scanner"
-import "kumachan/parser"
+
 
 func check (err error) {
     if (err != nil) {
@@ -40,28 +40,24 @@ func debug_parser(file io.Reader, name string, root string) {
             string(token.Content),
         )
     }
-    var RootId, exists = syntax.Name2Id[root]
+    var _, exists = syntax.Name2Id[root]
     if !exists {
         panic("invalid root syntax unit " + root)
     }
-    var nodes, err = parser.BuildTree(RootId, tokens)
+    var tree, err = parser.Parse(code, root, name)
     fmt.Println("------------------------------------------------------")
     fmt.Println("AST Nodes:")
-    parser.PrintBareTree(nodes)
-    var tree = ast.Tree{
-        Nodes: nodes, Name: name,
-        Code: code, Tokens: tokens, Info: info,
-    }
+    parser.PrintBareTree(tree.Nodes)
     fmt.Println("------------------------------------------------------")
     fmt.Println("AST:")
-    parser.PrintTree(&tree)
+    parser.PrintTree(tree)
     if err != nil {
-        fmt.Println(err.DetailedMessage(&tree))
+        fmt.Println(err.Message())
     } else {
         fmt.Println("------------------------------------------------------")
         fmt.Println("Transformed:")
-        transformer.PrintNode(reflect.ValueOf(transformer.Transform(&tree)))
-        // fmt.Printf("%+v\n", transformer.Transform(&tree))
+        transformer.PrintNode(reflect.ValueOf(transformer.Transform(tree)))
+        // fmt.Printf("%+v\n", transformer.Transform(tree))
     }
 }
 
