@@ -7,7 +7,7 @@ import (
 
 func (impl UntypedLambda) SemiExprVal() {}
 type UntypedLambda struct {
-	Input   Pattern
+	Input   node.VariousPattern
 	Output  node.Expr
 }
 
@@ -22,8 +22,8 @@ func CheckLambda(lambda node.Lambda, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(lambda.Node)
 	return SemiExpr {
 		Value: UntypedLambda {
-			Input:  PatternFrom(lambda.Input, ctx),
-			Output:  node.Expr {
+			Input:  lambda.Input,
+			Output: node.Expr {
 				Node:     lambda.Node,
 				Call:     lambda.Output,
 				Pipeline: nil,
@@ -41,25 +41,23 @@ func AssignLambdaTo(expected Type, lambda UntypedLambda, info ExprInfo, ctx Expr
 	case AnonymousType:
 		switch func_repr := E.Repr.(type) {
 		case Func:
-			var input = func_repr.Input
-			var output = func_repr.Output
-			var inner_ctx, err1 = ctx.WithPatternMatching (
-				input, lambda.Input, false,
-			)
+			var input_t = func_repr.Input
+			var output_t = func_repr.Output
+			//
+			var pattern, err1 = PatternFrom(lambda.Input, input_t, ctx)
 			if err1 != nil { return Expr{}, err1 }
-			var output_semi, err2 = Check (
-				lambda.Output, inner_ctx,
-			)
+			//
+			var inner_ctx = ctx.WithShadowingPatternMatching(pattern)
+			var output_semi, err2 = Check(lambda.Output, inner_ctx)
 			if err2 != nil { return Expr{}, err2 }
-			var output_typed, err3 = AssignTo (
-				output, output_semi, inner_ctx,
-			)
+			//
+			var output_typed, err3 = AssignTo(output_t, output_semi, inner_ctx)
 			if err3 != nil { return Expr{}, err3 }
 			return Expr {
 				Type:  expected,
 				Info:  info,
 				Value: Lambda {
-					Input:  lambda.Input,
+					Input:  pattern,
 					Output: output_typed,
 				},
 			}, nil
@@ -88,10 +86,9 @@ func CallUntypedLambda (
 			Concrete: E_ExplicitTypeRequired {},
 		}
 	}
-	var inner_ctx, err1 = ctx.WithPatternMatching (
-		input_typed.Type, lambda.Input, false,
-	)
+	var pattern, err1 = PatternFrom(lambda.Input, input_typed.Type, ctx)
 	if err1 != nil { return SemiExpr{}, err1 }
+	var inner_ctx = ctx.WithShadowingPatternMatching(pattern)
 	var output, err2 = Check(lambda.Output, inner_ctx)
 	if err2 != nil { return SemiExpr{}, err2 }
 	var output_typed, output_is_typed = output.Value.(TypedExpr)
@@ -101,13 +98,13 @@ func CallUntypedLambda (
 			Concrete: E_ExplicitTypeRequired {},
 		}
 	}
-	var lambda_typed = Expr{
+	var lambda_typed = Expr {
 		Type:  AnonymousType { Func {
 			Input:  input_typed.Type,
 			Output: output_typed.Type,
 		} },
 		Value: Lambda {
-			Input:  lambda.Input,
+			Input:  pattern,
 			Output: Expr(output_typed),
 		},
 		Info:  lambda_info,

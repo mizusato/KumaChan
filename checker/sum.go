@@ -70,7 +70,6 @@ func CheckMatch(match node.Match, ctx ExprContext) (SemiExpr, *ExprError) {
 				}
 			}
 			var maybe_type_sym = ctx.ModuleInfo.Module.SymbolFromRef(t)
-			var maybe_pattern = MaybePatternFrom(branch.Pattern, ctx)
 			var type_sym, ok = maybe_type_sym.(loader.Symbol)
 			if !ok { return SemiExpr{}, &ExprError {
 				Point:    ctx.GetErrorPoint(t.Module.Node),
@@ -106,15 +105,16 @@ func CheckMatch(match node.Match, ctx ExprContext) (SemiExpr, *ExprError) {
 				Name: type_sym,
 				Args: union_args,
 			}
+			var maybe_pattern MaybePattern
 			var branch_ctx ExprContext
-			switch pattern := maybe_pattern.(type) {
-			case Pattern:
-				var new_ctx, err = ctx.WithPatternMatching (
-					subtype, pattern, false,
-				)
+			switch pattern_node := branch.Pattern.(type) {
+			case node.VariousPattern:
+				var pattern, err = PatternFrom(pattern_node, subtype, ctx)
 				if err != nil { return SemiExpr{}, err }
-				branch_ctx = new_ctx
+				maybe_pattern = pattern
+				branch_ctx = ctx.WithShadowingPatternMatching(pattern)
 			default:
+				maybe_pattern = nil
 				branch_ctx = ctx
 			}
 			var semi, err = Check(

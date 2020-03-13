@@ -57,7 +57,7 @@ type Tuple struct {
 }
 func (impl Bundle) TypeRepr() {}
 type Bundle struct {
-	Fields  map[string] Type
+	Fields  map[string] Type  // TODO: merge the 2 maps
 	Index   map[string] uint
 }
 func (impl Func) TypeRepr() {}

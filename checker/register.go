@@ -345,14 +345,19 @@ func TypeFromRepr (repr node.Repr, ctx TypeContext) (Type, *TypeError) {
 			for i, f := range r.Fields {
 				var f_name = loader.Id2String(f.Name)
 				if f_name == IgnoreMark {
-
+					return nil, &TypeError {
+						Point:    ErrorPoint {
+							AST: ctx.Module.AST, Node: f.Name.Node,
+						},
+						Concrete: E_InvalidFieldName { f_name },
+					}
 				}
 				var _, exists = fields[f_name]
 				if exists { return nil, &TypeError {
-					Point: ErrorPoint { AST: ctx.Module.AST, Node: f.Name.Node },
-					Concrete: E_DuplicateField {
-						FieldName: f_name,
+					Point: ErrorPoint {
+						AST: ctx.Module.AST, Node: f.Name.Node,
 					},
+					Concrete: E_DuplicateField { f_name },
 				} }
 				var f_type, err = TypeFrom(f.Type.Type, ctx)
 				if err != nil { return nil, err }

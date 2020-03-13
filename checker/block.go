@@ -26,7 +26,6 @@ func CheckBlock(block node.Block, ctx ExprContext) (SemiExpr, *ExprError) {
 	var current_ctx = ctx
 	var bindings = make([]Binding, len(block.Bindings))
 	for i, b := range block.Bindings {
-		var pattern = PatternFrom(b.Pattern, current_ctx)
 		var t Type
 		switch type_node := b.Type.(type) {
 		case node.VariousType:
@@ -46,12 +45,12 @@ func CheckBlock(block node.Block, ctx ExprContext) (SemiExpr, *ExprError) {
 					Concrete: E_ExplicitTypeRequired {},
 				}
 			}
-			var rec_ctx, err1 = current_ctx.WithPatternMatching (
-				t, pattern, true,
-			)
+			var pattern, err1 = PatternFrom(b.Pattern, t, current_ctx)
 			if err1 != nil { return SemiExpr{}, err1 }
-			var semi, err2 = Check(b.Value, rec_ctx)
+			var rec_ctx, err2 = current_ctx.WithPatternMatching(pattern)
 			if err2 != nil { return SemiExpr{}, err2 }
+			var semi, err3 = Check(b.Value, rec_ctx)
+			if err3 != nil { return SemiExpr{}, err3 }
 			switch semi.Value.(type) {
 			case UntypedLambda:
 				var typed, err = AssignTo(t, semi, rec_ctx)
@@ -72,11 +71,11 @@ func CheckBlock(block node.Block, ctx ExprContext) (SemiExpr, *ExprError) {
 			if err1 != nil { return SemiExpr{}, err1 }
 			var typed, err2 = AssignTo(t, semi, current_ctx)
 			if err2 != nil { return SemiExpr{}, err2 }
-			var final_t = typed.Type
-			var next_ctx, err3 = current_ctx.WithPatternMatching (
-				final_t, pattern, true,
-			)
+			var non_nil_t = typed.Type
+			var pattern, err3 = PatternFrom(b.Pattern, non_nil_t, current_ctx)
 			if err3 != nil { return SemiExpr{}, err3 }
+			var next_ctx, err4 = current_ctx.WithPatternMatching(pattern)
+			if err4 != nil { return SemiExpr{}, err4 }
 			bindings[i] = Binding {
 				Pattern: pattern,
 				Value:   typed,

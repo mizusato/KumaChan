@@ -265,12 +265,6 @@ type E_NotAssignable struct {
 	Reason  string
 }
 
-func (impl E_NotConstructable) ExprError() {}
-type E_NotConstructable struct {
-	From    string
-	To      string
-}
-
 func (impl E_ExplicitTypeRequired) ExprError() {}
 type E_ExplicitTypeRequired struct {}
 

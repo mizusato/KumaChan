@@ -176,6 +176,8 @@ func CheckTerm(term node.VariousTerm, ctx ExprContext) (SemiExpr, *ExprError) {
 	switch t := term.Term.(type) {
 	case node.Cast:
 		return CheckCast(t, ctx)
+	case node.Lambda:
+		return CheckLambda(t, ctx)
 	case node.Match:
 		return CheckMatch(t, ctx)
 	case node.If:

@@ -17,109 +17,51 @@ type ConcretePattern interface { CheckerPattern() }
 func (impl TrivialPattern) CheckerPattern() {}
 type TrivialPattern struct {
 	ValueName  string
+	ValueType  Type
 	Point      ErrorPoint
 }
 func (impl TuplePattern) CheckerPattern() {}
 type TuplePattern struct {
-	ValueNames  [] string
-	Points      [] ErrorPoint
+	Items  [] PatternItem
 }
 func (impl BundlePattern) CheckerPattern() {}
 type BundlePattern struct {
-	ValueNames  [] string
-	Points      [] ErrorPoint
+	Items  [] PatternItem
+}
+
+type PatternItem struct {
+	Name   string
+	Index  uint
+	Type   Type
+	Point  ErrorPoint
 }
 
 
-func PatternFrom(p_node node.VariousPattern, ctx ExprContext) Pattern {
+func PatternFrom (
+	p_node  node.VariousPattern,
+	input   Type,
+	ctx     ExprContext,
+) (Pattern, *ExprError) {
+	var err_result = func(e ConcreteExprError) (Pattern, *ExprError) {
+		return Pattern{}, &ExprError {
+			Point:    ctx.GetErrorPoint(p_node.Node),
+			Concrete: e,
+		}
+	}
 	switch p := p_node.Pattern.(type) {
 	case node.PatternTrivial:
 		return Pattern {
 			Point:    ctx.GetErrorPoint(p_node.Node),
 			Concrete: TrivialPattern {
 				ValueName: loader.Id2String(p.Name),
+				ValueType: input,
 				Point:     ctx.GetErrorPoint(p.Name.Node),
 			},
-		}
+		}, nil
 	case node.PatternTuple:
-		var names = make([]string, len(p.Names))
-		var points = make([]ErrorPoint, len(p.Names))
-		for i, identifier := range p.Names {
-			names[i] = loader.Id2String(identifier)
-			points[i] = ctx.GetErrorPoint(p.Names[i].Node)
-		}
-		return Pattern {
-			Point:    ctx.GetErrorPoint(p_node.Node),
-			Concrete: TuplePattern {
-				ValueNames: names,
-				Points:     points,
-			},
-		}
-	case node.PatternBundle:
-		var names = make([]string, len(p.Names))
-		var points = make([]ErrorPoint, len(p.Names))
-		for i, identifier := range p.Names {
-			names[i] = loader.Id2String(identifier)
-			points[i] = ctx.GetErrorPoint(p.Names[i].Node)
-		}
-		return Pattern{
-			Point:    ctx.GetErrorPoint(p_node.Node),
-			Concrete: BundlePattern {
-				ValueNames: names,
-				Points:     points,
-			},
-		}
-	default:
-		panic("impossible branch")
-	}
-}
-
-func MaybePatternFrom(p node.MaybePattern, ctx ExprContext) MaybePattern {
-	switch p_node := p.(type) {
-	case node.VariousPattern:
-		return PatternFrom(p_node, ctx)
-	default:
-		return nil
-	}
-}
-
-
-func (ctx ExprContext) WithPatternMatching (
-	input    Type,
-	pattern  Pattern,
-	strict   bool,
-) (ExprContext, *ExprError) {
-	var err_result = func(e ConcreteExprError) (ExprContext, *ExprError) {
-		return ExprContext{}, &ExprError {
-			Point:    pattern.Point,
-			Concrete: e,
-		}
-	}
-	var check = func(added map[string]Type) (ExprContext, *ExprError) {
-		var new_ctx, shadowed = ctx.WithAddedLocalValues(added)
-		if shadowed != "" && !strict {
-			return err_result(E_DuplicateBinding {shadowed })
-		} else {
-			return new_ctx, nil
-		}
-	}
-	switch p := pattern.Concrete.(type) {
-	case TrivialPattern:
-		if p.ValueName == IgnoreMark {
-			if strict {
-				return err_result(E_EntireValueIgnored {})
-			} else {
-				return ctx, nil
-			}
-		} else {
-			var added = make(map[string]Type)
-			added[p.ValueName] = input
-			return check(added)
-		}
-	case TuplePattern:
 		switch tuple := UnboxTuple(input, ctx).(type) {
 		case Tuple:
-			var required = len(p.ValueNames)
+			var required = len(p.Names)
 			var given = len(tuple.Elements)
 			if given != required {
 				return err_result(E_TupleSizeNotMatching {
@@ -128,26 +70,37 @@ func (ctx ExprContext) WithPatternMatching (
 					GivenType: ctx.DescribeType(AnonymousType { tuple }),
 				})
 			} else {
-				var added = make(map[string]Type)
+				var occurred = make(map[string]bool)
 				var ignored = 0
-				for i, name := range p.ValueNames {
+				var items = make([]PatternItem, len(p.Names))
+				for i, identifier := range p.Names {
+					var name = loader.Id2String(identifier)
 					if name == IgnoreMark {
 						ignored += 1
 					} else {
-						var _, exists = added[name]
-						if exists {
-							return ExprContext{}, &ExprError {
-								Point:    p.Points[i],
+						var _, duplicate = occurred[name]
+						if duplicate {
+							return Pattern{}, &ExprError {
+								Point:    ctx.GetErrorPoint(identifier.Node),
 								Concrete: E_DuplicateBinding { name },
 							}
 						}
-						added[name] = tuple.Elements[i]
+						occurred[name] = true
+						items[i] = PatternItem {
+							Name:  loader.Id2String(identifier),
+							Index: uint(i),
+							Type:  tuple.Elements[i],
+							Point: ctx.GetErrorPoint(identifier.Node),
+						}
 					}
 				}
-				if ignored == len(p.ValueNames) {
-					return err_result(E_EntireValueIgnored {})
+				if ignored == len(p.Names) {
+					return err_result(E_EntireValueIgnored{})
 				} else {
-					return check(added)
+					return Pattern {
+						Point:    ctx.GetErrorPoint(p_node.Node),
+						Concrete: TuplePattern { items },
+					}, nil
 				}
 			}
 		case TR_NonTuple:
@@ -157,32 +110,50 @@ func (ctx ExprContext) WithPatternMatching (
 		default:
 			panic("impossible branch")
 		}
-	case BundlePattern:
+	case node.PatternBundle:
 		switch bundle := UnboxBundle(input, ctx).(type) {
 		case Bundle:
-			var added = make(map[string]Type)
-			for i, name := range p.ValueNames {
-				if name == IgnoreMark { panic("something went wrong") }
+			var occurred = make(map[string]bool)
+			var items = make([]PatternItem, len(p.Names))
+			for i, identifier := range p.Names {
+				var name = loader.Id2String(identifier)
 				var field_type, exists = bundle.Fields[name]
+				if exists && name == IgnoreMark {
+					// field should not be named using IgnoreMark;
+					// IgnoreMark used in bundle pattern considered
+					//   as "field does not exist" error
+					panic("something went wrong")
+				}
 				if !exists {
-					return ExprContext{}, &ExprError{
-						Point:    p.Points[i],
+					return Pattern{}, &ExprError {
+						Point:    ctx.GetErrorPoint(identifier.Node),
 						Concrete: E_FieldDoesNotExist {
 							Field:  name,
 							Target: ctx.DescribeType(input),
 						},
 					}
 				}
-				_, exists = added[name]
-				if exists {
-					return ExprContext{}, &ExprError {
-						Point:    p.Points[i],
+				var _, duplicate = occurred[name]
+				if duplicate {
+					return Pattern{}, &ExprError {
+						Point:    ctx.GetErrorPoint(identifier.Node),
 						Concrete: E_DuplicateBinding { name },
 					}
 				}
-				added[name] = field_type
+				occurred[name] = true
+				var field_index, ok = bundle.Index[name]
+				if !ok { panic("something went wrong") }
+				items[i] = PatternItem {
+					Name:  loader.Id2String(identifier),
+					Index: field_index,
+					Type:  field_type,
+					Point: ctx.GetErrorPoint(identifier.Node),
+				}
 			}
-			return check(added)
+			return Pattern {
+				Point:    ctx.GetErrorPoint(p_node.Node),
+				Concrete: BundlePattern { items },
+			}, nil
 		case BR_NonBundle:
 			return err_result(E_MatchingNonBundleType {})
 		case BR_BundleButOpaque:
@@ -190,6 +161,70 @@ func (ctx ExprContext) WithPatternMatching (
 		default:
 			panic("impossible branch")
 		}
+	default:
+		panic("impossible branch")
+	}
+}
+
+
+func (ctx ExprContext) WithShadowingPatternMatching(p Pattern) ExprContext {
+	var added = make(map[string]Type)
+	switch P := p.Concrete.(type) {
+	case TrivialPattern:
+		added[P.ValueName] = P.ValueType
+	case TuplePattern:
+		var added = make(map[string]Type)
+		for _, item := range P.Items {
+			added[item.Name] = item.Type
+		}
+	case BundlePattern:
+		var added = make(map[string]Type)
+		for _, item := range P.Items {
+			added[item.Name] = item.Type
+		}
+	default:
+		panic("impossible branch")
+	}
+	var new_ctx, _ = ctx.WithAddedLocalValues(added)
+	return new_ctx
+}
+
+func (ctx ExprContext) WithPatternMatching(p Pattern) (ExprContext, *ExprError) {
+	var err_result = func(e ConcreteExprError) (ExprContext, *ExprError) {
+		return ExprContext{}, &ExprError {
+			Point:    p.Point,
+			Concrete: e,
+		}
+	}
+	var check = func(added map[string]Type) (ExprContext, *ExprError) {
+		var new_ctx, shadowed = ctx.WithAddedLocalValues(added)
+		if shadowed != "" {
+			return err_result(E_DuplicateBinding { shadowed })
+		} else {
+			return new_ctx, nil
+		}
+	}
+	switch P := p.Concrete.(type) {
+	case TrivialPattern:
+		if P.ValueName == IgnoreMark {
+			return err_result(E_EntireValueIgnored {})
+		} else {
+			var added = make(map[string]Type)
+			added[P.ValueName] = P.ValueType
+			return check(added)
+		}
+	case TuplePattern:
+		var added = make(map[string]Type)
+		for _, item := range P.Items {
+			added[item.Name] = item.Type
+		}
+		return check(added)
+	case BundlePattern:
+		var added = make(map[string]Type)
+		for _, item := range P.Items {
+			added[item.Name] = item.Type
+		}
+		return check(added)
 	default:
 		panic("impossible branch")
 	}
