@@ -340,8 +340,7 @@ func TypeFromRepr (repr node.Repr, ctx TypeContext) (Type, *TypeError) {
 				Repr: Unit {},
 			}, nil
 		} else {
-			var fields = make(map[string]Type)
-			var index = make(map[string] uint)
+			var fields = make(map[string]Field)
 			for i, f := range r.Fields {
 				var f_name = loader.Id2String(f.Name)
 				if f_name == IgnoreMark {
@@ -361,13 +360,14 @@ func TypeFromRepr (repr node.Repr, ctx TypeContext) (Type, *TypeError) {
 				} }
 				var f_type, err = TypeFrom(f.Type.Type, ctx)
 				if err != nil { return nil, err }
-				fields[f_name] = f_type
-				index[f_name] = uint(i)
+				fields[f_name] = Field {
+					Type:  f_type,
+					Index: uint(i),
+				}
 			}
 			return AnonymousType {
 				Repr: Bundle {
 					Fields: fields,
-					Index: index,
 				},
 			}, nil
 		}

@@ -90,7 +90,7 @@ func CheckBundle(bundle node.Bundle, ctx ExprContext) (SemiExpr, *ExprError) {
 				var current_base = base
 				for _, field := range bundle.Values {
 					var name = loader.Id2String(field.Key)
-					var index, exists = target.Index[name]
+					var target_field, exists = target.Fields[name]
 					if !exists {
 						return SemiExpr{}, &ExprError {
 							Point: ctx.GetErrorPoint(field.Key.Node),
@@ -111,14 +111,13 @@ func CheckBundle(bundle node.Bundle, ctx ExprContext) (SemiExpr, *ExprError) {
 					var value_node = DesugarOmittedFieldValue(field)
 					var value_semi, err1 = Check(value_node, ctx)
 					if err1 != nil { return SemiExpr{}, err1 }
-					var field_type = target.Fields[name]
-					var value, err2 = AssignTo(field_type, value_semi, ctx)
+					var value, err2 = AssignTo(target_field.Type, value_semi, ctx)
 					if err2 != nil { return SemiExpr{}, err2 }
 					current_base = Expr {
 						Type:  current_base.Type,
 						Value: Set {
 							Product:  current_base,
-							Index:    index,
+							Index:    target_field.Index,
 							NewValue: value,
 						},
 						Info:  current_base.Info,
@@ -207,7 +206,7 @@ func CheckGet(get node.Get, ctx ExprContext) (SemiExpr, *ExprError) {
 			switch bundle := UnboxBundle(base.Type, ctx).(type) {
 			case Bundle:
 				var key = loader.Id2String(member.Name)
-				var index, exists = bundle.Index[key]
+				var field, exists = bundle.Fields[key]
 				if !exists { return SemiExpr{}, &ExprError {
 					Point:    ctx.GetErrorPoint(member.Node),
 					Concrete: E_FieldDoesNotExist {
@@ -216,10 +215,10 @@ func CheckGet(get node.Get, ctx ExprContext) (SemiExpr, *ExprError) {
 					},
 				} }
 				var expr = Expr {
-					Type: bundle.Fields[key],
+					Type: field.Type,
 					Value: Get {
 						Product: Expr(base),
-						Index:   index,
+						Index:   field.Index,
 					},
 					Info:  ctx.GetExprInfo(member.Node),
 				}
@@ -309,23 +308,22 @@ func AssignBundleTo(expected Type, bundle SemiTypedBundle, info ExprInfo, ctx Ex
 	case AnonymousType:
 		switch bundle_t := E.Repr.(type) {
 		case Bundle:
-			var values = make([]Expr, len(bundle_t.Index))
-			for field_name, index := range bundle_t.Index {
-				var field_type = bundle_t.Fields[field_name]
+			var values = make([]Expr, len(bundle_t.Fields))
+			for field_name, field := range bundle_t.Fields {
 				var given_index, exists = bundle.Index[field_name]
 				if !exists {
 					return Expr{}, &ExprError {
 						Point:    info.ErrorPoint,
 						Concrete: E_MissingField {
 							Field: field_name,
-							Type:  ctx.DescribeType(field_type),
+							Type:  ctx.DescribeType(field.Type),
 						},
 					}
 				}
 				var given_value = bundle.Values[given_index]
-				var value, err = AssignTo(field_type, given_value, ctx)
+				var value, err = AssignTo(field.Type, given_value, ctx)
 				if err != nil { return Expr{}, err }
-				values[index] = value
+				values[field.Index] = value
 			}
 			for given_field_name, index := range bundle.Index {
 				var _, exists = bundle_t.Fields[given_field_name]

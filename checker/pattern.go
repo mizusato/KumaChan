@@ -117,7 +117,7 @@ func PatternFrom (
 			var items = make([]PatternItem, len(p.Names))
 			for i, identifier := range p.Names {
 				var name = loader.Id2String(identifier)
-				var field_type, exists = bundle.Fields[name]
+				var field, exists = bundle.Fields[name]
 				if exists && name == IgnoreMark {
 					// field should not be named using IgnoreMark;
 					// IgnoreMark used in bundle pattern considered
@@ -141,12 +141,10 @@ func PatternFrom (
 					}
 				}
 				occurred[name] = true
-				var field_index, ok = bundle.Index[name]
-				if !ok { panic("something went wrong") }
 				items[i] = PatternItem {
 					Name:  loader.Id2String(identifier),
-					Index: field_index,
-					Type:  field_type,
+					Index: field.Index,
+					Type:  field.Type,
 					Point: ctx.GetErrorPoint(identifier.Node),
 				}
 			}

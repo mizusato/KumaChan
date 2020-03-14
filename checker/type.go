@@ -57,8 +57,11 @@ type Tuple struct {
 }
 func (impl Bundle) TypeRepr() {}
 type Bundle struct {
-	Fields  map[string] Type  // TODO: merge the 2 maps
-	Index   map[string] uint
+	Fields  map[string] Field
+}
+type Field struct {
+	Type   Type
+	Index  uint
 }
 func (impl Func) TypeRepr() {}
 type Func struct {
@@ -67,7 +70,7 @@ type Func struct {
 }
 
 
-func (u Union) GetSubtypeIndex(sym loader.Symbol) (uint, bool) {
+func GetSubtypeIndex(u Union, sym loader.Symbol) (uint, bool) {
 	for index, subtype := range u.SubTypes {
 		if subtype == sym {
 			return uint(index), true
@@ -126,7 +129,7 @@ func DescribeType(type_ Type, ctx TypeContext, opt TypeDescOptions) string {
 			for name, field := range r.Fields {
 				buf.WriteString(name)
 				buf.WriteString(": ")
-				buf.WriteString(DescribeType(field, ctx, opt))
+				buf.WriteString(DescribeType(field.Type, ctx, opt))
 			}
 			buf.WriteString(" }")
 			return buf.String()
@@ -173,7 +176,7 @@ func IsLocalType (type_ Type, mod string) bool {
 			return false
 		case Bundle:
 			for _, f := range r.Fields {
-				if IsLocalType(f, mod) {
+				if IsLocalType(f.Type, mod) {
 					return true
 				}
 			}
@@ -257,7 +260,7 @@ func AreTypesOverloadUnsafe (type1 Type, type2 Type) bool {
 					if L1 == L2 {
 						for name, f1 := range r1.Fields {
 							var f2, exists = r2.Fields[name]
-							if !exists || !(AreTypesOverloadUnsafe(f1, f2)) {
+							if !exists || !(AreTypesOverloadUnsafe(f1.Type, f2.Type)) {
 								return false
 							}
 						}
@@ -359,7 +362,7 @@ func AreTypesEqualInSameCtx (type1 Type, type2 Type) bool {
 					if L1 == L2 {
 						for name, f1 := range r1.Fields {
 							var f2, exists = r2.Fields[name]
-							if !exists || !(AreTypesEqualInSameCtx(f1, f2)) {
+							if !exists || !(AreTypesEqualInSameCtx(f1.Type, f2.Type)) {
 								return false
 							}
 						}

@@ -186,14 +186,16 @@ func FillTypeArgs(t Type, given []Type) Type {
 				},
 			}
 		case Bundle:
-			var filled = make(map[string]Type, len(r.Fields))
+			var filled = make(map[string]Field, len(r.Fields))
 			for name, field := range r.Fields {
-				filled[name] = FillTypeArgs(field, given)
+				filled[name] = Field {
+					Type:  FillTypeArgs(field.Type, given),
+					Index: field.Index,
+				}
 			}
 			return AnonymousType {
 				Repr: Bundle {
 					Fields: filled,
-					Index:  r.Index,
 				},
 			}
 		case Func:
@@ -252,7 +254,7 @@ func NaivelyInferTypeArgs(template Type, given Type, inferred map[uint]Type) {
 					for name, Tf := range Tr.Fields {
 						var Gf, exists = Gr.Fields[name]
 						if exists {
-							NaivelyInferTypeArgs(Tf, Gf, inferred)
+							NaivelyInferTypeArgs(Tf.Type, Gf.Type, inferred)
 						}
 					}
 				}
