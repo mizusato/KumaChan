@@ -153,7 +153,7 @@ func (raw RawTypeRegistry) LookupArity(name loader.Symbol) (bool, uint) {
 func (reg TypeRegistry) LookupArity(name loader.Symbol) (bool, uint) {
 	var t, exists = reg[name]
 	if exists {
-		return true, t.Arity
+		return true, uint(len(t.Params))
 	} else {
 		return false, 0
 	}
@@ -201,7 +201,7 @@ func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, *Type
 		// 3.3. Use the generated TypeVal to construct a GenericType
 		//      and register it to the TypeRegistry
 		reg[name] = &GenericType {
-			Arity:      uint(len(params)),
+			Params:     params,
 			Value:      val,
 			Node:       t.Node,
 			UnionIndex: raw.UnionIndexMap[name],

@@ -19,6 +19,7 @@ type ExprContext struct {
 	TypeParams     [] string
 	LocalValues    map[string] Type
 	InferTypeArgs  bool
+	InferredNames  [] string
 	Inferred       map[uint] Type  // mutable
 	UnboxCounted   bool
 	UnboxCount     *uint
@@ -70,20 +71,12 @@ func (ctx ExprContext) GetTypeContext() TypeContext {
 }
 
 func (ctx ExprContext) DescribeType(t Type) string {
-	return DescribeType(t, ctx.GetTypeContext(), TypeDescOptions {
-		UseContextParamNames: true,
-	})
-}
-
-func (ctx ExprContext) DescribeIncompleteType(t Type) string {
-	return DescribeType(t, ctx.GetTypeContext(), TypeDescOptions {
-		UseContextParamNames: false,
-	})
+	return DescribeType(t, ctx.TypeParams)
 }
 
 func (ctx ExprContext) DescribeExpectedType(t Type) string {
 	if ctx.InferTypeArgs {
-		return ctx.DescribeIncompleteType(t)
+		return DescribeType(t, ctx.InferredNames)
 	} else {
 		return ctx.DescribeType(t)
 	}

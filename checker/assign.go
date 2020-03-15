@@ -1,6 +1,8 @@
 package checker
 
-import "fmt"
+import (
+	"fmt"
+)
 
 
 func RequireExplicitType(t Type, info ExprInfo) *ExprError {
@@ -62,7 +64,8 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext, unbox bool) (Expr,
 			}
 		}
 		// -- behavior of assigning a named type to an union type --
-		var assign_union = func(exp NamedType, given NamedType, union Union) (Expr, *ExprError) {
+		var assign_union func(NamedType, NamedType, Union) (Expr, *ExprError)
+		assign_union = func(exp NamedType, given NamedType, union Union) (Expr, *ExprError) {
 			// 1. Find the given type in the list of subtypes of the union
 			for index, subtype := range union.SubTypes {
 				if subtype == given.Name {
@@ -83,6 +86,22 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext, unbox bool) (Expr,
 					return Expr {
 						Type:  exp,
 						Value: Sum { Value: expr, Index: uint(index) },
+						Info:  expr.Info,
+					}, nil
+				}
+			}
+			for index, subtype := range union.SubTypes {
+				var t = ctx.ModuleInfo.Types[subtype]
+				var item_union, ok = t.Value.(Union)
+				if ok {
+					var item_expr, err = assign_union(NamedType {
+						Name: subtype,
+						Args: exp.Args,
+					}, given, item_union)
+					if err != nil { continue }
+					return Expr {
+						Type:  exp,
+						Value: Sum { Value: item_expr, Index: uint(index) },
 						Info:  expr.Info,
 					}, nil
 				}

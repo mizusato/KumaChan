@@ -98,7 +98,7 @@ func CheckMatch(match node.Match, ctx ExprContext) (SemiExpr, *ExprError) {
 					TypeName: type_sym.String(),
 				},
 			} }
-			if g.Arity != uint(len(union_args)) {
+			if len(g.Params) != len(union_args) {
 				panic("something went wrong")
 			}
 			var subtype = NamedType {

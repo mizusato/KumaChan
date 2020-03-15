@@ -133,8 +133,9 @@ func OverloadedAssignTo (
 
 func DescribeCandidate(name string, f *GenericFunction, ctx ExprContext) string {
 	return fmt.Sprintf (
-		"%s: %s", name, ctx.DescribeIncompleteType (
+		"%s: %s", name, DescribeType (
 			AnonymousType { f.DeclaredType },
+			f.TypeParams,
 		),
 	)
 }

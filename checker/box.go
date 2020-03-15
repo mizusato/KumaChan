@@ -36,7 +36,8 @@ func Box (
 		}
 	}
 	var given_count = uint(len(given_args))
-	if given_count == g_type.Arity {
+	var g_type_arity = uint(len(g_type.Params))
+	if given_count == g_type_arity {
 		var inner_type = FillTypeArgs(wrapped.InnerType, given_args)
 		var expr, err = AssignTo(inner_type, to_be_boxed, ctx)
 		if err != nil { return Expr{}, err }
@@ -53,13 +54,13 @@ func Box (
 		var inf_ctx = ctx.WithTypeArgsInferringEnabled()
 		var expr, err = AssignTo(wrapped.InnerType, to_be_boxed, inf_ctx)
 		if err != nil { return Expr{}, err }
-		if uint(len(inf_ctx.Inferred)) != g_type.Arity {
+		if uint(len(inf_ctx.Inferred)) != g_type_arity {
 			return Expr{}, &ExprError {
 				Point:    g_type_info.ErrorPoint,
 				Concrete: E_ExplicitTypeParamsRequired {},
 			}
 		}
-		var inferred_args = make([]Type, g_type.Arity)
+		var inferred_args = make([]Type, g_type_arity)
 		for i, t := range inf_ctx.Inferred {
 			inferred_args[i] = t
 		}
@@ -83,7 +84,7 @@ func Box (
 				Point:    g_type_info.ErrorPoint,
 				Concrete: E_WrongParameterQuantity {
 					TypeName: g_type_name,
-					Required: g_type.Arity,
+					Required: g_type_arity,
 					Given:    given_count,
 				},
 			} },
