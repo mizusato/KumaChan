@@ -14,6 +14,7 @@ import (
 
 
 type Module struct {
+	Name      string
 	Node      node.Module
 	AST       *ast.Tree
 	ImpMap    map[string] *Module
@@ -160,6 +161,7 @@ func LoadModule(path string, ctx Context, idx Index) (*Module, *Error) {
 			}
 		}
 		var mod = &Module {
+			Name:     module_name,
 			Node:     module_node,
 			ImpMap:   imported_map,
 			AST:      tree,

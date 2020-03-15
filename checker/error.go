@@ -167,6 +167,10 @@ type E_InvalidOverload struct {
 	BetweenLocal  bool
 }
 
+func (err *FunctionError) Message() ErrorMessage {
+	panic("not implemented")
+}
+
 
 type ConstantError struct {
 	Point     ErrorPoint
@@ -194,6 +198,10 @@ type E_ConstTypeInvalid struct {
 func (impl E_ConstConflictWithType) ConstantError() {}
 type E_ConstConflictWithType struct {
 	Name  string
+}
+
+func (err *ConstantError) Message() ErrorMessage {
+	panic("not implemented")  // TODO
 }
 
 
@@ -419,4 +427,8 @@ type E_BoxProtectedType struct {
 func (impl E_BoxOpaqueType) ExprError() {}
 type E_BoxOpaqueType struct {
 	Type  string
+}
+
+func (err *ExprError) Message() ErrorMessage {
+	panic("not implemented")
 }

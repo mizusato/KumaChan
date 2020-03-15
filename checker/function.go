@@ -34,7 +34,7 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 	 *  Effect: fill all collected functions into the function store
 	 */
 	// 1. Check if the module was visited, if so, return the existing result
-	var mod_name = loader.Id2String(mod.Node.Name)
+	var mod_name = mod.Name
 	var existing, exists = store[mod_name]
 	if exists {
 		return existing, nil

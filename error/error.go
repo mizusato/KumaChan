@@ -13,6 +13,10 @@ import (
 
 const ERR_FOV = 5
 
+type E interface {
+	Message()  ErrorMessage
+}
+
 type MaybeErrorPoint interface { MaybeErrorPoint() }
 func (impl ErrorPoint) MaybeErrorPoint() {}
 type ErrorPoint struct {

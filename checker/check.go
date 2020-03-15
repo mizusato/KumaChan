@@ -7,11 +7,34 @@ import (
 )
 
 
+type CheckedModule struct {
+	Name             string
+	RawModule        *loader.Module
+	Imported         map[string] *CheckedModule
+	ConstantValues   map[string] ExprLike
+	FunctionBodies   map[string] []ExprLike
+	EffectsToBeDone  [] Expr
+}
+
+type ExprLike interface { ExprLike() }
+func (impl ExprNative) ExprLike() {}
+type ExprNative string
+func (impl ExprExpr) ExprLike() {}
+type ExprExpr Expr
+
+type Index  map[string] *CheckedModule
+
+type CheckContext struct {
+	Types      TypeRegistry
+	Functions  FunctionStore
+	Constants  ConstantStore
+}
+
 type ModuleInfo struct {
 	Module     *loader.Module
 	Types      TypeRegistry
-	Constants  ConstantCollection   // TODO: check naming conflict between
-	Functions  FunctionCollection   //       constants and functions
+	Constants  ConstantCollection
+	Functions  FunctionCollection
 }
 
 type ExprContext struct {
@@ -62,6 +85,16 @@ func (impl SymFunctions) Sym() {}
 type SymFunctions struct { Functions []*GenericFunction }
 
 
+func CreateExprContext(mod_info ModuleInfo, params []string) ExprContext {
+	return ExprContext {
+		ModuleInfo:    mod_info,
+		TypeParams:    params,
+		LocalValues:   make(map[string]Type),
+		InferTypeArgs: false,
+		UnboxCounted:  false,
+	}
+}
+
 func (ctx ExprContext) GetTypeContext() TypeContext {
 	return TypeContext {
 		Module: ctx.ModuleInfo.Module,
@@ -106,6 +139,16 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 				functions[i] = ref.Function
 			}
 			return SymFunctions { Functions: functions }, true
+		}
+		var self = ctx.ModuleInfo.Module.Name
+		var sym_self = loader.NewSymbol(self, sym_name)
+		g, exists := ctx.ModuleInfo.Types[sym_self]
+		if exists {
+			return SymType { Type: g }, true
+		}
+		constant, exists := ctx.ModuleInfo.Constants[sym_self]
+		if exists {
+			return SymConst { Const: constant }, true
 		}
 		return nil, false
 	} else {
@@ -212,4 +255,139 @@ func CheckTerm(term node.VariousTerm, ctx ExprContext) (SemiExpr, *ExprError) {
 	default:
 		panic("impossible branch")
 	}
+}
+
+func TypeCheck(entry *loader.Module, raw_index loader.Index) (
+	*CheckedModule, Index, []E,
+) {
+	var types, err1 = RegisterTypes(entry, raw_index)
+	if err1 != nil { return nil, nil, []E { err1 } }
+	var constants = make(ConstantStore)
+	var _, err2 = CollectConstants(entry, types, constants)
+	if err2 != nil { return nil, nil, []E { err2 } }
+	var functions = make(FunctionStore)
+	var _, err3 = CollectFunctions(entry, types, functions)
+	if err3 != nil { return nil, nil, []E { err3 } }
+	var ctx = CheckContext {
+		Types:     types,
+		Functions: functions,
+		Constants: constants,
+	}
+	var checked_index = make(Index)
+	var checked, errs = TypeCheckModule(entry, checked_index, ctx)
+	if errs != nil { return nil, nil, errs }
+	return checked, checked_index, nil
+}
+
+func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
+	*CheckedModule, []E,
+) {
+	var mod_name = mod.Name
+	var existing, exists = index[mod_name]
+	if exists {
+		return existing, nil
+	}
+	var functions = ctx.Functions[mod_name]
+	var constants = ctx.Constants[mod_name]
+	var mod_info = ModuleInfo {
+		Module:    mod,
+		Types:     ctx.Types,
+		Constants: constants,
+		Functions: functions,
+	}
+	var errors = make([]E, 0)
+	var imported = make(map[string] *CheckedModule)
+	for alias, imported_item := range mod.ImpMap {
+		var checked, errs = TypeCheckModule(imported_item, index, ctx)
+		if errs != nil {
+			errors = append(errors, errs...)
+			continue
+		}
+		imported[alias] = checked
+	}
+	var func_map = make(map[string] []ExprLike)
+	for name, group := range functions {
+		func_map[name] = make([]ExprLike, 0)
+		var add = func(b ExprLike) {
+			func_map[name] = append(func_map[name], b)
+		}
+		for _, f_ref := range group {
+			if f_ref.IsImported {
+				continue
+			}
+			var f = f_ref.Function
+			switch body := f.Body.(type) {
+			case node.Lambda:
+				var f_expr_ctx = CreateExprContext(mod_info, f.TypeParams)
+				var lambda, err1 = CheckLambda(body, f_expr_ctx)
+				if err1 != nil {
+					errors = append(errors, err1)
+					continue
+				}
+				var t = AnonymousType { f.DeclaredType }
+				var body_expr, err2 = AssignTo(t, lambda, f_expr_ctx)
+				if err2 != nil {
+					errors = append(errors, err2)
+					continue
+				}
+				add(ExprExpr(body_expr))
+			case node.NativeRef:
+				add(ExprNative(string(body.Id.Value)))
+			default:
+				panic("impossible branch")
+			}
+		}
+	}
+	var expr_ctx = CreateExprContext(mod_info, make([]string, 0))
+	var const_map = make(map[string] ExprLike)
+	for sym, constant := range constants {
+		if sym.ModuleName != mod_name { panic("something went wrong") }
+		var name = sym.SymbolName
+		switch val := constant.Value.(type) {
+		case node.Expr:
+			var semi_expr, err1 = Check(val, expr_ctx)
+			if err1 != nil {
+				errors = append(errors, err1)
+				continue
+			}
+			var t = constant.DeclaredType
+			var expr, err2 = AssignTo(t, semi_expr, expr_ctx)
+			if err2 != nil {
+				errors = append(errors, err2)
+				continue
+			}
+			const_map[name] = ExprExpr(expr)
+		case node.NativeRef:
+			const_map[name] = ExprNative(string(val.Id.Value))
+		default:
+			panic("impossible branch")
+		}
+	}
+	var do_effects = make([]Expr, 0)
+	for _, cmd := range mod.Node.Commands {
+		switch do := cmd.Command.(type) {
+		case node.Do:
+			var semi_expr, err1 = Check(do.Effect, expr_ctx)
+			if err1 != nil {
+				errors = append(errors, err1)
+				continue
+			}
+			var expr, err2 = AssignTo(__DoType, semi_expr, expr_ctx)
+			if err2 != nil {
+				errors = append(errors, err2)
+				continue
+			}
+			do_effects = append(do_effects, expr)
+		}
+	}
+	var checked = &CheckedModule {
+		Name:            mod_name,
+		RawModule:       mod,
+		Imported:        imported,
+		ConstantValues:  const_map,
+		FunctionBodies:  func_map,
+		EffectsToBeDone: do_effects,
+	}
+	index[mod_name] = checked
+	return checked, nil
 }

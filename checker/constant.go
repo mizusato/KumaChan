@@ -18,7 +18,7 @@ type ConstantCollection  map[loader.Symbol] *Constant
 type ConstantStore  map[string] ConstantCollection
 
 func CollectConstants(mod *loader.Module, reg TypeRegistry, store ConstantStore) (ConstantCollection, *ConstantError) {
-	var mod_name = loader.Id2String(mod.Node.Name)
+	var mod_name = mod.Name
 	var existing, exists = store[mod_name]
 	if exists {
 		return existing, nil

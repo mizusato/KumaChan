@@ -38,7 +38,7 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 	 *          and all modules imported by the module to the registry
 	 */
 	// 1. Check if the module was visited, if visited, do nothing
-	var mod_name = loader.Id2String(mod.Node.Name)
+	var mod_name = mod.Name
 	var _, visited = raw.VisitedMod[mod_name]
 	if visited { return nil }
 	raw.VisitedMod[mod_name] = true
@@ -261,7 +261,7 @@ func TypeFrom (type_ node.Type, ctx TypeContext) (Type, *TypeError) {
 				}
 			}
 		}
-		var sym = ctx.Module.SymbolFromRef(t.Ref)
+		var sym = ctx.Module.TypeSymbolFromRef(t.Ref)
 		switch s := sym.(type) {
 		case loader.Symbol:
 			var exists, arity = ctx.Ireg.LookupArity(s)

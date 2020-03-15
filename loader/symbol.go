@@ -41,7 +41,6 @@ func (mod *Module) SymbolFromName(name node.Identifier) Symbol {
 }
 
 func (mod *Module) SymbolFromRef(ref node.Ref) MaybeSymbol {
-	var self = Id2String(mod.Node.Name)
 	var ref_mod = Id2String(ref.Module)
 	var corresponding, exists = mod.ImpMap[ref_mod]
 	if exists {
@@ -62,7 +61,7 @@ func (mod *Module) SymbolFromRef(ref node.Ref) MaybeSymbol {
 					return NewSymbol(CoreModule, sym_name)
 				} else {
 					// Self::SymbolName
-					return NewSymbol(self, sym_name)
+					return NewSymbol("", sym_name)
 				}
 			}
 		} else {
@@ -71,6 +70,20 @@ func (mod *Module) SymbolFromRef(ref node.Ref) MaybeSymbol {
 	}
 }
 
+func (mod *Module) TypeSymbolFromRef(ref node.Ref) MaybeSymbol {
+	var self = Id2String(mod.Node.Name)
+	var maybe_sym = mod.SymbolFromRef(ref)
+	var sym, ok = maybe_sym.(Symbol)
+	if ok {
+		if sym.ModuleName == "" {
+			return NewSymbol(self, sym.SymbolName)
+		} else {
+			return sym
+		}
+	} else {
+		return nil
+	}
+}
 
 /* should be consistent with `stdlib/core.km` */
 var __PreloadCoreSymbols = []string {
