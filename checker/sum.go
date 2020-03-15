@@ -223,7 +223,7 @@ func CheckIf(if_node node.If, ctx ExprContext) (SemiExpr, *ExprError) {
 
 
 func AssignMatchTo(expected Type, match SemiTypedMatch, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
-	var _, err = RequireExplicitType(expected, info)
+	var err = RequireExplicitType(expected, info)
 	if err != nil { return Expr{}, err }
 	var branches = make([]Branch, len(match.Branches))
 	for i, branch_semi := range match.Branches {

@@ -2,14 +2,15 @@ package checker
 
 import "fmt"
 
-func RequireExplicitType(t Type, info ExprInfo) (struct{}, *ExprError) {
+
+func RequireExplicitType(t Type, info ExprInfo) *ExprError {
 	if t == nil {
-		return struct{}{}, &ExprError {
+		return &ExprError {
 			Point:    info.ErrorPoint,
 			Concrete: E_ExplicitTypeRequired {},
 		}
 	} else {
-		return struct{}{}, nil
+		return nil
 	}
 }
 
@@ -131,12 +132,19 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext, unbox bool) (Expr,
 			if unbox {
 				var unboxed, ok = Unbox(expr.Type, ctx).(Unboxed)
 				if ok {
-					var expr_unboxed = Expr{
+					var expr_unboxed = Expr {
 						Type:  unboxed.Type,
 						Value: expr.Value,
 						Info:  expr.Info,
 					}
-					return AssignTypedTo(expected, expr_unboxed, ctx, false)
+					var expr_expected, err = AssignTypedTo (
+						expected, expr_unboxed, ctx, false,
+					)
+					if err != nil { return Expr{}, err }
+					if ctx.UnboxCounted {
+						*(ctx.UnboxCount) += 1
+					}
+					return expr_expected, nil
 				}
 			}
 			return Expr{}, throw("")

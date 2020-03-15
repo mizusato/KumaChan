@@ -48,12 +48,12 @@ type Do struct {
 
 func (impl DeclFunction) Command() {}
 type DeclFunction struct {
-    Node                      `part:"decl_func"`
-    IsPublic  bool            `option:"scope.@public"`
-    Name      Identifier      `part:"name"`
-    Params    [] Identifier   `list_more:"type_params" item:"name"`
-    Repr      ReprFunc        `part:"signature.repr_func"`
-    Body      VariousBody     `part:"body"`
+    Node                    `part:"decl_func"`
+    Public  bool            `option:"scope.@public"`
+    Name    Identifier      `part:"name"`
+    Params  [] Identifier   `list_more:"type_params" item:"name"`
+    Repr    ReprFunc        `part:"signature.repr_func"`
+    Body    VariousBody     `part:"body"`
 }
 type VariousBody struct {
     Node         `part:"body"`

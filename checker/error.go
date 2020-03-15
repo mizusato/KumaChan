@@ -162,8 +162,9 @@ type E_SignatureNonLocal struct {
 
 func (E_InvalidOverload) FunctionError() {}
 type E_InvalidOverload struct {
-	FuncName         string
-	IsLocalConflict  bool
+	FunctionName  string
+	ModuleName    string
+	BetweenLocal  bool
 }
 
 

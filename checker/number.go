@@ -85,7 +85,7 @@ func CheckFloat(f node.FloatLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
 
 
 func AssignIntegerTo(expected Type, integer UntypedInteger, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
-	var _, err = RequireExplicitType(expected, info)
+	var err = RequireExplicitType(expected, info)
 	if err != nil { return Expr{}, err }
 	switch E := expected.(type) {
 	case NamedType:

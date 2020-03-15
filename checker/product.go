@@ -302,7 +302,7 @@ func AssignTupleTo(expected Type, tuple SemiTypedTuple, info ExprInfo, ctx ExprC
 }
 
 func AssignBundleTo(expected Type, bundle SemiTypedBundle, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
-	var _, err = RequireExplicitType(expected, info)
+	var err = RequireExplicitType(expected, info)
 	if err != nil { return Expr{}, err }
 	switch E := expected.(type) {
 	case AnonymousType:

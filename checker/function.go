@@ -8,7 +8,7 @@ import (
 
 type GenericFunction struct {
 	Node          node.Node
-	IsPublic      bool
+	Public        bool
 	TypeParams    [] string
 	DeclaredType  Func
 	Body          node.Body
@@ -17,6 +17,7 @@ type GenericFunction struct {
 type FunctionReference struct {
 	Function    *GenericFunction  // Pointer to the underlying function
 	IsImported  bool              // If it is imported from another module
+	ModuleName  string
 }
 
 // Map from module names to their corresponding function collections
@@ -47,15 +48,14 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 		// 2.2. Iterate over all functions in imported modules
 		for name, refs := range imp_col {
 			for _, ref := range refs {
-				if !ref.IsImported && ref.Function.IsPublic {
+				if !ref.IsImported && ref.Function.Public {
 					// 2.2.1. If the function is exported, import it
 					var _, exists = collection[name]
-					if !exists { collection[name] = make([]FunctionReference, 0) }
+					if !exists {
+						collection[name] = make([]FunctionReference, 0)
+					}
 					// Note: conflict (unsafe overload) must not happen there,
-					//       since public functions have local types
-					// TODO: assume modules with no type declarations
-					//       to be toolkit modules, in which
-					//       encapsulation is disabled
+					//       since public functions have local signatures
 					collection[name] = append(collection[name], FunctionReference {
 						Function:   ref.Function,
 						IsImported: true,
@@ -97,18 +97,23 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 					TypeError: err,
 				},
 			} }
-			// 3.4. If the function is exported, check if it is autognostic
-			var is_public = decl.IsPublic
-			if is_public && !(IsLocalType(sig, mod_name)) { return nil, &FunctionError {
-				Point:    ErrorPoint { AST: mod.AST, Node: decl.Repr.Node },
-				Concrete: E_SignatureNonLocal {
-					FuncName: name,
-				},
-			} }
+			// 3.4. If the function is public, ensure its signature type
+			//        to be a local type of this module.
+			var is_public = decl.Public
+			if is_public && !(IsLocalType(sig, mod_name)) {
+				return nil, &FunctionError {
+					Point:    ErrorPoint {
+						AST: mod.AST, Node: decl.Repr.Node,
+					},
+					Concrete: E_SignatureNonLocal {
+						FuncName: name,
+					},
+				}
+			}
 			// 3.5. Construct a representation and a reference of the function
 			var func_type = sig.(AnonymousType).Repr.(Func)
 			var gf = &GenericFunction {
-				IsPublic:     is_public,
+				Public:       is_public,
 				TypeParams:   params,
 				DeclaredType: func_type,
 				Body:         decl.Body.Body,
@@ -116,26 +121,21 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 			}
 			var ref = FunctionReference {
 				IsImported: false,
-				Function: gf,
+				Function:   gf,
+				ModuleName: mod_name,
 			}
 			// 3.6. Check if the name of the function is in use
 			var _, exists = collection[name]
 			if exists {
 				// 3.6.1. If in use, try to overload it
-				for _, existing := range collection[name] {
-					var unsafe = AreTypesOverloadUnsafe (
-						AnonymousType { Repr: existing.Function.DeclaredType },
-						AnonymousType { Repr: func_type },
-					)
-					if unsafe { return nil, &FunctionError {
-						Point:    ErrorPoint { AST: mod.AST, Node: decl.Name.Node },
-						Concrete: E_InvalidOverload {
-							FuncName:        name,
-							IsLocalConflict: !(existing.IsImported),
-						},
-					} }
-					collection[name] = append(collection[name], ref)
+				var err_point = ErrorPoint {
+					AST: mod.AST, Node: decl.Name.Node,
 				}
+				var err = CheckOverload (
+					collection[name], func_type, name, err_point,
+				)
+				if err != nil { return nil, err }
+				collection[name] = append(collection[name], ref)
 			} else {
 				// 3.6.2. If not, collect the function
 				collection[name] = []FunctionReference { ref }
@@ -146,4 +146,28 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 	store[mod_name] = collection
 	// 5. Return all collected functions of the current module
 	return collection, nil
+}
+
+
+func CheckOverload (
+	functions   [] FunctionReference,
+	added_type  Func,
+	added_name  string,
+	err_point   ErrorPoint,
+) *FunctionError {
+	for _, existing := range functions {
+		var cannot_overload = AreTypesOverloadUnsafe (
+			AnonymousType { existing.Function.DeclaredType },
+			AnonymousType { added_type },
+		)
+		if cannot_overload { return &FunctionError {
+			Point:    err_point,
+			Concrete: E_InvalidOverload {
+				FunctionName: added_name,
+				ModuleName:   existing.ModuleName,
+				BetweenLocal: !(existing.IsImported),
+			},
+		} }
+	}
+	return nil
 }

@@ -35,7 +35,7 @@ func CheckLambda(lambda node.Lambda, ctx ExprContext) (SemiExpr, *ExprError) {
 
 
 func AssignLambdaTo(expected Type, lambda UntypedLambda, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
-	var _, err = RequireExplicitType(expected, info)
+	var err = RequireExplicitType(expected, info)
 	if err != nil { return Expr{}, err }
 	switch E := expected.(type) {
 	case AnonymousType:

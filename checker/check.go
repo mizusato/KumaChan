@@ -20,6 +20,8 @@ type ExprContext struct {
 	LocalValues    map[string] Type
 	InferTypeArgs  bool
 	Inferred       map[uint] Type  // mutable
+	UnboxCounted   bool
+	UnboxCount     *uint
 }
 
 type Expr struct {
@@ -138,22 +140,27 @@ func (ctx ExprContext) WithAddedLocalValues(added map[string]Type) (ExprContext,
 	for name, t := range added {
 		merged[name] = t
 	}
-	return ExprContext {
-		ModuleInfo:    ctx.ModuleInfo,
-		TypeParams:    ctx.TypeParams,
-		LocalValues:   merged,
-		InferTypeArgs: ctx.InferTypeArgs,
-	}, ""
+	var new_ctx ExprContext
+	*(&new_ctx) = ctx
+	new_ctx.LocalValues = merged
+	return new_ctx, ""
 }
 
 func (ctx ExprContext) WithTypeArgsInferringEnabled() ExprContext {
-	return ExprContext {
-		ModuleInfo:    ctx.ModuleInfo,
-		TypeParams:    ctx.TypeParams,
-		LocalValues:   ctx.LocalValues,
-		InferTypeArgs: true,
-		Inferred:      make(map[uint] Type),
-	}
+	var new_ctx ExprContext
+	*(&new_ctx) = ctx
+	new_ctx.InferTypeArgs = true
+	new_ctx.Inferred = make(map[uint] Type)
+	return new_ctx
+}
+
+func (ctx ExprContext) WithUnboxCounted(count *uint) ExprContext {
+	var new_ctx ExprContext
+	*(&new_ctx) = ctx
+	new_ctx.UnboxCounted = true
+	new_ctx.UnboxCount = count
+	*count = 0
+	return new_ctx
 }
 
 func (ctx ExprContext) GetErrorPoint(node node.Node) ErrorPoint {

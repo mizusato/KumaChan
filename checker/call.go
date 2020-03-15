@@ -9,7 +9,8 @@ type UndecidedCall struct {
 	FuncName  string
 }
 type AvailableCall struct {
-	Expr  Expr
+	Expr        Expr
+	UnboxCount  uint
 }
 
 func (impl Call) ExprVal() {}
@@ -84,7 +85,7 @@ func CheckInfix(infix node.Infix, ctx ExprContext) (SemiExpr, *ExprError) {
 
 
 func AssignCallTo(expected Type, call UndecidedCall, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
-	var _, err = RequireExplicitType(expected, info)
+	var err = RequireExplicitType(expected, info)
 	if err != nil { return Expr{}, err }
 	var types_desc = make([]string, 0)
 	for _, option := range call.Options {

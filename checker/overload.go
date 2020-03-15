@@ -1,6 +1,8 @@
 package checker
 
-import "fmt"
+import (
+	"fmt"
+)
 
 
 func OverloadedCall (
@@ -15,8 +17,10 @@ func OverloadedCall (
 	if len(functions) == 0 { panic("something went wrong") }
 	if len(functions) == 1 {
 		var f = functions[0]
+		var unbox_count uint
 		var expr, err = GenericFunctionCall (
 			f, name, 0, type_args, arg, f_info, call_info, ctx,
+			&unbox_count,
 		)
 		if err != nil { return SemiExpr{}, err }
 		return LiftTyped(expr), nil
@@ -25,15 +29,20 @@ func OverloadedCall (
 		var candidates = make([]string, 0)
 		for i, f := range functions {
 			var index = uint(i)
+			var unbox_count uint
 			var expr, err = GenericFunctionCall (
 				f, name, index, type_args, arg, f_info, call_info, ctx,
+				&unbox_count,
 			)
 			if err != nil {
 				candidates = append(candidates, DescribeCandidate (
 					name, f, ctx,
 				))
 			} else {
-				options = append(options, AvailableCall { expr })
+				options = append(options, AvailableCall {
+					Expr:       expr,
+					UnboxCount: unbox_count,
+				})
 			}
 		}
 		var available_count = len(options)
@@ -47,13 +56,30 @@ func OverloadedCall (
 		} else if available_count == 1 {
 			return LiftTyped(options[0].Expr), nil
 		} else {
-			return SemiExpr {
-				Value: UndecidedCall {
-					Options:  options,
-					FuncName: name,
-				},
-				Info:  call_info,
-			}, nil
+			var min_unbox = ^(uint(0))
+			var min_quantity = 0
+			var min = -1
+			for i, opt := range options {
+				if opt.UnboxCount < min_unbox {
+					min_unbox = opt.UnboxCount
+					min_quantity = 0
+					min = i
+				} else if opt.UnboxCount == min_unbox {
+					min_quantity += 1
+				}
+			}
+			if min == -1 { panic("something went wrong") }
+			if min_quantity == 1 {
+				return LiftTyped(options[min].Expr), nil
+			} else {
+				return SemiExpr {
+					Value: UndecidedCall {
+						Options:  options,
+						FuncName: name,
+					},
+					Info: call_info,
+				}, nil
+			}
 		}
 	}
 }

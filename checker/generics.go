@@ -2,16 +2,18 @@ package checker
 
 
 func GenericFunctionCall (
-	f          *GenericFunction,
-	name       string,
-	index      uint,
-	type_args  [] Type,
-	arg        SemiExpr,
-	f_info     ExprInfo,
-	call_info  ExprInfo,
-	ctx        ExprContext,
+	f            *GenericFunction,
+	name         string,
+	index        uint,
+	type_args    [] Type,
+	arg          SemiExpr,
+	f_info       ExprInfo,
+	call_info    ExprInfo,
+	ctx          ExprContext,
+	unbox_count  *uint,  // mutate it instead of additional return value
 ) (Expr, *ExprError) {
 	var type_arity = len(f.TypeParams)
+	ctx = ctx.WithUnboxCounted(unbox_count)
 	if len(type_args) == type_arity {
 		var f_raw_type = AnonymousType { f.DeclaredType }
 		var f_type = FillTypeArgs(f_raw_type, type_args)
@@ -118,7 +120,7 @@ func GenericFunctionAssignTo (
 		}
 		var f_raw_type = AnonymousType { f.DeclaredType }
 		// Note: Unbox/Union related inferring is not required
-		//       since function types are anonymous types.
+		//       since function types are anonymous types and invariant.
 		//       Just apply NaivelyInferTypeArgs() here.
 		var inferred = make(map[uint]Type)
 		NaivelyInferTypeArgs(f_raw_type, expected, inferred)
