@@ -59,7 +59,7 @@ func CheckRef(ref node.Ref, ctx ExprContext) (SemiExpr, *ExprError) {
 	for i, arg_node := range ref.TypeArgs {
 		var t, err = TypeFrom(arg_node.Type, type_ctx)
 		if err != nil { return SemiExpr{}, &ExprError {
-			Point:    ctx.GetErrorPoint(arg_node.Node),
+			Point:    err.Point,
 			Concrete: E_TypeErrorInExpr { err },
 		} }
 		type_args[i] = t

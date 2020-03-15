@@ -93,7 +93,7 @@ func CheckMatch(match node.Match, ctx ExprContext) (SemiExpr, *ExprError) {
 			var index, is_subtype = GetSubtypeIndex(union, type_sym)
 			if !is_subtype { return SemiExpr{}, &ExprError{
 				Point:    ctx.GetErrorPoint(t.Node),
-				Concrete: E_NotSubtype {
+				Concrete: E_NotBranchType {
 					Union:    ctx.DescribeType(arg_type),
 					TypeName: type_sym.String(),
 				},

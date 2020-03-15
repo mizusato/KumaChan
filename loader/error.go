@@ -41,10 +41,13 @@ func (ctx Context) GetErrorDescription() ErrorMessage {
 	}
 }
 
-func (ctx Context) GetFullErrorMessage(note ErrorMessage) ErrorMessage {
+func (ctx Context) GetFullErrorMessage(detail ErrorMessage) ErrorMessage {
 	var p, ok = ctx.ImportPoint.(ErrorPoint)
 	if ok {
-		return FormatErrorAt(p, ctx.GetErrorDescription(), note)
+		var desc = ctx.GetErrorDescription()
+		desc.Write(T_LF)
+		desc.WriteAll(detail)
+		return FormatErrorAt(p, desc)
 	} else {
 		return ctx.GetErrorDescription()
 	}
@@ -86,7 +89,7 @@ type E_DuplicateImport struct {
 	ModuleName  string
 }
 
-func (err *Error) Note() ErrorMessage {
+func (err *Error) Desc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	msg.WriteText(TS_NORMAL, "**\n")
 	switch e := err.Concrete.(type) {
@@ -118,12 +121,8 @@ func (err *Error) Note() ErrorMessage {
 	return msg
 }
 
-func (err *Error) Desc() ErrorMessage {
-	return err.Context.GetErrorDescription()
-}
-
 func (err *Error) Message() ErrorMessage {
-	return err.Context.GetFullErrorMessage(err.Note())
+	return err.Context.GetFullErrorMessage(err.Desc())
 }
 
 func (err *Error) Error() string {

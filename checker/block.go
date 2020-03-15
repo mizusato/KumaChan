@@ -31,7 +31,7 @@ func CheckBlock(block node.Block, ctx ExprContext) (SemiExpr, *ExprError) {
 		case node.VariousType:
 			var some_t, err = TypeFrom(type_node.Type, type_ctx)
 			if err != nil { return SemiExpr{}, &ExprError {
-				Point:    ctx.GetErrorPoint(type_node.Node),
+				Point:    err.Point,
 				Concrete: E_TypeErrorInExpr { err },
 			}}
 			t = some_t

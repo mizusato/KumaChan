@@ -7,7 +7,7 @@ func CheckCast(cast node.Cast, ctx ExprContext) (SemiExpr, *ExprError) {
 	var type_ctx = ctx.GetTypeContext()
 	var target, err1 = TypeFrom(cast.Target.Type, type_ctx)
 	if err1 != nil { return SemiExpr{}, &ExprError {
-		Point:    ctx.GetErrorPoint(cast.Target.Node),
+		Point:    err1.Point,
 		Concrete: E_TypeErrorInExpr { err1 },
 	} }
 	var semi, err2 = Check(cast.Expr, ctx)

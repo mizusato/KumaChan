@@ -2,6 +2,7 @@ package checker
 
 import (
 	"fmt"
+	"strings"
 )
 
 
@@ -133,7 +134,10 @@ func OverloadedAssignTo (
 
 func DescribeCandidate(name string, f *GenericFunction, ctx ExprContext) string {
 	return fmt.Sprintf (
-		"%s: %s", name, DescribeType (
+		"%s[%s]: %s",
+		name,
+		strings.Join(f.TypeParams, ","),
+		DescribeType (
 			AnonymousType { f.DeclaredType },
 			f.TypeParams,
 		),

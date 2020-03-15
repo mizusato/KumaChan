@@ -91,7 +91,7 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 			// 3.3. Evaluate the function signature using the created context
 			var sig, err = TypeFromRepr(decl.Repr, ctx)
 			if err != nil { return nil, &FunctionError {
-				Point:    ErrorPoint { AST: mod.AST, Node: decl.Repr.Node },
+				Point:    err.Point,
 				Concrete: E_SignatureInvalid {
 					FuncName:  name,
 					TypeError: err,
@@ -132,7 +132,7 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 					AST: mod.AST, Node: decl.Name.Node,
 				}
 				var err = CheckOverload (
-					collection[name], func_type, name, err_point,
+					collection[name], func_type, name, params, err_point,
 				)
 				if err != nil { return nil, err }
 				collection[name] = append(collection[name], ref)
@@ -150,24 +150,29 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 
 
 func CheckOverload (
-	functions   [] FunctionReference,
-	added_type  Func,
-	added_name  string,
-	err_point   ErrorPoint,
+	functions     [] FunctionReference,
+	added_type    Func,
+	added_name    string,
+	added_params  [] string,
+	err_point     ErrorPoint,
 ) *FunctionError {
 	for _, existing := range functions {
-		var cannot_overload = AreTypesOverloadUnsafe (
-			AnonymousType { existing.Function.DeclaredType },
-			AnonymousType { added_type },
-		)
-		if cannot_overload { return &FunctionError {
-			Point:    err_point,
-			Concrete: E_InvalidOverload {
-				FunctionName: added_name,
-				ModuleName:   existing.ModuleName,
-				BetweenLocal: !(existing.IsImported),
-			},
-		} }
+		var existing_t = AnonymousType { existing.Function.DeclaredType }
+		var added_t = AnonymousType { added_type }
+		var cannot_overload = AreTypesOverloadUnsafe(existing_t, added_t)
+		if cannot_overload {
+			var existing_params = existing.Function.TypeParams
+			return &FunctionError {
+				Point:    err_point,
+				Concrete: E_InvalidOverload {
+					BetweenLocal: !(existing.IsImported),
+					AddedName:    added_name,
+					AddedModule:  existing.ModuleName,
+					AddedType:    DescribeType(added_t, added_params),
+					ExistingType: DescribeType(existing_t, existing_params),
+				},
+			}
+		}
 	}
 	return nil
 }

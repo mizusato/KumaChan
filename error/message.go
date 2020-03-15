@@ -26,6 +26,7 @@ func T(style TextStyle, text string) StyledText {
 }
 var T_LF = StyledText { Style: TS_NORMAL, Text:  "\n", }
 var T_SPACE = StyledText { Style: TS_NORMAL, Text:  " ", }
+var T_INDENT = StyledText { Style: TS_NORMAL, Text:  "    ", }
 
 
 func (t StyledText) String() string {

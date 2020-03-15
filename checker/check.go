@@ -257,6 +257,7 @@ func CheckTerm(term node.VariousTerm, ctx ExprContext) (SemiExpr, *ExprError) {
 	}
 }
 
+
 func TypeCheck(entry *loader.Module, raw_index loader.Index) (
 	*CheckedModule, Index, []E,
 ) {

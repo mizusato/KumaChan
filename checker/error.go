@@ -2,8 +2,8 @@ package checker
 
 import (
 	"fmt"
-	. "kumachan/error"
 	"kumachan/loader"
+	. "kumachan/error"
 )
 
 
@@ -65,7 +65,7 @@ func (err *TypeError) Desc() ErrorMessage {
 }
 
 func (err *TypeError) Message() ErrorMessage {
-	return FormatErrorAt(err.Point, err.Desc(), nil)
+	return FormatErrorAt(err.Point, err.Desc())
 }
 
 func (err *TypeError) Error() string {
@@ -113,7 +113,7 @@ func (err *TypeDeclError) Desc() ErrorMessage {
 	case E_GenericUnionSubType:
 		msg.WriteText(TS_ERROR, "Cannot define generic parameters on a union item")
 	case E_InvalidTypeDecl:
-		msg = e.Detail.Message()
+		msg = e.Detail.Desc()
 	default:
 		panic("unknown error kind")
 	}
@@ -121,12 +121,7 @@ func (err *TypeDeclError) Desc() ErrorMessage {
 }
 
 func (err *TypeDeclError) Message() ErrorMessage {
-	switch e := err.Concrete.(type) {
-	case E_InvalidTypeDecl:
-		return e.Detail.Message()
-	default:
-		return FormatErrorAt(err.Point, err.Desc(), nil)
-	}
+	return FormatErrorAt(err.Point, err.Desc())
 }
 
 func (err *TypeDeclError) Error() string {
@@ -162,13 +157,54 @@ type E_SignatureNonLocal struct {
 
 func (E_InvalidOverload) FunctionError() {}
 type E_InvalidOverload struct {
-	FunctionName  string
-	ModuleName    string
 	BetweenLocal  bool
+	AddedName     string
+	AddedModule   string
+	AddedType     string
+	ExistingType  string
+}
+
+func (err *FunctionError) Desc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	switch e := err.Concrete.(type) {
+	case E_InvalidFunctionName:
+		msg.WriteText(TS_ERROR, "Invalid function name")
+		msg.WriteEndText(TS_INLINE_CODE, e.Name)
+	case E_SignatureInvalid:
+		msg = e.TypeError.Desc()
+	case E_SignatureNonLocal:
+		msg.WriteText(TS_ERROR, "Function")
+		msg.WriteInnerText(TS_INLINE_CODE, e.FuncName)
+		msg.WriteText(TS_ERROR, "is declared to be public but has a non-local signature type")
+	case E_InvalidOverload:
+		msg.WriteText(TS_ERROR, "Cannot overload this function instance with the signature")
+		msg.WriteInnerText(TS_INLINE_CODE, e.AddedType)
+		msg.WriteText(TS_ERROR, "on the function name")
+		msg.WriteInnerText(TS_INLINE_CODE, e.AddedName)
+		msg.WriteText(TS_ERROR, "since a function with conflicting signature")
+		msg.WriteInnerText(TS_INLINE_CODE, e.ExistingType)
+		msg.WriteText(TS_ERROR, "already exists")
+		if e.BetweenLocal {
+			msg.WriteEndText(TS_ERROR, "in the current module")
+		} else {
+			msg.WriteInnerText(TS_ERROR, "in the module")
+			msg.WriteText(TS_INLINE_CODE, e.AddedModule)
+		}
+	default:
+		panic("unknown error kind")
+	}
+	return msg
 }
 
 func (err *FunctionError) Message() ErrorMessage {
-	panic("not implemented")
+	return FormatErrorAt(err.Point, err.Desc())
+}
+
+func (err *FunctionError) Error() string {
+	var msg = MsgFailedToCompile(err.Concrete, []ErrorMessage {
+		err.Message(),
+	})
+	return msg.String()
 }
 
 
@@ -200,8 +236,37 @@ type E_ConstConflictWithType struct {
 	Name  string
 }
 
+func (err *ConstantError) Desc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	switch e := err.Concrete.(type) {
+	case E_InvalidConstName:
+		msg.WriteText(TS_ERROR, "Invalid constant name")
+		msg.WriteEndText(TS_INLINE_CODE, e.Name)
+	case E_DuplicateConstDecl:
+		msg.WriteText(TS_ERROR, "Duplicate declaration of constant")
+		msg.WriteEndText(TS_INLINE_CODE, e.Name)
+	case E_ConstTypeInvalid:
+		msg = e.TypeError.Desc()
+	case E_ConstConflictWithType:
+		msg.WriteText(TS_ERROR, "The constant name")
+		msg.WriteInnerText(TS_INLINE_CODE, e.Name)
+		msg.WriteText(TS_ERROR, "conflict with existing type name")
+		msg.WriteEndText(TS_INLINE_CODE, e.Name)
+	default:
+		panic("unknown error kind")
+	}
+	return msg
+}
+
 func (err *ConstantError) Message() ErrorMessage {
-	panic("not implemented")  // TODO
+	return FormatErrorAt(err.Point, err.Desc())
+}
+
+func (err *ConstantError) Error() string {
+	var msg = MsgFailedToCompile(err.Concrete, []ErrorMessage {
+		err.Message(),
+	})
+	return msg.String()
 }
 
 
@@ -210,225 +275,534 @@ type ExprError struct {
 	Concrete  ConcreteExprError
 }
 
-type ConcreteExprError interface { ExprError() }
+type ConcreteExprError interface {
+	ExprErrorDesc() ErrorMessage
+}
 
-func (impl E_InvalidInteger) ExprError() {}
 type E_InvalidInteger struct {
 	Value  string
 }
+func (e E_InvalidInteger) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Invalid integer literal")
+	msg.WriteEndText(TS_INLINE_CODE, e.Value)
+	return msg
+}
 
-func (impl E_ExprDuplicateField) ExprError() {}
 type E_ExprDuplicateField struct {
 	Name  string
 }
+func (e E_ExprDuplicateField) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Duplicate field")
+	msg.WriteEndText(TS_INLINE_CODE, e.Name)
+	return msg
+}
 
-func (impl E_GetFromNonBundle) ExprError() {}
 type E_GetFromNonBundle struct {}
+func (e E_GetFromNonBundle) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR,
+		"Cannot perform field access on a value of non-bundle type")
+	return msg
+}
 
-func (impl E_GetFromLiteralBundle) ExprError() {}
 type E_GetFromLiteralBundle struct {}
+func (e E_GetFromLiteralBundle) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Suspicious field access on bundle literal")
+	return msg
+}
 
-func (impl E_GetFromOpaqueBundle) ExprError() {}
 type E_GetFromOpaqueBundle struct {}
+func (e E_GetFromOpaqueBundle) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR,
+		"Cannot perform field access on a value of opaque bundle type")
+	return msg
+}
 
-func (impl E_SetToNonBundle) ExprError() {}
 type E_SetToNonBundle struct {}
+func (e E_SetToNonBundle) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR,
+		"Cannot perform field update on a value of non-bundle type")
+	return msg
+}
 
-func (impl E_SetToLiteralBundle) ExprError() {}
 type E_SetToLiteralBundle struct {}
+func (e E_SetToLiteralBundle) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Suspicious field update on bundle literal")
+	return msg
+}
 
-func (impl E_SetToOpaqueBundle) ExprError() {}
 type E_SetToOpaqueBundle struct {}
+func (e E_SetToOpaqueBundle) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR,
+		"Cannot perform field update on a value of opaque bundle type")
+	return msg
+}
 
-func (impl E_FieldDoesNotExist) ExprError() {}
 type E_FieldDoesNotExist struct {
 	Field   string
 	Target  string
 }
+func (e E_FieldDoesNotExist) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "The field")
+	msg.WriteInnerText(TS_INLINE_CODE, e.Field)
+	msg.WriteText(TS_ERROR, "does not exist on the type")
+	msg.WriteEndText(TS_INLINE_CODE, e.Target)
+	return msg
+}
 
-func (impl E_MissingField) ExprError() {}
 type E_MissingField struct {
 	Field  string
 	Type   string
 }
+func (e E_MissingField) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Missing the field")
+	msg.WriteInnerText(TS_INLINE_CODE, e.Field)
+	msg.WriteText(TS_ERROR, "(type: ")
+	msg.WriteText(TS_INLINE_CODE, e.Type)
+	msg.WriteText(TS_ERROR, ")")
+	return msg
+}
 
-func (impl E_SurplusField) ExprError() {}
 type E_SurplusField struct {
 	Field  string
 }
+func (e E_SurplusField) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Surplus field")
+	msg.WriteEndText(TS_INLINE_CODE, e.Field)
+	return msg
+}
 
-func (impl E_EntireValueIgnored) ExprError() {}
 type E_EntireValueIgnored struct {}
+func (e E_EntireValueIgnored) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Entire value ignored suspiciously")
+	return msg
+}
 
-func (impl E_TupleSizeNotMatching) ExprError() {}
 type E_TupleSizeNotMatching struct {
 	Required   int
 	Given      int
 	GivenType  string
 }
+func (e E_TupleSizeNotMatching) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Tuple size not matching:")
+	msg.WriteInnerText(TS_INLINE, fmt.Sprint(e.Required))
+	msg.WriteText(TS_ERROR, "required but")
+	msg.WriteInnerText(TS_INLINE, fmt.Sprint(e.Given))
+	msg.WriteText(TS_ERROR, "given (expected type: ")
+	msg.WriteText(TS_INLINE_CODE, e.GivenType)
+	msg.WriteText(TS_ERROR, ")")
+	return msg
+}
 
-func (impl E_NotAssignable) ExprError() {}
 type E_NotAssignable struct {
 	From    string
 	To      string
 	Reason  string
 }
+func (e E_NotAssignable) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "The value of type")
+	msg.WriteInnerText(TS_INLINE_CODE, e.From)
+	msg.WriteText(TS_ERROR, "cannot be assigned to the type")
+	msg.WriteEndText(TS_INLINE_CODE, e.To)
+	if e.Reason != "" {
+		msg.WriteText(TS_ERROR, " (")
+		msg.WriteText(TS_ERROR, e.Reason)
+		msg.WriteText(TS_ERROR, ")")
+	}
+	return msg
+}
 
-func (impl E_ExplicitTypeRequired) ExprError() {}
 type E_ExplicitTypeRequired struct {}
+func (e E_ExplicitTypeRequired) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Explicit type cast desired")
+	return msg
+}
 
-func (impl E_DuplicateBinding) ExprError() {}
 type E_DuplicateBinding struct {
 	ValueName  string
 }
+func (e E_DuplicateBinding) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Duplicate binding of value name")
+	msg.WriteEndText(TS_INLINE_CODE, e.ValueName)
+	return msg
+}
 
-func (impl E_MatchingNonTupleType) ExprError() {}
 type E_MatchingNonTupleType struct {}
+func (e E_MatchingNonTupleType) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR,
+		"Cannot perform tuple destruction on a value of non-tuple type")
+	return msg
+}
 
-func (impl E_MatchingOpaqueTupleType) ExprError() {}
 type E_MatchingOpaqueTupleType struct {}
+func (e E_MatchingOpaqueTupleType) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR,
+		"Cannot perform tuple destruction on a value of opaque tuple type")
+	return msg
+}
 
-func (impl E_MatchingNonBundleType) ExprError() {}
 type E_MatchingNonBundleType struct {}
+func (e E_MatchingNonBundleType) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR,
+		"Cannot perform tuple destruction on a value of non-bundle type")
+	return msg
+}
 
-func (impl E_MatchingOpaqueBundleType) ExprError() {}
 type E_MatchingOpaqueBundleType struct {}
+func (e E_MatchingOpaqueBundleType) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR,
+		"Cannot perform tuple destruction on a value of opaque bundle type")
+	return msg
+}
 
-func (impl E_LambdaAssignedToNonFuncType) ExprError() {}
 type E_LambdaAssignedToNonFuncType struct {
 	NonFuncType  string
 }
+func (e E_LambdaAssignedToNonFuncType) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Cannot assign lambda to the non-function type")
+	msg.WriteEndText(TS_INLINE_CODE, e.NonFuncType)
+	return msg
+}
 
-func (impl E_IntegerAssignedToNonIntegerType) ExprError() {}
 type E_IntegerAssignedToNonIntegerType struct {
 	NonIntegerType  string
 }
+func (e E_IntegerAssignedToNonIntegerType) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR,
+		"Cannot assign integer literal to the non-integer type")
+	msg.WriteEndText(TS_INLINE_CODE, e.NonIntegerType)
+	return msg
+}
 
-func (impl E_IntegerOverflow) ExprError() {}
 type E_IntegerOverflow struct {
 	Kind  string
 }
+func (e E_IntegerOverflow) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Integer literal overflows")
+	msg.WriteEndText(TS_INLINE, e.Kind)
+	return msg
+}
 
-func (impl E_TupleAssignedToNonTupleType) ExprError() {}
 type E_TupleAssignedToNonTupleType struct {
 	NonTupleType  string
 }
+func (e E_TupleAssignedToNonTupleType) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR,
+		"Cannot assign tuple literal to the non-tuple type")
+	msg.WriteEndText(TS_INLINE_CODE, e.NonTupleType)
+	return msg
+}
 
-func (impl E_BundleAssignedToNonBundleType) ExprError() {}
 type E_BundleAssignedToNonBundleType struct {
 	NonBundleType  string
 }
+func (e E_BundleAssignedToNonBundleType) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR,
+		"Cannot assign bundle literal to the non-bundle type")
+	msg.WriteEndText(TS_INLINE_CODE, e.NonBundleType)
+	return msg
+}
 
-func (impl E_ArrayAssignedToNonArrayType) ExprError() {}
 type E_ArrayAssignedToNonArrayType struct {
 	NonArrayType  string
 }
+func (e E_ArrayAssignedToNonArrayType) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR,
+		"Cannot assign array literal to the non-array type")
+	msg.WriteEndText(TS_INLINE_CODE, e.NonArrayType)
+	return msg
 
-func (impl E_RecursiveMarkUsedOnNonLambda) ExprError() {}
+}
+
 type E_RecursiveMarkUsedOnNonLambda struct {}
+func (e E_RecursiveMarkUsedOnNonLambda) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Invalid usage of recursion mark")
+	return msg
+}
 
-func (impl E_TypeErrorInExpr) ExprError() {}
 type E_TypeErrorInExpr struct {
 	TypeError  *TypeError
 }
+func (e E_TypeErrorInExpr) ExprErrorDesc() ErrorMessage {
+	return e.TypeError.Desc()
+}
 
-func (impl E_InvalidMatchArgType) ExprError() {}
 type E_InvalidMatchArgType struct {
 	ArgType  string
 }
+func (e E_InvalidMatchArgType) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Cannot pattern match on the value of type")
+	msg.WriteEndText(TS_INLINE_CODE, e.ArgType)
+	return msg
+}
 
-func (impl E_DuplicateDefaultBranch) ExprError() {}
 type E_DuplicateDefaultBranch struct {}
+func (e E_DuplicateDefaultBranch) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Duplicate default branch")
+	return msg
+}
 
-func (impl E_TypeParametersUnnecessary) ExprError() {}
 type E_TypeParametersUnnecessary struct {}
+func (e E_TypeParametersUnnecessary) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Unnecessary type parameters")
+	return msg
+}
 
-func (impl E_NotSubtype) ExprError() {}
-type E_NotSubtype struct {
+type E_NotBranchType struct {
 	Union     string
 	TypeName  string
 }
+func (e E_NotBranchType) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "The type")
+	msg.WriteInnerText(TS_INLINE_CODE, e.TypeName)
+	msg.WriteText(TS_ERROR, "is not a branch type of the union type")
+	msg.WriteEndText(TS_INLINE_CODE, e.Union)
+	return msg
+}
 
-func (impl E_IncompleteMatch) ExprError() {}
 type E_IncompleteMatch struct {
 	Missing  [] string
 }
+func (e E_IncompleteMatch) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR,
+		"Pattern matching is not exhaustive: missing branches ")
+	for i, branch := range e.Missing {
+		msg.WriteText(TS_INLINE_CODE, branch)
+		if i != len(e.Missing)-1 {
+			msg.WriteText(TS_ERROR, ", ")
+		}
+	}
+	return msg
+}
 
-func (impl E_NonBooleanCondition) ExprError() {}
 type E_NonBooleanCondition struct {
 	Typed  bool
 	Type   string
 }
+func (e E_NonBooleanCondition) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR,
+		"Given condition expression has non-boolean type")
+	if e.Typed {
+		msg.WriteEndText(TS_INLINE_CODE, e.Type)
+	}
+	return msg
+}
 
-func (impl E_ModuleNotFound) ExprError() {}
 type E_ModuleNotFound struct {
 	Name  string
 }
+func (e E_ModuleNotFound) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "No such module:")
+	msg.WriteEndText(TS_INLINE_CODE, e.Name)
+	return msg
+}
 
-func (impl E_TypeOrValueNotFound) ExprError() {}
 type E_TypeOrValueNotFound struct {
 	Symbol  loader.Symbol
 }
+func (e E_TypeOrValueNotFound) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "No such value or type:")
+	msg.WriteEndText(TS_INLINE_CODE, e.Symbol.String())
+	return msg
 
-func (impl E_TypeParamInExpr) ExprError() {}
+}
+
 type E_TypeParamInExpr struct {
 	Name  string
 }
+func (e E_TypeParamInExpr) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Cannot use type parameter")
+	msg.WriteInnerText(TS_INLINE_CODE, e.Name)
+	msg.WriteText(TS_ERROR, "as a value")
+	return msg
+}
 
-func (impl E_ExplicitTypeParamsRequired) ExprError() {}
 type E_ExplicitTypeParamsRequired struct {}
+func (e E_ExplicitTypeParamsRequired) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Explicit type parameters expected")
+	return msg
+}
 
-func (impl E_TypeUsedAsValue) ExprError() {}
 type E_TypeUsedAsValue struct {
 	TypeName  loader.Symbol
 }
+func (e E_TypeUsedAsValue) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Cannot use type")
+	msg.WriteInnerText(TS_INLINE_CODE, e.TypeName.String())
+	msg.WriteText(TS_ERROR, "as a value")
+	return msg
+}
 
-func (impl E_FunctionWrongTypeParamsQuantity) ExprError() {}
 type E_FunctionWrongTypeParamsQuantity struct {
 	FuncName  string
 	Given     uint
 	Required  uint
 }
+func (e E_FunctionWrongTypeParamsQuantity) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "The function")
+	msg.WriteInnerText(TS_INLINE_CODE, e.FuncName)
+	msg.WriteText(TS_ERROR, "requires")
+	msg.WriteInnerText(TS_INLINE, fmt.Sprint(e.Required))
+	msg.WriteText(TS_ERROR, "type parameters but")
+	msg.WriteInnerText(TS_INLINE, fmt.Sprint(e.Given))
+	msg.WriteText(TS_ERROR, "given")
+	return msg
+}
 
-func (impl E_NoneOfFunctionsAssignable) ExprError() {}
 type E_NoneOfFunctionsAssignable struct {
 	To          string
 	Candidates  [] string
 }
+func (e E_NoneOfFunctionsAssignable) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR,
+		"None of function instances assignable to the type")
+	msg.WriteEndText(TS_INLINE_CODE, e.To)
+	msg.Write(T_LF)
+	msg.WriteText(TS_INFO, "*** candidates are:")
+	msg.Write(T_LF)
+	for _, candidate := range e.Candidates {
+		msg.Write(T_INDENT)
+		msg.WriteText(TS_INLINE_CODE, candidate)
+		msg.Write(T_LF)
+	}
+	return msg
+}
 
-func (impl E_NoneOfFunctionsCallable) ExprError() {}
 type E_NoneOfFunctionsCallable struct {
 	Candidates  [] string
 }
+func (e E_NoneOfFunctionsCallable) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR,
+		"None of function instances can be called")
+	msg.Write(T_LF)
+	msg.WriteText(TS_INFO, "*** candidates are:")
+	msg.Write(T_LF)
+	for _, candidate := range e.Candidates {
+		msg.Write(T_INDENT)
+		msg.WriteText(TS_INLINE_CODE, candidate)
+		msg.Write(T_LF)
+	}
+	return msg
 
-func (impl E_ExprNotCallable) ExprError() {}
+}
+
 type E_ExprNotCallable struct {}
+func (e E_ExprNotCallable) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "This value is not callable")
+	return msg
+}
 
-func (impl E_ExprTypeNotCallable) ExprError() {}
 type E_ExprTypeNotCallable struct {
 	Type  string
 }
-
-func (impl E_NoneOfTypesAssignable) ExprError() {}
-type E_NoneOfTypesAssignable struct {
-	Types  [] string
+func (e E_ExprTypeNotCallable) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "This value is not callable: type")
+	msg.WriteInnerText(TS_INLINE_CODE, e.Type)
+	msg.WriteText(TS_ERROR, "is not callable")
+	return msg
 }
 
-func (impl E_BoxNonBoxedType) ExprError() {}
+type E_NoneOfTypesAssignable struct {
+	From  [] string
+	To    string
+}
+func (e E_NoneOfTypesAssignable) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Cannot assign to type")
+	msg.WriteInnerText(TS_INLINE_CODE, e.To)
+	msg.WriteText(TS_ERROR, "from any of available return types: ")
+	for i, item := range e.From {
+		msg.WriteText(TS_INLINE_CODE, item)
+		if i != len(e.From)-1 {
+			msg.WriteText(TS_ERROR, ", ")
+		}
+	}
+	return msg
+}
+
 type E_BoxNonBoxedType struct {
 	Type  string
 }
+func (e E_BoxNonBoxedType) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Cannot box a value into the non-boxed type")
+	msg.WriteEndText(TS_INLINE_CODE, e.Type)
+	return msg
+}
 
-func (impl E_BoxProtectedType) ExprError() {}
 type E_BoxProtectedType struct {
 	Type  string
 }
+func (e E_BoxProtectedType) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Cannot box a value into the protected type")
+	msg.WriteEndText(TS_INLINE_CODE, e.Type)
+	return msg
+}
 
-func (impl E_BoxOpaqueType) ExprError() {}
 type E_BoxOpaqueType struct {
 	Type  string
 }
+func (e E_BoxOpaqueType) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Cannot box a value into the opaque type")
+	msg.WriteEndText(TS_INLINE_CODE, e.Type)
+	return msg
+}
+
+func (err *ExprError) Desc() ErrorMessage {
+	return err.Concrete.ExprErrorDesc()
+}
 
 func (err *ExprError) Message() ErrorMessage {
-	panic("not implemented")
+	return FormatErrorAt(err.Point, err.Desc())
+}
+
+func (err *ExprError) Error() string {
+	var msg = MsgFailedToCompile(err.Concrete, []ErrorMessage {
+		err.Message(),
+	})
+	return msg.String()
 }

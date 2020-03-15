@@ -192,7 +192,7 @@ func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, *Type
 			Ireg:   raw,
 		})
 		if err != nil { return nil, &TypeDeclError {
-			Point: ErrorPoint { AST: mod.AST, Node: t.Name.Node },
+			Point:    err.Point,
 			Concrete: E_InvalidTypeDecl {
 				TypeName: name,
 				Detail:   err,

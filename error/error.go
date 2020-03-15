@@ -50,7 +50,6 @@ func FormatError (
 	fov          uint,
 	highlight    TextStyle,
 	description  ErrorMessage,
-	note         ErrorMessage,
 ) ErrorMessage {
 	var nh_rows = make([]scanner.Span, 0)
 	var i = coordinate.Row
@@ -123,23 +122,18 @@ func FormatError (
 		msg.Write(T_LF)
 	}
 	msg.WriteAll(description)
-	if note != nil && len(note) > 0 {
-		msg.Write(T_LF)
-		msg.WriteAll(note)
-	}
 	return msg
 }
 
 func FormatErrorAt (
 	point  ErrorPoint,
 	desc   ErrorMessage,
-	note   ErrorMessage,
 ) ErrorMessage {
 	var AST = point.AST
 	var Node = point.Node
 	return FormatError (
 		AST.Code,  AST.Info,    AST.SpanMap,
 		AST.Name,  Node.Point,  Node.Span,
-		ERR_FOV,   TS_SPOT,     desc, note,
+		ERR_FOV,   TS_SPOT,     desc,
 	)
 }

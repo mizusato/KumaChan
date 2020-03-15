@@ -57,6 +57,6 @@ func (err *Error) Message() ErrorMessage {
     return FormatError (
         tree.Code,  tree.Info,  tree.SpanMap,
         tree.Name,  point,      token.Span,
-        ERR_FOV,    TS_SPOT,    desc, nil,
+        ERR_FOV,    TS_SPOT,    desc,
     )
 }

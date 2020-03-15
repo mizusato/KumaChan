@@ -102,7 +102,10 @@ func AssignCallTo(expected Type, call UndecidedCall, info ExprInfo, ctx ExprCont
 	}
 	return Expr{}, &ExprError {
 		Point:    info.ErrorPoint,
-		Concrete: E_NoneOfTypesAssignable { types_desc },
+		Concrete: E_NoneOfTypesAssignable {
+			From: types_desc,
+			To:   ctx.DescribeExpectedType(expected),
+		},
 	}
 }
 
