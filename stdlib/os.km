@@ -9,7 +9,8 @@ Stdout := [I/O::OutputStream] native 'Stdout';
 public const
 Stderr := [I/O::OutputStream] native 'Stderr';
 
+type ProcessExit  Effect[(),()];
 public function exit {
-    `Int => Effect[(),()]:
+    `Uint8 => ProcessExit:
     native 'exit'
 };

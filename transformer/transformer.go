@@ -1,12 +1,10 @@
 package transformer
 
-import (
-	"fmt"
-	"kumachan/parser/ast"
-)
+import "fmt"
 import "reflect"
 import "strings"
 import "kumachan/parser"
+import "kumachan/parser/ast"
 import "kumachan/parser/syntax"
 import . "kumachan/transformer/node"
 

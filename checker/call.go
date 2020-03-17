@@ -1,6 +1,9 @@
 package checker
 
-import "kumachan/transformer/node"
+import (
+	"kumachan/parser/scanner"
+	"kumachan/transformer/node"
+)
 
 
 func (impl UndecidedCall) SemiExprVal() {}
@@ -123,6 +126,7 @@ func DesugarPipeline(left node.Call, p node.MaybePipeline) node.Call {
 	var maybe_right = pipeline.Arg
 	var right, exists = maybe_right.(node.Call)
 	var arg node.Tuple
+	var current_node node.Node
 	if exists {
 		arg = node.Tuple {
 			Node:     pipeline.Operator.Node,
@@ -139,6 +143,14 @@ func DesugarPipeline(left node.Call, p node.MaybePipeline) node.Call {
 				},
 			},
 		}
+		current_node = node.Node {
+			Point: pipeline.Node.Point,
+			Span:  scanner.Span {
+				Start: pipeline.Node.Span.Start,
+				End:   right.Span.End,
+			},
+			UID:   0,
+		}
 	} else {
 		arg = node.Tuple {
 			Node:     left.Node,
@@ -148,9 +160,17 @@ func DesugarPipeline(left node.Call, p node.MaybePipeline) node.Call {
 				Pipeline: nil,
 			} },
 		}
+		current_node = node.Node {
+			Point: pipeline.Node.Point,
+			Span:  scanner.Span {
+				Start: pipeline.Node.Span.Start,
+				End:   pipeline.Func.Span.End,
+			},
+			UID:   0,
+		}
 	}
 	var current = node.Call {
-		Node:  pipeline.Node,
+		Node:  current_node,
 		Func:  f,
 		Arg:   node.Call {
 			Node: arg.Node,

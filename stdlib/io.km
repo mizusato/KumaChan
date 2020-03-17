@@ -17,7 +17,7 @@ public function write {
 };
 
 public function write-bytes {
-    `(OutputStream, Bytes) => Effect[Int, Error]:
+    `(OutputStream, Bytes) => Effect[Integer, Error]:
     native 'write-bytes'
 };
 

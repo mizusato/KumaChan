@@ -1,9 +1,9 @@
 package checker
 
 import (
+	. "kumachan/error"
 	"kumachan/loader"
 	"kumachan/transformer/node"
-	. "kumachan/error"
 )
 
 type GenericFunction struct {
@@ -168,8 +168,12 @@ func CheckOverload (
 					BetweenLocal: !(existing.IsImported),
 					AddedName:    added_name,
 					AddedModule:  existing.ModuleName,
-					AddedType:    DescribeType(added_t, added_params),
-					ExistingType: DescribeType(existing_t, existing_params),
+					AddedType:    DescribeTypeWithParams (
+						added_t, added_params,
+					),
+					ExistingType: DescribeTypeWithParams (
+						existing_t, existing_params,
+					),
 				},
 			}
 		}

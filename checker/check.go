@@ -104,12 +104,17 @@ func (ctx ExprContext) GetTypeContext() TypeContext {
 }
 
 func (ctx ExprContext) DescribeType(t Type) string {
-	return DescribeType(t, ctx.TypeParams)
+	return DescribeTypeWithParams(t, ctx.TypeParams)
 }
 
 func (ctx ExprContext) DescribeExpectedType(t Type) string {
 	if ctx.InferTypeArgs {
-		return DescribeType(t, ctx.InferredNames)
+		return DescribeType(t, TypeDescContext {
+			ParamNames:    ctx.TypeParams,
+			UseInferred:   ctx.InferTypeArgs,
+			InferredNames: ctx.InferredNames,
+			InferredTypes: ctx.Inferred,
+		})
 	} else {
 		return ctx.DescribeType(t)
 	}
@@ -182,10 +187,11 @@ func (ctx ExprContext) WithAddedLocalValues(added map[string]Type) (ExprContext,
 	return new_ctx, ""
 }
 
-func (ctx ExprContext) WithTypeArgsInferringEnabled() ExprContext {
+func (ctx ExprContext) WithTypeArgsInferringEnabled(names []string) ExprContext {
 	var new_ctx ExprContext
 	*(&new_ctx) = ctx
 	new_ctx.InferTypeArgs = true
+	new_ctx.InferredNames = names
 	new_ctx.Inferred = make(map[uint] Type)
 	return new_ctx
 }
@@ -297,7 +303,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 		Functions: functions,
 	}
 	var errors = make([]E, 0)
-	var imported = make(map[string] *CheckedModule)
+	var imported = make(map[string]*CheckedModule)
 	for alias, imported_item := range mod.ImpMap {
 		var checked, errs = TypeCheckModule(imported_item, index, ctx)
 		if errs != nil {
@@ -306,7 +312,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 		}
 		imported[alias] = checked
 	}
-	var func_map = make(map[string] []ExprLike)
+	var func_map = make(map[string][]ExprLike)
 	for name, group := range functions {
 		func_map[name] = make([]ExprLike, 0)
 		var add = func(b ExprLike) {
@@ -325,7 +331,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 					errors = append(errors, err1)
 					continue
 				}
-				var t = AnonymousType { f.DeclaredType }
+				var t = AnonymousType{f.DeclaredType}
 				var body_expr, err2 = AssignTo(t, lambda, f_expr_ctx)
 				if err2 != nil {
 					errors = append(errors, err2)
@@ -340,9 +346,8 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 		}
 	}
 	var expr_ctx = CreateExprContext(mod_info, make([]string, 0))
-	var const_map = make(map[string] ExprLike)
+	var const_map = make(map[string]ExprLike)
 	for sym, constant := range constants {
-		if sym.ModuleName != mod_name { panic("something went wrong") }
 		var name = sym.SymbolName
 		switch val := constant.Value.(type) {
 		case node.Expr:
@@ -381,14 +386,18 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 			do_effects = append(do_effects, expr)
 		}
 	}
-	var checked = &CheckedModule {
-		Name:            mod_name,
-		RawModule:       mod,
-		Imported:        imported,
-		ConstantValues:  const_map,
-		FunctionBodies:  func_map,
-		EffectsToBeDone: do_effects,
+	if len(errors) > 0 {
+		return nil, errors
+	} else {
+		var checked = &CheckedModule{
+			Name:            mod_name,
+			RawModule:       mod,
+			Imported:        imported,
+			ConstantValues:  const_map,
+			FunctionBodies:  func_map,
+			EffectsToBeDone: do_effects,
+		}
+		index[mod_name] = checked
+		return checked, nil
 	}
-	index[mod_name] = checked
-	return checked, nil
 }

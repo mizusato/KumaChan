@@ -78,21 +78,46 @@ func GetSubtypeIndex(u Union, sym loader.Symbol) (uint, bool) {
 	return BadIndex, false
 }
 
-func DescribeType(type_ Type, params []string) string {
+type TypeDescContext struct {
+	ParamNames     [] string
+	UseInferred    bool
+	InferredNames  [] string
+	InferredTypes  map[uint] Type
+}
+
+func DescribeTypeWithParams(type_ Type, params []string) string {
+	return DescribeType(type_, TypeDescContext {
+		ParamNames:    params,
+		UseInferred:   false,
+	})
+}
+
+func DescribeType(type_ Type, ctx TypeDescContext) string {
 	switch t := type_.(type) {
 	case ParameterType:
-		return params[t.Index]
+		if ctx.UseInferred {
+			var inferred_t, exists = ctx.InferredTypes[t.Index]
+			if exists {
+				return DescribeType(inferred_t, ctx)
+			} else {
+				return ctx.InferredNames[t.Index]
+			}
+		} else {
+			return ctx.ParamNames[t.Index]
+		}
 	case NamedType:
 		var buf strings.Builder
 		buf.WriteString(t.Name.String())
-		buf.WriteRune('[')
-		for i, arg := range t.Args {
-			buf.WriteString(DescribeType(arg, params))
-			if i != len(t.Args)-1 {
-				buf.WriteString(", ")
+		if len(t.Args) > 0 {
+			buf.WriteRune('[')
+			for i, arg := range t.Args {
+				buf.WriteString(DescribeType(arg, ctx))
+				if i != len(t.Args)-1 {
+					buf.WriteString(", ")
+				}
 			}
+			buf.WriteRune(']')
 		}
-		buf.WriteRune(']')
 		return buf.String()
 	case AnonymousType:
 		switch r := t.Repr.(type) {
@@ -102,7 +127,7 @@ func DescribeType(type_ Type, params []string) string {
 			var buf strings.Builder
 			buf.WriteRune('(')
 			for i, el := range r.Elements {
-				buf.WriteString(DescribeType(el, params))
+				buf.WriteString(DescribeType(el, ctx))
 				if i != len(r.Elements)-1 {
 					buf.WriteString(", ")
 				}
@@ -115,16 +140,16 @@ func DescribeType(type_ Type, params []string) string {
 			for name, field := range r.Fields {
 				buf.WriteString(name)
 				buf.WriteString(": ")
-				buf.WriteString(DescribeType(field.Type, params))
+				buf.WriteString(DescribeType(field.Type, ctx))
 			}
 			buf.WriteString(" }")
 			return buf.String()
 		case Func:
 			var buf strings.Builder
 			buf.WriteRune('`')
-			buf.WriteString(DescribeType(r.Input, params))
+			buf.WriteString(DescribeType(r.Input, ctx))
 			buf.WriteString(" => ")
-			buf.WriteString(DescribeType(r.Output, params))
+			buf.WriteString(DescribeType(r.Output, ctx))
 			return buf.String()
 		default:
 			panic("impossible branch")

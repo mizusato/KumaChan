@@ -137,7 +137,7 @@ func DescribeCandidate(name string, f *GenericFunction, ctx ExprContext) string 
 		"%s[%s]: %s",
 		name,
 		strings.Join(f.TypeParams, ","),
-		DescribeType (
+		DescribeTypeWithParams (
 			AnonymousType { f.DeclaredType },
 			f.TypeParams,
 		),

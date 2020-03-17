@@ -38,7 +38,7 @@ func GenericFunctionCall (
 			Info:  call_info,
 		}, nil
 	} else if len(type_args) == 0 {
-		var inf_ctx = ctx.WithTypeArgsInferringEnabled()
+		var inf_ctx = ctx.WithTypeArgsInferringEnabled(f.TypeParams)
 		var raw_input_type = f.DeclaredType.Input
 		var raw_output_type = f.DeclaredType.Output
 		var arg_typed, err = AssignTo(raw_input_type, arg, inf_ctx)
@@ -54,8 +54,15 @@ func GenericFunctionCall (
 			inferred_args[i] = t
 		}
 		var input_type = FillTypeArgs(raw_input_type, inferred_args)
+		/*
 		if !(AreTypesEqualInSameCtx(input_type, arg_typed.Type)) {
-			panic("something went wrong")
+			panic("something went wrong ")
+		}
+		*/
+		var input = Expr {
+			Type:  input_type,
+			Value: arg_typed.Value,
+			Info:  arg_typed.Info,
 		}
 		var output_type = FillTypeArgs(raw_output_type, inferred_args)
 		var f_type = AnonymousType { Func {
@@ -73,7 +80,7 @@ func GenericFunctionCall (
 					},
 					Info:  f_info,
 				},
-				Argument: arg_typed,
+				Argument: input,
 			},
 			Info:  call_info,
 		}, nil

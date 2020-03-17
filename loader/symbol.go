@@ -9,14 +9,18 @@ const CoreModule = "Core"
 
 type MaybeSymbol interface { MaybeSymbol() }
 
-func (impl Symbol) MaybeSymbol() {}
+func (Symbol) MaybeSymbol() {}
 type Symbol struct {
 	ModuleName  string
 	SymbolName  string
 }
 
 func (sym Symbol) String() string {
-	return fmt.Sprintf("%s::%s", sym.ModuleName, sym.SymbolName)
+	if sym.ModuleName == "" {
+		return sym.SymbolName
+	} else {
+		return fmt.Sprintf("%s::%s", sym.ModuleName, sym.SymbolName)
+	}
 }
 
 func NewSymbol (mod string, sym string) Symbol {

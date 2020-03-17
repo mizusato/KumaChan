@@ -25,7 +25,7 @@ type Set[T]    native;
 type Map[K,V]  native;
 
 // Effect Type
-type Effect[T,E]  native;
+type Effect[T,E]   native;
 
 // Fixed Integer Types
 type Int64   Qword;
@@ -54,4 +54,9 @@ type Maybe[T] union {
 type Result[T,E] union {
     type OK T;
     type NG E;
+};
+
+public function catch[T,E] {
+    `(Effect[T,E], `E => Effect[(),()]) => Effect[T,()]:
+    native 'catch'
 };

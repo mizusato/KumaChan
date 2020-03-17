@@ -12,6 +12,7 @@ import (
     "kumachan/parser/syntax"
     "kumachan/parser/scanner"
     "kumachan/parser"
+    . "kumachan/error"
 )
 
 
@@ -77,12 +78,17 @@ func debug_loader() (*loader.Module, loader.Index) {
 }
 
 func debug_checker(mod *loader.Module, idx loader.Index) {
-    var _, err = checker.RegisterTypes(mod, idx)
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+    var _, _, errs = checker.TypeCheck(mod, idx)
+    if errs != nil {
+        var messages = make([]ErrorMessage, len(errs))
+        for i, e := range errs {
+            messages[i] = e.Message()
+        }
+        var msg = MsgFailedToCompile(errs[0], messages)
+        fmt.Fprintf(os.Stderr, "%s\n", msg.String())
         os.Exit(126)
     } else {
-        fmt.Println("Types registered, no errors occurred.")
+        fmt.Println("Type check finished, no errors occurred.")
     }
 }
 

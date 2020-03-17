@@ -108,6 +108,7 @@ func __Initialize() {
         var kinds = []string {
             "use",
             "part", "part_opt", "content",
+            "option",
             "list", "list_more", "list_rec",
         }
         for _, kind := range kinds {

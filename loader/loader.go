@@ -184,21 +184,17 @@ var __StdLibIndex = make(map[string] *Module)
 var _ = __Init()
 
 func __Init() interface{} {
-	__StdLibIndex = LoadStdLib()
+	LoadStdLib()
 	return nil
 }
 
-func LoadStdLib() Index {
+func LoadStdLib() {
 	var exe_path, err = os.Executable()
 	if err != nil { panic(err) }
-	var files = make([]string, len(__StdLibModules))
-	for i, name := range __StdLibModules {
-		files[i] = filepath.Join(filepath.Dir(exe_path), "stdlib", name + ".km")
-	}
-	var idx = make(Index)
 	var ctx = MakeEntryContext()
-	for _, file := range files {
-		var _, err = LoadModule(file, ctx, idx)
+	for _, name := range __StdLibModules {
+		var file = filepath.Join(filepath.Dir(exe_path), "stdlib", name + ".km")
+		var _, err = LoadModule(file, ctx, __StdLibIndex)
 		if err != nil {
 			fmt.Fprintf (
 				os.Stderr,
@@ -208,13 +204,11 @@ func LoadStdLib() Index {
 			os.Exit(3)
 		}
 	}
-	return idx
 }
 
 func ImportStdLib (imp_map map[string]*Module, imp_set map[string]bool) {
 	for name, mod := range __StdLibIndex {
-		var mod_name = Id2String(mod.Node.Name)
 		imp_map[name] = mod
-		imp_set[mod_name] = true
+		imp_set[name] = true
 	}
 }

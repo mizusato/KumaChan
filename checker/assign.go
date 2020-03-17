@@ -57,8 +57,8 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext, unbox bool) (Expr,
 			return &ExprError {
 				Point:    expr.Info.ErrorPoint,
 				Concrete: E_NotAssignable {
-					From:   ctx.DescribeExpectedType(expr.Type),
-					To:     ctx.DescribeType(expected),
+					From:   ctx.DescribeType(expr.Type),
+					To:     ctx.DescribeExpectedType(expected),
 					Reason: reason,
 				},
 			}
@@ -117,29 +117,58 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext, unbox bool) (Expr,
 					if AreTypesEqualInSameCtx(inferred, expected) {
 						return expr, nil
 					} else {
-						return Expr{}, &ExprError {
-							Point:    expr.Info.ErrorPoint,
-							Concrete: E_NotAssignable {
-								From:   ctx.DescribeType(expr.Type),
-								To:     ctx.DescribeType(inferred),
-								Reason: fmt.Sprintf (
-									"cannot infer type parameter %s",
-									ctx.TypeParams[E.Index],
-								),
-							},
-						}
+						return Expr{}, throw(fmt.Sprintf (
+							"cannot infer type parameter %s",
+							ctx.InferredNames[E.Index],
+						))
 					}
 				} else {
+					ctx.Inferred[E.Index] = expr.Type
 					return expr, nil
 				}
 			}
 		case NamedType:
-			var g = ctx.ModuleInfo.Types[E.Name]
-			var union, is_union = g.Value.(Union)
-			if is_union {
-				switch T := expr.Type.(type) {
-				case NamedType:
-					if T.Name != E.Name {
+			switch T := expr.Type.(type) {
+			case NamedType:
+				if T.Name == E.Name {
+					if len(T.Args) != len(E.Args) {
+						return Expr{}, throw("quantity of type parameters not matching")
+					}
+					var L = len(T.Args)
+					if ctx.InferTypeArgs {
+						for i := 0; i < L; i += 1 {
+							switch E_arg := E.Args[i].(type) {
+							case ParameterType:
+								var inferred, exists = ctx.Inferred[E_arg.Index]
+								if exists {
+									if !AreTypesEqualInSameCtx(inferred, expected) {
+										return Expr{}, throw(fmt.Sprintf(
+											"cannot infer type parameter %s",
+											ctx.InferredNames[E_arg.Index],
+										))
+									}
+								} else {
+									ctx.Inferred[E_arg.Index] = T.Args[i]
+								}
+							default:
+								// TODO: a recursion required if E.Args[i] and T.Args[i] are both named types
+								if !(AreTypesEqualInSameCtx(T.Args[i], E.Args[i])) {
+									return Expr{}, throw("")
+								}
+							}
+						}
+					} else {
+						for i := 0; i < L; i += 1 {
+							if !(AreTypesEqualInSameCtx(T.Args[i], E.Args[i])) {
+								return Expr{}, throw("")
+							}
+						}
+					}
+					return expr, nil
+				} else {
+					var g = ctx.ModuleInfo.Types[E.Name]
+					var union, is_union = g.Value.(Union)
+					if is_union {
 						return assign_union(E, T, union)
 					}
 				}
