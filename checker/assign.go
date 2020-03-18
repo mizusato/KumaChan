@@ -17,29 +17,41 @@ func RequireExplicitType(t Type, info ExprInfo) *ExprError {
 }
 
 func AssignTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprError) {
-	switch semi_value := semi.Value.(type) {
-	case TypedExpr:
-		return AssignTypedTo(expected, Expr(semi_value), ctx, true)
-	case UntypedLambda:
-		return AssignLambdaTo(expected, semi_value, semi.Info, ctx)
-	case UntypedInteger:
-		return AssignIntegerTo(expected, semi_value, semi.Info, ctx)
-	case SemiTypedTuple:
-		return AssignTupleTo(expected, semi_value, semi.Info, ctx)
-	case SemiTypedBundle:
-		return AssignBundleTo(expected, semi_value, semi.Info, ctx)
-	case SemiTypedArray:
-		return AssignArrayTo(expected, semi_value, semi.Info, ctx)
-	case SemiTypedBlock:
-		return AssignBlockTo(expected, semi_value, semi.Info, ctx)
-	case SemiTypedMatch:
-		return AssignMatchTo(expected, semi_value, semi.Info, ctx)
-	case UntypedRef:
-		return AssignRefTo(expected, semi_value, semi.Info, ctx)
-	case UndecidedCall:
-		return AssignCallTo(expected, semi_value, semi.Info, ctx)
-	default:
-		panic("impossible branch")
+	var expr, err = (func() (Expr, *ExprError) {
+		switch semi_value := semi.Value.(type) {
+		case TypedExpr:
+			return AssignTypedTo(expected, Expr(semi_value), ctx, true)
+		case UntypedLambda:
+			return AssignLambdaTo(expected, semi_value, semi.Info, ctx)
+		case UntypedInteger:
+			return AssignIntegerTo(expected, semi_value, semi.Info, ctx)
+		case SemiTypedTuple:
+			return AssignTupleTo(expected, semi_value, semi.Info, ctx)
+		case SemiTypedBundle:
+			return AssignBundleTo(expected, semi_value, semi.Info, ctx)
+		case SemiTypedArray:
+			return AssignArrayTo(expected, semi_value, semi.Info, ctx)
+		case SemiTypedBlock:
+			return AssignBlockTo(expected, semi_value, semi.Info, ctx)
+		case SemiTypedMatch:
+			return AssignMatchTo(expected, semi_value, semi.Info, ctx)
+		case UntypedRef:
+			return AssignRefTo(expected, semi_value, semi.Info, ctx)
+		case UndecidedCall:
+			return AssignCallTo(expected, semi_value, semi.Info, ctx)
+		default:
+			panic("impossible branch")
+		}
+	})()
+	if err != nil { return Expr{}, err }
+	if ctx.InferTypeArgs {
+		return Expr {
+			Type:  FillMarkedParams(expr.Type, ctx),
+			Value: expr.Value,
+			Info:  expr.Info,
+		}, nil
+	} else {
+		return expr, nil
 	}
 }
 
@@ -109,9 +121,57 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext, unbox bool) (Expr,
 			// 1.2. Otherwise, throw an error.
 			return Expr{}, throw("given type is not a subtype of the expected union type")
 		}
+		var compare_named func(NamedType, NamedType) (*ExprError)
+		compare_named = func(E NamedType, T NamedType) (*ExprError) {
+			if !(ctx.InferTypeArgs) { panic("something went wrong") }
+			if E.Name != T.Name {
+				return throw("")
+			}
+			if len(E.Args) != len(T.Args) {
+				return throw("")
+			}
+			var L = len(T.Args)
+			for i := 0; i < L; i += 1 {
+				switch E_arg := E.Args[i].(type) {
+				case ParameterType:
+					if E_arg.BeingInferred {
+						var inferred, exists = ctx.Inferred[E_arg.Index]
+						if exists {
+							if !AreTypesEqualInSameCtx(inferred, expected) {
+								return throw(fmt.Sprintf(
+									"cannot infer type parameter %s",
+									ctx.InferredNames[E_arg.Index],
+								))
+							}
+						} else {
+							ctx.Inferred[E_arg.Index] = T.Args[i]
+						}
+					} else {
+						if !(AreTypesEqualInSameCtx(E.Args[i], T.Args[i])) {
+							return throw("")
+						}
+					}
+				case NamedType:
+					switch T_arg := T.Args[i].(type) {
+					case NamedType:
+						var err = compare_named(E_arg, T_arg)
+						if err != nil { return err }
+					default:
+						if !(AreTypesEqualInSameCtx(E.Args[i], T.Args[i])) {
+							return throw("")
+						}
+					}
+				default:
+					if !(AreTypesEqualInSameCtx(E.Args[i], T.Args[i])) {
+						return throw("")
+					}
+				}
+			}
+			return nil
+		}
 		switch E := expected.(type) {
 		case ParameterType:
-			if ctx.InferTypeArgs {
+			if ctx.InferTypeArgs && E.BeingInferred {
 				var inferred, exists = ctx.Inferred[E.Index]
 				if exists {
 					if AreTypesEqualInSameCtx(inferred, expected) {
@@ -130,46 +190,20 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext, unbox bool) (Expr,
 		case NamedType:
 			switch T := expr.Type.(type) {
 			case NamedType:
-				if T.Name == E.Name {
-					if len(T.Args) != len(E.Args) {
-						return Expr{}, throw("quantity of type parameters not matching")
-					}
-					var L = len(T.Args)
-					if ctx.InferTypeArgs {
-						for i := 0; i < L; i += 1 {
-							switch E_arg := E.Args[i].(type) {
-							case ParameterType:
-								var inferred, exists = ctx.Inferred[E_arg.Index]
-								if exists {
-									if !AreTypesEqualInSameCtx(inferred, expected) {
-										return Expr{}, throw(fmt.Sprintf(
-											"cannot infer type parameter %s",
-											ctx.InferredNames[E_arg.Index],
-										))
-									}
-								} else {
-									ctx.Inferred[E_arg.Index] = T.Args[i]
-								}
-							default:
-								// TODO: a recursion required if E.Args[i] and T.Args[i] are both named types
-								if !(AreTypesEqualInSameCtx(T.Args[i], E.Args[i])) {
-									return Expr{}, throw("")
-								}
-							}
-						}
+				if E.Name == T.Name && ctx.InferTypeArgs {
+					var err = compare_named(E, T)
+					if err != nil {
+						return Expr{}, err
 					} else {
-						for i := 0; i < L; i += 1 {
-							if !(AreTypesEqualInSameCtx(T.Args[i], E.Args[i])) {
-								return Expr{}, throw("")
-							}
-						}
+						return expr, nil
 					}
-					return expr, nil
 				} else {
 					var g = ctx.ModuleInfo.Types[E.Name]
 					var union, is_union = g.Value.(Union)
 					if is_union {
 						return assign_union(E, T, union)
+					} else {
+						// "fallthrough" to strict equal or unbox
 					}
 				}
 			}
@@ -188,7 +222,8 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext, unbox bool) (Expr,
 					var expr_expected, err = AssignTypedTo (
 						expected, expr_unboxed, ctx, false,
 					)
-					if err != nil { return Expr{}, err }
+					// if err != nil { return Expr{}, err }
+					if err != nil { return Expr{}, throw("") }
 					if ctx.UnboxCounted {
 						*(ctx.UnboxCount) += 1
 					}

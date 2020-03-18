@@ -43,6 +43,20 @@ func AssignLambdaTo(expected Type, lambda UntypedLambda, info ExprInfo, ctx Expr
 		case Func:
 			var input_t = func_repr.Input
 			var output_t = func_repr.Output
+			var input_param, is_param = input_t.(ParameterType)
+			if ctx.InferTypeArgs {
+				if is_param && input_param.BeingInferred {
+					var inferred, exists = ctx.Inferred[input_param.Index]
+					if exists {
+						input_t = inferred
+					} else {
+						return Expr{}, &ExprError{
+							Point:    info.ErrorPoint,
+							Concrete: E_ExplicitTypeRequired{},
+						}
+					}
+				}
+			}
 			//
 			var pattern, err1 = PatternFrom(lambda.Input, input_t, ctx)
 			if err1 != nil { return Expr{}, err1 }

@@ -33,7 +33,8 @@ type Type interface { CheckerType() }
 
 func (impl ParameterType) CheckerType() {}
 type ParameterType struct {
-	Index  uint
+	Index          uint
+	BeingInferred  bool
 }
 func (impl NamedType) CheckerType() {}
 type NamedType struct {
@@ -107,7 +108,11 @@ func DescribeType(type_ Type, ctx TypeDescContext) string {
 		}
 	case NamedType:
 		var buf strings.Builder
-		buf.WriteString(t.Name.String())
+		if loader.IsPreloadCoreSymbol(t.Name) {
+			buf.WriteString(t.Name.SymbolName)
+		} else {
+			buf.WriteString(t.Name.String())
+		}
 		if len(t.Args) > 0 {
 			buf.WriteRune('[')
 			for i, arg := range t.Args {
@@ -407,4 +412,3 @@ func AreTypesEqualInSameCtx (type1 Type, type2 Type) bool {
 		panic("impossible branch")
 	}
 }
-

@@ -52,7 +52,8 @@ func Box (
 		}, nil
 	} else if given_count == 0 {
 		var inf_ctx = ctx.WithTypeArgsInferringEnabled(g_type.Params)
-		var expr, err = AssignTo(wrapped.InnerType, to_be_boxed, inf_ctx)
+		var marked_inner_type = MarkParamsAsBeingInferred(wrapped.InnerType)
+		var expr, err = AssignTo(marked_inner_type, to_be_boxed, inf_ctx)
 		if err != nil { return Expr{}, err }
 		if uint(len(inf_ctx.Inferred)) != g_type_arity {
 			return Expr{}, &ExprError {
@@ -68,12 +69,10 @@ func Box (
 			Name: g_type_name,
 			Args: inferred_args,
 		}
-		/*
 		var inner_type = FillTypeArgs(wrapped.InnerType, inferred_args)
 		if !(AreTypesEqualInSameCtx(inner_type, expr.Type)) {
 			panic("something went wrong")
 		}
-		 */
 		return Expr {
 			Type:  inferred_type,
 			Value: expr.Value,

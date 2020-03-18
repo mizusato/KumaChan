@@ -4,6 +4,7 @@ import "kumachan/transformer/node"
 
 
 func CheckCast(cast node.Cast, ctx ExprContext) (SemiExpr, *ExprError) {
+	var info = ctx.GetExprInfo(cast.Node)
 	var type_ctx = ctx.GetTypeContext()
 	var target, err1 = TypeFrom(cast.Target.Type, type_ctx)
 	if err1 != nil { return SemiExpr{}, &ExprError {
@@ -14,5 +15,12 @@ func CheckCast(cast node.Cast, ctx ExprContext) (SemiExpr, *ExprError) {
 	if err2 != nil { return SemiExpr{}, err2 }
 	var typed, err3 = AssignTo(target, semi, ctx)
 	if err3 != nil { return SemiExpr{}, err3 }
-	return LiftTyped(typed), nil
+	if !(AreTypesEqualInSameCtx(typed.Type, target)) {
+		panic("something went wrong")
+	}
+	return LiftTyped(Expr {
+		Type:  typed.Type,
+		Value: typed.Value,
+		Info:  info,
+	}), nil
 }

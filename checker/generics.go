@@ -41,7 +41,8 @@ func GenericFunctionCall (
 		var inf_ctx = ctx.WithTypeArgsInferringEnabled(f.TypeParams)
 		var raw_input_type = f.DeclaredType.Input
 		var raw_output_type = f.DeclaredType.Output
-		var arg_typed, err = AssignTo(raw_input_type, arg, inf_ctx)
+		var marked_input_type = MarkParamsAsBeingInferred(raw_input_type)
+		var arg_typed, err = AssignTo(marked_input_type, arg, inf_ctx)
 		if err != nil { return Expr{}, err }
 		if len(inf_ctx.Inferred) != type_arity {
 			return Expr{}, &ExprError {
@@ -54,15 +55,8 @@ func GenericFunctionCall (
 			inferred_args[i] = t
 		}
 		var input_type = FillTypeArgs(raw_input_type, inferred_args)
-		/*
 		if !(AreTypesEqualInSameCtx(input_type, arg_typed.Type)) {
-			panic("something went wrong ")
-		}
-		*/
-		var input = Expr {
-			Type:  input_type,
-			Value: arg_typed.Value,
-			Info:  arg_typed.Info,
+			panic("something went wrong")
 		}
 		var output_type = FillTypeArgs(raw_output_type, inferred_args)
 		var f_type = AnonymousType { Func {
@@ -80,7 +74,7 @@ func GenericFunctionCall (
 					},
 					Info:  f_info,
 				},
-				Argument: input,
+				Argument: arg_typed,
 			},
 			Info:  call_info,
 		}, nil
@@ -183,7 +177,7 @@ func FillTypeArgs(t Type, given []Type) Type {
 	case AnonymousType:
 		switch r := T.Repr.(type) {
 		case Unit:
-			return t
+			return AnonymousType { Unit {} }
 		case Tuple:
 			var filled = make([]Type, len(r.Elements))
 			for i, element := range r.Elements {
@@ -282,4 +276,114 @@ func NaivelyInferTypeArgs(template Type, given Type, inferred map[uint]Type) {
 	}
 }
 
+func MarkParamsAsBeingInferred(type_ Type) Type {
+	switch t := type_.(type) {
+	case ParameterType:
+		return ParameterType {
+			Index:         t.Index,
+			BeingInferred: true,
+		}
+	case NamedType:
+		var marked_args = make([]Type, len(t.Args))
+		for i, arg := range t.Args {
+			marked_args[i] = MarkParamsAsBeingInferred(arg)
+		}
+		return NamedType {
+			Name: t.Name,
+			Args: marked_args,
+		}
+	case AnonymousType:
+		switch r := t.Repr.(type) {
+		case Unit:
+			return AnonymousType { Unit{} }
+		case Tuple:
+			var marked_elements = make([]Type, len(r.Elements))
+			for i, el := range r.Elements {
+				marked_elements[i] = MarkParamsAsBeingInferred(el)
+			}
+			return AnonymousType { Tuple { marked_elements } }
+		case Bundle:
+			var marked_fields = make(map[string]Field)
+			for name, f := range r.Fields {
+				marked_fields[name] = Field {
+					Type:  MarkParamsAsBeingInferred(f.Type),
+					Index: f.Index,
+				}
+			}
+			return AnonymousType { Bundle { marked_fields } }
+		case Func:
+			var marked_input = MarkParamsAsBeingInferred(r.Input)
+			var marked_output = MarkParamsAsBeingInferred(r.Output)
+			return AnonymousType { Func {
+				Input:  marked_input,
+				Output: marked_output,
+			} }
+		default:
+			panic("impossible branch")
+		}
+	default:
+		panic("impossible branch")
+	}
+}
 
+func FillMarkedParams(type_ Type, ctx ExprContext) Type {
+	if !(ctx.InferTypeArgs) { panic("something went wrong") }
+	switch T := type_.(type) {
+	case ParameterType:
+		if T.BeingInferred {
+			var inferred, exists = ctx.Inferred[T.Index]
+			if !exists { panic("something went wrong") }
+			return inferred
+		} else {
+			return T
+		}
+	case NamedType:
+		var filled = make([]Type, len(T.Args))
+		for i, arg := range T.Args {
+			filled[i] = FillMarkedParams(arg, ctx)
+		}
+		return NamedType {
+			Name: T.Name,
+			Args: filled,
+		}
+	case AnonymousType:
+		switch r := T.Repr.(type) {
+		case Unit:
+			return AnonymousType { Unit {} }
+		case Tuple:
+			var filled = make([]Type, len(r.Elements))
+			for i, element := range r.Elements {
+				filled[i] = FillMarkedParams(element, ctx)
+			}
+			return AnonymousType {
+				Repr: Tuple {
+					Elements: filled,
+				},
+			}
+		case Bundle:
+			var filled = make(map[string]Field, len(r.Fields))
+			for name, field := range r.Fields {
+				filled[name] = Field {
+					Type:  FillMarkedParams(field.Type, ctx),
+					Index: field.Index,
+				}
+			}
+			return AnonymousType {
+				Repr: Bundle {
+					Fields: filled,
+				},
+			}
+		case Func:
+			return AnonymousType {
+				Repr:Func {
+					Input:  FillMarkedParams(r.Input, ctx),
+					Output: FillMarkedParams(r.Output, ctx),
+				},
+			}
+		default:
+			panic("impossible branch")
+		}
+	default:
+		panic("impossible branch")
+	}
+}
