@@ -7,28 +7,26 @@ type Error {
 };
 
 public function read {
-    `InputStream => Effect[Bytes,Error]:
+    lambda(InputStream) Effect*[Bytes,Error]:
     native 'read'
 };
 
 public function write {
-    `(OutputStream, Effect[Bytes,Error]) => Effect[(),Error]:
+    lambda(OutputStream, Effect*[Bytes,Error]) Effect[(),Error]:
     native 'write'
 };
 
 public function write-bytes {
-    `(OutputStream, Bytes) => Effect[Integer, Error]:
+    lambda(OutputStream, Bytes) Effect[(),Error]:
     native 'write-bytes'
 };
 
 public function write-string {
-    `(OutputStream, String) => Effect[(), Error]:
+    lambda(OutputStream, String) Effect[(),Error]:
     native 'write-string'
 };
 
 public function write-line {
-    `(OutputStream, String) => Effect[(), Error]:
+    lambda(OutputStream, String) Effect[(),Error]:
     native 'write-line'
 };
-
-// print-line, ...

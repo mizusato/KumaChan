@@ -25,7 +25,8 @@ type Set[T]    native;
 type Map[K,V]  native;
 
 // Effect Type
-type Effect[T,E]   native;
+type Effect*[T,E]   native;
+type Effect[T,E]    protected Effect*[T,E];
 
 // Fixed Integer Types
 type Int64   Qword;
@@ -56,7 +57,52 @@ type Result[T,E] union {
     type NG E;
 };
 
+public function map![A,B,E] {
+    lambda(Effect*[A,E], lambda A B) Effect*[B,E]:
+    native 'effect-map'
+};
+
+public function then[A,B,E] {
+    lambda(Effect[A,()], lambda A Effect[B,E]) Effect[B,E]:
+    native 'effect-then'
+};
+
+public function then[T,E] {
+    lambda(Effect[(),()], Effect[T,E]) Effect[T,E]:
+    native 'effect-then-preset'
+};
+
+public function then*[A,B,E] {
+    lambda(Effect[A,()], lambda A Effect*[B,E]) Effect*[B,E]:
+    native 'effect-then'
+};
+
+public function then*[T,E] {
+    lambda(Effect[(),()], Effect*[T,E]) Effect*[T,E]:
+    native 'effect-then-preset'
+};
+
+public function next![A,B,E] {
+    lambda(Effect[A,E], lambda A Effect[B,E]) Effect[B,E]:
+    native 'effect-next'
+};
+
+public function next*[A,B,E] {
+    lambda(Effect[A,E], lambda A Effect*[B,E]) Effect*[B,E]:
+    native 'effect-next'
+};
+
+public function map-error[T,E,F] {
+    lambda(Effect[T,E], lambda E F) Effect[T,F]:
+    native 'effect-map-error'
+};
+
+public function map-error[T,E,F] {
+    lambda(Effect*[T,E], lambda E F) Effect*[T,F]:
+    native 'effect-map-error'
+};
+
 public function catch[T,E] {
-    `(Effect[T,E], `E => Effect[(),()]) => Effect[T,()]:
-    native 'catch'
+    lambda(Effect[T,E], lambda E Effect[(),()]) Effect[T,()]:
+    native 'effect-catch'
 };

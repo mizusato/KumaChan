@@ -40,13 +40,13 @@ type Branch struct {
 }
 
 
-func CheckMatch(match node.Match, ctx ExprContext) (SemiExpr, *ExprError) {
-	var info = ctx.GetExprInfo(match.Node)
-	var arg_semi, err = Check(match.Argument, ctx)
+func CheckSwitch(sw node.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
+	var info = ctx.GetExprInfo(sw.Node)
+	var arg_semi, err = CheckTerm(sw.Argument, ctx)
 	if err != nil { return SemiExpr{}, err }
 	var arg_typed, ok = arg_semi.Value.(TypedExpr)
 	if !ok { return SemiExpr{}, &ExprError {
-		Point:    ctx.GetErrorPoint(match.Argument.Node),
+		Point:    ctx.GetErrorPoint(sw.Argument.Node),
 		Concrete: E_ExplicitTypeRequired {},
 	} }
 	var arg_type = arg_typed.Type
@@ -59,8 +59,8 @@ func CheckMatch(match node.Match, ctx ExprContext) (SemiExpr, *ExprError) {
 	} }
 	var checked = make(map[loader.Symbol] bool)
 	var has_default = false
-	var branches = make([]SemiTypedBranch, len(match.Branches))
-	for i, branch := range match.Branches {
+	var branches = make([]SemiTypedBranch, len(sw.Branches))
+	for i, branch := range sw.Branches {
 		switch t := branch.Type.(type) {
 		case node.Ref:
 			if len(t.TypeArgs) > 0 {
@@ -158,7 +158,7 @@ func CheckMatch(match node.Match, ctx ExprContext) (SemiExpr, *ExprError) {
 			}
 		}
 		return SemiExpr{}, &ExprError {
-			Point:    ctx.GetErrorPoint(match.Node),
+			Point:    ctx.GetErrorPoint(sw.Node),
 			Concrete: E_IncompleteMatch { missing },
 		}
 	} else {
@@ -172,9 +172,10 @@ func CheckMatch(match node.Match, ctx ExprContext) (SemiExpr, *ExprError) {
 	}
 }
 
-func CheckIf(if_node node.If, ctx ExprContext) (SemiExpr, *ExprError) {
+func CheckIf(raw node.If, ctx ExprContext) (SemiExpr, *ExprError) {
+	var if_node = DesugarElseIf(raw)
 	var info = ctx.GetExprInfo(if_node.Node)
-	var cond_semi, err = Check(if_node.Condition, ctx)
+	var cond_semi, err = CheckTerm(if_node.Condition, ctx)
 	if err != nil { return SemiExpr{}, err }
 	var cond_typed, ok = cond_semi.Value.(TypedExpr)
 	if !ok { return SemiExpr{}, &ExprError{
@@ -292,4 +293,38 @@ func ExtractUnionTuple(t Type, ctx ExprContext) ([]Union, [][]Type, bool) {
 		}
 	}
 	return nil, nil, false
+}
+
+func DesugarElseIf(raw node.If) node.If {
+	var no_branch = raw.NoBranch
+	var elifs = raw.ElIfs
+	for i, _ := range elifs {
+		var elif = elifs[len(elifs)-1-i]
+		var t = node.If {
+			Node:      elif.Node,
+			Condition: elif.Condition,
+			YesBranch: elif.YesBranch,
+			NoBranch:  no_branch,
+			ElIfs:     nil,
+		}
+		no_branch = node.Expr {
+			Node:     t.Node,
+			Call:     node.Call {
+				Node: t.Node,
+				Func: node.VariousTerm {
+					Node: t.Node,
+					Term: t,
+				},
+				Arg:  nil,
+			},
+			Pipeline: nil,
+		}
+	}
+	return node.If {
+		Node:      raw.Node,
+		Condition: raw.Condition,
+		YesBranch: raw.YesBranch,
+		NoBranch:  no_branch,
+		ElIfs:     nil,
+	}
 }

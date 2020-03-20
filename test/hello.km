@@ -2,6 +2,6 @@ module Hello;
 
 do OS::Stdout
    | write-line  'Hello World'
-   | catch       `_ => exit 1;
+   | catch       lambda _ exit 1
+   | then        exit 0;
 
-do exit 0;

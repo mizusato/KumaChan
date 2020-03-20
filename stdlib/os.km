@@ -9,8 +9,9 @@ Stdout := [I/O::OutputStream] native 'Stdout';
 public const
 Stderr := [I/O::OutputStream] native 'Stderr';
 
-type ProcessExit  Effect[(),()];
+type ProcessExit  protected Effect[(),()];
+
 public function exit {
-    `Uint8 => ProcessExit:
+    lambda(Uint8) ProcessExit:
     native 'exit'
 };

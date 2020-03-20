@@ -227,8 +227,8 @@ func CheckTerm(term node.VariousTerm, ctx ExprContext) (SemiExpr, *ExprError) {
 		return CheckCast(t, ctx)
 	case node.Lambda:
 		return CheckLambda(t, ctx)
-	case node.Match:
-		return CheckMatch(t, ctx)
+	case node.Switch:
+		return CheckSwitch(t, ctx)
 	case node.If:
 		return CheckIf(t, ctx)
 	case node.Block:

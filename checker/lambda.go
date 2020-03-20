@@ -50,7 +50,7 @@ func AssignLambdaTo(expected Type, lambda UntypedLambda, info ExprInfo, ctx Expr
 					if exists {
 						input_t = inferred
 					} else {
-						return Expr{}, &ExprError{
+						return Expr{}, &ExprError {
 							Point:    info.ErrorPoint,
 							Concrete: E_ExplicitTypeRequired{},
 						}

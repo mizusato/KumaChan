@@ -42,14 +42,14 @@ func (ctx Context) GetErrorDescription() ErrorMessage {
 }
 
 func (ctx Context) GetFullErrorMessage(detail ErrorMessage) ErrorMessage {
+	var desc = ctx.GetErrorDescription()
+	desc.Write(T_LF)
+	desc.WriteAll(detail)
 	var p, ok = ctx.ImportPoint.(ErrorPoint)
 	if ok {
-		var desc = ctx.GetErrorDescription()
-		desc.Write(T_LF)
-		desc.WriteAll(detail)
 		return FormatErrorAt(p, desc)
 	} else {
-		return ctx.GetErrorDescription()
+		return desc
 	}
 }
 

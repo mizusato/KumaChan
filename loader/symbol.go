@@ -93,7 +93,7 @@ func (mod *Module) TypeSymbolFromRef(ref node.Ref) MaybeSymbol {
 var __PreloadCoreSymbols = []string {
 	"Bit", "Byte", "Word", "Dword", "Qword", "Integer", "Float64",
 	"Bytes", "String", "Seq", "Array", "Heap", "Set", "Map",
-	"Effect",
+	"Effect*", "Effect",
 	"Int64", "Uint64", "Int32", "Uint32", "Int16", "Uint16", "Int8", "Uint8",
 	"Char", "Natural", "Float",
 	"Bool", "Yes", "No",

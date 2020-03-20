@@ -6,9 +6,9 @@ const IgnoreMark = "_"
 const TextPlaceholder = '#'
 const BadIndex = ^(uint(0))
 /* should be consistent with `stdlib/core.km` */
-var __Effect = CoreSymbol("Effect")
+var __EffectSingleValue = CoreSymbol("Effect")
 var __DoType = NamedType {
-	Name: __Effect,
+	Name: __EffectSingleValue,
 	Args: []Type { AnonymousType { Unit{} }, AnonymousType { Unit{} } },
 }
 var __Bool = CoreSymbol("Bool")

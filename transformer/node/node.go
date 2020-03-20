@@ -73,8 +73,8 @@ var __NodeRegistry = []interface{} {
     PipeOperator {},
     // Term
     Cast {},
-    Match {},
-    Branch{},
+	Switch {},
+    Branch {},
     If {},
     Lambda {},
     VariousPattern {},

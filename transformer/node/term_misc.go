@@ -13,7 +13,7 @@ func (impl Lambda) Term() {}
 type Lambda struct {
 	Node                     `part:"lambda"`
 	Input   VariousPattern   `part:"pattern"`
-	Output  Call             `part:"call"`
+	Output  Call             `part:"terms.call"`
 }
 
 func (impl Block) Term() {}
