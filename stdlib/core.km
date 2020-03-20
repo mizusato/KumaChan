@@ -74,12 +74,12 @@ public function then[T,E] {
 
 public function then*[A,B,E] {
     lambda(Effect[A,()], lambda A Effect*[B,E]) Effect*[B,E]:
-    native 'effect-then'
+    native 'effect-then*'
 };
 
 public function then*[T,E] {
     lambda(Effect[(),()], Effect*[T,E]) Effect*[T,E]:
-    native 'effect-then-preset'
+    native 'effect-then*-preset'
 };
 
 public function next![A,B,E] {
@@ -89,7 +89,7 @@ public function next![A,B,E] {
 
 public function next*[A,B,E] {
     lambda(Effect[A,E], lambda A Effect*[B,E]) Effect*[B,E]:
-    native 'effect-next'
+    native 'effect-next*'
 };
 
 public function map-error[T,E,F] {
@@ -99,7 +99,7 @@ public function map-error[T,E,F] {
 
 public function map-error[T,E,F] {
     lambda(Effect*[T,E], lambda E F) Effect*[T,F]:
-    native 'effect-map-error'
+    native 'effect-map-error-*'
 };
 
 public function catch[T,E] {
