@@ -3,12 +3,15 @@ package common
 import (
 	. "kumachan/error"
 	"kumachan/loader"
+	"kumachan/transformer/node"
 )
 
 type Function struct {
-	Code        [] Instruction
-	BaseSize    FrameBaseSize
-	SourceInfo  SourceInfo
+	IsNative     bool
+	NativeIndex  int
+	Code         [] Instruction
+	BaseSize     FrameBaseSize
+	Info         FuncInfo
 }
 
 type FrameBaseSize struct {
@@ -16,8 +19,19 @@ type FrameBaseSize struct {
 	Reserved  Short
 }
 
-type SourceInfo struct {
+type FuncInfo struct {
 	Name       loader.Symbol
 	DeclPoint  ErrorPoint
-	CodeMap    [] ErrorPoint
+	SourceMap  [] *node.Node
+}
+
+func (f *Function) ToValue(native_index []NativeFunction) Value {
+	if f.IsNative {
+		return NativeFunctionValue(native_index[f.NativeIndex])
+	} else {
+		return FunctionValue{
+			Underlying:    f,
+			ContextValues: make([]Value, 0, 0),
+		}
+	}
 }

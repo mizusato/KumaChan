@@ -4,33 +4,35 @@ import (
 	"fmt"
 	. "kumachan/runtime/common"
 	"kumachan/runtime/common/rx"
+	"kumachan/runtime/lib"
 )
 
 
-func RunCommand (cmd Command, m *Machine) {
-	switch cmd.Kind {
-	case CMD_DeclareNative:
-		var nf = NativeFunctionValue(cmd.Native)
-		m.GlobalValues = append(m.GlobalValues, nf)
-	default:
-		var f = FunctionValue {
-			Underlying:    cmd.Function,
-			ContextValues: make([]Value, 0, 0),
-		}
-		switch cmd.Kind {
-		case CMD_DeclareFunction:
-			m.GlobalValues = append(m.GlobalValues, f)
-		case CMD_DeclareConstant:
-			var val = CallFunction(f, nil, m)
-			m.GlobalValues = append(m.GlobalValues, val)
-		case CMD_ActivateEffect:
-			var e = (CallFunction(f, nil, m)).(rx.Effect)
-			var sched = rx.TrivialScheduler { EventLoop: m.EventLoop }
-			var ctx = rx.Background()
-			rx.RunEffect(e, sched, ctx, nil, nil)
-		default:
-			panic("unknown command kind")
-		}
+func Execute(p Program, m *Machine) {
+	var L = len(p.Functions) + len(p.Constants) + len(p.Constants)
+	if L > RegistryMaxSize { panic("maximum registry size exceeded") }
+	var N = lib.NativeFunctions
+	m.GlobalValues = make([]Value, 0, L)
+	for i, _ := range p.Functions {
+		var f = &(p.Functions[i])
+		m.GlobalValues = append(m.GlobalValues, f.ToValue(N))
+	}
+	for i, _ := range p.Closures {
+		var f = &(p.Closures[i])
+		m.GlobalValues = append(m.GlobalValues, f.ToValue(nil))
+	}
+	for i, _ := range p.Constants {
+		var f = &(p.Constants[i])
+		var v = f.ToValue(N)
+		m.GlobalValues = append(m.GlobalValues, m.Call(v, nil))
+	}
+	var sched = rx.TrivialScheduler { EventLoop: m.EventLoop }
+	var ctx = rx.Background()
+	for i, _ := range p.Effects {
+		var f = &(p.Effects[i])
+		var v = f.ToValue(nil)
+		var e = (m.Call(v, nil)).(rx.Effect)
+		rx.RunEffect(e, sched, ctx, nil, nil)
 	}
 }
 
@@ -156,7 +158,8 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 					// check if the function is valid
 					var required = int(f.Underlying.BaseSize.Context)
 					var current = len(f.ContextValues)
-					assert(current == required, "CALL: missing correct context")
+					assert(current == required,
+						"CALL: missing correct context")
 					var arg = ec.PopValue()
 					// tailing call optimization
 					var L = len(code)
@@ -172,8 +175,9 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 					// push the function to call stack
 					ec.PushCall(f, arg)
 					// check if call stack size exceeded
-					var num_call = uint(len(ec.CallStack))
-					assert(num_call < m.MaxNumOfCall, "CALL: maximum call stack size exceeded")
+					var stack_size = uint(len(ec.DataStack))
+					assert(stack_size < m.MaxStackSize,
+						"CALL: stack overflow")
 					// work on the pushed new frame
 					continue outer
 				case NativeFunctionValue:

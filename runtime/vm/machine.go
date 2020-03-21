@@ -6,18 +6,18 @@ import (
 	"sync"
 )
 
-const InitialDataStackCapacity = 32
-const InitialCallStackCapacity = 8
+const InitialDataStackCapacity = 16
+const InitialCallStackCapacity = 4
 
 type Machine struct {
 	Program       Program
 	GlobalValues  [] Value
 	ContextPool   *sync.Pool
 	EventLoop     *rx.EventLoop
-	MaxNumOfCall  uint
+	MaxStackSize  uint
 }
 
-func CreateMachine(p Program, max_call uint) *Machine {
+func CreateMachine(p Program, max_stack_size uint) *Machine {
 	var m = &Machine {
 		Program:      p,
 		GlobalValues: nil,
@@ -28,11 +28,9 @@ func CreateMachine(p Program, max_call uint) *Machine {
 			}
 		} },
 		EventLoop:    rx.SpawnEventLoop(),
-		MaxNumOfCall: max_call,
+		MaxStackSize: max_stack_size,
 	}
-	for _, cmd := range m.Program.Commands {
-		RunCommand(cmd, m)
-	}
+	Execute(p, m)
 	return m
 }
 

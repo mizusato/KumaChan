@@ -7,6 +7,7 @@ const ShortSize = 8
 const LongSize = 16
 const SumMaxBranches = 1 << ShortSize
 const ProductMaxSize = 1 << ShortSize
+const ClosureMaxSize = 1 << ShortSize
 const FunCodeMaxLength = 1 << LongSize
 const RegistryMaxSize = 1 << (ShortSize + LongSize)
 

@@ -26,7 +26,7 @@ func PrintRuntimeErrorMessage(err interface{}, ec *ExecutionContext) {
 		} else {
 			callee = ec.WorkingFrame
 		}
-		var callee_name = callee.Function.SourceInfo.Name
+		var callee_name = callee.Function.Info.Name
 		var frame_msg = fmt.Sprintf("%s called", callee_name)
 		buf.WriteString(GenFrameErrMsg(this, frame_msg))
 		buf.WriteString("\n*\n")
@@ -38,6 +38,6 @@ func PrintRuntimeErrorMessage(err interface{}, ec *ExecutionContext) {
 }
 
 func GenFrameErrMsg(f CallStackFrame, desc string) string {
-	var point = f.Function.SourceInfo.CodeMap[f.InstPtr]
+	var point = f.Function.Info.CodeMap[f.InstPtr]
 	return point.GenErrMsg(desc)
 }
