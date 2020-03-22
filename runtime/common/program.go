@@ -2,8 +2,14 @@ package common
 
 
 type Program struct {
-	Functions  [] Function
-	Closures   [] Function
-	Constants  [] Function
-	Effects    [] Function
+	DataValues  [] DataValue
+	Functions   [] Function
+	Closures    [] Function
+	Constants   [] Function
+	Effects     [] Function
+}
+
+type DataValue interface {
+	ToValue()  Value
+	// Marshal()  interface{}  // TODO
 }

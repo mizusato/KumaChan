@@ -44,8 +44,8 @@ type DataStack  [] Value
 type CallStack  [] CallStackFrame
 type CallStackFrame struct {
 	Function  *Function
-	BaseAddr  int
-	InstPtr   int
+	BaseAddr  uint
+	InstPtr   uint
 }
 
 func (m *Machine) Call(fv Value, arg Value) Value {

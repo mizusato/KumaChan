@@ -24,8 +24,8 @@ type UntypedRefToFunctions struct {
 	Functions  [] *GenericFunction
 }
 
-func (impl RefConst) ExprVal() {}
-type RefConst struct {
+func (impl RefConstant) ExprVal() {}
+type RefConstant struct {
 	Name  loader.Symbol
 }
 
@@ -74,7 +74,7 @@ func CheckRef(ref node.Ref, ctx ExprContext) (SemiExpr, *ExprError) {
 	case SymConst:
 		return LiftTyped(Expr {
 			Type:  s.Const.DeclaredType,
-			Value: RefConst { symbol },
+			Value: RefConstant { symbol },
 			Info:  info,
 		}), nil
 	case SymTypeParam:

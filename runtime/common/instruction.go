@@ -37,20 +37,24 @@ const (
 	CALL    // [___, _]: Call a (native)function (pop func, pop arg, push ret)
 )
 
-func (inst Instruction) GetRegIndex() int {
-	return (int(inst.Arg0) << LongSize) + int(inst.Arg1)
+func (inst Instruction) GetRegIndex() uint {
+	return (uint(inst.Arg0) << LongSize) + uint(inst.Arg1)
 }
 
-func (inst Instruction) GetOffset() int {
-	return int(inst.Arg0)
+func RegIndex(i uint) (Short, Long) {
+	return Short(i & ((1 << LongSize) - 1)), Long(i >> LongSize)
 }
 
-func (inst Instruction) GetJumpAddr() int {
-	return int(inst.Arg1)
+func (inst Instruction) GetOffset() uint {
+	return uint(inst.Arg0)
 }
 
-func (inst Instruction) GetIndexOrSize() int {
-	return int(inst.Arg0)
+func (inst Instruction) GetJumpAddr() uint {
+	return uint(inst.Arg1)
+}
+
+func (inst Instruction) GetIndexOrSize() uint {
+	return uint(inst.Arg0)
 }
 
 func (inst Instruction) GetShortIndexOrSize() Short {

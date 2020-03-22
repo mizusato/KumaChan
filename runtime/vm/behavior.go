@@ -13,6 +13,9 @@ func Execute(p Program, m *Machine) {
 	if L > RegistryMaxSize { panic("maximum registry size exceeded") }
 	var N = lib.NativeFunctions
 	m.GlobalValues = make([]Value, 0, L)
+	for _, v := range p.DataValues {
+		m.GlobalValues = append(m.GlobalValues, v.ToValue())
+	}
 	for i, _ := range p.Functions {
 		var f = &(p.Functions[i])
 		m.GlobalValues = append(m.GlobalValues, f.ToValue(N))
@@ -51,7 +54,7 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 		var code = ec.WorkingFrame.Function.Code
 		var base_addr = ec.WorkingFrame.BaseAddr
 		var inst_ptr_ref = &(ec.WorkingFrame.InstPtr)
-		for *inst_ptr_ref < len(code) {
+		for *inst_ptr_ref < uint(len(code)) {
 			var inst = code[*inst_ptr_ref]
 			*inst_ptr_ref += 1
 			switch inst.OpCode {
@@ -81,7 +84,8 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 				case SumValue:
 					if sum.Index == inst.GetShortIndexOrSize() {
 						var new_inst_ptr = inst.GetJumpAddr()
-						assert(new_inst_ptr < len(code), "JIF: invalid address")
+						assert(new_inst_ptr < uint(len(code)),
+							"JIF: invalid address")
 						*inst_ptr_ref = new_inst_ptr
 					} else {
 						// do nothing
@@ -91,12 +95,13 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 				}
 			case JMP:
 				var new_inst_ptr = inst.GetJumpAddr()
-				assert(new_inst_ptr < len(code), "JMP: invalid address")
+				assert(new_inst_ptr < uint(len(code)),
+					"JMP: invalid address")
 				*inst_ptr_ref = new_inst_ptr
 			case PROD:
 				var size = inst.GetIndexOrSize()
 				var elements = make([]Value, size)
-				for i := 0; i < size; i += 1 {
+				for i := uint(0); i < size; i += 1 {
 					elements[size-1-i] = ec.PopValue()
 				}
 				ec.PushValue(ProductValue {
@@ -106,7 +111,8 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 				var index = inst.GetIndexOrSize()
 				switch prod := ec.GetCurrentValue().(type) {
 				case ProductValue:
-					assert(index < len(prod.Elements), "GET: invalid index")
+					assert(index < uint(len(prod.Elements)),
+						"GET: invalid index")
 					ec.PushValue(prod.Elements[index])
 				default:
 					panic("GET: cannot execute on non-product value")
@@ -116,7 +122,7 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 				var value = ec.PopValue()
 				switch prod := ec.PopValue().(type) {
 				case ProductValue:
-					var L = len(prod.Elements)
+					var L = uint(len(prod.Elements))
 					assert(index < L, "SET: invalid index")
 					var draft = make([]Value, L)
 					copy(draft, prod.Elements)
@@ -162,7 +168,7 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 						"CALL: missing correct context")
 					var arg = ec.PopValue()
 					// tailing call optimization
-					var L = len(code)
+					var L = uint(len(code))
 					var next_inst_ptr = *inst_ptr_ref
 					if next_inst_ptr < L {
 						var next = code[next_inst_ptr]
@@ -226,8 +232,8 @@ func (ec *ExecutionContext) PopValue() Value {
 	return popped
 }
 
-func (ec *ExecutionContext) PopValuesTo(addr int) {
-	var L = len(ec.DataStack)
+func (ec *ExecutionContext) PopValuesTo(addr uint) {
+	var L = uint(len(ec.DataStack))
 	assert(L > 0, "cannot pop empty data stack")
 	assert(addr < L, "invalid data stack address")
 	for i := addr; i < L; i += 1 {
@@ -239,8 +245,9 @@ func (ec *ExecutionContext) PopValuesTo(addr int) {
 func (ec *ExecutionContext) PushCall(f FunctionValue, arg Value) {
 	var context_size = int(f.Underlying.BaseSize.Context)
 	var reserved_size = int(f.Underlying.BaseSize.Reserved)
-	assert(context_size == len(f.ContextValues), "invalid number of context values")
-	var new_base_addr = len(ec.DataStack)
+	assert(context_size == len(f.ContextValues),
+		"invalid number of context values")
+	var new_base_addr = uint(len(ec.DataStack))
 	for i := 0; i < context_size; i += 1 {
 		ec.PushValue(f.ContextValues[i])
 	}
