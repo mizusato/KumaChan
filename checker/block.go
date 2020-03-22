@@ -15,8 +15,9 @@ type Block struct {
 	Returned  Expr
 }
 type Binding struct {
-	Pattern  Pattern
-	Value    Expr
+	Pattern    Pattern
+	Value      Expr
+	Recursive  bool
 }
 
 
@@ -56,8 +57,9 @@ func CheckBlock(block node.Block, ctx ExprContext) (SemiExpr, *ExprError) {
 				var typed, err = AssignTo(t, semi, rec_ctx)
 				if err != nil { return SemiExpr{}, err }
 				bindings[i] = Binding {
-					Pattern: pattern,
-					Value:   typed,
+					Pattern:   pattern,
+					Value:     typed,
+					Recursive: true,
 				}
 				current_ctx = rec_ctx
 			default:

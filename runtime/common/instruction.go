@@ -9,7 +9,8 @@ const SumMaxBranches = 1 << ShortSize
 const ProductMaxSize = 1 << ShortSize
 const ClosureMaxSize = 1 << ShortSize
 const FunCodeMaxLength = 1 << LongSize
-const RegistryMaxSize = 1 << (ShortSize + LongSize)
+const LocalSlotMaxSize = 1 << LongSize
+const GlobalSlotMaxSize = 1 << (ShortSize + LongSize)
 
 type Instruction struct {
 	OpCode  OpType
@@ -22,19 +23,19 @@ const (
 	NOP  OpType  =  iota
 	/* Data Transfer */
 	GLOBAL  // [ RegIndex ]: Load a global value (constant or function)
-	LOAD    // [Offset, __]: Load a value from BaseAddr + Offset
-	STORE   // [Offset, __]: Store current value to BaseAddr + Offset
+	LOAD    // [__, Offset]: Load a value from BaseAddr + Offset
+	STORE   // [__, Offset]: Store current value to BaseAddr + Offset
 	/* Sum Type Operations */
-	SUM     // [Index, ________]: Create a value of a sum type
-	JIF     // [Index, JumpAddr]: Jump if Index matches the current value
-	JMP     // [_____, JumpAddr]: Jump unconditionally
+	SUM     // [Index,    ___  ]: Create a value of a sum type
+	JIF     // [Index, DestAddr]: Jump if Index matches the current value
+	JMP     // [____,  DestAddr]: Jump unconditionally
 	/* Product Type Operations */
-	PROD    // [Size,  __]: Create a value of a product type
-	GET     // [Index, __]: Extract the value of a field
-	SET     // [Index, __]: Perform a functional update on a field
+	PROD    // [Size,  _ ]: Create a value of a product type
+	GET     // [Index, _ ]: Extract the value of a field
+	SET     // [Index, _ ]: Perform a functional update on a field
 	/* Function Type Operations */
-	CTX     // [Rec, _]: Use the current value as the context of a closure
-	CALL    // [___, _]: Call a (native)function (pop func, pop arg, push ret)
+	CTX     // [Rec, _ ]: Use the current value as the context of a closure
+	CALL    // [___, _ ]: Call a (native)function (pop func, pop arg, push ret)
 )
 
 func (inst Instruction) GetRegIndex() uint {
@@ -46,10 +47,10 @@ func RegIndex(i uint) (Short, Long) {
 }
 
 func (inst Instruction) GetOffset() uint {
-	return uint(inst.Arg0)
+	return uint(inst.Arg1)
 }
 
-func (inst Instruction) GetJumpAddr() uint {
+func (inst Instruction) GetDestAddr() uint {
 	return uint(inst.Arg1)
 }
 

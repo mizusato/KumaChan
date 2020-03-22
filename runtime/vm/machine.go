@@ -11,7 +11,7 @@ const InitialCallStackCapacity = 4
 
 type Machine struct {
 	Program       Program
-	GlobalValues  [] Value
+	GlobalSlot    [] Value
 	ContextPool   *sync.Pool
 	EventLoop     *rx.EventLoop
 	MaxStackSize  uint
@@ -19,8 +19,8 @@ type Machine struct {
 
 func CreateMachine(p Program, max_stack_size uint) *Machine {
 	var m = &Machine {
-		Program:      p,
-		GlobalValues: nil,
+		Program:    p,
+		GlobalSlot: nil,
 		ContextPool:  &sync.Pool { New: func() interface{} {
 			return &ExecutionContext {
 				DataStack: make([]Value, 0, InitialDataStackCapacity),

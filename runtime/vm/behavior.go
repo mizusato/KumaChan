@@ -10,24 +10,24 @@ import (
 
 func Execute(p Program, m *Machine) {
 	var L = len(p.Functions) + len(p.Constants) + len(p.Constants)
-	if L > RegistryMaxSize { panic("maximum registry size exceeded") }
+	if L > GlobalSlotMaxSize { panic("maximum registry size exceeded") }
 	var N = lib.NativeFunctions
-	m.GlobalValues = make([]Value, 0, L)
+	m.GlobalSlot = make([]Value, 0, L)
 	for _, v := range p.DataValues {
-		m.GlobalValues = append(m.GlobalValues, v.ToValue())
+		m.GlobalSlot = append(m.GlobalSlot, v.ToValue())
 	}
 	for i, _ := range p.Functions {
 		var f = &(p.Functions[i])
-		m.GlobalValues = append(m.GlobalValues, f.ToValue(N))
+		m.GlobalSlot = append(m.GlobalSlot, f.ToValue(N))
 	}
 	for i, _ := range p.Closures {
 		var f = &(p.Closures[i])
-		m.GlobalValues = append(m.GlobalValues, f.ToValue(nil))
+		m.GlobalSlot = append(m.GlobalSlot, f.ToValue(nil))
 	}
 	for i, _ := range p.Constants {
 		var f = &(p.Constants[i])
 		var v = f.ToValue(N)
-		m.GlobalValues = append(m.GlobalValues, m.Call(v, nil))
+		m.GlobalSlot = append(m.GlobalSlot, m.Call(v, nil))
 	}
 	var sched = rx.TrivialScheduler { EventLoop: m.EventLoop }
 	var ctx = rx.Background()
@@ -62,7 +62,7 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 				// do nothing
 			case GLOBAL:
 				var id = inst.GetRegIndex()
-				var gv = m.GlobalValues[id]
+				var gv = m.GlobalSlot[id]
 				ec.PushValue(gv)
 			case LOAD:
 				var offset = inst.GetOffset()
@@ -83,7 +83,7 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 				switch sum := ec.GetCurrentValue().(type) {
 				case SumValue:
 					if sum.Index == inst.GetShortIndexOrSize() {
-						var new_inst_ptr = inst.GetJumpAddr()
+						var new_inst_ptr = inst.GetDestAddr()
 						assert(new_inst_ptr < uint(len(code)),
 							"JIF: invalid address")
 						*inst_ptr_ref = new_inst_ptr
@@ -94,7 +94,7 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 					panic("JIF: cannot execute on non-sum value")
 				}
 			case JMP:
-				var new_inst_ptr = inst.GetJumpAddr()
+				var new_inst_ptr = inst.GetDestAddr()
 				assert(new_inst_ptr < uint(len(code)),
 					"JMP: invalid address")
 				*inst_ptr_ref = new_inst_ptr
@@ -167,16 +167,16 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 					assert(current == required,
 						"CALL: missing correct context")
 					var arg = ec.PopValue()
-					// tailing call optimization
+					// tail call optimization
 					var L = uint(len(code))
 					var next_inst_ptr = *inst_ptr_ref
 					if next_inst_ptr < L {
 						var next = code[next_inst_ptr]
-						if next.OpCode == JMP && next.GetJumpAddr() == L-1 {
-							ec.PopValuesTo(base_addr)
+						if next.OpCode == JMP && next.GetDestAddr() == L-1 {
+							ec.PopTailCall()
 						}
 					} else {
-						ec.PopValuesTo(base_addr)
+						ec.PopTailCall()
 					}
 					// push the function to call stack
 					ec.PushCall(f, arg)
@@ -273,6 +273,17 @@ func (ec *ExecutionContext) PopCall() {
 	var ret = ec.PopValue()
 	ec.PopValuesTo(ec.WorkingFrame.BaseAddr)
 	ec.PushValue(ret)
+	ec.WorkingFrame = popped
+}
+
+func (ec *ExecutionContext) PopTailCall() {
+	var L = len(ec.CallStack)
+	assert(L > 0, "cannot pop empty call stack")
+	var cur = (L - 1)
+	var popped = ec.CallStack[cur]
+	ec.CallStack[cur] = CallStackFrame {}
+	ec.CallStack = ec.CallStack[:cur]
+	ec.PopValuesTo(ec.WorkingFrame.BaseAddr)
 	ec.WorkingFrame = popped
 }
 

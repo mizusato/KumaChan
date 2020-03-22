@@ -215,6 +215,7 @@ func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, *Type
 func TypeValFrom (tv node.TypeValue, ctx TypeContext) (TypeVal, *TypeError) {
 	switch v := tv.(type) {
 	case node.UnionType:
+		// TODO: check common.SumMaxBranches
 		var subtypes = make([]loader.Symbol, len(v.Items))
 		for i, item := range v.Items {
 			subtypes[i] = ctx.Module.SymbolFromName(item.Name)

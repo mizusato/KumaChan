@@ -16,7 +16,7 @@ type Function struct {
 
 type FrameBaseSize struct {
 	Context   Short
-	Reserved  Short
+	Reserved  Long
 }
 
 type FuncInfo struct {

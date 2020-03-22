@@ -72,7 +72,7 @@ func PatternFrom (
 			} else {
 				var occurred = make(map[string]bool)
 				var ignored = 0
-				var items = make([]PatternItem, len(p.Names))
+				var items = make([]PatternItem, 0)
 				for i, identifier := range p.Names {
 					var name = loader.Id2String(identifier)
 					if name == IgnoreMark {
@@ -86,16 +86,16 @@ func PatternFrom (
 							}
 						}
 						occurred[name] = true
-						items[i] = PatternItem {
+						items = append(items, PatternItem {
 							Name:  loader.Id2String(identifier),
 							Index: uint(i),
 							Type:  tuple.Elements[i],
 							Point: ctx.GetErrorPoint(identifier.Node),
-						}
+						})
 					}
 				}
 				if ignored == len(p.Names) {
-					return err_result(E_EntireValueIgnored{})
+					return err_result(E_EntireValueIgnored {})
 				} else {
 					return Pattern {
 						Point:    ctx.GetErrorPoint(p_node.Node),
