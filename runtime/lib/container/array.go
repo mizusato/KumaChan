@@ -12,53 +12,10 @@ type Array struct {
 
 func ArrayFrom(values []Value) Array {
 	return Array {
-		Length: uint(len(values)),
+		Length:  uint(len(values)),
 		GetItem: func(i uint) Value {
 			return values[i]
 		},
-	}
-}
-
-func ArrayFromInline(values []uint64) Array {
-	return Array {
-		Length: uint(len(values)),
-		GetItem: func(i uint) Value {
-			return PlainValue { Inline: values[i] }
-		},
-	}
-}
-
-func ArrayFromSeq(seq Seq) Array {
-	var item, rest, exists = seq.Next()
-	if exists {
-		var inline_acc = make([]uint64, 0)
-		var variant_acc = make([]Value, 0)
-		for exists {
-			switch plain := item.(type) {
-			case PlainValue:
-				if plain.Pointer == nil && len(variant_acc) == 0 {
-					inline_acc = append(inline_acc, plain.Inline)
-					continue
-				}
-			}
-			if len(inline_acc) > 0 {
-				for _, I := range inline_acc {
-					variant_acc = append(variant_acc, PlainValue { Inline: I })
-				}
-				variant_acc = append(variant_acc, item)
-				inline_acc = inline_acc[:0]
-			} else {
-				variant_acc = append(variant_acc, item)
-			}
-			item, rest, exists = rest.Next()
-		}
-		if len(inline_acc) > 0 {
-			return ArrayFromInline(inline_acc)
-		} else {
-			return ArrayFrom(variant_acc)
-		}
-	} else {
-		return Array { Length: 0 }
 	}
 }
 

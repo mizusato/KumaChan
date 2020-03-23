@@ -12,7 +12,7 @@ type Code struct {
 	SourceMap  [] *node.Node
 }
 
-func CodeSingleInst (inst common.Instruction, info checker.ExprInfo) Code {
+func CodeFrom(inst common.Instruction, info checker.ExprInfo) Code {
 	return Code {
 		InstSeq:   [] common.Instruction { inst },
 		SourceMap: [] *node.Node { &(info.ErrorPoint.Node) },
@@ -116,6 +116,26 @@ type DataFloat  checker.FloatLiteral
 func (d DataFloat) ToValue() common.Value {
 	return d.Value
 }
+type DataString struct { Value  [] rune }
+func (d DataString) ToValue() common.Value {
+	return d.Value
+}
+type DataStringFormatter checker.StringFormatter
+func (d DataStringFormatter) ToValue() common.Value {
+	var f = func(args []common.Value) []rune {
+		var buf = make([]rune, 0)
+		for i, seg := range d.Segments {
+			buf = append(buf, seg...)
+			if uint(i) < d.Arity {
+				var runes = args[i].([]rune)
+				buf = append(buf, runes...)
+			}
+		}
+		return buf
+	}
+	return common.NativeFunctionValue(common.AdaptNativeFunction(f))
+}
+
 
 type Scope struct {
 	Bindings    [] Binding
@@ -174,27 +194,77 @@ func (scope *Scope) AddBinding(name string) uint {
 
 func Compile(expr checker.Expr, ctx Context) Code {
 	switch v := expr.Value.(type) {
+	case checker.UnitValue:
+		var inst_nil = common.Instruction { OpCode: common.NIL }
+		return CodeFrom(inst_nil, expr.Info)
 	case checker.IntLiteral:
 		var index = ctx.AppendDataRef(DataInteger(v))
-		return CodeSingleInst(InstGlobalRef(index), expr.Info)
+		return CodeFrom(InstGlobalRef(index), expr.Info)
 	case checker.SmallIntLiteral:
 		var index = ctx.AppendDataRef(DataSmallInteger(v))
-		return CodeSingleInst(InstGlobalRef(index), expr.Info)
+		return CodeFrom(InstGlobalRef(index), expr.Info)
 	case checker.FloatLiteral:
 		var index = ctx.AppendDataRef(DataFloat(v))
-		return CodeSingleInst(InstGlobalRef(index), expr.Info)
+		return CodeFrom(InstGlobalRef(index), expr.Info)
+	case checker.StringLiteral:
+		var index = ctx.AppendDataRef(DataString { v.Value })
+		return CodeFrom(InstGlobalRef(index), expr.Info)
+	case checker.StringFormatter:
+		var index = ctx.AppendDataRef(DataStringFormatter(v))
+		return CodeFrom(InstGlobalRef(index), expr.Info)
 	case checker.RefFunction:
 		var index = ctx.AppendFunRef(v)
-		return CodeSingleInst(InstGlobalRef(index), expr.Info)
+		return CodeFrom(InstGlobalRef(index), expr.Info)
 	case checker.RefConstant:
 		var index = ctx.AppendConstRef(v)
-		return CodeSingleInst(InstGlobalRef(index), expr.Info)
+		return CodeFrom(InstGlobalRef(index), expr.Info)
 	case checker.RefLocal:
 		var offset, exists = ctx.LocalScope.BindingMap[v.Name]
 		if !exists { panic("binding " + v.Name + " does not exist") }
 		ctx.LocalScope.Bindings[offset].Used = true
-		return CodeSingleInst(InstLocalRef(offset), expr.Info)
+		return CodeFrom(InstLocalRef(offset), expr.Info)
+	case checker.Array:
+		var buf = MakeCodeBuffer()
+		var inst_array = InstArray(uint(len(v.Items)))
+		buf.Write(CodeFrom(inst_array, expr.Info))
+		for _, item := range v.Items {
+			var item_code = Compile(item, ctx)
+			buf.Write(item_code)
+			var inst_append = common.Instruction {
+				OpCode: common.APPEND,
+			}
+			buf.Write(CodeFrom(inst_append, item.Info))
+		}
+		return buf.Collect()
+	case checker.Product:
+		var buf = MakeCodeBuffer()
+		for _, element := range v.Values {
+			var element_code = Compile(element, ctx)
+			buf.Write(element_code)
+		}
+		var inst_prod = InstProduct(uint(len(v.Values)))
+		buf.Write(CodeFrom(inst_prod, expr.Info))
+		return buf.Collect()
+	case checker.Get:
+		var buf = MakeCodeBuffer()
+		var base_code = Compile(v.Product, ctx)
+		buf.Write(base_code)
+		var inst_get = InstGet(v.Index)
+		buf.Write(CodeFrom(inst_get, expr.Info))
+		return buf.Collect()
+	case checker.Set:
+		var buf = MakeCodeBuffer()
+		var base_code = Compile(v.Product, ctx)
+		buf.Write(base_code)
+		var new_value_code = Compile(v.NewValue, ctx)
+		buf.Write(new_value_code)
+		var inst_set = InstSet(v.Index)
+		buf.Write(CodeFrom(inst_set, expr.Info))
+		return buf.Collect()
+	case checker.Lambda:
+		return CompileClosure(v, expr.Info, false, "", ctx)
 	case checker.Block:
+		// TODO: collect info of all unused bindings
 		var buf = MakeCodeBuffer()
 		for _, b := range v.Bindings {
 			switch p := b.Pattern.Concrete.(type) {
@@ -214,7 +284,7 @@ func Compile(expr checker.Expr, ctx Context) Code {
 				}
 				var bind_inst = InstAddBinding(offset)
 				buf.Write(val_code)
-				buf.Write(CodeSingleInst(bind_inst, b.Value.Info))
+				buf.Write(CodeFrom(bind_inst, b.Value.Info))
 			case checker.TuplePattern:
 				var val_code = Compile(b.Value, ctx)
 				buf.Write(val_code)
@@ -232,6 +302,17 @@ func Compile(expr checker.Expr, ctx Context) Code {
 		var ret_code = Compile(v.Returned, ctx)
 		buf.Write(ret_code)
 		return buf.Collect()
+	case checker.Call:
+		var buf = MakeCodeBuffer()
+		var arg_code = Compile(v.Argument, ctx)
+		var f_code = Compile(v.Function, ctx)
+		buf.Write(arg_code)
+		buf.Write(f_code)
+		var inst_call = common.Instruction {
+			OpCode:common.CALL,
+		}
+		buf.Write(CodeFrom(inst_call, expr.Info))
+		return buf.Collect()
 	default:
 		panic("unknown expression kind")
 	}
@@ -244,6 +325,7 @@ func CompileClosure (
 	rec_name    string,
 	ctx         Context,
 ) Code {
+	// TODO: collect info of all unused parameters
 	var inner_ctx = ctx.MakeClosure()
 	var inner_scope = inner_ctx.LocalScope
 	var inner_buf = MakeCodeBuffer()
@@ -251,7 +333,7 @@ func CompileClosure (
 	case checker.TrivialPattern:
 		var offset = inner_scope.AddBinding(p.ValueName)
 		var bind_inst = InstAddBinding(offset)
-		inner_buf.Write(CodeSingleInst(bind_inst, info))
+		inner_buf.Write(CodeFrom(bind_inst, info))
 	case checker.TuplePattern:
 		BindPatternItems(p.Items, inner_scope, inner_buf, info)
 	case checker.BundlePattern:
@@ -334,13 +416,13 @@ func CompileClosure (
 	}
 	var index = ctx.AppendClosureRef(f)
 	var outer_buf = MakeCodeBuffer()
-	outer_buf.Write(CodeSingleInst(InstGlobalRef(index), info))
+	outer_buf.Write(CodeFrom(InstGlobalRef(index), info))
 	for _, outer_offset := range context_outer_offsets {
 		var capture_inst = InstLocalRef(outer_offset)
-		outer_buf.Write(CodeSingleInst(capture_inst, info))
+		outer_buf.Write(CodeFrom(capture_inst, info))
 	}
 	var prod_inst = InstProduct(uint(len(context_outer_offsets)))
-	outer_buf.Write(CodeSingleInst(prod_inst, info))
+	outer_buf.Write(CodeFrom(prod_inst, info))
 	var rec_flag common.Short
 	if recursive {
 		rec_flag = 1
@@ -352,7 +434,7 @@ func CompileClosure (
 		Arg0:   rec_flag,
 		Arg1:   0,
 	}
-	outer_buf.Write(CodeSingleInst(ctx_inst, info))
+	outer_buf.Write(CodeFrom(ctx_inst, info))
 	return outer_buf.Collect()
 }
 
@@ -368,14 +450,14 @@ func BindPatternItems (
 		var inst_get = InstGet(item.Index)
 		var offset = scope.AddBinding(item.Name)
 		var inst_bind = InstAddBinding(offset)
-		buf.Write(CodeSingleInst(inst_get, info))
-		buf.Write(CodeSingleInst(inst_bind, info))
+		buf.Write(CodeFrom(inst_get, info))
+		buf.Write(CodeFrom(inst_bind, info))
 	}
 }
 
 func InstGlobalRef(index uint) common.Instruction {
 	ValidateGlobalIndex(index)
-	var a0, a1 = common.RegIndex(index)
+	var a0, a1 = common.GlobalIndex(index)
 	return common.Instruction {
 		OpCode: common.GLOBAL,
 		Arg0:   a0,
@@ -410,12 +492,31 @@ func InstGet(index uint) common.Instruction {
 	}
 }
 
+func InstSet(index uint) common.Instruction {
+	ValidateProductIndex(index)
+	return common.Instruction {
+		OpCode: common.SET,
+		Arg0:   common.Short(index),
+		Arg1:   0,
+	}
+}
+
 func InstProduct(size uint) common.Instruction {
 	ValidateProductSize(size)
-	return common.Instruction{
+	return common.Instruction {
 		OpCode: common.PROD,
 		Arg0:   common.Short(size),
 		Arg1:   0,
+	}
+}
+
+func InstArray(size uint) common.Instruction {
+	ValidateArraySize(size)
+	var a0, a1 = common.ArraySize(size)
+	return common.Instruction {
+		OpCode: common.ARRAY,
+		Arg0:   a0,
+		Arg1:   a1,
 	}
 }
 
@@ -446,5 +547,11 @@ func ValidateProductIndex(index uint) {
 func ValidateProductSize(size uint) {
 	if size > common.ProductMaxSize {
 		panic("given size exceeded maximum capacity of product type")
+	}
+}
+
+func ValidateArraySize(size uint) {
+	if size > common.ArrayMaxSize {
+		panic("given size exceeded maximum capacity of array literal")
 	}
 }

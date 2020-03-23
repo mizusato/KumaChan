@@ -60,8 +60,10 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 			switch inst.OpCode {
 			case NOP:
 				// do nothing
+			case NIL:
+				ec.PushValue(nil)
 			case GLOBAL:
-				var id = inst.GetRegIndex()
+				var id = inst.GetGlobalIndex()
 				var gv = m.GlobalSlot[id]
 				ec.PushValue(gv)
 			case LOAD:
@@ -73,7 +75,7 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 				var value = ec.PopValue()
 				ec.DataStack[base_addr + offset] = value
 			case SUM:
-				var index = inst.GetShortIndexOrSize()
+				var index = inst.GetRawShortIndexOrSize()
 				var value = ec.PopValue()
 				ec.PushValue(SumValue {
 					Index: index,
@@ -82,7 +84,7 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 			case JIF:
 				switch sum := ec.GetCurrentValue().(type) {
 				case SumValue:
-					if sum.Index == inst.GetShortIndexOrSize() {
+					if sum.Index == inst.GetRawShortIndexOrSize() {
 						var new_inst_ptr = inst.GetDestAddr()
 						assert(new_inst_ptr < uint(len(code)),
 							"JIF: invalid address")
@@ -99,7 +101,7 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 					"JMP: invalid address")
 				*inst_ptr_ref = new_inst_ptr
 			case PROD:
-				var size = inst.GetIndexOrSize()
+				var size = inst.GetShortIndexOrSize()
 				var elements = make([]Value, size)
 				for i := uint(0); i < size; i += 1 {
 					elements[size-1-i] = ec.PopValue()
@@ -108,7 +110,7 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 					Elements: elements,
 				})
 			case GET:
-				var index = inst.GetIndexOrSize()
+				var index = inst.GetShortIndexOrSize()
 				switch prod := ec.GetCurrentValue().(type) {
 				case ProductValue:
 					assert(index < uint(len(prod.Elements)),
@@ -118,7 +120,7 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 					panic("GET: cannot execute on non-product value")
 				}
 			case SET:
-				var index = inst.GetIndexOrSize()
+				var index = inst.GetShortIndexOrSize()
 				var value = ec.PopValue()
 				switch prod := ec.PopValue().(type) {
 				case ProductValue:
@@ -193,6 +195,16 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 				default:
 					panic("CALL: cannot execute on non-callable value")
 				}
+			case ARRAY:
+				var size = inst.GetGlobalIndex()
+				ec.PushValue(make([]Value, 0, size))
+			case APPEND:
+				var val = ec.PopValue()
+				var arr, ok = ec.PopValue().([]Value)
+				if !ok {
+					panic("APPEND: cannot append to non-array value")
+				}
+				ec.PushValue(append(arr, val))
 			default:
 				panic(fmt.Sprintf("invalid instruction %+v", inst))
 			}

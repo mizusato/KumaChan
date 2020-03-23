@@ -13,20 +13,8 @@ type StringLiteral struct {
 
 func (impl StringFormatter) ExprVal() {}
 type StringFormatter struct {
-	Segments  [] string
+	Segments  [] []rune
 	Arity     uint
-}
-func GetFormatterFunction(sf *StringFormatter) func([]string)string {
-	return func(args []string) string {
-		var buf strings.Builder
-		for i, seg := range sf.Segments {
-			buf.WriteString(seg)
-			if uint(i) < sf.Arity {
-				buf.WriteString(args[i])
-			}
-		}
-		return buf.String()
-	}
 }
 
 
@@ -45,14 +33,14 @@ func CheckString(s node.StringLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
 func CheckText(text node.Text, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(text.Node)
 	var template = text.Template
-	var segments = make([]string, 0)
+	var segments = make([] []rune, 0)
 	var arity uint = 0
 	var buf strings.Builder
 	for _, char := range template {
 		if char == TextPlaceholder {
 			var seg = buf.String()
 			buf.Reset()
-			segments = append(segments, seg)
+			segments = append(segments, []rune(seg))
 			arity += 1
 		} else {
 			buf.WriteRune(char)
@@ -60,7 +48,7 @@ func CheckText(text node.Text, ctx ExprContext) (SemiExpr, *ExprError) {
 	}
 	var last = buf.String()
 	if last != "" {
-		segments = append(segments, last)
+		segments = append(segments, []rune(last))
 	}
 	var elements = make([]Type, arity)
 	for i := uint(0); i < arity; i += 1 {
