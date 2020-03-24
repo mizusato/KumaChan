@@ -8,40 +8,46 @@ import (
 )
 
 
-func Execute(p Program, m *Machine) {
+func assert(ok bool, msg string) {
+	if !ok { panic(msg) }
+}
+
+func execute(p Program, m *Machine) {
 	var L = len(p.Functions) + len(p.Constants) + len(p.Constants)
-	if L > GlobalSlotMaxSize { panic("maximum registry size exceeded") }
-	var N = lib.NativeFunctions
-	m.GlobalSlot = make([]Value, 0, L)
+	assert(L <= GlobalSlotMaxSize, "maximum registry size exceeded")
+	var N = lib.NativeFunctions  // TODO: change to GetNativeFunction(i)
+	m.globalSlot = make([]Value, 0, L)
 	for _, v := range p.DataValues {
-		m.GlobalSlot = append(m.GlobalSlot, v.ToValue())
+		m.globalSlot = append(m.globalSlot, v.ToValue())
 	}
 	for i, _ := range p.Functions {
 		var f = &(p.Functions[i])
-		m.GlobalSlot = append(m.GlobalSlot, f.ToValue(N))
+		m.globalSlot = append(m.globalSlot, f.ToValue(N))
 	}
 	for i, _ := range p.Closures {
 		var f = &(p.Closures[i])
-		m.GlobalSlot = append(m.GlobalSlot, f.ToValue(nil))
+		m.globalSlot = append(m.globalSlot, f.ToValue(nil))
 	}
 	for i, _ := range p.Constants {
 		var f = &(p.Constants[i])
 		var v = f.ToValue(N)
-		m.GlobalSlot = append(m.GlobalSlot, m.Call(v, nil))
+		m.globalSlot = append(m.globalSlot, m.Call(v, nil))
 	}
-	var sched = rx.TrivialScheduler { EventLoop: m.EventLoop }
 	var ctx = rx.Background()
 	for i, _ := range p.Effects {
 		var f = &(p.Effects[i])
 		var v = f.ToValue(nil)
 		var e = (m.Call(v, nil)).(rx.Effect)
-		rx.RunEffect(e, sched, ctx, nil, nil)
+		m.scheduler.RunTopLevel(e, rx.Receiver {
+			Context: ctx,
+			Values:  nil,
+			Error:   nil,
+		})
 	}
 }
 
-
-func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
-	var ec = m.ContextPool.Get().(*ExecutionContext)
+func call(f FunctionValue, arg Value, m *Machine) Value {
+	var ec = m.contextPool.Get().(*ExecutionContext)
 	defer (func() {
 		var err = recover()
 		if err != nil {
@@ -49,11 +55,11 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 			panic(err)
 		}
 	}) ()
-	ec.PushCall(f, arg)
-	outer: for len(ec.CallStack) > 0 {
-		var code = ec.WorkingFrame.Function.Code
-		var base_addr = ec.WorkingFrame.BaseAddr
-		var inst_ptr_ref = &(ec.WorkingFrame.InstPtr)
+	ec.pushCall(f, arg)
+	outer: for len(ec.callStack) > 0 {
+		var code = ec.workingFrame.function.Code
+		var base_addr = ec.workingFrame.baseAddr
+		var inst_ptr_ref = &(ec.workingFrame.instPtr)
 		for *inst_ptr_ref < uint(len(code)) {
 			var inst = code[*inst_ptr_ref]
 			*inst_ptr_ref += 1
@@ -61,28 +67,28 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 			case NOP:
 				// do nothing
 			case NIL:
-				ec.PushValue(nil)
+				ec.pushValue(nil)
 			case GLOBAL:
 				var id = inst.GetGlobalIndex()
-				var gv = m.GlobalSlot[id]
-				ec.PushValue(gv)
+				var gv = m.globalSlot[id]
+				ec.pushValue(gv)
 			case LOAD:
 				var offset = inst.GetOffset()
-				var value = ec.DataStack[base_addr + offset]
-				ec.PushValue(value)
+				var value = ec.dataStack[base_addr + offset]
+				ec.pushValue(value)
 			case STORE:
 				var offset = inst.GetOffset()
-				var value = ec.PopValue()
-				ec.DataStack[base_addr + offset] = value
+				var value = ec.popValue()
+				ec.dataStack[base_addr + offset] = value
 			case SUM:
 				var index = inst.GetRawShortIndexOrSize()
-				var value = ec.PopValue()
-				ec.PushValue(SumValue {
+				var value = ec.popValue()
+				ec.pushValue(SumValue {
 					Index: index,
 					Value: value,
 				})
 			case JIF:
-				switch sum := ec.GetCurrentValue().(type) {
+				switch sum := ec.getCurrentValue().(type) {
 				case SumValue:
 					if sum.Index == inst.GetRawShortIndexOrSize() {
 						var new_inst_ptr = inst.GetDestAddr()
@@ -104,32 +110,32 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 				var size = inst.GetShortIndexOrSize()
 				var elements = make([]Value, size)
 				for i := uint(0); i < size; i += 1 {
-					elements[size-1-i] = ec.PopValue()
+					elements[size-1-i] = ec.popValue()
 				}
-				ec.PushValue(ProductValue {
+				ec.pushValue(ProductValue {
 					Elements: elements,
 				})
 			case GET:
 				var index = inst.GetShortIndexOrSize()
-				switch prod := ec.GetCurrentValue().(type) {
+				switch prod := ec.getCurrentValue().(type) {
 				case ProductValue:
 					assert(index < uint(len(prod.Elements)),
 						"GET: invalid index")
-					ec.PushValue(prod.Elements[index])
+					ec.pushValue(prod.Elements[index])
 				default:
 					panic("GET: cannot execute on non-product value")
 				}
 			case SET:
 				var index = inst.GetShortIndexOrSize()
-				var value = ec.PopValue()
-				switch prod := ec.PopValue().(type) {
+				var value = ec.popValue()
+				switch prod := ec.popValue().(type) {
 				case ProductValue:
 					var L = uint(len(prod.Elements))
 					assert(index < L, "SET: invalid index")
 					var draft = make([]Value, L)
 					copy(draft, prod.Elements)
 					draft[index] = value
-					ec.PushValue(ProductValue {
+					ec.pushValue(ProductValue {
 						Elements: draft,
 					})
 				default:
@@ -137,10 +143,10 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 				}
 			case CTX:
 				var is_recursive = (inst.Arg1 != 0)
-				switch prod := ec.PopValue().(type) {
+				switch prod := ec.popValue().(type) {
 				case ProductValue:
 					var ctx = prod.Elements
-					switch f := ec.PopValue().(type) {
+					switch f := ec.popValue().(type) {
 					case FunctionValue:
 						var required = int(f.Underlying.BaseSize.Context)
 						var given = len(ctx)
@@ -153,7 +159,7 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 							ContextValues: ctx,
 						}
 						if is_recursive { ctx[len(ctx)-1] = fv }
-						ec.PushValue(fv)
+						ec.pushValue(fv)
 					default:
 						panic("CTX: cannot inject context for non-function value")
 					}
@@ -161,145 +167,140 @@ func CallFunction (f FunctionValue, arg Value, m *Machine) Value {
 					panic("CTX: cannot use non-product value as context")
 				}
 			case CALL:
-				switch f := ec.PopValue().(type) {
+				switch f := ec.popValue().(type) {
 				case FunctionValue:
 					// check if the function is valid
 					var required = int(f.Underlying.BaseSize.Context)
 					var current = len(f.ContextValues)
 					assert(current == required,
 						"CALL: missing correct context")
-					var arg = ec.PopValue()
+					var arg = ec.popValue()
 					// tail call optimization
 					var L = uint(len(code))
 					var next_inst_ptr = *inst_ptr_ref
 					if next_inst_ptr < L {
 						var next = code[next_inst_ptr]
 						if next.OpCode == JMP && next.GetDestAddr() == L-1 {
-							ec.PopTailCall()
+							ec.popTailCall()
 						}
 					} else {
-						ec.PopTailCall()
+						ec.popTailCall()
 					}
 					// push the function to call stack
-					ec.PushCall(f, arg)
+					ec.pushCall(f, arg)
 					// check if call stack size exceeded
-					var stack_size = uint(len(ec.DataStack))
-					assert(stack_size < m.MaxStackSize,
+					var stack_size = uint(len(ec.dataStack))
+					assert(stack_size < m.maxStackSize,
 						"CALL: stack overflow")
 					// work on the pushed new frame
 					continue outer
 				case NativeFunctionValue:
-					var arg = ec.PopValue()
+					var arg = ec.popValue()
 					var ret = f(arg, m)
-					ec.PushValue(ret)
+					ec.pushValue(ret)
 				default:
 					panic("CALL: cannot execute on non-callable value")
 				}
 			case ARRAY:
 				var size = inst.GetGlobalIndex()
-				ec.PushValue(make([]Value, 0, size))
+				ec.pushValue(make([]Value, 0, size))
 			case APPEND:
-				var val = ec.PopValue()
-				var arr, ok = ec.PopValue().([]Value)
+				var val = ec.popValue()
+				var arr, ok = ec.popValue().([]Value)
 				if !ok {
 					panic("APPEND: cannot append to non-array value")
 				}
-				ec.PushValue(append(arr, val))
+				ec.pushValue(append(arr, val))
 			default:
 				panic(fmt.Sprintf("invalid instruction %+v", inst))
 			}
 		}
-		ec.PopCall()
+		ec.popCall()
 	}
-	var ret = ec.PopValue()
-	ec.WorkingFrame = CallStackFrame {}
-	for i, _ := range ec.CallStack {
-		ec.CallStack[i] = CallStackFrame {}
+	var ret = ec.popValue()
+	ec.workingFrame = CallStackFrame {}
+	for i, _ := range ec.callStack {
+		ec.callStack[i] = CallStackFrame {}
 	}
-	ec.CallStack = ec.CallStack[:0]
-	for i, _ := range ec.DataStack {
-		ec.DataStack[i] = nil
+	ec.callStack = ec.callStack[:0]
+	for i, _ := range ec.dataStack {
+		ec.dataStack[i] = nil
 	}
-	ec.DataStack = ec.DataStack[:0]
-	m.ContextPool.Put(ec)
+	ec.dataStack = ec.dataStack[:0]
+	m.contextPool.Put(ec)
 	return ret
 }
 
 
-func (ec *ExecutionContext) GetCurrentValue() Value {
-	return ec.DataStack[len(ec.DataStack) - 1]
+func (ec *ExecutionContext) getCurrentValue() Value {
+	return ec.dataStack[len(ec.dataStack) - 1]
 }
 
-func (ec *ExecutionContext) PushValue(v Value) {
-	ec.DataStack = append(ec.DataStack, v)
+func (ec *ExecutionContext) pushValue(v Value) {
+	ec.dataStack = append(ec.dataStack, v)
 }
 
-func (ec *ExecutionContext) PopValue() Value {
-	var L = len(ec.DataStack)
+func (ec *ExecutionContext) popValue() Value {
+	var L = len(ec.dataStack)
 	assert(L > 0, "cannot pop empty data stack")
 	var cur = (L - 1)
-	var popped = ec.DataStack[cur]
-	ec.DataStack[cur] = nil
-	ec.DataStack = ec.DataStack[:cur]
+	var popped = ec.dataStack[cur]
+	ec.dataStack[cur] = nil
+	ec.dataStack = ec.dataStack[:cur]
 	return popped
 }
 
-func (ec *ExecutionContext) PopValuesTo(addr uint) {
-	var L = uint(len(ec.DataStack))
+func (ec *ExecutionContext) popValuesTo(addr uint) {
+	var L = uint(len(ec.dataStack))
 	assert(L > 0, "cannot pop empty data stack")
 	assert(addr < L, "invalid data stack address")
 	for i := addr; i < L; i += 1 {
-		ec.DataStack[i] = nil
+		ec.dataStack[i] = nil
 	}
-	ec.DataStack = ec.DataStack[:addr]
+	ec.dataStack = ec.dataStack[:addr]
 }
 
-func (ec *ExecutionContext) PushCall(f FunctionValue, arg Value) {
+func (ec *ExecutionContext) pushCall(f FunctionValue, arg Value) {
 	var context_size = int(f.Underlying.BaseSize.Context)
 	var reserved_size = int(f.Underlying.BaseSize.Reserved)
 	assert(context_size == len(f.ContextValues),
 		"invalid number of context values")
-	var new_base_addr = uint(len(ec.DataStack))
+	var new_base_addr = uint(len(ec.dataStack))
 	for i := 0; i < context_size; i += 1 {
-		ec.PushValue(f.ContextValues[i])
+		ec.pushValue(f.ContextValues[i])
 	}
 	for i := 0; i < reserved_size; i += 1 {
-		ec.PushValue(nil)
+		ec.pushValue(nil)
 	}
-	ec.PushValue(arg)
-	ec.CallStack = append(ec.CallStack, ec.WorkingFrame)
-	ec.WorkingFrame = CallStackFrame {
-		Function: f.Underlying,
-		BaseAddr: new_base_addr,
-		InstPtr:  0,
+	ec.pushValue(arg)
+	ec.callStack = append(ec.callStack, ec.workingFrame)
+	ec.workingFrame = CallStackFrame {
+		function: f.Underlying,
+		baseAddr: new_base_addr,
+		instPtr:  0,
 	}
 }
 
-func (ec *ExecutionContext) PopCall() {
-	var L = len(ec.CallStack)
+func (ec *ExecutionContext) popCall() {
+	var L = len(ec.callStack)
 	assert(L > 0, "cannot pop empty call stack")
 	var cur = (L - 1)
-	var popped = ec.CallStack[cur]
-	ec.CallStack[cur] = CallStackFrame {}
-	ec.CallStack = ec.CallStack[:cur]
-	var ret = ec.PopValue()
-	ec.PopValuesTo(ec.WorkingFrame.BaseAddr)
-	ec.PushValue(ret)
-	ec.WorkingFrame = popped
+	var popped = ec.callStack[cur]
+	ec.callStack[cur] = CallStackFrame {}
+	ec.callStack = ec.callStack[:cur]
+	var ret = ec.popValue()
+	ec.popValuesTo(ec.workingFrame.baseAddr)
+	ec.pushValue(ret)
+	ec.workingFrame = popped
 }
 
-func (ec *ExecutionContext) PopTailCall() {
-	var L = len(ec.CallStack)
+func (ec *ExecutionContext) popTailCall() {
+	var L = len(ec.callStack)
 	assert(L > 0, "cannot pop empty call stack")
 	var cur = (L - 1)
-	var popped = ec.CallStack[cur]
-	ec.CallStack[cur] = CallStackFrame {}
-	ec.CallStack = ec.CallStack[:cur]
-	ec.PopValuesTo(ec.WorkingFrame.BaseAddr)
-	ec.WorkingFrame = popped
-}
-
-
-func assert(ok bool, msg string) {
-	if !ok { panic(msg) }
+	var popped = ec.callStack[cur]
+	ec.callStack[cur] = CallStackFrame {}
+	ec.callStack = ec.callStack[:cur]
+	ec.popValuesTo(ec.workingFrame.baseAddr)
+	ec.workingFrame = popped
 }

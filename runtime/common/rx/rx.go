@@ -2,6 +2,7 @@ package rx
 
 import "context"
 
+
 type Object = interface{}
 
 type Effect struct {
@@ -11,6 +12,7 @@ type Effect struct {
 type Scheduler interface {
 	dispatch(event)
 	run(Effect, *observer)
+	RunTopLevel(Effect, Receiver)
 }
 
 type observer struct {
@@ -18,11 +20,6 @@ type observer struct {
 	next      func(Object)
 	error     func(Object)
 	complete  func()
-}
-
-type Observer struct {
-	raw    *observer
-	sched  Scheduler
 }
 
 type Context struct {
@@ -64,64 +61,61 @@ func (ctx *Context) CreateChild() (*Context, Dispose) {
 }
 
 
-func (ob Observer) Context() context.Context {
-	return ob.raw.context.raw
+type Sender struct {
+	raw    *observer
+	sched  Scheduler
 }
 
-func (ob Observer) Next(x Object) {
-	ob.sched.dispatch(event {
+type Receiver struct {
+	Context  *Context
+	Values   chan <- Object
+	Error    chan <- Object
+}
+
+func (s Sender) Context() context.Context {
+	return s.raw.context.raw
+}
+
+func (s Sender) Next(x Object) {
+	s.sched.dispatch(event {
 		kind:     ev_next,
 		payload:  x,
-		observer: ob.raw,
+		observer: s.raw,
 	})
 }
 
-func (ob Observer) Error(e Object) {
-	ob.sched.dispatch(event {
+func (s Sender) Error(e Object) {
+	s.sched.dispatch(event {
 		kind:     ev_error,
 		payload:  e,
-		observer: ob.raw,
+		observer: s.raw,
 	})
 }
 
-func (ob Observer) Complete() {
-	ob.sched.dispatch(event {
+func (s Sender) Complete() {
+	s.sched.dispatch(event {
 		kind:     ev_complete,
 		payload:  nil,
-		observer: ob.raw,
+		observer: s.raw,
 	})
 }
 
-func CreateEffect(action func(Observer)) Effect {
+func CreateEffect(action func(Sender)) Effect {
 	return Effect { func (sched Scheduler, ob *observer) {
-		go action(Observer { sched: sched, raw: ob })
+		go action(Sender { sched: sched, raw: ob })
 	} }
 }
 
-func RunEffect (
-	e       Effect,
-	sched   Scheduler,
-	ctx     *Context,
-	values  chan <- Object,
-	err     chan <- Object,
-) {
-	sched.run(e, &observer {
-		context:  ctx,
-		next: func(x Object) {
-			if values != nil {
-				values <- x
+func CreateBlockingEffect(action func()([]Object,error)) Effect {
+	return Effect { func (sched Scheduler, ob *observer) {
+		var result, err = action()
+		if err != nil {
+			ob.error(err)
+		} else {
+			for _, item := range result {
+				ob.next(item)
 			}
-		},
-		error: func(e Object) {
-			if err != nil {
-				err <- e
-				close(err)
-			}
-		},
-		complete: func() {
-			if values != nil {
-				close(values)
-			}
-		},
-	})
+			ob.complete()
+		}
+	} }
 }

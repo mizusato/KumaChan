@@ -25,8 +25,8 @@ const (
 	NIL     // [ ___ ]: Load a nil value
 	/* Data Transfer */
 	GLOBAL  // [   index   ]: Load a global value (constant or function)
-	LOAD    // [ _, offset ]: Load a value from BaseAddr + offset
-	STORE   // [ _, offset ]: Store current value to BaseAddr + offset
+	LOAD    // [ _, offset ]: Load a value from (frame base) + offset
+	STORE   // [ _, offset ]: Store current value to (frame base) + offset
 	/* Sum Type Operations */
 	SUM     // [index, ___ ]: Create a value of a sum type
 	JIF     // [index, dest ]: Jump if Index matches the current value

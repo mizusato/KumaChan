@@ -3,14 +3,13 @@ package rx
 import "runtime"
 
 
-const MinimumEventChannelBufferSize = 32768
+const MinimumEventLoopBufferSize = 32768
 
 type event struct {
 	kind      event_kind
 	payload   Object
 	observer  *observer
 }
-
 type event_kind int
 const (
 	ev_next  event_kind  =  iota
@@ -18,24 +17,28 @@ const (
 	ev_complete
 )
 
+type task func()
+
 type EventLoop struct {
-	channel  chan event
+	event_channel  chan event
+	task_channel   chan task
 }
 
 func SpawnEventLoop() *EventLoop {
-	return SpawnEventLoopWithBufferSize(MinimumEventChannelBufferSize)
+	return SpawnEventLoopWithBufferSize(MinimumEventLoopBufferSize)
 }
 
 func SpawnEventLoopWithBufferSize(buf_size uint) *EventLoop {
-	if buf_size < MinimumEventChannelBufferSize {
-		buf_size = MinimumEventChannelBufferSize
+	if buf_size < MinimumEventLoopBufferSize {
+		buf_size = MinimumEventLoopBufferSize
 	}
-	var channel = make(chan event, buf_size)
+	var events = make(chan event, buf_size)
+	var tasks = make(chan task, buf_size)
 	go (func() {
 		runtime.LockOSThread()
 		for {
 			select {
-			case ev := <- channel:
+			case ev := <- events:
 				switch ev.kind {
 				case ev_next:
 					ev.observer.next(ev.payload)
@@ -45,46 +48,25 @@ func SpawnEventLoopWithBufferSize(buf_size uint) *EventLoop {
 					ev.observer.complete()
 				}
 			default:
-				continue
+				select {
+				case t := <- tasks:
+					t()
+				default:
+					continue
+				}
 			}
 		}
 	})()
-	return &EventLoop { channel }
+	return &EventLoop {
+		event_channel: events,
+		task_channel:  tasks,
+	}
 }
 
 func (el *EventLoop) dispatch(ev event) {
-	el.channel <- ev
+	el.event_channel <- ev
 }
 
-
-type TrivialScheduler struct {
-	EventLoop  *EventLoop
-}
-
-func (sched TrivialScheduler) dispatch(ev event) {
-	sched.EventLoop.dispatch(ev)
-}
-
-func (sched TrivialScheduler) run(effect Effect, ob *observer) {
-	var terminated = false
-	effect.action(sched, &observer {
-		context: ob.context,
-		next: func(x Object) {
-			if !terminated && !ob.context.disposed {
-				ob.next(x)
-			}
-		},
-		error: func(e Object) {
-			if !terminated && !ob.context.disposed {
-				terminated = true
-				ob.error(e)
-			}
-		},
-		complete: func() {
-			if !terminated && !ob.context.disposed {
-				terminated = true
-				ob.complete()
-			}
-		},
-	})
+func (el *EventLoop) commit(t task) {
+	el.task_channel <- t
 }

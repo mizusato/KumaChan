@@ -17,27 +17,27 @@ func PrintRuntimeErrorMessage(err interface{}, ec *ExecutionContext) {
 	}
 	var buf strings.Builder
 	fmt.Fprintf(&buf, "%v*** Runtime Error%v\n*\n", Bold, Reset)
-	var L = len(ec.CallStack)
+	var L = len(ec.callStack)
 	for i := 0; i < L; i += 1 {
-		var this = ec.CallStack[i]
+		var this = ec.callStack[i]
 		var callee CallStackFrame
 		if i+1 < L {
-			callee = ec.CallStack[i+1]
+			callee = ec.callStack[i+1]
 		} else {
-			callee = ec.WorkingFrame
+			callee = ec.workingFrame
 		}
-		var callee_name = callee.Function.Info.Name
+		var callee_name = callee.function.Info.Name
 		var frame_msg = fmt.Sprintf("%s called", callee_name)
 		buf.WriteString(GenFrameErrMsg(this, frame_msg))
 		buf.WriteString("\n*\n")
 	}
 	var frame_msg = fmt.Sprintf("Runtime Error: %s", err_desc)
-	buf.WriteString(GenFrameErrMsg(ec.WorkingFrame, frame_msg))
+	buf.WriteString(GenFrameErrMsg(ec.workingFrame, frame_msg))
 	var msg = buf.String()
 	var _, _ = fmt.Fprintln(os.Stderr, msg)
 }
 
 func GenFrameErrMsg(f CallStackFrame, desc string) string {
-	var point = f.Function.Info.CodeMap[f.InstPtr]
+	var point = f.function.Info.CodeMap[f.instPtr]
 	return point.GenErrMsg(desc)
 }

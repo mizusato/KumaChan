@@ -5,7 +5,6 @@ import "reflect"
 
 type MachineHandle interface {
 	Call(fv Value, arg Value) Value
-	CallAsync(fv Value, arg Value, cb func(Value))
 }
 var __MachineHandleType = reflect.TypeOf(MachineHandle(nil))
 

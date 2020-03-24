@@ -112,6 +112,10 @@ func (qs *QueueScheduler) dispatch(ev event) {
 	qs.underlying.dispatch(ev)
 }
 
+func (qs *QueueScheduler) RunTopLevel(e Effect, r Receiver) {
+	qs.underlying.RunTopLevel(e, r)
+}
+
 type queue struct {
 	data     [] queue_item
 	next_id  uint64
