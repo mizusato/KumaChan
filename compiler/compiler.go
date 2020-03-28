@@ -1,9 +1,10 @@
 package compiler
 
 import (
+	. "kumachan/error"
 	"kumachan/checker"
-	"kumachan/loader"
 	"kumachan/runtime/common"
+	"kumachan/runtime/lib"
 	"kumachan/transformer/node"
 )
 
@@ -11,12 +12,14 @@ type Code struct {
 	InstSeq    [] common.Instruction
 	SourceMap  [] *node.Node
 }
-
 func CodeFrom(inst common.Instruction, info checker.ExprInfo) Code {
 	return Code {
 		InstSeq:   [] common.Instruction { inst },
 		SourceMap: [] *node.Node { &(info.ErrorPoint.Node) },
 	}
+}
+func (code Code) Length() uint {
+	return uint(len(code.InstSeq))
 }
 
 type CodeBuffer struct {
@@ -47,6 +50,32 @@ func (buf CodeBuffer) Write(code Code) {
 	}
 	buf.Code.SourceMap = append(buf.Code.SourceMap, code.SourceMap...)
 }
+func (buf CodeBuffer) WriteAbsolute(code Code) {
+	buf.Code.InstSeq = append(buf.Code.InstSeq, code.InstSeq...)
+	buf.Code.SourceMap = append(buf.Code.SourceMap, code.SourceMap...)
+}
+func (buf CodeBuffer) WriteBranch(code Code, tail_addr uint) {
+	var base = &(buf.Code.InstSeq)
+	var base_size = uint(len(buf.Code.InstSeq))
+	var last_addr = (code.Length() - 1)
+	for _, inst := range code.InstSeq {
+		if inst.OpCode == common.JIF || inst.OpCode == common.JMP {
+			var dest_addr = (uint(inst.Arg1) + base_size)
+			ValidateDestAddr(dest_addr)
+			if dest_addr == last_addr {
+				dest_addr = tail_addr
+			}
+			*base = append(*base, common.Instruction {
+				OpCode: inst.OpCode,
+				Arg0:   inst.Arg0,
+				Arg1:   common.Long(dest_addr),
+			})
+		} else {
+			*base = append(*base, inst)
+		}
+	}
+	buf.Code.SourceMap = append(buf.Code.SourceMap, code.SourceMap...)
+}
 func (buf CodeBuffer) Collect() Code {
 	var code = buf.Code
 	buf.Code = nil
@@ -57,7 +86,13 @@ type Context struct {
 	GlobalRefs  *([] GlobalRef)
 	LocalScope  *Scope
 }
-
+func MakeContext() Context {
+	var refs = make([] GlobalRef, 0)
+	return Context {
+		GlobalRefs: &refs,
+		LocalScope: MakeScope(),
+	}
+}
 func (ctx Context) MakeClosure() Context {
 	var refs = make([] GlobalRef, 0)
 	return Context {
@@ -65,32 +100,40 @@ func (ctx Context) MakeClosure() Context {
 		LocalScope: MakeClosureScope(ctx.LocalScope),
 	}
 }
-
+func (ctx Context) MakeBranch() Context {
+	return Context {
+		GlobalRefs: ctx.GlobalRefs,
+		LocalScope: MakeBranchScope(ctx.LocalScope),
+	}
+}
 func (ctx Context) AppendDataRef(v common.DataValue) uint {
 	var refs = ctx.GlobalRefs
 	var index = uint(len(*refs))
 	*refs = append(*refs, RefData { v })
 	return index
 }
-
 func (ctx Context) AppendFunRef(ref checker.RefFunction) uint {
 	var refs = ctx.GlobalRefs
 	var index = uint(len(*refs))
 	*refs = append(*refs, RefFun(ref))
 	return index
 }
-
 func (ctx Context) AppendConstRef(ref checker.RefConstant) uint {
 	var refs = ctx.GlobalRefs
 	var index = uint(len(*refs))
 	*refs = append(*refs, RefConst(ref))
 	return index
 }
-
-func (ctx Context) AppendClosureRef(f *common.Function) uint {
+func (ctx Context) AppendClosureRef (
+	function    *common.Function,
+	inner_refs  []GlobalRef,
+) uint {
 	var refs = ctx.GlobalRefs
 	var index = uint(len(*refs))
-	*refs = append(*refs, RefClosure { f })
+	*refs = append(*refs, RefClosure {
+		Function:   function,
+		GlobalRefs: inner_refs,
+	})
 	return index
 }
 
@@ -102,7 +145,10 @@ type RefFun  checker.RefFunction
 func (impl RefConst) GlobalRef() {}
 type RefConst  checker.RefConstant
 func (impl RefClosure) GlobalRef() {}
-type RefClosure struct { *common.Function }
+type RefClosure struct {
+	Function    *common.Function
+	GlobalRefs  [] GlobalRef
+}
 
 type DataInteger  checker.IntLiteral
 func (d DataInteger) ToValue() common.Value {
@@ -138,13 +184,20 @@ func (d DataStringFormatter) ToValue() common.Value {
 
 
 type Scope struct {
-	Bindings    [] Binding
-	BindingMap  map[string] uint
-	BindingPeek *uint
+	Bindings     [] Binding
+	BindingMap   map[string] uint
+	BindingPeek  *uint
 }
 type Binding struct {
 	Name  string
 	Used  bool
+}
+func MakeScope() *Scope {
+	return &Scope {
+		Bindings:    make([] Binding, 0),
+		BindingMap:  make(map[string] uint),
+		BindingPeek: new(uint),
+	}
 }
 func MakeClosureScope(outer *Scope) *Scope {
 	var bindings = make([] Binding, 0)
@@ -261,6 +314,85 @@ func Compile(expr checker.Expr, ctx Context) Code {
 		var inst_set = InstSet(v.Index)
 		buf.Write(CodeFrom(inst_set, expr.Info))
 		return buf.Collect()
+	case checker.Sum:
+		var buf = MakeCodeBuffer()
+		var concrete = Compile(v.Value, ctx)
+		buf.Write(concrete)
+		var inst_sum = InstSum(v.Index)
+		buf.Write(CodeFrom(inst_sum, expr.Info))
+		return buf.Collect()
+	case checker.Match:
+		var raw_branches = make([]checker.Branch, len(v.Branches))
+		var i = 0
+		var default_occurred = false
+		for _, b := range v.Branches {
+			if b.IsDefault {
+				if default_occurred { panic("something went wrong") }
+				raw_branches[len(raw_branches)-1] = b
+				default_occurred = true
+			} else {
+				raw_branches[i] = b
+				i += 1
+			}
+		}
+		var branches = make([]Code, len(raw_branches))
+		for i, b := range raw_branches {
+			var branch_buf = MakeCodeBuffer()
+			var branch_ctx = ctx.MakeBranch()
+			var branch_scope = branch_ctx.LocalScope
+			var pattern, ok = b.Pattern.(checker.Pattern)
+			if ok {
+				switch p := pattern.Concrete.(type) {
+				case checker.TrivialPattern:
+					var offset = branch_scope.AddBinding(p.ValueName)
+					var bind_inst = InstAddBinding(offset)
+					branch_buf.Write(CodeFrom(bind_inst, b.Value.Info))
+				case checker.TuplePattern:
+					BindPatternItems (
+						pattern,       p.Items,
+						branch_scope,  branch_buf,
+					)
+				case checker.BundlePattern:
+					BindPatternItems (
+						pattern,       p.Items,
+						branch_scope,  branch_buf,
+					)
+				}
+			}
+			var expr_code = Compile(b.Value, branch_ctx)
+			branch_buf.Write(expr_code)
+			branches[i] = branch_buf.Collect()
+		}
+		var arg_code = Compile(v.Argument, ctx)
+		var branch_count = uint(len(branches))
+		var addrs = make([]uint, branch_count)
+		var addr = arg_code.Length() + uint(branch_count)
+		for i := uint(0); i < branch_count; i += 1 {
+			addrs[i] = addr
+			addr += (branches[i].Length() + 1)
+		}
+		var tail_addr = addr
+		var buf = MakeCodeBuffer()
+		buf.Write(arg_code)
+		for i := uint(0); i < branch_count; i += 1 {
+			var index = raw_branches[i].Index
+			var jump common.Instruction
+			if raw_branches[i].IsDefault {
+				jump = InstJump(addrs[i], true)
+			} else {
+				jump = InstJumpIf(index, addrs[i])
+			}
+			buf.WriteAbsolute(CodeFrom(jump, v.Argument.Info))
+		}
+		for i, branch_code := range branches {
+			buf.WriteBranch(branch_code, tail_addr)
+			var goto_tail = InstJump(tail_addr, false)
+			var info = raw_branches[i].Value.Info
+			buf.WriteAbsolute(CodeFrom(goto_tail, info))
+		}
+		var nop = common.Instruction { OpCode: common.NOP }
+		buf.Write(CodeFrom(nop, v.Argument.Info))
+		return buf.Collect()
 	case checker.Lambda:
 		return CompileClosure(v, expr.Info, false, "", ctx)
 	case checker.Block:
@@ -288,13 +420,17 @@ func Compile(expr checker.Expr, ctx Context) Code {
 			case checker.TuplePattern:
 				var val_code = Compile(b.Value, ctx)
 				buf.Write(val_code)
-				var info = b.Value.Info
-				BindPatternItems(p.Items, ctx.LocalScope, buf, info)
+				BindPatternItems (
+					b.Pattern,       p.Items,
+					ctx.LocalScope,  buf,
+				)
 			case checker.BundlePattern:
 				var val_code = Compile(b.Value, ctx)
 				buf.Write(val_code)
-				var info = b.Value.Info
-				BindPatternItems(p.Items, ctx.LocalScope, buf, info)
+				BindPatternItems (
+					b.Pattern,       p.Items,
+					ctx.LocalScope,  buf,
+				)
 			default:
 				panic("impossible branch")
 			}
@@ -309,7 +445,7 @@ func Compile(expr checker.Expr, ctx Context) Code {
 		buf.Write(arg_code)
 		buf.Write(f_code)
 		var inst_call = common.Instruction {
-			OpCode:common.CALL,
+			OpCode: common.CALL,
 		}
 		buf.Write(CodeFrom(inst_call, expr.Info))
 		return buf.Collect()
@@ -329,21 +465,22 @@ func CompileClosure (
 	var inner_ctx = ctx.MakeClosure()
 	var inner_scope = inner_ctx.LocalScope
 	var inner_buf = MakeCodeBuffer()
-	switch p := lambda.Input.Concrete.(type) {
+	var pattern = lambda.Input
+	switch p := pattern.Concrete.(type) {
 	case checker.TrivialPattern:
 		var offset = inner_scope.AddBinding(p.ValueName)
 		var bind_inst = InstAddBinding(offset)
 		inner_buf.Write(CodeFrom(bind_inst, info))
 	case checker.TuplePattern:
-		BindPatternItems(p.Items, inner_scope, inner_buf, info)
+		BindPatternItems(pattern, p.Items, inner_scope, inner_buf)
 	case checker.BundlePattern:
-		BindPatternItems(p.Items, inner_scope, inner_buf, info)
+		BindPatternItems(pattern, p.Items, inner_scope, inner_buf)
 	default:
 		panic("impossible branch")
 	}
 	var body_code = Compile(lambda.Output, inner_ctx)
 	inner_buf.Write(body_code)
-	var base_reserved_size = *inner_scope.BindingPeek
+	var base_reserved_size = *(inner_scope.BindingPeek)
 	if base_reserved_size >= common.LocalSlotMaxSize {
 		panic("maximum quantity of local bindings exceeded")
 	}
@@ -409,12 +546,12 @@ func CompileClosure (
 			Reserved: common.Long(base_reserved_size),
 		},
 		Info:        common.FuncInfo {
-			Name:      loader.NewSymbol("", "(closure)"),
+			Name:      "(closure)",
 			DeclPoint: info.ErrorPoint,
 			SourceMap: final_inner_code.SourceMap,
 		},
 	}
-	var index = ctx.AppendClosureRef(f)
+	var index = ctx.AppendClosureRef(f, *(inner_ctx.GlobalRefs))
 	var outer_buf = MakeCodeBuffer()
 	outer_buf.Write(CodeFrom(InstGlobalRef(index), info))
 	for _, outer_offset := range context_outer_offsets {
@@ -438,14 +575,140 @@ func CompileClosure (
 	return outer_buf.Collect()
 }
 
-// TODO: CompileFunction
+func CompileFunction (
+	body   checker.ExprLike,
+	name   string,
+	point  ErrorPoint,
+) (common.Function, []GlobalRef, *Error) {
+	switch b := body.(type) {
+	case checker.ExprNative:
+		var native_name = b.Name
+		var index, exists = lib.NativeFunctionIndex[native_name]
+		if !exists {
+			return common.Function{}, nil, &Error {
+				Point:    b.Point,
+				Concrete: E_NativeFunctionNotFound { native_name },
+			}
+		}
+		return common.Function {
+			IsNative:    true,
+			NativeIndex: index,
+			Code:        nil,
+			BaseSize:    common.FrameBaseSize {},
+			Info:        common.FuncInfo {
+				Name:      name,
+				DeclPoint: point,
+				SourceMap: nil,
+			},
+		}, nil, nil
+	case checker.ExprExpr:
+		var body_expr = checker.Expr(b)
+		var lambda = body_expr.Value.(checker.Lambda)
+		var pattern = lambda.Input
+		var ctx = MakeContext()
+		var scope = ctx.LocalScope
+		var buf = MakeCodeBuffer()
+		var info = body_expr.Info
+		switch p := pattern.Concrete.(type) {
+		case checker.TrivialPattern:
+			var offset = scope.AddBinding(p.ValueName)
+			var bind_inst = InstAddBinding(offset)
+			buf.Write(CodeFrom(bind_inst, info))
+		case checker.TuplePattern:
+			BindPatternItems(pattern, p.Items, scope, buf)
+		case checker.BundlePattern:
+			BindPatternItems(pattern, p.Items, scope, buf)
+		default:
+			panic("impossible branch")
+		}
+		var out_code = Compile(lambda.Output, ctx)
+		buf.Write(out_code)
+		var code = buf.Collect()
+		var binding_peek = *(scope.BindingPeek)
+		if binding_peek >= common.LocalSlotMaxSize {
+			panic("maximum quantity of local bindings exceeded")
+		}
+		return common.Function {
+			IsNative:    false,
+			NativeIndex: -1,
+			Code:        code.InstSeq,
+			BaseSize:    common.FrameBaseSize {
+				Context:  0,
+				Reserved: common.Long(binding_peek),
+			},
+			Info:        common.FuncInfo {
+				Name:      name,
+				DeclPoint: point,
+				SourceMap: code.SourceMap,
+			},
+		}, *(ctx.GlobalRefs), nil
+	default:
+		panic("impossible branch")
+	}
+}
+
+func CompileConstant (
+	body   checker.ExprLike,
+	name   string,
+	point  ErrorPoint,
+) (common.Function, []GlobalRef, *Error) {
+	switch b := body.(type) {
+	case checker.ExprNative:
+		var native_name = b.Name
+		var index, exists = lib.NativeConstantIndex[native_name]
+		if !exists {
+			return common.Function{}, nil, &Error {
+				Point:    b.Point,
+				Concrete: E_NativeConstantNotFound { native_name },
+			}
+		}
+		return common.Function {
+			IsNative:    true,
+			NativeIndex: index,
+			Code:        nil,
+			BaseSize:    common.FrameBaseSize {},
+			Info: common.FuncInfo{
+				Name:      name,
+				DeclPoint: point,
+				SourceMap: nil,
+			},
+		}, nil, nil
+	case checker.ExprExpr:
+		var body_expr = checker.Expr(b)
+		var ctx = MakeContext()
+		var code = Compile(body_expr, ctx)
+		var binding_peek = *(ctx.LocalScope.BindingPeek)
+		if binding_peek >= common.LocalSlotMaxSize {
+			panic("maximum quantity of local bindings exceeded")
+		}
+		return common.Function {
+			IsNative:    false,
+			NativeIndex: -1,
+			Code:        code.InstSeq,
+			BaseSize:    common.FrameBaseSize {
+				Context:  0,
+				Reserved: common.Long(binding_peek),
+			},
+			Info:        common.FuncInfo {
+				Name:      name,
+				DeclPoint: point,
+				SourceMap: code.SourceMap,
+			},
+		}, *(ctx.GlobalRefs), nil
+	default:
+		panic("impossible branch")
+	}
+}
 
 func BindPatternItems (
-	items  [] checker.PatternItem,
-	scope  *Scope,
-	buf    CodeBuffer,
-	info   checker.ExprInfo,
+	pattern  checker.Pattern,
+	items    [] checker.PatternItem,
+	scope    *Scope,
+	buf      CodeBuffer,
 ) {
+	var info = checker.ExprInfo {
+		ErrorPoint: pattern.Point,
+	}
 	for _, item := range items {
 		var inst_get = InstGet(item.Index)
 		var offset = scope.AddBinding(item.Name)
@@ -520,6 +783,40 @@ func InstArray(size uint) common.Instruction {
 	}
 }
 
+func InstSum(index uint) common.Instruction {
+	ValidateSumIndex(index)
+	return common.Instruction {
+		OpCode: common.SUM,
+		Arg0:   common.Short(index),
+		Arg1:   0,
+	}
+}
+
+func InstJumpIf(index uint, dest uint) common.Instruction {
+	ValidateSumIndex(index)
+	ValidateDestAddr(dest)
+	return common.Instruction {
+		OpCode: common.JIF,
+		Arg0:   common.Short(index),
+		Arg1:   common.Long(dest),
+	}
+}
+
+func InstJump(dest uint, narrow bool) common.Instruction {
+	ValidateDestAddr(dest)
+	var narrow_flag uint
+	if narrow {
+		narrow_flag = 1
+	} else {
+		narrow_flag = 0
+	}
+	return common.Instruction {
+		OpCode: common.JMP,
+		Arg0:   common.Short(narrow_flag),
+		Arg1:   common.Long(dest),
+	}
+}
+
 func ValidateGlobalIndex(index uint) {
 	if index >= common.GlobalSlotMaxSize {
 		panic("global value index exceeded maximum slot capacity")
@@ -547,6 +844,12 @@ func ValidateProductIndex(index uint) {
 func ValidateProductSize(size uint) {
 	if size > common.ProductMaxSize {
 		panic("given size exceeded maximum capacity of product type")
+	}
+}
+
+func ValidateSumIndex(index uint) {
+	if index >= common.SumMaxBranches {
+		panic("given index exceeded maximum branch limit of sum type")
 	}
 }
 

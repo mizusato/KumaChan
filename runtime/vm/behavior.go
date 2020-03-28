@@ -15,14 +15,20 @@ func assert(ok bool, msg string) {
 func execute(p Program, m *Machine) {
 	var L = len(p.Functions) + len(p.Constants) + len(p.Constants)
 	assert(L <= GlobalSlotMaxSize, "maximum registry size exceeded")
-	var N = lib.NativeFunctions  // TODO: change to GetNativeFunction(i)
+	var F = func(index int) Value {
+		// TODO: change raw array NativeFunctions to GetNativeFunction(i)
+		return NativeFunctionValue(lib.NativeFunctions[index])
+	}
+	var C = func(index int) Value {
+		return lib.NativeConstants[index]
+	}
 	m.globalSlot = make([]Value, 0, L)
 	for _, v := range p.DataValues {
 		m.globalSlot = append(m.globalSlot, v.ToValue())
 	}
 	for i, _ := range p.Functions {
 		var f = &(p.Functions[i])
-		m.globalSlot = append(m.globalSlot, f.ToValue(N))
+		m.globalSlot = append(m.globalSlot, f.ToValue(F))
 	}
 	for i, _ := range p.Closures {
 		var f = &(p.Closures[i])
@@ -30,7 +36,7 @@ func execute(p Program, m *Machine) {
 	}
 	for i, _ := range p.Constants {
 		var f = &(p.Constants[i])
-		var v = f.ToValue(N)
+		var v = f.ToValue(C)
 		m.globalSlot = append(m.globalSlot, m.Call(v, nil))
 	}
 	var ctx = rx.Background()
@@ -88,20 +94,24 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 					Value: value,
 				})
 			case JIF:
-				switch sum := ec.getCurrentValue().(type) {
-				case SumValue:
-					if sum.Index == inst.GetRawShortIndexOrSize() {
-						var new_inst_ptr = inst.GetDestAddr()
-						assert(new_inst_ptr < uint(len(code)),
-							"JIF: invalid address")
-						*inst_ptr_ref = new_inst_ptr
-					} else {
-						// do nothing
-					}
-				default:
-					panic("JIF: cannot execute on non-sum value")
+				var sum, ok = ec.getCurrentValue().(SumValue)
+				assert(ok, "JIF: cannot execute on non-sum value")
+				if sum.Index == inst.GetRawShortIndexOrSize() {
+					ec.popValue()
+					ec.pushValue(sum.Value)
+					var new_inst_ptr = inst.GetDestAddr()
+					assert(new_inst_ptr < uint(len(code)),
+						"JIF: invalid address")
+					*inst_ptr_ref = new_inst_ptr
+				} else {
+					// do nothing
 				}
 			case JMP:
+				if inst.Arg0 != 0 {
+					var sum, ok = ec.popValue().(SumValue)
+					assert(ok, "JMP: cannot narrow non-union type")
+					ec.pushValue(sum.Value)
+				}
 				var new_inst_ptr = inst.GetDestAddr()
 				assert(new_inst_ptr < uint(len(code)),
 					"JMP: invalid address")

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	. "kumachan/error"
 	"os"
-	"strings"
 )
 
 func PrintRuntimeErrorMessage(err interface{}, ec *ExecutionContext) {
@@ -15,8 +14,9 @@ func PrintRuntimeErrorMessage(err interface{}, ec *ExecutionContext) {
 	default:
 		err_desc = "unknown error"
 	}
-	var buf strings.Builder
-	fmt.Fprintf(&buf, "%v*** Runtime Error%v\n*\n", Bold, Reset)
+	var buf = make(ErrorMessage, 0)
+	buf.WriteText(TS_BOLD, "*** Runtime Error")
+	buf.WriteText(TS_NORMAL, "\n*\n")
 	var L = len(ec.callStack)
 	for i := 0; i < L; i += 1 {
 		var this = ec.callStack[i]
@@ -27,17 +27,21 @@ func PrintRuntimeErrorMessage(err interface{}, ec *ExecutionContext) {
 			callee = ec.workingFrame
 		}
 		var callee_name = callee.function.Info.Name
-		var frame_msg = fmt.Sprintf("%s called", callee_name)
-		buf.WriteString(GenFrameErrMsg(this, frame_msg))
-		buf.WriteString("\n*\n")
+		var frame_msg = make(ErrorMessage, 0)
+		frame_msg.WriteText(TS_NORMAL, fmt.Sprintf("%s called", callee_name))
+		buf.WriteAll(GenFrameErrMsg(this, frame_msg))
+		buf.WriteText(TS_NORMAL, "\n*\n")
 	}
-	var frame_msg = fmt.Sprintf("Runtime Error: %s", err_desc)
-	buf.WriteString(GenFrameErrMsg(ec.workingFrame, frame_msg))
+	var frame_msg = make(ErrorMessage, 0)
+	frame_msg.WriteText(TS_NORMAL, fmt.Sprintf("Runtime Error: %s", err_desc))
+	buf.WriteAll(GenFrameErrMsg(ec.workingFrame, frame_msg))
 	var msg = buf.String()
 	var _, _ = fmt.Fprintln(os.Stderr, msg)
 }
 
-func GenFrameErrMsg(f CallStackFrame, desc string) string {
-	var point = f.function.Info.CodeMap[f.instPtr]
-	return point.GenErrMsg(desc)
+func GenFrameErrMsg(f CallStackFrame, desc ErrorMessage) ErrorMessage {
+	return FormatErrorAt(ErrorPoint{
+		AST:  f.function.Info.DeclPoint.AST,
+		Node: *(f.function.Info.SourceMap[f.instPtr]),
+	}, desc)
 }

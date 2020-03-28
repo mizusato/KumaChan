@@ -28,9 +28,9 @@ const (
 	LOAD    // [ _, offset ]: Load a value from (frame base) + offset
 	STORE   // [ _, offset ]: Store current value to (frame base) + offset
 	/* Sum Type Operations */
-	SUM     // [index, ___ ]: Create a value of a sum type
-	JIF     // [index, dest ]: Jump if Index matches the current value
-	JMP     // [____,  dest ]: Jump unconditionally
+	SUM     // [index,  ____ ]: Create a value of a sum type
+	JIF     // [index,  dest ]: Jump if Index matches the current value
+	JMP     // [narrow, dest ]: Jump unconditionally
 	/* Product Type Operations */
 	PROD    // [size,  _ ]: Create a value of a product type
 	GET     // [index, _ ]: Extract the value of a field

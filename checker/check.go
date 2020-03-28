@@ -18,7 +18,10 @@ type CheckedModule struct {
 
 type ExprLike interface { ExprLike() }
 func (impl ExprNative) ExprLike() {}
-type ExprNative string
+type ExprNative struct {
+	Name   string
+	Point  ErrorPoint
+}
 func (impl ExprExpr) ExprLike() {}
 type ExprExpr Expr
 
@@ -339,7 +342,10 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 				}
 				add(ExprExpr(body_expr))
 			case node.NativeRef:
-				add(ExprNative(string(body.Id.Value)))
+				add(ExprNative {
+					Name:  string(body.Id.Value),
+					Point: ErrorPoint { AST: mod.AST, Node: body.Node },
+				})
 			default:
 				panic("impossible branch")
 			}
@@ -364,7 +370,10 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 			}
 			const_map[name] = ExprExpr(expr)
 		case node.NativeRef:
-			const_map[name] = ExprNative(string(val.Id.Value))
+			const_map[name] = ExprNative {
+				Name:  string(val.Id.Value),
+				Point: ErrorPoint { AST: mod.AST, Node: val.Node },
+			}
 		default:
 			panic("impossible branch")
 		}
