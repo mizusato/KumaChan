@@ -16,8 +16,9 @@ type GenericFunction struct {
 
 type FunctionReference struct {
 	Function    *GenericFunction  // Pointer to the underlying function
-	IsImported  bool              // If it is imported from another module
 	ModuleName  string
+	Index       uint
+	IsImported  bool              // If it is imported from another module
 }
 
 // Map from module names to their corresponding function collections
@@ -58,6 +59,8 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 					//       since public functions have local signatures
 					collection[name] = append(collection[name], FunctionReference {
 						Function:   ref.Function,
+						ModuleName: ref.ModuleName,
+						Index:      ref.Index,
 						IsImported: true,
 					})
 				}
@@ -119,26 +122,31 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 				Body:         decl.Body.Body,
 				Node:         decl.Node,
 			}
-			var ref = FunctionReference {
-				IsImported: false,
-				Function:   gf,
-				ModuleName: mod_name,
-			}
 			// 3.6. Check if the name of the function is in use
-			var _, exists = collection[name]
+			var existing, exists = collection[name]
 			if exists {
 				// 3.6.1. If in use, try to overload it
 				var err_point = ErrorPoint {
 					AST: mod.AST, Node: decl.Name.Node,
 				}
 				var err = CheckOverload (
-					collection[name], func_type, name, params, err_point,
+					existing, func_type, name, params, err_point,
 				)
 				if err != nil { return nil, err }
-				collection[name] = append(collection[name], ref)
+				collection[name] = append(existing, FunctionReference {
+					IsImported: false,
+					Function:   gf,
+					ModuleName: mod_name,
+					Index:      uint(len(existing)),
+				})
 			} else {
 				// 3.6.2. If not, collect the function
-				collection[name] = []FunctionReference { ref }
+				collection[name] = []FunctionReference { FunctionReference {
+					IsImported: false,
+					Function:   gf,
+					ModuleName: mod_name,
+					Index:      0,
+				} }
 			}
 		}
 	}

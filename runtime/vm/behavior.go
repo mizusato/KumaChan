@@ -27,21 +27,21 @@ func execute(p Program, m *Machine) {
 		m.globalSlot = append(m.globalSlot, v.ToValue())
 	}
 	for i, _ := range p.Functions {
-		var f = &(p.Functions[i])
+		var f = p.Functions[i]
 		m.globalSlot = append(m.globalSlot, f.ToValue(F))
 	}
 	for i, _ := range p.Closures {
-		var f = &(p.Closures[i])
+		var f = p.Closures[i]
 		m.globalSlot = append(m.globalSlot, f.ToValue(nil))
 	}
 	for i, _ := range p.Constants {
-		var f = &(p.Constants[i])
+		var f = p.Constants[i]
 		var v = f.ToValue(C)
 		m.globalSlot = append(m.globalSlot, m.Call(v, nil))
 	}
 	var ctx = rx.Background()
 	for i, _ := range p.Effects {
-		var f = &(p.Effects[i])
+		var f = p.Effects[i]
 		var v = f.ToValue(nil)
 		var e = (m.Call(v, nil)).(rx.Effect)
 		m.scheduler.RunTopLevel(e, rx.Receiver {

@@ -19,3 +19,8 @@ func (impl E_NativeConstantNotFound) CompilerError() {}
 type E_NativeConstantNotFound struct {
 	Name  string
 }
+
+func (impl E_CircularConstantDependency) CompilerError() {}
+type E_CircularConstantDependency struct {
+	Constants  [] string
+}

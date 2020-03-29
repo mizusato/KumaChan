@@ -8,12 +8,24 @@ import (
 
 
 type CheckedModule struct {
-	Name             string
-	RawModule        *loader.Module
-	Imported         map[string] *CheckedModule
-	ConstantValues   map[string] ExprLike
-	FunctionBodies   map[string] []ExprLike
-	EffectsToBeDone  [] Expr
+	Name       string
+	RawModule  *loader.Module
+	Imported   map[string] *CheckedModule
+	Constants  map[string] CheckedConstant
+	Functions  map[string] ([] CheckedFunction)
+	Effects    [] CheckedEffect
+}
+type CheckedConstant struct {
+	Point  ErrorPoint
+	Value  ExprLike
+}
+type CheckedFunction struct {
+	Point  ErrorPoint
+	Body   ExprLike
+}
+type CheckedEffect struct {
+	Point  ErrorPoint
+	Value  Expr
 }
 
 type ExprLike interface { ExprLike() }
@@ -315,11 +327,14 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 		}
 		imported[alias] = checked
 	}
-	var func_map = make(map[string][]ExprLike)
+	var func_map = make(map[string] ([] CheckedFunction))
 	for name, group := range functions {
-		func_map[name] = make([]ExprLike, 0)
-		var add = func(b ExprLike) {
-			func_map[name] = append(func_map[name], b)
+		func_map[name] = make([]CheckedFunction, 0)
+		var add = func(body ExprLike, node node.Node) {
+			func_map[name] = append(func_map[name], CheckedFunction {
+				Point: ErrorPoint { AST: mod.AST, Node: node },
+				Body:  body,
+			})
 		}
 		for _, f_ref := range group {
 			if f_ref.IsImported {
@@ -340,19 +355,19 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 					errors = append(errors, err2)
 					continue
 				}
-				add(ExprExpr(body_expr))
+				add(ExprExpr(body_expr), f.Node)
 			case node.NativeRef:
 				add(ExprNative {
 					Name:  string(body.Id.Value),
 					Point: ErrorPoint { AST: mod.AST, Node: body.Node },
-				})
+				}, f.Node)
 			default:
 				panic("impossible branch")
 			}
 		}
 	}
 	var expr_ctx = CreateExprContext(mod_info, make([]string, 0))
-	var const_map = make(map[string]ExprLike)
+	var const_map = make(map[string] CheckedConstant)
 	for sym, constant := range constants {
 		var name = sym.SymbolName
 		switch val := constant.Value.(type) {
@@ -368,17 +383,23 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 				errors = append(errors, err2)
 				continue
 			}
-			const_map[name] = ExprExpr(expr)
+			const_map[name] = CheckedConstant {
+				Point: ErrorPoint { AST: mod.AST, Node: constant.Node },
+				Value: ExprExpr(expr),
+			}
 		case node.NativeRef:
-			const_map[name] = ExprNative {
-				Name:  string(val.Id.Value),
-				Point: ErrorPoint { AST: mod.AST, Node: val.Node },
+			const_map[name] = CheckedConstant {
+				Point: ErrorPoint { AST: mod.AST, Node: constant.Node },
+				Value: ExprNative {
+					Name:  string(val.Id.Value),
+					Point: ErrorPoint { AST: mod.AST, Node: val.Node },
+				},
 			}
 		default:
 			panic("impossible branch")
 		}
 	}
-	var do_effects = make([]Expr, 0)
+	var do_effects = make([] CheckedEffect, 0)
 	for _, cmd := range mod.Node.Commands {
 		switch do := cmd.Command.(type) {
 		case node.Do:
@@ -392,19 +413,22 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 				errors = append(errors, err2)
 				continue
 			}
-			do_effects = append(do_effects, expr)
+			do_effects = append(do_effects, CheckedEffect{
+				Point: ErrorPoint { AST: mod.AST, Node: do.Node },
+				Value: expr,
+			})
 		}
 	}
 	if len(errors) > 0 {
 		return nil, errors
 	} else {
-		var checked = &CheckedModule{
-			Name:            mod_name,
-			RawModule:       mod,
-			Imported:        imported,
-			ConstantValues:  const_map,
-			FunctionBodies:  func_map,
-			EffectsToBeDone: do_effects,
+		var checked = &CheckedModule {
+			Name:      mod_name,
+			RawModule: mod,
+			Imported:  imported,
+			Constants: const_map,
+			Functions: func_map,
+			Effects:   do_effects,
 		}
 		index[mod_name] = checked
 		return checked, nil

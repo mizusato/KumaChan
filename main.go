@@ -1,6 +1,8 @@
 package main
 
 import (
+    "kumachan/compiler"
+    "kumachan/runtime/common"
     "os"
     "io"
     "fmt"
@@ -77,8 +79,8 @@ func debug_loader() (*loader.Module, loader.Index) {
     return mod, idx
 }
 
-func debug_checker(mod *loader.Module, idx loader.Index) {
-    var _, _, errs = checker.TypeCheck(mod, idx)
+func debug_checker(mod *loader.Module, idx loader.Index) (*checker.CheckedModule, checker.Index) {
+    var c_mod, c_idx, errs = checker.TypeCheck(mod, idx)
     if errs != nil {
         var messages = make([]ErrorMessage, len(errs))
         for i, e := range errs {
@@ -90,10 +92,28 @@ func debug_checker(mod *loader.Module, idx loader.Index) {
     } else {
         fmt.Println("Type check finished, no errors occurred.")
     }
+    return c_mod, c_idx
+}
+
+func debug_compiler(entry *checker.CheckedModule) {
+    // TODO: move to new function compiler.CompileEntry()
+    var data = make([] common.DataValue, 0)
+    var closures = make([] compiler.FuncNode, 0)
+    var index = make(compiler.Index)
+    var err1 = compiler.CompileModule(entry, index, &data, &closures)
+    if err1 != nil {
+        panic(err1)
+    }
+    var program, err2 = compiler.CreateProgram(index, data, closures)
+    if err2 != nil {
+        panic(err2)
+    }
+    fmt.Println(program.String())
 }
 
 func main () {
     // debug_parser(os.Stdin, "[eval]", "module")
     var mod, idx = debug_loader()
-    debug_checker(mod, idx)
+    var c_mod, _ = debug_checker(mod, idx)
+    debug_compiler(c_mod)
 }

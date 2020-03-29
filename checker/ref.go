@@ -31,8 +31,27 @@ type RefConstant struct {
 
 func (impl RefFunction) ExprVal() {}
 type RefFunction struct {
-	Name   string
-	Index  uint
+	Name    string
+	Index   uint
+	AbsRef  AbsRefFunction
+}
+type AbsRefFunction struct {
+	Module  string
+	Name    string
+	Index   uint
+}
+func MakeRefFunction(name string, index uint, ctx ExprContext) RefFunction {
+	var raw_ref = ctx.ModuleInfo.Functions[name][index]
+	var abs_ref = AbsRefFunction {
+		Module: raw_ref.ModuleName,
+		Name:   name,
+		Index:  raw_ref.Index,
+	}
+	return RefFunction {
+		Name:   name,
+		Index:  index,
+		AbsRef: abs_ref,
+	}
 }
 
 func (impl RefLocal) ExprVal() {}

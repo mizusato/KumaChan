@@ -2,19 +2,19 @@ package compiler
 
 import (
 	. "kumachan/error"
-	"kumachan/checker"
-	"kumachan/runtime/common"
 	"kumachan/runtime/lib"
 	"kumachan/transformer/node"
+	c "kumachan/runtime/common"
+	ch "kumachan/checker"
 )
 
 type Code struct {
-	InstSeq    [] common.Instruction
+	InstSeq    [] c.Instruction
 	SourceMap  [] *node.Node
 }
-func CodeFrom(inst common.Instruction, info checker.ExprInfo) Code {
+func CodeFrom(inst c.Instruction, info ch.ExprInfo) Code {
 	return Code {
-		InstSeq:   [] common.Instruction { inst },
+		InstSeq:   [] c.Instruction { inst },
 		SourceMap: [] *node.Node { &(info.ErrorPoint.Node) },
 	}
 }
@@ -27,7 +27,7 @@ type CodeBuffer struct {
 }
 func MakeCodeBuffer() CodeBuffer {
 	var code = &Code {
-		InstSeq:   make([] common.Instruction, 0),
+		InstSeq:   make([] c.Instruction, 0),
 		SourceMap: make([] *node.Node, 0),
 	}
 	return CodeBuffer { code }
@@ -36,13 +36,13 @@ func (buf CodeBuffer) Write(code Code) {
 	var base = &(buf.Code.InstSeq)
 	var base_size = uint(len(buf.Code.InstSeq))
 	for _, inst := range code.InstSeq {
-		if inst.OpCode == common.JIF || inst.OpCode == common.JMP {
+		if inst.OpCode == c.JIF || inst.OpCode == c.JMP {
 			var dest_addr = (uint(inst.Arg1) + base_size)
 			ValidateDestAddr(dest_addr)
-			*base = append(*base, common.Instruction {
+			*base = append(*base, c.Instruction {
 				OpCode: inst.OpCode,
 				Arg0:   inst.Arg0,
-				Arg1:   common.Long(dest_addr),
+				Arg1:   c.Long(dest_addr),
 			})
 		} else {
 			*base = append(*base, inst)
@@ -59,16 +59,16 @@ func (buf CodeBuffer) WriteBranch(code Code, tail_addr uint) {
 	var base_size = uint(len(buf.Code.InstSeq))
 	var last_addr = (code.Length() - 1)
 	for _, inst := range code.InstSeq {
-		if inst.OpCode == common.JIF || inst.OpCode == common.JMP {
+		if inst.OpCode == c.JIF || inst.OpCode == c.JMP {
 			var dest_addr = (uint(inst.Arg1) + base_size)
 			ValidateDestAddr(dest_addr)
 			if dest_addr == last_addr {
 				dest_addr = tail_addr
 			}
-			*base = append(*base, common.Instruction {
+			*base = append(*base, c.Instruction {
 				OpCode: inst.OpCode,
 				Arg0:   inst.Arg0,
-				Arg1:   common.Long(dest_addr),
+				Arg1:   c.Long(dest_addr),
 			})
 		} else {
 			*base = append(*base, inst)
@@ -106,69 +106,66 @@ func (ctx Context) MakeBranch() Context {
 		LocalScope: MakeBranchScope(ctx.LocalScope),
 	}
 }
-func (ctx Context) AppendDataRef(v common.DataValue) uint {
+func (ctx Context) AppendDataRef(v c.DataValue) uint {
 	var refs = ctx.GlobalRefs
 	var index = uint(len(*refs))
 	*refs = append(*refs, RefData { v })
 	return index
 }
-func (ctx Context) AppendFunRef(ref checker.RefFunction) uint {
+func (ctx Context) AppendFunRef(ref ch.RefFunction) uint {
 	var refs = ctx.GlobalRefs
 	var index = uint(len(*refs))
-	*refs = append(*refs, RefFun(ref))
+	*refs = append(*refs, RefFun(ref.AbsRef))
 	return index
 }
-func (ctx Context) AppendConstRef(ref checker.RefConstant) uint {
+func (ctx Context) AppendConstRef(ref ch.RefConstant) uint {
 	var refs = ctx.GlobalRefs
 	var index = uint(len(*refs))
 	*refs = append(*refs, RefConst(ref))
 	return index
 }
-func (ctx Context) AppendClosureRef (
-	function    *common.Function,
-	inner_refs  []GlobalRef,
-) uint {
-	var refs = ctx.GlobalRefs
-	var index = uint(len(*refs))
-	*refs = append(*refs, RefClosure {
-		Function:   function,
-		GlobalRefs: inner_refs,
+func (ctx Context) AppendClosureRef(f *c.Function, refs []GlobalRef) uint {
+	var outer_refs = ctx.GlobalRefs
+	var index = uint(len(*outer_refs))
+	*outer_refs = append(*outer_refs, RefClosure {
+		Function:   f,
+		GlobalRefs: refs,
 	})
 	return index
 }
 
 type GlobalRef interface { GlobalRef() }
 func (impl RefData) GlobalRef() {}
-type RefData struct { common.DataValue }
+type RefData struct { c.DataValue }
 func (impl RefFun) GlobalRef() {}
-type RefFun  checker.RefFunction
+type RefFun ch.AbsRefFunction
 func (impl RefConst) GlobalRef() {}
-type RefConst  checker.RefConstant
+type RefConst ch.RefConstant
 func (impl RefClosure) GlobalRef() {}
 type RefClosure struct {
-	Function    *common.Function
+	Function    *c.Function
 	GlobalRefs  [] GlobalRef
 }
 
-type DataInteger  checker.IntLiteral
-func (d DataInteger) ToValue() common.Value {
+type DataInteger ch.IntLiteral
+func (d DataInteger) ToValue() c.Value {
 	return d.Value
 }
-type DataSmallInteger  checker.SmallIntLiteral
-func (d DataSmallInteger) ToValue() common.Value {
+type DataSmallInteger ch.SmallIntLiteral
+func (d DataSmallInteger) ToValue() c.Value {
 	return d.Value
 }
-type DataFloat  checker.FloatLiteral
-func (d DataFloat) ToValue() common.Value {
+type DataFloat ch.FloatLiteral
+func (d DataFloat) ToValue() c.Value {
 	return d.Value
 }
 type DataString struct { Value  [] rune }
-func (d DataString) ToValue() common.Value {
+func (d DataString) ToValue() c.Value {
 	return d.Value
 }
-type DataStringFormatter checker.StringFormatter
-func (d DataStringFormatter) ToValue() common.Value {
-	var f = func(args []common.Value) []rune {
+type DataStringFormatter ch.StringFormatter
+func (d DataStringFormatter) ToValue() c.Value {
+	var f = func(args []c.Value) []rune {
 		var buf = make([]rune, 0)
 		for i, seg := range d.Segments {
 			buf = append(buf, seg...)
@@ -179,7 +176,7 @@ func (d DataStringFormatter) ToValue() common.Value {
 		}
 		return buf
 	}
-	return common.NativeFunctionValue(common.AdaptNativeFunction(f))
+	return c.NativeFunctionValue(c.AdaptNativeFunction(f))
 }
 
 
@@ -245,51 +242,51 @@ func (scope *Scope) AddBinding(name string) uint {
 	return offset
 }
 
-func Compile(expr checker.Expr, ctx Context) Code {
+func Compile(expr ch.Expr, ctx Context) Code {
 	switch v := expr.Value.(type) {
-	case checker.UnitValue:
-		var inst_nil = common.Instruction { OpCode: common.NIL }
+	case ch.UnitValue:
+		var inst_nil = c.Instruction { OpCode: c.NIL }
 		return CodeFrom(inst_nil, expr.Info)
-	case checker.IntLiteral:
+	case ch.IntLiteral:
 		var index = ctx.AppendDataRef(DataInteger(v))
 		return CodeFrom(InstGlobalRef(index), expr.Info)
-	case checker.SmallIntLiteral:
+	case ch.SmallIntLiteral:
 		var index = ctx.AppendDataRef(DataSmallInteger(v))
 		return CodeFrom(InstGlobalRef(index), expr.Info)
-	case checker.FloatLiteral:
+	case ch.FloatLiteral:
 		var index = ctx.AppendDataRef(DataFloat(v))
 		return CodeFrom(InstGlobalRef(index), expr.Info)
-	case checker.StringLiteral:
+	case ch.StringLiteral:
 		var index = ctx.AppendDataRef(DataString { v.Value })
 		return CodeFrom(InstGlobalRef(index), expr.Info)
-	case checker.StringFormatter:
+	case ch.StringFormatter:
 		var index = ctx.AppendDataRef(DataStringFormatter(v))
 		return CodeFrom(InstGlobalRef(index), expr.Info)
-	case checker.RefFunction:
+	case ch.RefFunction:
 		var index = ctx.AppendFunRef(v)
 		return CodeFrom(InstGlobalRef(index), expr.Info)
-	case checker.RefConstant:
+	case ch.RefConstant:
 		var index = ctx.AppendConstRef(v)
 		return CodeFrom(InstGlobalRef(index), expr.Info)
-	case checker.RefLocal:
+	case ch.RefLocal:
 		var offset, exists = ctx.LocalScope.BindingMap[v.Name]
 		if !exists { panic("binding " + v.Name + " does not exist") }
 		ctx.LocalScope.Bindings[offset].Used = true
 		return CodeFrom(InstLocalRef(offset), expr.Info)
-	case checker.Array:
+	case ch.Array:
 		var buf = MakeCodeBuffer()
 		var inst_array = InstArray(uint(len(v.Items)))
 		buf.Write(CodeFrom(inst_array, expr.Info))
 		for _, item := range v.Items {
 			var item_code = Compile(item, ctx)
 			buf.Write(item_code)
-			var inst_append = common.Instruction {
-				OpCode: common.APPEND,
+			var inst_append = c.Instruction {
+				OpCode: c.APPEND,
 			}
 			buf.Write(CodeFrom(inst_append, item.Info))
 		}
 		return buf.Collect()
-	case checker.Product:
+	case ch.Product:
 		var buf = MakeCodeBuffer()
 		for _, element := range v.Values {
 			var element_code = Compile(element, ctx)
@@ -298,14 +295,14 @@ func Compile(expr checker.Expr, ctx Context) Code {
 		var inst_prod = InstProduct(uint(len(v.Values)))
 		buf.Write(CodeFrom(inst_prod, expr.Info))
 		return buf.Collect()
-	case checker.Get:
+	case ch.Get:
 		var buf = MakeCodeBuffer()
 		var base_code = Compile(v.Product, ctx)
 		buf.Write(base_code)
 		var inst_get = InstGet(v.Index)
 		buf.Write(CodeFrom(inst_get, expr.Info))
 		return buf.Collect()
-	case checker.Set:
+	case ch.Set:
 		var buf = MakeCodeBuffer()
 		var base_code = Compile(v.Product, ctx)
 		buf.Write(base_code)
@@ -314,15 +311,15 @@ func Compile(expr checker.Expr, ctx Context) Code {
 		var inst_set = InstSet(v.Index)
 		buf.Write(CodeFrom(inst_set, expr.Info))
 		return buf.Collect()
-	case checker.Sum:
+	case ch.Sum:
 		var buf = MakeCodeBuffer()
 		var concrete = Compile(v.Value, ctx)
 		buf.Write(concrete)
 		var inst_sum = InstSum(v.Index)
 		buf.Write(CodeFrom(inst_sum, expr.Info))
 		return buf.Collect()
-	case checker.Match:
-		var raw_branches = make([]checker.Branch, len(v.Branches))
+	case ch.Match:
+		var raw_branches = make([]ch.Branch, len(v.Branches))
 		var i = 0
 		var default_occurred = false
 		for _, b := range v.Branches {
@@ -340,19 +337,19 @@ func Compile(expr checker.Expr, ctx Context) Code {
 			var branch_buf = MakeCodeBuffer()
 			var branch_ctx = ctx.MakeBranch()
 			var branch_scope = branch_ctx.LocalScope
-			var pattern, ok = b.Pattern.(checker.Pattern)
+			var pattern, ok = b.Pattern.(ch.Pattern)
 			if ok {
 				switch p := pattern.Concrete.(type) {
-				case checker.TrivialPattern:
+				case ch.TrivialPattern:
 					var offset = branch_scope.AddBinding(p.ValueName)
 					var bind_inst = InstAddBinding(offset)
 					branch_buf.Write(CodeFrom(bind_inst, b.Value.Info))
-				case checker.TuplePattern:
+				case ch.TuplePattern:
 					BindPatternItems (
 						pattern,       p.Items,
 						branch_scope,  branch_buf,
 					)
-				case checker.BundlePattern:
+				case ch.BundlePattern:
 					BindPatternItems (
 						pattern,       p.Items,
 						branch_scope,  branch_buf,
@@ -376,7 +373,7 @@ func Compile(expr checker.Expr, ctx Context) Code {
 		buf.Write(arg_code)
 		for i := uint(0); i < branch_count; i += 1 {
 			var index = raw_branches[i].Index
-			var jump common.Instruction
+			var jump c.Instruction
 			if raw_branches[i].IsDefault {
 				jump = InstJump(addrs[i], true)
 			} else {
@@ -390,22 +387,22 @@ func Compile(expr checker.Expr, ctx Context) Code {
 			var info = raw_branches[i].Value.Info
 			buf.WriteAbsolute(CodeFrom(goto_tail, info))
 		}
-		var nop = common.Instruction { OpCode: common.NOP }
+		var nop = c.Instruction { OpCode: c.NOP }
 		buf.Write(CodeFrom(nop, v.Argument.Info))
 		return buf.Collect()
-	case checker.Lambda:
+	case ch.Lambda:
 		return CompileClosure(v, expr.Info, false, "", ctx)
-	case checker.Block:
+	case ch.Block:
 		// TODO: collect info of all unused bindings
 		var buf = MakeCodeBuffer()
 		for _, b := range v.Bindings {
 			switch p := b.Pattern.Concrete.(type) {
-			case checker.TrivialPattern:
+			case ch.TrivialPattern:
 				var offset uint
 				var val_code Code
 				if b.Recursive {
 					offset = ctx.LocalScope.AddBinding(p.ValueName)
-					var lambda, ok = b.Value.Value.(checker.Lambda)
+					var lambda, ok = b.Value.Value.(ch.Lambda)
 					if !ok { panic("something went wrong") }
 					var info = b.Value.Info
 					var name = p.ValueName
@@ -417,14 +414,14 @@ func Compile(expr checker.Expr, ctx Context) Code {
 				var bind_inst = InstAddBinding(offset)
 				buf.Write(val_code)
 				buf.Write(CodeFrom(bind_inst, b.Value.Info))
-			case checker.TuplePattern:
+			case ch.TuplePattern:
 				var val_code = Compile(b.Value, ctx)
 				buf.Write(val_code)
 				BindPatternItems (
 					b.Pattern,       p.Items,
 					ctx.LocalScope,  buf,
 				)
-			case checker.BundlePattern:
+			case ch.BundlePattern:
 				var val_code = Compile(b.Value, ctx)
 				buf.Write(val_code)
 				BindPatternItems (
@@ -438,14 +435,14 @@ func Compile(expr checker.Expr, ctx Context) Code {
 		var ret_code = Compile(v.Returned, ctx)
 		buf.Write(ret_code)
 		return buf.Collect()
-	case checker.Call:
+	case ch.Call:
 		var buf = MakeCodeBuffer()
 		var arg_code = Compile(v.Argument, ctx)
 		var f_code = Compile(v.Function, ctx)
 		buf.Write(arg_code)
 		buf.Write(f_code)
-		var inst_call = common.Instruction {
-			OpCode: common.CALL,
+		var inst_call = c.Instruction {
+			OpCode: c.CALL,
 		}
 		buf.Write(CodeFrom(inst_call, expr.Info))
 		return buf.Collect()
@@ -455,8 +452,8 @@ func Compile(expr checker.Expr, ctx Context) Code {
 }
 
 func CompileClosure (
-	lambda      checker.Lambda,
-	info        checker.ExprInfo,
+	lambda      ch.Lambda,
+	info        ch.ExprInfo,
 	recursive   bool,
 	rec_name    string,
 	ctx         Context,
@@ -467,13 +464,13 @@ func CompileClosure (
 	var inner_buf = MakeCodeBuffer()
 	var pattern = lambda.Input
 	switch p := pattern.Concrete.(type) {
-	case checker.TrivialPattern:
+	case ch.TrivialPattern:
 		var offset = inner_scope.AddBinding(p.ValueName)
 		var bind_inst = InstAddBinding(offset)
 		inner_buf.Write(CodeFrom(bind_inst, info))
-	case checker.TuplePattern:
+	case ch.TuplePattern:
 		BindPatternItems(pattern, p.Items, inner_scope, inner_buf)
-	case checker.BundlePattern:
+	case ch.BundlePattern:
 		BindPatternItems(pattern, p.Items, inner_scope, inner_buf)
 	default:
 		panic("impossible branch")
@@ -481,7 +478,7 @@ func CompileClosure (
 	var body_code = Compile(lambda.Output, inner_ctx)
 	inner_buf.Write(body_code)
 	var base_reserved_size = *(inner_scope.BindingPeek)
-	if base_reserved_size >= common.LocalSlotMaxSize {
+	if base_reserved_size >= c.LocalSlotMaxSize {
 		panic("maximum quantity of local bindings exceeded")
 	}
 	var outer_bindings_size = uint(len(ctx.LocalScope.Bindings))
@@ -510,14 +507,14 @@ func CompileClosure (
 			context_offset_map[rec_outer_offset] = base_context_size
 		}
 	}
-	if base_context_size >= common.ClosureMaxSize {
+	if base_context_size >= c.ClosureMaxSize {
 		panic("maximum closure size exceeded")
 	}
 	var raw_inner_code = inner_buf.Collect()
 	var inst_seq_len = len(raw_inner_code.InstSeq)
-	var final_inst_seq = make([] common.Instruction, inst_seq_len)
+	var final_inst_seq = make([] c.Instruction, inst_seq_len)
 	for i, inst := range raw_inner_code.InstSeq {
-		if inst.OpCode == common.LOAD {
+		if inst.OpCode == c.LOAD {
 			var offset = inst.GetOffset()
 			var new_offset uint
 			if offset < outer_bindings_size {
@@ -525,10 +522,10 @@ func CompileClosure (
 			} else {
 				new_offset = offset - outer_bindings_size + base_context_size
 			}
-			final_inst_seq[i] = common.Instruction {
-				OpCode: common.LOAD,
+			final_inst_seq[i] = c.Instruction {
+				OpCode: c.LOAD,
 				Arg0:   0,
-				Arg1:   common.Long(new_offset),
+				Arg1:   c.Long(new_offset),
 			}
 		} else {
 			final_inst_seq[i] = inst
@@ -538,14 +535,14 @@ func CompileClosure (
 		InstSeq:   final_inst_seq,
 		SourceMap: raw_inner_code.SourceMap,
 	}
-	var f = &common.Function {
+	var f = &c.Function {
 		IsNative: false,
 		Code:     final_inner_code.InstSeq,
-		BaseSize:    common.FrameBaseSize {
-			Context:  common.Short(base_context_size),
-			Reserved: common.Long(base_reserved_size),
+		BaseSize:    c.FrameBaseSize {
+			Context:  c.Short(base_context_size),
+			Reserved: c.Long(base_reserved_size),
 		},
-		Info:        common.FuncInfo {
+		Info:        c.FuncInfo {
 			Name:      "(closure)",
 			DeclPoint: info.ErrorPoint,
 			SourceMap: final_inner_code.SourceMap,
@@ -560,14 +557,14 @@ func CompileClosure (
 	}
 	var prod_inst = InstProduct(uint(len(context_outer_offsets)))
 	outer_buf.Write(CodeFrom(prod_inst, info))
-	var rec_flag common.Short
+	var rec_flag c.Short
 	if recursive {
 		rec_flag = 1
 	} else {
 		rec_flag = 0
 	}
-	var ctx_inst = common.Instruction {
-		OpCode: common.CTX,
+	var ctx_inst = c.Instruction {
+		OpCode: c.CTX,
 		Arg0:   rec_flag,
 		Arg1:   0,
 	}
@@ -576,47 +573,45 @@ func CompileClosure (
 }
 
 func CompileFunction (
-	body   checker.ExprLike,
+	body   ch.ExprLike,
 	name   string,
 	point  ErrorPoint,
-) (common.Function, []GlobalRef, *Error) {
+) (*c.Function, []GlobalRef, *Error) {
 	switch b := body.(type) {
-	case checker.ExprNative:
+	case ch.ExprNative:
 		var native_name = b.Name
 		var index, exists = lib.NativeFunctionIndex[native_name]
-		if !exists {
-			return common.Function{}, nil, &Error {
-				Point:    b.Point,
-				Concrete: E_NativeFunctionNotFound { native_name },
-			}
-		}
-		return common.Function {
+		if !exists { return nil, nil, &Error {
+			Point:    b.Point,
+			Concrete: E_NativeFunctionNotFound { native_name },
+		} }
+		return &c.Function {
 			IsNative:    true,
 			NativeIndex: index,
 			Code:        nil,
-			BaseSize:    common.FrameBaseSize {},
-			Info:        common.FuncInfo {
+			BaseSize:    c.FrameBaseSize {},
+			Info:        c.FuncInfo {
 				Name:      name,
 				DeclPoint: point,
 				SourceMap: nil,
 			},
 		}, nil, nil
-	case checker.ExprExpr:
-		var body_expr = checker.Expr(b)
-		var lambda = body_expr.Value.(checker.Lambda)
+	case ch.ExprExpr:
+		var body_expr = ch.Expr(b)
+		var lambda = body_expr.Value.(ch.Lambda)
 		var pattern = lambda.Input
 		var ctx = MakeContext()
 		var scope = ctx.LocalScope
 		var buf = MakeCodeBuffer()
 		var info = body_expr.Info
 		switch p := pattern.Concrete.(type) {
-		case checker.TrivialPattern:
+		case ch.TrivialPattern:
 			var offset = scope.AddBinding(p.ValueName)
 			var bind_inst = InstAddBinding(offset)
 			buf.Write(CodeFrom(bind_inst, info))
-		case checker.TuplePattern:
+		case ch.TuplePattern:
 			BindPatternItems(pattern, p.Items, scope, buf)
-		case checker.BundlePattern:
+		case ch.BundlePattern:
 			BindPatternItems(pattern, p.Items, scope, buf)
 		default:
 			panic("impossible branch")
@@ -625,18 +620,18 @@ func CompileFunction (
 		buf.Write(out_code)
 		var code = buf.Collect()
 		var binding_peek = *(scope.BindingPeek)
-		if binding_peek >= common.LocalSlotMaxSize {
+		if binding_peek >= c.LocalSlotMaxSize {
 			panic("maximum quantity of local bindings exceeded")
 		}
-		return common.Function {
+		return &c.Function {
 			IsNative:    false,
 			NativeIndex: -1,
 			Code:        code.InstSeq,
-			BaseSize:    common.FrameBaseSize {
+			BaseSize:    c.FrameBaseSize {
 				Context:  0,
-				Reserved: common.Long(binding_peek),
+				Reserved: c.Long(binding_peek),
 			},
-			Info:        common.FuncInfo {
+			Info:        c.FuncInfo {
 				Name:      name,
 				DeclPoint: point,
 				SourceMap: code.SourceMap,
@@ -648,48 +643,48 @@ func CompileFunction (
 }
 
 func CompileConstant (
-	body   checker.ExprLike,
+	body   ch.ExprLike,
 	name   string,
 	point  ErrorPoint,
-) (common.Function, []GlobalRef, *Error) {
+) (*c.Function, []GlobalRef, *Error) {
 	switch b := body.(type) {
-	case checker.ExprNative:
+	case ch.ExprNative:
 		var native_name = b.Name
 		var index, exists = lib.NativeConstantIndex[native_name]
 		if !exists {
-			return common.Function{}, nil, &Error {
+			return nil, nil, &Error {
 				Point:    b.Point,
 				Concrete: E_NativeConstantNotFound { native_name },
 			}
 		}
-		return common.Function {
+		return &c.Function {
 			IsNative:    true,
 			NativeIndex: index,
 			Code:        nil,
-			BaseSize:    common.FrameBaseSize {},
-			Info: common.FuncInfo{
+			BaseSize:    c.FrameBaseSize {},
+			Info: c.FuncInfo{
 				Name:      name,
 				DeclPoint: point,
 				SourceMap: nil,
 			},
 		}, nil, nil
-	case checker.ExprExpr:
-		var body_expr = checker.Expr(b)
+	case ch.ExprExpr:
+		var body_expr = ch.Expr(b)
 		var ctx = MakeContext()
 		var code = Compile(body_expr, ctx)
 		var binding_peek = *(ctx.LocalScope.BindingPeek)
-		if binding_peek >= common.LocalSlotMaxSize {
+		if binding_peek >= c.LocalSlotMaxSize {
 			panic("maximum quantity of local bindings exceeded")
 		}
-		return common.Function {
+		return &c.Function {
 			IsNative:    false,
 			NativeIndex: -1,
 			Code:        code.InstSeq,
-			BaseSize:    common.FrameBaseSize {
+			BaseSize:    c.FrameBaseSize {
 				Context:  0,
-				Reserved: common.Long(binding_peek),
+				Reserved: c.Long(binding_peek),
 			},
-			Info:        common.FuncInfo {
+			Info:        c.FuncInfo {
 				Name:      name,
 				DeclPoint: point,
 				SourceMap: code.SourceMap,
@@ -701,12 +696,12 @@ func CompileConstant (
 }
 
 func BindPatternItems (
-	pattern  checker.Pattern,
-	items    [] checker.PatternItem,
+	pattern  ch.Pattern,
+	items    [] ch.PatternItem,
 	scope    *Scope,
 	buf      CodeBuffer,
 ) {
-	var info = checker.ExprInfo {
+	var info = ch.ExprInfo {
 		ErrorPoint: pattern.Point,
 	}
 	for _, item := range items {
@@ -718,91 +713,91 @@ func BindPatternItems (
 	}
 }
 
-func InstGlobalRef(index uint) common.Instruction {
+func InstGlobalRef(index uint) c.Instruction {
 	ValidateGlobalIndex(index)
-	var a0, a1 = common.GlobalIndex(index)
-	return common.Instruction {
-		OpCode: common.GLOBAL,
+	var a0, a1 = c.GlobalIndex(index)
+	return c.Instruction {
+		OpCode: c.GLOBAL,
 		Arg0:   a0,
 		Arg1:   a1,
 	}
 }
 
-func InstLocalRef(offset uint) common.Instruction {
+func InstLocalRef(offset uint) c.Instruction {
 	ValidateLocalOffset(offset)
-	return common.Instruction {
-		OpCode: common.LOAD,
+	return c.Instruction {
+		OpCode: c.LOAD,
 		Arg0:   0,
-		Arg1:   common.Long(offset),
+		Arg1:   c.Long(offset),
 	}
 }
 
-func InstAddBinding(offset uint) common.Instruction {
+func InstAddBinding(offset uint) c.Instruction {
 	ValidateLocalOffset(offset)
-	return common.Instruction {
-		OpCode: common.STORE,
+	return c.Instruction {
+		OpCode: c.STORE,
 		Arg0:   0,
-		Arg1:   common.Long(offset),
+		Arg1:   c.Long(offset),
 	}
 }
 
-func InstGet(index uint) common.Instruction {
+func InstGet(index uint) c.Instruction {
 	ValidateProductIndex(index)
-	return common.Instruction {
-		OpCode: common.GET,
-		Arg0:   common.Short(index),
+	return c.Instruction {
+		OpCode: c.GET,
+		Arg0:   c.Short(index),
 		Arg1:   0,
 	}
 }
 
-func InstSet(index uint) common.Instruction {
+func InstSet(index uint) c.Instruction {
 	ValidateProductIndex(index)
-	return common.Instruction {
-		OpCode: common.SET,
-		Arg0:   common.Short(index),
+	return c.Instruction {
+		OpCode: c.SET,
+		Arg0:   c.Short(index),
 		Arg1:   0,
 	}
 }
 
-func InstProduct(size uint) common.Instruction {
+func InstProduct(size uint) c.Instruction {
 	ValidateProductSize(size)
-	return common.Instruction {
-		OpCode: common.PROD,
-		Arg0:   common.Short(size),
+	return c.Instruction {
+		OpCode: c.PROD,
+		Arg0:   c.Short(size),
 		Arg1:   0,
 	}
 }
 
-func InstArray(size uint) common.Instruction {
+func InstArray(size uint) c.Instruction {
 	ValidateArraySize(size)
-	var a0, a1 = common.ArraySize(size)
-	return common.Instruction {
-		OpCode: common.ARRAY,
+	var a0, a1 = c.ArraySize(size)
+	return c.Instruction {
+		OpCode: c.ARRAY,
 		Arg0:   a0,
 		Arg1:   a1,
 	}
 }
 
-func InstSum(index uint) common.Instruction {
+func InstSum(index uint) c.Instruction {
 	ValidateSumIndex(index)
-	return common.Instruction {
-		OpCode: common.SUM,
-		Arg0:   common.Short(index),
+	return c.Instruction {
+		OpCode: c.SUM,
+		Arg0:   c.Short(index),
 		Arg1:   0,
 	}
 }
 
-func InstJumpIf(index uint, dest uint) common.Instruction {
+func InstJumpIf(index uint, dest uint) c.Instruction {
 	ValidateSumIndex(index)
 	ValidateDestAddr(dest)
-	return common.Instruction {
-		OpCode: common.JIF,
-		Arg0:   common.Short(index),
-		Arg1:   common.Long(dest),
+	return c.Instruction {
+		OpCode: c.JIF,
+		Arg0:   c.Short(index),
+		Arg1:   c.Long(dest),
 	}
 }
 
-func InstJump(dest uint, narrow bool) common.Instruction {
+func InstJump(dest uint, narrow bool) c.Instruction {
 	ValidateDestAddr(dest)
 	var narrow_flag uint
 	if narrow {
@@ -810,51 +805,51 @@ func InstJump(dest uint, narrow bool) common.Instruction {
 	} else {
 		narrow_flag = 0
 	}
-	return common.Instruction {
-		OpCode: common.JMP,
-		Arg0:   common.Short(narrow_flag),
-		Arg1:   common.Long(dest),
+	return c.Instruction {
+		OpCode: c.JMP,
+		Arg0:   c.Short(narrow_flag),
+		Arg1:   c.Long(dest),
 	}
 }
 
 func ValidateGlobalIndex(index uint) {
-	if index >= common.GlobalSlotMaxSize {
+	if index >= c.GlobalSlotMaxSize {
 		panic("global value index exceeded maximum slot capacity")
 	}
 }
 
 func ValidateLocalOffset(offset uint) {
-	if offset >= common.LocalSlotMaxSize {
+	if offset >= c.LocalSlotMaxSize {
 		panic("local binding offset exceeded maximum slot capacity")
 	}
 }
 
 func ValidateDestAddr(addr uint) {
-	if addr >= common.FunCodeMaxLength {
+	if addr >= c.FunCodeMaxLength {
 		panic("destination address exceeded limitation")
 	}
 }
 
 func ValidateProductIndex(index uint) {
-	if index >= common.ProductMaxSize {
+	if index >= c.ProductMaxSize {
 		panic("value index exceeded maximum capacity of product type")
 	}
 }
 
 func ValidateProductSize(size uint) {
-	if size > common.ProductMaxSize {
+	if size > c.ProductMaxSize {
 		panic("given size exceeded maximum capacity of product type")
 	}
 }
 
 func ValidateSumIndex(index uint) {
-	if index >= common.SumMaxBranches {
+	if index >= c.SumMaxBranches {
 		panic("given index exceeded maximum branch limit of sum type")
 	}
 }
 
 func ValidateArraySize(size uint) {
-	if size > common.ArrayMaxSize {
+	if size > c.ArrayMaxSize {
 		panic("given size exceeded maximum capacity of array literal")
 	}
 }

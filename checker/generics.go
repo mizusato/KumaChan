@@ -27,10 +27,7 @@ func GenericFunctionCall (
 			Value: Call {
 				Function: Expr {
 					Type:  f_type,
-					Value: RefFunction {
-						Name:  name,
-						Index: index,
-					},
+					Value: MakeRefFunction(name, index, ctx),
 					Info:  f_info,
 				},
 				Argument: arg_typed,
@@ -68,10 +65,7 @@ func GenericFunctionCall (
 			Value: Call {
 				Function: Expr {
 					Type:  f_type,
-					Value: RefFunction {
-						Name:  name,
-						Index: index,
-					},
+					Value: MakeRefFunction(name, index, ctx),
 					Info:  f_info,
 				},
 				Argument: arg_typed,
@@ -105,10 +99,7 @@ func GenericFunctionAssignTo (
 		var f_type = FillTypeArgs(f_raw_type, type_args)
 		var f_expr = Expr {
 			Type:  f_type,
-			Value: RefFunction {
-				Name:  name,
-				Index: index,
-			},
+			Value: MakeRefFunction(name, index, ctx),
 			Info:  info,
 		}
 		return AssignTypedTo(expected, f_expr, ctx, true)
@@ -136,10 +127,7 @@ func GenericFunctionAssignTo (
 			}
 			return Expr {
 				Type:  f_type,
-				Value: RefFunction {
-					Name:  name,
-					Index: index,
-				},
+				Value: MakeRefFunction(name, index, ctx),
 				Info:  info,
 			}, nil
 		} else {
