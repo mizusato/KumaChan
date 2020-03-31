@@ -6,7 +6,8 @@ import "reflect"
 type MachineHandle interface {
 	Call(fv Value, arg Value) Value
 }
-var __MachineHandleType = reflect.TypeOf(MachineHandle(nil))
+var __t = MachineHandle(nil)
+var __MachineHandleType = reflect.TypeOf(&__t).Elem()
 
 type NativeFunction  func(arg Value, handle MachineHandle) Value
 
@@ -29,7 +30,7 @@ func AdaptNativeFunction(f interface{}) NativeFunction {
 			var net_arity = arity - 1
 			if net_arity == 1 {
 				return func(arg Value, handle MachineHandle) Value {
-					var rv_args = []reflect.Value{
+					var rv_args = []reflect.Value {
 						reflect.ValueOf(arg),
 						reflect.ValueOf(handle),
 					}

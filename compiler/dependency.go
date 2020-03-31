@@ -44,14 +44,17 @@ func CompileModule (
 	idx       Index,
 	data      *([] c.DataValue),
 	closures  *([] FuncNode),
-) *Error {
+) []*Error {
 	var _, exists = idx[mod.Name]
 	if exists {
 		return nil
 	}
+	var errs = make([] *Error, 0)
 	for _, imported := range mod.Imported {
 		var err = CompileModule(imported, idx, data, closures)
-		if err != nil { return err }
+		if err != nil {
+			errs = append(errs, err...)
+		}
 	}
 	var functions = make(map[string] ([] FuncNode))
 	var constants = make(map[string] FuncNode)
@@ -59,7 +62,9 @@ func CompileModule (
 	for name, instances := range mod.Functions {
 		for _, item := range instances {
 			var f_raw, refs, err = CompileFunction(item.Body, name, item.Point)
-			if err != nil { return err }
+			if err != nil {
+				errs = append(errs, err...)
+			}
 			var f = FuncNodeFrom(f_raw, refs, idx, data, closures)
 			var existing, exists = functions[name]
 			if exists {
@@ -70,14 +75,18 @@ func CompileModule (
 		}
 	}
 	for name, item := range mod.Constants {
-		var f, refs, err = CompileFunction(item.Value, name, item.Point)
-		if err != nil { return err }
+		var f, refs, err = CompileConstant(item.Value, name, item.Point)
+		if err != nil {
+			errs = append(errs, err...)
+		}
 		constants[name] = FuncNodeFrom(f, refs, idx, data, closures)
 	}
 	for _, item := range mod.Effects {
 		var value = ch.ExprExpr(item.Value)
-		var f, refs, err = CompileFunction(value, "(do)", item.Point)
-		if err != nil { return err }
+		var f, refs, err = CompileConstant(value, "(do)", item.Point)
+		if err != nil {
+			errs = append(errs, err...)
+		}
 		effects = append(effects, FuncNodeFrom(f, refs, idx, data, closures))
 	}
 	idx[mod.Name] = &CompiledModule {
@@ -282,7 +291,7 @@ func CreateProgram (
 			}
 		}
 		if len(rest_names) == 0 { panic("something went wrong") }
-		return c.Program{}, &Error{
+		return c.Program{}, &Error {
 			Point:    point,
 			Concrete: E_CircularConstantDependency { rest_names },
 		}

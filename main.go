@@ -96,19 +96,26 @@ func debug_checker(mod *loader.Module, idx loader.Index) (*checker.CheckedModule
 }
 
 func debug_compiler(entry *checker.CheckedModule) {
-    // TODO: move to new function compiler.CompileEntry()
     var data = make([] common.DataValue, 0)
     var closures = make([] compiler.FuncNode, 0)
     var index = make(compiler.Index)
-    var err1 = compiler.CompileModule(entry, index, &data, &closures)
-    if err1 != nil {
-        panic(err1)
+    var errs = compiler.CompileModule(entry, index, &data, &closures)
+    if errs != nil {
+        var messages = make([]ErrorMessage, len(errs))
+        for i, e := range errs {
+            messages[i] = e.Message()
+        }
+        var msg = MsgFailedToCompile(errs[0], messages)
+        fmt.Fprintf(os.Stderr, "%s\n", msg.String())
+        os.Exit(125)
     }
-    var program, err2 = compiler.CreateProgram(index, data, closures)
-    if err2 != nil {
-        panic(err2)
+    var _, err = compiler.CreateProgram(index, data, closures)
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+        os.Exit(124)
     }
-    fmt.Println(program.String())
+    fmt.Println("Bytecode generated, no errors occurred.")
+    // fmt.Println(program.String())
 }
 
 func main () {

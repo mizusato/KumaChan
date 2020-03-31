@@ -184,36 +184,46 @@ type Scope struct {
 	Bindings     [] Binding
 	BindingMap   map[string] uint
 	BindingPeek  *uint
+	Children     [] *Scope
+	NextId       *uint
 }
 type Binding struct {
-	Name  string
-	Used  bool
+	Name   string
+	Used   bool
+	Point  ErrorPoint
+	Id     uint
 }
 func MakeScope() *Scope {
 	return &Scope {
 		Bindings:    make([] Binding, 0),
 		BindingMap:  make(map[string] uint),
 		BindingPeek: new(uint),
+		Children:    make([] *Scope, 0),
+		NextId:      new(uint),
 	}
 }
 func MakeClosureScope(outer *Scope) *Scope {
 	var bindings = make([] Binding, 0)
 	for i, e := range outer.Bindings {
 		bindings[i] = Binding {
-			Name: e.Name,
-			Used: false,
+			Name:  e.Name,
+			Used:  false,
+			Point: e.Point,
 		}
 	}
 	var binding_map = make(map[string] uint)
 	for k, v := range outer.BindingMap {
 		binding_map[k] = v
 	}
-	var peek = uint(0)
-	return &Scope {
+	var child = &Scope {
 		Bindings:    bindings,
 		BindingMap:  binding_map,
-		BindingPeek: &peek,
+		BindingPeek: new(uint),
+		Children:    make([] *Scope, 0),
+		NextId:      outer.NextId,
 	}
+	outer.Children = append(outer.Children, child)
+	return child
 }
 func MakeBranchScope(outer *Scope) *Scope {
 	var bindings = make([] Binding, 0)
@@ -222,24 +232,74 @@ func MakeBranchScope(outer *Scope) *Scope {
 	for k, v := range outer.BindingMap {
 		binding_map[k] = v
 	}
-	return &Scope {
+	var child = &Scope {
 		Bindings:    bindings,
 		BindingMap:  binding_map,
 		BindingPeek: outer.BindingPeek,
+		Children:    make([] *Scope, 0),
+		NextId:      outer.NextId,
 	}
+	outer.Children = append(outer.Children, child)
+	return child
 }
-func (scope *Scope) AddBinding(name string) uint {
+func (scope *Scope) AddBinding(name string, point ErrorPoint) uint {
 	var _, exists = scope.BindingMap[name]
-	if exists { panic("duplicate binding") }
+	if exists {
+		// shadowing: do nothing
+	}
 	var list = &(scope.Bindings)
 	var offset = uint(len(*list))
 	*list = append(*list, Binding {
-		Name: name,
-		Used: false,
+		Name:  name,
+		Used:  false,
+		Point: point,
+		Id:    *(scope.NextId),
 	})
+	*(scope.NextId) += 1
 	scope.BindingMap[name] = offset
 	*(scope.BindingPeek) += 1
 	return offset
+}
+func (scope *Scope) CollectUnused() ([] Binding) {
+	var all = make(map[uint] *Binding)
+	var collect func(*Scope)
+	collect = func(scope *Scope) {
+		for _, b := range scope.Bindings {
+			var existing, exists = all[b.Id]
+			if exists {
+				existing.Used = (existing.Used || b.Used)
+			} else {
+				var b_copied = b  // make copy more clearly
+				all[b.Id] = &b_copied
+			}
+		}
+		for _, child := range scope.Children {
+			collect(child)
+		}
+	}
+	collect(scope)
+	var unused = make([] Binding, 0)
+	for _, b := range all {
+		if !(b.Used) {
+			unused = append(unused, *b)
+		}
+	}
+	return unused
+}
+func (scope *Scope) CollectUnusedAsErrors() ([] *Error) {
+	var unused = scope.CollectUnused()
+	if len(unused) == 0 {
+		return nil
+	} else {
+		var errs = make([] *Error, 0)
+		for _, b := range unused {
+			errs = append(errs, &Error {
+				Point:    b.Point,
+				Concrete: E_UnusedBinding { b.Name },
+			})
+		}
+		return errs
+	}
 }
 
 func Compile(expr ch.Expr, ctx Context) Code {
@@ -341,7 +401,9 @@ func Compile(expr ch.Expr, ctx Context) Code {
 			if ok {
 				switch p := pattern.Concrete.(type) {
 				case ch.TrivialPattern:
-					var offset = branch_scope.AddBinding(p.ValueName)
+					var offset = branch_scope.AddBinding (
+						p.ValueName, pattern.Point,
+					)
 					var bind_inst = InstAddBinding(offset)
 					branch_buf.Write(CodeFrom(bind_inst, b.Value.Info))
 				case ch.TuplePattern:
@@ -393,7 +455,6 @@ func Compile(expr ch.Expr, ctx Context) Code {
 	case ch.Lambda:
 		return CompileClosure(v, expr.Info, false, "", ctx)
 	case ch.Block:
-		// TODO: collect info of all unused bindings
 		var buf = MakeCodeBuffer()
 		for _, b := range v.Bindings {
 			switch p := b.Pattern.Concrete.(type) {
@@ -401,7 +462,7 @@ func Compile(expr ch.Expr, ctx Context) Code {
 				var offset uint
 				var val_code Code
 				if b.Recursive {
-					offset = ctx.LocalScope.AddBinding(p.ValueName)
+					offset = ctx.LocalScope.AddBinding(p.ValueName, p.Point)
 					var lambda, ok = b.Value.Value.(ch.Lambda)
 					if !ok { panic("something went wrong") }
 					var info = b.Value.Info
@@ -409,7 +470,7 @@ func Compile(expr ch.Expr, ctx Context) Code {
 					val_code = CompileClosure(lambda, info, true, name, ctx)
 				} else {
 					val_code = Compile(b.Value, ctx)
-					offset = ctx.LocalScope.AddBinding(p.ValueName)
+					offset = ctx.LocalScope.AddBinding(p.ValueName, p.Point)
 				}
 				var bind_inst = InstAddBinding(offset)
 				buf.Write(val_code)
@@ -458,14 +519,13 @@ func CompileClosure (
 	rec_name    string,
 	ctx         Context,
 ) Code {
-	// TODO: collect info of all unused parameters
 	var inner_ctx = ctx.MakeClosure()
 	var inner_scope = inner_ctx.LocalScope
 	var inner_buf = MakeCodeBuffer()
 	var pattern = lambda.Input
 	switch p := pattern.Concrete.(type) {
 	case ch.TrivialPattern:
-		var offset = inner_scope.AddBinding(p.ValueName)
+		var offset = inner_scope.AddBinding(p.ValueName, p.Point)
 		var bind_inst = InstAddBinding(offset)
 		inner_buf.Write(CodeFrom(bind_inst, info))
 	case ch.TuplePattern:
@@ -576,15 +636,18 @@ func CompileFunction (
 	body   ch.ExprLike,
 	name   string,
 	point  ErrorPoint,
-) (*c.Function, []GlobalRef, *Error) {
+) (*c.Function, []GlobalRef, []*Error) {
 	switch b := body.(type) {
 	case ch.ExprNative:
 		var native_name = b.Name
 		var index, exists = lib.NativeFunctionIndex[native_name]
-		if !exists { return nil, nil, &Error {
-			Point:    b.Point,
-			Concrete: E_NativeFunctionNotFound { native_name },
-		} }
+		var errs []*Error = nil
+		if !exists {
+			errs = []*Error { &Error {
+				Point:    b.Point,
+				Concrete: E_NativeFunctionNotFound { native_name },
+			} }
+		}
 		return &c.Function {
 			IsNative:    true,
 			NativeIndex: index,
@@ -595,7 +658,7 @@ func CompileFunction (
 				DeclPoint: point,
 				SourceMap: nil,
 			},
-		}, nil, nil
+		}, make([]GlobalRef, 0), errs
 	case ch.ExprExpr:
 		var body_expr = ch.Expr(b)
 		var lambda = body_expr.Value.(ch.Lambda)
@@ -606,7 +669,7 @@ func CompileFunction (
 		var info = body_expr.Info
 		switch p := pattern.Concrete.(type) {
 		case ch.TrivialPattern:
-			var offset = scope.AddBinding(p.ValueName)
+			var offset = scope.AddBinding(p.ValueName, p.Point)
 			var bind_inst = InstAddBinding(offset)
 			buf.Write(CodeFrom(bind_inst, info))
 		case ch.TuplePattern:
@@ -617,6 +680,7 @@ func CompileFunction (
 			panic("impossible branch")
 		}
 		var out_code = Compile(lambda.Output, ctx)
+		var errs = ctx.LocalScope.CollectUnusedAsErrors()
 		buf.Write(out_code)
 		var code = buf.Collect()
 		var binding_peek = *(scope.BindingPeek)
@@ -636,7 +700,7 @@ func CompileFunction (
 				DeclPoint: point,
 				SourceMap: code.SourceMap,
 			},
-		}, *(ctx.GlobalRefs), nil
+		}, *(ctx.GlobalRefs), errs
 	default:
 		panic("impossible branch")
 	}
@@ -646,16 +710,17 @@ func CompileConstant (
 	body   ch.ExprLike,
 	name   string,
 	point  ErrorPoint,
-) (*c.Function, []GlobalRef, *Error) {
+) (*c.Function, []GlobalRef, []*Error) {
 	switch b := body.(type) {
 	case ch.ExprNative:
 		var native_name = b.Name
 		var index, exists = lib.NativeConstantIndex[native_name]
+		var errs []*Error = nil
 		if !exists {
-			return nil, nil, &Error {
+			errs = []*Error { &Error {
 				Point:    b.Point,
 				Concrete: E_NativeConstantNotFound { native_name },
-			}
+			} }
 		}
 		return &c.Function {
 			IsNative:    true,
@@ -667,11 +732,12 @@ func CompileConstant (
 				DeclPoint: point,
 				SourceMap: nil,
 			},
-		}, nil, nil
+		}, make([] GlobalRef, 0), errs
 	case ch.ExprExpr:
 		var body_expr = ch.Expr(b)
 		var ctx = MakeContext()
 		var code = Compile(body_expr, ctx)
+		var errs = ctx.LocalScope.CollectUnusedAsErrors()
 		var binding_peek = *(ctx.LocalScope.BindingPeek)
 		if binding_peek >= c.LocalSlotMaxSize {
 			panic("maximum quantity of local bindings exceeded")
@@ -689,7 +755,7 @@ func CompileConstant (
 				DeclPoint: point,
 				SourceMap: code.SourceMap,
 			},
-		}, *(ctx.GlobalRefs), nil
+		}, *(ctx.GlobalRefs), errs
 	default:
 		panic("impossible branch")
 	}
@@ -706,7 +772,7 @@ func BindPatternItems (
 	}
 	for _, item := range items {
 		var inst_get = InstGet(item.Index)
-		var offset = scope.AddBinding(item.Name)
+		var offset = scope.AddBinding(item.Name, item.Point)
 		var inst_bind = InstAddBinding(offset)
 		buf.Write(CodeFrom(inst_get, info))
 		buf.Write(CodeFrom(inst_bind, info))
