@@ -35,10 +35,10 @@ func (err *Error) Desc() ErrorMessage {
 	switch e := err.Concrete.(type) {
 	case E_NativeFunctionNotFound:
 		desc.WriteText(TS_ERROR, "No such native function:")
-		desc.WriteEndText(TS_BOLD, e.Name)
+		desc.WriteEndText(TS_INLINE, e.Name)
 	case E_NativeConstantNotFound:
 		desc.WriteText(TS_ERROR, "No such native constant:")
-		desc.WriteEndText(TS_BOLD, e.Name)
+		desc.WriteEndText(TS_INLINE, e.Name)
 	case E_CircularConstantDependency:
 		desc.WriteText(TS_ERROR,
 			"Circular dependency detected within constants:")
@@ -51,7 +51,7 @@ func (err *Error) Desc() ErrorMessage {
 		}
 	case E_UnusedBinding:
 		desc.WriteText(TS_ERROR, "Unused binding:")
-		desc.WriteText(TS_INLINE_CODE, e.Name)
+		desc.WriteEndText(TS_INLINE_CODE, e.Name)
 	}
 	return desc
 }

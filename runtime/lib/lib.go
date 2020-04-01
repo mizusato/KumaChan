@@ -15,7 +15,7 @@ var NativeFunctions      [] NativeFunction
 var NativeConstantMap    map[string] Value
 var NativeConstantIndex  map[string] int
 var NativeConstants      [] Value
-var _ = func() interface{} {
+var _ = (func() interface{} {
 	NativeFunctionMap = make(map[string] NativeFunction)
 	for _, category := range NativeFunctionMaps {
 		for name, f := range category {
@@ -50,4 +50,4 @@ var _ = func() interface{} {
 	}
 	// ---------------
 	return nil
-} ()
+}) ()

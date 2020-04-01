@@ -1,5 +1,7 @@
 package common
 
+import "fmt"
+
 
 type Short = uint8
 type Long = uint16
@@ -71,4 +73,50 @@ func (inst Instruction) GetShortIndexOrSize() uint {
 
 func (inst Instruction) GetRawShortIndexOrSize() Short {
 	return inst.Arg0
+}
+
+func (inst Instruction) String() string {
+	switch inst.OpCode {
+	case NOP:
+		return "NOP"
+	case NIL:
+		return "NIL"
+	case GLOBAL:
+		return fmt.Sprintf("GLOBAL %d", inst.GetGlobalIndex())
+	case LOAD:
+		return fmt.Sprintf("LOAD %d", inst.GetOffset())
+	case STORE:
+		return fmt.Sprintf("STORE %d", inst.GetOffset())
+	case SUM:
+		return fmt.Sprintf("SUM %d", inst.GetShortIndexOrSize())
+	case JIF:
+		return fmt.Sprintf("JIF %d %d",
+			inst.GetShortIndexOrSize(), inst.GetDestAddr())
+	case JMP:
+		if inst.Arg0 != 0 {
+			return fmt.Sprintf("JMP NARROW %d", inst.GetDestAddr())
+		} else {
+			return fmt.Sprintf("JMP %d", inst.GetDestAddr())
+		}
+	case PROD:
+		return fmt.Sprintf("PROD %d", inst.GetShortIndexOrSize())
+	case GET:
+		return fmt.Sprintf("GET %d", inst.GetShortIndexOrSize())
+	case SET:
+		return fmt.Sprintf("SET %d", inst.GetShortIndexOrSize())
+	case CTX:
+		if inst.Arg0 != 0 {
+			return "CTX REC"
+		} else {
+			return "CTX"
+		}
+	case CALL:
+		return "CALL"
+	case ARRAY:
+		return fmt.Sprintf("ARRAY %d", inst.GetArraySize())
+	case APPEND:
+		return "APPEND"
+	default:
+		panic("unknown instruction kind")
+	}
 }

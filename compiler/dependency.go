@@ -61,7 +61,9 @@ func CompileModule (
 	var effects = make([] FuncNode, 0)
 	for name, instances := range mod.Functions {
 		for _, item := range instances {
-			var f_raw, refs, err = CompileFunction(item.Body, name, item.Point)
+			var f_raw, refs, err = CompileFunction (
+				item.Body, mod.Name, name, item.Point,
+			)
 			if err != nil {
 				errs = append(errs, err...)
 			}
@@ -75,7 +77,9 @@ func CompileModule (
 		}
 	}
 	for name, item := range mod.Constants {
-		var f, refs, err = CompileConstant(item.Value, name, item.Point)
+		var f, refs, err = CompileConstant (
+			item.Value, mod.Name, name, item.Point,
+		)
 		if err != nil {
 			errs = append(errs, err...)
 		}
@@ -83,7 +87,7 @@ func CompileModule (
 	}
 	for _, item := range mod.Effects {
 		var value = ch.ExprExpr(item.Value)
-		var f, refs, err = CompileConstant(value, "(do)", item.Point)
+		var f, refs, err = CompileConstant(value, mod.Name, "(do)", item.Point)
 		if err != nil {
 			errs = append(errs, err...)
 		}
@@ -94,7 +98,11 @@ func CompileModule (
 		Constants: constants,
 		Effects:   effects,
 	}
-	return nil
+	if len(errs) != 0 {
+		return errs
+	} else {
+		return nil
+	}
 }
 
 func FuncNodeFrom (

@@ -1,9 +1,12 @@
 package common
 
 import (
+	"fmt"
+	"strings"
 	. "kumachan/error"
 	"kumachan/transformer/node"
 )
+
 
 type Function struct {
 	IsNative     bool
@@ -19,6 +22,7 @@ type FrameBaseSize struct {
 }
 
 type FuncInfo struct {
+	Module     string
 	Name       string
 	DeclPoint  ErrorPoint
 	SourceMap  [] *node.Node
@@ -32,5 +36,36 @@ func (f *Function) ToValue(native_registry func(int)Value) Value {
 			Underlying:    f,
 			ContextValues: make([]Value, 0, 0),
 		}
+	}
+}
+
+func (f *Function) String() string {
+	var buf strings.Builder
+	fmt.Fprintf(&buf, "proc %d %d:", f.BaseSize.Context, f.BaseSize.Reserved)
+	fmt.Fprintf(&buf, "   ; %s [%s]", f.Info.Name, f.Info.Module)
+	var point = f.Info.DeclPoint.Node.Point
+	var file = f.Info.DeclPoint.AST.Name
+	fmt.Fprintf(&buf, " at (%d, %d) in %s", point.Row, point.Col, file)
+	buf.WriteRune('\n')
+	if f.IsNative {
+		fmt.Fprintf(&buf, "    NATIVE %d", f.NativeIndex)
+		return buf.String()
+	} else {
+		var prev_node *node.Node
+		for i, inst := range f.Code {
+			var n *node.Node
+			if i < len(f.Info.SourceMap) {
+				n = f.Info.SourceMap[i]
+			}
+			fmt.Fprintf(&buf, "    %s", inst.String())
+			if n != nil && n != prev_node {
+				fmt.Fprintf(&buf, "   ; (%d, %d)", n.Point.Row, n.Point.Col)
+				prev_node = n
+			}
+			if i != len(f.Code)-1 {
+				buf.WriteRune('\n')
+			}
+		}
+		return buf.String()
 	}
 }

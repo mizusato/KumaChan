@@ -369,6 +369,9 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 	var expr_ctx = CreateExprContext(mod_info, make([]string, 0))
 	var const_map = make(map[string] CheckedConstant)
 	for sym, constant := range constants {
+		if sym.ModuleName != mod_name {
+			continue
+		}
 		var name = sym.SymbolName
 		switch val := constant.Value.(type) {
 		case node.Expr:
@@ -413,7 +416,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 				errors = append(errors, err2)
 				continue
 			}
-			do_effects = append(do_effects, CheckedEffect{
+			do_effects = append(do_effects, CheckedEffect {
 				Point: ErrorPoint { AST: mod.AST, Node: do.Node },
 				Value: expr,
 			})

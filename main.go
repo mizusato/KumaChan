@@ -105,17 +105,18 @@ func debug_compiler(entry *checker.CheckedModule) {
         for i, e := range errs {
             messages[i] = e.Message()
         }
-        var msg = MsgFailedToCompile(errs[0], messages)
+        var msg = MsgFailedToCompile(errs[0].Concrete, messages)
         fmt.Fprintf(os.Stderr, "%s\n", msg.String())
         os.Exit(125)
     }
-    var _, err = compiler.CreateProgram(index, data, closures)
+    var program, err = compiler.CreateProgram(index, data, closures)
     if err != nil {
         fmt.Fprintf(os.Stderr, "%s\n", err.Error())
         os.Exit(124)
     }
     fmt.Println("Bytecode generated, no errors occurred.")
-    // fmt.Println(program.String())
+    fmt.Print("\n")
+    fmt.Println(program.String())
 }
 
 func main () {

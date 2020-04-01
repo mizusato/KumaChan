@@ -1,9 +1,13 @@
 package compiler
 
 import (
-	. "kumachan/error"
+	"fmt"
+	"reflect"
+	"strings"
+	"encoding/base64"
 	"kumachan/runtime/lib"
 	"kumachan/transformer/node"
+	. "kumachan/error"
 	c "kumachan/runtime/common"
 	ch "kumachan/checker"
 )
@@ -151,17 +155,30 @@ type DataInteger ch.IntLiteral
 func (d DataInteger) ToValue() c.Value {
 	return d.Value
 }
+func (d DataInteger) String() string {
+	return fmt.Sprintf("BIG %s", d.Value.String())
+}
 type DataSmallInteger ch.SmallIntLiteral
 func (d DataSmallInteger) ToValue() c.Value {
 	return d.Value
+}
+func (d DataSmallInteger) String() string {
+	return fmt.Sprintf("SMALL %s %v", reflect.TypeOf(d.Value).String(), d.Value)
 }
 type DataFloat ch.FloatLiteral
 func (d DataFloat) ToValue() c.Value {
 	return d.Value
 }
+func (d DataFloat) String() string {
+	return fmt.Sprintf("FLOAT %f", d.Value)
+}
 type DataString struct { Value  [] rune }
 func (d DataString) ToValue() c.Value {
 	return d.Value
+}
+func (d DataString) String() string {
+	var b64 = RunesToBase64String(d.Value)
+	return fmt.Sprintf("STRING %s", b64)
 }
 type DataStringFormatter ch.StringFormatter
 func (d DataStringFormatter) ToValue() c.Value {
@@ -178,7 +195,28 @@ func (d DataStringFormatter) ToValue() c.Value {
 	}
 	return c.NativeFunctionValue(c.AdaptNativeFunction(f))
 }
+func (d DataStringFormatter) String() string {
+	var buf strings.Builder
+	fmt.Fprintf(&buf, "FORMAT %d ", d.Arity)
+	for i, item := range d.Segments {
+		buf.WriteString(RunesToBase64String(item))
+		if i != len(d.Segments)-1 {
+			buf.WriteString(" ")
+		}
+	}
+	return buf.String()
+}
 
+func RunesToBase64String(runes []rune) string {
+	var buf strings.Builder
+	var encoder = base64.NewEncoder(base64.StdEncoding, &buf)
+	var data = []byte(string(runes))
+	var n, err = encoder.Write(data)
+	if n != len(data) { panic("something went wrong") }
+	if err != nil { panic(err) }
+	_ = encoder.Close()
+	return buf.String()
+}
 
 type Scope struct {
 	Bindings     [] Binding
@@ -293,6 +331,9 @@ func (scope *Scope) CollectUnusedAsErrors() ([] *Error) {
 	} else {
 		var errs = make([] *Error, 0)
 		for _, b := range unused {
+			if b.Name == ch.IgnoreMark {
+				continue
+			}
 			errs = append(errs, &Error {
 				Point:    b.Point,
 				Concrete: E_UnusedBinding { b.Name },
@@ -634,6 +675,7 @@ func CompileClosure (
 
 func CompileFunction (
 	body   ch.ExprLike,
+	mod    string,
 	name   string,
 	point  ErrorPoint,
 ) (*c.Function, []GlobalRef, []*Error) {
@@ -654,6 +696,7 @@ func CompileFunction (
 			Code:        nil,
 			BaseSize:    c.FrameBaseSize {},
 			Info:        c.FuncInfo {
+				Module:    mod,
 				Name:      name,
 				DeclPoint: point,
 				SourceMap: nil,
@@ -696,6 +739,7 @@ func CompileFunction (
 				Reserved: c.Long(binding_peek),
 			},
 			Info:        c.FuncInfo {
+				Module:    mod,
 				Name:      name,
 				DeclPoint: point,
 				SourceMap: code.SourceMap,
@@ -708,6 +752,7 @@ func CompileFunction (
 
 func CompileConstant (
 	body   ch.ExprLike,
+	mod    string,
 	name   string,
 	point  ErrorPoint,
 ) (*c.Function, []GlobalRef, []*Error) {
@@ -727,7 +772,8 @@ func CompileConstant (
 			NativeIndex: index,
 			Code:        nil,
 			BaseSize:    c.FrameBaseSize {},
-			Info: c.FuncInfo{
+			Info: c.FuncInfo {
+				Module:    mod,
 				Name:      name,
 				DeclPoint: point,
 				SourceMap: nil,
@@ -751,6 +797,7 @@ func CompileConstant (
 				Reserved: c.Long(binding_peek),
 			},
 			Info:        c.FuncInfo {
+				Module:    mod,
 				Name:      name,
 				DeclPoint: point,
 				SourceMap: code.SourceMap,

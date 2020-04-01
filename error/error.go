@@ -69,6 +69,7 @@ func FormatError (
 	var start_row = i
 	var end_row = j
 	for r := start_row; r <= end_row; r += 1 {
+		if r >= len(span_map) { break }
 		nh_rows = append(nh_rows, span_map[r])
 	}
 	var expected_width = len(strconv.Itoa(last_row))
