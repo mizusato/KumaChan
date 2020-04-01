@@ -36,8 +36,12 @@ func execute(p Program, m *Machine) {
 	}
 	for i, _ := range p.Constants {
 		var f = p.Constants[i]
-		var v = f.ToValue(C)
-		m.globalSlot = append(m.globalSlot, m.Call(v, nil))
+		if f.IsNative {
+			m.globalSlot = append(m.globalSlot, C(f.NativeIndex))
+		} else {
+			var v = f.ToValue(nil)
+			m.globalSlot = append(m.globalSlot, m.Call(v, nil))
+		}
 	}
 	var ctx = rx.Background()
 	for i, _ := range p.Effects {

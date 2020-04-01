@@ -8,7 +8,8 @@ import (
 
 var EffectFunctions = map[string] Value {
 	"effect-then-preset": func(a rx.Effect, b rx.Effect) rx.Effect {
-		return a.SwitchMap(func(rx.Object) rx.Effect {
+		// TODO: implementation is not good, refactor this function
+		return a.SwitchMap(func(_ rx.Object) rx.Effect {
 			return b
 		})
 	},

@@ -78,7 +78,7 @@ func AdaptReturnValue(values []reflect.Value) Value {
 	if len(values) == 0 {
 		return nil
 	} else if len(values) == 1 {
-		return values[0]
+		return values[0].Interface()
 	} else {
 		var elements = make([]Value, len(values))
 		for i, e := range values {

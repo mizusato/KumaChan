@@ -3,6 +3,7 @@ package main
 import (
     "kumachan/compiler"
     "kumachan/runtime/common"
+    "kumachan/runtime/vm"
     "os"
     "io"
     "fmt"
@@ -95,7 +96,7 @@ func debug_checker(mod *loader.Module, idx loader.Index) (*checker.CheckedModule
     return c_mod, c_idx
 }
 
-func debug_compiler(entry *checker.CheckedModule) {
+func debug_compiler(entry *checker.CheckedModule) common.Program {
     var data = make([] common.DataValue, 0)
     var closures = make([] compiler.FuncNode, 0)
     var index = make(compiler.Index)
@@ -117,11 +118,14 @@ func debug_compiler(entry *checker.CheckedModule) {
     fmt.Println("Bytecode generated, no errors occurred.")
     fmt.Print("\n")
     fmt.Println(program.String())
+    return program
 }
 
 func main () {
     // debug_parser(os.Stdin, "[eval]", "module")
     var mod, idx = debug_loader()
     var c_mod, _ = debug_checker(mod, idx)
-    debug_compiler(c_mod)
+    var program = debug_compiler(c_mod)
+    vm.Execute(program, 33554432)
+    <- chan struct{} (nil)
 }
