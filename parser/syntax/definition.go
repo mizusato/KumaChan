@@ -22,7 +22,7 @@ const Symbols = `\{\}\[\]\(\)\.\,\:\;\$#@~\&\|\\'"` + "`"
 var Tokens = [...] Token {
     Token { Name: "String",  Pattern: r(`'[^']*'`) },
     Token { Name: "Text",    Pattern: r(`"[^"]*"`) },
-    Token { Name: "Comment", Pattern: r(`/\*([^\*]|[^/]|\*[^/]|[^\*]/|\*/)*\*/`) },
+    Token { Name: "Comment", Pattern: r(`/\*([^\*/]|\*[^/]|[^\*]/)*\*/`) },
     Token { Name: "Doc",     Pattern: r(`///[^`+LF+`]*`) },
     Token { Name: "Comment", Pattern: r(`//[^`+LF+`]*`) },
     Token { Name: "Pragma",  Pattern: r(`#[^`+LF+`]*`) },

@@ -6,8 +6,13 @@ import . "kumachan/runtime/common"
 var NativeFunctionMaps = [] (map[string] interface{}) {
 	ArithmeticFunctions,
 	BitwiseFunctions,
+	EffectFunctions,
+	IO_Functions,
+	OS_Functions,
 }
-var NativeConstantMaps = [] (map[string] Value) {}
+var NativeConstantMaps = [] (map[string] Value) {
+	OS_Constants,
+}
 
 var NativeFunctionMap    map[string] NativeFunction
 var NativeFunctionIndex  map[string] int
@@ -47,6 +52,7 @@ var _ = (func() interface{} {
 	for name, v := range NativeConstantMap {
 		NativeConstantIndex[name] = i
 		NativeConstants[i] = v
+		i += 1
 	}
 	// ---------------
 	return nil

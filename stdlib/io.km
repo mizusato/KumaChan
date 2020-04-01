@@ -2,10 +2,9 @@ module I/O;
 
 type InputStream   native;
 type OutputStream  native;
-type Error {
-    message: String
-};
+type Error         native;
 
+/*
 public function read {
     lambda(InputStream) Effect*[Bytes,Error]:
     native 'read'
@@ -25,6 +24,7 @@ public function write-string {
     lambda(OutputStream, String) Effect[(),Error]:
     native 'write-string'
 };
+*/
 
 public function write-line {
     lambda(OutputStream, String) Effect[(),Error]:
