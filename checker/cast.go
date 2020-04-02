@@ -1,9 +1,9 @@
 package checker
 
-import "kumachan/transformer/node"
+import "kumachan/transformer/ast"
 
 
-func CheckCast(cast node.Cast, ctx ExprContext) (SemiExpr, *ExprError) {
+func CheckCast(cast ast.Cast, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(cast.Node)
 	var type_ctx = ctx.GetTypeContext()
 	var target, err1 = TypeFrom(cast.Target.Type, type_ctx)

@@ -1,6 +1,6 @@
 package checker
 
-import "kumachan/transformer/node"
+import "kumachan/transformer/ast"
 
 
 func (impl SemiTypedBlock) SemiExprVal() {}
@@ -21,7 +21,7 @@ type Binding struct {
 }
 
 
-func CheckBlock(block node.Block, ctx ExprContext) (SemiExpr, *ExprError) {
+func CheckBlock(block ast.Block, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(block.Node)
 	var type_ctx = ctx.GetTypeContext()
 	var current_ctx = ctx
@@ -29,7 +29,7 @@ func CheckBlock(block node.Block, ctx ExprContext) (SemiExpr, *ExprError) {
 	for i, b := range block.Bindings {
 		var t Type
 		switch type_node := b.Type.(type) {
-		case node.VariousType:
+		case ast.VariousType:
 			var some_t, err = TypeFrom(type_node.Type, type_ctx)
 			if err != nil { return SemiExpr{}, &ExprError {
 				Point:    err.Point,

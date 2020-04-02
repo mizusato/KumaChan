@@ -2,7 +2,7 @@ package checker
 
 import (
 	"kumachan/loader"
-	"kumachan/transformer/node"
+	"kumachan/transformer/ast"
 )
 
 
@@ -15,7 +15,7 @@ func (impl SemiTypedBundle) SemiExprVal() {}
 type SemiTypedBundle struct {
 	Index     map[string] uint
 	Values    [] SemiExpr
-	KeyNodes  [] node.Node
+	KeyNodes  [] ast.Node
 }
 
 func (impl Product) ExprVal() {}
@@ -37,7 +37,7 @@ type Set struct {
 }
 
 
-func CheckTuple(tuple node.Tuple, ctx ExprContext) (SemiExpr, *ExprError) {
+func CheckTuple(tuple ast.Tuple, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(tuple.Node)
 	var L = len(tuple.Elements)
 	if L == 0 {
@@ -69,10 +69,10 @@ func CheckTuple(tuple node.Tuple, ctx ExprContext) (SemiExpr, *ExprError) {
 	}
 }
 
-func CheckBundle(bundle node.Bundle, ctx ExprContext) (SemiExpr, *ExprError) {
+func CheckBundle(bundle ast.Bundle, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(bundle.Node)
 	switch update := bundle.Update.(type) {
-	case node.Update:
+	case ast.Update:
 		var base_semi, err = Check(update.Base, ctx)
 		if err != nil { return SemiExpr{}, err }
 		switch b := base_semi.Value.(type) {
@@ -163,7 +163,7 @@ func CheckBundle(bundle node.Bundle, ctx ExprContext) (SemiExpr, *ExprError) {
 		} else {
 			var f_exprs = make([]SemiExpr, L)
 			var f_index_map = make(map[string]uint, L)
-			var f_key_nodes = make([]node.Node, L)
+			var f_key_nodes = make([]ast.Node, L)
 			for i, field := range bundle.Values {
 				var name = loader.Id2String(field.Key)
 				var _, exists = f_index_map[name]
@@ -190,7 +190,7 @@ func CheckBundle(bundle node.Bundle, ctx ExprContext) (SemiExpr, *ExprError) {
 	}
 }
 
-func CheckGet(get node.Get, ctx ExprContext) (SemiExpr, *ExprError) {
+func CheckGet(get ast.Get, ctx ExprContext) (SemiExpr, *ExprError) {
 	var base_semi, err = Check(get.Base, ctx)
 	if err != nil { return SemiExpr{}, err }
 	switch b := base_semi.Value.(type) {
@@ -367,26 +367,26 @@ func IsBundleLiteral(expr Expr) bool {
 	return false
 }
 
-func DesugarOmittedFieldValue(field node.FieldValue) node.Expr {
+func DesugarOmittedFieldValue(field ast.FieldValue) ast.Expr {
 	switch val_expr := field.Value.(type) {
-	case node.Expr:
+	case ast.Expr:
 		return val_expr
 	default:
-		return node.Expr {
+		return ast.Expr {
 			Node:  field.Node,
-			Call:  node.Call {
+			Call:  ast.Call {
 				Node:  field.Node,
-				Func: node.VariousTerm {
+				Func: ast.VariousTerm {
 					Node: field.Node,
-					Term: node.Ref {
+					Term: ast.Ref {
 						Node:     field.Node,
-						Module:   node.Identifier {
+						Module:   ast.Identifier {
 							Node: field.Node,
 							Name: []rune(""),
 						},
 						Specific: false,
 						Id:       field.Key,
-						TypeArgs: make([]node.VariousType, 0),
+						TypeArgs: make([]ast.VariousType, 0),
 					},
 				},
 			},

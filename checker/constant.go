@@ -2,15 +2,15 @@ package checker
 
 import (
 	"kumachan/loader"
-	"kumachan/transformer/node"
+	"kumachan/transformer/ast"
 	. "kumachan/error"
 )
 
 type Constant struct {
-	Node          node.Node
+	Node          ast.Node
 	IsPublic      bool
 	DeclaredType  Type
-	Value         node.ConstValue
+	Value         ast.ConstValue
 }
 
 type ConstantCollection  map[loader.Symbol] *Constant
@@ -38,25 +38,25 @@ func CollectConstants(mod *loader.Module, reg TypeRegistry, store ConstantStore)
 	}
 	for _, cmd := range mod.Node.Commands {
 		switch c := cmd.Command.(type) {
-		case node.DeclConst:
+		case ast.DeclConst:
 			var decl = c
 			var name = mod.SymbolFromName(decl.Name)
 			if name.SymbolName == IgnoreMark {
 				return nil, &ConstantError {
-					Point:    ErrorPoint { AST: mod.AST, Node: c.Name.Node },
+					Point:    ErrorPoint { CST: mod.CST, Node: c.Name.Node },
 					Concrete: E_InvalidConstName { name.SymbolName },
 				}
 			}
 			var _, exists = collection[name]
 			if exists { return nil, &ConstantError {
-				Point:    ErrorPoint { AST: mod.AST, Node: c.Name.Node },
+				Point:    ErrorPoint { CST: mod.CST, Node: c.Name.Node },
 				Concrete: E_DuplicateConstDecl {
 					Name: name.SymbolName,
 				},
 			} }
 			exists, _ = reg.LookupArity(name)
 			if exists { return nil, &ConstantError {
-				Point: ErrorPoint { AST:  mod.AST, Node: c.Name.Node, },
+				Point: ErrorPoint { CST: mod.CST, Node: c.Name.Node, },
 				Concrete: E_ConstConflictWithType {
 					Name: name.SymbolName,
 				},
@@ -69,7 +69,7 @@ func CollectConstants(mod *loader.Module, reg TypeRegistry, store ConstantStore)
 			var is_public = decl.IsPublic
 			var declared_type, err = TypeFrom(decl.Type.Type, ctx)
 			if err != nil { return nil, &ConstantError {
-				Point:    ErrorPoint { AST: mod.AST, Node: c.Type.Node },
+				Point:    ErrorPoint { CST: mod.CST, Node: c.Type.Node },
 				Concrete: E_ConstTypeInvalid {
 					ConstName: name.String(),
 					TypeError: err,

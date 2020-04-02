@@ -1,14 +1,14 @@
 package checker
 
 import (
-	"kumachan/transformer/node"
+	"kumachan/transformer/ast"
 )
 
 
 func (impl UntypedLambda) SemiExprVal() {}
 type UntypedLambda struct {
-	Input   node.VariousPattern
-	Output  node.Expr
+	Input   ast.VariousPattern
+	Output  ast.Expr
 }
 
 func (impl Lambda) ExprVal() {}
@@ -18,12 +18,12 @@ type Lambda struct {
 }
 
 
-func CheckLambda(lambda node.Lambda, ctx ExprContext) (SemiExpr, *ExprError) {
+func CheckLambda(lambda ast.Lambda, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(lambda.Node)
 	return SemiExpr {
 		Value: UntypedLambda {
 			Input:  lambda.Input,
-			Output: node.Expr {
+			Output: ast.Expr {
 				Node:     lambda.Node,
 				Call:     lambda.Output,
 				Pipeline: nil,
@@ -123,7 +123,7 @@ func CallUntypedLambda (
 		},
 		Info:  lambda_info,
 	}
-	return LiftTyped(Expr{
+	return LiftTyped(Expr {
 		Type:  output_typed.Type,
 		Value: Call {
 			Function: lambda_typed,

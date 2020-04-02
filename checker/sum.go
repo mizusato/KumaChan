@@ -2,7 +2,7 @@ package checker
 
 import (
 	"kumachan/loader"
-	"kumachan/transformer/node"
+	"kumachan/transformer/ast"
 )
 
 
@@ -40,7 +40,7 @@ type Branch struct {
 }
 
 
-func CheckSwitch(sw node.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
+func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(sw.Node)
 	var arg_semi, err = CheckTerm(sw.Argument, ctx)
 	if err != nil { return SemiExpr{}, err }
@@ -62,7 +62,7 @@ func CheckSwitch(sw node.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 	var branches = make([]SemiTypedBranch, len(sw.Branches))
 	for i, branch := range sw.Branches {
 		switch t := branch.Type.(type) {
-		case node.Ref:
+		case ast.Ref:
 			if len(t.TypeArgs) > 0 {
 				return SemiExpr{}, &ExprError {
 					Point:    ctx.GetErrorPoint(t.Node),
@@ -108,7 +108,7 @@ func CheckSwitch(sw node.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 			var maybe_pattern MaybePattern
 			var branch_ctx ExprContext
 			switch pattern_node := branch.Pattern.(type) {
-			case node.VariousPattern:
+			case ast.VariousPattern:
 				var pattern, err = PatternFrom(pattern_node, subtype, ctx)
 				if err != nil { return SemiExpr{}, err }
 				maybe_pattern = pattern
@@ -136,7 +136,7 @@ func CheckSwitch(sw node.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 				}
 			}
 			switch branch.Pattern.(type) {
-			case node.VariousPattern:
+			case ast.VariousPattern:
 				panic("something went wrong")
 			}
 			var semi, err = Check(branch.Expr, ctx)
@@ -172,7 +172,7 @@ func CheckSwitch(sw node.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 	}
 }
 
-func CheckIf(raw node.If, ctx ExprContext) (SemiExpr, *ExprError) {
+func CheckIf(raw ast.If, ctx ExprContext) (SemiExpr, *ExprError) {
 	var if_node = DesugarElseIf(raw)
 	var info = ctx.GetExprInfo(if_node.Node)
 	var cond_semi, err = CheckTerm(if_node.Condition, ctx)
@@ -295,23 +295,23 @@ func ExtractUnionTuple(t Type, ctx ExprContext) ([]Union, [][]Type, bool) {
 	return nil, nil, false
 }
 
-func DesugarElseIf(raw node.If) node.If {
+func DesugarElseIf(raw ast.If) ast.If {
 	var no_branch = raw.NoBranch
 	var elifs = raw.ElIfs
 	for i, _ := range elifs {
 		var elif = elifs[len(elifs)-1-i]
-		var t = node.If {
+		var t = ast.If {
 			Node:      elif.Node,
 			Condition: elif.Condition,
 			YesBranch: elif.YesBranch,
 			NoBranch:  no_branch,
 			ElIfs:     nil,
 		}
-		no_branch = node.Expr {
+		no_branch = ast.Expr {
 			Node:     t.Node,
-			Call:     node.Call {
+			Call:     ast.Call {
 				Node: t.Node,
-				Func: node.VariousTerm {
+				Func: ast.VariousTerm {
 					Node: t.Node,
 					Term: t,
 				},
@@ -320,7 +320,7 @@ func DesugarElseIf(raw node.If) node.If {
 			Pipeline: nil,
 		}
 	}
-	return node.If {
+	return ast.If {
 		Node:      raw.Node,
 		Condition: raw.Condition,
 		YesBranch: raw.YesBranch,

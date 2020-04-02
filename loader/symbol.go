@@ -2,7 +2,7 @@ package loader
 
 import (
 	"fmt"
-	"kumachan/transformer/node"
+	"kumachan/transformer/ast"
 )
 
 const CoreModule = "Core"
@@ -30,11 +30,11 @@ func NewSymbol (mod string, sym string) Symbol {
 	}
 }
 
-func Id2String(id node.Identifier) string {
+func Id2String(id ast.Identifier) string {
 	return string(id.Name)
 }
 
-func (mod *Module) SymbolFromName(name node.Identifier) Symbol {
+func (mod *Module) SymbolFromName(name ast.Identifier) Symbol {
 	var sym_name = Id2String(name)
 	var _, exists = __PreloadCoreSymbolSet[sym_name]
 	if exists {
@@ -44,7 +44,7 @@ func (mod *Module) SymbolFromName(name node.Identifier) Symbol {
 	}
 }
 
-func (mod *Module) SymbolFromRef(ref node.Ref) MaybeSymbol {
+func (mod *Module) SymbolFromRef(ref ast.Ref) MaybeSymbol {
 	var ref_mod = Id2String(ref.Module)
 	var corresponding, exists = mod.ImpMap[ref_mod]
 	if exists {
@@ -74,7 +74,7 @@ func (mod *Module) SymbolFromRef(ref node.Ref) MaybeSymbol {
 	}
 }
 
-func (mod *Module) TypeSymbolFromRef(ref node.Ref) MaybeSymbol {
+func (mod *Module) TypeSymbolFromRef(ref ast.Ref) MaybeSymbol {
 	var self = Id2String(mod.Node.Name)
 	var maybe_sym = mod.SymbolFromRef(ref)
 	var sym, ok = maybe_sym.(Symbol)

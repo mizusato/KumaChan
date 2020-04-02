@@ -1,6 +1,6 @@
 package checker
 
-import "kumachan/transformer/node"
+import "kumachan/transformer/ast"
 
 
 func (impl SemiTypedArray) SemiExprVal() {}
@@ -14,7 +14,7 @@ type Array struct {
 }
 
 
-func CheckArray(array node.Array, ctx ExprContext) (SemiExpr, *ExprError) {
+func CheckArray(array ast.Array, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(array.Node)
 	var L = len(array.Items)
 	if L == 0 {

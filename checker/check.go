@@ -3,7 +3,7 @@ package checker
 import (
 	. "kumachan/error"
 	"kumachan/loader"
-	"kumachan/transformer/node"
+	"kumachan/transformer/ast"
 )
 
 
@@ -60,7 +60,7 @@ type ExprContext struct {
 	InferredNames  [] string
 	Inferred       map[uint] Type  // mutable
 	UnboxCounted   bool
-	UnboxCount     *uint
+	UnboxCount     *uint  // mutable
 }
 
 type Expr struct {
@@ -220,58 +220,58 @@ func (ctx ExprContext) WithUnboxCounted(count *uint) ExprContext {
 	return new_ctx
 }
 
-func (ctx ExprContext) GetErrorPoint(node node.Node) ErrorPoint {
+func (ctx ExprContext) GetErrorPoint(node ast.Node) ErrorPoint {
 	return ErrorPoint {
-		AST:  ctx.ModuleInfo.Module.AST,
+		CST:  ctx.ModuleInfo.Module.CST,
 		Node: node,
 	}
 }
 
-func (ctx ExprContext) GetExprInfo(node node.Node) ExprInfo {
+func (ctx ExprContext) GetExprInfo(node ast.Node) ExprInfo {
 	return ExprInfo { ErrorPoint: ctx.GetErrorPoint(node) }
 }
 
 
-func Check(expr node.Expr, ctx ExprContext) (SemiExpr, *ExprError) {
+func Check(expr ast.Expr, ctx ExprContext) (SemiExpr, *ExprError) {
 	return CheckCall(DesugarExpr(expr), ctx)
 }
 
-func CheckTerm(term node.VariousTerm, ctx ExprContext) (SemiExpr, *ExprError) {
+func CheckTerm(term ast.VariousTerm, ctx ExprContext) (SemiExpr, *ExprError) {
 	switch t := term.Term.(type) {
-	case node.Cast:
+	case ast.Cast:
 		return CheckCast(t, ctx)
-	case node.Lambda:
+	case ast.Lambda:
 		return CheckLambda(t, ctx)
-	case node.Switch:
+	case ast.Switch:
 		return CheckSwitch(t, ctx)
-	case node.If:
+	case ast.If:
 		return CheckIf(t, ctx)
-	case node.Block:
+	case ast.Block:
 		return CheckBlock(t, ctx)
-	case node.Tuple:
+	case ast.Tuple:
 		return CheckTuple(t, ctx)
-	case node.Bundle:
+	case ast.Bundle:
 		return CheckBundle(t, ctx)
-	case node.Get:
+	case ast.Get:
 		return CheckGet(t, ctx)
-	case node.Array:
+	case ast.Array:
 		return CheckArray(t, ctx)
-	case node.Text:
+	case ast.Text:
 		return CheckText(t, ctx)
-	case node.VariousLiteral:
+	case ast.VariousLiteral:
 		switch l := t.Literal.(type) {
-		case node.IntegerLiteral:
+		case ast.IntegerLiteral:
 			return CheckInteger(l, ctx)
-		case node.FloatLiteral:
+		case ast.FloatLiteral:
 			return CheckFloat(l, ctx)
-		case node.StringLiteral:
+		case ast.StringLiteral:
 			return CheckString(l, ctx)
 		default:
 			panic("impossible branch")
 		}
-	case node.Ref:
+	case ast.Ref:
 		return CheckRef(t, ctx)
-	case node.Infix:
+	case ast.Infix:
 		return CheckInfix(t, ctx)
 	default:
 		panic("impossible branch")
@@ -330,9 +330,9 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 	var func_map = make(map[string] ([] CheckedFunction))
 	for name, group := range functions {
 		func_map[name] = make([]CheckedFunction, 0)
-		var add = func(body ExprLike, node node.Node) {
+		var add = func(body ExprLike, node ast.Node) {
 			func_map[name] = append(func_map[name], CheckedFunction {
-				Point: ErrorPoint { AST: mod.AST, Node: node },
+				Point: ErrorPoint { CST: mod.CST, Node: node },
 				Body:  body,
 			})
 		}
@@ -342,7 +342,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 			}
 			var f = f_ref.Function
 			switch body := f.Body.(type) {
-			case node.Lambda:
+			case ast.Lambda:
 				var f_expr_ctx = CreateExprContext(mod_info, f.TypeParams)
 				var lambda, err1 = CheckLambda(body, f_expr_ctx)
 				if err1 != nil {
@@ -356,10 +356,10 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 					continue
 				}
 				add(ExprExpr(body_expr), f.Node)
-			case node.NativeRef:
+			case ast.NativeRef:
 				add(ExprNative {
 					Name:  string(body.Id.Value),
-					Point: ErrorPoint { AST: mod.AST, Node: body.Node },
+					Point: ErrorPoint { CST: mod.CST, Node: body.Node },
 				}, f.Node)
 			default:
 				panic("impossible branch")
@@ -374,7 +374,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 		}
 		var name = sym.SymbolName
 		switch val := constant.Value.(type) {
-		case node.Expr:
+		case ast.Expr:
 			var semi_expr, err1 = Check(val, expr_ctx)
 			if err1 != nil {
 				errors = append(errors, err1)
@@ -387,15 +387,15 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 				continue
 			}
 			const_map[name] = CheckedConstant {
-				Point: ErrorPoint { AST: mod.AST, Node: constant.Node },
+				Point: ErrorPoint { CST: mod.CST, Node: constant.Node },
 				Value: ExprExpr(expr),
 			}
-		case node.NativeRef:
+		case ast.NativeRef:
 			const_map[name] = CheckedConstant {
-				Point: ErrorPoint { AST: mod.AST, Node: constant.Node },
+				Point: ErrorPoint { CST: mod.CST, Node: constant.Node },
 				Value: ExprNative {
 					Name:  string(val.Id.Value),
-					Point: ErrorPoint { AST: mod.AST, Node: val.Node },
+					Point: ErrorPoint { CST: mod.CST, Node: val.Node },
 				},
 			}
 		default:
@@ -405,7 +405,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 	var do_effects = make([] CheckedEffect, 0)
 	for _, cmd := range mod.Node.Commands {
 		switch do := cmd.Command.(type) {
-		case node.Do:
+		case ast.Do:
 			var semi_expr, err1 = Check(do.Effect, expr_ctx)
 			if err1 != nil {
 				errors = append(errors, err1)
@@ -417,7 +417,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 				continue
 			}
 			do_effects = append(do_effects, CheckedEffect {
-				Point: ErrorPoint { AST: mod.AST, Node: do.Node },
+				Point: ErrorPoint { CST: mod.CST, Node: do.Node },
 				Value: expr,
 			})
 		}

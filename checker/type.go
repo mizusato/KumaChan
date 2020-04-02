@@ -2,7 +2,7 @@ package checker
 
 import (
 	"kumachan/loader"
-	"kumachan/transformer/node"
+	"kumachan/transformer/ast"
 	"strings"
 )
 
@@ -10,7 +10,7 @@ import (
 type GenericType struct {
 	Params      [] string
 	Value       TypeVal
-	Node        node.Node
+	Node        ast.Node
 	UnionIndex  uint
 }
 type TypeVal interface { TypeVal() }

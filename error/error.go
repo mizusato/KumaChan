@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-	"kumachan/parser/ast"
+	"kumachan/parser/cst"
 	"kumachan/parser/scanner"
-	"kumachan/transformer/node"
+	"kumachan/transformer/ast"
 )
 
 
@@ -20,8 +20,8 @@ type E interface {
 type MaybeErrorPoint interface { MaybeErrorPoint() }
 func (impl ErrorPoint) MaybeErrorPoint() {}
 type ErrorPoint struct {
-	AST   *ast.Tree
-	Node  node.Node
+	CST   *cst.Tree
+	Node  ast.Node
 }
 
 func GetErrorTypeName(e interface{}) string {
@@ -126,15 +126,12 @@ func FormatError (
 	return msg
 }
 
-func FormatErrorAt (
-	point  ErrorPoint,
-	desc   ErrorMessage,
-) ErrorMessage {
-	var AST = point.AST
+func FormatErrorAt(point ErrorPoint,desc ErrorMessage) ErrorMessage {
+	var CST = point.CST
 	var Node = point.Node
 	return FormatError (
-		AST.Code,  AST.Info,    AST.SpanMap,
-		AST.Name,  Node.Point,  Node.Span,
+		CST.Code,  CST.Info,    CST.SpanMap,
+		CST.Name,  Node.Point,  Node.Span,
 		ERR_FOV,   TS_SPOT,     desc,
 	)
 }

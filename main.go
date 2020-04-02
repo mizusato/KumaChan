@@ -50,16 +50,16 @@ func debug_parser(file io.Reader, name string, root string) {
     }
     var tree, err = parser.Parse(code, root, name)
     fmt.Println("------------------------------------------------------")
-    fmt.Println("AST Nodes:")
+    fmt.Println("CST Nodes:")
     parser.PrintBareTree(tree.Nodes)
     fmt.Println("------------------------------------------------------")
-    fmt.Println("AST:")
+    fmt.Println("CST:")
     parser.PrintTree(tree)
     if err != nil {
         fmt.Println(err.Message())
     } else {
         fmt.Println("------------------------------------------------------")
-        fmt.Println("Transformed:")
+        fmt.Println("AST:")
         transformer.PrintNode(reflect.ValueOf(transformer.Transform(tree)))
         // fmt.Printf("%+v\n", transformer.Transform(tree))
     }

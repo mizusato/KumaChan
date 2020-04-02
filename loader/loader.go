@@ -1,22 +1,22 @@
 package loader
 
 import (
+	"os"
 	"fmt"
 	"io/ioutil"
+	"path/filepath"
 	. "kumachan/error"
 	"kumachan/parser"
-	"kumachan/parser/ast"
+	"kumachan/parser/cst"
 	"kumachan/transformer"
-	"kumachan/transformer/node"
-	"os"
-	"path/filepath"
+	"kumachan/transformer/ast"
 )
 
 
 type Module struct {
 	Name      string
-	Node      node.Module
-	AST       *ast.Tree
+	Node      ast.Module
+	CST       *cst.Tree
 	ImpMap    map[string] *Module
 	FileInfo  os.FileInfo
 }
@@ -26,7 +26,9 @@ type Index  map[string] *Module
 func ReadFile(path string) ([]byte, os.FileInfo, error) {
 	var fd, err1 = os.Open(path)
 	if err1 != nil { return nil, nil, err1 }
-	defer fd.Close()
+	defer func() {
+		_ = fd.Close()
+	} ()
 	var info, err2 = fd.Stat()
 	if err2 != nil { return nil, nil, err2 }
 	var content, err3 = ioutil.ReadAll(fd)
@@ -44,7 +46,7 @@ func LoadModule(path string, ctx Context, idx Index) (*Module, *Error) {
 			Message:   err1.Error(),
 		},
 	} }
-	/* 2. Try to parse the content and generate an AST */
+	/* 2. Try to parse the content and generate a CST */
 	var code_string = string(file_content)
 	var code = []rune(code_string)
 	var tree, err2 = parser.Parse(code, "module", path)
@@ -54,7 +56,7 @@ func LoadModule(path string, ctx Context, idx Index) (*Module, *Error) {
 			ParserError: err2,
 		},
 	} }
-	/* 3. Transform the AST to typed structures */
+	/* 3. Transform the CST into an AST */
 	var module_node = transformer.Transform(tree)
 	/* 4. Extract the module name */
 	var module_name = string(module_node.Name.Name)
@@ -99,7 +101,7 @@ func LoadModule(path string, ctx Context, idx Index) (*Module, *Error) {
 				Context: ctx,
 				Concrete: E_NameConflict {
 					ModuleName: module_name,
-					FilePath1:  existing.AST.Name,
+					FilePath1:  existing.CST.Name,
 					FilePath2:  path,
 				},
 			}
@@ -117,13 +119,13 @@ func LoadModule(path string, ctx Context, idx Index) (*Module, *Error) {
 		})
 		for _, cmd := range module_node.Commands {
 			switch c := cmd.Command.(type) {
-			case node.Import:
+			case ast.Import:
 				// Execute each `import` command
 				var local_alias = string(c.Name.Name)
 				var relpath = string(c.Path.Value)
 				var imctx = Context {
 					ImportPoint: ErrorPoint {
-						AST:  tree,
+						CST:  tree,
 						Node: c.Node,
 					},
 					LocalAlias:  local_alias,
@@ -164,7 +166,7 @@ func LoadModule(path string, ctx Context, idx Index) (*Module, *Error) {
 			Name:     module_name,
 			Node:     module_node,
 			ImpMap:   imported_map,
-			AST:      tree,
+			CST:      tree,
 			FileInfo: file_info,
 		}
 		idx[module_name] = mod

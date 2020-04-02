@@ -1,7 +1,7 @@
 package checker
 
 import (
-	"kumachan/transformer/node"
+	"kumachan/transformer/ast"
 	"math"
 	"math/big"
 	"strconv"
@@ -30,7 +30,7 @@ type FloatLiteral struct {
 }
 
 
-func CheckInteger(i node.IntegerLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
+func CheckInteger(i ast.IntegerLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(i.Node)
 	var chars = i.Value
 	var abs_chars []rune
@@ -69,7 +69,7 @@ func CheckInteger(i node.IntegerLiteral, ctx ExprContext) (SemiExpr, *ExprError)
 	}
 }
 
-func CheckFloat(f node.FloatLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
+func CheckFloat(f ast.FloatLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(f.Node)
 	var value, err = strconv.ParseFloat(string(f.Value), 64)
 	if err != nil { panic("invalid float literal got from parser") }

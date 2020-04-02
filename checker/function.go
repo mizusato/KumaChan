@@ -3,15 +3,15 @@ package checker
 import (
 	. "kumachan/error"
 	"kumachan/loader"
-	"kumachan/transformer/node"
+	"kumachan/transformer/ast"
 )
 
 type GenericFunction struct {
-	Node          node.Node
+	Node          ast.Node
 	Public        bool
 	TypeParams    [] string
 	DeclaredType  Func
-	Body          node.Body
+	Body          ast.Body
 }
 
 type FunctionReference struct {
@@ -70,14 +70,14 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 	// 3. Iterate over all function declarations in the current module
 	for _, cmd := range mod.Node.Commands {
 		switch c := cmd.Command.(type) {
-		case node.DeclFunction:
+		case ast.DeclFunction:
 			// 3.1. Get the names of the function and its type parameters
 			var decl = c
 			var name = loader.Id2String(decl.Name)
 			if name == IgnoreMark {
 				// 3.1.1. If the function name is invalid, throw an error.
 				return nil, &FunctionError {
-					Point:    ErrorPoint { AST: mod.AST, Node: decl.Name.Node },
+					Point:    ErrorPoint { CST: mod.CST, Node: decl.Name.Node },
 					Concrete: E_InvalidFunctionName { name },
 				}
 			}
@@ -106,7 +106,7 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 			if is_public && !(IsLocalType(sig, mod_name)) {
 				return nil, &FunctionError {
 					Point:    ErrorPoint {
-						AST: mod.AST, Node: decl.Repr.Node,
+						CST: mod.CST, Node: decl.Repr.Node,
 					},
 					Concrete: E_SignatureNonLocal {
 						FuncName: name,
@@ -127,7 +127,7 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 			if exists {
 				// 3.6.1. If in use, try to overload it
 				var err_point = ErrorPoint {
-					AST: mod.AST, Node: decl.Name.Node,
+					CST: mod.CST, Node: decl.Name.Node,
 				}
 				var err = CheckOverload (
 					existing, func_type, name, params, err_point,

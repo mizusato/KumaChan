@@ -1,7 +1,7 @@
 package checker
 
 import (
-	"kumachan/transformer/node"
+	"kumachan/transformer/ast"
 	"strings"
 )
 
@@ -18,7 +18,7 @@ type StringFormatter struct {
 }
 
 
-func CheckString(s node.StringLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
+func CheckString(s ast.StringLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(s.Node)
 	return LiftTyped(Expr {
 		Type:  NamedType {
@@ -30,7 +30,7 @@ func CheckString(s node.StringLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
 	}), nil
 }
 
-func CheckText(text node.Text, ctx ExprContext) (SemiExpr, *ExprError) {
+func CheckText(text ast.Text, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(text.Node)
 	var template = text.Template
 	var segments = make([] []rune, 0)

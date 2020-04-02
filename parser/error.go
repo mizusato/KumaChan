@@ -1,12 +1,12 @@
 package parser
 
-import "kumachan/parser/ast"
+import "kumachan/parser/cst"
 import "kumachan/parser/syntax"
 import . "kumachan/error"
 
 
 type Error struct {
-    Tree             *ast.Tree
+    Tree             *cst.Tree
     HasExpectedPart  bool
     ExpectedPart     syntax.Id
     NodeIndex        int  // may be bigger than the index of last token

@@ -2,7 +2,7 @@ package parser
 
 import (
 	"fmt"
-	"kumachan/parser/ast"
+	"kumachan/parser/cst"
 )
 import "strings"
 import "unicode/utf8"
@@ -31,7 +31,7 @@ func Fill (buf *strings.Builder, n int, s string, blank string) {
 }
 
 
-func PrintTreeNode (ptr int, node *ast.TreeNode) {
+func PrintTreeNode (ptr int, node *cst.TreeNode) {
     var buf strings.Builder
     fmt.Fprintf(&buf, "\033[1m\033[%vm", GetANSIColor(ptr))
     fmt.Fprintf(&buf, "(%v)", ptr)
@@ -63,7 +63,7 @@ func PrintTreeNode (ptr int, node *ast.TreeNode) {
     fmt.Print(buf.String())
 }
 
-func PrintBareTree (tree []ast.TreeNode) {
+func PrintBareTree (tree []cst.TreeNode) {
     for i := 0; i < len(tree); i++ {
         PrintTreeNode(i, &tree[i])
     }
@@ -71,7 +71,7 @@ func PrintBareTree (tree []ast.TreeNode) {
 
 func PrintTreeRecursively (
     buf *strings.Builder,
-    tree *ast.Tree, ptr int, depth int, is_last []bool,
+    tree *cst.Tree, ptr int, depth int, is_last []bool,
 ) {
     const INC = 2
     const SPACE = " "
@@ -128,7 +128,7 @@ func PrintTreeRecursively (
     }
 }
 
-func PrintTree (tree *ast.Tree) {
+func PrintTree (tree *cst.Tree) {
     var buf strings.Builder
     var is_last = make([]bool, 0, 1000)
     is_last = append(is_last, true)

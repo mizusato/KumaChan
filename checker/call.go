@@ -2,7 +2,7 @@ package checker
 
 import (
 	"kumachan/parser/scanner"
-	"kumachan/transformer/node"
+	"kumachan/transformer/ast"
 )
 
 
@@ -23,8 +23,8 @@ type Call struct {
 }
 
 
-func CheckCall(call node.Call, ctx ExprContext) (SemiExpr, *ExprError) {
-	var arg_node, has_arg = call.Arg.(node.Call)
+func CheckCall(call ast.Call, ctx ExprContext) (SemiExpr, *ExprError) {
+	var arg_node, has_arg = call.Arg.(ast.Call)
 	if has_arg {
 		var f, err1 = CheckTerm(call.Func, ctx)
 		if err1 != nil { return SemiExpr{}, err1 }
@@ -82,7 +82,7 @@ func CheckSingleCall(f SemiExpr, arg SemiExpr, info ExprInfo, ctx ExprContext) (
 	}
 }
 
-func CheckInfix(infix node.Infix, ctx ExprContext) (SemiExpr, *ExprError) {
+func CheckInfix(infix ast.Infix, ctx ExprContext) (SemiExpr, *ExprError) {
 	return CheckCall(DesugarInfix(infix), ctx)
 }
 
@@ -113,37 +113,37 @@ func AssignCallTo(expected Type, call UndecidedCall, info ExprInfo, ctx ExprCont
 }
 
 
-func DesugarExpr(expr node.Expr) node.Call {
+func DesugarExpr(expr ast.Expr) ast.Call {
 	return DesugarPipeline(expr.Call, expr.Pipeline)
 }
 
-func DesugarPipeline(left node.Call, p node.MaybePipeline) node.Call {
-	var pipeline, ok = p.(node.Pipeline)
+func DesugarPipeline(left ast.Call, p ast.MaybePipeline) ast.Call {
+	var pipeline, ok = p.(ast.Pipeline)
 	if !ok {
 		return left
 	}
 	var f = pipeline.Func
 	var maybe_right = pipeline.Arg
-	var right, exists = maybe_right.(node.Call)
-	var arg node.Tuple
-	var current_node node.Node
+	var right, exists = maybe_right.(ast.Call)
+	var arg ast.Tuple
+	var current_node ast.Node
 	if exists {
-		arg = node.Tuple {
+		arg = ast.Tuple {
 			Node:     pipeline.Operator.Node,
-			Elements: []node.Expr {
-				node.Expr {
+			Elements: []ast.Expr {
+				ast.Expr {
 					Node:     left.Node,
 					Call:     left,
 					Pipeline: nil,
 				},
-				node.Expr {
+				ast.Expr {
 					Node:     right.Node,
 					Call:     right,
 					Pipeline: nil,
 				},
 			},
 		}
-		current_node = node.Node {
+		current_node = ast.Node {
 			Point: pipeline.Node.Point,
 			Span:  scanner.Span {
 				Start: pipeline.Node.Span.Start,
@@ -152,15 +152,15 @@ func DesugarPipeline(left node.Call, p node.MaybePipeline) node.Call {
 			UID:   0,
 		}
 	} else {
-		arg = node.Tuple {
+		arg = ast.Tuple {
 			Node:     left.Node,
-			Elements: []node.Expr { {
+			Elements: []ast.Expr { {
 				Node:     left.Node,
 				Call:     left,
 				Pipeline: nil,
 			} },
 		}
-		current_node = node.Node {
+		current_node = ast.Node {
 			Point: pipeline.Node.Point,
 			Span:  scanner.Span {
 				Start: pipeline.Node.Span.Start,
@@ -169,12 +169,12 @@ func DesugarPipeline(left node.Call, p node.MaybePipeline) node.Call {
 			UID:   0,
 		}
 	}
-	var current = node.Call {
+	var current = ast.Call {
 		Node:  current_node,
 		Func:  f,
-		Arg:   node.Call {
+		Arg:   ast.Call {
 			Node: arg.Node,
-			Func: node.VariousTerm {
+			Func: ast.VariousTerm {
 				Node: arg.Node,
 				Term: arg,
 			},
@@ -184,29 +184,29 @@ func DesugarPipeline(left node.Call, p node.MaybePipeline) node.Call {
 	return DesugarPipeline(current, pipeline.Next)
 }
 
-func DesugarInfix(infix node.Infix) node.Call {
-	return node.Call {
+func DesugarInfix(infix ast.Infix) ast.Call {
+	return ast.Call {
 		Node: infix.Node,
 		Func: infix.Operator,
-		Arg:  node.Call {
+		Arg:  ast.Call {
 			Node: infix.Node,
-			Func: node.VariousTerm {
+			Func: ast.VariousTerm {
 				Node: infix.Node,
-				Term: node.Tuple {
+				Term: ast.Tuple {
 					Node:     infix.Node,
-					Elements: []node.Expr {
-						node.Expr {
+					Elements: []ast.Expr {
+						ast.Expr {
 							Node:     infix.Operand1.Node,
-							Call:     node.Call {
+							Call:     ast.Call {
 								Node: infix.Operand1.Node,
 								Func: infix.Operand1,
 								Arg:  nil,
 							},
 							Pipeline: nil,
 						},
-						node.Expr {
+						ast.Expr {
 							Node:     infix.Operand2.Node,
-							Call:     node.Call {
+							Call:     ast.Call {
 								Node: infix.Operand2.Node,
 								Func: infix.Operand2,
 								Arg:  nil,

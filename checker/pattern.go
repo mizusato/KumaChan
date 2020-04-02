@@ -2,7 +2,7 @@ package checker
 
 import (
 	"kumachan/loader"
-	"kumachan/transformer/node"
+	"kumachan/transformer/ast"
 	. "kumachan/error"
 )
 
@@ -38,7 +38,7 @@ type PatternItem struct {
 
 
 func PatternFrom (
-	p_node  node.VariousPattern,
+	p_node  ast.VariousPattern,
 	input   Type,
 	ctx     ExprContext,
 ) (Pattern, *ExprError) {
@@ -49,7 +49,7 @@ func PatternFrom (
 		}
 	}
 	switch p := p_node.Pattern.(type) {
-	case node.PatternTrivial:
+	case ast.PatternTrivial:
 		return Pattern {
 			Point:    ctx.GetErrorPoint(p_node.Node),
 			Concrete: TrivialPattern {
@@ -58,7 +58,7 @@ func PatternFrom (
 				Point:     ctx.GetErrorPoint(p.Name.Node),
 			},
 		}, nil
-	case node.PatternTuple:
+	case ast.PatternTuple:
 		switch tuple := UnboxTuple(input, ctx).(type) {
 		case Tuple:
 			var required = len(p.Names)
@@ -110,7 +110,7 @@ func PatternFrom (
 		default:
 			panic("impossible branch")
 		}
-	case node.PatternBundle:
+	case ast.PatternBundle:
 		switch bundle := UnboxBundle(input, ctx).(type) {
 		case Bundle:
 			var occurred = make(map[string]bool)

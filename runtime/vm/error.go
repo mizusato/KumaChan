@@ -39,7 +39,7 @@ func PrintRuntimeErrorMessage(err interface{}, ec *ExecutionContext) {
 func GenFrameErrMsg(f CallStackFrame, desc ErrorMessage) ErrorMessage {
 	var last_executed = (f.instPtr - 1)
 	return FormatErrorAt(ErrorPoint {
-		AST:  f.function.Info.DeclPoint.AST,
+		CST:  f.function.Info.DeclPoint.CST,
 		Node: *(f.function.Info.SourceMap[last_executed]),
 	}, desc)
 }

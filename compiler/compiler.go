@@ -6,7 +6,7 @@ import (
 	"strings"
 	"encoding/base64"
 	"kumachan/runtime/lib"
-	"kumachan/transformer/node"
+	"kumachan/transformer/ast"
 	. "kumachan/error"
 	c "kumachan/runtime/common"
 	ch "kumachan/checker"
@@ -14,12 +14,12 @@ import (
 
 type Code struct {
 	InstSeq    [] c.Instruction
-	SourceMap  [] *node.Node
+	SourceMap  [] *ast.Node
 }
 func CodeFrom(inst c.Instruction, info ch.ExprInfo) Code {
 	return Code {
 		InstSeq:   [] c.Instruction { inst },
-		SourceMap: [] *node.Node { &(info.ErrorPoint.Node) },
+		SourceMap: [] *ast.Node { &(info.ErrorPoint.Node) },
 	}
 }
 func (code Code) Length() uint {
@@ -32,7 +32,7 @@ type CodeBuffer struct {
 func MakeCodeBuffer() CodeBuffer {
 	var code = &Code {
 		InstSeq:   make([] c.Instruction, 0),
-		SourceMap: make([] *node.Node, 0),
+		SourceMap: make([] *ast.Node, 0),
 	}
 	return CodeBuffer { code }
 }

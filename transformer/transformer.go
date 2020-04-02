@@ -4,20 +4,20 @@ import "fmt"
 import "reflect"
 import "strings"
 import "kumachan/parser"
-import "kumachan/parser/ast"
+import "kumachan/parser/cst"
 import "kumachan/parser/syntax"
-import . "kumachan/transformer/node"
+import . "kumachan/transformer/ast"
 
 /**
- *  AST Transformer
+ *  Syntax Tree Transformer
  *
- *  This package is responsible for transforming the AST output
- *    of the `parser` package into typed and well-structured form
+ *  This package is responsible for transforming the CSTs output
+ *    by the `parser` package into typed and well-structured ASTs
  *    according to the declarative configurations defined in
- *    the `node` subpackage.
+ *    the `ast` subpackage.
  */
 
-type Tree = *ast.Tree
+type Tree = *cst.Tree
 type Pointer = int
 type Context = map[string] interface{}
 type Transformer = func(Tree, Pointer) reflect.Value

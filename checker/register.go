@@ -3,7 +3,7 @@ package checker
 import (
 	. "kumachan/error"
 	"kumachan/loader"
-	"kumachan/transformer/node"
+	"kumachan/transformer/ast"
 )
 
 // Final Registry of Types
@@ -11,8 +11,8 @@ type TypeRegistry  map[loader.Symbol] *GenericType
 
 // Intermediate Registry of Types, Used When Defining Types
 type RawTypeRegistry struct {
-	// a map from symbol to type declaration (transformed AST node)
-	DeclMap        map[loader.Symbol] node.DeclType
+	// a map from symbol to type declaration (AST node)
+	DeclMap        map[loader.Symbol] ast.DeclType
 	// a map from subtype to union type (e.g. Just -> Maybe, Null -> Maybe)
 	// (parameters of subtypes are inherited from the out-most union type)
 	UnionRootMap   map[loader.Symbol] loader.Symbol
@@ -24,7 +24,7 @@ type RawTypeRegistry struct {
 }
 func MakeRawTypeRegistry() RawTypeRegistry {
 	return RawTypeRegistry {
-		DeclMap:       make(map[loader.Symbol] node.DeclType),
+		DeclMap:       make(map[loader.Symbol] ast.DeclType),
 		UnionRootMap:  make(map[loader.Symbol] loader.Symbol),
 		UnionIndexMap: make(map[loader.Symbol] uint),
 		VisitedMod:    make(map[string] bool),
@@ -44,17 +44,17 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 	raw.VisitedMod[mod_name] = true
 	// 2. Extract all type declarations in the module,
 	//    and record the root union types of all subtypes
-	var decls = make([]node.DeclType, 0)
+	var decls = make([]ast.DeclType, 0)
 	var root_map = make(map[int]int)
 	var index_map = make(map[int]int)
 	for _, cmd := range mod.Node.Commands {
 		switch c := cmd.Command.(type) {
-		case node.DeclType:
+		case ast.DeclType:
 			var cur_union_index = len(decls)
 			decls = append(decls, c)
 			var root_of_union, root_of_union_exists = root_map[cur_union_index]
 			switch u := c.TypeValue.TypeValue.(type) {
-			case node.UnionType:
+			case ast.UnionType:
 				for index, item := range u.Items {
 					var cur_sub_index = len(decls)
 					decls = append(decls, item)
@@ -75,7 +75,7 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 		// 3.2. Check if the symbol name is valid
 		if type_sym.SymbolName == IgnoreMark {
 			return &TypeDeclError {
-				Point:    ErrorPoint { AST: mod.AST, Node: d.Name.Node },
+				Point:    ErrorPoint { CST: mod.CST, Node: d.Name.Node },
 				Concrete: E_InvalidTypeName { type_sym.SymbolName },
 			}
 		}
@@ -84,7 +84,7 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 		if exists || (mod_name != loader.CoreModule && loader.IsPreloadCoreSymbol(type_sym)) {
 			// 3.3.1. If used, throw an error
 			return &TypeDeclError {
-				Point: ErrorPoint { AST: mod.AST, Node: d.Name.Node },
+				Point: ErrorPoint { CST: mod.CST, Node: d.Name.Node },
 				Concrete: E_DuplicateTypeDecl {
 					TypeName: type_sym,
 				},
@@ -99,7 +99,7 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 			if exists {
 				if len(d.Params) > 0 {
 					return &TypeDeclError {
-						Point: ErrorPoint { AST: mod.AST, Node: d.Name.Node },
+						Point: ErrorPoint { CST: mod.CST, Node: d.Name.Node },
 						Concrete: E_GenericUnionSubType {
 							TypeName: type_sym,
 						},
@@ -171,7 +171,7 @@ func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, *Type
 		var mod, mod_exists = idx[name.ModuleName]
 		if !mod_exists { panic("mod " + name.ModuleName + " should exist") }
 		// 3.1. Determine parameters
-		var params_t node.DeclType
+		var params_t ast.DeclType
 		var root, exists = raw.UnionRootMap[name]
 		if exists {
 			// 3.1.1. If union root exists, use the parameters of it
@@ -211,10 +211,10 @@ func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, *Type
 	return reg, nil
 }
 
-/* Transform: node.TypeValue -> checker.TypeVal */
-func TypeValFrom (tv node.TypeValue, ctx TypeContext) (TypeVal, *TypeError) {
+/* Transform: ast.TypeValue -> checker.TypeVal */
+func TypeValFrom (tv ast.TypeValue, ctx TypeContext) (TypeVal, *TypeError) {
 	switch v := tv.(type) {
-	case node.UnionType:
+	case ast.UnionType:
 		// TODO: check common.SumMaxBranches
 		var subtypes = make([]loader.Symbol, len(v.Items))
 		for i, item := range v.Items {
@@ -223,8 +223,8 @@ func TypeValFrom (tv node.TypeValue, ctx TypeContext) (TypeVal, *TypeError) {
 		return Union {
 			SubTypes: subtypes,
 		}, nil
-	case node.BoxedType:
-		var inner, specified = v.Inner.(node.VariousType)
+	case ast.BoxedType:
+		var inner, specified = v.Inner.(ast.VariousType)
 		if specified {
 			var inner_type, err = TypeFrom(inner.Type, ctx)
 			if err != nil {
@@ -242,17 +242,17 @@ func TypeValFrom (tv node.TypeValue, ctx TypeContext) (TypeVal, *TypeError) {
 				Opaque:    v.Opaque,
 			}, nil
 		}
-	case node.NativeType:
+	case ast.NativeType:
 		return Native{}, nil
 	default:
 		panic("impossible branch")
 	}
 }
 
-/* Transform: node.Type -> checker.Type */
-func TypeFrom (type_ node.Type, ctx TypeContext) (Type, *TypeError) {
+/* Transform: ast.Type -> checker.Type */
+func TypeFrom (type_ ast.Type, ctx TypeContext) (Type, *TypeError) {
 	switch t := type_.(type) {
-	case node.TypeRef:
+	case ast.TypeRef:
 		var ref_mod = string(t.Ref.Module.Name)
 		var ref_name = string(t.Ref.Id.Name)
 		if ref_mod == "" {
@@ -267,14 +267,14 @@ func TypeFrom (type_ node.Type, ctx TypeContext) (Type, *TypeError) {
 		case loader.Symbol:
 			var exists, arity = ctx.Ireg.LookupArity(s)
 			if !exists { return nil, &TypeError {
-				Point:    ErrorPoint { AST: ctx.Module.AST, Node: t.Ref.Id.Node },
+				Point:    ErrorPoint { CST: ctx.Module.CST, Node: t.Ref.Id.Node },
 				Concrete: E_TypeNotFound {
 					Name: s,
 				},
 			} }
 			var given_arity = uint(len(t.Ref.TypeArgs))
 			if arity != given_arity { return nil, &TypeError {
-				Point:    ErrorPoint { AST: ctx.Module.AST, Node: t.Ref.Node },
+				Point:    ErrorPoint { CST: ctx.Module.CST, Node: t.Ref.Node },
 				Concrete: E_WrongParameterQuantity {
 					TypeName: s,
 					Required: arity,
@@ -293,23 +293,23 @@ func TypeFrom (type_ node.Type, ctx TypeContext) (Type, *TypeError) {
 			}, nil
 		default:
 			return nil, &TypeError {
-				Point: ErrorPoint { AST: ctx.Module.AST, Node: t.Ref.Module.Node },
+				Point: ErrorPoint { CST: ctx.Module.CST, Node: t.Ref.Module.Node },
 				Concrete: E_ModuleOfTypeRefNotFound {
 					Name: loader.Id2String(t.Ref.Module),
 				},
 			}
 		}
-	case node.TypeLiteral:
+	case ast.TypeLiteral:
 		return TypeFromRepr(t.Repr.Repr, ctx)
 	default:
 		panic("impossible branch")
 	}
 }
 
-/* Transform: node.Repr -> checker.Type */
-func TypeFromRepr (repr node.Repr, ctx TypeContext) (Type, *TypeError) {
+/* Transform: ast.Repr -> checker.Type */
+func TypeFromRepr (repr ast.Repr, ctx TypeContext) (Type, *TypeError) {
 	switch r := repr.(type) {
-	case node.ReprTuple:
+	case ast.ReprTuple:
 		if len(r.Elements) == 0 {
 			// there isn't an empty tuple,
 			// assume it to be the unit type
@@ -333,7 +333,7 @@ func TypeFromRepr (repr node.Repr, ctx TypeContext) (Type, *TypeError) {
 				}, nil
 			}
 		}
-	case node.ReprBundle:
+	case ast.ReprBundle:
 		if len(r.Fields) == 0 {
 			// there isn't an empty bundle,
 			// assume it to be the unit type
@@ -347,7 +347,7 @@ func TypeFromRepr (repr node.Repr, ctx TypeContext) (Type, *TypeError) {
 				if f_name == IgnoreMark {
 					return nil, &TypeError {
 						Point:    ErrorPoint {
-							AST: ctx.Module.AST, Node: f.Name.Node,
+							CST: ctx.Module.CST, Node: f.Name.Node,
 						},
 						Concrete: E_InvalidFieldName { f_name },
 					}
@@ -355,7 +355,7 @@ func TypeFromRepr (repr node.Repr, ctx TypeContext) (Type, *TypeError) {
 				var _, exists = fields[f_name]
 				if exists { return nil, &TypeError {
 					Point: ErrorPoint {
-						AST: ctx.Module.AST, Node: f.Name.Node,
+						CST: ctx.Module.CST, Node: f.Name.Node,
 					},
 					Concrete: E_DuplicateField { f_name },
 				} }
@@ -372,7 +372,7 @@ func TypeFromRepr (repr node.Repr, ctx TypeContext) (Type, *TypeError) {
 				},
 			}, nil
 		}
-	case node.ReprFunc:
+	case ast.ReprFunc:
 		var input, err1 = TypeFrom(r.Input.Type, ctx)
 		if err1 != nil { return nil, err1 }
 		var output, err2 = TypeFrom(r.Output.Type, ctx)

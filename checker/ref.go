@@ -2,7 +2,7 @@ package checker
 
 import (
 	"kumachan/loader"
-	"kumachan/transformer/node"
+	"kumachan/transformer/ast"
 )
 
 
@@ -60,7 +60,7 @@ type RefLocal struct {
 }
 
 
-func CheckRef(ref node.Ref, ctx ExprContext) (SemiExpr, *ExprError) {
+func CheckRef(ref ast.Ref, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(ref.Node)
 	var maybe_symbol = ctx.ModuleInfo.Module.SymbolFromRef(ref)
 	var symbol, ok = maybe_symbol.(loader.Symbol)
