@@ -118,7 +118,6 @@ func DesugarExpr(expr node.Expr) node.Call {
 }
 
 func DesugarPipeline(left node.Call, p node.MaybePipeline) node.Call {
-	// TODO: maybe something went wrong about ErrorPoint here
 	var pipeline, ok = p.(node.Pipeline)
 	if !ok {
 		return left

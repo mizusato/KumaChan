@@ -11,7 +11,7 @@ import (
 var IO_Functions = map[string] Value {
 	"write-line": func(out io.Writer, line []rune) rx.Effect {
 		return rx.CreateEffect(func(sender rx.Sender) {
-			var _, err = fmt.Fprintln(out, string(line))
+			var _, err = fmt.Fprintln(out, string(line))  // TODO: improve
 			if err != nil {
 				sender.Error(err)
 			} else {

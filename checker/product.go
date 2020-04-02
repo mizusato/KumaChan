@@ -297,7 +297,9 @@ func AssignTupleTo(expected Type, tuple SemiTypedTuple, info ExprInfo, ctx ExprC
 	}
 	return Expr{}, &ExprError {
 		Point:    info.ErrorPoint,
-		Concrete: E_TupleAssignedToNonTupleType {},
+		Concrete: E_TupleAssignedToNonTupleType {
+			NonTupleType: ctx.DescribeType(non_nil_expected),
+		},
 	}
 }
 
@@ -344,7 +346,9 @@ func AssignBundleTo(expected Type, bundle SemiTypedBundle, info ExprInfo, ctx Ex
 	}
 	return  Expr{}, &ExprError {
 		Point:    info.ErrorPoint,
-		Concrete: E_BundleAssignedToNonBundleType {},
+		Concrete: E_BundleAssignedToNonBundleType {
+			NonBundleType: ctx.DescribeType(expected),
+		},
 	}
 }
 
