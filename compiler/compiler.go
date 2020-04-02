@@ -182,7 +182,7 @@ func (d DataString) String() string {
 }
 type DataStringFormatter ch.StringFormatter
 func (d DataStringFormatter) ToValue() c.Value {
-	var f = func(args []c.Value) []rune {
+	var format_slice = func(args []c.Value) []rune {
 		var buf = make([]rune, 0)
 		for i, seg := range d.Segments {
 			buf = append(buf, seg...)
@@ -192,6 +192,20 @@ func (d DataStringFormatter) ToValue() c.Value {
 			}
 		}
 		return buf
+	}
+	var f interface{}
+	if d.Arity == 0 {
+		f = func() []rune {
+			return format_slice([]c.Value {})
+		}
+	} else if d.Arity == 1 {
+		f = func(arg c.Value) []rune {
+			return format_slice([]c.Value { arg })
+		}
+	} else {
+		f = func(arg c.ProductValue) []rune {
+			return format_slice(arg.Elements)
+		}
 	}
 	return c.NativeFunctionValue(c.AdaptNativeFunction(f))
 }

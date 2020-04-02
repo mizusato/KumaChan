@@ -54,8 +54,16 @@ func CheckText(text ast.Text, ctx ExprContext) (SemiExpr, *ExprError) {
 	for i := uint(0); i < arity; i += 1 {
 		elements[i] = NamedType { Name: __String, Args: make([]Type, 0) }
 	}
+	var input Type
+	if len(elements) == 0 {
+		input = AnonymousType { Unit {} }
+	} else if len(elements) == 1 {
+		input = elements[0]
+	} else {
+		input = AnonymousType { Tuple { elements } }
+	}
 	var t Type = AnonymousType { Func {
-		Input:  AnonymousType { Tuple { elements } },
+		Input:  input,
 		Output: NamedType { Name: __String, Args: make([]Type, 0) },
 	} }
 	return LiftTyped(Expr {
