@@ -25,6 +25,7 @@ type OpType Short
 const (
 	NOP  OpType  =  iota
 	NIL     // [ ___ ]: Load a nil value
+	POP     // [ ___ ]: Discard current value
 	/* Data Transfer */
 	GLOBAL  // [   index   ]: Load a global value (constant or function)
 	LOAD    // [ _, offset ]: Load a value from (frame base) + offset
@@ -81,6 +82,8 @@ func (inst Instruction) String() string {
 		return "NOP"
 	case NIL:
 		return "NIL"
+	case POP:
+		return "POP"
 	case GLOBAL:
 		return fmt.Sprintf("GLOBAL %d", inst.GetGlobalIndex())
 	case LOAD:

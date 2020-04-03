@@ -33,11 +33,11 @@ func MakeScope() *Scope {
 
 func MakeClosureScope(outer *Scope) *Scope {
 	var bindings = make([] Binding, 0)
-	for i, e := range outer.Bindings {
+	for i, b := range outer.Bindings {
 		bindings[i] = Binding {
-			Name:  e.Name,
+			Name:  b.Name,
 			Used:  false,
-			Point: e.Point,
+			Point: b.Point,
 		}
 	}
 	var binding_map = make(map[string] uint)
@@ -56,8 +56,10 @@ func MakeClosureScope(outer *Scope) *Scope {
 }
 
 func MakeBranchScope(outer *Scope) *Scope {
-	var bindings = make([] Binding, 0)
-	copy(bindings, outer.Bindings)
+	var bindings = make([] Binding, len(outer.Bindings))
+	for i, b := range outer.Bindings {
+		bindings[i] = b
+	}
 	var binding_map = make(map[string] uint)
 	for k, v := range outer.BindingMap {
 		binding_map[k] = v
@@ -87,8 +89,11 @@ func (scope *Scope) AddBinding(name string, point ErrorPoint) uint {
 		Id:    *(scope.NextId),
 	})
 	*(scope.NextId) += 1
+	var max = func(a uint, b uint) uint {
+		if (a > b) { return a } else { return b }
+	}
 	scope.BindingMap[name] = offset
-	*(scope.BindingPeek) += 1
+	*(scope.BindingPeek) = max(*(scope.BindingPeek), uint(len(*list)))
 	return offset
 }
 

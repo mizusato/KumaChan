@@ -129,62 +129,70 @@ func Transform (tree Tree) Module {
                 ))
             }
         }
-        for _, child_info := range info.Children {
-            transform_dived(&child_info, transform)
+        for _, child_info_group := range info.Children {
+        	for _, child_info := range child_info_group {
+            	transform_dived(&child_info, transform)
+        	}
         }
-        for _, child_info := range info.Strings {
-            transform_dived (
-                &child_info,
-                func (tree Tree, dived_ptr Pointer) reflect.Value {
-                    var dived_node = &tree.Nodes[dived_ptr]
-                    if dived_node.Part.PartType == syntax.MatchToken {
-                        var content = GetTokenContent(tree, dived_ptr)
-                        var L = len(content)
-                        if L >= 2 {
-                            if content[0] == '\'' && content[L-1] == '\'' {
-                                content = content[1: L-1]
-                            } else if content[0] == '"' && content[L-1] == '"' {
-                                content = content[1: L-1]
-                            }
-                        }
-                        return reflect.ValueOf(content)
-                    } else {
-                        panic(fmt.Sprintf (
-                            "cannot get token content of non-token part %v",
-                            syntax.Id2Name[dived_node.Part.Id],
-                        ))
-                    }
-                },
-            )
+        for _, child_info_group := range info.Strings {
+        	for _, child_info := range child_info_group {
+				transform_dived (
+					&child_info,
+					func (tree Tree, dived_ptr Pointer) reflect.Value {
+						var dived_node = &tree.Nodes[dived_ptr]
+						if dived_node.Part.PartType == syntax.MatchToken {
+							var content = GetTokenContent(tree, dived_ptr)
+							var L = len(content)
+							if L >= 2 {
+								if content[0] == '\'' && content[L-1] == '\'' {
+									content = content[1: L-1]
+								} else if content[0] == '"' && content[L-1] == '"' {
+									content = content[1: L-1]
+								}
+							}
+							return reflect.ValueOf(content)
+						} else {
+							panic(fmt.Sprintf (
+								"cannot get token content of non-token part %v",
+								syntax.Id2Name[dived_node.Part.Id],
+							))
+						}
+					},
+				)
+			}
         }
-        for _, child_info := range info.Options {
-            transform_dived (
-                &child_info,
-                func (tree Tree, _ Pointer) reflect.Value {
-                    return reflect.ValueOf(true)
-                },
-            )
+        for _, child_info_group := range info.Options {
+        	for _, child_info := range child_info_group {
+				transform_dived (
+					&child_info,
+					func (tree Tree, _ Pointer) reflect.Value {
+						return reflect.ValueOf(true)
+					},
+				)
+			}
         }
-        for _, list_info := range info.Lists {
-            transform_dived (
-                &list_info.NodeChildInfo,
-                func (tree Tree, dived_ptr Pointer) reflect.Value {
-                    var item_id = list_info.ItemId
-                    var tail_id = list_info.TailId
-                    var item_ptrs = FlatSubTree(tree, dived_ptr, item_id, tail_id)
-                    var field_index = list_info.FieldIndex
-                    var field = info.Type.Field(field_index)
-                    if field.Type.Kind() != reflect.Slice {
-                        panic("cannot transform list to non-slice field")
-                    }
-                    var N = len(item_ptrs)
-                    var slice = reflect.MakeSlice(field.Type, N, N)
-                    for i, item_ptr := range item_ptrs {
-                        slice.Index(i).Set(transform(tree, item_ptr))
-                    }
-                    return slice
-                },
-            )
+        for _, list_info_group := range info.Lists {
+        	for _, list_info := range list_info_group {
+				transform_dived (
+					&list_info.NodeChildInfo,
+					func (tree Tree, dived_ptr Pointer) reflect.Value {
+						var item_id = list_info.ItemId
+						var tail_id = list_info.TailId
+						var item_ptrs = FlatSubTree(tree, dived_ptr, item_id, tail_id)
+						var field_index = list_info.FieldIndex
+						var field = info.Type.Field(field_index)
+						if field.Type.Kind() != reflect.Slice {
+							panic("cannot transform list to non-slice field")
+						}
+						var N = len(item_ptrs)
+						var slice = reflect.MakeSlice(field.Type, N, N)
+						for i, item_ptr := range item_ptrs {
+							slice.Index(i).Set(transform(tree, item_ptr))
+						}
+						return slice
+					},
+				)
+			}
         }
         return node.Elem()
     }

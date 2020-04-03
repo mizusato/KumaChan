@@ -52,7 +52,7 @@ func AssignLambdaTo(expected Type, lambda UntypedLambda, info ExprInfo, ctx Expr
 					} else {
 						return Expr{}, &ExprError {
 							Point:    info.ErrorPoint,
-							Concrete: E_ExplicitTypeRequired{},
+							Concrete: E_ExplicitTypeRequired {},
 						}
 					}
 				}

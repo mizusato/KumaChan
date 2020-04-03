@@ -16,10 +16,10 @@ type Node struct {
 
 type NodeInfo struct {
     Type       reflect.Type
-    Children   map[syntax.Id] NodeChildInfo
-    Strings    map[syntax.Id] NodeChildInfo
-    Lists      map[syntax.Id] NodeListInfo
-    Options    map[syntax.Id] NodeChildInfo
+    Children   map[syntax.Id] ([] NodeChildInfo)
+    Strings    map[syntax.Id] ([] NodeChildInfo)
+    Lists      map[syntax.Id] ([] NodeListInfo)
+    Options    map[syntax.Id] ([] NodeChildInfo)
     First      int
     Last       int
 }
@@ -154,10 +154,10 @@ func __Initialize() {
         var node_id = get_part_id(node_part_name)
         var info = NodeInfo {
             Type:     T,
-            Children: make(map[syntax.Id] NodeChildInfo),
-            Strings:  make(map[syntax.Id] NodeChildInfo),
-            Lists:    make(map[syntax.Id] NodeListInfo),
-            Options:  make(map[syntax.Id] NodeChildInfo),
+            Children: make(map[syntax.Id] ([] NodeChildInfo)),
+            Strings:  make(map[syntax.Id] ([] NodeChildInfo)),
+            Lists:    make(map[syntax.Id] ([] NodeListInfo)),
+            Options:  make(map[syntax.Id] ([] NodeChildInfo)),
             First:    -1,
             Last:     -1,
         }
@@ -186,30 +186,30 @@ func __Initialize() {
             switch kind {
             // case "use": already handled above
             case "part":
-                info.Children[part_id] = NodeChildInfo {
+                info.Children[part_id] = append(info.Children[part_id], NodeChildInfo {
                     FieldIndex: i,
                     DivePath:   dive_path,
                     Fallback:   fallback_id,
-                }
+                })
             case "part_opt":
-                info.Children[part_id] = NodeChildInfo {
+                info.Children[part_id] = append(info.Children[part_id], NodeChildInfo {
                     FieldIndex: i,
                     DivePath:   dive_path,
                     Optional:   true,
                     Fallback:   fallback_id,
-                }
+                })
             case "content":
-                info.Strings[part_id] = NodeChildInfo {
+                info.Strings[part_id] = append(info.Strings[part_id], NodeChildInfo {
                     FieldIndex: i,
                     DivePath:   dive_path,
                     Fallback:   fallback_id,
-                }
+                })
             case "option":
-                info.Options[part_id] = NodeChildInfo {
+                info.Options[part_id] = append(info.Options[part_id], NodeChildInfo {
                     FieldIndex: i,
                     DivePath:   dive_path,
                     Optional:   true,
-                }
+                })
             case "list":
                 var list_name string
                 if len(dive_path) > 0 {
@@ -222,7 +222,7 @@ func __Initialize() {
                 var tail = list_name + "_tail"
                 var item_id = get_part_id(item)
                 var tail_id = get_part_id(tail)
-                info.Lists[part_id] = NodeListInfo {
+                info.Lists[part_id] = append(info.Lists[part_id], NodeListInfo {
                     NodeChildInfo: NodeChildInfo {
                         FieldIndex: i,
                         DivePath:   dive_path,
@@ -231,7 +231,7 @@ func __Initialize() {
                     },
                     ItemId: item_id,
                     TailId: tail_id,
-                }
+                })
             case "list_more":
                 var item = f.Tag.Get("item")
                 if item == "" {
@@ -245,7 +245,7 @@ func __Initialize() {
                     tail = "more_" + item + "s"
                 }
                 var tail_id = get_part_id(tail)
-                info.Lists[part_id] = NodeListInfo {
+                info.Lists[part_id] = append(info.Lists[part_id], NodeListInfo {
                     NodeChildInfo: NodeChildInfo {
                         FieldIndex: i,
                         DivePath:   dive_path,
@@ -254,7 +254,7 @@ func __Initialize() {
                     },
                     ItemId: item_id,
                     TailId: tail_id,
-                }
+                })
             case "list_rec":
                 var tail_id syntax.Id
                 if len(dive_path) > 0 {
@@ -270,8 +270,8 @@ func __Initialize() {
                     item = strings.TrimSuffix(list_name, "s")
                 }
                 var item_id = get_part_id(item)
-                info.Lists[part_id] = NodeListInfo{
-                    NodeChildInfo: NodeChildInfo{
+                info.Lists[part_id] = append(info.Lists[part_id], NodeListInfo {
+                    NodeChildInfo: NodeChildInfo {
                         FieldIndex: i,
                         DivePath:   dive_path,
                         Optional:   true,
@@ -279,7 +279,7 @@ func __Initialize() {
                     },
                     ItemId: item_id,
                     TailId: tail_id,
-                }
+                })
             default:
                 // no tag found, do nothing
             }
@@ -301,14 +301,5 @@ func GetNodeInfoById (part_id syntax.Id) NodeInfo {
         ))
     } else {
         return info
-    }
-}
-
-func GetNodeInfo (part string) NodeInfo {
-    var part_id, exists = syntax.Name2Id[part]
-    if !exists {
-        panic("part " + part + " does not exist")
-    } else {
-        return GetNodeInfoById(part_id)
     }
 }

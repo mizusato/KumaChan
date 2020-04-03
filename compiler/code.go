@@ -66,15 +66,16 @@ func (buf CodeBuffer) WriteBranch(code Code, tail_addr uint) {
 	var last_addr = (code.Length() - 1)
 	for _, inst := range code.InstSeq {
 		if inst.OpCode == c.JIF || inst.OpCode == c.JMP {
-			var dest_addr = (uint(inst.Arg1) + base_size)
-			ValidateDestAddr(dest_addr)
-			if dest_addr == last_addr {
-				dest_addr = tail_addr
+			var rel_dest_addr = uint(inst.Arg1)
+			var abs_dest_addr = (rel_dest_addr + base_size)
+			ValidateDestAddr(abs_dest_addr)
+			if rel_dest_addr == last_addr {
+				abs_dest_addr = tail_addr
 			}
 			*base = append(*base, c.Instruction {
 				OpCode: inst.OpCode,
 				Arg0:   inst.Arg0,
-				Arg1:   c.Long(dest_addr),
+				Arg1:   c.Long(abs_dest_addr),
 			})
 		} else {
 			*base = append(*base, inst)

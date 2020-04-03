@@ -198,8 +198,12 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 						pattern,       p.Items,
 						branch_scope,  branch_buf,
 					)
+				default:
+					panic("impossible branch")
 				}
 			}
+			var pop_inst = c.Instruction { OpCode: c.POP }
+			branch_buf.Write(CodeFrom(pop_inst, v.Argument.Info))
 			var expr_code = CompileExpr(b.Value, branch_ctx)
 			branch_buf.Write(expr_code)
 			branches[i] = branch_buf.Collect()
@@ -274,6 +278,8 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 			default:
 				panic("impossible branch")
 			}
+			var pop_inst = c.Instruction { OpCode: c.POP }
+			buf.Write(CodeFrom(pop_inst, b.Value.Info))
 		}
 		var ret_code = CompileExpr(v.Returned, ctx)
 		buf.Write(ret_code)
@@ -318,6 +324,8 @@ func CompileClosure (
 	default:
 		panic("impossible branch")
 	}
+	var pop_inst = c.Instruction { OpCode: c.POP }
+	inner_buf.Write(CodeFrom(pop_inst, info))
 	var body_code = CompileExpr(lambda.Output, inner_ctx)
 	inner_buf.Write(body_code)
 	var base_reserved_size = *(inner_scope.BindingPeek)

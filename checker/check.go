@@ -349,7 +349,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 					errors = append(errors, err1)
 					continue
 				}
-				var t = AnonymousType{f.DeclaredType}
+				var t = AnonymousType { f.DeclaredType }
 				var body_expr, err2 = AssignTo(t, lambda, f_expr_ctx)
 				if err2 != nil {
 					errors = append(errors, err2)

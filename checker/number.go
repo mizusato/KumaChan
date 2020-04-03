@@ -110,7 +110,9 @@ func AssignIntegerTo(expected Type, integer UntypedInteger, info ExprInfo, ctx E
 	}
 	return Expr{}, &ExprError {
 		Point:    info.ErrorPoint,
-		Concrete: E_IntegerAssignedToNonIntegerType {},
+		Concrete: E_IntegerAssignedToNonIntegerType {
+			NonIntegerType: ctx.DescribeExpectedType(expected),
+		},
 	}
 }
 

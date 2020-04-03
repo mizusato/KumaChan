@@ -135,12 +135,9 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 					Concrete: E_DuplicateDefaultBranch {},
 				}
 			}
-			switch branch.Pattern.(type) {
-			case ast.VariousPattern:
-				panic("something went wrong")
-			}
+			if branch.Pattern != nil { panic("something went wrong") }
 			var semi, err = Check(branch.Expr, ctx)
-			if err != nil { return SemiExpr{}, nil }
+			if err != nil { return SemiExpr{}, err }
 			branches[i] = SemiTypedBranch {
 				IsDefault: true,
 				Index:     BadIndex,

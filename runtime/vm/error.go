@@ -24,7 +24,7 @@ func PrintRuntimeErrorMessage(err interface{}, ec *ExecutionContext) {
 		var callee = ec.callStack[i]
 		var callee_name = callee.function.Info.Name
 		var frame_msg = make(ErrorMessage, 0)
-		frame_msg.WriteText(TS_NORMAL, fmt.Sprintf("%s called", callee_name))
+		frame_msg.WriteText(TS_NORMAL, fmt.Sprintf("call from %s", callee_name))
 		buf.WriteAll(GenFrameErrMsg(callee, frame_msg))
 		buf.WriteText(TS_NORMAL, "\n*\n")
 	}

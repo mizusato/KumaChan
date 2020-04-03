@@ -171,12 +171,10 @@ func (ctx ExprContext) WithShadowingPatternMatching(p Pattern) ExprContext {
 	case TrivialPattern:
 		added[P.ValueName] = P.ValueType
 	case TuplePattern:
-		var added = make(map[string]Type)
 		for _, item := range P.Items {
 			added[item.Name] = item.Type
 		}
 	case BundlePattern:
-		var added = make(map[string]Type)
 		for _, item := range P.Items {
 			added[item.Name] = item.Type
 		}

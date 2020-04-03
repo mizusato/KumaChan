@@ -132,9 +132,32 @@ func CheckRef(ref ast.Ref, ctx ExprContext) (SemiExpr, *ExprError) {
 func AssignRefTo(expected Type, ref UntypedRef, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
 	switch r := ref.RefBody.(type) {
 	case UntypedRefToType:
-		return Expr{}, &ExprError {
-			Point:    info.ErrorPoint,
-			Concrete: E_TypeUsedAsValue { r.TypeName },
+		var g = r.Type
+		var g_name = r.TypeName
+		var type_args = ref.TypeArgs
+		var unit = LiftTyped(Expr {
+			Type:  AnonymousType { Unit {} },
+			Value: UnitValue {},
+			Info:  info,
+		})
+		var boxed_unit, err = Box (
+			unit, g, g_name, info, type_args, info, ctx,
+		)
+		if err != nil {
+			return Expr{}, &ExprError {
+				Point:    info.ErrorPoint,
+				Concrete: E_TypeUsedAsValue { r.TypeName },
+			}
+		} else {
+			var adapted, err = AssignTypedTo(expected, boxed_unit, ctx, true)
+			if err != nil {
+				return Expr{}, &ExprError {
+					Point:    info.ErrorPoint,
+					Concrete: E_TypeUsedAsValue { r.TypeName },
+				}
+			} else {
+				return adapted, nil
+			}
 		}
 	case UntypedRefToFunctions:
 		var name = r.FuncName

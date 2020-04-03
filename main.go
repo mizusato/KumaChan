@@ -1,21 +1,22 @@
 package main
 
 import (
-    "kumachan/compiler"
-    "kumachan/runtime/common"
-    "kumachan/runtime/vm"
-    "os"
-    "io"
-    "fmt"
-    "reflect"
-    "io/ioutil"
-    "kumachan/checker"
-    "kumachan/loader"
-    "kumachan/transformer"
-    "kumachan/parser/syntax"
-    "kumachan/parser/scanner"
-    "kumachan/parser"
-    . "kumachan/error"
+
+"fmt"
+"io"
+"io/ioutil"
+"kumachan/checker"
+"kumachan/compiler"
+. "kumachan/error"
+"kumachan/loader"
+"kumachan/parser"
+"kumachan/parser/scanner"
+"kumachan/parser/syntax"
+"kumachan/runtime/common"
+"kumachan/runtime/vm"
+"kumachan/transformer"
+"os"
+"reflect"
 )
 
 

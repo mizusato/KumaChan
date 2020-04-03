@@ -1,7 +1,17 @@
 module Hello;
 
 do OS::Stdout
-   | write-line  'Hello World'
+   | write-line  if $(Yes and No) { '你好，世界' } else { 'Hello World' }
    | catch       lambda _ exit 1
    | then        exit 0;
 
+private function and {
+    lambda (Bool,Bool) Bool:
+    lambda (a,b) switch(a) {
+        case Yes: switch(b) {
+            case Yes: Yes,
+            case No:  No
+        },
+        case No: No
+    }
+};

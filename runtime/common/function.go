@@ -57,7 +57,7 @@ func (f *Function) String() string {
 			if i < len(f.Info.SourceMap) {
 				n = f.Info.SourceMap[i]
 			}
-			fmt.Fprintf(&buf, "    %s", inst.String())
+			fmt.Fprintf(&buf, "    [%d] %s", i, inst.String())
 			if n != nil && n != prev_node {
 				fmt.Fprintf(&buf, "   ; (%d, %d)", n.Point.Row, n.Point.Col)
 				prev_node = n

@@ -48,6 +48,7 @@ func (mod *Module) SymbolFromRef(ref ast.Ref) MaybeSymbol {
 	var ref_mod = Id2String(ref.Module)
 	var corresponding, exists = mod.ImpMap[ref_mod]
 	if exists {
+		if ref_mod == "" { panic("something went wrong") }
 		return NewSymbol (
 			Id2String(corresponding.Node.Name),
 			Id2String(ref.Id),
@@ -64,7 +65,7 @@ func (mod *Module) SymbolFromRef(ref ast.Ref) MaybeSymbol {
 					// Core::Int, Core::Float, Core::Effect, ...
 					return NewSymbol(CoreModule, sym_name)
 				} else {
-					// Self::SymbolName
+					// a, b, c
 					return NewSymbol("", sym_name)
 				}
 			}

@@ -78,6 +78,8 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 				// do nothing
 			case NIL:
 				ec.pushValue(nil)
+			case POP:
+				ec.popValue()
 			case GLOBAL:
 				var id = inst.GetGlobalIndex()
 				var gv = m.globalSlot[id]
