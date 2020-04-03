@@ -150,7 +150,7 @@ var SyntaxDefinition = [...] string {
       "block = @let { binding! more_bindings return! }!",
         "more_bindings? = , binding! more_bindings",
         "binding = rec_opt pattern := binding_type expr!",
-          "rec_opt? = ( @rec! )!",
+          "rec_opt? = @rec :!",
           "binding_type? = [ type! ]!",
         "return = , @return expr!",
       "bundle = { } | { update pairlist }!",

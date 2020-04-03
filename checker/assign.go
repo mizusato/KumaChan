@@ -197,7 +197,7 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext, unbox bool) (Expr,
 					} else {
 						return expr, nil
 					}
-				} else {
+				} else if E.Name != T.Name {
 					var g = ctx.ModuleInfo.Types[E.Name]
 					var union, is_union = g.Value.(Union)
 					if is_union {

@@ -18,3 +18,13 @@ type FunctionValue struct {
 }
 
 type NativeFunctionValue  NativeFunction
+
+
+func Bool(v bool) SumValue {
+	// This function should be consistent with `stdlib/core.km`
+	if v == true {
+		return SumValue { Index: 0 }
+	} else {
+		return SumValue { Index: 1 }
+	}
+}

@@ -186,8 +186,8 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 					var offset = branch_scope.AddBinding (
 						p.ValueName, pattern.Point,
 					)
-					var bind_inst = InstAddBinding(offset)
-					branch_buf.Write(CodeFrom(bind_inst, b.Value.Info))
+					var inst_store = InstStore(offset)
+					branch_buf.Write(CodeFrom(inst_store, b.Value.Info))
 				case ch.TuplePattern:
 					BindPatternItems (
 						pattern,       p.Items,
@@ -201,9 +201,10 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 				default:
 					panic("impossible branch")
 				}
+			} else {
+				var pop_inst = c.Instruction { OpCode: c.POP }
+				branch_buf.Write(CodeFrom(pop_inst, v.Argument.Info))
 			}
-			var pop_inst = c.Instruction { OpCode: c.POP }
-			branch_buf.Write(CodeFrom(pop_inst, v.Argument.Info))
 			var expr_code = CompileExpr(b.Value, branch_ctx)
 			branch_buf.Write(expr_code)
 			branches[i] = branch_buf.Collect()
@@ -258,9 +259,9 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 					val_code = CompileExpr(b.Value, ctx)
 					offset = ctx.LocalScope.AddBinding(p.ValueName, p.Point)
 				}
-				var bind_inst = InstAddBinding(offset)
+				var inst_store = InstStore(offset)
 				buf.Write(val_code)
-				buf.Write(CodeFrom(bind_inst, b.Value.Info))
+				buf.Write(CodeFrom(inst_store, b.Value.Info))
 			case ch.TuplePattern:
 				var val_code = CompileExpr(b.Value, ctx)
 				buf.Write(val_code)
@@ -278,8 +279,6 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 			default:
 				panic("impossible branch")
 			}
-			var pop_inst = c.Instruction { OpCode: c.POP }
-			buf.Write(CodeFrom(pop_inst, b.Value.Info))
 		}
 		var ret_code = CompileExpr(v.Returned, ctx)
 		buf.Write(ret_code)
@@ -315,8 +314,8 @@ func CompileClosure (
 	switch p := pattern.Concrete.(type) {
 	case ch.TrivialPattern:
 		var offset = inner_scope.AddBinding(p.ValueName, p.Point)
-		var bind_inst = InstAddBinding(offset)
-		inner_buf.Write(CodeFrom(bind_inst, info))
+		var inst_store = InstStore(offset)
+		inner_buf.Write(CodeFrom(inst_store, info))
 	case ch.TuplePattern:
 		BindPatternItems(pattern, p.Items, inner_scope, inner_buf)
 	case ch.BundlePattern:
@@ -324,8 +323,6 @@ func CompileClosure (
 	default:
 		panic("impossible branch")
 	}
-	var pop_inst = c.Instruction { OpCode: c.POP }
-	inner_buf.Write(CodeFrom(pop_inst, info))
 	var body_code = CompileExpr(lambda.Output, inner_ctx)
 	inner_buf.Write(body_code)
 	var base_reserved_size = *(inner_scope.BindingPeek)
@@ -436,8 +433,10 @@ func BindPatternItems (
 	for _, item := range items {
 		var inst_get = InstGet(item.Index)
 		var offset = scope.AddBinding(item.Name, item.Point)
-		var inst_bind = InstAddBinding(offset)
+		var inst_bind = InstStore(offset)
 		buf.Write(CodeFrom(inst_get, info))
 		buf.Write(CodeFrom(inst_bind, info))
 	}
+	var pop_inst = c.Instruction { OpCode: c.POP }
+	buf.Write(CodeFrom(pop_inst, info))
 }

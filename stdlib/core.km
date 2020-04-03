@@ -3,7 +3,8 @@ module Core;
 
 /**
  *  IMPORTANT: The following type definitions should be kept update
- *             with `loader/symbol.go` and `checker/special.go`.
+ *             with `loader/symbol.go`, `checker/special.go`
+ *             and `runtime/common/value.go`.
  */
 
 // Basic Types
@@ -109,4 +110,110 @@ public function map-error[T,E,F] {
 public function catch[T,E] {
     lambda(Effect[T,E], lambda E Effect[(),()]) Effect[T,()]:
     native 'effect-catch'
+};
+
+public function str! {
+    lambda String String:
+    lambda x x
+};
+
+public function str! {
+    lambda Integer String:
+    native 'str-integer'
+};
+
+public function + {
+    lambda (Integer,Integer) Integer:
+    native '+integer'
+};
+
+public function - {
+    lambda (Integer,Integer) Integer:
+    native '-integer'
+};
+
+public function * {
+    lambda (Integer,Integer) Integer:
+    native '*integer'
+};
+
+public function quorem {
+    lambda (Integer,Integer) (Integer,Integer):
+    native 'quorem'
+};
+
+public function divmod {
+    lambda (Integer,Integer) (Integer,Integer):
+    native 'divmod'
+};
+
+public function = {
+    lambda (Integer,Integer) Bool:
+    native '=integer'
+};
+
+public function < {
+    lambda (Integer,Integer) Bool:
+    native '<integer'
+};
+
+public function > {
+    lambda (Integer,Integer) Bool:
+    lambda (a, b)  $(b < a)
+};
+
+public function not {
+    lambda Bool Bool:
+    lambda p
+        switch(p) {
+            case Yes: No,
+            case No:  Yes
+        }
+};
+
+public function <= {
+    lambda (Integer,Integer) Bool:
+    lambda (a, b)  not $(a > b)
+};
+
+public function >= {
+    lambda (Integer,Integer) Bool:
+    lambda (a, b)  not $(a < b)
+};
+
+public function - {
+    lambda Integer Integer:
+    lambda n  $(0 - n)
+};
+
+public function div {
+    lambda (Integer,Integer) Integer:
+    lambda (a, b) let {
+        (q, _) := divmod (a, b),
+        return q
+    }
+};
+
+public function mod {
+    lambda (Integer,Integer) Integer:
+    lambda (a, b) let {
+        (_, r) := divmod (a, b),
+        return r
+    }
+};
+
+public function quo {
+    lambda (Integer,Integer) Integer:
+    lambda (a, b) let {
+        (q, _) := quorem (a, b),
+        return q
+    }
+};
+
+public function rem {
+    lambda (Integer,Integer) Integer:
+    lambda (a, b) let {
+        (_, r) := quorem (a, b),
+        return r
+    }
 };

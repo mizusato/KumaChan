@@ -1,6 +1,7 @@
 package lib
 
 import (
+	. "kumachan/runtime/common"
 	"math"
 	"math/big"
 )
@@ -18,15 +19,15 @@ func CheckFloat(x float64) float64 {
 
 
 var ArithmeticFunctions = map[string] interface{} {
-	"plus": func(a *big.Int, b *big.Int) *big.Int {
+	"+integer": func(a *big.Int, b *big.Int) *big.Int {
 		var c big.Int
 		return c.Add(a, b)
 	},
-	"minus": func(a *big.Int, b *big.Int) *big.Int {
+	"-integer": func(a *big.Int, b *big.Int) *big.Int {
 		var c big.Int
 		return c.Sub(a, b)
 	},
-	"times": func(a *big.Int, b *big.Int) *big.Int {
+	"*integer": func(a *big.Int, b *big.Int) *big.Int {
 		var c big.Int
 		return c.Mul(a, b)
 	},
@@ -39,6 +40,12 @@ var ArithmeticFunctions = map[string] interface{} {
 		var q, m big.Int
 		q.DivMod(a, b, &m)
 		return &q, &m
+	},
+	"=integer": func(a *big.Int, b *big.Int) SumValue {
+		return Bool(a.Cmp(b) == 0)
+	},
+	"<integer": func(a *big.Int, b *big.Int) SumValue {
+		return Bool(a.Cmp(b) == -1)
 	},
 	"+float": func(a float64, b float64) float64 {
 		return CheckFloat(a + b)

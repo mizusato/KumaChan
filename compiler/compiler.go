@@ -124,7 +124,7 @@ func CompileFunction (
 		switch p := pattern.Concrete.(type) {
 		case ch.TrivialPattern:
 			var offset = scope.AddBinding(p.ValueName, p.Point)
-			var bind_inst = InstAddBinding(offset)
+			var bind_inst = InstStore(offset)
 			buf.Write(CodeFrom(bind_inst, info))
 		case ch.TuplePattern:
 			BindPatternItems(pattern, p.Items, scope, buf)

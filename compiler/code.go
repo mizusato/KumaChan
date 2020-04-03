@@ -110,7 +110,7 @@ func InstLocalRef(offset uint) c.Instruction {
 	}
 }
 
-func InstAddBinding(offset uint) c.Instruction {
+func InstStore(offset uint) c.Instruction {
 	ValidateLocalOffset(offset)
 	return c.Instruction {
 		OpCode: c.STORE,
