@@ -51,7 +51,7 @@ type DeclFunction struct {
     Node                    `part:"decl_func"`
     Public  bool            `option:"scope.@public"`
     Name    Identifier      `part:"name"`
-    Params  [] Identifier   `list_more:"type_params" item:"name"`
+    Params  [] Identifier   `list_more:"type_params.namelist" item:"name"`
     Repr    ReprFunc        `part:"signature.repr_func"`
     Body    VariousBody     `part:"body"`
 }
@@ -61,11 +61,20 @@ type VariousBody struct {
 }
 type Body interface { Body() }
 
+func (impl DeclMacro) Command() {}
+type DeclMacro struct {
+    Node                    `part:"decl_macro"`
+    Public  bool            `option:"scope.@public"`
+    Name    Identifier      `part:"name"`
+    Input   [] Identifier   `list_more:"macro_params.namelist" item:"name"`
+    Output  Expr            `part:"expr"`
+}
+
 func (impl DeclType) Command() {}
 type DeclType struct {
     Node                          `part:"decl_type"`
     Name       Identifier         `part:"name"`
-    Params     [] Identifier      `list_more:"type_params" item:"name"`
+    Params     [] Identifier      `list_more:"type_params.namelist" item:"name"`
     TypeValue  VariousTypeValue   `part:"type_value"`
 }
 type VariousTypeValue struct {

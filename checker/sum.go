@@ -91,7 +91,7 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 				} },
 			} }
 			var index, is_subtype = GetSubtypeIndex(union, type_sym)
-			if !is_subtype { return SemiExpr{}, &ExprError{
+			if !is_subtype { return SemiExpr{}, &ExprError {
 				Point:    ctx.GetErrorPoint(t.Node),
 				Concrete: E_NotBranchType {
 					Union:    ctx.DescribeType(arg_type),
@@ -117,9 +117,7 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 				maybe_pattern = nil
 				branch_ctx = ctx
 			}
-			var semi, err = Check(
-				branch.Expr, branch_ctx,
-			)
+			var semi, err = Check(branch.Expr, branch_ctx)
 			if err != nil { return SemiExpr{}, err }
 			branches[i] = SemiTypedBranch {
 				IsDefault: false,

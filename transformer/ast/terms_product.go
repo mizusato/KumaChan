@@ -1,12 +1,6 @@
 package ast
 
 
-func (impl Array) Term() {}
-type Array struct {
-	Node             `part:"array"`
-	Items  [] Expr   `list_more:"exprlist" item:"expr"`
-}
-
 func (impl Tuple) Term() {}
 type Tuple struct {
 	Node                `part:"tuple"`

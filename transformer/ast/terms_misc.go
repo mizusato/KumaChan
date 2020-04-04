@@ -5,7 +5,7 @@ func (impl Cast) Term() {}
 type Cast struct {
 	Node                  `part:"cast"`
 	Target  VariousType   `part:"type"`
-	Expr    Expr          `part:"expr"`
+	Object  Call          `part:"terms.call"`
 }
 
 func (impl Lambda) Body() {}
@@ -28,6 +28,12 @@ type Binding struct {
 	Pattern    VariousPattern   `part:"pattern"`
 	Type       MaybeType        `part_opt:"binding_type.type"`
 	Value      Expr             `part:"expr"`
+}
+
+func (impl Array) Term() {}
+type Array struct {
+	Node             `part:"array"`
+	Items  [] Expr   `list_more:"exprlist" item:"expr"`
 }
 
 func (impl Infix) Term() {}

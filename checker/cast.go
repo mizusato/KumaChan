@@ -11,7 +11,7 @@ func CheckCast(cast ast.Cast, ctx ExprContext) (SemiExpr, *ExprError) {
 		Point:    err1.Point,
 		Concrete: E_TypeErrorInExpr { err1 },
 	} }
-	var semi, err2 = Check(cast.Expr, ctx)
+	var semi, err2 = CheckCall(cast.Object, ctx)
 	if err2 != nil { return SemiExpr{}, err2 }
 	var typed, err3 = AssignTo(target, semi, ctx)
 	if err3 != nil { return SemiExpr{}, err3 }

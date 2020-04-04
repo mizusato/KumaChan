@@ -6,6 +6,7 @@ import (
 	"kumachan/transformer/ast"
 )
 
+
 type GenericFunction struct {
 	Node          ast.Node
 	Public        bool
@@ -21,11 +22,12 @@ type FunctionReference struct {
 	IsImported  bool              // If it is imported from another module
 }
 
+// Map from names of available functions in the module to their references
+type FunctionCollection  map[string] []FunctionReference
+
 // Map from module names to their corresponding function collections
 type FunctionStore map[string] FunctionCollection
 
-// Map from names of available functions in the module to their references
-type FunctionCollection  map[string] []FunctionReference
 
 // Procedure to collect all functions in a module hierarchy
 func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore) (FunctionCollection, *FunctionError) {
@@ -69,10 +71,9 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 	}
 	// 3. Iterate over all function declarations in the current module
 	for _, cmd := range mod.Node.Commands {
-		switch c := cmd.Command.(type) {
+		switch decl := cmd.Command.(type) {
 		case ast.DeclFunction:
 			// 3.1. Get the names of the function and its type parameters
-			var decl = c
 			var name = loader.Id2String(decl.Name)
 			if name == IgnoreMark {
 				// 3.1.1. If the function name is invalid, throw an error.

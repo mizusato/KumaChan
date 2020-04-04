@@ -14,6 +14,19 @@ type Branch struct {
 	Expr     Expr           `part:"expr"`
 }
 
+func (impl MultiSwitch) Term() {}
+type MultiSwitch struct {
+	Node                        `part:"multi_switch"`
+	Arguments  [] Expr          `list_more:"exprlist" item:"expr"`
+	Branches   [] MultiBranch   `list_more:"multi_branch_list" item:"multi_branch"`
+}
+type MultiBranch struct {
+	Node                    `part:"multi_branch"`
+	Types    [] Ref         `list_more:"branch_key.multi_type_ref.ref_list" item:"ref"`
+	Pattern  PatternTuple   `part:"branch_key.pattern_tuple"`
+	Expr     Expr           `part:"expr"`
+}
+
 
 func (impl If) Term() {}
 type If struct {

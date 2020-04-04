@@ -24,6 +24,6 @@ private function factorial {
         if $(n <= 1) {
             1
         } else {
-            n | * factorial $(n - 1)
+            $(n * (factorial $(n - 1)))
         }
 };

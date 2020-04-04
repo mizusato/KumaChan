@@ -23,6 +23,11 @@ type UntypedRefToFunctions struct {
 	FuncName   string
 	Functions  [] *GenericFunction
 }
+func (impl UntypedRefToMacro) UntypedRefBody() {}
+type UntypedRefToMacro struct {
+	MacroName  string
+	Macro      *Macro
+}
 
 func (impl RefConstant) ExprVal() {}
 type RefConstant struct {
@@ -84,6 +89,20 @@ func CheckRef(ref ast.Ref, ctx ExprContext) (SemiExpr, *ExprError) {
 		type_args[i] = t
 	}
 	switch s := sym_concrete.(type) {
+	case SymMacroArg:
+		switch content := s.Content.Value.(type) {
+		case TypedExpr:
+			return LiftTyped(Expr {
+				Type:  content.Type,
+				Value: content.Value,
+				Info:  info,
+			}), nil
+		default:
+			return SemiExpr {
+				Value: s.Content.Value,
+				Info:  info,
+			}, nil
+		}
 	case SymLocalValue:
 		return LiftTyped(Expr {
 			Type:  s.ValueType,
@@ -123,6 +142,24 @@ func CheckRef(ref ast.Ref, ctx ExprContext) (SemiExpr, *ExprError) {
 			},
 			Info:  info,
 		}, nil
+	case SymMacro:
+		if len(type_args) > 0 {
+			return SemiExpr{}, &ExprError {
+				Point:    ctx.GetErrorPoint(ref.Node),
+				Concrete: E_TypeParamsOnMacro {},
+			}
+		} else {
+			return SemiExpr {
+				Value: UntypedRef {
+					RefBody: UntypedRefToMacro {
+						MacroName: symbol.SymbolName,
+						Macro:     s.Macro,
+					},
+					TypeArgs: nil,
+				},
+				Info: info,
+			}, nil
+		}
 	default:
 		panic("impossible branch")
 	}
@@ -166,6 +203,11 @@ func AssignRefTo(expected Type, ref UntypedRef, info ExprInfo, ctx ExprContext) 
 		return OverloadedAssignTo (
 			expected, functions, name, type_args, info, ctx,
 		)
+	case UntypedRefToMacro:
+		return Expr{}, &ExprError {
+			Point:    info.ErrorPoint,
+			Concrete: E_MacroUsedAsValue {},
+		}
 	default:
 		panic("impossible branch")
 	}
@@ -196,7 +238,40 @@ func CallUntypedRef (
 		return OverloadedCall (
 			functions, name, type_args, arg, ref_info, call_info, ctx,
 		)
+	case UntypedRefToMacro:
+		var args  [] SemiExpr
+		switch a := arg.Value.(type) {
+		case SemiTypedTuple:
+			args = a.Values
+		case TypedExpr:
+			switch a.Value.(type) {
+			case UnitValue:
+				// do nothing, leave `args` zero length
+			default:
+				args = [] SemiExpr { arg }
+			}
+		default:
+			args = [] SemiExpr { arg }
+		}
+		var m = ref_body.Macro
+		var name = ref_body.MacroName
+		var point = call_info.ErrorPoint
+		var m_ctx, err1 = ctx.WithMacroExpanded(m, name, args, point)
+		if err1 != nil { return SemiExpr{}, err1 }
+		var expanded, err2 = Check(m.Output, m_ctx)
+		if err2 != nil { return SemiExpr{}, &ExprError {
+			Point:    point,
+			Concrete: E_MacroExpandingFailed {
+				MacroName: name,
+				Deeper:    err2,
+			},
+		} }
+		return SemiExpr {
+			Value: expanded.Value,
+			Info:  call_info,
+		}, nil
 	default:
 		panic("impossible branch")
 	}
 }
+

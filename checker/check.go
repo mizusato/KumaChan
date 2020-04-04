@@ -43,6 +43,7 @@ type CheckContext struct {
 	Types      TypeRegistry
 	Functions  FunctionStore
 	Constants  ConstantStore
+	Macros     MacroStore
 }
 
 type ModuleInfo struct {
@@ -50,6 +51,7 @@ type ModuleInfo struct {
 	Types      TypeRegistry
 	Constants  ConstantCollection
 	Functions  FunctionCollection
+	Macros     MacroCollection
 }
 
 type ExprContext struct {
@@ -61,6 +63,14 @@ type ExprContext struct {
 	Inferred       map[uint] Type  // mutable
 	UnboxCounted   bool
 	UnboxCount     *uint  // mutable
+	MacroArgs      map[string] SemiExpr
+	MacroPath      [] MacroExpanding
+}
+
+type MacroExpanding struct {
+	Name   string
+	Macro  *Macro
+	Point  ErrorPoint
 }
 
 type Expr struct {
@@ -98,6 +108,10 @@ func (impl SymType) Sym() {}
 type SymType struct { Type *GenericType }
 func (impl SymFunctions) Sym() {}
 type SymFunctions struct { Functions []*GenericFunction }
+func (impl SymMacroArg) Sym() {}
+type SymMacroArg struct { Content SemiExpr }
+func (impl SymMacro) Sym() {}
+type SymMacro struct { Macro *Macro }
 
 
 func CreateExprContext(mod_info ModuleInfo, params []string) ExprContext {
@@ -143,9 +157,13 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 	var mod_name = raw.ModuleName
 	var sym_name = raw.SymbolName
 	if mod_name == "" {
-		var t, exists = ctx.LocalValues[sym_name]
+		m_arg, exists := ctx.MacroArgs[sym_name]
 		if exists {
-			return SymLocalValue { ValueType: t }, true
+			return SymMacroArg { Content: m_arg }, true
+		}
+		local, exists := ctx.LocalValues[sym_name]
+		if exists {
+			return SymLocalValue { ValueType: local }, true
 		}
 		for index, param_name := range ctx.TypeParams {
 			if param_name == sym_name {
@@ -159,6 +177,10 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 				functions[i] = ref.Function
 			}
 			return SymFunctions { Functions: functions }, true
+		}
+		m_ref, exists := ctx.ModuleInfo.Macros[sym_name]
+		if exists {
+			return SymMacro { m_ref.Macro }, true
 		}
 		var self = ctx.ModuleInfo.Module.Name
 		var sym_self = loader.NewSymbol(self, sym_name)
@@ -221,9 +243,17 @@ func (ctx ExprContext) WithUnboxCounted(count *uint) ExprContext {
 }
 
 func (ctx ExprContext) GetErrorPoint(node ast.Node) ErrorPoint {
-	return ErrorPoint {
-		CST:  ctx.ModuleInfo.Module.CST,
-		Node: node,
+	if len(ctx.MacroPath) == 0 {
+		return ErrorPoint {
+			CST:  ctx.ModuleInfo.Module.CST,
+			Node: node,
+		}
+	} else {
+		var expanded = ctx.MacroPath[len(ctx.MacroPath)-1]
+		return ErrorPoint {
+			CST:  expanded.Macro.CST,
+			Node: node,
+		}
 	}
 }
 
@@ -290,10 +320,14 @@ func TypeCheck(entry *loader.Module, raw_index loader.Index) (
 	var functions = make(FunctionStore)
 	var _, err3 = CollectFunctions(entry, types, functions)
 	if err3 != nil { return nil, nil, []E { err3 } }
+	var macros = make(MacroStore)
+	var _, err4 = CollectMacros(entry, functions, macros)
+	if err4 != nil { return nil, nil, []E { err4 } }
 	var ctx = CheckContext {
 		Types:     types,
 		Functions: functions,
 		Constants: constants,
+		Macros:    macros,
 	}
 	var checked_index = make(Index)
 	var checked, errs = TypeCheckModule(entry, checked_index, ctx)
@@ -311,11 +345,13 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 	}
 	var functions = ctx.Functions[mod_name]
 	var constants = ctx.Constants[mod_name]
+	var macros = ctx.Macros[mod_name]
 	var mod_info = ModuleInfo {
 		Module:    mod,
 		Types:     ctx.Types,
 		Constants: constants,
 		Functions: functions,
+		Macros:    macros,
 	}
 	var errors = make([]E, 0)
 	var imported = make(map[string]*CheckedModule)

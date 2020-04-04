@@ -167,11 +167,6 @@ public function < {
     native '<integer'
 };
 
-public function > {
-    lambda (Integer,Integer) Bool:
-    lambda (a, b)  $(b < a)
-};
-
 public function not {
     lambda Bool Bool:
     lambda p
@@ -181,15 +176,9 @@ public function not {
         }
 };
 
-public function <= {
-    lambda (Integer,Integer) Bool:
-    lambda (a, b)  not $(a > b)
-};
-
-public function >= {
-    lambda (Integer,Integer) Bool:
-    lambda (a, b)  not $(a < b)
-};
+public macro  >  (a, b)  :=  $(b < a);
+public macro  <= (a, b)  :=  not $(a > b);
+public macro  >= (a, b)  :=  not $(a < b);
 
 public function - {
     lambda Integer Integer:
