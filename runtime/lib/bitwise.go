@@ -1,49 +1,6 @@
 package lib
 
-
-func ByteFrom(i interface{}) uint8 {
-	switch x := i.(type) {
-	case uint8:
-		return x
-	case int8:
-		return uint8(x)
-	default:
-		panic("invalid Byte")
-	}
-}
-
-func WordFrom(i interface{}) uint16 {
-	switch x := i.(type) {
-	case uint16:
-		return x
-	case int16:
-		return uint16(x)
-	default:
-		panic("invalid Word")
-	}
-}
-
-func DwordFrom(i interface{}) uint32 {
-	switch x := i.(type) {
-	case uint32:
-		return x
-	case int32:
-		return uint32(x)
-	default:
-		panic("invalid Dword")
-	}
-}
-
-func QwordFrom(i interface{}) uint64 {
-	switch x := i.(type) {
-	case uint64:
-		return x
-	case int64:
-		return uint64(x)
-	default:
-		panic("invalid Qword")
-	}
-}
+import . "kumachan/runtime/common"
 
 
 var BitwiseFunctions = map[string] interface{} {

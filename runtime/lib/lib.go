@@ -7,6 +7,7 @@ var NativeFunctionMaps = [] (map[string] interface{}) {
 	ArithmeticFunctions,
 	BitwiseFunctions,
 	StringFunctions,
+	ComparisonFunctions,
 	EffectFunctions,
 	IO_Functions,
 	OS_Functions,

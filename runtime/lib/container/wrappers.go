@@ -3,17 +3,16 @@ package container
 import (
 	. "kumachan/runtime/common"
 	"kumachan/runtime/lib/container/avl"
-	"kumachan/runtime/lib/container/order"
 	"kumachan/runtime/lib/container/ltt"
 )
 
 
 type Heap struct {
-	LTT  *ltt.LTT
-	Cmp  order.Compare
+	LTT *ltt.LTT
+	Cmp Compare
 }
 
-func NewHeap (cmp order.Compare) Heap {
+func NewHeap (cmp Compare) Heap {
 	return Heap { LTT: nil, Cmp: cmp }
 }
 
@@ -32,11 +31,11 @@ func (h Heap) Pop() (Value, Heap, bool) {
 
 
 type Set struct {
-	AVL  *avl.AVL
-	Cmp  order.Compare
+	AVL *avl.AVL
+	Cmp Compare
 }
 
-func NewSet (cmp order.Compare) Set {
+func NewSet (cmp Compare) Set {
 	return Set { AVL: nil, Cmp: cmp }
 }
 
@@ -60,16 +59,18 @@ func (s Set) Delete(v Value) (Value, Set, bool) {
 
 type Map struct {
 	AVL  *avl.AVL
-	Cmp  order.Compare
+	Cmp  Compare
+}
+type MapEntry struct {
+	Key    Value
+	Value  Value
 }
 
-func NewMap (cmp order.Compare) Map {
+func NewMap (cmp Compare) Map {
 	return Map {
 		AVL: nil,
-		Cmp: func(kv1 Value, kv2 Value) order.Ordering {
-			var k1, _ = FromTuple2(kv1)
-			var k2, _ = FromTuple2(kv2)
-			return cmp(k1, k2)
+		Cmp: func(e1 Value, e2 Value) Ordering {
+			return cmp(e1.(MapEntry).Key, e2.(MapEntry).Key)
 		},
 	}
 }
@@ -81,22 +82,29 @@ func (m Map) From(a *avl.AVL) Map {
 func (m Map) Lookup(k Value) (Value, bool) {
 	var kv, exists = m.AVL.Lookup(k, m.Cmp)
 	if exists {
-		var _, v = FromTuple2(kv)
-		return v, true
+		return kv.(MapEntry).Value, true
 	} else {
 		return nil, false
 	}
 }
 
 func (m Map) Insert(k Value, v Value) Map {
-	return m.From(m.AVL.Inserted(Tuple2(k, v), m.Cmp))
+	var entry = MapEntry {
+		Key:   k,
+		Value: v,
+	}
+	return m.From(m.AVL.Inserted(entry, m.Cmp))
 }
 
 func (m Map) Delete(k Value) (Value, Map, bool) {
-	var deleted, rest, exists = m.AVL.Deleted(Tuple2(k, nil), m.Cmp)
+	var entry = MapEntry {
+		Key:   k,
+		Value: nil,
+	}
+	var deleted, rest, exists = m.AVL.Deleted(entry, m.Cmp)
 	var v Value
 	if exists {
-		_, v = FromTuple2(deleted)
+		v = deleted.(MapEntry).Value
 	} else {
 		v = nil
 	}

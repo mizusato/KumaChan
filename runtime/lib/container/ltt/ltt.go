@@ -2,7 +2,6 @@ package ltt
 
 import (
 	. "kumachan/runtime/common"
-	"kumachan/runtime/lib/container/order"
 )
 
 /* Functional Leftist Tree: Implementation of Queue and Priority Queue */
@@ -41,16 +40,16 @@ func (node *LTT) GetDist() uint64 {
 	}
 }
 
-func (node *LTT) Merge(another *LTT, cmp order.Compare) *LTT {
+func (node *LTT) Merge(another *LTT, cmp Compare) *LTT {
 	if node == nil { return another }
 	if another == nil { return node }
 	var smaller *LTT
 	var bigger *LTT
 	switch cmp(node.Value, another.Value) {
-	case order.Smaller, order.Equal:
+	case Smaller, Equal:
 		smaller = node
 		bigger = another
-	case order.Bigger:
+	case Bigger:
 		bigger = node
 		smaller = another
 	default:
@@ -74,7 +73,7 @@ func (node *LTT) Top() (Value, bool) {
 	}
 }
 
-func (node *LTT) Popped(cmp order.Compare) (Value, *LTT, bool) {
+func (node *LTT) Popped(cmp Compare) (Value, *LTT, bool) {
 	if node != nil {
 		var rest = node.Left.Merge(node.Right, cmp)
 		return node.Value, rest, true
@@ -83,7 +82,7 @@ func (node *LTT) Popped(cmp order.Compare) (Value, *LTT, bool) {
 	}
 }
 
-func (node *LTT) Pushed(v Value, cmp order.Compare) *LTT {
+func (node *LTT) Pushed(v Value, cmp Compare) *LTT {
 	return node.Merge(Leaf(v), cmp)
 }
 

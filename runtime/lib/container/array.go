@@ -2,7 +2,6 @@ package container
 
 import (
 	. "kumachan/runtime/common"
-	"kumachan/runtime/lib/container/order"
 )
 
 type Array struct {
@@ -78,7 +77,7 @@ func (array Array) Map(f func(Value)Value) Array {
 	}
 }
 
-func (array Array) CarefullySlice(low uint, high uint) Array {
+func (array Array) SliceView(low uint, high uint) Array {
 	var L = array.Length
 	if !(low <= high && low < L && high <= L) {
 		panic("invalid slice bounds")
@@ -91,7 +90,7 @@ func (array Array) CarefullySlice(low uint, high uint) Array {
 	}
 }
 
-func (array Array) Sort(cmp order.Compare) Seq {
+func (array Array) Sort(cmp Compare) Seq {
 	var L = array.Length
 	if L == 0 {
 		return EmptySeq {}
@@ -99,8 +98,8 @@ func (array Array) Sort(cmp order.Compare) Seq {
 		return SeqOf(array.GetItem(0))
 	} else {
 		var M = (L / 2)
-		var left = array.CarefullySlice(0, M)
-		var right = array.CarefullySlice(M, L)
+		var left = array.SliceView(0, M)
+		var right = array.SliceView(M, L)
 		return MergeSortIterator {
 			Left:  left.Sort(cmp),
 			Right: right.Sort(cmp),
@@ -110,9 +109,9 @@ func (array Array) Sort(cmp order.Compare) Seq {
 }
 
 type MergeSortIterator struct {
-	Left   Seq
-	Right  Seq
-	Cmp    order.Compare
+	Left  Seq
+	Right Seq
+	Cmp   Compare
 }
 
 func (m MergeSortIterator) Next() (Value, Seq, bool) {
@@ -127,9 +126,9 @@ func (m MergeSortIterator) Next() (Value, Seq, bool) {
 		var order_preserved bool
 		if l_exists && r_exists {
 			switch cmp(l, r) {
-			case order.Smaller, order.Equal:
+			case Smaller, Equal:
 				order_preserved = true
-			case order.Bigger:
+			case Bigger:
 				order_preserved = false
 			default:
 				panic("impossible branch")

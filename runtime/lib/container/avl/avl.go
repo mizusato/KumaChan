@@ -2,7 +2,6 @@ package avl
 
 import (
 	. "kumachan/runtime/common"
-	"kumachan/runtime/lib/container/order"
 )
 
 /* Functional AVL Tree: Underlying Implementation of Ordered Set and Map */
@@ -52,16 +51,16 @@ func (node *AVL) GetHeight() uint64 {
 	}
 }
 
-func (node *AVL) Lookup(target Value, cmp order.Compare) (Value, bool) {
+func (node *AVL) Lookup(target Value, cmp Compare) (Value, bool) {
 	if node == nil {
 		return nil, false
 	} else {
 		switch cmp(target, node.Value) {
-		case order.Smaller:
+		case Smaller:
 			return node.Left.Lookup(target, cmp)
-		case order.Bigger:
+		case Bigger:
 			return node.Right.Lookup(target, cmp)
-		case order.Equal:
+		case Equal:
 			return node.Value, true
 		default:
 			panic("impossible branch")
@@ -69,7 +68,7 @@ func (node *AVL) Lookup(target Value, cmp order.Compare) (Value, bool) {
 	}
 }
 
-func (node *AVL) Inserted(inserted Value, cmp order.Compare) *AVL {
+func (node *AVL) Inserted(inserted Value, cmp Compare) *AVL {
 	if node == nil {
 		return Leaf(inserted)
 	} else {
@@ -77,11 +76,11 @@ func (node *AVL) Inserted(inserted Value, cmp order.Compare) *AVL {
 		var left = node.Left
 		var right = node.Right
 		switch cmp(inserted, value) {
-		case order.Smaller:
+		case Smaller:
 			return Node(value, left.Inserted(inserted, cmp), right)
-		case order.Bigger:
+		case Bigger:
 			return Node(value, left, right.Inserted(inserted, cmp))
-		case order.Equal:
+		case Equal:
 			return Node(inserted, left, right)
 		default:
 			panic("impossible branch")
@@ -89,7 +88,7 @@ func (node *AVL) Inserted(inserted Value, cmp order.Compare) *AVL {
 	}
 }
 
-func (node *AVL) Deleted(target Value, cmp order.Compare) (Value, *AVL, bool) {
+func (node *AVL) Deleted(target Value, cmp Compare) (Value, *AVL, bool) {
 	if node == nil {
 		return nil, nil, false
 	} else {
@@ -97,21 +96,21 @@ func (node *AVL) Deleted(target Value, cmp order.Compare) (Value, *AVL, bool) {
 		var left = node.Left
 		var right = node.Right
 		switch cmp(target, value) {
-		case order.Smaller:
+		case Smaller:
 			var deleted, rest, found = left.Deleted(target, cmp)
 			if found {
 				return deleted, Node(value, rest, right), true
 			} else {
 				return nil, node, false
 			}
-		case order.Bigger:
+		case Bigger:
 			var deleted, rest, found = right.Deleted(target, cmp)
 			if found {
 				return deleted, Node(value, left, rest), true
 			} else {
 				return nil, node, false
 			}
-		case order.Equal:
+		case Equal:
 			if left == nil {
 				return value, right, true
 			} else if right == nil {

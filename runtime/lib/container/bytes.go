@@ -2,7 +2,7 @@ package container
 
 import . "kumachan/runtime/common"
 
-type Bytes  []byte
+type Bytes = []byte
 
 type ByteOrder int
 const (
@@ -12,13 +12,13 @@ const (
 
 func BytesFromBitSeq(seq Seq) Bytes {
 	var buf = make(Bytes, 0)
-	var written_bits = 8
+	var written_bits = uint(8)
 	for v,r,exists := seq.Next(); exists; v,r,exists = r.Next() {
 		if written_bits == 8 {
 			buf = append(buf, 0)
 			written_bits = 0
 		}
-		if BitFrom(v) {
+		if v.(bool) {
 			buf[len(buf)-1] |= (1 << written_bits)
 			written_bits += 1
 		} else {
@@ -31,7 +31,7 @@ func BytesFromBitSeq(seq Seq) Bytes {
 func BytesFromByteSeq(seq Seq) Bytes {
 	var buf = make(Bytes, 0)
 	for v,r,exists := seq.Next(); exists; v,r,exists = r.Next() {
-		buf = append(buf, Uint8From(v))
+		buf = append(buf, ByteFrom(v))
 	}
 	return buf
 }
@@ -40,7 +40,7 @@ func BytesFromWordSeq(seq Seq, ord ByteOrder) Bytes {
 	var buf = make(Bytes, 0)
 	var chunk [2]byte
 	for v,r,exists := seq.Next(); exists; v,r,exists = r.Next() {
-		chunk = EncodeWord(Uint16From(v), ord)
+		chunk = EncodeWord(WordFrom(v), ord)
 		buf = append(buf, chunk[0], chunk[1])
 	}
 	return buf
@@ -50,7 +50,7 @@ func BytesFromDwordSeq(seq Seq, ord ByteOrder) Bytes {
 	var buf = make(Bytes, 0)
 	var chunk [4]byte
 	for v,r,exists := seq.Next(); exists; v,r,exists = r.Next() {
-		chunk = EncodeDword(Uint32From(v), ord)
+		chunk = EncodeDword(DwordFrom(v), ord)
 		buf = append(buf, chunk[0], chunk[1], chunk[2], chunk[3])
 	}
 	return buf
@@ -60,7 +60,7 @@ func BytesFromQwordSeq(seq Seq, ord ByteOrder) Bytes {
 	var buf = make(Bytes, 0)
 	var chunk [8]byte
 	for v,r,exists := seq.Next(); exists; v,r,exists = r.Next() {
-		chunk = EncodeQword(Uint64From(v), ord)
+		chunk = EncodeQword(QwordFrom(v), ord)
 		for i := 0; i < 8; i += 1 {
 			buf = append(buf, chunk[i])
 		}
@@ -68,27 +68,27 @@ func BytesFromQwordSeq(seq Seq, ord ByteOrder) Bytes {
 	return buf
 }
 
-func (bytes Bytes) ToBitArray() Array {
+func BitArray(bytes Bytes) Array {
 	return Array {
 		Length: uint(len(bytes)) << 3,
 		GetItem: func(i uint) Value {
 			var n = i >> 3
 			var offset = uint8(1) << (i & 7)
-			return BitValue(1 == (uint8(bytes[n]) & offset))
+			return CoreBool(1 == (uint8(bytes[n]) & offset))
 		},
 	}
 }
 
-func (bytes Bytes) ToByteArray() Array {
+func ByteArray(bytes Bytes) Array {
 	return Array {
 		Length:  uint(len(bytes)),
 		GetItem: func(i uint) Value {
-			return Uint8Value(bytes[i])
+			return bytes[i]
 		},
 	}
 }
 
-func (bytes Bytes) ToWordArray(ord ByteOrder) Array {
+func WordArray(bytes Bytes, ord ByteOrder) Array {
 	var L = uint(len(bytes))
 	var length uint
 	if L % 2 == 0 {
@@ -104,12 +104,12 @@ func (bytes Bytes) ToWordArray(ord ByteOrder) Array {
 			var size uint = 2
 			for (p + size) >= length { size -= 1 }
 			copy(chunk[:], bytes[p: p+size])
-			return Uint16Value(DecodeWord(chunk, ord))
+			return uint16(DecodeWord(chunk, ord))
 		},
 	}
 }
 
-func (bytes Bytes) ToDwordArray(ord ByteOrder) Array {
+func DwordArray(bytes Bytes, ord ByteOrder) Array {
 	var L = uint(len(bytes))
 	var length uint
 	if L % 4 == 0 {
@@ -125,12 +125,12 @@ func (bytes Bytes) ToDwordArray(ord ByteOrder) Array {
 			var size uint = 4
 			for (p + size) >= length { size -= 1 }
 			copy(chunk[:], bytes[p: p+size])
-			return Uint32Value(DecodeDword(chunk, ord))
+			return uint32(DecodeDword(chunk, ord))
 		},
 	}
 }
 
-func (bytes Bytes) ToQwordArray(ord ByteOrder) Array {
+func QwordArray(bytes Bytes, ord ByteOrder) Array {
 	var L = uint(len(bytes))
 	var length uint
 	if L % 8 == 0 {
@@ -146,7 +146,7 @@ func (bytes Bytes) ToQwordArray(ord ByteOrder) Array {
 			var size uint = 8
 			for (p + size) >= length { size -= 1 }
 			copy(chunk[:], bytes[p: p+size])
-			return Uint64Value(DecodeQword(chunk, ord))
+			return uint64(DecodeQword(chunk, ord))
 		},
 	}
 }
@@ -181,11 +181,11 @@ func DecodeDword(chunk [4]byte, ord ByteOrder) uint32 {
 	var dw uint32 = 0
 	switch ord {
 	case BigEndian:
-		for i := 0; i < 4; i += 1 {
+		for i := uint(0); i < 4; i += 1 {
 			dw |= uint32(chunk[3-i]) << (i << 3)
 		}
 	case LittleEndian:
-		for i := 0; i < 4; i += 1 {
+		for i := uint(0); i < 4; i += 1 {
 			dw |= uint32(chunk[i]) << (i << 3)
 		}
 	default:
@@ -198,11 +198,11 @@ func EncodeDword(dw uint32, ord ByteOrder) [4]byte {
 	var chunk [4]byte
 	switch ord {
 	case BigEndian:
-		for i := 0; i < 4; i += 1 {
+		for i := uint(0); i < 4; i += 1 {
 			chunk[3-i] = byte(dw >> (i << 3))
 		}
 	case LittleEndian:
-		for i := 0; i < 4; i += 1 {
+		for i := uint(0); i < 4; i += 1 {
 			chunk[i] = byte(dw >> (i << 3))
 		}
 	default:
@@ -215,11 +215,11 @@ func DecodeQword(chunk [8]byte, ord ByteOrder) uint64 {
 	var qw uint64 = 0
 	switch ord {
 	case BigEndian:
-		for i := 0; i < 8; i += 1 {
+		for i := uint(0); i < 8; i += 1 {
 			qw |= uint64(chunk[7-i]) << (i << 3)
 		}
 	case LittleEndian:
-		for i := 0; i < 8; i += 1 {
+		for i := uint(0); i < 8; i += 1 {
 			qw |= uint64(chunk[i]) << (i << 3)
 		}
 	default:
@@ -232,11 +232,11 @@ func EncodeQword(qw uint64, ord ByteOrder) [8]byte {
 	var chunk [8]byte
 	switch ord {
 	case BigEndian:
-		for i := 0; i < 8; i += 1 {
+		for i := uint(0); i < 8; i += 1 {
 			chunk[7-i] = byte(qw >> (i << 3))
 		}
 	case LittleEndian:
-		for i := 0; i < 8; i += 1 {
+		for i := uint(0); i < 8; i += 1 {
 			chunk[i] = byte(qw >> (i << 3))
 		}
 	default:

@@ -57,6 +57,11 @@ type Result[T,E] union {
     type OK T;
     type NG E;
 };
+type Ordering union {
+    type <<;
+    type ==;
+    type >>;
+};
 
 /*
 public function map![A,B,E] {
@@ -152,6 +157,11 @@ public function = {
     native '=integer'
 };
 
+public function <> {
+    lambda (Integer,Integer) Ordering:
+    native '<>integer'
+};
+
 public function < {
     lambda (Integer,Integer) Bool:
     native '<integer'
@@ -202,7 +212,7 @@ public function mod {
     }
 };
 
-public function quo {
+public function / {
     lambda (Integer,Integer) Integer:
     lambda (a, b) let {
         (q, _) := quorem (a, b),
@@ -210,7 +220,7 @@ public function quo {
     }
 };
 
-public function rem {
+public function % {
     lambda (Integer,Integer) Integer:
     lambda (a, b) let {
         (_, r) := quorem (a, b),
