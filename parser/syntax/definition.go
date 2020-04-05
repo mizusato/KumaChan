@@ -112,7 +112,7 @@ var SyntaxDefinition = [...] string {
           "box_option? = @protected | @opaque",
           "inner_type? = type",
     "decl_func = scope @function name! type_params {! docs_brief signature! :! body docs_detail }! ;!",
-      "scope = @public | @private",  // TODO: more friendly error info for "parser stuck" at this rule
+      "scope = @public | @private",
       "signature = repr_func",
       "body = native | lambda!",
         "native = @native string!",
@@ -164,6 +164,7 @@ var SyntaxDefinition = [...] string {
           "rec_opt? = @rec :!",
           "binding_type? = [ type! ]!",
         "return = , @return expr!",
+      // TODO: procedure (sugar of monad chain operation)
       "bundle = { } | { update pairlist }!",
         "pairlist = pair! more_pairs",
           "more_pairs? = , pair! more_pairs",

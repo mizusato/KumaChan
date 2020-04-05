@@ -189,9 +189,21 @@ func buildTree(root syntax.Id, tokens scanner.Tokens) ([]cst.TreeNode, *Error) {
     var root_node = tree[0]
     if root_node.Amount < len(tokens) {
         // PrintBareTree(tree)
+        var last_token_ptr = 0
+        var last_token_pos = 0
+        for i, node := range tree {
+            switch node.Part.PartType {
+            case syntax.MatchKeyword,
+                 syntax.MatchToken:
+                     if node.Pos > last_token_pos {
+                         last_token_pos = node.Pos
+                         last_token_ptr = i
+                     }
+            }
+        }
         return tree, &Error {
             HasExpectedPart: false,
-            NodeIndex:       ptr,
+            NodeIndex:       last_token_ptr,
         }
     }
     return tree, nil

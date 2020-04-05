@@ -1,22 +1,21 @@
 package main
 
 import (
-
-"fmt"
-"io"
-"io/ioutil"
-"kumachan/checker"
-"kumachan/compiler"
-. "kumachan/error"
-"kumachan/loader"
-"kumachan/parser"
-"kumachan/parser/scanner"
-"kumachan/parser/syntax"
-"kumachan/runtime/common"
-"kumachan/runtime/vm"
-"kumachan/transformer"
-"os"
-"reflect"
+    "fmt"
+    "io"
+    "io/ioutil"
+    "kumachan/checker"
+    "kumachan/compiler"
+    . "kumachan/error"
+    "kumachan/loader"
+    "kumachan/parser"
+    "kumachan/parser/scanner"
+    "kumachan/parser/syntax"
+    "kumachan/runtime/common"
+    "kumachan/runtime/vm"
+    "kumachan/transformer"
+    "os"
+    "reflect"
 )
 
 
@@ -57,7 +56,8 @@ func debug_parser(file io.Reader, name string, root string) {
     fmt.Println("CST:")
     parser.PrintTree(tree)
     if err != nil {
-        fmt.Println(err.Message())
+        var msg = err.Message()
+        fmt.Println(msg.String())
     } else {
         fmt.Println("------------------------------------------------------")
         fmt.Println("AST:")
