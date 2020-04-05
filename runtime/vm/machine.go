@@ -1,6 +1,7 @@
 package vm
 
 import (
+	. "kumachan/error"
 	. "kumachan/runtime/common"
 	"kumachan/runtime/common/rx"
 	"sync"
@@ -53,13 +54,22 @@ type CallStackFrame struct {
 	instPtr   uint
 }
 
-func (m *Machine) Call(fv Value, arg Value) Value {
+type Handle struct {
+	machine  *Machine
+	context  *ExecutionContext
+}
+
+func (h Handle) Call(fv Value, arg Value) Value {
 	switch f := fv.(type) {
 	case FunctionValue:
-		return call(f, arg, m)
+		return call(f, arg, h.machine)
 	case NativeFunctionValue:
-		return f(arg, m)
+		return f(arg, h)
 	default:
 		panic("cannot call a non-callable value")
 	}
+}
+
+func (h Handle) GetErrorPoint() ErrorPoint {
+	return GetFrameErrorPoint(h.context.workingFrame)
 }

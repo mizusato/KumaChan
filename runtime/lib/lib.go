@@ -4,11 +4,13 @@ import . "kumachan/runtime/common"
 
 
 var NativeFunctionMaps = [] (map[string] interface{}) {
+	DebuggingFunctions,
+	LogicFunctions,
 	ArithmeticFunctions,
-	BitwiseFunctions,
-	StringFunctions,
 	ComparisonFunctions,
+	StringFunctions,
 	EffectFunctions,
+	BitwiseFunctions,
 	IO_Functions,
 	OS_Functions,
 }

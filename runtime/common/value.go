@@ -1,5 +1,10 @@
 package common
 
+import (
+	. "kumachan/error"
+	"reflect"
+)
+
 
 type Value = interface {}
 
@@ -20,16 +25,41 @@ type FunctionValue struct {
 type NativeFunctionValue  NativeFunction
 
 
-func CoreBool(v bool) SumValue {
+func Inspect(v Value) ErrorMessage {
+	var rv = reflect.ValueOf(v)
+	var msg = make(ErrorMessage, 0)
+	if rv.Type().AssignableTo(reflect.TypeOf([]rune{})) {
+		msg.WriteText(TS_BOLD, "String")
+		msg.WriteEndText(TS_NORMAL, string(v.([]rune)))
+	} else {
+		// TODO: more fancy representations
+		msg.WriteText(TS_NORMAL, rv.String())
+	}
+	return msg
+}
+
+func BoolFrom(p SumValue) bool {
 	// should be consistent with `stdlib/core.km`
-	if v == true {
+	if p.Value != nil { panic("something went wrong") }
+	if p.Index == 0 {
+		return true
+	} else if p.Index == 1 {
+		return false
+	} else {
+		panic("something went wrong")
+	}
+}
+
+func ToBool(p bool) SumValue {
+	// should be consistent with `stdlib/core.km`
+	if p == true {
 		return SumValue { Index: 0 }
 	} else {
 		return SumValue { Index: 1 }
 	}
 }
 
-func CoreOrdering(o Ordering) SumValue {
+func ToOrdering(o Ordering) SumValue {
 	// should be consistent with `stdlib/core.km`
 	switch o {
 	case Smaller:

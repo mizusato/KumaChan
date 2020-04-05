@@ -8,39 +8,39 @@ module Core;
  */
 
 // Basic Types
-type Bit    native;
-type Byte   native;
-type Word   native;
-type Dword  native;
-type Qword  native;
-type Integer  native;
-type Float64  native;
+type Bit    native;  // bool
+type Byte   native;  // uint8, int8
+type Word   native;  // uint16, int16
+type Dword  native;  // uint32, int32
+type Qword  native;  // uint64, int64
+type Integer  native;  // *big.Int
+type Float64  native;  // float64
 
 // Container Types
-type Bytes     native;
-type String    native;
-type Seq[T]    native;
-type Array[T]  native;
-type Heap[T]   native;
-type Set[T]    native;
-type Map[K,V]  native;
+type Bytes     native;  // []byte
+type String    native;  // []rune
+type Seq[T]    native;  // container.Seq
+type Array[T]  native;  // []T, container.Array
+type Heap[T]   native;  // container.Heap
+type Set[T]    native;  // container.Set
+type Map[K,V]  native;  // container.Map
 
 // Effect Type
-type Effect*[T,E]   native;
-type Effect[T,E]    protected Effect*[T,E];
+type Effect*[T,E]  native;  // rx.Effect
+type Effect[T,E]   protected Effect*[T,E];
 
 // Fixed Integer Types
-type Int64   Qword;
-type Uint64  Qword;
-type Int32   Dword;
-type Uint32  Dword;
-type Int16   Word;
-type Uint16  Word;
-type Int8    Byte;
-type Uint8   Byte;
+type Int64   protected Qword;
+type Uint64  protected Qword;
+type Int32   protected Dword;
+type Uint32  protected Dword;
+type Int16   protected Word;
+type Uint16  protected Word;
+type Int8    protected Byte;
+type Uint8   protected Byte;
 
 // Basic Boxed Types
-type Char     Dword;
+type Char     Uint32;
 type Natural  protected Integer;
 type Float    protected Float64;
 
@@ -63,156 +63,235 @@ type Ordering union {
     type >>;
 };
 
+// Debugging Functions (With Side Effects)
+type Traced[T] T;
+public function trace[T] {
+    lambda T Traced[T]:
+    native 'trace'
+};
+public function panic[T] {
+    lambda String T:
+    native 'panic'
+};
+
+// Logic Functions
+public function not { lambda Bool Bool:         native 'not' };
+public function and { lambda (Bool,Bool) Bool:  native 'and' };
+public function or  { lambda (Bool,Bool) Bool:  native 'or'  };
+
+// Arithmetic Functions
+public function + { lambda (Integer,Integer) Integer:  native '+Integer' };
+public function - { lambda (Integer,Integer) Integer:  native '-Integer' };
+public function * { lambda (Integer,Integer) Integer:  native '*Integer' };
+public function quorem {
+    lambda (Integer,Integer) (Integer,Integer):
+    native 'quorem'
+};
+public function divmod {
+    lambda (Integer,Integer) (Integer,Integer):
+    native 'divmod'
+};
+public function - {
+    lambda Integer Integer:
+    lambda    n    $(0 - n)
+};
+public function / {
+    lambda (Integer,Integer) Integer:
+    lambda (a, b)
+        let {
+            (q, _) := quorem(a, b),
+            return q
+        }
+};
+public function % {
+    lambda (Integer,Integer) Integer:
+    lambda (a, b)
+        let {
+            (_, r) := quorem(a, b),
+            return r
+        }
+};
+public function div {
+    lambda (Integer,Integer) Integer:
+    lambda (a, b)
+        let {
+            (q, _) := divmod(a, b),
+            return q
+        }
+};
+public function mod {
+    lambda (Integer,Integer) Integer:
+    lambda (a, b)
+        let {
+            (_, r) := divmod(a, b),
+            return r
+        }
+};
+public function + { lambda (Float, Float) Float:  native '+Float' };
+public function - { lambda (Float, Float) Float:  native '-Float' };
+public function * { lambda (Float, Float) Float:  native '*Float' };
+public function / { lambda (Float, Float) Float:  native '/Float' };
+public function % { lambda (Float, Float) Float:  native '%Float' };
+public function - {
+    lambda Float   Float:
+    lambda   x   $(0.0 - x)
+};
+public function + { lambda (Int8, Int8) Int8:  native '+Int8' };
+public function - { lambda (Int8, Int8) Int8:  native '-Int8' };
+public function * { lambda (Int8, Int8) Int8:  native '*Int8' };
+public function / { lambda (Int8, Int8) Int8:  native '/Int8' };
+public function % { lambda (Int8, Int8) Int8:  native '%Int8' };
+public function - {
+    lambda Int8   Int8:
+    lambda  n   $(0 - n)
+};
+public function + { lambda (Uint8, Uint8) Uint8:  native '+Uint8' };
+public function - { lambda (Uint8, Uint8) Uint8:  native '-Uint8' };
+public function * { lambda (Uint8, Uint8) Uint8:  native '*Uint8' };
+public function / { lambda (Uint8, Uint8) Uint8:  native '/Uint8' };
+public function % { lambda (Uint8, Uint8) Uint8:  native '%Uint8' };
+public function - {
+    lambda Uint8  Uint8:
+    lambda   n   $(0 - n)
+};
+public function + { lambda (Int16, Int16) Int16:  native '+Int16' };
+public function - { lambda (Int16, Int16) Int16:  native '-Int16' };
+public function * { lambda (Int16, Int16) Int16:  native '*Int16' };
+public function / { lambda (Int16, Int16) Int16:  native '/Int16' };
+public function % { lambda (Int16, Int16) Int16:  native '%Int16' };
+public function - {
+    lambda Int16  Int16:
+    lambda   n   $(0 - n)
+};
+public function + { lambda (Uint16, Uint16) Uint16:  native '+Uint16' };
+public function - { lambda (Uint16, Uint16) Uint16:  native '-Uint16' };
+public function * { lambda (Uint16, Uint16) Uint16:  native '*Uint16' };
+public function / { lambda (Uint16, Uint16) Uint16:  native '/Uint16' };
+public function % { lambda (Uint16, Uint16) Uint16:  native '%Uint16' };
+public function - {
+    lambda Uint16  Uint16:
+    lambda   n    $(0 - n)
+};
+public function + { lambda (Int32, Int32) Int32:  native '+Int32' };
+public function - { lambda (Int32, Int32) Int32:  native '-Int32' };
+public function * { lambda (Int32, Int32) Int32:  native '*Int32' };
+public function / { lambda (Int32, Int32) Int32:  native '/Int32' };
+public function % { lambda (Int32, Int32) Int32:  native '%Int32' };
+public function - {
+    lambda Int32  Int32:
+    lambda   n   $(0 - n)
+};
+public function + { lambda (Uint32, Uint32) Uint32:  native '+Uint32' };
+public function - { lambda (Uint32, Uint32) Uint32:  native '-Uint32' };
+public function * { lambda (Uint32, Uint32) Uint32:  native '*Uint32' };
+public function / { lambda (Uint32, Uint32) Uint32:  native '/Uint32' };
+public function % { lambda (Uint32, Uint32) Uint32:  native '%Uint32' };
+public function - {
+    lambda Uint32  Uint32:
+    lambda   n    $(0 - n)
+};
+public function + { lambda (Int64, Int64) Int64:  native '+Int64' };
+public function - { lambda (Int64, Int64) Int64:  native '-Int64' };
+public function * { lambda (Int64, Int64) Int64:  native '*Int64' };
+public function / { lambda (Int64, Int64) Int64:  native '/Int64' };
+public function % { lambda (Int64, Int64) Int64:  native '%Int64' };
+public function - {
+    lambda Int64  Int64:
+    lambda   n   $(0 - n)
+};
+public function + { lambda (Uint64, Uint64) Uint64:  native '+Uint64' };
+public function - { lambda (Uint64, Uint64) Uint64:  native '-Uint64' };
+public function * { lambda (Uint64, Uint64) Uint64:  native '*Uint64' };
+public function / { lambda (Uint64, Uint64) Uint64:  native '/Uint64' };
+public function % { lambda (Uint64, Uint64) Uint64:  native '%Uint64' };
+public function - {
+    lambda Uint64  Uint64:
+    lambda   n    $(0 - n)
+};
+
+// Comparison Functions & Macros
+public macro != (a, b) := not $(a = b);
+public macro  > (a, b) := $(b < a);
+public macro <= (a, b) := not $(a > b);
+public macro >= (a, b) := not $(a < b);
+public function  = { lambda (String,String) Bool:      native '=String' };
+public function  < { lambda (String,String) Bool:      native '<String' };
+public function <> { lambda (String,String) Ordering:  native '<>String' };
+public function  = { lambda (Integer,Integer) Bool:      native '=Integer' };
+public function  < { lambda (Integer,Integer) Bool:      native '<Integer' };
+public function <> { lambda (Integer,Integer) Ordering:  native '<>Integer' };
+public function  = { lambda (Float,Float) Bool:      native '=Float' };
+public function  < { lambda (Float,Float) Bool:      native '<Float' };
+public function <> { lambda (Float,Float) Ordering:  native '<>Float' };
+public function  = { lambda (Int8,Int8) Bool:      native '=Int8' };
+public function  < { lambda (Int8,Int8) Bool:      native '<Int8' };
+public function <> { lambda (Int8,Int8) Ordering:  native '<>Int8' };
+public function  = { lambda (Uint8,Uint8) Bool:      native '=Uint8' };
+public function  < { lambda (Uint8,Uint8) Bool:      native '<Uint8' };
+public function <> { lambda (Uint8,Uint8) Ordering:  native '<>Uint8' };
+public function  = { lambda (Int16,Int16) Bool:      native '=Int16' };
+public function  < { lambda (Int16,Int16) Bool:      native '<Int16' };
+public function <> { lambda (Int16,Int16) Ordering:  native '<>Int16' };
+public function  = { lambda (Uint16,Uint16) Bool:      native '=Uint16' };
+public function  < { lambda (Uint16,Uint16) Bool:      native '<Uint16' };
+public function <> { lambda (Uint16,Uint16) Ordering:  native '<>Uint16' };
+public function  = { lambda (Int32,Int32) Bool:      native '=Int32' };
+public function  < { lambda (Int32,Int32) Bool:      native '<Int32' };
+public function <> { lambda (Int32,Int32) Ordering:  native '<>Int32' };
+public function  = { lambda (Uint32,Uint32) Bool:      native '=Uint32' };
+public function  < { lambda (Uint32,Uint32) Bool:      native '<Uint32' };
+public function <> { lambda (Uint32,Uint32) Ordering:  native '<>Uint32' };
+public function  = { lambda (Int64,Int64) Bool:      native '=Int64' };
+public function  < { lambda (Int64,Int64) Bool:      native '<Int64' };
+public function <> { lambda (Int64,Int64) Ordering:  native '<>Int64' };
+public function  = { lambda (Uint64,Uint64) Bool:      native '=Uint64' };
+public function  < { lambda (Uint64,Uint64) Bool:      native '<Uint64' };
+public function <> { lambda (Uint64,Uint64) Ordering:  native '<>Uint64' };
+
+// String Related Functions
+public function str! { lambda String String:   lambda x x };
+public function str! { lambda Integer String:  native 'str-integer' };
+
+// Effect Operators
+public function then[T,E] {
+    lambda(Effect[(),()], Effect[T,E]) Effect[T,E]:
+    native 'effect-then-preset'
+};
+public function catch[T,E] {
+    lambda(Effect[T,E], lambda E Effect[(),()]) Effect[T,()]:
+    native 'effect-catch'
+};
 /*
 public function map![A,B,E] {
     lambda(Effect*[A,E], lambda A B) Effect*[B,E]:
     native 'effect-map'
 };
-
 public function then[A,B,E] {
     lambda(Effect[A,()], lambda A Effect[B,E]) Effect[B,E]:
     native 'effect-then'
 };
-*/
-
-public function then[T,E] {
-    lambda(Effect[(),()], Effect[T,E]) Effect[T,E]:
-    native 'effect-then-preset'
-};
-
-/*
 public function then*[A,B,E] {
     lambda(Effect[A,()], lambda A Effect*[B,E]) Effect*[B,E]:
     native 'effect-then*'
 };
-
 public function then*[T,E] {
     lambda(Effect[(),()], Effect*[T,E]) Effect*[T,E]:
     native 'effect-then*-preset'
 };
-
 public function next![A,B,E] {
     lambda(Effect[A,E], lambda A Effect[B,E]) Effect[B,E]:
     native 'effect-next'
 };
-
 public function next*[A,B,E] {
     lambda(Effect[A,E], lambda A Effect*[B,E]) Effect*[B,E]:
     native 'effect-next*'
 };
-
 public function map-error[T,E,F] {
     lambda(Effect[T,E], lambda E F) Effect[T,F]:
     native 'effect-map-error'
 };
-
 public function map-error[T,E,F] {
     lambda(Effect*[T,E], lambda E F) Effect*[T,F]:
     native 'effect-map-error-*'
 };
 */
-
-public function catch[T,E] {
-    lambda(Effect[T,E], lambda E Effect[(),()]) Effect[T,()]:
-    native 'effect-catch'
-};
-
-public function str! {
-    lambda String String:
-    lambda x x
-};
-
-public function str! {
-    lambda Integer String:
-    native 'str-integer'
-};
-
-public function + {
-    lambda (Integer,Integer) Integer:
-    native '+integer'
-};
-
-public function - {
-    lambda (Integer,Integer) Integer:
-    native '-integer'
-};
-
-public function * {
-    lambda (Integer,Integer) Integer:
-    native '*integer'
-};
-
-public function quorem {
-    lambda (Integer,Integer) (Integer,Integer):
-    native 'quorem'
-};
-
-public function divmod {
-    lambda (Integer,Integer) (Integer,Integer):
-    native 'divmod'
-};
-
-public function = {
-    lambda (Integer,Integer) Bool:
-    native '=integer'
-};
-
-public function <> {
-    lambda (Integer,Integer) Ordering:
-    native '<>integer'
-};
-
-public function < {
-    lambda (Integer,Integer) Bool:
-    native '<integer'
-};
-
-public function not {
-    lambda Bool Bool:
-    lambda p
-        switch(p) {
-            case Yes: No,
-            case No:  Yes
-        }
-};
-
-public macro  >  (a, b)  :=  $(b < a);
-public macro  <= (a, b)  :=  not $(a > b);
-public macro  >= (a, b)  :=  not $(a < b);
-
-public function - {
-    lambda Integer Integer:
-    lambda n  $(0 - n)
-};
-
-public function div {
-    lambda (Integer,Integer) Integer:
-    lambda (a, b) let {
-        (q, _) := divmod (a, b),
-        return q
-    }
-};
-
-public function mod {
-    lambda (Integer,Integer) Integer:
-    lambda (a, b) let {
-        (_, r) := divmod (a, b),
-        return r
-    }
-};
-
-public function / {
-    lambda (Integer,Integer) Integer:
-    lambda (a, b) let {
-        (q, _) := quorem (a, b),
-        return q
-    }
-};
-
-public function % {
-    lambda (Integer,Integer) Integer:
-    lambda (a, b) let {
-        (_, r) := quorem (a, b),
-        return r
-    }
-};

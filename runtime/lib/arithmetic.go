@@ -18,15 +18,15 @@ func CheckFloat(x float64) float64 {
 
 
 var ArithmeticFunctions = map[string] interface{} {
-	"+integer": func(a *big.Int, b *big.Int) *big.Int {
+	"+Integer": func(a *big.Int, b *big.Int) *big.Int {
 		var c big.Int
 		return c.Add(a, b)
 	},
-	"-integer": func(a *big.Int, b *big.Int) *big.Int {
+	"-Integer": func(a *big.Int, b *big.Int) *big.Int {
 		var c big.Int
 		return c.Sub(a, b)
 	},
-	"*integer": func(a *big.Int, b *big.Int) *big.Int {
+	"*Integer": func(a *big.Int, b *big.Int) *big.Int {
 		var c big.Int
 		return c.Mul(a, b)
 	},
@@ -40,139 +40,139 @@ var ArithmeticFunctions = map[string] interface{} {
 		q.DivMod(a, b, &m)
 		return &q, &m
 	},
-	"+float": func(a float64, b float64) float64 {
+	"+Float": func(a float64, b float64) float64 {
 		return CheckFloat(a + b)
 	},
-	"-float":  func(a float64, b float64) float64 {
+	"-Float":  func(a float64, b float64) float64 {
 		return CheckFloat(a - b)
 	},
-	"*float": func(a float64, b float64) float64 {
+	"*Float": func(a float64, b float64) float64 {
 		return CheckFloat(a * b)
 	},
-	"/float": func(a float64, b float64) float64 {
+	"/Float": func(a float64, b float64) float64 {
 		return CheckFloat(a / b)
 	},
-	"%float": func(a float64, b float64) float64 {
+	"%Float": func(a float64, b float64) float64 {
 		return CheckFloat(math.Mod(a, b))
 	},
-	"+int8": func(a int8, b int8) int8 {
+	"+Int8": func(a int8, b int8) int8 {
 		return a + b
 	},
-	"-int8": func(a int8, b int8) int8 {
+	"-Int8": func(a int8, b int8) int8 {
 		return a - b
 	},
-	"*int8": func(a int8, b int8) int8 {
+	"*Int8": func(a int8, b int8) int8 {
 		return a * b
 	},
-	"/int8": func(a int8, b int8) int8 {
+	"/Int8": func(a int8, b int8) int8 {
 		return a / b
 	},
-	"%int8": func(a int8, b int8) int8 {
+	"%Int8": func(a int8, b int8) int8 {
 		return a % b
 	},
-	"+uint8": func(a uint8, b uint8) uint8 {
+	"+Uint8": func(a uint8, b uint8) uint8 {
 		return a + b
 	},
-	"-uint8": func(a uint8, b uint8) uint8 {
+	"-Uint8": func(a uint8, b uint8) uint8 {
 		return a - b
 	},
-	"*uint8": func(a uint8, b uint8) uint8 {
+	"*Uint8": func(a uint8, b uint8) uint8 {
 		return a * b
 	},
-	"/uint8": func(a uint8, b uint8) uint8 {
+	"/Uint8": func(a uint8, b uint8) uint8 {
 		return a / b
 	},
-	"%uint8": func(a uint8, b uint8) uint8 {
+	"%Uint8": func(a uint8, b uint8) uint8 {
 		return a % b
 	},
-	"+int16": func(a int16, b int16) int16 {
+	"+Int16": func(a int16, b int16) int16 {
 		return a + b
 	},
-	"-int16": func(a int16, b int16) int16 {
+	"-Int16": func(a int16, b int16) int16 {
 		return a - b
 	},
-	"*int16": func(a int16, b int16) int16 {
+	"*Int16": func(a int16, b int16) int16 {
 		return a * b
 	},
-	"/int16": func(a int16, b int16) int16 {
+	"/Int16": func(a int16, b int16) int16 {
 		return a / b
 	},
-	"%int16": func(a int16, b int16) int16 {
+	"%Int16": func(a int16, b int16) int16 {
 		return a % b
 	},
-	"+uint16": func(a uint16, b uint16) uint16 {
+	"+Uint16": func(a uint16, b uint16) uint16 {
 		return a + b
 	},
-	"-uint16": func(a uint16, b uint16) uint16 {
+	"-Uint16": func(a uint16, b uint16) uint16 {
 		return a - b
 	},
-	"*uint16": func(a uint16, b uint16) uint16 {
+	"*Uint16": func(a uint16, b uint16) uint16 {
 		return a * b
 	},
-	"/uint16": func(a uint16, b uint16) uint16 {
+	"/Uint16": func(a uint16, b uint16) uint16 {
 		return a / b
 	},
-	"%uint16": func(a uint16, b uint16) uint16 {
+	"%Uint16": func(a uint16, b uint16) uint16 {
 		return a % b
 	},
-	"+int32": func(a int32, b int32) int32 {
+	"+Int32": func(a int32, b int32) int32 {
 		return a + b
 	},
-	"-int32": func(a int32, b int32) int32 {
+	"-Int32": func(a int32, b int32) int32 {
 		return a - b
 	},
-	"*int32": func(a int32, b int32) int32 {
+	"*Int32": func(a int32, b int32) int32 {
 		return a * b
 	},
-	"/int32": func(a int32, b int32) int32 {
+	"/Int32": func(a int32, b int32) int32 {
 		return a / b
 	},
-	"%int32": func(a int32, b int32) int32 {
+	"%Int32": func(a int32, b int32) int32 {
 		return a % b
 	},
-	"+uint32": func(a uint32, b uint32) uint32 {
+	"+Uint32": func(a uint32, b uint32) uint32 {
 		return a + b
 	},
-	"-uint32": func(a uint32, b uint32) uint32 {
+	"-Uint32": func(a uint32, b uint32) uint32 {
 		return a - b
 	},
-	"*uint32": func(a uint32, b uint32) uint32 {
+	"*Uint32": func(a uint32, b uint32) uint32 {
 		return a * b
 	},
-	"/uint32": func(a uint32, b uint32) uint32 {
+	"/Uint32": func(a uint32, b uint32) uint32 {
 		return a / b
 	},
-	"%uint32": func(a uint32, b uint32) uint32 {
+	"%Uint32": func(a uint32, b uint32) uint32 {
 		return a % b
 	},
-	"+int64": func(a int64, b int64) int64 {
+	"+Int64": func(a int64, b int64) int64 {
 		return a + b
 	},
-	"-int64": func(a int64, b int64) int64 {
+	"-Int64": func(a int64, b int64) int64 {
 		return a - b
 	},
-	"*int64": func(a int64, b int64) int64 {
+	"*Int64": func(a int64, b int64) int64 {
 		return a * b
 	},
-	"/int64": func(a int64, b int64) int64 {
+	"/Int64": func(a int64, b int64) int64 {
 		return a / b
 	},
-	"%int64": func(a int64, b int64) int64 {
+	"%Int64": func(a int64, b int64) int64 {
 		return a % b
 	},
-	"+uint64": func(a uint64, b uint64) uint64 {
+	"+Uint64": func(a uint64, b uint64) uint64 {
 		return a + b
 	},
-	"-uint64": func(a uint64, b uint64) uint64 {
+	"-Uint64": func(a uint64, b uint64) uint64 {
 		return a - b
 	},
-	"*uint64": func(a uint64, b uint64) uint64 {
+	"*Uint64": func(a uint64, b uint64) uint64 {
 		return a * b
 	},
-	"/uint64": func(a uint64, b uint64) uint64 {
+	"/Uint64": func(a uint64, b uint64) uint64 {
 		return a / b
 	},
-	"%uint64": func(a uint64, b uint64) uint64 {
+	"%Uint64": func(a uint64, b uint64) uint64 {
 		return a % b
 	},
 }

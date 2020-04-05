@@ -8,164 +8,164 @@ import (
 
 
 var ComparisonFunctions = map[string] interface{} {
-	"=string": func(a []rune, b []rune) SumValue {
-		return CoreBool(container.StringCompare(a, b) == Equal)
+	"=String": func(a []rune, b []rune) SumValue {
+		return ToBool(container.StringCompare(a, b) == Equal)
 	},
-	"<string": func(a []rune, b []rune) SumValue {
-		return CoreBool(container.StringCompare(a, b) == Smaller)
+	"<String": func(a []rune, b []rune) SumValue {
+		return ToBool(container.StringCompare(a, b) == Smaller)
 	},
-	"<>string": func(a []rune, b []rune) SumValue {
-		return CoreOrdering(container.StringCompare(a, b))
+	"<>String": func(a []rune, b []rune) SumValue {
+		return ToOrdering(container.StringCompare(a, b))
 	},
-	"=integer": func(a *big.Int, b *big.Int) SumValue {
-		return CoreBool(a.Cmp(b) == 0)
+	"=Integer": func(a *big.Int, b *big.Int) SumValue {
+		return ToBool(a.Cmp(b) == 0)
 	},
-	"<integer": func(a *big.Int, b *big.Int) SumValue {
-		return CoreBool(a.Cmp(b) == -1)
+	"<Integer": func(a *big.Int, b *big.Int) SumValue {
+		return ToBool(a.Cmp(b) == -1)
 	},
-	"<>integer": func(a *big.Int, b *big.Int) SumValue {
+	"<>Integer": func(a *big.Int, b *big.Int) SumValue {
 		var result = a.Cmp(b)
 		if result < 0 {
-			return CoreOrdering(Smaller)
+			return ToOrdering(Smaller)
 		} else if result > 0 {
-			return CoreOrdering(Bigger)
+			return ToOrdering(Bigger)
 		} else {
-			return CoreOrdering(Equal)
+			return ToOrdering(Equal)
 		}
 	},
-	"=float": func(a float64, b float64) SumValue {
-		return CoreBool(a == b)
+	"=Float": func(a float64, b float64) SumValue {
+		return ToBool(a == b)
 	},
-	"<float": func(a float64, b float64) SumValue {
-		return CoreBool(a < b)
+	"<Float": func(a float64, b float64) SumValue {
+		return ToBool(a < b)
 	},
-	"<>float": func(a float64, b float64) SumValue {
+	"<>Float": func(a float64, b float64) SumValue {
 		if a < b {
-			return CoreOrdering(Smaller)
+			return ToOrdering(Smaller)
 		} else if a > b {
-			return CoreOrdering(Bigger)
+			return ToOrdering(Bigger)
 		} else {
-			return CoreOrdering(Equal)
+			return ToOrdering(Equal)
 		}
 	},
-	"=int8": func(a int8, b int8) SumValue {
-		return CoreBool(a == b)
+	"=Int8": func(a int8, b int8) SumValue {
+		return ToBool(a == b)
 	},
-	"<int8": func(a int8, b int8) SumValue {
-		return CoreBool(a < b)
+	"<Int8": func(a int8, b int8) SumValue {
+		return ToBool(a < b)
 	},
-	"<>int8": func(a int8, b int8) SumValue {
+	"<>Int8": func(a int8, b int8) SumValue {
 		if a < b {
-			return CoreOrdering(Smaller)
+			return ToOrdering(Smaller)
 		} else if a > b {
-			return CoreOrdering(Bigger)
+			return ToOrdering(Bigger)
 		} else {
-			return CoreOrdering(Equal)
+			return ToOrdering(Equal)
 		}
 	},
-	"=uint8": func(a uint8, b uint8) SumValue {
-		return CoreBool(a == b)
+	"=Uint8": func(a uint8, b uint8) SumValue {
+		return ToBool(a == b)
 	},
-	"<uint8": func(a uint8, b uint8) SumValue {
-		return CoreBool(a < b)
+	"<Uint8": func(a uint8, b uint8) SumValue {
+		return ToBool(a < b)
 	},
-	"<>uint8": func(a uint8, b uint8) SumValue {
+	"<>Uint8": func(a uint8, b uint8) SumValue {
 		if a < b {
-			return CoreOrdering(Smaller)
+			return ToOrdering(Smaller)
 		} else if a > b {
-			return CoreOrdering(Bigger)
+			return ToOrdering(Bigger)
 		} else {
-			return CoreOrdering(Equal)
+			return ToOrdering(Equal)
 		}
 	},
-	"=int16": func(a int16, b int16) SumValue {
-		return CoreBool(a == b)
+	"=Int16": func(a int16, b int16) SumValue {
+		return ToBool(a == b)
 	},
-	"<int16": func(a int16, b int16) SumValue {
-		return CoreBool(a < b)
+	"<Int16": func(a int16, b int16) SumValue {
+		return ToBool(a < b)
 	},
-	"<>int16": func(a int16, b int16) SumValue {
+	"<>Int16": func(a int16, b int16) SumValue {
 		if a < b {
-			return CoreOrdering(Smaller)
+			return ToOrdering(Smaller)
 		} else if a > b {
-			return CoreOrdering(Bigger)
+			return ToOrdering(Bigger)
 		} else {
-			return CoreOrdering(Equal)
+			return ToOrdering(Equal)
 		}
 	},
-	"=uint16": func(a uint16, b uint16) SumValue {
-		return CoreBool(a == b)
+	"=Uint16": func(a uint16, b uint16) SumValue {
+		return ToBool(a == b)
 	},
-	"<uint16": func(a uint16, b uint16) SumValue {
-		return CoreBool(a < b)
+	"<Uint16": func(a uint16, b uint16) SumValue {
+		return ToBool(a < b)
 	},
-	"<>uint16": func(a uint16, b uint16) SumValue {
+	"<>Uint16": func(a uint16, b uint16) SumValue {
 		if a < b {
-			return CoreOrdering(Smaller)
+			return ToOrdering(Smaller)
 		} else if a > b {
-			return CoreOrdering(Bigger)
+			return ToOrdering(Bigger)
 		} else {
-			return CoreOrdering(Equal)
+			return ToOrdering(Equal)
 		}
 	},
-	"=int32": func(a int32, b int32) SumValue {
-		return CoreBool(a == b)
+	"=Int32": func(a int32, b int32) SumValue {
+		return ToBool(a == b)
 	},
-	"<int32": func(a int32, b int32) SumValue {
-		return CoreBool(a < b)
+	"<Int32": func(a int32, b int32) SumValue {
+		return ToBool(a < b)
 	},
-	"<>int32": func(a int32, b int32) SumValue {
+	"<>Int32": func(a int32, b int32) SumValue {
 		if a < b {
-			return CoreOrdering(Smaller)
+			return ToOrdering(Smaller)
 		} else if a > b {
-			return CoreOrdering(Bigger)
+			return ToOrdering(Bigger)
 		} else {
-			return CoreOrdering(Equal)
+			return ToOrdering(Equal)
 		}
 	},
-	"=uint32": func(a uint32, b uint32) SumValue {
-		return CoreBool(a == b)
+	"=Uint32": func(a uint32, b uint32) SumValue {
+		return ToBool(a == b)
 	},
-	"<uint32": func(a uint32, b uint32) SumValue {
-		return CoreBool(a < b)
+	"<Uint32": func(a uint32, b uint32) SumValue {
+		return ToBool(a < b)
 	},
-	"<>uint32": func(a uint32, b uint32) SumValue {
+	"<>Uint32": func(a uint32, b uint32) SumValue {
 		if a < b {
-			return CoreOrdering(Smaller)
+			return ToOrdering(Smaller)
 		} else if a > b {
-			return CoreOrdering(Bigger)
+			return ToOrdering(Bigger)
 		} else {
-			return CoreOrdering(Equal)
+			return ToOrdering(Equal)
 		}
 	},
-	"=int64": func(a int64, b int64) SumValue {
-		return CoreBool(a == b)
+	"=Int64": func(a int64, b int64) SumValue {
+		return ToBool(a == b)
 	},
-	"<int64": func(a int64, b int64) SumValue {
-		return CoreBool(a < b)
+	"<Int64": func(a int64, b int64) SumValue {
+		return ToBool(a < b)
 	},
-	"<>int64": func(a int64, b int64) SumValue {
+	"<>Int64": func(a int64, b int64) SumValue {
 		if a < b {
-			return CoreOrdering(Smaller)
+			return ToOrdering(Smaller)
 		} else if a > b {
-			return CoreOrdering(Bigger)
+			return ToOrdering(Bigger)
 		} else {
-			return CoreOrdering(Equal)
+			return ToOrdering(Equal)
 		}
 	},
-	"=uint64": func(a uint64, b uint64) SumValue {
-		return CoreBool(a == b)
+	"=Uint64": func(a uint64, b uint64) SumValue {
+		return ToBool(a == b)
 	},
-	"<uint64": func(a uint64, b uint64) SumValue {
-		return CoreBool(a < b)
+	"<Uint64": func(a uint64, b uint64) SumValue {
+		return ToBool(a < b)
 	},
-	"<>uint64": func(a uint64, b uint64) SumValue {
+	"<>Uint64": func(a uint64, b uint64) SumValue {
 		if a < b {
-			return CoreOrdering(Smaller)
+			return ToOrdering(Smaller)
 		} else if a > b {
-			return CoreOrdering(Bigger)
+			return ToOrdering(Bigger)
 		} else {
-			return CoreOrdering(Equal)
+			return ToOrdering(Equal)
 		}
 	},
 }

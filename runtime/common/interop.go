@@ -1,10 +1,12 @@
 package common
 
 import "reflect"
+import . "kumachan/error"
 
 
 type MachineHandle interface {
 	Call(fv Value, arg Value) Value
+	GetErrorPoint() ErrorPoint
 }
 var __t = MachineHandle(nil)
 var __MachineHandleType = reflect.TypeOf(&__t).Elem()

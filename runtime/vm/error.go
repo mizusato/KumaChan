@@ -25,21 +25,27 @@ func PrintRuntimeErrorMessage(err interface{}, ec *ExecutionContext) {
 		var callee_name = callee.function.Info.Name
 		var frame_msg = make(ErrorMessage, 0)
 		frame_msg.WriteText(TS_NORMAL, fmt.Sprintf("call from %s", callee_name))
-		buf.WriteAll(GenFrameErrMsg(callee, frame_msg))
+		buf.WriteAll(FormatErrorAtFrame(callee, frame_msg))
 		buf.WriteText(TS_NORMAL, "\n*\n")
 	}
 	var frame_msg = make(ErrorMessage, 0)
 	frame_msg.WriteText(TS_NORMAL, fmt.Sprintf("Runtime Error: %s", err_desc))
-	buf.WriteAll(GenFrameErrMsg(ec.workingFrame, frame_msg))
+	buf.WriteAll(FormatErrorAtFrame(ec.workingFrame, frame_msg))
 	buf.Write(T_LF)
 	var msg = buf.String()
 	var _, _ = fmt.Fprintln(os.Stderr, msg)
 }
 
-func GenFrameErrMsg(f CallStackFrame, desc ErrorMessage) ErrorMessage {
+func FormatErrorAtFrame(f CallStackFrame, desc ErrorMessage) ErrorMessage {
+	return FormatErrorAt(GetFrameErrorPoint(f), desc)
+}
+
+func GetFrameErrorPoint(f CallStackFrame) ErrorPoint {
+	if f.instPtr == 0 { panic("something went wrong") }
+	if f.function == nil { panic("something went wrong") }
 	var last_executed = (f.instPtr - 1)
-	return FormatErrorAt(ErrorPoint {
+	return ErrorPoint {
 		CST:  f.function.Info.DeclPoint.CST,
 		Node: *(f.function.Info.SourceMap[last_executed]),
-	}, desc)
+	}
 }

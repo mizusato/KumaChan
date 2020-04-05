@@ -39,15 +39,15 @@ func execute(p Program, m *Machine) {
 		if f.IsNative {
 			m.globalSlot = append(m.globalSlot, C(f.NativeIndex))
 		} else {
-			var v = f.ToValue(nil)
-			m.globalSlot = append(m.globalSlot, m.Call(v, nil))
+			var v = f.ToValue(nil).(FunctionValue)
+			m.globalSlot = append(m.globalSlot, call(v, nil, m))
 		}
 	}
 	var ctx = rx.Background()
 	for i, _ := range p.Effects {
 		var f = p.Effects[i]
-		var v = f.ToValue(nil)
-		var e = (m.Call(v, nil)).(rx.Effect)
+		var v = f.ToValue(nil).(FunctionValue)
+		var e = (call(v, nil, m)).(rx.Effect)
 		m.scheduler.RunTopLevel(e, rx.Receiver {
 			Context: ctx,
 			Values:  nil,
@@ -212,7 +212,7 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 					continue outer
 				case NativeFunctionValue:
 					var arg = ec.popValue()
-					var ret = f(arg, m)
+					var ret = f(arg, Handle { context: ec, machine: m })
 					ec.pushValue(ret)
 				default:
 					panic("CALL: cannot execute on non-callable value")

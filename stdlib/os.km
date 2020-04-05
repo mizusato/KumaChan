@@ -1,13 +1,10 @@
 module OS;
 
-public const
-Stdin := [I/O::InputStream] native 'Stdin';
+public const Stdin := [I/O::InputStream] native 'Stdin';
 
-public const
-Stdout := [I/O::OutputStream] native 'Stdout';
+public const Stdout := [I/O::OutputStream] native 'Stdout';
 
-public const
-Stderr := [I/O::OutputStream] native 'Stderr';
+public const Stderr := [I/O::OutputStream] native 'Stderr';
 
 type ProcessExit  protected Effect[(),()];
 

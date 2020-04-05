@@ -74,7 +74,7 @@ func BitArray(bytes Bytes) Array {
 		GetItem: func(i uint) Value {
 			var n = i >> 3
 			var offset = uint8(1) << (i & 7)
-			return CoreBool(1 == (uint8(bytes[n]) & offset))
+			return ToBool(1 == (uint8(bytes[n]) & offset))
 		},
 	}
 }
