@@ -36,6 +36,16 @@ func (impl E_InvalidFieldName) TypeError() {}
 type E_InvalidFieldName struct {
 	Name  string
 }
+func (impl E_TooManyUnionItems) TypeError() {}
+type E_TooManyUnionItems struct {
+	Defined  uint
+	Limit    uint
+}
+func (impl E_TooManyTupleBundleItems) TypeError() {}
+type E_TooManyTupleBundleItems struct {
+	Defined  uint
+	Limit    uint
+}
 
 func (err *TypeError) Desc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
@@ -58,6 +68,16 @@ func (err *TypeError) Desc() ErrorMessage {
 	case E_InvalidFieldName:
 		msg.WriteText(TS_ERROR, "Invalid field name:")
 		msg.WriteEndText(TS_INLINE_CODE, e.Name)
+	case E_TooManyUnionItems:
+		msg.WriteText(TS_ERROR, "Too many union items:")
+		msg.WriteInnerText(TS_INLINE, fmt.Sprint(e.Defined))
+		msg.WriteText(TS_ERROR,
+			fmt.Sprintf("items (maximum is %d)", e.Limit))
+	case E_TooManyTupleBundleItems:
+		msg.WriteText(TS_ERROR, "Too many elements/fields:")
+		msg.WriteInnerText(TS_INLINE, fmt.Sprint(e.Defined))
+		msg.WriteText(TS_ERROR,
+			fmt.Sprintf("elements/fields (maximum is %d)", e.Limit))
 	default:
 		panic("unknown error kind")
 	}

@@ -3,6 +3,7 @@ package checker
 import (
 	. "kumachan/error"
 	"kumachan/loader"
+	"kumachan/runtime/common"
 	"kumachan/stdlib"
 	"kumachan/transformer/ast"
 )
@@ -251,8 +252,18 @@ func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, *Type
 func TypeValFrom (tv ast.TypeValue, ctx TypeContext) (TypeVal, *TypeError) {
 	switch v := tv.(type) {
 	case ast.UnionType:
-		// TODO: check common.SumMaxBranches
-		var subtypes = make([]loader.Symbol, len(v.Items))
+		var count = uint(len(v.Items))
+		var max = uint(common.SumMaxBranches)
+		if count > max {
+			return nil, &TypeError {
+				Point:    ErrorPoint { CST: ctx.Module.CST, Node: v.Node },
+				Concrete: E_TooManyUnionItems {
+					Defined: count,
+					Limit:   max,
+				},
+			}
+		}
+		var subtypes = make([]loader.Symbol, count)
 		for i, item := range v.Items {
 			subtypes[i] = ctx.Module.SymbolFromName(item.Name)
 		}
@@ -346,7 +357,18 @@ func TypeFrom (type_ ast.Type, ctx TypeContext) (Type, *TypeError) {
 func TypeFromRepr (repr ast.Repr, ctx TypeContext) (Type, *TypeError) {
 	switch r := repr.(type) {
 	case ast.ReprTuple:
-		if len(r.Elements) == 0 {
+		var count = uint(len(r.Elements))
+		var max = uint(common.ProductMaxSize)
+		if count > max {
+			return nil, &TypeError {
+				Point:    ErrorPoint { CST: ctx.Module.CST, Node: r.Node },
+				Concrete: E_TooManyTupleBundleItems {
+					Defined: count,
+					Limit:   max,
+				},
+			}
+		}
+		if count == 0 {
 			// there isn't an empty tuple,
 			// assume it to be the unit type
 			return AnonymousType {
@@ -370,6 +392,17 @@ func TypeFromRepr (repr ast.Repr, ctx TypeContext) (Type, *TypeError) {
 			}
 		}
 	case ast.ReprBundle:
+		var count = uint(len(r.Fields))
+		var max = uint(common.ProductMaxSize)
+		if count > max {
+			return nil, &TypeError {
+				Point:    ErrorPoint { CST: ctx.Module.CST, Node: r.Node },
+				Concrete: E_TooManyTupleBundleItems {
+					Defined: count,
+					Limit:   max,
+				},
+			}
+		}
 		if len(r.Fields) == 0 {
 			// there isn't an empty bundle,
 			// assume it to be the unit type
