@@ -250,10 +250,37 @@ public function  = { lambda (Uint64,Uint64) Bool:      native '=Uint64' };
 public function  < { lambda (Uint64,Uint64) Bool:      native '<Uint64' };
 public function <> { lambda (Uint64,Uint64) Ordering:  native '<>Uint64' };
 
-// TODO: Bitwise Operations
+// Bitwise Operation Functions
+public function AND { lambda (Bit,Bit) Bit:  native '&Bit' };
+public function  OR { lambda (Bit,Bit) Bit:  native '|Bit' };
+public function NOT { lambda Bit Bit:        native '~Bit' };
+public function AND { lambda (Byte,Byte) Byte:  native '&Byte' };
+public function  OR { lambda (Byte,Byte) Byte:  native '|Byte' };
+public function NOT { lambda Byte Byte:         native '~Byte' };
+public function XOR { lambda (Byte,Byte) Byte:  native '^Byte' };
+public function SHL { lambda (Byte,Byte) Byte:  native '<<Byte' };
+public function SHR { lambda (Byte,Byte) Byte:  native '>>Byte' };
+public function AND { lambda (Word,Word) Word:  native '&Word' };
+public function  OR { lambda (Word,Word) Word:  native '|Word' };
+public function NOT { lambda Word Word:         native '~Word' };
+public function XOR { lambda (Word,Word) Word:  native '^Word' };
+public function SHL { lambda (Word,Byte) Word:  native '<<Word' };
+public function SHR { lambda (Word,Byte) Word:  native '>>Word' };
+public function AND { lambda (Dword,Dword) Dword:  native '&Dword' };
+public function  OR { lambda (Dword,Dword) Dword:  native '|Dword' };
+public function NOT { lambda Dword Dword:          native '~Dword' };
+public function XOR { lambda (Dword,Dword) Dword:  native '^Dword' };
+public function SHL { lambda (Dword,Byte) Dword:   native '<<Dword' };
+public function SHR { lambda (Dword,Byte) Dword:   native '>>Dword' };
+public function AND { lambda (Qword,Qword) Qword:  native '&Qword' };
+public function  OR { lambda (Qword,Qword) Qword:  native '|Qword' };
+public function NOT { lambda Qword Qword:          native '~Qword' };
+public function XOR { lambda (Qword,Qword) Qword:  native '^Qword' };
+public function SHL { lambda (Qword,Byte) Qword:   native '<<Qword' };
+public function SHR { lambda (Qword,Byte) Qword:   native '>>Qword' };
 
 // String Related Functions
-public function str! { lambda String String:   lambda x x };
+public function str! { lambda String String:  lambda x x };
 public function str! { lambda Int String:  native 'str-Int' };
 
 // Effect Operators
