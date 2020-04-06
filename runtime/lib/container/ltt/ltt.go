@@ -40,24 +40,21 @@ func (node *LTT) GetDist() uint64 {
 	}
 }
 
-func (node *LTT) Merge(another *LTT, cmp Compare) *LTT {
+func (node *LTT) Merge(another *LTT, lt LessThanOperator) *LTT {
 	if node == nil { return another }
 	if another == nil { return node }
 	var smaller *LTT
 	var bigger *LTT
-	switch cmp(node.Value, another.Value) {
-	case Smaller, Equal:
+	if lt(node.Value, another.Value) {
 		smaller = node
 		bigger = another
-	case Bigger:
+	} else {
 		bigger = node
 		smaller = another
-	default:
-		panic("impossible branch")
 	}
 	var v = smaller.Value
 	var a = smaller.Left
-	var b = smaller.Right.Merge(bigger, cmp)
+	var b = smaller.Right.Merge(bigger, lt)
 	if a.GetDist() >= b.GetDist() {
 		return Node(v, a, b)
 	} else {
@@ -73,17 +70,17 @@ func (node *LTT) Top() (Value, bool) {
 	}
 }
 
-func (node *LTT) Popped(cmp Compare) (Value, *LTT, bool) {
+func (node *LTT) Popped(lt LessThanOperator) (Value, *LTT, bool) {
 	if node != nil {
-		var rest = node.Left.Merge(node.Right, cmp)
+		var rest = node.Left.Merge(node.Right, lt)
 		return node.Value, rest, true
 	} else {
 		return nil, nil, false
 	}
 }
 
-func (node *LTT) Pushed(v Value, cmp Compare) *LTT {
-	return node.Merge(Leaf(v), cmp)
+func (node *LTT) Pushed(v Value, lt LessThanOperator) *LTT {
+	return node.Merge(Leaf(v), lt)
 }
 
 

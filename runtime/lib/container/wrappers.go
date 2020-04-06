@@ -8,24 +8,24 @@ import (
 
 
 type Heap struct {
-	LTT *ltt.LTT
-	Cmp Compare
+	LTT   *ltt.LTT
+	LtOp  LessThanOperator
 }
 
-func NewHeap (cmp Compare) Heap {
-	return Heap { LTT: nil, Cmp: cmp }
+func NewHeap (lt LessThanOperator) Heap {
+	return Heap { LTT: nil, LtOp: lt }
 }
 
 func (h Heap) From(t *ltt.LTT) Heap {
-	return Heap { LTT: t, Cmp: h.Cmp }
+	return Heap { LTT: t, LtOp: h.LtOp }
 }
 
 func (h Heap) Push(v Value) Heap {
-	return h.From(h.LTT.Pushed(v, h.Cmp))
+	return h.From(h.LTT.Pushed(v, h.LtOp))
 }
 
 func (h Heap) Pop() (Value, Heap, bool) {
-	var popped, rest, exists = h.LTT.Popped(h.Cmp)
+	var popped, rest, exists = h.LTT.Popped(h.LtOp)
 	return popped, h.From(rest), exists
 }
 

@@ -8,6 +8,7 @@ const (
 	Smaller
 	Bigger
 )
+type LessThanOperator  func(Value,Value) bool
 
 func (o Ordering) Reversed() Ordering {
 	switch o {
