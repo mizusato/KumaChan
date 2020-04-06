@@ -280,8 +280,10 @@ public function SHL { lambda (Qword,Byte) Qword:   native '<<Qword' };
 public function SHR { lambda (Qword,Byte) Qword:   native '>>Qword' };
 
 // String Related Functions
-public function str! { lambda String String:  lambda x x };
-public function str! { lambda Int String:  native 'str-Int' };
+public macro str! (x) := ~String from x;
+// TODO: from (cast function)
+public function from { lambda String String:  lambda x x };
+public function from { lambda Int String:  native 'string-from-int' };
 
 // Effect Operators
 public function then[T,E] {

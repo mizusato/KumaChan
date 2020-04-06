@@ -18,6 +18,7 @@ func CheckFloat(x float64) float64 {
 
 
 var ArithmeticFunctions = map[string] interface{} {
+	// TODO: pow, sqrt, ...
 	"+Int": func(a *big.Int, b *big.Int) *big.Int {
 		var c big.Int
 		return c.Add(a, b)

@@ -7,7 +7,7 @@ import (
 
 
 var StringFunctions = map[string] Value {
-	"str-Int": func(n *big.Int) []rune {
+	"string-from-int": func(n *big.Int) []rune {
 		return []rune(n.String())
 	},
 }

@@ -221,6 +221,7 @@ func AreTypesOverloadUnsafe (type1 Type, type2 Type) bool {
 	case NamedType:
 		switch t2 := type2.(type) {
 		case NamedType:
+			// check union (through TypeRegistry)
 			if t1.Name == t2.Name {
 				var L1 = len(t1.Args)
 				var L2 = len(t2.Args)
