@@ -142,10 +142,15 @@ func DescribeType(type_ Type, ctx TypeDescContext) string {
 		case Bundle:
 			var buf strings.Builder
 			buf.WriteString("{ ")
+			var i = 0
 			for name, field := range r.Fields {
 				buf.WriteString(name)
 				buf.WriteString(": ")
 				buf.WriteString(DescribeType(field.Type, ctx))
+				if i != len(r.Fields)-1 {
+					buf.WriteString(", ")
+				}
+				i += 1
 			}
 			buf.WriteString(" }")
 			return buf.String()

@@ -82,10 +82,12 @@ public function not { lambda Bool Bool:         native 'not' };
 public function and { lambda (Bool,Bool) Bool:  native 'and' };
 public function or  { lambda (Bool,Bool) Bool:  native 'or'  };
 
-// Arithmetic Functions
+// Baisc Arithmetic Functions
 public function + { lambda (Int,Int) Int:  native '+Int' };
 public function - { lambda (Int,Int) Int:  native '-Int' };
 public function * { lambda (Int,Int) Int:  native '*Int' };
+// TODO: ** (integer power)
+// TODO: +Nat, -Nat, ... (natural number)
 public function quorem {
     lambda (Int,Int) (Int,Int):
     native 'quorem'
@@ -210,6 +212,35 @@ public function % { lambda (Uint64, Uint64) Uint64:  native '%Uint64' };
 public function - {
     lambda Uint64  Uint64:
     lambda   n    $(0 - n)
+};
+
+// Advanced Arithmetic Functions
+public function floor! { lambda Float Float:  native 'floor' };
+public function  ceil! { lambda Float Float:  native 'ceil' };
+public function round! { lambda Float Float:  native 'round' };
+public function ** { lambda (Float,Float) Float:  native 'real-**' };
+public function sqrt { lambda Float Float:  native 'real-sqrt' };
+public function cbrt { lambda Float Float:  native 'real-cbrt' };
+public function exp! { lambda Float Float:  native 'real-exp' };
+public function log! { lambda Float Float:  native 'real-log' };
+public function  sin { lambda Float Float: native 'real-sin' };
+public function  cos { lambda Float Float: native 'real-cos' };
+public function  tan { lambda Float Float: native 'real-tan' };
+public function asin { lambda Float Float: native 'real-asin' };
+public function acos { lambda Float Float: native 'real-acos' };
+public function atan { lambda Float Float: native 'real-atan' };
+public function atan2 { lambda { y: Float, x: Float } Float:  native 'atan2' };
+public function log! {
+    lambda { base: Float, x: Float } Float:
+    lambda {base,x} $((log! x) / (log! base))
+};
+public function log2! {
+    lambda Float Float:
+    lambda x (log! { base: 2.0, x })
+};
+public function log10! {
+    lambda Float Float:
+    lambda x (log! { base: 10.0, x })
 };
 
 // Comparison Functions & Macros

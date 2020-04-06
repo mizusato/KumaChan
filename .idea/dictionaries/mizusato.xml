@@ -1,9 +1,12 @@
 <component name="ProjectDictionaryState">
   <dictionary name="mizusato">
     <words>
+      <w>acos</w>
       <w>addrs</w>
       <w>arglist</w>
       <w>arith</w>
+      <w>asin</w>
+      <w>atan</w>
       <w>autognosis</w>
       <w>autognostic</w>
       <w>bytecode</w>
@@ -27,6 +30,7 @@
       <w>repr</w>
       <w>resumable</w>
       <w>sched</w>
+      <w>sqrt</w>
       <w>typelist</w>
       <w>unbox</w>
       <w>unboxes</w>

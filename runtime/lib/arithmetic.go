@@ -166,4 +166,73 @@ var ArithmeticFunctions = map[string] interface{} {
 	"%Uint64": func(a uint64, b uint64) uint64 {
 		return a % b
 	},
+	"floor": func(x float64) float64 {
+		return math.Floor(x)
+	},
+	"ceil": func(x float64) float64 {
+		return math.Ceil(x)
+	},
+	"round": func(x float64) float64 {
+		return math.Round(x)
+	},
+	"real-**": func(x float64, p float64) float64 {
+		if x == 0.0 && p == 0.0 {
+			panic("cannot evaluate 0.0 to the power of 0.0")
+		}
+		return math.Pow(x, p)
+	},
+	"real-sqrt": func(x float64) float64 {
+		if x >= 0.0 {
+			return math.Sqrt(x)
+		} else {
+			panic("cannot take real square root on negative number")
+		}
+	},
+	"real-cbrt": func(x float64) float64 {
+		return math.Cbrt(x)
+	},
+	"real-exp": func(x float64) float64 {
+		return math.Exp(x)
+	},
+	"real-log": func(x float64) float64 {
+		if x > 0 {
+			return math.Log(x)
+		} else {
+			panic("cannot take real logarithm of non-positive number")
+		}
+	},
+	"real-sin": func(x float64) float64 {
+		return math.Sin(x)
+	},
+	"real-cos": func(x float64) float64 {
+		return math.Cos(x)
+	},
+	"real-tan": func(x float64) float64 {
+		var sine = math.Sin(x)
+		var cosine = math.Cos(x)
+		if cosine == 0.0 {
+			panic("input out of the domain of tangent function")
+		}
+		return (sine / cosine)
+	},
+	"real-asin": func(x float64) float64 {
+		if -1.0 <= x && x <= 1.0 {
+			return math.Asin(x)
+		} else {
+			panic("input out of the domain of inverse sine function")
+		}
+	},
+	"real-acos": func(x float64) float64 {
+		if -1.0 <= x && x <= 1.0 {
+			return math.Acos(x)
+		} else {
+			panic("input out of the domain of inverse cosine function")
+		}
+	},
+	"real-atan": func(x float64) float64 {
+		return math.Atan(x)
+	},
+	"atan2": func(y float64, x float64) float64 {
+		return math.Atan2(y, x)
+	},
 }
