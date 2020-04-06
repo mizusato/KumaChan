@@ -102,7 +102,7 @@ func GenericFunctionAssignTo (
 			Value: MakeRefFunction(name, index, ctx),
 			Info:  info,
 		}
-		return AssignTypedTo(expected, f_expr, ctx, true)
+		return AssignTypedTo(expected, f_expr, ctx, 0)
 	} else if len(type_args) == 0 {
 		if expected == nil {
 			return Expr{}, &ExprError {

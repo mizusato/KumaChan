@@ -186,7 +186,7 @@ func AssignRefTo(expected Type, ref UntypedRef, info ExprInfo, ctx ExprContext) 
 				Concrete: E_TypeUsedAsValue { r.TypeName },
 			}
 		} else {
-			var adapted, err = AssignTypedTo(expected, boxed_unit, ctx, true)
+			var adapted, err = AssignTypedTo(expected, boxed_unit, ctx, 0)
 			if err != nil {
 				return Expr{}, &ExprError {
 					Point:    info.ErrorPoint,

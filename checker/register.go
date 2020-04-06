@@ -208,7 +208,42 @@ func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, *Type
 			UnionIndex: raw.UnionIndexMap[name],
 		}
 	}
-	// 4. Return the TypeRegistry
+	// 4. Validate boxed types
+	var check_cycle func(loader.Symbol, Boxed, []loader.Symbol) *TypeDeclError
+	check_cycle = func (
+		name loader.Symbol, t Boxed, path []loader.Symbol,
+	) *TypeDeclError {
+		for _, visited := range path {
+			if visited == name {
+				var node = reg[path[0]].Node
+				var cst = idx[path[0].ModuleName].CST
+				var point = ErrorPoint { Node: node, CST: cst }
+				return &TypeDeclError {
+					Point:    point,
+					Concrete: E_TypeCircularDependency { path },
+				}
+			}
+		}
+		var named, is_named = t.InnerType.(NamedType)
+		if is_named {
+			var inner_name = named.Name
+			var g = reg[inner_name]
+			var inner_boxed, is_boxed = g.Value.(Boxed)
+			if is_boxed {
+				var inner_path = append(path, name)
+				return check_cycle(inner_name, inner_boxed, inner_path)
+			}
+		}
+		return nil
+	}
+	for name, g := range reg {
+		var boxed, is_boxed = g.Value.(Boxed)
+		if is_boxed {
+			var err = check_cycle(name, boxed, make([]loader.Symbol, 0))
+			if err != nil { return nil, err }
+		}
+	}
+	// 5. Return the TypeRegistry
 	return reg, nil
 }
 

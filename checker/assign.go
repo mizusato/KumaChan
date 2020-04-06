@@ -20,7 +20,7 @@ func AssignTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprError) 
 	var expr, err = (func() (Expr, *ExprError) {
 		switch semi_value := semi.Value.(type) {
 		case TypedExpr:
-			return AssignTypedTo(expected, Expr(semi_value), ctx, true)
+			return AssignTypedTo(expected, Expr(semi_value), ctx, 0)
 		case UntypedLambda:
 			return AssignLambdaTo(expected, semi_value, semi.Info, ctx)
 		case UntypedInteger:
@@ -55,7 +55,7 @@ func AssignTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprError) 
 	}
 }
 
-func AssignTypedTo(expected Type, expr Expr, ctx ExprContext, unbox bool) (Expr, *ExprError) {
+func AssignTypedTo(expected Type, expr Expr, ctx ExprContext, depth uint) (Expr, *ExprError) {
 	// TODO: update comments
 	if expected == nil {
 		// 1. If the expected type is not specified,
@@ -211,28 +211,25 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext, unbox bool) (Expr,
 		if AreTypesEqualInSameCtx(expected, expr.Type) {
 			return expr, nil
 		} else {
-			if unbox {
-				var unboxed, ok = Unbox(expr.Type, ctx).(Unboxed)
-				if ok {
-					var expr_unboxed = Expr {
-						Type:  unboxed.Type,
-						Value: expr.Value,
-						Info:  expr.Info,
-					}
-					var expr_expected, err = AssignTypedTo (
-						expected, expr_unboxed, ctx, false,
-					)
-					// if err != nil { return Expr{}, err }
-					// TODO: allow transitive unbox (parameter unbox -> depth)
-					// TODO: check circular definition of boxed types
-					if err != nil { return Expr{}, throw("") }
-					if ctx.UnboxCounted {  // TODO: increment only when depth is 0
-						*(ctx.UnboxCount) += 1
-					}
-					return expr_expected, nil
+			var unboxed, ok = Unbox(expr.Type, ctx).(Unboxed)
+			if !ok {
+				return Expr{}, throw("")
+			} else {
+				var expr_unboxed = Expr {
+					Type:  unboxed.Type,
+					Value: expr.Value,
+					Info:  expr.Info,
 				}
+				var expr_expected, err = AssignTypedTo (
+					expected, expr_unboxed, ctx, (depth + 1),
+				)
+				// if err != nil { return Expr{}, err }
+				if err != nil { return Expr{}, throw("") }
+				if ctx.UnboxCounted && depth == 0 {
+					*(ctx.UnboxCount) += 1
+				}
+				return expr_expected, nil
 			}
-			return Expr{}, throw("")
 		}
 	}
 }

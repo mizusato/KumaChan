@@ -100,6 +100,10 @@ type E_InvalidTypeDecl struct {
 	TypeName  loader.Symbol
 	Detail    *TypeError
 }
+func (impl E_TypeCircularDependency) TypeDeclError() {}
+type E_TypeCircularDependency struct {
+	TypeNames  [] loader.Symbol
+}
 
 func (err *TypeDeclError) Desc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
@@ -113,7 +117,16 @@ func (err *TypeDeclError) Desc() ErrorMessage {
 	case E_GenericUnionSubType:
 		msg.WriteText(TS_ERROR, "Cannot define generic parameters on a union item")
 	case E_InvalidTypeDecl:
-		msg = e.Detail.Desc()
+		msg.WriteAll(e.Detail.Desc())
+	case E_TypeCircularDependency:
+		msg.WriteText(TS_ERROR, "Dependency cycle found among types:")
+		msg.Write(T_SPACE)
+		for i, t := range e.TypeNames {
+			msg.WriteText(TS_INLINE_CODE, t.String())
+			if i != len(e.TypeNames)-1 {
+				msg.WriteText(TS_ERROR, ", ")
+			}
+		}
 	default:
 		panic("unknown error kind")
 	}
@@ -171,7 +184,7 @@ func (err *FunctionError) Desc() ErrorMessage {
 		msg.WriteText(TS_ERROR, "Invalid function name")
 		msg.WriteEndText(TS_INLINE_CODE, e.Name)
 	case E_SignatureInvalid:
-		msg = e.TypeError.Desc()
+		msg.WriteAll(e.TypeError.Desc())
 	case E_SignatureNonLocal:
 		msg.WriteText(TS_ERROR, "Function")
 		msg.WriteInnerText(TS_INLINE_CODE, e.FuncName)
@@ -246,7 +259,7 @@ func (err *ConstantError) Desc() ErrorMessage {
 		msg.WriteText(TS_ERROR, "Duplicate declaration of constant")
 		msg.WriteEndText(TS_INLINE_CODE, e.Name)
 	case E_ConstTypeInvalid:
-		msg = e.TypeError.Desc()
+		msg.WriteAll(e.TypeError.Desc())
 	case E_ConstConflictWithType:
 		msg.WriteText(TS_ERROR, "The constant name")
 		msg.WriteInnerText(TS_INLINE_CODE, e.Name)

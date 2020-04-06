@@ -213,27 +213,61 @@ func IsLocalType (type_ Type, mod string) bool {
 	}
 }
 
-func AreTypesOverloadUnsafe (type1 Type, type2 Type) bool {
-	// Are type1 and type2 equal in the context of function overloading
+func AreTypesOverloadUnsafe (type1 Type, type2 Type, reg TypeRegistry) bool {
+	// Does type1 equals type2 (in the context of function overloading)
 	switch t1 := type1.(type) {
 	case ParameterType:
 		return true  // rough comparison
 	case NamedType:
 		switch t2 := type2.(type) {
 		case NamedType:
-			// check union (through TypeRegistry)
-			if t1.Name == t2.Name {
+			var check_args = func() bool {
 				var L1 = len(t1.Args)
 				var L2 = len(t2.Args)
 				if L1 != L2 { panic("type registration went wrong") }
 				var L = L1
 				for i := 0; i < L; i += 1 {
-					if !(AreTypesOverloadUnsafe(t1.Args[i], t2.Args[i])) {
+					var a1, a2 = t1.Args[i], t2.Args[i]
+					if !(AreTypesOverloadUnsafe(a1, a2, reg)) {
 						return false
 					}
 				}
 				return true
+			}
+			var check_union = func(union Union, another NamedType) bool {
+				var q = [] Union { union }
+				for len(q) > 0 {
+					var u = q[0]
+					q = q[1:]
+					for _, sub := range u.SubTypes {
+						if another.Name == sub {
+							return check_args()
+						} else {
+							var t = reg[sub]
+							var sub_union, sub_is_union = t.Value.(Union)
+							if sub_is_union {
+								q = append(q, sub_union)
+							}
+						}
+					}
+				}
+				return false
+			}
+			if t1.Name == t2.Name {
+				return check_args()
 			} else {
+				var t1_union, t1_is_union = reg[t1.Name].Value.(Union)
+				if t1_is_union {
+					if check_union(t1_union, t2) {
+						return true
+					}
+				}
+				var t2_union, t2_is_union = reg[t2.Name].Value.(Union)
+				if t2_is_union {
+					if check_union(t2_union, t1) {
+						return true
+					}
+				}
 				return false
 			}
 		default:
@@ -258,7 +292,8 @@ func AreTypesOverloadUnsafe (type1 Type, type2 Type) bool {
 					if L1 == L2 {
 						var L = L1
 						for i := 0; i < L; i += 1 {
-							if !(AreTypesOverloadUnsafe(r1.Elements[i], r2.Elements[i])) {
+							var e1, e2 = r1.Elements[i], r2.Elements[i]
+							if !(AreTypesOverloadUnsafe(e1, e2, reg)) {
 								return false
 							}
 						}
@@ -277,7 +312,9 @@ func AreTypesOverloadUnsafe (type1 Type, type2 Type) bool {
 					if L1 == L2 {
 						for name, f1 := range r1.Fields {
 							var f2, exists = r2.Fields[name]
-							if !exists || !(AreTypesOverloadUnsafe(f1.Type, f2.Type)) {
+							if !exists { return false }
+							var t1, t2 = f1.Type, f2.Type
+							if !(AreTypesOverloadUnsafe(t1, t2, reg)) {
 								return false
 							}
 						}
@@ -291,10 +328,10 @@ func AreTypesOverloadUnsafe (type1 Type, type2 Type) bool {
 			case Func:
 				switch r2 := t2.Repr.(type) {
 				case Func:
-					if !(AreTypesOverloadUnsafe(r1.Input, r2.Input)) {
+					if !(AreTypesOverloadUnsafe(r1.Input, r2.Input, reg)) {
 						return false
 					}
-					if !(AreTypesOverloadUnsafe(r1.Output, r2.Output)) {
+					if !(AreTypesOverloadUnsafe(r1.Output, r2.Output, reg)) {
 						return false
 					}
 					return true

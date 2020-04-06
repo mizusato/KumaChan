@@ -92,7 +92,7 @@ func AssignCallTo(expected Type, call UndecidedCall, info ExprInfo, ctx ExprCont
 	if err != nil { return Expr{}, err }
 	var types_desc = make([]string, 0)
 	for _, option := range call.Options {
-		var expr, err = AssignTypedTo(expected, option.Expr, ctx, false)
+		var expr, err = AssignTypedTo(expected, option.Expr, ctx, 0)
 		if err != nil {
 			types_desc = append (
 				types_desc,

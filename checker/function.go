@@ -131,7 +131,7 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 					CST: mod.CST, Node: decl.Name.Node,
 				}
 				var err = CheckOverload (
-					existing, func_type, name, params, err_point,
+					existing, func_type, name, params, reg, err_point,
 				)
 				if err != nil { return nil, err }
 				collection[name] = append(existing, FunctionReference {
@@ -163,12 +163,13 @@ func CheckOverload (
 	added_type    Func,
 	added_name    string,
 	added_params  [] string,
+	reg           TypeRegistry,
 	err_point     ErrorPoint,
 ) *FunctionError {
 	for _, existing := range functions {
 		var existing_t = AnonymousType { existing.Function.DeclaredType }
 		var added_t = AnonymousType { added_type }
-		var cannot_overload = AreTypesOverloadUnsafe(existing_t, added_t)
+		var cannot_overload = AreTypesOverloadUnsafe(existing_t, added_t, reg)
 		if cannot_overload {
 			var existing_params = existing.Function.TypeParams
 			return &FunctionError {
