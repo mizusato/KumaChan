@@ -2,6 +2,7 @@ package container
 
 import (
 	. "kumachan/runtime/common"
+	"kumachan/stdlib"
 )
 
 type Array struct {
@@ -9,12 +10,24 @@ type Array struct {
 	GetItem  func(uint) Value
 }
 
-func ArrayFrom(values []Value) Array {
+func ArrayFromSlice(values []Value) Array {
 	return Array {
 		Length:  uint(len(values)),
 		GetItem: func(i uint) Value {
 			return values[i]
 		},
+	}
+}
+
+func ArrayFrom(value Value) Array {
+	var l, get, ok = stdlib.AdaptSlice(value)
+	if ok {
+		return Array {
+			Length:  l,
+			GetItem: get,
+		}
+	} else {
+		return value.(Array)
 	}
 }
 

@@ -13,8 +13,8 @@ func (_ EmptySeq) Next() (Value, Seq, bool) {
 	return nil, nil, false
 }
 
-func SeqFrom(values []Value) Seq {
-	return ArrayFrom(values).Iterate()
+func SeqFromSlice(values []Value) Seq {
+	return ArrayFromSlice(values).Iterate()
 }
 
 func SeqOf(v Value) Seq {

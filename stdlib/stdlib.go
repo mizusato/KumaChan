@@ -1,6 +1,9 @@
 package stdlib
 
-import "math"
+import (
+	"math"
+	"reflect"
+)
 
 
 /* IMPORTANT: this go file should be consistent with corresponding km files */
@@ -10,7 +13,7 @@ var core_types = []string {
 	Bytes, String, Seq, Array, Heap, Set, Map,
 	EffectMultiValue, Effect,
 	Int64, Uint64, Int32, Uint32, Int16, Uint16, Int8, Uint8,
-	Char, Nat, Float64, Float,
+	Char, Nat, Float64, Float, Complex,
 	Bool, Yes, No,
 	Maybe, Just, Na,
 	Result, Ok, Ng,
@@ -48,6 +51,7 @@ const Char = "Char"
 const Nat = "Nat"
 const Float64 = "Float64"
 const Float = "Float"
+const Complex = "Complex"
 const Bool = "Bool"
 const Yes = "Yes"
 const No = "No"
@@ -111,5 +115,27 @@ func QwordFrom(i interface{}) uint64 {
 		return math.Float64bits(x)
 	default:
 		panic("invalid Qword")
+	}
+}
+
+func CheckFloat(x float64) float64 {
+	if math.IsNaN(x) {
+		panic("Float Overflow: NaN")
+	}
+	if math.IsInf(x, 0) {
+		panic("Float Overflow: Infinity")
+	}
+	return x
+}
+
+func AdaptSlice(v interface{}) (uint, func(uint)interface{}, bool) {
+	var rv = reflect.ValueOf(v)
+	var t = rv.Type()
+	if t.Kind() == reflect.Slice {
+		return uint(rv.Len()), func(i uint) interface{} {
+			return rv.Index(int(i)).Interface()
+		}, true
+	} else {
+		return 0, nil, false
 	}
 }

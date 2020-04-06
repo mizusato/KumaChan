@@ -15,8 +15,6 @@ type Qword  native;  // uint64, int64, float64
 type Int    native;  // *big.Int
 
 // Container Types
-type Bytes     native;  // []byte
-type String    native;  // []rune
 type Seq[T]    native;  // container.Seq
 type Array[T]  native;  // []T, container.Array
 type Heap[T]   native;  // container.Heap
@@ -38,10 +36,13 @@ type Int8    protected Byte;
 type Uint8   protected Byte;
 
 // Basic Boxed Types
-type Char     Uint32;
 type Nat      protected Int;
 type Float64  protected Qword;
-type Float    protected Float64;
+type Float    protected Float64;  // float64 with NaN and Infinity excluded
+type Complex  (Float, Float);
+type Char     Uint32;  // rune
+type String   protected Array[Char];  // []rune
+type Bytes    protected Array[Byte];  // []byte
 
 // Basic Sum Types
 type Bool union {
@@ -281,9 +282,17 @@ public function SHR { lambda (Qword,Byte) Qword:   native '>>Qword' };
 
 // String Related Functions
 public macro str! (x) := ~String from x;
-// TODO: from (cast function)
 public function from { lambda String String:  lambda x x };
-public function from { lambda Int String:  native 'string-from-int' };
+public function from { lambda Int    String:  native 'String from Int' };
+public function from { lambda Float  String:  native 'String from Float' };
+public function from { lambda Int8   String:  native 'String from Int8' };
+public function from { lambda Int16  String:  native 'String from Int16' };
+public function from { lambda Int32  String:  native 'String from Int32' };
+public function from { lambda Int64  String:  native 'String from Int64' };
+public function from { lambda Uint8  String:  native 'String from Uint8' };
+public function from { lambda Uint16 String:  native 'String from Uint16' };
+public function from { lambda Uint32 String:  native 'String from Uint32' };
+public function from { lambda Uint64 String:  native 'String from Uint64' };
 
 // Effect Operators
 public function then[T,E] {

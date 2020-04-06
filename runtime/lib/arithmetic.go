@@ -1,20 +1,10 @@
 package lib
 
 import (
+	"kumachan/stdlib"
 	"math"
 	"math/big"
 )
-
-
-func CheckFloat(x float64) float64 {
-	if math.IsNaN(x) {
-		panic("Float Overflow: NaN")
-	}
-	if math.IsInf(x, 0) {
-		panic("Float Overflow: Infinity")
-	}
-	return x
-}
 
 
 var ArithmeticFunctions = map[string] interface{} {
@@ -42,19 +32,19 @@ var ArithmeticFunctions = map[string] interface{} {
 		return &q, &m
 	},
 	"+Float": func(a float64, b float64) float64 {
-		return CheckFloat(a + b)
+		return stdlib.CheckFloat(a + b)
 	},
 	"-Float":  func(a float64, b float64) float64 {
-		return CheckFloat(a - b)
+		return stdlib.CheckFloat(a - b)
 	},
 	"*Float": func(a float64, b float64) float64 {
-		return CheckFloat(a * b)
+		return stdlib.CheckFloat(a * b)
 	},
 	"/Float": func(a float64, b float64) float64 {
-		return CheckFloat(a / b)
+		return stdlib.CheckFloat(a / b)
 	},
 	"%Float": func(a float64, b float64) float64 {
-		return CheckFloat(math.Mod(a, b))
+		return stdlib.CheckFloat(math.Mod(a, b))
 	},
 	"+Int8": func(a int8, b int8) int8 {
 		return a + b
