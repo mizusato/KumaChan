@@ -1,42 +1,41 @@
 package checker
 
-import "kumachan/loader"
+import (
+	"kumachan/loader"
+	"kumachan/stdlib"
+)
 
 const IgnoreMark = "_"
 const TextPlaceholder = '#'
 const BadIndex = ^(uint(0))
-/* should be consistent with `stdlib/core.km` */
-var __EffectSingleValue = CoreSymbol("Effect")
+var __EffectSingleValue = CoreSymbol(stdlib.Effect)
 var __DoType = NamedType {
 	Name: __EffectSingleValue,
 	Args: []Type { AnonymousType { Unit{} }, AnonymousType { Unit{} } },
 }
-var __Bool = CoreSymbol("Bool")
-var __Yes uint = 0
-// var __Maybe = CoreSymbol("Maybe")
-// var __Just uint = 0
-// var __Nothing uint = 1
-var __Float = CoreSymbol("Float")
-var __String = CoreSymbol("String")
-var __Array = CoreSymbol("Array")
-var __Integer = CoreSymbol("Integer")
-var __Natural = CoreSymbol("Natural")
-var __Int64 = CoreSymbol("Int64")
-var __Uint64 = CoreSymbol("Uint64")
-var __Qword = CoreSymbol("Qword")
-var __Int32 = CoreSymbol("Int32")
-var __Uint32 = CoreSymbol("Uint32")
-var __Dword = CoreSymbol("Dword")
-var __Char = CoreSymbol("Char")
-var __Int16 = CoreSymbol("Int16")
-var __Uint16 = CoreSymbol("Uint16")
-var __Word = CoreSymbol("Word")
-var __Int8 = CoreSymbol("Int8")
-var __Uint8 = CoreSymbol("Uint8")
-var __Byte = CoreSymbol("Byte")
-var __Bit = CoreSymbol("Bit")
+var __Bool = CoreSymbol(stdlib.Bool)
+var __Yes uint = stdlib.YesIndex
+var __Float = CoreSymbol(stdlib.Float)
+var __String = CoreSymbol(stdlib.String)
+var __Array = CoreSymbol(stdlib.Array)
+var __Int = CoreSymbol(stdlib.Int)
+var __Nat = CoreSymbol(stdlib.Nat)
+var __Int64 = CoreSymbol(stdlib.Int64)
+var __Uint64 = CoreSymbol(stdlib.Uint64)
+var __Qword = CoreSymbol(stdlib.Qword)
+var __Int32 = CoreSymbol(stdlib.Int32)
+var __Uint32 = CoreSymbol(stdlib.Uint32)
+var __Dword = CoreSymbol(stdlib.Dword)
+var __Char = CoreSymbol(stdlib.Char)
+var __Int16 = CoreSymbol(stdlib.Int16)
+var __Uint16 = CoreSymbol(stdlib.Uint16)
+var __Word = CoreSymbol(stdlib.Word)
+var __Int8 = CoreSymbol(stdlib.Int8)
+var __Uint8 = CoreSymbol(stdlib.Uint8)
+var __Byte = CoreSymbol(stdlib.Byte)
+var __Bit = CoreSymbol(stdlib.Bit)
 var __IntegerTypes = []loader.Symbol {
-	__Integer, __Natural,
+	__Int,   __Nat,
 	__Int64, __Uint64, __Qword,
 	__Int32, __Uint32, __Dword, __Char,
 	__Int16, __Uint16, __Word,
@@ -52,5 +51,5 @@ var __IntegerTypeMap = (func() map[loader.Symbol]string {
 })()
 
 func CoreSymbol(name string) loader.Symbol {
-	return loader.NewSymbol(loader.CoreModule, name)
+	return loader.NewSymbol(stdlib.Core, name)
 }

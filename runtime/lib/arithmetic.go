@@ -18,15 +18,15 @@ func CheckFloat(x float64) float64 {
 
 
 var ArithmeticFunctions = map[string] interface{} {
-	"+Integer": func(a *big.Int, b *big.Int) *big.Int {
+	"+Int": func(a *big.Int, b *big.Int) *big.Int {
 		var c big.Int
 		return c.Add(a, b)
 	},
-	"-Integer": func(a *big.Int, b *big.Int) *big.Int {
+	"-Int": func(a *big.Int, b *big.Int) *big.Int {
 		var c big.Int
 		return c.Sub(a, b)
 	},
-	"*Integer": func(a *big.Int, b *big.Int) *big.Int {
+	"*Int": func(a *big.Int, b *big.Int) *big.Int {
 		var c big.Int
 		return c.Mul(a, b)
 	},

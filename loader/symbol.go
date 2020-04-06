@@ -2,10 +2,10 @@ package loader
 
 import (
 	"fmt"
+	"kumachan/stdlib"
 	"kumachan/transformer/ast"
 )
 
-const CoreModule = "Core"
 
 type MaybeSymbol interface { MaybeSymbol() }
 
@@ -38,7 +38,7 @@ func (mod *Module) SymbolFromName(name ast.Identifier) Symbol {
 	var sym_name = Id2String(name)
 	var _, exists = __PreloadCoreSymbolSet[sym_name]
 	if exists {
-		return NewSymbol(CoreModule, sym_name)
+		return NewSymbol(stdlib.Core, sym_name)
 	} else {
 		return NewSymbol(Id2String(mod.Node.Name), sym_name)
 	}
@@ -63,7 +63,7 @@ func (mod *Module) SymbolFromRef(ref ast.Ref) MaybeSymbol {
 				var _, exists = __PreloadCoreSymbolSet[sym_name]
 				if exists {
 					// Core::Int, Core::Float, Core::Effect, ...
-					return NewSymbol(CoreModule, sym_name)
+					return NewSymbol(stdlib.Core, sym_name)
 				} else {
 					// a, b, c
 					return NewSymbol("", sym_name)
@@ -90,17 +90,8 @@ func (mod *Module) TypeSymbolFromRef(ref ast.Ref) MaybeSymbol {
 	}
 }
 
-/* should be consistent with `stdlib/core.km` */
-var __PreloadCoreSymbols = []string {
-	"Bit", "Byte", "Word", "Dword", "Qword", "Integer", "Float64",
-	"Bytes", "String", "Seq", "Array", "Heap", "Set", "Map",
-	"Effect*", "Effect",
-	"Int64", "Uint64", "Int32", "Uint32", "Int16", "Uint16", "Int8", "Uint8",
-	"Char", "Natural", "Float",
-	"Bool", "Yes", "No",
-	"Maybe", "Just", "N/A",
-	"Result", "OK", "NG",
-}
+
+var __PreloadCoreSymbols = stdlib.GetCoreTypes()
 var __PreloadCoreSymbolSet = func() map[string] bool {
 	var set = make(map[string] bool)
 	for _, name := range __PreloadCoreSymbols {
@@ -111,7 +102,7 @@ var __PreloadCoreSymbolSet = func() map[string] bool {
 func IsPreloadCoreSymbol (sym Symbol) bool {
 	var _, exists = __PreloadCoreSymbolSet[sym.SymbolName]
 	if exists {
-		if sym.ModuleName != CoreModule {
+		if sym.ModuleName != stdlib.Core {
 			panic("invalid symbol: preload symbol must belong to CoreModule")
 		}
 		return true

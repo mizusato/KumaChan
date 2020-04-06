@@ -1,6 +1,7 @@
 package checker
 
 import (
+	"kumachan/stdlib"
 	"kumachan/transformer/ast"
 	"math"
 	"math/big"
@@ -118,10 +119,15 @@ func AssignIntegerTo(expected Type, integer UntypedInteger, info ExprInfo, ctx E
 
 func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 	switch expected_kind {
-	case "Integer",
-	     "Natural":
+	case stdlib.Int:
 		return IntLiteral { value }, true
-	case "Int64":
+	case stdlib.Nat:
+		if value.Cmp(big.NewInt(0)) >= 0 {
+			return IntLiteral { value }, true
+		} else {
+			return nil, false
+		}
+	case stdlib.Int64:
 		if value.IsInt64() {
 			return SmallIntLiteral {
 				Kind:  "Int64",
@@ -130,7 +136,7 @@ func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 		} else {
 			return nil, false
 		}
-	case "Uint64", "Qword":
+	case stdlib.Uint64, stdlib.Qword:
 		if value.IsUint64() {
 			return SmallIntLiteral {
 				Kind:  "Uint64",
@@ -139,7 +145,7 @@ func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 		} else {
 			return nil, false
 		}
-	case "Int32":
+	case stdlib.Int32:
 		if value.IsInt64() {
 			var x = value.Int64()
 			if math.MinInt32 <= x && x <= math.MaxInt32 {
@@ -153,7 +159,7 @@ func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 		} else {
 			return nil, false
 		}
-	case "Uint32", "Dword", "Char":
+	case stdlib.Uint32, stdlib.Dword, stdlib.Char:
 		if value.IsUint64() {
 			var x = value.Uint64()
 			if x <= math.MaxUint32 {
@@ -167,7 +173,7 @@ func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 		} else {
 			return nil, false
 		}
-	case "Int16":
+	case stdlib.Int16:
 		if value.IsInt64() {
 			var x = value.Int64()
 			if math.MinInt16 <= x && x <= math.MaxInt16 {
@@ -181,7 +187,7 @@ func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 		} else {
 			return nil, false
 		}
-	case "Uint16", "Word":
+	case stdlib.Uint16, stdlib.Word:
 		if value.IsUint64() {
 			var x = value.Uint64()
 			if x <= math.MaxUint16 {
@@ -195,7 +201,7 @@ func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 		} else {
 			return nil, false
 		}
-	case "Int8":
+	case stdlib.Int8:
 		if value.IsInt64() {
 			var x = value.Int64()
 			if math.MinInt8 <= x && x <= math.MaxInt8 {
@@ -209,7 +215,7 @@ func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 		} else {
 			return nil, false
 		}
-	case "Uint8", "Byte":
+	case stdlib.Uint8, stdlib.Byte:
 		if value.IsUint64() {
 			var x = value.Uint64()
 			if x <= math.MaxUint8 {
@@ -223,7 +229,7 @@ func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 		} else {
 			return nil, false
 		}
-	case "Bit":
+	case stdlib.Bit:
 		if value.IsUint64() {
 			var x = value.Uint64()
 			if x == 0 || x == 1 {

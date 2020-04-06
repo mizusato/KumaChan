@@ -2,9 +2,8 @@ module Core;
 
 
 /**
- *  IMPORTANT: The following type definitions should be kept update
- *             with `loader/symbol.go`, `checker/special.go`
- *             and `runtime/common/value.go`.
+ *  IMPORTANT: The following type definitions should be kept consistent
+ *             with the `stdlib.go` file.
  */
 
 // Basic Types
@@ -12,9 +11,8 @@ type Bit    native;  // bool
 type Byte   native;  // uint8, int8
 type Word   native;  // uint16, int16
 type Dword  native;  // uint32, int32
-type Qword  native;  // uint64, int64
-type Integer  native;  // *big.Int
-type Float64  native;  // float64
+type Qword  native;  // uint64, int64, float64
+type Int    native;  // *big.Int
 
 // Container Types
 type Bytes     native;  // []byte
@@ -29,7 +27,7 @@ type Map[K,V]  native;  // container.Map
 type Effect*[T,E]  native;  // rx.Effect
 type Effect[T,E]   protected Effect*[T,E];
 
-// Fixed Integer Types
+// Fixed Int Types
 type Int64   protected Qword;
 type Uint64  protected Qword;
 type Int32   protected Dword;
@@ -41,7 +39,8 @@ type Uint8   protected Byte;
 
 // Basic Boxed Types
 type Char     Uint32;
-type Natural  protected Integer;
+type Nat      protected Int;
+type Float64  protected Qword;
 type Float    protected Float64;
 
 // Basic Sum Types
@@ -63,14 +62,17 @@ type Ordering union {
     type >>;
 };
 
+// Debugging Types
+type Debug[T]  protected T;
+type Never[T]  protected T;
+
 // Debugging Functions (With Side Effects)
-type Traced[T] T;
 public function trace[T] {
-    lambda T Traced[T]:
+    lambda T Debug[T]:
     native 'trace'
 };
 public function panic[T] {
-    lambda String T:
+    lambda String Never[T]:
     native 'panic'
 };
 
@@ -80,23 +82,23 @@ public function and { lambda (Bool,Bool) Bool:  native 'and' };
 public function or  { lambda (Bool,Bool) Bool:  native 'or'  };
 
 // Arithmetic Functions
-public function + { lambda (Integer,Integer) Integer:  native '+Integer' };
-public function - { lambda (Integer,Integer) Integer:  native '-Integer' };
-public function * { lambda (Integer,Integer) Integer:  native '*Integer' };
+public function + { lambda (Int,Int) Int:  native '+Int' };
+public function - { lambda (Int,Int) Int:  native '-Int' };
+public function * { lambda (Int,Int) Int:  native '*Int' };
 public function quorem {
-    lambda (Integer,Integer) (Integer,Integer):
+    lambda (Int,Int) (Int,Int):
     native 'quorem'
 };
 public function divmod {
-    lambda (Integer,Integer) (Integer,Integer):
+    lambda (Int,Int) (Int,Int):
     native 'divmod'
 };
 public function - {
-    lambda Integer Integer:
-    lambda    n    $(0 - n)
+    lambda Int   Int:
+    lambda  n  $(0 - n)
 };
 public function / {
-    lambda (Integer,Integer) Integer:
+    lambda (Int,Int) Int:
     lambda (a, b)
         let {
             (q, _) := quorem(a, b),
@@ -104,7 +106,7 @@ public function / {
         }
 };
 public function % {
-    lambda (Integer,Integer) Integer:
+    lambda (Int,Int) Int:
     lambda (a, b)
         let {
             (_, r) := quorem(a, b),
@@ -112,7 +114,7 @@ public function % {
         }
 };
 public function div {
-    lambda (Integer,Integer) Integer:
+    lambda (Int,Int) Int:
     lambda (a, b)
         let {
             (q, _) := divmod(a, b),
@@ -120,7 +122,7 @@ public function div {
         }
 };
 public function mod {
-    lambda (Integer,Integer) Integer:
+    lambda (Int,Int) Int:
     lambda (a, b)
         let {
             (_, r) := divmod(a, b),
@@ -217,9 +219,9 @@ public macro >= (a, b) := not $(a < b);
 public function  = { lambda (String,String) Bool:      native '=String' };
 public function  < { lambda (String,String) Bool:      native '<String' };
 public function <> { lambda (String,String) Ordering:  native '<>String' };
-public function  = { lambda (Integer,Integer) Bool:      native '=Integer' };
-public function  < { lambda (Integer,Integer) Bool:      native '<Integer' };
-public function <> { lambda (Integer,Integer) Ordering:  native '<>Integer' };
+public function  = { lambda (Int,Int) Bool:      native '=Int' };
+public function  < { lambda (Int,Int) Bool:      native '<Int' };
+public function <> { lambda (Int,Int) Ordering:  native '<>Int' };
 public function  = { lambda (Float,Float) Bool:      native '=Float' };
 public function  < { lambda (Float,Float) Bool:      native '<Float' };
 public function <> { lambda (Float,Float) Ordering:  native '<>Float' };
@@ -248,9 +250,11 @@ public function  = { lambda (Uint64,Uint64) Bool:      native '=Uint64' };
 public function  < { lambda (Uint64,Uint64) Bool:      native '<Uint64' };
 public function <> { lambda (Uint64,Uint64) Ordering:  native '<>Uint64' };
 
+// TODO: Bitwise Operations
+
 // String Related Functions
 public function str! { lambda String String:   lambda x x };
-public function str! { lambda Integer String:  native 'str-integer' };
+public function str! { lambda Int String:  native 'str-Int' };
 
 // Effect Operators
 public function then[T,E] {

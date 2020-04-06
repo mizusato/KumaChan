@@ -1,6 +1,8 @@
 package container
 
-import . "kumachan/runtime/common"
+import (
+	. "kumachan/runtime/common"
+)
 
 type Bytes = []byte
 

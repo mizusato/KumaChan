@@ -17,13 +17,13 @@ var ComparisonFunctions = map[string] interface{} {
 	"<>String": func(a []rune, b []rune) SumValue {
 		return ToOrdering(container.StringCompare(a, b))
 	},
-	"=Integer": func(a *big.Int, b *big.Int) SumValue {
+	"=Int": func(a *big.Int, b *big.Int) SumValue {
 		return ToBool(a.Cmp(b) == 0)
 	},
-	"<Integer": func(a *big.Int, b *big.Int) SumValue {
+	"<Int": func(a *big.Int, b *big.Int) SumValue {
 		return ToBool(a.Cmp(b) == -1)
 	},
-	"<>Integer": func(a *big.Int, b *big.Int) SumValue {
+	"<>Int": func(a *big.Int, b *big.Int) SumValue {
 		var result = a.Cmp(b)
 		if result < 0 {
 			return ToOrdering(Smaller)

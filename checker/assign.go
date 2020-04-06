@@ -223,8 +223,10 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext, unbox bool) (Expr,
 						expected, expr_unboxed, ctx, false,
 					)
 					// if err != nil { return Expr{}, err }
+					// TODO: allow transitive unbox (parameter unbox -> depth)
+					// TODO: check circular definition of boxed types
 					if err != nil { return Expr{}, throw("") }
-					if ctx.UnboxCounted {
+					if ctx.UnboxCounted {  // TODO: increment only when depth is 0
 						*(ctx.UnboxCount) += 1
 					}
 					return expr_expected, nil

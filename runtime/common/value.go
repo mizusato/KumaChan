@@ -2,6 +2,7 @@ package common
 
 import (
 	. "kumachan/error"
+	"kumachan/stdlib"
 	"reflect"
 )
 
@@ -39,11 +40,10 @@ func Inspect(v Value) ErrorMessage {
 }
 
 func BoolFrom(p SumValue) bool {
-	// should be consistent with `stdlib/core.km`
 	if p.Value != nil { panic("something went wrong") }
-	if p.Index == 0 {
+	if p.Index == stdlib.YesIndex {
 		return true
-	} else if p.Index == 1 {
+	} else if p.Index == stdlib.NoIndex {
 		return false
 	} else {
 		panic("something went wrong")
@@ -51,68 +51,38 @@ func BoolFrom(p SumValue) bool {
 }
 
 func ToBool(p bool) SumValue {
-	// should be consistent with `stdlib/core.km`
 	if p == true {
-		return SumValue { Index: 0 }
+		return SumValue { Index: stdlib.YesIndex }
 	} else {
-		return SumValue { Index: 1 }
+		return SumValue { Index: stdlib.NoIndex }
 	}
 }
 
 func ToOrdering(o Ordering) SumValue {
-	// should be consistent with `stdlib/core.km`
 	switch o {
 	case Smaller:
-		return SumValue { Index: 0 }
+		return SumValue { Index: stdlib.SmallerIndex }
 	case Equal:
-		return SumValue { Index: 1 }
+		return SumValue { Index: stdlib.EqualIndex }
 	case Bigger:
-		return SumValue { Index: 2 }
+		return SumValue { Index: stdlib.BiggerIndex }
 	default:
 		panic("impossible branch")
 	}
 }
 
-func ByteFrom(i interface{}) uint8 {
-	switch x := i.(type) {
-	case uint8:
-		return x
-	case int8:
-		return uint8(x)
-	default:
-		panic("invalid Byte")
-	}
+func ByteFrom(v Value) uint8 {
+	return stdlib.ByteFrom(v)
 }
 
-func WordFrom(i interface{}) uint16 {
-	switch x := i.(type) {
-	case uint16:
-		return x
-	case int16:
-		return uint16(x)
-	default:
-		panic("invalid Word")
-	}
+func WordFrom(v Value) uint16 {
+	return stdlib.WordFrom(v)
 }
 
-func DwordFrom(i interface{}) uint32 {
-	switch x := i.(type) {
-	case uint32:
-		return x
-	case int32:
-		return uint32(x)
-	default:
-		panic("invalid Dword")
-	}
+func DwordFrom(v Value) uint32 {
+	return stdlib.DwordFrom(v)
 }
 
-func QwordFrom(i interface{}) uint64 {
-	switch x := i.(type) {
-	case uint64:
-		return x
-	case int64:
-		return uint64(x)
-	default:
-		panic("invalid Qword")
-	}
+func QwordFrom(v Value) uint64 {
+	return stdlib.QwordFrom(v)
 }

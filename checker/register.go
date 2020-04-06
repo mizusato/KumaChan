@@ -3,6 +3,7 @@ package checker
 import (
 	. "kumachan/error"
 	"kumachan/loader"
+	"kumachan/stdlib"
 	"kumachan/transformer/ast"
 )
 
@@ -81,7 +82,7 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 		}
 		// 3.3. Check if the symbol is used
 		var _, exists = raw.DeclMap[type_sym]
-		if exists || (mod_name != loader.CoreModule && loader.IsPreloadCoreSymbol(type_sym)) {
+		if exists || (mod_name != stdlib.Core && loader.IsPreloadCoreSymbol(type_sym)) {
 			// 3.3.1. If used, throw an error
 			return &TypeDeclError {
 				Point: ErrorPoint { CST: mod.CST, Node: d.Name.Node },

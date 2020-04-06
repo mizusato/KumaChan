@@ -1,6 +1,8 @@
 package lib
 
-import . "kumachan/runtime/common"
+import (
+	. "kumachan/runtime/common"
+)
 
 
 var BitwiseFunctions = map[string] interface{} {

@@ -19,7 +19,7 @@ private function and2 {
 };
 
 private function factorial {
-    lambda Integer Integer:
+    lambda Int Int:
     lambda n
         if $(n <= 1) {
             1
