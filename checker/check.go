@@ -157,13 +157,13 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 	var mod_name = raw.ModuleName
 	var sym_name = raw.SymbolName
 	if mod_name == "" {
-		m_arg, exists := ctx.MacroArgs[sym_name]
-		if exists {
-			return SymMacroArg { Content: m_arg }, true
-		}
 		local, exists := ctx.LocalValues[sym_name]
 		if exists {
 			return SymLocalValue { ValueType: local }, true
+		}
+		m_arg, exists := ctx.MacroArgs[sym_name]
+		if exists {
+			return SymMacroArg { Content: m_arg }, true
 		}
 		for index, param_name := range ctx.TypeParams {
 			if param_name == sym_name {
