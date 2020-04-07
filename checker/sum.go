@@ -170,51 +170,35 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 func CheckIf(raw ast.If, ctx ExprContext) (SemiExpr, *ExprError) {
 	var if_node = DesugarElseIf(raw)
 	var info = ctx.GetExprInfo(if_node.Node)
-	var cond_semi, err = CheckTerm(if_node.Condition, ctx)
-	if err != nil { return SemiExpr{}, err }
-	var cond_typed, ok = cond_semi.Value.(TypedExpr)
-	if !ok { return SemiExpr{}, &ExprError{
-		Point:    ctx.GetErrorPoint(if_node.Condition.Node),
-		Concrete: E_NonBooleanCondition { Typed:false },
-	} }
-	switch T := cond_typed.Type.(type) {
-	case NamedType:
-		if T.Name == __Bool {
-			if len(T.Args) != 0 { panic("something went wrong") }
-			var yes_semi, err1 = Check(if_node.YesBranch, ctx)
-			if err1 != nil { return SemiExpr{}, err1 }
-			var yes_branch = SemiTypedBranch {
-				IsDefault: false,
-				Index:     __Yes,
-				Pattern:   nil,
-				Value:     yes_semi,
-			}
-			var no_semi, err2 = Check(if_node.NoBranch, ctx)
-			if err2 != nil { return SemiExpr{}, err2 }
-			var no_branch = SemiTypedBranch {
-				IsDefault: true,
-				Index:     BadIndex,
-				Pattern:   nil,
-				Value:     no_semi,
-			}
-			return SemiExpr {
-				Info: info,
-				Value: SemiTypedMatch {
-					Argument: Expr(cond_typed),
-					Branches: []SemiTypedBranch {
-						yes_branch, no_branch,
-					},
-				},
-			}, nil
-		}
+	var cond_semi, err1 = CheckTerm(if_node.Condition, ctx)
+	if err1 != nil { return SemiExpr{}, err1 }
+	var cond_typed, err2 = AssignTo(__T_Bool, cond_semi, ctx)
+	if err2 != nil { return SemiExpr{}, err2 }
+	var yes_semi, err3 = Check(if_node.YesBranch, ctx)
+	if err3 != nil { return SemiExpr{}, err3 }
+	var yes_branch = SemiTypedBranch {
+		IsDefault: false,
+		Index:     __Yes,
+		Pattern:   nil,
+		Value:     yes_semi,
 	}
-	return SemiExpr{}, &ExprError {
-		Point:    ctx.GetErrorPoint(if_node.Condition.Node),
-		Concrete: E_NonBooleanCondition {
-			Typed: true,
-			Type:  ctx.DescribeType(cond_typed.Type),
+	var no_semi, err4 = Check(if_node.NoBranch, ctx)
+	if err4 != nil { return SemiExpr{}, err4 }
+	var no_branch = SemiTypedBranch {
+		IsDefault: true,
+		Index:     BadIndex,
+		Pattern:   nil,
+		Value:     no_semi,
+	}
+	return SemiExpr {
+		Info: info,
+		Value: SemiTypedMatch {
+			Argument: Expr(cond_typed),
+			Branches: []SemiTypedBranch {
+				yes_branch, no_branch,
+			},
 		},
-	}
+	}, nil
 }
 
 

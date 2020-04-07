@@ -36,7 +36,6 @@ type Int8    protected Byte;
 type Uint8   protected Byte;
 
 // Basic Boxed Types
-type Nat      protected Int;
 type Float64  protected Qword;
 type Float    protected Float64;  // float64 with NaN and Infinity excluded
 type Complex  (Float, Float);
@@ -77,10 +76,25 @@ public function panic[T] {
     native 'panic'
 };
 
-// Logic Functions
-public function not { lambda Bool Bool:         native 'not' };
-public function and { lambda (Bool,Bool) Bool:  native 'and' };
-public function or  { lambda (Bool,Bool) Bool:  native 'or'  };
+// Logic Macros
+public macro not (p) := ~Bool switch(~Bool p) {
+    case Yes: No,
+    case No:  Yes
+};
+public macro and (p, q) := ~Bool switch(~Bool p) {
+    case Yes: switch(~Bool q) {
+        case Yes: Yes,
+        default:  No
+    },
+    default: No  // shortcut
+};
+public macro or (p, q) := ~Bool switch(~Bool p) {
+    case No: switch(~Bool q) {
+        case No: No,
+        default: Yes
+    },
+    default: Yes  // shortcut
+};
 
 // Baisc Arithmetic Functions
 public function + { lambda (Int,Int) Int:  native '+Int' };
@@ -313,7 +327,6 @@ public function SHR { lambda (Qword,Byte) Qword:   native '>>Qword' };
 
 // String Related Functions
 public macro str! (x) := ~String from x;
-public function from { lambda String String:  lambda x x };
 public function from { lambda Int    String:  native 'String from Int' };
 public function from { lambda Float  String:  native 'String from Float' };
 public function from { lambda Int8   String:  native 'String from Int8' };

@@ -57,6 +57,8 @@ func OverloadedCall (
 		} else if available_count == 1 {
 			return LiftTyped(options[0].Expr), nil
 		} else {
+			// TODO: don't count number of unbox, just disallow overload
+			//       on boxed type chain (make them super/subtype)
 			var min_unbox = ^(uint(0))
 			var min_quantity = 0
 			var min = -1

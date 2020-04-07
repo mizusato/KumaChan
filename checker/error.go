@@ -720,20 +720,6 @@ func (e E_IncompleteMatch) ExprErrorDesc() ErrorMessage {
 	return msg
 }
 
-type E_NonBooleanCondition struct {
-	Typed  bool
-	Type   string
-}
-func (e E_NonBooleanCondition) ExprErrorDesc() ErrorMessage {
-	var msg = make(ErrorMessage, 0)
-	msg.WriteText(TS_ERROR,
-		"Given condition expression has non-boolean type")
-	if e.Typed {
-		msg.WriteEndText(TS_INLINE_CODE, e.Type)
-	}
-	return msg
-}
-
 type E_ModuleNotFound struct {
 	Name  string
 }

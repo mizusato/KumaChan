@@ -166,6 +166,8 @@ func CheckOverload (
 	reg           TypeRegistry,
 	err_point     ErrorPoint,
 ) *FunctionError {
+	// TODO: move to overload.go
+	// TODO: adapt new subtyping rule
 	for _, existing := range functions {
 		var existing_t = AnonymousType { existing.Function.DeclaredType }
 		var added_t = AnonymousType { added_type }

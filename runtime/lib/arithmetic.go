@@ -235,4 +235,5 @@ var ArithmeticFunctions = map[string] interface{} {
 	"atan2": func(y float64, x float64) float64 {
 		return math.Atan2(y, x)
 	},
+	// TODO: complex arithmetic functions
 }

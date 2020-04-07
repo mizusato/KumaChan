@@ -121,12 +121,6 @@ func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 	switch expected_kind {
 	case stdlib.Int:
 		return IntLiteral { value }, true
-	case stdlib.Nat:
-		if value.Cmp(big.NewInt(0)) >= 0 {
-			return IntLiteral { value }, true
-		} else {
-			return nil, false
-		}
 	case stdlib.Int64:
 		if value.IsInt64() {
 			return SmallIntLiteral {

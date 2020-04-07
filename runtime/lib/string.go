@@ -38,5 +38,6 @@ var StringFunctions = map[string] Value {
 	"String from Uint64": func(n uint64) []rune {
 		return []rune(fmt.Sprint(n))
 	},
-	// TODO: split, join, contains, find, trim, ...
+	// TODO: split, join, contains, find, trim, substr-view, substr-copy,
+	//       +String
 }

@@ -87,6 +87,7 @@ func CollectMacros(mod *loader.Module, functions FunctionStore, store MacroStore
 					}
 				}
 			}
+			// TODO: the following check is wrong
 			var _, f_exists = mod_functions[name]
 			if f_exists { return nil, &MacroError {
 				Point:    ErrorPoint { CST: mod.CST, Node: decl.Name.Node },
