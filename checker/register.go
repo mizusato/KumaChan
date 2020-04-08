@@ -15,21 +15,21 @@ type TypeRegistry  map[loader.Symbol] *GenericType
 type RawTypeRegistry struct {
 	// a map from symbol to type declaration (AST node)
 	DeclMap        map[loader.Symbol] ast.DeclType
-	// a map from subtype to union type (e.g. Just -> Maybe, Null -> Maybe)
-	// (parameters of subtypes are inherited from the out-most union type)
+	// a map from case type to union type (e.g. Just -> Maybe, Null -> Maybe)
+	// (parameters of cases are inherited from the out-most union type)
 	UnionRootMap   map[loader.Symbol] loader.Symbol
-	// a map from subtypes to their corresponding indexes
-	UnionIndexMap  map[loader.Symbol] uint
+	// a map from case types to their corresponding indexes
+	CaseIndexMap   map[loader.Symbol] uint
 	// a context value to track all visited modules
 	// (same module may appear many times when walking through the hierarchy)
 	VisitedMod     map[string] bool
 }
 func MakeRawTypeRegistry() RawTypeRegistry {
 	return RawTypeRegistry {
-		DeclMap:       make(map[loader.Symbol] ast.DeclType),
-		UnionRootMap:  make(map[loader.Symbol] loader.Symbol),
-		UnionIndexMap: make(map[loader.Symbol] uint),
-		VisitedMod:    make(map[string] bool),
+		DeclMap:      make(map[loader.Symbol] ast.DeclType),
+		UnionRootMap: make(map[loader.Symbol] loader.Symbol),
+		CaseIndexMap: make(map[loader.Symbol] uint),
+		VisitedMod:   make(map[string] bool),
 	}
 }
 func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
@@ -45,7 +45,7 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 	if visited { return nil }
 	raw.VisitedMod[mod_name] = true
 	// 2. Extract all type declarations in the module,
-	//    and record the root union types of all subtypes
+	//    and record the root union types of all case types
 	var decls = make([]ast.DeclType, 0)
 	var root_map = make(map[int]int)
 	var index_map = make(map[int]int)
@@ -93,12 +93,15 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 			}
 		} else {
 			// 3.3.2. If not, register the declaration node to DeclMap
-			//        and update UnionRootMap and UnionIndexMap if necessary.
-			//        If parameters were declared on a subtype,
+			//        and update UnionRootMap and CaseIndexMap if necessary.
+			//        If parameters were declared on a case type,
 			//        throw an error.
 			raw.DeclMap[type_sym] = d
 			var root, exists = root_map[i]
 			if exists {
+				// TODO: this behaviour is bad
+				//       parameters of a case type should be a subset
+				//       of the parameters of its union type
 				if len(d.Params) > 0 {
 					return &TypeDeclError {
 						Point: ErrorPoint { CST: mod.CST, Node: d.Name.Node },
@@ -108,7 +111,7 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 					}
 				}
 				raw.UnionRootMap[type_sym] = mod.SymbolFromName(decls[root].Name)
-				raw.UnionIndexMap[type_sym] = uint(index_map[i])
+				raw.CaseIndexMap[type_sym] = uint(index_map[i])
 			}
 		}
 	}
@@ -203,10 +206,10 @@ func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, *Type
 		// 3.3. Use the generated TypeVal to construct a GenericType
 		//      and register it to the TypeRegistry
 		reg[name] = &GenericType {
-			Params:     params,
-			Value:      val,
-			Node:       t.Node,
-			UnionIndex: raw.UnionIndexMap[name],
+			Params:    params,
+			Value:     val,
+			Node:      t.Node,
+			CaseIndex: raw.CaseIndexMap[name],
 		}
 	}
 	// 4. Validate boxed types
@@ -263,12 +266,12 @@ func TypeValFrom (tv ast.TypeValue, ctx TypeContext) (TypeVal, *TypeError) {
 				},
 			}
 		}
-		var subtypes = make([]loader.Symbol, count)
+		var case_types = make([]loader.Symbol, count)
 		for i, item := range v.Items {
-			subtypes[i] = ctx.Module.SymbolFromName(item.Name)
+			case_types[i] = ctx.Module.SymbolFromName(item.Name)
 		}
 		return Union {
-			SubTypes: subtypes,
+			CaseTypes: case_types,
 		}, nil
 	case ast.BoxedType:
 		var inner, specified = v.Inner.(ast.VariousType)

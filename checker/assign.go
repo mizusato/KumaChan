@@ -78,15 +78,16 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 		// -- behavior of assigning a named type to an union type --
 		var assign_union func(NamedType, NamedType, Union) (Expr, *ExprError)
 		assign_union = func(exp NamedType, given NamedType, union Union) (Expr, *ExprError) {
-			// 1. Find the given type in the list of subtypes of the union
-			for index, subtype := range union.SubTypes {
-				if subtype == given.Name {
+			// 1. Find the given type in the list of case types of the union
+			for index, case_type := range union.CaseTypes {
+				if case_type == given.Name {
 					// 1.1. If found, check if type parameters are identical
 					if len(exp.Args) != len(given.Args) {
 						panic("something went wrong")
 					}
 					var L = len(exp.Args)
 					for i := 0; i < L; i += 1 {
+						// TODO: this behaviour is bad
 						var arg_exp = exp.Args[i]
 						var arg_given = given.Args[i]
 						if !(AreTypesEqualInSameCtx(arg_exp, arg_given)) {
@@ -102,12 +103,12 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 					}, nil
 				}
 			}
-			for index, subtype := range union.SubTypes {
-				var t = ctx.ModuleInfo.Types[subtype]
+			for index, case_type := range union.CaseTypes {
+				var t = ctx.ModuleInfo.Types[case_type]
 				var item_union, ok = t.Value.(Union)
 				if ok {
 					var item_expr, err = assign_union(NamedType {
-						Name: subtype,
+						Name: case_type,
 						Args: exp.Args,
 					}, given, item_union)
 					if err != nil { continue }
@@ -119,7 +120,7 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 				}
 			}
 			// 1.2. Otherwise, throw an error.
-			return Expr{}, throw("given type is not a subtype of the expected union type")
+			return Expr{}, throw("given type is not a case type of the expected union type")
 		}
 		var compare_named func(NamedType, NamedType) (*ExprError)
 		compare_named = func(E NamedType, T NamedType) (*ExprError) {

@@ -195,7 +195,7 @@ func AreTypesConflict(type1 Type, type2 Type, reg TypeRegistry) bool {
 				for len(q) > 0 {
 					var u = q[0]
 					q = q[1:]
-					for _, sub := range u.SubTypes {
+					for _, sub := range u.CaseTypes {
 						if another.Name == sub {
 							return check_args()
 						} else {

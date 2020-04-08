@@ -77,9 +77,9 @@ public function panic[T] {
 };
 
 // Logic Macros
-public macro not (p)    := ~Bool if p { No } else { Yes };
-public macro and (p, q) := ~Bool if p { if q { Yes } else { No } } else { No };
-public macro  or (p, q) := ~Bool if p { Yes } else { if q { Yes } else { No } };
+public macro not(p)    := ~Bool(if p { No } else { Yes });
+public macro and(p, q) := ~Bool(if p { if q { Yes } else { No } } else { No });
+public macro  or(p, q) := ~Bool(if p { Yes } else { if q { Yes } else { No } });
 
 // Baisc Arithmetic Functions
 public function + { lambda (Int,Int) Int:  native '+Int' };

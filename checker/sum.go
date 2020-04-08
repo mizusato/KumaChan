@@ -90,8 +90,8 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 					},
 				} },
 			} }
-			var index, is_subtype = GetSubtypeIndex(union, type_sym)
-			if !is_subtype { return SemiExpr{}, &ExprError {
+			var index, is_case = GetCaseIndex(union, type_sym)
+			if !is_case { return SemiExpr{}, &ExprError {
 				Point:    ctx.GetErrorPoint(t.Node),
 				Concrete: E_NotBranchType {
 					Union:    ctx.DescribeType(arg_type),
@@ -101,7 +101,7 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 			if len(g.Params) != len(union_args) {
 				panic("something went wrong")
 			}
-			var subtype = NamedType {
+			var case_type = NamedType {
 				Name: type_sym,
 				Args: union_args,
 			}
@@ -109,7 +109,7 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 			var branch_ctx ExprContext
 			switch pattern_node := branch.Pattern.(type) {
 			case ast.VariousPattern:
-				var pattern, err = PatternFrom(pattern_node, subtype, ctx)
+				var pattern, err = PatternFrom(pattern_node, case_type, ctx)
 				if err != nil { return SemiExpr{}, err }
 				maybe_pattern = pattern
 				branch_ctx = ctx.WithShadowingPatternMatching(pattern)
@@ -145,11 +145,11 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 			has_default = true
 		}
 	}
-	if !has_default && len(checked) != len(union.SubTypes) {
+	if !has_default && len(checked) != len(union.CaseTypes) {
 		var missing = make([]string, 0)
-		for _, subtype := range union.SubTypes {
-			if !checked[subtype] {
-				missing = append(missing, subtype.String())
+		for _, case_type := range union.CaseTypes {
+			if !checked[case_type] {
+				missing = append(missing, case_type.String())
 			}
 		}
 		return SemiExpr{}, &ExprError {

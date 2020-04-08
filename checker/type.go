@@ -8,16 +8,16 @@ import (
 
 
 type GenericType struct {
-	Params      [] string
-	Value       TypeVal
-	Node        ast.Node
-	UnionIndex  uint
+	Params     [] string
+	Value      TypeVal
+	Node       ast.Node
+	CaseIndex  uint
 }
 type TypeVal interface { TypeVal() }
 
 func (impl Union) TypeVal() {}
 type Union struct {
-	SubTypes  [] loader.Symbol
+	CaseTypes  [] loader.Symbol
 }
 func (impl Boxed) TypeVal() {}
 type Boxed struct {
@@ -70,9 +70,9 @@ type Func struct {
 }
 
 
-func GetSubtypeIndex(u Union, sym loader.Symbol) (uint, bool) {
-	for index, subtype := range u.SubTypes {
-		if subtype == sym {
+func GetCaseIndex(u Union, sym loader.Symbol) (uint, bool) {
+	for index, case_type := range u.CaseTypes {
+		if case_type == sym {
 			return uint(index), true
 		}
 	}
