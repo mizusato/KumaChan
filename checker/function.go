@@ -131,7 +131,8 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 					CST: mod.CST, Node: decl.Name.Node,
 				}
 				var err = CheckOverload (
-					existing, func_type, name, params, reg, err_point,
+					existing, func_type, name, params,
+					reg, err_point,
 				)
 				if err != nil { return nil, err }
 				collection[name] = append(existing, FunctionReference {
@@ -155,40 +156,4 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 	store[mod_name] = collection
 	// 5. Return all collected functions of the current module
 	return collection, nil
-}
-
-
-func CheckOverload (
-	functions     [] FunctionReference,
-	added_type    Func,
-	added_name    string,
-	added_params  [] string,
-	reg           TypeRegistry,
-	err_point     ErrorPoint,
-) *FunctionError {
-	// TODO: move to overload.go
-	// TODO: adapt new subtyping rule
-	for _, existing := range functions {
-		var existing_t = AnonymousType { existing.Function.DeclaredType }
-		var added_t = AnonymousType { added_type }
-		var cannot_overload = AreTypesOverloadUnsafe(existing_t, added_t, reg)
-		if cannot_overload {
-			var existing_params = existing.Function.TypeParams
-			return &FunctionError {
-				Point:    err_point,
-				Concrete: E_InvalidOverload {
-					BetweenLocal: !(existing.IsImported),
-					AddedName:    added_name,
-					AddedModule:  existing.ModuleName,
-					AddedType:    DescribeTypeWithParams (
-						added_t, added_params,
-					),
-					ExistingType: DescribeTypeWithParams (
-						existing_t, existing_params,
-					),
-				},
-			}
-		}
-	}
-	return nil
 }

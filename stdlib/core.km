@@ -77,31 +77,15 @@ public function panic[T] {
 };
 
 // Logic Macros
-public macro not (p) := ~Bool switch(~Bool p) {
-    case Yes: No,
-    case No:  Yes
-};
-public macro and (p, q) := ~Bool switch(~Bool p) {
-    case Yes: switch(~Bool q) {
-        case Yes: Yes,
-        default:  No
-    },
-    default: No  // shortcut
-};
-public macro or (p, q) := ~Bool switch(~Bool p) {
-    case No: switch(~Bool q) {
-        case No: No,
-        default: Yes
-    },
-    default: Yes  // shortcut
-};
+public macro not (p)    := ~Bool if p { No } else { Yes };
+public macro and (p, q) := ~Bool if p { if q { Yes } else { No } } else { No };
+public macro  or (p, q) := ~Bool if p { Yes } else { if q { Yes } else { No } };
 
 // Baisc Arithmetic Functions
 public function + { lambda (Int,Int) Int:  native '+Int' };
 public function - { lambda (Int,Int) Int:  native '-Int' };
 public function * { lambda (Int,Int) Int:  native '*Int' };
 // TODO: ** (integer power)
-// TODO: +Nat, -Nat, ... (natural number)
 public function quorem {
     lambda (Int,Int) (Int,Int):
     native 'quorem'

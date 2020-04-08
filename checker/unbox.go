@@ -11,13 +11,12 @@ type UnboxedButOpaque struct {}
 func (impl UnboxFailed) UnboxResult() {}
 type UnboxFailed struct {}
 
-func Unbox(t Type, ctx ExprContext) UnboxResult {
+func Unbox(t Type, ctx_mod string, reg TypeRegistry) UnboxResult {
 	switch T := t.(type) {
 	case NamedType:
-		var g = ctx.ModuleInfo.Types[T.Name]
+		var g = reg[T.Name]
 		switch gv := g.Value.(type) {
 		case Boxed:
-			var ctx_mod = ctx.GetModuleName()
 			var type_mod = T.Name.ModuleName
 			if gv.Opaque && ctx_mod != type_mod {
 				return UnboxedButOpaque {}

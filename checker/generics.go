@@ -10,10 +10,9 @@ func GenericFunctionCall (
 	f_info       ExprInfo,
 	call_info    ExprInfo,
 	ctx          ExprContext,
-	unbox_count  *uint,  // mutate it instead of additional return value
+	is_exact     *bool,  // mutate it instead of additional return value
 ) (Expr, *ExprError) {
 	var type_arity = len(f.TypeParams)
-	ctx = ctx.WithUnboxCounted(unbox_count)
 	if len(type_args) == type_arity {
 		var f_raw_type = AnonymousType { f.DeclaredType }
 		var f_type = FillTypeArgs(f_raw_type, type_args)
@@ -22,6 +21,9 @@ func GenericFunctionCall (
 		var output_type = f_type_repr.Output
 		var arg_typed, err = AssignTo(input_type, arg, ctx)
 		if err != nil { return Expr{}, err }
+		if IsExactAssignTo(arg_typed.Type, arg) {
+			*is_exact = true
+		}
 		return Expr {
 			Type:  output_type,
 			Value: Call {
@@ -60,6 +62,9 @@ func GenericFunctionCall (
 			Input:  input_type,
 			Output: output_type,
 		} }
+		if IsExactAssignTo(arg_typed.Type, arg) {
+			*is_exact = true
+		}
 		return Expr {
 			Type:  output_type,
 			Value: Call {
@@ -102,7 +107,7 @@ func GenericFunctionAssignTo (
 			Value: MakeRefFunction(name, index, ctx),
 			Info:  info,
 		}
-		return AssignTypedTo(expected, f_expr, ctx, 0)
+		return AssignTypedTo(expected, f_expr, ctx)
 	} else if len(type_args) == 0 {
 		if expected == nil {
 			return Expr{}, &ExprError {

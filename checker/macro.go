@@ -27,17 +27,16 @@ type MacroCollection  map[string] MacroReference
 type MacroStore map[string] MacroCollection
 
 
-func CollectMacros(mod *loader.Module, functions FunctionStore, store MacroStore) (MacroCollection, *MacroError) {
+func CollectMacros(mod *loader.Module, store MacroStore) (MacroCollection, *MacroError) {
 	var mod_name = mod.Name
 	var existing, exists = store[mod_name]
 	if exists {
 		return existing, nil
 	}
-	var mod_functions = functions[mod_name]
 	var collection = make(MacroCollection)
 	for _, imported := range mod.ImpMap {
 		var imp_mod_name = imported.Name
-		var imp_col, err = CollectMacros(imported, functions, store)
+		var imp_col, err = CollectMacros(imported, store)
 		if err != nil { return nil, err }
 		for name, macro_ref := range imp_col {
 			if !(macro_ref.IsImported) && macro_ref.Macro.Public {
@@ -87,12 +86,6 @@ func CollectMacros(mod *loader.Module, functions FunctionStore, store MacroStore
 					}
 				}
 			}
-			// TODO: the following check is wrong
-			var _, f_exists = mod_functions[name]
-			if f_exists { return nil, &MacroError {
-				Point:    ErrorPoint { CST: mod.CST, Node: decl.Name.Node },
-				Concrete: E_MacroConflictWithFunction { name },
-			} }
 			var input = make([]string, len(decl.Input))
 			for i, item := range decl.Input {
 				input[i] = loader.Id2String(item)

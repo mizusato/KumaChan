@@ -197,6 +197,12 @@ type E_InvalidOverload struct {
 	ExistingType  string
 }
 
+func (impl E_FunctionConflictWithMacro) FunctionError() {}
+type E_FunctionConflictWithMacro struct {
+	Name    string
+	Module  string
+}
+
 func (err *FunctionError) Desc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	switch e := err.Concrete.(type) {
@@ -223,6 +229,13 @@ func (err *FunctionError) Desc() ErrorMessage {
 			msg.WriteInnerText(TS_ERROR, "in the module")
 			msg.WriteText(TS_INLINE_CODE, e.AddedModule)
 		}
+	case E_FunctionConflictWithMacro:
+		msg.WriteText(TS_ERROR, "The function name")
+		msg.WriteInnerText(TS_INLINE_CODE, e.Name)
+		msg.WriteText(TS_ERROR, "conflicts with the existing macro")
+		msg.WriteInnerText(TS_INLINE_CODE, e.Name)
+		msg.WriteText(TS_ERROR, "defined in the module")
+		msg.WriteEndText(TS_INLINE_CODE, e.Module)
 	default:
 		panic("unknown error kind")
 	}
@@ -323,11 +336,6 @@ type E_MacroConflictWithImported struct {
 	Module  string
 }
 
-func (impl E_MacroConflictWithFunction) MacroError() {}
-type E_MacroConflictWithFunction struct {
-	Macro  string
-}
-
 func (impl E_DuplicateMacroName) MacroError() {}
 type E_DuplicateMacroName struct {
 	Name  string
@@ -355,11 +363,6 @@ func (err *MacroError) Desc() ErrorMessage {
 		msg.WriteInnerText(TS_INLINE_CODE, e.Macro)
 		msg.WriteText(TS_ERROR, "imported from the module")
 		msg.WriteEndText(TS_INLINE_CODE, e.Module)
-	case E_MacroConflictWithFunction:
-		msg.WriteText(TS_ERROR, "Macro conflict: the macro name")
-		msg.WriteInnerText(TS_INLINE_CODE, e.Macro)
-		msg.WriteText(TS_ERROR, "conflicts with existing function")
-		msg.WriteEndText(TS_INLINE_CODE, e.Macro)
 	case E_DuplicateMacroName:
 		msg.WriteText(TS_ERROR, "Duplicate macro name:")
 		msg.WriteEndText(TS_INLINE_CODE, e.Name)
@@ -877,7 +880,24 @@ func (e E_NoneOfFunctionsCallable) ExprErrorDesc() ErrorMessage {
 		msg.Write(T_LF)
 	}
 	return msg
+}
 
+type E_AmbiguousCall struct {
+	Candidates  [] string
+}
+func (e E_AmbiguousCall) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR,
+		"Ambiguous function call")
+	msg.Write(T_LF)
+	msg.WriteText(TS_INFO, "*** candidates are:")
+	msg.Write(T_LF)
+	for _, candidate := range e.Candidates {
+		msg.Write(T_INDENT)
+		msg.WriteText(TS_INLINE_CODE, candidate)
+		msg.Write(T_LF)
+	}
+	return msg
 }
 
 type E_ExprNotCallable struct {}

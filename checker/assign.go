@@ -20,7 +20,7 @@ func AssignTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprError) 
 	var expr, err = (func() (Expr, *ExprError) {
 		switch semi_value := semi.Value.(type) {
 		case TypedExpr:
-			return AssignTypedTo(expected, Expr(semi_value), ctx, 0)
+			return AssignTypedTo(expected, Expr(semi_value), ctx)
 		case UntypedLambda:
 			return AssignLambdaTo(expected, semi_value, semi.Info, ctx)
 		case UntypedInteger:
@@ -55,7 +55,7 @@ func AssignTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprError) 
 	}
 }
 
-func AssignTypedTo(expected Type, expr Expr, ctx ExprContext, depth uint) (Expr, *ExprError) {
+func AssignTypedTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError) {
 	// TODO: update comments
 	if expected == nil {
 		// 1. If the expected type is not specified,
@@ -211,7 +211,9 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext, depth uint) (Expr,
 		if AreTypesEqualInSameCtx(expected, expr.Type) {
 			return expr, nil
 		} else {
-			var unboxed, ok = Unbox(expr.Type, ctx).(Unboxed)
+			var ctx_mod = ctx.ModuleInfo.Module.Name
+			var reg = ctx.ModuleInfo.Types
+			var unboxed, ok = Unbox(expr.Type, ctx_mod, reg).(Unboxed)
 			if !ok {
 				return Expr{}, throw("")
 			} else {
@@ -221,13 +223,10 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext, depth uint) (Expr,
 					Info:  expr.Info,
 				}
 				var expr_expected, err = AssignTypedTo (
-					expected, expr_unboxed, ctx, (depth + 1),
+					expected, expr_unboxed, ctx,
 				)
 				// if err != nil { return Expr{}, err }
 				if err != nil { return Expr{}, throw("") }
-				if ctx.UnboxCounted && depth == 0 {
-					*(ctx.UnboxCount) += 1
-				}
 				return expr_expected, nil
 			}
 		}

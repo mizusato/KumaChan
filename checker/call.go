@@ -12,8 +12,14 @@ type UndecidedCall struct {
 	FuncName  string
 }
 type AvailableCall struct {
-	Expr        Expr
-	UnboxCount  uint
+	Expr      Expr
+	IsExact   bool
+	Function  *GenericFunction
+}
+type AssignableCall struct {
+	Expr      Expr
+	IsExact   bool
+	Function  *GenericFunction
 }
 
 func (impl Call) ExprVal() {}
@@ -91,24 +97,54 @@ func AssignCallTo(expected Type, call UndecidedCall, info ExprInfo, ctx ExprCont
 	var err = RequireExplicitType(expected, info)
 	if err != nil { return Expr{}, err }
 	var types_desc = make([]string, 0)
+	var assignable = make([]AssignableCall, 0)
 	for _, option := range call.Options {
-		var expr, err = AssignTypedTo(expected, option.Expr, ctx, 0)
+		var expr, err = AssignTypedTo(expected, option.Expr, ctx)
 		if err != nil {
 			types_desc = append (
 				types_desc,
 				ctx.DescribeType(option.Expr.Type),
 			)
-			continue
 		} else {
-			return expr, nil
+			var is_exact = AreTypesEqualInSameCtx(expr.Type, option.Expr.Type)
+			assignable = append(assignable, AssignableCall{
+				Expr:     expr,
+				IsExact:  is_exact,
+				Function: option.Function,
+			})
 		}
 	}
-	return Expr{}, &ExprError {
-		Point:    info.ErrorPoint,
-		Concrete: E_NoneOfTypesAssignable {
-			From: types_desc,
-			To:   ctx.DescribeExpectedType(expected),
-		},
+	if len(assignable) == 0 {
+		return Expr{}, &ExprError{
+			Point: info.ErrorPoint,
+			Concrete: E_NoneOfTypesAssignable{
+				From: types_desc,
+				To:   ctx.DescribeExpectedType(expected),
+			},
+		}
+	} else {
+		var exact_quantity = 0
+		var exact = -1
+		for i, a := range assignable {
+			if a.IsExact {
+				exact_quantity += 1
+				exact = i
+			}
+		}
+		if exact_quantity == 1 {
+			return assignable[exact].Expr, nil
+		} else {
+			var candidates = make([]string, len(assignable))
+			for i, a := range assignable {
+				candidates[i] = DescribeCandidate(call.FuncName, a.Function)
+			}
+			return Expr{}, &ExprError {
+				Point:    info.ErrorPoint,
+				Concrete: E_AmbiguousCall {
+					Candidates: candidates,
+				},
+			}
+		}
 	}
 }
 

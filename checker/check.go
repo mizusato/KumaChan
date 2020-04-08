@@ -61,8 +61,6 @@ type ExprContext struct {
 	InferTypeArgs  bool
 	InferredNames  [] string
 	Inferred       map[uint] Type  // mutable
-	UnboxCounted   bool
-	UnboxCount     *uint  // mutable
 	MacroArgs      map[string] SemiExpr
 	MacroPath      [] MacroExpanding
 }
@@ -120,7 +118,6 @@ func CreateExprContext(mod_info ModuleInfo, params []string) ExprContext {
 		TypeParams:    params,
 		LocalValues:   make(map[string]Type),
 		InferTypeArgs: false,
-		UnboxCounted:  false,
 	}
 }
 
@@ -233,15 +230,6 @@ func (ctx ExprContext) WithTypeArgsInferringEnabled(names []string) ExprContext 
 	return new_ctx
 }
 
-func (ctx ExprContext) WithUnboxCounted(count *uint) ExprContext {
-	var new_ctx ExprContext
-	*(&new_ctx) = ctx
-	new_ctx.UnboxCounted = true
-	new_ctx.UnboxCount = count
-	*count = 0
-	return new_ctx
-}
-
 func (ctx ExprContext) GetErrorPoint(node ast.Node) ErrorPoint {
 	if len(ctx.MacroPath) == 0 {
 		return ErrorPoint {
@@ -321,8 +309,23 @@ func TypeCheck(entry *loader.Module, raw_index loader.Index) (
 	var _, err3 = CollectFunctions(entry, types, functions)
 	if err3 != nil { return nil, nil, []E { err3 } }
 	var macros = make(MacroStore)
-	var _, err4 = CollectMacros(entry, functions, macros)
+	var _, err4 = CollectMacros(entry, macros)
 	if err4 != nil { return nil, nil, []E { err4 } }
+	for mod_name, mod := range raw_index {
+		for name, f := range functions[mod_name] {
+			var macro, exists = macros[mod_name][name]
+			if exists { return nil, nil, []E { &FunctionError {
+				Point:    ErrorPoint {
+					CST: mod.CST,
+					Node: f[0].Function.Node,
+				},
+				Concrete: E_FunctionConflictWithMacro {
+					Name:   name,
+					Module: macro.ModuleName,
+				},
+			} } }
+		}
+	}
 	var ctx = CheckContext {
 		Types:     types,
 		Functions: functions,
