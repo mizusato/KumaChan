@@ -17,7 +17,11 @@ type TypeVal interface { TypeVal() }
 
 func (impl Union) TypeVal() {}
 type Union struct {
-	CaseTypes  [] loader.Symbol
+	CaseTypes  [] CaseType
+}
+type CaseType struct {
+	Name    loader.Symbol
+	Params  [] uint
 }
 func (impl Boxed) TypeVal() {}
 type Boxed struct {
@@ -72,7 +76,7 @@ type Func struct {
 
 func GetCaseIndex(u Union, sym loader.Symbol) (uint, bool) {
 	for index, case_type := range u.CaseTypes {
-		if case_type == sym {
+		if case_type.Name == sym {
 			return uint(index), true
 		}
 	}

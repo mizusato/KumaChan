@@ -196,10 +196,10 @@ func AreTypesConflict(type1 Type, type2 Type, reg TypeRegistry) bool {
 					var u = q[0]
 					q = q[1:]
 					for _, sub := range u.CaseTypes {
-						if another.Name == sub {
+						if another.Name == sub.Name {
 							return check_args()
 						} else {
-							var t = reg[sub]
+							var t = reg[sub.Name]
 							var sub_union, sub_is_union = t.Value.(Union)
 							if sub_is_union {
 								q = append(q, sub_union)

@@ -75,55 +75,8 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 				},
 			}
 		}
-		// -- behavior of assigning a named type to an union type --
-		var assign_union func(NamedType, NamedType, Union) (Expr, *ExprError)
-		assign_union = func(exp NamedType, given NamedType, union Union) (Expr, *ExprError) {
-			// 1. Find the given type in the list of case types of the union
-			for index, case_type := range union.CaseTypes {
-				if case_type == given.Name {
-					// 1.1. If found, check if type parameters are identical
-					if len(exp.Args) != len(given.Args) {
-						panic("something went wrong")
-					}
-					var L = len(exp.Args)
-					for i := 0; i < L; i += 1 {
-						// TODO: this behaviour is bad
-						var arg_exp = exp.Args[i]
-						var arg_given = given.Args[i]
-						if !(AreTypesEqualInSameCtx(arg_exp, arg_given)) {
-							// 1.1.1. If not identical, throw an error.
-							return Expr{}, throw("type parameters not matching")
-						}
-					}
-					// 1.1.2. Otherwise, return a lifted value.
-					return Expr {
-						Type:  exp,
-						Value: Sum { Value: expr, Index: uint(index) },
-						Info:  expr.Info,
-					}, nil
-				}
-			}
-			for index, case_type := range union.CaseTypes {
-				var t = ctx.ModuleInfo.Types[case_type]
-				var item_union, ok = t.Value.(Union)
-				if ok {
-					var item_expr, err = assign_union(NamedType {
-						Name: case_type,
-						Args: exp.Args,
-					}, given, item_union)
-					if err != nil { continue }
-					return Expr {
-						Type:  exp,
-						Value: Sum { Value: item_expr, Index: uint(index) },
-						Info:  expr.Info,
-					}, nil
-				}
-			}
-			// 1.2. Otherwise, throw an error.
-			return Expr{}, throw("given type is not a case type of the expected union type")
-		}
-		var compare_named func(NamedType, NamedType) (*ExprError)
-		compare_named = func(E NamedType, T NamedType) (*ExprError) {
+		var compare_named func(NamedType, NamedType) *ExprError
+		compare_named = func(E NamedType, T NamedType) *ExprError {
 			if !(ctx.InferTypeArgs) { panic("something went wrong") }
 			if E.Name != T.Name {
 				return throw("")
@@ -169,6 +122,60 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 				}
 			}
 			return nil
+		}
+		var apply_params_mapping = func(args []Type, mapping []uint) []Type {
+			var mapped = make([]Type, len(mapping))
+			for i, j := range mapping {
+				mapped[i] = args[j]
+			}
+			return mapped
+		}
+		// -- behavior of assigning a named type to an union type --
+		var assign_union func(NamedType, NamedType, Union) (Expr, *ExprError)
+		assign_union = func(exp NamedType, given NamedType, union Union) (Expr, *ExprError) {
+			// 1. Find the given type in the list of case types of the union
+			for index, case_type := range union.CaseTypes {
+				if case_type.Name == given.Name {
+					// 1.1. If found, check if type parameters matching
+					var case_exp_type = NamedType {
+						Name: case_type.Name,
+						Args: apply_params_mapping(exp.Args, case_type.Params),
+					}
+					// 1.1.1. If not matching, throw an error
+					if ctx.InferTypeArgs {
+						var err = compare_named(case_exp_type, given)
+						if err != nil { return Expr{}, err }
+					} else {
+						if !(AreTypesEqualInSameCtx(case_exp_type, given)) {
+							return Expr{}, throw("type parameters not matching")
+						}
+					}
+					// 1.1.2. Otherwise, return a lifted value.
+					return Expr {
+						Type:  exp,
+						Value: Sum { Value: expr, Index: uint(index) },
+						Info:  expr.Info,
+					}, nil
+				}
+			}
+			for index, case_type := range union.CaseTypes {
+				var g = ctx.ModuleInfo.Types[case_type.Name]
+				var item_union, ok = g.Value.(Union)
+				if ok {
+					var item_expr, err = assign_union(NamedType {
+						Name: case_type.Name,
+						Args: apply_params_mapping(exp.Args, case_type.Params),
+					}, given, item_union)
+					if err != nil { continue }
+					return Expr {
+						Type:  exp,
+						Value: Sum { Value: item_expr, Index: uint(index) },
+						Info:  expr.Info,
+					}, nil
+				}
+			}
+			// 1.2. Otherwise, throw an error.
+			return Expr{}, throw("given type is not a case type of the expected union type")
 		}
 		switch E := expected.(type) {
 		case ParameterType:

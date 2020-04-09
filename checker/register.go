@@ -15,21 +15,20 @@ type TypeRegistry  map[loader.Symbol] *GenericType
 type RawTypeRegistry struct {
 	// a map from symbol to type declaration (AST node)
 	DeclMap        map[loader.Symbol] ast.DeclType
-	// a map from case type to union type (e.g. Just -> Maybe, Null -> Maybe)
-	// (parameters of cases are inherited from the out-most union type)
-	UnionRootMap   map[loader.Symbol] loader.Symbol
 	// a map from case types to their corresponding indexes
 	CaseIndexMap   map[loader.Symbol] uint
+	// a map from case types to their parameters mapping
+	CaseParamsMap  map[loader.Symbol] ([] uint)
 	// a context value to track all visited modules
 	// (same module may appear many times when walking through the hierarchy)
 	VisitedMod     map[string] bool
 }
 func MakeRawTypeRegistry() RawTypeRegistry {
 	return RawTypeRegistry {
-		DeclMap:      make(map[loader.Symbol] ast.DeclType),
-		UnionRootMap: make(map[loader.Symbol] loader.Symbol),
-		CaseIndexMap: make(map[loader.Symbol] uint),
-		VisitedMod:   make(map[string] bool),
+		DeclMap:       make(map[loader.Symbol] ast.DeclType),
+		CaseIndexMap:  make(map[loader.Symbol] uint),
+		CaseParamsMap: make(map[loader.Symbol] ([] uint)),
+		VisitedMod:    make(map[string] bool),
 	}
 }
 func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
@@ -47,25 +46,20 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 	// 2. Extract all type declarations in the module,
 	//    and record the root union types of all case types
 	var decls = make([]ast.DeclType, 0)
-	var root_map = make(map[int]int)
-	var index_map = make(map[int]int)
+	var parent_map = make(map[uint]uint)
+	var index_map = make(map[uint]uint)
 	for _, cmd := range mod.Node.Commands {
 		switch c := cmd.Command.(type) {
 		case ast.DeclType:
-			var cur_union_index = len(decls)
+			var parent_index = uint(len(decls))
 			decls = append(decls, c)
-			var root_of_union, root_of_union_exists = root_map[cur_union_index]
 			switch u := c.TypeValue.TypeValue.(type) {
 			case ast.UnionType:
-				for index, item := range u.Items {
-					var cur_sub_index = len(decls)
-					decls = append(decls, item)
-					index_map[cur_sub_index] = index
-					if root_of_union_exists {
-						root_map[cur_sub_index] = root_of_union
-					} else {
-						root_map[cur_sub_index] = cur_union_index
-					}
+				for case_index, case_decl := range u.Cases {
+					var cur_sub_index = uint(len(decls))
+					decls = append(decls, case_decl)
+					index_map[cur_sub_index] = uint(case_index)
+					parent_map[cur_sub_index] = parent_index
 				}
 			}
 		}
@@ -91,29 +85,37 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 					TypeName: type_sym,
 				},
 			}
-		} else {
-			// 3.3.2. If not, register the declaration node to DeclMap
-			//        and update UnionRootMap and CaseIndexMap if necessary.
-			//        If parameters were declared on a case type,
-			//        throw an error.
-			raw.DeclMap[type_sym] = d
-			var root, exists = root_map[i]
-			if exists {
-				// TODO: this behaviour is bad
-				//       parameters of a case type should be a subset
-				//       of the parameters of its union type
-				if len(d.Params) > 0 {
-					return &TypeDeclError {
-						Point: ErrorPoint { CST: mod.CST, Node: d.Name.Node },
-						Concrete: E_GenericUnionSubType {
-							TypeName: type_sym,
-						},
+		}
+		// 3.3.2. If not, register the declaration node to DeclMap
+		//        and update CaseIndexMap if necessary.
+		//        If invalid parameters were declared on a case type,
+		//        throw an error.
+		raw.DeclMap[type_sym] = d
+		var index, is_case_type = index_map[uint(i)]
+		if is_case_type {
+			raw.CaseIndexMap[type_sym] = index
+			var parent_index = parent_map[uint(i)]
+			var parent = decls[parent_index]
+			var mapping = make([]uint, len(d.Params))
+			for p_index, param := range d.Params {
+				var p_name = loader.Id2String(param)
+				var exists = false
+				var corresponding = ^(uint(0))
+				for parent_p_index, parent_param := range parent.Params {
+					var parent_p_name = loader.Id2String(parent_param)
+					if p_name == parent_p_name {
+						exists = true
+						corresponding = uint(parent_p_index)
 					}
 				}
-				raw.UnionRootMap[type_sym] = mod.SymbolFromName(decls[root].Name)
-				raw.CaseIndexMap[type_sym] = uint(index_map[i])
+				if !exists { return &TypeDeclError {
+					Point:    ErrorPoint { CST: mod.CST, Node: param.Node },
+					Concrete: E_InvalidCaseTypeParam { p_name },
+				} }
+				mapping[p_index] = corresponding
 			}
-		}
+			raw.CaseParamsMap[type_sym] = mapping
+		} // if is_case_type
 	}
 	// 4. Go through all imported modules, call self recursively
 	for _, imported := range mod.ImpMap {
@@ -141,16 +143,7 @@ type AbstractRegistry interface {
 func (raw RawTypeRegistry) LookupArity(name loader.Symbol) (bool, uint) {
 	var t, exists = raw.DeclMap[name]
 	if exists {
-		var ur_name, exists = raw.UnionRootMap[name]
-		if exists {
-			// if union root exists, use the arity of the union root
-			var ur = raw.DeclMap[ur_name]  // the value must exist,
-										   // thus omit checking
-			return true, uint(len(ur.Params))
-		} else {
-			// else, use the arity of the type itself
-			return true, uint(len(t.Params))
-		}
+		return true, uint(len(t.Params))
 	} else {
 		return false, 0
 	}
@@ -176,17 +169,8 @@ func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, *Type
 		var mod, mod_exists = idx[name.ModuleName]
 		if !mod_exists { panic("mod " + name.ModuleName + " should exist") }
 		// 3.1. Determine parameters
-		var params_t ast.DeclType
-		var root, exists = raw.UnionRootMap[name]
-		if exists {
-			// 3.1.1. If union root exists, use the parameters of it
-			params_t = raw.DeclMap[root]
-		} else {
-			// 3.1.2. Otherwise, use the parameters of the type itself
-			params_t = t
-		}
-		var params = make([]string, len(params_t.Params))
-		for i, param := range params_t.Params {
+		var params = make([]string, len(t.Params))
+		for i, param := range t.Params {
 			params[i] = loader.Id2String(param)
 		}
 		// 3.2. Construct a TypeContext and pass it to TypeValFrom()
@@ -195,7 +179,7 @@ func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, *Type
 			Module: mod,
 			Params: params,
 			Ireg:   raw,
-		})
+		}, raw)
 		if err != nil { return nil, &TypeDeclError {
 			Point:    err.Point,
 			Concrete: E_InvalidTypeDecl {
@@ -252,10 +236,10 @@ func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, *Type
 }
 
 /* Transform: ast.TypeValue -> checker.TypeVal */
-func TypeValFrom (tv ast.TypeValue, ctx TypeContext) (TypeVal, *TypeError) {
+func TypeValFrom(tv ast.TypeValue, ctx TypeContext, raw RawTypeRegistry) (TypeVal, *TypeError) {
 	switch v := tv.(type) {
 	case ast.UnionType:
-		var count = uint(len(v.Items))
+		var count = uint(len(v.Cases))
 		var max = uint(common.SumMaxBranches)
 		if count > max {
 			return nil, &TypeError {
@@ -266,9 +250,13 @@ func TypeValFrom (tv ast.TypeValue, ctx TypeContext) (TypeVal, *TypeError) {
 				},
 			}
 		}
-		var case_types = make([]loader.Symbol, count)
-		for i, item := range v.Items {
-			case_types[i] = ctx.Module.SymbolFromName(item.Name)
+		var case_types = make([] CaseType, count)
+		for i, case_decl := range v.Cases {
+			var sym = ctx.Module.SymbolFromName(case_decl.Name)
+			case_types[i] = CaseType {
+				Name:   sym,
+				Params: raw.CaseParamsMap[sym],
+			}
 		}
 		return Union {
 			CaseTypes: case_types,
@@ -300,7 +288,7 @@ func TypeValFrom (tv ast.TypeValue, ctx TypeContext) (TypeVal, *TypeError) {
 }
 
 /* Transform: ast.Type -> checker.Type */
-func TypeFrom (type_ ast.Type, ctx TypeContext) (Type, *TypeError) {
+func TypeFrom(type_ ast.Type, ctx TypeContext) (Type, *TypeError) {
 	switch t := type_.(type) {
 	case ast.TypeRef:
 		var ref_mod = string(t.Ref.Module.Name)
@@ -357,7 +345,7 @@ func TypeFrom (type_ ast.Type, ctx TypeContext) (Type, *TypeError) {
 }
 
 /* Transform: ast.Repr -> checker.Type */
-func TypeFromRepr (repr ast.Repr, ctx TypeContext) (Type, *TypeError) {
+func TypeFromRepr(repr ast.Repr, ctx TypeContext) (Type, *TypeError) {
 	switch r := repr.(type) {
 	case ast.ReprTuple:
 		var count = uint(len(r.Elements))

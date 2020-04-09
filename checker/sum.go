@@ -148,8 +148,8 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 	if !has_default && len(checked) != len(union.CaseTypes) {
 		var missing = make([]string, 0)
 		for _, case_type := range union.CaseTypes {
-			if !checked[case_type] {
-				missing = append(missing, case_type.String())
+			if !checked[case_type.Name] {
+				missing = append(missing, case_type.Name.String())
 			}
 		}
 		return SemiExpr{}, &ExprError {

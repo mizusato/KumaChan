@@ -49,12 +49,12 @@ type Bool union {
     type No;
 };
 type Maybe[T] union {
-    type Just T;
+    type Just[T] T;
     type N/A;
 };
 type Result[T,E] union {
-    type OK T;
-    type NG E;
+    type OK[T] T;
+    type NG[E] E;
 };
 type Ordering union {
     type <<;
@@ -86,14 +86,8 @@ public function + { lambda (Int,Int) Int:  native '+Int' };
 public function - { lambda (Int,Int) Int:  native '-Int' };
 public function * { lambda (Int,Int) Int:  native '*Int' };
 // TODO: ** (integer power)
-public function quorem {
-    lambda (Int,Int) (Int,Int):
-    native 'quorem'
-};
-public function divmod {
-    lambda (Int,Int) (Int,Int):
-    native 'divmod'
-};
+public function quorem { lambda (Int,Int) (Int,Int):  native 'quorem' };
+public function divmod { lambda (Int,Int) (Int,Int):  native 'divmod' };
 public function - {
     lambda Int   Int:
     lambda  n  $(0 - n)

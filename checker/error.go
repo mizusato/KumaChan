@@ -111,9 +111,9 @@ func (impl E_DuplicateTypeDecl) TypeDeclError() {}
 type E_DuplicateTypeDecl struct {
 	TypeName  loader.Symbol
 }
-func (impl E_GenericUnionSubType) TypeDeclError() {}
-type E_GenericUnionSubType struct {
-	TypeName  loader.Symbol
+func (impl E_InvalidCaseTypeParam) TypeDeclError() {}
+type E_InvalidCaseTypeParam struct {
+	Name  string
 }
 func (impl E_InvalidTypeDecl) TypeDeclError() {}
 type E_InvalidTypeDecl struct {
@@ -134,8 +134,10 @@ func (err *TypeDeclError) Desc() ErrorMessage {
 	case E_DuplicateTypeDecl:
 		msg.WriteText(TS_ERROR, "Duplicate type declaration:")
 		msg.WriteEndText(TS_INLINE_CODE, e.TypeName.SymbolName)
-	case E_GenericUnionSubType:
-		msg.WriteText(TS_ERROR, "Cannot define generic parameters on a union item")
+	case E_InvalidCaseTypeParam:
+		msg.WriteText(TS_ERROR, "Invalid type parameter")
+		msg.WriteInnerText(TS_INLINE_CODE, e.Name)
+		msg.WriteText(TS_ERROR, "(parameters of a case type should be a subset of its parent union type)")
 	case E_InvalidTypeDecl:
 		msg.WriteAll(e.Detail.Desc())
 	case E_TypeCircularDependency:

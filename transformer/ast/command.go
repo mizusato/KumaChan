@@ -96,5 +96,5 @@ type BoxedType struct {
 func (impl UnionType) TypeValue() {}
 type UnionType struct {
     Node                 `part:"union_type"`
-    Items  [] DeclType   `list_more:"" item:"decl_type"`
+    Cases  [] DeclType   `list_more:"" item:"decl_type"`
 }
