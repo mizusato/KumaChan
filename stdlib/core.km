@@ -77,9 +77,9 @@ public function panic[T] {
 };
 
 // Logic Macros
-public macro not(p)    := ~Bool(if p { No } else { Yes });
-public macro and(p, q) := ~Bool(if p { if q { Yes } else { No } } else { No });
-public macro  or(p, q) := ~Bool(if p { Yes } else { if q { Yes } else { No } });
+public macro not(p)    := ~Bool(if p: No, else: Yes);
+public macro and(p, q) := ~Bool(if p: (if q: Yes, else: No), else: No);
+public macro  or(p, q) := ~Bool(if p: Yes, else: (if q: Yes, else: No));
 
 // Baisc Arithmetic Functions
 public function + { lambda (Int,Int) Int:  native '+Int' };
@@ -94,34 +94,26 @@ public function - {
 public function / {
     lambda (Int,Int) Int:
     lambda (a, b)
-        let {
-            (q, _) := quorem(a, b),
-            return q
-        }
+        let (q, _) := quorem(a, b),
+        return q
 };
 public function % {
     lambda (Int,Int) Int:
     lambda (a, b)
-        let {
-            (_, r) := quorem(a, b),
-            return r
-        }
+        let (_, r) := quorem(a, b),
+        return r
 };
 public function div {
     lambda (Int,Int) Int:
     lambda (a, b)
-        let {
-            (q, _) := divmod(a, b),
-            return q
-        }
+        let (q, _) := divmod(a, b),
+        return q
 };
 public function mod {
     lambda (Int,Int) Int:
     lambda (a, b)
-        let {
-            (_, r) := divmod(a, b),
-            return r
-        }
+        let (_, r) := divmod(a, b),
+        return r
 };
 public function ** {
     lambda (Int,Int) Int:
@@ -135,24 +127,21 @@ private function power-by-squaring {
         case <<:
             panic[Int] 'taking negative power of a Int value is not supported',
         case ==:
-            if $(n = 0) {
-                panic[Int] 'cannot evaluate 0 to the power of 0'
-            } else {
-                t
-            },
+            if $(n = 0):
+                panic[Int] 'cannot evaluate 0 to the power of 0',
+            else:
+                t,
         case >>:
-            if $(p = 1) {
-                $(t * n)
-            } else { let {
-                (q, r) := $(p divmod 2),
-                square := $(n * n),
+            if $(p = 1):
+                $(t * n),
+            else:
+                let (q, r) := $(p divmod 2),
+                    square := $(n * n),
                 return
-                    if $(r = 1) {
-                        power-by-squaring ($(t * n), square, q)
-                    } else {
+                    if $(r = 1):
+                        power-by-squaring ($(t * n), square, q),
+                    else:
                         power-by-squaring (t, square, q)
-                    }
-            } }
         }
 };
 public function + { lambda (Float, Float) Float:  native '+Float' };
