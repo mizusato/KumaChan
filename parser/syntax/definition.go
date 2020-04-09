@@ -72,6 +72,8 @@ var ConditionalKeywords = [...] string {
     "@lambda", "@let", "@rec", "@return", "@procedure",
 }
 
+// TODO: forbid using keywords as identifier
+
 var SyntaxDefinition = [...] string {
     "module = shebang module_name! commands",
       "shebang? = Pragma",

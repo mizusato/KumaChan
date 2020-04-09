@@ -256,3 +256,5 @@ func DesugarInfix(infix ast.Infix) ast.Call {
 		},
 	}
 }
+
+// TODO: DesugarProcedure

@@ -167,6 +167,11 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 	}
 }
 
+func CheckMultiSwitch(sw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprError) {
+	// TODO: multi-switch
+	panic("unimplemented")
+}
+
 func CheckIf(raw ast.If, ctx ExprContext) (SemiExpr, *ExprError) {
 	var if_node = DesugarElseIf(raw)
 	var info = ctx.GetExprInfo(if_node.Node)

@@ -85,7 +85,6 @@ public macro  or(p, q) := ~Bool(if p { Yes } else { if q { Yes } else { No } });
 public function + { lambda (Int,Int) Int:  native '+Int' };
 public function - { lambda (Int,Int) Int:  native '-Int' };
 public function * { lambda (Int,Int) Int:  native '*Int' };
-// TODO: ** (integer power)
 public function quorem { lambda (Int,Int) (Int,Int):  native 'quorem' };
 public function divmod { lambda (Int,Int) (Int,Int):  native 'divmod' };
 public function - {
@@ -122,6 +121,38 @@ public function mod {
         let {
             (_, r) := divmod(a, b),
             return r
+        }
+};
+public function ** {
+    lambda (Int,Int) Int:
+    lambda (n, p)
+        power-by-squaring (1, n, p)
+};
+private function power-by-squaring {
+    lambda (Int,Int,Int) Int:
+    lambda (t, n, p)
+        switch $(p <> 0) {
+        case <<:
+            panic[Int] 'taking negative power of a Int value is not supported',
+        case ==:
+            if $(n = 0) {
+                panic[Int] 'cannot evaluate 0 to the power of 0'
+            } else {
+                t
+            },
+        case >>:
+            if $(p = 1) {
+                $(t * n)
+            } else { let {
+                (q, r) := $(p divmod 2),
+                square := $(n * n),
+                return
+                    if $(r = 1) {
+                        power-by-squaring ($(t * n), square, q)
+                    } else {
+                        power-by-squaring (t, square, q)
+                    }
+            } }
         }
 };
 public function + { lambda (Float, Float) Float:  native '+Float' };

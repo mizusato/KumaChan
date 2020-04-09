@@ -357,7 +357,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 		Macros:    macros,
 	}
 	var errors = make([]E, 0)
-	var imported = make(map[string]*CheckedModule)
+	var imported = make(map[string] *CheckedModule)
 	for alias, imported_item := range mod.ImpMap {
 		var checked, errs = TypeCheckModule(imported_item, index, ctx)
 		if errs != nil {
@@ -462,6 +462,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 		}
 	}
 	if len(errors) > 0 {
+		index[mod_name] = nil
 		return nil, errors
 	} else {
 		var checked = &CheckedModule {
