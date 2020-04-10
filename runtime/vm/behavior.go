@@ -158,7 +158,7 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 					panic("GET: cannot execute on non-product value")
 				}
 			case CTX:
-				var is_recursive = (inst.Arg1 != 0)
+				var is_recursive = (inst.Arg0 != 0)
 				switch prod := ec.popValue().(type) {
 				case ProductValue:
 					var ctx = prod.Elements

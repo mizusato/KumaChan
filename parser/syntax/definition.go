@@ -68,11 +68,9 @@ var ConditionalKeywords = [...] string {
     "@module", "@import", "@from",
     "@type", "@union", "@native", "@protected", "@opaque",
     "@private", "@public", "@function", "@const", "@macro", "@do",
-    "@if", "@else", "@switch", "@case", "@default",
+    "@if", "@elif", "@else", "@switch", "@case", "@default",
     "@lambda", "@let", "@rec", "@return", "@procedure",
 }
-
-// TODO: forbid using keywords as identifier
 
 var SyntaxDefinition = [...] string {
     "module = shebang module_name! commands",
@@ -158,7 +156,7 @@ var SyntaxDefinition = [...] string {
                   "more_refs? = , ref! more_refs",
       "if = @if term :! if_yes ,! elifs @else! :! if_no",
         "elifs? = elif elifs",
-          "elif = @else @if term! :! expr! ,!",
+          "elif = @elif term! :! expr! ,!",
         "if_yes = expr!",
         "if_no = expr!",
       "block = @let binding! more_bindings return!",

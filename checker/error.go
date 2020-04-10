@@ -491,12 +491,12 @@ func (e E_MissingField) ExprErrorDesc() ErrorMessage {
 	return msg
 }
 
-type E_SurplusField struct {
+type E_SuperfluousField struct {
 	Field  string
 }
-func (e E_SurplusField) ExprErrorDesc() ErrorMessage {
+func (e E_SuperfluousField) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
-	msg.WriteText(TS_ERROR, "Surplus field")
+	msg.WriteText(TS_ERROR, "Superfluous field")
 	msg.WriteEndText(TS_INLINE_CODE, e.Field)
 	return msg
 }
@@ -686,6 +686,13 @@ type E_DuplicateDefaultBranch struct {}
 func (e E_DuplicateDefaultBranch) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	msg.WriteText(TS_ERROR, "Duplicate default branch")
+	return msg
+}
+
+type E_SuperfluousDefaultBranch struct {}
+func (e E_SuperfluousDefaultBranch) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Superfluous default branch")
 	return msg
 }
 

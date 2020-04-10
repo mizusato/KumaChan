@@ -239,6 +239,7 @@ func CallUntypedRef (
 			functions, name, type_args, arg, ref_info, call_info, ctx,
 		)
 	case UntypedRefToMacro:
+		// TODO: UntypedMacroExpanding
 		var args  [] SemiExpr
 		switch a := arg.Value.(type) {
 		case SemiTypedTuple:

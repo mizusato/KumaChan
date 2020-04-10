@@ -205,10 +205,11 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 
 func (ctx ExprContext) WithAddedLocalValues(added map[string]Type) (ExprContext, string) {
 	var merged = make(map[string]Type)
+	var shadowed = ""
 	for name, t := range ctx.LocalValues {
 		var _, exists = added[name]
 		if exists {
-			return ExprContext{}, name
+			shadowed = name
 		}
 		merged[name] = t
 	}
@@ -218,7 +219,7 @@ func (ctx ExprContext) WithAddedLocalValues(added map[string]Type) (ExprContext,
 	var new_ctx ExprContext
 	*(&new_ctx) = ctx
 	new_ctx.LocalValues = merged
-	return new_ctx, ""
+	return new_ctx, shadowed
 }
 
 func (ctx ExprContext) WithTypeArgsInferringEnabled(names []string) ExprContext {

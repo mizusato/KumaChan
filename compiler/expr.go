@@ -362,7 +362,7 @@ func CompileClosure (
 	var inst_seq_len = len(raw_inner_code.InstSeq)
 	var final_inst_seq = make([] c.Instruction, inst_seq_len)
 	for i, inst := range raw_inner_code.InstSeq {
-		if inst.OpCode == c.LOAD {
+		if inst.OpCode == c.LOAD || inst.OpCode == c.STORE {
 			var offset = inst.GetOffset()
 			var new_offset uint
 			if offset < outer_bindings_size {
@@ -371,7 +371,7 @@ func CompileClosure (
 				new_offset = offset - outer_bindings_size + base_context_size
 			}
 			final_inst_seq[i] = c.Instruction {
-				OpCode: c.LOAD,
+				OpCode: inst.OpCode,
 				Arg0:   0,
 				Arg1:   c.Long(new_offset),
 			}

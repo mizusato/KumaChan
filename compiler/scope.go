@@ -32,7 +32,7 @@ func MakeScope() *Scope {
 }
 
 func MakeClosureScope(outer *Scope) *Scope {
-	var bindings = make([] Binding, 0)
+	var bindings = make([] Binding, len(outer.Bindings))
 	for i, b := range outer.Bindings {
 		bindings[i] = Binding {
 			Name:  b.Name,

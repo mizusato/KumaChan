@@ -57,17 +57,10 @@ func EscapePartName (name string) string {
 }
 
 
-var Id2Name     [] string
-var Name2Id     map[string] Id
-var Id2Keyword  map[Id] []rune
-var Rules       map[Id] Rule
-
-func __Allocate () {
-    Id2Name = make([]string, 0, 1000)
-    Name2Id = make(map[string]Id)
-    Id2Keyword = make(map[Id][]rune)
-    Rules = make(map[Id]Rule)
-}
+var Id2Name = make([]string, 0, 1000)
+var Name2Id = make(map[string] Id)
+var Id2ConditionalKeyword = make(map[Id] []rune)
+var Rules = make(map[Id] Rule)
 
 func __AssignId2Name (name string) Id {
     var existing, exists = Name2Id[name]
@@ -91,7 +84,7 @@ func __AssignId2Keywords () {
         var keyword = []rune(strings.TrimLeft(name, "@"))
         if len(keyword) == 0 { panic("empty keyword") }
         var id = __AssignId2Name(name)
-        Id2Keyword[id] = keyword
+        Id2ConditionalKeyword[id] = keyword
     }
 }
 
@@ -157,7 +150,6 @@ func __ParseRules () {
 }
 
 func __Init () interface{} {
-    __Allocate()
     __AssignId2Tokens()
     __AssignId2Keywords()
     __AssignId2Rules()

@@ -48,10 +48,9 @@ func CheckBlock(block ast.Block, ctx ExprContext) (SemiExpr, *ExprError) {
 			}
 			var pattern, err1 = PatternFrom(b.Pattern, t, current_ctx)
 			if err1 != nil { return SemiExpr{}, err1 }
-			var rec_ctx, err2 = current_ctx.WithPatternMatching(pattern)
+			var rec_ctx = current_ctx.WithShadowingPatternMatching(pattern)
+			var semi, err2 = Check(b.Value, rec_ctx)
 			if err2 != nil { return SemiExpr{}, err2 }
-			var semi, err3 = Check(b.Value, rec_ctx)
-			if err3 != nil { return SemiExpr{}, err3 }
 			switch semi.Value.(type) {
 			case UntypedLambda:
 				var typed, err = AssignTo(t, semi, rec_ctx)
@@ -76,8 +75,7 @@ func CheckBlock(block ast.Block, ctx ExprContext) (SemiExpr, *ExprError) {
 			var non_nil_t = typed.Type
 			var pattern, err3 = PatternFrom(b.Pattern, non_nil_t, current_ctx)
 			if err3 != nil { return SemiExpr{}, err3 }
-			var next_ctx, err4 = current_ctx.WithPatternMatching(pattern)
-			if err4 != nil { return SemiExpr{}, err4 }
+			var next_ctx = current_ctx.WithShadowingPatternMatching(pattern)
 			bindings[i] = Binding {
 				Pattern: pattern,
 				Value:   typed,

@@ -87,7 +87,7 @@ func buildTree(root syntax.Id, tokens scanner.Tokens) ([]cst.TreeNode, *Error) {
             var token_id = token.Id
             if token_id != Name { node.Status = cst.Failed; break }
             var text = token.Content
-            var keyword = syntax.Id2Keyword[id]
+            var keyword = syntax.Id2ConditionalKeyword[id]
             if len(text) != len(keyword) { node.Status = cst.Failed; break }
             var equal = true
             for i, char := range keyword {

@@ -59,6 +59,7 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 	} }
 	var checked = make(map[loader.Symbol] bool)
 	var has_default = false
+	var default_node ast.Node
 	var branches = make([]SemiTypedBranch, len(sw.Branches))
 	for i, branch := range sw.Branches {
 		switch t := branch.Type.(type) {
@@ -143,6 +144,7 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 				Value:     semi,
 			}
 			has_default = true
+			default_node = branch.Node
 		}
 	}
 	if !has_default && len(checked) != len(union.CaseTypes) {
@@ -155,6 +157,11 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 		return SemiExpr{}, &ExprError {
 			Point:    ctx.GetErrorPoint(sw.Node),
 			Concrete: E_IncompleteMatch { missing },
+		}
+	} else if has_default && len(checked) == len(union.CaseTypes) {
+		return SemiExpr{}, &ExprError {
+			Point:    ctx.GetErrorPoint(default_node),
+			Concrete: E_SuperfluousDefaultBranch {},
 		}
 	} else {
 		return SemiExpr {
