@@ -2,20 +2,20 @@ package compiler
 
 import (
 	ch "kumachan/checker"
+	. "kumachan/error"
 	c "kumachan/runtime/common"
-	"kumachan/transformer/ast"
 )
 
 
 type Code struct {
 	InstSeq    [] c.Instruction
-	SourceMap  [] *ast.Node
+	SourceMap  [] ErrorPoint
 }
 
 func CodeFrom(inst c.Instruction, info ch.ExprInfo) Code {
 	return Code {
 		InstSeq:   [] c.Instruction { inst },
-		SourceMap: [] *ast.Node { &(info.ErrorPoint.Node) },
+		SourceMap: [] ErrorPoint { info.ErrorPoint },
 	}
 }
 
@@ -31,7 +31,7 @@ type CodeBuffer struct {
 func MakeCodeBuffer() CodeBuffer {
 	var code = &Code {
 		InstSeq:   make([] c.Instruction, 0),
-		SourceMap: make([] *ast.Node, 0),
+		SourceMap: make([] ErrorPoint, 0),
 	}
 	return CodeBuffer { code }
 }

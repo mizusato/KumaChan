@@ -44,8 +44,5 @@ func GetFrameErrorPoint(f CallStackFrame) ErrorPoint {
 	if f.instPtr == 0 { panic("something went wrong") }
 	if f.function == nil { panic("something went wrong") }
 	var last_executed = (f.instPtr - 1)
-	return ErrorPoint {
-		CST:  f.function.Info.DeclPoint.CST,
-		Node: *(f.function.Info.SourceMap[last_executed]),
-	}
+	return f.function.Info.SourceMap[last_executed]
 }

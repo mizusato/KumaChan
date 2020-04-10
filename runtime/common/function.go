@@ -2,9 +2,8 @@ package common
 
 import (
 	"fmt"
-	"strings"
 	. "kumachan/error"
-	"kumachan/transformer/ast"
+	"strings"
 )
 
 
@@ -25,7 +24,7 @@ type FuncInfo struct {
 	Module     string
 	Name       string
 	DeclPoint  ErrorPoint
-	SourceMap  [] *ast.Node
+	SourceMap  [] ErrorPoint
 }
 
 func (f *Function) ToValue(native_registry func(int)Value) Value {
@@ -51,16 +50,15 @@ func (f *Function) String() string {
 		fmt.Fprintf(&buf, "    NATIVE %d", f.NativeIndex)
 		return buf.String()
 	} else {
-		var prev_node *ast.Node
 		for i, inst := range f.Code {
-			var n *ast.Node
-			if i < len(f.Info.SourceMap) {
-				n = f.Info.SourceMap[i]
-			}
 			fmt.Fprintf(&buf, "    [%d] %s", i, inst.String())
-			if n != nil && n != prev_node {
+			if i < len(f.Info.SourceMap) {
+				var point = f.Info.SourceMap[i]
+				var n = point.Node
 				fmt.Fprintf(&buf, "   ; (%d, %d)", n.Point.Row, n.Point.Col)
-				prev_node = n
+				if point.CST != f.Info.DeclPoint.CST {
+					fmt.Fprintf(&buf, " in %s", point.CST.Name)
+				}
 			}
 			if i != len(f.Code)-1 {
 				buf.WriteRune('\n')
