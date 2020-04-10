@@ -239,36 +239,13 @@ func CallUntypedRef (
 			functions, name, type_args, arg, ref_info, call_info, ctx,
 		)
 	case UntypedRefToMacro:
-		// TODO: UntypedMacroExpanding
-		var args  [] SemiExpr
-		switch a := arg.Value.(type) {
-		case SemiTypedTuple:
-			args = a.Values
-		case TypedExpr:
-			switch a.Value.(type) {
-			case UnitValue:
-				// do nothing, leave `args` zero length
-			default:
-				args = [] SemiExpr { arg }
-			}
-		default:
-			args = [] SemiExpr { arg }
-		}
-		var m = ref_body.Macro
-		var name = ref_body.MacroName
-		var point = call_info.ErrorPoint
-		var m_ctx, err1 = ctx.WithMacroExpanded(m, name, args, point)
-		if err1 != nil { return SemiExpr{}, err1 }
-		var expanded, err2 = Check(m.Output, m_ctx)
-		if err2 != nil { return SemiExpr{}, &ExprError {
-			Point:    point,
-			Concrete: E_MacroExpandingFailed {
-				MacroName: name,
-				Deeper:    err2,
-			},
-		} }
 		return SemiExpr {
-			Value: expanded.Value,
+			Value: UntypedMacroInflation {
+				Macro:     ref_body.Macro,
+				MacroName: ref_body.MacroName,
+				Argument:  arg,
+				Point:     call_info.ErrorPoint,
+			},
 			Info:  call_info,
 		}, nil
 	default:

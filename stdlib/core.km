@@ -119,11 +119,12 @@ public function ** {
     lambda (Int,Int) Int:
     lambda (n, p)
         let rec: pow := [lambda (Int,Int,Int) Int]
-                        lambda(t, n, p) (power-by-squaring (pow, panic[Int])),
+                        power-by-squaring (pow, panic[Int]),
         return pow (1, n, p)
 };
 private macro power-by-squaring (recursive-call, panic)
-    := switch $(p <> 0) {
+:= lambda(t, n, p)
+    switch $(p <> 0) {
     case <<:
         panic 'taking negative power of a Int value is not supported',
     case ==:
@@ -139,9 +140,9 @@ private macro power-by-squaring (recursive-call, panic)
                 square := $(n * n),
             return
                 if $(r = 1):
-                    pow ($(t * n), square, q),
+                    recursive-call ($(t * n), square, q),
                 else:
-                    pow (t, square, q)
+                    recursive-call (t, square, q)
     };
 public function + { lambda (Float, Float) Float:  native '+Float' };
 public function - { lambda (Float, Float) Float:  native '-Float' };

@@ -26,6 +26,14 @@ type MacroCollection  map[string] MacroReference
 
 type MacroStore map[string] MacroCollection
 
+func (impl UntypedMacroInflation) SemiExprVal() {}
+type UntypedMacroInflation struct {
+	Macro      *Macro
+	MacroName  string
+	Argument   SemiExpr
+	Point      ErrorPoint
+}
+
 
 func CollectMacros(mod *loader.Module, store MacroStore) (MacroCollection, *MacroError) {
 	var mod_name = mod.Name
@@ -106,6 +114,60 @@ func CollectMacros(mod *loader.Module, store MacroStore) (MacroCollection, *Macr
 	}
 	store[mod_name] = collection
 	return collection, nil
+}
+
+
+func AssignMacroInflationTo(expected Type, e UntypedMacroInflation, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
+	var args  [] SemiExpr
+	switch a := e.Argument.Value.(type) {
+	case SemiTypedTuple:
+		args = a.Values
+	case TypedExpr:
+		switch a.Value.(type) {
+		case UnitValue:
+			// do nothing, leave `args` zero length
+		default:
+			args = [] SemiExpr { e.Argument }
+		}
+	default:
+		args = [] SemiExpr { e.Argument }
+	}
+	var m = e.Macro
+	var name = e.MacroName
+	var point = e.Point
+	var m_ctx, err1 = ctx.WithMacroExpanded(m, name, args, point)
+	if err1 != nil { return Expr{}, err1 }
+	var semi, err2 = Check(m.Output, m_ctx)
+	if err2 != nil { return Expr{}, &ExprError {
+		Point:    point,
+		Concrete: E_MacroExpandingFailed {
+			MacroName: name,
+			Deeper:    err2,
+		},
+	} }
+	if expected == nil {
+		switch typed := semi.Value.(type) {
+		case TypedExpr:
+			return Expr {
+				Type:  typed.Type,
+				Value: typed.Value,
+				Info:  info,
+			}, nil
+		default:
+			return Expr{}, &ExprError {
+				Point:    point,
+				Concrete: E_ExplicitTypeRequired {},
+			}
+		}
+	} else {
+		var expr, err = AssignTo(expected, semi, m_ctx)
+		if err != nil { return Expr{}, err }
+		return Expr {
+			Type:  expr.Type,
+			Value: expr.Value,
+			Info:  info,
+		}, nil
+	}
 }
 
 

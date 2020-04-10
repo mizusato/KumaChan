@@ -51,10 +51,10 @@ func CheckBlock(block ast.Block, ctx ExprContext) (SemiExpr, *ExprError) {
 			var rec_ctx = current_ctx.WithShadowingPatternMatching(pattern)
 			var semi, err2 = Check(b.Value, rec_ctx)
 			if err2 != nil { return SemiExpr{}, err2 }
-			switch semi.Value.(type) {
-			case UntypedLambda:
-				var typed, err = AssignTo(t, semi, rec_ctx)
-				if err != nil { return SemiExpr{}, err }
+			var typed, err3 = AssignTo(t, semi, rec_ctx)
+			if err3 != nil { return SemiExpr{}, err3 }
+			switch typed.Value.(type) {
+			case Lambda:
 				bindings[i] = Binding {
 					Pattern:   pattern,
 					Value:     typed,
