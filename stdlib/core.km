@@ -246,6 +246,7 @@ public function log10! {
     lambda Float Float:
     lambda x (log! { base: 10.0, x })
 };
+private macro re-im-> (z, expr) := (let (re, im) := z, return expr);
 public function re! {
     lambda Complex Float:
     lambda    z    let (re, _) := z, return re
@@ -254,18 +255,17 @@ public function im! {
     lambda Complex Float:
     lambda    z    let (_, im) := z, return im
 };
-private macro ReIm(z, expr) := (let (re, im) := z, return expr);
 public function conj! {
     lambda Complex Complex:
-    lambda    z    ReIm (z, Complex (re, (- im)))
+    lambda (re, im) (Complex (re, (- im)))
 };
 public function arg! {
     lambda Complex Float:
-    lambda    z    ReIm (z, atan2 { y: im, x: re })
+    lambda (re, im) (atan2 { y: im, x: re })
 };
 public function norm! {
     lambda Complex Float:
-    lambda    z    let (re, im) := z, return sqrt $($(re * re) + $(im * im))
+    lambda (re, im) (sqrt $($(re * re) + $(im * im)))
 };
 public function polar! {
     lambda { norm: Float, arg: Float } Complex:
@@ -288,7 +288,7 @@ public function + {
 };
 public function + {
     lambda (Float,Complex) Complex:
-    lambda (x, z) let (re, im) := z, return Complex ($(x + re), im)
+    lambda (x, z) (z | re-im-> Complex ($(x + re), im))
 };
 public function + {
     lambda (Complex,Float) Complex:
@@ -318,7 +318,7 @@ public function * {
 };
 public function * {
     lambda (Float,Complex) Complex:
-    lambda (x, z) let (re, im) := z, return Complex ($(x * re), $(x * im))
+    lambda (x, z) (z | re-im-> Complex ($(x * re), $(x * im)))
 };
 public function * {
     lambda (Complex,Float) Complex:
@@ -339,15 +339,15 @@ public function / {
 };
 public function / {
     lambda (Complex,Float) Complex:
-    lambda (z, x) let (re, im) := z, return Complex ($(re / x), $(im / x))
+    lambda (z, x) (z | re-im-> Complex ($(re / x), $(im / x)))
 };
 public function - {
     lambda Complex Complex:
-    lambda    z    let (re, im) := z, return Complex ((- re), (- im))
+    lambda (re, im) (Complex ((- re), (- im)))
 };
 public function exp! {
     lambda Complex Complex:
-    lambda    z    let (re, im) := z, return polar! { norm: exp!(re), arg: im }
+    lambda (re, im) (polar! { norm: exp!(re), arg: im })
 };
 public function sin {
     lambda Complex Complex:

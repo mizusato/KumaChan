@@ -61,6 +61,8 @@ func Unbox${Repr}(t Type, ctx ExprContext) ${Repr}ReprResult {
 						return inner_repr
 					}
 				}
+			case NamedType:
+				Unbox${Repr}(inner, ctx)
 			}
 		}
 		return ${ReprBrief}R_Non${Repr} {}
@@ -103,6 +105,8 @@ func UnboxTuple(t Type, ctx ExprContext) TupleReprResult {
 						return inner_repr
 					}
 				}
+			case NamedType:
+				return UnboxTuple(inner, ctx)
 			}
 		}
 		return TR_NonTuple {}
@@ -144,6 +148,8 @@ func UnboxBundle(t Type, ctx ExprContext) BundleReprResult {
 						return inner_repr
 					}
 				}
+			case NamedType:
+				UnboxBundle(inner, ctx)
 			}
 		}
 		return BR_NonBundle {}
@@ -185,6 +191,8 @@ func UnboxFunc(t Type, ctx ExprContext) FuncReprResult {
 						return inner_repr
 					}
 				}
+			case NamedType:
+				UnboxFunc(inner, ctx)
 			}
 		}
 		return FR_NonFunc {}
