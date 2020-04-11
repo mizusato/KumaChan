@@ -1,6 +1,7 @@
 package checker
 
 import (
+	. "kumachan/error"
 	"kumachan/loader"
 	"kumachan/transformer/ast"
 )
@@ -70,12 +71,33 @@ func CheckRef(ref ast.Ref, ctx ExprContext) (SemiExpr, *ExprError) {
 	var maybe_symbol = ctx.ModuleInfo.Module.SymbolFromRef(ref)
 	var symbol, ok = maybe_symbol.(loader.Symbol)
 	if !ok { return SemiExpr{}, &ExprError {
-		Point:    ctx.GetErrorPoint(ref.Module.Node),
+		Point:    ErrorPointFrom(ref.Module.Node),
 		Concrete: E_ModuleNotFound { loader.Id2String(ref.Module) },
 	} }
+	if len(ctx.MacroPath) > 0 && symbol.ModuleName == "" {
+		var arg_name = symbol.SymbolName
+		var arg, unwound_ctx, exists = ctx.FindMacroArg(arg_name)
+		if exists {
+			var semi, err = Check(arg, unwound_ctx)
+			if err != nil { return SemiExpr{}, err }
+			switch content := semi.Value.(type) {
+			case TypedExpr:
+				return LiftTyped(Expr {
+					Type:  content.Type,
+					Value: content.Value,
+					Info:  info,
+				}), nil
+			default:
+				return SemiExpr {
+					Value: semi.Value,
+					Info:  info,
+				}, nil
+			}
+		}
+	}
 	var sym_concrete, exists = ctx.LookupSymbol(symbol)
 	if !exists { return SemiExpr{}, &ExprError {
-		Point:    ctx.GetErrorPoint(ref.Id.Node),
+		Point:    ErrorPointFrom(ref.Id.Node),
 		Concrete: E_TypeOrValueNotFound { symbol },
 	} }
 	var type_ctx = ctx.GetTypeContext()
@@ -89,20 +111,6 @@ func CheckRef(ref ast.Ref, ctx ExprContext) (SemiExpr, *ExprError) {
 		type_args[i] = t
 	}
 	switch s := sym_concrete.(type) {
-	case SymMacroArg:
-		switch content := s.Content.Value.(type) {
-		case TypedExpr:
-			return LiftTyped(Expr {
-				Type:  content.Type,
-				Value: content.Value,
-				Info:  info,
-			}), nil
-		default:
-			return SemiExpr {
-				Value: s.Content.Value,
-				Info:  info,
-			}, nil
-		}
 	case SymLocalValue:
 		return LiftTyped(Expr {
 			Type:  s.ValueType,
@@ -117,7 +125,7 @@ func CheckRef(ref ast.Ref, ctx ExprContext) (SemiExpr, *ExprError) {
 		}), nil
 	case SymTypeParam:
 		return SemiExpr{}, &ExprError {
-			Point:    ctx.GetErrorPoint(ref.Id.Node),
+			Point:    ErrorPointFrom(ref.Id.Node),
 			Concrete: E_TypeParamInExpr { symbol.SymbolName },
 		}
 	case SymType:
@@ -145,7 +153,7 @@ func CheckRef(ref ast.Ref, ctx ExprContext) (SemiExpr, *ExprError) {
 	case SymMacro:
 		if len(type_args) > 0 {
 			return SemiExpr{}, &ExprError {
-				Point:    ctx.GetErrorPoint(ref.Node),
+				Point:    ErrorPointFrom(ref.Node),
 				Concrete: E_TypeParamsOnMacro {},
 			}
 		} else {
@@ -239,17 +247,8 @@ func CallUntypedRef (
 			functions, name, type_args, arg, ref_info, call_info, ctx,
 		)
 	case UntypedRefToMacro:
-		return SemiExpr {
-			Value: UntypedMacroInflation {
-				Macro:     ref_body.Macro,
-				MacroName: ref_body.MacroName,
-				Argument:  arg,
-				Point:     call_info.ErrorPoint,
-			},
-			Info:  call_info,
-		}, nil
+		panic("this branch should have been processed in CheckCall()")
 	default:
 		panic("impossible branch")
 	}
 }
-

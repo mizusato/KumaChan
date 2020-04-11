@@ -30,14 +30,37 @@ type Call struct {
 
 
 func CheckCall(call ast.Call, ctx ExprContext) (SemiExpr, *ExprError) {
+	var get_macro_ref = func(semi SemiExpr) (UntypedRefToMacro, bool) {
+		switch ref := semi.Value.(type) {
+		case UntypedRef:
+			switch ref_body := ref.RefBody.(type) {
+			case UntypedRefToMacro:
+				return ref_body, true
+			}
+		}
+		return UntypedRefToMacro{}, false
+	}
 	var arg_node, has_arg = call.Arg.(ast.Call)
 	if has_arg {
-		var f, err1 = CheckTerm(call.Func, ctx)
-		if err1 != nil { return SemiExpr{}, err1 }
-		var arg, err2 = CheckCall(arg_node, ctx)
-		if err2 != nil { return SemiExpr{}, err2 }
 		var info = ctx.GetExprInfo(call.Node)
-		return CheckSingleCall(f, arg, info, ctx)
+		var f, err = CheckTerm(call.Func, ctx)
+		if err != nil { return SemiExpr{}, err }
+		var macro_ref, is_macro_ref = get_macro_ref(f)
+		if is_macro_ref {
+			return SemiExpr {
+				Value: UntypedMacroInflation {
+					Macro:     macro_ref.Macro,
+					MacroName: macro_ref.MacroName,
+					Arguments: AdaptMacroArgs(arg_node),
+					Point:     info.ErrorPoint,
+				},
+				Info:  info,
+			}, nil
+		} else {
+			var arg, err = CheckCall(arg_node, ctx)
+			if err != nil { return SemiExpr{}, err }
+			return CheckSingleCall(f, arg, info, ctx)
+		}
 	} else {
 		return CheckTerm(call.Func, ctx)
 	}
@@ -180,12 +203,12 @@ func DesugarPipeline(left ast.Call, p ast.MaybePipeline) ast.Call {
 			},
 		}
 		current_node = ast.Node {
+			CST:   pipeline.Node.CST,
 			Point: pipeline.Node.Point,
 			Span:  scanner.Span {
 				Start: pipeline.Node.Span.Start,
 				End:   right.Span.End,
 			},
-			UID:   0,
 		}
 	} else {
 		arg = ast.Tuple {
@@ -197,12 +220,12 @@ func DesugarPipeline(left ast.Call, p ast.MaybePipeline) ast.Call {
 			} },
 		}
 		current_node = ast.Node {
+			CST:   pipeline.Node.CST,
 			Point: pipeline.Node.Point,
 			Span:  scanner.Span {
 				Start: pipeline.Node.Span.Start,
 				End:   pipeline.Func.Span.End,
 			},
-			UID:   0,
 		}
 	}
 	var current = ast.Call {

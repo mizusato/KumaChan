@@ -24,12 +24,6 @@ type Transformer = func(Tree, Pointer) reflect.Value
 
 
 func Transform (tree Tree) Module {
-    var next_id uint64 = 0
-    var generate_id = func() uint64 {
-        var id = next_id
-        next_id += 1
-        return id
-    }
     var dive func(Tree, Pointer, []syntax.Id) (Pointer, bool)
     dive = func (tree Tree, ptr Pointer, path []syntax.Id) (Pointer, bool) {
         if len(path) == 0 {
@@ -56,9 +50,9 @@ func Transform (tree Tree) Module {
         var info = GetNodeInfoById(parser_node.Part.Id)
         var node = reflect.New(info.Type)
         var meta = node.Elem().FieldByName("Node").Addr().Interface().(*Node)
+        meta.CST = tree
         meta.Span = parser_node.Span
         meta.Point = tree.Info[meta.Span.Start]
-        meta.UID = generate_id()
         var transform_dived = func (child_info *NodeChildInfo, f Transformer) {
             var field_index = child_info.FieldIndex
             var field = info.Type.Field(field_index)

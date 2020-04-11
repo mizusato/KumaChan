@@ -78,7 +78,7 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 			if name == IgnoreMark {
 				// 3.1.1. If the function name is invalid, throw an error.
 				return nil, &FunctionError {
-					Point:    ErrorPoint { CST: mod.CST, Node: decl.Name.Node },
+					Point:    ErrorPointFrom(decl.Name.Node),
 					Concrete: E_InvalidFunctionName { name },
 				}
 			}
@@ -106,12 +106,8 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 			var is_public = decl.Public
 			if is_public && !(IsLocalType(sig, mod_name)) {
 				return nil, &FunctionError {
-					Point:    ErrorPoint {
-						CST: mod.CST, Node: decl.Repr.Node,
-					},
-					Concrete: E_SignatureNonLocal {
-						FuncName: name,
-					},
+					Point:    ErrorPointFrom(decl.Repr.Node),
+					Concrete: E_SignatureNonLocal { name },
 				}
 			}
 			// 3.5. Construct a representation and a reference of the function
@@ -127,9 +123,7 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 			var existing, exists = collection[name]
 			if exists {
 				// 3.6.1. If in use, try to overload it
-				var err_point = ErrorPoint {
-					CST: mod.CST, Node: decl.Name.Node,
-				}
+				var err_point = ErrorPointFrom(decl.Name.Node)
 				var err = CheckOverload (
 					existing, func_type, name, params,
 					reg, err_point,

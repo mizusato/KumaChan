@@ -2,12 +2,11 @@ package error
 
 import (
 	"fmt"
+	"kumachan/parser/scanner"
+	"kumachan/transformer/ast"
 	"reflect"
 	"strconv"
 	"strings"
-	"kumachan/parser/cst"
-	"kumachan/parser/scanner"
-	"kumachan/transformer/ast"
 )
 
 
@@ -20,8 +19,11 @@ type E interface {
 type MaybeErrorPoint interface { MaybeErrorPoint() }
 func (impl ErrorPoint) MaybeErrorPoint() {}
 type ErrorPoint struct {
-	CST   *cst.Tree
 	Node  ast.Node
+}
+
+func ErrorPointFrom(node ast.Node) ErrorPoint {
+	return ErrorPoint { node }
 }
 
 func GetErrorTypeName(e interface{}) string {
@@ -127,7 +129,7 @@ func FormatError (
 }
 
 func FormatErrorAt(point ErrorPoint,desc ErrorMessage) ErrorMessage {
-	var CST = point.CST
+	var CST = point.Node.CST
 	var Node = point.Node
 	return FormatError (
 		CST.Code,  CST.Info,    CST.SpanMap,

@@ -30,7 +30,7 @@ func (impl UntypedMacroInflation) SemiExprVal() {}
 type UntypedMacroInflation struct {
 	Macro      *Macro
 	MacroName  string
-	Argument   SemiExpr
+	Arguments  [] ast.Expr
 	Point      ErrorPoint
 }
 
@@ -50,10 +50,7 @@ func CollectMacros(mod *loader.Module, store MacroStore) (MacroCollection, *Macr
 			if !(macro_ref.IsImported) && macro_ref.Macro.Public {
 				var existing, exists = collection[name]
 				if exists { return nil, &MacroError {
-					Point:    ErrorPoint {
-						CST:  mod.CST,
-						Node: mod.Node.Name.Node,
-					},
+					Point:    ErrorPointFrom(mod.Node.Name.Node),
 					Concrete: E_MacroConflictBetweenModules {
 						Macro:   name,
 						Module1: existing.ModuleName,
@@ -73,12 +70,12 @@ func CollectMacros(mod *loader.Module, store MacroStore) (MacroCollection, *Macr
 		case ast.DeclMacro:
 			var name = loader.Id2String(decl.Name)
 			if name == IgnoreMark { return nil, &MacroError {
-				Point:    ErrorPoint { CST: mod.CST, Node: decl.Name.Node },
+				Point:    ErrorPointFrom(decl.Name.Node),
 				Concrete: E_InvalidMacroName { name },
 			} }
 			var existing, exists = collection[name]
 			if exists {
-				var point = ErrorPoint { CST: mod.CST, Node: decl.Name.Node }
+				var point = ErrorPointFrom(decl.Name.Node)
 				if existing.ModuleName == mod_name {
 					return nil, &MacroError {
 						Point:    point,
@@ -118,33 +115,23 @@ func CollectMacros(mod *loader.Module, store MacroStore) (MacroCollection, *Macr
 
 
 func AssignMacroInflationTo(expected Type, e UntypedMacroInflation, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
-	var args  [] SemiExpr
-	switch a := e.Argument.Value.(type) {
-	case SemiTypedTuple:
-		args = a.Values
-	case TypedExpr:
-		switch a.Value.(type) {
-		case UnitValue:
-			// do nothing, leave `args` zero length
-		default:
-			args = [] SemiExpr { e.Argument }
-		}
-	default:
-		args = [] SemiExpr { e.Argument }
-	}
 	var m = e.Macro
 	var name = e.MacroName
+	var args = e.Arguments
 	var point = e.Point
+	var wrap_error = func(err *ExprError) *ExprError {
+		return &ExprError {
+			Point:    point,
+			Concrete: E_MacroExpandingFailed {
+				MacroName: name,
+				Deeper:    err,
+			},
+		}
+	}
 	var m_ctx, err1 = ctx.WithMacroExpanded(m, name, args, point)
-	if err1 != nil { return Expr{}, err1 }
+	if err1 != nil { return Expr{}, wrap_error(err1) }
 	var semi, err2 = Check(m.Output, m_ctx)
-	if err2 != nil { return Expr{}, &ExprError {
-		Point:    point,
-		Concrete: E_MacroExpandingFailed {
-			MacroName: name,
-			Deeper:    err2,
-		},
-	} }
+	if err2 != nil { return Expr{}, wrap_error(err2) }
 	if expected == nil {
 		switch typed := semi.Value.(type) {
 		case TypedExpr:
@@ -161,7 +148,7 @@ func AssignMacroInflationTo(expected Type, e UntypedMacroInflation, info ExprInf
 		}
 	} else {
 		var expr, err = AssignTo(expected, semi, m_ctx)
-		if err != nil { return Expr{}, err }
+		if err != nil { return Expr{}, wrap_error(err) }
 		return Expr {
 			Type:  expr.Type,
 			Value: expr.Value,
@@ -171,10 +158,33 @@ func AssignMacroInflationTo(expected Type, e UntypedMacroInflation, info ExprInf
 }
 
 
+func AdaptMacroArgs(call ast.Call) [] ast.Expr {
+	var _, has_arg = call.Arg.(ast.Call)
+	if has_arg {
+		return [] ast.Expr { {
+			Node:     call.Node,
+			Call:     call,
+			Pipeline: nil,
+		} }
+	} else {
+		var tuple, is_tuple = call.Func.Term.(ast.Tuple)
+		if is_tuple {
+			return tuple.Elements
+		} else {
+			return [] ast.Expr { {
+				Node:     call.Node,
+				Call:     call,
+				Pipeline: nil,
+			} }
+		}
+	}
+}
+
+
 func (ctx ExprContext) WithMacroExpanded (
 	m      *Macro,
 	name   string,
-	args   [] SemiExpr,
+	args   [] ast.Expr,
 	point  ErrorPoint,
 ) (ExprContext, *ExprError) {
 	var given = uint(len(args))
@@ -201,15 +211,39 @@ func (ctx ExprContext) WithMacroExpanded (
 	}
 	var new_ctx ExprContext
 	*(&new_ctx) = ctx
-	var arg_map = make(map[string] SemiExpr)
+	var arg_map = make(map[string] ast.Expr)
 	for i, name := range m.Input {
 		arg_map[name] = args[i]
 	}
-	new_ctx.MacroArgs = arg_map
 	new_ctx.MacroPath = append(ctx.MacroPath, MacroExpanding {
 		Name:  name,
 		Macro: m,
 		Point: point,
+		Args:  arg_map,
 	})
 	return new_ctx, nil
+}
+
+func (ctx ExprContext) WithMacroExpandingUnwound() ExprContext {
+	var new_ctx ExprContext
+	*(&new_ctx) = ctx
+	if len(ctx.MacroPath) > 0 {
+		new_ctx.MacroPath = ctx.MacroPath[:len(ctx.MacroPath)-1]
+	} else {
+		panic("something went wrong")
+	}
+	return new_ctx
+}
+
+func (ctx ExprContext) FindMacroArg(name string) (ast.Expr, ExprContext, bool) {
+	var current = ctx
+	for len(current.MacroPath) > 0 {
+		var args = current.MacroPath[len(current.MacroPath)-1].Args
+		current = current.WithMacroExpandingUnwound()
+		var arg, exists = args[name]
+		if exists {
+			return arg, current, true
+		}
+	}
+	return ast.Expr{}, ExprContext{}, false
 }

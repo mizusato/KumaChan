@@ -124,10 +124,7 @@ func LoadModule(path string, ctx Context, idx Index) (*Module, *Error) {
 				var local_alias = string(c.Name.Name)
 				var relpath = string(c.Path.Value)
 				var imctx = Context {
-					ImportPoint: ErrorPoint {
-						CST:  tree,
-						Node: c.Node,
-					},
+					ImportPoint: ErrorPointFrom(c.Node),
 					LocalAlias:  local_alias,
 					BreadCrumbs: current_breadcrumbs,
 				}

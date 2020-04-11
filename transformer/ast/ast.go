@@ -2,16 +2,18 @@ package ast
 
 import (
     "fmt"
-    "reflect"
-    "strings"
+    "kumachan/parser/cst"
     "kumachan/parser/scanner"
     "kumachan/parser/syntax"
+    "reflect"
+    "strings"
 )
 
+
 type Node struct {
+    CST    *cst.Tree
     Point  scanner.Point
     Span   scanner.Span
-    UID    uint64
 }
 
 type NodeInfo struct {

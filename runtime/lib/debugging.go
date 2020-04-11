@@ -13,7 +13,7 @@ var DebuggingFunctions = map[string] interface{} {
 		var source_point = point.Node.Point
 		fmt.Fprintf (
 			os.Stderr, "--- \033[1mtrace:\033[0m (%d, %d) at %s\n",
-			source_point.Row, source_point.Col, point.CST.Name,
+			source_point.Row, source_point.Col, point.Node.CST.Name,
 		)
 		var repr = Inspect(value)
 		fmt.Fprintf(os.Stderr, "%s\n", repr.String())

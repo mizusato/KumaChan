@@ -1,6 +1,7 @@
 package checker
 
 import (
+	. "kumachan/error"
 	"kumachan/loader"
 	"kumachan/transformer/ast"
 )
@@ -78,7 +79,7 @@ func CheckBundle(bundle ast.Bundle, ctx ExprContext) (SemiExpr, *ExprError) {
 		switch b := base_semi.Value.(type) {
 		case TypedExpr:
 			if IsBundleLiteral(Expr(b)) { return SemiExpr{}, &ExprError {
-				Point:    ctx.GetErrorPoint(update.Base.Node),
+				Point:    ErrorPointFrom(update.Base.Node),
 				Concrete: E_SetToLiteralBundle {},
 			} }
 			var L = len(bundle.Values)
@@ -93,7 +94,7 @@ func CheckBundle(bundle ast.Bundle, ctx ExprContext) (SemiExpr, *ExprError) {
 					var target_field, exists = target.Fields[name]
 					if !exists {
 						return SemiExpr{}, &ExprError {
-							Point: ctx.GetErrorPoint(field.Key.Node),
+							Point: ErrorPointFrom(field.Key.Node),
 							Concrete: E_FieldDoesNotExist {
 								Field:  name,
 								Target: ctx.DescribeType(base.Type),
@@ -103,7 +104,7 @@ func CheckBundle(bundle ast.Bundle, ctx ExprContext) (SemiExpr, *ExprError) {
 					var _, duplicate = occurred_names[name]
 					if duplicate {
 						return SemiExpr{}, &ExprError {
-							Point:    ctx.GetErrorPoint(field.Key.Node),
+							Point:    ErrorPointFrom(field.Key.Node),
 							Concrete: E_ExprDuplicateField { name },
 						}
 					}
@@ -143,12 +144,12 @@ func CheckBundle(bundle ast.Bundle, ctx ExprContext) (SemiExpr, *ExprError) {
 			}
 		case SemiTypedBundle:
 			return SemiExpr{}, &ExprError {
-				Point:    ctx.GetErrorPoint(update.Base.Node),
+				Point:    ErrorPointFrom(update.Base.Node),
 				Concrete: E_SetToLiteralBundle {},
 			}
 		default:
 			return SemiExpr{}, &ExprError {
-				Point:    ctx.GetErrorPoint(update.Base.Node),
+				Point:    ErrorPointFrom(update.Base.Node),
 				Concrete: E_SetToNonBundle {},
 			}
 		}
@@ -168,7 +169,7 @@ func CheckBundle(bundle ast.Bundle, ctx ExprContext) (SemiExpr, *ExprError) {
 				var name = loader.Id2String(field.Key)
 				var _, exists = f_index_map[name]
 				if exists { return SemiExpr{}, &ExprError {
-					Point:    ctx.GetErrorPoint(field.Key.Node),
+					Point:    ErrorPointFrom(field.Key.Node),
 					Concrete: E_ExprDuplicateField { name },
 				} }
 				var value = DesugarOmittedFieldValue(field)
@@ -196,7 +197,7 @@ func CheckGet(get ast.Get, ctx ExprContext) (SemiExpr, *ExprError) {
 	switch b := base_semi.Value.(type) {
 	case TypedExpr:
 		if IsBundleLiteral(Expr(b)) { return SemiExpr{}, &ExprError {
-			Point:    ctx.GetErrorPoint(get.Base.Node),
+			Point:    ErrorPointFrom(get.Base.Node),
 			Concrete: E_GetFromLiteralBundle {},
 		} }
 		var L = len(get.Path)
@@ -208,7 +209,7 @@ func CheckGet(get ast.Get, ctx ExprContext) (SemiExpr, *ExprError) {
 				var key = loader.Id2String(member.Name)
 				var field, exists = bundle.Fields[key]
 				if !exists { return SemiExpr{}, &ExprError {
-					Point:    ctx.GetErrorPoint(member.Node),
+					Point:    ErrorPointFrom(member.Node),
 					Concrete: E_FieldDoesNotExist {
 						Field:  key,
 						Target: ctx.DescribeType(AnonymousType{bundle}),
@@ -241,12 +242,12 @@ func CheckGet(get ast.Get, ctx ExprContext) (SemiExpr, *ExprError) {
 		return LiftTyped(final), nil
 	case SemiTypedBundle:
 		return SemiExpr{}, &ExprError {
-			Point:    ctx.GetErrorPoint(get.Base.Node),
+			Point:    ErrorPointFrom(get.Base.Node),
 			Concrete: E_GetFromLiteralBundle {},
 		}
 	default:
 		return SemiExpr{}, &ExprError {
-			Point:    ctx.GetErrorPoint(get.Base.Node),
+			Point:    ErrorPointFrom(get.Base.Node),
 			Concrete: E_GetFromNonBundle {},
 		}
 	}
@@ -342,7 +343,7 @@ func AssignBundleTo(expected Type, bundle SemiTypedBundle, info ExprInfo, ctx Ex
 				if !exists {
 					var key_node = bundle.KeyNodes[index]
 					return Expr{}, &ExprError {
-						Point:    ctx.GetErrorPoint(key_node),
+						Point:    ErrorPointFrom(key_node),
 						Concrete: E_SuperfluousField { given_field_name },
 					}
 				}

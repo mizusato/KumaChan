@@ -254,14 +254,14 @@ public function im! {
     lambda Complex Float:
     lambda    z    let (_, im) := z, return im
 };
-// public macro ReIm(z, expr) := let (re, im) := z, return expr;
+private macro ReIm(z, expr) := (let (re, im) := z, return expr);
 public function conj! {
     lambda Complex Complex:
-    lambda    z    let (re, im) := z, return Complex (re, (- im))
+    lambda    z    ReIm (z, Complex (re, (- im)))
 };
 public function arg! {
     lambda Complex Float:
-    lambda    z    let (re, im) := z, return atan2 { y: im, x: re }
+    lambda    z    ReIm (z, atan2 { y: im, x: re })
 };
 public function norm! {
     lambda Complex Float:

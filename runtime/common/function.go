@@ -43,7 +43,7 @@ func (f *Function) String() string {
 	fmt.Fprintf(&buf, "proc %d %d:", f.BaseSize.Context, f.BaseSize.Reserved)
 	fmt.Fprintf(&buf, "   ; %s [%s]", f.Info.Name, f.Info.Module)
 	var point = f.Info.DeclPoint.Node.Point
-	var file = f.Info.DeclPoint.CST.Name
+	var file = f.Info.DeclPoint.Node.CST.Name
 	fmt.Fprintf(&buf, " at (%d, %d) in %s", point.Row, point.Col, file)
 	buf.WriteRune('\n')
 	if f.IsNative {
@@ -56,8 +56,8 @@ func (f *Function) String() string {
 				var point = f.Info.SourceMap[i]
 				var n = point.Node
 				fmt.Fprintf(&buf, "   ; (%d, %d)", n.Point.Row, n.Point.Col)
-				if point.CST != f.Info.DeclPoint.CST {
-					fmt.Fprintf(&buf, " in %s", point.CST.Name)
+				if point.Node.CST != f.Info.DeclPoint.Node.CST {
+					fmt.Fprintf(&buf, " in %s", point.Node.CST.Name)
 				}
 			}
 			if i != len(f.Code)-1 {

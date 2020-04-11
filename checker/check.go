@@ -61,7 +61,6 @@ type ExprContext struct {
 	InferTypeArgs  bool
 	InferredNames  [] string
 	Inferred       map[uint] Type  // mutable
-	MacroArgs      map[string] SemiExpr
 	MacroPath      [] MacroExpanding
 }
 
@@ -69,6 +68,7 @@ type MacroExpanding struct {
 	Name   string
 	Macro  *Macro
 	Point  ErrorPoint
+	Args   map[string] ast.Expr
 }
 
 type Expr struct {
@@ -106,8 +106,6 @@ func (impl SymType) Sym() {}
 type SymType struct { Type *GenericType }
 func (impl SymFunctions) Sym() {}
 type SymFunctions struct { Functions []*GenericFunction }
-func (impl SymMacroArg) Sym() {}
-type SymMacroArg struct { Content SemiExpr }
 func (impl SymMacro) Sym() {}
 type SymMacro struct { Macro *Macro }
 
@@ -157,10 +155,6 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 		local, exists := ctx.LocalValues[sym_name]
 		if exists {
 			return SymLocalValue { ValueType: local }, true
-		}
-		m_arg, exists := ctx.MacroArgs[sym_name]
-		if exists {
-			return SymMacroArg { Content: m_arg }, true
 		}
 		for index, param_name := range ctx.TypeParams {
 			if param_name == sym_name {
@@ -231,23 +225,8 @@ func (ctx ExprContext) WithTypeArgsInferringEnabled(names []string) ExprContext 
 	return new_ctx
 }
 
-func (ctx ExprContext) GetErrorPoint(node ast.Node) ErrorPoint {
-	if len(ctx.MacroPath) == 0 {
-		return ErrorPoint {
-			CST:  ctx.ModuleInfo.Module.CST,
-			Node: node,
-		}
-	} else {
-		var expanded = ctx.MacroPath[len(ctx.MacroPath)-1]
-		return ErrorPoint {
-			CST:  expanded.Macro.CST,
-			Node: node,
-		}
-	}
-}
-
 func (ctx ExprContext) GetExprInfo(node ast.Node) ExprInfo {
-	return ExprInfo { ErrorPoint: ctx.GetErrorPoint(node) }
+	return ExprInfo { ErrorPoint: ErrorPointFrom(node) }
 }
 
 
@@ -312,14 +291,11 @@ func TypeCheck(entry *loader.Module, raw_index loader.Index) (
 	var macros = make(MacroStore)
 	var _, err4 = CollectMacros(entry, macros)
 	if err4 != nil { return nil, nil, []E { err4 } }
-	for mod_name, mod := range raw_index {
+	for mod_name, _ := range raw_index {
 		for name, f := range functions[mod_name] {
 			var macro, exists = macros[mod_name][name]
 			if exists { return nil, nil, []E { &FunctionError {
-				Point:    ErrorPoint {
-					CST: mod.CST,
-					Node: f[0].Function.Node,
-				},
+				Point:    ErrorPointFrom(f[0].Function.Node),
 				Concrete: E_FunctionConflictWithMacro {
 					Name:   name,
 					Module: macro.ModuleName,
@@ -372,7 +348,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 		func_map[name] = make([]CheckedFunction, 0)
 		var add = func(body ExprLike, node ast.Node) {
 			func_map[name] = append(func_map[name], CheckedFunction {
-				Point: ErrorPoint { CST: mod.CST, Node: node },
+				Point: ErrorPointFrom(node),
 				Body:  body,
 			})
 		}
@@ -399,7 +375,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 			case ast.NativeRef:
 				add(ExprNative {
 					Name:  string(body.Id.Value),
-					Point: ErrorPoint { CST: mod.CST, Node: body.Node },
+					Point: ErrorPointFrom(body.Node),
 				}, f.Node)
 			default:
 				panic("impossible branch")
@@ -427,15 +403,15 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 				continue
 			}
 			const_map[name] = CheckedConstant {
-				Point: ErrorPoint { CST: mod.CST, Node: constant.Node },
+				Point: ErrorPointFrom(constant.Node),
 				Value: ExprExpr(expr),
 			}
 		case ast.NativeRef:
 			const_map[name] = CheckedConstant {
-				Point: ErrorPoint { CST: mod.CST, Node: constant.Node },
+				Point: ErrorPointFrom(constant.Node),
 				Value: ExprNative {
 					Name:  string(val.Id.Value),
-					Point: ErrorPoint { CST: mod.CST, Node: val.Node },
+					Point: ErrorPointFrom(val.Node),
 				},
 			}
 		default:
@@ -457,7 +433,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 				continue
 			}
 			do_effects = append(do_effects, CheckedEffect {
-				Point: ErrorPoint { CST: mod.CST, Node: do.Node },
+				Point: ErrorPointFrom(do.Node),
 				Value: expr,
 			})
 		}

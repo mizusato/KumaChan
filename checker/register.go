@@ -71,7 +71,7 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 		// 3.2. Check if the symbol name is valid
 		if type_sym.SymbolName == IgnoreMark {
 			return &TypeDeclError {
-				Point:    ErrorPoint { CST: mod.CST, Node: d.Name.Node },
+				Point:    ErrorPointFrom(d.Name.Node),
 				Concrete: E_InvalidTypeName { type_sym.SymbolName },
 			}
 		}
@@ -80,7 +80,7 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 		if exists || (mod_name != stdlib.Core && loader.IsPreloadCoreSymbol(type_sym)) {
 			// 3.3.1. If used, throw an error
 			return &TypeDeclError {
-				Point: ErrorPoint { CST: mod.CST, Node: d.Name.Node },
+				Point:    ErrorPointFrom(d.Name.Node),
 				Concrete: E_DuplicateTypeDecl {
 					TypeName: type_sym,
 				},
@@ -109,7 +109,7 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 					}
 				}
 				if !exists { return &TypeDeclError {
-					Point:    ErrorPoint { CST: mod.CST, Node: param.Node },
+					Point:    ErrorPointFrom(param.Node),
 					Concrete: E_InvalidCaseTypeParam { p_name },
 				} }
 				mapping[p_index] = corresponding
@@ -204,8 +204,7 @@ func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, *Type
 		for _, visited := range path {
 			if visited == name {
 				var node = reg[path[0]].Node
-				var cst = idx[path[0].ModuleName].CST
-				var point = ErrorPoint { Node: node, CST: cst }
+				var point = ErrorPointFrom(node)
 				return &TypeDeclError {
 					Point:    point,
 					Concrete: E_TypeCircularDependency { path },
@@ -243,7 +242,7 @@ func TypeValFrom(tv ast.TypeValue, ctx TypeContext, raw RawTypeRegistry) (TypeVa
 		var max = uint(common.SumMaxBranches)
 		if count > max {
 			return nil, &TypeError {
-				Point:    ErrorPoint { CST: ctx.Module.CST, Node: v.Node },
+				Point:    ErrorPointFrom(v.Node),
 				Concrete: E_TooManyUnionItems {
 					Defined: count,
 					Limit:   max,
@@ -305,14 +304,14 @@ func TypeFrom(type_ ast.Type, ctx TypeContext) (Type, *TypeError) {
 		case loader.Symbol:
 			var exists, arity = ctx.Ireg.LookupArity(s)
 			if !exists { return nil, &TypeError {
-				Point:    ErrorPoint { CST: ctx.Module.CST, Node: t.Ref.Id.Node },
+				Point:    ErrorPointFrom(t.Ref.Id.Node),
 				Concrete: E_TypeNotFound {
 					Name: s,
 				},
 			} }
 			var given_arity = uint(len(t.Ref.TypeArgs))
 			if arity != given_arity { return nil, &TypeError {
-				Point:    ErrorPoint { CST: ctx.Module.CST, Node: t.Ref.Node },
+				Point:    ErrorPointFrom(t.Ref.Node),
 				Concrete: E_WrongParameterQuantity {
 					TypeName: s,
 					Required: arity,
@@ -331,7 +330,7 @@ func TypeFrom(type_ ast.Type, ctx TypeContext) (Type, *TypeError) {
 			}, nil
 		default:
 			return nil, &TypeError {
-				Point: ErrorPoint { CST: ctx.Module.CST, Node: t.Ref.Module.Node },
+				Point:    ErrorPointFrom(t.Ref.Module.Node),
 				Concrete: E_ModuleOfTypeRefNotFound {
 					Name: loader.Id2String(t.Ref.Module),
 				},
@@ -352,7 +351,7 @@ func TypeFromRepr(repr ast.Repr, ctx TypeContext) (Type, *TypeError) {
 		var max = uint(common.ProductMaxSize)
 		if count > max {
 			return nil, &TypeError {
-				Point:    ErrorPoint { CST: ctx.Module.CST, Node: r.Node },
+				Point:    ErrorPointFrom(r.Node),
 				Concrete: E_TooManyTupleBundleItems {
 					Defined: count,
 					Limit:   max,
@@ -387,7 +386,7 @@ func TypeFromRepr(repr ast.Repr, ctx TypeContext) (Type, *TypeError) {
 		var max = uint(common.ProductMaxSize)
 		if count > max {
 			return nil, &TypeError {
-				Point:    ErrorPoint { CST: ctx.Module.CST, Node: r.Node },
+				Point:    ErrorPointFrom(r.Node),
 				Concrete: E_TooManyTupleBundleItems {
 					Defined: count,
 					Limit:   max,
@@ -406,17 +405,13 @@ func TypeFromRepr(repr ast.Repr, ctx TypeContext) (Type, *TypeError) {
 				var f_name = loader.Id2String(f.Name)
 				if f_name == IgnoreMark {
 					return nil, &TypeError {
-						Point:    ErrorPoint {
-							CST: ctx.Module.CST, Node: f.Name.Node,
-						},
+						Point:    ErrorPointFrom(f.Name.Node),
 						Concrete: E_InvalidFieldName { f_name },
 					}
 				}
 				var _, exists = fields[f_name]
 				if exists { return nil, &TypeError {
-					Point: ErrorPoint {
-						CST: ctx.Module.CST, Node: f.Name.Node,
-					},
+					Point:    ErrorPointFrom(f.Name.Node),
 					Concrete: E_DuplicateField { f_name },
 				} }
 				var f_type, err = TypeFrom(f.Type.Type, ctx)

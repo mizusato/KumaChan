@@ -1,6 +1,7 @@
 package checker
 
 import (
+	. "kumachan/error"
 	"kumachan/loader"
 	"kumachan/transformer/ast"
 )
@@ -46,7 +47,7 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 	if err != nil { return SemiExpr{}, err }
 	var arg_typed, ok = arg_semi.Value.(TypedExpr)
 	if !ok { return SemiExpr{}, &ExprError {
-		Point:    ctx.GetErrorPoint(sw.Argument.Node),
+		Point:    ErrorPointFrom(sw.Argument.Node),
 		Concrete: E_ExplicitTypeRequired {},
 	} }
 	var arg_type = arg_typed.Type
@@ -66,16 +67,16 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 		case ast.Ref:
 			if len(t.TypeArgs) > 0 {
 				return SemiExpr{}, &ExprError {
-					Point:    ctx.GetErrorPoint(t.Node),
+					Point:    ErrorPointFrom(t.Node),
 					Concrete: E_TypeParametersUnnecessary {},
 				}
 			}
 			var maybe_type_sym = ctx.ModuleInfo.Module.SymbolFromRef(t)
 			var type_sym, ok = maybe_type_sym.(loader.Symbol)
 			if !ok { return SemiExpr{}, &ExprError {
-				Point:    ctx.GetErrorPoint(t.Module.Node),
+				Point:    ErrorPointFrom(t.Module.Node),
 				Concrete: E_TypeErrorInExpr { &TypeError {
-					Point:    ctx.GetErrorPoint(t.Module.Node),
+					Point:    ErrorPointFrom(t.Module.Node),
 					Concrete: E_ModuleOfTypeRefNotFound {
 						Name: loader.Id2String(t.Module),
 					},
@@ -83,9 +84,9 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 			}}
 			var g, exists = ctx.ModuleInfo.Types[type_sym]
 			if !exists { return SemiExpr{}, &ExprError {
-				Point:    ctx.GetErrorPoint(t.Node),
+				Point:    ErrorPointFrom(t.Node),
 				Concrete: E_TypeErrorInExpr { &TypeError {
-					Point:    ctx.GetErrorPoint(t.Node),
+					Point:    ErrorPointFrom(t.Node),
 					Concrete: E_TypeNotFound {
 						Name: type_sym,
 					},
@@ -93,7 +94,7 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 			} }
 			var index, is_case = GetCaseIndex(union, type_sym)
 			if !is_case { return SemiExpr{}, &ExprError {
-				Point:    ctx.GetErrorPoint(t.Node),
+				Point:    ErrorPointFrom(t.Node),
 				Concrete: E_NotBranchType {
 					Union:    ctx.DescribeType(arg_type),
 					TypeName: type_sym.String(),
@@ -130,7 +131,7 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 		default:
 			if has_default {
 				return SemiExpr{}, &ExprError {
-					Point:    ctx.GetErrorPoint(branch.Node),
+					Point:    ErrorPointFrom(branch.Node),
 					Concrete: E_DuplicateDefaultBranch {},
 				}
 			}
@@ -155,12 +156,12 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 			}
 		}
 		return SemiExpr{}, &ExprError {
-			Point:    ctx.GetErrorPoint(sw.Node),
+			Point:    ErrorPointFrom(sw.Node),
 			Concrete: E_IncompleteMatch { missing },
 		}
 	} else if has_default && len(checked) == len(union.CaseTypes) {
 		return SemiExpr{}, &ExprError {
-			Point:    ctx.GetErrorPoint(default_node),
+			Point:    ErrorPointFrom(default_node),
 			Concrete: E_SuperfluousDefaultBranch {},
 		}
 	} else {

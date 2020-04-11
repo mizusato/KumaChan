@@ -44,18 +44,18 @@ func PatternFrom (
 ) (Pattern, *ExprError) {
 	var err_result = func(e ConcreteExprError) (Pattern, *ExprError) {
 		return Pattern{}, &ExprError {
-			Point:    ctx.GetErrorPoint(p_node.Node),
+			Point:    ErrorPointFrom(p_node.Node),
 			Concrete: e,
 		}
 	}
 	switch p := p_node.Pattern.(type) {
 	case ast.PatternTrivial:
 		return Pattern {
-			Point:    ctx.GetErrorPoint(p_node.Node),
+			Point:    ErrorPointFrom(p_node.Node),
 			Concrete: TrivialPattern {
 				ValueName: loader.Id2String(p.Name),
 				ValueType: input,
-				Point:     ctx.GetErrorPoint(p.Name.Node),
+				Point:     ErrorPointFrom(p.Name.Node),
 			},
 		}, nil
 	case ast.PatternTuple:
@@ -81,7 +81,7 @@ func PatternFrom (
 						var _, duplicate = occurred[name]
 						if duplicate {
 							return Pattern{}, &ExprError {
-								Point:    ctx.GetErrorPoint(identifier.Node),
+								Point:    ErrorPointFrom(identifier.Node),
 								Concrete: E_DuplicateBinding { name },
 							}
 						}
@@ -90,7 +90,7 @@ func PatternFrom (
 							Name:  loader.Id2String(identifier),
 							Index: uint(i),
 							Type:  tuple.Elements[i],
-							Point: ctx.GetErrorPoint(identifier.Node),
+							Point: ErrorPointFrom(identifier.Node),
 						})
 					}
 				}
@@ -98,7 +98,7 @@ func PatternFrom (
 					return err_result(E_EntireValueIgnored {})
 				} else {
 					return Pattern {
-						Point:    ctx.GetErrorPoint(p_node.Node),
+						Point:    ErrorPointFrom(p_node.Node),
 						Concrete: TuplePattern { items },
 					}, nil
 				}
@@ -126,7 +126,7 @@ func PatternFrom (
 				}
 				if !exists {
 					return Pattern{}, &ExprError {
-						Point:    ctx.GetErrorPoint(identifier.Node),
+						Point:    ErrorPointFrom(identifier.Node),
 						Concrete: E_FieldDoesNotExist {
 							Field:  name,
 							Target: ctx.DescribeType(input),
@@ -136,7 +136,7 @@ func PatternFrom (
 				var _, duplicate = occurred[name]
 				if duplicate {
 					return Pattern{}, &ExprError {
-						Point:    ctx.GetErrorPoint(identifier.Node),
+						Point:    ErrorPointFrom(identifier.Node),
 						Concrete: E_DuplicateBinding { name },
 					}
 				}
@@ -145,11 +145,11 @@ func PatternFrom (
 					Name:  loader.Id2String(identifier),
 					Index: field.Index,
 					Type:  field.Type,
-					Point: ctx.GetErrorPoint(identifier.Node),
+					Point: ErrorPointFrom(identifier.Node),
 				}
 			}
 			return Pattern {
-				Point:    ctx.GetErrorPoint(p_node.Node),
+				Point:    ErrorPointFrom(p_node.Node),
 				Concrete: BundlePattern { items },
 			}, nil
 		case BR_NonBundle:

@@ -1,6 +1,7 @@
 package checker
 
 import "kumachan/transformer/ast"
+import . "kumachan/error"
 
 
 func (impl SemiTypedBlock) SemiExprVal() {}
@@ -42,7 +43,7 @@ func CheckBlock(block ast.Block, ctx ExprContext) (SemiExpr, *ExprError) {
 		if b.Recursive {
 			if t == nil {
 				return SemiExpr{}, &ExprError {
-					Point:    ctx.GetErrorPoint(b.Value.Node),
+					Point:    ErrorPointFrom(b.Value.Node),
 					Concrete: E_ExplicitTypeRequired {},
 				}
 			}
