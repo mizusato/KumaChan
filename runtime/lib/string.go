@@ -39,5 +39,5 @@ var StringFunctions = map[string] Value {
 		return []rune(fmt.Sprint(n))
 	},
 	// TODO: split, join, contains, find, trim, substr-view, substr-copy,
-	//       ++ (array => concat, string => ++)
+	//       ++ (array => concat, string => ++), starts-with, ends-with
 }

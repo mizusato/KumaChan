@@ -93,27 +93,19 @@ public function - {
 };
 public function / {
     lambda (Int,Int) Int:
-    lambda (a, b)
-        let (q, _) := quorem(a, b),
-        return q
+    lambda (a, b)    let (q, _) := quorem(a, b), return q
 };
 public function % {
     lambda (Int,Int) Int:
-    lambda (a, b)
-        let (_, r) := quorem(a, b),
-        return r
+    lambda (a, b)    let (_, r) := quorem(a, b), return r
 };
 public function div {
     lambda (Int,Int) Int:
-    lambda (a, b)
-        let (q, _) := divmod(a, b),
-        return q
+    lambda (a, b)    let (q, _) := divmod(a, b), return q
 };
 public function mod {
     lambda (Int,Int) Int:
-    lambda (a, b)
-        let (_, r) := divmod(a, b),
-        return r
+    lambda (a, b)    let (_, r) := divmod(a, b), return r
 };
 public function ** {
     lambda (Int,Int) Int:
@@ -254,6 +246,127 @@ public function log10! {
     lambda Float Float:
     lambda x (log! { base: 10.0, x })
 };
+public function re! {
+    lambda Complex Float:
+    lambda    z    let (re, _) := z, return re
+};
+public function im! {
+    lambda Complex Float:
+    lambda    z    let (_, im) := z, return im
+};
+// public macro ReIm(z, expr) := let (re, im) := z, return expr;
+public function conj! {
+    lambda Complex Complex:
+    lambda    z    let (re, im) := z, return Complex (re, (- im))
+};
+public function arg! {
+    lambda Complex Float:
+    lambda    z    let (re, im) := z, return atan2 { y: im, x: re }
+};
+public function norm! {
+    lambda Complex Float:
+    lambda    z    let (re, im) := z, return sqrt $($(re * re) + $(im * im))
+};
+public function polar! {
+    lambda { norm: Float, arg: Float } Complex:
+    lambda { norm, arg }
+        if $(norm >= 0.0):
+            Complex ( $(norm * (cos arg)), $(norm * (sin arg)) ),
+        else:
+            panic[Complex] 'invalid input: negative norm'
+};
+public function polar! {
+    lambda Float Complex:
+    lambda  arg  polar! { norm: 1.0, arg }
+};
+public function + {
+    lambda (Complex,Complex) Complex:
+    lambda (z1, z2)
+        let (r1, i1) := z1,
+            (r2, i2) := z2,
+        return Complex ($(r1 + r2), $(i1 + i2))
+};
+public function + {
+    lambda (Float,Complex) Complex:
+    lambda (x, z) let (re, im) := z, return Complex ($(x + re), im)
+};
+public function + {
+    lambda (Complex,Float) Complex:
+    lambda (z, x) $(x + z)
+};
+public function - {
+    lambda (Complex,Complex) Complex:
+    lambda (z1, z2)
+        let (r1, i1) := z1,
+            (r2, i2) := z2,
+        return Complex ($(r1 - r2), $(i1 - i2))
+};
+public function - {
+    lambda (Float,Complex) Complex:
+    lambda (x, z) $(x + (- z))
+};
+public function - {
+    lambda (Complex,Float) Complex:
+    lambda (z, x) $(z + (- x))
+};
+public function * {
+    lambda (Complex,Complex) Complex:
+    lambda (z1, z2)
+        let (a, b) := z1,
+            (c, d) := z2,
+        return Complex ( $($(a * c) - $(b * d)), $($(a * d) + $(b * c)) )
+};
+public function * {
+    lambda (Float,Complex) Complex:
+    lambda (x, z) let (re, im) := z, return Complex ($(x * re), $(x * im))
+};
+public function * {
+    lambda (Complex,Float) Complex:
+    lambda (z, x) $(x * z)
+};
+public function / {
+    lambda (Complex,Complex) Complex:
+    lambda (z1, z2)
+        let (a, b) := z1,
+            (c, d) := z2,
+               u   := Complex ( $($(a * c) + $(b * d)), $($(b * c) - $(a * d)) ),
+               v   := Complex ( $(1.0 / $($(c * c) + $(d * d))), 0.0 ),
+        return $(u * v)
+};
+public function / {
+    lambda (Float,Complex) Complex:
+    lambda (x, z) $((Complex (x, 0.0)) / z)
+};
+public function / {
+    lambda (Complex,Float) Complex:
+    lambda (z, x) let (re, im) := z, return Complex ($(re / x), $(im / x))
+};
+public function - {
+    lambda Complex Complex:
+    lambda    z    let (re, im) := z, return Complex ((- re), (- im))
+};
+public function exp! {
+    lambda Complex Complex:
+    lambda    z    let (re, im) := z, return polar! { norm: exp!(re), arg: im }
+};
+public function sin {
+    lambda Complex Complex:
+    lambda    z    $( $((exp! $(i * z)) - (exp! $((- i) * z))) / $(2.0 * i) )
+};
+public function cos {
+    lambda Complex Complex:
+    lambda    z    $( $((exp! $(i * z)) + (exp! $((- i) * z))) / $(2.0 * _1) )
+};
+public function tan {
+    lambda Complex Complex:
+    lambda    z    $((sin z) / (cos z))
+};
+
+// Arithmetic Constants
+public const pi := [Float] atan2 { y: 0.0, x: -1.0 };
+public const  e := [Float] exp! 1.0;
+public const  i := [Complex] Complex (0.0, 1.0);
+public const _1 := [Complex] Complex (1.0, 0.0);
 
 // Comparison Functions & Macros
 public macro != (a, b) := not $(a = b);
@@ -335,6 +448,10 @@ public function from { lambda Uint8  String:  native 'String from Uint8' };
 public function from { lambda Uint16 String:  native 'String from Uint16' };
 public function from { lambda Uint32 String:  native 'String from Uint32' };
 public function from { lambda Uint64 String:  native 'String from Uint64' };
+public function from {
+    lambda Complex String:
+    lambda    z    let (re, im) := z, return "(# + #i)" (str! re, str! im)
+};
 
 // Effect Operators
 public function then[T,E] {

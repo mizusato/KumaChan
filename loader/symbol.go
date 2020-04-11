@@ -91,7 +91,7 @@ func (mod *Module) TypeSymbolFromRef(ref ast.Ref) MaybeSymbol {
 }
 
 
-var __PreloadCoreSymbols = stdlib.GetCoreTypes()
+var __PreloadCoreSymbols = stdlib.GetCoreScopedSymbols()
 var __PreloadCoreSymbolSet = func() map[string] bool {
 	var set = make(map[string] bool)
 	for _, name := range __PreloadCoreSymbols {
