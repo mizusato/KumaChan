@@ -249,11 +249,11 @@ public function log10! {
 private macro re-im-> (z, expr) := (let (re, im) := z, return expr);
 public function re! {
     lambda Complex Float:
-    lambda    z    let (re, _) := z, return re
+    lambda (re, _) re
 };
 public function im! {
     lambda Complex Float:
-    lambda    z    let (_, im) := z, return im
+    lambda (_, im) im
 };
 public function conj! {
     lambda Complex Complex:

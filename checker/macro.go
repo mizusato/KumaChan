@@ -134,29 +134,13 @@ func AssignMacroInflationTo(expected Type, e UntypedMacroInflation, info ExprInf
 	if err1 != nil { return Expr{}, wrap_error(err1) }
 	var semi, err2 = Check(m.Output, m_ctx)
 	if err2 != nil { return Expr{}, wrap_error(err2) }
-	if expected == nil {
-		switch typed := semi.Value.(type) {
-		case TypedExpr:
-			return Expr {
-				Type:  typed.Type,
-				Value: typed.Value,
-				Info:  info,
-			}, nil
-		default:
-			return Expr{}, &ExprError {
-				Point:    point,
-				Concrete: E_ExplicitTypeRequired {},
-			}
-		}
-	} else {
-		var expr, err = AssignTo(expected, semi, m_ctx)
-		if err != nil { return Expr{}, wrap_error(err) }
-		return Expr {
-			Type:  expr.Type,
-			Value: expr.Value,
-			Info:  info,
-		}, nil
-	}
+	var expr, err3 = AssignTo(expected, semi, m_ctx)
+	if err3 != nil { return Expr{}, wrap_error(err3) }
+	return Expr {
+		Type:  expr.Type,
+		Value: expr.Value,
+		Info:  info,
+	}, nil
 }
 
 
