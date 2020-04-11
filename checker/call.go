@@ -53,6 +53,7 @@ func CheckCall(call ast.Call, ctx ExprContext) (SemiExpr, *ExprError) {
 					MacroName: macro_ref.MacroName,
 					Arguments: AdaptMacroArgs(arg_node),
 					Point:     info.ErrorPoint,
+					Context:   ctx,
 				},
 				Info:  info,
 			}, nil

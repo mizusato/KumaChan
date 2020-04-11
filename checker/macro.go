@@ -32,6 +32,7 @@ type UntypedMacroInflation struct {
 	MacroName  string
 	Arguments  [] ast.Expr
 	Point      ErrorPoint
+	Context    ExprContext
 }
 
 
@@ -114,11 +115,12 @@ func CollectMacros(mod *loader.Module, store MacroStore) (MacroCollection, *Macr
 }
 
 
-func AssignMacroInflationTo(expected Type, e UntypedMacroInflation, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
+func AssignMacroInflationTo(expected Type, e UntypedMacroInflation, info ExprInfo, _ ExprContext) (Expr, *ExprError) {
 	var m = e.Macro
 	var name = e.MacroName
 	var args = e.Arguments
 	var point = e.Point
+	var e_ctx = e.Context
 	var wrap_error = func(err *ExprError) *ExprError {
 		return &ExprError {
 			Point:    point,
@@ -128,7 +130,7 @@ func AssignMacroInflationTo(expected Type, e UntypedMacroInflation, info ExprInf
 			},
 		}
 	}
-	var m_ctx, err1 = ctx.WithMacroExpanded(m, name, args, point)
+	var m_ctx, err1 = e_ctx.WithMacroExpanded(m, name, args, point)
 	if err1 != nil { return Expr{}, wrap_error(err1) }
 	var semi, err2 = Check(m.Output, m_ctx)
 	if err2 != nil { return Expr{}, wrap_error(err2) }
@@ -236,13 +238,11 @@ func (ctx ExprContext) WithMacroExpandingUnwound() ExprContext {
 }
 
 func (ctx ExprContext) FindMacroArg(name string) (ast.Expr, ExprContext, bool) {
-	var current = ctx
-	for len(current.MacroPath) > 0 {
-		var args = current.MacroPath[len(current.MacroPath)-1].Args
-		current = current.WithMacroExpandingUnwound()
+	if L := len(ctx.MacroPath); L > 0 {
+		var args = ctx.MacroPath[L-1].Args
 		var arg, exists = args[name]
 		if exists {
-			return arg, current, true
+			return arg, ctx.WithMacroExpandingUnwound(), true
 		}
 	}
 	return ast.Expr{}, ExprContext{}, false
