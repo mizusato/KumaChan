@@ -349,6 +349,10 @@ public function exp! {
     lambda Complex Complex:
     lambda (re, im) (polar! { norm: exp!(re), arg: im })
 };
+public function log! {
+    lambda Complex Complex:
+    lambda    z    Complex((log! norm! z), (arg! z))
+};
 public function sin {
     lambda Complex Complex:
     lambda    z    $( $((exp! $(i * z)) - (exp! $((- i) * z))) / $(2.0 * i) )
@@ -363,7 +367,7 @@ public function tan {
 };
 
 // Arithmetic Constants
-public const pi := [Float] atan2 { y: 0.0, x: -1.0 };
+public const pi := [Float] acos -1.0;
 public const  e := [Float] exp! 1.0;
 public const  i := [Complex] Complex (0.0, 1.0);
 public const _1 := [Complex] Complex (1.0, 0.0);

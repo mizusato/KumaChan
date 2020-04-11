@@ -17,7 +17,7 @@ var EscapeMap = map[string] string {
 
 const LF = `\n`
 const Blanks = ` \t\r　`
-const Symbols = `\{\}\[\]\(\)\.\,\:\;\$#@~\&\|\\'"` + "`"
+const Symbols = `\{\}\[\]\(\)\.\,\:\;\~@#$\^\&\|\\'"` + "`"
 
 var Tokens = [...] Token {
     Token { Name: "String",  Pattern: r(`'[^']*'`) },
@@ -34,6 +34,9 @@ var Tokens = [...] Token {
     Token { Name: "Float",   Pattern: r(`\-?\d+(\.\d+)?[Ee][\+\-]?\d+`) },
     Token { Name: "Float",   Pattern: r(`\-?\d+\.\d+`) },
     Token { Name: "Int",     Pattern: r(`\-?\d[\d_]*`) },
+    Token { Name: "Char",    Pattern: r(`\^.`) },
+    Token { Name: "Char",    Pattern: r(`\\u[0-9A-Fa-f]+`) },
+    Token { Name: "Char",    Pattern: r(`\\[a-z]`) },
     Token { Name: "(",       Pattern: r(`\(`) },
     Token { Name: ")",       Pattern: r(`\)`) },
     Token { Name: "[",       Pattern: r(`\[`) },
@@ -48,19 +51,14 @@ var Tokens = [...] Token {
     Token { Name: ":=",      Pattern: r(`\:\=`) },
     Token { Name: ":",       Pattern: r(`\:`) },
     Token { Name: ";",       Pattern: r(`\;`) },
-    Token { Name: "$$",      Pattern: r(`\$\$`) },
-    Token { Name: "$",       Pattern: r(`\$`) },
-    Token { Name: "@@",      Pattern: r(`\@\@`) },
-    Token { Name: "@",       Pattern: r(`\@`) },
     Token { Name: "<~",      Pattern: r(`\<\~`) },
     Token { Name: "~>",      Pattern: r(`\~\>`) },
     Token { Name: "~",       Pattern: r(`\~`) },
     Token { Name: "`",       Pattern: r("`") },
-    Token { Name: "&&",      Pattern: r(`\&\&`) },
+    Token { Name: "@",       Pattern: r(`\@`) },
+    Token { Name: "$",       Pattern: r(`\$`) },
     Token { Name: "&",       Pattern: r(`\&`) },
-    Token { Name: "||",      Pattern: r(`\|\|`) },
     Token { Name: "|",       Pattern: r(`\|`) },
-    Token { Name: `\`,       Pattern: r(`\\`) },
     Token { Name: "Name",    Pattern: r(`[^`+Symbols+Blanks+LF+`]+`) },
 }
 
@@ -186,8 +184,18 @@ var SyntaxDefinition = [...] string {
         "operand2 = term!",
       "array = _at ( ) | _at (! exprlist )!",
       "text = Text",
-      "literal = string | int | float",
+      "literal = string | int | float | char",
         "string = String",
         "int = Int",
         "float = Float",
+        "char = Char",
+    // TODO: implement compile-time concatenated
+    //       string & text (with chars). e.g.
+    //         'Hello' \n 'World' ^!
+    //         ("Number " ^# "#") (str! n)   // explicit ^# as raw #
+    // TODO: implement l10n message constants (type: lambda {...} String)
+    //       message NumRecords { name: String, count: Int }:
+    //           number: count,
+    //           plural:   'The table ' .name. ' has ' .count. '  records' \n,
+    //           singular: 'The table ' .name. ' has ' .count. ' record' \n
 }

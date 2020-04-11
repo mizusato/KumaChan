@@ -14,10 +14,7 @@ var __DoType = NamedType {
 	Args: []Type { AnonymousType { Unit{} }, AnonymousType { Unit{} } },
 }
 var __Bool = CoreSymbol(stdlib.Bool)
-var __T_Bool = NamedType {
-	Name: __Bool,
-	Args: make([] Type, 0),
-}
+var __T_Bool = NamedType { Name: __Bool, Args: make([] Type, 0) }
 var __Yes uint = stdlib.YesIndex
 var __Float = CoreSymbol(stdlib.Float)
 var __String = CoreSymbol(stdlib.String)
@@ -30,6 +27,7 @@ var __Int32 = CoreSymbol(stdlib.Int32)
 var __Uint32 = CoreSymbol(stdlib.Uint32)
 var __Dword = CoreSymbol(stdlib.Dword)
 var __Char = CoreSymbol(stdlib.Char)
+var __T_Char = NamedType { Name: __Char, Args: make([] Type, 0) }
 var __Int16 = CoreSymbol(stdlib.Int16)
 var __Uint16 = CoreSymbol(stdlib.Uint16)
 var __Word = CoreSymbol(stdlib.Word)

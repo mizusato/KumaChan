@@ -264,6 +264,8 @@ func CheckTerm(term ast.VariousTerm, ctx ExprContext) (SemiExpr, *ExprError) {
 			return CheckFloat(l, ctx)
 		case ast.StringLiteral:
 			return CheckString(l, ctx)
+		case ast.CharLiteral:
+			return CheckChar(l, ctx)
 		default:
 			panic("impossible branch")
 		}

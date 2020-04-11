@@ -624,6 +624,16 @@ func (e E_IntegerOverflow) ExprErrorDesc() ErrorMessage {
 	return msg
 }
 
+type E_InvalidCharacter struct {
+	RawValue  string
+}
+func (e E_InvalidCharacter) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Invalid character")
+	msg.WriteEndText(TS_INLINE_CODE, e.RawValue)
+	return msg
+}
+
 type E_TupleAssignedToNonTupleType struct {
 	NonTupleType  string
 }

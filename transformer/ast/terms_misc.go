@@ -86,3 +86,9 @@ type StringLiteral struct {
 	Node             `part:"string"`
 	Value  [] rune   `content:"String"`
 }
+
+func (impl CharLiteral) Literal() {}
+type CharLiteral struct {
+	Node             `part:"char"`
+	Value  [] rune   `content:"Char"`
+}
