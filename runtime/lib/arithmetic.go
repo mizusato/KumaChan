@@ -8,7 +8,7 @@ import (
 
 
 var ArithmeticFunctions = map[string] interface{} {
-	// TODO: pow, sqrt, ...
+	// TODO: Size(Index) Arithmetic
 	"+Int": func(a *big.Int, b *big.Int) *big.Int {
 		var c big.Int
 		return c.Add(a, b)

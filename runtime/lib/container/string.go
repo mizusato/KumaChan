@@ -1,9 +1,11 @@
 package container
 
 import (
-	"kumachan/runtime/common"
+	. "kumachan/runtime/common"
+	"reflect"
 	"unicode/utf8"
 )
+
 
 type String = []rune
 
@@ -12,7 +14,7 @@ const (
 	UTF8  Encoding  =  iota
 )
 
-func StringFrom(bytes Bytes, e Encoding) (String, bool) {
+func StringDecode(bytes Bytes, e Encoding) (String, bool) {
 	switch e {
 	case UTF8:
 		var str = make(String, 0, len(bytes) / 4)
@@ -45,21 +47,107 @@ func StringEncode(str String, e Encoding) Bytes {
 	}
 }
 
-func StringCompare(a String, b String) common.Ordering {
+func StringCompare(a String, b String) Ordering {
 	if len(a) <= len(b) {
 		for i := 0; i < len(b); i += 1 {
 			if i < len(a) {
 				if a[i] < b[i] {
-					return common.Smaller
+					return Smaller
 				} else if a[i] > b[i] {
-					return common.Bigger
+					return Bigger
 				}
 			} else {
-				return common.Smaller
+				return Smaller
 			}
 		}
-		return common.Equal
+		return Equal
 	} else {
 		return StringCompare(b, a).Reversed()
 	}
+}
+
+func StringConcat(arr Array) String {
+	var buf = make(String, 0)
+	for i := uint(0); i < arr.Length; i += 1 {
+		var item = (arr.GetItem(i)).(String)
+		buf = append(buf, item...)
+	}
+	return buf
+}
+
+func StringFind(str String, sub String) (uint, bool) {
+	var L = uint(len(str))
+	var M = uint(len(sub))
+	outer: for i := uint(0); i < L; i += 1 {
+		var ok = true
+		for j := uint(0); j < M; j += 1 {
+			var k = i + j
+			if !(k < L) {
+				ok = false
+				break outer
+			}
+			if str[k] != sub[j] {
+				ok = false
+				break
+			}
+		}
+		if ok {
+			return i, true
+		}
+	}
+	return (^uint(0)), false
+}
+
+type StringSplitIterator struct {
+	Operand    String
+	Separator  String
+	LastIndex  uint
+}
+func (it *StringSplitIterator) GetItemType() reflect.Type {
+	return reflect.TypeOf([]rune {})
+}
+func (it *StringSplitIterator) Next() (Value, Seq, bool) {
+	if it == nil { return nil, nil, false }
+	var L = uint(len(it.Operand))
+	var M = uint(len(it.Separator))
+	outer: for i := it.LastIndex; i < L; i += 1 {
+		var ok = true
+		for j := uint(0); j < M; j += 1 {
+			var k = i + j
+			if !(k < L) {
+				ok = false
+				break outer
+			}
+			if it.Operand[k] != it.Separator[j] {
+				ok = false
+				break
+			}
+		}
+		if ok {
+			var item = append(String{}, it.Operand[it.LastIndex:i]...)
+			var rest = &StringSplitIterator {
+				Operand:   it.Operand,
+				Separator: it.Separator,
+				LastIndex: (i + M),
+			}
+			return item, rest, ok
+		}
+	}
+	var item = append(String{}, it.Operand[it.LastIndex:]...)
+	return item, nil, true
+}
+func StringSplit(str String, sep String) Seq {
+	return &StringSplitIterator {
+		Operand:   str,
+		Separator: sep,
+		LastIndex: 0,
+	}
+}
+
+func StringJoin(seq Seq) String {
+	var buf = make(String, 0)
+	for v,rest,ok := seq.Next(); ok; v,rest,ok = rest.Next() {
+		buf = append(buf, v.(String)...)
+	}
+	return buf
 }

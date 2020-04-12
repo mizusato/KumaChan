@@ -39,6 +39,15 @@ func Inspect(v Value) ErrorMessage {
 	return msg
 }
 
+func Tuple2From(t ProductValue) (Value, Value) {
+	if len(t.Elements) != 2 { panic("tuple size is not 2") }
+	return t.Elements[0], t.Elements[1]
+}
+
+func ToTuple2(a Value, b Value) ProductValue {
+	return ProductValue { [] Value { a, b } }
+}
+
 func BoolFrom(p SumValue) bool {
 	if p.Value != nil { panic("something went wrong") }
 	if p.Index == stdlib.YesIndex {
@@ -68,6 +77,20 @@ func ToOrdering(o Ordering) SumValue {
 		return SumValue { Index: stdlib.BiggerIndex }
 	default:
 		panic("impossible branch")
+	}
+}
+
+func Just(v Value) SumValue {
+	return SumValue {
+		Index: stdlib.JustIndex,
+		Value: v,
+	}
+}
+
+func Na() SumValue {
+	return SumValue {
+		Index: stdlib.NaIndex,
+		Value: nil,
 	}
 }
 

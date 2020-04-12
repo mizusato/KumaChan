@@ -74,13 +74,17 @@ type Func struct {
 }
 
 
-func GetCaseIndex(u Union, sym loader.Symbol) (uint, bool) {
+func GetCaseInfo(u Union, args []Type, sym loader.Symbol) (uint, []Type, bool) {
 	for index, case_type := range u.CaseTypes {
 		if case_type.Name == sym {
-			return uint(index), true
+			var case_args = make([]Type, len(case_type.Params))
+			for i, which_arg := range case_type.Params {
+				case_args[i] = args[which_arg]
+			}
+			return uint(index), case_args, true
 		}
 	}
-	return BadIndex, false
+	return BadIndex, nil, false
 }
 
 type TypeDescContext struct {

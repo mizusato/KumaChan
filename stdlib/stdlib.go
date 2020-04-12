@@ -9,11 +9,11 @@ import (
 /* IMPORTANT: this go file should be consistent with corresponding km files */
 const Core = "Core"
 var core_types = []string {
-	Bit, Byte, Word, Dword, Qword, Int,
-	Bytes, String, Seq, Array, Heap, Set, Map,
+	Bit, Byte, Word, Dword, Qword, Size, Int,
+	Seq, Array, Heap, Set, Map,
 	EffectMultiValue, Effect,
 	Int64, Uint64, Int32, Uint32, Int16, Uint16, Int8, Uint8,
-	Char, Float64, Float, Complex,
+	Float64, Float, Complex, Char, Index, Range, String, Bytes,
 	Bool, Yes, No,
 	Maybe, Just, Na,
 	Result, Ok, Ng,
@@ -35,9 +35,8 @@ const Byte = "Byte"
 const Word = "Word"
 const Dword = "Dword"
 const Qword = "Qword"
+const Size = "Size"
 const Int = "Int"
-const Bytes = "Bytes"
-const String = "String"
 const Seq = "Seq"
 const Array = "Array"
 const Heap = "Heap"
@@ -53,10 +52,14 @@ const Int16 = "Int16"
 const Uint16 = "Uint16"
 const Int8 = "Int8"
 const Uint8 = "Uint8"
-const Char = "Char"
 const Float64 = "Float64"
 const Float = "Float"
 const Complex = "Complex"
+const Char = "Char"
+const Index = "Index"
+const Range = "Range"
+const String = "String"
+const Bytes = "Bytes"
 const Bool = "Bool"
 const Yes = "Yes"
 const No = "No"
@@ -133,14 +136,12 @@ func CheckFloat(x float64) float64 {
 	return x
 }
 
-func AdaptSlice(v interface{}) (uint, func(uint)interface{}, bool) {
+func AdaptSlice(v interface{}) (reflect.Value, bool) {
 	var rv = reflect.ValueOf(v)
 	var t = rv.Type()
 	if t.Kind() == reflect.Slice {
-		return uint(rv.Len()), func(i uint) interface{} {
-			return rv.Index(int(i)).Interface()
-		}, true
+		return rv, true
 	} else {
-		return 0, nil, false
+		return reflect.ValueOf(nil), false
 	}
 }

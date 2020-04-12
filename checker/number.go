@@ -21,7 +21,6 @@ type IntLiteral struct {
 
 func (impl SmallIntLiteral) ExprVal() {}
 type SmallIntLiteral struct {
-	Kind   string
 	Value  interface {}
 }
 
@@ -124,7 +123,6 @@ func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 	case stdlib.Int64:
 		if value.IsInt64() {
 			return SmallIntLiteral {
-				Kind:  "Int64",
 				Value: int64(value.Int64()),
 			}, true
 		} else {
@@ -133,7 +131,6 @@ func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 	case stdlib.Uint64, stdlib.Qword:
 		if value.IsUint64() {
 			return SmallIntLiteral {
-				Kind:  "Uint64",
 				Value: uint64(value.Uint64()),
 			}, true
 		} else {
@@ -144,7 +141,6 @@ func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 			var x = value.Int64()
 			if math.MinInt32 <= x && x <= math.MaxInt32 {
 				return SmallIntLiteral {
-					Kind:  "Int32",
 					Value: int32(x),
 				}, true
 			} else {
@@ -158,7 +154,6 @@ func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 			var x = value.Uint64()
 			if x <= math.MaxUint32 {
 				return SmallIntLiteral {
-					Kind:  "Uint32",
 					Value: uint32(x),
 				}, true
 			} else {
@@ -172,7 +167,6 @@ func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 			var x = value.Int64()
 			if math.MinInt16 <= x && x <= math.MaxInt16 {
 				return SmallIntLiteral {
-					Kind:  "Int16",
 					Value: int16(x),
 				}, true
 			} else {
@@ -186,7 +180,6 @@ func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 			var x = value.Uint64()
 			if x <= math.MaxUint16 {
 				return SmallIntLiteral {
-					Kind:  "Uint16",
 					Value: uint16(x),
 				}, true
 			} else {
@@ -200,7 +193,6 @@ func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 			var x = value.Int64()
 			if math.MinInt8 <= x && x <= math.MaxInt8 {
 				return SmallIntLiteral {
-					Kind:  "Int8",
 					Value: int8(x),
 				}, true
 			} else {
@@ -214,7 +206,6 @@ func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 			var x = value.Uint64()
 			if x <= math.MaxUint8 {
 				return SmallIntLiteral {
-					Kind:  "Uint8",
 					Value: uint8(x),
 				}, true
 			} else {
@@ -228,7 +219,6 @@ func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 			var x = value.Uint64()
 			if x == 0 || x == 1 {
 				return SmallIntLiteral {
-					Kind:  "Bit",
 					Value: (x == 1),
 				}, true
 			} else {

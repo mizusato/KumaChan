@@ -3,32 +3,52 @@ package container
 import (
 	. "kumachan/runtime/common"
 	"kumachan/stdlib"
+	"reflect"
 )
 
+
 type Array struct {
-	Length   uint
-	GetItem  func(uint) Value
+	Length    uint
+	GetItem   func(uint) Value
+	ItemType  reflect.Type
 }
 
-func ArrayFromSlice(values []Value) Array {
+func ArrayFromSlice(slice interface{}) Array {
+	var slice_rv = reflect.ValueOf(slice)
+	if slice_rv.Kind() != reflect.Slice {
+		panic("cannot apply ArrayFromSlice() on non-slice value")
+	}
 	return Array {
-		Length:  uint(len(values)),
+		Length:  uint(slice_rv.Len()),
 		GetItem: func(i uint) Value {
-			return values[i]
+			return slice_rv.Index(int(i))
 		},
+		ItemType: slice_rv.Type().Elem(),
 	}
 }
 
 func ArrayFrom(value Value) Array {
-	var l, get, ok = stdlib.AdaptSlice(value)
+	var slice, ok = stdlib.AdaptSlice(value)
 	if ok {
 		return Array {
-			Length:  l,
-			GetItem: get,
+			Length:  uint(slice.Len()),
+			GetItem: func(index uint) Value {
+				return slice.Index(int(index))
+			},
+			ItemType: slice.Type().Elem(),
 		}
 	} else {
 		return value.(Array)
 	}
+}
+
+func (array Array) CopyAsSlice() Value {
+	var L = array.Length
+	var slice_rv = reflect.MakeSlice(array.ItemType, int(L), int(L))
+	for i := uint(0); i < L; i += 1 {
+		slice_rv.Index(int(i)).Set(reflect.ValueOf(array.GetItem(i)))
+	}
+	return slice_rv.Interface()
 }
 
 type ArrayIterator struct {
@@ -39,6 +59,10 @@ type ArrayIterator struct {
 type ArrayReversedIterator struct {
 	Array      Array
 	NextIndex  uint
+}
+
+func (it ArrayIterator) GetItemType() reflect.Type {
+	return it.Array.ItemType
 }
 
 func (it ArrayIterator) Next() (Value, Seq, bool) {
@@ -52,6 +76,10 @@ func (it ArrayIterator) Next() (Value, Seq, bool) {
 	} else {
 		return nil, nil, false
 	}
+}
+
+func (it ArrayReversedIterator) GetItemType() reflect.Type {
+	return it.Array.ItemType
 }
 
 func (it ArrayReversedIterator) Next() (Value, Seq, bool) {
@@ -81,7 +109,7 @@ func (array Array) IterateReversed() Seq {
 	}
 }
 
-func (array Array) Map(f func(Value)Value) Array {
+func (array Array) MapView(f func(Value)Value) Array {
 	return Array {
 		Length:  array.Length,
 		GetItem: func(i uint) Value {
@@ -106,9 +134,12 @@ func (array Array) SliceView(low uint, high uint) Array {
 func (array Array) Sort(cmp Compare) Seq {
 	var L = array.Length
 	if L == 0 {
-		return EmptySeq {}
+		return EmptySeq { array.ItemType }
 	} else if L == 1 {
-		return SeqOf(array.GetItem(0))
+		return OneShotSeq {
+			ItemType: array.ItemType,
+			Item:     array.GetItem(0),
+		}
 	} else {
 		var M = (L / 2)
 		var left = array.SliceView(0, M)
@@ -121,10 +152,21 @@ func (array Array) Sort(cmp Compare) Seq {
 	}
 }
 
+
 type MergeSortIterator struct {
 	Left  Seq
 	Right Seq
 	Cmp   Compare
+}
+
+func (m MergeSortIterator) GetItemType() reflect.Type {
+	var lt = m.Left.GetItemType()
+	var rt = m.Right.GetItemType()
+	if rt.AssignableTo(lt) {
+		return lt
+	} else {
+		panic("something went wrong")
+	}
 }
 
 func (m MergeSortIterator) Next() (Value, Seq, bool) {

@@ -12,6 +12,7 @@ type Byte   native;  // uint8, int8
 type Word   native;  // uint16, int16
 type Dword  native;  // uint32, int32
 type Qword  native;  // uint64, int64, float64
+type Size   native;  // uint
 type Int    native;  // *big.Int
 
 // Container Types
@@ -25,7 +26,7 @@ type Map[K,V]  native;  // container.Map
 type Effect*[T,E]  native;  // rx.Effect
 type Effect[T,E]   protected Effect*[T,E];
 
-// Fixed Int Types
+// Fixed Integer Types
 type Int64   protected Qword;
 type Uint64  protected Qword;
 type Int32   protected Dword;
@@ -40,6 +41,8 @@ type Float64  protected Qword;
 type Float    protected Float64;  // float64 with NaN and Infinity excluded
 type Complex  (Float, Float);
 type Char     Uint32;  // rune
+type Index    Size;
+type Range    protected (Index, Index);  // left-close right-open interval
 type String   protected Array[Char];  // []rune
 type Bytes    protected Array[Byte];  // []byte
 
@@ -383,6 +386,9 @@ public function <> { lambda (String,String) Ordering:  native '<>String' };
 public function  = { lambda (Int,Int) Bool:      native '=Int' };
 public function  < { lambda (Int,Int) Bool:      native '<Int' };
 public function <> { lambda (Int,Int) Ordering:  native '<>Int' };
+public function  = { lambda (Size,Size) Bool:      native '=Size' };
+public function  < { lambda (Size,Size) Bool:      native '<Size' };
+public function <> { lambda (Size,Size) Ordering:  native '<>Size' };
 public function  = { lambda (Float,Float) Bool:      native '=Float' };
 public function  < { lambda (Float,Float) Bool:      native '<Float' };
 public function <> { lambda (Float,Float) Ordering:  native '<>Float' };
@@ -440,9 +446,64 @@ public function XOR { lambda (Qword,Qword) Qword:  native '^Qword' };
 public function SHL { lambda (Qword,Byte) Qword:   native '<<Qword' };
 public function SHR { lambda (Qword,Byte) Qword:   native '>>Qword' };
 
+// Range Operation Functions
+public function range! {
+    lambda (Index,Index) Range:
+    lambda (l, r)
+        if $(l <= r):
+            Range(l, r),
+        else:
+            panic[Range] 'invalid range: left bound bigger than right bound'
+};
+public function iterate {
+    lambda Range Seq[Index]:
+    lambda r (from r)
+};
+
+// Sequence Operation Functions
+public function from {
+    lambda Range Seq[Index]:
+    native 'seq-from-range'
+};
+public function next![T] {
+    lambda Seq[T] Maybe[(T,Seq[T])]:
+    native 'seq-next'
+};
+public function collect[T] {
+    lambda Seq[T] Array[T]:
+    native 'seq-collect'
+};
+
+// Array Operation Functions
+public function get[T] {
+    lambda (Array[T],Index) T:
+    native 'array-get'
+};
+public function slice![T] {
+    lambda (Array[T],Range) Array[T]:
+    native 'array-slice'
+};
+public function slice-view[T] {
+    lambda (Array[T],Range) Array[T]:
+    native 'array-slice-view'
+};
+public function map![A,B] {
+    lambda (Array[A], lambda A B) Array[B]:
+    native 'array-map'
+};
+public function map-view[A,B] {
+    lambda (Array[A], lambda A B) Array[B]:
+    native 'array-map-view'
+};
+public function iterate[T] {
+    lambda Array[T] Seq[T]:
+    native 'array-iterate'
+};
+
 // String Related Functions
 public macro str! (x) := ~String from x;
 public function from { lambda Int    String:  native 'String from Int' };
+public function from { lambda Size   String:  native 'String from Size' };
 public function from { lambda Float  String:  native 'String from Float' };
 public function from { lambda Int8   String:  native 'String from Int8' };
 public function from { lambda Int16  String:  native 'String from Int16' };
@@ -454,8 +515,78 @@ public function from { lambda Uint32 String:  native 'String from Uint32' };
 public function from { lambda Uint64 String:  native 'String from Uint64' };
 public function from {
     lambda Complex String:
-    lambda    z    let (re, im) := z, return "(# + #i)" (str! re, str! im)
+    lambda (re, im) ("(# + #i)" (str! re, str! im))
 };
+public function from {
+    lambda Range String:
+    lambda (l, r) ("[#, #)" (str! l, str! r))
+};
+public function encode {   /// encodes string into UTF-8 byte sequence
+    lambda String Bytes:
+    native 'encode-utf8'
+};
+public function decode {   /// decodes string from UTF-8 byte sequence
+    lambda Bytes Maybe[String]:
+    native 'decode-utf8'
+};
+public function substr {
+    lambda (String,Range) String:
+    lambda (str, range) String(str | slice! range)
+};
+public function concat {
+    lambda Array[String] String:
+    native 'str-concat'
+};
+public function find {
+    lambda (String,String) Maybe[Index]:
+    native 'str-find'
+};
+public function contains {
+    lambda (String,String) Bool:
+    lambda (str, sub)
+        switch (str | find sub) {
+            case Just _: Yes,
+            case N/A:    No
+        }
+};
+public function split {
+    lambda (String,String) Seq[String]:
+    native 'str-split'
+};
+public function join {
+    lambda (Seq[String], String) String:
+    native 'str-join'
+};
+/*
+public function trim {
+    lambda (String,Array[Char]) String:
+    native 'str-trim'
+};
+public function trim-left {
+    lambda (String,Array[Char]) String:
+    native 'str-trim-left'
+};
+public function trim-right {
+    lambda (String,Array[Char]) String:
+    native 'str-trim-right'
+};
+public function has-prefix {
+    lambda (String,String) Bool:
+    native 'str-has-prefix'
+};
+public function has-suffix {
+    lambda (String,String) Bool:
+    native 'str-has-suffix'
+};
+public function trim-prefix {
+    lambda (String,String) String:
+    native 'str-trim-prefix'
+};
+public function trim-suffix {
+    lambda (String,String) String:
+    native 'str-trim-suffix'
+};
+*/
 
 // Effect Operators
 public function then[T,E] {

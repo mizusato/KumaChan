@@ -132,7 +132,7 @@ func CheckRef(ref ast.Ref, ctx ExprContext) (SemiExpr, *ExprError) {
 		return SemiExpr {
 			Value: UntypedRef {
 				RefBody:  UntypedRefToType {
-					TypeName: symbol,
+					TypeName: s.Name,
 					Type:     s.Type,
 				},
 				TypeArgs: type_args,

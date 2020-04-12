@@ -13,7 +13,7 @@ var EffectFunctions = map[string] Value {
 			return b
 		})
 	},
-	"effect-catch": func(e rx.Effect, f FunctionValue, h MachineHandle) rx.Effect {
+	"effect-catch": func(e rx.Effect, f Value, h MachineHandle) rx.Effect {
 		return e.Catch(func(rx.Object) rx.Effect {
 			return h.Call(f, nil).(rx.Effect)
 		})

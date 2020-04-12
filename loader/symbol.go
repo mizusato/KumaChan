@@ -65,7 +65,7 @@ func (mod *Module) SymbolFromRef(ref ast.Ref) MaybeSymbol {
 					// Core::Int, Core::Float, Core::Effect, ...
 					return NewSymbol(stdlib.Core, sym_name)
 				} else {
-					// a, b, c
+					// a, b, c, Self::Type1
 					return NewSymbol("", sym_name)
 				}
 			}

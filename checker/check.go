@@ -103,7 +103,7 @@ type SymConst struct { Const *Constant }
 func (impl SymTypeParam) Sym() {}
 type SymTypeParam struct { Index uint }
 func (impl SymType) Sym() {}
-type SymType struct { Type *GenericType }
+type SymType struct { Type *GenericType; Name loader.Symbol }
 func (impl SymFunctions) Sym() {}
 type SymFunctions struct { Functions []*GenericFunction }
 func (impl SymMacro) Sym() {}
@@ -177,7 +177,7 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 		var sym_self = loader.NewSymbol(self, sym_name)
 		g, exists := ctx.ModuleInfo.Types[sym_self]
 		if exists {
-			return SymType { Type: g }, true
+			return SymType { Type: g, Name: sym_self }, true
 		}
 		constant, exists := ctx.ModuleInfo.Constants[sym_self]
 		if exists {
@@ -187,7 +187,7 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 	} else {
 		var g, exists = ctx.ModuleInfo.Types[raw]
 		if exists {
-			return SymType { Type: g }, true
+			return SymType { Type: g, Name: raw }, true
 		}
 		constant, exists := ctx.ModuleInfo.Constants[raw]
 		if exists {

@@ -86,8 +86,7 @@ func CheckChar(char ast.CharLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
 		return LiftTyped(Expr {
 			Type:  __T_Char,
 			Value: SmallIntLiteral {
-				Kind:  "Uint32",  // TODO: this field seems redundant
-				Value: r,         //       because Value is already reflect.Value
+				Value: r,
 			},
 			Info:  ctx.GetExprInfo(char.Node),
 		}), nil

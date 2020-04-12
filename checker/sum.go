@@ -82,7 +82,7 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 					},
 				} },
 			}}
-			var g, exists = ctx.ModuleInfo.Types[type_sym]
+			var _, exists = ctx.ModuleInfo.Types[type_sym]
 			if !exists { return SemiExpr{}, &ExprError {
 				Point:    ErrorPointFrom(t.Node),
 				Concrete: E_TypeErrorInExpr { &TypeError {
@@ -92,7 +92,9 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 					},
 				} },
 			} }
-			var index, is_case = GetCaseIndex(union, type_sym)
+			var index, case_args, is_case = GetCaseInfo (
+				union, union_args, type_sym,
+			)
 			if !is_case { return SemiExpr{}, &ExprError {
 				Point:    ErrorPointFrom(t.Node),
 				Concrete: E_NotBranchType {
@@ -100,12 +102,9 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 					TypeName: type_sym.String(),
 				},
 			} }
-			if len(g.Params) != len(union_args) {
-				panic("something went wrong")
-			}
 			var case_type = NamedType {
 				Name: type_sym,
-				Args: union_args,
+				Args: case_args,
 			}
 			var maybe_pattern MaybePattern
 			var branch_ctx ExprContext
