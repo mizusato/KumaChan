@@ -144,10 +144,15 @@ func StringSplit(str String, sep String) Seq {
 	}
 }
 
-func StringJoin(seq Seq) String {
+func StringJoin(seq Seq, sep String) String {
 	var buf = make(String, 0)
+	var index = uint(0)
 	for v,rest,ok := seq.Next(); ok; v,rest,ok = rest.Next() {
+		if index > 0 {
+			buf = append(buf, sep...)
+		}
 		buf = append(buf, v.(String)...)
+		index += 1
 	}
 	return buf
 }

@@ -120,8 +120,8 @@ var ContainerFunctions = map[string] Value {
 	"str-split": func(str String, sep String) Seq {
 		return StringSplit(str, sep)
 	},
-	"str-join": func(seq Seq) String {
-		return StringJoin(seq)
+	"str-join": func(seq Seq, sep String) String {
+		return StringJoin(seq, sep)
 	},
 	// TODO: trim, trim-left, trim-left, {has,trim}-prefix, {has,trim}-suffix
 }
