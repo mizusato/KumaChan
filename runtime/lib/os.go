@@ -3,15 +3,20 @@ package lib
 import (
 	"io"
 	"os"
+	"runtime"
 	"kumachan/runtime/common/rx"
 	. "kumachan/runtime/common"
+	. "kumachan/runtime/lib/container"
 )
 
 
 var OS_Constants = map[string] Value {
-	"Stdin": io.Reader(os.Stdin),
-	"Stdout": io.Writer(os.Stderr),
-	"Stderr": io.Writer(os.Stderr),
+	"OS::Kind":    String(runtime.GOOS),
+	"OS::Arch":    String(runtime.GOARCH),
+	"OS::Is64Bit": ToBool(uint64(^uintptr(0)) == ^uint64(0)),
+	"OS::Stdin":   io.Reader(os.Stdin),
+	"OS::Stdout":  io.Writer(os.Stderr),
+	"OS::Stderr":  io.Writer(os.Stderr),
 }
 
 var OS_Functions = map[string] Value {

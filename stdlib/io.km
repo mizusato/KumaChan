@@ -27,6 +27,6 @@ public function write-string {
 */
 
 public function write-line {
-    lambda(OutputStream, String) Effect[(),Error]:
+    lambda (OutputStream, String) Effect[(),Error]:
     native 'write-line'
 };

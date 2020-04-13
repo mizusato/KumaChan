@@ -2,20 +2,20 @@ package lib
 
 import (
 	. "kumachan/runtime/common"
-	"kumachan/runtime/lib/container"
+	. "kumachan/runtime/lib/container"
 	"math/big"
 )
 
 
 var ComparisonFunctions = map[string] interface{} {
-	"=String": func(a []rune, b []rune) SumValue {
-		return ToBool(container.StringCompare(a, b) == Equal)
+	"=String": func(a String, b String) SumValue {
+		return ToBool(StringCompare(a, b) == Equal)
 	},
-	"<String": func(a []rune, b []rune) SumValue {
-		return ToBool(container.StringCompare(a, b) == Smaller)
+	"<String": func(a String, b String) SumValue {
+		return ToBool(StringCompare(a, b) == Smaller)
 	},
-	"<>String": func(a []rune, b []rune) SumValue {
-		return ToOrdering(container.StringCompare(a, b))
+	"<>String": func(a String, b String) SumValue {
+		return ToOrdering(StringCompare(a, b))
 	},
 	"=Int": func(a *big.Int, b *big.Int) SumValue {
 		return ToBool(a.Cmp(b) == 0)

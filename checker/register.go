@@ -69,10 +69,11 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 		// 3.1. Get the symbol of the declared type
 		var type_sym = mod.SymbolFromName(d.Name)
 		// 3.2. Check if the symbol name is valid
-		if type_sym.SymbolName == IgnoreMark {
+		var sym_name = type_sym.SymbolName
+		if sym_name == IgnoreMark || sym_name == UnitAlias {
 			return &TypeDeclError {
 				Point:    ErrorPointFrom(d.Name.Node),
-				Concrete: E_InvalidTypeName { type_sym.SymbolName },
+				Concrete: E_InvalidTypeName { sym_name },
 			}
 		}
 		// 3.3. Check if the symbol is used
@@ -293,6 +294,9 @@ func TypeFrom(type_ ast.Type, ctx TypeContext) (Type, *TypeError) {
 		var ref_mod = string(t.Ref.Module.Name)
 		var ref_name = string(t.Ref.Id.Name)
 		if ref_mod == "" {
+			if ref_name == UnitAlias {
+				return AnonymousType { Unit{} }, nil
+			}
 			for i, param := range ctx.Params {
 				if param == ref_name {
 					return ParameterType { Index: uint(i) }, nil

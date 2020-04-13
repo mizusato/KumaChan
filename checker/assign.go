@@ -93,8 +93,8 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 					if E_arg.BeingInferred {
 						var inferred, exists = ctx.Inferred[E_arg.Index]
 						if exists {
-							if !AreTypesEqualInSameCtx(inferred, expected) {
-								return throw(fmt.Sprintf(
+							if !AreTypesEqualInSameCtx(inferred, T.Args[i]) {
+								return throw(fmt.Sprintf (
 									"cannot infer type parameter %s",
 									ctx.InferredNames[E_arg.Index],
 								))

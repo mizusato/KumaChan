@@ -22,9 +22,11 @@ type Heap[T]   native;  // container.Heap
 type Set[T]    native;  // container.Set
 type Map[K,V]  native;  // container.Map
 
-// Effect Type
+// Effect Types
 type Effect*[T,E]  native;  // rx.Effect
 type Effect[T,E]   protected Effect*[T,E];
+type NoExcept*[T]  opaque Effect*[T,-];
+type NoExcept[T]   protected NoExcept*[T];
 
 // Fixed Integer Types
 type Int64   protected Qword;
@@ -425,26 +427,26 @@ public function AND { lambda (Byte,Byte) Byte:  native '&Byte' };
 public function  OR { lambda (Byte,Byte) Byte:  native '|Byte' };
 public function NOT { lambda Byte Byte:         native '~Byte' };
 public function XOR { lambda (Byte,Byte) Byte:  native '^Byte' };
-public function SHL { lambda (Byte,Byte) Byte:  native '<<Byte' };
-public function SHR { lambda (Byte,Byte) Byte:  native '>>Byte' };
+public function SHL { lambda (Byte,Size) Byte:  native '<<Byte' };
+public function SHR { lambda (Byte,Size) Byte:  native '>>Byte' };
 public function AND { lambda (Word,Word) Word:  native '&Word' };
 public function  OR { lambda (Word,Word) Word:  native '|Word' };
 public function NOT { lambda Word Word:         native '~Word' };
 public function XOR { lambda (Word,Word) Word:  native '^Word' };
-public function SHL { lambda (Word,Byte) Word:  native '<<Word' };
-public function SHR { lambda (Word,Byte) Word:  native '>>Word' };
+public function SHL { lambda (Word,Size) Word:  native '<<Word' };
+public function SHR { lambda (Word,Size) Word:  native '>>Word' };
 public function AND { lambda (Dword,Dword) Dword:  native '&Dword' };
 public function  OR { lambda (Dword,Dword) Dword:  native '|Dword' };
 public function NOT { lambda Dword Dword:          native '~Dword' };
 public function XOR { lambda (Dword,Dword) Dword:  native '^Dword' };
-public function SHL { lambda (Dword,Byte) Dword:   native '<<Dword' };
-public function SHR { lambda (Dword,Byte) Dword:   native '>>Dword' };
+public function SHL { lambda (Dword,Size) Dword:   native '<<Dword' };
+public function SHR { lambda (Dword,Size) Dword:   native '>>Dword' };
 public function AND { lambda (Qword,Qword) Qword:  native '&Qword' };
 public function  OR { lambda (Qword,Qword) Qword:  native '|Qword' };
 public function NOT { lambda Qword Qword:          native '~Qword' };
 public function XOR { lambda (Qword,Qword) Qword:  native '^Qword' };
-public function SHL { lambda (Qword,Byte) Qword:   native '<<Qword' };
-public function SHR { lambda (Qword,Byte) Qword:   native '>>Qword' };
+public function SHL { lambda (Qword,Size) Qword:   native '<<Qword' };
+public function SHR { lambda (Qword,Size) Qword:   native '>>Qword' };
 
 // Range Operation Functions
 public function range! {
@@ -589,45 +591,59 @@ public function trim-suffix {
 */
 
 // Effect Operators
-public function then[T,E] {
-    lambda(Effect[(),()], Effect[T,E]) Effect[T,E]:
-    native 'effect-then-preset'
-};
-public function catch[T,E] {
-    lambda(Effect[T,E], lambda E Effect[(),()]) Effect[T,()]:
-    native 'effect-catch'
-};
 /*
-public function map![A,B,E] {
-    lambda(Effect*[A,E], lambda A B) Effect*[B,E]:
-    native 'effect-map'
+public function then[A,B,E] {
+    lambda (Effect[A,E], (lambda A Effect[B,E])) Effect[B,E]:
+    native 'then'
 };
 public function then[A,B,E] {
-    lambda(Effect[A,()], lambda A Effect[B,E]) Effect[B,E]:
-    native 'effect-then'
+    lambda (Effect[A,E], (lambda A NoExcept[B])) Effect[B,E]:
+    native 'then'
 };
-public function then*[A,B,E] {
-    lambda(Effect[A,()], lambda A Effect*[B,E]) Effect*[B,E]:
-    native 'effect-then*'
+public function then[A,B,E] {
+    lambda (NoExcept[A], (lambda A Effect[B,E])) Effect[B,E]:
+    native 'then'
 };
-public function then*[T,E] {
-    lambda(Effect[(),()], Effect*[T,E]) Effect*[T,E]:
-    native 'effect-then*-preset'
+public function then[A,B] {
+    lambda (NoExcept[A], (lambda A NoExcept[B])) NoExcept[B]:
+    native 'then'
 };
-public function next![A,B,E] {
-    lambda(Effect[A,E], lambda A Effect[B,E]) Effect[B,E]:
-    native 'effect-next'
+*/
+public function then[B,E] {
+    lambda (Effect[-,E], Effect[B,E]) Effect[B,E]:
+    native 'then-shortcut'
 };
-public function next*[A,B,E] {
-    lambda(Effect[A,E], lambda A Effect*[B,E]) Effect*[B,E]:
-    native 'effect-next*'
+public function then[B,E] {
+    lambda (Effect[-,E], NoExcept[B]) Effect[B,E]:
+    native 'then-shortcut'
 };
-public function map-error[T,E,F] {
-    lambda(Effect[T,E], lambda E F) Effect[T,F]:
-    native 'effect-map-error'
+public function then[B,E] {
+    lambda (NoExcept[-], Effect[B,E]) Effect[B,E]:
+    native 'then-shortcut'
 };
-public function map-error[T,E,F] {
-    lambda(Effect*[T,E], lambda E F) Effect*[T,F]:
-    native 'effect-map-error-*'
+public function then[B] {
+    lambda (NoExcept[-], NoExcept[B]) NoExcept[B]:
+    native 'then-shortcut'
+};
+public function catch[T,E,F] {
+    lambda (Effect[T,E], lambda E Effect[T,F]) Effect[T,F]:
+    native 'catch'
+};
+public function catch[T,E] {
+    lambda (Effect[T,E], lambda E NoExcept[T]) NoExcept[T]:
+    native 'catch'
+};
+/*
+public function throw[T,E] {
+    lambda E Effect[T,E]:
+    native 'throw'
+};
+public function catch-throw[T,E,F] {
+    lambda (Effect[T,E], lambda E F) Effect[T,F]:
+    native 'catch-throw'
+};
+public function map![A,B,E] {
+    lambda (Effect[A,E], lambda A B) Effect[B,E]:
+    native 'effect-map'
 };
 */

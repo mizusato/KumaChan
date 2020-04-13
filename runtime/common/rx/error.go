@@ -14,10 +14,10 @@ func (e Effect) Catch(f func(Object)Effect) Effect {
 				sched.run(handler, &observer {
 					context: ctx,
 					next: func(x Object) {
-						// do nothing
+						ob.next(x)
 					},
 					error: func(e Object) {
-						// do nothing
+						ob.error(e)
 					},
 					complete: func() {
 						ob.complete()

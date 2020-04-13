@@ -120,6 +120,25 @@ func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 	switch expected_kind {
 	case stdlib.Int:
 		return IntLiteral { value }, true
+	case stdlib.Size:
+		if value.IsUint64() {
+			var n = value.Uint64()
+			if uint64(^uintptr(0)) == ^uint64(0) {
+				return SmallIntLiteral {
+					Value: uint(n),
+				}, true
+			} else {
+				if n <= math.MaxUint32 {
+					return SmallIntLiteral {
+						Value: uint(n),
+					}, true
+				} else {
+					return nil, false
+				}
+			}
+		} else {
+			return nil, false
+		}
 	case stdlib.Int64:
 		if value.IsInt64() {
 			return SmallIntLiteral {

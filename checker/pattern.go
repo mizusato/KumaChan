@@ -59,6 +59,17 @@ func PatternFrom (
 			},
 		}, nil
 	case ast.PatternTuple:
+		if len(p.Names) == 1 {
+			// no single-element tuple
+			return Pattern {
+				Point:    ErrorPointFrom(p_node.Node),
+				Concrete: TrivialPattern {
+					ValueName: loader.Id2String(p.Names[0]),
+					ValueType: input,
+					Point:     ErrorPointFrom(p.Names[0].Node),
+				},
+			}, nil
+		}
 		switch tuple := UnboxTuple(input, ctx).(type) {
 		case Tuple:
 			var required = len(p.Names)

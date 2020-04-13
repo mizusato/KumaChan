@@ -30,11 +30,11 @@ var BitwiseFunctions = map[string] interface{} {
 	"^Byte": func(a interface{}, b interface{}) uint8 {
 		return ByteFrom(a) ^ ByteFrom(b)
 	},
-	"<<Byte": func(a interface{}, b interface{}) uint8 {
-		return ByteFrom(a) << ByteFrom(b)
+	"<<Byte": func(a interface{}, b uint) uint8 {
+		return ByteFrom(a) << b
 	},
-	">>Byte": func(a interface{}, b interface{}) uint8 {
-		return ByteFrom(a) >> ByteFrom(b)
+	">>Byte": func(a interface{}, b uint) uint8 {
+		return ByteFrom(a) >> b
 	},
 	"&Word": func(a interface{}, b interface{}) uint16 {
 		return WordFrom(a) & WordFrom(b)
@@ -48,11 +48,11 @@ var BitwiseFunctions = map[string] interface{} {
 	"^Word": func(a interface{}, b interface{}) uint16 {
 		return WordFrom(a) ^ WordFrom(b)
 	},
-	"<<Word": func(a interface{}, b interface{}) uint16 {
-		return WordFrom(a) << ByteFrom(b)
+	"<<Word": func(a interface{}, b uint) uint16 {
+		return WordFrom(a) << b
 	},
-	">>Word": func(a interface{}, b interface{}) uint16 {
-		return WordFrom(a) >> ByteFrom(b)
+	">>Word": func(a interface{}, b uint) uint16 {
+		return WordFrom(a) >> b
 	},
 	"&Dword": func(a interface{}, b interface{}) uint32 {
 		return DwordFrom(a) & DwordFrom(b)
@@ -66,11 +66,11 @@ var BitwiseFunctions = map[string] interface{} {
 	"^Dword": func(a interface{}, b interface{}) uint32 {
 		return DwordFrom(a) ^ DwordFrom(b)
 	},
-	"<<Dword": func(a interface{}, b interface{}) uint32 {
-		return DwordFrom(a) << ByteFrom(b)
+	"<<Dword": func(a interface{}, b uint) uint32 {
+		return DwordFrom(a) << b
 	},
-	">>Dword": func(a interface{}, b interface{}) uint32 {
-		return DwordFrom(a) >> ByteFrom(b)
+	">>Dword": func(a interface{}, b uint) uint32 {
+		return DwordFrom(a) >> b
 	},
 	"&Qword": func(a interface{}, b interface{}) uint64 {
 		return QwordFrom(a) & QwordFrom(b)
@@ -84,10 +84,10 @@ var BitwiseFunctions = map[string] interface{} {
 	"^Qword": func(a interface{}, b interface{}) uint64 {
 		return QwordFrom(a) ^ QwordFrom(b)
 	},
-	"<<Qword": func(a interface{}, b interface{}) uint64 {
-		return QwordFrom(a) << ByteFrom(b)
+	"<<Qword": func(a interface{}, b uint) uint64 {
+		return QwordFrom(a) << b
 	},
-	">>Qword": func(a interface{}, b interface{}) uint64 {
-		return QwordFrom(a) >> ByteFrom(b)
+	">>Qword": func(a interface{}, b uint) uint64 {
+		return QwordFrom(a) >> b
 	},
 }

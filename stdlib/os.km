@@ -1,14 +1,16 @@
 module OS;
 
-public const Stdin := [I/O::InputStream] native 'Stdin';
+public const Kind := [String] native 'OS::Kind';
+public const Arch := [String] native 'OS::Arch';
+public const Is64Bit := [Bool] native 'OS::Is64Bit';
 
-public const Stdout := [I/O::OutputStream] native 'Stdout';
+public const  Stdin := [I/O::InputStream] native 'OS::Stdin';
+public const Stdout := [I/O::OutputStream] native 'OS::Stdout';
+public const Stderr := [I/O::OutputStream] native 'OS::Stderr';
 
-public const Stderr := [I/O::OutputStream] native 'Stderr';
-
-type ProcessExit  protected Effect[(),()];
+type ProcessExit  protected NoExcept[-];
 
 public function exit {
-    lambda(Uint8) ProcessExit:
+    lambda Uint8 ProcessExit:
     native 'exit'
 };

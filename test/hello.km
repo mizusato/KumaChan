@@ -1,16 +1,16 @@
 module Hello;
 
 do (OS::Stdout | write-line 'Hello World')
-   | catch       lambda _ exit 1
-   | then        (OS::Stdout | write-line str! log! exp! Complex(0.0, $(pi / 2.0)))
-   | catch       lambda _ exit 1
-   | then        (OS::Stdout | write-line str! $(20 ** 11))
-   | catch       lambda _ exit 1
-   | then        exit 0;
+   | then   (OS::Stdout | write-line str! log! exp! Complex(0.0, $(pi / 2.0)))
+   | then   (OS::Stdout | write-line str! $(20 ** 11))
+   | then   exit 0
+   | catch  lambda _ exit 1;
 
 private function factorial {
     lambda Int Int:
     lambda n
-        if $(n <= 1):  1,
-                else:  $(n * (factorial $(n - 1)))
+        if $(n <= 1):
+            1,
+        else:
+            $(n * (factorial $(n - 1)))
 };

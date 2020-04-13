@@ -11,7 +11,7 @@ const Core = "Core"
 var core_types = []string {
 	Bit, Byte, Word, Dword, Qword, Size, Int,
 	Seq, Array, Heap, Set, Map,
-	EffectMultiValue, Effect,
+	EffectMultiValue, Effect, NoExceptMultiValue, NoExcept,
 	Int64, Uint64, Int32, Uint32, Int16, Uint16, Int8, Uint8,
 	Float64, Float, Complex, Char, Index, Range, String, Bytes,
 	Bool, Yes, No,
@@ -44,6 +44,8 @@ const Set = "Set"
 const Map = "Map"
 const EffectMultiValue = "Effect*"
 const Effect = "Effect"
+const NoExceptMultiValue = "NoExcept*"
+const NoExcept = "NoExcept"
 const Int64 = "Int64"
 const Uint64 = "Uint64"
 const Int32 = "Int32"
