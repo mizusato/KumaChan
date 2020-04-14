@@ -21,12 +21,13 @@ type Array[T]  native;  // []T, container.Array
 type Heap[T]   native;  // container.Heap
 type Set[T]    native;  // container.Set
 type Map[K,V]  native;  // container.Map
+// TODO: Mutable[T], HashMap[K,V]
 
 // Effect Types
-type Effect*[T,E]  native;  // rx.Effect
-type Effect[T,E]   protected Effect*[T,E];
-type NoExcept*[T]  opaque Effect*[T,-];
-type NoExcept[T]   protected NoExcept*[T];
+type Effect*[T,E]  native;  // rx.Effect       (Observable<T,E>)
+type Effect[T,E]   protected Effect*[T,E];  // (Promise<T,E>)
+type NoExcept*[T]  opaque Effect*[T,-];     // (Observable<T>)
+type NoExcept[T]   protected NoExcept*[T];  // (Promise<T>)
 
 // Fixed Integer Types
 type Int64   protected Qword;
@@ -591,7 +592,6 @@ public function trim-suffix {
 */
 
 // Effect Operators
-/*
 public function then[A,B,E] {
     lambda (Effect[A,E], (lambda A Effect[B,E])) Effect[B,E]:
     native 'then'
@@ -608,7 +608,6 @@ public function then[A,B] {
     lambda (NoExcept[A], (lambda A NoExcept[B])) NoExcept[B]:
     native 'then'
 };
-*/
 public function then[B,E] {
     lambda (Effect[-,E], Effect[B,E]) Effect[B,E]:
     native 'then-shortcut'
@@ -626,24 +625,62 @@ public function then[B] {
     native 'then-shortcut'
 };
 public function catch[T,E,F] {
-    lambda (Effect[T,E], lambda E Effect[T,F]) Effect[T,F]:
+    lambda (Effect[T,E], (lambda E Effect[T,F])) Effect[T,F]:
     native 'catch'
 };
 public function catch[T,E] {
-    lambda (Effect[T,E], lambda E NoExcept[T]) NoExcept[T]:
+    lambda (Effect[T,E], (lambda E NoExcept[T])) NoExcept[T]:
     native 'catch'
 };
-/*
-public function throw[T,E] {
-    lambda E Effect[T,E]:
-    native 'throw'
+public function catch-retry[T,E] {
+    lambda (Effect[T,E], (lambda E NoExcept[Bool])) Effect[T,E]:
+    native 'catch-retry'
 };
 public function catch-throw[T,E,F] {
     lambda (Effect[T,E], lambda E F) Effect[T,F]:
     native 'catch-throw'
 };
+public function throw[T,E] {
+    lambda E Effect[T,E]:
+    native 'throw'
+};
 public function map![A,B,E] {
     lambda (Effect[A,E], lambda A B) Effect[B,E]:
-    native 'effect-map'
+    native 'map-effect'
 };
-*/
+public function map![A,B] {
+    lambda (NoExcept[A], lambda A B) NoExcept[B]:
+    native 'map-effect'
+};
+public function map*[A,B,E] {
+    lambda (Effect*[A,E], lambda A B) Effect*[B,E]:
+    native 'map-effect'
+};
+public function map*[A,B] {
+    lambda (NoExcept*[A], lambda A B) NoExcept*[B]:
+    native 'map-effect'
+};
+public function filter![T,E] {
+    lambda (Effect*[T,E], lambda T Bool) Effect*[T,E]:
+    native 'filter-effect'
+};
+public function filter![T] {
+    lambda (NoExcept*[T], lambda T Bool) NoExcept*[T]:
+    native 'filter-effect'
+};
+public function reduce[T,A,E] {
+    lambda (Effect*[T,E], (lambda (A,T) A), A) Effect[A,E]:
+    native 'reduce-effect'
+};
+public function reduce[T,A] {
+    lambda (NoExcept*[T], (lambda (A,T) A), A) NoExcept[A]:
+    native 'reduce-effect'
+};
+public function scan[T,A,E] {
+    lambda (Effect*[T,E], (lambda (A,T) A), A) Effect*[A,E]:
+    native 'scan-effect'
+};
+public function scan[T,A] {
+    lambda (NoExcept*[T], (lambda (A,T) A), A) NoExcept*[A]:
+    native 'scan-effect'
+};
