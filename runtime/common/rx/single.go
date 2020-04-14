@@ -1,7 +1,8 @@
 package rx
 
 
-const invalid_single = "The effect that assumed to be a single-valued effect emitted multiple values"
+const single_multiple_return = "The effect that assumed to be a single-valued effect emitted multiple values"
+const single_zero_return = "The effect that assumed to be a single-valued effect completed with zero values emitted"
 
 func (e Effect) Then(f func(Object)Effect) Effect {
 	return Effect { func(sched Scheduler, ob *observer) {
@@ -11,7 +12,7 @@ func (e Effect) Then(f func(Object)Effect) Effect {
 			context: ob.context,
 			next: func(x Object) {
 				if returned {
-					panic(invalid_single)
+					panic(single_multiple_return)
 				}
 				returned = true
 				returned_value = x
@@ -20,6 +21,9 @@ func (e Effect) Then(f func(Object)Effect) Effect {
 				ob.error(e)
 			},
 			complete: func() {
+				if !returned {
+					panic(single_zero_return)
+				}
 				var next = f(returned_value)
 				sched.run(next, ob)
 			},

@@ -48,6 +48,11 @@ func ToTuple2(a Value, b Value) ProductValue {
 	return ProductValue { [] Value { a, b } }
 }
 
+func SingleValueFromBundle(b ProductValue) Value {
+	if len(b.Elements) != 1 { panic("bundle size is not 1") }
+	return b.Elements[0]
+}
+
 func BoolFrom(p SumValue) bool {
 	if p.Value != nil { panic("something went wrong") }
 	if p.Index == stdlib.YesIndex {

@@ -591,6 +591,16 @@ public function trim-suffix {
 };
 */
 
+// Effect Constructors
+public function timer! {
+    lambda { timeout: Size } NoExcept[-]:
+    native 'timer'
+};
+public function ticker! {
+    lambda { interval: Size } NoExcept*[-]:
+    native 'ticker'
+};
+
 // Effect Operators
 public function then[A,B,E] {
     lambda (Effect[A,E], (lambda A Effect[B,E])) Effect[B,E]:

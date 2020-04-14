@@ -7,6 +7,14 @@ import (
 
 
 var EffectFunctions = map[string] Value {
+	"timer": func(bundle ProductValue) rx.Effect {
+		var timeout = SingleValueFromBundle(bundle).(uint)
+		return rx.Timer(timeout)
+	},
+	"ticker": func(bundle ProductValue) rx.Effect {
+		var interval = SingleValueFromBundle(bundle).(uint)
+		return rx.Ticker(interval)
+	},
 	"then": func(e rx.Effect, f Value, h MachineHandle) rx.Effect {
 		return e.Then(func(val rx.Object) rx.Effect {
 			return h.Call(f, val).(rx.Effect)
