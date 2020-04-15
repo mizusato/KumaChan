@@ -1,9 +1,13 @@
 module Hello;
 
 do (OS::Stdout | write-line 'Hello World')
+    | then   (OS::Stdout | write-line
+        "# # #" (OS::Kind, OS::Arch, (if OS::Is64Bit: '64bit', else: '32bit')))
     | then   timer! { timeout: 2000 }
-    | then   (OS::Stdout | write-line str! log! exp! Complex(0.0, $(pi / 2.0)))
-    | then   (OS::Stdout | write-line str! $(20 ** 11))
+    | then   (OS::Stdout | write-line str! sqrt ln exp Complex(0.0, $(pi / 2.0)))
+    | then   (OS::Stdout | write-line str! sin asin sqrt $(2.0 * i))
+    | then   (OS::Stdout | write-line str! cos acos sqrt $(2.0 * i))
+    | then   (OS::Stdout | write-line str! tan atan sqrt $(2.0 * i))
     | then   exit 0
     | catch  lambda _ exit 1;
 

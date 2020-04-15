@@ -231,8 +231,8 @@ public function round! { lambda Float Float:  native 'round' };
 public function ** { lambda (Float,Float) Float:  native 'real-**' };
 public function sqrt { lambda Float Float:  native 'real-sqrt' };
 public function cbrt { lambda Float Float:  native 'real-cbrt' };
-public function exp! { lambda Float Float:  native 'real-exp' };
-public function log! { lambda Float Float:  native 'real-log' };
+public function  exp { lambda Float Float:  native 'real-exp' };
+public function   ln { lambda Float Float:  native 'real-log' };
 public function  sin { lambda Float Float: native 'real-sin' };
 public function  cos { lambda Float Float: native 'real-cos' };
 public function  tan { lambda Float Float: native 'real-tan' };
@@ -240,17 +240,17 @@ public function asin { lambda Float Float: native 'real-asin' };
 public function acos { lambda Float Float: native 'real-acos' };
 public function atan { lambda Float Float: native 'real-atan' };
 public function atan2 { lambda { y: Float, x: Float } Float:  native 'atan2' };
-public function log! {
+public function log {
     lambda { base: Float, x: Float } Float:
-    lambda {base,x} $((log! x) / (log! base))
+    lambda {base,x} $((ln x) / (ln base))
 };
-public function log2! {
+public function log2 {
     lambda Float Float:
-    lambda x (log! { base: 2.0, x })
+    lambda x (log { base: 2.0, x })
 };
-public function log10! {
+public function log10 {
     lambda Float Float:
-    lambda x (log! { base: 10.0, x })
+    lambda x (log { base: 10.0, x })
 };
 private macro re-im-> (z, expr) := (let (re, im) := z, return expr);
 public function re! {
@@ -351,30 +351,50 @@ public function - {
     lambda Complex Complex:
     lambda (re, im) (Complex ((- re), (- im)))
 };
-public function exp! {
+public function exp {
     lambda Complex Complex:
-    lambda (re, im) (polar! { norm: exp!(re), arg: im })
+    lambda (re, im) (polar! { norm: exp(re), arg: im })
 };
-public function log! {
+public function ln {
     lambda Complex Complex:
-    lambda    z    Complex((log! norm! z), (arg! z))
+    lambda    z    Complex((ln norm! z), (arg! z))
 };
 public function sin {
     lambda Complex Complex:
-    lambda    z    $( $((exp! $(i * z)) - (exp! $((- i) * z))) / $(2.0 * i) )
+    lambda    z    $( $((exp $(i * z)) - (exp $((- i) * z))) / $(2.0 * i) )
 };
 public function cos {
     lambda Complex Complex:
-    lambda    z    $( $((exp! $(i * z)) + (exp! $((- i) * z))) / $(2.0 * _1) )
+    lambda    z    $( $((exp $(i * z)) + (exp $((- i) * z))) / $(2.0 * _1) )
 };
 public function tan {
     lambda Complex Complex:
     lambda    z    $((sin z) / (cos z))
 };
+public function asin {
+    lambda Complex Complex:
+    lambda    z    $((- i) * (ln $( $(i * z) + (sqrt $(1.0 - $(z * z))) )))
+};
+public function acos {
+    lambda Complex Complex:
+    lambda    z    $((- i) * (ln $( z + (sqrt $($(z * z) - 1.0)) )))
+};
+public function atan {
+    lambda Complex Complex:
+    lambda    z    $($(i / 2.0) * (ln $($(i + z) / $(i - z))))
+};
+public function sqrt {
+    lambda Complex Complex:
+    lambda    z    (polar! { norm: (sqrt norm! z), arg: $((arg! z) / 2.0) })
+};
+public function cbrt {
+    lambda Complex Complex:
+    lambda    z    (polar! { norm: (cbrt norm! z), arg: $((arg! z) / 3.0) })
+};
 
 // Arithmetic Constants
 public const pi := [Float] acos -1.0;
-public const  e := [Float] exp! 1.0;
+public const  e := [Float] exp 1.0;
 public const  i := [Complex] Complex (0.0, 1.0);
 public const _1 := [Complex] Complex (1.0, 0.0);
 

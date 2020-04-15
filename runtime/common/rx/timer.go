@@ -20,9 +20,9 @@ func Ticker(interval uint) Effect {
 	return CreateEffect(func(sender Sender) {
 		var ticker = time.NewTicker(time.Duration(interval) * time.Millisecond)
 		go (func() {
-			<- ticker.C
-			sender.Next(nil)
-			sender.Complete()
+			for range ticker.C {
+				sender.Next(nil)
+			}
 		})()
 		<- sender.Context().Done()
 		ticker.Stop()
