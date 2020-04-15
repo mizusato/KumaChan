@@ -225,6 +225,15 @@ func (ctx ExprContext) WithTypeArgsInferringEnabled(names []string) ExprContext 
 	return new_ctx
 }
 
+func (ctx ExprContext) WithInferringInfoFrom(another ExprContext) ExprContext {
+	var new_ctx ExprContext
+	*(&new_ctx) = ctx
+	new_ctx.InferTypeArgs = another.InferTypeArgs
+	new_ctx.InferredNames = another.InferredNames
+	new_ctx.Inferred = another.Inferred
+	return new_ctx
+}
+
 func (ctx ExprContext) GetExprInfo(node ast.Node) ExprInfo {
 	return ExprInfo { ErrorPoint: ErrorPointFrom(node) }
 }

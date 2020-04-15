@@ -50,7 +50,7 @@ func (e Effect) CatchRetry(f func(Object)Effect) Effect {
 			},
 			error: func(err Object) {
 				var caught_effect =
-					f(err).NoExcept().Then(func(retry Object) Effect {
+					f(err).NoExcept().SingleThen(func(retry Object) Effect {
 						if retry.(bool) {
 							return try
 						} else {

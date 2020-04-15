@@ -10,6 +10,8 @@ public const Stderr := [I/O::OutputStream] native 'OS::Stderr';
 
 type ProcessExit  protected NoExcept[-];
 
+public macro println(line) := (OS::Stdout | write-line line);
+
 public function exit {
     lambda Uint8 ProcessExit:
     native 'exit'

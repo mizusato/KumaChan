@@ -1,13 +1,20 @@
 module Hello;
 
-do (OS::Stdout | write-line 'Hello World')
-    | then   (OS::Stdout | write-line
-        "# # #" (OS::Kind, OS::Arch, (if OS::Is64Bit: '64bit', else: '32bit')))
-    | then   timer! { timeout: 2000 }
-    | then   (OS::Stdout | write-line str! sqrt ln exp Complex(0.0, $(pi / 2.0)))
-    | then   (OS::Stdout | write-line str! sin asin sqrt $(2.0 * i))
-    | then   (OS::Stdout | write-line str! cos acos sqrt $(2.0 * i))
-    | then   (OS::Stdout | write-line str! tan atan sqrt $(2.0 * i))
+do (println 'Hello World')
+    | then   (println "# # #" (
+        OS::Kind, OS::Arch, (if OS::Is64Bit: '64bit', else: '32bit')))
+    | then   wait { timeout: 2000 }
+    | then   (println str! sqrt ln exp Complex(0.0, $(pi / 2.0)))
+    | then   (println str! sin asin sqrt $(2.0 * i))
+    | then   (println str! cos acos sqrt $(2.0 * i))
+    | then   (println str! tan atan sqrt $(2.0 * i))
+    // | then   (~NoExcept*[Size] from range! (0, 10)
+    //             | concat-map lambda x (println str! x)  // FIXME: local i conflict with core i
+    //             | wait-complete )
+    // | then   (println 'test!')
+    | then   (tick { interval: 1000 }  // FIXME: not working if above code not commented
+                | concat-map lambda _ (println str! 1.0)  // FIXME: use 1 instead will cause unexpected error point
+                | wait-complete )  // TODO: cancel
     | then   exit 0
     | catch  lambda _ exit 1;
 

@@ -115,6 +115,12 @@ func GenericFunctionAssignTo (
 				Concrete: E_ExplicitTypeRequired {},
 			}
 		}
+		if ctx.InferTypeArgs {
+			return Expr{}, &ExprError {
+				Point:    info.ErrorPoint,
+				Concrete: E_ExplicitTypeParamsRequired {},
+			}
+		}
 		var f_raw_type = AnonymousType { f.DeclaredType }
 		// Note: Unbox/Union related inferring is not required
 		//       since function types are anonymous types and invariant.

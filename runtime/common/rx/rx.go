@@ -1,6 +1,8 @@
 package rx
 
-import "context"
+import (
+	"context"
+)
 
 
 type Object = interface{}
@@ -106,15 +108,12 @@ func CreateEffect(action func(Sender)) Effect {
 	} }
 }
 
-func CreateBlockingEffect(action func()([]Object,error)) Effect {
+func CreateBlockingEffect(action func(next func(Object)) error) Effect {
 	return Effect { func (sched Scheduler, ob *observer) {
-		var result, err = action()
+		var err = action(ob.next)
 		if err != nil {
 			ob.error(err)
 		} else {
-			for _, item := range result {
-				ob.next(item)
-			}
 			ob.complete()
 		}
 	} }

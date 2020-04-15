@@ -9,7 +9,7 @@ import (
 
 
 var ContainerFunctions = map[string] Value {
-	"seq-from-range": func(l uint, r uint) Seq {
+	"Seq from Range": func(l uint, r uint) Seq {
 		return RangeIterator {
 			Current: l,
 			Bound:   r,

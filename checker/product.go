@@ -212,7 +212,7 @@ func CheckGet(get ast.Get, ctx ExprContext) (SemiExpr, *ExprError) {
 					Point:    ErrorPointFrom(member.Node),
 					Concrete: E_FieldDoesNotExist {
 						Field:  key,
-						Target: ctx.DescribeType(AnonymousType{bundle}),
+						Target: ctx.DescribeType(AnonymousType { bundle }),
 					},
 				} }
 				var expr = Expr {
@@ -278,7 +278,7 @@ func AssignTupleTo(expected Type, tuple SemiTypedTuple, info ExprInfo, ctx ExprC
 					Concrete: E_TupleSizeNotMatching {
 						Required:  required,
 						Given:     given,
-						GivenType: ctx.DescribeType(AnonymousType { tuple_t }),
+						GivenType: ctx.DescribeExpectedType(AnonymousType { tuple_t }),
 					},
 				}
 			}
@@ -329,7 +329,7 @@ func AssignBundleTo(expected Type, bundle SemiTypedBundle, info ExprInfo, ctx Ex
 						Point:    info.ErrorPoint,
 						Concrete: E_MissingField {
 							Field: field_name,
-							Type:  ctx.DescribeType(field.Type),
+							Type:  ctx.DescribeExpectedType(field.Type),
 						},
 					}
 				}

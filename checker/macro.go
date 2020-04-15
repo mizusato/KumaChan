@@ -115,7 +115,7 @@ func CollectMacros(mod *loader.Module, store MacroStore) (MacroCollection, *Macr
 }
 
 
-func AssignMacroInflationTo(expected Type, e UntypedMacroInflation, info ExprInfo, _ ExprContext) (Expr, *ExprError) {
+func AssignMacroInflationTo(expected Type, e UntypedMacroInflation, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
 	var m = e.Macro
 	var name = e.MacroName
 	var args = e.Arguments
@@ -134,7 +134,7 @@ func AssignMacroInflationTo(expected Type, e UntypedMacroInflation, info ExprInf
 	if err1 != nil { return Expr{}, wrap_error(err1) }
 	var semi, err2 = Check(m.Output, m_ctx)
 	if err2 != nil { return Expr{}, wrap_error(err2) }
-	var expr, err3 = AssignTo(expected, semi, m_ctx)
+	var expr, err3 = AssignTo(expected, semi, m_ctx.WithInferringInfoFrom(ctx))
 	if err3 != nil { return Expr{}, wrap_error(err3) }
 	return Expr {
 		Type:  expr.Type,
