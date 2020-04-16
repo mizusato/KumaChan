@@ -4,13 +4,13 @@ do println 'Hello World'
     | then   (println "# # #" (
         OS::Kind, OS::Arch, (if OS::Is64Bit: '64bit', else: '32bit')))
     | then   wait { timeout: 2000 }
-    | then   println str! sqrt ln exp Complex(0.0, $(pi / 2.0))
-    | then   println str! sin asin sqrt $(2.0 * i)
-    | then   println str! cos acos sqrt $(2.0 * i)
-    | then   println str! tan atan sqrt $(2.0 * i)
+    | then   println str! sqrt ln exp Complex(0.0, $((acos -1.0) / 2.0))
+    | then   println str! sin asin sqrt $(2.0 * (Complex(0.0,1.0)))
+    | then   println str! cos acos sqrt $(2.0 * (Complex(0.0,1.0)))
+    | then   println str! tan atan sqrt $(2.0 * (Complex(0.0,1.0)))
     | then   println 'merge (0..9)'
     | then   (~NoExcept*[Size] from range! (0, 10)
-                | merge-map lambda x (println str! x)  // FIXME: local i conflict with core i
+                | merge-map lambda i (println str! i)
                 | wait-complete )
     | then   println 'ticker'
     | then   (tick { interval: 1000 }

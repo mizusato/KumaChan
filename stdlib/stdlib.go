@@ -20,13 +20,11 @@ var core_types = []string {
 	Ordering, Smaller, Equal, Bigger,
 	Debug, Never,
 }
-var core_constants = []string {
-	"pi", "e", "i", "_1",
-}
+// var core_constants = []string {}
 func GetCoreScopedSymbols() []string {
 	var list = make([]string, 0)
 	list = append(list, core_types...)
-	list = append(list, core_constants...)
+	// list = append(list, core_constants...)
 	return list
 }
 

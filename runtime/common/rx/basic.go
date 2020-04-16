@@ -60,3 +60,24 @@ func (e Effect) Scan(f func(Object,Object)Object, init Object) Effect {
 		})
 	} }
 }
+
+func (e Effect) Take(amount uint) Effect {
+	if amount == 0 { panic("take: invalid amount 0") }
+	return Effect { func(sched Scheduler, ob *observer) {
+		var ctx, dispose = ob.context.CreateChild()
+		var taken = uint(0)
+		sched.run(e, &observer {
+			context:  ctx,
+			next: func(val Object) {
+				ob.next(val)
+				taken += 1
+				if taken == amount {
+					dispose()
+					ob.complete()
+				}
+			},
+			error:    ob.error,
+			complete: ob.complete,
+		})
+	} }
+}

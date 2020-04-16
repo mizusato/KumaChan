@@ -46,3 +46,22 @@ func (e Effect) WaitComplete() Effect {
 		})
 	} }
 }
+
+func (e Effect) TakeOne() Effect {
+	return Effect { func(sched Scheduler, ob *observer) {
+		var ctx, dispose = ob.context.CreateChild()
+		sched.run(e, &observer {
+			context:  ctx,
+			next: func(val Object) {
+				dispose()
+				ob.next(struct { Object; bool } {val, true})
+				ob.complete()
+			},
+			error:    ob.error,
+			complete: func() {
+				ob.next(struct { Object; bool } {nil, false})
+				ob.complete()
+			},
+		})
+	} }
+}

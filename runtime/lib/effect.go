@@ -33,10 +33,20 @@ var EffectFunctions = map[string] Value {
 			return nil
 		})
 	},
-	"oneshot": func(v Value) rx.Effect {
+	"one-shot": func(v Value) rx.Effect {
 		return rx.CreateBlockingEffect(func(next func(rx.Object)) error {
 			next(v)
 			return nil
+		})
+	},
+	"take-one": func(e rx.Effect) rx.Effect {
+		return e.TakeOne().Map(func(val rx.Object) rx.Object {
+			var v = val.(struct{ rx.Object; bool })
+			if v.bool {
+				return Just(v.Object)
+			} else {
+				return Na()
+			}
 		})
 	},
 	"adapt-no-except": func(v Value) Value {
