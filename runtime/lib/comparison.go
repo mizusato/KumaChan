@@ -33,13 +33,13 @@ var ComparisonFunctions = map[string] interface{} {
 			return ToOrdering(Equal)
 		}
 	},
-	"=Size": func(a uint, b uint) SumValue {
+	"=Number": func(a uint, b uint) SumValue {
 		return ToBool(a == b)
 	},
-	"<Size": func(a uint, b uint) SumValue {
+	"<Number": func(a uint, b uint) SumValue {
 		return ToBool(a < b)
 	},
-	"<>Size": func(a uint, b uint) SumValue {
+	"<>Number": func(a uint, b uint) SumValue {
 		if a < b {
 			return ToOrdering(Smaller)
 		} else if a > b {

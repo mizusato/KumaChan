@@ -1,20 +1,21 @@
 module Hello;
 
 do println 'Hello World'
-    | then   (println "# # #" (
-        OS::Kind, OS::Arch, (if OS::Is64Bit: '64bit', else: '32bit')))
+    // | then   (println "# # #" (
+    //     OS::Kind, OS::Arch, (if OS::Is64Bit: '64bit', else: '32bit')))
+    | then   println 'timer'
     | then   wait { timeout: 2000 }
-    | then   println str! sqrt ln exp Complex(0.0, $(pi / 2.0))
+    | then   println str! exp ln Complex(5.0, 5.0)
     | then   println str! sin asin sqrt $(2.0 * (Complex(0.0,1.0)))
     | then   println str! cos acos sqrt $(2.0 * (Complex(0.0,1.0)))
     | then   println str! tan atan sqrt $(2.0 * (Complex(0.0,1.0)))
-    | then   println 'merge (0..9)'
-    | then   (~NoExcept*[Size] from range! (0, 10)
+    | then   println 'merge (0..5)'
+    | then   (~NoExcept*[Number] from range! (0, 6)
                 | merge-map lambda i (println str! i)
                 | wait-complete )
     | then   println 'ticker'
     | then   (tick { interval: 1000 }
-                | scan (~Size 0, lambda (n, _) $(n + 1))
+                | scan (~Number 0, lambda (n, _) $(n + 1))
                 | concat-map lambda n (println str! n)
                 | wait-complete )  // TODO: cancel
     | then   exit 0

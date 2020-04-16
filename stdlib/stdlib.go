@@ -9,11 +9,11 @@ import (
 /* IMPORTANT: this go file should be consistent with corresponding km files */
 const Core = "Core"
 var core_types = []string {
-	Bit, Byte, Word, Dword, Qword, Size, Int,
+	Bit, Byte, Word, Dword, Qword, Number, Int,
 	Seq, Array, Heap, Set, Map,
 	EffectMultiValue, Effect, NoExceptMultiValue, NoExcept,
 	Int64, Uint64, Int32, Uint32, Int16, Uint16, Int8, Uint8,
-	Float64, Float, Complex, Char, Index, Range, String, Bytes,
+	Float64, Float, Complex, Char, Range, String, Bytes,
 	Bool, Yes, No,
 	Maybe, Just, Na,
 	Result, Ok, Ng,
@@ -34,7 +34,7 @@ const Byte = "Byte"
 const Word = "Word"
 const Dword = "Dword"
 const Qword = "Qword"
-const Size = "Size"
+const Number = "Number"
 const Int = "Int"
 const Seq = "Seq"
 const Array = "Array"
@@ -57,7 +57,6 @@ const Float64 = "Float64"
 const Float = "Float"
 const Complex = "Complex"
 const Char = "Char"
-const Index = "Index"
 const Range = "Range"
 const String = "String"
 const Bytes = "Bytes"

@@ -7,13 +7,13 @@ module Core;
  */
 
 // Basic Types
-type Bit    native;  // bool
-type Byte   native;  // uint8, int8
-type Word   native;  // uint16, int16
-type Dword  native;  // uint32, int32
-type Qword  native;  // uint64, int64, float64
-type Size   native;  // uint
-type Int    native;  // *big.Int
+type Bit     native;  // bool
+type Byte    native;  // uint8, int8
+type Word    native;  // uint16, int16
+type Dword   native;  // uint32, int32
+type Qword   native;  // uint64, int64, float64
+type Number  native;  // uint
+type Int     native;  // *big.Int
 
 // Container Types
 type Seq[T]    native;  // container.Seq
@@ -44,8 +44,7 @@ type Float64  protected Qword;
 type Float    protected Float64;  // float64 with NaN and Infinity excluded
 type Complex  (Float, Float);
 type Char     Uint32;  // rune
-type Index    Size;  // TODO: change `Size` to `Nat`, remove `Index` (use `Nat` instead)
-type Range    protected (Index, Index);  // left-close right-open interval
+type Range    protected (Number, Number);  // left-close right-open interval
 type String   protected Array[Char];  // []rune
 type Bytes    protected Array[Byte];  // []byte
 
@@ -142,11 +141,11 @@ private macro power-by-squaring (recursive-call, panic)
                 else:
                     recursive-call (t, square, q)
     };
-public function + { lambda (Size, Size) Size:  native '+Size' };
-public function - { lambda (Size, Size) Size:  native '-Size' };
-public function * { lambda (Size, Size) Size:  native '*Size' };
-public function / { lambda (Size, Size) Size:  native '/Size' };
-public function % { lambda (Size, Size) Size:  native '%Size' };
+public function + { lambda (Number, Number) Number:  native '+Number' };
+public function - { lambda (Number, Number) Number:  native '-Number' };
+public function * { lambda (Number, Number) Number:  native '*Number' };
+public function / { lambda (Number, Number) Number:  native '/Number' };
+public function % { lambda (Number, Number) Number:  native '%Number' };
 public function + { lambda (Float, Float) Float:  native '+Float' };
 public function - { lambda (Float, Float) Float:  native '-Float' };
 public function * { lambda (Float, Float) Float:  native '*Float' };
@@ -410,9 +409,9 @@ public function <> { lambda (String,String) Ordering:  native '<>String' };
 public function  = { lambda (Int,Int) Bool:      native '=Int' };
 public function  < { lambda (Int,Int) Bool:      native '<Int' };
 public function <> { lambda (Int,Int) Ordering:  native '<>Int' };
-public function  = { lambda (Size,Size) Bool:      native '=Size' };
-public function  < { lambda (Size,Size) Bool:      native '<Size' };
-public function <> { lambda (Size,Size) Ordering:  native '<>Size' };
+public function  = { lambda (Number,Number) Bool:      native '=Number' };
+public function  < { lambda (Number,Number) Bool:      native '<Number' };
+public function <> { lambda (Number,Number) Ordering:  native '<>Number' };
 public function  = { lambda (Float,Float) Bool:      native '=Float' };
 public function  < { lambda (Float,Float) Bool:      native '<Float' };
 public function <> { lambda (Float,Float) Ordering:  native '<>Float' };
@@ -449,30 +448,30 @@ public function AND { lambda (Byte,Byte) Byte:  native '&Byte' };
 public function  OR { lambda (Byte,Byte) Byte:  native '|Byte' };
 public function NOT { lambda Byte Byte:         native '~Byte' };
 public function XOR { lambda (Byte,Byte) Byte:  native '^Byte' };
-public function SHL { lambda (Byte,Size) Byte:  native '<<Byte' };
-public function SHR { lambda (Byte,Size) Byte:  native '>>Byte' };
+public function SHL { lambda (Byte,Number) Byte:  native '<<Byte' };
+public function SHR { lambda (Byte,Number) Byte:  native '>>Byte' };
 public function AND { lambda (Word,Word) Word:  native '&Word' };
 public function  OR { lambda (Word,Word) Word:  native '|Word' };
 public function NOT { lambda Word Word:         native '~Word' };
 public function XOR { lambda (Word,Word) Word:  native '^Word' };
-public function SHL { lambda (Word,Size) Word:  native '<<Word' };
-public function SHR { lambda (Word,Size) Word:  native '>>Word' };
+public function SHL { lambda (Word,Number) Word:  native '<<Word' };
+public function SHR { lambda (Word,Number) Word:  native '>>Word' };
 public function AND { lambda (Dword,Dword) Dword:  native '&Dword' };
 public function  OR { lambda (Dword,Dword) Dword:  native '|Dword' };
 public function NOT { lambda Dword Dword:          native '~Dword' };
 public function XOR { lambda (Dword,Dword) Dword:  native '^Dword' };
-public function SHL { lambda (Dword,Size) Dword:   native '<<Dword' };
-public function SHR { lambda (Dword,Size) Dword:   native '>>Dword' };
+public function SHL { lambda (Dword,Number) Dword:   native '<<Dword' };
+public function SHR { lambda (Dword,Number) Dword:   native '>>Dword' };
 public function AND { lambda (Qword,Qword) Qword:  native '&Qword' };
 public function  OR { lambda (Qword,Qword) Qword:  native '|Qword' };
 public function NOT { lambda Qword Qword:          native '~Qword' };
 public function XOR { lambda (Qword,Qword) Qword:  native '^Qword' };
-public function SHL { lambda (Qword,Size) Qword:   native '<<Qword' };
-public function SHR { lambda (Qword,Size) Qword:   native '>>Qword' };
+public function SHL { lambda (Qword,Number) Qword:   native '<<Qword' };
+public function SHR { lambda (Qword,Number) Qword:   native '>>Qword' };
 
 // Range Operation Functions
 public function range! {
-    lambda (Index,Index) Range:
+    lambda (Number,Number) Range:
     lambda (l, r)
         if $(l <= r):
             Range(l, r),
@@ -480,13 +479,13 @@ public function range! {
             panic[Range] 'invalid range: left bound bigger than right bound'
 };
 public function iterate {
-    lambda Range Seq[Index]:
+    lambda Range Seq[Number]:
     lambda r (from r)
 };
 
 // Sequence Operation Functions
 public function from {
-    lambda Range Seq[Index]:
+    lambda Range Seq[Number]:
     native 'Seq from Range'
 };
 public function next![T] {
@@ -500,7 +499,7 @@ public function collect[T] {
 
 // Array Operation Functions
 public function get[T] {
-    lambda (Array[T],Index) T:
+    lambda (Array[T],Number) T:
     native 'array-get'
 };
 public function slice![T] {
@@ -527,7 +526,7 @@ public function iterate[T] {
 // String Related Functions
 public macro str! (x) := ~String from x;
 public function from { lambda Int    String:  native 'String from Int' };
-public function from { lambda Size   String:  native 'String from Size' };
+public function from { lambda Number String:  native 'String from Number' };
 public function from { lambda Float  String:  native 'String from Float' };
 public function from { lambda Int8   String:  native 'String from Int8' };
 public function from { lambda Int16  String:  native 'String from Int16' };
@@ -562,7 +561,7 @@ public function concat {
     native 'str-concat'
 };
 public function find {
-    lambda (String,String) Maybe[Index]:
+    lambda (String,String) Maybe[Number]:
     native 'str-find'
 };
 public function contains {
@@ -618,15 +617,15 @@ public function one-shot[T] {
     native 'one-shot'
 };
 public function wait {
-    lambda { timeout: Size } NoExcept[-]:
+    lambda { timeout: Number } NoExcept[-]:
     native 'wait'
 };
 public function tick {
-    lambda { interval: Size } NoExcept*[-]:
+    lambda { interval: Number } NoExcept*[-]:
     native 'tick'
 };
 public function from {
-    lambda Range NoExcept*[Size]:
+    lambda Range NoExcept*[Number]:
     native 'NoExcept* from Range'
 };
 public function from[T] {
@@ -804,18 +803,18 @@ public function concat-map[A,B] {
     native 'concat-map'
 };
 public function mix-map[A,B,E] {
-    lambda (Effect*[A,E], (Size, lambda A Effect*[B,E])) Effect*[B,E]:
+    lambda (Effect*[A,E], (Number, lambda A Effect*[B,E])) Effect*[B,E]:
     native 'mix-map'
 };
 public function mix-map[A,B,E] {
-    lambda (Effect*[A,E], (Size, lambda A NoExcept*[B])) Effect*[B,E]:
+    lambda (Effect*[A,E], (Number, lambda A NoExcept*[B])) Effect*[B,E]:
     native 'mix-map'
 };
 public function mix-map[A,B,E] {
-    lambda (NoExcept*[A], (Size, lambda A Effect*[B,E])) Effect*[B,E]:
+    lambda (NoExcept*[A], (Number, lambda A Effect*[B,E])) Effect*[B,E]:
     native 'mix-map'
 };
 public function mix-map[A,B] {
-    lambda (NoExcept*[A], (Size, lambda A NoExcept*[B])) NoExcept*[B]:
+    lambda (NoExcept*[A], (Number, lambda A NoExcept*[B])) NoExcept*[B]:
     native 'mix-map'
 };

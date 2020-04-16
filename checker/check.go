@@ -99,7 +99,7 @@ type Sym interface { Sym() }
 func (impl SymLocalValue) Sym() {}
 type SymLocalValue struct { ValueType Type }
 func (impl SymConst) Sym() {}
-type SymConst struct { Const *Constant }
+type SymConst struct { Const *Constant; Name loader.Symbol }
 func (impl SymTypeParam) Sym() {}
 type SymTypeParam struct { Index uint }
 func (impl SymType) Sym() {}
@@ -181,7 +181,7 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 		}
 		constant, exists := ctx.ModuleInfo.Constants[sym_self]
 		if exists {
-			return SymConst { Const: constant }, true
+			return SymConst { Const: constant, Name: sym_self }, true
 		}
 		return nil, false
 	} else {
@@ -191,7 +191,7 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 		}
 		constant, exists := ctx.ModuleInfo.Constants[raw]
 		if exists {
-			return SymConst { Const: constant }, true
+			return SymConst { Const: constant, Name: raw }, true
 		}
 		return nil, false
 	}

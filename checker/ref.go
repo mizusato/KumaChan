@@ -120,7 +120,7 @@ func CheckRef(ref ast.Ref, ctx ExprContext) (SemiExpr, *ExprError) {
 	case SymConst:
 		return LiftTyped(Expr {
 			Type:  s.Const.DeclaredType,
-			Value: RefConstant { symbol },
+			Value: RefConstant { s.Name },
 			Info:  info,
 		}), nil
 	case SymTypeParam:

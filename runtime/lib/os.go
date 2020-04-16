@@ -15,7 +15,7 @@ var OS_Constants = map[string] Value {
 	"OS::Arch":    String(runtime.GOARCH),
 	"OS::Is64Bit": ToBool(uint64(^uintptr(0)) == ^uint64(0)),
 	"OS::Stdin":   io.Reader(os.Stdin),
-	"OS::Stdout":  io.Writer(os.Stderr),
+	"OS::Stdout":  io.Writer(os.Stdout),
 	"OS::Stderr":  io.Writer(os.Stderr),
 }
 

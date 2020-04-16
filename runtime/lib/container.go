@@ -65,7 +65,7 @@ var ContainerFunctions = map[string] Value {
 	"String from Int": func(n *big.Int) String {
 		return String(n.String())
 	},
-	"String from Size": func(x uint) String {
+	"String from Number": func(x uint) String {
 		return String(fmt.Sprint(x))
 	},
 	"String from Float": func(x float64) String {

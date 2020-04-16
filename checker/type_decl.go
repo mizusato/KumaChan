@@ -8,6 +8,7 @@ import (
 	"kumachan/transformer/ast"
 )
 
+
 // Final Registry of Types
 type TypeRegistry  map[loader.Symbol] *GenericType
 

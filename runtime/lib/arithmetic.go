@@ -8,7 +8,6 @@ import (
 
 
 var ArithmeticFunctions = map[string] interface{} {
-	// TODO: Size(Index) Arithmetic
 	"+Int": func(a *big.Int, b *big.Int) *big.Int {
 		var c big.Int
 		return c.Add(a, b)
@@ -31,23 +30,32 @@ var ArithmeticFunctions = map[string] interface{} {
 		q.DivMod(a, b, &m)
 		return &q, &m
 	},
-	"+Size": func(a uint, b uint) uint {
-		// TODO: Overflow Check
-		return a + b
-	},
-	"-Size": func(a uint, b uint) uint {
-		var r = a - b
-		// TODO: Overflow/Underflow Check
+	"+Number": func(a uint, b uint) uint {
+		var r = a + b
+		if r < a || r < b {
+			panic("Number Overflow")
+		}
 		return r
 	},
-	"*Size": func(a uint, b uint) uint {
-		// TODO: Overflow Check
-		return a * b
+	"-Number": func(a uint, b uint) uint {
+		if a < b {
+			panic("Number Underflow")
+		}
+		return a - b
 	},
-	"/Size": func(a uint, b uint) uint {
+	"*Number": func(a uint, b uint) uint {
+		var r = a * b
+		if r < a || r < b {
+			panic("Number Overflow")
+		} else if (r == a && b != 1) || (r == b && a != 1) {
+			panic("Number Overflow")
+		}
+		return r
+	},
+	"/Number": func(a uint, b uint) uint {
 		return a / b
 	},
-	"%Size": func(a uint, b uint) uint {
+	"%Number": func(a uint, b uint) uint {
 		return a % b
 	},
 	"+Float": func(a float64, b float64) float64 {

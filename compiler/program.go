@@ -163,7 +163,7 @@ func CreateProgram (
 		case DepClosure:
 			return base_closure + d.Index
 		case DepConstant:
-			return base_constant + constant_index_map[d]
+			return base_constant + sorted[constant_index_map[d]]
 		default:
 			panic("impossible branch")
 		}

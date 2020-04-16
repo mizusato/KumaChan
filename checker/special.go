@@ -21,8 +21,7 @@ var __Float = CoreSymbol(stdlib.Float)
 var __String = CoreSymbol(stdlib.String)
 var __Array = CoreSymbol(stdlib.Array)
 var __Int = CoreSymbol(stdlib.Int)
-var __Size = CoreSymbol(stdlib.Size)
-var __Index = CoreSymbol(stdlib.Index)
+var __Number = CoreSymbol(stdlib.Number)
 var __Int64 = CoreSymbol(stdlib.Int64)
 var __Uint64 = CoreSymbol(stdlib.Uint64)
 var __Qword = CoreSymbol(stdlib.Qword)
@@ -39,7 +38,7 @@ var __Uint8 = CoreSymbol(stdlib.Uint8)
 var __Byte = CoreSymbol(stdlib.Byte)
 var __Bit = CoreSymbol(stdlib.Bit)
 var __IntegerTypes = []loader.Symbol {
-	__Int,   __Size,   __Index,
+	__Int, __Number,
 	__Int64, __Uint64, __Qword,
 	__Int32, __Uint32, __Dword, __Char,
 	__Int16, __Uint16, __Word,
