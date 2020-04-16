@@ -41,7 +41,7 @@ var EffectFunctions = map[string] Value {
 	},
 	"take-one": func(e rx.Effect) rx.Effect {
 		return e.TakeOne().Map(func(val rx.Object) rx.Object {
-			var v = val.(struct{ rx.Object; bool })
+			var v = val.(struct { rx.Object; bool })
 			if v.bool {
 				return Just(v.Object)
 			} else {

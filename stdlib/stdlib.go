@@ -24,6 +24,7 @@ var core_types = []string {
 func GetCoreScopedSymbols() []string {
 	var list = make([]string, 0)
 	list = append(list, core_types...)
+	// Using public constants in Core violates shadowing rules
 	// list = append(list, core_constants...)
 	return list
 }

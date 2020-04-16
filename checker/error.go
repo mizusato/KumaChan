@@ -2,8 +2,8 @@ package checker
 
 import (
 	"fmt"
-	"kumachan/loader"
 	. "kumachan/error"
+	"kumachan/loader"
 )
 
 
@@ -865,7 +865,7 @@ func (e E_FunctionWrongTypeParamsQuantity) ExprErrorDesc() ErrorMessage {
 
 type E_NoneOfFunctionsAssignable struct {
 	To          string
-	Candidates  [] string
+	Candidates  [] Candidate
 }
 func (e E_NoneOfFunctionsAssignable) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
@@ -877,14 +877,15 @@ func (e E_NoneOfFunctionsAssignable) ExprErrorDesc() ErrorMessage {
 	msg.Write(T_LF)
 	for _, candidate := range e.Candidates {
 		msg.Write(T_INDENT)
-		msg.WriteText(TS_INLINE_CODE, candidate)
+		msg.WriteText(TS_INLINE_CODE, DescribeCandidate(candidate))
+		msg.WriteAllWithIndent(candidate.Error.Desc(), 2)
 		msg.Write(T_LF)
 	}
 	return msg
 }
 
 type E_NoneOfFunctionsCallable struct {
-	Candidates  [] string
+	Candidates  [] Candidate
 }
 func (e E_NoneOfFunctionsCallable) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
@@ -893,9 +894,24 @@ func (e E_NoneOfFunctionsCallable) ExprErrorDesc() ErrorMessage {
 	msg.Write(T_LF)
 	msg.WriteText(TS_INFO, "*** candidates are:")
 	msg.Write(T_LF)
-	for _, candidate := range e.Candidates {
+	var err_listed = make(map[string] int)
+	for i, candidate := range e.Candidates {
 		msg.Write(T_INDENT)
-		msg.WriteText(TS_INLINE_CODE, candidate)
+		msg.WriteText(TS_INFO, fmt.Sprintf("(%d)", (i + 1)))
+		msg.Write(T_SPACE)
+		msg.WriteText(TS_INFO, DescribeCandidate(candidate))
+		msg.Write(T_LF)
+		var candidate_msg = candidate.Error.Message()
+		var key = candidate_msg.String()
+		var listed_index, listed = err_listed[key]
+		if listed {
+			msg.WriteRepeated(T_INDENT, 2)
+			msg.WriteText(TS_ERROR,
+				fmt.Sprintf("= (%d)", (listed_index + 1)))
+		} else {
+			msg.WriteAllWithIndent(candidate_msg, 2)
+			err_listed[key] = i
+		}
 		msg.Write(T_LF)
 	}
 	return msg

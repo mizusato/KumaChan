@@ -160,7 +160,13 @@ func AssignCallTo(expected Type, call UndecidedCall, info ExprInfo, ctx ExprCont
 		} else {
 			var candidates = make([]string, len(assignable))
 			for i, a := range assignable {
-				candidates[i] = DescribeCandidate(call.FuncName, a.Function)
+				candidates[i] = DescribeCandidate (
+					Candidate {
+						Function: a.Function,
+						Name:     call.FuncName,
+						Error:    nil,
+					},
+				)
 			}
 			return Expr{}, &ExprError {
 				Point:    info.ErrorPoint,

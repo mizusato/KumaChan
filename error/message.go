@@ -100,6 +100,22 @@ func (msg *ErrorMessage) WriteAll(another ErrorMessage) {
 	*msg = append(*msg, another...)
 }
 
+func (msg *ErrorMessage) WriteAllWithIndent(another ErrorMessage, amount uint) {
+	msg.WriteRepeated(T_INDENT, amount)
+	for i, item := range another {
+		msg.Write(item)
+		if item == T_LF && i != len(another)-1 {
+			msg.WriteRepeated(T_INDENT, amount)
+		}
+	}
+}
+
+func (msg *ErrorMessage) WriteRepeated(text StyledText, amount uint) {
+	for i := uint(0); i < amount; i += 1 {
+		msg.Write(text)
+	}
+}
+
 func JoinErrMsg(messages []ErrorMessage, separator StyledText) ErrorMessage {
 	var joined = make(ErrorMessage, 0, len(messages))
 	for i, item := range messages {

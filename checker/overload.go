@@ -7,6 +7,12 @@ import (
 )
 
 
+type Candidate struct {
+	Function  *GenericFunction
+	Name      string
+	Error     *ExprError
+}
+
 func OverloadedCall (
 	functions  [] *GenericFunction,
 	name       string,
@@ -28,8 +34,7 @@ func OverloadedCall (
 		return LiftTyped(expr), nil
 	} else {
 		var options = make([]AvailableCall, 0)
-		var candidates = make([]string, 0)
-		var errs = make([]*ExprError, 0)  // TODO: merge into candidates info
+		var candidates = make([]Candidate, 0)
 		for i, f := range functions {
 			var index = uint(i)
 			var is_exact bool
@@ -38,8 +43,11 @@ func OverloadedCall (
 				&is_exact,
 			)
 			if err != nil {
-				candidates = append(candidates, DescribeCandidate(name, f))
-				errs = append(errs, err)
+				candidates = append(candidates, Candidate {
+					Function: f,
+					Name:     name,
+					Error:    err,
+				})
 			} else {
 				options = append(options, AvailableCall {
 					Expr:     expr,
@@ -97,14 +105,18 @@ func OverloadedAssignTo (
 			expected, name, 0, f, type_args, info, ctx,
 		)
 	} else {
-		var candidates = make([]string, 0)
+		var candidates = make([]Candidate, 0)
 		for i, f := range functions {
 			var index = uint(i)
 			var expr, err = GenericFunctionAssignTo (
 				expected, name, index, f, type_args, info, ctx,
 			)
 			if err != nil {
-				candidates = append(candidates, DescribeCandidate(name, f))
+				candidates = append(candidates, Candidate {
+					Function: f,
+					Name:     name,
+					Error:    err,
+				})
 			} else {
 				return expr, nil
 			}
@@ -126,7 +138,9 @@ func OverloadedAssignTo (
 	}
 }
 
-func DescribeCandidate(name string, f *GenericFunction) string {
+func DescribeCandidate(c Candidate) string {
+	var name = c.Name
+	var f = c.Function
 	return fmt.Sprintf (
 		"%s[%s]: %s",
 		name,

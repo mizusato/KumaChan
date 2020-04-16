@@ -74,7 +74,7 @@ func FormatError (
 		if r >= len(span_map) { break }
 		nh_rows = append(nh_rows, span_map[r])
 	}
-	var expected_width = len(strconv.Itoa(last_row))
+	var expected_width = len(strconv.Itoa(end_row))
 	var align = func(num int) string {
 		var num_str = strconv.Itoa(num)
 		var num_width = len(num_str)
@@ -97,7 +97,7 @@ func FormatError (
 	for i, row := range nh_rows {
 		var current_row = (start_row + i)
 		msg.WriteText(TS_NORMAL, fmt.Sprintf (
-			" %s |", align(current_row),
+			"  %s |", align(current_row),
 		))
 		msg.Write(T_SPACE)
 		var buf strings.Builder
