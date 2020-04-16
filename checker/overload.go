@@ -29,6 +29,7 @@ func OverloadedCall (
 	} else {
 		var options = make([]AvailableCall, 0)
 		var candidates = make([]string, 0)
+		var errs = make([]*ExprError, 0)  // TODO: merge into candidates info
 		for i, f := range functions {
 			var index = uint(i)
 			var is_exact bool
@@ -38,6 +39,7 @@ func OverloadedCall (
 			)
 			if err != nil {
 				candidates = append(candidates, DescribeCandidate(name, f))
+				errs = append(errs, err)
 			} else {
 				options = append(options, AvailableCall {
 					Expr:     expr,

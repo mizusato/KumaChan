@@ -31,6 +31,23 @@ var ArithmeticFunctions = map[string] interface{} {
 		q.DivMod(a, b, &m)
 		return &q, &m
 	},
+	"+Size": func(a uint, b uint) uint {
+		return a + b
+	},
+	"-Size": func(a uint, b uint) uint {
+		var r = a - b
+		if r < 0 { panic("Size Underflow") }
+		return r
+	},
+	"*Size": func(a uint, b uint) uint {
+		return a * b
+	},
+	"/Size": func(a uint, b uint) uint {
+		return a / b
+	},
+	"%Size": func(a uint, b uint) uint {
+		return a % b
+	},
 	"+Float": func(a float64, b float64) float64 {
 		return stdlib.CheckFloat(a + b)
 	},

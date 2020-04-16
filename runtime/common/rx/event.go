@@ -39,20 +39,13 @@ func SpawnEventLoopWithBufferSize(buf_size uint) *EventLoop {
 		for {
 			select {
 			case ev := <- events:
-				switch ev.kind {
-				case ev_next:
-					ev.observer.next(ev.payload)
-				case ev_error:
-					ev.observer.error(ev.payload)
-				case ev_complete:
-					ev.observer.complete()
-				}
+				process_event(ev)
 			default:
 				select {
 				case t := <- tasks:
 					t()
-				default:
-					continue
+				case ev := <- events:
+					process_event(ev)
 				}
 			}
 		}
@@ -69,4 +62,15 @@ func (el *EventLoop) dispatch(ev event) {
 
 func (el *EventLoop) commit(t task) {
 	el.task_channel <- t
+}
+
+func process_event(ev event) {
+	switch ev.kind {
+	case ev_next:
+		ev.observer.next(ev.payload)
+	case ev_error:
+		ev.observer.error(ev.payload)
+	case ev_complete:
+		ev.observer.complete()
+	}
 }

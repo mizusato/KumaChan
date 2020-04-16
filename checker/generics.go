@@ -1,5 +1,7 @@
 package checker
 
+import . "kumachan/error"
+
 
 func GenericFunctionCall (
 	f            *GenericFunction,
@@ -379,6 +381,86 @@ func FillMarkedParams(type_ Type, ctx ExprContext) Type {
 					Output: FillMarkedParams(r.Output, ctx),
 				},
 			}
+		default:
+			panic("impossible branch")
+		}
+	default:
+		panic("impossible branch")
+	}
+}
+
+func GetCertainType(type_ Type, point ErrorPoint, ctx ExprContext) (Type, *ExprError) {
+	if !(ctx.InferTypeArgs) {
+		return type_, nil
+	}
+	switch T := type_.(type) {
+	case ParameterType:
+		if T.BeingInferred {
+			var inferred, exists = ctx.Inferred[T.Index]
+			if exists {
+				return inferred, nil
+			} else {
+				return nil, &ExprError {
+					Point:    point,
+					Concrete: E_ExplicitTypeRequired {},
+				}
+			}
+		} else {
+			return T, nil
+		}
+	case NamedType:
+		var result_args = make([]Type, len(T.Args))
+		for i, arg := range T.Args {
+			var t, err = GetCertainType(arg, point, ctx)
+			if err != nil { return nil, err }
+			result_args[i] = t
+		}
+		return NamedType {
+			Name: T.Name,
+			Args: result_args,
+		}, nil
+	case AnonymousType:
+		switch r := T.Repr.(type) {
+		case Unit:
+			return AnonymousType { Unit {} }, nil
+		case Tuple:
+			var result_elements = make([]Type, len(r.Elements))
+			for i, element := range r.Elements {
+				var t, err = GetCertainType(element, point, ctx)
+				if err != nil { return nil, err }
+				result_elements[i] = t
+			}
+			return AnonymousType {
+				Repr: Tuple {
+					Elements: result_elements,
+				},
+			}, nil
+		case Bundle:
+			var result_fields = make(map[string]Field, len(r.Fields))
+			for name, field := range r.Fields {
+				var t, err = GetCertainType(field.Type, point, ctx)
+				if err != nil { return nil, err }
+				result_fields[name] = Field {
+					Type:  t,
+					Index: field.Index,
+				}
+			}
+			return AnonymousType {
+				Repr: Bundle {
+					Fields: result_fields,
+				},
+			}, nil
+		case Func:
+			var input, err1 = GetCertainType(r.Input, point, ctx)
+			if err1 != nil { return nil, err1 }
+			var output, err2 = GetCertainType(r.Output, point, ctx)
+			if err2 != nil { return nil, err2 }
+			return AnonymousType {
+				Repr:Func {
+					Input:  input,
+					Output: output,
+				},
+			}, nil
 		default:
 			panic("impossible branch")
 		}

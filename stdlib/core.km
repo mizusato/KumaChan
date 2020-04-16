@@ -142,6 +142,11 @@ private macro power-by-squaring (recursive-call, panic)
                 else:
                     recursive-call (t, square, q)
     };
+public function + { lambda (Size, Size) Size:  native '+Size' };
+public function - { lambda (Size, Size) Size:  native '-Size' };
+public function * { lambda (Size, Size) Size:  native '*Size' };
+public function / { lambda (Size, Size) Size:  native '/Size' };
+public function % { lambda (Size, Size) Size:  native '%Size' };
 public function + { lambda (Float, Float) Float:  native '+Float' };
 public function - { lambda (Float, Float) Float:  native '-Float' };
 public function * { lambda (Float, Float) Float:  native '*Float' };
@@ -731,19 +736,19 @@ public function filter![T] {
     native 'filter-effect'
 };
 public function reduce[T,A,E] {
-    lambda (Effect*[T,E], (lambda (A,T) A), A) Effect[A,E]:
+    lambda (Effect*[T,E], (A, lambda (A,T) A)) Effect[A,E]:
     native 'reduce-effect'
 };
 public function reduce[T,A] {
-    lambda (NoExcept*[T], (lambda (A,T) A), A) NoExcept[A]:
+    lambda (NoExcept*[T], (A, lambda (A,T) A)) NoExcept[A]:
     native 'reduce-effect'
 };
 public function scan[T,A,E] {
-    lambda (Effect*[T,E], (lambda (A,T) A), A) Effect*[A,E]:
+    lambda (Effect*[T,E], (A, lambda (A,T) A)) Effect*[A,E]:
     native 'scan-effect'
 };
 public function scan[T,A] {
-    lambda (NoExcept*[T], (lambda (A,T) A), A) NoExcept*[A]:
+    lambda (NoExcept*[T], (A, lambda (A,T) A)) NoExcept*[A]:
     native 'scan-effect'
 };
 public function switch-map[A,B,E] {
@@ -795,18 +800,18 @@ public function concat-map[A,B] {
     native 'concat-map'
 };
 public function mix-map[A,B,E] {
-    lambda (Effect*[A,E], (lambda A Effect*[B,E]), Size) Effect*[B,E]:
+    lambda (Effect*[A,E], (Size, lambda A Effect*[B,E])) Effect*[B,E]:
     native 'mix-map'
 };
 public function mix-map[A,B,E] {
-    lambda (Effect*[A,E], (lambda A NoExcept*[B]), Size) Effect*[B,E]:
+    lambda (Effect*[A,E], (Size, lambda A NoExcept*[B])) Effect*[B,E]:
     native 'mix-map'
 };
 public function mix-map[A,B,E] {
-    lambda (NoExcept*[A], (lambda A Effect*[B,E]), Size) Effect*[B,E]:
+    lambda (NoExcept*[A], (Size, lambda A Effect*[B,E])) Effect*[B,E]:
     native 'mix-map'
 };
 public function mix-map[A,B] {
-    lambda (NoExcept*[A], (lambda A NoExcept*[B]), Size) NoExcept*[B]:
+    lambda (NoExcept*[A], (Size, lambda A NoExcept*[B])) NoExcept*[B]:
     native 'mix-map'
 };

@@ -184,7 +184,7 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 			if ctx.InferTypeArgs && E.BeingInferred {
 				var inferred, exists = ctx.Inferred[E.Index]
 				if exists {
-					if AreTypesEqualInSameCtx(inferred, expected) {
+					if AreTypesEqualInSameCtx(inferred, expr.Type) {
 						return expr, nil
 					} else {
 						return Expr{}, throw(fmt.Sprintf (

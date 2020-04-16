@@ -196,6 +196,7 @@ func (ctx ExprContext) WithShadowingPatternMatching(p Pattern) ExprContext {
 	return new_ctx
 }
 
+/*
 func (ctx ExprContext) WithPatternMatching(p Pattern) (ExprContext, *ExprError) {
 	var err_result = func(e ConcreteExprError) (ExprContext, *ExprError) {
 		return ExprContext{}, &ExprError {
@@ -236,3 +237,4 @@ func (ctx ExprContext) WithPatternMatching(p Pattern) (ExprContext, *ExprError) 
 		panic("impossible branch")
 	}
 }
+*/
