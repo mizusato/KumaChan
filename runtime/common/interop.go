@@ -15,6 +15,13 @@ type NativeFunction  func(arg Value, handle MachineHandle) Value
 
 
 func AdaptNativeFunction(f interface{}) NativeFunction {
+	var get_arg_val = func(v Value) reflect.Value {
+		if v == nil {
+			return reflect.ValueOf(struct{}{})
+		} else {
+			return reflect.ValueOf(v)
+		}
+	}
 	var f_fit, ok = f.(NativeFunction)
 	if ok {
 		return f_fit
@@ -33,7 +40,7 @@ func AdaptNativeFunction(f interface{}) NativeFunction {
 			if net_arity == 1 {
 				return func(arg Value, handle MachineHandle) Value {
 					var rv_args = []reflect.Value {
-						reflect.ValueOf(arg),
+						get_arg_val(arg),
 						reflect.ValueOf(handle),
 					}
 					return AdaptReturnValue(f_rv.Call(rv_args))
@@ -46,7 +53,7 @@ func AdaptNativeFunction(f interface{}) NativeFunction {
 					}
 					var rv_args = make([]reflect.Value, arity)
 					for i, e := range p.Elements {
-						rv_args[i] = reflect.ValueOf(e)
+						rv_args[i] = get_arg_val(e)
 					}
 					rv_args[net_arity] = reflect.ValueOf(handle)
 					return AdaptReturnValue(f_rv.Call(rv_args))
@@ -56,7 +63,7 @@ func AdaptNativeFunction(f interface{}) NativeFunction {
 			if arity == 1 {
 				return func(arg Value, handle MachineHandle) Value {
 					return AdaptReturnValue(f_rv.Call([]reflect.Value {
-						reflect.ValueOf(arg),
+						get_arg_val(arg),
 					}))
 				}
 			} else {
@@ -67,7 +74,7 @@ func AdaptNativeFunction(f interface{}) NativeFunction {
 					}
 					var args = make([]reflect.Value, arity)
 					for i, e := range p.Elements {
-						args[i] = reflect.ValueOf(e)
+						args[i] = get_arg_val(e)
 					}
 					return AdaptReturnValue(f_rv.Call(args))
 				}

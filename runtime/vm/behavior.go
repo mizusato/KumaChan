@@ -77,7 +77,7 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 			case NOP:
 				// do nothing
 			case NIL:
-				ec.pushValue(struct{}{})
+				ec.pushValue(nil)
 			case POP:
 				ec.popValue()
 			case GLOBAL:

@@ -32,14 +32,16 @@ var ArithmeticFunctions = map[string] interface{} {
 		return &q, &m
 	},
 	"+Size": func(a uint, b uint) uint {
+		// TODO: Overflow Check
 		return a + b
 	},
 	"-Size": func(a uint, b uint) uint {
 		var r = a - b
-		if r < 0 { panic("Size Underflow") }
+		// TODO: Overflow/Underflow Check
 		return r
 	},
 	"*Size": func(a uint, b uint) uint {
+		// TODO: Overflow Check
 		return a * b
 	},
 	"/Size": func(a uint, b uint) uint {

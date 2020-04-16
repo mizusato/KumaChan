@@ -1,26 +1,22 @@
 module Hello;
 
 do println 'Hello World'
-    // | then   (println "# # #" (
-    //     OS::Kind, OS::Arch, (if OS::Is64Bit: '64bit', else: '32bit')))
-    // | then   wait { timeout: 2000 }
-    // | then   (println str! sqrt ln exp Complex(0.0, $(pi / 2.0)))
-    // | then   (println str! sin asin sqrt $(2.0 * i))
-    // | then   (println str! cos acos sqrt $(2.0 * i))
-    // | then   (println str! tan atan sqrt $(2.0 * i))
-    // | then   (println 'test!')
-    // | then   (~NoExcept*[Size] from range! (0, 10)
-    //             | reduce (~Size 0, lambda (a, item) $(a + item)) )
-    // | then   (~NoExcept*[Size] from range! (0, 10)
-    //             | map* lambda _ () | wait-complete)
+    | then   (println "# # #" (
+        OS::Kind, OS::Arch, (if OS::Is64Bit: '64bit', else: '32bit')))
+    | then   wait { timeout: 2000 }
+    | then   println str! sqrt ln exp Complex(0.0, $(pi / 2.0))
+    | then   println str! sin asin sqrt $(2.0 * i)
+    | then   println str! cos acos sqrt $(2.0 * i)
+    | then   println str! tan atan sqrt $(2.0 * i)
+    | then   println 'merge (0..9)'
     | then   (~NoExcept*[Size] from range! (0, 10)
-                | concat-map lambda x (println str! x)  // FIXME: local i conflict with core i
+                | merge-map lambda x (println str! x)  // FIXME: local i conflict with core i
                 | wait-complete )
-    | then   println 'vvv'
-    | then   println 'xxx'
-    // | then   (tick { interval: 1000 }  // FIXME: not working if above code not commented
-    //             | concat-map lambda _ (println str! 1.0)  // FIXME: use 1 instead will cause unexpected error point
-    //             | wait-complete )  // TODO: cancel
+    | then   println 'ticker'
+    | then   (tick { interval: 1000 }
+                | scan (~Size 0, lambda (n, _) $(n + 1))
+                | concat-map lambda n (println str! n)  // FIXME: error info inside lambda not bubbled
+                | wait-complete )  // TODO: cancel
     | then   exit 0
     | catch  lambda _ exit 1;
 

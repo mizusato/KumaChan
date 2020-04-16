@@ -44,7 +44,7 @@ type Float64  protected Qword;
 type Float    protected Float64;  // float64 with NaN and Infinity excluded
 type Complex  (Float, Float);
 type Char     Uint32;  // rune
-type Index    Size;
+type Index    Size;  // TODO: change `Size` to `Nat`, remove `Index` (use `Nat` instead)
 type Range    protected (Index, Index);  // left-close right-open interval
 type String   protected Array[Char];  // []rune
 type Bytes    protected Array[Byte];  // []byte
