@@ -44,15 +44,20 @@ func execute(p Program, m *Machine) {
 		}
 	}
 	var ctx = rx.Background()
+	var sem = make(chan struct{}, len(p.Effects))
 	for i, _ := range p.Effects {
 		var f = p.Effects[i]
 		var v = f.ToValue(nil).(FunctionValue)
 		var e = (call(v, nil, m)).(rx.Effect)
 		m.scheduler.RunTopLevel(e, rx.Receiver {
-			Context: ctx,
-			Values:  nil,
-			Error:   nil,
+			Context:   ctx,
+			Values:    nil,
+			Error:     nil,
+			Terminate: sem,
 		})
+	}
+	for i := 0; i < len(p.Effects); i += 1 {
+		<- sem
 	}
 }
 

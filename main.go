@@ -128,5 +128,4 @@ func main () {
     var c_mod, _ = debug_checker(mod, idx)
     var program = debug_compiler(c_mod)
     vm.Execute(program, 33554432)
-    <- chan struct{} (nil)
 }

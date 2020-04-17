@@ -69,9 +69,10 @@ type Sender struct {
 }
 
 type Receiver struct {
-	Context  *Context
-	Values   chan <- Object
-	Error    chan <- Object
+	Context    *Context
+	Values     chan <- Object
+	Error      chan <- Object
+	Terminate  chan <- struct {}
 }
 
 func (s Sender) Context() context.Context {
