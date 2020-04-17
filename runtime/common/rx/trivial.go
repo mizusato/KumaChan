@@ -48,7 +48,7 @@ func (sched TrivialScheduler) RunTopLevel(e Effect, r Receiver) {
 					close(r.Error)
 				}
 				if r.Terminate != nil {
-					r.Terminate <- struct{} {}
+					r.Terminate <- struct {} {}
 				}
 			},
 			complete: func() {
@@ -56,7 +56,7 @@ func (sched TrivialScheduler) RunTopLevel(e Effect, r Receiver) {
 					close(r.Values)
 				}
 				if r.Terminate != nil {
-					r.Terminate <- struct{} {}
+					r.Terminate <- struct {} {}
 				}
 			},
 		})

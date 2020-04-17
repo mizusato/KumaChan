@@ -21,13 +21,19 @@ type Array[T]  native;  // []T, container.Array
 type Heap[T]   native;  // container.Heap
 type Set[T]    native;  // container.Set
 type Map[K,V]  native;  // container.Map
-// TODO: Mutable[T], HashMap[K,V]
 
 // Effect Types
 type Effect*[T,E]  native;  // rx.Effect       (Observable<T,E>)
 type Effect[T,E]   protected Effect*[T,E];  // (Promise<T,E>)
 type NoExcept*[T]  opaque Effect*[T,-];     // (Observable<T>)
 type NoExcept[T]   protected NoExcept*[T];  // (Promise<T>)
+
+// Mutable Containers
+type Source[T]   native;  // rx.Source
+type Sink[T]     protected Source[T];  // rx.Sink
+type Mutable[T]  native;  // rx.Cell
+type List[T]     native;  // rx.List
+type HashMap[T]  native;  // rx.Map
 
 // Fixed Integer Types
 type Int64   protected Qword;

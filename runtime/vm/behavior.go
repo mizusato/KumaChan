@@ -44,7 +44,7 @@ func execute(p Program, m *Machine) {
 		}
 	}
 	var ctx = rx.Background()
-	var sem = make(chan struct{}, len(p.Effects))
+	var wg = make(chan struct{}, len(p.Effects))
 	for i, _ := range p.Effects {
 		var f = p.Effects[i]
 		var v = f.ToValue(nil).(FunctionValue)
@@ -53,11 +53,11 @@ func execute(p Program, m *Machine) {
 			Context:   ctx,
 			Values:    nil,
 			Error:     nil,
-			Terminate: sem,
+			Terminate: wg,
 		})
 	}
 	for i := 0; i < len(p.Effects); i += 1 {
-		<- sem
+		<- wg
 	}
 }
 
