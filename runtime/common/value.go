@@ -9,16 +9,19 @@ import (
 
 type Value = interface {}
 
-type SumValue struct {
+type SumValue = *ValSum
+type ValSum struct {
 	Index  Short
 	Value  Value
 }
 
-type ProductValue struct {
+type ProductValue = *ValProd
+type ValProd struct {
 	Elements  [] Value
 }
 
-type FunctionValue struct {
+type FunctionValue = *ValFunc
+type ValFunc struct {
 	Underlying     *Function
 	ContextValues  [] Value
 }
@@ -45,7 +48,7 @@ func Tuple2From(t ProductValue) (Value, Value) {
 }
 
 func ToTuple2(a Value, b Value) ProductValue {
-	return ProductValue { [] Value { a, b } }
+	return &ValProd { [] Value { a, b } }
 }
 
 func SingleValueFromBundle(b ProductValue) Value {
@@ -66,34 +69,34 @@ func BoolFrom(p SumValue) bool {
 
 func ToBool(p bool) SumValue {
 	if p == true {
-		return SumValue { Index: stdlib.YesIndex }
+		return &ValSum { Index: stdlib.YesIndex }
 	} else {
-		return SumValue { Index: stdlib.NoIndex }
+		return &ValSum { Index: stdlib.NoIndex }
 	}
 }
 
 func ToOrdering(o Ordering) SumValue {
 	switch o {
 	case Smaller:
-		return SumValue { Index: stdlib.SmallerIndex }
+		return &ValSum { Index: stdlib.SmallerIndex }
 	case Equal:
-		return SumValue { Index: stdlib.EqualIndex }
+		return &ValSum { Index: stdlib.EqualIndex }
 	case Bigger:
-		return SumValue { Index: stdlib.BiggerIndex }
+		return &ValSum { Index: stdlib.BiggerIndex }
 	default:
 		panic("impossible branch")
 	}
 }
 
 func Just(v Value) SumValue {
-	return SumValue {
+	return &ValSum {
 		Index: stdlib.JustIndex,
 		Value: v,
 	}
 }
 
 func Na() SumValue {
-	return SumValue {
+	return &ValSum {
 		Index: stdlib.NaIndex,
 		Value: nil,
 	}

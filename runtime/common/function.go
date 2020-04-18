@@ -31,7 +31,7 @@ func (f *Function) ToValue(native_registry func(int)Value) Value {
 	if f.IsNative {
 		return native_registry(f.NativeIndex)
 	} else {
-		return FunctionValue {
+		return &ValFunc {
 			Underlying:    f,
 			ContextValues: make([]Value, 0, 0),
 		}

@@ -93,6 +93,6 @@ func AdaptReturnValue(values []reflect.Value) Value {
 		for i, e := range values {
 			elements[i] = e.Interface()
 		}
-		return ProductValue { elements }
+		return &ValProd { elements }
 	}
 }

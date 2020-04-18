@@ -100,7 +100,7 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 			case SUM:
 				var index = inst.GetRawShortIndexOrSize()
 				var value = ec.popValue()
-				ec.pushValue(SumValue {
+				ec.pushValue(&ValSum {
 					Index: index,
 					Value: value,
 				})
@@ -133,7 +133,7 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 				for i := uint(0); i < size; i += 1 {
 					elements[size-1-i] = ec.popValue()
 				}
-				ec.pushValue(ProductValue {
+				ec.pushValue(&ValProd {
 					Elements: elements,
 				})
 			case GET:
@@ -156,7 +156,7 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 					var draft = make([]Value, L)
 					copy(draft, prod.Elements)
 					draft[index] = value
-					ec.pushValue(ProductValue {
+					ec.pushValue(&ValProd {
 						Elements: draft,
 					})
 				default:
@@ -175,7 +175,7 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 						assert(given == required, "CTX: invalid context size")
 						assert((len(f.ContextValues) == 0), "CTX: context already injected")
 						if is_recursive { ctx = append(ctx, nil) }
-						var fv = FunctionValue {
+						var fv = &ValFunc {
 							Underlying:    f.Underlying,
 							ContextValues: ctx,
 						}
