@@ -116,72 +116,20 @@ func (qs *QueueScheduler) RunTopLevel(e Effect, r Receiver) {
 	qs.underlying.RunTopLevel(e, r)
 }
 
-type queue struct {
-	data     [] queue_item
-	next_id  uint64
-}
-
-type queue_item struct {
-	id     uint64
-	value  Effect
-}
-
+type queue  [] Effect
 func new_queue() *queue {
-	return &queue {
-		next_id: 0,
-		data:    make([]queue_item, 0),
-	}
+	var q = queue(make([] Effect, 0))
+	return &q
 }
-
 func (q *queue) push(e Effect) {
-	q.data = append(q.data, queue_item{ value: e, id: q.next_id})
-	q.next_id += 1
+	*q = append(*q, e)
 }
-
 func (q *queue) pop() (Effect, bool) {
-	var L = len(q.data)
-	if L == 0 {
-		return Effect{}, false
+	if len(*q) > 0 {
+		var e = (*q)[0]
+		*q = (*q)[1:]
+		return e, true
 	} else {
-		var popped = q.data[0]
-		var last_index = L - 1
-		var last = q.data[last_index]
-		q.data[0] = last
-		q.data = q.data[:last_index]
-		var node = 0
-		for (node*2 + 1) < last_index {
-			var left = node*2 + 1
-			var right = node*2 + 2
-			if right < last_index {
-				var node_id = q.data[node].id
-				var left_id = q.data[left].id
-				var right_id = q.data[right].id
-				if node_id < left_id && node_id < right_id {
-					break
-				} else if left_id < right_id {
-					var left_data = q.data[left]
-					q.data[left] = q.data[node]
-					q.data[node] = left_data
-					node = left
-				} else {
-					var right_data = q.data[right]
-					q.data[right] = q.data[node]
-					q.data[node] = right_data
-					node = right
-				}
-			} else {
-				var node_id = q.data[node].id
-				var left_id = q.data[left].id
-				if node_id < left_id {
-					break
-				} else {
-					var left_data = q.data[left]
-					q.data[left] = q.data[node]
-					q.data[node] = left_data
-					node = left
-				}
-			}
-		}
-		return popped.value, true
+		return Effect{}, false
 	}
 }

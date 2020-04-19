@@ -2,15 +2,15 @@ package lib
 
 import (
 	"fmt"
+	"math/big"
 	. "kumachan/runtime/common"
 	. "kumachan/runtime/lib/container"
-	"math/big"
 )
 
 
 var ContainerFunctions = map[string] Value {
 	"Seq from Range": func(l uint, r uint) Seq {
-		return RangeIterator {
+		return RangeSeq {
 			Current: l,
 			Bound:   r,
 		}
@@ -23,8 +23,49 @@ var ContainerFunctions = map[string] Value {
 			return Na()
 		}
 	},
+	"seq-nil": func() Seq {
+		return EmptySeq { ItemType: ValueReflectType }
+	},
+	"seq-cons": func(head Value, tail Seq) Seq {
+		return ConsSeq {
+			Head: head,
+			Tail: tail,
+		}
+	},
+	"seq-map": func(input Seq, f Value, h MachineHandle) Seq {
+		return MappedSeq {
+			Input:  input,
+			Mapper: func(item Value) Value {
+				return h.Call(f, item)
+			},
+		}
+	},
+	"seq-filter": func(input Seq, f Value, h MachineHandle) Seq {
+		return FilteredSeq {
+			Input:  input,
+			Filter: func(item Value) bool {
+				return BoolFrom(h.Call(f, item).(SumValue))
+			},
+		}
+	},
+	"seq-scan": func(input Seq, opts ProductValue, h MachineHandle) Seq {
+		var init, f = Tuple2From(opts)
+		return ScannedSeq {
+			Previous: init,
+			Rest:     input,
+			Reducer: func(prev Value, cur Value) Value {
+				return h.Call(f, ToTuple2(prev, cur))
+			},
+		}
+	},
+	"seq-reduce": func(input Seq, opts ProductValue, h MachineHandle) Value {
+		var init, f = Tuple2From(opts)
+		return SeqReduce(input, init, func(prev Value, cur Value) Value {
+			return h.Call(f, ToTuple2(prev, cur))
+		})
+	},
 	"seq-collect": func(seq Seq) Value {
-		return Collect(seq)
+		return SeqCollect(seq)
 	},
 	"array-get": func(av Value, index uint) Value {
 		var arr = ArrayFrom(av)

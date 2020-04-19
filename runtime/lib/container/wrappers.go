@@ -1,6 +1,7 @@
 package container
 
 import (
+	. "kumachan/error"
 	. "kumachan/runtime/common"
 	"kumachan/runtime/lib/container/avl"
 	"kumachan/runtime/lib/container/ltt"
@@ -29,6 +30,18 @@ func (h Heap) Pop() (Value, Heap, bool) {
 	return popped, h.From(rest), exists
 }
 
+func (h Heap) Top() (Value, bool) {
+	return h.LTT.Top()
+}
+
+func (h Heap) Inspect(inspect func(Value)ErrorMessage) ErrorMessage {
+	var items = make([] ErrorMessage, 0)
+	h.LTT.Walk(func(v Value) {
+		items = append(items, inspect(v))
+	})
+	return ListErrMsgItems(items, "Heap")
+}
+
 
 type Set struct {
 	AVL *avl.AVL
@@ -54,6 +67,14 @@ func (s Set) Insert(v Value) Set {
 func (s Set) Delete(v Value) (Value, Set, bool) {
 	var deleted, rest, exists = s.AVL.Deleted(v, s.Cmp)
 	return deleted, s.From(rest), exists
+}
+
+func (s Set) Inspect(inspect func(Value)ErrorMessage) ErrorMessage {
+	var items = make([] ErrorMessage, 0)
+	s.AVL.Walk(func(v Value) {
+		items = append(items, inspect(v))
+	})
+	return ListErrMsgItems(items, "Set")
 }
 
 
@@ -109,4 +130,18 @@ func (m Map) Delete(k Value) (Value, Map, bool) {
 		v = nil
 	}
 	return v, m.From(rest), exists
+}
+
+func (m Map) Inspect(inspect func(Value)ErrorMessage) ErrorMessage {
+	var items = make([] ErrorMessage, 0)
+	m.AVL.Walk(func(kv Value) {
+		var entry = kv.(MapEntry)
+		var entry_msg = make(ErrorMessage, 0)
+		entry_msg.WriteAll(inspect(entry.Key))
+		entry_msg.WriteText(TS_NORMAL, ":")
+		entry_msg.Write(T_SPACE)
+		entry_msg.WriteAll(inspect(entry.Value))
+		items = append(items, entry_msg)
+	})
+	return ListErrMsgItems(items, "Map")
 }

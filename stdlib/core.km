@@ -498,6 +498,30 @@ public function next![T] {
     lambda Seq[T] Maybe[(T,Seq[T])]:
     native 'seq-next'
 };
+public function nil[T] {
+    lambda () Seq[T]:
+    native 'seq-nil'
+};
+public function cons[T] {
+    lambda (T,Seq[T]) Seq[T]:
+    native 'seq-cons'
+};
+public function map![A,B] {
+    lambda (Seq[A], lambda A B) Seq[B]:
+    native 'seq-map'
+};
+public function filter![T] {
+    lambda (Seq[T], lambda T Bool) Seq[T]:
+    native 'seq-filter'
+};
+public function scan[T,A] {
+    lambda (Seq[T], (A, lambda (A,T) A)) A:
+    native 'seq-reduce'
+};
+public function reduce[T,A] {
+    lambda (Seq[T], (A, lambda (A,T) A)) A:
+    native 'seq-reduce'
+};
 public function collect[T] {
     lambda Seq[T] Array[T]:
     native 'seq-collect'

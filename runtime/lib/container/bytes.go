@@ -2,6 +2,7 @@ package container
 
 import (
 	. "kumachan/runtime/common"
+	"reflect"
 )
 
 type Bytes = []byte
@@ -78,6 +79,7 @@ func BitArray(bytes Bytes) Array {
 			var offset = uint8(1) << (i & 7)
 			return ToBool(1 == (uint8(bytes[n]) & offset))
 		},
+		ItemType: reflect.TypeOf(true),
 	}
 }
 
@@ -87,6 +89,7 @@ func ByteArray(bytes Bytes) Array {
 		GetItem: func(i uint) Value {
 			return bytes[i]
 		},
+		ItemType: reflect.TypeOf(uint8(0)),
 	}
 }
 
@@ -108,6 +111,7 @@ func WordArray(bytes Bytes, ord ByteOrder) Array {
 			copy(chunk[:], bytes[p: p+size])
 			return uint16(DecodeWord(chunk, ord))
 		},
+		ItemType: reflect.TypeOf(uint16(0)),
 	}
 }
 
@@ -129,6 +133,7 @@ func DwordArray(bytes Bytes, ord ByteOrder) Array {
 			copy(chunk[:], bytes[p: p+size])
 			return uint32(DecodeDword(chunk, ord))
 		},
+		ItemType: reflect.TypeOf(uint32(0)),
 	}
 }
 
@@ -150,6 +155,7 @@ func QwordArray(bytes Bytes, ord ByteOrder) Array {
 			copy(chunk[:], bytes[p: p+size])
 			return uint64(DecodeQword(chunk, ord))
 		},
+		ItemType: reflect.TypeOf(uint64(0)),
 	}
 }
 

@@ -1,6 +1,9 @@
 package error
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 
 type ErrorMessage  [] StyledText
@@ -125,4 +128,21 @@ func JoinErrMsg(messages []ErrorMessage, separator StyledText) ErrorMessage {
 		}
 	}
 	return joined
+}
+
+func ListErrMsgItems(items []ErrorMessage, prefix string) ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_NORMAL, fmt.Sprintf("%s {", prefix))
+	if len(items) > 0 {
+		msg.Write(T_LF)
+	}
+	for i, item := range items {
+		msg.WriteAllWithIndent(item, 1)
+		if i != len(items)-1 {
+			msg.WriteText(TS_NORMAL, ",")
+		}
+		msg.Write(T_LF)
+	}
+	msg.WriteText(TS_NORMAL, "}")
+	return msg
 }

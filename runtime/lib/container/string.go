@@ -1,6 +1,7 @@
 package container
 
 import (
+	. "kumachan/error"
 	. "kumachan/runtime/common"
 	"reflect"
 	"unicode/utf8"
@@ -135,6 +136,11 @@ func (it *StringSplitIterator) Next() (Value, Seq, bool) {
 	}
 	var item = append(String{}, it.Operand[it.LastIndex:]...)
 	return item, nil, true
+}
+func (_ *StringSplitIterator) Inspect(_ func(Value)ErrorMessage) ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_NORMAL, "[seq string-split-iterator]")
+	return msg
 }
 func StringSplit(str String, sep String) Seq {
 	return &StringSplitIterator {

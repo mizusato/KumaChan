@@ -142,6 +142,13 @@ func (node *AVL) DeletedMax() (Value, *AVL, bool) {
 	}
 }
 
+func (node *AVL) Walk(f func(Value)) {
+	if node == nil { return }
+	node.Left.Walk(f)
+	f(node.Value)
+	node.Right.Walk(f)
+}
+
 type BalanceState int
 const (
 	LeftTaller  BalanceState  =  iota

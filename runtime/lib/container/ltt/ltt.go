@@ -83,6 +83,19 @@ func (node *LTT) Pushed(v Value, lt LessThanOperator) *LTT {
 	return node.Merge(Leaf(v), lt)
 }
 
+func (node *LTT) Walk(f func(Value)) {
+	var q = []*LTT { node }
+	for len(q) > 0 {
+		var current = q[0]
+		q = q[1:]
+		if current != nil {
+			f(current.Value)
+			q = append(q, current.Right)
+			q = append(q, current.Left)
+		}
+	}
+}
+
 
 func assert(ok bool, msg string) {
 	if !ok { panic(msg) }

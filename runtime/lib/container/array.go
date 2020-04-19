@@ -1,9 +1,10 @@
 package container
 
 import (
+	"reflect"
+	. "kumachan/error"
 	. "kumachan/runtime/common"
 	"kumachan/stdlib"
-	"reflect"
 )
 
 
@@ -33,7 +34,7 @@ func ArrayFrom(value Value) Array {
 		return Array {
 			Length:  uint(slice.Len()),
 			GetItem: func(index uint) Value {
-				return slice.Index(int(index))
+				return slice.Index(int(index)).Interface()
 			},
 			ItemType: slice.Type().Elem(),
 		}
@@ -51,20 +52,23 @@ func (array Array) CopyAsSlice() Value {
 	return slice_rv.Interface()
 }
 
+func (_ Array) Inspect(inspect func(Value)ErrorMessage) ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_NORMAL, "[array-view]")
+	return msg
+}
+
 type ArrayIterator struct {
 	Array      Array
 	NextIndex  uint
 }
-
 type ArrayReversedIterator struct {
 	Array      Array
 	NextIndex  uint
 }
-
 func (it ArrayIterator) GetItemType() reflect.Type {
 	return it.Array.ItemType
 }
-
 func (it ArrayIterator) Next() (Value, Seq, bool) {
 	var array = it.Array
 	var next = it.NextIndex
@@ -77,11 +81,14 @@ func (it ArrayIterator) Next() (Value, Seq, bool) {
 		return nil, nil, false
 	}
 }
-
+func (_ ArrayIterator) Inspect(_ func(Value)ErrorMessage) ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_NORMAL, "[seq array-iterator]")
+	return msg
+}
 func (it ArrayReversedIterator) GetItemType() reflect.Type {
 	return it.Array.ItemType
 }
-
 func (it ArrayReversedIterator) Next() (Value, Seq, bool) {
 	var array = it.Array
 	var next = it.NextIndex
@@ -93,6 +100,11 @@ func (it ArrayReversedIterator) Next() (Value, Seq, bool) {
 	} else {
 		return nil, nil, false
 	}
+}
+func (_ ArrayReversedIterator) Inspect(_ func(Value)ErrorMessage) ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_NORMAL, "[seq array-reversed-iterator]")
+	return msg
 }
 
 func (array Array) Iterate() Seq {
@@ -115,6 +127,7 @@ func (array Array) MapView(f func(Value)Value) Array {
 		GetItem: func(i uint) Value {
 			return f(array.GetItem(i))
 		},
+		ItemType: ValueReflectType,
 	}
 }
 
@@ -128,10 +141,11 @@ func (array Array) SliceView(low uint, high uint) Array {
 		GetItem: func(i uint) Value {
 			return array.GetItem(i + low)
 		},
+		ItemType: array.ItemType,
 	}
 }
 
-func (array Array) Sort(cmp Compare) Seq {
+func (array Array) Sort(lt LessThanOperator) Seq {
 	var L = array.Length
 	if L == 0 {
 		return EmptySeq { array.ItemType }
@@ -145,18 +159,18 @@ func (array Array) Sort(cmp Compare) Seq {
 		var left = array.SliceView(0, M)
 		var right = array.SliceView(M, L)
 		return MergeSortIterator {
-			Left:  left.Sort(cmp),
-			Right: right.Sort(cmp),
-			Cmp:   cmp,
+			Left:  left.Sort(lt),
+			Right: right.Sort(lt),
+			LtOp:  lt,
 		}
 	}
 }
 
 
 type MergeSortIterator struct {
-	Left  Seq
-	Right Seq
-	Cmp   Compare
+	Left   Seq
+	Right  Seq
+	LtOp   LessThanOperator
 }
 
 func (m MergeSortIterator) GetItemType() reflect.Type {
@@ -172,7 +186,7 @@ func (m MergeSortIterator) GetItemType() reflect.Type {
 func (m MergeSortIterator) Next() (Value, Seq, bool) {
 	var left = m.Left
 	var right = m.Right
-	var cmp = m.Cmp
+	var lt = m.LtOp
 	var l, l_rest, l_exists = left.Next()
 	var r, r_rest, r_exists = right.Next()
 	if !l_exists && !r_exists {
@@ -180,13 +194,12 @@ func (m MergeSortIterator) Next() (Value, Seq, bool) {
 	} else {
 		var order_preserved bool
 		if l_exists && r_exists {
-			switch cmp(l, r) {
-			case Smaller, Equal:
+			if !(lt(r, l)) {
+				// `l` is smaller than or equal to `r`
 				order_preserved = true
-			case Bigger:
+			} else {
+				// `l` is greater than `r`
 				order_preserved = false
-			default:
-				panic("impossible branch")
 			}
 		} else if l_exists {
 			order_preserved = true
@@ -199,15 +212,21 @@ func (m MergeSortIterator) Next() (Value, Seq, bool) {
 			return l, MergeSortIterator {
 				Left:  l_rest,
 				Right: right,
-				Cmp:   cmp,
+				LtOp:  lt,
 			}, true
 		} else {
 			return r, MergeSortIterator {
 				Left:  left,
 				Right: r_rest,
-				Cmp:   cmp,
+				LtOp:  lt,
 			}, true
 		}
 	}
+}
+
+func (_ MergeSortIterator) Inspect(_ func(Value)ErrorMessage) ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_NORMAL, "[seq merge-sort-iterator]")
+	return msg
 }
 

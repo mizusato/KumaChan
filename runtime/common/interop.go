@@ -19,7 +19,13 @@ func AdaptNativeFunction(f interface{}) NativeFunction {
 		if v == nil {
 			return reflect.ValueOf(struct{}{})
 		} else {
-			return reflect.ValueOf(v)
+			switch v.(type) {
+			case reflect.Value, *reflect.Value:
+				// reflect.Value should not be used as Value
+				panic("something went wrong")
+			default:
+				return reflect.ValueOf(v)
+			}
 		}
 	}
 	var f_fit, ok = f.(NativeFunction)
