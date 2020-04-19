@@ -22,7 +22,7 @@ func ArrayFromSlice(slice interface{}) Array {
 	return Array {
 		Length:  uint(slice_rv.Len()),
 		GetItem: func(i uint) Value {
-			return slice_rv.Index(int(i))
+			return slice_rv.Index(int(i)).Interface()
 		},
 		ItemType: slice_rv.Type().Elem(),
 	}
