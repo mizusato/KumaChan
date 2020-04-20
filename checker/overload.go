@@ -188,6 +188,8 @@ func CheckOverload (
 func AreTypesConflict(type1 Type, type2 Type, reg TypeRegistry) bool {
 	// Does type1 conflict with type2 (when overloading functions)
 	switch t1 := type1.(type) {
+	case WildcardRhsType:
+		return true  // panic is more reasonable behaviour, but not consistent
 	case ParameterType:
 		return true  // rough comparison
 	case NamedType:
@@ -325,6 +327,8 @@ func AreTypesConflict(type1 Type, type2 Type, reg TypeRegistry) bool {
 
 func IsLocalType(type_ Type, mod string) bool {
 	switch t := type_.(type) {
+	case WildcardRhsType:
+		panic("something went wrong")
 	case ParameterType:
 		return false
 	case NamedType:

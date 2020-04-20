@@ -122,10 +122,10 @@ public function ** {
     lambda (Int,Int) Int:
     lambda (n, p)
         let rec: pow := [lambda (Int,Int,Int) Int]
-                        power-by-squaring (pow, panic[Int]),
+                        power-by-squaring (pow),
         return pow (1, n, p)
 };
-private macro power-by-squaring (recursive-call, panic)
+private macro power-by-squaring (recursive-call)
 := lambda(t, n, p)
     switch $(p <> 0) {
     case <<:
@@ -291,7 +291,7 @@ public function polar! {
         if $(norm >= 0.0):
             Complex ( $(norm * (cos arg)), $(norm * (sin arg)) ),
         else:
-            panic[Complex] 'invalid input: negative norm'
+            panic 'invalid input: negative norm'
 };
 public function polar! {
     lambda Float Complex:
@@ -482,7 +482,7 @@ public function range! {
         if $(l <= r):
             Range(l, r),
         else:
-            panic[Range] 'invalid range: left bound bigger than right bound'
+            panic 'invalid range: left bound bigger than right bound'
 };
 public function iterate {
     lambda Range Seq[Number]:

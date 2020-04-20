@@ -6,9 +6,10 @@ do println 'Hello World'
     | then   println 'timer'
     | then   wait { timeout: 2000 }
     | then   println str! exp ln Complex(5.0, 5.0)
-    | then   println str! sin asin sqrt $(2.0 * (Complex(0.0,1.0)))
-    | then   println str! cos acos sqrt $(2.0 * (Complex(0.0,1.0)))
-    | then   println str! tan atan sqrt $(2.0 * (Complex(0.0,1.0)))
+    | then   println str! sin asin sqrt $(2.0 * (Complex(0.0, 1.0)))
+    | then   println str! cos acos sqrt $(2.0 * (Complex(0.0, 1.0)))
+    | then   println str! tan atan sqrt $(2.0 * (Complex(0.0, 1.0)))
+    | then   println str! $(2 ** 20)
     | then   println 'merge (0..5)'
     | then   (~NoExcept*[Number] from range! (0, 6)   // TODO: eff! range! ...
                 | merge-map lambda i (println str! i)

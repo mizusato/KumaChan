@@ -88,12 +88,16 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 			}
 			var L = len(T.Args)
 			for i := 0; i < L; i += 1 {
+				var _, t_arg_is_wildcard = T.Args[i].(WildcardRhsType)
+				if t_arg_is_wildcard {
+					continue
+				}
 				switch E_arg := E.Args[i].(type) {
 				case ParameterType:
 					if E_arg.BeingInferred {
 						var inferred, exists = ctx.Inferred[E_arg.Index]
 						if exists {
-							if !AreTypesEqualInSameCtx(inferred, T.Args[i]) {
+							if !(CheckStrictAssignable(inferred, T.Args[i])) {
 								return throw(fmt.Sprintf (
 									"cannot infer type parameter %s",
 									ctx.InferredNames[E_arg.Index],
@@ -103,7 +107,7 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 							ctx.Inferred[E_arg.Index] = T.Args[i]
 						}
 					} else {
-						if !(AreTypesEqualInSameCtx(E.Args[i], T.Args[i])) {
+						if !(CheckStrictAssignable(E.Args[i], T.Args[i])) {
 							return throw("")
 						}
 					}
@@ -113,12 +117,12 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 						var err = compare_named(E_arg, T_arg)
 						if err != nil { return err }
 					default:
-						if !(AreTypesEqualInSameCtx(E.Args[i], T.Args[i])) {
+						if !(CheckStrictAssignable(E.Args[i], T.Args[i])) {
 							return throw("")
 						}
 					}
 				default:
-					if !(AreTypesEqualInSameCtx(E.Args[i], T.Args[i])) {
+					if !(CheckStrictAssignable(E.Args[i], T.Args[i])) {
 						return throw("")
 					}
 				}
@@ -148,7 +152,7 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 						var err = compare_named(case_exp_type, given)
 						if err != nil { return Expr{}, err }
 					} else {
-						if !(AreTypesEqualInSameCtx(case_exp_type, given)) {
+						if !(CheckStrictAssignable(case_exp_type, given)) {
 							return Expr{}, throw("type parameters not matching")
 						}
 					}
@@ -184,7 +188,7 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 			if ctx.InferTypeArgs && E.BeingInferred {
 				var inferred, exists = ctx.Inferred[E.Index]
 				if exists {
-					if AreTypesEqualInSameCtx(inferred, expr.Type) {
+					if CheckStrictAssignable(inferred, expr.Type) {
 						return expr, nil
 					} else {
 						return Expr{}, throw(fmt.Sprintf (
@@ -213,12 +217,12 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 					if is_union {
 						return assign_union(E, T, union)
 					} else {
-						// "fallthrough" to strict equal or unbox
+						// "fallthrough" to strict check or unbox
 					}
 				}
 			}
 		}
-		if AreTypesEqualInSameCtx(expected, expr.Type) {
+		if CheckStrictAssignable(expected, expr.Type) {
 			return expr, nil
 		} else {
 			var ctx_mod = ctx.ModuleInfo.Module.Name
@@ -240,5 +244,107 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 				return expr_expected, nil
 			}
 		}
+	}
+}
+
+func CheckStrictAssignable(expected Type, given Type) bool {
+	switch T := given.(type) {
+	case WildcardRhsType:
+		return true
+	case ParameterType:
+		switch E := expected.(type) {
+		case ParameterType:
+			return T.Index == E.Index
+		default:
+			return false
+		}
+	case NamedType:
+		switch E := expected.(type) {
+		case NamedType:
+			if E.Name == T.Name {
+				var L1 = len(T.Args)
+				var L2 = len(E.Args)
+				if L1 != L2 { panic("type registration went wrong") }
+				var L = L1
+				for i := 0; i < L; i += 1 {
+					if !(CheckStrictAssignable(E.Args[i], T.Args[i])) {
+						return false
+					}
+				}
+				return true
+			} else {
+				return false
+			}
+		default:
+			return false
+		}
+	case AnonymousType:
+		switch E := expected.(type) {
+		case AnonymousType:
+			switch rt := T.Repr.(type) {
+			case Unit:
+				switch E.Repr.(type) {
+				case Unit:
+					return true
+				default:
+					return false
+				}
+			case Tuple:
+				switch re := E.Repr.(type) {
+				case Tuple:
+					var L1 = len(rt.Elements)
+					var L2 = len(re.Elements)
+					if L1 == L2 {
+						var L = L1
+						for i := 0; i < L; i += 1 {
+							if !(CheckStrictAssignable(re.Elements[i], rt.Elements[i])) {
+								return false
+							}
+						}
+						return true
+					} else {
+						return false
+					}
+				default:
+					return false
+				}
+			case Bundle:
+				switch re := E.Repr.(type) {
+				case Bundle:
+					if len(rt.Fields) == len(re.Fields) {
+						for name, ft := range rt.Fields {
+							var fe, exists = re.Fields[name]
+							if !exists || !(CheckStrictAssignable(fe.Type, ft.Type)) {
+								return false
+							}
+						}
+						return true
+					} else {
+						return false
+					}
+				default:
+					return false
+				}
+			case Func:
+				switch re := E.Repr.(type) {
+				case Func:
+					if !(CheckStrictAssignable(re.Input, rt.Input)) {
+						return false
+					}
+					if !(CheckStrictAssignable(re.Output, rt.Output)) {
+						return false
+					}
+					return true
+				default:
+					return true
+				}
+			default:
+				panic("impossible branch")
+			}
+		default:
+			return false
+		}
+	default:
+		panic("impossible branch")
 	}
 }

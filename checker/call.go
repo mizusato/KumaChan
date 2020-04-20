@@ -131,7 +131,7 @@ func AssignCallTo(expected Type, call UndecidedCall, info ExprInfo, ctx ExprCont
 			)
 		} else {
 			var is_exact = AreTypesEqualInSameCtx(expr.Type, option.Expr.Type)
-			assignable = append(assignable, AssignableCall{
+			assignable = append(assignable, AssignableCall {
 				Expr:     expr,
 				IsExact:  is_exact,
 				Function: option.Function,

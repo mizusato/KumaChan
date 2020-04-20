@@ -9,6 +9,10 @@ import (
 )
 
 
+var __ReservedTypeNames = [...]string {
+	IgnoreMark, UnitAlias, WildcardRhsTypeDesc,
+}
+
 // Final Registry of Types
 type TypeRegistry  map[loader.Symbol] *GenericType
 
@@ -71,10 +75,12 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 		var type_sym = mod.SymbolFromName(d.Name)
 		// 3.2. Check if the symbol name is valid
 		var sym_name = type_sym.SymbolName
-		if sym_name == IgnoreMark || sym_name == UnitAlias {
-			return &TypeDeclError {
-				Point:    ErrorPointFrom(d.Name.Node),
-				Concrete: E_InvalidTypeName { sym_name },
+		for _, reserved := range __ReservedTypeNames {
+			if sym_name == reserved {
+				return &TypeDeclError {
+					Point:    ErrorPointFrom(d.Name.Node),
+					Concrete: E_InvalidTypeName { sym_name },
+				}
 			}
 		}
 		// 3.3. Check if the symbol is used

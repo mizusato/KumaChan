@@ -45,15 +45,14 @@ func GenericFunctionCall (
 		var marked_input_type = MarkParamsAsBeingInferred(raw_input_type)
 		var arg_typed, err = AssignTo(marked_input_type, arg, inf_ctx)
 		if err != nil { return Expr{}, err }
-		if len(inf_ctx.Inferred) != type_arity {
-			return Expr{}, &ExprError {
-				Point:    f_info.ErrorPoint,
-				Concrete: E_ExplicitTypeParamsRequired {},
-			}
-		}
 		var inferred_args = make([]Type, type_arity)
-		for i, t := range inf_ctx.Inferred {
-			inferred_args[i] = t
+		for i := 0; i < type_arity; i += 1 {
+			var t, exists = inf_ctx.Inferred[uint(i)]
+			if exists {
+				inferred_args[i] = t
+			} else {
+				inferred_args[i] = WildcardRhsType {}
+			}
 		}
 		var input_type = FillTypeArgs(raw_input_type, inferred_args)
 		if !(AreTypesEqualInSameCtx(input_type, arg_typed.Type)) {
@@ -164,6 +163,8 @@ func GenericFunctionAssignTo (
 
 func FillTypeArgs(t Type, given []Type) Type {
 	switch T := t.(type) {
+	case WildcardRhsType:
+		panic("something went wrong")
 	case ParameterType:
 		return given[T.Index]
 	case NamedType:
@@ -220,6 +221,8 @@ func FillTypeArgs(t Type, given []Type) Type {
 
 func NaivelyInferTypeArgs(template Type, given Type, inferred map[uint]Type) {
 	switch T := template.(type) {
+	case WildcardRhsType:
+		panic("something went wrong")
 	case ParameterType:
 		var existing, exists = inferred[T.Index]
 		if !exists || AreTypesEqualInSameCtx(existing, given) {
@@ -279,6 +282,8 @@ func NaivelyInferTypeArgs(template Type, given Type, inferred map[uint]Type) {
 
 func MarkParamsAsBeingInferred(type_ Type) Type {
 	switch t := type_.(type) {
+	case WildcardRhsType:
+		panic("something went wrong")
 	case ParameterType:
 		return ParameterType {
 			Index:         t.Index,
@@ -330,6 +335,8 @@ func MarkParamsAsBeingInferred(type_ Type) Type {
 func FillMarkedParams(type_ Type, ctx ExprContext) Type {
 	if !(ctx.InferTypeArgs) { panic("something went wrong") }
 	switch T := type_.(type) {
+	case WildcardRhsType:
+		panic("something went wrong")
 	case ParameterType:
 		if T.BeingInferred {
 			var inferred, exists = ctx.Inferred[T.Index]
@@ -394,6 +401,8 @@ func GetCertainType(type_ Type, point ErrorPoint, ctx ExprContext) (Type, *ExprE
 		return type_, nil
 	}
 	switch T := type_.(type) {
+	case WildcardRhsType:
+		panic("something went wrong")
 	case ParameterType:
 		if T.BeingInferred {
 			var inferred, exists = ctx.Inferred[T.Index]
