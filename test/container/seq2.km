@@ -1,0 +1,9 @@
+module TestContainerSeq2;
+
+do
+    let seq := cons(1.0, cons(2.0, nil())),
+        eff := [NoExcept*[Float]] from cons(0.0, seq),
+    return
+        eff | concat-map &x println str! x
+            | catch* &_ crash 'I/O Error'
+            | wait-complete;

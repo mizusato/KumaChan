@@ -11,7 +11,7 @@ do println 'Hello World'
     | then   println str! tan atan sqrt $(2.0 * (Complex(0.0, 1.0)))
     | then   println str! $(2 ** 20)
     | then   println 'merge (0..5)'
-    | then   (~NoExcept*[Number] from range! (0, 6)   // TODO: eff! range! ...
+    | then   (~NoExcept*[Number] from range! (0, 6)
                 | merge-map lambda i (println str! i)
                 | wait-complete )
     | then   println 'ticker'

@@ -77,14 +77,20 @@ type Ordering union {
 type Debug[T]  protected T;
 type Never[T]  protected T;
 
-// Debugging Functions (With Side Effects)
+// Debugging Functions
 public function trace[T] {
     lambda T Debug[T]:
     native 'trace'
+    /// side-effect: log input value in stdout
 };
 public function panic[T] {
     lambda String Never[T]:
     native 'panic'
+    /// side-effect: crash immediately
+};
+public function crash {
+    lambda String NoExcept[-]:
+    native 'crash'
 };
 
 // Logic Macros
@@ -730,6 +736,14 @@ public function catch[T,E,F] {
 };
 public function catch[T,E] {
     lambda (Effect[T,E], (lambda E NoExcept[T])) NoExcept[T]:
+    native 'catch'
+};
+public function catch*[T,E,F] {
+    lambda (Effect*[T,E], (lambda E Effect*[T,F])) Effect*[T,F]:
+    native 'catch'
+};
+public function catch*[T,E] {
+    lambda (Effect*[T,E], (lambda E NoExcept*[T])) NoExcept*[T]:
     native 'catch'
 };
 public function catch-retry[T,E] {

@@ -336,7 +336,7 @@ func FillMarkedParams(type_ Type, ctx ExprContext) Type {
 	if !(ctx.InferTypeArgs) { panic("something went wrong") }
 	switch T := type_.(type) {
 	case WildcardRhsType:
-		panic("something went wrong")
+		return WildcardRhsType {}
 	case ParameterType:
 		if T.BeingInferred {
 			var inferred, exists = ctx.Inferred[T.Index]
