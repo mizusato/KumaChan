@@ -64,6 +64,16 @@ var ContainerFunctions = map[string] Value {
 			return h.Call(f, ToTuple2(prev, cur))
 		})
 	},
+	"seq-some": func(input Seq, f Value, h MachineHandle) Value {
+		return SeqSome(input, func(item Value) bool {
+			return BoolFrom(h.Call(f, item).(SumValue))
+		})
+	},
+	"seq-every": func(input Seq, f Value, h MachineHandle) Value {
+		return SeqEvery(input, func(item Value) bool {
+			return BoolFrom(h.Call(f, item).(SumValue))
+		})
+	},
 	"seq-collect": func(seq Seq) Value {
 		return SeqCollect(seq)
 	},

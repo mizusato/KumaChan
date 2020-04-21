@@ -289,16 +289,11 @@ func AssignTupleTo(expected Type, tuple SemiTypedTuple, info ExprInfo, ctx ExprC
 				if err != nil { return Expr{}, err }
 				typed_exprs[i] = typed
 			}
-			var final_t Type
-			if expected == nil {
-				var el_types = make([]Type, len(tuple.Values))
-				for i, el := range typed_exprs {
-					el_types[i] = el.Type
-				}
-				final_t = AnonymousType { Tuple { el_types } }
-			} else {
-				final_t = expected
+			var el_types = make([]Type, len(tuple.Values))
+			for i, el := range typed_exprs {
+				el_types[i] = el.Type
 			}
+			var final_t = AnonymousType { Tuple { el_types } }
 			return Expr {
 				Type:  final_t,
 				Info:  info,
@@ -348,8 +343,16 @@ func AssignBundleTo(expected Type, bundle SemiTypedBundle, info ExprInfo, ctx Ex
 					}
 				}
 			}
+			var final_fields = make(map[string]Field)
+			for field_name, field := range bundle_t.Fields {
+				final_fields[field_name] = Field {
+					Type:  values[field.Index].Type,
+					Index: field.Index,
+				}
+			}
+			var final_t = AnonymousType { Bundle{ final_fields } }
 			return Expr {
-				Type:  expected,
+				Type:  final_t,
 				Info:  info,
 				Value: Product { values },
 			}, nil

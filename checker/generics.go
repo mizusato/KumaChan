@@ -55,7 +55,9 @@ func GenericFunctionCall (
 			}
 		}
 		var input_type = FillTypeArgs(raw_input_type, inferred_args)
-		if !(AreTypesEqualInSameCtx(input_type, arg_typed.Type)) {
+		if !(DirectAssignableTo(input_type, arg_typed.Type, ctx)) {
+			var inf_ctx = ctx.WithTypeArgsInferringEnabled(f.TypeParams)
+			var _, _ = AssignTo(marked_input_type, arg, inf_ctx)
 			panic("something went wrong")
 		}
 		var output_type = FillTypeArgs(raw_output_type, inferred_args)
@@ -324,70 +326,6 @@ func MarkParamsAsBeingInferred(type_ Type) Type {
 				Input:  marked_input,
 				Output: marked_output,
 			} }
-		default:
-			panic("impossible branch")
-		}
-	default:
-		panic("impossible branch")
-	}
-}
-
-func FillMarkedParams(type_ Type, ctx ExprContext) Type {
-	if !(ctx.InferTypeArgs) { panic("something went wrong") }
-	switch T := type_.(type) {
-	case WildcardRhsType:
-		return WildcardRhsType {}
-	case ParameterType:
-		if T.BeingInferred {
-			var inferred, exists = ctx.Inferred[T.Index]
-			if !exists { panic("something went wrong") }
-			return inferred
-		} else {
-			return T
-		}
-	case NamedType:
-		var filled = make([]Type, len(T.Args))
-		for i, arg := range T.Args {
-			filled[i] = FillMarkedParams(arg, ctx)
-		}
-		return NamedType {
-			Name: T.Name,
-			Args: filled,
-		}
-	case AnonymousType:
-		switch r := T.Repr.(type) {
-		case Unit:
-			return AnonymousType { Unit {} }
-		case Tuple:
-			var filled = make([]Type, len(r.Elements))
-			for i, element := range r.Elements {
-				filled[i] = FillMarkedParams(element, ctx)
-			}
-			return AnonymousType {
-				Repr: Tuple {
-					Elements: filled,
-				},
-			}
-		case Bundle:
-			var filled = make(map[string]Field, len(r.Fields))
-			for name, field := range r.Fields {
-				filled[name] = Field {
-					Type:  FillMarkedParams(field.Type, ctx),
-					Index: field.Index,
-				}
-			}
-			return AnonymousType {
-				Repr: Bundle {
-					Fields: filled,
-				},
-			}
-		case Func:
-			return AnonymousType {
-				Repr:Func {
-					Input:  FillMarkedParams(r.Input, ctx),
-					Output: FillMarkedParams(r.Output, ctx),
-				},
-			}
 		default:
 			panic("impossible branch")
 		}

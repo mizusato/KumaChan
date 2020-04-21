@@ -57,7 +57,10 @@ func AssignLambdaTo(expected Type, lambda UntypedLambda, info ExprInfo, ctx Expr
 			var output_typed, err3 = AssignTo(output_t, output_semi, inner_ctx)
 			if err3 != nil { return Expr{}, err3 }
 			return Expr {
-				Type:  expected,
+				Type:  AnonymousType { Func {
+					Input:  input_t,
+					Output: output_typed.Type,
+				} },
 				Info:  info,
 				Value: Lambda {
 					Input:  pattern,

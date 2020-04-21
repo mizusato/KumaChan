@@ -175,3 +175,16 @@ func SeqReduce(seq Seq, init Value, f func(Value,Value)Value) Value {
 	}
 	return v
 }
+
+func SeqSome(seq Seq, f func(Value)bool) bool {
+	for item,rest,ok := seq.Next(); ok; item,rest,ok = rest.Next() {
+		if f(item) {
+			return true
+		}
+	}
+	return false
+}
+
+func SeqEvery(seq Seq, f func(Value)bool) bool {
+	return !(SeqSome(seq, func(item Value) bool { return !(f(item)) }))
+}

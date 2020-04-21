@@ -10,10 +10,26 @@ public const  Stdin := [I/O::InputStream]  native 'OS::Stdin';
 public const Stdout := [I/O::OutputStream] native 'OS::Stdout';
 public const Stderr := [I/O::OutputStream] native 'OS::Stderr';
 
-type ProcessExit  protected NoExcept[-];
-
 public macro println(line) := (OS::Stdout | write-line line);
 
+type Path  protected Array[String];
+
+private function validate-raw-path {
+    lambda Array[String] Array[String]:
+    lambda raw
+        // if raw.every &part( not (part.includes '/') )
+        if ( raw | every &part (not (part | contains '/')) ):
+            raw,
+        else:
+            panic 'invalid path'
+};
+
+public function rel-path! {
+    lambda Array[String] Path:
+    lambda raw Path(cons ('.', iterate validate-raw-path(raw)) | collect)
+};
+
+type ProcessExit  protected NoExcept[-];
 public function exit {
     lambda Uint8 ProcessExit:
     native 'exit'

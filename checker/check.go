@@ -234,6 +234,12 @@ func (ctx ExprContext) WithInferringInfoFrom(another ExprContext) ExprContext {
 	return new_ctx
 }
 
+func (ctx ExprContext) ClearInferredTypes() {
+	for k, _ := range ctx.Inferred {
+		delete(ctx.Inferred, k)
+	}
+}
+
 func (ctx ExprContext) GetExprInfo(node ast.Node) ExprInfo {
 	return ExprInfo { ErrorPoint: ErrorPointFrom(node) }
 }

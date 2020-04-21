@@ -521,12 +521,20 @@ public function filter![T] {
     native 'seq-filter'
 };
 public function scan[T,A] {
-    lambda (Seq[T], (A, lambda (A,T) A)) A:
-    native 'seq-reduce'
+    lambda (Seq[T], (A, lambda (A,T) A)) Seq[A]:
+    native 'seq-scan'
 };
 public function reduce[T,A] {
     lambda (Seq[T], (A, lambda (A,T) A)) A:
     native 'seq-reduce'
+};
+public function some[T] {
+    lambda (Seq[T], lambda T Bool) Bool:
+    native 'seq-some'
+};
+public function every[T] {
+    lambda (Seq[T], lambda T Bool) Bool:
+    native 'seq-every'
 };
 public function collect[T] {
     lambda Seq[T] Array[T]:
@@ -557,6 +565,31 @@ public function map-view[A,B] {
 public function iterate[T] {
     lambda Array[T] Seq[T]:
     native 'array-iterate'
+};
+public function filter![T] {
+    lambda (Array[T], lambda T Bool) Array[T]:
+    lambda (arr, f)
+        (arr | iterate | filter! f | collect)
+};
+public function scan[T,A] {
+    lambda (Array[T], (A, lambda (A,T) A)) Array[A]:
+    lambda (arr, opts)
+        (arr | iterate | scan opts | collect)
+};
+public function reduce[T,A] {
+    lambda (Array[T], (A, lambda (A,T) A)) A:
+    lambda (arr, opts)
+        (arr | iterate | reduce opts)
+};
+public function some[T] {
+    lambda (Array[T], lambda T Bool) Bool:
+    lambda (arr, f)
+        (arr | iterate | some f)
+};
+public function every[T] {
+    lambda (Array[T], lambda T Bool) Bool:
+    lambda (arr, f)
+        (arr | iterate | every f)
 };
 
 // String Related Functions
