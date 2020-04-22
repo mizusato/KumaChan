@@ -11,16 +11,15 @@ do println 'Hello World'
     | then   println str! tan atan sqrt $(2.0 * (Complex(0.0, 1.0)))
     | then   println str! $(2 ** 20)
     | then   println 'merge (0..5)'
-    | then   (~NoExcept*[Number] from range! (0, 6)
-                | merge-map lambda i (println str! i)
+    | then   (yield-range (0, 6)
+                | merge-map &(i)(println str! i)
                 | wait-complete )
     | then   println 'ticker'
     | then   (tick { interval: 1000 }
-                | scan (~Number 0, lambda (n, _) $(n + 1))
-                | concat-map lambda n (println str! n)
+                | scan        ([Number 0], &(n, _)$(n + 1))
+                | concat-map  &(n)(println str! n)
                 | wait-complete )  // TODO: cancel
-    | then   exit 0
-    | catch  lambda _ exit 1;
+    | catch  &(_)(exit 1);
 
 private function factorial {
     lambda Int Int:

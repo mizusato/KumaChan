@@ -94,9 +94,9 @@ public function crash {
 };
 
 // Logic Macros
-public macro not(p)    := ~Bool(if p: No, else: Yes);
-public macro and(p, q) := ~Bool(if p: (if q: Yes, else: No), else: No);
-public macro  or(p, q) := ~Bool(if p: Yes, else: (if q: Yes, else: No));
+public macro not(p)    := [Bool (if p: No, else: Yes)];
+public macro and(p, q) := [Bool (if p: (if q: Yes, else: No), else: No)];
+public macro  or(p, q) := [Bool (if p: Yes, else: (if q: Yes, else: No))];
 
 // Baisc Arithmetic Functions
 public function + { lambda (Int,Int) Int:  native '+Int' };
@@ -270,7 +270,7 @@ public function log10 {
 };
 private const  i := [Complex] Complex(0.0, 1.0);
 private const _1 := [Complex] Complex(1.0, 0.0);
-private macro re-im-> (z, expr) := (let (re, im) := z, return expr);
+private macro re-im (z, expr) := (let (re, im) := z, return expr);
 public function re! {
     lambda Complex Float:
     lambda (re, _) re
@@ -301,7 +301,7 @@ public function polar! {
 };
 public function polar! {
     lambda Float Complex:
-    lambda  arg  polar! { norm: 1.0, arg }
+    lambda  arg  (polar! { norm: 1.0, arg })
 };
 public function + {
     lambda (Complex,Complex) Complex:
@@ -312,7 +312,7 @@ public function + {
 };
 public function + {
     lambda (Float,Complex) Complex:
-    lambda (x, z) (z | re-im-> Complex ($(x + re), im))
+    lambda (x, z) (z | re-im Complex ($(x + re), im))
 };
 public function + {
     lambda (Complex,Float) Complex:
@@ -342,7 +342,7 @@ public function * {
 };
 public function * {
     lambda (Float,Complex) Complex:
-    lambda (x, z) (z | re-im-> Complex ($(x * re), $(x * im)))
+    lambda (x, z) (z | re-im Complex ($(x * re), $(x * im)))
 };
 public function * {
     lambda (Complex,Float) Complex:
@@ -363,7 +363,7 @@ public function / {
 };
 public function / {
     lambda (Complex,Float) Complex:
-    lambda (z, x) (z | re-im-> Complex ($(re / x), $(im / x)))
+    lambda (z, x) (z | re-im Complex ($(re / x), $(im / x)))
 };
 public function - {
     lambda Complex Complex:
@@ -375,7 +375,7 @@ public function exp {
 };
 public function ln {
     lambda Complex Complex:
-    lambda    z    Complex((ln norm! z), (arg! z))
+    lambda    z    (Complex((ln norm! z), (arg! z)))
 };
 public function sin {
     lambda Complex Complex:
@@ -593,7 +593,7 @@ public function every[T] {
 };
 
 // String Related Functions
-public macro str! (x) := ~String from x;
+public macro str! (x) := [String from x];
 public function from { lambda Int    String:  native 'String from Int' };
 public function from { lambda Number String:  native 'String from Number' };
 public function from { lambda Float  String:  native 'String from Float' };
@@ -607,11 +607,11 @@ public function from { lambda Uint32 String:  native 'String from Uint32' };
 public function from { lambda Uint64 String:  native 'String from Uint64' };
 public function from {
     lambda Complex String:
-    lambda (re, im) ("(# + #i)" (str! re, str! im))
+    lambda (re, im) ("(# + #i)" ((str! re), (str! im)))
 };
 public function from {
     lambda Range String:
-    lambda (l, r) ("[#, #)" (str! l, str! r))
+    lambda (l, r) ("[#, #)" ((str! l), (str! r)))
 };
 public function encode {   /// encodes string into UTF-8 byte sequence
     lambda String Bytes:
@@ -623,7 +623,7 @@ public function decode {   /// decodes string from UTF-8 byte sequence
 };
 public function substr {
     lambda (String,Range) String:
-    lambda (str, range) String(str | slice! range)
+    lambda (str, range) (String (str.slice! range))
 };
 public function concat {
     lambda Array[String] String:
@@ -704,6 +704,10 @@ public function from[T] {
 public function from[T] {
     lambda Array[T] NoExcept*[T]:
     native 'NoExcept* from Array'
+};
+public function yield-range {
+    lambda (Number,Number) NoExcept*[Number]:
+    lambda (l, r) (from range!(l, r))
 };
 public function adapt-no-except[T,E] {
     lambda NoExcept[T] Effect[T,E]:

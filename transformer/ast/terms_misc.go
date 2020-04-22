@@ -5,7 +5,7 @@ func (impl Cast) Term() {}
 type Cast struct {
 	Node                  `part:"cast"`
 	Target  VariousType   `part:"type"`
-	Object  Call          `part:"terms.call"`
+	Object  Expr          `part:"expr"`
 }
 
 func (impl Lambda) Body() {}
@@ -13,7 +13,7 @@ func (impl Lambda) Term() {}
 type Lambda struct {
 	Node                     `part:"lambda"`
 	Input   VariousPattern   `part:"pattern"`
-	Output  Call             `part:"terms.call"`
+	Output  VariousTerm      `part:"term"`
 }
 
 func (impl Block) Term() {}

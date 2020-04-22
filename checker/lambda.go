@@ -25,7 +25,11 @@ func CheckLambda(lambda ast.Lambda, ctx ExprContext) (SemiExpr, *ExprError) {
 			Input:  lambda.Input,
 			Output: ast.Expr {
 				Node:     lambda.Node,
-				Call:     lambda.Output,
+				Call:     ast.Call {
+					Node: lambda.Node,
+					Func: lambda.Output,
+					Arg:  nil,
+				},
 				Pipeline: nil,
 			},
 		},
