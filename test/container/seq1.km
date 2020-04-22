@@ -9,4 +9,4 @@ do
             | reduce   (0.0, (&(sum,x) $(sum + x))),
     return
         println str! sum
-            | catch  &(_) (exit 1);
+            | catch  &(_) (crash 'I/O Error');
