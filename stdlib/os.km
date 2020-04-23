@@ -17,10 +17,10 @@ type Path  protected Array[String];
 private function validate-raw-path {
     lambda Array[String] Array[String]:
     lambda raw
-        if (raw.every &(part)(not (part.contains '/'))):
-            raw,
+        if (raw.some &(part)(part.contains '/')):
+            panic 'invalid path',
         else:
-            panic 'invalid path'
+            raw
 };
 
 public function rel-path! {

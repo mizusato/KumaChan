@@ -160,7 +160,7 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 		var inst_sum = InstSum(v.Index)
 		buf.Write(CodeFrom(inst_sum, expr.Info))
 		return buf.Collect()
-	case ch.Match:
+	case ch.Switch:
 		var raw_branches = make([]ch.Branch, len(v.Branches))
 		var i = 0
 		var default_occurred = false

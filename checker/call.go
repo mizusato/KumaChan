@@ -97,7 +97,7 @@ func CheckSingleCall(f SemiExpr, arg SemiExpr, info ExprInfo, ctx ExprContext) (
 		return CallUntypedLambda(arg, f_concrete, f.Info, info, ctx)
 	case UntypedRef:
 		return CallUntypedRef(arg, f_concrete, f.Info, info, ctx)
-	case SemiTypedMatch,
+	case SemiTypedSwitch,
 		 SemiTypedBlock,
 		 UndecidedCall:
 		return SemiExpr{}, &ExprError {

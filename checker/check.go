@@ -251,6 +251,8 @@ func CheckTerm(term ast.VariousTerm, ctx ExprContext) (SemiExpr, *ExprError) {
 		return CheckLambda(t, ctx)
 	case ast.Switch:
 		return CheckSwitch(t, ctx)
+	case ast.MultiSwitch:
+		return CheckMultiSwitch(t, ctx)
 	case ast.If:
 		return CheckIf(t, ctx)
 	case ast.Block:

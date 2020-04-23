@@ -29,8 +29,10 @@ func AssignTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprError) 
 			return AssignArrayTo(expected, semi_value, semi.Info, ctx)
 		case SemiTypedBlock:
 			return AssignBlockTo(expected, semi_value, semi.Info, ctx)
-		case SemiTypedMatch:
-			return AssignMatchTo(expected, semi_value, semi.Info, ctx)
+		case SemiTypedSwitch:
+			return AssignSwitchTo(expected, semi_value, semi.Info, ctx)
+		case SemiTypedMultiSwitch:
+			return AssignMultiSwitchTo(expected, semi_value, semi.Info, ctx)
 		case UntypedRef:
 			return AssignRefTo(expected, semi_value, semi.Info, ctx)
 		case UndecidedCall:

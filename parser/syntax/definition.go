@@ -66,8 +66,8 @@ var ConditionalKeywords = [...] string {
     "@module", "@import", "@from",
     "@type", "@union", "@native", "@protected", "@opaque",
     "@private", "@public", "@function", "@const", "@macro", "@do",
-    "@if", "@elif", "@else", "@switch", "@case", "@default",
-    "@lambda", "@let", "@rec", "@return", "@procedure",
+    "@if", "@elif", "@else", "@switch", "@case", "@default", "@switch*",
+    "@lambda", "@let", "@rec", "@return", "@proc",
 }
 
 var SyntaxDefinition = [...] string {
@@ -135,7 +135,7 @@ var SyntaxDefinition = [...] string {
         "pipe_op = _bar1 | . ",
         "pipe_func = term!",
         "pipe_arg? = call",
-    "term = cast | lambda | multi_switch | switch | if | block | procedure | bundle | get | tuple | infix | array | text | literal | ref",
+    "term = cast | lambda | multi_switch | switch | if | block | proc | bundle | get | tuple | infix | array | text | literal | ref",
       "cast = [ type expr ]!",
       "switch = @switch term {! branch_list }!",
         "branch_list = branch! more_branches",
@@ -143,7 +143,7 @@ var SyntaxDefinition = [...] string {
           "branch = branch_key :! expr!",
             "branch_key = @default | @case type_ref! opt_pattern",
               "opt_pattern? = pattern",
-      "multi_switch = @switch [ exprlist ]! {! multi_branch_list }!",
+      "multi_switch = @switch* ( exprlist )! {! multi_branch_list }!",
         "exprlist = expr! more_exprs",
           "more_exprs? = , expr! more_exprs",
         "multi_branch_list = multi_branch! more_multi_branches",
@@ -164,7 +164,7 @@ var SyntaxDefinition = [...] string {
           "rec_opt? = @rec :!",
           "binding_type? = [ type! ]!",
         "return = , @return expr!",
-      "procedure = @procedure { proc_binding! more_proc_bindings proc_return! }!",
+      "proc = @proc { proc_binding! more_proc_bindings proc_return! }!",
         "more_proc_bindings? = , proc_binding more_proc_bindings",
         "proc_binding = proc_pattern binding_type expr!",
           "proc_pattern? = pattern <~",

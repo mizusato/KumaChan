@@ -682,13 +682,20 @@ func (e E_TypeErrorInExpr) ExprErrorDesc() ErrorMessage {
 	return e.TypeError.Desc()
 }
 
-type E_InvalidMatchArgType struct {
+type E_InvalidSwitchArgType struct {
 	ArgType  string
 }
-func (e E_InvalidMatchArgType) ExprErrorDesc() ErrorMessage {
+func (e E_InvalidSwitchArgType) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	msg.WriteText(TS_ERROR, "Cannot pattern match on the value of type")
 	msg.WriteEndText(TS_INLINE_CODE, e.ArgType)
+	return msg
+}
+
+type E_CheckedBranch struct {}
+func (e E_CheckedBranch) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "This situation already checked in another branch")
 	return msg
 }
 
@@ -710,6 +717,27 @@ type E_TypeParametersUnnecessary struct {}
 func (e E_TypeParametersUnnecessary) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	msg.WriteText(TS_ERROR, "Unnecessary type parameters")
+	return msg
+}
+
+type E_MultiBranchTypesAllDefault struct {}
+func (e E_MultiBranchTypesAllDefault) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Invalid case types: should use default branch instead")
+	return msg
+}
+
+type E_WrongMultiBranchTypeQuantity struct {
+	Required  uint
+	Given     uint
+}
+func (e E_WrongMultiBranchTypeQuantity) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "A case in this switch requires")
+	msg.WriteInnerText(TS_INLINE, fmt.Sprint(e.Required))
+	msg.WriteText(TS_ERROR, "case types but")
+	msg.WriteInnerText(TS_INLINE, fmt.Sprint(e.Given))
+	msg.WriteText(TS_ERROR, "given")
 	return msg
 }
 
@@ -739,6 +767,18 @@ func (e E_IncompleteMatch) ExprErrorDesc() ErrorMessage {
 			msg.WriteText(TS_ERROR, ", ")
 		}
 	}
+	return msg
+}
+
+type E_IncompleteMultiMatch struct {
+	MissingQuantity  uint
+}
+func (e E_IncompleteMultiMatch) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR,
+		"Pattern matching is not exhaustive: missing")
+	msg.WriteInnerText(TS_INLINE, fmt.Sprint(e.MissingQuantity))
+	msg.WriteText(TS_ERROR, "situations")
 	return msg
 }
 

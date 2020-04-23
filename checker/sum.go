@@ -1,6 +1,8 @@
 package checker
 
 import (
+	"fmt"
+	"strings"
 	. "kumachan/error"
 	"kumachan/loader"
 	"kumachan/transformer/ast"
@@ -16,8 +18,8 @@ type Sum struct {
 func (impl UnitValue) ExprVal() {}
 type UnitValue struct {}
 
-func (impl SemiTypedMatch) SemiExprVal() {}
-type SemiTypedMatch struct {
+func (impl SemiTypedSwitch) SemiExprVal() {}
+type SemiTypedSwitch struct {
 	Argument  Expr
 	Branches  [] SemiTypedBranch
 }
@@ -28,8 +30,24 @@ type SemiTypedBranch struct {
 	Value      SemiExpr
 }
 
-func (impl Match) ExprVal() {}
-type Match struct {
+func (impl SemiTypedMultiSwitch) SemiExprVal() {}
+type SemiTypedMultiSwitch struct {
+	Arguments  [] Expr
+	Branches   [] SemiTypedMultiBranch
+}
+type SemiTypedMultiBranch struct {
+	IsDefault  bool
+	Indexes    [] MaybeDefaultIndex
+	Pattern    MaybePattern   // can only be TuplePattern or nil
+	Value      SemiExpr
+}
+type MaybeDefaultIndex struct {
+	IsDefault  bool
+	Index      uint
+}
+
+func (impl Switch) ExprVal() {}
+type Switch struct {
 	Argument  Expr
 	Branches  [] Branch
 }
@@ -54,14 +72,14 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 	var union, union_args, is_union = ExtractUnion(arg_type, ctx)
 	if !is_union { return SemiExpr{}, &ExprError {
 		Point:    arg_typed.Info.ErrorPoint,
-		Concrete: E_InvalidMatchArgType {
+		Concrete: E_InvalidSwitchArgType {
 			ArgType: ctx.DescribeType(arg_typed.Type),
 		},
 	} }
 	var checked = make(map[loader.Symbol] bool)
 	var has_default = false
 	var default_node ast.Node
-	var branches = make([]SemiTypedBranch, len(sw.Branches))
+	var semi_branches = make([]SemiTypedBranch, len(sw.Branches))
 	for i, branch := range sw.Branches {
 		switch t := branch.Type.(type) {
 		case ast.Ref:
@@ -102,6 +120,10 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 					TypeName: type_sym.String(),
 				},
 			} }
+			if checked[type_sym] { return SemiExpr{}, &ExprError {
+				Point:    ErrorPointFrom(branch.Node),
+				Concrete: E_CheckedBranch {},
+			} }
 			var case_type = NamedType {
 				Name: type_sym,
 				Args: case_args,
@@ -120,7 +142,7 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 			}
 			var semi, err = Check(branch.Expr, branch_ctx)
 			if err != nil { return SemiExpr{}, err }
-			branches[i] = SemiTypedBranch {
+			semi_branches[i] = SemiTypedBranch {
 				IsDefault: false,
 				Index:     index,
 				Pattern:   maybe_pattern,
@@ -135,13 +157,13 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 				}
 			}
 			if branch.Pattern != nil { panic("something went wrong") }
-			var semi, err = Check(branch.Expr, ctx)
+			var value, err = Check(branch.Expr, ctx)
 			if err != nil { return SemiExpr{}, err }
-			branches[i] = SemiTypedBranch {
+			semi_branches[i] = SemiTypedBranch {
 				IsDefault: true,
 				Index:     BadIndex,
-				Pattern:   Pattern {},
-				Value:     semi,
+				Pattern:   nil,
+				Value:     value,
 			}
 			has_default = true
 			default_node = branch.Node
@@ -165,18 +187,236 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 		}
 	} else {
 		return SemiExpr {
-			Value: SemiTypedMatch {
+			Value: SemiTypedSwitch {
 				Argument: Expr(arg_typed),
-				Branches: branches,
+				Branches: semi_branches,
 			},
 			Info: info,
 		}, nil
 	}
 }
 
-func CheckMultiSwitch(sw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprError) {
-	// TODO: multi-switch
-	panic("unimplemented")
+func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprError) {
+	var info = ctx.GetExprInfo(msw.Node)
+	var A = uint(len(msw.Arguments))
+	var args = make([]Expr, A)
+	var unions = make([]Union, A)
+	var unions_args = make([][]Type, A)
+	for i, arg_node := range msw.Arguments {
+		var semi, err = Check(arg_node, ctx)
+		if err != nil { return SemiExpr{}, err }
+		var arg_typed, ok = semi.Value.(TypedExpr)
+		if !ok { return SemiExpr{}, &ExprError {
+			Point:    ErrorPointFrom(arg_node.Node),
+			Concrete: E_ExplicitTypeRequired {},
+		} }
+		var arg_type = arg_typed.Type
+		var union, union_args, is_union = ExtractUnion(arg_type, ctx)
+		if !is_union { return SemiExpr{}, &ExprError {
+			Point:    arg_typed.Info.ErrorPoint,
+			Concrete: E_InvalidSwitchArgType {
+				ArgType: ctx.DescribeType(arg_typed.Type),
+			},
+		} }
+		args[i] = Expr(arg_typed)
+		unions[i] = union
+		unions_args[i] = union_args
+	}
+	var checked = make(map[string] bool)
+	var N = uint(0)
+	for _, u := range unions {
+		N += uint(len(u.CaseTypes))
+	}
+	var has_default = false
+	var default_node ast.Node
+	var semi_branches = make([]SemiTypedMultiBranch, len(msw.Branches))
+	for branch_index, branch := range msw.Branches {
+		if len(branch.Types) > 0 {
+			var num_types = uint(len(branch.Types))
+			if num_types != A { return SemiExpr{}, &ExprError {
+				Point:    ErrorPointFrom(branch.Node),
+				Concrete: E_WrongMultiBranchTypeQuantity {
+					Required: A,
+					Given:    num_types,
+				},
+			} }
+			var indexes = make([]uint, A)
+			var types = make([]Type, A)
+			var is_default = make([]bool, A)
+			for i, t := range branch.Types {
+				if len(t.TypeArgs) > 0 {
+					return SemiExpr{}, &ExprError {
+						Point:    ErrorPointFrom(t.Node),
+						Concrete: E_TypeParametersUnnecessary {},
+					}
+				}
+				var maybe_type_sym = ctx.ModuleInfo.Module.SymbolFromRef(t)
+				var type_sym, ok = maybe_type_sym.(loader.Symbol)
+				if !ok { return SemiExpr{}, &ExprError {
+					Point:    ErrorPointFrom(t.Module.Node),
+					Concrete: E_TypeErrorInExpr { &TypeError {
+						Point:    ErrorPointFrom(t.Module.Node),
+						Concrete: E_ModuleOfTypeRefNotFound {
+							Name: loader.Id2String(t.Module),
+						},
+					} },
+				}}
+				if (type_sym.ModuleName == "" &&
+					type_sym.SymbolName == IgnoreMark) {
+					indexes[i] = BadIndex
+					types[i] = AnonymousType { Unit {} }
+					is_default[i] = true
+					continue
+				}
+				var _, exists = ctx.ModuleInfo.Types[type_sym]
+				if !exists { return SemiExpr{}, &ExprError {
+					Point:    ErrorPointFrom(t.Node),
+					Concrete: E_TypeErrorInExpr { &TypeError {
+						Point:    ErrorPointFrom(t.Node),
+						Concrete: E_TypeNotFound {
+							Name: type_sym,
+						},
+					} },
+				} }
+				var index, case_args, is_case = GetCaseInfo (
+					unions[i], unions_args[i], type_sym,
+				)
+				if !is_case { return SemiExpr{}, &ExprError {
+					Point:    ErrorPointFrom(t.Node),
+					Concrete: E_NotBranchType {
+						Union:    ctx.DescribeType(args[i].Type),
+						TypeName: type_sym.String(),
+					},
+				} }
+				var el_case_type = NamedType {
+					Name: type_sym,
+					Args: case_args,
+				}
+				indexes[i] = index
+				types[i] = el_case_type
+				is_default[i] = false
+			}
+			var all_default = true
+			for _, is_def := range is_default {
+				var is_not_def = !(is_def)
+				if is_not_def {
+					all_default = false
+					break
+				}
+			}
+			if all_default { return SemiExpr{}, &ExprError {
+				Point:    ErrorPointFrom(branch.Node),
+				Concrete: E_MultiBranchTypesAllDefault {},
+			} }
+			var keys = make([]string, 0)
+			var collect_keys func([]uint)
+			collect_keys = func(path []uint) {
+				if len(path) == len(indexes) {
+					var buf strings.Builder
+					for _, index := range path {
+						buf.WriteString(fmt.Sprint(index))
+						buf.WriteRune(' ')
+					}
+					var key = buf.String()
+					keys = append(keys, key)
+				} else {
+					var i = len(path)
+					if is_default[i] {
+						var num_cases = uint(len(unions[i].CaseTypes))
+						for j := uint(0); j < num_cases; j += 1 {
+							var copied = make([]uint, len(path))
+							copy(copied, path)
+							collect_keys(append(copied, j))
+						}
+					} else {
+						var copied = make([]uint, len(path))
+						copy(copied, path)
+						collect_keys(append(copied, indexes[i]))
+					}
+				}
+			}
+			collect_keys([]uint {})
+			for _, key := range keys {
+				if checked[key] { return SemiExpr{}, &ExprError {
+					Point:    ErrorPointFrom(branch.Node),
+					Concrete: E_CheckedBranch {},
+				} }
+				checked[key] = true
+			}
+			var case_type = AnonymousType { Tuple { types } }
+			var maybe_pattern MaybePattern
+			var branch_ctx ExprContext
+			switch pattern_node := branch.Pattern.(type) {
+			case ast.PatternTuple:
+				var adapted = ast.VariousPattern {
+					Node:    pattern_node.Node,
+					Pattern: pattern_node,
+				}
+				var pattern, err = PatternFrom(adapted, case_type, ctx)
+				if err != nil { return SemiExpr{}, err }
+				maybe_pattern = pattern
+				branch_ctx = ctx.WithShadowingPatternMatching(pattern)
+			default:
+				maybe_pattern = nil
+				branch_ctx = ctx
+			}
+			var indexes_info = make([]MaybeDefaultIndex, A)
+			for i := uint(0); i < A; i += 1 {
+				indexes_info[i] = MaybeDefaultIndex {
+					IsDefault: is_default[i],
+					Index:     indexes[i],
+				}
+			}
+			var value, err = Check(branch.Expr, branch_ctx)
+			if err != nil { return SemiExpr{}, err }
+			semi_branches[branch_index] = SemiTypedMultiBranch {
+				IsDefault: false,
+				Indexes:   indexes_info,
+				Pattern:   maybe_pattern,
+				Value:     value,
+			}
+		} else {
+			if has_default {
+				return SemiExpr{}, &ExprError {
+					Point:    ErrorPointFrom(branch.Node),
+					Concrete: E_DuplicateDefaultBranch {},
+				}
+			}
+			if branch.Pattern != nil { panic("something went wrong") }
+			var value, err = Check(branch.Expr, ctx)
+			if err != nil { return SemiExpr{}, err }
+			semi_branches[branch_index] = SemiTypedMultiBranch {
+				IsDefault: true,
+				Indexes:   nil,
+				Pattern:   nil,
+				Value:     value,
+			}
+			has_default = true
+			default_node = branch.Node
+		}
+	}
+	var num_checked = uint(len(checked))
+	if !has_default && num_checked != N {
+		return SemiExpr{}, &ExprError {
+			Point:    ErrorPointFrom(msw.Node),
+			Concrete: E_IncompleteMultiMatch {
+				MissingQuantity: (N - num_checked),
+			},
+		}
+	} else if has_default && num_checked == N {
+		return SemiExpr{}, &ExprError {
+			Point:    ErrorPointFrom(default_node),
+			Concrete: E_SuperfluousDefaultBranch {},
+		}
+	} else {
+		return SemiExpr {
+			Value: SemiTypedMultiSwitch {
+				Arguments: args,
+				Branches:  semi_branches,
+			},
+			Info: info,
+		}, nil
+	}
 }
 
 func CheckIf(raw ast.If, ctx ExprContext) (SemiExpr, *ExprError) {
@@ -204,7 +444,7 @@ func CheckIf(raw ast.If, ctx ExprContext) (SemiExpr, *ExprError) {
 	}
 	return SemiExpr {
 		Info: info,
-		Value: SemiTypedMatch {
+		Value: SemiTypedSwitch{
 			Argument: Expr(cond_typed),
 			Branches: []SemiTypedBranch {
 				yes_branch, no_branch,
@@ -214,7 +454,7 @@ func CheckIf(raw ast.If, ctx ExprContext) (SemiExpr, *ExprError) {
 }
 
 
-func AssignMatchTo(expected Type, match SemiTypedMatch, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
+func AssignSwitchTo(expected Type, match SemiTypedSwitch, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
 	var err = RequireExplicitType(expected, info)
 	if err != nil { return Expr{}, err }
 	var branches = make([]Branch, len(match.Branches))
@@ -230,7 +470,7 @@ func AssignMatchTo(expected Type, match SemiTypedMatch, info ExprInfo, ctx ExprC
 	}
 	return Expr {
 		Type:  expected,
-		Value: Match {
+		Value: Switch {
 			Argument: match.Argument,
 			Branches: branches,
 		},
@@ -238,6 +478,9 @@ func AssignMatchTo(expected Type, match SemiTypedMatch, info ExprInfo, ctx ExprC
 	}, nil
 }
 
+func AssignMultiSwitchTo(expected Type, match SemiTypedMultiSwitch, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
+	panic("not implemented")
+}
 
 
 func ExtractUnion(t Type, ctx ExprContext) (Union, []Type, bool) {
@@ -250,40 +493,6 @@ func ExtractUnion(t Type, ctx ExprContext) (Union, []Type, bool) {
 		}
 	}
 	return Union{}, nil, false
-}
-
-func ExtractUnionTuple(t Type, ctx ExprContext) ([]Union, [][]Type, bool) {
-	switch T := t.(type) {
-	case NamedType:
-		var g = ctx.ModuleInfo.Types[T.Name]
-		switch gv := g.Value.(type) {
-		case Boxed:
-			var inner = FillTypeArgs(gv.InnerType, T.Args)
-			switch inner_type := inner.(type) {
-			case AnonymousType:
-				switch tuple := inner_type.Repr.(type) {
-				case Tuple:
-					var union_types = make([]Union, len(tuple.Elements))
-					var union_args = make([][]Type, len(tuple.Elements))
-					for i, el := range tuple.Elements {
-						switch el_t := el.(type) {
-						case NamedType:
-							var el_g = ctx.ModuleInfo.Types[el_t.Name]
-							switch el_gv := el_g.Value.(type) {
-							case Union:
-								union_types[i] = el_gv
-								union_args[i] = el_t.Args
-								continue
-							}
-						}
-						return nil, nil, false
-					}
-					return union_types, union_args, true
-				}
-			}
-		}
-	}
-	return nil, nil, false
 }
 
 func DesugarElseIf(raw ast.If) ast.If {

@@ -15,7 +15,9 @@ type PatternTrivial struct {
 	Name   Identifier   `part:"name"`
 }
 
+type MaybePatternTuple interface { MaybePatternTuple() }
 func (impl PatternTuple) Pattern() {}
+func (impl PatternTuple) MaybePatternTuple() {}
 type PatternTuple struct {
 	Node                   `part:"pattern_tuple"`
 	Names  [] Identifier   `list_more:"namelist" item:"name"`
