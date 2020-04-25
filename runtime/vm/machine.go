@@ -44,6 +44,8 @@ type ExecutionContext struct {
 	dataStack     DataStack
 	callStack     CallStack
 	workingFrame  CallStackFrame
+	indexBufLen   uint
+	indexBuf      [ProductMaxSize] Short
 }
 
 type DataStack  [] Value

@@ -212,7 +212,7 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 		var arg_code = CompileExpr(v.Argument, ctx)
 		var branch_count = uint(len(branches))
 		var addrs = make([]uint, branch_count)
-		var addr = arg_code.Length() + uint(branch_count)
+		var addr = arg_code.Length() + branch_count
 		for i := uint(0); i < branch_count; i += 1 {
 			addrs[i] = addr
 			addr += (branches[i].Length() + 1)
@@ -224,7 +224,7 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 			var index = raw_branches[i].Index
 			var jump c.Instruction
 			if raw_branches[i].IsDefault {
-				jump = InstJump(addrs[i], true)
+				jump = InstJump(addrs[i])
 			} else {
 				jump = InstJumpIf(index, addrs[i])
 			}
@@ -232,12 +232,102 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 		}
 		for i, branch_code := range branches {
 			buf.WriteBranch(branch_code, tail_addr)
-			var goto_tail = InstJump(tail_addr, false)
+			var goto_tail = InstJump(tail_addr)
 			var info = raw_branches[i].Value.Info
 			buf.WriteAbsolute(CodeFrom(goto_tail, info))
 		}
 		var nop = c.Instruction { OpCode: c.NOP }
 		buf.Write(CodeFrom(nop, v.Argument.Info))
+		return buf.Collect()
+	case ch.MultiSwitch:
+		var arg = ch.GetMultiSwitchArgumentTuple(v, expr.Info)
+		var A = uint(len(v.Arguments))
+		var raw_branches = make([]ch.MultiBranch, len(v.Branches))
+		var i = 0
+		var default_occurred = false
+		for _, b := range v.Branches {
+			if b.IsDefault {
+				if default_occurred { panic("something went wrong") }
+				raw_branches[len(raw_branches)-1] = b
+				default_occurred = true
+			} else {
+				raw_branches[i] = b
+				i += 1
+			}
+		}
+		var branches = make([]Code, len(raw_branches))
+		for i, b := range raw_branches {
+			var branch_buf = MakeCodeBuffer()
+			var branch_ctx = ctx.MakeBranch()
+			var branch_scope = branch_ctx.LocalScope
+			var pattern, ok = b.Pattern.(ch.Pattern)
+			if ok {
+				switch p := pattern.Concrete.(type) {
+				case ch.TuplePattern:
+					BindPatternItems (
+						pattern,       p.Items,
+						branch_scope,  branch_buf,
+					)
+				default:
+					panic("something went wrong")
+				}
+			} else {
+				var pop_inst = c.Instruction { OpCode: c.POP }
+				branch_buf.Write(CodeFrom(pop_inst, arg.Info))
+			}
+			var expr_code = CompileExpr(b.Value, branch_ctx)
+			branch_buf.Write(expr_code)
+			branches[i] = branch_buf.Collect()
+		}
+		var arg_code = CompileExpr(arg, ctx)
+		var branch_count = uint(len(branches))
+		var cond_code_length uint
+		if default_occurred {
+			cond_code_length = (((branch_count - 1) * (A + 2)) + 1)
+		} else {
+			cond_code_length = (branch_count * (A + 2))
+		}
+		var addrs = make([]uint, branch_count)
+		var addr = arg_code.Length() + cond_code_length
+		for i := uint(0); i < branch_count; i += 1 {
+			addrs[i] = addr
+			addr += (branches[i].Length() + 1)
+		}
+		var tail_addr = addr
+		var buf = MakeCodeBuffer()
+		buf.Write(arg_code)
+		for i := uint(0); i < branch_count; i += 1 {
+			if raw_branches[i].IsDefault {
+				var jump = InstJump(addrs[i])
+				buf.WriteAbsolute(CodeFrom(jump, arg.Info))
+			} else {
+				var element_indexes = raw_branches[i].Indexes
+				var ms = c.Instruction { OpCode: c.MS }
+				buf.WriteAbsolute(CodeFrom(ms, arg.Info))
+				if uint(len(element_indexes)) != A {
+					panic("something went wrong")
+				}
+				for j, el := range element_indexes {
+					var el_inst c.Instruction
+					if el.IsDefault {
+						el_inst = c.Instruction { OpCode: c.MSD }
+					} else {
+						el_inst = InstMultiSwitchIndex(el.Index)
+					}
+					buf.WriteAbsolute(CodeFrom(el_inst, v.Arguments[j].Info))
+				}
+				var jump = InstMultiSwitchJump(addrs[i])
+				buf.WriteAbsolute(CodeFrom(jump, arg.Info))
+			}
+		}
+		for i, branch_code := range branches {
+			buf.WriteBranch(branch_code, tail_addr)
+			var goto_tail = InstJump(tail_addr)
+			var info = raw_branches[i].Value.Info
+			buf.WriteAbsolute(CodeFrom(goto_tail, info))
+		}
+		var nop = c.Instruction { OpCode: c.NOP }
+		buf.Write(CodeFrom(nop, arg.Info))
 		return buf.Collect()
 	case ch.Lambda:
 		return CompileClosure(v, expr.Info, false, "", ctx)

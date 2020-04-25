@@ -22,8 +22,8 @@ type MultiSwitch struct {
 }
 type MultiBranch struct {
 	Node                         `part:"multi_branch"`
-	Types    [] Ref              `list_more:"branch_key.multi_type_ref.ref_list" item:"ref"`
-	Pattern  MaybePatternTuple   `part_opt:"branch_key.pattern_tuple"`
+	Types    [] Ref              `list_more:"multi_branch_key.multi_type_ref.ref_list" item:"ref"`
+	Pattern  MaybePatternTuple   `part_opt:"multi_branch_key.multi_pattern.pattern_tuple"`
 	Expr     Expr                `part:"expr"`
 }
 

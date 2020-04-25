@@ -114,7 +114,7 @@ func AssignBlockTo(expected Type, block SemiTypedBlock, info ExprInfo, ctx ExprC
 	var ret_typed, err = AssignTo(expected, ret_semi, ctx)
 	if err != nil { return Expr{}, err }
 	return Expr {
-		Type:  expected,
+		Type:  ret_typed.Type,
 		Info:  info,
 		Value: Block {
 			Bindings: bindings,

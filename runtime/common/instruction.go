@@ -27,23 +27,28 @@ const (
 	NIL     // [ ___ ]: Load a nil value
 	POP     // [ ___ ]: Discard current value
 	/* Data Transfer */
-	GLOBAL  // [   index   ]: Load a global value (constant or function)
-	LOAD    // [ _, offset ]: Load a value from (frame base) + offset
-	STORE   // [ _, offset ]: Store current value to (frame base) + offset
+	GLOBAL  // [   index  ]: Load a global value (constant or function)
+	LOAD    // [ _, offset]: Load a value from (frame base) + offset
+	STORE   // [ _, offset]: Store current value to (frame base) + offset
 	/* Sum Type Operations */
-	SUM     // [index,  ____ ]: Create a value of a sum type
-	JIF     // [index,  dest ]: Jump if Index matches the current value
-	JMP     // [narrow, dest ]: Jump unconditionally
+	SUM     // [index, ___ ]: Create a value of a sum type
+	JIF     // [index, dest]: Jump if Index matches the current value
+	JMP     // [ ____, dest]: Jump unconditionally
 	/* Product Type Operations */
 	PROD    // [size,  _ ]: Create a value of a product type
 	GET     // [index, _ ]: Extract the value of a field
 	SET     // [index, _ ]: Perform a functional update on a field
 	/* Function Type Operations */
 	CTX     // [rec, _ ]: Use the current value as the context of a closure
-	CALL    // [___, _ ]: Call a (native)function (pop func, pop arg, push ret)
+	CALL    // [ __, _ ]: Call a (native)function (pop func, pop arg, push ret)
 	/* Array Operations */
 	ARRAY   // [ size ]: Create an empty array
 	APPEND  // [ ____ ]: Append an element to the created array
+	/* Multi-Switch Operations */
+	MS      // [ _________ ]: Start multi-switch
+	MSI     // [index, ___ ]: Append branch element index
+	MSD     // [ ____, ___ ]: Append branch element index (default)
+	MSJ     // [ ____, dest]: Jump if branch indexes matches the current value
 )
 
 func (inst Instruction) GetGlobalIndex() uint {
@@ -96,11 +101,7 @@ func (inst Instruction) String() string {
 		return fmt.Sprintf("JIF %d %d",
 			inst.GetShortIndexOrSize(), inst.GetDestAddr())
 	case JMP:
-		if inst.Arg0 != 0 {
-			return fmt.Sprintf("JMP NARROW %d", inst.GetDestAddr())
-		} else {
-			return fmt.Sprintf("JMP %d", inst.GetDestAddr())
-		}
+		return fmt.Sprintf("JMP %d", inst.GetDestAddr())
 	case PROD:
 		return fmt.Sprintf("PROD %d", inst.GetShortIndexOrSize())
 	case GET:
@@ -119,6 +120,14 @@ func (inst Instruction) String() string {
 		return fmt.Sprintf("ARRAY %d", inst.GetArraySize())
 	case APPEND:
 		return "APPEND"
+	case MS:
+		return "MS"
+	case MSI:
+		return fmt.Sprintf("MSI %d", inst.GetShortIndexOrSize())
+	case MSD:
+		return "MSD"
+	case MSJ:
+		return fmt.Sprintf("MSJ %d", inst.GetDestAddr())
 	default:
 		panic("unknown instruction kind")
 	}

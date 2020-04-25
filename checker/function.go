@@ -69,6 +69,10 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 			}
 		}
 	}
+	var index_offset_map = make(map[string] uint)
+	for name, refs := range collection {
+		index_offset_map[name] = uint(len(refs))
+	}
 	// 3. Iterate over all function declarations in the current module
 	for _, cmd := range mod.Node.Commands {
 		switch decl := cmd.Command.(type) {
@@ -123,6 +127,7 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 			var existing, exists = collection[name]
 			if exists {
 				// 3.6.1. If in use, try to overload it
+				var index_offset = index_offset_map[name]
 				var err_point = ErrorPointFrom(decl.Name.Node)
 				var err = CheckOverload (
 					existing, func_type, name, params,
@@ -133,7 +138,7 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 					IsImported: false,
 					Function:   gf,
 					ModuleName: mod_name,
-					Index:      uint(len(existing)),
+					Index:      uint(len(existing)) - index_offset,
 				})
 			} else {
 				// 3.6.2. If not, collect the function

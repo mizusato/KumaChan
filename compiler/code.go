@@ -40,7 +40,8 @@ func (buf CodeBuffer) Write(code Code) {
 	var base = &(buf.Code.InstSeq)
 	var base_size = uint(len(buf.Code.InstSeq))
 	for _, inst := range code.InstSeq {
-		if inst.OpCode == c.JIF || inst.OpCode == c.JMP {
+		switch inst.OpCode {
+		case c.JIF, c.JMP, c.MSJ:
 			var dest_addr = (uint(inst.Arg1) + base_size)
 			ValidateDestAddr(dest_addr)
 			*base = append(*base, c.Instruction {
@@ -48,7 +49,7 @@ func (buf CodeBuffer) Write(code Code) {
 				Arg0:   inst.Arg0,
 				Arg1:   c.Long(dest_addr),
 			})
-		} else {
+		default:
 			*base = append(*base, inst)
 		}
 	}
@@ -175,17 +176,29 @@ func InstJumpIf(index uint, dest uint) c.Instruction {
 	}
 }
 
-func InstJump(dest uint, narrow bool) c.Instruction {
+func InstJump(dest uint) c.Instruction {
 	ValidateDestAddr(dest)
-	var narrow_flag uint
-	if narrow {
-		narrow_flag = 1
-	} else {
-		narrow_flag = 0
-	}
 	return c.Instruction {
 		OpCode: c.JMP,
-		Arg0:   c.Short(narrow_flag),
+		Arg0:   0,
+		Arg1:   c.Long(dest),
+	}
+}
+
+func InstMultiSwitchIndex(index uint) c.Instruction {
+	ValidateSumIndex(index)
+	return c.Instruction {
+		OpCode: c.MSI,
+		Arg0:   c.Short(index),
+		Arg1:   0,
+	}
+}
+
+func InstMultiSwitchJump(dest uint) c.Instruction {
+	ValidateDestAddr(dest)
+	return c.Instruction {
+		OpCode: c.MSJ,
+		Arg0:   0,
 		Arg1:   c.Long(dest),
 	}
 }

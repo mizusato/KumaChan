@@ -29,7 +29,6 @@ type SemiTypedBranch struct {
 	Pattern    MaybePattern
 	Value      SemiExpr
 }
-
 func (impl SemiTypedMultiSwitch) SemiExprVal() {}
 type SemiTypedMultiSwitch struct {
 	Arguments  [] Expr
@@ -55,6 +54,17 @@ type Branch struct {
 	IsDefault  bool
 	Index      uint
 	Pattern    MaybePattern
+	Value      Expr
+}
+func (impl MultiSwitch) ExprVal() {}
+type MultiSwitch struct {
+	Arguments  [] Expr
+	Branches   [] MultiBranch
+}
+type MultiBranch struct {
+	IsDefault  bool
+	Indexes    [] MaybeDefaultIndex
+	Pattern    MaybePattern   // can only be TuplePattern or nil
 	Value      Expr
 }
 
@@ -89,7 +99,7 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 					Concrete: E_TypeParametersUnnecessary {},
 				}
 			}
-			var maybe_type_sym = ctx.ModuleInfo.Module.SymbolFromRef(t)
+			var maybe_type_sym = ctx.ModuleInfo.Module.TypeSymbolFromRef(t)
 			var type_sym, ok = maybe_type_sym.(loader.Symbol)
 			if !ok { return SemiExpr{}, &ExprError {
 				Point:    ErrorPointFrom(t.Module.Node),
@@ -223,9 +233,9 @@ func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprErro
 		unions_args[i] = union_args
 	}
 	var checked = make(map[string] bool)
-	var N = uint(0)
+	var N = uint(1)
 	for _, u := range unions {
-		N += uint(len(u.CaseTypes))
+		N *= uint(len(u.CaseTypes))
 	}
 	var has_default = false
 	var default_node ast.Node
@@ -250,7 +260,7 @@ func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprErro
 						Concrete: E_TypeParametersUnnecessary {},
 					}
 				}
-				var maybe_type_sym = ctx.ModuleInfo.Module.SymbolFromRef(t)
+				var maybe_type_sym = ctx.ModuleInfo.Module.TypeSymbolFromRef(t)
 				var type_sym, ok = maybe_type_sym.(loader.Symbol)
 				if !ok { return SemiExpr{}, &ExprError {
 					Point:    ErrorPointFrom(t.Module.Node),
@@ -261,8 +271,7 @@ func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprErro
 						},
 					} },
 				}}
-				if (type_sym.ModuleName == "" &&
-					type_sym.SymbolName == IgnoreMark) {
+				if (type_sym.SymbolName == IgnoreMark) {
 					indexes[i] = BadIndex
 					types[i] = AnonymousType { Unit {} }
 					is_default[i] = true
@@ -360,7 +369,7 @@ func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprErro
 				maybe_pattern = nil
 				branch_ctx = ctx
 			}
-			var indexes_info = make([]MaybeDefaultIndex, A)
+			var indexes_info = make([] MaybeDefaultIndex, A)
 			for i := uint(0); i < A; i += 1 {
 				indexes_info[i] = MaybeDefaultIndex {
 					IsDefault: is_default[i],
@@ -396,6 +405,7 @@ func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprErro
 		}
 	}
 	var num_checked = uint(len(checked))
+	if num_checked > N { panic("something went wrong") }
 	if !has_default && num_checked != N {
 		return SemiExpr{}, &ExprError {
 			Point:    ErrorPointFrom(msw.Node),
@@ -454,11 +464,11 @@ func CheckIf(raw ast.If, ctx ExprContext) (SemiExpr, *ExprError) {
 }
 
 
-func AssignSwitchTo(expected Type, match SemiTypedSwitch, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
-	var err = RequireExplicitType(expected, info)
-	if err != nil { return Expr{}, err }
-	var branches = make([]Branch, len(match.Branches))
-	for i, branch_semi := range match.Branches {
+func AssignSwitchTo(expected Type, sw SemiTypedSwitch, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
+	var err1 = RequireExplicitType(expected, info)
+	if err1 != nil { return Expr{}, err1 }
+	var branches = make([] Branch, len(sw.Branches))
+	for i, branch_semi := range sw.Branches {
 		var typed, err = AssignTo(expected, branch_semi.Value, ctx)
 		if err != nil { return Expr{}, err }
 		branches[i] = Branch {
@@ -468,18 +478,42 @@ func AssignSwitchTo(expected Type, match SemiTypedSwitch, info ExprInfo, ctx Exp
 			Value:     typed,
 		}
 	}
+	var t, err2 = GetCertainType(expected, info.ErrorPoint, ctx)
+	if err2 != nil { return Expr{}, err2 }
 	return Expr {
-		Type:  expected,
+		Type:  t,
 		Value: Switch {
-			Argument: match.Argument,
+			Argument: sw.Argument,
 			Branches: branches,
 		},
 		Info:  info,
 	}, nil
 }
 
-func AssignMultiSwitchTo(expected Type, match SemiTypedMultiSwitch, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
-	panic("not implemented")
+func AssignMultiSwitchTo(expected Type, msw SemiTypedMultiSwitch, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
+	var err1 = RequireExplicitType(expected, info)
+	if err1 != nil { return Expr{}, err1 }
+	var branches = make([] MultiBranch, len(msw.Branches))
+	for i, branch_semi := range msw.Branches {
+		var typed, err = AssignTo(expected, branch_semi.Value, ctx)
+		if err != nil { return Expr{}, err }
+		branches[i] = MultiBranch {
+			IsDefault: branch_semi.IsDefault,
+			Indexes:   branch_semi.Indexes,
+			Pattern:   branch_semi.Pattern,
+			Value:     typed,
+		}
+	}
+	var t, err2 = GetCertainType(expected, info.ErrorPoint, ctx)
+	if err2 != nil { return Expr{}, err2 }
+	return Expr {
+		Type:  t,
+		Value: MultiSwitch {
+			Arguments: msw.Arguments,
+			Branches:  branches,
+		},
+		Info:  info,
+	}, nil
 }
 
 
@@ -526,5 +560,17 @@ func DesugarElseIf(raw ast.If) ast.If {
 		YesBranch: raw.YesBranch,
 		NoBranch:  no_branch,
 		ElIfs:     nil,
+	}
+}
+
+func GetMultiSwitchArgumentTuple(msw MultiSwitch, info ExprInfo) Expr {
+	var el_types = make([] Type, len(msw.Arguments))
+	for i, arg := range msw.Arguments {
+		el_types[i] = arg.Type
+	}
+	return Expr {
+		Type:  AnonymousType { Tuple { el_types } },
+		Value: Product { msw.Arguments },
+		Info:  info,
 	}
 }

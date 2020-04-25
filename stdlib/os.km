@@ -27,7 +27,7 @@ public function rel-path! {
     lambda Array[String] Path:
     lambda raw
         let validated := (validate-raw-path raw),
-        return (Path (collect cons ('.', iterate validated)))
+        return (Path (('.'.cons (validated.iterate)).collect))
 };
 
 type ProcessExit  protected NoExcept[-];

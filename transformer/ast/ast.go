@@ -78,6 +78,8 @@ var __NodeRegistry = []interface{} {
     Cast {},
 	Switch {},
     Branch {},
+    MultiSwitch {},
+    MultiBranch {},
     If {},
     Lambda {},
     VariousPattern {},

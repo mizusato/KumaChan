@@ -188,22 +188,11 @@ func AssignRefTo(expected Type, ref UntypedRef, info ExprInfo, ctx ExprContext) 
 		var boxed_unit, err = Box (
 			unit, g, g_name, info, type_args, info, ctx,
 		)
-		if err != nil {
-			return Expr{}, &ExprError {
-				Point:    info.ErrorPoint,
-				Concrete: E_TypeUsedAsValue { r.TypeName },
-			}
-		} else {
-			var adapted, err = AssignTypedTo(expected, boxed_unit, ctx)
-			if err != nil {
-				return Expr{}, &ExprError {
-					Point:    info.ErrorPoint,
-					Concrete: E_TypeUsedAsValue { r.TypeName },
-				}
-			} else {
-				return adapted, nil
-			}
-		}
+		if err != nil { return Expr{}, &ExprError {
+			Point:    info.ErrorPoint,
+			Concrete: E_TypeUsedAsValue { r.TypeName },
+		} }
+		return AssignTypedTo(expected, boxed_unit, ctx)
 	case UntypedRefToFunctions:
 		var name = r.FuncName
 		var functions = r.Functions

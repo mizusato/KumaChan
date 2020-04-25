@@ -118,11 +118,6 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 					// do nothing
 				}
 			case JMP:
-				if inst.Arg0 != 0 {
-					var sum, ok = ec.popValue().(SumValue)
-					assert(ok, "JMP: cannot narrow non-union type")
-					ec.pushValue(sum.Value)
-				}
 				var new_inst_ptr = inst.GetDestAddr()
 				assert(new_inst_ptr < uint(len(code)),
 					"JMP: invalid address")
@@ -232,6 +227,54 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 					panic("APPEND: cannot append to non-array value")
 				}
 				ec.pushValue(append(arr, val))
+			case MS:
+				ec.indexBufLen = 0
+			case MSI:
+				assert(ec.indexBufLen < ProductMaxSize,
+					"MSI: index buffer overflow")
+				var index = inst.GetRawShortIndexOrSize()
+				ec.indexBuf[ec.indexBufLen] = index
+				ec.indexBufLen += 1
+			case MSD:
+				assert(ec.indexBufLen < ProductMaxSize,
+					"MSD: index buffer overflow")
+				ec.indexBuf[ec.indexBufLen] = ^(Short(0))
+				ec.indexBufLen += 1
+			case MSJ:
+				var prod, ok = ec.getCurrentValue().(ProductValue)
+				assert(ok, "MSJ: cannot execute on non-product value")
+				assert(uint(len(prod.Elements)) == ec.indexBufLen,
+					"MSJ: wrong index quantity")
+				var matching = true
+				for i, e := range prod.Elements {
+					var sum, ok = e.(SumValue)
+					assert(ok, "MSJ: non-sum element value occurred")
+					var desired = ec.indexBuf[i]
+					if desired == ^(Short(0)) {
+						continue
+					} else {
+						if sum.Index == desired {
+							continue
+						} else {
+							matching = false
+							break
+						}
+					}
+				}
+				if matching {
+					ec.popValue()
+					var narrowed = make([] Value, len(prod.Elements))
+					for i, e := range prod.Elements {
+						narrowed[i] = e.(SumValue).Value
+					}
+					ec.pushValue(&ValProd { Elements: narrowed })
+					var new_inst_ptr = inst.GetDestAddr()
+					assert(new_inst_ptr < uint(len(code)),
+						"MSJ: invalid address")
+					*inst_ptr_ref = new_inst_ptr
+				} else {
+					// do nothing
+				}
 			default:
 				panic(fmt.Sprintf("invalid instruction %+v", inst))
 			}
