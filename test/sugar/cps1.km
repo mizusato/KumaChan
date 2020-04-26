@@ -1,4 +1,4 @@
-module TestCps1;
+module TestSugarCps1;
 
 do (
     ~ for &(x) := yield-range(0,10):
