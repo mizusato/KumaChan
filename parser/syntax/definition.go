@@ -191,13 +191,14 @@ var SyntaxDefinition = [...] string {
         "int = Int",
         "float = Float",
         "char = Char",
-    // TODO: implement compile-time concatenated
-    //       string & text (with chars). e.g.
+    // TODO: compile-time concatenated string & text (with chars)
+    //       e.g.
     //         'Hello' \n 'World' ^!
     //         ("Number " ^# "#") (str! n)   // explicit ^# as raw #
-    // TODO: implement l10n message constants (type: lambda {...} String)
+    // TODO: l10n message constants (type: lambda {...} String)
     //       message NumRecords { name: String, count: Int }:
-    //           number: count,
+    //           number:   count,
     //           plural:   'The table ' .name. ' has ' .count. '  records' \n,
     //           singular: 'The table ' .name. ' has ' .count. ' record' \n
+    // TODO: bytes literal and compact array literal
 }

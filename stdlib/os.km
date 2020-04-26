@@ -4,7 +4,8 @@ public const Kind := [String] native 'OS::Kind';
 public const Arch := [String] native 'OS::Arch';
 public const Is64Bit := [Bool] native 'OS::Is64Bit';
 
-public const Env := [Map[String,String]] native 'OS::Env';
+public const  Env := [Map[String,String]] native 'OS::Env';
+public const Args := [Array[String]] native 'OS::Args';
 
 public const  Stdin := [I/O::InputStream]  native 'OS::Stdin';
 public const Stdout := [I/O::OutputStream] native 'OS::Stdout';
@@ -12,26 +13,10 @@ public const Stderr := [I/O::OutputStream] native 'OS::Stderr';
 
 public macro println(line) := (OS::Stdout | write-line line);
 
-type Path  protected Array[String];
-
-private function validate-raw-path {
-    lambda Array[String] Array[String]:
-    lambda raw
-        if (raw.some &(part)(part.contains '/')):
-            panic 'invalid path',
-        else:
-            raw
-};
-
-public function rel-path! {
-    lambda Array[String] Path:
-    lambda raw
-        let validated := (validate-raw-path raw),
-        return (Path (('.'.cons (validated.iterate)).collect))
-};
+type Path native;
 
 type ProcessExit  protected NoExcept[-];
 public function exit {
-    lambda Uint8 ProcessExit:
+    &(Uint8) ProcessExit:
     native 'exit'
 };

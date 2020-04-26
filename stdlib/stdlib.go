@@ -2,7 +2,6 @@ package stdlib
 
 import (
 	"math"
-	"reflect"
 )
 
 
@@ -134,14 +133,4 @@ func CheckFloat(x float64) float64 {
 		panic("Float Overflow: Infinity")
 	}
 	return x
-}
-
-func AdaptSlice(v interface{}) (reflect.Value, bool) {
-	var rv = reflect.ValueOf(v)
-	var t = rv.Type()
-	if t.Kind() == reflect.Slice {
-		return rv, true
-	} else {
-		return reflect.ValueOf(nil), false
-	}
 }

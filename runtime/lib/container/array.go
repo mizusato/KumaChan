@@ -4,7 +4,6 @@ import (
 	"reflect"
 	. "kumachan/error"
 	. "kumachan/runtime/common"
-	"kumachan/stdlib"
 )
 
 
@@ -14,22 +13,18 @@ type Array struct {
 	ItemType  reflect.Type
 }
 
-func ArrayFromSlice(slice interface{}) Array {
-	var slice_rv = reflect.ValueOf(slice)
-	if slice_rv.Kind() != reflect.Slice {
-		panic("cannot apply ArrayFromSlice() on non-slice value")
-	}
-	return Array {
-		Length:  uint(slice_rv.Len()),
-		GetItem: func(i uint) Value {
-			return slice_rv.Index(int(i)).Interface()
-		},
-		ItemType: slice_rv.Type().Elem(),
+func AdaptSlice(v interface{}) (reflect.Value, bool) {
+	var rv = reflect.ValueOf(v)
+	var t = rv.Type()
+	if t.Kind() == reflect.Slice {
+		return rv, true
+	} else {
+		return reflect.ValueOf(nil), false
 	}
 }
 
 func ArrayFrom(value Value) Array {
-	var slice, ok = stdlib.AdaptSlice(value)
+	var slice, ok = AdaptSlice(value)
 	if ok {
 		return Array {
 			Length:  uint(slice.Len()),
@@ -52,7 +47,7 @@ func (array Array) CopyAsSlice() Value {
 	return slice_rv.Interface()
 }
 
-func (_ Array) Inspect(inspect func(Value)ErrorMessage) ErrorMessage {
+func (_ Array) Inspect(_ func(Value)ErrorMessage) ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	msg.WriteText(TS_NORMAL, "[array-view]")
 	return msg

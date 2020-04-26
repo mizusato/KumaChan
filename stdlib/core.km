@@ -241,14 +241,14 @@ public function - {
 };
 
 // Advanced Arithmetic Functions
-public function floor! { lambda Float Float:  native 'floor' };
-public function  ceil! { lambda Float Float:  native 'ceil' };
-public function round! { lambda Float Float:  native 'round' };
+public function floor { lambda Float Float:  native 'floor' };
+public function  ceil { lambda Float Float:  native 'ceil' };
+public function round { lambda Float Float:  native 'round' };
 public function ** { lambda (Float,Float) Float:  native 'real-**' };
 public function sqrt { lambda Float Float:  native 'real-sqrt' };
 public function cbrt { lambda Float Float:  native 'real-cbrt' };
 public function  exp { lambda Float Float:  native 'real-exp' };
-public function   ln { lambda Float Float:  native 'real-log' };
+public function  log { lambda Float Float:  native 'real-log' };
 public function  sin { lambda Float Float: native 'real-sin' };
 public function  cos { lambda Float Float: native 'real-cos' };
 public function  tan { lambda Float Float: native 'real-tan' };
@@ -258,7 +258,7 @@ public function atan { lambda Float Float: native 'real-atan' };
 public function atan2 { lambda { y: Float, x: Float } Float:  native 'atan2' };
 public function log {
     lambda { base: Float, x: Float } Float:
-    lambda {base,x} $((ln x) / (ln base))
+    lambda {base,x} $((log x) / (log base))
 };
 public function log2 {
     lambda Float Float:
@@ -271,27 +271,27 @@ public function log10 {
 private const  i := [Complex] Complex(0.0, 1.0);
 private const _1 := [Complex] Complex(1.0, 0.0);
 private macro re-im (z, expr) := (let (re, im) := z, return expr);
-public function re! {
+public function Re {
     lambda Complex Float:
     lambda (re, _) re
 };
-public function im! {
+public function Im {
     lambda Complex Float:
     lambda (_, im) im
 };
-public function conj! {
+public function Conj {
     lambda Complex Complex:
     lambda (re, im) (Complex (re, (- im)))
 };
-public function arg! {
+public function Arg {
     lambda Complex Float:
     lambda (re, im) (atan2 { y: im, x: re })
 };
-public function norm! {
+public function Norm {
     lambda Complex Float:
     lambda (re, im) (sqrt $($(re * re) + $(im * im)))
 };
-public function polar! {
+public function Polar {
     lambda { norm: Float, arg: Float } Complex:
     lambda { norm, arg }
         if $(norm >= 0.0):
@@ -299,9 +299,9 @@ public function polar! {
         else:
             panic 'invalid input: negative norm'
 };
-public function polar! {
+public function Polar {
     lambda Float Complex:
-    lambda  arg  (polar! { norm: 1.0, arg })
+    lambda  arg  (Polar { norm: 1.0, arg })
 };
 public function + {
     lambda (Complex,Complex) Complex:
@@ -371,11 +371,11 @@ public function - {
 };
 public function exp {
     lambda Complex Complex:
-    lambda (re, im) (polar! { norm: exp(re), arg: im })
+    lambda (re, im) (Polar { norm: exp(re), arg: im })
 };
-public function ln {
+public function log {
     lambda Complex Complex:
-    lambda    z    (Complex((ln norm! z), (arg! z)))
+    lambda    z    (Complex((log Norm z), (Arg z)))
 };
 public function sin {
     lambda Complex Complex:
@@ -391,23 +391,23 @@ public function tan {
 };
 public function asin {
     lambda Complex Complex:
-    lambda    z    $((- i) * (ln $( $(i * z) + (sqrt $(1.0 - $(z * z))) )))
+    lambda    z    $((- i) * (log $( $(i * z) + (sqrt $(1.0 - $(z * z))) )))
 };
 public function acos {
     lambda Complex Complex:
-    lambda    z    $((- i) * (ln $( z + (sqrt $($(z * z) - 1.0)) )))
+    lambda    z    $((- i) * (log $( z + (sqrt $($(z * z) - 1.0)) )))
 };
 public function atan {
     lambda Complex Complex:
-    lambda    z    $($(i / 2.0) * (ln $($(i + z) / $(i - z))))
+    lambda    z    $($(i / 2.0) * (log $($(i + z) / $(i - z))))
 };
 public function sqrt {
     lambda Complex Complex:
-    lambda    z    (polar! { norm: (sqrt norm! z), arg: $((arg! z) / 2.0) })
+    lambda    z    (Polar { norm: (sqrt Norm z), arg: $((Arg z) / 2.0) })
 };
 public function cbrt {
     lambda Complex Complex:
-    lambda    z    (polar! { norm: (cbrt norm! z), arg: $((arg! z) / 3.0) })
+    lambda    z    (Polar { norm: (cbrt Norm z), arg: $((Arg z) / 3.0) })
 };
 
 // Comparison Functions & Macros
@@ -482,7 +482,7 @@ public function SHL { lambda (Qword,Number) Qword:   native '<<Qword' };
 public function SHR { lambda (Qword,Number) Qword:   native '>>Qword' };
 
 // Range Operation Functions
-public function range! {
+public function range {
     lambda (Number,Number) Range:
     lambda (l, r)
         if $(l <= r):
@@ -500,7 +500,7 @@ public function from {
     lambda Range Seq[Number]:
     native 'Seq from Range'
 };
-public function next![T] {
+public function next[T] {
     lambda Seq[T] Maybe[(T,Seq[T])]:
     native 'seq-next'
 };
@@ -512,11 +512,11 @@ public function cons[T] {
     lambda (T,Seq[T]) Seq[T]:
     native 'seq-cons'
 };
-public function map![A,B] {
+public function map[A,B] {
     lambda (Seq[A], lambda A B) Seq[B]:
     native 'seq-map'
 };
-public function filter![T] {
+public function filter[T] {
     lambda (Seq[T], lambda T Bool) Seq[T]:
     native 'seq-filter'
 };
@@ -546,7 +546,7 @@ public function get[T] {
     lambda (Array[T],Number) T:
     native 'array-get'
 };
-public function slice![T] {
+public function slice[T] {
     lambda (Array[T],Range) Array[T]:
     native 'array-slice'
 };
@@ -554,7 +554,7 @@ public function slice-view[T] {
     lambda (Array[T],Range) Array[T]:
     native 'array-slice-view'
 };
-public function map![A,B] {
+public function map[A,B] {
     lambda (Array[A], lambda A B) Array[B]:
     native 'array-map'
 };
@@ -566,20 +566,20 @@ public function iterate[T] {
     lambda Array[T] Seq[T]:
     native 'array-iterate'
 };
-public function filter![T] {
+public function filter[T] {
     lambda (Array[T], lambda T Bool) Array[T]:
     lambda (arr, f)
-        (arr | iterate | filter! f | collect)
+        (arr | iterate | filter(f) | collect)
 };
 public function scan[T,A] {
     lambda (Array[T], (A, lambda (A,T) A)) Array[A]:
     lambda (arr, opts)
-        (arr | iterate | scan opts | collect)
+        (arr | iterate | scan(opts) | collect)
 };
 public function reduce[T,A] {
     lambda (Array[T], (A, lambda (A,T) A)) A:
     lambda (arr, opts)
-        (arr | iterate | reduce opts)
+        (arr | iterate | reduce(opts))
 };
 public function some[T] {
     lambda (Array[T], lambda T Bool) Bool:
@@ -593,7 +593,7 @@ public function every[T] {
 };
 
 // String Related Functions
-public macro str! (x) := [String from x];
+public macro str (x) := [String from x];
 public function from { lambda Int    String:  native 'String from Int' };
 public function from { lambda Number String:  native 'String from Number' };
 public function from { lambda Float  String:  native 'String from Float' };
@@ -607,11 +607,11 @@ public function from { lambda Uint32 String:  native 'String from Uint32' };
 public function from { lambda Uint64 String:  native 'String from Uint64' };
 public function from {
     lambda Complex String:
-    lambda (re, im) ("(# + #i)" ((str! re), (str! im)))
+    lambda (re, im) ("(# + #i)" ((str re), (str im)))
 };
 public function from {
     lambda Range String:
-    lambda (l, r) ("[#, #)" ((str! l), (str! r)))
+    lambda (l, r) ("[#, #)" ((str l), (str r)))
 };
 public function encode {   /// encodes string into UTF-8 byte sequence
     lambda String Bytes:
@@ -623,7 +623,7 @@ public function decode {   /// decodes string from UTF-8 byte sequence
 };
 public function substr {
     lambda (String,Range) String:
-    lambda (str, range) (String (str.slice! range))
+    lambda (str, range) (String (str.slice range))
 };
 public function concat {
     lambda Array[String] String:
@@ -707,7 +707,7 @@ public function from[T] {
 };
 public function yield-range {
     lambda (Number,Number) NoExcept*[Number]:
-    lambda (l, r) (from range!(l, r))
+    lambda (l, r) (from range(l, r))
 };
 public function adapt-no-except[T,E] {
     lambda NoExcept[T] Effect[T,E]:
@@ -795,11 +795,11 @@ public function throw[T,E] {
     lambda E Effect[T,E]:
     native 'throw'
 };
-public function map![A,B,E] {
+public function map[A,B,E] {
     lambda (Effect[A,E], lambda A B) Effect[B,E]:
     native 'map-effect'
 };
-public function map![A,B] {
+public function map[A,B] {
     lambda (NoExcept[A], lambda A B) NoExcept[B]:
     native 'map-effect'
 };
@@ -811,11 +811,11 @@ public function map*[A,B] {
     lambda (NoExcept*[A], lambda A B) NoExcept*[B]:
     native 'map-effect'
 };
-public function filter![T,E] {
+public function filter[T,E] {
     lambda (Effect*[T,E], lambda T Bool) Effect*[T,E]:
     native 'filter-effect'
 };
-public function filter![T] {
+public function filter[T] {
     lambda (NoExcept*[T], lambda T Bool) NoExcept*[T]:
     native 'filter-effect'
 };

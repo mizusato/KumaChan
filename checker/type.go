@@ -169,9 +169,9 @@ func DescribeType(type_ Type, ctx TypeDescContext) string {
 			return buf.String()
 		case Func:
 			var buf strings.Builder
-			buf.WriteString("lambda ")
+			buf.WriteString("λ(")
 			buf.WriteString(DescribeType(r.Input, ctx))
-			buf.WriteString(" ")
+			buf.WriteString(") ")
 			buf.WriteString(DescribeType(r.Output, ctx))
 			return buf.String()
 		default:

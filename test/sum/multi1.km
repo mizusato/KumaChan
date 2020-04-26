@@ -31,4 +31,4 @@ private function f {
 };
 
 do println str! (f (A, B))
-   | catch &_ (crash 'I/O Error');
+   | catch &(_)(crash 'I/O Error');

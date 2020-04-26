@@ -8,6 +8,8 @@ import (
 const IgnoreMark = "_"
 const UnitAlias = "-"
 const TextPlaceholder = '#'
+const FuncSuffix = "!"
+const MacroSuffix = FuncSuffix
 const BadIndex = ^(uint(0))
 var __NoExcept = CoreSymbol(stdlib.NoExcept)
 var __DoType = NamedType {

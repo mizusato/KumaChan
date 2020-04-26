@@ -1,6 +1,7 @@
 package checker
 
 import (
+	"strings"
 	. "kumachan/error"
 	"kumachan/loader"
 	"kumachan/transformer/ast"
@@ -162,6 +163,12 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 			}
 		}
 		f_refs, exists := ctx.ModuleInfo.Functions[sym_name]
+		if !exists &&
+			len(sym_name) > len(FuncSuffix) &&
+			strings.HasSuffix(sym_name, FuncSuffix) {
+			var func_sym_name = strings.TrimSuffix(sym_name, FuncSuffix)
+			f_refs, exists = ctx.ModuleInfo.Functions[func_sym_name]
+		}
 		if exists {
 			var functions = make([]*GenericFunction, len(f_refs))
 			for i, ref := range f_refs {
@@ -170,6 +177,12 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 			return SymFunctions { Functions: functions }, true
 		}
 		m_ref, exists := ctx.ModuleInfo.Macros[sym_name]
+		if !exists &&
+			len(sym_name) > len(MacroSuffix) &&
+			strings.HasSuffix(sym_name, MacroSuffix) {
+			var macro_sym_name = strings.TrimSuffix(sym_name, MacroSuffix)
+			m_ref, exists = ctx.ModuleInfo.Macros[macro_sym_name]
+		}
 		if exists {
 			return SymMacro { m_ref.Macro }, true
 		}
