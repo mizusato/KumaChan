@@ -30,6 +30,22 @@ type Binding struct {
 	Value      Expr             `part:"expr"`
 }
 
+func (impl Cps) Term() {}
+type Cps struct {
+	Node                       `part:"cps"`
+	Callee   Ref               `part:"ref"`
+	Binding  MaybeCpsBinding   `part_opt:"cps_binding"`
+	Input    Expr              `part:"cps_input.expr"`
+	Output   Expr              `part:"cps_output.expr"`
+}
+type MaybeCpsBinding interface { MaybeCpsBinding() }
+func (impl CpsBinding) MaybeCpsBinding() {}
+type CpsBinding struct {
+	Node                        `part:"cps_binding"`
+	Pattern    VariousPattern   `part:"pattern"`
+	Type       MaybeType        `part_opt:"binding_type.type"`
+}
+
 func (impl Array) Term() {}
 type Array struct {
 	Node             `part:"array"`

@@ -270,6 +270,8 @@ func CheckTerm(term ast.VariousTerm, ctx ExprContext) (SemiExpr, *ExprError) {
 		return CheckIf(t, ctx)
 	case ast.Block:
 		return CheckBlock(t, ctx)
+	case ast.Cps:
+		return CheckCps(t, ctx)
 	case ast.Tuple:
 		return CheckTuple(t, ctx)
 	case ast.Bundle:

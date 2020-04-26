@@ -95,6 +95,8 @@ var __NodeRegistry = []interface{} {
     Get {},
     Block {},
     Binding {},
+    Cps {},
+    CpsBinding {},
     Infix {},
     Text {},
     Ref {},

@@ -244,7 +244,7 @@ public function - {
 public function floor { lambda Float Float:  native 'floor' };
 public function  ceil { lambda Float Float:  native 'ceil' };
 public function round { lambda Float Float:  native 'round' };
-public function ** { lambda (Float,Float) Float:  native 'real-**' };
+public function   ** { lambda (Float,Float) Float:  native 'real-**' };
 public function sqrt { lambda Float Float:  native 'real-sqrt' };
 public function cbrt { lambda Float Float:  native 'real-cbrt' };
 public function  exp { lambda Float Float:  native 'real-exp' };
@@ -719,6 +719,8 @@ public function adapt-no-except*[T,E] {
 };
 
 // Effect Operators
+public macro do(e, f) := then(e, f);
+public macro for(e, f) := concat-map(e, f);
 public function take-one[T,E] {
     lambda Effect*[T,E] Effect[Maybe[T],E]:
     native 'take-one'

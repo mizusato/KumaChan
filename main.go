@@ -3,6 +3,8 @@ package main
 import (
     "fmt"
     "io"
+    "os"
+    "reflect"
     "io/ioutil"
     "kumachan/checker"
     "kumachan/compiler"
@@ -14,8 +16,6 @@ import (
     "kumachan/runtime/common"
     "kumachan/runtime/vm"
     "kumachan/transformer"
-    "os"
-    "reflect"
 )
 
 
@@ -124,6 +124,7 @@ func debug_compiler(entry *checker.CheckedModule) common.Program {
 
 func main () {
     // debug_parser(os.Stdin, "[eval]", "module")
+    // os.Exit(0)
     var mod, idx = debug_loader()
     var c_mod, _ = debug_checker(mod, idx)
     var program = debug_compiler(c_mod)

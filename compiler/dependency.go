@@ -61,7 +61,6 @@ func RefsToDeps (
 				Index: index,
 			}
 		case RefClosure:
-			var index = uint(len(*closures))
 			var cl = FuncNodeFrom (
 				r.Function,
 				r.GlobalRefs,
@@ -69,6 +68,7 @@ func RefsToDeps (
 				data,
 				closures,
 			)
+			var index = uint(len(*closures))
 			*closures = append(*closures, cl)
 			deps[i] = DepClosure {
 				Index: index,

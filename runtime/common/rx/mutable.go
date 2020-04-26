@@ -221,3 +221,4 @@ func (m Map) Delete(key string) Effect {
 	})
 }
 
+// TODO: bytes

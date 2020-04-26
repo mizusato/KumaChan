@@ -1,0 +1,19 @@
+module TestCps1;
+
+do (
+    ~ for &(x) := yield-range(0,10):
+    ~ do println str x:
+    println '---'
+) | catch* &(_)(crash 'I/O Error')
+  | wait-complete;
+
+/*
+do
+	yield-range(0,10)
+	| concat-map &x(
+	    println str x
+	    | then &(_)(println '---')
+	)
+	| catch* &(_)(crash 'I/O Error')
+	| wait-complete;
+*/
