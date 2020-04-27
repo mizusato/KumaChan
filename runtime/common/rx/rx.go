@@ -109,13 +109,40 @@ func CreateEffect(action func(Sender)) Effect {
 	} }
 }
 
-func CreateBlockingEffect(action func(next func(Object)) error) Effect {
+func CreateQueuedEffect(w *Worker, action func()(Object,bool)) Effect {
+	return Effect { func(sched Scheduler, ob *observer) {
+		var sender = Sender { sched: sched, raw: ob }
+		w.Do(func() {
+			var result, ok = action()
+			if ok {
+				sender.Next(result)
+				sender.Complete()
+			} else {
+				sender.Error(result)
+			}
+		})
+	} }
+}
+
+func CreateBlockingEffect(action func()(Object,bool)) Effect {
 	return Effect { func (sched Scheduler, ob *observer) {
-		var err = action(ob.next)
-		if err != nil {
-			ob.error(err)
-		} else {
+		var result, ok = action()
+		if ok {
+			ob.next(result)
 			ob.complete()
+		} else {
+			ob.error(result)
+		}
+	} }
+}
+
+func CreateBlockingSequenceEffect(action func(func(Object))(bool,Object)) Effect {
+	return Effect { func (sched Scheduler, ob *observer) {
+		var ok, err = action(ob.next)
+		if ok {
+			ob.complete()
+		} else {
+			ob.error(err)
 		}
 	} }
 }

@@ -15,28 +15,18 @@ func DesugarCps(cps ast.Cps) ast.Call {
 		Term: cps.Callee,
 	}
 	var binding, exists = cps.Binding.(ast.CpsBinding)
-	var lambda ast.Expr
+	var cont ast.VariousTerm
 	if exists {
-		lambda = WrapTermAsExpr(ast.Lambda {
-			Node:   binding.Node,
-			Input:  binding.Pattern,
-			Output: output,
-		}, binding.Node)
-	} else {
-		lambda = WrapTermAsExpr(ast.Lambda {
-			Node:   output.Node,
-			Input:  ast.VariousPattern {
-				Node:    input.Node,
-				Pattern: ast.PatternTrivial {
-					Node: input.Node,
-					Name: ast.Identifier {
-						Node: input.Node,
-						Name: ([] rune)(IgnoreMark),
-					},
-				},
+		cont = ast.VariousTerm {
+			Node: binding.Node,
+			Term: ast.Lambda {
+				Node:   binding.Node,
+				Input:  binding.Pattern,
+				Output: output,
 			},
-			Output: output,
-		}, output.Node)
+		}
+	} else {
+		cont = output
 	}
 	return ast.Call {
 		Node: cps.Node,
@@ -49,7 +39,7 @@ func DesugarCps(cps ast.Cps) ast.Call {
 					Node: cps.Node,
 					Elements: []ast.Expr {
 						input,
-						lambda,
+						WrapTermAsExpr(cont),
 					},
 				},
 			},
@@ -58,15 +48,12 @@ func DesugarCps(cps ast.Cps) ast.Call {
 	}
 }
 
-func WrapTermAsExpr(term ast.Term, node ast.Node) ast.Expr {
+func WrapTermAsExpr(term ast.VariousTerm) ast.Expr {
 	return ast.Expr {
-		Node:     node,
+		Node:     term.Node,
 		Call:     ast.Call {
-			Node: node,
-			Func: ast.VariousTerm {
-				Node: node,
-				Term: term,
-			},
+			Node: term.Node,
+			Func: term,
 			Arg:  nil,
 		},
 		Pipeline: nil,

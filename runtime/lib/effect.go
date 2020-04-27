@@ -9,34 +9,33 @@ import (
 
 var EffectFunctions = map[string] Value {
 	"emit*-range": func(l uint, r uint) rx.Effect {
-		return rx.CreateBlockingEffect(func(next func(rx.Object)) error {
+		return rx.CreateBlockingSequenceEffect(func(next func(rx.Object))(bool,rx.Object) {
 			for i := l; i < r; i += 1 {
 				next(i)
 			}
-			return nil
+			return true, nil
 		})
 	},
 	"emit*-seq": func(seq container.Seq) rx.Effect {
-		return rx.CreateBlockingEffect(func(next func(rx.Object)) error {
+		return rx.CreateBlockingSequenceEffect(func(next func(rx.Object))(bool,rx.Object) {
 			for item, rest, ok := seq.Next(); ok; item, rest, ok = rest.Next() {
 				next(item)
 			}
-			return nil
+			return true, nil
 		})
 	},
 	"emit*-array": func(av Value) rx.Effect {
 		var arr = container.ArrayFrom(av)
-		return rx.CreateBlockingEffect(func(next func(rx.Object)) error {
+		return rx.CreateBlockingSequenceEffect(func(next func(rx.Object))(bool,rx.Object) {
 			for i := uint(0); i < arr.Length; i += 1 {
 				next(arr.GetItem(i))
 			}
-			return nil
+			return true, nil
 		})
 	},
 	"emit": func(v Value) rx.Effect {
-		return rx.CreateBlockingEffect(func(next func(rx.Object)) error {
-			next(v)
-			return nil
+		return rx.CreateBlockingEffect(func() (rx.Object, bool) {
+			return v, true
 		})
 	},
 	"take-one": func(e rx.Effect) rx.Effect {

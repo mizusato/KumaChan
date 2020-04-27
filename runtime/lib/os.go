@@ -59,7 +59,7 @@ func GetArgs() ([] String) {
 
 var OS_Functions = map[string] Value {
 	"exit": func(code uint8) rx.Effect {
-		return rx.CreateBlockingEffect(func(_ func(rx.Object)) error {
+		return rx.CreateBlockingEffect(func() (rx.Object, bool) {
 			os.Exit(int(code))
 			panic("process should have exited")
 		})

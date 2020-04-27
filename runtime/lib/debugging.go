@@ -33,7 +33,7 @@ var DebuggingFunctions = map[string] interface{} {
 		const reset = "\033[0m"
 		var point = h.GetErrorPoint()
 		var source_point = point.Node.Point
-		return rx.CreateBlockingEffect(func(_ func(rx.Object)) error {
+		return rx.CreateBlockingEffect(func() (rx.Object, bool) {
 			fmt.Fprintf (
 				os.Stderr, "%v*** Crash: (%d, %d) at %s%v\n",
 				bold+red,

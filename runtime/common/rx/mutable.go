@@ -74,25 +74,22 @@ func CreateCell(init_val Object) *Cell {
 }
 
 func (c *Cell) Get() Effect {
-	return CreateBlockingEffect(func(next func(Object)) error {
-		next(c.value)
-		return nil
+	return CreateBlockingEffect(func()(Object, bool) {
+		return c.value, true
 	})
 }
 
 func (c *Cell) Set(new_val Object) Effect {
-	return CreateBlockingEffect(func(next func(Object)) error {
+	return CreateBlockingEffect(func()(Object, bool) {
 		c.value = new_val
-		next(nil)
-		return nil
+		return nil, true
 	})
 }
 
 func (c *Cell) Map(f func(Object)Object) Effect {
-	return CreateBlockingEffect(func(next func(Object)) error {
+	return CreateBlockingEffect(func()(Object, bool) {
 		c.value = f(c.value)
-		next(nil)
-		return nil
+		return nil, true
 	})
 }
 
@@ -107,70 +104,63 @@ func CreateList(l interface{}) List {
 }
 
 func (l List) ToRaw() Effect {
-	return CreateBlockingEffect(func(next func(Object)) error {
+	return CreateBlockingEffect(func()(Object, bool) {
 		var copied_rv = reflect.MakeSlice(l.slice_rv.Type(), l.slice_rv.Len(), l.slice_rv.Len())
 		reflect.Copy(copied_rv, l.slice_rv)
-		next(copied_rv.Interface())
-		return nil
+		return copied_rv.Interface(), true
 	})
 }
 
 func (l List) Length() Effect {
-	return CreateBlockingEffect(func(next func(Object)) error {
-		next(uint(l.slice_rv.Len()))
-		return nil
+	return CreateBlockingEffect(func()(Object, bool) {
+		return uint(l.slice_rv.Len()), true
 	})
 }
 
 func (l List) Get(index uint) Effect {
-	return CreateBlockingEffect(func(next func(Object)) error {
+	return CreateBlockingEffect(func()(Object, bool) {
 		var val = l.slice_rv.Index(int(index)).Interface()
-		next(val)
-		return nil
+		return val, true
 	})
 }
 
 func (l List) Set(index uint, val Object) Effect {
-	return CreateBlockingEffect(func(next func(Object)) error {
+	return CreateBlockingEffect(func()(Object, bool) {
 		l.slice_rv.Index(int(index)).Set(reflect.ValueOf(val))
-		next(nil)
-		return nil
+		return nil, true
 	})
 }
 
 func (l List) Shift() Effect {
-	return CreateBlockingEffect(func(next func(Object)) error {
+	return CreateBlockingEffect(func()(Object, bool) {
 		var length = l.slice_rv.Len()
 		if length > 0 {
 			var head = l.slice_rv.Index(0)
 			l.slice_rv = l.slice_rv.Slice(1, length)
-			next(struct { Object; bool } { head, true })
+			return struct { Object; bool } { head, true }, true
 		} else {
-			next(struct { Object; bool } { nil, false })
+			return struct { Object; bool } { nil, false }, true
 		}
-		return nil
 	})
 }
 
 func (l List) Pop() Effect {
-	return CreateBlockingEffect(func(next func(Object)) error {
+	return CreateBlockingEffect(func()(Object, bool) {
 		var length = l.slice_rv.Len()
 		if length > 0 {
 			var tail = l.slice_rv.Index(length-1)
 			l.slice_rv = l.slice_rv.Slice(0, length-1)
-			next(struct { Object; bool } { tail, true })
+			return struct { Object; bool } { tail, true }, true
 		} else {
-			next(struct { Object; bool } { nil, false })
+			return struct { Object; bool } { nil, false }, true
 		}
-		return nil
 	})
 }
 
 func (l List) Push(new_tail Object) Effect {
-	return CreateBlockingEffect(func(next func(Object)) error {
+	return CreateBlockingEffect(func()(Object, bool) {
 		l.slice_rv = reflect.Append(l.slice_rv, reflect.ValueOf(new_tail))
-		next(nil)
-		return nil
+		return nil, true
 	})
 }
 
@@ -181,43 +171,39 @@ func CreateMap(m map[string] Object) Map {
 }
 
 func (m Map) Has(key string) Effect {
-	return CreateBlockingEffect(func(next func(Object)) error {
+	return CreateBlockingEffect(func()(Object, bool) {
 		var _, exists = m[key]
-		next(exists)
-		return nil
+		return exists, true
 	})
 }
 
 func (m Map) Get(key string) Effect {
-	return CreateBlockingEffect(func(next func(Object)) error {
+	return CreateBlockingEffect(func()(Object, bool) {
 		var val, exists = m[key]
 		if exists {
-			next(struct { Object; bool } { val, true })
+			return struct { Object; bool } { val, true }, true
 		} else {
-			next(struct { Object; bool } { nil, false })
+			return struct { Object; bool } { nil, false }, true
 		}
-		return nil
 	})
 }
 
 func (m Map) Set(key string, val Object) Effect {
-	return CreateBlockingEffect(func(next func(Object)) error {
+	return CreateBlockingEffect(func()(Object, bool) {
 		m[key] = val
-		next(nil)
-		return nil
+		return nil, true
 	})
 }
 
 func (m Map) Delete(key string) Effect {
-	return CreateBlockingEffect(func(next func(Object)) error {
+	return CreateBlockingEffect(func()(Object, bool) {
 		var deleted, exists = m[key]
 		if exists {
 			delete(m, key)
-			next(struct { Object; bool } { deleted, true })
+			return struct { Object; bool } { deleted, true }, true
 		} else {
-			next(struct { Object; bool } { nil, false })
+			return struct { Object; bool } { nil, false }, true
 		}
-		return nil
 	})
 }
 
