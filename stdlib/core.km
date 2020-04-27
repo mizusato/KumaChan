@@ -492,14 +492,10 @@ public function range {
 };
 public function iterate {
     lambda Range Seq[Number]:
-    lambda r (from r)
+    native 'range-iterate'
 };
 
 // Sequence Operation Functions
-public function from {
-    lambda Range Seq[Number]:
-    native 'Seq from Range'
-};
 public function next[T] {
     lambda Seq[T] Maybe[(T,Seq[T])]:
     native 'seq-next'
@@ -681,9 +677,21 @@ public function trim-suffix {
 */
 
 // Effect Constructors
-public function one-shot[T] {
+public function emit[T] {
     lambda T NoExcept[T]:
-    native 'one-shot'
+    native 'emit'
+};
+public function emit* {
+    lambda Range NoExcept*[Number]:
+    native 'emit*-range'
+};
+public function emit*[T] {
+    lambda Seq[T] NoExcept*[T]:
+    native 'emit*-seq'
+};
+public function emit*[T] {
+    lambda Array[T] NoExcept*[T]:
+    native 'emit*-array'
 };
 public function wait {
     lambda { timeout: Number } NoExcept[-]:
@@ -692,22 +700,6 @@ public function wait {
 public function tick {
     lambda { interval: Number } NoExcept*[-]:
     native 'tick'
-};
-public function from {
-    lambda Range NoExcept*[Number]:
-    native 'NoExcept* from Range'
-};
-public function from[T] {
-    lambda Seq[T] NoExcept*[T]:
-    native 'NoExcept* from Seq'
-};
-public function from[T] {
-    lambda Array[T] NoExcept*[T]:
-    native 'NoExcept* from Array'
-};
-public function yield-range {
-    lambda (Number,Number) NoExcept*[Number]:
-    lambda (l, r) (from range(l, r))
 };
 public function adapt-no-except[T,E] {
     lambda NoExcept[T] Effect[T,E]:

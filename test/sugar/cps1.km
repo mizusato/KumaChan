@@ -1,9 +1,9 @@
 module TestSugarCps1;
 
 do (
-    ~ for &(x) := yield-range(0,10):
-    ~ do println str x:
-    println '---'
+    ~ for &(x) := emit* range(0,10):
+    ~ do println (str x):
+         println '---'
 ) | catch* &(_)(crash 'I/O Error')
   | wait-complete;
 

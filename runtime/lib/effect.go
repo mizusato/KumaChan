@@ -8,7 +8,7 @@ import (
 
 
 var EffectFunctions = map[string] Value {
-	"NoExcept* from Range": func(l uint, r uint) rx.Effect {
+	"emit*-range": func(l uint, r uint) rx.Effect {
 		return rx.CreateBlockingEffect(func(next func(rx.Object)) error {
 			for i := l; i < r; i += 1 {
 				next(i)
@@ -16,7 +16,7 @@ var EffectFunctions = map[string] Value {
 			return nil
 		})
 	},
-	"NoExcept* from Seq": func(seq container.Seq) rx.Effect {
+	"emit*-seq": func(seq container.Seq) rx.Effect {
 		return rx.CreateBlockingEffect(func(next func(rx.Object)) error {
 			for item, rest, ok := seq.Next(); ok; item, rest, ok = rest.Next() {
 				next(item)
@@ -24,7 +24,7 @@ var EffectFunctions = map[string] Value {
 			return nil
 		})
 	},
-	"NoExcept* from Array": func(av Value) rx.Effect {
+	"emit*-array": func(av Value) rx.Effect {
 		var arr = container.ArrayFrom(av)
 		return rx.CreateBlockingEffect(func(next func(rx.Object)) error {
 			for i := uint(0); i < arr.Length; i += 1 {
@@ -33,7 +33,7 @@ var EffectFunctions = map[string] Value {
 			return nil
 		})
 	},
-	"one-shot": func(v Value) rx.Effect {
+	"emit": func(v Value) rx.Effect {
 		return rx.CreateBlockingEffect(func(next func(rx.Object)) error {
 			next(v)
 			return nil
