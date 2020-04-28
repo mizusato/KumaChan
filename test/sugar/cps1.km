@@ -1,5 +1,3 @@
-module TestSugarCps1;
-
 do (
     ~ for &(x) := emit* range(0,10):
     ~ do println (str x):

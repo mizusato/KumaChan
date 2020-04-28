@@ -88,7 +88,7 @@ func (r *RuneListReader) ReadRune() (rune, int, error) {
 
 
 func MatchToken(code Code, pos int) (amount int, id syntax.Id) {
-    for _, token := range syntax.Tokens {
+    for _, token := range syntax.GetTokens() {
         var reader = RuneListReader { src: code, pos: pos }
         var loc = token.Pattern.FindReaderIndex(&reader)
         // fmt.Printf("Try %v\n", token.Name)
@@ -102,7 +102,7 @@ func MatchToken(code Code, pos int) (amount int, id syntax.Id) {
 
 func Scan(code Code) (Tokens, RowColInfo, RowSpanMap) {
     var ignore = make(map[syntax.Id] bool)
-    for _, ignore_name := range syntax.IgnoreTokens {
+    for _, ignore_name := range syntax.GetIgnoreTokens() {
         ignore[syntax.Name2Id[ignore_name]] = true
     }
     var tokens = make(Tokens, 0, 10000)

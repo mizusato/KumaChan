@@ -1,5 +1,3 @@
-module Hello;
-
 do println 'Hello World'
     // | then   (println "# # #" (
     //     OS::Kind, OS::Arch, (if OS::Is64Bit: '64bit', else: '32bit')))

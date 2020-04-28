@@ -8,6 +8,11 @@ import (
 
 
 var EffectFunctions = map[string] Value {
+	"emit": func(v Value) rx.Effect {
+		return rx.CreateBlockingEffect(func() (rx.Object, bool) {
+			return v, true
+		})
+	},
 	"emit*-range": func(l uint, r uint) rx.Effect {
 		return rx.CreateBlockingSequenceEffect(func(next func(rx.Object))(bool,rx.Object) {
 			for i := l; i < r; i += 1 {
@@ -31,11 +36,6 @@ var EffectFunctions = map[string] Value {
 				next(arr.GetItem(i))
 			}
 			return true, nil
-		})
-	},
-	"emit": func(v Value) rx.Effect {
-		return rx.CreateBlockingEffect(func() (rx.Object, bool) {
-			return v, true
 		})
 	},
 	"take-one": func(e rx.Effect) rx.Effect {

@@ -40,7 +40,7 @@ func (mod *Module) SymbolFromName(name ast.Identifier) Symbol {
 	if exists {
 		return NewSymbol(stdlib.Core, sym_name)
 	} else {
-		return NewSymbol(Id2String(mod.Node.Name), sym_name)
+		return NewSymbol(mod.Name, sym_name)
 	}
 }
 
@@ -50,7 +50,7 @@ func (mod *Module) SymbolFromRef(ref ast.Ref) MaybeSymbol {
 	if exists {
 		if ref_mod == "" { panic("something went wrong") }
 		return NewSymbol (
-			Id2String(corresponding.Node.Name),
+			corresponding.Name,
 			Id2String(ref.Id),
 		)
 	} else {
@@ -76,7 +76,7 @@ func (mod *Module) SymbolFromRef(ref ast.Ref) MaybeSymbol {
 }
 
 func (mod *Module) TypeSymbolFromRef(ref ast.Ref) MaybeSymbol {
-	var self = Id2String(mod.Node.Name)
+	var self = mod.Name
 	var maybe_sym = mod.SymbolFromRef(ref)
 	var sym, ok = maybe_sym.(Symbol)
 	if ok {

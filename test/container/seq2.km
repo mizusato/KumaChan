@@ -1,5 +1,3 @@
-module TestContainerSeq2;
-
 do
     let seq := 1.0 | cons (2.0 | cons nil()),
         eff := emit* $(0.0 cons seq),

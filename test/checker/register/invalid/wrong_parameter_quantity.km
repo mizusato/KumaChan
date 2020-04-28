@@ -1,5 +1,3 @@
-module WrongParameterQuantity;
-
 type Triple[A,B,C] (A, B, C);
 
 type Foo[A,B]  (Triple[A,B]);

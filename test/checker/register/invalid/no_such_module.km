@@ -1,3 +1,1 @@
-module NoSuchModule;
-
 type A (B::Foo);

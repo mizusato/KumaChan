@@ -146,7 +146,7 @@ func (ctx ExprContext) DescribeExpectedType(t Type) string {
 }
 
 func (ctx ExprContext) GetModuleName() string {
-	return loader.Id2String(ctx.ModuleInfo.Module.Node.Name)
+	return ctx.ModuleInfo.Module.Name
 }
 
 func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {

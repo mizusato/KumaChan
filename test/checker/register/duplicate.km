@@ -1,5 +1,3 @@
-module Duplicate;
-
 type Foo();
 type Bar();
 type Foo(Bar);

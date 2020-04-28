@@ -1,5 +1,3 @@
-module Normal;
-
 type Foo (Integer);
 type Bar { data: String };
 type Baz[A,B] (A, B);

@@ -1,5 +1,3 @@
-module TestSumMulti1;
-
 type ABC union {
      type A;
      type B;

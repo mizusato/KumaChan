@@ -41,7 +41,7 @@ type NodeListInfo struct {
 
 var __NodeRegistry = []interface{} {
     // Root
-    Module {},
+	Root{},
     // Command
     VariousCommand {},
     Import {},

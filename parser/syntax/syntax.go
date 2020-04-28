@@ -49,8 +49,8 @@ func GetPartType (name string) PartType {
 }
 
 func EscapePartName (name string) string {
-    if strings.HasPrefix(name, "_") && EscapeMap[name] != "" {
-        return EscapeMap[name]
+    if strings.HasPrefix(name, "_") && __EscapeMap[name] != "" {
+        return __EscapeMap[name]
     } else {
         return name
     }
@@ -74,13 +74,13 @@ func __AssignId2Name (name string) Id {
 }
 
 func __AssignId2Tokens () {
-    for _, token := range Tokens {
+    for _, token := range __Tokens {
         __AssignId2Name(token.Name)
     }
 }
 
 func __AssignId2Keywords () {
-    for _, name := range ConditionalKeywords {
+    for _, name := range __ConditionalKeywords {
         var keyword = []rune(strings.TrimLeft(name, "@"))
         if len(keyword) == 0 { panic("empty keyword") }
         var id = __AssignId2Name(name)
@@ -89,7 +89,7 @@ func __AssignId2Keywords () {
 }
 
 func __AssignId2Rules () {
-    for _, def := range SyntaxDefinition {
+    for _, def := range __SyntaxDefinition {
         var t = strings.Split(def, "=")
         var u = strings.Trim(t[0], " ")
         var rule_name = strings.TrimRight(u, "?")
@@ -98,7 +98,7 @@ func __AssignId2Rules () {
 }
 
 func __ParseRules () {
-    for _, def := range SyntaxDefinition {
+    for _, def := range __SyntaxDefinition {
         var pivot = strings.Index(def, "=")
         if (pivot == -1) { panic(def + ": invalid rule: missing =") }
         // name = ...

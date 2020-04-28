@@ -5,21 +5,28 @@ type Regexp = *regexp.Regexp
 func r (pattern string) Regexp { return regexp.MustCompile(`^` + pattern) }
 
 
+const RootPartName = "root"
 const IdentifierPartName = "Name"
-var IgnoreTokens = [] string { "Comment", "Blank", "LF" }
-var EscapeMap = map[string] string {
+var __EscapeMap = map[string] string {
     "_bang1":  "!",
     "_bang2":  "!!",
     "_bar1":   "|",
     "_bar2":   "||",
     "_at":     "@",
 }
+var __IgnoreTokens = [...] string {
+    "Comment",
+    "Blank",
+    "LF",
+}
 
 const LF = `\n`
 const Blanks = ` \t\r　`
 const Symbols = `\{\}\[\]\(\)\.\,\:\;\~@#$\^\&\|\\'"` + "`"
+const IdentifierRegexp = `[^`+Symbols+Blanks+LF+`]+`
+const IdentifierFullRegexp = "^" + IdentifierRegexp + "$"
 
-var Tokens = [...] Token {
+var __Tokens = [...] Token {
     Token { Name: "String",  Pattern: r(`'[^']*'`) },
     Token { Name: "Text",    Pattern: r(`"[^"]*"`) },
     Token { Name: "Comment", Pattern: r(`/\*([^\*/]|\*[^/]|[^\*]/)*\*/`) },
@@ -57,25 +64,29 @@ var Tokens = [...] Token {
     Token { Name: "$",       Pattern: r(`\$`) },
     Token { Name: "&",       Pattern: r(`\&`) },
     Token { Name: "|",       Pattern: r(`\|`) },
-    Token { Name: "Name",    Pattern: r(`[^`+Symbols+Blanks+LF+`]+`) },
+    Token { Name: "Name",    Pattern: r(IdentifierRegexp) },
+}
+func GetTokens() ([] Token) { return __Tokens[:] }
+func GetIgnoreTokens() ([] string) { return __IgnoreTokens[:] }
+func GetIdentifierFullRegexp() *regexp.Regexp {
+    return regexp.MustCompile(IdentifierFullRegexp)
 }
 
-var ConditionalKeywords = [...] string {
-    "@module", "@import", "@from",
+var __ConditionalKeywords = [...] string {
+    "@import", "@from",
     "@type", "@union", "@native", "@protected", "@opaque",
     "@private", "@public", "@function", "@const", "@macro", "@do",
     "@if", "@elif", "@else", "@switch", "@case", "@default", "@switch*",
     "@lambda", "@let", "@rec", "@return",
 }
 
-var SyntaxDefinition = [...] string {
-    "module = shebang module_name! commands",
+var __SyntaxDefinition = [...] string {
+    "root = shebang commands",
       "shebang? = Pragma",
-      "module_name = @module name! ;!",
-        "name = Name",
       "commands? = command commands",
         "command = import | do | decl_type | decl_func | decl_const | decl_macro",
           "import = @import name! @from! string! ;!",
+            "name = Name",
           "do = @do expr! ;!",
     "ref = module_prefix name type_args",
       "module_prefix? = name :: | ::",

@@ -1,5 +1,3 @@
-module DuplicateField;
-
 type Foo {
     Bar: Integer,
     Baz: Natural,

@@ -23,7 +23,7 @@ type Context = map[string] interface{}
 type Transformer = func(Tree, Pointer) reflect.Value
 
 
-func Transform (tree Tree) Module {
+func Transform (tree Tree) Root {
     var dive func(Tree, Pointer, []syntax.Id) (Pointer, bool)
     dive = func (tree Tree, ptr Pointer, path []syntax.Id) (Pointer, bool) {
         if len(path) == 0 {
@@ -52,7 +52,9 @@ func Transform (tree Tree) Module {
         var meta = node.Elem().FieldByName("Node").Addr().Interface().(*Node)
         meta.CST = tree
         meta.Span = parser_node.Span
-        meta.Point = tree.Info[meta.Span.Start]
+        if meta.Span.Start < len(tree.Info) {
+            meta.Point = tree.Info[meta.Span.Start]
+        }
         var transform_dived = func (child_info *NodeChildInfo, f Transformer) {
             var field_index = child_info.FieldIndex
             var field = info.Type.Field(field_index)
@@ -190,7 +192,7 @@ func Transform (tree Tree) Module {
         }
         return node.Elem()
     }
-    return transform(tree, 0).Interface().(Module)
+    return transform(tree, 0).Interface().(Root)
 }
 
 
@@ -339,7 +341,7 @@ func PrintNode (node reflect.Value) {
     var buf strings.Builder
     var is_last = make([]bool, 0, 1000)
     is_last = append(is_last, true)
-    PrintNodeRecursively(&buf, node, "Module", 0, is_last)
+    PrintNodeRecursively(&buf, node, "Root", 0, is_last)
     fmt.Println(buf.String())
 }
 

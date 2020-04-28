@@ -1,5 +1,3 @@
-module I/O;
-
 type InputStream   native;
 type OutputStream  native;
 type Error         native;

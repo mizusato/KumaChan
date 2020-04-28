@@ -1,4 +1,2 @@
-module Normal;
-
-import Lib1 from 'lib1.km';
-import Lib2 from 'lib2.km';
+import Lib1 from 'lib1';
+import Lib2 from 'lib2';

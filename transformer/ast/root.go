@@ -1,8 +1,7 @@
 package ast
 
-type Module struct {
-    Node                          `part:"module"`
-    Name      Identifier          `part:"module_name.name"`
+type Root struct {
+    Node                          `part:"root"`
     Commands  [] VariousCommand   `list_rec:"commands"`
 }
 

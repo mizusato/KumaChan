@@ -1,6 +1,3 @@
-module Core;
-
-
 /**
  *  IMPORTANT: The following type definitions should be kept consistent
  *             with the `stdlib.go` file.

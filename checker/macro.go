@@ -3,14 +3,12 @@ package checker
 import (
 	. "kumachan/error"
 	"kumachan/loader"
-	"kumachan/parser/cst"
 	"kumachan/transformer/ast"
 )
 
 
 type Macro struct {
 	Node    ast.Node
-	CST     *cst.Tree
 	Public  bool
 	Input   [] string
 	Output  ast.Expr
@@ -51,7 +49,7 @@ func CollectMacros(mod *loader.Module, store MacroStore) (MacroCollection, *Macr
 			if !(macro_ref.IsImported) && macro_ref.Macro.Public {
 				var existing, exists = collection[name]
 				if exists { return nil, &MacroError {
-					Point:    ErrorPointFrom(mod.Node.Name.Node),
+					Point:    ErrorPointFrom(mod.Node.Node),  // TODO: more specific info
 					Concrete: E_MacroConflictBetweenModules {
 						Macro:   name,
 						Module1: existing.ModuleName,
@@ -98,7 +96,6 @@ func CollectMacros(mod *loader.Module, store MacroStore) (MacroCollection, *Macr
 			}
 			var m = &Macro {
 				Node:   decl.Node,
-				CST:    mod.CST,
 				Public: decl.Public,
 				Input:  input,
 				Output: decl.Output,
