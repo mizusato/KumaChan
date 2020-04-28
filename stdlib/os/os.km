@@ -15,6 +15,6 @@ type Path native;
 
 type ProcessExit  protected NoExcept[-];
 public function exit {
-    &(Uint8) ProcessExit:
+    & (Uint8) ProcessExit:
     native 'exit'
 };

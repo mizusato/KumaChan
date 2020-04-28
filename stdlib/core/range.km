@@ -1,0 +1,19 @@
+public function range {
+    & (Number,Number)
+        Range:
+    & (l, r)
+        if $(l <= r):
+            Range(l, r),
+        else:
+            panic 'invalid range: left bound bigger than right bound'
+};
+
+public function from {
+    & (Range) String:
+    & (l, r) ("[#, #)" ((str l), (str r)))
+};
+
+public function iterate {
+    & (Range) Seq[Number]:
+    native 'range-iterate'
+};

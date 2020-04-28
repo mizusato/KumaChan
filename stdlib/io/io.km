@@ -2,29 +2,7 @@ type InputStream   native;
 type OutputStream  native;
 type Error         native;
 
-/*
-public function read {
-    lambda(InputStream) Effect*[Bytes,Error]:
-    native 'read'
-};
-
-public function write {
-    lambda(OutputStream, Effect*[Bytes,Error]) Effect[(),Error]:
-    native 'write'
-};
-
-public function write-bytes {
-    lambda(OutputStream, Bytes) Effect[(),Error]:
-    native 'write-bytes'
-};
-
-public function write-string {
-    lambda(OutputStream, String) Effect[(),Error]:
-    native 'write-string'
-};
-*/
-
 public function write-line {
-    lambda (OutputStream, String) Effect[(),Error]:
+    &(OutputStream, String) Effect[(),Error]:
     native 'write-line'
 };

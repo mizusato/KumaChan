@@ -1,0 +1,75 @@
+/**
+ *  IMPORTANT: The following type definitions should be kept consistent
+ *             with the `stdlib.go` file.
+ */
+
+// Basic Types
+type Bit     native;  // bool
+type Byte    native;  // uint8, int8
+type Word    native;  // uint16, int16
+type Dword   native;  // uint32, int32
+type Qword   native;  // uint64, int64, float64
+type Number  native;  // uint (size_t)
+type Int     native;  // *big.Int
+
+// Container Types
+type Seq[T]    native;  // container.Seq
+type Array[T]  native;  // []T, container.Array
+type Heap[T]   native;  // container.Heap
+type Set[T]    native;  // container.Set
+type Map[K,V]  native;  // container.Map
+
+// Effect Types
+type Effect*[T,E]  native;  // rx.Effect       (Observable<T,E>)
+type Effect[T,E]   protected Effect*[T,E];  // (Promise<T,E>)
+type NoExcept*[T]  native;  // rx.Effect       (Observable<T>)
+type NoExcept[T]   protected NoExcept*[T];  // (Promise<T>)
+
+// Mutable Containers
+type Source[T]   native;  // rx.Source
+type Sink[T]     protected Source[T];  // rx.Sink
+type Mutable[T]  native;  // rx.Cell
+type List[T]     native;  // rx.List
+type HashMap[T]  native;  // rx.Map
+
+// Fixed Integer Types
+type Int64   protected Qword;
+type Uint64  protected Qword;
+type Int32   protected Dword;
+type Uint32  protected Dword;
+type Int16   protected Word;
+type Uint16  protected Word;
+type Int8    protected Byte;
+type Uint8   protected Byte;
+
+// Basic Boxed Types
+type Float64  protected Qword;
+type Float    protected Float64;  // float64 with NaN and Infinity excluded
+type Complex  (Float, Float);
+type Char     Uint32;  // rune
+type Range    protected (Number, Number);  // left-close right-open interval
+type String   protected Array[Char];  // []rune
+type Bytes    protected Array[Byte];  // []byte
+
+// Basic Sum Types
+type Bool union {
+    type Yes;
+    type No;
+};
+type Maybe[T] union {
+    type Just[T] T;
+    type N/A;
+};
+type Result[T,E] union {
+    type OK[T] T;
+    type NG[E] E;
+};
+type Ordering union {
+    type <<;
+    type ==;
+    type >>;
+};
+
+// Debugging Types
+type Debug[T]  protected T;
+type Never[T]  protected T;

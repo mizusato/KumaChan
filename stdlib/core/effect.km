@@ -1,0 +1,274 @@
+// Effect Constructors
+public function crash {
+    & (String)
+        NoExcept[-]:
+    native 'crash'
+};
+public function emit[T] {
+    & (T)
+        NoExcept[T]:
+    native 'emit'
+};
+public function emit* {
+    & (Range)
+        NoExcept*[Number]:
+    native 'emit*-range'
+};
+public function emit*[T] {
+    & (Seq[T])
+        NoExcept*[T]:
+    native 'emit*-seq'
+};
+public function emit*[T] {
+    & (Array[T])
+        NoExcept*[T]:
+    native 'emit*-array'
+};
+public function wait {
+    & { timeout: Number }
+        NoExcept[-]:
+    native 'wait'
+};
+public function tick {
+    & { interval: Number }
+        NoExcept*[-]:
+    native 'tick'
+};
+public function adapt-no-except[T,E] {
+    & (NoExcept[T])
+        Effect[T,E]:
+    native 'adapt-no-except'
+};
+public function adapt-no-except*[T,E] {
+    & (NoExcept*[T])
+        Effect*[T,E]:
+    native 'adapt-no-except'
+};
+
+// Effect Operators
+public macro do(e, f) := then(e, f);
+public macro for(e, f) := concat-map(e, f);
+public function take-one[T,E] {
+    & (Effect*[T,E])
+        Effect[Maybe[T],E]:
+    native 'take-one'
+};
+public function take-one[T] {
+    & (NoExcept*[T])
+        NoExcept[Maybe[T]]:
+    native 'take-one'
+};
+public function wait-complete[E] {
+    & (Effect*[-,E])
+        Effect[-,E]:
+    native 'wait-complete'
+};
+public function wait-complete {
+    & (NoExcept*[-])
+        NoExcept[-]:
+    native 'wait-complete'
+};
+public function then[A,B,E] {
+    & (Effect[A,E], &(A)(Effect[B,E]))
+        Effect[B,E]:
+    native 'then'
+};
+public function then[A,B,E] {
+    & (Effect[A,E], &(A)(NoExcept[B]))
+        Effect[B,E]:
+    native 'then'
+};
+public function then[A,B,E] {
+    & (NoExcept[A], &(A)(Effect[B,E]))
+        Effect[B,E]:
+    native 'then'
+};
+public function then[A,B] {
+    & (NoExcept[A], &(A)(NoExcept[B]))
+        NoExcept[B]:
+    native 'then'
+};
+public function then[B,E] {
+    & (Effect[-,E], Effect[B,E])
+        Effect[B,E]:
+    native 'then-shortcut'
+};
+public function then[B,E] {
+    & (Effect[-,E], NoExcept[B])
+        Effect[B,E]:
+    native 'then-shortcut'
+};
+public function then[B,E] {
+    & (NoExcept[-], Effect[B,E])
+        Effect[B,E]:
+    native 'then-shortcut'
+};
+public function then[B] {
+    & (NoExcept[-], NoExcept[B])
+        NoExcept[B]:
+    native 'then-shortcut'
+};
+public function catch[T,E,F] {
+    & (Effect[T,E], &(E)(Effect[T,F]))
+        Effect[T,F]:
+    native 'catch'
+};
+public function catch[T,E] {
+    & (Effect[T,E], &(E)(NoExcept[T]))
+        NoExcept[T]:
+    native 'catch'
+};
+public function catch*[T,E,F] {
+    & (Effect*[T,E], &(E)(Effect*[T,F]))
+        Effect*[T,F]:
+    native 'catch'
+};
+public function catch*[T,E] {
+    & (Effect*[T,E], &(E)(NoExcept*[T]))
+        NoExcept*[T]:
+    native 'catch'
+};
+public function catch-retry[T,E] {
+    & (Effect[T,E], &(E)(NoExcept[Bool]))
+        Effect[T,E]:
+    native 'catch-retry'
+};
+public function catch-throw[T,E,F] {
+    & (Effect[T,E], &(E)(F))
+        Effect[T,F]:
+    native 'catch-throw'
+};
+public function throw[T,E] {
+    & (E) Effect[T,E]:
+    native 'throw'
+};
+public function map[A,B,E] {
+    & (Effect[A,E], &(A)(B))
+        Effect[B,E]:
+    native 'map-effect'
+};
+public function map[A,B] {
+    & (NoExcept[A], &(A)(B))
+        NoExcept[B]:
+    native 'map-effect'
+};
+public function map*[A,B,E] {
+    & (Effect*[A,E], &(A)(B))
+        Effect*[B,E]:
+    native 'map-effect'
+};
+public function map*[A,B] {
+    & (NoExcept*[A], &(A)(B))
+        NoExcept*[B]:
+    native 'map-effect'
+};
+public function filter[T,E] {
+    & (Effect*[T,E], &(T)(Bool))
+        Effect*[T,E]:
+    native 'filter-effect'
+};
+public function filter[T] {
+    & (NoExcept*[T], & (T)(Bool))
+        NoExcept*[T]:
+    native 'filter-effect'
+};
+public function reduce[T,A,E] {
+    & (Effect*[T,E], (A, &(A,T)(A)))
+        Effect[A,E]:
+    native 'reduce-effect'
+};
+public function reduce[T,A] {
+    & (NoExcept*[T], (A, &(A,T)(A)))
+        NoExcept[A]:
+    native 'reduce-effect'
+};
+public function scan[T,A,E] {
+    & (Effect*[T,E], (A, &(A,T)(A)))
+        Effect*[A,E]:
+    native 'scan-effect'
+};
+public function scan[T,A] {
+    & (NoExcept*[T], (A, &(A,T)(A)))
+        NoExcept*[A]:
+    native 'scan-effect'
+};
+public function switch-map[A,B,E] {
+    & (Effect*[A,E], &(A)(Effect*[B,E]))
+        Effect*[B,E]:
+    native 'switch-map'
+};
+public function switch-map[A,B,E] {
+    & (Effect*[A,E], &(A)(NoExcept*[B]))
+        Effect*[B,E]:
+    native 'switch-map'
+};
+public function switch-map[A,B,E] {
+    & (NoExcept*[A], &(A)(Effect*[B,E]))
+        Effect*[B,E]:
+    native 'switch-map'
+};
+public function switch-map[A,B] {
+    & (NoExcept*[A], &(A)(NoExcept*[B]))
+        NoExcept*[B]:
+    native 'switch-map'
+};
+public function merge-map[A,B,E] {
+    & (Effect*[A,E], &(A)(Effect*[B,E]))
+        Effect*[B,E]:
+    native 'merge-map'
+};
+public function merge-map[A,B,E] {
+    & (Effect*[A,E], &(A)(NoExcept*[B]))
+        Effect*[B,E]:
+    native 'merge-map'
+};
+public function merge-map[A,B,E] {
+    & (NoExcept*[A], &(A)(Effect*[B,E]))
+        Effect*[B,E]:
+    native 'merge-map'
+};
+public function merge-map[A,B] {
+    & (NoExcept*[A], &(A)(NoExcept*[B]))
+        NoExcept*[B]:
+    native 'merge-map'
+};
+public function concat-map[A,B,E] {
+    & (Effect*[A,E], &(A)(Effect*[B,E]))
+        Effect*[B,E]:
+    native 'concat-map'
+};
+public function concat-map[A,B,E] {
+    & (Effect*[A,E], &(A)(NoExcept*[B]))
+        Effect*[B,E]:
+    native 'concat-map'
+};
+public function concat-map[A,B,E] {
+    & (NoExcept*[A], &(A)(Effect*[B,E]))
+        Effect*[B,E]:
+    native 'concat-map'
+};
+public function concat-map[A,B] {
+    & (NoExcept*[A], &(A)(NoExcept*[B]))
+        NoExcept*[B]:
+    native 'concat-map'
+};
+public function mix-map[A,B,E] {
+    & (Effect*[A,E], (Number, &(A)(Effect*[B,E])))
+        Effect*[B,E]:
+    native 'mix-map'
+};
+public function mix-map[A,B,E] {
+    & (Effect*[A,E], (Number, &(A)(NoExcept*[B])))
+        Effect*[B,E]:
+    native 'mix-map'
+};
+public function mix-map[A,B,E] {
+    & (NoExcept*[A], (Number, &(A)(Effect*[B,E])))
+        Effect*[B,E]:
+    native 'mix-map'
+};
+public function mix-map[A,B] {
+    & (NoExcept*[A], (Number, &(A)(NoExcept*[B])))
+        NoExcept*[B]:
+    native 'mix-map'
+};

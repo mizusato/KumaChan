@@ -1,0 +1,33 @@
+// Bitwise Operation Functions
+
+public function AND { &(Bit,Bit)(Bit): native '&Bit' };
+public function  OR { &(Bit,Bit)(Bit): native '|Bit' };
+public function NOT { &(Bit)(Bit):     native '~Bit' };
+
+public function AND { &(Byte,Byte)(Byte):   native '&Byte' };
+public function  OR { &(Byte,Byte)(Byte):   native '|Byte' };
+public function NOT { &(Byte)(Byte):        native '~Byte' };
+public function XOR { &(Byte,Byte)(Byte):   native '^Byte' };
+public function SHL { &(Byte,Number)(Byte): native '<<Byte' };
+public function SHR { &(Byte,Number)(Byte): native '>>Byte' };
+
+public function AND { &(Word,Word)(Word):   native '&Word' };
+public function  OR { &(Word,Word)(Word):   native '|Word' };
+public function NOT { &(Word)(Word):        native '~Word' };
+public function XOR { &(Word,Word)(Word):   native '^Word' };
+public function SHL { &(Word,Number)(Word): native '<<Word' };
+public function SHR { &(Word,Number)(Word): native '>>Word' };
+
+public function AND { &(Dword,Dword)(Dword):  native '&Dword' };
+public function  OR { &(Dword,Dword)(Dword):  native '|Dword' };
+public function NOT { &(Dword)(Dword):        native '~Dword' };
+public function XOR { &(Dword,Dword)(Dword):  native '^Dword' };
+public function SHL { &(Dword,Number)(Dword): native '<<Dword' };
+public function SHR { &(Dword,Number)(Dword): native '>>Dword' };
+
+public function AND { &(Qword,Qword)(Qword): native '&Qword' };
+public function  OR { &(Qword,Qword)(Qword): native '|Qword' };
+public function NOT { &(Qword)(Qword):       native '~Qword' };
+public function XOR { &(Qword,Qword)(Qword): native '^Qword' };
+public function SHL { &(Qword,Number)(Qword):  native '<<Qword' };
+public function SHR { &(Qword,Number)(Qword):  native '>>Qword' };

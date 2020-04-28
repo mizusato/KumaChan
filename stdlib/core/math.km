@@ -1,0 +1,31 @@
+public function floor { &(Float)(Float): native 'floor' };
+public function  ceil { &(Float)(Float): native 'ceil' };
+public function round { &(Float)(Float): native 'round' };
+
+public function ** { &(Float,Float)(Float): native 'real-**' };
+
+public function  sin { &(Float)(Float): native 'real-sin' };
+public function  cos { &(Float)(Float): native 'real-cos' };
+public function  tan { &(Float)(Float): native 'real-tan' };
+public function asin { &(Float)(Float): native 'real-asin' };
+public function acos { &(Float)(Float): native 'real-acos' };
+public function atan { &(Float)(Float): native 'real-atan' };
+public function atan2 { &({ y:Float, x:Float })(Float): native 'atan2' };
+
+public function sqrt { &(Float)(Float): native 'real-sqrt' };
+public function cbrt { &(Float)(Float): native 'real-cbrt' };
+public function  exp { &(Float)(Float): native 'real-exp' };
+public function  log { &(Float)(Float): native 'real-log' };
+
+public function log {
+    & { base:Float, x:Float } Float:
+    & {base,x} $((log x) / (log base))
+};
+public function log2 {
+    & (Float) Float:
+    &    x   (log { base: 2.0, x })
+};
+public function log10 {
+    & (Float) Float:
+    &    x   (log { base: 10.0, x })
+};
