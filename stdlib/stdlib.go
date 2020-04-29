@@ -102,6 +102,10 @@ func CheckComplex(z complex128) complex128 {
 
 func GetPrimitiveReflectType(name string) (reflect.Type, bool) {
 	switch name {
+	case Number:
+		return reflect.TypeOf(uint(0)), true
+	case Float:
+		return reflect.TypeOf(float64(0)), true
 	case Bit:
 		return reflect.TypeOf(true), true
 	case Uint8, Byte:

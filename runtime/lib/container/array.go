@@ -123,7 +123,7 @@ func (array Array) MapView(f func(Value)Value) Array {
 		GetItem: func(i uint) Value {
 			return f(array.GetItem(i))
 		},
-		ItemType: ValueReflectType,
+		ItemType: ValueReflectType(),
 	}
 }
 

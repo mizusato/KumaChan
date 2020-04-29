@@ -24,7 +24,7 @@ var ContainerFunctions = map[string] Value {
 		}
 	},
 	"seq-nil": func() Seq {
-		return EmptySeq { ItemType: ValueReflectType }
+		return EmptySeq { ItemType: ValueReflectType() }
 	},
 	"seq-cons": func(head Value, tail Seq) Seq {
 		return ConsSeq {

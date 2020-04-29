@@ -165,19 +165,19 @@ func (l List) Push(new_tail Object) Effect {
 }
 
 
-type Map  map[string] Object
-func CreateMap(m map[string] Object) Map {
-	return Map(m)
+type StringHashMap  map[string] Object
+func CreateStringHashMap(m map[string] Object) StringHashMap {
+	return StringHashMap(m)
 }
 
-func (m Map) Has(key string) Effect {
+func (m StringHashMap) Has(key string) Effect {
 	return CreateBlockingEffect(func()(Object, bool) {
 		var _, exists = m[key]
 		return exists, true
 	})
 }
 
-func (m Map) Get(key string) Effect {
+func (m StringHashMap) Get(key string) Effect {
 	return CreateBlockingEffect(func()(Object, bool) {
 		var val, exists = m[key]
 		if exists {
@@ -188,14 +188,14 @@ func (m Map) Get(key string) Effect {
 	})
 }
 
-func (m Map) Set(key string, val Object) Effect {
+func (m StringHashMap) Set(key string, val Object) Effect {
 	return CreateBlockingEffect(func()(Object, bool) {
 		m[key] = val
 		return nil, true
 	})
 }
 
-func (m Map) Delete(key string) Effect {
+func (m StringHashMap) Delete(key string) Effect {
 	return CreateBlockingEffect(func()(Object, bool) {
 		var deleted, exists = m[key]
 		if exists {
@@ -207,4 +207,69 @@ func (m Map) Delete(key string) Effect {
 	})
 }
 
-// TODO: bytes
+type NumberHashMap  map[uint] Object
+func CreateNumberHashMap(m map[uint] Object) NumberHashMap {
+	return NumberHashMap(m)
+}
+
+func (m NumberHashMap) Has(key uint) Effect {
+	return CreateBlockingEffect(func()(Object, bool) {
+		var _, exists = m[key]
+		return exists, true
+	})
+}
+
+func (m NumberHashMap) Get(key uint) Effect {
+	return CreateBlockingEffect(func()(Object, bool) {
+		var val, exists = m[key]
+		if exists {
+			return struct { Object; bool } { val, true }, true
+		} else {
+			return struct { Object; bool } { nil, false }, true
+		}
+	})
+}
+
+func (m NumberHashMap) Set(key uint, val Object) Effect {
+	return CreateBlockingEffect(func()(Object, bool) {
+		m[key] = val
+		return nil, true
+	})
+}
+
+func (m NumberHashMap) Delete(key uint) Effect {
+	return CreateBlockingEffect(func()(Object, bool) {
+		var deleted, exists = m[key]
+		if exists {
+			delete(m, key)
+			return struct { Object; bool } { deleted, true }, true
+		} else {
+			return struct { Object; bool } { nil, false }, true
+		}
+	})
+}
+
+
+type Buffer struct {
+	data  *([] byte)
+}
+func CreateBuffer(capacity uint) Buffer {
+	var data = make([] byte, 0, capacity)
+	return Buffer { &data }
+}
+
+func (buf Buffer) Write(bytes ([] byte)) Effect {
+	return CreateBlockingEffect(func() (Object, bool) {
+		*buf.data = append(*buf.data, bytes...)
+		return nil, true
+	})
+}
+
+func (buf Buffer) Dump() Effect {
+	return CreateEffect(func(sender Sender) {
+		var dumped = make([] byte, len(*buf.data))
+		copy(dumped, *buf.data)
+		sender.Next(dumped)
+		sender.Complete()
+	})
+}

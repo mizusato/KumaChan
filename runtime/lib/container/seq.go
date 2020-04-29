@@ -97,7 +97,7 @@ func (m MappedSeq) Next() (Value, Seq, bool) {
 	}
 }
 func (_ MappedSeq) GetItemType() reflect.Type {
-	return ValueReflectType
+	return ValueReflectType()
 }
 func (_ MappedSeq) Inspect(_ func(Value)ErrorMessage) ErrorMessage {
 	var msg = make(ErrorMessage, 0)
@@ -152,7 +152,7 @@ func (s ScannedSeq) Next() (Value, Seq, bool) {
 	}
 }
 func (_ ScannedSeq) GetItemType() reflect.Type {
-	return ValueReflectType
+	return ValueReflectType()
 }
 func (_ ScannedSeq) Inspect(_ func(Value)ErrorMessage) ErrorMessage {
 	var msg = make(ErrorMessage, 0)

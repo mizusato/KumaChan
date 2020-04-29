@@ -10,8 +10,8 @@ import (
 
 
 type Value = interface {}
-var _t = Value(nil)
-var ValueReflectType = reflect.TypeOf(&_t).Elem()
+var __ValueReflectType = reflect.TypeOf((*Value)(nil)).Elem()
+func ValueReflectType() reflect.Type { return __ValueReflectType }
 
 type SumValue = *ValSum
 type ValSum struct {

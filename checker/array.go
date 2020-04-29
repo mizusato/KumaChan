@@ -120,9 +120,9 @@ func GetArrayInfo(length uint, array_type Type) common.ArrayInfo {
 					return rt
 				}
 			}
-			return common.ValueReflectType
+			return common.ValueReflectType()
 		default:
-			return common.ValueReflectType
+			return common.ValueReflectType()
 		}
 	})()
 	return common.ArrayInfo {
