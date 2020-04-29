@@ -161,7 +161,8 @@ func (_ ScannedSeq) Inspect(_ func(Value)ErrorMessage) ErrorMessage {
 }
 
 func SeqCollect(seq Seq) interface{} {
-	var slice_rv = reflect.MakeSlice(seq.GetItemType(), 0, 0)
+	var t = reflect.SliceOf(seq.GetItemType())
+	var slice_rv = reflect.MakeSlice(t, 0, 0)
 	for item,rest,ok := seq.Next(); ok; item,rest,ok = rest.Next() {
 		slice_rv = reflect.Append(slice_rv, reflect.ValueOf(item))
 	}

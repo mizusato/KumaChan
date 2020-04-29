@@ -66,7 +66,8 @@ func (buf CodeBuffer) WriteBranch(code Code, tail_addr uint) {
 	var base_size = uint(len(buf.Code.InstSeq))
 	var last_addr = (code.Length() - 1)
 	for _, inst := range code.InstSeq {
-		if inst.OpCode == c.JIF || inst.OpCode == c.JMP {
+		switch inst.OpCode {
+		case c.JIF, c.JMP, c.MSJ:
 			var rel_dest_addr = uint(inst.Arg1)
 			var abs_dest_addr = (rel_dest_addr + base_size)
 			ValidateDestAddr(abs_dest_addr)
@@ -78,7 +79,7 @@ func (buf CodeBuffer) WriteBranch(code Code, tail_addr uint) {
 				Arg0:   inst.Arg0,
 				Arg1:   c.Long(abs_dest_addr),
 			})
-		} else {
+		default:
 			*base = append(*base, inst)
 		}
 	}
@@ -147,9 +148,9 @@ func InstProduct(size uint) c.Instruction {
 	}
 }
 
-func InstArray(size uint) c.Instruction {
-	ValidateArraySize(size)
-	var a0, a1 = c.ArraySize(size)
+func InstArray(info_index uint) c.Instruction {
+	ValidateGlobalIndex(info_index)
+	var a0, a1 = c.GlobalIndex(info_index)
 	return c.Instruction {
 		OpCode: c.ARRAY,
 		Arg0:   a0,
@@ -236,11 +237,5 @@ func ValidateProductSize(size uint) {
 func ValidateSumIndex(index uint) {
 	if index >= c.SumMaxBranches {
 		panic("given index exceeded maximum branch limit of sum type")
-	}
-}
-
-func ValidateArraySize(size uint) {
-	if size > c.ArrayMaxSize {
-		panic("given size exceeded maximum capacity of array literal")
 	}
 }

@@ -1,3 +1,10 @@
+// Container Types
+type Seq[T]    native;  // container.Seq
+type Array[T]  native;  // []T, container.Array
+type Heap[T]   native;  // container.Heap
+type Set[T]    native;  // container.Set
+type Map[K,V]  native;  // container.Map
+
 // Functions of Seq[T]
 public function next[T] {
     & (Seq[T]) Maybe[(T,Seq[T])]:

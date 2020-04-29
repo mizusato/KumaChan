@@ -2,17 +2,18 @@ package stdlib
 
 import (
 	"math"
+	"reflect"
 )
 
 
 /* IMPORTANT: this go file should be consistent with corresponding km files */
 const Core = "Core"
 var core_types = []string {
-	Bit, Byte, Word, Dword, Qword, Number, Int,
+	Bit, Byte, Word, Dword, Qword, Number, Float, Int,
 	Seq, Array, Heap, Set, Map,
 	EffectMultiValue, Effect, NoExceptMultiValue, NoExcept,
 	Int64, Uint64, Int32, Uint32, Int16, Uint16, Int8, Uint8,
-	Float64, Float, Complex, Char, Range, String, Bytes,
+	Complex, Char, Range, String, Bytes,
 	Bool, Yes, No,
 	Maybe, Just, Na,
 	Result, Ok, Ng,
@@ -35,6 +36,7 @@ const Dword = "Dword"
 const Qword = "Qword"
 const Number = "Number"
 const Int = "Int"
+const Float = "Float"
 const Seq = "Seq"
 const Array = "Array"
 const Heap = "Heap"
@@ -52,8 +54,6 @@ const Int16 = "Int16"
 const Uint16 = "Uint16"
 const Int8 = "Int8"
 const Uint8 = "Uint8"
-const Float64 = "Float64"
-const Float = "Float"
 const Complex = "Complex"
 const Char = "Char"
 const Range = "Range"
@@ -79,52 +79,6 @@ const ( SmallerIndex = iota; EqualIndex; BiggerIndex )
 const Debug = "Debug"
 const Never = "Never"
 
-func ByteFrom(i interface{}) uint8 {
-	switch x := i.(type) {
-	case uint8:
-		return x
-	case int8:
-		return uint8(x)
-	default:
-		panic("invalid Byte")
-	}
-}
-
-func WordFrom(i interface{}) uint16 {
-	switch x := i.(type) {
-	case uint16:
-		return x
-	case int16:
-		return uint16(x)
-	default:
-		panic("invalid Word")
-	}
-}
-
-func DwordFrom(i interface{}) uint32 {
-	switch x := i.(type) {
-	case uint32:
-		return x
-	case int32:
-		return uint32(x)
-	default:
-		panic("invalid Dword")
-	}
-}
-
-func QwordFrom(i interface{}) uint64 {
-	switch x := i.(type) {
-	case uint64:
-		return x
-	case int64:
-		return uint64(x)
-	case float64:
-		return math.Float64bits(x)
-	default:
-		panic("invalid Qword")
-	}
-}
-
 func CheckFloat(x float64) float64 {
 	if math.IsNaN(x) {
 		panic("Float Overflow: NaN")
@@ -133,4 +87,35 @@ func CheckFloat(x float64) float64 {
 		panic("Float Overflow: Infinity")
 	}
 	return x
+}
+
+func CheckComplex(z complex128) complex128 {
+	return complex(CheckFloat(real(z)), CheckFloat(imag(z)))
+}
+
+func GetPrimitiveReflectType(name string) (reflect.Type, bool) {
+	switch name {
+	case Bit:
+		return reflect.TypeOf(true), true
+	case Uint8, Byte:
+		return reflect.TypeOf(uint8(0)), true
+	case Uint16, Word:
+		return reflect.TypeOf(uint16(0)), true
+	case Uint32, Dword, Char:
+		return reflect.TypeOf(uint32(0)), true
+	case Uint64, Qword:
+		return reflect.TypeOf(uint64(0)), true
+	case Int8:
+		return reflect.TypeOf(int8(0)), true
+	case Int16:
+		return reflect.TypeOf(int16(0)), true
+	case Int32:
+		return reflect.TypeOf(int32(0)), true
+	case Int64:
+		return reflect.TypeOf(int64(0)), true
+	case Complex:
+		return reflect.TypeOf(complex128(complex(0,1))), true
+	default:
+		return nil, false
+	}
 }

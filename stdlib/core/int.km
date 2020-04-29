@@ -1,3 +1,5 @@
+type Int native;  // *big.Int
+
 public function  = { &(Int,Int)(Bool):     native '=Int' };
 public function  < { &(Int,Int)(Bool):     native '<Int' };
 public function <> { &(Int,Int)(Ordering): native '<>Int' };
@@ -9,7 +11,7 @@ public function * { &(Int,Int)(Int): native '*Int' };
 public function quorem { &(Int,Int)(Int,Int): native 'quorem' };
 public function divmod { &(Int,Int)(Int,Int): native 'divmod' };
 
-public function from { &(Int)(String):  native 'String from Int' };
+public function from { &(Int)(String): native 'String from Int' };
 
 public function / {
     & (Int,Int) Int:

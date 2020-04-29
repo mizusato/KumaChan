@@ -32,6 +32,11 @@ type ValFunc struct {
 
 type NativeFunctionValue  NativeFunction
 
+type ArrayInfo struct {
+	Length    uint
+	ItemType  reflect.Type
+}
+
 
 type Inspectable interface {
 	Inspect(inspect func(Value)ErrorMessage) ErrorMessage
@@ -175,17 +180,17 @@ func Na() SumValue {
 }
 
 func ByteFrom(v Value) uint8 {
-	return stdlib.ByteFrom(v)
+	return v.(uint8)
 }
 
 func WordFrom(v Value) uint16 {
-	return stdlib.WordFrom(v)
+	return v.(uint16)
 }
 
 func DwordFrom(v Value) uint32 {
-	return stdlib.DwordFrom(v)
+	return v.(uint32)
 }
 
 func QwordFrom(v Value) uint64 {
-	return stdlib.QwordFrom(v)
+	return v.(uint64)
 }

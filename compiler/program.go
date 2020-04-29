@@ -171,12 +171,15 @@ func CreateProgram (
 	var relocate_code = func(f *FuncNode) {
 		var inst_seq = f.Underlying.Code
 		for i, _ := range inst_seq {
-			if inst_seq[i].OpCode == c.GLOBAL {
+			switch inst_seq[i].OpCode {
+			case c.GLOBAL, c.ARRAY:
 				var relative_index = inst_seq[i].GetGlobalIndex()
 				var dep = f.Dependencies[relative_index]
 				var absolute_index = get_dep_addr(dep)
 				ValidateGlobalIndex(absolute_index)
-				inst_seq[i].Arg1 = c.Long(absolute_index)
+				var a0, a1 = c.GlobalIndex(absolute_index)
+				inst_seq[i].Arg0 = a0
+				inst_seq[i].Arg1 = a1
 			}
 		}
 	}

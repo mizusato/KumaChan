@@ -1,3 +1,5 @@
+type Range  protected (Number, Number);  // left-close right-open interval
+
 public function range {
     & (Number,Number)
         Range:

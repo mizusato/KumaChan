@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"reflect"
 	. "kumachan/runtime/common"
 	"kumachan/runtime/common/rx"
 	"kumachan/runtime/lib"
@@ -218,15 +219,24 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 					panic("CALL: cannot execute on non-callable value")
 				}
 			case ARRAY:
-				var size = inst.GetGlobalIndex()
-				ec.pushValue(make([]Value, 0, size))
+				var id = inst.GetGlobalIndex()
+				var info = m.globalSlot[id].(ArrayInfo)
+				var t = reflect.SliceOf(info.ItemType)
+				var rv = reflect.MakeSlice(t, 0, int(info.Length))
+				var v = rv.Interface()
+				ec.pushValue(v)
 			case APPEND:
-				var val = ec.popValue()
-				var arr, ok = ec.popValue().([]Value)
-				if !ok {
-					panic("APPEND: cannot append to non-array value")
+				var item = ec.popValue()
+				var item_rv = reflect.ValueOf(item)
+				var arr = ec.popValue()
+				var arr_rv = reflect.ValueOf(arr)
+				if arr_rv.Kind() == reflect.Slice {
+					var appended_rv = reflect.Append(arr_rv, item_rv)
+					var appended = appended_rv.Interface()
+					ec.pushValue(appended)
+				} else {
+					panic("APPEND: cannot append to non-slice value")
 				}
-				ec.pushValue(append(arr, val))
 			case MS:
 				ec.indexBufLen = 0
 			case MSI:

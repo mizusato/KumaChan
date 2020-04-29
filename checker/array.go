@@ -2,6 +2,9 @@ package checker
 
 import (
 	"kumachan/transformer/ast"
+	"kumachan/runtime/common"
+	"reflect"
+	"kumachan/stdlib"
 )
 
 
@@ -97,5 +100,33 @@ func AssignArrayTo(expected Type, array SemiTypedArray, info ExprInfo, ctx ExprC
 	return Expr{}, &ExprError {
 		Point:    info.ErrorPoint,
 		Concrete: E_ArrayAssignedToNonArrayType {},
+	}
+}
+
+func GetArrayInfo(length uint, array_type Type) common.ArrayInfo {
+	var named, is_named = array_type.(NamedType)
+	if !(is_named) { panic("something went wrong") }
+	if named.Name != __Array { panic("something went wrong") }
+	if len(named.Args) != 1 { panic("something went wrong") }
+	var item_type = named.Args[0]
+	var item_reflect_type = (func() reflect.Type {
+		switch t := item_type.(type) {
+		case NamedType:
+			var mod_name = t.Name.ModuleName
+			var sym_name = t.Name.SymbolName
+			if mod_name == stdlib.Core && len(t.Args) == 0 {
+				var rt, ok = stdlib.GetPrimitiveReflectType(sym_name)
+				if ok {
+					return rt
+				}
+			}
+			return common.ValueReflectType
+		default:
+			return common.ValueReflectType
+		}
+	})()
+	return common.ArrayInfo {
+		Length:   length,
+		ItemType: item_reflect_type,
 	}
 }

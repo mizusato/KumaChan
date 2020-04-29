@@ -3,10 +3,10 @@ do println 'Hello World'
     //     OS::Kind, OS::Arch, (if OS::Is64Bit: '64bit', else: '32bit')))
     | then   println 'timer'
     | then   wait { timeout: 2000 }
-    | then   println str exp log Complex(5.0, 5.0)
-    | then   println str sin asin sqrt $(2.0 * (Complex(0.0, 1.0)))
-    | then   println str cos acos sqrt $(2.0 * (Complex(0.0, 1.0)))
-    | then   println str tan atan sqrt $(2.0 * (Complex(0.0, 1.0)))
+    | then   println str exp log complex(5.0, 5.0)
+    | then   println str sin asin sqrt $(2.0 * (complex(0.0, 1.0)))
+    | then   println str cos acos sqrt $(2.0 * (complex(0.0, 1.0)))
+    | then   println str tan atan sqrt $(2.0 * (complex(0.0, 1.0)))
     | then   println str $(2 ** 20)
     | then   println 'merge (0..5)'
     | then   (emit* range(0, 6)

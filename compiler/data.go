@@ -84,6 +84,14 @@ func (d DataStringFormatter) String() string {
 	return buf.String()
 }
 
+type DataArrayInfo c.ArrayInfo
+func (d DataArrayInfo) ToValue() c.Value {
+	return c.ArrayInfo(d)
+}
+func (d DataArrayInfo) String() string {
+	return fmt.Sprintf("ARRAY %d %s", d.Length, d.ItemType.String())
+}
+
 func RunesToBase64String(runes []rune) string {
 	var buf strings.Builder
 	var encoder = base64.NewEncoder(base64.StdEncoding, &buf)

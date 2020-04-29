@@ -5,7 +5,7 @@ import . "kumachan/runtime/common"
 
 var NativeFunctionMaps = [] (map[string] interface{}) {
 	DebuggingFunctions,
-	ArithmeticFunctions,
+	MathFunctions,
 	ComparisonFunctions,
 	ContainerFunctions,
 	EffectFunctions,

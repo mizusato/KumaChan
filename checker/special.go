@@ -40,7 +40,7 @@ var __Uint8 = CoreSymbol(stdlib.Uint8)
 var __Byte = CoreSymbol(stdlib.Byte)
 var __Bit = CoreSymbol(stdlib.Bit)
 var __IntegerTypes = []loader.Symbol {
-	__Int, __Number,
+	__Int,   __Number,
 	__Int64, __Uint64, __Qword,
 	__Int32, __Uint32, __Dword, __Char,
 	__Int16, __Uint16, __Word,

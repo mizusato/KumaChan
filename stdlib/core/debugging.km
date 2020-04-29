@@ -1,3 +1,8 @@
+// Debugging Types
+type Debug[T]  protected T;
+type Never[T]  protected T;
+
+// Debugging Functions
 public function trace[T] {
     & (T) Debug[T]:
     native 'trace'

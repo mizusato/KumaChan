@@ -1,3 +1,16 @@
+// Effect Types
+type Effect*[T,E]  native;  // rx.Effect       (Observable<T,E>)
+type Effect[T,E]   protected Effect*[T,E];  // (Promise<T,E>)
+type NoExcept*[T]  native;  // rx.Effect       (Observable<T>)
+type NoExcept[T]   protected NoExcept*[T];  // (Promise<T>)
+
+// Mutable Containers
+type Source[T]   native;  // rx.Source
+type Sink[T]     protected Source[T];  // rx.Sink
+type Mutable[T]  native;  // rx.Cell
+type List[T]     native;  // rx.List
+type HashMap[T]  native;  // rx.Map
+
 // Effect Constructors
 public function crash {
     & (String)

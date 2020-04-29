@@ -1,0 +1,6 @@
+type Bit     native;  // bool
+type Byte    Uint8;
+type Word    Uint16;
+type Dword   Uint32;
+type Qword   Uint64;
+type Bytes   protected Array[Byte];  // []byte

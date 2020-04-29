@@ -40,7 +40,8 @@ func ArrayFrom(value Value) Array {
 
 func (array Array) CopyAsSlice() Value {
 	var L = array.Length
-	var slice_rv = reflect.MakeSlice(array.ItemType, int(L), int(L))
+	var t = reflect.SliceOf(array.ItemType)
+	var slice_rv = reflect.MakeSlice(t, int(L), int(L))
 	for i := uint(0); i < L; i += 1 {
 		slice_rv.Index(int(i)).Set(reflect.ValueOf(array.GetItem(i)))
 	}

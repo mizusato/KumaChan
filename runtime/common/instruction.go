@@ -42,8 +42,8 @@ const (
 	CTX     // [rec, _ ]: Use the current value as the context of a closure
 	CALL    // [ __, _ ]: Call a (native)function (pop func, pop arg, push ret)
 	/* Array Operations */
-	ARRAY   // [ size ]: Create an empty array
-	APPEND  // [ ____ ]: Append an element to the created array
+	ARRAY   // [ infoIndex ]: Create an empty array
+	APPEND  // [ _________ ]: Append an element to the created array
 	/* Multi-Switch Operations */
 	MS      // [ _________ ]: Start multi-switch
 	MSI     // [index, ___ ]: Append branch element index
@@ -60,9 +60,6 @@ func (inst Instruction) GetArraySize() uint {
 
 func GlobalIndex(i uint) (Short, Long) {
 	return Short(i >> LongSize), Long(i & ((1 << LongSize) - 1))
-}
-func ArraySize(n uint) (Short, Long) {
-	return GlobalIndex(n)
 }
 
 func (inst Instruction) GetOffset() uint {

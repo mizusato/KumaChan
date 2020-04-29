@@ -1,3 +1,6 @@
+type Char    Uint32;  // rune
+type String  protected Array[Char];  // []rune
+
 public function  = { lambda (String,String) Bool:      native '=String' };
 public function  < { lambda (String,String) Bool:      native '<String' };
 public function <> { lambda (String,String) Ordering:  native '<>String' };

@@ -1,154 +1,40 @@
-private const  i := [Complex] Complex(0.0, 1.0);
-private const _1 := [Complex] Complex(1.0, 0.0);
-private macro re-im (z, expr) := (let (re, im) := z, return expr);
+type Complex native;
+
+public function complex { &(Float,Float)(Complex): native 'complex' };
+public function   polar { &(Float,Float)(Complex): native 'polar' };
 
 public function from {
     & (Complex) String:
-    & (re, im)  ("(# + #i)" ((str re), (str im)))
+    &     z    ("(# + #i)" (Re(z).str, Im(z).str))
 };
 
-public function Re {
-    & (Complex) Float:
-    & (re, _)   re
-};
-public function Im {
-    & (Complex) Float:
-    & (_, im)   im
-};
-public function Conj {
-    & (Complex) Complex:
-    & (re, im)  (Complex (re, (- im)))
-};
-public function Arg {
-    & (Complex) Float:
-    & (re, im) (atan2 { y: im, x: re })
-};
-public function Norm {
-    & (Complex) Float:
-    & (re, im) (sqrt $($(re * re) + $(im * im)))
-};
-public function Polar {
-    & { norm: Float, arg: Float } Complex:
-    & { norm, arg }
-        if $(norm >= 0.0):
-            Complex ( $(norm * (cos arg)), $(norm * (sin arg)) ),
-        else:
-            panic 'invalid input: negative norm'
-};
-public function Polar {
-    & (Float) Complex:
-    & (arg)  (Polar { norm: 1.0, arg })
-};
+public function Conj { &(Complex)(Complex): native 'Conj' };
+public function   Re { &(Complex)(Float):   native 'Re'   };
+public function   Im { &(Complex)(Float):   native 'Im'   };
+public function Norm { &(Complex)(Float):   native 'Norm' };
+public function  Arg { &(Complex)(Float):   native 'Arg'  };
 
-public function + {
-    & (Complex,Complex) Complex:
-    & (z1, z2)
-        let (r1, i1) := z1,
-            (r2, i2) := z2,
-        return Complex($(r1 + r2), $(i1 + i2))
-};
-public function + {
-    & (Float,Complex) Complex:
-    & (x, z) (z | re-im Complex($(x + re), im))
-};
-public function + {
-    & (Complex,Float) Complex:
-    & (z, x) $(x + z)
-};
+public function + { &(Complex,Complex)(Complex): native '+complex' };
+public function + { &(Float,Complex)(Complex):   native 'f+complex' };
+public function + { &(Complex,Float)(Complex):   native 'complex+f' };
+public function - { &(Complex,Complex)(Complex): native '-complex' };
+public function - { &(Float,Complex)(Complex):   native 'f-complex' };
+public function - { &(Complex,Float)(Complex):   native 'complex-f' };
+public function - { &(Complex)(Complex):         &(z)$(-1.0 * z) };
+public function * { &(Complex,Complex)(Complex): native '*complex' };
+public function * { &(Float,Complex)(Complex):   native 'f*complex' };
+public function * { &(Complex,Float)(Complex):   native 'complex*f' };
+public function / { &(Complex,Complex)(Complex): native '/complex' };
+public function / { &(Float,Complex)(Complex):   native 'f/complex' };
+public function / { &(Complex,Float)(Complex):   native 'complex/f' };
 
-public function - {
-    & (Complex,Complex) Complex:
-    & (z1, z2)
-        let (r1, i1) := z1,
-            (r2, i2) := z2,
-        return (Complex ($(r1 - r2), $(i1 - i2)))
-};
-public function - {
-    & (Float,Complex) Complex:
-    & (x, z) $(x + (- z))
-};
-public function - {
-    & (Complex,Float) Complex:
-    & (z, x) $(z + (- x))
-};
-public function - {
-    & (Complex) Complex:
-    & (re, im) (Complex ((- re), (- im)))
-};
-
-public function * {
-    & (Complex,Complex) Complex:
-    & (z1, z2)
-        let (a, b) := z1,
-            (c, d) := z2,
-            prod_real := $($(a * c) - $(b * d)),
-            prod_imag := $($(a * d) + $(b * c)),
-        return Complex(prod_real, prod_imag)
-};
-public function * {
-    & (Float,Complex) Complex:
-    & (x, z) (z | re-im Complex($(x * re), $(x * im)))
-};
-public function * {
-    & (Complex,Float) Complex:
-    & (z, x) $(x * z)
-};
-
-public function / {
-    & (Complex,Complex) Complex:
-    & (z1, z2)
-        let (a, b) := z1,
-            (c, d) := z2,
-               u   := Complex ( $($(a * c) + $(b * d)), $($(b * c) - $(a * d)) ),
-               v   := Complex ( $(1.0 / $($(c * c) + $(d * d))), 0.0 ),
-        return $(u * v)
-};
-public function / {
-    & (Float,Complex) Complex:
-    & (x, z) $((Complex (x, 0.0)) / z)
-};
-public function / {
-    & (Complex,Float) Complex:
-    & (z, x) (z | re-im Complex ($(re / x), $(im / x)))
-};
-
-public function exp {
-    & (Complex) Complex:
-    & (re, im) (Polar { norm: exp(re), arg: im })
-};
-public function log {
-    & (Complex) Complex:
-    &     z    (Complex((log Norm z), (Arg z)))
-};
-public function sin {
-    & (Complex) Complex:
-    &     z    $( $((exp $(i * z)) - (exp $((- i) * z))) / $(2.0 * i) )
-};
-public function cos {
-    & (Complex) Complex:
-    &     z    $( $((exp $(i * z)) + (exp $((- i) * z))) / $(2.0 * _1) )
-};
-public function tan {
-    & (Complex) Complex:
-    &     z    $((sin z) / (cos z))
-};
-public function asin {
-    & (Complex) Complex:
-    &     z    $((- i) * (log $( $(i * z) + (sqrt $(1.0 - $(z * z))) )))
-};
-public function acos {
-    & (Complex) Complex:
-    &     z    $((- i) * (log $( z + (sqrt $($(z * z) - 1.0)) )))
-};
-public function atan {
-    & (Complex) Complex:
-    &     z    $( $(i / 2.0) * (log $($(i + z) / $(i - z))) )
-};
-public function sqrt {
-    & (Complex) Complex:
-    &     z    (Polar { norm: (sqrt Norm z), arg: $((Arg z) / 2.0) })
-};
-public function cbrt {
-    & (Complex) Complex:
-    &     z    (Polar { norm: (cbrt Norm z), arg: $((Arg z) / 3.0) })
-};
+public function sqrt { &(Complex)(Complex): native 'complex-sqrt' };
+public function cbrt { &(Complex)(Complex): native 'complex-cbrt' };
+public function  exp { &(Complex)(Complex): native 'complex-exp'  };
+public function  log { &(Complex)(Complex): native 'complex-log'  };
+public function  sin { &(Complex)(Complex): native 'complex-sin'  };
+public function  cos { &(Complex)(Complex): native 'complex-cos'  };
+public function  tan { &(Complex)(Complex): native 'complex-tan'  };
+public function asin { &(Complex)(Complex): native 'complex-asin' };
+public function acos { &(Complex)(Complex): native 'complex-acos' };
+public function atan { &(Complex)(Complex): native 'complex-atan' };
