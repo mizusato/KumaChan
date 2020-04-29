@@ -19,8 +19,11 @@ func OpenReadOnly(path string) Effect {
 			}
 			sender.Next(f)
 			sender.Complete()
-			<- sender.Context().Done()
-			_ = raw.Close()
+			var cancel, cancellable = sender.CancelSignal()
+			if cancellable {
+				<- cancel
+				_ = raw.Close()
+			}
 		}
 	})
 }
@@ -37,8 +40,11 @@ func Open(path string, flag int, perm os.FileMode) Effect {
 			}
 			sender.Next(f)
 			sender.Complete()
-			<- sender.Context().Done()
-			_ = raw.Close()
+			var cancel, cancellable = sender.CancelSignal()
+			if cancellable {
+				<- cancel
+				_ = raw.Close()
+			}
 		}
 	})
 }

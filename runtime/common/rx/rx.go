@@ -64,7 +64,7 @@ func (ctx *Context) CreateChild() (*Context, Dispose) {
 
 
 type Sender struct {
-	raw    *observer
+	ob     *observer
 	sched  Scheduler
 }
 
@@ -76,14 +76,23 @@ type Receiver struct {
 }
 
 func (s Sender) Context() context.Context {
-	return s.raw.context.raw
+	return s.ob.context.raw
+}
+
+func (s Sender) CancelSignal() (<- chan struct{}, bool) {
+	var done = s.ob.context.raw.Done()
+	if done != nil {
+		return done, true
+	} else {
+		return nil, false
+	}
 }
 
 func (s Sender) Next(x Object) {
 	s.sched.dispatch(event {
 		kind:     ev_next,
 		payload:  x,
-		observer: s.raw,
+		observer: s.ob,
 	})
 }
 
@@ -91,7 +100,7 @@ func (s Sender) Error(e Object) {
 	s.sched.dispatch(event {
 		kind:     ev_error,
 		payload:  e,
-		observer: s.raw,
+		observer: s.ob,
 	})
 }
 
@@ -99,19 +108,19 @@ func (s Sender) Complete() {
 	s.sched.dispatch(event {
 		kind:     ev_complete,
 		payload:  nil,
-		observer: s.raw,
+		observer: s.ob,
 	})
 }
 
 func CreateEffect(action func(Sender)) Effect {
 	return Effect { func (sched Scheduler, ob *observer) {
-		go action(Sender { sched: sched, raw: ob })
+		go action(Sender { sched: sched, ob: ob })
 	} }
 }
 
 func CreateQueuedEffect(w *Worker, action func()(Object,bool)) Effect {
 	return Effect { func(sched Scheduler, ob *observer) {
-		var sender = Sender { sched: sched, raw: ob }
+		var sender = Sender { sched: sched, ob: ob }
 		w.Do(func() {
 			var result, ok = action()
 			if ok {

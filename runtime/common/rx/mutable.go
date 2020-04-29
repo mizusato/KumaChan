@@ -35,8 +35,11 @@ func (s *Sink) Listen() Effect {
 				sender.Next(value)
 			},
 		})
-		<- sender.Context().Done()
-		s.removeListener(l)
+		var cancel, cancellable = sender.CancelSignal()
+		if cancellable {
+			<- cancel
+			s.removeListener(l)
+		}
 	})
 }
 

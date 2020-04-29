@@ -11,8 +11,11 @@ func Timer(timeout uint) Effect {
 			sender.Next(nil)
 			sender.Complete()
 		})()
-		<- sender.Context().Done()
-		timer.Stop()
+		var cancel, cancellable = sender.CancelSignal()
+		if cancellable {
+			<- cancel
+			timer.Stop()
+		}
 	})
 }
 
@@ -24,7 +27,10 @@ func Ticker(interval uint) Effect {
 				sender.Next(nil)
 			}
 		})()
-		<- sender.Context().Done()
-		ticker.Stop()
+		var cancel, cancellable = sender.CancelSignal()
+		if cancellable {
+			<- cancel
+			ticker.Stop()
+		}
 	})
 }
