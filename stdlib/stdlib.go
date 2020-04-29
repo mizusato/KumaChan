@@ -3,6 +3,7 @@ package stdlib
 import (
 	"math"
 	"reflect"
+	"math/cmplx"
 )
 
 
@@ -90,7 +91,13 @@ func CheckFloat(x float64) float64 {
 }
 
 func CheckComplex(z complex128) complex128 {
-	return complex(CheckFloat(real(z)), CheckFloat(imag(z)))
+	if cmplx.IsNaN(z) {
+		panic("Complex Overflow: NaN")
+	}
+	if cmplx.IsInf(z) {
+		panic("Complex Overflow: Infinity")
+	}
+	return z
 }
 
 func GetPrimitiveReflectType(name string) (reflect.Type, bool) {
