@@ -1,0 +1,11 @@
+type Path native;
+
+public function path {
+    & (String) Path:
+    & (string) (from string)
+};
+
+public function from {
+    & (String) Path:
+    native 'Path from String'
+};

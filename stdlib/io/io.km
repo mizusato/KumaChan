@@ -1,8 +1,0 @@
-type InputStream   native;
-type OutputStream  native;
-type Error         native;
-
-public function write-line {
-    &(OutputStream, String) Effect[(),Error]:
-    native 'write-line'
-};

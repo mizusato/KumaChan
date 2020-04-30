@@ -143,7 +143,7 @@ func CheckRef(ref ast.Ref, ctx ExprContext) (SemiExpr, *ExprError) {
 		return SemiExpr {
 			Value: UntypedRef {
 				RefBody:  UntypedRefToFunctions {
-					FuncName:  symbol.SymbolName,
+					FuncName:  s.Name,
 					Functions: s.Functions,
 				},
 				TypeArgs: type_args,
@@ -160,7 +160,7 @@ func CheckRef(ref ast.Ref, ctx ExprContext) (SemiExpr, *ExprError) {
 			return SemiExpr {
 				Value: UntypedRef {
 					RefBody: UntypedRefToMacro {
-						MacroName: symbol.SymbolName,
+						MacroName: s.Name,
 						Macro:     s.Macro,
 					},
 					TypeArgs: nil,

@@ -1,0 +1,30 @@
+type Error native;
+
+type ErrorKind union {
+    type EOF;
+    type ClosedPipe;
+    type UnknownError;
+};
+
+public function is {
+    & (Error,ErrorKind) Bool:
+    & (err,kind)
+        switch* (kind, err.kind!) {
+            case [EOF,EOF]: Yes,
+            case [ClosedPipe,ClosedPipe]: Yes,
+            default: No
+        }
+};
+public function kind {
+    & (Error) ErrorKind:
+    & (err)
+        if (err | is-eof):
+            EOF,
+        elif (err | is-closed-pipe):
+            ClosedPipe,
+        else:
+            UnknownError
+};
+
+private function is-eof { &(Error)(Bool): native 'is-eof' };
+private function is-closed-pipe { &(Error)(Bool): native 'is-closed-pipe' };

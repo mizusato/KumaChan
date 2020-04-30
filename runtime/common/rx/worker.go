@@ -9,7 +9,6 @@ import (
 type Worker struct {
 	mutex     *sync.Mutex
 	pending   [] func()
-	incoming  chan func()
 	notify    chan struct{}
 	disposed  bool
 }
@@ -19,21 +18,8 @@ func CreateWorker() *Worker {
 	var w = &Worker {
 		mutex:    &mutex,
 		pending:  make([]func(), 0),
-		incoming: make(chan func()),
 		notify:   make(chan struct{}, 1),
 	}
-	go (func() {
-		for work := range w.incoming {
-			w.mutex.Lock()
-			w.pending = append(w.pending, work)
-			select {
-			case w.notify <- struct{}{}:
-			default:
-			}
-			w.mutex.Unlock()
-		}
-		close(w.notify)
-	})()
 	go (func() {
 		for range w.notify {
 			w.mutex.Lock()
@@ -49,7 +35,7 @@ func CreateWorker() *Worker {
 			}
 		}
 	})()
-	runtime.SetFinalizer(w, func() {
+	runtime.SetFinalizer(w, func(w *Worker) {
 		w.Dispose()
 	})
 	return w
@@ -59,7 +45,11 @@ func (w *Worker) Do(work func()) {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
 	if !(w.disposed) {
-		w.incoming <- work
+		w.pending = append(w.pending, work)
+		select {
+		case w.notify <- struct{} {}:
+		default:
+		}
 	}
 }
 
@@ -67,5 +57,5 @@ func (w *Worker) Dispose() {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
 	w.disposed = true
-	close(w.incoming)
+	close(w.notify)
 }

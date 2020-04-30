@@ -106,9 +106,9 @@ type SymTypeParam struct { Index uint }
 func (impl SymType) Sym() {}
 type SymType struct { Type *GenericType; Name loader.Symbol }
 func (impl SymFunctions) Sym() {}
-type SymFunctions struct { Functions []*GenericFunction }
+type SymFunctions struct { Functions []*GenericFunction; Name string }
 func (impl SymMacro) Sym() {}
-type SymMacro struct { Macro *Macro }
+type SymMacro struct { Macro *Macro; Name string }
 
 
 func CreateExprContext(mod_info ModuleInfo, params []string) ExprContext {
@@ -162,19 +162,26 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 				return SymTypeParam { Index: uint(index) }, true
 			}
 		}
+		var real_sym_name = sym_name
 		f_refs, exists := ctx.ModuleInfo.Functions[sym_name]
 		if !exists &&
 			len(sym_name) > len(FuncSuffix) &&
 			strings.HasSuffix(sym_name, FuncSuffix) {
 			var func_sym_name = strings.TrimSuffix(sym_name, FuncSuffix)
 			f_refs, exists = ctx.ModuleInfo.Functions[func_sym_name]
+			if exists {
+				real_sym_name = func_sym_name
+			}
 		}
 		if exists {
 			var functions = make([]*GenericFunction, len(f_refs))
 			for i, ref := range f_refs {
 				functions[i] = ref.Function
 			}
-			return SymFunctions { Functions: functions }, true
+			return SymFunctions {
+				Name:      real_sym_name,
+				Functions: functions,
+			}, true
 		}
 		m_ref, exists := ctx.ModuleInfo.Macros[sym_name]
 		if !exists &&
@@ -182,9 +189,15 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 			strings.HasSuffix(sym_name, MacroSuffix) {
 			var macro_sym_name = strings.TrimSuffix(sym_name, MacroSuffix)
 			m_ref, exists = ctx.ModuleInfo.Macros[macro_sym_name]
+			if exists {
+				real_sym_name = macro_sym_name
+			}
 		}
 		if exists {
-			return SymMacro { m_ref.Macro }, true
+			return SymMacro {
+				Name:  real_sym_name,
+				Macro: m_ref.Macro,
+			}, true
 		}
 		var self = ctx.ModuleInfo.Module.Name
 		var sym_self = loader.NewSymbol(self, sym_name)
