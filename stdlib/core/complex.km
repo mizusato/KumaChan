@@ -1,40 +1,38 @@
 type Complex native;
 
-public function complex { &(Float,Float)(Complex): native 'complex' };
-public function   polar { &(Float,Float)(Complex): native 'polar' };
+public function complex: (&(Float,Float)(Complex)) native 'complex';
+public function   polar: (&(Float,Float)(Complex)) native 'polar';
 
-public function from {
-    & (Complex) String:
-    &     z    ("(# + #i)" (Re(z).str, Im(z).str))
-};
+public function from: ( &(Complex) String)
+    ( &(z) ("(# + #i)" (Re(z).str) (Im(z).str)) );
 
-public function Conj { &(Complex)(Complex): native 'Conj' };
-public function   Re { &(Complex)(Float):   native 'Re'   };
-public function   Im { &(Complex)(Float):   native 'Im'   };
-public function Norm { &(Complex)(Float):   native 'Norm' };
-public function  Arg { &(Complex)(Float):   native 'Arg'  };
+public function Conj: (&(Complex)(Complex))  native 'Conj';
+public function   Re: (&(Complex)(Float))    native 'Re';
+public function   Im: (&(Complex)(Float))    native 'Im';
+public function Norm: (&(Complex)(Float))    native 'Norm';
+public function  Arg: (&(Complex)(Float))    native 'Arg';
 
-public function + { &(Complex,Complex)(Complex): native '+complex' };
-public function + { &(Float,Complex)(Complex):   native 'f+complex' };
-public function + { &(Complex,Float)(Complex):   native 'complex+f' };
-public function - { &(Complex,Complex)(Complex): native '-complex' };
-public function - { &(Float,Complex)(Complex):   native 'f-complex' };
-public function - { &(Complex,Float)(Complex):   native 'complex-f' };
-public function - { &(Complex)(Complex):         &(z)$(-1.0 * z) };
-public function * { &(Complex,Complex)(Complex): native '*complex' };
-public function * { &(Float,Complex)(Complex):   native 'f*complex' };
-public function * { &(Complex,Float)(Complex):   native 'complex*f' };
-public function / { &(Complex,Complex)(Complex): native '/complex' };
-public function / { &(Float,Complex)(Complex):   native 'f/complex' };
-public function / { &(Complex,Float)(Complex):   native 'complex/f' };
+public function +: (&(Complex,Complex)(Complex))  native '+complex';
+public function +: (&(Float,Complex)(Complex))    native 'f+complex';
+public function +: (&(Complex,Float)(Complex))    native 'complex+f';
+public function -: (&(Complex,Complex)(Complex))  native '-complex';
+public function -: (&(Float,Complex)(Complex))    native 'f-complex';
+public function -: (&(Complex,Float)(Complex))    native 'complex-f';
+public function -: (&(Complex)(Complex))          (&(z)$(-1.0 * z));
+public function *: (&(Complex,Complex)(Complex))  native '*complex';
+public function *: (&(Float,Complex)(Complex))    native 'f*complex';
+public function *: (&(Complex,Float)(Complex))    native 'complex*f';
+public function /: (&(Complex,Complex)(Complex))  native '/complex';
+public function /: (&(Float,Complex)(Complex))    native 'f/complex';
+public function /: (&(Complex,Float)(Complex))    native 'complex/f';
 
-public function sqrt { &(Complex)(Complex): native 'complex-sqrt' };
-public function cbrt { &(Complex)(Complex): native 'complex-cbrt' };
-public function  exp { &(Complex)(Complex): native 'complex-exp'  };
-public function  log { &(Complex)(Complex): native 'complex-log'  };
-public function  sin { &(Complex)(Complex): native 'complex-sin'  };
-public function  cos { &(Complex)(Complex): native 'complex-cos'  };
-public function  tan { &(Complex)(Complex): native 'complex-tan'  };
-public function asin { &(Complex)(Complex): native 'complex-asin' };
-public function acos { &(Complex)(Complex): native 'complex-acos' };
-public function atan { &(Complex)(Complex): native 'complex-atan' };
+public function sqrt: (&(Complex)(Complex))  native 'complex-sqrt';
+public function cbrt: (&(Complex)(Complex))  native 'complex-cbrt';
+public function  exp: (&(Complex)(Complex))  native 'complex-exp';
+public function  log: (&(Complex)(Complex))  native 'complex-log';
+public function  sin: (&(Complex)(Complex))  native 'complex-sin';
+public function  cos: (&(Complex)(Complex))  native 'complex-cos';
+public function  tan: (&(Complex)(Complex))  native 'complex-tan';
+public function asin: (&(Complex)(Complex))  native 'complex-asin';
+public function acos: (&(Complex)(Complex))  native 'complex-acos';
+public function atan: (&(Complex)(Complex))  native 'complex-atan';

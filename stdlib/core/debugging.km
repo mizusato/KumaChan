@@ -3,13 +3,7 @@ type Debug[T]  protected T;
 type Never[T]  protected T;
 
 // Debugging Functions
-public function trace[T] {
-    & (T) Debug[T]:
-    native 'trace'
-    /// side-effect: log input value in stdout
-};
-public function panic[T] {
-    & (String) Never[T]:
-    native 'panic'
-    /// side-effect: crash immediately
-};
+public function trace[T]: ( &(T) Debug[T] )
+    native 'trace';  // side-effect: log input value in stderr
+public function panic[T]: ( &(String) Never[T] )
+    native 'panic';  // side-effect: crash immediately

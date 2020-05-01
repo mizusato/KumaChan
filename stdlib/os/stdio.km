@@ -1,7 +1,10 @@
-public const  Stdin := [FileReadOnly]  native 'OS::Stdin';
-public const Stdout := [FileWriteOnly] native 'OS::Stdout';
-public const Stderr := [FileWriteOnly] native 'OS::Stderr';
+public const  Stdin: FileReadOnly
+    native 'OS::Stdin';
+public const Stdout: FileWriteOnly
+    native 'OS::Stdout';
+public const Stderr: FileWriteOnly
+    native 'OS::Stderr';
 
-public macro scanln() := (OS::Stdin | read-line);
-public macro println(line) := (OS::Stdout | write-line line);
-public macro errorln(line) := (OS::Stderr | write-line line);
+public macro scanln(): (OS::Stdin | read-line);
+public macro println(line): (OS::Stdout | write-line line);
+public macro errorln(line): (OS::Stderr | write-line line);

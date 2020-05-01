@@ -271,6 +271,8 @@ func Check(expr ast.Expr, ctx ExprContext) (SemiExpr, *ExprError) {
 
 func CheckTerm(term ast.VariousTerm, ctx ExprContext) (SemiExpr, *ExprError) {
 	switch t := term.Term.(type) {
+	case ast.Call:
+		return CheckCall(t, ctx)
 	case ast.Cast:
 		return CheckCast(t, ctx)
 	case ast.Lambda:

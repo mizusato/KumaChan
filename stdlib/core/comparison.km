@@ -5,42 +5,42 @@ public macro >= (a, b): not $(a < b);
 public macro min(a, b): (if $(a < b): a, else: b);
 public macro max(a, b): (if $(a > b): a, else: b);
 
-public function  = { &(Number,Number)(Bool):     native '=Number' };
-public function  < { &(Number,Number)(Bool):     native '<Number' };
-public function <> { &(Number,Number)(Ordering): native '<>Number' };
+public function  = :(&(Number,Number)(Bool))      native '=Number';
+public function  < :(&(Number,Number)(Bool))      native '<Number';
+public function <> :(&(Number,Number)(Ordering))  native '<>Number';
 
-public function  = { &(Uint8,Uint8)(Bool):     native '=Uint8' };
-public function  < { &(Uint8,Uint8)(Bool):     native '<Uint8' };
-public function <> { &(Uint8,Uint8)(Ordering): native '<>Uint8' };
+public function  = :(&(Uint8,Uint8)(Bool))      native '=Uint8';
+public function  < :(&(Uint8,Uint8)(Bool))      native '<Uint8';
+public function <> :(&(Uint8,Uint8)(Ordering))  native '<>Uint8';
 
-public function  = { &(Uint16,Uint16)(Bool):     native '=Uint16' };
-public function  < { &(Uint16,Uint16)(Bool):     native '<Uint16' };
-public function <> { &(Uint16,Uint16)(Ordering): native '<>Uint16' };
+public function  = :(&(Uint16,Uint16)(Bool))      native '=Uint16';
+public function  < :(&(Uint16,Uint16)(Bool))      native '<Uint16';
+public function <> :(&(Uint16,Uint16)(Ordering))  native '<>Uint16';
 
-public function  = { &(Uint32,Uint32)(Bool):     native '=Uint32' };
-public function  < { &(Uint32,Uint32)(Bool):     native '<Uint32' };
-public function <> { &(Uint32,Uint32)(Ordering): native '<>Uint32' };
+public function  = :(&(Uint32,Uint32)(Bool))      native '=Uint32';
+public function  < :(&(Uint32,Uint32)(Bool))      native '<Uint32';
+public function <> :(&(Uint32,Uint32)(Ordering))  native '<>Uint32';
 
-public function  = { &(Uint64,Uint64)(Bool):     native '=Uint64' };
-public function  < { &(Uint64,Uint64)(Bool):     native '<Uint64' };
-public function <> { &(Uint64,Uint64)(Ordering): native '<>Uint64' };
+public function  = :(&(Uint64,Uint64)(Bool))      native '=Uint64';
+public function  < :(&(Uint64,Uint64)(Bool))      native '<Uint64';
+public function <> :(&(Uint64,Uint64)(Ordering))  native '<>Uint64';
 
-public function  = { &(Float,Float)(Bool):     native '=Float' };
-public function  < { &(Float,Float)(Bool):     native '<Float' };
-public function <> { &(Float,Float)(Ordering): native '<>Float' };
+public function  = :(&(Float,Float)(Bool))      native '=Float';
+public function  < :(&(Float,Float)(Bool))      native '<Float';
+public function <> :(&(Float,Float)(Ordering))  native '<>Float';
 
-public function  = { &(Int8,Int8)(Bool):     native '=Int8' };
-public function  < { &(Int8,Int8)(Bool):     native '<Int8' };
-public function <> { &(Int8,Int8)(Ordering): native '<>Int8' };
+public function  = :(&(Int8,Int8)(Bool))      native '=Int8';
+public function  < :(&(Int8,Int8)(Bool))      native '<Int8';
+public function <> :(&(Int8,Int8)(Ordering))  native '<>Int8';
 
-public function  = { &(Int16,Int16)(Bool):     native '=Int16' };
-public function  < { &(Int16,Int16)(Bool):     native '<Int16' };
-public function <> { &(Int16,Int16)(Ordering): native '<>Int16' };
+public function  = :(&(Int16,Int16)(Bool))      native '=Int16';
+public function  < :(&(Int16,Int16)(Bool))      native '<Int16';
+public function <> :(&(Int16,Int16)(Ordering))  native '<>Int16';
 
-public function  = { &(Int32,Int32)(Bool):     native '=Int32' };
-public function  < { &(Int32,Int32)(Bool):     native '<Int32' };
-public function <> { &(Int32,Int32)(Ordering): native '<>Int32' };
+public function  = :(&(Int32,Int32)(Bool))      native '=Int32';
+public function  < :(&(Int32,Int32)(Bool))      native '<Int32';
+public function <> :(&(Int32,Int32)(Ordering))  native '<>Int32';
 
-public function  = { &(Int64,Int64)(Bool):     native '=Int64' };
-public function  < { &(Int64,Int64)(Bool):     native '<Int64' };
-public function <> { &(Int64,Int64)(Ordering): native '<>Int64' };
+public function  = :(&(Int64,Int64)(Bool))      native '=Int64';
+public function  < :(&(Int64,Int64)(Bool))      native '<Int64';
+public function <> :(&(Int64,Int64)(Ordering))  native '<>Int64';

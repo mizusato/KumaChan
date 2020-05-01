@@ -1,11 +1,7 @@
 type Path native;
 
-public function path {
-    & (String) Path:
-    & (string) (from string)
-};
+public function path: ( &(String) Path )
+    ( &(str) (from str) );
 
-public function from {
-    & (String) Path:
-    native 'Path from String'
-};
+public function from: ( &(String) Path )
+    native 'Path from String';

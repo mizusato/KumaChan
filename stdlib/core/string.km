@@ -1,86 +1,40 @@
 type Char    Uint32;  // rune
 type String  protected Array[Char];  // []rune
 
-public function  = { lambda (String,String) Bool:      native '=String' };
-public function  < { lambda (String,String) Bool:      native '<String' };
-public function <> { lambda (String,String) Ordering:  native '<>String' };
+public function  = :(&(String,String)(Bool))      native '=String';
+public function  < :(&(String,String)(Bool))      native '<String';
+public function <> :(&(String,String)(Ordering))  native '<>String';
 
-public macro str(x) := [String from x];
-public function from { &(Number)(String): native 'String from Number' };
-public function from { &(Uint8)(String):  native 'String from Uint8' };
-public function from { &(Uint16)(String): native 'String from Uint16' };
-public function from { &(Uint32)(String): native 'String from Uint32' };
-public function from { &(Uint64)(String): native 'String from Uint64' };
-public function from { &(Float)(String):  native 'String from Float' };
-public function from { &(Int8)(String):   native 'String from Int8' };
-public function from { &(Int16)(String):  native 'String from Int16' };
-public function from { &(Int32)(String):  native 'String from Int32' };
-public function from { &(Int64)(String):  native 'String from Int64' };
+public macro str(x): (String: from x);
+public function from: (&(Number)(String))  native 'String from Number';
+public function from: (&(Uint8)(String))   native 'String from Uint8';
+public function from: (&(Uint16)(String))  native 'String from Uint16';
+public function from: (&(Uint32)(String))  native 'String from Uint32';
+public function from: (&(Uint64)(String))  native 'String from Uint64';
+public function from: (&(Float)(String))   native 'String from Float';
+public function from: (&(Int8)(String))    native 'String from Int8';
+public function from: (&(Int16)(String))   native 'String from Int16';
+public function from: (&(Int32)(String))   native 'String from Int32';
+public function from: (&(Int64)(String))   native 'String from Int64';
 
-public function encode {   /// encodes string into UTF-8 byte sequence
-    & (String) Bytes:
-    native 'encode-utf8'
-};
-public function decode {   /// decodes string from UTF-8 byte sequence
-    & (Bytes) Maybe[String]:
-    native 'decode-utf8'
-};
-public function substr {
-    & (String,Range) String:
-    & (str, range) (String (str.slice range))
-};
-public function concat {
-    & (Array[String]) String:
-    native 'str-concat'
-};
-public function find {
-    & (String,String) Maybe[Number]:
-    native 'str-find'
-};
-public function contains {
-    & (String,String)
-        Bool:
-    & (str, sub)
-        switch (str | find sub) {
+// encodes string into UTF-8 byte sequence
+public function encode: (&(String)(Bytes))         native 'encode-utf8';
+// decodes string from UTF-8 byte sequence
+public function decode: (&(Bytes)(Maybe[String]))  native 'decode-utf8';
+
+public function substr: (&(String,Range)(String))
+    ( &(str,range) (String (str.slice range)) );
+
+public function find: (&(String,String)(Maybe[Number]))  native 'str-find';
+public function contains: (&(String,String)(Bool))
+    ( &(str, sub)
+        switch (str.find sub):
             case Just _: Yes,
             case N/A:    No
-        }
-};
-public function split {
-    & (String,String) Seq[String]:
-    native 'str-split'
-};
-public function join {
-    & (Seq[String], String) String:
-    native 'str-join'
-};
-/*
-public function trim {
-    & (String,Array[Char]) String:
-    native 'str-trim'
-};
-public function trim-left {
-    & (String,Array[Char]) String:
-    native 'str-trim-left'
-};
-public function trim-right {
-    & (String,Array[Char]) String:
-    native 'str-trim-right'
-};
-public function has-prefix {
-    & (String,String) Bool:
-    native 'str-has-prefix'
-};
-public function has-suffix {
-    & (String,String) Bool:
-    native 'str-has-suffix'
-};
-public function trim-prefix {
-    & (String,String) String:
-    native 'str-trim-prefix'
-};
-public function trim-suffix {
-    & (String,String) String:
-    native 'str-trim-suffix'
-};
-*/
+    );
+
+public function concat: (&(Array[String])(String))      native 'str-concat';
+public function split:  (&(String,String)(Seq[String])) native 'str-split';
+public function join:   (&(Seq[String],String)(String)) native 'str-join';
+
+// TODO: trim-{,left,right}, {trim,has}-{prefix,suffix}

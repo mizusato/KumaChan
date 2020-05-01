@@ -14,9 +14,9 @@ private function from:
     );
 
 private function f:
-	( &(ABC,ABC) ABC ):
+	( &(ABC,ABC) ABC )
 	( &(x,y)
-       switch* (x, y) {
+       switch* (x, y):
 	       case [A,B]: C,
 	       case [B,_]: B,
 	       case [C,A]: B,
@@ -24,7 +24,6 @@ private function f:
 	       case [A,A]: A,
 	       case [C,C]: C,
 	       case [C,B]: A
-       }
     );
 
 do println (str! (f A B))

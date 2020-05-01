@@ -5,111 +5,62 @@ type Heap[T]   native;  // container.Heap
 type Set[T]    native;  // container.Set
 type Map[K,V]  native;  // container.Map
 
-// Functions of Seq[T]
-public function next[T] {
-    & (Seq[T]) Maybe[(T,Seq[T])]:
-    native 'seq-next'
-};
-public function nil[T] {
-    & () Seq[T]:
-    native 'seq-nil'
-};
-public function cons[T] {
-    & (T,Seq[T]) Seq[T]:
-    native 'seq-cons'
-};
-public function map[A,B] {
-    & (Seq[A], &(A)(B))
-        Seq[B]:
-    native 'seq-map'
-};
-public function filter[T] {
-    & (Seq[T], &(T)(Bool))
-        Seq[T]:
-    native 'seq-filter'
-};
-public function scan[T,A] {
-    & (Seq[T], (A, &(A,T)(A)))
-        Seq[A]:
-    native 'seq-scan'
-};
-public function reduce[T,A] {
-    & (Seq[T], (A, &(A,T)(A)))
-        A:
-    native 'seq-reduce'
-};
-public function some[T] {
-    & (Seq[T], &(T)(Bool))
-        Bool:
-    native 'seq-some'
-};
-public function every[T] {
-    & (Seq[T], &(T)(Bool))
-        Bool:
-    native 'seq-every'
-};
-public function collect[T] {
-    & (Seq[T]) Array[T]:
-    native 'seq-collect'
-};
 
-// Functions of Array[T]
-public function get[T] {
-    & (Array[T], Number)
-        T:
-    native 'array-get'
-};
-public function slice[T] {
-    & (Array[T], Range)
-        Array[T]:
-    native 'array-slice'
-};
-public function slice-view[T] {
-    & (Array[T], Range)
-        Array[T]:
-    native 'array-slice-view'
-};
-public function map[A,B] {
-    & (Array[A], &(A)(B))
-        Array[B]:
-    native 'array-map'
-};
-public function map-view[A,B] {
-    & (Array[A], &(A)(B))
-        Array[B]:
-    native 'array-map-view'
-};
-public function iterate[T] {
-    & (Array[T]) Seq[T]:
-    native 'array-iterate'
-};
-public function filter[T] {
-    & (Array[T], &(T)(Bool))
-        Array[T]:
-    & (arr, f)
-        (arr | iterate | filter(f) | collect)
-};
-public function scan[T,A] {
-    & (Array[T], (A, &(A,T)(A)))
-        Array[A]:
-    & (arr, opts)
-        (arr | iterate | scan(opts) | collect)
-};
-public function reduce[T,A] {
-    & (Array[T], (A, &(A,T)(A)))
-        A:
-    & (arr, opts)
-        (arr | iterate | reduce(opts))
-};
-public function some[T] {
-    & (Array[T], &(T)(Bool))
-        Bool:
-    & (arr, f)
-        (arr | iterate | some f)
-};
-public function every[T] {
-    & (Array[T], &(T)(Bool))
-        Bool:
-    & (arr, f)
-        (arr | iterate | every f)
-};
+/* Functions for Seq[T] */
+
+public function collect[T]: ( &(Seq[T]) Array[T] )
+    native 'seq-collect';
+
+public function next[T]: ( &(Seq[T]) Maybe[(T,Seq[T])] )
+    native 'seq-next';
+public function nil[T]:  ( &() Seq[T] )
+    native 'seq-nil';
+public function cons[T]: ( &(T,Seq[T]) Seq[T] )
+    native 'seq-cons';
+
+public function map[A,B]:  ( &(Seq[A],(&(A)(B))) Seq[B] )
+    native 'seq-map';
+public function filter[T]: ( &(Seq[T],(&(T)(Bool))) Seq[T] )
+    native 'seq-filter';
+
+public function scan[T,A]:   ( &(Seq[T],A,(&(A,T)(A))) Seq[A] )
+    native 'seq-scan';
+public function reduce[T,A]: ( &(Seq[T],A,(&(A,T)(A))) A )
+    native 'seq-reduce';
+
+public function some[T]:  ( &(Seq[T],(&(T)(Bool))) Bool )
+    native 'seq-some';
+public function every[T]: ( &(Seq[T],(&(T)(Bool))) Bool )
+    native 'seq-every';
+
+
+/* Functions of Array[T] */
+
+public function iterate[T]: ( &(Array[T]) Seq[T] )
+    native 'array-iterate';
+
+public function get[T]: ( &(Array[T],Number) T )
+    native 'array-get';
+
+public function slice[T]:      ( &(Array[T],Range) Array[T] )
+    native 'array-slice';
+public function slice-view[T]: ( &(Array[T], Range) Array[T] )
+    native 'array-slice-view';
+
+public function map[A,B]:      ( &(Array[A],(&(A)(B))) Array[B] )
+    native 'array-map';
+public function map-view[A,B]: ( &(Array[A],(&(A)(B))) Array[B] )
+    native 'array-map-view';
+
+public function filter[T]: ( &(Array[T],(&(T)(Bool))) Array[T] )
+    ( &(arr,f) (arr | iterate | filter f | collect) );
+
+public function scan[T,A]:   ( &(Array[T],A,(&(A,T)(A))) Array[A] )
+    ( &(arr,init,f) (arr | iterate | scan init f | collect) );
+public function reduce[T,A]: ( &(Array[T],A,(&(A,T)(A))) A )
+    ( &(arr,init,f) (arr | iterate | reduce init f) );
+
+public function some[T]:  ( &(Array[T],(&(T)(Bool))) Bool )
+    ( &(arr,f) (arr | iterate | some f) );
+public function every[T]: ( &(Array[T],(&(T)(Bool))) Bool )
+    ( &(arr,f) (arr | iterate | every f) );

@@ -1,8 +1,8 @@
-public const  Env := [Map[String,String]] native 'OS::Env';
-public const Args := [Array[String]] native 'OS::Args';
+public const Env: Map[String,String]
+    native 'OS::Env';
+public const Args: Array[String]
+    native 'OS::Args';
 
-type ProcessExit  protected NoExcept[-];
-public function exit {
-    & (Uint8) ProcessExit:
-    native 'exit'
-};
+type ProcessExit protected NoExcept[-];
+public function exit: ( &(Uint8) ProcessExit )
+    native 'exit';

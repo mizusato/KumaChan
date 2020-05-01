@@ -169,10 +169,11 @@ func DescribeType(type_ Type, ctx TypeDescContext) string {
 			return buf.String()
 		case Func:
 			var buf strings.Builder
-			buf.WriteString("λ(")
+			buf.WriteString("(λ ")
 			buf.WriteString(DescribeType(r.Input, ctx))
-			buf.WriteString(") ")
+			buf.WriteString(" ")
 			buf.WriteString(DescribeType(r.Output, ctx))
+			buf.WriteString(")")
 			return buf.String()
 		default:
 			panic("impossible branch")

@@ -1,29 +1,29 @@
 do println 'Hello World'
     // | then   (println "# # #" (
     //     OS::Kind, OS::Arch, (if OS::Is64Bit: '64bit', else: '32bit')))
-    | then   println 'timer'
-    | then   wait { timeout: 2000 }
-    | then   println (str (exp (log (complex 5.0 5.0))))
-    | then   println ($(2.0 * (complex 0.0 1.0)).sqrt.asin.sin.str)
-    | then   println ($(2.0 * (complex 0.0 1.0)).sqrt.acos.cos.str)
-    | then   println ($(2.0 * (complex 0.0 1.0)).sqrt.atan.tan.str)
-    | then   println (str $(2 ** 20))
-    | then   println 'merge (0..5)'
+    | then   (println 'timer')
+    | then   (wait { timeout: 2000 })
+    | then   (println (str (exp (log (complex 5.0 5.0)))))
+    | then   (println ($(2.0 * (complex 0.0 1.0)).sqrt.asin.sin.str))
+    | then   (println ($(2.0 * (complex 0.0 1.0)).sqrt.acos.cos.str))
+    | then   (println ($(2.0 * (complex 0.0 1.0)).sqrt.atan.tan.str))
+    | then   (println (str $(20 ** 11)))
+    | then   (println (str (factorial 20)))
+    | then   (println 'merge (0..5)')
     | then   (emit* (range 0 6)
-                | merge-map ( &(i) (println (str i)) )
+                | merge-map (&(i)(println (str i)))
                 | wait-complete )
-    | then   println 'ticker'
+    | then   (println 'ticker')
     | then   (tick { interval: 1000 }
-                | scan        [Number 0], ( &(n, _) $(n + 1) )
-                | concat-map  ( &(n) (println (str n)) )
+                | scan        (Number: 0) (&(n, _)(+ 1 n))
+                | concat-map  (&(n)(println (str n)))
                 | wait-complete )  // TODO: cancel
-    | catch  ( &(_) (exit 1) );
+    | catch  (&(_)(exit 1));
 
-private function factorial {
-    lambda Int Int:
-    lambda n
+private function factorial: (&(Int)(Int))
+    ( &(n)
         if $(n <= 1):
             1,
         else:
             $(n * (factorial $(n - 1)))
-};
+    );

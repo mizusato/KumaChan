@@ -3,28 +3,28 @@ package ast
 
 func (impl Cast) Term() {}
 type Cast struct {
-	Node   `part:"cast"`
-	Target VariousType `part:"type"`
-	Object Expr        `part:"expr"`
+	Node                  `part:"cast"`
+	Target  VariousType   `part:"type"`
+	Object  Expr          `part:"expr"`
 }
 
 func (impl Lambda) Body() {}
 func (impl Lambda) Term() {}
 type Lambda struct {
-	Node   `part:"lambda"`
-	Input  VariousPattern `part:"pattern"`
-	Output Expr           `part:"expr"`
+	Node                     `part:"lambda"`
+	Input   VariousPattern   `part:"pattern"`
+	Output  Expr             `part:"expr"`
 }
 
 func (impl Block) Term() {}
 type Block struct {
-	Node     `part:"block"`
-	Bindings [] Binding `list_more:"" item:"binding"`
-	Return   Expr       `part:"return.expr"`
+	Node                  `part:"block"`
+	Bindings [] Binding   `list_more:"" item:"binding"`
+	Return   Expr         `part:"return.expr"`
 }
 type Binding struct {
-	Node      `part:"binding"`
-	Recursive bool           `option:"rec_opt.@rec"`
+	Node                     `part:"binding"`
+	Recursive bool           `option:"binding_type.rec_opt.@rec"`
 	Pattern   VariousPattern `part:"pattern"`
 	Type      MaybeType      `part_opt:"binding_type.type"`
 	Value     Expr           `part:"expr"`

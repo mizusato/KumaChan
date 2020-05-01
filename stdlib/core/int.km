@@ -1,44 +1,52 @@
 type Int native;  // *big.Int
 
-public function  = { &(Int,Int)(Bool):     native '=Int' };
-public function  < { &(Int,Int)(Bool):     native '<Int' };
-public function <> { &(Int,Int)(Ordering): native '<>Int' };
+public function from: (&(Int)(String))  native 'String from Int';
 
-public function + { &(Int,Int)(Int): native '+Int' };
-public function - { &(Int,Int)(Int): native '-Int' };
-public function - { &(Int)(Int): &(n)$(0 - n) };
-public function * { &(Int,Int)(Int): native '*Int' };
-public function quorem { &(Int,Int)(Int,Int): native 'quorem' };
-public function divmod { &(Int,Int)(Int,Int): native 'divmod' };
+public function  = :(&(Int,Int)(Bool))      native '=Int';
+public function  < :(&(Int,Int)(Bool))      native '<Int';
+public function <> :(&(Int,Int)(Ordering))  native '<>Int';
 
-public function from { &(Int)(String): native 'String from Int' };
+public function + :(&(Int,Int)(Int))  native '+Int';
+public function - :(&(Int,Int)(Int))  native '-Int';
+public function - :(&(Int)(Int))      (&(n)$(0 - n));
+public function * :(&(Int,Int)(Int))  native '*Int';
 
-public function / {
-    & (Int,Int) Int:
-    & (a, b)    let (q, _) := quorem(a, b), return q
-};
-public function % {
-    & (Int,Int) Int:
-    & (a, b)    let (_, r) := quorem(a, b), return r
-};
-public function div {
-    & (Int,Int) Int:
-    & (a, b)    let (q, _) := divmod(a, b), return q
-};
-public function mod {
-    & (Int,Int) Int:
-    & (a, b)    let (_, r) := divmod(a, b), return r
-};
+public function quorem: (&(Int,Int)(Int,Int))  native 'quorem';
+public function divmod: (&(Int,Int)(Int,Int))  native 'divmod';
 
-public function ** {
-    & (Int,Int) Int:
-    & (n, p)
-        let rec pow := [&(Int,Int,Int)(Int)]
-                        (power-by-squaring pow),
-        return pow (1, n, p)
-};
-private macro power-by-squaring (recursive-call):
-    (& (t, n, p)
+
+public function / :(&(Int,Int)(Int))
+    ( &(a, b)
+        let (q, _) := quorem(a, b),
+        return q
+    );
+
+public function % :(&(Int,Int)(Int))
+    ( &(a, b)
+        let (_, r) := quorem(a, b),
+        return r
+    );
+
+public function div: (&(Int,Int)(Int))
+    ( &(a, b)
+        let (q, _) := divmod(a, b),
+        return q
+    );
+
+public function mod: (&(Int,Int)(Int))
+    ( &(a, b)
+        let (_, r) := divmod(a, b),
+        return r
+    );
+
+public function ** :(&(Int,Int)(Int))
+    ( &(n, p)
+        let pow: rec (&(Int,Int,Int)(Int)) := (power-by-squaring pow),
+        return (pow 1 n p)
+    );
+
+private macro power-by-squaring(recursive-call):
+    ( &(t, n, p)
         switch $(p <> 0):
         case <<:
             panic 'taking negative power of a Int value is not supported',
@@ -55,7 +63,7 @@ private macro power-by-squaring (recursive-call):
                     square := $(n * n),
                 return
                     if $(r = 1):
-                        recursive-call ($(t * n), square, q),
+                        (recursive-call $(t * n) square q),
                     else:
-                        recursive-call (t, square, q)
+                        (recursive-call t square q)
     );
