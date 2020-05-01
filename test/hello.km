@@ -15,7 +15,7 @@ do println 'Hello World'
                 | wait-complete )
     | then   (println 'ticker')
     | then   (tick { interval: 1000 }
-                | scan        (Number: 0) (&(n, _)(+ 1 n))
+                | scan        (:Number: 0) (&(n, _)(+ 1 n))
                 | concat-map  (&(n)(println (str n)))
                 | wait-complete )  // TODO: cancel
     | catch  (&(_)(exit 1));
