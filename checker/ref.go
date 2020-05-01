@@ -66,9 +66,9 @@ type RefLocal struct {
 }
 
 
-func CheckRef(ref ast.Ref, ctx ExprContext) (SemiExpr, *ExprError) {
+func CheckRef(ref ast.InlineRef, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(ref.Node)
-	var maybe_symbol = ctx.ModuleInfo.Module.SymbolFromRef(ref)
+	var maybe_symbol = ctx.ModuleInfo.Module.SymbolFromInlineRef(ref)
 	var symbol, ok = maybe_symbol.(loader.Symbol)
 	if !ok { return SemiExpr{}, &ExprError {
 		Point:    ErrorPointFrom(ref.Module.Node),

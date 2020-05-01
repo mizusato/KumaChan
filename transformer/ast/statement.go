@@ -1,13 +1,13 @@
 package ast
 
 
-type VariousCommand struct {
-    Node                `part:"command"`
-    Command   Command   `use:"first"`
+type VariousStatement struct {
+    Node                   `part:"stmt"`
+    Statement  Statement   `use:"first"`
 }
-type Command interface { Command() }
+type Statement interface { Statement() }
 
-func (impl Import) Command() {}
+func (impl Import) Statement() {}
 type Import struct {
     Node                  `part:"import"`
     Name  Identifier      `part:"name"`
@@ -20,10 +20,16 @@ type Identifier struct {
     Name [] rune   `content:"Name"`
 }
 
-func (impl DeclConst) Command() {}
+func (impl Do) Statement() {}
+type Do struct {
+    Node   `part:"do"`
+    Effect Expr `part:"expr"`
+}
+
+func (impl DeclConst) Statement() {}
 type DeclConst struct {
     Node                          `part:"decl_const"`
-    IsPublic  bool                `option:"scope.@public"`
+    Public    bool                `option:"scope.@public"`
     Name      Identifier          `part:"name"`
     Type      VariousType         `part:"type"`
     Value     VariousConstValue   `part:"const_value"`
@@ -40,13 +46,7 @@ type NativeRef struct {
     Id  StringLiteral   `part:"string"`
 }
 
-func (impl Do) Command() {}
-type Do struct {
-    Node           `part:"do"`
-    Effect  Expr   `part:"expr"`
-}
-
-func (impl DeclFunction) Command() {}
+func (impl DeclFunction) Statement() {}
 type DeclFunction struct {
     Node                    `part:"decl_func"`
     Public  bool            `option:"scope.@public"`
@@ -61,16 +61,16 @@ type VariousBody struct {
 }
 type Body interface { Body() }
 
-func (impl DeclMacro) Command() {}
+func (impl DeclMacro) Statement() {}
 type DeclMacro struct {
     Node                    `part:"decl_macro"`
     Public  bool            `option:"scope.@public"`
     Name    Identifier      `part:"name"`
-    Input   [] Identifier   `list_more:"macro_params.namelist" item:"name"`
-    Output  Expr            `part:"expr"`
+    Input  [] Identifier `list_more:"macro_params.namelist" item:"name"`
+    Output Expr          `part:"expr"`
 }
 
-func (impl DeclType) Command() {}
+func (impl DeclType) Statement() {}
 type DeclType struct {
     Node                          `part:"decl_type"`
     Name       Identifier         `part:"name"`

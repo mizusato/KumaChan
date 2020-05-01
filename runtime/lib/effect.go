@@ -102,14 +102,12 @@ var EffectFunctions = map[string] Value {
 			return BoolFrom((h.Call(f, val)).(SumValue))
 		})
 	},
-	"reduce-effect": func(e rx.Effect, opts ProductValue, h MachineHandle) rx.Effect {
-		var init, f = Tuple2From(opts)
+	"reduce-effect": func(e rx.Effect, init Value, f Value, h MachineHandle) rx.Effect {
 		return e.Reduce(func(acc rx.Object, val rx.Object) rx.Object {
 			return h.Call(f, ToTuple2(acc, val))
 		}, init)
 	},
-	"scan-effect": func(e rx.Effect, opts ProductValue, h MachineHandle) rx.Effect {
-		var init, f = Tuple2From(opts)
+	"scan-effect": func(e rx.Effect, init Value, f Value, h MachineHandle) rx.Effect {
 		return e.Scan(func(acc rx.Object, val rx.Object) rx.Object {
 			return h.Call(f, ToTuple2(acc, val))
 		}, init)
@@ -129,11 +127,10 @@ var EffectFunctions = map[string] Value {
 			return h.Call(f, val).(rx.Effect)
 		})
 	},
-	"mix-map": func(e rx.Effect, opts ProductValue, h MachineHandle) rx.Effect {
-		var c, f = Tuple2From(opts)
+	"mix-map": func(e rx.Effect, n uint, f Value, h MachineHandle) rx.Effect {
 		return e.MixMap(func(val rx.Object) rx.Effect {
 			return h.Call(f, val).(rx.Effect)
-		}, c.(uint))
+		}, n)
 	},
 }
 

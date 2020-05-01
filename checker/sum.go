@@ -71,7 +71,7 @@ type MultiBranch struct {
 
 func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(sw.Node)
-	var arg_semi, err = CheckTerm(sw.Argument, ctx)
+	var arg_semi, err = Check(sw.Argument, ctx)
 	if err != nil { return SemiExpr{}, err }
 	var arg_typed, ok = arg_semi.Value.(TypedExpr)
 	if !ok { return SemiExpr{}, &ExprError {
@@ -92,14 +92,14 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 	var semi_branches = make([]SemiTypedBranch, len(sw.Branches))
 	for i, branch := range sw.Branches {
 		switch t := branch.Type.(type) {
-		case ast.Ref:
+		case ast.TypeRef:
 			if len(t.TypeArgs) > 0 {
 				return SemiExpr{}, &ExprError {
 					Point:    ErrorPointFrom(t.Node),
 					Concrete: E_TypeParametersUnnecessary {},
 				}
 			}
-			var maybe_type_sym = ctx.ModuleInfo.Module.TypeSymbolFromRef(t)
+			var maybe_type_sym = ctx.ModuleInfo.Module.SymbolFromTypeRef(t)
 			var type_sym, ok = maybe_type_sym.(loader.Symbol)
 			if !ok { return SemiExpr{}, &ExprError {
 				Point:    ErrorPointFrom(t.Module.Node),
@@ -260,7 +260,7 @@ func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprErro
 						Concrete: E_TypeParametersUnnecessary {},
 					}
 				}
-				var maybe_type_sym = ctx.ModuleInfo.Module.TypeSymbolFromRef(t)
+				var maybe_type_sym = ctx.ModuleInfo.Module.SymbolFromTypeRef(t)
 				var type_sym, ok = maybe_type_sym.(loader.Symbol)
 				if !ok { return SemiExpr{}, &ExprError {
 					Point:    ErrorPointFrom(t.Module.Node),
@@ -432,7 +432,7 @@ func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprErro
 func CheckIf(raw ast.If, ctx ExprContext) (SemiExpr, *ExprError) {
 	var if_node = DesugarElseIf(raw)
 	var info = ctx.GetExprInfo(if_node.Node)
-	var cond_semi, err1 = CheckTerm(if_node.Condition, ctx)
+	var cond_semi, err1 = Check(if_node.Condition, ctx)
 	if err1 != nil { return SemiExpr{}, err1 }
 	var cond_typed, err2 = AssignTo(__T_Bool, cond_semi, ctx)
 	if err2 != nil { return SemiExpr{}, err2 }
@@ -541,18 +541,10 @@ func DesugarElseIf(raw ast.If) ast.If {
 			NoBranch:  no_branch,
 			ElIfs:     nil,
 		}
-		no_branch = ast.Expr {
-			Node:     t.Node,
-			Call:     ast.Call {
-				Node: t.Node,
-				Func: ast.VariousTerm {
-					Node: t.Node,
-					Term: t,
-				},
-				Arg:  nil,
-			},
-			Pipeline: nil,
-		}
+		no_branch = ast.WrapTermAsExpr(ast.VariousTerm {
+			Node: t.Node,
+			Term: t,
+		})
 	}
 	return ast.If {
 		Node:      raw.Node,

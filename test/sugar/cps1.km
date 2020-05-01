@@ -1,8 +1,8 @@
 do (
-    ~ for &(x) := emit* range(0,10):
+    ~ for &(x) := emit* (range 0 10):
     ~ do println (str x):
          println '---'
-) | catch* &(_)(crash 'I/O Error')
+) | catch* (&(_)(crash 'I/O Error'))
   | wait-complete;
 
 /*

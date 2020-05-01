@@ -141,7 +141,7 @@ func AssignCallTo(expected Type, call UndecidedCall, info ExprInfo, ctx ExprCont
 	if len(assignable) == 0 {
 		return Expr{}, &ExprError{
 			Point: info.ErrorPoint,
-			Concrete: E_NoneOfTypesAssignable{
+			Concrete: E_NoneOfTypesAssignable {
 				From: types_desc,
 				To:   ctx.DescribeExpectedType(expected),
 			},
@@ -180,7 +180,54 @@ func AssignCallTo(expected Type, call UndecidedCall, info ExprInfo, ctx ExprCont
 
 
 func DesugarExpr(expr ast.Expr) ast.Call {
-	return DesugarPipeline(expr.Call, expr.Pipeline)
+	return DesugarPipeline(DesugarTerms(expr.Terms), expr.Pipeline)
+}
+
+func DesugarTerms(terms ast.Terms) ast.Call {
+	if len(terms.Terms) == 0 { panic("something went wrong") }
+	var callee = terms.Terms[0]
+	var args = terms.Terms[1:]
+	if len(args) == 0 {
+		return ast.Call {
+			Node: terms.Node,
+			Func: callee,
+			Arg:  nil,
+		}
+	} else if len(args) == 1 {
+		return ast.Call {
+			Node: terms.Node,
+			Func: callee,
+			Arg:  ast.Call {
+				Node: terms.Node,
+				Func: args[0],
+				Arg:  nil,
+			},
+		}
+	} else {
+		var elements = make([] ast.Expr, len(args))
+		for i, arg := range args {
+			elements[i] = ast.WrapCallAsExpr(ast.Call {
+				Node: arg.Node,
+				Func: arg,
+				Arg:  nil,
+			})
+		}
+		return ast.Call {
+			Node: terms.Node,
+			Func: callee,
+			Arg:  ast.Call {
+				Node: terms.Node,
+				Func: ast.VariousTerm {
+					Node: terms.Node,
+					Term: ast.Tuple {
+						Node:     terms.Node,
+						Elements: elements,
+					},
+				},
+				Arg:  nil,
+			},
+		}
+	}
 }
 
 func DesugarPipeline(left ast.Call, p ast.MaybePipeline) ast.Call {
@@ -190,23 +237,20 @@ func DesugarPipeline(left ast.Call, p ast.MaybePipeline) ast.Call {
 	}
 	var f = pipeline.Func
 	var maybe_right = pipeline.Arg
-	var right, exists = maybe_right.(ast.Call)
-	var arg ast.Tuple
+	var right, exists = maybe_right.(ast.Terms)
+	var arg ast.VariousTerm
 	var current_node ast.Node
 	if exists {
-		arg = ast.Tuple {
-			Node:     pipeline.Operator.Node,
-			Elements: []ast.Expr {
-				ast.Expr {
-					Node:     left.Node,
-					Call:     left,
-					Pipeline: nil,
-				},
-				ast.Expr {
-					Node:     right.Node,
-					Call:     right,
-					Pipeline: nil,
-				},
+		var elements = make([] ast.Expr, 0, (1 + len(right.Terms)))
+		elements = append(elements, ast.WrapCallAsExpr(left))
+		for _, r := range right.Terms {
+			elements = append(elements, ast.WrapTermAsExpr(r))
+		}
+		arg = ast.VariousTerm {
+			Node: pipeline.Operator.Node,
+			Term: ast.Tuple {
+				Node:     pipeline.Operator.Node,
+				Elements: elements,
 			},
 		}
 		current_node = ast.Node {
@@ -218,14 +262,7 @@ func DesugarPipeline(left ast.Call, p ast.MaybePipeline) ast.Call {
 			},
 		}
 	} else {
-		arg = ast.Tuple {
-			Node:     left.Node,
-			Elements: []ast.Expr { {
-				Node:     left.Node,
-				Call:     left,
-				Pipeline: nil,
-			} },
-		}
+		arg = ast.WrapCallAsTerm(left)
 		current_node = ast.Node {
 			CST:   pipeline.Node.CST,
 			Point: pipeline.Node.Point,
@@ -240,10 +277,7 @@ func DesugarPipeline(left ast.Call, p ast.MaybePipeline) ast.Call {
 		Func:  f,
 		Arg:   ast.Call {
 			Node: arg.Node,
-			Func: ast.VariousTerm {
-				Node: arg.Node,
-				Term: arg,
-			},
+			Func: arg,
 			Arg:  nil,
 		},
 	}
@@ -261,24 +295,16 @@ func DesugarInfix(infix ast.Infix) ast.Call {
 				Term: ast.Tuple {
 					Node:     infix.Node,
 					Elements: []ast.Expr {
-						ast.Expr {
-							Node:     infix.Operand1.Node,
-							Call:     ast.Call {
-								Node: infix.Operand1.Node,
-								Func: infix.Operand1,
-								Arg:  nil,
-							},
-							Pipeline: nil,
-						},
-						ast.Expr {
-							Node:     infix.Operand2.Node,
-							Call:     ast.Call {
-								Node: infix.Operand2.Node,
-								Func: infix.Operand2,
-								Arg:  nil,
-							},
-							Pipeline: nil,
-						},
+						ast.WrapCallAsExpr(ast.Call {
+							Node: infix.Operand1.Node,
+							Func: infix.Operand1,
+							Arg:  nil,
+						}),
+						ast.WrapCallAsExpr(ast.Call {
+							Node: infix.Operand2.Node,
+							Func: infix.Operand2,
+							Arg:  nil,
+						}),
 					},
 				},
 			},
@@ -287,4 +313,3 @@ func DesugarInfix(infix ast.Infix) ast.Call {
 	}
 }
 
-// TODO: DesugarProcedure

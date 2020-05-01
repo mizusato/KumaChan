@@ -84,8 +84,8 @@ func (mod M_ModuleFolder) Load(ctx Context) (ast.Root, *Error) {
 			},
 		} }
 		var f_root = transformer.Transform(tree)
-		for _, cmd := range f_root.Commands {
-			mod_root.Commands = append(mod_root.Commands, cmd)
+		for _, cmd := range f_root.Statements {
+			mod_root.Statements = append(mod_root.Statements, cmd)
 		}
 	}
 	return mod_root, nil
@@ -242,8 +242,8 @@ func LoadModule(path string, ctx Context, idx Index) (*Module, *Error) {
 			FileInfo:   file_info,
 			FilePath:   path,
 		})
-		for _, cmd := range module_node.Commands {
-			switch c := cmd.Command.(type) {
+		for _, cmd := range module_node.Statements {
+			switch c := cmd.Statement.(type) {
 			case ast.Import:
 				// Execute each `import` command
 				var local_alias = string(c.Name.Name)

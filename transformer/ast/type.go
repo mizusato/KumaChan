@@ -9,10 +9,15 @@ type VariousType struct {
 }
 type Type interface { Type() }
 
-func (impl TypeRef) Type() {}
+type MaybeTypeRef interface { MaybeTypeRef() }
+func (impl TypeRef) MaybeTypeRef() {}
+func (impl TypeRef) Type()  {}
 type TypeRef struct {
-    Node        `part:"type_ref"`
-    Ref   Ref   `part:"ref"`
+    Node                       `part:"type_ref"`
+    Module    Identifier       `part_opt:"module_prefix.name"`
+    Specific  bool             `option:"module_prefix.::"`
+    Id        Identifier       `part:"name"`
+    TypeArgs  [] VariousType   `list_more:"type_args" item:"type"`
 }
 
 func (impl TypeLiteral) Type()  {}
@@ -50,3 +55,4 @@ type ReprFunc struct {
     Input   VariousType   `part:"input_type.type"`
     Output  VariousType   `part:"output_type.type"`
 }
+

@@ -48,8 +48,7 @@ var ContainerFunctions = map[string] Value {
 			},
 		}
 	},
-	"seq-scan": func(input Seq, opts ProductValue, h MachineHandle) Seq {
-		var init, f = Tuple2From(opts)
+	"seq-scan": func(input Seq, init Value, f Value, h MachineHandle) Seq {
 		return ScannedSeq {
 			Previous: init,
 			Rest:     input,
@@ -58,8 +57,7 @@ var ContainerFunctions = map[string] Value {
 			},
 		}
 	},
-	"seq-reduce": func(input Seq, opts ProductValue, h MachineHandle) Value {
-		var init, f = Tuple2From(opts)
+	"seq-reduce": func(input Seq, init Value, f Value, h MachineHandle) Value {
 		return SeqReduce(input, init, func(prev Value, cur Value) Value {
 			return h.Call(f, ToTuple2(prev, cur))
 		})

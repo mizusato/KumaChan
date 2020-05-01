@@ -1,13 +1,6 @@
 package ast
 
 type Root struct {
-    Node                          `part:"root"`
-    Commands  [] VariousCommand   `list_rec:"commands"`
+    Node                              `part:"root"`
+    Statements  [] VariousStatement   `list_rec:"stmts"`
 }
-
-/*
-type Eval struct {
-    Node                          `part:"eval"`
-    Commands  [] VariousCommand   `list_rec:"commands"`
-}
- */

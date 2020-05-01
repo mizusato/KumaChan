@@ -44,19 +44,18 @@ func (mod *Module) SymbolFromName(name ast.Identifier) Symbol {
 	}
 }
 
-func (mod *Module) SymbolFromRef(ref ast.Ref) MaybeSymbol {
-	var ref_mod = Id2String(ref.Module)
+func (mod *Module) SymbolFromRef(ref_mod string, name string, specific bool) MaybeSymbol {
 	var corresponding, exists = mod.ImpMap[ref_mod]
 	if exists {
 		if ref_mod == "" { panic("something went wrong") }
 		return NewSymbol (
 			corresponding.Name,
-			Id2String(ref.Id),
+			name,
 		)
 	} else {
 		if ref_mod == "" {
-			var sym_name = Id2String(ref.Id)
-			if ref.Specific {
+			var sym_name = name
+			if specific {
 				// ::Module <=> Module::Module
 				return NewSymbol(sym_name, sym_name)
 			} else {
@@ -75,9 +74,9 @@ func (mod *Module) SymbolFromRef(ref ast.Ref) MaybeSymbol {
 	}
 }
 
-func (mod *Module) TypeSymbolFromRef(ref ast.Ref) MaybeSymbol {
+func (mod *Module) TypeSymbolFromRef(ref_mod string, name string, specific bool) MaybeSymbol {
 	var self = mod.Name
-	var maybe_sym = mod.SymbolFromRef(ref)
+	var maybe_sym = mod.SymbolFromRef(ref_mod, name, specific)
 	var sym, ok = maybe_sym.(Symbol)
 	if ok {
 		if sym.ModuleName == "" {
@@ -88,6 +87,20 @@ func (mod *Module) TypeSymbolFromRef(ref ast.Ref) MaybeSymbol {
 	} else {
 		return nil
 	}
+}
+
+func (mod *Module) SymbolFromInlineRef(ref ast.InlineRef) MaybeSymbol {
+	var ref_mod = Id2String(ref.Module)
+	var name = Id2String(ref.Id)
+	var specific = ref.Specific
+	return mod.SymbolFromRef(ref_mod, name, specific)
+}
+
+func (mod *Module) SymbolFromTypeRef(ref ast.TypeRef) MaybeSymbol {
+	var ref_mod = Id2String(ref.Module)
+	var name = Id2String(ref.Id)
+	var specific = ref.Specific
+	return mod.TypeSymbolFromRef(ref_mod, name, specific)
 }
 
 

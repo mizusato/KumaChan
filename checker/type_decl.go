@@ -53,12 +53,12 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 	var decls = make([]ast.DeclType, 0)
 	var parent_map = make(map[uint]uint)
 	var index_map = make(map[uint]uint)
-	for _, cmd := range mod.Node.Commands {
-		switch c := cmd.Command.(type) {
+	for _, stmt := range mod.Node.Statements {
+		switch s := stmt.Statement.(type) {
 		case ast.DeclType:
 			var parent_index = uint(len(decls))
-			decls = append(decls, c)
-			switch u := c.TypeValue.TypeValue.(type) {
+			decls = append(decls, s)
+			switch u := s.TypeValue.TypeValue.(type) {
 			case ast.UnionType:
 				for case_index, case_decl := range u.Cases {
 					var cur_sub_index = uint(len(decls))
@@ -298,8 +298,8 @@ func TypeValFrom(tv ast.TypeValue, ctx TypeContext, raw RawTypeRegistry) (TypeVa
 func TypeFrom(type_ ast.Type, ctx TypeContext) (Type, *TypeError) {
 	switch t := type_.(type) {
 	case ast.TypeRef:
-		var ref_mod = string(t.Ref.Module.Name)
-		var ref_name = string(t.Ref.Id.Name)
+		var ref_mod = string(t.Module.Name)
+		var ref_name = string(t.Id.Name)
 		if ref_mod == "" {
 			if ref_name == UnitAlias {
 				return AnonymousType { Unit{} }, nil
@@ -310,19 +310,19 @@ func TypeFrom(type_ ast.Type, ctx TypeContext) (Type, *TypeError) {
 				}
 			}
 		}
-		var sym = ctx.Module.TypeSymbolFromRef(t.Ref)
+		var sym = ctx.Module.SymbolFromTypeRef(t)
 		switch s := sym.(type) {
 		case loader.Symbol:
 			var exists, arity = ctx.Ireg.LookupArity(s)
 			if !exists { return nil, &TypeError {
-				Point:    ErrorPointFrom(t.Ref.Id.Node),
+				Point:    ErrorPointFrom(t.Id.Node),
 				Concrete: E_TypeNotFound {
 					Name: s,
 				},
 			} }
-			var given_arity = uint(len(t.Ref.TypeArgs))
+			var given_arity = uint(len(t.TypeArgs))
 			if arity != given_arity { return nil, &TypeError {
-				Point:    ErrorPointFrom(t.Ref.Node),
+				Point:    ErrorPointFrom(t.Node),
 				Concrete: E_WrongParameterQuantity {
 					TypeName: s,
 					Required: arity,
@@ -330,7 +330,7 @@ func TypeFrom(type_ ast.Type, ctx TypeContext) (Type, *TypeError) {
 				},
 			} }
 			var args = make([]Type, arity)
-			for i, arg_node := range t.Ref.TypeArgs {
+			for i, arg_node := range t.TypeArgs {
 				var arg, err = TypeFrom(arg_node.Type, ctx)
 				if err != nil { return nil, err }
 				args[i] = arg
@@ -341,9 +341,9 @@ func TypeFrom(type_ ast.Type, ctx TypeContext) (Type, *TypeError) {
 			}, nil
 		default:
 			return nil, &TypeError {
-				Point:    ErrorPointFrom(t.Ref.Module.Node),
+				Point:    ErrorPointFrom(t.Module.Node),
 				Concrete: E_ModuleOfTypeRefNotFound {
-					Name: loader.Id2String(t.Ref.Module),
+					Name: loader.Id2String(t.Module),
 				},
 			}
 		}

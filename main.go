@@ -74,7 +74,7 @@ func debug_loader() (*loader.Module, loader.Index) {
     var mod, idx, err = loader.LoadEntry(path)
     if err != nil {
         fmt.Fprintf(os.Stderr, "%s\n", err.Error())
-        os.Exit(127)
+        os.Exit(3)
     } else {
         fmt.Println("Modules loaded, no errors occurred.")
     }
@@ -90,7 +90,7 @@ func debug_checker(mod *loader.Module, idx loader.Index) (*checker.CheckedModule
         }
         var msg = MsgFailedToCompile(errs[0], messages)
         fmt.Fprintf(os.Stderr, "%s\n", msg.String())
-        os.Exit(126)
+        os.Exit(4)
     } else {
         fmt.Println("Type check finished, no errors occurred.")
     }
@@ -109,12 +109,12 @@ func debug_compiler(entry *checker.CheckedModule) common.Program {
         }
         var msg = MsgFailedToCompile(errs[0].Concrete, messages)
         fmt.Fprintf(os.Stderr, "%s\n", msg.String())
-        os.Exit(125)
+        os.Exit(5)
     }
     var program, err = compiler.CreateProgram(index, data, closures)
     if err != nil {
         fmt.Fprintf(os.Stderr, "%s\n", err.Error())
-        os.Exit(124)
+        os.Exit(6)
     }
     fmt.Println("Bytecode generated, no errors occurred.")
     fmt.Print("\n")

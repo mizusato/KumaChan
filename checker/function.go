@@ -74,8 +74,8 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 		index_offset_map[name] = uint(len(refs))
 	}
 	// 3. Iterate over all function declarations in the current module
-	for _, cmd := range mod.Node.Commands {
-		switch decl := cmd.Command.(type) {
+	for _, stmt := range mod.Node.Statements {
+		switch decl := stmt.Statement.(type) {
 		case ast.DeclFunction:
 			// 3.1. Get the names of the function and its type parameters
 			var name = loader.Id2String(decl.Name)

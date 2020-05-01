@@ -386,24 +386,21 @@ func DesugarOmittedFieldValue(field ast.FieldValue) ast.Expr {
 	case ast.Expr:
 		return val_expr
 	default:
-		return ast.Expr {
-			Node:  field.Node,
-			Call:  ast.Call {
-				Node:  field.Node,
-				Func: ast.VariousTerm {
-					Node: field.Node,
-					Term: ast.Ref {
-						Node:     field.Node,
-						Module:   ast.Identifier {
-							Node: field.Node,
-							Name: []rune(""),
-						},
-						Specific: false,
-						Id:       field.Key,
-						TypeArgs: make([]ast.VariousType, 0),
+		return ast.WrapCallAsExpr(ast.Call {
+			Node: field.Node,
+			Func: ast.VariousTerm {
+				Node: field.Node,
+				Term: ast.InlineRef {
+					Node:     field.Node,
+					Module:   ast.Identifier {
+						Node: field.Node,
+						Name: []rune(""),
 					},
+					Specific: false,
+					Id:       field.Key,
+					TypeArgs: make([]ast.VariousType, 0),
 				},
 			},
-		}
+		})
 	}
 }

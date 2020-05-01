@@ -38,8 +38,8 @@ func CollectConstants(mod *loader.Module, reg TypeRegistry, store ConstantStore)
 			}
 		}
 	}
-	for _, cmd := range mod.Node.Commands {
-		switch decl := cmd.Command.(type) {
+	for _, stmt := range mod.Node.Statements {
+		switch decl := stmt.Statement.(type) {
 		case ast.DeclConst:
 			var name = mod.SymbolFromName(decl.Name)
 			if name.SymbolName == IgnoreMark {
@@ -67,7 +67,7 @@ func CollectConstants(mod *loader.Module, reg TypeRegistry, store ConstantStore)
 				Params: make([]string, 0),
 				Ireg:   reg,
 			}
-			var is_public = decl.IsPublic
+			var is_public = decl.Public
 			var declared_type, err = TypeFrom(decl.Type.Type, ctx)
 			if err != nil { return nil, &ConstantError {
 				Point:    ErrorPointFrom(decl.Type.Node),

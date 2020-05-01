@@ -3,21 +3,21 @@ do println 'Hello World'
     //     OS::Kind, OS::Arch, (if OS::Is64Bit: '64bit', else: '32bit')))
     | then   println 'timer'
     | then   wait { timeout: 2000 }
-    | then   println str exp log complex(5.0, 5.0)
-    | then   println str sin asin sqrt $(2.0 * (complex(0.0, 1.0)))
-    | then   println str cos acos sqrt $(2.0 * (complex(0.0, 1.0)))
-    | then   println str tan atan sqrt $(2.0 * (complex(0.0, 1.0)))
-    | then   println str $(2 ** 20)
+    | then   println (str (exp (log (complex 5.0 5.0))))
+    | then   println ($(2.0 * (complex 0.0 1.0)).sqrt.asin.sin.str)
+    | then   println ($(2.0 * (complex 0.0 1.0)).sqrt.acos.cos.str)
+    | then   println ($(2.0 * (complex 0.0 1.0)).sqrt.atan.tan.str)
+    | then   println (str $(2 ** 20))
     | then   println 'merge (0..5)'
-    | then   (emit* range(0, 6)
-                | merge-map &(i)(println str i)
+    | then   (emit* (range 0 6)
+                | merge-map ( &(i) (println (str i)) )
                 | wait-complete )
     | then   println 'ticker'
     | then   (tick { interval: 1000 }
-                | scan        ([Number 0], &(n, _)$(n + 1))
-                | concat-map  &(n)(println str n)
+                | scan        [Number 0], ( &(n, _) $(n + 1) )
+                | concat-map  ( &(n) (println (str n)) )
                 | wait-complete )  // TODO: cancel
-    | catch  &(_)(exit 1);
+    | catch  ( &(_) (exit 1) );
 
 private function factorial {
     lambda Int Int:

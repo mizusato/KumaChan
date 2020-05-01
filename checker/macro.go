@@ -64,8 +64,8 @@ func CollectMacros(mod *loader.Module, store MacroStore) (MacroCollection, *Macr
 			}
 		}
 	}
-	for _, cmd := range mod.Node.Commands {
-		switch decl := cmd.Command.(type) {
+	for _, stmt := range mod.Node.Statements {
+		switch decl := stmt.Statement.(type) {
 		case ast.DeclMacro:
 			var name = loader.Id2String(decl.Name)
 			if name == IgnoreMark { return nil, &MacroError {
@@ -144,21 +144,13 @@ func AssignMacroInflationTo(expected Type, e UntypedMacroInflation, info ExprInf
 func AdaptMacroArgs(call ast.Call) [] ast.Expr {
 	var _, has_arg = call.Arg.(ast.Call)
 	if has_arg {
-		return [] ast.Expr { {
-			Node:     call.Node,
-			Call:     call,
-			Pipeline: nil,
-		} }
+		return [] ast.Expr { ast.WrapCallAsExpr(call) }
 	} else {
 		var tuple, is_tuple = call.Func.Term.(ast.Tuple)
 		if is_tuple {
 			return tuple.Elements
 		} else {
-			return [] ast.Expr { {
-				Node:     call.Node,
-				Call:     call,
-				Pipeline: nil,
-			} }
+			return [] ast.Expr{ ast.WrapCallAsExpr(call) }
 		}
 	}
 }

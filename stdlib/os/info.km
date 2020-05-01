@@ -1,3 +1,6 @@
-public const Kind := [String] native 'OS::Kind';
-public const Arch := [String] native 'OS::Arch';
-public const Is64Bit := [Bool] native 'OS::Is64Bit';
+public const Kind: String
+    native 'OS::Kind';
+public const Arch: String
+    native 'OS::Arch';
+public const Is64Bit: Bool
+    native 'OS::Is64Bit';

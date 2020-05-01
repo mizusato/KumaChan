@@ -4,19 +4,18 @@ type ABC union {
      type C;
 };
 
-private function from {
-	&(ABC) String:
-	&(x)
-       switch x {
+private function from:
+    ( &(ABC) String )
+	( &(x)
+       switch x:
 	       case A: 'A',
 	       case B: 'B',
 	       case C: 'C'
-       }
-};
+    );
 
-private function f {
-	&(ABC,ABC) ABC:
-	&(x,y)
+private function f:
+	( &(ABC,ABC) ABC ):
+	( &(x,y)
        switch* (x, y) {
 	       case [A,B]: C,
 	       case [B,_]: B,
@@ -26,7 +25,7 @@ private function f {
 	       case [C,C]: C,
 	       case [C,B]: A
        }
-};
+    );
 
-do println str! (f (A, B))
-   | catch &(_)(crash 'I/O Error');
+do println (str! (f A B))
+   | catch (&(_)(crash 'I/O Error'));

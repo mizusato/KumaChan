@@ -23,15 +23,7 @@ func CheckLambda(lambda ast.Lambda, ctx ExprContext) (SemiExpr, *ExprError) {
 	return SemiExpr {
 		Value: UntypedLambda {
 			Input:  lambda.Input,
-			Output: ast.Expr {
-				Node:     lambda.Node,
-				Call:     ast.Call {
-					Node: lambda.Node,
-					Func: lambda.Output,
-					Arg:  nil,
-				},
-				Pipeline: nil,
-			},
+			Output: lambda.Output,
 		},
 		Info: info,
 	}, nil

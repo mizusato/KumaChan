@@ -41,16 +41,15 @@ type NodeListInfo struct {
 
 var __NodeRegistry = []interface{} {
     // Root
-	Root{},
-    // Command
-    VariousCommand {},
+	Root {},
+    // Statement
+    VariousStatement {},
     Import {},
     Identifier {},
+    Do {},
     DeclConst {},
     VariousConstValue {},
-    Do {},
     DeclFunction {},
-    DeclType {},
     VariousBody {},
     NativeRef {},
     DeclMacro {},
@@ -69,8 +68,8 @@ var __NodeRegistry = []interface{} {
     Field {},
     ReprFunc {},
     // Expression
-    Expr {},
-    Call {},
+    Expr{},
+    Terms {},
     VariousTerm {},
     Pipeline {},
     PipeOperator {},
@@ -100,7 +99,7 @@ var __NodeRegistry = []interface{} {
     CpsBinding {},
     Infix {},
     Text {},
-    Ref {},
+    InlineRef {},
     VariousLiteral {},
     IntegerLiteral {},
     FloatLiteral {},

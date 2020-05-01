@@ -65,7 +65,15 @@ func GetArgs() ([] String) {
 
 var OS_Functions = map[string] Value {
 	"Path from String": func(str String) Path {
-		return strings.Split(string(str), __PathSep)
+		var raw = strings.Split(string(str), __PathSep)
+		var path = make([] string, 0, len(raw))
+		for i, segment := range raw {
+			if i != 0 && segment == "" {
+				continue
+			}
+			path = append(path, segment)
+		}
+		return path
 	},
 	"open-read-only": func(path Path) rx.Effect {
 		return rx.OpenReadOnly(path.String())

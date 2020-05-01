@@ -9,22 +9,22 @@ func CheckCps(cps ast.Cps, ctx ExprContext) (SemiExpr, *ExprError)  {
 
 func DesugarCps(cps ast.Cps) ast.Call {
 	var input = cps.Input
-	var output = WrapExprAsTerm(cps.Output)
+	var output = cps.Output
 	var callee = ast.VariousTerm {
 		Node: cps.Callee.Node,
 		Term: cps.Callee,
 	}
 	var binding, exists = cps.Binding.(ast.CpsBinding)
-	var cont ast.VariousTerm
+	var cont ast.Expr
 	if exists {
-		cont = ast.VariousTerm {
+		cont = ast.WrapTermAsExpr(ast.VariousTerm {
 			Node: binding.Node,
 			Term: ast.Lambda {
 				Node:   binding.Node,
 				Input:  binding.Pattern,
 				Output: output,
 			},
-		}
+		})
 	} else {
 		cont = output
 	}
@@ -39,7 +39,7 @@ func DesugarCps(cps ast.Cps) ast.Call {
 					Node: cps.Node,
 					Elements: []ast.Expr {
 						input,
-						WrapTermAsExpr(cont),
+						cont,
 					},
 				},
 			},
@@ -48,24 +48,3 @@ func DesugarCps(cps ast.Cps) ast.Call {
 	}
 }
 
-func WrapTermAsExpr(term ast.VariousTerm) ast.Expr {
-	return ast.Expr {
-		Node:     term.Node,
-		Call:     ast.Call {
-			Node: term.Node,
-			Func: term,
-			Arg:  nil,
-		},
-		Pipeline: nil,
-	}
-}
-
-func WrapExprAsTerm(expr ast.Expr) ast.VariousTerm {
-	return ast.VariousTerm {
-		Node: expr.Node,
-		Term: ast.Tuple {
-			Node:     expr.Node,
-			Elements: [] ast.Expr { expr },
-		},
-	}
-}

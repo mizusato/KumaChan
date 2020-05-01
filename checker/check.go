@@ -308,7 +308,7 @@ func CheckTerm(term ast.VariousTerm, ctx ExprContext) (SemiExpr, *ExprError) {
 		default:
 			panic("impossible branch")
 		}
-	case ast.Ref:
+	case ast.InlineRef:
 		return CheckRef(t, ctx)
 	case ast.Infix:
 		return CheckInfix(t, ctx)
@@ -460,8 +460,8 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 		}
 	}
 	var do_effects = make([] CheckedEffect, 0)
-	for _, cmd := range mod.Node.Commands {
-		switch do := cmd.Command.(type) {
+	for _, cmd := range mod.Node.Statements {
+		switch do := cmd.Statement.(type) {
 		case ast.Do:
 			var semi_expr, err1 = Check(do.Effect, expr_ctx)
 			if err1 != nil {
