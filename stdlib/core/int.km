@@ -17,25 +17,25 @@ public function divmod: (&(Int,Int)(Int,Int))  native 'divmod';
 
 public function / :(&(Int,Int)(Int))
     ( &(a, b)
-        let (q, _) := quorem(a, b),
+        let (q, _) := $(a quorem b),
         return q
     );
 
 public function % :(&(Int,Int)(Int))
     ( &(a, b)
-        let (_, r) := quorem(a, b),
+        let (_, r) := $(a quorem b),
         return r
     );
 
 public function div: (&(Int,Int)(Int))
     ( &(a, b)
-        let (q, _) := divmod(a, b),
+        let (q, _) := $(a divmod b),
         return q
     );
 
 public function mod: (&(Int,Int)(Int))
     ( &(a, b)
-        let (_, r) := divmod(a, b),
+        let (_, r) := $(a divmod b),
         return r
     );
 
