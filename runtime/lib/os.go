@@ -2,6 +2,7 @@ package lib
 
 import (
 	"os"
+	"time"
 	"runtime"
 	"strings"
 	"kumachan/runtime/common/rx"
@@ -14,6 +15,17 @@ type Path ([] string)
 var __PathSep = string([]rune { os.PathSeparator })
 func (path Path) String() string {
 	return strings.Join(path, __PathSep)
+}
+func PathFrom(str string) Path {
+	var raw = strings.Split(str, __PathSep)
+	var path = make([] string, 0, len(raw))
+	for i, segment := range raw {
+		if i != 0 && segment == "" {
+			continue
+		}
+		path = append(path, segment)
+	}
+	return path
 }
 
 var OS_Constants = map[string] Value {
@@ -28,11 +40,7 @@ var OS_Constants = map[string] Value {
 }
 
 func GetEnv() Map {
-	var m = NewMap(func(v1 Value, v2 Value) Ordering {
-		var s1 = v1.(String)
-		var s2 = v2.(String)
-		return StringCompare(s1, s2)
-	})
+	var m = NewStrMap()
 	for _, item := range os.Environ() {
 		var str = String(item)
 		var k = make(String, 0)
@@ -65,15 +73,37 @@ func GetArgs() ([] String) {
 
 var OS_Functions = map[string] Value {
 	"Path from String": func(str String) Path {
-		var raw = strings.Split(string(str), __PathSep)
-		var path = make([] string, 0, len(raw))
-		for i, segment := range raw {
-			if i != 0 && segment == "" {
-				continue
-			}
-			path = append(path, segment)
-		}
-		return path
+		return PathFrom(string(str))
+	},
+	"String from Path": func(path Path) String {
+		return String(path.String())
+	},
+	"walk-dir": func(dir Path) rx.Effect {
+		return rx.WalkDir(dir.String()).Map(func(val rx.Object) rx.Object {
+			var item = val.(rx.FileItem)
+			return ToTuple2(PathFrom(item.Path), item.Info)
+		})
+	},
+	"list-dir": func(dir Path) rx.Effect {
+		return rx.ListDir(dir.String()).Map(func(val rx.Object) rx.Object {
+			var item = val.(rx.FileItem)
+			return ToTuple2(PathFrom(item.Path), item.Info)
+		})
+	},
+	"file-state-get-name": func(state os.FileInfo) String {
+		return String(state.Name())
+	},
+	"file-state-get-size": func(state os.FileInfo) uint64 {
+		return uint64(state.Size())
+	},
+	"file-state-get-mode": func(state os.FileInfo) os.FileMode {
+		return state.Mode()
+	},
+	"file-state-get-is-dir": func(state os.FileInfo) SumValue {
+		return ToBool(state.IsDir())
+	},
+	"file-state-get-last-modified": func(state os.FileInfo) time.Time {
+		return state.ModTime()
 	},
 	"open-read-only": func(path Path) rx.Effect {
 		return rx.OpenReadOnly(path.String())
@@ -92,6 +122,9 @@ var OS_Functions = map[string] Value {
 	},
 	"file-close": func(f rx.File) rx.Effect {
 		return f.Close()
+	},
+	"file-get-state": func(f rx.File) rx.Effect {
+		return f.State()
 	},
 	"file-read": func(f rx.File, amount uint) rx.Effect {
 		return f.Read(amount)

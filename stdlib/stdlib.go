@@ -10,15 +10,30 @@ import (
 /* IMPORTANT: this go file should be consistent with corresponding km files */
 const Core = "Core"
 var core_types = []string {
-	Bit, Byte, Word, Dword, Qword, Number, Float, Int,
-	Seq, Array, Heap, Set, Map,
-	EffectMultiValue, Effect, NoExceptMultiValue, NoExcept,
+	// types.km
+	Float, Number,
 	Int64, Uint64, Int32, Uint32, Int16, Uint16, Int8, Uint8,
-	Complex, Char, Range, String, Bytes,
 	Bool, Yes, No,
 	Maybe, Just, Na,
 	Result, Ok, Ng,
 	Ordering, Smaller, Equal, Bigger,
+	// binary.km
+	Bit, Byte, Word, Dword, Qword, Bytes,
+	// int.km
+	Int,
+	// containers.km
+	Seq, Array, Heap, Set, Map,
+	// effect.km
+	EffectMultiValue, Effect, NoExceptMultiValue, NoExcept,
+	// time.km
+	Time,
+	// complex.km
+	Complex,
+	// string.km
+	Char, String,
+	// range.km
+	Range,
+	// debugging.km
 	Debug, Never,
 }
 // var core_constants = []string {}
@@ -30,23 +45,9 @@ func GetCoreScopedSymbols() []string {
 	return list
 }
 
-const Bit = "Bit"
-const Byte = "Byte"
-const Word = "Word"
-const Dword = "Dword"
-const Qword = "Qword"
-const Number = "Number"
-const Int = "Int"
+// types.km
 const Float = "Float"
-const Seq = "Seq"
-const Array = "Array"
-const Heap = "Heap"
-const Set = "Set"
-const Map = "Map"
-const EffectMultiValue = "Effect*"
-const Effect = "Effect"
-const NoExceptMultiValue = "NoExcept*"
-const NoExcept = "NoExcept"
+const Number = "Number"
 const Int64 = "Int64"
 const Uint64 = "Uint64"
 const Int32 = "Int32"
@@ -55,11 +56,6 @@ const Int16 = "Int16"
 const Uint16 = "Uint16"
 const Int8 = "Int8"
 const Uint8 = "Uint8"
-const Complex = "Complex"
-const Char = "Char"
-const Range = "Range"
-const String = "String"
-const Bytes = "Bytes"
 const Bool = "Bool"
 const Yes = "Yes"
 const No = "No"
@@ -77,6 +73,36 @@ const Smaller = "<<"
 const Equal = "=="
 const Bigger = ">>"
 const ( SmallerIndex = iota; EqualIndex; BiggerIndex )
+// binary.km
+const Bit = "Bit"
+const Byte = "Byte"
+const Word = "Word"
+const Dword = "Dword"
+const Qword = "Qword"
+const Bytes = "Bytes"
+// int.km
+const Int = "Int"
+// containers.km
+const Seq = "Seq"
+const Array = "Array"
+const Heap = "Heap"
+const Set = "Set"
+const Map = "Map"
+// effect.km
+const EffectMultiValue = "Effect*"
+const Effect = "Effect"
+const NoExceptMultiValue = "NoExcept*"
+const NoExcept = "NoExcept"
+// time.km
+const Time = "Time"
+// complex.km
+const Complex = "Complex"
+// string.km
+const Char = "Char"
+const String = "String"
+// range.km
+const Range = "Range"
+// debugging.km
 const Debug = "Debug"
 const Never = "Never"
 

@@ -5,3 +5,6 @@ public function path: ( &(String) Path )
 
 public function from: ( &(String) Path )
     native 'Path from String';
+
+public function from: ( &(Path) String )
+    native 'String from Path';

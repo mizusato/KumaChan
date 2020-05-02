@@ -5,6 +5,8 @@ import (
 	"io"
 	"fmt"
 	"math"
+	"errors"
+	"path/filepath"
 )
 
 
@@ -189,3 +191,66 @@ func (f File) WriteLine(str string) Effect {
 	})
 }
 
+
+type FileItem struct {
+	Path  string
+	Info  os.FileInfo
+}
+
+func WalkDir(root string) Effect {
+	return CreateEffect(func(sender Sender) {
+		var cancel, cancellable = sender.CancelSignal()
+		var err = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+			if cancellable {
+				select {
+				case <- cancel:
+					return errors.New("operation cancelled")
+				default:
+				}
+			}
+			sender.Next(FileItem {
+				Path: path,
+				Info: info,
+			})
+			return err
+		})
+		if err != nil {
+			sender.Error(err)
+			return
+		}
+		sender.Complete()
+	})
+}
+
+func ListDir(dir_path string) Effect {
+	return CreateEffect(func(sender Sender) {
+		var cancel, cancellable = sender.CancelSignal()
+		var err = filepath.Walk(dir_path, func(path string, info os.FileInfo, err error) error {
+			if cancellable {
+				select {
+				case <- cancel:
+					return errors.New("operation cancelled")
+				default:
+				}
+			}
+			if path != dir_path {
+				sender.Next(FileItem {
+					Path: path,
+					Info: info,
+				})
+				if info.IsDir() && path != dir_path {
+					return filepath.SkipDir
+				} else {
+					return nil
+				}
+			} else {
+				return nil
+			}
+		})
+		if err != nil {
+			sender.Error(err)
+			return
+		}
+		sender.Complete()
+	})
+}

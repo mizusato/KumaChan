@@ -1,8 +1,25 @@
-type File           native;
-type FileInfo       native;  // TODO: fstat
+type File           native;  // rx.File
 type FileReadOnly   protected File;
 type FileWriteOnly  protected File;
 type FileReadWrite  protected File;
+
+type FileState  native;
+type FileMode   Uint32;
+public function name: ( &(FileState) String )
+    native 'file-state-get-name';
+public function size: ( &(FileState) Uint64 )
+    native 'file-state-get-size';
+public function mode: ( &(FileState) FileMode )
+    native 'file-state-get-mode';
+public function is-dir: ( &(FileState) Bool )
+    native 'file-state-get-is-dir';
+public function last-modified: ( &(FileState) Time )
+    native 'file-state-get-last-modified';
+
+public function walk-dir: ( &(Path) Effect*[(Path,FileState),I/O::Error] )
+    native 'walk-dir';
+public function list-dir: ( &(Path) Effect*[(Path,FileState),I/O::Error] )
+    native 'list-dir';
 
 public function open-read-only: ( &(Path) Effect[FileReadOnly,I/O::Error] )
     native 'open-read-only';
@@ -17,6 +34,9 @@ public function open-append: ( &(Path) Effect[FileWriteOnly,I/O::Error] )
 
 public function close: ( &(File) NoExcept[-] )
     native 'file-close';
+
+public function get-state: ( &(File) FileState )
+    native 'file-get-state';
 
 public function read:  ( &(FileReadOnly,Number) Effect[Bytes,I/O::Error] )
     native 'file-read';

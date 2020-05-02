@@ -13,7 +13,7 @@ type Heap struct {
 	LtOp  LessThanOperator
 }
 
-func NewHeap (lt LessThanOperator) Heap {
+func NewHeap(lt LessThanOperator) Heap {
 	return Heap { LTT: nil, LtOp: lt }
 }
 
@@ -48,7 +48,7 @@ type Set struct {
 	Cmp Compare
 }
 
-func NewSet (cmp Compare) Set {
+func NewSet(cmp Compare) Set {
 	return Set { AVL: nil, Cmp: cmp }
 }
 
@@ -87,13 +87,21 @@ type MapEntry struct {
 	Value  Value
 }
 
-func NewMap (cmp Compare) Map {
+func NewMap(cmp Compare) Map {
 	return Map {
 		AVL: nil,
 		Cmp: func(e1 Value, e2 Value) Ordering {
 			return cmp(e1.(MapEntry).Key, e2.(MapEntry).Key)
 		},
 	}
+}
+
+func NewStrMap() Map {
+	return NewMap(func(k1 Value, k2 Value) Ordering {
+		var s1 = k1.(String)
+		var s2 = k2.(String)
+		return StringCompare(s1, s2)
+	})
 }
 
 func (m Map) From(a *avl.AVL) Map {
