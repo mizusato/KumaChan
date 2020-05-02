@@ -5,7 +5,7 @@ public function  = :(&(String,String)(Bool))      native '=String';
 public function  < :(&(String,String)(Bool))      native '<String';
 public function <> :(&(String,String)(Ordering))  native '<>String';
 
-public macro str(x): ((:String: (from x)));
+public macro str(x): (:String: (from x));
 public function from: (&(Number)(String))  native 'String from Number';
 public function from: (&(Uint8)(String))   native 'String from Uint8';
 public function from: (&(Uint16)(String))  native 'String from Uint16';
