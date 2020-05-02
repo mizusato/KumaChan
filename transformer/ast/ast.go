@@ -104,6 +104,7 @@ var __NodeRegistry = []interface{} {
     IntegerLiteral {},
     FloatLiteral {},
     StringLiteral {},
+    CharLiteral {},
 }
 
 var __NodeInfoMap = map[syntax.Id] NodeInfo {}

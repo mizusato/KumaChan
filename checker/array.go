@@ -43,7 +43,8 @@ func CheckArray(array ast.Array, ctx ExprContext) (SemiExpr, *ExprError) {
 
 
 func AssignArrayTo(expected Type, array SemiTypedArray, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
-	if expected == nil {
+	switch E := expected.(type) {
+	default:
 		var item_type Type = nil
 		var items = make([]Expr, len(array.Items))
 		for i, item_semi := range array.Items {
@@ -67,13 +68,14 @@ func AssignArrayTo(expected Type, array SemiTypedArray, info ExprInfo, ctx ExprC
 				Args: []Type { item_type },
 			}
 		}
-		return Expr {
+		var typed_array = Expr {
 			Type:  array_t,
 			Info:  info,
 			Value: Array { items },
-		}, nil
-	}
-	switch E := expected.(type) {
+		}
+		var expr, err = AssignTypedTo(expected, typed_array, ctx)
+		if err != nil { return Expr{}, err }
+		return expr, nil
 	case NamedType:
 		if E.Name == __Array {
 			if len(E.Args) != 1 { panic("something went wrong") }
@@ -99,7 +101,9 @@ func AssignArrayTo(expected Type, array SemiTypedArray, info ExprInfo, ctx ExprC
 	}
 	return Expr{}, &ExprError {
 		Point:    info.ErrorPoint,
-		Concrete: E_ArrayAssignedToNonArrayType {},
+		Concrete: E_ArrayAssignedToNonArrayType {
+			NonArrayType: ctx.DescribeExpectedType(expected),
+		},
 	}
 }
 

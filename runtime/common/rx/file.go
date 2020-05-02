@@ -68,6 +68,17 @@ func (f File) Close() Effect {
 	})
 }
 
+func (f File) State() Effect {
+	return CreateQueuedEffect(f.worker, func() (Object, bool) {
+		var info, err = f.raw.Stat()
+		if err != nil {
+			return err, false
+		} else {
+			return info, true
+		}
+	})
+}
+
 func (f File) Read(amount uint) Effect {
 	return CreateQueuedEffect(f.worker, func() (Object, bool) {
 		var buf = make([] byte, amount)

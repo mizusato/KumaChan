@@ -98,7 +98,7 @@ func inspect(value Value, path []uintptr) ErrorMessage {
 		var rv = reflect.ValueOf(v)
 		if rv.Kind() == reflect.Slice {
 			var L = rv.Len()
-			msg.WriteText(TS_NORMAL, "@(")
+			msg.WriteText(TS_NORMAL, "[")
 			if L > 0 {
 				msg.Write(T_LF)
 			}
@@ -110,7 +110,7 @@ func inspect(value Value, path []uintptr) ErrorMessage {
 				}
 				msg.Write(T_LF)
 			}
-			msg.WriteText(TS_NORMAL, ")")
+			msg.WriteText(TS_NORMAL, "]")
 		} else {
 			msg.WriteText(TS_NORMAL,
 				fmt.Sprintf("[%s %v]", rv.Type().String(), v))
