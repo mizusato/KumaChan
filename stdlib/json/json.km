@@ -1,0 +1,31 @@
+type Value union {
+    type Object  Map[String,Value];
+    type Array   Array[Value];
+    type Boolean Bool;
+    type Number  Float;
+    type String  String;
+    type Null;
+};
+
+// public function json-parse: ( &(String) Value )
+//     native 'json-parse';
+public function json-stringify: ( &(JSON::Value) String )
+    (& (jv)
+        switch jv:
+        case JSON::Object (o):
+            (o.iterate.map(&(key,value)(
+                ("#:#" (quote key) (json-stringify value))
+            )).join(',')."{#}"),
+        case JSON::Array (a):
+            (a.iterate.map(json-stringify).join(',')."[#]"),
+        case JSON::Boolean (b):
+            (switch b:
+                case Yes: 'true',
+                case No:  'false'),
+        case JSON::Number (n):
+            (str n),
+        case JSON::String (s):
+            (quote s),
+        case JSON::Null:
+            ('null')
+    );

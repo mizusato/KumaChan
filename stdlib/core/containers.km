@@ -64,3 +64,13 @@ public function some[T]:  ( &(Array[T],(&(T)(Bool))) Bool )
     ( &(arr,f) (arr | iterate | some f) );
 public function every[T]: ( &(Array[T],(&(T)(Bool))) Bool )
     ( &(arr,f) (arr | iterate | every f) );
+
+
+/* Functions of Map[K,V] */
+
+public function new-map[T]: ( &(Array[(String,T)]) Map[String,T] )
+    native 'new-map-str';
+public function entries[K,V]: ( &(Map[K,V]) Array[(K,V)] )
+    native 'map-entries';
+public function iterate[K,V]: ( &(Map[K,V]) Seq[(K,V)] )
+    ( &(m) (m.entries.iterate) );

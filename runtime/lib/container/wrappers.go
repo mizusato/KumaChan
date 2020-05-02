@@ -21,11 +21,11 @@ func (h Heap) From(t *ltt.LTT) Heap {
 	return Heap { LTT: t, LtOp: h.LtOp }
 }
 
-func (h Heap) Push(v Value) Heap {
+func (h Heap) Pushed(v Value) Heap {
 	return h.From(h.LTT.Pushed(v, h.LtOp))
 }
 
-func (h Heap) Pop() (Value, Heap, bool) {
+func (h Heap) Popped() (Value, Heap, bool) {
 	var popped, rest, exists = h.LTT.Popped(h.LtOp)
 	return popped, h.From(rest), exists
 }
@@ -56,15 +56,20 @@ func (s Set) From(a *avl.AVL) Set {
 	return Set { AVL: a, Cmp: s.Cmp }
 }
 
+func (m Set) Size() uint {
+	if m.AVL == nil { return 0 }
+	return uint(m.AVL.Size)
+}
+
 func (s Set) Lookup(v Value) (Value, bool) {
 	return s.AVL.Lookup(v, s.Cmp)
 }
 
-func (s Set) Insert(v Value) Set {
+func (s Set) Inserted(v Value) Set {
 	return s.From(s.AVL.Inserted(v, s.Cmp))
 }
 
-func (s Set) Delete(v Value) (Value, Set, bool) {
+func (s Set) Deleted(v Value) (Value, Set, bool) {
 	var deleted, rest, exists = s.AVL.Deleted(v, s.Cmp)
 	return deleted, s.From(rest), exists
 }
@@ -108,6 +113,11 @@ func (m Map) From(a *avl.AVL) Map {
 	return Map { AVL: a, Cmp: m.Cmp }
 }
 
+func (m Map) Size() uint {
+	if m.AVL == nil { return 0 }
+	return uint(m.AVL.Size)
+}
+
 func (m Map) Lookup(k Value) (Value, bool) {
 	var kv, exists = m.AVL.Lookup(k, m.Cmp)
 	if exists {
@@ -117,7 +127,7 @@ func (m Map) Lookup(k Value) (Value, bool) {
 	}
 }
 
-func (m Map) Insert(k Value, v Value) Map {
+func (m Map) Inserted(k Value, v Value) Map {
 	var entry = MapEntry {
 		Key:   k,
 		Value: v,
@@ -125,7 +135,7 @@ func (m Map) Insert(k Value, v Value) Map {
 	return m.From(m.AVL.Inserted(entry, m.Cmp))
 }
 
-func (m Map) Delete(k Value) (Value, Map, bool) {
+func (m Map) Deleted(k Value) (Value, Map, bool) {
 	var entry = MapEntry {
 		Key:   k,
 		Value: nil,

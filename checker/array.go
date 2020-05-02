@@ -15,7 +15,8 @@ type SemiTypedArray struct {
 
 func (impl Array) ExprVal() {}
 type Array struct {
-	Items  [] Expr
+	Items     [] Expr
+	ItemType  Type
 }
 
 
@@ -71,7 +72,7 @@ func AssignArrayTo(expected Type, array SemiTypedArray, info ExprInfo, ctx ExprC
 		var typed_array = Expr {
 			Type:  array_t,
 			Info:  info,
-			Value: Array { items },
+			Value: Array { Items: items, ItemType: item_type },
 		}
 		var expr, err = AssignTypedTo(expected, typed_array, ctx)
 		if err != nil { return Expr{}, err }
@@ -95,7 +96,7 @@ func AssignArrayTo(expected Type, array SemiTypedArray, info ExprInfo, ctx ExprC
 					Args: []Type { item_type },
 				},
 				Info:  info,
-				Value: Array { items },
+				Value: Array { Items: items, ItemType: item_type },
 			}, nil
 		}
 	}
@@ -107,12 +108,7 @@ func AssignArrayTo(expected Type, array SemiTypedArray, info ExprInfo, ctx ExprC
 	}
 }
 
-func GetArrayInfo(length uint, array_type Type) common.ArrayInfo {
-	var named, is_named = array_type.(NamedType)
-	if !(is_named) { panic("something went wrong") }
-	if named.Name != __Array { panic("something went wrong") }
-	if len(named.Args) != 1 { panic("something went wrong") }
-	var item_type = named.Args[0]
+func GetArrayInfo(length uint, item_type Type) common.ArrayInfo {
 	var item_reflect_type = (func() reflect.Type {
 		switch t := item_type.(type) {
 		case NamedType:
@@ -134,3 +130,4 @@ func GetArrayInfo(length uint, array_type Type) common.ArrayInfo {
 		ItemType: item_reflect_type,
 	}
 }
+

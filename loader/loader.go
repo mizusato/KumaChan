@@ -308,7 +308,7 @@ func LoadEntry (path string) (*Module, Index, *Error) {
 	return mod, idx, err
 }
 
-var __StdLibModules = []string { "core", "io", "os" }
+var __StdLibModules = []string { "core", "io", "os", "json" }
 var __StdLibIndex = make(map[string] *Module)
 var _ = __Init()
 

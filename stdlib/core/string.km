@@ -22,6 +22,8 @@ public function encode: (&(String)(Bytes))         native 'encode-utf8';
 // decodes string from UTF-8 byte sequence
 public function decode: (&(Bytes)(Maybe[String]))  native 'decode-utf8';
 
+public function quote: (&(String)(String))  native 'quote';
+
 public function substr: (&(String,Range)(String))
     ( &(str,range) (String (str.slice range)) );
 

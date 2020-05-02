@@ -4,7 +4,6 @@ import (
 	. "kumachan/error"
 	"kumachan/loader"
 	"kumachan/runtime/common"
-	"kumachan/stdlib"
 	"kumachan/transformer/ast"
 )
 
@@ -72,7 +71,7 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 	// 3. Go through all type declarations
 	for i, d := range decls {
 		// 3.1. Get the symbol of the declared type
-		var type_sym = mod.SymbolFromName(d.Name)
+		var type_sym = mod.SymbolFromDeclName(d.Name)
 		// 3.2. Check if the symbol name is valid
 		var sym_name = type_sym.SymbolName
 		for _, reserved := range __ReservedTypeNames {
@@ -85,7 +84,7 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 		}
 		// 3.3. Check if the symbol is used
 		var _, exists = raw.DeclMap[type_sym]
-		if exists || (mod_name != stdlib.Core && loader.IsPreloadCoreSymbol(type_sym)) {
+		if exists {
 			// 3.3.1. If used, throw an error
 			return &TypeDeclError {
 				Point:    ErrorPointFrom(d.Name.Node),
@@ -259,7 +258,7 @@ func TypeValFrom(tv ast.TypeValue, ctx TypeContext, raw RawTypeRegistry) (TypeVa
 		}
 		var case_types = make([] CaseType, count)
 		for i, case_decl := range v.Cases {
-			var sym = ctx.Module.SymbolFromName(case_decl.Name)
+			var sym = ctx.Module.SymbolFromDeclName(case_decl.Name)
 			case_types[i] = CaseType {
 				Name:   sym,
 				Params: raw.CaseParamsMap[sym],

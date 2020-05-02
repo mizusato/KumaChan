@@ -5,6 +5,8 @@ import (
 	"math/big"
 	. "kumachan/runtime/common"
 	. "kumachan/runtime/lib/container"
+	"strconv"
+	"encoding/json"
 )
 
 
@@ -155,6 +157,34 @@ var ContainerFunctions = map[string] Value {
 			return Na()
 		}
 	},
+	"quote": func(str String) String {
+		var buf = make([] rune, 0, len(str)+2)
+		buf = append(buf, '"')
+		for _, char := range str {
+			switch char {
+			case '\\', '"':
+				buf = append(buf, '\\')
+				buf = append(buf, char)
+			case '\n':
+				buf = append(buf, '\\', 'n')
+			case '\r':
+				buf = append(buf, '\\', 'r')
+			case '\t':
+				buf = append(buf, '\\', 't')
+			default:
+				if strconv.IsPrint(char) {
+					buf = append(buf, char)
+				} else {
+					var bin, err = json.Marshal(string([] rune { char }))
+					if err != nil { panic("something went wrong") }
+					var escaped = ([] rune)(string(bin[1:len(bin)-1]))
+					buf = append(buf, escaped...)
+				}
+			}
+		}
+		buf = append(buf, '"')
+		return buf
+	},
 	"str-concat": func(av Value) String {
 		return StringConcat(ArrayFrom(av))
 	},
@@ -173,4 +203,23 @@ var ContainerFunctions = map[string] Value {
 		return StringJoin(seq, sep)
 	},
 	// TODO: trim, trim-left, trim-left, {has,trim}-prefix, {has,trim}-suffix
+	"new-map-str": func(v Value) Map {
+		var str_arr = ArrayFrom(v)
+		var m = NewStrMap()
+		for i := uint(0); i < str_arr.Length; i += 1 {
+			var key, value = Tuple2From(str_arr.GetItem(i).(ProductValue))
+			m = m.Inserted(key.(String), value)
+		}
+		return m
+	},
+	"map-entries": func(m Map) ([] ProductValue) {
+		var entries = make([] ProductValue, 0, m.Size())
+		m.AVL.Walk(func(v Value) {
+			var entry = v.(MapEntry)
+			entries = append(entries, &ValProd {
+				Elements: [] Value { entry.Key, entry.Value },
+			})
+		})
+		return entries
+	},
 }

@@ -116,7 +116,7 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 		ctx.LocalScope.Bindings[offset].Used = true
 		return CodeFrom(InstLocalRef(offset), expr.Info)
 	case ch.Array:
-		var info = ch.GetArrayInfo(uint(len(v.Items)), expr.Type)
+		var info = ch.GetArrayInfo(uint(len(v.Items)), v.ItemType)
 		var info_index = ctx.AppendDataRef(DataArrayInfo(info))
 		var buf = MakeCodeBuffer()
 		var inst_array = InstArray(info_index)

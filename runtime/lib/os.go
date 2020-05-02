@@ -57,7 +57,7 @@ func GetEnv() Map {
 				k = append(k, r)
 			}
 		}
-		m = m.Insert(k, v)
+		m = m.Inserted(k, v)
 	}
 	return m
 }

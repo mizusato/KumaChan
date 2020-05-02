@@ -41,7 +41,7 @@ func CollectConstants(mod *loader.Module, reg TypeRegistry, store ConstantStore)
 	for _, stmt := range mod.Node.Statements {
 		switch decl := stmt.Statement.(type) {
 		case ast.DeclConst:
-			var name = mod.SymbolFromName(decl.Name)
+			var name = mod.SymbolFromDeclName(decl.Name)
 			if name.SymbolName == IgnoreMark {
 				return nil, &ConstantError {
 					Point:    ErrorPointFrom(decl.Name.Node),

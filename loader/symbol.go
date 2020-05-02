@@ -34,17 +34,13 @@ func Id2String(id ast.Identifier) string {
 	return string(id.Name)
 }
 
-func (mod *Module) SymbolFromName(name ast.Identifier) Symbol {
+func (mod *Module) SymbolFromDeclName(name ast.Identifier) Symbol {
 	var sym_name = Id2String(name)
-	var _, exists = __PreloadCoreSymbolSet[sym_name]
-	if exists {
-		return NewSymbol(stdlib.Core, sym_name)
-	} else {
-		return NewSymbol(mod.Name, sym_name)
-	}
+	return NewSymbol(mod.Name, sym_name)
 }
 
 func (mod *Module) SymbolFromRef(ref_mod string, name string, specific bool) MaybeSymbol {
+	var self = mod.Name
 	var corresponding, exists = mod.ImpMap[ref_mod]
 	if exists {
 		if ref_mod == "" { panic("something went wrong") }
@@ -68,6 +64,8 @@ func (mod *Module) SymbolFromRef(ref_mod string, name string, specific bool) May
 					return NewSymbol("", sym_name)
 				}
 			}
+		} else if ref_mod == self {
+			return NewSymbol(self, name)
 		} else {
 			return nil
 		}
@@ -112,13 +110,14 @@ var __PreloadCoreSymbolSet = func() map[string] bool {
 	}
 	return set
 } ()
-func IsPreloadCoreSymbol (sym Symbol) bool {
-	var _, exists = __PreloadCoreSymbolSet[sym.SymbolName]
-	if exists {
-		if sym.ModuleName != stdlib.Core {
-			panic("invalid symbol: preload symbol must belong to CoreModule")
+func IsPreloadCoreSymbol(sym Symbol) bool {
+	if sym.ModuleName == stdlib.Core {
+		var _, exists = __PreloadCoreSymbolSet[sym.SymbolName]
+		if exists {
+			return true
+		} else {
+			return false
 		}
-		return true
 	} else {
 		return false
 	}

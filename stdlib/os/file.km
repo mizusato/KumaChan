@@ -3,7 +3,7 @@ type FileReadOnly   protected File;
 type FileWriteOnly  protected File;
 type FileReadWrite  protected File;
 
-type FileState  native;
+type FileState  native;  // os.FileInfo
 type FileMode   Uint32;
 public function name: ( &(FileState) String )
     native 'file-state-get-name';
