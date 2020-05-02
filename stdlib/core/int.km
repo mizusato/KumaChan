@@ -46,7 +46,7 @@ public function ** :(&(Int,Int)(Int))
     );
 
 private macro power-by-squaring(recursive-call):
-    ( &(t, n, p)
+    (( &(t, n, p)
         switch $(p <> 0):
         case <<:
             panic 'taking negative power of a Int value is not supported',
@@ -66,4 +66,4 @@ private macro power-by-squaring(recursive-call):
                         (recursive-call $(t * n) square q),
                     else:
                         (recursive-call t square q)
-    );
+    ));

@@ -1,7 +1,7 @@
-public macro != (a, b): not $(a = b);
-public macro  > (a, b): $(b < a);
-public macro <= (a, b): not $(a > b);
-public macro >= (a, b): not $(a < b);
+public macro != (a, b): (not $(a = b));
+public macro  > (a, b): ($(b < a));
+public macro <= (a, b): (not $(a > b));
+public macro >= (a, b): (not $(a < b));
 public macro min(a, b): (if $(a < b): a, else: b);
 public macro max(a, b): (if $(a > b): a, else: b);
 

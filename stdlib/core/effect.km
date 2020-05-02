@@ -33,8 +33,8 @@ public function adapt-no-except*[T,E]: ( &(NoExcept*[T]) Effect*[T,E] )
     native 'adapt-no-except';
 
 // Effect Operators
-public macro do(e, f): then(e, f);
-public macro for(e, f): concat-map(e, f);
+public macro do(e, f): (then e f);
+public macro for(e, f): (concat-map e f);
 public function take-one[T,E]: ( &(Effect*[T,E]) Effect[Maybe[T],E] )
     native 'take-one';
 public function take-one[T]:   ( &(NoExcept*[T]) NoExcept[Maybe[T]] )

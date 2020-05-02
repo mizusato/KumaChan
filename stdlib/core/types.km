@@ -4,8 +4,8 @@
  */
 
 // Basic Numeric Types
-type Float   native;  // float64 with NaN and Infinity excluded
-type Number  native;  // uint (size_t)
+type Float   native;  // float64 except NaN and Infinity values
+type Number  native;  // uint (size_t), with overflow/underflow checking
 type Int8    native;  // int8
 type Int16   native;  // int16
 type Int32   native;  // int32
