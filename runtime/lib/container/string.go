@@ -21,7 +21,11 @@ func StringDecode(bytes Bytes, e Encoding) (String, bool) {
 		var str = make(String, 0, len(bytes) / 4)
 		for len(bytes) > 0 {
 			var char, size = utf8.DecodeRune(bytes)
-			if char == utf8.RuneError { return nil, false }
+			if char == utf8.RuneError && size == 1 {
+				// Note: An error should be thrown when input is invalid
+				//       to ensure this function to be invertible.
+				return nil, false
+			}
 			str = append(str, char)
 			bytes = bytes[size:]
 		}

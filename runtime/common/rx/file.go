@@ -172,8 +172,7 @@ func (f File) WriteChar(char rune) Effect {
 
 func (f File) ReadLine() Effect {
 	return CreateQueuedEffect(f.worker, func() (Object, bool) {
-		var str string
-		var _, err = fmt.Fscanln(f.raw, &str)
+		var str, err = WellBehavedScanLine(f.raw)
 		if err != nil {
 			return err, false
 		}
@@ -188,6 +187,34 @@ func (f File) WriteLine(str string) Effect {
 			return err, false
 		}
 		return nil, true
+	})
+}
+
+func (f File) ReadLines() Effect {
+	return CreateEffect(func(s Sender) {
+		var cancel, cancellable = s.CancelSignal()
+		f.worker.Do(func() {
+			for {
+				if cancellable {
+					select {
+					case <- cancel:
+						return
+					default:
+					}
+				}
+				var line, err = WellBehavedScanLine(f.raw)
+				if err != nil {
+					if err == io.EOF {
+						s.Complete()
+						return
+					} else {
+						s.Error(err)
+						return
+					}
+				}
+				s.Next(line)
+			}
+		})
 	})
 }
 
@@ -254,3 +281,28 @@ func ListDir(dir_path string) Effect {
 		sender.Complete()
 	})
 }
+
+
+func WellBehavedScanLine(f io.Reader) ([]rune, error) {
+	// This function is a well-behaved substitution of fmt.Fscanln
+	//   (fmt.Fscanln does not accept empty lines)
+	// Note: ...[\n][EOF] and ...[EOF] are not distinguished
+	var buf = make([] rune, 0)
+	for {
+		var char rune
+		var _, err = fmt.Fscanf(f, "%c", &char)
+		if err != nil {
+			if err == io.EOF && len(buf) > 0 {
+				return buf, nil
+			} else {
+				return nil, err
+			}
+		}
+		if char != '\n' {
+			buf = append(buf, char)
+		} else {
+			return buf, nil
+		}
+	}
+}
+

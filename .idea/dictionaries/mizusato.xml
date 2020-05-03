@@ -19,6 +19,7 @@
       <w>exprlist</w>
       <w>exprs</w>
       <w>extern</w>
+      <w>fscanln</w>
       <w>inspectable</w>
       <w>ireg</w>
       <w>namelist</w>
@@ -30,6 +31,7 @@
       <w>qword</w>
       <w>repr</w>
       <w>resumable</w>
+      <w>scanln</w>
       <w>sched</w>
       <w>sqrt</w>
       <w>typelist</w>

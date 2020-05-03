@@ -6,6 +6,11 @@ type ErrorKind union {
     type UnknownError;
 };
 
+public function from: ( &(Error) String )
+    native 'String from I/O::Error';
+public function crash: ( &(Error) NoExcept[-] )
+    ( &(err) (crash ((str err) | "I/O Error: #")) );
+
 public function is:
     ( &(Error,ErrorKind) Bool )
     ( &(err, kind)

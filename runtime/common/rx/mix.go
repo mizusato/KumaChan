@@ -112,6 +112,10 @@ func (qs *QueueScheduler) dispatch(ev event) {
 	qs.underlying.dispatch(ev)
 }
 
+func (qs *QueueScheduler) commit(t task) {
+	qs.underlying.commit(t)
+}
+
 func (qs *QueueScheduler) RunTopLevel(e Effect, r Receiver) {
 	qs.underlying.RunTopLevel(e, r)
 }

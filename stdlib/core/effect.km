@@ -74,25 +74,29 @@ public function catch-throw[T,E,F]: ( &(Effect[T,E],(&(E)(F))) Effect[T,F] )
 public function throw[T,E]: ( &(E) Effect[T,E] )
     native 'throw';
 public function map[A,B,E]:  ( &(Effect[A,E],(&(A)(B))) Effect[B,E] )
-    native 'map-effect';
+    native 'effect-map';
 public function map[A,B]:    ( &(NoExcept[A],(&(A)(B))) NoExcept[B] )
-    native 'map-effect';
+    native 'effect-map';
 public function map*[A,B,E]: ( &(Effect*[A,E],(&(A)(B))) Effect*[B,E] )
-    native 'map-effect';
+    native 'effect-map';
 public function map*[A,B]:   ( &(NoExcept*[A],(&(A)(B))) NoExcept*[B] )
-    native 'map-effect';
+    native 'effect-map';
 public function filter[T,E]: ( &(Effect*[T,E],(&(T)(Bool))) Effect*[T,E] )
-    native 'filter-effect';
+    native 'effect-filter';
 public function filter[T]:   ( &(NoExcept*[T],(&(T)(Bool))) NoExcept*[T] )
-    native 'filter-effect';
+    native 'effect-filter';
 public function reduce[T,A,E]: ( &(Effect*[T,E],A,(&(A,T)(A))) Effect[A,E] )
-    native 'reduce-effect';
+    native 'effect-reduce';
 public function reduce[T,A]:   ( &(NoExcept*[T],A,(&(A,T)(A))) NoExcept[A] )
-    native 'reduce-effect';
+    native 'effect-reduce';
 public function scan[T,A,E]: ( &(Effect*[T,E],A,(&(A,T)(A))) Effect*[A,E] )
-    native 'scan-effect';
+    native 'effect-scan';
 public function scan[T,A]:   ( &(NoExcept*[T],A,(&(A,T)(A))) NoExcept*[A] )
-    native 'scan-effect';
+    native 'effect-scan';
+public function debounce[T,E]: ( &(Effect*[T,E],Number) Effect*[T,E] )
+    native 'debounce-time';
+public function debounce[T]:   ( &(NoExcept*[T],Number) NoExcept*[T] )
+    native 'debounce-time';
 public function switch-map[A,B,E]: ( &(Effect*[A,E],(&(A)(Effect*[B,E]))) Effect*[B,E] )
     native 'switch-map';
 public function switch-map[A,B,E]: ( &(Effect*[A,E],(&(A)(NoExcept*[B]))) Effect*[B,E] )

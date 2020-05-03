@@ -2,11 +2,11 @@ package lib
 
 import (
 	"fmt"
+	"strconv"
 	"math/big"
+	"encoding/json"
 	. "kumachan/runtime/common"
 	. "kumachan/runtime/lib/container"
-	"strconv"
-	"encoding/json"
 )
 
 
@@ -208,7 +208,12 @@ var ContainerFunctions = map[string] Value {
 		var m = NewStrMap()
 		for i := uint(0); i < str_arr.Length; i += 1 {
 			var key, value = Tuple2From(str_arr.GetItem(i).(ProductValue))
-			m = m.Inserted(key.(String), value)
+			var inserted, override = m.Inserted(key.(String), value)
+			if override {
+				var key_desc = strconv.Quote(string(key.(String)))
+				panic("duplicate map key " + key_desc)
+			}
+			m = inserted
 		}
 		return m
 	},

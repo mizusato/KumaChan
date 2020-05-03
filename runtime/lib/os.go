@@ -57,7 +57,7 @@ func GetEnv() Map {
 				k = append(k, r)
 			}
 		}
-		m = m.Inserted(k, v)
+		m, _ = m.Inserted(k, v)
 	}
 	return m
 }
@@ -151,12 +151,13 @@ var OS_Functions = map[string] Value {
 		return f.WriteChar(char)
 	},
 	"file-read-line": func(f rx.File) rx.Effect {
-		return f.ReadLine().Map(func(line rx.Object) rx.Object {
-			return ([] rune)(line.(string))
-		})
+		return f.ReadLine()
 	},
 	"file-write-line": func(f rx.File, line ([] rune)) rx.Effect {
 		return f.WriteLine(string(line))
+	},
+	"file-read-lines": func(f rx.File) rx.Effect {
+		return f.ReadLines()
 	},
 	"exit": func(code uint8) rx.Effect {
 		return rx.CreateBlockingEffect(func() (rx.Object, bool) {

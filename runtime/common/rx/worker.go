@@ -43,7 +43,6 @@ func CreateWorker() *Worker {
 
 func (w *Worker) Do(work func()) {
 	w.mutex.Lock()
-	defer w.mutex.Unlock()
 	if !(w.disposed) {
 		w.pending = append(w.pending, work)
 		select {
@@ -51,11 +50,13 @@ func (w *Worker) Do(work func()) {
 		default:
 		}
 	}
+	w.mutex.Unlock()
 }
 
 func (w *Worker) Dispose() {
 	w.mutex.Lock()
-	defer w.mutex.Unlock()
 	w.disposed = true
 	close(w.notify)
+	w.mutex.Unlock()
 }
+

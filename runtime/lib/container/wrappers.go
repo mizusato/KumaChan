@@ -65,8 +65,9 @@ func (s Set) Lookup(v Value) (Value, bool) {
 	return s.AVL.Lookup(v, s.Cmp)
 }
 
-func (s Set) Inserted(v Value) Set {
-	return s.From(s.AVL.Inserted(v, s.Cmp))
+func (s Set) Inserted(v Value) (Set, bool) {
+	var inserted, override = s.AVL.Inserted(v, s.Cmp)
+	return s.From(inserted), override
 }
 
 func (s Set) Deleted(v Value) (Value, Set, bool) {
@@ -127,12 +128,13 @@ func (m Map) Lookup(k Value) (Value, bool) {
 	}
 }
 
-func (m Map) Inserted(k Value, v Value) Map {
+func (m Map) Inserted(k Value, v Value) (Map, bool) {
 	var entry = MapEntry {
 		Key:   k,
 		Value: v,
 	}
-	return m.From(m.AVL.Inserted(entry, m.Cmp))
+	var inserted, override = m.AVL.Inserted(entry, m.Cmp)
+	return m.From(inserted), override
 }
 
 func (m Map) Deleted(k Value) (Value, Map, bool) {

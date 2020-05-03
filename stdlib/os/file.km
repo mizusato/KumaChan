@@ -73,3 +73,8 @@ public function write-line: ( &(FileWriteOnly,String) Effect[-,I/O::Error] )
     native 'file-write-line';
 public function write-line: ( &(FileReadWrite,String) Effect[-,I/O::Error] )
     native 'file-write-line';
+
+public function read-lines: ( &(FileReadOnly) Effect*[String,I/O::Error] )
+    native 'file-read-lines';
+public function read-lines: ( &(FileReadWrite) Effect*[String,I/O::Error] )
+    native 'file-read-lines';

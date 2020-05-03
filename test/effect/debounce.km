@@ -1,0 +1,5 @@
+do (read-lines OS::Stdin)
+   | debounce 2000
+   | concat-map (&(line)(println ("GOT #" line)))
+   | catch* (&(err)(crash err))
+   | wait-complete;

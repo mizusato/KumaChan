@@ -13,6 +13,7 @@ type Effect struct {
 
 type Scheduler interface {
 	dispatch(event)
+	commit(task)
 	run(Effect, *observer)
 	RunTopLevel(Effect, Receiver)
 }

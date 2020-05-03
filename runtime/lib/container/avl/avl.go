@@ -68,20 +68,22 @@ func (node *AVL) Lookup(target Value, cmp Compare) (Value, bool) {
 	}
 }
 
-func (node *AVL) Inserted(inserted Value, cmp Compare) *AVL {
+func (node *AVL) Inserted(inserted Value, cmp Compare) (*AVL, bool) {
 	if node == nil {
-		return Leaf(inserted)
+		return Leaf(inserted), false
 	} else {
 		var value = node.Value
 		var left = node.Left
 		var right = node.Right
 		switch cmp(inserted, value) {
 		case Smaller:
-			return Node(value, left.Inserted(inserted, cmp), right)
+			var left_inserted, override = left.Inserted(inserted, cmp)
+			return Node(value, left_inserted, right), override
 		case Bigger:
-			return Node(value, left, right.Inserted(inserted, cmp))
+			var right_inserted, override = right.Inserted(inserted, cmp)
+			return Node(value, left, right_inserted), override
 		case Equal:
-			return Node(inserted, left, right)
+			return Node(inserted, left, right), true
 		default:
 			panic("impossible branch")
 		}

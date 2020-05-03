@@ -9,6 +9,10 @@ func (sched TrivialScheduler) dispatch(ev event) {
 	sched.EventLoop.dispatch(ev)
 }
 
+func (sched TrivialScheduler) commit(t task) {
+	sched.EventLoop.commit(t)
+}
+
 func (sched TrivialScheduler) run(effect Effect, ob *observer) {
 	var terminated = false
 	effect.action(sched, &observer {
