@@ -10,6 +10,7 @@ type Id int
 type Token struct {
     Name     string
     Pattern  Regexp
+    Keyword  bool  // TODO
 }
 
 type Rule struct {
@@ -57,6 +58,7 @@ func EscapePartName (name string) string {
 }
 
 
+// TODO: change following variables to functions for immutability
 var Id2Name = make([]string, 0, 1000)
 var Name2Id = make(map[string] Id)
 var Id2ConditionalKeyword = make(map[Id] []rune)

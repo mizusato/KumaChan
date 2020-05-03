@@ -87,23 +87,35 @@ func (r *RuneListReader) ReadRune() (rune, int, error) {
 }
 
 
-func MatchToken(code Code, pos int) (amount int, id syntax.Id) {
-    for _, token := range syntax.GetTokens() {
+func MatchToken(code Code, pos int, skip_kw bool) (amount int, id syntax.Id) {
+    for _, token_def := range syntax.GetTokens() {
+        if skip_kw && token_def.Keyword {
+            continue
+        }
         var reader = RuneListReader { src: code, pos: pos }
-        var loc = token.Pattern.FindReaderIndex(&reader)
+        var loc = token_def.Pattern.FindReaderIndex(&reader)
         // fmt.Printf("Try %v\n", token.Name)
         if loc != nil {
-            if (loc[0] != 0) { panic("invalid token definition " + token.Name) }
-            return loc[1], syntax.Name2Id[token.Name]
+            if (loc[0] != 0) {
+                panic("invalid token definition " + token_def.Name)
+            }
+            return loc[1], syntax.Name2Id[token_def.Name]
         }
     }
     return 0, 0
 }
 
 func Scan(code Code) (Tokens, RowColInfo, RowSpanMap) {
+    var idenitifer = syntax.Name2Id[syntax.IdentifierPartName]
     var ignore = make(map[syntax.Id] bool)
+    var keyword = make(map[syntax.Id] bool)
     for _, ignore_name := range syntax.GetIgnoreTokens() {
         ignore[syntax.Name2Id[ignore_name]] = true
+    }
+    for _, token_def := range syntax.GetTokens() {
+        if token_def.Keyword {
+            keyword[syntax.Name2Id[token_def.Name]] = true
+        }
     }
     var tokens = make(Tokens, 0, 10000)
     var info = GetRowColInfo(code)
@@ -111,9 +123,16 @@ func Scan(code Code) (Tokens, RowColInfo, RowSpanMap) {
     var length = len(code)
     var pos = 0
     for pos < length {
-        var amount, id = MatchToken(code, pos)
+        var amount, id = MatchToken(code, pos, false)
         if amount == 0 { break }
         if ignore[id] { pos += amount; continue }
+        if keyword[id] {
+            var non_kw_amount, non_kw_id = MatchToken(code, pos, true)
+            if non_kw_amount > amount && non_kw_id == idenitifer {
+                amount = non_kw_amount
+                id = non_kw_id
+            }
+        }
         var span = Span { Start: pos, End: pos + amount }
         var current = Token {
             Id:      id,
