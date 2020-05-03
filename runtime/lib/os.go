@@ -90,19 +90,19 @@ var OS_Functions = map[string] Value {
 			return ToTuple2(PathFrom(item.Path), item.Info)
 		})
 	},
-	"file-state-get-name": func(state os.FileInfo) String {
+	"file-state-name": func(state os.FileInfo) String {
 		return String(state.Name())
 	},
-	"file-state-get-size": func(state os.FileInfo) uint64 {
+	"file-state-size": func(state os.FileInfo) uint64 {
 		return uint64(state.Size())
 	},
-	"file-state-get-mode": func(state os.FileInfo) os.FileMode {
+	"file-state-mode": func(state os.FileInfo) os.FileMode {
 		return state.Mode()
 	},
-	"file-state-get-is-dir": func(state os.FileInfo) SumValue {
+	"file-state-is-dir": func(state os.FileInfo) SumValue {
 		return ToBool(state.IsDir())
 	},
-	"file-state-get-last-modified": func(state os.FileInfo) time.Time {
+	"file-state-last-modified": func(state os.FileInfo) time.Time {
 		return state.ModTime()
 	},
 	"open-read-only": func(path Path) rx.Effect {

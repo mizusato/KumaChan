@@ -21,6 +21,8 @@ public function from: (&(Int64)(String))   native 'String from Int64';
 public function encode: (&(String)(Bytes))         native 'encode-utf8';
 // decodes string from UTF-8 byte sequence
 public function decode: (&(Bytes)(Maybe[String]))  native 'decode-utf8';
+// decodes string from UTF-8 byte sequence (outputs \uFFFD on errors)
+public function force-decode: (&(Bytes)(String))   native 'force-decode-utf8';
 
 public function quote: (&(String)(String))  native 'quote';
 

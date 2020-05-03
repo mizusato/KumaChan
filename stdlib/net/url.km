@@ -1,0 +1,7 @@
+type URL native;
+
+public function parse-url: ( &(String) Maybe[URL] )
+    native 'parse-url';
+
+public function url: ( &(String) URL )
+    native 'url';

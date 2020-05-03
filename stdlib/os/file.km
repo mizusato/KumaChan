@@ -6,15 +6,15 @@ type FileReadWrite  protected File;
 type FileState  native;  // os.FileInfo
 type FileMode   Uint32;
 public function name: ( &(FileState) String )
-    native 'file-state-get-name';
+    native 'file-state-name';
 public function size: ( &(FileState) Uint64 )
-    native 'file-state-get-size';
+    native 'file-state-size';
 public function mode: ( &(FileState) FileMode )
-    native 'file-state-get-mode';
+    native 'file-state-mode';
 public function is-dir: ( &(FileState) Bool )
-    native 'file-state-get-is-dir';
+    native 'file-state-is-dir';
 public function last-modified: ( &(FileState) Time )
-    native 'file-state-get-last-modified';
+    native 'file-state-last-modified';
 
 public function walk-dir: ( &(Path) Effect*[(Path,FileState),I/O::Error] )
     native 'walk-dir';

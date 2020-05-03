@@ -1,0 +1,11 @@
+type HttpResponse native;
+
+public function status-code: ( &(HttpResponse) Number )
+    native 'http-response-status-code';
+public function header: ( &(HttpResponse) Map[String,Array[String]] )
+    native 'http-response-header';
+public function body: ( &(HttpResponse) Bytes )
+    native 'http-response-body';
+
+public function http-get: ( &(URL) Effect[HttpResponse,I/O::Error] )
+    native 'http-get';

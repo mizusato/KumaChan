@@ -1,0 +1,3 @@
+do (http-get (url 'https://jsonplaceholder.typicode.com/todos/2'))
+    | then (&(res)(println (force-decode (res.body))))
+    | catch (&(_)(crash 'Network Error'));

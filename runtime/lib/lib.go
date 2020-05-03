@@ -12,6 +12,7 @@ var NativeFunctionMaps = [] (map[string] interface{}) {
 	BitwiseFunctions,
 	IO_Functions,
 	OS_Functions,
+	NetFunctions,
 }
 var NativeConstantMaps = [] (map[string] Value) {
 	OS_Constants,

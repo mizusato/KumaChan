@@ -8,6 +8,8 @@ import (
 
 
 /* IMPORTANT: this go file should be consistent with corresponding km files */
+var __ModuleDirectories = [] string { "core", "io", "os", "json", "net" }
+func GetModuleDirectories() ([] string) { return __ModuleDirectories }
 const Core = "Core"
 var core_types = []string {
 	// types.km

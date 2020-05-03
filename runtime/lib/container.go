@@ -149,13 +149,16 @@ var ContainerFunctions = map[string] Value {
 	"encode-utf8": func(str String) []byte {
 		return StringEncode(str, UTF8)
 	},
-	"decode-utf8": func(bytes []byte) SumValue {
+	"decode-utf8": func(bytes ([] byte)) SumValue {
 		var str, ok = StringDecode(bytes, UTF8)
 		if ok {
 			return Just(str)
 		} else {
 			return Na()
 		}
+	},
+	"force-decode-utf8": func(bytes ([] byte)) String {
+		return StringForceDecode(bytes, UTF8)
 	},
 	"quote": func(str String) String {
 		var buf = make([] rune, 0, len(str)+2)

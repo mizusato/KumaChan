@@ -15,6 +15,21 @@ const (
 	UTF8  Encoding  =  iota
 )
 
+func StringForceDecode(bytes Bytes, e Encoding) String {
+	switch e {
+	case UTF8:
+		var str = make(String, 0, len(bytes) / 4)
+		for len(bytes) > 0 {
+			var char, size = utf8.DecodeRune(bytes)
+			str = append(str, char)
+			bytes = bytes[size:]
+		}
+		return str
+	default:
+		panic("unknown or unimplemented encoding")
+	}
+}
+
 func StringDecode(bytes Bytes, e Encoding) (String, bool) {
 	switch e {
 	case UTF8:

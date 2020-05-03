@@ -13,6 +13,7 @@ import (
 	"kumachan/transformer"
 	"kumachan/transformer/ast"
 	"kumachan/parser/syntax"
+	"kumachan/stdlib"
 )
 
 
@@ -308,7 +309,7 @@ func LoadEntry (path string) (*Module, Index, *Error) {
 	return mod, idx, err
 }
 
-var __StdLibModules = []string { "core", "io", "os", "json" }
+var __StdLibModules = stdlib.GetModuleDirectories()
 var __StdLibIndex = make(map[string] *Module)
 var _ = __Init()
 
