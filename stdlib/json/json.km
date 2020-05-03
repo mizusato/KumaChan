@@ -18,10 +18,11 @@ public function json-stringify: ( &(JSON::Value) String )
             )).join(',')."{#}"),
         case JSON::Array (a):
             (a.iterate.map(json-stringify).join(',')."[#]"),
-        case JSON::Boolean (b):
-            (switch b:
+        case JSON::Boolean (b): (
+            switch b:
                 case Yes: 'true',
-                case No:  'false'),
+                case No:  'false'
+            ),
         case JSON::Number (n):
             (str n),
         case JSON::String (s):

@@ -60,7 +60,7 @@ private macro power-by-squaring(recursive-call):
                 $(t * n),
             else:
                 let (q, r) := $(p divmod 2),
-                    square := $(n * n),
+                let square := $(n * n),
                 return
                     if $(r = 1):
                         (recursive-call $(t * n) square q),
