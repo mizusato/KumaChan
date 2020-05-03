@@ -63,7 +63,6 @@ var __Tokens = [...] Token {
     Token { Name: "&",       Pattern: r(`\&`) },
     Token { Name: "|",       Pattern: r(`\|`) },
     Token { Name: "Case",    Pattern: r(`case `) },
-    Token { Name: "Elif",    Pattern: r(`elif `) },
     Token { Name: "Let",     Pattern: r(`let `) },
     Token { Name: "Name",    Pattern: r(IdentifierRegexp) },
 }
@@ -77,7 +76,7 @@ var __ConditionalKeywords = [...] string {
     "@import", "@from",
     "@type", "@union", "@native", "@protected", "@opaque",
     "@private", "@public", "@function", "@const", "@macro", "@do",
-    "@if", "@else", "@switch", "@switch*", "@default",
+    "@if", "@elif", "@else", "@switch", "@switch*", "@default",
     "@lambda", "@rec", "@return",
 }
 
@@ -160,7 +159,7 @@ var __SyntaxDefinition = [...] string {
       "if = @if cond :! if_yes ,! elifs @else! :! if_no",
         "cond = expr",
         "elifs? = elif elifs",
-          "elif = Elif cond! :! expr! ,!",
+          "elif = @elif cond! :! expr! ,!",
         "if_yes = expr!",
         "if_no = expr!",
       "block = binding more_bindings return!",
