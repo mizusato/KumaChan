@@ -1,0 +1,244 @@
+type ParserState {
+    input:   String,
+    pos:     Number,
+    status:  ParserStatus
+};
+type ParserStatus union {
+    type ParseValue;
+    type ParseObjectKey   { entries: Seq[(String,Value)] };
+    type ParseObjectValue { entries: Seq[(String,Value)], key: String };
+    type ParseObjectNext  { entries: Seq[(String,Value)] };
+    type ParseArray       { items: Seq[Value] };
+    type ParseArrayNext   { items: Seq[Value] };
+    type ParseNumber { begin: Number };
+    type ParseString { begin: Number };
+    type ParseNull   { begin: Number };
+    type ParseTrue   { begin: Number };
+    type ParseFalse  { begin: Number };
+    type ParseBlanks { saved: Value };
+};
+private const Blanks: String
+    from [\n, \t, ^ ];
+private const NumberChars: String
+    '0123456789.Ee+-';
+private const TrueChars: String
+    'true';
+private const FalseChars: String
+    'false';
+private const NullChars: String
+    'null';
+
+public function parse: (&(String)(Result[Value,String]))
+    (&(str)(
+        let initial-state := ParserState {
+            input:  str,
+            pos:    0,
+            status: ParseValue
+        },
+        switch (parse initial-state):
+        case OK (val, _):
+            OK val,
+        case NG (err):
+            err,
+        end
+    ));
+
+private function parse: (&(ParserState)(Result[(Value,Number),String]))
+    (&(state)(
+        let {input,pos,status} := state,
+        let go: (&(Number,ParserStatus)(Result[(Value,Number),String]))
+            := (&(next-pos, next-status)(
+                let result := parse (ParserState {
+                    input,
+                    pos:    next-pos,
+                    status: next-status
+                }),
+                switch result:
+                case OK (value, pos):
+                    parse (ParserState {
+                        input, pos,
+                        status: ParseBlanks { saved: value }
+                    }),
+                case NG err:
+                    err,
+                end
+            )),
+        let go-next: (&(ParserStatus)(Result[(Value,Number),String]))
+            := (&(next-status)(go (+ 1 pos) next-status)),
+        let go-current: (&(ParserStatus)(Result[(Value,Number),String]))
+            := (&(next-status)(go pos next-status)),
+        let scan-chars: (&(Array[Char],Number,Value)(Result[(Value,Number),String]))
+            := (&(chars, begin, val)(
+                let i := $(pos - begin),
+                if $(i = (chars.length)):
+                    OK (val, pos),
+                elif $(pos = (input.length)):
+                    NG 'unexpected end of input',
+                else:
+                    let expected := (get chars i),
+                    if $(char = expected):
+                        go-next status,
+                    else:
+                        NG ("expect char # at #, got #"
+                            (str expected) (str pos) (str char))
+            )),
+        switch status:
+        case ParseValue:
+            if $(pos = (input.length)):
+                NG 'unexpected end of input',
+            else:
+                let char := (input.get pos),
+                if $(Blanks contains char):
+                    go-next ParseValue,
+                elif $(char = ^{):
+                    go-next (ParseObjectKey { entries: nil() }),
+                elif $(char = ^[):
+                    go-next (ParseArray { items: nil() }),
+                elif $(char = ^"):
+                    go-next (ParseString { begin: $(pos + 1) }),
+                elif $(NumberChars contains char):
+                    go-current (ParseNumber { begin: pos }),
+                elif $(char = ^t):
+                    go-current (ParseTrue { begin: pos }),
+                elif $(char = ^f):
+                    go-current (ParseFalse { begin: pos }),
+                elif $(char = ^n):
+                    go-current (ParseNull { begin: pos }),
+                else:
+                    NG ("unexpected char # at #" (str char) (str pos)),
+        case ParseObjectKey {entries}:
+            if $(pos = (input.length)):
+                NG 'unexpected end of input',
+            else:
+                let char := (input.get pos),
+                if $(char = ^}):
+                    OK ((JSON::Object (new-map [])), $(pos + 1)),
+                elif $(Blanks contains char):
+                    go-next status,
+                else:
+                    switch (go-current (ParseString { begin: pos })):
+                    case OK (key-val, pos):
+                        switch key-val:
+                        case JSON::String (json-str):
+                            let key := (:String: json-str),
+                            if $(pos = (input.length)):
+                                NG 'unexpected end of input',
+                            else:
+                                let char := (input.get pos),
+                                if $(char = ^:):
+                                    go ($(pos + 1), ParseObjectValue {
+                                        entries, key
+                                    }),
+                                else:
+                                    NG ("colon expected at #" pos),
+                        default:
+                            panic 'impossible branch',
+                        end,
+                    case NG (err):
+                        err,
+                    end,
+        case ParseObjectValue {entries,key}:
+            switch (go-current ParseValue):
+            case OK (val, pos):
+                go (pos, ParseObjectNext {
+                    entries: $((key,val) cons entries)
+                }),
+            case NG (err):
+                err,
+            end,
+        case ParseObjectNext {entries}:
+            if $(pos = (input.length)):
+                NG 'unexpected end of input',
+            else:
+                let char := (input.get pos),
+                if $(char = ^,):
+                    go-next (ParseObjectKey { entries }),
+                elif $(char = ^}):
+                    let entries-array := (collect items),
+                    OK ((JSON::Object (new-map entries-array)), $(pos + 1)),
+                else:
+                    NG ("unexpected char # at #" (str char) (str pos)),
+        case ParseArray {items}:
+            if $(pos = (input.length)):
+                NG 'unexpected end of input',
+            else:
+                let char := (input.get pos),
+                if $(char = ^]):
+                    OK ((JSON::Array []), $(pos + 1)),
+                else:
+                    switch (go-current ParseValue):
+                    case OK (val, pos):
+                        go (pos, ParseArrayNext {
+                            items: $(val cons items)
+                        }),
+                    case NG err:
+                        err,
+                    end,
+        case ParseArrayNext {items}:
+            if $(pos = (input.length)):
+                NG 'unexpected end of input',
+            else:
+                let char := (input.get pos),
+                if $(char = ^,):
+                    go-next (ParseArray { items }),
+                elif $(char = ^]):
+                    let reversed := (collect items),
+                    let array := (reverse reversed),
+                    OK ((JSON::Array array), $(pos + 1)),
+                else:
+                    NG ("unexpected char # at #" (str char) (str pos)),
+        case ParseString {begin}:
+            if $(pos = (input.length)):
+                NG 'unexpected end of input',
+            else:
+                let char := (get input pos),
+                if $(char = ^"):
+                    let prev := (get input $(pos - 1)),
+                    if $(prev != ^\):
+                        let raw := (str (input.slice begin pos)),
+                        switch (unquote raw):
+                        case Just str:
+                            OK (str, pos),
+                        case N/A:
+                            NG ("invalid string at #" (str begin)),
+                        end,
+                    else:
+                        go-next status,
+                else:
+                    go-next status,
+        case ParseNumber {begin}:
+            let got-number: (&()(Result[(Value,Number),String]))
+                := (&()(
+                    let raw := (str (input.slice begin pos)),
+                    switch (parse-float raw):
+                    case Just x:
+                        OK ((JSON::Number x), pos),
+                    case N/A:
+                        NG ("invalid number at #" (str begin)),
+                    end
+                )),
+            if $(pos = (input.length)):
+                got-number (),
+            else:
+                let char := (get input pos),
+                if $(NumberChars contains char):
+                    go-next status,
+                else:
+                    got-number (),
+        case ParseTrue {begin}:
+            (scan-chars TrueChars begin (Boolean Yes)),
+        case ParseFalse {begin}:
+            (scan-chars FalseChars begin (Boolean No)),
+        case ParseNull {begin}:
+            (scan-chars NullChars begin (Null)),
+        case ParseBlanks {saved}:
+            if $(pos = (input.length)):
+                OK (saved, pos),
+            else:
+                let char := (input.get pos),
+                if $(Blanks contains char):
+                    go-next ParseBlanks { saved },
+                else:
+                    OK (saved, pos),
+        end
+    ));

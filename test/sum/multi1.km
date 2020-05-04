@@ -7,23 +7,25 @@ type ABC union {
 private function from:
     ( &(ABC) String )
 	( &(x)
-       switch x:
+        switch x:
 	       case A: 'A',
 	       case B: 'B',
-	       case C: 'C'
+	       case C: 'C',
+        end
     );
 
 private function f:
 	( &(ABC,ABC) ABC )
 	( &(x,y)
-       switch* (x, y):
+        switch* (x, y):
 	       case [A,B]: C,
 	       case [B,_]: B,
 	       case [C,A]: B,
 	       case [A,C]: B,
 	       case [A,A]: A,
 	       case [C,C]: C,
-	       case [C,B]: A
+	       case [C,B]: A,
+        end
     );
 
 do println (str! (f A B))

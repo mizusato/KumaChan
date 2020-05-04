@@ -66,9 +66,9 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 		}
 		return mapped
 	}
-	var get_union_args = func(case_args []Type, mapping []uint) []Type {
-		var mapped = make([]Type, len(mapping))
-		for i := 0; i < len(mapped); i += 1 {
+	var get_union_args = func(n uint, case_args []Type, mapping []uint) []Type {
+		var mapped = make([]Type, n)
+		for i := uint(0); i < n; i += 1 {
 			mapped[i] = WildcardRhsType {}
 		}
 		for i, j := range mapping {
@@ -90,10 +90,13 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 				}
 				if DirectAssignableTo(case_expected_type, given, ctx) {
 					// 1.1.1. If matching, return a lifted value.
+					var union_arity = uint(len(union_t.Args))
 					return Expr {
 						Type:  NamedType {
 							Name: union_t.Name,
-							Args: get_union_args(given.Args, mapping),
+							Args: get_union_args (
+								union_arity, given.Args, mapping,
+							),
 						},
 						Value: Sum { Value: expr, Index: uint(index) },
 						Info:  expr.Info,
@@ -117,10 +120,13 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 					continue  // if `err` is thrown at 1.1.2, return is OK,
 					          // but `err` could be thrown at 1.2, so...
 				}
+				var union_args = uint(len(union_t.Args))
 				return Expr {
 					Type:  NamedType {
 						Name: union_t.Name,
-						Args: get_union_args(given.Args, mapping),
+						Args: get_union_args (
+							union_args, given.Args, mapping,
+						),
 					},
 					Value: Sum { Value: item_expr, Index: uint(index) },
 					Info:  expr.Info,

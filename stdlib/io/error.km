@@ -20,7 +20,8 @@ public function is:
         case [ClosedPipe,ClosedPipe]:
             Yes,
         default:
-            No
+            No,
+        end
     );
 public function kind:
     ( &(Error) ErrorKind )

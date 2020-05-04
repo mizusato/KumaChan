@@ -20,7 +20,7 @@ func (impl Block) Term() {}
 type Block struct {
 	Node                  `part:"block"`
 	Bindings [] Binding   `list_more:"" item:"binding"`
-	Return   Expr         `part:"return.expr"`
+	Return   Expr         `part:"block_value.expr"`
 }
 type Binding struct {
 	Node                     `part:"binding"`

@@ -69,7 +69,6 @@ var __Tokens = [...] Token {
     Token { Name: "Switch",  Pattern: r(`switch`),    Keyword: true },
     Token { Name: "Case",    Pattern: r(`case`),      Keyword: true },
     Token { Name: "Let",     Pattern: r(`let`),       Keyword: true },
-    Token { Name: "Return",  Pattern: r(`return`),    Keyword: true },
     Token { Name: "Name",    Pattern: r(IdentifierRegexp) },
 }
 func GetTokens() ([] Token) { return __Tokens[:] }
@@ -82,7 +81,7 @@ var __ConditionalKeywords = [...] string {
     "@import", "@from",
     "@type", "@union", "@native", "@protected", "@opaque",
     "@private", "@public", "@function", "@const", "@macro", "@do",
-    "@default", "@lambda", "@rec",
+    "@default", "@end", "@lambda", "@rec",
 }
 
 var __SyntaxDefinition = [...] string {
@@ -144,13 +143,13 @@ var __SyntaxDefinition = [...] string {
         "pipe_arg? = terms",
     "term = cast | lambda | multi_switch | switch | if | block | cps | bundle | get | tuple | infix | array | text | literal | inline_ref",
       "cast = ( : type! :! expr! )!",
-      "switch = Switch expr :! branch_list",
+      "switch = Switch expr :! branch_list ,! @end!",
         "branch_list = branch! more_branches",
           "more_branches? = , branch more_branches",
           "branch = branch_key :! expr!",
             "branch_key = @default | Case type_ref! opt_pattern",
               "opt_pattern? = pattern",
-      "multi_switch = Switch* ( exprlist )! :! multi_branch_list",
+      "multi_switch = Switch* ( exprlist )! :! multi_branch_list ,! @end!",
         "exprlist = expr! more_exprs",
           "more_exprs? = , expr! more_exprs",
         "multi_branch_list = multi_branch! more_multi_branches",
@@ -167,12 +166,12 @@ var __SyntaxDefinition = [...] string {
           "elif = Elif cond! :! expr! ,!",
         "if_yes = expr!",
         "if_no = expr!",
-      "block = binding more_bindings return!",
+      "block = binding more_bindings block_value",
         "more_bindings? = , binding more_bindings",
         "binding = Let pattern! binding_type :=! expr!",
           "binding_type? = : rec_opt type!",
             "rec_opt? = @rec",
-        "return = , Return expr!",
+        "block_value = ,! expr!",
       "cps = ~ inline_ref! cps_binding cps_input :! cps_output",
         "cps_binding? = lambda_header pattern := binding_type",
         "cps_input = expr!",

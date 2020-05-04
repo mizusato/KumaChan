@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	. "kumachan/runtime/common"
 	. "kumachan/runtime/lib/container"
+	"math"
 )
 
 
@@ -88,6 +89,14 @@ var ContainerFunctions = map[string] Value {
 			))
 		}
 	},
+	"array-length": func(av Value, index uint) Value {
+		var arr = ArrayFrom(av)
+		return arr.Length
+	},
+	"array-reverse": func(av Value) Value {
+		var arr = ArrayFrom(av)
+		return arr.Reversed()
+	},
 	"array-slice": func(av Value, range_ ProductValue) Value {
 		var l, r = Tuple2From(range_)
 		var arr = ArrayFrom(av)
@@ -146,6 +155,13 @@ var ContainerFunctions = map[string] Value {
 	"String from Uint64": func(n uint64) String {
 		return String(fmt.Sprint(n))
 	},
+	"String from Char": func(char rune) String {
+		return [] rune { char }
+	},
+	"String from Array": func(v Value) String {
+		var a = ArrayFrom(v)
+		return a.CopyAsSlice().(String)  // TODO: unnecessary copy could happen
+	},
 	"encode-utf8": func(str String) []byte {
 		return StringEncode(str, UTF8)
 	},
@@ -187,6 +203,31 @@ var ContainerFunctions = map[string] Value {
 		}
 		buf = append(buf, '"')
 		return buf
+	},
+	"unquote": func(str String) SumValue {
+		var buf = make([] rune, 0)
+		var s = string(str)
+		for len(s) > 0 {
+			var char, _, rest, err = strconv.UnquoteChar(s, byte('"'))
+			if err != nil {
+				return Na()
+			}
+			buf = append(buf, char)
+			s = rest
+		}
+		return Just(buf)
+	},
+	"parse-float": func(str String) SumValue {
+		var x, err = strconv.ParseFloat(string(str), 64)
+		if err != nil {
+			return Na()
+		} else {
+			if math.IsInf(x, 0) || math.IsNaN(x) {
+				return Na()
+			} else {
+				return Just(x)
+			}
+		}
 	},
 	"str-concat": func(av Value) String {
 		return StringConcat(ArrayFrom(av))

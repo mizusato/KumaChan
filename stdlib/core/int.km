@@ -18,31 +18,31 @@ public function divmod: (&(Int,Int)(Int,Int))  native 'divmod';
 public function / :(&(Int,Int)(Int))
     ( &(a, b)
         let (q, _) := $(a quorem b),
-        return q
+        q
     );
 
 public function % :(&(Int,Int)(Int))
     ( &(a, b)
         let (_, r) := $(a quorem b),
-        return r
+        r
     );
 
 public function div: (&(Int,Int)(Int))
     ( &(a, b)
         let (q, _) := $(a divmod b),
-        return q
+        q
     );
 
 public function mod: (&(Int,Int)(Int))
     ( &(a, b)
         let (_, r) := $(a divmod b),
-        return r
+        r
     );
 
 public function ** :(&(Int,Int)(Int))
     ( &(n, p)
         let pow: rec (&(Int,Int,Int)(Int)) := (power-by-squaring pow),
-        return (pow 1 n p)
+        (pow 1 n p)
     );
 
 private macro power-by-squaring(recursive-call):
@@ -61,9 +61,9 @@ private macro power-by-squaring(recursive-call):
             else:
                 let (q, r) := $(p divmod 2),
                 let square := $(n * n),
-                return
-                    if $(r = 1):
-                        (recursive-call $(t * n) square q),
-                    else:
-                        (recursive-call t square q)
+                if $(r = 1):
+                    (recursive-call $(t * n) square q),
+                else:
+                    (recursive-call t square q),
+        end
     );

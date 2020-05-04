@@ -16,6 +16,8 @@ public function from: (&(Int8)(String))    native 'String from Int8';
 public function from: (&(Int16)(String))   native 'String from Int16';
 public function from: (&(Int32)(String))   native 'String from Int32';
 public function from: (&(Int64)(String))   native 'String from Int64';
+public function from: (&(Char)(String))    native 'String from Char';
+public function from: (&(Array[Char])(String))  native 'String from Array';
 
 // encodes string into UTF-8 byte sequence
 public function encode: (&(String)(Bytes))         native 'encode-utf8';
@@ -24,18 +26,25 @@ public function decode: (&(Bytes)(Maybe[String]))  native 'decode-utf8';
 // decodes string from UTF-8 byte sequence (outputs \uFFFD on errors)
 public function force-decode: (&(Bytes)(String))   native 'force-decode-utf8';
 
-public function quote: (&(String)(String))  native 'quote';
+public function quote:   (&(String)(String))         native 'quote';
+public function unquote: (&(String)(Maybe[String]))  native 'unquote';
+
+// TODO: parse-int
+public function parse-float: (&(String)(Float))  native 'parse-float';
 
 public function substr: (&(String,Range)(String))
     ( &(str,range) (String (str.slice range)) );
 
 public function find: (&(String,String)(Maybe[Number]))  native 'str-find';
 public function contains: (&(String,String)(Bool))
-    ( &(str, sub)
+    ( &(str,sub)
         switch (str.find sub):
             case Just _: Yes,
-            case N/A:    No
+            case N/A:    No,
+        end
     );
+public function contains: (&(String,Char)(Bool))
+    ( &(str,char)(str.some (&(c) $(c = char))) );
 
 public function concat: (&(Array[String])(String))      native 'str-concat';
 public function split:  (&(String,String)(Seq[String])) native 'str-split';

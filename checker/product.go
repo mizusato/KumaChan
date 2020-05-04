@@ -255,6 +255,7 @@ func CheckGet(get ast.Get, ctx ExprContext) (SemiExpr, *ExprError) {
 
 
 func AssignTupleTo(expected Type, tuple SemiTypedTuple, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
+	// TODO: fix this function (same problem as AssignArrayTo)
 	var non_nil_expected Type
 	if expected == nil {
 		non_nil_expected = AnonymousType {

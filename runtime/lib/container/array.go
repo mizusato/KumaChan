@@ -48,6 +48,16 @@ func (array Array) CopyAsSlice() Value {
 	return slice_rv.Interface()
 }
 
+func (array Array) Reversed() Value {
+	return Array {
+		Length:   array.Length,
+		GetItem: func(index uint) Value {
+			return array.GetItem(array.Length - 1 - index)
+		},
+		ItemType: array.ItemType,
+	}
+}
+
 func (_ Array) Inspect(_ func(Value)ErrorMessage) ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	msg.WriteText(TS_NORMAL, "[array-view]")

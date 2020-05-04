@@ -7,9 +7,10 @@ type Value union {
     type Null;
 };
 
-// public function json-parse: ( &(String) Value )
-//     native 'json-parse';
-public function json-stringify: ( &(JSON::Value) String )
+public function json-parse: (&(String)(Result[JSON::Value,String]))
+    (&(str)(parse str));
+
+public function json-stringify: (&(JSON::Value)(String))
     (& (jv)
         switch jv:
         case JSON::Object (o):
@@ -18,15 +19,16 @@ public function json-stringify: ( &(JSON::Value) String )
             )).join(',')."{#}"),
         case JSON::Array (a):
             (a.iterate.map(json-stringify).join(',')."[#]"),
-        case JSON::Boolean (b): (
+        case JSON::Boolean (b):
             switch b:
                 case Yes: 'true',
-                case No:  'false'
-            ),
+                case No:  'false',
+            end,
         case JSON::Number (n):
             (str n),
         case JSON::String (s):
             (quote s),
         case JSON::Null:
-            ('null')
+            ('null'),
+        end
     );
