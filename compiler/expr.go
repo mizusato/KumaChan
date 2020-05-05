@@ -433,6 +433,7 @@ func CompileClosure (
 			if recursive && b.Name == rec_name {
 				rec_used = true
 				rec_outer_offset = i
+				ctx.LocalScope.Bindings[i].Used = true
 				continue
 			}
 			var offset = base_context_size
@@ -443,10 +444,10 @@ func CompileClosure (
 		}
 	}
 	if recursive {
-		base_context_size += 1
 		if rec_used {
 			context_offset_map[rec_outer_offset] = base_context_size
 		}
+		base_context_size += 1
 	}
 	if base_context_size >= c.ClosureMaxSize {
 		panic("maximum closure size exceeded")

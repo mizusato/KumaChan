@@ -19,15 +19,15 @@ type Lambda struct {
 func (impl Block) Term() {}
 type Block struct {
 	Node                  `part:"block"`
-	Bindings [] Binding   `list_more:"" item:"binding"`
-	Return   Expr         `part:"block_value.expr"`
+	Bindings  [] Binding   `list_more:"" item:"binding"`
+	Return    Expr         `part:"block_value.expr"`
 }
 type Binding struct {
-	Node                     `part:"binding"`
-	Recursive bool           `option:"binding_type.rec_opt.@rec"`
-	Pattern   VariousPattern `part:"pattern"`
-	Type      MaybeType      `part_opt:"binding_type.type"`
-	Value     Expr           `part:"expr"`
+	Node                        `part:"binding"`
+	Recursive  bool             `option:"binding_type.rec_opt.@rec"`
+	Pattern    VariousPattern   `part:"pattern"`
+	Type       MaybeType        `part_opt:"binding_type.type"`
+	Value      Expr             `part:"expr"`
 }
 
 func (impl Cps) Term() {}
@@ -48,8 +48,8 @@ type CpsBinding struct {
 
 func (impl Array) Term() {}
 type Array struct {
-	Node            `part:"array"`
-	Items  []Expr   `list_more:"exprlist" item:"expr"`
+	Node             `part:"array"`
+	Items  [] Expr   `list_more:"exprlist" item:"expr"`
 }
 
 func (impl Infix) Term() {}
