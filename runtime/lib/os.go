@@ -150,8 +150,16 @@ var OS_Functions = map[string] Value {
 	"file-write-char": func(f rx.File, char Char) rx.Effect {
 		return f.WriteChar(rune(char))
 	},
+	"file-read-string": func(f rx.File) rx.Effect {
+		return f.ReadRunes().Map(func(line rx.Object) rx.Object {
+			return StringFromRuneSlice(line.([] rune))
+		})
+	},
+	"file-write-string": func(f rx.File, str String) rx.Effect {
+		return f.WriteString(GoStringFromString(str))
+	},
 	"file-read-line": func(f rx.File) rx.Effect {
-		return f.ReadLine().Map(func(line rx.Object) rx.Object {
+		return f.ReadLineRunes().Map(func(line rx.Object) rx.Object {
 			return StringFromRuneSlice(line.([] rune))
 		})
 	},
@@ -159,7 +167,7 @@ var OS_Functions = map[string] Value {
 		return f.WriteLine(GoStringFromString(line))
 	},
 	"file-read-lines": func(f rx.File) rx.Effect {
-		return f.ReadLines().Map(func(runes rx.Object) rx.Object {
+		return f.ReadLinesRuneSlices().Map(func(runes rx.Object) rx.Object {
 			return StringFromRuneSlice(runes.([] rune))
 		})
 	},

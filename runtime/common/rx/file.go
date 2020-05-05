@@ -170,13 +170,51 @@ func (f File) WriteChar(char rune) Effect {
 	})
 }
 
-func (f File) ReadLine() Effect {
+func (f File) ReadRunes() Effect {
+	return CreateQueuedEffect(f.worker, func() (Object, bool) {
+		var buf = make([] rune, 0)
+		for {
+			var char rune
+			var _, err = fmt.Fscanf(f.raw, "%c", &char)
+			if err != nil { return err, false }
+			if char != ' ' && char != '\n' {
+				buf = append(buf, char)
+			} else {
+				return buf, true
+			}
+		}
+	})
+}
+
+func (f File) ReadString() Effect {
+	return f.ReadRunes().Map(func(runes Object) Object {
+		return string(runes.([] rune))
+	})
+}
+
+func (f File) ReadLineRunes() Effect {
 	return CreateQueuedEffect(f.worker, func() (Object, bool) {
 		var str, err = WellBehavedScanLine(f.raw)
 		if err != nil {
 			return err, false
 		}
 		return str, true
+	})
+}
+
+func (f File) ReadLine() Effect {
+	return f.ReadLineRunes().Map(func(runes Object) Object {
+		return string(runes.([] rune))
+	})
+}
+
+func (f File) WriteString(str string) Effect {
+	return CreateQueuedEffect(f.worker, func() (Object, bool) {
+		var _, err = fmt.Fprint(f.raw, str)
+		if err != nil {
+			return err, false
+		}
+		return nil, true
 	})
 }
 
@@ -190,7 +228,8 @@ func (f File) WriteLine(str string) Effect {
 	})
 }
 
-func (f File) ReadLines() Effect {
+func (f File) ReadLinesRuneSlices() Effect {
+	// emits rune slices
 	return CreateEffect(func(s Sender) {
 		var cancel, cancellable = s.CancelSignal()
 		f.worker.Do(func() {
@@ -215,6 +254,12 @@ func (f File) ReadLines() Effect {
 				s.Next(line)
 			}
 		})
+	})
+}
+
+func (f File) ReadLines() Effect {
+	return f.ReadLinesRuneSlices().Map(func(runes Object) Object {
+		return string(runes.([] rune))
 	})
 }
 

@@ -65,6 +65,15 @@ public function write-char: ( &(FileWriteOnly,Char) Effect[-,I/O::Error] )
 public function write-char: ( &(FileReadWrite,Char) Effect[-,I/O::Error] )
     native 'file-write-char';
 
+public function read-string:  ( &(FileReadOnly) Effect[String,I/O::Error] )
+    native 'file-read-string';
+public function read-string:  ( &(FileReadWrite) Effect[String,I/O::Error] )
+    native 'file-read-string';
+public function write-string: ( &(FileWriteOnly,String) Effect[-,I/O::Error] )
+    native 'file-write-string';
+public function write-string: ( &(FileReadWrite,String) Effect[-,I/O::Error] )
+    native 'file-write-string';
+
 public function read-line:  ( &(FileReadOnly) Effect[String,I/O::Error] )
     native 'file-read-line';
 public function read-line:  ( &(FileReadWrite) Effect[String,I/O::Error] )
