@@ -439,6 +439,7 @@ func CompileClosure (
 			base_context_size += 1
 			context_offset_map[i] = offset
 			context_outer_offsets = append(context_outer_offsets, i)
+			ctx.LocalScope.Bindings[i].Used = true
 		}
 	}
 	if recursive {

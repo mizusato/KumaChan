@@ -49,7 +49,7 @@ public function reverse[T]: ( &(Array[T]) Array[T] )
 
 public function slice[T]:      ( &(Array[T],Range) Array[T] )
     native 'array-slice';
-public function slice-view[T]: ( &(Array[T], Range) Array[T] )
+public function slice-view[T]: ( &(Array[T],Range) Array[T] )
     native 'array-slice-view';
 
 public function map[A,B]:      ( &(Array[A],(&(A)(B))) Array[B] )

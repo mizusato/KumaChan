@@ -255,7 +255,6 @@ func CheckGet(get ast.Get, ctx ExprContext) (SemiExpr, *ExprError) {
 
 
 func AssignTupleTo(expected Type, tuple SemiTypedTuple, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
-	// TODO: fix this function (same problem as AssignArrayTo)
 	var non_nil_expected Type
 	if expected == nil {
 		non_nil_expected = AnonymousType {
@@ -268,6 +267,24 @@ func AssignTupleTo(expected Type, tuple SemiTypedTuple, info ExprInfo, ctx ExprC
 		non_nil_expected = expected
 	}
 	switch E := non_nil_expected.(type) {
+	default:
+		var typed_exprs = make([]Expr, len(tuple.Values))
+		for i, el := range tuple.Values {
+			var typed, err = AssignTo(nil, el, ctx)
+			if err != nil { return Expr{}, err }
+			typed_exprs[i] = typed
+		}
+		var el_types = make([]Type, len(tuple.Values))
+		for i, el := range typed_exprs {
+			el_types[i] = el.Type
+		}
+		var final_t = AnonymousType { Tuple { el_types } }
+		var typed_tuple = Expr {
+			Type:  final_t,
+			Value: Product { typed_exprs },
+			Info:  info,
+		}
+		return AssignTypedTo(expected, typed_tuple, ctx)
 	case AnonymousType:
 		switch tuple_t := E.Repr.(type) {
 		case Tuple:

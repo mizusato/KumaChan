@@ -1,4 +1,4 @@
-type Char    Uint32;  // rune
+type Char    Int32;  // rune
 type String  protected Array[Char];  // []rune
 
 public function  = :(&(String,String)(Bool))      native '=String';
@@ -30,7 +30,7 @@ public function quote:   (&(String)(String))         native 'quote';
 public function unquote: (&(String)(Maybe[String]))  native 'unquote';
 
 // TODO: parse-int
-public function parse-float: (&(String)(Float))  native 'parse-float';
+public function parse-float: (&(String)(Maybe[Float]))  native 'parse-float';
 
 public function substr: (&(String,Range)(String))
     ( &(str,range) (String (str.slice range)) );

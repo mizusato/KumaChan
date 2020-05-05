@@ -155,7 +155,7 @@ func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 		} else {
 			return nil, false
 		}
-	case stdlib.Int32:
+	case stdlib.Int32, stdlib.Char:
 		if value.IsInt64() {
 			var x = value.Int64()
 			if math.MinInt32 <= x && x <= math.MaxInt32 {
@@ -168,7 +168,7 @@ func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 		} else {
 			return nil, false
 		}
-	case stdlib.Uint32, stdlib.Dword, stdlib.Char:
+	case stdlib.Uint32, stdlib.Dword:
 		if value.IsUint64() {
 			var x = value.Uint64()
 			if x <= math.MaxUint32 {

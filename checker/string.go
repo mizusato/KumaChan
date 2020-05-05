@@ -121,7 +121,7 @@ func CheckChar(char ast.CharLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
 			var code_point_raw = string(raw[2:])
 			var n, ok1 = big.NewInt(0).SetString(code_point_raw, 16)
 			if !ok1 { return invalid() }
-			var val, ok2 = AdaptInteger(stdlib.Uint32, n)
+			var val, ok2 = AdaptInteger(stdlib.Char, n)
 			if !ok2 { return invalid() }
 			return LiftTyped(Expr {
 				Type:  __T_Char,

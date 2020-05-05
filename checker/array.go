@@ -74,9 +74,7 @@ func AssignArrayTo(expected Type, array SemiTypedArray, info ExprInfo, ctx ExprC
 			Info:  info,
 			Value: Array { Items: items, ItemType: item_type },
 		}
-		var expr, err = AssignTypedTo(expected, typed_array, ctx)
-		if err != nil { return Expr{}, err }
-		return expr, nil
+		return AssignTypedTo(expected, typed_array, ctx)
 	case NamedType:
 		if E.Name == __Array {
 			if len(E.Args) != 1 { panic("something went wrong") }

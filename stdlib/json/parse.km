@@ -75,6 +75,7 @@ private function parse: (&(ParserState)(Result[(Value,Number),String]))
                 elif $(pos = (input.length)):
                     NG 'unexpected end of input',
                 else:
+                    let char := (get input pos),
                     let expected := (get chars i),
                     if $(char = expected):
                         go-next status,
@@ -112,7 +113,7 @@ private function parse: (&(ParserState)(Result[(Value,Number),String]))
             else:
                 let char := (input.get pos),
                 if $(char = ^}):
-                    OK ((JSON::Object (new-map [])), $(pos + 1)),
+                    OK ((:Value: JSON::Object (new-map:[Value] [])), $(pos + 1)),
                 elif $(Blanks contains char):
                     go-next status,
                 else:
@@ -130,7 +131,7 @@ private function parse: (&(ParserState)(Result[(Value,Number),String]))
                                         entries, key
                                     }),
                                 else:
-                                    NG ("colon expected at #" pos),
+                                    NG ("colon expected at #" (str pos)),
                         default:
                             panic 'impossible branch',
                         end,
@@ -154,8 +155,8 @@ private function parse: (&(ParserState)(Result[(Value,Number),String]))
                 if $(char = ^,):
                     go-next (ParseObjectKey { entries }),
                 elif $(char = ^}):
-                    let entries-array := (collect items),
-                    OK ((JSON::Object (new-map entries-array)), $(pos + 1)),
+                    let entries-array := (collect entries),
+                    OK ((:Value: JSON::Object (new-map entries-array)), $(pos + 1)),
                 else:
                     NG ("unexpected char # at #" (str char) (str pos)),
         case ParseArray {items}:
@@ -164,7 +165,7 @@ private function parse: (&(ParserState)(Result[(Value,Number),String]))
             else:
                 let char := (input.get pos),
                 if $(char = ^]):
-                    OK ((JSON::Array []), $(pos + 1)),
+                    OK ((:Value: JSON::Array []), $(pos + 1)),
                 else:
                     switch (go-current ParseValue):
                     case OK (val, pos):
@@ -184,7 +185,7 @@ private function parse: (&(ParserState)(Result[(Value,Number),String]))
                 elif $(char = ^]):
                     let reversed := (collect items),
                     let array := (reverse reversed),
-                    OK ((JSON::Array array), $(pos + 1)),
+                    OK ((:Value: JSON::Array array), $(pos + 1)),
                 else:
                     NG ("unexpected char # at #" (str char) (str pos)),
         case ParseString {begin}:
@@ -195,10 +196,10 @@ private function parse: (&(ParserState)(Result[(Value,Number),String]))
                 if $(char = ^"):
                     let prev := (get input $(pos - 1)),
                     if $(prev != ^\):
-                        let raw := (str (input.slice begin pos)),
+                        let raw := (str (input.slice (range begin pos))),
                         switch (unquote raw):
                         case Just str:
-                            OK (str, pos),
+                            OK ((:Value: JSON::String str), pos),
                         case N/A:
                             NG ("invalid string at #" (str begin)),
                         end,
@@ -208,11 +209,11 @@ private function parse: (&(ParserState)(Result[(Value,Number),String]))
                     go-next status,
         case ParseNumber {begin}:
             let got-number: (&()(Result[(Value,Number),String]))
-                := (&()(
-                    let raw := (str (input.slice begin pos)),
+                := (&(_)(
+                    let raw := (str (input.slice (range begin pos))),
                     switch (parse-float raw):
                     case Just x:
-                        OK ((JSON::Number x), pos),
+                        OK ((:Value: (JSON::Number x)), pos),
                     case N/A:
                         NG ("invalid number at #" (str begin)),
                     end
@@ -226,18 +227,18 @@ private function parse: (&(ParserState)(Result[(Value,Number),String]))
                 else:
                     got-number (),
         case ParseTrue {begin}:
-            (scan-chars TrueChars begin (Boolean Yes)),
+            (scan-chars TrueChars begin (:Value: Boolean Yes)),
         case ParseFalse {begin}:
-            (scan-chars FalseChars begin (Boolean No)),
+            (scan-chars FalseChars begin (:Value: Boolean No)),
         case ParseNull {begin}:
-            (scan-chars NullChars begin (Null)),
+            (scan-chars NullChars begin (:Value: Null)),
         case ParseBlanks {saved}:
             if $(pos = (input.length)):
                 OK (saved, pos),
             else:
                 let char := (input.get pos),
                 if $(Blanks contains char):
-                    go-next ParseBlanks { saved },
+                    go-next (ParseBlanks { saved }),
                 else:
                     OK (saved, pos),
         end
