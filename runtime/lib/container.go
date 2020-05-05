@@ -78,7 +78,15 @@ var ContainerFunctions = map[string] Value {
 	"seq-collect": func(seq Seq) Value {
 		return SeqCollect(seq)
 	},
-	"array-get": func(av Value, index uint) Value {
+	"array-get": func(av Value, index uint) SumValue {
+		var arr = ArrayFrom(av)
+		if index < arr.Length {
+			return Just(arr.GetItem(index))
+		} else {
+			return Na()
+		}
+	},
+	"array-force-get": func(av Value, index uint) Value {
 		var arr = ArrayFrom(av)
 		if index < arr.Length {
 			return arr.GetItem(index)
@@ -122,6 +130,9 @@ var ContainerFunctions = map[string] Value {
 	"array-iterate": func(av Value) Seq {
 		return ArrayFrom(av).Iterate()
 	},
+	"chrstr": func(char rune) String {
+		return [] rune { char }
+	},
 	"String from Int": func(n *big.Int) String {
 		return String(n.String())
 	},
@@ -154,9 +165,6 @@ var ContainerFunctions = map[string] Value {
 	},
 	"String from Uint64": func(n uint64) String {
 		return String(fmt.Sprint(n))
-	},
-	"String from Char": func(char rune) String {
-		return [] rune { char }
 	},
 	"String from Array": func(v Value) String {
 		var a = ArrayFrom(v)

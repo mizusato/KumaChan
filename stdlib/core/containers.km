@@ -39,8 +39,10 @@ public function every[T]: ( &(Seq[T],(&(T)(Bool))) Bool )
 public function iterate[T]: ( &(Array[T]) Seq[T] )
     native 'array-iterate';
 
-public function get[T]: ( &(Array[T],Number) T )  // TODO: --> Maybe[T]
+public function get[T]: ( &(Array[T],Number) Maybe[T] )
     native 'array-get';
+public function force-get[T]: ( &(Array[T],Number) T )
+    native 'array-force-get';
 public function length[T]: ( &(Array[T]) Number )
     native 'array-length';
 
