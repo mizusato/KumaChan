@@ -65,15 +65,15 @@ var ContainerFunctions = map[string] Value {
 			return h.Call(f, ToTuple2(prev, cur))
 		})
 	},
-	"seq-some": func(input Seq, f Value, h MachineHandle) Value {
-		return SeqSome(input, func(item Value) bool {
+	"seq-some": func(input Seq, f Value, h MachineHandle) SumValue {
+		return ToBool(SeqSome(input, func(item Value) bool {
 			return BoolFrom(h.Call(f, item).(SumValue))
-		})
+		}))
 	},
-	"seq-every": func(input Seq, f Value, h MachineHandle) Value {
-		return SeqEvery(input, func(item Value) bool {
+	"seq-every": func(input Seq, f Value, h MachineHandle) SumValue {
+		return ToBool(SeqEvery(input, func(item Value) bool {
 			return BoolFrom(h.Call(f, item).(SumValue))
-		})
+		}))
 	},
 	"seq-collect": func(seq Seq) Value {
 		return SeqCollect(seq)
@@ -89,7 +89,7 @@ var ContainerFunctions = map[string] Value {
 			))
 		}
 	},
-	"array-length": func(av Value, index uint) Value {
+	"array-length": func(av Value) Value {
 		var arr = ArrayFrom(av)
 		return arr.Length
 	},

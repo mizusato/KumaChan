@@ -116,8 +116,8 @@ private function parse: (&(ParserState)(Result[(Value,Number),String]))
                     OK ((:Value: JSON::Object (new-map [])), $(pos + 1)),
                 elif $(Blanks contains char):
                     go-next status,
-                else:
-                    switch (go-current (ParseString { begin: pos })):
+                elif $(char = ^"):
+                    switch (go-next (ParseString { begin: $(pos + 1) })):
                     case OK (key-val, pos):
                         switch key-val:
                         case JSON::String (json-str):
@@ -138,6 +138,8 @@ private function parse: (&(ParserState)(Result[(Value,Number),String]))
                     case NG (err):
                         err,
                     end,
+                else:
+                    NG ("double quote expected at #" (str pos)),
         case ParseObjectValue {entries,key}:
             switch (go-current ParseValue):
             case OK (val, pos):
@@ -199,7 +201,7 @@ private function parse: (&(ParserState)(Result[(Value,Number),String]))
                         let raw := (str (input.slice (range begin pos))),
                         switch (unquote raw):
                         case Just str:
-                            OK ((:Value: JSON::String str), pos),
+                            OK ((:Value: JSON::String str), $(pos + 1)),
                         case N/A:
                             NG ("invalid string at #" (str begin)),
                         end,

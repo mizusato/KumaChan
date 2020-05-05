@@ -1,0 +1,11 @@
+do (scanln ())
+    | then (&(line)(
+	let result := (json-parse line),
+	switch result:
+	case OK (v):
+	    (println (v | json-stringify)),
+	case NG err:
+	    (errorln err),
+	end
+    ))
+    | catch (&(err)(crash err));

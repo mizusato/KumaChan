@@ -7,34 +7,31 @@ import (
 
 
 type Scope struct {
-	Bindings     [] Binding
+	Bindings     [] *Binding
 	BindingMap   map[string] uint
 	BindingPeek  *uint
 	Children     [] *Scope
-	NextId       *uint
 }
 
 type Binding struct {
 	Name   string
 	Used   bool
 	Point  ErrorPoint
-	Id     uint
 }
 
 func MakeScope() *Scope {
 	return &Scope {
-		Bindings:    make([] Binding, 0),
+		Bindings:    make([] *Binding, 0),
 		BindingMap:  make(map[string] uint),
 		BindingPeek: new(uint),
 		Children:    make([] *Scope, 0),
-		NextId:      new(uint),
 	}
 }
 
 func MakeClosureScope(outer *Scope) *Scope {
-	var bindings = make([] Binding, len(outer.Bindings))
+	var bindings = make([] *Binding, len(outer.Bindings))
 	for i, b := range outer.Bindings {
-		bindings[i] = Binding {
+		bindings[i] = &Binding {
 			Name:  b.Name,
 			Used:  false,
 			Point: b.Point,
@@ -49,14 +46,13 @@ func MakeClosureScope(outer *Scope) *Scope {
 		BindingMap:  binding_map,
 		BindingPeek: new(uint),
 		Children:    make([] *Scope, 0),
-		NextId:      outer.NextId,
 	}
 	outer.Children = append(outer.Children, child)
 	return child
 }
 
 func MakeBranchScope(outer *Scope) *Scope {
-	var bindings = make([] Binding, len(outer.Bindings))
+	var bindings = make([] *Binding, len(outer.Bindings))
 	for i, b := range outer.Bindings {
 		bindings[i] = b
 	}
@@ -69,7 +65,6 @@ func MakeBranchScope(outer *Scope) *Scope {
 		BindingMap:  binding_map,
 		BindingPeek: outer.BindingPeek,
 		Children:    make([] *Scope, 0),
-		NextId:      outer.NextId,
 	}
 	outer.Children = append(outer.Children, child)
 	return child
@@ -82,13 +77,11 @@ func (scope *Scope) AddBinding(name string, point ErrorPoint) uint {
 	}
 	var list = &(scope.Bindings)
 	var offset = uint(len(*list))
-	*list = append(*list, Binding {
+	*list = append(*list, &Binding {
 		Name:  name,
 		Used:  false,
 		Point: point,
-		Id:    *(scope.NextId),
 	})
-	*(scope.NextId) += 1
 	var max = func(a uint, b uint) uint {
 		if (a > b) { return a } else { return b }
 	}
@@ -98,16 +91,16 @@ func (scope *Scope) AddBinding(name string, point ErrorPoint) uint {
 }
 
 func (scope *Scope) CollectUnused() ([] Binding) {
-	var all = make(map[uint] *Binding)
+	var all = make(map[int] *Binding)
 	var collect func(*Scope)
 	collect = func(scope *Scope) {
-		for _, b := range scope.Bindings {
-			var existing, exists = all[b.Id]
+		for index, b := range scope.Bindings {
+			var existing, exists = all[index]
 			if exists {
 				existing.Used = (existing.Used || b.Used)
 			} else {
-				var b_copied = b  // make copy more clearly
-				all[b.Id] = &b_copied
+				var b_copied = *b  // make a copy more explicitly
+				all[index] = &b_copied
 			}
 		}
 		for _, child := range scope.Children {
