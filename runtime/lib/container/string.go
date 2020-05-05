@@ -1,19 +1,36 @@
 package container
 
 import (
+	"reflect"
+	"unsafe"
+	"strings"
+	"unicode/utf8"
 	. "kumachan/error"
 	. "kumachan/runtime/common"
-	"reflect"
-	"unicode/utf8"
 )
 
 
-type String = []rune
+type Char = uint32
+type String = ([] Char)
 
 type Encoding  int
 const (
 	UTF8  Encoding  =  iota
 )
+
+func StringFromGoString(bytes string) String {
+	var str = make(String, 0, len(bytes) / 4)
+	for len(bytes) > 0 {
+		var char, size = utf8.DecodeRuneInString(bytes)
+		str = append(str, Char(char))
+		bytes = bytes[size:]
+	}
+	return str
+}
+
+func StringFromRuneSlice(runes ([] rune)) String {
+	return *(*([] Char))(unsafe.Pointer(&runes))
+}
 
 func StringForceDecode(bytes Bytes, e Encoding) String {
 	switch e {
@@ -21,7 +38,7 @@ func StringForceDecode(bytes Bytes, e Encoding) String {
 		var str = make(String, 0, len(bytes) / 4)
 		for len(bytes) > 0 {
 			var char, size = utf8.DecodeRune(bytes)
-			str = append(str, char)
+			str = append(str, Char(char))
 			bytes = bytes[size:]
 		}
 		return str
@@ -41,7 +58,7 @@ func StringDecode(bytes Bytes, e Encoding) (String, bool) {
 				//       to ensure this function to be invertible.
 				return nil, false
 			}
-			str = append(str, char)
+			str = append(str, Char(char))
 			bytes = bytes[size:]
 		}
 		return str, true
@@ -50,13 +67,21 @@ func StringDecode(bytes Bytes, e Encoding) (String, bool) {
 	}
 }
 
+func GoStringFromString(str String) string {
+	var buf strings.Builder
+	for _, char := range str {
+		buf.WriteRune(rune(char))
+	}
+	return buf.String()
+}
+
 func StringEncode(str String, e Encoding) Bytes {
 	switch e {
 	case UTF8:
 		var buf = make(Bytes, 0, len(str))
-		var chunk [4]byte
+		var chunk ([4] byte)
 		for _, r := range str {
-			var size = utf8.EncodeRune(chunk[:], r)
+			var size = utf8.EncodeRune(chunk[:], rune(r))
 			for i := 0; i < size; i += 1 {
 				buf = append(buf, chunk[i])
 			}
@@ -124,7 +149,7 @@ type StringSplitIterator struct {
 	LastIndex  uint
 }
 func (it *StringSplitIterator) GetItemType() reflect.Type {
-	return reflect.TypeOf([]rune {})
+	return reflect.TypeOf(StringFromGoString(""))
 }
 func (it *StringSplitIterator) Next() (Value, Seq, bool) {
 	if it == nil { return nil, nil, false }

@@ -33,7 +33,7 @@ type FloatLiteral struct {
 func CheckInteger(i ast.IntegerLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(i.Node)
 	var chars = i.Value
-	var abs_chars []rune
+	var abs_chars ([] rune)
 	if chars[0] == '-' {
 		abs_chars = chars[1:]
 	} else {
@@ -155,7 +155,7 @@ func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 		} else {
 			return nil, false
 		}
-	case stdlib.Int32, stdlib.Char:
+	case stdlib.Int32:
 		if value.IsInt64() {
 			var x = value.Int64()
 			if math.MinInt32 <= x && x <= math.MaxInt32 {
@@ -168,7 +168,7 @@ func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 		} else {
 			return nil, false
 		}
-	case stdlib.Uint32, stdlib.Dword:
+	case stdlib.Uint32, stdlib.Dword, stdlib.Char:
 		if value.IsUint64() {
 			var x = value.Uint64()
 			if x <= math.MaxUint32 {

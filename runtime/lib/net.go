@@ -10,7 +10,7 @@ import (
 
 var NetFunctions = map[string] interface{} {
 	"parse-url": func(str String) SumValue {
-		var url, err = url.Parse(string(str))
+		var url, err = url.Parse(GoStringFromString(str))
 		if err != nil {
 			return Na()
 		} else {
@@ -18,7 +18,7 @@ var NetFunctions = map[string] interface{} {
 		}
 	},
 	"url": func(str String) *url.URL {
-		var url, err = url.Parse(string(str))
+		var url, err = url.Parse(GoStringFromString(str))
 		if err != nil { panic(err) }
 		return url
 	},

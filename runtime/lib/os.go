@@ -29,8 +29,8 @@ func PathFrom(str string) Path {
 }
 
 var OS_Constants = map[string] Value {
-	"OS::Kind":    String(runtime.GOOS),
-	"OS::Arch":    String(runtime.GOARCH),
+	"OS::Kind":    StringFromGoString(runtime.GOOS),
+	"OS::Arch":    StringFromGoString(runtime.GOARCH),
 	"OS::Is64Bit": ToBool(uint64(^uintptr(0)) == ^uint64(0)),
 	"OS::Env":     GetEnv(),
 	"OS::Args":    GetArgs(),
@@ -42,7 +42,7 @@ var OS_Constants = map[string] Value {
 func GetEnv() Map {
 	var m = NewStrMap()
 	for _, item := range os.Environ() {
-		var str = String(item)
+		var str = StringFromGoString(item)
 		var k = make(String, 0)
 		var v = make(String, 0)
 		var cut = false
@@ -66,17 +66,17 @@ func GetArgs() ([] String) {
 	// TODO: further process may be useful to extinguish interpreter arguments
 	var args = make([] String, len(os.Args))
 	for i, raw := range os.Args {
-		args[i] = ([] rune)(raw)
+		args[i] = StringFromGoString(raw)
 	}
 	return args
 }
 
 var OS_Functions = map[string] Value {
 	"Path from String": func(str String) Path {
-		return PathFrom(string(str))
+		return PathFrom(GoStringFromString(str))
 	},
 	"String from Path": func(path Path) String {
-		return String(path.String())
+		return StringFromGoString(path.String())
 	},
 	"walk-dir": func(dir Path) rx.Effect {
 		return rx.WalkDir(dir.String()).Map(func(val rx.Object) rx.Object {
@@ -91,7 +91,7 @@ var OS_Functions = map[string] Value {
 		})
 	},
 	"file-state-name": func(state os.FileInfo) String {
-		return String(state.Name())
+		return StringFromGoString(state.Name())
 	},
 	"file-state-size": func(state os.FileInfo) uint64 {
 		return uint64(state.Size())
@@ -147,17 +147,21 @@ var OS_Functions = map[string] Value {
 	"file-read-char": func(f rx.File) rx.Effect {
 		return f.ReadChar()
 	},
-	"file-write-char": func(f rx.File, char rune) rx.Effect {
-		return f.WriteChar(char)
+	"file-write-char": func(f rx.File, char Char) rx.Effect {
+		return f.WriteChar(rune(char))
 	},
 	"file-read-line": func(f rx.File) rx.Effect {
-		return f.ReadLine()
+		return f.ReadLine().Map(func(line rx.Object) rx.Object {
+			return StringFromRuneSlice(line.([] rune))
+		})
 	},
-	"file-write-line": func(f rx.File, line ([] rune)) rx.Effect {
-		return f.WriteLine(string(line))
+	"file-write-line": func(f rx.File, line String) rx.Effect {
+		return f.WriteLine(GoStringFromString(line))
 	},
 	"file-read-lines": func(f rx.File) rx.Effect {
-		return f.ReadLines()
+		return f.ReadLines().Map(func(runes rx.Object) rx.Object {
+			return StringFromRuneSlice(runes.([] rune))
+		})
 	},
 	"exit": func(code uint8) rx.Effect {
 		return rx.CreateBlockingEffect(func() (rx.Object, bool) {

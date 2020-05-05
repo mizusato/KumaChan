@@ -1,23 +1,28 @@
 package checker
 
 import (
+	"unsafe"
+	"strings"
+	"math/big"
 	. "kumachan/error"
 	"kumachan/stdlib"
 	"kumachan/transformer/ast"
-	"math/big"
-	"strings"
 )
 
 
 func (impl StringLiteral) ExprVal() {}
 type StringLiteral struct {
-	Value  [] rune
+	Value  [] uint32
 }
 
 func (impl StringFormatter) ExprVal() {}
 type StringFormatter struct {
-	Segments  [] []rune
+	Segments  [] [] uint32
 	Arity     uint
+}
+
+func CharSliceFromRuneSlice(runes ([] rune)) ([] uint32) {
+	return *(*([] uint32))(unsafe.Pointer(&runes))
 }
 
 
@@ -29,21 +34,21 @@ func CheckString(s ast.StringLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
 			Args: make([]Type, 0),
 		},
 		Info:  info,
-		Value: StringLiteral { s.Value },
+		Value: StringLiteral { CharSliceFromRuneSlice(s.Value) },
 	}), nil
 }
 
 func CheckText(text ast.Text, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(text.Node)
 	var template = text.Template
-	var segments = make([] []rune, 0)
+	var segments = make([] [] uint32, 0)
 	var arity uint = 0
 	var buf strings.Builder
 	for _, char := range template {
 		if char == TextPlaceholder {
 			var seg = buf.String()
 			buf.Reset()
-			segments = append(segments, []rune(seg))
+			segments = append(segments, CharSliceFromRuneSlice([]rune(seg)))
 			arity += 1
 		} else {
 			buf.WriteRune(char)
@@ -51,7 +56,7 @@ func CheckText(text ast.Text, ctx ExprContext) (SemiExpr, *ExprError) {
 	}
 	var last = buf.String()
 	if last != "" {
-		segments = append(segments, []rune(last))
+		segments = append(segments, CharSliceFromRuneSlice([]rune(last)))
 	}
 	var elements = make([]Type, arity)
 	for i := uint(0); i < arity; i += 1 {
@@ -86,7 +91,7 @@ func CheckChar(char ast.CharLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
 		return LiftTyped(Expr {
 			Type:  __T_Char,
 			Value: SmallIntLiteral {
-				Value: r,
+				Value: uint32(r),
 			},
 			Info:  ctx.GetExprInfo(char.Node),
 		}), nil

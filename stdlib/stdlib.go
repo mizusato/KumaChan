@@ -140,7 +140,7 @@ func GetPrimitiveReflectType(name string) (reflect.Type, bool) {
 		return reflect.TypeOf(uint8(0)), true
 	case Uint16, Word:
 		return reflect.TypeOf(uint16(0)), true
-	case Uint32, Dword:
+	case Uint32, Dword, Char:
 		return reflect.TypeOf(uint32(0)), true
 	case Uint64, Qword:
 		return reflect.TypeOf(uint64(0)), true
@@ -148,7 +148,7 @@ func GetPrimitiveReflectType(name string) (reflect.Type, bool) {
 		return reflect.TypeOf(int8(0)), true
 	case Int16:
 		return reflect.TypeOf(int16(0)), true
-	case Int32, Char:
+	case Int32:
 		return reflect.TypeOf(int32(0)), true
 	case Int64:
 		return reflect.TypeOf(int64(0)), true

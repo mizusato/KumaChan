@@ -25,7 +25,7 @@ var DebuggingFunctions = map[string] interface{} {
 		return value
 	},
 	"panic": func(msg String) struct{} {
-		panic("programmed panic: " + string(msg))
+		panic("programmed panic: " + GoStringFromString(msg))
 	},
 	"crash": func(msg String, h MachineHandle) rx.Effect {
 		const bold = "\033[1m"
@@ -42,7 +42,7 @@ var DebuggingFunctions = map[string] interface{} {
 			)
 			fmt.Fprintf (
 				os.Stderr, "%v%s%v\n",
-				bold+red, string(msg), reset,
+				bold+red, GoStringFromString(msg), reset,
 			)
 			os.Exit(255)
 			panic("program should have crashed")

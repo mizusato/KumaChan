@@ -130,41 +130,41 @@ var ContainerFunctions = map[string] Value {
 	"array-iterate": func(av Value) Seq {
 		return ArrayFrom(av).Iterate()
 	},
-	"chrstr": func(char rune) String {
-		return [] rune { char }
+	"chrstr": func(char Char) String {
+		return [] Char { char }
 	},
 	"String from Int": func(n *big.Int) String {
-		return String(n.String())
+		return StringFromGoString(n.String())
 	},
 	"String from Number": func(x uint) String {
-		return String(fmt.Sprint(x))
+		return StringFromGoString(fmt.Sprint(x))
 	},
 	"String from Float": func(x float64) String {
-		return String(fmt.Sprint(x))
+		return StringFromGoString(fmt.Sprint(x))
 	},
 	"String from Int8": func(n int8) String {
-		return String(fmt.Sprint(n))
+		return StringFromGoString(fmt.Sprint(n))
 	},
 	"String from Int16": func(n int16) String {
-		return String(fmt.Sprint(n))
+		return StringFromGoString(fmt.Sprint(n))
 	},
 	"String from Int32": func(n int32) String {
-		return String(fmt.Sprint(n))
+		return StringFromGoString(fmt.Sprint(n))
 	},
 	"String from Int64": func(n int64) String {
-		return String(fmt.Sprint(n))
+		return StringFromGoString(fmt.Sprint(n))
 	},
 	"String from Uint8": func(n uint8) String {
-		return String(fmt.Sprint(n))
+		return StringFromGoString(fmt.Sprint(n))
 	},
 	"String from Uint16": func(n uint16) String {
-		return String(fmt.Sprint(n))
+		return StringFromGoString(fmt.Sprint(n))
 	},
 	"String from Uint32": func(n uint32) String {
-		return String(fmt.Sprint(n))
+		return StringFromGoString(fmt.Sprint(n))
 	},
 	"String from Uint64": func(n uint64) String {
-		return String(fmt.Sprint(n))
+		return StringFromGoString(fmt.Sprint(n))
 	},
 	"String from Array": func(v Value) String {
 		var a = ArrayFrom(v)
@@ -185,7 +185,7 @@ var ContainerFunctions = map[string] Value {
 		return StringForceDecode(bytes, UTF8)
 	},
 	"quote": func(str String) String {
-		var buf = make([] rune, 0, len(str)+2)
+		var buf = make([] Char, 0, len(str)+2)
 		buf = append(buf, '"')
 		for _, char := range str {
 			switch char {
@@ -199,12 +199,12 @@ var ContainerFunctions = map[string] Value {
 			case '\t':
 				buf = append(buf, '\\', 't')
 			default:
-				if strconv.IsPrint(char) {
+				if strconv.IsPrint(rune(char)) {
 					buf = append(buf, char)
 				} else {
-					var bin, err = json.Marshal(string([] rune { char }))
+					var bin, err = json.Marshal(string([] rune { rune(char) }))
 					if err != nil { panic("something went wrong") }
-					var escaped = ([] rune)(string(bin[1:len(bin)-1]))
+					var escaped = StringFromGoString(string(bin[1:len(bin)-1]))
 					buf = append(buf, escaped...)
 				}
 			}
@@ -213,20 +213,20 @@ var ContainerFunctions = map[string] Value {
 		return buf
 	},
 	"unquote": func(str String) SumValue {
-		var buf = make([] rune, 0)
-		var s = string(str)
+		var buf = make([] Char, 0)
+		var s = GoStringFromString(str)
 		for len(s) > 0 {
-			var char, _, rest, err = strconv.UnquoteChar(s, byte('"'))
+			var r, _, rest, err = strconv.UnquoteChar(s, byte('"'))
 			if err != nil {
 				return Na()
 			}
-			buf = append(buf, char)
+			buf = append(buf, Char(r))
 			s = rest
 		}
 		return Just(buf)
 	},
 	"parse-float": func(str String) SumValue {
-		var x, err = strconv.ParseFloat(string(str), 64)
+		var x, err = strconv.ParseFloat(GoStringFromString(str), 64)
 		if err != nil {
 			return Na()
 		} else {
@@ -262,7 +262,7 @@ var ContainerFunctions = map[string] Value {
 			var key, value = Tuple2From(str_arr.GetItem(i).(ProductValue))
 			var inserted, override = m.Inserted(key.(String), value)
 			if override {
-				var key_desc = strconv.Quote(string(key.(String)))
+				var key_desc = strconv.Quote(GoStringFromString(key.(String)))
 				panic("duplicate map key " + key_desc)
 			}
 			m = inserted

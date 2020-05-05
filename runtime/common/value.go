@@ -6,6 +6,7 @@ import (
 	"strconv"
 	. "kumachan/error"
 	"kumachan/stdlib"
+	"unsafe"
 )
 
 
@@ -68,8 +69,9 @@ func inspect(value Value, path []uintptr) ErrorMessage {
 	switch v := value.(type) {
 	case nil, struct{}:
 		msg.WriteText(TS_NORMAL, "()")
-	case []rune:
-		msg.WriteText(TS_NORMAL, strconv.Quote(string(v)))
+	case [] uint32:
+		var go_str = string(*(*([] rune))(unsafe.Pointer(&v)))
+		msg.WriteText(TS_NORMAL, strconv.Quote(go_str))
 	case reflect.Value:
 		msg.WriteText(TS_NORMAL, "reflect.Value")
 	case *reflect.Value:
