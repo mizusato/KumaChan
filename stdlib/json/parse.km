@@ -113,7 +113,7 @@ private function parse: (&(ParserState)(Result[(Value,Number),String]))
             else:
                 let char := (input.get pos),
                 if $(char = ^}):
-                    OK ((:Value: JSON::Object (new-map:[Value] [])), $(pos + 1)),
+                    OK ((:Value: JSON::Object (new-map [])), $(pos + 1)),
                 elif $(Blanks contains char):
                     go-next status,
                 else:

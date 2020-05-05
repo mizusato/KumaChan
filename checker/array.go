@@ -79,6 +79,17 @@ func AssignArrayTo(expected Type, array SemiTypedArray, info ExprInfo, ctx ExprC
 		if E.Name == __Array {
 			if len(E.Args) != 1 { panic("something went wrong") }
 			var item_expected = E.Args[0]
+			if len(array.Items) == 0 {
+				var empty_array = Expr {
+					Type:  NamedType {
+						Name: __Array,
+						Args: []Type { WildcardRhsType {} },
+					},
+					Value: Array { Items: [] Expr {}, ItemType: nil },
+					Info:  info,
+				}
+				return AssignTypedTo(expected, empty_array, ctx)
+			}
 			var items = make([]Expr, len(array.Items))
 			for i, item_semi := range array.Items {
 				var item, err = AssignTo(item_expected, item_semi, ctx)
