@@ -1,6 +1,6 @@
 // Debugging Types
-type Debug[T]  protected T;
-type Never[T]  protected T;
+type Debug[T] as T;
+type Never[T] protected T;
 
 // Debugging Functions
 public function trace[T]: ( &(T) Debug[T] )
