@@ -2,7 +2,7 @@ package checker
 
 import (
 	"kumachan/loader"
-	"kumachan/transformer/ast"
+	"kumachan/parser/ast"
 	"strings"
 )
 

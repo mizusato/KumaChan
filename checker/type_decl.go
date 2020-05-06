@@ -4,7 +4,7 @@ import (
 	. "kumachan/error"
 	"kumachan/loader"
 	"kumachan/runtime/common"
-	"kumachan/transformer/ast"
+	"kumachan/parser/ast"
 )
 
 

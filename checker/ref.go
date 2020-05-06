@@ -3,7 +3,7 @@ package checker
 import (
 	. "kumachan/error"
 	"kumachan/loader"
-	"kumachan/transformer/ast"
+	"kumachan/parser/ast"
 )
 
 

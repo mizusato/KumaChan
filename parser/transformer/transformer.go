@@ -6,7 +6,7 @@ import "strings"
 import "kumachan/parser"
 import "kumachan/parser/cst"
 import "kumachan/parser/syntax"
-import . "kumachan/transformer/ast"
+import . "kumachan/parser/ast"
 
 /**
  *  Syntax Tree Transformer

@@ -15,7 +15,7 @@ import (
     "kumachan/parser/syntax"
     "kumachan/runtime/common"
     "kumachan/runtime/vm"
-    "kumachan/transformer"
+    "kumachan/parser/transformer"
 )
 
 

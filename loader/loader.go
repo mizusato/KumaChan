@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	. "kumachan/error"
 	"kumachan/parser"
-	"kumachan/transformer"
-	"kumachan/transformer/ast"
+	"kumachan/parser/transformer"
+	"kumachan/parser/ast"
 	"kumachan/parser/syntax"
 	"kumachan/stdlib"
 )

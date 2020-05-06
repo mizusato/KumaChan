@@ -1,6 +1,6 @@
 package checker
 
-import "kumachan/transformer/ast"
+import "kumachan/parser/ast"
 
 
 func CheckCast(cast ast.Cast, ctx ExprContext) (SemiExpr, *ExprError) {

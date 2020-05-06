@@ -2,7 +2,7 @@ package checker
 
 import (
 	"kumachan/stdlib"
-	"kumachan/transformer/ast"
+	"kumachan/parser/ast"
 	"math"
 	"math/big"
 	"strconv"
