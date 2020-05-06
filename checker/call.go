@@ -70,7 +70,7 @@ func CheckCall(call ast.Call, ctx ExprContext) (SemiExpr, *ExprError) {
 func CheckSingleCall(f SemiExpr, arg SemiExpr, info ExprInfo, ctx ExprContext) (SemiExpr, *ExprError) {
 	switch f_concrete := f.Value.(type) {
 	case TypedExpr:
-		var t = f_concrete.Type
+		var t = UnboxAsIs(f_concrete.Type, ctx.ModuleInfo.Types)
 		switch T := t.(type) {
 		case AnonymousType:
 			switch r := T.Repr.(type) {
