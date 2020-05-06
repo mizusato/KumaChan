@@ -139,7 +139,11 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 	// 1. If the expected type is not specified,
 	//    no further process is required.
 	if expected == nil {
-		return expr, nil
+		return Expr {
+			Type:  UnboxAsIs(expr.Type, ctx.ModuleInfo.Types),
+			Value: expr.Value,
+			Info:  expr.Info,
+		}, nil
 	}
 	// Try Direct
 	if DirectAssignableTo(expected, expr.Type, ctx) {

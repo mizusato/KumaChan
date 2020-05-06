@@ -180,12 +180,8 @@ func (ctx ExprContext) WithShadowingPatternMatching(p Pattern) ExprContext {
 	var added = make(map[string]Type)
 	switch P := p.Concrete.(type) {
 	case TrivialPattern:
-		var unboxed, as_is = UnboxAsIs(P.ValueType, ctx.ModuleInfo.Types)
-		if as_is {
-			added[P.ValueName] = unboxed
-		} else {
-			added[P.ValueName] = P.ValueType
-		}
+		var reg = ctx.ModuleInfo.Types
+		added[P.ValueName] = UnboxAsIs(P.ValueType, reg)
 	case TuplePattern:
 		for _, item := range P.Items {
 			added[item.Name] = item.Type
