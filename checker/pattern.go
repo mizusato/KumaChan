@@ -180,7 +180,12 @@ func (ctx ExprContext) WithShadowingPatternMatching(p Pattern) ExprContext {
 	var added = make(map[string]Type)
 	switch P := p.Concrete.(type) {
 	case TrivialPattern:
-		added[P.ValueName] = P.ValueType
+		var unboxed, as_is = UnboxAsIs(P.ValueType, ctx.ModuleInfo.Types)
+		if as_is {
+			added[P.ValueName] = unboxed
+		} else {
+			added[P.ValueName] = P.ValueType
+		}
 	case TuplePattern:
 		for _, item := range P.Items {
 			added[item.Name] = item.Type
@@ -196,45 +201,3 @@ func (ctx ExprContext) WithShadowingPatternMatching(p Pattern) ExprContext {
 	return new_ctx
 }
 
-/*
-func (ctx ExprContext) WithPatternMatching(p Pattern) (ExprContext, *ExprError) {
-	var err_result = func(e ConcreteExprError) (ExprContext, *ExprError) {
-		return ExprContext{}, &ExprError {
-			Point:    p.Point,
-			Concrete: e,
-		}
-	}
-	var check = func(added map[string]Type) (ExprContext, *ExprError) {
-		var new_ctx, shadowed = ctx.WithAddedLocalValues(added)
-		if shadowed != "" {
-			return err_result(E_DuplicateBinding { shadowed })
-		} else {
-			return new_ctx, nil
-		}
-	}
-	switch P := p.Concrete.(type) {
-	case TrivialPattern:
-		if P.ValueName == IgnoreMark {
-			return err_result(E_EntireValueIgnored {})
-		} else {
-			var added = make(map[string]Type)
-			added[P.ValueName] = P.ValueType
-			return check(added)
-		}
-	case TuplePattern:
-		var added = make(map[string]Type)
-		for _, item := range P.Items {
-			added[item.Name] = item.Type
-		}
-		return check(added)
-	case BundlePattern:
-		var added = make(map[string]Type)
-		for _, item := range P.Items {
-			added[item.Name] = item.Type
-		}
-		return check(added)
-	default:
-		panic("impossible branch")
-	}
-}
-*/

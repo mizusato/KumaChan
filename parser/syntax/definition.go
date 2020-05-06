@@ -79,7 +79,7 @@ func GetIdentifierFullRegexp() *regexp.Regexp {
 
 var __ConditionalKeywords = [...] string {
     "@import", "@from",
-    "@type", "@union", "@native", "@protected", "@opaque",
+    "@type", "@union", "@native", "@as", "@protected", "@opaque",
     "@private", "@public", "@function", "@const", "@macro", "@do",
     "@default", "@end", "@lambda", "@rec",
 }
@@ -118,7 +118,7 @@ var __SyntaxDefinition = [...] string {
               "more_names? = , name! more_names",
           "more_decl_types? = decl_type more_decl_types",
         "boxed_type = box_option inner_type",
-          "box_option? = @protected | @opaque",
+          "box_option? = @as | @protected | @opaque",
           "inner_type? = type",
     "decl_func = scope @function name! type_params :! signature! body ;!",
       "scope = @public | @private",

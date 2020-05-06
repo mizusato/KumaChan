@@ -89,6 +89,7 @@ type NativeType struct {
 func (impl BoxedType) TypeValue() {}
 type BoxedType struct {
     Node                     `part:"boxed_type"`
+    AsIs       bool          `option:"box_option.@as"`
     Protected  bool          `option:"box_option.@protected"`
     Opaque     bool          `option:"box_option.@opaque"`
     Inner      MaybeType     `part_opt:"inner_type.type"`

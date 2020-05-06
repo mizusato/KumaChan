@@ -39,7 +39,7 @@ public function parse: (&(String)(Result[Value,String]))
         case OK (val, _):
             OK val,
         case NG (err):
-            err,
+            NG err,
         end
     ));
 
@@ -60,7 +60,7 @@ private function parse: (&(ParserState)(Result[(Value,Number),String]))
                         status: ParseBlanks { saved: value }
                     }),
                 case NG err:
-                    err,
+                    NG err,
                 end
             )),
         let go-next: (&(ParserStatus)(Result[(Value,Number),String]))
@@ -140,7 +140,7 @@ private function parse: (&(ParserState)(Result[(Value,Number),String]))
                             panic 'impossible branch',
                         end,
                     case NG (err):
-                        err,
+                        NG err,
                     end,
                 else:
                     NG ("double quote expected at #" (str pos)),
@@ -152,7 +152,7 @@ private function parse: (&(ParserState)(Result[(Value,Number),String]))
                     entries: $((key,val) cons entries)
                 }),
             case NG (err):
-                err,
+                NG err,
             end,
         case ParseObjectNext {entries}:
             switch (input.get pos):
@@ -181,7 +181,7 @@ private function parse: (&(ParserState)(Result[(Value,Number),String]))
                             items: $(val cons items)
                         }),
                     case NG err:
-                        err,
+                        NG err,
                     end,
             end,
         case ParseArrayNext {items}:

@@ -276,12 +276,14 @@ func TypeValFrom(tv ast.TypeValue, ctx TypeContext, raw RawTypeRegistry) (TypeVa
 			}
 			return Boxed {
 				InnerType: inner_type,
+				AsIs:      v.AsIs,
 				Protected: v.Protected,
 				Opaque:    v.Opaque,
 			}, nil
 		} else {
 			return Boxed {
 				InnerType: AnonymousType { Unit{} },
+				AsIs:      v.AsIs,
 				Protected: v.Protected,
 				Opaque:    v.Opaque,
 			}, nil
