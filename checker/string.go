@@ -27,6 +27,18 @@ func CharSliceFromRuneSlice(runes ([] rune)) ([] uint32) {
 
 
 func CheckString(s ast.StringLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
+	var value = make([] uint32, len(s.First.Value))
+	copy(value, CharSliceFromRuneSlice(s.First.Value))
+	for _, part := range s.Parts {
+		switch p := part.Part.(type) {
+		case ast.StringText:
+			value = append(value, CharSliceFromRuneSlice(p.Value)...)
+		case ast.CharLiteral:
+			var char, err = GetChar(p, ctx)
+			if err != nil { return SemiExpr{}, err }
+			value = append(value, char)
+		}
+	}
 	var info = ctx.GetExprInfo(s.Node)
 	return LiftTyped(Expr {
 		Type:  NamedType {
@@ -34,33 +46,46 @@ func CheckString(s ast.StringLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
 			Args: make([]Type, 0),
 		},
 		Info:  info,
-		Value: StringLiteral { CharSliceFromRuneSlice(s.Value) },
+		Value: StringLiteral { value },
 	}), nil
 }
 
-func CheckText(text ast.Text, ctx ExprContext) (SemiExpr, *ExprError) {
-	var info = ctx.GetExprInfo(text.Node)
-	var template = text.Template
+func CheckFormatter(formatter ast.Formatter, ctx ExprContext) (SemiExpr, *ExprError) {
+	var template = make([] uint32, len(formatter.First.Template))
+	copy(template, CharSliceFromRuneSlice(formatter.First.Template))
+	var is_raw_char = make(map[uint] bool)
+	for _, part := range formatter.Parts {
+		switch p := part.Part.(type) {
+		case ast.FormatterText:
+			template = append(template, CharSliceFromRuneSlice(p.Template)...)
+		case ast.CharLiteral:
+			var char, err = GetChar(p, ctx)
+			if err != nil { return SemiExpr{}, err }
+			is_raw_char[uint(len(template))] = true
+			template = append(template, char)
+		}
+	}
+	var info = ctx.GetExprInfo(formatter.Node)
 	var segments = make([] [] uint32, 0)
 	var arity uint = 0
 	var buf strings.Builder
-	for _, char := range template {
-		if char == TextPlaceholder {
+	for i, char := range template {
+		if char == TextPlaceholder && !(is_raw_char[uint(i)]) {
 			var seg = buf.String()
 			buf.Reset()
 			segments = append(segments, CharSliceFromRuneSlice([]rune(seg)))
 			arity += 1
 		} else {
-			buf.WriteRune(char)
+			buf.WriteRune(rune(char))
 		}
 	}
 	var last = buf.String()
 	if last != "" {
 		segments = append(segments, CharSliceFromRuneSlice([]rune(last)))
 	}
-	var elements = make([]Type, arity)
+	var elements = make([] Type, arity)
 	for i := uint(0); i < arity; i += 1 {
-		elements[i] = NamedType { Name: __String, Args: make([]Type, 0) }
+		elements[i] = NamedType { Name: __String, Args: make([] Type, 0) }
 	}
 	var input Type
 	if len(elements) == 0 {
@@ -72,7 +97,7 @@ func CheckText(text ast.Text, ctx ExprContext) (SemiExpr, *ExprError) {
 	}
 	var t Type = AnonymousType { Func {
 		Input:  input,
-		Output: NamedType { Name: __String, Args: make([]Type, 0) },
+		Output: NamedType { Name: __String, Args: make([] Type, 0) },
 	} }
 	return LiftTyped(Expr {
 		Type:  t,
@@ -85,19 +110,25 @@ func CheckText(text ast.Text, ctx ExprContext) (SemiExpr, *ExprError) {
 }
 
 func CheckChar(char ast.CharLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
+	var char_value, err = GetChar(char, ctx)
+	if err != nil { return SemiExpr{}, err }
+	return LiftTyped(Expr {
+		Type:  __T_Char,
+		Value: SmallIntLiteral {
+			Value: char_value,
+		},
+		Info:  ctx.GetExprInfo(char.Node),
+	}), nil
+}
+
+func GetChar(char ast.CharLiteral, ctx ExprContext) (uint32, *ExprError) {
 	var raw = char.Value
 	if len(raw) < 2 { panic("something went wrong") }
-	var use_rune = func(r rune) (SemiExpr, *ExprError) {
-		return LiftTyped(Expr {
-			Type:  __T_Char,
-			Value: SmallIntLiteral {
-				Value: uint32(r),
-			},
-			Info:  ctx.GetExprInfo(char.Node),
-		}), nil
+	var use_rune = func(r rune) (uint32, *ExprError) {
+		return uint32(r), nil
 	}
-	var invalid = func() (SemiExpr, *ExprError) {
-		return SemiExpr{}, &ExprError {
+	var invalid = func() (uint32, *ExprError) {
+		return ^(uint32(0)), &ExprError {
 			Point:    ErrorPointFrom(char.Node),
 			Concrete: E_InvalidCharacter { string(raw) },
 		}
@@ -128,11 +159,7 @@ func CheckChar(char ast.CharLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
 			if !ok1 { return invalid() }
 			var val, ok2 = AdaptInteger(stdlib.Char, n)
 			if !ok2 { return invalid() }
-			return LiftTyped(Expr {
-				Type:  __T_Char,
-				Value: val,
-				Info:  ctx.GetExprInfo(char.Node),
-			}), nil
+			return val.(SmallIntLiteral).Value.(uint32), nil
 		default:
 			return invalid()
 		}

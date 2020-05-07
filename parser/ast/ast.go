@@ -2,11 +2,11 @@ package ast
 
 import (
     "fmt"
+    "reflect"
+    "strings"
     "kumachan/parser/cst"
     "kumachan/parser/scanner"
     "kumachan/parser/syntax"
-    "reflect"
-    "strings"
 )
 
 
@@ -98,12 +98,15 @@ var __NodeRegistry = []interface{} {
     Cps {},
     CpsBinding {},
     Infix {},
-    Text {},
     InlineRef {},
-    VariousLiteral {},
     IntegerLiteral {},
     FloatLiteral {},
     StringLiteral {},
+    VariousStringPart {},
+    StringText {},
+    Formatter {},
+    VariousFormatterPart {},
+    FormatterText {},
     CharLiteral {},
 }
 

@@ -46,11 +46,6 @@ type CpsBinding struct {
 	Type     MaybeType        `part_opt:"binding_type.type"`
 }
 
-func (impl Array) Term() {}
-type Array struct {
-	Node             `part:"array"`
-	Items  [] Expr   `list_more:"exprlist" item:"expr"`
-}
 
 func (impl Infix) Term() {}
 type Infix struct {
@@ -58,12 +53,6 @@ type Infix struct {
 	Operand1  VariousTerm   `part:"operand1.term"`
 	Operand2  VariousTerm   `part:"operand2.term"`
 	Operator  VariousTerm   `part:"operator.term"`
-}
-
-func (impl Text) Term() {}
-type Text struct {
-	Node                `part:"text"`
-	Template  [] rune   `content:"Text"`
 }
 
 func (impl InlineRef) Term() {}
@@ -75,34 +64,21 @@ type InlineRef struct {
 	TypeArgs  [] VariousType   `list_more:"inline_type_args" item:"type"`
 }
 
-func (impl VariousLiteral) Term() {}
-type VariousLiteral struct {
-	Node               `part:"literal"`
-	Literal  Literal   `use:"first"`
+func (impl Array) Term() {}
+type Array struct {
+	Node             `part:"array"`
+	Items  [] Expr   `list_more:"exprlist" item:"expr"`
 }
-type Literal interface { Literal() }
 
-
-func (impl IntegerLiteral) Literal() {}
+func (impl IntegerLiteral) Term() {}
 type IntegerLiteral struct {
 	Node             `part:"int"`
 	Value  [] rune   `content:"Int"`
 }
 
-func (impl FloatLiteral) Literal() {}
+func (impl FloatLiteral) Term() {}
 type FloatLiteral struct {
 	Node             `part:"float"`
 	Value  [] rune   `content:"Float"`
 }
 
-func (impl StringLiteral) Literal() {}
-type StringLiteral struct {
-	Node             `part:"string"`
-	Value  [] rune   `content:"String"`
-}
-
-func (impl CharLiteral) Literal() {}
-type CharLiteral struct {
-	Node             `part:"char"`
-	Value  [] rune   `content:"Char"`
-}

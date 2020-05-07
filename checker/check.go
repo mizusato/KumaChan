@@ -293,27 +293,22 @@ func CheckTerm(term ast.VariousTerm, ctx ExprContext) (SemiExpr, *ExprError) {
 		return CheckBundle(t, ctx)
 	case ast.Get:
 		return CheckGet(t, ctx)
-	case ast.Array:
-		return CheckArray(t, ctx)
-	case ast.Text:
-		return CheckText(t, ctx)
-	case ast.VariousLiteral:
-		switch l := t.Literal.(type) {
-		case ast.IntegerLiteral:
-			return CheckInteger(l, ctx)
-		case ast.FloatLiteral:
-			return CheckFloat(l, ctx)
-		case ast.StringLiteral:
-			return CheckString(l, ctx)
-		case ast.CharLiteral:
-			return CheckChar(l, ctx)
-		default:
-			panic("impossible branch")
-		}
-	case ast.InlineRef:
-		return CheckRef(t, ctx)
 	case ast.Infix:
 		return CheckInfix(t, ctx)
+	case ast.InlineRef:
+		return CheckRef(t, ctx)
+	case ast.Array:
+		return CheckArray(t, ctx)
+	case ast.IntegerLiteral:
+		return CheckInteger(t, ctx)
+	case ast.FloatLiteral:
+		return CheckFloat(t, ctx)
+	case ast.StringLiteral:
+		return CheckString(t, ctx)
+	case ast.Formatter:
+		return CheckFormatter(t, ctx)
+	case ast.CharLiteral:
+		return CheckChar(t, ctx)
 	default:
 		panic("impossible branch")
 	}
@@ -321,23 +316,23 @@ func CheckTerm(term ast.VariousTerm, ctx ExprContext) (SemiExpr, *ExprError) {
 
 
 func TypeCheck(entry *loader.Module, raw_index loader.Index) (
-	*CheckedModule, Index, []E,
+	*CheckedModule, Index, [] E,
 ) {
 	var types, err1 = RegisterTypes(entry, raw_index)
-	if err1 != nil { return nil, nil, []E { err1 } }
+	if err1 != nil { return nil, nil, [] E { err1 } }
 	var constants = make(ConstantStore)
 	var _, err2 = CollectConstants(entry, types, constants)
-	if err2 != nil { return nil, nil, []E { err2 } }
+	if err2 != nil { return nil, nil, [] E { err2 } }
 	var functions = make(FunctionStore)
 	var _, err3 = CollectFunctions(entry, types, functions)
-	if err3 != nil { return nil, nil, []E { err3 } }
+	if err3 != nil { return nil, nil, [] E { err3 } }
 	var macros = make(MacroStore)
 	var _, err4 = CollectMacros(entry, macros)
-	if err4 != nil { return nil, nil, []E { err4 } }
+	if err4 != nil { return nil, nil, [] E { err4 } }
 	for mod_name, _ := range raw_index {
 		for name, f := range functions[mod_name] {
 			var macro, exists = macros[mod_name][name]
-			if exists { return nil, nil, []E { &FunctionError {
+			if exists { return nil, nil, [] E { &FunctionError {
 				Point:    ErrorPointFrom(f[0].Function.Node),
 				Concrete: E_FunctionConflictWithMacro {
 					Name:   name,
@@ -359,7 +354,7 @@ func TypeCheck(entry *loader.Module, raw_index loader.Index) (
 }
 
 func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
-	*CheckedModule, []E,
+	*CheckedModule, [] E,
 ) {
 	var mod_name = mod.Name
 	var existing, exists = index[mod_name]
@@ -376,7 +371,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 		Functions: functions,
 		Macros:    macros,
 	}
-	var errors = make([]E, 0)
+	var errors = make([] E, 0)
 	var imported = make(map[string] *CheckedModule)
 	for alias, imported_item := range mod.ImpMap {
 		var checked, errs = TypeCheckModule(imported_item, index, ctx)

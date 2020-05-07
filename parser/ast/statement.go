@@ -9,9 +9,9 @@ type Statement interface { Statement() }
 
 func (impl Import) Statement() {}
 type Import struct {
-    Node                  `part:"import"`
-    Name  Identifier      `part:"name"`
-    Path  StringLiteral   `part:"string"`
+    Node               `part:"import"`
+    Name  Identifier   `part:"name"`
+    Path  StringText   `part:"string_text"`
 }
 type MaybeIdentifier interface { MaybeIdentifier() }
 func (impl Identifier) MaybeIdentifier() {}
@@ -42,8 +42,8 @@ type ConstValue interface { ConstValue() }
 func (impl NativeRef) ConstValue() {}
 func (impl NativeRef) Body() {}
 type NativeRef struct {
-    Node                `part:"native"`
-    Id  StringLiteral   `part:"string"`
+    Node               `part:"native"`
+    Id    StringText   `part:"string_text"`
 }
 
 func (impl DeclFunction) Statement() {}

@@ -27,8 +27,8 @@ const IdentifierRegexp = `[^`+Symbols+Blanks+LF+`]+`
 const IdentifierFullRegexp = "^" + IdentifierRegexp + "$"
 
 var __Tokens = [...] Token {
-    Token { Name: "String",  Pattern: r(`'[^']*'`) },
-    Token { Name: "Text",    Pattern: r(`"[^"]*"`) },
+    Token { Name: "SqStr",   Pattern: r(`'[^']*'`) },
+    Token { Name: "DqStr",   Pattern: r(`"[^"]*"`) },
     Token { Name: "Comment", Pattern: r(`/\*([^\*/]|\*[^/]|[^\*]/)*\*/`) },
     Token { Name: "Comment", Pattern: r(`//[^`+LF+`]*`) },
     Token { Name: "Pragma",  Pattern: r(`#[^`+LF+`]*`) },
@@ -57,9 +57,9 @@ var __Tokens = [...] Token {
     Token { Name: ":=",      Pattern: r(`\:\=`) },
     Token { Name: ":",       Pattern: r(`\:`) },
     Token { Name: ";",       Pattern: r(`\;`) },
-    Token { Name: "~",       Pattern: r(`\~`) },
-    Token { Name: "`",       Pattern: r("`") },
+    Token { Name: "`",       Pattern: r("`") },   // Reserved
     Token { Name: "$",       Pattern: r(`\$`) },
+    Token { Name: "~",       Pattern: r(`\~`) },
     Token { Name: "&",       Pattern: r(`\&`) },
     Token { Name: "|",       Pattern: r(`\|`) },
     Token { Name: "If",      Pattern: r(`if`),        Keyword: true },
@@ -124,7 +124,7 @@ var __SyntaxDefinition = [...] string {
       "scope = @public | @private",
       "signature = repr_func",
       "body = native | lambda!",
-        "native = @native string!",
+        "native = @native string_text!",
         "lambda = ( lambda_header pattern! expr! )!",
           "pattern = pattern_trivial | pattern_tuple | pattern_bundle",
             "pattern_trivial = name",
@@ -141,7 +141,9 @@ var __SyntaxDefinition = [...] string {
         "pipe_op = _bar1 | . ",
         "pipe_func = term!",
         "pipe_arg? = terms",
-    "term = cast | lambda | multi_switch | switch | if | block | cps | bundle | get | tuple | infix | array | text | literal | inline_ref",
+    "term = cast | lambda | multi_switch | switch | if " +
+        "| block | cps | bundle | get | tuple | infix | inline_ref " +
+        "| array | int | float | formatter | string | char",
       "cast = ( : type! :! expr! )!",
       "switch = Switch expr :! branch_list ,! @end!",
         "branch_list = branch! more_branches",
@@ -189,23 +191,18 @@ var __SyntaxDefinition = [...] string {
         "operand1 = term!",
         "operator = term!",
         "operand2 = term!",
-      "array = [ ] | [ exprlist ]!",
-      "text = Text",
-      "literal = string | int | float | char",
-        "string = String",
-        "int = Int",
-        "float = Float",
-        "char = Char",
       "inline_ref = module_prefix name inline_type_args",
         "inline_type_args? = : [ type! more_types ]!",
-    // TODO: compile-time concatenated string & text (with chars)
-    //       e.g.
-    //         'Hello' \n 'World' ^!
-    //         ("Number " ^# "#") (str! n)   // explicit ^# as raw #
-    // TODO: l10n message constants (type: (lambda {...} String))
-    //       message NumRecords { name: String, count: Int }:
-    //           number:   count,
-    //           plural:   'The table ' (name) ' has ' (count) '  records' \n,
-    //           singular: 'The table ' (name) ' has ' (count) ' record' \n
-    // TODO: bytes literal and compact array literal
+      "array = [ ] | [ exprlist ]!",
+      "int = Int",
+      "float = Float",
+      "formatter = formatter_text formatter_parts",
+        "formatter_parts? = .. formatter_part! formatter_parts",
+        "formatter_part = formatter_text | char",
+        "formatter_text = DqStr",
+      "string = string_text string_parts",
+        "string_parts? = .. string_part! string_parts",
+        "string_part = string_text | char",
+        "string_text = SqStr",
+      "char = Char",
 }
