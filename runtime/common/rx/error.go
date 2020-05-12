@@ -1,7 +1,7 @@
 package rx
 
 
-const invalid_no_except = "The effect that assumed to be a no-exception effect has thrown an error"
+const invalid_no_except = "An effect that assumed to be a no-exception effect has thrown an error"
 
 func Throw(e Object) Effect {
 	return Effect { func(_ Scheduler, ob *observer) {
@@ -11,7 +11,7 @@ func Throw(e Object) Effect {
 
 func (e Effect) NoExcept() Effect {
 	return Effect{ func(sched Scheduler, ob *observer) {
-		sched.run(e, &observer{
+		sched.run(e, &observer {
 			context:  ob.context,
 			next:     ob.next,
 			error:    func(_ Object) {
@@ -50,7 +50,7 @@ func (e Effect) CatchRetry(f func(Object)Effect) Effect {
 			},
 			error: func(err Object) {
 				var caught_effect =
-					f(err).NoExcept().SingleThen(func(retry Object) Effect {
+					f(err).NoExcept().Then(func(retry Object) Effect {
 						if retry.(bool) {
 							return try
 						} else {

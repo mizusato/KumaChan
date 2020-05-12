@@ -1,9 +1,5 @@
 package rx
 
-import (
-	"context"
-)
-
 
 type Object = interface{}
 
@@ -26,40 +22,89 @@ type observer struct {
 }
 
 type Context struct {
-	raw       context.Context
-	disposed  bool
-	children  map[*Context] struct{}
+	children   map[*Context] struct{}
+	disposed   bool
+	cancel     chan struct{}
+	terminate  chan struct{}
 }
 
-type Dispose func()
+type disposeFunc func(disposeBehaviour)
+type disposeBehaviour int
+const (
+	behaviour_cancel disposeBehaviour = iota
+	behaviour_terminate
+)
+
+var background = &Context {
+	children:  make(map[*Context] struct{}),
+	disposed:  false,
+	cancel:    nil,
+	terminate: nil,
+}
 
 func Background() *Context {
-	return &Context {
-		raw:      context.Background(),
-		children: make(map[*Context] struct{}),
+	return background
+}
+
+func (ctx *Context) disposable() bool {
+	return (ctx != background)
+}
+
+func (ctx *Context) dispose_recursively(behaviour disposeBehaviour) {
+	if !(ctx.disposable()) { panic("something went wrong") }
+	if !(ctx.disposed) {
+		ctx.disposed = true
+		for child, _ := range ctx.children {
+			child.dispose_recursively(behaviour)
+		}
+		switch behaviour {
+		case behaviour_cancel:
+			close(ctx.cancel)
+		case behaviour_terminate:
+			close(ctx.terminate)
+		default:
+			panic("impossible branch")
+		}
 	}
 }
 
-func (ctx *Context) CreateChild() (*Context, Dispose) {
-	var dispose_recursively func(*Context)
-	dispose_recursively = func(ctx *Context) {
-		ctx.disposed = true
-		for child, _ := range ctx.children {
-			dispose_recursively(child)
-		}
-	}
-	var child_raw, cancel_raw = context.WithCancel(ctx.raw)
+func (ctx *Context) create_disposable_child() (*Context, disposeFunc) {
 	var child = &Context {
-		raw:      child_raw,
-		disposed: false,
-		children: make(map[*Context] struct{}),
+		children:  make(map[*Context] struct{}),
+		disposed:  false,
+		cancel:    make(chan struct{}),
+		terminate: make(chan struct{}),
 	}
 	ctx.children[child] = struct{}{}
-	return child, func() {
-		if child.disposed { return }
-		delete(ctx.children, child)
-		dispose_recursively(child)
-		cancel_raw()
+	return child, func(behaviour disposeBehaviour) {
+		if !(child.disposed) {
+			delete(ctx.children, child)
+			child.dispose_recursively(behaviour)
+		}
+	}
+}
+
+func (ctx *Context) AlreadyCancelled() bool {
+	if ctx.disposable() {
+		select {
+		case <- ctx.cancel:
+			return true
+		default:
+			return false
+		}
+	} else {
+		return false
+	}
+}
+
+func (ctx *Context) WaitDispose(handleCancel func()) {
+	if ctx.disposable() {
+		select {
+		case <- ctx.cancel:
+			handleCancel()
+		case <- ctx.terminate:
+			// do nothing
+		}
 	}
 }
 
@@ -76,17 +121,8 @@ type Receiver struct {
 	Terminate  chan <- struct {}
 }
 
-func (s Sender) Context() context.Context {
-	return s.ob.context.raw
-}
-
-func (s Sender) CancelSignal() (<- chan struct{}, bool) {
-	var done = s.ob.context.raw.Done()
-	if done != nil {
-		return done, true
-	} else {
-		return nil, false
-	}
+func (s Sender) Context() *Context {
+	return s.ob.context
 }
 
 func (s Sender) Next(x Object) {

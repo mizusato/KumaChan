@@ -3,7 +3,7 @@ package rx
 
 func Merge(effects []Effect) Effect {
 	return Effect { func(sched Scheduler, ob *observer) {
-		var ctx, dispose = ob.context.CreateChild()
+		var ctx, dispose = ob.context.create_disposable_child()
 		var c = new_collector(ob, dispose)
 		for _, item := range effects {
 			c.new_child()
@@ -26,8 +26,8 @@ func Merge(effects []Effect) Effect {
 
 func (e Effect) MergeMap(f func(Object)Effect) Effect {
 	return Effect { func(sched Scheduler, ob *observer) {
-		var ctx, dispose = ob.context.CreateChild()
-		var c = new_collector(ob, dispose)
+		var ctx, ctx_dispose = ob.context.create_disposable_child()
+		var c = new_collector(ob, ctx_dispose)
 		sched.run(e, &observer {
 			context: ctx,
 			next: func(x Object) {
@@ -59,12 +59,12 @@ func (e Effect) MergeMap(f func(Object)Effect) Effect {
 
 type collector struct {
 	observer          *observer
-	dispose           func()
+	dispose           disposeFunc
 	num_children      uint
 	no_more_children  bool
 }
 
-func new_collector(ob *observer, dispose func()) *collector {
+func new_collector(ob *observer, dispose disposeFunc) *collector {
 	return &collector {
 		observer:         ob,
 		dispose:          dispose,
@@ -79,7 +79,7 @@ func (c *collector) pass(x Object) {
 
 func (c *collector) throw(e Object) {
 	c.observer.error(e)
-	c.dispose()
+	c.dispose(behaviour_cancel)
 }
 
 func (c *collector) new_child() {
@@ -91,7 +91,7 @@ func (c *collector) delete_child() {
 	c.num_children -= 1
 	if c.num_children == 0 && c.no_more_children {
 		c.observer.complete()
-		c.dispose()
+		c.dispose(behaviour_terminate)
 	}
 }
 
@@ -99,6 +99,6 @@ func (c *collector) parent_complete() {
 	c.no_more_children = true
 	if c.num_children == 0 {
 		c.observer.complete()
-		c.dispose()
+		c.dispose(behaviour_terminate)
 	}
 }

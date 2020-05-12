@@ -44,6 +44,9 @@ func OpenAppend(path string, perm os.FileMode) Effect {
 
 func Open(path string, flag int, perm os.FileMode) Effect {
 	return CreateEffect(func(sender Sender) {
+		if sender.Context().AlreadyCancelled() {
+			return
+		}
 		raw, err := os.OpenFile(path, flag, perm)
 		if err != nil {
 			sender.Error(err)
@@ -55,11 +58,9 @@ func Open(path string, flag int, perm os.FileMode) Effect {
 		}
 		sender.Next(f)
 		sender.Complete()
-		var cancel, cancellable = sender.CancelSignal()
-		if cancellable {
-			<-cancel
+		sender.Context().WaitDispose(func() {
 			_ = raw.Close()
-		}
+		})
 	})
 }
 
@@ -231,15 +232,10 @@ func (f File) WriteLine(str string) Effect {
 func (f File) ReadLinesRuneSlices() Effect {
 	// emits rune slices
 	return CreateEffect(func(s Sender) {
-		var cancel, cancellable = s.CancelSignal()
 		f.worker.Do(func() {
 			for {
-				if cancellable {
-					select {
-					case <- cancel:
-						return
-					default:
-					}
+				if s.Context().AlreadyCancelled() {
+					return
 				}
 				var line, err = WellBehavedScanLine(f.raw)
 				if err != nil {
@@ -271,14 +267,9 @@ type FileItem struct {
 
 func WalkDir(root string) Effect {
 	return CreateEffect(func(sender Sender) {
-		var cancel, cancellable = sender.CancelSignal()
 		var err = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-			if cancellable {
-				select {
-				case <- cancel:
-					return errors.New("operation cancelled")
-				default:
-				}
+			if sender.Context().AlreadyCancelled() {
+				return errors.New("operation cancelled")
 			}
 			sender.Next(FileItem {
 				Path: path,
@@ -296,14 +287,9 @@ func WalkDir(root string) Effect {
 
 func ListDir(dir_path string) Effect {
 	return CreateEffect(func(sender Sender) {
-		var cancel, cancellable = sender.CancelSignal()
 		var err = filepath.Walk(dir_path, func(path string, info os.FileInfo, err error) error {
-			if cancellable {
-				select {
-				case <- cancel:
-					return errors.New("operation cancelled")
-				default:
-				}
+			if sender.Context().AlreadyCancelled() {
+				return errors.New("operation cancelled")
 			}
 			if path != dir_path {
 				sender.Next(FileItem {

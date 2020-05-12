@@ -63,12 +63,12 @@ var EffectFunctions = map[string] Value {
 		return e.WaitComplete()
 	},
 	"then": func(e rx.Effect, f Value, h MachineHandle) rx.Effect {
-		return e.SingleThen(func(val rx.Object) rx.Effect {
+		return e.Then(func(val rx.Object) rx.Effect {
 			return h.Call(f, val).(rx.Effect)
 		})
 	},
 	"then-shortcut": func(a rx.Effect, b rx.Effect) rx.Effect {
-		return a.SingleThen(func(_ rx.Object) rx.Effect {
+		return a.Then(func(_ rx.Object) rx.Effect {
 			return b
 		})
 	},

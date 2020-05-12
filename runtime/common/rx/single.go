@@ -1,10 +1,10 @@
 package rx
 
 
-const single_multiple_return = "The effect that assumed to be a single-valued effect emitted multiple values"
-const single_zero_return = "The effect that assumed to be a single-valued effect completed with zero values emitted"
+const single_multiple_return = "An effect that assumed to be a single-valued effect emitted multiple values"
+const single_zero_return = "An effect that assumed to be a single-valued effect completed with zero values emitted"
 
-func (e Effect) SingleThen(f func(Object)Effect) Effect {
+func (e Effect) Then(f func(Object)Effect) Effect {
 	return Effect { func(sched Scheduler, ob *observer) {
 		var returned = false
 		var returned_value Object
@@ -49,16 +49,20 @@ func (e Effect) WaitComplete() Effect {
 
 func (e Effect) TakeOne() Effect {
 	return Effect { func(sched Scheduler, ob *observer) {
-		var ctx, dispose = ob.context.CreateChild()
+		var ctx, ctx_dispose = ob.context.create_disposable_child()
 		sched.run(e, &observer {
 			context:  ctx,
 			next: func(val Object) {
-				dispose()
+				ctx_dispose(behaviour_cancel)
 				ob.next(struct { Object; bool } {val, true})
 				ob.complete()
 			},
-			error:    ob.error,
+			error: func(err Object) {
+				ctx_dispose(behaviour_terminate)
+				ob.error(err)
+			},
 			complete: func() {
+				ctx_dispose(behaviour_terminate)
 				ob.next(struct { Object; bool } {nil, false})
 				ob.complete()
 			},

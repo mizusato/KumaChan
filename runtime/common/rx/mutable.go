@@ -35,11 +35,9 @@ func (s *Sink) Listen() Effect {
 				sender.Next(value)
 			},
 		})
-		var cancel, cancellable = sender.CancelSignal()
-		if cancellable {
-			<- cancel
+		sender.Context().WaitDispose(func() {
 			s.removeListener(l)
-		}
+		})
 	})
 }
 

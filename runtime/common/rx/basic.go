@@ -64,7 +64,7 @@ func (e Effect) Scan(f func(Object,Object)Object, init Object) Effect {
 func (e Effect) Take(amount uint) Effect {
 	if amount == 0 { panic("take: invalid amount 0") }
 	return Effect { func(sched Scheduler, ob *observer) {
-		var ctx, dispose = ob.context.CreateChild()
+		var ctx, dispose = ob.context.create_disposable_child()
 		var taken = uint(0)
 		sched.run(e, &observer {
 			context:  ctx,
@@ -72,7 +72,7 @@ func (e Effect) Take(amount uint) Effect {
 				ob.next(val)
 				taken += 1
 				if taken == amount {
-					dispose()
+					dispose(behaviour_cancel)
 					ob.complete()
 				}
 			},

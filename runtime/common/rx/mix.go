@@ -4,7 +4,7 @@ package rx
 func Mix(effects []Effect, concurrent uint) Effect {
 	if concurrent == 0 { panic("invalid concurrent amount") }
 	return Effect { func(sched Scheduler, ob *observer) {
-		var ctx, dispose = ob.context.CreateChild()
+		var ctx, dispose = ob.context.create_disposable_child()
 		var c = new_collector(ob, dispose)
 		var q_sched = QueueSchedulerFrom(sched, concurrent)
 		for _, item := range effects {
@@ -29,7 +29,7 @@ func Mix(effects []Effect, concurrent uint) Effect {
 func (e Effect) MixMap(f func(Object)Effect, concurrent uint) Effect {
 	if concurrent == 0 { panic("invalid concurrent amount") }
 	return Effect { func(sched Scheduler, ob *observer) {
-		var ctx, dispose = ob.context.CreateChild()
+		var ctx, dispose = ob.context.create_disposable_child()
 		var c = new_collector(ob, dispose)
 		var q_sched = QueueSchedulerFrom(sched, concurrent)
 		sched.run(e, &observer {

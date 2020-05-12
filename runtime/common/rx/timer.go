@@ -11,11 +11,9 @@ func Timer(timeout uint) Effect {
 			sender.Next(nil)
 			sender.Complete()
 		})()
-		var cancel, cancellable = sender.CancelSignal()
-		if cancellable {
-			<- cancel
+		sender.Context().WaitDispose(func() {
 			timer.Stop()
-		}
+		})
 	})
 }
 
@@ -27,10 +25,8 @@ func Ticker(interval uint) Effect {
 				sender.Next(nil)
 			}
 		})()
-		var cancel, cancellable = sender.CancelSignal()
-		if cancellable {
-			<- cancel
+		sender.Context().WaitDispose(func() {
 			ticker.Stop()
-		}
+		})
 	})
 }

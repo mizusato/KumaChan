@@ -15,26 +15,17 @@ type HttpResponse struct {
 
 func HttpGet(url *url.URL) Effect {
 	return CreateEffect(func(sender Sender) {
-		var cancel, cancellable = sender.CancelSignal()
-		if cancellable {
-			select {
-			case <- cancel:
-				return
-			default:
-			}
+		if sender.Context().AlreadyCancelled() {
+			return
 		}
 		res, err := http.Get(url.String())
 		if err != nil {
 			sender.Error(err)
 			return
 		}
-		if cancellable {
-			select {
-			case <- cancel:
-				_ = res.Body.Close()
-				return
-			default:
-			}
+		if sender.Context().AlreadyCancelled() {
+			_ = res.Body.Close()
+			return
 		}
 		body, err := ioutil.ReadAll(res.Body)
 		if err != nil {

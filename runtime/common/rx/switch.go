@@ -3,16 +3,21 @@ package rx
 
 func (e Effect) SwitchMap(f func(Object)Effect) Effect {
 	return Effect { func(sched Scheduler, ob *observer) {
-		var ctx, dispose = ob.context.CreateChild()
+		var ctx, dispose = ob.context.create_disposable_child()
 		var c = new_collector(ob, dispose)
-		var cur_ctx, cur_dispose = ctx.CreateChild()
+		var cur_ctx, cur_dispose = ctx.create_disposable_child()
+		var cur_terminated = false
 		sched.run(e, &observer {
 			context: ctx,
 			next: func(x Object) {
 				var item = f(x)
 				c.new_child()
-				cur_dispose()
-				cur_ctx, cur_dispose = ctx.CreateChild()
+				if cur_terminated {
+					cur_dispose(behaviour_terminate)
+				} else {
+					cur_dispose(behaviour_cancel)
+				}
+				cur_ctx, cur_dispose = ctx.create_disposable_child()
 				sched.run(item, &observer {
 					context: cur_ctx,
 					next: func(x Object) {
@@ -20,9 +25,11 @@ func (e Effect) SwitchMap(f func(Object)Effect) Effect {
 					},
 					error: func(e Object) {
 						c.throw(e)
+						cur_terminated = true
 					},
 					complete: func() {
 						c.delete_child()
+						cur_terminated = true
 					},
 				})
 			},
