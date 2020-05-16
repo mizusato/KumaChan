@@ -60,6 +60,7 @@ func Open(path string, flag int, perm os.FileMode) Effect {
 		sender.Complete()
 		sender.Context().WaitDispose(func() {
 			_ = raw.Close()
+			f.worker.Dispose()
 		})
 	})
 }
@@ -67,6 +68,7 @@ func Open(path string, flag int, perm os.FileMode) Effect {
 func (f File) Close() Effect {
 	return CreateQueuedEffect(f.worker, func() (Object, bool) {
 		_ = f.raw.Close()
+		f.worker.Dispose()
 		return nil, true
 	})
 }

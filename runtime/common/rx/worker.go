@@ -55,8 +55,10 @@ func (w *Worker) Do(work func()) {
 
 func (w *Worker) Dispose() {
 	w.mutex.Lock()
-	w.disposed = true
-	close(w.notify)
+	if !(w.disposed) {
+		w.disposed = true
+		close(w.notify)
+	}
 	w.mutex.Unlock()
 }
 
