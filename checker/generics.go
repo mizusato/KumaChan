@@ -55,7 +55,8 @@ func GenericFunctionCall (
 			}
 		}
 		var input_type = FillTypeArgs(raw_input_type, inferred_args)
-		if !(DirectAssignableTo(input_type, arg_typed.Type, ctx)) {
+		var _, ok = DirectAssignTo(input_type, arg_typed.Type, ctx)
+		if !(ok) {
 			// var inf_ctx = ctx.WithTypeArgsInferringEnabled(f.TypeParams)
 			// var _, _ = AssignTo(marked_input_type, arg, inf_ctx)
 			panic("something went wrong")
@@ -163,16 +164,16 @@ func GenericFunctionAssignTo (
 }
 
 
-func FillTypeArgs(t Type, given []Type) Type {
+func FillTypeArgs(t Type, given_args []Type) Type {
 	switch T := t.(type) {
 	case WildcardRhsType:
 		panic("something went wrong")
 	case ParameterType:
-		return given[T.Index]
+		return given_args[T.Index]
 	case NamedType:
 		var filled = make([]Type, len(T.Args))
 		for i, arg := range T.Args {
-			filled[i] = FillTypeArgs(arg, given)
+			filled[i] = FillTypeArgs(arg, given_args)
 		}
 		return NamedType {
 			Name: T.Name,
@@ -185,7 +186,7 @@ func FillTypeArgs(t Type, given []Type) Type {
 		case Tuple:
 			var filled = make([]Type, len(r.Elements))
 			for i, element := range r.Elements {
-				filled[i] = FillTypeArgs(element, given)
+				filled[i] = FillTypeArgs(element, given_args)
 			}
 			return AnonymousType {
 				Repr: Tuple {
@@ -196,7 +197,7 @@ func FillTypeArgs(t Type, given []Type) Type {
 			var filled = make(map[string]Field, len(r.Fields))
 			for name, field := range r.Fields {
 				filled[name] = Field {
-					Type:  FillTypeArgs(field.Type, given),
+					Type:  FillTypeArgs(field.Type, given_args),
 					Index: field.Index,
 				}
 			}
@@ -208,8 +209,8 @@ func FillTypeArgs(t Type, given []Type) Type {
 		case Func:
 			return AnonymousType {
 				Repr:Func {
-					Input:  FillTypeArgs(r.Input, given),
-					Output: FillTypeArgs(r.Output, given),
+					Input:  FillTypeArgs(r.Input, given_args),
+					Output: FillTypeArgs(r.Output, given_args),
 				},
 			}
 		default:
@@ -415,3 +416,4 @@ func GetCertainType(type_ Type, point ErrorPoint, ctx ExprContext) (Type, *ExprE
 		panic("impossible branch")
 	}
 }
+

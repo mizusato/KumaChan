@@ -118,11 +118,15 @@ func CreateProgram (
 			queue = append(queue, i)
 		}
 	}
-	var sorted = make([] uint, 0, L)
+	var sorted2raw = make([] uint, L)
+	var raw2sorted = make([] uint, L)
+	var sorted_count = uint(0)
 	for len(queue) > 0 {
 		var i = queue[0]
 		queue = queue[1:]
-		sorted = append(sorted, i)
+		sorted2raw[sorted_count] = i
+		raw2sorted[i] = sorted_count
+		sorted_count += 1
 		for _, j := range inv_map[i] {
 			if in_degrees[j] < 1 { panic("something went wrong") }
 			in_degrees[j] -= 1
@@ -131,7 +135,7 @@ func CreateProgram (
 			}
 		}
 	}
-	if uint(len(sorted)) < L {
+	if sorted_count < L {
 		var rest_names = make([] string, 0)
 		var point ErrorPoint
 		for i := uint(0); i < L; i += 1 {
@@ -148,7 +152,7 @@ func CreateProgram (
 	}
 	var sorted_constants = make([] FuncNode, L)
 	for i := uint(0); i < L; i += 1 {
-		sorted_constants[i] = constants[sorted[i]]
+		sorted_constants[i] = constants[sorted2raw[i]]
 	}
 	var base_data = uint(0)
 	var base_function = base_data + uint(len(data))
@@ -163,7 +167,7 @@ func CreateProgram (
 		case DepClosure:
 			return base_closure + d.Index
 		case DepConstant:
-			return base_constant + sorted[constant_index_map[d]]
+			return base_constant + raw2sorted[constant_index_map[d]]
 		default:
 			panic("impossible branch")
 		}

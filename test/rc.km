@@ -1,0 +1,35 @@
+type TreeF[T] union {
+    type Leaf Float;
+    type Branch[T] (T,T);
+};
+
+type Tree TreeF[Tree];
+
+public macro catamorphism(term, alg, cata):
+    (term | map (&(inner)(cata inner alg)) | alg);
+
+public function map[A,B]: ( &(TreeF[A],(&(A)(B))) TreeF[B] )
+    ( &(t, f)
+        switch t:
+        case Leaf x:
+            x,
+        case Branch (l, r):
+            (Branch (f l) (f r)),
+        end
+    );
+
+public function reduce[A]: ( &(Tree,(&(TreeF[A])(A))) A )
+    ( &(t, alg) (catamorphism t alg reduce) );
+
+private const a: Tree
+    Tree (Branch (Tree (Leaf 1.0)) (Tree (Branch (Tree (Leaf 2.0)) (Tree (Leaf 3.0)))) );
+
+private const b: Float
+    (trace (a | reduce (:(&(TreeF[Float])Float): (& (t)
+        switch t:
+        case Leaf x:
+            x,
+        case Branch (l, r):
+            (+ l r),
+        end
+    ))));

@@ -116,7 +116,8 @@ private function parse: (&(ParserState)(Result[(Value,Number),String]))
                 NG 'unexpected end of input',
             case Just char:
                 if $(char = ^}):
-                    OK ((:Value: JSON::Object (new-map [])), $(pos + 1)),
+                    let empty-map := new-map:[JSON::Value] [],
+                    OK ((:Value: JSON::Object empty-map), $(pos + 1)),
                 elif $(Blanks contains char):
                     go-next status,
                 elif $(char = ^"):

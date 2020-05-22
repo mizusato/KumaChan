@@ -1,5 +1,7 @@
 package checker
 
+import . "kumachan/error"
+
 
 func RequireExplicitType(t Type, info ExprInfo) *ExprError {
 	if t == nil {
@@ -66,10 +68,11 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 		}
 		return mapped
 	}
-	var get_union_args = func(n uint, case_args []Type, mapping []uint) []Type {
+	var get_union_args = func(case_args []Type, exp_args []Type, mapping []uint) []Type {
+		var n = len(exp_args)
 		var mapped = make([]Type, n)
-		for i := uint(0); i < n; i += 1 {
-			mapped[i] = WildcardRhsType {}
+		for i := 0; i < n; i += 1 {
+			mapped[i] = exp_args[i]
 		}
 		for i, j := range mapping {
 			mapped[j] = case_args[i]
@@ -88,14 +91,15 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 					Name: case_type.Name,
 					Args: get_case_args(union_t.Args, mapping),
 				}
-				if DirectAssignableTo(case_expected_type, given, ctx) {
+				var t, ok = DirectAssignTo(case_expected_type, given, ctx)
+				var given_assigned = t.(NamedType)
+				if ok {
 					// 1.1.1. If matching, return a lifted value.
-					var union_arity = uint(len(union_t.Args))
 					return Expr {
 						Type:  NamedType {
 							Name: union_t.Name,
 							Args: get_union_args (
-								union_arity, given.Args, mapping,
+								given_assigned.Args, union_t.Args, mapping,
 							),
 						},
 						Value: Sum { Value: expr, Index: uint(index) },
@@ -120,17 +124,17 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 					continue  // if `err` is thrown at 1.1.2, return is OK,
 					          // but `err` could be thrown at 1.2, so...
 				}
-				var union_args = uint(len(union_t.Args))
-				return Expr {
+				var union_expr = Expr {
 					Type:  NamedType {
 						Name: union_t.Name,
 						Args: get_union_args (
-							union_args, given.Args, mapping,
+							given.Args, union_t.Args, mapping,
 						),
 					},
 					Value: Sum { Value: item_expr, Index: uint(index) },
 					Info:  expr.Info,
-				}, nil
+				}
+				return AssignTypedTo(expected, union_expr, ctx)
 			}
 		}
 		// 1.2. Otherwise, throw an error.
@@ -146,8 +150,13 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 		}, nil
 	}
 	// Try Direct
-	if DirectAssignableTo(expected, expr.Type, ctx) {
-		return expr, nil
+	var direct_type, ok = DirectAssignTo(expected, expr.Type, ctx)
+	if ok {
+		return Expr {
+			Type:  direct_type,
+			Value: expr.Value,
+			Info:  expr.Info,
+		}, nil
 	}
 	// Try Unbox
 	var ctx_mod = ctx.ModuleInfo.Module.Name
@@ -186,37 +195,49 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 	return failed()
 }
 
-func DirectAssignableTo(expected Type, given Type, ctx ExprContext) bool {
+func DirectAssignTo(expected Type, given Type, ctx ExprContext) (Type, bool) {
 	switch E := expected.(type) {
 	case ParameterType:
 		if E.BeingInferred {
 			if !(ctx.InferTypeArgs) { panic("something went wrong") }
 			switch given.(type) {
 			case WildcardRhsType:
-				return true
+				return given, true
 			default:
 				var inferred, exists = ctx.Inferred[E.Index]
 				if exists {
-					return AreTypesEqualInSameCtx(inferred, given)
+					if AreTypesEqualInSameCtx(inferred, given) {
+						return given, true
+					} else {
+						return nil, false
+					}
 				} else {
 					ctx.Inferred[E.Index] = given
-					return true
+					return given, true
 				}
 			}
 		} else {
 			switch T := given.(type) {
 			case WildcardRhsType:
-				return true
+				return expected, true
 			case ParameterType:
-				return E.Index == T.Index
+				if E.Index == T.Index {
+					return given, true
+				}
 			default:
-				return false
+				return nil, false
 			}
 		}
 	}
 	switch given.(type) {
 	case WildcardRhsType:
-		return true
+		if ctx.InferTypeArgs {
+			var t, err = GetCertainType(expected, ErrorPoint{}, ctx)
+			if err != nil { return nil, false }
+			return t, true
+		} else {
+			return expected, true
+		}
 	}
 	switch E := expected.(type) {
 	case NamedType:
@@ -227,14 +248,22 @@ func DirectAssignableTo(expected Type, given Type, ctx ExprContext) bool {
 					panic("something went wrong")
 				}
 				var L = len(T.Args)
+				var name = T.Name
+				var args = make([] Type, L)
 				for i := 0; i < L; i += 1 {
-					if !(DirectAssignableTo(E.Args[i], T.Args[i], ctx)) {
-						return false
+					var t, ok = DirectAssignTo(E.Args[i], T.Args[i], ctx)
+					if ok {
+						args[i] = t
+					} else {
+						return nil, false
 					}
 				}
-				return true
+				return NamedType {
+					Name: name,
+					Args: args,
+				}, true
 			} else {
-				return false
+				return nil, false
 			}
 		}
 	case AnonymousType:
@@ -244,54 +273,74 @@ func DirectAssignableTo(expected Type, given Type, ctx ExprContext) bool {
 			case Unit:
 				switch T.Repr.(type) {
 				case Unit:
-					return true
+					return given, true
 				}
 			case Tuple:
 				switch T_ := T.Repr.(type) {
 				case Tuple:
 					if len(T_.Elements) != len(E_.Elements) {
-						return false
+						return nil, false
 					}
 					var L = len(T_.Elements)
+					var elements = make([] Type, L)
 					for i := 0; i < L; i += 1 {
 						var e = E_.Elements[i]
 						var t = T_.Elements[i]
-						if !(DirectAssignableTo(e, t, ctx)) {
-							return false
+						var el_t, ok = DirectAssignTo(e, t, ctx)
+						if ok {
+							elements[i] = el_t
+						} else {
+							return nil, false
 						}
 					}
-					return true
+					return AnonymousType { Tuple { elements } }, true
 				}
 			case Bundle:
 				switch T_ := T.Repr.(type) {
 				case Bundle:
 					if len(E_.Fields) != len(T_.Fields) {
-						return false
+						return nil, false
 					}
+					var fields = make(map[string] Field)
 					for name, e := range E_.Fields {
 						var t, exists = T_.Fields[name]
 						if !exists {
-							return false
+							return nil, false
 						}
-						if !(DirectAssignableTo(e.Type, t.Type, ctx)) {
-							return false
+						if t.Index != e.Index {
+							return nil, false
+						}
+						var field_index = t.Index
+						var field_t, ok = DirectAssignTo(e.Type, t.Type, ctx)
+						if ok {
+							fields[name] = Field {
+								Type:  field_t,
+								Index: field_index,
+							}
+						} else {
+							return nil, false
 						}
 					}
-					return true
+					return AnonymousType { Bundle { fields } }, true
 				}
 			case Func:
 				switch T_ := T.Repr.(type) {
 				case Func:
-					if !(DirectAssignableTo(E_.Input, T_.Input, ctx)) {
-						return false
+					var input_t, ok1 = DirectAssignTo(E_.Input, T_.Input, ctx)
+					if !(ok1) {
+						return nil, false
 					}
-					if !(DirectAssignableTo(E_.Output, T_.Output, ctx)) {
-						return false
+					var output_t, ok2 = DirectAssignTo(E_.Output, T_.Output, ctx)
+					if !(ok2) {
+						return nil, false
 					}
-					return true
+					return AnonymousType { Func {
+						Input:  input_t,
+						Output: output_t,
+					} }, true
 				}
 			}
 		}
 	}
-	return false
+	return nil, false
 }
