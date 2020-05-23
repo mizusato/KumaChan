@@ -1,17 +1,9 @@
-do (
-    ~ for &(x) := emit* (range 0 10):
-    ~ do println (str x):
-         println '---'
-) | catch* (&(_)(crash 'I/O Error'))
-  | wait-complete;
+private macro for(e, f): (concat-map e f);
 
-/*
 do
-	yield-range(0,10)
-	| concat-map &(x)(
-	    println str x
-	    | then println '---'
-	)
-	| catch* &(_)(crash 'I/O Error')
-	| wait-complete;
-*/
+    let eff :=
+        ~ for &(x) := emit* (range 0 10),
+        ~ do println (str x),
+            println '---',
+    eff | catch* (&(_)(crash 'I/O Error'))
+        | wait-complete;

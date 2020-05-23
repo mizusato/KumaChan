@@ -203,7 +203,10 @@ func (ctx ExprContext) WithMacroExpandingUnwound() ExprContext {
 	var new_ctx ExprContext
 	*(&new_ctx) = ctx
 	if len(ctx.MacroPath) > 0 {
-		new_ctx.MacroPath = ctx.MacroPath[:len(ctx.MacroPath)-1]
+		var L = len(ctx.MacroPath)
+		var new_path = make([] MacroExpanding, L-1)
+		copy(new_path, ctx.MacroPath[:L-1])
+		new_ctx.MacroPath = new_path
 	} else {
 		panic("something went wrong")
 	}

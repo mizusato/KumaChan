@@ -174,7 +174,7 @@ var __SyntaxDefinition = [...] string {
           "binding_type? = : rec_opt type!",
             "rec_opt? = @rec",
         "block_value = ,! expr!",
-      "cps = ~ inline_ref! cps_binding cps_input :! cps_output",
+      "cps = ~ inline_ref! cps_binding cps_input ,! cps_output",
         "cps_binding? = lambda_header pattern binding_type := ",
         "cps_input = expr!",
         "cps_output = expr!",
