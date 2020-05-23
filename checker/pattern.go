@@ -125,11 +125,12 @@ func PatternFrom (
 		switch bundle := UnboxBundle(input, ctx).(type) {
 		case Bundle:
 			var occurred = make(map[string]bool)
-			var items = make([]PatternItem, len(p.Names))
-			for i, identifier := range p.Names {
-				var name = loader.Id2String(identifier)
-				var field, exists = bundle.Fields[name]
-				if exists && name == IgnoreMark {
+			var items = make([]PatternItem, len(p.FieldMaps))
+			for i, field_map := range p.FieldMaps {
+				var field_name = loader.Id2String(field_map.FieldName)
+				var value_name = loader.Id2String(field_map.ValueName)
+				var field, exists = bundle.Fields[field_name]
+				if exists && field_name == IgnoreMark {
 					// field should not be named using IgnoreMark;
 					// IgnoreMark used in bundle pattern considered
 					//   as "field does not exist" error
@@ -137,26 +138,26 @@ func PatternFrom (
 				}
 				if !exists {
 					return Pattern{}, &ExprError {
-						Point:    ErrorPointFrom(identifier.Node),
+						Point:    ErrorPointFrom(field_map.FieldName.Node),
 						Concrete: E_FieldDoesNotExist {
-							Field:  name,
+							Field:  field_name,
 							Target: ctx.DescribeType(input),
 						},
 					}
 				}
-				var _, duplicate = occurred[name]
+				var _, duplicate = occurred[value_name]
 				if duplicate {
 					return Pattern{}, &ExprError {
-						Point:    ErrorPointFrom(identifier.Node),
-						Concrete: E_DuplicateBinding { name },
+						Point:    ErrorPointFrom(field_map.ValueName.Node),
+						Concrete: E_DuplicateBinding { value_name },
 					}
 				}
-				occurred[name] = true
+				occurred[value_name] = true
 				items[i] = PatternItem {
-					Name:  loader.Id2String(identifier),
+					Name:  value_name,
 					Index: field.Index,
 					Type:  field.Type,
-					Point: ErrorPointFrom(identifier.Node),
+					Point: ErrorPointFrom(field_map.Node),
 				}
 			}
 			return Pattern {

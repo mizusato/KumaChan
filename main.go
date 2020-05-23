@@ -123,7 +123,7 @@ func debug_compiler(entry *checker.CheckedModule) common.Program {
 }
 
 func main () {
-    // debug_parser(os.Stdin, "[eval]", "module")
+    // debug_parser(os.Stdin, "[eval]", "root")
     // os.Exit(0)
     var mod, idx = debug_loader()
     var c_mod, _ = debug_checker(mod, idx)

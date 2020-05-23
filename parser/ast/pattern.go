@@ -25,6 +25,12 @@ type PatternTuple struct {
 
 func (impl PatternBundle) Pattern() {}
 type PatternBundle struct {
-	Node                   `part:"pattern_bundle"`
-	Names  [] Identifier   `list_more:"namelist" item:"name"`
+	Node                     `part:"pattern_bundle"`
+	FieldMaps  [] FieldMap   `list_more:"field_map_list" item:"field_map"`
+}
+
+type FieldMap struct {
+	Node                    `part:"field_map"`
+	ValueName  Identifier   `part:"name"`
+	FieldName  Identifier   `part:"field_map_to.name" fallback:"name"`
 }

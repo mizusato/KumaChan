@@ -86,6 +86,7 @@ var __NodeRegistry = []interface{} {
 	PatternTrivial {},
     PatternTuple {},
     PatternBundle {},
+    FieldMap {},
 	Array {},
     Tuple {},
     Bundle {},
