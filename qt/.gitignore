@@ -1,0 +1,4 @@
+/build
+/build-release
+/qtbinding/.qmake.stash
+/example
