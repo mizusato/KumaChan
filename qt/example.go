@@ -45,6 +45,12 @@ func main() {
         btn.Connect("clicked()", func() {
             label.SetPropString("text", fmt.Sprint(rand.Float64()))
         })
+        input, ok := window.FindChild("input")
+        input.Connect("textEdited(const QString&)", func() {
+            var input_text = input.GetPropString("text")
+            label.SetPropString("text", input_text)
+            fmt.Printf("input_text: %s\n", input_text)
+        })
     })
     <- chan struct{} (nil)
 }
@@ -123,10 +129,20 @@ func (obj Object) Connect(signal string, callback func()) func() {
     }
 }
 
+func (obj Object) GetPropQtString(prop string) String {
+    var new_str, del_all_str = str_alloc()
+    defer del_all_str()
+    return String(C.QtObjectGetPropString(obj.addr, new_str(prop)))
+}
+
 func (obj Object) SetPropQtString(prop string, val String) {
     var new_str, del_all_str = str_alloc()
     defer del_all_str()
     C.QtObjectSetPropString(obj.addr, new_str(prop), C.QtString(val))
+}
+
+func (obj Object) GetPropRuneString(prop string) ([] rune) {
+    return StringToRunes(obj.GetPropQtString(prop))
 }
 
 func (obj Object) SetPropRuneString(prop string, val ([] rune)) {
@@ -135,16 +151,37 @@ func (obj Object) SetPropRuneString(prop string, val ([] rune)) {
     obj.SetPropQtString(prop, q_val)
 }
 
+func (obj Object) GetPropString(prop string) string {
+    return string(obj.GetPropRuneString(prop))
+}
+
 func (obj Object) SetPropString(prop string, value string) {
     obj.SetPropRuneString(prop, ([] rune)(value))
 }
 
 func NewStringFromRunes(runes ([] rune)) (String, func()) {
-    var ptr = (*C.uint32_t)(unsafe.Pointer(&runes[0]))
-    var size = (C.size_t)(len(runes))
-    var str = C.QtNewStringUTF32(ptr, size)
+    var str C.QtString
+    if len(runes) > 0 {
+        var ptr = (*C.uint32_t)(unsafe.Pointer(&runes[0]))
+        var size = (C.size_t)(len(runes))
+        str = C.QtNewStringUTF32(ptr, size)
+    } else {
+        str = C.QtNewStringUTF32(nil, 0)
+    }
     return String(str), func() {
         C.QtDeleteString(str)
     }
+}
+
+func StringToRunes(str String) ([] rune) {
+    var q_str = (C.QtString)(str)
+    var size16 = uint(C.QtStringUTF16Length(q_str))
+    var buf = make([] rune, size16)
+    if size16 > 0 {
+        var size32 = uint(C.QtStringWriteToUTF32Buffer(q_str,
+            (*C.uint32_t)(unsafe.Pointer(&buf[0]))))
+        buf = buf[:size32]
+    }
+    return buf
 }
 

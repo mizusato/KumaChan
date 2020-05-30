@@ -35,6 +35,8 @@ extern "C" {
     QtString QtNewStringUTF8(const char* buf, size_t len);
     QtString QtNewStringUTF32(const uint32_t* buf, size_t len);
     void QtDeleteString(QtString str);
+    size_t QtStringUTF16Length(QtString str);
+    size_t QtStringWriteToUTF32Buffer(QtString str, uint32_t *buf);
 #ifdef __cplusplus
 }
 #endif

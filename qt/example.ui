@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>259</width>
-    <height>132</height>
+    <width>306</width>
+    <height>216</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -27,6 +27,9 @@
        <string>Hello World</string>
       </property>
      </widget>
+    </item>
+    <item>
+     <widget class="QLineEdit" name="input"/>
     </item>
     <item>
      <widget class="QPushButton" name="button">

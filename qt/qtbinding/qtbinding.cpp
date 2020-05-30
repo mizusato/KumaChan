@@ -4,6 +4,7 @@
 #include <QBuffer>
 #include <QByteArray>
 #include <QString>
+#include <QVector>
 #include <QVariant>
 #include "qtbinding.hpp"
 #include "qtbinding.h"
@@ -148,6 +149,21 @@ QString QtUnwrapString(QtString str) {
 
 void QtDeleteString(QtString str) {
     delete (QString*)(str.ptr);
+}
+
+size_t QtStringUTF16Length(QtString str) {
+    return QtUnwrapString(str).length();
+}
+
+size_t QtStringWriteToUTF32Buffer(QtString str, uint32_t *buf) {
+    QVector<uint> vec = QtUnwrapString(str).toUcs4();
+    size_t len = 0;
+    for(auto rune: vec) {
+        *buf = rune;
+        buf += 1;
+        len += 1;
+    }
+    return len;
 }
 
 QMetaObject::Connection QtDynamicConnect (
