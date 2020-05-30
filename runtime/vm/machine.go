@@ -3,7 +3,7 @@ package vm
 import (
 	. "kumachan/error"
 	. "kumachan/runtime/common"
-	"kumachan/runtime/common/rx"
+	"kumachan/runtime/rx"
 	"sync"
 )
 

@@ -4,7 +4,7 @@ import (
 	"net/url"
 	. "kumachan/runtime/common"
 	. "kumachan/runtime/lib/container"
-	"kumachan/runtime/common/rx"
+	"kumachan/runtime/rx"
 )
 
 

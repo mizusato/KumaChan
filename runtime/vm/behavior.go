@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	. "kumachan/runtime/common"
-	"kumachan/runtime/common/rx"
+	"kumachan/runtime/rx"
 	"kumachan/runtime/lib"
 )
 

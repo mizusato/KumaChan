@@ -5,7 +5,7 @@ import (
 	"time"
 	"runtime"
 	"strings"
-	"kumachan/runtime/common/rx"
+	"kumachan/runtime/rx"
 	. "kumachan/runtime/common"
 	. "kumachan/runtime/lib/container"
 )
