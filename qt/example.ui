@@ -14,7 +14,7 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QHBoxLayout" name="horizontalLayout">
+   <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <widget class="QLabel" name="label">
       <property name="font">
@@ -25,6 +25,13 @@
       </property>
       <property name="text">
        <string>Hello World</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="button">
+      <property name="text">
+       <string>ChangeText</string>
       </property>
      </widget>
     </item>

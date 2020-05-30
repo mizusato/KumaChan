@@ -2,8 +2,10 @@
 #define HELLO_H
 #include <QObject>
 #include <QWidget>
+#include <cstdlib>
 
-typedef void (*Callback1)(void*);
+
+typedef void (*callback_t)(size_t);
 
 class Bridge: public QObject {
 Q_OBJECT
@@ -17,28 +19,26 @@ public:
     };
     virtual ~Bridge() {};
 signals:
-    void QueueCallback(Callback1 callback, void* payload);
+    void QueueCallback(callback_t cb, size_t payload);
 private slots:
-    void __InvokeCallback(Callback1 callback, void* payload) {
-        callback(payload);
+    void __InvokeCallback(callback_t cb, size_t payload) {
+        cb(payload);
     };
 };
 
 class CallbackObject: public QObject {
 Q_OBJECT
 public:
-    void (*callback)(void*,void*);
-    void* target;
-    void* payload;
-    CallbackObject(void (*callback)(void*,void*), void* target, void* payload): QObject(nullptr) {
-        this->callback = callback;
-        this->target = target;
+    callback_t cb;
+    size_t payload;
+    CallbackObject(callback_t cb, size_t payload): QObject(nullptr) {
+        this->cb = cb;
         this->payload = payload;
     };
     virtual ~CallbackObject() {};
 public slots:
-    void Callback() {
-        this->callback(this->target, this->payload);
+    void slot() {
+        this->cb(this->payload);
     };
 };
 

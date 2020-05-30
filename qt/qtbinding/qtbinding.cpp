@@ -1,4 +1,5 @@
 #include <QApplication>
+#include <QMetaMethod>
 #include <QUiLoader>
 #include <QBuffer>
 #include <QByteArray>
@@ -10,6 +11,10 @@
 
 QtString QtWrapString(QString str);
 QString QtUnwrapString(QtString str);
+QMetaObject::Connection QtDynamicConnect (
+        QObject *emitter , const QString &signalName,
+        QObject *receiver, const QString &slotName
+);
 
 struct __QtConnHandle {
     QMetaObject::Connection
@@ -45,8 +50,8 @@ int QtMainLoop() {
     return app->exec();
 }
 
-void QtCommitTask(void (*task)(void*), void* arg) {
-    bridge->QueueCallback(task, arg);
+void QtCommitTask(callback_t cb, size_t payload) {
+    bridge->QueueCallback(cb, payload);
 }
 
 void QtExit(int code) {
@@ -92,15 +97,15 @@ QtString QtObjectGetPropString(void* obj_ptr, const char* prop) {
 }
 
 QtConnHandle QtConnect (
-        void* widget_ptr,
+        void* obj_ptr,
         const char* signal,
-        void (*callback)(void*,void*),
-        void* payload
+        callback_t cb,
+        size_t payload
 ) {
-    QWidget* widget = (QWidget*) widget_ptr;
-    CallbackObject* cb_obj = new CallbackObject(callback, widget_ptr, payload);
+    QObject* target_obj = (QObject*) obj_ptr;
+    CallbackObject* cb_obj = new CallbackObject(cb, payload);
     __QtConnHandle* handle = new __QtConnHandle;
-    handle->conn = QObject::connect(widget, signal, cb_obj, "Callback");
+    handle->conn = QtDynamicConnect(target_obj, signal, cb_obj, "slot()");
     handle->cb_obj = cb_obj;
     return { (void*) handle };
 }
@@ -152,4 +157,26 @@ QString QtUnwrapString(QtString str) {
 
 void QtDeleteString(QtString str) {
     delete (QString*)(str.ptr);
+}
+
+QMetaObject::Connection QtDynamicConnect (
+        QObject *emitter , const QString &signalName,
+        QObject *receiver, const QString &slotName
+) {
+    /* ref: https://stackoverflow.com/questions/26208851/qt-connecting-signals-and-slots-from-text */
+    int index = emitter->metaObject()
+                ->indexOfSignal(QMetaObject::normalizedSignature(qPrintable(signalName)));
+    if (index == -1) {
+        qWarning("Wrong signal name: %s", qPrintable(signalName));
+        return QMetaObject::Connection();
+    }
+    QMetaMethod signal = emitter->metaObject()->method(index);
+    index = receiver->metaObject()
+            ->indexOfSlot(QMetaObject::normalizedSignature(qPrintable(slotName)));
+    if (index == -1) {
+        qWarning("Wrong slot name: %s", qPrintable(slotName));
+        return QMetaObject::Connection();
+    }
+    QMetaMethod slot = receiver->metaObject()->method(index);
+    return QObject::connect(emitter, signal, receiver, slot);
 }
