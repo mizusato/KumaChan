@@ -82,7 +82,7 @@ private function parse: (&(ParserState)(Result[(Value,Number),String]))
                             go-next status,
                         else:
                             NG ("expect char # at #, got #"
-                                (str expected) (str pos) (chrstr char)),
+                                (str expected) (str pos) (str char)),
                     end
             )),
         switch status:
@@ -108,7 +108,7 @@ private function parse: (&(ParserState)(Result[(Value,Number),String]))
                 elif $(char = ^n):
                     go-current (ParseNull { begin: pos }),
                 else:
-                    NG ("unexpected char # at #" (chrstr char) (str pos)),
+                    NG ("unexpected char # at #" (str char) (str pos)),
             end,
         case ParseObjectKey {entries}:
             switch (input.get pos):
@@ -166,7 +166,7 @@ private function parse: (&(ParserState)(Result[(Value,Number),String]))
                     let entries-array := (collect entries),
                     OK ((:Value: JSON::Object (new-map entries-array)), $(pos + 1)),
                 else:
-                    NG ("unexpected char # at #" (chrstr char) (str pos)),
+                    NG ("unexpected char # at #" (str char) (str pos)),
             end,
         case ParseArray {items}:
             switch (input.get pos):
@@ -197,7 +197,7 @@ private function parse: (&(ParserState)(Result[(Value,Number),String]))
                     let array := (reverse reversed),
                     OK ((:Value: JSON::Array array), $(pos + 1)),
                 else:
-                    NG ("unexpected char # at #" (chrstr char) (str pos)),
+                    NG ("unexpected char # at #" (str char) (str pos)),
             end,
         case ParseString {begin}:
             switch (input.get pos):
