@@ -12,8 +12,8 @@
 QtString QtWrapString(QString str);
 QString QtUnwrapString(QtString str);
 QMetaObject::Connection QtDynamicConnect (
-        QObject *emitter , const QString &signalName,
-        QObject *receiver, const QString &slotName
+        QObject* emitter , const QString& signalName,
+        QObject* receiver, const QString& slotName
 );
 
 struct __QtConnHandle {
@@ -21,8 +21,6 @@ struct __QtConnHandle {
         conn;
     CallbackObject*
         cb_obj;
-    bool
-        disconnected;
 };
 
 static QApplication*
@@ -42,15 +40,16 @@ void QtInit() {
         app = new QApplication(fake_argc, fake_argv);
         bridge = new Bridge();
         loader = new QUiLoader();
+        qRegisterMetaType<callback_t>();
         initialized = true;
     }
 }
 
-int QtMainLoop() {
+int QtMain() {
     return app->exec();
 }
 
-void QtCommitTask(callback_t cb, size_t payload) {
+void QtSchedule(callback_t cb, size_t payload) {
     bridge->QueueCallback(cb, payload);
 }
 
@@ -115,21 +114,13 @@ QtBool QtIsConnectionValid(QtConnHandle handle) {
     return bool(h->conn);
 };
 
-QtBool QtDisconnect(QtConnHandle handle) {
+void QtDisconnect(QtConnHandle handle) {
     __QtConnHandle* h = (__QtConnHandle*) handle.ptr;
-    if (!(h->conn) || h->disconnected) {
-        return false;
+    if (!(h->conn)) {
+        QObject::disconnect(h->conn);
     }
-    QObject::disconnect(h->conn);
     delete h->cb_obj;
     h->cb_obj = nullptr;
-    h->disconnected = true;
-    return true;
-};
-
-void QtDeleteConnection(QtConnHandle handle) {
-    QtDisconnect(handle);
-    __QtConnHandle* h = (__QtConnHandle*) handle.ptr;
     delete h;
 };
 
@@ -160,8 +151,8 @@ void QtDeleteString(QtString str) {
 }
 
 QMetaObject::Connection QtDynamicConnect (
-        QObject *emitter , const QString &signalName,
-        QObject *receiver, const QString &slotName
+        QObject* emitter , const QString& signalName,
+        QObject* receiver, const QString& slotName
 ) {
     /* ref: https://stackoverflow.com/questions/26208851/qt-connecting-signals-and-slots-from-text */
     int index = emitter->metaObject()

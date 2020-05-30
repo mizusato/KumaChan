@@ -19,8 +19,8 @@ typedef struct _QtString QtString;
 extern "C" {
 #endif
     void QtInit();
-    int QtMainLoop();
-    void QtCommitTask(void (*cb)(size_t), size_t payload);
+    int QtMain();
+    void QtSchedule(void (*cb)(size_t), size_t payload);
     void QtExit(int code);
     void QtQuit();
     void* QtLoadWidget(const char* definition);
@@ -31,8 +31,7 @@ extern "C" {
     QtString QtObjectGetPropString(void* obj_ptr, const char* prop);
     QtConnHandle QtConnect(void* obj_ptr, const char* signal, void (*cb)(size_t), size_t payload);
     QtBool QtIsConnectionValid(QtConnHandle handle);
-    QtBool QtDisconnect(QtConnHandle handle);
-    void QtDeleteConnection(QtConnHandle handle);
+    void QtDisconnect(QtConnHandle handle);
     QtString QtNewStringUTF8(const char* buf, size_t len);
     QtString QtNewStringUTF32(const uint32_t* buf, size_t len);
     void QtDeleteString(QtString str);

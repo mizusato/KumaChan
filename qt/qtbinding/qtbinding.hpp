@@ -6,6 +6,7 @@
 
 
 typedef void (*callback_t)(size_t);
+Q_DECLARE_METATYPE(callback_t);
 
 class Bridge: public QObject {
 Q_OBJECT
