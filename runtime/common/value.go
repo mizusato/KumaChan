@@ -7,6 +7,7 @@ import (
 	. "kumachan/error"
 	"kumachan/stdlib"
 	"unsafe"
+	"strings"
 )
 
 
@@ -36,6 +37,25 @@ type NativeFunctionValue  NativeFunction
 type ArrayInfo struct {
 	Length    uint
 	ItemType  reflect.Type
+}
+
+type Char = uint32
+type String = ([]Char)
+
+func StringFromRuneSlice(runes ([] rune)) String {
+	return *(*([]Char))(unsafe.Pointer(&runes))
+}
+
+func StringFromGoString(bytes string) String {
+	return StringFromRuneSlice([]rune(bytes))
+}
+
+func GoStringFromString(str String) string {
+	var buf strings.Builder
+	for _, char := range str {
+		buf.WriteRune(rune(char))
+	}
+	return buf.String()
 }
 
 
@@ -196,3 +216,27 @@ func DwordFrom(v Value) uint32 {
 func QwordFrom(v Value) uint64 {
 	return v.(uint64)
 }
+
+func Struct2Prod(v interface{}) ProductValue {
+	var rv = reflect.ValueOf(v)
+	if rv.Kind() != reflect.Struct {
+		panic("struct expected")
+	}
+	var elements = make([] Value, rv.NumField())
+	for i := 0; i < rv.NumField(); i += 1 {
+		elements[i] = ToValue(rv.Field(i).Interface())
+	}
+	return &ValProd { elements }
+}
+
+func ToValue(go_value interface{}) Value {
+	switch v := go_value.(type) {
+	case bool:
+		return ToBool(v)
+	case string:
+		return StringFromGoString(v)
+	default:
+		return v
+	}
+}
+

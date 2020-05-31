@@ -3,18 +3,15 @@ type FileReadOnly   protected File;
 type FileWriteOnly  protected File;
 type FileReadWrite  protected File;
 
-type FileState  native;  // os.FileInfo
+type FileState {
+    // rx.FileState
+    name:     String,
+    size:     Uint64,
+    mode:     FileMode,
+    is-dir:   Bool,
+    mod-time: Time
+};
 type FileMode   Uint32;
-public function name: ( &(FileState) String )
-    native 'file-state-name';
-public function size: ( &(FileState) Uint64 )
-    native 'file-state-size';
-public function mode: ( &(FileState) FileMode )
-    native 'file-state-mode';
-public function is-dir: ( &(FileState) Bool )
-    native 'file-state-is-dir';
-public function last-modified: ( &(FileState) Time )
-    native 'file-state-last-modified';
 
 public function walk-dir: ( &(Path) Effect*[(Path,FileState),I/O::Error] )
     native 'walk-dir';
@@ -35,7 +32,7 @@ public function open-append: ( &(Path) Effect[FileWriteOnly,I/O::Error] )
 public function close: ( &(File) NoExcept[-] )
     native 'file-close';
 
-public function get-state: ( &(File) FileState )
+public function get-state: ( &(File) Effect[FileState,I/O::Error] )
     native 'file-get-state';
 
 public function read:  ( &(FileReadOnly,Number) Effect[Bytes,I/O::Error] )

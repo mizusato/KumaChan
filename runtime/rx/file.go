@@ -7,6 +7,7 @@ import (
 	"math"
 	"errors"
 	"path/filepath"
+	"time"
 )
 
 
@@ -14,6 +15,23 @@ type File struct {
 	raw     *os.File
 	worker  *Worker
 }
+type FileState struct {
+	Name     string
+	Size     uint64
+	Mode     uint32
+	IsDir    bool
+	ModTime  time.Time
+}
+func FileStateFromInfo(info os.FileInfo) FileState {
+	return FileState {
+		Name:    info.Name(),
+		Size:    uint64(info.Size()),
+		Mode:    uint32(info.Mode()),
+		IsDir:   info.IsDir(),
+		ModTime: info.ModTime(),
+	}
+}
+
 
 func FileFrom(raw *os.File) File {
 	return File {
@@ -79,7 +97,7 @@ func (f File) State() Effect {
 		if err != nil {
 			return err, false
 		} else {
-			return info, true
+			return FileStateFromInfo(info), true
 		}
 	})
 }
@@ -263,8 +281,8 @@ func (f File) ReadLines() Effect {
 
 
 type FileItem struct {
-	Path  string
-	Info  os.FileInfo
+	Path   string
+	State  FileState
 }
 
 func WalkDir(root string) Effect {
@@ -274,8 +292,8 @@ func WalkDir(root string) Effect {
 				return errors.New("operation cancelled")
 			}
 			sender.Next(FileItem {
-				Path: path,
-				Info: info,
+				Path:  path,
+				State: FileStateFromInfo(info),
 			})
 			return err
 		})
@@ -295,8 +313,8 @@ func ListDir(dir_path string) Effect {
 			}
 			if path != dir_path {
 				sender.Next(FileItem {
-					Path: path,
-					Info: info,
+					Path:  path,
+					State: FileStateFromInfo(info),
 				})
 				if info.IsDir() && path != dir_path {
 					return filepath.SkipDir

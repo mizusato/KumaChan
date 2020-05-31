@@ -4,7 +4,6 @@ import (
 	"os"
 	"fmt"
 	. "kumachan/runtime/common"
-	. "kumachan/runtime/lib/container"
 	"kumachan/runtime/rx"
 )
 

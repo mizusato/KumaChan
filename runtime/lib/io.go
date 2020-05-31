@@ -3,7 +3,6 @@ package lib
 import (
 	"io"
 	. "kumachan/runtime/common"
-	. "kumachan/runtime/lib/container"
 )
 
 

@@ -2,7 +2,6 @@ package lib
 
 import (
 	"os"
-	"time"
 	"runtime"
 	"strings"
 	"kumachan/runtime/rx"
@@ -81,29 +80,14 @@ var OS_Functions = map[string] Value {
 	"walk-dir": func(dir Path) rx.Effect {
 		return rx.WalkDir(dir.String()).Map(func(val rx.Object) rx.Object {
 			var item = val.(rx.FileItem)
-			return ToTuple2(PathFrom(item.Path), item.Info)
+			return ToTuple2(PathFrom(item.Path), Struct2Prod(item.State))
 		})
 	},
 	"list-dir": func(dir Path) rx.Effect {
 		return rx.ListDir(dir.String()).Map(func(val rx.Object) rx.Object {
 			var item = val.(rx.FileItem)
-			return ToTuple2(PathFrom(item.Path), item.Info)
+			return ToTuple2(PathFrom(item.Path), Struct2Prod(item.State))
 		})
-	},
-	"file-state-name": func(state os.FileInfo) String {
-		return StringFromGoString(state.Name())
-	},
-	"file-state-size": func(state os.FileInfo) uint64 {
-		return uint64(state.Size())
-	},
-	"file-state-mode": func(state os.FileInfo) os.FileMode {
-		return state.Mode()
-	},
-	"file-state-is-dir": func(state os.FileInfo) SumValue {
-		return ToBool(state.IsDir())
-	},
-	"file-state-last-modified": func(state os.FileInfo) time.Time {
-		return state.ModTime()
 	},
 	"open-read-only": func(path Path) rx.Effect {
 		return rx.OpenReadOnly(path.String())
@@ -124,7 +108,9 @@ var OS_Functions = map[string] Value {
 		return f.Close()
 	},
 	"file-get-state": func(f rx.File) rx.Effect {
-		return f.State()
+		return f.State().Map(func(state rx.Object) rx.Object {
+			return Struct2Prod(state)
+		})
 	},
 	"file-read": func(f rx.File, amount uint) rx.Effect {
 		return f.Read(amount)

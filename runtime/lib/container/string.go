@@ -2,35 +2,16 @@ package container
 
 import (
 	"reflect"
-	"unsafe"
-	"strings"
 	"unicode/utf8"
 	. "kumachan/error"
 	. "kumachan/runtime/common"
 )
 
 
-type Char = uint32
-type String = ([] Char)
-
 type Encoding  int
 const (
 	UTF8  Encoding  =  iota
 )
-
-func StringFromGoString(bytes string) String {
-	var str = make(String, 0, len(bytes) / 4)
-	for len(bytes) > 0 {
-		var char, size = utf8.DecodeRuneInString(bytes)
-		str = append(str, Char(char))
-		bytes = bytes[size:]
-	}
-	return str
-}
-
-func StringFromRuneSlice(runes ([] rune)) String {
-	return *(*([] Char))(unsafe.Pointer(&runes))
-}
 
 func StringForceDecode(bytes Bytes, e Encoding) String {
 	switch e {
@@ -65,14 +46,6 @@ func StringDecode(bytes Bytes, e Encoding) (String, bool) {
 	default:
 		panic("unknown or unimplemented encoding")
 	}
-}
-
-func GoStringFromString(str String) string {
-	var buf strings.Builder
-	for _, char := range str {
-		buf.WriteRune(rune(char))
-	}
-	return buf.String()
 }
 
 func StringEncode(str String, e Encoding) Bytes {
