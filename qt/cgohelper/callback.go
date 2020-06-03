@@ -8,12 +8,11 @@ import (
 
 var __GlobalCallbackRegistry = CreateCallbackRegistry()
 
-func RegisterCallback(cb func()) uint {
-	return __GlobalCallbackRegistry.Register(cb)
-}
-
-func UnregisterCallback(id uint) bool {
-	return __GlobalCallbackRegistry.Unregister(id)
+func NewCallback(cb func()) (uint, (func() bool)) {
+	var id = __GlobalCallbackRegistry.Register(cb)
+	return id, func() bool {
+		return __GlobalCallbackRegistry.Unregister(id)
+	}
 }
 
 func GetCallback(id uint) func() {

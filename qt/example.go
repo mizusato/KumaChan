@@ -28,6 +28,12 @@ type Widget struct {
 
 type String C.QtString
 
+type EventKind uint
+func EventMove() EventKind { return EventKind(uint(C.QtEventMove)) }
+func EventResize() EventKind { return EventKind(uint(C.QtEventResize)) }
+
+type Event C.QtEvent
+
 func main() {
     var ui_bytes, err = ioutil.ReadFile("example.ui")
     if err != nil { panic(err) }
@@ -36,6 +42,11 @@ func main() {
     Schedule(func() {
         window, ok := LoadWidget(ui_str)
         if !ok { panic("failed to load widget") }
+        window.Listen(EventResize(), false, func(ev Event) {
+            var width = ev.ResizeEventGetWidth()
+            var height = ev.ResizeEventGetHeight()
+            fmt.Printf("Resize Event: (%d, %d)\n", width, height)
+        })
         window.Show()
         label, ok := window.FindChild("label")
         if !ok { panic("unable to find label") }
@@ -76,13 +87,13 @@ func Init() {
 }
 
 func Schedule(operation func()) {
-    var f_id uint
+    var delete_callback (func() bool)
     var f = func() {
         operation()
-        cgohelper.UnregisterCallback(f_id)
+        delete_callback()
     }
-    f_id = cgohelper.RegisterCallback(f)
-    C.QtSchedule(cgo_callback, C.size_t(f_id))
+    callback, delete_callback := cgohelper.NewCallback(f)
+    C.QtSchedule(cgo_callback, C.size_t(callback))
 }
 
 func LoadWidget(def string) (Widget, bool) {
@@ -114,18 +125,37 @@ func (w Widget) Show() {
 func (obj Object) Connect(signal string, callback func()) func() {
     var new_str, del_all_str = str_alloc()
     defer del_all_str()
-    var cb = cgohelper.RegisterCallback(callback)
+    var cb, del_cb = cgohelper.NewCallback(callback)
     var conn = C.QtConnect(obj.addr, new_str(signal), cgo_callback, C.size_t(cb))
     if int(C.QtIsConnectionValid(conn)) != 0 {
         return func() {
             C.QtDisconnect(conn)
             // use Schedule() to prevent removing pending callbacks
             Schedule(func() {
-                cgohelper.UnregisterCallback(cb)
+                del_cb()
             })
         }
     } else {
         panic("invalid connection")
+    }
+}
+
+func (obj Object) Listen(kind EventKind, prevent bool, callback func(Event)) func() {
+    var l C.QtEventListener
+    var cb, del_cb = cgohelper.NewCallback(func() {
+        var ev = C.QtGetCurrentEvent(l)
+        callback(Event(ev))
+    })
+    Schedule(func() {
+        var prevent_flag int
+        if prevent { prevent_flag = 1 } else { prevent_flag = 0 }
+        l = C.QtAddEventListener(obj.addr, C.size_t(kind), C.int(prevent_flag), cgo_callback, C.size_t(cb))
+    })
+    return func() {
+        Schedule(func() {
+            C.QtRemoveEventListener(obj.addr, l)
+            del_cb()
+        })
     }
 }
 
@@ -157,6 +187,14 @@ func (obj Object) GetPropString(prop string) string {
 
 func (obj Object) SetPropString(prop string, value string) {
     obj.SetPropRuneString(prop, ([] rune)(value))
+}
+
+func (ev Event) ResizeEventGetWidth() uint {
+    return uint(C.QtResizeEventGetWidth(C.QtEvent(ev)))
+}
+
+func (ev Event) ResizeEventGetHeight() uint {
+    return uint(C.QtResizeEventGetHeight(C.QtEvent(ev)))
 }
 
 func NewStringFromRunes(runes ([] rune)) (String, func()) {

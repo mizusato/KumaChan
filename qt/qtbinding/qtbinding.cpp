@@ -6,9 +6,13 @@
 #include <QString>
 #include <QVector>
 #include <QVariant>
+#include <QResizeEvent>
 #include "qtbinding.hpp"
 #include "qtbinding.h"
 
+
+const size_t QtEventMove = QEvent::Move;
+const size_t QtEventResize = QEvent::Resize;
 
 QtString QtWrapString(QString str);
 QString QtUnwrapString(QtString str);
@@ -124,6 +128,46 @@ void QtDisconnect(QtConnHandle handle) {
     h->cb_obj = nullptr;
     delete h;
 };
+
+QtEventListener QtAddEventListener (
+        void*       obj_ptr,
+        size_t      kind,
+        QtBool      prevent,
+        callback_t  cb,
+        size_t      payload
+) {
+    QObject* obj = (QObject*) obj_ptr;
+    QEvent::Type q_kind = (QEvent::Type) kind;
+    EventListener* l = new EventListener(q_kind, prevent, cb, payload);
+    obj->installEventFilter(l);
+    QtEventListener wrapped;
+    wrapped.ptr = l;
+    return wrapped;
+}
+
+QtEvent QtGetCurrentEvent(QtEventListener listener) {
+    EventListener* l = (EventListener*) listener.ptr;
+    QtEvent wrapped;
+    wrapped.ptr = l->current_event;
+    return wrapped;
+}
+
+void QtRemoveEventListener(void* obj_ptr, QtEventListener listener) {
+    QObject* obj = (QObject*) obj_ptr;
+    EventListener* l = (EventListener*) listener.ptr;
+    obj->removeEventFilter(l);
+    delete l;
+}
+
+size_t QtResizeEventGetWidth(QtEvent ev) {
+    QResizeEvent* resize = (QResizeEvent*) ev.ptr;
+    return resize->size().width();
+}
+
+size_t QtResizeEventGetHeight(QtEvent ev) {
+    QResizeEvent* resize = (QResizeEvent*) ev.ptr;
+    return resize->size().height();
+}
 
 QtString QtNewStringUTF8(const char* buf, size_t len) {
     QString* ptr = new QString;

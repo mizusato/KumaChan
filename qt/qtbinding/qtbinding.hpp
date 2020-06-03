@@ -2,6 +2,7 @@
 #define HELLO_H
 #include <QObject>
 #include <QWidget>
+#include <QEvent>
 #include <cstdlib>
 
 
@@ -39,8 +40,41 @@ public:
     virtual ~CallbackObject() {};
 public slots:
     void slot() {
-        this->cb(this->payload);
+        cb(payload);
     };
+};
+
+class EventListener: public QObject {
+Q_OBJECT
+public:
+    QEvent::Type accept_type;
+    bool prevent_default;
+    callback_t cb;
+    size_t payload;
+    QObject* current_object;
+    QEvent* current_event;
+    EventListener(QEvent::Type t, bool prevent, callback_t cb, size_t payload): QObject(nullptr) {
+        this->accept_type = t;
+        this->prevent_default = prevent;
+        this->cb = cb;
+        this->payload = payload;
+    }
+    bool eventFilter(QObject* obj, QEvent *event) {
+        if (event->type() == accept_type) {
+            current_object = obj;
+            current_event = event;
+            cb(payload);
+            current_event = nullptr;
+            current_object = nullptr;
+            if (prevent_default) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
 };
 
 #endif
