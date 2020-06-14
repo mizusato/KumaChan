@@ -54,7 +54,7 @@ int QtMain() {
     return app->exec();
 }
 
-void QtSchedule(callback_t cb, size_t payload) {
+void QtCommitTask(callback_t cb, size_t payload) {
     bridge->QueueCallback(cb, payload);
 }
 
@@ -71,7 +71,7 @@ void* QtLoadWidget(const char* definition) {
     QBuffer buf(&bytes);
     QWidget* widget = loader->load(&buf, nullptr);
     return (void*) widget;
-};
+}
 
 void* QtWidgetFindChild(void* widget_ptr, const char* name) {
     QWidget* widget = (QWidget*) widget_ptr;

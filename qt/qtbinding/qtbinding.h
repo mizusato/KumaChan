@@ -33,7 +33,7 @@ extern "C" {
 #endif
     void QtInit();
     int QtMain();
-    void QtSchedule(void (*cb)(size_t), size_t payload);
+    void QtCommitTask(void (*cb)(size_t), size_t payload);
     void QtExit(int code);
     void QtQuit();
     void* QtLoadWidget(const char* definition);

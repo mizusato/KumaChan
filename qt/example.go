@@ -18,13 +18,20 @@ import (
 )
 
 
-type Object struct {
-    addr  unsafe.Pointer
+type Object interface {
+    Object()
+    ptr()  unsafe.Pointer
 }
+func (obj object) Object() {}
+func (obj object) ptr() unsafe.Pointer { return obj.addr }
+type object struct { addr unsafe.Pointer }
 
-type Widget struct {
+type Widget interface {
     Object
+    Widget()
 }
+func (widget) Widget() {}
+type widget struct { object }
 
 type String C.QtString
 
@@ -39,27 +46,27 @@ func main() {
     if err != nil { panic(err) }
     var ui_str = string(ui_bytes)
     Init()
-    Schedule(func() {
+    CommitTask(func() {
         window, ok := LoadWidget(ui_str)
         if !ok { panic("failed to load widget") }
-        window.Listen(EventResize(), false, func(ev Event) {
+        Listen(window, EventResize(), false, func(ev Event) {
             var width = ev.ResizeEventGetWidth()
             var height = ev.ResizeEventGetHeight()
             fmt.Printf("Resize Event: (%d, %d)\n", width, height)
         })
-        window.Show()
-        label, ok := window.FindChild("label")
+        Show(window)
+        label, ok := FindChild(window, "label")
         if !ok { panic("unable to find label") }
-        label.SetPropString("text", "你好世界")
-        btn, ok := window.FindChild("button")
+        SetPropString(label, "text", "你好世界")
+        btn, ok := FindChild(window, "button")
         if !ok { panic("unable to find button") }
-        btn.Connect("clicked()", func() {
-            label.SetPropString("text", fmt.Sprint(rand.Float64()))
+        Connect(btn, "clicked()", func() {
+            SetPropString(label, "text", fmt.Sprint(rand.Float64()))
         })
-        input, ok := window.FindChild("input")
-        input.Connect("textEdited(const QString&)", func() {
-            var input_text = input.GetPropString("text")
-            label.SetPropString("text", input_text)
+        input, ok := FindChild(window, "input")
+        Connect(input, "textEdited(const QString&)", func() {
+            var input_text = GetPropString(input, "text")
+            SetPropString(label, "text", input_text)
             fmt.Printf("input_text: %s\n", input_text)
         })
     })
@@ -86,14 +93,14 @@ func Init() {
     }
 }
 
-func Schedule(operation func()) {
+func CommitTask(operation func()) {
     var delete_callback (func() bool)
     var f = func() {
         operation()
         delete_callback()
     }
     callback, delete_callback := cgohelper.NewCallback(f)
-    C.QtSchedule(cgo_callback, C.size_t(callback))
+    C.QtCommitTask(cgo_callback, C.size_t(callback))
 }
 
 func LoadWidget(def string) (Widget, bool) {
@@ -101,37 +108,37 @@ func LoadWidget(def string) (Widget, bool) {
     defer del_all_str()
     var ptr = C.QtLoadWidget(new_str(def))
     if ptr != nil {
-        return Widget{Object{ptr}}, true
+        return widget{object{ptr}}, true
     } else {
-        return Widget{}, false
+        return widget{}, false
     }
 }
 
-func (w Widget) FindChild(name string) (Widget, bool) {
+func FindChild(w Widget, name string) (Widget, bool) {
     var new_str, del_all_str = str_alloc()
     defer del_all_str()
-    var ptr = C.QtWidgetFindChild(w.addr, new_str(name))
+    var ptr = C.QtWidgetFindChild(w.ptr(), new_str(name))
     if ptr != nil {
-        return Widget{Object{ptr}}, true
+        return widget{object{ptr}}, true
     } else {
-        return Widget{}, false
+        return widget{}, false
     }
 }
 
-func (w Widget) Show() {
-    C.QtWidgetShow(w.addr)
+func Show(w Widget) {
+    C.QtWidgetShow(w.ptr())
 }
 
-func (obj Object) Connect(signal string, callback func()) func() {
+func Connect(obj Object, signal string, callback func()) func() {
     var new_str, del_all_str = str_alloc()
     defer del_all_str()
     var cb, del_cb = cgohelper.NewCallback(callback)
-    var conn = C.QtConnect(obj.addr, new_str(signal), cgo_callback, C.size_t(cb))
+    var conn = C.QtConnect(obj.ptr(), new_str(signal), cgo_callback, C.size_t(cb))
     if int(C.QtIsConnectionValid(conn)) != 0 {
         return func() {
             C.QtDisconnect(conn)
-            // use Schedule() to prevent removing pending callbacks
-            Schedule(func() {
+            // use CommitTask() to prevent removing pending callbacks
+            CommitTask(func() {
                 del_cb()
             })
         }
@@ -140,53 +147,53 @@ func (obj Object) Connect(signal string, callback func()) func() {
     }
 }
 
-func (obj Object) Listen(kind EventKind, prevent bool, callback func(Event)) func() {
+func Listen(obj Object, kind EventKind, prevent bool, callback func(Event)) func() {
     var l C.QtEventListener
     var cb, del_cb = cgohelper.NewCallback(func() {
         var ev = C.QtGetCurrentEvent(l)
         callback(Event(ev))
     })
-    Schedule(func() {
+    CommitTask(func() {
         var prevent_flag int
         if prevent { prevent_flag = 1 } else { prevent_flag = 0 }
-        l = C.QtAddEventListener(obj.addr, C.size_t(kind), C.int(prevent_flag), cgo_callback, C.size_t(cb))
+        l = C.QtAddEventListener(obj.ptr(), C.size_t(kind), C.int(prevent_flag), cgo_callback, C.size_t(cb))
     })
     return func() {
-        Schedule(func() {
-            C.QtRemoveEventListener(obj.addr, l)
+        CommitTask(func() {
+            C.QtRemoveEventListener(obj.ptr(), l)
             del_cb()
         })
     }
 }
 
-func (obj Object) GetPropQtString(prop string) String {
+func GetPropQtString(obj Object, prop string) String {
     var new_str, del_all_str = str_alloc()
     defer del_all_str()
-    return String(C.QtObjectGetPropString(obj.addr, new_str(prop)))
+    return String(C.QtObjectGetPropString(obj.ptr(), new_str(prop)))
 }
 
-func (obj Object) SetPropQtString(prop string, val String) {
+func SetPropQtString(obj Object, prop string, val String) {
     var new_str, del_all_str = str_alloc()
     defer del_all_str()
-    C.QtObjectSetPropString(obj.addr, new_str(prop), C.QtString(val))
+    C.QtObjectSetPropString(obj.ptr(), new_str(prop), C.QtString(val))
 }
 
-func (obj Object) GetPropRuneString(prop string) ([] rune) {
-    return StringToRunes(obj.GetPropQtString(prop))
+func GetPropRuneString(obj Object, prop string) ([] rune) {
+    return StringToRunes(GetPropQtString(obj, prop))
 }
 
-func (obj Object) SetPropRuneString(prop string, val ([] rune)) {
+func SetPropRuneString(obj Object, prop string, val ([] rune)) {
     var q_val, del_str = NewStringFromRunes(val)
     defer del_str()
-    obj.SetPropQtString(prop, q_val)
+    SetPropQtString(obj, prop, q_val)
 }
 
-func (obj Object) GetPropString(prop string) string {
-    return string(obj.GetPropRuneString(prop))
+func GetPropString(obj Object, prop string) string {
+    return string(GetPropRuneString(obj, prop))
 }
 
-func (obj Object) SetPropString(prop string, value string) {
-    obj.SetPropRuneString(prop, ([] rune)(value))
+func SetPropString(obj Object, prop string, value string) {
+    SetPropRuneString(obj, prop, ([] rune)(value))
 }
 
 func (ev Event) ResizeEventGetWidth() uint {
