@@ -45,6 +45,10 @@ type NativeRef struct {
     Node               `part:"native"`
     Id    StringText   `part:"string_text"`
 }
+func (impl PredefinedValue) ConstValue() {}
+type PredefinedValue struct {
+    Value  interface {}
+}
 
 func (impl DeclFunction) Statement() {}
 type DeclFunction struct {

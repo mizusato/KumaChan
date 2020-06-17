@@ -1,4 +1,4 @@
-package main
+package qt
 
 /*
 #include <stdlib.h>

@@ -1,4 +1,4 @@
-package main
+package qt
 
 /*
 #include <stdlib.h>
@@ -8,13 +8,10 @@ package main
 import "C"
 
 import (
-    "io/ioutil"
     "runtime"
     "unsafe"
-    "fmt"
-    "math/rand"
-    "kumachan/qt/cgohelper"
     "sync"
+    "kumachan/qt/cgohelper"
 )
 
 
@@ -41,41 +38,41 @@ func EventResize() EventKind { return EventKind(uint(C.QtEventResize)) }
 
 type Event C.QtEvent
 
-func main() {
-    var ui_bytes, err = ioutil.ReadFile("example.ui")
-    if err != nil { panic(err) }
-    var ui_str = string(ui_bytes)
-    Init()
-    CommitTask(func() {
-        window, ok := LoadWidget(ui_str)
-        if !ok { panic("failed to load widget") }
-        Listen(window, EventResize(), false, func(ev Event) {
-            var width = ev.ResizeEventGetWidth()
-            var height = ev.ResizeEventGetHeight()
-            fmt.Printf("Resize Event: (%d, %d)\n", width, height)
-        })
-        Show(window)
-        label, ok := FindChild(window, "label")
-        if !ok { panic("unable to find label") }
-        SetPropString(label, "text", "你好世界")
-        btn, ok := FindChild(window, "button")
-        if !ok { panic("unable to find button") }
-        Connect(btn, "clicked()", func() {
-            SetPropString(label, "text", fmt.Sprint(rand.Float64()))
-        })
-        input, ok := FindChild(window, "input")
-        Connect(input, "textEdited(const QString&)", func() {
-            var input_text = GetPropString(input, "text")
-            SetPropString(label, "text", input_text)
-            fmt.Printf("input_text: %s\n", input_text)
-        })
-    })
-    <- chan struct{} (nil)
-}
+//func main() {
+//    var ui_bytes, err = ioutil.ReadFile("example.ui")
+//    if err != nil { panic(err) }
+//    var ui_str = string(ui_bytes)
+//    MakeSureInitialized()
+//    CommitTask(func() {
+//        window, ok := LoadWidget(ui_str)
+//        if !ok { panic("failed to load widget") }
+//        Listen(window, EventResize(), false, func(ev Event) {
+//            var width = ev.ResizeEventGetWidth()
+//            var height = ev.ResizeEventGetHeight()
+//            fmt.Printf("Resize Event: (%d, %d)\n", width, height)
+//        })
+//        Show(window)
+//        label, ok := FindChild(window, "label")
+//        if !ok { panic("unable to find label") }
+//        SetPropString(label, "text", "你好世界")
+//        btn, ok := FindChild(window, "button")
+//        if !ok { panic("unable to find button") }
+//        Connect(btn, "clicked()", func() {
+//            SetPropString(label, "text", fmt.Sprint(rand.Float64()))
+//        })
+//        input, ok := FindChild(window, "input")
+//        Connect(input, "textEdited(const QString&)", func() {
+//            var input_text = GetPropString(input, "text")
+//            SetPropString(label, "text", input_text)
+//            fmt.Printf("input_text: %s\n", input_text)
+//        })
+//    })
+//    <- chan struct{} (nil)
+//}
 
 var initialized = false
 var init_mutex sync.Mutex
-func Init() {
+func MakeSureInitialized() {
     init_mutex.Lock()
     if !(initialized) {
         initialized = true

@@ -14,6 +14,8 @@ import (
 	"kumachan/parser/ast"
 	"kumachan/parser/syntax"
 	"kumachan/stdlib"
+	"kumachan/loader/common"
+	"kumachan/loader/kinds"
 )
 
 
@@ -21,6 +23,11 @@ const ManifestFileName = "module.json"
 const StandaloneScriptModuleName = "Main"
 const SourceSuffix = ".km"
 const StdlibFolder = "stdlib"
+
+
+var __UnitFileLoaders = [] common.UnitFileLoader {
+	kinds.QtUiLoader(),
+}
 
 type Module struct {
 	Name      string
@@ -46,45 +53,44 @@ type M_StandaloneScript struct {
 	File  SourceFile
 }
 type M_ModuleFolder struct {
-	Files  [] SourceFile
+	Files  [] common.UnitFile
 }
 type SourceFile struct {
 	Path     string
 	Content  [] byte
 }
+func (sf SourceFile) GetAST() (ast.Root, *parser.Error) {
+	var code_string = string(sf.Content)
+	var code = []rune(code_string)
+	var tree, err = parser.Parse(code, syntax.RootPartName, sf.Path)
+	if err != nil { return ast.Root{}, err }
+	return transformer.Transform(tree), nil
+}
 
 func (mod M_StandaloneScript) Load(ctx Context) (ast.Root, *Error) {
-	const syntax_root = syntax.RootPartName
-	var code_string = string(mod.File.Content)
-	var code = []rune(code_string)
-	var tree, err = parser.Parse(code, syntax_root, mod.File.Path)
+	var root, err = mod.File.GetAST()
 	if err != nil { return ast.Root{}, &Error {
 		Context:  ctx,
 		Concrete: E_ParseFailed {
 			ParserError: err,
 		},
 	} }
-	var root = transformer.Transform(tree)
 	return root, nil
 }
 func (mod M_ModuleFolder) Load(ctx Context) (ast.Root, *Error) {
-	const syntax_root = syntax.RootPartName
 	var empty_tree, err = parser.Parse (
-		([] rune)("#"), syntax_root, "(Module Folder)",
+		([] rune)("#"), syntax.RootPartName, "(Module Folder)",
 	)
 	if err != nil { panic("something went wrong") }
 	var mod_root = transformer.Transform(empty_tree)
 	for _, f := range mod.Files {
-		var code_string = string(f.Content)
-		var code = []rune(code_string)
-		var tree, err = parser.Parse(code, syntax_root, f.Path)
+		var f_root, err = f.GetAST()
 		if err != nil { return ast.Root{}, &Error {
 			Context:  ctx,
 			Concrete: E_ParseFailed {
 				ParserError: err,
 			},
 		} }
-		var f_root = transformer.Transform(tree)
 		for _, cmd := range f_root.Statements {
 			mod_root.Statements = append(mod_root.Statements, cmd)
 		}
@@ -106,7 +112,7 @@ func ReadModulePath(path string) (RawModule, error) {
 		var has_manifest = false
 		var manifest_content ([] byte)
 		var manifest_path string
-		var source_files = make([] SourceFile, 0)
+		var unit_files = make([] common.UnitFile, 0)
 		for _, item := range items {
 			var item_name = item.Name()
 			var item_path = filepath.Join(path, item_name)
@@ -119,10 +125,27 @@ func ReadModulePath(path string) (RawModule, error) {
 			} else if strings.HasSuffix(item_name, SourceSuffix) {
 				var item_content, err = ioutil.ReadFile(item_path)
 				if err != nil { return RawModule{}, err }
-				source_files = append(source_files, SourceFile {
+				unit_files = append(unit_files, SourceFile {
 					Path:    item_path,
 					Content: item_content,
 				})
+			} else {
+				var loader common.UnitFileLoader
+				var loader_exists = false
+				for _, l := range __UnitFileLoaders {
+					if strings.HasSuffix(item_name, ("." + l.Extension)) {
+						loader = l
+						loader_exists = true
+						break
+					}
+				}
+				if loader_exists {
+					item_content, err := ioutil.ReadFile(item_path)
+					if err != nil { return RawModule{}, err }
+					f, err := loader.Load(item_path, item_content)
+					if err != nil { return RawModule{}, err }
+					unit_files = append(unit_files, f)
+				}
 			}
 		}
 		if !(has_manifest) {
@@ -151,7 +174,7 @@ func ReadModulePath(path string) (RawModule, error) {
 		return RawModule {
 			FileInfo: fd_info,
 			Manifest: manifest,
-			Content:  M_ModuleFolder { source_files },
+			Content:  M_ModuleFolder {unit_files},
 		}, nil
 	} else {
 		var content, err = ioutil.ReadAll(fd)
