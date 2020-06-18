@@ -1,0 +1,3 @@
+do (show MainWindow);
+
+do (wait { timeout: 1000000 });

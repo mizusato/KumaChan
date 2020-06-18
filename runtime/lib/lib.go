@@ -13,6 +13,7 @@ var NativeFunctionMaps = [] (map[string] interface{}) {
 	IO_Functions,
 	OS_Functions,
 	NetFunctions,
+	QtFunctions,
 }
 var NativeConstantMaps = [] (map[string] Value) {
 	OS_Constants,

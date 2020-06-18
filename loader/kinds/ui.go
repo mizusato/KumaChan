@@ -2,13 +2,13 @@ package kinds
 
 import (
 	"errors"
+	"strings"
 	"encoding/xml"
 	"path/filepath"
 	"kumachan/loader/common"
 	"kumachan/parser"
 	"kumachan/parser/ast"
 	"kumachan/qt"
-	"strings"
 )
 
 
@@ -63,11 +63,18 @@ func (f QtUiFile) GetAST() (ast.Root, *parser.Error) {
 type QtUi struct {
 	RootWidget  QtUiWidget   `xml:"widget"`
 }
-
 type QtUiWidget struct {
 	Name      string          `xml:"name,attr"`
 	Class     string          `xml:"class,attr"`
 	Children  [] QtUiWidget   `xml:"widget"`
+	Layout    QtUiLayout      `xml:"layout"`
+
+}
+type QtUiLayout struct {
+	Items  [] QtUiLayoutItem   `xml:"item"`
+}
+type QtUiLayoutItem struct {
+	Widget  QtUiWidget   `xml:"widget"`
 }
 
 func LoadQtUi(path string, content ([] byte), raw_config interface{}) (common.UnitFile, error) {
@@ -76,27 +83,43 @@ func LoadQtUi(path string, content ([] byte), raw_config interface{}) (common.Un
 	var err = xml.Unmarshal(content, &ui)
 	if err != nil { return nil, err }
 	qt.MakeSureInitialized()
-	var root_instance, ok = qt.LoadWidget(string(content), filepath.Dir(path))
-	if !ok { return QtUiFile{}, errors.New("error parsing UI file") }
 	var widgets = make(map[string] QtWidget)
-	widgets[ui.RootWidget.Name] = QtWidget {
-		Class:    ui.RootWidget.Class,
-		Instance: root_instance,
-	}
-	var add_children func(def QtUiWidget, instance qt.Widget)
-	add_children = func(def QtUiWidget, instance qt.Widget) {
-		for _, child := range def.Children {
-			var name = child.Name
-			var child_instance, ok = qt.FindChild(instance, name)
-			if !ok { panic("something went wrong") }
-			widgets[name] = QtWidget {
-				Class:    def.Class,
-				Instance: child_instance,
-			}
-			add_children(child, child_instance)
+	var result = make(chan error)
+	qt.CommitTask(func() {
+		var root_instance, ok = qt.LoadWidget(string(content), filepath.Dir(path))
+		if !ok {
+			result <- errors.New("error parsing UI file")
+			return
 		}
-	}
-	add_children(ui.RootWidget, root_instance)
+		widgets[ui.RootWidget.Name] = QtWidget {
+			Class:    ui.RootWidget.Class,
+			Instance: root_instance,
+		}
+		var add_children func(def QtUiWidget, instance qt.Widget)
+		add_children = func(def QtUiWidget, instance qt.Widget) {
+			var all_children = make([] QtUiWidget, 0)
+			for _, child := range def.Children {
+				all_children = append(all_children, child)
+			}
+			for _, item := range def.Layout.Items {
+				all_children = append(all_children, item.Widget)
+			}
+			for _, child := range all_children {
+				var name = child.Name
+				var child_instance, ok = qt.FindChild(instance, name)
+				if !ok { panic("something went wrong") }
+				widgets[name] = QtWidget {
+					Class:    def.Class,
+					Instance: child_instance,
+				}
+				add_children(child, child_instance)
+			}
+		}
+		add_children(ui.RootWidget, root_instance)
+		result <- nil
+	})
+	err = <-result
+	if err != nil { return QtUiFile{}, err }
 	return QtUiFile {
 		Path:    path,
 		Widgets: widgets,

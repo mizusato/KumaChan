@@ -478,13 +478,13 @@ func CompileClosure (
 		SourceMap: raw_inner_code.SourceMap,
 	}
 	var f = &c.Function {
-		IsNative: false,
+		Kind:     c.F_USER,
 		Code:     final_inner_code.InstSeq,
-		BaseSize:    c.FrameBaseSize {
+		BaseSize: c.FrameBaseSize {
 			Context:  c.Short(base_context_size),
 			Reserved: c.Long(base_reserved_size),
 		},
-		Info:        c.FuncInfo {
+		Info:     c.FuncInfo {
 			Name:      "(closure)",
 			DeclPoint: info.ErrorPoint,
 			SourceMap: final_inner_code.SourceMap,

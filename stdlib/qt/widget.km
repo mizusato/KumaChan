@@ -1,0 +1,2 @@
+public function show: (&(Widget)(NoExcept[-]))
+    native 'qt-show';

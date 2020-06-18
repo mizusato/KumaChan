@@ -4,19 +4,19 @@ import (
 	"os"
 	"fmt"
 	"errors"
+	"strings"
+	"reflect"
 	"io/ioutil"
 	"encoding/json"
 	"path/filepath"
 	. "kumachan/error"
 	"kumachan/parser"
-	"kumachan/parser/transformer"
 	"kumachan/parser/ast"
 	"kumachan/parser/syntax"
+	"kumachan/parser/transformer"
 	"kumachan/stdlib"
 	"kumachan/loader/common"
 	"kumachan/loader/kinds"
-	"strings"
-	"reflect"
 )
 
 

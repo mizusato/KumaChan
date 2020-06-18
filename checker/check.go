@@ -35,6 +35,10 @@ type ExprNative struct {
 	Name   string
 	Point  ErrorPoint
 }
+func (impl ExprPredefinedValue) ExprLike() {}
+type ExprPredefinedValue struct {
+	Value  interface{}
+}
 func (impl ExprExpr) ExprLike() {}
 type ExprExpr Expr
 
@@ -450,6 +454,13 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 				Value: ExprNative {
 					Name:  string(val.Id.Value),
 					Point: ErrorPointFrom(val.Node),
+				},
+			}
+		case ast.PredefinedValue:
+			const_map[name] = CheckedConstant {
+				Point: ErrorPointFrom(constant.Node),
+				Value: ExprPredefinedValue {
+					Value: val.Value,
 				},
 			}
 		default:

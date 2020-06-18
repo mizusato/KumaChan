@@ -37,11 +37,14 @@ func execute(p Program, m *Machine) {
 	}
 	for i, _ := range p.Constants {
 		var f = p.Constants[i]
-		if f.IsNative {
-			m.globalSlot = append(m.globalSlot, C(f.NativeIndex))
-		} else {
+		switch f.Kind {
+		case F_USER:
 			var v = f.ToValue(nil).(FunctionValue)
 			m.globalSlot = append(m.globalSlot, call(v, nil, m))
+		case F_NATIVE:
+			m.globalSlot = append(m.globalSlot, C(f.NativeIndex))
+		case F_PREDEFINED:
+			m.globalSlot = append(m.globalSlot, f.ToValue(nil))
 		}
 	}
 	var ctx = rx.Background()

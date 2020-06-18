@@ -91,6 +91,20 @@ func CompileFunction (
 	point  ErrorPoint,
 ) (*c.Function, []GlobalRef, []*Error) {
 	switch b := body.(type) {
+	case ch.ExprPredefinedValue:
+		return &c.Function {
+			Kind:        c.F_PREDEFINED,
+			NativeIndex: -1,
+			Predefined:  b.Value,
+			Code:        nil,
+			BaseSize:    c.FrameBaseSize {},
+			Info: c.FuncInfo {
+				Module:    mod,
+				Name:      name,
+				DeclPoint: point,
+				SourceMap: nil,
+			},
+		}, make([] GlobalRef, 0), nil
 	case ch.ExprNative:
 		var native_name = b.Name
 		var index, exists = lib.NativeFunctionIndex[native_name]
@@ -102,8 +116,9 @@ func CompileFunction (
 			} }
 		}
 		return &c.Function {
-			IsNative:    true,
+			Kind:        c.F_NATIVE,
 			NativeIndex: index,
+			Predefined:  nil,
 			Code:        nil,
 			BaseSize:    c.FrameBaseSize {},
 			Info:        c.FuncInfo {
@@ -142,8 +157,9 @@ func CompileFunction (
 			panic("maximum quantity of local bindings exceeded")
 		}
 		return &c.Function {
-			IsNative:    false,
+			Kind:        c.F_USER,
 			NativeIndex: -1,
+			Predefined:  nil,
 			Code:        code.InstSeq,
 			BaseSize:    c.FrameBaseSize {
 				Context:  0,
@@ -169,6 +185,20 @@ func CompileConstant (
 	point  ErrorPoint,
 ) (*c.Function, []GlobalRef, []*Error) {
 	switch b := body.(type) {
+	case ch.ExprPredefinedValue:
+		return &c.Function {
+			Kind:        c.F_PREDEFINED,
+			NativeIndex: -1,
+			Predefined:  b.Value,
+			Code:        nil,
+			BaseSize:    c.FrameBaseSize {},
+			Info: c.FuncInfo {
+				Module:    mod,
+				Name:      name,
+				DeclPoint: point,
+				SourceMap: nil,
+			},
+		}, make([] GlobalRef, 0), nil
 	case ch.ExprNative:
 		var native_name = b.Name
 		var index, exists = lib.NativeConstantIndex[native_name]
@@ -180,8 +210,9 @@ func CompileConstant (
 			} }
 		}
 		return &c.Function {
-			IsNative:    true,
+			Kind:        c.F_NATIVE,
 			NativeIndex: index,
+			Predefined:  nil,
 			Code:        nil,
 			BaseSize:    c.FrameBaseSize {},
 			Info: c.FuncInfo {
@@ -201,8 +232,9 @@ func CompileConstant (
 			panic("maximum quantity of local bindings exceeded")
 		}
 		return &c.Function {
-			IsNative:    false,
+			Kind:        c.F_USER,
 			NativeIndex: -1,
+			Predefined:  nil,
 			Code:        code.InstSeq,
 			BaseSize:    c.FrameBaseSize {
 				Context:  0,

@@ -2,14 +2,21 @@ package common
 
 import (
 	"fmt"
-	. "kumachan/error"
 	"strings"
+	. "kumachan/error"
 )
 
 
+type FunctionKind int
+const (
+	F_USER FunctionKind = iota
+	F_NATIVE
+	F_PREDEFINED
+)
 type Function struct {
-	IsNative     bool
+	Kind         FunctionKind
 	NativeIndex  int
+	Predefined   interface{}
 	Code         [] Instruction
 	BaseSize     FrameBaseSize
 	Info         FuncInfo
@@ -28,13 +35,18 @@ type FuncInfo struct {
 }
 
 func (f *Function) ToValue(native_registry func(int)Value) Value {
-	if f.IsNative {
-		return native_registry(f.NativeIndex)
-	} else {
+	switch f.Kind {
+	case F_USER:
 		return &ValFunc {
 			Underlying:    f,
 			ContextValues: make([]Value, 0, 0),
 		}
+	case F_NATIVE:
+		return native_registry(f.NativeIndex)
+	case F_PREDEFINED:
+		return f.Predefined
+	default:
+		panic("impossible branch")
 	}
 }
 
@@ -46,10 +58,8 @@ func (f *Function) String() string {
 	var file = f.Info.DeclPoint.Node.CST.Name
 	fmt.Fprintf(&buf, " at (%d, %d) in %s", point.Row, point.Col, file)
 	buf.WriteRune('\n')
-	if f.IsNative {
-		fmt.Fprintf(&buf, "    NATIVE %d", f.NativeIndex)
-		return buf.String()
-	} else {
+	switch f.Kind {
+	case F_USER:
 		for i, inst := range f.Code {
 			fmt.Fprintf(&buf, "    [%d] %s", i, inst.String())
 			if i < len(f.Info.SourceMap) {
@@ -65,5 +75,13 @@ func (f *Function) String() string {
 			}
 		}
 		return buf.String()
+	case F_NATIVE:
+		fmt.Fprintf(&buf, "    NATIVE %d", f.NativeIndex)
+		return buf.String()
+	case F_PREDEFINED:
+		fmt.Fprintf(&buf, "    PREDEFINED")
+		return buf.String()
+	default:
+		panic("impossible branch")
 	}
 }
