@@ -1,5 +1,6 @@
 #include <QApplication>
 #include <QMetaMethod>
+#include <QDir>
 #include <QUiLoader>
 #include <QBuffer>
 #include <QByteArray>
@@ -66,9 +67,11 @@ void QtQuit() {
     app->quit();
 }
 
-void* QtLoadWidget(const char* definition) {
+void* QtLoadWidget(const char* definition, const char* directory) {
     QByteArray bytes(definition);
     QBuffer buf(&bytes);
+    QDir dir(directory);
+    loader->setWorkingDirectory(dir);
     QWidget* widget = loader->load(&buf, nullptr);
     return (void*) widget;
 }

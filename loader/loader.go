@@ -3,7 +3,6 @@ package loader
 import (
 	"os"
 	"fmt"
-	"strings"
 	"errors"
 	"io/ioutil"
 	"encoding/json"
@@ -16,6 +15,8 @@ import (
 	"kumachan/stdlib"
 	"kumachan/loader/common"
 	"kumachan/loader/kinds"
+	"strings"
+	"reflect"
 )
 
 
@@ -44,7 +45,11 @@ type RawModule struct {
 	Content   RawModuleContent
 }
 type RawModuleManifest struct {
-	Name  string   `json:"name"`
+	Name    string            `json:"name"`
+	Config  RawModuleConfig   `json:"config"`
+}
+type RawModuleConfig struct {
+	UI  kinds.QtUiConfig   `json:"ui"`
 }
 type RawModuleContent interface {
 	Load(ctx Context)  (ast.Root, *Error)
@@ -78,11 +83,7 @@ func (mod M_StandaloneScript) Load(ctx Context) (ast.Root, *Error) {
 	return root, nil
 }
 func (mod M_ModuleFolder) Load(ctx Context) (ast.Root, *Error) {
-	var empty_tree, err = parser.Parse (
-		([] rune)("#"), syntax.RootPartName, "(Module Folder)",
-	)
-	if err != nil { panic("something went wrong") }
-	var mod_root = transformer.Transform(empty_tree)
+	var ast_root = common.CreateEmptyAST("(Module Folder)")
 	for _, f := range mod.Files {
 		var f_root, err = f.GetAST()
 		if err != nil { return ast.Root{}, &Error {
@@ -92,10 +93,10 @@ func (mod M_ModuleFolder) Load(ctx Context) (ast.Root, *Error) {
 			},
 		} }
 		for _, cmd := range f_root.Statements {
-			mod_root.Statements = append(mod_root.Statements, cmd)
+			ast_root.Statements = append(ast_root.Statements, cmd)
 		}
 	}
-	return mod_root, nil
+	return ast_root, nil
 }
 
 func ReadModulePath(path string) (RawModule, error) {
@@ -122,7 +123,24 @@ func ReadModulePath(path string) (RawModule, error) {
 				manifest_content = item_content
 				manifest_path = item_path
 				has_manifest = true
-			} else if strings.HasSuffix(item_name, SourceSuffix) {
+			}
+		}
+		if !(has_manifest) {
+			return RawModule{}, errors.New (
+				fmt.Sprintf("missing manifest(%s) in module folder %s",
+					ManifestFileName, path))
+		}
+		var manifest RawModuleManifest
+		err = json.Unmarshal(manifest_content, &manifest)
+		if err != nil {
+			return RawModule{}, errors.New (
+				fmt.Sprintf("error decoding module manifest %s: %s",
+					manifest_path, err.Error()))
+		}
+		for _, item := range items {
+			var item_name = item.Name()
+			var item_path = filepath.Join(path, item_name)
+			if strings.HasSuffix(item_name, SourceSuffix) {
 				var item_content, err = ioutil.ReadFile(item_path)
 				if err != nil { return RawModule{}, err }
 				unit_files = append(unit_files, SourceFile {
@@ -140,25 +158,22 @@ func ReadModulePath(path string) (RawModule, error) {
 					}
 				}
 				if loader_exists {
+					var item_config interface{} = nil
+					var config_rv = reflect.ValueOf(manifest.Config)
+					var config_t = config_rv.Type()
+					for i := 0; i < config_t.NumField(); i += 1 {
+						var field_t = config_t.Field(i)
+						if field_t.Tag.Get("json") == loader.Extension {
+							item_config = config_rv.Field(i).Interface()
+						}
+					}
 					item_content, err := ioutil.ReadFile(item_path)
 					if err != nil { return RawModule{}, err }
-					f, err := loader.Load(item_path, item_content)
+					f, err := loader.Load(item_path, item_content, item_config)
 					if err != nil { return RawModule{}, err }
 					unit_files = append(unit_files, f)
 				}
 			}
-		}
-		if !(has_manifest) {
-			return RawModule{}, errors.New (
-				fmt.Sprintf("missing manifest(%s) in module folder %s",
-					ManifestFileName, path))
-		}
-		var manifest RawModuleManifest
-		err = json.Unmarshal(manifest_content, &manifest)
-		if err != nil {
-			return RawModule{}, errors.New (
-				fmt.Sprintf("error decoding module manifest %s: %s",
-					manifest_path, err.Error()))
 		}
 		var mod_name = manifest.Name
 		if mod_name == "" {

@@ -100,10 +100,10 @@ func CommitTask(operation func()) {
     C.QtCommitTask(cgo_callback, C.size_t(callback))
 }
 
-func LoadWidget(def string) (Widget, bool) {
+func LoadWidget(def string, dir string) (Widget, bool) {
     var new_str, del_all_str = str_alloc()
     defer del_all_str()
-    var ptr = C.QtLoadWidget(new_str(def))
+    var ptr = C.QtLoadWidget(new_str(def), new_str(dir))
     if ptr != nil {
         return widget{object{ptr}}, true
     } else {

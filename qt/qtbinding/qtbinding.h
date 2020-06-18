@@ -36,7 +36,7 @@ extern "C" {
     void QtCommitTask(void (*cb)(size_t), size_t payload);
     void QtExit(int code);
     void QtQuit();
-    void* QtLoadWidget(const char* definition);
+    void* QtLoadWidget(const char* definition, const char* directory);
     void* QtWidgetFindChild(void* widget_ptr, const char* name);
     void QtWidgetShow(void* widget_ptr);
     void QtWidgetHide(void* widget_ptr);
