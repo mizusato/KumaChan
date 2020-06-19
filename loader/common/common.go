@@ -1,8 +1,8 @@
 package common
 
 import (
-	"kumachan/parser/ast"
 	"kumachan/parser"
+	"kumachan/parser/ast"
 	"kumachan/parser/syntax"
 	"kumachan/parser/transformer"
 )

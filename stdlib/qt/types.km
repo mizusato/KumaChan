@@ -1,8 +1,0 @@
-type Object native;
-
-type Widget protected Object;
-
-type MainWindow protected Widget;
-type Label protected Widget;
-type LineEdit protected Widget;
-type PushButton protected Widget;

@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
-	. "kumachan/error"
-	"kumachan/stdlib"
 	"unsafe"
 	"strings"
+	. "kumachan/error"
+	"kumachan/stdlib"
 )
 
 
@@ -40,14 +40,18 @@ type ArrayInfo struct {
 }
 
 type Char = uint32
-type String = ([]Char)
+type String = ([] Char)
 
 func StringFromRuneSlice(runes ([] rune)) String {
-	return *(*([]Char))(unsafe.Pointer(&runes))
+	return *(*([] Char))(unsafe.Pointer(&runes))
+}
+
+func RuneSliceFromString(str String) ([] rune) {
+	return *(*([] rune))(unsafe.Pointer(&str))
 }
 
 func StringFromGoString(bytes string) String {
-	return StringFromRuneSlice([]rune(bytes))
+	return StringFromRuneSlice(([] rune)(bytes))
 }
 
 func GoStringFromString(str String) string {

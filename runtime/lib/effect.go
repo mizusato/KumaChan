@@ -1,6 +1,9 @@
 package lib
 
 import (
+	"os"
+	"fmt"
+	"math/rand"
 	. "kumachan/runtime/common"
 	"kumachan/runtime/rx"
 	"kumachan/runtime/lib/container"
@@ -8,6 +11,36 @@ import (
 
 
 var EffectFunctions = map[string] Value {
+	"listen": func(source rx.Source) rx.Effect {
+		return source.Listen()
+	},
+	"random": func() rx.Effect {
+		return rx.CreateBlockingEffect(func() (rx.Object, bool) {
+			return rand.Float64(), true
+		})
+	},
+	"crash": func(msg String, h MachineHandle) rx.Effect {
+		const bold = "\033[1m"
+		const red = "\033[31m"
+		const reset = "\033[0m"
+		var point = h.GetErrorPoint()
+		var source_point = point.Node.Point
+		return rx.CreateBlockingEffect(func() (rx.Object, bool) {
+			fmt.Fprintf (
+				os.Stderr, "%v*** Crash: (%d, %d) at %s%v\n",
+				bold+red,
+				source_point.Row, source_point.Col, point.Node.CST.Name,
+				reset,
+			)
+			fmt.Fprintf (
+				os.Stderr, "%v%s%v\n",
+				bold+red, GoStringFromString(msg), reset,
+			)
+			os.Exit(255)
+			// noinspection GoUnreachableCode
+			panic("program should have crashed")
+		})
+	},
 	"emit": func(v Value) rx.Effect {
 		return rx.CreateBlockingEffect(func() (rx.Object, bool) {
 			return v, true
@@ -60,6 +93,7 @@ var EffectFunctions = map[string] Value {
 		return rx.Ticker(interval)
 	},
 	"wait-complete": func(e rx.Effect) rx.Effect {
+		// TODO: "wait-complete" -> "forever"
 		return e.WaitComplete()
 	},
 	"then": func(e rx.Effect, f Value, h MachineHandle) rx.Effect {

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>MainWindow</class>
- <widget class="QMainWindow" name="MainWindow">
+ <class>DemoWindow</class>
+ <widget class="QMainWindow" name="DemoWindow">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -11,12 +11,12 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Qt Demo</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <widget class="QLabel" name="label">
+     <widget class="QLabel" name="TextDisplay">
       <property name="font">
        <font>
         <family>Sans Serif</family>
@@ -29,10 +29,10 @@
      </widget>
     </item>
     <item>
-     <widget class="QLineEdit" name="input"/>
+     <widget class="QLineEdit" name="TextInput"/>
     </item>
     <item>
-     <widget class="QPushButton" name="button">
+     <widget class="QPushButton" name="ChangeTextButton">
       <property name="text">
        <string>ChangeText</string>
       </property>

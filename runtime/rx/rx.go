@@ -192,3 +192,14 @@ func CreateBlockingSequenceEffect(action func(func(Object))(bool,Object)) Effect
 		}
 	} }
 }
+
+func CreateValueCallbackEffect(action func(func(Object))) Effect {
+	return Effect { func(sched Scheduler, ob *observer) {
+		var sender = Sender { sched: sched, ob: ob }
+		action(func(value Object) {
+			sender.Next(value)
+			sender.Complete()
+		})
+	}}
+}
+

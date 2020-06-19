@@ -23,6 +23,13 @@ var __QtSupportedWidgetClassMap = (func() map[string] bool {
 	}
 	return m
 })()
+var __QtWidgetDefaultNames = map[string] ([] string) {
+	"Widget": { "widget", "centralWidget" },
+	"MainWindow": { "MainWindow" },
+	"Label": { "label" },
+	"LineEdit": { "input" },
+	"PushButton": { "button" },
+}
 func QtIsSupportedWidgetClass(name string) bool {
 	return __QtSupportedWidgetClassMap[name]
 }
@@ -42,8 +49,14 @@ type QtUiConfig struct {
 func (f QtUiFile) GetAST() (ast.Root, *parser.Error) {
 	var ast_root = common.CreateEmptyAST(f.Path)
 	var ast_root_node = ast_root.Node
-	for name, widget := range f.Widgets {
+	outer: for name, widget := range f.Widgets {
 		var normalized_class = strings.TrimPrefix(widget.Class, "Q")
+		var default_names = __QtWidgetDefaultNames[normalized_class]
+		for _, default_name := range default_names {
+			if name == default_name || strings.HasPrefix(name, (default_name + ")")) {
+				continue outer
+			}
+		}
 		if (!(QtIsSupportedWidgetClass(normalized_class))) {
 			continue
 		}
@@ -109,7 +122,7 @@ func LoadQtUi(path string, content ([] byte), raw_config interface{}) (common.Un
 				var child_instance, ok = qt.FindChild(instance, name)
 				if !ok { panic("something went wrong") }
 				widgets[name] = QtWidget {
-					Class:    def.Class,
+					Class:    child.Class,
 					Instance: child_instance,
 				}
 				add_children(child, child_instance)

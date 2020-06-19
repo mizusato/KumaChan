@@ -1,2 +1,32 @@
+// QWidget
+type Widget protected Object;
+
 public function show: (&(Widget)(NoExcept[-]))
     native 'qt-show';
+
+
+// QMainWindow
+type MainWindow protected Widget;
+
+
+// QLabel
+type Label protected Widget;
+
+public function set-text: ( &(Label,String) NoExcept[-] )
+    (&(label,text)(set-property label 'text' 'String' text));
+
+// QLineEdit
+type LineEdit protected Widget;
+
+private function get-text: ( &(Static[LineEdit]) String )
+    (&(line)(get-property line 'text' 'String'));
+private function edited[T]: ( &(LineEdit,(&(Static[LineEdit])(T))) Signal[T] )
+    (&(line,f)(signal line 'textEdited(const QString&)' f));
+public function text: ( &(LineEdit) Signal[String] )
+    (&(line)(line.edited (&(line)(line.get-text))));
+
+// QPushButton
+type PushButton protected Widget;
+
+public function clicked: ( &(PushButton) Signal[-] )
+    (&(button)(signal button 'clicked()'));

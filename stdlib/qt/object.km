@@ -1,0 +1,26 @@
+type Object     native;               // qt.Object
+type Signal[T]  protected Source[T];  // lib.QtSignal
+type Event[T]   protected Source[T];  // lib.QtEvent
+type Static[O]  protected O;
+
+type EventResize {
+    width:  Number,
+    height: Number
+};
+
+private function get-property[O,T]: ( &(Static[O],String,String) T )
+    native 'qt-get-property';
+
+private function set-property[T]: ( &(Object,String,String,T) NoExcept[-] )
+    native 'qt-set-property';
+
+private function signal[O,T]: ( &(O,String,(&(Static[O])(T))) Signal[T] )
+    native 'qt-signal';
+private function signal[T]: ( &(Object,String) Signal[-] )
+    native 'qt-signal-no-payload';
+
+private function event[E]: ( &(Object,String,Bool) Event[E] )
+    native 'qt-event';
+
+public function on-resize: ( &(Object) Event[EventResize] )
+    (&(object)(event object 'Resize' No));

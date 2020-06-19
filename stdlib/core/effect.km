@@ -12,7 +12,13 @@ type List[T]       native;  // rx.List
 type Buffer        native;  // rx.Buffer
 type HashMap[K,V]  native;  // rx.StringHashMap, rx.NumberHashMap
 
+// Source Operations
+public function listen[T]: ( &(Source[T]) NoExcept*[T] )
+    native 'listen';
+
 // Effect Constructors
+public function random: ( &() NoExcept[Float] )
+    native 'random';
 public function crash: ( &(String) NoExcept[-] )
     native 'crash';
 public function emit[T]:  ( &(T) NoExcept[T] )
