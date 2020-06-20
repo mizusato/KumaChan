@@ -47,6 +47,8 @@ func (event QtEvent) Listen() rx.Effect {
 							ev.ResizeEventGetWidth(),
 							ev.ResizeEventGetHeight(),
 						} }
+					case qt.EventClose():
+						return nil
 					default:
 						panic("something went wrong")
 					}
@@ -99,8 +101,10 @@ var QtFunctions = map[string] interface{} {
 		var event_kind = (func() qt.EventKind {
 			var k = GoStringFromString(kind)
 			switch k {
-			case "Resize":
+			case "resized":
 				return qt.EventResize()
+			case "closed":
+				return qt.EventClose()
 			default:
 				panic(fmt.Sprintf("unsupported Qt event kind %s", k))
 			}

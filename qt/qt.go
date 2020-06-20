@@ -35,40 +35,10 @@ type String C.QtString
 type EventKind uint
 func EventMove() EventKind { return EventKind(uint(C.QtEventMove)) }
 func EventResize() EventKind { return EventKind(uint(C.QtEventResize)) }
+func EventClose() EventKind { return EventKind(uint(C.QtEventClose)) }
 
 type Event C.QtEvent
 
-//func main() {
-//    var ui_bytes, err = ioutil.ReadFile("example.ui")
-//    if err != nil { panic(err) }
-//    var ui_str = string(ui_bytes)
-//    MakeSureInitialized()
-//    CommitTask(func() {
-//        window, ok := LoadWidget(ui_str)
-//        if !ok { panic("failed to load widget") }
-//        Listen(window, EventResize(), false, func(ev Event) {
-//            var width = ev.ResizeEventGetWidth()
-//            var height = ev.ResizeEventGetHeight()
-//            fmt.Printf("Resize Event: (%d, %d)\n", width, height)
-//        })
-//        Show(window)
-//        label, ok := FindChild(window, "label")
-//        if !ok { panic("unable to find label") }
-//        SetPropString(label, "text", "你好世界")
-//        btn, ok := FindChild(window, "button")
-//        if !ok { panic("unable to find button") }
-//        Connect(btn, "clicked()", func() {
-//            SetPropString(label, "text", fmt.Sprint(rand.Float64()))
-//        })
-//        input, ok := FindChild(window, "input")
-//        Connect(input, "textEdited(const QString&)", func() {
-//            var input_text = GetPropString(input, "text")
-//            SetPropString(label, "text", input_text)
-//            fmt.Printf("input_text: %s\n", input_text)
-//        })
-//    })
-//    <- chan struct{} (nil)
-//}
 
 var initialized = false
 var init_mutex sync.Mutex
@@ -193,14 +163,6 @@ func SetPropString(obj Object, prop string, value string) {
     SetPropRuneString(obj, prop, ([] rune)(value))
 }
 
-func (ev Event) ResizeEventGetWidth() uint {
-    return uint(C.QtResizeEventGetWidth(C.QtEvent(ev)))
-}
-
-func (ev Event) ResizeEventGetHeight() uint {
-    return uint(C.QtResizeEventGetHeight(C.QtEvent(ev)))
-}
-
 func NewStringFromRunes(runes ([] rune)) (String, func()) {
     var str C.QtString
     if len(runes) > 0 {
@@ -225,5 +187,13 @@ func StringToRunes(str String) ([] rune) {
         buf = buf[:size32]
     }
     return buf
+}
+
+func (ev Event) ResizeEventGetWidth() uint {
+    return uint(C.QtResizeEventGetWidth(C.QtEvent(ev)))
+}
+
+func (ev Event) ResizeEventGetHeight() uint {
+    return uint(C.QtResizeEventGetHeight(C.QtEvent(ev)))
 }
 

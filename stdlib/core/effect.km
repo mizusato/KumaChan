@@ -48,6 +48,10 @@ public function wait-complete[E]: ( &(Effect*[-,E]) Effect[-,E] )
     native 'wait-complete';
 public function wait-complete:    ( &(NoExcept*[-]) NoExcept[-] )
     native 'wait-complete';
+public function forever[E]: ( &(Effect*[-,E]) Effect[-,E] )
+    native 'forever';
+public function forever:    ( &(NoExcept*[-]) NoExcept[-] )
+    native 'forever';
 public function then[A,B,E]: ( &(Effect[A,E],(&(A)(Effect[B,E]))) Effect[B,E] )
     native 'then';
 public function then[A,B,E]: ( &(Effect[A,E],(&(A)(NoExcept[B]))) Effect[B,E] )

@@ -1,18 +1,22 @@
 do (show DemoWindow);
 
-do (listen (DemoWindow.on-resize))
+do (listen (DemoWindow.closed))
+    | concat-map (&(_)(exit 0))
+    | forever;
+
+do (listen (DemoWindow.resized))
     | concat-map (
         & { width, height }
         println ("Current Size: (#, #)" (str width) (str height))
     )
     | catch* (&(err)(crash err))
-    | wait-complete;
+    | forever;
 
 do (listen (ChangeTextButton.clicked))
     | concat-map (&(_)(random ()))
     | map* (&(x)(str x))
     | concat-map (&(text)(TextDisplay | set-text text))
-    | wait-complete;
+    | forever;
 
 do (listen (TextInput.text))
     | concat-map (
@@ -21,6 +25,4 @@ do (listen (TextInput.text))
         | then (println ("Current Text: #" text))
     )
     | catch* (&(err)(crash err))
-    | wait-complete;
-
-// do (wait { timeout: 1000000 });
+    | forever;

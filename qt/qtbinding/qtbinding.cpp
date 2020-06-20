@@ -14,6 +14,7 @@
 
 const size_t QtEventMove = QEvent::Move;
 const size_t QtEventResize = QEvent::Resize;
+const size_t QtEventClose = QEvent::Close;
 
 QtString QtWrapString(QString str);
 QString QtUnwrapString(QtString str);
@@ -44,6 +45,7 @@ void QtInit() {
     static char* fake_argv[] = { fake_arg };
     if (!(initialized)) {
         app = new QApplication(fake_argc, fake_argv);
+        app->setQuitOnLastWindowClosed(false);
         bridge = new Bridge();
         loader = new QUiLoader();
         qRegisterMetaType<callback_t>();

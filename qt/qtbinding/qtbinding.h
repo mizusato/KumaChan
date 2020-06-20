@@ -27,6 +27,7 @@ typedef struct _QtEventListener QtEventListener;
 
 extern const size_t QtEventMove;
 extern const size_t QtEventResize;
+extern const size_t QtEventClose;
 
 #ifdef __cplusplus
 extern "C" {

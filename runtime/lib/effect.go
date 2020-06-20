@@ -93,8 +93,14 @@ var EffectFunctions = map[string] Value {
 		return rx.Ticker(interval)
 	},
 	"wait-complete": func(e rx.Effect) rx.Effect {
-		// TODO: "wait-complete" -> "forever"
 		return e.WaitComplete()
+	},
+	"forever": func(e rx.Effect) rx.Effect {
+		var repeat rx.Effect
+		repeat = e.WaitComplete().Then(func(_ rx.Object) rx.Effect {
+			return repeat
+		})
+		return repeat
 	},
 	"then": func(e rx.Effect, f Value, h MachineHandle) rx.Effect {
 		return e.Then(func(val rx.Object) rx.Effect {

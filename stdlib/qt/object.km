@@ -3,10 +3,11 @@ type Signal[T]  protected Source[T];  // lib.QtSignal
 type Event[T]   protected Source[T];  // lib.QtEvent
 type Static[O]  protected O;
 
-type EventResize {
+type EventResized {
     width:  Number,
     height: Number
 };
+type EventClosed {};
 
 private function get-property[O,T]: ( &(Static[O],String,String) T )
     native 'qt-get-property';
@@ -22,5 +23,8 @@ private function signal[T]: ( &(Object,String) Signal[-] )
 private function event[E]: ( &(Object,String,Bool) Event[E] )
     native 'qt-event';
 
-public function on-resize: ( &(Object) Event[EventResize] )
-    (&(object)(event object 'Resize' No));
+public function resized: ( &(Object) Event[EventResized] )
+    (&(object)(event object 'resized' No));
+
+public function closed: ( &(Object) Event[EventClosed] )
+    (&(object)(event object 'closed' Yes));
