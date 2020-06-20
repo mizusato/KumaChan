@@ -15,14 +15,9 @@ type QtSignal struct {
 }
 func (signal QtSignal) Listen() rx.Effect {
 	return rx.CreateEffect(func(sender rx.Sender) {
-		var channel = make(chan func())
-		qt.CommitTask(func() {
-			var disconnect = qt.Connect(signal.Object, signal.Signature, func() {
-				sender.Next(signal.PropMapper(signal.Object))
-			})
-			channel <- disconnect
+		var disconnect = qt.Connect(signal.Object, signal.Signature, func() {
+			sender.Next(signal.PropMapper(signal.Object))
 		})
-		var disconnect = <- channel
 		sender.Context().WaitDispose(func() {
 			disconnect()
 		})
@@ -36,28 +31,23 @@ type QtEvent struct {
 }
 func (event QtEvent) Listen() rx.Effect {
 	return rx.CreateEffect(func(sender rx.Sender) {
-		var channel = make(chan func())
-		qt.CommitTask(func() {
-			var cancel = qt.Listen(event.Object, event.Kind, event.Prevent, func(ev qt.Event) {
-				var obj = (func() Value {
-					switch event.Kind {
-					case qt.EventResize():
-						// Qt::EventResize
-						return &ValProd { Elements: [] Value {
-							ev.ResizeEventGetWidth(),
-							ev.ResizeEventGetHeight(),
-						} }
-					case qt.EventClose():
-						return nil
-					default:
-						panic("something went wrong")
-					}
-				})()
-				sender.Next(obj)
-			})
-			channel <- cancel
+		var cancel = qt.Listen(event.Object, event.Kind, event.Prevent, func(ev qt.Event) {
+			var obj = (func() Value {
+				switch event.Kind {
+				case qt.EventResize():
+					// Qt::EventResize
+					return &ValProd { Elements: [] Value {
+						ev.ResizeEventGetWidth(),
+						ev.ResizeEventGetHeight(),
+					} }
+				case qt.EventClose():
+					return nil
+				default:
+					panic("something went wrong")
+				}
+			})()
+			sender.Next(obj)
 		})
-		var cancel = <- channel
 		sender.Context().WaitDispose(func() {
 			cancel()
 		})

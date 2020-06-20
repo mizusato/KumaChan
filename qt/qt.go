@@ -60,6 +60,7 @@ func MakeSureInitialized() {
     }
 }
 
+/// Invokes the operation callback in the Qt main thread.
 func CommitTask(operation func()) {
     var delete_callback (func() bool)
     var f = func() {
@@ -100,13 +101,25 @@ func Connect(obj Object, signal string, callback func()) func() {
     var new_str, del_all_str = str_alloc()
     defer del_all_str()
     var cb, del_cb = cgohelper.NewCallback(callback)
-    var conn = C.QtConnect(obj.ptr(), new_str(signal), cgo_callback, C.size_t(cb))
+    var channel = make(chan C.QtConnHandle)
+    // Note: Although connect() is documented as "thread-safe",
+    //       it is not clear what will happen if the goroutine
+    //       is preempted and moved to another thread while
+    //       calling connect(), thus CommitTask() is used here.
+    CommitTask(func() {
+        var conn = C.QtConnect(obj.ptr(), new_str(signal), cgo_callback, C.size_t(cb))
+        channel <- conn
+    })
+    var conn = <- channel
     if int(C.QtIsConnectionValid(conn)) != 0 {
         return func() {
-            C.QtDisconnect(conn)
-            // use CommitTask() to prevent removing pending callbacks
             CommitTask(func() {
-                del_cb()
+                C.QtDisconnect(conn)
+                // Note: Use CommitTask() to prevent pending callbacks
+                //       from being removed.
+                CommitTask(func() {
+                    del_cb()
+                })
             })
         }
     } else {
@@ -120,11 +133,14 @@ func Listen(obj Object, kind EventKind, prevent bool, callback func(Event)) func
         var ev = C.QtGetCurrentEvent(l)
         callback(Event(ev))
     })
+    var ok = make(chan struct{})
     CommitTask(func() {
         var prevent_flag int
         if prevent { prevent_flag = 1 } else { prevent_flag = 0 }
         l = C.QtAddEventListener(obj.ptr(), C.size_t(kind), C.int(prevent_flag), cgo_callback, C.size_t(cb))
+        ok <- struct{} {}
     })
+    <- ok
     return func() {
         CommitTask(func() {
             C.QtRemoveEventListener(obj.ptr(), l)
