@@ -1,6 +1,7 @@
 package checker
 
 import (
+	"strings"
 	. "kumachan/error"
 	"kumachan/loader"
 	"kumachan/parser/ast"
@@ -68,10 +69,12 @@ func CollectMacros(mod *loader.Module, store MacroStore) (MacroCollection, *Macr
 		switch decl := stmt.Statement.(type) {
 		case ast.DeclMacro:
 			var name = loader.Id2String(decl.Name)
-			if name == IgnoreMark { return nil, &MacroError {
-				Point:    ErrorPointFrom(decl.Name.Node),
-				Concrete: E_InvalidMacroName { name },
-			} }
+			if name == IgnoreMark || strings.HasSuffix(name, MacroSuffix) {
+				return nil, &MacroError {
+					Point:    ErrorPointFrom(decl.Name.Node),
+					Concrete: E_InvalidMacroName { name },
+				}
+			}
 			var existing, exists = collection[name]
 			if exists {
 				var point = ErrorPointFrom(decl.Name.Node)

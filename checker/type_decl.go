@@ -1,6 +1,7 @@
 package checker
 
 import (
+	"strings"
 	. "kumachan/error"
 	"kumachan/loader"
 	"kumachan/runtime/common"
@@ -19,19 +20,23 @@ type TypeRegistry  map[loader.Symbol] *GenericType
 type RawTypeRegistry struct {
 	// a map from symbol to type declaration (AST node)
 	DeclMap        map[loader.Symbol] ast.DeclType
-	// a map from case types to their corresponding indexes
-	CaseIndexMap   map[loader.Symbol] uint
-	// a map from case types to their parameters mapping
-	CaseParamsMap  map[loader.Symbol] ([] uint)
+	// a map from case types to their corresponding union information
+	CaseInfoMap    map[loader.Symbol] CaseInfo
 	// a context value to track all visited modules
 	// (same module may appear many times when walking through the hierarchy)
 	VisitedMod     map[string] bool
 }
+type CaseInfo struct {
+	IsCaseType  bool
+	UnionName   loader.Symbol
+	UnionArity  uint
+	CaseIndex   uint
+	CaseParams  [] uint
+}
 func MakeRawTypeRegistry() RawTypeRegistry {
 	return RawTypeRegistry {
 		DeclMap:       make(map[loader.Symbol] ast.DeclType),
-		CaseIndexMap:  make(map[loader.Symbol] uint),
-		CaseParamsMap: make(map[loader.Symbol] ([] uint)),
+		CaseInfoMap:   make(map[loader.Symbol] CaseInfo),
 		VisitedMod:    make(map[string] bool),
 	}
 }
@@ -74,6 +79,12 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 		var type_sym = mod.SymbolFromDeclName(d.Name)
 		// 3.2. Check if the symbol name is valid
 		var sym_name = type_sym.SymbolName
+		if strings.HasSuffix(sym_name, ForceExactSuffix) {
+			return &TypeDeclError {
+				Point:    ErrorPointFrom(d.Name.Node),
+				Concrete: E_InvalidTypeName { sym_name },
+			}
+		}
 		for _, reserved := range __ReservedTypeNames {
 			if sym_name == reserved {
 				return &TypeDeclError {
@@ -100,9 +111,9 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 		raw.DeclMap[type_sym] = d
 		var index, is_case_type = index_map[uint(i)]
 		if is_case_type {
-			raw.CaseIndexMap[type_sym] = index
 			var parent_index = parent_map[uint(i)]
 			var parent = decls[parent_index]
+			var parent_name = mod.SymbolFromDeclName(parent.Name)
 			var mapping = make([]uint, len(d.Params))
 			for p_index, param := range d.Params {
 				var p_name = loader.Id2String(param)
@@ -121,7 +132,13 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 				} }
 				mapping[p_index] = corresponding
 			}
-			raw.CaseParamsMap[type_sym] = mapping
+			raw.CaseInfoMap[type_sym] = CaseInfo {
+				IsCaseType: true,
+				UnionName:  parent_name,
+				UnionArity: uint(len(parent.Params)),
+				CaseIndex:  index,
+				CaseParams: mapping,
+			}
 		} // if is_case_type
 	}
 	// 4. Go through all imported modules, call self recursively
@@ -197,10 +214,10 @@ func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, *Type
 		// 3.3. Use the generated TypeVal to construct a GenericType
 		//      and register it to the TypeRegistry
 		reg[name] = &GenericType {
-			Params:    params,
-			Value:     val,
-			Node:      t.Node,
-			CaseIndex: raw.CaseIndexMap[name],
+			Params:   params,
+			Value:    val,
+			Node:     t.Node,
+			CaseInfo: raw.CaseInfoMap[name],
 		}
 	}
 	// 4. Validate boxed types
@@ -261,7 +278,7 @@ func TypeValFrom(tv ast.TypeValue, ctx TypeContext, raw RawTypeRegistry) (TypeVa
 			var sym = ctx.Module.SymbolFromDeclName(case_decl.Name)
 			case_types[i] = CaseType {
 				Name:   sym,
-				Params: raw.CaseParamsMap[sym],
+				Params: raw.CaseInfoMap[sym].CaseParams,
 			}
 		}
 		return Union {

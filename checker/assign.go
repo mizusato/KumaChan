@@ -61,85 +61,6 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 			},
 		}
 	}
-	var get_case_args = func(union_args []Type, mapping []uint) []Type {
-		var mapped = make([]Type, len(mapping))
-		for i, j := range mapping {
-			mapped[i] = union_args[j]
-		}
-		return mapped
-	}
-	var get_union_args = func(case_args []Type, exp_args []Type, mapping []uint) []Type {
-		var n = len(exp_args)
-		var mapped = make([]Type, n)
-		for i := 0; i < n; i += 1 {
-			mapped[i] = exp_args[i]
-		}
-		for i, j := range mapping {
-			mapped[j] = case_args[i]
-		}
-		return mapped
-	}
-	// -- behavior of assigning a named type to an union type --
-	var assign_union func(NamedType, NamedType, Union) (Expr, *ExprError)
-	assign_union = func(union_t NamedType, given NamedType, union Union) (Expr, *ExprError) {
-		// 1. Find the given type in the list of case types of the union
-		for index, case_type := range union.CaseTypes {
-			if case_type.Name == given.Name {
-				// 1.1. If found, check if type parameters matching
-				var mapping = case_type.Params
-				var case_expected_type = NamedType {
-					Name: case_type.Name,
-					Args: get_case_args(union_t.Args, mapping),
-				}
-				var t, ok = DirectAssignTo(case_expected_type, given, ctx)
-				var given_assigned = t.(NamedType)
-				if ok {
-					// 1.1.1. If matching, return a lifted value.
-					return Expr {
-						Type:  NamedType {
-							Name: union_t.Name,
-							Args: get_union_args (
-								given_assigned.Args, union_t.Args, mapping,
-							),
-						},
-						Value: Sum { Value: expr, Index: uint(index) },
-						Info:  expr.Info,
-					}, nil
-				} else {
-					// 1.1.2. Otherwise, throw an error.
-					return failed()
-				}
-			}
-		}
-		for index, case_type := range union.CaseTypes {
-			var g = ctx.ModuleInfo.Types[case_type.Name]
-			var item_union, item_is_union = g.Value.(Union)
-			if item_is_union {
-				var mapping = case_type.Params
-				var item_expr, err = assign_union(NamedType {
-					Name: case_type.Name,
-					Args: get_case_args(union_t.Args, mapping),
-				}, given, item_union)
-				if err != nil {
-					continue  // if `err` is thrown at 1.1.2, return is OK,
-					          // but `err` could be thrown at 1.2, so...
-				}
-				var union_expr = Expr {
-					Type:  NamedType {
-						Name: union_t.Name,
-						Args: get_union_args (
-							given.Args, union_t.Args, mapping,
-						),
-					},
-					Value: Sum { Value: item_expr, Index: uint(index) },
-					Info:  expr.Info,
-				}
-				return AssignTypedTo(expected, union_expr, ctx)
-			}
-		}
-		// 1.2. Otherwise, throw an error.
-		return failed()
-	}
 	// 1. If the expected type is not specified,
 	//    no further process is required.
 	if expected == nil {
@@ -176,20 +97,6 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 		if err == nil {
 			return expr_with_expected, nil
 		}  // else fallthrough to union
-	}
-	// Try Union
-	switch E := expected.(type) {
-	case NamedType:
-		switch T := expr.Type.(type) {
-		case NamedType:
-			if E.Name != T.Name {
-				var g = ctx.ModuleInfo.Types[E.Name]
-				var union, is_union = g.Value.(Union)
-				if is_union {
-					return assign_union(E, T, union)
-				}
-			}
-		}
 	}
 	// Failed
 	return failed()

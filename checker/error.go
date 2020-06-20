@@ -1011,6 +1011,19 @@ func (e E_NoneOfTypesAssignable) ExprErrorDesc() ErrorMessage {
 	return msg
 }
 
+type E_NotCaseType struct {
+	Type   string
+	Union  string
+}
+func (e E_NotCaseType) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "The type")
+	msg.WriteInnerText(TS_INLINE_CODE, e.Type)
+	msg.WriteText(TS_ERROR, "is not a case type of the union type")
+	msg.WriteEndText(TS_INLINE_CODE, e.Union)
+	return msg
+}
+
 type E_BoxNonBoxedType struct {
 	Type  string
 }

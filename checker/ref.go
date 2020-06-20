@@ -16,8 +16,9 @@ type UntypedRef struct {
 type UntypedRefBody interface { UntypedRefBody() }
 func (impl UntypedRefToType) UntypedRefBody() {}
 type UntypedRefToType struct {
-	TypeName  loader.Symbol
-	Type      *GenericType
+	TypeName    loader.Symbol
+	Type        *GenericType
+	ForceExact  bool
 }
 func (impl UntypedRefToFunctions) UntypedRefBody() {}
 type UntypedRefToFunctions struct {
@@ -132,8 +133,9 @@ func CheckRef(ref ast.InlineRef, ctx ExprContext) (SemiExpr, *ExprError) {
 		return SemiExpr {
 			Value: UntypedRef {
 				RefBody:  UntypedRefToType {
-					TypeName: s.Name,
-					Type:     s.Type,
+					TypeName:   s.Name,
+					Type:       s.Type,
+					ForceExact: s.ForceExact,
 				},
 				TypeArgs: type_args,
 			},
@@ -179,6 +181,7 @@ func AssignRefTo(expected Type, ref UntypedRef, info ExprInfo, ctx ExprContext) 
 	case UntypedRefToType:
 		var g = r.Type
 		var g_name = r.TypeName
+		var force_exact = r.ForceExact
 		var type_args = ref.TypeArgs
 		var unit = LiftTyped(Expr {
 			Type:  AnonymousType { Unit {} },
@@ -186,7 +189,8 @@ func AssignRefTo(expected Type, ref UntypedRef, info ExprInfo, ctx ExprContext) 
 			Info:  info,
 		})
 		var boxed_unit, err = Box (
-			unit, g, g_name, info, type_args, info, ctx,
+			unit, g, g_name, info, type_args,
+			force_exact, info, ctx,
 		)
 		if err != nil { return Expr{}, &ExprError {
 			Point:    info.ErrorPoint,
@@ -222,9 +226,11 @@ func CallUntypedRef (
 	case UntypedRefToType:
 		var g = ref_body.Type
 		var g_name = ref_body.TypeName
+		var force_exact = ref_body.ForceExact
 		var type_args = ref.TypeArgs
 		var expr, err = Box (
-			arg, g, g_name, ref_info, type_args, call_info, ctx,
+			arg, g, g_name, ref_info, type_args,
+			force_exact, call_info, ctx,
 		)
 		if err != nil { return SemiExpr{}, err }
 		return LiftTyped(expr), nil

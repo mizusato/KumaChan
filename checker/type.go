@@ -8,10 +8,10 @@ import (
 
 
 type GenericType struct {
-	Params     [] string
-	Value      TypeVal
-	Node       ast.Node
-	CaseIndex  uint
+	Params    [] string
+	Value     TypeVal
+	Node      ast.Node
+	CaseInfo  CaseInfo
 }
 type TypeVal interface { TypeVal() }
 

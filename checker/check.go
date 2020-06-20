@@ -108,7 +108,7 @@ type SymConst struct { Const *Constant; Name loader.Symbol }
 func (impl SymTypeParam) Sym() {}
 type SymTypeParam struct { Index uint }
 func (impl SymType) Sym() {}
-type SymType struct { Type *GenericType; Name loader.Symbol }
+type SymType struct { Type *GenericType; Name loader.Symbol; ForceExact bool }
 func (impl SymFunctions) Sym() {}
 type SymFunctions struct { Functions []*GenericFunction; Name string }
 func (impl SymMacro) Sym() {}
@@ -154,6 +154,22 @@ func (ctx ExprContext) GetModuleName() string {
 }
 
 func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
+	var lookup_type = func(sym loader.Symbol) (Sym, bool) {
+		g, exists := ctx.ModuleInfo.Types[sym]
+		if exists {
+			return SymType { Type: g, Name: sym }, true
+		}
+		if len(sym.SymbolName) > len(ForceExactSuffix) &&
+			strings.HasSuffix(sym.SymbolName, ForceExactSuffix) {
+			var sym_name_force = strings.TrimSuffix(sym.SymbolName, ForceExactSuffix)
+			var sym_force = loader.NewSymbol(sym.ModuleName, sym_name_force)
+			g, exists := ctx.ModuleInfo.Types[sym_force]
+			if exists {
+				return SymType { Type: g, Name: sym_force, ForceExact: true }, true
+			}
+		}
+		return nil, false
+	}
 	var mod_name = raw.ModuleName
 	var sym_name = raw.SymbolName
 	if mod_name == "" {
@@ -204,20 +220,20 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 			}, true
 		}
 		var self = ctx.ModuleInfo.Module.Name
-		var sym_self = loader.NewSymbol(self, sym_name)
-		g, exists := ctx.ModuleInfo.Types[sym_self]
+		var sym_this_mod = loader.NewSymbol(self, sym_name)
+		g, exists := lookup_type(sym_this_mod)
 		if exists {
-			return SymType { Type: g, Name: sym_self }, true
+			return g, true
 		}
-		constant, exists := ctx.ModuleInfo.Constants[sym_self]
+		constant, exists := ctx.ModuleInfo.Constants[sym_this_mod]
 		if exists {
-			return SymConst { Const: constant, Name: sym_self }, true
+			return SymConst { Const: constant, Name: sym_this_mod }, true
 		}
 		return nil, false
 	} else {
-		var g, exists = ctx.ModuleInfo.Types[raw]
+		g, exists := lookup_type(raw)
 		if exists {
-			return SymType { Type: g, Name: raw }, true
+			return g, true
 		}
 		constant, exists := ctx.ModuleInfo.Constants[raw]
 		if exists {

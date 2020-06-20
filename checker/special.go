@@ -10,11 +10,12 @@ const UnitAlias = "-"
 const TextPlaceholder = '#'
 const FuncSuffix = "!"
 const MacroSuffix = FuncSuffix
+const ForceExactSuffix = FuncSuffix
 const BadIndex = ^(uint(0))
 var __NoExcept = CoreSymbol(stdlib.NoExcept)
 var __DoType = NamedType {
 	Name: __NoExcept,
-	Args: []Type { AnonymousType { Unit {} } },
+	Args: [] Type { AnonymousType { Unit {} } },
 }
 var __Bool = CoreSymbol(stdlib.Bool)
 var __T_Bool = NamedType { Name: __Bool, Args: make([] Type, 0) }
