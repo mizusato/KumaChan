@@ -50,6 +50,11 @@ func (impl E_BoxedBadVariance) TypeError() {}
 type E_BoxedBadVariance struct {
 	BadParams  [] string
 }
+func (impl E_CaseBadVariance) TypeError() {}
+type E_CaseBadVariance struct {
+	CaseName   string
+	UnionName  string
+}
 
 func (err *TypeError) Desc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
@@ -92,6 +97,13 @@ func (err *TypeError) Desc() ErrorMessage {
 				msg.WriteText(TS_ERROR, ", ")
 			}
 		}
+	case E_CaseBadVariance:
+		msg.WriteText(TS_ERROR,
+			"The declared variance of the case type")
+		msg.WriteInnerText(TS_INLINE_CODE, e.CaseName)
+		msg.WriteText(TS_ERROR,
+			"is not consistent with its parent union type")
+		msg.WriteEndText(TS_INLINE_CODE, e.UnionName)
 	default:
 		panic("unknown error kind")
 	}

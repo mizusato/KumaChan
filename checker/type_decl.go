@@ -355,12 +355,26 @@ func TypeValFrom(tv ast.TypeValue, ctx TypeContext, raw RawTypeRegistry) (TypeVa
 				},
 			}
 		}
+		var union_v = ParamsVarianceVector(ctx.Params)
 		var case_types = make([] CaseType, count)
 		for i, case_decl := range val.Cases {
 			var sym = ctx.Module.SymbolFromDeclName(case_decl.Name)
+			var case_v = ParamsVarianceVector(raw.ParamsMap[sym])
+			var mapping = raw.CaseInfoMap[sym].CaseParams
+			for i, j := range mapping {
+				if case_v[i] != union_v[j] {
+					return nil, &TypeError {
+						Point:    ErrorPointFrom(case_decl.Node),
+						Concrete: E_CaseBadVariance {
+							CaseName:  sym.String(),
+							UnionName: raw.CaseInfoMap[sym].UnionName.String(),
+						},
+					}
+				}
+			}
 			case_types[i] = CaseType {
 				Name:   sym,
-				Params: raw.CaseInfoMap[sym].CaseParams,
+				Params: mapping,
 			}
 		}
 		// TODO: check variance

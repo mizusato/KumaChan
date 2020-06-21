@@ -20,13 +20,13 @@ type Bool union {
     type Yes;
     type No;
 };
-type Maybe[T] union {
-    type Just[T] as T;
+type Maybe[+T] union {
+    type Just[+T] as T;
     type N/A;
 };
-type Result[T,E] union {
-    type OK[T] as T;
-    type NG[E] as E;
+type Result[+T,+E] union {
+    type OK[+T] as T;
+    type NG[+E] as E;
 };
 type Ordering union {
     type <<;
