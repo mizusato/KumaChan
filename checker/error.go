@@ -236,10 +236,8 @@ type E_FunctionInvalidTypeParameterName struct {
 	Name  string
 }
 
-func (impl E_FunctionBadVariance) FunctionError() {}
-type E_FunctionBadVariance struct {
-	BadParams  [] string
-}
+func (impl E_FunctionVarianceDeclared) FunctionError() {}
+type E_FunctionVarianceDeclared struct {}
 
 func (err *FunctionError) Desc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
@@ -277,16 +275,9 @@ func (err *FunctionError) Desc() ErrorMessage {
 	case E_FunctionInvalidTypeParameterName:
 		msg.WriteText(TS_ERROR, "invalid type name")
 		msg.WriteEndText(TS_INLINE_CODE, e.Name)
-	case E_FunctionBadVariance:
+	case E_FunctionVarianceDeclared:
 		msg.WriteText(TS_ERROR,
-			"Contradictory variance declaration on type parameter(s):")
-		msg.Write(T_SPACE)
-		for i, p := range e.BadParams {
-			msg.WriteText(TS_INLINE_CODE, p)
-			if i != (len(e.BadParams) - 1) {
-				msg.WriteText(TS_ERROR, ", ")
-			}
-		}
+			"Cannot declare variance of type parameters of functions")
 	default:
 		panic("unknown error kind")
 	}

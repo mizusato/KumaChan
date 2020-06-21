@@ -99,7 +99,7 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 				Ireg:   reg,
 			}
 			// 3.3. Evaluate the function signature using the created context
-			var sig, v, err = TypeFromRepr(decl.Repr, ctx)
+			var sig, _, err = TypeFromRepr(decl.Repr, ctx)
 			if err != nil { return nil, &FunctionError {
 				Point:    err.Point,
 				Concrete: E_SignatureInvalid {
@@ -107,11 +107,14 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 					TypeError: err,
 				},
 			} }
-			var v_ok, bad_params = MatchVariance(params, v)
-			if !(v_ok) { return nil, &FunctionError{
-				Point:    ErrorPointFrom(decl.Repr.Node),
-				Concrete: E_FunctionBadVariance { bad_params },
-			} }
+			for i, param := range params {
+				if param.Variance != Invariant {
+					return nil, &FunctionError{
+						Point:    ErrorPointFrom(decl.Params[i].Node),
+						Concrete: E_FunctionVarianceDeclared {},
+					}
+				}
+			}
 			// 3.4. If the function is public, ensure its signature type
 			//        to be a local type of this module.
 			var is_public = decl.Public
