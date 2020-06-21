@@ -1,9 +1,8 @@
 // Debugging Types
 type Debug[T] as T;
-type Never[T] protected T;
 
 // Debugging Functions
 public function trace[T]: ( &(T) Debug[T] )
     native 'trace';  // side-effect: log input value in stderr
-public function panic[T]: ( &(String) Never[T] )
+public function panic: ( &(String) * )
     native 'panic';  // side-effect: crash immediately

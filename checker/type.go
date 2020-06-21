@@ -131,7 +131,6 @@ type AnonymousType struct {
 }
 func (impl WildcardRhsType) CheckerType() {}
 type WildcardRhsType struct {}
-const WildcardRhsTypeDesc = "?"
 
 
 type TypeRepr interface { TypeRepr() }
@@ -187,7 +186,7 @@ func DescribeTypeWithParams(type_ Type, params ([] string)) string {
 func DescribeType(type_ Type, ctx TypeDescContext) string {
 	switch t := type_.(type) {
 	case WildcardRhsType:
-		return WildcardRhsTypeDesc
+		return WildcardRhsTypeName
 	case ParameterType:
 		if ctx.UseInferred {
 			var inferred_t, exists = ctx.InferredTypes[t.Index]
@@ -270,7 +269,12 @@ func DescribeType(type_ Type, ctx TypeDescContext) string {
 func AreTypesEqualInSameCtx(type1 Type, type2 Type) bool {
 	switch t1 := type1.(type) {
 	case WildcardRhsType:
-		return false
+		switch type2.(type) {
+		case WildcardRhsType:
+			return true
+		default:
+			return false
+		}
 	case ParameterType:
 		switch t2 := type2.(type) {
 		case ParameterType:

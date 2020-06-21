@@ -167,7 +167,7 @@ func GenericFunctionAssignTo (
 func FillTypeArgs(t Type, given_args []Type) Type {
 	switch T := t.(type) {
 	case WildcardRhsType:
-		panic("something went wrong")
+		return WildcardRhsType {}
 	case ParameterType:
 		return given_args[T.Index]
 	case NamedType:
@@ -225,7 +225,7 @@ func FillTypeArgs(t Type, given_args []Type) Type {
 func NaivelyInferTypeArgs(template Type, given Type, inferred map[uint]Type) {
 	switch T := template.(type) {
 	case WildcardRhsType:
-		panic("something went wrong")
+		return
 	case ParameterType:
 		var existing, exists = inferred[T.Index]
 		if !exists || AreTypesEqualInSameCtx(existing, given) {
@@ -286,7 +286,7 @@ func NaivelyInferTypeArgs(template Type, given Type, inferred map[uint]Type) {
 func MarkParamsAsBeingInferred(type_ Type) Type {
 	switch t := type_.(type) {
 	case WildcardRhsType:
-		panic("something went wrong")
+		return WildcardRhsType {}
 	case ParameterType:
 		return ParameterType {
 			Index:         t.Index,
@@ -341,7 +341,7 @@ func GetCertainType(type_ Type, point ErrorPoint, ctx ExprContext) (Type, *ExprE
 	}
 	switch T := type_.(type) {
 	case WildcardRhsType:
-		panic("something went wrong")
+		return WildcardRhsType {}, nil
 	case ParameterType:
 		if T.BeingInferred {
 			var inferred, exists = ctx.Inferred[T.Index]

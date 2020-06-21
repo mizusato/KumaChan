@@ -10,7 +10,7 @@ import (
 
 
 var __ReservedTypeNames = [...]string {
-	IgnoreMark, UnitAlias, WildcardRhsTypeDesc,
+	IgnoreMark, UnitAlias, WildcardRhsTypeName,
 }
 func IsReservedTypeName(name string) bool {
 	for _, reserved := range __ReservedTypeNames {
@@ -424,6 +424,10 @@ func TypeFrom(type_ ast.Type, ctx TypeContext) (Type, ([] TypeVariance), *TypeEr
 			if ref_name == UnitAlias {
 				var v = FilledVarianceVector(Bivariant, ctx.Arity())
 				return AnonymousType { Unit{} }, v, nil
+			}
+			if ref_name == WildcardRhsTypeName {
+				var v = FilledVarianceVector(Bivariant, ctx.Arity())
+				return WildcardRhsType {}, v, nil
 			}
 			for i, param := range ctx.Params {
 				if param.Name == ref_name {

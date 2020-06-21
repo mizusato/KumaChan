@@ -7,6 +7,7 @@ import (
 
 const IgnoreMark = "_"
 const UnitAlias = "-"
+const WildcardRhsTypeName = "*"
 const TextPlaceholder = '#'
 const FuncSuffix = "!"
 const MacroSuffix = FuncSuffix
