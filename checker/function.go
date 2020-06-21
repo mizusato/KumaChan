@@ -11,7 +11,7 @@ import (
 type GenericFunction struct {
 	Node          ast.Node
 	Public        bool
-	TypeParams    [] string
+	TypeParams    [] TypeParam
 	DeclaredType  Func
 	Body          ast.Body
 }
@@ -87,10 +87,11 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 					Concrete: E_InvalidFunctionName { name },
 				}
 			}
-			var params = make([]string, len(decl.Params))
-			for i, p := range decl.Params {
-				params[i] = loader.Id2String(p)
-			}
+			var params, p_err, p_err_node = TypeParams(decl.Params)
+			if p_err != nil { return nil, &FunctionError {
+				Point:    ErrorPointFrom(p_err_node),
+				Concrete: E_FunctionInvalidTypeParameterName { p_err.Name },
+			} }
 			// 3.2. Create a context for evaluating types
 			var ctx = TypeContext {
 				Module: mod,
@@ -98,13 +99,18 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 				Ireg:   reg,
 			}
 			// 3.3. Evaluate the function signature using the created context
-			var sig, err = TypeFromRepr(decl.Repr, ctx)
+			var sig, v, err = TypeFromRepr(decl.Repr, ctx)
 			if err != nil { return nil, &FunctionError {
 				Point:    err.Point,
 				Concrete: E_SignatureInvalid {
 					FuncName:  name,
 					TypeError: err,
 				},
+			} }
+			var v_ok, bad_params = MatchVariance(params, v)
+			if !(v_ok) { return nil, &FunctionError{
+				Point:    ErrorPointFrom(decl.Repr.Node),
+				Concrete: E_FunctionBadVariance { bad_params },
 			} }
 			// 3.4. If the function is public, ensure its signature type
 			//        to be a local type of this module.
@@ -131,7 +137,7 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 				var index_offset = index_offset_map[name]
 				var err_point = ErrorPointFrom(decl.Name.Node)
 				var err = CheckOverload (
-					existing, func_type, name, params,
+					existing, func_type, name, TypeParamsNames(params),
 					reg, err_point,
 				)
 				if err != nil { return nil, err }

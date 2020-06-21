@@ -1,16 +1,16 @@
 // Effect Types
-type Effect*[T,E]  native;  // rx.Effect       (Observable<T,E>)
-type Effect[T,E]   protected Effect*[T,E];  // (Promise<T,E>)
-type NoExcept*[T]  native;  // rx.Effect       (Observable<T>)
-type NoExcept[T]   protected NoExcept*[T];  // (Promise<T>)
+type Effect*[+T,+E]  native;  // rx.Effect       (Observable<T,E>)
+type Effect[+T,+E]   protected Effect*[T,E];  // (Promise<T,E>)
+type NoExcept*[+T]   native;  // rx.Effect       (Observable<T>)
+type NoExcept[+T]    protected NoExcept*[T];  // (Promise<T>)
 
 // Mutable Containers
-type Source[T]     native;  // rx.Source
-type Sink[T]       protected Source[T];  // rx.Sink
-type Mutable[T]    native;  // rx.Cell
-type List[T]       native;  // rx.List
-type Buffer        native;  // rx.Buffer
-type HashMap[K,V]  native;  // rx.StringHashMap, rx.NumberHashMap
+type Source[+T]      native;  // rx.Source
+type Sink[+T]        protected Source[T];  // rx.Sink
+type Mutable[+T]     native;  // rx.Cell
+type List[+T]        native;  // rx.List
+type Buffer          native;  // rx.Buffer
+type HashMap[+K,+V]  native;  // rx.StringHashMap, rx.NumberHashMap
 
 // Source Operations
 public function listen[T]: ( &(Source[T]) NoExcept*[T] )

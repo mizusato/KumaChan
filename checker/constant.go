@@ -55,7 +55,7 @@ func CollectConstants(mod *loader.Module, reg TypeRegistry, store ConstantStore)
 					Name: name.SymbolName,
 				},
 			} }
-			exists, _ = reg.LookupArity(name)
+			_, exists = reg[name]
 			if exists { return nil, &ConstantError {
 				Point: ErrorPointFrom(decl.Name.Node),
 				Concrete: E_ConstConflictWithType {
@@ -64,11 +64,11 @@ func CollectConstants(mod *loader.Module, reg TypeRegistry, store ConstantStore)
 			} }
 			var ctx = TypeContext {
 				Module: mod,
-				Params: make([]string, 0),
+				Params: make([] TypeParam, 0),
 				Ireg:   reg,
 			}
 			var is_public = decl.Public
-			var declared_type, err = TypeFrom(decl.Type.Type, ctx)
+			var declared_type, _, err = TypeFrom(decl.Type.Type, ctx)
 			if err != nil { return nil, &ConstantError {
 				Point:    ErrorPointFrom(decl.Type.Node),
 				Concrete: E_ConstTypeInvalid {

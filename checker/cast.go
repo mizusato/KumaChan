@@ -6,7 +6,7 @@ import "kumachan/parser/ast"
 func CheckCast(cast ast.Cast, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(cast.Node)
 	var type_ctx = ctx.GetTypeContext()
-	var target, err1 = TypeFrom(cast.Target.Type, type_ctx)
+	var target, _, err1 = TypeFrom(cast.Target.Type, type_ctx)
 	if err1 != nil { return SemiExpr{}, &ExprError {
 		Point:    err1.Point,
 		Concrete: E_TypeErrorInExpr { err1 },

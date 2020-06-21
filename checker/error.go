@@ -46,6 +46,10 @@ type E_TooManyTupleBundleItems struct {
 	Defined  uint
 	Limit    uint
 }
+func (impl E_BoxedBadVariance) TypeError() {}
+type E_BoxedBadVariance struct {
+	BadParams  [] string
+}
 
 func (err *TypeError) Desc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
@@ -78,6 +82,16 @@ func (err *TypeError) Desc() ErrorMessage {
 		msg.WriteInnerText(TS_INLINE, fmt.Sprint(e.Defined))
 		msg.WriteText(TS_ERROR,
 			fmt.Sprintf("elements/fields (maximum is %d)", e.Limit))
+	case E_BoxedBadVariance:
+		msg.WriteText(TS_ERROR,
+			"Contradictory variance declaration on type parameter(s):")
+		msg.Write(T_SPACE)
+		for i, p := range e.BadParams {
+			msg.WriteText(TS_INLINE_CODE, p)
+			if i != (len(e.BadParams) - 1) {
+				msg.WriteText(TS_ERROR, ", ")
+			}
+		}
 	default:
 		panic("unknown error kind")
 	}
@@ -145,7 +159,7 @@ func (err *TypeDeclError) Desc() ErrorMessage {
 		msg.Write(T_SPACE)
 		for i, t := range e.TypeNames {
 			msg.WriteText(TS_INLINE_CODE, t.String())
-			if i != len(e.TypeNames)-1 {
+			if i != (len(e.TypeNames) - 1) {
 				msg.WriteText(TS_ERROR, ", ")
 			}
 		}
@@ -205,6 +219,16 @@ type E_FunctionConflictWithMacro struct {
 	Module  string
 }
 
+func (impl E_FunctionInvalidTypeParameterName) FunctionError() {}
+type E_FunctionInvalidTypeParameterName struct {
+	Name  string
+}
+
+func (impl E_FunctionBadVariance) FunctionError() {}
+type E_FunctionBadVariance struct {
+	BadParams  [] string
+}
+
 func (err *FunctionError) Desc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	switch e := err.Concrete.(type) {
@@ -238,6 +262,19 @@ func (err *FunctionError) Desc() ErrorMessage {
 		msg.WriteInnerText(TS_INLINE_CODE, e.Name)
 		msg.WriteText(TS_ERROR, "defined in the module")
 		msg.WriteEndText(TS_INLINE_CODE, e.Module)
+	case E_FunctionInvalidTypeParameterName:
+		msg.WriteText(TS_ERROR, "invalid type name")
+		msg.WriteEndText(TS_INLINE_CODE, e.Name)
+	case E_FunctionBadVariance:
+		msg.WriteText(TS_ERROR,
+			"Contradictory variance declaration on type parameter(s):")
+		msg.Write(T_SPACE)
+		for i, p := range e.BadParams {
+			msg.WriteText(TS_INLINE_CODE, p)
+			if i != (len(e.BadParams) - 1) {
+				msg.WriteText(TS_ERROR, ", ")
+			}
+		}
 	default:
 		panic("unknown error kind")
 	}

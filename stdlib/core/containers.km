@@ -1,9 +1,9 @@
 // Container Types
-type Seq[T]    native;  // container.Seq
-type Array[T]  native;  // []T, container.Array
-type Heap[T]   native;  // container.Heap
-type Set[T]    native;  // container.Set
-type Map[K,V]  native;  // container.Map
+type Seq[+T]     native;  // container.Seq
+type Array[+T]   native;  // []T, container.Array
+type Heap[+T]    native;  // container.Heap
+type Set[+T]     native;  // container.Set
+type Map[+K,+V]  native;  // container.Map
 
 
 /* Functions for Seq[T] */

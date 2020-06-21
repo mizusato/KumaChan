@@ -141,13 +141,14 @@ func OverloadedAssignTo (
 func DescribeCandidate(c Candidate) string {
 	var name = c.Name
 	var f = c.Function
+	var params = TypeParamsNames(f.TypeParams)
 	return fmt.Sprintf (
 		"%s[%s]: %s",
 		name,
-		strings.Join(f.TypeParams, ","),
+		strings.Join(params, ","),
 		DescribeTypeWithParams (
 			AnonymousType { f.DeclaredType },
-			f.TypeParams,
+			params,
 		),
 	)
 }
@@ -176,7 +177,7 @@ func CheckOverload (
 						added_t, added_params,
 					),
 					ExistingType: DescribeTypeWithParams (
-						existing_t, existing_params,
+						existing_t, TypeParamsNames(existing_params),
 					),
 				},
 			}

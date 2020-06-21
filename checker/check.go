@@ -61,10 +61,10 @@ type ModuleInfo struct {
 
 type ExprContext struct {
 	ModuleInfo     ModuleInfo
-	TypeParams     [] string
+	TypeParams     [] TypeParam
 	LocalValues    map[string] Type
 	InferTypeArgs  bool
-	InferredNames  [] string
+	InferredInfo   [] TypeParam
 	Inferred       map[uint] Type  // mutable
 	MacroPath      [] MacroExpanding
 }
@@ -115,7 +115,7 @@ func (impl SymMacro) Sym() {}
 type SymMacro struct { Macro *Macro; Name string }
 
 
-func CreateExprContext(mod_info ModuleInfo, params []string) ExprContext {
+func CreateExprContext(mod_info ModuleInfo, params ([] TypeParam)) ExprContext {
 	return ExprContext {
 		ModuleInfo:    mod_info,
 		TypeParams:    params,
@@ -133,15 +133,15 @@ func (ctx ExprContext) GetTypeContext() TypeContext {
 }
 
 func (ctx ExprContext) DescribeType(t Type) string {
-	return DescribeTypeWithParams(t, ctx.TypeParams)
+	return DescribeTypeWithParams(t, TypeParamsNames(ctx.TypeParams))
 }
 
 func (ctx ExprContext) DescribeExpectedType(t Type) string {
 	if ctx.InferTypeArgs {
 		return DescribeType(t, TypeDescContext {
-			ParamNames:    ctx.TypeParams,
+			ParamNames:    TypeParamsNames(ctx.TypeParams),
 			UseInferred:   ctx.InferTypeArgs,
-			InferredNames: ctx.InferredNames,
+			InferredNames: TypeParamsNames(ctx.InferredInfo),
 			InferredTypes: ctx.Inferred,
 		})
 	} else {
@@ -177,8 +177,8 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 		if exists {
 			return SymLocalValue { ValueType: local }, true
 		}
-		for index, param_name := range ctx.TypeParams {
-			if param_name == sym_name {
+		for index, param := range ctx.TypeParams {
+			if param.Name == sym_name {
 				return SymTypeParam { Index: uint(index) }, true
 			}
 		}
@@ -262,11 +262,11 @@ func (ctx ExprContext) WithAddedLocalValues(added map[string]Type) (ExprContext,
 	return new_ctx, shadowed
 }
 
-func (ctx ExprContext) WithTypeArgsInferringEnabled(names []string) ExprContext {
+func (ctx ExprContext) WithTypeArgsInferringEnabled(params ([] TypeParam)) ExprContext {
 	var new_ctx ExprContext
 	*(&new_ctx) = ctx
 	new_ctx.InferTypeArgs = true
-	new_ctx.InferredNames = names
+	new_ctx.InferredInfo = params
 	new_ctx.Inferred = make(map[uint] Type)
 	return new_ctx
 }
@@ -275,7 +275,7 @@ func (ctx ExprContext) WithInferringInfoFrom(another ExprContext) ExprContext {
 	var new_ctx ExprContext
 	*(&new_ctx) = ctx
 	new_ctx.InferTypeArgs = another.InferTypeArgs
-	new_ctx.InferredNames = another.InferredNames
+	new_ctx.InferredInfo = another.InferredInfo
 	new_ctx.Inferred = another.Inferred
 	return new_ctx
 }
@@ -440,7 +440,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 			}
 		}
 	}
-	var expr_ctx = CreateExprContext(mod_info, make([]string, 0))
+	var expr_ctx = CreateExprContext(mod_info, make([] TypeParam, 0))
 	var const_map = make(map[string] CheckedConstant)
 	for sym, constant := range constants {
 		if sym.ModuleName != mod_name {

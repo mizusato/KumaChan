@@ -1,17 +1,96 @@
 package checker
 
 import (
+	"strings"
 	"kumachan/loader"
 	"kumachan/parser/ast"
-	"strings"
 )
 
 
 type GenericType struct {
-	Params    [] string
+	Params    [] TypeParam
 	Value     TypeVal
 	Node      ast.Node
 	CaseInfo  CaseInfo
+}
+type TypeParam struct {
+	Name      string
+	Variance  TypeVariance
+}
+func TypeParamsNames(params ([] TypeParam)) ([] string) {
+	var draft = make([] string, len(params))
+	for i, _ := range draft {
+		draft[i] = params[i].Name
+	}
+	return draft
+}
+type TypeVariance int
+const (
+	Invariant  TypeVariance  =  iota
+	Covariant
+	Contravariant
+	Bivariant
+)
+func FilledVarianceVector(v TypeVariance, arity uint) ([] TypeVariance) {
+	var draft = make([] TypeVariance, arity)
+	for i, _ := range draft {
+		draft[i] = v
+	}
+	return draft
+}
+func ParamsVarianceVector(params ([] TypeParam)) ([] TypeVariance) {
+	var draft = make([] TypeVariance, len(params))
+	for i, _ := range draft {
+		draft[i] = params[i].Variance
+	}
+	return draft
+}
+func InverseVariance(v TypeVariance) TypeVariance {
+	if v == Contravariant {
+		return Covariant
+	} else if v == Covariant {
+		return Contravariant
+	} else {
+		return v
+	}
+}
+func ApplyVariance(param TypeVariance, arg TypeVariance) TypeVariance {
+	if arg == Covariant || arg == Contravariant {
+		if param == Bivariant {
+			return arg
+		} else if arg == param {
+			return Covariant
+		} else if arg == InverseVariance(param) {
+			return Contravariant
+		} else {
+			return Invariant
+		}
+	} else if arg == Bivariant {
+		if param == Bivariant {
+			return Bivariant
+		} else if param == Covariant || param == Contravariant {
+			return param
+		} else {
+			return Invariant
+		}
+	} else {
+		return Invariant
+	}
+}
+func CombineVariance(a TypeVariance, b TypeVariance) TypeVariance {
+	if a == Invariant || b == Invariant {
+		return Invariant
+	} else if a == Bivariant {
+		return b
+	} else if b == Bivariant {
+		return a
+	} else if a == Covariant && b == Covariant {
+		return Covariant
+	} else if a == Contravariant && b == Contravariant {
+		return Contravariant
+	} else {
+		return Invariant
+	}
 }
 type TypeVal interface { TypeVal() }
 
@@ -98,7 +177,7 @@ type TypeDescContext struct {
 	InferredTypes  map[uint] Type
 }
 
-func DescribeTypeWithParams(type_ Type, params []string) string {
+func DescribeTypeWithParams(type_ Type, params ([] string)) string {
 	return DescribeType(type_, TypeDescContext {
 		ParamNames:    params,
 		UseInferred:   false,
