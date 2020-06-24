@@ -19,6 +19,7 @@ do (listen (ChangeTextButton.clicked))
     | forever;
 
 do (listen (TextInput.text))
+    | debounce 300
     | concat-map (
         & text
         (TextDisplay | set-text text)

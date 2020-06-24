@@ -68,28 +68,26 @@ func CheckCall(call ast.Call, ctx ExprContext) (SemiExpr, *ExprError) {
 func CheckSingleCall(f SemiExpr, arg SemiExpr, info ExprInfo, ctx ExprContext) (SemiExpr, *ExprError) {
 	switch f_concrete := f.Value.(type) {
 	case TypedExpr:
-		var t = UnboxAsIs(f_concrete.Type, ctx.ModuleInfo.Types)
-		switch T := t.(type) {
-		case AnonymousType:
-			switch r := T.Repr.(type) {
-			case Func:
-				var arg_typed, err = AssignTo(r.Input, arg, ctx)
-				if err != nil { return SemiExpr{}, err }
-				return LiftTyped(Expr {
-					Type:  r.Output,
-					Value: Call {
-						Function: Expr(f_concrete),
-						Argument: arg_typed,
-					},
-					Info:  f.Info,
-				}), nil
+		var t = f_concrete.Type
+		var r, ok = UnboxFunc(t, ctx).(Func)
+		if ok {
+			var arg_typed, err = AssignTo(r.Input, arg, ctx)
+			if err != nil { return SemiExpr{}, err }
+			return LiftTyped(Expr {
+				Type:  r.Output,
+				Value: Call {
+					Function: Expr(f_concrete),
+					Argument: arg_typed,
+				},
+				Info:  f.Info,
+			}), nil
+		} else {
+			return SemiExpr{}, &ExprError {
+				Point: f.Info.ErrorPoint,
+				Concrete: E_ExprTypeNotCallable {
+					Type: ctx.DescribeType(t),
+				},
 			}
-		}
-		return SemiExpr{}, &ExprError {
-			Point:    f.Info.ErrorPoint,
-			Concrete: E_ExprTypeNotCallable {
-				Type: ctx.DescribeType(t),
-			},
 		}
 	case UntypedLambda:
 		return CallUntypedLambda(arg, f_concrete, f.Info, info, ctx)
