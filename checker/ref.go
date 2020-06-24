@@ -196,7 +196,7 @@ func AssignRefTo(expected Type, ref UntypedRef, info ExprInfo, ctx ExprContext) 
 			Point:    info.ErrorPoint,
 			Concrete: E_TypeUsedAsValue { r.TypeName },
 		} }
-		return AssignTypedTo(expected, boxed_unit, ctx)
+		return TypedAssignTo(expected, boxed_unit, ctx)
 	case UntypedRefToFunctions:
 		var name = r.FuncName
 		var functions = r.Functions

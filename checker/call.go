@@ -13,12 +13,10 @@ type UndecidedCall struct {
 }
 type AvailableCall struct {
 	Expr      Expr
-	IsExact   bool
 	Function  *GenericFunction
 }
 type AssignableCall struct {
 	Expr      Expr
-	IsExact   bool
 	Function  *GenericFunction
 }
 
@@ -123,17 +121,15 @@ func AssignCallTo(expected Type, call UndecidedCall, info ExprInfo, ctx ExprCont
 	var types_desc = make([]string, 0)
 	var assignable = make([]AssignableCall, 0)
 	for _, option := range call.Options {
-		var expr, err = AssignTypedTo(expected, option.Expr, ctx)
+		var expr, err = TypedAssignTo(expected, option.Expr, ctx)
 		if err != nil {
 			types_desc = append (
 				types_desc,
 				ctx.DescribeType(option.Expr.Type),
 			)
 		} else {
-			var is_exact = AreTypesEqualInSameCtx(expr.Type, option.Expr.Type)
 			assignable = append(assignable, AssignableCall {
 				Expr:     expr,
-				IsExact:  is_exact,
 				Function: option.Function,
 			})
 		}
@@ -146,34 +142,24 @@ func AssignCallTo(expected Type, call UndecidedCall, info ExprInfo, ctx ExprCont
 				To:   ctx.DescribeExpectedType(expected),
 			},
 		}
+	} else if len(assignable) == 1 {
+		return assignable[0].Expr, nil
 	} else {
-		var exact_quantity = 0
-		var exact = -1
+		var candidates = make([]string, len(assignable))
 		for i, a := range assignable {
-			if a.IsExact {
-				exact_quantity += 1
-				exact = i
-			}
-		}
-		if exact_quantity == 1 {
-			return assignable[exact].Expr, nil
-		} else {
-			var candidates = make([]string, len(assignable))
-			for i, a := range assignable {
-				candidates[i] = DescribeCandidate (
-					Candidate {
-						Function: a.Function,
-						Name:     call.FuncName,
-						Error:    nil,
-					},
-				)
-			}
-			return Expr{}, &ExprError {
-				Point:    info.ErrorPoint,
-				Concrete: E_AmbiguousCall {
-					Candidates: candidates,
+			candidates[i] = DescribeCandidate (
+				Candidate {
+					Function: a.Function,
+					Name:     call.FuncName,
+					Error:    nil,
 				},
-			}
+			)
+		}
+		return Expr{}, &ExprError {
+			Point:    info.ErrorPoint,
+			Concrete: E_AmbiguousCall {
+				Candidates: candidates,
+			},
 		}
 	}
 }

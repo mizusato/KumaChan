@@ -109,7 +109,7 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 			} }
 			for i, param := range params {
 				if param.Variance != Invariant {
-					return nil, &FunctionError{
+					return nil, &FunctionError {
 						Point:    ErrorPointFrom(decl.Params[i].Node),
 						Concrete: E_FunctionVarianceDeclared {},
 					}

@@ -1,5 +1,5 @@
 // Debugging Types
-type Debug[T] as T;
+type Debug[+T] as T;
 
 // Debugging Functions
 public function trace[T]: ( &(T) Debug[T] )

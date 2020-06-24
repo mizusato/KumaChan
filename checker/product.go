@@ -284,7 +284,7 @@ func AssignTupleTo(expected Type, tuple SemiTypedTuple, info ExprInfo, ctx ExprC
 			Value: Product { typed_exprs },
 			Info:  info,
 		}
-		return AssignTypedTo(expected, typed_tuple, ctx)
+		return TypedAssignTo(expected, typed_tuple, ctx)
 	case AnonymousType:
 		switch tuple_t := E.Repr.(type) {
 		case Tuple:

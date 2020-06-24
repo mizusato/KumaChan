@@ -18,7 +18,7 @@ func AssignTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprError) 
 	var expr, err = (func() (Expr, *ExprError) {
 		switch semi_value := semi.Value.(type) {
 		case TypedExpr:
-			return AssignTypedTo(expected, Expr(semi_value), ctx)
+			return TypedAssignTo(expected, Expr(semi_value), ctx)
 		case UntypedLambda:
 			return AssignLambdaTo(expected, semi_value, semi.Info, ctx)
 		case UntypedInteger:
@@ -49,9 +49,22 @@ func AssignTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprError) 
 	return expr, nil
 }
 
-func AssignTypedTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError) {
-	// TODO: update comments
-	var failed = func() (Expr, *ExprError) {
+func TypedAssignTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError) {
+	if expected == nil {
+		return Expr {
+			Type:  UnboxAsIs(expr.Type, ctx.ModuleInfo.Types),
+			Value: expr.Value,
+			Info:  expr.Info,
+		}, nil
+	}
+	var result_type, ok = AssignTypeTo(expected, expr.Type, Covariant, ctx)
+	if ok {
+		return Expr {
+			Type:  result_type,
+			Value: expr.Value,
+			Info:  expr.Info,
+		}, nil
+	} else {
 		return Expr{}, &ExprError {
 			Point:    expr.Info.ErrorPoint,
 			Concrete: E_NotAssignable {
@@ -61,48 +74,37 @@ func AssignTypedTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 			},
 		}
 	}
-	// 1. If the expected type is not specified,
-	//    no further process is required.
-	if expected == nil {
-		return Expr {
-			Type:  UnboxAsIs(expr.Type, ctx.ModuleInfo.Types),
-			Value: expr.Value,
-			Info:  expr.Info,
-		}, nil
-	}
-	// Try Direct
-	var direct_type, ok = DirectAssignTo(expected, expr.Type, ctx)
-	if ok {
-		return Expr {
-			Type:  direct_type,
-			Value: expr.Value,
-			Info:  expr.Info,
-		}, nil
-	}
-	// Try Unbox
-	var ctx_mod = ctx.ModuleInfo.Module.Name
-	var reg = ctx.ModuleInfo.Types
-	var unboxed, can_unbox = Unbox(expr.Type, ctx_mod, reg).(Unboxed)
-	if can_unbox {
-		var expr_with_unboxed = Expr {
-			Type:  unboxed.Type,
-			Value: expr.Value,
-			Info:  expr.Info,
-		}
-		var expr_with_expected, err = AssignTypedTo (
-			expected, expr_with_unboxed, ctx,
-		)
-		// if err != nil { return Expr{}, err }
-		// if err != nil { return failed() }
-		if err == nil {
-			return expr_with_expected, nil
-		}  // else fallthrough to union
-	}
-	// Failed
-	return failed()
 }
 
-func DirectAssignTo(expected Type, given Type, ctx ExprContext) (Type, bool) {
+func AssignTypeTo(expected Type, given Type, v TypeVariance, ctx ExprContext) (Type, bool) {
+	var direct_type, ok = DirectAssignTypeTo(expected, given, ctx)
+	if ok {
+		return direct_type, true
+	} else {
+		var ctx_mod = ctx.ModuleInfo.Module.Name
+		var reg = ctx.ModuleInfo.Types
+		switch v {
+		case Covariant:
+			var unboxed, can_unbox = Unbox(given, ctx_mod, reg).(Unboxed)
+			if can_unbox {
+				return AssignTypeTo(expected, unboxed.Type, v, ctx)
+			} else {
+				return nil, false
+			}
+		case Contravariant:
+			var unboxed, can_unbox = Unbox(expected, ctx_mod, reg).(Unboxed)
+			if can_unbox {
+				return AssignTypeTo(unboxed.Type, given, v, ctx)
+			} else {
+				return nil, false
+			}
+		default:
+			return nil, false
+		}
+	}
+}
+
+func DirectAssignTypeTo(expected Type, given Type, ctx ExprContext) (Type, bool) {
 	switch E := expected.(type) {
 	case ParameterType:
 		if E.BeingInferred {
@@ -154,11 +156,13 @@ func DirectAssignTo(expected Type, given Type, ctx ExprContext) (Type, bool) {
 				if len(T.Args) != len(E.Args) {
 					panic("something went wrong")
 				}
+				var g = ctx.ModuleInfo.Types[E.Name]
 				var L = len(T.Args)
 				var name = T.Name
 				var args = make([] Type, L)
 				for i := 0; i < L; i += 1 {
-					var t, ok = DirectAssignTo(E.Args[i], T.Args[i], ctx)
+					var v = g.Params[i].Variance
+					var t, ok = AssignTypeTo(E.Args[i], T.Args[i], v, ctx)
 					if ok {
 						args[i] = t
 					} else {
@@ -193,7 +197,7 @@ func DirectAssignTo(expected Type, given Type, ctx ExprContext) (Type, bool) {
 					for i := 0; i < L; i += 1 {
 						var e = E_.Elements[i]
 						var t = T_.Elements[i]
-						var el_t, ok = DirectAssignTo(e, t, ctx)
+						var el_t, ok = AssignTypeTo(e, t, Covariant, ctx)
 						if ok {
 							elements[i] = el_t
 						} else {
@@ -218,7 +222,9 @@ func DirectAssignTo(expected Type, given Type, ctx ExprContext) (Type, bool) {
 							return nil, false
 						}
 						var field_index = t.Index
-						var field_t, ok = DirectAssignTo(e.Type, t.Type, ctx)
+						var field_t, ok = AssignTypeTo (
+							e.Type, t.Type, Covariant, ctx,
+						)
 						if ok {
 							fields[name] = Field {
 								Type:  field_t,
@@ -233,11 +239,15 @@ func DirectAssignTo(expected Type, given Type, ctx ExprContext) (Type, bool) {
 			case Func:
 				switch T_ := T.Repr.(type) {
 				case Func:
-					var input_t, ok1 = DirectAssignTo(E_.Input, T_.Input, ctx)
+					var input_t, ok1 = AssignTypeTo (
+						E_.Input, T_.Input, Contravariant, ctx,
+					)
 					if !(ok1) {
 						return nil, false
 					}
-					var output_t, ok2 = DirectAssignTo(E_.Output, T_.Output, ctx)
+					var output_t, ok2 = AssignTypeTo (
+						E_.Output, T_.Output, Covariant, ctx,
+					)
 					if !(ok2) {
 						return nil, false
 					}

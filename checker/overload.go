@@ -25,10 +25,8 @@ func OverloadedCall (
 	if len(functions) == 0 { panic("something went wrong") }
 	if len(functions) == 1 {
 		var f = functions[0]
-		var is_exact bool
 		var expr, err = GenericFunctionCall (
 			f, name, 0, type_args, arg, f_info, call_info, ctx,
-			&is_exact,
 		)
 		if err != nil { return SemiExpr{}, err }
 		return LiftTyped(expr), nil
@@ -37,10 +35,8 @@ func OverloadedCall (
 		var candidates = make([]Candidate, 0)
 		for i, f := range functions {
 			var index = uint(i)
-			var is_exact bool
 			var expr, err = GenericFunctionCall (
 				f, name, index, type_args, arg, f_info, call_info, ctx,
-				&is_exact,
 			)
 			if err != nil {
 				candidates = append(candidates, Candidate {
@@ -51,7 +47,6 @@ func OverloadedCall (
 			} else {
 				options = append(options, AvailableCall {
 					Expr:     expr,
-					IsExact:  is_exact,
 					Function: f,
 				})
 			}
@@ -67,25 +62,13 @@ func OverloadedCall (
 		} else if available_count == 1 {
 			return LiftTyped(options[0].Expr), nil
 		} else {
-			var exact_quantity = 0
-			var exact = -1
-			for i, opt := range options {
-				if opt.IsExact {
-					exact_quantity += 1
-					exact = i
-				}
-			}
-			if exact_quantity == 1 {
-				return LiftTyped(options[exact].Expr), nil
-			} else {
-				return SemiExpr {
-					Value: UndecidedCall {
-						Options:  options,
-						FuncName: name,
-					},
-					Info: call_info,
-				}, nil
-			}
+			return SemiExpr {
+				Value: UndecidedCall {
+					Options:  options,
+					FuncName: name,
+				},
+				Info: call_info,
+			}, nil
 		}
 	}
 }
@@ -377,30 +360,3 @@ func IsLocalType(type_ Type, mod string) bool {
 	}
 }
 
-func IsExactAssignTo(t Type, arg SemiExpr) bool {
-	switch a := arg.Value.(type) {
-	case TypedExpr:
-		return AreTypesEqualInSameCtx(a.Type, t)
-	case SemiTypedTuple:
-		switch T := t.(type) {
-		case AnonymousType:
-			switch r := T.Repr.(type) {
-			case Tuple:
-				if len(r.Elements) != len(a.Values) {
-					panic("something went wrong")
-				}
-				for i, el := range a.Values {
-					var el_t = r.Elements[i]
-					var el_exact = IsExactAssignTo(el_t, el)
-					if !(el_exact) {
-						return false
-					}
-				}
-				return true
-			}
-		}
-		return false
-	default:
-		return false
-	}
-}

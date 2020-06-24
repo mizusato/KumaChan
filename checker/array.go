@@ -74,7 +74,7 @@ func AssignArrayTo(expected Type, array SemiTypedArray, info ExprInfo, ctx ExprC
 			Info:  info,
 			Value: Array { Items: items, ItemType: item_type },
 		}
-		return AssignTypedTo(expected, typed_array, ctx)
+		return TypedAssignTo(expected, typed_array, ctx)
 	case NamedType:
 		if E.Name == __Array {
 			if len(E.Args) != 1 { panic("something went wrong") }
@@ -88,7 +88,7 @@ func AssignArrayTo(expected Type, array SemiTypedArray, info ExprInfo, ctx ExprC
 					Value: Array { Items: [] Expr {}, ItemType: nil },
 					Info:  info,
 				}
-				return AssignTypedTo(expected, empty_array, ctx)
+				return TypedAssignTo(expected, empty_array, ctx)
 			}
 			var items = make([]Expr, len(array.Items))
 			for i, item_semi := range array.Items {
