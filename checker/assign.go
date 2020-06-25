@@ -85,6 +85,10 @@ func AssignTypeTo(expected Type, given Type, v TypeVariance, ctx ExprContext) (T
 		var reg = ctx.ModuleInfo.Types
 		switch v {
 		case Covariant:
+			var _, is_given_wildcard = given.(WildcardRhsType)
+			if is_given_wildcard {
+				return AssignWildcardRhsTypeTo(expected, ctx)
+			}
 			var unboxed, can_unbox = Unbox(given, ctx_mod, reg).(Unboxed)
 			if can_unbox {
 				return AssignTypeTo(expected, unboxed.Type, v, ctx)
@@ -92,6 +96,10 @@ func AssignTypeTo(expected Type, given Type, v TypeVariance, ctx ExprContext) (T
 				return nil, false
 			}
 		case Contravariant:
+			var _, is_expected_wildcard = expected.(WildcardRhsType)
+			if is_expected_wildcard {
+				return WildcardRhsType {}, true
+			}
 			var unboxed, can_unbox = Unbox(expected, ctx_mod, reg).(Unboxed)
 			if can_unbox {
 				return AssignTypeTo(unboxed.Type, given, v, ctx)
@@ -104,31 +112,30 @@ func AssignTypeTo(expected Type, given Type, v TypeVariance, ctx ExprContext) (T
 	}
 }
 
+func AssignWildcardRhsTypeTo(expected Type, ctx ExprContext) (Type, bool) {
+	var t, err = GetCertainType(expected, ErrorPoint{}, ctx)
+	if err != nil { return nil, false }
+	return t, true
+}
+
 func DirectAssignTypeTo(expected Type, given Type, ctx ExprContext) (Type, bool) {
 	switch E := expected.(type) {
 	case ParameterType:
 		if E.BeingInferred {
 			if !(ctx.InferTypeArgs) { panic("something went wrong") }
-			switch given.(type) {
-			case WildcardRhsType:
-				return given, true
-			default:
-				var inferred, exists = ctx.Inferred[E.Index]
-				if exists {
-					if AreTypesEqualInSameCtx(inferred, given) {
-						return given, true
-					} else {
-						return nil, false
-					}
-				} else {
-					ctx.Inferred[E.Index] = given
+			var inferred, exists = ctx.Inferred[E.Index]
+			if exists {
+				if AreTypesEqualInSameCtx(inferred, given) {
 					return given, true
+				} else {
+					return nil, false
 				}
+			} else {
+				ctx.Inferred[E.Index] = given
+				return given, true
 			}
 		} else {
 			switch T := given.(type) {
-			case WildcardRhsType:
-				return expected, true
 			case ParameterType:
 				if E.Index == T.Index {
 					return given, true
@@ -137,18 +144,6 @@ func DirectAssignTypeTo(expected Type, given Type, ctx ExprContext) (Type, bool)
 				return nil, false
 			}
 		}
-	}
-	switch given.(type) {
-	case WildcardRhsType:
-		if ctx.InferTypeArgs {
-			var t, err = GetCertainType(expected, ErrorPoint{}, ctx)
-			if err != nil { return nil, false }
-			return t, true
-		} else {
-			return expected, true
-		}
-	}
-	switch E := expected.(type) {
 	case NamedType:
 		switch T := given.(type) {
 		case NamedType:

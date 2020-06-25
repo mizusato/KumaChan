@@ -13,7 +13,7 @@ do (listen (DemoWindow.resized))
     | forever;
 
 do (listen (ChangeTextButton.clicked))
-    | concat-map (&(_)(random ()))
+    | concat-map random
     | map* (&(x)(str x))
     | concat-map (&(text)(TextDisplay | set-text text))
     | forever;
