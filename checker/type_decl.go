@@ -341,8 +341,8 @@ func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, *Type
 }
 
 /* Transform: ast.TypeValue -> checker.TypeVal */
-func TypeValFrom(tv ast.TypeValue, ctx TypeContext, raw RawTypeRegistry) (TypeVal, *TypeError) {
-	switch val := tv.(type) {
+func TypeValFrom(type_val ast.TypeValue, ctx TypeContext, raw RawTypeRegistry) (TypeVal, *TypeError) {
+	switch val := type_val.(type) {
 	case ast.UnionType:
 		var count = uint(len(val.Cases))
 		var max = uint(common.SumMaxBranches)
@@ -377,7 +377,6 @@ func TypeValFrom(tv ast.TypeValue, ctx TypeContext, raw RawTypeRegistry) (TypeVa
 				Params: mapping,
 			}
 		}
-		// TODO: check variance
 		return Union {
 			CaseTypes: case_types,
 		}, nil
@@ -416,6 +415,7 @@ func TypeValFrom(tv ast.TypeValue, ctx TypeContext, raw RawTypeRegistry) (TypeVa
 
 /* Transform: ast.Type -> checker.Type */
 func TypeFrom(type_ ast.Type, ctx TypeContext) (Type, ([] TypeVariance), *TypeError) {
+	// TODO: separate type construction and validity check
 	switch t := type_.(type) {
 	case ast.TypeRef:
 		var ref_mod = string(t.Module.Name)
@@ -432,6 +432,7 @@ func TypeFrom(type_ ast.Type, ctx TypeContext) (Type, ([] TypeVariance), *TypeEr
 			for i, param := range ctx.Params {
 				if param.Name == ref_name {
 					var v = FilledVarianceVector(Bivariant, ctx.Arity())
+					v[i] = Covariant
 					return ParameterType { Index: uint(i) }, v, nil
 				}
 			}

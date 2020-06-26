@@ -47,6 +47,7 @@ func GenericFunctionCall (
 			if exists {
 				inferred_args[i] = t
 			} else {
+				// TODO: check variance
 				inferred_args[i] = WildcardRhsType {}
 			}
 		}

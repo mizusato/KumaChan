@@ -70,6 +70,7 @@ type MultiBranch struct {
 
 
 func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
+	// TODO: merge switch and multi_switch
 	var info = ctx.GetExprInfo(sw.Node)
 	var arg_semi, err = Check(sw.Argument, ctx)
 	if err != nil { return SemiExpr{}, err }
