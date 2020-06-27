@@ -11,25 +11,15 @@ type TypeContext struct {
 	TypeConstructContext
 	Registry  TypeRegistry
 }
+func (ctx TypeContext) GetVarianceContext() TypeVarianceContext {
+	return TypeVarianceContext {
+		Registry:   ctx.Registry,
+		Parameters: ctx.Parameters,
+	}
+}
 type TypeNodeInfo struct {
 	ValNodeMap   map[TypeVal] ast.Node
 	TypeNodeMap  map[Type] ast.Node
-}
-func (ctx TypeContext) Arity() uint {
-	return uint(len(ctx.Parameters))
-}
-func (ctx TypeContext) DeduceVariance(params_v ([] TypeVariance), args_v ([][] TypeVariance)) ([] TypeVariance) {
-	var ctx_arity = ctx.Arity()
-	var n = uint(len(params_v))
-	var result = make([] TypeVariance, ctx_arity)
-	for i := uint(0); i < ctx_arity; i += 1 {
-		var v = Bivariant
-		for j := uint(0); j < n; j += 1 {
-			v = CombineVariance(v, ApplyVariance(params_v[j], args_v[j][i]))
-		}
-		result[i] = TypeVariance(v)
-	}
-	return result
 }
 
 func TypeFrom(ast_type ast.VariousType, ctx TypeContext) (Type, *TypeError) {
@@ -85,7 +75,7 @@ func ValidateTypeVal(val TypeVal, info TypeNodeInfo, ctx TypeContext) *TypeError
 	case *Boxed:
 		var err = ValidateType(V.InnerType, info.TypeNodeMap, ctx)
 		if err != nil { return err }
-		var inner_v = GetVariance(V.InnerType, ctx)
+		var inner_v = GetVariance(V.InnerType, ctx.GetVarianceContext())
 		var v_ok, bad_params = MatchVariance(ctx.Parameters, inner_v)
 		if !(v_ok) { return &TypeError {
 			Point:    val_point,
@@ -172,57 +162,3 @@ func ValidateType(t Type, nodes (map[Type] ast.Node), ctx TypeContext) *TypeErro
 		panic("impossible branch")
 	}
 }
-
-func GetVariance(t Type, ctx TypeContext) ([] TypeVariance) {
-	switch T := t.(type) {
-	case *WildcardRhsType:
-		return FilledVarianceVector(Bivariant, ctx.Arity())
-	case *ParameterType:
-		var v_draft = FilledVarianceVector(Bivariant, ctx.Arity())
-		v_draft[T.Index] = Covariant
-		var v = v_draft
-		return v
-	case *NamedType:
-		var g = ctx.Registry[T.Name]
-		var arity = uint(len(g.Params))
-		if uint(len(T.Args)) != arity { panic("something went wrong") }
-		var params_v = ParamsVarianceVector(g.Params)
-		var args_v = make([][] TypeVariance, arity)
-		for i, arg := range T.Args {
-			args_v[i] = GetVariance(arg, ctx)
-		}
-		return ctx.DeduceVariance(params_v, args_v)
-	case *AnonymousType:
-		switch R := T.Repr.(type) {
-		case Unit:
-			return FilledVarianceVector(Bivariant, ctx.Arity())
-		case Tuple:
-			var n = uint(len(R.Elements))
-			var tuple_v = FilledVarianceVector(Covariant, n)
-			var elements_v = make([][] TypeVariance, n)
-			for i, el := range R.Elements {
-				elements_v[i] = GetVariance(el, ctx)
-			}
-			return ctx.DeduceVariance(tuple_v, elements_v)
-		case Bundle:
-			var n = uint(len(R.Fields))
-			var bundle_v = FilledVarianceVector(Covariant, n)
-			var fields_v = make([][] TypeVariance, n)
-			for _, field := range R.Fields {
-				fields_v[field.Index] = GetVariance(field.Type, ctx)
-			}
-			return ctx.DeduceVariance(bundle_v, fields_v)
-		case Func:
-			var input_v = GetVariance(R.Input, ctx)
-			var output_v = GetVariance(R.Output, ctx)
-			var func_v = [] TypeVariance { Contravariant, Covariant }
-			var io_v = [][] TypeVariance { input_v, output_v }
-			return ctx.DeduceVariance(func_v, io_v)
-		default:
-			panic("impossible branch")
-		}
-	default:
-		panic("impossible branch")
-	}
-}
-

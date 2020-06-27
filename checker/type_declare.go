@@ -20,6 +20,16 @@ func IsReservedTypeName(name string) bool {
 	return false
 }
 
+type TypeConstructContext struct {
+	Module      *loader.Module
+	Parameters  [] TypeParam
+}
+
+type RawTypeContext struct {
+	TypeConstructContext
+	Registry    RawTypeRegistry
+}
+
 // Final Registry of Types
 type TypeRegistry  map[loader.Symbol] *GenericType
 
@@ -42,6 +52,34 @@ type CaseInfo struct {
 	CaseIndex   uint
 	CaseParams  [] uint
 }
+
+func CollectTypeParams(raw_params ([] ast.Identifier)) ([] TypeParam, *E_InvalidTypeName, ast.Node) {
+	var params = make([] TypeParam, len(raw_params))
+	for p, raw_param := range raw_params {
+		var raw_name = loader.Id2String(raw_param)
+		var name = raw_name
+		var v = Invariant
+		if len(raw_name) > len(CovariantPrefix) &&
+			strings.HasPrefix(raw_name, CovariantPrefix) {
+			name = strings.TrimPrefix(raw_name, CovariantPrefix)
+			v = Covariant
+		} else if len(raw_name) > len(ContravariantPrefix) &&
+			strings.HasPrefix(raw_name, ContravariantPrefix) {
+			name = strings.TrimPrefix(raw_name, ContravariantPrefix)
+			v = Contravariant
+		}
+		if strings.HasSuffix(name, ForceExactSuffix) ||
+			IsReservedTypeName(name) {
+			return nil, &E_InvalidTypeName {name}, raw_param.Node
+		}
+		params[p] = TypeParam {
+			Name:     name,
+			Variance: v,
+		}
+	}
+	return params, nil, ast.Node{}
+}
+
 func MakeRawTypeRegistry() RawTypeRegistry {
 	return RawTypeRegistry {
 		DeclMap:       make(map[loader.Symbol] ast.DeclType),
@@ -50,6 +88,7 @@ func MakeRawTypeRegistry() RawTypeRegistry {
 		VisitedMod:    make(map[string] bool),
 	}
 }
+
 func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 	/**
 	 *  Input: a loaded module and a raw registry
@@ -73,7 +112,7 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 		case ast.DeclType:
 			var i = uint(len(decls))
 			decls = append(decls, s)
-			var params, err, err_node = TypeParams(s.Params)
+			var params, err, err_node = CollectTypeParams(s.Params)
 			if err != nil { return &TypeDeclError {
 				Point:    ErrorPointFrom(err_node),
 				Concrete: *err,
@@ -84,7 +123,7 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 				for case_index, case_decl := range u.Cases {
 					var case_i = uint(len(decls))
 					decls = append(decls, case_decl)
-					var params, err, err_node = TypeParams(case_decl.Params)
+					var params, err, err_node = CollectTypeParams(case_decl.Params)
 					if err != nil { return &TypeDeclError {
 						Point:    ErrorPointFrom(err_node),
 						Concrete: *err,
@@ -170,71 +209,6 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 	}
 	// 5. Return nil
 	return nil
-}
-
-type TypeConstructContext struct {
-	Module      *loader.Module
-	Parameters  [] TypeParam
-}
-type RawTypeContext struct {
-	TypeConstructContext
-	Registry    RawTypeRegistry
-}
-func TypeParams(raw_params ([] ast.Identifier)) ([] TypeParam, *E_InvalidTypeName, ast.Node) {
-	var params = make([] TypeParam, len(raw_params))
-	for p, raw_param := range raw_params {
-		var raw_name = loader.Id2String(raw_param)
-		var name = raw_name
-		var v = Invariant
-		if len(raw_name) > len(CovariantPrefix) &&
-			strings.HasPrefix(raw_name, CovariantPrefix) {
-			name = strings.TrimPrefix(raw_name, CovariantPrefix)
-			v = Covariant
-		} else if len(raw_name) > len(ContravariantPrefix) &&
-			strings.HasPrefix(raw_name, ContravariantPrefix) {
-			name = strings.TrimPrefix(raw_name, ContravariantPrefix)
-			v = Contravariant
-		}
-		if strings.HasSuffix(name, ForceExactSuffix) ||
-			IsReservedTypeName(name) {
-			return nil, &E_InvalidTypeName {name}, raw_param.Node
-		}
-		params[p] = TypeParam {
-			Name:     name,
-			Variance: v,
-		}
-	}
-	return params, nil, ast.Node{}
-}
-func MatchVariance(declared ([] TypeParam), deduced ([] TypeVariance)) (bool, ([] string)) {
-	var bad_params = make([] string, 0)
-	for i, _ := range declared {
-		var v = deduced[i]
-		var name = declared[i].Name
-		var declared_v = declared[i].Variance
-		var bad = false
-		if declared_v == Covariant {
-			if !(v == Covariant || v == Bivariant) {
-				bad = true
-			}
-		} else if declared_v == Contravariant {
-			if !(v == Contravariant || v == Bivariant) {
-				bad = true
-			}
-		} else if declared_v == Bivariant {
-			if v != Bivariant {
-				bad = true
-			}
-		}
-		if bad {
-			bad_params = append(bad_params, name)
-		}
-	}
-	if len(bad_params) > 0 {
-		return false, bad_params
-	} else {
-		return true, nil
-	}
 }
 
 func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, ([] *TypeDeclError)) {
@@ -508,3 +482,4 @@ func RawTypeFromRepr(ast_repr ast.VariousRepr, info (map[Type] ast.Node), ctx Ty
 		panic("impossible branch")
 	}
 }
+

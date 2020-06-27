@@ -41,14 +41,24 @@ func GenericFunctionCall (
 		var marked_input_type = MarkParamsAsBeingInferred(raw_input_type)
 		var arg_typed, err = AssignTo(marked_input_type, arg, inf_ctx)
 		if err != nil { return Expr{}, err }
+		var output_v = GetVariance(raw_output_type, TypeVarianceContext {
+			Parameters: f.TypeParams,
+			Registry:   ctx.ModuleInfo.Types,
+		})
 		var inferred_args = make([]Type, type_arity)
 		for i := 0; i < type_arity; i += 1 {
 			var t, exists = inf_ctx.Inferred[uint(i)]
 			if exists {
 				inferred_args[i] = t
 			} else {
-				// TODO: check variance
-				inferred_args[i] = &WildcardRhsType {}
+				if output_v[i] == Covariant {
+					inferred_args[i] = &WildcardRhsType{}
+				} else {
+					return Expr{}, &ExprError {
+						Point:    f_info.ErrorPoint,
+						Concrete: E_ExplicitTypeParamsRequired {},
+					}
+				}
 			}
 		}
 		var input_type = FillTypeArgs(raw_input_type, inferred_args)

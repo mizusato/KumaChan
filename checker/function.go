@@ -87,7 +87,7 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 					Concrete: E_InvalidFunctionName { name },
 				}
 			}
-			var params, p_err, p_err_node = TypeParams(decl.Params)
+			var params, p_err, p_err_node = CollectTypeParams(decl.Params)
 			if p_err != nil { return nil, &FunctionError {
 				Point:    ErrorPointFrom(p_err_node),
 				Concrete: E_FunctionInvalidTypeParameterName { p_err.Name },
