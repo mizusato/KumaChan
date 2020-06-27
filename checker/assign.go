@@ -85,7 +85,7 @@ func AssignTypeTo(expected Type, given Type, v TypeVariance, ctx ExprContext) (T
 		var reg = ctx.ModuleInfo.Types
 		switch v {
 		case Covariant:
-			var _, is_given_wildcard = given.(WildcardRhsType)
+			var _, is_given_wildcard = given.(*WildcardRhsType)
 			if is_given_wildcard {
 				return AssignWildcardRhsTypeTo(expected, ctx)
 			}
@@ -96,9 +96,9 @@ func AssignTypeTo(expected Type, given Type, v TypeVariance, ctx ExprContext) (T
 				return nil, false
 			}
 		case Contravariant:
-			var _, is_expected_wildcard = expected.(WildcardRhsType)
+			var _, is_expected_wildcard = expected.(*WildcardRhsType)
 			if is_expected_wildcard {
-				return WildcardRhsType {}, true
+				return &WildcardRhsType {}, true
 			}
 			var unboxed, can_unbox = Unbox(expected, ctx_mod, reg).(Unboxed)
 			if can_unbox {
@@ -120,7 +120,7 @@ func AssignWildcardRhsTypeTo(expected Type, ctx ExprContext) (Type, bool) {
 
 func DirectAssignTypeTo(expected Type, given Type, ctx ExprContext) (Type, bool) {
 	switch E := expected.(type) {
-	case ParameterType:
+	case *ParameterType:
 		if E.BeingInferred {
 			if !(ctx.InferTypeArgs) { panic("something went wrong") }
 			var inferred, exists = ctx.Inferred[E.Index]
@@ -136,7 +136,7 @@ func DirectAssignTypeTo(expected Type, given Type, ctx ExprContext) (Type, bool)
 			}
 		} else {
 			switch T := given.(type) {
-			case ParameterType:
+			case *ParameterType:
 				if E.Index == T.Index {
 					return given, true
 				}
@@ -144,9 +144,9 @@ func DirectAssignTypeTo(expected Type, given Type, ctx ExprContext) (Type, bool)
 				return nil, false
 			}
 		}
-	case NamedType:
+	case *NamedType:
 		switch T := given.(type) {
-		case NamedType:
+		case *NamedType:
 			if E.Name == T.Name {
 				if len(T.Args) != len(E.Args) {
 					panic("something went wrong")
@@ -164,7 +164,7 @@ func DirectAssignTypeTo(expected Type, given Type, ctx ExprContext) (Type, bool)
 						return nil, false
 					}
 				}
-				return NamedType {
+				return &NamedType {
 					Name: name,
 					Args: args,
 				}, true
@@ -172,9 +172,9 @@ func DirectAssignTypeTo(expected Type, given Type, ctx ExprContext) (Type, bool)
 				return nil, false
 			}
 		}
-	case AnonymousType:
+	case *AnonymousType:
 		switch T := given.(type) {
-		case AnonymousType:
+		case *AnonymousType:
 			switch E_ := E.Repr.(type) {
 			case Unit:
 				switch T.Repr.(type) {
@@ -199,7 +199,7 @@ func DirectAssignTypeTo(expected Type, given Type, ctx ExprContext) (Type, bool)
 							return nil, false
 						}
 					}
-					return AnonymousType { Tuple { elements } }, true
+					return &AnonymousType { Tuple { elements } }, true
 				}
 			case Bundle:
 				switch T_ := T.Repr.(type) {
@@ -229,7 +229,7 @@ func DirectAssignTypeTo(expected Type, given Type, ctx ExprContext) (Type, bool)
 							return nil, false
 						}
 					}
-					return AnonymousType { Bundle { fields } }, true
+					return &AnonymousType { Bundle { fields } }, true
 				}
 			case Func:
 				switch T_ := T.Repr.(type) {
@@ -246,7 +246,7 @@ func DirectAssignTypeTo(expected Type, given Type, ctx ExprContext) (Type, bool)
 					if !(ok2) {
 						return nil, false
 					}
-					return AnonymousType { Func {
+					return &AnonymousType { Func {
 						Input:  input_t,
 						Output: output_t,
 					} }, true

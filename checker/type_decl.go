@@ -4,7 +4,6 @@ import (
 	"strings"
 	. "kumachan/error"
 	"kumachan/loader"
-	"kumachan/runtime/common"
 	"kumachan/parser/ast"
 )
 
@@ -173,41 +172,13 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 	return nil
 }
 
-type TypeContext struct {
-	Module  *loader.Module
-	Params  [] TypeParam
-	Ireg    AbstractRegistry
+type TypeConstructContext struct {
+	Module      *loader.Module
+	Parameters  [] TypeParam
 }
-type AbstractRegistry interface {
-	LookupParams(loader.Symbol) ([] TypeParam, bool)
-}
-func (raw RawTypeRegistry) LookupParams(name loader.Symbol) ([] TypeParam, bool) {
-	var params, exists = raw.ParamsMap[name]
-	return params, exists
-}
-func (reg TypeRegistry) LookupParams(name loader.Symbol) ([] TypeParam, bool) {
-	var t, exists = reg[name]
-	if exists {
-		return t.Params, true
-	} else {
-		return nil, false
-	}
-}
-func (ctx TypeContext) Arity() uint {
-	return uint(len(ctx.Params))
-}
-func (ctx TypeContext) DeduceVariance(params_v ([] TypeVariance), args_v ([][] TypeVariance)) ([] TypeVariance) {
-	var ctx_arity = ctx.Arity()
-	var n = uint(len(params_v))
-	var result = make([] TypeVariance, ctx_arity)
-	for i := uint(0); i < ctx_arity; i += 1 {
-		var v = Bivariant
-		for j := uint(0); j < n; j += 1 {
-			v = CombineVariance(v, ApplyVariance(params_v[j], args_v[j][i]))
-		}
-		result[i] = TypeVariance(v)
-	}
-	return result
+type RawTypeContext struct {
+	TypeConstructContext
+	Registry    RawTypeRegistry
 }
 func TypeParams(raw_params ([] ast.Identifier)) ([] TypeParam, *E_InvalidTypeName, ast.Node) {
 	var params = make([] TypeParam, len(raw_params))
@@ -266,14 +237,18 @@ func MatchVariance(declared ([] TypeParam), deduced ([] TypeVariance)) (bool, ([
 	}
 }
 
-func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, *TypeDeclError) {
+func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, ([] *TypeDeclError)) {
 	// 1. Build a raw registry
 	var raw = MakeRawTypeRegistry()
 	var err = RegisterRawTypes(entry, raw)
-	if err != nil { return nil, err }
+	if err != nil { return nil, [] *TypeDeclError { err } }
 	// 2. Create a empty TypeRegistry
 	var reg = make(TypeRegistry)
 	// 3. Go through all types in the raw registry
+	var info = TypeNodeInfo {
+		ValNodeMap:  make(map[TypeVal] ast.Node),
+		TypeNodeMap: make(map[Type] ast.Node),
+	}
 	for name, t := range raw.DeclMap {
 		var mod, mod_exists = idx[name.ModuleName]
 		if !mod_exists { panic("mod " + name.ModuleName + " should exist") }
@@ -281,18 +256,20 @@ func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, *Type
 		var params = raw.ParamsMap[name]
 		// 3.2. Construct a TypeContext and pass it to TypeValFrom()
 		//      to generate a TypeVal and bubble errors
-		var val, err = TypeValFrom(t.TypeValue.TypeValue, TypeContext {
-			Module: mod,
-			Params: params,
-			Ireg:   raw,
-		}, raw)
-		if err != nil { return nil, &TypeDeclError {
+		var val, err = RawTypeValFrom(t.TypeValue, info, RawTypeContext {
+			TypeConstructContext: TypeConstructContext {
+				Module:     mod,
+				Parameters: params,
+			},
+			Registry: raw,
+		})
+		if err != nil { return nil, [] *TypeDeclError { &TypeDeclError {
 			Point:    err.Point,
 			Concrete: E_InvalidTypeDecl {
 				TypeName: name,
 				Detail:   err,
 			},
-		} }
+		} } }
 		// 3.3. Use the generated TypeVal to construct a GenericType
 		//      and register it to the TypeRegistry
 		reg[name] = &GenericType {
@@ -303,9 +280,9 @@ func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, *Type
 		}
 	}
 	// 4. Validate boxed types
-	var check_cycle func(loader.Symbol, Boxed, []loader.Symbol) *TypeDeclError
+	var check_cycle func(loader.Symbol, *Boxed, []loader.Symbol) *TypeDeclError
 	check_cycle = func (
-		name loader.Symbol, t Boxed, path []loader.Symbol,
+		name loader.Symbol, t *Boxed, path []loader.Symbol,
 	) *TypeDeclError {
 		for _, visited := range path {
 			if visited == name {
@@ -317,11 +294,11 @@ func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, *Type
 				}
 			}
 		}
-		var named, is_named = t.InnerType.(NamedType)
+		var named, is_named = t.InnerType.(*NamedType)
 		if is_named {
 			var inner_name = named.Name
 			var g = reg[inner_name]
-			var inner_boxed, is_boxed = g.Value.(Boxed)
+			var inner_boxed, is_boxed = g.Value.(*Boxed)
 			if is_boxed {
 				var inner_path = append(path, name)
 				return check_cycle(inner_name, inner_boxed, inner_path)
@@ -330,272 +307,203 @@ func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, *Type
 		return nil
 	}
 	for name, g := range reg {
-		var boxed, is_boxed = g.Value.(Boxed)
+		var boxed, is_boxed = g.Value.(*Boxed)
 		if is_boxed {
 			var err = check_cycle(name, boxed, make([]loader.Symbol, 0))
-			if err != nil { return nil, err }
+			if err != nil { return nil, [] *TypeDeclError { err } }
 		}
 	}
-	// 5. Return the TypeRegistry
+	// 5. Validate types
+	var errs ([] *TypeDeclError) = nil
+	for name, g := range reg {
+		var cons_ctx = TypeConstructContext {
+			Module:     idx[name.ModuleName],
+			Parameters: g.Params,
+		}
+		var err = ValidateTypeVal(g.Value, info, TypeContext{
+			TypeConstructContext: cons_ctx,
+			Registry:             reg,
+		})
+		if err != nil {
+			errs = append(errs, &TypeDeclError {
+				Point: err.Point,
+				Concrete: E_InvalidTypeDecl {
+					TypeName: name,
+					Detail:   err,
+				},
+			})
+		}
+	}
+	if errs != nil { return nil, errs }
+	// 6. Return the TypeRegistry
 	return reg, nil
 }
 
 /* Transform: ast.TypeValue -> checker.TypeVal */
-func TypeValFrom(type_val ast.TypeValue, ctx TypeContext, raw RawTypeRegistry) (TypeVal, *TypeError) {
-	switch val := type_val.(type) {
+func RawTypeValFrom(ast_val ast.VariousTypeValue, info TypeNodeInfo, ctx RawTypeContext) (TypeVal, *TypeError) {
+	var got = func(val TypeVal) (TypeVal, *TypeError) {
+		info.ValNodeMap[val] = ast_val.Node
+		return val, nil
+	}
+	switch a := ast_val.TypeValue.(type) {
 	case ast.UnionType:
-		var count = uint(len(val.Cases))
-		var max = uint(common.SumMaxBranches)
-		if count > max {
-			return nil, &TypeError {
-				Point:    ErrorPointFrom(val.Node),
-				Concrete: E_TooManyUnionItems {
-					Defined: count,
-					Limit:   max,
-				},
-			}
-		}
-		var union_v = ParamsVarianceVector(ctx.Params)
-		var case_types = make([] CaseType, count)
-		for i, case_decl := range val.Cases {
+		var raw_reg = ctx.Registry
+		var case_types = make([] CaseType, len(a.Cases))
+		for i, case_decl := range a.Cases {
 			var sym = ctx.Module.SymbolFromDeclName(case_decl.Name)
-			var case_v = ParamsVarianceVector(raw.ParamsMap[sym])
-			var mapping = raw.CaseInfoMap[sym].CaseParams
-			for i, j := range mapping {
-				if case_v[i] != union_v[j] {
-					return nil, &TypeError {
-						Point:    ErrorPointFrom(case_decl.Node),
-						Concrete: E_CaseBadVariance {
-							CaseName:  sym.String(),
-							UnionName: raw.CaseInfoMap[sym].UnionName.String(),
-						},
-					}
-				}
-			}
+			var mapping = raw_reg.CaseInfoMap[sym].CaseParams
 			case_types[i] = CaseType {
 				Name:   sym,
 				Params: mapping,
 			}
 		}
-		return Union {
-			CaseTypes: case_types,
-		}, nil
+		return got(&Union { case_types })
 	case ast.BoxedType:
-		var inner, specified = val.Inner.(ast.VariousType)
+		var inner, specified = a.Inner.(ast.VariousType)
 		if specified {
-			var inner_type, inner_v, err = TypeFrom(inner.Type, ctx)
+			var inner_type, err = RawTypeFrom(inner, info.TypeNodeMap, ctx.TypeConstructContext)
 			if err != nil {
 				return nil, err
 			}
-			var v_ok, bad_params = MatchVariance(ctx.Params, inner_v)
-			if !(v_ok) { return nil, &TypeError {
-				Point:    ErrorPointFrom(val.Node),
-				Concrete: E_BoxedBadVariance { bad_params },
-			} }
-			return Boxed {
+			return got(&Boxed {
 				InnerType: inner_type,
-				AsIs:      val.AsIs,
-				Protected: val.Protected,
-				Opaque:    val.Opaque,
-			}, nil
+				AsIs:      a.AsIs,
+				Protected: a.Protected,
+				Opaque:    a.Opaque,
+			})
 		} else {
-			return Boxed {
-				InnerType: AnonymousType { Unit{} },
-				AsIs:      val.AsIs,
-				Protected: val.Protected,
-				Opaque:    val.Opaque,
-			}, nil
+			return got(&Boxed {
+				InnerType: &AnonymousType { Unit{} },
+				AsIs:      a.AsIs,
+				Protected: a.Protected,
+				Opaque:    a.Opaque,
+			})
 		}
 	case ast.NativeType:
-		return Native{}, nil
+		return got(&Native{})
 	default:
 		panic("impossible branch")
 	}
 }
 
 /* Transform: ast.Type -> checker.Type */
-func TypeFrom(type_ ast.Type, ctx TypeContext) (Type, ([] TypeVariance), *TypeError) {
-	// TODO: separate type construction and validity check
-	switch t := type_.(type) {
+func RawTypeFrom(ast_type ast.VariousType, info (map[Type] ast.Node), ctx TypeConstructContext) (Type, *TypeError) {
+	var got = func(t Type) (Type, *TypeError) {
+		info[t] = ast_type.Node
+		return t, nil
+	}
+	switch a := ast_type.Type.(type) {
 	case ast.TypeRef:
-		var ref_mod = string(t.Module.Name)
-		var ref_name = string(t.Id.Name)
+		var ref_mod = string(a.Module.Name)
+		var ref_name = string(a.Id.Name)
 		if ref_mod == "" {
 			if ref_name == UnitAlias {
-				var v = FilledVarianceVector(Bivariant, ctx.Arity())
-				return AnonymousType { Unit{} }, v, nil
+				return got(&AnonymousType { Unit{} })
 			}
 			if ref_name == WildcardRhsTypeName {
-				var v = FilledVarianceVector(Bivariant, ctx.Arity())
-				return WildcardRhsType {}, v, nil
+				return got(&WildcardRhsType {})
 			}
-			for i, param := range ctx.Params {
+			for i, param := range ctx.Parameters {
 				if param.Name == ref_name {
-					var v = FilledVarianceVector(Bivariant, ctx.Arity())
-					v[i] = Covariant
-					return ParameterType { Index: uint(i) }, v, nil
+					return got(&ParameterType { Index: uint(i) })
 				}
 			}
 		}
-		var sym = ctx.Module.SymbolFromTypeRef(t)
+		var sym = ctx.Module.SymbolFromTypeRef(a)
 		switch s := sym.(type) {
 		case loader.Symbol:
-			var params, exists = ctx.Ireg.LookupParams(s)
-			if !exists { return nil, nil, &TypeError {
-				Point:    ErrorPointFrom(t.Id.Node),
-				Concrete: E_TypeNotFound {
-					Name: s,
-				},
-			} }
-			var arity = uint(len(params))
-			var given_arity = uint(len(t.TypeArgs))
-			if arity != given_arity { return nil, nil, &TypeError {
-				Point:    ErrorPointFrom(t.Node),
-				Concrete: E_WrongParameterQuantity {
-					TypeName: s,
-					Required: arity,
-					Given:    given_arity,
-				},
-			} }
-			var args = make([] Type, arity)
-			var args_v = make([][] TypeVariance, arity)
-			for i, arg_node := range t.TypeArgs {
-				var arg, arg_v, err = TypeFrom(arg_node.Type, ctx)
-				if err != nil { return nil, nil, err }
+			var args = make([] Type, len(a.TypeArgs))
+			for i, ast_arg := range a.TypeArgs {
+				var arg, err = RawTypeFrom(ast_arg, info, ctx)
+				if err != nil { return nil, err }
 				args[i] = arg
-				args_v[i] = arg_v
 			}
-			var params_v = ParamsVarianceVector(params)
-			var v = ctx.DeduceVariance(params_v, args_v)
-			return NamedType {
+			return got(&NamedType {
 				Name: s,
 				Args: args,
-			}, v, nil
+			})
 		default:
-			return nil, nil, &TypeError {
-				Point:    ErrorPointFrom(t.Module.Node),
+			return nil, &TypeError {
+				Point:    ErrorPointFrom(a.Module.Node),
 				Concrete: E_ModuleOfTypeRefNotFound {
-					Name: loader.Id2String(t.Module),
+					Name: loader.Id2String(a.Module),
 				},
 			}
 		}
 	case ast.TypeLiteral:
-		return TypeFromRepr(t.Repr.Repr, ctx)
+		return RawTypeFromRepr(a.Repr, info, ctx)
 	default:
 		panic("impossible branch")
 	}
 }
 
 /* Transform: ast.Repr -> checker.Type */
-func TypeFromRepr(repr ast.Repr, ctx TypeContext) (Type, ([] TypeVariance), *TypeError) {
-	switch r := repr.(type) {
+func RawTypeFromRepr(ast_repr ast.VariousRepr, info (map[Type] ast.Node), ctx TypeConstructContext) (Type, *TypeError) {
+	var got = func(t Type) (Type, *TypeError) {
+		info[t] = ast_repr.Node
+		return t, nil
+	}
+	switch a := ast_repr.Repr.(type) {
 	case ast.ReprTuple:
-		var count = uint(len(r.Elements))
-		var max = uint(common.ProductMaxSize)
-		if count > max {
-			return nil, nil, &TypeError {
-				Point:    ErrorPointFrom(r.Node),
-				Concrete: E_TooManyTupleBundleItems {
-					Defined: count,
-					Limit:   max,
-				},
-			}
-		}
+		var count = uint(len(a.Elements))
 		if count == 0 {
 			// there isn't an empty tuple,
 			// assume it to be the unit type
-			var v = FilledVarianceVector(Bivariant, ctx.Arity())
-			return AnonymousType {
-				Repr: Unit {},
-			}, v, nil
+			return got(&AnonymousType { Unit{} })
 		} else {
-			var n = uint(len(r.Elements))
+			var n = uint(len(a.Elements))
 			var elements = make([] Type, n)
-			var elements_v = make([][] TypeVariance, n)
-			for i, el := range r.Elements {
-				var e, ev, err = TypeFrom(el.Type, ctx)
-				if err != nil { return nil, nil, err }
+			for i, el := range a.Elements {
+				var e, err = RawTypeFrom(el, info, ctx)
+				if err != nil { return nil, err }
 				elements[i] = e
-				elements_v[i] = ev
 			}
 			if len(elements) == 1 {
 				// there isn't a tuple with 1 element,
 				// simply forward the inner type
-				return elements[0], elements_v[0], nil
+				return got(elements[0])
 			} else {
-				var tuple_v = FilledVarianceVector(Covariant, n)
-				var v = ctx.DeduceVariance(tuple_v, elements_v)
-				return AnonymousType {
-					Repr: Tuple { Elements: elements },
-				}, v, nil
+				return got(&AnonymousType { Tuple { elements } })
 			}
 		}
 	case ast.ReprBundle:
-		var count = uint(len(r.Fields))
-		var max = uint(common.ProductMaxSize)
-		if count > max {
-			return nil, nil, &TypeError {
-				Point:    ErrorPointFrom(r.Node),
-				Concrete: E_TooManyTupleBundleItems {
-					Defined: count,
-					Limit:   max,
-				},
-			}
-		}
-		if len(r.Fields) == 0 {
+		if len(a.Fields) == 0 {
 			// there isn't an empty bundle,
 			// assume it to be the unit type
-			var v = FilledVarianceVector(Bivariant, ctx.Arity())
-			return AnonymousType {
-				Repr: Unit {},
-			}, v, nil
+			return got(&AnonymousType { Unit{} })
 		} else {
-			var n = uint(len(r.Fields))
 			var fields = make(map[string] Field)
-			var fields_v = make([][] TypeVariance, n)
-			for i, f := range r.Fields {
+			for i, f := range a.Fields {
 				var f_name = loader.Id2String(f.Name)
 				if f_name == IgnoreMark {
-					return nil, nil, &TypeError {
+					return nil, &TypeError {
 						Point:    ErrorPointFrom(f.Name.Node),
 						Concrete: E_InvalidFieldName { f_name },
 					}
 				}
 				var _, exists = fields[f_name]
-				if exists { return nil, nil, &TypeError {
+				if exists { return nil, &TypeError {
 					Point:    ErrorPointFrom(f.Name.Node),
 					Concrete: E_DuplicateField { f_name },
 				} }
-				var f_type, f_v, err = TypeFrom(f.Type.Type, ctx)
-				if err != nil { return nil, nil, err }
+				var f_type, err = RawTypeFrom(f.Type, info, ctx)
+				if err != nil { return nil, err }
 				fields[f_name] = Field {
 					Type:  f_type,
 					Index: uint(i),
 				}
-				fields_v[i] = f_v
 			}
-			var bundle_v = FilledVarianceVector(Covariant, n)
-			var v = ctx.DeduceVariance(bundle_v, fields_v)
-			return AnonymousType {
-				Repr: Bundle {
-					Fields: fields,
-				},
-			}, v, nil
+			return got(&AnonymousType { Bundle { fields } })
 		}
 	case ast.ReprFunc:
-		var input, input_v, err1 = TypeFrom(r.Input.Type, ctx)
-		if err1 != nil { return nil, nil, err1 }
-		var output, output_v, err2 = TypeFrom(r.Output.Type, ctx)
-		if err2 != nil { return nil, nil, err2 }
-		var func_v = [] TypeVariance { Contravariant, Covariant }
-		var io_v = [][] TypeVariance { input_v, output_v }
-		var v = ctx.DeduceVariance(func_v, io_v)
-		return AnonymousType {
-			Repr: Func {
-				Input:  input,
-				Output: output,
-			},
-		}, v, nil
+		var input, err1 = RawTypeFrom(a.Input, info, ctx)
+		if err1 != nil { return nil, err1 }
+		var output, err2 = RawTypeFrom(a.Output, info, ctx)
+		if err2 != nil { return nil, err2 }
+		return got(&AnonymousType { Func {
+			Input:  input,
+			Output: output,
+		} })
 	default:
 		panic("impossible branch")
 	}

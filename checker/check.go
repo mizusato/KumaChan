@@ -126,9 +126,11 @@ func CreateExprContext(mod_info ModuleInfo, params ([] TypeParam)) ExprContext {
 
 func (ctx ExprContext) GetTypeContext() TypeContext {
 	return TypeContext {
-		Module: ctx.ModuleInfo.Module,
-		Params: ctx.TypeParams,
-		Ireg:   ctx.ModuleInfo.Types,
+		TypeConstructContext: TypeConstructContext {
+			Module:     ctx.ModuleInfo.Module,
+			Parameters: ctx.TypeParams,
+		},
+		Registry: ctx.ModuleInfo.Types,
 	}
 }
 
@@ -339,7 +341,13 @@ func TypeCheck(entry *loader.Module, raw_index loader.Index) (
 	*CheckedModule, Index, [] E,
 ) {
 	var types, err1 = RegisterTypes(entry, raw_index)
-	if err1 != nil { return nil, nil, [] E { err1 } }
+	if err1 != nil {
+		var type_errors = make([] E, len(err1))
+		for i, e := range err1 {
+			type_errors[i] = e
+		}
+		return nil, nil, type_errors
+	}
 	var constants = make(ConstantStore)
 	var _, err2 = CollectConstants(entry, types, constants)
 	if err2 != nil { return nil, nil, [] E { err2 } }
@@ -423,7 +431,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 					errors = append(errors, err1)
 					continue
 				}
-				var t = AnonymousType { f.DeclaredType }
+				var t = &AnonymousType { f.DeclaredType }
 				var body_expr, err2 = AssignTo(t, lambda, f_expr_ctx)
 				if err2 != nil {
 					errors = append(errors, err2)

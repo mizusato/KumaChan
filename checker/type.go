@@ -94,7 +94,7 @@ func CombineVariance(a TypeVariance, b TypeVariance) TypeVariance {
 }
 type TypeVal interface { TypeVal() }
 
-func (impl Union) TypeVal() {}
+func (impl *Union) TypeVal() {}
 type Union struct {
 	CaseTypes  [] CaseType
 }
@@ -102,34 +102,34 @@ type CaseType struct {
 	Name    loader.Symbol
 	Params  [] uint
 }
-func (impl Boxed) TypeVal() {}
+func (impl *Boxed) TypeVal() {}
 type Boxed struct {
 	InnerType  Type
 	AsIs       bool
 	Protected  bool
 	Opaque     bool
 }
-func (impl Native) TypeVal() {}
+func (impl *Native) TypeVal() {}
 type Native struct {}
 
 
 type Type interface { CheckerType() }
 
-func (impl ParameterType) CheckerType() {}
+func (impl *ParameterType) CheckerType() {}
 type ParameterType struct {
 	Index          uint
 	BeingInferred  bool
 }
-func (impl NamedType) CheckerType() {}
+func (impl *NamedType) CheckerType() {}
 type NamedType struct {
 	Name  loader.Symbol
 	Args  [] Type
 }
-func (impl AnonymousType) CheckerType() {}
+func (impl *AnonymousType) CheckerType() {}
 type AnonymousType struct {
 	Repr  TypeRepr
 }
-func (impl WildcardRhsType) CheckerType() {}
+func (impl *WildcardRhsType) CheckerType() {}
 type WildcardRhsType struct {}
 
 
@@ -156,7 +156,7 @@ type Func struct {
 }
 
 
-func GetCaseInfo(u Union, args []Type, sym loader.Symbol) (uint, []Type, bool) {
+func GetCaseInfo(u *Union, args []Type, sym loader.Symbol) (uint, []Type, bool) {
 	for index, case_type := range u.CaseTypes {
 		if case_type.Name == sym {
 			var case_args = make([]Type, len(case_type.Params))
@@ -185,9 +185,9 @@ func DescribeTypeWithParams(type_ Type, params ([] string)) string {
 
 func DescribeType(type_ Type, ctx TypeDescContext) string {
 	switch t := type_.(type) {
-	case WildcardRhsType:
+	case *WildcardRhsType:
 		return WildcardRhsTypeName
-	case ParameterType:
+	case *ParameterType:
 		if ctx.UseInferred {
 			var inferred_t, exists = ctx.InferredTypes[t.Index]
 			if exists {
@@ -198,7 +198,7 @@ func DescribeType(type_ Type, ctx TypeDescContext) string {
 		} else {
 			return ctx.ParamNames[t.Index]
 		}
-	case NamedType:
+	case *NamedType:
 		var buf strings.Builder
 		if loader.IsPreloadCoreSymbol(t.Name) {
 			buf.WriteString(t.Name.SymbolName)
@@ -216,7 +216,7 @@ func DescribeType(type_ Type, ctx TypeDescContext) string {
 			buf.WriteRune(']')
 		}
 		return buf.String()
-	case AnonymousType:
+	case *AnonymousType:
 		switch r := t.Repr.(type) {
 		case Unit:
 			return "()"
@@ -268,23 +268,23 @@ func DescribeType(type_ Type, ctx TypeDescContext) string {
 
 func AreTypesEqualInSameCtx(type1 Type, type2 Type) bool {
 	switch t1 := type1.(type) {
-	case WildcardRhsType:
+	case *WildcardRhsType:
 		switch type2.(type) {
-		case WildcardRhsType:
+		case *WildcardRhsType:
 			return true
 		default:
 			return false
 		}
-	case ParameterType:
+	case *ParameterType:
 		switch t2 := type2.(type) {
-		case ParameterType:
+		case *ParameterType:
 			return t1.Index == t2.Index
 		default:
 			return false
 		}
-	case NamedType:
+	case *NamedType:
 		switch t2 := type2.(type) {
-		case NamedType:
+		case *NamedType:
 			if t1.Name == t2.Name {
 				var L1 = len(t1.Args)
 				var L2 = len(t2.Args)
@@ -302,9 +302,9 @@ func AreTypesEqualInSameCtx(type1 Type, type2 Type) bool {
 		default:
 			return false
 		}
-	case AnonymousType:
+	case *AnonymousType:
 		switch t2 := type2.(type) {
-		case AnonymousType:
+		case *AnonymousType:
 			switch r1 := t1.Repr.(type) {
 			case Unit:
 				switch t2.Repr.(type) {

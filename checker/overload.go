@@ -130,7 +130,7 @@ func DescribeCandidate(c Candidate) string {
 		name,
 		strings.Join(params, ","),
 		DescribeTypeWithParams (
-			AnonymousType { f.DeclaredType },
+			&AnonymousType { f.DeclaredType },
 			params,
 		),
 	)
@@ -145,8 +145,8 @@ func CheckOverload (
 	err_point     ErrorPoint,
 ) *FunctionError {
 	for _, existing := range functions {
-		var existing_t = AnonymousType { existing.Function.DeclaredType }
-		var added_t = AnonymousType { added_type }
+		var existing_t = &AnonymousType { existing.Function.DeclaredType }
+		var added_t = &AnonymousType { added_type }
 		var cannot_overload = AreTypesConflict(existing_t, added_t, reg)
 		if cannot_overload {
 			var existing_params = existing.Function.TypeParams
@@ -172,13 +172,13 @@ func CheckOverload (
 func AreTypesConflict(type1 Type, type2 Type, reg TypeRegistry) bool {
 	// Does type1 conflict with type2 (when overloading functions)
 	switch t1 := type1.(type) {
-	case WildcardRhsType:
+	case *WildcardRhsType:
 		return true
-	case ParameterType:
+	case *ParameterType:
 		return true  // rough comparison
-	case NamedType:
+	case *NamedType:
 		switch t2 := type2.(type) {
-		case NamedType:
+		case *NamedType:
 			var check_args = func() bool {
 				var L1 = len(t1.Args)
 				var L2 = len(t2.Args)
@@ -192,8 +192,8 @@ func AreTypesConflict(type1 Type, type2 Type, reg TypeRegistry) bool {
 				}
 				return true
 			}
-			var check_union = func(union Union, another NamedType) bool {
-				var q = [] Union { union }
+			var check_union = func(union *Union, another *NamedType) bool {
+				var q = [] *Union { union }
 				for len(q) > 0 {
 					var u = q[0]
 					q = q[1:]
@@ -202,7 +202,7 @@ func AreTypesConflict(type1 Type, type2 Type, reg TypeRegistry) bool {
 							return check_args()
 						} else {
 							var t = reg[sub.Name]
-							var sub_union, sub_is_union = t.Value.(Union)
+							var sub_union, sub_is_union = t.Value.(*Union)
 							if sub_is_union {
 								q = append(q, sub_union)
 							}
@@ -216,13 +216,13 @@ func AreTypesConflict(type1 Type, type2 Type, reg TypeRegistry) bool {
 			} else {
 				var T1 = reg[t1.Name]
 				var T2 = reg[t2.Name]
-				var t1_union, t1_is_union = T1.Value.(Union)
+				var t1_union, t1_is_union = T1.Value.(*Union)
 				if t1_is_union {
 					if check_union(t1_union, t2) {
 						return true
 					}
 				}
-				var t2_union, t2_is_union = T2.Value.(Union)
+				var t2_union, t2_is_union = T2.Value.(*Union)
 				if t2_is_union {
 					if check_union(t2_union, t1) {
 						return true
@@ -233,9 +233,9 @@ func AreTypesConflict(type1 Type, type2 Type, reg TypeRegistry) bool {
 		default:
 			return false
 		}
-	case AnonymousType:
+	case *AnonymousType:
 		switch t2 := type2.(type) {
-		case AnonymousType:
+		case *AnonymousType:
 			switch r1 := t1.Repr.(type) {
 			case Unit:
 				switch t2.Repr.(type) {
@@ -311,11 +311,11 @@ func AreTypesConflict(type1 Type, type2 Type, reg TypeRegistry) bool {
 
 func IsLocalType(type_ Type, mod string) bool {
 	switch t := type_.(type) {
-	case WildcardRhsType:
+	case *WildcardRhsType:
 		return false
-	case ParameterType:
+	case *ParameterType:
 		return false
-	case NamedType:
+	case *NamedType:
 		if t.Name.ModuleName == mod {
 			return true
 		} else {
@@ -326,7 +326,7 @@ func IsLocalType(type_ Type, mod string) bool {
 			}
 			return false
 		}
-	case AnonymousType:
+	case *AnonymousType:
 		switch r := t.Repr.(type) {
 		case Unit:
 			return false

@@ -104,7 +104,7 @@ func CheckRef(ref ast.InlineRef, ctx ExprContext) (SemiExpr, *ExprError) {
 	var type_ctx = ctx.GetTypeContext()
 	var type_args = make([]Type, len(ref.TypeArgs))
 	for i, arg_node := range ref.TypeArgs {
-		var t, _, err = TypeFrom(arg_node.Type, type_ctx)
+		var t, err = TypeFrom(arg_node, type_ctx)
 		if err != nil { return SemiExpr{}, &ExprError {
 			Point:    err.Point,
 			Concrete: E_TypeErrorInExpr { err },
@@ -184,7 +184,7 @@ func AssignRefTo(expected Type, ref UntypedRef, info ExprInfo, ctx ExprContext) 
 		var force_exact = r.ForceExact
 		var type_args = ref.TypeArgs
 		var unit = LiftTyped(Expr {
-			Type:  AnonymousType { Unit {} },
+			Type:  &AnonymousType { Unit {} },
 			Value: UnitValue {},
 			Info:  info,
 		})

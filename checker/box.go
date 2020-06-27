@@ -15,13 +15,13 @@ func Box (
 	info         ExprInfo,
 	ctx          ExprContext,
 ) (Expr, *ExprError) {
-	var boxed, is_boxed = g_type.Value.(Boxed)
+	var boxed, is_boxed = g_type.Value.(*Boxed)
 	if !is_boxed {
-		var _, is_union = g_type.Value.(Union)
+		var _, is_union = g_type.Value.(*Union)
 		if is_union {
 			var typed_expr, is_typed = to_be_boxed.Value.(TypedExpr)
 			if is_typed {
-				var named, is_named = typed_expr.Type.(NamedType)
+				var named, is_named = typed_expr.Type.(*NamedType)
 				if is_named {
 					var named_g = ctx.ModuleInfo.Types[named.Name]
 					var c = named_g.CaseInfo
@@ -72,7 +72,7 @@ func Box (
 		var inner_type = FillTypeArgs(boxed.InnerType, given_args)
 		var expr, err = AssignTo(inner_type, to_be_boxed, ctx)
 		if err != nil { return Expr{}, err }
-		var outer_type = NamedType {
+		var outer_type = &NamedType {
 			Name: g_type_name,
 			Args: given_args,
 		}
@@ -97,7 +97,7 @@ func Box (
 		for i, t := range inf_ctx.Inferred {
 			inferred_args[i] = t
 		}
-		var inferred_type = NamedType {
+		var inferred_type = &NamedType {
 			Name: g_type_name,
 			Args: inferred_args,
 		}
@@ -129,7 +129,7 @@ func Box (
 func GetUnionArgs (case_args []Type, union_arity uint, mapping []uint) []Type {
 	var mapped = make([] Type, union_arity)
 	for i := uint(0); i < union_arity; i += 1 {
-		mapped[i] = WildcardRhsType {}
+		mapped[i] = &WildcardRhsType {}
 	}
 	for i, j := range mapping {
 		mapped[j] = case_args[i]
@@ -137,7 +137,7 @@ func GetUnionArgs (case_args []Type, union_arity uint, mapping []uint) []Type {
 	return mapped
 }
 
-func LiftCase(case_info CaseInfo, t NamedType, force_exact bool, expr Expr) Expr {
+func LiftCase(case_info CaseInfo, t *NamedType, force_exact bool, expr Expr) Expr {
 	if force_exact || !(case_info.IsCaseType) {
 		return expr
 	} else {
@@ -147,7 +147,7 @@ func LiftCase(case_info CaseInfo, t NamedType, force_exact bool, expr Expr) Expr
 		var index = case_info.CaseIndex
 		var args = GetUnionArgs(t.Args, union_arity, mapping)
 		return Expr {
-			Type:  NamedType {
+			Type:  &NamedType {
 				Name: union,
 				Args: args,
 			},

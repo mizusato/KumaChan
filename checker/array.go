@@ -58,13 +58,13 @@ func AssignArrayTo(expected Type, array SemiTypedArray, info ExprInfo, ctx ExprC
 		}
 		var array_t Type
 		if len(array.Items) == 0 {
-			array_t = NamedType {
+			array_t = &NamedType {
 				Name: __Array,
-				Args: []Type { WildcardRhsType {} },
+				Args: []Type { &WildcardRhsType {} },
 			}
 		} else {
 			if item_type == nil { panic("something went wrong") }
-			array_t = NamedType {
+			array_t = &NamedType {
 				Name: __Array,
 				Args: []Type { item_type },
 			}
@@ -75,15 +75,15 @@ func AssignArrayTo(expected Type, array SemiTypedArray, info ExprInfo, ctx ExprC
 			Value: Array { Items: items, ItemType: item_type },
 		}
 		return TypedAssignTo(expected, typed_array, ctx)
-	case NamedType:
+	case *NamedType:
 		if E.Name == __Array {
 			if len(E.Args) != 1 { panic("something went wrong") }
 			var item_expected = E.Args[0]
 			if len(array.Items) == 0 {
 				var empty_array = Expr {
-					Type:  NamedType {
+					Type:  &NamedType {
 						Name: __Array,
-						Args: []Type { WildcardRhsType {} },
+						Args: []Type { &WildcardRhsType {} },
 					},
 					Value: Array { Items: [] Expr {}, ItemType: nil },
 					Info:  info,
@@ -100,7 +100,7 @@ func AssignArrayTo(expected Type, array SemiTypedArray, info ExprInfo, ctx ExprC
 			var item_type, err = GetCertainType(item_expected, point, ctx)
 			if err != nil { return Expr{}, err }
 			return Expr {
-				Type:  NamedType {
+				Type:  &NamedType {
 					Name: __Array,
 					Args: []Type { item_type },
 				},
@@ -120,7 +120,7 @@ func AssignArrayTo(expected Type, array SemiTypedArray, info ExprInfo, ctx ExprC
 func GetArrayInfo(length uint, item_type Type) common.ArrayInfo {
 	var item_reflect_type = (func() reflect.Type {
 		switch t := item_type.(type) {
-		case NamedType:
+		case *NamedType:
 			var mod_name = t.Name.ModuleName
 			var sym_name = t.Name.SymbolName
 			if mod_name == stdlib.Core && len(t.Args) == 0 {

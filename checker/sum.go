@@ -135,7 +135,7 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 				Point:    ErrorPointFrom(branch.Node),
 				Concrete: E_CheckedBranch {},
 			} }
-			var case_type = NamedType {
+			var case_type = &NamedType {
 				Name: type_sym,
 				Args: case_args,
 			}
@@ -210,9 +210,9 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(msw.Node)
 	var A = uint(len(msw.Arguments))
-	var args = make([]Expr, A)
-	var unions = make([]Union, A)
-	var unions_args = make([][]Type, A)
+	var args = make([] Expr, A)
+	var unions = make([] *Union, A)
+	var unions_args = make([][] Type, A)
 	for i, arg_node := range msw.Arguments {
 		var semi, err = Check(arg_node, ctx)
 		if err != nil { return SemiExpr{}, err }
@@ -274,7 +274,7 @@ func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprErro
 				}}
 				if (type_sym.SymbolName == IgnoreMark) {
 					indexes[i] = BadIndex
-					types[i] = AnonymousType { Unit {} }
+					types[i] = &AnonymousType { Unit {} }
 					is_default[i] = true
 					continue
 				}
@@ -298,7 +298,7 @@ func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprErro
 						TypeName: type_sym.String(),
 					},
 				} }
-				var el_case_type = NamedType {
+				var el_case_type = &NamedType {
 					Name: type_sym,
 					Args: case_args,
 				}
@@ -353,7 +353,7 @@ func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprErro
 				} }
 				checked[key] = true
 			}
-			var case_type = AnonymousType { Tuple { types } }
+			var case_type = &AnonymousType { Tuple { types } }
 			var maybe_pattern MaybePattern
 			var branch_ctx ExprContext
 			switch pattern_node := branch.Pattern.(type) {
@@ -518,15 +518,15 @@ func AssignMultiSwitchTo(expected Type, msw SemiTypedMultiSwitch, info ExprInfo,
 }
 
 
-func ExtractUnion(t Type, ctx ExprContext) (Union, []Type, bool) {
+func ExtractUnion(t Type, ctx ExprContext) (*Union, []Type, bool) {
 	switch T := t.(type) {
-	case NamedType:
+	case *NamedType:
 		var reg = ctx.ModuleInfo.Types
 		var g = reg[T.Name]
 		switch gv := g.Value.(type) {
-		case Union:
+		case *Union:
 			return gv, T.Args, true
-		case Boxed:
+		case *Boxed:
 			var ctx_mod = ctx.ModuleInfo.Module.Name
 			var unboxed, can_unbox = Unbox(t, ctx_mod, reg).(Unboxed)
 			if can_unbox {
@@ -534,7 +534,7 @@ func ExtractUnion(t Type, ctx ExprContext) (Union, []Type, bool) {
 			}
 		}
 	}
-	return Union{}, nil, false
+	return nil, nil, false
 }
 
 func DesugarElseIf(raw ast.If) ast.If {
@@ -569,7 +569,7 @@ func GetMultiSwitchArgumentTuple(msw MultiSwitch, info ExprInfo) Expr {
 		el_types[i] = arg.Type
 	}
 	return Expr {
-		Type:  AnonymousType { Tuple { el_types } },
+		Type:  &AnonymousType { Tuple { el_types } },
 		Value: Product { msw.Arguments },
 		Info:  info,
 	}

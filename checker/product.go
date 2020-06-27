@@ -43,7 +43,7 @@ func CheckTuple(tuple ast.Tuple, ctx ExprContext) (SemiExpr, *ExprError) {
 	var L = len(tuple.Elements)
 	if L == 0 {
 		return LiftTyped(Expr {
-			Type:  AnonymousType { Unit {} },
+			Type:  &AnonymousType { Unit {} },
 			Value: UnitValue {},
 			Info:  info,
 		}), nil
@@ -157,7 +157,7 @@ func CheckBundle(bundle ast.Bundle, ctx ExprContext) (SemiExpr, *ExprError) {
 		var L = len(bundle.Values)
 		if L == 0 {
 			return LiftTyped(Expr {
-				Type:  AnonymousType { Unit {} },
+				Type:  &AnonymousType { Unit {} },
 				Value: UnitValue {},
 				Info:  info,
 			}), nil
@@ -212,7 +212,7 @@ func CheckGet(get ast.Get, ctx ExprContext) (SemiExpr, *ExprError) {
 					Point:    ErrorPointFrom(member.Node),
 					Concrete: E_FieldDoesNotExist {
 						Field:  key,
-						Target: ctx.DescribeType(AnonymousType { bundle }),
+						Target: ctx.DescribeType(&AnonymousType { bundle }),
 					},
 				} }
 				var expr = Expr {
@@ -257,7 +257,7 @@ func CheckGet(get ast.Get, ctx ExprContext) (SemiExpr, *ExprError) {
 func AssignTupleTo(expected Type, tuple SemiTypedTuple, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
 	var non_nil_expected Type
 	if expected == nil {
-		non_nil_expected = AnonymousType {
+		non_nil_expected = &AnonymousType {
 			Tuple {
 				// Fill with nil
 				Elements: make([]Type, len(tuple.Values)),
@@ -278,14 +278,14 @@ func AssignTupleTo(expected Type, tuple SemiTypedTuple, info ExprInfo, ctx ExprC
 		for i, el := range typed_exprs {
 			el_types[i] = el.Type
 		}
-		var final_t = AnonymousType { Tuple { el_types } }
+		var final_t = &AnonymousType { Tuple { el_types } }
 		var typed_tuple = Expr {
 			Type:  final_t,
 			Value: Product { typed_exprs },
 			Info:  info,
 		}
 		return TypedAssignTo(expected, typed_tuple, ctx)
-	case AnonymousType:
+	case *AnonymousType:
 		switch tuple_t := E.Repr.(type) {
 		case Tuple:
 			var required = len(tuple_t.Elements)
@@ -296,7 +296,7 @@ func AssignTupleTo(expected Type, tuple SemiTypedTuple, info ExprInfo, ctx ExprC
 					Concrete: E_TupleSizeNotMatching {
 						Required:  required,
 						Given:     given,
-						GivenType: ctx.DescribeExpectedType(AnonymousType { tuple_t }),
+						GivenType: ctx.DescribeExpectedType(&AnonymousType { tuple_t }),
 					},
 				}
 			}
@@ -311,7 +311,7 @@ func AssignTupleTo(expected Type, tuple SemiTypedTuple, info ExprInfo, ctx ExprC
 			for i, el := range typed_exprs {
 				el_types[i] = el.Type
 			}
-			var final_t = AnonymousType { Tuple { el_types } }
+			var final_t = &AnonymousType { Tuple { el_types } }
 			return Expr {
 				Type:  final_t,
 				Info:  info,
@@ -331,7 +331,7 @@ func AssignBundleTo(expected Type, bundle SemiTypedBundle, info ExprInfo, ctx Ex
 	var err = RequireExplicitType(expected, info)
 	if err != nil { return Expr{}, err }
 	switch E := expected.(type) {
-	case AnonymousType:
+	case *AnonymousType:
 		switch bundle_t := E.Repr.(type) {
 		case Bundle:
 			var values = make([]Expr, len(bundle_t.Fields))
@@ -368,7 +368,7 @@ func AssignBundleTo(expected Type, bundle SemiTypedBundle, info ExprInfo, ctx Ex
 					Index: field.Index,
 				}
 			}
-			var final_t = AnonymousType { Bundle{ final_fields } }
+			var final_t = &AnonymousType { Bundle{ final_fields } }
 			return Expr {
 				Type:  final_t,
 				Info:  info,
@@ -389,7 +389,7 @@ func IsBundleLiteral(expr Expr) bool {
 	switch expr.Value.(type) {
 	case Product:
 		switch t := expr.Type.(type) {
-		case AnonymousType:
+		case *AnonymousType:
 			switch t.Repr.(type) {
 			case Bundle:
 				return true

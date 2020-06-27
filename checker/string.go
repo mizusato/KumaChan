@@ -41,7 +41,7 @@ func CheckString(s ast.StringLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
 	}
 	var info = ctx.GetExprInfo(s.Node)
 	return LiftTyped(Expr {
-		Type:  NamedType {
+		Type:  &NamedType {
 			Name: __String,
 			Args: make([]Type, 0),
 		},
@@ -85,19 +85,19 @@ func CheckFormatter(formatter ast.Formatter, ctx ExprContext) (SemiExpr, *ExprEr
 	}
 	var elements = make([] Type, arity)
 	for i := uint(0); i < arity; i += 1 {
-		elements[i] = NamedType { Name: __String, Args: make([] Type, 0) }
+		elements[i] = &NamedType { Name: __String, Args: make([] Type, 0) }
 	}
 	var input Type
 	if len(elements) == 0 {
-		input = AnonymousType { Unit {} }
+		input = &AnonymousType { Unit {} }
 	} else if len(elements) == 1 {
 		input = elements[0]
 	} else {
-		input = AnonymousType { Tuple { elements } }
+		input = &AnonymousType { Tuple { elements } }
 	}
-	var t Type = AnonymousType { Func {
+	var t Type = &AnonymousType { Func {
 		Input:  input,
-		Output: NamedType { Name: __String, Args: make([] Type, 0) },
+		Output: &NamedType { Name: __String, Args: make([] Type, 0) },
 	} }
 	return LiftTyped(Expr {
 		Type:  t,

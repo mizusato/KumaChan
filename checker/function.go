@@ -94,12 +94,17 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 			} }
 			// 3.2. Create a context for evaluating types
 			var ctx = TypeContext {
-				Module: mod,
-				Params: params,
-				Ireg:   reg,
+				TypeConstructContext: TypeConstructContext {
+					Module:     mod,
+					Parameters: params,
+				},
+				Registry: reg,
 			}
 			// 3.3. Evaluate the function signature using the created context
-			var sig, _, err = TypeFromRepr(decl.Repr, ctx)
+			var sig, err = TypeFromRepr(ast.VariousRepr {
+				Node: decl.Repr.Node,
+				Repr: decl.Repr,
+			}, ctx)
 			if err != nil { return nil, &FunctionError {
 				Point:    err.Point,
 				Concrete: E_SignatureInvalid {
@@ -125,7 +130,7 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 				}
 			}
 			// 3.5. Construct a representation and a reference of the function
-			var func_type = sig.(AnonymousType).Repr.(Func)
+			var func_type = sig.(*AnonymousType).Repr.(Func)
 			var gf = &GenericFunction {
 				Public:       is_public,
 				TypeParams:   params,

@@ -34,7 +34,7 @@ func AssignLambdaTo(expected Type, lambda UntypedLambda, info ExprInfo, ctx Expr
 	var err = RequireExplicitType(expected, info)
 	if err != nil { return Expr{}, err }
 	switch E := expected.(type) {
-	case AnonymousType:
+	case *AnonymousType:
 		switch func_repr := E.Repr.(type) {
 		case Func:
 			var input_t, err = GetCertainType (
@@ -53,7 +53,7 @@ func AssignLambdaTo(expected Type, lambda UntypedLambda, info ExprInfo, ctx Expr
 			var output_typed, err3 = AssignTo(output_t, output_semi, inner_ctx)
 			if err3 != nil { return Expr{}, err3 }
 			return Expr {
-				Type:  AnonymousType { Func {
+				Type:  &AnonymousType { Func {
 					Input:  input_t,
 					Output: output_typed.Type,
 				} },
@@ -101,7 +101,7 @@ func CallUntypedLambda (
 		}
 	}
 	var lambda_typed = Expr {
-		Type:  AnonymousType { Func {
+		Type:  &AnonymousType { Func {
 			Input:  input_typed.Type,
 			Output: output_typed.Type,
 		} },

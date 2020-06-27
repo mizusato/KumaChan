@@ -63,12 +63,14 @@ func CollectConstants(mod *loader.Module, reg TypeRegistry, store ConstantStore)
 				},
 			} }
 			var ctx = TypeContext {
-				Module: mod,
-				Params: make([] TypeParam, 0),
-				Ireg:   reg,
+				TypeConstructContext: TypeConstructContext {
+					Module:     mod,
+					Parameters: make([] TypeParam, 0),
+				},
+				Registry: reg,
 			}
 			var is_public = decl.Public
-			var declared_type, _, err = TypeFrom(decl.Type.Type, ctx)
+			var declared_type, err = TypeFrom(decl.Type, ctx)
 			if err != nil { return nil, &ConstantError {
 				Point:    ErrorPointFrom(decl.Type.Node),
 				Concrete: E_ConstTypeInvalid {

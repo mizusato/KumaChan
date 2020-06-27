@@ -15,9 +15,9 @@ func GenericFunctionCall (
 ) (Expr, *ExprError) {
 	var type_arity = len(f.TypeParams)
 	if len(type_args) == type_arity {
-		var f_raw_type = AnonymousType { f.DeclaredType }
+		var f_raw_type = &AnonymousType { f.DeclaredType }
 		var f_type = FillTypeArgs(f_raw_type, type_args)
-		var f_type_repr = f_type.(AnonymousType).Repr.(Func)
+		var f_type_repr = f_type.(*AnonymousType).Repr.(Func)
 		var input_type = f_type_repr.Input
 		var output_type = f_type_repr.Output
 		var arg_typed, err = AssignTo(input_type, arg, ctx)
@@ -48,7 +48,7 @@ func GenericFunctionCall (
 				inferred_args[i] = t
 			} else {
 				// TODO: check variance
-				inferred_args[i] = WildcardRhsType {}
+				inferred_args[i] = &WildcardRhsType {}
 			}
 		}
 		var input_type = FillTypeArgs(raw_input_type, inferred_args)
@@ -59,7 +59,7 @@ func GenericFunctionCall (
 			panic("something went wrong")
 		}
 		var output_type = FillTypeArgs(raw_output_type, inferred_args)
-		var f_type = AnonymousType { Func {
+		var f_type = &AnonymousType { Func {
 			Input:  input_type,
 			Output: output_type,
 		} }
@@ -98,7 +98,7 @@ func GenericFunctionAssignTo (
 ) (Expr, *ExprError) {
 	var type_arity = len(f.TypeParams)
 	if len(type_args) == type_arity {
-		var f_raw_type = AnonymousType { f.DeclaredType }
+		var f_raw_type = &AnonymousType { f.DeclaredType }
 		var f_type = FillTypeArgs(f_raw_type, type_args)
 		var f_expr = Expr {
 			Type:  f_type,
@@ -119,7 +119,7 @@ func GenericFunctionAssignTo (
 				Concrete: E_ExplicitTypeParamsRequired {},
 			}
 		}
-		var f_raw_type = AnonymousType { f.DeclaredType }
+		var f_raw_type = &AnonymousType { f.DeclaredType }
 		// Note: Unbox/Union related inferring is not required
 		//       since function types are anonymous types and invariant.
 		//       Just apply NaivelyInferTypeArgs() here.
@@ -160,29 +160,29 @@ func GenericFunctionAssignTo (
 
 func FillTypeArgs(t Type, given_args []Type) Type {
 	switch T := t.(type) {
-	case WildcardRhsType:
-		return WildcardRhsType {}
-	case ParameterType:
+	case *WildcardRhsType:
+		return &WildcardRhsType {}
+	case *ParameterType:
 		return given_args[T.Index]
-	case NamedType:
+	case *NamedType:
 		var filled = make([]Type, len(T.Args))
 		for i, arg := range T.Args {
 			filled[i] = FillTypeArgs(arg, given_args)
 		}
-		return NamedType {
+		return &NamedType {
 			Name: T.Name,
 			Args: filled,
 		}
-	case AnonymousType:
+	case *AnonymousType:
 		switch r := T.Repr.(type) {
 		case Unit:
-			return AnonymousType { Unit {} }
+			return &AnonymousType { Unit {} }
 		case Tuple:
 			var filled = make([]Type, len(r.Elements))
 			for i, element := range r.Elements {
 				filled[i] = FillTypeArgs(element, given_args)
 			}
-			return AnonymousType {
+			return &AnonymousType {
 				Repr: Tuple {
 					Elements: filled,
 				},
@@ -195,13 +195,13 @@ func FillTypeArgs(t Type, given_args []Type) Type {
 					Index: field.Index,
 				}
 			}
-			return AnonymousType {
+			return &AnonymousType {
 				Repr: Bundle {
 					Fields: filled,
 				},
 			}
 		case Func:
-			return AnonymousType {
+			return &AnonymousType {
 				Repr:Func {
 					Input:  FillTypeArgs(r.Input, given_args),
 					Output: FillTypeArgs(r.Output, given_args),
@@ -218,16 +218,16 @@ func FillTypeArgs(t Type, given_args []Type) Type {
 
 func NaivelyInferTypeArgs(template Type, given Type, inferred map[uint]Type) {
 	switch T := template.(type) {
-	case WildcardRhsType:
+	case *WildcardRhsType:
 		return
-	case ParameterType:
+	case *ParameterType:
 		var existing, exists = inferred[T.Index]
 		if !exists || AreTypesEqualInSameCtx(existing, given) {
 			inferred[T.Index] = given
 		}
-	case NamedType:
+	case *NamedType:
 		switch G := given.(type) {
-		case NamedType:
+		case *NamedType:
 			var L1 = len(T.Args)
 			var L2 = len(G.Args)
 			if L1 != L2 { panic("type registration went wrong") }
@@ -236,9 +236,9 @@ func NaivelyInferTypeArgs(template Type, given Type, inferred map[uint]Type) {
 				NaivelyInferTypeArgs(T.Args[i], G.Args[i], inferred)
 			}
 		}
-	case AnonymousType:
+	case *AnonymousType:
 		switch G := given.(type) {
-		case AnonymousType:
+		case *AnonymousType:
 			switch Tr := T.Repr.(type) {
 			case Tuple:
 				switch Gr := G.Repr.(type) {
@@ -279,32 +279,32 @@ func NaivelyInferTypeArgs(template Type, given Type, inferred map[uint]Type) {
 
 func MarkParamsAsBeingInferred(type_ Type) Type {
 	switch t := type_.(type) {
-	case WildcardRhsType:
-		return WildcardRhsType {}
-	case ParameterType:
-		return ParameterType {
+	case *WildcardRhsType:
+		return &WildcardRhsType {}
+	case *ParameterType:
+		return &ParameterType {
 			Index:         t.Index,
 			BeingInferred: true,
 		}
-	case NamedType:
+	case *NamedType:
 		var marked_args = make([]Type, len(t.Args))
 		for i, arg := range t.Args {
 			marked_args[i] = MarkParamsAsBeingInferred(arg)
 		}
-		return NamedType {
+		return &NamedType {
 			Name: t.Name,
 			Args: marked_args,
 		}
-	case AnonymousType:
+	case *AnonymousType:
 		switch r := t.Repr.(type) {
 		case Unit:
-			return AnonymousType { Unit{} }
+			return &AnonymousType { Unit{} }
 		case Tuple:
 			var marked_elements = make([]Type, len(r.Elements))
 			for i, el := range r.Elements {
 				marked_elements[i] = MarkParamsAsBeingInferred(el)
 			}
-			return AnonymousType { Tuple { marked_elements } }
+			return &AnonymousType { Tuple { marked_elements } }
 		case Bundle:
 			var marked_fields = make(map[string]Field)
 			for name, f := range r.Fields {
@@ -313,11 +313,11 @@ func MarkParamsAsBeingInferred(type_ Type) Type {
 					Index: f.Index,
 				}
 			}
-			return AnonymousType { Bundle { marked_fields } }
+			return &AnonymousType { Bundle { marked_fields } }
 		case Func:
 			var marked_input = MarkParamsAsBeingInferred(r.Input)
 			var marked_output = MarkParamsAsBeingInferred(r.Output)
-			return AnonymousType { Func {
+			return &AnonymousType { Func {
 				Input:  marked_input,
 				Output: marked_output,
 			} }
@@ -334,9 +334,9 @@ func GetCertainType(type_ Type, point ErrorPoint, ctx ExprContext) (Type, *ExprE
 		return type_, nil
 	}
 	switch T := type_.(type) {
-	case WildcardRhsType:
-		return WildcardRhsType {}, nil
-	case ParameterType:
+	case *WildcardRhsType:
+		return &WildcardRhsType {}, nil
+	case *ParameterType:
 		if T.BeingInferred {
 			var inferred, exists = ctx.Inferred[T.Index]
 			if exists {
@@ -350,21 +350,21 @@ func GetCertainType(type_ Type, point ErrorPoint, ctx ExprContext) (Type, *ExprE
 		} else {
 			return T, nil
 		}
-	case NamedType:
+	case *NamedType:
 		var result_args = make([]Type, len(T.Args))
 		for i, arg := range T.Args {
 			var t, err = GetCertainType(arg, point, ctx)
 			if err != nil { return nil, err }
 			result_args[i] = t
 		}
-		return NamedType {
+		return &NamedType {
 			Name: T.Name,
 			Args: result_args,
 		}, nil
-	case AnonymousType:
+	case *AnonymousType:
 		switch r := T.Repr.(type) {
 		case Unit:
-			return AnonymousType { Unit {} }, nil
+			return &AnonymousType { Unit {} }, nil
 		case Tuple:
 			var result_elements = make([]Type, len(r.Elements))
 			for i, element := range r.Elements {
@@ -372,7 +372,7 @@ func GetCertainType(type_ Type, point ErrorPoint, ctx ExprContext) (Type, *ExprE
 				if err != nil { return nil, err }
 				result_elements[i] = t
 			}
-			return AnonymousType {
+			return &AnonymousType {
 				Repr: Tuple {
 					Elements: result_elements,
 				},
@@ -387,7 +387,7 @@ func GetCertainType(type_ Type, point ErrorPoint, ctx ExprContext) (Type, *ExprE
 					Index: field.Index,
 				}
 			}
-			return AnonymousType {
+			return &AnonymousType {
 				Repr: Bundle {
 					Fields: result_fields,
 				},
@@ -397,7 +397,7 @@ func GetCertainType(type_ Type, point ErrorPoint, ctx ExprContext) (Type, *ExprE
 			if err1 != nil { return nil, err1 }
 			var output, err2 = GetCertainType(r.Output, point, ctx)
 			if err2 != nil { return nil, err2 }
-			return AnonymousType {
+			return &AnonymousType {
 				Repr:Func {
 					Input:  input,
 					Output: output,

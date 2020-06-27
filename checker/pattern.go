@@ -78,7 +78,7 @@ func PatternFrom (
 				return err_result(E_TupleSizeNotMatching {
 					Required:  required,
 					Given:     given,
-					GivenType: ctx.DescribeType(AnonymousType { tuple }),
+					GivenType: ctx.DescribeType(&AnonymousType { tuple }),
 				})
 			} else {
 				var occurred = make(map[string]bool)

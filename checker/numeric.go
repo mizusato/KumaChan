@@ -74,7 +74,7 @@ func CheckFloat(f ast.FloatLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
 	var value, err = strconv.ParseFloat(string(f.Value), 64)
 	if err != nil { panic("invalid float literal got from parser") }
 	return LiftTyped(Expr {
-		Type:  NamedType {
+		Type:  &NamedType {
 			Name: __Float,
 			Args: make([]Type, 0),
 		},
@@ -88,7 +88,7 @@ func AssignIntegerTo(expected Type, integer UntypedInteger, info ExprInfo, ctx E
 	var err = RequireExplicitType(expected, info)
 	if err != nil { return Expr{}, err }
 	switch E := expected.(type) {
-	case NamedType:
+	case *NamedType:
 		var sym = E.Name
 		var kind, exists = __IntegerTypeMap[sym]
 		if exists {

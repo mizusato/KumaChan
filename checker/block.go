@@ -31,7 +31,7 @@ func CheckBlock(block ast.Block, ctx ExprContext) (SemiExpr, *ExprError) {
 		var t Type
 		switch type_node := b.Type.(type) {
 		case ast.VariousType:
-			var some_t, _, err = TypeFrom(type_node.Type, type_ctx)
+			var some_t, err = TypeFrom(type_node, type_ctx)
 			if err != nil { return SemiExpr{}, &ExprError {
 				Point:    err.Point,
 				Concrete: E_TypeErrorInExpr { err },
