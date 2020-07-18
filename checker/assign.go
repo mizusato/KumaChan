@@ -122,8 +122,8 @@ func DirectAssignTypeTo(expected Type, given Type, ctx ExprContext) (Type, bool)
 	switch E := expected.(type) {
 	case *ParameterType:
 		if E.BeingInferred {
-			if !(ctx.InferTypeArgs) { panic("something went wrong") }
-			var inferred, exists = ctx.Inferred[E.Index]
+			if !(ctx.Inferring.Enabled) { panic("something went wrong") }
+			var inferred, exists = ctx.Inferring.Arguments[E.Index]
 			if exists {
 				if AreTypesEqualInSameCtx(inferred, given) {
 					return given, true
@@ -131,7 +131,7 @@ func DirectAssignTypeTo(expected Type, given Type, ctx ExprContext) (Type, bool)
 					return nil, false
 				}
 			} else {
-				ctx.Inferred[E.Index] = given
+				ctx.Inferring.Arguments[E.Index] = given
 				return given, true
 			}
 		} else {

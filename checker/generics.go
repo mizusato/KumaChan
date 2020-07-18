@@ -47,7 +47,7 @@ func GenericFunctionCall (
 		})
 		var inferred_args = make([]Type, type_arity)
 		for i := 0; i < type_arity; i += 1 {
-			var t, exists = inf_ctx.Inferred[uint(i)]
+			var t, exists = inf_ctx.Inferring.Arguments[uint(i)]
 			if exists {
 				inferred_args[i] = t
 			} else {
@@ -123,7 +123,7 @@ func GenericFunctionAssignTo (
 				Concrete: E_ExplicitTypeRequired {},
 			}
 		}
-		if ctx.InferTypeArgs {
+		if ctx.Inferring.Enabled {
 			return Expr{}, &ExprError {
 				Point:    info.ErrorPoint,
 				Concrete: E_ExplicitTypeParamsRequired {},
@@ -340,7 +340,7 @@ func MarkParamsAsBeingInferred(type_ Type) Type {
 }
 
 func GetCertainType(type_ Type, point ErrorPoint, ctx ExprContext) (Type, *ExprError) {
-	if !(ctx.InferTypeArgs) {
+	if !(ctx.Inferring.Enabled) {
 		return type_, nil
 	}
 	switch T := type_.(type) {
@@ -348,7 +348,7 @@ func GetCertainType(type_ Type, point ErrorPoint, ctx ExprContext) (Type, *ExprE
 		return &WildcardRhsType {}, nil
 	case *ParameterType:
 		if T.BeingInferred {
-			var inferred, exists = ctx.Inferred[T.Index]
+			var inferred, exists = ctx.Inferring.Arguments[T.Index]
 			if exists {
 				return inferred, nil
 			} else {

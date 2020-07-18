@@ -63,10 +63,14 @@ type ExprContext struct {
 	ModuleInfo     ModuleInfo
 	TypeParams     [] TypeParam
 	LocalValues    map[string] Type
-	InferTypeArgs  bool
-	InferredInfo   [] TypeParam
-	Inferred       map[uint] Type  // mutable
+	Inferring      TypeArgsInferringContext
 	MacroPath      [] MacroExpanding
+}
+
+type TypeArgsInferringContext struct {
+	Enabled      bool
+	Parameters   [] TypeParam
+	Arguments    map[uint] Type  // mutable
 }
 
 type MacroExpanding struct {
@@ -117,10 +121,14 @@ type SymMacro struct { Macro *Macro; Name string }
 
 func CreateExprContext(mod_info ModuleInfo, params ([] TypeParam)) ExprContext {
 	return ExprContext {
-		ModuleInfo:    mod_info,
-		TypeParams:    params,
-		LocalValues:   make(map[string]Type),
-		InferTypeArgs: false,
+		ModuleInfo:   mod_info,
+		TypeParams:   params,
+		LocalValues:  make(map[string]Type),
+		Inferring:    TypeArgsInferringContext {
+			Enabled:    false,
+			Parameters: nil,
+			Arguments:  nil,
+		},
 	}
 }
 
@@ -139,12 +147,12 @@ func (ctx ExprContext) DescribeType(t Type) string {
 }
 
 func (ctx ExprContext) DescribeExpectedType(t Type) string {
-	if ctx.InferTypeArgs {
+	if ctx.Inferring.Enabled {
 		return DescribeType(t, TypeDescContext {
 			ParamNames:    TypeParamsNames(ctx.TypeParams),
-			UseInferred:   ctx.InferTypeArgs,
-			InferredNames: TypeParamsNames(ctx.InferredInfo),
-			InferredTypes: ctx.Inferred,
+			UseInferred:   ctx.Inferring.Enabled,
+			InferredNames: TypeParamsNames(ctx.Inferring.Parameters),
+			InferredTypes: ctx.Inferring.Arguments,
 		})
 	} else {
 		return ctx.DescribeType(t)
@@ -267,18 +275,18 @@ func (ctx ExprContext) WithAddedLocalValues(added map[string]Type) (ExprContext,
 func (ctx ExprContext) WithTypeArgsInferringEnabled(params ([] TypeParam)) ExprContext {
 	var new_ctx ExprContext
 	*(&new_ctx) = ctx
-	new_ctx.InferTypeArgs = true
-	new_ctx.InferredInfo = params
-	new_ctx.Inferred = make(map[uint] Type)
+	new_ctx.Inferring = TypeArgsInferringContext {
+		Enabled:    true,
+		Parameters: params,
+		Arguments:  make(map[uint] Type),
+	}
 	return new_ctx
 }
 
 func (ctx ExprContext) WithInferringInfoFrom(another ExprContext) ExprContext {
 	var new_ctx ExprContext
 	*(&new_ctx) = ctx
-	new_ctx.InferTypeArgs = another.InferTypeArgs
-	new_ctx.InferredInfo = another.InferredInfo
-	new_ctx.Inferred = another.Inferred
+	new_ctx.Inferring = another.Inferring
 	return new_ctx
 }
 

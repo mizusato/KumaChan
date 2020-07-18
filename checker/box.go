@@ -87,14 +87,14 @@ func Box (
 		var marked_inner_type = MarkParamsAsBeingInferred(boxed.InnerType)
 		var expr, err = AssignTo(marked_inner_type, to_be_boxed, inf_ctx)
 		if err != nil { return Expr{}, err }
-		if uint(len(inf_ctx.Inferred)) != g_type_arity {
+		if uint(len(inf_ctx.Inferring.Arguments)) != g_type_arity {
 			return Expr{}, &ExprError {
 				Point:    g_type_info.ErrorPoint,
 				Concrete: E_ExplicitTypeParamsRequired {},
 			}
 		}
 		var inferred_args = make([] Type, g_type_arity)
-		for i, t := range inf_ctx.Inferred {
+		for i, t := range inf_ctx.Inferring.Arguments {
 			inferred_args[i] = t
 		}
 		var inferred_type = &NamedType {
