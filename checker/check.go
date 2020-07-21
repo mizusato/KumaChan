@@ -21,8 +21,9 @@ type CheckedConstant struct {
 	Value  ExprLike
 }
 type CheckedFunction struct {
-	Point  ErrorPoint
-	Body   ExprLike
+	Point     ErrorPoint
+	Body      ExprLike
+	Implicit  [] string
 }
 type CheckedEffect struct {
 	Point  ErrorPoint
@@ -48,7 +49,6 @@ type CheckContext struct {
 	Types      TypeRegistry
 	Functions  FunctionStore
 	Constants  ConstantStore
-	Macros     MacroStore
 }
 
 type ModuleInfo struct {
@@ -56,7 +56,6 @@ type ModuleInfo struct {
 	Types      TypeRegistry
 	Constants  ConstantCollection
 	Functions  FunctionCollection
-	Macros     MacroCollection
 }
 
 type ExprContext struct {
@@ -64,20 +63,12 @@ type ExprContext struct {
 	TypeParams     [] TypeParam
 	LocalValues    map[string] Type
 	Inferring      TypeArgsInferringContext
-	MacroPath      [] MacroExpanding
 }
 
 type TypeArgsInferringContext struct {
 	Enabled      bool
 	Parameters   [] TypeParam
 	Arguments    map[uint] Type  // mutable
-}
-
-type MacroExpanding struct {
-	Name   string
-	Macro  *Macro
-	Point  ErrorPoint
-	Args   map[string] ast.Expr
 }
 
 type Expr struct {
@@ -115,8 +106,6 @@ func (impl SymType) Sym() {}
 type SymType struct { Type *GenericType; Name loader.Symbol; ForceExact bool }
 func (impl SymFunctions) Sym() {}
 type SymFunctions struct { Functions []*GenericFunction; Name string }
-func (impl SymMacro) Sym() {}
-type SymMacro struct { Macro *Macro; Name string }
 
 
 func CreateExprContext(mod_info ModuleInfo, params ([] TypeParam)) ExprContext {
@@ -213,22 +202,6 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 				Functions: functions,
 			}, true
 		}
-		m_ref, exists := ctx.ModuleInfo.Macros[sym_name]
-		if !exists &&
-			len(sym_name) > len(MacroSuffix) &&
-			strings.HasSuffix(sym_name, MacroSuffix) {
-			var macro_sym_name = strings.TrimSuffix(sym_name, MacroSuffix)
-			m_ref, exists = ctx.ModuleInfo.Macros[macro_sym_name]
-			if exists {
-				real_sym_name = macro_sym_name
-			}
-		}
-		if exists {
-			return SymMacro {
-				Name:  real_sym_name,
-				Macro: m_ref.Macro,
-			}, true
-		}
 		var self = ctx.ModuleInfo.Module.Name
 		var sym_this_mod = loader.NewSymbol(self, sym_name)
 		g, exists := lookup_type(sym_this_mod)
@@ -253,8 +226,8 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 	}
 }
 
-func (ctx ExprContext) WithAddedLocalValues(added map[string]Type) (ExprContext, string) {
-	var merged = make(map[string]Type)
+func (ctx ExprContext) WithAddedLocalValues(added (map[string] Type)) (ExprContext, string) {
+	var merged = make(map[string] Type)
 	var shadowed = ""
 	for name, t := range ctx.LocalValues {
 		var _, exists = added[name]
@@ -362,26 +335,10 @@ func TypeCheck(entry *loader.Module, raw_index loader.Index) (
 	var functions = make(FunctionStore)
 	var _, err3 = CollectFunctions(entry, types, functions)
 	if err3 != nil { return nil, nil, [] E { err3 } }
-	var macros = make(MacroStore)
-	var _, err4 = CollectMacros(entry, macros)
-	if err4 != nil { return nil, nil, [] E { err4 } }
-	for mod_name, _ := range raw_index {
-		for name, f := range functions[mod_name] {
-			var macro, exists = macros[mod_name][name]
-			if exists { return nil, nil, [] E { &FunctionError {
-				Point:    ErrorPointFrom(f[0].Function.Node),
-				Concrete: E_FunctionConflictWithMacro {
-					Name:   name,
-					Module: macro.ModuleName,
-				},
-			} } }
-		}
-	}
 	var ctx = CheckContext {
 		Types:     types,
 		Functions: functions,
 		Constants: constants,
-		Macros:    macros,
 	}
 	var checked_index = make(Index)
 	var checked, errs = TypeCheckModule(entry, checked_index, ctx)
@@ -399,13 +356,11 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 	}
 	var functions = ctx.Functions[mod_name]
 	var constants = ctx.Constants[mod_name]
-	var macros = ctx.Macros[mod_name]
 	var mod_info = ModuleInfo {
 		Module:    mod,
 		Types:     ctx.Types,
 		Constants: constants,
 		Functions: functions,
-		Macros:    macros,
 	}
 	var errors = make([] E, 0)
 	var imported = make(map[string] *CheckedModule)
@@ -420,10 +375,11 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 	var func_map = make(map[string] ([] CheckedFunction))
 	for name, group := range functions {
 		func_map[name] = make([]CheckedFunction, 0)
-		var add = func(body ExprLike, node ast.Node) {
+		var add = func(body ExprLike, imp ([] string), node ast.Node) {
 			func_map[name] = append(func_map[name], CheckedFunction {
-				Point: ErrorPointFrom(node),
-				Body:  body,
+				Point:    ErrorPointFrom(node),
+				Body:     body,
+				Implicit: imp,
 			})
 		}
 		for _, f_ref := range group {
@@ -433,7 +389,14 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 			var f = f_ref.Function
 			switch body := f.Body.(type) {
 			case ast.Lambda:
-				var f_expr_ctx = CreateExprContext(mod_info, f.TypeParams)
+				var implicit_fields = make([] string, len(f.Implicit))
+				var implicit_types = make(map[string] Type)
+				for name, field := range f.Implicit {
+					implicit_fields[field.Index] = name
+					implicit_types[name] = field.Type
+				}
+				var blank_ctx = CreateExprContext(mod_info, f.TypeParams)
+				var f_expr_ctx, _ = blank_ctx.WithAddedLocalValues(implicit_types)
 				var lambda, err1 = CheckLambda(body, f_expr_ctx)
 				if err1 != nil {
 					errors = append(errors, err1)
@@ -445,12 +408,12 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 					errors = append(errors, err2)
 					continue
 				}
-				add(ExprExpr(body_expr), f.Node)
+				add(ExprExpr(body_expr), implicit_fields, f.Node)
 			case ast.NativeRef:
 				add(ExprNative {
 					Name:  string(body.Id.Value),
 					Point: ErrorPointFrom(body.Node),
-				}, f.Node)
+				}, make([] string, 0), f.Node)
 			default:
 				panic("impossible branch")
 			}

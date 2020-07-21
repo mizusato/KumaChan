@@ -52,7 +52,6 @@ var __NodeRegistry = []interface{} {
     DeclFunction {},
     VariousBody {},
     NativeRef {},
-    DeclMacro {},
     DeclType {},
     VariousTypeValue {},
     NativeType {},

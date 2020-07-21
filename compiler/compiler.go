@@ -40,7 +40,7 @@ func CompileModule (
 	for name, instances := range mod.Functions {
 		for _, item := range instances {
 			var f_raw, refs, err = CompileFunction (
-				item.Body, mod.Name, name, item.Point,
+				item.Body, item.Implicit, mod.Name, name, item.Point,
 			)
 			if err != nil {
 				errs = append(errs, err...)
@@ -86,12 +86,14 @@ func CompileModule (
 
 func CompileFunction (
 	body   ch.ExprLike,
+	imp    [] string,
 	mod    string,
 	name   string,
 	point  ErrorPoint,
 ) (*c.Function, []GlobalRef, []*Error) {
 	switch b := body.(type) {
 	case ch.ExprPredefinedValue:
+		if len(imp) > 0 { panic("something went wrong") }
 		return &c.Function {
 			Kind:        c.F_PREDEFINED,
 			NativeIndex: -1,
@@ -106,6 +108,7 @@ func CompileFunction (
 			},
 		}, make([] GlobalRef, 0), nil
 	case ch.ExprNative:
+		if len(imp) > 0 { panic("something went wrong") }
 		var native_name = b.Name
 		var index, exists = lib.NativeFunctionIndex[native_name]
 		var errs []*Error = nil
@@ -132,7 +135,8 @@ func CompileFunction (
 		var body_expr = ch.Expr(b)
 		var lambda = body_expr.Value.(ch.Lambda)
 		var pattern = lambda.Input
-		var ctx = MakeContext()
+		var context_size = uint(len(imp))
+		var ctx = MakeContextWithImplicit(imp)
 		var scope = ctx.LocalScope
 		var buf = MakeCodeBuffer()
 		var info = body_expr.Info
@@ -153,7 +157,7 @@ func CompileFunction (
 		buf.Write(out_code)
 		var code = buf.Collect()
 		var binding_peek = *(scope.BindingPeek)
-		if binding_peek >= c.LocalSlotMaxSize {
+		if (context_size + binding_peek) > c.LocalSlotMaxSize {
 			panic("maximum quantity of local bindings exceeded")
 		}
 		return &c.Function {
@@ -162,7 +166,7 @@ func CompileFunction (
 			Predefined:  nil,
 			Code:        code.InstSeq,
 			BaseSize:    c.FrameBaseSize {
-				Context:  0,
+				Context:  c.Short(context_size),
 				Reserved: c.Long(binding_peek),
 			},
 			Info:        c.FuncInfo {
@@ -228,7 +232,7 @@ func CompileConstant (
 		var code = CompileExpr(body_expr, ctx)
 		var errs = ctx.LocalScope.CollectUnusedAsErrors()
 		var binding_peek = *(ctx.LocalScope.BindingPeek)
-		if binding_peek >= c.LocalSlotMaxSize {
+		if binding_peek > c.LocalSlotMaxSize {
 			panic("maximum quantity of local bindings exceeded")
 		}
 		return &c.Function {

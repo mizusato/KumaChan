@@ -10,7 +10,6 @@ const UnitAlias = "-"
 const WildcardRhsTypeName = "*"
 const TextPlaceholder = '#'
 const FuncSuffix = "!"
-const MacroSuffix = FuncSuffix
 const ForceExactSuffix = FuncSuffix
 const CovariantPrefix = "+"
 const ContravariantPrefix = "-"

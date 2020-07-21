@@ -12,6 +12,7 @@ type GenericFunction struct {
 	Node          ast.Node
 	Public        bool
 	TypeParams    [] TypeParam
+	Implicit      map[string] Field
 	DeclaredType  Func
 	Body          ast.Body
 }
@@ -100,15 +101,67 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 				},
 				Registry: reg,
 			}
-			// 3.3. Evaluate the function signature using the created context
+			// 3.3. Collect implicit context value definitions
+			var implicit_fields = make(map[string] Field)
+			var implicit_types = make([] Type, len(decl.Implicit))
+			if len(decl.Implicit) > 0 {
+				var _, is_native = decl.Body.Body.(ast.NativeRef)
+				if is_native {
+					return nil, &FunctionError {
+						Point:    ErrorPointFrom(decl.Node),
+						Concrete: E_ImplicitContextOnNativeFunction {},
+					}
+				}
+			}
+			for i, item := range decl.Implicit {
+				var item_t, err = TypeFrom(item, ctx)
+				if err != nil { return nil, &FunctionError {
+					Point:    err.Point,
+					Concrete: E_InvalidTypeInFunction {
+						TypeError: err,
+					},
+				} }
+				implicit_types[i] = item_t
+			}
+			for i, t := range implicit_types {
+				var throw = func(problem string) *FunctionError {
+					return &FunctionError {
+						Point:    ErrorPointFrom(decl.Implicit[i].Node),
+						Concrete: E_InvalidImplicitContextType {
+							Reason: problem,
+						},
+					}
+				}
+				var named, is_named = t.(*NamedType)
+				if !(is_named) { return nil, throw("should be a named type") }
+				var g = reg[named.Name]
+				var boxed, is_boxed = g.Value.(*Boxed)
+				if !(is_boxed) { return nil, throw("should be a boxed type") }
+				if !(boxed.Implicit) { return nil,
+					throw("should be declared as a implicit context type") }
+				var inner = FillTypeArgs(boxed.InnerType, named.Args)
+				var bundle = inner.(*AnonymousType).Repr.(*Bundle)
+				var offset = uint(len(implicit_fields))
+				for name, field := range bundle.Fields {
+					var _, exists = implicit_fields[name]
+					if exists { return nil, &FunctionError {
+						Point:    ErrorPointFrom(decl.Node),
+						Concrete: E_ConflictImplicitContextField { name },
+					} }
+					implicit_fields[name] = Field {
+						Type:  field.Type,
+						Index: (offset + field.Index),
+					}
+				}
+			}
+			// 3.4. Evaluate the function signature using the created context
 			var sig, err = TypeFromRepr(ast.VariousRepr {
 				Node: decl.Repr.Node,
 				Repr: decl.Repr,
 			}, ctx)
 			if err != nil { return nil, &FunctionError {
 				Point:    err.Point,
-				Concrete: E_SignatureInvalid {
-					FuncName:  name,
+				Concrete: E_InvalidTypeInFunction {
 					TypeError: err,
 				},
 			} }
@@ -120,7 +173,7 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 					}
 				}
 			}
-			// 3.4. If the function is public, ensure its signature type
+			// 3.5. If the function is public, ensure its signature type
 			//        to be a local type of this module.
 			var is_public = decl.Public
 			if is_public && !(IsLocalType(sig, mod_name)) {
@@ -129,7 +182,7 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 					Concrete: E_SignatureNonLocal { name },
 				}
 			}
-			// 3.5. Construct a representation and a reference of the function
+			// 3.6. Construct a representation and a reference of the function
 			var func_type = sig.(*AnonymousType).Repr.(Func)
 			var gf = &GenericFunction {
 				Public:       is_public,
@@ -138,10 +191,10 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 				Body:         decl.Body.Body,
 				Node:         decl.Node,
 			}
-			// 3.6. Check if the name of the function is in use
+			// 3.7. Check if the name of the function is in use
 			var existing, exists = collection[name]
 			if exists {
-				// 3.6.1. If in use, try to overload it
+				// 3.7.1. If in use, try to overload it
 				var index_offset = index_offset_map[name]
 				var err_point = ErrorPointFrom(decl.Name.Node)
 				var err = CheckOverload (
@@ -156,7 +209,7 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 					Index:      uint(len(existing)) - index_offset,
 				})
 			} else {
-				// 3.6.2. If not, collect the function
+				// 3.7.2. If not, collect the function
 				collection[name] = []FunctionReference { FunctionReference {
 					IsImported: false,
 					Function:   gf,

@@ -14,20 +14,23 @@ func GenericFunctionCall (
 	ctx          ExprContext,
 ) (Expr, *ExprError) {
 	var type_arity = len(f.TypeParams)
+	var f_node = f_info.ErrorPoint.Node
 	if len(type_args) == type_arity {
 		var f_raw_type = &AnonymousType { f.DeclaredType }
 		var f_type = FillTypeArgs(f_raw_type, type_args)
 		var f_type_repr = f_type.(*AnonymousType).Repr.(Func)
 		var input_type = f_type_repr.Input
 		var output_type = f_type_repr.Output
-		var arg_typed, err = AssignTo(input_type, arg, ctx)
+		arg_typed, err := AssignTo(input_type, arg, ctx)
+		if err != nil { return Expr{}, err }
+		f_ref, err := MakeRefFunction(name, index, type_args, f_node, ctx)
 		if err != nil { return Expr{}, err }
 		return Expr {
 			Type:  output_type,
 			Value: Call {
 				Function: Expr {
 					Type:  f_type,
-					Value: MakeRefFunction(name, index, ctx),
+					Value: f_ref,
 					Info:  f_info,
 				},
 				Argument: arg_typed,
@@ -45,7 +48,7 @@ func GenericFunctionCall (
 			Parameters: f.TypeParams,
 			Registry:   ctx.ModuleInfo.Types,
 		})
-		var inferred_args = make([]Type, type_arity)
+		var inferred_args = make([] Type, type_arity)
 		for i := 0; i < type_arity; i += 1 {
 			var t, exists = inf_ctx.Inferring.Arguments[uint(i)]
 			if exists {
@@ -73,12 +76,14 @@ func GenericFunctionCall (
 			Input:  input_type,
 			Output: output_type,
 		} }
+		f_ref, err := MakeRefFunction(name, index, inferred_args, f_node, ctx)
+		if err != nil { return Expr{}, err }
 		return Expr {
 			Type:  output_type,
 			Value: Call {
 				Function: Expr {
 					Type:  f_type,
-					Value: MakeRefFunction(name, index, ctx),
+					Value: f_ref,
 					Info:  f_info,
 				},
 				Argument: arg_typed,
@@ -107,12 +112,15 @@ func GenericFunctionAssignTo (
 	ctx        ExprContext,
 ) (Expr, *ExprError) {
 	var type_arity = len(f.TypeParams)
+	var f_node = info.ErrorPoint.Node
 	if len(type_args) == type_arity {
 		var f_raw_type = &AnonymousType { f.DeclaredType }
 		var f_type = FillTypeArgs(f_raw_type, type_args)
+		f_ref, err := MakeRefFunction(name, index, type_args, f_node, ctx)
+		if err != nil { return Expr{}, err }
 		var f_expr = Expr {
 			Type:  f_type,
-			Value: MakeRefFunction(name, index, ctx),
+			Value: f_ref,
 			Info:  info,
 		}
 		return TypedAssignTo(expected, f_expr, ctx)
@@ -133,20 +141,22 @@ func GenericFunctionAssignTo (
 		// Note: Unbox/Union related inferring is not required
 		//       since function types are anonymous types and invariant.
 		//       Just apply NaivelyInferTypeArgs() here.
-		var inferred = make(map[uint]Type)
-		NaivelyInferTypeArgs(f_raw_type, expected, inferred)
-		if len(inferred) == type_arity {
-			var args = make([]Type, type_arity)
-			for i, t := range inferred {
-				args[i] = t
+		var inferred_arg_map = make(map[uint] Type)
+		NaivelyInferTypeArgs(f_raw_type, expected, inferred_arg_map)
+		if len(inferred_arg_map) == type_arity {
+			var inferred_args = make([]Type, type_arity)
+			for i, t := range inferred_arg_map {
+				inferred_args[i] = t
 			}
-			var f_type = FillTypeArgs(f_raw_type, args)
+			var f_type = FillTypeArgs(f_raw_type, inferred_args)
 			if !(AreTypesEqualInSameCtx(f_type, expected)) {
 				panic("something went wrong")
 			}
+			f_ref, err := MakeRefFunction(name, index, inferred_args, f_node, ctx)
+			if err != nil { return Expr{}, err }
 			return Expr {
 				Type:  f_type,
-				Value: MakeRefFunction(name, index, ctx),
+				Value: f_ref,
 				Info:  info,
 			}, nil
 		} else {
@@ -168,7 +178,7 @@ func GenericFunctionAssignTo (
 }
 
 
-func FillTypeArgs(t Type, given_args []Type) Type {
+func FillTypeArgs(t Type, given_args ([] Type)) Type {
 	switch T := t.(type) {
 	case *WildcardRhsType:
 		return &WildcardRhsType {}

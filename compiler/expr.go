@@ -19,6 +19,14 @@ func MakeContext() Context {
 	}
 }
 
+func MakeContextWithImplicit(fields ([] string)) Context {
+	var refs = make([] GlobalRef, 0)
+	return Context {
+		GlobalRefs: &refs,
+		LocalScope: MakeScopeWithImplicit(fields),
+	}
+}
+
 func (ctx Context) MakeClosure() Context {
 	var refs = make([] GlobalRef, 0)
 	return Context {
@@ -106,7 +114,23 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 		return CodeFrom(InstGlobalRef(index), expr.Info)
 	case ch.RefFunction:
 		var index = ctx.AppendFunRef(v)
-		return CodeFrom(InstGlobalRef(index), expr.Info)
+		var buf = MakeCodeBuffer()
+		buf.Write(CodeFrom(InstGlobalRef(index), expr.Info))
+		if len(v.Implicit) > 0 {
+			var n = uint(len(v.Implicit))
+			for _, ref := range v.Implicit {
+				var ref_expr = ch.Expr {
+					Type:  nil,
+					Value: ref,
+					Info:  expr.Info,
+				}
+				var ref_code = CompileExpr(ref_expr, ctx)
+				buf.Write(ref_code)
+			}
+			buf.Write(CodeFrom(InstProduct(n), expr.Info))
+			buf.Write(CodeFrom(c.Instruction { OpCode: c.CTX }, expr.Info))
+		}
+		return buf.Collect()
 	case ch.RefConstant:
 		var index = ctx.AppendConstRef(v)
 		return CodeFrom(InstGlobalRef(index), expr.Info)
@@ -418,9 +442,6 @@ func CompileClosure (
 	var body_code = CompileExpr(lambda.Output, inner_ctx)
 	inner_buf.Write(body_code)
 	var base_reserved_size = *(inner_scope.BindingPeek)
-	if base_reserved_size >= c.LocalSlotMaxSize {
-		panic("maximum quantity of local bindings exceeded")
-	}
 	var outer_bindings_size = uint(len(ctx.LocalScope.Bindings))
 	var base_context_size = uint(0)
 	var context_offset_map = make(map[uint] uint)
@@ -449,8 +470,11 @@ func CompileClosure (
 		}
 		base_context_size += 1
 	}
-	if base_context_size >= c.ClosureMaxSize {
+	if base_context_size > c.ClosureMaxSize {
 		panic("maximum closure size exceeded")
+	}
+	if (base_context_size + base_reserved_size) > c.LocalSlotMaxSize {
+		panic("maximum quantity of local bindings exceeded")
 	}
 	var raw_inner_code = inner_buf.Collect()
 	var inst_seq_len = len(raw_inner_code.InstSeq)

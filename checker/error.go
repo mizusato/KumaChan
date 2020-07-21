@@ -205,11 +205,23 @@ type E_InvalidFunctionName struct {
 	Name  string
 }
 
-func (impl E_SignatureInvalid) FunctionError() {}
-type E_SignatureInvalid struct {
-	FuncName   string
+func (impl E_InvalidTypeInFunction) FunctionError() {}
+type E_InvalidTypeInFunction struct {
  	TypeError  *TypeError
 }
+
+func (impl E_InvalidImplicitContextType) FunctionError() {}
+type E_InvalidImplicitContextType struct {
+	Reason  string
+}
+
+func (impl E_ConflictImplicitContextField) FunctionError() {}
+type E_ConflictImplicitContextField struct {
+	FieldName  string
+}
+
+func (impl E_ImplicitContextOnNativeFunction) FunctionError() {}
+type E_ImplicitContextOnNativeFunction struct {}
 
 func (E_SignatureNonLocal) FunctionError() {}
 type E_SignatureNonLocal struct {
@@ -223,12 +235,6 @@ type E_InvalidOverload struct {
 	AddedModule   string
 	AddedType     string
 	ExistingType  string
-}
-
-func (impl E_FunctionConflictWithMacro) FunctionError() {}
-type E_FunctionConflictWithMacro struct {
-	Name    string
-	Module  string
 }
 
 func (impl E_FunctionInvalidTypeParameterName) FunctionError() {}
@@ -245,8 +251,16 @@ func (err *FunctionError) Desc() ErrorMessage {
 	case E_InvalidFunctionName:
 		msg.WriteText(TS_ERROR, "Invalid function name")
 		msg.WriteEndText(TS_INLINE_CODE, e.Name)
-	case E_SignatureInvalid:
+	case E_InvalidTypeInFunction:
 		msg.WriteAll(e.TypeError.Desc())
+	case E_InvalidImplicitContextType:
+		msg.WriteText(TS_ERROR, "Invalid implicit context type:")
+		msg.WriteEndText(TS_ERROR, e.Reason)
+	case E_ConflictImplicitContextField:
+		msg.WriteText(TS_ERROR, "Conflict implicit context field:")
+		msg.WriteEndText(TS_INLINE_CODE, e.FieldName)
+	case E_ImplicitContextOnNativeFunction:
+		msg.WriteText(TS_ERROR, "Cannot use implicit context on a native function")
 	case E_SignatureNonLocal:
 		msg.WriteText(TS_ERROR, "Function")
 		msg.WriteInnerText(TS_INLINE_CODE, e.FuncName)
@@ -265,13 +279,6 @@ func (err *FunctionError) Desc() ErrorMessage {
 			msg.WriteInnerText(TS_ERROR, "in the module")
 			msg.WriteText(TS_INLINE_CODE, e.AddedModule)
 		}
-	case E_FunctionConflictWithMacro:
-		msg.WriteText(TS_ERROR, "The function name")
-		msg.WriteInnerText(TS_INLINE_CODE, e.Name)
-		msg.WriteText(TS_ERROR, "conflicts with the existing macro")
-		msg.WriteInnerText(TS_INLINE_CODE, e.Name)
-		msg.WriteText(TS_ERROR, "defined in the module")
-		msg.WriteEndText(TS_INLINE_CODE, e.Module)
 	case E_FunctionInvalidTypeParameterName:
 		msg.WriteText(TS_ERROR, "invalid type name")
 		msg.WriteEndText(TS_INLINE_CODE, e.Name)
@@ -351,77 +358,6 @@ func (err *ConstantError) Message() ErrorMessage {
 }
 
 func (err *ConstantError) Error() string {
-	var msg = MsgFailedToCompile(err.Concrete, []ErrorMessage {
-		err.Message(),
-	})
-	return msg.String()
-}
-
-
-type MacroError struct {
-	Point     ErrorPoint
-	Concrete  ConcreteMacroError
-}
-
-type ConcreteMacroError interface { MacroError() }
-
-func (impl E_MacroConflictBetweenModules) MacroError() {}
-type E_MacroConflictBetweenModules struct {
-	Macro    string
-	Module1  string
-	Module2  string
-}
-
-func (impl E_MacroConflictWithImported) MacroError() {}
-type E_MacroConflictWithImported struct {
-	Macro   string
-	Module  string
-}
-
-func (impl E_DuplicateMacroName) MacroError() {}
-type E_DuplicateMacroName struct {
-	Name  string
-}
-
-func (impl E_InvalidMacroName) MacroError() {}
-type E_InvalidMacroName struct {
-	Name  string
-}
-
-func (err *MacroError) Desc() ErrorMessage {
-	var msg = make(ErrorMessage, 0)
-	switch e := err.Concrete.(type) {
-	case E_MacroConflictBetweenModules:
-		msg.WriteText(TS_ERROR, "Macro conflict: the macro name")
-		msg.WriteInnerText(TS_INLINE_CODE, e.Macro)
-		msg.WriteText(TS_ERROR, "used by both the imported modules:")
-		msg.WriteInnerText(TS_INLINE_CODE, e.Module1)
-		msg.WriteText(TS_ERROR, "and")
-		msg.WriteEndText(TS_INLINE_CODE, e.Module2)
-	case E_MacroConflictWithImported:
-		msg.WriteText(TS_ERROR, "Macro conflict: the macro name")
-		msg.WriteInnerText(TS_INLINE_CODE, e.Macro)
-		msg.WriteText(TS_ERROR, "conflicts with the macro")
-		msg.WriteInnerText(TS_INLINE_CODE, e.Macro)
-		msg.WriteText(TS_ERROR, "imported from the module")
-		msg.WriteEndText(TS_INLINE_CODE, e.Module)
-	case E_DuplicateMacroName:
-		msg.WriteText(TS_ERROR, "Duplicate macro name:")
-		msg.WriteEndText(TS_INLINE_CODE, e.Name)
-	case E_InvalidMacroName:
-		msg.WriteText(TS_ERROR, "Invalid macro name")
-		msg.WriteEndText(TS_INLINE_CODE, e.Name)
-	default:
-		panic("unknown error kind")
-	}
-	return msg
-}
-
-func (err *MacroError) Message() ErrorMessage {
-	return FormatErrorAt(err.Point, err.Desc())
-}
-
-func (err *MacroError) Error() string {
 	var msg = MsgFailedToCompile(err.Concrete, []ErrorMessage {
 		err.Message(),
 	})
@@ -840,7 +776,19 @@ func (e E_TypeOrValueNotFound) ExprErrorDesc() ErrorMessage {
 	msg.WriteText(TS_ERROR, "No such value or type:")
 	msg.WriteEndText(TS_INLINE_CODE, e.Symbol.String())
 	return msg
+}
 
+type E_ImplicitContextNotFound struct {
+	Name    string
+	Detail  *ExprError
+}
+func (e E_ImplicitContextNotFound) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Implicit context value")
+	msg.WriteInnerText(TS_INLINE_CODE, e.Name)
+	msg.WriteText(TS_ERROR, "not found:")
+	msg.WriteAllWithIndent(e.Detail.Desc(), 1)
+	return msg
 }
 
 type E_TypeParamInExpr struct {
@@ -851,13 +799,6 @@ func (e E_TypeParamInExpr) ExprErrorDesc() ErrorMessage {
 	msg.WriteText(TS_ERROR, "Cannot use type parameter")
 	msg.WriteInnerText(TS_INLINE_CODE, e.Name)
 	msg.WriteText(TS_ERROR, "as a value")
-	return msg
-}
-
-type E_TypeParamsOnMacro struct {}
-func (e E_TypeParamsOnMacro) ExprErrorDesc() ErrorMessage {
-	var msg = make(ErrorMessage, 0)
-	msg.WriteText(TS_ERROR, "Cannot use type parameters on a macro")
 	return msg
 }
 
@@ -876,53 +817,6 @@ func (e E_TypeUsedAsValue) ExprErrorDesc() ErrorMessage {
 	msg.WriteText(TS_ERROR, "Cannot use type")
 	msg.WriteInnerText(TS_INLINE_CODE, e.TypeName.String())
 	msg.WriteText(TS_ERROR, "as a value")
-	return msg
-}
-
-type E_MacroUsedAsValue struct {}
-func (e E_MacroUsedAsValue) ExprErrorDesc() ErrorMessage {
-	var msg = make(ErrorMessage, 0)
-	msg.WriteText(TS_ERROR, "Cannot use a macro as a value")
-	return msg
-}
-
-type E_MacroWrongArgsQuantity struct {
-	MacroName  string
-	Given      uint
-	Required   uint
-}
-func (e E_MacroWrongArgsQuantity) ExprErrorDesc() ErrorMessage {
-	var msg = make(ErrorMessage, 0)
-	msg.WriteText(TS_ERROR, "The macro")
-	msg.WriteInnerText(TS_INLINE_CODE, e.MacroName)
-	msg.WriteText(TS_ERROR, "requires")
-	msg.WriteInnerText(TS_INLINE, fmt.Sprint(e.Required))
-	msg.WriteText(TS_ERROR, "arguments but")
-	msg.WriteInnerText(TS_INLINE, fmt.Sprint(e.Given))
-	msg.WriteText(TS_ERROR, "given")
-	return msg
-}
-
-type E_MacroCircularExpanding struct {
-	MacroName  string
-}
-func (e E_MacroCircularExpanding) ExprErrorDesc() ErrorMessage {
-	var msg = make(ErrorMessage, 0)
-	msg.WriteText(TS_ERROR, "Circular expanding of macro")
-	msg.WriteEndText(TS_INLINE_CODE, e.MacroName)
-	return msg
-}
-
-type E_MacroExpandingFailed struct {
-	MacroName  string
-	Deeper     *ExprError
-}
-func (e E_MacroExpandingFailed) ExprErrorDesc() ErrorMessage {
-	var msg = make(ErrorMessage, 0)
-	msg.WriteText(TS_ERROR, "Error occurred during expanding macro")
-	msg.WriteInnerText(TS_INLINE_CODE, e.MacroName)
-	msg.Write(T_LF)
-	msg.WriteAll(e.Deeper.Message())
 	return msg
 }
 

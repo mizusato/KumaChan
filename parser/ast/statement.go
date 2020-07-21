@@ -52,27 +52,19 @@ type PredefinedValue struct {
 
 func (impl DeclFunction) Statement() {}
 type DeclFunction struct {
-    Node                    `part:"decl_func"`
-    Public  bool            `option:"scope.@public"`
-    Name    Identifier      `part:"name"`
-    Params  [] Identifier   `list_more:"type_params.namelist" item:"name"`
-    Repr    ReprFunc        `part:"signature.repr_func"`
-    Body    VariousBody     `part:"body"`
+    Node                      `part:"decl_func"`
+    Public    bool            `option:"scope.@public"`
+    Name      Identifier      `part:"name"`
+    Params    [] Identifier   `list_more:"type_params.namelist" item:"name"`
+    Implicit  [] VariousType  `list_more:"signature.implicit_input.type_args" item:"type"`
+    Repr      ReprFunc        `part:"signature.repr_func"`
+    Body      VariousBody     `part:"body"`
 }
 type VariousBody struct {
     Node         `part:"body"`
     Body  Body   `part:"lambda" fallback:"native"`
 }
 type Body interface { Body() }
-
-func (impl DeclMacro) Statement() {}
-type DeclMacro struct {
-    Node                    `part:"decl_macro"`
-    Public  bool            `option:"scope.@public"`
-    Name    Identifier      `part:"name"`
-    Input  [] Identifier `list_more:"macro_params.namelist" item:"name"`
-    Output Expr          `part:"expr"`
-}
 
 func (impl DeclType) Statement() {}
 type DeclType struct {
@@ -89,6 +81,11 @@ type TypeValue interface { TypeValue() }
 func (impl NativeType) TypeValue() {}
 type NativeType struct {
     Node   `part:"native_type"`
+}
+func (impl ImplicitType) TypeValue() {}
+type ImplicitType struct {
+    Node               `part:"implicit_type"`
+    Repr  ReprBundle   `part:"repr_bundle"`
 }
 func (impl BoxedType) TypeValue() {}
 type BoxedType struct {

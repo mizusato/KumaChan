@@ -37,6 +37,8 @@ type CaseType struct {
 func (impl *Boxed) TypeVal() {}
 type Boxed struct {
 	InnerType  Type
+	Implicit   bool
+	// following properties are exclusive
 	AsIs       bool
 	Protected  bool
 	Opaque     bool

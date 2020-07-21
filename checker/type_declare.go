@@ -89,7 +89,7 @@ func MakeRawTypeRegistry() RawTypeRegistry {
 	}
 }
 
-func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
+func RegisterRawTypes(mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 	/**
 	 *  Input: a loaded module and a raw registry
 	 *  Output: error or nil
@@ -211,7 +211,7 @@ func RegisterRawTypes (mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 	return nil
 }
 
-func RegisterTypes (entry *loader.Module, idx loader.Index) (TypeRegistry, ([] *TypeDeclError)) {
+func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, ([] *TypeDeclError)) {
 	// 1. Build a raw registry
 	var raw = MakeRawTypeRegistry()
 	var err = RegisterRawTypes(entry, raw)
@@ -336,9 +336,7 @@ func RawTypeValFrom(ast_val ast.VariousTypeValue, info TypeNodeInfo, ctx RawType
 		var inner, specified = a.Inner.(ast.VariousType)
 		if specified {
 			var inner_type, err = RawTypeFrom(inner, info.TypeNodeMap, ctx.TypeConstructContext)
-			if err != nil {
-				return nil, err
-			}
+			if err != nil { return nil, err }
 			return got(&Boxed {
 				InnerType: inner_type,
 				AsIs:      a.AsIs,
@@ -353,6 +351,17 @@ func RawTypeValFrom(ast_val ast.VariousTypeValue, info TypeNodeInfo, ctx RawType
 				Opaque:    a.Opaque,
 			})
 		}
+	case ast.ImplicitType:
+		var repr = ast.VariousRepr {
+			Node: a.Repr.Node,
+			Repr: a.Repr,
+		}
+		var inner_type, err = RawTypeFromRepr(repr, info.TypeNodeMap, ctx.TypeConstructContext)
+		if err != nil { return nil, err }
+		return got(&Boxed {
+			InnerType: inner_type,
+			Implicit:  true,
+		})
 	case ast.NativeType:
 		return got(&Native{})
 	default:

@@ -28,6 +28,24 @@ func MakeScope() *Scope {
 	}
 }
 
+func MakeScopeWithImplicit(fields ([] string)) *Scope {
+	var bindings = make([] *Binding, len(fields))
+	var binding_map = make(map[string] uint)
+	for i, name := range fields {
+		bindings[i] = &Binding {
+			Name:  name,
+			Used:  true,  // assume always used, omit error point
+		}
+		binding_map[name] = uint(i)
+	}
+	return &Scope {
+		Bindings:    bindings,
+		BindingMap:  binding_map,
+		BindingPeek: new(uint),
+		Children:    make([] *Scope, 0),
+	}
+}
+
 func MakeClosureScope(outer *Scope) *Scope {
 	var bindings = make([] *Binding, len(outer.Bindings))
 	for i, b := range outer.Bindings {

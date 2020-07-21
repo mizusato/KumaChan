@@ -25,43 +25,72 @@ type UntypedRefToFunctions struct {
 	FuncName   string
 	Functions  [] *GenericFunction
 }
-func (impl UntypedRefToMacro) UntypedRefBody() {}
-type UntypedRefToMacro struct {
-	MacroName  string
-	Macro      *Macro
-}
+
+type Ref interface { ExprVal; Ref() }
 
 func (impl RefConstant) ExprVal() {}
+func (impl RefConstant) Ref() {}
 type RefConstant struct {
 	Name  loader.Symbol
 }
 
 func (impl RefFunction) ExprVal() {}
+func (impl RefFunction) Ref() {}
 type RefFunction struct {
-	Name    string
-	Index   uint
-	AbsRef  AbsRefFunction
+	Name      string
+	Index     uint
+	AbsRef    AbsRefFunction
+	Implicit  [] Ref
 }
 type AbsRefFunction struct {
 	Module  string
 	Name    string
 	Index   uint
 }
-func MakeRefFunction(name string, index uint, ctx ExprContext) RefFunction {
+func MakeRefFunction(name string, index uint, type_args ([] Type), node ast.Node, ctx ExprContext) (RefFunction, *ExprError) {
 	var raw_ref = ctx.ModuleInfo.Functions[name][index]
 	var abs_ref = AbsRefFunction {
 		Module: raw_ref.ModuleName,
 		Name:   name,
 		Index:  raw_ref.Index,
 	}
-	return RefFunction {
-		Name:   name,
-		Index:  index,
-		AbsRef: abs_ref,
+	var f = raw_ref.Function
+	var implicit_refs = make([] Ref, 0)
+	if len(f.Implicit) > 0 {
+		var wrap_error = func(name string, err *ExprError) *ExprError {
+			return &ExprError {
+				Point:    ErrorPointFrom(node),
+				Concrete: E_ImplicitContextNotFound {
+					Name:   name,
+					Detail: err,
+				},
+			}
+		}
+		for name, field := range f.Implicit {
+			var field_t = FillTypeArgs(field.Type, type_args)
+			var ref = CraftAstRefNode(name, node)
+			var ref_term = ast.VariousTerm {
+				Node: node,
+				Term: ref,
+			}
+			var ref_semi, err1 = CheckTerm(ref_term, ctx)
+			if err1 != nil { return RefFunction{}, wrap_error(name, err1) }
+			var ref_expr, err2 = AssignTo(field_t, ref_semi, ctx)
+			if err2 != nil { return RefFunction{}, wrap_error(name, err2) }
+			var ref_val = ref_expr.Value.(Ref)
+			implicit_refs[field.Index] = ref_val
+		}
 	}
+	return RefFunction {
+		Name:     name,
+		Index:    index,
+		AbsRef:   abs_ref,
+		Implicit: implicit_refs,
+	}, nil
 }
 
 func (impl RefLocal) ExprVal() {}
+func (impl RefLocal) Ref() {}
 type RefLocal struct {
 	Name  string
 }
@@ -75,27 +104,6 @@ func CheckRef(ref ast.InlineRef, ctx ExprContext) (SemiExpr, *ExprError) {
 		Point:    ErrorPointFrom(ref.Module.Node),
 		Concrete: E_ModuleNotFound { loader.Id2String(ref.Module) },
 	} }
-	if len(ctx.MacroPath) > 0 && symbol.ModuleName == "" {
-		var arg_name = symbol.SymbolName
-		var arg, unwound_ctx, exists = ctx.FindMacroArg(arg_name)
-		if exists {
-			var semi, err = Check(arg, unwound_ctx)
-			if err != nil { return SemiExpr{}, err }
-			switch content := semi.Value.(type) {
-			case TypedExpr:
-				return LiftTyped(Expr {
-					Type:  content.Type,
-					Value: content.Value,
-					Info:  info,
-				}), nil
-			default:
-				return SemiExpr {
-					Value: semi.Value,
-					Info:  info,
-				}, nil
-			}
-		}
-	}
 	var sym_concrete, exists = ctx.LookupSymbol(symbol)
 	if !exists { return SemiExpr{}, &ExprError {
 		Point:    ErrorPointFrom(ref.Id.Node),
@@ -152,24 +160,6 @@ func CheckRef(ref ast.InlineRef, ctx ExprContext) (SemiExpr, *ExprError) {
 			},
 			Info:  info,
 		}, nil
-	case SymMacro:
-		if len(type_args) > 0 {
-			return SemiExpr{}, &ExprError {
-				Point:    ErrorPointFrom(ref.Node),
-				Concrete: E_TypeParamsOnMacro {},
-			}
-		} else {
-			return SemiExpr {
-				Value: UntypedRef {
-					RefBody: UntypedRefToMacro {
-						MacroName: s.Name,
-						Macro:     s.Macro,
-					},
-					TypeArgs: nil,
-				},
-				Info: info,
-			}, nil
-		}
 	default:
 		panic("impossible branch")
 	}
@@ -204,11 +194,6 @@ func AssignRefTo(expected Type, ref UntypedRef, info ExprInfo, ctx ExprContext) 
 		return OverloadedAssignTo (
 			expected, functions, name, type_args, info, ctx,
 		)
-	case UntypedRefToMacro:
-		return Expr{}, &ExprError {
-			Point:    info.ErrorPoint,
-			Concrete: E_MacroUsedAsValue {},
-		}
 	default:
 		panic("impossible branch")
 	}
@@ -241,9 +226,23 @@ func CallUntypedRef (
 		return OverloadedCall (
 			functions, name, type_args, arg, ref_info, call_info, ctx,
 		)
-	case UntypedRefToMacro:
-		panic("this branch should have been processed in CheckCall()")
 	default:
 		panic("impossible branch")
+	}
+}
+
+func CraftAstRefNode(name string, node ast.Node) ast.InlineRef {
+	return ast.InlineRef {
+		Node:     node,
+		Module:   ast.Identifier {
+			Node: node,
+			Name: [] rune {},
+		},
+		Specific: false,
+		Id:       ast.Identifier {
+			Node: node,
+			Name: ([] rune)(name),
+		},
+		TypeArgs: make([] ast.VariousType, 0),
 	}
 }

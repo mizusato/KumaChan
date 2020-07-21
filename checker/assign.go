@@ -39,8 +39,6 @@ func AssignTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprError) 
 			return AssignRefTo(expected, semi_value, semi.Info, ctx)
 		case UndecidedCall:
 			return AssignCallTo(expected, semi_value, semi.Info, ctx)
-		case UntypedMacroInflation:
-			return AssignMacroInflationTo(expected, semi_value, semi.Info, ctx)
 		default:
 			panic("impossible branch")
 		}

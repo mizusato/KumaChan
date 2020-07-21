@@ -31,8 +31,8 @@ func OverloadedCall (
 		if err != nil { return SemiExpr{}, err }
 		return LiftTyped(expr), nil
 	} else {
-		var options = make([]AvailableCall, 0)
-		var candidates = make([]Candidate, 0)
+		var options = make([] AvailableCall, 0)
+		var candidates = make([] Candidate, 0)
 		for i, f := range functions {
 			var index = uint(i)
 			var expr, err = GenericFunctionCall (
@@ -88,7 +88,7 @@ func OverloadedAssignTo (
 			expected, name, 0, f, type_args, info, ctx,
 		)
 	} else {
-		var candidates = make([]Candidate, 0)
+		var candidates = make([] Candidate, 0)
 		for i, f := range functions {
 			var index = uint(i)
 			var expr, err = GenericFunctionAssignTo (

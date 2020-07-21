@@ -28,38 +28,14 @@ type Call struct {
 
 
 func CheckCall(call ast.Call, ctx ExprContext) (SemiExpr, *ExprError) {
-	var get_macro_ref = func(semi SemiExpr) (UntypedRefToMacro, bool) {
-		switch ref := semi.Value.(type) {
-		case UntypedRef:
-			switch ref_body := ref.RefBody.(type) {
-			case UntypedRefToMacro:
-				return ref_body, true
-			}
-		}
-		return UntypedRefToMacro{}, false
-	}
 	var arg_node, has_arg = call.Arg.(ast.Call)
 	if has_arg {
 		var info = ctx.GetExprInfo(call.Node)
-		var f, err = CheckTerm(call.Func, ctx)
+		f, err := CheckTerm(call.Func, ctx)
 		if err != nil { return SemiExpr{}, err }
-		var macro_ref, is_macro_ref = get_macro_ref(f)
-		if is_macro_ref {
-			return SemiExpr {
-				Value: UntypedMacroInflation {
-					Macro:     macro_ref.Macro,
-					MacroName: macro_ref.MacroName,
-					Arguments: AdaptMacroArgs(arg_node),
-					Point:     info.ErrorPoint,
-					Context:   ctx,
-				},
-				Info:  info,
-			}, nil
-		} else {
-			var arg, err = CheckCall(arg_node, ctx)
-			if err != nil { return SemiExpr{}, err }
-			return CheckSingleCall(f, arg, info, ctx)
-		}
+		arg, err := CheckCall(arg_node, ctx)
+		if err != nil { return SemiExpr{}, err }
+		return CheckSingleCall(f, arg, info, ctx)
 	} else {
 		return CheckTerm(call.Func, ctx)
 	}
