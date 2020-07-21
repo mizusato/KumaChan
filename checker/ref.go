@@ -55,8 +55,9 @@ func MakeRefFunction(name string, index uint, type_args ([] Type), node ast.Node
 		Index:  raw_ref.Index,
 	}
 	var f = raw_ref.Function
-	var implicit_refs = make([] Ref, 0)
-	if len(f.Implicit) > 0 {
+	var implicit_count = uint(len(f.Implicit))
+	var implicit_refs = make([] Ref, implicit_count)
+	if implicit_count > 0 {
 		var wrap_error = func(name string, err *ExprError) *ExprError {
 			return &ExprError {
 				Point:    ErrorPointFrom(node),

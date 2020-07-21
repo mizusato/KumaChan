@@ -1,11 +1,11 @@
 package checker
 
 import (
-	"kumachan/stdlib"
-	"kumachan/parser/ast"
 	"math"
 	"math/big"
 	"strconv"
+	"kumachan/stdlib"
+	"kumachan/parser/ast"
 )
 
 
@@ -87,7 +87,9 @@ func CheckFloat(f ast.FloatLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
 func AssignIntegerTo(expected Type, integer UntypedInteger, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
 	var err = RequireExplicitType(expected, info)
 	if err != nil { return Expr{}, err }
-	switch E := expected.(type) {
+	expected_certain, err := GetCertainType(expected, info.ErrorPoint, ctx)
+	if err != nil { return Expr{}, err }
+	switch E := expected_certain.(type) {
 	case *NamedType:
 		var sym = E.Name
 		var kind, exists = __IntegerTypeMap[sym]
@@ -96,7 +98,7 @@ func AssignIntegerTo(expected Type, integer UntypedInteger, info ExprInfo, ctx E
 			var val, ok = AdaptInteger(kind, integer.Value)
 			if ok {
 				return Expr {
-					Type:  expected,
+					Type:  expected_certain,
 					Info:  info,
 					Value: val,
 				}, nil

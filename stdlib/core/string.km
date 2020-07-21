@@ -9,7 +9,11 @@ public function  = :(&(String,String)(Bool))      native '=String';
 public function  < :(&(String,String)(Bool))      native '<String';
 public function <> :(&(String,String)(Ordering))  native '<>String';
 
-public macro str(x): (:String: (from x));
+type Str[T] implicit {
+    from: (&(T)(String))
+};
+public function str[T]: implicit[Str[T]] (&(T)(String))
+    (&(x)(from x));
 public function from: (&(Char)(String))         native 'String from Char';
 public function from: (&(Array[Char])(String))  native 'String from Array';
 public function from: (&(Number)(String))  native 'String from Number';

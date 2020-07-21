@@ -140,7 +140,7 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 				if !(boxed.Implicit) { return nil,
 					throw("should be declared as a implicit context type") }
 				var inner = FillTypeArgs(boxed.InnerType, named.Args)
-				var bundle = inner.(*AnonymousType).Repr.(*Bundle)
+				var bundle = inner.(*AnonymousType).Repr.(Bundle)
 				var offset = uint(len(implicit_fields))
 				for name, field := range bundle.Fields {
 					var _, exists = implicit_fields[name]
@@ -176,7 +176,8 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 			// 3.5. If the function is public, ensure its signature type
 			//        to be a local type of this module.
 			var is_public = decl.Public
-			if is_public && !(IsLocalType(sig, mod_name)) {
+			var implicit_all = &AnonymousType { Tuple { implicit_types } }
+			if is_public && !(IsLocalType(sig, mod_name) || IsLocalType(implicit_all, mod_name)) {
 				return nil, &FunctionError {
 					Point:    ErrorPointFrom(decl.Repr.Node),
 					Concrete: E_SignatureNonLocal { name },
@@ -187,6 +188,7 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 			var gf = &GenericFunction {
 				Public:       is_public,
 				TypeParams:   params,
+				Implicit:     implicit_fields,
 				DeclaredType: func_type,
 				Body:         decl.Body.Body,
 				Node:         decl.Node,

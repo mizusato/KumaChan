@@ -1,4 +1,7 @@
 // Logic Macros
-public macro not(p):    (:Bool: (if p: No, else: Yes));
-public macro and(p, q): (:Bool: (if p: (if q: Yes, else: No), else: No));
-public macro  or(p, q): (:Bool: (if p: Yes, else: (if q: Yes, else: No)));
+public function not: (&(Bool)(Bool))
+    (&(p)(if p: No, else: Yes));
+public function and: (&(Bool,Bool)(Bool))
+    (&(p,q)(if p: (if q: Yes, else: No), else: No));
+public function  or: (&(Bool,Bool)(Bool))
+    (&(p,q)(if p: Yes, else: (if q: Yes, else: No)));

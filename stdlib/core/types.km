@@ -33,3 +33,13 @@ type Ordering union {
     type ==;
     type >>;
 };
+
+public function maybe[A,B]: ( &(Maybe[A],(&(A)(Maybe[B]))) Maybe[B] )
+    (& (v?, k)
+        switch v?:
+        case Just v:
+            (k v),
+        case N/A:
+            N/A,
+        end
+    );

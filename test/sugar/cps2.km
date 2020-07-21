@@ -1,0 +1,19 @@
+do
+    ~ catch &(err) := (
+        ~ then println 'Number a:',
+        ~ then &(str-a) := scanln (),
+        ~ then println 'Number b:',
+        ~ then &(str-b) := scanln (),
+        let sum? := (
+            ~ maybe &(a) := str-a | parse-float,
+            ~ maybe &(b) := str-b | parse-float,
+            Just $(a + b)
+        ),
+        switch sum?:
+        case Just sum:
+            println (str sum),
+        case N/A:
+            println 'N/A',
+        end
+    ),
+    crash err;

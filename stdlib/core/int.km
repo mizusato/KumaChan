@@ -41,29 +41,26 @@ public function mod: (&(Int,Int)(Int))
 
 public function ** :(&(Int,Int)(Int))
     ( &(n, p)
-        let pow: rec (&(Int,Int,Int)(Int)) := (power-by-squaring pow),
-        (pow 1 n p)
-    );
-
-private macro power-by-squaring(recursive-call):
-    ( &(t, n, p)
-        switch $(p <> 0):
-        case <<:
-            panic 'taking negative power of a Int value is not supported',
-        case ==:
-            if $(n = 0):
-                panic 'cannot evaluate 0 to the power of 0',
-            else:
-                t,
-        case >>:
-            if $(p = 1):
-                $(t * n),
-            else:
-                let (q, r) := $(p divmod 2),
-                let square := $(n * n),
-                if $(r = 1):
-                    (recursive-call $(t * n) square q),
+        let pow: rec (&(Int,Int,Int)(Int)) := ( &(t, n, p)
+            switch $(p <> 0):
+            case <<:
+                panic 'taking negative power of a Int value is not supported',
+            case ==:
+                if $(n = 0):
+                    panic 'cannot evaluate 0 to the power of 0',
                 else:
-                    (recursive-call t square q),
-        end
+                    t,
+            case >>:
+                if $(p = 1):
+                    $(t * n),
+                else:
+                    let (q, r) := $(p divmod 2),
+                    let square := $(n * n),
+                    if $(r = 1):
+                        (pow $(t * n) square q),
+                    else:
+                        (pow t square q),
+            end
+        ),
+        (pow 1 n p)
     );
