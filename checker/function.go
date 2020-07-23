@@ -112,51 +112,40 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 				},
 			}
 			var bounds_info = make(map[Type] ast.Node)
+			var got_bound = func(m (map[uint] Type), i int, b ast.VariousType) *FunctionError {
+				var t, info, err = TypeNoBoundCheckFrom(b, ctx.TypeValidationContext)
+				if err != nil { return &FunctionError {
+					Point:    err.Point,
+					Concrete: E_InvalidTypeInFunction {
+						TypeError: err,
+					},
+				} }
+				m[uint(i)] = t
+				for k, v := range info {
+					bounds_info[k] = v
+				}
+				return nil
+			}
 			for i, bound := range raw_bounds {
 				switch b := bound.(type) {
 				case ast.TypeLowerBound:
-					var t, info, err = TypeNoBoundCheckFrom(b.BoundType, ctx.TypeValidationContext)
-					if err != nil { return nil, &FunctionError {
-						Point:    err.Point,
-						Concrete: E_InvalidTypeInFunction {
-							TypeError: err,
-						},
-					} }
-					bounds.Sub[uint(i)] = t
-					for k, v := range info {
-						bounds_info[k] = v
-					}
+					var err = got_bound(bounds.Sub, i, b.BoundType)
+					if err != nil { return nil, err }
 				case ast.TypeHigherBound:
-					var t, info, err = TypeNoBoundCheckFrom(b.BoundType, ctx.TypeValidationContext)
-					if err != nil { return nil, &FunctionError {
-						Point:    err.Point,
-						Concrete: E_InvalidTypeInFunction {
-							TypeError: err,
-						},
-					} }
-					bounds.Super[uint(i)] = t
-					for k, v := range info {
-						bounds_info[k] = v
-					}
+					var err = got_bound(bounds.Super, i, b.BoundType)
+					if err != nil { return nil, err }
 				}
 			}
-			for _, super := range bounds.Super {
-				var err = CheckTypeBounds(super, bounds_info, ctx.TypeBoundsContext)
-				if err != nil { return nil, &FunctionError {
-					Point:    err.Point,
-					Concrete: E_InvalidTypeInFunction {
-						TypeError: err,
-					},
-				} }
-			}
-			for _, sub := range bounds.Sub {
-				var err = CheckTypeBounds(sub, bounds_info, ctx.TypeBoundsContext)
-				if err != nil { return nil, &FunctionError {
-					Point:    err.Point,
-					Concrete: E_InvalidTypeInFunction {
-						TypeError: err,
-					},
-				} }
+			for _, group := range [] (map[uint] Type) { bounds.Super, bounds.Sub } {
+				for _, t := range group {
+					var err = CheckTypeBounds(t, bounds_info, ctx.TypeBoundsContext)
+					if err != nil { return nil, &FunctionError {
+						Point:    err.Point,
+						Concrete: E_InvalidTypeInFunction {
+							TypeError: err,
+						},
+					} }
+				}
 			}
 			// 3.3. Collect implicit context value definitions
 			var implicit_fields = make(map[string] Field)
@@ -233,8 +222,7 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 			// 3.5. If the function is public, ensure its signature type
 			//        to be a local type of this module.
 			var is_public = decl.Public
-			var implicit_all = &AnonymousType { Tuple { implicit_types } }
-			if is_public && !(IsLocalType(sig, mod_name) || IsLocalType(implicit_all, mod_name)) {
+			if is_public && !(IsExportable(mod_name, sig, implicit_types, bounds)) {
 				return nil, &FunctionError {
 					Point:    ErrorPointFrom(decl.Repr.Node),
 					Concrete: E_SignatureNonLocal { name },

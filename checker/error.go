@@ -30,8 +30,12 @@ type E_WrongParameterQuantity struct {
 }
 func (impl E_BoundNotSatisfied) TypeError() {}
 type E_BoundNotSatisfied struct {
-	Kind   string
-	Bound  string
+	Kind  TypeBoundKind
+	Bound string
+}
+func (impl E_InvalidBoundType) TypeError() {}
+type E_InvalidBoundType struct {
+	Type  string
 }
 func (impl E_DuplicateField) TypeError() {}
 type E_DuplicateField struct {
@@ -60,6 +64,11 @@ type E_CaseBadVariance struct {
 	CaseName   string
 	UnionName  string
 }
+func (impl E_CaseBadBounds) TypeError() {}
+type E_CaseBadBounds struct {
+	CaseName   string
+	UnionName  string
+}
 
 func (err *TypeError) Desc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
@@ -78,8 +87,12 @@ func (err *TypeError) Desc() ErrorMessage {
 		msg.WriteText(TS_ERROR, "given")
 	case E_BoundNotSatisfied:
 		msg.WriteText(TS_ERROR, "Type parameter bound")
-		msg.WriteInnerText(TS_INLINE_CODE, e.Kind + " " + e.Bound)
+		msg.WriteInnerText(TS_INLINE_CODE, fmt.Sprintf("%c %s", e.Kind, e.Bound))
 		msg.WriteText(TS_ERROR, "not satisfied")
+	case E_InvalidBoundType:
+		msg.WriteText(TS_ERROR, "Invalid bound type")
+		msg.WriteInnerText(TS_INLINE_CODE, e.Type)
+		msg.WriteText(TS_ERROR, "(parameter types cannot be used as bounds)")
 	case E_DuplicateField:
 		msg.WriteText(TS_ERROR, "Duplicate field:")
 		msg.WriteEndText(TS_INLINE_CODE, e.FieldName)
@@ -108,7 +121,14 @@ func (err *TypeError) Desc() ErrorMessage {
 		}
 	case E_CaseBadVariance:
 		msg.WriteText(TS_ERROR,
-			"The declared variance of the case type")
+			"Some parameter variance declaration(s) on the case type")
+		msg.WriteInnerText(TS_INLINE_CODE, e.CaseName)
+		msg.WriteText(TS_ERROR,
+			"is not consistent with its parent union type")
+		msg.WriteEndText(TS_INLINE_CODE, e.UnionName)
+	case E_CaseBadBounds:
+		msg.WriteText(TS_ERROR,
+			"Some parameter bound declaration(s) on the case type")
 		msg.WriteInnerText(TS_INLINE_CODE, e.CaseName)
 		msg.WriteText(TS_ERROR,
 			"is not consistent with its parent union type")
@@ -796,6 +816,20 @@ func (e E_ImplicitContextNotFound) ExprErrorDesc() ErrorMessage {
 	msg.WriteText(TS_ERROR, "Implicit context value")
 	msg.WriteInnerText(TS_INLINE_CODE, e.Name)
 	msg.WriteText(TS_ERROR, "not found:")
+	msg.WriteAllWithIndent(e.Detail.Desc(), 1)
+	return msg
+}
+
+type E_BadTypeArg struct {
+	Index   uint
+	Name    string
+	Detail  *TypeError
+}
+func (e E_BadTypeArg) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Bad type parameter")
+	msg.WriteInnerText(TS_INLINE, fmt.Sprintf("(#%d %s)", e.Index, e.Name))
+	msg.WriteText(TS_ERROR, ":")
 	msg.WriteAllWithIndent(e.Detail.Desc(), 1)
 	return msg
 }

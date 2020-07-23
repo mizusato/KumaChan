@@ -68,6 +68,7 @@ func Box (
 	}
 	var given_count = uint(len(given_args))
 	var g_type_arity = uint(len(g_type.Params))
+	var node = info.ErrorPoint.Node
 	if given_count == g_type_arity {
 		var inner_type = FillTypeArgs(boxed.InnerType, given_args)
 		var expr, err = AssignTo(inner_type, to_be_boxed, ctx)
@@ -76,6 +77,8 @@ func Box (
 			Name: g_type_name,
 			Args: given_args,
 		}
+		err = CheckTypeArgsBounds(given_args, g_type.Params, g_type.Bounds, node, ctx)
+		if err != nil { return Expr{}, err }
 		var case_info = g_type.CaseInfo
 		return LiftCase(case_info, outer_type, force_exact, Expr {
 			Type:  outer_type,
@@ -105,6 +108,8 @@ func Box (
 		if !(AreTypesEqualInSameCtx(inner_type, expr.Type)) {
 			panic("something went wrong")
 		}
+		err = CheckTypeArgsBounds(inferred_args, g_type.Params, g_type.Bounds, node, ctx)
+		if err != nil { return Expr{}, err }
 		var case_info = g_type.CaseInfo
 		return LiftCase(case_info, inferred_type, force_exact, Expr {
 			Type:  inferred_type,

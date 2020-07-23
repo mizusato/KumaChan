@@ -117,6 +117,13 @@ func AssignWildcardRhsTypeTo(expected Type, ctx ExprContext) (Type, bool) {
 }
 
 func DirectAssignTypeTo(expected Type, given Type, ctx ExprContext) (Type, bool) {
+	var given_param, given_is_param = given.(*ParameterType)
+	if given_is_param {
+		var super, has_super = ctx.TypeBounds.Super[given_param.Index]
+		if has_super {
+			return AssignTypeTo(expected, super, Covariant, ctx)
+		}
+	}
 	switch E := expected.(type) {
 	case *ParameterType:
 		if E.BeingInferred {
@@ -139,7 +146,12 @@ func DirectAssignTypeTo(expected Type, given Type, ctx ExprContext) (Type, bool)
 					return given, true
 				}
 			default:
-				return nil, false
+				var sub, has_sub = ctx.TypeBounds.Sub[E.Index]
+				if has_sub {
+					return AssignTypeTo(sub, given, Covariant, ctx)
+				} else {
+					return nil, false
+				}
 			}
 		}
 	case *NamedType:

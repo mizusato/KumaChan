@@ -221,14 +221,17 @@ func RegisterRawTypes(mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 }
 
 func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, ([] *TypeDeclError)) {
-	var raise = func(name loader.Symbol, err *TypeError) ([] *TypeDeclError) {
-		return [] *TypeDeclError { &TypeDeclError {
-			Point:    err.Point,
+	var raise = func(name loader.Symbol, err *TypeError) *TypeDeclError {
+		return &TypeDeclError {
+			Point: err.Point,
 			Concrete: E_InvalidTypeDecl {
 				TypeName: name,
 				Detail:   err,
 			},
-		} }
+		}
+	}
+	var raise_all = func(name loader.Symbol, err *TypeError) ([] *TypeDeclError) {
+		return [] *TypeDeclError { raise(name, err) }
 	}
 	// 1. Build a raw registry
 	var raw = MakeRawTypeRegistry()
@@ -257,7 +260,7 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, ([] *T
 			Registry: raw,
 		}
 		var val, err = RawTypeValFrom(t.TypeValue, info, ctx)
-		if err != nil { return nil, raise(name, err) }
+		if err != nil { return nil, raise_all(name, err) }
 		// 3.3. Get bound types
 		var bounds = TypeBounds {
 			Sub:   make(map[uint] Type),
@@ -268,11 +271,11 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, ([] *T
 			switch b := bound.(type) {
 			case ast.TypeLowerBound:
 				var t, err = RawTypeFrom(b.BoundType, info.TypeNodeMap, ctx.TypeConstructContext)
-				if err != nil { return nil, raise(name, err) }
+				if err != nil { return nil, raise_all(name, err) }
 				bounds.Sub[uint(i)] = t
 			case ast.TypeHigherBound:
 				var t, err = RawTypeFrom(b.BoundType, info.TypeNodeMap, ctx.TypeConstructContext)
-				if err != nil { return nil, raise(name, err) }
+				if err != nil { return nil, raise_all(name, err) }
 				bounds.Super[uint(i)] = t
 			}
 		}
@@ -334,14 +337,23 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, ([] *T
 		// 5.1. Validate type values
 		var err = ValidateTypeVal(g.Value, info, val_ctx)
 		if err != nil {
-			errs = append(errs, raise(name, err)...)
+			errs = append(errs, raise(name, err))
 		}
 		// 5.2. Validate bound types
 		for _, bounds := range [](map[uint] Type) { g.Bounds.Sub, g.Bounds.Super } {
 			for _, bound := range bounds {
+				var param, is_param = bound.(*ParameterType)
+				if is_param {
+					errs = append(errs, raise(name, &TypeError {
+						Point:    ErrorPointFrom(info.TypeNodeMap[bound]),
+						Concrete: E_InvalidBoundType {
+							Type: val_ctx.Parameters[param.Index].Name,
+						},
+					}))
+				}
 				var err = ValidateType(bound, info.TypeNodeMap, val_ctx)
 				if err != nil {
-					errs = append(errs, raise(name, err)...)
+					errs = append(errs, raise(name, err))
 				}
 			}
 		}
@@ -362,14 +374,14 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, ([] *T
 		}
 		for _, super := range g.Bounds.Super {
 			var err = CheckTypeBounds(super, info.TypeNodeMap, bound_ctx)
-			if err != nil { errs = append(errs, raise(name, err)...) }
+			if err != nil { errs = append(errs, raise(name, err)) }
 		}
 		for _, sub := range g.Bounds.Sub {
 			var err = CheckTypeBounds(sub, info.TypeNodeMap, bound_ctx)
-			if err != nil { errs = append(errs, raise(name, err)...) }
+			if err != nil { errs = append(errs, raise(name, err)) }
 		}
 		var err = CheckTypeValBounds(g.Value, info, bound_ctx)
-		if err != nil { errs = append(errs, raise(name, err)...) }
+		if err != nil { errs = append(errs, raise(name, err)) }
 	}
 	if errs != nil { return nil, errs }
 	// 7. Return the TypeRegistry
