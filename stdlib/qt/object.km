@@ -9,13 +9,13 @@ type EventResized {
 };
 type EventClosed {};
 
-private function get-property[O,T]: ( &(Static[O],String,String) T )
+private function get-property[O < Object, T]: ( &(Static[O],String,String) T )
     native 'qt-get-property';
 
 private function set-property[T]: ( &(Object,String,String,T) NoExcept[-] )
     native 'qt-set-property';
 
-private function signal[O,T]: ( &(O,String,(&(Static[O])(T))) Signal[T] )
+private function signal[O < Object, T]: ( &(O,String,(&(Static[O])(T))) Signal[T] )
     native 'qt-signal';
 private function signal[T]: ( &(Object,String) Signal[-] )
     native 'qt-signal-no-payload';

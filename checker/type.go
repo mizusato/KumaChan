@@ -118,7 +118,8 @@ func TypeFromRepr(ast_repr ast.VariousRepr, ctx TypeContext) (Type, *TypeError) 
 	if err != nil { return nil, err }
 	err = ValidateType(t, info, ctx.TypeValidationContext)
 	if err != nil { return nil, err }
-	// TODO: bounds
+	err = CheckTypeBounds(t, info, ctx.TypeBoundsContext)
+	if err != nil { return nil, err }
 	return t, nil
 }
 

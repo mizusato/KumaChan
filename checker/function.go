@@ -269,7 +269,7 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 				})
 			} else {
 				// 3.7.2. If not, collect the function
-				collection[name] = []FunctionReference { FunctionReference {
+				collection[name] = [] FunctionReference { {
 					IsImported: false,
 					Function:   gf,
 					ModuleName: mod_name,
