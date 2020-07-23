@@ -28,6 +28,11 @@ type E_WrongParameterQuantity struct {
 	Required  uint
 	Given     uint
 }
+func (impl E_BoundNotSatisfied) TypeError() {}
+type E_BoundNotSatisfied struct {
+	Kind   string
+	Bound  string
+}
 func (impl E_DuplicateField) TypeError() {}
 type E_DuplicateField struct {
 	FieldName  string
@@ -71,6 +76,10 @@ func (err *TypeError) Desc() ErrorMessage {
 		msg.WriteText(TS_ERROR, "required but")
 		msg.WriteInnerText(TS_INLINE, fmt.Sprint(e.Given))
 		msg.WriteText(TS_ERROR, "given")
+	case E_BoundNotSatisfied:
+		msg.WriteText(TS_ERROR, "Type parameter bound")
+		msg.WriteInnerText(TS_INLINE_CODE, e.Kind + " " + e.Bound)
+		msg.WriteText(TS_ERROR, "not satisfied")
 	case E_DuplicateField:
 		msg.WriteText(TS_ERROR, "Duplicate field:")
 		msg.WriteEndText(TS_INLINE_CODE, e.FieldName)

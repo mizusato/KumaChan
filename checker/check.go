@@ -61,6 +61,7 @@ type ModuleInfo struct {
 type ExprContext struct {
 	ModuleInfo     ModuleInfo
 	TypeParams     [] TypeParam
+	TypeBounds     TypeBounds
 	LocalValues    map[string] Type
 	Inferring      TypeArgsInferringContext
 }
@@ -108,10 +109,11 @@ func (impl SymFunctions) Sym() {}
 type SymFunctions struct { Functions []*GenericFunction; Name string }
 
 
-func CreateExprContext(mod_info ModuleInfo, params ([] TypeParam)) ExprContext {
+func CreateExprContext(mod_info ModuleInfo, params ([] TypeParam), bounds TypeBounds) ExprContext {
 	return ExprContext {
 		ModuleInfo:   mod_info,
 		TypeParams:   params,
+		TypeBounds:   bounds,
 		LocalValues:  make(map[string]Type),
 		Inferring:    TypeArgsInferringContext {
 			Enabled:    false,
@@ -123,11 +125,16 @@ func CreateExprContext(mod_info ModuleInfo, params ([] TypeParam)) ExprContext {
 
 func (ctx ExprContext) GetTypeContext() TypeContext {
 	return TypeContext {
-		TypeConstructContext: TypeConstructContext {
-			Module:     ctx.ModuleInfo.Module,
-			Parameters: ctx.TypeParams,
+		TypeBoundsContext: TypeBoundsContext {
+			TypeValidationContext: TypeValidationContext {
+				TypeConstructContext: TypeConstructContext {
+					Module:     ctx.ModuleInfo.Module,
+					Parameters: ctx.TypeParams,
+				},
+				Registry: ctx.ModuleInfo.Types,
+			},
+			Bounds: ctx.TypeBounds,
 		},
-		Registry: ctx.ModuleInfo.Types,
 	}
 }
 
@@ -395,7 +402,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 					implicit_fields[field.Index] = name
 					implicit_types[name] = field.Type
 				}
-				var blank_ctx = CreateExprContext(mod_info, f.TypeParams)
+				var blank_ctx = CreateExprContext(mod_info, f.TypeParams, f.TypeBounds)
 				var f_expr_ctx, _ = blank_ctx.WithAddedLocalValues(implicit_types)
 				var lambda, err1 = CheckLambda(body, f_expr_ctx)
 				if err1 != nil {
@@ -419,7 +426,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 			}
 		}
 	}
-	var expr_ctx = CreateExprContext(mod_info, make([] TypeParam, 0))
+	var expr_ctx = CreateExprContext(mod_info, __NoParams, __NoBounds)
 	var const_map = make(map[string] CheckedConstant)
 	for sym, constant := range constants {
 		if sym.ModuleName != mod_name {

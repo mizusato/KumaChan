@@ -58,6 +58,10 @@ var __NodeRegistry = []interface{} {
     ImplicitType {},
 	BoxedType {},
     UnionType {},
+    TypeParam {},
+    VariousTypeBound {},
+    TypeLowerBound {},
+    TypeHigherBound {},
     // Type
     VariousType {},
     TypeRef {},

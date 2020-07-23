@@ -55,7 +55,7 @@ type DeclFunction struct {
     Node                      `part:"decl_func"`
     Public    bool            `option:"scope.@public"`
     Name      Identifier      `part:"name"`
-    Params    [] Identifier   `list_more:"type_params.namelist" item:"name"`
+    Params    [] TypeParam    `list_more:"type_params" item:"type_param"`
     Implicit  [] VariousType  `list_more:"signature.implicit_input.type_args" item:"type"`
     Repr      ReprFunc        `part:"signature.repr_func"`
     Body      VariousBody     `part:"body"`
@@ -70,8 +70,28 @@ func (impl DeclType) Statement() {}
 type DeclType struct {
     Node                          `part:"decl_type"`
     Name       Identifier         `part:"name"`
-    Params     [] Identifier      `list_more:"type_params.namelist" item:"name"`
+    Params     [] TypeParam       `list_more:"type_params" item:"type_param"`
     TypeValue  VariousTypeValue   `part:"type_value"`
+}
+type TypeParam struct {
+    Node                        `part:"type_param"`
+    Name    Identifier          `part:"name"`
+    Bound   VariousTypeBound    `part_opt:"type_bound"`
+}
+type VariousTypeBound struct {
+    Node                   `part:"type_bound"`
+    TypeBound  TypeBound   `use:"first"`
+}
+type TypeBound interface { TypeBound() }
+func (impl TypeLowerBound) TypeBound() {}
+type TypeLowerBound struct {
+    Node                     `part:"type_lo_bound"`
+    BoundType  VariousType   `part:"type"`
+}
+func (impl TypeHigherBound) TypeBound() {}
+type TypeHigherBound struct {
+    Node                     `part:"type_hi_bound"`
+    BoundType  VariousType   `part:"type"`
 }
 type VariousTypeValue struct {
     Node                   `part:"type_value"`

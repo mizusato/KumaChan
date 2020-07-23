@@ -1,7 +1,7 @@
 type Object      native;               // qt.Object
 type Signal[+T]  protected Source[T];  // lib.QtSignal
 type Event[+T]   protected Source[T];  // lib.QtEvent
-type Static[+O]  protected O;
+type Static[+O < Object]  opaque O;
 
 type EventResized {
     width:  Number,

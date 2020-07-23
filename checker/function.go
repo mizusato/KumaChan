@@ -12,6 +12,7 @@ type GenericFunction struct {
 	Node          ast.Node
 	Public        bool
 	TypeParams    [] TypeParam
+	TypeBounds    TypeBounds
 	Implicit      map[string] Field
 	DeclaredType  Func
 	Body          ast.Body
@@ -79,7 +80,7 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 	for _, stmt := range mod.Node.Statements {
 		switch decl := stmt.Statement.(type) {
 		case ast.DeclFunction:
-			// 3.1. Get the names of the function and its type parameters
+			// 3.1. Get the name of the function and its type parameters
 			var name = loader.Id2String(decl.Name)
 			if name == IgnoreMark || strings.HasSuffix(name, FuncSuffix) {
 				// 3.1.1. If the function name is invalid, throw an error.
@@ -88,18 +89,74 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 					Concrete: E_InvalidFunctionName { name },
 				}
 			}
-			var params, p_err, p_err_node = CollectTypeParams(decl.Params)
+			var params, raw_bounds, p_err, p_err_node = CollectTypeParams(decl.Params)
 			if p_err != nil { return nil, &FunctionError {
 				Point:    ErrorPointFrom(p_err_node),
 				Concrete: E_FunctionInvalidTypeParameterName { p_err.Name },
 			} }
+			var bounds = TypeBounds {
+				Sub:   make(map[uint] Type),
+				Super: make(map[uint] Type),
+			}
 			// 3.2. Create a context for evaluating types
 			var ctx = TypeContext {
-				TypeConstructContext: TypeConstructContext {
-					Module:     mod,
-					Parameters: params,
+				TypeBoundsContext: TypeBoundsContext {
+					TypeValidationContext: TypeValidationContext {
+						TypeConstructContext: TypeConstructContext {
+							Module:     mod,
+							Parameters: params,
+						},
+						Registry: reg,
+					},
+					Bounds: bounds,
 				},
-				Registry: reg,
+			}
+			var bounds_info = make(map[Type] ast.Node)
+			for i, bound := range raw_bounds {
+				switch b := bound.(type) {
+				case ast.TypeLowerBound:
+					var t, info, err = TypeNoBoundCheckFrom(b.BoundType, ctx.TypeValidationContext)
+					if err != nil { return nil, &FunctionError {
+						Point:    err.Point,
+						Concrete: E_InvalidTypeInFunction {
+							TypeError: err,
+						},
+					} }
+					bounds.Sub[uint(i)] = t
+					for k, v := range info {
+						bounds_info[k] = v
+					}
+				case ast.TypeHigherBound:
+					var t, info, err = TypeNoBoundCheckFrom(b.BoundType, ctx.TypeValidationContext)
+					if err != nil { return nil, &FunctionError {
+						Point:    err.Point,
+						Concrete: E_InvalidTypeInFunction {
+							TypeError: err,
+						},
+					} }
+					bounds.Super[uint(i)] = t
+					for k, v := range info {
+						bounds_info[k] = v
+					}
+				}
+			}
+			for _, super := range bounds.Super {
+				var err = CheckTypeBounds(super, bounds_info, ctx.TypeBoundsContext)
+				if err != nil { return nil, &FunctionError {
+					Point:    err.Point,
+					Concrete: E_InvalidTypeInFunction {
+						TypeError: err,
+					},
+				} }
+			}
+			for _, sub := range bounds.Sub {
+				var err = CheckTypeBounds(sub, bounds_info, ctx.TypeBoundsContext)
+				if err != nil { return nil, &FunctionError {
+					Point:    err.Point,
+					Concrete: E_InvalidTypeInFunction {
+						TypeError: err,
+					},
+				} }
 			}
 			// 3.3. Collect implicit context value definitions
 			var implicit_fields = make(map[string] Field)

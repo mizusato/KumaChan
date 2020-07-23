@@ -79,7 +79,7 @@ func GetIdentifierFullRegexp() *regexp.Regexp {
 
 var __ConditionalKeywords = [...] string {
     "@import", "@from",
-    "@type", "@union", "@native", "@as", "@protected", "@opaque",
+    "@type", "@<", "@>", "@union", "@native", "@as", "@protected", "@opaque",
     "@private", "@public", "@function", "@const", "@implicit", "@do",
     "@default", "@end", "@lambda", "@rec",
 }
@@ -118,9 +118,12 @@ var __SyntaxDefinition = [...] string {
         "boxed_type = box_option inner_type",
           "box_option? = @as | @protected | @opaque",
           "inner_type? = type",
-      "type_params? = [ namelist ]!",
-        "namelist = name! more_names",
-          "more_names? = , name! more_names",
+      "type_params? = [ type_param! more_type_params ]!",
+        "more_type_params? = , type_param more_type_params",
+        "type_param = name type_bound",
+          "type_bound? = type_hi_bound | type_lo_bound",
+            "type_hi_bound = @< type!",
+            "type_lo_bound = @> type!",
     "decl_func = scope @function name! type_params :! signature! body ;!",
       "scope = @public | @private",
       "signature = implicit_input repr_func",
@@ -131,6 +134,8 @@ var __SyntaxDefinition = [...] string {
           "pattern = pattern_trivial | pattern_tuple | pattern_bundle",
             "pattern_trivial = name",
             "pattern_tuple = ( ) | ( namelist )!",
+              "namelist = name! more_names",
+              "more_names? = , name! more_names",
             "pattern_bundle = { } | { field_map_list }!",
               "field_map_list = field_map more_field_maps",
                 "more_field_maps? = , field_map more_field_maps",

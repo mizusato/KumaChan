@@ -1,7 +1,6 @@
 package checker
 
 import (
-	"strings"
 	"kumachan/loader"
 	"kumachan/parser/ast"
 )
@@ -9,6 +8,7 @@ import (
 
 type GenericType struct {
 	Params    [] TypeParam
+	Bounds    TypeBounds
 	Value     TypeVal
 	Node      ast.Node
 	CaseInfo  CaseInfo
@@ -24,6 +24,8 @@ func TypeParamsNames(params ([] TypeParam)) ([] string) {
 	}
 	return draft
 }
+
+
 type TypeVal interface { TypeVal() }
 
 func (impl *Union) TypeVal() {}
@@ -47,6 +49,9 @@ func (impl *Native) TypeVal() {}
 type Native struct {}
 
 
+type TypeContext struct {
+	TypeBoundsContext
+}
 type Type interface { CheckerType() }
 
 func (impl *ParameterType) CheckerType() {}
@@ -90,115 +95,33 @@ type Func struct {
 }
 
 
-func GetCaseInfo(u *Union, args []Type, sym loader.Symbol) (uint, []Type, bool) {
-	for index, case_type := range u.CaseTypes {
-		if case_type.Name == sym {
-			var case_args = make([]Type, len(case_type.Params))
-			for i, which_arg := range case_type.Params {
-				case_args[i] = args[which_arg]
-			}
-			return uint(index), case_args, true
-		}
-	}
-	return BadIndex, nil, false
+func TypeFrom(ast_type ast.VariousType, ctx TypeContext) (Type, *TypeError) {
+	var t, info, err = TypeNoBoundCheckFrom(ast_type, ctx.TypeValidationContext)
+	if err != nil { return nil, err }
+	err = CheckTypeBounds(t, info, ctx.TypeBoundsContext)
+	if err != nil { return nil, err }
+	return t, nil
 }
 
-type TypeDescContext struct {
-	ParamNames     [] string
-	UseInferred    bool
-	InferredNames  [] string
-	InferredTypes  map[uint] Type
+func TypeNoBoundCheckFrom(ast_type ast.VariousType, ctx TypeValidationContext) (Type, (map[Type] ast.Node), *TypeError) {
+	var info = make(map[Type] ast.Node)
+	var t, err = RawTypeFrom(ast_type, info, ctx.TypeConstructContext)
+	if err != nil { return nil, info, err }
+	err = ValidateType(t, info, ctx)
+	if err != nil { return nil, info, err }
+	return t, nil, nil
 }
 
-func DescribeTypeWithParams(type_ Type, params ([] string)) string {
-	return DescribeType(type_, TypeDescContext {
-		ParamNames:    params,
-		UseInferred:   false,
-	})
+func TypeFromRepr(ast_repr ast.VariousRepr, ctx TypeContext) (Type, *TypeError) {
+	var info = make(map[Type] ast.Node)
+	var t, err = RawTypeFromRepr(ast_repr, info, ctx.TypeConstructContext)
+	if err != nil { return nil, err }
+	err = ValidateType(t, info, ctx.TypeValidationContext)
+	if err != nil { return nil, err }
+	// TODO: bounds
+	return t, nil
 }
 
-func DescribeType(type_ Type, ctx TypeDescContext) string {
-	switch t := type_.(type) {
-	case *WildcardRhsType:
-		return WildcardRhsTypeName
-	case *ParameterType:
-		if ctx.UseInferred {
-			var inferred_t, exists = ctx.InferredTypes[t.Index]
-			if exists {
-				return DescribeType(inferred_t, ctx)
-			} else {
-				return ctx.InferredNames[t.Index]
-			}
-		} else {
-			return ctx.ParamNames[t.Index]
-		}
-	case *NamedType:
-		var buf strings.Builder
-		if loader.IsPreloadCoreSymbol(t.Name) {
-			buf.WriteString(t.Name.SymbolName)
-		} else {
-			buf.WriteString(t.Name.String())
-		}
-		if len(t.Args) > 0 {
-			buf.WriteRune('[')
-			for i, arg := range t.Args {
-				buf.WriteString(DescribeType(arg, ctx))
-				if i != len(t.Args)-1 {
-					buf.WriteString(", ")
-				}
-			}
-			buf.WriteRune(']')
-		}
-		return buf.String()
-	case *AnonymousType:
-		switch r := t.Repr.(type) {
-		case Unit:
-			return "()"
-		case Tuple:
-			var buf strings.Builder
-			buf.WriteRune('(')
-			for i, el := range r.Elements {
-				buf.WriteString(DescribeType(el, ctx))
-				if i != len(r.Elements)-1 {
-					buf.WriteString(", ")
-				}
-			}
-			buf.WriteRune(')')
-			return buf.String()
-		case Bundle:
-			var field_types = make([] Type, len(r.Fields))
-			var field_names = make([] string, len(r.Fields))
-			for name, field := range r.Fields {
-				field_types[field.Index] = field.Type
-				field_names[field.Index] = name
-			}
-			var buf strings.Builder
-			buf.WriteString("{ ")
-			for i := 0; i < len(r.Fields); i += 1 {
-				buf.WriteString(field_names[i])
-				buf.WriteString(": ")
-				buf.WriteString(DescribeType(field_types[i], ctx))
-				if i != len(r.Fields)-1 {
-					buf.WriteString(", ")
-				}
-			}
-			buf.WriteString(" }")
-			return buf.String()
-		case Func:
-			var buf strings.Builder
-			buf.WriteString("(λ ")
-			buf.WriteString(DescribeType(r.Input, ctx))
-			buf.WriteString(" ")
-			buf.WriteString(DescribeType(r.Output, ctx))
-			buf.WriteString(")")
-			return buf.String()
-		default:
-			panic("impossible branch")
-		}
-	default:
-		panic("impossible branch")
-	}
-}
 
 func AreTypesEqualInSameCtx(type1 Type, type2 Type) bool {
 	switch t1 := type1.(type) {
@@ -308,3 +231,4 @@ func AreTypesEqualInSameCtx(type1 Type, type2 Type) bool {
 		panic("impossible branch")
 	}
 }
+

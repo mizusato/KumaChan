@@ -7,11 +7,11 @@ import (
 )
 
 
-type TypeContext struct {
+type TypeValidationContext struct {
 	TypeConstructContext
 	Registry  TypeRegistry
 }
-func (ctx TypeContext) GetVarianceContext() TypeVarianceContext {
+func (ctx TypeValidationContext) GetVarianceContext() TypeVarianceContext {
 	return TypeVarianceContext {
 		Registry:   ctx.Registry,
 		Parameters: ctx.Parameters,
@@ -22,25 +22,7 @@ type TypeNodeInfo struct {
 	TypeNodeMap  map[Type] ast.Node
 }
 
-func TypeFrom(ast_type ast.VariousType, ctx TypeContext) (Type, *TypeError) {
-	var info = make(map[Type] ast.Node)
-	var t, err = RawTypeFrom(ast_type, info, ctx.TypeConstructContext)
-	if err != nil { return nil, err }
-	err = ValidateType(t, info, ctx)
-	if err != nil { return nil, err }
-	return t, nil
-}
-
-func TypeFromRepr(ast_repr ast.VariousRepr, ctx TypeContext) (Type, *TypeError) {
-	var info = make(map[Type] ast.Node)
-	var t, err = RawTypeFromRepr(ast_repr, info, ctx.TypeConstructContext)
-	if err != nil { return nil, err }
-	err = ValidateType(t, info, ctx)
-	if err != nil { return nil, err }
-	return t, nil
-}
-
-func ValidateTypeVal(val TypeVal, info TypeNodeInfo, ctx TypeContext) *TypeError {
+func ValidateTypeVal(val TypeVal, info TypeNodeInfo, ctx TypeValidationContext) *TypeError {
 	var val_point = ErrorPointFrom(info.ValNodeMap[val])
 	switch V := val.(type) {
 	case *Union:
@@ -89,7 +71,7 @@ func ValidateTypeVal(val TypeVal, info TypeNodeInfo, ctx TypeContext) *TypeError
 	}
 }
 
-func ValidateType(t Type, nodes (map[Type] ast.Node), ctx TypeContext) *TypeError {
+func ValidateType(t Type, nodes (map[Type] ast.Node), ctx TypeValidationContext) *TypeError {
 	var t_point = ErrorPointFrom(nodes[t])
 	switch T := t.(type) {
 	case *WildcardRhsType:

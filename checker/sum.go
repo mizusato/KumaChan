@@ -574,3 +574,16 @@ func GetMultiSwitchArgumentTuple(msw MultiSwitch, info ExprInfo) Expr {
 		Info:  info,
 	}
 }
+
+func GetCaseInfo(u *Union, args []Type, sym loader.Symbol) (uint, []Type, bool) {
+	for index, case_type := range u.CaseTypes {
+		if case_type.Name == sym {
+			var case_args = make([]Type, len(case_type.Params))
+			for i, which_arg := range case_type.Params {
+				case_args[i] = args[which_arg]
+			}
+			return uint(index), case_args, true
+		}
+	}
+	return BadIndex, nil, false
+}

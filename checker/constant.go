@@ -13,10 +13,14 @@ type Constant struct {
 	DeclaredType  Type
 	Value         ast.ConstValue
 }
-
 type ConstantCollection  map[loader.Symbol] *Constant
+type ConstantStore       map[string] ConstantCollection
 
-type ConstantStore  map[string] ConstantCollection
+var __NoParams = make([] TypeParam, 0)
+var __NoBounds = TypeBounds {
+	Sub:   make(map[uint] Type),
+	Super: make(map[uint] Type),
+}
 
 
 func CollectConstants(mod *loader.Module, reg TypeRegistry, store ConstantStore) (ConstantCollection, *ConstantError) {
@@ -63,11 +67,16 @@ func CollectConstants(mod *loader.Module, reg TypeRegistry, store ConstantStore)
 				},
 			} }
 			var ctx = TypeContext {
-				TypeConstructContext: TypeConstructContext {
-					Module:     mod,
-					Parameters: make([] TypeParam, 0),
+				TypeBoundsContext: TypeBoundsContext {
+					TypeValidationContext: TypeValidationContext {
+						TypeConstructContext: TypeConstructContext {
+							Module:     mod,
+							Parameters: __NoParams,
+						},
+						Registry: reg,
+					},
+					Bounds: __NoBounds,
 				},
-				Registry: reg,
 			}
 			var is_public = decl.Public
 			var declared_type, err = TypeFrom(decl.Type, ctx)
