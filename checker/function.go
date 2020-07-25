@@ -222,7 +222,7 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 			// 3.5. If the function is public, ensure its signature type
 			//        to be a local type of this module.
 			var is_public = decl.Public
-			if is_public && !(IsExportable(mod_name, sig, implicit_types, bounds)) {
+			if is_public && !(IsExportable(mod_name, sig, implicit_fields, bounds)) {
 				return nil, &FunctionError {
 					Point:    ErrorPointFrom(decl.Repr.Node),
 					Concrete: E_SignatureNonLocal { name },

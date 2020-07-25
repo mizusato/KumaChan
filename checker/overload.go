@@ -309,10 +309,10 @@ func AreTypesConflict(type1 Type, type2 Type, reg TypeRegistry) bool {
 	}
 }
 
-func IsExportable(mod string, pure_sig Type, implicit ([] Type), bounds TypeBounds) bool {
+func IsExportable(mod string, pure_sig Type, implicit (map[string] Field), bounds TypeBounds) bool {
 	if IsLocalType(pure_sig, mod) { return true }
-	for _, t := range implicit {
-		if IsLocalType(t, mod) { return true }
+	for _, f := range implicit {
+		if IsLocalType(f.Type, mod) { return true }
 	}
 	for _, group := range [] (map[uint] Type) { bounds.Super, bounds.Sub } {
 		for _, t := range group {
