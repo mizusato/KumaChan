@@ -67,18 +67,28 @@ func StringEncode(str String, e Encoding) Bytes {
 
 func StringCompare(a String, b String) Ordering {
 	if len(a) <= len(b) {
+		var result = Equal
+		var first_different = true
 		for i := 0; i < len(b); i += 1 {
 			if i < len(a) {
 				if a[i] < b[i] {
-					return Smaller
-				} else if a[i] > b[i] {
-					return Bigger
+					if first_different {
+						result = Smaller
+						first_different = false
+					}
+				}
+				if a[i] > b[i] {
+					if first_different {
+						result = Bigger
+						first_different = false
+					}
 				}
 			} else {
+				// b starts with a and longer than a
 				return Smaller
 			}
 		}
-		return Equal
+		return result
 	} else {
 		return StringCompare(b, a).Reversed()
 	}

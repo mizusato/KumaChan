@@ -230,7 +230,7 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 			}
 			// 3.6. Construct a representation and a reference of the function
 			var func_type = sig.(*AnonymousType).Repr.(Func)
-			var gf = &GenericFunction {
+			var f = &GenericFunction {
 				Public:       is_public,
 				TypeParams:   params,
 				Implicit:     implicit_fields,
@@ -251,7 +251,7 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 				if err != nil { return nil, err }
 				collection[name] = append(existing, FunctionReference {
 					IsImported: false,
-					Function:   gf,
+					Function:   f,
 					ModuleName: mod_name,
 					Index:      uint(len(existing)) - index_offset,
 				})
@@ -259,7 +259,7 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 				// 3.7.2. If not, collect the function
 				collection[name] = [] FunctionReference { {
 					IsImported: false,
-					Function:   gf,
+					Function:   f,
 					ModuleName: mod_name,
 					Index:      0,
 				} }
