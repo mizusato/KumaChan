@@ -10,7 +10,7 @@ typedef void (*callback_t)(size_t);
 Q_DECLARE_METATYPE(callback_t);
 
 class Bridge final: public QObject {
-Q_OBJECT
+    Q_OBJECT
 public:
     Bridge(QWidget *parent = nullptr): QObject(parent) {
         QObject::connect (
@@ -29,7 +29,7 @@ private slots:
 };
 
 class CallbackObject final: public QObject {
-Q_OBJECT
+    Q_OBJECT
 public:
     callback_t cb;
     size_t payload;
@@ -45,7 +45,7 @@ public slots:
 };
 
 class EventListener final: public QObject {
-Q_OBJECT
+    Q_OBJECT
 public:
     QEvent::Type accept_type;
     bool prevent_default;

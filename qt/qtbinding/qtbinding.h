@@ -10,10 +10,21 @@ struct _QtConnHandle {
 typedef struct _QtConnHandle QtConnHandle;
 
 typedef int QtBool;
+
 struct _QtString {
     void* ptr;
 };
 typedef struct _QtString QtString;
+
+struct _QtIcon {
+    void* ptr;
+};
+typedef struct _QtIcon QtIcon;
+
+struct _QtPixmap {
+    void* ptr;
+};
+typedef struct _QtPixmap QtPixmap;
 
 struct _QtEvent {
     void* ptr;
@@ -55,6 +66,16 @@ extern "C" {
     QtString QtNewStringUTF32(const uint32_t* buf, size_t len);
     void QtDeleteString(QtString str);
     size_t QtStringUTF16Length(QtString str);
+    QtIcon QtNewIcon(QtPixmap pm);
+    void QtDeleteIcon(QtIcon icon);
+    QtPixmap QtNewPixmapPNG(const uint8_t* buf, size_t len);
+    QtPixmap QtNewPixmapJPEG(const uint8_t* buf, size_t len);
+    void QtDeletePixmap(QtPixmap pm);
+    void QtListWidgetClear(void *widget_ptr);
+    void QtListWidgetAddItem(void* widget_ptr, QtString key_, QtString label_, QtBool as_current);
+    void QtListWidgetAddItemWithIcon(void* widget_ptr, QtString key_, QtIcon icon_, QtString label_, QtBool as_current);
+    QtBool QtListWidgetHasCurrentItem(void* widget_ptr);
+    QtString QtListWidgetGetCurrentItemKey(void *widget_ptr);
     size_t QtStringWriteToUTF32Buffer(QtString str, uint32_t *buf);
 #ifdef __cplusplus
 }

@@ -8,6 +8,10 @@
 #include <QVector>
 #include <QVariant>
 #include <QResizeEvent>
+#include <QIcon>
+#include <QPixmap>
+#include <QListWidget>
+#include <QListWidgetItem>
 #include "qtbinding.hpp"
 #include "qtbinding.h"
 
@@ -213,6 +217,74 @@ size_t QtStringWriteToUTF32Buffer(QtString str, uint32_t *buf) {
         len += 1;
     }
     return len;
+}
+
+QtIcon QtNewIcon(QtPixmap pm) {
+    QIcon* ptr = new QIcon(*(QPixmap*)(pm.ptr));
+    return { (void*) ptr };
+}
+
+void QtDeleteIcon(QtIcon icon) {
+    delete (QIcon*)(icon.ptr);
+}
+
+QtPixmap QtNewPixmap(const uint8_t* buf, size_t len, const char* format) {
+    QPixmap *ptr = new QPixmap;
+    ptr->loadFromData(buf, len, format);
+    return { (void*) ptr };
+}
+
+QtPixmap QtNewPixmapPNG(const uint8_t* buf, size_t len) {
+    return QtNewPixmap(buf, len, "PNG");
+}
+
+QtPixmap QtNewPixmapJPEG(const uint8_t* buf, size_t len) {
+    return QtNewPixmap(buf, len, "JPG");
+}
+
+void QtDeletePixmap(QtPixmap pm) {
+    delete (QPixmap*)(pm.ptr);
+}
+
+void QtListWidgetClear(void *widget_ptr) {
+    QListWidget* widget = (QListWidget*) widget_ptr;
+    widget->clear();
+}
+
+void QtListWidgetAddItem(void* widget_ptr, QtString key_, QtString label_, QtBool as_current) {
+    QListWidget* widget = (QListWidget*) widget_ptr;
+    QString key = QtUnwrapString(key_);
+    QString label = QtUnwrapString(label_);
+    QListWidgetItem* item = new QListWidgetItem(label, widget);
+    item->setData(Qt::UserRole, key);
+    widget->addItem(item);
+    if (as_current) {
+        widget->setCurrentItem(item);
+    }
+}
+
+void QtListWidgetAddItemWithIcon(void* widget_ptr, QtString key_, QtIcon icon_, QtString label_, QtBool as_current) {
+    QListWidget* widget = (QListWidget*) widget_ptr;
+    QString key = QtUnwrapString(key_);
+    QString label = QtUnwrapString(label_);
+    QIcon* icon = (QIcon*) icon_.ptr;
+    QListWidgetItem* item = new QListWidgetItem(*icon, label, widget);
+    item->setData(Qt::UserRole, key);
+    widget->addItem(item);
+    if (as_current) {
+        widget->setCurrentItem(item);
+    }
+}
+
+QtBool QtListWidgetHasCurrentItem(void* widget_ptr) {
+    QListWidget* widget = (QListWidget*) widget_ptr;
+    return (widget->currentRow() != -1);
+}
+
+QtString QtListWidgetGetCurrentItemKey(void *widget_ptr) {
+    QListWidget* widget = (QListWidget*) widget_ptr;
+    QVariant key_v = widget->currentItem()->data(Qt::UserRole);
+    return QtWrapString(key_v.toString());
 }
 
 QMetaObject::Connection QtDynamicConnect (
