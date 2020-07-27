@@ -43,9 +43,6 @@ type QtWidget struct {
 	Class     string
 	Instance  qt.Widget
 }
-type QtUiConfig struct {
-	Public  bool   `json:"public"`
-}
 func (f QtUiFile) GetAST() (ast.Root, *parser.Error) {
 	var ast_root = common.CreateEmptyAST(f.Path)
 	var ast_root_node = ast_root.Node
@@ -90,6 +87,9 @@ type QtUiLayoutItem struct {
 	Widget  QtUiWidget   `xml:"widget"`
 }
 
+type QtUiConfig struct {
+	Public  bool   `json:"public"`
+}
 func LoadQtUi(path string, content ([] byte), raw_config interface{}) (common.UnitFile, error) {
 	var config, _ = raw_config.(QtUiConfig)
 	var ui QtUi

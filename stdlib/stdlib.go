@@ -2,13 +2,16 @@ package stdlib
 
 import (
 	"math"
+	"image"
 	"reflect"
 	"math/cmplx"
 )
 
 
 /* IMPORTANT: this go file should be consistent with corresponding km files */
-var __ModuleDirectories = [] string { "core", "io", "os", "json", "net", "qt" }
+var __ModuleDirectories = [] string {
+	"core", "io", "os", "json", "net", "image", "qt",
+}
 func GetModuleDirectories() ([] string) { return __ModuleDirectories }
 const Core = "Core"
 var core_types = []string {
@@ -165,3 +168,14 @@ func GetPrimitiveReflectType(name string) (reflect.Type, bool) {
 		return nil, false
 	}
 }
+
+// loader types
+const Image_M = "Image"
+type Image interface { GetPixelData() image.Image }
+const PNG_T = "PNG"
+func (img *PNG) GetPixelData() image.Image { return img.Decoded }
+type PNG struct {
+	RawData  [] byte
+	Decoded  image.Image
+}
+

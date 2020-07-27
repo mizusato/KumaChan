@@ -28,6 +28,7 @@ const StdlibFolder = "stdlib"
 
 var __UnitFileLoaders = [] common.UnitFileLoader {
 	kinds.QtUiLoader(),
+	kinds.PNG_Loader(),
 }
 
 type Module struct {
@@ -49,7 +50,8 @@ type RawModuleManifest struct {
 	Config  RawModuleConfig   `json:"config"`
 }
 type RawModuleConfig struct {
-	UI  kinds.QtUiConfig   `json:"ui"`
+	UI   kinds.QtUiConfig   `json:"ui"`
+	PNG  kinds.PNG_Config   `json:"png"`
 }
 type RawModuleContent interface {
 	Load(ctx Context)  (ast.Root, *Error)

@@ -1,0 +1,2 @@
+type Image native;
+type PNG protected Image;
