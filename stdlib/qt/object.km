@@ -3,6 +3,8 @@ type Signal[+T]  protected Source[T];  // lib.QtSignal
 type Event[+T]   protected Source[T];  // lib.QtEvent
 type Static[+O < Object]  opaque O;
 
+type Icon native;
+
 type EventResized {
     width:  Number,
     height: Number

@@ -1,0 +1,25 @@
+do (show Window);
+
+do (listen (Window.closed))
+    | concat-map (&(_)(exit 0))
+    | forever;
+
+do TodoList
+    | set-items [
+        (list-widget-item '1' 'Foo'),
+        (list-widget-item '2' 'Bar'),
+        (list-widget-item '3' 'Baz'),
+        (list-widget-item '4' 'Lorem Ipsum')
+    ] N/A;
+
+do (listen (TodoList.current-item))
+    | concat-map ( &(key?)
+        switch key?:
+        case Just key:
+            println ("Current: #" key),
+        case N/A:
+            println 'Current N/A',
+        end
+    )
+    | catch* (&(err)(crash err))
+    | forever;

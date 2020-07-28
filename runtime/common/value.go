@@ -205,6 +205,14 @@ func Na() SumValue {
 	}
 }
 
+func Unwrap(maybe SumValue) (Value, bool) {
+	if maybe.Index == stdlib.JustIndex {
+		return maybe.Value, true
+	} else {
+		return nil, false
+	}
+}
+
 func ByteFrom(v Value) uint8 {
 	return v.(uint8)
 }

@@ -12,6 +12,7 @@ import (
     "unsafe"
     "sync"
     "kumachan/qt/cgohelper"
+    "fmt"
 )
 
 
@@ -31,6 +32,23 @@ func (widget) Widget() {}
 type widget struct { object }
 
 type String C.QtString
+type Icon C.QtIcon
+type Pixmap C.QtPixmap
+
+type ListWidgetItem struct {
+    Key    [] rune
+    Label  [] rune
+    Icon   *ImageData
+}
+type ImageData struct {
+    Data    [] byte
+    Format  ImageDataFormat
+}
+type ImageDataFormat int
+const (
+    PNG  ImageDataFormat  =  iota
+    JPEG
+)
 
 type EventKind uint
 func EventMove() EventKind { return EventKind(uint(C.QtEventMove)) }
@@ -149,10 +167,13 @@ func Listen(obj Object, kind EventKind, prevent bool, callback func(Event)) func
     }
 }
 
-func GetPropQtString(obj Object, prop string) String {
+func GetPropQtString(obj Object, prop string) (String, func()) {
     var new_str, del_all_str = str_alloc()
     defer del_all_str()
-    return String(C.QtObjectGetPropString(obj.ptr(), new_str(prop)))
+    var value = C.QtObjectGetPropString(obj.ptr(), new_str(prop))
+    return String(value), func() {
+        C.QtDeleteString(value)
+    }
 }
 
 func SetPropQtString(obj Object, prop string, val String) {
@@ -162,7 +183,9 @@ func SetPropQtString(obj Object, prop string, val String) {
 }
 
 func GetPropRuneString(obj Object, prop string) ([] rune) {
-    return StringToRunes(GetPropQtString(obj, prop))
+    var value, del = GetPropQtString(obj, prop)
+    defer del()
+    return StringToRunes(value)
 }
 
 func SetPropRuneString(obj Object, prop string, val ([] rune)) {
@@ -203,6 +226,86 @@ func StringToRunes(str String) ([] rune) {
         buf = buf[:size32]
     }
     return buf
+}
+
+func NewPixmap(data ([] byte), format ImageDataFormat) (Pixmap, func()) {
+    var buf = (*C.uint8_t)(unsafe.Pointer(&data[0]))
+    var length = C.size_t(uint(len(data)))
+    if format == PNG {
+        var pm = C.QtNewPixmapPNG(buf, length)
+        return Pixmap(pm), func() { C.QtDeletePixmap(pm) }
+    } else if format == JPEG {
+        var pm = C.QtNewPixmapJPEG(buf, length)
+        return Pixmap(pm), func() { C.QtDeletePixmap(pm) }
+    } else {
+        panic("qt pixmap: unsupported image format")
+    }
+}
+
+func NewIcon(pm Pixmap) (Icon, func()) {
+    var icon = C.QtNewIcon(C.QtPixmap(pm))
+    return Icon(icon), func() {
+        C.QtDeleteIcon(icon)
+    }
+}
+
+func ListWidgetClear(w Widget) {
+    C.QtListWidgetClear(w.ptr())
+}
+
+func ListWidgetSetItems(w Widget, get_item (func(uint) ListWidgetItem), length uint, current ([] rune)) {
+    ListWidgetClear(w)
+    var icon_pool = make(map[*ImageData] struct { icon Icon; del func() })
+    var occurred_keys = make(map[string] bool)
+    for i := uint(0); i < length; i += 1 {
+        var item = get_item(i)
+        var key_str = string(item.Key)
+        if occurred_keys[key_str] {
+            panic(fmt.Sprintf("qt listwidget: duplicate item key %s", key_str))
+        }
+        occurred_keys[key_str] = true
+        var key, del_key = NewStringFromRunes(item.Key)
+        var label, del_label = NewStringFromRunes(item.Label)
+        var is_current = (current != nil && key_str == string(current))
+        var current_flag int
+        if is_current { current_flag = 1 } else { current_flag = 0 }
+        if item.Icon != nil {
+            var icon Icon
+            var cached, is_cached = icon_pool[item.Icon]
+            if is_cached {
+                icon = cached.icon
+            } else {
+                var pm, del_pm = NewPixmap(item.Icon.Data, item.Icon.Format)
+                var new_icon, del_icon = NewIcon(pm)
+                del_pm()
+                icon = new_icon
+                icon_pool[item.Icon] = struct { icon Icon; del func() } {
+                    icon: new_icon,
+                    del:  del_icon,
+                }
+            }
+            C.QtListWidgetAddItemWithIcon(
+                w.ptr(), C.QtString(key), C.QtIcon(icon), C.QtString(label), C.int(current_flag))
+        } else {
+            C.QtListWidgetAddItem(
+                w.ptr(), C.QtString(key), C.QtString(label), C.int(current_flag))
+        }
+        del_label()
+        del_key()
+    }
+    for _, cached := range icon_pool {
+        cached.del()
+    }
+}
+
+func ListWidgetHasCurrentItem(w Widget) bool {
+    return (C.QtListWidgetHasCurrentItem(w.ptr()) != 0)
+}
+
+func ListWidgetGetCurrentItemKey(w Widget) ([] rune) {
+    var raw_key = C.QtListWidgetGetCurrentItemKey(w.ptr())
+    defer C.QtDeleteString(raw_key)
+    return StringToRunes(String(raw_key))
 }
 
 func (ev Event) ResizeEventGetWidth() uint {

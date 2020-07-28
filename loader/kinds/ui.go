@@ -15,6 +15,7 @@ import (
 const QtModName = "Qt"
 var __QtSupportedWidgetClassList = [] string {
 	"Widget", "MainWindow", "Label", "LineEdit", "PushButton",
+	"ListWidget",
 }
 var __QtSupportedWidgetClassMap = (func() map[string] bool {
 	var m = make(map[string] bool)
@@ -29,6 +30,7 @@ var __QtWidgetDefaultNames = map[string] ([] string) {
 	"Label": { "label" },
 	"LineEdit": { "input" },
 	"PushButton": { "button" },
+	"ListWidget": { "listWidget" },
 }
 func QtIsSupportedWidgetClass(name string) bool {
 	return __QtSupportedWidgetClassMap[name]
@@ -85,6 +87,7 @@ type QtUiLayout struct {
 }
 type QtUiLayoutItem struct {
 	Widget  QtUiWidget   `xml:"widget"`
+	Layout  QtUiLayout   `xml:"layout"`
 }
 
 type QtUiConfig struct {
@@ -114,9 +117,14 @@ func LoadQtUi(path string, content ([] byte), raw_config interface{}) (common.Un
 			for _, child := range def.Children {
 				all_children = append(all_children, child)
 			}
-			for _, item := range def.Layout.Items {
-				all_children = append(all_children, item.Widget)
+			var consume_layout func(QtUiLayout)
+			consume_layout = func(layout QtUiLayout) {
+				for _, item := range layout.Items {
+					all_children = append(all_children, item.Widget)
+					consume_layout(item.Layout)
+				}
 			}
+			consume_layout(def.Layout)
 			for _, child := range all_children {
 				var name = child.Name
 				var child_instance, ok = qt.FindChild(instance, name)

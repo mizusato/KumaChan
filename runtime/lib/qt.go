@@ -5,6 +5,8 @@ import (
 	"kumachan/qt"
 	"kumachan/runtime/rx"
 	. "kumachan/runtime/common"
+	"kumachan/runtime/lib/container"
+	"kumachan/stdlib"
 )
 
 
@@ -128,5 +130,52 @@ var QtFunctions = map[string] interface{} {
 			}
 			return nil
 		})
+	},
+	"qt-list-widget-clear": func(list qt.Widget) rx.Effect {
+		return CreateQtTaskEffect(func() interface{} {
+			qt.ListWidgetClear(list)
+			return nil
+		})
+	},
+	"qt-list-widget-set-items": func(list qt.Widget, av Value, current SumValue) rx.Effect {
+		return CreateQtTaskEffect(func() interface{} {
+			var arr = container.ArrayFrom(av)
+			var current_key ([] rune)
+			var the_current, has_current = Unwrap(current)
+			if has_current {
+				current_key = RuneSliceFromString(the_current.(String))
+			} else {
+				current_key = nil
+			}
+			qt.ListWidgetSetItems(list, func(i uint) qt.ListWidgetItem {
+				return arr.GetItem(i).(qt.ListWidgetItem)
+			}, arr.Length, current_key)
+			return nil
+		})
+	},
+	"qt-list-widget-item": func(key String, label String) qt.ListWidgetItem {
+		return qt.ListWidgetItem {
+			Key:   RuneSliceFromString(key),
+			Label: RuneSliceFromString(label),
+			Icon:  nil,
+		}
+	},
+	"qt-list-widget-item-with-icon-png": func(key String, png stdlib.PNG, label String) qt.ListWidgetItem {
+		return qt.ListWidgetItem {
+			Key:   RuneSliceFromString(key),
+			Label: RuneSliceFromString(label),
+			Icon:  &qt.ImageData {
+				Data:   png.RawData,
+				Format: qt.PNG,
+			},
+		}
+	},
+	"qt-list-widget-get-current": func(list qt.Widget) Value {
+		if qt.ListWidgetHasCurrentItem(list) {
+			var key_runes = qt.ListWidgetGetCurrentItemKey(list)
+			return Just(StringFromRuneSlice(key_runes))
+		} else {
+			return Na()
+		}
 	},
 }
