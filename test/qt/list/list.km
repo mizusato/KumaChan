@@ -4,13 +4,28 @@ do (listen (Window.closed))
     | concat-map (&(_)(exit 0))
     | forever;
 
-do TodoList
-    | set-items [
-        (list-widget-item '1' 'Foo'),
-        (list-widget-item '2' 'Bar'),
-        (list-widget-item '3' 'Baz'),
-        (list-widget-item '4' 'Lorem Ipsum')
-    ] N/A;
+private const Add: NoExcept*[-]
+    (listen (AddButton.clicked));
+// TODO: with-latest-from
+private const @add: NoExcept*[(String,String)]
+    (listen (TodoInput.text)
+        | switch-map:[String,String] (&(input)(Add.map*-to input)))
+        | concat-map:[String,(String,String)] (&(label)( (random()).map (&(x)(str x, label)) ));
+// TODO: combine-latest
+// private const @remove: NoExcept*[-]
+//     (listen (RemoveButton.clicked));
+// private const @action: NoExcept*[Action]
+//     ();
+// TODO: fix type parameter inferring
+private const @list: NoExcept*[Array[Qt::ListWidgetItem]]
+    (@add | scan:[(String,String),Array[Qt::ListWidgetItem]] [] (&(list,added)(
+        let (id, label) := added,
+        collect (cons (list-widget-item id label) (iterate list))
+    )));
+
+do @list
+    | concat-map (&(list)(TodoList.set-items list N/A))
+    | forever;
 
 do (listen (TodoList.current-item))
     | concat-map ( &(key?)
