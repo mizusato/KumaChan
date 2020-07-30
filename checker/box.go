@@ -86,7 +86,7 @@ func Box (
 			Info:  info,
 		}), nil
 	} else if given_count == 0 {
-		var inf_ctx = ctx.WithTypeArgsInferringEnabled(g_type.Params)
+		var inf_ctx = ctx.WithInferringEnabled(g_type.Params)
 		var marked_inner_type = MarkParamsAsBeingInferred(boxed.InnerType)
 		var expr, err = AssignTo(marked_inner_type, to_be_boxed, inf_ctx)
 		if err != nil { return Expr{}, err }

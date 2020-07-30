@@ -9,8 +9,8 @@ private const Add: NoExcept*[-]
 // TODO: with-latest-from
 private const @add: NoExcept*[(String,String)]
     (listen (TodoInput.text)
-        | switch-map:[String,String] (&(input)(Add.map*-to input)))
-        | concat-map:[String,(String,String)] (&(label)( (random()).map (&(x)(str x, label)) ));
+        | switch-map (&(input)(Add.map*-to input)))
+        | concat-map (&(label)( (random()).map (&(x)(str x, label)) ));
 // TODO: combine-latest
 // private const @remove: NoExcept*[-]
 //     (listen (RemoveButton.clicked));
@@ -18,7 +18,7 @@ private const @add: NoExcept*[(String,String)]
 //     ();
 // TODO: fix type parameter inferring
 private const @list: NoExcept*[Array[Qt::ListWidgetItem]]
-    (@add | scan:[(String,String),Array[Qt::ListWidgetItem]] [] (&(list,added)(
+    (@add | scan (:Array[Qt::ListWidgetItem]: []) (&(list,added)(
         let (id, label) := added,
         collect (cons (list-widget-item id label) (iterate list))
     )));

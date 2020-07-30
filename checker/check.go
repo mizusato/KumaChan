@@ -252,7 +252,7 @@ func (ctx ExprContext) WithAddedLocalValues(added (map[string] Type)) (ExprConte
 	return new_ctx, shadowed
 }
 
-func (ctx ExprContext) WithTypeArgsInferringEnabled(params ([] TypeParam)) ExprContext {
+func (ctx ExprContext) WithInferringEnabled(params ([] TypeParam)) ExprContext {
 	var new_ctx ExprContext
 	*(&new_ctx) = ctx
 	new_ctx.Inferring = TypeArgsInferringContext {
@@ -260,13 +260,6 @@ func (ctx ExprContext) WithTypeArgsInferringEnabled(params ([] TypeParam)) ExprC
 		Parameters: params,
 		Arguments:  make(map[uint] Type),
 	}
-	return new_ctx
-}
-
-func (ctx ExprContext) WithInferringInfoFrom(another ExprContext) ExprContext {
-	var new_ctx ExprContext
-	*(&new_ctx) = ctx
-	new_ctx.Inferring = another.Inferring
 	return new_ctx
 }
 

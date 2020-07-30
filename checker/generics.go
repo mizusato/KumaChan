@@ -38,7 +38,7 @@ func GenericFunctionCall (
 			Info:  call_info,
 		}, nil
 	} else if len(type_args) == 0 {
-		var inf_ctx = ctx.WithTypeArgsInferringEnabled(f.TypeParams)
+		var inf_ctx = ctx.WithInferringEnabled(f.TypeParams)
 		var raw_input_type = f.DeclaredType.Input
 		var raw_output_type = f.DeclaredType.Output
 		var marked_input_type = MarkParamsAsBeingInferred(raw_input_type)
@@ -67,7 +67,7 @@ func GenericFunctionCall (
 		var input_type = FillTypeArgs(raw_input_type, inferred_args)
 		var _, ok = DirectAssignTypeTo(input_type, arg_typed.Type, ctx)
 		if !(ok) {
-			// var inf_ctx = ctx.WithTypeArgsInferringEnabled(f.TypeParams)
+			// var inf_ctx = ctx.WithInferringEnabled(f.TypeParams)
 			// var _, _ = AssignTo(marked_input_type, arg, inf_ctx)
 			panic("something went wrong")
 		}
@@ -107,7 +107,7 @@ func GenericFunctionAssignTo (
 	name       string,
 	index      uint,
 	f          *GenericFunction,
-	type_args  []Type,
+	type_args  [] Type,
 	info       ExprInfo,
 	ctx        ExprContext,
 ) (Expr, *ExprError) {

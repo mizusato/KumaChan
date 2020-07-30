@@ -177,7 +177,7 @@ func PatternFrom (
 }
 
 
-func (ctx ExprContext) WithShadowingPatternMatching(p Pattern) ExprContext {
+func (ctx ExprContext) WithPatternMatching(p Pattern) ExprContext {
 	var added = make(map[string]Type)
 	switch P := p.Concrete.(type) {
 	case TrivialPattern:
