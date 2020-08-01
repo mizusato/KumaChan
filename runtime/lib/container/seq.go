@@ -112,16 +112,15 @@ type FilteredSeq struct {
 func (f FilteredSeq) Next() (Value, Seq, bool) {
 	var v, rest, ok = f.Input.Next()
 	if ok {
-		var f = f.Filter
-		if f(v) {
-			return v, FilteredSeq { Input: rest, Filter: f }, true
+		var filtered_rest = FilteredSeq { Input: rest, Filter: f.Filter }
+		if f.Filter(v) {
+			return v, filtered_rest, true
 		} else {
-			return rest.Next()
+			return filtered_rest.Next()
 		}
 	} else {
 		return nil, nil, false
 	}
-
 }
 func (f FilteredSeq) GetItemType() reflect.Type {
 	return f.Input.GetItemType()

@@ -1,5 +1,6 @@
 type State {
-    list: Array[Item]
+    list:     Array[Item],
+    current?: Maybe[String]
 };
 
 type Item {
@@ -18,8 +19,30 @@ type Action union {
 };
 
 
+private function adapt-item: ( &(Item) Qt::ListWidgetItem )
+    ( & { id, label } (list-widget-item id KdfIcon label));
+
+private function show-item: ( &(Maybe[Item]) NoExcept[-] )
+    ( & item?
+        switch item?:
+        case Just { id, label }:
+            ~ then (IdLabel.set-text id),
+                   (ContentLabel.set-text label),
+        case N/A:
+            ~ then (IdLabel.set-text 'N/A'),
+                   (ContentLabel.set-text 'N/A'),
+        end
+    );
+
+
 private const @state: NoExcept*[State]
-    @list | map* (&(list) State { list });
+    combine-latest @list @current
+        | map* ( &(list?, current??)
+            State {
+                list:     (fallback? list? []),
+                current?: (unwrap? current??)
+            }
+        );
 
 private const @list: NoExcept*[Array[Item]]
     (@action | scan (:Array[Item]: []) ( &(list,action?)
@@ -36,6 +59,8 @@ private const @list: NoExcept*[Array[Item]]
         end
     ));
 
+private const @current: NoExcept*[Maybe[String]]
+    (listen (TodoList.current-item));
 
 private const @action: NoExcept*[Maybe[Action]]
     merge [@add, @remove];

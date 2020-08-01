@@ -81,9 +81,9 @@ func PatternFrom (
 					GivenType: ctx.DescribeType(&AnonymousType { tuple }),
 				})
 			} else {
-				var occurred = make(map[string]bool)
+				var occurred = make(map[string] bool)
 				var ignored = 0
-				var items = make([]PatternItem, 0)
+				var items = make([] PatternItem, 0)
 				for i, identifier := range p.Names {
 					var name = loader.Id2String(identifier)
 					if name == IgnoreMark {
@@ -124,8 +124,8 @@ func PatternFrom (
 	case ast.PatternBundle:
 		switch bundle := UnboxBundle(input, ctx).(type) {
 		case Bundle:
-			var occurred = make(map[string]bool)
-			var items = make([]PatternItem, len(p.FieldMaps))
+			var occurred = make(map[string]  bool)
+			var items = make([] PatternItem, len(p.FieldMaps))
 			for i, field_map := range p.FieldMaps {
 				var field_name = loader.Id2String(field_map.FieldName)
 				var value_name = loader.Id2String(field_map.ValueName)

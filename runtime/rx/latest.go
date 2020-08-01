@@ -1,16 +1,29 @@
 package rx
 
+import "reflect"
+
+
+func RefEqual(a interface{}, b interface{}) bool {
+	var x = reflect.ValueOf(a)
+	var y = reflect.ValueOf(b)
+	if x.Kind() == reflect.Ptr && y.Kind() == reflect.Ptr {
+		if x.Pointer() == y.Pointer() {
+			return true
+		}
+	}
+	return false
+}
 
 func (e Effect) WithLatestFrom(values Effect) Effect {
 	return Effect { func(sched Scheduler, ob *observer) {
 		var ctx, dispose = ob.context.create_disposable_child()
 		var c = new_collector(ob, dispose)
-		var current_value Optional
+		var current Optional
 		c.new_child()
 		sched.run(values, &observer {
 			context: ctx,
 			next: func(value Object) {
-				current_value = Optional { true, value }
+				current = Optional { true, value }
 			},
 			error: func(err Object) {
 				c.throw(err)
@@ -23,7 +36,11 @@ func (e Effect) WithLatestFrom(values Effect) Effect {
 		sched.run(e, &observer {
 			context:  ctx,
 			next: func(obj Object) {
-				c.pass(Pair { obj, current_value })
+				if current.HasValue && RefEqual(obj, current.Value) {
+					return
+				} else {
+					c.pass(Pair { obj, current })
+				}
 			},
 			error: func(err Object) {
 				c.throw(err)
@@ -41,14 +58,21 @@ func CombineLatest(effects ([] Effect)) Effect {
 		var ctx, dispose = ob.context.create_disposable_child()
 		var c = new_collector(ob, dispose)
 		var values = make([] Optional, len(effects))
-		for i, e := range effects {
+		for i_, e := range effects {
+			var i = i_
 			c.new_child()
 			sched.run(e, &observer {
 				context: ctx,
 				next: func(obj Object) {
-					values[i].Value = obj
-					values[i].HasValue = true
-					c.pass(values)
+					var has_saved = &(values[i].HasValue)
+					var saved_latest = &(values[i].Value)
+					if *has_saved && RefEqual(obj, *saved_latest) {
+						return
+					} else {
+						*saved_latest = obj
+						*has_saved = true
+						c.pass(values)
+					}
 				},
 				error: func(err Object) {
 					c.throw(err)

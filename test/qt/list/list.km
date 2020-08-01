@@ -5,9 +5,17 @@ do (listen (Window.closed))
     | forever;
 
 do @state
-    | map* ( & {list}
-        list | map (& { id, label } (list-widget-item id label)))
-    | concat-map (&(list)(TodoList.set-items list N/A))
+    | concat-map (& {list, current?}
+        let update-list := (TodoList.set-items (list | map adapt-item) current?),
+        switch current?:
+        case Just current:
+            let current-item := (list | filter (& {id} $(id = current))),
+            let show-current := (show-item (current-item.get 0)),
+            merge [update-list, show-current],
+        case N/A:
+            update-list,
+        end
+    )
     | forever;
 
 do (listen (TodoList.current-item))

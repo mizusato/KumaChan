@@ -46,8 +46,23 @@ func CheckArray(array ast.Array, ctx ExprContext) (SemiExpr, *ExprError) {
 func AssignArrayTo(expected Type, array SemiTypedArray, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
 	switch E := expected.(type) {
 	default:
+		var param, is_param = expected.(*ParameterType)
+		if is_param {
+			if param.BeingInferred {
+				if !(ctx.Inferring.Enabled) { panic("something went wrong") }
+				var inferred, exists = ctx.Inferring.Arguments[param.Index]
+				if exists {
+					return AssignArrayTo(inferred, array, info, ctx)
+				}
+			} else {
+				var sub, has_sub = ctx.TypeBounds.Sub[param.Index]
+				if has_sub {
+					return AssignArrayTo(sub, array, info, ctx)
+				}
+			}
+		}
 		var item_type Type = nil
-		var items = make([]Expr, len(array.Items))
+		var items = make([] Expr, len(array.Items))
 		for i, item_semi := range array.Items {
 			var item, err = AssignTo(item_type, item_semi, ctx)
 			if err != nil { return Expr{}, err }
@@ -83,14 +98,14 @@ func AssignArrayTo(expected Type, array SemiTypedArray, info ExprInfo, ctx ExprC
 				var empty_array = Expr {
 					Type:  &NamedType {
 						Name: __Array,
-						Args: []Type { &WildcardRhsType {} },
+						Args: [] Type { &WildcardRhsType {} },
 					},
 					Value: Array { Items: [] Expr {}, ItemType: nil },
 					Info:  info,
 				}
 				return TypedAssignTo(expected, empty_array, ctx)
 			}
-			var items = make([]Expr, len(array.Items))
+			var items = make([] Expr, len(array.Items))
 			for i, item_semi := range array.Items {
 				var item, err = AssignTo(item_expected, item_semi, ctx)
 				if err != nil { return Expr{}, err }

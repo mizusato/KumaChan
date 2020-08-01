@@ -145,6 +145,13 @@ func Connect(obj Object, signal string, callback func()) func() {
     }
 }
 
+func BlockSignals(obj Object) (error, func()) {
+    C.QtBlockSignals(obj.ptr(), 1)
+    return nil, func() {
+        C.QtBlockSignals(obj.ptr(), 0)
+    }
+}
+
 func Listen(obj Object, kind EventKind, prevent bool, callback func(Event)) func() {
     var l C.QtEventListener
     var cb, del_cb = cgohelper.NewCallback(func() {
@@ -254,6 +261,7 @@ func ListWidgetClear(w Widget) {
 }
 
 func ListWidgetSetItems(w Widget, get_item (func(uint) ListWidgetItem), length uint, current ([] rune)) {
+    var _, unblock = BlockSignals(w)
     ListWidgetClear(w)
     var icon_pool = make(map[*ImageData] struct { icon Icon; del func() })
     var occurred_keys = make(map[string] bool)
@@ -296,6 +304,7 @@ func ListWidgetSetItems(w Widget, get_item (func(uint) ListWidgetItem), length u
     for _, cached := range icon_pool {
         cached.del()
     }
+    unblock()
 }
 
 func ListWidgetHasCurrentItem(w Widget) bool {

@@ -55,7 +55,7 @@ func GenericFunctionCall (
 				inferred_args[i] = t
 			} else {
 				if output_v[i] == Covariant {
-					inferred_args[i] = &WildcardRhsType{}
+					inferred_args[i] = &WildcardRhsType {}
 				} else {
 					return Expr{}, &ExprError {
 						Point:    f_info.ErrorPoint,

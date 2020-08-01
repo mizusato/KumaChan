@@ -34,8 +34,6 @@ public function clicked: ( &(PushButton) Signal[-] )
 type ListWidget protected Widget;
 type ListWidgetItem native;
 
-public function clear: ( &(ListWidget) NoExcept[-] )
-    native 'qt-list-widget-clear';
 public function set-items: ( &(ListWidget,Array[ListWidgetItem],Maybe[String]) NoExcept[-] )
     native 'qt-list-widget-set-items';
 public function list-widget-item: ( &(String,String) ListWidgetItem )

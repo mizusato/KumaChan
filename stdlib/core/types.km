@@ -76,3 +76,13 @@ public function unwrap?[T]: ( &(Maybe[Maybe[T]]) Maybe[T] )
             N/A,
         end
     );
+
+public function fallback?[T]: ( &(Maybe[T],T) T )
+    ( & (t?, fallback)
+        switch t?:
+        case Just t:
+            t,
+        case N/A:
+            fallback,
+        end
+    );

@@ -586,7 +586,7 @@ type E_MatchingNonBundleType struct {}
 func (e E_MatchingNonBundleType) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	msg.WriteText(TS_ERROR,
-		"Cannot perform tuple destruction on a value of non-bundle type")
+		"Cannot perform bundle destruction on a value of non-bundle type")
 	return msg
 }
 
@@ -594,7 +594,7 @@ type E_MatchingOpaqueBundleType struct {}
 func (e E_MatchingOpaqueBundleType) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	msg.WriteText(TS_ERROR,
-		"Cannot perform tuple destruction on a value of opaque bundle type")
+		"Cannot perform bundle destruction on a value of opaque bundle type")
 	return msg
 }
 

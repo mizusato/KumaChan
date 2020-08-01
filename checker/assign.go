@@ -161,13 +161,16 @@ func DirectAssignTypeTo(expected Type, given Type, v TypeVariance, ctx ExprConte
 				if len(T.Args) != len(E.Args) {
 					panic("something went wrong")
 				}
-				var g = ctx.ModuleInfo.Types[E.Name]
-				var L = len(T.Args)
 				var name = T.Name
+				var L = len(T.Args)
+				var g = ctx.ModuleInfo.Types[name]
 				var args = make([] Type, L)
 				for i := 0; i < L; i += 1 {
-					var v = g.Params[i].Variance
-					var t, ok = AssignTypeTo(E.Args[i], T.Args[i], v, ctx)
+					var param_v = g.Params[i].Variance
+					if v == Contravariant {
+						param_v = InverseVariance(param_v)
+					}
+					var t, ok = AssignTypeTo(E.Args[i], T.Args[i], param_v, ctx)
 					if ok {
 						args[i] = t
 					} else {

@@ -84,8 +84,12 @@ func StringCompare(a String, b String) Ordering {
 					}
 				}
 			} else {
-				// b starts with a and longer than a
-				return Smaller
+				if first_different {
+					// b starts with a and longer than a
+					return Smaller
+				} else {
+					return result
+				}
 			}
 		}
 		return result

@@ -138,6 +138,11 @@ void QtDisconnect(QtConnHandle handle) {
     delete h;
 };
 
+void QtBlockSignals(void* obj_ptr, QtBool block) {
+    QObject* obj = (QObject*) obj_ptr;
+    obj->blockSignals(bool(block));
+}
+
 QtEventListener QtAddEventListener (
         void*       obj_ptr,
         size_t      kind,

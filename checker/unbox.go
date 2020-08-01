@@ -164,7 +164,7 @@ func UnboxBundle(t Type, ctx ExprContext) BundleReprResult {
 					}
 				}
 			case *NamedType:
-				UnboxBundle(inner, ctx)
+				return UnboxBundle(inner, ctx)
 			}
 		}
 		return BR_NonBundle {}

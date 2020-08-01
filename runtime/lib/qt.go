@@ -131,12 +131,6 @@ var QtFunctions = map[string] interface{} {
 			return nil
 		})
 	},
-	"qt-list-widget-clear": func(list qt.Widget) rx.Effect {
-		return CreateQtTaskEffect(func() interface{} {
-			qt.ListWidgetClear(list)
-			return nil
-		})
-	},
 	"qt-list-widget-set-items": func(list qt.Widget, av Value, current SumValue) rx.Effect {
 		return CreateQtTaskEffect(func() interface{} {
 			var arr = container.ArrayFrom(av)
@@ -160,7 +154,7 @@ var QtFunctions = map[string] interface{} {
 			Icon:  nil,
 		}
 	},
-	"qt-list-widget-item-with-icon-png": func(key String, png stdlib.PNG, label String) qt.ListWidgetItem {
+	"qt-list-widget-item-with-icon-png": func(key String, png *stdlib.PNG, label String) qt.ListWidgetItem {
 		return qt.ListWidgetItem {
 			Key:   RuneSliceFromString(key),
 			Label: RuneSliceFromString(label),

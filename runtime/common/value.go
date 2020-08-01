@@ -34,10 +34,12 @@ type ValFunc struct {
 
 type NativeFunctionValue  NativeFunction
 
+
 type ArrayInfo struct {
 	Length    uint
 	ItemType  reflect.Type
 }
+
 
 type Char = uint32
 type String = ([] Char)
