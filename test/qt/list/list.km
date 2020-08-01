@@ -4,26 +4,9 @@ do (listen (Window.closed))
     | concat-map (&(_)(exit 0))
     | forever;
 
-private const Add: NoExcept*[-]
-    (listen (AddButton.clicked));
-// TODO: with-latest-from
-private const @add: NoExcept*[(String,String)]
-    (listen (TodoInput.text)
-        | switch-map (&(input)(Add.map*-to input)))
-        | concat-map (&(label)( (random()).map (&(x)(str x, label)) ));
-// TODO: combine-latest
-// private const @remove: NoExcept*[-]
-//     (listen (RemoveButton.clicked));
-// private const @action: NoExcept*[Action]
-//     ();
-// TODO: fix type parameter inferring
-private const @list: NoExcept*[Array[Qt::ListWidgetItem]]
-    (@add | scan (:Array[Qt::ListWidgetItem]: []) (&(list,added)(
-        let (id, label) := added,
-        collect (cons (list-widget-item id label) (iterate list))
-    )));
-
-do @list
+do @state
+    | map* ( & {list}
+        list | map (& { id, label } (list-widget-item id label)))
     | concat-map (&(list)(TodoList.set-items list N/A))
     | forever;
 

@@ -1,0 +1,61 @@
+type State {
+    list: Array[Item]
+};
+
+type Item {
+    id: String,
+    label: String
+};
+
+type Action union {
+    type Add {
+        id: String,
+        label: String
+    };
+    type Remove {
+        id: String
+    };
+};
+
+
+private const @state: NoExcept*[State]
+    @list | map* (&(list) State { list });
+
+private const @list: NoExcept*[Array[Item]]
+    (@action | scan (:Array[Item]: []) ( &(list,action?)
+        switch action?:
+        case Just action:
+            switch action:
+            case Add { id, label }:
+                collect (cons (Item { id, label }) (iterate list)),
+            case Remove { target: id }:
+                list | filter (&{id} $(id != target)),
+            end,
+        case N/A:
+            list,
+        end
+    ));
+
+
+private const @action: NoExcept*[Maybe[Action]]
+    merge [@add, @remove];
+
+private const @add: NoExcept*[Maybe[Action]]
+    (listen (AddButton.clicked))
+        | with-latest-from (listen (TodoInput.text))
+        | concat-map ( &(_,label?)
+            ~ map* &(x) := random (),
+            ~ maybe? &(label) := label?,
+                if $((label.length) > 0):
+                    Just (Add { id: (str x), label }),
+                else:
+                    N/A
+        );
+
+private const @remove: NoExcept*[Maybe[Action]]
+    (listen (RemoveButton.clicked))
+        | with-latest-from (listen (TodoList.current-item))
+        | map* ( &(_,current??)
+            ~ maybe &(current) := (unwrap? current??),
+                Remove { id: current }
+        );

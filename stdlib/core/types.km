@@ -34,11 +34,36 @@ type Ordering union {
     type >>;
 };
 
-public function maybe[A,B]: ( &(Maybe[A],(&(A)(Maybe[B]))) Maybe[B] )
-    (& (v?, k)
+public function maybe[A,B]:  ( &(Maybe[A],(&(A)(B))) Maybe[B] )
+    ( &(v?, f)
+        switch v?:
+        case Just v:
+            Just (f v),
+        case N/A:
+            N/A,
+        end
+    );
+
+public function maybe?[A,B]: ( &(Maybe[A],(&(A)(Maybe[B]))) Maybe[B] )
+    ( &(v?, k)
         switch v?:
         case Just v:
             (k v),
+        case N/A:
+            N/A,
+        end
+    );
+
+public function unwrap?[T]: ( &(Maybe[Maybe[T]]) Maybe[T] )
+    ( &(v??)
+        switch v??:
+        case Just v?:
+            switch v?:
+            case Just v:
+                Just v,
+            case N/A:
+                N/A,
+            end,
         case N/A:
             N/A,
         end

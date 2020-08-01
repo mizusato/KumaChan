@@ -12,9 +12,23 @@ type List[+T]        native;  // rx.List
 type Buffer          native;  // rx.Buffer
 type HashMap[+K,+V]  native;  // rx.StringHashMap, rx.NumberHashMap
 
-// Source Operations
+// Source/Sink Operations
 public function listen[T]: ( &(Source[T]) NoExcept*[T] )
     native 'listen';
+public function dispatch[T]: ( &(Sink[T],T) NoExcept[-] )
+    native 'dispatch';
+public function new-sink[T]: ( &() NoExcept[Sink[T]] )
+    native 'new-sink';
+
+// Mutable Cell Operations
+public function new-mutable[T]: ( &() NoExcept[Mutable[T]] )
+    native 'new-mutable';
+public function get[T]: ( &(Mutable[T]) NoExcept[T] )
+    native 'mutable-get';
+public function set[T]: ( &(Mutable[T],T) NoExcept[-] )
+    native 'mutable-set';
+public function swap[T]: ( &(Mutable[T],(&(T)(T))) NoExcept[-] )
+    native 'mutable-swap';
 
 // Effect Constructors
 public function random: ( &() NoExcept[Float] )
@@ -145,3 +159,27 @@ public function mix-map[A,B,E]: ( &(NoExcept*[A],Number,(&(A)(Effect*[B,E]))) Ef
     native 'mix-map';
 public function mix-map[A,B]:   ( &(NoExcept*[A],Number,(&(A)(NoExcept*[B]))) NoExcept*[B] )
     native 'mix-map';
+public function merge[T,E]: ( &(Array[Effect*[T,E]]) Effect*[T,E] )
+    native 'effect-merge';
+public function merge[T]:   ( &(Array[NoExcept*[T]]) NoExcept*[T] )
+    native 'effect-merge';
+public function concat[T,E]: ( &(Array[Effect*[T,E]]) Effect*[T,E] )
+    native 'effect-concat';
+public function concat[T]:   ( &(Array[NoExcept*[T]]) NoExcept*[T] )
+    native 'effect-concat';
+public function with-latest-from[A,B,E]: ( &(Effect*[A,E],Effect*[B,E]) Effect*[(A,Maybe[B]),E] )
+    native 'with-latest-from';
+public function with-latest-from[A,B,E]: ( &(Effect*[A,E],NoExcept*[B]) Effect*[(A,Maybe[B]),E] )
+    native 'with-latest-from';
+public function with-latest-from[A,B,E]: ( &(NoExcept*[A],Effect*[B,E]) Effect*[(A,Maybe[B]),E] )
+    native 'with-latest-from';
+public function with-latest-from[A,B]:   ( &(NoExcept*[A],NoExcept*[B]) NoExcept*[(A,Maybe[B])] )
+    native 'with-latest-from';
+public function combine-latest[A,B,E]: ( &(Effect*[A,E],Effect*[B,E]) Effect*[(Maybe[A],Maybe[B]),E] )
+    native 'combine-latest';
+public function combine-latest[A,B,E]: ( &(Effect*[A,E],NoExcept*[B]) Effect*[(Maybe[A],Maybe[B]),E] )
+    native 'combine-latest';
+public function combine-latest[A,B,E]: ( &(NoExcept*[A],Effect*[B,E]) Effect*[(Maybe[A],Maybe[B]),E] )
+    native 'combine-latest';
+public function combine-latest[A,B]:   ( &(NoExcept*[A],NoExcept*[B]) NoExcept*[(Maybe[A],Maybe[B])] )
+    native 'combine-latest';

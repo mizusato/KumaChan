@@ -54,7 +54,7 @@ func (e Effect) TakeOne() Effect {
 			context:  ctx,
 			next: func(val Object) {
 				ctx_dispose(behaviour_cancel)
-				ob.next(struct { Object; bool } {val, true})
+				ob.next(Optional { true, val })
 				ob.complete()
 			},
 			error: func(err Object) {
@@ -63,7 +63,7 @@ func (e Effect) TakeOne() Effect {
 			},
 			complete: func() {
 				ctx_dispose(behaviour_terminate)
-				ob.next(struct { Object; bool } {nil, false})
+				ob.next(Optional {} )
 				ob.complete()
 			},
 		})

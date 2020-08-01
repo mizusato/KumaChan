@@ -87,7 +87,7 @@ func (c *Cell) Set(new_val Object) Effect {
 	})
 }
 
-func (c *Cell) Map(f func(Object)Object) Effect {
+func (c *Cell) Swap(f func(Object)Object) Effect {
 	return CreateBlockingEffect(func()(Object, bool) {
 		c.value = f(c.value)
 		return nil, true
@@ -138,9 +138,9 @@ func (l List) Shift() Effect {
 		if length > 0 {
 			var head = l.slice_rv.Index(0)
 			l.slice_rv = l.slice_rv.Slice(1, length)
-			return struct { Object; bool } { head, true }, true
+			return Optional { true, head }, true
 		} else {
-			return struct { Object; bool } { nil, false }, true
+			return Optional {}, true
 		}
 	})
 }
@@ -151,9 +151,9 @@ func (l List) Pop() Effect {
 		if length > 0 {
 			var tail = l.slice_rv.Index(length-1)
 			l.slice_rv = l.slice_rv.Slice(0, length-1)
-			return struct { Object; bool } { tail, true }, true
+			return Optional { true, tail }, true
 		} else {
-			return struct { Object; bool } { nil, false }, true
+			return Optional {}, true
 		}
 	})
 }
@@ -182,9 +182,9 @@ func (m StringHashMap) Get(key string) Effect {
 	return CreateBlockingEffect(func()(Object, bool) {
 		var val, exists = m[key]
 		if exists {
-			return struct { Object; bool } { val, true }, true
+			return Optional { true, val }, true
 		} else {
-			return struct { Object; bool } { nil, false }, true
+			return Optional {}, true
 		}
 	})
 }
@@ -201,9 +201,9 @@ func (m StringHashMap) Delete(key string) Effect {
 		var deleted, exists = m[key]
 		if exists {
 			delete(m, key)
-			return struct { Object; bool } { deleted, true }, true
+			return Optional { true, deleted }, true
 		} else {
-			return struct { Object; bool } { nil, false }, true
+			return Optional {}, true
 		}
 	})
 }
@@ -224,9 +224,9 @@ func (m NumberHashMap) Get(key uint) Effect {
 	return CreateBlockingEffect(func()(Object, bool) {
 		var val, exists = m[key]
 		if exists {
-			return struct { Object; bool } { val, true }, true
+			return Optional { true, val }, true
 		} else {
-			return struct { Object; bool } { nil, false }, true
+			return Optional {}, true
 		}
 	})
 }
@@ -243,9 +243,9 @@ func (m NumberHashMap) Delete(key uint) Effect {
 		var deleted, exists = m[key]
 		if exists {
 			delete(m, key)
-			return struct { Object; bool } { deleted, true }, true
+			return Optional { true, deleted }, true
 		} else {
-			return struct { Object; bool } { nil, false }, true
+			return Optional {}, true
 		}
 	})
 }

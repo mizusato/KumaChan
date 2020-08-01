@@ -10,9 +10,47 @@ import (
 )
 
 
+func Optional2Maybe(obj rx.Object) Value {
+	var opt = obj.(rx.Optional)
+	if opt.HasValue {
+		return Just(opt.Value)
+	} else {
+		return Na()
+	}
+}
+
 var EffectFunctions = map[string] Value {
+	"new-sink": func() rx.Effect {
+		return rx.CreateBlockingEffect(func() (rx.Object, bool) {
+			var sink = rx.CreateSink()
+			return sink, true
+		})
+	},
+	"dispatch": func(sink rx.Sink, v Value) rx.Effect {
+		return rx.CreateBlockingEffect(func() (rx.Object, bool) {
+			sink.Emit(v)
+			return nil, true
+		})
+	},
 	"listen": func(source rx.Source) rx.Effect {
 		return source.Listen()
+	},
+	"new-mutable": func(init Value) rx.Effect {
+		return rx.CreateBlockingEffect(func() (rx.Object, bool) {
+			var cell = rx.CreateCell(init)
+			return cell, true
+		})
+	},
+	"mutable-get": func(cell rx.Cell) rx.Effect {
+		return cell.Get()
+	},
+	"mutable-set": func(cell rx.Cell, v Value) rx.Effect {
+		return cell.Set(v)
+	},
+	"mutable-swap": func(cell rx.Cell, f Value, h MachineHandle) rx.Effect {
+		return cell.Swap(func(v rx.Object) rx.Object {
+			return h.Call(f, v)
+		})
 	},
 	"random": func() rx.Effect {
 		return rx.CreateBlockingEffect(func() (rx.Object, bool) {
@@ -73,9 +111,9 @@ var EffectFunctions = map[string] Value {
 	},
 	"take-one": func(e rx.Effect) rx.Effect {
 		return e.TakeOne().Map(func(val rx.Object) rx.Object {
-			var v = val.(struct { rx.Object; bool })
-			if v.bool {
-				return Just(v.Object)
+			var opt = val.(rx.Optional)
+			if opt.HasValue {
+				return Just(opt.Value)
 			} else {
 				return Na()
 			}
@@ -174,6 +212,42 @@ var EffectFunctions = map[string] Value {
 		return e.MixMap(func(val rx.Object) rx.Effect {
 			return h.Call(f, val).(rx.Effect)
 		}, n)
+	},
+	"effect-merge": func(av Value) rx.Effect {
+		var arr = container.ArrayFrom(av)
+		var effects = make([] rx.Effect, arr.Length)
+		for i := uint(0); i < arr.Length; i += 1 {
+			effects[i] = arr.GetItem(i).(rx.Effect)
+		}
+		return rx.Merge(effects)
+	},
+	"effect-concat": func(av Value) rx.Effect {
+		var arr = container.ArrayFrom(av)
+		var effects = make([] rx.Effect, arr.Length)
+		for i := uint(0); i < arr.Length; i += 1 {
+			effects[i] = arr.GetItem(i).(rx.Effect)
+		}
+		return rx.Concat(effects)
+	},
+	"with-latest-from": func(signal rx.Effect, values rx.Effect) rx.Effect {
+		return signal.WithLatestFrom(values).Map(func(p rx.Object) rx.Object {
+			var pair = p.(rx.Pair)
+			return &ValProd { Elements: [] Value {
+				pair.First,
+				Optional2Maybe(pair.Second),
+			} }
+		})
+	},
+	"combine-latest": func(a rx.Effect, b rx.Effect) rx.Effect {
+		var effects = [] rx.Effect { a, b }
+		return rx.CombineLatest(effects).Map(func(raw rx.Object) rx.Object {
+			var raw_values = raw.([] rx.Optional)
+			var values = make([] Value, len(effects))
+			for i := 0; i < len(values); i += 1 {
+				values[i] = Optional2Maybe(raw_values[i])
+			}
+			return &ValProd { Elements: values }
+		})
 	},
 }
 

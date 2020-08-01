@@ -3,6 +3,16 @@ package rx
 
 type Object = interface{}
 
+type Pair struct {
+	First   Object
+	Second  Object
+}
+
+type Optional struct {
+	HasValue  bool
+	Value     Object
+}
+
 type Effect struct {
 	action  func(Scheduler, *observer)
 }
