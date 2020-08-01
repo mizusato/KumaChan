@@ -142,34 +142,6 @@ var ContainerFunctions = map[string] Value {
 	"String from Float": func(x float64) String {
 		return StringFromGoString(fmt.Sprint(x))
 	},
-	"String from Int8": func(n int8) String {
-		return StringFromGoString(fmt.Sprint(n))
-	},
-	"String from Int16": func(n int16) String {
-		return StringFromGoString(fmt.Sprint(n))
-	},
-	"String from Int32": func(n int32) String {
-		return StringFromGoString(fmt.Sprint(n))
-	},
-	"String from Int64": func(n int64) String {
-		return StringFromGoString(fmt.Sprint(n))
-	},
-	"String from Uint8": func(n uint8) String {
-		return StringFromGoString(fmt.Sprint(n))
-	},
-	"String from Uint16": func(n uint16) String {
-		return StringFromGoString(fmt.Sprint(n))
-	},
-	"String from Uint32": func(n uint32) String {
-		return StringFromGoString(fmt.Sprint(n))
-	},
-	"String from Uint64": func(n uint64) String {
-		return StringFromGoString(fmt.Sprint(n))
-	},
-	"String from Array": func(v Value) String {
-		var a = ArrayFrom(v)
-		return a.CopyAsSlice().(String)  // TODO: unnecessary copy could happen
-	},
 	"encode-utf8": func(str String) []byte {
 		return StringEncode(str, UTF8)
 	},

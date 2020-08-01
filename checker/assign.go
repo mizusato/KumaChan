@@ -75,7 +75,7 @@ func TypedAssignTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 }
 
 func AssignTypeTo(expected Type, given Type, v TypeVariance, ctx ExprContext) (Type, bool) {
-	var direct_type, ok = DirectAssignTypeTo(expected, given, ctx)
+	var direct_type, ok = DirectAssignTypeTo(expected, given, v, ctx)
 	if ok {
 		return direct_type, true
 	} else {
@@ -116,7 +116,7 @@ func AssignWildcardRhsTypeTo(expected Type, ctx ExprContext) (Type, bool) {
 	return t, true
 }
 
-func DirectAssignTypeTo(expected Type, given Type, ctx ExprContext) (Type, bool) {
+func DirectAssignTypeTo(expected Type, given Type, v TypeVariance, ctx ExprContext) (Type, bool) {
 	var given_param, given_is_param = given.(*ParameterType)
 	if given_is_param {
 		var super, has_super = ctx.TypeBounds.Super[given_param.Index]
@@ -202,7 +202,7 @@ func DirectAssignTypeTo(expected Type, given Type, ctx ExprContext) (Type, bool)
 					for i := 0; i < L; i += 1 {
 						var e = E_.Elements[i]
 						var t = T_.Elements[i]
-						var el_t, ok = AssignTypeTo(e, t, Covariant, ctx)
+						var el_t, ok = AssignTypeTo(e, t, v, ctx)
 						if ok {
 							elements[i] = el_t
 						} else {
@@ -228,7 +228,7 @@ func DirectAssignTypeTo(expected Type, given Type, ctx ExprContext) (Type, bool)
 						}
 						var field_index = t.Index
 						var field_t, ok = AssignTypeTo (
-							e.Type, t.Type, Covariant, ctx,
+							e.Type, t.Type, v, ctx,
 						)
 						if ok {
 							fields[name] = Field {
@@ -245,13 +245,13 @@ func DirectAssignTypeTo(expected Type, given Type, ctx ExprContext) (Type, bool)
 				switch T_ := T.Repr.(type) {
 				case Func:
 					var input_t, ok1 = AssignTypeTo (
-						E_.Input, T_.Input, Contravariant, ctx,
+						E_.Input, T_.Input, InverseVariance(v), ctx,
 					)
 					if !(ok1) {
 						return nil, false
 					}
 					var output_t, ok2 = AssignTypeTo (
-						E_.Output, T_.Output, Covariant, ctx,
+						E_.Output, T_.Output, v, ctx,
 					)
 					if !(ok2) {
 						return nil, false

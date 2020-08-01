@@ -34,6 +34,14 @@ type Ordering union {
     type >>;
 };
 
+// Casting
+type Cast[T,U] implicit {
+    from: (& T U)
+};
+type CastTo[T] T;
+public function to[T,U]: implicit[Cast[T,U]] ( &(T) CastTo[U] )
+    (&(t)(CastTo (from t)));
+
 public function maybe[A,B]:  ( &(Maybe[A],(&(A)(B))) Maybe[B] )
     ( &(v?, f)
         switch v?:

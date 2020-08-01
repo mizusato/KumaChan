@@ -65,7 +65,7 @@ func GenericFunctionCall (
 			}
 		}
 		var input_type = FillTypeArgs(raw_input_type, inferred_args)
-		var _, ok = DirectAssignTypeTo(input_type, arg_typed.Type, ctx)
+		var _, ok = DirectAssignTypeTo(input_type, arg_typed.Type, Invariant, ctx)
 		if !(ok) {
 			// var inf_ctx = ctx.WithInferringEnabled(f.TypeParams)
 			// var _, _ = AssignTo(marked_input_type, arg, inf_ctx)

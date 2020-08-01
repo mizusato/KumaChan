@@ -816,6 +816,7 @@ func (e E_ImplicitContextNotFound) ExprErrorDesc() ErrorMessage {
 	msg.WriteText(TS_ERROR, "Implicit context value")
 	msg.WriteInnerText(TS_INLINE_CODE, e.Name)
 	msg.WriteText(TS_ERROR, "not found:")
+	msg.Write(T_LF)
 	msg.WriteAllWithIndent(e.Detail.Desc(), 1)
 	return msg
 }
@@ -830,6 +831,7 @@ func (e E_BadTypeArg) ExprErrorDesc() ErrorMessage {
 	msg.WriteText(TS_ERROR, "Bad type parameter")
 	msg.WriteInnerText(TS_INLINE, fmt.Sprintf("(#%d %s)", e.Index, e.Name))
 	msg.WriteText(TS_ERROR, ":")
+	msg.Write(T_LF)
 	msg.WriteAllWithIndent(e.Detail.Desc(), 1)
 	return msg
 }
@@ -895,6 +897,7 @@ func (e E_NoneOfFunctionsAssignable) ExprErrorDesc() ErrorMessage {
 	for _, candidate := range e.Candidates {
 		msg.Write(T_INDENT)
 		msg.WriteText(TS_INLINE_CODE, DescribeCandidate(candidate))
+		msg.Write(T_LF)
 		msg.WriteAllWithIndent(candidate.Error.Desc(), 2)
 		msg.Write(T_LF)
 	}
