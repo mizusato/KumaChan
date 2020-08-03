@@ -37,6 +37,7 @@ const (
 	/* Product Type Operations */
 	PROD    // [size,  _ ]: Create a value of a product type
 	GET     // [index, _ ]: Extract the value of a field
+	POPGET  // [index, _ ]: Replace current value into the value of a field
 	SET     // [index, _ ]: Perform a functional update on a field
 	/* Function Type Operations */
 	CTX     // [rec, _ ]: Use the current value as the context of a closure
@@ -103,6 +104,8 @@ func (inst Instruction) String() string {
 		return fmt.Sprintf("PROD %d", inst.GetShortIndexOrSize())
 	case GET:
 		return fmt.Sprintf("GET %d", inst.GetShortIndexOrSize())
+	case POPGET:
+		return fmt.Sprintf("POPGET %d", inst.GetShortIndexOrSize())
 	case SET:
 		return fmt.Sprintf("SET %d", inst.GetShortIndexOrSize())
 	case CTX:

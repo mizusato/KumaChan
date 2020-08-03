@@ -16,6 +16,12 @@ type Action union {
     type Remove {
         id: String
     };
+    type MoveDown {
+        id: String
+    };
+    type MoveUp {
+        id: String
+    };
 };
 
 
@@ -52,7 +58,37 @@ private const @list: NoExcept*[Array[Item]]
             case Add { id, label }:
                 collect (cons (Item { id, label }) (iterate list)),
             case Remove { target: id }:
-                list | filter (&{id} $(id != target)),
+                list | filter ( &{id} $(id != target) ),
+            case MoveDown { target: id }:
+                let t := list | reduce (No, (:Seq[Item]: nil())) ( &(t, item)
+                    let (ok, seq) := t,
+                    switch seq.next:
+                    case Just (prev, rest):
+                        if $((not ok) and $(${prev}.id = target)):
+                            (Yes, (cons prev (cons item rest))),
+                        else:
+                            (No, (cons item seq)),
+                    case N/A:
+                        (No, (cons item seq)),
+                    end
+                ),
+                let (_, seq) := t,
+                seq | collect | reverse,
+            case MoveUp { target: id }:
+                let t := list | reduce (No, (:Seq[Item]: nil())) ( &(t, item)
+                    let (ok, seq) := t,
+                    switch seq.next:
+                    case Just (prev, rest):
+                        if $((not ok) and $(${item}.id = target)):
+                            (Yes, (cons prev (cons item rest))),
+                        else:
+                            (No, (cons item seq)),
+                    case N/A:
+                        (No, (cons item seq)),
+                    end
+                ),
+                let (_, seq) := t,
+                seq | collect | reverse,
             end,
         case N/A:
             list,
@@ -61,9 +97,18 @@ private const @list: NoExcept*[Array[Item]]
 
 private const @current: NoExcept*[Maybe[String]]
     (listen (TodoList.current-item));
+private function with-current-item:
+    ( &(NoExcept*[-], (&(String)(Action))) NoExcept*[Maybe[Action]] )
+    ( &(signal, transform)
+        signal | with-latest-from @current
+               | map* ( &(_, current??)
+                   ~ maybe &(current) := (unwrap? current??),
+                   transform current
+               )
+    );
 
 private const @action: NoExcept*[Maybe[Action]]
-    merge [@add, @remove];
+    merge [@add, @remove, @move-down, @move-up];
 
 private const @add: NoExcept*[Maybe[Action]]
     (listen (AddButton.clicked))
@@ -79,8 +124,17 @@ private const @add: NoExcept*[Maybe[Action]]
 
 private const @remove: NoExcept*[Maybe[Action]]
     (listen (RemoveButton.clicked))
-        | with-latest-from (listen (TodoList.current-item))
-        | map* ( &(_,current??)
-            ~ maybe &(current) := (unwrap? current??),
-                Remove { id: current }
+        | with-current-item (&(current)
+            Remove { id: current } );
+
+private const @move-down: NoExcept*[Maybe[Action]]
+    (listen (DownButton.clicked))
+        | with-current-item ( &(current)
+            MoveDown { id: current }
+        );
+
+private const @move-up: NoExcept*[Maybe[Action]]
+    (listen (UpButton.clicked))
+        | with-current-item ( &(current)
+            MoveUp { id: current }
         );

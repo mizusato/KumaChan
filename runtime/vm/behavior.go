@@ -70,6 +70,7 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 	defer (func() {
 		var err = recover()
 		if err != nil {
+			// TODO: innermost panic message is printed first, fix it
 			PrintRuntimeErrorMessage(err, ec)
 			panic(err)
 		}
@@ -145,6 +146,16 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 				default:
 					panic("GET: cannot execute on non-product value")
 				}
+			case POPGET:
+				var index = inst.GetShortIndexOrSize()
+				switch prod := ec.popValue().(type) {
+				case ProductValue:
+					assert(index < uint(len(prod.Elements)),
+						"POPGET: invalid index")
+					ec.pushValue(prod.Elements[index])
+				default:
+					panic("POPGET: cannot execute on non-product value")
+				}
 			case SET:
 				var index = inst.GetShortIndexOrSize()
 				var value = ec.popValue()
@@ -159,7 +170,7 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 						Elements: draft,
 					})
 				default:
-					panic("GET: cannot execute on non-product value")
+					panic("SET: cannot execute on non-product value")
 				}
 			case CTX:
 				var is_recursive = (inst.Arg0 != 0)

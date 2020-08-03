@@ -1,4 +1,4 @@
-// Logic Macros
+// Logic Functions
 public function not: (&(Bool)(Bool))
     (&(p)(if p: No, else: Yes));
 public function and: (&(Bool,Bool)(Bool))

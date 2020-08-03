@@ -130,6 +130,15 @@ func InstGet(index uint) c.Instruction {
 	}
 }
 
+func InstPopGet(index uint) c.Instruction {
+	ValidateProductIndex(index)
+	return c.Instruction {
+		OpCode: c.POPGET,
+		Arg0:   c.Short(index),
+		Arg1:   0,
+	}
+}
+
 func InstSet(index uint) c.Instruction {
 	ValidateProductIndex(index)
 	return c.Instruction {

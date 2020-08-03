@@ -140,7 +140,11 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 		ctx.LocalScope.Bindings[offset].Used = true
 		return CodeFrom(InstLocalRef(offset), expr.Info)
 	case ch.Array:
-		var info = ch.GetArrayInfo(uint(len(v.Items)), v.ItemType)
+		var length = uint(len(v.Items))
+		if length > c.ArrayMaxSize {
+			panic("array literal length exceeded limit")
+		}
+		var info = ch.GetArrayInfo(length, v.ItemType)
 		var info_index = ctx.AppendDataRef(DataArrayInfo(info))
 		var buf = MakeCodeBuffer()
 		var inst_array = InstArray(info_index)
@@ -167,7 +171,7 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 		var buf = MakeCodeBuffer()
 		var base_code = CompileExpr(v.Product, ctx)
 		buf.Write(base_code)
-		var inst_get = InstGet(v.Index)
+		var inst_get = InstPopGet(v.Index)
 		buf.Write(CodeFrom(inst_get, expr.Info))
 		return buf.Collect()
 	case ch.Set:
