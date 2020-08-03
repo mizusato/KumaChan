@@ -21,7 +21,11 @@ type LineEdit protected Widget;
 private function get-text: ( &(Static[LineEdit]) String )
     (&(line)(get-property line 'text' 'String'));
 public function text: ( &(LineEdit) Signal[String] )
-    (&(line)(signal line 'textEdited(const QString&)' get-text));
+    (&(line)(signal line 'textChanged(const QString&)' get-text));
+public function enter: ( &(LineEdit) Signal[-] )
+    (&(line)(signal line 'returnPressed()'));
+public function set-text: ( &(LineEdit,String) NoExcept[-] )
+    (&(line,text)(set-property line 'text' 'String' text));
 
 // QPushButton
 type PushButton protected Widget;

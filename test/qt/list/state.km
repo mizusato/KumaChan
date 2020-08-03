@@ -111,7 +111,7 @@ private const @action: NoExcept*[Maybe[Action]]
     merge [@add, @remove, @move-down, @move-up];
 
 private const @add: NoExcept*[Maybe[Action]]
-    (listen (AddButton.clicked))
+    merge [listen (AddButton.clicked), listen (TodoInput.enter)]
         | with-latest-from (listen (TodoInput.text))
         | concat-map ( &(_,label?)
             ~ map* &(x) := random (),
