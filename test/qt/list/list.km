@@ -4,20 +4,8 @@ do (listen (Window.closed))
     | concat-map (&(_)(exit 0))
     | forever;
 
-do @action
-    | concat-map ( &(action?)
-        switch action?:
-        case Just action:
-            switch action:
-            case Add _:
-                TodoInput.set-text '',
-            default:
-                emit* [],
-            end,
-        case N/A:
-            emit* [],
-        end
-    )
+do @add
+    | concat-map ( &(_) (TodoInput.set-text '') )
     | forever;
 
 do @state
