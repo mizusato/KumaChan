@@ -4,7 +4,7 @@ package qt
 #include <stdlib.h>
 #include "qtbinding/qtbinding.h"
 */
-// #cgo LDFLAGS: -L./build -lqtbinding
+// #cgo LDFLAGS: -L./build -lqtbinding -Wl,-rpath=\$ORIGIN/
 import "C"
 
 import (

@@ -1,4 +1,5 @@
 /.idea/workspace.xml
-/build
+/build/*
+!/build/.gitkeep
 /debug-build
 /go_build*
