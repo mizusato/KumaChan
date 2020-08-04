@@ -13,14 +13,14 @@ qt:
 	cd qt/build && qmake ../qtbinding/qtbinding.pro && $(MAKE)
 	cp -P qt/build/libqtbinding* build/
 
-interpreter: qt
-	@echo -e '\033[1mCompiling the Interpreter...\033[0m'
-	go build -o ./build/kumachan main.go
-
 stdlib:
 	@echo -e '\033[1mCopying Standard Library Files...\033[0m'
 	if [ -d build/stdlib ]; then rm -r build/stdlib; fi
 	cp -rP stdlib build/
 	rm build/stdlib/*.go
 
-all: check qt interpreter stdlib
+interpreter: qt stdlib
+	@echo -e '\033[1mCompiling the Interpreter...\033[0m'
+	go build -o ./build/kumachan main.go
+
+all: check qt stdlib interpreter

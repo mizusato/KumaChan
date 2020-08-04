@@ -67,10 +67,15 @@ func debug_parser(file io.Reader, name string, root string) {
 }
 
 func debug_loader() (*loader.Module, loader.Index) {
+    var path string
     if len(os.Args) != 2 {
-        panic("invalid arguments")
+        fmt.Println("*** Interpreter ***")
+        fmt.Println("Input Script Path:")
+        var _, err = fmt.Scanln(&path)
+        if err != nil { panic(err) }
+    } else {
+        path = os.Args[1]
     }
-    var path = os.Args[1]
     var mod, idx, err = loader.LoadEntry(path)
     if err != nil {
         fmt.Fprintf(os.Stderr, "%s\n", err.Error())
