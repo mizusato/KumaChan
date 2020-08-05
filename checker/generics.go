@@ -65,7 +65,7 @@ func GenericFunctionCall (
 			}
 		}
 		var input_type = FillTypeArgs(raw_input_type, inferred_args)
-		var _, ok = DirectAssignTypeTo(input_type, arg_typed.Type, Invariant, ctx)
+		var _, ok = AssignTypeTo(input_type, arg_typed.Type, Invariant, ctx)
 		if !(ok) {
 			// var inf_ctx = ctx.WithInferringEnabled(f.TypeParams)
 			// var _, _ = AssignTo(marked_input_type, arg, inf_ctx)
@@ -131,40 +131,38 @@ func GenericFunctionAssignTo (
 				Concrete: E_ExplicitTypeRequired {},
 			}
 		}
-		if ctx.Inferring.Enabled {
-			return Expr{}, &ExprError {
-				Point:    info.ErrorPoint,
-				Concrete: E_ExplicitTypeParamsRequired {},
-			}
-		}
+		var exp_certain, err = GetCertainType(expected, info.ErrorPoint, ctx)
+		if err != nil { return Expr{}, err }
+		var inf_ctx = ctx.WithInferringEnabled(f.TypeParams)
 		var f_raw_type = &AnonymousType { f.DeclaredType }
-		// Note: Unbox/Union related inferring is not required
-		//       since function types are anonymous types and invariant.
-		//       Just apply NaivelyInferTypeArgs() here.
-		var inferred_arg_map = make(map[uint] Type)
-		NaivelyInferTypeArgs(f_raw_type, expected, inferred_arg_map)
-		if len(inferred_arg_map) == type_arity {
-			var inferred_args = make([]Type, type_arity)
-			for i, t := range inferred_arg_map {
-				inferred_args[i] = t
-			}
-			var f_type = FillTypeArgs(f_raw_type, inferred_args)
-			if !(AreTypesEqualInSameCtx(f_type, expected)) {
-				panic("something went wrong")
-			}
-			f_ref, err := MakeRefFunction(name, index, inferred_args, f_node, ctx)
-			if err != nil { return Expr{}, err }
-			return Expr {
-				Type:  f_type,
-				Value: f_ref,
-				Info:  info,
-			}, nil
-		} else {
-			return Expr{}, &ExprError {
-				Point:    info.ErrorPoint,
-				Concrete: E_ExplicitTypeParamsRequired {},
-			}
+		var _, ok = AssignTypeTo(f_raw_type, exp_certain, Contravariant, inf_ctx)
+		if !(ok) { return Expr{}, &ExprError {
+			Point:    info.ErrorPoint,
+			Concrete: E_NotAssignable {
+				From:   inf_ctx.DescribeExpectedType(f_raw_type),
+				To:     ctx.DescribeType(exp_certain),
+				Reason: "",
+			},
+		} }
+		if len(inf_ctx.Inferring.Arguments) != type_arity {
+			panic("something went wrong")
 		}
+		var inferred_args = make([] Type, type_arity)
+		for i := 0; i < type_arity; i += 1 {
+			inferred_args[i] = inf_ctx.Inferring.Arguments[uint(i)]
+		}
+		var f_type = FillTypeArgs(f_raw_type, inferred_args)
+		_, ok = AssignTypeTo(exp_certain, f_type, Invariant, ctx)
+		if !(ok) {
+			panic("something went wrong")
+		}
+		f_ref, err := MakeRefFunction(name, index, inferred_args, f_node, ctx)
+		if err != nil { return Expr{}, err }
+		return Expr {
+			Type:  f_type,
+			Value: f_ref,
+			Info:  info,
+		}, nil
 	} else {
 		return Expr{}, &ExprError {
 			Point:    info.ErrorPoint,
@@ -229,68 +227,6 @@ func FillTypeArgs(t Type, given_args ([] Type)) Type {
 			}
 		default:
 			panic("impossible branch")
-		}
-	default:
-		panic("impossible branch")
-	}
-}
-
-
-func NaivelyInferTypeArgs(template Type, given Type, inferred map[uint]Type) {
-	switch T := template.(type) {
-	case *WildcardRhsType:
-		return
-	case *ParameterType:
-		var existing, exists = inferred[T.Index]
-		if !exists || AreTypesEqualInSameCtx(existing, given) {
-			inferred[T.Index] = given
-		}
-	case *NamedType:
-		switch G := given.(type) {
-		case *NamedType:
-			var L1 = len(T.Args)
-			var L2 = len(G.Args)
-			if L1 != L2 { panic("type registration went wrong") }
-			var L = L1
-			for i := 0; i < L; i += 1 {
-				NaivelyInferTypeArgs(T.Args[i], G.Args[i], inferred)
-			}
-		}
-	case *AnonymousType:
-		switch G := given.(type) {
-		case *AnonymousType:
-			switch Tr := T.Repr.(type) {
-			case Tuple:
-				switch Gr := G.Repr.(type) {
-				case Tuple:
-					var L1 = len(Tr.Elements)
-					var L2 = len(Gr.Elements)
-					if L1 == L2 {
-						var L = L1
-						for i := 0; i < L; i += 1 {
-							NaivelyInferTypeArgs(Tr.Elements[i], Gr.Elements[i], inferred)
-						}
-					}
-				}
-			case Bundle:
-				switch Gr := G.Repr.(type) {
-				case Bundle:
-					for name, Tf := range Tr.Fields {
-						var Gf, exists = Gr.Fields[name]
-						if exists {
-							NaivelyInferTypeArgs(Tf.Type, Gf.Type, inferred)
-						}
-					}
-				}
-			case Func:
-				switch Gr := G.Repr.(type) {
-				case Func:
-					NaivelyInferTypeArgs(Tr.Input, Gr.Input, inferred)
-					NaivelyInferTypeArgs(Tr.Output, Gr.Output, inferred)
-				}
-			default:
-				panic("impossible branch")
-			}
 		}
 	default:
 		panic("impossible branch")

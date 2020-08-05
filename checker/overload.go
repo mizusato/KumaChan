@@ -113,7 +113,7 @@ func OverloadedAssignTo (
 			return Expr{}, &ExprError {
 				Point:    info.ErrorPoint,
 				Concrete: E_NoneOfFunctionsAssignable {
-					To:         ctx.DescribeType(expected),
+					To:         ctx.DescribeExpectedType(expected),
 					Candidates: candidates,
 				},
 			}
