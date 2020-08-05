@@ -1,6 +1,6 @@
-do (show Window);
+do Window.show;
 
-do (listen (Window.closed))
+do Window.closed
     | concat-map (&(_)(exit 0))
     | forever;
 
@@ -13,7 +13,7 @@ do @state
         let update-list := (TodoList.set-items (list | map adapt-item) current?),
         switch current?:
         case Just current:
-            let current-item := (list | filter (& {id} $(id = current))),
+            let current-item := (list.filter (&{id} $(id = current))),
             let show-current := (show-item (current-item.get 0)),
             merge [update-list, show-current],
         case N/A:
@@ -22,7 +22,7 @@ do @state
     )
     | forever;
 
-do (listen (TodoList.current-item))
+do TodoList.current-item
     | concat-map ( &(key?)
         switch key?:
         case Just key:
@@ -31,5 +31,5 @@ do (listen (TodoList.current-item))
             println 'Current N/A',
         end
     )
-    | catch* (&(err)(crash err))
+    | catch* crash
     | forever;

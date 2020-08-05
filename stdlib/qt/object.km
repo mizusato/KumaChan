@@ -1,6 +1,6 @@
-type Object      native;               // qt.Object
-type Signal[+T]  protected Source[T];  // lib.QtSignal
-type Event[+T]   protected Source[T];  // lib.QtEvent
+type Object      native;  // qt.Object
+type Signal[+T]  protected NoExcept*[T];
+type Event[+T]   protected NoExcept*[T];
 type Static[+O < Object]  opaque O;
 
 type Icon native;

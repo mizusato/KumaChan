@@ -20,20 +20,26 @@ func Optional2Maybe(obj rx.Object) Value {
 }
 
 var EffectFunctions = map[string] Value {
-	"new-sink": func() rx.Effect {
+	"new-wire": func() rx.Effect {
 		return rx.CreateBlockingEffect(func() (rx.Object, bool) {
-			var sink = rx.CreateSink()
-			return sink, true
+			var wire = rx.CreateWire()
+			return wire, true
 		})
 	},
-	"dispatch": func(sink rx.Sink, v Value) rx.Effect {
+	"Source from Wire": func(wire *rx.Wire) rx.Source {
+		return wire
+	},
+	"Sink from Wire": func(wire *rx.Wire) rx.Sink {
+		return wire
+	},
+	"send": func(sink rx.Sink, v Value) rx.Effect {
 		return rx.CreateBlockingEffect(func() (rx.Object, bool) {
-			sink.Emit(v)
+			sink.Send(v)
 			return nil, true
 		})
 	},
-	"listen": func(source rx.Source) rx.Effect {
-		return source.Listen()
+	"receive": func(source rx.Source) rx.Effect {
+		return source.Receive()
 	},
 	"new-mutable": func(init Value) rx.Effect {
 		return rx.CreateBlockingEffect(func() (rx.Object, bool) {

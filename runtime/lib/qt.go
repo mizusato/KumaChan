@@ -15,7 +15,7 @@ type QtSignal struct {
 	Signature   string
 	PropMapper  func(qt.Object) interface{}
 }
-func (signal QtSignal) Listen() rx.Effect {
+func (signal QtSignal) Receive() rx.Effect {
 	return rx.CreateEffect(func(sender rx.Sender) {
 		var disconnect = qt.Connect(signal.Object, signal.Signature, func() {
 			sender.Next(signal.PropMapper(signal.Object))
@@ -31,7 +31,7 @@ type QtEvent struct {
 	Kind     qt.EventKind
 	Prevent  bool
 }
-func (event QtEvent) Listen() rx.Effect {
+func (event QtEvent) Receive() rx.Effect {
 	return rx.CreateEffect(func(sender rx.Sender) {
 		var cancel = qt.Listen(event.Object, event.Kind, event.Prevent, func(ev qt.Event) {
 			var obj = (func() Value {
@@ -71,25 +71,27 @@ var QtFunctions = map[string] interface{} {
 			return nil
 		})
 	},
-	"qt-signal": func(object qt.Object, signature String, mapper Value, h MachineHandle) QtSignal {
-		return QtSignal {
+	"qt-signal": func(object qt.Object, signature String, mapper Value, h MachineHandle) rx.Effect {
+		var source = QtSignal {
 			Object:     object,
 			Signature:  GoStringFromString(signature),
 			PropMapper: func(object qt.Object) interface{} {
 				return h.Call(mapper, object)
 			},
 		}
+		return source.Receive()
 	},
-	"qt-signal-no-payload": func(object qt.Object, signature String) QtSignal {
-		return QtSignal {
+	"qt-signal-no-payload": func(object qt.Object, signature String) rx.Effect {
+		var source = QtSignal {
 			Object:     object,
 			Signature:  GoStringFromString(signature),
 			PropMapper: func(object qt.Object) interface{} {
 				return nil
 			},
 		}
+		return source.Receive()
 	},
-	"qt-event": func(object qt.Object, kind String, prevent SumValue) QtEvent {
+	"qt-event": func(object qt.Object, kind String, prevent SumValue) rx.Effect {
 		var event_kind = (func() qt.EventKind {
 			var k = GoStringFromString(kind)
 			switch k {
@@ -102,11 +104,12 @@ var QtFunctions = map[string] interface{} {
 			}
 		})()
 		var prevent_default = BoolFrom(prevent)
-		return QtEvent {
+		var source = QtEvent {
 			Object:  object,
 			Kind:    event_kind,
 			Prevent: prevent_default,
 		}
+		return source.Receive()
 	},
 	"qt-get-property": func(object qt.Object, prop_name String, prop_type String) Value {
 		var prop = GoStringFromString(prop_name)

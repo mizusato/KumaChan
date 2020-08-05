@@ -60,7 +60,7 @@ private const @list: NoExcept*[Array[Item]]
             case Remove { target: id }:
                 list | filter ( &{id} $(id != target) ),
             case MoveDown { target: id }:
-                let t := list | reduce (No, (:Seq[Item]: nil())) ( &(t, item)
+                let t := list.reduce (No, (:Seq[Item]: nil())) ( &(t, item)
                     let (ok, seq) := t,
                     switch seq.next:
                     case Just (prev, rest):
@@ -73,9 +73,9 @@ private const @list: NoExcept*[Array[Item]]
                     end
                 ),
                 let (_, seq) := t,
-                seq | collect | reverse,
+                seq.collect.reverse,
             case MoveUp { target: id }:
-                let t := list | reduce (No, (:Seq[Item]: nil())) ( &(t, item)
+                let t := list.reduce (No, (:Seq[Item]: nil())) ( &(t, item)
                     let (ok, seq) := t,
                     switch seq.next:
                     case Just (prev, rest):
@@ -88,7 +88,7 @@ private const @list: NoExcept*[Array[Item]]
                     end
                 ),
                 let (_, seq) := t,
-                seq | collect | reverse,
+                seq.collect.reverse,
             end,
         case N/A:
             list,
@@ -96,7 +96,7 @@ private const @list: NoExcept*[Array[Item]]
     ));
 
 private const @current: NoExcept*[Maybe[String]]
-    (listen (TodoList.current-item));
+    TodoList.current-item;
 private function with-current-item:
     ( &(NoExcept*[-], (&(String)(Action))) NoExcept*[Maybe[Action]] )
     ( &(signal, transform)
@@ -111,8 +111,8 @@ private const @action: NoExcept*[Maybe[Action]]
     merge [@add, @remove, @move-down, @move-up];
 
 private const @add: NoExcept*[Maybe[Action]]
-    merge [listen (AddButton.clicked), listen (TodoInput.enter)]
-        | with-latest-from (listen (TodoInput.text))
+    merge [AddButton.clicked, TodoInput.enter]
+        | with-latest-from (TodoInput.text)
         | concat-map ( &(_,label?)
             ~ map* &(x) := random (),
             ~ maybe? &(label) := label?,
@@ -123,18 +123,18 @@ private const @add: NoExcept*[Maybe[Action]]
         );
 
 private const @remove: NoExcept*[Maybe[Action]]
-    (listen (RemoveButton.clicked))
+    RemoveButton.clicked
         | with-current-item (&(current)
             Remove { id: current } );
 
 private const @move-down: NoExcept*[Maybe[Action]]
-    (listen (DownButton.clicked))
+    DownButton.clicked
         | with-current-item ( &(current)
             MoveDown { id: current }
         );
 
 private const @move-up: NoExcept*[Maybe[Action]]
-    (listen (UpButton.clicked))
+    UpButton.clicked
         | with-current-item ( &(current)
             MoveUp { id: current }
         );

@@ -1,29 +1,29 @@
-do (show DemoWindow);
+do DemoWindow.show;
 
-do (listen (DemoWindow.closed))
+do DemoWindow.closed
     | concat-map (&(_)(exit 0))
     | forever;
 
-do (listen (DemoWindow.resized))
+do DemoWindow.resized
     | concat-map (
         & { width, height }
         println ("Current Size: (#, #)" (str width) (str height))
     )
-    | catch* (&(err)(crash err))
+    | catch* crash
     | forever;
 
-do (listen (ChangeTextButton.clicked))
+do ChangeTextButton.clicked
     | concat-map random
-    | map* (&(x)(str x))
-    | concat-map (&(text)(TextDisplay | set-text text))
+    | map* (& x str x)
+    | concat-map (&(text)(TextDisplay.set-text text))
     | forever;
 
-do (listen (TextInput.text))
+do TextInput.text
     | debounce 300
     | concat-map (
         & text
-        (TextDisplay | set-text text)
+        (TextDisplay.set-text text)
         | then (println ("Current Text: #" text))
     )
-    | catch* (&(err)(crash err))
+    | catch* crash
     | forever;

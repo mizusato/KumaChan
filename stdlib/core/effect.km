@@ -6,19 +6,28 @@ type NoExcept[+T]    protected NoExcept*[T];  // (Promise<T>)
 
 // Mutable Containers
 type Source[+T]      native;  // rx.Source
-type Sink[+T]        protected Source[T];  // rx.Sink
+type Sink[-T]        native;  // rx.Sink
+type Wire[T]         native;  // rx.Wire
 type Mutable[+T]     native;  // rx.Cell
 type List[+T]        native;  // rx.List
 type Buffer          native;  // rx.Buffer
 type HashMap[+K,+V]  native;  // rx.StringHashMap, rx.NumberHashMap
 
-// Source/Sink Operations
-public function listen[T]: ( &(Source[T]) NoExcept*[T] )
-    native 'listen';
-public function dispatch[T]: ( &(Sink[T],T) NoExcept[-] )
-    native 'dispatch';
-public function new-sink[T]: ( &() NoExcept[Sink[T]] )
-    native 'new-sink';
+// Operations on Wire, Source and Sink
+public function new-wire[T]: ( &() NoExcept[Wire[T]] )
+    native 'new-wire';
+public function receive[T]: ( &(Wire[T])   NoExcept*[T] )
+    native 'receive';
+public function send[T]:    ( &(Wire[T],T) NoExcept[-] )
+    native 'send';
+public function receive[T]: ( &(Source[T]) NoExcept*[T] )
+    native 'receive';
+public function send[T]:    ( &(Sink[T],T) NoExcept[-] )
+    native 'send';
+public function from[T]: ( &(Wire[T]) Source[T] )
+    native 'Source from Wire';
+public function from[T]: ( &(Wire[T]) Sink[T] )
+    native 'Sink from Wire';
 
 // Mutable Cell Operations
 public function new-mutable[T]: ( &() NoExcept[Mutable[T]] )
