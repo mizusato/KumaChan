@@ -1,6 +1,13 @@
 package rx
 
 
+func (e Effect) StartWith(obj Object) Effect {
+	return Effect { func(sched Scheduler, ob *observer) {
+		ob.next(obj)
+		sched.run(e, ob)
+	} }
+}
+
 func (e Effect) Map(f func(Object)Object) Effect {
 	return Effect { func(sched Scheduler, ob *observer) {
 		sched.run(e, &observer {

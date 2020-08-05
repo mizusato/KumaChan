@@ -4,30 +4,48 @@ type Effect[+T,+E]   protected Effect*[T,E];  // (Promise<T,E>)
 type NoExcept*[+T]   native;  // rx.Effect       (Observable<T>)
 type NoExcept[+T]    protected NoExcept*[T];  // (Promise<T>)
 
-// Mutable Containers
+// Wired Components
 type Source[+T]      native;  // rx.Source
 type Sink[-T]        native;  // rx.Sink
-type Bus[T]          native;  // rx.Wire
+type Bus[T]          native;  // rx.Bus   (PublishSubject<T>)
+type Latch[T]        native;  // rx.Latch (BehaviorSubject<T>)
+
+// Mutable Containers
 type Mutable[+T]     native;  // rx.Cell
 type List[+T]        native;  // rx.List
 type Buffer          native;  // rx.Buffer
 type HashMap[+K,+V]  native;  // rx.StringHashMap, rx.NumberHashMap
 
-// Operations on Wire, Source and Sink
-public function new-bus[T]: ( &() NoExcept[Bus[T]] )
-    native 'new-bus';
-public function receive[T]: ( &(Bus[T])    NoExcept*[T] )
-    native 'receive';
-public function send[T]:    ( &(Bus[T],T)  NoExcept[-] )
-    native 'send';
+// Operations on Source and Sink
 public function receive[T]: ( &(Source[T]) NoExcept*[T] )
     native 'receive';
 public function send[T]:    ( &(Sink[T],T) NoExcept[-] )
     native 'send';
+
+// Operations on Bus and Latch
+public function new-bus[T]: ( &() NoExcept[Bus[T]] )
+    native 'new-bus';
+public function receive[T]: ( &(Bus[T])  NoExcept*[T] )
+    native 'receive';
+public function send[T]:    ( &(Bus[T],T) NoExcept[-] )
+    native 'send';
 public function from[T]: ( &(Bus[T]) Source[T] )
-    native 'Source from Bus';
+    native 'Source from *';
 public function from[T]: ( &(Bus[T]) Sink[T] )
-    native 'Sink from Bus';
+    native 'Sink from *';
+public function new-latch[T]: ( &(T) NoExcept[Latch[T]] )
+    native 'new-latch';
+public function receive[T]: ( &(Latch[T])  NoExcept*[T] )
+    native 'receive';
+public function send[T]:    ( &(Latch[T],T) NoExcept[-] )
+    native 'send';
+public function reset[T]: ( &(Latch[T]) NoExcept[-] )
+    native 'latch-reset';
+public function from[T]: ( &(Latch[T]) Source[T] )
+    native 'Source from *';
+public function from[T]: ( &(Latch[T]) Sink[T] )
+    native 'Sink from *';
+
 
 // Mutable Cell Operations
 public function new-mutable[T]: ( &() NoExcept[Mutable[T]] )

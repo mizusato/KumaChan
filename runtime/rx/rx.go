@@ -36,6 +36,7 @@ type Context struct {
 	disposed   bool
 	cancel     chan struct{}
 	terminate  chan struct{}
+	hooks      [] func()
 }
 
 type disposeFunc func(disposeBehaviour)
@@ -90,6 +91,12 @@ func (ctx *Context) create_disposable_child() (*Context, disposeFunc) {
 		if !(child.disposed) {
 			delete(ctx.children, child)
 			child.dispose_recursively(behaviour)
+			for len(child.hooks) > 0 {
+				var l = len(child.hooks)
+				child.hooks[l-1]()
+				child.hooks[l-1] = nil
+				child.hooks = child.hooks[:l-1]
+			}
 		}
 	}
 }
@@ -115,6 +122,13 @@ func (ctx *Context) WaitDispose(handleCancel func()) {
 		case <- ctx.terminate:
 			// do nothing
 		}
+	}
+}
+
+func (ctx *Context) push_dispose_hook(h func()) {
+	if !(ctx.disposable()) { return }
+	if !(ctx.disposed) {
+		ctx.hooks = append(ctx.hooks, h)
 	}
 }
 
@@ -199,6 +213,15 @@ func CreateBlockingSequenceEffect(action func(func(Object))(bool,Object)) Effect
 			ob.complete()
 		} else {
 			ob.error(err)
+		}
+	} }
+}
+
+func CreateBlockingListenerEffect(action func(func(Object))(func())) Effect {
+	return Effect { func(sched Scheduler, ob *observer) {
+		var h = action(ob.next)
+		if h != nil {
+			ob.context.push_dispose_hook(h)
 		}
 	} }
 }

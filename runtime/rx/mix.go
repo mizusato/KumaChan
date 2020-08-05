@@ -131,6 +131,7 @@ func (q *queue) push(e Effect) {
 func (q *queue) pop() (Effect, bool) {
 	if len(*q) > 0 {
 		var e = (*q)[0]
+		(*q)[0] = Effect { nil }
 		*q = (*q)[1:]
 		return e, true
 	} else {

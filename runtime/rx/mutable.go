@@ -2,67 +2,8 @@ package rx
 
 import (
 	"reflect"
-	"sync"
 )
 
-
-type Source interface {
-	Receive() Effect
-}
-type Sink interface {
-	Send(Object)
-}
-
-type Bus struct {
-	mutex      *sync.RWMutex
-	nextId     uint64
-	listeners  map[uint64] Listener
-}
-type Listener struct {
-	Notify  func(Object)
-}
-func CreateBus() *Bus {
-	var mutex sync.RWMutex
-	return &Bus {
-		mutex:     &mutex,
-		nextId:    0,
-		listeners: make(map[uint64] Listener, 0),
-	}
-}
-func (s *Bus) Receive() Effect {
-	return CreateEffect(func(sender Sender) {
-		var l = s.addListener(Listener {
-			Notify: func(value Object) {
-				sender.Next(value)
-			},
-		})
-		sender.Context().WaitDispose(func() {
-			s.removeListener(l)
-		})
-	})
-}
-func (s *Bus) Send(value Object) {
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
-	for _, l := range s.listeners {
-		l.Notify(value)
-	}
-}
-func (s *Bus) addListener(l Listener) uint64 {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-	var id = s.nextId
-	s.listeners[id] = l
-	s.nextId = (id + 1)
-	return id
-}
-func (s *Bus) removeListener(id uint64) {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-	var _, exists = s.listeners[id]
-	if !exists { panic("cannot remove absent listener") }
-	delete(s.listeners, id)
-}
 
 type Cell struct {
 	value   Object

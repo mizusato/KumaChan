@@ -20,31 +20,34 @@ func Optional2Maybe(obj rx.Object) Value {
 }
 
 var EffectFunctions = map[string] Value {
-	"new-bus": func() rx.Effect {
-		return rx.CreateBlockingEffect(func() (rx.Object, bool) {
-			var bus = rx.CreateBus()
-			return bus, true
-		})
-	},
-	"Source from Bus": func(bus *rx.Bus) rx.Source {
-		return bus
-	},
-	"Sink from Bus": func(bus *rx.Bus) rx.Sink {
-		return bus
-	},
 	"send": func(sink rx.Sink, v Value) rx.Effect {
-		return rx.CreateBlockingEffect(func() (rx.Object, bool) {
-			sink.Send(v)
-			return nil, true
-		})
+		return sink.Send(v)
 	},
 	"receive": func(source rx.Source) rx.Effect {
 		return source.Receive()
 	},
+	"Source from *": func(source rx.Source) rx.Source {
+		return source
+	},
+	"Sink from *": func(sink rx.Sink) rx.Sink {
+		return sink
+	},
+	"new-bus": func() rx.Effect {
+		return rx.CreateBlockingEffect(func() (rx.Object, bool) {
+			return rx.CreateBus(), true
+		})
+	},
+	"new-latch": func(init Value) rx.Effect {
+		return rx.CreateBlockingEffect(func() (rx.Object, bool) {
+			return rx.CreateLatch(init), true
+		})
+	},
+	"latch-reset": func(l *rx.Latch) rx.Effect {
+		return l.Reset()
+	},
 	"new-mutable": func(init Value) rx.Effect {
 		return rx.CreateBlockingEffect(func() (rx.Object, bool) {
-			var cell = rx.CreateCell(init)
-			return cell, true
+			return rx.CreateCell(init), true
 		})
 	},
 	"mutable-get": func(cell rx.Cell) rx.Effect {
