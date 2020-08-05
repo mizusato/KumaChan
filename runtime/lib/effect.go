@@ -20,17 +20,17 @@ func Optional2Maybe(obj rx.Object) Value {
 }
 
 var EffectFunctions = map[string] Value {
-	"new-wire": func() rx.Effect {
+	"new-bus": func() rx.Effect {
 		return rx.CreateBlockingEffect(func() (rx.Object, bool) {
-			var wire = rx.CreateWire()
-			return wire, true
+			var bus = rx.CreateBus()
+			return bus, true
 		})
 	},
-	"Source from Wire": func(wire *rx.Wire) rx.Source {
-		return wire
+	"Source from Bus": func(bus *rx.Bus) rx.Source {
+		return bus
 	},
-	"Sink from Wire": func(wire *rx.Wire) rx.Sink {
-		return wire
+	"Sink from Bus": func(bus *rx.Bus) rx.Sink {
+		return bus
 	},
 	"send": func(sink rx.Sink, v Value) rx.Effect {
 		return rx.CreateBlockingEffect(func() (rx.Object, bool) {

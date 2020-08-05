@@ -13,7 +13,7 @@ type Sink interface {
 	Send(Object)
 }
 
-type Wire struct {
+type Bus struct {
 	mutex      *sync.RWMutex
 	nextId     uint64
 	listeners  map[uint64] Listener
@@ -21,15 +21,15 @@ type Wire struct {
 type Listener struct {
 	Notify  func(Object)
 }
-func CreateWire() *Wire {
+func CreateBus() *Bus {
 	var mutex sync.RWMutex
-	return &Wire {
+	return &Bus {
 		mutex:     &mutex,
 		nextId:    0,
 		listeners: make(map[uint64] Listener, 0),
 	}
 }
-func (s *Wire) Receive() Effect {
+func (s *Bus) Receive() Effect {
 	return CreateEffect(func(sender Sender) {
 		var l = s.addListener(Listener {
 			Notify: func(value Object) {
@@ -41,14 +41,14 @@ func (s *Wire) Receive() Effect {
 		})
 	})
 }
-func (s *Wire) Send(value Object) {
+func (s *Bus) Send(value Object) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 	for _, l := range s.listeners {
 		l.Notify(value)
 	}
 }
-func (s *Wire) addListener(l Listener) uint64 {
+func (s *Bus) addListener(l Listener) uint64 {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	var id = s.nextId
@@ -56,7 +56,7 @@ func (s *Wire) addListener(l Listener) uint64 {
 	s.nextId = (id + 1)
 	return id
 }
-func (s *Wire) removeListener(id uint64) {
+func (s *Bus) removeListener(id uint64) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	var _, exists = s.listeners[id]
