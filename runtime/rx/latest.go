@@ -1,18 +1,5 @@
 package rx
 
-import "reflect"
-
-
-func RefEqual(a interface{}, b interface{}) bool {
-	var x = reflect.ValueOf(a)
-	var y = reflect.ValueOf(b)
-	if x.Kind() == reflect.Ptr && y.Kind() == reflect.Ptr {
-		if x.Pointer() == y.Pointer() {
-			return true
-		}
-	}
-	return false
-}
 
 func (e Effect) WithLatestFrom(values Effect) Effect {
 	return Effect { func(sched Scheduler, ob *observer) {
@@ -36,11 +23,7 @@ func (e Effect) WithLatestFrom(values Effect) Effect {
 		sched.run(e, &observer {
 			context:  ctx,
 			next: func(obj Object) {
-				if current.HasValue && RefEqual(obj, current.Value) {
-					return
-				} else {
-					c.pass(Pair { obj, current })
-				}
+				c.pass(Pair { obj, current })
 			},
 			error: func(err Object) {
 				c.throw(err)
@@ -66,13 +49,9 @@ func CombineLatest(effects ([] Effect)) Effect {
 				next: func(obj Object) {
 					var has_saved = &(values[i].HasValue)
 					var saved_latest = &(values[i].Value)
-					if *has_saved && RefEqual(obj, *saved_latest) {
-						return
-					} else {
-						*saved_latest = obj
-						*has_saved = true
-						c.pass(values)
-					}
+					*saved_latest = obj
+					*has_saved = true
+					c.pass(values)
 				},
 				error: func(err Object) {
 					c.throw(err)
