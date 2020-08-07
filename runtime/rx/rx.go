@@ -93,7 +93,9 @@ func (ctx *Context) create_disposable_child() (*Context, disposeFunc) {
 			child.dispose_recursively(behaviour)
 			for len(child.hooks) > 0 {
 				var l = len(child.hooks)
-				child.hooks[l-1]()
+				if behaviour == behaviour_cancel {
+					child.hooks[l-1]()
+				}
 				child.hooks[l-1] = nil
 				child.hooks = child.hooks[:l-1]
 			}
@@ -125,7 +127,7 @@ func (ctx *Context) WaitDispose(handleCancel func()) {
 	}
 }
 
-func (ctx *Context) push_dispose_hook(h func()) {
+func (ctx *Context) push_cancel_hook(h func()) {
 	if !(ctx.disposable()) { return }
 	if !(ctx.disposed) {
 		ctx.hooks = append(ctx.hooks, h)
@@ -221,7 +223,7 @@ func CreateBlockingListenerEffect(action func(func(Object))(func())) Effect {
 	return Effect { func(sched Scheduler, ob *observer) {
 		var h = action(ob.next)
 		if h != nil {
-			ob.context.push_dispose_hook(h)
+			ob.context.push_cancel_hook(h)
 		}
 	} }
 }
