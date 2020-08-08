@@ -1,5 +1,5 @@
-#ifndef HELLO_H
-#define HELLO_H
+#ifndef QTBINDING_HPP
+#define QTBINDING_HPP
 #include <QObject>
 #include <QWidget>
 #include <QEvent>
@@ -77,4 +77,4 @@ public:
     }
 };
 
-#endif
+#endif  // QTBINDING_HPP
