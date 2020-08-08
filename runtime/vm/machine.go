@@ -72,6 +72,10 @@ func (h Handle) Call(fv Value, arg Value) Value {
 	}
 }
 
+func (h Handle) GetScheduler() rx.Scheduler {
+	return h.machine.scheduler
+}
+
 func (h Handle) GetErrorPoint() ErrorPoint {
 	return GetFrameErrorPoint(h.context.workingFrame)
 }

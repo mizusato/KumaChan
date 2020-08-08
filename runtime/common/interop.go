@@ -1,11 +1,15 @@
 package common
 
-import "reflect"
-import . "kumachan/error"
+import (
+	"reflect"
+	. "kumachan/error"
+	"kumachan/runtime/rx"
+)
 
 
 type MachineHandle interface {
 	Call(fv Value, arg Value) Value
+	GetScheduler() rx.Scheduler
 	GetErrorPoint() ErrorPoint
 }
 var __t = MachineHandle(nil)

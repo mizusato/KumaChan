@@ -4,9 +4,9 @@
 void Node::diff(DeltaNotifier* ctx, Node* parent, Node* old, Node* _new) {
     assert(ctx != nullptr);
     assert(!(old == nullptr && _new == nullptr));
-    auto parent_id = reinterpret_cast<NodeId>(parent);
-    auto old_id = reinterpret_cast<NodeId>(old);
-    auto new_id = reinterpret_cast<NodeId>(_new);
+    auto parent_id = QString::number(reinterpret_cast<size_t>(parent));
+    auto old_id = QString::number(reinterpret_cast<size_t>(old));
+    auto new_id = QString::number(reinterpret_cast<size_t>(_new));
     if (old == _new) { return; }
     if (old == nullptr) {
         ctx->AppendNode(parent_id, new_id, _new->tagName);

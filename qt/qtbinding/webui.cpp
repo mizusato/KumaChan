@@ -15,6 +15,10 @@ void* QtWebUiGetWindow() {
     return (void*) (window);
 }
 
+size_t QtWebUiGetWindowDetachedHandler() {
+    return window->getDetachedHandler();
+}
+
 void QtWebUiUpdateVDOM(QtWebUiNode root) {
     Node* ptr = (Node*) (root.ptr);
     window->updateVDOM(ptr);
@@ -36,7 +40,7 @@ void QtWebUiNodeAddEvent(QtWebUiNode node, QtString name, QtBool prevent, QtBool
     EventOptions* opts = new EventOptions(ptr);
     opts->prevent = prevent;
     opts->stop = stop;
-    opts->handler = handler;
+    opts->handler = QString::number(handler);
     ptr->events[QtUnwrapString(name)] = opts;
 }
 

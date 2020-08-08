@@ -1,4 +1,22 @@
-type WebUiEffect NoExcept[-];
+type MainLoop NoExcept[-];
 
-public function webui-debug: ( &() WebUiEffect )
+public function webui-debug: ( &(NoExcept*[DomNode]) MainLoop )
     native 'webui-debug';
+
+
+type Event native;
+type DomNode native;
+type DomStyle native;
+type DomEvent native;
+type DomContent native;
+
+public function dom-node: ( &(String,Array[DomStyle],Array[DomEvent],DomContent) DomNode )
+    native 'webui-dom-node';
+public function dom-style: (&(String,String) DomStyle )
+    native 'webui-dom-style';
+public function dom-event: ( &(String,Bool,Bool,Sink[Event]) DomEvent )
+    native 'webui-dom-event';
+public function dom-text: ( &(String) DomContent )
+    native 'webui-dom-text';
+public function dom-children: ( &(Array[DomNode]) DomContent )
+    native 'webui-dom-children';

@@ -90,6 +90,7 @@ extern "C" {
     size_t QtStringWriteToUTF32Buffer(QtString str, uint32_t *buf);
     void QtWebUiInit(QtString title);
     void* QtWebUiGetWindow();
+    size_t QtWebUiGetWindowDetachedHandler();
     void QtWebUiUpdateVDOM(QtWebUiNode root);
     QtWebUiNode QtWebUiNewNode(QtString tagName);
     void QtWebUiNodeAddStyle(QtWebUiNode node, QtString key, QtString value);

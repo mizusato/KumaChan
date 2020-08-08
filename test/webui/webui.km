@@ -1,1 +1,3 @@
-do webui-debug ();
+do webui-debug (
+    emit* [(dom-node 'h1' [] [] (dom-text '你好 WebUI'))]
+);

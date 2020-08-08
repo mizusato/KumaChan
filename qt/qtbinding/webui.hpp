@@ -19,19 +19,20 @@ class WebUiBridge final: public QObject, public DeltaNotifier {
     Q_OBJECT
     Q_INTERFACES(DeltaNotifier)
 signals:
+    void LoadFinish();
+    void EmitEvent(QString id, QString name, QVariantMap event);
     void CloseWindow();
-    void EmitEvent(NodeId id, QString name, QVariantMap event);
-    void SetText(NodeId id, QString text);
-    void InsertNode(NodeId parent, NodeId ref, NodeId id, QString tag);
-    void AppendNode(NodeId parent, NodeId id, QString tag);
-    void RemoveNode(NodeId parent, NodeId id);
-    void UpdateNode(NodeId old_id, NodeId new_id);
-    void ReplaceNode(NodeId old_id, NodeId id, QString tag);
-    void EraseStyle(NodeId id, QString key);
-    void ApplyStyle(NodeId id, QString key, QString value);
-    void DetachEvent(NodeId id, QString event, size_t handler);
-    void ModifyEvent(NodeId id, QString event, bool prevent, bool stop);
-    void AttachEvent(NodeId id, QString event, bool prevent, bool stop, size_t handler);
+    void SetText(QString id, QString text);
+    void InsertNode(QString parent, QString ref, QString id, QString tag);
+    void AppendNode(QString parent, QString id, QString tag);
+    void RemoveNode(QString parent, QString id);
+    void UpdateNode(QString old_id, QString new_id);
+    void ReplaceNode(QString old_id, QString id, QString tag);
+    void EraseStyle(QString id, QString key);
+    void ApplyStyle(QString id, QString key, QString value);
+    void DetachEvent(QString id, QString event, QString handler);
+    void ModifyEvent(QString id, QString event, bool prevent, bool stop);
+    void AttachEvent(QString id, QString event, bool prevent, bool stop, QString handler);
 };
 
 class WebUiWindow final: public QMainWindow {
@@ -47,17 +48,13 @@ public:
     WebUiWindow(QString title): QMainWindow(nullptr), vdom(nullptr), debug(true) {
         setWindowTitle(title);
         bridge = new WebUiBridge();
-        connect(bridge, &WebUiBridge::AttachEvent, this, [this]
-                (NodeId, QString, bool, bool, size_t handler) -> void {
-            targetEventHandler = handler;
-            eventAttached();
-        });
         connect(bridge, &WebUiBridge::DetachEvent, this, [this]
-                (NodeId, QString, size_t handler) -> void {
-            targetEventHandler = handler;
-            eventDetached();
+                (QString, QString, QString handler) -> void {
+            detachedHandler = handler.toULongLong();
+            handlerDetached();
         });
         connect(bridge, &WebUiBridge::EmitEvent, this, &WebUiWindow::emitEvent);
+        connect(bridge, &WebUiBridge::LoadFinish, this, &WebUiWindow::loadFinished);
         view = new QWebView(this);
         view->setUrl(QUrl(WebUiHtmlUrl));
         view->setContextMenuPolicy(Qt::NoContextMenu);
@@ -77,26 +74,26 @@ private:
         ev->ignore();
         bridge->CloseWindow();
     };
-    NodeId emittedEventNode;
+    QString emittedEventNode;
     QString emittedEventName;
     QVariantMap emittedEventPayload;
-    size_t targetEventHandler;
+    size_t detachedHandler;
 public:
     void updateVDOM(Node* new_vdom) {
         Node* old_vdom = vdom;
         vdom = new_vdom;
         Node::diff(bridge, nullptr, old_vdom, new_vdom);
     };
-    NodeId getEmittedEventNode() const { return emittedEventNode; }
+    QString getEmittedEventNode() const { return emittedEventNode; }
     QString getEmittedEventName() const { return emittedEventName; }
     QVariantMap getEmittedEventPayload() const { return emittedEventPayload; }
-    size_t getTargetEventHandler() const { return targetEventHandler; }
+    size_t getDetachedHandler() const { return detachedHandler; }
 signals:
-    void eventAttached();
+    void loadFinished();
     void eventEmitted();
-    void eventDetached();
+    void handlerDetached();
 public slots:
-    void emitEvent(NodeId id, QString name, QVariantMap event) {
+    void emitEvent(QString id, QString name, QVariantMap event) {
         emittedEventNode = id;
         emittedEventName = name;
         emittedEventPayload = event;

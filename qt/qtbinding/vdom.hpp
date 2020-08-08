@@ -8,8 +8,6 @@
 #include <cassert>
 
 
-using NodeId = size_t;
-
 class EventOptions;
 class DeltaNotifier;
 
@@ -37,23 +35,23 @@ public:
     EventOptions(Node* parent): QObject(parent) {};
     bool prevent;
     bool stop;
-    size_t handler;
+    QString handler;
 };
 
 class DeltaNotifier {
 public:
     virtual ~DeltaNotifier() {}
-    virtual void SetText(NodeId id, QString text) = 0;
-    virtual void InsertNode(NodeId parent, NodeId ref, NodeId id, QString tag) = 0;
-    virtual void AppendNode(NodeId parent, NodeId id, QString tag) = 0;
-    virtual void RemoveNode(NodeId parent, NodeId id) = 0;
-    virtual void UpdateNode(NodeId old_id, NodeId new_id) = 0;
-    virtual void ReplaceNode(NodeId old_id, NodeId id, QString tag) = 0;
-    virtual void EraseStyle(NodeId id, QString key) = 0;
-    virtual void ApplyStyle(NodeId id, QString key, QString value) = 0;
-    virtual void DetachEvent(NodeId id, QString event, size_t handler) = 0;
-    virtual void ModifyEvent(NodeId id, QString event, bool prevent, bool stop) = 0;
-    virtual void AttachEvent(NodeId id, QString event, bool prevent, bool stop, size_t handler) = 0;
+    virtual void SetText(QString id, QString text) = 0;
+    virtual void InsertNode(QString parent, QString ref, QString id, QString tag) = 0;
+    virtual void AppendNode(QString parent, QString id, QString tag) = 0;
+    virtual void RemoveNode(QString parent, QString id) = 0;
+    virtual void UpdateNode(QString old_id, QString new_id) = 0;
+    virtual void ReplaceNode(QString old_id, QString id, QString tag) = 0;
+    virtual void EraseStyle(QString id, QString key) = 0;
+    virtual void ApplyStyle(QString id, QString key, QString value) = 0;
+    virtual void DetachEvent(QString id, QString event, QString handler) = 0;
+    virtual void ModifyEvent(QString id, QString event, bool prevent, bool stop) = 0;
+    virtual void AttachEvent(QString id, QString event, bool prevent, bool stop, QString handler) = 0;
 };
 
 Q_DECLARE_INTERFACE(DeltaNotifier, "DeltaNotifier");

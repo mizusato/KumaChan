@@ -48,9 +48,9 @@ type DomEvent struct {
     Name     [] rune
     Prevent  bool
     Stop     bool
-    handler  DomEventHandler
+    Handler  DomEventHandler
 }
-type DomNodeContent interface { DomNodeContent() }
+type DomContent interface { DomNodeContent() }
 func (impl DomText) DomNodeContent() {}
 type DomText ([] rune)
 func (impl DomChildren) DomNodeContent() {}
@@ -58,11 +58,20 @@ type DomChildren ([] DomNode)
 type DomEventHandler = func(VariantMap)
 var __EventHandlers = make(map[uint] DomEventHandler)
 var __EventHandlerNextId = uint(0)
+var __EventHandlerMutex sync.Mutex
 func RegisterEventHandler(handler DomEventHandler) uint {
+    __EventHandlerMutex.Lock()
+    defer __EventHandlerMutex.Unlock()
     var id = __EventHandlerNextId
     __EventHandlerNextId += 1
     __EventHandlers[id] = handler
     return id
+}
+func UnregisterDetachedEventHandler() {
+    __EventHandlerMutex.Lock()
+    defer __EventHandlerMutex.Unlock()
+    var id = uint(C.QtWebUiGetWindowDetachedHandler())
+    delete(__EventHandlers, id)
 }
 
 type ListWidgetItem struct {
@@ -360,7 +369,15 @@ func WebUiDebug(title String) {
     C.QtWebUiInit(C.QtString(title))
 }
 
-func NewDomNode(tag ([] rune), props DomProps, content DomNodeContent) DomNode {
+func WebUiGetWindow() Widget {
+    return widget { object { C.QtWebUiGetWindow() } }
+}
+
+func WebUiUpdateVDOM(root DomNode) {
+    C.QtWebUiUpdateVDOM(C.QtWebUiNode(root))
+}
+
+func WebUiNewDomNode(tag ([] rune), props DomProps, content DomContent) DomNode {
     var tag_, del_tag = NewStringFromRunes(tag)
     var raw_node = C.QtWebUiNewNode(C.QtString(tag_))
     del_tag()
@@ -377,7 +394,7 @@ func NewDomNode(tag ([] rune), props DomProps, content DomNodeContent) DomNode {
         if event.Prevent { prevent = 1 } else { prevent = 0 }
         var stop int
         if event.Stop { stop = 1 } else { stop = 0 }
-        var handler = RegisterEventHandler(event.handler)
+        var handler = RegisterEventHandler(event.Handler)
         C.QtWebUiNodeAddEvent(
             raw_node, C.QtString(name),
             C.int(prevent), C.int(stop), C.size_t(handler))
