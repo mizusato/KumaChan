@@ -42,7 +42,7 @@ public:
     virtual void ReplaceNode(uintptr old_id, uintptr id, QString tag) = 0;
     virtual void EraseStyle(uintptr id, QString key) = 0;
     virtual void ApplyStyle(uintptr id, QString key, QString value) = 0;
-    virtual void DetachEvent(uintptr id, QString event) = 0;
+    virtual void DetachEvent(uintptr id, QString event, bool dispose_handler) = 0;
     virtual void AttachEvent(uintptr id, QString event, bool prevent, bool stop, size_t handler) = 0;
 };
 

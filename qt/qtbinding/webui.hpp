@@ -20,7 +20,7 @@ signals:
     void ReplaceNode(uintptr old_id, uintptr id, QString tag);
     void EraseStyle(uintptr id, QString key);
     void ApplyStyle(uintptr id, QString key, QString value);
-    void DetachEvent(uintptr id, QString event);
+    void DetachEvent(uintptr id, QString event, bool dispose_handler);
     void AttachEvent(uintptr id, QString event, bool prevent, bool stop, size_t handler);
 };
 

@@ -45,13 +45,13 @@ void Node::diff(DeltaNotifier* ctx, Node* parent, Node* old, Node* _new) {
                 if (new_events.contains(old_key)) {
                     auto new_opts = new_events[old_key];
                     if (new_opts != old_opts) {
-                        ctx->DetachEvent(id, old_key);
+                        ctx->DetachEvent(id, old_key, false);
                         delete old_opts;
                         ctx->AttachEvent(id, old_key,
                             new_opts->prevent, new_opts->stop, new_opts->handler);
                     }
                 } else {
-                    ctx->DetachEvent(id, old_key);
+                    ctx->DetachEvent(id, old_key, true);
                     delete old_opts;
                 }
             }
