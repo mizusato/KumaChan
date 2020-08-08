@@ -25,8 +25,8 @@ func Execute(p Program, max_stack_size uint) *Machine {
 	}
 	var pool = &sync.Pool { New: func() interface{} {
 		return &ExecutionContext {
-			dataStack: make([]Value, 0, InitialDataStackCapacity),
-			callStack: make([]CallStackFrame, 0, InitialCallStackCapacity),
+			dataStack: make([] Value, 0, InitialDataStackCapacity),
+			callStack: make([] CallStackFrame, 0, InitialCallStackCapacity),
 		}
 	} }
 	var m = &Machine {

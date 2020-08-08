@@ -14,6 +14,7 @@ var NativeFunctionMaps = [] (map[string] interface{}) {
 	OS_Functions,
 	NetFunctions,
 	QtFunctions,
+	WebUiFunctions,
 }
 var NativeConstantMaps = [] (map[string] Value) {
 	OS_Constants,

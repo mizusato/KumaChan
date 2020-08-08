@@ -4,15 +4,15 @@
 void Node::diff(DeltaNotifier* ctx, Node* parent, Node* old, Node* _new) {
     assert(ctx != nullptr);
     assert(!(old == nullptr && _new == nullptr));
-    auto parent_id = reinterpret_cast<uintptr>(parent);
-    auto old_id = reinterpret_cast<uintptr>(old);
-    auto new_id = reinterpret_cast<uintptr>(_new);
+    auto parent_id = reinterpret_cast<NodeId>(parent);
+    auto old_id = reinterpret_cast<NodeId>(old);
+    auto new_id = reinterpret_cast<NodeId>(_new);
     if (old == _new) { return; }
     if (old == nullptr) {
         ctx->AppendNode(parent_id, new_id, _new->tagName);
     } else if (_new == nullptr) {
         ctx->RemoveNode(parent_id, old_id);
-        old->deleteLater();
+        delete old;
     } else {
         if (old->tagName == _new->tagName) {
             ctx->UpdateNode(old_id, new_id);
@@ -45,13 +45,19 @@ void Node::diff(DeltaNotifier* ctx, Node* parent, Node* old, Node* _new) {
                 if (new_events.contains(old_key)) {
                     auto new_opts = new_events[old_key];
                     if (new_opts != old_opts) {
-                        ctx->DetachEvent(id, old_key, false);
-                        delete old_opts;
-                        ctx->AttachEvent(id, old_key,
-                            new_opts->prevent, new_opts->stop, new_opts->handler);
+                        if (new_opts->handler == old_opts->handler) {
+                            delete old_opts;
+                            ctx->ModifyEvent(id, old_key,
+                                new_opts->prevent, new_opts->stop);
+                        } else {
+                            ctx->DetachEvent(id, old_key, old_opts->handler);
+                            delete old_opts;
+                            ctx->AttachEvent(id, old_key,
+                                new_opts->prevent, new_opts->stop, new_opts->handler);
+                        }
                     }
                 } else {
-                    ctx->DetachEvent(id, old_key, true);
+                    ctx->DetachEvent(id, old_key, old_opts->handler);
                     delete old_opts;
                 }
             }

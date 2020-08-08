@@ -8,7 +8,6 @@ package qt
 import "C"
 
 import (
-    "runtime"
     "unsafe"
     "sync"
     "kumachan/qt/cgohelper"
@@ -60,18 +59,18 @@ type Event C.QtEvent
 
 var initialized = false
 var init_mutex sync.Mutex
+var InitRequestSignal = make(chan func())
 func MakeSureInitialized() {
     init_mutex.Lock()
     if !(initialized) {
         initialized = true
         init_mutex.Unlock()
-        var wait = make(chan struct{}, 1)
-        go (func() {
-           runtime.LockOSThread()
+        var wait = make(chan struct{})
+        InitRequestSignal <- func() {
            C.QtInit()
            wait <- struct{}{}
            C.QtMain()
-        })()
+        }
         <- wait
     } else {
         init_mutex.Unlock()
@@ -325,3 +324,7 @@ func (ev Event) ResizeEventGetHeight() uint {
     return uint(C.QtResizeEventGetHeight(C.QtEvent(ev)))
 }
 
+func WebUiDebug(title String) {
+    MakeSureInitialized()
+    C.QtWebUiInit(C.QtString(title))
+}

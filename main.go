@@ -16,6 +16,8 @@ import (
     "kumachan/compiler"
     "kumachan/runtime/common"
     "kumachan/runtime/vm"
+    "runtime"
+    "kumachan/qt"
 )
 
 
@@ -130,8 +132,16 @@ func debug_compiler(entry *checker.CheckedModule) common.Program {
 func main () {
     // debug_parser(os.Stdin, "[eval]", "root")
     // os.Exit(0)
+    runtime.LockOSThread()
     var mod, idx = debug_loader()
     var c_mod, _ = debug_checker(mod, idx)
     var program = debug_compiler(c_mod)
-    vm.Execute(program, 33554432)
+    go (func() {
+        vm.Execute(program, 33554432)
+        close(qt.InitRequestSignal)
+    })()
+    var qt_main, use_qt = <- qt.InitRequestSignal
+    if use_qt {
+        qt_main()
+    }
 }

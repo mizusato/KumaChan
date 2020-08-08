@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/qtbinding">
+        <file>webui/webui.js</file>
+        <file>webui/webui.html</file>
+    </qresource>
+</RCC>

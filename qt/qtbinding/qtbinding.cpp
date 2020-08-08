@@ -12,6 +12,7 @@
 #include <QPixmap>
 #include <QListWidget>
 #include <QListWidgetItem>
+#include "adapt.hpp"
 #include "qtbinding.hpp"
 #include "qtbinding.h"
 
@@ -20,8 +21,6 @@ const size_t QtEventMove = QEvent::Move;
 const size_t QtEventResize = QEvent::Resize;
 const size_t QtEventClose = QEvent::Close;
 
-QtString QtWrapString(QString str);
-QString QtUnwrapString(QtString str);
 QMetaObject::Connection QtDynamicConnect (
         QObject* emitter , const QString& signalName,
         QObject* receiver, const QString& slotName
@@ -193,16 +192,6 @@ QtString QtNewStringUTF32(const uint32_t* buf, size_t len) {
     QString* ptr = new QString;
     *ptr = QString::fromUcs4(buf, len);
     return { (void*) ptr };
-}
-
-QtString QtWrapString(QString str) {
-    QString* ptr = new QString;
-    *ptr = str;
-    return { (void*) ptr };
-}
-
-QString QtUnwrapString(QtString str) {
-    return QString(*(QString*)(str.ptr));
 }
 
 void QtDeleteString(QtString str) {

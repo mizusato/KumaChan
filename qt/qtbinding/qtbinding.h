@@ -78,6 +78,7 @@ extern "C" {
     QtBool QtListWidgetHasCurrentItem(void* widget_ptr);
     QtString QtListWidgetGetCurrentItemKey(void *widget_ptr);
     size_t QtStringWriteToUTF32Buffer(QtString str, uint32_t *buf);
+    void QtWebUiInit(QtString title);
 #ifdef __cplusplus
 }
 #endif

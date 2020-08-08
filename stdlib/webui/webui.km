@@ -1,0 +1,4 @@
+type WebUiEffect NoExcept[-];
+
+public function webui-debug: ( &() WebUiEffect )
+    native 'webui-debug';
