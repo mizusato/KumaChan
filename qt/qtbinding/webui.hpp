@@ -21,6 +21,7 @@ class WebUiBridge final: public QObject, public DeltaNotifier {
 signals:
     void CloseWindow();
     void EmitEvent(NodeId id, QString name, QVariantMap event);
+    void SetText(NodeId id, QString text);
     void InsertNode(NodeId parent, NodeId ref, NodeId id, QString tag);
     void AppendNode(NodeId parent, NodeId id, QString tag);
     void RemoveNode(NodeId parent, NodeId id);
@@ -72,19 +73,6 @@ public:
     }
     ~WebUiWindow() {}
 private:
-    void openInspector() {
-        QWebInspector* inspector = new QWebInspector(this);
-        inspector->setPage(page);
-        QDialog* inspector_dialog = new QDialog();
-        inspector_dialog->setLayout(new QVBoxLayout());
-        inspector_dialog->layout()->addWidget(inspector);
-        inspector_dialog->setModal(false);
-        inspector_dialog->resize(800, 360);
-        inspector_dialog->layout()->setContentsMargins(0, 0, 0, 0);
-        inspector_dialog->setWindowTitle(tr("Webkit Inspector"));
-        inspector_dialog->show();
-        inspector_dialog->raise();
-    }
     void closeEvent(QCloseEvent* ev) override {
         ev->ignore();
         bridge->CloseWindow();
@@ -94,6 +82,11 @@ private:
     QVariantMap emittedEventPayload;
     size_t targetEventHandler;
 public:
+    void updateVDOM(Node* new_vdom) {
+        Node* old_vdom = vdom;
+        vdom = new_vdom;
+        Node::diff(bridge, nullptr, old_vdom, new_vdom);
+    };
     NodeId getEmittedEventNode() const { return emittedEventNode; }
     QString getEmittedEventName() const { return emittedEventName; }
     QVariantMap getEmittedEventPayload() const { return emittedEventPayload; }
@@ -112,6 +105,20 @@ public slots:
             qDebug() << "Event: " << id << " " << name;
         }
     };
+private:
+    void openInspector() {
+        QWebInspector* inspector = new QWebInspector(this);
+        inspector->setPage(page);
+        QDialog* inspector_dialog = new QDialog();
+        inspector_dialog->setLayout(new QVBoxLayout());
+        inspector_dialog->layout()->addWidget(inspector);
+        inspector_dialog->setModal(false);
+        inspector_dialog->resize(800, 360);
+        inspector_dialog->layout()->setContentsMargins(0, 0, 0, 0);
+        inspector_dialog->setWindowTitle(tr("Webkit Inspector"));
+        inspector_dialog->show();
+        inspector_dialog->raise();
+    }
 };
 
 #endif  // WEBUI_HPP

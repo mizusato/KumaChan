@@ -16,6 +16,11 @@ struct _QtString {
 };
 typedef struct _QtString QtString;
 
+struct _QtVariantMap {
+    void* ptr;
+};
+typedef struct _QtVariantMap QtVariantMap;
+
 struct _QtIcon {
     void* ptr;
 };
@@ -35,6 +40,11 @@ struct _QtEventListener {
     void* ptr;
 };
 typedef struct _QtEventListener QtEventListener;
+
+struct _QtWebUiNode {
+    void* ptr;
+};
+typedef struct _QtWebUiNode QtWebUiNode;
 
 extern const size_t QtEventMove;
 extern const size_t QtEventResize;
@@ -79,6 +89,13 @@ extern "C" {
     QtString QtListWidgetGetCurrentItemKey(void *widget_ptr);
     size_t QtStringWriteToUTF32Buffer(QtString str, uint32_t *buf);
     void QtWebUiInit(QtString title);
+    void* QtWebUiGetWindow();
+    void QtWebUiUpdateVDOM(QtWebUiNode root);
+    QtWebUiNode QtWebUiNewNode(QtString tagName);
+    void QtWebUiNodeAddStyle(QtWebUiNode node, QtString key, QtString value);
+    void QtWebUiNodeAddEvent(QtWebUiNode node, QtString name, QtBool prevent, QtBool stop, size_t handler);
+    void QtWebUiNodeSetText(QtWebUiNode node, QtString text);
+    void QtWebUiNodeAppendChild(QtWebUiNode node, QtWebUiNode child);
 #ifdef __cplusplus
 }
 #endif

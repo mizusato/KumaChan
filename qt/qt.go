@@ -31,8 +31,39 @@ func (widget) Widget() {}
 type widget struct { object }
 
 type String C.QtString
+type VariantMap C.QtVariantMap
 type Icon C.QtIcon
 type Pixmap C.QtPixmap
+
+type DomNode C.QtWebUiNode
+type DomProps struct {
+    Styles  [] DomStyle
+    Events  [] DomEvent
+}
+type DomStyle struct {
+    Key    [] rune
+    Value  [] rune
+}
+type DomEvent struct {
+    Name     [] rune
+    Prevent  bool
+    Stop     bool
+    handler  DomEventHandler
+}
+type DomNodeContent interface { DomNodeContent() }
+func (impl DomText) DomNodeContent() {}
+type DomText ([] rune)
+func (impl DomChildren) DomNodeContent() {}
+type DomChildren ([] DomNode)
+type DomEventHandler = func(VariantMap)
+var __EventHandlers = make(map[uint] DomEventHandler)
+var __EventHandlerNextId = uint(0)
+func RegisterEventHandler(handler DomEventHandler) uint {
+    var id = __EventHandlerNextId
+    __EventHandlerNextId += 1
+    __EventHandlers[id] = handler
+    return id
+}
 
 type ListWidgetItem struct {
     Key    [] rune
@@ -327,4 +358,43 @@ func (ev Event) ResizeEventGetHeight() uint {
 func WebUiDebug(title String) {
     MakeSureInitialized()
     C.QtWebUiInit(C.QtString(title))
+}
+
+func NewDomNode(tag ([] rune), props DomProps, content DomNodeContent) DomNode {
+    var tag_, del_tag = NewStringFromRunes(tag)
+    var raw_node = C.QtWebUiNewNode(C.QtString(tag_))
+    del_tag()
+    for _, style := range props.Styles {
+        var key, del_key = NewStringFromRunes(style.Key)
+        var val, del_val = NewStringFromRunes(style.Value)
+        C.QtWebUiNodeAddStyle(raw_node, C.QtString(key), C.QtString(val))
+        del_val()
+        del_key()
+    }
+    for _, event := range props.Events {
+        var name, del_name = NewStringFromRunes(event.Name)
+        var prevent int
+        if event.Prevent { prevent = 1 } else { prevent = 0 }
+        var stop int
+        if event.Stop { stop = 1 } else { stop = 0 }
+        var handler = RegisterEventHandler(event.handler)
+        C.QtWebUiNodeAddEvent(
+            raw_node, C.QtString(name),
+            C.int(prevent), C.int(stop), C.size_t(handler))
+        del_name()
+    }
+    switch c := content.(type) {
+    case DomText:
+        var text = ([] rune)(c)
+        var text_, del_text = NewStringFromRunes(text)
+        C.QtWebUiNodeSetText(raw_node, C.QtString(text_))
+        del_text()
+    case DomChildren:
+        var children = ([] DomNode)(c)
+        for _, child := range children {
+            var raw_child = C.QtWebUiNode(child)
+            C.QtWebUiNodeAppendChild(raw_node, raw_child)
+        }
+    }
+    return DomNode(raw_node)
 }

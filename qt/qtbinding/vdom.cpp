@@ -77,27 +77,35 @@ void Node::diff(DeltaNotifier* ctx, Node* parent, Node* old, Node* _new) {
                     new_opts->prevent, new_opts->stop, new_opts->handler);
             }
         }
-        auto& new_children = _new->children;
-        int i = 0;
-        for (auto child: new_children) {
-            Node* old_child = nullptr;
+        if (_new->is_text) {
+            auto& new_text = _new->text;
+            ctx->SetText(id, new_text);
+        } else {
+            auto& new_children = _new->children;
+            if (old != nullptr && old->is_text) {
+                ctx->SetText(id, "");
+            }
+            int i = 0;
+            for (auto child: new_children) {
+                Node* old_child = nullptr;
+                if (old != nullptr) {
+                    auto& old_children = old->children;
+                    if (i < old_children.length()) {
+                        old_child = old_children[i];
+                    }
+                }
+                diff(ctx, node, old_child, child);
+                i += 1;
+            }
             if (old != nullptr) {
                 auto& old_children = old->children;
-                if (i < old_children.length()) {
-                    old_child = old_children[i];
-                }
-            }
-            diff(ctx, node, old_child, child);
-            i += 1;
-        }
-        if (old != nullptr) {
-            auto& old_children = old->children;
-            int old_len = old_children.length();
-            int new_len = new_children.length();
-            if (old_len > new_len) {
-                for (int i = new_len; i < old_len; i += 1) {
-                    Node* old_child = old_children[i];
-                    diff(ctx, node, old_child, nullptr);
+                int old_len = old_children.length();
+                int new_len = new_children.length();
+                if (old_len > new_len) {
+                    for (int i = new_len; i < old_len; i += 1) {
+                        Node* old_child = old_children[i];
+                        diff(ctx, node, old_child, nullptr);
+                    }
                 }
             }
         }

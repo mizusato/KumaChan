@@ -16,17 +16,25 @@ class DeltaNotifier;
 class Node final: public QObject {
     Q_OBJECT
 public:
+    Node(): QObject(nullptr) {};
+    ~Node() {
+        for (Node* child: children) {
+            delete child;
+        }
+    }
     QString tagName;
     QMap<QString,QString> style;
     QMap<QString,EventOptions*> events;
+    bool is_text;
+    QString text;
     QList<Node*> children;
-    QString key;
     static void diff(DeltaNotifier* ctx, Node* parent, Node* old, Node* _new);
 };
 
 class EventOptions: public QObject {
     Q_OBJECT
 public:
+    EventOptions(Node* parent): QObject(parent) {};
     bool prevent;
     bool stop;
     size_t handler;
@@ -35,6 +43,7 @@ public:
 class DeltaNotifier {
 public:
     virtual ~DeltaNotifier() {}
+    virtual void SetText(NodeId id, QString text) = 0;
     virtual void InsertNode(NodeId parent, NodeId ref, NodeId id, QString tag) = 0;
     virtual void AppendNode(NodeId parent, NodeId id, QString tag) = 0;
     virtual void RemoveNode(NodeId parent, NodeId id) = 0;

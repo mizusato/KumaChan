@@ -12,6 +12,7 @@
 #include <QPixmap>
 #include <QListWidget>
 #include <QListWidgetItem>
+#include <QVariantMap>
 #include "adapt.hpp"
 #include "qtbinding.hpp"
 #include "qtbinding.h"
