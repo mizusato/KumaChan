@@ -96,6 +96,10 @@ func ValidateType(t Type, nodes (map[Type] ast.Node), ctx TypeValidationContext)
 				Given:    given_arity,
 			},
 		} }
+		for _, arg := range T.Args {
+			var err = ValidateType(arg, nodes, ctx)
+			if err != nil { return err }
+		}
 		return nil
 	case *AnonymousType:
 		switch R := T.Repr.(type) {

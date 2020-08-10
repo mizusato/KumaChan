@@ -1,6 +1,5 @@
 type MainLoop NoExcept[-];
 
-// TODO: fix error for absent named type
 public function webui-debug: ( &(NoExcept*[Node]) MainLoop )
     native 'webui-debug';
 

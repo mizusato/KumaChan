@@ -126,7 +126,7 @@ public function map[A,B,E]:  ( &(Effect[A,E],(&(A)(B))) Effect[B,E] )
     native 'effect-map';
 public function map[A,B]:    ( &(NoExcept[A],(&(A)(B))) NoExcept[B] )
     native 'effect-map';
-public function map-to[A,B]: ( &(Effect[A,E],B) Effect[B,E] )
+public function map-to[A,B,E]: ( &(Effect[A,E],B) Effect[B,E] )
     (&(e,v)(e | map (&(_)(v))));
 public function map-to[A,B]: ( &(NoExcept[A],B) NoExcept[B] )
     (&(e,v)(e | map (&(_)(v))));
@@ -134,7 +134,7 @@ public function map*[A,B,E]: ( &(Effect*[A,E],(&(A)(B))) Effect*[B,E] )
     native 'effect-map';
 public function map*[A,B]:   ( &(NoExcept*[A],(&(A)(B))) NoExcept*[B] )
     native 'effect-map';
-public function map*-to[A,B]: ( &(Effect*[A,E],B) Effect*[B,E] )
+public function map*-to[A,B,E]: ( &(Effect*[A,E],B) Effect*[B,E] )
     (&(e,v)(e | map* (&(_)(v))));
 public function map*-to[A,B]: ( &(NoExcept*[A],B) NoExcept*[B] )
     (&(e,v)(e | map* (&(_)(v))));
