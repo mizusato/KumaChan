@@ -56,6 +56,7 @@ window.addEventListener('load', _ => {
         el._events[name] = { listener, handler }
     })
     bridge.ModifyEvent.connect((id, name, prevent, stop) => {
+        console.log('ModifyEvent', { id, name, prevent, stop })
         let el = ElementRegistry[id]
         let old_event = el._events[name]
         let handler = old_event.handler
@@ -66,6 +67,7 @@ window.addEventListener('load', _ => {
         el._events[name] = { listener, handler }
     })
     bridge.DetachEvent.connect((id, name) => {
+        console.log('DetachEvent', { id, name })
         let el = ElementRegistry[id]
         let event = el._events[name]
         el.removeEventListener(name, event.listener)

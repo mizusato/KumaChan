@@ -1,0 +1,27 @@
+do webui-init 'Counter' DOM;
+
+private const DOM: NoExcept*[WebUi::Node]
+    ~ then* &(@value) := new-latch:[Int] 0,
+    ~ map* &(value) := @value.receive,
+    let delta: (&(Int)(Sink[WebUi::EventPayload])) := (
+        &(n)(@value.adapt:[Int,WebUi::EventPayload] (&(_)$(value + n)))
+    ),
+    let styles := (dom-styles [
+        ('display', 'inline-block'),
+        ('font-size', '24px'),
+        ('min-width', '50px'),
+        ('text-align', 'center')
+    ]),
+    let dec-btn := (
+        dom-node 'button' styles (dom-single-event 'click' (delta (- 1)))
+        (dom-text '-')
+    ),
+    let inc-btn := (
+        dom-node 'button' styles (dom-single-event 'click' (delta 1))
+        (dom-text '+')
+    ),
+    let label := (
+        dom-node 'span' styles (dom-events [])
+        (dom-text (str value))
+    ),
+    dom-node 'div' [dec-btn, label, inc-btn];

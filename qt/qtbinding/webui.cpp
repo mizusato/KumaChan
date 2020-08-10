@@ -1,8 +1,8 @@
+#include <QApplication>
+#include <QDesktopWidget>
 #include "adapt.hpp"
 #include "webui.hpp"
 #include "qtbinding.h"
-#include <QApplication>
-#include <QDesktopWidget>
 
 
 static WebUiWindow* window = nullptr;
@@ -10,13 +10,27 @@ static WebUiWindow* window = nullptr;
 void WebUiInit(QtString title) {
     if (window == nullptr) {
         window = new WebUiWindow(QtUnwrapString(title));
-        window->move(QApplication::desktop()->rect().center()
-                     - window->frameGeometry().center());
     };
+}
+
+void WebUiLoadView() {
+    window->loadView();
+    window->move(QApplication::desktop()->rect().center()
+                 - window->frameGeometry().center());
 }
 
 void* WebUiGetWindow() {
     return (void*) (window);
+}
+
+QtString WebUiGetEventHandler() {
+    return QtWrapString(window->getEmittedEventHandler());
+}
+
+QtVariantMap WebUiGetEventPayload() {
+    QVariantMap* m = new QVariantMap;
+    *m = window->getEmittedEventPayload();
+    return { m };
 }
 
 void WebUiEraseStyle(QtString id, QtString key) {

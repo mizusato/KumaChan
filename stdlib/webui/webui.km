@@ -1,6 +1,6 @@
 type MainLoop NoExcept[-];
 
-public function webui-init: ( &(NoExcept*[Node]) MainLoop )
+public function webui-init: ( &(String,NoExcept*[Node]) MainLoop )
     native 'webui-init';
 
 
@@ -19,7 +19,7 @@ public function dom-node: ( &(String,String) Node )
     );
 public function dom-node: ( &(String,Array[Node]) Node )
     ( &(tag, children)
-        dom-node tag (dom-styles[]) (dom-events []) (dom-children children)
+        dom-node tag (dom-styles []) (dom-events []) (dom-children children)
     );
 public function dom-node: ( &(String,Styles,Events,NodeContent) Node )
     native 'webui-dom-node';
@@ -27,7 +27,9 @@ public function dom-styles: ( &(Array[(String,String)]) Styles )
     (&(styles)(Styles (new-map styles)));
 public function dom-events: ( &(Array[(String,EventOptions)]) Events )
     (&(events)(Events (new-map events)));
-public function dom-event: ( &(String,Bool,Bool,EventHandler) EventOptions )
+public function dom-single-event: ( &(String,Sink[EventPayload]) Events )
+    (&(name,sink)(dom-events [(name, (dom-event No No (EventHandler sink)))]));
+public function dom-event: ( &(Bool,Bool,EventHandler) EventOptions )
     native 'webui-dom-event';
 public function dom-text: ( &(String) NodeContent )
     native 'webui-dom-text';

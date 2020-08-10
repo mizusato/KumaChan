@@ -77,6 +77,7 @@ extern "C" {
     QtPixmap QtNewPixmapPNG(const uint8_t* buf, size_t len);
     QtPixmap QtNewPixmapJPEG(const uint8_t* buf, size_t len);
     void QtDeletePixmap(QtPixmap pm);
+    void QtDeleteVariantMap(QtVariantMap m);
     void QtListWidgetClear(void *widget_ptr);
     void QtListWidgetAddItem(void* widget_ptr, QtString key_, QtString label_, QtBool as_current);
     void QtListWidgetAddItemWithIcon(void* widget_ptr, QtString key_, QtIcon icon_, QtString label_, QtBool as_current);
@@ -84,7 +85,10 @@ extern "C" {
     QtString QtListWidgetGetCurrentItemKey(void *widget_ptr);
     size_t QtStringWriteToUTF32Buffer(QtString str, uint32_t *buf);
     void WebUiInit(QtString title);
+    void WebUiLoadView();
     void* WebUiGetWindow();
+    QtString WebUiGetEventHandler();
+    QtVariantMap WebUiGetEventPayload();
     void WebUiEraseStyle(QtString id, QtString key);
     void WebUiApplyStyle(QtString id, QtString key, QtString value);
     void WebUiDetachEvent(QtString id, QtString event);

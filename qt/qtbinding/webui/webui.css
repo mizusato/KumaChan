@@ -1,3 +1,7 @@
+html {
+    font-family: sans-serif;
+}
+
 * {
     user-select: none;
     -webkit-user-select: none;

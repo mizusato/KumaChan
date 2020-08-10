@@ -1,7 +1,6 @@
 package lib
 
 import (
-	"sync"
 	"kumachan/qt"
 	"kumachan/runtime/rx"
 	. "kumachan/runtime/common"
@@ -10,11 +9,63 @@ import (
 )
 
 
+var __WebUiLoading = make(chan struct{}, 1)
+var __WebUiLoaded = make(chan struct{})
+
+func WebUiInitAndLoad(sched rx.Scheduler, root rx.Effect, title String) {
+	select {
+	case __WebUiLoading <- struct{}{}:
+		qt.MakeSureInitialized()
+		var wait = make(chan struct{})
+		qt.CommitTask(func() {
+			var title_runes = RuneSliceFromString(title)
+			var title, del_title = qt.NewStringFromRunes(title_runes)
+			defer del_title()
+			qt.WebUiInit(title)
+			wait <- struct{}{}
+		})
+		<- wait
+		var window = qt.WebUiGetWindow()
+		qt.Connect(window, "eventEmitted()", func() {
+			var handler = qt.WebUiGetEventHandler()
+			var payload = qt.WebUiGetEventPayload()
+			var sink = handler.(rx.Sink)
+			sched.RunTopLevel(sink.Send(payload), rx.Receiver {
+				Context:   rx.Background(),
+			})
+		})
+		qt.Connect(window, "loadFinished()", func() {
+			var update = root.ConcatMap(func(node rx.Object) rx.Effect {
+				return __WebUiUpdateDom(node.(*vdom.Node))
+			})
+			sched.RunTopLevel(update, rx.Receiver {
+				Context: rx.Background(),
+			})
+		})
+		qt.CommitTask(func() {
+			qt.WebUiLoadView()
+			wait <- struct{}{}
+		})
+		<- wait
+		close(__WebUiLoaded)
+	default:
+		<-__WebUiLoaded
+	}
+}
+
 type WebUiAdaptedMap struct {
 	Data  container.Map
 }
 func WebUiAdaptMap(mv Value) WebUiAdaptedMap {
 	return WebUiAdaptedMap{mv.(container.Map) }
+}
+func WebUiMapAdaptValue(v Value) Value {
+	var str, is_str = v.(String)
+	if is_str {
+		return RuneSliceFromString(str)
+	} else {
+		return v
+	}
 }
 func (m WebUiAdaptedMap) Has(key vdom.String) bool {
 	var key_str = StringFromRuneSlice(key)
@@ -23,11 +74,12 @@ func (m WebUiAdaptedMap) Has(key vdom.String) bool {
 }
 func (m WebUiAdaptedMap) Lookup(key vdom.String) (interface{}, bool) {
 	var key_str = StringFromRuneSlice(key)
-	return m.Data.Lookup(key_str)
+	var v, ok = m.Data.Lookup(key_str)
+	return WebUiMapAdaptValue(v), ok
 }
 func (m WebUiAdaptedMap) ForEach(f func(key vdom.String, val interface{})) {
 	m.Data.ForEach(func(k Value, v Value) {
-		f(RuneSliceFromString(k.(String)), v)
+		f(RuneSliceFromString(k.(String)), WebUiMapAdaptValue(v))
 	})
 }
 
@@ -56,37 +108,11 @@ var __WebUiUpdateDom = func(new_root *vdom.Node) rx.Effect {
 	})
 }
 
-var __WebUiLoaded = false
-var __WebUiLoadedMutex sync.Mutex
 
 var WebUiFunctions = map[string] interface{} {
-	"webui-init": func(root rx.Effect, h MachineHandle) rx.Effect {
+	"webui-init": func(title String, root rx.Effect, h MachineHandle) rx.Effect {
 		return rx.CreateEffect(func(_ rx.Sender) {
-			__WebUiLoadedMutex.Lock()
-			if __WebUiLoaded {
-				__WebUiLoadedMutex.Unlock()
-				return
-			}
-			qt.MakeSureInitialized()
-			var wait = make(chan struct{})
-			qt.CommitTask(func() {
-				var title, del_title = qt.NewStringFromRunes([]rune("WebUI Debug"))
-				defer del_title()
-				qt.WebUiInit(title)
-				wait <- struct{}{}
-			})
-			<- wait
-			__WebUiLoaded = true
-			__WebUiLoadedMutex.Unlock()
-			var window = qt.WebUiGetWindow()
-			qt.Connect(window, "loadFinished()", func() {
-				var update = root.ConcatMap(func(node rx.Object) rx.Effect {
-					return __WebUiUpdateDom(node.(*vdom.Node))
-				})
-				h.GetScheduler().RunTopLevel(update, rx.Receiver {
-					Context: rx.Background(),
-				})
-			})
+			WebUiInitAndLoad(h.GetScheduler(), root, title)
 		})
 	},
 	"webui-dom-node": func(tag String, styles Value, events Value, content vdom.Content) *vdom.Node {

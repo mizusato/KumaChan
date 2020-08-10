@@ -21,6 +21,8 @@ public function receive[T]: ( &(Source[T]) NoExcept*[T] )
     native 'receive';
 public function send[T]:    ( &(Sink[T],T) NoExcept[-] )
     native 'send';
+public function adapt[A,B]: ( &(Sink[A],(&(B)(A))) Sink[B] )
+    native 'adapt';
 
 // Operations on Bus and Latch
 public function new-bus[T]: ( &() NoExcept[Bus[T]] )
@@ -29,6 +31,8 @@ public function receive[T]: ( &(Bus[T])  NoExcept*[T] )
     native 'receive';
 public function send[T]:    ( &(Bus[T],T) NoExcept[-] )
     native 'send';
+public function adapt[A,B]: ( &(Bus[A],(&(B)(A))) Sink[B] )
+    native 'adapt';
 public function from[T]: ( &(Bus[T]) Source[T] )
     native 'Source from *';
 public function from[T]: ( &(Bus[T]) Sink[T] )
@@ -39,13 +43,14 @@ public function receive[T]: ( &(Latch[T])  NoExcept*[T] )
     native 'receive';
 public function send[T]:    ( &(Latch[T],T) NoExcept[-] )
     native 'send';
+public function adapt[A,B]: ( &(Latch[A],(&(B)(A))) Sink[B] )
+    native 'adapt';
 public function reset[T]: ( &(Latch[T]) NoExcept[-] )
     native 'latch-reset';
 public function from[T]: ( &(Latch[T]) Source[T] )
     native 'Source from *';
 public function from[T]: ( &(Latch[T]) Sink[T] )
     native 'Sink from *';
-
 
 // Mutable Cell Operations
 public function new-mutable[T]: ( &() NoExcept[Mutable[T]] )
@@ -154,14 +159,6 @@ public function debounce[T,E]: ( &(Effect*[T,E],Number) Effect*[T,E] )
     native 'debounce-time';
 public function debounce[T]:   ( &(NoExcept*[T],Number) NoExcept*[T] )
     native 'debounce-time';
-public function switch-map[A,B,E]: ( &(Effect*[A,E],(&(A)(Effect*[B,E]))) Effect*[B,E] )
-    native 'switch-map';
-public function switch-map[A,B,E]: ( &(Effect*[A,E],(&(A)(NoExcept*[B]))) Effect*[B,E] )
-    native 'switch-map';
-public function switch-map[A,B,E]: ( &(NoExcept*[A],(&(A)(Effect*[B,E]))) Effect*[B,E] )
-    native 'switch-map';
-public function switch-map[A,B]:   ( &(NoExcept*[A],(&(A)(NoExcept*[B]))) NoExcept*[B] )
-    native 'switch-map';
 public function merge-map[A,B,E]: ( &(Effect*[A,E],(&(A)(Effect*[B,E]))) Effect*[B,E] )
     native 'merge-map';
 public function merge-map[A,B,E]: ( &(Effect*[A,E],(&(A)(NoExcept*[B]))) Effect*[B,E] )
@@ -186,6 +183,22 @@ public function mix-map[A,B,E]: ( &(NoExcept*[A],Number,(&(A)(Effect*[B,E]))) Ef
     native 'mix-map';
 public function mix-map[A,B]:   ( &(NoExcept*[A],Number,(&(A)(NoExcept*[B]))) NoExcept*[B] )
     native 'mix-map';
+public function switch-map[A,B,E]: ( &(Effect*[A,E],(&(A)(Effect*[B,E]))) Effect*[B,E] )
+    native 'switch-map';
+public function switch-map[A,B,E]: ( &(Effect*[A,E],(&(A)(NoExcept*[B]))) Effect*[B,E] )
+    native 'switch-map';
+public function switch-map[A,B,E]: ( &(NoExcept*[A],(&(A)(Effect*[B,E]))) Effect*[B,E] )
+    native 'switch-map';
+public function switch-map[A,B]:   ( &(NoExcept*[A],(&(A)(NoExcept*[B]))) NoExcept*[B] )
+    native 'switch-map';
+public function then*[A,B,E]: ( &(Effect[A,E],(&(A)(Effect*[B,E]))) Effect*[B,E] )
+    native 'switch-map';
+public function then*[A,B,E]: ( &(Effect[A,E],(&(A)(NoExcept*[B]))) Effect*[B,E] )
+    native 'switch-map';
+public function then*[A,B,E]: ( &(NoExcept[A],(&(A)(Effect*[B,E]))) Effect*[B,E] )
+    native 'switch-map';
+public function then*[A,B]:   ( &(NoExcept[A],(&(A)(NoExcept*[B]))) NoExcept*[B] )
+    native 'switch-map';
 public function merge[T,E]: ( &(Array[Effect*[T,E]]) Effect*[T,E] )
     native 'effect-merge';
 public function merge[T]:   ( &(Array[NoExcept*[T]]) NoExcept*[T] )

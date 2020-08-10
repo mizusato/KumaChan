@@ -9,11 +9,11 @@ import "C"
 
 import (
     "fmt"
-    "sync"
     "unsafe"
+    "reflect"
+    "runtime"
     "kumachan/qt/cgohelper"
     "kumachan/qt/qtbinding/webui/vdom"
-    "reflect"
 )
 
 
@@ -61,23 +61,22 @@ func EventClose() EventKind { return EventKind(uint(C.QtEventClose)) }
 type Event C.QtEvent
 
 
-var initialized = false
-var init_mutex sync.Mutex
+var initializing = make(chan struct{}, 1)
+var initialized = make(chan struct{})
 var InitRequestSignal = make(chan func())
 func MakeSureInitialized() {
-    init_mutex.Lock()
-    if !(initialized) {
-        initialized = true
-        init_mutex.Unlock()
+    select {
+    case initializing <- struct{}{}:
         var wait = make(chan struct{})
         InitRequestSignal <- func() {
-           C.QtInit()
-           wait <- struct{}{}
-           C.QtMain()
+            C.QtInit()
+            wait <- struct{}{}
+            C.QtMain()
         }
         <- wait
-    } else {
-        init_mutex.Unlock()
+        close(initialized)
+    default:
+        <- initialized
     }
 }
 
@@ -332,26 +331,55 @@ func (ev Event) ResizeEventGetHeight() uint {
 }
 
 
-var __EventHandlers = make(map[string] vdom.EventHandler)
-func GetHandlerId(handler vdom.EventHandler) string {
-    return fmt.Sprintf("%X", reflect.ValueOf(handler).Pointer())
+type WebUiEventPayload struct {
+    Data  VariantMap
 }
-func RegisterEventHandler(handler vdom.EventHandler) string {
-    var id = GetHandlerId(handler)
-    __EventHandlers[id] = handler
-    return id
-}
-func UnregisterEventHandler(id string) {
-    delete(__EventHandlers, id)
-}
+
+var webui_initialized = false
 
 func WebUiInit(title String) {
     MakeSureInitialized()
     C.WebUiInit(C.QtString(title))
+    webui_initialized = true
+}
+
+func WebUiLoadView() {
+    if !webui_initialized { panic("webui not initialized") }
+    C.WebUiLoadView()
+}
+
+var __WebUiEventHandlers = make(map[string] vdom.EventHandler)
+func WebUiGetHandler(id string) vdom.EventHandler {
+    return __WebUiEventHandlers[id]
+}
+func WebUiGetHandlerId(handler vdom.EventHandler) string {
+    return fmt.Sprintf("%X", reflect.ValueOf(handler).Pointer())
+}
+func WebUiRegisterEventHandler(handler vdom.EventHandler) string {
+    var id = WebUiGetHandlerId(handler)
+    __WebUiEventHandlers[id] = handler
+    return id
+}
+func WebUiUnregisterEventHandler(id string) {
+    delete(__WebUiEventHandlers, id)
 }
 
 func WebUiGetWindow() Widget {
     return widget { object { C.WebUiGetWindow() } }
+}
+
+func WebUiGetEventHandler() vdom.EventHandler {
+    var raw = String(C.WebUiGetEventHandler())
+    var id = string(StringToRunes(raw))
+    return WebUiGetHandler(id)
+}
+
+func WebUiGetEventPayload() *WebUiEventPayload {
+    var ptr = &WebUiEventPayload { VariantMap(C.WebUiGetEventPayload()) }
+    runtime.SetFinalizer(ptr, func(ptr *WebUiEventPayload) {
+        C.QtDeleteVariantMap(C.QtVariantMap(ptr.Data))
+    })
+    return ptr
 }
 
 func WebUiApplyStyle(id vdom.String, key vdom.String, value vdom.String) {
@@ -370,7 +398,7 @@ func WebUiAttachEvent(id vdom.String, name vdom.String, prevent bool, stop bool,
     var name_, del_name = NewStringFromRunes(name);  defer del_name()
     var prevent_ = MakeBool(prevent)
     var stop_ = MakeBool(stop)
-    var handler_id = RegisterEventHandler(handler)
+    var handler_id = WebUiRegisterEventHandler(handler)
     var handler_runes = ([] rune)(handler_id)
     var handler_, del_handler = NewStringFromRunes(handler_runes); defer del_handler()
     C.WebUiAttachEvent(C.QtString(id_), C.QtString(name_), C.QtBool(prevent_), C.QtBool(stop_), C.QtString(handler_))
@@ -386,7 +414,7 @@ func WebUiDetachEvent(id vdom.String, name vdom.String, handler vdom.EventHandle
     var id_, del_id = NewStringFromRunes(id);  defer del_id()
     var name_, del_name = NewStringFromRunes(name);  defer del_name()
     C.WebUiDetachEvent(C.QtString(id_), C.QtString(name_))
-    UnregisterEventHandler(GetHandlerId(handler))
+    WebUiUnregisterEventHandler(WebUiGetHandlerId(handler))
 }
 func WebUiSetText(id vdom.String, content vdom.String) {
     var id_, del_id = NewStringFromRunes(id);  defer del_id()

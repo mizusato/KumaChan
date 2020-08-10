@@ -241,6 +241,10 @@ void QtDeletePixmap(QtPixmap pm) {
     delete (QPixmap*)(pm.ptr);
 }
 
+void QtDeleteVariantMap(QtVariantMap m) {
+    delete (QVariantMap*)(m.ptr);
+}
+
 void QtListWidgetClear(void *widget_ptr) {
     QListWidget* widget = (QListWidget*) widget_ptr;
     widget->clear();

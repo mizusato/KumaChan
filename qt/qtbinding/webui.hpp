@@ -42,18 +42,23 @@ private:
     bool debug;
 public:
     WebUiBridge* bridge;
-    WebUiWindow(QString title): QMainWindow(nullptr), debug(true) {
+    WebUiWindow(QString title): QMainWindow(nullptr), view(nullptr), debug(true) {
         setWindowTitle(title);
         bridge = new WebUiBridge();
         connect(bridge, &WebUiBridge::EmitEvent, this, &WebUiWindow::emitEvent);
         connect(bridge, &WebUiBridge::LoadFinish, this, &WebUiWindow::loadFinished);
+    }
+    void loadView() {
+        if (view != nullptr) { return; }
         view = new QWebView(this);
-        view->setUrl(QUrl(WebUiHtmlUrl));
         view->setContextMenuPolicy(Qt::NoContextMenu);
         page = view->page();
         page->settings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, true);
         frame = page->mainFrame();
-        frame->addToJavaScriptWindowObject("WebUI", bridge);
+        connect(frame, &QWebFrame::javaScriptWindowObjectCleared, [this] () -> void {
+            frame->addToJavaScriptWindowObject("WebUI", bridge);
+        });
+        view->setUrl(QUrl(WebUiHtmlUrl));
         setCentralWidget(view);
         show();
         if (debug) {
@@ -82,7 +87,7 @@ public slots:
         emittedEventPayload = event;
         eventEmitted();
         if (debug) {
-            qDebug() << "Event: " << handler << "\n";
+            qDebug() << "Event: " << handler;
         }
     };
 private:

@@ -64,6 +64,7 @@ type ExprContext struct {
 	TypeBounds     TypeBounds
 	LocalValues    map[string] Type
 	Inferring      TypeArgsInferringContext
+	// TODO: reversed inferring
 }
 
 type TypeArgsInferringContext struct {

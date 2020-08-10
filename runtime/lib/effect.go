@@ -26,6 +26,14 @@ var EffectFunctions = map[string] Value {
 	"receive": func(source rx.Source) rx.Effect {
 		return source.Receive()
 	},
+	"adapt": func(sink rx.Sink, f Value, h MachineHandle) rx.Sink {
+		return &rx.AdaptedSink {
+			Adapted: sink,
+			Adapter: func(obj rx.Object) rx.Object {
+				return h.Call(f, obj)
+			},
+		}
+	},
 	"Source from *": func(source rx.Source) rx.Source {
 		return source
 	},

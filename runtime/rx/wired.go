@@ -9,6 +9,14 @@ type Sink interface {
 	Send(Object) Effect
 }
 
+type AdaptedSink struct {
+	Adapted  Sink
+	Adapter  func(Object) Object
+}
+func (a *AdaptedSink) Send(obj Object) Effect {
+	return a.Adapted.Send(a.Adapter(obj))
+}
+
 type Bus struct {
 	nextId     uint64
 	listeners  map[uint64] Listener

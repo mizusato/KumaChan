@@ -124,7 +124,7 @@ func (m Map) Size() uint {
 }
 
 func (m Map) Lookup(k Value) (Value, bool) {
-	var kv, exists = m.AVL.Lookup(k, m.Cmp)
+	var kv, exists = m.AVL.Lookup(MapEntry { Key: k }, m.Cmp)
 	if exists {
 		return kv.(MapEntry).Value, true
 	} else {
