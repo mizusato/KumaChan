@@ -2,5 +2,6 @@
     <qresource prefix="/qtbinding">
         <file>webui/webui.js</file>
         <file>webui/webui.html</file>
+        <file>webui/webui.css</file>
     </qresource>
 </RCC>

@@ -1,0 +1,8 @@
+* {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+*:not(input) {
+    cursor: default;
+}
