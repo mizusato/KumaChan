@@ -60,7 +60,7 @@ var __WebUiLoaded = false
 var __WebUiLoadedMutex sync.Mutex
 
 var WebUiFunctions = map[string] interface{} {
-	"webui-debug": func(root rx.Effect, h MachineHandle) rx.Effect {
+	"webui-init": func(root rx.Effect, h MachineHandle) rx.Effect {
 		return rx.CreateEffect(func(_ rx.Sender) {
 			__WebUiLoadedMutex.Lock()
 			if __WebUiLoaded {

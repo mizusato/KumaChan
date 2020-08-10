@@ -18,7 +18,7 @@ class WebUiBridge final: public QObject {
     Q_OBJECT
 signals:
     void LoadFinish();
-    void EmitEvent(QString id, QString name, QVariantMap event);
+    void EmitEvent(QString handler, QVariantMap event);
     void CloseWindow();
     void EraseStyle(QString id, QString key);
     void ApplyStyle(QString id, QString key, QString value);
@@ -30,7 +30,7 @@ signals:
     void AppendNode(QString parent, QString id, QString tag);
     void RemoveNode(QString parent, QString id);
     void UpdateNode(QString old_id, QString new_id);
-    void ReplaceNode(QString old_id, QString id, QString tag);
+    void ReplaceNode(QString parent, QString old_id, QString id, QString tag);
 };
 
 class WebUiWindow final: public QMainWindow {
@@ -66,26 +66,23 @@ private:
         ev->ignore();
         bridge->CloseWindow();
     };
-    QString emittedEventNode;
-    QString emittedEventName;
+    QString emittedEventHandler;
     QVariantMap emittedEventPayload;
     size_t detachedHandler;
 public:
-    QString getEmittedEventNode() const { return emittedEventNode; }
-    QString getEmittedEventName() const { return emittedEventName; }
+    QString getEmittedEventHandler() const { return emittedEventHandler; }
     QVariantMap getEmittedEventPayload() const { return emittedEventPayload; }
     size_t getDetachedHandler() const { return detachedHandler; }
 signals:
     void loadFinished();
     void eventEmitted();
 public slots:
-    void emitEvent(QString id, QString name, QVariantMap event) {
-        emittedEventNode = id;
-        emittedEventName = name;
+    void emitEvent(QString handler, QVariantMap event) {
+        emittedEventHandler = handler;
         emittedEventPayload = event;
         eventEmitted();
         if (debug) {
-            qDebug() << "Event: " << id << " " << name;
+            qDebug() << "Event: " << handler << "\n";
         }
     };
 private:

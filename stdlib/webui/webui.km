@@ -1,17 +1,33 @@
 type MainLoop NoExcept[-];
 
-public function webui-debug: ( &(NoExcept*[Node]) MainLoop )
-    native 'webui-debug';
+public function webui-init: ( &(NoExcept*[Node]) MainLoop )
+    native 'webui-init';
 
 
-type Event native;
 type Node native;  // *vdom.Node
+type Styles Map[String,String];
+type Events Map[String,EventOptions];
 type EventOptions native;  // *vdom.EventOptions
+type EventPayload native;
+type EventHandler Sink[EventPayload];
 type NodeContent native;  // vdom.NodeContent
 
-public function dom-node: ( &(String,Map[String,String],Map[String,EventOptions],NodeContent) Node )
+
+public function dom-node: ( &(String,String) Node )
+    ( &(tag, text)
+        dom-node tag (dom-styles []) (dom-events []) (dom-text text)
+    );
+public function dom-node: ( &(String,Array[Node]) Node )
+    ( &(tag, children)
+        dom-node tag (dom-styles[]) (dom-events []) (dom-children children)
+    );
+public function dom-node: ( &(String,Styles,Events,NodeContent) Node )
     native 'webui-dom-node';
-public function dom-event: ( &(String,Bool,Bool,Sink[Event]) EventOptions )
+public function dom-styles: ( &(Array[(String,String)]) Styles )
+    (&(styles)(Styles (new-map styles)));
+public function dom-events: ( &(Array[(String,EventOptions)]) Events )
+    (&(events)(Events (new-map events)));
+public function dom-event: ( &(String,Bool,Bool,EventHandler) EventOptions )
     native 'webui-dom-event';
 public function dom-text: ( &(String) NodeContent )
     native 'webui-dom-text';

@@ -409,10 +409,11 @@ func WebUiUpdateNode(old_id vdom.String, new_id vdom.String) {
     var new_id_, del_new_id = NewStringFromRunes(new_id);  defer del_new_id()
     C.WebUiUpdateNode(C.QtString(old_id_), C.QtString(new_id_))
 }
-func WebUiReplaceNode(target vdom.String, id vdom.String, tag vdom.String) {
-    var target_, del_target = NewStringFromRunes(target);  defer del_target()
-    var id_, del_id = NewStringFromRunes(id);  defer del_id()
+func WebUiReplaceNode(parent vdom.String, old_id vdom.String, new_id vdom.String, tag vdom.String) {
+    var parent_, del_parent = NewStringFromRunes(parent);  defer del_parent()
+    var old_id_, del_old_id = NewStringFromRunes(old_id);  defer del_old_id()
+    var new_id_, del_new_id = NewStringFromRunes(new_id);  defer del_new_id()
     var tag_, del_tag = NewStringFromRunes(tag);  defer del_tag()
-    C.WebUiReplaceNode(C.QtString(target_), C.QtString(id_), C.QtString(tag_))
+    C.WebUiReplaceNode(C.QtString(parent_), C.QtString(old_id_), C.QtString(new_id_), C.QtString(tag_))
 }
 

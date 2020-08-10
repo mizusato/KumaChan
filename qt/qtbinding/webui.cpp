@@ -1,6 +1,8 @@
 #include "adapt.hpp"
 #include "webui.hpp"
 #include "qtbinding.h"
+#include <QApplication>
+#include <QDesktopWidget>
 
 
 static WebUiWindow* window = nullptr;
@@ -8,6 +10,8 @@ static WebUiWindow* window = nullptr;
 void WebUiInit(QtString title) {
     if (window == nullptr) {
         window = new WebUiWindow(QtUnwrapString(title));
+        window->move(QApplication::desktop()->rect().center()
+                     - window->frameGeometry().center());
     };
 }
 
@@ -55,6 +59,6 @@ void WebUiUpdateNode(QtString old_id, QtString new_id) {
     window->bridge->UpdateNode(QtUnwrapString(old_id), QtUnwrapString(new_id));
 }
 
-void WebUiReplaceNode(QtString old_id, QtString id, QtString tag) {
-    window->bridge->ReplaceNode(QtUnwrapString(old_id), QtUnwrapString(id), QtUnwrapString(tag));
+void WebUiReplaceNode(QtString parent, QtString old_id, QtString id, QtString tag) {
+    window->bridge->ReplaceNode(QtUnwrapString(parent), QtUnwrapString(old_id), QtUnwrapString(id), QtUnwrapString(tag));
 }

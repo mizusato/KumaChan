@@ -47,7 +47,7 @@ type DeltaNotifier struct {
 	// InsertNode   func(parent String, ref String, id String, tag String)
 	RemoveNode   func(parent String, id String)
 	UpdateNode   func(old_id String, new_id String)
-	ReplaceNode  func(target String, id String, tag String)
+	ReplaceNode  func(parent String, old_id String, new_id String, tag String)
 }
 
 func assert(ok bool) {
@@ -80,12 +80,16 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 	if old == nil {
 		ctx.AppendNode(parent_id, new_id, new.Tag)
 	} else if new == nil {
+		old.Events.ForEach(func(name String, val interface{}) {
+			var opts = val.(*EventOptions)
+			ctx.DetachEvent(old_id, name, opts.Handler)
+		})
 		ctx.RemoveNode(parent_id, old_id)
 	} else {
 		if str_equal(old.Tag, new.Tag) {
 			ctx.UpdateNode(old_id, new_id)
 		} else {
-			ctx.ReplaceNode(old_id, new_id, new.Tag)
+			ctx.ReplaceNode(parent_id, old_id, new_id, new.Tag)
 		}
 	}
 	if new != nil {
@@ -156,7 +160,15 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 					L = len(new_children)
 				}
 				for i := 0; i < L; i += 1 {
-					Diff(ctx, node, old_children[i], new_children[i])
+					var old_child *Node = nil
+					var new_child *Node = nil
+					if i < len(old_children) {
+						old_child = old_children[i]
+					}
+					if i < len(new_children) {
+						new_child = new_children[i]
+					}
+					Diff(ctx, node, old_child, new_child)
 				}
 			}
 			if old != nil {

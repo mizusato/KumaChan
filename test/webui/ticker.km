@@ -1,0 +1,10 @@
+do webui-init (
+    let hello := (dom-node 'h1' '你好 WebUI'),
+    tick { interval: 1000 }
+        | scan (:Number: 0) ( &(n,_) $(1 + n) )
+        | map* ( &(n)
+            (dom-node 'div' [
+                hello,
+                (dom-node 'h2' (str n))
+            ]))
+);
