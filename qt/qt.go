@@ -8,10 +8,12 @@ package qt
 import "C"
 
 import (
-    "unsafe"
-    "sync"
-    "kumachan/qt/cgohelper"
     "fmt"
+    "sync"
+    "unsafe"
+    "kumachan/qt/cgohelper"
+    "kumachan/qt/qtbinding/webui/vdom"
+    "reflect"
 )
 
 
@@ -31,48 +33,10 @@ func (widget) Widget() {}
 type widget struct { object }
 
 type String C.QtString
+type Bool C.int
 type VariantMap C.QtVariantMap
 type Icon C.QtIcon
 type Pixmap C.QtPixmap
-
-type DomNode C.QtWebUiNode
-type DomProps struct {
-    Styles  [] DomStyle
-    Events  [] DomEvent
-}
-type DomStyle struct {
-    Key    [] rune
-    Value  [] rune
-}
-type DomEvent struct {
-    Name     [] rune
-    Prevent  bool
-    Stop     bool
-    Handler  DomEventHandler
-}
-type DomContent interface { DomNodeContent() }
-func (impl DomText) DomNodeContent() {}
-type DomText ([] rune)
-func (impl DomChildren) DomNodeContent() {}
-type DomChildren ([] DomNode)
-type DomEventHandler = func(VariantMap)
-var __EventHandlers = make(map[uint] DomEventHandler)
-var __EventHandlerNextId = uint(0)
-var __EventHandlerMutex sync.Mutex
-func RegisterEventHandler(handler DomEventHandler) uint {
-    __EventHandlerMutex.Lock()
-    defer __EventHandlerMutex.Unlock()
-    var id = __EventHandlerNextId
-    __EventHandlerNextId += 1
-    __EventHandlers[id] = handler
-    return id
-}
-func UnregisterDetachedEventHandler() {
-    __EventHandlerMutex.Lock()
-    defer __EventHandlerMutex.Unlock()
-    var id = uint(C.QtWebUiGetWindowDetachedHandler())
-    delete(__EventHandlers, id)
-}
 
 type ListWidgetItem struct {
     Key    [] rune
@@ -199,9 +163,8 @@ func Listen(obj Object, kind EventKind, prevent bool, callback func(Event)) func
     })
     var ok = make(chan struct{})
     CommitTask(func() {
-        var prevent_flag int
-        if prevent { prevent_flag = 1 } else { prevent_flag = 0 }
-        l = C.QtAddEventListener(obj.ptr(), C.size_t(kind), C.int(prevent_flag), cgo_callback, C.size_t(cb))
+        var prevent_ = MakeBool(prevent)
+        l = C.QtAddEventListener(obj.ptr(), C.size_t(kind), C.int(prevent_), cgo_callback, C.size_t(cb))
         ok <- struct{} {}
     })
     <- ok
@@ -246,6 +209,10 @@ func GetPropString(obj Object, prop string) string {
 
 func SetPropString(obj Object, prop string, value string) {
     SetPropRuneString(obj, prop, ([] rune)(value))
+}
+
+func MakeBool(p bool) Bool {
+    if p { return Bool(C.int(int(1))) } else { return Bool(C.int(int(0))) }
 }
 
 func NewStringFromRunes(runes ([] rune)) (String, func()) {
@@ -364,54 +331,88 @@ func (ev Event) ResizeEventGetHeight() uint {
     return uint(C.QtResizeEventGetHeight(C.QtEvent(ev)))
 }
 
-func WebUiDebug(title String) {
+
+var __EventHandlers = make(map[string] vdom.EventHandler)
+func GetHandlerId(handler vdom.EventHandler) string {
+    return fmt.Sprintf("%X", reflect.ValueOf(handler).Pointer())
+}
+func RegisterEventHandler(handler vdom.EventHandler) string {
+    var id = GetHandlerId(handler)
+    __EventHandlers[id] = handler
+    return id
+}
+func UnregisterEventHandler(id string) {
+    delete(__EventHandlers, id)
+}
+
+func WebUiInit(title String) {
     MakeSureInitialized()
-    C.QtWebUiInit(C.QtString(title))
+    C.WebUiInit(C.QtString(title))
 }
 
 func WebUiGetWindow() Widget {
-    return widget { object { C.QtWebUiGetWindow() } }
+    return widget { object { C.WebUiGetWindow() } }
 }
 
-func WebUiUpdateVDOM(root DomNode) {
-    C.QtWebUiUpdateVDOM(C.QtWebUiNode(root))
+func WebUiApplyStyle(id vdom.String, key vdom.String, value vdom.String) {
+    var id_, del_id = NewStringFromRunes(id);  defer del_id()
+    var key_, del_key = NewStringFromRunes(key);  defer del_key()
+    var value_, del_value = NewStringFromRunes(value);  defer del_value()
+    C.WebUiApplyStyle(C.QtString(id_), C.QtString(key_), C.QtString(value_))
+}
+func WebUiEraseStyle(id vdom.String, key vdom.String) {
+    var id_, del_id = NewStringFromRunes(id);  defer del_id()
+    var key_, del_key = NewStringFromRunes(key);  defer del_key()
+    C.WebUiEraseStyle(C.QtString(id_), C.QtString(key_))
+}
+func WebUiAttachEvent(id vdom.String, name vdom.String, prevent bool, stop bool, handler vdom.EventHandler) {
+    var id_, del_id = NewStringFromRunes(id);  defer del_id()
+    var name_, del_name = NewStringFromRunes(name);  defer del_name()
+    var prevent_ = MakeBool(prevent)
+    var stop_ = MakeBool(stop)
+    var handler_id = RegisterEventHandler(handler)
+    var handler_runes = ([] rune)(handler_id)
+    var handler_, del_handler = NewStringFromRunes(handler_runes); defer del_handler()
+    C.WebUiAttachEvent(C.QtString(id_), C.QtString(name_), C.QtBool(prevent_), C.QtBool(stop_), C.QtString(handler_))
+}
+func WebUiModifyEvent(id vdom.String, name vdom.String, prevent bool, stop bool) {
+    var id_, del_id = NewStringFromRunes(id);  defer del_id()
+    var name_, del_name = NewStringFromRunes(name);  defer del_name()
+    var prevent_ = MakeBool(prevent)
+    var stop_ = MakeBool(stop)
+    C.WebUiModifyEvent(C.QtString(id_), C.QtString(name_), C.QtBool(prevent_), C.QtBool(stop_))
+}
+func WebUiDetachEvent(id vdom.String, name vdom.String, handler vdom.EventHandler) {
+    var id_, del_id = NewStringFromRunes(id);  defer del_id()
+    var name_, del_name = NewStringFromRunes(name);  defer del_name()
+    C.WebUiDetachEvent(C.QtString(id_), C.QtString(name_))
+    UnregisterEventHandler(GetHandlerId(handler))
+}
+func WebUiSetText(id vdom.String, content vdom.String) {
+    var id_, del_id = NewStringFromRunes(id);  defer del_id()
+    var content_, del_content = NewStringFromRunes(content);  defer del_content()
+    C.WebUiSetText(C.QtString(id_), C.QtString(content_))
+}
+func WebUiAppendNode(parent vdom.String, id vdom.String, tag vdom.String) {
+    var parent_, del_parent = NewStringFromRunes(parent);  defer del_parent()
+    var id_, del_id = NewStringFromRunes(id);  defer del_id()
+    var tag_, del_tag = NewStringFromRunes(tag);  defer del_tag()
+    C.WebUiAppendNode(C.QtString(parent_), C.QtString(id_), C.QtString(tag_))
+}
+func WebUiRemoveNode(parent vdom.String, id vdom.String) {
+    var parent_, del_parent = NewStringFromRunes(parent);  defer del_parent()
+    var id_, del_id = NewStringFromRunes(id);  defer del_id()
+    C.WebUiRemoveNode(C.QtString(parent_), C.QtString(id_))
+}
+func WebUiUpdateNode(old_id vdom.String, new_id vdom.String) {
+    var old_id_, del_old_id = NewStringFromRunes(old_id);  defer del_old_id()
+    var new_id_, del_new_id = NewStringFromRunes(new_id);  defer del_new_id()
+    C.WebUiUpdateNode(C.QtString(old_id_), C.QtString(new_id_))
+}
+func WebUiReplaceNode(target vdom.String, id vdom.String, tag vdom.String) {
+    var target_, del_target = NewStringFromRunes(target);  defer del_target()
+    var id_, del_id = NewStringFromRunes(id);  defer del_id()
+    var tag_, del_tag = NewStringFromRunes(tag);  defer del_tag()
+    C.WebUiReplaceNode(C.QtString(target_), C.QtString(id_), C.QtString(tag_))
 }
 
-func WebUiNewDomNode(tag ([] rune), props DomProps, content DomContent) DomNode {
-    var tag_, del_tag = NewStringFromRunes(tag)
-    var raw_node = C.QtWebUiNewNode(C.QtString(tag_))
-    del_tag()
-    for _, style := range props.Styles {
-        var key, del_key = NewStringFromRunes(style.Key)
-        var val, del_val = NewStringFromRunes(style.Value)
-        C.QtWebUiNodeAddStyle(raw_node, C.QtString(key), C.QtString(val))
-        del_val()
-        del_key()
-    }
-    for _, event := range props.Events {
-        var name, del_name = NewStringFromRunes(event.Name)
-        var prevent int
-        if event.Prevent { prevent = 1 } else { prevent = 0 }
-        var stop int
-        if event.Stop { stop = 1 } else { stop = 0 }
-        var handler = RegisterEventHandler(event.Handler)
-        C.QtWebUiNodeAddEvent(
-            raw_node, C.QtString(name),
-            C.int(prevent), C.int(stop), C.size_t(handler))
-        del_name()
-    }
-    switch c := content.(type) {
-    case DomText:
-        var text = ([] rune)(c)
-        var text_, del_text = NewStringFromRunes(text)
-        C.QtWebUiNodeSetText(raw_node, C.QtString(text_))
-        del_text()
-    case DomChildren:
-        var children = ([] DomNode)(c)
-        for _, child := range children {
-            var raw_child = C.QtWebUiNode(child)
-            C.QtWebUiNodeAppendChild(raw_node, raw_child)
-        }
-    }
-    return DomNode(raw_node)
-}

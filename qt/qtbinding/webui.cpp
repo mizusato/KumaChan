@@ -5,55 +5,56 @@
 
 static WebUiWindow* window = nullptr;
 
-void QtWebUiInit(QtString title) {
+void WebUiInit(QtString title) {
     if (window == nullptr) {
         window = new WebUiWindow(QtUnwrapString(title));
     };
 }
 
-void* QtWebUiGetWindow() {
+void* WebUiGetWindow() {
     return (void*) (window);
 }
 
-size_t QtWebUiGetWindowDetachedHandler() {
-    return window->getDetachedHandler();
+void WebUiEraseStyle(QtString id, QtString key) {
+    window->bridge->EraseStyle(QtUnwrapString(id), QtUnwrapString(key));
 }
 
-void QtWebUiUpdateVDOM(QtWebUiNode root) {
-    Node* ptr = (Node*) (root.ptr);
-    window->updateVDOM(ptr);
+void WebUiApplyStyle(QtString id, QtString key, QtString value) {
+    window->bridge->ApplyStyle(QtUnwrapString(id), QtUnwrapString(key), QtUnwrapString(value));
 }
 
-QtWebUiNode QtWebUiNewNode(QtString tagName) {
-    Node* ptr = new Node;
-    ptr->tagName = QtUnwrapString(tagName);
-    return { (void*) ptr };
-};
-
-void QtWebUiNodeAddStyle(QtWebUiNode node, QtString key, QtString value) {
-    Node* ptr = (Node*) (node.ptr);
-    ptr->style[QtUnwrapString(key)] = QtUnwrapString(value);
+void WebUiDetachEvent(QtString id, QtString event) {
+    window->bridge->DetachEvent(QtUnwrapString(id), QtUnwrapString(event));
 }
 
-void QtWebUiNodeAddEvent(QtWebUiNode node, QtString name, QtBool prevent, QtBool stop, size_t handler) {
-    Node* ptr = (Node*) (node.ptr);
-    EventOptions* opts = new EventOptions(ptr);
-    opts->prevent = prevent;
-    opts->stop = stop;
-    opts->handler = QString::number(handler);
-    ptr->events[QtUnwrapString(name)] = opts;
+void WebUiModifyEvent(QtString id, QtString event, QtBool prevent, QtBool stop) {
+    window->bridge->ModifyEvent(QtUnwrapString(id), QtUnwrapString(event), bool(prevent), bool(stop));
 }
 
-void QtWebUiNodeSetText(QtWebUiNode node, QtString text) {
-    Node* ptr = (Node*) (node.ptr);
-    assert(ptr->children.length() == 0);
-    ptr->is_text = true;
-    ptr->text = QtUnwrapString(text);
+void WebUiAttachEvent(QtString id, QtString event, QtBool prevent, QtBool stop, QtString handler) {
+    window->bridge->AttachEvent(QtUnwrapString(id), QtUnwrapString(event), bool(prevent), bool(stop), QtUnwrapString(handler));
 }
 
-void QtWebUiNodeAppendChild(QtWebUiNode node, QtWebUiNode child) {
-    Node* ptr = (Node*) (node.ptr);
-    assert(!(ptr->is_text));
-    Node* child_ptr = (Node*) (child.ptr);
-    ptr->children.append(child_ptr);
+void WebUiSetText(QtString id, QtString text) {
+    window->bridge->SetText(QtUnwrapString(id), QtUnwrapString(text));
+}
+
+// void WebUiInsertNode(QtString parent, QtString ref, QtString id, QtString tag) {
+//     window->bridge->InsertNode(QtUnwrapString(parent), QtUnwrapString(ref), QtUnwrapString(id), QtUnwrapString(tag));
+// }
+
+void WebUiAppendNode(QtString parent, QtString id, QtString tag) {
+    window->bridge->AppendNode(QtUnwrapString(parent), QtUnwrapString(id), QtUnwrapString(tag));
+}
+
+void WebUiRemoveNode(QtString parent, QtString id) {
+    window->bridge->RemoveNode(QtUnwrapString(parent), QtUnwrapString(id));
+}
+
+void WebUiUpdateNode(QtString old_id, QtString new_id) {
+    window->bridge->UpdateNode(QtUnwrapString(old_id), QtUnwrapString(new_id));
+}
+
+void WebUiReplaceNode(QtString old_id, QtString id, QtString tag) {
+    window->bridge->ReplaceNode(QtUnwrapString(old_id), QtUnwrapString(id), QtUnwrapString(tag));
 }

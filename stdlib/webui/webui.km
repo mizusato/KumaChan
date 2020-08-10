@@ -1,22 +1,20 @@
 type MainLoop NoExcept[-];
 
-public function webui-debug: ( &(NoExcept*[DomNode]) MainLoop )
+// TODO: fix error for absent named type
+public function webui-debug: ( &(NoExcept*[Node]) MainLoop )
     native 'webui-debug';
 
 
 type Event native;
-type DomNode native;
-type DomStyle native;
-type DomEvent native;
-type DomContent native;
+type Node native;  // *vdom.Node
+type EventOptions native;  // *vdom.EventOptions
+type NodeContent native;  // vdom.NodeContent
 
-public function dom-node: ( &(String,Array[DomStyle],Array[DomEvent],DomContent) DomNode )
+public function dom-node: ( &(String,Map[String,String],Map[String,EventOptions],NodeContent) Node )
     native 'webui-dom-node';
-public function dom-style: (&(String,String) DomStyle )
-    native 'webui-dom-style';
-public function dom-event: ( &(String,Bool,Bool,Sink[Event]) DomEvent )
+public function dom-event: ( &(String,Bool,Bool,Sink[Event]) EventOptions )
     native 'webui-dom-event';
-public function dom-text: ( &(String) DomContent )
+public function dom-text: ( &(String) NodeContent )
     native 'webui-dom-text';
-public function dom-children: ( &(Array[DomNode]) DomContent )
+public function dom-children: ( &(Array[Node]) NodeContent )
     native 'webui-dom-children';

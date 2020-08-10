@@ -6,14 +6,61 @@ import (
 	"kumachan/runtime/rx"
 	. "kumachan/runtime/common"
 	"kumachan/runtime/lib/container"
+	"kumachan/qt/qtbinding/webui/vdom"
 )
 
+
+type WebUiAdaptedMap struct {
+	Data  container.Map
+}
+func WebUiAdaptMap(mv Value) WebUiAdaptedMap {
+	return WebUiAdaptedMap{mv.(container.Map) }
+}
+func (m WebUiAdaptedMap) Has(key vdom.String) bool {
+	var key_str = StringFromRuneSlice(key)
+	var _, ok = m.Data.Lookup(key_str)
+	return ok
+}
+func (m WebUiAdaptedMap) Lookup(key vdom.String) (interface{}, bool) {
+	var key_str = StringFromRuneSlice(key)
+	return m.Data.Lookup(key_str)
+}
+func (m WebUiAdaptedMap) ForEach(f func(key vdom.String, val interface{})) {
+	m.Data.ForEach(func(k Value, v Value) {
+		f(RuneSliceFromString(k.(String)), v)
+	})
+}
+
+var __WebUiVirtualDomDeltaNotifier = &vdom.DeltaNotifier {
+	ApplyStyle:  qt.WebUiApplyStyle,
+	EraseStyle:  qt.WebUiEraseStyle,
+	AttachEvent: qt.WebUiAttachEvent,
+	ModifyEvent: qt.WebUiModifyEvent,
+	DetachEvent: qt.WebUiDetachEvent,
+	SetText:     qt.WebUiSetText,
+	AppendNode:  qt.WebUiAppendNode,
+	RemoveNode:  qt.WebUiRemoveNode,
+	UpdateNode:  qt.WebUiUpdateNode,
+	ReplaceNode: qt.WebUiReplaceNode,
+}
+var __WebUiVirtualDom *vdom.Node = nil
+var __WebUiUpdateDom = func(new_root *vdom.Node) rx.Effect {
+	return rx.CreateValueCallbackEffect(func(done func(rx.Object)) {
+		qt.CommitTask(func() {
+			var ctx = __WebUiVirtualDomDeltaNotifier
+			var prev_root = __WebUiVirtualDom
+			__WebUiVirtualDom = new_root
+			vdom.Diff(ctx, nil, prev_root, new_root)
+			done(nil)
+		})
+	})
+}
 
 var __WebUiLoaded = false
 var __WebUiLoadedMutex sync.Mutex
 
 var WebUiFunctions = map[string] interface{} {
-	"webui-debug": func(dom rx.Effect, h MachineHandle) rx.Effect {
+	"webui-debug": func(root rx.Effect, h MachineHandle) rx.Effect {
 		return rx.CreateEffect(func(_ rx.Sender) {
 			__WebUiLoadedMutex.Lock()
 			if __WebUiLoaded {
@@ -24,85 +71,55 @@ var WebUiFunctions = map[string] interface{} {
 			var wait = make(chan struct{})
 			qt.CommitTask(func() {
 				var title, del_title = qt.NewStringFromRunes([]rune("WebUI Debug"))
-				qt.WebUiDebug(title)
-				del_title()
+				defer del_title()
+				qt.WebUiInit(title)
 				wait <- struct{}{}
 			})
+			<- wait
 			__WebUiLoaded = true
 			__WebUiLoadedMutex.Unlock()
-			<- wait
 			var window = qt.WebUiGetWindow()
 			qt.Connect(window, "loadFinished()", func() {
-				var sched = h.GetScheduler()
-				var dom_ch = make(chan rx.Object, 16384)
-				sched.RunTopLevel(dom, rx.Receiver {
-					Context: rx.Background(),
-					Values:  dom_ch,
+				var update = root.ConcatMap(func(node rx.Object) rx.Effect {
+					return __WebUiUpdateDom(node.(*vdom.Node))
 				})
-				go (func() {
-					for update := range dom_ch {
-						var root = update.(qt.DomNode)
-						qt.CommitTask(func() {
-							qt.WebUiUpdateVDOM(root)
-						})
-					}
-				})()
-			})
-			qt.Connect(window, "handlerDetached()", func() {
-				qt.UnregisterDetachedEventHandler()
+				h.GetScheduler().RunTopLevel(update, rx.Receiver {
+					Context: rx.Background(),
+				})
 			})
 		})
 	},
-	"webui-dom-node": func(tag String, styles Value, events Value, content qt.DomContent) qt.DomNode {
-		var style_arr = container.ArrayFrom(styles)
-		var event_arr = container.ArrayFrom(events)
+	"webui-dom-node": func(tag String, styles Value, events Value, content vdom.Content) *vdom.Node {
 		var tag_ = RuneSliceFromString(tag)
-		var styles_ = make([] qt.DomStyle, style_arr.Length)
-		for i := uint(0); i < style_arr.Length; i += 1 {
-			styles_[i] = style_arr.GetItem(i).(qt.DomStyle)
-		}
-		var events_ = make([] qt.DomEvent, event_arr.Length)
-		for i := uint(0); i < event_arr.Length; i += 1 {
-			events_[i] = event_arr.GetItem(i).(qt.DomEvent)
-		}
-		var ch = make(chan qt.DomNode)
-		qt.MakeSureInitialized()
-		qt.CommitTask(func() {
-			ch <- qt.WebUiNewDomNode(tag_, qt.DomProps {
+		var styles_ = WebUiAdaptMap(styles)
+		var events_ = WebUiAdaptMap(events)
+		return &vdom.Node {
+			Tag:     tag_,
+			Props:   vdom.Props {
 				Styles: styles_,
 				Events: events_,
-			}, content)
-		})
-		return <- ch
-	},
-	"webui-dom-style": func(key String, value String) qt.DomStyle {
-		return qt.DomStyle {
-			Key:   RuneSliceFromString(key),
-			Value: RuneSliceFromString(value),
+			},
+			Content: content,
 		}
 	},
-	"webui-dom-event": func(name String, prevent SumValue, stop SumValue, sink rx.Sink, h MachineHandle) qt.DomEvent {
-		return qt.DomEvent {
-			Name:    RuneSliceFromString(name),
+	"webui-dom-event": func(prevent SumValue, stop SumValue, sink rx.Sink) *vdom.EventOptions {
+		return &vdom.EventOptions {
 			Prevent: BoolFrom(prevent),
 			Stop:    BoolFrom(stop),
-			Handler: func(payload qt.VariantMap) {
-				h.GetScheduler().RunTopLevel(rx.CreateBlockingEffect(func() (rx.Object, bool) {
-					sink.Send(payload)
-					return nil, true
-				}), rx.Receiver {})
-			},
+			Handler: (vdom.EventHandler)(sink),
 		}
 	},
-	"webui-dom-text": func(text String) qt.DomContent {
-		return qt.DomText(RuneSliceFromString(text))
+	"webui-dom-text": func(text String) vdom.Content {
+		var t = vdom.Text(RuneSliceFromString(text))
+		return &t
 	},
-	"webui-dom-children": func(children Value) qt.DomContent {
+	"webui-dom-children": func(children Value) vdom.Content {
 		var arr = container.ArrayFrom(children)
-		var children_ = make([] qt.DomNode, arr.Length)
+		var children_ = make([] *vdom.Node, arr.Length)
 		for i := uint(0); i < arr.Length; i += 1 {
-			children_[i] = arr.GetItem(i).(qt.DomNode)
+			children_[i] = arr.GetItem(i).(*vdom.Node)
 		}
-		return qt.DomChildren(children_)
+		var c = vdom.Children(children_)
+		return &c
 	},
 }

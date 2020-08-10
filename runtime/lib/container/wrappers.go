@@ -56,9 +56,9 @@ func (s Set) From(a *avl.AVL) Set {
 	return Set { AVL: a, Cmp: s.Cmp }
 }
 
-func (m Set) Size() uint {
-	if m.AVL == nil { return 0 }
-	return uint(m.AVL.Size)
+func (s Set) Size() uint {
+	if s.AVL == nil { return 0 }
+	return uint(s.AVL.Size)
 }
 
 func (s Set) Lookup(v Value) (Value, bool) {
@@ -75,9 +75,13 @@ func (s Set) Deleted(v Value) (Value, Set, bool) {
 	return deleted, s.From(rest), exists
 }
 
+func (s Set) ForEach(f func(Value)) {
+	s.AVL.Walk(f)
+}
+
 func (s Set) Inspect(inspect func(Value)ErrorMessage) ErrorMessage {
 	var items = make([] ErrorMessage, 0)
-	s.AVL.Walk(func(v Value) {
+	s.ForEach(func(v Value) {
 		items = append(items, inspect(v))
 	})
 	return ListErrMsgItems(items, "Set")
@@ -152,15 +156,21 @@ func (m Map) Deleted(k Value) (Value, Map, bool) {
 	return v, m.From(rest), exists
 }
 
-func (m Map) Inspect(inspect func(Value)ErrorMessage) ErrorMessage {
-	var items = make([] ErrorMessage, 0)
+func (m Map) ForEach(f func(k Value, v Value)) {
 	m.AVL.Walk(func(kv Value) {
 		var entry = kv.(MapEntry)
+		f(entry.Key, entry.Value)
+	})
+}
+
+func (m Map) Inspect(inspect func(Value)ErrorMessage) ErrorMessage {
+	var items = make([] ErrorMessage, 0)
+	m.ForEach(func(k Value, v Value) {
 		var entry_msg = make(ErrorMessage, 0)
-		entry_msg.WriteAll(inspect(entry.Key))
+		entry_msg.WriteAll(inspect(k))
 		entry_msg.WriteText(TS_NORMAL, ":")
 		entry_msg.Write(T_SPACE)
-		entry_msg.WriteAll(inspect(entry.Value))
+		entry_msg.WriteAll(inspect(k))
 		items = append(items, entry_msg)
 	})
 	return ListErrMsgItems(items, "Map")

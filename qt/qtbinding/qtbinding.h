@@ -41,11 +41,6 @@ struct _QtEventListener {
 };
 typedef struct _QtEventListener QtEventListener;
 
-struct _QtWebUiNode {
-    void* ptr;
-};
-typedef struct _QtWebUiNode QtWebUiNode;
-
 extern const size_t QtEventMove;
 extern const size_t QtEventResize;
 extern const size_t QtEventClose;
@@ -88,15 +83,19 @@ extern "C" {
     QtBool QtListWidgetHasCurrentItem(void* widget_ptr);
     QtString QtListWidgetGetCurrentItemKey(void *widget_ptr);
     size_t QtStringWriteToUTF32Buffer(QtString str, uint32_t *buf);
-    void QtWebUiInit(QtString title);
-    void* QtWebUiGetWindow();
-    size_t QtWebUiGetWindowDetachedHandler();
-    void QtWebUiUpdateVDOM(QtWebUiNode root);
-    QtWebUiNode QtWebUiNewNode(QtString tagName);
-    void QtWebUiNodeAddStyle(QtWebUiNode node, QtString key, QtString value);
-    void QtWebUiNodeAddEvent(QtWebUiNode node, QtString name, QtBool prevent, QtBool stop, size_t handler);
-    void QtWebUiNodeSetText(QtWebUiNode node, QtString text);
-    void QtWebUiNodeAppendChild(QtWebUiNode node, QtWebUiNode child);
+    void WebUiInit(QtString title);
+    void* WebUiGetWindow();
+    void WebUiEraseStyle(QtString id, QtString key);
+    void WebUiApplyStyle(QtString id, QtString key, QtString value);
+    void WebUiDetachEvent(QtString id, QtString event);
+    void WebUiModifyEvent(QtString id, QtString event, QtBool prevent, QtBool stop);
+    void WebUiAttachEvent(QtString id, QtString event, QtBool prevent, QtBool stop, QtString handler);
+    void WebUiSetText(QtString id, QtString text);
+    void WebUiInsertNode(QtString parent, QtString ref, QtString id, QtString tag);
+    void WebUiAppendNode(QtString parent, QtString id, QtString tag);
+    void WebUiRemoveNode(QtString parent, QtString id);
+    void WebUiUpdateNode(QtString old_id, QtString new_id);
+    void WebUiReplaceNode(QtString old_id, QtString id, QtString tag);
 #ifdef __cplusplus
 }
 #endif

@@ -1,3 +1,4 @@
 do webui-debug (
-    emit* [(dom-node 'h1' [] [] (dom-text '你好 WebUI'))]
+    // TODO: fix inferring
+    emit* [(dom-node 'h1' (new-map:[String] []) (new-map:[WebUi::EventOptions] []) (dom-text '你好 WebUI'))]
 );
