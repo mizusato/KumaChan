@@ -133,10 +133,12 @@ func main () {
     // debug_parser(os.Stdin, "[eval]", "root")
     // os.Exit(0)
     runtime.LockOSThread()
-    var mod, idx = debug_loader()
-    var c_mod, _ = debug_checker(mod, idx)
-    var program = debug_compiler(c_mod)
     go (func() {
+        var mod, idx = debug_loader()
+        var c_mod, _ = debug_checker(mod, idx)
+        var program = debug_compiler(c_mod)
+        mod = nil
+        c_mod = nil
         vm.Execute(program, 33554432)
         close(qt.InitRequestSignal)
     })()
