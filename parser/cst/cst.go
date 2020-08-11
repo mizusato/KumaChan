@@ -10,7 +10,7 @@ const _MAX = syntax.MAX_NUM_PARTS
 
 type Tree struct {
 	Name     string
-	Nodes    []TreeNode
+	Nodes    [] TreeNode
 	Code     scanner.Code
 	Tokens   scanner.Tokens
 	Info     scanner.RowColInfo

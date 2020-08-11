@@ -34,7 +34,7 @@ type Point struct {
 }
 type RowColInfo = []Point
 func GetRowColInfo(code Code) RowColInfo {
-    var info = make(RowColInfo, 0, 10000)
+    var info = make(RowColInfo, 0)
     var row = 1
     var col = 0
     for _, char := range code {
@@ -50,8 +50,8 @@ func GetRowColInfo(code Code) RowColInfo {
 }
 type RowSpanMap = []Span
 func GetRowSpanMap(code Code) RowSpanMap {
-    var span_map = make([]Span, 0)
-    span_map = append(span_map, Span{})
+    var span_map = make([] Span, 0)
+    span_map = append(span_map, Span {})
     var row = 1
     var col = 0
     for i, char := range code {
@@ -117,7 +117,7 @@ func Scan(code Code) (Tokens, RowColInfo, RowSpanMap) {
             keyword[syntax.Name2Id[token_def.Name]] = true
         }
     }
-    var tokens = make(Tokens, 0, 10000)
+    var tokens = make(Tokens, 0)
     var info = GetRowColInfo(code)
     var span_map = GetRowSpanMap(code)
     var length = len(code)

@@ -137,8 +137,6 @@ func main () {
         var mod, idx = debug_loader()
         var c_mod, _ = debug_checker(mod, idx)
         var program = debug_compiler(c_mod)
-        mod = nil
-        c_mod = nil
         vm.Execute(program, 33554432)
         close(qt.InitRequestSignal)
     })()

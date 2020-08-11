@@ -37,7 +37,7 @@ func buildTree(root syntax.Id, tokens scanner.Tokens) ([]cst.TreeNode, *Error) {
     }
     var ZeroSpan = scanner.Span { Start: 0, End: 0 }
     // prepare the stack (as well as tree), push the root node
-    var tree = make([]cst.TreeNode, 0, 100000)
+    var tree = make([]cst.TreeNode, 0)
     tree = append(tree, cst.TreeNode {
         Part:    RootPart,  Parent:  -1,
         Length:  0,         Status: cst.Initial,
