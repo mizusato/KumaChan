@@ -56,8 +56,8 @@ func WebUiInitAndLoad(sched rx.Scheduler, root rx.Effect, title String) {
 type WebUiAdaptedMap struct {
 	Data  container.Map
 }
-func WebUiAdaptMap(mv Value) WebUiAdaptedMap {
-	return WebUiAdaptedMap{mv.(container.Map) }
+func WebUiAdaptMap(m container.Map) WebUiAdaptedMap {
+	return WebUiAdaptedMap { m }
 }
 func WebUiMapAdaptValue(v Value) Value {
 	var str, is_str = v.(String)
@@ -115,18 +115,19 @@ var WebUiFunctions = map[string] interface{} {
 			WebUiInitAndLoad(h.GetScheduler(), root, title)
 		})
 	},
-	"webui-dom-node": func(tag String, styles Value, events Value, content vdom.Content) *vdom.Node {
+	"webui-dom-node": func(tag String, styles *vdom.Styles, events *vdom.Events, content vdom.Content) *vdom.Node {
 		var tag_ = RuneSliceFromString(tag)
-		var styles_ = WebUiAdaptMap(styles)
-		var events_ = WebUiAdaptMap(events)
 		return &vdom.Node {
 			Tag:     tag_,
 			Props:   vdom.Props {
-				Styles: styles_,
-				Events: events_,
+				Styles: styles,
+				Events: events,
 			},
 			Content: content,
 		}
+	},
+	"webui-dom-styles": func(styles container.Map) *vdom.Styles {
+		return &vdom.Styles { Data: WebUiAdaptMap(styles) }
 	},
 	"webui-dom-event": func(prevent SumValue, stop SumValue, sink rx.Sink) *vdom.EventOptions {
 		return &vdom.EventOptions {
@@ -134,6 +135,9 @@ var WebUiFunctions = map[string] interface{} {
 			Stop:    BoolFrom(stop),
 			Handler: (vdom.EventHandler)(sink),
 		}
+	},
+	"webui-dom-events": func(events container.Map) *vdom.Events {
+		return &vdom.Events { Data: WebUiAdaptMap(events) }
 	},
 	"webui-dom-text": func(text String) vdom.Content {
 		var t = vdom.Text(RuneSliceFromString(text))
