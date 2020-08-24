@@ -9,18 +9,17 @@ private const ControlStyle: WebUi::Styles
     ];
 
 private const DOM: NoExcept*[WebUi::Node]
-    ~ then* &(@value) := new-latch:[Int] 0,
+    ~ then* &(@value) := new-latch (:Int: 0),
     ~ map* &(value) := @value.receive,
-    let delta: (&(Int)(Sink[WebUi::EventPayload])) := (
-        &(n)(@value.adapt (&(_)$(value + n)))
-    ),
+    let dec := dom-event-sink @value (&(_) $(value - 1)),
+    let inc := dom-event-sink @value (&(_) $(value + 1)),
     let styles := ControlStyle,
     let dec-btn := (
-        dom-node 'button' styles (dom-single-event 'click' (delta (- 1)))
+        dom-node 'button' styles (dom-event 'click' dec)
         (dom-text '-')
     ),
     let inc-btn := (
-        dom-node 'button' styles (dom-single-event 'click' (delta 1))
+        dom-node 'button' styles (dom-event 'click' inc)
         (dom-text '+')
     ),
     let label := (

@@ -30,7 +30,8 @@ var core_types = []string {
 	Seq, Array, Heap, Set, Map,
 	// effect.km
 	EffectMultiValue, Effect, NoExceptMultiValue, NoExcept,
-	Source, Sink, Mutable, List, Buffer, HashMap,
+	Source, Sink, Bus, Latch,
+	Mutable, List, Buffer, HashMap,
 	// time.km
 	Time,
 	// complex.km
@@ -101,6 +102,8 @@ const NoExceptMultiValue = "NoExcept*"
 const NoExcept = "NoExcept"
 const Source = "Source"
 const Sink = "Sink"
+const Bus = "Bus"
+const Latch = "Latch"
 const Mutable = "Mutable"
 const List = "List"
 const Buffer = "Buffer"

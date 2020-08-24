@@ -9,7 +9,7 @@ type Styles native;  // *vdom.Styles
 type Events native;  // *vdom.Events
 type EventOptions  native;  // *vdom.EventOptions
 type EventPayload  native;  // *qt.WebUiEventPayload
-type EventHandler  Sink[EventPayload];
+type EventSink     Sink[EventPayload];
 type NodeContent   native;  // vdom.NodeContent
 
 
@@ -31,10 +31,16 @@ public function dom-events: ( &(Map[String,EventOptions]) Events )
     native 'webui-dom-events';
 public function dom-events: ( &(Array[(String,EventOptions)]) Events )
     (&(events)(dom-events (new-map events)));
-public function dom-single-event: ( &(String,Sink[EventPayload]) Events )
-    (&(name,sink)(dom-events [(name, (dom-event No No (EventHandler sink)))]));
-public function dom-event: ( &(Bool,Bool,EventHandler) EventOptions )
+public function dom-event: ( &(String,EventSink) Events )
+    (&(name,sink)(dom-events [(name, (dom-event No No sink))]));
+public function dom-event: ( &(Bool,Bool,EventSink) EventOptions )
     native 'webui-dom-event';
+public function dom-event-sink[T]: ( &(Sink[T],(&(EventPayload)(T))) EventSink )
+    (&(sink,f)(EventSink (sink.adapt f)));
+public function dom-event-sink[T]: ( &(Bus[T],(&(EventPayload)(T))) EventSink )
+    (&(bus,f)(EventSink (bus.adapt f)));
+public function dom-event-sink[T]: ( &(Latch[T],(&(EventPayload)(T))) EventSink )
+    (&(latch,f)(EventSink (latch.adapt f)));
 public function dom-text: ( &(String) NodeContent )
     native 'webui-dom-text';
 public function dom-children: ( &(Array[Node]) NodeContent )
