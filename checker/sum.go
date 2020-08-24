@@ -72,13 +72,10 @@ type MultiBranch struct {
 func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 	// TODO: merge switch and multi_switch
 	var info = ctx.GetExprInfo(sw.Node)
-	var arg_semi, err = Check(sw.Argument, ctx)
-	if err != nil { return SemiExpr{}, err }
-	var arg_typed, ok = arg_semi.Value.(TypedExpr)
-	if !ok { return SemiExpr{}, &ExprError {
-		Point:    ErrorPointFrom(sw.Argument.Node),
-		Concrete: E_ExplicitTypeRequired {},
-	} }
+	var arg_semi, err1 = Check(sw.Argument, ctx)
+	if err1 != nil { return SemiExpr{}, err1 }
+	var arg_typed, err2 = AssignTo(nil, arg_semi, ctx)
+	if err2 != nil { return SemiExpr{}, err2 }
 	var arg_type = arg_typed.Type
 	var union, union_args, is_union = ExtractUnion(arg_type, ctx)
 	if !is_union { return SemiExpr{}, &ExprError {
@@ -214,13 +211,10 @@ func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprErro
 	var unions = make([] *Union, A)
 	var unions_args = make([][] Type, A)
 	for i, arg_node := range msw.Arguments {
-		var semi, err = Check(arg_node, ctx)
-		if err != nil { return SemiExpr{}, err }
-		var arg_typed, ok = semi.Value.(TypedExpr)
-		if !ok { return SemiExpr{}, &ExprError {
-			Point:    ErrorPointFrom(arg_node.Node),
-			Concrete: E_ExplicitTypeRequired {},
-		} }
+		var semi, err1 = Check(arg_node, ctx)
+		if err1 != nil { return SemiExpr{}, err1 }
+		var arg_typed, err2 = AssignTo(nil, semi, ctx)
+		if err2 != nil { return SemiExpr{}, err2 }
 		var arg_type = arg_typed.Type
 		var union, union_args, is_union = ExtractUnion(arg_type, ctx)
 		if !is_union { return SemiExpr{}, &ExprError {

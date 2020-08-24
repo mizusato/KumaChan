@@ -53,15 +53,10 @@ func CheckTuple(tuple ast.Tuple, ctx ExprContext) (SemiExpr, *ExprError) {
 		return expr, nil
 	} else {
 		var el_exprs = make([] SemiExpr, L)
-		var el_types = make([] Type, L)
 		for i, el := range tuple.Elements {
 			var expr, err = Check(el, ctx)
 			if err != nil { return SemiExpr{}, err }
 			el_exprs[i] = expr
-			switch typed := expr.Value.(type) {
-			case TypedExpr:
-				el_types[i] = typed.Type
-			}
 		}
 		return SemiExpr {
 			Value: SemiTypedTuple { el_exprs },
@@ -268,7 +263,7 @@ func AssignTupleTo(expected Type, tuple SemiTypedTuple, info ExprInfo, ctx ExprC
 	}
 	switch E := non_nil_expected.(type) {
 	default:
-		var typed_exprs = make([]Expr, len(tuple.Values))
+		var typed_exprs = make([] Expr, len(tuple.Values))
 		for i, el := range tuple.Values {
 			var typed, err = AssignTo(nil, el, ctx)
 			if err != nil { return Expr{}, err }
@@ -307,7 +302,7 @@ func AssignTupleTo(expected Type, tuple SemiTypedTuple, info ExprInfo, ctx ExprC
 				if err != nil { return Expr{}, err }
 				typed_exprs[i] = typed
 			}
-			var el_types = make([]Type, len(tuple.Values))
+			var el_types = make([] Type, len(tuple.Values))
 			for i, el := range typed_exprs {
 				el_types[i] = el.Type
 			}

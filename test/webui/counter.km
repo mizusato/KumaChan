@@ -12,7 +12,7 @@ private const DOM: NoExcept*[WebUi::Node]
     ~ then* &(@value) := new-latch:[Int] 0,
     ~ map* &(value) := @value.receive,
     let delta: (&(Int)(Sink[WebUi::EventPayload])) := (
-        &(n)(@value.adapt:[Int,WebUi::EventPayload] (&(_)$(value + n)))
+        &(n)(@value.adapt (&(_)$(value + n)))
     ),
     let styles := ControlStyle,
     let dec-btn := (

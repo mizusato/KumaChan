@@ -79,23 +79,24 @@ func CallUntypedLambda (
 	lambda       UntypedLambda,
 	lambda_info  ExprInfo,
 	call_info    ExprInfo,
+	expected     Type,
 	ctx          ExprContext,
-) (SemiExpr, *ExprError) {
+) (Expr, *ExprError) {
 	var input_typed, input_is_typed = input.Value.(TypedExpr)
 	if !input_is_typed {
-		return SemiExpr{}, &ExprError {
+		return Expr{}, &ExprError {
 			Point:    lambda_info.ErrorPoint,
 			Concrete: E_ExplicitTypeRequired {},
 		}
 	}
 	var pattern, err1 = PatternFrom(lambda.Input, input_typed.Type, ctx)
-	if err1 != nil { return SemiExpr{}, err1 }
+	if err1 != nil { return Expr{}, err1 }
 	var inner_ctx = ctx.WithPatternMatching(pattern)
 	var output, err2 = Check(lambda.Output, inner_ctx)
-	if err2 != nil { return SemiExpr{}, err2 }
+	if err2 != nil { return Expr{}, err2 }
 	var output_typed, output_is_typed = output.Value.(TypedExpr)
 	if !output_is_typed {
-		return SemiExpr{}, &ExprError {
+		return Expr{}, &ExprError {
 			Point:    lambda_info.ErrorPoint,
 			Concrete: E_ExplicitTypeRequired {},
 		}
@@ -111,12 +112,15 @@ func CallUntypedLambda (
 		},
 		Info:  lambda_info,
 	}
-	return LiftTyped(Expr {
+	var typed_call = Expr {
 		Type:  output_typed.Type,
 		Value: Call {
 			Function: lambda_typed,
 			Argument: Expr(input_typed),
 		},
 		Info:  call_info,  // this is a little ambiguous
-	}), nil
+	}
+	var assigned, err3 = TypedAssignTo(expected, typed_call, ctx)
+	if err3 != nil { return Expr{}, err3 }
+	return assigned, nil
 }

@@ -884,7 +884,7 @@ func (e E_FunctionWrongTypeParamsQuantity) ExprErrorDesc() ErrorMessage {
 
 type E_NoneOfFunctionsAssignable struct {
 	To          string
-	Candidates  [] Candidate
+	Candidates  [] UnavailableFuncInfo
 }
 func (e E_NoneOfFunctionsAssignable) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
@@ -896,7 +896,7 @@ func (e E_NoneOfFunctionsAssignable) ExprErrorDesc() ErrorMessage {
 	msg.Write(T_LF)
 	for _, candidate := range e.Candidates {
 		msg.Write(T_INDENT)
-		msg.WriteText(TS_INLINE_CODE, DescribeCandidate(candidate))
+		msg.WriteText(TS_INLINE_CODE, candidate.FuncDesc)
 		msg.Write(T_LF)
 		msg.WriteAllWithIndent(candidate.Error.Desc(), 2)
 		msg.Write(T_LF)
@@ -905,7 +905,11 @@ func (e E_NoneOfFunctionsAssignable) ExprErrorDesc() ErrorMessage {
 }
 
 type E_NoneOfFunctionsCallable struct {
-	Candidates  [] Candidate
+	Candidates  [] UnavailableFuncInfo
+}
+type UnavailableFuncInfo struct {
+	FuncDesc  string
+	Error     *ExprError
 }
 func (e E_NoneOfFunctionsCallable) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
@@ -919,7 +923,7 @@ func (e E_NoneOfFunctionsCallable) ExprErrorDesc() ErrorMessage {
 		msg.Write(T_INDENT)
 		msg.WriteText(TS_INFO, fmt.Sprintf("(%d)", (i + 1)))
 		msg.Write(T_SPACE)
-		msg.WriteText(TS_INFO, DescribeCandidate(candidate))
+		msg.WriteText(TS_INFO, candidate.FuncDesc)
 		msg.Write(T_LF)
 		var candidate_msg = candidate.Error.Message()
 		var key = candidate_msg.String()

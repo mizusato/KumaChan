@@ -91,6 +91,21 @@ func MakeRefFunction(name string, index uint, type_args ([] Type), node ast.Node
 		Implicit: implicit_refs,
 	}, nil
 }
+func CraftAstRefNode(name string, node ast.Node) ast.InlineRef {
+	return ast.InlineRef {
+		Node:     node,
+		Module:   ast.Identifier {
+			Node: node,
+			Name: [] rune {},
+		},
+		Specific: false,
+		Id:       ast.Identifier {
+			Node: node,
+			Name: ([] rune)(name),
+		},
+		TypeArgs: make([] ast.VariousType, 0),
+	}
+}
 
 func (impl RefLocal) ExprVal() {}
 func (impl RefLocal) Ref() {}
@@ -208,44 +223,32 @@ func CallUntypedRef (
 	ref        UntypedRef,
 	ref_info   ExprInfo,
 	call_info  ExprInfo,
+	expected   Type,
 	ctx        ExprContext,
-) (SemiExpr, *ExprError) {
+) (Expr, *ExprError) {
 	switch ref_body := ref.RefBody.(type) {
 	case UntypedRefToType:
 		var g = ref_body.Type
 		var g_name = ref_body.TypeName
 		var force_exact = ref_body.ForceExact
 		var type_args = ref.TypeArgs
-		var expr, err = Box (
+		boxed, err := Box (
 			arg, g, g_name, ref_info, type_args,
 			force_exact, call_info, ctx,
 		)
-		if err != nil { return SemiExpr{}, err }
-		return LiftTyped(expr), nil
+		if err != nil { return Expr{}, err }
+		assigned, err := TypedAssignTo(expected, boxed, ctx)
+		if err != nil { return Expr{}, err }
+		return assigned, nil
 	case UntypedRefToFunctions:
 		var functions = ref_body.Functions
 		var name = ref_body.FuncName
 		var type_args = ref.TypeArgs
 		return OverloadedCall (
-			functions, name, type_args, arg, ref_info, call_info, ctx,
+			functions, name, type_args,
+			arg, ref_info, call_info, expected, ctx,
 		)
 	default:
 		panic("impossible branch")
-	}
-}
-
-func CraftAstRefNode(name string, node ast.Node) ast.InlineRef {
-	return ast.InlineRef {
-		Node:     node,
-		Module:   ast.Identifier {
-			Node: node,
-			Name: [] rune {},
-		},
-		Specific: false,
-		Id:       ast.Identifier {
-			Node: node,
-			Name: ([] rune)(name),
-		},
-		TypeArgs: make([] ast.VariousType, 0),
 	}
 }

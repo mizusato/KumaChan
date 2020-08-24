@@ -6,18 +6,11 @@ import (
 )
 
 
-func (impl UndecidedCall) SemiExprVal() {}
-type UndecidedCall struct {
-	Options   [] AvailableCall
-	FuncName  string
-}
-type AvailableCall struct {
-	Expr      Expr
-	Function  *GenericFunction
-}
-type AssignableCall struct {
-	Expr      Expr
-	Function  *GenericFunction
+func (impl UntypedCall) SemiExprVal() {}
+type UntypedCall struct {
+	Callee    SemiExpr
+	Argument  ast.Call
+	Context   ExprContext
 }
 
 func (impl Call) ExprVal() {}
@@ -28,59 +21,21 @@ type Call struct {
 
 
 func CheckCall(call ast.Call, ctx ExprContext) (SemiExpr, *ExprError) {
-	var arg_node, has_arg = call.Arg.(ast.Call)
+	var arg, has_arg = call.Arg.(ast.Call)
 	if has_arg {
+		var callee, err = CheckTerm(call.Func, ctx)
+		if err != nil { return SemiExpr{}, err }
 		var info = ctx.GetExprInfo(call.Node)
-		f, err := CheckTerm(call.Func, ctx)
-		if err != nil { return SemiExpr{}, err }
-		arg, err := CheckCall(arg_node, ctx)
-		if err != nil { return SemiExpr{}, err }
-		return CheckSingleCall(f, arg, info, ctx)
+		return SemiExpr {
+			Value: UntypedCall {
+				Callee:   callee,
+				Argument: arg,
+				Context:  ctx,
+			},
+			Info: info,
+		}, nil
 	} else {
 		return CheckTerm(call.Func, ctx)
-	}
-}
-
-func CheckSingleCall(f SemiExpr, arg SemiExpr, info ExprInfo, ctx ExprContext) (SemiExpr, *ExprError) {
-	switch f_concrete := f.Value.(type) {
-	case TypedExpr:
-		var t = f_concrete.Type
-		var r, ok = UnboxFunc(t, ctx).(Func)
-		if ok {
-			var arg_typed, err = AssignTo(r.Input, arg, ctx)
-			if err != nil { return SemiExpr{}, err }
-			return LiftTyped(Expr {
-				Type:  r.Output,
-				Value: Call {
-					Function: Expr(f_concrete),
-					Argument: arg_typed,
-				},
-				Info:  f.Info,
-			}), nil
-		} else {
-			return SemiExpr{}, &ExprError {
-				Point: f.Info.ErrorPoint,
-				Concrete: E_ExprTypeNotCallable {
-					Type: ctx.DescribeType(t),
-				},
-			}
-		}
-	case UntypedLambda:
-		return CallUntypedLambda(arg, f_concrete, f.Info, info, ctx)
-	case UntypedRef:
-		return CallUntypedRef(arg, f_concrete, f.Info, info, ctx)
-	case SemiTypedSwitch,
-		 SemiTypedBlock,
-		 UndecidedCall:
-		return SemiExpr{}, &ExprError {
-			Point:    f.Info.ErrorPoint,
-			Concrete: E_ExplicitTypeRequired {},
-		}
-	default:
-		return SemiExpr{}, &ExprError {
-			Point:    f.Info.ErrorPoint,
-			Concrete: E_ExprNotCallable {},
-		}
 	}
 }
 
@@ -89,51 +44,48 @@ func CheckInfix(infix ast.Infix, ctx ExprContext) (SemiExpr, *ExprError) {
 }
 
 
-func AssignCallTo(expected Type, call UndecidedCall, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
-	var err = RequireExplicitType(expected, info)
+func AssignCallTo(expected Type, call UntypedCall, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
+	var arg, err = Check(ast.WrapCallAsExpr(call.Argument), call.Context)
 	if err != nil { return Expr{}, err }
-	var types_desc = make([]string, 0)
-	var assignable = make([]AssignableCall, 0)
-	for _, option := range call.Options {
-		var expr, err = TypedAssignTo(expected, option.Expr, ctx)
-		if err != nil {
-			types_desc = append (
-				types_desc,
-				ctx.DescribeType(option.Expr.Type),
-			)
-		} else {
-			assignable = append(assignable, AssignableCall {
-				Expr:     expr,
-				Function: option.Function,
-			})
-		}
-	}
-	if len(assignable) == 0 {
-		return Expr{}, &ExprError{
-			Point: info.ErrorPoint,
-			Concrete: E_NoneOfTypesAssignable {
-				From: types_desc,
-				To:   ctx.DescribeExpectedType(expected),
-			},
-		}
-	} else if len(assignable) == 1 {
-		return assignable[0].Expr, nil
-	} else {
-		var candidates = make([]string, len(assignable))
-		for i, a := range assignable {
-			candidates[i] = DescribeCandidate (
-				Candidate {
-					Function: a.Function,
-					Name:     call.FuncName,
-					Error:    nil,
+	var f_info = call.Callee.Info
+	switch f := call.Callee.Value.(type) {
+	case TypedExpr:
+		var t = f.Type
+		var r, ok = UnboxFunc(t, ctx).(Func)
+		if ok {
+			var arg_typed, err = AssignTo(r.Input, arg, ctx)
+			if err != nil { return Expr{}, err }
+			var call_typed = Expr {
+				Type:  r.Output,
+				Value: Call {
+					Function: Expr(f),
+					Argument: arg_typed,
 				},
-			)
+				Info:  f_info,
+			}
+			return TypedAssignTo(expected, call_typed, ctx)
+		} else {
+			return Expr{}, &ExprError {
+				Point: f_info.ErrorPoint,
+				Concrete: E_ExprTypeNotCallable {
+					Type: ctx.DescribeType(t),
+				},
+			}
 		}
+	case UntypedLambda:
+		return CallUntypedLambda(arg, f, f_info, info, expected, ctx)
+	case UntypedRef:
+		return CallUntypedRef(arg, f, f_info, info, expected, ctx)
+	case SemiTypedSwitch,
+		SemiTypedBlock:
 		return Expr{}, &ExprError {
-			Point:    info.ErrorPoint,
-			Concrete: E_AmbiguousCall {
-				Candidates: candidates,
-			},
+			Point:    f_info.ErrorPoint,
+			Concrete: E_ExplicitTypeRequired {},
+		}
+	default:
+		return Expr{}, &ExprError {
+			Point:    f_info.ErrorPoint,
+			Concrete: E_ExprNotCallable {},
 		}
 	}
 }

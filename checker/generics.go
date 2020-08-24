@@ -11,6 +11,7 @@ func GenericFunctionCall (
 	arg          SemiExpr,
 	f_info       ExprInfo,
 	call_info    ExprInfo,
+	expected     Type,
 	ctx          ExprContext,
 ) (Expr, *ExprError) {
 	var type_arity = len(f.TypeParams)
@@ -25,7 +26,7 @@ func GenericFunctionCall (
 		if err != nil { return Expr{}, err }
 		f_ref, err := MakeRefFunction(name, index, type_args, f_node, ctx)
 		if err != nil { return Expr{}, err }
-		return Expr {
+		var call = Expr {
 			Type:  output_type,
 			Value: Call {
 				Function: Expr {
@@ -36,12 +37,31 @@ func GenericFunctionCall (
 				Argument: arg_typed,
 			},
 			Info:  call_info,
-		}, nil
+		}
+		assigned, err := TypedAssignTo(expected, call, ctx)
+		if err != nil { return Expr{}, err }
+		return assigned, nil
 	} else if len(type_args) == 0 {
 		var inf_ctx = ctx.WithInferringEnabled(f.TypeParams)
 		var raw_input_type = f.DeclaredType.Input
 		var raw_output_type = f.DeclaredType.Output
 		var marked_input_type = MarkParamsAsBeingInferred(raw_input_type)
+		var marked_output_type = MarkParamsAsBeingInferred(raw_output_type)
+		if expected != nil {
+			var exp_certain, e = GetCertainType(expected, ErrorPoint{}, ctx)
+			if e == nil {
+				var _, ok = AssignTypeTo(marked_output_type, exp_certain, Contravariant, inf_ctx)
+				if !(ok) {
+					return Expr{}, &ExprError {
+						Point: call_info.ErrorPoint,
+						Concrete: &E_NotAssignable {
+							From: inf_ctx.DescribeExpectedType(marked_output_type),
+							To:   ctx.DescribeType(exp_certain),
+						},
+					}
+				}
+			}
+		}
 		var arg_typed, err = AssignTo(marked_input_type, arg, inf_ctx)
 		if err != nil { return Expr{}, err }
 		var output_v = GetVariance(raw_output_type, TypeVarianceContext {
@@ -78,7 +98,7 @@ func GenericFunctionCall (
 		} }
 		f_ref, err := MakeRefFunction(name, index, inferred_args, f_node, ctx)
 		if err != nil { return Expr{}, err }
-		return Expr {
+		var call = Expr {
 			Type:  output_type,
 			Value: Call {
 				Function: Expr {
@@ -89,7 +109,10 @@ func GenericFunctionCall (
 				Argument: arg_typed,
 			},
 			Info:  call_info,
-		}, nil
+		}
+		assigned, err := TypedAssignTo(expected, call, ctx)
+		if err != nil { return Expr{}, err }
+		return assigned, nil
 	} else {
 		return Expr{}, &ExprError {
 			Point:    f_info.ErrorPoint,

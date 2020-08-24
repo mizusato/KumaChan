@@ -7,7 +7,11 @@ import (
 )
 
 
-type Candidate struct {
+type AvailableCall struct {
+	Expr      Expr
+	Function  *GenericFunction
+}
+type UnavailableCall struct {
 	Function  *GenericFunction
 	Name      string
 	Error     *ExprError
@@ -20,55 +24,63 @@ func OverloadedCall (
 	arg        SemiExpr,
 	f_info     ExprInfo,
 	call_info  ExprInfo,
+	expected   Type,
 	ctx        ExprContext,
-) (SemiExpr, *ExprError) {
+) (Expr, *ExprError) {
 	if len(functions) == 0 { panic("something went wrong") }
 	if len(functions) == 1 {
 		var f = functions[0]
-		var expr, err = GenericFunctionCall (
-			f, name, 0, type_args, arg, f_info, call_info, ctx,
+		call, err := GenericFunctionCall (
+			f, name, 0, type_args,
+			arg, f_info, call_info, expected, ctx,
 		)
-		if err != nil { return SemiExpr{}, err }
-		return LiftTyped(expr), nil
+		if err != nil { return Expr{}, err }
+		assigned, err := TypedAssignTo(expected, call, ctx)
+		if err != nil { return Expr{}, err }
+		return assigned, nil
 	} else {
-		var options = make([] AvailableCall, 0)
-		var candidates = make([] Candidate, 0)
+		var available = make([] AvailableCall, 0)
+		var unavailable = make([]UnavailableCall, 0)
 		for i, f := range functions {
 			var index = uint(i)
 			var expr, err = GenericFunctionCall (
-				f, name, index, type_args, arg, f_info, call_info, ctx,
+				f, name, index, type_args,
+				arg, f_info, call_info, expected, ctx,
 			)
 			if err != nil {
-				candidates = append(candidates, Candidate {
+				unavailable = append(unavailable, UnavailableCall {
 					Function: f,
 					Name:     name,
 					Error:    err,
 				})
 			} else {
-				options = append(options, AvailableCall {
+				available = append(available, AvailableCall {
 					Expr:     expr,
 					Function: f,
 				})
 			}
 		}
-		var available_count = len(options)
-		if available_count == 0 {
-			return SemiExpr{}, &ExprError {
-				Point:    call_info.ErrorPoint,
-				Concrete: E_NoneOfFunctionsCallable {
-					Candidates: candidates,
-				},
+		if len(available) == 0 {
+			var unavailable_info = make([] UnavailableFuncInfo, len(unavailable))
+			for i, item := range unavailable {
+				unavailable_info[i].FuncDesc = DescribeFunction(item.Function, name)
+				unavailable_info[i].Error = item.Error
 			}
-		} else if available_count == 1 {
-			return LiftTyped(options[0].Expr), nil
+			return Expr{}, &ExprError {
+				Point:    call_info.ErrorPoint,
+				Concrete: E_NoneOfFunctionsCallable { unavailable_info },
+			}
+		} else if len(available) == 1 {
+			return available[0].Expr, nil
 		} else {
-			return SemiExpr {
-				Value: UndecidedCall {
-					Options:  options,
-					FuncName: name,
-				},
-				Info: call_info,
-			}, nil
+			var available_desc = make([] string, len(available))
+			for i, item := range available {
+				available_desc[i] = DescribeFunction(item.Function, name)
+			}
+			return Expr{}, &ExprError {
+				Point:    call_info.ErrorPoint,
+				Concrete: &E_AmbiguousCall { available_desc },
+			}
 		}
 	}
 }
@@ -88,16 +100,15 @@ func OverloadedAssignTo (
 			expected, name, 0, f, type_args, info, ctx,
 		)
 	} else {
-		var candidates = make([] Candidate, 0)
+		var candidates = make([] UnavailableFuncInfo, 0)
 		for i, f := range functions {
 			var index = uint(i)
 			var expr, err = GenericFunctionAssignTo (
 				expected, name, index, f, type_args, info, ctx,
 			)
 			if err != nil {
-				candidates = append(candidates, Candidate {
-					Function: f,
-					Name:     name,
+				candidates = append(candidates, UnavailableFuncInfo {
+					FuncDesc: DescribeFunction(f, name),
 					Error:    err,
 				})
 			} else {
@@ -121,9 +132,7 @@ func OverloadedAssignTo (
 	}
 }
 
-func DescribeCandidate(c Candidate) string {
-	var name = c.Name
-	var f = c.Function
+func DescribeFunction(f *GenericFunction, name string) string {
 	var params = TypeParamsNames(f.TypeParams)
 	return fmt.Sprintf (
 		"%s[%s]: %s",
