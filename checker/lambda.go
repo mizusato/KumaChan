@@ -80,6 +80,7 @@ func CallUntypedLambda (
 	lambda_info  ExprInfo,
 	call_info    ExprInfo,
 	expected     Type,
+	call_ctx     ExprContext,
 	ctx          ExprContext,
 ) (Expr, *ExprError) {
 	var input_typed, input_is_typed = input.Value.(TypedExpr)
@@ -89,9 +90,9 @@ func CallUntypedLambda (
 			Concrete: E_ExplicitTypeRequired {},
 		}
 	}
-	var pattern, err1 = PatternFrom(lambda.Input, input_typed.Type, ctx)
+	var pattern, err1 = PatternFrom(lambda.Input, input_typed.Type, call_ctx)
 	if err1 != nil { return Expr{}, err1 }
-	var inner_ctx = ctx.WithPatternMatching(pattern)
+	var inner_ctx = call_ctx.WithPatternMatching(pattern)
 	var output, err2 = Check(lambda.Output, inner_ctx)
 	if err2 != nil { return Expr{}, err2 }
 	var output_typed, output_is_typed = output.Value.(TypedExpr)

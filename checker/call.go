@@ -45,7 +45,9 @@ func CheckInfix(infix ast.Infix, ctx ExprContext) (SemiExpr, *ExprError) {
 
 
 func AssignCallTo(expected Type, call UntypedCall, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
-	var arg, err = Check(ast.WrapCallAsExpr(call.Argument), call.Context)
+	var call_arg = call.Argument
+	var call_ctx = call.Context
+	var arg, err = Check(ast.WrapCallAsExpr(call_arg), call_ctx)
 	if err != nil { return Expr{}, err }
 	var f_info = call.Callee.Info
 	switch f := call.Callee.Value.(type) {
@@ -73,9 +75,9 @@ func AssignCallTo(expected Type, call UntypedCall, info ExprInfo, ctx ExprContex
 			}
 		}
 	case UntypedLambda:
-		return CallUntypedLambda(arg, f, f_info, info, expected, ctx)
+		return CallUntypedLambda(arg, f, f_info, info, expected, call_ctx, ctx)
 	case UntypedRef:
-		return CallUntypedRef(arg, f, f_info, info, expected, ctx)
+		return CallUntypedRef(arg, f, f_info, info, expected, call_ctx, ctx)
 	case SemiTypedSwitch,
 		SemiTypedBlock:
 		return Expr{}, &ExprError {
