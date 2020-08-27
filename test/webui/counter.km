@@ -10,9 +10,9 @@ private const ControlStyle: WebUi::Styles
 
 private const DOM: NoExcept*[WebUi::Node]
     ~ then* &(@value) := new-latch (:Int: 0),
+    let dec := dom-event-sink @value (&(value) (&(_) $(value - 1))),
+    let inc := dom-event-sink @value (&(value) (&(_) $(value + 1))),
     ~ map* &(value) := @value.receive,
-    let dec := dom-event-sink @value (&(_) $(value - 1)),
-    let inc := dom-event-sink @value (&(_) $(value + 1)),
     let styles := ControlStyle,
     let dec-btn := (
         dom-node 'button' styles (dom-event 'click' dec)

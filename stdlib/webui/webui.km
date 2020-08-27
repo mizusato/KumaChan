@@ -39,7 +39,7 @@ public function dom-event-sink[T]: ( &(Sink[T],(&(EventPayload)(T))) EventSink )
     (&(sink,f)(EventSink (sink.adapt f)));
 public function dom-event-sink[T]: ( &(Bus[T],(&(EventPayload)(T))) EventSink )
     (&(bus,f)(EventSink (bus.adapt f)));
-public function dom-event-sink[T]: ( &(Latch[T],(&(EventPayload)(T))) EventSink )
+public function dom-event-sink[T]: ( &(Latch[T],(&(T)(&(EventPayload)(T)))) EventSink )
     (&(latch,f)(EventSink (latch.adapt f)));
 public function dom-text: ( &(String) NodeContent )
     native 'webui-dom-text';

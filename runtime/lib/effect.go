@@ -28,9 +28,21 @@ var EffectFunctions = map[string] Value {
 	},
 	"adapt": func(sink rx.Sink, f Value, h MachineHandle) rx.Sink {
 		return &rx.AdaptedSink {
-			Adapted: sink,
+			Sink: sink,
 			Adapter: func(obj rx.Object) rx.Object {
 				return h.Call(f, obj)
+			},
+		}
+	},
+	"adapt-latch": func(latch *rx.Latch, f Value, h MachineHandle) rx.Sink {
+		return &rx.AdaptedLatch {
+			Latch:      latch,
+			GetAdapter: func(old_state rx.Object) (func(rx.Object) rx.Object) {
+				var adapter = h.Call(f, old_state)
+				return func(obj rx.Object) rx.Object {
+					var new_state = h.Call(adapter, obj)
+					return new_state
+				}
 			},
 		}
 	},

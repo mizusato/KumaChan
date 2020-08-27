@@ -42,6 +42,16 @@ type EventOptions struct {
 	Stop     bool
 	Handler  EventHandler
 }
+func EventOptionsEqual(a *EventOptions, b *EventOptions) bool {
+	if a == b {
+		return true
+	} else {
+		if a.Handler != b.Handler { return false }
+		if a.Prevent != b.Prevent { return false }
+		if a.Stop != b.Stop { return false }
+		return true
+	}
+}
 
 type Content interface { NodeContent() }
 func (impl *Text) NodeContent() {}
@@ -139,19 +149,19 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 				if name_in_new {
 					var name = old_name
 					var new_opts = new_opts_.(*EventOptions)
-					if new_opts != old_opts {
-						if new_opts.Handler == old_opts.Handler {
-							ctx.ModifyEvent(id, name,
-								new_opts.Prevent, new_opts.Stop)
-						} else {
-							ctx.DetachEvent(id, name,
-								old_opts.Handler)
-							ctx.AttachEvent(id, name,
-								new_opts.Prevent, new_opts.Stop, new_opts.Handler)
-						}
-					} else {
-						// do nothing
+					if EventOptionsEqual(new_opts, old_opts) {
+						goto skip_event_opts
 					}
+					if new_opts.Handler == old_opts.Handler {
+						ctx.ModifyEvent(id, name,
+							new_opts.Prevent, new_opts.Stop)
+					} else {
+						ctx.DetachEvent(id, name,
+							old_opts.Handler)
+						ctx.AttachEvent(id, name,
+							new_opts.Prevent, new_opts.Stop, new_opts.Handler)
+					}
+					skip_event_opts:
 				} else {
 					ctx.DetachEvent(id, old_name, old_opts.Handler)
 				}

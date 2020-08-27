@@ -10,11 +10,11 @@ type Sink interface {
 }
 
 type AdaptedSink struct {
-	Adapted  Sink
+	Sink     Sink
 	Adapter  func(Object) Object
 }
 func (a *AdaptedSink) Send(obj Object) Effect {
-	return a.Adapted.Send(a.Adapter(obj))
+	return a.Sink.Send(a.Adapter(obj))
 }
 
 type Bus struct {
@@ -95,3 +95,21 @@ func (latch *Latch) Send(obj Object) Effect {
 func (latch *Latch) Reset() Effect {
 	return latch.Send(latch.init)
 }
+
+type AdaptedLatch struct {
+	Latch       *Latch
+	GetAdapter  func(Object) (func(Object) Object)
+}
+func (a *AdaptedLatch) Send(obj Object) Effect {
+	return CreateBlockingEffect(func() (Object, bool) {
+		var old_state = a.Latch.state
+		var adapter = a.GetAdapter(old_state)
+		var new_state = adapter(obj)
+		a.Latch.state = new_state
+		for _, l := range a.Latch.bus.listeners {
+			l.Notify(new_state)
+		}
+		return nil, true
+	})
+}
+

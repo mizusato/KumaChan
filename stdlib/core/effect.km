@@ -43,8 +43,8 @@ public function receive[T]: ( &(Latch[T])  NoExcept*[T] )
     native 'receive';
 public function send[T]:    ( &(Latch[T],T) NoExcept[-] )
     native 'send';
-public function adapt[A,B]: ( &(Latch[A],(&(B)(A))) Sink[B] )
-    native 'adapt';
+public function adapt[A,B]: ( &(Latch[A],(&(A)(&(B)(A)))) Sink[B] )
+    native 'adapt-latch';
 public function reset[T]: ( &(Latch[T]) NoExcept[-] )
     native 'latch-reset';
 public function from[T]: ( &(Latch[T]) Source[T] )
