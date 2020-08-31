@@ -39,9 +39,10 @@ func OverloadedCall (
 		return call, nil
 	} else {
 		var available = make([] AvailableCall, 0)
-		var unavailable = make([]UnavailableCall, 0)
+		var unavailable = make([] UnavailableCall, 0)
 		for i, f := range functions {
 			var index = uint(i)
+			// TODO: branch cutting required to reduce time complexity
 			var expr, err = GenericFunctionCall (
 				f, name, index, type_args,
 				arg, f_info, call_info, expected, call_ctx, ctx,
@@ -152,6 +153,7 @@ func CheckOverload (
 	reg           TypeRegistry,
 	err_point     ErrorPoint,
 ) *FunctionError {
+	// TODO: check implicit context
 	for _, existing := range functions {
 		var existing_t = &AnonymousType { existing.Function.DeclaredType }
 		var added_t = &AnonymousType { added_type }

@@ -98,6 +98,25 @@ func StringCompare(a String, b String) Ordering {
 	}
 }
 
+func StringFastCompare(a String, b String) Ordering {
+	if len(a) <= len(b) {
+		for i := 0; i < len(b); i += 1 {
+			if i < len(a) {
+				if a[i] < b[i] {
+					return Smaller
+				} else if a[i] > b[i] {
+					return Bigger
+				}
+			} else {
+				return Smaller
+			}
+		}
+		return Equal
+	} else {
+		return StringFastCompare(b, a).Reversed()
+	}
+}
+
 func StringConcat(arr Array) String {
 	var buf = make(String, 0)
 	for i := uint(0); i < arr.Length; i += 1 {

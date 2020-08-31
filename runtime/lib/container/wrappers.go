@@ -110,7 +110,7 @@ func NewStrMap() Map {
 	return NewMap(func(k1 Value, k2 Value) Ordering {
 		var s1 = k1.(String)
 		var s2 = k2.(String)
-		return StringCompare(s1, s2)
+		return StringFastCompare(s1, s2)
 	})
 }
 
