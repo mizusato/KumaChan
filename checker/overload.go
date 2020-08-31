@@ -42,7 +42,6 @@ func OverloadedCall (
 		var unavailable = make([] UnavailableCall, 0)
 		for i, f := range functions {
 			var index = uint(i)
-			// TODO: branch cutting required to reduce time complexity
 			var expr, err = GenericFunctionCall (
 				f, name, index, type_args,
 				arg, f_info, call_info, expected, call_ctx, ctx,

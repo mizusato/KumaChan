@@ -23,17 +23,23 @@ type Call struct {
 func CheckCall(call ast.Call, ctx ExprContext) (SemiExpr, *ExprError) {
 	var arg, has_arg = call.Arg.(ast.Call)
 	if has_arg {
-		var callee, err = CheckTerm(call.Func, ctx)
+		callee, err := CheckTerm(call.Func, ctx)
 		if err != nil { return SemiExpr{}, err }
 		var info = ctx.GetExprInfo(call.Node)
-		return SemiExpr {
+		var semi = SemiExpr {
 			Value: UntypedCall {
 				Callee:   callee,
 				Argument: arg,
 				Context:  ctx,
 			},
 			Info: info,
-		}, nil
+		}
+		typed, err := AssignTo(nil, semi, ctx)
+		if err == nil {
+			return LiftTyped(typed), nil
+		} else {
+			return semi, nil
+		}
 	} else {
 		return CheckTerm(call.Func, ctx)
 	}
