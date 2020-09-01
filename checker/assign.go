@@ -19,8 +19,6 @@ func AssignTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprError) 
 		switch semi_value := semi.Value.(type) {
 		case TypedExpr:
 			return TypedAssignTo(expected, Expr(semi_value), ctx)
-		case UntypedCall:
-			return AssignCallTo(expected, semi_value, semi.Info, ctx)
 		case UntypedLambda:
 			return AssignLambdaTo(expected, semi_value, semi.Info, ctx)
 		case UntypedInteger:

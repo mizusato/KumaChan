@@ -24,8 +24,6 @@ func OverloadedCall (
 	arg        SemiExpr,
 	f_info     ExprInfo,
 	call_info  ExprInfo,
-	expected   Type,
-	call_ctx   ExprContext,
 	ctx        ExprContext,
 ) (Expr, *ExprError) {
 	if len(functions) == 0 { panic("something went wrong") }
@@ -33,7 +31,7 @@ func OverloadedCall (
 		var f = functions[0]
 		call, err := GenericFunctionCall (
 			f, name, 0, type_args,
-			arg, f_info, call_info, expected, call_ctx, ctx,
+			arg, f_info, call_info, ctx,
 		)
 		if err != nil { return Expr{}, err }
 		return call, nil
@@ -44,7 +42,7 @@ func OverloadedCall (
 			var index = uint(i)
 			var expr, err = GenericFunctionCall (
 				f, name, index, type_args,
-				arg, f_info, call_info, expected, call_ctx, ctx,
+				arg, f_info, call_info, ctx,
 			)
 			if err != nil {
 				unavailable = append(unavailable, UnavailableCall {

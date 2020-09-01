@@ -11,8 +11,6 @@ func GenericFunctionCall (
 	arg          SemiExpr,
 	f_info       ExprInfo,
 	call_info    ExprInfo,
-	expected     Type,
-	call_ctx     ExprContext,
 	ctx          ExprContext,
 ) (Expr, *ExprError) {
 	var type_arity = len(f.TypeParams)
@@ -23,9 +21,9 @@ func GenericFunctionCall (
 		var f_type_repr = f_type.(*AnonymousType).Repr.(Func)
 		var input_type = f_type_repr.Input
 		var output_type = f_type_repr.Output
-		arg_typed, err := AssignTo(input_type, arg, call_ctx)
+		arg_typed, err := AssignTo(input_type, arg, ctx)
 		if err != nil { return Expr{}, err }
-		f_ref, err := MakeRefFunction(name, index, type_args, f_node, call_ctx)
+		f_ref, err := MakeRefFunction(name, index, type_args, f_node, ctx)
 		if err != nil { return Expr{}, err }
 		var call = Expr {
 			Type:  output_type,
@@ -39,35 +37,18 @@ func GenericFunctionCall (
 			},
 			Info:  call_info,
 		}
-		assigned, err := TypedAssignTo(expected, call, ctx)
-		if err != nil { return Expr{}, err }
-		return assigned, nil
+		return call, nil
 	} else if len(type_args) == 0 {
-		var inf_ctx = call_ctx.WithInferringEnabled(f.TypeParams)
+		var inf_ctx = ctx.WithInferringEnabled(f.TypeParams)
 		var raw_input_type = f.DeclaredType.Input
 		var raw_output_type = f.DeclaredType.Output
 		var marked_input_type = MarkParamsAsBeingInferred(raw_input_type)
-		var marked_output_type = MarkParamsAsBeingInferred(raw_output_type)
-		if expected != nil {
-			var exp_certain, e = GetCertainType(expected, ErrorPoint{}, ctx)
-			if e == nil {
-				var _, ok = AssignTypeTo(marked_output_type, exp_certain, Contravariant, inf_ctx)
-				if !(ok) {
-					return Expr{}, &ExprError {
-						Point: call_info.ErrorPoint,
-						Concrete: &E_NotAssignable {
-							From: inf_ctx.DescribeExpectedType(marked_output_type),
-							To:   ctx.DescribeType(exp_certain),
-						},
-					}
-				}
-			}
-		}
+		// var marked_output_type = MarkParamsAsBeingInferred(raw_output_type)
 		var arg_typed, err = AssignTo(marked_input_type, arg, inf_ctx)
 		if err != nil { return Expr{}, err }
 		var output_v = GetVariance(raw_output_type, TypeVarianceContext {
 			Parameters: f.TypeParams,
-			Registry:   call_ctx.ModuleInfo.Types,
+			Registry:   ctx.ModuleInfo.Types,
 		})
 		var inferred_args = make([] Type, type_arity)
 		for i := 0; i < type_arity; i += 1 {
@@ -86,7 +67,7 @@ func GenericFunctionCall (
 			}
 		}
 		var input_type = FillTypeArgs(raw_input_type, inferred_args)
-		var _, ok = AssignTypeTo(input_type, arg_typed.Type, Invariant, call_ctx)
+		var _, ok = AssignTypeTo(input_type, arg_typed.Type, Invariant, ctx)
 		if !(ok) {
 			// var inf_ctx = ctx.WithInferringEnabled(f.TypeParams)
 			// var _, _ = AssignTo(marked_input_type, arg, inf_ctx)
@@ -97,7 +78,7 @@ func GenericFunctionCall (
 			Input:  input_type,
 			Output: output_type,
 		} }
-		f_ref, err := MakeRefFunction(name, index, inferred_args, f_node, call_ctx)
+		f_ref, err := MakeRefFunction(name, index, inferred_args, f_node, ctx)
 		if err != nil { return Expr{}, err }
 		var call = Expr {
 			Type:  output_type,
@@ -111,9 +92,7 @@ func GenericFunctionCall (
 			},
 			Info:  call_info,
 		}
-		assigned, err := TypedAssignTo(expected, call, ctx)
-		if err != nil { return Expr{}, err }
-		return assigned, nil
+		return call, nil
 	} else {
 		return Expr{}, &ExprError {
 			Point:    f_info.ErrorPoint,

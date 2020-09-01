@@ -223,8 +223,6 @@ func CallUntypedRef (
 	ref        UntypedRef,
 	ref_info   ExprInfo,
 	call_info  ExprInfo,
-	expected   Type,
-	call_ctx   ExprContext,
 	ctx        ExprContext,
 ) (Expr, *ExprError) {
 	switch ref_body := ref.RefBody.(type) {
@@ -233,21 +231,17 @@ func CallUntypedRef (
 		var g_name = ref_body.TypeName
 		var force_exact = ref_body.ForceExact
 		var type_args = ref.TypeArgs
-		boxed, err := Box (
+		return Box (
 			arg, g, g_name, ref_info, type_args,
-			force_exact, call_info, call_ctx,
+			force_exact, call_info, ctx,
 		)
-		if err != nil { return Expr{}, err }
-		assigned, err := TypedAssignTo(expected, boxed, ctx)
-		if err != nil { return Expr{}, err }
-		return assigned, nil
 	case UntypedRefToFunctions:
 		var functions = ref_body.Functions
 		var name = ref_body.FuncName
 		var type_args = ref.TypeArgs
 		return OverloadedCall (
 			functions, name, type_args,
-			arg, ref_info, call_info, expected, call_ctx, ctx,
+			arg, ref_info, call_info, ctx,
 		)
 	default:
 		panic("impossible branch")
