@@ -18,6 +18,7 @@ import (
     "kumachan/runtime/vm"
     "runtime"
     "kumachan/qt"
+    "kumachan/tools"
 )
 
 
@@ -130,6 +131,12 @@ func debug_compiler(entry *checker.CheckedModule) common.Program {
 }
 
 func main () {
+    var args = os.Args
+    if len(args) == 2 && args[1] == "tools-server" {
+        err := tools.Server(os.Stdin, os.Stdout)
+        if err != nil { panic(err) }
+        return
+    }
     // debug_parser(os.Stdin, "[eval]", "root")
     // os.Exit(0)
     runtime.LockOSThread()

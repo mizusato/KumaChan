@@ -1,6 +1,9 @@
 package syntax
 
-import "regexp"
+import (
+    "regexp"
+    "strings"
+)
 type Regexp = *regexp.Regexp
 func r (pattern string) Regexp { return regexp.MustCompile(`^` + pattern) }
 
@@ -73,6 +76,9 @@ var __Tokens = [...] Token {
 }
 func GetTokens() ([] Token) { return __Tokens[:] }
 func GetIgnoreTokens() ([] string) { return __IgnoreTokens[:] }
+func GetIdentifierRegexp() *regexp.Regexp {
+    return regexp.MustCompile(IdentifierRegexp)
+}
 func GetIdentifierFullRegexp() *regexp.Regexp {
     return regexp.MustCompile(IdentifierFullRegexp)
 }
@@ -82,6 +88,20 @@ var __ConditionalKeywords = [...] string {
     "@type", "@<", "@>", "@union", "@native", "@as", "@protected", "@opaque",
     "@private", "@public", "@function", "@const", "@implicit", "@do",
     "@default", "@end", "@lambda", "@rec",
+}
+func GetKeywordList() ([] string) {
+    var list = make([] string, 0)
+    for _, v := range __ConditionalKeywords {
+        var kw = strings.TrimPrefix(v, "@")
+        list = append(list, kw)
+    }
+    for _, t := range __Tokens {
+        if t.Keyword {
+            var kw = strings.ToLower(t.Name)
+            list = append(list, kw)
+        }
+    }
+    return list
 }
 
 var __SyntaxDefinition = [...] string {
