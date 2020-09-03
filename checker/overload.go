@@ -173,6 +173,34 @@ func CheckOverload (
 					}
 				}
 			}
+		} else {
+			var less map[string] Field
+			var more map[string] Field
+			if len(existing_fields) < len(added_fields) {
+				less = existing_fields
+				more = added_fields
+			} else if len(existing_fields) > len(added_fields) {
+				less = added_fields
+				more = existing_fields
+			} else {
+				panic("impossible branch")
+			}
+			var conflict = true
+			for key, less_field := range less {
+				var more_field, exists = more[key]
+				if exists {
+					if !(AreTypesConflict(less_field.Type, more_field.Type, reg)) {
+						conflict = false
+						break
+					}
+				} else {
+					conflict = false
+					break
+				}
+			}
+			if conflict {
+				cannot_overload = true
+			}
 		}
 		if cannot_overload {
 			var existing_params = TypeParamsNames(existing.Function.TypeParams)
