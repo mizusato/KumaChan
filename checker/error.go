@@ -262,8 +262,8 @@ type E_InvalidOverload struct {
 	BetweenLocal  bool
 	AddedName     string
 	AddedModule   string
-	AddedType     string
-	ExistingType  string
+	AddedSig      string
+	ExistingSig   string
 }
 
 func (impl E_FunctionInvalidTypeParameterName) FunctionError() {}
@@ -296,11 +296,11 @@ func (err *FunctionError) Desc() ErrorMessage {
 		msg.WriteText(TS_ERROR, "is declared to be public but has a non-local signature type")
 	case E_InvalidOverload:
 		msg.WriteText(TS_ERROR, "Cannot overload this function instance with the signature")
-		msg.WriteInnerText(TS_INLINE_CODE, e.AddedType)
+		msg.WriteInnerText(TS_INLINE_CODE, e.AddedSig)
 		msg.WriteText(TS_ERROR, "on the function name")
 		msg.WriteInnerText(TS_INLINE_CODE, e.AddedName)
 		msg.WriteText(TS_ERROR, "since a function with conflicting signature")
-		msg.WriteInnerText(TS_INLINE_CODE, e.ExistingType)
+		msg.WriteInnerText(TS_INLINE_CODE, e.ExistingSig)
 		msg.WriteText(TS_ERROR, "already exists")
 		if e.BetweenLocal {
 			msg.WriteEndText(TS_ERROR, "in the current module")

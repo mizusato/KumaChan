@@ -145,30 +145,61 @@ func DescribeFunction(f *GenericFunction, name string) string {
 func CheckOverload (
 	functions     [] FunctionReference,
 	added_type    Func,
+	added_fields  map[string] Field,
 	added_name    string,
 	added_params  [] string,
 	reg           TypeRegistry,
 	err_point     ErrorPoint,
 ) *FunctionError {
-	// TODO: check implicit context
 	for _, existing := range functions {
 		var existing_t = &AnonymousType { existing.Function.DeclaredType }
 		var added_t = &AnonymousType { added_type }
-		var cannot_overload = AreTypesConflict(existing_t, added_t, reg)
+		var existing_fields = existing.Function.Implicit
+		var cannot_overload = false
+		if AreTypesConflict(existing_t, added_t, reg) {
+			cannot_overload = true
+		} else if len(existing_fields) == len(added_fields) {
+			var same_keys = true
+			for key, _ := range added_fields {
+				var _, exists = existing_fields[key]
+				if !exists { same_keys = false }
+			}
+			if same_keys {
+				for key, added_field := range added_fields {
+					var existing_field = existing_fields[key]
+					if AreTypesConflict(added_field.Type, existing_field.Type, reg) {
+						cannot_overload = true
+						break
+					}
+				}
+			}
+		}
 		if cannot_overload {
-			var existing_params = existing.Function.TypeParams
+			var existing_params = TypeParamsNames(existing.Function.TypeParams)
+			var sig_desc = func (
+				params  ([] string),
+				t       Type,
+				fields  map[string] Field,
+			) string {
+				var t_desc = DescribeTypeWithParams(t, params)
+				var fields_desc = ""
+				if len(fields) > 0 {
+					var fields_t = &AnonymousType { Bundle { fields } }
+					var desc = DescribeTypeWithParams(fields_t, params)
+					fields_desc = fmt.Sprintf(" (implicit: %s)", desc)
+				}
+				return (t_desc + fields_desc)
+			}
+			var added_desc = sig_desc(added_params, added_t, added_fields)
+			var existing_desc = sig_desc(existing_params, existing_t, existing_fields)
 			return &FunctionError {
 				Point: err_point,
 				Concrete: E_InvalidOverload {
 					BetweenLocal: !(existing.IsImported),
 					AddedName:    added_name,
 					AddedModule:  existing.ModuleName,
-					AddedType: DescribeTypeWithParams (
-						added_t, added_params,
-					),
-					ExistingType: DescribeTypeWithParams (
-						existing_t, TypeParamsNames(existing_params),
-					),
+					AddedSig:     added_desc,
+					ExistingSig:  existing_desc,
 				},
 			}
 		}

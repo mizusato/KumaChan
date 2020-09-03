@@ -245,7 +245,9 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 				var index_offset = index_offset_map[name]
 				var err_point = ErrorPointFrom(decl.Name.Node)
 				var err = CheckOverload (
-					existing, func_type, name, TypeParamsNames(params),
+					existing,
+					func_type, implicit_fields,
+					name, TypeParamsNames(params),
 					reg, err_point,
 				)
 				if err != nil { return nil, err }
