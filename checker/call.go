@@ -54,11 +54,11 @@ func CheckCall(call ast.Call, ctx ExprContext) (SemiExpr, *ExprError) {
 			}
 		case UntypedLambda:
 			var typed, err = CallUntypedLambda(arg, f, f_info, info, ctx)
-			if err != nil { return SemiExpr{}, nil }
+			if err != nil { return SemiExpr{}, err }
 			return LiftTyped(typed), nil
 		case UntypedRef:
 			var typed, err = CallUntypedRef(arg, f, f_info, info, ctx)
-			if err != nil { return SemiExpr{}, nil }
+			if err != nil { return SemiExpr{}, err }
 			return LiftTyped(typed), nil
 		case SemiTypedSwitch,
 			SemiTypedBlock:
