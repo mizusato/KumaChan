@@ -1072,3 +1072,53 @@ func (err *ExprError) Error() string {
 	})
 	return msg.String()
 }
+
+func (err* ExprError) GetInnerMost() *ExprError {
+	type item struct {
+		error  *ExprError
+		depth  int
+	}
+	var q = [] item { { error: err, depth: 0 } }
+	var leaf_list = make([] item, 0)
+	for len(q) > 0 {
+		var i = q[0]
+		q = q[1:]
+		var e = i.error
+		var d = i.depth
+		switch e := e.Concrete.(type) {
+		case E_NoneOfFunctionsCallable:
+			var nest = false
+			for _, candidate := range e.Candidates {
+				switch candidate.Error.Concrete.(type) {
+				case E_NoneOfFunctionsCallable:
+					nest = true
+					q = append(q, item {
+						error: candidate.Error,
+						depth: (d + 1),
+					})
+				}
+			}
+			if !(nest) {
+				leaf_list = append(leaf_list, i)
+			}
+		default:
+			return i.error
+		}
+	}
+	if len(leaf_list) == 1 {
+		return leaf_list[0].error
+	} else if len(leaf_list) > 1 {
+		var max = -1
+		var max_index = -1
+		for i, leaf := range leaf_list {
+			if leaf.depth > max {
+				max = leaf.depth
+				max_index = i
+			}
+		}
+		return leaf_list[max_index].error
+	} else {
+		panic("impossible branch")
+	}
+}
+

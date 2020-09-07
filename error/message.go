@@ -63,6 +63,29 @@ func (t StyledText) String() string {
 	}
 }
 
+func (t StyledText) StringMarkdown() string {
+	switch t.Style {
+	case TS_NORMAL:
+		return t.Text
+	case TS_BOLD:
+		return fmt.Sprintf("**%s**", t.Text)
+	case TS_ERROR:
+		return fmt.Sprintf("**%s**", t.Text)
+	case TS_WARNING:
+		return fmt.Sprintf("**%s**", t.Text)
+	case TS_INFO:
+		return fmt.Sprintf("**<font color='orange'>%s</font>**", t.Text)
+	case TS_SPOT:
+		return fmt.Sprintf("**<font color='red'>%s</font>**", t.Text)
+	case TS_INLINE:
+		return fmt.Sprintf("**<font color='red'>%s</font>**", t.Text)
+	case TS_INLINE_CODE:
+		return fmt.Sprintf("**<font color='magenta'>%s</font>**", t.Text)
+	default:
+		return t.Text
+	}
+}
+
 func (t StyledText) StringPlain() string {
 	return t.Text
 }
@@ -72,6 +95,14 @@ func (msg *ErrorMessage) String() string {
 	var buf strings.Builder
 	for _, segment := range *msg {
 		buf.WriteString(segment.String())
+	}
+	return buf.String()
+}
+
+func (msg *ErrorMessage) StringMarkdown() string {
+	var buf strings.Builder
+	for _, segment := range *msg {
+		buf.WriteString(segment.StringMarkdown())
 	}
 	return buf.String()
 }

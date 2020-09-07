@@ -10,6 +10,7 @@ import (
 	"kumachan/compiler"
 	"kumachan/runtime/common"
 	"kumachan/parser/cst"
+	"fmt"
 )
 
 
@@ -22,9 +23,10 @@ type LintResponse struct {
 }
 
 type LintError struct {
-	Severity  string         `json:"severity"`
-	Location  LintLocation   `json:"location"`
-	Excerpt   string         `json:"excerpt"`
+	Severity     string         `json:"severity"`
+	Location     LintLocation   `json:"location"`
+	Excerpt      string         `json:"excerpt"`
+	Description  string         `json:"description"`
 }
 
 type LintLocation struct {
@@ -67,7 +69,7 @@ func GetLocation(tree *cst.Tree, span scanner.Span) LintLocation {
 		}
 	} else {
 		var start = tree.Info[span.Start]
-		var end = tree.Info[span.End-1]
+		var end = tree.Info[span.End]
 		return LintLocation {
 			File:     file,
 			Position: Range {
@@ -84,13 +86,14 @@ func GetLocationFromErrorPoint(point ErrorPoint) LintLocation {
 	return GetLocation(tree, span)
 }
 
-func GetError(e E) LintError {
+func GetError(e E, tip string) LintError {
 	var point = e.ErrorPoint()
 	var desc = e.Desc()
 	return LintError {
-		Severity: "error",
-		Location: GetLocationFromErrorPoint(point),
-		Excerpt:  desc.StringPlain(),
+		Severity:   "error",
+		Location:    GetLocationFromErrorPoint(point),
+		Excerpt:     desc.StringPlain(),
+		Description: tip,
 	}
 }
 
@@ -144,9 +147,22 @@ func Lint(req LintRequest, ctx ServerContext) LintResponse {
 	}
 	var checked_mod, _, errs_checker = checker.TypeCheck(mod, idx)
 	if errs_checker != nil {
-		var errs = make([] LintError, len(errs_checker))
-		for i, e := range errs_checker {
-			errs[i] = GetError(e)
+		var errs = make([] LintError, 0)
+		for _, e := range errs_checker {
+			switch e := e.(type) {
+			case *checker.ExprError:
+				var inner = e.GetInnerMost()
+				var none_callable, is = inner.Concrete.(checker.E_NoneOfFunctionsCallable)
+				if is {
+					for _, c := range none_callable.Candidates {
+						var tip = fmt.Sprintf(
+							"(overload candidate: %s)", c.FuncDesc)
+						errs = append(errs, GetError(c.Error, tip))
+					}
+					continue
+				}
+			}
+			errs = append(errs, GetError(e, ""))
 		}
 		return LintResponse { errs }
 	}
@@ -158,7 +174,7 @@ func Lint(req LintRequest, ctx ServerContext) LintResponse {
 	if errs_compiler != nil {
 		var errs = make([] LintError, len(errs_compiler))
 		for i, e := range errs_compiler {
-			errs[i] = GetError(e)
+			errs[i] = GetError(e, "")
 		}
 		return LintResponse { errs }
 	}
