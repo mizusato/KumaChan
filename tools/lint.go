@@ -2,15 +2,15 @@ package tools
 
 import (
 	"os"
+	"fmt"
 	"path/filepath"
 	. "kumachan/error"
 	"kumachan/loader"
+	"kumachan/parser/cst"
 	"kumachan/parser/scanner"
 	"kumachan/checker"
 	"kumachan/compiler"
 	"kumachan/runtime/common"
-	"kumachan/parser/cst"
-	"fmt"
 )
 
 
@@ -156,7 +156,7 @@ func Lint(req LintRequest, ctx ServerContext) LintResponse {
 				if is {
 					for _, c := range none_callable.Candidates {
 						var tip = fmt.Sprintf(
-							"(overload candidate: %s)", c.FuncDesc)
+							"(overloaded candidate: %s)", c.FuncDesc)
 						errs = append(errs, GetError(c.Error, tip))
 					}
 					continue
