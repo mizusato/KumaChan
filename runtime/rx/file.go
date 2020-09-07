@@ -8,6 +8,7 @@ import (
 	"errors"
 	"path/filepath"
 	"time"
+	"kumachan/util"
 )
 
 
@@ -215,7 +216,7 @@ func (f File) ReadString() Effect {
 
 func (f File) ReadLineRunes() Effect {
 	return CreateQueuedEffect(f.worker, func() (Object, bool) {
-		var str, err = WellBehavedScanLine(f.raw)
+		var str, err = util.WellBehavedScanLine(f.raw)
 		if err != nil {
 			return err, false
 		}
@@ -257,7 +258,7 @@ func (f File) ReadLinesRuneSlices() Effect {
 				if s.Context().AlreadyCancelled() {
 					return
 				}
-				var line, err = WellBehavedScanLine(f.raw)
+				var line, err = util.WellBehavedScanLine(f.raw)
 				if err != nil {
 					if err == io.EOF {
 						s.Complete()
@@ -331,29 +332,5 @@ func ListDir(dir_path string) Effect {
 		}
 		sender.Complete()
 	})
-}
-
-
-func WellBehavedScanLine(f io.Reader) ([]rune, error) {
-	// This function is a well-behaved substitution of fmt.Fscanln
-	//   (fmt.Fscanln does not accept empty lines)
-	// Note: ...[\n][EOF] and ...[EOF] are not distinguished
-	var buf = make([] rune, 0)
-	for {
-		var char rune
-		var _, err = fmt.Fscanf(f, "%c", &char)
-		if err != nil {
-			if err == io.EOF && len(buf) > 0 {
-				return buf, nil
-			} else {
-				return nil, err
-			}
-		}
-		if char != '\n' {
-			buf = append(buf, char)
-		} else {
-			return buf, nil
-		}
-	}
 }
 

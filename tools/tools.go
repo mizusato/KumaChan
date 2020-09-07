@@ -4,7 +4,7 @@ import (
 	"io"
 	"strings"
 	"encoding/json"
-	"kumachan/runtime/rx"
+	"kumachan/util"
 )
 
 
@@ -15,7 +15,7 @@ type DirtyBuffer struct {
 
 func Server(input io.Reader, output io.Writer) error {
 	for {
-		var line_runes, err = rx.WellBehavedScanLine(input)
+		var line_runes, err = util.WellBehavedScanLine(input)
 		if err != nil { return err }
 		var line = string(line_runes)
 		var i = strings.Index(line, " ")
@@ -26,8 +26,9 @@ func Server(input io.Reader, output io.Writer) error {
 		case "quit":
 			return nil
 		case "autocomplete":
+			var raw_req = ([]byte)(arg)
 			var req AutoCompleteRequest
-			err := json.Unmarshal(([]byte)(arg), &req)
+			err := json.Unmarshal(raw_req, &req)
 			if err != nil { return err }
 			var res = AutoComplete(req)
 			raw_res, err := json.Marshal(&res)
