@@ -38,20 +38,7 @@ func (err *Error) Desc() ErrorMessage {
 
 func (err *Error) Message() ErrorMessage {
     var tree = err.Tree
-    var node = tree.Nodes[err.NodeIndex]
-    var token_index int
-    if node.Pos >= len(tree.Tokens) {
-        token_index = len(tree.Tokens)-1
-    } else {
-        token_index = node.Pos
-    }
-    var token = tree.Tokens[token_index]
-    var token_span_size = token.Span.End - token.Span.Start
-    for (token_index + 1) < len(tree.Tokens) && token_span_size == 0 {
-        token_index += 1
-        token = tree.Tokens[token_index]
-        token_span_size = token.Span.End - token.Span.Start
-    }
+    var token = cst.GetNodeFirstToken(tree, err.NodeIndex)
     var point = tree.Info[token.Span.Start]
     var desc = err.Desc()
     return FormatError (

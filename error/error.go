@@ -13,7 +13,9 @@ import (
 const ERR_FOV = 5
 
 type E interface {
-	Message()  ErrorMessage
+	ErrorPoint()  ErrorPoint
+	Desc()        ErrorMessage
+	Message()     ErrorMessage
 }
 
 type MaybeErrorPoint interface { MaybeErrorPoint() }

@@ -139,6 +139,10 @@ func (err *TypeError) Desc() ErrorMessage {
 	return msg
 }
 
+func (err *TypeError) ErrorPoint() ErrorPoint {
+	return err.Point
+}
+
 func (err *TypeError) Message() ErrorMessage {
 	return FormatErrorAt(err.Point, err.Desc())
 }
@@ -208,6 +212,10 @@ func (err *TypeDeclError) Desc() ErrorMessage {
 		panic("unknown error kind")
 	}
 	return msg
+}
+
+func (err *TypeDeclError) ErrorPoint() ErrorPoint {
+	return err.Point
 }
 
 func (err *TypeDeclError) Message() ErrorMessage {
@@ -320,6 +328,10 @@ func (err *FunctionError) Desc() ErrorMessage {
 	return msg
 }
 
+func (err *FunctionError) ErrorPoint() ErrorPoint {
+	return err.Point
+}
+
 func (err *FunctionError) Message() ErrorMessage {
 	return FormatErrorAt(err.Point, err.Desc())
 }
@@ -380,6 +392,10 @@ func (err *ConstantError) Desc() ErrorMessage {
 		panic("unknown error kind")
 	}
 	return msg
+}
+
+func (err *ConstantError) ErrorPoint() ErrorPoint {
+	return err.Point
 }
 
 func (err *ConstantError) Message() ErrorMessage {
@@ -1036,6 +1052,10 @@ func (e E_BoxOpaqueType) ExprErrorDesc() ErrorMessage {
 	msg.WriteText(TS_ERROR, "Cannot box a value into the opaque type")
 	msg.WriteEndText(TS_INLINE_CODE, e.Type)
 	return msg
+}
+
+func (err *ExprError) ErrorPoint() ErrorPoint {
+	return err.Point
 }
 
 func (err *ExprError) Desc() ErrorMessage {

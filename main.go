@@ -22,7 +22,7 @@ import (
 )
 
 
-func check (err error) {
+func check(err error) {
     if (err != nil) {
         panic(err)
     }
@@ -92,7 +92,7 @@ func debug_loader() (*loader.Module, loader.Index) {
 func debug_checker(mod *loader.Module, idx loader.Index) (*checker.CheckedModule, checker.Index) {
     var c_mod, c_idx, errs = checker.TypeCheck(mod, idx)
     if errs != nil {
-        var messages = make([]ErrorMessage, len(errs))
+        var messages = make([] ErrorMessage, len(errs))
         for i, e := range errs {
             messages[i] = e.Message()
         }
@@ -111,7 +111,7 @@ func debug_compiler(entry *checker.CheckedModule) common.Program {
     var index = make(compiler.Index)
     var errs = compiler.CompileModule(entry, index, &data, &closures)
     if errs != nil {
-        var messages = make([]ErrorMessage, len(errs))
+        var messages = make([] ErrorMessage, len(errs))
         for i, e := range errs {
             messages[i] = e.Message()
         }
@@ -133,7 +133,7 @@ func debug_compiler(entry *checker.CheckedModule) common.Program {
 func main () {
     var args = os.Args
     if len(args) == 2 && args[1] == "tools-server" {
-        err := tools.Server(os.Stdin, os.Stdout)
+        err := tools.Server(os.Stdin, os.Stdout, os.Stderr)
         if err != nil { panic(err) }
         return
     }

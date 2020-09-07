@@ -6,7 +6,6 @@ import (
 )
 
 
-func (impl UntypedCall) SemiExprVal() {}
 type UntypedCall struct {
 	Callee    SemiExpr
 	Argument  ast.Call

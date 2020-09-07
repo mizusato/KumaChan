@@ -32,7 +32,7 @@ type Point struct {
     Row  int
     Col  int
 }
-type RowColInfo = []Point
+type RowColInfo = [] Point
 func GetRowColInfo(code Code) RowColInfo {
     var info = make(RowColInfo, 0)
     var row = 1
@@ -46,6 +46,7 @@ func GetRowColInfo(code Code) RowColInfo {
         }
         info = append(info, Point { Row: row, Col: col })
     }
+    info = append(info, Point { Row: row, Col: (col + 1) })
     return info
 }
 type RowSpanMap = []Span
@@ -106,7 +107,7 @@ func MatchToken(code Code, pos int, skip_kw bool) (amount int, id syntax.Id) {
 }
 
 func Scan(code Code) (Tokens, RowColInfo, RowSpanMap) {
-    var idenitifer = syntax.Name2Id[syntax.IdentifierPartName]
+    var identifier = syntax.Name2Id[syntax.IdentifierPartName]
     var ignore = make(map[syntax.Id] bool)
     var keyword = make(map[syntax.Id] bool)
     for _, ignore_name := range syntax.GetIgnoreTokens() {
@@ -128,7 +129,7 @@ func Scan(code Code) (Tokens, RowColInfo, RowSpanMap) {
         if ignore[id] { pos += amount; continue }
         if keyword[id] {
             var non_kw_amount, non_kw_id = MatchToken(code, pos, true)
-            if non_kw_amount > amount && non_kw_id == idenitifer {
+            if non_kw_amount > amount && non_kw_id == identifier {
                 amount = non_kw_amount
                 id = non_kw_id
             }

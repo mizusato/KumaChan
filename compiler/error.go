@@ -30,6 +30,10 @@ type E_UnusedBinding struct {
 	Name  string
 }
 
+func (err *Error) ErrorPoint() ErrorPoint {
+	return err.Point
+}
+
 func (err *Error) Desc() ErrorMessage {
 	var desc = make(ErrorMessage, 0)
 	switch e := err.Concrete.(type) {

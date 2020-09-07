@@ -40,7 +40,7 @@ func buildTree(root syntax.Id, tokens scanner.Tokens) ([]cst.TreeNode, *Error) {
     var tree = make([]cst.TreeNode, 0)
     tree = append(tree, cst.TreeNode {
         Part:    RootPart,  Parent:  -1,
-        Length:  0,         Status: cst.Initial,
+        Length:  0,         Status:  cst.Initial,
         Tried:   0,         Index:   0,
         Pos:     0,         Amount:  0,
         Span:    ZeroSpan,
@@ -134,7 +134,7 @@ func buildTree(root syntax.Id, tokens scanner.Tokens) ([]cst.TreeNode, *Error) {
                 var part = next.Parts[i]
                 tree = append(tree, cst.TreeNode {
                     Part:    part,   Parent:  ptr,
-                    Length:  0,      Status: cst.Initial,
+                    Length:  0,      Status:  cst.Initial,
                     Tried:   0,      Index:   j,
                     Pos:     -1,     Amount:  0,
                     Span:    ZeroSpan,
@@ -209,7 +209,7 @@ func buildTree(root syntax.Id, tokens scanner.Tokens) ([]cst.TreeNode, *Error) {
     return tree, nil
 }
 
-func Parse (code []rune, root string, name string) (*cst.Tree, *Error) {
+func Parse(code []rune, root string, name string) (*cst.Tree, *Error) {
     var tokens, info, span_map = scanner.Scan(code)
     var Root, exists = syntax.Name2Id[root]
     if (!exists) {

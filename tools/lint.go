@@ -1,0 +1,166 @@
+package tools
+
+import (
+	"os"
+	"path/filepath"
+	. "kumachan/error"
+	"kumachan/loader"
+	"kumachan/parser/scanner"
+	"kumachan/checker"
+	"kumachan/compiler"
+	"kumachan/runtime/common"
+	"kumachan/parser/cst"
+)
+
+
+type LintRequest struct {
+	Path  string   `json:"path"`
+}
+
+type LintResponse struct {
+	Errors  [] LintError   `json:"errors"`
+}
+
+type LintError struct {
+	Severity  string         `json:"severity"`
+	Location  LintLocation   `json:"location"`
+	Excerpt   string         `json:"excerpt"`
+}
+
+type LintLocation struct {
+	File      string   `json:"file"`
+	Position  Range    `json:"position"`
+}
+
+type Range struct {
+	Start  Point   `json:"start"`
+	End    Point   `json:"end"`
+}
+
+type Point struct {
+	Row  int   `json:"row"`
+	Col  int   `json:"column"`
+}
+
+func GetPoint(point scanner.Point) Point {
+	var row int
+	var col int
+	row = (point.Row - 1)
+	if point.Col == 0 {
+		col = 1
+	} else {
+		col = (point.Col - 1)
+	}
+	return Point { row, col }
+}
+
+func GetLocation(tree *cst.Tree, span scanner.Span) LintLocation {
+	var file = tree.Name
+	if span == (scanner.Span {}) {
+		// empty span
+		return LintLocation {
+			File:     file,
+			Position: Range {
+				Start: Point { 0, 0 },
+				End:   Point { 0, 1 },
+			},
+		}
+	} else {
+		var start = tree.Info[span.Start]
+		var end = tree.Info[span.End-1]
+		return LintLocation {
+			File:     file,
+			Position: Range {
+				Start: GetPoint(start),
+				End:   GetPoint(end),
+			},
+		}
+	}
+}
+
+func GetLocationFromErrorPoint(point ErrorPoint) LintLocation {
+	var tree = point.Node.CST
+	var span = point.Node.Span
+	return GetLocation(tree, span)
+}
+
+func GetError(e E) LintError {
+	var point = e.ErrorPoint()
+	var desc = e.Desc()
+	return LintError {
+		Severity: "error",
+		Location: GetLocationFromErrorPoint(point),
+		Excerpt:  desc.StringPlain(),
+	}
+}
+
+func Lint(req LintRequest, ctx ServerContext) LintResponse {
+	var dir = filepath.Dir(req.Path)
+	var manifest_path = filepath.Join(dir, loader.ManifestFileName)
+	var mod_path string
+	var mf, err_mf = os.Open(manifest_path)
+	if err_mf != nil {
+		mod_path = req.Path
+	} else {
+		mod_path = dir
+		_ = mf.Close()
+	}
+	// ctx.DebugLog("Lint Path: " + mod_path)
+	var mod, idx, err_loader = loader.LoadEntry(mod_path)
+	if err_loader != nil {
+		var point, ok = err_loader.Context.ImportPoint.(ErrorPoint)
+		if ok {
+			var err_desc = err_loader.Desc()
+			var err = LintError {
+				Severity: "error",
+				Location: GetLocationFromErrorPoint(point),
+				Excerpt:  err_desc.String(),
+			}
+			return LintResponse {
+				Errors: [] LintError { err },
+			}
+		} else {
+			switch e := err_loader.Concrete.(type) {
+			case loader.E_ParseFailed:
+				var desc = e.ParserError.Desc()
+				var tree = e.ParserError.Tree
+				var index = e.ParserError.NodeIndex
+				var token = cst.GetNodeFirstToken(tree, index)
+				var span = token.Span
+				var err = LintError {
+					Severity: "error",
+					Location: GetLocation(tree, span),
+					Excerpt:  desc.StringPlain(),
+				}
+				return LintResponse {
+					Errors: [] LintError { err },
+				}
+			default:
+				// var desc = err_loader.Desc()
+				// ctx.DebugLog(mod_path + " unable to lint: " + desc.StringPlain())
+				return LintResponse {}
+			}
+		}
+	}
+	var checked_mod, _, errs_checker = checker.TypeCheck(mod, idx)
+	if errs_checker != nil {
+		var errs = make([] LintError, len(errs_checker))
+		for i, e := range errs_checker {
+			errs[i] = GetError(e)
+		}
+		return LintResponse { errs }
+	}
+	var data = make([] common.DataValue, 0)
+	var closures = make([] compiler.FuncNode, 0)
+	var index = make(compiler.Index)
+	var errs_compiler =
+		compiler.CompileModule(checked_mod, index, &data, &closures)
+	if errs_compiler != nil {
+		var errs = make([] LintError, len(errs_compiler))
+		for i, e := range errs_compiler {
+			errs[i] = GetError(e)
+		}
+		return LintResponse { errs }
+	}
+	return LintResponse {}
+}

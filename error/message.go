@@ -63,11 +63,23 @@ func (t StyledText) String() string {
 	}
 }
 
+func (t StyledText) StringPlain() string {
+	return t.Text
+}
+
 
 func (msg *ErrorMessage) String() string {
 	var buf strings.Builder
 	for _, segment := range *msg {
 		buf.WriteString(segment.String())
+	}
+	return buf.String()
+}
+
+func (msg *ErrorMessage) StringPlain() string {
+	var buf strings.Builder
+	for _, segment := range *msg {
+		buf.WriteString(segment.StringPlain())
 	}
 	return buf.String()
 }

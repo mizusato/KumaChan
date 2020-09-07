@@ -343,7 +343,10 @@ func LoadModule(path string, ctx Context, idx Index) (*Module, *Error) {
 }
 
 func LoadEntry (path string) (*Module, Index, *Error) {
-	var idx = __StdLibIndex
+	var idx = make(map[string] *Module)
+	for k, v := range __StdLibIndex {
+		idx[k] = v
+	}
 	var ctx = MakeEntryContext()
 	var mod, err = LoadModule(path, ctx, idx)
 	return mod, idx, err
