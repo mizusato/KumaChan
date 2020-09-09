@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 	"math"
+	"bufio"
 	"errors"
 	"path/filepath"
 	"kumachan/util"
@@ -254,11 +255,12 @@ func (f File) ReadLinesRuneSlices() Effect {
 	// emits rune slices
 	return CreateEffect(func(s Sender) {
 		f.worker.Do(func() {
+			var buffered = bufio.NewReader(f.raw)
 			for {
 				if s.Context().AlreadyCancelled() {
 					return
 				}
-				var line, err = util.WellBehavedScanLine(f.raw)
+				var line, err = util.WellBehavedScanLine(buffered)
 				if err != nil {
 					if err == io.EOF {
 						s.Complete()

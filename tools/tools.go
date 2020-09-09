@@ -2,10 +2,11 @@ package tools
 
 import (
 	"io"
+	"fmt"
+	"bufio"
 	"strings"
 	"encoding/json"
 	"kumachan/util"
-	"fmt"
 )
 
 
@@ -19,6 +20,7 @@ type ServerContext struct {
 }
 
 func Server(input io.Reader, output io.Writer, debug io.Writer) error {
+	input = bufio.NewReader(input)
 	var ctx = ServerContext {
 		DebugLog: func(info string) {
 			_, _ = fmt.Fprintln(debug, info)

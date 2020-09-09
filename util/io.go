@@ -6,10 +6,13 @@ import (
 )
 
 
+// This function is a well-behaved substitution of fmt.Fscanln.
+// The reader is recommended to be a buffered reader because
+// this function only reads one character at a time.
+// If the given reader is not buffered, this function could perform
+// one system call per one character.
+// Note that ...[\n][EOF] and ...[EOF] are not distinguished.
 func WellBehavedScanLine(f io.Reader) ([]rune, error) {
-	// This function is a well-behaved substitution of fmt.Fscanln
-	//   (fmt.Fscanln does not accept empty lines)
-	// Note: ...[\n][EOF] and ...[EOF] are not distinguished
 	var buf = make([] rune, 0)
 	for {
 		var char rune
