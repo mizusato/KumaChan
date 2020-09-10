@@ -1,16 +1,18 @@
 package loader
 
-import "time"
+import (
+	"time"
+	"os"
+)
 
 
 type Cache struct {
 	Data  map[string] CacheItem
-	Keep  time.Duration
 }
 
 type CacheItem struct {
-	Expire  time.Time
-	Result  EntryResult
+	ModTime  time.Time
+	Result   EntryResult
 }
 
 type EntryResult struct {
@@ -19,39 +21,36 @@ type EntryResult struct {
 	Error   *Error
 }
 
-func MakeCache(keep time.Duration) Cache {
+func MakeCache() Cache {
 	return Cache {
 		Data: make(map[string] CacheItem),
-		Keep: keep,
-	}
-}
-
-func (c Cache) SweepExpired() {
-	var now = time.Now()
-	var expired = make([] string, 0)
-	for k, v := range c.Data {
-		if now.Sub(v.Expire) > c.Keep {
-			expired = append(expired, k)
-		}
-	}
-	for _, k := range expired {
-		delete(c.Data, k)
 	}
 }
 
 func (c Cache) Put(path string, result EntryResult) {
-	var now = time.Now()
-	c.Data[path] = CacheItem {
-		Expire: now.Add(c.Keep),
-		Result: result,
+	if result.Error != nil {
+		c.Data[path] = CacheItem {
+			ModTime: time.Unix(0, 1),
+			Result:  result,
+		}
+	} else {
+		c.Data[path] = CacheItem {
+			ModTime: result.Module.FileInfo.ModTime(),
+			Result:  result,
+		}
 	}
 }
 
 func (c Cache) Get(path string) (EntryResult, bool) {
-	var now = time.Now()
 	var item, exists = c.Data[path]
 	if exists {
-		if now.Sub(item.Expire) > c.Keep {
+		fd, err := os.Open(path)
+		if err != nil { return EntryResult{}, false }
+		fd_info, err := fd.Stat()
+		if err != nil { return EntryResult{}, false }
+		var mod_time = fd_info.ModTime()
+		_ = fd.Close()
+		if mod_time.Equal(item.ModTime) {
 			return item.Result, true
 		} else {
 			return EntryResult{}, false

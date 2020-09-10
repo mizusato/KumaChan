@@ -1,8 +1,8 @@
 package tools
 
 import (
-	"kumachan/parser/syntax"
 	"strings"
+	"kumachan/parser/syntax"
 )
 
 
@@ -23,19 +23,30 @@ type AutoCompleteSuggestion struct {
 	Type  string   `json:"type"`
 }
 
-func AutoComplete(req AutoCompleteRequest) AutoCompleteResponse {
-	var raw_text = req.PrecedingText
-	var ranges = IdentifierRegexp.FindAllStringIndex(raw_text, -1)
-	if len(ranges) == 0 {
-		return AutoCompleteResponse {}
+func AutoComplete(req AutoCompleteRequest, ctx ServerContext) AutoCompleteResponse {
+	var get_search_text = func() string {
+		var raw_text = req.PrecedingText
+		var ranges = IdentifierRegexp.FindAllStringIndex(raw_text, -1)
+		if len(ranges) == 0 {
+			return ""
+		}
+		var last = ranges[len(ranges)-1]
+		var lo = last[0]
+		var hi = last[1]
+		if hi != len(raw_text) {
+			return ""
+		}
+		return raw_text[lo:hi]
 	}
-	var last = ranges[len(ranges)-1]
-	var lo = last[0]
-	var hi = last[1]
-	if hi != len(raw_text) {
-		return AutoCompleteResponse {}
+	var text = get_search_text()
+	if text == "" {
+		return AutoCompleteResponse{}
 	}
-	var text = raw_text[lo:hi]
+	//var mod, idx, err =
+	//	loader.LoadEntryWithCache(req.CurrentPath, ctx.LoaderCache)
+	//if err == nil {
+	//
+	//}
 	var suggestions = make([] AutoCompleteSuggestion, 0)
 	for _, kw := range Keywords {
 		if strings.HasPrefix(kw, text) {

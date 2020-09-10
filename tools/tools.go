@@ -3,12 +3,12 @@ package tools
 import (
 	"io"
 	"fmt"
-	"time"
 	"bufio"
 	"strings"
 	"encoding/json"
 	"kumachan/util"
 	"kumachan/loader"
+	"time"
 )
 
 
@@ -28,11 +28,10 @@ func Server(input io.Reader, output io.Writer, debug io.Writer) error {
 	}
 	var ctx = ServerContext {
 		DebugLog:    func(info string) { _, _ = fmt.Fprintln(debug, info) },
-		LoaderCache: loader.MakeCache(time.Second),
+		LoaderCache: loader.MakeCache(),
 	}
-	var linter_cache = MakeLinterCache(time.Second)
+	var linter_cache = MakeLinterCache(333 * time.Millisecond)
 	for {
-		ctx.LoaderCache.SweepExpired()
 		linter_cache.SweepExpired()
 		var line_runes, err = util.WellBehavedScanLine(input)
 		if err != nil { return err }
@@ -66,7 +65,7 @@ func Server(input io.Reader, output io.Writer, debug io.Writer) error {
 			var req AutoCompleteRequest
 			err := json.Unmarshal(raw_req, &req)
 			if err != nil { return err }
-			var res = AutoComplete(req)
+			var res = AutoComplete(req, ctx)
 			raw_res, err := json.Marshal(&res)
 			if err != nil { return err }
 			err = write_line(raw_res)

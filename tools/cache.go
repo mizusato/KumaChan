@@ -35,7 +35,7 @@ func (c LinterCache) SweepExpired() {
 
 func (c LinterCache) Put(req LintRequest, res LintResponse) {
 	var now = time.Now()
-	c.Data[req] = LinterCacheItem{
+	c.Data[req] = LinterCacheItem {
 		Expire:   now.Add(c.Keep),
 		Response: res,
 	}
@@ -45,7 +45,7 @@ func (c LinterCache) Get(req LintRequest) (LintResponse, bool) {
 	var now = time.Now()
 	var item, exists = c.Data[req]
 	if exists {
-		if now.Sub(item.Expire) > c.Keep {
+		if now.Sub(item.Expire) < c.Keep {
 			return item.Response, true
 		} else {
 			return LintResponse{}, false
