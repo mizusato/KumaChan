@@ -342,7 +342,7 @@ func LoadModule(path string, ctx Context, idx Index) (*Module, *Error) {
 	}
 }
 
-func LoadEntry (path string) (*Module, Index, *Error) {
+func LoadEntry(path string) (*Module, Index, *Error) {
 	var idx = make(map[string] *Module)
 	for k, v := range __StdLibIndex {
 		idx[k] = v

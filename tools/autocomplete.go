@@ -10,9 +10,8 @@ var IdentifierRegexp = syntax.GetIdentifierRegexp()
 var Keywords = syntax.GetKeywordList()
 
 type AutoCompleteRequest struct {
-	PrecedingText  string           `json:"precedingText"`
-	CurrentPath    string           `json:"currentPath"`
-	SiblingDirty   [] DirtyBuffer   `json:"siblingDirtyBufferContents"`
+	PrecedingText  string   `json:"precedingText"`
+	CurrentPath    string   `json:"currentPath"`
 }
 
 type AutoCompleteResponse struct {

@@ -109,7 +109,8 @@ func Lint(req LintRequest, ctx ServerContext) LintResponse {
 		_ = mf.Close()
 	}
 	// ctx.DebugLog("Lint Path: " + mod_path)
-	var mod, idx, err_loader = loader.LoadEntry(mod_path)
+	var mod, idx, err_loader =
+		loader.LoadEntryWithCache(mod_path, ctx.LoaderCache)
 	if err_loader != nil {
 		var point, ok = err_loader.Context.ImportPoint.(ErrorPoint)
 		if ok {

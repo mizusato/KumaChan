@@ -3,29 +3,22 @@ package tools
 import (
 	"io"
 	"fmt"
+	"time"
 	"bufio"
 	"strings"
 	"encoding/json"
 	"kumachan/util"
+	"kumachan/loader"
 )
 
 
-type DirtyBuffer struct {
-	Path  string   `json:"path"`
-	Text  string   `json:"text"`
-}
-
 type ServerContext struct {
-	DebugLog func(info string)
+	DebugLog     func(info string)
+	LoaderCache  loader.Cache
 }
 
 func Server(input io.Reader, output io.Writer, debug io.Writer) error {
 	input = bufio.NewReader(input)
-	var ctx = ServerContext {
-		DebugLog: func(info string) {
-			_, _ = fmt.Fprintln(debug, info)
-		},
-	}
 	var write_line = func(line ([] byte)) error {
 		_, err := output.Write(line)
 		if err != nil { return err }
@@ -33,7 +26,14 @@ func Server(input io.Reader, output io.Writer, debug io.Writer) error {
 		if err != nil { return err }
 		return nil
 	}
+	var ctx = ServerContext {
+		DebugLog:    func(info string) { _, _ = fmt.Fprintln(debug, info) },
+		LoaderCache: loader.MakeCache(time.Second),
+	}
+	var linter_cache = MakeLinterCache(time.Second)
 	for {
+		ctx.LoaderCache.SweepExpired()
+		linter_cache.SweepExpired()
 		var line_runes, err = util.WellBehavedScanLine(input)
 		if err != nil { return err }
 		var line = string(line_runes)
@@ -49,7 +49,14 @@ func Server(input io.Reader, output io.Writer, debug io.Writer) error {
 			var req LintRequest
 			err := json.Unmarshal(raw_req, &req)
 			if err != nil { return err }
-			var res = Lint(req, ctx)
+			var res LintResponse
+			var cached_res, is_cached = linter_cache.Get(req)
+			if is_cached {
+				res = cached_res
+			} else {
+				res = Lint(req, ctx)
+				linter_cache.Put(req, res)
+			}
 			raw_res, err := json.Marshal(&res)
 			if err != nil { return err }
 			err = write_line(raw_res)
