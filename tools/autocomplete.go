@@ -14,8 +14,9 @@ var IdentifierRegexp = syntax.GetIdentifierRegexp()
 var Keywords = syntax.GetKeywordList()
 
 type AutoCompleteRequest struct {
-	PrecedingText  string   `json:"precedingText"`
-	CurrentPath    string   `json:"currentPath"`
+	PrecedingText  string     `json:"precedingText"`
+	LocalBindings  [] string  `json:"localBindings"`
+	CurrentPath    string     `json:"currentPath"`
 }
 
 type AutoCompleteResponse struct {
@@ -24,6 +25,7 @@ type AutoCompleteResponse struct {
 
 type AutoCompleteSuggestion struct {
 	Text     string   `json:"text"`
+	Replace  string   `json:"replacementPrefix"`
 	Type     string   `json:"type"`
 	Display  string   `json:"displayText,omitempty"`
 }
@@ -63,25 +65,22 @@ func AutoComplete(req AutoCompleteRequest, ctx ServerContext) AutoCompleteRespon
 			return text, ""
 		}
 	}
-	var text, text_mod = get_search_text()
-	if text == "" && text_mod == "" {
+	var input, input_mod = get_search_text()
+	if input == "" && input_mod == "" {
 		return AutoCompleteResponse {}
 	}
 	var quick_check = func(id ast.Identifier) bool {
 		if !(len(id.Name) > 0) { panic("something went wrong") }
-		if len(text) > 0 {
+		if len(input) > 0 {
 			var first_char = id.Name[0]
 			if first_char < 128 &&
-				first_char != rune(text[0]) &&
-				(first_char + ('a' - 'A')) != rune(text[0]) {
+				first_char != rune(input[0]) &&
+				(first_char + ('a' - 'A')) != rune(input[0]) {
 				return false
 			}
 		}
 		return true
 	}
-	var suggestions = make([] AutoCompleteSuggestion, 0)
-	var suggested_function_names = make(map[string] bool)
-	var process_statement func(ast.Statement, string)
 	var get_name_with_mod = func(name string, mod_prefix string) string {
 		if mod_prefix == "" {
 			return name
@@ -89,16 +88,30 @@ func AutoComplete(req AutoCompleteRequest, ctx ServerContext) AutoCompleteRespon
 			return fmt.Sprintf("%s::%s", mod_prefix, name)
 		}
 	}
-	process_statement = func(stmt ast.Statement, mod_prefix string) {
+	var suggestions = make([] AutoCompleteSuggestion, 0)
+	if len(input) > 0 && input_mod == "" {
+		for _, binding := range req.LocalBindings {
+			if strings.HasPrefix(binding, input) {
+				suggestions = append(suggestions, AutoCompleteSuggestion {
+					Text:    binding,
+					Replace: input,
+					Type:    "variable",
+				})
+			}
+		}
+	}
+	var suggested_function_names = make(map[string] bool)
+	var process_statement func(ast.Statement, string)
+	process_statement = func(stmt ast.Statement, mod string) {
 		switch s := stmt.(type) {
 		case ast.DeclType:
 			switch v := s.TypeValue.TypeValue.(type) {
 			case ast.UnionType:
-				for _, decl := range v.Cases {
-					process_statement(decl, mod_prefix)
+				for _, case_decl := range v.Cases {
+					process_statement(case_decl, mod)
 				}
 			}
-			if !(text_mod == mod_prefix) {
+			if !(input_mod == mod) {
 				return
 			}
 			if !(quick_check(s.Name)) {
@@ -106,15 +119,16 @@ func AutoComplete(req AutoCompleteRequest, ctx ServerContext) AutoCompleteRespon
 			}
 			var name = loader.Id2String(s.Name)
 			var name_lower = strings.ToLower(name)
-			if strings.HasPrefix(name, text) || strings.HasPrefix(name_lower, text) {
+			if strings.HasPrefix(name, input) || strings.HasPrefix(name_lower, input) {
 				suggestions = append(suggestions, AutoCompleteSuggestion {
 					Text:    name,
+					Replace: input,
 					Type:    "type",
-					Display: get_name_with_mod(name, mod_prefix),
+					Display: get_name_with_mod(name, mod),
 				})
 			}
 		case ast.DeclConst:
-			if !(text_mod == mod_prefix) {
+			if !(input_mod == mod) {
 				return
 			}
 			if !(quick_check(s.Name)) {
@@ -122,36 +136,38 @@ func AutoComplete(req AutoCompleteRequest, ctx ServerContext) AutoCompleteRespon
 			}
 			var name = loader.Id2String(s.Name)
 			var name_lower = strings.ToLower(name)
-			if strings.HasPrefix(name, text) || strings.HasPrefix(name_lower, text) {
+			if strings.HasPrefix(name, input) || strings.HasPrefix(name_lower, input) {
 				suggestions = append(suggestions, AutoCompleteSuggestion {
 					Text:    name,
+					Replace: input,
 					Type:    "constant",
-					Display: get_name_with_mod(name, mod_prefix),
+					Display: get_name_with_mod(name, mod),
 				})
 			}
 		case ast.DeclFunction:
-			if !(text_mod == "") {
+			if !(input_mod == "") {
 				return
 			}
-			if !(mod_prefix == "" || s.Public) {
+			if !(mod == "" || s.Public) {
 				return
 			}
 			if !(quick_check(s.Name)) {
 				return
 			}
 			var name = loader.Id2String(s.Name)
-			if strings.HasPrefix(name, text) {
+			if strings.HasPrefix(name, input) {
 				if !(suggested_function_names[name]) {
 					suggestions = append(suggestions, AutoCompleteSuggestion {
-						Text: name,
-						Type: "function",
+						Text:    name,
+						Replace: input,
+						Type:    "function",
 					})
 					suggested_function_names[name] = true
 				}
 			}
 		}
 	}
-	if (text_mod == "" && len(text) >= 2) || text_mod != "" {
+	if (input_mod == "" && len(input) >= 2) || input_mod != "" {
 		var mod, idx, err =
 			loader.LoadEntryWithCache(req.CurrentPath, ctx.LoaderCache)
 		if err != nil { goto keywords }
@@ -163,45 +179,59 @@ func AutoComplete(req AutoCompleteRequest, ctx ServerContext) AutoCompleteRespon
 				process_statement(item.Statement, mod_prefix)
 			}
 		}
-		if text_mod == "" {
+		if input_mod == "" {
 			for mod_prefix, _ := range mod.ImpMap {
-				if strings.HasPrefix(mod_prefix, text) {
+				if strings.HasPrefix(mod_prefix, input) {
 					suggestions = append(suggestions, AutoCompleteSuggestion {
-						Text: mod_prefix,
-						Type: "import",
+						Text:    mod_prefix,
+						Replace: input,
+						Type:    "import",
 					})
+				}
+			}
+			var process_core_statement func(stmt ast.Statement)
+			process_core_statement = func(stmt ast.Statement) {
+				switch s := stmt.(type) {
+				case ast.DeclConst:
+					var name = loader.Id2String(s.Name)
+					if strings.HasPrefix(name, input) {
+						suggestions = append(suggestions, AutoCompleteSuggestion {
+							Text:    name,
+							Replace: input,
+							Type:    "constant",
+						})
+					}
+				case ast.DeclType:
+					switch v := s.TypeValue.TypeValue.(type) {
+					case ast.UnionType:
+						for _, case_decl := range v.Cases {
+							process_core_statement(case_decl)
+						}
+					}
+					var name = loader.Id2String(s.Name)
+					if strings.HasPrefix(name, input) {
+						suggestions = append(suggestions, AutoCompleteSuggestion{
+							Text:    name,
+							Replace: input,
+							Type:    "type",
+						})
+					}
 				}
 			}
 			var core_mod = idx[stdlib.Core]
 			for _, stmt := range core_mod.Node.Statements {
-				switch s := stmt.Statement.(type) {
-				case ast.DeclConst:
-					var name = loader.Id2String(s.Name)
-					if strings.HasPrefix(name, text) {
-						suggestions = append(suggestions, AutoCompleteSuggestion {
-							Text: name,
-							Type: "constant",
-						})
-					}
-				case ast.DeclType:
-					var name = loader.Id2String(s.Name)
-					if strings.HasPrefix(name, text) {
-						suggestions = append(suggestions, AutoCompleteSuggestion{
-							Text: name,
-							Type: "type",
-						})
-					}
-				}
+				process_core_statement(stmt.Statement)
 			}
 		}
 	}
 	keywords:
-	if len(text) > 0 && text_mod == "" {
+	if len(input) > 0 && input_mod == "" {
 		for _, kw := range Keywords {
-			if strings.HasPrefix(kw, text) {
+			if strings.HasPrefix(kw, input) {
 				suggestions = append(suggestions, AutoCompleteSuggestion {
-					Text: kw,
-					Type: "keyword",
+					Text:    kw,
+					Replace: input,
+					Type:    "keyword",
 				})
 			}
 		}
