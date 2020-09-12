@@ -28,7 +28,7 @@ private const FalseChars: String
 private const NullChars: String
     'null';
 
-public function parse: (&(String)(Result[Value,String]))
+private function parse: (&(String)(Result[Value,String]))
     (&(str)(
         let initial-state := ParserState {
             input:  str,

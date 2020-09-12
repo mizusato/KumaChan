@@ -3,6 +3,8 @@ package tools
 import (
 	"strings"
 	"kumachan/parser/syntax"
+	"kumachan/loader"
+	"kumachan/parser/ast"
 )
 
 
@@ -42,12 +44,45 @@ func AutoComplete(req AutoCompleteRequest, ctx ServerContext) AutoCompleteRespon
 	if text == "" {
 		return AutoCompleteResponse{}
 	}
-	//var mod, idx, err =
-	//	loader.LoadEntryWithCache(req.CurrentPath, ctx.LoaderCache)
-	//if err == nil {
-	//
-	//}
 	var suggestions = make([] AutoCompleteSuggestion, 0)
+	var suggested_function_names = make(map[string] bool)
+	var process_statement = func(stmt ast.VariousStatement, imported bool) {
+		switch s := stmt.Statement.(type) {
+		case ast.DeclFunction:
+			if imported && !(s.Public) {
+				return
+			}
+			if len(s.Name.Name) == 0 { panic("something went wrong") }
+			var first_char = s.Name.Name[0]
+			if first_char < 128 && first_char != rune(text[0]) {
+				return
+			}
+			var name = loader.Id2String(s.Name)
+			if strings.HasPrefix(name, text) {
+				if !(suggested_function_names[name]) {
+					suggestions = append(suggestions, AutoCompleteSuggestion {
+						Text: name,
+						Type: "function",
+					})
+					suggested_function_names[name] = true
+				}
+			}
+		}
+	}
+	if len(text) >= 2 {
+		var mod, _, err =
+			loader.LoadEntryWithCache(req.CurrentPath, ctx.LoaderCache)
+		if err == nil {
+			for _, stmt := range mod.Node.Statements {
+				process_statement(stmt, false)
+			}
+			for _, imp := range mod.ImpMap {
+				for _, stmt := range imp.Node.Statements {
+					process_statement(stmt, true)
+				}
+			}
+		}
+	}
 	for _, kw := range Keywords {
 		if strings.HasPrefix(kw, text) {
 			suggestions = append(suggestions, AutoCompleteSuggestion {
