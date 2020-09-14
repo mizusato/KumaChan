@@ -73,7 +73,11 @@ func CheckTypeBounds(t Type, nodes (map[Type] ast.Node), ctx TypeBoundsContext) 
 	case *ParameterType:
 		return nil
 	case *NamedType:
-		var g = ctx.Registry[T.Name]
+		var g, exists = ctx.Registry[T.Name]
+		if !(exists) {
+			// refers to a type that does not exist
+			return nil
+		}
 		for i, super := range g.Bounds.Super {
 			var arg = T.Args[i]
 			var err = CheckTypeArgBound(arg, super, SuperBound, get_node, ctx)

@@ -307,7 +307,11 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, ([] *T
 		var named, is_named = t.InnerType.(*NamedType)
 		if is_named {
 			var inner_name = named.Name
-			var g = reg[inner_name]
+			var g, exists = reg[inner_name]
+			if !(exists) {
+				// refers to a type that does not exist
+				return nil
+			}
 			var inner_boxed, is_boxed = g.Value.(*Boxed)
 			if is_boxed {
 				var inner_path = append(path, name)
