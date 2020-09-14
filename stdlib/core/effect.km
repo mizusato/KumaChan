@@ -1,8 +1,8 @@
 // Effect Types
 type Effect*[+T,+E]  native;  // rx.Effect       (Observable<T,E>)
-type Effect[+T,+E]   protected Effect*[T,E];  // (Promise<T,E>)
+type Effect[+T,+E]   protected Effect*[T,E];  // (() => Promise<T,E>)
 type NoExcept*[+T]   native;  // rx.Effect       (Observable<T>)
-type NoExcept[+T]    protected NoExcept*[T];  // (Promise<T>)
+type NoExcept[+T]    protected NoExcept*[T];  // (() => Promise<T>)
 
 // Wired Components
 type Source[+T]      native;  // rx.Source

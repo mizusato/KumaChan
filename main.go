@@ -132,7 +132,7 @@ func debug_compiler(entry *checker.CheckedModule) common.Program {
 
 func main () {
     var args = os.Args
-    if len(args) == 2 && args[1] == "tools-server" {
+    if len(args) == 2 && args[1] == "--mode=tools-server" {
         err := tools.Server(os.Stdin, os.Stdout, os.Stderr)
         if err != nil { panic(err) }
         return
