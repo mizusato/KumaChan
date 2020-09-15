@@ -14,7 +14,7 @@ public function crash: ( &(Error) NoExcept[-] )
 public function is:
     ( &(Error,ErrorKind) Bool )
     ( &(err, kind)
-        switch* (err.kind!, kind):
+        switch* (err.kind!!, kind):
         case [EOF,EOF]:
             Yes,
         case [ClosedPipe,ClosedPipe]:
