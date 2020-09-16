@@ -10,12 +10,14 @@ import (
 type MachineHandle interface {
 	Call(fv Value, arg Value) Value
 	GetScheduler() rx.Scheduler
+	GetArgs() ([] string)
 	GetErrorPoint() ErrorPoint
 }
 var __t = MachineHandle(nil)
 var __MachineHandleType = reflect.TypeOf(&__t).Elem()
 
 type NativeFunction  func(arg Value, handle MachineHandle) Value
+type NativeConstant  func(handle MachineHandle) Value
 
 
 func AdaptNativeFunction(f interface{}) NativeFunction {

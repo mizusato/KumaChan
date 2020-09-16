@@ -14,9 +14,9 @@ import (
 	"kumachan/parser/ast"
 	"kumachan/parser/syntax"
 	"kumachan/parser/transformer"
-	"kumachan/stdlib"
 	"kumachan/loader/common"
 	"kumachan/loader/kinds"
+	"kumachan/stdlib"
 )
 
 
@@ -24,7 +24,6 @@ const ManifestFileName = "module.json"
 const StandaloneScriptModuleName = "Main"
 const SourceSuffix = ".km"
 const StdlibFolder = "stdlib"
-
 
 var __UnitFileLoaders = [] common.UnitFileLoader {
 	kinds.QtUiLoader(),

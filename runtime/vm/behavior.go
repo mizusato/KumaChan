@@ -16,12 +16,9 @@ func assert(ok bool, msg string) {
 func execute(p Program, m *Machine) {
 	var L = len(p.Functions) + len(p.Constants) + len(p.Constants)
 	assert(L <= GlobalSlotMaxSize, "maximum registry size exceeded")
-	var F = func(index int) Value {
-		// TODO: change raw array NativeFunctions to GetNativeFunction(i)
-		return NativeFunctionValue(lib.NativeFunctions[index])
-	}
-	var C = func(index int) Value {
-		return lib.NativeConstants[index]
+	var nil_ctx_handle = Handle {
+		machine: m,
+		context: nil,
 	}
 	m.globalSlot = make([]Value, 0, L)
 	for _, v := range p.DataValues {
@@ -29,7 +26,7 @@ func execute(p Program, m *Machine) {
 	}
 	for i, _ := range p.Functions {
 		var f = p.Functions[i]
-		m.globalSlot = append(m.globalSlot, f.ToValue(F))
+		m.globalSlot = append(m.globalSlot, f.ToValue(lib.GetNativeFunction))
 	}
 	for i, _ := range p.Closures {
 		var f = p.Closures[i]
@@ -39,10 +36,11 @@ func execute(p Program, m *Machine) {
 		var f = p.Constants[i]
 		switch f.Kind {
 		case F_USER:
-			var v = f.ToValue(nil).(FunctionValue)
-			m.globalSlot = append(m.globalSlot, call(v, nil, m))
+			var fv = f.ToValue(nil).(FunctionValue)
+			m.globalSlot = append(m.globalSlot, call(fv, nil, m))
 		case F_NATIVE:
-			m.globalSlot = append(m.globalSlot, C(f.NativeIndex))
+			var v = lib.GetNativeConstant(f.NativeIndex, nil_ctx_handle)
+			m.globalSlot = append(m.globalSlot, v)
 		case F_PREDEFINED:
 			m.globalSlot = append(m.globalSlot, f.ToValue(nil))
 		}

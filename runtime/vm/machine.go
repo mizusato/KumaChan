@@ -13,13 +13,14 @@ const InitialCallStackCapacity = 4
 
 type Machine struct {
 	program       Program
+	arguments     [] string
 	globalSlot    [] Value
 	contextPool   *sync.Pool
 	scheduler     rx.Scheduler
 	maxStackSize  uint
 }
 
-func Execute(p Program, max_stack_size uint) *Machine {
+func Execute(p Program, args ([] string), max_stack_size uint) *Machine {
 	var sched = rx.TrivialScheduler {
 		EventLoop: rx.SpawnEventLoop(),
 	}
@@ -31,6 +32,7 @@ func Execute(p Program, max_stack_size uint) *Machine {
 	} }
 	var m = &Machine {
 		program:      p,
+		arguments:    args,
 		globalSlot:   nil,
 		contextPool:  pool,
 		scheduler:    sched,
@@ -74,6 +76,10 @@ func (h Handle) Call(fv Value, arg Value) Value {
 
 func (h Handle) GetScheduler() rx.Scheduler {
 	return h.machine.scheduler
+}
+
+func (h Handle) GetArgs() ([] string) {
+	return h.machine.arguments
 }
 
 func (h Handle) GetErrorPoint() ErrorPoint {

@@ -96,7 +96,7 @@ func CompileFunction (
 		if len(imp) > 0 { panic("something went wrong") }
 		return &c.Function {
 			Kind:        c.F_PREDEFINED,
-			NativeIndex: -1,
+			NativeIndex: ^uint(0),
 			Predefined:  b.Value,
 			Code:        nil,
 			BaseSize:    c.FrameBaseSize {},
@@ -162,7 +162,7 @@ func CompileFunction (
 		}
 		return &c.Function {
 			Kind:        c.F_USER,
-			NativeIndex: -1,
+			NativeIndex: ^uint(0),
 			Predefined:  nil,
 			Code:        code.InstSeq,
 			BaseSize:    c.FrameBaseSize {
@@ -192,7 +192,7 @@ func CompileConstant (
 	case ch.ExprPredefinedValue:
 		return &c.Function {
 			Kind:        c.F_PREDEFINED,
-			NativeIndex: -1,
+			NativeIndex: ^uint(0),
 			Predefined:  b.Value,
 			Code:        nil,
 			BaseSize:    c.FrameBaseSize {},
@@ -237,7 +237,7 @@ func CompileConstant (
 		}
 		return &c.Function {
 			Kind:        c.F_USER,
-			NativeIndex: -1,
+			NativeIndex: ^uint(0),
 			Predefined:  nil,
 			Code:        code.InstSeq,
 			BaseSize:    c.FrameBaseSize {

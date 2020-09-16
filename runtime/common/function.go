@@ -15,7 +15,7 @@ const (
 )
 type Function struct {
 	Kind         FunctionKind
-	NativeIndex  int
+	NativeIndex  uint
 	Predefined   interface{}
 	Code         [] Instruction
 	BaseSize     FrameBaseSize
@@ -34,7 +34,7 @@ type FuncInfo struct {
 	SourceMap  [] ErrorPoint
 }
 
-func (f *Function) ToValue(native_registry func(int)Value) Value {
+func (f *Function) ToValue(native_registry (func(uint) Value)) Value {
 	switch f.Kind {
 	case F_USER:
 		return &ValFunc {

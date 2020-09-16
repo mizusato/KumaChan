@@ -41,5 +41,7 @@ public function contains: (&(String,Char)(Bool))
 public function concat: (&(Array[String])(String))      native 'str-concat';
 public function split:  (&(String,String)(Seq[String])) native 'str-split';
 public function join:   (&(Seq[String],String)(String)) native 'str-join';
+public function join:   (&(Seq[String],Char)(String))
+    (&(seq,char)(seq.join (String [char])));
 
 // TODO: trim-{,left,right}, {trim,has}-{prefix,suffix}

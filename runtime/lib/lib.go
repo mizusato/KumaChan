@@ -16,16 +16,16 @@ var NativeFunctionMaps = [] (map[string] interface{}) {
 	QtFunctions,
 	WebUiFunctions,
 }
-var NativeConstantMaps = [] (map[string] Value) {
+var NativeConstantMaps = [] (map[string] NativeConstant) {
 	OS_Constants,
 }
 
 var NativeFunctionMap    map[string] NativeFunction
-var NativeFunctionIndex  map[string] int
+var NativeFunctionIndex  map[string] uint
 var NativeFunctions      [] NativeFunction
-var NativeConstantMap    map[string] Value
-var NativeConstantIndex  map[string] int
-var NativeConstants      [] Value
+var NativeConstantMap    map[string] NativeConstant
+var NativeConstantIndex  map[string] uint
+var NativeConstants      [] NativeConstant
 var _ = (func() interface{} {
 	NativeFunctionMap = make(map[string] NativeFunction)
 	for _, category := range NativeFunctionMaps {
@@ -35,16 +35,16 @@ var _ = (func() interface{} {
 			NativeFunctionMap[name] = AdaptNativeFunction(f)
 		}
 	}
-	NativeFunctionIndex = make(map[string]int, len(NativeFunctionMap))
-	NativeFunctions = make([]NativeFunction, len(NativeFunctionMap))
-	var i = 0
+	NativeFunctionIndex = make(map[string] uint, len(NativeFunctionMap))
+	NativeFunctions = make([] NativeFunction, len(NativeFunctionMap))
+	var i = uint(0)
 	for name, f := range NativeFunctionMap {
 		NativeFunctionIndex[name] = i
 		NativeFunctions[i] = f
 		i += 1
 	}
 	// ---------------
-	NativeConstantMap = make(map[string] Value)
+	NativeConstantMap = make(map[string] NativeConstant)
 	for _, category := range NativeConstantMaps {
 		for name, v := range category {
 			var _, exists = NativeConstantMap[name]
@@ -52,8 +52,8 @@ var _ = (func() interface{} {
 			NativeConstantMap[name] = v
 		}
 	}
-	NativeConstantIndex = make(map[string] int)
-	NativeConstants = make([]Value, len(NativeConstantMap))
+	NativeConstantIndex = make(map[string] uint)
+	NativeConstants = make([] NativeConstant, len(NativeConstantMap))
 	i = 0
 	for name, v := range NativeConstantMap {
 		NativeConstantIndex[name] = i
@@ -63,3 +63,11 @@ var _ = (func() interface{} {
 	// ---------------
 	return nil
 }) ()
+
+func GetNativeFunction(i uint) Value {
+	return NativeFunctionValue(NativeFunctions[i])
+}
+
+func GetNativeConstant(i uint, h MachineHandle) Value {
+	return NativeConstants[i](h)
+}

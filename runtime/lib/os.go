@@ -27,15 +27,31 @@ func PathFrom(str string) Path {
 	return path
 }
 
-var OS_Constants = map[string] Value {
-	"OS::Kind":    StringFromGoString(runtime.GOOS),
-	"OS::Arch":    StringFromGoString(runtime.GOARCH),
-	"OS::Is64Bit": ToBool(uint64(^uintptr(0)) == ^uint64(0)),
-	"OS::Env":     GetEnv(),
-	"OS::Args":    GetArgs(),
-	"OS::Stdin":   rx.FileFrom(os.Stdin),
-	"OS::Stdout":  rx.FileFrom(os.Stdout),
-	"OS::Stderr":  rx.FileFrom(os.Stderr),
+var OS_Constants = map[string] NativeConstant {
+	"OS::Kind":    func(h MachineHandle) Value {
+		return StringFromGoString(runtime.GOOS)
+	},
+	"OS::Arch":    func(h MachineHandle) Value {
+		return StringFromGoString(runtime.GOARCH)
+	},
+	"OS::Is64Bit": func(h MachineHandle) Value {
+		return ToBool(uint64(^uintptr(0)) == ^uint64(0))
+	},
+	"OS::Env":     func(h MachineHandle) Value {
+		return GetEnv()
+	},
+	"OS::Args":    func(h MachineHandle) Value {
+		return GetArgs(h)
+	},
+	"OS::Stdin":   func(h MachineHandle) Value {
+		return rx.FileFrom(os.Stdin)
+	},
+	"OS::Stdout":  func(h MachineHandle) Value {
+		return rx.FileFrom(os.Stdout)
+	},
+	"OS::Stderr":  func(h MachineHandle) Value {
+		return rx.FileFrom(os.Stderr)
+	},
 }
 
 func GetEnv() Map {
@@ -61,10 +77,10 @@ func GetEnv() Map {
 	return m
 }
 
-func GetArgs() ([] String) {
-	// TODO: further process may be useful to extinguish interpreter arguments
-	var args = make([] String, len(os.Args))
-	for i, raw := range os.Args {
+func GetArgs(h MachineHandle) ([] String) {
+	var raw_args = h.GetArgs()
+	var args = make([] String, len(raw_args))
+	for i, raw := range raw_args {
 		args[i] = StringFromGoString(raw)
 	}
 	return args
