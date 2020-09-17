@@ -19,7 +19,7 @@ class WebUiBridge final: public QObject {
 signals:
     void LoadFinish();
     void EmitEvent(QString handler, QVariantMap event);
-    void CloseWindow();
+    void CallMethod(QString id, QString name, QVariantList args);
     void EraseStyle(QString id, QString key);
     void ApplyStyle(QString id, QString key, QString value);
     void DetachEvent(QString id, QString event);
@@ -69,7 +69,7 @@ public:
 private:
     void closeEvent(QCloseEvent* ev) override {
         ev->ignore();
-        bridge->CloseWindow();
+        closeButtonClicked();
     };
     QString emittedEventHandler;
     QVariantMap emittedEventPayload;
@@ -81,6 +81,7 @@ public:
 signals:
     void loadFinished();
     void eventEmitted();
+    void closeButtonClicked();
 public slots:
     void emitEvent(QString handler, QVariantMap event) {
         emittedEventHandler = handler;

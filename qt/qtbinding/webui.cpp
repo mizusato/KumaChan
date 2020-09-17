@@ -33,6 +33,11 @@ QtVariantMap WebUiGetEventPayload() {
     return { m };
 }
 
+void WebUiCallMethod(QtString id, QtString name, QtVariantList args) {
+    QVariantList args_copy = *(QVariantList*)(args.ptr);
+    window->bridge->CallMethod(QtUnwrapString(id), QtUnwrapString(name), args_copy);
+}
+
 void WebUiEraseStyle(QtString id, QtString key) {
     window->bridge->EraseStyle(QtUnwrapString(id), QtUnwrapString(key));
 }

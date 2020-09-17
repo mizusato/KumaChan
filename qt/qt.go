@@ -240,6 +240,16 @@ func StringToRunes(str String) ([] rune) {
     return buf
 }
 
+func VariantMapGetRunes(m VariantMap, key String) ([] rune) {
+    var val = C.QtVariantMapGetString(C.QtVariantMap(m), C.QtString(key))
+    return StringToRunes(String(val))
+}
+
+func VariantMapGetNumber(m VariantMap, key String) float64 {
+    var val = C.QtVariantMapGetNumber(C.QtVariantMap(m), C.QtString(key))
+    return float64(val)
+}
+
 func NewPixmap(data ([] byte), format ImageDataFormat) (Pixmap, func()) {
     var buf = (*C.uint8_t)(unsafe.Pointer(&data[0]))
     var length = C.size_t(uint(len(data)))
@@ -380,6 +390,18 @@ func WebUiGetEventPayload() *WebUiEventPayload {
         C.QtDeleteVariantMap(C.QtVariantMap(ptr.Data))
     })
     return ptr
+}
+
+func WebUiEventPayloadGetRunes(ev *WebUiEventPayload, key ([] rune)) ([] rune) {
+    var key_str, del = NewStringFromRunes(key)
+    defer del()
+    return VariantMapGetRunes(ev.Data, key_str)
+}
+
+func WebUiEventPayloadGetNumber(ev *WebUiEventPayload, key ([] rune)) float64 {
+    var key_str, del = NewStringFromRunes(key)
+    defer del()
+    return VariantMapGetNumber(ev.Data, key_str)
 }
 
 func WebUiApplyStyle(id vdom.String, key vdom.String, value vdom.String) {

@@ -6,6 +6,7 @@ import (
 	. "kumachan/runtime/common"
 	"kumachan/runtime/lib/container"
 	"kumachan/qt/qtbinding/webui/vdom"
+	"kumachan/stdlib"
 )
 
 
@@ -151,5 +152,11 @@ var WebUiFunctions = map[string] interface{} {
 		}
 		var c = vdom.Children(children_)
 		return &c
+	},
+	"webui-event-payload-get-string": func(ev *qt.WebUiEventPayload, key String) String {
+		return StringFromRuneSlice(qt.WebUiEventPayloadGetRunes(ev, RuneSliceFromString(key)))
+	},
+	"webui-event-payload-get-float": func(ev *qt.WebUiEventPayload, key String) float64 {
+		return stdlib.CheckFloat(qt.WebUiEventPayloadGetNumber(ev, RuneSliceFromString(key)))
 	},
 }

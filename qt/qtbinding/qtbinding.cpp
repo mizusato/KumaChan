@@ -13,6 +13,7 @@
 #include <QListWidget>
 #include <QListWidgetItem>
 #include <QVariantMap>
+#include <QVariantList>
 #include "adapt.hpp"
 #include "qtbinding.hpp"
 #include "qtbinding.h"
@@ -214,6 +215,44 @@ size_t QtStringWriteToUTF32Buffer(QtString str, uint32_t *buf) {
     return len;
 }
 
+QtVariantList QtNewVariantList() {
+    return { (void*) new QVariantList() };
+}
+
+void QtVariantListAppendNumber(QtVariantList l, double n) {
+    QVariantList* ptr = (QVariantList*) l.ptr;
+    ptr->append(n);
+}
+
+void QtVariantListAppendString(QtVariantList l, QtString str) {
+    QVariantList* ptr = (QVariantList*) l.ptr;
+    ptr->append(QtUnwrapString(str));
+}
+
+void QtDeleteVariantList(QtVariantList l) {
+    delete (QVariantList*)(l.ptr);
+}
+
+QtString QtVariantMapGetString(QtVariantMap m, QtString key) {
+    QVariantMap* ptr = (QVariantMap*) m.ptr;
+    QString key_ = QtUnwrapString(key);
+    QVariant val_ = (*ptr)[key_];
+    QtString val = QtWrapString(val_.toString());
+    return val;
+}
+
+double QtVariantMapGetNumber(QtVariantMap m, QtString key) {
+    QVariantMap* ptr = (QVariantMap*) m.ptr;
+    QString key_ = QtUnwrapString(key);
+    QVariant val_ = (*ptr)[key_];
+    double val = val_.toDouble();
+    return val;
+}
+
+void QtDeleteVariantMap(QtVariantMap m) {
+    delete (QVariantMap*)(m.ptr);
+}
+
 QtIcon QtNewIcon(QtPixmap pm) {
     QIcon* ptr = new QIcon(*(QPixmap*)(pm.ptr));
     return { (void*) ptr };
@@ -239,10 +278,6 @@ QtPixmap QtNewPixmapJPEG(const uint8_t* buf, size_t len) {
 
 void QtDeletePixmap(QtPixmap pm) {
     delete (QPixmap*)(pm.ptr);
-}
-
-void QtDeleteVariantMap(QtVariantMap m) {
-    delete (QVariantMap*)(m.ptr);
 }
 
 void QtListWidgetClear(void *widget_ptr) {

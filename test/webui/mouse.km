@@ -1,0 +1,16 @@
+do webui-init 'Mouse' DOM;
+
+private const DOM: NoExcept*[WebUi::Node]
+    ~ then* &(@value) := new-latch 0.0,
+    let set-value := dom-event-sink @value (&(_) (&(ev)(ev.get-float 'offsetX'))),
+    let square := (
+        dom-node 'div'
+        (dom-styles [
+            ('width','300px'),('height','300px'),('backgroundColor','red')
+        ])
+        (dom-event 'mousemove' set-value)
+        (dom-children [])
+    ),
+    ~ map* &(value) := @value.receive,
+    let label := (dom-node 'div' ("offsetX: #" (str value))),
+    dom-node 'div' [square, label];

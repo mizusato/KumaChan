@@ -45,3 +45,8 @@ public function dom-text: ( &(String) NodeContent )
     native 'webui-dom-text';
 public function dom-children: ( &(Array[Node]) NodeContent )
     native 'webui-dom-children';
+
+public function get-string: ( &(EventPayload,String) String )
+    native 'webui-event-payload-get-string';
+public function get-float: ( &(EventPayload,String) Float )
+    native 'webui-event-payload-get-float';

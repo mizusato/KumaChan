@@ -21,6 +21,11 @@ struct _QtVariantMap {
 };
 typedef struct _QtVariantMap QtVariantMap;
 
+struct _QtVariantList {
+    void* ptr;
+};
+typedef struct _QtVariantList QtVariantList;
+
 struct _QtIcon {
     void* ptr;
 };
@@ -71,13 +76,19 @@ extern "C" {
     QtString QtNewStringUTF8(const char* buf, size_t len);
     QtString QtNewStringUTF32(const uint32_t* buf, size_t len);
     void QtDeleteString(QtString str);
+    QtVariantList QtNewVariantList();
+    void QtVariantListAppendNumber(QtVariantList l, double n);
+    void QtVariantListAppendString(QtVariantList l, QtString str);
+    void QtDeleteVariantList(QtVariantList l);
+    QtString QtVariantMapGetString(QtVariantMap m, QtString key);
+    double QtVariantMapGetNumber(QtVariantMap m, QtString key);
+    void QtDeleteVariantMap(QtVariantMap m);
     size_t QtStringUTF16Length(QtString str);
     QtIcon QtNewIcon(QtPixmap pm);
     void QtDeleteIcon(QtIcon icon);
     QtPixmap QtNewPixmapPNG(const uint8_t* buf, size_t len);
     QtPixmap QtNewPixmapJPEG(const uint8_t* buf, size_t len);
     void QtDeletePixmap(QtPixmap pm);
-    void QtDeleteVariantMap(QtVariantMap m);
     void QtListWidgetClear(void *widget_ptr);
     void QtListWidgetAddItem(void* widget_ptr, QtString key_, QtString label_, QtBool as_current);
     void QtListWidgetAddItemWithIcon(void* widget_ptr, QtString key_, QtIcon icon_, QtString label_, QtBool as_current);
@@ -89,6 +100,7 @@ extern "C" {
     void* WebUiGetWindow();
     QtString WebUiGetEventHandler();
     QtVariantMap WebUiGetEventPayload();
+    void WebUiCallMethod(QtString id, QtString name, QtVariantList args);
     void WebUiEraseStyle(QtString id, QtString key);
     void WebUiApplyStyle(QtString id, QtString key, QtString value);
     void WebUiDetachEvent(QtString id, QtString event);
