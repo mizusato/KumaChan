@@ -1,10 +1,10 @@
 package lib
 
 import (
-	"kumachan/stdlib"
 	"math"
 	"math/big"
 	"math/cmplx"
+	"kumachan/util"
 )
 
 
@@ -61,19 +61,19 @@ var MathFunctions = map[string] interface{} {
 		return a % b
 	},
 	"+Float": func(a float64, b float64) float64 {
-		return stdlib.CheckFloat(a + b)
+		return util.CheckFloat(a + b)
 	},
 	"-Float":  func(a float64, b float64) float64 {
-		return stdlib.CheckFloat(a - b)
+		return util.CheckFloat(a - b)
 	},
 	"*Float": func(a float64, b float64) float64 {
-		return stdlib.CheckFloat(a * b)
+		return util.CheckFloat(a * b)
 	},
 	"/Float": func(a float64, b float64) float64 {
-		return stdlib.CheckFloat(a / b)
+		return util.CheckFloat(a / b)
 	},
 	"%Float": func(a float64, b float64) float64 {
-		return stdlib.CheckFloat(math.Mod(a, b))
+		return util.CheckFloat(math.Mod(a, b))
 	},
 	"+Int8": func(a int8, b int8) int8 {
 		return a + b
@@ -222,7 +222,7 @@ var MathFunctions = map[string] interface{} {
 		return math.Cbrt(x)
 	},
 	"real-exp": func(x float64) float64 {
-		return stdlib.CheckFloat(math.Exp(x))
+		return util.CheckFloat(math.Exp(x))
 	},
 	"real-log": func(x float64) float64 {
 		if x > 0 {
@@ -243,7 +243,7 @@ var MathFunctions = map[string] interface{} {
 		if cosine == 0.0 {
 			panic("input out of the domain of tangent function")
 		}
-		return stdlib.CheckFloat(sine / cosine)
+		return util.CheckFloat(sine / cosine)
 	},
 	"real-asin": func(x float64) float64 {
 		if -1.0 <= x && x <= 1.0 {
@@ -295,40 +295,40 @@ var MathFunctions = map[string] interface{} {
 		return math.Atan2(im, re)
 	},
 	"+complex": func(z1 complex128, z2 complex128) complex128 {
-		return stdlib.CheckComplex(z1 + z2)
+		return util.CheckComplex(z1 + z2)
 	},
 	"f+complex": func(f float64, z complex128) complex128 {
-		return stdlib.CheckComplex(complex(f, 0) + z)
+		return util.CheckComplex(complex(f, 0) + z)
 	},
 	"complex+f": func(z complex128, f float64) complex128 {
-		return stdlib.CheckComplex(z + complex(f, 0))
+		return util.CheckComplex(z + complex(f, 0))
 	},
 	"-complex": func(z1 complex128, z2 complex128) complex128 {
-		return stdlib.CheckComplex(z1 - z2)
+		return util.CheckComplex(z1 - z2)
 	},
 	"f-complex": func(f float64, z complex128) complex128 {
-		return stdlib.CheckComplex(complex(f, 0) - z)
+		return util.CheckComplex(complex(f, 0) - z)
 	},
 	"complex-f": func(z complex128, f float64) complex128 {
-		return stdlib.CheckComplex(z - complex(f, 0))
+		return util.CheckComplex(z - complex(f, 0))
 	},
 	"*complex": func(z1 complex128, z2 complex128) complex128 {
-		return stdlib.CheckComplex(z1 * z2)
+		return util.CheckComplex(z1 * z2)
 	},
 	"f*complex": func(f float64, z complex128) complex128 {
-		return stdlib.CheckComplex(complex(f, 0) * z)
+		return util.CheckComplex(complex(f, 0) * z)
 	},
 	"complex*f": func(z complex128, f float64) complex128 {
-		return stdlib.CheckComplex(z * complex(f, 0))
+		return util.CheckComplex(z * complex(f, 0))
 	},
 	"/complex": func(z1 complex128, z2 complex128) complex128 {
-		return stdlib.CheckComplex(z1 / z2)
+		return util.CheckComplex(z1 / z2)
 	},
 	"f/complex": func(f float64, z complex128) complex128 {
-		return stdlib.CheckComplex(complex(f, 0) / z)
+		return util.CheckComplex(complex(f, 0) / z)
 	},
 	"complex/f": func(z complex128, f float64) complex128 {
-		return stdlib.CheckComplex(z / complex(f, 0))
+		return util.CheckComplex(z / complex(f, 0))
 	},
 	"complex-sqrt": func(z complex128) complex128 {
 		var norm, arg = cmplx.Polar(z)
@@ -339,7 +339,7 @@ var MathFunctions = map[string] interface{} {
 		return cmplx.Rect(math.Cbrt(norm), (arg / 3.0))
 	},
 	"complex-exp": func(z complex128) complex128 {
-		return stdlib.CheckComplex(cmplx.Exp(z))
+		return util.CheckComplex(cmplx.Exp(z))
 	},
 	"complex-log": func(z complex128) complex128 {
 		return cmplx.Log(z)
@@ -359,12 +359,12 @@ var MathFunctions = map[string] interface{} {
 		return (sine / cosine)
 	},
 	"complex-asin": func(z complex128) complex128 {
-		return stdlib.CheckComplex(cmplx.Asin(z))
+		return util.CheckComplex(cmplx.Asin(z))
 	},
 	"complex-acos": func(z complex128) complex128 {
-		return stdlib.CheckComplex(cmplx.Acos(z))
+		return util.CheckComplex(cmplx.Acos(z))
 	},
 	"complex-atan": func(z complex128) complex128 {
-		return stdlib.CheckComplex(cmplx.Atan(z))
+		return util.CheckComplex(cmplx.Atan(z))
 	},
 }
