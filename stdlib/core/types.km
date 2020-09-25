@@ -21,12 +21,12 @@ type Bool union {
     type No;
 };
 type Maybe[+T] union {
-    type Just[+T] as T;
+    type Just[+T] weak T;
     type N/A;
 };
 type Result[+T,+E] union {
-    type OK[+T] as T;
-    type NG[+E] as E;
+    type OK[+T] weak T;
+    type NG[+E] weak E;
 };
 type Ordering union {
     type <<;

@@ -36,7 +36,7 @@ func UnboxAsIs(t Type, reg TypeRegistry) Type {
 		var g = reg[T.Name]
 		switch gv := g.Value.(type) {
 		case *Boxed:
-			if gv.AsIs {
+			if gv.Weak {
 				var filled_inner = FillTypeArgs(gv.InnerType, T.Args)
 				return UnboxAsIs(filled_inner, reg)
 			}

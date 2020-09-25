@@ -71,7 +71,7 @@ type DeclType struct {
     Node                          `part:"decl_type"`
     Name       Identifier         `part:"name"`
     Params     [] TypeParam       `list_more:"type_params" item:"type_param"`
-    TypeValue  VariousTypeValue   `part:"type_value"`
+    TypeValue  VariousTypeValue   `part:"type_def"`
 }
 type TypeParam struct {
     Node                        `part:"type_param"`
@@ -94,29 +94,35 @@ type TypeHigherBound struct {
     BoundType  VariousType   `part:"type"`
 }
 type VariousTypeValue struct {
-    Node                   `part:"type_value"`
-    TypeValue  TypeValue   `use:"first"`
+    Node                 `part:"type_def"`
+    TypeValue  TypeDef   `use:"first"`
 }
-type TypeValue interface { TypeValue() }
-func (impl NativeType) TypeValue() {}
+type TypeDef interface { TypeDef() }
+func (impl NativeType) TypeDef() {}
 type NativeType struct {
-    Node   `part:"native_type"`
+    Node   `part:"t_native"`
 }
-func (impl ImplicitType) TypeValue() {}
+func (impl UnionType) TypeDef() {}
+type UnionType struct {
+    Node                 `part:"t_union"`
+    Cases  [] DeclType   `list_more:"" item:"decl_type"`
+}
+func (impl InterfaceType) TypeDef() {}
+type InterfaceType struct {
+    Node                   `part:"t_interface"`
+    Params  [] TypeParam   `list_more:"interface_params" item:"type_param"`
+    Inner   MaybeType      `part:"interface_inner_type.type"`
+}
+func (impl ImplicitType) TypeDef() {}
 type ImplicitType struct {
-    Node               `part:"implicit_type"`
+    Node               `part:"t_implicit"`
     Repr  ReprBundle   `part:"repr_bundle"`
 }
-func (impl BoxedType) TypeValue() {}
+func (impl BoxedType) TypeDef() {}
 type BoxedType struct {
-    Node                     `part:"boxed_type"`
-    AsIs       bool          `option:"box_option.@as"`
-    Protected  bool          `option:"box_option.@protected"`
-    Opaque     bool          `option:"box_option.@opaque"`
-    Inner      MaybeType     `part_opt:"inner_type.type"`
-}
-func (impl UnionType) TypeValue() {}
-type UnionType struct {
-    Node                 `part:"union_type"`
-    Cases  [] DeclType   `list_more:"" item:"decl_type"`
+    Node                   `part:"t_boxed"`
+    Weak       bool        `option:"box_option.@weak"`
+    Protected  bool        `option:"box_option.@protected"`
+    Opaque     bool        `option:"box_option.@opaque"`
+    Inner      MaybeType   `part_opt:"inner_type.type"`
 }

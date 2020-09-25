@@ -85,7 +85,7 @@ func CheckFormatter(formatter ast.Formatter, ctx ExprContext) (SemiExpr, *ExprEr
 	}
 	var elements = make([] Type, arity)
 	for i := uint(0); i < arity; i += 1 {
-		elements[i] = &NamedType { Name: __String, Args: make([] Type, 0) }
+		elements[i] = __T_String
 	}
 	var input Type
 	if len(elements) == 0 {
@@ -97,7 +97,7 @@ func CheckFormatter(formatter ast.Formatter, ctx ExprContext) (SemiExpr, *ExprEr
 	}
 	var t Type = &AnonymousType { Func {
 		Input:  input,
-		Output: &NamedType { Name: __String, Args: make([] Type, 0) },
+		Output: __T_String,
 	} }
 	return LiftTyped(Expr {
 		Type:  t,

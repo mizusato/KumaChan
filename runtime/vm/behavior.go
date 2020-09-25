@@ -297,6 +297,10 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 				} else {
 					// do nothing
 				}
+			case PANIC:
+				var msg_val = ec.popValue()
+				var msg = GoStringFromString(msg_val.(String))
+				panic("programmed panic: " + msg)
 			default:
 				panic(fmt.Sprintf("invalid instruction %+v", inst))
 			}

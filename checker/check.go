@@ -312,6 +312,10 @@ func CheckTerm(term ast.VariousTerm, ctx ExprContext) (SemiExpr, *ExprError) {
 		return CheckFormatter(t, ctx)
 	case ast.CharLiteral:
 		return CheckChar(t, ctx)
+	// case ast.Unbox:
+		// TODO
+	case ast.Panic:
+		return CheckPanic(t, ctx)
 	default:
 		panic("impossible branch")
 	}

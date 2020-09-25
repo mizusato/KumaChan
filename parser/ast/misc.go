@@ -8,6 +8,18 @@ type Cast struct {
 	Object  Expr          `part:"expr"`
 }
 
+func (impl Unbox) Term() {}
+type Unbox struct {
+	Node           `part:"unbox"`
+	Object  Expr   `part:"expr"`
+}
+
+func (impl Panic) Term() {}
+type Panic struct {
+	Node           `part:"panic"`
+	Object  Expr   `part:"expr"`
+}
+
 func (impl Lambda) Body() {}
 func (impl Lambda) Term() {}
 type Lambda struct {

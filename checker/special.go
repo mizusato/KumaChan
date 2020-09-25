@@ -5,9 +5,11 @@ import (
 	"kumachan/stdlib"
 )
 
+
 const IgnoreMark = "_"
+const Placeholder = IgnoreMark
 const UnitAlias = "-"
-const WildcardRhsTypeName = "*"
+const WildcardRhsTypeName = "never"
 const TextPlaceholder = '#'
 const FuncSuffix = "!!"
 const ForceExactSuffix = "!"
@@ -24,6 +26,7 @@ var __T_Bool = &NamedType { Name: __Bool, Args: make([] Type, 0) }
 var __Yes uint = stdlib.YesIndex
 var __Float = CoreSymbol(stdlib.Float)
 var __String = CoreSymbol(stdlib.String)
+var __T_String = &NamedType { Name: __String, Args: make([] Type, 0) }
 var __Array = CoreSymbol(stdlib.Array)
 var __Int = CoreSymbol(stdlib.Int)
 var __Number = CoreSymbol(stdlib.Number)

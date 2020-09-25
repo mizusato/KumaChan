@@ -41,7 +41,7 @@ type Boxed struct {
 	InnerType  Type
 	Implicit   bool
 	// following properties are exclusive
-	AsIs       bool
+	Weak       bool
 	Protected  bool
 	Opaque     bool
 }

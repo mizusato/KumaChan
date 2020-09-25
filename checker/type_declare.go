@@ -392,7 +392,7 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, ([] *T
 	return reg, nil
 }
 
-/* Transform: ast.TypeValue -> checker.TypeVal */
+/* Transform: ast.TypeDef -> checker.TypeVal */
 func RawTypeValFrom(ast_val ast.VariousTypeValue, info TypeNodeInfo, ctx RawTypeContext) (TypeVal, *TypeError) {
 	var got = func(val TypeVal) (TypeVal, *TypeError) {
 		info.ValNodeMap[val] = ast_val.Node
@@ -418,14 +418,14 @@ func RawTypeValFrom(ast_val ast.VariousTypeValue, info TypeNodeInfo, ctx RawType
 			if err != nil { return nil, err }
 			return got(&Boxed {
 				InnerType: inner_type,
-				AsIs:      a.AsIs,
+				Weak:      a.Weak,
 				Protected: a.Protected,
 				Opaque:    a.Opaque,
 			})
 		} else {
 			return got(&Boxed {
 				InnerType: &AnonymousType { Unit{} },
-				AsIs:      a.AsIs,
+				Weak:      a.Weak,
 				Protected: a.Protected,
 				Opaque:    a.Opaque,
 			})
@@ -458,7 +458,7 @@ func RawTypeFrom(ast_type ast.VariousType, info (map[Type] ast.Node), ctx TypeCo
 	case ast.TypeRef:
 		var ref_mod = string(a.Module.Name)
 		var ref_name = string(a.Id.Name)
-		if ref_mod == "" {
+		if ref_mod == "" && len(a.TypeArgs) == 0 {
 			if ref_name == UnitAlias {
 				return got(&AnonymousType { Unit{} })
 			}
