@@ -220,7 +220,7 @@ func AreTypesEqualInSameCtx(type1 Type, type2 Type) bool {
 					}
 					return true
 				default:
-					return true
+					return false
 				}
 			default:
 				panic("impossible branch")

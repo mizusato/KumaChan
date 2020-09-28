@@ -87,9 +87,9 @@ public slots:
         emittedEventHandler = handler;
         emittedEventPayload = event;
         eventEmitted();
-        if (debug) {
-            qDebug() << "Event: " << handler;
-        }
+        // if (debug) {
+        //     qDebug() << "Event: " << handler;
+        // }
     };
 private:
     void openInspector() {

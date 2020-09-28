@@ -68,10 +68,10 @@ type Body interface { Body() }
 
 func (impl DeclType) Statement() {}
 type DeclType struct {
-    Node                          `part:"decl_type"`
-    Name       Identifier         `part:"name"`
-    Params     [] TypeParam       `list_more:"type_params" item:"type_param"`
-    TypeValue  VariousTypeValue   `part:"type_def"`
+    Node                        `part:"decl_type"`
+    Name       Identifier       `part:"name"`
+    Params     [] TypeParam     `list_more:"type_params" item:"type_param"`
+    TypeValue  VariousTypeDef   `part:"type_def"`
 }
 type TypeParam struct {
     Node                        `part:"type_param"`
@@ -93,7 +93,7 @@ type TypeHigherBound struct {
     Node                     `part:"type_hi_bound"`
     BoundType  VariousType   `part:"type"`
 }
-type VariousTypeValue struct {
+type VariousTypeDef struct {
     Node                 `part:"type_def"`
     TypeValue  TypeDef   `use:"first"`
 }

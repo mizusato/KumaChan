@@ -53,7 +53,7 @@ var __NodeRegistry = []interface{} {
     VariousBody {},
     NativeRef {},
     DeclType {},
-    VariousTypeValue {},
+	VariousTypeDef {},
     NativeType {},
     ImplicitType {},
 	BoxedType {},
@@ -79,8 +79,6 @@ var __NodeRegistry = []interface{} {
     PipeOperator {},
     // Term
     Cast {},
-    Unbox {},
-    Panic {},
 	Switch {},
     Branch {},
     MultiSwitch {},

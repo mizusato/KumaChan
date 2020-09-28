@@ -229,6 +229,17 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 		if exists {
 			return SymConst { Const: constant, Name: raw }, true
 		}
+		f_refs, exists := ctx.ModuleInfo.Functions[raw.SymbolName]
+		if exists {
+			var functions = make([]*GenericFunction, len(f_refs))
+			for i, ref := range f_refs {
+				functions[i] = ref.Function
+			}
+			return SymFunctions {
+				Name:      raw.SymbolName,
+				Functions: functions,
+			}, true
+		}
 		return nil, false
 	}
 }
@@ -312,10 +323,6 @@ func CheckTerm(term ast.VariousTerm, ctx ExprContext) (SemiExpr, *ExprError) {
 		return CheckFormatter(t, ctx)
 	case ast.CharLiteral:
 		return CheckChar(t, ctx)
-	// case ast.Unbox:
-		// TODO
-	case ast.Panic:
-		return CheckPanic(t, ctx)
 	default:
 		panic("impossible branch")
 	}

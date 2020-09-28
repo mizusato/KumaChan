@@ -393,7 +393,7 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, ([] *T
 }
 
 /* Transform: ast.TypeDef -> checker.TypeVal */
-func RawTypeValFrom(ast_val ast.VariousTypeValue, info TypeNodeInfo, ctx RawTypeContext) (TypeVal, *TypeError) {
+func RawTypeValFrom(ast_val ast.VariousTypeDef, info TypeNodeInfo, ctx RawTypeContext) (TypeVal, *TypeError) {
 	var got = func(val TypeVal) (TypeVal, *TypeError) {
 		info.ValNodeMap[val] = ast_val.Node
 		return val, nil

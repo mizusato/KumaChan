@@ -50,8 +50,6 @@ const (
 	MSI     // [index, ___ ]: Append branch element index
 	MSD     // [ ____, ___ ]: Append branch element index (default)
 	MSJ     // [ ____, dest]: Jump if branch indexes matches the current value
-	/* Misc */
-	PANIC   // [ ___ ]: crash the running program
 )
 
 func (inst Instruction) GetGlobalIndex() uint {

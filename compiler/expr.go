@@ -97,13 +97,6 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 	case ch.UnitValue:
 		var inst_nil = c.Instruction { OpCode: c.NIL }
 		return CodeFrom(inst_nil, expr.Info)
-	case ch.Panic:
-		var buf = MakeCodeBuffer()
-		var msg_code = CompileExpr(v.Message, ctx)
-		buf.Write(msg_code)
-		var inst_panic = c.Instruction { OpCode: c.PANIC }
-		buf.Write(CodeFrom(inst_panic, expr.Info))
-		return buf.Collect()
 	case ch.IntLiteral:
 		var index = ctx.AppendDataRef(DataInteger(v))
 		return CodeFrom(InstGlobalRef(index), expr.Info)

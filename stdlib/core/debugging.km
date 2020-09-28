@@ -4,3 +4,5 @@ type Debug[+T] weak T;
 // Debugging Functions
 public function trace[T]: ( &(T) Debug[T] )
     native 'trace';  // side-effect: log input value in stderr
+public function panic: ( &(String) never )
+    native 'panic';  // side-effect: crash immediately

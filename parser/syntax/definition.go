@@ -78,9 +78,6 @@ var __Tokens = [...] Token {
     Token { Name: "Case",       Pattern: r(`case`),       Keyword: true },
     Token { Name: "Let",        Pattern: r(`let`),        Keyword: true },
     Token { Name: "Lambda",     Pattern: r(`lambda`),     Keyword: true },
-    Token { Name: "Interface",  Pattern: r(`interface`),  Keyword: true },
-    Token { Name: "Unbox",      Pattern: r(`unbox`),      Keyword: true },
-    Token { Name: "Panic",      Pattern: r(`panic`),      Keyword: true },
     // identifier
     Token { Name: "Name", Pattern: r(IdentifierRegexp) },
 }
@@ -95,10 +92,10 @@ func GetIdentifierFullRegexp() *regexp.Regexp {
 
 var __ConditionalKeywords = [...] string {
     "@import", "@from",
-    "@type", "@union", "@native", "@interface",
-    "@<", "@>",  // TODO: remove subtyping
+    "@type", "@union", "@native",
     "@weak", "@protected", "@opaque",
     "@private", "@public", "@function", "@const", "@do",
+    "@<", "@>",
     "@implicit", "@default", "@end", "@rec",
 }
 func GetKeywordList() ([] string) {
@@ -142,13 +139,10 @@ var __SyntaxDefinition = [...] string {
             "input_type = type",
             "output_type = type",
     "decl_type = @type name! type_params type_def ;!",
-      "type_def = t_native | t_union | t_interface | t_implicit | t_boxed",
+      "type_def = t_native | t_union | t_implicit | t_boxed",
         "t_native = @native",
         "t_union = @union {! decl_type! more_decl_types }!",
           "more_decl_types? = decl_type more_decl_types",
-        "t_interface = @interface interface_params! interface_inner_type!",
-          "interface_params = ( type_param! more_type_params )!",
-          "interface_inner_type = type",
         "t_implicit = @implicit repr_bundle",
         "t_boxed = box_option inner_type",
           "box_option? = @weak | @protected | @opaque",
@@ -185,12 +179,10 @@ var __SyntaxDefinition = [...] string {
         "pipe_op = _bar1 | . ",
         "pipe_func = term!",
         "pipe_arg? = terms",
-    "term = cast | unbox | panic | lambda | multi_switch | switch | if " +
+    "term = cast | lambda | multi_switch | switch | if " +
         "| block | cps | bundle | get | tuple | infix | inline_ref " +
         "| array | int | float | formatter | string | char",
       "cast = ( : type! :! expr! )!",
-      "unbox = Unbox expr",
-      "panic = Panic expr",
       "switch = Switch expr :! branch_list ,! @end!",
         "branch_list = branch! more_branches",
           "more_branches? = , branch more_branches",
