@@ -1,0 +1,27 @@
+do webui-init 'SVG' DOM;
+
+private const PI: Float
+    acos -1.0;
+
+private const DOM: NoExcept*[WebUi::Node]
+    tick { interval: 100 }
+    | scan 0.0 (&(theta,_)(% (+ theta (/ PI 40.0)) (* 2.0 PI)))
+    | map* ( &(theta)
+        (dom-node 'svg'
+            (dom-styles [('width','300px'),('height','300px')])
+            (dom-attrs [('viewBox','0 0 100 100')])
+            (dom-events [])
+            (dom-children [
+                (dom-node 'rect'
+                    (dom-styles [])
+                    (dom-attrs [
+                        ('x',      (str (+ 50.0 (* 20.0 (cos theta))))),
+                        ('y',      (str (+ 50.0 (* 20.0 (sin theta))))),
+                        ('width',  '20'),
+                        ('height', '20'),
+                        ('fill',   '#FF3333')
+                    ])
+                    (dom-events [])
+                    (dom-children []))
+            ]))
+    );
