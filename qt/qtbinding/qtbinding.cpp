@@ -49,6 +49,7 @@ void QtInit() {
     static char fake_arg[] = {'Q','t','A','p','p','\0'};
     static char* fake_argv[] = { fake_arg };
     if (!(initialized)) {
+        QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
         app = new QApplication(fake_argc, fake_argv);
         app->setQuitOnLastWindowClosed(false);
         bridge = new Bridge();

@@ -28,8 +28,12 @@ type Node struct {
 }
 
 type Props struct {
+	Attrs   *Attrs
 	Styles  *Styles
 	Events  *Events
+}
+type Attrs struct {
+	Data  Map
 }
 type Styles struct {
 	Data  Map
@@ -63,6 +67,8 @@ type EventHandler = interface{}
 type DeltaNotifier struct {
 	ApplyStyle   func(id String, key String, value String)
 	EraseStyle   func(id String, key String)
+	SetAttr      func(id String, key String, value String)
+	RemoveAttr   func(id String, key String)
 	AttachEvent  func(id String, name String, prevent bool, stop bool, handler EventHandler)
 	ModifyEvent  func(id String, name String, prevent bool, stop bool)
 	DetachEvent  func(id String, name String, handler EventHandler)
@@ -136,6 +142,23 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 			ctx.ApplyStyle(id, key, val)
 		})
 		skip_styles:
+		var new_attrs = new.Attrs
+		if old != nil {
+			var old_attrs = old.Attrs
+			if new_attrs == old_attrs {
+				goto skip_attrs
+			}
+			old_attrs.Data.ForEach(func(name String, _ interface{}) {
+				if !(old_attrs.Data.Has(name)) {
+					ctx.RemoveAttr(id, name)
+				}
+			})
+		}
+		new_attrs.Data.ForEach(func(name String, val_ interface{}) {
+			var val = val_.(String)
+			ctx.SetAttr(id, name, val)
+		})
+		skip_attrs:
 		var new_events = new.Events
 		if old != nil {
 			var old_events = old.Events

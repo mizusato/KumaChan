@@ -2,11 +2,11 @@ html {
     font-family: sans-serif;
 }
 
-* {
+*:not(input):not(button) {
     user-select: none;
     -webkit-user-select: none;
 }
 
-*:not(input) {
+*:not(input):not(button) {
     cursor: default;
 }

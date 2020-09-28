@@ -1,0 +1,15 @@
+do webui-init 'Echo' DOM;
+
+private const DOM: NoExcept*[WebUi::Node]
+    ~ then* &(@text) := new-latch '',
+    let input := dom-event-sink @text (&(_)(&(ev)(ev.get-string 'value'))),
+    @text.receive.map* (&(text)(
+        (dom-node 'div' [
+            (dom-node 'input'
+                (dom-styles [])
+                (dom-attrs [('type','text'), ('value',text)])
+                (dom-event 'input' input)
+                (dom-children [])),
+            (dom-node 'div' ("echo: #" text))
+        ])
+    ));

@@ -10,6 +10,8 @@
  *  @property {function(): void} LoadFinish
  *  @property {Signal.<function(id:string, key:string, value:string): void>} ApplyStyle
  *  @property {Signal.<function(id:string, key:string): void>} EraseStyle
+ *  @property {Signal.<function(id:string, name:string, value:string): void>} SetAttr
+ *  @property {Signal.<function(id:string, name:string): void>} RemoveAttr
  *  @property {Signal.<function(id:string, name:string, prevent:boolean, stop:boolean, handler: string): void>} AttachEvent
  *  @property {Signal.<function(id:string, name:string, prevent:boolean, stop:boolean): void>} ModifyEvent
  *  @property {Signal.<function(id:string, name:string): void>} DetachEvent
@@ -37,6 +39,9 @@ window.addEventListener('load', _ => {
     let create_listener = (prevent, stop, handler) => ev => {
         if (prevent) { ev.preventDefault() }
         if (stop) { ev.stopPropagation() }
+        if (ev.target && ev.target instanceof HTMLInputElement) {
+            ev.value = ev.target.value
+        }
         bridge.EmitEvent(handler, ev)
     }
     bridge.ApplyStyle.connect((id, key, val) => {
@@ -46,6 +51,22 @@ window.addEventListener('load', _ => {
     bridge.EraseStyle.connect((id, key) => {
         console.log('EraseStyle', { id, key })
         ElementRegistry[id].style[key] = ''
+    })
+    bridge.SetAttr.connect((id, name, val) => {
+        console.log('SetAttribute', { id, name, val })
+        if (name == 'value') {
+            ElementRegistry[id].value = val
+        } else {
+            ElementRegistry[id].setAttribute(name, val)
+        }
+    })
+    bridge.RemoveAttr.connect((id, name) => {
+        console.log('RemoveAttribute', { id, name })
+        if (name == 'value') {
+            ElementRegistry[id].value = ''
+        } else {
+            ElementRegistry[id].removeAttribute(name)
+        }
     })
     bridge.AttachEvent.connect((id, name, prevent, stop, handler) => {
         console.log('AttachEvent', { id, name, prevent, stop, handler })

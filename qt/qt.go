@@ -415,6 +415,17 @@ func WebUiEraseStyle(id vdom.String, key vdom.String) {
     var key_, del_key = NewStringFromRunes(key);  defer del_key()
     C.WebUiEraseStyle(C.QtString(id_), C.QtString(key_))
 }
+func WebUiSetAttr(id vdom.String, name vdom.String, value vdom.String) {
+    var id_, del_id = NewStringFromRunes(id);  defer del_id()
+    var name_, del_key = NewStringFromRunes(name);  defer del_key()
+    var value_, del_value = NewStringFromRunes(value);  defer del_value()
+    C.WebUiSetAttr(C.QtString(id_), C.QtString(name_), C.QtString(value_))
+}
+func WebUiRemoveAttr(id vdom.String, name vdom.String) {
+    var id_, del_id = NewStringFromRunes(id);  defer del_id()
+    var name_, del_key = NewStringFromRunes(name);  defer del_key()
+    C.WebUiRemoveAttr(C.QtString(id_), C.QtString(name_))
+}
 func WebUiAttachEvent(id vdom.String, name vdom.String, prevent bool, stop bool, handler vdom.EventHandler) {
     var id_, del_id = NewStringFromRunes(id);  defer del_id()
     var name_, del_name = NewStringFromRunes(name);  defer del_name()

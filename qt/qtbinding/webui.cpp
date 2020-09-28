@@ -46,6 +46,14 @@ void WebUiApplyStyle(QtString id, QtString key, QtString value) {
     window->bridge->ApplyStyle(QtUnwrapString(id), QtUnwrapString(key), QtUnwrapString(value));
 }
 
+void WebUiRemoveAttr(QtString id, QtString name) {
+    window->bridge->RemoveAttr(QtUnwrapString(id), QtUnwrapString(name));
+}
+
+void WebUiSetAttr(QtString id, QtString name, QtString value) {
+    window->bridge->SetAttr(QtUnwrapString(id), QtUnwrapString(name), QtUnwrapString(value));
+}
+
 void WebUiDetachEvent(QtString id, QtString event) {
     window->bridge->DetachEvent(QtUnwrapString(id), QtUnwrapString(event));
 }

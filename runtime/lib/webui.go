@@ -87,6 +87,8 @@ func (m WebUiAdaptedMap) ForEach(f func(key vdom.String, val interface{})) {
 var __WebUiVirtualDomDeltaNotifier = &vdom.DeltaNotifier {
 	ApplyStyle:  qt.WebUiApplyStyle,
 	EraseStyle:  qt.WebUiEraseStyle,
+	SetAttr:     qt.WebUiSetAttr,
+	RemoveAttr:  qt.WebUiRemoveAttr,
 	AttachEvent: qt.WebUiAttachEvent,
 	ModifyEvent: qt.WebUiModifyEvent,
 	DetachEvent: qt.WebUiDetachEvent,
@@ -116,12 +118,19 @@ var WebUiFunctions = map[string] interface{} {
 			WebUiInitAndLoad(h.GetScheduler(), root, title)
 		})
 	},
-	"webui-dom-node": func(tag String, styles *vdom.Styles, events *vdom.Events, content vdom.Content) *vdom.Node {
+	"webui-dom-node": func (
+		tag      String,
+		styles   *vdom.Styles,
+		attrs    *vdom.Attrs,
+		events   *vdom.Events,
+		content  vdom.Content,
+	) *vdom.Node {
 		var tag_ = RuneSliceFromString(tag)
 		return &vdom.Node {
 			Tag:     tag_,
 			Props:   vdom.Props {
 				Styles: styles,
+				Attrs:  attrs,
 				Events: events,
 			},
 			Content: content,
@@ -129,6 +138,9 @@ var WebUiFunctions = map[string] interface{} {
 	},
 	"webui-dom-styles": func(styles container.Map) *vdom.Styles {
 		return &vdom.Styles { Data: WebUiAdaptMap(styles) }
+	},
+	"webui-dom-attrs": func(attrs container.Map) *vdom.Attrs {
+		return &vdom.Attrs { Data: WebUiAdaptMap(attrs) }
 	},
 	"webui-dom-event": func(prevent SumValue, stop SumValue, sink rx.Sink) *vdom.EventOptions {
 		return &vdom.EventOptions {

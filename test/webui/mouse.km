@@ -8,6 +8,7 @@ private const DOM: NoExcept*[WebUi::Node]
         (dom-styles [
             ('width','300px'),('height','300px'),('backgroundColor','red')
         ])
+        (dom-attrs [])
         (dom-event 'mousemove' set-value)
         (dom-children [])
     ),

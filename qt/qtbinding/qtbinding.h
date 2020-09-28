@@ -103,6 +103,8 @@ extern "C" {
     void WebUiCallMethod(QtString id, QtString name, QtVariantList args);
     void WebUiEraseStyle(QtString id, QtString key);
     void WebUiApplyStyle(QtString id, QtString key, QtString value);
+    void WebUiRemoveAttr(QtString id, QtString name);
+    void WebUiSetAttr(QtString id, QtString name, QtString value);
     void WebUiDetachEvent(QtString id, QtString event);
     void WebUiModifyEvent(QtString id, QtString event, QtBool prevent, QtBool stop);
     void WebUiAttachEvent(QtString id, QtString event, QtBool prevent, QtBool stop, QtString handler);
