@@ -8,7 +8,7 @@ import (
 
 /* IMPORTANT: this go file should be consistent with corresponding km files */
 var __ModuleDirectories = [] string {
-	"core", "io", "os", "json", "net", "image", "qt", "webui",
+	"core", "math", "io", "os", "json", "net", "image", "qt", "webui",
 }
 func GetModuleDirectories() ([] string) { return __ModuleDirectories }
 const Core = "Core"

@@ -1,0 +1,8 @@
+public const Tau: Float
+    $(2.0 * Pi);
+
+public const Pi: Float
+    acos -1.0;
+
+public const E: Float
+    exp 1.0;
