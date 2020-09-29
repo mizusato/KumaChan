@@ -6,7 +6,7 @@ private const DOM: NoExcept*[WebUi::Node]
     let square := (
         dom-node 'div'
         (dom-styles [
-            ('width','300px'),('height','300px'),('backgroundColor','red')
+            ('width','300px'),('height','300px'),('backgroundColor','#FFAA33')
         ])
         (dom-attrs [])
         (dom-event 'mousemove' set-value)

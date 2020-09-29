@@ -9,6 +9,14 @@ type Sink interface {
 	Send(Object) Effect
 }
 
+type MappedSource struct {
+	Source  Source
+	Mapper  func(Object) Object
+}
+func (m *MappedSource) Receive() Effect {
+	return m.Source.Receive().Map(m.Mapper)
+}
+
 type AdaptedSink struct {
 	Sink     Sink
 	Adapter  func(Object) Object
@@ -110,6 +118,35 @@ func (a *AdaptedLatch) Send(obj Object) Effect {
 			l.Notify(new_state)
 		}
 		return nil, true
+	})
+}
+
+type CombinedLatch struct {
+	Elements  [] *Latch
+}
+func (c *CombinedLatch) Receive() Effect {
+	return CreateBlockingListenerEffect(func(next func(Object)) func() {
+		var L = len(c.Elements)
+		var values = make([] Object, L)
+		for i, el := range c.Elements {
+			values[i] = el.state
+		}
+		next(values)
+		var listeners = make([] uint64, L)
+		for loop_var, el := range c.Elements {
+			var index = loop_var
+			listeners[index] = el.bus.addListener(Listener {
+				Notify: func(object Object) {
+					values[index] = object
+					next(values)
+				},
+			})
+		}
+		return func() {
+			for i, l := range listeners {
+				c.Elements[i].bus.removeListener(l)
+			}
+		}
 	})
 }
 

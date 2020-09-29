@@ -26,7 +26,15 @@ var EffectFunctions = map[string] Value {
 	"receive": func(source rx.Source) rx.Effect {
 		return source.Receive()
 	},
-	"adapt": func(sink rx.Sink, f Value, h MachineHandle) rx.Sink {
+	"source-map": func(source rx.Source, f Value, h MachineHandle) rx.Source {
+		return &rx.MappedSource {
+			Source: source,
+			Mapper: func(obj rx.Object) rx.Object {
+				return h.Call(f, obj)
+			},
+		}
+	},
+	"sink-adapt": func(sink rx.Sink, f Value, h MachineHandle) rx.Sink {
 		return &rx.AdaptedSink {
 			Sink: sink,
 			Adapter: func(obj rx.Object) rx.Object {
@@ -34,7 +42,7 @@ var EffectFunctions = map[string] Value {
 			},
 		}
 	},
-	"adapt-latch": func(latch *rx.Latch, f Value, h MachineHandle) rx.Sink {
+	"latch-adapt": func(latch *rx.Latch, f Value, h MachineHandle) rx.Sink {
 		return &rx.AdaptedLatch {
 			Latch:      latch,
 			GetAdapter: func(old_state rx.Object) (func(rx.Object) rx.Object) {
@@ -43,6 +51,19 @@ var EffectFunctions = map[string] Value {
 					var new_state = h.Call(adapter, obj)
 					return new_state
 				}
+			},
+		}
+	},
+	"latch-combine": func(tuple ProductValue) rx.Source {
+		var latches = make([] *rx.Latch, len(tuple.Elements))
+		for i, el := range tuple.Elements {
+			latches[i] = el.(*rx.Latch)
+		}
+		return &rx.MappedSource {
+			Source: &rx.CombinedLatch { Elements: latches },
+			Mapper: func(obj rx.Object) rx.Object {
+				var values = obj.([] rx.Object)
+				return &ValProd { Elements: values }
 			},
 		}
 	},
@@ -267,8 +288,11 @@ var EffectFunctions = map[string] Value {
 			} }
 		})
 	},
-	"combine-latest": func(a rx.Effect, b rx.Effect) rx.Effect {
-		var effects = [] rx.Effect { a, b }
+	"combine-latest": func(tuple ProductValue) rx.Effect {
+		var effects = make([] rx.Effect, len(tuple.Elements))
+		for i, el := range tuple.Elements {
+			effects[i] = el.(rx.Effect)
+		}
 		return rx.CombineLatest(effects).Map(func(raw rx.Object) rx.Object {
 			var raw_values = raw.([] rx.Optional)
 			var values = make([] Value, len(effects))
