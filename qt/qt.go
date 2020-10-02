@@ -61,10 +61,17 @@ func EventClose() EventKind { return EventKind(uint(C.QtEventClose)) }
 type Event C.QtEvent
 
 
+var mock = false
 var initializing = make(chan struct{}, 1)
 var initialized = make(chan struct{})
 var InitRequestSignal = make(chan func())
+func Mock() {
+    mock = true
+}
 func MakeSureInitialized() {
+    if mock {
+        return
+    }
     select {
     case initializing <- struct{}{}:
         var wait = make(chan struct{})
@@ -82,6 +89,10 @@ func MakeSureInitialized() {
 
 /// Invokes the operation callback in the Qt main thread.
 func CommitTask(operation func()) {
+    if mock {
+        go operation()
+        return
+    }
     var delete_callback (func() bool)
     var f = func() {
         operation()
@@ -92,6 +103,9 @@ func CommitTask(operation func()) {
 }
 
 func LoadWidget(def string, dir string) (Widget, bool) {
+    if mock {
+        return widget{}, true
+    }
     var new_str, del_all_str = str_alloc()
     defer del_all_str()
     var ptr = C.QtLoadWidget(new_str(def), new_str(dir))
@@ -103,6 +117,9 @@ func LoadWidget(def string, dir string) (Widget, bool) {
 }
 
 func FindChild(w Widget, name string) (Widget, bool) {
+    if mock {
+        return widget{}, true
+    }
     var new_str, del_all_str = str_alloc()
     defer del_all_str()
     var ptr = C.QtWidgetFindChild(w.ptr(), new_str(name))

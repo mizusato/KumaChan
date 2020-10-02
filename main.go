@@ -221,6 +221,7 @@ func main() {
         }
         debug_parser(program_file, program_path, syntax.RootPartName)
     case "tools-server":
+        qt.Mock()
         err := tools.Server(os.Stdin, os.Stdout, os.Stderr)
         if err != nil { panic(err) }
     default:
