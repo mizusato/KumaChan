@@ -64,7 +64,10 @@ public:
         setCentralWidget(view);
         show();
         if (debug) {
+            #ifndef _WIN32
+            // inspector crashes on windows
             openInspector();
+            #endif
         }
     }
     ~WebUiWindow() {}

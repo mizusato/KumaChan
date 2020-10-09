@@ -1,3 +1,11 @@
+ifdef OS	
+	WINDOWS_WORKAROUND = cp qt/build/release/libqtbinding* qt/build/
+	LIBBIN = qt/build/release/qtbinding.dll
+else
+	WINDOWS_WORKAROUND = $(NOOP)
+	LIBBIN = qt/build/libqtbinding*
+endif
+
 .PHONY: check qt interpreter stdlib
 
 default: all
@@ -11,7 +19,8 @@ check:
 qt:
 	@echo -e '\033[1mCompiling CGO Qt Binding...\033[0m'
 	cd qt/build && qmake ../qtbinding/qtbinding.pro && $(MAKE)
-	cp -P qt/build/libqtbinding* build/
+	$(WINDOWS_WORKAROUND)
+	cp -P $(LIBBIN) build/
 
 stdlib:
 	@echo -e '\033[1mCopying Standard Library Files...\033[0m'
