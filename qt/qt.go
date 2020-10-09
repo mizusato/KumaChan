@@ -11,7 +11,6 @@ import (
     "fmt"
     "unsafe"
     "reflect"
-    "runtime"
     "kumachan/qt/cgohelper"
     "kumachan/qt/qtbinding/webui/vdom"
 )
@@ -402,11 +401,14 @@ func WebUiGetEventHandler() vdom.EventHandler {
 }
 
 func WebUiGetEventPayload() *WebUiEventPayload {
-    var ptr = &WebUiEventPayload { VariantMap(C.WebUiGetEventPayload()) }
-    runtime.SetFinalizer(ptr, func(ptr *WebUiEventPayload) {
-        C.QtDeleteVariantMap(C.QtVariantMap(ptr.Data))
-    })
-    return ptr
+    return &WebUiEventPayload { VariantMap(C.WebUiGetEventPayload()) }
+}
+
+func WebUiConsumeEventPayload(ev *WebUiEventPayload, f func(*WebUiEventPayload) interface{}) interface{} {
+    defer func() {
+        C.QtDeleteVariantMap(C.QtVariantMap(ev.Data))
+    } ()
+    return f(ev)
 }
 
 func WebUiEventPayloadGetRunes(ev *WebUiEventPayload, key ([] rune)) ([] rune) {

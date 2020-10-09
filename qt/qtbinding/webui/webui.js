@@ -71,7 +71,7 @@ window.addEventListener('load', _ => {
         }
     })
     bridge.RemoveAttr.connect((id, name) => {
-        console.log('RemoveAttribute', { id, name })
+        // console.log('RemoveAttribute', { id, name })
         if (name == 'value') {
             ElementRegistry[id].value = ''
         } else {
@@ -132,6 +132,8 @@ window.addEventListener('load', _ => {
         let new_el = createElement(parent, tag)
         parent_el.insertBefore(new_el, old_el)
         parent_el.removeChild(old_el)
+        delete ElementRegistry[old_id]
+        ElementRegistry[new_id] = new_el
     })
     bridge.LoadFinish()
     console.log('LoadFinish')

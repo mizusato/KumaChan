@@ -149,6 +149,30 @@ var WebUiFunctions = map[string] interface{} {
 			Handler: (vdom.EventHandler)(sink),
 		}
 	},
+	"webui-dom-event-sink": func(sink rx.Sink, f Value, h MachineHandle) rx.Sink {
+		return &rx.AdaptedSink {
+			Sink:    sink,
+			Adapter: func(obj rx.Object) rx.Object {
+				var ev = obj.(*qt.WebUiEventPayload)
+				return qt.WebUiConsumeEventPayload(ev, func(ev *qt.WebUiEventPayload) interface{} {
+					return h.Call(f, ev)
+				})
+			},
+		}
+	},
+	"webui-dom-event-sink-latch": func(latch *rx.Latch, f Value, h MachineHandle) rx.Sink {
+		return &rx.AdaptedLatch {
+			Latch:      latch,
+			GetAdapter: func(state rx.Object) func(rx.Object) rx.Object {
+				return func(obj rx.Object) rx.Object {
+					var ev = obj.(*qt.WebUiEventPayload)
+					return qt.WebUiConsumeEventPayload(ev, func(ev *qt.WebUiEventPayload) interface{} {
+						return h.Call(h.Call(f, state), ev)
+					})
+				}
+			},
+		}
+	},
 	"webui-dom-events": func(events container.Map) *vdom.Events {
 		return &vdom.Events { Data: WebUiAdaptMap(events) }
 	},

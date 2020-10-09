@@ -10,7 +10,7 @@ type Attrs  native;  // *vdom.Attrs
 type Events native;  // *vdom.Events
 type EventOptions  native;  // *vdom.EventOptions
 type EventPayload  native;  // *qt.WebUiEventPayload
-type EventSink     Sink[EventPayload];
+type EventSink     protected Sink[EventPayload];
 type NodeContent   native;  // vdom.NodeContent
 
 
@@ -57,13 +57,13 @@ public function dom-event: ( &(Bool,Bool,EventSink) EventOptions )
     native 'webui-dom-event';
 
 public function dom-event-sink[T]: ( &(Sink[T],(&(EventPayload)(T))) EventSink )
-    (&(sink,f)(EventSink (sink.adapt f)));
+    native 'webui-dom-event-sink';
 
 public function dom-event-sink[T]: ( &(Bus[T],(&(EventPayload)(T))) EventSink )
-    (&(bus,f)(EventSink (bus.adapt f)));
+    native 'webui-dom-event-sink';
 
 public function dom-event-sink[T]: ( &(Latch[T],(&(T)(&(EventPayload)(T)))) EventSink )
-    (&(latch,f)(EventSink (latch.adapt f)));
+    native 'webui-dom-event-sink-latch';
 
 
 public function dom-text: ( &(String) NodeContent )
