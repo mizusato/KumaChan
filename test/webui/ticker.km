@@ -8,3 +8,5 @@ do webui-init 'Ticker' (
                 (dom-node 'h2' (str n))
             ]))
 );
+
+do WebUi::ExitWhenWindowClosed;

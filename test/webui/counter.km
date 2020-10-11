@@ -1,5 +1,7 @@
 do webui-init 'Counter' DOM;
 
+do WebUi::ExitWhenWindowClosed;
+
 private const ControlStyle: WebUi::Styles
     dom-styles [
         ('display', 'inline-block'),

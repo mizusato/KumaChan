@@ -25,6 +25,12 @@ private function signal[T]: ( &(Object,String) Signal[-] )
 private function event[E]: ( &(Object,String,Bool) Event[E] )
     native 'qt-event';
 
+public function listen[T]: ( &(Event[T],(&(T)(NoExcept[-]))) NoExcept[-] )
+    ( &(ev,f)
+        ev  | merge-map (&(payload)(f payload))
+            | forever
+    );
+
 public function resized: ( &(Object) Event[EventResized] )
     (&(object)(event object 'resized' No));
 

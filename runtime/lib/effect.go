@@ -74,12 +74,12 @@ var EffectFunctions = map[string] Value {
 		return sink
 	},
 	"new-bus": func() rx.Effect {
-		return rx.CreateBlockingEffect(func() (rx.Object, bool) {
+		return rx.NewSync(func() (rx.Object, bool) {
 			return rx.CreateBus(), true
 		})
 	},
 	"new-latch": func(init Value) rx.Effect {
-		return rx.CreateBlockingEffect(func() (rx.Object, bool) {
+		return rx.NewSync(func() (rx.Object, bool) {
 			return rx.CreateLatch(init), true
 		})
 	},
@@ -87,7 +87,7 @@ var EffectFunctions = map[string] Value {
 		return l.Reset()
 	},
 	"new-mutable": func(init Value) rx.Effect {
-		return rx.CreateBlockingEffect(func() (rx.Object, bool) {
+		return rx.NewSync(func() (rx.Object, bool) {
 			return rx.CreateCell(init), true
 		})
 	},
@@ -103,7 +103,7 @@ var EffectFunctions = map[string] Value {
 		})
 	},
 	"random": func() rx.Effect {
-		return rx.CreateBlockingEffect(func() (rx.Object, bool) {
+		return rx.NewSync(func() (rx.Object, bool) {
 			return rand.Float64(), true
 		})
 	},
@@ -113,7 +113,7 @@ var EffectFunctions = map[string] Value {
 		const reset = "\033[0m"
 		var point = h.GetErrorPoint()
 		var source_point = point.Node.Point
-		return rx.CreateBlockingEffect(func() (rx.Object, bool) {
+		return rx.NewSync(func() (rx.Object, bool) {
 			fmt.Fprintf (
 				os.Stderr, "%v*** Crash: (%d, %d) at %s%v\n",
 				bold+red,
@@ -130,12 +130,12 @@ var EffectFunctions = map[string] Value {
 		})
 	},
 	"emit": func(v Value) rx.Effect {
-		return rx.CreateBlockingEffect(func() (rx.Object, bool) {
+		return rx.NewSync(func() (rx.Object, bool) {
 			return v, true
 		})
 	},
 	"emit*-range": func(l uint, r uint) rx.Effect {
-		return rx.CreateBlockingSequenceEffect(func(next func(rx.Object))(bool,rx.Object) {
+		return rx.NewSyncSequence(func(next func(rx.Object))(bool,rx.Object) {
 			for i := l; i < r; i += 1 {
 				next(i)
 			}
@@ -143,7 +143,7 @@ var EffectFunctions = map[string] Value {
 		})
 	},
 	"emit*-seq": func(seq container.Seq) rx.Effect {
-		return rx.CreateBlockingSequenceEffect(func(next func(rx.Object))(bool,rx.Object) {
+		return rx.NewSyncSequence(func(next func(rx.Object))(bool,rx.Object) {
 			for item, rest, ok := seq.Next(); ok; item, rest, ok = rest.Next() {
 				next(item)
 			}
@@ -152,7 +152,7 @@ var EffectFunctions = map[string] Value {
 	},
 	"emit*-array": func(av Value) rx.Effect {
 		var arr = container.ArrayFrom(av)
-		return rx.CreateBlockingSequenceEffect(func(next func(rx.Object))(bool,rx.Object) {
+		return rx.NewSyncSequence(func(next func(rx.Object))(bool,rx.Object) {
 			for i := uint(0); i < arr.Length; i += 1 {
 				next(arr.GetItem(i))
 			}

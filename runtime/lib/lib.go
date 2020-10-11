@@ -18,6 +18,7 @@ var NativeFunctionMaps = [] (map[string] interface{}) {
 }
 var NativeConstantMaps = [] (map[string] NativeConstant) {
 	OS_Constants,
+	WebUiConstants,
 }
 
 var NativeFunctionMap    map[string] NativeFunction

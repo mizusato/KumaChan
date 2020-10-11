@@ -39,7 +39,7 @@ func CreateBus() *Bus {
 	}
 }
 func (bus *Bus) Receive() Effect {
-	return CreateBlockingListenerEffect(func(next func(Object)) func() {
+	return NewListener(func(next func(Object)) func() {
 		var l = bus.addListener(Listener {
 			Notify: next,
 		})
@@ -49,7 +49,7 @@ func (bus *Bus) Receive() Effect {
 	})
 }
 func (bus *Bus) Send(obj Object) Effect {
-	return CreateBlockingEffect(func() (Object, bool) {
+	return NewSync(func() (Object, bool) {
 		for _, l := range bus.listeners {
 			l.Notify(obj)
 		}
@@ -81,7 +81,7 @@ func CreateLatch(init Object) *Latch {
 	}
 }
 func (latch *Latch) Receive() Effect {
-	return CreateBlockingListenerEffect(func(next func(Object)) func() {
+	return NewListener(func(next func(Object)) func() {
 		next(latch.state)
 		var l = latch.bus.addListener(Listener {
 			Notify: next,
@@ -92,7 +92,7 @@ func (latch *Latch) Receive() Effect {
 	})
 }
 func (latch *Latch) Send(obj Object) Effect {
-	return CreateBlockingEffect(func() (Object, bool) {
+	return NewSync(func() (Object, bool) {
 		latch.state = obj
 		for _, l := range latch.bus.listeners {
 			l.Notify(obj)
@@ -109,7 +109,7 @@ type AdaptedLatch struct {
 	GetAdapter  func(Object) (func(Object) Object)
 }
 func (a *AdaptedLatch) Send(obj Object) Effect {
-	return CreateBlockingEffect(func() (Object, bool) {
+	return NewSync(func() (Object, bool) {
 		var old_state = a.Latch.state
 		var adapter = a.GetAdapter(old_state)
 		var new_state = adapter(obj)
@@ -125,7 +125,7 @@ type CombinedLatch struct {
 	Elements  [] *Latch
 }
 func (c *CombinedLatch) Receive() Effect {
-	return CreateBlockingListenerEffect(func(next func(Object)) func() {
+	return NewListener(func(next func(Object)) func() {
 		var L = len(c.Elements)
 		var values = make([] Object, L)
 		for i, el := range c.Elements {

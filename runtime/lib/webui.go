@@ -32,7 +32,7 @@ func WebUiInitAndLoad(sched rx.Scheduler, root rx.Effect, title String) {
 			var payload = qt.WebUiGetEventPayload()
 			var sink = handler.(rx.Sink)
 			sched.RunTopLevel(sink.Send(payload), rx.Receiver {
-				Context:   rx.Background(),
+				Context: rx.Background(),
 			})
 		})
 		qt.Connect(window, "loadFinished()", func() {
@@ -100,7 +100,7 @@ var __WebUiVirtualDomDeltaNotifier = &vdom.DeltaNotifier {
 }
 var __WebUiVirtualDom *vdom.Node = nil
 var __WebUiUpdateDom = func(new_root *vdom.Node) rx.Effect {
-	return rx.CreateValueCallbackEffect(func(done func(rx.Object)) {
+	return rx.NewCallback(func(done func(rx.Object)) {
 		qt.CommitTask(func() {
 			var ctx = __WebUiVirtualDomDeltaNotifier
 			var prev_root = __WebUiVirtualDom
@@ -112,10 +112,20 @@ var __WebUiUpdateDom = func(new_root *vdom.Node) rx.Effect {
 }
 
 
+var WebUiConstants = map[string] NativeConstant {
+	"WebUi::GetWindow": func(_ MachineHandle) Value {
+		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
+			<- __WebUiLoaded
+			return qt.WebUiGetWindow(), true
+		})
+	},
+}
+
 var WebUiFunctions = map[string] interface{} {
 	"webui-init": func(title String, root rx.Effect, h MachineHandle) rx.Effect {
-		return rx.CreateEffect(func(_ rx.Sender) {
+		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
 			WebUiInitAndLoad(h.GetScheduler(), root, title)
+			return nil, true
 		})
 	},
 	"webui-dom-node": func (

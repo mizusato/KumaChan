@@ -16,7 +16,7 @@ type QtSignal struct {
 	PropMapper  func(qt.Object) interface{}
 }
 func (signal QtSignal) Receive() rx.Effect {
-	return rx.CreateEffect(func(sender rx.Sender) {
+	return rx.NewGoroutine(func(sender rx.Sender) {
 		var disconnect = qt.Connect(signal.Object, signal.Signature, func() {
 			sender.Next(signal.PropMapper(signal.Object))
 		})
@@ -32,7 +32,7 @@ type QtEvent struct {
 	Prevent  bool
 }
 func (event QtEvent) Receive() rx.Effect {
-	return rx.CreateEffect(func(sender rx.Sender) {
+	return rx.NewGoroutine(func(sender rx.Sender) {
 		var cancel = qt.Listen(event.Object, event.Kind, event.Prevent, func(ev qt.Event) {
 			var obj = (func() Value {
 				switch event.Kind {
@@ -57,7 +57,7 @@ func (event QtEvent) Receive() rx.Effect {
 }
 
 func CreateQtTaskEffect(action func() interface{}) rx.Effect {
-	return rx.CreateValueCallbackEffect(func(callback func(rx.Object)) {
+	return rx.NewCallback(func(callback func(rx.Object)) {
 		qt.CommitTask(func() {
 			callback(action())
 		})

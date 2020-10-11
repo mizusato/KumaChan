@@ -4,7 +4,7 @@ import "time"
 
 
 func Timer(timeout uint) Effect {
-	return CreateEffect(func(sender Sender) {
+	return NewGoroutine(func(sender Sender) {
 		var timer = time.NewTimer(time.Duration(timeout) * time.Millisecond)
 		go (func() {
 			<- timer.C
@@ -18,7 +18,7 @@ func Timer(timeout uint) Effect {
 }
 
 func Ticker(interval uint) Effect {
-	return CreateEffect(func(sender Sender) {
+	return NewGoroutine(func(sender Sender) {
 		var ticker = time.NewTicker(time.Duration(interval) * time.Millisecond)
 		go (func() {
 			for range ticker.C {

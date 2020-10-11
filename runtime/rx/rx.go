@@ -175,13 +175,29 @@ func (s Sender) Complete() {
 	})
 }
 
-func CreateEffect(action func(Sender)) Effect {
+
+func NewGoroutine(action func(Sender)) Effect {
 	return Effect { func (sched Scheduler, ob *observer) {
 		go action(Sender { sched: sched, ob: ob })
 	} }
 }
 
-func CreateQueuedEffect(w *Worker, action func()(Object,bool)) Effect {
+func NewGoroutineSingle(action func()(Object,bool)) Effect {
+	return Effect { func(sched Scheduler, ob *observer) {
+		var sender = Sender { sched: sched, ob: ob }
+		go (func() {
+			var result, ok = action()
+			if ok {
+				sender.Next(result)
+				sender.Complete()
+			} else {
+				sender.Error(result)
+			}
+		})()
+	}}
+}
+
+func NewQueued(w *Worker, action func()(Object,bool)) Effect {
 	return Effect { func(sched Scheduler, ob *observer) {
 		var sender = Sender { sched: sched, ob: ob }
 		w.Do(func() {
@@ -196,7 +212,26 @@ func CreateQueuedEffect(w *Worker, action func()(Object,bool)) Effect {
 	} }
 }
 
-func CreateBlockingEffect(action func()(Object,bool)) Effect {
+func NewCallback(action func(func(Object))) Effect {
+	return Effect { func(sched Scheduler, ob *observer) {
+		var sender = Sender { sched: sched, ob: ob }
+		action(func(value Object) {
+			sender.Next(value)
+			sender.Complete()
+		})
+	}}
+}
+
+func NewListener(action func(func(Object))(func())) Effect {
+	return Effect { func(sched Scheduler, ob *observer) {
+		var h = action(ob.next)
+		if h != nil {
+			ob.context.push_cancel_hook(h)
+		}
+	} }
+}
+
+func NewSync(action func()(Object,bool)) Effect {
 	return Effect { func (sched Scheduler, ob *observer) {
 		var result, ok = action()
 		if ok {
@@ -208,7 +243,7 @@ func CreateBlockingEffect(action func()(Object,bool)) Effect {
 	} }
 }
 
-func CreateBlockingSequenceEffect(action func(func(Object))(bool,Object)) Effect {
+func NewSyncSequence(action func(func(Object))(bool,Object)) Effect {
 	return Effect { func (sched Scheduler, ob *observer) {
 		var ok, err = action(ob.next)
 		if ok {
@@ -218,23 +253,3 @@ func CreateBlockingSequenceEffect(action func(func(Object))(bool,Object)) Effect
 		}
 	} }
 }
-
-func CreateBlockingListenerEffect(action func(func(Object))(func())) Effect {
-	return Effect { func(sched Scheduler, ob *observer) {
-		var h = action(ob.next)
-		if h != nil {
-			ob.context.push_cancel_hook(h)
-		}
-	} }
-}
-
-func CreateValueCallbackEffect(action func(func(Object))) Effect {
-	return Effect { func(sched Scheduler, ob *observer) {
-		var sender = Sender { sched: sched, ob: ob }
-		action(func(value Object) {
-			sender.Next(value)
-			sender.Complete()
-		})
-	}}
-}
-

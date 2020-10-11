@@ -1,5 +1,7 @@
 do webui-init 'Echo' DOM;
 
+do WebUi::ExitWhenWindowClosed;
+
 private const DOM: NoExcept*[WebUi::Node]
     ~ then* &(@text) := new-latch '',
     let input := dom-event-sink @text (&(_)(&(ev)(ev.get-string 'value'))),

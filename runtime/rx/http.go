@@ -14,7 +14,7 @@ type HttpResponse struct {
 }
 
 func HttpGet(url *url.URL) Effect {
-	return CreateEffect(func(sender Sender) {
+	return NewGoroutine(func(sender Sender) {
 		if sender.Context().AlreadyCancelled() {
 			return
 		}

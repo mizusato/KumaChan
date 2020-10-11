@@ -1,5 +1,7 @@
 do webui-init 'Mouse' DOM;
 
+do WebUi::ExitWhenWindowClosed;
+
 private const DOM: NoExcept*[WebUi::Node]
     ~ then* &(@value) := new-latch 0.0,
     let set-value := dom-event-sink @value (&(_) (&(ev)(ev.get-float 'offsetX'))),

@@ -63,7 +63,7 @@ func OpenAppend(path string, perm os.FileMode) Effect {
 }
 
 func Open(path string, flag int, perm os.FileMode) Effect {
-	return CreateEffect(func(sender Sender) {
+	return NewGoroutine(func(sender Sender) {
 		if sender.Context().AlreadyCancelled() {
 			return
 		}
@@ -86,7 +86,7 @@ func Open(path string, flag int, perm os.FileMode) Effect {
 }
 
 func (f File) Close() Effect {
-	return CreateQueuedEffect(f.worker, func() (Object, bool) {
+	return NewQueued(f.worker, func() (Object, bool) {
 		_ = f.raw.Close()
 		f.worker.Dispose()
 		return nil, true
@@ -94,7 +94,7 @@ func (f File) Close() Effect {
 }
 
 func (f File) State() Effect {
-	return CreateQueuedEffect(f.worker, func() (Object, bool) {
+	return NewQueued(f.worker, func() (Object, bool) {
 		var info, err = f.raw.Stat()
 		if err != nil {
 			return err, false
@@ -105,7 +105,7 @@ func (f File) State() Effect {
 }
 
 func (f File) Read(amount uint) Effect {
-	return CreateQueuedEffect(f.worker, func() (Object, bool) {
+	return NewQueued(f.worker, func() (Object, bool) {
 		var buf = make([] byte, amount)
 		var n, err = f.raw.Read(buf)
 		if err != nil {
@@ -118,7 +118,7 @@ func (f File) Read(amount uint) Effect {
 }
 
 func (f File) Write(data ([] byte)) Effect {
-	return CreateQueuedEffect(f.worker, func() (Object, bool) {
+	return NewQueued(f.worker, func() (Object, bool) {
 		var _, err = f.raw.Write(data)
 		if err != nil {
 			return err, false
@@ -129,7 +129,7 @@ func (f File) Write(data ([] byte)) Effect {
 }
 
 func (f File) SeekStart(offset uint64) Effect {
-	return CreateQueuedEffect(f.worker, func() (Object, bool) {
+	return NewQueued(f.worker, func() (Object, bool) {
 		if offset >= math.MaxInt64 { panic("offset overflow") }
 		var new_offset, err = f.raw.Seek(int64(offset), io.SeekStart)
 		if err != nil {
@@ -140,7 +140,7 @@ func (f File) SeekStart(offset uint64) Effect {
 }
 
 func (f File) SeekForward(delta uint64) Effect {
-	return CreateQueuedEffect(f.worker, func() (Object, bool) {
+	return NewQueued(f.worker, func() (Object, bool) {
 		if delta >= math.MaxInt64 { panic("offset delta overflow") }
 		var new_offset, err = f.raw.Seek(int64(delta), io.SeekCurrent)
 		if err != nil {
@@ -151,7 +151,7 @@ func (f File) SeekForward(delta uint64) Effect {
 }
 
 func (f File) SeekBackward(delta uint64) Effect {
-	return CreateQueuedEffect(f.worker, func() (Object, bool) {
+	return NewQueued(f.worker, func() (Object, bool) {
 		if delta >= math.MaxInt64 { panic("offset delta overflow") }
 		var new_offset, err = f.raw.Seek((-int64(delta)), io.SeekCurrent)
 		if err != nil {
@@ -162,7 +162,7 @@ func (f File) SeekBackward(delta uint64) Effect {
 }
 
 func (f File) SeekEnd(offset uint64) Effect {
-	return CreateQueuedEffect(f.worker, func() (Object, bool) {
+	return NewQueued(f.worker, func() (Object, bool) {
 		if offset >= math.MaxInt64 { panic("offset overflow") }
 		var new_offset, err = f.raw.Seek((-int64(offset)), io.SeekEnd)
 		if err != nil {
@@ -173,7 +173,7 @@ func (f File) SeekEnd(offset uint64) Effect {
 }
 
 func (f File) ReadChar() Effect {
-	return CreateQueuedEffect(f.worker, func() (Object, bool) {
+	return NewQueued(f.worker, func() (Object, bool) {
 		var char rune
 		var _, err = fmt.Fscanf(f.raw, "%c", &char)
 		if err != nil {
@@ -184,7 +184,7 @@ func (f File) ReadChar() Effect {
 }
 
 func (f File) WriteChar(char rune) Effect {
-	return CreateQueuedEffect(f.worker, func() (Object, bool) {
+	return NewQueued(f.worker, func() (Object, bool) {
 		var _, err = fmt.Fprintf(f.raw, "%c", char)
 		if err != nil {
 			return err, false
@@ -194,7 +194,7 @@ func (f File) WriteChar(char rune) Effect {
 }
 
 func (f File) ReadRunes() Effect {
-	return CreateQueuedEffect(f.worker, func() (Object, bool) {
+	return NewQueued(f.worker, func() (Object, bool) {
 		var buf = make([] rune, 0)
 		for {
 			var char rune
@@ -216,7 +216,7 @@ func (f File) ReadString() Effect {
 }
 
 func (f File) ReadLineRunes() Effect {
-	return CreateQueuedEffect(f.worker, func() (Object, bool) {
+	return NewQueued(f.worker, func() (Object, bool) {
 		var str, err = util.WellBehavedScanLine(f.raw)
 		if err != nil {
 			return err, false
@@ -232,7 +232,7 @@ func (f File) ReadLine() Effect {
 }
 
 func (f File) WriteString(str string) Effect {
-	return CreateQueuedEffect(f.worker, func() (Object, bool) {
+	return NewQueued(f.worker, func() (Object, bool) {
 		var _, err = fmt.Fprint(f.raw, str)
 		if err != nil {
 			return err, false
@@ -242,7 +242,7 @@ func (f File) WriteString(str string) Effect {
 }
 
 func (f File) WriteLine(str string) Effect {
-	return CreateQueuedEffect(f.worker, func() (Object, bool) {
+	return NewQueued(f.worker, func() (Object, bool) {
 		var _, err = fmt.Fprintln(f.raw, str)
 		if err != nil {
 			return err, false
@@ -253,7 +253,7 @@ func (f File) WriteLine(str string) Effect {
 
 func (f File) ReadLinesRuneSlices() Effect {
 	// emits rune slices
-	return CreateEffect(func(s Sender) {
+	return NewGoroutine(func(s Sender) {
 		f.worker.Do(func() {
 			var buffered = bufio.NewReader(f.raw)
 			for {
@@ -289,7 +289,7 @@ type FileItem struct {
 }
 
 func WalkDir(root string) Effect {
-	return CreateEffect(func(sender Sender) {
+	return NewGoroutine(func(sender Sender) {
 		var err = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 			if sender.Context().AlreadyCancelled() {
 				return errors.New("operation cancelled")
@@ -309,7 +309,7 @@ func WalkDir(root string) Effect {
 }
 
 func ListDir(dir_path string) Effect {
-	return CreateEffect(func(sender Sender) {
+	return NewGoroutine(func(sender Sender) {
 		var err = filepath.Walk(dir_path, func(path string, info os.FileInfo, err error) error {
 			if sender.Context().AlreadyCancelled() {
 				return errors.New("operation cancelled")

@@ -174,7 +174,7 @@ var OS_Functions = map[string] Value {
 		})
 	},
 	"exit": func(code uint8) rx.Effect {
-		return rx.CreateBlockingEffect(func() (rx.Object, bool) {
+		return rx.NewSync(func() (rx.Object, bool) {
 			os.Exit(int(code))
 			panic("process should have exited")
 		})
