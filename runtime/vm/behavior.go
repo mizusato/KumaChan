@@ -15,11 +15,7 @@ func assert(ok bool, msg string) {
 
 func execute(p Program, m *Machine) {
 	var L = len(p.Functions) + len(p.Constants) + len(p.Constants)
-	assert(L <= GlobalSlotMaxSize, "maximum registry size exceeded")
-	var nil_ctx_handle = Handle {
-		machine: m,
-		context: nil,
-	}
+	assert(L <= GlobalSlotMaxSize, "maximum global slot size exceeded")
 	m.globalSlot = make([]Value, 0, L)
 	for _, v := range p.DataValues {
 		m.globalSlot = append(m.globalSlot, v.ToValue())
@@ -32,6 +28,7 @@ func execute(p Program, m *Machine) {
 		var f = p.Closures[i]
 		m.globalSlot = append(m.globalSlot, f.ToValue(nil))
 	}
+	var nil_ctx_handle = MachineContextHandle { machine: m, context: nil }
 	for i, _ := range p.Constants {
 		var f = p.Constants[i]
 		switch f.Kind {
@@ -122,8 +119,8 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 				}
 			case JMP:
 				var new_inst_ptr = inst.GetDestAddr()
-				assert(new_inst_ptr < uint(len(code)),
-					"JMP: invalid address")
+				var ok = new_inst_ptr < uint(len(code))
+				assert(ok, "JMP: invalid address")
 				*inst_ptr_ref = new_inst_ptr
 			case PROD:
 				var size = inst.GetShortIndexOrSize()
@@ -225,7 +222,7 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 					continue outer
 				case NativeFunctionValue:
 					var arg = ec.popValue()
-					var ret = f(arg, Handle { context: ec, machine: m })
+					var ret = f(arg, MachineContextHandle{ context: ec, machine: m })
 					ec.pushValue(ret)
 				default:
 					panic("CALL: cannot execute on non-callable value")

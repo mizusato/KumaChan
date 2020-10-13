@@ -28,28 +28,28 @@ func PathFrom(str string) Path {
 }
 
 var OS_Constants = map[string] NativeConstant {
-	"OS::Kind":    func(h MachineHandle) Value {
+	"OS::Kind":    func(h InteropContext) Value {
 		return StringFromGoString(runtime.GOOS)
 	},
-	"OS::Arch":    func(h MachineHandle) Value {
+	"OS::Arch":    func(h InteropContext) Value {
 		return StringFromGoString(runtime.GOARCH)
 	},
-	"OS::Is64Bit": func(h MachineHandle) Value {
+	"OS::Is64Bit": func(h InteropContext) Value {
 		return ToBool(uint64(^uintptr(0)) == ^uint64(0))
 	},
-	"OS::Env":     func(h MachineHandle) Value {
+	"OS::Env":     func(h InteropContext) Value {
 		return GetEnv()
 	},
-	"OS::Args":    func(h MachineHandle) Value {
+	"OS::Args":    func(h InteropContext) Value {
 		return GetArgs(h)
 	},
-	"OS::Stdin":   func(h MachineHandle) Value {
+	"OS::Stdin":   func(h InteropContext) Value {
 		return rx.FileFrom(os.Stdin)
 	},
-	"OS::Stdout":  func(h MachineHandle) Value {
+	"OS::Stdout":  func(h InteropContext) Value {
 		return rx.FileFrom(os.Stdout)
 	},
-	"OS::Stderr":  func(h MachineHandle) Value {
+	"OS::Stderr":  func(h InteropContext) Value {
 		return rx.FileFrom(os.Stderr)
 	},
 }
@@ -77,7 +77,7 @@ func GetEnv() Map {
 	return m
 }
 
-func GetArgs(h MachineHandle) ([] String) {
+func GetArgs(h InteropContext) ([] String) {
 	var raw_args = h.GetArgs()
 	var args = make([] String, len(raw_args))
 	for i, raw := range raw_args {

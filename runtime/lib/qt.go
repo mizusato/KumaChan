@@ -71,7 +71,7 @@ var QtFunctions = map[string] interface{} {
 			return nil
 		})
 	},
-	"qt-signal": func(object qt.Object, signature String, mapper Value, h MachineHandle) rx.Effect {
+	"qt-signal": func(object qt.Object, signature String, mapper Value, h InteropContext) rx.Effect {
 		var source = QtSignal {
 			Object:     object,
 			Signature:  GoStringFromString(signature),

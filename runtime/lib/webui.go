@@ -113,7 +113,7 @@ var __WebUiUpdateDom = func(new_root *vdom.Node) rx.Effect {
 
 
 var WebUiConstants = map[string] NativeConstant {
-	"WebUi::GetWindow": func(_ MachineHandle) Value {
+	"WebUi::GetWindow": func(_ InteropContext) Value {
 		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
 			<- __WebUiLoaded
 			return qt.WebUiGetWindow(), true
@@ -122,7 +122,7 @@ var WebUiConstants = map[string] NativeConstant {
 }
 
 var WebUiFunctions = map[string] interface{} {
-	"webui-init": func(title String, root rx.Effect, h MachineHandle) rx.Effect {
+	"webui-init": func(title String, root rx.Effect, h InteropContext) rx.Effect {
 		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
 			WebUiInitAndLoad(h.GetScheduler(), root, title)
 			return nil, true
@@ -159,7 +159,7 @@ var WebUiFunctions = map[string] interface{} {
 			Handler: (vdom.EventHandler)(sink),
 		}
 	},
-	"webui-dom-event-sink": func(sink rx.Sink, f Value, h MachineHandle) rx.Sink {
+	"webui-dom-event-sink": func(sink rx.Sink, f Value, h InteropContext) rx.Sink {
 		return &rx.AdaptedSink {
 			Sink:    sink,
 			Adapter: func(obj rx.Object) rx.Object {
@@ -170,7 +170,7 @@ var WebUiFunctions = map[string] interface{} {
 			},
 		}
 	},
-	"webui-dom-event-sink-latch": func(latch *rx.Latch, f Value, h MachineHandle) rx.Sink {
+	"webui-dom-event-sink-latch": func(latch *rx.Latch, f Value, h InteropContext) rx.Sink {
 		return &rx.AdaptedLatch {
 			Latch:      latch,
 			GetAdapter: func(state rx.Object) func(rx.Object) rx.Object {

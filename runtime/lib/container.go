@@ -35,7 +35,7 @@ var ContainerFunctions = map[string] Value {
 			Tail: tail,
 		}
 	},
-	"seq-map": func(input Seq, f Value, h MachineHandle) Seq {
+	"seq-map": func(input Seq, f Value, h InteropContext) Seq {
 		return MappedSeq {
 			Input:  input,
 			Mapper: func(item Value) Value {
@@ -43,7 +43,7 @@ var ContainerFunctions = map[string] Value {
 			},
 		}
 	},
-	"seq-filter": func(input Seq, f Value, h MachineHandle) Seq {
+	"seq-filter": func(input Seq, f Value, h InteropContext) Seq {
 		return FilteredSeq {
 			Input:  input,
 			Filter: func(item Value) bool {
@@ -51,7 +51,7 @@ var ContainerFunctions = map[string] Value {
 			},
 		}
 	},
-	"seq-scan": func(input Seq, init Value, f Value, h MachineHandle) Seq {
+	"seq-scan": func(input Seq, init Value, f Value, h InteropContext) Seq {
 		return ScannedSeq {
 			Previous: init,
 			Rest:     input,
@@ -60,17 +60,17 @@ var ContainerFunctions = map[string] Value {
 			},
 		}
 	},
-	"seq-reduce": func(input Seq, init Value, f Value, h MachineHandle) Value {
+	"seq-reduce": func(input Seq, init Value, f Value, h InteropContext) Value {
 		return SeqReduce(input, init, func(prev Value, cur Value) Value {
 			return h.Call(f, ToTuple2(prev, cur))
 		})
 	},
-	"seq-some": func(input Seq, f Value, h MachineHandle) SumValue {
+	"seq-some": func(input Seq, f Value, h InteropContext) SumValue {
 		return ToBool(SeqSome(input, func(item Value) bool {
 			return BoolFrom(h.Call(f, item).(SumValue))
 		}))
 	},
-	"seq-every": func(input Seq, f Value, h MachineHandle) SumValue {
+	"seq-every": func(input Seq, f Value, h InteropContext) SumValue {
 		return ToBool(SeqEvery(input, func(item Value) bool {
 			return BoolFrom(h.Call(f, item).(SumValue))
 		}))
@@ -115,13 +115,13 @@ var ContainerFunctions = map[string] Value {
 		var arr = ArrayFrom(av)
 		return arr.SliceView(l.(uint), r.(uint))
 	},
-	"array-map": func(av Value, f Value, h MachineHandle) Value {
+	"array-map": func(av Value, f Value, h InteropContext) Value {
 		var arr = ArrayFrom(av)
 		return arr.MapView(func(item Value) Value {
 			return h.Call(f, item)
 		}).CopyAsSlice()
 	},
-	"array-map-view": func(av Value, f Value, h MachineHandle) Value {
+	"array-map-view": func(av Value, f Value, h InteropContext) Value {
 		var arr = ArrayFrom(av)
 		return arr.MapView(func(item Value) Value {
 			return h.Call(f, item)

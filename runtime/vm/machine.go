@@ -58,12 +58,12 @@ type CallStackFrame struct {
 	instPtr   uint
 }
 
-type Handle struct {
+type MachineContextHandle struct {
 	machine  *Machine
 	context  *ExecutionContext
 }
 
-func (h Handle) Call(fv Value, arg Value) Value {
+func (h MachineContextHandle) Call(fv Value, arg Value) Value {
 	switch f := fv.(type) {
 	case FunctionValue:
 		return call(f, arg, h.machine)
@@ -74,14 +74,14 @@ func (h Handle) Call(fv Value, arg Value) Value {
 	}
 }
 
-func (h Handle) GetScheduler() rx.Scheduler {
+func (h MachineContextHandle) GetScheduler() rx.Scheduler {
 	return h.machine.scheduler
 }
 
-func (h Handle) GetArgs() ([] string) {
+func (h MachineContextHandle) GetArgs() ([] string) {
 	return h.machine.arguments
 }
 
-func (h Handle) GetErrorPoint() ErrorPoint {
+func (h MachineContextHandle) GetErrorPoint() ErrorPoint {
 	return GetFrameErrorPoint(h.context.workingFrame)
 }

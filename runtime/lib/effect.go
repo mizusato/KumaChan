@@ -26,7 +26,7 @@ var EffectFunctions = map[string] Value {
 	"receive": func(source rx.Source) rx.Effect {
 		return source.Receive()
 	},
-	"source-map": func(source rx.Source, f Value, h MachineHandle) rx.Source {
+	"source-map": func(source rx.Source, f Value, h InteropContext) rx.Source {
 		return &rx.MappedSource {
 			Source: source,
 			Mapper: func(obj rx.Object) rx.Object {
@@ -34,7 +34,7 @@ var EffectFunctions = map[string] Value {
 			},
 		}
 	},
-	"sink-adapt": func(sink rx.Sink, f Value, h MachineHandle) rx.Sink {
+	"sink-adapt": func(sink rx.Sink, f Value, h InteropContext) rx.Sink {
 		return &rx.AdaptedSink {
 			Sink:    sink,
 			Adapter: func(obj rx.Object) rx.Object {
@@ -42,7 +42,7 @@ var EffectFunctions = map[string] Value {
 			},
 		}
 	},
-	"latch-adapt": func(latch *rx.Latch, f Value, h MachineHandle) rx.Sink {
+	"latch-adapt": func(latch *rx.Latch, f Value, h InteropContext) rx.Sink {
 		return &rx.AdaptedLatch {
 			Latch:      latch,
 			GetAdapter: func(old_state rx.Object) (func(rx.Object) rx.Object) {
@@ -97,7 +97,7 @@ var EffectFunctions = map[string] Value {
 	"mutable-set": func(cell rx.Cell, v Value) rx.Effect {
 		return cell.Set(v)
 	},
-	"mutable-swap": func(cell rx.Cell, f Value, h MachineHandle) rx.Effect {
+	"mutable-swap": func(cell rx.Cell, f Value, h InteropContext) rx.Effect {
 		return cell.Swap(func(v rx.Object) rx.Object {
 			return h.Call(f, v)
 		})
@@ -107,7 +107,7 @@ var EffectFunctions = map[string] Value {
 			return rand.Float64(), true
 		})
 	},
-	"crash": func(msg String, h MachineHandle) rx.Effect {
+	"crash": func(msg String, h InteropContext) rx.Effect {
 		const bold = "\033[1m"
 		const red = "\033[31m"
 		const reset = "\033[0m"
@@ -190,7 +190,7 @@ var EffectFunctions = map[string] Value {
 		})
 		return repeat
 	},
-	"then": func(e rx.Effect, f Value, h MachineHandle) rx.Effect {
+	"then": func(e rx.Effect, f Value, h InteropContext) rx.Effect {
 		return e.Then(func(val rx.Object) rx.Effect {
 			return h.Call(f, val).(rx.Effect)
 		})
@@ -200,19 +200,19 @@ var EffectFunctions = map[string] Value {
 			return b
 		})
 	},
-	"catch": func(e rx.Effect, f Value, h MachineHandle) rx.Effect {
+	"catch": func(e rx.Effect, f Value, h InteropContext) rx.Effect {
 		return e.Catch(func(err rx.Object) rx.Effect {
 			return h.Call(f, err).(rx.Effect)
 		})
 	},
-	"catch-retry": func(e rx.Effect, f Value, h MachineHandle) rx.Effect {
+	"catch-retry": func(e rx.Effect, f Value, h InteropContext) rx.Effect {
 		return e.CatchRetry(func(err rx.Object) rx.Effect {
 			return h.Call(f, err).(rx.Effect).Map(func(retry rx.Object) rx.Object {
 				return BoolFrom(retry.(SumValue))
 			})
 		})
 	},
-	"catch-throw": func(e rx.Effect, f Value, h MachineHandle) rx.Effect {
+	"catch-throw": func(e rx.Effect, f Value, h InteropContext) rx.Effect {
 		return e.CatchThrow(func(err rx.Object) rx.Object {
 			return h.Call(f, err)
 		})
@@ -220,22 +220,22 @@ var EffectFunctions = map[string] Value {
 	"throw": func(err Value) rx.Effect {
 		return rx.Throw(err)
 	},
-	"effect-map": func(e rx.Effect, f Value, h MachineHandle) rx.Effect {
+	"effect-map": func(e rx.Effect, f Value, h InteropContext) rx.Effect {
 		return e.Map(func(val rx.Object) rx.Object {
 			return h.Call(f, val)
 		})
 	},
-	"effect-filter": func(e rx.Effect, f Value, h MachineHandle) rx.Effect {
+	"effect-filter": func(e rx.Effect, f Value, h InteropContext) rx.Effect {
 		return e.Filter(func(val rx.Object) bool {
 			return BoolFrom((h.Call(f, val)).(SumValue))
 		})
 	},
-	"effect-reduce": func(e rx.Effect, init Value, f Value, h MachineHandle) rx.Effect {
+	"effect-reduce": func(e rx.Effect, init Value, f Value, h InteropContext) rx.Effect {
 		return e.Reduce(func(acc rx.Object, val rx.Object) rx.Object {
 			return h.Call(f, ToTuple2(acc, val))
 		}, init)
 	},
-	"effect-scan": func(e rx.Effect, init Value, f Value, h MachineHandle) rx.Effect {
+	"effect-scan": func(e rx.Effect, init Value, f Value, h InteropContext) rx.Effect {
 		return e.Scan(func(acc rx.Object, val rx.Object) rx.Object {
 			return h.Call(f, ToTuple2(acc, val))
 		}, init)
@@ -243,22 +243,22 @@ var EffectFunctions = map[string] Value {
 	"debounce-time": func(e rx.Effect, dueTime uint) rx.Effect {
 		return e.DebounceTime(dueTime)
 	},
-	"switch-map": func(e rx.Effect, f Value, h MachineHandle) rx.Effect {
+	"switch-map": func(e rx.Effect, f Value, h InteropContext) rx.Effect {
 		return e.SwitchMap(func(val rx.Object) rx.Effect {
 			return h.Call(f, val).(rx.Effect)
 		})
 	},
-	"merge-map": func(e rx.Effect, f Value, h MachineHandle) rx.Effect {
+	"merge-map": func(e rx.Effect, f Value, h InteropContext) rx.Effect {
 		return e.MergeMap(func(val rx.Object) rx.Effect {
 			return h.Call(f, val).(rx.Effect)
 		})
 	},
-	"concat-map": func(e rx.Effect, f Value, h MachineHandle) rx.Effect {
+	"concat-map": func(e rx.Effect, f Value, h InteropContext) rx.Effect {
 		return e.ConcatMap(func(val rx.Object) rx.Effect {
 			return h.Call(f, val).(rx.Effect)
 		})
 	},
-	"mix-map": func(e rx.Effect, n uint, f Value, h MachineHandle) rx.Effect {
+	"mix-map": func(e rx.Effect, n uint, f Value, h InteropContext) rx.Effect {
 		return e.MixMap(func(val rx.Object) rx.Effect {
 			return h.Call(f, val).(rx.Effect)
 		}, n)

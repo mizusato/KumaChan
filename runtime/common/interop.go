@@ -7,17 +7,17 @@ import (
 )
 
 
-type MachineHandle interface {
+type InteropContext interface {
 	Call(fv Value, arg Value) Value
 	GetScheduler() rx.Scheduler
 	GetArgs() ([] string)
 	GetErrorPoint() ErrorPoint
 }
-var __t = MachineHandle(nil)
-var __MachineHandleType = reflect.TypeOf(&__t).Elem()
+var __t = InteropContext(nil)
+var __InteropContextType = reflect.TypeOf(&__t).Elem()
 
-type NativeFunction  func(arg Value, handle MachineHandle) Value
-type NativeConstant  func(handle MachineHandle) Value
+type NativeFunction  func(arg Value, handle InteropContext) Value
+type NativeConstant  func(handle InteropContext) Value
 
 
 func AdaptNativeFunction(f interface{}) NativeFunction {
@@ -43,14 +43,14 @@ func AdaptNativeFunction(f interface{}) NativeFunction {
 	var t = f_rv.Type()
 	var arity = t.NumIn()
 	if arity == 0 {
-		return func(_ Value, handle MachineHandle) Value {
+		return func(_ Value, handle InteropContext) Value {
 			return AdaptReturnValue(f_rv.Call([]reflect.Value {}))
 		}
 	} else {
-		if t.In(arity-1).AssignableTo(__MachineHandleType) {
+		if t.In(arity-1).AssignableTo(__InteropContextType) {
 			var net_arity = arity - 1
 			if net_arity == 1 {
-				return func(arg Value, handle MachineHandle) Value {
+				return func(arg Value, handle InteropContext) Value {
 					var rv_args = []reflect.Value {
 						get_arg_val(arg),
 						reflect.ValueOf(handle),
@@ -58,7 +58,7 @@ func AdaptNativeFunction(f interface{}) NativeFunction {
 					return AdaptReturnValue(f_rv.Call(rv_args))
 				}
 			} else {
-				return func(arg Value, handle MachineHandle) Value {
+				return func(arg Value, handle InteropContext) Value {
 					var p = arg.(ProductValue)
 					if len(p.Elements) != net_arity {
 						panic("invalid input quantity")
@@ -73,13 +73,13 @@ func AdaptNativeFunction(f interface{}) NativeFunction {
 			}
 		} else {
 			if arity == 1 {
-				return func(arg Value, handle MachineHandle) Value {
+				return func(arg Value, handle InteropContext) Value {
 					return AdaptReturnValue(f_rv.Call([]reflect.Value {
 						get_arg_val(arg),
 					}))
 				}
 			} else {
-				return func(arg Value, handle MachineHandle) Value {
+				return func(arg Value, handle InteropContext) Value {
 					var p = arg.(ProductValue)
 					if len(p.Elements) != arity {
 						panic("invalid input quantity")
@@ -95,7 +95,7 @@ func AdaptNativeFunction(f interface{}) NativeFunction {
 	}
 }
 
-func AdaptReturnValue(values []reflect.Value) Value {
+func AdaptReturnValue(values ([] reflect.Value)) Value {
 	if len(values) == 0 {
 		return nil
 	} else if len(values) == 1 {

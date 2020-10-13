@@ -69,6 +69,6 @@ func GetNativeFunction(i uint) Value {
 	return NativeFunctionValue(NativeFunctions[i])
 }
 
-func GetNativeConstant(i uint, h MachineHandle) Value {
+func GetNativeConstant(i uint, h InteropContext) Value {
 	return NativeConstants[i](h)
 }
