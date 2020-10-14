@@ -14,8 +14,8 @@ import (
 
 const QtModName = "Qt"
 var __QtSupportedWidgetClassList = [] string {
-	"Widget", "MainWindow", "Label", "LineEdit", "PushButton",
-	"ListWidget",
+	"Widget", "MainWindow", "Label", "LineEdit", "PlainTextEdit",
+	"PushButton", "ListWidget",
 }
 var __QtSupportedWidgetClassMap = (func() map[string] bool {
 	var m = make(map[string] bool)
@@ -29,6 +29,7 @@ var __QtWidgetDefaultNames = map[string] ([] string) {
 	"MainWindow": { "MainWindow" },
 	"Label": { "label" },
 	"LineEdit": { "input" },
+	"PlainTextEditor": { "plainTextEdit" },
 	"PushButton": { "button" },
 	"ListWidget": { "listWidget" },
 }

@@ -37,6 +37,11 @@ var OS_Constants = map[string] NativeConstant {
 	"OS::Is64Bit": func(h InteropContext) Value {
 		return ToBool(uint64(^uintptr(0)) == ^uint64(0))
 	},
+	"OS::Cwd":     func(h InteropContext) Value {
+		var wd, err = os.Getwd()
+		if err != nil { panic("unable to get current working directory") }
+		return PathFrom(wd)
+	},
 	"OS::Env":     func(h InteropContext) Value {
 		return GetEnv()
 	},

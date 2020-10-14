@@ -23,6 +23,13 @@ type Object interface {
 func (obj object) Object() {}
 func (obj object) ptr() unsafe.Pointer { return obj.addr }
 type object struct { addr unsafe.Pointer }
+func ObjectNullablePointer(obj Object) unsafe.Pointer {
+    if obj == nil {
+        return nil
+    } else {
+        return obj.ptr()
+    }
+}
 
 type Widget interface {
     Object
@@ -191,13 +198,11 @@ func Listen(obj Object, kind EventKind, prevent bool, callback func(Event)) func
     }
 }
 
-func GetPropQtString(obj Object, prop string) (String, func()) {
+func GetPropQtString(obj Object, prop string) String {
     var new_str, del_all_str = str_alloc()
     defer del_all_str()
     var value = C.QtObjectGetPropString(obj.ptr(), new_str(prop))
-    return String(value), func() {
-        C.QtDeleteString(value)
-    }
+    return String(value)
 }
 
 func SetPropQtString(obj Object, prop string, val String) {
@@ -207,9 +212,9 @@ func SetPropQtString(obj Object, prop string, val String) {
 }
 
 func GetPropRuneString(obj Object, prop string) ([] rune) {
-    var value, del = GetPropQtString(obj, prop)
-    defer del()
-    return StringToRunes(value)
+    var value = GetPropQtString(obj, prop)
+    var value_runes = StringToRunes(value)
+    return value_runes
 }
 
 func SetPropRuneString(obj Object, prop string, val ([] rune)) {
@@ -253,12 +258,14 @@ func StringToRunes(str String) ([] rune) {
             (*C.uint32_t)(unsafe.Pointer(&buf[0]))))
         buf = buf[:size32]
     }
+    C.QtDeleteString(q_str)
     return buf
 }
 
 func VariantMapGetRunes(m VariantMap, key String) ([] rune) {
     var val = C.QtVariantMapGetString(C.QtVariantMap(m), C.QtString(key))
-    return StringToRunes(String(val))
+    var val_runes = StringToRunes(String(val))
+    return val_runes
 }
 
 func VariantMapGetNumber(m VariantMap, key String) float64 {
@@ -344,8 +351,64 @@ func ListWidgetHasCurrentItem(w Widget) bool {
 
 func ListWidgetGetCurrentItemKey(w Widget) ([] rune) {
     var raw_key = C.QtListWidgetGetCurrentItemKey(w.ptr())
-    defer C.QtDeleteString(raw_key)
-    return StringToRunes(String(raw_key))
+    var key = StringToRunes(String(raw_key))
+    return key
+}
+
+type FileDialogOptions struct {
+    Title   [] rune
+    Cwd     [] rune
+    Filter  [] rune
+}
+func fileDialogAdaptOptions(opts FileDialogOptions) (String, String, String, func()) {
+    var title, del_title = NewStringFromRunes(opts.Title)
+    var cwd, del_cwd = NewStringFromRunes(opts.Cwd)
+    var filter, del_filter = NewStringFromRunes(opts.Filter)
+    return title, cwd, filter, func() {
+        del_title()
+        del_cwd()
+        del_filter()
+    }
+}
+func FileDialogOpen(parent Widget, opts FileDialogOptions) ([] rune) {
+    var parent_ptr = ObjectNullablePointer(parent)
+    var title, cwd, filter, del = fileDialogAdaptOptions(opts)
+    defer del()
+    var raw_path = C.QtFileDialogOpen(parent_ptr,
+        C.QtString(title), C.QtString(cwd), C.QtString(filter))
+    return StringToRunes(String(raw_path))
+}
+func FileDialogOpenMultiple(parent Widget, opts FileDialogOptions) ([][] rune) {
+    var parent_ptr = ObjectNullablePointer(parent)
+    var title, cwd, filter, del = fileDialogAdaptOptions(opts)
+    defer del()
+    var raw_path_list = C.QtFileDialogOpenMultiple(parent_ptr,
+        C.QtString(title), C.QtString(cwd), C.QtString(filter))
+    var path_list = make([][] rune, 0)
+    var L = uint(C.QtStringListGetSize(raw_path_list))
+    for i := uint(0); i < L; i += 1 {
+        var raw_item = C.QtStringListGetItem(raw_path_list, C.size_t(i))
+        var item = StringToRunes(String(raw_item))
+        path_list = append(path_list, item)
+    }
+    C.QtDeleteStringList(raw_path_list)
+    return path_list
+}
+func FileDialogSelectDirectory(parent Widget, opts FileDialogOptions) ([] rune) {
+    var parent_ptr = ObjectNullablePointer(parent)
+    var title, cwd, _, del = fileDialogAdaptOptions(opts)
+    defer del()
+    var raw_path = C.QtFileDialogSelectDirectory(parent_ptr,
+        C.QtString(title), C.QtString(cwd))
+    return StringToRunes(String(raw_path))
+}
+func FileDialogSave(parent Widget, opts FileDialogOptions) ([] rune) {
+    var parent_ptr = ObjectNullablePointer(parent)
+    var title, cwd, filter, del = fileDialogAdaptOptions(opts)
+    defer del()
+    var raw_path = C.QtFileDialogSave(parent_ptr,
+        C.QtString(title), C.QtString(cwd), C.QtString(filter))
+    return StringToRunes(String(raw_path))
 }
 
 func (ev Event) ResizeEventGetWidth() uint {
@@ -395,9 +458,9 @@ func WebUiGetWindow() Widget {
 }
 
 func WebUiGetEventHandler() vdom.EventHandler {
-    var raw = String(C.WebUiGetEventHandler())
-    var id = string(StringToRunes(raw))
-    return WebUiGetHandler(id)
+    var raw_id = C.WebUiGetEventHandler()
+    var id = StringToRunes(String(raw_id))
+    return WebUiGetHandler(string(id))
 }
 
 func WebUiGetEventPayload() *WebUiEventPayload {

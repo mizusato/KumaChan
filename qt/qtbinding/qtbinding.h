@@ -16,6 +16,11 @@ struct _QtString {
 };
 typedef struct _QtString QtString;
 
+struct _QtStringList {
+    void* ptr;
+};
+typedef struct _QtStringList QtStringList;
+
 struct _QtVariantMap {
     void* ptr;
 };
@@ -76,6 +81,9 @@ extern "C" {
     QtString QtNewStringUTF8(const char* buf, size_t len);
     QtString QtNewStringUTF32(const uint32_t* buf, size_t len);
     void QtDeleteString(QtString str);
+    size_t QtStringListGetSize(QtStringList list);
+    QtString QtStringListGetItem(QtStringList list, size_t index);
+    void QtDeleteStringList(QtStringList list);
     QtVariantList QtNewVariantList();
     void QtVariantListAppendNumber(QtVariantList l, double n);
     void QtVariantListAppendString(QtVariantList l, QtString str);
@@ -84,6 +92,7 @@ extern "C" {
     double QtVariantMapGetNumber(QtVariantMap m, QtString key);
     void QtDeleteVariantMap(QtVariantMap m);
     size_t QtStringUTF16Length(QtString str);
+    size_t QtStringWriteToUTF32Buffer(QtString str, uint32_t *buf);
     QtIcon QtNewIcon(QtPixmap pm);
     void QtDeleteIcon(QtIcon icon);
     QtPixmap QtNewPixmapPNG(const uint8_t* buf, size_t len);
@@ -94,7 +103,10 @@ extern "C" {
     void QtListWidgetAddItemWithIcon(void* widget_ptr, QtString key_, QtIcon icon_, QtString label_, QtBool as_current);
     QtBool QtListWidgetHasCurrentItem(void* widget_ptr);
     QtString QtListWidgetGetCurrentItemKey(void *widget_ptr);
-    size_t QtStringWriteToUTF32Buffer(QtString str, uint32_t *buf);
+    QtString QtFileDialogOpen(void* parent_ptr, QtString title, QtString cwd, QtString filter);
+    QtStringList QtFileDialogOpenMultiple(void* parent_ptr,  QtString title, QtString cwd, QtString filter);
+    QtString QtFileDialogSelectDirectory(void *parent_ptr, QtString title, QtString cwd);
+    QtString QtFileDialogSave(void *parent_ptr, QtString title, QtString cwd, QtString filter);
     void WebUiInit(QtString title);
     void WebUiLoadView();
     void* WebUiGetWindow();

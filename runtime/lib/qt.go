@@ -56,6 +56,25 @@ func (event QtEvent) Receive() rx.Effect {
 	})
 }
 
+func QtFileDialogAdaptArgs (
+	parent  SumValue,
+	title   String,
+	cwd     Path,
+	filter  String,
+) (qt.Widget, qt.FileDialogOptions) {
+	var parent_val, ok = Unwrap(parent)
+	var parent_widget qt.Widget
+	if ok {
+		parent_widget = parent_val.(qt.Widget)
+	}
+	var opts = qt.FileDialogOptions {
+		Title:  RuneSliceFromString(title),
+		Cwd:    ([] rune)(cwd.String()),
+		Filter: RuneSliceFromString(filter),
+	}
+	return parent_widget, opts
+}
+
 func CreateQtTaskEffect(action func() interface{}) rx.Effect {
 	return rx.NewCallback(func(callback func(rx.Object)) {
 		qt.CommitTask(func() {
@@ -174,5 +193,63 @@ var QtFunctions = map[string] interface{} {
 		} else {
 			return Na()
 		}
+	},
+	"qt-dialog-open": func(parent SumValue, title String, cwd Path, filter String) rx.Effect {
+		var parent_widget, opts = QtFileDialogAdaptArgs(parent, title, cwd, filter)
+		return rx.NewCallback(func(ok func(rx.Object)) {
+			qt.CommitTask(func() {
+				var path_runes = qt.FileDialogOpen(parent_widget, opts)
+				var path_str = string(path_runes)
+				if path_str != "" {
+					var path = PathFrom(string(path_str))
+					ok(Just(path))
+				} else {
+					ok(Na())
+				}
+			})
+		})
+	},
+	"qt-dialog-open*": func(parent SumValue, title String, cwd Path, filter String) rx.Effect {
+		var parent_widget, opts = QtFileDialogAdaptArgs(parent, title, cwd, filter)
+		return rx.NewCallback(func(ok func(rx.Object)) {
+			qt.CommitTask(func() {
+				var str_list = qt.FileDialogOpenMultiple(parent_widget, opts)
+				var path_list = make([] Path, len(str_list))
+				for i, str := range str_list {
+					path_list[i] = PathFrom(string(str))
+				}
+				ok(path_list)
+			})
+		})
+	},
+	"qt-dialog-open-dir": func(parent SumValue, title String, cwd Path) rx.Effect {
+		var parent_widget, opts = QtFileDialogAdaptArgs(parent, title, cwd, String([] Char {}))
+		return rx.NewCallback(func(ok func(rx.Object)) {
+			qt.CommitTask(func() {
+				var path_runes = qt.FileDialogSelectDirectory(parent_widget, opts)
+				var path_str = string(path_runes)
+				if path_str != "" {
+					var path = PathFrom(string(path_str))
+					ok(Just(path))
+				} else {
+					ok(Na())
+				}
+			})
+		})
+	},
+	"qt-dialog-save": func(parent SumValue, title String, cwd Path, filter String) rx.Effect {
+		var parent_widget, opts = QtFileDialogAdaptArgs(parent, title, cwd, filter)
+		return rx.NewCallback(func(ok func(rx.Object)) {
+			qt.CommitTask(func() {
+				var path_runes = qt.FileDialogSave(parent_widget, opts)
+				var path_str = string(path_runes)
+				if path_str != "" {
+					var path = PathFrom(string(path_str))
+					ok(Just(path))
+				} else {
+					ok(Na())
+				}
+			})
+		})
 	},
 }

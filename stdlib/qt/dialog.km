@@ -1,0 +1,19 @@
+public function qt-dialog-open:
+    ( & { parent: Maybe[Widget], title: String, cwd: OS::Path, filter: String }
+        NoExcept[Maybe[OS::Path]] )
+    native 'qt-dialog-open';
+
+public function qt-dialog-open*:
+    ( & { parent: Maybe[Widget], title: String, cwd: OS::Path, filter: String }
+        NoExcept[Array[OS::Path]] )
+    native 'qt-dialog-open*';
+
+public function qt-dialog-open-dir:
+    ( & { parent: Maybe[Widget], title: String, cwd: OS::Path }
+        NoExcept[Maybe[OS::Path]] )
+    native 'qt-dialog-open-dir';
+
+public function qt-dialog-save:
+    ( & { parent: Maybe[Widget], title: String, cwd: OS::Path, filter: String }
+        NoExcept[Maybe[OS::Path]] )
+    native 'qt-dialog-save';

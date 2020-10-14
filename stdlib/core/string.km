@@ -38,6 +38,7 @@ public function contains: (&(String,String)(Bool))
 public function contains: (&(String,Char)(Bool))
     ( &(str,char)(str.some (&(c) $(c = char))) );
 
+// TODO: fix Array Seq inconsistency
 public function concat: (&(Array[String])(String))      native 'str-concat';
 public function split:  (&(String,String)(Seq[String])) native 'str-split';
 public function join:   (&(Seq[String],String)(String)) native 'str-join';

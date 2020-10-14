@@ -1,5 +1,8 @@
 type Path native;
 
+public const Cwd: Path
+    native 'OS::Cwd';
+
 public function path: ( &(String) Path )
     ( &(str) (from str) );
 

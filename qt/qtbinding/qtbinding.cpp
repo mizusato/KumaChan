@@ -1,6 +1,7 @@
 #include <QApplication>
 #include <QMetaMethod>
 #include <QDir>
+#include <QFileDialog>
 #include <QUiLoader>
 #include <QBuffer>
 #include <QByteArray>
@@ -216,6 +217,20 @@ size_t QtStringWriteToUTF32Buffer(QtString str, uint32_t *buf) {
     return len;
 }
 
+size_t QtStringListGetSize(QtStringList list) {
+    QStringList* ptr = (QStringList*) (list.ptr);
+    return ptr->size();
+}
+
+QtString QtStringListGetItem(QtStringList list, size_t index) {
+    QStringList* ptr = (QStringList*) (list.ptr);
+    return QtWrapString(ptr->at(index));
+}
+
+void QtDeleteStringList(QtStringList list) {
+    delete (QStringList*)(list.ptr);
+}
+
 QtVariantList QtNewVariantList() {
     return { (void*) new QVariantList() };
 }
@@ -320,6 +335,47 @@ QtString QtListWidgetGetCurrentItemKey(void *widget_ptr) {
     QListWidget* widget = (QListWidget*) widget_ptr;
     QVariant key_v = widget->currentItem()->data(Qt::UserRole);
     return QtWrapString(key_v.toString());
+}
+
+QtString QtFileDialogOpen(void* parent_ptr, QtString title, QtString cwd, QtString filter) {
+   QWidget* parent = (QWidget*) parent_ptr;
+   QString path = QFileDialog::getOpenFileName(
+               parent,
+               QtUnwrapString(title),
+               QtUnwrapString(cwd),
+               QtUnwrapString(filter));
+   return QtWrapString(path);
+}
+
+QtStringList QtFileDialogOpenMultiple(void* parent_ptr,  QtString title, QtString cwd, QtString filter) {
+    QWidget* parent = (QWidget*) parent_ptr;
+    QStringList* path_list = new QStringList;
+    *path_list = QFileDialog::getOpenFileNames(
+                parent,
+                QtUnwrapString(title),
+                QtUnwrapString(cwd),
+                QtUnwrapString(filter));
+    QtStringList wrapped = { path_list };
+    return wrapped;
+}
+
+QtString QtFileDialogSelectDirectory(void *parent_ptr, QtString title, QtString cwd) {
+    QWidget* parent = (QWidget*) parent_ptr;
+    QString path = QFileDialog::getExistingDirectory(
+                parent,
+                QtUnwrapString(title),
+                QtUnwrapString(cwd));
+    return QtWrapString(path);
+}
+
+QtString QtFileDialogSave(void *parent_ptr, QtString title, QtString cwd, QtString filter) {
+    QWidget* parent = (QWidget*) parent_ptr;
+    QString path = QFileDialog::getSaveFileName(
+                parent,
+                QtUnwrapString(title),
+                QtUnwrapString(cwd),
+                QtUnwrapString(filter));
+    return QtWrapString(path);
 }
 
 QMetaObject::Connection QtDynamicConnect (
