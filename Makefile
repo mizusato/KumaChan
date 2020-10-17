@@ -1,9 +1,11 @@
 ifdef OS	
 	WINDOWS_WORKAROUND = cp qt/build/release/libqtbinding* qt/build/
 	LIBBIN = qt/build/release/qtbinding.dll
+	EXENAME = kumachan.exe
 else
 	WINDOWS_WORKAROUND = $(NOOP)
 	LIBBIN = qt/build/libqtbinding*
+	EXENAME = kumachan
 endif
 
 .PHONY: check qt interpreter stdlib
@@ -30,6 +32,6 @@ stdlib:
 
 interpreter: qt stdlib
 	@echo -e '\033[1mCompiling the Interpreter...\033[0m'
-	go build -o ./build/kumachan main.go
+	go build -o ./build/$(EXENAME) main.go
 
 all: check qt stdlib interpreter
