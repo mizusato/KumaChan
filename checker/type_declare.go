@@ -247,9 +247,18 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, ([] *T
 	for name, t := range raw.DeclMap {
 		var mod, mod_exists = idx[name.ModuleName]
 		if !mod_exists { panic("mod " + name.ModuleName + " should exist") }
-		// 3.1. Get parameters
+		// 3.1. Get tags
+		var tags, tags_err = ParseTypeTags(t.Tags)
+		if tags_err != nil { return nil, [] *TypeDeclError { {
+			Point:    ErrorPointFrom(tags_err.Tag.Node),
+			Concrete: E_InvalidTypeTag {
+				Tag:  string(tags_err.Tag.RawContent),
+				Info: tags_err.Info,
+			},
+		} } }
+		// 3.2. Get parameters
 		var params = raw.ParamsMap[name]
-		// 3.2. Construct a TypeContext and pass it to TypeValFrom()
+		// 3.3. Construct a TypeContext and pass it to TypeValFrom()
 		//      to generate a TypeVal and bubble errors
 		var cons_ctx = TypeConstructContext {
 			Module:     mod,
@@ -261,7 +270,7 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, ([] *T
 		}
 		var val, err = RawTypeValFrom(t.TypeValue, info, ctx)
 		if err != nil { return nil, raise_all(name, err) }
-		// 3.3. Get bound types
+		// 3.4. Get bound types
 		var bounds = TypeBounds {
 			Sub:   make(map[uint] Type),
 			Super: make(map[uint] Type),
@@ -279,9 +288,10 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, ([] *T
 				bounds.Super[uint(i)] = t
 			}
 		}
-		// 3.4. Use the generated TypeVal to construct a GenericType
+		// 3.5. Use the generated TypeVal to construct a GenericType
 		//      and register it to the TypeRegistry
 		reg[name] = &GenericType {
+			Tags:     tags,
 			Params:   params,
 			Bounds:   bounds,
 			Value:    val,

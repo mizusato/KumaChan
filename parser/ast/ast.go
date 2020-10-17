@@ -42,6 +42,7 @@ type NodeListInfo struct {
 var __NodeRegistry = []interface{} {
     // Root
 	Root {},
+	Shebang {},
     // Statement
     VariousStatement {},
     Import {},
@@ -53,6 +54,7 @@ var __NodeRegistry = []interface{} {
     VariousBody {},
     NativeRef {},
     DeclType {},
+    TypeTag {},
 	VariousTypeDef {},
     NativeType {},
     ImplicitType {},

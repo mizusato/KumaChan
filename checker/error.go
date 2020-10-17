@@ -170,6 +170,11 @@ func (impl E_DuplicateTypeDecl) TypeDeclError() {}
 type E_DuplicateTypeDecl struct {
 	TypeName  loader.Symbol
 }
+func (impl E_InvalidTypeTag) TypeDeclError() {}
+type E_InvalidTypeTag struct {
+	Tag   string
+	Info  string
+}
 func (impl E_InvalidCaseTypeParam) TypeDeclError() {}
 type E_InvalidCaseTypeParam struct {
 	Name  string
@@ -193,6 +198,10 @@ func (err *TypeDeclError) Desc() ErrorMessage {
 	case E_DuplicateTypeDecl:
 		msg.WriteText(TS_ERROR, "Duplicate type declaration:")
 		msg.WriteEndText(TS_INLINE_CODE, e.TypeName.SymbolName)
+	case E_InvalidTypeTag:
+		msg.WriteText(TS_ERROR, "Invalid type tag:")
+		msg.WriteInnerText(TS_INLINE_CODE, fmt.Sprintf("'%s'", e.Tag))
+		msg.WriteText(TS_ERROR, fmt.Sprintf("(%s)", e.Info))
 	case E_InvalidCaseTypeParam:
 		msg.WriteText(TS_ERROR, "Invalid type parameter")
 		msg.WriteInnerText(TS_INLINE_CODE, e.Name)

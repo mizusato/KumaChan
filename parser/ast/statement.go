@@ -69,9 +69,14 @@ type Body interface { Body() }
 func (impl DeclType) Statement() {}
 type DeclType struct {
     Node                        `part:"decl_type"`
+    Tags       [] TypeTag       `list_rec:"tags"`
     Name       Identifier       `part:"name"`
     Params     [] TypeParam     `list_more:"type_params" item:"type_param"`
     TypeValue  VariousTypeDef   `part:"type_def"`
+}
+type TypeTag struct {
+    Node                  `part:"tag"`
+    RawContent  [] rune   `content:"Pragma"`
 }
 type TypeParam struct {
     Node                        `part:"type_param"`
