@@ -44,8 +44,9 @@ type Serializer struct {
 }
 type PrimitiveSerializer struct {
 	WriteBool    func(Object) bool
-	WriteNumber  func(Object) uint
 	WriteFloat   func(Object) float64
+	WriteUint32  func(Object) uint32
+	WriteInt32   func(Object) int32
 	WriteUint64  func(Object) uint64
 	WriteInt64   func(Object) int64
 	WriteInt     func(Object) *big.Int
@@ -71,8 +72,9 @@ type Deserializer struct {
 }
 type PrimitiveDeserializer struct {
 	ReadBool    func(bool) Object
-	ReadNumber  func(uint) Object
 	ReadFloat   func(float64) Object
+	ReadUint32  func(uint32) Object
+	ReadInt32   func(int32) Object
 	ReadUint64  func(uint64) Object
 	ReadInt64   func(int64) Object
 	ReadInt     func(*big.Int) Object
