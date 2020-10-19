@@ -12,8 +12,8 @@ type TypeTags struct {
 }
 
 type TypeDataConfig struct {
-	Identifier  string
-	Version     string
+	Name     string
+	Version  string
 }
 
 type TypeTagParsingError struct {
@@ -40,29 +40,30 @@ func ParseTypeTags(ast_tags ([] ast.TypeTag)) (TypeTags, *TypeTagParsingError) {
 			for _, item := range t {
 				item = strings.Trim(item, " ")
 				var t = strings.Split(item, "=")
-				if len(t) != 2 {
+				if len(t) == 2 {
+					var key = t[0]
+					var val = t[1]
+					if key == "name" {
+						tags.DataConfig.Name = val
+					} else if key == "ver" {
+						tags.DataConfig.Version = val
+					} else {
+						return TypeTags{}, &TypeTagParsingError{
+							Tag:  ast_tag,
+							Info: fmt.Sprintf("unknown data config key: %s", key),
+						}
+					}
+				} else {
 					return TypeTags{}, &TypeTagParsingError {
 						Tag:  ast_tag,
 						Info: fmt.Sprintf("invalid data config item: %s", item),
 					}
 				}
-				var key = t[0]
-				var val = t[1]
-				if key == "id" {
-					tags.DataConfig.Identifier = val
-				} else if key == "ver" {
-					tags.DataConfig.Version = val
-				} else {
-					return TypeTags{}, &TypeTagParsingError {
-						Tag:  ast_tag,
-						Info: fmt.Sprintf("unknown data config key: %s", key),
-					}
-				}
 			}
-			if tags.DataConfig.Identifier == "" {
+			if tags.DataConfig.Name == "" {
 				return TypeTags{}, &TypeTagParsingError {
 					Tag:  ast_tag,
-					Info: fmt.Sprintf("invalid data config: 'id' not set"),
+					Info: fmt.Sprintf("invalid data config: 'name' not set"),
 				}
 			}
 			if tags.DataConfig.Version == "" {
