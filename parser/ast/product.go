@@ -18,8 +18,8 @@ type FieldValue struct {
 	Key   Identifier `part:"name"`
 	Value MaybeExpr  `part_opt:"expr"`
 }
-type MaybeUpdate interface { MaybeUpdate() }
-func (impl Update) MaybeUpdate() {}
+type MaybeUpdate interface { Maybe(Update,MaybeUpdate) }
+func (impl Update) Maybe(Update,MaybeUpdate) {}
 type Update struct {
 	Node `part:"update"`
 	Base Expr `part:"expr"`

@@ -1,16 +1,16 @@
 package ast
 
 
-type MaybeType interface { MaybeType() }
-func (impl VariousType) MaybeType() {}
+type MaybeType interface { Maybe(Type,MaybeType) }
+func (impl VariousType) Maybe(Type,MaybeType) {}
 type VariousType struct {
     Node         `part:"type"`
     Type  Type   `use:"first"`
 }
 type Type interface { Type() }
 
-type MaybeTypeRef interface { MaybeTypeRef() }
-func (impl TypeRef) MaybeTypeRef() {}
+type MaybeTypeRef interface { Maybe(TypeRef,MaybeTypeRef) }
+func (impl TypeRef) Maybe(TypeRef,MaybeTypeRef) {}
 func (impl TypeRef) Type()  {}
 type TypeRef struct {
     Node                       `part:"type_ref"`

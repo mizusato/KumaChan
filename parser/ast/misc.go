@@ -38,8 +38,8 @@ type Cps struct {
 	Input    Expr              `part:"cps_input.expr"`
 	Output   Expr              `part:"cps_output.expr"`
 }
-type MaybeCpsBinding interface { MaybeCpsBinding() }
-func (impl CpsBinding) MaybeCpsBinding() {}
+type MaybeCpsBinding interface { Maybe(CpsBinding,MaybeCpsBinding) }
+func (impl CpsBinding) Maybe(CpsBinding,MaybeCpsBinding) {}
 type CpsBinding struct {
 	Node                      `part:"cps_binding"`
 	Pattern  VariousPattern   `part:"pattern"`

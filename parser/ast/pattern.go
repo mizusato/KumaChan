@@ -1,8 +1,8 @@
 package ast
 
 
-type MaybePattern interface { MaybePattern() }
-func (impl VariousPattern) MaybePattern() {}
+type MaybePattern interface { Maybe(Pattern,MaybePattern) }
+func (impl VariousPattern) Maybe(Pattern,MaybePattern) {}
 type VariousPattern struct {
 	Node               `part:"pattern"`
 	Pattern  Pattern   `use:"first"`
@@ -15,9 +15,9 @@ type PatternTrivial struct {
 	Name   Identifier   `part:"name"`
 }
 
-type MaybePatternTuple interface { MaybePatternTuple() }
+type MaybePatternTuple interface { Maybe(PatternTuple,MaybePatternTuple) }
 func (impl PatternTuple) Pattern() {}
-func (impl PatternTuple) MaybePatternTuple() {}
+func (impl PatternTuple) Maybe(PatternTuple,MaybePatternTuple) {}
 type PatternTuple struct {
 	Node                   `part:"pattern_tuple"`
 	Names  [] Identifier   `list_more:"namelist" item:"name"`

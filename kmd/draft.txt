@@ -1,11 +1,10 @@
-KumaChan Data Format
+KumaChan Data
 tab 4
 // content
 
 // Legend:
 // <none> primitive
 // []  array
-// =>  map
 //  ?  optional
 // {}  record
 // ()  tuple
@@ -23,6 +22,9 @@ tab 4
             5
         y int
             6
+
+? {} org.foobar.point v1
+    nothing
 
 () org.foobar.point v2
     int
@@ -61,17 +63,4 @@ tab 4
         3.5
 
 [] org.foobar.point v1
-    empty
-
-=> org.foobar.point v1
-    "origin"
-        x float
-            0.0
-        y float
-            0.0
-    "A"
-        1.3
-        3.0
-
-=> org.foobar.point v1
     empty

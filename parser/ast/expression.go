@@ -1,8 +1,8 @@
 package ast
 
 
-type MaybeCall interface { MaybeCall() }
-func (impl Call) MaybeCall() {}
+type MaybeCall interface { Maybe(Call,MaybeCall) }
+func (impl Call) Maybe(Call,MaybeCall) {}
 func (impl Call) Term() {}
 type Call struct {
     Node
@@ -26,8 +26,8 @@ func WrapCallAsExpr(call Call) Expr {
     }
 }
 
-type MaybeExpr interface { MaybeExpr() }
-func (impl Expr) MaybeExpr()  {}
+type MaybeExpr interface { Maybe(Expr,MaybeExpr) }
+func (impl Expr) Maybe(Expr,MaybeExpr)  {}
 func (impl Expr) ConstValue() {}
 type Expr struct {
     Node                      `part:"expr"`
@@ -45,8 +45,8 @@ func WrapTermAsExpr(term VariousTerm) Expr {
     }
 }
 
-type MaybeTerms interface { MaybeTerms() }
-func (impl Terms) MaybeTerms() {}
+type MaybeTerms interface { Maybe(Terms,MaybeTerms) }
+func (impl Terms) Maybe(Terms,MaybeTerms) {}
 type Terms struct {
     Node                    `part:"terms"`
     Terms  [] VariousTerm   `list_more:"" item:"term"`
@@ -58,8 +58,8 @@ type VariousTerm struct {
 }
 type Term interface { Term() }
 
-type MaybePipeline interface { MaybePipeline() }
-func (impl Pipeline) MaybePipeline() {}
+type MaybePipeline interface { Maybe(Pipeline,MaybePipeline) }
+func (impl Pipeline) Maybe(Pipeline,MaybePipeline) {}
 type Pipeline struct {
     Node                      `part:"pipeline"`
     Operator  PipeOperator    `part:"pipe_op"`
