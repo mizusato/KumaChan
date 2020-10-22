@@ -168,14 +168,13 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 			},
 		},
 		ContainerSerializer: ContainerSerializer {
-			GetArrayLength: func(obj Object) uint {
-				return uint(reflect.ValueOf(obj).Len())
-			},
-			IterateArray: func(obj Object, f func(uint, Object)) {
+			IterateArray: func(obj Object, f func(uint, Object) error) error {
 				var v = reflect.ValueOf(obj)
 				for i := 0; i < v.Len(); i += 1 {
-					f(uint(i), v.Index(i).Interface())
+					err := f(uint(i), v.Index(i).Interface())
+					if err != nil { return err }
 				}
+				return nil
 			},
 			UnwrapOptional: func(obj Object) (Object, bool) {
 				if obj != nil {
@@ -187,17 +186,19 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 			},
 		},
 		AlgebraicSerializer: AlgebraicSerializer {
-			IterateRecord: func(obj Object, f func(string, Object)) {
+			IterateRecord: func(obj Object, f func(string, Object) error) error {
 				var v = reflect.ValueOf(obj)
 				for i := 0; i < v.NumField(); i += 1 {
 					var field_t = v.Type().Field(i)
 					var field_v = v.Field(i)
 					if field_t.Tag.Get(TagKmd) != KmdIgnore {
-						f(field_t.Name, field_v)
+						err := f(field_t.Name, field_v)
+						if err != nil { return err }
 					}
 				}
+				return nil
 			},
-			IterateTuple:  func(Object, func(Object)) {
+			IterateTuple:  func(Object, func(Object) error) error {
 				panic("tuple is not supported in Go")
 			},
 			Union2Case: func(obj Object) Object {

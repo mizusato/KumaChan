@@ -99,10 +99,10 @@ func CharsToBase64String(chars ([] uint32)) string {
 	var chunk ([4] byte)
 	for _, char := range chars {
 		var size = utf8.EncodeRune(chunk[:], rune(char))
-		var n, err = encoder.Write(chunk[:size])
-		if n != size { panic("something went wrong") }
+		var _, err = encoder.Write(chunk[:size])
 		if err != nil { panic(err) }
 	}
-	_ = encoder.Close()
+	var err = encoder.Close()
+	if err != nil { panic(err) }
 	return buf.String()
 }

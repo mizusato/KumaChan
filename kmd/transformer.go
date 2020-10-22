@@ -26,13 +26,12 @@ type PrimitiveSerializer struct {
 	WriteBinary  func(Object) ([] byte)
 }
 type ContainerSerializer struct {
-	GetArrayLength  func(Object) uint
-	IterateArray    func(Object, func(uint,Object))
+	IterateArray    func(Object, func(uint,Object) error) error
 	UnwrapOptional  func(Object) (Object, bool)
 }
 type AlgebraicSerializer struct {
-	IterateRecord   func(Object, func(string,Object))
-	IterateTuple    func(Object, func(Object))
+	IterateRecord   func(Object, func(string,Object) error) error
+	IterateTuple    func(Object, func(Object) error) error
 	Union2Case      func(Object) Object
 }
 
