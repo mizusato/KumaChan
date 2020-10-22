@@ -331,7 +331,9 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 			FillField: func(record Object, field string, value Object) {
 				var record_v = reflect.ValueOf(record)
 				var record_t = record_v.Type()
-				for i := 0; i < record_t.NumField(); i += 1 {
+				// downward loop: higher priority for later fields
+				var n = record_t.NumField()
+				for i := (n - 1); i >= 0; i -= 1 {
 					var field_t = record_t.Field(i)
 					var field_v = record_v.Field(i)
 					if (field_t.Name == field) ||
