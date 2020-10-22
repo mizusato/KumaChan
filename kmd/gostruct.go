@@ -8,8 +8,8 @@ import (
 )
 
 
-const TagKmd = "kmd"
-const KmdIgnore = "ignore"
+const Tag = "kmd"
+const TagIgnore = "kmd_ignore"
 
 type StringKind uint
 const (
@@ -23,7 +23,7 @@ type AdapterId struct {
 type GoStructOptions struct {
 	StringKind
 	Types               map[TypeId] reflect.Type
-	GetAlgebraicTypeId  (func(reflect.Type) TypeId)
+	GetAlgebraicTypeId  (func(reflect.Type) (TypeId, bool))
 	GoStructSerializerOptions
 	GoStructDeserializerOptions
 }
@@ -87,11 +87,17 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 					var elem = getInterfaceValueFromType(elem_t)
 					return ContainerType(Optional, determine_type(elem))
 				} else {
-					var id = opts.GetAlgebraicTypeId(t)
+					var id, exists = opts.GetAlgebraicTypeId(t)
+					if !(exists) {
+						panic(fmt.Sprintf("the type %s does not have an id", t))
+					}
 					return AlgebraicType(Union, id)
 				}
 			} else if t.Kind() == reflect.Struct {
-				var id = opts.GetAlgebraicTypeId(t)
+				var id, exists = opts.GetAlgebraicTypeId(t)
+				if !(exists) {
+					panic(fmt.Sprintf("the type %s does not have an id", t))
+				}
 				return AlgebraicType(Record, id)
 			} else {
 				panic(fmt.Sprintf("unsupported type: %s", t))
@@ -191,8 +197,17 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 				for i := 0; i < v.NumField(); i += 1 {
 					var field_t = v.Type().Field(i)
 					var field_v = v.Field(i)
-					if field_t.Tag.Get(TagKmd) != KmdIgnore {
-						err := f(field_t.Name, field_v)
+					var field_obj = field_v.Interface()
+					var _, ignore = field_t.Tag.Lookup(TagIgnore)
+					if !(ignore) {
+						var tagged_name = field_t.Tag.Get(Tag)
+						var name string
+						if tagged_name != "" {
+							name = tagged_name
+						} else {
+							name = field_t.Name
+						}
+						err := f(name, field_obj)
 						if err != nil { return err }
 					}
 				}
@@ -285,7 +300,7 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 					"type %s is not a record type", record_t))}
 				var valid_field_count = uint(0)
 				for i := 0; i < rt.NumField(); i += 1 {
-					if rt.Field(i).Tag.Get(TagKmd) != KmdIgnore {
+					if rt.Field(i).Tag.Get(Tag) != TagIgnore {
 						valid_field_count += 1
 					}
 				}
@@ -315,7 +330,18 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 			},
 			FillField: func(record Object, field string, value Object) {
 				var record_v = reflect.ValueOf(record)
-				record_v.FieldByName(field).Set(reflect.ValueOf(value))
+				var record_t = record_v.Type()
+				for i := 0; i < record_t.NumField(); i += 1 {
+					var field_t = record_t.Field(i)
+					var field_v = record_v.Field(i)
+					if (field_t.Name == field) ||
+						(field_t.Tag.Get(Tag) == field) {
+						field_v.Set(reflect.ValueOf(value))
+						return
+					}
+				}
+				panic("field existence should be checked" +
+					" before filling a field")
 			},
 			CheckTuple: func(TypeId, uint) error {
 				panic("tuple is not supported in Go")

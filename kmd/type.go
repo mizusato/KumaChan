@@ -62,6 +62,16 @@ func TypeEqual(t1 *Type, t2 *Type) bool {
 	return true
 }
 
+func TheTypeId(vendor string, name string, version string) TypeId {
+	return TypeId {
+		TypeIdBase: TypeIdBase {
+			Vendor: vendor,
+			Name:   name,
+		},
+		Version:    version,
+	}
+}
+
 func (kind TypeKind) String() string {
 	switch kind {
 	case Bool:     return "bool"
