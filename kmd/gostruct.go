@@ -23,7 +23,6 @@ type AdapterId struct {
 type GoStructOptions struct {
 	StringKind
 	Types               map[TypeId] reflect.Type
-	GetAlgebraicTypeId  (func(reflect.Type) (TypeId, bool))
 	GoStructSerializerOptions
 	GoStructDeserializerOptions
 }
@@ -41,6 +40,14 @@ func getInterfaceValueFromType(t reflect.Type) interface{} {
 }
 
 func CreateGoStructTransformer(opts GoStructOptions) Transformer {
+	var types_rev = make(map[reflect.Type] TypeId)
+	for id, rt := range opts.Types {
+		var _, exists = types_rev[rt]
+		if exists {
+			panic(fmt.Sprintf("more than one id for the type %s", rt))
+		}
+		types_rev[rt] = id
+	}
 	var determine_type (func(Object) *Type)
 	determine_type = func(obj Object) *Type {
 		switch obj.(type) {
@@ -87,14 +94,14 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 					var elem = getInterfaceValueFromType(elem_t)
 					return ContainerType(Optional, determine_type(elem))
 				} else {
-					var id, exists = opts.GetAlgebraicTypeId(t)
+					var id, exists = types_rev[t]
 					if !(exists) {
 						panic(fmt.Sprintf("the type %s does not have an id", t))
 					}
 					return AlgebraicType(Union, id)
 				}
 			} else if t.Kind() == reflect.Struct {
-				var id, exists = opts.GetAlgebraicTypeId(t)
+				var id, exists = types_rev[t]
 				if !(exists) {
 					panic(fmt.Sprintf("the type %s does not have an id", t))
 				}
@@ -245,17 +252,18 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 			},
 		},
 		ContainerDeserializer: ContainerDeserializer {
-			CreateArray: func(array_t *Type, cap uint) Object {
+			CreateArray: func(array_t *Type) Object {
 				var elem_t = array_t.ElementType
 				var slice_t = reflect.SliceOf(get_reflect_type(elem_t))
-				var slice_v = reflect.MakeSlice(slice_t, 0, int(cap))
+				var slice_v = reflect.MakeSlice(slice_t, 0, 0)
 				return slice_v.Interface()
 			},
-			AppendItem: func(array Object, item Object) Object {
-				var array_v = reflect.ValueOf(array)
+			AppendItem: func(array *Object, item Object) {
+				var array_v = reflect.ValueOf(*array)
 				var item_v = reflect.ValueOf(item)
 				var appended_v = reflect.Append(array_v, item_v)
-				return appended_v.Interface()
+				var appended = appended_v.Interface()
+				*array = appended
 			},
 			Just: func(obj Object, opt_t *Type) Object {
 				var opt_rt = get_reflect_type(opt_t)
@@ -300,7 +308,8 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 					"type %s is not a record type", record_t))}
 				var valid_field_count = uint(0)
 				for i := 0; i < rt.NumField(); i += 1 {
-					if rt.Field(i).Tag.Get(Tag) != TagIgnore {
+					var _, ignore = rt.Field(i).Tag.Lookup(TagIgnore)
+					if !(ignore) {
 						valid_field_count += 1
 					}
 				}
@@ -313,7 +322,19 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 				var rt, ok = opts.Types[record_t]
 				if !(ok) { panic("record type existence should be checked" +
 					" before trying to get a field type") }
-				var field_info, exists = rt.FieldByName(field)
+				var field_info reflect.StructField
+				var exists = false
+				for i := 0; i < rt.NumField(); i += 1 {
+					var this = rt.Field(i)
+					var _, ignore = this.Tag.Lookup(TagIgnore)
+					if !(ignore) {
+						if this.Tag.Get(Tag) == field || this.Name == field {
+							field_info = this
+							exists = true
+							break
+						}
+					}
+				}
 				if !(exists) { return nil, errors.New(fmt.Sprintf(
 					"field %s does not exist on type %s", field, record_t))}
 				var obj = getInterfaceValueFromType(field_info.Type)
@@ -325,11 +346,10 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 				if !(ok) { panic("record type existence should be checked" +
 					" before trying to create a record") }
 				var struct_ptr = reflect.New(rt)
-				var struct_v = struct_ptr.Elem()
-				return struct_v.Interface()
+				return struct_ptr.Interface()
 			},
 			FillField: func(record Object, field string, value Object) {
-				var record_v = reflect.ValueOf(record)
+				var record_v = reflect.ValueOf(record).Elem()
 				var record_t = record_v.Type()
 				// downward loop: higher priority for later fields
 				var n = record_t.NumField()
@@ -345,6 +365,9 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 				panic("field existence should be checked" +
 					" before filling a field")
 			},
+			FinishRecord: func(record Object) Object {
+				return reflect.ValueOf(record).Elem().Interface()
+			},
 			CheckTuple: func(TypeId, uint) error {
 				panic("tuple is not supported in Go")
 			},
@@ -355,6 +378,9 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 				panic("tuple is not supported in Go")
 			},
 			FillElement: func(Object, uint, Object) {
+				panic("tuple is not supported in Go")
+			},
+			FinishTuple: func(Object) Object {
 				panic("tuple is not supported in Go")
 			},
 			Case2Union: func(obj Object, union_t TypeId, case_t TypeId) (Object, error) {

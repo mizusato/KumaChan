@@ -8,30 +8,29 @@ import (
 )
 
 
-type SerializeContext struct {
+type serializeContext struct {
 	Serializer
 	Key           string
 	Depth         uint
 	OmitType      bool
 	OmitAllTypes  bool
 }
+const header = "KumaChan Data"
 const omittedType = "-"
 
 func Serialize(root Object, serializer Serializer, output io.Writer) error {
-	var ctx = SerializeContext {
+	var ctx = serializeContext {
 		Serializer: serializer,
 		Key:        "",
 		Depth:      0,
 		OmitType:   false,
 	}
-	_, err := fmt.Fprintln(output, "KumaChan Data")
+	_, err := fmt.Fprintln(output, header)
 	if err != nil { return err }
-	err = serialize(root, ctx, output)
-	if err != nil { return err }
-	return nil
+	return serialize(root, ctx, output)
 }
 
-func serialize(obj Object, ctx SerializeContext, output io.Writer) error {
+func serialize(obj Object, ctx serializeContext, output io.Writer) error {
 	var t = ctx.DetermineType(obj)
 	err := writeIndent(output, ctx.Depth)
 	if err != nil { return err }
@@ -82,7 +81,7 @@ func serialize(obj Object, ctx SerializeContext, output io.Writer) error {
 		return nil
 	case Array:
 		return ctx.IterateArray(obj, func(i uint, item Object) error {
-			var item_ctx = SerializeContext {
+			var item_ctx = serializeContext {
 				Serializer:   ctx.Serializer,
 				Key:          ctx.Key,
 				Depth:        (ctx.Depth + 1),
@@ -92,24 +91,22 @@ func serialize(obj Object, ctx SerializeContext, output io.Writer) error {
 			return serialize(item, item_ctx, output)
 		})
 	case Optional:
-		var inner, ok = ctx.UnwrapOptional(obj)
-		if ok {
-			err := writePrimitive(output, "just", ctx.Depth)
-			if err != nil { return err }
-			var inner_ctx = SerializeContext {
+		var inner, exists = ctx.UnwrapOptional(obj)
+		if exists {
+			var inner_ctx = serializeContext {
 				Serializer:   ctx.Serializer,
 				Key:          ctx.Key,
-				Depth:        (ctx.Depth + 2),
+				Depth:        (ctx.Depth + 1),
 				OmitType:     true,
 				OmitAllTypes: ctx.OmitAllTypes,
 			}
 			return serialize(inner, inner_ctx, output)
 		} else {
-			return writePrimitive(output, "nothing", ctx.Depth)
+			return nil
 		}
 	case Record:
 		return ctx.IterateRecord(obj, func(key string, value Object) error {
-			var entry_ctx = SerializeContext {
+			var entry_ctx = serializeContext {
 				Serializer:   ctx.Serializer,
 				Key:          key,
 				Depth:        (ctx.Depth + 1),
@@ -120,7 +117,7 @@ func serialize(obj Object, ctx SerializeContext, output io.Writer) error {
 		})
 	case Tuple:
 		return ctx.IterateTuple(obj, func(element Object) error {
-			var element_ctx = SerializeContext {
+			var element_ctx = serializeContext {
 				Serializer:   ctx.Serializer,
 				Key:          "",
 				Depth:        (ctx.Depth + 1),
@@ -130,14 +127,14 @@ func serialize(obj Object, ctx SerializeContext, output io.Writer) error {
 			return serialize(element, element_ctx, output)
 		})
 	case Union:
-		var case_ctx = SerializeContext {
+		var case_ctx = serializeContext {
 			Serializer:   ctx.Serializer,
 			Key:          "",
 			Depth:        (ctx.Depth + 1),
 			OmitType:     false,
 			OmitAllTypes: ctx.OmitAllTypes,
 		}
-		return serialize(obj, case_ctx, output)
+		return serialize(ctx.Union2Case(obj), case_ctx, output)
 	default:
 		panic("impossible branch")
 	}

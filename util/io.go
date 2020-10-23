@@ -3,6 +3,7 @@ package util
 import (
 	"io"
 	"fmt"
+	"strings"
 )
 
 
@@ -14,8 +15,9 @@ import (
 // Note that ...[\n][EOF] and ...[EOF] are not distinguished.
 func WellBehavedScanLine(f io.Reader) ([]rune, error) {
 	var buf = make([] rune, 0)
+	var char rune
 	for {
-		var char rune
+		// TODO: use Read() directly
 		var _, err = fmt.Fscanf(f, "%c", &char)
 		if err != nil {
 			if err == io.EOF && len(buf) > 0 {
@@ -28,6 +30,31 @@ func WellBehavedScanLine(f io.Reader) ([]rune, error) {
 			buf = append(buf, char)
 		} else {
 			return buf, nil
+		}
+	}
+}
+
+// standard-library-like version of WellBehavedScanLine
+func WellBehavedFscanln(f io.Reader, output *string) (int, error) {
+	var buf strings.Builder
+	var total = 0
+	var bytes = [] byte { 0 }
+	for {
+		var _, err = f.Read(bytes)
+		total += 1
+		if err != nil {
+			if err == io.EOF && buf.Len() > 0 {
+				*output = buf.String()
+				return total, nil
+			} else {
+				return total, err
+			}
+		}
+		if rune(bytes[0]) != '\n' {
+			buf.WriteByte(bytes[0])
+		} else {
+			*output = buf.String()
+			return total, nil
 		}
 	}
 }

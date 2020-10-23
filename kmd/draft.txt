@@ -17,14 +17,13 @@ tab 4
         2.0
 
 ? {} org.foobar.point v1
-    just
+    -
         x int
             5
         y int
             6
 
 ? {} org.foobar.point v1
-    nothing
 
 () org.foobar.point v2
     int
@@ -63,4 +62,3 @@ tab 4
         3.5
 
 [] org.foobar.point v1
-    empty

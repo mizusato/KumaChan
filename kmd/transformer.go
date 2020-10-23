@@ -52,8 +52,8 @@ type PrimitiveDeserializer struct {
 	ReadBinary  func([] byte) Object
 }
 type ContainerDeserializer struct {
-	CreateArray  func(array_t *Type, cap uint) Object
-	AppendItem   func(array Object, item Object) Object
+	CreateArray  func(array_t *Type) Object
+	AppendItem   func(array *Object, item Object)
 	Just         func(obj Object, opt_t *Type) Object
 	Nothing      func(opt_t *Type) Object
 }
@@ -63,9 +63,11 @@ type AlgebraicDeserializer struct {
 	GetFieldType    func(record_t TypeId, field string) (*Type, error)
 	CreateRecord    func(record_t TypeId) Object
 	FillField       func(record Object, field string, value Object)
+	FinishRecord    func(record Object) Object
 	CheckTuple      func(tuple_t TypeId, size uint) error
 	GetElementType  func(tuple_t TypeId, element uint) (*Type, error)
 	CreateTuple     func(tuple_t TypeId) Object
 	FillElement     func(tuple Object, element uint, value Object)
+	FinishTuple     func(tuple Object) Object
 	Case2Union      func(obj Object, union_t TypeId, case_t TypeId) (Object, error)
 }
