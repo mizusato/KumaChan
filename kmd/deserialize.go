@@ -16,7 +16,6 @@ import (
 
 type deserializeContext struct {
 	Deserializer
-	RowsRead     *uint
 	Depth        uint
 	RequireKey   bool
 	ReturnKey    *string
@@ -31,12 +30,12 @@ type omittedTypeInfo struct {
 type deserializeReader struct {
 	*bufio.Reader
 	unreadIndention  uint
+	linesRead        uint
 }
 
 func Deserialize(input io.Reader, deserializer Deserializer) (Object, error) {
 	var ctx = deserializeContext {
 		Deserializer: deserializer,
-		RowsRead:     new(uint),
 		Depth:        0,
 		RequireKey:   false,
 		ReturnKey:    nil,
@@ -47,23 +46,22 @@ func Deserialize(input io.Reader, deserializer Deserializer) (Object, error) {
 	var line string
 	_, err := util.WellBehavedFscanln(input, &line)
 	if err != nil { return nil, err }
-	*ctx.RowsRead += 1
 	if line != header { return nil, errors.New("invalid header") }
 	var reader = &deserializeReader {
 		Reader: bufio.NewReader(input),
 		unreadIndention: 0,
+		linesRead: 1,
 	}
 	obj, err := deserialize(reader, ctx)
-	var n = (*ctx.RowsRead + 1)
-	if err != nil { return nil, fmt.Errorf("error at line %d: %w", n, err) }
+	var n = (reader.linesRead + 1)
+	if err != nil { return nil, fmt.Errorf("error near line %d: %w", n, err) }
 	return obj, nil
 }
 
 func deserialize(input *deserializeReader, ctx deserializeContext) (Object, error) {
 	var line string
-	_, err := util.WellBehavedFscanln(input, &line)
+	_, err := readLine(input, &line)
 	if err != nil { return nil, err }
-	*ctx.RowsRead += 1
 	var t *Type
 	var key string
 	if ctx.TypesInfo != nil && ctx.TypesCursor != nil &&
@@ -109,7 +107,7 @@ func deserialize(input *deserializeReader, ctx deserializeContext) (Object, erro
 	}
 	switch t.Kind {
 	case Bool:
-		return readPrimitive(input, ctx.Depth, ctx.RowsRead, func(str string) (Object, error) {
+		return readPrimitive(input, ctx.Depth, func(str string) (Object, error) {
 			switch str {
 			case "true":  return ctx.ReadBool(true), nil
 			case "false": return ctx.ReadBool(false), nil
@@ -117,50 +115,50 @@ func deserialize(input *deserializeReader, ctx deserializeContext) (Object, erro
 			}
 		})
 	case Float:
-		return readPrimitive(input, ctx.Depth, ctx.RowsRead, func(str string) (Object, error) {
+		return readPrimitive(input, ctx.Depth, func(str string) (Object, error) {
 			value, err := strconv.ParseFloat(str, 64)
 			if err != nil { return nil, fmt.Errorf("invalid float: %w", err) }
 			return ctx.ReadFloat(value), nil
 		})
 	case Uint32:
-		return readPrimitive(input, ctx.Depth, ctx.RowsRead, func(str string) (Object, error) {
+		return readPrimitive(input, ctx.Depth, func(str string) (Object, error) {
 			value, err := strconv.ParseUint(str, 10, 32)
 			if err != nil { return nil, fmt.Errorf("invalid uint32: %w", err) }
 			return ctx.ReadUint32(uint32(value)), nil
 		})
 	case Int32:
-		return readPrimitive(input, ctx.Depth, ctx.RowsRead, func(str string) (Object, error) {
+		return readPrimitive(input, ctx.Depth, func(str string) (Object, error) {
 			value, err := strconv.ParseInt(str, 10, 32)
 			if err != nil { return nil, fmt.Errorf("invalid int32: %w", err) }
 			return ctx.ReadInt32(int32(value)), nil
 		})
 	case Uint64:
-		return readPrimitive(input, ctx.Depth, ctx.RowsRead, func(str string) (Object, error) {
+		return readPrimitive(input, ctx.Depth, func(str string) (Object, error) {
 			value, err := strconv.ParseUint(str, 10, 64)
 			if err != nil { return nil, fmt.Errorf("invalid uint64: %w", err) }
 			return ctx.ReadUint64(value), nil
 		})
 	case Int64:
-		return readPrimitive(input, ctx.Depth, ctx.RowsRead, func(str string) (Object, error) {
+		return readPrimitive(input, ctx.Depth, func(str string) (Object, error) {
 			value, err := strconv.ParseInt(str, 10, 64)
 			if err != nil { return nil, fmt.Errorf("invalid int64: %w", err) }
 			return ctx.ReadInt64(value), nil
 		})
 	case Int:
-		return readPrimitive(input, ctx.Depth, ctx.RowsRead, func(str string) (Object, error) {
+		return readPrimitive(input, ctx.Depth, func(str string) (Object, error) {
 			var value big.Int
 			var _, ok = value.SetString(str, 10)
 			if !(ok) { return nil, errors.New("invalid int") }
 			return ctx.ReadInt(&value), nil
 		})
 	case String:
-		return readPrimitive(input, ctx.Depth, ctx.RowsRead, func(str string) (Object, error) {
+		return readPrimitive(input, ctx.Depth, func(str string) (Object, error) {
 			value, err := strconv.Unquote(str)
 			if err != nil { return nil, fmt.Errorf("invalid string: %w", err) }
 			return ctx.ReadString(value), nil
 		})
 	case Binary:
-		return readPrimitive(input, ctx.Depth, ctx.RowsRead, func(str string) (Object, error) {
+		return readPrimitive(input, ctx.Depth, func(str string) (Object, error) {
 			var str_reader = strings.NewReader(str)
 			var decoder = base64.NewDecoder(base64.StdEncoding, str_reader)
 			value, err := ioutil.ReadAll(decoder)
@@ -183,7 +181,6 @@ func deserialize(input *deserializeReader, ctx deserializeContext) (Object, erro
 				}
 				var item_ctx = deserializeContext {
 					Deserializer: ctx.Deserializer,
-					RowsRead:     ctx.RowsRead,
 					Depth:        (ctx.Depth + 1),
 					TypesInfo:    &types_info,
 					TypesCursor:  &types_cursor,
@@ -209,7 +206,6 @@ func deserialize(input *deserializeReader, ctx deserializeContext) (Object, erro
 		if n == (ctx.Depth + 1) {
 			var inner_ctx = deserializeContext {
 				Deserializer: ctx.Deserializer,
-				RowsRead:     ctx.RowsRead,
 				Depth:        (ctx.Depth + 1),
 				TypesInfo:    &types_info,
 				TypesCursor:  &types_cursor,
@@ -234,7 +230,6 @@ func deserialize(input *deserializeReader, ctx deserializeContext) (Object, erro
 				var value_t *Type
 				var entry_ctx = deserializeContext {
 					Deserializer: ctx.Deserializer,
-					RowsRead:     ctx.RowsRead,
 					Depth:        (ctx.Depth + 1),
 					RequireKey:   true,
 					ReturnKey:    &key,
@@ -278,7 +273,6 @@ func deserialize(input *deserializeReader, ctx deserializeContext) (Object, erro
 				var value_t *Type
 				var entry_ctx = deserializeContext {
 					Deserializer: ctx.Deserializer,
-					RowsRead:     ctx.RowsRead,
 					Depth:        (ctx.Depth + 1),
 					ReturnType:   &value_t,
 					TypesInfo:    ctx.TypesInfo,
@@ -314,7 +308,6 @@ func deserialize(input *deserializeReader, ctx deserializeContext) (Object, erro
 			var case_t *Type
 			var case_ctx = deserializeContext {
 				Deserializer: ctx.Deserializer,
-				RowsRead:     ctx.RowsRead,
 				Depth:        (ctx.Depth + 1),
 				ReturnType:   &case_t,
 				TypesInfo:    ctx.TypesInfo,
@@ -354,14 +347,20 @@ func readIndent(input *deserializeReader) (uint, error) {
 func unreadIndent(input *deserializeReader, n uint) {
 	input.unreadIndention += n
 }
-func readPrimitive(input *deserializeReader, depth uint, rows *uint, f func(string)(Object,error)) (Object,error) {
+func readPrimitive(input *deserializeReader, depth uint, f func(string)(Object,error)) (Object,error) {
 	n, err := readIndent(input)
 	if err != nil { return nil, err }
 	if n != (depth + 1) { return nil, errors.New("wrong indention") }
 	var line string
-	_, err = util.WellBehavedFscanln(input, &line)
+	_, err = readLine(input, &line)
 	if err != nil { return nil, err }
-	*rows += 1
 	return f(line)
+}
+func readLine(input *deserializeReader, to *string) (int, error) {
+	n, err := util.WellBehavedFscanln(input, to)
+	if err == nil {
+		input.linesRead += 1
+	}
+	return n, err
 }
 
