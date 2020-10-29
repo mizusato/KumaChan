@@ -105,7 +105,7 @@ func deserialize(input *deserializeReader, ctx deserializeContext) (Object, erro
 	if ctx.ReturnType != nil {
 		*ctx.ReturnType = t
 	}
-	switch t.Kind {
+	switch t.kind {
 	case Bool:
 		return readPrimitive(input, ctx.Depth, func(str string) (Object, error) {
 			switch str {
@@ -168,7 +168,7 @@ func deserialize(input *deserializeReader, ctx deserializeContext) (Object, erro
 	case Array:
 		var array = ctx.CreateArray(t)
 		var types_info = [] omittedTypeInfo {
-			{ Key: "", Type: t.ElementType },
+			{ Key: "", Type: t.elementType},
 		}
 		var types_cursor = uint(0)
 		var i = 0
@@ -198,7 +198,7 @@ func deserialize(input *deserializeReader, ctx deserializeContext) (Object, erro
 		}
 	case Optional:
 		var types_info = [] omittedTypeInfo{
-			{ Key: "", Type: t.ElementType },
+			{ Key: "", Type: t.elementType},
 		}
 		var types_cursor = uint(0)
 		n, err := readIndent(input)
@@ -246,16 +246,17 @@ func deserialize(input *deserializeReader, ctx deserializeContext) (Object, erro
 				types[key] = value_t
 			} else if n <= ctx.Depth {
 				unreadIndent(input, n)
-				var tid = t.Identifier
+				var tid = t.identifier
 				err := ctx.CheckRecord(tid, uint(len(entries)))
 				if err != nil { return nil, err }
 				var draft = ctx.CreateRecord(tid)
 				for key, value := range entries {
 					var value_t = types[key]
-					field_t, err := ctx.GetFieldType(tid, key)
+					field_t, field_index, err := ctx.GetFieldInfo(tid, key)
 					if err != nil { return nil, err }
 					adapted, err := ctx.AssignObject(value, value_t, field_t)
-					ctx.FillField(draft, key, adapted)
+					if err != nil { return nil, err }
+					ctx.FillField(draft, field_index, adapted)
 				}
 				var record = ctx.FinishRecord(draft)
 				return record, nil
@@ -284,15 +285,15 @@ func deserialize(input *deserializeReader, ctx deserializeContext) (Object, erro
 				types = append(types, value_t)
 			} else if n <= ctx.Depth {
 				unreadIndent(input, n)
-				var tid = t.Identifier
+				var tid = t.identifier
 				err := ctx.CheckTuple(tid, uint(len(elements)))
 				if err != nil { return nil, err }
 				var draft = ctx.CreateTuple(tid)
 				for i, value := range elements {
 					var value_t = types[i]
-					el_t, err := ctx.GetElementType(tid, uint(i))
-					if err != nil { return nil, err }
+					el_t := ctx.GetElementType(tid, uint(i))
 					adapted, err := ctx.AssignObject(value, value_t, el_t)
+					if err != nil { return nil, err }
 					ctx.FillElement(draft, uint(i), adapted)
 				}
 				var tuple = ctx.FinishTuple(draft)
@@ -315,8 +316,8 @@ func deserialize(input *deserializeReader, ctx deserializeContext) (Object, erro
 			}
 			case_value, err := deserialize(input, case_ctx)
 			if err != nil { return nil, err }
-			var union_tid = t.Identifier
-			var case_tid = case_t.Identifier
+			var union_tid = t.identifier
+			var case_tid = case_t.identifier
 			union_value, err := ctx.Case2Union(case_value, union_tid, case_tid)
 			if err != nil { return nil, err }
 			return union_value, nil

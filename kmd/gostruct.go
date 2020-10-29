@@ -17,10 +17,6 @@ const (
 	GoString StringKind = iota
 	RuneSlice
 )
-type AdapterId struct {
-	From  TypeId
-	To    TypeId
-}
 type GoStructOptions struct {
 	StringKind
 	Types               map[TypeId] reflect.Type
@@ -133,7 +129,7 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 	}
 	var get_reflect_type func(*Type) reflect.Type
 	get_reflect_type = func(t *Type) reflect.Type {
-		switch t.Kind {
+		switch t.kind {
 		case Bool:   return reflect.TypeOf(true)
 		case Float:  return reflect.TypeOf(float64(0.0))
 		case Uint32: return reflect.TypeOf(uint32(0))
@@ -152,9 +148,9 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 		case Binary:
 			return reflect.TypeOf([] byte {})
 		case Array:
-			return reflect.SliceOf(get_reflect_type(t.ElementType))
+			return reflect.SliceOf(get_reflect_type(t.elementType))
 		case Optional:
-			var elem_t = get_reflect_type(t.ElementType)
+			var elem_t = get_reflect_type(t.elementType)
 			var method, ok = elem_t.MethodByName(MaybeMethod)
 			if !ok {
 				panic(fmt.Sprintf("%s: Maybe() method not found", elem_t))
@@ -164,14 +160,14 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 			}
 			return method.Type.In(1)
 		case Record:
-			var rt, ok = opts.Types[t.Identifier]
-			if !ok { panic(fmt.Sprintf("unknown type %s", t.Identifier)) }
+			var rt, ok = opts.Types[t.identifier]
+			if !ok { panic(fmt.Sprintf("unknown type %s", t.identifier)) }
 			return rt
 		case Tuple:
 			panic("tuple is not supported in Go")
 		case Union:
-			var rt, ok = opts.Types[t.Identifier]
-			if !ok { panic(fmt.Sprintf("unknown type %s", t.Identifier)) }
+			var rt, ok = opts.Types[t.identifier]
+			if !ok { panic(fmt.Sprintf("unknown type %s", t.identifier)) }
 			return rt
 		default:
 			panic("impossible branch")
@@ -255,7 +251,7 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 				}
 				return nil
 			},
-			IterateTuple:  func(Object, func(Object) error) error {
+			IterateTuple:  func(Object, func(uint,Object) error) error {
 				panic("tuple is not supported in Go")
 			},
 			Union2Case: func(obj Object) Object {
@@ -292,7 +288,7 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 		},
 		ContainerDeserializer: ContainerDeserializer {
 			CreateArray: func(array_t *Type) Object {
-				var elem_t = array_t.ElementType
+				var elem_t = array_t.elementType
 				var slice_t = reflect.SliceOf(get_reflect_type(elem_t))
 				var slice_v = reflect.MakeSlice(slice_t, 0, 0)
 				return slice_v.Interface()
@@ -318,12 +314,12 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 		},
 		AlgebraicDeserializer: AlgebraicDeserializer {
 			AssignObject: func(obj Object, from *Type, to *Type) (Object, error) {
-				if from.Kind == Record && to.Kind == Record &&
-					from.Identifier.TypeIdBase == to.Identifier.TypeIdBase &&
-					from.Identifier.Version != to.Identifier.Version {
+				if from.kind == Record && to.kind == Record &&
+					from.identifier.TypeIdFuzzy == to.identifier.TypeIdFuzzy &&
+					from.identifier.Version != to.identifier.Version {
 					var adapter_id = AdapterId {
-						From: from.Identifier,
-						To:   to.Identifier,
+						From: from.identifier,
+						To:   to.identifier,
 					}
 					var adapter, exists = opts.Adapters[adapter_id]
 					if exists {
@@ -357,7 +353,7 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 					size, valid_field_count))}
 				return nil
 			},
-			GetFieldType: func(record_t TypeId, field string) (*Type, error) {
+			GetFieldInfo: func(record_t TypeId, field string) (*Type, uint, error) {
 				var rt, ok = opts.Types[record_t]
 				if !(ok) { panic("record type existence should be checked" +
 					" before trying to get a field type") }
@@ -374,11 +370,12 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 						}
 					}
 				}
-				if !(exists) { return nil, errors.New(fmt.Sprintf(
+				if !(exists) { return nil, ^uint(0), errors.New(fmt.Sprintf(
 					"field %s does not exist on type %s", field, record_t))}
 				var obj = getInterfaceValueFromType(field_info.Type)
 				var t = determine_type(obj)
-				return t, nil
+				var index = uint(field_info.Index[0])
+				return t, index, nil
 			},
 			CreateRecord: func(record_t TypeId) Object {
 				var rt, ok = opts.Types[record_t]
@@ -387,22 +384,10 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 				var struct_ptr = reflect.New(rt)
 				return struct_ptr.Interface()
 			},
-			FillField: func(record Object, field string, value Object) {
+			FillField: func(record Object, index uint, value Object) {
 				var record_v = reflect.ValueOf(record).Elem()
-				var record_t = record_v.Type()
-				// downward loop: higher priority for later fields
-				var n = record_t.NumField()
-				for i := (n - 1); i >= 0; i -= 1 {
-					var field_t = record_t.Field(i)
-					var field_v = record_v.Field(i)
-					if (field_t.Name == field) ||
-						(field_t.Tag.Get(Tag) == field) {
-						field_v.Set(reflect.ValueOf(value))
-						return
-					}
-				}
-				panic("field existence should be checked" +
-					" before filling a field")
+				var field_v = record_v.Field(int(index))
+				field_v.Set(reflect.ValueOf(value))
 			},
 			FinishRecord: func(record Object) Object {
 				return reflect.ValueOf(record).Elem().Interface()
@@ -410,7 +395,7 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 			CheckTuple: func(TypeId, uint) error {
 				panic("tuple is not supported in Go")
 			},
-			GetElementType: func(TypeId, uint) (*Type, error) {
+			GetElementType: func(TypeId, uint) *Type {
 				panic("tuple is not supported in Go")
 			},
 			CreateTuple: func(TypeId) Object {

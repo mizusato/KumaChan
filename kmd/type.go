@@ -8,9 +8,9 @@ import (
 
 type Object = interface{}
 type Type struct {
-	Kind         TypeKind
-	ElementType  *Type   // only available in Container Types
-	Identifier   TypeId  // only available in Algebraic Types
+	kind        TypeKind
+	elementType *Type  // only available in Container Types
+	identifier  TypeId // only available in Algebraic Types
 }
 type TypeKind uint
 const (
@@ -21,13 +21,17 @@ const (
 	// Algebraic Types
 	Record; Tuple; Union
 )
-type TypeId struct {
-	TypeIdBase
-	Version  string
+
+func (t Type) Kind() TypeKind {
+	return t.kind
 }
-type TypeIdBase struct {
-	Vendor   string
-	Name     string
+func (t Type) ElementType() *Type {
+	if t.elementType == nil { panic("something went wrong") }
+	return t.elementType
+}
+func (t Type) Identifier() TypeId {
+	if t.identifier == (TypeId {}) { panic("something went wrong") }
+	return t.identifier
 }
 
 var __PrimitiveTypes = make(map[TypeKind] *Type)
@@ -37,20 +41,20 @@ func PrimitiveType(kind TypeKind) *Type {
 	if exists {
 		return existing
 	} else {
-		var t = &Type { Kind: kind }
+		var t = &Type { kind: kind }
 		__PrimitiveTypes[kind] = t
 		return t
 	}
 }
 func ContainerType(kind TypeKind, elem *Type) *Type {
-	return &Type { Kind: kind, ElementType: elem }
+	return &Type { kind: kind, elementType: elem }
 }
 func AlgebraicType(kind TypeKind, id TypeId) *Type {
 	var existing, exists = __AlgebraicTypes[id]
 	if exists {
 		return existing
 	} else {
-		var t = &Type { Kind: kind, Identifier: id }
+		var t = &Type { kind: kind, identifier: id }
 		__AlgebraicTypes[id] = t
 		return t
 	}
@@ -59,11 +63,12 @@ func AlgebraicType(kind TypeKind, id TypeId) *Type {
 func TypeEqual(t1 *Type, t2 *Type) bool {
 	if t1 == nil && t2 == nil { return true }
 	if t1 == nil || t2 == nil { return false }
-	if t1.Kind != t2.Kind { return false }
-	if t1.Identifier != t2.Identifier { return false }
-	if !(TypeEqual(t1.ElementType, t2.ElementType)) { return false }
+	if t1.kind != t2.kind { return false }
+	if t1.identifier != t2.identifier { return false }
+	if !(TypeEqual(t1.elementType, t2.elementType)) { return false }
 	return true
 }
+
 func TypeParse(text string) (*Type, bool) {
 	if stringHasFirstSegment(text, "[]") ||
 		stringHasFirstSegment(text, "?") {
@@ -139,16 +144,6 @@ func stringSplitFirstSegment(str string) (string, string) {
 	return "", str
 }
 
-func TheTypeId(vendor string, name string, version string) TypeId {
-	return TypeId {
-		TypeIdBase: TypeIdBase {
-			Vendor: vendor,
-			Name:   name,
-		},
-		Version:    version,
-	}
-}
-
 func (kind TypeKind) String() string {
 	switch kind {
 	case Bool:     return "bool"
@@ -172,11 +167,11 @@ func (id TypeId) String() string {
 	return fmt.Sprintf("%s.%s %s", id.Vendor, id.Name, id.Version)
 }
 func (t *Type) String() string {
-	if t.ElementType != nil {
-		return fmt.Sprintf("%s %s", t.Kind, t.ElementType)
-	} else if t.Identifier != (TypeId {}) {
-		return fmt.Sprintf("%s %s", t.Kind, t.Identifier)
+	if t.elementType != nil {
+		return fmt.Sprintf("%s %s", t.kind, t.elementType)
+	} else if t.identifier != (TypeId {}) {
+		return fmt.Sprintf("%s %s", t.kind, t.identifier)
 	} else {
-		return fmt.Sprintf("%s", t.Kind)
+		return fmt.Sprintf("%s", t.kind)
 	}
 }

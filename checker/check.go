@@ -5,6 +5,7 @@ import (
 	. "kumachan/error"
 	"kumachan/loader"
 	"kumachan/parser/ast"
+	"kumachan/kmd"
 )
 
 
@@ -21,9 +22,11 @@ type CheckedConstant struct {
 	Value  ExprLike
 }
 type CheckedFunction struct {
-	Point     ErrorPoint
-	Body      ExprLike
-	Implicit  [] string
+	Point      ErrorPoint
+	Body       ExprLike
+	Implicit   [] string
+	IsAdapter  bool
+	AdapterId  kmd.AdapterId
 }
 type CheckedEffect struct {
 	Point  ErrorPoint
@@ -39,6 +42,10 @@ type ExprNative struct {
 func (impl ExprPredefinedValue) ExprLike() {}
 type ExprPredefinedValue struct {
 	Value  interface{}
+}
+func (impl ExprKmdApi) ExprLike() {}
+type ExprKmdApi struct {
+	TransformerPartId  kmd.TransformerPartId
 }
 func (impl ExprExpr) ExprLike() {}
 type ExprExpr Expr

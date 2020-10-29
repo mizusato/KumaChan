@@ -31,7 +31,7 @@ type ContainerSerializer struct {
 }
 type AlgebraicSerializer struct {
 	IterateRecord   func(Object, func(string,Object) error) error
-	IterateTuple    func(Object, func(Object) error) error
+	IterateTuple    func(Object, func(uint,Object) error) error
 	Union2Case      func(Object) Object
 }
 
@@ -53,19 +53,19 @@ type PrimitiveDeserializer struct {
 }
 type ContainerDeserializer struct {
 	CreateArray  func(array_t *Type) Object
-	AppendItem   func(array *Object, item Object)
+	AppendItem   func(array_ptr *Object, item Object)
 	Just         func(obj Object, opt_t *Type) Object
 	Nothing      func(opt_t *Type) Object
 }
 type AlgebraicDeserializer struct {
 	AssignObject    func(obj Object, from *Type, to *Type) (Object, error)
 	CheckRecord     func(record_t TypeId, size uint) error
-	GetFieldType    func(record_t TypeId, field string) (*Type, error)
+	GetFieldInfo    func(record_t TypeId, field string) (*Type, uint, error)
 	CreateRecord    func(record_t TypeId) Object
-	FillField       func(record Object, field string, value Object)
+	FillField       func(record Object, index uint, value Object)
 	FinishRecord    func(record Object) Object
 	CheckTuple      func(tuple_t TypeId, size uint) error
-	GetElementType  func(tuple_t TypeId, element uint) (*Type, error)
+	GetElementType  func(tuple_t TypeId, element uint) *Type
 	CreateTuple     func(tuple_t TypeId) Object
 	FillElement     func(tuple Object, element uint, value Object)
 	FinishTuple     func(tuple Object) Object

@@ -47,7 +47,7 @@ func serialize(obj Object, ctx serializeContext, output io.Writer) error {
 		}
 	})())
 	if err != nil { return err }
-	switch t.Kind {
+	switch t.kind {
 	case Bool:
 		val := ctx.WriteBool(obj)
 		if val {
@@ -117,7 +117,7 @@ func serialize(obj Object, ctx serializeContext, output io.Writer) error {
 			return serialize(value, entry_ctx, output)
 		})
 	case Tuple:
-		return ctx.IterateTuple(obj, func(element Object) error {
+		return ctx.IterateTuple(obj, func(_ uint, element Object) error {
 			var element_ctx = serializeContext {
 				Serializer:   ctx.Serializer,
 				Key:          "",

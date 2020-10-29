@@ -12,6 +12,7 @@ type Program struct {
 	Closures    [] *Function
 	Constants   [] *Function
 	Effects     [] *Function
+	KmdConfig
 }
 
 type DataValue interface {

@@ -50,8 +50,8 @@ func RefsToDeps (
 	idx       Index,
 	data      *([] c.DataValue),
 	closures  *([] FuncNode),
-) []Dependency {
-	var deps = make([]Dependency, len(refs))
+) ([] Dependency) {
+	var deps = make([] Dependency, len(refs))
 	for i, ref := range refs {
 		switch r := ref.(type) {
 		case RefData:
