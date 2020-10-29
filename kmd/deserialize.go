@@ -310,8 +310,8 @@ func deserialize(input *deserializeReader, ctx deserializeContext) (Object, erro
 				Deserializer: ctx.Deserializer,
 				Depth:        (ctx.Depth + 1),
 				ReturnType:   &case_t,
-				TypesInfo:    ctx.TypesInfo,
-				TypesCursor:  ctx.TypesCursor,
+				TypesInfo:    nil,
+				TypesCursor:  nil,
 			}
 			case_value, err := deserialize(input, case_ctx)
 			if err != nil { return nil, err }

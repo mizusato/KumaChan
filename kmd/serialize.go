@@ -21,9 +21,10 @@ const omittedType = "-"
 func Serialize(root Object, serializer Serializer, output io.Writer) error {
 	var ctx = serializeContext {
 		Serializer: serializer,
-		Key:        "",
-		Depth:      0,
-		OmitType:   false,
+		Key:          "",
+		Depth:        0,
+		OmitType:     false,
+		OmitAllTypes: false,
 	}
 	_, err := fmt.Fprintln(output, header)
 	if err != nil { return err }
@@ -132,7 +133,7 @@ func serialize(obj Object, ctx serializeContext, output io.Writer) error {
 			Key:          "",
 			Depth:        (ctx.Depth + 1),
 			OmitType:     false,
-			OmitAllTypes: ctx.OmitAllTypes,
+			OmitAllTypes: false,
 		}
 		return serialize(ctx.Union2Case(obj), case_ctx, output)
 	default:

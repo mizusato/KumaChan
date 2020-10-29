@@ -10,6 +10,7 @@ import (
 
 const Tag = "kmd"
 const TagIgnore = "kmd_ignore"
+const MaybeMethod = "Maybe"
 
 type StringKind uint
 const (
@@ -31,12 +32,26 @@ type GoStructSerializerOptions struct {
 type GoStructDeserializerOptions struct {
 	Adapters  map[AdapterId] (func(Object) Object)
 }
+type GoInterfaceWorkaround struct {
+	Type      reflect.Type
+	Concrete  Object
+}
 
 func getInterfaceValueFromType(t reflect.Type) interface{} {
-	var ptr = reflect.New(t)
-	var v = ptr.Elem()
-	var i = v.Interface()
-	return i
+	if t.Kind() == reflect.Interface &&
+		!(t.NumMethod() == 1 && t.Method(0).Name == MaybeMethod) {
+		return GoInterfaceWorkaround { Type: t }
+	} else {
+		var ptr = reflect.New(t)
+		var v = ptr.Elem()
+		var i = v.Interface()
+		return i
+	}
+}
+func isUnionType(t reflect.Type) bool {
+	var obj = getInterfaceValueFromType(t)
+	var _, is = obj.(GoInterfaceWorkaround)
+	return is
 }
 
 func CreateGoStructTransformer(opts GoStructOptions) Transformer {
@@ -80,13 +95,18 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 				panic("inconsistent string kind")
 			}
 		default:
-			var v = reflect.ValueOf(obj)
-			var t = v.Type()
+			var t reflect.Type
+			var workaround, is_workaround = obj.(GoInterfaceWorkaround)
+			if is_workaround {
+				t = workaround.Type
+			} else {
+				t = reflect.TypeOf(obj)
+			}
 			if t.Kind() == reflect.Slice {
 				var elem = getInterfaceValueFromType(t.Elem())
 				return ContainerType(Array, determine_type(elem))
 			} else if t.Kind() == reflect.Interface {
-				if t.NumMethod() == 1 && t.Method(0).Name == "Maybe" {
+				if t.NumMethod() == 1 && t.Method(0).Name == MaybeMethod {
 					if t.Method(0).Type.NumIn() != 2 {
 						panic(fmt.Sprintf("%s: Maybe() method should have signature (T,MaybeT)", t))
 					}
@@ -135,7 +155,7 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 			return reflect.SliceOf(get_reflect_type(t.ElementType))
 		case Optional:
 			var elem_t = get_reflect_type(t.ElementType)
-			var method, ok = elem_t.MethodByName("Maybe")
+			var method, ok = elem_t.MethodByName(MaybeMethod)
 			if !ok {
 				panic(fmt.Sprintf("%s: Maybe() method not found", elem_t))
 			}
@@ -183,16 +203,24 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 		ContainerSerializer: ContainerSerializer {
 			IterateArray: func(obj Object, f func(uint, Object) error) error {
 				var v = reflect.ValueOf(obj)
+				var elem_t = v.Type().Elem()
+				var is_elem_union = isUnionType(elem_t)
 				for i := 0; i < v.Len(); i += 1 {
-					err := f(uint(i), v.Index(i).Interface())
+					var elem = v.Index(i).Interface()
+					if is_elem_union {
+						elem = GoInterfaceWorkaround {
+							Type:     elem_t,
+							Concrete: elem,
+						}
+					}
+					err := f(uint(i), elem)
 					if err != nil { return err }
 				}
 				return nil
 			},
 			UnwrapOptional: func(obj Object) (Object, bool) {
 				if obj != nil {
-					var v = reflect.ValueOf(obj)
-					return v.Elem().Interface(), true
+					return obj, true
 				} else {
 					return nil, false
 				}
@@ -202,17 +230,24 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 			IterateRecord: func(obj Object, f func(string, Object) error) error {
 				var v = reflect.ValueOf(obj)
 				for i := 0; i < v.NumField(); i += 1 {
-					var field_t = v.Type().Field(i)
+					var field_info = v.Type().Field(i)
+					var field_t = field_info.Type
 					var field_v = v.Field(i)
 					var field_obj = field_v.Interface()
-					var _, ignore = field_t.Tag.Lookup(TagIgnore)
+					if isUnionType(field_t) {
+						field_obj = GoInterfaceWorkaround {
+							Type:     field_t,
+							Concrete: field_obj,
+						}
+					}
+					var _, ignore = field_info.Tag.Lookup(TagIgnore)
 					if !(ignore) {
-						var tagged_name = field_t.Tag.Get(Tag)
+						var tagged_name = field_info.Tag.Get(Tag)
 						var name string
 						if tagged_name != "" {
 							name = tagged_name
 						} else {
-							name = field_t.Name
+							name = field_info.Name
 						}
 						err := f(name, field_obj)
 						if err != nil { return err }
@@ -224,8 +259,12 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 				panic("tuple is not supported in Go")
 			},
 			Union2Case: func(obj Object) Object {
-				var v = reflect.ValueOf(obj)
-				return v.Elem().Interface()
+				var workaround, is_workaround = obj.(GoInterfaceWorkaround)
+				if is_workaround {
+					return workaround.Concrete
+				} else {
+					panic("something went wrong")
+				}
 			},
 		},
 	}

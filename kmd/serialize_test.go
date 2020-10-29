@@ -6,11 +6,19 @@ import (
 )
 
 
-var sampleObject = [] Point {
-	{ Name: "O", Coordinate: Vector { 0.0, 0.0 } },
-	{ Name: "A", Coordinate: Vector { 1.0, 1.0 } },
-	{ Name: "B", Coordinate: Vector { -5.0, 7.0 } },
-	{ Name: "C", Coordinate: Vector { 10.0, 15.0 } },
+var sampleObject = [] Shape {
+	Point { Name: "O", Coordinate: Vector { 0.0, 0.0 } },
+	PointGroup {
+		Points: [] Point {
+			Point { Name: "A", Coordinate: Vector { 1.0, 1.0 } },
+			Point { Name: "B", Coordinate: Vector { -5.0, 7.0 } },
+			Point { Name: "C", Coordinate: Vector { 10.0, 15.0 } },
+		},
+	},
+	Circle {
+		Center: Vector { 4.2, 7.4 },
+		Radius: 10,
+	},
 }
 
 func TestSerialize(t *testing.T) {
