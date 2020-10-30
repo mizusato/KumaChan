@@ -5,6 +5,7 @@ import (
 	. "kumachan/error"
 	c "kumachan/runtime/common"
 	"kumachan/runtime/lib"
+	"kumachan/kmd"
 )
 
 
@@ -92,6 +93,39 @@ func CompileFunction (
 	point  ErrorPoint,
 ) (*c.Function, []GlobalRef, []*Error) {
 	switch b := body.(type) {
+	case ch.ExprKmdApi:
+		var f c.NativeFunctionValue
+		switch id := b.TransformerPartId.(type) {
+		case kmd.SerializerId:
+			f = func(arg c.Value, h c.InteropContext) c.Value {
+				var t = h.KmdGetTypeFromId(id.TypeId)
+				var binary, err = h.KmdSerialize(arg, t)
+				if err != nil { return c.Ng(err) }
+				return c.Ok(binary)
+			}
+		case kmd.DeserializerId:
+			f = func(arg c.Value, h c.InteropContext) c.Value {
+				var t = h.KmdGetTypeFromId(id.TypeId)
+				var obj, err = h.KmdDeserialize(arg.([] byte), t)
+				if err != nil { return c.Ng(err) }
+				return c.Ok(obj)
+			}
+		default:
+			panic("impossible branch")
+		}
+		return &c.Function {
+			Kind:        c.F_PREDEFINED,
+			NativeIndex: ^uint(0),
+			Predefined:  f,
+			Code:        nil,
+			BaseSize:    c.FrameBaseSize {},
+			Info: c.FuncInfo {
+				Module:    mod,
+				Name:      name,
+				DeclPoint: point,
+				SourceMap: nil,
+			},
+		}, make([] GlobalRef, 0), nil
 	case ch.ExprPredefinedValue:
 		if len(imp) > 0 { panic("something went wrong") }
 		return &c.Function {

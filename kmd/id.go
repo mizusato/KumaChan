@@ -24,12 +24,14 @@ type AdapterId struct {
 	To    TypeId
 }
 
+type ValidatorId TypeId
+
 type TransformerPartId interface { TransformerPartId() }
 func (SerializerId) TransformerPartId() {}
 type SerializerId struct {
-	ObjectType  TypeId
+	TypeId
 }
 func (DeserializerId) TransformerPartId() {}
 type DeserializerId struct {
-	ObjectType  TypeId
+	TypeId
 }

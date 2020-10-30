@@ -90,6 +90,10 @@ func (h MachineContextHandle) GetErrorPoint() ErrorPoint {
 	return GetFrameErrorPoint(h.context.workingFrame)
 }
 
+func (h MachineContextHandle) KmdGetTypeFromId(id kmd.TypeId) *kmd.Type {
+	return h.machine.program.KmdConfig.GetTypeFromId(id)
+}
+
 func (h MachineContextHandle) KmdSerialize(v Value, t *kmd.Type) ([] byte, error) {
 	return lib.KmdSerialize(v, t, h.machine.kmdTransformer)
 }

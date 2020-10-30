@@ -2,13 +2,13 @@ package lib
 
 import (
 	"fmt"
+	"bytes"
 	"errors"
 	"reflect"
 	"math/big"
 	"kumachan/kmd"
 	. "kumachan/runtime/common"
 	"kumachan/runtime/lib/container"
-	"bytes"
 )
 
 
@@ -27,7 +27,7 @@ type KmdTransformContext interface {
 func KmdTransformer(h KmdTransformContext) kmd.Transformer {
 	var conf = h.KmdGetConfig()
 	var validate = func(obj kmd.Object, t kmd.TypeId) error {
-		var v, exists = conf.KmdValidatorTable[t]
+		var v, exists = conf.KmdValidatorTable[kmd.ValidatorId(t)]
 		if exists {
 			var ok = h.KmdCallValidator(v, obj)
 			if ok {

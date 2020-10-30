@@ -22,15 +22,20 @@ type CheckedConstant struct {
 	Value  ExprLike
 }
 type CheckedFunction struct {
-	Point      ErrorPoint
-	Body       ExprLike
-	Implicit   [] string
-	IsAdapter  bool
-	AdapterId  kmd.AdapterId
+	Point     ErrorPoint
+	Body      ExprLike
+	Implicit  [] string
+	FunctionKmdInfo
 }
 type CheckedEffect struct {
 	Point  ErrorPoint
 	Value  Expr
+}
+type FunctionKmdInfo struct {
+	IsAdapter    bool
+	AdapterId    kmd.AdapterId
+	IsValidator  bool
+	ValidatorId  kmd.ValidatorId
 }
 
 type ExprLike interface { ExprLike() }
