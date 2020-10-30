@@ -146,7 +146,7 @@ func Lint(req LintRequest, ctx ServerContext) LintResponse {
 			}
 		}
 	}
-	var checked_mod, _, errs_checker = checker.TypeCheck(mod, idx)
+	var checked_mod, _, _, errs_checker = checker.TypeCheck(mod, idx)
 	if errs_checker != nil {
 		var errs = make([] LintError, 0)
 		for _, e := range errs_checker {

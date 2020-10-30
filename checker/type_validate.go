@@ -17,10 +17,6 @@ func (ctx TypeValidationContext) GetVarianceContext() TypeVarianceContext {
 		Parameters: ctx.Parameters,
 	}
 }
-type TypeNodeInfo struct {
-	ValNodeMap   map[TypeVal] ast.Node
-	TypeNodeMap  map[Type] ast.Node
-}
 
 func ValidateTypeVal(val TypeVal, info TypeNodeInfo, ctx TypeValidationContext) *TypeError {
 	var val_point = ErrorPointFrom(info.ValNodeMap[val])

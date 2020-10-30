@@ -10,6 +10,7 @@ import (
 
 
 type CheckedModule struct {
+	Vendor     string
 	Name       string
 	RawModule  *loader.Module
 	Imported   map[string] *CheckedModule
@@ -50,7 +51,7 @@ type ExprPredefinedValue struct {
 }
 func (impl ExprKmdApi) ExprLike() {}
 type ExprKmdApi struct {
-	TransformerPartId  kmd.TransformerPartId
+	Id  kmd.TransformerPartId
 }
 func (impl ExprExpr) ExprLike() {}
 type ExprExpr Expr
@@ -342,22 +343,24 @@ func CheckTerm(term ast.VariousTerm, ctx ExprContext) (SemiExpr, *ExprError) {
 
 
 func TypeCheck(entry *loader.Module, raw_index loader.Index) (
-	*CheckedModule, Index, [] E,
+	*CheckedModule, Index, KmdIdMapping, [] E,
 ) {
-	var types, err1 = RegisterTypes(entry, raw_index)
+	var types, type_nodes, err1 = RegisterTypes(entry, raw_index)
 	if err1 != nil {
 		var type_errors = make([] E, len(err1))
 		for i, e := range err1 {
 			type_errors[i] = e
 		}
-		return nil, nil, type_errors
+		return nil, nil, nil, type_errors
 	}
 	var constants = make(ConstantStore)
 	var _, err2 = CollectConstants(entry, types, constants)
-	if err2 != nil { return nil, nil, [] E { err2 } }
+	if err2 != nil { return nil, nil, nil, [] E { err2 } }
 	var functions = make(FunctionStore)
-	var _, err3 = CollectFunctions(entry, types, functions)
-	if err3 != nil { return nil, nil, [] E { err3 } }
+	var mapping, inj, err3 = CollectKmdApi(types, type_nodes, raw_index)
+	if err3 != nil { return nil, nil, nil, [] E { err3 } }
+	var _, err4 = CollectFunctions(entry, types, inj, functions)
+	if err4 != nil { return nil, nil, nil, [] E { err4 } }
 	var ctx = CheckContext {
 		Types:     types,
 		Functions: functions,
@@ -365,8 +368,8 @@ func TypeCheck(entry *loader.Module, raw_index loader.Index) (
 	}
 	var checked_index = make(Index)
 	var checked, errs = TypeCheckModule(entry, checked_index, ctx)
-	if errs != nil { return nil, nil, errs }
-	return checked, checked_index, nil
+	if errs != nil { return nil, nil, nil, errs }
+	return checked, checked_index, mapping, nil
 }
 
 func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
@@ -510,6 +513,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 		return nil, errors
 	} else {
 		var checked = &CheckedModule {
+			Vendor:    mod.Vendor,
 			Name:      mod_name,
 			RawModule: mod,
 			Imported:  imported,

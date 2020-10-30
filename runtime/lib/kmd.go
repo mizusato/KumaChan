@@ -128,11 +128,17 @@ func KmdTransformer(h KmdTransformContext) kmd.Transformer {
 				},
 				IterateTuple: func(obj kmd.Object, f func(uint,kmd.Object) error) error {
 					var tv = obj.(KmdTypedValue)
-					var pv = tv.Value.(ProductValue)
 					var tid = tv.Type.Identifier()
 					var t, exists = conf.KmdSchemaTable[tid]
 					if !(exists) { panic("something went wrong") }
 					var schema = t.(KmdTupleSchema)
+					var pv, is_pv = tv.Value.(ProductValue)
+					if !(is_pv) {
+						return f(0, KmdTypedValue {
+							Type:  schema.Elements[0],
+							Value: tv.Value,
+						})
+					}
 					for i, elem_t := range schema.Elements {
 						var elem_v = pv.Elements[i]
 						err := f(uint(i), KmdTypedValue {
@@ -305,6 +311,10 @@ func KmdTransformer(h KmdTransformContext) kmd.Transformer {
 					tuple_pv.Elements[i] = value
 				},
 				FinishTuple: func(tuple kmd.Object, t kmd.TypeId) (kmd.Object, error) {
+					var tuple_pv = tuple.(ProductValue)
+					if len(tuple_pv.Elements) == 1 {
+						tuple = tuple_pv.Elements[0]
+					}
 					err := validate(tuple, t)
 					if err != nil { return nil, err }
 					return tuple, nil

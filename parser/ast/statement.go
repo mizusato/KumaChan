@@ -1,5 +1,6 @@
 package ast
 
+import "kumachan/kmd"
 
 type VariousStatement struct {
     Node                   `part:"stmt"`
@@ -48,6 +49,10 @@ type NativeRef struct {
 func (impl PredefinedValue) ConstValue() {}
 type PredefinedValue struct {
     Value  interface {}
+}
+func (impl KmdApiFuncBody) Body() {}
+type KmdApiFuncBody struct {
+    Id  kmd.TransformerPartId
 }
 
 func (impl DeclFunction) Statement() {}
@@ -111,12 +116,6 @@ func (impl UnionType) TypeDef() {}
 type UnionType struct {
     Node                 `part:"t_union"`
     Cases  [] DeclType   `list_more:"" item:"decl_type"`
-}
-func (impl InterfaceType) TypeDef() {}
-type InterfaceType struct {
-    Node                   `part:"t_interface"`
-    Params  [] TypeParam   `list_more:"interface_params" item:"type_param"`
-    Inner   MaybeType      `part:"interface_inner_type.type"`
 }
 func (impl ImplicitType) TypeDef() {}
 type ImplicitType struct {

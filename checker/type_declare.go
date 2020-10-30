@@ -55,6 +55,13 @@ type CaseInfo struct {
 	CaseParams  [] uint
 }
 
+type TypeDeclNodeInfo  map[loader.Symbol] ast.Node
+type TypeNodeInfo struct {
+	ValNodeMap   map[TypeVal] ast.Node
+	TypeNodeMap  map[Type] ast.Node
+}
+
+
 func CollectTypeParams(raw_params ([] ast.TypeParam)) (([] TypeParam), ([] ast.TypeBound), *E_InvalidTypeName, ast.Node) {
 	var params = make([] TypeParam, len(raw_params))
 	var bounds = make([] ast.TypeBound, len(raw_params))
@@ -220,7 +227,7 @@ func RegisterRawTypes(mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 	return nil
 }
 
-func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, ([] *TypeDeclError)) {
+func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, TypeDeclNodeInfo, ([] *TypeDeclError)) {
 	var raise = func(name loader.Symbol, err *TypeError) *TypeDeclError {
 		return &TypeDeclError {
 			Point: err.Point,
@@ -233,10 +240,14 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, ([] *T
 	var raise_all = func(name loader.Symbol, err *TypeError) ([] *TypeDeclError) {
 		return [] *TypeDeclError { raise(name, err) }
 	}
+	var decl_info = make(TypeDeclNodeInfo)
 	// 1. Build a raw registry
 	var raw = MakeRawTypeRegistry()
 	var err = RegisterRawTypes(entry, raw)
-	if err != nil { return nil, [] *TypeDeclError { err } }
+	if err != nil { return nil, nil, [] *TypeDeclError { err } }
+	for sym, t := range raw.DeclMap {
+		decl_info[sym] = t.Node
+	}
 	// 2. Create a empty TypeRegistry
 	var reg = make(TypeRegistry)
 	// 3. Go through all types in the raw registry
@@ -249,7 +260,7 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, ([] *T
 		if !mod_exists { panic("mod " + name.ModuleName + " should exist") }
 		// 3.1. Get tags
 		var tags, tags_err = ParseTypeTags(t.Tags)
-		if tags_err != nil { return nil, [] *TypeDeclError { {
+		if tags_err != nil { return nil, nil, [] *TypeDeclError { {
 			Point:    ErrorPointFrom(tags_err.Tag.Node),
 			Concrete: E_InvalidTypeTag {
 				Tag:  string(tags_err.Tag.RawContent),
@@ -269,7 +280,7 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, ([] *T
 			Registry: raw,
 		}
 		var val, err = RawTypeValFrom(t.TypeValue, info, ctx)
-		if err != nil { return nil, raise_all(name, err) }
+		if err != nil { return nil, nil, raise_all(name, err) }
 		// 3.4. Get bound types
 		var bounds = TypeBounds {
 			Sub:   make(map[uint] Type),
@@ -280,11 +291,11 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, ([] *T
 			switch b := bound.(type) {
 			case ast.TypeLowerBound:
 				var t, err = RawTypeFrom(b.BoundType, info.TypeNodeMap, ctx.TypeConstructContext)
-				if err != nil { return nil, raise_all(name, err) }
+				if err != nil { return nil, nil, raise_all(name, err) }
 				bounds.Sub[uint(i)] = t
 			case ast.TypeHigherBound:
 				var t, err = RawTypeFrom(b.BoundType, info.TypeNodeMap, ctx.TypeConstructContext)
-				if err != nil { return nil, raise_all(name, err) }
+				if err != nil { return nil, nil, raise_all(name, err) }
 				bounds.Super[uint(i)] = t
 			}
 		}
@@ -334,7 +345,7 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, ([] *T
 		var boxed, is_boxed = g.Value.(*Boxed)
 		if is_boxed {
 			var err = check_cycle(name, boxed, make([]loader.Symbol, 0))
-			if err != nil { return nil, [] *TypeDeclError { err } }
+			if err != nil { return nil, nil, [] *TypeDeclError { err } }
 		}
 	}
 	// 5. Validate types
@@ -397,9 +408,9 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, ([] *T
 		var err = CheckTypeValBounds(g.Value, info, bound_ctx)
 		if err != nil { errs = append(errs, raise(name, err)) }
 	}
-	if errs != nil { return nil, errs }
+	if errs != nil { return nil, nil, errs }
 	// 7. Return the TypeRegistry
-	return reg, nil
+	return reg, decl_info, nil
 }
 
 /* Transform: ast.TypeDef -> checker.TypeVal */

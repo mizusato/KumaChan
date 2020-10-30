@@ -45,6 +45,8 @@ var __Int8 = CoreSymbol(stdlib.Int8)
 var __Uint8 = CoreSymbol(stdlib.Uint8)
 var __Byte = CoreSymbol(stdlib.Byte)
 var __Bit = CoreSymbol(stdlib.Bit)
+var __Bytes = CoreSymbol(stdlib.Bytes)
+var __T_Bytes = &NamedType { Name: __Bytes, Args: make([] Type, 0) }
 var __IntegerTypes = []loader.Symbol {
 	__Int,   __Number,
 	__Int64, __Uint64, __Qword,

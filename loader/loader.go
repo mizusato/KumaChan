@@ -31,6 +31,7 @@ var __UnitFileLoaders = [] common.UnitFileLoader {
 }
 
 type Module struct {
+	Vendor    string
 	Name      string
 	Path      string
 	Node      ast.Root
@@ -45,6 +46,7 @@ type RawModule struct {
 	Content   RawModuleContent
 }
 type RawModuleManifest struct {
+	Vendor  string            `json:"vendor"`
 	Name    string            `json:"name"`
 	Config  RawModuleConfig   `json:"config"`
 }
@@ -176,6 +178,7 @@ func ReadModulePath(path string) (RawModule, error) {
 				}
 			}
 		}
+		// TODO: check format of vendor name
 		var mod_name = manifest.Name
 		if mod_name == "" {
 			return RawModule{}, errors.New (
@@ -221,7 +224,14 @@ func LoadModule(path string, ctx Context, idx Index) (*Module, *Error) {
 		},
 	} }
 	/* 2. Try to parse the content to get an AST */
-	var module_name = raw_mod.Manifest.Name
+	var manifest = raw_mod.Manifest
+	var module_name = (func() string {
+		if manifest.Vendor != "" {
+			return fmt.Sprintf("%s.%s", manifest.Vendor, manifest.Name)
+		} else {
+			return manifest.Name
+		}
+	})()
 	var file_info = raw_mod.FileInfo
 	var module_node, err2 = raw_mod.Content.Load(ctx)
 	if err2 != nil { return nil, err2 }
@@ -330,6 +340,7 @@ func LoadModule(path string, ctx Context, idx Index) (*Module, *Error) {
 			}
 		}
 		var mod = &Module {
+			Vendor:   manifest.Vendor,
 			Name:     module_name,
 			Path:     path,
 			Node:     module_node,

@@ -239,6 +239,73 @@ func (err *TypeDeclError) Error() string {
 }
 
 
+type KmdError struct {
+	Point     ErrorPoint
+	Concrete  ConcreteKmdError
+}
+
+type ConcreteKmdError interface { KmdError() }
+
+func (impl E_KmdOnNative) KmdError() {}
+type E_KmdOnNative struct {}
+
+func (impl E_KmdOnGeneric) KmdError() {}
+type E_KmdOnGeneric struct {}
+
+func (impl E_KmdFieldNotSerializable) KmdError() {}
+type E_KmdFieldNotSerializable struct {
+	FieldName  string
+}
+
+func (impl E_KmdElementNotSerializable) KmdError() {}
+type E_KmdElementNotSerializable struct {
+	ElementIndex  uint
+}
+
+func (impl E_KmdTypeNotSerializable) KmdError() {}
+type E_KmdTypeNotSerializable struct {}
+
+func (err *KmdError) Desc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	switch e := err.Concrete.(type) {
+	case E_KmdOnNative:
+		msg.WriteText(TS_ERROR, "KMD serialization on native types " +
+			"is not supported")
+	case E_KmdOnGeneric:
+		msg.WriteText(TS_ERROR, "KMD serialization on generic types " +
+			"is not supported")
+	case E_KmdFieldNotSerializable:
+		msg.WriteText(TS_ERROR, "Field")
+		msg.WriteInnerText(TS_INLINE_CODE, e.FieldName)
+		msg.WriteText(TS_ERROR, "is not KMD serializable")
+	case E_KmdElementNotSerializable:
+		msg.WriteText(TS_ERROR, "The")
+		msg.WriteInnerText(TS_INLINE, fmt.Sprintf("#%d", e.ElementIndex))
+		msg.WriteText(TS_ERROR, "is not KMD serializable")
+	case E_KmdTypeNotSerializable:
+		msg.WriteText(TS_ERROR, "This type is not KMD serializable")
+	default:
+		panic("unknown error kind")
+	}
+	return msg
+}
+
+func (err *KmdError) ErrorPoint() ErrorPoint {
+	return err.Point
+}
+
+func (err *KmdError) Message() ErrorMessage {
+	return FormatErrorAt(err.Point, err.Desc())
+}
+
+func (err *KmdError) Error() string {
+	var msg = MsgFailedToCompile(err.Concrete, [] ErrorMessage {
+		err.Message(),
+	})
+	return msg.String()
+}
+
+
 type FunctionError struct {
 	Point     ErrorPoint
 	Concrete  ConcreteFunctionError
@@ -346,7 +413,7 @@ func (err *FunctionError) Message() ErrorMessage {
 }
 
 func (err *FunctionError) Error() string {
-	var msg = MsgFailedToCompile(err.Concrete, []ErrorMessage {
+	var msg = MsgFailedToCompile(err.Concrete, [] ErrorMessage {
 		err.Message(),
 	})
 	return msg.String()

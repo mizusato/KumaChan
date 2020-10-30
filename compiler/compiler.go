@@ -95,7 +95,7 @@ func CompileFunction (
 	switch b := body.(type) {
 	case ch.ExprKmdApi:
 		var f c.NativeFunctionValue
-		switch id := b.TransformerPartId.(type) {
+		switch id := b.Id.(type) {
 		case kmd.SerializerId:
 			f = func(arg c.Value, h c.InteropContext) c.Value {
 				var t = h.KmdGetTypeFromId(id.TypeId)

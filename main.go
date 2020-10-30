@@ -75,7 +75,7 @@ func load(path string) (*loader.Module, loader.Index) {
 }
 
 func check(mod *loader.Module, idx loader.Index) (*checker.CheckedModule, checker.Index) {
-    var c_mod, c_idx, errs = checker.TypeCheck(mod, idx)
+    var c_mod, c_idx, _, errs = checker.TypeCheck(mod, idx)
     if errs != nil {
         var messages = make([] ErrorMessage, len(errs))
         for i, e := range errs {

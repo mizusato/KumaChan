@@ -33,12 +33,12 @@ type FunctionStore map[string] FunctionCollection
 
 
 // Procedure to collect all functions in a module hierarchy
-func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore) (FunctionCollection, *FunctionError) {
-	/**
-	 *  Input: a root module, a type registry and an empty function store
-	 *  Output: collected functions of the root module (or an error)
-	 *  Effect: fill all collected functions into the function store
-	 */
+func CollectFunctions (
+	mod    *loader.Module,
+	reg    TypeRegistry,
+	inj    KmdStmtInjection,
+	store  FunctionStore,
+) (FunctionCollection, *FunctionError) {
 	// 1. Check if the module was visited, if so, return the existing result
 	var mod_name = mod.Name
 	var existing, exists = store[mod_name]
@@ -49,7 +49,7 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 	var collection = make(FunctionCollection)
 	for _, imported := range mod.ImpMap {
 		// 2.1. Call self recursively to collect functions of imported modules
-		var imp_col, err = CollectFunctions(imported, reg, store)
+		var imp_col, err = CollectFunctions(imported, reg, inj, store)
 		if err != nil { return nil, err }
 		// 2.2. Iterate over all functions in imported modules
 		for name, refs := range imp_col {
@@ -77,12 +77,21 @@ func CollectFunctions(mod *loader.Module, reg TypeRegistry, store FunctionStore)
 		index_offset_map[name] = uint(len(refs))
 	}
 	// 3. Iterate over all function declarations in the current module
+	var stmts = make([] ast.VariousStatement, len(mod.Node.Statements))
+	copy(stmts, mod.Node.Statements)
+	var mod_inj, mod_has_inj = inj[mod_name]
+	if mod_has_inj {
+		for _, stmt := range mod_inj {
+			stmts = append(stmts, stmt)
+		}
+	}
 	for _, stmt := range mod.Node.Statements {
 		switch decl := stmt.Statement.(type) {
 		case ast.DeclFunction:
 			// 3.1. Get the name of the function and its type parameters
 			var name = loader.Id2String(decl.Name)
-			if name == IgnoreMark || strings.HasSuffix(name, FuncSuffix) {
+			if name == IgnoreMark || strings.HasSuffix(name, FuncSuffix) ||
+				name == KmdSerializerName || name == KmdDeserializerName {
 				// 3.1.1. If the function name is invalid, throw an error.
 				return nil, &FunctionError {
 					Point:    ErrorPointFrom(decl.Name.Node),
