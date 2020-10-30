@@ -33,20 +33,21 @@ type deserializeReader struct {
 	linesRead        uint
 }
 
-func Deserialize(input io.Reader, deserializer Deserializer) (Object, error) {
+func Deserialize(input io.Reader, deserializer Deserializer) (Object, *Type, error) {
+	var t *Type
 	var ctx = deserializeContext {
 		Deserializer: deserializer,
 		Depth:        0,
 		RequireKey:   false,
 		ReturnKey:    nil,
-		ReturnType:   nil,
+		ReturnType:   &t,
 		TypesInfo:    nil,
 		TypesCursor:  nil,
 	}
 	var line string
 	_, err := util.WellBehavedFscanln(input, &line)
-	if err != nil { return nil, err }
-	if line != header { return nil, errors.New("invalid header") }
+	if err != nil { return nil, nil, err }
+	if line != header { return nil, nil, errors.New("invalid header") }
 	var reader = &deserializeReader {
 		Reader: bufio.NewReader(input),
 		unreadIndention: 0,
@@ -54,8 +55,10 @@ func Deserialize(input io.Reader, deserializer Deserializer) (Object, error) {
 	}
 	obj, err := deserialize(reader, ctx)
 	var n = (reader.linesRead + 1)
-	if err != nil { return nil, fmt.Errorf("error near line %d: %w", n, err) }
-	return obj, nil
+	if err != nil { return nil, nil,
+		fmt.Errorf("error near line %d: %w", n, err) }
+	if t == nil { panic("something went wrong") }
+	return obj, t, nil
 }
 
 func deserialize(input *deserializeReader, ctx deserializeContext) (Object, error) {
@@ -258,7 +261,8 @@ func deserialize(input *deserializeReader, ctx deserializeContext) (Object, erro
 					if err != nil { return nil, err }
 					ctx.FillField(draft, field_index, adapted)
 				}
-				var record = ctx.FinishRecord(draft)
+				record, err := ctx.FinishRecord(draft, tid)
+				if err != nil { return nil, err }
 				return record, nil
 			} else {
 				return nil, errors.New("wrong indention")
@@ -296,7 +300,8 @@ func deserialize(input *deserializeReader, ctx deserializeContext) (Object, erro
 					if err != nil { return nil, err }
 					ctx.FillElement(draft, uint(i), adapted)
 				}
-				var tuple = ctx.FinishTuple(draft)
+				tuple, err := ctx.FinishTuple(draft, tid)
+				if err != nil { return nil, err }
 				return tuple, nil
 			} else {
 				return nil, errors.New("wrong indention")

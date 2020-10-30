@@ -59,8 +59,8 @@ func TestDeserialize(t *testing.T) {
 	t.Log("deserialize a sample text")
 	var ts = CreateGoStructTransformer(sampleOptions)
 	var reader = strings.NewReader(sampleText)
-	var obj, err = Deserialize(reader, ts.Deserializer)
+	var obj, typ, err = Deserialize(reader, ts.Deserializer)
 	if err != nil { t.Fatal(err) }
-	t.Logf("%+v", obj)
+	t.Logf("%s\n%+v", typ, obj)
 }
 

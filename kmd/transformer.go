@@ -63,11 +63,11 @@ type AlgebraicDeserializer struct {
 	GetFieldInfo    func(record_t TypeId, field string) (*Type, uint, error)
 	CreateRecord    func(record_t TypeId) Object
 	FillField       func(record Object, index uint, value Object)
-	FinishRecord    func(record Object) Object
+	FinishRecord    func(record Object, t TypeId) (Object, error)
 	CheckTuple      func(tuple_t TypeId, size uint) error
 	GetElementType  func(tuple_t TypeId, element uint) *Type
 	CreateTuple     func(tuple_t TypeId) Object
 	FillElement     func(tuple Object, element uint, value Object)
-	FinishTuple     func(tuple Object) Object
+	FinishTuple     func(tuple Object, t TypeId) (Object, error)
 	Case2Union      func(obj Object, union_t TypeId, case_t TypeId) (Object, error)
 }

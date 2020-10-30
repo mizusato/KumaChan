@@ -389,8 +389,8 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 				var field_v = record_v.Field(int(index))
 				field_v.Set(reflect.ValueOf(value))
 			},
-			FinishRecord: func(record Object) Object {
-				return reflect.ValueOf(record).Elem().Interface()
+			FinishRecord: func(record Object, _ TypeId) (Object, error) {
+				return reflect.ValueOf(record).Elem().Interface(), nil
 			},
 			CheckTuple: func(TypeId, uint) error {
 				panic("tuple is not supported in Go")
@@ -404,7 +404,7 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 			FillElement: func(Object, uint, Object) {
 				panic("tuple is not supported in Go")
 			},
-			FinishTuple: func(Object) Object {
+			FinishTuple: func(Object, TypeId) (Object, error) {
 				panic("tuple is not supported in Go")
 			},
 			Case2Union: func(obj Object, union_t TypeId, case_t TypeId) (Object, error) {

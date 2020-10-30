@@ -207,6 +207,20 @@ func Na() SumValue {
 	}
 }
 
+func Ok(v Value) SumValue {
+	return &ValSum {
+		Index: stdlib.OkIndex,
+		Value: v,
+	}
+}
+
+func Ng(v Value) SumValue {
+	return &ValSum {
+		Index: stdlib.NgIndex,
+		Value: v,
+	}
+}
+
 func Unwrap(maybe SumValue) (Value, bool) {
 	if maybe.Index == stdlib.JustIndex {
 		return maybe.Value, true

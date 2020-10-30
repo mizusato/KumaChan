@@ -5,6 +5,8 @@ import (
 	. "kumachan/runtime/common"
 	"kumachan/runtime/rx"
 	"sync"
+	"kumachan/kmd"
+	"kumachan/runtime/lib"
 )
 
 
@@ -12,12 +14,13 @@ const InitialDataStackCapacity = 16
 const InitialCallStackCapacity = 4
 
 type Machine struct {
-	program       Program
-	arguments     [] string
-	globalSlot    [] Value
-	contextPool   *sync.Pool
-	scheduler     rx.Scheduler
-	maxStackSize  uint
+	program         Program
+	arguments       [] string
+	globalSlot      [] Value
+	contextPool     *sync.Pool
+	scheduler       rx.Scheduler
+	maxStackSize    uint
+	kmdTransformer  kmd.Transformer
 }
 
 func Execute(p Program, args ([] string), max_stack_size uint) *Machine {
@@ -38,6 +41,7 @@ func Execute(p Program, args ([] string), max_stack_size uint) *Machine {
 		scheduler:    sched,
 		maxStackSize: max_stack_size,
 	}
+	m.kmdTransformer = lib.KmdTransformer(m)
 	execute(p, m)
 	return m
 }
@@ -84,4 +88,31 @@ func (h MachineContextHandle) GetArgs() ([] string) {
 
 func (h MachineContextHandle) GetErrorPoint() ErrorPoint {
 	return GetFrameErrorPoint(h.context.workingFrame)
+}
+
+func (h MachineContextHandle) KmdSerialize(v Value, t *kmd.Type) ([] byte, error) {
+	return lib.KmdSerialize(v, t, h.machine.kmdTransformer)
+}
+
+func (h MachineContextHandle) KmdDeserialize(binary ([] byte), t *kmd.Type) (Value, error) {
+	return lib.KmdDeserialize(binary, t, h.machine.kmdTransformer)
+}
+
+func (m *Machine) KmdGetConfig() KmdConfig {
+	return m.program.KmdConfig
+}
+
+func (m *Machine) KmdGetAdapter(index uint) Value {
+	var adapter = m.globalSlot[index]
+	var _, ok = adapter.(FunctionValue)
+	if !(ok) { panic("something went wrong") }
+	return adapter
+}
+
+func (m *Machine) KmdCallAdapter(f Value, x Value) Value {
+	return call(f.(FunctionValue), x, m)
+}
+
+func (m *Machine) KmdCallValidator(f Value, x Value) bool {
+	return BoolFrom(call(f.(FunctionValue), x, m).(SumValue))
 }

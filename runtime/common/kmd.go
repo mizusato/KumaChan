@@ -3,13 +3,24 @@ package common
 import "kumachan/kmd"
 
 
+type KmdApi interface {
+	KmdSerialize(v Value, t *kmd.Type) ([] byte, error)
+	KmdDeserialize(binary ([] byte), t *kmd.Type) (Value, error)
+}
+
 type KmdConfig struct {
 	KmdSchemaTable
 	KmdAdapterTable
+	KmdValidatorTable
 }
 
 type KmdAdapterTable  map[kmd.AdapterId] KmdAdapterInfo
 type KmdAdapterInfo   struct {
+	Index  uint
+}
+
+type KmdValidatorTable  map[kmd.TypeId] KmdValidatorInfo
+type KmdValidatorInfo   struct {
 	Index  uint
 }
 

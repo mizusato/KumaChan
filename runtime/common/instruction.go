@@ -50,9 +50,6 @@ const (
 	MSI     // [index, ___ ]: Append branch element index
 	MSD     // [ ____, ___ ]: Append branch element index (default)
 	MSJ     // [ ____, dest]: Jump if branch indexes matches the current value
-	/* KMD Operations */
-	DES     // [ typeIndex ]: Deserialize the current value
-	SER     // [ typeIndex ]: Serialize the current value
 )
 
 func (inst Instruction) GetGlobalIndex() uint {
@@ -128,10 +125,6 @@ func (inst Instruction) String() string {
 		return "MSD"
 	case MSJ:
 		return fmt.Sprintf("MSJ %d", inst.GetDestAddr())
-	case DES:
-		return fmt.Sprintf("DES %d", inst.GetGlobalIndex())
-	case SER:
-		return fmt.Sprintf("SER %d", inst.GetGlobalIndex())
 	default:
 		panic("unknown instruction kind")
 	}

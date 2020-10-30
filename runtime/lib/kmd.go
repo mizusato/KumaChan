@@ -8,6 +8,7 @@ import (
 	"kumachan/kmd"
 	. "kumachan/runtime/common"
 	"kumachan/runtime/lib/container"
+	"bytes"
 )
 
 
@@ -16,12 +17,29 @@ type KmdTypedValue struct {
 	Value  Value
 }
 
-type KmdInteropHandle interface {
-	GetAdapter(index uint) Value
-	CallAdapter(f Value, x Value) Value
+type KmdTransformContext interface {
+	KmdGetConfig() KmdConfig
+	KmdGetAdapter(index uint) Value
+	KmdCallAdapter(f Value, x Value) Value
+	KmdCallValidator(f Value, x Value) bool
 }
 
-func KmdTransformer(conf KmdConfig, h KmdInteropHandle) kmd.Transformer {
+func KmdTransformer(h KmdTransformContext) kmd.Transformer {
+	var conf = h.KmdGetConfig()
+	var validate = func(obj kmd.Object, t kmd.TypeId) error {
+		var v, exists = conf.KmdValidatorTable[t]
+		if exists {
+			var ok = h.KmdCallValidator(v, obj)
+			if ok {
+				return nil
+			} else {
+				return errors.New(fmt.Sprintf(
+					"validation failed for type %s", t))
+			}
+		} else {
+			return nil
+		}
+	}
 	return kmd.Transformer {
 		Serializer:   kmd.Serializer {
 			DetermineType: func(obj kmd.Object) *kmd.Type {
@@ -188,7 +206,7 @@ func KmdTransformer(conf KmdConfig, h KmdInteropHandle) kmd.Transformer {
 					return Na()
 				},
 			},
-			AlgebraicDeserializer: kmd.AlgebraicDeserializer{
+			AlgebraicDeserializer: kmd.AlgebraicDeserializer {
 				AssignObject: func(obj kmd.Object, from *kmd.Type, to *kmd.Type) (kmd.Object, error) {
 					if kmd.TypeEqual(from, to) {
 						return obj, nil
@@ -200,8 +218,9 @@ func KmdTransformer(conf KmdConfig, h KmdInteropHandle) kmd.Transformer {
 						}
 						var info, exists = conf.KmdAdapterTable[adapter_id]
 						if exists {
-							var adapter = h.GetAdapter(info.Index)
-							return h.CallAdapter(adapter, obj), nil
+							var adapter = h.KmdGetAdapter(info.Index)
+							var adapted = h.KmdCallAdapter(adapter, obj)
+							return adapted, nil
 						} else {
 							return nil, errors.New(fmt.Sprintf(
 								"the type %s cannot be adapted to the type %s",
@@ -248,8 +267,10 @@ func KmdTransformer(conf KmdConfig, h KmdInteropHandle) kmd.Transformer {
 					var record_pv = record.(ProductValue)
 					record_pv.Elements[index] = value
 				},
-				FinishRecord: func(record kmd.Object) kmd.Object {
-					return record
+				FinishRecord: func(record kmd.Object, t kmd.TypeId) (kmd.Object, error) {
+					err := validate(record, t)
+					if err != nil { return nil, err }
+					return record, nil
 				},
 				CheckTuple: func(tuple_t kmd.TypeId, size uint) error {
 					var t, exists = conf.KmdSchemaTable[tuple_t]
@@ -283,8 +304,10 @@ func KmdTransformer(conf KmdConfig, h KmdInteropHandle) kmd.Transformer {
 					var tuple_pv = tuple.(ProductValue)
 					tuple_pv.Elements[i] = value
 				},
-				FinishTuple: func(tuple kmd.Object) kmd.Object {
-					return tuple
+				FinishTuple: func(tuple kmd.Object, t kmd.TypeId) (kmd.Object, error) {
+					err := validate(tuple, t)
+					if err != nil { return nil, err }
+					return tuple, nil
 				},
 				Case2Union: func(obj kmd.Object, union_tid kmd.TypeId, case_tid kmd.TypeId) (kmd.Object, error) {
 					var union_t, exists = conf.KmdSchemaTable[union_tid]
@@ -308,5 +331,24 @@ func KmdTransformer(conf KmdConfig, h KmdInteropHandle) kmd.Transformer {
 			},
 		},
 	}
+}
+
+func KmdSerialize(v Value, t *kmd.Type, ts kmd.Transformer) ([] byte, error) {
+	var buf bytes.Buffer
+	var tv = KmdTypedValue {
+		Type:  t,
+		Value: v,
+	}
+	err := kmd.Serialize(tv, ts.Serializer, &buf)
+	if err != nil { return nil, err }
+	return buf.Bytes(), nil
+}
+
+func KmdDeserialize(binary ([] byte), t *kmd.Type, ts kmd.Transformer) (Value, error) {
+	obj, real_t, err := kmd.Deserialize(bytes.NewReader(binary), ts.Deserializer)
+	if err != nil { return nil, err }
+	obj, err = ts.AssignObject(obj, real_t, t)
+	if err != nil { return nil, err }
+	return obj, nil
 }
 
