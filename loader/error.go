@@ -22,7 +22,7 @@ type Ancestor struct {
 func MakeEntryContext() Context {
 	return Context {
 		ImportPoint: nil,
-		BreadCrumbs: make([]Ancestor, 0),
+		BreadCrumbs: make([] Ancestor, 0),
 	}
 }
 
@@ -66,6 +66,8 @@ type E_ReadFileFailed struct {
 	FilePath string
 	Message  string
 }
+func (e E_StandaloneImported) LoaderError() {}
+type E_StandaloneImported struct {}
 func (e E_ParseFailed) LoaderError() {}
 type E_ParseFailed struct {
 	ParserError  *parser.Error
@@ -96,6 +98,8 @@ func (err *Error) Desc() ErrorMessage {
 	case E_ReadFileFailed:
 		msg.WriteText(TS_ERROR, "Cannot open source file:")
 		msg.WriteEndText(TS_ERROR, e.Message)
+	case E_StandaloneImported:
+		msg.WriteText(TS_ERROR, "Standalone scripts are not importable")
 	case E_ParseFailed:
 		msg.WriteAll(e.ParserError.Message())
 	case E_NameConflict:

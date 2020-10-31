@@ -41,9 +41,10 @@ type Module struct {
 type Index  map[string] *Module
 
 type RawModule struct {
-	FileInfo  os.FileInfo
-	Manifest  RawModuleManifest
-	Content   RawModuleContent
+	FileInfo    os.FileInfo
+	Manifest    RawModuleManifest
+	Content     RawModuleContent
+	Standalone  bool
 }
 type RawModuleManifest struct {
 	Vendor  string            `json:"vendor"`
@@ -209,6 +210,7 @@ func ReadModulePath(path string) (RawModule, error) {
 					Content: content,
 				},
 			},
+			Standalone: true,
 		}, nil
 	}
 }
@@ -223,6 +225,12 @@ func LoadModule(path string, ctx Context, idx Index) (*Module, *Error) {
 			Message:   err1.Error(),
 		},
 	} }
+	if raw_mod.Standalone && len(ctx.BreadCrumbs) > 0 {
+		return nil, &Error {
+			Context:  ctx,
+			Concrete: E_StandaloneImported {},
+		}
+	}
 	/* 2. Try to parse the content to get an AST */
 	var manifest = raw_mod.Manifest
 	var module_name = (func() string {
