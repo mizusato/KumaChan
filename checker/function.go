@@ -85,13 +85,12 @@ func CollectFunctions (
 			stmts = append(stmts, stmt)
 		}
 	}
-	for _, stmt := range mod.Node.Statements {
+	for _, stmt := range stmts {
 		switch decl := stmt.Statement.(type) {
 		case ast.DeclFunction:
 			// 3.1. Get the name of the function and its type parameters
 			var name = loader.Id2String(decl.Name)
-			if name == IgnoreMark || strings.HasSuffix(name, FuncSuffix) ||
-				name == KmdSerializerName || name == KmdDeserializerName {
+			if name == IgnoreMark || strings.HasSuffix(name, FuncSuffix) {
 				// 3.1.1. If the function name is invalid, throw an error.
 				return nil, &FunctionError {
 					Point:    ErrorPointFrom(decl.Name.Node),

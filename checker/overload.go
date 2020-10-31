@@ -258,42 +258,9 @@ func AreTypesConflict(type1 Type, type2 Type, reg TypeRegistry) bool {
 				}
 				return true
 			}
-			var check_union = func(union *Union, another *NamedType) bool {
-				var q = [] *Union { union }
-				for len(q) > 0 {
-					var u = q[0]
-					q = q[1:]
-					for _, sub := range u.CaseTypes {
-						if another.Name == sub.Name {
-							return check_args()
-						} else {
-							var t = reg[sub.Name]
-							var sub_union, sub_is_union = t.Value.(*Union)
-							if sub_is_union {
-								q = append(q, sub_union)
-							}
-						}
-					}
-				}
-				return false
-			}
 			if t1.Name == t2.Name {
 				return check_args()
 			} else {
-				var T1 = reg[t1.Name]
-				var T2 = reg[t2.Name]
-				var t1_union, t1_is_union = T1.Value.(*Union)
-				if t1_is_union {
-					if check_union(t1_union, t2) {
-						return true
-					}
-				}
-				var t2_union, t2_is_union = T2.Value.(*Union)
-				if t2_is_union {
-					if check_union(t2_union, t1) {
-						return true
-					}
-				}
 				return false
 			}
 		default:

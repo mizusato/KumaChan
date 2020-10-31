@@ -444,6 +444,9 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 					Name:  string(body.Id.Value),
 					Point: ErrorPointFrom(body.Node),
 				}, make([] string, 0), f.Node)
+			case ast.KmdApiFuncBody:
+				add(f.DeclaredType, ExprKmdApi { Id: body.Id },
+					make([] string, 0), f.Node)
 			default:
 				panic("impossible branch")
 			}

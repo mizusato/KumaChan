@@ -158,7 +158,7 @@ func KmdTransformer(h KmdTransformContext) kmd.Transformer {
 					var schema = t.(kmd.UnionSchema)
 					for case_tid, index := range schema.CaseIndexMap {
 						if index == uint(sv.Index) {
-							var case_t = kmd.AlgebraicType(kmd.Union, case_tid)
+							var case_t = conf.GetTypeFromId(case_tid)
 							var case_v = sv.Value
 							return KmdTypedValue {
 								Type:  case_t,

@@ -6,6 +6,7 @@ import (
 	c "kumachan/runtime/common"
 	"kumachan/runtime/lib"
 	"kumachan/kmd"
+	"fmt"
 )
 
 
@@ -99,8 +100,11 @@ func CompileFunction (
 			f = func(arg c.Value, h c.InteropContext) c.Value {
 				var t = h.KmdGetTypeFromId(id.TypeId)
 				var binary, err = h.KmdSerialize(arg, t)
-				if err != nil { return c.Ng(err) }
-				return c.Ok(binary)
+				if err != nil {
+					var wrapped = fmt.Errorf("serialiation error: %w", err)
+					panic(wrapped)
+				}
+				return binary
 			}
 		case kmd.DeserializerId:
 			f = func(arg c.Value, h c.InteropContext) c.Value {

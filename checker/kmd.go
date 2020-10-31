@@ -136,28 +136,22 @@ func CraftKmdApiFunction (
 	id  kmd.TransformerPartId,
 ) ast.DeclFunction {
 	var node = nodes[sym]
-	var binary_t = ast.VariousType {
-		Node: node,
-		Type: ast.TypeRef {
+	var make_type = func(name string) ast.VariousType {
+		return ast.VariousType {
 			Node: node,
-			Id: ast.Identifier {
+			Type: ast.TypeRef {
 				Node: node,
-				Name: ([] rune)(stdlib.Bytes),
+				Id: ast.Identifier {
+					Node: node,
+					Name: ([] rune)(name),
+				},
+				TypeArgs: make([] ast.VariousType, 0),
 			},
-			TypeArgs: make([] ast.VariousType, 0),
-		},
+		}
 	}
-	var object_t = ast.VariousType {
-		Node: node,
-		Type: ast.TypeRef {
-			Node:     node,
-			Id:       ast.Identifier {
-				Node: node,
-				Name: ([] rune)(sym.SymbolName),
-			},
-			TypeArgs: make([] ast.VariousType, 0),
-		},
-	}
+	var binary_t = make_type(stdlib.Bytes)
+	var object_t = make_type(sym.SymbolName)
+	var error_t = make_type(stdlib.BinaryError)
 	var name string
 	var sig ast.ReprFunc
 	switch id.(type) {
@@ -173,7 +167,17 @@ func CraftKmdApiFunction (
 		sig = ast.ReprFunc {
 			Node:   node,
 			Input:  binary_t,
-			Output: object_t,
+			Output: ast.VariousType {
+				Node: node,
+				Type: ast.TypeRef {
+					Node:     node,
+					Id:       ast.Identifier {
+						Node: node,
+						Name: ([] rune)(stdlib.Result),
+					},
+					TypeArgs: [] ast.VariousType { object_t, error_t },
+				},
+			},
 		}
 	default:
 		panic("impossible branch")
@@ -232,7 +236,10 @@ func GetKmdSchema (
 		var index_map = make(map[kmd.TypeId] uint)
 		for i, case_t := range def.CaseTypes {
 			var case_id, exists = mapping[case_t.Name]
-			if !(exists) { panic("something went wrong") }
+			if !(exists) { return nil, &KmdError {
+				Point:    p,
+				Concrete: E_KmdTypeNotSerializable {},
+			} }
 			index_map[case_id] = uint(i)
 		}
 		return kmd.UnionSchema {

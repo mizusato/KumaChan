@@ -2,3 +2,29 @@
 
 # data: name=Vector, ver=v1
 type Vector (Float, Float);
+
+# data: name=Point, ver=v1
+type Point {
+    name: String,
+    pos:  Vector
+};
+
+# data: name=Shape, ver=v1
+type Shape union {
+    # data: name=Line, ver=v1
+    type Line (Point, Point);
+    # data: name=Polygon, ver=v1
+    type Polygon {
+        points: Array[Point]
+    };
+    # data: name=Circle, ver=v1
+    type Circle {
+        center: Point,
+        radius: Float
+    };
+};
+
+# data: name=Canvas, ver=v1
+type Canvas {
+    shapes: Array[Shape]
+};

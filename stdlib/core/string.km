@@ -12,11 +12,11 @@ public function from: (&(Number)(String))  native 'String from Number';
 public function from: (&(Float)(String))   native 'String from Float';
 
 // encodes string into UTF-8 byte sequence
-public function encode: (&(String)(Bytes))         native 'encode-utf8';
+public function encode:  (&(String)(Bytes))         native 'encode-utf8';
 // decodes string from UTF-8 byte sequence
-public function decode: (&(Bytes)(Maybe[String]))  native 'decode-utf8';
+public function decode:  (&(Bytes)(Maybe[String]))  native 'decode-utf8';
 // decodes string from UTF-8 byte sequence (outputs \uFFFD on errors)
-public function force-decode: (&(Bytes)(String))   native 'force-decode-utf8';
+public function decode!: (&(Bytes)(String))         native 'force-decode-utf8';
 
 public function quote:   (&(String)(String))         native 'quote';
 public function unquote: (&(String)(Maybe[String]))  native 'unquote';

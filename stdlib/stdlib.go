@@ -21,7 +21,7 @@ var core_types = []string {
 	Result, Ok, Ng,
 	Ordering, Smaller, Equal, Bigger,
 	// binary.km
-	Bit, Byte, Word, Dword, Qword, Bytes,
+	Bit, Byte, Word, Dword, Qword, Bytes, BinaryError,
 	// int.km
 	Int,
 	// containers.km
@@ -85,6 +85,7 @@ const Word = "Word"
 const Dword = "Dword"
 const Qword = "Qword"
 const Bytes = "Bytes"
+const BinaryError = "BinaryError"
 // int.km
 const Int = "Int"
 // containers.km

@@ -222,7 +222,7 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 					continue outer
 				case NativeFunctionValue:
 					var arg = ec.popValue()
-					var ret = f(arg, MachineContextHandle{ context: ec, machine: m })
+					var ret = f(arg, MachineContextHandle { context: ec, machine: m })
 					ec.pushValue(ret)
 				default:
 					panic("CALL: cannot execute on non-callable value")

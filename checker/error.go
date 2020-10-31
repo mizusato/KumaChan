@@ -262,6 +262,11 @@ type E_KmdElementNotSerializable struct {
 	ElementIndex  uint
 }
 
+func (impl E_KmdCaseNotSerializable) KmdError() {}
+type E_KmdCaseNotSerializable struct {
+	CaseName  string
+}
+
 func (impl E_KmdTypeNotSerializable) KmdError() {}
 type E_KmdTypeNotSerializable struct {}
 
@@ -281,6 +286,10 @@ func (err *KmdError) Desc() ErrorMessage {
 	case E_KmdElementNotSerializable:
 		msg.WriteText(TS_ERROR, "The")
 		msg.WriteInnerText(TS_INLINE, fmt.Sprintf("#%d", e.ElementIndex))
+		msg.WriteText(TS_ERROR, "is not KMD serializable")
+	case E_KmdCaseNotSerializable:
+		msg.WriteText(TS_ERROR, "Case type")
+		msg.WriteInnerText(TS_INLINE_CODE, e.CaseName)
 		msg.WriteText(TS_ERROR, "is not KMD serializable")
 	case E_KmdTypeNotSerializable:
 		msg.WriteText(TS_ERROR, "This type is not KMD serializable")

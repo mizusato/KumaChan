@@ -75,7 +75,7 @@ func AdaptNativeFunction(f interface{}) NativeFunction {
 		} else {
 			if arity == 1 {
 				return func(arg Value, handle InteropContext) Value {
-					return AdaptReturnValue(f_rv.Call([]reflect.Value {
+					return AdaptReturnValue(f_rv.Call([] reflect.Value {
 						get_arg_val(arg),
 					}))
 				}
