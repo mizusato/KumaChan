@@ -7,9 +7,6 @@ import (
 
 
 var IO_Functions = map[string] Value {
-	"String from I/O::Error": func(err error) String {
-		return StringFromGoString(err.Error())
-	},
 	"is-eof": func(err error) SumValue {
 		return ToBool(err == io.EOF)
 	},

@@ -84,3 +84,8 @@ public function read-lines: ( &(FileReadOnly) Effect*[String,I/O::Error] )
     native 'file-read-lines';
 public function read-lines: ( &(FileReadWrite) Effect*[String,I/O::Error] )
     native 'file-read-lines';
+
+public function read-all: ( &(FileReadOnly) Effect[Bytes,I/O::Error] )
+    native 'file-read-all';
+public function read-all: ( &(FileReadWrite) Effect[Bytes,I/O::Error] )
+    native 'file-read-all';

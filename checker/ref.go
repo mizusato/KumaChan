@@ -224,17 +224,19 @@ func CallUntypedRef (
 	ref_info   ExprInfo,
 	call_info  ExprInfo,
 	ctx        ExprContext,
-) (Expr, *ExprError) {
+) (SemiExpr, *ExprError) {
 	switch ref_body := ref.RefBody.(type) {
 	case UntypedRefToType:
 		var g = ref_body.Type
 		var g_name = ref_body.TypeName
 		var force_exact = ref_body.ForceExact
 		var type_args = ref.TypeArgs
-		return Box (
+		var typed, err = Box (
 			arg, g, g_name, ref_info, type_args,
 			force_exact, call_info, ctx,
 		)
+		if err != nil { return SemiExpr{}, err }
+		return LiftTyped(typed), nil
 	case UntypedRefToFunctions:
 		var functions = ref_body.Functions
 		var name = ref_body.FuncName

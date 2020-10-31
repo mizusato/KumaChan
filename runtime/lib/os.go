@@ -178,6 +178,9 @@ var OS_Functions = map[string] Value {
 			return StringFromRuneSlice(runes.([] rune))
 		})
 	},
+	"file-read-all": func(f rx.File) rx.Effect {
+		return f.ReadAll()
+	},
 	"exit": func(code uint8) rx.Effect {
 		return rx.NewSync(func() (rx.Object, bool) {
 			os.Exit(int(code))

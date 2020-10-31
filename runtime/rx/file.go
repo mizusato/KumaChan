@@ -8,6 +8,7 @@ import (
 	"math"
 	"bufio"
 	"errors"
+	"io/ioutil"
 	"path/filepath"
 	"kumachan/util"
 )
@@ -228,6 +229,16 @@ func (f File) ReadLineRunes() Effect {
 func (f File) ReadLine() Effect {
 	return f.ReadLineRunes().Map(func(runes Object) Object {
 		return string(runes.([] rune))
+	})
+}
+
+func (f File) ReadAll() Effect {
+	return NewQueued(f.worker, func() (Object, bool) {
+		var bytes, err = ioutil.ReadAll(f.raw)
+		if err != nil {
+			return err, false
+		}
+		return bytes, true
 	})
 }
 

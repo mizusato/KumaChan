@@ -6,3 +6,7 @@ type Qword   Uint64;
 type Bytes   protected Array[Byte];  // []byte
 
 type BinaryError native;
+public function from: ( &(BinaryError) String )
+    native 'String from error';
+public function crash: ( &(BinaryError) NoExcept[-] )
+    ( &(err) (crash ((str err) | "Binary Error: #")) );

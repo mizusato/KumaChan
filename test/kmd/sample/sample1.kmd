@@ -1,0 +1,60 @@
+KumaChan Data
+{} kumachan.Canvas v1
+ shapes [] | kumachan.Shape v1
+  -
+   () kumachan.Line v1
+    {} kumachan.Point v1
+     pos () kumachan.Vector v1
+      float
+       1
+      float
+       2
+     name string
+      "A"
+    {} kumachan.Point v1
+     name string
+      "B"
+     pos () kumachan.Vector v1
+      float
+       3
+      float
+       4
+  -
+   {} kumachan.Polygon v1
+    points [] {} kumachan.Point v1
+     -
+      name string
+       "O"
+      pos () kumachan.Vector v1
+       float
+        0
+       float
+        0
+     -
+      -
+       "C"
+      -
+       -
+        -1.5
+       -
+        0.5
+     -
+      -
+       "D"
+      -
+       -
+        -1.5
+       -
+        -2
+  -
+   {} kumachan.Circle v1
+    center {} kumachan.Point v1
+     name string
+      "P"
+     pos () kumachan.Vector v1
+      float
+       5
+      float
+       5
+    radius float
+     15.5

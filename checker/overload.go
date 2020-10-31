@@ -16,6 +16,11 @@ type UnavailableCall struct {
 	Name      string
 	Error     *ExprError
 }
+func (impl UndecidedCall) SemiExprVal() {}
+type UndecidedCall struct {
+	FuncName  string
+	Calls     [] AvailableCall
+}
 
 func OverloadedCall (
 	functions  [] *GenericFunction,
@@ -25,7 +30,7 @@ func OverloadedCall (
 	f_info     ExprInfo,
 	call_info  ExprInfo,
 	ctx        ExprContext,
-) (Expr, *ExprError) {
+) (SemiExpr, *ExprError) {
 	if len(functions) == 0 { panic("something went wrong") }
 	if len(functions) == 1 {
 		var f = functions[0]
@@ -33,8 +38,8 @@ func OverloadedCall (
 			f, name, 0, type_args,
 			arg, f_info, call_info, ctx,
 		)
-		if err != nil { return Expr{}, err }
-		return call, nil
+		if err != nil { return SemiExpr{}, err }
+		return LiftTyped(call), nil
 	} else {
 		var available = make([] AvailableCall, 0)
 		var unavailable = make([] UnavailableCall, 0)
@@ -57,27 +62,71 @@ func OverloadedCall (
 				})
 			}
 		}
-		if len(available) == 0 {
-			var unavailable_info = make([] UnavailableFuncInfo, len(unavailable))
-			for i, item := range unavailable {
-				unavailable_info[i].FuncDesc = DescribeFunction(item.Function, name)
-				unavailable_info[i].Error = item.Error
-			}
-			return Expr{}, &ExprError {
-				Point:    call_info.ErrorPoint,
-				Concrete: E_NoneOfFunctionsCallable { unavailable_info },
-			}
-		} else if len(available) == 1 {
-			return available[0].Expr, nil
+		return GenerateCallResult(name, call_info, available, unavailable, false)
+	}
+}
+
+func AssignUndecidedTo(expected Type, call UndecidedCall, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
+	var name = call.FuncName
+	var available = make([] AvailableCall, 0)
+	var unavailable = make([] UnavailableCall, 0)
+	for _, opt := range call.Calls {
+		var expr, err = TypedAssignTo(expected, opt.Expr, ctx)
+		if err == nil {
+			available = append(available, AvailableCall {
+				Expr:     expr,
+				Function: opt.Function,
+			})
 		} else {
+			unavailable = append(unavailable, UnavailableCall{
+				Function: opt.Function,
+				Name:     name,
+				Error:    err,
+			})
+		}
+	}
+	var semi, err = GenerateCallResult(name, info, available, unavailable, true)
+	if err != nil { return Expr{}, nil }
+	return Expr(semi.Value.(TypedExpr)), nil
+}
+
+func GenerateCallResult (
+	name         string,
+	info         ExprInfo,
+	available    [] AvailableCall,
+	unavailable  [] UnavailableCall,
+	assigned     bool,
+) (SemiExpr, *ExprError) {
+	if len(available) == 0 {
+		var unavailable_info = make([] UnavailableFuncInfo, len(unavailable))
+		for i, item := range unavailable {
+			unavailable_info[i].FuncDesc = DescribeFunction(item.Function, name)
+			unavailable_info[i].Error = item.Error
+		}
+		return SemiExpr{}, &ExprError {
+			Point:    info.ErrorPoint,
+			Concrete: E_NoneOfFunctionsCallable { unavailable_info },
+		}
+	} else if len(available) == 1 {
+		return LiftTyped(available[0].Expr), nil
+	} else {
+		if assigned {
 			var available_desc = make([] string, len(available))
 			for i, item := range available {
 				available_desc[i] = DescribeFunction(item.Function, name)
 			}
-			return Expr{}, &ExprError {
-				Point:    call_info.ErrorPoint,
+			return SemiExpr{}, &ExprError {
+				Point:    info.ErrorPoint,
 				Concrete: &E_AmbiguousCall { available_desc },
 			}
+		} else {
+			return SemiExpr {
+				Value: UndecidedCall {
+					FuncName: name,
+					Calls:    available,
+				},
+				Info:  info,
+			}, nil
 		}
 	}
 }
@@ -142,7 +191,7 @@ func DescribeFunction(f *GenericFunction, name string) string {
 	)
 }
 
-func CheckOverload (
+func ValidateOverload (
 	functions     [] FunctionReference,
 	added_type    Func,
 	added_fields  map[string] Field,

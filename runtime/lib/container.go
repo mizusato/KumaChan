@@ -130,6 +130,9 @@ var ContainerFunctions = map[string] Value {
 	"array-iterate": func(av Value) Seq {
 		return ArrayFrom(av).Iterate()
 	},
+	"String from error": func(err error) String {
+		return StringFromGoString(err.Error())
+	},
 	"String from Char": func(char Char) String {
 		return [] Char { char }
 	},

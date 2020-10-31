@@ -1,0 +1,18 @@
+import Data from './schema';
+
+// TODO: directory path APIs
+do open-read-only (path './test/kmd/sample/sample1.kmd')
+    | then (& (file)
+        file.read-all
+        | then (& (binary)
+            let result := (:Result[Data::Canvas,BinaryError]:
+                data-deserialize binary),
+            switch result:
+            case OK canvas:
+                let _ := trace canvas,
+                println 'Deserialization Finished',
+            case NG err:
+                println ("Deserialization Error: #" (str err)),
+            end
+        ))
+    | catch (&(err)(crash err));

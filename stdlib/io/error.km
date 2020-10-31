@@ -7,7 +7,7 @@ type ErrorKind union {
 };
 
 public function from: ( &(Error) String )
-    native 'String from I/O::Error';
+    native 'String from error';
 public function crash: ( &(Error) NoExcept[-] )
     ( &(err) (crash ((str err) | "I/O Error: #")) );
 
