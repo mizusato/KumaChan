@@ -2,9 +2,9 @@ import Data from './schema';
 
 // TODO: directory path APIs
 do open-read-only (path './test/kmd/sample/sample1.kmd')
-    | then (& (file)
+    | then ( &(file)
         file.read-all
-        | then (& (binary)
+        | then ( &(binary)
             let result := (:Result[Data::Canvas,BinaryError]:
                 data-deserialize binary),
             switch result:
