@@ -1,7 +1,7 @@
 import Data from './schema';
 
 do (println (decode! (data-serialize canvas)))
-| catch (&(err)(crash err));
+    | catch (&(err)(crash err));
 
 private const canvas: Data::Canvas
     Data::Canvas {
