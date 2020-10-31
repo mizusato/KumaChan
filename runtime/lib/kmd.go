@@ -112,9 +112,9 @@ func KmdTransformer(h KmdTransformContext) kmd.Transformer {
 					var tv = obj.(KmdTypedValue)
 					var pv = tv.Value.(ProductValue)
 					var tid = tv.Type.Identifier()
-					var t, exists = conf.KmdSchemaTable[tid]
+					var t, exists = conf.SchemaTable[tid]
 					if !(exists) { panic("something went wrong") }
-					var schema = t.(KmdRecordSchema)
+					var schema = t.(kmd.RecordSchema)
 					for name, field := range schema.Fields {
 						var field_t = field.Type
 						var field_v = pv.Elements[field.Index]
@@ -129,9 +129,9 @@ func KmdTransformer(h KmdTransformContext) kmd.Transformer {
 				IterateTuple: func(obj kmd.Object, f func(uint,kmd.Object) error) error {
 					var tv = obj.(KmdTypedValue)
 					var tid = tv.Type.Identifier()
-					var t, exists = conf.KmdSchemaTable[tid]
+					var t, exists = conf.SchemaTable[tid]
 					if !(exists) { panic("something went wrong") }
-					var schema = t.(KmdTupleSchema)
+					var schema = t.(kmd.TupleSchema)
 					var pv, is_pv = tv.Value.(ProductValue)
 					if !(is_pv) {
 						return f(0, KmdTypedValue {
@@ -153,9 +153,9 @@ func KmdTransformer(h KmdTransformContext) kmd.Transformer {
 					var tv = obj.(KmdTypedValue)
 					var sv = tv.Value.(SumValue)
 					var tid = tv.Type.Identifier()
-					var t, exists = conf.KmdSchemaTable[tid]
+					var t, exists = conf.SchemaTable[tid]
 					if !(exists) { panic("something went wrong") }
-					var schema = t.(KmdUnionSchema)
+					var schema = t.(kmd.UnionSchema)
 					for case_tid, index := range schema.CaseIndexMap {
 						if index == uint(sv.Index) {
 							var case_t = kmd.AlgebraicType(kmd.Union, case_tid)
@@ -239,10 +239,10 @@ func KmdTransformer(h KmdTransformContext) kmd.Transformer {
 					}
 				},
 				CheckRecord: func(record_t kmd.TypeId, size uint) error {
-					var t, exists = conf.KmdSchemaTable[record_t]
+					var t, exists = conf.SchemaTable[record_t]
 					if !(exists) { return errors.New(fmt.Sprintf(
 						"type %s does not exist", record_t)) }
-					var schema, ok = t.(KmdRecordSchema)
+					var schema, ok = t.(kmd.RecordSchema)
 					if !(ok) { return errors.New(fmt.Sprintf(
 						"type %s is not a record type", record_t)) }
 					var schema_size = uint(len(schema.Fields))
@@ -252,18 +252,18 @@ func KmdTransformer(h KmdTransformContext) kmd.Transformer {
 					return nil
 				},
 				GetFieldInfo: func(record_t kmd.TypeId, name string) (*kmd.Type, uint, error) {
-					var t, t_exists = conf.KmdSchemaTable[record_t]
+					var t, t_exists = conf.SchemaTable[record_t]
 					if !(t_exists) { panic("something went wrong") }
-					var schema = t.(KmdRecordSchema)
+					var schema = t.(kmd.RecordSchema)
 					var schema_field, exists = schema.Fields[name]
 					if !(exists) { return nil, ^uint(0), errors.New(fmt.Sprintf(
 						"field %s does not exist on type %s", name, record_t)) }
 					return schema_field.Type, schema_field.Index, nil
 				},
 				CreateRecord: func(record_t kmd.TypeId) kmd.Object {
-					var t, exists = conf.KmdSchemaTable[record_t]
+					var t, exists = conf.SchemaTable[record_t]
 					if !(exists) { panic("something went wrong") }
-					var schema = t.(KmdRecordSchema)
+					var schema = t.(kmd.RecordSchema)
 					var size = len(schema.Fields)
 					return &ValProd {
 						Elements: make([] Value, size),
@@ -279,10 +279,10 @@ func KmdTransformer(h KmdTransformContext) kmd.Transformer {
 					return record, nil
 				},
 				CheckTuple: func(tuple_t kmd.TypeId, size uint) error {
-					var t, exists = conf.KmdSchemaTable[tuple_t]
+					var t, exists = conf.SchemaTable[tuple_t]
 					if !(exists) { return errors.New(fmt.Sprintf(
 						"type %s does not exist", tuple_t)) }
-					var schema, ok = t.(KmdTupleSchema)
+					var schema, ok = t.(kmd.TupleSchema)
 					if !(ok) { return errors.New(fmt.Sprintf(
 						"type %s is not a tuple type", tuple_t)) }
 					var schema_size = uint(len(schema.Elements))
@@ -292,15 +292,15 @@ func KmdTransformer(h KmdTransformContext) kmd.Transformer {
 					return nil
 				},
 				GetElementType: func(tuple_t kmd.TypeId, i uint) *kmd.Type {
-					var t, t_exists = conf.KmdSchemaTable[tuple_t]
+					var t, t_exists = conf.SchemaTable[tuple_t]
 					if !(t_exists) { panic("something went wrong") }
-					var schema = t.(KmdTupleSchema)
+					var schema = t.(kmd.TupleSchema)
 					return schema.Elements[i]
 				},
 				CreateTuple: func(tuple_t kmd.TypeId) kmd.Object {
-					var t, exists = conf.KmdSchemaTable[tuple_t]
+					var t, exists = conf.SchemaTable[tuple_t]
 					if !(exists) { panic("something went wrong") }
-					var schema = t.(KmdTupleSchema)
+					var schema = t.(kmd.TupleSchema)
 					var size = len(schema.Elements)
 					return &ValProd {
 						Elements: make([] Value, size),
@@ -320,10 +320,10 @@ func KmdTransformer(h KmdTransformContext) kmd.Transformer {
 					return tuple, nil
 				},
 				Case2Union: func(obj kmd.Object, union_tid kmd.TypeId, case_tid kmd.TypeId) (kmd.Object, error) {
-					var union_t, exists = conf.KmdSchemaTable[union_tid]
+					var union_t, exists = conf.SchemaTable[union_tid]
 					if !(exists) { return nil, errors.New(fmt.Sprintf(
 						"type %s does not exist", union_tid)) }
-					var schema, ok = union_t.(KmdUnionSchema)
+					var schema, ok = union_t.(kmd.UnionSchema)
 					if !(ok) { return nil, errors.New(fmt.Sprintf(
 						"type %s is not a union type", union_tid)) }
 					var index, is_case = schema.CaseIndexMap[case_tid]

@@ -2,14 +2,17 @@ package compiler
 
 import (
 	c "kumachan/runtime/common"
+	ch "kumachan/checker"
 )
 
 
 type FuncNode struct {
 	Underlying    *c.Function
 	Dependencies  [] Dependency
+	ch.FunctionKmdInfo
 }
 type Dependency interface { Dependency() }
+var __NoKmdInfo = ch.FunctionKmdInfo {}
 
 func (impl DepFunction) Dependency() {}
 type DepFunction struct {
@@ -37,11 +40,13 @@ func FuncNodeFrom (
 	idx       Index,
 	data      *([] c.DataValue),
 	closures  *([] FuncNode),
+	kmd_info  ch.FunctionKmdInfo,
 ) FuncNode {
 	var deps = RefsToDeps(refs, idx, data, closures)
 	return FuncNode {
-		Underlying:   f,
-		Dependencies: deps,
+		Underlying:      f,
+		Dependencies:    deps,
+		FunctionKmdInfo: kmd_info,
 	}
 }
 
@@ -67,6 +72,7 @@ func RefsToDeps (
 				idx,
 				data,
 				closures,
+				__NoKmdInfo,
 			)
 			var index = uint(len(*closures))
 			*closures = append(*closures, cl)

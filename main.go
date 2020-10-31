@@ -21,6 +21,7 @@ import (
     "kumachan/runtime/common"
     "kumachan/qt"
     "kumachan/tools"
+    "kumachan/kmd"
 )
 
 
@@ -74,8 +75,8 @@ func load(path string) (*loader.Module, loader.Index) {
     return mod, idx
 }
 
-func check(mod *loader.Module, idx loader.Index) (*checker.CheckedModule, checker.Index) {
-    var c_mod, c_idx, _, errs = checker.TypeCheck(mod, idx)
+func check(mod *loader.Module, idx loader.Index) (*checker.CheckedModule, checker.Index, kmd.SchemaTable) {
+    var c_mod, c_idx, schema, errs = checker.TypeCheck(mod, idx)
     if errs != nil {
         var messages = make([] ErrorMessage, len(errs))
         for i, e := range errs {
@@ -85,10 +86,10 @@ func check(mod *loader.Module, idx loader.Index) (*checker.CheckedModule, checke
         fmt.Fprintf(os.Stderr, "%s\n", msg.String())
         os.Exit(4)
     }
-    return c_mod, c_idx
+    return c_mod, c_idx, schema
 }
 
-func compile(entry *checker.CheckedModule) common.Program {
+func compile(entry *checker.CheckedModule, schema kmd.SchemaTable) common.Program {
     var data = make([] common.DataValue, 0)
     var closures = make([] compiler.FuncNode, 0)
     var index = make(compiler.Index)
@@ -102,7 +103,7 @@ func compile(entry *checker.CheckedModule) common.Program {
         fmt.Fprintf(os.Stderr, "%s\n", msg.String())
         os.Exit(5)
     }
-    var program, err = compiler.CreateProgram(index, data, closures)
+    var program, err = compiler.CreateProgram(index, data, closures, schema)
     if err != nil {
         fmt.Fprintf(os.Stderr, "%s\n", err.Error())
         os.Exit(6)
@@ -195,8 +196,8 @@ func main() {
                 if err != nil { panic(err) }
             }
             var mod, idx = load(path)
-            var c_mod, _ = check(mod, idx)
-            var program = compile(c_mod)
+            var c_mod, _, schema = check(mod, idx)
+            var program = compile(c_mod, schema)
             if asm_dump != "" {
                 dump_asm(program, asm_dump)
             }

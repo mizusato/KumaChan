@@ -1,8 +1,8 @@
 package compiler
 
 import (
-	ch "kumachan/checker"
 	. "kumachan/error"
+	ch "kumachan/checker"
 	c "kumachan/runtime/common"
 	"kumachan/runtime/lib"
 	"kumachan/kmd"
@@ -43,10 +43,9 @@ func CompileModule (
 			var f_raw, refs, err = CompileFunction (
 				item.Body, item.Implicit, mod.Name, name, item.Point,
 			)
-			if err != nil {
-				errs = append(errs, err...)
-			}
-			var f = FuncNodeFrom(f_raw, refs, idx, data, closures)
+			if err != nil { errs = append(errs, err...) }
+			var kmd_info = item.FunctionKmdInfo
+			var f = FuncNodeFrom(f_raw, refs, idx, data, closures, kmd_info)
 			var existing, exists = functions[name]
 			if exists {
 				functions[name] = append(existing, f)
@@ -62,7 +61,7 @@ func CompileModule (
 		if err != nil {
 			errs = append(errs, err...)
 		}
-		constants[name] = FuncNodeFrom(f, refs, idx, data, closures)
+		constants[name] = FuncNodeFrom(f, refs, idx, data, closures, __NoKmdInfo)
 	}
 	for _, item := range mod.Effects {
 		var value = ch.ExprExpr(item.Value)
@@ -70,7 +69,7 @@ func CompileModule (
 		if err != nil {
 			errs = append(errs, err...)
 		}
-		effects = append(effects, FuncNodeFrom(f, refs, idx, data, closures))
+		effects = append(effects, FuncNodeFrom(f, refs, idx, data, closures, __NoKmdInfo))
 	}
 	idx[mod.Name] = &CompiledModule {
 		Functions: functions,

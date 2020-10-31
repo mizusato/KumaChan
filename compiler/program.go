@@ -2,8 +2,9 @@ package compiler
 
 import (
 	"fmt"
-	c "kumachan/runtime/common"
 	. "kumachan/error"
+	c "kumachan/runtime/common"
+	"kumachan/kmd"
 )
 
 
@@ -11,7 +12,13 @@ func CreateProgram (
 	idx       Index,
 	data      [] c.DataValue,
 	closures  [] FuncNode,
+	schema    kmd.SchemaTable,
 ) (c.Program, *Error) {
+	var kmd_conf = c.KmdConfig {
+		SchemaTable:       schema,
+		KmdAdapterTable:   make(c.KmdAdapterTable),
+		KmdValidatorTable: make(c.KmdValidatorTable),
+	}
 	var function_index_map = make(map[DepFunction] uint)
 	var functions = make([] FuncNode, 0)
 	for mod_name, mod := range idx {
@@ -24,6 +31,16 @@ func CreateProgram (
 					Name:   f_name,
 					Index:  uint(f_index),
 				}] = global_index
+				if item.IsAdapter {
+					kmd_conf.KmdAdapterTable[item.AdapterId] = c.KmdAdapterInfo {
+						Index: global_index,
+					}
+				}
+				if item.IsValidator {
+					kmd_conf.KmdValidatorTable[item.ValidatorId] = c.KmdValidatorInfo {
+						Index: global_index,
+					}
+				}
 			}
 		}
 	}
@@ -212,5 +229,6 @@ func CreateProgram (
 		Closures:   unwrap(closures),
 		Constants:  unwrap(sorted_constants),
 		Effects:    unwrap(effects),
+		KmdConfig:  kmd_conf,
 	}, nil
 }

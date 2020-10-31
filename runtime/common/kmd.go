@@ -10,7 +10,7 @@ type KmdApi interface {
 }
 
 type KmdConfig struct {
-	KmdSchemaTable
+	kmd.SchemaTable
 	KmdAdapterTable
 	KmdValidatorTable
 }
@@ -25,30 +25,11 @@ type KmdValidatorInfo   struct {
 	Index  uint
 }
 
-type KmdSchemaTable  map[kmd.TypeId] KmdSchema
-type KmdSchema       interface { KmdSchema() }
-func (KmdRecordSchema) KmdSchema() {}
-type KmdRecordSchema struct {
-	Fields  map[string] KmdRecordField
-}
-type KmdRecordField struct {
-	Type   *kmd.Type
-	Index  uint
-}
-func (KmdTupleSchema) KmdSchema() {}
-type KmdTupleSchema struct {
-	Elements  [] *kmd.Type
-}
-func (KmdUnionSchema) KmdSchema() {}
-type KmdUnionSchema struct {
-	CaseIndexMap  map[kmd.TypeId] uint
-}
-
 func (conf KmdConfig) GetTypeFromId(id kmd.TypeId) *kmd.Type {
-	switch conf.KmdSchemaTable[id].(type) {
-	case KmdRecordSchema: return kmd.AlgebraicType(kmd.Record, id)
-	case KmdTupleSchema:  return kmd.AlgebraicType(kmd.Tuple, id)
-	case KmdUnionSchema:  return kmd.AlgebraicType(kmd.Union, id)
-	default:              panic("something went wrong")
+	switch conf.SchemaTable[id].(type) {
+	case kmd.RecordSchema: return kmd.AlgebraicType(kmd.Record, id)
+	case kmd.TupleSchema:  return kmd.AlgebraicType(kmd.Tuple, id)
+	case kmd.UnionSchema:  return kmd.AlgebraicType(kmd.Union, id)
+	default:               panic("something went wrong")
 	}
 }

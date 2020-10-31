@@ -16,6 +16,10 @@ const ForceExactSuffix = "!"
 const CovariantPrefix = "+"
 const ContravariantPrefix = "-"
 const BadIndex = ^(uint(0))
+const KmdSerializerName = "data-serialize"
+const KmdDeserializerName = "data-deserialize"
+const KmdAdapterName = "data-adapt"
+const KmdValidatorName = "data-validate"
 var __NoExcept = CoreSymbol(stdlib.NoExcept)
 var __DoType = &NamedType {
 	Name: __NoExcept,
@@ -24,6 +28,7 @@ var __DoType = &NamedType {
 var __Bool = CoreSymbol(stdlib.Bool)
 var __T_Bool = &NamedType { Name: __Bool, Args: make([] Type, 0) }
 var __Yes uint = stdlib.YesIndex
+var __Maybe = CoreSymbol(stdlib.Maybe)
 var __Float = CoreSymbol(stdlib.Float)
 var __String = CoreSymbol(stdlib.String)
 var __T_String = &NamedType { Name: __String, Args: make([] Type, 0) }
@@ -46,7 +51,6 @@ var __Uint8 = CoreSymbol(stdlib.Uint8)
 var __Byte = CoreSymbol(stdlib.Byte)
 var __Bit = CoreSymbol(stdlib.Bit)
 var __Bytes = CoreSymbol(stdlib.Bytes)
-var __T_Bytes = &NamedType { Name: __Bytes, Args: make([] Type, 0) }
 var __IntegerTypes = []loader.Symbol {
 	__Int,   __Number,
 	__Int64, __Uint64, __Qword,

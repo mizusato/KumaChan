@@ -9,8 +9,17 @@ import (
 )
 
 
-const KmdSerializerName = "data-serialize"
-const KmdDeserializerName = "data-deserialize"
+var __KmdPrimitiveTypes = map[loader.Symbol] kmd.TypeKind {
+	__Bool:   kmd.Bool,
+	__Float:  kmd.Float,
+	__Uint32: kmd.Uint32,
+	__Int32:  kmd.Int32,
+	__Uint64: kmd.Uint64,
+	__Int64:  kmd.Int64,
+	__Int:    kmd.Int,
+	__String: kmd.String,
+	__Bytes:  kmd.Binary,
+}
 
 type KmdIdMapping  map[loader.Symbol] kmd.TypeId
 
@@ -21,8 +30,9 @@ func CollectKmdApi (
 	reg        TypeRegistry,
 	nodes      TypeDeclNodeInfo,
 	raw_index  loader.Index,
-) (KmdIdMapping, KmdStmtInjection, *KmdError) {
+) (KmdIdMapping, kmd.SchemaTable, KmdStmtInjection, *KmdError) {
 	var mapping = make(KmdIdMapping)
+	var sch = make(kmd.SchemaTable)
 	var inj = make(KmdStmtInjection)
 	for sym, g := range reg {
 		var point = ErrorPointFrom(nodes[sym])
@@ -31,12 +41,12 @@ func CollectKmdApi (
 		if labelled_serializable {
 			var _, is_native = g.Value.(*Native)
 			if is_native {
-				return nil, nil, &KmdError {
+				return nil, nil, nil, &KmdError {
 					Point:    point,
 					Concrete: E_KmdOnNative {},
 				}
 			} else if len(g.Params) > 0 {
-				return nil, nil, &KmdError {
+				return nil, nil, nil, &KmdError {
 					Point:    point,
 					Concrete: E_KmdOnGeneric {},
 				}
@@ -51,9 +61,10 @@ func CollectKmdApi (
 			}
 		}
 	}
-	for sym, _ := range mapping {
-		var err = CheckKmdSerializable(sym, nodes, reg, mapping)
-		if err != nil { return nil, nil, err }
+	for sym, id := range mapping {
+		var schema, err = GetKmdSchema(sym, nodes, reg, mapping)
+		if err != nil { return nil, nil, nil, err }
+		sch[id] = schema
 	}
 	for sym, id := range mapping {
 		var mod = sym.ModuleName
@@ -74,7 +85,48 @@ func CollectKmdApi (
 			inj[mod] = [] ast.VariousStatement { serializer, deserializer }
 		}
 	}
-	return mapping, inj, nil
+	return mapping, sch, inj, nil
+}
+
+func GetFunctionKmdInfo(name string, t Func, mapping KmdIdMapping) FunctionKmdInfo {
+	var info FunctionKmdInfo
+	if name == KmdAdapterName {
+		switch I := t.Input.(type) {
+		case *NamedType:
+			if len(I.Args) == 0 {
+				var in, exists = mapping[I.Name]
+				if exists {
+					switch O := t.Output.(type) {
+					case *NamedType:
+						if len(O.Args) == 0 {
+							var out, exists = mapping[O.Name]
+							if exists {
+								info.IsAdapter = true
+								info.AdapterId = kmd.AdapterId {
+									From: in,
+									To:   out,
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	} else if name == KmdValidatorName {
+		switch I := t.Input.(type) {
+		case *NamedType:
+			if len(I.Args) == 0 {
+				var in, exists = mapping[I.Name]
+				if exists {
+					if AreTypesEqualInSameCtx(t.Output, __T_Bool) {
+						info.IsValidator = true
+						info.ValidatorId = kmd.ValidatorId(in)
+					}
+				}
+			}
+		}
+	}
+	return info
 }
 
 func CraftKmdApiFunction (
@@ -165,66 +217,120 @@ func IsKmdApiPublic(sym loader.Symbol, reg TypeRegistry) bool {
 	}
 }
 
-func CheckKmdSerializable (
+func GetKmdSchema (
 	sym      loader.Symbol,
 	nodes    TypeDeclNodeInfo,
 	reg      TypeRegistry,
 	mapping  KmdIdMapping,
-) *KmdError {
+) (kmd.Schema, *KmdError) {
 	var p = ErrorPointFrom(nodes[sym])
 	var g = reg[sym]
 	switch def := g.Value.(type) {
 	case *Boxed:
-		return CheckKmdInnerTypeSerializable(def.InnerType, p, mapping)
+		return GetKmdInnerTypeSchema(def.InnerType, p, reg, mapping)
 	case *Union:
-		for _, case_t := range def.CaseTypes {
-			var err = CheckKmdSerializable(case_t.Name, nodes, reg, mapping)
-			if err != nil { return err }
+		var index_map = make(map[kmd.TypeId] uint)
+		for i, case_t := range def.CaseTypes {
+			var case_id, exists = mapping[case_t.Name]
+			if !(exists) { panic("something went wrong") }
+			index_map[case_id] = uint(i)
 		}
-		return nil
+		return kmd.UnionSchema {
+			CaseIndexMap: index_map,
+		}, nil
 	default:
-		return &KmdError {
+		return nil, &KmdError {
 			Point:    p,
 			Concrete: E_KmdTypeNotSerializable {},
 		}
 	}
 }
 
-func CheckKmdInnerTypeSerializable(t Type, p ErrorPoint, mapping KmdIdMapping) *KmdError {
+func GetKmdInnerTypeSchema (
+	t        Type,
+	p        ErrorPoint,
+	reg      TypeRegistry,
+	mapping  KmdIdMapping,
+) (kmd.Schema, *KmdError) {
 	switch T := t.(type) {
 	case *AnonymousType:
 		switch R := T.Repr.(type) {
 		case Tuple:
+			var elements = make([] *kmd.Type, len(R.Elements))
 			for i, el := range R.Elements {
-				var err = CheckKmdInnerTypeSerializable(el, p, mapping)
-				if err != nil {
-					return &KmdError {
-						Point:    p,
-						Concrete: E_KmdElementNotSerializable { uint(i) },
-					}
-				}
+				var el_t, err = GetKmdType(el, p, reg, mapping)
+				if err != nil { return nil, &KmdError {
+					Point:    p,
+					Concrete: E_KmdElementNotSerializable { uint(i) },
+				} }
+				elements[i] = el_t
 			}
-			return nil
+			return kmd.TupleSchema { Elements: elements }, nil
 		case Bundle:
+			var fields = make(map[string] kmd.RecordField)
 			for name, field := range R.Fields {
-				var err = CheckKmdInnerTypeSerializable(field.Type, p, mapping)
-				if err != nil {
-					return &KmdError {
-						Point:    p,
-						Concrete: E_KmdFieldNotSerializable { name },
-					}
+				var field_t, err = GetKmdType(field.Type, p, reg, mapping)
+				if err != nil { return nil, &KmdError {
+					Point:    p,
+					Concrete: E_KmdFieldNotSerializable { name },
+				} }
+				fields[name] = kmd.RecordField {
+					Type:  field_t,
+					Index: field.Index,
 				}
 			}
-			return nil
-		}
-	case *NamedType:
-		var _, ok = mapping[T.Name]
-		if ok {
-			return nil
+			return kmd.RecordSchema { Fields: fields }, nil
 		}
 	}
-	return &KmdError {
+	var wrapped = &AnonymousType { Tuple { Elements: []Type { t } } }
+	return GetKmdInnerTypeSchema(wrapped, p, reg, mapping)
+}
+
+func GetKmdType (
+	t        Type,
+	p        ErrorPoint,
+	reg      TypeRegistry,
+	mapping  KmdIdMapping,
+) (*kmd.Type, *KmdError) {
+	switch T := t.(type) {
+	case *NamedType:
+		if len(T.Args) == 0 {
+			var id, ok = mapping[T.Name]
+			if ok {
+				var g, exists = reg[T.Name]
+				if !(exists) { panic("something went wrong") }
+				switch def := g.Value.(type) {
+				case *Boxed:
+					switch T := def.InnerType.(type) {
+					case *AnonymousType:
+						switch T.Repr.(type) {
+						case Bundle:
+							return kmd.AlgebraicType(kmd.Record, id), nil
+						}
+					}
+					return kmd.AlgebraicType(kmd.Tuple, id), nil
+				case *Union:
+					return kmd.AlgebraicType(kmd.Union, id), nil
+				}
+			}
+			kind, ok := __KmdPrimitiveTypes[T.Name]
+			if ok {
+				return kmd.PrimitiveType(kind), nil
+			}
+		} else if len(T.Args) == 1 {
+			var arg = T.Args[0]
+			var arg_t, err = GetKmdType(arg, p, reg, mapping)
+			if err != nil { return nil, err }
+			if T.Name == __Array {
+				return kmd.ContainerType(kmd.Array, arg_t), nil
+			} else if T.Name == __Maybe {
+				return kmd.ContainerType(kmd.Optional, arg_t), nil
+			}
+		}
+	}
+	return nil, &KmdError {
 		Point:    p,
 		Concrete: E_KmdTypeNotSerializable {},
 	}
 }
+

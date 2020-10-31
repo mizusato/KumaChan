@@ -62,6 +62,7 @@ type CheckContext struct {
 	Types      TypeRegistry
 	Functions  FunctionStore
 	Constants  ConstantStore
+	Mapping    KmdIdMapping
 }
 
 type ModuleInfo struct {
@@ -343,7 +344,7 @@ func CheckTerm(term ast.VariousTerm, ctx ExprContext) (SemiExpr, *ExprError) {
 
 
 func TypeCheck(entry *loader.Module, raw_index loader.Index) (
-	*CheckedModule, Index, KmdIdMapping, [] E,
+	*CheckedModule, Index, kmd.SchemaTable, [] E,
 ) {
 	var types, type_nodes, err1 = RegisterTypes(entry, raw_index)
 	if err1 != nil {
@@ -354,10 +355,10 @@ func TypeCheck(entry *loader.Module, raw_index loader.Index) (
 		return nil, nil, nil, type_errors
 	}
 	var constants = make(ConstantStore)
+	var functions = make(FunctionStore)
 	var _, err2 = CollectConstants(entry, types, constants)
 	if err2 != nil { return nil, nil, nil, [] E { err2 } }
-	var functions = make(FunctionStore)
-	var mapping, inj, err3 = CollectKmdApi(types, type_nodes, raw_index)
+	var mapping, sch, inj, err3 = CollectKmdApi(types, type_nodes, raw_index)
 	if err3 != nil { return nil, nil, nil, [] E { err3 } }
 	var _, err4 = CollectFunctions(entry, types, inj, functions)
 	if err4 != nil { return nil, nil, nil, [] E { err4 } }
@@ -365,11 +366,12 @@ func TypeCheck(entry *loader.Module, raw_index loader.Index) (
 		Types:     types,
 		Functions: functions,
 		Constants: constants,
+		Mapping:   mapping,
 	}
 	var checked_index = make(Index)
 	var checked, errs = TypeCheckModule(entry, checked_index, ctx)
 	if errs != nil { return nil, nil, nil, errs }
-	return checked, checked_index, mapping, nil
+	return checked, checked_index, sch, nil
 }
 
 func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
@@ -400,12 +402,13 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 	}
 	var func_map = make(map[string] ([] CheckedFunction))
 	for name, group := range functions {
-		func_map[name] = make([]CheckedFunction, 0)
-		var add = func(body ExprLike, imp ([] string), node ast.Node) {
+		func_map[name] = make([] CheckedFunction, 0)
+		var add = func(t Func, body ExprLike, imp ([] string), node ast.Node) {
 			func_map[name] = append(func_map[name], CheckedFunction {
 				Point:    ErrorPointFrom(node),
 				Body:     body,
 				Implicit: imp,
+				FunctionKmdInfo: GetFunctionKmdInfo(name, t, ctx.Mapping),
 			})
 		}
 		for _, f_ref := range group {
@@ -434,9 +437,10 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 					errors = append(errors, err2)
 					continue
 				}
-				add(ExprExpr(body_expr), implicit_fields, f.Node)
+				add(f.DeclaredType, ExprExpr(body_expr),
+					implicit_fields, f.Node)
 			case ast.NativeRef:
-				add(ExprNative {
+				add(f.DeclaredType, ExprNative {
 					Name:  string(body.Id.Value),
 					Point: ErrorPointFrom(body.Node),
 				}, make([] string, 0), f.Node)
