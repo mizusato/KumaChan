@@ -25,6 +25,7 @@ func ParseTypeTags(ast_tags ([] ast.TypeTag)) (TypeTags, *TypeTagParsingError) {
 	var tags TypeTags
 	for _, ast_tag := range ast_tags {
 		var raw = string(ast_tag.RawContent)
+		raw = strings.TrimRight(raw, "\r")
 		raw = strings.TrimPrefix(raw, "#")
 		raw = strings.Trim(raw, " ")
 		var t = strings.Split(raw, ":")

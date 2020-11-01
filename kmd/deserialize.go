@@ -47,6 +47,7 @@ func Deserialize(input io.Reader, deserializer Deserializer) (Object, *Type, err
 	var line string
 	_, err := util.WellBehavedFscanln(input, &line)
 	if err != nil { return nil, nil, err }
+	line = strings.TrimRight(line, "\r")
 	if line != header { return nil, nil, errors.New("invalid header") }
 	var reader = &deserializeReader {
 		Reader: bufio.NewReader(input),
@@ -365,6 +366,7 @@ func readPrimitive(input *deserializeReader, depth uint, f func(string)(Object,e
 func readLine(input *deserializeReader, to *string) (int, error) {
 	n, err := util.WellBehavedFscanln(input, to)
 	if err == nil {
+		*to = strings.TrimRight(*to, "\r")
 		input.linesRead += 1
 	}
 	return n, err
