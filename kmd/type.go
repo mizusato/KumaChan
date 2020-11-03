@@ -93,15 +93,14 @@ func TypeParse(text string) (*Type, bool) {
 		case "|":  kind = Union
 		default:   panic("impossible branch")
 		}
-		var vendor, name, version string
-		var vendor_name_text, version_text = stringSplitFirstSegment(id_text)
-		var temp = strings.Split(vendor_name_text, ".")
-		if !(len(temp) >= 2) { return nil, false }
-		// TODO: some format validation
-		vendor = strings.Join(temp[:len(temp)-1], ".")
-		name = temp[len(temp)-1]
-		version = version_text
-		var id = TheTypeId(vendor, name, version)
+		var base, version_text = stringSplitFirstSegment(id_text)
+		var temp = strings.Split(base, ".")
+		if !(len(temp) >= 3) { return nil, false }
+		var vendor = strings.Join(temp[:len(temp)-2], ".")
+		var project = temp[len(temp)-2]
+		var name = temp[len(temp)-1]
+		var version = version_text
+		var id = TheTypeId(vendor, project, name, version)
 		return AlgebraicType(kind, id), true
 	} else {
 		var kind_text = text
@@ -164,7 +163,8 @@ func (kind TypeKind) String() string {
 	}
 }
 func (id TypeId) String() string {
-	return fmt.Sprintf("%s.%s %s", id.Vendor, id.Name, id.Version)
+	return fmt.Sprintf("%s.%s.%s %s",
+		id.Vendor, id.Project, id.Name, id.Version)
 }
 func (t *Type) String() string {
 	if t.elementType != nil {

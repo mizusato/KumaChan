@@ -51,10 +51,12 @@ func CollectKmdApi (
 					Concrete: E_KmdOnGeneric {},
 				}
 			} else {
+				var raw_mod = raw_index[sym.ModuleName]
 				mapping[sym] = kmd.TypeId {
 					TypeIdFuzzy: kmd.TypeIdFuzzy {
-						Vendor: raw_index[sym.ModuleName].Vendor,
-						Name:   conf.Name,
+						Vendor:  raw_mod.Vendor,
+						Project: raw_mod.Project,
+						Name:    conf.Name,
 					},
 					Version: conf.Version,
 				}

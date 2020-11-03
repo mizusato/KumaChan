@@ -7,23 +7,23 @@ import (
 
 
 var sampleText = `KumaChan Data
-[] | test.sample.Shape v1
+[] | kmd.test.go.Shape v1
  -
-  {} test.sample.Point v1
+  {} kmd.test.go.Point v1
    name string
     "O"
-   pos {} test.sample.Vector v1
+   pos {} kmd.test.go.Vector v1
     x float
      0
     y float
      0
  -
-  {} test.sample.PointGroup v1
-   points [] {} test.sample.Point v1
+  {} kmd.test.go.PointGroup v1
+   points [] {} kmd.test.go.Point v1
     -
      name string
       "A"
-     pos {} test.sample.Vector v1
+     pos {} kmd.test.go.Vector v1
       x float
        1
       y float
@@ -45,8 +45,8 @@ var sampleText = `KumaChan Data
       -
        15
  -
-  {} test.sample.Circle v1
-   center {} test.sample.Vector v1
+  {} kmd.test.go.Circle v1
+   center {} kmd.test.go.Vector v1
     x float
      4.2
     y float

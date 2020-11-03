@@ -1,31 +1,31 @@
 KumaChan Data
-{} kumachan.Canvas v1
- shapes [] | kumachan.Shape v1
+{} kumachan.TestKmd.Canvas v1
+ shapes [] | kumachan.TestKmd.Shape v1
   -
-   () kumachan.Line v1
-    {} kumachan.Point v1
-     pos () kumachan.Vector v1
+   () kumachan.TestKmd.Line v1
+    {} kumachan.TestKmd.Point v1
+     pos () kumachan.TestKmd.Vector v1
       float
        1
       float
        2
      name string
       "A"
-    {} kumachan.Point v1
+    {} kumachan.TestKmd.Point v1
      name string
       "B"
-     pos () kumachan.Vector v1
+     pos () kumachan.TestKmd.Vector v1
       float
        3
       float
        4
   -
-   {} kumachan.Polygon v1
-    points [] {} kumachan.Point v1
+   {} kumachan.TestKmd.Polygon v1
+    points [] {} kumachan.TestKmd.Point v1
      -
       name string
        "O"
-      pos () kumachan.Vector v1
+      pos () kumachan.TestKmd.Vector v1
        float
         0
        float
@@ -47,11 +47,11 @@ KumaChan Data
        -
         -2
   -
-   {} kumachan.Circle v1
-    center {} kumachan.Point v1
+   {} kumachan.TestKmd.Circle v1
+    center {} kumachan.TestKmd.Point v1
      name string
       "P"
-     pos () kumachan.Vector v1
+     pos () kumachan.TestKmd.Vector v1
       float
        5
       float

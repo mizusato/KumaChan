@@ -7,13 +7,15 @@ type TypeId struct {
 }
 type TypeIdFuzzy struct {
 	Vendor   string
+	Project  string
 	Name     string
 }
-func TheTypeId(vendor string, name string, version string) TypeId {
+func TheTypeId(vendor string, project string, name string, version string) TypeId {
 	return TypeId {
 		TypeIdFuzzy: TypeIdFuzzy {
-			Vendor: vendor,
-			Name:   name,
+			Vendor:  vendor,
+			Project: project,
+			Name:    name,
 		},
 		Version:    version,
 	}

@@ -1,4 +1,5 @@
 {
   "name": "TestKmdSchema",
-  "vendor": "kumachan"
+  "vendor": "kumachan",
+  "project": "TestKmd"
 }

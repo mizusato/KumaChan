@@ -11,6 +11,7 @@ import (
 
 type CheckedModule struct {
 	Vendor     string
+	Project    string
 	Name       string
 	RawModule  *loader.Module
 	Imported   map[string] *CheckedModule
@@ -521,6 +522,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 	} else {
 		var checked = &CheckedModule {
 			Vendor:    mod.Vendor,
+			Project:   mod.Project,
 			Name:      mod_name,
 			RawModule: mod,
 			Imported:  imported,

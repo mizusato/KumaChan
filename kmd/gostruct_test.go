@@ -28,11 +28,11 @@ type Circle struct {
 var sampleOptions = GoStructOptions {
 	StringKind: GoString,
 	Types: map[TypeId] reflect.Type {
-		TheTypeId("test.sample", "Shape", "v1"): reflect.TypeOf(new(Shape)).Elem(),
-		TheTypeId("test.sample", "Vector", "v1"): reflect.TypeOf(Vector {}),
-		TheTypeId("test.sample", "Point", "v1"): reflect.TypeOf(Point {}),
-		TheTypeId("test.sample", "PointGroup", "v1"): reflect.TypeOf(PointGroup {}),
-		TheTypeId("test.sample", "Circle", "v1"): reflect.TypeOf(Circle {}),
+		TheTypeId("kmd.test", "go", "Shape", "v1"): reflect.TypeOf(new(Shape)).Elem(),
+		TheTypeId("kmd.test", "go", "Vector", "v1"): reflect.TypeOf(Vector {}),
+		TheTypeId("kmd.test", "go", "Point", "v1"): reflect.TypeOf(Point {}),
+		TheTypeId("kmd.test", "go", "PointGroup", "v1"): reflect.TypeOf(PointGroup {}),
+		TheTypeId("kmd.test", "go", "Circle", "v1"): reflect.TypeOf(Circle {}),
 	},
 	GoStructSerializerOptions:   GoStructSerializerOptions {},
 	GoStructDeserializerOptions: GoStructDeserializerOptions {

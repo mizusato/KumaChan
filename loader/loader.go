@@ -32,6 +32,7 @@ var __UnitFileLoaders = [] common.UnitFileLoader {
 
 type Module struct {
 	Vendor    string
+	Project   string
 	Name      string
 	Path      string
 	Node      ast.Root
@@ -47,9 +48,10 @@ type RawModule struct {
 	Standalone  bool
 }
 type RawModuleManifest struct {
-	Vendor  string            `json:"vendor"`
-	Name    string            `json:"name"`
-	Config  RawModuleConfig   `json:"config"`
+	Vendor   string            `json:"vendor"`
+	Project  string           `json:"project"`
+	Name     string            `json:"name"`
+	Config   RawModuleConfig   `json:"config"`
 }
 type RawModuleConfig struct {
 	UI   kinds.QtUiConfig   `json:"ui"`
@@ -191,10 +193,20 @@ func ReadModulePath(path string) (RawModule, error) {
 				fmt.Sprintf("invalid module manifest %s: %s",
 					manifest_path, `field "name" has an invalid value`))
 		}
+		if strings.ContainsAny(manifest.Project, ". \r\n") {
+			return RawModule{}, errors.New (
+				fmt.Sprintf("invalid module manifest %s: %s",
+					manifest_path, `field "project" has an invalid value`))
+		}
+		if strings.ContainsAny(manifest.Vendor, " \r\n") {
+			return RawModule{}, errors.New (
+				fmt.Sprintf("invalid module manifest %s: %s",
+					manifest_path, `field "vendor" has an invalid value`))
+		}
 		return RawModule {
 			FileInfo: fd_info,
 			Manifest: manifest,
-			Content:  M_ModuleFolder {unit_files},
+			Content:  M_ModuleFolder { unit_files },
 		}, nil
 	} else {
 		var content, err = ioutil.ReadAll(fd)
@@ -235,7 +247,13 @@ func LoadModule(path string, ctx Context, idx Index) (*Module, *Error) {
 	var manifest = raw_mod.Manifest
 	var module_name = (func() string {
 		if manifest.Vendor != "" {
-			return fmt.Sprintf("%s.%s", manifest.Vendor, manifest.Name)
+			var v = manifest.Vendor
+			if manifest.Project != "" {
+				var p = manifest.Project
+				return fmt.Sprintf("%s.%s.%s", v, p, manifest.Name)
+			} else {
+				return fmt.Sprintf("%s..%s", v, manifest.Name)
+			}
 		} else {
 			return manifest.Name
 		}
@@ -349,6 +367,7 @@ func LoadModule(path string, ctx Context, idx Index) (*Module, *Error) {
 		}
 		var mod = &Module {
 			Vendor:   manifest.Vendor,
+			Project:  manifest.Project,
 			Name:     module_name,
 			Path:     path,
 			Node:     module_node,
