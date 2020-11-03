@@ -3,11 +3,20 @@ type Path native;
 public const Cwd: Path
     native 'OS::Cwd';
 
-public function path: ( &(String) Path )
-    ( &(str) (from str) );
+public const EntryModulePath: Path
+    native 'OS::EntryModulePath';
+
+public const EntryModuleDirPath: Path
+    native 'OS::EntryModuleDirPath';
 
 public function from: ( &(String) Path )
     native 'Path from String';
 
 public function from: ( &(Path) String )
     native 'String from Path';
+
+public function path: ( &(String) Path )
+    ( &(str) (from str) );
+
+public function join: ( &(Path,String) Path )
+    native 'path-join';

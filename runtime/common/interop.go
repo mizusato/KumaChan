@@ -12,6 +12,7 @@ type InteropContext interface {
 	GetScheduler() rx.Scheduler
 	GetArgs() ([] string)
 	GetErrorPoint() ErrorPoint
+	GetEntryModulePath() string
 	KmdApi
 }
 var __t = InteropContext(nil)

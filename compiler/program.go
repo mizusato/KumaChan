@@ -9,6 +9,7 @@ import (
 
 
 func CreateProgram (
+	metadata  c.ProgramMetaData,
 	idx       Index,
 	data      [] c.DataValue,
 	closures  [] FuncNode,
@@ -224,6 +225,7 @@ func CreateProgram (
 		return raw
 	}
 	return c.Program {
+		MetaData:   metadata,
 		DataValues: data,
 		Functions:  unwrap(functions),
 		Closures:   unwrap(closures),

@@ -89,11 +89,11 @@ func check(mod *loader.Module, idx loader.Index) (*checker.CheckedModule, checke
     return c_mod, c_idx, schema
 }
 
-func compile(entry *checker.CheckedModule, schema kmd.SchemaTable) common.Program {
+func compile(entry *checker.CheckedModule, sch kmd.SchemaTable) common.Program {
     var data = make([] common.DataValue, 0)
     var closures = make([] compiler.FuncNode, 0)
-    var index = make(compiler.Index)
-    var errs = compiler.CompileModule(entry, index, &data, &closures)
+    var idx = make(compiler.Index)
+    var errs = compiler.CompileModule(entry, idx, &data, &closures)
     if errs != nil {
         var messages = make([] ErrorMessage, len(errs))
         for i, e := range errs {
@@ -103,7 +103,10 @@ func compile(entry *checker.CheckedModule, schema kmd.SchemaTable) common.Progra
         fmt.Fprintf(os.Stderr, "%s\n", msg.String())
         os.Exit(5)
     }
-    var program, err = compiler.CreateProgram(index, data, closures, schema)
+    var meta = common.ProgramMetaData {
+        EntryModulePath: entry.RawModule.Path,
+    }
+    var program, err = compiler.CreateProgram(meta, idx, data, closures, sch)
     if err != nil {
         fmt.Fprintf(os.Stderr, "%s\n", err.Error())
         os.Exit(6)

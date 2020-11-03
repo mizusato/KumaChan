@@ -7,12 +7,16 @@ import (
 
 
 type Program struct {
+	MetaData    ProgramMetaData
 	DataValues  [] DataValue
 	Functions   [] *Function
 	Closures    [] *Function
 	Constants   [] *Function
 	Effects     [] *Function
 	KmdConfig
+}
+type ProgramMetaData struct {
+	EntryModulePath  string
 }
 
 type DataValue interface {

@@ -1,12 +1,14 @@
 package vm
 
 import (
+	"os"
+	"sync"
+	"strings"
+	"kumachan/kmd"
+	"kumachan/runtime/rx"
+	"kumachan/runtime/lib"
 	. "kumachan/error"
 	. "kumachan/runtime/common"
-	"kumachan/runtime/rx"
-	"sync"
-	"kumachan/kmd"
-	"kumachan/runtime/lib"
 )
 
 
@@ -88,6 +90,11 @@ func (h MachineContextHandle) GetArgs() ([] string) {
 
 func (h MachineContextHandle) GetErrorPoint() ErrorPoint {
 	return GetFrameErrorPoint(h.context.workingFrame)
+}
+
+func (h MachineContextHandle) GetEntryModulePath() string {
+	var raw = h.machine.program.MetaData.EntryModulePath
+	return strings.TrimRight(raw, string([] rune { os.PathSeparator }))
 }
 
 func (h MachineContextHandle) KmdGetTypeFromId(id kmd.TypeId) *kmd.Type {
