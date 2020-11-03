@@ -9,7 +9,7 @@ type FileState {
     size:     Uint64,
     mode:     FileMode,
     is-dir:   Bool,
-    mod-time: Time
+    mod-time: ::Time
 };
 type FileMode   Uint32;
 
