@@ -2,14 +2,14 @@ package lib
 
 import (
 	"os"
+	"fmt"
 	"time"
 	"runtime"
 	"strings"
+	"path/filepath"
 	"kumachan/runtime/rx"
 	. "kumachan/runtime/common"
 	. "kumachan/runtime/lib/container"
-	"path/filepath"
-	"fmt"
 )
 
 
@@ -18,22 +18,19 @@ var __PathSep = string([] rune { os.PathSeparator })
 func (path Path) String() string {
 	return strings.Join(path, __PathSep)
 }
-func (path Path) Join(segments_str string) Path {
-	if __PathSep != "/" && strings.Contains(segments_str, __PathSep) {
-		panic(fmt.Sprintf("invalid path segments: %s", segments_str))
+func (path Path) Join(segments ([] string)) Path {
+	for _, seg := range segments {
+		if strings.Contains(seg, __PathSep) {
+			panic(fmt.Sprintf("invalid path segment %s", seg))
+		}
 	}
-	segments_str = strings.TrimLeft(segments_str, "/")
-	var segments = strings.Split(segments_str, "/")
 	var new_path = make(Path, (len(path) + len(segments)))
 	copy(new_path, path)
 	copy(new_path[len(path):], segments)
 	return new_path
 }
-func PathFrom(str string) Path {
-	if __PathSep != "/" && strings.Contains(str, __PathSep) {
-		panic(fmt.Sprintf("invalid path: %s", str))
-	}
-	var raw = strings.Split(str, "/")
+func ParsePath(str string) Path {
+	var raw = strings.Split(str, __PathSep)
 	var path = make([] string, 0, len(raw))
 	for i, segment := range raw {
 		if i != 0 && segment == "" {
@@ -83,7 +80,7 @@ var OS_Constants = map[string] NativeConstant {
 	"OS::Cwd":     func(h InteropContext) Value {
 		var wd, err = os.Getwd()
 		if err != nil { panic("unable to get current working directory") }
-		return PathFrom(wd)
+		return ParsePath(wd)
 	},
 	"OS::Env":     func(h InteropContext) Value {
 		return GetEnv()
@@ -109,11 +106,11 @@ var OS_Constants = map[string] NativeConstant {
 		return Struct2Prod(locale)
 	},
 	"OS::EntryModulePath": func(h InteropContext) Value {
-		return PathFrom(h.GetEntryModulePath())
+		return ParsePath(h.GetEntryModulePath())
 	},
 	"OS::EntryModuleDirPath": func(h InteropContext) Value {
 		var p = h.GetEntryModulePath()
-		return PathFrom(filepath.Dir(p))
+		return ParsePath(filepath.Dir(p))
 	},
 }
 
@@ -150,25 +147,30 @@ func GetArgs(h InteropContext) ([] String) {
 }
 
 var OS_Functions = map[string] Value {
-	"Path from String": func(str String) Path {
-		return PathFrom(GoStringFromString(str))
-	},
 	"String from Path": func(path Path) String {
 		return StringFromGoString(path.String())
 	},
-	"path-join": func(path Path, segments String) Path {
-		return path.Join(GoStringFromString(segments))
+	"parse-path": func(str String) Path {
+		return ParsePath(GoStringFromString(str))
+	},
+	"path-join": func(path Path, raw Value) Path {
+		var arr = ArrayFrom(raw)
+		var segments = make([] string, arr.Length)
+		for i := uint(0); i < arr.Length; i += 1 {
+			segments[i] = GoStringFromString(arr.GetItem(i).(String))
+		}
+		return path.Join(segments)
 	},
 	"walk-dir": func(dir Path) rx.Effect {
 		return rx.WalkDir(dir.String()).Map(func(val rx.Object) rx.Object {
 			var item = val.(rx.FileItem)
-			return ToTuple2(PathFrom(item.Path), Struct2Prod(item.State))
+			return ToTuple2(ParsePath(item.Path), Struct2Prod(item.State))
 		})
 	},
 	"list-dir": func(dir Path) rx.Effect {
 		return rx.ListDir(dir.String()).Map(func(val rx.Object) rx.Object {
 			var item = val.(rx.FileItem)
-			return ToTuple2(PathFrom(item.Path), Struct2Prod(item.State))
+			return ToTuple2(ParsePath(item.Path), Struct2Prod(item.State))
 		})
 	},
 	"open-read-only": func(path Path) rx.Effect {

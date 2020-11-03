@@ -201,7 +201,7 @@ var QtFunctions = map[string] interface{} {
 				var path_runes = qt.FileDialogOpen(parent_widget, opts)
 				var path_str = string(path_runes)
 				if path_str != "" {
-					var path = PathFrom(string(path_str))
+					var path = ParsePath(string(path_str))
 					ok(Just(path))
 				} else {
 					ok(Na())
@@ -216,7 +216,7 @@ var QtFunctions = map[string] interface{} {
 				var str_list = qt.FileDialogOpenMultiple(parent_widget, opts)
 				var path_list = make([] Path, len(str_list))
 				for i, str := range str_list {
-					path_list[i] = PathFrom(string(str))
+					path_list[i] = ParsePath(string(str))
 				}
 				ok(path_list)
 			})
@@ -229,7 +229,7 @@ var QtFunctions = map[string] interface{} {
 				var path_runes = qt.FileDialogSelectDirectory(parent_widget, opts)
 				var path_str = string(path_runes)
 				if path_str != "" {
-					var path = PathFrom(string(path_str))
+					var path = ParsePath(string(path_str))
 					ok(Just(path))
 				} else {
 					ok(Na())
@@ -244,7 +244,7 @@ var QtFunctions = map[string] interface{} {
 				var path_runes = qt.FileDialogSave(parent_widget, opts)
 				var path_str = string(path_runes)
 				if path_str != "" {
-					var path = PathFrom(string(path_str))
+					var path = ParsePath(string(path_str))
 					ok(Just(path))
 				} else {
 					ok(Na())
