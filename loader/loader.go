@@ -181,7 +181,6 @@ func ReadModulePath(path string) (RawModule, error) {
 				}
 			}
 		}
-		// TODO: check format of vendor name
 		var mod_name = manifest.Name
 		if mod_name == "" {
 			return RawModule{}, errors.New (
