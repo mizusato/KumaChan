@@ -1,6 +1,5 @@
 import Data from './schema';
 
-// TODO: directory path APIs
 do open-read-only (OS::EntryModuleDirPath.join 'sample/sample1.kmd')
     | then ( &(file)
         file.read-all
