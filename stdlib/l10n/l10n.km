@@ -1,0 +1,7 @@
+type Locale {
+    language:    LanguageCode,
+    timezone:    Time::Zone,
+    alternative: Maybe[Locale]
+};
+
+type LanguageCode String;

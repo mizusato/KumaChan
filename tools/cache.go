@@ -45,7 +45,7 @@ func (c LinterCache) Get(req LintRequest) (LintResponse, bool) {
 	var now = time.Now()
 	var item, exists = c.Data[req]
 	if exists {
-		if now.Sub(item.Expire) < c.Keep {
+		if now.Sub(item.Expire) < 0 {
 			return item.Response, true
 		} else {
 			return LintResponse{}, false

@@ -1,0 +1,7 @@
+type Zone native;  // *time.Location
+
+public const UTC: Zone
+    native 'Time::UTC';
+
+public const Local: Zone
+    native 'Time::Local';

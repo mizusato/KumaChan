@@ -1,0 +1,25 @@
+private function msg-sample: ( &(L10n::Locale,Number) String )
+    ( &(locale, n)
+        let {language} := locale,
+        if $(language = 'zh_TW'):
+            "收到 # 筆資料" (str n),
+        elif $(language = 'zh_CN'):
+            "收到 # 条数据" (str n),
+        else:
+            if $(n = 1):
+                'one item received',
+            else:
+                "# items received" (str n)
+    );
+
+private const locale: L10n::Locale
+    OS::Locale;
+
+do
+    let a := (:Number: 0),
+    let b := (:Number: 1),
+    let c := (:Number: 2),
+    println (
+        "message a: #"..\n..  "message b: #"..\n..  "message c: #"
+        (locale.msg-sample a) (locale.msg-sample b) (locale.msg-sample c))
+    | catch (&(err)(crash err));

@@ -1,1 +1,3 @@
 type Time native;  // time.Time
+                   // Note: this type is placed in Core module due to
+                   //   the inclusion of monotonic clock

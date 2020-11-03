@@ -2,6 +2,7 @@ package lib
 
 import (
 	"os"
+	"time"
 	"runtime"
 	"strings"
 	"kumachan/runtime/rx"
@@ -25,6 +26,32 @@ func PathFrom(str string) Path {
 		path = append(path, segment)
 	}
 	return path
+}
+
+type Locale struct {
+	Language     String
+	TimeZone     *time.Location
+	Alternative  SumValue
+}
+func GetSystemLanguage() string {
+	if runtime.GOOS == "windows" {
+		// TODO: get system language from Windows API
+		return "C"
+	} else {
+		var strip_encoding = func(value string) string {
+			var t = strings.Split(value, ".")
+			if len(t) > 0 {
+				return t[0]
+			} else {
+				return "C"
+			}
+		}
+		lc_all, exists := os.LookupEnv("LC_ALL")
+		if exists { return strip_encoding(lc_all) }
+		lang, exists := os.LookupEnv("LANG")
+		if exists { return strip_encoding(lang) }
+		return "C"
+	}
 }
 
 var OS_Constants = map[string] NativeConstant {
@@ -56,6 +83,14 @@ var OS_Constants = map[string] NativeConstant {
 	},
 	"OS::Stderr":  func(h InteropContext) Value {
 		return rx.FileFrom(os.Stderr)
+	},
+	"OS::Locale":  func(h InteropContext) Value {
+		var locale = Locale {
+			Language:    StringFromGoString(GetSystemLanguage()),
+			TimeZone:    time.Local,
+			Alternative: Na(),
+		}
+		return Struct2Prod(locale)
 	},
 }
 
