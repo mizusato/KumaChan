@@ -13,11 +13,10 @@ import (
 // If the given reader is not buffered, this function could perform
 // one system call per one character.
 // Note that ...[\n][EOF] and ...[EOF] are not distinguished.
-func WellBehavedScanLine(f io.Reader) ([]rune, error) {
+func WellBehavedReadLine(f io.Reader) ([]rune, error) {
 	var buf = make([] rune, 0)
 	var char rune
 	for {
-		// TODO: use Read() directly
 		var _, err = fmt.Fscanf(f, "%c", &char)
 		if err != nil {
 			if err == io.EOF && len(buf) > 0 {
@@ -34,13 +33,13 @@ func WellBehavedScanLine(f io.Reader) ([]rune, error) {
 	}
 }
 
-// standard-library-like version of WellBehavedScanLine
+// standard-library-like version of WellBehavedReadLine
 func WellBehavedFscanln(f io.Reader, output *string) (int, error) {
 	var buf strings.Builder
 	var total = 0
-	var bytes = [] byte { 0 }
+	var one_byte = [] byte { 0 }
 	for {
-		var _, err = f.Read(bytes)
+		var _, err = f.Read(one_byte)
 		total += 1
 		if err != nil {
 			if err == io.EOF && buf.Len() > 0 {
@@ -50,8 +49,8 @@ func WellBehavedFscanln(f io.Reader, output *string) (int, error) {
 				return total, err
 			}
 		}
-		if rune(bytes[0]) != '\n' {
-			buf.WriteByte(bytes[0])
+		if rune(one_byte[0]) != '\n' {
+			buf.WriteByte(one_byte[0])
 		} else {
 			*output = buf.String()
 			return total, nil

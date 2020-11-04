@@ -218,7 +218,7 @@ func (f File) ReadString() Effect {
 
 func (f File) ReadLineRunes() Effect {
 	return NewQueued(f.worker, func() (Object, bool) {
-		var str, err = util.WellBehavedScanLine(f.raw)
+		var str, err = util.WellBehavedReadLine(f.raw)
 		if err != nil {
 			return err, false
 		}
@@ -271,7 +271,7 @@ func (f File) ReadLinesRuneSlices() Effect {
 				if s.Context().AlreadyCancelled() {
 					return
 				}
-				var line, err = util.WellBehavedScanLine(buffered)
+				var line, err = util.WellBehavedReadLine(buffered)
 				if err != nil {
 					if err == io.EOF {
 						s.Complete()

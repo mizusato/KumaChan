@@ -33,7 +33,7 @@ func Server(input io.Reader, output io.Writer, debug io.Writer) error {
 	var linter_cache = MakeLinterCache(333 * time.Millisecond)
 	for {
 		linter_cache.SweepExpired()
-		var line_runes, err = util.WellBehavedScanLine(input)
+		var line_runes, err = util.WellBehavedReadLine(input)
 		if err != nil { return err }
 		var line = string(line_runes)
 		var i = strings.Index(line, " ")

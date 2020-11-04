@@ -22,7 +22,6 @@ type ProgramMetaData struct {
 type DataValue interface {
 	fmt.Stringer
 	ToValue()  Value
-	// Marshal()  interface{}  // TODO (+Unmarshal)
 }
 
 func (p Program) String() string {
