@@ -1,0 +1,13 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="go test kumachan/loader" type="GoTestRunConfiguration" factoryName="Go Test" nameIsGenerated="true">
+    <module name="KumaChan" />
+    <working_directory value="$PROJECT_DIR$/loader" />
+    <framework value="gotest" />
+    <kind value="PACKAGE" />
+    <package value="kumachan/loader" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$" />
+    <output_directory value="$PROJECT_DIR$/build" />
+    <method v="2" />
+  </configuration>
+</component>
