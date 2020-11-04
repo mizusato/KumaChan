@@ -28,7 +28,7 @@ func buildTree(root syntax.Id, tokens scanner.Tokens) ([]cst.TreeNode, *Error) {
      *    its logic is extraordinarily complicated.
      *  Therefore, be careful when modifying the following code.
      */
-    var Name = syntax.Name2Id[syntax.IdentifierPartName]
+    var Name = syntax.Name2IdMustExist(syntax.IdentifierPartName)
     var RootId = root
     var RootPart = syntax.Part {
         Id:       RootId,
@@ -58,7 +58,7 @@ func buildTree(root syntax.Id, tokens scanner.Tokens) ([]cst.TreeNode, *Error) {
             }
             // derivation through a branch failed
             if node.Status == cst.BranchFailed {
-                var rule = syntax.Rules[id]
+                var rule = syntax.Rules(id)
                 var num_branches = len(rule.Branches)
                 // check if all branches have been tried
                 if node.Tried == num_branches {
@@ -87,7 +87,7 @@ func buildTree(root syntax.Id, tokens scanner.Tokens) ([]cst.TreeNode, *Error) {
             var token_id = token.Id
             if token_id != Name { node.Status = cst.Failed; break }
             var text = token.Content
-            var keyword = syntax.Id2ConditionalKeyword[id]
+            var keyword = syntax.Id2ConditionalKeyword(id)
             if len(text) != len(keyword) { node.Status = cst.Failed; break }
             var equal = true
             for i, char := range keyword {
@@ -123,7 +123,7 @@ func buildTree(root syntax.Id, tokens scanner.Tokens) ([]cst.TreeNode, *Error) {
         switch node.Status {
         case cst.BranchFailed:
             // status == BranchFailed  =>  part_type == Recursive
-            var rule = syntax.Rules[id]
+            var rule = syntax.Rules(id)
             var next = rule.Branches[node.Tried]
             node.Tried += 1   // increment the number of tried branches
             node.Length = 0   // clear invalid children
@@ -211,7 +211,7 @@ func buildTree(root syntax.Id, tokens scanner.Tokens) ([]cst.TreeNode, *Error) {
 
 func Parse(code []rune, root string, name string) (*cst.Tree, *Error) {
     var tokens, info, span_map = scanner.Scan(code)
-    var Root, exists = syntax.Name2Id[root]
+    var Root, exists = syntax.Name2Id(root)
     if (!exists) {
         panic(fmt.Sprintf("invalid root syntax unit '%v'", root))
     }

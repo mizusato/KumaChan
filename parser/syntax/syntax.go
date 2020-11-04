@@ -10,7 +10,7 @@ type Id int
 type Token struct {
     Name     string
     Pattern  Regexp
-    Keyword  bool  // TODO
+    Keyword  bool
 }
 
 type Rule struct {
@@ -58,20 +58,37 @@ func EscapePartName (name string) string {
 }
 
 
-// TODO: change following variables to functions for immutability
-var Id2Name = make([]string, 0, 1000)
-var Name2Id = make(map[string] Id)
-var Id2ConditionalKeyword = make(map[Id] []rune)
-var Rules = make(map[Id] Rule)
+var __Id2Name = make([] string, 0, 1000)
+func Id2Name(id Id) string {
+    return __Id2Name[id]
+}
+var __Name2Id = make(map[string] Id)
+func Name2IdMustExist(str string) Id {
+    var id, ok = __Name2Id[str]
+    if !(ok) { panic("something went wrong") }
+    return id
+}
+func Name2Id(str string) (Id, bool) {
+    var id, ok = __Name2Id[str]
+    return id, ok
+}
+var __Id2ConditionalKeyword = make(map[Id] ([] rune))
+func Id2ConditionalKeyword(id Id) ([] rune) {
+    return __Id2ConditionalKeyword[id]
+}
+var __Rules = make(map[Id] Rule)
+func Rules(id Id) Rule {
+    return __Rules[id]
+}
 
 func __AssignId2Name (name string) Id {
-    var existing, exists = Name2Id[name]
+    var existing, exists = __Name2Id[name]
     if exists {
         return existing
     }
-    var id = Id(len(Id2Name))
-    Name2Id[name] = id
-    Id2Name = append(Id2Name, name)
+    var id = Id(len(__Id2Name))
+    __Name2Id[name] = id
+    __Id2Name = append(__Id2Name, name)
     return id
 }
 
@@ -86,7 +103,7 @@ func __AssignId2Keywords () {
         var keyword = []rune(strings.TrimLeft(name, "@"))
         if len(keyword) == 0 { panic("empty keyword") }
         var id = __AssignId2Name(name)
-        Id2ConditionalKeyword[id] = keyword
+        __Id2ConditionalKeyword[id] = keyword
     }
 }
 
@@ -107,7 +124,7 @@ func __ParseRules () {
         var str_name = strings.Trim(def[:pivot], " ")
         var name = strings.TrimRight(str_name, "?")
         var nullable = strings.HasSuffix(str_name, "?")
-        var id, exists = Name2Id[name]
+        var id, exists = __Name2Id[name]
         if (!exists) { panic("undefined rule name: " + name) }
         // ... = branches
         var str_branches = strings.Trim(def[pivot+1:], " ")
@@ -136,14 +153,14 @@ func __ParseRules () {
                 part_name = EscapePartName(part_name)
                 // add to list if it is a keyword
                 var part_type = GetPartType(part_name)
-                var id, exists = Name2Id[part_name]
+                var id, exists = __Name2Id[part_name]
                 if (!exists) { panic("undefined part: " + part_name) }
                 branches[i].Parts[j] = Part {
                     Id: id, Required: required, PartType: part_type,
                 }
             }
         }
-        Rules[id] = Rule {
+        __Rules[id] = Rule {
             Branches: branches,
             Nullable: nullable,
             Id:       id,

@@ -92,12 +92,12 @@ func Transform (tree Tree) Root {
                 } else {
                     var path_strlist = make([]string, len(path))
                     for i, segment := range path {
-                        path_strlist[i] = syntax.Id2Name[segment]
+                        path_strlist[i] = syntax.Id2Name(segment)
                     }
                     var path_str = strings.Join(path_strlist, ".")
                     panic(fmt.Sprintf (
                         "transform(): path `%v` cannot be found in `%v`",
-                        path_str, syntax.Id2Name[parser_node.Part.Id],
+                        path_str, syntax.Id2Name(parser_node.Part.Id),
                     ))
                 }
             }
@@ -109,7 +109,7 @@ func Transform (tree Tree) Root {
             } else {
                 panic(fmt.Sprintf (
                     "transform(): cannot get first child of empty node `%v`",
-                    syntax.Id2Name[parser_node.Part.Id],
+                    syntax.Id2Name(parser_node.Part.Id),
                 ))
             }
         }
@@ -121,7 +121,7 @@ func Transform (tree Tree) Root {
             } else {
                 panic(fmt.Sprintf (
                     "transform(): cannot get last child of empty node `%v`",
-                    syntax.Id2Name[parser_node.Part.Id],
+                    syntax.Id2Name(parser_node.Part.Id),
                 ))
             }
         }
@@ -150,7 +150,7 @@ func Transform (tree Tree) Root {
 						} else {
 							panic(fmt.Sprintf (
 								"cannot get token content of non-token part %v",
-								syntax.Id2Name[dived_node.Part.Id],
+								syntax.Id2Name(dived_node.Part.Id),
 							))
 						}
 					},
@@ -217,11 +217,11 @@ func FlatSubTree (
             }
         }
         if extract_ptr == -1 {
-            panic("cannot extract part " + syntax.Id2Name[extract])
+            panic("cannot extract part " + syntax.Id2Name(extract))
         }
         sequence = append(sequence, extract_ptr)
         if next_ptr == -1 {
-            panic("next part " + syntax.Id2Name[next] + " not found")
+            panic("next part " + syntax.Id2Name(next) + " not found")
         }
         ptr = next_ptr
     }

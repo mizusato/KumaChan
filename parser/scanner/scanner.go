@@ -100,22 +100,22 @@ func MatchToken(code Code, pos int, skip_kw bool) (amount int, id syntax.Id) {
             if (loc[0] != 0) {
                 panic("invalid token definition " + token_def.Name)
             }
-            return loc[1], syntax.Name2Id[token_def.Name]
+            return loc[1], syntax.Name2IdMustExist(token_def.Name)
         }
     }
     return 0, 0
 }
 
 func Scan(code Code) (Tokens, RowColInfo, RowSpanMap) {
-    var identifier = syntax.Name2Id[syntax.IdentifierPartName]
+    var identifier = syntax.Name2IdMustExist(syntax.IdentifierPartName)
     var ignore = make(map[syntax.Id] bool)
     var keyword = make(map[syntax.Id] bool)
     for _, ignore_name := range syntax.GetIgnoreTokens() {
-        ignore[syntax.Name2Id[ignore_name]] = true
+        ignore[syntax.Name2IdMustExist(ignore_name)] = true
     }
     for _, token_def := range syntax.GetTokens() {
         if token_def.Keyword {
-            keyword[syntax.Name2Id[token_def.Name]] = true
+            keyword[syntax.Name2IdMustExist(token_def.Name)] = true
         }
     }
     var tokens = make(Tokens, 0)

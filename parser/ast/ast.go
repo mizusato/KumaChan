@@ -138,7 +138,7 @@ func __Initialize() {
         return "", ""
     }
     var get_part_id = func(part string) syntax.Id {
-        var part_id, exists = syntax.Name2Id[part]
+        var part_id, exists = syntax.Name2Id(part)
         if !exists {
             panic(fmt.Sprintf("syntax part `%v` does not exist", part))
         }
@@ -231,9 +231,9 @@ func __Initialize() {
             case "list":
                 var list_name string
                 if len(dive_path) > 0 {
-                    list_name = syntax.Id2Name[dive_path[len(dive_path)-1]]
+                    list_name = syntax.Id2Name(dive_path[len(dive_path)-1])
                 } else {
-                    list_name = syntax.Id2Name[part_id]
+                    list_name = syntax.Id2Name(part_id)
                 }
                 var t = strings.TrimSuffix(list_name, "list")
                 var item = strings.TrimSuffix(t, "_")
@@ -280,7 +280,7 @@ func __Initialize() {
                 } else {
                     tail_id = part_id
                 }
-                var list_name = syntax.Id2Name[tail_id]
+                var list_name = syntax.Id2Name(tail_id)
                 var item string
                 if strings.HasSuffix(list_name, "ches") {
                     item = strings.TrimSuffix(list_name, "es")
@@ -315,7 +315,7 @@ func GetNodeInfoById (part_id syntax.Id) NodeInfo {
     if !exists {
         panic(fmt.Sprintf (
             "node info of part `%v` does not exist",
-            syntax.Id2Name[part_id],
+            syntax.Id2Name(part_id),
         ))
     } else {
         return info

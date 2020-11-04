@@ -40,11 +40,11 @@ func debug_parser(file io.Reader, name string, root string) {
             token.Span.End,
             info[token.Span.Start].Row,
             info[token.Span.Start].Col,
-            syntax.Id2Name[token.Id],
+            syntax.Id2Name(token.Id),
             string(token.Content),
         )
     }
-    var _, exists = syntax.Name2Id[root]
+    var _, exists = syntax.Name2Id(root)
     if !exists {
         panic("invalid root syntax unit " + root)
     }

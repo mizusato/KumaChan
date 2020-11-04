@@ -38,7 +38,7 @@ func PrintTreeNode (ptr int, node *cst.TreeNode) {
     fmt.Fprintf(&buf, "\033[0m")
     buf.WriteRune(' ')
     fmt.Fprintf(&buf, "\033[1m")
-    buf.WriteString(syntax.Id2Name[node.Part.Id])
+    buf.WriteString(syntax.Id2Name(node.Part.Id))
     fmt.Fprintf(&buf, "\033[0m")
     buf.WriteRune(' ')
     buf.WriteRune('[')
@@ -97,7 +97,7 @@ func PrintTreeRecursively (
         buf.WriteString("──")
     }
     fmt.Fprintf(buf, "\033[1m\033[%vm", GetANSIColor(depth))
-    fmt.Fprintf(buf, "[%v]", syntax.Id2Name[node.Part.Id])
+    fmt.Fprintf(buf, "[%v]", syntax.Id2Name(node.Part.Id))
     fmt.Fprintf(buf, "\033[0m")
     fmt.Fprintf(buf, "\033[%vm", GetANSIColor(depth))
     buf.WriteRune(' ')

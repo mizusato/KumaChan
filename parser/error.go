@@ -18,12 +18,12 @@ func (err *Error) Desc() ErrorMessage {
     if node.Pos >= len(err.Tree.Tokens) {
         got = "EOF"
     } else {
-        got = syntax.Id2Name[err.Tree.Tokens[node.Pos].Id]
+        got = syntax.Id2Name(err.Tree.Tokens[node.Pos].Id)
     }
     var desc = make(ErrorMessage, 0)
     if err.HasExpectedPart {
         desc.WriteText(TS_ERROR, "Syntax unit")
-        desc.WriteInnerText(TS_INLINE, syntax.Id2Name[err.ExpectedPart])
+        desc.WriteInnerText(TS_INLINE, syntax.Id2Name(err.ExpectedPart))
         desc.WriteText(TS_ERROR, "expected")
     } else {
         desc.WriteText(TS_ERROR, "Parser stuck")
