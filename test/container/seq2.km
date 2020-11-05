@@ -1,6 +1,0 @@
-do
-    let seq := 1.0 | cons (2.0 | cons (nil ())),
-    let eff := emit* $(0.0 cons seq),
-    eff | concat-map  (&(x)(println (str! x)))
-            | catch*      (&(_)(crash 'I/O Error'))
-            | wait-complete;

@@ -28,5 +28,5 @@ private function f:
         end
     );
 
-do println (str! (f A B))
+do println (str (f A B))
    | catch (&(_)(crash 'I/O Error'));

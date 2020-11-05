@@ -11,7 +11,7 @@ func getTestDirPath(t *testing.T) string {
 	var exe_path, err = os.Executable()
 	if err != nil { t.Fatal(err) }
 	var project_path = filepath.Dir(filepath.Dir(exe_path))
-	return filepath.Join(project_path, "test", "loader")
+	return filepath.Join(project_path, "test", "interpreter", "loader")
 }
 
 func getTestPath(t *testing.T, name string) string {
