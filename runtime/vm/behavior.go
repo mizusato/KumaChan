@@ -216,7 +216,7 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 					ec.pushCall(f, arg)
 					// check if call stack size exceeded
 					var stack_size = uint(len(ec.dataStack))
-					assert(stack_size < m.maxStackSize,
+					assert(stack_size < m.options.MaxStackSize,
 						"CALL: stack overflow")
 					// work on the pushed new frame
 					continue outer

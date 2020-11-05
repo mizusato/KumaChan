@@ -83,19 +83,19 @@ var OS_Constants = map[string] NativeConstant {
 		return ParsePath(wd)
 	},
 	"OS::Env":     func(h InteropContext) Value {
-		return GetEnv()
+		return GetEnv(h.GetEnv())
 	},
 	"OS::Args":    func(h InteropContext) Value {
-		return GetArgs(h)
+		return GetArgs(h.GetArgs())
 	},
 	"OS::Stdin":   func(h InteropContext) Value {
-		return rx.FileFrom(os.Stdin)
+		return rx.FileFrom(h.GetStdIO().Stdin)
 	},
 	"OS::Stdout":  func(h InteropContext) Value {
-		return rx.FileFrom(os.Stdout)
+		return rx.FileFrom(h.GetStdIO().Stdout)
 	},
 	"OS::Stderr":  func(h InteropContext) Value {
-		return rx.FileFrom(os.Stderr)
+		return rx.FileFrom(h.GetStdIO().Stderr)
 	},
 	"OS::Locale":  func(h InteropContext) Value {
 		var locale = Locale {
@@ -114,9 +114,9 @@ var OS_Constants = map[string] NativeConstant {
 	},
 }
 
-func GetEnv() Map {
+func GetEnv(raw ([] string)) Map {
 	var m = NewStrMap()
-	for _, item := range os.Environ() {
+	for _, item := range raw {
 		var str = StringFromGoString(item)
 		var k = make(String, 0)
 		var v = make(String, 0)
@@ -137,11 +137,10 @@ func GetEnv() Map {
 	return m
 }
 
-func GetArgs(h InteropContext) ([] String) {
-	var raw_args = h.GetArgs()
-	var args = make([] String, len(raw_args))
-	for i, raw := range raw_args {
-		args[i] = StringFromGoString(raw)
+func GetArgs(raw ([] string)) ([] String) {
+	var args = make([] String, len(raw))
+	for i, raw_arg := range raw {
+		args[i] = StringFromGoString(raw_arg)
 	}
 	return args
 }

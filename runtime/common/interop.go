@@ -1,6 +1,7 @@
 package common
 
 import (
+	"os"
 	"reflect"
 	. "kumachan/error"
 	"kumachan/runtime/rx"
@@ -10,10 +11,17 @@ import (
 type InteropContext interface {
 	Call(fv Value, arg Value) Value
 	GetScheduler() rx.Scheduler
+	GetEnv() ([] string)
 	GetArgs() ([] string)
+	GetStdIO() StdIO
 	GetErrorPoint() ErrorPoint
 	GetEntryModulePath() string
 	KmdApi
+}
+type StdIO struct {
+	Stdin   *os.File
+	Stdout  *os.File
+	Stderr  *os.File
 }
 var __t = InteropContext(nil)
 var __InteropContextType = reflect.TypeOf(&__t).Elem()

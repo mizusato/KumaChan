@@ -78,12 +78,7 @@ func load(path string) (*loader.Module, loader.Index) {
 func check(mod *loader.Module, idx loader.Index) (*checker.CheckedModule, checker.Index, kmd.SchemaTable) {
     var c_mod, c_idx, schema, errs = checker.TypeCheck(mod, idx)
     if errs != nil {
-        var messages = make([] ErrorMessage, len(errs))
-        for i, e := range errs {
-            messages[i] = e.Message()
-        }
-        var msg = MsgFailedToCompile(errs[0], messages)
-        fmt.Fprintf(os.Stderr, "%s\n", msg.String())
+        fmt.Fprintf(os.Stderr, "%s\n", MergeErrors(errs))
         os.Exit(4)
     }
     return c_mod, c_idx, schema
@@ -95,12 +90,7 @@ func compile(entry *checker.CheckedModule, sch kmd.SchemaTable) common.Program {
     var idx = make(compiler.Index)
     var errs = compiler.CompileModule(entry, idx, &data, &closures)
     if errs != nil {
-        var messages = make([] ErrorMessage, len(errs))
-        for i, e := range errs {
-            messages[i] = e.Message()
-        }
-        var msg = MsgFailedToCompile(errs[0].Concrete, messages)
-        fmt.Fprintf(os.Stderr, "%s\n", msg.String())
+        fmt.Fprintf(os.Stderr, "%s\n", MergeErrors(errs))
         os.Exit(5)
     }
     var meta = common.ProgramMetaData {
@@ -108,7 +98,7 @@ func compile(entry *checker.CheckedModule, sch kmd.SchemaTable) common.Program {
     }
     var program, err = compiler.CreateProgram(meta, idx, data, closures, sch)
     if err != nil {
-        fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+        fmt.Fprintf(os.Stderr, "%s\n", MergeErrors([] E { err }))
         os.Exit(6)
     }
     return program
@@ -204,7 +194,16 @@ func main() {
             if asm_dump != "" {
                 dump_asm(program, asm_dump)
             }
-            vm.Execute(program, program_args, uint(max_stack_size))
+            vm.Execute(program, vm.Options {
+                MaxStackSize: uint(max_stack_size),
+                Environment:  os.Environ(),
+                Arguments:    program_args,
+                StdIO:        common.StdIO {
+                    Stdin:  os.Stdin,
+                    Stdout: os.Stdout,
+                    Stderr: os.Stderr,
+                },
+            })
             close(qt.InitRequestSignal)
         })()
         var qt_main, use_qt = <- qt.InitRequestSignal

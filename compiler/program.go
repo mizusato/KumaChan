@@ -14,7 +14,7 @@ func CreateProgram (
 	data      [] c.DataValue,
 	closures  [] FuncNode,
 	schema    kmd.SchemaTable,
-) (c.Program, *Error) {
+) (c.Program, E) {
 	var kmd_conf = c.KmdConfig {
 		SchemaTable:       schema,
 		KmdAdapterTable:   make(c.KmdAdapterTable),

@@ -34,6 +34,10 @@ func (err *Error) ErrorPoint() ErrorPoint {
 	return err.Point
 }
 
+func (err *Error) ErrorConcrete() interface{} {
+	return err.Concrete
+}
+
 func (err *Error) Desc() ErrorMessage {
 	var desc = make(ErrorMessage, 0)
 	switch e := err.Concrete.(type) {
@@ -65,7 +69,7 @@ func (err *Error) Message() ErrorMessage {
 }
 
 func (err *Error) Error() string {
-	var msg = MsgFailedToCompile(err.Concrete, []ErrorMessage {
+	var msg = MsgFailedToCompile(err.Concrete, [] ErrorMessage {
 		err.Message(),
 	})
 	return msg.String()

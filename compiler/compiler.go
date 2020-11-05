@@ -24,12 +24,12 @@ func CompileModule (
 	idx       Index,
 	data      *([] c.DataValue),
 	closures  *([] FuncNode),
-) []*Error {
+) [] E {
 	var _, exists = idx[mod.Name]
 	if exists {
 		return nil
 	}
-	var errs = make([] *Error, 0)
+	var errs = make([] E, 0)
 	for _, imported := range mod.Imported {
 		var err = CompileModule(imported, idx, data, closures)
 		if err != nil {
@@ -91,7 +91,7 @@ func CompileFunction (
 	mod    string,
 	name   string,
 	point  ErrorPoint,
-) (*c.Function, []GlobalRef, []*Error) {
+) (*c.Function, []GlobalRef, [] E) {
 	switch b := body.(type) {
 	case ch.ExprKmdApi:
 		var f c.NativeFunctionValue
@@ -148,9 +148,9 @@ func CompileFunction (
 		if len(imp) > 0 { panic("something went wrong") }
 		var native_name = b.Name
 		var index, exists = lib.NativeFunctionIndex[native_name]
-		var errs []*Error = nil
+		var errs [] E = nil
 		if !exists {
-			errs = []*Error { &Error {
+			errs = [] E { &Error {
 				Point:    b.Point,
 				Concrete: E_NativeFunctionNotFound { native_name },
 			} }
@@ -224,7 +224,7 @@ func CompileConstant (
 	mod    string,
 	name   string,
 	point  ErrorPoint,
-) (*c.Function, []GlobalRef, []*Error) {
+) (*c.Function, []GlobalRef, [] E) {
 	switch b := body.(type) {
 	case ch.ExprPredefinedValue:
 		return &c.Function {
@@ -243,9 +243,9 @@ func CompileConstant (
 	case ch.ExprNative:
 		var native_name = b.Name
 		var index, exists = lib.NativeConstantIndex[native_name]
-		var errs []*Error = nil
+		var errs [] E = nil
 		if !exists {
-			errs = []*Error { &Error {
+			errs = [] E { &Error {
 				Point:    b.Point,
 				Concrete: E_NativeConstantNotFound { native_name },
 			} }

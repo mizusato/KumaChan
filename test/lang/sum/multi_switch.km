@@ -1,0 +1,52 @@
+type ABC union {
+     type A;
+     type B;
+     type C;
+};
+
+private function parse-abc:
+    ( &(String) ABC )
+    ( &(str)
+        if $(str = 'A'):
+            A,
+        elif $(str = 'B'):
+            B,
+        elif $(str = 'C'):
+            C,
+        else:
+            panic 'invalid ABC'
+    );
+
+private function from:
+    ( &(ABC) String )
+	( &(x)
+        switch x:
+	       case A: 'A',
+	       case B: 'B',
+	       case C: 'C',
+        end
+    );
+
+private function f:
+	( &(ABC,ABC) ABC )
+	( &(x,y)
+        switch* (x, y):
+	       case [A,A]: A,
+	       case [A,B]: C,
+	       case [A,C]: B,
+	       case [B,_]: B,
+	       case [C,A]: B,
+	       case [C,B]: A,
+	       case [C,C]: C,
+        end
+    );
+
+do scanln ()
+    | then ( &(x-str)
+        scanln()
+        | then ( &(y-str)
+            let z := (f (parse-abc x-str) (parse-abc y-str)),
+            println (str z)
+        )
+    )
+    | catch (&(_)(crash 'I/O Error'));

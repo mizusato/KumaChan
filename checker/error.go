@@ -143,12 +143,16 @@ func (err *TypeError) ErrorPoint() ErrorPoint {
 	return err.Point
 }
 
+func (err *TypeError) ErrorConcrete() interface{} {
+	return err.Concrete
+}
+
 func (err *TypeError) Message() ErrorMessage {
 	return FormatErrorAt(err.Point, err.Desc())
 }
 
 func (err *TypeError) Error() string {
-	var msg = MsgFailedToCompile(err.Concrete, []ErrorMessage {
+	var msg = MsgFailedToCompile(err.Concrete, [] ErrorMessage {
 		err.Message(),
 	})
 	return msg.String()
@@ -227,6 +231,10 @@ func (err *TypeDeclError) ErrorPoint() ErrorPoint {
 	return err.Point
 }
 
+func (err *TypeDeclError) ErrorConcrete() interface{} {
+	return err.Concrete
+}
+
 func (err *TypeDeclError) Message() ErrorMessage {
 	return FormatErrorAt(err.Point, err.Desc())
 }
@@ -301,6 +309,10 @@ func (err *KmdError) Desc() ErrorMessage {
 
 func (err *KmdError) ErrorPoint() ErrorPoint {
 	return err.Point
+}
+
+func (err *KmdError) ErrorConcrete() interface{} {
+	return err.Concrete
 }
 
 func (err *KmdError) Message() ErrorMessage {
@@ -417,6 +429,10 @@ func (err *FunctionError) ErrorPoint() ErrorPoint {
 	return err.Point
 }
 
+func (err *FunctionError) ErrorConcrete() interface{} {
+	return err.Concrete
+}
+
 func (err *FunctionError) Message() ErrorMessage {
 	return FormatErrorAt(err.Point, err.Desc())
 }
@@ -481,6 +497,10 @@ func (err *ConstantError) Desc() ErrorMessage {
 
 func (err *ConstantError) ErrorPoint() ErrorPoint {
 	return err.Point
+}
+
+func (err *ConstantError) ErrorConcrete() interface{} {
+	return err.Concrete
 }
 
 func (err *ConstantError) Message() ErrorMessage {
@@ -1141,6 +1161,10 @@ func (e E_BoxOpaqueType) ExprErrorDesc() ErrorMessage {
 
 func (err *ExprError) ErrorPoint() ErrorPoint {
 	return err.Point
+}
+
+func (err *ExprError) ErrorConcrete() interface{} {
+	return err.Concrete
 }
 
 func (err *ExprError) Desc() ErrorMessage {

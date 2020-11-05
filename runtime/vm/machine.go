@@ -17,15 +17,21 @@ const InitialCallStackCapacity = 4
 
 type Machine struct {
 	program         Program
-	arguments       [] string
+	options         Options
 	globalSlot      [] Value
 	contextPool     *sync.Pool
 	scheduler       rx.Scheduler
-	maxStackSize    uint
 	kmdTransformer  kmd.Transformer
 }
 
-func Execute(p Program, args ([] string), max_stack_size uint) *Machine {
+type Options struct {
+	MaxStackSize  uint
+	Environment   [] string
+	Arguments     [] string
+	StdIO
+}
+
+func Execute(p Program, opts Options) *Machine {
 	var sched = rx.TrivialScheduler {
 		EventLoop: rx.SpawnEventLoop(),
 	}
@@ -37,11 +43,10 @@ func Execute(p Program, args ([] string), max_stack_size uint) *Machine {
 	} }
 	var m = &Machine {
 		program:      p,
-		arguments:    args,
+		options:      opts,
 		globalSlot:   nil,
 		contextPool:  pool,
 		scheduler:    sched,
-		maxStackSize: max_stack_size,
 	}
 	m.kmdTransformer = lib.KmdTransformer(m)
 	execute(p, m)
@@ -84,8 +89,16 @@ func (h MachineContextHandle) GetScheduler() rx.Scheduler {
 	return h.machine.scheduler
 }
 
+func (h MachineContextHandle) GetEnv() ([] string) {
+	return h.machine.options.Environment
+}
+
 func (h MachineContextHandle) GetArgs() ([] string) {
-	return h.machine.arguments
+	return h.machine.options.Arguments
+}
+
+func (h MachineContextHandle) GetStdIO() (StdIO) {
+	return h.machine.options.StdIO
 }
 
 func (h MachineContextHandle) GetErrorPoint() ErrorPoint {

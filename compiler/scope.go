@@ -135,12 +135,12 @@ func (scope *Scope) CollectUnused() ([] Binding) {
 	return unused
 }
 
-func (scope *Scope) CollectUnusedAsErrors() ([] *Error) {
+func (scope *Scope) CollectUnusedAsErrors() ([] E) {
 	var unused = scope.CollectUnused()
 	if len(unused) == 0 {
 		return nil
 	} else {
-		var errs = make([] *Error, 0)
+		var errs = make([] E, 0)
 		for _, b := range unused {
 			if b.Name == ch.IgnoreMark {
 				continue

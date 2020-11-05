@@ -7,15 +7,17 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"errors"
 )
 
 
 const ERR_FOV = 5
 
 type E interface {
-	ErrorPoint()  ErrorPoint
-	Desc()        ErrorMessage
-	Message()     ErrorMessage
+	ErrorPoint()     ErrorPoint
+	ErrorConcrete()  interface {}
+	Desc()           ErrorMessage
+	Message()        ErrorMessage
 }
 
 type MaybeErrorPoint interface { MaybeErrorPoint() }
@@ -33,7 +35,7 @@ func GetErrorTypeName(e interface{}) string {
 	return T.String()
 }
 
-func MsgFailedToCompile(cause interface{}, err []ErrorMessage) ErrorMessage {
+func MsgFailedToCompile(cause interface{}, err ([] ErrorMessage)) ErrorMessage {
 	var err_type = GetErrorTypeName(cause)
 	var msg = make(ErrorMessage, 0)
 	msg.WriteText(TS_ERROR, fmt.Sprintf (
@@ -42,6 +44,15 @@ func MsgFailedToCompile(cause interface{}, err []ErrorMessage) ErrorMessage {
 	msg.WriteText(TS_NORMAL, "\n*\n")
 	msg.WriteAll(JoinErrMsg(err, T(TS_NORMAL, "\n*\n")))
 	return msg
+}
+
+func MergeErrors(errs ([] E)) error {
+	var messages = make([] ErrorMessage, len(errs))
+	for i, e := range errs {
+		messages[i] = e.Message()
+	}
+	var msg = MsgFailedToCompile(errs[0].ErrorConcrete(), messages)
+	return errors.New(msg.String())
 }
 
 func FormatError (
