@@ -40,7 +40,6 @@ private const @open-multiple: NoExcept*[String]
         if $((path-list.length) > 0):
             "open multiple: #" (
                 path-list
-                | iterate
                 | map (&(path)(str path))
                 | map "'#'"
                 | join ' '),

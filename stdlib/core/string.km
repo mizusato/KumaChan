@@ -38,11 +38,14 @@ public function contains: (&(String,String)(Bool))
 public function contains: (&(String,Char)(Bool))
     ( &(str,char)(str.some (&(c) $(c = char))) );
 
-// TODO: fix Array Seq inconsistency
 public function concat: (&(Array[String])(String))      native 'str-concat';
 public function split:  (&(String,String)(Seq[String])) native 'str-split';
 public function join:   (&(Seq[String],String)(String)) native 'str-join';
 public function join:   (&(Seq[String],Char)(String))
     (&(seq,char)(seq.join (String [char])));
+public function join:   (&(Array[String],String)(String))
+    (&(arr,sep)(arr.iterate.join sep));
+public function join:   (&(Array[String],Char)(String))
+    (&(arr,char)(arr.iterate.join char));
 
 // TODO: trim-{,left,right}, {trim,has}-{prefix,suffix}
