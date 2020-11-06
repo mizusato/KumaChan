@@ -223,12 +223,13 @@ var ContainerFunctions = map[string] Value {
 			return Na()
 		}
 	},
-	"str-split": func(str String, sep String) Seq {
-		return StringSplit(str, sep)
-	},
-	"str-join": func(seq Seq, sep String) String {
-		return StringJoin(seq, sep)
-	},
+	"str-split": StringSplit,
+	"str-join": StringJoin,
+	"trim": StringTrim,
+	"trim-left": StringTrimLeft,
+	"trim-right": StringTrimRight,
+	"trim-prefix": StringTrimPrefix,
+	"trim-suffix": StringTrimSuffix,
 	// TODO: trim, trim-left, trim-left, {has,trim}-prefix, {has,trim}-suffix
 	"new-map-str": func(v Value) Map {
 		var str_arr = ArrayFrom(v)

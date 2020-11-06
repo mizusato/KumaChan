@@ -48,4 +48,13 @@ public function join:   (&(Array[String],String)(String))
 public function join:   (&(Array[String],Char)(String))
     (&(arr,char)(arr.iterate.join char));
 
-// TODO: trim-{,left,right}, {trim,has}-{prefix,suffix}
+public function trim: (&(String,Char)(String))
+    native 'trim';
+public function trim-left: (&(String,Char)(String))
+    native 'trim-left';
+public function trim-right: (&(String,Char)(String))
+    native 'trim-right';
+public function trim-prefix: (&(String,String)(String))
+    native 'trim-prefix';
+public function trim-suffix: (&(String,String)(String))
+    native 'trim-suffix';

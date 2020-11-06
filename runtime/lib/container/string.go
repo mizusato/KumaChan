@@ -149,6 +149,60 @@ func StringFind(str String, sub String) (uint, bool) {
 	return (^uint(0)), false
 }
 
+func StringTrim(str String, char Char) String {
+	return StringTrimRight(StringTrimLeft(str, char), char)
+}
+
+func StringTrimLeft(str String, char Char) String {
+	for len(str) > 0 && str[0] == char {
+		if len(str) >= 2 {
+			str = str[1:]
+		} else {
+			str = String([] Char {})
+		}
+	}
+	return str
+}
+
+func StringTrimRight(str String, char Char) String {
+	for len(str) > 0 && str[len(str)-1] == char {
+		str = str[:len(str)-1]
+	}
+	return str
+}
+
+func StringTrimPrefix(str String, prefix String) String {
+	if len(prefix) <= len(str) {
+		for i := 0; i < len(prefix); i += 1 {
+			if prefix[i] != str[i] {
+				return str
+			}
+		}
+		if len(prefix) < len(str) {
+			return str[len(prefix):]
+		} else {
+			return String([] Char {})
+		}
+	} else {
+		return str
+	}
+}
+
+func StringTrimSuffix(str String, suffix String) String {
+	if len(str) > 0 && len(suffix) > 0 && len(suffix) <= len(str) {
+		var j = len(suffix)-1
+		for i := len(str)-1; i >= len(str)-len(suffix); i -= 1 {
+			if suffix[j] != str[i] {
+				return str
+			}
+			j -= 1
+		}
+		return str[:len(str)-len(suffix)]
+	} else {
+		return str
+	}
+}
+
 type StringSplitIterator struct {
 	Operand    String
 	Separator  String
