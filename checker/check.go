@@ -18,6 +18,7 @@ type CheckedModule struct {
 	Constants  map[string] CheckedConstant
 	Functions  map[string] ([] CheckedFunction)
 	Effects    [] CheckedEffect
+	Context    CheckContext
 }
 type CheckedConstant struct {
 	Point  ErrorPoint
@@ -529,6 +530,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 			Constants: const_map,
 			Functions: func_map,
 			Effects:   do_effects,
+			Context:   ctx,
 		}
 		index[mod_name] = checked
 		return checked, nil

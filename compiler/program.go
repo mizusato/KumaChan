@@ -14,7 +14,8 @@ func CreateProgram (
 	data      [] c.DataValue,
 	closures  [] FuncNode,
 	schema    kmd.SchemaTable,
-) (c.Program, E) {
+) (c.Program, DepLocator, E) {
+	var no_locator = DepLocator {}
 	var kmd_conf = c.KmdConfig {
 		SchemaTable:       schema,
 		KmdAdapterTable:   make(c.KmdAdapterTable),
@@ -163,7 +164,7 @@ func CreateProgram (
 			}
 		}
 		if len(rest_names) == 0 { panic("something went wrong") }
-		return c.Program{}, &Error {
+		return c.Program{}, no_locator, &Error {
 			Point:    point,
 			Concrete: E_CircularConstantDependency { rest_names },
 		}
@@ -176,34 +177,27 @@ func CreateProgram (
 	var base_function = base_data + uint(len(data))
 	var base_closure = base_function + uint(len(functions))
 	var base_constant = base_closure + uint(len(closures))
-	var get_dep_addr = func(dep Dependency) uint {
+	var base_extra = base_constant + uint(len(constants))
+	var get_dep_addr = func(dep Dependency) (uint, bool) {
 		switch d := dep.(type) {
 		case DepData:
-			return base_data + d.Index
+			return base_data + d.Index, true
 		case DepFunction:
-			return base_function + function_index_map[d]
+			return base_function + function_index_map[d], true
 		case DepClosure:
-			return base_closure + d.Index
+			return base_closure + d.Index, true
 		case DepConstant:
-			return base_constant + raw2sorted[constant_index_map[d]]
+			return base_constant + raw2sorted[constant_index_map[d]], true
 		default:
-			panic("impossible branch")
+			return ^uint(0), false
 		}
 	}
+	var locator = DepLocator {
+		Locate: get_dep_addr,
+		Offset: base_extra,
+	}
 	var relocate_code = func(f *FuncNode) {
-		var inst_seq = f.Underlying.Code
-		for i, _ := range inst_seq {
-			switch inst_seq[i].OpCode {
-			case c.GLOBAL, c.ARRAY:
-				var relative_index = inst_seq[i].GetGlobalIndex()
-				var dep = f.Dependencies[relative_index]
-				var absolute_index = get_dep_addr(dep)
-				ValidateGlobalIndex(absolute_index)
-				var a0, a1 = c.GlobalIndex(absolute_index)
-				inst_seq[i].Arg0 = a0
-				inst_seq[i].Arg1 = a1
-			}
-		}
+		RelocateCode(f, locator, nil)
 	}
 	for i, _ := range functions {
 		relocate_code(&(functions[i]))
@@ -232,5 +226,6 @@ func CreateProgram (
 		Constants:  unwrap(sorted_constants),
 		Effects:    unwrap(effects),
 		KmdConfig:  kmd_conf,
-	}, nil
+	}, locator, nil
 }
+

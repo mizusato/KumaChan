@@ -23,7 +23,7 @@ type Context = map[string] interface{}
 type Transformer = func(Tree, Pointer) reflect.Value
 
 
-func Transform (tree Tree) Root {
+func Transform(tree Tree) interface{} {
     var dive func(Tree, Pointer, []syntax.Id) (Pointer, bool)
     dive = func (tree Tree, ptr Pointer, path []syntax.Id) (Pointer, bool) {
         if len(path) == 0 {
@@ -192,7 +192,7 @@ func Transform (tree Tree) Root {
         }
         return node.Elem()
     }
-    return transform(tree, 0).Interface().(Root)
+    return transform(tree, 0).Interface()
 }
 
 

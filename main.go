@@ -10,18 +10,21 @@ import (
     "strconv"
     "io/ioutil"
     . "kumachan/error"
+    "kumachan/qt"
+    "kumachan/tools"
+    "kumachan/kmd"
+    "kumachan/util"
     "kumachan/loader"
     "kumachan/parser"
+    "kumachan/parser/ast"
     "kumachan/parser/scanner"
     "kumachan/parser/syntax"
     "kumachan/parser/transformer"
     "kumachan/checker"
     "kumachan/compiler"
     "kumachan/runtime/vm"
+    "kumachan/runtime/rx"
     "kumachan/runtime/common"
-    "kumachan/qt"
-    "kumachan/tools"
-    "kumachan/kmd"
 )
 
 
@@ -96,7 +99,7 @@ func compile(entry *checker.CheckedModule, sch kmd.SchemaTable) common.Program {
     var meta = common.ProgramMetaData {
         EntryModulePath: entry.RawModule.Path,
     }
-    var program, err = compiler.CreateProgram(meta, idx, data, closures, sch)
+    var program, _, err = compiler.CreateProgram(meta, idx, data, closures, sch)
     if err != nil {
         fmt.Fprintf(os.Stderr, "%s\n", MergeErrors([] E { err }))
         os.Exit(6)
@@ -148,7 +151,7 @@ func main() {
             fmt.Println("options:")
             fmt.Println("\t--help,-h\tshow help")
             fmt.Println("\t--version,-v\tshow version")
-            fmt.Println("\t--mode={interpreter,tools-server,parser-debug}")
+            fmt.Println("\t--mode={interpreter,repl,tools-server,parser-debug}")
             fmt.Println("\t--asm-dump=[FILE]")
             fmt.Println("\t--max-stack-size=[NUMBER]")
             return
@@ -203,7 +206,100 @@ func main() {
                     Stdout: os.Stdout,
                     Stderr: os.Stderr,
                 },
-            })
+            }, nil)
+            close(qt.InitRequestSignal)
+        })()
+        var qt_main, use_qt = <- qt.InitRequestSignal
+        if use_qt {
+            qt_main()
+        }
+    case "repl":
+        go (func() {
+            var path = "//(repl)//"
+            var raw_mod = loader.CraftRawEmptyModule(loader.RawModuleManifest {
+                Vendor:  "repl",
+                Project: "Repl",
+                Name:    "Repl",
+            }, path)
+            ldr_mod, ldr_idx, ldr_err := loader.LoadEntryRawModule(raw_mod)
+            if ldr_err != nil { panic(ldr_err) }
+            mod, _, sch, errs := checker.TypeCheck(ldr_mod, ldr_idx)
+            if errs != nil { panic(MergeErrors(errs)) }
+            var data = make([] common.DataValue, 0)
+            var closures = make([] compiler.FuncNode, 0)
+            var idx = make(compiler.Index)
+            errs = compiler.CompileModule(mod, idx, &data, &closures)
+            if errs != nil { panic(MergeErrors(errs)) }
+            var meta = common.ProgramMetaData { EntryModulePath: path }
+            program, dl, err := compiler.CreateProgram(meta, idx, data, closures, sch)
+            if err != nil { panic(err) }
+            var mod_info = checker.ModuleInfo {
+                Module:    mod.RawModule,
+                Types:     mod.Context.Types,
+                Constants: mod.Context.Constants[mod.Name],
+                Functions: mod.Context.Functions[mod.Name],
+            }
+            var ic = compiler.NewIncrementalCompiler(&mod_info, dl)
+            var wait_m = make(chan *vm.Machine, 1)
+            var in_r, _, e = os.Pipe()
+            if e != nil { panic(e) }
+            var cmd_id = uint(0)
+            var repl = func() {
+                var m = <- wait_m
+                for {
+                    cmd_id += 1
+                    _, err1 := fmt.Fprintf(os.Stderr, "[%d] ", cmd_id)
+                    if err1 != nil { panic(err1) }
+                    code, err1 := util.WellBehavedReadLine(os.Stdin)
+                    if err1 != nil { panic(err1) }
+                    cst, err2 := parser.Parse(code, syntax.ReplRootPartName, fmt.Sprintf("[%d]", cmd_id))
+                    if err2 != nil {
+                        fmt.Fprintf(os.Stderr,
+                            "[%d] error:\n%s\n", cmd_id, err2.Message())
+                        continue
+                    }
+                    cmd_node := transformer.Transform(cst).(ast.ReplRoot)
+                    switch cmd := cmd_node.Cmd.(type) {
+                    case ast.ReplAssign:
+                        panic("not implemented")
+                    case ast.ReplDo:
+                        panic("not implemented")
+                    case ast.ReplEval:
+                        var id = compiler.DepConstant {
+                            Module: mod.Name,
+                            Name:   fmt.Sprintf("Temp%d", cmd_id),
+                        }
+                        var f, dep_vals, err = ic.AddConstant(id, cmd.Expr)
+                        if err != nil {
+                            fmt.Fprintf(os.Stderr,
+                                "[%d] error:\n%s\n", cmd_id, err)
+                            continue
+                        }
+                        m.InjectExtraGlobals(dep_vals)
+                        var ret = m.Call(f, nil)
+                        m.InjectExtraGlobals([] common.Value { ret })
+                        fmt.Printf("(%d) %s\n", cmd_id, common.Inspect(ret))
+                    }
+                }
+            }
+            var do_repl = &common.Function {
+                Kind:        common.F_PREDEFINED,
+                Predefined:  rx.NewGoroutineSingle(func() (rx.Object, bool) {
+                    repl()
+                    return nil, true
+                }),
+            }
+            program.Effects = append(program.Effects, do_repl)
+            vm.Execute(program, vm.Options {
+                MaxStackSize: uint(max_stack_size),
+                Environment:  os.Environ(),
+                Arguments:    program_args,
+                StdIO:        common.StdIO {
+                    Stdin:  in_r,
+                    Stdout: os.Stdout,
+                    Stderr: os.Stderr,
+                },
+            }, wait_m)
             close(qt.InitRequestSignal)
         })()
         var qt_main, use_qt = <- qt.InitRequestSignal

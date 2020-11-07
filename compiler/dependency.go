@@ -11,8 +11,13 @@ type FuncNode struct {
 	Dependencies  [] Dependency
 	ch.FunctionKmdInfo
 }
-type Dependency interface { Dependency() }
 var __NoKmdInfo = ch.FunctionKmdInfo {}
+
+type Dependency interface { Dependency() }
+type DepLocator struct {
+	Locate  func(Dependency) (uint, bool)
+	Offset  uint
+}
 
 func (impl DepFunction) Dependency() {}
 type DepFunction struct {
@@ -37,12 +42,11 @@ type DepClosure struct {
 func FuncNodeFrom (
 	f         *c.Function,
 	refs      [] GlobalRef,
-	idx       Index,
 	data      *([] c.DataValue),
 	closures  *([] FuncNode),
 	kmd_info  ch.FunctionKmdInfo,
 ) FuncNode {
-	var deps = RefsToDeps(refs, idx, data, closures)
+	var deps = RefsToDeps(refs, data, closures)
 	return FuncNode {
 		Underlying:      f,
 		Dependencies:    deps,
@@ -52,7 +56,6 @@ func FuncNodeFrom (
 
 func RefsToDeps (
 	refs      [] GlobalRef,
-	idx       Index,
 	data      *([] c.DataValue),
 	closures  *([] FuncNode),
 ) ([] Dependency) {
@@ -69,7 +72,6 @@ func RefsToDeps (
 			var cl = FuncNodeFrom (
 				r.Function,
 				r.GlobalRefs,
-				idx,
 				data,
 				closures,
 				__NoKmdInfo,
@@ -96,3 +98,34 @@ func RefsToDeps (
 	}
 	return deps
 }
+
+func RelocateCode(f *FuncNode, locator DepLocator, extra ExtraDepLocator) {
+	var inst_seq = f.Underlying.Code
+	for i, _ := range inst_seq {
+		switch inst_seq[i].OpCode {
+		case c.GLOBAL, c.ARRAY:
+			var relative_index = inst_seq[i].GetGlobalIndex()
+			var dep = f.Dependencies[relative_index]
+			var absolute_index uint
+			if extra != nil {
+				var extra_index, is_extra = extra(dep)
+				if is_extra {
+					absolute_index = (locator.Offset + extra_index)
+				} else {
+					var index, exists = locator.Locate(dep)
+					if !(exists) { panic("something went wrong") }
+					absolute_index = index
+				}
+			} else {
+				var index, exists = locator.Locate(dep)
+				if !(exists) { panic("something went wrong") }
+				absolute_index = index
+			}
+			ValidateGlobalIndex(absolute_index)
+			var a0, a1 = c.GlobalIndex(absolute_index)
+			inst_seq[i].Arg0 = a0
+			inst_seq[i].Arg1 = a1
+		}
+	}
+}
+

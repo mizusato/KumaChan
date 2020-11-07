@@ -19,6 +19,8 @@ type Machine struct {
 	program         Program
 	options         Options
 	globalSlot      [] Value
+	extraSlot       [] Value
+	extraLock       *sync.Mutex
 	contextPool     *sync.Pool
 	scheduler       rx.Scheduler
 	kmdTransformer  kmd.Transformer
@@ -31,7 +33,7 @@ type Options struct {
 	StdIO
 }
 
-func Execute(p Program, opts Options) *Machine {
+func Execute(p Program, opts Options, m_signal (chan <- *Machine)) {
 	var sched = rx.TrivialScheduler {
 		EventLoop: rx.SpawnEventLoop(),
 	}
@@ -45,12 +47,16 @@ func Execute(p Program, opts Options) *Machine {
 		program:      p,
 		options:      opts,
 		globalSlot:   nil,
+		extraSlot:    make([] Value, 0),
+		extraLock:    &sync.Mutex {},
 		contextPool:  pool,
 		scheduler:    sched,
 	}
 	m.kmdTransformer = lib.KmdTransformer(m)
+	if m_signal != nil {
+		m_signal <- m
+	}
 	execute(p, m)
-	return m
 }
 
 type ExecutionContext struct {
@@ -77,7 +83,7 @@ type MachineContextHandle struct {
 func (h MachineContextHandle) Call(fv Value, arg Value) Value {
 	switch f := fv.(type) {
 	case FunctionValue:
-		return call(f, arg, h.machine)
+		return h.machine.Call(f, arg)
 	case NativeFunctionValue:
 		return f(arg, h)
 	default:
@@ -120,6 +126,16 @@ func (h MachineContextHandle) KmdSerialize(v Value, t *kmd.Type) ([] byte, error
 
 func (h MachineContextHandle) KmdDeserialize(binary ([] byte), t *kmd.Type) (Value, error) {
 	return lib.KmdDeserialize(binary, t, h.machine.kmdTransformer)
+}
+
+func (m *Machine) Call(f FunctionValue, arg Value) Value {
+	return call(f, arg, m)
+}
+
+func (m *Machine) InjectExtraGlobals(values ([] Value)) {
+	m.extraLock.Lock()
+	defer m.extraLock.Unlock()
+	m.extraSlot = append(m.extraSlot, values...)
 }
 
 func (m *Machine) KmdGetConfig() KmdConfig {

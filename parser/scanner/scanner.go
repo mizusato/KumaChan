@@ -144,6 +144,7 @@ func Scan(code Code) (Tokens, RowColInfo, RowSpanMap) {
         pos += amount
     }
     if (pos < length) {
+        // TODO: show be error return instead of panic
         panic(fmt.Sprintf("invalid token at %+v", info[pos]))
     }
     return tokens, info, span_map

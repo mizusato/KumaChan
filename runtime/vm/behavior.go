@@ -46,8 +46,17 @@ func execute(p Program, m *Machine) {
 	var wg = make(chan struct{}, len(p.Effects))
 	for i, _ := range p.Effects {
 		var f = p.Effects[i]
-		var v = f.ToValue(nil).(FunctionValue)
-		var e = (call(v, nil, m)).(rx.Effect)
+		var e = (func() rx.Effect {
+			var v = f.ToValue(nil)
+			switch v := v.(type) {
+			case FunctionValue:
+				return (call(v, nil, m)).(rx.Effect)
+			case rx.Effect:
+				return v
+			default:
+				panic("something went wrong")
+			}
+		})()
 		m.scheduler.RunTopLevel(e, rx.Receiver {
 			Context:   ctx,
 			Values:    nil,
@@ -86,9 +95,21 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 			case POP:
 				ec.popValue()
 			case GLOBAL:
-				var id = inst.GetGlobalIndex()
-				var gv = m.globalSlot[id]
-				ec.pushValue(gv)
+				var index = inst.GetGlobalIndex()
+				var L = uint(len(m.globalSlot))
+				if index < L {
+					ec.pushValue(m.globalSlot[index])
+				} else {
+					m.extraLock.Lock()
+					var offset = (index - L)
+					if offset < uint(len(m.extraSlot)) {
+						ec.pushValue(m.extraSlot[offset])
+						m.extraLock.Unlock()
+					} else {
+						m.extraLock.Unlock()
+						panic("GLOBAL: index out of range")
+					}
+				}
 			case LOAD:
 				var offset = inst.GetOffset()
 				var value = ec.dataStack[base_addr + offset]

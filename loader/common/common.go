@@ -21,7 +21,7 @@ func CreateEmptyAST(name string) ast.Root {
 	var empty_cst, err = parser.Parse(([] rune)(""), syntax.RootPartName, name)
 	if err != nil { panic("something went wrong") }
 	var empty_ast = transformer.Transform(empty_cst)
-	return empty_ast
+	return empty_ast.(ast.Root)
 }
 
 func CreateConstant (

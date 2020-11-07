@@ -17,6 +17,7 @@ import (
 	"kumachan/loader/common"
 	"kumachan/loader/kinds"
 	"kumachan/stdlib"
+	"time"
 )
 
 
@@ -49,7 +50,7 @@ type RawModule struct {
 }
 type RawModuleManifest struct {
 	Vendor   string            `json:"vendor"`
-	Project  string           `json:"project"`
+	Project  string            `json:"project"`
 	Name     string            `json:"name"`
 	Config   RawModuleConfig   `json:"config"`
 }
@@ -59,6 +60,10 @@ type RawModuleConfig struct {
 }
 type RawModuleContent interface {
 	Load(ctx Context)  (ast.Root, *Error)
+}
+func (m M_PredefinedAST) Load(Context) (ast.Root, *Error) { return m.Root, nil }
+type M_PredefinedAST struct {
+	Root  ast.Root
 }
 type M_StandaloneScript struct {
 	File  SourceFile
@@ -75,7 +80,7 @@ func (sf SourceFile) GetAST() (ast.Root, *parser.Error) {
 	var code = []rune(code_string)
 	var tree, err = parser.Parse(code, syntax.RootPartName, sf.Path)
 	if err != nil { return ast.Root{}, err }
-	return transformer.Transform(tree), nil
+	return transformer.Transform(tree).(ast.Root), nil
 }
 
 func (mod M_StandaloneScript) Load(ctx Context) (ast.Root, *Error) {
@@ -227,7 +232,7 @@ func ReadModulePath(path string) (RawModule, error) {
 }
 
 func LoadModule(path string, ctx Context, idx Index) (*Module, *Error) {
-	/* 1. Try to read the content of given source file/folder */
+	// Try to read the content of given source file/folder
 	var raw_mod, err1 = ReadModulePath(path)
 	if err1 != nil { return nil, &Error {
 		Context:  ctx,
@@ -236,12 +241,18 @@ func LoadModule(path string, ctx Context, idx Index) (*Module, *Error) {
 			Message:   err1.Error(),
 		},
 	} }
+	return LoadRawModule(raw_mod, ctx, idx)
+}
+
+func LoadRawModule(raw_mod RawModule, ctx Context, idx Index) (*Module, *Error) {
+	/* 1. Check for validity of standalone module */
 	if raw_mod.Standalone && len(ctx.BreadCrumbs) > 0 {
 		return nil, &Error {
 			Context:  ctx,
 			Concrete: E_StandaloneImported {},
 		}
 	}
+	var path = raw_mod.FileInfo.Name()
 	/* 2. Try to parse the content to get an AST */
 	var manifest = raw_mod.Manifest
 	var module_name = (func() string {
@@ -388,6 +399,16 @@ func LoadEntry(path string) (*Module, Index, *Error) {
 	return mod, idx, err
 }
 
+func LoadEntryRawModule(raw_mod RawModule) (*Module, Index, *Error) {
+	var idx = make(map[string] *Module)
+	for k, v := range __StdLibIndex {
+		idx[k] = v
+	}
+	var ctx = MakeEntryContext()
+	var mod, err = LoadRawModule(raw_mod, ctx, idx)
+	return mod, idx, err
+}
+
 var __StdLibModules = stdlib.GetModuleDirectories()
 var __StdLibIndex = make(map[string] *Module)
 var _ = __Init()
@@ -423,3 +444,37 @@ func ImportStdLib (imp_map map[string]*Module, imp_set map[string]bool) {
 		imp_set[name] = true
 	}
 }
+
+func CraftRawModule(manifest RawModuleManifest, path string, tree ast.Root) RawModule {
+	return RawModule {
+		FileInfo:   craftModuleFileInfo(path),
+		Manifest:   manifest,
+		Content:    M_PredefinedAST { tree },
+		Standalone: false,
+	}
+}
+
+func CraftRawEmptyModule(manifest RawModuleManifest, path string) RawModule {
+	return CraftRawModule(manifest, path, common.CreateEmptyAST(path))
+}
+
+type craftedFileInfo struct {
+	name     string
+	size     int64
+	mode     os.FileMode
+	modTime  time.Time
+	isDir    bool
+	sys      interface {}
+}
+func (info craftedFileInfo) Name() string { return info.name }
+func (info craftedFileInfo) Size() int64 { return info.size }
+func (info craftedFileInfo) Mode() os.FileMode { return info.mode }
+func (info craftedFileInfo) ModTime() time.Time { return info.modTime }
+func (info craftedFileInfo) IsDir() bool { return info.isDir }
+func (info craftedFileInfo) Sys() interface{} { return info.sys }
+func craftModuleFileInfo(name string) os.FileInfo {
+	return craftedFileInfo {
+		name: name,
+	}
+}
+

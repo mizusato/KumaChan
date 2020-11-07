@@ -45,7 +45,7 @@ func expectStdIO(t *testing.T, path string, in string, expected_out string) {
 	errs = compiler.CompileModule(mod, idx, &data, &closures)
 	if errs != nil { t.Fatal(mergeErrorMessages(errs)) }
 	var meta = common.ProgramMetaData { EntryModulePath: path}
-	program, err := compiler.CreateProgram(meta, idx, data, closures, sch)
+	program, _, err := compiler.CreateProgram(meta, idx, data, closures, sch)
 	if err != nil { t.Fatal(err) }
 	in_read, in_write, e := os.Pipe()
 	if e != nil { panic(e) }
@@ -61,7 +61,7 @@ func expectStdIO(t *testing.T, path string, in string, expected_out string) {
 				Stdout: out_write,
 				Stderr: os.Stderr,
 			},
-		})
+		}, nil)
 		var e = out_write.Close()
 		if e != nil { panic(e) }
 	})()

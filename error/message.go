@@ -91,25 +91,25 @@ func (t StyledText) StringPlain() string {
 }
 
 
-func (msg *ErrorMessage) String() string {
+func (msg ErrorMessage) String() string {
 	var buf strings.Builder
-	for _, segment := range *msg {
+	for _, segment := range msg {
 		buf.WriteString(segment.String())
 	}
 	return buf.String()
 }
 
-func (msg *ErrorMessage) StringMarkdown() string {
+func (msg ErrorMessage) StringMarkdown() string {
 	var buf strings.Builder
-	for _, segment := range *msg {
+	for _, segment := range msg {
 		buf.WriteString(segment.StringMarkdown())
 	}
 	return buf.String()
 }
 
-func (msg *ErrorMessage) StringPlain() string {
+func (msg ErrorMessage) StringPlain() string {
 	var buf strings.Builder
-	for _, segment := range *msg {
+	for _, segment := range msg {
 		buf.WriteString(segment.StringPlain())
 	}
 	return buf.String()
@@ -162,7 +162,7 @@ func (msg *ErrorMessage) WriteRepeated(text StyledText, amount uint) {
 	}
 }
 
-func JoinErrMsg(messages []ErrorMessage, separator StyledText) ErrorMessage {
+func JoinErrMsg(messages ([] ErrorMessage), separator StyledText) ErrorMessage {
 	var joined = make(ErrorMessage, 0, len(messages))
 	for i, item := range messages {
 		joined.WriteAll(item)
@@ -173,7 +173,7 @@ func JoinErrMsg(messages []ErrorMessage, separator StyledText) ErrorMessage {
 	return joined
 }
 
-func ListErrMsgItems(items []ErrorMessage, prefix string) ErrorMessage {
+func ListErrMsgItems(items ([] ErrorMessage), prefix string) ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	msg.WriteText(TS_NORMAL, fmt.Sprintf("%s {", prefix))
 	if len(items) > 0 {

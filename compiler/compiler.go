@@ -46,7 +46,7 @@ func CompileModule (
 			)
 			if err != nil { errs = append(errs, err...) }
 			var kmd_info = item.FunctionKmdInfo
-			var f = FuncNodeFrom(f_raw, refs, idx, data, closures, kmd_info)
+			var f = FuncNodeFrom(f_raw, refs, data, closures, kmd_info)
 			var existing, exists = functions[name]
 			if exists {
 				functions[name] = append(existing, f)
@@ -62,7 +62,7 @@ func CompileModule (
 		if err != nil {
 			errs = append(errs, err...)
 		}
-		constants[name] = FuncNodeFrom(f, refs, idx, data, closures, __NoKmdInfo)
+		constants[name] = FuncNodeFrom(f, refs, data, closures, __NoKmdInfo)
 	}
 	for _, item := range mod.Effects {
 		var value = ch.ExprExpr(item.Value)
@@ -70,7 +70,7 @@ func CompileModule (
 		if err != nil {
 			errs = append(errs, err...)
 		}
-		effects = append(effects, FuncNodeFrom(f, refs, idx, data, closures, __NoKmdInfo))
+		effects = append(effects, FuncNodeFrom(f, refs, data, closures, __NoKmdInfo))
 	}
 	idx[mod.Name] = &CompiledModule {
 		Functions: functions,
@@ -91,7 +91,7 @@ func CompileFunction (
 	mod    string,
 	name   string,
 	point  ErrorPoint,
-) (*c.Function, []GlobalRef, [] E) {
+) (*c.Function, [] GlobalRef, [] E) {
 	switch b := body.(type) {
 	case ch.ExprKmdApi:
 		var f c.NativeFunctionValue
@@ -224,7 +224,7 @@ func CompileConstant (
 	mod    string,
 	name   string,
 	point  ErrorPoint,
-) (*c.Function, []GlobalRef, [] E) {
+) (*c.Function, [] GlobalRef, [] E) {
 	switch b := body.(type) {
 	case ch.ExprPredefinedValue:
 		return &c.Function {

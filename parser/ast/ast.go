@@ -43,6 +43,10 @@ var __NodeRegistry = []interface{} {
     // Root
 	Root {},
 	Shebang {},
+	ReplRoot {},
+	ReplAssign {},
+	ReplDo {},
+	ReplEval {},
     // Statement
     VariousStatement {},
     Import {},

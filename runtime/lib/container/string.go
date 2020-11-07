@@ -239,7 +239,7 @@ func (it *StringSplitIterator) Next() (Value, Seq, bool) {
 		}
 	}
 	var item = append(String{}, it.Operand[it.LastIndex:]...)
-	return item, nil, true
+	return item, EmptySeq { ItemType: it.GetItemType() }, true
 }
 func (_ *StringSplitIterator) Inspect(_ func(Value)ErrorMessage) ErrorMessage {
 	var msg = make(ErrorMessage, 0)

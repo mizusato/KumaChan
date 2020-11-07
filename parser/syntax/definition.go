@@ -9,6 +9,7 @@ func r (pattern string) Regexp { return regexp.MustCompile(`^` + pattern) }
 
 
 const RootPartName = "root"
+const ReplRootPartName = "repl_root"
 const IdentifierPartName = "Name"
 var __EscapeMap = map[string] string {
     "_bang1":  "!",
@@ -121,6 +122,10 @@ var __SyntaxDefinition = [...] string {
           "import = @import name! @from! string_text! ;!",
             "name = Name",
           "do = @do expr! ;!",
+    "repl_root = repl_assign | repl_do | repl_eval",
+        "repl_assign = name := expr!",
+        "repl_do = @do expr!",
+        "repl_eval = expr!",
     "type = type_literal | type_ref",
       "type_ref = module_prefix name type_args",
         "module_prefix? = name :: | ::",
