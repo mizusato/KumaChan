@@ -178,40 +178,87 @@ func repl(args ([] string), max_stack_size int) {
     if e != nil { panic(e) }
     var cmd_id = uint(0)
     var loop = func() {
+        const repl_root = syntax.ReplRootPartName
         var m = <- wait_m
+        var sched = m.GetScheduler()
         for {
             cmd_id += 1
-            _, err1 := fmt.Fprintf(os.Stderr, "[%d] ", cmd_id)
-            if err1 != nil { panic(err1) }
-            code, err1 := util.WellBehavedReadLine(os.Stdin)
-            if err1 != nil { panic(err1) }
-            cst, err2 := parser.Parse(code, syntax.ReplRootPartName, fmt.Sprintf("[%d]", cmd_id))
-            if err2 != nil {
+            _, err := fmt.Fprintf(os.Stderr, "[%d] ", cmd_id)
+            if err != nil { panic(err) }
+            code, err := util.WellBehavedReadLine(os.Stdin)
+            if err != nil { panic(err) }
+            var cmd_ast_name = fmt.Sprintf("[%d]", cmd_id)
+            cst, p_err := parser.Parse(code, repl_root, cmd_ast_name)
+            if p_err != nil {
                 fmt.Fprintf(os.Stderr,
-                    "[%d] error:\n%s\n", cmd_id, err2.Message())
+                    "[%d] error:\n%s\n", cmd_id, p_err.Message())
                 continue
             }
-            cmd_node := transformer.Transform(cst).(ast.ReplRoot)
-            switch cmd := cmd_node.Cmd.(type) {
+            cmd := transformer.Transform(cst).(ast.ReplRoot)
+            var expr = ast.ReplCmdGetExpr(cmd.Cmd)
+            var temp_name = fmt.Sprintf("Temp%d", cmd_id)
+            var temp_id = compiler.DepConstant {
+                Module: mod.Name,
+                Name:   temp_name,
+            }
+            f, dep_vals, err := ic.AddConstant(temp_id, expr)
+            if err != nil {
+                fmt.Fprintf(os.Stderr,
+                    "[%d] error:\n%s\n", cmd_id, err)
+                continue
+            }
+            m.InjectExtraGlobals(dep_vals)
+            var ret = m.Call(f, nil)
+            m.InjectExtraGlobals([] common.Value { ret })
+            fmt.Printf("(%d) %s\n", cmd_id, common.Inspect(ret))
+            switch cmd := cmd.Cmd.(type) {
             case ast.ReplAssign:
-                panic("not implemented")
+                var alias = string(cmd.Name.Name)
+                ic.SetConstantAlias(temp_id, compiler.DepConstant {
+                    Module: temp_id.Module,
+                    Name:   alias,
+                })
             case ast.ReplDo:
-                panic("not implemented")
+                var eff, ok = ret.(rx.Effect)
+                if !(ok) { fmt.Fprintf(os.Stderr,
+                    "[%d] failure: given value is not an effect\n", cmd_id) }
+                var ch_values = make(chan rx.Object, 1024)
+                var ch_error = make(chan rx.Object, 4)
+                var ch_terminate = make(chan bool, 4)
+                var receiver = rx.Receiver {
+                    Context:   rx.Background(),
+                    Values:    ch_values,
+                    Error:     ch_error,
+                    Terminate: ch_terminate,
+                }
+                sched.RunTopLevel(eff, receiver)
+                outer: for {
+                    select {
+                    case eff_v := <- ch_values:
+                        var msg = common.Inspect(eff_v)
+                        _, err := fmt.Fprintf(os.Stderr,
+                            "(%d) * value: %s\n", cmd_id, msg)
+                        if err != nil { panic(err) }
+                    case eff_err := <- ch_error:
+                        var msg = common.Inspect(eff_err)
+                        _, err := fmt.Fprintf(os.Stderr,
+                            "(%d) * error: %s\n", cmd_id, msg)
+                        if err != nil { panic(err) }
+                    case eff_ok := <- ch_terminate:
+                        if eff_ok {
+                            _, err := fmt.Fprintf(os.Stderr,
+                                "(%d) * terminated: <complete>\n", cmd_id)
+                            if err != nil { panic(err) }
+                        } else {
+                            _, err := fmt.Fprintf(os.Stderr,
+                                "(%d) * terminated: <error>\n", cmd_id)
+                            if err != nil { panic(err) }
+                        }
+                        break outer
+                    }
+                }
             case ast.ReplEval:
-                var id = compiler.DepConstant {
-                    Module: mod.Name,
-                    Name:   fmt.Sprintf("Temp%d", cmd_id),
-                }
-                var f, dep_vals, err = ic.AddConstant(id, cmd.Expr)
-                if err != nil {
-                    fmt.Fprintf(os.Stderr,
-                        "[%d] error:\n%s\n", cmd_id, err)
-                    continue
-                }
-                m.InjectExtraGlobals(dep_vals)
-                var ret = m.Call(f, nil)
-                m.InjectExtraGlobals([] common.Value { ret })
-                fmt.Printf("(%d) %s\n", cmd_id, common.Inspect(ret))
+                // do nothing extra
             }
         }
     }

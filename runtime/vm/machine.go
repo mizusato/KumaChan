@@ -79,6 +79,10 @@ func (m *Machine) Call(f FunctionValue, arg Value) Value {
 	return call(f, arg, m)
 }
 
+func (m *Machine) GetScheduler() rx.Scheduler {
+	return m.scheduler
+}
+
 func (m *Machine) InjectExtraGlobals(values ([] Value)) {
 	m.extraLock.Lock()
 	defer m.extraLock.Unlock()

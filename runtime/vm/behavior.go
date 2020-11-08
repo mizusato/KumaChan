@@ -43,7 +43,7 @@ func execute(p Program, m *Machine) {
 		}
 	}
 	var ctx = rx.Background()
-	var wg = make(chan struct{}, len(p.Effects))
+	var wg = make(chan bool, len(p.Effects))
 	for i, _ := range p.Effects {
 		var f = p.Effects[i]
 		var e = (func() rx.Effect {

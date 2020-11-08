@@ -110,3 +110,14 @@ func (ctx *IncrementalCompiler) AddConstant(id DepConstant, val ast.Expr) (
 	return &c.ValFunc { Underlying: const_f }, all_dep_values, nil
 }
 
+func (ctx *IncrementalCompiler) SetConstantAlias(id DepConstant, alias DepConstant) {
+	var sym = loader.NewSymbol(id.Module, id.Name)
+	var alias_sym = loader.NewSymbol(alias.Module, alias.Name)
+	constant, exists := ctx.typeInfo.Constants[sym]
+	if !(exists) { panic("something went wrong") }
+	ctx.typeInfo.Constants[alias_sym] = constant
+	index, exists := ctx.addedDepMap[id]
+	if !(exists) { panic("something went wrong") }
+	ctx.addedDepMap[alias] = index
+}
+

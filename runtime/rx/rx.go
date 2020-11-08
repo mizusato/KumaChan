@@ -144,7 +144,7 @@ type Receiver struct {
 	Context    *Context
 	Values     chan <- Object
 	Error      chan <- Object
-	Terminate  chan <- struct {}
+	Terminate  chan <- bool
 }
 
 func (s Sender) Context() *Context {

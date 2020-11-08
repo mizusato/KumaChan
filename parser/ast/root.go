@@ -32,4 +32,17 @@ type ReplEval struct {
     Node         `part:"repl_eval"`
     Expr  Expr   `part:"expr"`
 }
+func ReplCmdGetExpr(cmd ReplCmd) Expr {
+    switch cmd := cmd.(type) {
+    case ReplAssign:
+        return cmd.Expr
+    case ReplDo:
+        return cmd.Expr
+    case ReplEval:
+        return cmd.Expr
+    default:
+        panic("impossible branch")
+    }
+}
+
 
