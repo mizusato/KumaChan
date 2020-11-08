@@ -234,16 +234,20 @@ func repl(args ([] string), max_stack_size int) {
                 sched.RunTopLevel(eff, receiver)
                 outer: for {
                     select {
-                    case eff_v := <- ch_values:
-                        var msg = common.Inspect(eff_v)
-                        _, err := fmt.Fprintf(os.Stderr,
-                            "(%d) * value: %s\n", cmd_id, msg)
-                        if err != nil { panic(err) }
-                    case eff_err := <- ch_error:
-                        var msg = common.Inspect(eff_err)
-                        _, err := fmt.Fprintf(os.Stderr,
-                            "(%d) * error: %s\n", cmd_id, msg)
-                        if err != nil { panic(err) }
+                    case eff_v, not_closed := <- ch_values:
+                        if not_closed {
+                            var msg = common.Inspect(eff_v)
+                            _, err := fmt.Fprintf(os.Stderr,
+                                "(%d) * value: %s\n", cmd_id, msg)
+                            if err != nil { panic(err) }
+                        }
+                    case eff_err, not_closed := <- ch_error:
+                        if not_closed {
+                            var msg = common.Inspect(eff_err)
+                            _, err := fmt.Fprintf(os.Stderr,
+                                "(%d) * error: %s\n", cmd_id, msg)
+                            if err != nil { panic(err) }
+                        }
                     case eff_ok := <- ch_terminate:
                         if eff_ok {
                             _, err := fmt.Fprintf(os.Stderr,
