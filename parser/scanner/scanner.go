@@ -1,8 +1,11 @@
 package scanner
 
-import "io"
-import "fmt"
-import "kumachan/parser/syntax"
+import (
+    "io"
+    "fmt"
+    "errors"
+    "kumachan/parser/syntax"
+)
 
 
 const ZERO_COLUMN = 0
@@ -106,7 +109,7 @@ func MatchToken(code Code, pos int, skip_kw bool) (amount int, id syntax.Id) {
     return 0, 0
 }
 
-func Scan(code Code) (Tokens, RowColInfo, RowSpanMap) {
+func Scan(code Code) (Tokens, RowColInfo, RowSpanMap, error) {
     var identifier = syntax.Name2IdMustExist(syntax.IdentifierPartName)
     var ignore = make(map[syntax.Id] bool)
     var keyword = make(map[syntax.Id] bool)
@@ -144,8 +147,18 @@ func Scan(code Code) (Tokens, RowColInfo, RowSpanMap) {
         pos += amount
     }
     if (pos < length) {
-        // TODO: show be error return instead of panic
-        panic(fmt.Sprintf("invalid token at %+v", info[pos]))
+        var p = info[pos]
+        const pick_span = 10
+        var left = 0
+        if pos > pick_span {
+            left = (pos - pick_span)
+        }
+        var right = pos
+        var span = string(code[left:right])
+        return nil, nil, nil, errors.New(fmt.Sprintf(
+                "invalid token at (row %d, column %d) near `%s`",
+                p.Row, p.Col, span))
     }
-    return tokens, info, span_map
+    return tokens, info, span_map, nil
 }
+

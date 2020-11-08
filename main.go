@@ -33,7 +33,8 @@ func debug_parser(file io.Reader, name string, root string) {
     if e != nil { panic(e) }
     var code_string = string(code_bytes)
     var code = []rune(code_string)
-    var tokens, info, _ = scanner.Scan(code)
+    var tokens, info, _, s_err = scanner.Scan(code)
+    if s_err != nil { panic(s_err) }
     fmt.Println("Tokens:")
     for i, token := range tokens {
         fmt.Printf(

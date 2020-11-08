@@ -210,7 +210,11 @@ func buildTree(root syntax.Id, tokens scanner.Tokens) ([]cst.TreeNode, *Error) {
 }
 
 func Parse(code []rune, root string, name string) (*cst.Tree, *Error) {
-    var tokens, info, span_map = scanner.Scan(code)
+    var tokens, info, span_map, s_err = scanner.Scan(code)
+    if s_err != nil { return nil, &Error {
+        IsScannerError:  true,
+        ScannerError:    s_err,
+    } }
     var Root, exists = syntax.Name2Id(root)
     if (!exists) {
         panic(fmt.Sprintf("invalid root syntax unit '%v'", root))

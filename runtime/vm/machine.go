@@ -59,6 +59,52 @@ func Execute(p Program, opts Options, m_signal (chan <- *Machine)) {
 	execute(p, m)
 }
 
+func (m *Machine) GetGlobalValue(index uint) (Value, bool) {
+	var L = uint(len(m.globalSlot))
+	if index < L {
+		return m.globalSlot[index], true
+	} else {
+		m.extraLock.Lock()
+		defer m.extraLock.Unlock()
+		var offset = (index - L)
+		if offset < uint(len(m.extraSlot)) {
+			return m.extraSlot[offset], true
+		} else {
+			return nil, false
+		}
+	}
+}
+
+func (m *Machine) Call(f FunctionValue, arg Value) Value {
+	return call(f, arg, m)
+}
+
+func (m *Machine) InjectExtraGlobals(values ([] Value)) {
+	m.extraLock.Lock()
+	defer m.extraLock.Unlock()
+	m.extraSlot = append(m.extraSlot, values...)
+}
+
+func (m *Machine) KmdGetConfig() KmdConfig {
+	return m.program.KmdConfig
+}
+
+func (m *Machine) KmdGetAdapter(index uint) Value {
+	var adapter = m.globalSlot[index]
+	var _, ok = adapter.(FunctionValue)
+	if !(ok) { panic("something went wrong") }
+	return adapter
+}
+
+func (m *Machine) KmdCallAdapter(f Value, x Value) Value {
+	return call(f.(FunctionValue), x, m)
+}
+
+func (m *Machine) KmdCallValidator(f Value, x Value) bool {
+	return BoolFrom(call(f.(FunctionValue), x, m).(SumValue))
+}
+
+
 type ExecutionContext struct {
 	dataStack     DataStack
 	callStack     CallStack
@@ -128,31 +174,3 @@ func (h MachineContextHandle) KmdDeserialize(binary ([] byte), t *kmd.Type) (Val
 	return lib.KmdDeserialize(binary, t, h.machine.kmdTransformer)
 }
 
-func (m *Machine) Call(f FunctionValue, arg Value) Value {
-	return call(f, arg, m)
-}
-
-func (m *Machine) InjectExtraGlobals(values ([] Value)) {
-	m.extraLock.Lock()
-	defer m.extraLock.Unlock()
-	m.extraSlot = append(m.extraSlot, values...)
-}
-
-func (m *Machine) KmdGetConfig() KmdConfig {
-	return m.program.KmdConfig
-}
-
-func (m *Machine) KmdGetAdapter(index uint) Value {
-	var adapter = m.globalSlot[index]
-	var _, ok = adapter.(FunctionValue)
-	if !(ok) { panic("something went wrong") }
-	return adapter
-}
-
-func (m *Machine) KmdCallAdapter(f Value, x Value) Value {
-	return call(f.(FunctionValue), x, m)
-}
-
-func (m *Machine) KmdCallValidator(f Value, x Value) bool {
-	return BoolFrom(call(f.(FunctionValue), x, m).(SumValue))
-}

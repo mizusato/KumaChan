@@ -35,6 +35,7 @@ func (ctx *IncrementalCompiler) AddConstant(id DepConstant, val ast.Expr) (
 	c.FunctionValue, ([] c.Value), error,
 ) {
 	var all_dep_values = make([] c.Value, 0)
+	var closure_deps = make(map[*c.Function] ([] Dependency))
 	var sym = loader.NewSymbol(id.Module, id.Name)
 	var expr_ctx = ch.ExprContext {
 		ModuleInfo: *(ctx.typeInfo),
@@ -70,6 +71,7 @@ func (ctx *IncrementalCompiler) AddConstant(id DepConstant, val ast.Expr) (
 				all_dep_values = append(all_dep_values, &c.ValFunc {
 					Underlying: cl.Underlying,
 				})
+				closure_deps[cl.Underlying] = cl.Dependencies
 				collect_all_deps(cl.Dependencies)
 			default:
 				continue
@@ -98,7 +100,8 @@ func (ctx *IncrementalCompiler) AddConstant(id DepConstant, val ast.Expr) (
 		var f, is_f = v.(c.FunctionValue)
 		if is_f {
 			var f_node = FuncNode {
-				Underlying: f.Underlying,
+				Underlying:   f.Underlying,
+				Dependencies: closure_deps[f.Underlying],
 			}
 			RelocateCode(&f_node, ctx.baseLocator, extraLocator)
 		}

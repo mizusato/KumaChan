@@ -96,20 +96,9 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 				ec.popValue()
 			case GLOBAL:
 				var index = inst.GetGlobalIndex()
-				var L = uint(len(m.globalSlot))
-				if index < L {
-					ec.pushValue(m.globalSlot[index])
-				} else {
-					m.extraLock.Lock()
-					var offset = (index - L)
-					if offset < uint(len(m.extraSlot)) {
-						ec.pushValue(m.extraSlot[offset])
-						m.extraLock.Unlock()
-					} else {
-						m.extraLock.Unlock()
-						panic("GLOBAL: index out of range")
-					}
-				}
+				var v, exists = m.GetGlobalValue(index)
+				if !(exists) { panic("GLOBAL: value index out of range") }
+				ec.pushValue(v)
 			case LOAD:
 				var offset = inst.GetOffset()
 				var value = ec.dataStack[base_addr + offset]
@@ -250,7 +239,9 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 				}
 			case ARRAY:
 				var id = inst.GetGlobalIndex()
-				var info = m.globalSlot[id].(ArrayInfo)
+				var info_v, exists = m.GetGlobalValue(id)
+				if !(exists) { panic("ARRAY: info index out of range") }
+				var info = info_v.(ArrayInfo)
 				var t = reflect.SliceOf(info.ItemType)
 				var rv = reflect.MakeSlice(t, 0, int(info.Length))
 				var v = rv.Interface()
