@@ -174,8 +174,6 @@ func repl(args ([] string), max_stack_size int) {
     var ic = compiler.NewIncrementalCompiler(&mod_info, dep_locator)
     // 7. Define the REPL
     var wait_m = make(chan *vm.Machine, 1)
-    var in_r, _, e = os.Pipe()
-    if e != nil { panic(e) }
     var cmd_id = uint(0)
     var loop = func() {
         const repl_root = syntax.ReplRootPartName
@@ -183,10 +181,17 @@ func repl(args ([] string), max_stack_size int) {
         var sched = m.GetScheduler()
         for {
             cmd_id += 1
-            _, err := fmt.Fprintf(os.Stderr, "[%d] ", cmd_id)
+            _, err := fmt.Fprintf(os.Stderr, "\n\033[1m[%d]\033[0m ", cmd_id)
             if err != nil { panic(err) }
             code, err := util.WellBehavedReadLine(os.Stdin)
             if err != nil { panic(err) }
+            if len(code) == 0 {
+                cmd_id -= 1
+                continue
+            }
+            var cmd_label = fmt.Sprintf("\033[34m(%d)\033[0m", cmd_id)
+            var cmd_label_ok = fmt.Sprintf("\033[32m(%d)\033[0m", cmd_id)
+            var cmd_label_err = fmt.Sprintf("\033[31m(%d)\033[0m", cmd_id)
             var cmd_ast_name = fmt.Sprintf("[%d]", cmd_id)
             cst, p_err := parser.Parse(code, repl_root, cmd_ast_name)
             if p_err != nil {
@@ -204,13 +209,13 @@ func repl(args ([] string), max_stack_size int) {
             f, dep_vals, err := ic.AddConstant(temp_id, expr)
             if err != nil {
                 fmt.Fprintf(os.Stderr,
-                    "[%d] error:\n%s\n", cmd_id, err)
+                    "%s error:\n%s\n", cmd_label_err, err)
                 continue
             }
             m.InjectExtraGlobals(dep_vals)
             var ret = m.Call(f, nil)
             m.InjectExtraGlobals([] common.Value { ret })
-            fmt.Printf("(%d) %s\n", cmd_id, common.Inspect(ret))
+            fmt.Printf("%s %s\n", cmd_label, common.Inspect(ret))
             switch cmd := cmd.Cmd.(type) {
             case ast.ReplAssign:
                 var alias = string(cmd.Name.Name)
@@ -221,7 +226,7 @@ func repl(args ([] string), max_stack_size int) {
             case ast.ReplDo:
                 var eff, ok = ret.(rx.Effect)
                 if !(ok) { fmt.Fprintf(os.Stderr,
-                    "[%d] failure: given value is not an effect\n", cmd_id) }
+                    "%s failure:\nvalue is not an effect\n", cmd_label_err) }
                 var ch_values = make(chan rx.Object, 1024)
                 var ch_error = make(chan rx.Object, 4)
                 var ch_terminate = make(chan bool, 4)
@@ -238,24 +243,24 @@ func repl(args ([] string), max_stack_size int) {
                         if not_closed {
                             var msg = common.Inspect(eff_v)
                             _, err := fmt.Fprintf(os.Stderr,
-                                "(%d) * value: %s\n", cmd_id, msg)
+                                "%s * value: %s\n", cmd_label_ok, msg)
                             if err != nil { panic(err) }
                         }
                     case eff_err, not_closed := <- ch_error:
                         if not_closed {
                             var msg = common.Inspect(eff_err)
                             _, err := fmt.Fprintf(os.Stderr,
-                                "(%d) * error: %s\n", cmd_id, msg)
+                                "%s * error: %s\n", cmd_label_err, msg)
                             if err != nil { panic(err) }
                         }
                     case eff_ok := <- ch_terminate:
                         if eff_ok {
                             _, err := fmt.Fprintf(os.Stderr,
-                                "(%d) * terminated: <complete>\n", cmd_id)
+                                "%s * terminated: <complete>\n", cmd_label_ok)
                             if err != nil { panic(err) }
                         } else {
                             _, err := fmt.Fprintf(os.Stderr,
-                                "(%d) * terminated: <error>\n", cmd_id)
+                                "%s * terminated: <error>\n", cmd_label_err)
                             if err != nil { panic(err) }
                         }
                         break outer
@@ -281,7 +286,7 @@ func repl(args ([] string), max_stack_size int) {
         Environment:  os.Environ(),
         Arguments:    args,
         StdIO:        common.StdIO {
-            Stdin:  in_r,
+            Stdin:  os.Stdin,
             Stdout: os.Stdout,
             Stderr: os.Stderr,
         },
@@ -370,6 +375,8 @@ func main() {
             if got_path {
                 interpret(path, program_args, max_stack_size, asm_dump)
             } else {
+                _, err = fmt.Fprintln(os.Stderr, "Starting REPL...")
+                if err != nil { panic(err) }
                 repl(program_args, max_stack_size)
             }
             close(qt.InitRequestSignal)
