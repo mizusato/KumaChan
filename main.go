@@ -174,11 +174,11 @@ func repl(args ([] string), max_stack_size int) {
     var ic = compiler.NewIncrementalCompiler(&mod_info, dep_locator)
     // 7. Define the REPL
     var wait_m = make(chan *vm.Machine, 1)
-    var cmd_id = uint(0)
     var loop = func() {
         const repl_root = syntax.ReplRootPartName
         var m = <- wait_m
         var sched = m.GetScheduler()
+        var cmd_id = uint(0)
         for {
             cmd_id += 1
             _, err := fmt.Fprintf(os.Stderr, "\n\033[1m[%d]\033[0m ", cmd_id)
