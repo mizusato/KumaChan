@@ -229,12 +229,10 @@ func repl(args ([] string), max_stack_size int) {
                     "%s failure:\nvalue is not an effect\n", cmd_label_err) }
                 var ch_values = make(chan rx.Object, 1024)
                 var ch_error = make(chan rx.Object, 4)
-                var ch_terminate = make(chan bool, 4)
                 var receiver = rx.Receiver {
                     Context:   rx.Background(),
                     Values:    ch_values,
                     Error:     ch_error,
-                    Terminate: ch_terminate,
                 }
                 sched.RunTopLevel(eff, receiver)
                 outer: for {
@@ -245,6 +243,11 @@ func repl(args ([] string), max_stack_size int) {
                             _, err := fmt.Fprintf(os.Stderr,
                                 "%s * value: %s\n", cmd_label_ok, msg)
                             if err != nil { panic(err) }
+                        } else {
+                            _, err := fmt.Fprintf(os.Stderr,
+                                "%s * terminated: <complete>\n", cmd_label_ok)
+                            if err != nil { panic(err) }
+                            break outer
                         }
                     case eff_err, not_closed := <- ch_error:
                         if not_closed {
@@ -252,18 +255,12 @@ func repl(args ([] string), max_stack_size int) {
                             _, err := fmt.Fprintf(os.Stderr,
                                 "%s * error: %s\n", cmd_label_err, msg)
                             if err != nil { panic(err) }
-                        }
-                    case eff_ok := <- ch_terminate:
-                        if eff_ok {
-                            _, err := fmt.Fprintf(os.Stderr,
-                                "%s * terminated: <complete>\n", cmd_label_ok)
-                            if err != nil { panic(err) }
                         } else {
                             _, err := fmt.Fprintf(os.Stderr,
                                 "%s * terminated: <error>\n", cmd_label_err)
                             if err != nil { panic(err) }
+                            break outer
                         }
-                        break outer
                     }
                 }
             case ast.ReplEval:
