@@ -74,7 +74,6 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 	defer (func() {
 		var err = recover()
 		if err != nil {
-			// TODO: innermost panic message is printed first, fix it
 			PrintRuntimeErrorMessage(err, ec)
 			panic(err)
 		}

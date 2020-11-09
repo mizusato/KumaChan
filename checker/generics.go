@@ -71,7 +71,7 @@ func GenericFunctionCall (
 		if !(ok) {
 			// var inf_ctx = ctx.WithInferringEnabled(f.TypeParams)
 			// var _, _ = AssignTo(marked_input_type, arg, inf_ctx)
-			panic("something went wrong")
+			panic("type system internal error (likely a bug)")
 		}
 		var output_type = FillTypeArgs(raw_output_type, inferred_args)
 		var f_type = &AnonymousType { Func {

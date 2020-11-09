@@ -125,6 +125,11 @@ func DirectAssignTypeTo(expected Type, given Type, v TypeVariance, ctx ExprConte
 		}
 	}
 	switch E := expected.(type) {
+	case *WildcardRhsType:
+		var _, given_is_also_this = given.(*WildcardRhsType)
+		if given_is_also_this {
+			return given, true
+		}
 	case *ParameterType:
 		if E.BeingInferred {
 			if !(ctx.Inferring.Enabled) { panic("something went wrong") }
