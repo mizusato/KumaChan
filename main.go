@@ -225,8 +225,12 @@ func repl(args ([] string), max_stack_size int) {
                 })
             case ast.ReplDo:
                 var eff, ok = ret.(rx.Effect)
-                if !(ok) { fmt.Fprintf(os.Stderr,
-                    "%s failure:\nvalue is not an effect\n", cmd_label_err) }
+                if !(ok) {
+                    fmt.Fprintf(os.Stderr,
+                        "%s failure:\nvalue is not an effect\n",
+                        cmd_label_err)
+                    continue
+                }
                 var ch_values = make(chan rx.Object, 1024)
                 var ch_error = make(chan rx.Object, 4)
                 var receiver = rx.Receiver {
