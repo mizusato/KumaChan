@@ -365,6 +365,7 @@ func main() {
                 if err != nil { panic(err) }
                 _, err = util.WellBehavedFscanln(os.Stdin, &path)
                 if err != nil { panic(err) }
+                path = strings.TrimSuffix(path, "\r")
                 if path == "" {
                     got_path = false
                 }

@@ -8,14 +8,26 @@ public const Stderr: FileWriteOnly
     native 'OS::Stderr';
 
 public function scan:  (&()(ConsoleIO[String]))
-    (&(_)(ConsoleIO (OS::Stdin | read-string)));
+    (&(_)(ConsoleIO (
+        let read := OS::Stdin | read-string,
+        if $(OS::Kind = 'windows'):
+            read | map (&(str)(str.trim-suffix ''..\r)),
+        else:
+            read
+    )));
 public function print: (&(String)(ConsoleIO[-]))
     (&(line)(ConsoleIO (OS::Stdout | write-string line)));
 public function error: (&(String)(ConsoleIO[-]))
     (&(line)(ConsoleIO (OS::Stderr | write-string line)));
 
 public function scanln:  (&()(ConsoleIO[String]))
-    (&(_)(ConsoleIO (OS::Stdin | read-line)));
+    (&(_)(ConsoleIO (
+        let read := OS::Stdin | read-line,
+        if $(OS::Kind = 'windows'):
+            read | map (&(str)(str.trim-suffix ''..\r)),
+        else:
+            read
+    )));
 public function println: (&(String)(ConsoleIO[-]))
     (&(line)(ConsoleIO (OS::Stdout | write-line line)));
 public function errorln: (&(String)(ConsoleIO[-]))
