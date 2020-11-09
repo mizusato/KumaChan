@@ -43,6 +43,7 @@ type Module struct {
 type Index  map[string] *Module
 
 type RawModule struct {
+	FilePath    string
 	FileInfo    os.FileInfo
 	Manifest    RawModuleManifest
 	Content     RawModuleContent
@@ -208,6 +209,7 @@ func ReadModulePath(path string) (RawModule, error) {
 					manifest_path, `field "vendor" has an invalid value`))
 		}
 		return RawModule {
+			FilePath: path,
 			FileInfo: fd_info,
 			Manifest: manifest,
 			Content:  M_ModuleFolder { unit_files },
@@ -216,6 +218,7 @@ func ReadModulePath(path string) (RawModule, error) {
 		var content, err = ioutil.ReadAll(fd)
 		if err != nil { return RawModule{}, err }
 		return RawModule {
+			FilePath: path,
 			FileInfo: fd_info,
 			Manifest: RawModuleManifest {
 				Name: StandaloneScriptModuleName,
@@ -252,7 +255,7 @@ func LoadRawModule(raw_mod RawModule, ctx Context, idx Index) (*Module, *Error) 
 			Concrete: E_StandaloneImported {},
 		}
 	}
-	var path = raw_mod.FileInfo.Name()
+	var file_path = raw_mod.FilePath
 	/* 2. Try to parse the content to get an AST */
 	var manifest = raw_mod.Manifest
 	var module_name = (func() string {
@@ -291,7 +294,7 @@ func LoadRawModule(raw_mod RawModule, ctx Context, idx Index) (*Module, *Error) 
 					Concrete: E_NameConflict {
 						ModuleName: module_name,
 						FilePath1:  ancestor.FilePath,
-						FilePath2:  path,
+						FilePath2:  file_path,
 					},
 				}
 			}
@@ -313,7 +316,7 @@ func LoadRawModule(raw_mod RawModule, ctx Context, idx Index) (*Module, *Error) 
 				Concrete: E_NameConflict {
 					ModuleName: module_name,
 					FilePath1:  existing.Path,
-					FilePath2:  path,
+					FilePath2:  file_path,
 				},
 			}
 		}
@@ -326,15 +329,15 @@ func LoadRawModule(raw_mod RawModule, ctx Context, idx Index) (*Module, *Error) 
 		var current_breadcrumbs = append(ctx.BreadCrumbs, Ancestor {
 			ModuleName: module_name,
 			FileInfo:   file_info,
-			FilePath:   path,
+			FilePath:   file_path,
 		})
 		for _, cmd := range module_node.Statements {
 			switch c := cmd.Statement.(type) {
 			case ast.Import:
 				// Execute each `import` command
 				var local_alias = string(c.Name.Name)
-				var relpath = string(c.Path.Value)
-				var imctx = Context {
+				var rel_path = string(c.Path.Value)
+				var im_ctx = Context {
 					ImportPoint: ErrorPointFrom(c.Node),
 					LocalAlias:  local_alias,
 					BreadCrumbs: current_breadcrumbs,
@@ -342,34 +345,34 @@ func LoadRawModule(raw_mod RawModule, ctx Context, idx Index) (*Module, *Error) 
 				var _, exists = imported_map[local_alias]
 				if exists {
 					return nil, &Error {
-						Context: imctx,
+						Context: im_ctx,
 						Concrete: E_ConflictAlias {
 							LocalAlias: local_alias,
 						},
 					}
 				}
-				var impath string
+				var im_path string
 				if file_info.IsDir() {
-					impath = filepath.Join(path, relpath)
+					im_path = filepath.Join(file_path, rel_path)
 				} else {
-					impath = filepath.Join(filepath.Dir(path), relpath)
+					im_path = filepath.Join(filepath.Dir(file_path), rel_path)
 				}
-				var immod, err = LoadModule(impath, imctx, idx)
+				var im_mod, err = LoadModule(im_path, im_ctx, idx)
 				if err != nil {
 					// Bubble errors
 					return nil, err
 				} else {
 					// Register the imported module
-					var immod_name = string(immod.Name)
-					if imported_set[immod_name] { return nil, &Error {
-						Context: imctx,
+					var im_name = string(im_mod.Name)
+					if imported_set[im_name] { return nil, &Error {
+						Context: im_ctx,
 						Concrete: E_DuplicateImport {
-							ModuleName: immod_name,
+							ModuleName: im_name,
 						},
 					} }
-					imported_set[immod_name] = true
-					imported_map[local_alias] = immod
-					idx[immod_name] = immod
+					imported_set[im_name] = true
+					imported_map[local_alias] = im_mod
+					idx[im_name] = im_mod
 				}
 			default:
 				// do nothing
@@ -379,7 +382,7 @@ func LoadRawModule(raw_mod RawModule, ctx Context, idx Index) (*Module, *Error) 
 			Vendor:   manifest.Vendor,
 			Project:  manifest.Project,
 			Name:     module_name,
-			Path:     path,
+			Path:     file_path,
 			Node:     module_node,
 			ImpMap:   imported_map,
 			FileInfo: file_info,
@@ -447,7 +450,8 @@ func ImportStdLib (imp_map map[string]*Module, imp_set map[string]bool) {
 
 func CraftRawModule(manifest RawModuleManifest, path string, tree ast.Root) RawModule {
 	return RawModule {
-		FileInfo:   craftModuleFileInfo(path),
+		FilePath:   path,
+		FileInfo:   craftModuleFileInfo(filepath.Base(path)),
 		Manifest:   manifest,
 		Content:    M_PredefinedAST { tree },
 		Standalone: false,

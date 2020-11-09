@@ -138,7 +138,7 @@ func interpret(path string, args ([] string), max_stack_size int, asm_dump strin
 
 func repl(args ([] string), max_stack_size int) {
     // 1. Craft an empty module
-    const mod_ast_path = "//(repl)//"
+    const mod_ast_path = "."
     const mod_runtime_path = "."
     var raw_mod = loader.CraftRawEmptyModule(loader.RawModuleManifest {
         Vendor:  "repl",

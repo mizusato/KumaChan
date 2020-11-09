@@ -118,7 +118,7 @@ func Lint(req LintRequest, ctx ServerContext) LintResponse {
 			var err = LintError {
 				Severity: "error",
 				Location: GetLocationFromErrorPoint(point),
-				Excerpt:  err_desc.String(),
+				Excerpt:  err_desc.StringPlain(),
 			}
 			return LintResponse {
 				Errors: [] LintError { err },
