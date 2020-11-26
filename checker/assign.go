@@ -1,6 +1,9 @@
 package checker
 
-import . "kumachan/error"
+import (
+	. "kumachan/error"
+	"kumachan/parser/ast"
+)
 
 
 func RequireExplicitType(t Type, info ExprInfo) *ExprError {
@@ -12,6 +15,14 @@ func RequireExplicitType(t Type, info ExprInfo) *ExprError {
 	} else {
 		return nil
 	}
+}
+
+func AssignAstExprTo(expected Type, raw ast.Expr, ctx ExprContext) (Expr, *ExprError) {
+	semi, err := Check(raw, ctx)
+	if err != nil { return Expr{}, err }
+	expr, err := AssignTo(expected, semi, ctx)
+	if err != nil { return Expr{}, err }
+	return expr, nil
 }
 
 func AssignTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprError) {

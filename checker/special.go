@@ -16,6 +16,7 @@ const ForceExactSuffix = "!"
 const CovariantPrefix = "+"
 const ContravariantPrefix = "-"
 const BadIndex = ^(uint(0))
+const ZeroValueGetter = "zero-value"
 const KmdSerializerName = "data-serialize"
 const KmdDeserializerName = "data-deserialize"
 const KmdAdapterName = "data-adapt"

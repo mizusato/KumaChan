@@ -150,39 +150,31 @@ func CheckBundle(bundle ast.Bundle, ctx ExprContext) (SemiExpr, *ExprError) {
 		}
 	default:
 		var L = len(bundle.Values)
-		if L == 0 {
-			return LiftTyped(Expr {
-				Type:  &AnonymousType { Unit {} },
-				Value: UnitValue {},
-				Info:  info,
-			}), nil
-		} else {
-			var f_exprs = make([]SemiExpr, L)
-			var f_index_map = make(map[string]uint, L)
-			var f_key_nodes = make([]ast.Node, L)
-			for i, field := range bundle.Values {
-				var name = loader.Id2String(field.Key)
-				var _, exists = f_index_map[name]
-				if exists { return SemiExpr{}, &ExprError {
-					Point:    ErrorPointFrom(field.Key.Node),
-					Concrete: E_ExprDuplicateField { name },
-				} }
-				var value = DesugarOmittedFieldValue(field)
-				var expr, err = Check(value, ctx)
-				if err != nil { return SemiExpr{}, err }
-				f_exprs[i] = expr
-				f_index_map[name] = uint(i)
-				f_key_nodes[i] = field.Key.Node
-			}
-			return SemiExpr {
-				Value: SemiTypedBundle {
-					Index:    f_index_map,
-					Values:   f_exprs,
-					KeyNodes: f_key_nodes,
-				},
-				Info: info,
-			}, nil
+		var f_exprs = make([] SemiExpr, L)
+		var f_index_map = make(map[string] uint, L)
+		var f_key_nodes = make([] ast.Node, L)
+		for i, field := range bundle.Values {
+			var name = loader.Id2String(field.Key)
+			var _, exists = f_index_map[name]
+			if exists { return SemiExpr{}, &ExprError {
+				Point:    ErrorPointFrom(field.Key.Node),
+				Concrete: E_ExprDuplicateField { name },
+			} }
+			var value = DesugarOmittedFieldValue(field)
+			var expr, err = Check(value, ctx)
+			if err != nil { return SemiExpr{}, err }
+			f_exprs[i] = expr
+			f_index_map[name] = uint(i)
+			f_key_nodes[i] = field.Key.Node
 		}
+		return SemiExpr {
+			Value: SemiTypedBundle {
+				Index:    f_index_map,
+				Values:   f_exprs,
+				KeyNodes: f_key_nodes,
+			},
+			Info: info,
+		}, nil
 	}
 }
 
@@ -329,22 +321,29 @@ func AssignBundleTo(expected Type, bundle SemiTypedBundle, info ExprInfo, ctx Ex
 	case *AnonymousType:
 		switch bundle_t := E.Repr.(type) {
 		case Bundle:
-			var values = make([]Expr, len(bundle_t.Fields))
+			var values = make([] Expr, len(bundle_t.Fields))
 			for field_name, field := range bundle_t.Fields {
 				var given_index, exists = bundle.Index[field_name]
-				if !exists {
-					return Expr{}, &ExprError {
+				if exists {
+					var given_value = bundle.Values[given_index]
+					var value, err = AssignTo(field.Type, given_value, ctx)
+					if err != nil { return Expr{}, err }
+					values[field.Index] = value
+				} else {
+					var node = info.ErrorPoint.Node
+					var getter = CraftAstRefTerm(ZeroValueGetter, node)
+					var unit = CraftAstTupleTerm(node)
+					var getter_call = CraftAstCallExpr(getter, unit, node)
+					var zero, err = AssignAstExprTo(field.Type, getter_call, ctx)
+					if err != nil { return Expr{}, &ExprError {
 						Point:    info.ErrorPoint,
 						Concrete: E_MissingField {
 							Field: field_name,
 							Type:  ctx.DescribeExpectedType(field.Type),
 						},
-					}
+					} }
+					values[field.Index] = zero
 				}
-				var given_value = bundle.Values[given_index]
-				var value, err = AssignTo(field.Type, given_value, ctx)
-				if err != nil { return Expr{}, err }
-				values[field.Index] = value
 			}
 			for given_field_name, index := range bundle.Index {
 				var _, exists = bundle_t.Fields[given_field_name]
@@ -392,6 +391,16 @@ func IsBundleLiteral(expr Expr) bool {
 		}
 	}
 	return false
+}
+
+func CraftAstTupleTerm(node ast.Node, elements... ast.Expr) ast.VariousTerm {
+	return ast.VariousTerm {
+		Node: node,
+		Term: ast.Tuple {
+			Node:     node,
+			Elements: elements,
+		},
+	}
 }
 
 func DesugarOmittedFieldValue(field ast.FieldValue) ast.Expr {

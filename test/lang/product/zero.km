@@ -1,0 +1,15 @@
+type Real Float;
+
+type Point {
+     x: Real,
+     y: Real
+};
+
+public function zero-value: ( &() Real )
+       (&(_)(Real 0.0));
+
+do
+    let p := Point {},
+    let {x,y} := p,
+    println ("(#,#)" (str x) (str y))
+    | catch (&(err)(crash err));

@@ -71,7 +71,7 @@ func MakeRefFunction(name string, index uint, type_args ([] Type), node ast.Node
 		}
 		for name, field := range f.Implicit {
 			var field_t = FillTypeArgs(field.Type, type_args)
-			var ref = CraftAstRefNode(name, node)
+			var ref = CraftAstRef(name, node)
 			var ref_term = ast.VariousTerm {
 				Node: node,
 				Term: ref,
@@ -91,7 +91,7 @@ func MakeRefFunction(name string, index uint, type_args ([] Type), node ast.Node
 		Implicit: implicit_refs,
 	}, nil
 }
-func CraftAstRefNode(name string, node ast.Node) ast.InlineRef {
+func CraftAstRef(name string, node ast.Node) ast.InlineRef {
 	return ast.InlineRef {
 		Node:     node,
 		Module:   ast.Identifier {
@@ -104,6 +104,12 @@ func CraftAstRefNode(name string, node ast.Node) ast.InlineRef {
 			Name: ([] rune)(name),
 		},
 		TypeArgs: make([] ast.VariousType, 0),
+	}
+}
+func CraftAstRefTerm(name string, node ast.Node) ast.VariousTerm {
+	return ast.VariousTerm {
+		Node: node,
+		Term: CraftAstRef(name, node),
 	}
 }
 

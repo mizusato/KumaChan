@@ -80,6 +80,19 @@ func CheckInfix(infix ast.Infix, ctx ExprContext) (SemiExpr, *ExprError) {
 }
 
 
+func CraftAstCallExpr(f ast.VariousTerm, arg ast.VariousTerm, node ast.Node) ast.Expr {
+	var call = ast.Call {
+		Node: node,
+		Func: f,
+		Arg:  ast.Call {
+			Node: arg.Node,
+			Func: arg,
+			Arg:  nil,
+		},
+	}
+	return ast.WrapCallAsExpr(call)
+}
+
 func DesugarExpr(expr ast.Expr) ast.Call {
 	return DesugarPipeline(DesugarTerms(expr.Terms), expr.Pipeline)
 }

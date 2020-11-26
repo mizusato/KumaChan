@@ -35,6 +35,12 @@ func TestCps(t *testing.T) {
 	expectStdIO(t, mod_path, input("bad", "bad"), output("N/A"))
 }
 
+func TestZeroValue(t *testing.T) {
+	var dir_path = getTestDirPath(t, lang)
+	var mod_path = filepath.Join(dir_path, "product", "zero.km")
+	expectStdIO(t, mod_path, "", "(0,0)\n")
+}
+
 func TestMultiSwitch(t *testing.T) {
 	var dir_path = getTestDirPath(t, lang)
 	var mod_path = filepath.Join(dir_path, "sum", "multi_switch.km")
