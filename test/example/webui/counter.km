@@ -16,16 +16,15 @@ private const DOM: NoExcept*[WebUi::Node]
     let inc := dom-event-sink @value (&(value) (&(_) $(value + 1))),
     ~ map* &(value) := @value.receive,
     let styles := ControlStyle,
-    let dec-btn := (
-        dom-node 'button' styles (dom-attrs []) (dom-event 'click' dec)
-        (dom-text '-')
-    ),
-    let inc-btn := (
-        dom-node 'button' styles (dom-attrs []) (dom-event 'click' inc)
-        (dom-text '+')
-    ),
-    let label := (
-        dom-node 'span' styles (dom-attrs []) (dom-events [])
-        (dom-text (str value))
-    ),
+    let dec-btn := dom-node 'button' {
+        content: (dom-text '-'), styles,
+        events:  (dom-event 'click' dec)
+    },
+    let inc-btn := dom-node 'button' {
+        content: (dom-text '+'), styles,
+        events:  (dom-event 'click' inc)
+    },
+    let label := dom-node 'span' {
+        content: (dom-text (str value)), styles
+    },
     dom-node 'div' [dec-btn, label, inc-btn];

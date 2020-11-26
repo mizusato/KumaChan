@@ -6,21 +6,19 @@ private const DOM: NoExcept*[WebUi::Node]
     tick { interval: 100 }
     | scan 0.0 (&(theta,_)(% (+ theta (/ Math::Tau 80.0)) Math::Tau))
     | map* ( &(theta)
-        (dom-node 'svg'
-            (dom-styles [('width','300px'),('height','300px')])
-            (dom-attrs [('viewBox','0 0 100 100')])
-            (dom-events [])
-            (dom-children [
-                (dom-node 'rect'
-                    (dom-styles [])
-                    (dom-attrs [
+        (dom-node 'svg' {
+            styles:  (dom-styles [('width','300px'),('height','300px')]),
+            attrs:   (dom-attrs [('viewBox','0 0 100 100')]),
+            content: (dom-children [
+                (dom-node 'rect' {
+                    attrs: (dom-attrs [
                         ('x',      (str (+ 50.0 (* 20.0 (cos theta))))),
                         ('y',      (str (+ 50.0 (* 20.0 (sin theta))))),
                         ('width',  '20'),
                         ('height', '20'),
                         ('fill',   '#FF3333')
                     ])
-                    (dom-events [])
-                    (dom-children []))
-            ]))
+                })
+            ])
+        })
     );

@@ -244,6 +244,8 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 			} else {
 				diff_children(Children([] *Node {}), new_children)
 			}
+		default:
+			panic("impossible branch")
 		}
 		skip_content:
 	}

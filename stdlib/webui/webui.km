@@ -7,6 +7,12 @@ type EventPayload  native;  // *qt.WebUiEventPayload
 type EventSink     protected Sink[EventPayload];
 type NodeContent   native;  // vdom.NodeContent
 
+public function zero-value: ( &() Styles )      native 'webui-dom-styles-zero';
+public function zero-value: ( &() Attrs )       native 'webui-dom-attrs-zero';
+public function zero-value: ( &() Events )      native 'webui-dom-events-zero';
+public function zero-value: ( &() NodeContent ) native 'webui-dom-content-zero';
+
+
 type MainLoop NoExcept[-];
 
 public function webui-init: ( &(String,NoExcept*[Node]) MainLoop )
@@ -33,6 +39,18 @@ public function dom-node: ( &(String,Array[Node]) Node )
     ( &(tag, children)
         dom-node tag
         (dom-styles []) (dom-attrs []) (dom-events []) (dom-children children)
+    );
+
+public function dom-node:
+    ( &(String, {
+        styles:  Styles,
+        attrs:   Attrs,
+        events:  Events,
+        content: NodeContent
+    }) Node )
+    ( &(tag, props)
+        let {styles,attrs,events,content} := props,
+        (dom-node tag styles attrs events content)
     );
 
 
@@ -77,7 +95,6 @@ public function dom-text: ( &(String) NodeContent )
 
 public function dom-children: ( &(Array[Node]) NodeContent )
     native 'webui-dom-children';
-
 
 public function get-string: ( &(EventPayload,String) String )
     native 'webui-event-payload-get-string';

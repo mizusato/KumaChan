@@ -12,6 +12,10 @@ import (
 
 var __WebUiLoading = make(chan struct{}, 1)
 var __WebUiLoaded = make(chan struct{})
+var __WebUiEmptyAttrs = &vdom.Attrs { Data: WebUiEmptyMap{} }
+var __WebUiEmptyStyles = &vdom.Styles { Data: WebUiEmptyMap{} }
+var __WebUiEmptyEvents = &vdom.Events { Data: WebUiEmptyMap{} }
+var __WebUiEmptyContent = &vdom.Children {}
 
 func WebUiInitAndLoad(sched rx.Scheduler, root rx.Effect, title String) {
 	select {
@@ -54,6 +58,7 @@ func WebUiInitAndLoad(sched rx.Scheduler, root rx.Effect, title String) {
 	}
 }
 
+type WebUiEmptyMap struct {}
 type WebUiAdaptedMap struct {
 	Data  container.Map
 }
@@ -68,16 +73,19 @@ func WebUiMapAdaptValue(v Value) Value {
 		return v
 	}
 }
+func (_ WebUiEmptyMap) Has(key vdom.String) bool { return false }
 func (m WebUiAdaptedMap) Has(key vdom.String) bool {
 	var key_str = StringFromRuneSlice(key)
 	var _, ok = m.Data.Lookup(key_str)
 	return ok
 }
+func (_ WebUiEmptyMap) Lookup(key vdom.String) (interface{}, bool) { return nil, false }
 func (m WebUiAdaptedMap) Lookup(key vdom.String) (interface{}, bool) {
 	var key_str = StringFromRuneSlice(key)
 	var v, ok = m.Data.Lookup(key_str)
 	return WebUiMapAdaptValue(v), ok
 }
+func (_ WebUiEmptyMap) ForEach(_ func(key vdom.String, val interface{})) {}
 func (m WebUiAdaptedMap) ForEach(f func(key vdom.String, val interface{})) {
 	m.Data.ForEach(func(k Value, v Value) {
 		f(RuneSliceFromString(k.(String)), WebUiMapAdaptValue(v))
@@ -149,8 +157,14 @@ var WebUiFunctions = map[string] interface{} {
 	"webui-dom-styles": func(styles container.Map) *vdom.Styles {
 		return &vdom.Styles { Data: WebUiAdaptMap(styles) }
 	},
+	"webui-dom-styles-zero": func(_ Value) *vdom.Styles {
+		return __WebUiEmptyStyles
+	},
 	"webui-dom-attrs": func(attrs container.Map) *vdom.Attrs {
 		return &vdom.Attrs { Data: WebUiAdaptMap(attrs) }
+	},
+	"webui-dom-attrs-zero": func(_ Value) *vdom.Attrs {
+		return __WebUiEmptyAttrs
 	},
 	"webui-dom-event": func(prevent SumValue, stop SumValue, sink rx.Sink) *vdom.EventOptions {
 		return &vdom.EventOptions {
@@ -186,6 +200,9 @@ var WebUiFunctions = map[string] interface{} {
 	"webui-dom-events": func(events container.Map) *vdom.Events {
 		return &vdom.Events { Data: WebUiAdaptMap(events) }
 	},
+	"webui-dom-events-zero": func(_ Value) *vdom.Events {
+		return __WebUiEmptyEvents
+	},
 	"webui-dom-text": func(text String) vdom.Content {
 		var t = vdom.Text(RuneSliceFromString(text))
 		return &t
@@ -198,6 +215,9 @@ var WebUiFunctions = map[string] interface{} {
 		}
 		var c = vdom.Children(children_)
 		return &c
+	},
+	"webui-dom-content-zero": func(_ Value) vdom.Content {
+		return __WebUiEmptyContent
 	},
 	"webui-event-payload-get-string": func(ev *qt.WebUiEventPayload, key String) String {
 		return StringFromRuneSlice(qt.WebUiEventPayloadGetRunes(ev, RuneSliceFromString(key)))
