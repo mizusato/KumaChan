@@ -206,49 +206,49 @@ func ValidateOverload (
 		var existing_fields = existing.Function.Implicit
 		var cannot_overload = false
 		if AreTypesConflict(existing_t, added_t, reg) {
-			cannot_overload = true
-		} else if len(existing_fields) == len(added_fields) {
-			var same_keys = true
-			for key, _ := range added_fields {
-				var _, exists = existing_fields[key]
-				if !exists { same_keys = false }
-			}
-			if same_keys {
-				for key, added_field := range added_fields {
-					var existing_field = existing_fields[key]
-					if AreTypesConflict(added_field.Type, existing_field.Type, reg) {
-						cannot_overload = true
-						break
+			if len(existing_fields) == len(added_fields) {
+				var same_keys = true
+				for key, _ := range added_fields {
+					var _, exists = existing_fields[key]
+					if !exists { same_keys = false }
+				}
+				if same_keys {
+					for key, added_field := range added_fields {
+						var existing_field = existing_fields[key]
+						if AreTypesConflict(added_field.Type, existing_field.Type, reg) {
+							cannot_overload = true
+							break
+						}
 					}
 				}
-			}
-		} else {
-			var less map[string] Field
-			var more map[string] Field
-			if len(existing_fields) < len(added_fields) {
-				less = existing_fields
-				more = added_fields
-			} else if len(existing_fields) > len(added_fields) {
-				less = added_fields
-				more = existing_fields
 			} else {
-				panic("impossible branch")
-			}
-			var conflict = true
-			for key, less_field := range less {
-				var more_field, exists = more[key]
-				if exists {
-					if !(AreTypesConflict(less_field.Type, more_field.Type, reg)) {
+				var less map[string] Field
+				var more map[string] Field
+				if len(existing_fields) < len(added_fields) {
+					less = existing_fields
+					more = added_fields
+				} else if len(existing_fields) > len(added_fields) {
+					less = added_fields
+					more = existing_fields
+				} else {
+					panic("impossible branch")
+				}
+				var conflict = true
+				for key, less_field := range less {
+					var more_field, exists = more[key]
+					if exists {
+						if !(AreTypesConflict(less_field.Type, more_field.Type, reg)) {
+							conflict = false
+							break
+						}
+					} else {
 						conflict = false
 						break
 					}
-				} else {
-					conflict = false
-					break
 				}
-			}
-			if conflict {
-				cannot_overload = true
+				if conflict {
+					cannot_overload = true
+				}
 			}
 		}
 		if cannot_overload {
