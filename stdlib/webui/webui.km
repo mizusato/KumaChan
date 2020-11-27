@@ -29,18 +29,6 @@ public const ExitWhenWindowClosed: NoExcept[-]
 public function dom-node: ( &(String,Styles,Attrs,Events,NodeContent) Node )
     native 'webui-dom-node';
 
-public function dom-node: ( &(String,String) Node )
-    ( &(tag, text)
-        dom-node tag
-        (dom-styles []) (dom-attrs []) (dom-events []) (dom-text text)
-    );
-
-public function dom-node: ( &(String,Array[Node]) Node )
-    ( &(tag, children)
-        dom-node tag
-        (dom-styles []) (dom-attrs []) (dom-events []) (dom-children children)
-    );
-
 public function dom-node:
     ( &(String, {
         styles:  Styles,
@@ -51,6 +39,36 @@ public function dom-node:
     ( &(tag, props)
         let {styles,attrs,events,content} := props,
         (dom-node tag styles attrs events content)
+    );
+
+public function dom-node: ( &(String,Array[(String,String)]) Node )
+    ( &(tag, styles)
+        dom-node tag
+        { styles: (dom-styles styles) }
+    );
+
+public function dom-node: ( &(String,String) Node )
+    ( &(tag, text)
+        dom-node tag
+        { content: (dom-text text) }
+    );
+
+public function dom-node: ( &(String,Array[Node]) Node )
+    ( &(tag, children)
+        dom-node tag
+        { content: (dom-children children) }
+    );
+
+public function dom-node: ( &(String,Array[(String,String)],String) Node )
+    ( &(tag, styles, text)
+        dom-node tag
+        { styles: (dom-styles styles), content: (dom-text text) }
+    );
+
+public function dom-node: ( &(String,Array[(String,String)],Array[Node]) Node )
+    ( &(tag, styles, children)
+        dom-node tag
+        { styles: (dom-styles styles), content: (dom-children children) }
     );
 
 
@@ -75,10 +93,16 @@ public function dom-events: ( &(Array[(String,EventOptions)]) Events )
     (&(events)(dom-events (new-map events)));
 
 public function dom-event: ( &(String,EventSink) Events )
-    (&(name,sink)(dom-events [(name, (dom-event No No sink))]));
+    ( &(name,sink)
+        dom-events [ (name, (dom-event { prevent: No, stop: No, sink })) ]
+    );
 
-public function dom-event: ( &(Bool,Bool,EventSink) EventOptions )
+public function dom-event:
+    ( & { prevent: Bool, stop: Bool, sink: EventSink } EventOptions )
     native 'webui-dom-event';
+
+public function dom-event: ( &(EventSink) EventOptions )
+    (&(sink)(dom-event { prevent: No, stop: No, sink }));
 
 public function dom-event-sink[T]: ( &(Sink[T],(&(EventPayload)(T))) EventSink )
     native 'webui-dom-event-sink';
