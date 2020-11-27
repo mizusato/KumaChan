@@ -50,7 +50,7 @@ func (c Cache) Get(path string) (EntryResult, bool) {
 		if err != nil { return EntryResult{}, false }
 		var mod_time = fd_info.ModTime()
 		_ = fd.Close()
-		if mod_time.Equal(item.ModTime) {
+		if mod_time.Equal(item.ModTime) && !(fd_info.IsDir()) {
 			return item.Result, true
 		} else {
 			return EntryResult{}, false

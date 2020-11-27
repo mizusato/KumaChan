@@ -52,6 +52,7 @@ type RawModule struct {
 type RawModuleManifest struct {
 	Vendor   string            `json:"vendor"`
 	Project  string            `json:"project"`
+	Version  string            `json:"version"`
 	Name     string            `json:"name"`
 	Config   RawModuleConfig   `json:"config"`
 }
@@ -198,12 +199,17 @@ func ReadModulePath(path string) (RawModule, error) {
 				fmt.Sprintf("invalid module manifest %s: %s",
 					manifest_path, `field "name" has an invalid value`))
 		}
-		if strings.ContainsAny(manifest.Project, ". \r\n") {
+		if strings.ContainsAny(manifest.Project, ": \r\n") {
 			return RawModule{}, errors.New (
 				fmt.Sprintf("invalid module manifest %s: %s",
 					manifest_path, `field "project" has an invalid value`))
 		}
-		if strings.ContainsAny(manifest.Vendor, " \r\n") {
+		if strings.ContainsAny(manifest.Version, ": \r\n") {
+			return RawModule{}, errors.New (
+				fmt.Sprintf("invalid module manifest %s: %s",
+					manifest_path, `field "version" has an invalid value`))
+		}
+		if strings.ContainsAny(manifest.Vendor, ": \r\n") {
 			return RawModule{}, errors.New (
 				fmt.Sprintf("invalid module manifest %s: %s",
 					manifest_path, `field "vendor" has an invalid value`))
@@ -263,9 +269,15 @@ func LoadRawModule(raw_mod RawModule, ctx Context, idx Index) (*Module, *Error) 
 			var v = manifest.Vendor
 			if manifest.Project != "" {
 				var p = manifest.Project
-				return fmt.Sprintf("%s.%s.%s", v, p, manifest.Name)
+				var ver = "dev"
+				if manifest.Version != "" {
+					ver = manifest.Version
+				}
+				// org.bar.foo:App:dev::Main
+				return fmt.Sprintf("%s:%s:%s::%s", v, p, ver, manifest.Name)
 			} else {
-				return fmt.Sprintf("%s..%s", v, manifest.Name)
+				// org.bar.foo::Toolkit
+				return fmt.Sprintf("%s::%s", v, manifest.Name)
 			}
 		} else {
 			return manifest.Name
