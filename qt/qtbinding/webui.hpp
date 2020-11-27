@@ -1,6 +1,8 @@
 #ifndef WEBUI_HPP
 #define WEBUI_HPP
 
+#include <QGuiApplication>
+#include <QScreen>
 #include <QMainWindow>
 #include <QCloseEvent>
 #include <QUrl>
@@ -10,15 +12,19 @@
 #include <QWebInspector>
 #include <QDialog>
 #include <QVBoxLayout>
+#include <cmath>
 
 
 #define WebUiHtmlUrl "qrc:/qtbinding/webui/webui.html"
+#define BaseSize 18.0
+#define BaseScreen 768.0
 
 class WebUiBridge final: public QObject {
     Q_OBJECT
 signals:
     void LoadFinish();
     void EmitEvent(QString handler, QVariantMap event);
+    void UpdateRootFontSize(double size);
     void CallMethod(QString id, QString name, QVariantList args);
     void EraseStyle(QString id, QString key);
     void ApplyStyle(QString id, QString key, QString value);
@@ -49,6 +55,9 @@ public:
         bridge = new WebUiBridge();
         connect(bridge, &WebUiBridge::EmitEvent, this, &WebUiWindow::emitEvent);
         connect(bridge, &WebUiBridge::LoadFinish, this, &WebUiWindow::loadFinished);
+        QScreen *screen = QGuiApplication::primaryScreen();
+        connect(screen, &QScreen::geometryChanged, this, &WebUiWindow::updateRootFontSize);
+        connect(bridge, &WebUiBridge::LoadFinish, this, &WebUiWindow::updateRootFontSize);
     }
     void loadView() {
         if (view != nullptr) { return; }
@@ -96,6 +105,15 @@ public slots:
         //     qDebug() << "Event: " << handler;
         // }
     };
+    void updateRootFontSize() {
+        QScreen *screen = QGuiApplication::primaryScreen();
+        QRect screenGeometry = screen->geometry();
+        int screenHeight = screenGeometry.height();
+        int screenWidth = screenGeometry.width();
+        int minEdgeLength = std::min(screenHeight, screenWidth);
+        double fontSize = round(BaseSize * (((double) minEdgeLength) / BaseScreen));
+        bridge->UpdateRootFontSize(fontSize);
+    }
 private:
     void openInspector() {
         QWebInspector* inspector = new QWebInspector(this);

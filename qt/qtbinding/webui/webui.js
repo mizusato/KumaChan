@@ -8,6 +8,7 @@
  *  @interface Bridge
  *  @property {function(handler:string, event:Object): void} EmitEvent
  *  @property {function(): void} LoadFinish
+ *  @property {function(size: number): void} UpdateRootFontSize
  *  @property {Signal.<function(id:string, key:string, value:string): void>} ApplyStyle
  *  @property {Signal.<function(id:string, key:string): void>} EraseStyle
  *  @property {Signal.<function(id:string, name:string, value:string): void>} SetAttr
@@ -134,6 +135,9 @@ window.addEventListener('load', _ => {
         parent_el.removeChild(old_el)
         delete ElementRegistry[old_id]
         ElementRegistry[new_id] = new_el
+    })
+    bridge.UpdateRootFontSize.connect(size => {
+        document.querySelector('html').style.fontSize = `${size}px`
     })
     bridge.LoadFinish()
     console.log('LoadFinish')
