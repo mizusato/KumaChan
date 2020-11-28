@@ -9,8 +9,9 @@ import (
 
 
 type UnitFileLoader struct {
-	Extension  string
-	Load       func(path string, content ([] byte), config interface{}) (UnitFile, error)
+	Extensions  [] string
+	Name        string
+	Load        func(path string, content ([] byte), config interface{}) (UnitFile, error)
 }
 
 type UnitFile interface {

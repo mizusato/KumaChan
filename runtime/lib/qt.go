@@ -181,7 +181,7 @@ var QtFunctions = map[string] interface{} {
 			Key:   RuneSliceFromString(key),
 			Label: RuneSliceFromString(label),
 			Icon:  &qt.ImageData {
-				Data:   png.RawData,
+				Data:   png.Data,
 				Format: qt.PNG,
 			},
 		}

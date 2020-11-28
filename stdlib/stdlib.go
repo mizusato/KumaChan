@@ -3,6 +3,9 @@ package stdlib
 import (
 	"image"
 	"reflect"
+	"image/png"
+	"bytes"
+	"fmt"
 )
 
 
@@ -153,12 +156,24 @@ func GetPrimitiveReflectType(name string) (reflect.Type, bool) {
 }
 
 // loader types
+// image
 const Image_M = "Image"
 type Image interface { GetPixelData() image.Image }
+// image:raw
+const RawImage_T = "RawImage"
+type RawImage struct {
+	Data  image.Image
+}
+func (img *RawImage) GetPixelData() image.Image { return img.Data }
+// image:png
 const PNG_T = "PNG"
-func (img *PNG) GetPixelData() image.Image { return img.Decoded }
 type PNG struct {
-	RawData  [] byte
-	Decoded  image.Image
+	Data  [] byte
+}
+func (img *PNG) GetPixelData() image.Image {
+	var reader = bytes.NewReader(img.Data)
+	var decoded, err = png.Decode(reader)
+	if err != nil { panic(fmt.Errorf("failed to decode png data: %w", err)) }
+	return decoded
 }
 

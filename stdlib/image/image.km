@@ -1,2 +1,3 @@
 type Image native;
+type RawImage protected Image;
 type PNG protected Image;

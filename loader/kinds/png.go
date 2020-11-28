@@ -14,19 +14,26 @@ import (
 
 type PNG_File struct {
 	Path    string
-	Data    *stdlib.PNG
+	Data    interface {}
 	Public  bool
+	Decode  bool
 }
 func (f PNG_File) GetAST() (ast.Root, *parser.Error) {
 	var name = strings.TrimSuffix(filepath.Base(f.Path), filepath.Ext(f.Path))
 	var ast_root = common.CreateEmptyAST(f.Path)
 	var ast_root_node = ast_root.Node
+	var type_name string
+	if f.Decode {
+		type_name = stdlib.RawImage_T
+	} else {
+		type_name = stdlib.PNG_T
+	}
 	var const_decl = common.CreateConstant (
 		ast_root_node,
 		f.Public,
 		name,
 		stdlib.Image_M,
-		stdlib.PNG_T,
+		type_name,
 		f.Data,
 	)
 	ast_root.Statements = append(ast_root.Statements, const_decl)
@@ -35,25 +42,34 @@ func (f PNG_File) GetAST() (ast.Root, *parser.Error) {
 
 type PNG_Config struct {
 	Public  bool   `json:"public"`
+	Decode  bool   `json:"decode"`
 }
 func LoadPNG(path string, content ([] byte), raw_config interface{}) (common.UnitFile, error) {
 	var config = raw_config.(PNG_Config)
-	var reader = bytes.NewReader(content)
-	var decoded, err = png.Decode(reader)
-	if err != nil { return nil, err }
-	return PNG_File {
-		Path:   path,
-		Data:   &stdlib.PNG {
-			RawData: content,
-			Decoded: decoded,
-		},
-		Public: config.Public,
-	}, nil
+	if config.Decode {
+		var reader = bytes.NewReader(content)
+		var decoded, err = png.Decode(reader)
+		if err != nil { return nil, err }
+		return PNG_File {
+			Path:   path,
+			Data:   &stdlib.RawImage { Data: decoded },
+			Public: config.Public,
+			Decode: config.Decode,
+		}, nil
+	} else {
+		return PNG_File {
+			Path:   path,
+			Data:   &stdlib.PNG { Data: content },
+			Public: config.Public,
+			Decode: config.Decode,
+		}, nil
+	}
 }
 
 func PNG_Loader() common.UnitFileLoader {
 	return common.UnitFileLoader {
-		Extension: "png",
-		Load:      LoadPNG,
+		Extensions: [] string { "png", "PNG" },
+		Name:       "png",
+		Load:       LoadPNG,
 	}
 }

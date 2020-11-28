@@ -3,6 +3,7 @@ package loader
 import (
 	"os"
 	"fmt"
+	"time"
 	"errors"
 	"strings"
 	"reflect"
@@ -10,14 +11,13 @@ import (
 	"encoding/json"
 	"path/filepath"
 	. "kumachan/error"
+	"kumachan/stdlib"
 	"kumachan/parser"
 	"kumachan/parser/ast"
 	"kumachan/parser/syntax"
 	"kumachan/parser/transformer"
 	"kumachan/loader/common"
 	"kumachan/loader/kinds"
-	"kumachan/stdlib"
-	"time"
 )
 
 
@@ -163,11 +163,13 @@ func ReadModulePath(path string) (RawModule, error) {
 			} else {
 				var loader common.UnitFileLoader
 				var loader_exists = false
-				for _, l := range __UnitFileLoaders {
-					if strings.HasSuffix(item_name, ("." + l.Extension)) {
-						loader = l
-						loader_exists = true
-						break
+				outer: for _, l := range __UnitFileLoaders {
+					for _, ext := range l.Extensions {
+						if strings.HasSuffix(item_name, ("." + ext)) {
+							loader = l
+							loader_exists = true
+							break outer
+						}
 					}
 				}
 				if loader_exists {
@@ -176,7 +178,7 @@ func ReadModulePath(path string) (RawModule, error) {
 					var config_t = config_rv.Type()
 					for i := 0; i < config_t.NumField(); i += 1 {
 						var field_t = config_t.Field(i)
-						if field_t.Tag.Get("json") == loader.Extension {
+						if field_t.Tag.Get("json") == loader.Name {
 							item_config = config_rv.Field(i).Interface()
 						}
 					}
