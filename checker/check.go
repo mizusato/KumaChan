@@ -247,14 +247,20 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 		}
 		f_refs, exists := ctx.ModuleInfo.Functions[raw.SymbolName]
 		if exists {
-			var functions = make([]*GenericFunction, len(f_refs))
-			for i, ref := range f_refs {
-				functions[i] = ref.Function
+			var functions = make([] *GenericFunction, 0)
+			for _, ref := range f_refs {
+				if !(ref.IsImported) {
+					functions = append(functions, ref.Function)
+				}
 			}
-			return SymFunctions {
-				Name:      raw.SymbolName,
-				Functions: functions,
-			}, true
+			if len(functions) > 0 {
+				return SymFunctions {
+					Name:      raw.SymbolName,
+					Functions: functions,
+				}, true
+			} else {
+				return nil, false
+			}
 		}
 		return nil, false
 	}

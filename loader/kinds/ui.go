@@ -94,8 +94,8 @@ type QtUiLayoutItem struct {
 type QtUiConfig struct {
 	Public  bool   `json:"public"`
 }
-func LoadQtUi(path string, content ([] byte), raw_config interface{}) (common.UnitFile, error) {
-	var config, _ = raw_config.(QtUiConfig)
+func LoadQtUi(path string, content ([] byte), i_config interface{}) (common.UnitFile, error) {
+	var config, _ = i_config.(QtUiConfig)
 	var ui QtUi
 	var err = xml.Unmarshal(content, &ui)
 	if err != nil { return nil, err }

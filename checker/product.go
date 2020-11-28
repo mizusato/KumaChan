@@ -320,6 +320,14 @@ func AssignBundleTo(expected Type, bundle SemiTypedBundle, info ExprInfo, ctx Ex
 	switch E := expected.(type) {
 	case *AnonymousType:
 		switch bundle_t := E.Repr.(type) {
+		case Unit:
+			if len(bundle.Values) == 0 {
+				return Expr {
+					Type:  &AnonymousType { Unit {} },
+					Value: UnitValue {},
+					Info:  info,
+				}, nil
+			}
 		case Bundle:
 			var values = make([] Expr, len(bundle_t.Fields))
 			for field_name, field := range bundle_t.Fields {
