@@ -33,6 +33,9 @@ public function some[T]:  ( &(Seq[T],(&(T)(Bool))) Bool )
 public function every[T]: ( &(Seq[T],(&(T)(Bool))) Bool )
     native 'seq-every';
 
+public function chunk[T]: ( &(Seq[T],Number) Seq[Array[T]] )
+    native 'seq-chunk';
+
 
 /* Functions of Array[T] */
 

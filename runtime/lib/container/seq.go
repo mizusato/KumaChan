@@ -159,6 +159,53 @@ func (_ ScannedSeq) Inspect(_ func(Value)ErrorMessage) ErrorMessage {
 	return msg
 }
 
+type ChunkedSeq struct {
+	ChunkSize  uint
+	Remaining  Seq
+}
+func (c ChunkedSeq) Next() (Value, Seq, bool) {
+	if c.ChunkSize == 0 {
+		return nil, nil, false
+	} else {
+		var item_t = c.Remaining.GetItemType()
+		var slice_t = reflect.SliceOf(item_t)
+		var chunk_rv = reflect.MakeSlice(slice_t, 0, int(c.ChunkSize))
+		var v Value
+		var remaining = c.Remaining
+		var ok bool
+		for i := uint(0); i < c.ChunkSize; i += 1 {
+			v, remaining, ok = remaining.Next()
+			if ok {
+				chunk_rv = reflect.Append(chunk_rv, reflect.ValueOf(v))
+			} else {
+				break
+			}
+		}
+		var chunk = chunk_rv.Interface()
+		var L = uint(chunk_rv.Len())
+		if L == c.ChunkSize {
+			return chunk, ChunkedSeq {
+				ChunkSize: c.ChunkSize,
+				Remaining: remaining,
+			}, true
+		} else if L > 0 {
+			return chunk, EmptySeq { ItemType: item_t}, true
+		} else {
+			return nil, nil, false
+		}
+	}
+}
+func (c ChunkedSeq) GetItemType() reflect.Type {
+	var item_t = c.Remaining.GetItemType()
+	var slice_t = reflect.SliceOf(item_t)
+	return slice_t
+}
+func (_ ChunkedSeq) Inspect(_ func(Value)ErrorMessage) ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_NORMAL, "[seq chunked]")
+	return msg
+}
+
 func SeqCollect(seq Seq) interface{} {
 	var t = reflect.SliceOf(seq.GetItemType())
 	var slice_rv = reflect.MakeSlice(t, 0, 0)

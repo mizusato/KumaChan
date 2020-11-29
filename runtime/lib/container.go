@@ -75,6 +75,12 @@ var ContainerFunctions = map[string] Value {
 			return BoolFrom(h.Call(f, item).(SumValue))
 		}))
 	},
+	"seq-chunk": func(input Seq, size uint) Value {
+		return ChunkedSeq {
+			ChunkSize: size,
+			Remaining: input,
+		}
+	},
 	"seq-collect": func(seq Seq) Value {
 		return SeqCollect(seq)
 	},
