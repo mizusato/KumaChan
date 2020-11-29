@@ -78,6 +78,9 @@ public function dom-styles: ( &(Map[String,String]) Styles )
 public function dom-styles: ( &(Array[(String,String)]) Styles )
     (&(styles)(dom-styles (new-map styles)));
 
+public function dom-styles-merge: ( &(Array[Styles]) Styles )
+    native 'webui-dom-styles-merge';
+
 
 public function dom-attrs: ( &(Map[String,String]) Attrs )
     native 'webui-dom-attrs';

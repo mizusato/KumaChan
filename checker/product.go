@@ -247,7 +247,7 @@ func AssignTupleTo(expected Type, tuple SemiTypedTuple, info ExprInfo, ctx ExprC
 		non_nil_expected = &AnonymousType {
 			Tuple {
 				// Fill with nil
-				Elements: make([]Type, len(tuple.Values)),
+				Elements: make([] Type, len(tuple.Values)),
 			},
 		}
 	} else {

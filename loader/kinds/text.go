@@ -24,7 +24,10 @@ func (f TextFile) GetAST() (ast.Root, *parser.Error) {
 		str = append(str, uint32(char))
 		bytes = bytes[size:]
 	}
-	var name = strings.TrimSuffix(filepath.Base(f.Path), filepath.Ext(f.Path))
+	var ext = filepath.Ext(f.Path)
+	var name_base = strings.TrimSuffix(filepath.Base(f.Path), ext)
+	var name_ext = strings.TrimPrefix(ext, ".")
+	var name = name_base + "-" + name_ext
 	var ast_root = common.CreateEmptyAST(f.Path)
 	var ast_root_node = ast_root.Node
 	var const_decl = common.CreateConstant (

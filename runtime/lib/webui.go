@@ -160,6 +160,19 @@ var WebUiFunctions = map[string] interface{} {
 	"webui-dom-styles-zero": func(_ Value) *vdom.Styles {
 		return __WebUiEmptyStyles
 	},
+	"webui-dom-styles-merge": func(v Value) *vdom.Styles {
+		var styles container.Map
+		var array = container.ArrayFrom(v)
+		for i := uint(0); i < array.Length; i += 1 {
+			var part = array.GetItem(i).(*vdom.Styles)
+			part.Data.ForEach(func(k_ vdom.String, v_ interface{}) {
+				var k = StringFromRuneSlice(k_)
+				var v = StringFromRuneSlice(v_.([] rune))
+				styles, _ = styles.Inserted(k, v)
+			})
+		}
+		return &vdom.Styles { Data: WebUiAdaptMap(styles) }
+	},
 	"webui-dom-attrs": func(attrs container.Map) *vdom.Attrs {
 		return &vdom.Attrs { Data: WebUiAdaptMap(attrs) }
 	},
