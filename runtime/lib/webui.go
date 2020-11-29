@@ -161,7 +161,7 @@ var WebUiFunctions = map[string] interface{} {
 		return __WebUiEmptyStyles
 	},
 	"webui-dom-styles-merge": func(v Value) *vdom.Styles {
-		var styles container.Map
+		var styles = container.NewStrMap()
 		var array = container.ArrayFrom(v)
 		for i := uint(0); i < array.Length; i += 1 {
 			var part = array.GetItem(i).(*vdom.Styles)
