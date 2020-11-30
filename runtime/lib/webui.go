@@ -35,7 +35,7 @@ func WebUiInitAndLoad(sched rx.Scheduler, root rx.Effect, title String) {
 			var handler = qt.WebUiGetEventHandler()
 			var payload = qt.WebUiGetEventPayload()
 			var sink = handler.(rx.Sink)
-			sched.RunTopLevel(sink.Send(payload), rx.Receiver {
+			sched.RunTopLevel(sink.Emit(payload), rx.Receiver {
 				Context: rx.Background(),
 			})
 		})
@@ -186,29 +186,25 @@ var WebUiFunctions = map[string] interface{} {
 			Handler: (vdom.EventHandler)(sink),
 		}
 	},
-	"webui-dom-event-sink": func(sink rx.Sink, f Value, h InteropContext) rx.Sink {
-		return &rx.AdaptedSink {
-			Sink:    sink,
-			Adapter: func(obj rx.Object) rx.Object {
+	"webui-dom-event-sink": func(s rx.Sink, f Value, h InteropContext) rx.Sink {
+		var adapter = func(obj rx.Object) rx.Object {
+			var ev = obj.(*qt.WebUiEventPayload)
+			return qt.WebUiConsumeEventPayload(ev, func(ev *qt.WebUiEventPayload) interface{} {
+				return h.Call(f, ev)
+			})
+		}
+		return rx.SinkAdapt(s, adapter)
+	},
+	"webui-dom-event-sink-reactive": func(r rx.Reactive, f Value, h InteropContext) rx.Sink {
+		var in = func(state rx.Object) func(rx.Object) rx.Object {
+			return func(obj rx.Object) rx.Object {
 				var ev = obj.(*qt.WebUiEventPayload)
 				return qt.WebUiConsumeEventPayload(ev, func(ev *qt.WebUiEventPayload) interface{} {
-					return h.Call(f, ev)
+					return h.Call(h.Call(f, state), ev)
 				})
-			},
+			}
 		}
-	},
-	"webui-dom-event-sink-latch": func(latch *rx.Latch, f Value, h InteropContext) rx.Sink {
-		return &rx.AdaptedLatch {
-			Latch:      latch,
-			GetAdapter: func(state rx.Object) func(rx.Object) rx.Object {
-				return func(obj rx.Object) rx.Object {
-					var ev = obj.(*qt.WebUiEventPayload)
-					return qt.WebUiConsumeEventPayload(ev, func(ev *qt.WebUiEventPayload) interface{} {
-						return h.Call(h.Call(f, state), ev)
-					})
-				}
-			},
-		}
+		return rx.ReactiveAdapt(r, in)
 	},
 	"webui-dom-events": func(events container.Map) *vdom.Events {
 		return &vdom.Events { Data: WebUiAdaptMap(events) }

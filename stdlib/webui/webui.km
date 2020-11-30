@@ -110,11 +110,8 @@ public function dom-event: ( &(EventSink) EventOptions )
 public function dom-event-sink[T]: ( &(Sink[T],(&(EventPayload)(T))) EventSink )
     native 'webui-dom-event-sink';
 
-public function dom-event-sink[T]: ( &(Bus[T],(&(EventPayload)(T))) EventSink )
-    native 'webui-dom-event-sink';
-
-public function dom-event-sink[T]: ( &(Latch[T],(&(T)(&(EventPayload)(T)))) EventSink )
-    native 'webui-dom-event-sink-latch';
+public function dom-event-sink[T]: ( &(Reactive[T],(&(T)(&(EventPayload)(T)))) EventSink )
+    native 'webui-dom-event-sink-reactive';
 
 
 public function dom-text: ( &(String) NodeContent )

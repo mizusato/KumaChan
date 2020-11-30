@@ -3,9 +3,9 @@ do webui-init 'Echo' DOM;
 do WebUi::ExitWhenWindowClosed;
 
 private const DOM: NoExcept*[WebUi::Node]
-    ~ then* &(@text) := new-latch '',
+    ~ with-reactive* &(@text) := '',
     let input := dom-event-sink @text (&(_)(&(ev)(ev.get-string 'value'))),
-    @text.receive.map* (&(text)(
+    @text.watch.map* (&(text)(
         (dom-node 'div' [
             (dom-node 'input'
                 (dom-styles [])

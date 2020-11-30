@@ -11,10 +11,10 @@ private const ControlStyle: WebUi::Styles
     ];
 
 private const DOM: NoExcept*[WebUi::Node]
-    ~ then* &(@value) := new-latch (:Int: 0),
+    ~ with-reactive* &(@value) := (:Int: 0),
     let dec := dom-event-sink @value (&(value) (&(_) $(value - 1))),
     let inc := dom-event-sink @value (&(value) (&(_) $(value + 1))),
-    ~ map* &(value) := @value.receive,
+    ~ map* &(value) := @value.watch,
     let styles := ControlStyle,
     let dec-btn := dom-node 'button' {
         content: (dom-text '-'), styles,

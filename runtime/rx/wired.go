@@ -1,152 +1,166 @@
 package rx
 
 
-type Source interface {
-	Receive() Effect
-}
+/**
+ *  FRP with wired components
+ *    Sink <: Bus(aka Subject) <: Reactive(aka BehaviorSubject)
+ *    Sink[A]     --> adapt[B->A]         --> Sink[B]
+ *    Reactive[A] --> adapt[A->B->A]      --> Sink[B]
+ *    Reactive[A] --> morph[A->B->A,A->B] --> Reactive[B]
+ */
 
+// Sink accepts values
 type Sink interface {
-	Send(Object) Effect
+	Emit(obj Object) Effect
 }
 
-type MappedSource struct {
-	Source  Source
-	Mapper  func(Object) Object
+// Bus accepts and provides values
+type Bus interface {
+	Sink
+	Watch() Effect
 }
-func (m *MappedSource) Receive() Effect {
-	return m.Source.Receive().Map(m.Mapper)
+
+// Reactive accepts and provides values, while holding a current value
+type Reactive interface {
+	Bus
+	Update(f func(old_state Object) Object) Effect
 }
 
 type AdaptedSink struct {
 	Sink     Sink
 	Adapter  func(Object) Object
 }
-func (a *AdaptedSink) Send(obj Object) Effect {
-	return a.Sink.Send(a.Adapter(obj))
+func SinkAdapt(sink Sink, adapter (func(Object) Object)) Sink {
+	return &AdaptedSink {
+		Sink:    sink,
+		Adapter: adapter,
+	}
+}
+func (a *AdaptedSink) Emit(obj Object) Effect {
+	return a.Sink.Emit(a.Adapter(obj))
 }
 
-type Bus struct {
+type AdaptedReactive struct {
+	Reactive  Reactive
+	In        func(Object) (func(Object) Object)
+}
+func ReactiveAdapt(r Reactive, in (func(Object) (func(Object) Object))) Sink {
+	return &AdaptedReactive {
+		Reactive: r,
+		In:       in,
+	}
+}
+func (a *AdaptedReactive) Emit(obj Object) Effect {
+	return a.Reactive.Update(func(old_state Object) Object {
+		return a.In(old_state)(obj)
+	})
+}
+
+type MorphedReactive struct {
+	*AdaptedReactive
+	Out  func(Object) Object
+}
+func ReactiveMorph(r Reactive, in (func(Object) (func(Object) Object)), out (func(Object) Object)) Reactive {
+	return &MorphedReactive {
+		AdaptedReactive: &AdaptedReactive {
+			Reactive: r,
+			In:       in,
+		},
+		Out: out,
+	}
+}
+func (m *MorphedReactive) Watch() Effect {
+	return m.Reactive.Watch().Map(m.Out)
+}
+func (m *MorphedReactive) Update(f (func(Object) Object)) Effect {
+	return m.Reactive.Update(func(obj Object) Object {
+		return m.In(f(m.Out(obj)))
+	})
+}
+
+
+type BusImpl struct {
 	nextId     uint64
 	listeners  map[uint64] Listener
 }
 type Listener struct {
 	Notify  func(Object)
 }
-func CreateBus() *Bus {
-	return &Bus {
+func CreateBus() *BusImpl {
+	return &BusImpl{
 		nextId:    0,
 		listeners: make(map[uint64] Listener, 0),
 	}
 }
-func (bus *Bus) Receive() Effect {
+func (b *BusImpl) Watch() Effect {
 	return NewListener(func(next func(Object)) func() {
-		var l = bus.addListener(Listener {
+		var l = b.addListener(Listener {
 			Notify: next,
 		})
 		return func() {
-			bus.removeListener(l)
+			b.removeListener(l)
 		}
 	})
 }
-func (bus *Bus) Send(obj Object) Effect {
+func (b *BusImpl) Emit(obj Object) Effect {
 	return NewSync(func() (Object, bool) {
-		for _, l := range bus.listeners {
+		for _, l := range b.listeners {
 			l.Notify(obj)
 		}
 		return nil, true
 	})
 }
-func (bus *Bus) addListener(l Listener) uint64 {
-	var id = bus.nextId
-	bus.listeners[id] = l
-	bus.nextId = (id + 1)
+func (b *BusImpl) addListener(l Listener) uint64 {
+	var id = b.nextId
+	b.listeners[id] = l
+	b.nextId = (id + 1)
 	return id
 }
-func (bus *Bus) removeListener(id uint64) {
-	var _, exists = bus.listeners[id]
+func (b *BusImpl) removeListener(id uint64) {
+	var _, exists = b.listeners[id]
 	if !exists { panic("cannot remove absent listener") }
-	delete(bus.listeners, id)
+	delete(b.listeners, id)
 }
 
-type Latch struct {
-	bus    *Bus
+type ReactiveImpl struct {
+	bus    *BusImpl
 	state  Object
-	init   Object
 }
-func CreateLatch(init Object) *Latch {
-	return &Latch {
+func CreateReactive(init Object) *ReactiveImpl {
+	return &ReactiveImpl {
 		bus:   CreateBus(),
 		state: init,
-		init:  init,
 	}
 }
-func (latch *Latch) Receive() Effect {
+func (r *ReactiveImpl) Watch() Effect {
 	return NewListener(func(next func(Object)) func() {
-		next(latch.state)
-		var l = latch.bus.addListener(Listener {
+		next(r.state)
+		var l = r.bus.addListener(Listener {
 			Notify: next,
 		})
 		return func() {
-			latch.bus.removeListener(l)
+			r.bus.removeListener(l)
 		}
 	})
 }
-func (latch *Latch) Send(obj Object) Effect {
+func (r *ReactiveImpl) Emit(obj Object) Effect {
 	return NewSync(func() (Object, bool) {
-		latch.state = obj
-		for _, l := range latch.bus.listeners {
+		r.state = obj
+		for _, l := range r.bus.listeners {
 			l.Notify(obj)
 		}
 		return nil, true
 	})
 }
-func (latch *Latch) Reset() Effect {
-	return latch.Send(latch.init)
-}
-
-type AdaptedLatch struct {
-	Latch       *Latch
-	GetAdapter  func(Object) (func(Object) Object)
-}
-func (a *AdaptedLatch) Send(obj Object) Effect {
+func (r *ReactiveImpl) Update(f (func(Object) Object)) Effect {
 	return NewSync(func() (Object, bool) {
-		var old_state = a.Latch.state
-		var adapter = a.GetAdapter(old_state)
-		var new_state = adapter(obj)
-		a.Latch.state = new_state
-		for _, l := range a.Latch.bus.listeners {
+		var old_state = r.state
+		var new_state = f(old_state)
+		r.state = new_state
+		for _, l := range r.bus.listeners {
 			l.Notify(new_state)
 		}
 		return nil, true
-	})
-}
-
-type CombinedLatch struct {
-	Elements  [] *Latch
-}
-func (c *CombinedLatch) Receive() Effect {
-	return NewListener(func(next func(Object)) func() {
-		var L = len(c.Elements)
-		var values = make([] Object, L)
-		for i, el := range c.Elements {
-			values[i] = el.state
-		}
-		next(values)
-		var listeners = make([] uint64, L)
-		for loop_var, el := range c.Elements {
-			var index = loop_var
-			listeners[index] = el.bus.addListener(Listener {
-				Notify: func(object Object) {
-					values[index] = object
-					next(values)
-				},
-			})
-		}
-		return func() {
-			for i, l := range listeners {
-				c.Elements[i].bus.removeListener(l)
-			}
-		}
 	})
 }
 

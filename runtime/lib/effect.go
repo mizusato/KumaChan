@@ -20,75 +20,82 @@ func Optional2Maybe(obj rx.Object) Value {
 }
 
 var EffectFunctions = map[string] Value {
-	"send": func(sink rx.Sink, v Value) rx.Effect {
-		return sink.Send(v)
+	"sink-emit": func(s rx.Sink, v Value) rx.Effect {
+		return s.Emit(v)
 	},
-	"receive": func(source rx.Source) rx.Effect {
-		return source.Receive()
-	},
-	"source-map": func(source rx.Source, f Value, h InteropContext) rx.Source {
-		return &rx.MappedSource {
-			Source: source,
-			Mapper: func(obj rx.Object) rx.Object {
-				return h.Call(f, obj)
-			},
+	"sink-adapt": func(s rx.Sink, f Value, h InteropContext) rx.Sink {
+		var adapter = func(obj rx.Object) rx.Object {
+			return h.Call(f, obj)
 		}
+		return rx.SinkAdapt(s, adapter)
 	},
-	"sink-adapt": func(sink rx.Sink, f Value, h InteropContext) rx.Sink {
-		return &rx.AdaptedSink {
-			Sink:    sink,
-			Adapter: func(obj rx.Object) rx.Object {
-				return h.Call(f, obj)
-			},
+	"bus-watch": func(b rx.Bus) rx.Effect {
+		return b.Watch()
+	},
+	"reactive-update": func(r rx.Reactive, f Value, h InteropContext) rx.Effect {
+		return r.Update(func(old_state rx.Object) rx.Object {
+			var new_state = h.Call(f, old_state)
+			return new_state
+		})
+	},
+	"reactive-adapt": func(r rx.Reactive, f Value, h InteropContext) rx.Sink {
+		var in = func(old_state rx.Object) (func(rx.Object) rx.Object) {
+			var adapter = h.Call(f, old_state)
+			return func(obj rx.Object) rx.Object {
+				var new_state = h.Call(adapter, obj)
+				return new_state
+			}
 		}
+		return rx.ReactiveAdapt(r, in)
 	},
-	"latch-adapt": func(latch *rx.Latch, f Value, h InteropContext) rx.Sink {
-		return &rx.AdaptedLatch {
-			Latch:      latch,
-			GetAdapter: func(old_state rx.Object) (func(rx.Object) rx.Object) {
-				var adapter = h.Call(f, old_state)
-				return func(obj rx.Object) rx.Object {
-					var new_state = h.Call(adapter, obj)
-					return new_state
-				}
-			},
+	"reactive-morph": func(r rx.Reactive, f Value, g Value, h InteropContext) rx.Reactive {
+		var in = func(old_state rx.Object) (func(rx.Object) rx.Object) {
+			var adapter = h.Call(f, old_state)
+			return func(obj rx.Object) rx.Object {
+				var new_state = h.Call(adapter, obj)
+				return new_state
+			}
 		}
-	},
-	"latch-combine": func(tuple ProductValue) rx.Source {
-		var latches = make([] *rx.Latch, len(tuple.Elements))
-		for i, el := range tuple.Elements {
-			latches[i] = el.(*rx.Latch)
+		var out = func(obj rx.Object) rx.Object {
+			return h.Call(g, obj)
 		}
-		return &rx.MappedSource {
-			Source: &rx.CombinedLatch { Elements: latches },
-			Mapper: func(obj rx.Object) rx.Object {
-				var values = obj.([] rx.Object)
-				return &ValProd { Elements: values }
-			},
-		}
-	},
-	"Source from *": func(source rx.Source) rx.Source {
-		return source
-	},
-	"Sink from *": func(sink rx.Sink) rx.Sink {
-		return sink
+		return rx.ReactiveMorph(r, in, out)
 	},
 	"new-bus": func() rx.Effect {
 		return rx.NewSync(func() (rx.Object, bool) {
 			return rx.CreateBus(), true
 		})
 	},
-	"new-latch": func(init Value) rx.Effect {
+	"with-bus": func(f Value, h InteropContext) rx.Effect {
+		// this func is not useful due to the limitation of type inference
 		return rx.NewSync(func() (rx.Object, bool) {
-			return rx.CreateLatch(init), true
+			return rx.CreateBus(), true
+		}).ConcatMap(func(obj rx.Object) rx.Effect {
+			return h.Call(f, obj).(rx.Effect)
 		})
 	},
-	"latch-reset": func(l *rx.Latch) rx.Effect {
-		return l.Reset()
+	"new-reactive": func(init Value) rx.Effect {
+		return rx.NewSync(func() (rx.Object, bool) {
+			return rx.CreateReactive(init), true
+		})
+	},
+	"with-reactive": func(init Value, f Value, h InteropContext) rx.Effect {
+		return rx.NewSync(func() (rx.Object, bool) {
+			return rx.CreateReactive(init), true
+		}).ConcatMap(func(obj rx.Object) rx.Effect {
+			return h.Call(f, obj).(rx.Effect)
+		})
 	},
 	"new-mutable": func(init Value) rx.Effect {
 		return rx.NewSync(func() (rx.Object, bool) {
 			return rx.CreateCell(init), true
+		})
+	},
+	"with-mutable": func(init Value, f Value, h InteropContext) rx.Effect {
+		return rx.NewSync(func() (rx.Object, bool) {
+			return rx.CreateCell(init), true
+		}).ConcatMap(func(obj rx.Object) rx.Effect {
+			return h.Call(f, obj).(rx.Effect)
 		})
 	},
 	"mutable-get": func(cell rx.Cell) rx.Effect {
@@ -129,12 +136,12 @@ var EffectFunctions = map[string] Value {
 			panic("program should have crashed")
 		})
 	},
-	"emit": func(v Value) rx.Effect {
+	"yield": func(v Value) rx.Effect {
 		return rx.NewSync(func() (rx.Object, bool) {
 			return v, true
 		})
 	},
-	"emit*-range": func(l uint, r uint) rx.Effect {
+	"yield*-range": func(l uint, r uint) rx.Effect {
 		return rx.NewSyncSequence(func(next func(rx.Object))(bool,rx.Object) {
 			for i := l; i < r; i += 1 {
 				next(i)
@@ -142,7 +149,7 @@ var EffectFunctions = map[string] Value {
 			return true, nil
 		})
 	},
-	"emit*-seq": func(seq container.Seq) rx.Effect {
+	"yield*-seq": func(seq container.Seq) rx.Effect {
 		return rx.NewSyncSequence(func(next func(rx.Object))(bool,rx.Object) {
 			for item, rest, ok := seq.Next(); ok; item, rest, ok = rest.Next() {
 				next(item)
@@ -150,7 +157,7 @@ var EffectFunctions = map[string] Value {
 			return true, nil
 		})
 	},
-	"emit*-array": func(av Value) rx.Effect {
+	"yield*-array": func(av Value) rx.Effect {
 		var arr = container.ArrayFrom(av)
 		return rx.NewSyncSequence(func(next func(rx.Object))(bool,rx.Object) {
 			for i := uint(0); i < arr.Length; i += 1 {
