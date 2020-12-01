@@ -5,6 +5,8 @@ type Name {
 
 do webui-init 'Name' DOM;
 
+do WebUi::ExitWhenWindowClosed;
+
 private const DOM: NoExcept*[WebUi::Node]
     ~ with-reactive* &(name) := Name { first: '', last: '' },
     let {first,last} := name,
@@ -28,6 +30,8 @@ private const DOM: NoExcept*[WebUi::Node]
         ],
         dom-node 'p' [
             dom-node 'span' 'Full Name:',
-            dom-node 'span' ("# #" first last)
+            dom-node 'span'
+                [('color','red'),('border','1px solid red'),('padding','0px 5px')]
+                ("# #" first last)
         ]
     ];

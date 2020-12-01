@@ -36,7 +36,7 @@ var EffectFunctions = map[string] Value {
 		return r.Update(func(old_state rx.Object) rx.Object {
 			var new_state = h.Call(f, old_state)
 			return new_state
-		})
+		}, nil)
 	},
 	"reactive-adapt": func(r rx.Reactive, f Value, h InteropContext) rx.Sink {
 		var in = func(old_state rx.Object) (func(rx.Object) rx.Object) {

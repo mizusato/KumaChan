@@ -150,7 +150,7 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 					ec.pushValue(prod.Elements[index])
 				case rx.Reactive:
 					var r = v
-					ec.pushValue(MorphReactiveProduct(r, index))
+					ec.pushValue(ProjectReactiveProduct(r, index))
 				default:
 					panic("GET: cannot execute on non-product value")
 				}
@@ -164,7 +164,7 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 					ec.pushValue(prod.Elements[index])
 				case rx.Reactive:
 					var r = v
-					ec.pushValue(MorphReactiveProduct(r, index))
+					ec.pushValue(ProjectReactiveProduct(r, index))
 				default:
 					panic("POPGET: cannot execute on non-product value")
 				}
@@ -407,7 +407,7 @@ func (ec *ExecutionContext) popTailCall() {
 	ec.workingFrame = popped
 }
 
-func MorphReactiveProduct(r rx.Reactive, index uint) rx.Reactive {
+func ProjectReactiveProduct(r rx.Reactive, index uint) rx.Reactive {
 	var in = func(old_state rx.Object) func(rx.Object) rx.Object {
 		return func(obj rx.Object) rx.Object {
 			var prod = old_state.(ProductValue)
@@ -422,6 +422,6 @@ func MorphReactiveProduct(r rx.Reactive, index uint) rx.Reactive {
 		var prod = state.(ProductValue)
 		return prod.Elements[index]
 	}
-	return rx.ReactiveMorph(r, in, out)
+	return rx.ReactiveProject(r, in, out, &rx.KeyChain { Key: index })
 }
 
