@@ -80,8 +80,9 @@ func CheckBundle(bundle ast.Bundle, ctx ExprContext) (SemiExpr, *ExprError) {
 			var L = len(bundle.Values)
 			if !(L >= 1) { panic("something went wrong") }
 			var base = Expr(b)
-			switch target := UnboxBundle(base.Type, ctx).(type) {
-			case Bundle:
+			switch target := UnboxBundle(base.Type, ctx, false).(type) {
+			case BR_Bundle:
+				if target.AcrossReactive { panic("something went wrong") }
 				var occurred_names = make(map[string] bool)
 				var current_base = base
 				for _, field := range bundle.Values {
@@ -191,8 +192,8 @@ func CheckGet(get ast.Get, ctx ExprContext) (SemiExpr, *ExprError) {
 		if !(L >= 1) { panic("something went wrong") }
 		var base = Expr(b)
 		for _, member := range get.Path {
-			switch bundle := UnboxBundle(base.Type, ctx).(type) {
-			case Bundle:
+			switch bundle := UnboxBundle(base.Type, ctx, true).(type) {
+			case BR_Bundle:
 				var key = loader.Id2String(member.Name)
 				var field, exists = bundle.Fields[key]
 				if !exists { return SemiExpr{}, &ExprError {
@@ -202,8 +203,12 @@ func CheckGet(get ast.Get, ctx ExprContext) (SemiExpr, *ExprError) {
 						Target: ctx.DescribeType(&AnonymousType { bundle }),
 					},
 				} }
+				var t = field.Type
+				if bundle.AcrossReactive {
+					t = Reactive(t)
+				}
 				var expr = Expr {
-					Type: field.Type,
+					Type:  t,
 					Value: Get {
 						Product: Expr(base),
 						Index:   field.Index,

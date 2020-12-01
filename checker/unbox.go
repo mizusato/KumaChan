@@ -45,65 +45,33 @@ func UnboxAsIs(t Type, reg TypeRegistry) Type {
 	return t
 }
 
-
-/**
- *  Generic Template:
- *  (${Repr},${ReprBrief}) = (Tuple,T) | (Bundle,B) | (Func,F)
- *
-type ${Repr}ReprResult interface { ${Repr}ReprResult() }
-func (impl ${Repr}) ${Repr}ReprResult() {}
-func (impl ${ReprBrief}R_Non${Repr}) ${Repr}ReprResult() {}
-type ${ReprBrief}R_Non${Repr} struct {}
-func (impl ${ReprBrief}R_${Repr}ButOpaque) ${Repr}ReprResult() {}
-type ${ReprBrief}R_${Repr}ButOpaque struct {}
-
-func Unbox${Repr}(t Type, ctx ExprContext) ${Repr}ReprResult {
-	switch T := t.(type) {
-	case *NamedType:
-		var g = ctx.ModuleInfo.Types[T.Name]
-		switch gv := g.Value.(type) {
-		case Boxed:
-			var inner = FillTypeArgs(gv.InnerType, T.Args)
-			switch inner_type := inner.(type) {
-			case *AnonymousType:
-				switch inner_repr := inner_type.Repr.(type) {
-				case ${Repr}:
-					var ctx_mod = ctx.GetModuleName()
-					var type_mod = T.Name.ModuleName
-					if gv.Opaque && ctx_mod != type_mod {
-						return ${ReprBrief}R_${Repr}ButOpaque {}
-					} else {
-						return inner_repr
-					}
-				}
-			case *NamedType:
-				Unbox${Repr}(inner, ctx)
-			}
-		}
-		return ${ReprBrief}R_Non${Repr} {}
-	case *AnonymousType:
-		switch r := T.Repr.(type) {
-		case ${Repr}:
-			return r
-		default:
-			return ${ReprBrief}R_Non${Repr} {}
-		}
-	default:
-		return ${ReprBrief}R_Non${Repr} {}
-	}
-}
-*/
-
 type TupleReprResult interface { TupleReprResult() }
-func (impl Tuple) TupleReprResult() {}
+func (impl TR_Tuple) TupleReprResult() {}
+type TR_Tuple struct {
+	Tuple
+	AcrossReactive  bool
+}
 func (impl TR_NonTuple) TupleReprResult() {}
 type TR_NonTuple struct {}
 func (impl TR_TupleButOpaque) TupleReprResult() {}
 type TR_TupleButOpaque struct {}
 
-func UnboxTuple(t Type, ctx ExprContext) TupleReprResult {
+func UnboxTuple(t Type, ctx ExprContext, across_reactive bool) TupleReprResult {
 	switch T := t.(type) {
 	case *NamedType:
+		if across_reactive && T.Name == __Reactive {
+			if !(len(T.Args) == 1) { panic("something went wrong") }
+			var result = UnboxTuple(T.Args[0], ctx, false)
+			switch r := result.(type) {
+			case TR_Tuple:
+				return TR_Tuple {
+					Tuple:          r.Tuple,
+					AcrossReactive: true,
+				}
+			default:
+				return result
+			}
+		}
 		var g = ctx.ModuleInfo.Types[T.Name]
 		switch gv := g.Value.(type) {
 		case *Boxed:
@@ -117,18 +85,18 @@ func UnboxTuple(t Type, ctx ExprContext) TupleReprResult {
 					if gv.Opaque && ctx_mod != type_mod {
 						return TR_TupleButOpaque {}
 					} else {
-						return inner_repr
+						return TR_Tuple { Tuple: inner_repr }
 					}
 				}
 			case *NamedType:
-				return UnboxTuple(inner, ctx)
+				return UnboxTuple(inner, ctx, false)
 			}
 		}
 		return TR_NonTuple {}
 	case *AnonymousType:
 		switch r := T.Repr.(type) {
 		case Tuple:
-			return r
+			return TR_Tuple { Tuple: r }
 		default:
 			return TR_NonTuple {}
 		}
@@ -138,15 +106,32 @@ func UnboxTuple(t Type, ctx ExprContext) TupleReprResult {
 }
 
 type BundleReprResult interface { BundleReprResult() }
-func (impl Bundle) BundleReprResult() {}
+func (impl BR_Bundle) BundleReprResult() {}
+type BR_Bundle struct {
+	Bundle
+	AcrossReactive  bool
+}
 func (impl BR_NonBundle) BundleReprResult() {}
 type BR_NonBundle struct {}
 func (impl BR_BundleButOpaque) BundleReprResult() {}
 type BR_BundleButOpaque struct {}
 
-func UnboxBundle(t Type, ctx ExprContext) BundleReprResult {
+func UnboxBundle(t Type, ctx ExprContext, across_reactive bool) BundleReprResult {
 	switch T := t.(type) {
 	case *NamedType:
+		if across_reactive && T.Name == __Reactive {
+			if !(len(T.Args) == 1) { panic("something went wrong") }
+			var result = UnboxBundle(T.Args[0], ctx, false)
+			switch r := result.(type) {
+			case BR_Bundle:
+				return BR_Bundle {
+					Bundle:         r.Bundle,
+					AcrossReactive: true,
+				}
+			default:
+				return result
+			}
+		}
 		var g = ctx.ModuleInfo.Types[T.Name]
 		switch gv := g.Value.(type) {
 		case *Boxed:
@@ -160,18 +145,18 @@ func UnboxBundle(t Type, ctx ExprContext) BundleReprResult {
 					if gv.Opaque && ctx_mod != type_mod {
 						return BR_BundleButOpaque {}
 					} else {
-						return inner_repr
+						return BR_Bundle { Bundle: inner_repr }
 					}
 				}
 			case *NamedType:
-				return UnboxBundle(inner, ctx)
+				return UnboxBundle(inner, ctx, false)
 			}
 		}
 		return BR_NonBundle {}
 	case *AnonymousType:
 		switch r := T.Repr.(type) {
 		case Bundle:
-			return r
+			return BR_Bundle { Bundle: r }
 		default:
 			return BR_NonBundle {}
 		}
@@ -222,3 +207,4 @@ func UnboxFunc(t Type, ctx ExprContext) FuncReprResult {
 		return FR_NonFunc {}
 	}
 }
+

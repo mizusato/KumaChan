@@ -1,0 +1,33 @@
+type Name {
+    first: String,
+    last:  String
+};
+
+do webui-init 'Name' DOM;
+
+private const DOM: NoExcept*[WebUi::Node]
+    ~ with-reactive* &(name) := Name { first: '', last: '' },
+    let {first,last} := name,
+    let @first := dom-event-sink first (&(ev)(ev.get-string 'value')),
+    let @last :=  dom-event-sink last (&(ev)(ev.get-string 'value')),
+    ~ map* &{first,last} := name.watch,
+    dom-node 'div' [
+        dom-node 'div' [
+            dom-node 'span' 'First Name:',
+            dom-node 'input' (dom-styles [])
+                (dom-attrs [('value',first)])
+                (dom-event 'input' @first)
+                (dom-children [])
+        ],
+        dom-node 'div' [
+            dom-node 'span' 'Last Name:',
+            dom-node 'input' (dom-styles [])
+                (dom-attrs [('value',last)])
+                (dom-event 'input' @last)
+                (dom-children [])
+        ],
+        dom-node 'p' [
+            dom-node 'span' 'Full Name:',
+            dom-node 'span' ("# #" first last)
+        ]
+    ];

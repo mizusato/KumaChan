@@ -142,21 +142,29 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 				})
 			case GET:
 				var index = inst.GetShortIndexOrSize()
-				switch prod := ec.getCurrentValue().(type) {
+				switch v := ec.getCurrentValue().(type) {
 				case ProductValue:
+					var prod = v
 					assert(index < uint(len(prod.Elements)),
 						"GET: invalid index")
 					ec.pushValue(prod.Elements[index])
+				case rx.Reactive:
+					var r = v
+					ec.pushValue(MorphReactiveProduct(r, index))
 				default:
 					panic("GET: cannot execute on non-product value")
 				}
 			case POPGET:
 				var index = inst.GetShortIndexOrSize()
-				switch prod := ec.popValue().(type) {
+				switch v := ec.popValue().(type) {
 				case ProductValue:
+					var prod = v
 					assert(index < uint(len(prod.Elements)),
 						"POPGET: invalid index")
 					ec.pushValue(prod.Elements[index])
+				case rx.Reactive:
+					var r = v
+					ec.pushValue(MorphReactiveProduct(r, index))
 				default:
 					panic("POPGET: cannot execute on non-product value")
 				}
@@ -167,7 +175,7 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 				case ProductValue:
 					var L = uint(len(prod.Elements))
 					assert(index < L, "SET: invalid index")
-					var draft = make([]Value, L)
+					var draft = make([] Value, L)
 					copy(draft, prod.Elements)
 					draft[index] = value
 					ec.pushValue(&ValProd {
@@ -398,3 +406,22 @@ func (ec *ExecutionContext) popTailCall() {
 	ec.popValuesTo(ec.workingFrame.baseAddr)
 	ec.workingFrame = popped
 }
+
+func MorphReactiveProduct(r rx.Reactive, index uint) rx.Reactive {
+	var in = func(old_state rx.Object) func(rx.Object) rx.Object {
+		return func(obj rx.Object) rx.Object {
+			var prod = old_state.(ProductValue)
+			var L = uint(len(prod.Elements))
+			var draft = make([] Value, L)
+			copy(draft, prod.Elements)
+			draft[index] = obj
+			return &ValProd { Elements: draft }
+		}
+	}
+	var out = func(state rx.Object) rx.Object {
+		var prod = state.(ProductValue)
+		return prod.Elements[index]
+	}
+	return rx.ReactiveMorph(r, in, out)
+}
+

@@ -7,7 +7,6 @@ import (
 
 
 const IgnoreMark = "_"
-const Placeholder = IgnoreMark
 const UnitAlias = "-"
 const WildcardRhsTypeName = "never"
 const TextPlaceholder = '#'
@@ -22,6 +21,11 @@ const KmdDeserializerName = "data-deserialize"
 const KmdAdapterName = "data-adapt"
 const KmdValidatorName = "data-validate"
 var __NoExcept = CoreSymbol(stdlib.NoExcept)
+var __Reactive = CoreSymbol(stdlib.Reactive)
+func Reactive(t Type) Type { return &NamedType {
+	Name: __Reactive,
+	Args: [] Type { t },
+} }
 var __DoType = &NamedType {
 	Name: __NoExcept,
 	Args: [] Type { &AnonymousType { Unit {} } },
