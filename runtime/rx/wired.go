@@ -4,9 +4,12 @@ package rx
 /**
  *  FRP with wired components
  *    Sink <: Bus(aka Subject) <: Reactive(aka BehaviorSubject)
+ *    transformations:
  *    Sink[A]     --> adapt[B->A]         --> Sink[B]
  *    Reactive[A] --> adapt[A->B->A]      --> Sink[B]
  *    Reactive[A] --> morph[A->B->A,A->B] --> Reactive[B]
+ *    Reactive[(A,B)] --> project[A] --> Reactive[A]
+ *    Reactive[(A,B)] --> project[B] --> Reactive[B]
  */
 
 // Sink accepts values
@@ -55,40 +58,23 @@ func KeyChainEqual(a *KeyChain, b *KeyChain) bool {
 	}
 }
 
-type AdaptedSink struct {
-	Sink     Sink
-	Adapter  func(Object) Object
-}
+
+// Transformation APIs
+
 func SinkAdapt(sink Sink, adapter (func(Object) Object)) Sink {
 	return &AdaptedSink {
 		Sink:    sink,
 		Adapter: adapter,
 	}
 }
-func (a *AdaptedSink) Emit(obj Object) Effect {
-	return a.Sink.Emit(a.Adapter(obj))
-}
 
-type AdaptedReactive struct {
-	Reactive  Reactive
-	In        func(Object) (func(Object) Object)
-}
 func ReactiveAdapt(r Reactive, in (func(Object) (func(Object) Object))) Sink {
 	return &AdaptedReactive {
 		Reactive: r,
 		In:       in,
 	}
 }
-func (a *AdaptedReactive) Emit(obj Object) Effect {
-	return a.Reactive.Update(func(old_state Object) Object {
-		return a.In(old_state)(obj)
-	}, nil)
-}
 
-type MorphedReactive struct {
-	*AdaptedReactive
-	Out  func(Object) Object
-}
 func ReactiveMorph (
 	r    Reactive,
 	in   (func(Object) (func(Object) Object)),
@@ -101,6 +87,46 @@ func ReactiveMorph (
 		},
 		Out: out,
 	}
+}
+
+func ReactiveProject (
+	r    Reactive,
+	in   (func(Object) (func(Object) Object)),
+	out  (func(Object) Object),
+	key  *KeyChain,
+) Reactive {
+	return &ProjectedReactive {
+		Reactive: r,
+		In:       in,
+		Out:      out,
+		Key:      key,
+	}
+}
+
+
+// Transformation API Implementations
+
+type AdaptedSink struct {
+	Sink     Sink
+	Adapter  func(Object) Object
+}
+func (a *AdaptedSink) Emit(obj Object) Effect {
+	return a.Sink.Emit(a.Adapter(obj))
+}
+
+type AdaptedReactive struct {
+	Reactive  Reactive
+	In        func(Object) (func(Object) Object)
+}
+func (a *AdaptedReactive) Emit(obj Object) Effect {
+	return a.Reactive.Update(func(old_state Object) Object {
+		return a.In(old_state)(obj)
+	}, nil)
+}
+
+type MorphedReactive struct {
+	*AdaptedReactive
+	Out  func(Object) Object
 }
 func (m *MorphedReactive) Watch() Effect {
 	return m.Reactive.Watch().Map(m.Out)
@@ -119,19 +145,6 @@ type ProjectedReactive struct {
 	In        (func(Object) (func(Object) Object))
 	Out       (func(Object) Object)
 	Key       *KeyChain
-}
-func ReactiveProject (
-	r    Reactive,
-	in   (func(Object) (func(Object) Object)),
-	out  (func(Object) Object),
-	key  *KeyChain,
-) Reactive {
-	return &ProjectedReactive {
-		Reactive: r,
-		In:       in,
-		Out:      out,
-		Key:      key,
-	}
 }
 func (p *ProjectedReactive) ChainedKey(key *KeyChain) *KeyChain {
 	return &KeyChain {
@@ -156,6 +169,8 @@ func (p *ProjectedReactive) Project(key *KeyChain) Effect {
 	return p.Reactive.Project(p.ChainedKey(key)).Map(p.Out)
 }
 
+
+// Basic Implementations of Bus[T] and Reactive[T]
 
 type BusImpl struct {
 	nextId     uint64
