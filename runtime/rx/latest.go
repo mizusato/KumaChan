@@ -67,7 +67,7 @@ func CombineLatest(effects ([] Effect)) Effect {
 func CombineLatestWaitAll(effects ([] Effect)) Effect {
 	return CombineLatest(effects).ConcatMap(func(opt_values_ Object) Effect {
 		var opt_values = opt_values_.([] Optional)
-		var values = make([] Object, 0)
+		var values = make([] Object, len(opt_values))
 		var ok = true
 		for i := 0; i < len(opt_values); i += 1 {
 			var opt = opt_values[i]

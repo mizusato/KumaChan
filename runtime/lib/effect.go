@@ -319,10 +319,11 @@ var EffectFunctions = map[string] Value {
 			return &ValProd { Elements: values }
 		})
 	},
-	"combine-latest!-array": func(tuple ProductValue) rx.Effect {
-		var effects = make([] rx.Effect, len(tuple.Elements))
-		for i, el := range tuple.Elements {
-			effects[i] = el.(rx.Effect)
+	"combine-latest!-array": func(v Value) rx.Effect {
+		var array = container.ArrayFrom(v)
+		var effects = make([] rx.Effect, array.Length)
+		for i := uint(0); i < array.Length; i += 1 {
+			effects[i] = array.GetItem(i).(rx.Effect)
 		}
 		return rx.CombineLatestWaitAll(effects)
 	},

@@ -71,6 +71,29 @@ public function dom-node: ( &(String,Array[(String,String)],Array[Node]) Node )
         { styles: (dom-styles styles), content: (dom-children children) }
     );
 
+public function dom-dynmaic:
+    ( &(String, NoExcept*[(Styles,Attrs,Events)], Array[NoExcept*[Node]])
+        NoExcept*[Node] )
+    ( &(tag, @opts, children)
+        let @children := (combine-latest! children),
+        ~ map* &(opts,children) := (combine-latest! @opts @children),
+        let (styles,attrs,events) := opts,
+        dom-node tag styles attrs events (dom-children children)
+    );
+
+public function dom-dynmaic:
+    ( &(String, Styles, Attrs, Events, Array[NoExcept*[Node]])
+        NoExcept*[Node] )
+    ( &(tag, styles, attrs, events, children)
+        dom-dynmaic tag (yield styles attrs events) children
+    );
+
+public function dom-dynmaic:
+    ( &(String, Array[NoExcept*[Node]])
+        NoExcept*[Node] )
+    ( &(tag, children)
+        dom-dynmaic tag (dom-styles []) (dom-attrs []) (dom-events []) children
+    );
 
 public function dom-styles: ( &(Map[String,String]) Styles )
     native 'webui-dom-styles';
