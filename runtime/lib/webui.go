@@ -73,13 +73,13 @@ func WebUiMapAdaptValue(v Value) Value {
 		return v
 	}
 }
-func (_ WebUiEmptyMap) Has(key vdom.String) bool { return false }
+func (_ WebUiEmptyMap) Has(_ vdom.String) bool { return false }
 func (m WebUiAdaptedMap) Has(key vdom.String) bool {
 	var key_str = StringFromRuneSlice(key)
 	var _, ok = m.Data.Lookup(key_str)
 	return ok
 }
-func (_ WebUiEmptyMap) Lookup(key vdom.String) (interface{}, bool) { return nil, false }
+func (_ WebUiEmptyMap) Lookup(_ vdom.String) (interface{}, bool) { return nil, false }
 func (m WebUiAdaptedMap) Lookup(key vdom.String) (interface{}, bool) {
 	var key_str = StringFromRuneSlice(key)
 	var v, ok = m.Data.Lookup(key_str)

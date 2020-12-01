@@ -230,3 +230,28 @@ public function combine-latest[A,B,C,D,E]:
     ( &(NoExcept*[A],NoExcept*[B],NoExcept*[C],NoExcept*[D],NoExcept*[E])
         NoExcept*[(Maybe[A],Maybe[B],Maybe[C],Maybe[D],Maybe[E])] )
     native 'combine-latest';
+public function combine-latest![A,B,E]: ( &(Effect*[A,E],Effect*[B,E]) Effect*[(A,B),E] )
+    native 'combine-latest!';
+public function combine-latest![A,B,E]: ( &(Effect*[A,E],NoExcept*[B]) Effect*[(A,B),E] )
+    native 'combine-latest!';
+public function combine-latest![A,B,E]: ( &(NoExcept*[A],Effect*[B,E]) Effect*[(A,B),E] )
+    native 'combine-latest!';
+public function combine-latest![A,B]:   ( &(NoExcept*[A],NoExcept*[B]) NoExcept*[(A,B)] )
+    native 'combine-latest!';
+public function combine-latest![A,B,C]:
+    ( &(NoExcept*[A],NoExcept*[B],NoExcept*[C])
+        NoExcept*[(A,B,C)] )
+    native 'combine-latest!';
+public function combine-latest![A,B,C,D]:
+    ( &(NoExcept*[A],NoExcept*[B],NoExcept*[C],NoExcept*[D])
+        NoExcept*[(A,B,C,D)] )
+    native 'combine-latest!';
+public function combine-latest![A,B,C,D,E]:
+    ( &(NoExcept*[A],NoExcept*[B],NoExcept*[C],NoExcept*[D],NoExcept*[E])
+        NoExcept*[(A,B,C,D,E)] )
+    native 'combine-latest!';
+public function combine-latest![T,E]: ( &(Array[Effect*[T,E]]) Effect*[Array[T],E] )
+    native 'combine-latest!-array';
+public function combine-latest![T]: ( &(Array[NoExcept*[T]]) NoExcept*[Array[T]] )
+    native 'combine-latest!-array';
+
