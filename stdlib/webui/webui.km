@@ -143,6 +143,8 @@ public function dom-event-sink[T]: ( &(Sink[T],(&(EventPayload)(T))) EventSink )
 public function dom-event-sink[T]: ( &(Reactive[T],(&(T)(&(EventPayload)(T)))) EventSink )
     native 'webui-dom-event-sink-reactive';
 
+public function dom-callback: ( &((&(EventPayload)(NoExcept[-]))) EventSink )
+    (&(cb)(dom-event-sink (callback:[NoExcept[-]] (& e e)) cb));
 
 public function dom-text: ( &(String) NodeContent )
     native 'webui-dom-text';

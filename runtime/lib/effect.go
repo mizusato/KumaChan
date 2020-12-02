@@ -61,6 +61,11 @@ var EffectFunctions = map[string] Value {
 		}
 		return rx.ReactiveMorph(r, in, out)
 	},
+	"callback": func(f Value, h InteropContext) rx.Sink {
+		return rx.Callback(func(obj rx.Object) rx.Effect {
+			return h.Call(f, obj).(rx.Effect)
+		})
+	},
 	"new-bus": func() rx.Effect {
 		return rx.NewSync(func() (rx.Object, bool) {
 			return rx.CreateBus(), true

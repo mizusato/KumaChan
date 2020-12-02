@@ -170,6 +170,14 @@ func (p *ProjectedReactive) Project(key *KeyChain) Effect {
 }
 
 
+// Trivial Sink: Callback
+
+type Callback  func(Object) Effect
+func (cb Callback) Emit(obj Object) Effect {
+	return cb(obj)
+}
+
+
 // Basic Implementations of Bus[T] and Reactive[T]
 
 type BusImpl struct {

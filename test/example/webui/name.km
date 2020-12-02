@@ -10,6 +10,12 @@ do WebUi::ExitWhenWindowClosed;
 private function cpt-label: ( &(String) NoExcept*[WebUi::Node] )
     ( &(text) (yield (dom-node 'span' text)) );
 
+private function cpt-button: ( &(String,WebUi::EventSink) NoExcept*[WebUi::Node] )
+    ( &(title,sink) (yield (dom-node 'button' {
+        content: (dom-text title),
+        events:  (dom-event 'click' sink)
+    })) );
+
 private function cpt-text-input: ( &(Reactive[String]) NoExcept*[WebUi::Node] )
     ( &(@value)
         ~ map* &(value) := watch @value,
@@ -26,11 +32,13 @@ private const DOM: NoExcept*[WebUi::Node]
     dom-dynamic 'div' [
         dom-dynamic 'div' [
             cpt-label 'First Name:',
-            cpt-text-input first
+            cpt-text-input first,
+            cpt-button 'clear' (dom-callback (& _ (first.update (& _ ''))))
         ],
         dom-dynamic 'div' [
             cpt-label 'Last Name:',
-            cpt-text-input last
+            cpt-text-input last,
+            cpt-button 'clear' (dom-callback (& _ (last.update (& _ ''))))
         ],
         dom-dynamic 'p' [
             cpt-label 'Full Name:',

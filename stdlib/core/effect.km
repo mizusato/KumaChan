@@ -22,10 +22,14 @@ public function adapt[A,B]: ( &(Sink[A],(&(B)(A))) Sink[B] )
     native 'sink-adapt';
 public function watch[T]:   ( &(Bus[T]) NoExcept*[T] )
     native 'bus-watch';
+public function update[T]:  ( &(Reactive[T],(&(T)(T))) NoExcept[-] )
+    native 'reactive-update';
 public function adapt[A,B]: ( &(Reactive[A],(&(A)(&(B)(A)))) Sink[B] )
     native 'reactive-adapt';
 public function morph[A,B]: ( &(Reactive[A],(&(A)(&(B)(A))),(&(A)(B))) Reactive[B] )
     native 'reactive-morph';
+public function callback[T]:           ( &(&(T)(NoExcept[-])) Sink[T] )
+    native 'callback';
 public function new-bus[T]:            ( &() NoExcept[Bus[T]] )
     native 'new-bus';
 public function new-reactive[T]:       ( &(T) NoExcept[Reactive[T]] )
@@ -254,4 +258,3 @@ public function combine-latest![T,E]: ( &(Array[Effect*[T,E]]) Effect*[Array[T],
     native 'combine-latest!-array';
 public function combine-latest![T]: ( &(Array[NoExcept*[T]]) NoExcept*[Array[T]] )
     native 'combine-latest!-array';
-
