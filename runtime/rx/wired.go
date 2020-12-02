@@ -147,9 +147,15 @@ type ProjectedReactive struct {
 	Key       *KeyChain
 }
 func (p *ProjectedReactive) ChainedKey(key *KeyChain) *KeyChain {
-	return &KeyChain {
-		Parent: p.Key,
-		Key:    key,
+	if p.Key == nil && key == nil {
+		return nil
+	} else if p.Key != nil && key == nil {
+		return p.Key
+	} else {
+		return &KeyChain {
+			Parent: p.Key,
+			Key:    key,
+		}
 	}
 }
 func (p *ProjectedReactive) Watch() Effect {
