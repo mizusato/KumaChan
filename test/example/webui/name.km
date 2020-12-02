@@ -23,16 +23,16 @@ private function cpt-text-input: ( &(Reactive[String]) NoExcept*[WebUi::Node] )
 private const DOM: NoExcept*[WebUi::Node]
     ~ with-reactive* &(name) := Name { first: '', last: '' },
     let {first,last} := name,
-    dom-dynmaic 'div' [
-        dom-dynmaic 'div' [
+    dom-dynamic 'div' [
+        dom-dynamic 'div' [
             cpt-label 'First Name:',
             cpt-text-input first
         ],
-        dom-dynmaic 'div' [
+        dom-dynamic 'div' [
             cpt-label 'Last Name:',
             cpt-text-input last
         ],
-        dom-dynmaic 'p' [
+        dom-dynamic 'p' [
             cpt-label 'Full Name:',
             (~ map* &{first,last} := watch name,
                 (dom-node 'span'

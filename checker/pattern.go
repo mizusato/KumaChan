@@ -70,8 +70,9 @@ func PatternFrom (
 				},
 			}, nil
 		}
-		switch tuple := UnboxTuple(input, ctx, true).(type) {
+		switch tuple_ := UnboxTuple(input, ctx, true).(type) {
 		case TR_Tuple:
+			var tuple = tuple_.Tuple
 			var required = len(p.Names)
 			var given = len(tuple.Elements)
 			if given != required {
@@ -98,7 +99,7 @@ func PatternFrom (
 						}
 						occurred[name] = true
 						var t = tuple.Elements[i]
-						if tuple.AcrossReactive {
+						if tuple_.AcrossReactive {
 							t = Reactive(t)
 						}
 						items = append(items, PatternItem {
@@ -126,8 +127,9 @@ func PatternFrom (
 			panic("impossible branch")
 		}
 	case ast.PatternBundle:
-		switch bundle := UnboxBundle(input, ctx, true).(type) {
+		switch bundle_ := UnboxBundle(input, ctx, true).(type) {
 		case BR_Bundle:
+			var bundle = bundle_.Bundle
 			var occurred = make(map[string]  bool)
 			var items = make([] PatternItem, len(p.FieldMaps))
 			for i, field_map := range p.FieldMaps {
@@ -158,7 +160,7 @@ func PatternFrom (
 				}
 				occurred[value_name] = true
 				var t = field.Type
-				if bundle.AcrossReactive {
+				if bundle_.AcrossReactive {
 					t = Reactive(t)
 				}
 				items[i] = PatternItem {

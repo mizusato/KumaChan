@@ -48,7 +48,7 @@ func UnboxAsIs(t Type, reg TypeRegistry) Type {
 type TupleReprResult interface { TupleReprResult() }
 func (impl TR_Tuple) TupleReprResult() {}
 type TR_Tuple struct {
-	Tuple
+	Tuple           Tuple
 	AcrossReactive  bool
 }
 func (impl TR_NonTuple) TupleReprResult() {}
@@ -108,7 +108,7 @@ func UnboxTuple(t Type, ctx ExprContext, across_reactive bool) TupleReprResult {
 type BundleReprResult interface { BundleReprResult() }
 func (impl BR_Bundle) BundleReprResult() {}
 type BR_Bundle struct {
-	Bundle
+	Bundle          Bundle
 	AcrossReactive  bool
 }
 func (impl BR_NonBundle) BundleReprResult() {}

@@ -71,7 +71,7 @@ public function dom-node: ( &(String,Array[(String,String)],Array[Node]) Node )
         { styles: (dom-styles styles), content: (dom-children children) }
     );
 
-public function dom-dynmaic:
+public function dom-dynamic:
     ( &(String, NoExcept*[(Styles,Attrs,Events)], Array[NoExcept*[Node]])
         NoExcept*[Node] )
     ( &(tag, @opts, children)
@@ -81,18 +81,25 @@ public function dom-dynmaic:
         dom-node tag styles attrs events (dom-children children)
     );
 
-public function dom-dynmaic:
+public function dom-dynamic:
     ( &(String, Styles, Attrs, Events, Array[NoExcept*[Node]])
         NoExcept*[Node] )
     ( &(tag, styles, attrs, events, children)
-        dom-dynmaic tag (yield styles attrs events) children
+        dom-dynamic tag (yield styles attrs events) children
     );
 
-public function dom-dynmaic:
+public function dom-dynamic:
+    ( &(String, Array[(String,String)], Array[NoExcept*[Node]])
+        NoExcept*[Node] )
+    ( &(tag, styles, children)
+        dom-dynamic tag (dom-styles styles) (dom-attrs []) (dom-events []) children
+    );
+
+public function dom-dynamic:
     ( &(String, Array[NoExcept*[Node]])
         NoExcept*[Node] )
     ( &(tag, children)
-        dom-dynmaic tag (dom-styles []) (dom-attrs []) (dom-events []) children
+        dom-dynamic tag (dom-styles []) (dom-attrs []) (dom-events []) children
     );
 
 public function dom-styles: ( &(Map[String,String]) Styles )
