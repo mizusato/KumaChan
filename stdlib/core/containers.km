@@ -18,12 +18,14 @@ public function nil[T]:  ( &() Seq[T] )
 public function cons[T]: ( &(T,Seq[T]) Seq[T] )
     native 'seq-cons';
 
-public function map[A,B]:  ( &(Seq[A],(&(A)(B))) Seq[B] )
+public function map[A,B]:      ( &(Seq[A],(&(A)(B))) Seq[B] )
     native 'seq-map';
-public function map?[A,B]:  ( &(Seq[A],(&(A)(Maybe[B]))) Seq[B] )
+public function map?[A,B]:     ( &(Seq[A],(&(A)(Maybe[B]))) Seq[B] )
     native 'seq-map?';
-public function filter[T]: ( &(Seq[T],(&(T)(Bool))) Seq[T] )
+public function filter[T]:     ( &(Seq[T],(&(T)(Bool))) Seq[T] )
     native 'seq-filter';
+public function flat-map[A,B]: ( &(Seq[A],(&(A)(Seq[B]))) Seq[B] )
+    native 'seq-flat-map';
 
 public function scan[T,A]:   ( &(Seq[T],A,(&(A,T)(A))) Seq[A] )
     native 'seq-scan';

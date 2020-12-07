@@ -162,6 +162,44 @@ func (_ FilteredSeq) Inspect(_ func(Value)ErrorMessage) ErrorMessage {
 	return msg
 }
 
+type FlatMappedSeq struct {
+	Input    Seq
+	Mapper   func(Value) Value
+	Current  Seq
+}
+func (f FlatMappedSeq) Next() (Value, Seq, bool) {
+	if f.Current == nil { panic("something went wrong") }
+	var v, rest, ok = f.Current.Next()
+	if ok {
+		return v, FlatMappedSeq {
+			Input:   f.Input,
+			Mapper:  f.Mapper,
+			Current: rest,
+		}, true
+	} else {
+		var v, rest, ok = f.Input.Next()
+		if ok {
+			var inner_seq = f.Mapper(v).(Seq)
+			var t = FlatMappedSeq {
+				Input:   rest,
+				Mapper:  f.Mapper,
+				Current: inner_seq,
+			}
+			return t.Next()
+		} else {
+			return nil, nil, false
+		}
+	}
+}
+func (f FlatMappedSeq) GetItemType() reflect.Type {
+	return f.Input.GetItemType()
+}
+func (f FlatMappedSeq) Inspect(_ func(Value)ErrorMessage) ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_NORMAL, "[seq flat-mapped]")
+	return msg
+}
+
 type ScannedSeq struct {
 	Previous  Value
 	Rest      Seq

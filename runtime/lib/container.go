@@ -59,6 +59,15 @@ var ContainerFunctions = map[string] Value {
 			},
 		}
 	},
+	"seq-flat-map": func(input Seq, f Value, h InteropContext) Seq {
+		return FlatMappedSeq {
+			Input:   input,
+			Mapper:  func(item Value) Value {
+				return h.Call(f, item)
+			},
+			Current: EmptySeq { ItemType: input.GetItemType() },
+		}
+	},
 	"seq-scan": func(input Seq, init Value, f Value, h InteropContext) Seq {
 		return ScannedSeq {
 			Previous: init,
