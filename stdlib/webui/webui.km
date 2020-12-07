@@ -111,6 +111,9 @@ public function dom-styles: ( &(Array[(String,String)]) Styles )
 public function dom-styles-merge: ( &(Array[Styles]) Styles )
     native 'webui-dom-styles-merge';
 
+public function dom-node-with-styles: ( &(Node,Styles) Node )
+    native 'webui-dom-node-with-styles';
+
 
 public function dom-attrs: ( &(Map[String,String]) Attrs )
     native 'webui-dom-attrs';
@@ -120,6 +123,9 @@ public function dom-attrs: ( &(Array[(String,String)]) Attrs )
 
 public function dom-attrs-merge: ( &(Array[Attrs]) Attrs )
     native 'webui-dom-attrs-merge';
+
+public function dom-node-with-attrs: ( &(Node,Attrs) Node )
+    native 'webui-dom-node-with-attrs';
 
 
 public function dom-events: ( &(Map[String,EventOptions]) Events )

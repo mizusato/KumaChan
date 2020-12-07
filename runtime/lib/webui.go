@@ -10,6 +10,64 @@ import (
 )
 
 
+type WebUiEmptyMap struct {}
+type WebUiAdaptedMap struct {
+	Data  container.Map
+}
+func WebUiAdaptMap(m container.Map) WebUiAdaptedMap {
+	return WebUiAdaptedMap { m }
+}
+func WebUiMapAdaptValue(v Value) Value {
+	var str, is_str = v.(String)
+	if is_str {
+		return RuneSliceFromString(str)
+	} else {
+		return v
+	}
+}
+func WebUiMergeStyles(list container.Array) *vdom.Styles {
+	var styles = container.NewStrMap()
+	for i := uint(0); i < list.Length; i += 1 {
+		var part = list.GetItem(i).(*vdom.Styles)
+		part.Data.ForEach(func(k_ vdom.String, v_ interface{}) {
+			var k = StringFromRuneSlice(k_)
+			var v = StringFromRuneSlice(v_.([] rune))
+			styles, _ = styles.Inserted(k, v)
+		})
+	}
+	return &vdom.Styles { Data: WebUiAdaptMap(styles) }
+}
+func WebUiMergeAttrs(list container.Array) *vdom.Attrs {
+	var attrs = container.NewStrMap()
+	for i := uint(0); i < list.Length; i += 1 {
+		var part = list.GetItem(i).(*vdom.Attrs)
+		part.Data.ForEach(func(k_ vdom.String, v_ interface{}) {
+			var k = StringFromRuneSlice(k_)
+			var v = StringFromRuneSlice(v_.([] rune))
+			attrs, _ = attrs.Inserted(k, v)
+		})
+	}
+	return &vdom.Attrs { Data: WebUiAdaptMap(attrs) }
+}
+func (_ WebUiEmptyMap) Has(_ vdom.String) bool { return false }
+func (m WebUiAdaptedMap) Has(key vdom.String) bool {
+	var key_str = StringFromRuneSlice(key)
+	var _, ok = m.Data.Lookup(key_str)
+	return ok
+}
+func (_ WebUiEmptyMap) Lookup(_ vdom.String) (interface{}, bool) { return nil, false }
+func (m WebUiAdaptedMap) Lookup(key vdom.String) (interface{}, bool) {
+	var key_str = StringFromRuneSlice(key)
+	var v, ok = m.Data.Lookup(key_str)
+	return WebUiMapAdaptValue(v), ok
+}
+func (_ WebUiEmptyMap) ForEach(_ func(key vdom.String, val interface{})) {}
+func (m WebUiAdaptedMap) ForEach(f func(key vdom.String, val interface{})) {
+	m.Data.ForEach(func(k Value, v Value) {
+		f(RuneSliceFromString(k.(String)), WebUiMapAdaptValue(v))
+	})
+}
+
 var __WebUiLoading = make(chan struct{}, 1)
 var __WebUiLoaded = make(chan struct{})
 var __WebUiEmptyAttrs = &vdom.Attrs { Data: WebUiEmptyMap{} }
@@ -56,40 +114,6 @@ func WebUiInitAndLoad(sched rx.Scheduler, root rx.Effect, title String) {
 	default:
 		<-__WebUiLoaded
 	}
-}
-
-type WebUiEmptyMap struct {}
-type WebUiAdaptedMap struct {
-	Data  container.Map
-}
-func WebUiAdaptMap(m container.Map) WebUiAdaptedMap {
-	return WebUiAdaptedMap { m }
-}
-func WebUiMapAdaptValue(v Value) Value {
-	var str, is_str = v.(String)
-	if is_str {
-		return RuneSliceFromString(str)
-	} else {
-		return v
-	}
-}
-func (_ WebUiEmptyMap) Has(_ vdom.String) bool { return false }
-func (m WebUiAdaptedMap) Has(key vdom.String) bool {
-	var key_str = StringFromRuneSlice(key)
-	var _, ok = m.Data.Lookup(key_str)
-	return ok
-}
-func (_ WebUiEmptyMap) Lookup(_ vdom.String) (interface{}, bool) { return nil, false }
-func (m WebUiAdaptedMap) Lookup(key vdom.String) (interface{}, bool) {
-	var key_str = StringFromRuneSlice(key)
-	var v, ok = m.Data.Lookup(key_str)
-	return WebUiMapAdaptValue(v), ok
-}
-func (_ WebUiEmptyMap) ForEach(_ func(key vdom.String, val interface{})) {}
-func (m WebUiAdaptedMap) ForEach(f func(key vdom.String, val interface{})) {
-	m.Data.ForEach(func(k Value, v Value) {
-		f(RuneSliceFromString(k.(String)), WebUiMapAdaptValue(v))
-	})
 }
 
 var __WebUiVirtualDomDeltaNotifier = &vdom.DeltaNotifier {
@@ -161,17 +185,21 @@ var WebUiFunctions = map[string] interface{} {
 		return __WebUiEmptyStyles
 	},
 	"webui-dom-styles-merge": func(v Value) *vdom.Styles {
-		var styles = container.NewStrMap()
-		var array = container.ArrayFrom(v)
-		for i := uint(0); i < array.Length; i += 1 {
-			var part = array.GetItem(i).(*vdom.Styles)
-			part.Data.ForEach(func(k_ vdom.String, v_ interface{}) {
-				var k = StringFromRuneSlice(k_)
-				var v = StringFromRuneSlice(v_.([] rune))
-				styles, _ = styles.Inserted(k, v)
-			})
+		var list = container.ArrayFrom(v)
+		return WebUiMergeStyles(list)
+	},
+	"webui-dom-node-with-styles": func(node *vdom.Node, styles *vdom.Styles) *vdom.Node {
+		return &vdom.Node {
+			Tag:     node.Tag,
+			Props:   vdom.Props {
+				Attrs:  node.Attrs,
+				Styles: WebUiMergeStyles(container.ArrayFrom([] *vdom.Styles {
+					node.Styles, styles,
+				})),
+				Events: node.Events,
+			},
+			Content: node.Content,
 		}
-		return &vdom.Styles { Data: WebUiAdaptMap(styles) }
 	},
 	"webui-dom-attrs": func(attrs container.Map) *vdom.Attrs {
 		return &vdom.Attrs { Data: WebUiAdaptMap(attrs) }
@@ -180,17 +208,21 @@ var WebUiFunctions = map[string] interface{} {
 		return __WebUiEmptyAttrs
 	},
 	"webui-dom-attrs-merge": func(v Value) *vdom.Attrs {
-		var attrs = container.NewStrMap()
-		var array = container.ArrayFrom(v)
-		for i := uint(0); i < array.Length; i += 1 {
-			var part = array.GetItem(i).(*vdom.Attrs)
-			part.Data.ForEach(func(k_ vdom.String, v_ interface{}) {
-				var k = StringFromRuneSlice(k_)
-				var v = StringFromRuneSlice(v_.([] rune))
-				attrs, _ = attrs.Inserted(k, v)
-			})
+		var list = container.ArrayFrom(v)
+		return WebUiMergeAttrs(list)
+	},
+	"webui-dom-node-with-attrs": func(node *vdom.Node, attrs *vdom.Attrs) *vdom.Node {
+		return &vdom.Node {
+			Tag:     node.Tag,
+			Props:   vdom.Props {
+				Attrs:  WebUiMergeAttrs(container.ArrayFrom([] *vdom.Attrs {
+					node.Attrs, attrs,
+				})),
+				Styles: node.Styles,
+				Events: node.Events,
+			},
+			Content: node.Content,
 		}
-		return &vdom.Attrs { Data: WebUiAdaptMap(attrs) }
 	},
 	"webui-dom-event": func(prevent SumValue, stop SumValue, sink rx.Sink) *vdom.EventOptions {
 		return &vdom.EventOptions {
