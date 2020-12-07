@@ -12,9 +12,11 @@ type Map interface {
 	Lookup(String) (interface{}, bool)
 	ForEach(func(String,interface{}))
 }
-func StringEqual(a String, b String) bool {
+func stringEqual(a String, b String) bool {
+	const max_chars = 1024
 	if len(a) != len(b) { return false }
 	var L = len(a)
+	if L > max_chars { return false }
 	for i := 0; i < L; i += 1 {
 		if a[i] != b[i] { return false }
 	}
@@ -206,7 +208,7 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 		case *Text:
 			if old != nil {
 				var old_content, is_text = old.Content.(*Text)
-				if is_text && StringEqual(*old_content, *new_content) {
+				if is_text && stringEqual(*old_content, *new_content) {
 					break
 				}
 			}
