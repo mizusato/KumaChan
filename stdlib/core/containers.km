@@ -37,8 +37,10 @@ public function some[T]:  ( &(Seq[T],(&(T)(Bool))) Bool )
 public function every[T]: ( &(Seq[T],(&(T)(Bool))) Bool )
     native 'seq-every';
 
-public function chunk[T]: ( &(Seq[T],Number) Seq[Array[T]] )
+public function chunk[T]:  ( &(Seq[T],Number) Seq[Array[T]] )
     native 'seq-chunk';
+public function concat[T]: ( &(Array[Seq[T]]) Seq[T] )
+    (&(array)(array.iterate.flat-map (&(x)(x))));
 
 
 /* Functions of Array[T] */
