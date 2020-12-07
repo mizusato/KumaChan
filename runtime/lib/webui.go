@@ -179,6 +179,19 @@ var WebUiFunctions = map[string] interface{} {
 	"webui-dom-attrs-zero": func(_ Value) *vdom.Attrs {
 		return __WebUiEmptyAttrs
 	},
+	"webui-dom-attrs-merge": func(v Value) *vdom.Attrs {
+		var attrs = container.NewStrMap()
+		var array = container.ArrayFrom(v)
+		for i := uint(0); i < array.Length; i += 1 {
+			var part = array.GetItem(i).(*vdom.Attrs)
+			part.Data.ForEach(func(k_ vdom.String, v_ interface{}) {
+				var k = StringFromRuneSlice(k_)
+				var v = StringFromRuneSlice(v_.([] rune))
+				attrs, _ = attrs.Inserted(k, v)
+			})
+		}
+		return &vdom.Attrs { Data: WebUiAdaptMap(attrs) }
+	},
 	"webui-dom-event": func(prevent SumValue, stop SumValue, sink rx.Sink) *vdom.EventOptions {
 		return &vdom.EventOptions {
 			Prevent: BoolFrom(prevent),

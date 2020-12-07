@@ -118,6 +118,9 @@ public function dom-attrs: ( &(Map[String,String]) Attrs )
 public function dom-attrs: ( &(Array[(String,String)]) Attrs )
     (&(attrs)(dom-attrs (new-map attrs)));
 
+public function dom-attrs-merge: ( &(Array[Attrs]) Attrs )
+    native 'webui-dom-attrs-merge';
+
 
 public function dom-events: ( &(Map[String,EventOptions]) Events )
     native 'webui-dom-events';
