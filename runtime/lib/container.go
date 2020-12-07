@@ -43,6 +43,14 @@ var ContainerFunctions = map[string] Value {
 			},
 		}
 	},
+	"seq-map?": func(input Seq, f Value, h InteropContext) Seq {
+		return OptMappedSeq {
+			Input:      input,
+			MapFilter: func(item Value) Value {
+				return h.Call(f, item)
+			},
+		}
+	},
 	"seq-filter": func(input Seq, f Value, h InteropContext) Seq {
 		return FilteredSeq {
 			Input:  input,

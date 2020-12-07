@@ -105,6 +105,37 @@ func (_ MappedSeq) Inspect(_ func(Value)ErrorMessage) ErrorMessage {
 	return msg
 }
 
+type OptMappedSeq struct {
+	Input      Seq
+	MapFilter  func(Value) Value
+}
+func (o OptMappedSeq) Next() (Value, Seq, bool) {
+	var v, rest, ok = o.Input.Next()
+	if ok {
+		var filtered_rest = OptMappedSeq {
+			Input:      rest,
+			MapFilter: o.MapFilter,
+		}
+		var ok_v, ok = Unwrap(o.MapFilter(v).(SumValue))
+		if ok {
+			return ok_v, filtered_rest, true
+		} else {
+			return filtered_rest.Next()
+		}
+	} else {
+		return nil, nil, false
+	}
+}
+func (o OptMappedSeq) GetItemType() reflect.Type {
+	return o.Input.GetItemType()
+}
+func (o OptMappedSeq) Inspect(_ func(Value)ErrorMessage) ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_NORMAL, "[seq opt-mapped]")
+	return msg
+}
+
+
 type FilteredSeq struct {
 	Input   Seq
 	Filter  func(Value) bool

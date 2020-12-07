@@ -20,6 +20,8 @@ public function cons[T]: ( &(T,Seq[T]) Seq[T] )
 
 public function map[A,B]:  ( &(Seq[A],(&(A)(B))) Seq[B] )
     native 'seq-map';
+public function map?[A,B]:  ( &(Seq[A],(&(A)(Maybe[B]))) Seq[B] )
+    native 'seq-map?';
 public function filter[T]: ( &(Seq[T],(&(T)(Bool))) Seq[T] )
     native 'seq-filter';
 
