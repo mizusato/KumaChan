@@ -10,3 +10,7 @@ html {
 *:not(input):not(button) {
     cursor: default;
 }
+
+body {
+    margin: 0;
+}

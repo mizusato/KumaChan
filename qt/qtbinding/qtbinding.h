@@ -90,6 +90,7 @@ extern "C" {
     void QtDeleteVariantList(QtVariantList l);
     QtString QtVariantMapGetString(QtVariantMap m, QtString key);
     double QtVariantMapGetNumber(QtVariantMap m, QtString key);
+    QtBool QtVariantMapGetBool(QtVariantMap m, QtString key);
     void QtDeleteVariantMap(QtVariantMap m);
     size_t QtStringUTF16Length(QtString str);
     size_t QtStringWriteToUTF32Buffer(QtString str, uint32_t *buf);

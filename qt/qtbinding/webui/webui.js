@@ -50,8 +50,12 @@ window.addEventListener('load', _ => {
     let create_listener = (prevent, stop, handler) => ev => {
         if (prevent) { ev.preventDefault() }
         if (stop) { ev.stopPropagation() }
-        if (ev.target && ev.target instanceof HTMLInputElement) {
-            ev.value = ev.target.value
+        if (ev.target) {
+            if (ev.target instanceof HTMLInputElement
+                || ev.target instanceof HTMLSelectElement) {
+                ev.value = ev.target.value
+                ev.checked = ev.target.checked
+            }
         }
         bridge.EmitEvent(handler, ev)
     }
@@ -67,6 +71,8 @@ window.addEventListener('load', _ => {
         // console.log('SetAttribute', { id, name, val })
         if (name == 'value') {
             ElementRegistry[id].value = val
+        } else if (name == 'checked' || name == 'disabled') {
+            ElementRegistry[id][name] = true
         } else {
             ElementRegistry[id].setAttribute(name, val)
         }
@@ -75,6 +81,8 @@ window.addEventListener('load', _ => {
         // console.log('RemoveAttribute', { id, name })
         if (name == 'value') {
             ElementRegistry[id].value = ''
+        } else if (name == 'checked' || name == 'disabled') {
+            ElementRegistry[id][name] = false
         } else {
             ElementRegistry[id].removeAttribute(name)
         }

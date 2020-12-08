@@ -6,7 +6,7 @@ private const DOM: NoExcept*[WebUi::Node]
     ~ with-reactive* &(@text) := '',
     let input := dom-event-sink @text (&(_)(&(ev)(ev.get-string 'value'))),
     @text.watch.map* (&(text)(
-        (dom-node 'div' [
+        (dom-node 'div' [('padding','0.5rem 0.5rem')] [
             (dom-node 'input'
                 (dom-styles [])
                 (dom-attrs [('type','text'), ('value',text)])

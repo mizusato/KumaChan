@@ -1,0 +1,85 @@
+type Component union {
+    type Dynamic    weak NoExcept*[Component];
+    type Node       weak WebUi::Node;
+    type DynNode    weak NoExcept*[WebUi::Node];
+    type Styled     weak (Array[String], Component);
+    type DynStyled  weak (NoExcept*[Array[String]], Component);
+    type DynEnabled weak (NoExcept*[Bool], Component);
+    type Container  weak Array[Component];
+    type Text       weak String;
+    type TextWatch  weak NoExcept*[String];
+    type TextInput  weak Reactive[String];
+    type Checkbox   weak Reactive[Bool];
+    type Select     weak (Reactive[String], Array[(String,String)]);
+};
+
+public function render: ( &(Component) NoExcept*[WebUi::Node] )
+    ( &(cpt)
+        switch cpt:
+        case Dynamic @cpt:
+            @cpt.switch-map (&(cpt)(render cpt)),
+        case Node node:
+            yield node,
+        case DynNode @node:
+            @node,
+        case DynEnabled (@enabled, cpt):
+            ~ map* &(enabled, node) := (combine-latest! @enabled (render cpt)),
+            if enabled:
+                node,
+            else:
+                dom-node-with-attrs node
+                    (dom-attrs [('disabled', 'disabled')]),
+        case Styled (classes, cpt):
+            ~ map* &(node) := (render cpt),
+            dom-node-with-attrs node (dom-attrs [
+                ('class', (classes.join ' '))
+            ]),
+        case DynStyled (@classes, cpt):
+            ~ map* &(classes, node) := (combine-latest! @classes (render cpt)),
+            dom-node-with-attrs node (dom-attrs [
+                ('class', (classes.join ' '))
+            ]),
+        case Container children:
+            dom-dynamic 'div' (children.map (&(cpt)(render cpt))),
+        case Text text:
+            yield (dom-node 'div' text),
+        case TextWatch @text:
+            ~ map* &(text) := @text,
+            dom-node 'div' text,
+        case TextInput @text:
+            ~ map* &(text) := watch @text,
+            dom-node 'input'
+                (dom-styles [])
+                (dom-attrs [ ('type', 'text'), ('value', text) ])
+                (dom-event 'input'
+                    (dom-event-sink @text (&(ev)(ev.get-string 'value'))))
+                (dom-children []),
+        case Checkbox @checked:
+            ~ map* &(checked) := watch @checked,
+            dom-node 'input'
+                (dom-styles [])
+                (dom-attrs (
+                    if checked:
+                        ([('type', 'checkbox'), ('checked', 'checked')]),
+                    else:
+                        ([('type', 'checkbox')])
+                ))
+                (dom-event 'change'
+                    (dom-event-sink @checked (&(ev)(ev.get-bool 'checked'))))
+                (dom-children []),
+        case Select (@current, options):
+            ~ map* &(current) := watch @current,
+            dom-node 'select'
+                (dom-styles [])
+                (dom-attrs [('value', current)])
+                (dom-event 'change'
+                    (dom-event-sink @current (&(ev)(ev.get-string 'value'))))
+                (dom-children (
+                    ~ map &(name,desc) := options,
+                    dom-node 'option' {
+                        attrs:   (dom-attrs [('name', name)]),
+                        content: (dom-text desc)
+                    }
+                )),
+        end
+    );

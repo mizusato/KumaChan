@@ -29,7 +29,7 @@ private function cpt-text-input: ( &(Reactive[String]) NoExcept*[WebUi::Node] )
 private const DOM: NoExcept*[WebUi::Node]
     ~ with-reactive* &(name) := Name { first: '', last: '' },
     let {first,last} := name,
-    dom-dynamic 'div' [
+    dom-dynamic 'div' [('padding','0.5rem 0.5rem')] [
         dom-dynamic 'div' [
             cpt-label 'First Name:',
             cpt-text-input first,

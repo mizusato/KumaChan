@@ -179,6 +179,7 @@ var WebUiFunctions = map[string] interface{} {
 		}
 	},
 	"webui-dom-styles": func(styles container.Map) *vdom.Styles {
+		if styles.IsEmpty() { return __WebUiEmptyStyles }
 		return &vdom.Styles { Data: WebUiAdaptMap(styles) }
 	},
 	"webui-dom-styles-zero": func(_ Value) *vdom.Styles {
@@ -202,6 +203,7 @@ var WebUiFunctions = map[string] interface{} {
 		}
 	},
 	"webui-dom-attrs": func(attrs container.Map) *vdom.Attrs {
+		if attrs.IsEmpty() { return __WebUiEmptyAttrs }
 		return &vdom.Attrs { Data: WebUiAdaptMap(attrs) }
 	},
 	"webui-dom-attrs-zero": func(_ Value) *vdom.Attrs {
@@ -252,6 +254,7 @@ var WebUiFunctions = map[string] interface{} {
 		return rx.ReactiveAdapt(r, in)
 	},
 	"webui-dom-events": func(events container.Map) *vdom.Events {
+		if events.IsEmpty() { return __WebUiEmptyEvents }
 		return &vdom.Events { Data: WebUiAdaptMap(events) }
 	},
 	"webui-dom-events-zero": func(_ Value) *vdom.Events {
@@ -263,6 +266,7 @@ var WebUiFunctions = map[string] interface{} {
 	},
 	"webui-dom-children": func(children Value) vdom.Content {
 		var arr = container.ArrayFrom(children)
+		if arr.Length == 0 { return __WebUiEmptyContent }
 		var children_ = make([] *vdom.Node, arr.Length)
 		for i := uint(0); i < arr.Length; i += 1 {
 			children_[i] = arr.GetItem(i).(*vdom.Node)
@@ -278,5 +282,8 @@ var WebUiFunctions = map[string] interface{} {
 	},
 	"webui-event-payload-get-float": func(ev *qt.WebUiEventPayload, key String) float64 {
 		return util.CheckFloat(qt.WebUiEventPayloadGetNumber(ev, RuneSliceFromString(key)))
+	},
+	"webui-event-payload-get-bool": func(ev *qt.WebUiEventPayload, key String) SumValue {
+		return ToBool(qt.WebUiEventPayloadGetBool(ev, RuneSliceFromString(key)))
 	},
 }

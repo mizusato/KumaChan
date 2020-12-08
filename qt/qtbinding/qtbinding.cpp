@@ -265,6 +265,14 @@ double QtVariantMapGetNumber(QtVariantMap m, QtString key) {
     return val;
 }
 
+QtBool QtVariantMapGetBool(QtVariantMap m, QtString key) {
+    QVariantMap* ptr = (QVariantMap*) m.ptr;
+    QString key_ = QtUnwrapString(key);
+    QVariant val_ = (*ptr)[key_];
+    int val = val_.toBool();
+    return val;
+}
+
 void QtDeleteVariantMap(QtVariantMap m) {
     delete (QVariantMap*)(m.ptr);
 }

@@ -1,0 +1,13 @@
+do webui-init 'Checkbox' DOM;
+
+private const DOM: NoExcept*[WebUi::Node]
+    ~ with-reactive* &(ok) := Yes,
+    render (
+        WebQuick::Styled ['container']
+        (WebQuick::Container [
+            WebQuick::Node (dom-node 'style' '.container { padding: 1rem }'),
+            WebQuick::Checkbox ok,
+            WebQuick::TextWatch
+                (ok.watch.map* (&(ok)(if ok: 'checked', else: 'not checked')))
+        ])
+    );

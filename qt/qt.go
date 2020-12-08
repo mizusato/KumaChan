@@ -273,6 +273,11 @@ func VariantMapGetNumber(m VariantMap, key String) float64 {
     return float64(val)
 }
 
+func VariantMapGetBool(m VariantMap, key String) bool {
+    var val = C.QtVariantMapGetBool(C.QtVariantMap(m), C.QtString(key))
+    return (val != 0)
+}
+
 func NewPixmap(data ([] byte), format ImageDataFormat) (Pixmap, func()) {
     var buf = (*C.uint8_t)(unsafe.Pointer(&data[0]))
     var length = C.size_t(uint(len(data)))
@@ -484,6 +489,12 @@ func WebUiEventPayloadGetNumber(ev *WebUiEventPayload, key ([] rune)) float64 {
     var key_str, del = NewStringFromRunes(key)
     defer del()
     return VariantMapGetNumber(ev.Data, key_str)
+}
+
+func WebUiEventPayloadGetBool(ev *WebUiEventPayload, key ([] rune)) bool {
+    var key_str, del = NewStringFromRunes(key)
+    defer del()
+    return VariantMapGetBool(ev.Data, key_str)
 }
 
 func WebUiApplyStyle(id vdom.String, key vdom.String, value vdom.String) {

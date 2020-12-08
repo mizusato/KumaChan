@@ -52,6 +52,10 @@ func NewSet(cmp Compare) Set {
 	return Set { AVL: nil, Cmp: cmp }
 }
 
+func (s Set) IsEmpty() bool {
+	return s.AVL == nil
+}
+
 func (s Set) From(a *avl.AVL) Set {
 	return Set { AVL: a, Cmp: s.Cmp }
 }
@@ -112,6 +116,10 @@ func NewStrMap() Map {
 		var s2 = k2.(String)
 		return StringFastCompare(s1, s2)
 	})
+}
+
+func (m Map) IsEmpty() bool {
+	return m.AVL == nil
 }
 
 func (m Map) From(a *avl.AVL) Map {
