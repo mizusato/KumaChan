@@ -140,6 +140,10 @@ func Show(w Widget) {
     C.QtWidgetShow(w.ptr())
 }
 
+func MoveToScreenCenter(w Widget) {
+    C.QtWidgetMoveToScreenCenter(w.ptr())
+}
+
 func Connect(obj Object, signal string, callback func()) func() {
     var new_str, del_all_str = str_alloc()
     defer del_all_str()
@@ -196,6 +200,25 @@ func Listen(obj Object, kind EventKind, prevent bool, callback func(Event)) func
             del_cb()
         })
     }
+}
+
+func GetPropBool(obj Object, prop string) bool {
+    var new_str, del_all_str = str_alloc()
+    defer del_all_str()
+    var val = C.QtObjectGetPropBool(obj.ptr(), new_str(prop))
+    return (val != 0)
+}
+
+func SetPropBool(obj Object, prop string, val bool) {
+    var new_str, del_all_str = str_alloc()
+    defer del_all_str()
+    var int_val int
+    if val {
+        int_val = 1
+    } else {
+        int_val = 0
+    }
+    C.QtObjectSetPropBool(obj.ptr(), new_str(prop), C.int(int_val))
 }
 
 func GetPropQtString(obj Object, prop string) String {

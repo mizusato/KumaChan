@@ -1,4 +1,5 @@
-do DemoWindow.show;
+do DemoWindow.show
+    | then (DemoWindow.move-to-screen-center);
 
 do DemoWindow.closed
     | concat-map (&(_)(exit 0))

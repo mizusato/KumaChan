@@ -1,4 +1,5 @@
-do Window.show;
+do Window.show
+    | then (Window.move-to-screen-center);
 
 do Window.closed
     | concat-map (&(_)(exit 0))

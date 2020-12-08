@@ -1,4 +1,5 @@
 #include <QApplication>
+#include <QScreen>
 #include <QMetaMethod>
 #include <QDir>
 #include <QFileDialog>
@@ -99,6 +100,23 @@ void QtWidgetShow(void* widget_ptr) {
 void QtWidgetHide(void* widget_ptr) {
     QWidget* widget = (QWidget*) widget_ptr;
     widget->hide();
+}
+
+void QtWidgetMoveToScreenCenter(void* widget_ptr) {
+    QWidget* widget = (QWidget*) widget_ptr;
+    QScreen* screen = QGuiApplication::primaryScreen();
+    widget->move(widget->pos() + (screen->geometry().center() - widget->geometry().center()));
+}
+
+QtBool QtObjectSetPropBool(void* obj_ptr, const char* prop, QtBool val) {
+    QObject* obj = (QObject*) obj_ptr;
+    return obj->setProperty(prop, (val != 0));
+}
+
+QtBool QtObjectGetPropBool(void* obj_ptr, const char* prop) {
+    QObject* obj = (QObject*) obj_ptr;
+    QVariant val = obj->property(prop);
+    return val.toBool();
 }
 
 QtBool QtObjectSetPropString(void* obj_ptr, const char* prop, QtString val) {

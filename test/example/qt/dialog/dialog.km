@@ -1,4 +1,5 @@
-do DialogDemoWindow.show;
+do DialogDemoWindow.show
+    | then (DialogDemoWindow.move-to-screen-center);
 
 do DialogDemoWindow.closed.listen (&(_)(exit 0));
 

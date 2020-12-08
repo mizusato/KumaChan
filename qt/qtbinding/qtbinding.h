@@ -67,6 +67,9 @@ extern "C" {
     void* QtWidgetFindChild(void* widget_ptr, const char* name);
     void QtWidgetShow(void* widget_ptr);
     void QtWidgetHide(void* widget_ptr);
+    void QtWidgetMoveToScreenCenter(void* widget_ptr);
+    QtBool QtObjectSetPropBool(void* obj_ptr, const char* prop, QtBool val);
+    QtBool QtObjectGetPropBool(void* obj_ptr, const char* prop);
     QtBool QtObjectSetPropString(void* obj_ptr, const char* prop, QtString val);
     QtString QtObjectGetPropString(void* obj_ptr, const char* prop);
     QtConnHandle QtConnect(void* obj_ptr, const char* signal, void (*cb)(size_t), size_t payload);

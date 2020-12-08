@@ -90,6 +90,12 @@ var QtFunctions = map[string] interface{} {
 			return nil
 		})
 	},
+	"qt-move-to-screen-center": func(widget qt.Widget) rx.Effect {
+		return CreateQtTaskEffect(func() interface{} {
+			qt.MoveToScreenCenter(widget)
+			return nil
+		})
+	},
 	"qt-signal": func(object qt.Object, signature String, mapper Value, h InteropContext) rx.Effect {
 		var source = QtSignal {
 			Object:     object,
@@ -136,6 +142,8 @@ var QtFunctions = map[string] interface{} {
 		switch t {
 		case "String":
 			return String(StringFromRuneSlice(qt.GetPropRuneString(object, prop)))
+		case "Bool":
+			return ToBool(qt.GetPropBool(object, prop))
 		default:
 			panic(fmt.Sprintf("unsupported Qt property type %s", t))
 		}
@@ -147,6 +155,8 @@ var QtFunctions = map[string] interface{} {
 			switch t {
 			case "String":
 				qt.SetPropRuneString(object, prop, RuneSliceFromString(value.(String)))
+			case "Bool":
+				qt.SetPropBool(object, prop, BoolFrom(value.(SumValue)))
 			default:
 				panic(fmt.Sprintf("unsupported Qt property type %s", t))
 			}

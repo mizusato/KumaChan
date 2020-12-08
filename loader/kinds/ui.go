@@ -15,7 +15,7 @@ import (
 const QtModName = "Qt"
 var __QtSupportedWidgetClassList = [] string {
 	"Widget", "MainWindow", "Label", "LineEdit", "PlainTextEdit",
-	"PushButton", "ListWidget",
+	"PushButton", "CheckBox", "ComboBox", "ListWidget",
 }
 var __QtSupportedWidgetClassMap = (func() map[string] bool {
 	var m = make(map[string] bool)
@@ -31,6 +31,8 @@ var __QtWidgetDefaultNames = map[string] ([] string) {
 	"LineEdit": { "input" },
 	"PlainTextEdit": { "plainTextEdit" },
 	"PushButton": { "button" },
+	"CheckBox": { "checkBox" },
+	"ComboBox": { "comboBox" },
 	"ListWidget": { "listWidget" },
 }
 func QtIsSupportedWidgetClass(name string) bool {
@@ -81,7 +83,10 @@ type QtUiWidget struct {
 	Class     string          `xml:"class,attr"`
 	Children  [] QtUiWidget   `xml:"widget"`
 	Layout    QtUiLayout      `xml:"layout"`
-
+	Actions   [] QtUiAction   `xml:"action"`
+}
+type QtUiAction struct {
+	Name  string   `xml:"name,attr"`
 }
 type QtUiLayout struct {
 	Items  [] QtUiLayoutItem   `xml:"item"`
@@ -112,6 +117,7 @@ func LoadQtUi(path string, content ([] byte), i_config interface{}) (common.Unit
 			Class:    ui.RootWidget.Class,
 			Instance: root_instance,
 		}
+		// TODO: collect ui.RootWidget.Actions
 		var add_children func(def QtUiWidget, instance qt.Widget)
 		add_children = func(def QtUiWidget, instance qt.Widget) {
 			var all_children = make([] QtUiWidget, 0)

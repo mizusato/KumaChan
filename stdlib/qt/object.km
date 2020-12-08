@@ -17,10 +17,22 @@ private function get-property[O < Object, T]: ( &(Static[O],String,String) T )
 private function set-property[T]: ( &(Object,String,String,T) NoExcept[-] )
     native 'qt-set-property';
 
-private function signal[O < Object, T]: ( &(O,String,(&(Static[O])(T))) Signal[T] )
+private function signal [O < Object, T]:
+    ( &(O,String,(&(Static[O])(T))) Signal[T] )
     native 'qt-signal';
-private function signal[T]: ( &(Object,String) Signal[-] )
+
+private function signal [T]:
+    ( &(Object,String) Signal[-] )
     native 'qt-signal-no-payload';
+
+public function bind [Obj < Object, T]:
+    ( &(Obj, Reactive[T], (&(Obj)(Signal[T])), (&(Obj,T)(NoExcept[-])))
+        NoExcept[-] )
+    ( &(obj, @value, get, set)
+        let @get := obj.get.concat-map (&(value)(@value.update (&(_)(value)))),
+        let @set := @value.watch.concat-map (&(value)(obj.set value)),
+        (merge [@get, @set]).forever
+    );
 
 private function event[E]: ( &(Object,String,Bool) Event[E] )
     native 'qt-event';
