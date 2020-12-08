@@ -29,7 +29,7 @@ var __QtWidgetDefaultNames = map[string] ([] string) {
 	"MainWindow": { "MainWindow" },
 	"Label": { "label" },
 	"LineEdit": { "input" },
-	"PlainTextEditor": { "plainTextEdit" },
+	"PlainTextEdit": { "plainTextEdit" },
 	"PushButton": { "button" },
 	"ListWidget": { "listWidget" },
 }
