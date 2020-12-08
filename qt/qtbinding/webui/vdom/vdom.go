@@ -12,7 +12,17 @@ type Map interface {
 	Lookup(String) (interface{}, bool)
 	ForEach(func(String,interface{}))
 }
-func stringEqual(a String, b String) bool {
+func str_equal(a String, b String) bool {
+	if len(a) != len(b) { return false }
+	var L = len(a)
+	for i := 0; i < L; i += 1 {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+func str_limited_equal(a String, b String) bool {
 	const max_chars = 1024
 	if len(a) != len(b) { return false }
 	var L = len(a)
@@ -91,17 +101,6 @@ func get_addr(ptr interface{}) String {
 	return String(fmt.Sprintf("%X", n))
 }
 
-func str_equal(a String, b String) bool {
-	if len(a) != len(b) { return false }
-	var l = len(a)
-	for i := 0; i < l; i += 1 {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
-}
-
 func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 	assert(ctx != nil)
 	assert(old != nil || new != nil)
@@ -141,7 +140,19 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 		}
 		new_styles.Data.ForEach(func(key String, val_ interface{}) {
 			var val = val_.(String)
+			if old != nil {
+				var old_val_, exists = old.Styles.Data.Lookup(key)
+				if exists {
+					if exists {
+						var old_val = old_val_.(String)
+						if str_equal(old_val, val) {
+							goto skip_this_style
+						}
+					}
+				}
+			}
 			ctx.ApplyStyle(id, key, val)
+			skip_this_style:
 		})
 		skip_styles:
 		var new_attrs = new.Attrs
@@ -158,7 +169,17 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 		}
 		new_attrs.Data.ForEach(func(name String, val_ interface{}) {
 			var val = val_.(String)
+			if old != nil {
+				var old_val_, exists = old.Attrs.Data.Lookup(name)
+				if exists {
+					var old_val = old_val_.(String)
+					if str_equal(old_val, val) {
+						goto skip_this_attr
+					}
+				}
+			}
 			ctx.SetAttr(id, name, val)
+			skip_this_attr:
 		})
 		skip_attrs:
 		var new_events = new.Events
@@ -208,7 +229,7 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 		case *Text:
 			if old != nil {
 				var old_content, is_text = old.Content.(*Text)
-				if is_text && stringEqual(*old_content, *new_content) {
+				if is_text && str_limited_equal(*old_content, *new_content) {
 					break
 				}
 			}
@@ -252,3 +273,4 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 		skip_content:
 	}
 }
+
