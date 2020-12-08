@@ -7,11 +7,10 @@ do WebUi::ExitWhenWindowClosed;
 private const DOM: NoExcept*[WebUi::Node]
     ~ with-reactive* &(ok) := Yes,
     render (
-        Q::Styled ['container']
-        (Q::Container [
+        (Q::Styled ['container'] (Q::Container [
             Q::Checkbox ok,
             Q::TextWatch
                 (ok.watch.map* (&(ok)(if ok: 'checked', else: 'not checked'))),
             Q::Button 'toggle' (ok.update (&(ok)(not ok)))
-        ])
+        ]))
     );

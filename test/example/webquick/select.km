@@ -12,13 +12,11 @@ private const CSS: String
 private const DOM: NoExcept*[WebUi::Node]
     ~ with-reactive* &(selection) := 'foo',
     render (
-        Q::Styled ['container']
-        (Q::Container [
-            (Q::Styled ['row']
-            (Q::Container [
+        (Q::Styled ['container'] (Q::Container [
+            (Q::Styled ['row'] (Q::Container [
                 Q::Select selection [('foo','Foo'),('bar','Bar'),('42','42')],
                 Q::TextWatch (selection.watch)
             ])),
             Q::Button 'reset' (selection.update (&(_)('foo')))
-        ])
+        ]))
     );
