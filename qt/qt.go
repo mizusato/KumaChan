@@ -431,9 +431,9 @@ type WebUiEventPayload struct {
 
 var webui_initialized = false
 
-func WebUiInit(title String) {
+func WebUiInit(title String, css String) {
     MakeSureInitialized()
-    C.WebUiInit(C.QtString(title))
+    C.WebUiInit(C.QtString(title), C.QtString(css))
     webui_initialized = true
 }
 

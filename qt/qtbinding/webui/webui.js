@@ -9,6 +9,7 @@
  *  @property {function(handler:string, event:Object): void} EmitEvent
  *  @property {function(): void} LoadFinish
  *  @property {function(size: number): void} UpdateRootFontSize
+ *  @property {function(content: string): void} SetGlobalStyleCSS
  *  @property {Signal.<function(id:string, key:string, value:string): void>} ApplyStyle
  *  @property {Signal.<function(id:string, key:string): void>} EraseStyle
  *  @property {Signal.<function(id:string, name:string, value:string): void>} SetAttr
@@ -24,6 +25,8 @@
  */
 
 const SVGNS = 'http://www.w3.org/2000/svg'
+const S_Root = 'html'
+const S_GlobalStyle = '#__webui_global_style'
 
 /** @type {Object.<string,HTMLElement>} */
 let ElementRegistry = {}
@@ -145,8 +148,12 @@ window.addEventListener('load', _ => {
         ElementRegistry[new_id] = new_el
     })
     bridge.UpdateRootFontSize.connect(size => {
-        document.querySelector('html').style.fontSize = `${size}px`
+        document.querySelector(S_Root).style.fontSize = `${size}px`
+    })
+    bridge.SetGlobalStyleCSS.connect(content => {
+        document.querySelector(S_GlobalStyle).textContent = content
     })
     bridge.LoadFinish()
     console.log('LoadFinish')
 })
+

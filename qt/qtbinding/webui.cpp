@@ -7,9 +7,9 @@
 
 static WebUiWindow* window = nullptr;
 
-void WebUiInit(QtString title) {
+void WebUiInit(QtString title, QtString css) {
     if (window == nullptr) {
-        window = new WebUiWindow(QtUnwrapString(title));
+        window = new WebUiWindow(QtUnwrapString(title), QtUnwrapString(css));
     };
 }
 

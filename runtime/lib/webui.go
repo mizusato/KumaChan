@@ -75,7 +75,12 @@ var __WebUiEmptyStyles = &vdom.Styles { Data: WebUiEmptyMap{} }
 var __WebUiEmptyEvents = &vdom.Events { Data: WebUiEmptyMap{} }
 var __WebUiEmptyContent = &vdom.Children {}
 
-func WebUiInitAndLoad(sched rx.Scheduler, root rx.Effect, title String) {
+func WebUiInitAndLoad (
+	sched  rx.Scheduler,
+	root   rx.Effect,
+	title  String,
+	css    String,
+) {
 	select {
 	case __WebUiLoading <- struct{}{}:
 		qt.MakeSureInitialized()
@@ -84,7 +89,10 @@ func WebUiInitAndLoad(sched rx.Scheduler, root rx.Effect, title String) {
 			var title_runes = RuneSliceFromString(title)
 			var title, del_title = qt.NewStringFromRunes(title_runes)
 			defer del_title()
-			qt.WebUiInit(title)
+			var css_runes = RuneSliceFromString(css)
+			var css, del_css = qt.NewStringFromRunes(css_runes)
+			defer del_css()
+			qt.WebUiInit(title, css)
 			wait <- struct{}{}
 		})
 		<- wait
@@ -154,9 +162,9 @@ var WebUiConstants = map[string] NativeConstant {
 }
 
 var WebUiFunctions = map[string] interface{} {
-	"webui-init": func(title String, root rx.Effect, h InteropContext) rx.Effect {
+	"webui-init": func(title String, css String, root rx.Effect, h InteropContext) rx.Effect {
 		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
-			WebUiInitAndLoad(h.GetScheduler(), root, title)
+			WebUiInitAndLoad(h.GetScheduler(), root, title, css)
 			return nil, true
 		})
 	},

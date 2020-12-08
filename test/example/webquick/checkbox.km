@@ -1,6 +1,6 @@
 import Q from 'rename:WebQuick';
 
-do webui-init 'Checkbox' DOM;
+do webui-init 'Checkbox' '.container { padding: 1rem }' DOM;
 
 do WebUi::ExitWhenWindowClosed;
 
@@ -9,7 +9,6 @@ private const DOM: NoExcept*[WebUi::Node]
     render (
         Q::Styled ['container']
         (Q::Container [
-            Q::Node (dom-node 'style' '.container { padding: 1rem }'),
             Q::Checkbox ok,
             Q::TextWatch
                 (ok.watch.map* (&(ok)(if ok: 'checked', else: 'not checked'))),

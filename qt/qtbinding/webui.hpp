@@ -25,6 +25,7 @@ signals:
     void LoadFinish();
     void EmitEvent(QString handler, QVariantMap event);
     void UpdateRootFontSize(double size);
+    void SetGlobalStyleCSS(QString content);
     void CallMethod(QString id, QString name, QVariantList args);
     void EraseStyle(QString id, QString key);
     void ApplyStyle(QString id, QString key, QString value);
@@ -47,10 +48,11 @@ private:
     QWebView* view;
     QWebPage* page;
     QWebFrame* frame;
+    QString css;
     bool debug;
 public:
     WebUiBridge* bridge;
-    WebUiWindow(QString title): QMainWindow(nullptr), view(nullptr), debug(true) {
+    WebUiWindow(QString title, QString css): QMainWindow(nullptr), view(nullptr), css(css), debug(true) {
         setWindowTitle(title);
         bridge = new WebUiBridge();
         connect(bridge, &WebUiBridge::EmitEvent, this, &WebUiWindow::emitEvent);
@@ -58,6 +60,7 @@ public:
         QScreen *screen = QGuiApplication::primaryScreen();
         connect(screen, &QScreen::geometryChanged, this, &WebUiWindow::updateRootFontSize);
         connect(bridge, &WebUiBridge::LoadFinish, this, &WebUiWindow::updateRootFontSize);
+        connect(bridge, &WebUiBridge::LoadFinish, this, &WebUiWindow::setGlobalStyleCSS);
     }
     void loadView() {
         if (view != nullptr) { return; }
@@ -113,6 +116,9 @@ public slots:
         int minEdgeLength = std::min(screenHeight, screenWidth);
         double fontSize = round(BaseSize * (((double) minEdgeLength) / BaseScreen));
         bridge->UpdateRootFontSize(fontSize);
+    }
+    void setGlobalStyleCSS() {
+        bridge->SetGlobalStyleCSS(css);
     }
 private:
     void openInspector() {
