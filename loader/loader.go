@@ -25,6 +25,7 @@ const ManifestFileName = "module.json"
 const StandaloneScriptModuleName = "Main"
 const SourceSuffix = ".km"
 const StdlibFolder = "stdlib"
+const RenamePrefix = "rename:"
 
 var __UnitFileLoaders = [] common.UnitFileLoader {
 	kinds.QtUiLoader(),
@@ -365,6 +366,19 @@ func LoadRawModule(raw_mod RawModule, ctx Context, idx Index) (*Module, *Error) 
 						Concrete: E_ConflictAlias {
 							LocalAlias: local_alias,
 						},
+					}
+				}
+				if strings.HasPrefix(rel_path, RenamePrefix) {
+					var target = strings.TrimPrefix(rel_path, RenamePrefix)
+					var target_mod, exists = __StdLibIndex[target]
+					if exists {
+						if imported_map[target] != target_mod {
+							panic("something went wrong")
+						}
+						// rename the local alias of a stdlib module
+						delete(imported_map, target)
+						imported_map[local_alias] = target_mod
+						continue
 					}
 				}
 				var im_path string
