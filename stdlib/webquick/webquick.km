@@ -78,7 +78,7 @@ public function render: ( &(Component) NoExcept*[WebUi::Node] )
                 (dom-children (
                     ~ map &(name,desc) := options,
                     dom-node 'option' {
-                        attrs:   (dom-attrs [('name', name)]),
+                        attrs:   (dom-attrs [('value', name)]),
                         content: (dom-text desc)
                     }
                 )),

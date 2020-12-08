@@ -1,0 +1,24 @@
+import Q from 'rename:WebQuick';
+
+do webui-init 'WebQuick Select' CSS DOM;
+
+do WebUi::ExitWhenWindowClosed;
+
+private const CSS: String
+    '.container { padding: 1rem; }' .. \n ..
+    '.row { display: flex; margin: 0.25rem 0; align-items: center; }'  .. \n ..
+    '.row > * { margin: 0 0.25rem; }';
+
+private const DOM: NoExcept*[WebUi::Node]
+    ~ with-reactive* &(selection) := 'foo',
+    render (
+        Q::Styled ['container']
+        (Q::Container [
+            (Q::Styled ['row']
+            (Q::Container [
+                Q::Select selection [('foo','Foo'),('bar','Bar'),('42','42')],
+                Q::TextWatch (selection.watch)
+            ])),
+            Q::Button 'reset' (selection.update (&(_)('foo')))
+        ])
+    );

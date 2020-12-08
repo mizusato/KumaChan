@@ -1,6 +1,6 @@
 import Q from 'rename:WebQuick';
 
-do webui-init 'Checkbox' '.container { padding: 1rem }' DOM;
+do webui-init 'WebQuick Checkbox' '.container { padding: 1rem }' DOM;
 
 do WebUi::ExitWhenWindowClosed;
 
