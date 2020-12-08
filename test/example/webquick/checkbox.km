@@ -2,6 +2,8 @@ import Q from 'rename:WebQuick';
 
 do webui-init 'Checkbox' DOM;
 
+do WebUi::ExitWhenWindowClosed;
+
 private const DOM: NoExcept*[WebUi::Node]
     ~ with-reactive* &(ok) := Yes,
     render (
@@ -10,6 +12,7 @@ private const DOM: NoExcept*[WebUi::Node]
             Q::Node (dom-node 'style' '.container { padding: 1rem }'),
             Q::Checkbox ok,
             Q::TextWatch
-                (ok.watch.map* (&(ok)(if ok: 'checked', else: 'not checked')))
+                (ok.watch.map* (&(ok)(if ok: 'checked', else: 'not checked'))),
+            Q::Button 'toggle' (ok.update (&(ok)(not ok)))
         ])
     );

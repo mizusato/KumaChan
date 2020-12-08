@@ -11,6 +11,7 @@ type Component union {
     type TextInput  weak Reactive[String];
     type Checkbox   weak Reactive[Bool];
     type Select     weak (Reactive[String], Array[(String,String)]);
+    type Button     weak (String, NoExcept[-]);
 };
 
 public function render: ( &(Component) NoExcept*[WebUi::Node] )
@@ -81,5 +82,13 @@ public function render: ( &(Component) NoExcept*[WebUi::Node] )
                         content: (dom-text desc)
                     }
                 )),
+        case Button (text, action):
+            yield (dom-node 'button'
+                (dom-styles [])
+                (dom-attrs [])
+                (dom-event 'click'
+                    (dom-callback (&(_)(action))))
+                (dom-text text)
+            ),
         end
     );
