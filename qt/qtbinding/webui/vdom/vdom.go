@@ -151,7 +151,7 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 				goto skip_attrs
 			}
 			old_attrs.Data.ForEach(func(name String, _ interface{}) {
-				if !(old_attrs.Data.Has(name)) {
+				if !(new_attrs.Data.Has(name)) {
 					ctx.RemoveAttr(id, name)
 				}
 			})
