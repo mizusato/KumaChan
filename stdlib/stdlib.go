@@ -18,7 +18,7 @@ func GetModuleDirectories() ([] string) { return __ModuleDirectories }
 const Core = "Core"
 var core_types = []string {
 	// types.km
-	Float, Number,
+	Float, FloatIEEE, Number,
 	Int64, Uint64, Int32, Uint32, Int16, Uint16, Int8, Uint8,
 	Bool, Yes, No,
 	Maybe, Just, Na,
@@ -37,7 +37,7 @@ var core_types = []string {
 	// time.km
 	Time,
 	// complex.km
-	Complex,
+	Complex, ComplexIEEE,
 	// string.km
 	Char, String,
 	// range.km
@@ -56,6 +56,7 @@ func GetCoreScopedSymbols() []string {
 
 // types.km
 const Float = "Float"
+const FloatIEEE = "Float*"
 const Number = "Number"
 const Int64 = "Int64"
 const Uint64 = "Uint64"
@@ -115,6 +116,7 @@ const HashMap = "HashMap"
 const Time = "Time"
 // complex.km
 const Complex = "Complex"
+const ComplexIEEE = "Complex*"
 // string.km
 const Char = "Char"
 const String = "String"

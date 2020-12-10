@@ -1,10 +1,32 @@
-type Complex native;
+type Complex  native;  // complex128 except NaN and Infinity values
+type Complex* native;  // complex128
+
+public function from: ( &(Complex) Complex* )
+    native 'Complex* from Complex';
+public function check-nan-inf: ( &(Complex*) Maybe[Complex] )
+    native 'check-nan-inf-complex';
 
 public function complex: (&(Float,Float)(Complex)) native 'complex';
 public function   polar: (&(Float,Float)(Complex)) native 'polar';
 
-public function from: ( &(Complex) String)
+public function complex: (&(Float*,Float*)(Complex*)) native 'complex';
+public function   polar: (&(Float*,Float*)(Complex*)) native 'polar';
+
+public function from: (&(Float)(Complex))   (&(x)(complex x 0.0));
+public function from: (&(Float*)(Complex*)) (&(x)(complex x (from 0.0)));
+
+public function from:
+    ( &(Complex) String )
     ( &(z) ("(# + #i)" (get-real(z).str) (get-imag(z).str)) );
+
+public function from:
+    ( &(Complex*) String )
+    ( &(z*)
+        switch (check-nan-inf z*):
+            case Just z: (:String: from z),
+            case N/A:    'INVALID',
+        end
+    );
 
 public function get-conj: (&(Complex)(Complex))  native 'get-conj';
 public function get-real: (&(Complex)(Float))    native 'get-real';
@@ -12,11 +34,11 @@ public function get-imag: (&(Complex)(Float))    native 'get-imag';
 public function get-norm: (&(Complex)(Float))    native 'get-norm';
 public function get-arg:  (&(Complex)(Float))    native 'get-arg';
 
-public function get-conj: (&(Maybe[Complex])(Maybe[Complex]))  native 'get-conj?';
-public function get-real: (&(Maybe[Complex])(Maybe[Float]))    native 'get-real?';
-public function get-imag: (&(Maybe[Complex])(Maybe[Float]))    native 'get-imag?';
-public function get-norm: (&(Maybe[Complex])(Maybe[Float]))    native 'get-norm?';
-public function get-arg:  (&(Maybe[Complex])(Maybe[Float]))    native 'get-arg?';
+public function get-conj: (&(Complex*)(Complex*))  native 'get-conj';
+public function get-real: (&(Complex*)(Float*))    native 'get-real';
+public function get-imag: (&(Complex*)(Float*))    native 'get-imag';
+public function get-norm: (&(Complex*)(Float*))    native 'get-norm';
+public function get-arg:  (&(Complex*)(Float*))    native 'get-arg';
 
 public function +: (&(Complex,Complex)(Complex))  native '+complex';
 public function +: (&(Float,Complex)(Complex))    native 'f+complex';
@@ -32,19 +54,19 @@ public function /: (&(Complex,Complex)(Complex))  native '/complex';
 public function /: (&(Float,Complex)(Complex))    native 'f/complex';
 public function /: (&(Complex,Float)(Complex))    native 'complex/f';
 
-public function +: (&(Maybe[Complex],Maybe[Complex])(Maybe[Complex]))  native '+complex?';
-public function +: (&(Maybe[Float],Maybe[Complex])(Maybe[Complex]))    native 'f+complex?';
-public function +: (&(Maybe[Complex],Maybe[Float])(Maybe[Complex]))    native 'complex+f?';
-public function -: (&(Maybe[Complex],Maybe[Complex])(Maybe[Complex]))  native '-complex?';
-public function -: (&(Maybe[Float],Maybe[Complex])(Maybe[Complex]))    native 'f-complex?';
-public function -: (&(Maybe[Complex],Maybe[Float])(Maybe[Complex]))    native 'complex-f?';
-public function -: (&(Maybe[Complex])(Maybe[Complex]))                 (&(z)$((Just 0.0) - z));
-public function *: (&(Maybe[Complex],Maybe[Complex])(Maybe[Complex]))  native '*complex?';
-public function *: (&(Maybe[Float],Maybe[Complex])(Maybe[Complex]))    native 'f*complex?';
-public function *: (&(Maybe[Complex],Maybe[Float])(Maybe[Complex]))    native 'complex*f?';
-public function /: (&(Maybe[Complex],Maybe[Complex])(Maybe[Complex]))  native '/complex?';
-public function /: (&(Maybe[Float],Maybe[Complex])(Maybe[Complex]))    native 'f/complex?';
-public function /: (&(Maybe[Complex],Maybe[Float])(Maybe[Complex]))    native 'complex/f?';
+public function +: (&(Complex*,Complex*)(Complex*))  native '+complex!';
+public function +: (&(Float*,Complex*)(Complex*))    native 'f+complex!';
+public function +: (&(Complex*,Float*)(Complex*))    native 'complex+f!';
+public function -: (&(Complex*,Complex*)(Complex*))  native '-complex!';
+public function -: (&(Float*,Complex*)(Complex*))    native 'f-complex!';
+public function -: (&(Complex*,Float*)(Complex*))    native 'complex-f!';
+public function -: (&(Complex*)(Complex*))           (&(z)$((:Float*: from 0.0) - z));
+public function *: (&(Complex*,Complex*)(Complex*))  native '*complex!';
+public function *: (&(Float*,Complex*)(Complex*))    native 'f*complex!';
+public function *: (&(Complex*,Float*)(Complex*))    native 'complex*f!';
+public function /: (&(Complex*,Complex*)(Complex*))  native '/complex!';
+public function /: (&(Float*,Complex*)(Complex*))    native 'f/complex!';
+public function /: (&(Complex*,Float*)(Complex*))    native 'complex/f!';
 
 public function sqrt: (&(Complex)(Complex))  native 'complex-sqrt';
 public function cbrt: (&(Complex)(Complex))  native 'complex-cbrt';
@@ -57,13 +79,13 @@ public function asin: (&(Complex)(Complex))  native 'complex-asin';
 public function acos: (&(Complex)(Complex))  native 'complex-acos';
 public function atan: (&(Complex)(Complex))  native 'complex-atan';
 
-public function sqrt: (&(Maybe[Complex])(Maybe[Complex]))  native 'complex-sqrt?';
-public function cbrt: (&(Maybe[Complex])(Maybe[Complex]))  native 'complex-cbrt?';
-public function  exp: (&(Maybe[Complex])(Maybe[Complex]))  native 'complex-exp?';
-public function  log: (&(Maybe[Complex])(Maybe[Complex]))  native 'complex-log?';
-public function  sin: (&(Maybe[Complex])(Maybe[Complex]))  native 'complex-sin?';
-public function  cos: (&(Maybe[Complex])(Maybe[Complex]))  native 'complex-cos?';
-public function  tan: (&(Maybe[Complex])(Maybe[Complex]))  native 'complex-tan?';
-public function asin: (&(Maybe[Complex])(Maybe[Complex]))  native 'complex-asin?';
-public function acos: (&(Maybe[Complex])(Maybe[Complex]))  native 'complex-acos?';
-public function atan: (&(Maybe[Complex])(Maybe[Complex]))  native 'complex-atan?';
+public function sqrt: (&(Complex*)(Complex*))  native 'complex-sqrt!';
+public function cbrt: (&(Complex*)(Complex*))  native 'complex-cbrt!';
+public function  exp: (&(Complex*)(Complex*))  native 'complex-exp!';
+public function  log: (&(Complex*)(Complex*))  native 'complex-log!';
+public function  sin: (&(Complex*)(Complex*))  native 'complex-sin!';
+public function  cos: (&(Complex*)(Complex*))  native 'complex-cos!';
+public function  tan: (&(Complex*)(Complex*))  native 'complex-tan!';
+public function asin: (&(Complex*)(Complex*))  native 'complex-asin!';
+public function acos: (&(Complex*)(Complex*))  native 'complex-acos!';
+public function atan: (&(Complex*)(Complex*))  native 'complex-atan!';

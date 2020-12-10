@@ -37,12 +37,12 @@ public function * :(&(Float,Float)(Float))  native '*Float';
 public function / :(&(Float,Float)(Float))  native '/Float';
 public function % :(&(Float,Float)(Float))  native '%Float';
 
-public function + :(&(Maybe[Float],Maybe[Float])(Maybe[Float]))  native '+Float?';
-public function - :(&(Maybe[Float],Maybe[Float])(Maybe[Float]))  native '-Float?';
-public function - :(&(Maybe[Float])(Maybe[Float]))               (&(x)$((Just 0.0) - x));
-public function * :(&(Maybe[Float],Maybe[Float])(Maybe[Float]))  native '*Float?';
-public function / :(&(Maybe[Float],Maybe[Float])(Maybe[Float]))  native '/Float?';
-public function % :(&(Maybe[Float],Maybe[Float])(Maybe[Float]))  native '%Float?';
+public function + :(&(Float*,Float*)(Float*))  native '+Float!';
+public function - :(&(Float*,Float*)(Float*))  native '-Float!';
+public function - :(&(Float*)(Float*))         (&(x)$((:Float*: from 0.0) - x));
+public function * :(&(Float*,Float*)(Float*))  native '*Float!';
+public function / :(&(Float*,Float*)(Float*))  native '/Float!';
+public function % :(&(Float*,Float*)(Float*))  native '%Float!';
 
 public function + :(&(Int8,Int8)(Int8))  native '+Int8';
 public function - :(&(Int8,Int8)(Int8))  native '-Int8';

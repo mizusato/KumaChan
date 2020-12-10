@@ -5,6 +5,7 @@
 
 // Basic Numeric Types
 type Float   native;  // float64 except NaN and Infinity values
+type Float*  native;  // float64
 type Number  native;  // uint (size_t), with overflow/underflow checking
 type Int8    native;  // int8
 type Int16   native;  // int16
@@ -14,6 +15,12 @@ type Uint8   native;  // uint8
 type Uint16  native;  // uint16
 type Uint32  native;  // uint32
 type Uint64  native;  // uint64
+
+// Float <-> Float*
+public function from: ( &(Float) Float* )
+    native 'Float* from Float';
+public function check-nan-inf: ( &(Float*) Maybe[Float] )
+    native 'check-nan-inf-float';
 
 // Basic Sum Types
 type Bool union {
@@ -34,7 +41,7 @@ type Ordering union {
     type >>;
 };
 
-// Casting
+// Type Cast
 type Cast[T,U] implicit {
     from: (& T U)
 };
@@ -51,6 +58,9 @@ public function maybe[A,B]:  ( &(Maybe[A],(&(A)(B))) Maybe[B] )
             N/A,
         end
     );
+
+
+// -----------
 
 public function maybe?[A,B]: ( &(Maybe[A],(&(A)(Maybe[B]))) Maybe[B] )
     ( &(v?, k)

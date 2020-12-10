@@ -10,6 +10,13 @@ public function str[T]: implicit[Cast[T,String]] (&(T)(String))
 public function from: (&(Char)(String))    native 'String from Char';
 public function from: (&(Number)(String))  native 'String from Number';
 public function from: (&(Float)(String))   native 'String from Float';
+public function from: (&(Float*)(String))
+    ( &(x*)
+        switch (check-nan-inf x*):
+            case Just x: (:String: from x),
+            case N/A:    'INVALID',
+        end
+    );
 
 // encodes string into UTF-8 byte sequence
 public function encode:  (&(String)(Bytes))         native 'encode-utf8';
