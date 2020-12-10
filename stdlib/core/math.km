@@ -17,6 +17,21 @@ public function cbrt: (&(Float)(Float))  native 'real-cbrt';
 public function  exp: (&(Float)(Float))  native 'real-exp';
 public function  log: (&(Float)(Float))  native 'real-log';
 
+public function ** :(&(Maybe[Float],Maybe[Float])(Maybe[Float]))  native 'real-**?';
+
+public function  sin: (&(Maybe[Float])(Maybe[Float]))  native 'real-sin?';
+public function  cos: (&(Maybe[Float])(Maybe[Float]))  native 'real-cos?';
+public function  tan: (&(Maybe[Float])(Maybe[Float]))  native 'real-tan?';
+public function asin: (&(Maybe[Float])(Maybe[Float]))  native 'real-asin?';
+public function acos: (&(Maybe[Float])(Maybe[Float]))  native 'real-acos?';
+public function atan: (&(Maybe[Float])(Maybe[Float]))  native 'real-atan?';
+public function atan2: (&({ y:Maybe[Float], x:Maybe[Float] })(Maybe[Float]))  native 'atan2?';
+
+public function sqrt: (&(Maybe[Float])(Maybe[Float]))  native 'real-sqrt?';
+public function cbrt: (&(Maybe[Float])(Maybe[Float]))  native 'real-cbrt?';
+public function  exp: (&(Maybe[Float])(Maybe[Float]))  native 'real-exp?';
+public function  log: (&(Maybe[Float])(Maybe[Float]))  native 'real-log?';
+
 public function log: ( & { base:Float, x:Float } Float )
     ( & {base,x} $((log x) / (log base)) );
 public function log2: ( &(Float) Float )

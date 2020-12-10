@@ -120,34 +120,34 @@ func RegisterRawTypes(mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 	var bounds_map = make(map[uint] ([] ast.TypeBound))
 	var case_parent_map = make(map[uint]uint)
 	var case_index_map = make(map[uint]uint)
+	var process_decl_stmt func(ast.DeclType) *TypeDeclError
+	process_decl_stmt = func(s ast.DeclType) *TypeDeclError {
+		var i = uint(len(decls))
+		decls = append(decls, s)
+		var params, bounds, err, err_node = CollectTypeParams(s.Params)
+		if err != nil { return &TypeDeclError {
+			Point:    ErrorPointFrom(err_node),
+			Concrete: *err,
+		} }
+		params_map[i] = params
+		bounds_map[i] = bounds
+		switch u := s.TypeValue.TypeValue.(type) {
+		case ast.UnionType:
+			for case_index, case_decl := range u.Cases {
+				var case_i = uint(len(decls))
+				var err = process_decl_stmt(case_decl)
+				if err != nil { return err }
+				case_index_map[case_i] = uint(case_index)
+				case_parent_map[case_i] = i
+			}
+		}
+		return nil
+	}
 	for _, stmt := range mod.Node.Statements {
 		switch s := stmt.Statement.(type) {
 		case ast.DeclType:
-			var i = uint(len(decls))
-			decls = append(decls, s)
-			var params, bounds, err, err_node = CollectTypeParams(s.Params)
-			if err != nil { return &TypeDeclError {
-				Point:    ErrorPointFrom(err_node),
-				Concrete: *err,
-			} }
-			params_map[i] = params
-			bounds_map[i] = bounds
-			switch u := s.TypeValue.TypeValue.(type) {
-			case ast.UnionType:
-				for case_index, case_decl := range u.Cases {
-					var case_i = uint(len(decls))
-					decls = append(decls, case_decl)
-					var params, bounds, err, err_node = CollectTypeParams(case_decl.Params)
-					if err != nil { return &TypeDeclError {
-						Point:    ErrorPointFrom(err_node),
-						Concrete: *err,
-					} }
-					params_map[case_i] = params
-					bounds_map[case_i] = bounds
-					case_index_map[case_i] = uint(case_index)
-					case_parent_map[case_i] = i
-				}
-			}
+			var err = process_decl_stmt(s)
+			if err != nil { return err }
 		}
 	}
 	// 3. Go through all type declarations
