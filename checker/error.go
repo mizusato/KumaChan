@@ -808,6 +808,13 @@ func (e E_TypeErrorInExpr) ExprErrorDesc() ErrorMessage {
 	return e.TypeError.Desc()
 }
 
+type E_SuperfluousTypeArgs struct {}
+func (e E_SuperfluousTypeArgs) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Superfluous type arguments")
+	return msg
+}
+
 type E_InvalidSwitchArgType struct {
 	ArgType  string
 }

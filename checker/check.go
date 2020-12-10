@@ -123,6 +123,8 @@ func (impl SymType) Sym() {}
 type SymType struct { Type *GenericType; Name loader.Symbol; ForceExact bool }
 func (impl SymFunctions) Sym() {}
 type SymFunctions struct { Functions []*GenericFunction; Name string }
+func (impl SymLocalAndFunc) Sym() {}
+type SymLocalAndFunc struct { Local SymLocalValue; Func SymFunctions }
 
 
 func CreateExprContext(mod_info ModuleInfo, params ([] TypeParam), bounds TypeBounds) ExprContext {
@@ -192,18 +194,7 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 		}
 		return nil, false
 	}
-	var mod_name = raw.ModuleName
-	var sym_name = raw.SymbolName
-	if mod_name == "" {
-		local, exists := ctx.LocalValues[sym_name]
-		if exists {
-			return SymLocalValue { ValueType: local }, true
-		}
-		for index, param := range ctx.TypeParams {
-			if param.Name == sym_name {
-				return SymTypeParam { Index: uint(index) }, true
-			}
-		}
+	var lookup_functions = func(sym_name string) (SymFunctions, bool) {
 		var real_sym_name = sym_name
 		f_refs, exists := ctx.ModuleInfo.Functions[sym_name]
 		if !exists &&
@@ -216,7 +207,7 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 			}
 		}
 		if exists {
-			var functions = make([]*GenericFunction, len(f_refs))
+			var functions = make([] *GenericFunction, len(f_refs))
 			for i, ref := range f_refs {
 				functions[i] = ref.Function
 			}
@@ -224,6 +215,32 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 				Name:      real_sym_name,
 				Functions: functions,
 			}, true
+		}
+		return SymFunctions{}, false
+	}
+	var mod_name = raw.ModuleName
+	var sym_name = raw.SymbolName
+	if mod_name == "" {
+		local, exists := ctx.LocalValues[sym_name]
+		if exists {
+			functions, exists := lookup_functions(sym_name)
+			if exists {
+				return SymLocalAndFunc {
+					Local: SymLocalValue { ValueType: local },
+					Func:  functions,
+				}, true
+			} else {
+				return SymLocalValue { ValueType: local }, true
+			}
+		}
+		for index, param := range ctx.TypeParams {
+			if param.Name == sym_name {
+				return SymTypeParam { Index: uint(index) }, true
+			}
+		}
+		functions, exists := lookup_functions(sym_name)
+		if exists {
+			return functions, true
 		}
 		var self = ctx.ModuleInfo.Module.Name
 		var sym_this_mod = loader.NewSymbol(self, sym_name)

@@ -25,6 +25,11 @@ type UntypedRefToFunctions struct {
 	FuncName   string
 	Functions  [] *GenericFunction
 }
+func (impl UntypedRefToFunctionsAndLocalValue) UntypedRefBody() {}
+type UntypedRefToFunctionsAndLocalValue struct {
+	RefToFunctions   UntypedRefToFunctions
+	RefToLocalValue  Expr
+}
 
 type Ref interface { ExprVal; Ref() }
 
@@ -145,6 +150,10 @@ func CheckRef(ref ast.InlineRef, ctx ExprContext) (SemiExpr, *ExprError) {
 	}
 	switch s := sym_concrete.(type) {
 	case SymLocalValue:
+		if len(type_args) > 0 { return SemiExpr{}, &ExprError {
+			Point:    info.ErrorPoint,
+			Concrete: E_SuperfluousTypeArgs {},
+		} }
 		return LiftTyped(Expr {
 			Type:  s.ValueType,
 			Value: RefLocal { symbol.SymbolName },
@@ -184,6 +193,37 @@ func CheckRef(ref ast.InlineRef, ctx ExprContext) (SemiExpr, *ExprError) {
 			},
 			Info:  info,
 		}, nil
+	case SymLocalAndFunc:
+		if len(type_args) > 0 {
+			return SemiExpr {
+				Value: UntypedRef {
+					RefBody:  UntypedRefToFunctions {
+						FuncName:  s.Func.Name,
+						Functions: s.Func.Functions,
+					},
+					TypeArgs: type_args,
+				},
+				Info:  info,
+			}, nil
+		} else {
+			return SemiExpr {
+				Value: UntypedRef {
+					RefBody:  UntypedRefToFunctionsAndLocalValue {
+						RefToFunctions:  UntypedRefToFunctions {
+							FuncName:  s.Func.Name,
+							Functions: s.Func.Functions,
+						},
+						RefToLocalValue: Expr {
+							Type:  s.Local.ValueType,
+							Value: RefLocal { symbol.SymbolName },
+							Info:  info,
+						},
+					},
+					TypeArgs: type_args,
+				},
+				Info:  info,
+			}, nil
+		}
 	default:
 		panic("impossible branch")
 	}
@@ -218,6 +258,18 @@ func AssignRefTo(expected Type, ref UntypedRef, info ExprInfo, ctx ExprContext) 
 		return OverloadedAssignTo (
 			expected, functions, name, type_args, info, ctx,
 		)
+	case UntypedRefToFunctionsAndLocalValue:
+		var local = r.RefToLocalValue
+		var expr, err = TypedAssignTo(expected, local, ctx)
+		if err == nil {
+			return expr, nil
+		} else {
+			var functions = UntypedRef {
+				RefBody:  r.RefToFunctions,
+				TypeArgs: ref.TypeArgs,
+			}
+			return AssignRefTo(expected, functions, info, ctx)
+		}
 	default:
 		panic("impossible branch")
 	}
@@ -251,6 +303,18 @@ func CallUntypedRef (
 			functions, name, type_args,
 			arg, ref_info, call_info, ctx,
 		)
+	case UntypedRefToFunctionsAndLocalValue:
+		var local = ref_body.RefToLocalValue
+		var expr, err = CallTyped(local, arg, call_info, ctx)
+		if err == nil {
+			return LiftTyped(expr), nil
+		} else {
+			var functions = UntypedRef {
+				RefBody:  ref_body.RefToFunctions,
+				TypeArgs: ref.TypeArgs,
+			}
+			return CallUntypedRef(arg, functions, ref_info, call_info, ctx)
+		}
 	default:
 		panic("impossible branch")
 	}

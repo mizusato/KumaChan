@@ -30,28 +30,9 @@ func CheckCall(call ast.Call, ctx ExprContext) (SemiExpr, *ExprError) {
 		var f_info = callee.Info
 		switch f := callee.Value.(type) {
 		case TypedExpr:
-			var t = f.Type
-			var r, ok = UnboxFunc(t, ctx).(Func)
-			if ok {
-				var arg_typed, err = AssignTo(r.Input, arg, ctx)
-				if err != nil { return SemiExpr{}, err }
-				var typed = Expr {
-					Type:  r.Output,
-					Value: Call {
-						Function: Expr(f),
-						Argument: arg_typed,
-					},
-					Info:  info,
-				}
-				return LiftTyped(typed), nil
-			} else {
-				return SemiExpr{}, &ExprError {
-					Point:    f_info.ErrorPoint,
-					Concrete: E_ExprTypeNotCallable {
-						Type: ctx.DescribeType(t),
-					},
-				}
-			}
+			var expr, err = CallTyped(Expr(f), arg, info, ctx)
+			if err != nil { return SemiExpr{}, err }
+			return LiftTyped(expr), nil
 		case UntypedLambda:
 			var typed, err = CallUntypedLambda(arg, f, f_info, info, ctx)
 			if err != nil { return SemiExpr{}, err }
@@ -77,6 +58,30 @@ func CheckCall(call ast.Call, ctx ExprContext) (SemiExpr, *ExprError) {
 
 func CheckInfix(infix ast.Infix, ctx ExprContext) (SemiExpr, *ExprError) {
 	return CheckCall(DesugarInfix(infix), ctx)
+}
+
+func CallTyped(f Expr, arg SemiExpr, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
+	var r, ok = UnboxFunc(f.Type, ctx).(Func)
+	if ok {
+		var arg_typed, err = AssignTo(r.Input, arg, ctx)
+		if err != nil { return Expr{}, err }
+		var typed = Expr {
+			Type:  r.Output,
+			Value: Call {
+				Function: Expr(f),
+				Argument: arg_typed,
+			},
+			Info:  info,
+		}
+		return typed, nil
+	} else {
+		return Expr{}, &ExprError {
+			Point:    f.Info.ErrorPoint,
+			Concrete: E_ExprTypeNotCallable {
+				Type: ctx.DescribeType(f.Type),
+			},
+		}
+	}
 }
 
 
