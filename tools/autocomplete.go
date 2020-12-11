@@ -1,8 +1,10 @@
 package tools
 
 import (
+	"os"
 	"fmt"
 	"strings"
+	"path/filepath"
 	"kumachan/parser/syntax"
 	"kumachan/loader"
 	"kumachan/parser/ast"
@@ -145,11 +147,16 @@ func AutoComplete(req AutoCompleteRequest, ctx ServerContext) AutoCompleteRespon
 				})
 			}
 		case ast.DeclFunction:
-			if !(input_mod == "") {
-				return
-			}
-			if !(mod == "" || s.Public) {
-				return
+			if input_mod == "" {
+				// lookup in all modules
+				if !(mod == "" || (mod != "" && s.Public)) {
+					return
+				}
+			} else {
+				// lookup in a specific module
+				if !(input_mod == mod) {
+					return
+				}
 			}
 			if !(quick_check(s.Name)) {
 				return
@@ -168,8 +175,18 @@ func AutoComplete(req AutoCompleteRequest, ctx ServerContext) AutoCompleteRespon
 		}
 	}
 	if (input_mod == "" && len(input) >= 2) || input_mod != "" {
+		var dir = filepath.Dir(req.CurrentPath)
+		var manifest_path = filepath.Join(dir, loader.ManifestFileName)
+		var mod_path string
+		var mf, err_mf = os.Open(manifest_path)
+		if err_mf != nil {
+			mod_path = req.CurrentPath
+		} else {
+			mod_path = dir
+			_ = mf.Close()
+		}
 		var mod, idx, err =
-			loader.LoadEntryWithCache(req.CurrentPath, ctx.LoaderCache)
+			loader.LoadEntryWithCache(mod_path, ctx.LoaderCache)
 		if err != nil { goto keywords }
 		for _, item := range mod.Node.Statements {
 			process_statement(item.Statement, "")
