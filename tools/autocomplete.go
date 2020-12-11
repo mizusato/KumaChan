@@ -9,6 +9,7 @@ import (
 	"kumachan/loader"
 	"kumachan/parser/ast"
 	"kumachan/stdlib"
+	"sort"
 )
 
 
@@ -244,7 +245,7 @@ func AutoComplete(req AutoCompleteRequest, ctx ServerContext) AutoCompleteRespon
 	keywords:
 	if len(input) > 0 && input_mod == "" {
 		for _, kw := range Keywords {
-			if strings.HasPrefix(kw, input) {
+			if len(kw) > 1 && strings.HasPrefix(kw, input) {
 				suggestions = append(suggestions, AutoCompleteSuggestion {
 					Text:    kw,
 					Replace: input,
@@ -253,6 +254,23 @@ func AutoComplete(req AutoCompleteRequest, ctx ServerContext) AutoCompleteRespon
 			}
 		}
 	}
+	sort.SliceStable(suggestions, func(i, j int) bool {
+		var a = suggestions[i]
+		var b = suggestions[j]
+		if a.Type == b.Type {
+			return a.Text < b.Text
+		} else if a.Type == "keyword" {
+			return false
+		} else if b.Type == "keyword" {
+			return true
+		} else if a.Type == "function" {
+			return false
+		} else if b.Type == "function" {
+			return true
+		} else {
+			return a.Text < b.Text
+		}
+	})
 	return AutoCompleteResponse { Suggestions: suggestions }
 }
 
