@@ -17,7 +17,7 @@ public function from: (&(Float*)(Complex*)) (&(x)(complex x (from 0.0)));
 
 public function from:
     ( &(Complex) String )
-    ( &(z) ("(# + #i)" (get-real(z).str) (get-imag(z).str)) );
+    ( &(z) ("(# + #i)" (z.<real>.str) (z.<imag>.str)) );
 
 public function from:
     ( &(Complex*) String )
@@ -28,17 +28,17 @@ public function from:
         end
     );
 
-public function get-conj: (&(Complex)(Complex))  native 'get-conj';
-public function get-real: (&(Complex)(Float))    native 'get-real';
-public function get-imag: (&(Complex)(Float))    native 'get-imag';
-public function get-norm: (&(Complex)(Float))    native 'get-norm';
-public function get-arg:  (&(Complex)(Float))    native 'get-arg';
+public function <conj>: (&(Complex)(Complex))  native '<conj>';
+public function <real>: (&(Complex)(Float))    native '<real>';
+public function <imag>: (&(Complex)(Float))    native '<imag>';
+public function <norm>: (&(Complex)(Float))    native '<norm>';
+public function <arg>:  (&(Complex)(Float))    native '<arg>';
 
-public function get-conj: (&(Complex*)(Complex*))  native 'get-conj';
-public function get-real: (&(Complex*)(Float*))    native 'get-real';
-public function get-imag: (&(Complex*)(Float*))    native 'get-imag';
-public function get-norm: (&(Complex*)(Float*))    native 'get-norm';
-public function get-arg:  (&(Complex*)(Float*))    native 'get-arg';
+public function <conj>: (&(Complex*)(Complex*))  native '<conj>';
+public function <real>: (&(Complex*)(Float*))    native '<real>';
+public function <imag>: (&(Complex*)(Float*))    native '<imag>';
+public function <norm>: (&(Complex*)(Float*))    native '<norm>';
+public function <arg>:  (&(Complex*)(Float*))    native '<arg>';
 
 public function +: (&(Complex,Complex)(Complex))  native '+complex';
 public function +: (&(Float,Complex)(Complex))    native 'f+complex';

@@ -318,21 +318,21 @@ var MathFunctions = map[string] interface{} {
 			panic("negative norm")
 		}
 	},
-	"get-real": func(z complex128) float64 {
+	"<real>": func(z complex128) float64 {
 		return real(z)
 	},
-	"get-imag": func(z complex128) float64 {
+	"<imag>": func(z complex128) float64 {
 		return imag(z)
 	},
-	"get-conj": func(z complex128) complex128 {
+	"<conj>": func(z complex128) complex128 {
 		var re, im = real(z), imag(z)
 		return complex(re, -im)
 	},
-	"get-norm": func(z complex128) float64 {
+	"<norm>": func(z complex128) float64 {
 		var re, im = real(z), imag(z)
 		return math.Sqrt((re * re) + (im * im))
 	},
-	"get-arg": func(z complex128) float64 {
+	"<arg>": func(z complex128) float64 {
 		var re, im = real(z), imag(z)
 		return math.Atan2(im, re)
 	},
