@@ -357,11 +357,6 @@ type E_ConflictImplicitContextField struct {
 func (impl E_ImplicitContextOnNativeFunction) FunctionError() {}
 type E_ImplicitContextOnNativeFunction struct {}
 
-func (E_SignatureNonLocal) FunctionError() {}
-type E_SignatureNonLocal struct {
-	FuncName  string
-}
-
 func (E_InvalidOverload) FunctionError() {}
 type E_InvalidOverload struct {
 	BetweenLocal  bool
@@ -395,10 +390,6 @@ func (err *FunctionError) Desc() ErrorMessage {
 		msg.WriteEndText(TS_INLINE_CODE, e.FieldName)
 	case E_ImplicitContextOnNativeFunction:
 		msg.WriteText(TS_ERROR, "Cannot use implicit context on a native function")
-	case E_SignatureNonLocal:
-		msg.WriteText(TS_ERROR, "Function")
-		msg.WriteInnerText(TS_INLINE_CODE, e.FuncName)
-		msg.WriteText(TS_ERROR, "is declared to be public but has a non-local signature type")
 	case E_InvalidOverload:
 		msg.WriteText(TS_ERROR, "Cannot overload this function instance with the signature")
 		msg.WriteInnerText(TS_INLINE_CODE, e.AddedSig)

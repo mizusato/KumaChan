@@ -1,5 +1,3 @@
-type ConsoleIO[T] protected Effect[T,I/O::Error];
-
 public const  Stdin: FileReadOnly
     native 'OS::Stdin';
 public const Stdout: FileWriteOnly
@@ -7,28 +5,28 @@ public const Stdout: FileWriteOnly
 public const Stderr: FileWriteOnly
     native 'OS::Stderr';
 
-public function scan:  (&()(ConsoleIO[String]))
-    (&(_)(ConsoleIO (
+public function scan:  (&()(Effect[String,I/O::Error]))
+    ( &(_)
         let read := OS::Stdin | read-string,
         if $(OS::Kind = 'windows'):
             read | map (&(str)(str.trim-suffix ''..\r)),
         else:
             read
-    )));
-public function print: (&(String)(ConsoleIO[-]))
-    (&(line)(ConsoleIO (OS::Stdout | write-string line)));
-public function error: (&(String)(ConsoleIO[-]))
-    (&(line)(ConsoleIO (OS::Stderr | write-string line)));
+    );
+public function print: (&(String)(Effect[-,I/O::Error]))
+    (&(line)(OS::Stdout | write-string line));
+public function error: (&(String)(Effect[-,I/O::Error]))
+    (&(line)(OS::Stderr | write-string line));
 
-public function scanln:  (&()(ConsoleIO[String]))
-    (&(_)(ConsoleIO (
+public function scanln:  (&()(Effect[String,I/O::Error]))
+    ( &(_)
         let read := OS::Stdin | read-line,
         if $(OS::Kind = 'windows'):
             read | map (&(str)(str.trim-suffix ''..\r)),
         else:
             read
-    )));
-public function println: (&(String)(ConsoleIO[-]))
-    (&(line)(ConsoleIO (OS::Stdout | write-line line)));
-public function errorln: (&(String)(ConsoleIO[-]))
-    (&(line)(ConsoleIO (OS::Stderr | write-line line)));
+    );
+public function println: (&(String)(Effect[-,I/O::Error]))
+    (&(line)(OS::Stdout | write-line line));
+public function errorln: (&(String)(Effect[-,I/O::Error]))
+    (&(line)(OS::Stderr | write-line line));

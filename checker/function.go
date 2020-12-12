@@ -227,29 +227,20 @@ func CollectFunctions (
 					}
 				}
 			}
-			// 3.5. If the function is public, ensure its signature type
-			//        to be a local type of this module.
-			var is_public = decl.Public
-			if is_public && !(IsExportable(mod_name, sig, implicit_fields, bounds)) {
-				return nil, &FunctionError {
-					Point:    ErrorPointFrom(decl.Repr.Node),
-					Concrete: E_SignatureNonLocal { name },
-				}
-			}
-			// 3.6. Construct a representation and a reference of the function
+			// 3.5. Construct a representation and a reference of the function
 			var func_type = sig.(*AnonymousType).Repr.(Func)
 			var f = &GenericFunction {
-				Public:       is_public,
+				Public:       decl.Public,
 				TypeParams:   params,
 				Implicit:     implicit_fields,
 				DeclaredType: func_type,
 				Body:         decl.Body.Body,
 				Node:         decl.Node,
 			}
-			// 3.7. Check if the name of the function is in use
+			// 3.6. Check if the name of the function is in use
 			var existing, exists = collection[name]
 			if exists {
-				// 3.7.1. If in use, try to overload it
+				// 3.6.1. If in use, try to overload it
 				var index_offset = index_offset_map[name]
 				var err_point = ErrorPointFrom(decl.Name.Node)
 				var err = ValidateOverload(
@@ -266,7 +257,7 @@ func CollectFunctions (
 					Index:      uint(len(existing)) - index_offset,
 				})
 			} else {
-				// 3.7.2. If not, collect the function
+				// 3.6.2. If not, collect the function
 				collection[name] = [] FunctionReference { {
 					IsImported: false,
 					Function:   f,
@@ -281,3 +272,4 @@ func CollectFunctions (
 	// 5. Return all collected functions of the current module
 	return collection, nil
 }
+
