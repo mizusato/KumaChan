@@ -275,7 +275,7 @@ QtString QtVariantMapGetString(QtVariantMap m, QtString key) {
     return val;
 }
 
-double QtVariantMapGetNumber(QtVariantMap m, QtString key) {
+double QtVariantMapGetFloat(QtVariantMap m, QtString key) {
     QVariantMap* ptr = (QVariantMap*) m.ptr;
     QString key_ = QtUnwrapString(key);
     QVariant val_ = (*ptr)[key_];

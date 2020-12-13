@@ -305,7 +305,11 @@ var WebUiFunctions = map[string] interface{} {
 		return StringFromRuneSlice(qt.WebUiEventPayloadGetRunes(ev, RuneSliceFromString(key)))
 	},
 	"webui-event-payload-get-float": func(ev *qt.WebUiEventPayload, key String) float64 {
-		return util.CheckFloat(qt.WebUiEventPayloadGetNumber(ev, RuneSliceFromString(key)))
+		return util.CheckFloat(qt.WebUiEventPayloadGetFloat(ev, RuneSliceFromString(key)))
+	},
+	"webui-event-payload-get-number": func(ev *qt.WebUiEventPayload, key String) uint {
+		var x = util.CheckFloat(qt.WebUiEventPayloadGetFloat(ev, RuneSliceFromString(key)))
+		return uint(x)
 	},
 	"webui-event-payload-get-bool": func(ev *qt.WebUiEventPayload, key String) SumValue {
 		return ToBool(qt.WebUiEventPayloadGetBool(ev, RuneSliceFromString(key)))

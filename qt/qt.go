@@ -295,8 +295,8 @@ func VariantMapGetRunes(m VariantMap, key String) ([] rune) {
     return val_runes
 }
 
-func VariantMapGetNumber(m VariantMap, key String) float64 {
-    var val = C.QtVariantMapGetNumber(C.QtVariantMap(m), C.QtString(key))
+func VariantMapGetFloat(m VariantMap, key String) float64 {
+    var val = C.QtVariantMapGetFloat(C.QtVariantMap(m), C.QtString(key))
     return float64(val)
 }
 
@@ -516,10 +516,10 @@ func WebUiEventPayloadGetRunes(ev *WebUiEventPayload, key ([] rune)) ([] rune) {
     return VariantMapGetRunes(ev.Data, key_str)
 }
 
-func WebUiEventPayloadGetNumber(ev *WebUiEventPayload, key ([] rune)) float64 {
+func WebUiEventPayloadGetFloat(ev *WebUiEventPayload, key ([] rune)) float64 {
     var key_str, del = NewStringFromRunes(key)
     defer del()
-    return VariantMapGetNumber(ev.Data, key_str)
+    return VariantMapGetFloat(ev.Data, key_str)
 }
 
 func WebUiEventPayloadGetBool(ev *WebUiEventPayload, key ([] rune)) bool {
