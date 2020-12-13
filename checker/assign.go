@@ -120,7 +120,6 @@ func AssignTypeTo(expected Type, given Type, v TypeVariance, ctx ExprContext) (T
 		}
 	}
 }
-
 func AssignWildcardRhsTypeTo(expected Type, ctx ExprContext) (Type, bool) {
 	var t, err = GetCertainType(expected, ErrorPoint{}, ctx)
 	if err != nil { return nil, false }
@@ -146,11 +145,7 @@ func DirectAssignTypeTo(expected Type, given Type, v TypeVariance, ctx ExprConte
 			if !(ctx.Inferring.Enabled) { panic("something went wrong") }
 			var inferred, exists = ctx.Inferring.Arguments[E.Index]
 			if exists {
-				if AreTypesEqualInSameCtx(inferred, given) {
-					return given, true
-				} else {
-					return nil, false
-				}
+				return DirectAssignTypeTo(inferred, given, v, ctx)
 			} else {
 				ctx.Inferring.Arguments[E.Index] = given
 				return given, true
