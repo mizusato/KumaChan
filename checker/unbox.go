@@ -30,7 +30,7 @@ func Unbox(t Type, ctx_mod string, reg TypeRegistry) UnboxResult {
 	return UnboxFailed {}
 }
 
-func UnboxAsIs(t Type, reg TypeRegistry) Type {
+func UnboxWeak(t Type, reg TypeRegistry) Type {
 	switch T := t.(type) {
 	case *NamedType:
 		var g = reg[T.Name]
@@ -38,7 +38,7 @@ func UnboxAsIs(t Type, reg TypeRegistry) Type {
 		case *Boxed:
 			if gv.Weak {
 				var filled_inner = FillTypeArgs(gv.InnerType, T.Args)
-				return UnboxAsIs(filled_inner, reg)
+				return UnboxWeak(filled_inner, reg)
 			}
 		}
 	}

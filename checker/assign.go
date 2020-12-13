@@ -61,7 +61,7 @@ func AssignTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprError) 
 func TypedAssignTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError) {
 	if expected == nil {
 		return Expr {
-			Type:  UnboxAsIs(expr.Type, ctx.ModuleInfo.Types),
+			Type:  UnboxWeak(expr.Type, ctx.ModuleInfo.Types),
 			Value: expr.Value,
 			Info:  expr.Info,
 		}, nil

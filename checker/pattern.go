@@ -192,7 +192,7 @@ func (ctx ExprContext) WithPatternMatching(p Pattern) ExprContext {
 	switch P := p.Concrete.(type) {
 	case TrivialPattern:
 		var reg = ctx.ModuleInfo.Types
-		added[P.ValueName] = UnboxAsIs(P.ValueType, reg)
+		added[P.ValueName] = UnboxWeak(P.ValueType, reg)
 	case TuplePattern:
 		for _, item := range P.Items {
 			added[item.Name] = item.Type
