@@ -1,5 +1,5 @@
 type Char    protected Uint32;  // container.Char (uint32)
-type String  Array[Char];  // container.String ([] uint32)
+type String  protected Array[Char];  // container.String ([] uint32)
 
 public function  = :(&(String,String)(Bool))      native '=String';
 public function  < :(&(String,String)(Bool))      native '<String';
@@ -7,9 +7,10 @@ public function <> :(&(String,String)(Ordering))  native '<>String';
 
 public function str[T]: implicit[Cast[T,String]] (&(T)(String))
     (&(x)(from x));
-public function from: (&(Char)(String))    native 'String from Char';
-public function from: (&(Number)(String))  native 'String from Number';
-public function from: (&(Float)(String))   native 'String from Float';
+public function from: (&(Array[Char])(String))  native 'String from Array';
+public function from: (&(Char)(String))         native 'String from Char';
+public function from: (&(Number)(String))       native 'String from Number';
+public function from: (&(Float)(String))        native 'String from Float';
 public function from: (&(Float*)(String))
     ( &(x*)
         switch (check-nan-inf x*):

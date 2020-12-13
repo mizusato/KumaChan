@@ -18,7 +18,7 @@ type ParserStatus union {
     type ParseBlanks { saved: Value };
 };
 private const Blanks: String
-    String [\n, \t, ^ ];
+    str [\n, \t, ^ ];
 private const NumberChars: String
     '0123456789.Ee+-';
 private const TrueChars: String
@@ -206,7 +206,7 @@ private function parse: (&(ParserState)(Result[(Value,Number),String]))
                 if $(char = ^"):
                     let prev := $(input at! $(pos - 1)),
                     if $(prev != ^\):
-                        let raw := (String (input.slice (range begin pos))),
+                        let raw := (str (input.slice (range begin pos))),
                         switch (unquote raw):
                         case Just str:
                             OK ((JSON::String str), $(pos + 1)),
@@ -221,7 +221,7 @@ private function parse: (&(ParserState)(Result[(Value,Number),String]))
         case ParseNumber {begin}:
             let got-number: (&()(Result[(Value,Number),String]))
                 := (&(_)(
-                    let raw := (String (input.slice (range begin pos))),
+                    let raw := (str (input.slice (range begin pos))),
                     switch (parse-float raw):
                     case Just x:
                         OK ((JSON::Number x), pos),

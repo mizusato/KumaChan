@@ -3,11 +3,11 @@ package lib
 import (
 	"fmt"
 	"strconv"
+	"math"
 	"math/big"
 	"encoding/json"
 	. "kumachan/runtime/common"
 	. "kumachan/runtime/lib/container"
-	"math"
 )
 
 
@@ -101,16 +101,16 @@ var ContainerFunctions = map[string] Value {
 	"seq-collect": func(seq Seq) Value {
 		return SeqCollect(seq)
 	},
-	"array-at": func(av Value, index uint) SumValue {
-		var arr = ArrayFrom(av)
+	"array-at": func(v Value, index uint) SumValue {
+		var arr = ArrayFrom(v)
 		if index < arr.Length {
 			return Just(arr.GetItem(index))
 		} else {
 			return Na()
 		}
 	},
-	"array-at!": func(av Value, index uint) Value {
-		var arr = ArrayFrom(av)
+	"array-at!": func(v Value, index uint) Value {
+		var arr = ArrayFrom(v)
 		if index < arr.Length {
 			return arr.GetItem(index)
 		} else {
@@ -120,41 +120,45 @@ var ContainerFunctions = map[string] Value {
 			))
 		}
 	},
-	"array-length": func(av Value) Value {
-		var arr = ArrayFrom(av)
+	"array-length": func(v Value) Value {
+		var arr = ArrayFrom(v)
 		return arr.Length
 	},
-	"array-reverse": func(av Value) Value {
-		var arr = ArrayFrom(av)
+	"array-reverse": func(v Value) Value {
+		var arr = ArrayFrom(v)
 		return arr.Reversed()
 	},
-	"array-slice": func(av Value, range_ ProductValue) Value {
+	"array-slice": func(v Value, range_ ProductValue) Value {
 		var l, r = Tuple2From(range_)
-		var arr = ArrayFrom(av)
+		var arr = ArrayFrom(v)
 		return arr.SliceView(l.(uint), r.(uint)).CopyAsSlice()
 	},
-	"array-slice-view": func(av Value, range_ ProductValue) Value {
+	"array-slice-view": func(v Value, range_ ProductValue) Value {
 		var l, r = Tuple2From(range_)
-		var arr = ArrayFrom(av)
+		var arr = ArrayFrom(v)
 		return arr.SliceView(l.(uint), r.(uint))
 	},
-	"array-map": func(av Value, f Value, h InteropContext) Value {
-		var arr = ArrayFrom(av)
+	"array-map": func(v Value, f Value, h InteropContext) Value {
+		var arr = ArrayFrom(v)
 		return arr.MapView(func(item Value) Value {
 			return h.Call(f, item)
 		}).CopyAsSlice()
 	},
-	"array-map-view": func(av Value, f Value, h InteropContext) Value {
-		var arr = ArrayFrom(av)
+	"array-map-view": func(v Value, f Value, h InteropContext) Value {
+		var arr = ArrayFrom(v)
 		return arr.MapView(func(item Value) Value {
 			return h.Call(f, item)
 		})
 	},
-	"array-iterate": func(av Value) Seq {
-		return ArrayFrom(av).Iterate()
+	"array-iterate": func(v Value) Seq {
+		return ArrayFrom(v).Iterate()
 	},
 	"String from error": func(err error) String {
 		return StringFromGoString(err.Error())
+	},
+	"String from Array": func(v Value) Value {
+		var arr = ArrayFrom(v)
+		return arr.CopyAsSlice()
 	},
 	"String from Char": func(char Char) String {
 		return [] Char { char }
@@ -235,8 +239,8 @@ var ContainerFunctions = map[string] Value {
 			}
 		}
 	},
-	"str-concat": func(av Value) String {
-		return StringConcat(ArrayFrom(av))
+	"str-concat": func(v Value) String {
+		return StringConcat(ArrayFrom(v))
 	},
 	"str-find": func(str String, sub String) SumValue {
 		var index, ok = StringFind(str, sub)
