@@ -101,7 +101,7 @@ var ContainerFunctions = map[string] Value {
 	"seq-collect": func(seq Seq) Value {
 		return SeqCollect(seq)
 	},
-	"array-get": func(av Value, index uint) SumValue {
+	"array-at": func(av Value, index uint) SumValue {
 		var arr = ArrayFrom(av)
 		if index < arr.Length {
 			return Just(arr.GetItem(index))
@@ -109,7 +109,7 @@ var ContainerFunctions = map[string] Value {
 			return Na()
 		}
 	},
-	"array-force-get": func(av Value, index uint) Value {
+	"array-at!": func(av Value, index uint) Value {
 		var arr = ArrayFrom(av)
 		if index < arr.Length {
 			return arr.GetItem(index)

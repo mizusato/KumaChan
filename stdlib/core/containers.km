@@ -48,10 +48,10 @@ public function concat[T]: ( &(Array[Seq[T]]) Seq[T] )
 public function iterate[T]: ( &(Array[T]) Seq[T] )
     native 'array-iterate';
 
-public function get[T]: ( &(Array[T],Number) Maybe[T] )
-    native 'array-get';
-public function force-get[T]: ( &(Array[T],Number) T )
-    native 'array-force-get';
+public function at[T]: ( &(Array[T],Number) Maybe[T] )
+    native 'array-at';
+public function at![T]: ( &(Array[T],Number) T )
+    native 'array-at!';
 public function length[T]: ( &(Array[T]) Number )
     native 'array-length';
 
