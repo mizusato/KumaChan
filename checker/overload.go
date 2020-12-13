@@ -202,6 +202,7 @@ func ValidateOverload (
 	reg           TypeRegistry,
 	err_point     ErrorPoint,
 ) *FunctionError {
+	// TODO: fix bug here
 	for _, existing := range functions {
 		var existing_t = &AnonymousType { existing.Function.DeclaredType }
 		var added_t = &AnonymousType { added_type }

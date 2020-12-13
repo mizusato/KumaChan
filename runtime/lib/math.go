@@ -26,6 +26,15 @@ var MathFunctions = map[string] interface{} {
 			return common.Na()
 		}
 	},
+	"Number from Uint32": func(n uint32) uint {
+		return uint(n)
+	},
+	"Number from Uint16": func(n uint16) uint {
+		return uint(n)
+	},
+	"Number from Uint8": func(n uint8) uint {
+		return uint(n)
+	},
 	// arithmetic
 	"+Int": func(a *big.Int, b *big.Int) *big.Int {
 		var c big.Int

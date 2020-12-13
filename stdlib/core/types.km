@@ -16,6 +16,11 @@ type Uint16  native;  // uint16
 type Uint32  native;  // uint32
 type Uint64  native;  // uint64
 
+// Integer Conversions
+public function from: (&(Uint32)(Number))  native 'Number from Uint32';
+public function from: (&(Uint16)(Number))  native 'Number from Uint16';
+public function from: (&(Uint8)(Number))  native 'Number from Uint8';
+
 // Float <-> Float*
 public function from: ( &(Float) Float* )
     native 'Float* from Float';
