@@ -90,3 +90,11 @@ public function entries[K,V]: ( &(Map[K,V]) Array[(K,V)] )
     native 'map-entries';
 public function iterate[K,V]: ( &(Map[K,V]) Seq[(K,V)] )
     ( &(m) (m.entries.iterate) );
+public function get[K,V]: ( &(Map[K,V],K) Maybe[V] )
+    native 'map-get';
+public function get![K,V]: ( &(Map[K,V],K) V )
+    native 'map-get!';
+public function insert*[K,V]: ( &(Map[K,V],K,V) Map[K,V] )
+    native 'map-insert*';
+public function delete*[K,V]: ( &(Map[K,V],K) Map[K,V] )
+    native 'map-delete*';

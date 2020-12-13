@@ -178,7 +178,7 @@ func (m Map) Inspect(inspect func(Value)ErrorMessage) ErrorMessage {
 		entry_msg.WriteAll(inspect(k))
 		entry_msg.WriteText(TS_NORMAL, ":")
 		entry_msg.Write(T_SPACE)
-		entry_msg.WriteAll(inspect(k))
+		entry_msg.WriteAll(inspect(v))
 		items = append(items, entry_msg)
 	})
 	return ListErrMsgItems(items, "Map")

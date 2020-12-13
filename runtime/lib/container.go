@@ -278,4 +278,28 @@ var ContainerFunctions = map[string] Value {
 		})
 		return entries
 	},
+	"map-get": func(m Map, k Value) SumValue {
+		var v, exists = m.Lookup(k)
+		if exists {
+			return Just(v)
+		} else {
+			return Na()
+		}
+	},
+	"map-get!": func(m Map, k Value) Value {
+		var v, exists = m.Lookup(k)
+		if exists {
+			return v
+		} else {
+			panic(fmt.Sprintf("accessing absent key %s of a map", Inspect(k)))
+		}
+	},
+	"map-insert*": func(m Map, k Value, v Value) Map {
+		var result, _ = m.Inserted(k, v)
+		return result
+	},
+	"map-delete*": func(m Map, k Value) Map {
+		var _, result, _ = m.Deleted(k)
+		return result
+	},
 }
