@@ -1001,6 +1001,24 @@ func (e E_FunctionWrongTypeParamsQuantity) ExprErrorDesc() ErrorMessage {
 	return msg
 }
 
+type E_AmbiguousFunctionAssign struct {
+	Candidates  [] string
+}
+func (e E_AmbiguousFunctionAssign) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR,
+		"Ambiguous function assignment")
+	msg.Write(T_LF)
+	msg.WriteText(TS_INFO, "*** candidates are:")
+	msg.Write(T_LF)
+	for _, candidate := range e.Candidates {
+		msg.Write(T_INDENT)
+		msg.WriteText(TS_INLINE_CODE, candidate)
+		msg.Write(T_LF)
+	}
+	return msg
+}
+
 type E_NoneOfFunctionsAssignable struct {
 	To          string
 	Candidates  [] UnavailableFuncInfo

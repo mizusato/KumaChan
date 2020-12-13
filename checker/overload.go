@@ -8,8 +8,9 @@ import (
 
 
 type AvailableCall struct {
-	Expr      Expr
-	Function  *GenericFunction
+	Expr       Expr
+	Function   *GenericFunction
+	Inferring  TypeArgsInferringContext
 }
 type UnavailableCall struct {
 	Function  *GenericFunction
@@ -62,7 +63,10 @@ func OverloadedCall (
 				})
 			}
 		}
-		return GenerateCallResult(name, call_info, available, unavailable, false)
+		return GenerateCallResult (
+			name, call_info, available, unavailable,
+			false, TypeArgsInferringContext {},
+		)
 	}
 }
 
@@ -73,21 +77,26 @@ func AssignUndecidedTo(expected Type, call UndecidedCall, info ExprInfo, ctx Exp
 	var available = make([] AvailableCall, 0)
 	var unavailable = make([] UnavailableCall, 0)
 	for _, opt := range call.Calls {
-		var expr, err = TypedAssignTo(expected, opt.Expr, ctx)
+		var this_call_ctx = ctx.WithInferringContextCloned()
+		var expr, err = TypedAssignTo(expected, opt.Expr, this_call_ctx)
 		if err == nil {
 			available = append(available, AvailableCall {
-				Expr:     expr,
-				Function: opt.Function,
+				Expr:      expr,
+				Function:  opt.Function,
+				Inferring: this_call_ctx.Inferring,
 			})
 		} else {
-			unavailable = append(unavailable, UnavailableCall{
+			unavailable = append(unavailable, UnavailableCall {
 				Function: opt.Function,
 				Name:     name,
 				Error:    err,
 			})
 		}
 	}
-	semi, err := GenerateCallResult(name, info, available, unavailable, true)
+	semi, err := GenerateCallResult (
+		name, info, available, unavailable,
+		true, ctx.Inferring,
+	)
 	if err != nil { return Expr{}, err }
 	return Expr(semi.Value.(TypedExpr)), nil
 }
@@ -98,6 +107,7 @@ func GenerateCallResult (
 	available    [] AvailableCall,
 	unavailable  [] UnavailableCall,
 	assigned     bool,
+	inferring    TypeArgsInferringContext,
 ) (SemiExpr, *ExprError) {
 	if len(available) == 0 {
 		var unavailable_info = make([] UnavailableFuncInfo, len(unavailable))
@@ -110,7 +120,11 @@ func GenerateCallResult (
 			Concrete: E_NoneOfFunctionsCallable { unavailable_info },
 		}
 	} else if len(available) == 1 {
-		return LiftTyped(available[0].Expr), nil
+		var opt = available[0]
+		if assigned {
+			inferring.MergeArgsFrom(opt.Inferring)
+		}
+		return LiftTyped(opt.Expr), nil
 	} else {
 		if assigned {
 			var available_desc = make([] string, len(available))
@@ -149,10 +163,14 @@ func OverloadedAssignTo (
 		)
 	} else {
 		var candidates = make([] UnavailableFuncInfo, 0)
+		var ok_expr Expr
+		var ok_inferring TypeArgsInferringContext
+		var available = make([] *GenericFunction, 0)
 		for i, f := range functions {
+			var this_f_ctx = ctx.WithInferringContextCloned()
 			var index = uint(i)
 			var expr, err = GenericFunctionAssignTo (
-				expected, name, index, f, type_args, info, ctx,
+				expected, name, index, f, type_args, info, this_f_ctx,
 			)
 			if err != nil {
 				candidates = append(candidates, UnavailableFuncInfo {
@@ -160,20 +178,31 @@ func OverloadedAssignTo (
 					Error:    err,
 				})
 			} else {
-				return expr, nil
+				available = append(available, f)
+				ok_expr = expr
+				ok_inferring = this_f_ctx.Inferring
 			}
 		}
-		if expected == nil {
-			return Expr{}, &ExprError {
-				Point:    info.ErrorPoint,
-				Concrete: E_ExplicitTypeRequired {},
-			}
-		} else {
+		if len(available) == 0 {
 			return Expr{}, &ExprError {
 				Point:    info.ErrorPoint,
 				Concrete: E_NoneOfFunctionsAssignable {
 					To:         ctx.DescribeExpectedType(expected),
 					Candidates: candidates,
+				},
+			}
+		} else if len(available) == 1 {
+			ctx.Inferring.MergeArgsFrom(ok_inferring)
+			return ok_expr, nil
+		} else {
+			var ok_candidates = make([] string, len(available))
+			for i, f := range available {
+				ok_candidates[i] = DescribeFunction(f, name)
+			}
+			return Expr{}, &ExprError {
+				Point:    info.ErrorPoint,
+				Concrete: E_AmbiguousFunctionAssign {
+					Candidates: ok_candidates,
 				},
 			}
 		}

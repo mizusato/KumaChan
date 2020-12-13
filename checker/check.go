@@ -87,6 +87,16 @@ type TypeArgsInferringContext struct {
 	Parameters   [] TypeParam
 	Arguments    map[uint] Type  // mutable
 }
+func (ctx TypeArgsInferringContext) MergeArgsFrom(another TypeArgsInferringContext) {
+	if ctx.Enabled && another.Enabled {
+		if ctx.Arguments == nil || another.Arguments == nil {
+			panic("something went wrong")
+		}
+		for k, v := range another.Arguments {
+			ctx.Arguments[k] = v
+		}
+	}
+}
 
 type Expr struct {
 	Type   Type
@@ -305,6 +315,21 @@ func (ctx ExprContext) WithInferringEnabled(params ([] TypeParam)) ExprContext {
 		Arguments:  make(map[uint] Type),
 	}
 	return new_ctx
+}
+
+func (ctx ExprContext) WithInferringContextCloned() ExprContext {
+	if ctx.Inferring.Enabled {
+		var new_ctx ExprContext
+		*(&new_ctx) = ctx
+		var cloned_args = make(map[uint] Type)
+		for k, v := range new_ctx.Inferring.Arguments {
+			cloned_args[k] = v
+		}
+		new_ctx.Inferring.Arguments = cloned_args
+		return new_ctx
+	} else {
+		return ctx
+	}
 }
 
 func (ctx ExprContext) GetExprInfo(node ast.Node) ExprInfo {
