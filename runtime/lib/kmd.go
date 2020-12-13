@@ -48,7 +48,7 @@ func KmdTransformer(h KmdTransformContext) kmd.Transformer {
 			PrimitiveSerializer: kmd.PrimitiveSerializer {
 				WriteBool: func(obj kmd.Object) bool {
 					var tv = obj.(KmdTypedValue)
-					return BoolFrom(tv.Value.(SumValue))
+					return FromBool(tv.Value.(SumValue))
 				},
 				WriteFloat: func(obj kmd.Object) float64 {
 					return obj.(KmdTypedValue).Value.(float64)

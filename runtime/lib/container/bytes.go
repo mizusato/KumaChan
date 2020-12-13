@@ -34,7 +34,7 @@ func BytesFromBitSeq(seq Seq) Bytes {
 func BytesFromByteSeq(seq Seq) Bytes {
 	var buf = make(Bytes, 0)
 	for v,r,exists := seq.Next(); exists; v,r,exists = r.Next() {
-		buf = append(buf, ByteFrom(v))
+		buf = append(buf, FromByte(v))
 	}
 	return buf
 }
@@ -43,7 +43,7 @@ func BytesFromWordSeq(seq Seq, ord ByteOrder) Bytes {
 	var buf = make(Bytes, 0)
 	var chunk [2]byte
 	for v,r,exists := seq.Next(); exists; v,r,exists = r.Next() {
-		chunk = EncodeWord(WordFrom(v), ord)
+		chunk = EncodeWord(FromWord(v), ord)
 		buf = append(buf, chunk[0], chunk[1])
 	}
 	return buf
@@ -53,7 +53,7 @@ func BytesFromDwordSeq(seq Seq, ord ByteOrder) Bytes {
 	var buf = make(Bytes, 0)
 	var chunk [4]byte
 	for v,r,exists := seq.Next(); exists; v,r,exists = r.Next() {
-		chunk = EncodeDword(DwordFrom(v), ord)
+		chunk = EncodeDword(FromDword(v), ord)
 		buf = append(buf, chunk[0], chunk[1], chunk[2], chunk[3])
 	}
 	return buf
@@ -63,7 +63,7 @@ func BytesFromQwordSeq(seq Seq, ord ByteOrder) Bytes {
 	var buf = make(Bytes, 0)
 	var chunk [8]byte
 	for v,r,exists := seq.Next(); exists; v,r,exists = r.Next() {
-		chunk = EncodeQword(QwordFrom(v), ord)
+		chunk = EncodeQword(FromQword(v), ord)
 		for i := 0; i < 8; i += 1 {
 			buf = append(buf, chunk[i])
 		}

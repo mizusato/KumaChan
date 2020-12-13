@@ -220,7 +220,7 @@ var EffectFunctions = map[string] Value {
 	"catch-retry": func(e rx.Effect, f Value, h InteropContext) rx.Effect {
 		return e.CatchRetry(func(err rx.Object) rx.Effect {
 			return h.Call(f, err).(rx.Effect).Map(func(retry rx.Object) rx.Object {
-				return BoolFrom(retry.(SumValue))
+				return FromBool(retry.(SumValue))
 			})
 		})
 	},
@@ -239,7 +239,7 @@ var EffectFunctions = map[string] Value {
 	},
 	"effect-filter": func(e rx.Effect, f Value, h InteropContext) rx.Effect {
 		return e.Filter(func(val rx.Object) bool {
-			return BoolFrom((h.Call(f, val)).(SumValue))
+			return FromBool((h.Call(f, val)).(SumValue))
 		})
 	},
 	"effect-reduce": func(e rx.Effect, init Value, f Value, h InteropContext) rx.Effect {

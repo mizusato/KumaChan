@@ -252,8 +252,8 @@ var WebUiFunctions = map[string] interface{} {
 	},
 	"webui-dom-event": func(prevent SumValue, stop SumValue, sink rx.Sink) *vdom.EventOptions {
 		return &vdom.EventOptions {
-			Prevent: BoolFrom(prevent),
-			Stop:    BoolFrom(stop),
+			Prevent: FromBool(prevent),
+			Stop:    FromBool(stop),
 			Handler: (vdom.EventHandler)(sink),
 		}
 	},

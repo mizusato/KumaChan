@@ -161,7 +161,7 @@ func SingleValueFromBundle(b ProductValue) Value {
 	return b.Elements[0]
 }
 
-func BoolFrom(p SumValue) bool {
+func FromBool(p SumValue) bool {
 	if p.Value != nil { panic("something went wrong") }
 	if p.Index == stdlib.YesIndex {
 		return true
@@ -177,6 +177,20 @@ func ToBool(p bool) SumValue {
 		return &ValSum { Index: stdlib.YesIndex }
 	} else {
 		return &ValSum { Index: stdlib.NoIndex }
+	}
+}
+
+func FromOrdering(o SumValue) Ordering {
+	if o.Value != nil { panic("something went wrong") }
+	switch o.Index {
+	case stdlib.SmallerIndex:
+		return Smaller
+	case stdlib.EqualIndex:
+		return Equal
+	case stdlib.BiggerIndex:
+		return Bigger
+	default:
+		panic("something went wrong")
 	}
 }
 
@@ -229,19 +243,19 @@ func Unwrap(maybe SumValue) (Value, bool) {
 	}
 }
 
-func ByteFrom(v Value) uint8 {
+func FromByte(v Value) uint8 {
 	return v.(uint8)
 }
 
-func WordFrom(v Value) uint16 {
+func FromWord(v Value) uint16 {
 	return v.(uint16)
 }
 
-func DwordFrom(v Value) uint32 {
+func FromDword(v Value) uint32 {
 	return v.(uint32)
 }
 
-func QwordFrom(v Value) uint64 {
+func FromQword(v Value) uint64 {
 	return v.(uint64)
 }
 

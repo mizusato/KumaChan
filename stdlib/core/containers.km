@@ -82,6 +82,13 @@ public function every[T]: ( &(Array[T],(&(T)(Bool))) Bool )
     ( &(arr,f) (arr | iterate | every f) );
 
 
+/* Functions of Set[T] */
+
+public function new-set[T]: ( &((&(T,T)(Ordering)),Array[T]) Set[T] )
+    native 'new-set';
+public function has[T]: ( &(Set[T],T) Bool )
+    native 'set-has';
+
 /* Functions of Map[K,V] */
 
 public function new-map[T]: ( &(Array[(String,T)]) Map[String,T] )

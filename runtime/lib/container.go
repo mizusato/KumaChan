@@ -55,7 +55,7 @@ var ContainerFunctions = map[string] Value {
 		return FilteredSeq {
 			Input:  input,
 			Filter: func(item Value) bool {
-				return BoolFrom(h.Call(f, item).(SumValue))
+				return FromBool(h.Call(f, item).(SumValue))
 			},
 		}
 	},
@@ -84,12 +84,12 @@ var ContainerFunctions = map[string] Value {
 	},
 	"seq-some": func(input Seq, f Value, h InteropContext) SumValue {
 		return ToBool(SeqSome(input, func(item Value) bool {
-			return BoolFrom(h.Call(f, item).(SumValue))
+			return FromBool(h.Call(f, item).(SumValue))
 		}))
 	},
 	"seq-every": func(input Seq, f Value, h InteropContext) SumValue {
 		return ToBool(SeqEvery(input, func(item Value) bool {
-			return BoolFrom(h.Call(f, item).(SumValue))
+			return FromBool(h.Call(f, item).(SumValue))
 		}))
 	},
 	"seq-chunk": func(input Seq, size uint) Value {
@@ -257,18 +257,38 @@ var ContainerFunctions = map[string] Value {
 	"trim-right": StringTrimRight,
 	"trim-prefix": StringTrimPrefix,
 	"trim-suffix": StringTrimSuffix,
-	// TODO: trim, trim-left, trim-left, {has,trim}-prefix, {has,trim}-suffix
+	"new-set": func(cmp_ Value, values_ Value, h InteropContext) Set {
+		var values = ArrayFrom(values_)
+		var cmp = Compare(func(a Value, b Value) Ordering {
+			var t = h.Call(cmp_, &ValProd{Elements: [] Value { a, b }})
+			return FromOrdering(t.(SumValue))
+		})
+		var set = NewSet(cmp)
+		for i := uint(0); i < values.Length; i += 1 {
+			var item = values.GetItem(i)
+			var result, override = set.Inserted(item)
+			if override {
+				panic(fmt.Sprintf("duplicate set item: %s", Inspect(item)))
+			}
+			set = result
+		}
+		return set
+	},
+	"set-has": func(set Set, v Value) SumValue {
+		var _, exists = set.Lookup(v)
+		return ToBool(exists)
+	},
 	"new-map-str": func(v Value) Map {
 		var str_arr = ArrayFrom(v)
 		var m = NewStrMap()
 		for i := uint(0); i < str_arr.Length; i += 1 {
 			var key, value = Tuple2From(str_arr.GetItem(i).(ProductValue))
-			var inserted, override = m.Inserted(key.(String), value)
+			var result, override = m.Inserted(key.(String), value)
 			if override {
 				var key_desc = strconv.Quote(GoStringFromString(key.(String)))
 				panic("duplicate map key " + key_desc)
 			}
-			m = inserted
+			m = result
 		}
 		return m
 	},

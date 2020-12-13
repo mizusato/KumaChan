@@ -105,7 +105,7 @@ func (m *Machine) KmdCallAdapter(f Value, x Value) Value {
 }
 
 func (m *Machine) KmdCallValidator(f Value, x Value) bool {
-	return BoolFrom(call(f.(FunctionValue), x, m).(SumValue))
+	return FromBool(call(f.(FunctionValue), x, m).(SumValue))
 }
 
 

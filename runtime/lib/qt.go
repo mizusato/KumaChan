@@ -128,7 +128,7 @@ var QtFunctions = map[string] interface{} {
 				panic(fmt.Sprintf("unsupported Qt event kind %s", k))
 			}
 		})()
-		var prevent_default = BoolFrom(prevent)
+		var prevent_default = FromBool(prevent)
 		var source = QtEvent {
 			Object:  object,
 			Kind:    event_kind,
@@ -156,7 +156,7 @@ var QtFunctions = map[string] interface{} {
 			case "String":
 				qt.SetPropRuneString(object, prop, RuneSliceFromString(value.(String)))
 			case "Bool":
-				qt.SetPropBool(object, prop, BoolFrom(value.(SumValue)))
+				qt.SetPropBool(object, prop, FromBool(value.(SumValue)))
 			default:
 				panic(fmt.Sprintf("unsupported Qt property type %s", t))
 			}
