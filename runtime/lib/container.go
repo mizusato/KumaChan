@@ -12,6 +12,20 @@ import (
 
 
 var ContainerFunctions = map[string] Value {
+	"chr": func(n uint) SumValue {
+		if n <= 0x10FFFF && !(0xD800 <= n && n <= 0xDFFF) {
+			return Just(uint32(n))
+		} else {
+			return Na()
+		}
+	},
+	"chr!": func(n uint) uint32 {
+		if n <= 0x10FFFF && !(0xD800 <= n && n <= 0xDFFF) {
+			return uint32(n)
+		} else {
+			panic(fmt.Sprintf("invalid code point 0x%X", n))
+		}
+	},
 	"range-iterate": func(l uint, r uint) Seq {
 		return RangeSeq {
 			Current: l,

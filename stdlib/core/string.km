@@ -1,5 +1,8 @@
-type Char    protected Uint32;  // container.Char (uint32)
+type Char    protected Uint32;       // container.Char (uint32)
 type String  protected Array[Char];  // container.String ([] uint32)
+
+public function chr:  (&(Number)(Maybe[Char])) native 'chr';
+public function chr!: (&(Number)(Char)) native 'chr!';
 
 public function  = :(&(String,String)(Bool))      native '=String';
 public function  < :(&(String,String)(Bool))      native '<String';

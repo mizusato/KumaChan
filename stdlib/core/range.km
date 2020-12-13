@@ -8,6 +8,14 @@ public function range: ( &(Number,Number) Range )
             panic 'invalid range: left bound bigger than right bound'
     );
 
+public function range-inclusive: ( &(Number,Number) Range )
+    ( &(l, r)
+        if $(l <= r):
+            Range l $(r + 1),
+        else:
+            panic 'invalid range: left bound bigger than right bound'
+    );
+
 public function from: ( &(Range) String )
     ( &(l, r) ("[#, #)" (str l) (str r)) );
 
