@@ -285,6 +285,10 @@ func StringToRunes(str String) ([] rune) {
     return buf
 }
 
+func DeleteString(str String) {
+    C.QtDeleteString((C.QtString)(str))
+}
+
 func VariantMapGetRunes(m VariantMap, key String) ([] rune) {
     var val = C.QtVariantMapGetString(C.QtVariantMap(m), C.QtString(key))
     var val_runes = StringToRunes(String(val))
@@ -483,6 +487,10 @@ func WebUiUnregisterEventHandler(id string) {
 
 func WebUiGetWindow() Widget {
     return widget { object { C.WebUiGetWindow() } }
+}
+
+func WebUiInjectCSS(content String) String {
+    return String(C.WebUiInjectAdditionalCSS(C.QtString(content)))
 }
 
 func WebUiGetEventHandler() vdom.EventHandler {

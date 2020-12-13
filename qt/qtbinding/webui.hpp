@@ -26,6 +26,7 @@ signals:
     void EmitEvent(QString handler, QVariantMap event);
     void UpdateRootFontSize(double size);
     void SetGlobalStyleCSS(QString content);
+    void InjectAdditionalCSS(QString uuid, QString content);
     void CallMethod(QString id, QString name, QVariantList args);
     void EraseStyle(QString id, QString key);
     void ApplyStyle(QString id, QString key, QString value);

@@ -69,7 +69,8 @@ func (m WebUiAdaptedMap) ForEach(f func(key vdom.String, val interface{})) {
 }
 
 var __WebUiLoading = make(chan struct{}, 1)
-var __WebUiLoaded = make(chan struct{})
+var __WebUiWindowLoaded = make(chan struct{})
+var __WebUiBridgeLoaded = make(chan struct{})
 var __WebUiEmptyAttrs = &vdom.Attrs { Data: WebUiEmptyMap{} }
 var __WebUiEmptyStyles = &vdom.Styles { Data: WebUiEmptyMap{} }
 var __WebUiEmptyEvents = &vdom.Events { Data: WebUiEmptyMap{} }
@@ -106,6 +107,7 @@ func WebUiInitAndLoad (
 			})
 		})
 		qt.Connect(window, "loadFinished()", func() {
+			close(__WebUiBridgeLoaded)
 			var update = root.ConcatMap(func(node rx.Object) rx.Effect {
 				return __WebUiUpdateDom(node.(*vdom.Node))
 			})
@@ -118,9 +120,9 @@ func WebUiInitAndLoad (
 			wait <- struct{}{}
 		})
 		<- wait
-		close(__WebUiLoaded)
+		close(__WebUiWindowLoaded)
 	default:
-		<-__WebUiLoaded
+		<-__WebUiWindowLoaded
 	}
 }
 
@@ -155,7 +157,7 @@ var __WebUiUpdateDom = func(new_root *vdom.Node) rx.Effect {
 var WebUiConstants = map[string] NativeConstant {
 	"WebUi::GetWindow": func(_ InteropContext) Value {
 		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
-			<- __WebUiLoaded
+			<-__WebUiWindowLoaded
 			return qt.WebUiGetWindow(), true
 		})
 	},
@@ -166,6 +168,20 @@ var WebUiFunctions = map[string] interface{} {
 		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
 			WebUiInitAndLoad(h.GetScheduler(), root, title, css)
 			return nil, true
+		})
+	},
+	"webui-inject-css": func(content String) rx.Effect {
+		return rx.NewGoroutine(func(sender rx.Sender) {
+			<- __WebUiBridgeLoaded
+			qt.CommitTask(func() {
+				var content_runes = RuneSliceFromString(content)
+				var content, del = qt.NewStringFromRunes(content_runes)
+				defer del()
+				var uuid = qt.WebUiInjectCSS(content)
+				qt.DeleteString(uuid)  // unused now
+				sender.Next(nil)
+				sender.Complete()
+			})
 		})
 	},
 	"webui-dom-node": func (

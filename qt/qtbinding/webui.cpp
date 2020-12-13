@@ -1,5 +1,6 @@
 #include <QApplication>
 #include <QDesktopWidget>
+#include <QUuid>
 #include "adapt.hpp"
 #include "webui.hpp"
 #include "qtbinding.h"
@@ -31,6 +32,12 @@ QtVariantMap WebUiGetEventPayload() {
     QVariantMap* m = new QVariantMap;
     *m = window->getEmittedEventPayload();
     return { m };
+}
+
+QtString WebUiInjectAdditionalCSS(QtString content) {
+    QString uuid = QUuid::createUuid().toString();
+    window->bridge->InjectAdditionalCSS(uuid, QtUnwrapString(content));
+    return QtWrapString(uuid);
 }
 
 void WebUiCallMethod(QtString id, QtString name, QtVariantList args) {

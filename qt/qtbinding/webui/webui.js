@@ -10,6 +10,7 @@
  *  @property {function(): void} LoadFinish
  *  @property {function(size: number): void} UpdateRootFontSize
  *  @property {function(content: string): void} SetGlobalStyleCSS
+ *  @property {function(uuid: string, content: string): void} InjectAdditionalCSS
  *  @property {Signal.<function(id:string, key:string, value:string): void>} ApplyStyle
  *  @property {Signal.<function(id:string, key:string): void>} EraseStyle
  *  @property {Signal.<function(id:string, name:string, value:string): void>} SetAttr
@@ -152,6 +153,12 @@ window.addEventListener('load', _ => {
     })
     bridge.SetGlobalStyleCSS.connect(content => {
         document.querySelector(S_GlobalStyle).textContent = content
+    })
+    bridge.InjectAdditionalCSS.connect((uuid, content) => {
+        let style_tag = document.createElement('style')
+        style_tag.dataset['uuid'] = uuid
+        style_tag.textContent = content
+        document.head.appendChild(style_tag)
     })
     bridge.LoadFinish()
     console.log('LoadFinish')
