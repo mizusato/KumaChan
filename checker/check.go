@@ -174,7 +174,6 @@ func (ctx ExprContext) DescribeExpectedType(t Type) string {
 	if ctx.Inferring.Enabled {
 		return DescribeType(t, TypeDescContext {
 			ParamNames:    TypeParamsNames(ctx.TypeParams),
-			UseInferred:   ctx.Inferring.Enabled,
 			InferredNames: TypeParamsNames(ctx.Inferring.Parameters),
 			InferredTypes: ctx.Inferring.Arguments,
 		})

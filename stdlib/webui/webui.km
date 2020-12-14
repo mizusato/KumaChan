@@ -174,7 +174,7 @@ public function get-string: ( &(EventPayload,String) String )
 public function get-float: ( &(EventPayload,String) Float )
     native 'webui-event-payload-get-float';
 
-public function get-float: ( &(EventPayload,String) Number )
+public function get-number: ( &(EventPayload,String) Number )
     native 'webui-event-payload-get-number';
 
 public function get-bool: ( &(EventPayload,String) Bool )

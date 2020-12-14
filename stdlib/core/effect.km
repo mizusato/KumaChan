@@ -74,14 +74,18 @@ public function yield*[T]: ( &(Seq[T]) NoExcept*[T] )
     native 'yield*-seq';
 public function yield*[T]: ( &(Array[T]) NoExcept*[T] )
     native 'yield*-array';
+public function start-with[T]:   ( &(NoExcept*[T],Array[T]) NoExcept*[T] )
+    (&(e,prepended)(concat [(yield* prepended), e]));
+public function start-with[T,E]: ( &(Effect*[T,E],Array[T]) Effect*[T,E] )
+    (&(e,prepended)(concat:[T,E] [(assume-except* (yield* prepended)), e]));
 public function wait: ( & {timeout:Number} NoExcept[-] )
     native 'wait';
 public function tick: ( & {interval:Number} NoExcept*[-] )
     native 'tick';
-public function adapt-no-except[T,E]:  ( &(NoExcept[T]) Effect[T,E] )
-    native 'adapt-no-except';
-public function adapt-no-except*[T,E]: ( &(NoExcept*[T]) Effect*[T,E] )
-    native 'adapt-no-except';
+public function assume-except[T,E]:  ( &(NoExcept[T]) Effect[T,E] )
+    native 'assume-except';
+public function assume-except*[T,E]: ( &(NoExcept*[T]) Effect*[T,E] )
+    native 'assume-except';
 
 // Effect Operators
 public function take-one[T,E]: ( &(Effect*[T,E]) Effect[Maybe[T],E] )

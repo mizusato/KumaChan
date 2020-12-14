@@ -2,8 +2,9 @@ package lib
 
 import (
 	"fmt"
-	"strconv"
 	"math"
+	"reflect"
+	"strconv"
 	"math/big"
 	"encoding/json"
 	. "kumachan/runtime/common"
@@ -145,7 +146,7 @@ var ContainerFunctions = map[string] Value {
 	"array-slice": func(v Value, range_ ProductValue) Value {
 		var l, r = Tuple2From(range_)
 		var arr = ArrayFrom(v)
-		return arr.SliceView(l.(uint), r.(uint)).CopyAsSlice()
+		return arr.SliceView(l.(uint), r.(uint)).CopyAsSlice(arr.ItemType)
 	},
 	"array-slice-view": func(v Value, range_ ProductValue) Value {
 		var l, r = Tuple2From(range_)
@@ -156,7 +157,7 @@ var ContainerFunctions = map[string] Value {
 		var arr = ArrayFrom(v)
 		return arr.MapView(func(item Value) Value {
 			return h.Call(f, item)
-		}).CopyAsSlice()
+		}).CopyAsSlice(arr.ItemType)
 	},
 	"array-map-view": func(v Value, f Value, h InteropContext) Value {
 		var arr = ArrayFrom(v)
@@ -172,7 +173,7 @@ var ContainerFunctions = map[string] Value {
 	},
 	"String from Array": func(v Value) Value {
 		var arr = ArrayFrom(v)
-		return arr.CopyAsSlice()
+		return arr.CopyAsSlice(reflect.TypeOf(Char(0)))
 	},
 	"String from Char": func(char Char) String {
 		return [] Char { char }

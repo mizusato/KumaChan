@@ -8,15 +8,13 @@ import (
 
 type TypeDescContext struct {
 	ParamNames     [] string
-	UseInferred    bool
 	InferredNames  [] string
 	InferredTypes  map[uint] Type
 }
 
 func DescribeTypeWithParams(type_ Type, params ([] string)) string {
 	return DescribeType(type_, TypeDescContext {
-		ParamNames:    params,
-		UseInferred:   false,
+		ParamNames: params,
 	})
 }
 
@@ -25,7 +23,7 @@ func DescribeType(type_ Type, ctx TypeDescContext) string {
 	case *WildcardRhsType:
 		return WildcardRhsTypeName
 	case *ParameterType:
-		if ctx.UseInferred {
+		if t.BeingInferred {
 			var inferred_t, exists = ctx.InferredTypes[t.Index]
 			if exists {
 				return DescribeType(inferred_t, ctx)

@@ -181,7 +181,7 @@ var EffectFunctions = map[string] Value {
 			}
 		})
 	},
-	"adapt-no-except": func(v Value) Value {
+	"assume-except": func(v Value) Value {
 		return v
 	},
 	"wait": func(bundle ProductValue) rx.Effect {

@@ -4,14 +4,14 @@ import . "kumachan/error"
 
 
 func GenericFunctionCall (
-	f            *GenericFunction,
-	name         string,
-	index        uint,
-	type_args    [] Type,
-	arg          SemiExpr,
-	f_info       ExprInfo,
-	call_info    ExprInfo,
-	ctx          ExprContext,
+	f          *GenericFunction,
+	name       string,
+	index      uint,
+	type_args  [] Type,
+	arg        SemiExpr,
+	f_info     ExprInfo,
+	call_info  ExprInfo,
+	ctx        ExprContext,
 ) (Expr, *ExprError) {
 	var type_arity = len(f.TypeParams)
 	var f_node = f_info.ErrorPoint.Node
@@ -138,11 +138,12 @@ func GenericFunctionAssignTo (
 		if err != nil { return Expr{}, err }
 		var inf_ctx = ctx.WithInferringEnabled(f.TypeParams)
 		var f_raw_type = &AnonymousType { f.DeclaredType }
-		var _, ok = AssignTypeTo(f_raw_type, exp_certain, Contravariant, inf_ctx)
+		var f_marked_type = MarkParamsAsBeingInferred(f_raw_type)
+		var _, ok = AssignTypeTo(f_marked_type, exp_certain, Contravariant, inf_ctx)
 		if !(ok) { return Expr{}, &ExprError {
 			Point:    info.ErrorPoint,
 			Concrete: E_NotAssignable {
-				From:   inf_ctx.DescribeExpectedType(f_raw_type),
+				From:   inf_ctx.DescribeExpectedType(f_marked_type),
 				To:     ctx.DescribeType(exp_certain),
 				Reason: "",
 			},
