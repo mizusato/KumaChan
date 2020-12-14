@@ -37,6 +37,11 @@ func (e Effect) WithLatestFrom(values Effect) Effect {
 }
 
 func CombineLatest(effects ([] Effect)) Effect {
+	if len(effects) == 0 {
+		return NewSync(func() (Object, bool) {
+			return make([] Optional, 0), true
+		})
+	}
 	return Effect { func(sched Scheduler, ob *observer) {
 		var ctx, dispose = ob.context.create_disposable_child()
 		var c = new_collector(ob, dispose)

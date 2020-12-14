@@ -142,6 +142,10 @@ public function map*[A,B,E]: ( &(Effect*[A,E],(&(A)(B))) Effect*[B,E] )
     native 'effect-map';
 public function map*[A,B]:   ( &(NoExcept*[A],(&(A)(B))) NoExcept*[B] )
     native 'effect-map';
+public function map?[A,B,E]: ( &(Effect*[A,E],(&(A)(Maybe[B]))) Effect*[B,E] )
+    (&(e,f)(e.concat-map (&(x)(switch(f(x)): case Just(y): yield(y), case N/A: yield*([]), end))));
+public function map?[A,B]:   ( &(NoExcept*[A],(&(A)(Maybe[B]))) NoExcept*[B] )
+    (&(e,f)(e.concat-map (&(x)(switch(f(x)): case Just(y): yield(y), case N/A: yield*([]), end))));
 public function map*-to[A,B,E]: ( &(Effect*[A,E],B) Effect*[B,E] )
     (&(e,v)(e | map* (&(_)(v))));
 public function map*-to[A,B]: ( &(NoExcept*[A],B) NoExcept*[B] )

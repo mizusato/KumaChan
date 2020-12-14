@@ -78,13 +78,19 @@ public function dom-node: ( &(String,Array[(String,String)],Array[Node]) Node )
     );
 
 public function dom-dynamic:
-    ( &(String, NoExcept*[(Styles,Attrs,Events)], Array[NoExcept*[Node]])
+    ( &(String, NoExcept*[(Styles,Attrs,Events)], NoExcept*[Array[Node]])
         NoExcept*[Node] )
-    ( &(tag, @opts, children)
-        let @children := (combine-latest! children),
+    ( &(tag, @opts, @children)
         ~ map* &(opts,children) := (combine-latest! @opts @children),
         let (styles,attrs,events) := opts,
         dom-node tag styles attrs events (dom-children children)
+    );
+
+public function dom-dynamic:
+    ( &(String, NoExcept*[(Styles,Attrs,Events)], Array[NoExcept*[Node]])
+        NoExcept*[Node] )
+    ( &(tag, @opts, children)
+        dom-dynamic tag @opts (combine-latest! children)
     );
 
 public function dom-dynamic:
