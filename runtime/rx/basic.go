@@ -22,7 +22,7 @@ func (e Effect) Map(f func(Object)Object) Effect {
 }
 
 func (e Effect) Filter(f func(Object)bool) Effect {
-	return Effect{func(sched Scheduler, ob *observer) {
+	return Effect { func(sched Scheduler, ob *observer) {
 		sched.run(e, &observer {
 			context:  ob.context,
 			next:     func(val Object) {
@@ -37,8 +37,8 @@ func (e Effect) Filter(f func(Object)bool) Effect {
 }
 
 func (e Effect) Reduce(f func(Object,Object)Object, init Object) Effect {
-	var acc = init
 	return Effect { func(sched Scheduler, ob *observer) {
+		var acc = init
 		sched.run(e, &observer {
 			context:  ob.context,
 			next:     func(val Object) {
@@ -54,8 +54,8 @@ func (e Effect) Reduce(f func(Object,Object)Object, init Object) Effect {
 }
 
 func (e Effect) Scan(f func(Object,Object)Object, init Object) Effect {
-	var acc = init
 	return Effect { func(sched Scheduler, ob *observer) {
+		var acc = init
 		sched.run(e, &observer {
 			context:  ob.context,
 			next:     func(val Object) {
