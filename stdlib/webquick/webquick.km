@@ -6,13 +6,18 @@ type Component union {
     type DynStyled  weak (NoExcept*[Array[String]], Component);
     type DynEnabled weak (NoExcept*[Bool], Component);
     type Container  weak Array[Component];
+    type Focusable  weak (WebUi::Events, Array[Component]);
     type Text       weak String;
+    type TextSpace  weak String;
     type TextWatch  weak NoExcept*[String];
     type TextInput  weak Reactive[String];
     type Checkbox   weak Reactive[Bool];
     type Select     weak (Reactive[String], Array[(String,String)]);
     type Button     weak (String, NoExcept[-]);
 };
+
+public function dynamic[T]: ( &(NoExcept*[T],(&(T)(Component))) Component )
+    (&(e,f)(e.map*(f).Dynamic));
 
 public function render: ( &(Component) NoExcept*[WebUi::Node] )
     ( &(cpt)
@@ -42,8 +47,16 @@ public function render: ( &(Component) NoExcept*[WebUi::Node] )
             ]),
         case Container children:
             dom-dynamic 'div' (children.map (&(cpt)(render cpt))),
+        case Focusable (events, children):
+            dom-dynamic 'div'
+                (dom-styles [])
+                (dom-attrs [('tabindex','0')])
+                events
+                (children.map (&(cpt)(render cpt))),
         case Text text:
             yield (dom-node 'div' text),
+        case TextSpace text:
+            yield (dom-node 'div' [('visibility','hidden')] text),
         case TextWatch @text:
             ~ map* &(text) := @text,
             dom-node 'div' text,
@@ -92,3 +105,4 @@ public function render: ( &(Component) NoExcept*[WebUi::Node] )
             ),
         end
     );
+
