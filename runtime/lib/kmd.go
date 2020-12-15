@@ -17,6 +17,11 @@ type KmdTypedValue struct {
 	Value  Value
 }
 
+type KmdFieldValue struct {
+	Name   string
+	Value  KmdTypedValue
+}
+
 type KmdTransformContext interface {
 	KmdGetConfig() KmdConfig
 	KmdGetAdapter(index uint) Value
@@ -115,13 +120,20 @@ func KmdTransformer(h KmdTransformContext) kmd.Transformer {
 					var t, exists = conf.SchemaTable[tid]
 					if !(exists) { panic("something went wrong") }
 					var schema = t.(kmd.RecordSchema)
+					var buffer = make([] KmdFieldValue, len(schema.Fields))
 					for name, field := range schema.Fields {
 						var field_t = field.Type
 						var field_v = pv.Elements[field.Index]
-						err := f(name, KmdTypedValue {
-							Type:  field_t,
-							Value: field_v,
-						})
+						buffer[field.Index] = KmdFieldValue{
+							Name:  name,
+							Value: KmdTypedValue {
+								Type:  field_t,
+								Value: field_v,
+							},
+						}
+					}
+					for _, field := range buffer {
+						var err = f(field.Name, field.Value)
 						if err != nil { return err }
 					}
 					return nil

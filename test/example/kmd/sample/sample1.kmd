@@ -4,13 +4,13 @@ KumaChan Data
   -
    () kumachan.TestKmd.Line v1
     {} kumachan.TestKmd.Point v1
+     name string
+      "A"
      pos () kumachan.TestKmd.Vector v1
       float
        1
       float
        2
-     name string
-      "A"
     {} kumachan.TestKmd.Point v1
      name string
       "B"
@@ -58,3 +58,29 @@ KumaChan Data
        5
     radius float
      15.5
+  -
+   () kumachan.TestKmd.Curve v1
+    | kumachan.TestKmd.Chain#kumachan#TestKmd#Curve#v1 v1
+     () kumachan.TestKmd.Next#kumachan#TestKmd#Curve#v1 v1
+      {} kumachan.TestKmd.Point v1
+       name string
+        "C1"
+       pos () kumachan.TestKmd.Vector v1
+        float
+         0
+        float
+         0
+      () kumachan.TestKmd.Curve v1
+       | kumachan.TestKmd.Chain#kumachan#TestKmd#Curve#v1 v1
+        () kumachan.TestKmd.Next#kumachan#TestKmd#Curve#v1 v1
+         {} kumachan.TestKmd.Point v1
+          name string
+           "C2"
+          pos () kumachan.TestKmd.Vector v1
+           float
+            5
+           float
+            5
+         () kumachan.TestKmd.Curve v1
+          | kumachan.TestKmd.Chain#kumachan#TestKmd#Curve#v1 v1
+           () kumachan.TestKmd.End v1

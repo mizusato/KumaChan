@@ -7,7 +7,7 @@ type Schema interface{ KmdSchema() }
 func (RecordSchema) KmdSchema() {}
 
 type RecordSchema struct {
-	Fields map[string]RecordField
+	Fields  map[string] RecordField
 }
 type RecordField struct {
 	Type   *Type

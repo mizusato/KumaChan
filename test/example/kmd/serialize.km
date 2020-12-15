@@ -22,7 +22,7 @@ private const canvas: Data::Canvas
             }),
             (Data::Curve (
                 Data::Next (Data::Point { name: 'C1', pos: (Data::Vector 0.0 0.0) },
-                Data::Curve! (Data::Next (Data::Point { name: 'C1', pos: (Data::Vector 5.0 5.0) },
+                Data::Curve! (Data::Next (Data::Point { name: 'C2', pos: (Data::Vector 5.0 5.0) },
                 Data::Curve! (Data::End))))
             ))
         ]
