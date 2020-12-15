@@ -19,6 +19,11 @@ private const canvas: Data::Canvas
             (Data::Circle {
                 center: (Data::Point { name: 'P', pos: (Data::Vector 5.0 5.0) }),
                 radius: 15.5
-            })
+            }),
+            (Data::Curve (
+                Data::Next (Data::Point { name: 'C1', pos: (Data::Vector 0.0 0.0) },
+                Data::Curve! (Data::Next (Data::Point { name: 'C1', pos: (Data::Vector 5.0 5.0) },
+                Data::Curve! (Data::End))))
+            ))
         ]
     };

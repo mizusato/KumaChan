@@ -166,6 +166,15 @@ func (id TypeId) String() string {
 	return fmt.Sprintf("%s.%s.%s %s",
 		id.Vendor, id.Project, id.Name, id.Version)
 }
+func (id TypeId) EncodeAsNameFragment() string {
+	return fmt.Sprintf("#%s#%s#%s#%s",
+		strings.ReplaceAll(id.Vendor, ".", "##"),
+		id.Project, id.Name, id.Version)
+}
+func (id TypeId) Decorate(decorator TypeId) TypeId {
+	id.Name = (id.Name + decorator.EncodeAsNameFragment())
+	return id
+}
 func (t *Type) String() string {
 	if t.elementType != nil {
 		return fmt.Sprintf("%s %s", t.kind, t.elementType)
@@ -175,3 +184,4 @@ func (t *Type) String() string {
 		return fmt.Sprintf("%s", t.kind)
 	}
 }
+

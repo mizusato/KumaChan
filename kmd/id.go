@@ -11,6 +11,7 @@ type TypeIdFuzzy struct {
 	Name     string
 }
 func TheTypeId(vendor string, project string, name string, version string) TypeId {
+	// TODO: validate strings
 	return TypeId {
 		TypeIdFuzzy: TypeIdFuzzy {
 			Vendor:  vendor,

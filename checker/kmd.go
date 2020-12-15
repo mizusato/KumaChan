@@ -45,11 +45,6 @@ func CollectKmdApi (
 					Point:    point,
 					Concrete: E_KmdOnNative {},
 				}
-			} else if len(g.Params) > 0 {
-				return nil, nil, nil, &KmdError {
-					Point:    point,
-					Concrete: E_KmdOnGeneric {},
-				}
 			} else {
 				var raw_mod = raw_index[sym.ModuleName]
 				mapping[sym] = kmd.TypeId {
@@ -63,12 +58,91 @@ func CollectKmdApi (
 			}
 		}
 	}
-	for sym, id := range mapping {
-		var schema, err = GetKmdSchema(sym, nodes, reg, mapping)
-		if err != nil { return nil, nil, nil, err }
-		sch[id] = schema
+	var mono_mapping = make(map[kmd.TypeId] ([] kmd.TypeId))
+	var mono_args = make(map[kmd.TypeId] ([] Type))
+	var add_mono = func(id kmd.TypeId, mono kmd.TypeId) {
+		existing, exists := mono_mapping[id]
+		if exists {
+			mono_mapping[id] = append(existing, mono)
+		} else {
+			mono_mapping[id] = [] kmd.TypeId { mono }
+		}
 	}
 	for sym, id := range mapping {
+		var g = reg[sym]
+		if len(g.Params) == 0 {
+			switch def := g.Value.(type) {
+			case *Boxed:
+				switch T := def.InnerType.(type) {
+				case *NamedType:
+					var inner_id, inner_has_id = mapping[T.Name]
+					if inner_has_id && len(T.Args) > 0 {
+						var inner_g, exists = reg[T.Name]
+						if !(exists) { panic("something went wrong") }
+						if len(T.Args) != len(inner_g.Params) { panic("something went wrong") }
+						mono_args[id] = T.Args
+						add_mono(inner_id, id)
+					}
+				}
+			}
+		}
+	}
+	for sym, id := range mapping {
+		var g = reg[sym]
+		if len(g.Params) > 0 {
+			var mono_types = make([] [] kmd.TypeId, 0)
+			var args_maps = make([] [] uint, 0)
+			var m, exists = mono_mapping[id]
+			if exists {
+				mono_types = append(mono_types, m)
+				var args_map = make([] uint, len(g.Params))
+				for i, _ := range g.Params { args_map[i] = uint(i) }
+				args_maps = append(args_maps, args_map)
+			} else {
+				var cur = g
+				for cur.CaseInfo.IsCaseType {
+					var case_info = cur.CaseInfo
+					var union_sym = case_info.UnionName
+					var union_id = mapping[union_sym]
+					var m, exists = mono_mapping[union_id]
+					if exists {
+						mono_types = append(mono_types, m)
+						args_maps = append(args_maps, case_info.CaseParams)
+					}
+					cur = reg[union_sym]
+				}
+			}
+			for i, _ := range mono_types {
+				var group = mono_types[i]
+				var args_map = args_maps[i]
+				for _, mono_id := range group {
+					var decorated_id = id.Decorate(mono_id)
+					var args = make([] Type, len(args_map))
+					for i := 0; i < len(args_map); i += 1 {
+						args[i] = mono_args[mono_id][args_map[i]]
+					}
+					var schema, err = GetKmdSchema (
+						decorated_id, sym, nodes, reg, mapping,
+						args, mono_id,
+					)
+					if err != nil { return nil, nil, nil, err }
+					sch[decorated_id] = schema
+				}
+			}
+		} else {
+			var schema, err = GetKmdSchema (
+				id, sym, nodes, reg, mapping,
+				nil, kmd.TypeId {},
+			)
+			if err != nil { return nil, nil, nil, err }
+			sch[id] = schema
+		}
+	}
+	for sym, id := range mapping {
+		var g = reg[sym]
+		if len(g.Params) > 0 {
+			continue
+		}
 		var mod = sym.ModuleName
 		var serializer = ast.VariousStatement {
 			Node:      nodes[sym],
@@ -132,10 +206,10 @@ func GetFunctionKmdInfo(name string, t Func, mapping KmdIdMapping) FunctionKmdIn
 }
 
 func CraftKmdApiFunction (
-	sym loader.Symbol,
-	reg TypeRegistry,
+	sym   loader.Symbol,
+	reg   TypeRegistry,
 	nodes TypeDeclNodeInfo,
-	id  kmd.TransformerPartId,
+	id    kmd.TransformerPartId,
 ) ast.DeclFunction {
 	var node = nodes[sym]
 	var make_type = func(name string) ast.VariousType {
@@ -224,20 +298,33 @@ func IsKmdApiPublic(sym loader.Symbol, reg TypeRegistry) bool {
 }
 
 func GetKmdSchema (
+	id       kmd.TypeId,
 	sym      loader.Symbol,
 	nodes    TypeDeclNodeInfo,
 	reg      TypeRegistry,
 	mapping  KmdIdMapping,
+	args     [] Type,
+	mono_id  kmd.TypeId,
 ) (kmd.Schema, *KmdError) {
 	var p = ErrorPointFrom(nodes[sym])
 	var g = reg[sym]
 	switch def := g.Value.(type) {
 	case *Boxed:
-		return GetKmdInnerTypeSchema(def.InnerType, p, reg, mapping)
+		var inner Type
+		if len(g.Params) > 0 {
+			inner = FillTypeArgs(def.InnerType, args)
+		} else {
+			inner = def.InnerType
+		}
+		var generic = len(g.Params) > 0
+		return GetKmdInnerTypeSchema(id, generic, inner, p, reg, mapping)
 	case *Union:
 		var index_map = make(map[kmd.TypeId] uint)
 		for i, case_t := range def.CaseTypes {
 			var case_id, exists = mapping[case_t.Name]
+			if len(g.Params) > 0 && len(case_t.Params) > 0 {
+				case_id = case_id.Decorate(mono_id)
+			}
 			if !(exists) { return nil, &KmdError {
 				Point:    p,
 				Concrete: E_KmdTypeNotSerializable {},
@@ -256,6 +343,8 @@ func GetKmdSchema (
 }
 
 func GetKmdInnerTypeSchema (
+	id       kmd.TypeId,
+	generic  bool,
 	t        Type,
 	p        ErrorPoint,
 	reg      TypeRegistry,
@@ -265,9 +354,36 @@ func GetKmdInnerTypeSchema (
 	case *AnonymousType:
 		switch R := T.Repr.(type) {
 		case Tuple:
-			var elements = make([] *kmd.Type, len(R.Elements))
+			var length = len(R.Elements)
+			if length == 1 {
+				switch E := R.Elements[0].(type) {
+				case *AnonymousType:
+					switch E.Repr.(type) {
+					case Unit:
+						var zero_tuple =
+							&AnonymousType { Tuple { Elements: [] Type {} } }
+						return GetKmdInnerTypeSchema(
+							id, generic, zero_tuple, p, reg, mapping)
+					}
+				}
+			}
+			var elements = make([] *kmd.Type, length)
 			for i, el := range R.Elements {
-				var el_t, err = GetKmdType(el, p, reg, mapping)
+				var mono_ok bool
+				var mono_id kmd.TypeId
+				if length == 1 {
+					// length = 1, subtyping (must be a non-generic subtype)
+					if generic { return nil, &KmdError {
+						Point:    p,
+						Concrete: E_KmdElementNotSerializable { uint(i) },
+					} }
+					mono_ok = true
+					mono_id = id
+				} else {
+					// length > 1, tuple
+					mono_ok = false
+				}
+				var el_t, err = GetKmdType(el, p, reg, mapping, mono_ok, mono_id)
 				if err != nil { return nil, &KmdError {
 					Point:    p,
 					Concrete: E_KmdElementNotSerializable { uint(i) },
@@ -278,7 +394,7 @@ func GetKmdInnerTypeSchema (
 		case Bundle:
 			var fields = make(map[string] kmd.RecordField)
 			for name, field := range R.Fields {
-				var field_t, err = GetKmdType(field.Type, p, reg, mapping)
+				var field_t, err = GetKmdType(field.Type, p, reg, mapping, false, kmd.TypeId {})
 				if err != nil { return nil, &KmdError {
 					Point:    p,
 					Concrete: E_KmdFieldNotSerializable { name },
@@ -292,43 +408,27 @@ func GetKmdInnerTypeSchema (
 		}
 	}
 	var wrapped = &AnonymousType { Tuple { Elements: []Type { t } } }
-	return GetKmdInnerTypeSchema(wrapped, p, reg, mapping)
+	return GetKmdInnerTypeSchema(id, generic, wrapped, p, reg, mapping)
 }
 
 func GetKmdType (
-	t        Type,
-	p        ErrorPoint,
-	reg      TypeRegistry,
-	mapping  KmdIdMapping,
+	t         Type,
+	p         ErrorPoint,
+	reg       TypeRegistry,
+	mapping   KmdIdMapping,
+	mono_ok   bool,
+	mono_id   kmd.TypeId,
 ) (*kmd.Type, *KmdError) {
 	switch T := t.(type) {
 	case *NamedType:
-		if len(T.Args) == 0 {
-			var id, ok = mapping[T.Name]
-			if ok {
-				var g, exists = reg[T.Name]
-				if !(exists) { panic("something went wrong") }
-				switch def := g.Value.(type) {
-				case *Boxed:
-					switch T := def.InnerType.(type) {
-					case *AnonymousType:
-						switch T.Repr.(type) {
-						case Bundle:
-							return kmd.AlgebraicType(kmd.Record, id), nil
-						}
-					}
-					return kmd.AlgebraicType(kmd.Tuple, id), nil
-				case *Union:
-					return kmd.AlgebraicType(kmd.Union, id), nil
-				}
-			}
-			kind, ok := __KmdPrimitiveTypes[T.Name]
-			if ok {
-				return kmd.PrimitiveType(kind), nil
-			}
-		} else if len(T.Args) == 1 {
+		kind, ok := __KmdPrimitiveTypes[T.Name]
+		if ok {
+			if len(T.Args) > 0 { panic("something went wrong") }
+			return kmd.PrimitiveType(kind), nil
+		}
+		if len(T.Args) == 1 {
 			var arg = T.Args[0]
-			var arg_t, err = GetKmdType(arg, p, reg, mapping)
+			var arg_t, err = GetKmdType(arg, p, reg, mapping, false, kmd.TypeId {})
 			if err != nil { return nil, err }
 			if T.Name == __Array {
 				return kmd.ContainerType(kmd.Array, arg_t), nil
@@ -336,6 +436,33 @@ func GetKmdType (
 				return kmd.ContainerType(kmd.Optional, arg_t), nil
 			}
 		}
+		id, ok := mapping[T.Name]
+		if ok {
+			var g, exists = reg[T.Name]
+			if !(exists) { panic("something went wrong") }
+			if len(g.Params) != len(T.Args) { panic("something went wrong") }
+			if len(g.Params) > 0 {
+				if mono_ok {
+					id = id.Decorate(mono_id)
+				} else {
+					goto error
+				}
+			}
+			switch def := g.Value.(type) {
+			case *Boxed:
+				switch T := def.InnerType.(type) {
+				case *AnonymousType:
+					switch T.Repr.(type) {
+					case Bundle:
+						return kmd.AlgebraicType(kmd.Record, id), nil
+					}
+				}
+				return kmd.AlgebraicType(kmd.Tuple, id), nil
+			case *Union:
+				return kmd.AlgebraicType(kmd.Union, id), nil
+			}
+		}
+		error:
 	}
 	return nil, &KmdError {
 		Point:    p,

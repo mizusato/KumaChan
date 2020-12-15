@@ -21,6 +21,6 @@ type TupleSchema struct {
 
 func (UnionSchema) KmdSchema() {}
 type UnionSchema struct {
-	CaseIndexMap  map[TypeId]uint
+	CaseIndexMap  map[TypeId] uint
 }
 

@@ -257,9 +257,6 @@ type ConcreteKmdError interface { KmdError() }
 func (impl E_KmdOnNative) KmdError() {}
 type E_KmdOnNative struct {}
 
-func (impl E_KmdOnGeneric) KmdError() {}
-type E_KmdOnGeneric struct {}
-
 func (impl E_KmdFieldNotSerializable) KmdError() {}
 type E_KmdFieldNotSerializable struct {
 	FieldName  string
@@ -284,15 +281,12 @@ func (err *KmdError) Desc() ErrorMessage {
 	case E_KmdOnNative:
 		msg.WriteText(TS_ERROR, "KMD serialization on native types " +
 			"is not supported")
-	case E_KmdOnGeneric:
-		msg.WriteText(TS_ERROR, "KMD serialization on generic types " +
-			"is not supported")
 	case E_KmdFieldNotSerializable:
 		msg.WriteText(TS_ERROR, "Field")
 		msg.WriteInnerText(TS_INLINE_CODE, e.FieldName)
 		msg.WriteText(TS_ERROR, "is not KMD serializable")
 	case E_KmdElementNotSerializable:
-		msg.WriteText(TS_ERROR, "The")
+		msg.WriteText(TS_ERROR, "Element")
 		msg.WriteInnerText(TS_INLINE, fmt.Sprintf("#%d", e.ElementIndex))
 		msg.WriteText(TS_ERROR, "is not KMD serializable")
 	case E_KmdCaseNotSerializable:

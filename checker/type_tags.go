@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"kumachan/parser/ast"
+	"kumachan/parser/syntax"
 )
 
 
@@ -45,11 +46,25 @@ func ParseTypeTags(ast_tags ([] ast.TypeTag)) (TypeTags, *TypeTagParsingError) {
 					var key = t[0]
 					var val = t[1]
 					if key == "name" {
-						tags.DataConfig.Name = val
+						if syntax.GetIdentifierFullRegexp().MatchString(val) {
+							tags.DataConfig.Name = val
+						} else {
+							return TypeTags{}, &TypeTagParsingError {
+								Tag:  ast_tag,
+								Info: fmt.Sprintf("invalid value for item 'name': %s", val),
+							}
+						}
 					} else if key == "ver" {
-						tags.DataConfig.Version = val
+						if syntax.GetIdentifierFullRegexp().MatchString(val) {
+							tags.DataConfig.Version = val
+						} else {
+							return TypeTags{}, &TypeTagParsingError {
+								Tag:  ast_tag,
+								Info: fmt.Sprintf("invalid value for item 'ver': %s", val),
+							}
+						}
 					} else {
-						return TypeTags{}, &TypeTagParsingError{
+						return TypeTags{}, &TypeTagParsingError {
 							Tag:  ast_tag,
 							Info: fmt.Sprintf("unknown data config key: %s", key),
 						}

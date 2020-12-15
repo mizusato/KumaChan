@@ -9,6 +9,14 @@ type Point {
     pos:  Vector
 };
 
+# data: name=Chain, ver=v1
+type Chain[+R] union {
+    # data: name=End, ver=v1
+    type End;
+    # data: name=Next, ver=v1
+    type Next[+R] (Point, R);
+};
+
 # data: name=Shape, ver=v1
 type Shape union {
     # data: name=Line, ver=v1
@@ -17,6 +25,8 @@ type Shape union {
     type Polygon {
         points: Array[Point]
     };
+    # data: name=Curve, ver=v1
+    type Curve Chain[Curve];
     # data: name=Circle, ver=v1
     type Circle {
         center: Point,
