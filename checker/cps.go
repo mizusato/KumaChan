@@ -26,7 +26,23 @@ func DesugarCps(cps ast.Cps) ast.Call {
 			},
 		})
 	} else {
-		cont = output
+		cont = ast.WrapTermAsExpr(ast.VariousTerm {
+			Node: cps.Output.Node,
+			Term: ast.Lambda {
+				Node:   cps.Output.Node,
+				Input:  ast.VariousPattern {
+					Node:    cps.Output.Node,
+					Pattern: ast.PatternTrivial {
+						Node: cps.Output.Node,
+						Name: ast.Identifier {
+							Node: cps.Output.Node,
+							Name: ([]rune)(IgnoreMark),
+						},
+					},
+				},
+				Output: output,
+			},
+		})
 	}
 	return ast.Call {
 		Node: cps.Node,
