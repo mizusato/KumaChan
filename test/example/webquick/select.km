@@ -1,13 +1,11 @@
 import Q from 'rename:WebQuick';
+import assets from './assets';
 
-do webui-init 'WebQuick Select' CSS DOM;
+do webui-init 'WebQuick Select' DOM;
+
+do webui-inject-css [assets::style-css];
 
 do WebUi::ExitWhenWindowClosed;
-
-private const CSS: String
-    '.container { padding: 1rem; }' .. \n ..
-    '.row { display: flex; margin: 0.25rem 0; align-items: center; }'  .. \n ..
-    '.row > * { margin: 0 0.25rem; }';
 
 private const DOM: NoExcept*[WebUi::Node]
     ~ with-reactive* &(selection) := 'foo',

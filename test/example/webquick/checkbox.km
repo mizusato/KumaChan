@@ -1,6 +1,9 @@
 import Q from 'rename:WebQuick';
+import assets from './assets';
 
-do webui-init 'WebQuick Checkbox' '.container { padding: 1rem }' DOM;
+do webui-init 'WebQuick Checkbox' DOM;
+
+do webui-inject-css [assets::style-css];
 
 do WebUi::ExitWhenWindowClosed;
 

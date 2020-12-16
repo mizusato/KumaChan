@@ -34,11 +34,11 @@ func (f DataFile) GetAST() (ast.Root, *parser.Error) {
 	return ast_root, nil
 }
 
-type TextConfig struct {
+type DataConfig struct {
 	Public  bool   `json:"public"`
 }
 func LoadData(path string, i_config interface{}) (common.UnitFile, error) {
-	var config = i_config.(TextConfig)
+	var config = i_config.(DataConfig)
 	return DataFile {
 		Path:   path,
 		Public: config.Public,
@@ -54,7 +54,7 @@ func DataLoader() common.UnitFileLoader {
 			"css",  "CSS",
 			"js",   "JS",
 		},
-		Name: "text",
+		Name: "data",
 		Load: LoadData,
 	}
 }

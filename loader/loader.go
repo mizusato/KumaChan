@@ -61,7 +61,7 @@ type RawModuleManifest struct {
 type RawModuleConfig struct {
 	UI    kinds.QtUiConfig   `json:"ui"`
 	PNG   kinds.PNG_Config   `json:"png"`
-	Text  kinds.TextConfig   `json:"text"`
+	Data  kinds.DataConfig   `json:"data"`
 }
 type RawModuleContent interface {
 	Load(ctx Context)  (ast.Root, *Error)
