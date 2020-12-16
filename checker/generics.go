@@ -67,7 +67,7 @@ func GenericFunctionCall (
 			}
 		}
 		var input_type = FillTypeArgs(raw_input_type, inferred_args)
-		var _, ok = AssignTypeTo(input_type, arg_typed.Type, Invariant, ctx)
+		var _, ok = AssignType(input_type, arg_typed.Type, Matching, ctx)
 		if !(ok) {
 			// var inf_ctx = ctx.WithInferringEnabled(f.TypeParams)
 			// var _, _ = AssignTo(marked_input_type, arg, inf_ctx)
@@ -139,7 +139,7 @@ func GenericFunctionAssignTo (
 		var inf_ctx = ctx.WithInferringEnabled(f.TypeParams)
 		var f_raw_type = &AnonymousType { f.DeclaredType }
 		var f_marked_type = MarkParamsAsBeingInferred(f_raw_type)
-		var _, ok = AssignTypeTo(f_marked_type, exp_certain, Contravariant, inf_ctx)
+		var _, ok = AssignType(f_marked_type, exp_certain, FromInferred, inf_ctx)
 		if !(ok) { return Expr{}, &ExprError {
 			Point:    info.ErrorPoint,
 			Concrete: E_NotAssignable {
@@ -156,7 +156,7 @@ func GenericFunctionAssignTo (
 			inferred_args[i] = inf_ctx.Inferring.Arguments[uint(i)]
 		}
 		var f_type = FillTypeArgs(f_raw_type, inferred_args)
-		_, ok = AssignTypeTo(exp_certain, f_type, Invariant, ctx)
+		_, ok = AssignType(exp_certain, f_type, Matching, ctx)
 		if !(ok) {
 			panic("something went wrong")
 		}

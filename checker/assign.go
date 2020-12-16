@@ -6,6 +6,40 @@ import (
 )
 
 
+type AssignDirection int
+const (
+	ToInferred AssignDirection = iota
+	FromInferred
+	Matching
+)
+
+func DirectionFromVariance(v TypeVariance) AssignDirection {
+	switch v {
+	case Covariant:
+		return ToInferred
+	case Contravariant:
+		return FromInferred
+	case Invariant:
+		return Matching
+	case Bivariant:
+		panic("bivariant is not declarable")
+	default:
+		panic("impossible branch")
+	}
+}
+
+func InverseDirection(d AssignDirection) AssignDirection {
+	switch d {
+	case ToInferred:
+		return FromInferred
+	case FromInferred:
+		return ToInferred
+	default:
+		return d
+	}
+}
+
+
 func RequireExplicitType(t Type, info ExprInfo) *ExprError {
 	if t == nil {
 		return &ExprError {
@@ -66,7 +100,7 @@ func TypedAssignTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 			Info:  expr.Info,
 		}, nil
 	}
-	var result_type, ok = AssignTypeTo(expected, expr.Type, Covariant, ctx)
+	var result_type, ok = AssignType(expected, expr.Type, ToInferred, ctx)
 	if ok {
 		return Expr {
 			Type:  result_type,
@@ -85,38 +119,40 @@ func TypedAssignTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 	}
 }
 
-func AssignTypeTo(expected Type, given Type, v TypeVariance, ctx ExprContext) (Type, bool) {
-	var direct_type, ok = DirectAssignTypeTo(expected, given, v, ctx)
+func AssignType(inferred Type, given Type, d AssignDirection, ctx ExprContext) (Type, bool) {
+	var direct_type, ok = DirectAssignType(inferred, given, d, ctx)
 	if ok {
 		return direct_type, true
 	} else {
 		var ctx_mod = ctx.ModuleInfo.Module.Name
 		var reg = ctx.ModuleInfo.Types
-		switch v {
-		case Covariant:
+		switch d {
+		case ToInferred:
 			var _, is_given_wildcard = given.(*WildcardRhsType)
 			if is_given_wildcard {
-				return AssignWildcardRhsTypeTo(expected, ctx)
+				return AssignWildcardRhsTypeTo(inferred, ctx)
 			}
 			var unboxed, can_unbox = Unbox(given, ctx_mod, reg).(Unboxed)
 			if can_unbox {
-				return AssignTypeTo(expected, unboxed.Type, v, ctx)
+				return AssignType(inferred, unboxed.Type, d, ctx)
 			} else {
 				return nil, false
 			}
-		case Contravariant:
-			var _, is_expected_wildcard = expected.(*WildcardRhsType)
+		case FromInferred:
+			var _, is_expected_wildcard = inferred.(*WildcardRhsType)
 			if is_expected_wildcard {
 				return &WildcardRhsType {}, true
 			}
-			var unboxed, can_unbox = Unbox(expected, ctx_mod, reg).(Unboxed)
+			var unboxed, can_unbox = Unbox(inferred, ctx_mod, reg).(Unboxed)
 			if can_unbox {
-				return AssignTypeTo(unboxed.Type, given, v, ctx)
+				return AssignType(unboxed.Type, given, d, ctx)
 			} else {
 				return nil, false
 			}
-		default:
+		case Matching:
 			return nil, false
+		default:
+			panic("impossible branch")
 		}
 	}
 }
@@ -126,50 +162,63 @@ func AssignWildcardRhsTypeTo(expected Type, ctx ExprContext) (Type, bool) {
 	return t, true
 }
 
-func DirectAssignTypeTo(expected Type, given Type, v TypeVariance, ctx ExprContext) (Type, bool) {
+func DirectAssignType(inferred Type, given Type, d AssignDirection, ctx ExprContext) (Type, bool) {
 	var given_param, given_is_param = given.(*ParameterType)
 	if given_is_param {
-		var super, has_super = ctx.TypeBounds.Super[given_param.Index]
-		if has_super {
-			return AssignTypeTo(expected, super, Covariant, ctx)
+		if d == ToInferred {
+			var super, has_super = ctx.TypeBounds.Super[given_param.Index]
+			if has_super {
+				return AssignType(inferred, super, d, ctx)
+			}
+		} else if d == FromInferred {
+			var sub, has_sub = ctx.TypeBounds.Sub[given_param.Index]
+			if has_sub {
+				return AssignType(inferred, sub, d, ctx)
+			}
 		}
 	}
-	switch E := expected.(type) {
+	switch I := inferred.(type) {
 	case *WildcardRhsType:
 		var _, given_is_also_this = given.(*WildcardRhsType)
 		if given_is_also_this {
 			return given, true
 		}
 	case *ParameterType:
-		if E.BeingInferred {
+		if I.BeingInferred {
 			if !(ctx.Inferring.Enabled) { panic("something went wrong") }
-			var inferred, exists = ctx.Inferring.Arguments[E.Index]
+			var inferred_val, exists = ctx.Inferring.Arguments[I.Index]
 			if exists {
-				return DirectAssignTypeTo(inferred, given, v, ctx)
+				return DirectAssignType(inferred_val, given, d, ctx)
 			} else {
-				ctx.Inferring.Arguments[E.Index] = given
+				ctx.Inferring.Arguments[I.Index] = given
 				return given, true
 			}
 		} else {
 			switch T := given.(type) {
 			case *ParameterType:
-				if E.Index == T.Index {
+				if I.Index == T.Index {
 					return given, true
 				}
 			default:
-				var sub, has_sub = ctx.TypeBounds.Sub[E.Index]
-				if has_sub {
-					return AssignTypeTo(sub, given, Covariant, ctx)
-				} else {
-					return nil, false
+				if d == ToInferred {
+					var sub, has_sub = ctx.TypeBounds.Sub[I.Index]
+					if has_sub {
+						return AssignType(sub, given, d, ctx)
+					}
+				} else if d == FromInferred {
+					var super, has_super = ctx.TypeBounds.Super[I.Index]
+					if has_super {
+						return AssignType(super, given, d, ctx)
+					}
 				}
+				return nil, false
 			}
 		}
 	case *NamedType:
 		switch T := given.(type) {
 		case *NamedType:
-			if E.Name == T.Name {
-				if len(T.Args) != len(E.Args) {
+			if I.Name == T.Name {
+				if len(T.Args) != len(I.Args) {
 					panic("something went wrong")
 				}
 				var name = T.Name
@@ -178,10 +227,11 @@ func DirectAssignTypeTo(expected Type, given Type, v TypeVariance, ctx ExprConte
 				var args = make([] Type, L)
 				for i := 0; i < L; i += 1 {
 					var param_v = g.Params[i].Variance
-					if v == Contravariant {
-						param_v = InverseVariance(param_v)
+					var param_d = DirectionFromVariance(param_v)
+					if d == FromInferred {
+						param_d = InverseDirection(param_d)
 					}
-					var t, ok = AssignTypeTo(E.Args[i], T.Args[i], param_v, ctx)
+					var t, ok = AssignType(I.Args[i], T.Args[i], param_d, ctx)
 					if ok {
 						args[i] = t
 					} else {
@@ -199,7 +249,7 @@ func DirectAssignTypeTo(expected Type, given Type, v TypeVariance, ctx ExprConte
 	case *AnonymousType:
 		switch T := given.(type) {
 		case *AnonymousType:
-			switch E_ := E.Repr.(type) {
+			switch I_ := I.Repr.(type) {
 			case Unit:
 				switch T.Repr.(type) {
 				case Unit:
@@ -208,15 +258,15 @@ func DirectAssignTypeTo(expected Type, given Type, v TypeVariance, ctx ExprConte
 			case Tuple:
 				switch T_ := T.Repr.(type) {
 				case Tuple:
-					if len(T_.Elements) != len(E_.Elements) {
+					if len(T_.Elements) != len(I_.Elements) {
 						return nil, false
 					}
 					var L = len(T_.Elements)
 					var elements = make([] Type, L)
 					for i := 0; i < L; i += 1 {
-						var e = E_.Elements[i]
+						var e = I_.Elements[i]
 						var t = T_.Elements[i]
-						var el_t, ok = AssignTypeTo(e, t, v, ctx)
+						var el_t, ok = AssignType(e, t, d, ctx)
 						if ok {
 							elements[i] = el_t
 						} else {
@@ -228,11 +278,11 @@ func DirectAssignTypeTo(expected Type, given Type, v TypeVariance, ctx ExprConte
 			case Bundle:
 				switch T_ := T.Repr.(type) {
 				case Bundle:
-					if len(E_.Fields) != len(T_.Fields) {
+					if len(I_.Fields) != len(T_.Fields) {
 						return nil, false
 					}
 					var fields = make(map[string] Field)
-					for name, e := range E_.Fields {
+					for name, e := range I_.Fields {
 						var t, exists = T_.Fields[name]
 						if !exists {
 							return nil, false
@@ -241,9 +291,7 @@ func DirectAssignTypeTo(expected Type, given Type, v TypeVariance, ctx ExprConte
 							return nil, false
 						}
 						var field_index = t.Index
-						var field_t, ok = AssignTypeTo (
-							e.Type, t.Type, v, ctx,
-						)
+						var field_t, ok = AssignType(e.Type, t.Type, d, ctx)
 						if ok {
 							fields[name] = Field {
 								Type:  field_t,
@@ -258,14 +306,14 @@ func DirectAssignTypeTo(expected Type, given Type, v TypeVariance, ctx ExprConte
 			case Func:
 				switch T_ := T.Repr.(type) {
 				case Func:
-					var input_t, ok1 = AssignTypeTo (
-						E_.Input, T_.Input, InverseVariance(v), ctx,
+					var input_t, ok1 = AssignType(
+						I_.Input, T_.Input, InverseDirection(d), ctx,
 					)
 					if !(ok1) {
 						return nil, false
 					}
-					var output_t, ok2 = AssignTypeTo (
-						E_.Output, T_.Output, v, ctx,
+					var output_t, ok2 = AssignType(
+						I_.Output, T_.Output, d, ctx,
 					)
 					if !(ok2) {
 						return nil, false
@@ -280,3 +328,4 @@ func DirectAssignTypeTo(expected Type, given Type, v TypeVariance, ctx ExprConte
 	}
 	return nil, false
 }
+
