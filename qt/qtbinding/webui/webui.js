@@ -9,8 +9,8 @@
  *  @property {function(handler:string, event:Object): void} EmitEvent
  *  @property {function(): void} LoadFinish
  *  @property {function(size: number): void} UpdateRootFontSize
- *  @property {function(content: string): void} SetGlobalStyleCSS
- *  @property {function(uuid: string, content: string): void} InjectAdditionalCSS
+ *  @property {function(uuid: string, content: string): void} InjectCSS
+ *  @property {function(uuid: string, content: string): void} InjectJS
  *  @property {Signal.<function(id:string, key:string, value:string): void>} ApplyStyle
  *  @property {Signal.<function(id:string, key:string): void>} EraseStyle
  *  @property {Signal.<function(id:string, name:string, value:string): void>} SetAttr
@@ -30,9 +30,9 @@ const S_Root = 'html'
 const S_GlobalStyle = '#__webui_global_style'
 
 /** @type {Object.<string,HTMLElement>} */
-let ElementRegistry = {}
+let elementRegistry = {}
 function createElement(parent, tag) {
-    let parent_el = ElementRegistry[parent]
+    let parent_el = elementRegistry[parent]
     if (tag == 'svg' || parent_el instanceof SVGElement) {
         return document.createElementNS(SVGNS, tag)
     } else {
@@ -40,9 +40,36 @@ function createElement(parent, tag) {
     }
 }
 
+/** @type {Array.<function():void>} */
+let updateHooks = []
+let updateHooksQueued = false
+function WebUiRegisterUpdateHook(f) {
+    updateHooks.push(f)
+    f()
+    return () => {
+        for (let i = 0; i < updateHooks.length; i += 1) {
+            if (updateHooks[i] === f) {
+                updateHooks.splice(i, 1)
+                break
+            }
+        }
+    }
+}
+function runAllUpdateHooks() {
+    if (!(updateHooksQueued)) {
+        setTimeout(function () {
+            for (let f of updateHooks) {
+                f()
+            }
+            updateHooksQueued = false
+        }, 0)
+        updateHooksQueued = true
+    }
+}
+
 console.log('[WebUI] Script Loaded')
 window.addEventListener('load', _ => {
-    ElementRegistry[0] = document.body
+    elementRegistry[0] = document.body
     if (typeof WebUI == 'undefined') {
         console.error('[WebUI] Bridge Object Not Found')
         return
@@ -65,43 +92,48 @@ window.addEventListener('load', _ => {
     }
     bridge.ApplyStyle.connect((id, key, val) => {
         // console.log('ApplyStyle', { id, key, val })
-        ElementRegistry[id].style[key] = val
+        elementRegistry[id].style[key] = val
+        runAllUpdateHooks()
     })
     bridge.EraseStyle.connect((id, key) => {
         // console.log('EraseStyle', { id, key })
-        ElementRegistry[id].style[key] = ''
+        elementRegistry[id].style[key] = ''
+        runAllUpdateHooks()
     })
     bridge.SetAttr.connect((id, name, val) => {
         // console.log('SetAttribute', { id, name, val })
         if (name == 'value') {
-            ElementRegistry[id].value = val
+            elementRegistry[id].value = val
         } else if (name == 'checked' || name == 'disabled') {
-            ElementRegistry[id][name] = true
+            elementRegistry[id][name] = true
         } else {
-            ElementRegistry[id].setAttribute(name, val)
+            elementRegistry[id].setAttribute(name, val)
         }
+        runAllUpdateHooks()
     })
     bridge.RemoveAttr.connect((id, name) => {
         // console.log('RemoveAttribute', { id, name })
         if (name == 'value') {
-            ElementRegistry[id].value = ''
+            elementRegistry[id].value = ''
         } else if (name == 'checked' || name == 'disabled') {
-            ElementRegistry[id][name] = false
+            elementRegistry[id][name] = false
         } else {
-            ElementRegistry[id].removeAttribute(name)
+            elementRegistry[id].removeAttribute(name)
         }
+        runAllUpdateHooks()
     })
     bridge.AttachEvent.connect((id, name, prevent, stop, handler) => {
         // console.log('AttachEvent', { id, name, prevent, stop, handler })
         let listener = create_listener(prevent, stop, handler)
-        let el = ElementRegistry[id]
+        let el = elementRegistry[id]
         el.addEventListener(name, listener)
         if (!(el._events)) { el._events = {} }
         el._events[name] = { listener, handler }
+        runAllUpdateHooks()
     })
     bridge.ModifyEvent.connect((id, name, prevent, stop) => {
         // console.log('ModifyEvent', { id, name, prevent, stop })
-        let el = ElementRegistry[id]
+        let el = elementRegistry[id]
         let old_event = el._events[name]
         let handler = old_event.handler
         let old_listener = old_event.listener
@@ -109,56 +141,67 @@ window.addEventListener('load', _ => {
         el.removeEventListener(name, old_listener)
         el.addEventListener(name, listener)
         el._events[name] = { listener, handler }
+        runAllUpdateHooks()
     })
     bridge.DetachEvent.connect((id, name) => {
         // console.log('DetachEvent', { id, name })
-        let el = ElementRegistry[id]
+        let el = elementRegistry[id]
         let event = el._events[name]
         el.removeEventListener(name, event.listener)
         delete el._events[name]
+        runAllUpdateHooks()
     })
     bridge.SetText.connect((id, text) => {
         // console.log('SetText', { id, text })
-        ElementRegistry[id].textContent = text
+        elementRegistry[id].textContent = text
+        runAllUpdateHooks()
     })
     bridge.AppendNode.connect((parent, id, tag) => {
         // console.log('AppendNode', { parent, id, tag })
         let el = createElement(parent, tag)
-        ElementRegistry[id] = el
-        ElementRegistry[parent].appendChild(el)
+        elementRegistry[id] = el
+        elementRegistry[parent].appendChild(el)
+        runAllUpdateHooks()
     })
     bridge.RemoveNode.connect((parent, id) => {
         // console.log('RemoveNode', { parent, id })
-        ElementRegistry[parent].removeChild(ElementRegistry[id])
-        delete ElementRegistry[id]
+        elementRegistry[parent].removeChild(elementRegistry[id])
+        delete elementRegistry[id]
+        runAllUpdateHooks()
     })
     bridge.UpdateNode.connect((old_id, new_id) => {
         // console.log('UpdateNode', { old_id, new_id })
-        let el = ElementRegistry[old_id]
-        delete ElementRegistry[old_id]
-        ElementRegistry[new_id] = el
+        let el = elementRegistry[old_id]
+        delete elementRegistry[old_id]
+        elementRegistry[new_id] = el
+        runAllUpdateHooks()
     })
     bridge.ReplaceNode.connect((parent, old_id, new_id, tag) => {
         // console.log('ReplaceNode', { parent, old_id, new_id, tag })
-        let parent_el = ElementRegistry[parent]
-        let old_el = ElementRegistry[old_id]
+        let parent_el = elementRegistry[parent]
+        let old_el = elementRegistry[old_id]
         let new_el = createElement(parent, tag)
         parent_el.insertBefore(new_el, old_el)
         parent_el.removeChild(old_el)
-        delete ElementRegistry[old_id]
-        ElementRegistry[new_id] = new_el
+        delete elementRegistry[old_id]
+        elementRegistry[new_id] = new_el
+        runAllUpdateHooks()
     })
     bridge.UpdateRootFontSize.connect(size => {
         document.querySelector(S_Root).style.fontSize = `${size}px`
     })
-    bridge.SetGlobalStyleCSS.connect(content => {
-        document.querySelector(S_GlobalStyle).textContent = content
-    })
-    bridge.InjectAdditionalCSS.connect((uuid, content) => {
+    bridge.InjectCSS.connect((uuid, content) => {
         let style_tag = document.createElement('style')
         style_tag.dataset['uuid'] = uuid
         style_tag.textContent = content
         document.head.appendChild(style_tag)
+    })
+    bridge.InjectJS.connect((uuid, content) => {
+        let script_tag = document.createElement('script')
+        script_tag.type = 'text/javascript'
+        script_tag.dataset['uuid'] = uuid
+        script_tag.textContent = content
+        document.head.appendChild(script_tag)
     })
     bridge.LoadFinish()
     console.log('LoadFinish')

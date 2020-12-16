@@ -111,12 +111,13 @@ extern "C" {
     QtStringList QtFileDialogOpenMultiple(void* parent_ptr,  QtString title, QtString cwd, QtString filter);
     QtString QtFileDialogSelectDirectory(void *parent_ptr, QtString title, QtString cwd);
     QtString QtFileDialogSave(void *parent_ptr, QtString title, QtString cwd, QtString filter);
-    void WebUiInit(QtString title, QtString css);
+    void WebUiInit(QtString title);
     void WebUiLoadView();
     void* WebUiGetWindow();
     QtString WebUiGetEventHandler();
     QtVariantMap WebUiGetEventPayload();
-    QtString WebUiInjectAdditionalCSS(QtString content);
+    QtString WebUiInjectCSS(QtString content);
+    QtString WebUiInjectJS(QtString content);
     void WebUiCallMethod(QtString id, QtString name, QtVariantList args);
     void WebUiEraseStyle(QtString id, QtString key);
     void WebUiApplyStyle(QtString id, QtString key, QtString value);

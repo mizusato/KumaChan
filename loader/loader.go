@@ -28,9 +28,9 @@ const StdlibFolder = "stdlib"
 const RenamePrefix = "rename:"
 
 var __UnitFileLoaders = [] common.UnitFileLoader {
+	kinds.DataLoader(),
 	kinds.QtUiLoader(),
 	kinds.PNG_Loader(),
-	kinds.TextLoader(),
 }
 
 type Module struct {
@@ -185,9 +185,7 @@ func ReadModulePath(path string) (RawModule, error) {
 							item_config = config_rv.Field(i).Interface()
 						}
 					}
-					item_content, err := ioutil.ReadFile(item_path)
-					if err != nil { return RawModule{}, err }
-					f, err := loader.Load(item_path, item_content, item_config)
+					f, err := loader.Load(item_path, item_config)
 					if err != nil { return RawModule{}, err }
 					unit_files = append(unit_files, f)
 				}

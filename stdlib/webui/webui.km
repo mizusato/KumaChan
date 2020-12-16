@@ -15,14 +15,14 @@ public function zero-value: ( &() NodeContent ) native 'webui-dom-content-zero';
 
 type MainLoop protected NoExcept[-];
 
-public function webui-init: ( &(String,String,NoExcept*[Node]) MainLoop )
+public function webui-init: ( &(String,NoExcept*[Node]) MainLoop )
     native 'webui-init';
 
-public function webui-init: ( &(String,NoExcept*[Node]) MainLoop )
-    ( &(title, dom) (webui-init title '' dom) );
-
-public function webui-inject-css: ( &(String) NoExcept[-] )
+public function webui-inject-css: ( &(Array[OS::Path]) NoExcept[-] )
     native 'webui-inject-css';
+
+public function webui-inject-js: ( &(Array[OS::Path]) NoExcept[-] )
+    native 'webui-inject-js';
 
 public const GetWindow: NoExcept[Qt::MainWindow]
     native 'WebUi::GetWindow';

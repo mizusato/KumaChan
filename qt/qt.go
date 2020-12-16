@@ -258,6 +258,7 @@ func MakeBool(p bool) Bool {
     if p { return Bool(C.int(int(1))) } else { return Bool(C.int(int(0))) }
 }
 
+// TODO: also needed: NewStringFromUTF8Binary
 func NewStringFromRunes(runes ([] rune)) (String, func()) {
     var str C.QtString
     if len(runes) > 0 {
@@ -458,9 +459,9 @@ type WebUiEventPayload struct {
 
 var webui_initialized = false
 
-func WebUiInit(title String, css String) {
+func WebUiInit(title String) {
     MakeSureInitialized()
-    C.WebUiInit(C.QtString(title), C.QtString(css))
+    C.WebUiInit(C.QtString(title))
     webui_initialized = true
 }
 
@@ -490,7 +491,11 @@ func WebUiGetWindow() Widget {
 }
 
 func WebUiInjectCSS(content String) String {
-    return String(C.WebUiInjectAdditionalCSS(C.QtString(content)))
+    return String(C.WebUiInjectCSS(C.QtString(content)))
+}
+
+func WebUiInjectJS(content String) String {
+    return String(C.WebUiInjectJS(C.QtString(content)))
 }
 
 func WebUiGetEventHandler() vdom.EventHandler {

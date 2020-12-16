@@ -7,6 +7,9 @@ import (
 	"kumachan/runtime/lib/container"
 	"kumachan/qt/qtbinding/webui/vdom"
 	"kumachan/util"
+	"kumachan/stdlib"
+	"io/ioutil"
+	"fmt"
 )
 
 
@@ -80,7 +83,6 @@ func WebUiInitAndLoad (
 	sched  rx.Scheduler,
 	root   rx.Effect,
 	title  String,
-	css    String,
 ) {
 	select {
 	case __WebUiLoading <- struct{}{}:
@@ -90,10 +92,7 @@ func WebUiInitAndLoad (
 			var title_runes = RuneSliceFromString(title)
 			var title, del_title = qt.NewStringFromRunes(title_runes)
 			defer del_title()
-			var css_runes = RuneSliceFromString(css)
-			var css, del_css = qt.NewStringFromRunes(css_runes)
-			defer del_css()
-			qt.WebUiInit(title, css)
+			qt.WebUiInit(title)
 			wait <- struct{}{}
 		})
 		<- wait
@@ -124,6 +123,27 @@ func WebUiInitAndLoad (
 	default:
 		<-__WebUiWindowLoaded
 	}
+}
+
+func WebUiInjectAssetFiles(files ([] stdlib.Path), kind string, inject func(qt.String)(qt.String)) {
+	<- __WebUiBridgeLoaded
+	var wait = make(chan struct{})
+	qt.CommitTask(func() {
+		for _, path := range files {
+			var content_bin, err = ioutil.ReadFile(path.String())
+			if err != nil {
+				panic(fmt.Sprintf("error loading %s file: %s", kind, path))
+			}
+			var content_str = container.StringForceDecode(content_bin, container.UTF8)
+			var content_runes = RuneSliceFromString(content_str)
+			var content, del = qt.NewStringFromRunes(content_runes)
+			var uuid = inject(content)
+			qt.DeleteString(uuid) // unused now
+			del()
+		}
+		wait <- struct{}{}
+	})
+	<- wait
 }
 
 var __WebUiVirtualDomDeltaNotifier = &vdom.DeltaNotifier {
@@ -164,24 +184,32 @@ var WebUiConstants = map[string] NativeConstant {
 }
 
 var WebUiFunctions = map[string] interface{} {
-	"webui-init": func(title String, css String, root rx.Effect, h InteropContext) rx.Effect {
+	"webui-init": func(title String, root rx.Effect, h InteropContext) rx.Effect {
 		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
-			WebUiInitAndLoad(h.GetScheduler(), root, title, css)
+			WebUiInitAndLoad(h.GetScheduler(), root, title)
 			return nil, true
 		})
 	},
-	"webui-inject-css": func(content String) rx.Effect {
-		return rx.NewGoroutine(func(sender rx.Sender) {
-			<- __WebUiBridgeLoaded
-			qt.CommitTask(func() {
-				var content_runes = RuneSliceFromString(content)
-				var content, del = qt.NewStringFromRunes(content_runes)
-				defer del()
-				var uuid = qt.WebUiInjectCSS(content)
-				qt.DeleteString(uuid)  // unused now
-				sender.Next(nil)
-				sender.Complete()
-			})
+	"webui-inject-css": func(v Value) rx.Effect {
+		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
+			var array = container.ArrayFrom(v)
+			var files = make([] stdlib.Path, array.Length)
+			for i := uint(0); i < array.Length; i += 1 {
+				files[i] = array.GetItem(i).(stdlib.Path)
+			}
+			WebUiInjectAssetFiles(files, "CSS", qt.WebUiInjectCSS)
+			return nil, true
+		})
+	},
+	"webui-inject-js": func(v Value) rx.Effect {
+		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
+			var array = container.ArrayFrom(v)
+			var files = make([] stdlib.Path, array.Length)
+			for i := uint(0); i < array.Length; i += 1 {
+				files[i] = array.GetItem(i).(stdlib.Path)
+			}
+			WebUiInjectAssetFiles(files, "JS", qt.WebUiInjectJS)
+			return nil, true
 		})
 	},
 	"webui-dom-node": func (

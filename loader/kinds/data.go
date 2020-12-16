@@ -7,23 +7,15 @@ import (
 	"kumachan/parser/ast"
 	"kumachan/loader/common"
 	"kumachan/stdlib"
-	"unicode/utf8"
 )
 
 
-type TextFile struct {
+type DataFile struct {
 	Path    string
-	Data    [] byte
 	Public  bool
 }
-func (f TextFile) GetAST() (ast.Root, *parser.Error) {
-	var bytes = f.Data
-	var str = make([] uint32, 0, len(bytes) / 4)
-	for len(bytes) > 0 {
-		var char, size = utf8.DecodeRune(bytes)
-		str = append(str, uint32(char))
-		bytes = bytes[size:]
-	}
+func (f DataFile) GetAST() (ast.Root, *parser.Error) {
+	var path = stdlib.ParsePath(f.Path)
 	var ext = filepath.Ext(f.Path)
 	var name_base = strings.TrimSuffix(filepath.Base(f.Path), ext)
 	var name_ext = strings.TrimPrefix(ext, ".")
@@ -34,9 +26,9 @@ func (f TextFile) GetAST() (ast.Root, *parser.Error) {
 		ast_root_node,
 		f.Public,
 		name,
-		stdlib.Core,
-		stdlib.String,
-		str,
+		stdlib.OS,
+		stdlib.PathT,
+		path,
 	)
 	ast_root.Statements = append(ast_root.Statements, const_decl)
 	return ast_root, nil
@@ -45,25 +37,25 @@ func (f TextFile) GetAST() (ast.Root, *parser.Error) {
 type TextConfig struct {
 	Public  bool   `json:"public"`
 }
-func LoadText(path string, content ([] byte), i_config interface{}) (common.UnitFile, error) {
+func LoadData(path string, i_config interface{}) (common.UnitFile, error) {
 	var config = i_config.(TextConfig)
-	return TextFile {
+	return DataFile {
 		Path:   path,
-		Data:   content,
 		Public: config.Public,
 	}, nil
 }
 
-func TextLoader() common.UnitFileLoader {
+func DataLoader() common.UnitFileLoader {
 	return common.UnitFileLoader {
 		Extensions: [] string {
+			"bin",  "BIN",
 			"txt",  "TXT",
 			"html", "HTML",
 			"css",  "CSS",
 			"js",   "JS",
 		},
 		Name: "text",
-		Load: LoadText,
+		Load: LoadData,
 	}
 }
 

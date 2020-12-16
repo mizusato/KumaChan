@@ -59,7 +59,7 @@ func (event QtEvent) Receive() rx.Effect {
 func QtFileDialogAdaptArgs (
 	parent  SumValue,
 	title   String,
-	cwd     Path,
+	cwd     stdlib.Path,
 	filter  String,
 ) (qt.Widget, qt.FileDialogOptions) {
 	var parent_val, ok = Unwrap(parent)
@@ -204,14 +204,14 @@ var QtFunctions = map[string] interface{} {
 			return Na()
 		}
 	},
-	"qt-dialog-open": func(parent SumValue, title String, cwd Path, filter String) rx.Effect {
+	"qt-dialog-open": func(parent SumValue, title String, cwd stdlib.Path, filter String) rx.Effect {
 		var parent_widget, opts = QtFileDialogAdaptArgs(parent, title, cwd, filter)
 		return rx.NewCallback(func(ok func(rx.Object)) {
 			qt.CommitTask(func() {
 				var path_runes = qt.FileDialogOpen(parent_widget, opts)
 				var path_str = string(path_runes)
 				if path_str != "" {
-					var path = ParsePath(string(path_str))
+					var path = stdlib.ParsePath(string(path_str))
 					ok(Just(path))
 				} else {
 					ok(Na())
@@ -219,27 +219,27 @@ var QtFunctions = map[string] interface{} {
 			})
 		})
 	},
-	"qt-dialog-open*": func(parent SumValue, title String, cwd Path, filter String) rx.Effect {
+	"qt-dialog-open*": func(parent SumValue, title String, cwd stdlib.Path, filter String) rx.Effect {
 		var parent_widget, opts = QtFileDialogAdaptArgs(parent, title, cwd, filter)
 		return rx.NewCallback(func(ok func(rx.Object)) {
 			qt.CommitTask(func() {
 				var str_list = qt.FileDialogOpenMultiple(parent_widget, opts)
-				var path_list = make([] Path, len(str_list))
+				var path_list = make([] stdlib.Path, len(str_list))
 				for i, str := range str_list {
-					path_list[i] = ParsePath(string(str))
+					path_list[i] = stdlib.ParsePath(string(str))
 				}
 				ok(path_list)
 			})
 		})
 	},
-	"qt-dialog-open-dir": func(parent SumValue, title String, cwd Path) rx.Effect {
+	"qt-dialog-open-dir": func(parent SumValue, title String, cwd stdlib.Path) rx.Effect {
 		var parent_widget, opts = QtFileDialogAdaptArgs(parent, title, cwd, String([] Char {}))
 		return rx.NewCallback(func(ok func(rx.Object)) {
 			qt.CommitTask(func() {
 				var path_runes = qt.FileDialogSelectDirectory(parent_widget, opts)
 				var path_str = string(path_runes)
 				if path_str != "" {
-					var path = ParsePath(string(path_str))
+					var path = stdlib.ParsePath(string(path_str))
 					ok(Just(path))
 				} else {
 					ok(Na())
@@ -247,14 +247,14 @@ var QtFunctions = map[string] interface{} {
 			})
 		})
 	},
-	"qt-dialog-save": func(parent SumValue, title String, cwd Path, filter String) rx.Effect {
+	"qt-dialog-save": func(parent SumValue, title String, cwd stdlib.Path, filter String) rx.Effect {
 		var parent_widget, opts = QtFileDialogAdaptArgs(parent, title, cwd, filter)
 		return rx.NewCallback(func(ok func(rx.Object)) {
 			qt.CommitTask(func() {
 				var path_runes = qt.FileDialogSave(parent_widget, opts)
 				var path_str = string(path_runes)
 				if path_str != "" {
-					var path = ParsePath(string(path_str))
+					var path = stdlib.ParsePath(string(path_str))
 					ok(Just(path))
 				} else {
 					ok(Na())

@@ -11,7 +11,7 @@ import (
 type UnitFileLoader struct {
 	Extensions  [] string
 	Name        string
-	Load        func(path string, content ([] byte), config interface{}) (UnitFile, error)
+	Load        func(path string, config interface{}) (UnitFile, error)
 }
 
 type UnitFile interface {

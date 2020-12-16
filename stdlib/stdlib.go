@@ -1,11 +1,13 @@
 package stdlib
 
 import (
+	"os"
+	"fmt"
+	"bytes"
 	"image"
+	"strings"
 	"reflect"
 	"image/png"
-	"bytes"
-	"fmt"
 )
 
 
@@ -16,6 +18,7 @@ var __ModuleDirectories = [] string {
 }
 func GetModuleDirectories() ([] string) { return __ModuleDirectories }
 const Core = "Core"
+const OS = "OS"
 var core_types = []string {
 	// types.km
 	Float, FloatIEEE, Number,
@@ -126,6 +129,9 @@ const Range = "Range"
 const Debug = "Debug"
 const Never = "Never"
 
+// os
+const PathT = "Path"
+
 func GetPrimitiveReflectType(name string) (reflect.Type, bool) {
 	switch name {
 	case Number:
@@ -155,6 +161,35 @@ func GetPrimitiveReflectType(name string) (reflect.Type, bool) {
 	default:
 		return nil, false
 	}
+}
+
+// path
+type Path ([] string)
+var __PathSep = string([] rune { os.PathSeparator })
+func (path Path) String() string {
+	return strings.Join(path, __PathSep)
+}
+func (path Path) Join(segments ([] string)) Path {
+	for _, seg := range segments {
+		if strings.Contains(seg, __PathSep) {
+			panic(fmt.Sprintf("invalid path segment %s", seg))
+		}
+	}
+	var new_path = make(Path, (len(path) + len(segments)))
+	copy(new_path, path)
+	copy(new_path[len(path):], segments)
+	return new_path
+}
+func ParsePath(str string) Path {
+	var raw = strings.Split(str, __PathSep)
+	var path = make([] string, 0, len(raw))
+	for i, segment := range raw {
+		if i != 0 && segment == "" {
+			continue
+		}
+		path = append(path, segment)
+	}
+	return path
 }
 
 // loader types

@@ -8,9 +8,9 @@
 
 static WebUiWindow* window = nullptr;
 
-void WebUiInit(QtString title, QtString css) {
+void WebUiInit(QtString title) {
     if (window == nullptr) {
-        window = new WebUiWindow(QtUnwrapString(title), QtUnwrapString(css));
+        window = new WebUiWindow(QtUnwrapString(title));
     };
 }
 
@@ -34,9 +34,15 @@ QtVariantMap WebUiGetEventPayload() {
     return { m };
 }
 
-QtString WebUiInjectAdditionalCSS(QtString content) {
+QtString WebUiInjectCSS(QtString content) {
     QString uuid = QUuid::createUuid().toString();
-    window->bridge->InjectAdditionalCSS(uuid, QtUnwrapString(content));
+    window->bridge->InjectCSS(uuid, QtUnwrapString(content));
+    return QtWrapString(uuid);
+}
+
+QtString WebUiInjectJS(QtString content) {
+    QString uuid = QUuid::createUuid().toString();
+    window->bridge->InjectJS(uuid, QtUnwrapString(content));
     return QtWrapString(uuid);
 }
 

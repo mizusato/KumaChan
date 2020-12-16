@@ -2,7 +2,6 @@ package lib
 
 import (
 	"os"
-	"fmt"
 	"time"
 	"runtime"
 	"strings"
@@ -10,36 +9,9 @@ import (
 	"kumachan/runtime/rx"
 	. "kumachan/runtime/common"
 	. "kumachan/runtime/lib/container"
+	"kumachan/stdlib"
 )
 
-
-type Path ([] string)
-var __PathSep = string([] rune { os.PathSeparator })
-func (path Path) String() string {
-	return strings.Join(path, __PathSep)
-}
-func (path Path) Join(segments ([] string)) Path {
-	for _, seg := range segments {
-		if strings.Contains(seg, __PathSep) {
-			panic(fmt.Sprintf("invalid path segment %s", seg))
-		}
-	}
-	var new_path = make(Path, (len(path) + len(segments)))
-	copy(new_path, path)
-	copy(new_path[len(path):], segments)
-	return new_path
-}
-func ParsePath(str string) Path {
-	var raw = strings.Split(str, __PathSep)
-	var path = make([] string, 0, len(raw))
-	for i, segment := range raw {
-		if i != 0 && segment == "" {
-			continue
-		}
-		path = append(path, segment)
-	}
-	return path
-}
 
 type Locale struct {
 	Language     String
@@ -80,7 +52,7 @@ var OS_Constants = map[string] NativeConstant {
 	"OS::Cwd":     func(h InteropContext) Value {
 		var wd, err = os.Getwd()
 		if err != nil { panic("unable to get current working directory") }
-		return ParsePath(wd)
+		return stdlib.ParsePath(wd)
 	},
 	"OS::Env":     func(h InteropContext) Value {
 		return GetEnv(h.GetEnv())
@@ -106,11 +78,11 @@ var OS_Constants = map[string] NativeConstant {
 		return Struct2Prod(locale)
 	},
 	"OS::EntryModulePath": func(h InteropContext) Value {
-		return ParsePath(h.GetEntryModulePath())
+		return stdlib.ParsePath(h.GetEntryModulePath())
 	},
 	"OS::EntryModuleDirPath": func(h InteropContext) Value {
 		var p = h.GetEntryModulePath()
-		return ParsePath(filepath.Dir(p))
+		return stdlib.ParsePath(filepath.Dir(p))
 	},
 }
 
@@ -146,13 +118,13 @@ func GetArgs(raw ([] string)) ([] String) {
 }
 
 var OS_Functions = map[string] Value {
-	"String from Path": func(path Path) String {
+	"String from Path": func(path stdlib.Path) String {
 		return StringFromGoString(path.String())
 	},
-	"parse-path": func(str String) Path {
-		return ParsePath(GoStringFromString(str))
+	"parse-path": func(str String) stdlib.Path {
+		return stdlib.ParsePath(GoStringFromString(str))
 	},
-	"path-join": func(path Path, raw Value) Path {
+	"path-join": func(path stdlib.Path, raw Value) stdlib.Path {
 		var arr = ArrayFrom(raw)
 		var segments = make([] string, arr.Length)
 		for i := uint(0); i < arr.Length; i += 1 {
@@ -160,31 +132,31 @@ var OS_Functions = map[string] Value {
 		}
 		return path.Join(segments)
 	},
-	"walk-dir": func(dir Path) rx.Effect {
+	"walk-dir": func(dir stdlib.Path) rx.Effect {
 		return rx.WalkDir(dir.String()).Map(func(val rx.Object) rx.Object {
 			var item = val.(rx.FileItem)
-			return ToTuple2(ParsePath(item.Path), Struct2Prod(item.State))
+			return ToTuple2(stdlib.ParsePath(item.Path), Struct2Prod(item.State))
 		})
 	},
-	"list-dir": func(dir Path) rx.Effect {
+	"list-dir": func(dir stdlib.Path) rx.Effect {
 		return rx.ListDir(dir.String()).Map(func(val rx.Object) rx.Object {
 			var item = val.(rx.FileItem)
-			return ToTuple2(ParsePath(item.Path), Struct2Prod(item.State))
+			return ToTuple2(stdlib.ParsePath(item.Path), Struct2Prod(item.State))
 		})
 	},
-	"open-read-only": func(path Path) rx.Effect {
+	"open-read-only": func(path stdlib.Path) rx.Effect {
 		return rx.OpenReadOnly(path.String())
 	},
-	"open-read-write": func(path Path) rx.Effect {
+	"open-read-write": func(path stdlib.Path) rx.Effect {
 		return rx.OpenReadWrite(path.String())
 	},
-	"open-read-write-create": func(path Path) rx.Effect {
+	"open-read-write-create": func(path stdlib.Path) rx.Effect {
 		return rx.OpenReadWriteCreate(path.String(), 0666)
 	},
-	"open-overwrite": func(path Path) rx.Effect {
+	"open-overwrite": func(path stdlib.Path) rx.Effect {
 		return rx.OpenOverwrite(path.String(), 0666)
 	},
-	"open-append": func(path Path) rx.Effect {
+	"open-append": func(path stdlib.Path) rx.Effect {
 		return rx.OpenAppend(path.String(), 0666)
 	},
 	"file-close": func(f rx.File) rx.Effect {
