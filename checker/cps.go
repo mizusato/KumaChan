@@ -36,7 +36,7 @@ func DesugarCps(cps ast.Cps) ast.Call {
 						Node: cps.Output.Node,
 						Name: ast.Identifier {
 							Node: cps.Output.Node,
-							Name: ([]rune)(IgnoreMark),
+							Name: ([] rune)(IgnoreMark),
 						},
 					},
 				},

@@ -34,15 +34,15 @@ QtVariantMap WebUiGetEventPayload() {
     return { m };
 }
 
-QtString WebUiInjectCSS(QtString content) {
+QtString WebUiInjectCSS(QtString path) {
     QString uuid = QUuid::createUuid().toString();
-    window->bridge->InjectCSS(uuid, QtUnwrapString(content));
+    window->bridge->InjectCSS(uuid, QtUnwrapString(path));
     return QtWrapString(uuid);
 }
 
-QtString WebUiInjectJS(QtString content) {
+QtString WebUiInjectJS(QtString path) {
     QString uuid = QUuid::createUuid().toString();
-    window->bridge->InjectJS(uuid, QtUnwrapString(content));
+    window->bridge->InjectJS(uuid, QtUnwrapString(path));
     return QtWrapString(uuid);
 }
 

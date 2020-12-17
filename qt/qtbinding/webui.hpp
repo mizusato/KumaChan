@@ -25,8 +25,8 @@ signals:
     void LoadFinish();
     void EmitEvent(QString handler, QVariantMap event);
     void UpdateRootFontSize(double size);
-    void InjectCSS(QString uuid, QString content);
-    void InjectJS(QString uuid, QString content);
+    void InjectCSS(QString uuid, QString path);
+    void InjectJS(QString uuid, QString path);
     void CallMethod(QString id, QString name, QVariantList args);
     // TODO: use 1 notifier signal instead of many
     void EraseStyle(QString id, QString key);

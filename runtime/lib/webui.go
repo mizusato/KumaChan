@@ -8,8 +8,6 @@ import (
 	"kumachan/qt/qtbinding/webui/vdom"
 	"kumachan/util"
 	"kumachan/stdlib"
-	"io/ioutil"
-	"fmt"
 )
 
 
@@ -130,14 +128,10 @@ func WebUiInjectAssetFiles(files ([] stdlib.Path), kind string, inject func(qt.S
 	var wait = make(chan struct{})
 	qt.CommitTask(func() {
 		for _, path := range files {
-			var content_bin, err = ioutil.ReadFile(path.String())
-			if err != nil {
-				panic(fmt.Sprintf("error loading %s file: %s", kind, path))
-			}
-			var content_str = container.StringForceDecode(content_bin, container.UTF8)
-			var content_runes = RuneSliceFromString(content_str)
-			var content, del = qt.NewStringFromRunes(content_runes)
-			var uuid = inject(content)
+			var path_str = StringFromGoString(path.String())
+			var path_runes = RuneSliceFromString(path_str)
+			var path_q, del = qt.NewStringFromRunes(path_runes)
+			var uuid = inject(path_q)
 			qt.DeleteString(uuid) // unused now
 			del()
 		}

@@ -190,17 +190,18 @@ window.addEventListener('load', _ => {
     bridge.UpdateRootFontSize.connect(size => {
         document.querySelector(S_Root).style.fontSize = `${size}px`
     })
-    bridge.InjectCSS.connect((uuid, content) => {
-        let style_tag = document.createElement('style')
-        style_tag.dataset['uuid'] = uuid
-        style_tag.textContent = content
-        document.head.appendChild(style_tag)
+    bridge.InjectCSS.connect((uuid, path) => {
+        let link_tag = document.createElement('link')
+        link_tag.dataset['uuid'] = uuid
+        link_tag.rel = 'stylesheet'
+        link_tag.href = `file://${path}`
+        document.head.appendChild(link_tag)
     })
-    bridge.InjectJS.connect((uuid, content) => {
+    bridge.InjectJS.connect((uuid, path) => {
         let script_tag = document.createElement('script')
-        script_tag.type = 'text/javascript'
         script_tag.dataset['uuid'] = uuid
-        script_tag.textContent = content
+        script_tag.type = 'text/javascript'
+        script_tag.src = `file://${path}`
         document.head.appendChild(script_tag)
     })
     bridge.LoadFinish()

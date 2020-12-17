@@ -490,12 +490,12 @@ func WebUiGetWindow() Widget {
     return widget { object { C.WebUiGetWindow() } }
 }
 
-func WebUiInjectCSS(content String) String {
-    return String(C.WebUiInjectCSS(C.QtString(content)))
+func WebUiInjectCSS(path String) String {
+    return String(C.WebUiInjectCSS(C.QtString(path)))
 }
 
-func WebUiInjectJS(content String) String {
-    return String(C.WebUiInjectJS(C.QtString(content)))
+func WebUiInjectJS(path String) String {
+    return String(C.WebUiInjectJS(C.QtString(path)))
 }
 
 func WebUiGetEventHandler() vdom.EventHandler {

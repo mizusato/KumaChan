@@ -116,8 +116,8 @@ extern "C" {
     void* WebUiGetWindow();
     QtString WebUiGetEventHandler();
     QtVariantMap WebUiGetEventPayload();
-    QtString WebUiInjectCSS(QtString content);
-    QtString WebUiInjectJS(QtString content);
+    QtString WebUiInjectCSS(QtString path);
+    QtString WebUiInjectJS(QtString path);
     void WebUiCallMethod(QtString id, QtString name, QtVariantList args);
     void WebUiEraseStyle(QtString id, QtString key);
     void WebUiApplyStyle(QtString id, QtString key, QtString value);
