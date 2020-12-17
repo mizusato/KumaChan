@@ -63,6 +63,24 @@ type RawModuleConfig struct {
 	PNG   kinds.PNG_Config   `json:"png"`
 	Data  kinds.DataConfig   `json:"data"`
 }
+func DefaultManifest(path string) RawModuleManifest {
+	var abs_path, err = filepath.Abs(path)
+	if err == nil { path = abs_path }
+	var dir = filepath.Dir(path)
+	var base = filepath.Base(path)
+	return RawModuleManifest {
+		Vendor:  "",
+		Project: dir,
+		Version: "",
+		Name:    base,
+		Config:  RawModuleConfig {
+			UI:   kinds.QtUiConfig { Public: true },
+			PNG:  kinds.PNG_Config { Public: true },
+			Data: kinds.DataConfig { Public: true },
+		},
+	}
+}
+
 type RawModuleContent interface {
 	Load(ctx Context)  (ast.Root, *Error)
 }
@@ -141,17 +159,16 @@ func ReadModulePath(path string) (RawModule, error) {
 				has_manifest = true
 			}
 		}
-		if !(has_manifest) {
-			return RawModule{}, errors.New (
-				fmt.Sprintf("missing manifest(%s) in module folder %s",
-					ManifestFileName, path))
-		}
 		var manifest RawModuleManifest
-		err = json.Unmarshal(manifest_content, &manifest)
-		if err != nil {
-			return RawModule{}, errors.New (
-				fmt.Sprintf("error decoding module manifest %s: %s",
-					manifest_path, err.Error()))
+		if has_manifest {
+			var err = json.Unmarshal(manifest_content, &manifest)
+			if err != nil {
+				return RawModule{}, errors.New (
+					fmt.Sprintf("error decoding module manifest %s: %s",
+						manifest_path, err.Error()))
+			}
+		} else {
+			manifest = DefaultManifest(path)
 		}
 		for _, item := range items {
 			var item_name = item.Name()

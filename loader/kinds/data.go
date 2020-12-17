@@ -19,7 +19,7 @@ func (f DataFile) GetAST() (ast.Root, *parser.Error) {
 	var ext = filepath.Ext(f.Path)
 	var name_base = strings.TrimSuffix(filepath.Base(f.Path), ext)
 	var name_ext = strings.TrimPrefix(ext, ".")
-	var name = name_base + "-" + name_ext
+	var name = strings.ReplaceAll(name_base, ".", "-") + "-" + name_ext
 	var ast_root = common.CreateEmptyAST(f.Path)
 	var ast_root_node = ast_root.Node
 	var const_decl = common.CreateConstant (

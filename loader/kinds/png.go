@@ -21,6 +21,7 @@ type PNG_File struct {
 }
 func (f PNG_File) GetAST() (ast.Root, *parser.Error) {
 	var name = strings.TrimSuffix(filepath.Base(f.Path), filepath.Ext(f.Path))
+	name = strings.ReplaceAll(name, ".", "-")
 	var ast_root = common.CreateEmptyAST(f.Path)
 	var ast_root_node = ast_root.Node
 	var type_name string
