@@ -70,7 +70,8 @@ type AnonymousType struct {
 	Repr  TypeRepr
 }
 func (impl *WildcardRhsType) CheckerType() {}
-type WildcardRhsType struct {}
+type WildcardRhsType struct {}  // TODO: rename to NeverType
+// TODO: WildcardLhsType (any)
 
 
 type TypeRepr interface { TypeRepr() }

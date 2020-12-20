@@ -10,6 +10,7 @@ import (
 
 var __ReservedTypeNames = [...]string {
 	IgnoreMark, UnitAlias, WildcardRhsTypeName,
+	// TODO: WildcardLhsTypeName, SuperTypeName
 }
 func IsReservedTypeName(name string) bool {
 	for _, reserved := range __ReservedTypeNames {
