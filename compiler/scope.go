@@ -150,6 +150,10 @@ func (scope *Scope) CollectUnusedAsErrors() ([] E) {
 				Concrete: E_UnusedBinding { b.Name },
 			})
 		}
-		return errs
+		if len(errs) == 0 {
+			return nil
+		} else {
+			return errs
+		}
 	}
 }

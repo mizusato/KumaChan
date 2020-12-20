@@ -66,6 +66,10 @@ public function random: ( &() NoExcept[Float] )
     native 'random';
 public function crash: ( &(String) NoExcept[-] )
     native 'crash';
+public function go[T]: ( &((&()(T))) NoExcept[T] )
+    native 'go';
+public function go*[T]: ( &(Seq[T]) NoExcept*[T] )
+    native 'go*';
 public function yield[T]:  ( &(T) NoExcept[T] )
     native 'yield';
 public function yield*:    ( &(Range) NoExcept*[Number] )
