@@ -186,9 +186,9 @@ func DirectAssignType(inferred Type, given Type, d AssignDirection, ctx ExprCont
 	case *ParameterType:
 		if I.BeingInferred {
 			if !(ctx.Inferring.Enabled) { panic("something went wrong") }
-			var inferred_val, exists = ctx.Inferring.Arguments[I.Index]
+			var inferred_t, exists = ctx.Inferring.Arguments[I.Index]
 			if exists {
-				return DirectAssignType(inferred_val, given, d, ctx)
+				return DirectAssignType(inferred_t, given, d, ctx)
 			} else {
 				ctx.Inferring.Arguments[I.Index] = given
 				return given, true

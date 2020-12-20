@@ -13,6 +13,7 @@ public function collect[T]: ( &(Seq[T]) Array[T] )
 
 public function next[T]: ( &(Seq[T]) Maybe[(T,Seq[T])] )
     native 'seq-next';
+// TODO: consider change to const: Seq[never]
 public function nil[T]:  ( &() Seq[T] )
     native 'seq-nil';
 public function cons[T]: ( &(T,Seq[T]) Seq[T] )
