@@ -128,9 +128,13 @@ func AssignType(inferred Type, given Type, d AssignDirection, ctx ExprContext) (
 		var reg = ctx.GetTypeRegistry()
 		switch d {
 		case ToInferred:
-			var _, is_given_wildcard = given.(*NeverType)
-			if is_given_wildcard {
-				return AssignWildcardRhsTypeTo(inferred, ctx)
+			var _, from_never = given.(*NeverType)
+			if from_never {
+				return AssignNeverTypeTo(inferred, ctx)
+			}
+			var _, to_any = inferred.(*AnyType)
+			if to_any {
+				return &AnyType {}, true
 			}
 			var unboxed, can_unbox = Unbox(given, ctx_mod, reg).(Unboxed)
 			if can_unbox {
@@ -139,9 +143,13 @@ func AssignType(inferred Type, given Type, d AssignDirection, ctx ExprContext) (
 				return nil, false
 			}
 		case FromInferred:
-			var _, is_expected_wildcard = inferred.(*NeverType)
-			if is_expected_wildcard {
-				return &NeverType {}, true
+			var _, from_never = inferred.(*NeverType)
+			if from_never {
+				return given, true
+			}
+			var _, to_any = given.(*AnyType)
+			if to_any {
+				return &AnyType {}, true
 			}
 			var unboxed, can_unbox = Unbox(inferred, ctx_mod, reg).(Unboxed)
 			if can_unbox {
@@ -156,7 +164,7 @@ func AssignType(inferred Type, given Type, d AssignDirection, ctx ExprContext) (
 		}
 	}
 }
-func AssignWildcardRhsTypeTo(expected Type, ctx ExprContext) (Type, bool) {
+func AssignNeverTypeTo(expected Type, ctx ExprContext) (Type, bool) {
 	var t, err = GetCertainType(expected, ErrorPoint{}, ctx)
 	if err != nil { return nil, false }
 	return t, true
@@ -179,8 +187,13 @@ func DirectAssignType(inferred Type, given Type, d AssignDirection, ctx ExprCont
 	}
 	switch I := inferred.(type) {
 	case *NeverType:
-		var _, given_is_also_this = given.(*NeverType)
-		if given_is_also_this {
+		var _, given_is_also_never = given.(*NeverType)
+		if given_is_also_never {
+			return given, true
+		}
+	case *AnyType:
+		var _, given_is_also_any = given.(*AnyType)
+		if given_is_also_any {
 			return given, true
 		}
 	case *ParameterType:

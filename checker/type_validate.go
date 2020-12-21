@@ -72,6 +72,8 @@ func ValidateType(t Type, nodes (map[Type] ast.Node), ctx TypeValidationContext)
 	switch T := t.(type) {
 	case *NeverType:
 		return nil
+	case *AnyType:
+		return nil
 	case *ParameterType:
 		return nil
 	case *NamedType:

@@ -40,6 +40,8 @@ func DescribeType(type_ Type, ctx TypeDescContext) string {
 	switch t := type_.(type) {
 	case *NeverType:
 		return NeverTypeName
+	case *AnyType:
+		return AnyTypeName
 	case *ParameterType:
 		if t.BeingInferred {
 			var inferred_t, exists = ctx.InferredTypes[t.Index]

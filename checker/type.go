@@ -71,9 +71,8 @@ type AnonymousType struct {
 }
 func (impl *NeverType) CheckerType() {}
 type NeverType struct {}
-// TODO: AnyType
-// func (impl *AnyType) CheckerType() {}
-// type AnyType struct {}
+func (impl *AnyType) CheckerType() {}
+type AnyType struct {}
 
 
 type TypeRepr interface { TypeRepr() }
@@ -133,6 +132,13 @@ func AreTypesEqualInSameCtx(type1 Type, type2 Type) bool {
 	case *NeverType:
 		switch type2.(type) {
 		case *NeverType:
+			return true
+		default:
+			return false
+		}
+	case *AnyType:
+		switch type2.(type) {
+		case *AnyType:
 			return true
 		default:
 			return false

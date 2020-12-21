@@ -131,11 +131,23 @@ func Box (
 	}
 }
 
-func GetUnionArgs (case_args []Type, union_arity uint, mapping []uint) []Type {
+func GetUnionArgs (
+	case_args       [] Type,
+	union_arity     uint,
+	union_variance  [] TypeVariance,
+	mapping         [] uint,
+) ([] Type) {
 	var mapped = make([] Type, union_arity)
 	for i := uint(0); i < union_arity; i += 1 {
-		// TODO: should be any/never or return error based on variance
-		mapped[i] = &NeverType {}
+		var v = union_variance[i]
+		switch v {
+		case Covariant:
+			mapped[i] = &NeverType {}
+		case Contravariant:
+			mapped[i] = &AnyType {}
+		default:
+			mapped[i] = &AnonymousType { Unit {} }
+		}
 	}
 	for i, j := range mapping {
 		mapped[j] = case_args[i]
@@ -143,15 +155,21 @@ func GetUnionArgs (case_args []Type, union_arity uint, mapping []uint) []Type {
 	return mapped
 }
 
-func LiftCase(case_info CaseInfo, t *NamedType, force_exact bool, expr Expr) Expr {
+func LiftCase (
+	case_info    CaseInfo,
+	case_t       *NamedType,
+	force_exact  bool,
+	expr         Expr,
+) Expr {
 	if force_exact || !(case_info.IsCaseType) {
 		return expr
 	} else {
 		var union = case_info.UnionName
 		var union_arity = case_info.UnionArity
+		var union_variance = case_info.UnionVariance
 		var mapping = case_info.CaseParams
 		var index = case_info.CaseIndex
-		var args = GetUnionArgs(t.Args, union_arity, mapping)
+		var args = GetUnionArgs(case_t.Args, union_arity, union_variance, mapping)
 		return Expr {
 			Type:  &NamedType {
 				Name: union,

@@ -49,11 +49,12 @@ type RawTypeRegistry struct {
 	VisitedMod     map[string] bool
 }
 type CaseInfo struct {
-	IsCaseType  bool
-	UnionName   loader.Symbol
-	UnionArity  uint
-	CaseIndex   uint
-	CaseParams  [] uint
+	IsCaseType     bool
+	UnionName      loader.Symbol
+	UnionArity     uint
+	UnionVariance  [] TypeVariance
+	CaseIndex      uint
+	CaseParams     [] uint
 }
 
 type TypeDeclNodeInfo  map[loader.Symbol] ast.Node
@@ -63,10 +64,27 @@ type TypeNodeInfo struct {
 }
 
 
+func GetVarianceFromRawTypeParams(raw_params ([] ast.TypeParam)) ([] TypeVariance) {
+	var v = make([] TypeVariance, len(raw_params))
+	for i, raw_param := range raw_params {
+		var name = loader.Id2String(raw_param.Name)
+		if len(name) > len(CovariantPrefix) &&
+			strings.HasPrefix(name, CovariantPrefix) {
+			v[i] = Covariant
+		} else if len(name) > len(ContravariantPrefix) &&
+			strings.HasPrefix(name, ContravariantPrefix) {
+			v[i] = Contravariant
+		} else {
+			v[i] = Invariant
+		}
+	}
+	return v
+}
+
 func CollectTypeParams(raw_params ([] ast.TypeParam)) (([] TypeParam), ([] ast.TypeBound), *E_InvalidTypeName, ast.Node) {
 	var params = make([] TypeParam, len(raw_params))
 	var bounds = make([] ast.TypeBound, len(raw_params))
-	for p, raw_param := range raw_params {
+	for i, raw_param := range raw_params {
 		var raw_name = loader.Id2String(raw_param.Name)
 		var name = raw_name
 		var v = Invariant
@@ -83,11 +101,11 @@ func CollectTypeParams(raw_params ([] ast.TypeParam)) (([] TypeParam), ([] ast.T
 			IsReservedTypeName(name) {
 			return nil, nil, &E_InvalidTypeName {name}, raw_param.Node
 		}
-		params[p] = TypeParam {
+		params[i] = TypeParam {
 			Name:     name,
 			Variance: v,
 		}
-		bounds[p] = raw_param.Bound.TypeBound
+		bounds[i] = raw_param.Bound.TypeBound
 	}
 	return params, bounds, nil, ast.Node{}
 }
@@ -208,11 +226,12 @@ func RegisterRawTypes(mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 				mapping[p] = corresponding
 			}
 			raw.CaseInfoMap[type_sym] = CaseInfo {
-				IsCaseType: true,
-				UnionName:  parent_name,
-				UnionArity: uint(len(parent.Params)),
-				CaseIndex:  case_index,
-				CaseParams: mapping,
+				IsCaseType:    true,
+				UnionName:     parent_name,
+				UnionArity:    uint(len(parent.Params)),
+				UnionVariance: GetVarianceFromRawTypeParams(parent.Params),
+				CaseIndex:     case_index,
+				CaseParams:    mapping,
 			}
 		} // if is_case_type
 	}
@@ -483,9 +502,10 @@ func RawTypeFrom(ast_type ast.VariousType, info (map[Type] ast.Node), ctx TypeCo
 		if ref_mod == "" && len(a.TypeArgs) == 0 {
 			if ref_name == UnitAlias {
 				return got(&AnonymousType { Unit{} })
-			}
-			if ref_name == NeverTypeName {
+			} else if ref_name == NeverTypeName {
 				return got(&NeverType {})
+			} else if ref_name == AnyTypeName {
+				return got(&AnyType {})
 			}
 			for i, param := range ctx.Parameters {
 				if param.Name == ref_name {

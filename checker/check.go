@@ -79,13 +79,13 @@ type ExprContext struct {
 	TypeParams     [] TypeParam
 	TypeBounds     TypeBounds
 	LocalValues    map[string] Type
-	Inferring      TypeArgsInferringContext
+	Inferring      TypeArgsInferringContext  // contains mutable part
 }
 
 type TypeArgsInferringContext struct {
 	Enabled      bool
 	Parameters   [] TypeParam
-	Arguments    map[uint] Type  // mutable
+	Arguments    map[uint] Type  // mutable (interior)
 }
 func (ctx TypeArgsInferringContext) MergeArgsFrom(another TypeArgsInferringContext) {
 	if ctx.Enabled && another.Enabled {

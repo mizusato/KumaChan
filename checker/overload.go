@@ -325,6 +325,8 @@ func AreTypesConflict(type1 Type, type2 Type, reg TypeRegistry) bool {
 	switch t1 := type1.(type) {
 	case *NeverType:
 		return true
+	case *AnyType:
+		return true
 	case *ParameterType:
 		return true  // rough comparison
 	case *NamedType:

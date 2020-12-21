@@ -70,6 +70,8 @@ func CheckTypeBounds(t Type, nodes (map[Type] ast.Node), ctx TypeBoundsContext) 
 	switch T := t.(type) {
 	case *NeverType:
 		return nil
+	case *AnyType:
+		return nil
 	case *ParameterType:
 		return nil
 	case *NamedType:

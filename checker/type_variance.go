@@ -132,6 +132,8 @@ func GetVariance(t Type, ctx TypeVarianceContext) ([] TypeVariance) {
 	switch T := t.(type) {
 	case *NeverType:
 		return FilledVarianceVector(Bivariant, ctx.Arity())
+	case *AnyType:
+		return FilledVarianceVector(Bivariant, ctx.Arity())
 	case *ParameterType:
 		var v_draft = FilledVarianceVector(Bivariant, ctx.Arity())
 		v_draft[T.Index] = Covariant
