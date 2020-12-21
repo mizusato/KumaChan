@@ -10,12 +10,29 @@ type TypeDescContext struct {
 	ParamNames     [] string
 	InferredNames  [] string
 	InferredTypes  map[uint] Type
-	// TODO: current module name --- omit the common part of the module name
+	CurrentModule  string
 }
 
-func DescribeTypeWithParams(type_ Type, params ([] string)) string {
+func getCommonPrefixLength(a string, b string) uint {
+	var L = uint(0)
+	var A = ([] rune)(a)
+	var B = ([] rune)(b)
+	var S uint
+	if len(A) > len(B) { S = uint(len(B)) } else { S = uint(len(A)) }
+	for i := uint(0); i < S; i += 1 {
+		if A[i] == B[i] {
+			L += 1
+		} else {
+			break
+		}
+	}
+	return uint(len(string(A[:L])))
+}
+
+func DescribeTypeWithParams(type_ Type, params ([] string), mod string) string {
 	return DescribeType(type_, TypeDescContext {
-		ParamNames: params,
+		ParamNames:    params,
+		CurrentModule: mod,
 	})
 }
 
@@ -39,7 +56,19 @@ func DescribeType(type_ Type, ctx TypeDescContext) string {
 		if loader.IsPreloadCoreSymbol(t.Name) {
 			buf.WriteString(t.Name.SymbolName)
 		} else {
-			buf.WriteString(t.Name.String())
+			var mod = t.Name.ModuleName
+			var L = getCommonPrefixLength(mod, ctx.CurrentModule)
+			var clear string
+			if L < uint(len(mod)) {
+				clear = mod[L:]
+			} else {
+				clear = ""
+			}
+			if strings.HasSuffix(clear, ":" + loader.DefaultVersion) {
+				clear = strings.TrimSuffix(clear, ":" + loader.DefaultVersion)
+			}
+			var clear_sym = loader.NewSymbol(clear, t.Name.SymbolName)
+			buf.WriteString(clear_sym.String())
 		}
 		if len(t.Args) > 0 {
 			buf.WriteRune('[')

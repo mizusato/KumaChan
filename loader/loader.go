@@ -22,6 +22,7 @@ import (
 
 
 const ManifestFileName = "module.json"
+const DefaultVersion = "dev"
 const StandaloneScriptModuleName = "Main"
 const SourceSuffix = ".km"
 const StdlibFolder = "stdlib"
@@ -289,12 +290,12 @@ func LoadRawModule(raw_mod RawModule, ctx Context, idx Index) (*Module, *Error) 
 			var v = manifest.Vendor
 			if manifest.Project != "" {
 				var p = manifest.Project
-				var ver = "dev"
+				var ver = DefaultVersion
 				if manifest.Version != "" {
 					ver = manifest.Version
 				}
-				// org.bar.foo:App:dev::Main
-				return fmt.Sprintf("%s:%s:%s::%s", v, p, ver, manifest.Name)
+				// org.bar.foo:App::Main:dev
+				return fmt.Sprintf("%s:%s::%s:%s", v, p, manifest.Name, ver)
 			} else {
 				// org.bar.foo::Toolkit
 				return fmt.Sprintf("%s::%s", v, manifest.Name)

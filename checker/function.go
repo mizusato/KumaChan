@@ -243,11 +243,11 @@ func CollectFunctions (
 				// 3.6.1. If in use, try to overload it
 				var index_offset = index_offset_map[name]
 				var err_point = ErrorPointFrom(decl.Name.Node)
-				var err = ValidateOverload(
+				var err = ValidateOverload (
 					existing,
 					func_type, implicit_fields,
 					name, TypeParamsNames(params),
-					reg, err_point,
+					mod_name, reg, err_point,
 				)
 				if err != nil { return nil, err }
 				collection[name] = append(existing, FunctionReference {

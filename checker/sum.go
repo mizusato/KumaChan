@@ -514,13 +514,13 @@ func AssignMultiSwitchTo(expected Type, msw SemiTypedMultiSwitch, info ExprInfo,
 func ExtractUnion(t Type, ctx ExprContext) (*Union, []Type, bool) {
 	switch T := t.(type) {
 	case *NamedType:
-		var reg = ctx.ModuleInfo.Types
+		var reg = ctx.GetTypeRegistry()
 		var g = reg[T.Name]
 		switch gv := g.Value.(type) {
 		case *Union:
 			return gv, T.Args, true
 		case *Boxed:
-			var ctx_mod = ctx.ModuleInfo.Module.Name
+			var ctx_mod = ctx.GetModuleName()
 			var unboxed, can_unbox = Unbox(t, ctx_mod, reg).(Unboxed)
 			if can_unbox {
 				return ExtractUnion(unboxed.Type, ctx)

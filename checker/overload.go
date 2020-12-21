@@ -65,7 +65,7 @@ func OverloadedCall (
 		}
 		return GenerateCallResult (
 			name, call_info, available, unavailable,
-			false, TypeArgsInferringContext {},
+			false, TypeArgsInferringContext {}, ctx.GetModuleName(),
 		)
 	}
 }
@@ -95,7 +95,7 @@ func AssignUndecidedTo(expected Type, call UndecidedCall, info ExprInfo, ctx Exp
 	}
 	semi, err := GenerateCallResult (
 		name, info, available, unavailable,
-		true, ctx.Inferring,
+		true, ctx.Inferring, ctx.GetModuleName(),
 	)
 	if err != nil { return Expr{}, err }
 	return Expr(semi.Value.(TypedExpr)), nil
@@ -108,11 +108,12 @@ func GenerateCallResult (
 	unavailable  [] UnavailableCall,
 	assigned     bool,
 	inferring    TypeArgsInferringContext,
+	mod_name     string,
 ) (SemiExpr, *ExprError) {
 	if len(available) == 0 {
 		var unavailable_info = make([] UnavailableFuncInfo, len(unavailable))
 		for i, item := range unavailable {
-			unavailable_info[i].FuncDesc = DescribeFunction(item.Function, name)
+			unavailable_info[i].FuncDesc = DescribeFunction(item.Function, name, mod_name)
 			unavailable_info[i].Error = item.Error
 		}
 		return SemiExpr{}, &ExprError {
@@ -129,7 +130,7 @@ func GenerateCallResult (
 		if assigned {
 			var available_desc = make([] string, len(available))
 			for i, item := range available {
-				available_desc[i] = DescribeFunction(item.Function, name)
+				available_desc[i] = DescribeFunction(item.Function, name, mod_name)
 			}
 			return SemiExpr{}, &ExprError {
 				Point:    info.ErrorPoint,
@@ -155,6 +156,7 @@ func OverloadedAssignTo (
 	info       ExprInfo,
 	ctx        ExprContext,
 ) (Expr, *ExprError) {
+	var mod_name = ctx.GetModuleName()
 	if len(functions) == 0 { panic("something went wrong") }
 	if len(functions) == 1 {
 		var f = functions[0]
@@ -174,7 +176,7 @@ func OverloadedAssignTo (
 			)
 			if err != nil {
 				candidates = append(candidates, UnavailableFuncInfo {
-					FuncDesc: DescribeFunction(f, name),
+					FuncDesc: DescribeFunction(f, name, mod_name),
 					Error:    err,
 				})
 			} else {
@@ -197,7 +199,7 @@ func OverloadedAssignTo (
 		} else {
 			var ok_candidates = make([] string, len(available))
 			for i, f := range available {
-				ok_candidates[i] = DescribeFunction(f, name)
+				ok_candidates[i] = DescribeFunction(f, name, mod_name)
 			}
 			return Expr{}, &ExprError {
 				Point:    info.ErrorPoint,
@@ -209,7 +211,7 @@ func OverloadedAssignTo (
 	}
 }
 
-func DescribeFunction(f *GenericFunction, name string) string {
+func DescribeFunction(f *GenericFunction, name string, mod string) string {
 	var params = TypeParamsNames(f.TypeParams)
 	return fmt.Sprintf (
 		"%s[%s]: %s",
@@ -218,6 +220,7 @@ func DescribeFunction(f *GenericFunction, name string) string {
 		DescribeTypeWithParams (
 			&AnonymousType { f.DeclaredType },
 			params,
+			mod,
 		),
 	)
 }
@@ -228,6 +231,7 @@ func ValidateOverload (
 	added_fields  map[string] Field,
 	added_name    string,
 	added_params  [] string,
+	mod_name      string,
 	reg           TypeRegistry,
 	err_point     ErrorPoint,
 ) *FunctionError {
@@ -290,11 +294,11 @@ func ValidateOverload (
 				t       Type,
 				fields  map[string] Field,
 			) string {
-				var t_desc = DescribeTypeWithParams(t, params)
+				var t_desc = DescribeTypeWithParams(t, params, mod_name)
 				var fields_desc = ""
 				if len(fields) > 0 {
 					var fields_t = &AnonymousType { Bundle { fields } }
-					var desc = DescribeTypeWithParams(fields_t, params)
+					var desc = DescribeTypeWithParams(fields_t, params, mod_name)
 					fields_desc = fmt.Sprintf(" (implicit: %s)", desc)
 				}
 				return (t_desc + fields_desc)

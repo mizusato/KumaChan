@@ -167,7 +167,9 @@ func (ctx ExprContext) GetTypeContext() TypeContext {
 }
 
 func (ctx ExprContext) DescribeType(t Type) string {
-	return DescribeTypeWithParams(t, TypeParamsNames(ctx.TypeParams))
+	var params = TypeParamsNames(ctx.TypeParams)
+	var mod = ctx.GetModuleName()
+	return DescribeTypeWithParams(t, params, mod)
 }
 
 func (ctx ExprContext) DescribeExpectedType(t Type) string {
@@ -176,6 +178,7 @@ func (ctx ExprContext) DescribeExpectedType(t Type) string {
 			ParamNames:    TypeParamsNames(ctx.TypeParams),
 			InferredNames: TypeParamsNames(ctx.Inferring.Parameters),
 			InferredTypes: ctx.Inferring.Arguments,
+			CurrentModule: ctx.GetModuleName(),
 		})
 	} else {
 		return ctx.DescribeType(t)
@@ -184,6 +187,10 @@ func (ctx ExprContext) DescribeExpectedType(t Type) string {
 
 func (ctx ExprContext) GetModuleName() string {
 	return ctx.ModuleInfo.Module.Name
+}
+
+func (ctx ExprContext) GetTypeRegistry() TypeRegistry {
+	return ctx.ModuleInfo.Types
 }
 
 func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {

@@ -20,8 +20,8 @@ func CheckCast(cast ast.Cast, ctx ExprContext) (SemiExpr, *ExprError) {
 				Point:    typed.Info.ErrorPoint,
 				Concrete: E_ExplicitTypeRequired {},
 			} }
-			var ctx_mod = ctx.ModuleInfo.Module.Name  // TODO: --> method
-			var reg = ctx.ModuleInfo.Types
+			var ctx_mod = ctx.GetModuleName()
+			var reg = ctx.GetTypeRegistry()
 			switch result := Unbox(typed.Type, ctx_mod, reg).(type) {
 			case Unboxed:
 				var t = result.Type

@@ -121,6 +121,7 @@ func CheckTypeBounds(t Type, nodes (map[Type] ast.Node), ctx TypeBoundsContext) 
 
 func CheckTypeArgBound(arg Type, bound Type, kind TypeBoundKind, nodes func(Type)(ast.Node), ctx TypeBoundsContext) *TypeError {
 	var ctx_param_names = TypeParamsNames(ctx.Parameters)
+	var ctx_mod = ctx.Module.Name
 	switch kind {
 	case SuperBound:
 		var super = bound
@@ -130,7 +131,7 @@ func CheckTypeArgBound(arg Type, bound Type, kind TypeBoundKind, nodes func(Type
 			Point:    ErrorPointFrom(nodes(arg)),
 			Concrete: E_BoundNotSatisfied {
 				Kind:  kind,
-				Bound: DescribeTypeWithParams(super, ctx_param_names),
+				Bound: DescribeTypeWithParams(super, ctx_param_names, ctx_mod),
 			},
 		} }
 	case SubBound:
@@ -141,7 +142,7 @@ func CheckTypeArgBound(arg Type, bound Type, kind TypeBoundKind, nodes func(Type
 			Point:    ErrorPointFrom(nodes(arg)),
 			Concrete: E_BoundNotSatisfied {
 				Kind:  kind,
-				Bound: DescribeTypeWithParams(sub, ctx_param_names),
+				Bound: DescribeTypeWithParams(sub, ctx_param_names, ctx_mod),
 			},
 		} }
 	default:

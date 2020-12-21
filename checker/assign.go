@@ -124,8 +124,8 @@ func AssignType(inferred Type, given Type, d AssignDirection, ctx ExprContext) (
 	if ok {
 		return direct_type, true
 	} else {
-		var ctx_mod = ctx.ModuleInfo.Module.Name
-		var reg = ctx.ModuleInfo.Types
+		var ctx_mod = ctx.GetModuleName()
+		var reg = ctx.GetTypeRegistry()
 		switch d {
 		case ToInferred:
 			var _, is_given_wildcard = given.(*NeverType)
