@@ -114,6 +114,24 @@ func GenericFunctionAssignTo (
 	info       ExprInfo,
 	ctx        ExprContext,
 ) (Expr, *ExprError) {
+	var unit_t = &AnonymousType { Unit {} }
+	if AreTypesEqualInSameCtx(f.DeclaredType.Input, unit_t) {
+		// globally defined constant-like thunk
+		var arg = LiftTyped(Expr {
+			Type:  unit_t,
+			Value: UnitValue {},
+			Info:  info,
+		})
+		var expr, err = GenericFunctionCall (
+			f, name, index, type_args, arg, info, info, ctx,
+		)
+		if err == nil {
+			var assigned, err = TypedAssignTo(expected, expr, ctx)
+			if err == nil {
+				return assigned, nil
+			}
+		}
+	}
 	var type_arity = len(f.TypeParams)
 	var f_node = info.ErrorPoint.Node
 	if len(type_args) == type_arity {
