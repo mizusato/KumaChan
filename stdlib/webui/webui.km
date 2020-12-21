@@ -24,7 +24,10 @@ public function webui-inject-css: ( &(Array[OS::Path]) NoExcept[-] )
 public function webui-inject-js: ( &(Array[OS::Path]) NoExcept[-] )
     native 'webui-inject-js';
 
-public const GetWindow: NoExcept[Qt::MainWindow]
+public function webui-get-window: ( &() NoExcept[Qt::MainWindow] )
+    (&(_)(GetWindow));
+
+private const GetWindow: NoExcept[Qt::MainWindow]
     native 'WebUi::GetWindow';
 
 public const ExitWhenWindowClosed: NoExcept[-]
