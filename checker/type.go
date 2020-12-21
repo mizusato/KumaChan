@@ -69,9 +69,11 @@ func (impl *AnonymousType) CheckerType() {}
 type AnonymousType struct {
 	Repr  TypeRepr
 }
-func (impl *WildcardRhsType) CheckerType() {}
-type WildcardRhsType struct {}  // TODO: rename to NeverType
-// TODO: WildcardLhsType (any)
+func (impl *NeverType) CheckerType() {}
+type NeverType struct {}
+// TODO: AnyType
+// func (impl *AnyType) CheckerType() {}
+// type AnyType struct {}
 
 
 type TypeRepr interface { TypeRepr() }
@@ -128,9 +130,9 @@ func TypeFromRepr(ast_repr ast.VariousRepr, ctx TypeContext) (Type, *TypeError) 
 
 func AreTypesEqualInSameCtx(type1 Type, type2 Type) bool {
 	switch t1 := type1.(type) {
-	case *WildcardRhsType:
+	case *NeverType:
 		switch type2.(type) {
-		case *WildcardRhsType:
+		case *NeverType:
 			return true
 		default:
 			return false

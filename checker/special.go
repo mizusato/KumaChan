@@ -8,7 +8,9 @@ import (
 
 const IgnoreMark = "_"
 const UnitAlias = "-"
-const WildcardRhsTypeName = "never"
+const NeverTypeName = "never"
+const AnyTypeName = "any"
+const SuperTypeName = "super"
 const TextPlaceholder = '#'
 const FuncSuffix = "!!"
 const ForceExactSuffix = "!"

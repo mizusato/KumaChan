@@ -57,7 +57,7 @@ func GenericFunctionCall (
 				inferred_args[i] = t
 			} else {
 				if output_v[i] == Covariant {
-					inferred_args[i] = &WildcardRhsType {}
+					inferred_args[i] = &NeverType {}
 				} else {
 					return Expr{}, &ExprError {
 						Point:    f_info.ErrorPoint,
@@ -182,8 +182,8 @@ func GenericFunctionAssignTo (
 
 func FillTypeArgs(t Type, given_args ([] Type)) Type {
 	switch T := t.(type) {
-	case *WildcardRhsType:
-		return &WildcardRhsType {}
+	case *NeverType:
+		return &NeverType {}
 	case *ParameterType:
 		return given_args[T.Index]
 	case *NamedType:
@@ -239,8 +239,8 @@ func FillTypeArgs(t Type, given_args ([] Type)) Type {
 
 func MarkParamsAsBeingInferred(type_ Type) Type {
 	switch t := type_.(type) {
-	case *WildcardRhsType:
-		return &WildcardRhsType {}
+	case *NeverType:
+		return &NeverType {}
 	case *ParameterType:
 		return &ParameterType {
 			Index:         t.Index,
@@ -294,8 +294,8 @@ func GetCertainType(type_ Type, point ErrorPoint, ctx ExprContext) (Type, *ExprE
 		return type_, nil
 	}
 	switch T := type_.(type) {
-	case *WildcardRhsType:
-		return &WildcardRhsType {}, nil
+	case *NeverType:
+		return &NeverType {}, nil
 	case *ParameterType:
 		if T.BeingInferred {
 			var inferred, exists = ctx.Inferring.Arguments[T.Index]

@@ -68,7 +68,7 @@ func CheckTypeBounds(t Type, nodes (map[Type] ast.Node), ctx TypeBoundsContext) 
 		return nodes[t]
 	}
 	switch T := t.(type) {
-	case *WildcardRhsType:
+	case *NeverType:
 		return nil
 	case *ParameterType:
 		return nil

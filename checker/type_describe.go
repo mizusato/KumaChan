@@ -10,6 +10,7 @@ type TypeDescContext struct {
 	ParamNames     [] string
 	InferredNames  [] string
 	InferredTypes  map[uint] Type
+	// TODO: current module name --- omit the common part of the module name
 }
 
 func DescribeTypeWithParams(type_ Type, params ([] string)) string {
@@ -20,8 +21,8 @@ func DescribeTypeWithParams(type_ Type, params ([] string)) string {
 
 func DescribeType(type_ Type, ctx TypeDescContext) string {
 	switch t := type_.(type) {
-	case *WildcardRhsType:
-		return WildcardRhsTypeName
+	case *NeverType:
+		return NeverTypeName
 	case *ParameterType:
 		if t.BeingInferred {
 			var inferred_t, exists = ctx.InferredTypes[t.Index]

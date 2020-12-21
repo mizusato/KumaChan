@@ -130,7 +130,7 @@ func MatchVariance(declared ([] TypeParam), deduced ([] TypeVariance)) (bool, ([
 
 func GetVariance(t Type, ctx TypeVarianceContext) ([] TypeVariance) {
 	switch T := t.(type) {
-	case *WildcardRhsType:
+	case *NeverType:
 		return FilledVarianceVector(Bivariant, ctx.Arity())
 	case *ParameterType:
 		var v_draft = FilledVarianceVector(Bivariant, ctx.Arity())

@@ -9,8 +9,8 @@ import (
 
 
 var __ReservedTypeNames = [...]string {
-	IgnoreMark, UnitAlias, WildcardRhsTypeName,
-	// TODO: WildcardLhsTypeName, SuperTypeName
+	IgnoreMark, UnitAlias,
+	NeverTypeName, AnyTypeName, SuperTypeName,
 }
 func IsReservedTypeName(name string) bool {
 	for _, reserved := range __ReservedTypeNames {
@@ -484,8 +484,8 @@ func RawTypeFrom(ast_type ast.VariousType, info (map[Type] ast.Node), ctx TypeCo
 			if ref_name == UnitAlias {
 				return got(&AnonymousType { Unit{} })
 			}
-			if ref_name == WildcardRhsTypeName {
-				return got(&WildcardRhsType {})
+			if ref_name == NeverTypeName {
+				return got(&NeverType {})
 			}
 			for i, param := range ctx.Parameters {
 				if param.Name == ref_name {

@@ -135,7 +135,7 @@ func GetUnionArgs (case_args []Type, union_arity uint, mapping []uint) []Type {
 	var mapped = make([] Type, union_arity)
 	for i := uint(0); i < union_arity; i += 1 {
 		// TODO: should be any/never or return error based on variance
-		mapped[i] = &WildcardRhsType {}
+		mapped[i] = &NeverType {}
 	}
 	for i, j := range mapping {
 		mapped[j] = case_args[i]

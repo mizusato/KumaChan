@@ -70,7 +70,7 @@ func ValidateTypeVal(val TypeVal, info TypeNodeInfo, ctx TypeValidationContext) 
 func ValidateType(t Type, nodes (map[Type] ast.Node), ctx TypeValidationContext) *TypeError {
 	var t_point = ErrorPointFrom(nodes[t])
 	switch T := t.(type) {
-	case *WildcardRhsType:
+	case *NeverType:
 		return nil
 	case *ParameterType:
 		return nil

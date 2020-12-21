@@ -128,7 +128,7 @@ func AssignType(inferred Type, given Type, d AssignDirection, ctx ExprContext) (
 		var reg = ctx.ModuleInfo.Types
 		switch d {
 		case ToInferred:
-			var _, is_given_wildcard = given.(*WildcardRhsType)
+			var _, is_given_wildcard = given.(*NeverType)
 			if is_given_wildcard {
 				return AssignWildcardRhsTypeTo(inferred, ctx)
 			}
@@ -139,9 +139,9 @@ func AssignType(inferred Type, given Type, d AssignDirection, ctx ExprContext) (
 				return nil, false
 			}
 		case FromInferred:
-			var _, is_expected_wildcard = inferred.(*WildcardRhsType)
+			var _, is_expected_wildcard = inferred.(*NeverType)
 			if is_expected_wildcard {
-				return &WildcardRhsType {}, true
+				return &NeverType {}, true
 			}
 			var unboxed, can_unbox = Unbox(inferred, ctx_mod, reg).(Unboxed)
 			if can_unbox {
@@ -178,8 +178,8 @@ func DirectAssignType(inferred Type, given Type, d AssignDirection, ctx ExprCont
 		}
 	}
 	switch I := inferred.(type) {
-	case *WildcardRhsType:
-		var _, given_is_also_this = given.(*WildcardRhsType)
+	case *NeverType:
+		var _, given_is_also_this = given.(*NeverType)
 		if given_is_also_this {
 			return given, true
 		}

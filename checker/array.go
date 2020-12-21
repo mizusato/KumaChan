@@ -75,7 +75,7 @@ func AssignArrayTo(expected Type, array SemiTypedArray, info ExprInfo, ctx ExprC
 		if len(array.Items) == 0 {
 			array_t = &NamedType {
 				Name: __Array,
-				Args: []Type { &WildcardRhsType {} },
+				Args: []Type { &NeverType {} },
 			}
 		} else {
 			if item_type == nil { panic("something went wrong") }
@@ -98,7 +98,7 @@ func AssignArrayTo(expected Type, array SemiTypedArray, info ExprInfo, ctx ExprC
 				var empty_array = Expr {
 					Type:  &NamedType {
 						Name: __Array,
-						Args: [] Type { &WildcardRhsType {} },
+						Args: [] Type { &NeverType {} },
 					},
 					Value: Array { Items: [] Expr {}, ItemType: nil },
 					Info:  info,

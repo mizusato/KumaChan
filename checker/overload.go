@@ -319,7 +319,7 @@ func ValidateOverload (
 func AreTypesConflict(type1 Type, type2 Type, reg TypeRegistry) bool {
 	// Does type1 conflict with type2 (when overloading functions)
 	switch t1 := type1.(type) {
-	case *WildcardRhsType:
+	case *NeverType:
 		return true
 	case *ParameterType:
 		return true  // rough comparison

@@ -1169,6 +1169,26 @@ func (e E_BoxOpaqueType) ExprErrorDesc() ErrorMessage {
 	return msg
 }
 
+type E_UnboxOpaqueType struct {
+	Type  string
+}
+func (e E_UnboxOpaqueType) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Cannot unbox a value from the opaque type")
+	msg.WriteEndText(TS_INLINE_CODE, e.Type)
+	return msg
+}
+
+type E_UnboxFailed struct {
+	Type  string
+}
+func (e E_UnboxFailed) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Cannot unbox a value from the type")
+	msg.WriteEndText(TS_INLINE_CODE, e.Type)
+	return msg
+}
+
 func (err *ExprError) ErrorPoint() ErrorPoint {
 	return err.Point
 }
