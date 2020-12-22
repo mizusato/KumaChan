@@ -356,8 +356,6 @@ type E_InvalidOverload struct {
 	BetweenLocal  bool
 	AddedName     string
 	AddedModule   string
-	AddedSig      string
-	ExistingSig   string
 }
 
 func (impl E_FunctionInvalidTypeParameterName) FunctionError() {}
@@ -385,13 +383,9 @@ func (err *FunctionError) Desc() ErrorMessage {
 	case E_ImplicitContextOnNativeFunction:
 		msg.WriteText(TS_ERROR, "Cannot use implicit context on a native function")
 	case E_InvalidOverload:
-		msg.WriteText(TS_ERROR, "Cannot overload this function instance with the signature")
-		msg.WriteInnerText(TS_INLINE_CODE, e.AddedSig)
-		msg.WriteText(TS_ERROR, "on the function name")
+		msg.WriteText(TS_ERROR, "Cannot define this function with the name")
 		msg.WriteInnerText(TS_INLINE_CODE, e.AddedName)
-		msg.WriteText(TS_ERROR, "since a function with conflicting signature")
-		msg.WriteInnerText(TS_INLINE_CODE, e.ExistingSig)
-		msg.WriteText(TS_ERROR, "already exists")
+		msg.WriteText(TS_ERROR, "since a function with identical signature exists")
 		if e.BetweenLocal {
 			msg.WriteEndText(TS_ERROR, "in the current module")
 		} else {

@@ -247,7 +247,7 @@ func CollectFunctions (
 					existing,
 					func_type, implicit_fields,
 					name, TypeParamsNames(params),
-					mod_name, reg, err_point,
+					err_point,
 				)
 				if err != nil { return nil, err }
 				collection[name] = append(existing, FunctionReference {
