@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"kumachan/util"
 	"kumachan/loader"
-	"time"
 )
 
 
@@ -30,9 +29,7 @@ func Server(input io.Reader, output io.Writer, debug io.Writer) error {
 		DebugLog:    func(info string) { _, _ = fmt.Fprintln(debug, info) },
 		LoaderCache: loader.MakeCache(),
 	}
-	var linter_cache = MakeLinterCache(333 * time.Millisecond)
 	for {
-		linter_cache.SweepExpired()
 		var line_runes, err = util.WellBehavedReadLine(input)
 		if err != nil { return err }
 		var line = string(line_runes)
@@ -48,14 +45,7 @@ func Server(input io.Reader, output io.Writer, debug io.Writer) error {
 			var req LintRequest
 			err := json.Unmarshal(raw_req, &req)
 			if err != nil { return err }
-			var res LintResponse
-			var cached_res, is_cached = linter_cache.Get(req)
-			if is_cached {
-				res = cached_res
-			} else {
-				res = Lint(req, ctx)
-				linter_cache.Put(req, res)
-			}
+			var res = Lint(req, ctx)
 			raw_res, err := json.Marshal(&res)
 			if err != nil { return err }
 			err = write_line(raw_res)

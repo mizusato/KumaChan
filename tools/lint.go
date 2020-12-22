@@ -15,11 +15,13 @@ import (
 
 
 type LintRequest struct {
-	Path  string   `json:"path"`
+	Path            string      `json:"path"`
+	VisitedModules  [] string   `json:"visitedModules"`
 }
 
 type LintResponse struct {
-	Errors  [] LintError   `json:"errors"`
+	Module   string         `json:"module"`
+	Errors   [] LintError   `json:"errors"`
 }
 
 type LintError struct {
@@ -100,6 +102,11 @@ func GetError(e E, tip string) LintError {
 func Lint(req LintRequest, ctx ServerContext) LintResponse {
 	var dir = filepath.Dir(req.Path)
 	var manifest_path = filepath.Join(dir, loader.ManifestFileName)
+	for _, visited := range req.VisitedModules {
+		if dir == visited || req.Path == visited {
+			return LintResponse {}
+		}
+	}
 	var mod_path string
 	var mf, err_mf = os.Open(manifest_path)
 	if err_mf != nil {
@@ -121,6 +128,7 @@ func Lint(req LintRequest, ctx ServerContext) LintResponse {
 				Excerpt:  err_desc.StringPlain(),
 			}
 			return LintResponse {
+				Module: mod_path,
 				Errors: [] LintError { err },
 			}
 		} else {
@@ -137,12 +145,15 @@ func Lint(req LintRequest, ctx ServerContext) LintResponse {
 					Excerpt:  desc.StringPlain(),
 				}
 				return LintResponse {
+					Module: mod_path,
 					Errors: [] LintError { err },
 				}
 			default:
 				// var desc = err_loader.Desc()
 				// ctx.DebugLog(mod_path + " unable to lint: " + desc.StringPlain())
-				return LintResponse {}
+				return LintResponse {
+					Module: mod_path,
+				}
 			}
 		}
 	}
@@ -165,7 +176,10 @@ func Lint(req LintRequest, ctx ServerContext) LintResponse {
 			}
 			errs = append(errs, GetError(e, ""))
 		}
-		return LintResponse { errs }
+		return LintResponse {
+			Module: mod_path,
+			Errors: errs,
+		}
 	}
 	var data = make([] common.DataValue, 0)
 	var closures = make([] compiler.FuncNode, 0)
@@ -177,7 +191,12 @@ func Lint(req LintRequest, ctx ServerContext) LintResponse {
 		for i, e := range errs_compiler {
 			errs[i] = GetError(e, "")
 		}
-		return LintResponse { errs }
+		return LintResponse {
+			Module: mod_path,
+			Errors: errs,
+		}
 	}
-	return LintResponse {}
+	return LintResponse {
+		Module: mod_path,
+	}
 }
