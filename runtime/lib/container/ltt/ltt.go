@@ -15,7 +15,7 @@ type LTT struct {
 func Node(v Value, left *LTT, right *LTT) *LTT {
 	var ld = left.GetDist()
 	var rd = right.GetDist()
-	assert(ld >= rd, "violation of leftist property")
+	if !(ld >= rd) { panic("violation of leftist property") }
 	return &LTT {
 		Value: v,
 		Left:  left,
@@ -97,6 +97,3 @@ func (node *LTT) Walk(f func(Value)) {
 }
 
 
-func assert(ok bool, msg string) {
-	if !ok { panic(msg) }
-}
