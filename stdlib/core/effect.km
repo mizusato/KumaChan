@@ -6,8 +6,8 @@ type NoExcept[+T]    protected NoExcept*[T];  // (() => Promise<T>)
 
 // Wired Components
 type Sink[-T]     native;             // rx.Sink
-type Bus[T]       protected Sink[T];  // rx.Bus            (Subject<T>)
-type Reactive[T]  protected Bus[T];   // rx.PublishSubject (BehaviorSubject<T>)
+type Bus[T]       protected Sink[T];  // rx.Bus      (Subject<T>)
+type Reactive[T]  protected Bus[T];   // rx.Reactive (BehaviorSubject<T>)
 
 // Mutable Containers
 type Mutable[+T]     native;  // rx.Cell
