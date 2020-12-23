@@ -1,3 +1,4 @@
+// TODO: rewrite this file using parser combinators
 type ParserState {
     input:   String,
     pos:     Number,

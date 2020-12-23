@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-	"encoding/base64"
 	ch "kumachan/checker"
 	c "kumachan/runtime/common"
-	"unicode/utf8"
+	"strconv"
 )
 
 
@@ -40,8 +39,8 @@ func (d DataString) ToValue() c.Value {
 	return d.Value
 }
 func (d DataString) String() string {
-	var b64 = CharsToBase64String(d.Value)
-	return fmt.Sprintf("STRING %s", b64)
+	return fmt.Sprintf("STRING %s",
+		strconv.Quote(c.GoStringFromString(d.Value)))
 }
 
 type DataStringFormatter ch.StringFormatter
@@ -60,11 +59,11 @@ func (d DataStringFormatter) ToValue() c.Value {
 	var f interface{}
 	if d.Arity == 0 {
 		f = func() ([] uint32) {
-			return format_slice([]c.Value {})
+			return format_slice([] c.Value {})
 		}
 	} else if d.Arity == 1 {
 		f = func(arg c.Value) ([] uint32) {
-			return format_slice([]c.Value { arg })
+			return format_slice([] c.Value { arg })
 		}
 	} else {
 		f = func(arg c.ProductValue) ([] uint32) {
@@ -77,9 +76,9 @@ func (d DataStringFormatter) String() string {
 	var buf strings.Builder
 	fmt.Fprintf(&buf, "FORMAT %d ", d.Arity)
 	for i, item := range d.Segments {
-		buf.WriteString(CharsToBase64String(item))
-		if i != len(d.Segments)-1 {
-			buf.WriteString(" ")
+		buf.WriteString(strconv.Quote(c.GoStringFromString(item)))
+		if i != len(d.Segments)-1 || uint(len(d.Segments)) == d.Arity {
+			buf.WriteString(fmt.Sprintf("$%d", i))
 		}
 	}
 	return buf.String()
@@ -93,16 +92,3 @@ func (d DataArrayInfo) String() string {
 	return fmt.Sprintf("ARRAY %d %s", d.Length, d.ItemType.String())
 }
 
-func CharsToBase64String(chars ([] uint32)) string {
-	var buf strings.Builder
-	var encoder = base64.NewEncoder(base64.StdEncoding, &buf)
-	var chunk ([4] byte)
-	for _, char := range chars {
-		var size = utf8.EncodeRune(chunk[:], rune(char))
-		var _, err = encoder.Write(chunk[:size])
-		if err != nil { panic(err) }
-	}
-	var err = encoder.Close()
-	if err != nil { panic(err) }
-	return buf.String()
-}
