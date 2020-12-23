@@ -115,6 +115,7 @@ func interpret(path string, args ([] string), max_stack_size int, asm_dump strin
         _, err = fmt.Fprint(f, program.String())
         if err != nil {
             fmt.Fprintf(os.Stderr, "error writing to asm dump file: %s", err)
+            os.Exit(254)
         }
         _ = f.Close()
     }
