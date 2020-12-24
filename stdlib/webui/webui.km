@@ -17,14 +17,19 @@ type MainLoop protected NoExcept[-];
 
 type ResourceFile native;
 
+type FontInfo (String,String,String);  // family, weight, style
+
 public function webui-init: ( &(String,NoExcept*[Node]) MainLoop )
     native 'webui-init';
 
 public function webui-inject-css: ( &(Array[ResourceFile]) NoExcept[-] )
     native 'webui-inject-css';
 
-public function webui-inject-js: ( &(Array[ResourceFile]) NoExcept[-] )
+public function webui-inject-js:  ( &(Array[ResourceFile]) NoExcept[-] )
     native 'webui-inject-js';
+
+public function webui-inject-ttf: ( &(Array[(FontInfo,ResourceFile)]) NoExcept[-] )
+    native 'webui-inject-ttf';
 
 public function webui-get-window: ( &() NoExcept[Qt::MainWindow] )
     (&(_)(GetWindow));

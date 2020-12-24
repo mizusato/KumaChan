@@ -119,6 +119,7 @@ extern "C" {
     void WebUiRegisterAsset(QtString path, QtString mime, const uint8_t* buf, size_t len);
     QtString WebUiInjectCSS(QtString path);
     QtString WebUiInjectJS(QtString path);
+    QtString WebUiInjectTTF(QtString path, QtString family, QtString weight, QtString style);
     void WebUiCallMethod(QtString id, QtString name, QtVariantList args);
     void WebUiEraseStyle(QtString id, QtString key);
     void WebUiApplyStyle(QtString id, QtString key, QtString value);

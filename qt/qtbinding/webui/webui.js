@@ -11,6 +11,7 @@
  *  @property {function(size: number): void} UpdateRootFontSize
  *  @property {function(uuid: string, content: string): void} InjectCSS
  *  @property {function(uuid: string, content: string): void} InjectJS
+ *  @property {function(uuid: string, content: string, family: string, weight: string, style: string): void} InjectTTF
  *  @property {Signal.<function(id:string, key:string, value:string): void>} ApplyStyle
  *  @property {Signal.<function(id:string, key:string): void>} EraseStyle
  *  @property {Signal.<function(id:string, name:string, value:string): void>} SetAttr
@@ -203,6 +204,17 @@ window.addEventListener('load', _ => {
         script_tag.type = 'text/javascript'
         script_tag.src = `asset://${path}`
         document.head.appendChild(script_tag)
+    })
+    bridge.InjectTTF.connect((uuid, path, family, weight, style) => {
+        let style_tag = document.createElement('style')
+        style_tag.dataset['uuid'] = uuid
+        style_tag.textContent = `@font-face {
+            font-family: '${family}';
+            src: url(asset://${path}) format('truetype');
+            font-weight: ${weight};
+            font-style: ${style};
+        }`
+        document.head.appendChild(style_tag)
     })
     bridge.LoadFinish()
     console.log('LoadFinish')

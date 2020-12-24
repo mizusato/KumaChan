@@ -33,6 +33,7 @@ signals:
     void UpdateRootFontSize(double size);
     void InjectCSS(QString uuid, QString path);
     void InjectJS(QString uuid, QString path);
+    void InjectTTF(QString uuid, QString path, QString family, QString weight, QString style);
     void CallMethod(QString id, QString name, QVariantList args);
     // TODO: use 1 notifier signal instead of many
     void EraseStyle(QString id, QString key);

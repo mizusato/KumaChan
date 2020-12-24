@@ -51,6 +51,12 @@ QtString WebUiInjectJS(QtString path) {
     return QtWrapString(uuid);
 }
 
+QtString WebUiInjectTTF(QtString path, QtString family, QtString weight, QtString style) {
+    QString uuid = QUuid::createUuid().toString();
+    emit window->bridge->InjectTTF(uuid, QtUnwrapString(path), QtUnwrapString(family), QtUnwrapString(weight), QtUnwrapString(style));
+    return QtWrapString(uuid);
+}
+
 void WebUiCallMethod(QtString id, QtString name, QtVariantList args) {
     QVariantList args_copy = *(QVariantList*)(args.ptr);
     emit window->bridge->CallMethod(QtUnwrapString(id), QtUnwrapString(name), args_copy);

@@ -504,6 +504,10 @@ func WebUiInjectJS(path String) String {
     return String(C.WebUiInjectJS(C.QtString(path)))
 }
 
+func WebUiInjectTTF(path String, family String, weight String, style String) String {
+    return String(C.WebUiInjectTTF(C.QtString(path), C.QtString(family), C.QtString(weight), C.QtString(style)))
+}
+
 func WebUiGetEventHandler() vdom.EventHandler {
     var raw_id = C.WebUiGetEventHandler()
     var id = StringToRunes(String(raw_id))

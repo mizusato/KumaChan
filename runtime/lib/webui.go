@@ -221,6 +221,33 @@ var WebUiFunctions = map[string] interface{} {
 			return nil, true
 		})
 	},
+	"webui-inject-ttf": func(v Value) rx.Effect {
+		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
+			<- __WebUiBridgeLoaded
+			var array = container.ArrayFrom(v)
+			var wait = make(chan struct{})
+			qt.CommitTask(func() {
+				for i := uint(0); i < array.Length; i += 1 {
+					var item = array.GetItem(i).(ProductValue)
+					var info = item.Elements[0].(ProductValue)
+					var family = RuneSliceFromString(info.Elements[0].(String))
+					var weight = RuneSliceFromString(info.Elements[1].(String))
+					var style = RuneSliceFromString(info.Elements[2].(String))
+					var f = item.Elements[1].(stdlib.WebUiResourceFile)
+					var path_q, del1 = qt.NewStringFromRunes(([] rune)(f.Path))
+					var family_q, del2 = qt.NewStringFromRunes(family)
+					var weight_q, del3  = qt.NewStringFromRunes(weight)
+					var style_q, del4 = qt.NewStringFromRunes(style)
+					var uuid = qt.WebUiInjectTTF(path_q, family_q, weight_q, style_q)
+					qt.DeleteString(uuid) // unused now
+					del1(); del2(); del3(); del4()
+				}
+				wait <- struct{}{}
+			})
+			<- wait
+			return nil, true
+		})
+	},
 	"webui-dom-node": func (
 		tag      String,
 		styles   *vdom.Styles,

@@ -48,7 +48,6 @@ func LoadWebAsset(path string, _ ([] byte), i_config interface{}) (common.UnitFi
 func WebAssetLoader() common.UnitFileLoader {
 	return common.UnitFileLoader {
 		Extensions: [] string {
-			"html",  "HTML",
 			"css",   "CSS",
 			"js",    "JS",
 			"ttf",   "TTF",
@@ -59,7 +58,6 @@ func WebAssetLoader() common.UnitFileLoader {
 		GetMIME: func(path string) string {
 			var ext = filepath.Ext(path)
 			switch ext {
-			case "html", "HTML": return "text/html"
 			case "css", "CSS":   return "text/css"
 			case "js", "JS":     return "text/javascript"
 			case "ttf", "TTF":   return "font/ttf"
