@@ -9,7 +9,6 @@ import (
 	"kumachan/parser"
 	"kumachan/parser/ast"
 	"kumachan/qt"
-	"io/ioutil"
 )
 
 
@@ -100,12 +99,10 @@ type QtUiLayoutItem struct {
 type QtUiConfig struct {
 	Public  bool   `json:"public"`
 }
-func LoadQtUi(path string, i_config interface{}) (common.UnitFile, error) {
-	var content, err = ioutil.ReadFile(path)
-	if err != nil { return nil, err }
+func LoadQtUi(path string, content ([] byte), i_config interface{}) (common.UnitFile, error) {
 	var config, _ = i_config.(QtUiConfig)
 	var ui QtUi
-	err = xml.Unmarshal(content, &ui)
+	var err = xml.Unmarshal(content, &ui)
 	if err != nil { return nil, err }
 	qt.MakeSureInitialized()
 	var widgets = make(map[string] QtWidget)
@@ -160,8 +157,9 @@ func LoadQtUi(path string, i_config interface{}) (common.UnitFile, error) {
 
 func QtUiLoader() common.UnitFileLoader {
 	return common.UnitFileLoader {
-		Extensions: [] string { "ui", "UI" },
-		Name:       "ui",
-		Load:       LoadQtUi,
+		Extensions:  [] string { "ui", "UI" },
+		Name:        "ui",
+		Load:        LoadQtUi,
+		ReadContent: true,
 	}
 }

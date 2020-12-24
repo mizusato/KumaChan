@@ -6,7 +6,6 @@ import (
 	"errors"
 	"strings"
 	"reflect"
-	"io/ioutil"
 	"encoding/json"
 	"path/filepath"
 	. "kumachan/error"
@@ -28,7 +27,7 @@ const StdlibFolder = "stdlib"
 const RenamePrefix = "rename:"
 
 var __UnitFileLoaders = [] common.UnitFileLoader {
-	kinds.DataLoader(),
+	kinds.WebAssetLoader(),
 	kinds.QtUiLoader(),
 	kinds.PNG_Loader(),
 }
@@ -59,9 +58,9 @@ type RawModuleManifest struct {
 	Config   RawModuleConfig   `json:"config"`
 }
 type RawModuleConfig struct {
-	UI    kinds.QtUiConfig   `json:"ui"`
-	PNG   kinds.PNG_Config   `json:"png"`
-	Data  kinds.DataConfig   `json:"data"`
+	UI        kinds.QtUiConfig       `json:"ui"`
+	PNG       kinds.PNG_Config       `json:"png"`
+	WebAsset  kinds.WebAssetConfig   `json:"webAsset"`
 }
 func DefaultManifest(path string) RawModuleManifest {
 	var abs_path, err = filepath.Abs(path)
@@ -74,9 +73,9 @@ func DefaultManifest(path string) RawModuleManifest {
 		Version: "",
 		Name:    base,
 		Config:  RawModuleConfig {
-			UI:   kinds.QtUiConfig { Public: true },
-			PNG:  kinds.PNG_Config { Public: true },
-			Data: kinds.DataConfig { Public: true },
+			UI:       kinds.QtUiConfig { Public: true },
+			PNG:      kinds.PNG_Config { Public: true },
+			WebAsset: kinds.WebAssetConfig{ Public: true },
 		},
 	}
 }
@@ -152,7 +151,7 @@ func readModulePath(path string, fs FileSystem) (RawModule, error) {
 			var item_name = item.Name()
 			var item_path = filepath.Join(path, item_name)
 			if item_name == ManifestFileName {
-				var item_content, err = ioutil.ReadFile(item_path)
+				var item_content, err = ReadFile(item_path, fs)
 				if err != nil { return RawModule{}, err }
 				manifest_content = item_content
 				manifest_path = item_path
@@ -174,7 +173,7 @@ func readModulePath(path string, fs FileSystem) (RawModule, error) {
 			var item_name = item.Name()
 			var item_path = filepath.Join(path, item_name)
 			if strings.HasSuffix(item_name, SourceSuffix) {
-				var item_content, err = ioutil.ReadFile(item_path)
+				var item_content, err = ReadFile(item_path, fs)
 				if err != nil { return RawModule{}, err }
 				unit_files = append(unit_files, SourceFile {
 					Path:    item_path,
@@ -202,7 +201,12 @@ func readModulePath(path string, fs FileSystem) (RawModule, error) {
 							item_config = config_rv.Field(i).Interface()
 						}
 					}
-					f, err := loader.Load(item_path, item_config)
+					var content  [] byte
+					if loader.ReadContent {
+						content, err = ReadFile(item_path, fs)
+						if err != nil { return RawModule{}, err }
+					}
+					f, err := loader.Load(item_path, content, item_config)
 					if err != nil { return RawModule{}, err }
 					unit_files = append(unit_files, f)
 				}

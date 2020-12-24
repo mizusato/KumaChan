@@ -43,6 +43,7 @@ func LoadZipFile(content [] byte, base_path string) (ZipFileSystem, error) {
 			name:    filepath.Base(base_path),
 			isDir:   true,
 		},
+		zipFullContent: content,
 	}
 	for _, f := range zip_reader.File {
 		var rel_path, err = validateZipItemFileName(f.Name)
@@ -53,6 +54,7 @@ func LoadZipFile(content [] byte, base_path string) (ZipFileSystem, error) {
 			"duplicate file: %s", abs_path))}
 		var item = &ZipItemFile {
 			underlyingFile:  f,
+			zipFullContent:  content,
 		}
 		index[abs_path] = item
 		var dir_path = filepath.Dir(abs_path)
@@ -107,6 +109,7 @@ type ZipItemFile struct {
 	rootFileInfo     craftedFileInfo
 	underlyingFile   *zip.File
 	containingFiles  [] *ZipItemFile
+	zipFullContent   [] byte  // use this data with offset in underlyingFile
 }
 func (fs ZipFileSystem) AllFilesPathList() ([] string) {
 	var path_list = make([] string, 0, len(fs.files))

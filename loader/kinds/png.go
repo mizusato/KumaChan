@@ -9,7 +9,6 @@ import (
 	"kumachan/parser/ast"
 	"kumachan/parser"
 	"kumachan/stdlib"
-	"io/ioutil"
 )
 
 
@@ -46,9 +45,7 @@ type PNG_Config struct {
 	Public  bool   `json:"public"`
 	Decode  bool   `json:"decode"`
 }
-func LoadPNG(path string, i_config interface{}) (common.UnitFile, error) {
-	var content, err = ioutil.ReadFile(path)
-	if err != nil { return nil, err }
+func LoadPNG(path string, content ([] byte), i_config interface{}) (common.UnitFile, error) {
 	var config = i_config.(PNG_Config)
 	if config.Decode {
 		var reader = bytes.NewReader(content)
@@ -72,8 +69,9 @@ func LoadPNG(path string, i_config interface{}) (common.UnitFile, error) {
 
 func PNG_Loader() common.UnitFileLoader {
 	return common.UnitFileLoader {
-		Extensions: [] string { "png", "PNG" },
-		Name:       "png",
-		Load:       LoadPNG,
+		Extensions:  [] string { "png", "PNG" },
+		Name:        "png",
+		Load:        LoadPNG,
+		ReadContent: true,
 	}
 }
