@@ -35,7 +35,7 @@ func mergeErrorMessages(errs ([] E)) ErrorMessage {
 
 func expectStdIO(t *testing.T, path string, in string, expected_out string) {
 	qt.Mock()
-	ldr_mod, ldr_idx, ldr_err := loader.LoadEntry(path)
+	ldr_mod, ldr_idx, ldr_res, ldr_err := loader.LoadEntry(path)
 	if ldr_err != nil { t.Fatal(ldr_err) }
 	mod, _, sch, errs := checker.TypeCheck(ldr_mod, ldr_idx)
 	if errs != nil { t.Fatal(mergeErrorMessages(errs)) }
@@ -53,6 +53,7 @@ func expectStdIO(t *testing.T, path string, in string, expected_out string) {
 	if e != nil { panic(e) }
 	go (func() {
 		vm.Execute(program, vm.Options {
+			Resources:    ldr_res,
 			MaxStackSize: 65536,
 			Environment:  os.Environ(),
 			Arguments:    [] string { path },

@@ -10,7 +10,7 @@ import (
 
 func expectError(t *testing.T, name string, kind ConcreteError) {
 	var expect_t = reflect.TypeOf(kind)
-	var _, _, err = LoadEntry(getTestPath(t, name))
+	var _, _, _, err = LoadEntry(getTestPath(t, name))
 	if err != nil {
 		var got_t = reflect.TypeOf(err.Concrete)
 		if !(got_t.AssignableTo(expect_t)) {

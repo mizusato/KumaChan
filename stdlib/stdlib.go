@@ -19,6 +19,7 @@ var __ModuleDirectories = [] string {
 func GetModuleDirectories() ([] string) { return __ModuleDirectories }
 const Core = "Core"
 const OS = "OS"
+const WebUi = "WebUi"
 var core_types = []string {
 	// types.km
 	Float, FloatIEEE, Number,
@@ -130,7 +131,13 @@ const Debug = "Debug"
 const Never = "Never"
 
 // os
-const PathT = "Path"
+const OS_Path = "Path"
+
+// webui
+const WebUi_ResourceFile = "ResourceFile"
+type WebUiResourceFile struct {
+	Path  string
+}
 
 func GetPrimitiveReflectType(name string) (reflect.Type, bool) {
 	switch name {

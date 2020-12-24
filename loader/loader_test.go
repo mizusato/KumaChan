@@ -20,7 +20,7 @@ func getTestPath(t *testing.T, name string) string {
 
 func TestLoader(t *testing.T) {
 	var path = getTestPath(t, "normal.km")
-	var _, _, err = LoadEntry(path)
+	var _, _, _, err = LoadEntry(path)
 	if err != nil { t.Fatal(err) }
 }
 

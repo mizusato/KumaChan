@@ -490,6 +490,12 @@ func WebUiGetWindow() Widget {
     return widget { object { C.WebUiGetWindow() } }
 }
 
+func WebUiRegisterAsset(path String, mime String, data ([] byte))  {
+    var buf = (*C.uint8_t)(unsafe.Pointer(&data[0]))
+    var length = C.size_t(uint(len(data)))
+    C.WebUiRegisterAsset(C.QtString(path), C.QtString(mime), buf, length)
+}
+
 func WebUiInjectCSS(path String) String {
     return String(C.WebUiInjectCSS(C.QtString(path)))
 }

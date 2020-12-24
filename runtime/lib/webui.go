@@ -81,6 +81,7 @@ func WebUiInitAndLoad (
 	sched  rx.Scheduler,
 	root   rx.Effect,
 	title  String,
+	res    map[string] util.Resource,
 ) {
 	select {
 	case __WebUiLoading <- struct{}{}:
@@ -113,6 +114,7 @@ func WebUiInitAndLoad (
 			})
 		})
 		qt.CommitTask(func() {
+			__WebUiRegisterAssetFiles(res)
 			qt.WebUiLoadView()
 			wait <- struct{}{}
 		})
@@ -123,14 +125,25 @@ func WebUiInitAndLoad (
 	}
 }
 
-func WebUiInjectAssetFiles(files ([] stdlib.Path), kind string, inject func(qt.String)(qt.String)) {
+func __WebUiRegisterAssetFiles(res (map[string] util.Resource)) {
+	for path, item := range res {
+		var path_q, path_del = qt.NewStringFromRunes(([] rune)(path))
+		var mime_q, mime_del = qt.NewStringFromRunes(([] rune)(item.MIME))
+		qt.WebUiRegisterAsset(path_q, mime_q, item.Data)
+		mime_del()
+		path_del()
+	}
+}
+
+func WebUiInjectAssetFiles (
+	files   ([] stdlib.WebUiResourceFile),
+	inject  func(qt.String)(qt.String),
+) {
 	<- __WebUiBridgeLoaded
 	var wait = make(chan struct{})
 	qt.CommitTask(func() {
-		for _, path := range files {
-			var path_str = StringFromGoString(path.String())
-			var path_runes = RuneSliceFromString(path_str)
-			var path_q, del = qt.NewStringFromRunes(path_runes)
+		for _, f := range files {
+			var path_q, del = qt.NewStringFromRunes(([] rune)(f.Path))
 			var uuid = inject(path_q)
 			qt.DeleteString(uuid) // unused now
 			del()
@@ -180,29 +193,31 @@ var WebUiConstants = map[string] NativeConstant {
 var WebUiFunctions = map[string] interface{} {
 	"webui-init": func(title String, root rx.Effect, h InteropContext) rx.Effect {
 		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
-			WebUiInitAndLoad(h.GetScheduler(), root, title)
+			// TODO: handle duplicate load (throw an error)
+			var res = h.GetResources("webAsset")
+			WebUiInitAndLoad(h.GetScheduler(), root, title, res)
 			return nil, true
 		})
 	},
 	"webui-inject-css": func(v Value) rx.Effect {
 		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
 			var array = container.ArrayFrom(v)
-			var files = make([] stdlib.Path, array.Length)
+			var files = make([] stdlib.WebUiResourceFile, array.Length)
 			for i := uint(0); i < array.Length; i += 1 {
-				files[i] = array.GetItem(i).(stdlib.Path)
+				files[i] = array.GetItem(i).(stdlib.WebUiResourceFile)
 			}
-			WebUiInjectAssetFiles(files, "CSS", qt.WebUiInjectCSS)
+			WebUiInjectAssetFiles(files, qt.WebUiInjectCSS)
 			return nil, true
 		})
 	},
 	"webui-inject-js": func(v Value) rx.Effect {
 		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
 			var array = container.ArrayFrom(v)
-			var files = make([] stdlib.Path, array.Length)
+			var files = make([] stdlib.WebUiResourceFile, array.Length)
 			for i := uint(0); i < array.Length; i += 1 {
-				files[i] = array.GetItem(i).(stdlib.Path)
+				files[i] = array.GetItem(i).(stdlib.WebUiResourceFile)
 			}
-			WebUiInjectAssetFiles(files, "JS", qt.WebUiInjectJS)
+			WebUiInjectAssetFiles(files, qt.WebUiInjectJS)
 			return nil, true
 		})
 	},

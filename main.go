@@ -71,13 +71,13 @@ func debug_parser(file io.Reader, name string, root string) {
 }
 
 func interpret(path string, args ([] string), max_stack_size int, asm_dump string) {
-    var load = func(path string) (*loader.Module, loader.Index) {
-        var mod, idx, err = loader.LoadEntry(path)
+    var load = func(path string) (*loader.Module, loader.Index, loader.ResIndex) {
+        var mod, idx, res, err = loader.LoadEntry(path)
         if err != nil {
             fmt.Fprintf(os.Stderr, "%s\n", err.Error())
             os.Exit(3)
         }
-        return mod, idx
+        return mod, idx, res
     }
     var check = func(mod *loader.Module, idx loader.Index) (*checker.CheckedModule, checker.Index, kmd.SchemaTable) {
         var c_mod, c_idx, schema, errs = checker.TypeCheck(mod, idx)
@@ -119,13 +119,14 @@ func interpret(path string, args ([] string), max_stack_size int, asm_dump strin
         }
         _ = f.Close()
     }
-    var mod, idx = load(path)
+    var mod, idx, res = load(path)
     var c_mod, _, schema = check(mod, idx)
     var program = compile(c_mod, schema)
     if asm_dump != "" {
         dump_asm(program, asm_dump)
     }
     vm.Execute(program, vm.Options {
+        Resources:    res,
         MaxStackSize: uint(max_stack_size),
         Environment:  os.Environ(),
         Arguments:    args,
@@ -147,7 +148,7 @@ func repl(args ([] string), max_stack_size int) {
         Name:    "Repl",
     }, mod_ast_path)
     // 2. Load the empty module (stdlib also loaded)
-    ldr_mod, ldr_idx, ldr_err := loader.LoadEntryRawModule(raw_mod)
+    ldr_mod, ldr_idx, ldr_res, ldr_err := loader.LoadEntryRawModule(raw_mod)
     if ldr_err != nil { panic(ldr_err) }
     // 3. Type check the module tree
     mod, _, sch, errs := checker.TypeCheck(ldr_mod, ldr_idx)
@@ -284,6 +285,7 @@ func repl(args ([] string), max_stack_size int) {
     program.Effects = append(program.Effects, do_repl)
     // 9. Execute the program
     vm.Execute(program, vm.Options {
+        Resources:    ldr_res,
         MaxStackSize: uint(max_stack_size),
         Environment:  os.Environ(),
         Arguments:    args,

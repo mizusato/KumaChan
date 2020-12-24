@@ -65,7 +65,7 @@ func LoadEntryWithCache(path string, cache Cache) (*Module, Index, *Error) {
 	if is_cached {
 		return cached.Module, cached.Index, cached.Error
 	} else {
-		var mod, idx, err = LoadEntry(path)
+		var mod, idx, _, err = LoadEntry(path)
 		cache.Put(path, EntryResult {
 			Module: mod,
 			Index:  idx,

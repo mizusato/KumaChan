@@ -9,6 +9,7 @@ import (
 	"kumachan/runtime/lib"
 	. "kumachan/error"
 	. "kumachan/runtime/common"
+	"kumachan/util"
 )
 
 
@@ -27,6 +28,7 @@ type Machine struct {
 }
 
 type Options struct {
+	Resources     map[string] util.Resource
 	MaxStackSize  uint
 	Environment   [] string
 	Arguments     [] string
@@ -176,5 +178,15 @@ func (h MachineContextHandle) KmdSerialize(v Value, t *kmd.Type) ([] byte, error
 
 func (h MachineContextHandle) KmdDeserialize(binary ([] byte), t *kmd.Type) (Value, error) {
 	return lib.KmdDeserialize(binary, t, h.machine.kmdTransformer)
+}
+
+func (h MachineContextHandle) GetResources(kind string) (map[string] util.Resource) {
+	var res = make(map[string] util.Resource)
+	for path, item := range h.machine.options.Resources {
+		if item.Kind == kind {
+			res[path] = item
+		}
+	}
+	return res
 }
 

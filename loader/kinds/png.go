@@ -69,9 +69,10 @@ func LoadPNG(path string, content ([] byte), i_config interface{}) (common.UnitF
 
 func PNG_Loader() common.UnitFileLoader {
 	return common.UnitFileLoader {
-		Extensions:  [] string { "png", "PNG" },
-		Name:        "png",
-		Load:        LoadPNG,
-		ReadContent: true,
+		Extensions: [] string { "png", "PNG" },
+		Name:       "png",
+		Load:       LoadPNG,
+		IsResource: true,
+		GetMIME:    func(_ string) string { return "image/png" },
 	}
 }

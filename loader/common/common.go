@@ -9,11 +9,12 @@ import (
 
 
 type UnitFileLoader struct {
-	Extensions   [] string
-	Name         string
-	ReadContent  bool
-	Load         func(path string, content ([] byte), config interface{},
+	Extensions [] string
+	Name       string
+	IsResource bool
+	Load       func(path string, content ([] byte), config interface{},
 					) (UnitFile, error)
+	GetMIME    func(path string) string
 }
 
 type UnitFile interface {

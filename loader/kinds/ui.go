@@ -157,9 +157,9 @@ func LoadQtUi(path string, content ([] byte), i_config interface{}) (common.Unit
 
 func QtUiLoader() common.UnitFileLoader {
 	return common.UnitFileLoader {
-		Extensions:  [] string { "ui", "UI" },
-		Name:        "ui",
-		Load:        LoadQtUi,
-		ReadContent: true,
+		Extensions: [] string { "ui", "UI" },
+		Name:       "ui",
+		Load:       LoadQtUi,
+		IsResource: false,
 	}
 }

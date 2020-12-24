@@ -16,6 +16,7 @@ import (
 	"kumachan/parser/transformer"
 	"kumachan/loader/common"
 	"kumachan/loader/kinds"
+	"kumachan/util"
 )
 
 
@@ -43,12 +44,20 @@ type Module struct {
 }
 type Index  map[string] *Module
 
+type ResIndex map[string] util.Resource
+func (res ResIndex) MergeFrom(another ResIndex) {
+	for k, v := range another {
+		res[k] = v
+	}
+}
+
 type RawModule struct {
 	FilePath    string
 	FileInfo    os.FileInfo
 	Manifest    RawModuleManifest
 	Content     RawModuleContent
 	Standalone  bool
+	Resources   ResIndex
 }
 type RawModuleManifest struct {
 	Vendor   string            `json:"vendor"`
@@ -133,6 +142,10 @@ func (mod M_ModuleFolder) Load(ctx Context) (ast.Root, *Error) {
 }
 
 func readModulePath(path string, fs FileSystem) (RawModule, error) {
+	var res = make(ResIndex)
+	var abs_path, err = filepath.Abs(path)
+	if err != nil { return RawModule{}, err }
+	path = filepath.Clean(abs_path)
 	fd, err := fs.Open(path)
 	if err != nil { return RawModule{}, err }
 	defer func() {
@@ -201,10 +214,14 @@ func readModulePath(path string, fs FileSystem) (RawModule, error) {
 							item_config = config_rv.Field(i).Interface()
 						}
 					}
-					var content  [] byte
-					if loader.ReadContent {
-						content, err = ReadFile(item_path, fs)
-						if err != nil { return RawModule{}, err }
+					var content, err = ReadFile(item_path, fs)
+					if err != nil { return RawModule{}, err }
+					if loader.IsResource {
+						res[item_path] = util.Resource {
+							Kind: loader.Name,
+							MIME: loader.GetMIME(item_path),
+							Data: content,
+						}
 					}
 					f, err := loader.Load(item_path, content, item_config)
 					if err != nil { return RawModule{}, err }
@@ -239,10 +256,11 @@ func readModulePath(path string, fs FileSystem) (RawModule, error) {
 					manifest_path, `field "vendor" has an invalid value`))
 		}
 		return RawModule {
-			FilePath: path,
-			FileInfo: fd_info,
-			Manifest: manifest,
-			Content:  M_ModuleFolder { unit_files },
+			FilePath:  path,
+			FileInfo:  fd_info,
+			Manifest:  manifest,
+			Content:   M_ModuleFolder { unit_files },
+			Resources: res,
 		}, nil
 	} else {
 		var content, err = fd.ReadContent()
@@ -259,28 +277,46 @@ func readModulePath(path string, fs FileSystem) (RawModule, error) {
 					Content: content,
 				},
 			},
+			Resources:  res,
 			Standalone: true,
 		}, nil
 	}
 }
 
-func loadModule(path string, fs FileSystem, ctx Context, idx Index) (*Module, *Error) {
+func loadModule (
+	path  string,
+	fs    FileSystem,
+	ctx   Context,
+	idx   Index,
+	res   ResIndex,
+) (*Module, *Error) {
 	// Try to read the content of given source file/folder
 	var raw_mod, err1 = readModulePath(path, fs)
 	if err1 != nil { return nil, &Error {
 		Context:  ctx,
 		Concrete: E_ReadFileFailed {
-			FilePath:  path,
-			Message:   err1.Error(),
+			FilePath: path,
+			Message:  err1.Error(),
 		},
 	} }
-	return loadRawModule(raw_mod, fs, ctx, idx)
+	var mod, already_loaded, err2 = loadRawModule(raw_mod, fs, ctx, idx, res)
+	if err2 != nil { return nil, err2 }
+	if !(already_loaded) {
+		res.MergeFrom(raw_mod.Resources)
+	}
+	return mod, nil
 }
 
-func loadRawModule(raw_mod RawModule, fs FileSystem, ctx Context, idx Index) (*Module, *Error) {
+func loadRawModule (
+	raw_mod  RawModule,
+	fs       FileSystem,
+	ctx      Context,
+	idx      Index,
+	res      ResIndex,
+) (*Module, bool, *Error) {
 	/* 1. Check for validity of standalone module */
 	if raw_mod.Standalone && len(ctx.BreadCrumbs) > 0 {
-		return nil, &Error {
+		return nil, false, &Error {
 			Context:  ctx,
 			Concrete: E_StandaloneImported {},
 		}
@@ -309,7 +345,7 @@ func loadRawModule(raw_mod RawModule, fs FileSystem, ctx Context, idx Index) (*M
 	})()
 	var file_info = raw_mod.FileInfo
 	var module_node, err2 = raw_mod.Content.Load(ctx)
-	if err2 != nil { return nil, err2 }
+	if err2 != nil { return nil, false, err2 }
 	/* 3. Check the module name according to ancestor modules */
 	for _, ancestor := range ctx.BreadCrumbs {
 		if ancestor.ModuleName == module_name {
@@ -317,7 +353,7 @@ func loadRawModule(raw_mod RawModule, fs FileSystem, ctx Context, idx Index) (*M
 			if os.SameFile(ancestor.FileInfo, file_info) {
 				/* 3.1.1. If it corresponds to the same source file, */
 				/*        throw an error of circular import. */
-				return nil, &Error {
+				return nil, false, &Error {
 					Context:  ctx,
 					Concrete: E_CircularImport {
 						ModuleName: module_name,
@@ -325,7 +361,7 @@ func loadRawModule(raw_mod RawModule, fs FileSystem, ctx Context, idx Index) (*M
 				}
 			} else {
 				/* 3.1.2. Otherwise, throw an error of module name conflict. */
-				return nil, &Error {
+				return nil, false, &Error {
 					Context:  ctx,
 					Concrete: E_NameConflict {
 						ModuleName: module_name,
@@ -344,10 +380,10 @@ func loadRawModule(raw_mod RawModule, fs FileSystem, ctx Context, idx Index) (*M
 			/* 4.1.1. If it corresponds to the same source file, */
 			/*        which indicates the module has already been loaded, */
 			/*        return the loaded module. */
-			return existing, nil
+			return existing, true, nil
 		} else {
 			/* 4.1.2. Otherwise, throw an error of module name conflict. */
-			return nil, &Error {
+			return nil, false, &Error {
 				Context: ctx,
 				Concrete: E_NameConflict {
 					ModuleName: module_name,
@@ -380,7 +416,7 @@ func loadRawModule(raw_mod RawModule, fs FileSystem, ctx Context, idx Index) (*M
 				}
 				var _, exists = imported_map[local_alias]
 				if exists {
-					return nil, &Error {
+					return nil, false, &Error {
 						Context: im_ctx,
 						Concrete: E_ConflictAlias {
 							LocalAlias: local_alias,
@@ -406,14 +442,14 @@ func loadRawModule(raw_mod RawModule, fs FileSystem, ctx Context, idx Index) (*M
 				} else {
 					im_path = filepath.Join(filepath.Dir(file_path), rel_path)
 				}
-				var im_mod, err = loadModule(im_path, fs, im_ctx, idx)
+				var im_mod, err = loadModule(im_path, fs, im_ctx, idx, res)
 				if err != nil {
 					// Bubble errors
-					return nil, err
+					return nil, false, err
 				} else {
 					// Register the imported module
 					var im_name = string(im_mod.Name)
-					if imported_set[im_name] { return nil, &Error {
+					if imported_set[im_name] { return nil, false, &Error {
 						Context: im_ctx,
 						Concrete: E_DuplicateImport {
 							ModuleName: im_name,
@@ -437,45 +473,48 @@ func loadRawModule(raw_mod RawModule, fs FileSystem, ctx Context, idx Index) (*M
 			FileInfo: file_info,
 		}
 		idx[module_name] = mod
-		return mod, nil
+		return mod, false, nil
 	}
 }
 
-func loadEntry(path string, fs FileSystem) (*Module, Index, *Error) {
-	var idx = make(map[string] *Module)
+func loadEntry(path string, fs FileSystem) (*Module, Index, ResIndex, *Error) {
+	var idx = make(Index)
 	for k, v := range __StdLibIndex {
 		idx[k] = v
 	}
 	var ctx = MakeEntryContext()
-	var mod, err = loadModule(path, fs, ctx, idx)
-	return mod, idx, err
+	var res = make(ResIndex)
+	var mod, err = loadModule(path, fs, ctx, idx, res)
+	return mod, idx, res, err
 }
 
-func loadEntryRawModule(raw_mod RawModule, fs FileSystem) (*Module, Index, *Error) {
-	var idx = make(map[string] *Module)
+func loadEntryRawModule(raw_mod RawModule, fs FileSystem) (*Module, Index, ResIndex, *Error) {
+	var idx = make(Index)
 	for k, v := range __StdLibIndex {
 		idx[k] = v
 	}
 	var ctx = MakeEntryContext()
-	var mod, err = loadRawModule(raw_mod, fs, ctx, idx)
-	return mod, idx, err
+	var res = make(ResIndex)
+	var mod, _, err = loadRawModule(raw_mod, fs, ctx, idx, res)
+	return mod, idx, res, err
 }
 
-func LoadEntry(path string) (*Module, Index, *Error) {
+func LoadEntry(path string) (*Module, Index, ResIndex, *Error) {
 	return loadEntry(path, RealFileSystem {})
 }
 
-func LoadEntryWithinFileSystem(path string, fs FileSystem) (*Module, Index, *Error) {
+func LoadEntryWithinFileSystem(path string, fs FileSystem) (*Module, Index, ResIndex, *Error) {
 	return loadEntry(path, fs)
 }
 
-func LoadEntryRawModule(raw_mod RawModule) (*Module, Index, *Error) {
+func LoadEntryRawModule(raw_mod RawModule) (*Module, Index, ResIndex, *Error) {
 	return loadEntryRawModule(raw_mod, RealFileSystem {})
 }
 
 
 var __StdLibModules = stdlib.GetModuleDirectories()
-var __StdLibIndex = make(map[string] *Module)
+var __StdLibIndex = make(Index)
+var __StdLibResIndex = make(ResIndex)
 var _ = __Init()
 
 func __Init() interface{} {
@@ -492,7 +531,7 @@ func LoadStdLib() {
 		var file = filepath.Join (
 			filepath.Dir(exe_path), StdlibFolder, name,
 		)
-		var _, err = loadModule(file, fs, ctx, __StdLibIndex)
+		var _, err = loadModule(file, fs, ctx, __StdLibIndex, __StdLibResIndex)
 		if err != nil {
 			fmt.Fprintf (
 				os.Stderr,
