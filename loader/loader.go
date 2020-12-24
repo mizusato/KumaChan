@@ -3,7 +3,6 @@ package loader
 import (
 	"os"
 	"fmt"
-	"time"
 	"errors"
 	"strings"
 	"reflect"
@@ -134,16 +133,16 @@ func (mod M_ModuleFolder) Load(ctx Context) (ast.Root, *Error) {
 	return ast_root, nil
 }
 
-func ReadModulePath(path string) (RawModule, error) {
-	fd, err := os.Open(path)
+func readModulePath(path string, fs FileSystem) (RawModule, error) {
+	fd, err := fs.Open(path)
 	if err != nil { return RawModule{}, err }
 	defer func() {
 		_ = fd.Close()
 	} ()
-	fd_info, err := fd.Stat()
+	fd_info, err := fd.Info()
 	if err != nil { return RawModule{}, err }
 	if fd_info.IsDir() {
-		items, err := fd.Readdir(0)
+		items, err := fd.ReadDir()
 		if err != nil { return RawModule{}, err }
 		var has_manifest = false
 		var manifest_content ([] byte)
@@ -242,7 +241,7 @@ func ReadModulePath(path string) (RawModule, error) {
 			Content:  M_ModuleFolder { unit_files },
 		}, nil
 	} else {
-		var content, err = ioutil.ReadAll(fd)
+		var content, err = fd.ReadContent()
 		if err != nil { return RawModule{}, err }
 		return RawModule {
 			FilePath: path,
@@ -261,9 +260,9 @@ func ReadModulePath(path string) (RawModule, error) {
 	}
 }
 
-func LoadModule(path string, ctx Context, idx Index) (*Module, *Error) {
+func loadModule(path string, fs FileSystem, ctx Context, idx Index) (*Module, *Error) {
 	// Try to read the content of given source file/folder
-	var raw_mod, err1 = ReadModulePath(path)
+	var raw_mod, err1 = readModulePath(path, fs)
 	if err1 != nil { return nil, &Error {
 		Context:  ctx,
 		Concrete: E_ReadFileFailed {
@@ -271,10 +270,10 @@ func LoadModule(path string, ctx Context, idx Index) (*Module, *Error) {
 			Message:   err1.Error(),
 		},
 	} }
-	return LoadRawModule(raw_mod, ctx, idx)
+	return loadRawModule(raw_mod, fs, ctx, idx)
 }
 
-func LoadRawModule(raw_mod RawModule, ctx Context, idx Index) (*Module, *Error) {
+func loadRawModule(raw_mod RawModule, fs FileSystem, ctx Context, idx Index) (*Module, *Error) {
 	/* 1. Check for validity of standalone module */
 	if raw_mod.Standalone && len(ctx.BreadCrumbs) > 0 {
 		return nil, &Error {
@@ -403,7 +402,7 @@ func LoadRawModule(raw_mod RawModule, ctx Context, idx Index) (*Module, *Error) 
 				} else {
 					im_path = filepath.Join(filepath.Dir(file_path), rel_path)
 				}
-				var im_mod, err = LoadModule(im_path, im_ctx, idx)
+				var im_mod, err = loadModule(im_path, fs, im_ctx, idx)
 				if err != nil {
 					// Bubble errors
 					return nil, err
@@ -438,25 +437,38 @@ func LoadRawModule(raw_mod RawModule, ctx Context, idx Index) (*Module, *Error) 
 	}
 }
 
-func LoadEntry(path string) (*Module, Index, *Error) {
+func loadEntry(path string, fs FileSystem) (*Module, Index, *Error) {
 	var idx = make(map[string] *Module)
 	for k, v := range __StdLibIndex {
 		idx[k] = v
 	}
 	var ctx = MakeEntryContext()
-	var mod, err = LoadModule(path, ctx, idx)
+	var mod, err = loadModule(path, fs, ctx, idx)
 	return mod, idx, err
 }
 
-func LoadEntryRawModule(raw_mod RawModule) (*Module, Index, *Error) {
+func loadEntryRawModule(raw_mod RawModule, fs FileSystem) (*Module, Index, *Error) {
 	var idx = make(map[string] *Module)
 	for k, v := range __StdLibIndex {
 		idx[k] = v
 	}
 	var ctx = MakeEntryContext()
-	var mod, err = LoadRawModule(raw_mod, ctx, idx)
+	var mod, err = loadRawModule(raw_mod, fs, ctx, idx)
 	return mod, idx, err
 }
+
+func LoadEntry(path string) (*Module, Index, *Error) {
+	return loadEntry(path, RealFileSystem {})
+}
+
+func LoadEntryWithinFileSystem(path string, fs FileSystem) (*Module, Index, *Error) {
+	return loadEntry(path, fs)
+}
+
+func LoadEntryRawModule(raw_mod RawModule) (*Module, Index, *Error) {
+	return loadEntryRawModule(raw_mod, RealFileSystem {})
+}
+
 
 var __StdLibModules = stdlib.GetModuleDirectories()
 var __StdLibIndex = make(map[string] *Module)
@@ -468,6 +480,7 @@ func __Init() interface{} {
 }
 
 func LoadStdLib() {
+	var fs = RealFileSystem {}
 	var exe_path, err = os.Executable()
 	if err != nil { panic(err) }
 	var ctx = MakeEntryContext()
@@ -475,7 +488,7 @@ func LoadStdLib() {
 		var file = filepath.Join (
 			filepath.Dir(exe_path), StdlibFolder, name,
 		)
-		var _, err = LoadModule(file, ctx, __StdLibIndex)
+		var _, err = loadModule(file, fs, ctx, __StdLibIndex)
 		if err != nil {
 			fmt.Fprintf (
 				os.Stderr,
@@ -508,20 +521,6 @@ func CraftRawEmptyModule(manifest RawModuleManifest, path string) RawModule {
 	return CraftRawModule(manifest, path, common.CreateEmptyAST(path))
 }
 
-type craftedFileInfo struct {
-	name     string
-	size     int64
-	mode     os.FileMode
-	modTime  time.Time
-	isDir    bool
-	sys      interface {}
-}
-func (info craftedFileInfo) Name() string { return info.name }
-func (info craftedFileInfo) Size() int64 { return info.size }
-func (info craftedFileInfo) Mode() os.FileMode { return info.mode }
-func (info craftedFileInfo) ModTime() time.Time { return info.modTime }
-func (info craftedFileInfo) IsDir() bool { return info.isDir }
-func (info craftedFileInfo) Sys() interface{} { return info.sys }
 func craftModuleFileInfo(name string) os.FileInfo {
 	return craftedFileInfo {
 		name: name,
