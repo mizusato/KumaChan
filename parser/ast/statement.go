@@ -14,12 +14,6 @@ type Import struct {
     Name  Identifier   `part:"name"`
     Path  StringText   `part:"string_text"`
 }
-type MaybeIdentifier interface { Maybe(Identifier,MaybeIdentifier) }
-func (impl Identifier) Maybe(Identifier,MaybeIdentifier) {}
-type Identifier struct {
-    Node           `part:"name"`
-    Name [] rune   `content:"Name"`
-}
 
 func (impl Do) Statement() {}
 type Do struct {

@@ -2,7 +2,6 @@ package checker
 
 import (
 	. "kumachan/error"
-	"kumachan/loader"
 	"kumachan/parser/ast"
 )
 
@@ -87,7 +86,7 @@ func CheckBundle(bundle ast.Bundle, ctx ExprContext) (SemiExpr, *ExprError) {
 				var occurred_names = make(map[string] bool)
 				var current_base = base
 				for _, field := range bundle.Values {
-					var name = loader.Id2String(field.Key)
+					var name = ast.Id2String(field.Key)
 					var target_field, exists = target.Fields[name]
 					if !exists {
 						return SemiExpr{}, &ExprError {
@@ -156,7 +155,7 @@ func CheckBundle(bundle ast.Bundle, ctx ExprContext) (SemiExpr, *ExprError) {
 		var f_index_map = make(map[string] uint, L)
 		var f_key_nodes = make([] ast.Node, L)
 		for i, field := range bundle.Values {
-			var name = loader.Id2String(field.Key)
+			var name = ast.Id2String(field.Key)
 			var _, exists = f_index_map[name]
 			if exists { return SemiExpr{}, &ExprError {
 				Point:    ErrorPointFrom(field.Key.Node),
@@ -196,7 +195,7 @@ func CheckGet(get ast.Get, ctx ExprContext) (SemiExpr, *ExprError) {
 			switch bundle_ := UnboxBundle(base.Type, ctx, true).(type) {
 			case BR_Bundle:
 				var bundle = bundle_.Bundle
-				var key = loader.Id2String(member.Name)
+				var key = ast.Id2String(member.Name)
 				var field, exists = bundle.Fields[key]
 				if !exists { return SemiExpr{}, &ExprError {
 					Point:    ErrorPointFrom(member.Node),

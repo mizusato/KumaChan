@@ -1,7 +1,6 @@
 package checker
 
 import (
-	"kumachan/loader"
 	"kumachan/parser/ast"
 	. "kumachan/error"
 )
@@ -53,7 +52,7 @@ func PatternFrom (
 		return Pattern {
 			Point:    ErrorPointFrom(p_node.Node),
 			Concrete: TrivialPattern {
-				ValueName: loader.Id2String(p.Name),
+				ValueName: ast.Id2String(p.Name),
 				ValueType: input,
 				Point:     ErrorPointFrom(p.Name.Node),
 			},
@@ -64,7 +63,7 @@ func PatternFrom (
 			return Pattern {
 				Point:    ErrorPointFrom(p_node.Node),
 				Concrete: TrivialPattern {
-					ValueName: loader.Id2String(p.Names[0]),
+					ValueName: ast.Id2String(p.Names[0]),
 					ValueType: input,
 					Point:     ErrorPointFrom(p.Names[0].Node),
 				},
@@ -86,7 +85,7 @@ func PatternFrom (
 				var ignored = 0
 				var items = make([] PatternItem, 0)
 				for i, identifier := range p.Names {
-					var name = loader.Id2String(identifier)
+					var name = ast.Id2String(identifier)
 					if name == IgnoreMark {
 						ignored += 1
 					} else {
@@ -103,7 +102,7 @@ func PatternFrom (
 							t = Reactive(t)
 						}
 						items = append(items, PatternItem {
-							Name:  loader.Id2String(identifier),
+							Name:  ast.Id2String(identifier),
 							Index: uint(i),
 							Type:  t,
 							Point: ErrorPointFrom(identifier.Node),
@@ -133,8 +132,8 @@ func PatternFrom (
 			var occurred = make(map[string]  bool)
 			var items = make([] PatternItem, len(p.FieldMaps))
 			for i, field_map := range p.FieldMaps {
-				var field_name = loader.Id2String(field_map.FieldName)
-				var value_name = loader.Id2String(field_map.ValueName)
+				var field_name = ast.Id2String(field_map.FieldName)
+				var value_name = ast.Id2String(field_map.ValueName)
 				var field, exists = bundle.Fields[field_name]
 				if exists && field_name == IgnoreMark {
 					// field should not be named using IgnoreMark;

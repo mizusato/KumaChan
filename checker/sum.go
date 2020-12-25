@@ -103,7 +103,7 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 				Concrete: E_TypeErrorInExpr { &TypeError {
 					Point:    ErrorPointFrom(t.Module.Node),
 					Concrete: E_ModuleOfTypeRefNotFound {
-						Name: loader.Id2String(t.Module),
+						Name: ast.Id2String(t.Module),
 					},
 				} },
 			}}
@@ -261,7 +261,7 @@ func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprErro
 					Concrete: E_TypeErrorInExpr { &TypeError {
 						Point:    ErrorPointFrom(t.Module.Node),
 						Concrete: E_ModuleOfTypeRefNotFound {
-							Name: loader.Id2String(t.Module),
+							Name: ast.Id2String(t.Module),
 						},
 					} },
 				}}

@@ -7,11 +7,6 @@ import (
 )
 
 
-//  TODO: move this function to the `ast` package
-func Id2String(id ast.Identifier) string {
-	return string(id.Name)
-}
-
 type Symbol struct {
 	ModuleName  string
 	SymbolName  string
@@ -36,7 +31,7 @@ func (sym Symbol) String() string {
 
 
 func (mod *Module) SymbolFromDeclName(name ast.Identifier) Symbol {
-	var sym_name = Id2String(name)
+	var sym_name = ast.Id2String(name)
 	return NewSymbol(mod.Name, sym_name)
 }
 
@@ -89,15 +84,15 @@ func (mod *Module) TypeSymbolFromRef(ref_mod string, name string, specific bool)
 }
 
 func (mod *Module) SymbolFromInlineRef(ref ast.InlineRef) MaybeSymbol {
-	var ref_mod = Id2String(ref.Module)
-	var name = Id2String(ref.Id)
+	var ref_mod = ast.Id2String(ref.Module)
+	var name = ast.Id2String(ref.Id)
 	var specific = ref.Specific
 	return mod.SymbolFromRef(ref_mod, name, specific)
 }
 
 func (mod *Module) SymbolFromTypeRef(ref ast.TypeRef) MaybeSymbol {
-	var ref_mod = Id2String(ref.Module)
-	var name = Id2String(ref.Id)
+	var ref_mod = ast.Id2String(ref.Module)
+	var name = ast.Id2String(ref.Id)
 	var specific = ref.Specific
 	return mod.TypeSymbolFromRef(ref_mod, name, specific)
 }

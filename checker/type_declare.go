@@ -67,7 +67,7 @@ type TypeNodeInfo struct {
 func GetVarianceFromRawTypeParams(raw_params ([] ast.TypeParam)) ([] TypeVariance) {
 	var v = make([] TypeVariance, len(raw_params))
 	for i, raw_param := range raw_params {
-		var name = loader.Id2String(raw_param.Name)
+		var name = ast.Id2String(raw_param.Name)
 		if len(name) > len(CovariantPrefix) &&
 			strings.HasPrefix(name, CovariantPrefix) {
 			v[i] = Covariant
@@ -85,7 +85,7 @@ func CollectTypeParams(raw_params ([] ast.TypeParam)) (([] TypeParam), ([] ast.T
 	var params = make([] TypeParam, len(raw_params))
 	var bounds = make([] ast.TypeBound, len(raw_params))
 	for i, raw_param := range raw_params {
-		var raw_name = loader.Id2String(raw_param.Name)
+		var raw_name = ast.Id2String(raw_param.Name)
 		var name = raw_name
 		var v = Invariant
 		if len(raw_name) > len(CovariantPrefix) &&
@@ -530,7 +530,7 @@ func RawTypeFrom(ast_type ast.VariousType, info (map[Type] ast.Node), ctx TypeCo
 			return nil, &TypeError {
 				Point:    ErrorPointFrom(a.Module.Node),
 				Concrete: E_ModuleOfTypeRefNotFound {
-					Name: loader.Id2String(a.Module),
+					Name: ast.Id2String(a.Module),
 				},
 			}
 		}
@@ -578,7 +578,7 @@ func RawTypeFromRepr(ast_repr ast.VariousRepr, info (map[Type] ast.Node), ctx Ty
 		} else {
 			var fields = make(map[string] Field)
 			for i, f := range a.Fields {
-				var f_name = loader.Id2String(f.Name)
+				var f_name = ast.Id2String(f.Name)
 				if f_name == IgnoreMark {
 					return nil, &TypeError {
 						Point:    ErrorPointFrom(f.Name.Node),

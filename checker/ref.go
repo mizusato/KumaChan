@@ -131,7 +131,7 @@ func CheckRef(ref ast.InlineRef, ctx ExprContext) (SemiExpr, *ExprError) {
 	var symbol, ok = maybe_symbol.(loader.Symbol)
 	if !ok { return SemiExpr{}, &ExprError {
 		Point:    ErrorPointFrom(ref.Module.Node),
-		Concrete: E_ModuleNotFound { loader.Id2String(ref.Module) },
+		Concrete: E_ModuleNotFound { ast.Id2String(ref.Module) },
 	} }
 	var sym_concrete, exists = ctx.LookupSymbol(symbol)
 	if !exists { return SemiExpr{}, &ExprError {

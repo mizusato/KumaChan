@@ -120,7 +120,7 @@ func AutoComplete(req AutoCompleteRequest, ctx ServerContext) AutoCompleteRespon
 			if !(quick_check(s.Name)) {
 				return
 			}
-			var name = loader.Id2String(s.Name)
+			var name = ast.Id2String(s.Name)
 			var name_lower = strings.ToLower(name)
 			if strings.HasPrefix(name, input) || strings.HasPrefix(name_lower, input) {
 				suggestions = append(suggestions, AutoCompleteSuggestion {
@@ -137,7 +137,7 @@ func AutoComplete(req AutoCompleteRequest, ctx ServerContext) AutoCompleteRespon
 			if !(quick_check(s.Name)) {
 				return
 			}
-			var name = loader.Id2String(s.Name)
+			var name = ast.Id2String(s.Name)
 			var name_lower = strings.ToLower(name)
 			if strings.HasPrefix(name, input) || strings.HasPrefix(name_lower, input) {
 				suggestions = append(suggestions, AutoCompleteSuggestion {
@@ -162,7 +162,7 @@ func AutoComplete(req AutoCompleteRequest, ctx ServerContext) AutoCompleteRespon
 			if !(quick_check(s.Name)) {
 				return
 			}
-			var name = loader.Id2String(s.Name)
+			var name = ast.Id2String(s.Name)
 			if strings.HasPrefix(name, input) {
 				if !(suggested_function_names[name]) {
 					suggestions = append(suggestions, AutoCompleteSuggestion {
@@ -210,7 +210,7 @@ func AutoComplete(req AutoCompleteRequest, ctx ServerContext) AutoCompleteRespon
 			process_core_statement = func(stmt ast.Statement) {
 				switch s := stmt.(type) {
 				case ast.DeclConst:
-					var name = loader.Id2String(s.Name)
+					var name = ast.Id2String(s.Name)
 					if strings.HasPrefix(name, input) {
 						suggestions = append(suggestions, AutoCompleteSuggestion {
 							Text:    name,
@@ -225,7 +225,7 @@ func AutoComplete(req AutoCompleteRequest, ctx ServerContext) AutoCompleteRespon
 							process_core_statement(case_decl)
 						}
 					}
-					var name = loader.Id2String(s.Name)
+					var name = ast.Id2String(s.Name)
 					if strings.HasPrefix(name, input) {
 						suggestions = append(suggestions, AutoCompleteSuggestion{
 							Text:    name,
