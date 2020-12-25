@@ -11,7 +11,7 @@ import (
 
 
 const SourceSuffix = ".km"
-const BundleSuffix = ".zip.kmb"
+const BundleSuffix = ".kmx"
 const ManifestFileName = "module.json"
 const StandaloneScriptModuleName = "Main"
 
