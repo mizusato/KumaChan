@@ -31,7 +31,9 @@ func ReadFile(path string, fs FileSystem) ([] byte, error) {
 }
 
 func LoadZipFile(content [] byte, base_path string) (ZipFileSystem, error) {
-	if base_path == "" { base_path = "." }
+	if !(filepath.IsAbs(base_path)) {
+		panic("base_path for a zip file should be an absolute path")
+	}
 	var content_reader = bytes.NewReader(content)
 	var zip_reader, err = zip.NewReader(content_reader, int64(len(content)))
 	if err != nil { return ZipFileSystem {}, err }

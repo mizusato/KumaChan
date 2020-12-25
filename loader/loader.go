@@ -6,6 +6,7 @@ import (
 	"errors"
 	"strings"
 	"reflect"
+	"io/ioutil"
 	"encoding/json"
 	"path/filepath"
 	. "kumachan/error"
@@ -24,6 +25,7 @@ const ManifestFileName = "module.json"
 const DefaultVersion = "dev"
 const StandaloneScriptModuleName = "Main"
 const SourceSuffix = ".km"
+const BundleSuffix = ".zip.kmb"
 const StdlibFolder = "stdlib"
 const RenamePrefix = "rename:"
 
@@ -80,11 +82,11 @@ func DefaultManifest(path string) RawModuleManifest {
 		Vendor:  "",
 		Project: dir,
 		Version: "",
-		Name:    base,
+		Name:    base,  // TODO: sanitize
 		Config:  RawModuleConfig {
 			UI:       kinds.QtUiConfig { Public: true },
 			PNG:      kinds.PNG_Config { Public: true },
-			WebAsset: kinds.WebAssetConfig{ Public: true },
+			WebAsset: kinds.WebAssetConfig { Public: true },
 		},
 	}
 }
@@ -141,11 +143,9 @@ func (mod M_ModuleFolder) Load(ctx Context) (ast.Root, *Error) {
 	return ast_root, nil
 }
 
-func readModulePath(path string, fs FileSystem) (RawModule, error) {
+func readModulePath(path string, fs FileSystem, root bool) (RawModule, error) {
 	var res = make(ResIndex)
-	var abs_path, err = filepath.Abs(path)
-	if err != nil { return RawModule{}, err }
-	path = filepath.Clean(abs_path)
+	path = filepath.Clean(path)
 	fd, err := fs.Open(path)
 	if err != nil { return RawModule{}, err }
 	defer func() {
@@ -175,12 +175,15 @@ func readModulePath(path string, fs FileSystem) (RawModule, error) {
 		if has_manifest {
 			var err = json.Unmarshal(manifest_content, &manifest)
 			if err != nil {
-				return RawModule{}, errors.New (
-					fmt.Sprintf("error decoding module manifest %s: %s",
-						manifest_path, err.Error()))
+				return RawModule{}, errors.New(fmt.Sprintf(
+					"error decoding module manifest %s: %s",
+					manifest_path, err.Error()))
 			}
-		} else {
+		} else if !(root) {
 			manifest = DefaultManifest(path)
+		} else {
+			return RawModule{}, errors.New(fmt.Sprintf(
+				"missing module manifest in %s", path))
 		}
 		for _, item := range items {
 			var item_name = item.Name()
@@ -291,7 +294,8 @@ func loadModule (
 	res   ResIndex,
 ) (*Module, *Error) {
 	// Try to read the content of given source file/folder
-	var raw_mod, err1 = readModulePath(path, fs)
+	var is_project_root = (len(ctx.BreadCrumbs) == 0)
+	var raw_mod, err1 = readModulePath(path, fs, is_project_root)
 	if err1 != nil { return nil, &Error {
 		Context:  ctx,
 		Concrete: E_ReadFileFailed {
@@ -499,12 +503,61 @@ func loadEntryRawModule(raw_mod RawModule, fs FileSystem) (*Module, Index, ResIn
 	return mod, idx, res, err
 }
 
+func entryPathToAbsPath(path string) (string, *Error) {
+	var abs_path, err = filepath.Abs(path)
+	if err != nil { return "", &Error {
+		Context:  MakeEntryContext(),
+		Concrete: E_ReadFileFailed {
+			FilePath: path,
+			Message:  "cannot get absolute path of the given file",
+		},
+	} }
+	return abs_path, nil
+}
+
 func LoadEntry(path string) (*Module, Index, ResIndex, *Error) {
-	return loadEntry(path, RealFileSystem {})
+	var abs_path, e = entryPathToAbsPath(path)
+	if e != nil { return nil, nil, nil, e }
+	path = abs_path
+	if strings.HasSuffix(path, BundleSuffix) {
+		return loadEntryZipFile(path)
+	} else {
+		return loadEntry(path, RealFileSystem {})
+	}
+}
+
+func loadEntryZipFile(path string) (*Module, Index, ResIndex, *Error) {
+	var content, err = ioutil.ReadFile(path)
+	if err != nil { return nil, nil, nil, &Error {
+		Context:  MakeEntryContext(),
+		Concrete: E_ReadFileFailed {
+			FilePath: path,
+			Message:  err.Error(),
+		},
+	} }
+	return LoadEntryZipData(content, path)
 }
 
 func LoadEntryWithinFileSystem(path string, fs FileSystem) (*Module, Index, ResIndex, *Error) {
+	var _, is_real_fs = fs.(RealFileSystem)
+	if is_real_fs {
+		var abs_path, err = entryPathToAbsPath(path)
+		if err != nil { return nil, nil, nil, err }
+		path = abs_path
+	}
 	return loadEntry(path, fs)
+}
+
+func LoadEntryZipData(data ([] byte), dummy_path string) (*Module, Index, ResIndex, *Error) {
+	var fs, err = LoadZipFile(data, dummy_path)
+	if err != nil { return nil, nil, nil, &Error {
+		Context:  MakeEntryContext(),
+		Concrete: E_ReadFileFailed {
+			FilePath: dummy_path,
+			Message:  err.Error(),
+		},
+	} }
+	return loadEntry(dummy_path, fs)
 }
 
 func LoadEntryRawModule(raw_mod RawModule) (*Module, Index, ResIndex, *Error) {
