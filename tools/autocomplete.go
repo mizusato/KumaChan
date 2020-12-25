@@ -186,14 +186,13 @@ func AutoComplete(req AutoCompleteRequest, ctx ServerContext) AutoCompleteRespon
 			mod_path = dir
 			_ = mf.Close()
 		}
-		var mod, idx, err =
-			loader.LoadEntryWithCache(mod_path, ctx.LoaderCache)
+		var mod, idx, _, err = loader.LoadEntry(mod_path)
 		if err != nil { goto keywords }
-		for _, item := range mod.Node.Statements {
+		for _, item := range mod.AST.Statements {
 			process_statement(item.Statement, "")
 		}
 		for mod_prefix, imp := range mod.ImpMap {
-			for _, item := range imp.Node.Statements {
+			for _, item := range imp.AST.Statements {
 				process_statement(item.Statement, mod_prefix)
 			}
 		}
@@ -237,7 +236,7 @@ func AutoComplete(req AutoCompleteRequest, ctx ServerContext) AutoCompleteRespon
 				}
 			}
 			var core_mod = idx[stdlib.Core]
-			for _, stmt := range core_mod.Node.Statements {
+			for _, stmt := range core_mod.AST.Statements {
 				process_core_statement(stmt.Statement)
 			}
 		}

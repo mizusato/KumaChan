@@ -142,13 +142,13 @@ func repl(args ([] string), max_stack_size int) {
     // 1. Craft an empty module
     const mod_ast_path = "."
     const mod_runtime_path = "."
-    var raw_mod = loader.CraftRawEmptyModule(loader.RawModuleManifest {
+    var mod_thunk = loader.CraftEmptyThunk(loader.Manifest {
         Vendor:  "repl",
         Project: "Repl",
         Name:    "Repl",
     }, mod_ast_path)
     // 2. Load the empty module (stdlib also loaded)
-    ldr_mod, ldr_idx, ldr_res, ldr_err := loader.LoadEntryRawModule(raw_mod)
+    ldr_mod, ldr_idx, ldr_res, ldr_err := loader.LoadEntryThunk(mod_thunk)
     if ldr_err != nil { panic(ldr_err) }
     // 3. Type check the module tree
     mod, _, sch, errs := checker.TypeCheck(ldr_mod, ldr_idx)

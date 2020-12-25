@@ -42,7 +42,7 @@ func CollectConstants(mod *loader.Module, reg TypeRegistry, store ConstantStore)
 			}
 		}
 	}
-	for _, stmt := range mod.Node.Statements {
+	for _, stmt := range mod.AST.Statements {
 		switch decl := stmt.Statement.(type) {
 		case ast.DeclConst:
 			var name = mod.SymbolFromDeclName(decl.Name)

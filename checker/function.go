@@ -77,8 +77,8 @@ func CollectFunctions (
 		index_offset_map[name] = uint(len(refs))
 	}
 	// 3. Iterate over all function declarations in the current module
-	var stmts = make([] ast.VariousStatement, len(mod.Node.Statements))
-	copy(stmts, mod.Node.Statements)
+	var stmts = make([] ast.VariousStatement, len(mod.AST.Statements))
+	copy(stmts, mod.AST.Statements)
 	var mod_inj, mod_has_inj = inj[mod_name]
 	if mod_has_inj {
 		for _, stmt := range mod_inj {

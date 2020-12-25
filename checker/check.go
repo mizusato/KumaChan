@@ -546,7 +546,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 		}
 	}
 	var do_effects = make([] CheckedEffect, 0)
-	for _, cmd := range mod.Node.Statements {
+	for _, cmd := range mod.AST.Statements {
 		switch do := cmd.Statement.(type) {
 		case ast.Do:
 			var semi_expr, err1 = Check(do.Effect, expr_ctx)

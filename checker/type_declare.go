@@ -162,7 +162,7 @@ func RegisterRawTypes(mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 		}
 		return nil
 	}
-	for _, stmt := range mod.Node.Statements {
+	for _, stmt := range mod.AST.Statements {
 		switch s := stmt.Statement.(type) {
 		case ast.DeclType:
 			var err = process_decl_stmt(s)

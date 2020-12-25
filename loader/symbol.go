@@ -7,12 +7,23 @@ import (
 )
 
 
-type MaybeSymbol interface { MaybeSymbol() }
+//  TODO: move this function to the `ast` package
+func Id2String(id ast.Identifier) string {
+	return string(id.Name)
+}
 
-func (Symbol) MaybeSymbol() {}
 type Symbol struct {
 	ModuleName  string
 	SymbolName  string
+}
+type MaybeSymbol interface { MaybeSymbol() }
+func (Symbol) MaybeSymbol() {}
+
+func NewSymbol (mod string, sym string) Symbol {
+	return Symbol {
+		ModuleName: mod,
+		SymbolName: sym,
+	}
 }
 
 func (sym Symbol) String() string {
@@ -23,16 +34,6 @@ func (sym Symbol) String() string {
 	}
 }
 
-func NewSymbol (mod string, sym string) Symbol {
-	return Symbol {
-		ModuleName: mod,
-		SymbolName: sym,
-	}
-}
-
-func Id2String(id ast.Identifier) string {
-	return string(id.Name)
-}
 
 func (mod *Module) SymbolFromDeclName(name ast.Identifier) Symbol {
 	var sym_name = Id2String(name)
@@ -55,7 +56,7 @@ func (mod *Module) SymbolFromRef(ref_mod string, name string, specific bool) May
 				// ::Module <=> Module::Module
 				return NewSymbol(sym_name, sym_name)
 			} else {
-				var _, exists = __PreloadCoreSymbolSet[sym_name]
+				var _, exists = __CoreSymbolSet[sym_name]
 				if exists {
 					// Core::Int, Core::Float, Core::Effect, ...
 					return NewSymbol(stdlib.Core, sym_name)
@@ -102,17 +103,18 @@ func (mod *Module) SymbolFromTypeRef(ref ast.TypeRef) MaybeSymbol {
 }
 
 
-var __PreloadCoreSymbols = stdlib.GetCoreScopedSymbols()
-var __PreloadCoreSymbolSet = func() map[string] bool {
+var __CoreSymbols = stdlib.GetCoreScopedSymbols()
+var __CoreSymbolSet = func() map[string] bool {
 	var set = make(map[string] bool)
-	for _, name := range __PreloadCoreSymbols {
+	for _, name := range __CoreSymbols {
 		set[name] = true
 	}
 	return set
 } ()
-func IsPreloadCoreSymbol(sym Symbol) bool {
+
+func IsCoreSymbol(sym Symbol) bool {
 	if sym.ModuleName == stdlib.Core {
-		var _, exists = __PreloadCoreSymbolSet[sym.SymbolName]
+		var _, exists = __CoreSymbolSet[sym.SymbolName]
 		if exists {
 			return true
 		} else {
@@ -122,3 +124,4 @@ func IsPreloadCoreSymbol(sym Symbol) bool {
 		return false
 	}
 }
+

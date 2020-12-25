@@ -55,7 +55,7 @@ func DescribeType(type_ Type, ctx TypeDescContext) string {
 		}
 	case *NamedType:
 		var buf strings.Builder
-		if loader.IsPreloadCoreSymbol(t.Name) {
+		if loader.IsCoreSymbol(t.Name) {
 			buf.WriteString(t.Name.SymbolName)
 		} else {
 			var mod = t.Name.ModuleName

@@ -7,13 +7,11 @@ import (
 	"strings"
 	"encoding/json"
 	"kumachan/util"
-	"kumachan/loader"
 )
 
 
 type ServerContext struct {
 	DebugLog     func(info string)
-	LoaderCache  loader.Cache
 }
 
 func Server(input io.Reader, output io.Writer, debug io.Writer) error {
@@ -26,8 +24,7 @@ func Server(input io.Reader, output io.Writer, debug io.Writer) error {
 		return nil
 	}
 	var ctx = ServerContext {
-		DebugLog:    func(info string) { _, _ = fmt.Fprintln(debug, info) },
-		LoaderCache: loader.MakeCache(),
+		DebugLog: func(info string) { _, _ = fmt.Fprintln(debug, info) },
 	}
 	for {
 		var line_runes, err = util.WellBehavedReadLine(input)
