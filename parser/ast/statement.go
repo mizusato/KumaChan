@@ -2,6 +2,7 @@ package ast
 
 import "kumachan/kmd"
 
+
 type VariousStatement struct {
     Node                   `part:"stmt"`
     Statement  Statement   `use:"first"`
@@ -52,6 +53,7 @@ type KmdApiFuncBody struct {
 func (impl DeclFunction) Statement() {}
 type DeclFunction struct {
     Node                      `part:"decl_func"`
+    Tags      [] Tag          `list_rec:"tags"`
     Public    bool            `option:"scope.@public"`
     Name      Identifier      `part:"name"`
     Params    [] TypeParam    `list_more:"type_params" item:"type_param"`
@@ -68,12 +70,12 @@ type Body interface { Body() }
 func (impl DeclType) Statement() {}
 type DeclType struct {
     Node                        `part:"decl_type"`
-    Tags       [] TypeTag       `list_rec:"tags"`
+    Tags       [] Tag           `list_rec:"tags"`
     Name       Identifier       `part:"name"`
     Params     [] TypeParam     `list_more:"type_params" item:"type_param"`
     TypeValue  VariousTypeDef   `part:"type_def"`
 }
-type TypeTag struct {
+type Tag struct {
     Node                  `part:"tag"`
     RawContent  [] rune   `content:"Pragma"`
 }

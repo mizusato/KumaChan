@@ -18,11 +18,11 @@ type TypeDataConfig struct {
 }
 
 type TypeTagParsingError struct {
-	Tag   ast.TypeTag
+	Tag   ast.Tag
 	Info  string
 }
 
-func ParseTypeTags(ast_tags ([] ast.TypeTag)) (TypeTags, *TypeTagParsingError) {
+func ParseTypeTags(ast_tags ([] ast.Tag)) (TypeTags, *TypeTagParsingError) {
 	var tags TypeTags
 	for _, ast_tag := range ast_tags {
 		var raw = string(ast_tag.RawContent)

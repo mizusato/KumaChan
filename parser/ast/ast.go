@@ -58,7 +58,7 @@ var __NodeRegistry = []interface{} {
     VariousBody {},
     NativeRef {},
     DeclType {},
-    TypeTag {},
+	Tag {},
 	VariousTypeDef {},
     NativeType {},
     ImplicitType {},
