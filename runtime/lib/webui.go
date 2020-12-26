@@ -11,7 +11,6 @@ import (
 )
 
 
-type WebUiEmptyMap struct {}
 type WebUiAdaptedMap struct {
 	Data  container.Map
 }
@@ -50,19 +49,16 @@ func WebUiMergeAttrs(list container.Array) *vdom.Attrs {
 	}
 	return &vdom.Attrs { Data: WebUiAdaptMap(attrs) }
 }
-func (_ WebUiEmptyMap) Has(_ vdom.String) bool { return false }
 func (m WebUiAdaptedMap) Has(key vdom.String) bool {
 	var key_str = StringFromRuneSlice(key)
 	var _, ok = m.Data.Lookup(key_str)
 	return ok
 }
-func (_ WebUiEmptyMap) Lookup(_ vdom.String) (interface{}, bool) { return nil, false }
 func (m WebUiAdaptedMap) Lookup(key vdom.String) (interface{}, bool) {
 	var key_str = StringFromRuneSlice(key)
 	var v, ok = m.Data.Lookup(key_str)
 	return WebUiMapAdaptValue(v), ok
 }
-func (_ WebUiEmptyMap) ForEach(_ func(key vdom.String, val interface{})) {}
 func (m WebUiAdaptedMap) ForEach(f func(key vdom.String, val interface{})) {
 	m.Data.ForEach(func(k Value, v Value) {
 		f(RuneSliceFromString(k.(String)), WebUiMapAdaptValue(v))
@@ -72,10 +68,6 @@ func (m WebUiAdaptedMap) ForEach(f func(key vdom.String, val interface{})) {
 var __WebUiLoading = make(chan struct{}, 1)
 var __WebUiWindowLoaded = make(chan struct{})
 var __WebUiBridgeLoaded = make(chan struct{})
-var __WebUiEmptyAttrs = &vdom.Attrs { Data: WebUiEmptyMap{} }
-var __WebUiEmptyStyles = &vdom.Styles { Data: WebUiEmptyMap{} }
-var __WebUiEmptyEvents = &vdom.Events { Data: WebUiEmptyMap{} }
-var __WebUiEmptyContent = &vdom.Children {}
 
 func WebUiInitAndLoad (
 	sched  rx.Scheduler,
@@ -267,11 +259,11 @@ var WebUiFunctions = map[string] interface{} {
 		}
 	},
 	"webui-dom-styles": func(styles container.Map) *vdom.Styles {
-		if styles.IsEmpty() { return __WebUiEmptyStyles }
+		if styles.IsEmpty() { return vdom.EmptyStyles }
 		return &vdom.Styles { Data: WebUiAdaptMap(styles) }
 	},
 	"webui-dom-styles-zero": func(_ Value) *vdom.Styles {
-		return __WebUiEmptyStyles
+		return vdom.EmptyStyles
 	},
 	"webui-dom-styles-merge": func(v Value) *vdom.Styles {
 		var list = container.ArrayFrom(v)
@@ -291,11 +283,11 @@ var WebUiFunctions = map[string] interface{} {
 		}
 	},
 	"webui-dom-attrs": func(attrs container.Map) *vdom.Attrs {
-		if attrs.IsEmpty() { return __WebUiEmptyAttrs }
+		if attrs.IsEmpty() { return vdom.EmptyAttrs }
 		return &vdom.Attrs { Data: WebUiAdaptMap(attrs) }
 	},
 	"webui-dom-attrs-zero": func(_ Value) *vdom.Attrs {
-		return __WebUiEmptyAttrs
+		return vdom.EmptyAttrs
 	},
 	"webui-dom-attrs-merge": func(v Value) *vdom.Attrs {
 		var list = container.ArrayFrom(v)
@@ -342,11 +334,11 @@ var WebUiFunctions = map[string] interface{} {
 		return rx.ReactiveAdapt(r, in)
 	},
 	"webui-dom-events": func(events container.Map) *vdom.Events {
-		if events.IsEmpty() { return __WebUiEmptyEvents }
+		if events.IsEmpty() { return vdom.EmptyEvents }
 		return &vdom.Events { Data: WebUiAdaptMap(events) }
 	},
 	"webui-dom-events-zero": func(_ Value) *vdom.Events {
-		return __WebUiEmptyEvents
+		return vdom.EmptyEvents
 	},
 	"webui-dom-text": func(text String) vdom.Content {
 		var t = vdom.Text(RuneSliceFromString(text))
@@ -354,7 +346,7 @@ var WebUiFunctions = map[string] interface{} {
 	},
 	"webui-dom-children": func(children Value) vdom.Content {
 		var arr = container.ArrayFrom(children)
-		if arr.Length == 0 { return __WebUiEmptyContent }
+		if arr.Length == 0 { return vdom.EmptyContent }
 		var children_ = make([] *vdom.Node, arr.Length)
 		for i := uint(0); i < arr.Length; i += 1 {
 			children_[i] = arr.GetItem(i).(*vdom.Node)
@@ -363,7 +355,7 @@ var WebUiFunctions = map[string] interface{} {
 		return &c
 	},
 	"webui-dom-content-zero": func(_ Value) vdom.Content {
-		return __WebUiEmptyContent
+		return vdom.EmptyContent
 	},
 	"webui-event-payload-get-string": func(ev *qt.WebUiEventPayload, key String) String {
 		return StringFromRuneSlice(qt.WebUiEventPayloadGetRunes(ev, RuneSliceFromString(key)))

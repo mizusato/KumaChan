@@ -12,6 +12,10 @@ type Map interface {
 	Lookup(String) (interface{}, bool)
 	ForEach(func(String,interface{}))
 }
+type EmptyMap struct {}
+func (_ EmptyMap) Has(String) bool { return false }
+func (_ EmptyMap) Lookup(String) (interface{},bool) { return nil, false }
+func (_ EmptyMap) ForEach(func(String,interface{})) {}
 func str_equal(a String, b String) bool {
 	if len(a) != len(b) { return false }
 	var L = len(a)
@@ -69,6 +73,11 @@ func EventOptionsEqual(a *EventOptions, b *EventOptions) bool {
 	}
 }
 
+var EmptyAttrs = &Attrs { Data: EmptyMap {} }
+var EmptyStyles = &Styles { Data: EmptyMap {} }
+var EmptyEvents = &Events { Data: EmptyMap {} }
+var EmptyContent = &Children {}
+
 type Content interface { NodeContent() }
 func (impl *Text) NodeContent() {}
 type Text String
@@ -121,6 +130,15 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 			ctx.UpdateNode(old_id, new_id)
 		} else {
 			ctx.ReplaceNode(parent_id, old_id, new_id, new.Tag)
+			old = &Node {
+				Tag:     old.Tag,
+				Props:   Props {
+					Attrs:  EmptyAttrs,
+					Styles: EmptyStyles,
+					Events: EmptyEvents,
+				},
+				Content: EmptyContent,
+			}
 		}
 	}
 	if new != nil {
