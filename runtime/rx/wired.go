@@ -10,8 +10,8 @@ package rx
  *    Reactive[A] --> morph[A->B->A,A->B] --> Reactive[B]
  *    Reactive[(A,B)] --> project[A] --> Reactive[A]
  *    Reactive[(A,B)] --> project[B] --> Reactive[B]
- *    Reactive[A|B]   --> branch[A]  --> Reactive[A]
- *    Reactive[A|B]   --> branch[B]  --> Reactive[B]
+ *    Reactive[A|B]   --> branch[A]  --> Reactive[A] (restricted update operation)
+ *    Reactive[A|B]   --> branch[B]  --> Reactive[B] (restricted update operation)
  */
 
 // Sink accepts values
