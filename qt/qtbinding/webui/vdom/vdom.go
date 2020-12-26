@@ -73,6 +73,7 @@ func EventOptionsEqual(a *EventOptions, b *EventOptions) bool {
 	}
 }
 
+// TODO: change to functions to prevent them from being mutated
 var EmptyAttrs = &Attrs { Data: EmptyMap {} }
 var EmptyStyles = &Styles { Data: EmptyMap {} }
 var EmptyEvents = &Events { Data: EmptyMap {} }
@@ -130,15 +131,7 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 			ctx.UpdateNode(old_id, new_id)
 		} else {
 			ctx.ReplaceNode(parent_id, old_id, new_id, new.Tag)
-			old = &Node {
-				Tag:     old.Tag,
-				Props:   Props {
-					Attrs:  EmptyAttrs,
-					Styles: EmptyStyles,
-					Events: EmptyEvents,
-				},
-				Content: EmptyContent,
-			}
+			old = nil
 		}
 	}
 	if new != nil {
