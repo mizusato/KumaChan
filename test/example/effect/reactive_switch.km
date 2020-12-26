@@ -1,0 +1,35 @@
+import UI from 'rename:WebQuick';
+
+type Value union {
+     type Double (String,String);
+     type Single { content: String };
+};
+
+do webui-init 'Reactive Switch' DOM;
+
+do WebUi::ExitWhenWindowClosed;
+
+private const DOM: NoExcept*[WebUi::Node]
+    ~ with-reactive* &v := Single { content: 'a value' },
+    let editor: NoExcept*[WebUi::Node] :=
+        switch v:
+        case Double (x, y):
+            render (UI::Container [
+                UI::TextInput x,
+                UI::TextInput y
+            ]),
+        case Single {content}:
+            render (UI::TextInput content),
+        end,
+    render (UI::Container [
+        UI::DynNode editor,
+	UI::Button 'init double' (v.emit (Double 'a' 'b')),
+	UI::Button 'init single' (v.emit (Single { content: 'foo' })),
+	UI::Dynamic ~ map* &v := watch v,
+        switch v:
+        case Double (x, y):
+            UI::Text ("[Double] (#, #)" x y),
+        case Single {content}:
+            UI::Text ("[Single] #" content),
+        end	
+    ]);
