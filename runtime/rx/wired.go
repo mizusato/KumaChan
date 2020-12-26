@@ -3,13 +3,15 @@ package rx
 
 /**
  *  FRP with wired components
- *    Sink <: Bus(aka Subject) <: Reactive(aka BehaviorSubject)
+ *    Sink :> Bus(aka Subject) >: Reactive(aka BehaviorSubject)
  *    transformations:
  *    Sink[A]     --> adapt[B->A]         --> Sink[B]
  *    Reactive[A] --> adapt[A->B->A]      --> Sink[B]
  *    Reactive[A] --> morph[A->B->A,A->B] --> Reactive[B]
  *    Reactive[(A,B)] --> project[A] --> Reactive[A]
  *    Reactive[(A,B)] --> project[B] --> Reactive[B]
+ *    Reactive[A|B]   --> branch[A]  --> Reactive[A]
+ *    Reactive[A|B]   --> branch[B]  --> Reactive[B]
  */
 
 // Sink accepts values
