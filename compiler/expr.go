@@ -191,7 +191,7 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 		buf.Write(CodeFrom(inst_sum, expr.Info))
 		return buf.Collect()
 	case ch.Switch:
-		var raw_branches = make([]ch.Branch, len(v.Branches))
+		var raw_branches = make([] ch.Branch, len(v.Branches))
 		var i = 0
 		var default_occurred = false
 		for _, b := range v.Branches {
@@ -204,7 +204,7 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 				i += 1
 			}
 		}
-		var branches = make([]Code, len(raw_branches))
+		var branches = make([] Code, len(raw_branches))
 		for i, b := range raw_branches {
 			var branch_buf = MakeCodeBuffer()
 			var branch_ctx = ctx.MakeBranch()
@@ -268,6 +268,19 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 		}
 		var nop = c.Instruction { OpCode: c.NOP }
 		buf.Write(CodeFrom(nop, v.Argument.Info))
+		return buf.Collect()
+	case ch.ReactiveSwitch:
+		var arg_code = CompileExpr(v.Argument, ctx)
+		var branches_code = CompileExpr(ch.Expr {
+			Type:  nil,
+			Value: v.Branches,
+			Info:  expr.Info,
+		}, ctx)
+		var buf = MakeCodeBuffer()
+		buf.Write(branches_code)
+		buf.Write(arg_code)
+		var rsw = c.Instruction { OpCode: c.RSW }
+		buf.Write(CodeFrom(rsw, expr.Info))
 		return buf.Collect()
 	case ch.MultiSwitch:
 		var arg = ch.GetMultiSwitchArgumentTuple(v, expr.Info)

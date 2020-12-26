@@ -252,6 +252,12 @@ var EffectFunctions = map[string] Value {
 			return h.Call(f, val)
 		})
 	},
+	"effect-map?": func(e rx.Effect, f Value, h InteropContext) rx.Effect {
+		return e.FilterMap(func(val rx.Object) (rx.Object, bool) {
+			var maybe_mapped = h.Call(f, val).(SumValue)
+			return Unwrap(maybe_mapped)
+		})
+	},
 	"effect-filter": func(e rx.Effect, f Value, h InteropContext) rx.Effect {
 		return e.Filter(func(val rx.Object) bool {
 			return FromBool((h.Call(f, val)).(SumValue))

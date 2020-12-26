@@ -111,8 +111,8 @@ func TypedAssignTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 		return Expr{}, &ExprError {
 			Point:    expr.Info.ErrorPoint,
 			Concrete: E_NotAssignable {
-				From:   ctx.DescribeType(expr.Type),
-				To:     ctx.DescribeExpectedType(expected),
+				From:   ctx.DescribeCertainType(expr.Type),
+				To:     ctx.DescribeInferredType(expected),
 				Reason: "",  // reserved for possible use in the future
 			},
 		}

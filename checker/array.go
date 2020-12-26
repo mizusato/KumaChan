@@ -127,7 +127,7 @@ func AssignArrayTo(expected Type, array SemiTypedArray, info ExprInfo, ctx ExprC
 	return Expr{}, &ExprError {
 		Point:    info.ErrorPoint,
 		Concrete: E_ArrayAssignedToNonArrayType {
-			NonArrayType: ctx.DescribeExpectedType(expected),
+			NonArrayType: ctx.DescribeInferredType(expected),
 		},
 	}
 }

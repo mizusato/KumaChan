@@ -131,9 +131,38 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 				var ok = new_inst_ptr < uint(len(code))
 				assert(ok, "JMP: invalid address")
 				*inst_ptr_ref = new_inst_ptr
+			case RSW:
+				arg, ok := ec.popValue().(rx.Reactive)
+				assert(ok, "RSW: cannot execute on non-reactive value")
+				p, ok := ec.popValue().(ProductValue)
+				assert(ok, "RSW: invalid branches")
+				var consumers = make(map[uint] (func(rx.Reactive) rx.Effect))
+				var default_consumer (func(rx.Effect) rx.Effect)
+				for _, element := range p.Elements {
+					pair, ok := element.(ProductValue)
+					assert(ok, "RSW: invalid branch")
+					assert(len(pair.Elements) == 2, "RSW: invalid branch")
+					consumer, ok := pair.Elements[1].(FunctionValue)
+					assert(ok, "RSW: invalid branch")
+					if pair.Elements[0] == nil {
+						assert(default_consumer == nil,
+							"RSW: duplicate default branch")
+						default_consumer = func(eff rx.Effect) rx.Effect {
+							return call(consumer, eff, m).(rx.Effect)
+						}
+					} else {
+						index, ok := pair.Elements[0].(uint)
+						assert(ok, "RSW: invalid branch")
+						consumers[index] = func(r rx.Reactive) rx.Effect {
+							return call(consumer, r, m).(rx.Effect)
+						}
+					}
+				}
+				var eff = ConsumeReactiveSum(arg, consumers, default_consumer)
+				ec.pushValue(eff)
 			case PROD:
 				var size = inst.GetShortIndexOrSize()
-				var elements = make([]Value, size)
+				var elements = make([] Value, size)
 				for i := uint(0); i < size; i += 1 {
 					elements[size-1-i] = ec.popValue()
 				}
@@ -423,5 +452,77 @@ func ProjectReactiveProduct(r rx.Reactive, index uint) rx.Reactive {
 		return prod.Elements[index]
 	}
 	return rx.ReactiveProject(r, in, out, &rx.KeyChain { Key: index })
+}
+
+func ConsumeReactiveSum (
+	r                 rx.Reactive,
+	consumers         (map[uint] (func(rx.Reactive) rx.Effect)),
+	default_consumer  (func(rx.Effect) rx.Effect),
+) rx.Effect {
+	var branches = make(map[uint] rx.Reactive)
+	for _i, _ := range consumers {
+		var case_index = _i
+		var in = func(obj rx.Object) rx.Object {
+			return &ValSum {
+				Index: Short(case_index),
+				Value: obj,
+			}
+		}
+		var out = func(obj rx.Object) (rx.Object, bool) {
+			var sum = obj.(SumValue)
+			if uint(sum.Index) == case_index {
+				return sum.Value, true
+			} else {
+				return nil, false
+			}
+		}
+		branches[case_index] = rx.ReactiveBranch(r, in, out)
+	}
+	var default_branch = r.Watch().Filter(func(obj rx.Object) bool {
+		var sum = obj.(SumValue)
+		var _, exists = branches[uint(sum.Index)]
+		return !(exists)
+	})
+	// TODO: distinctUntilChanged operator
+	var changing_index = r.Watch().Map(func(obj rx.Object) rx.Object {
+		var sum = obj.(SumValue)
+		return uint(sum.Index)
+	}).Scan(func(acc rx.Object, this rx.Object)(rx.Object) {
+		if acc == nil {
+			return rx.Pair {
+				First:  nil,
+				Second: this,
+			}
+		} else {
+			var pair = acc.(rx.Pair)
+			return rx.Pair {
+				First:  pair.Second,
+				Second: this,
+			}
+		}
+	}, nil).FilterMap(func(acc rx.Object) (rx.Object, bool) {
+		var pair = acc.(rx.Pair)
+		var prev, has_prev = pair.First.(uint)
+		var this = pair.Second.(uint)
+		if has_prev && prev == this {
+			return nil, false
+		} else {
+			return this, true
+		}
+	})
+	return changing_index.SwitchMap(func(obj rx.Object) rx.Effect {
+		var case_index = obj.(uint)
+		var branch, exists = branches[case_index]
+		if exists {
+			var consumer = consumers[case_index]
+			return consumer(branch)
+		} else {
+			if default_consumer != nil {
+				return default_consumer(default_branch)
+			} else {
+				panic("something went wrong")
+			}
+		}
+	})
 }
 

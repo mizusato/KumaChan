@@ -8,7 +8,7 @@ func (e Effect) StartWith(obj Object) Effect {
 	} }
 }
 
-func (e Effect) Map(f func(Object)Object) Effect {
+func (e Effect) Map(f func(Object)(Object)) Effect {
 	return Effect { func(sched Scheduler, ob *observer) {
 		sched.run(e, &observer {
 			context:  ob.context,
@@ -21,7 +21,7 @@ func (e Effect) Map(f func(Object)Object) Effect {
 	} }
 }
 
-func (e Effect) Filter(f func(Object)bool) Effect {
+func (e Effect) Filter(f func(Object)(bool)) Effect {
 	return Effect { func(sched Scheduler, ob *observer) {
 		sched.run(e, &observer {
 			context:  ob.context,
@@ -34,6 +34,22 @@ func (e Effect) Filter(f func(Object)bool) Effect {
 			complete: ob.complete,
 		})
 	}}
+}
+
+func (e Effect) FilterMap(f func(Object)(Object,bool)) Effect {
+	return Effect { func(sched Scheduler, ob *observer) {
+		sched.run(e, &observer {
+			context:  ob.context,
+			next:     func(val Object) {
+				var mapped, ok = f(val)
+				if ok {
+					ob.next(mapped)
+				}
+			},
+			error:    ob.error,
+			complete: ob.complete,
+		})
+	} }
 }
 
 func (e Effect) Reduce(f func(Object,Object)Object, init Object) Effect {

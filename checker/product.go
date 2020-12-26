@@ -93,7 +93,7 @@ func CheckBundle(bundle ast.Bundle, ctx ExprContext) (SemiExpr, *ExprError) {
 							Point: ErrorPointFrom(field.Key.Node),
 							Concrete: E_FieldDoesNotExist {
 								Field:  name,
-								Target: ctx.DescribeType(base.Type),
+								Target: ctx.DescribeCertainType(base.Type),
 							},
 						}
 					}
@@ -201,7 +201,7 @@ func CheckGet(get ast.Get, ctx ExprContext) (SemiExpr, *ExprError) {
 					Point:    ErrorPointFrom(member.Node),
 					Concrete: E_FieldDoesNotExist {
 						Field:  key,
-						Target: ctx.DescribeType(&AnonymousType { bundle }),
+						Target: ctx.DescribeCertainType(&AnonymousType { bundle }),
 					},
 				} }
 				var t = field.Type
@@ -289,7 +289,7 @@ func AssignTupleTo(expected Type, tuple SemiTypedTuple, info ExprInfo, ctx ExprC
 					Concrete: E_TupleSizeNotMatching {
 						Required:  required,
 						Given:     given,
-						GivenType: ctx.DescribeExpectedType(&AnonymousType { tuple_t }),
+						GivenType: ctx.DescribeInferredType(&AnonymousType {tuple_t }),
 					},
 				}
 			}
@@ -315,7 +315,7 @@ func AssignTupleTo(expected Type, tuple SemiTypedTuple, info ExprInfo, ctx ExprC
 	return Expr{}, &ExprError {
 		Point:    info.ErrorPoint,
 		Concrete: E_TupleAssignedToNonTupleType {
-			NonTupleType: ctx.DescribeExpectedType(non_nil_expected),
+			NonTupleType: ctx.DescribeInferredType(non_nil_expected),
 		},
 	}
 }
@@ -353,7 +353,7 @@ func AssignBundleTo(expected Type, bundle SemiTypedBundle, info ExprInfo, ctx Ex
 						Point:    info.ErrorPoint,
 						Concrete: E_MissingField {
 							Field: field_name,
-							Type:  ctx.DescribeExpectedType(field.Type),
+							Type:  ctx.DescribeInferredType(field.Type),
 						},
 					} }
 					values[field.Index] = zero
@@ -387,7 +387,7 @@ func AssignBundleTo(expected Type, bundle SemiTypedBundle, info ExprInfo, ctx Ex
 	return  Expr{}, &ExprError {
 		Point:    info.ErrorPoint,
 		Concrete: E_BundleAssignedToNonBundleType {
-			NonBundleType: ctx.DescribeExpectedType(expected),
+			NonBundleType: ctx.DescribeInferredType(expected),
 		},
 	}
 }

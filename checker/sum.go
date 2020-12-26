@@ -22,6 +22,7 @@ func (impl SemiTypedSwitch) SemiExprVal() {}
 type SemiTypedSwitch struct {
 	Argument  Expr
 	Branches  [] SemiTypedBranch
+	Reactive  bool
 }
 type SemiTypedBranch struct {
 	IsDefault  bool
@@ -56,6 +57,11 @@ type Branch struct {
 	Pattern    MaybePattern
 	Value      Expr
 }
+func (impl ReactiveSwitch) ExprVal() {}
+type ReactiveSwitch struct {
+	Argument  Expr
+	Branches  Product
+}
 func (impl MultiSwitch) ExprVal() {}
 type MultiSwitch struct {
 	Arguments  [] Expr
@@ -76,11 +82,12 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 	var arg_typed, err2 = AssignTo(nil, arg_semi, ctx)
 	if err2 != nil { return SemiExpr{}, err2 }
 	var arg_type = arg_typed.Type
-	var union, union_args, is_union = ExtractUnion(arg_type, ctx)
-	if !is_union { return SemiExpr{}, &ExprError {
+	var union, union_args, across_reactive, ok =
+		ExtractUnion(arg_type, ctx, true)
+	if !(ok) { return SemiExpr{}, &ExprError {
 		Point:    arg_typed.Info.ErrorPoint,
 		Concrete: E_InvalidSwitchArgType {
-			ArgType: ctx.DescribeType(arg_typed.Type),
+			ArgType: ctx.DescribeCertainType(arg_typed.Type),
 		},
 	} }
 	var checked = make(map[loader.Symbol] bool)
@@ -123,7 +130,7 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 			if !is_case { return SemiExpr{}, &ExprError {
 				Point:    ErrorPointFrom(t.Node),
 				Concrete: E_NotBranchType {
-					Union:    ctx.DescribeType(arg_type),
+					Union:    ctx.DescribeCertainType(arg_type),
 					TypeName: type_sym.String(),
 				},
 			} }
@@ -197,6 +204,7 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 			Value: SemiTypedSwitch {
 				Argument: Expr(arg_typed),
 				Branches: semi_branches,
+				Reactive: across_reactive,
 			},
 			Info: info,
 		}, nil
@@ -215,11 +223,11 @@ func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprErro
 		var arg_typed, err2 = AssignTo(nil, semi, ctx)
 		if err2 != nil { return SemiExpr{}, err2 }
 		var arg_type = arg_typed.Type
-		var union, union_args, is_union = ExtractUnion(arg_type, ctx)
+		var union, union_args, _, is_union = ExtractUnion(arg_type, ctx, false)
 		if !is_union { return SemiExpr{}, &ExprError {
 			Point:    arg_typed.Info.ErrorPoint,
 			Concrete: E_InvalidSwitchArgType {
-				ArgType: ctx.DescribeType(arg_typed.Type),
+				ArgType: ctx.DescribeCertainType(arg_typed.Type),
 			},
 		} }
 		args[i] = Expr(arg_typed)
@@ -287,7 +295,7 @@ func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprErro
 				if !is_case { return SemiExpr{}, &ExprError {
 					Point:    ErrorPointFrom(t.Node),
 					Concrete: E_NotBranchType {
-						Union:    ctx.DescribeType(args[i].Type),
+						Union:    ctx.DescribeCertainType(args[i].Type),
 						TypeName: type_sym.String(),
 					},
 				} }
@@ -448,11 +456,12 @@ func CheckIf(raw ast.If, ctx ExprContext) (SemiExpr, *ExprError) {
 	}
 	return SemiExpr {
 		Info: info,
-		Value: SemiTypedSwitch{
+		Value: SemiTypedSwitch {
 			Argument: Expr(cond_typed),
 			Branches: []SemiTypedBranch {
 				yes_branch, no_branch,
 			},
+			Reactive: false,
 		},
 	}, nil
 }
@@ -461,6 +470,21 @@ func CheckIf(raw ast.If, ctx ExprContext) (SemiExpr, *ExprError) {
 func AssignSwitchTo(expected Type, sw SemiTypedSwitch, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
 	var err1 = RequireExplicitType(expected, info)
 	if err1 != nil { return Expr{}, err1 }
+	if sw.Reactive {
+		switch E := expected.(type) {
+		case *NamedType:
+			if E.Name == __Effect || E.Name == __NoExcept {
+				goto ok
+			}
+		}
+		return Expr{}, &ExprError {
+			Point:    info.ErrorPoint,
+			Concrete: E_InvalidTypeForReactiveSwitch {
+				Type: ctx.DescribeInferredType(expected),
+			},
+		}
+		ok:
+	}
 	var branches = make([] Branch, len(sw.Branches))
 	for i, branch_semi := range sw.Branches {
 		var typed, err = AssignTo(expected, branch_semi.Value, ctx)
@@ -474,14 +498,66 @@ func AssignSwitchTo(expected Type, sw SemiTypedSwitch, info ExprInfo, ctx ExprCo
 	}
 	var t, err2 = GetCertainType(expected, info.ErrorPoint, ctx)
 	if err2 != nil { return Expr{}, err2 }
-	return Expr {
-		Type:  t,
-		Value: Switch {
-			Argument: sw.Argument,
-			Branches: branches,
-		},
-		Info:  info,
-	}, nil
+	if sw.Reactive {
+		var elements = make([] Expr, len(branches))
+		for i, b := range branches {
+			var index Expr
+			if b.IsDefault {
+				index = Expr {
+					Type:  nil,
+					Value: UnitValue {},
+					Info:  b.Value.Info,
+				}
+			} else {
+				index = Expr {
+					Type:  nil,
+					Value: SmallIntLiteral { Value: b.Index },
+					Info:  b.Value.Info,
+				}
+			}
+			var pattern, ok = b.Pattern.(Pattern)
+			if !(ok) {
+				pattern = Pattern {
+					Point:    b.Value.Info.ErrorPoint,
+					Concrete: TrivialPattern {
+						ValueName: IgnoreMark,
+						ValueType: nil,
+						Point:     b.Value.Info.ErrorPoint,
+					},
+				}
+			}
+			var pair = Product { Values: [] Expr {
+				index, {
+					Type: nil,
+					Value: Lambda {
+						Input:  pattern,
+						Output: b.Value,
+					},
+				},
+			} }
+			elements[i] = Expr {
+				Type:  nil,
+				Value: pair,
+				Info:  b.Value.Info,
+			}
+		}
+		return Expr {
+			Type:  t,
+			Value: ReactiveSwitch {
+				Argument: sw.Argument,
+				Branches: Product { Values: elements },
+			},
+		}, nil
+	} else {
+		return Expr {
+			Type:  t,
+			Value: Switch {
+				Argument: sw.Argument,
+				Branches: branches,
+			},
+			Info:  info,
+		}, nil
+	}
 }
 
 func AssignMultiSwitchTo(expected Type, msw SemiTypedMultiSwitch, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
@@ -511,23 +587,32 @@ func AssignMultiSwitchTo(expected Type, msw SemiTypedMultiSwitch, info ExprInfo,
 }
 
 
-func ExtractUnion(t Type, ctx ExprContext) (*Union, []Type, bool) {
+func ExtractUnion(t Type, ctx ExprContext, cross_reactive bool) (*Union, []Type, bool, bool) {
 	switch T := t.(type) {
 	case *NamedType:
+		if cross_reactive && T.Name == __Reactive {
+			if !(len(T.Args) == 1) { panic("something went wrong") }
+			var union, args, _, ok = ExtractUnion(T.Args[0], ctx, false)
+			if ok {
+				return union, args, true, true
+			} else {
+				return nil, nil, false, false
+			}
+		}
 		var reg = ctx.GetTypeRegistry()
 		var g = reg[T.Name]
 		switch gv := g.Value.(type) {
 		case *Union:
-			return gv, T.Args, true
+			return gv, T.Args, false, true
 		case *Boxed:
 			var ctx_mod = ctx.GetModuleName()
 			var unboxed, can_unbox = Unbox(t, ctx_mod, reg).(Unboxed)
 			if can_unbox {
-				return ExtractUnion(unboxed.Type, ctx)
+				return ExtractUnion(unboxed.Type, ctx, cross_reactive)
 			}
 		}
 	}
-	return nil, nil, false
+	return nil, nil, false, false
 }
 
 func DesugarElseIf(raw ast.If) ast.If {

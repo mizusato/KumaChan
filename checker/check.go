@@ -166,13 +166,13 @@ func (ctx ExprContext) GetTypeContext() TypeContext {
 	}
 }
 
-func (ctx ExprContext) DescribeType(t Type) string {
+func (ctx ExprContext) DescribeCertainType(t Type) string {
 	var params = TypeParamsNames(ctx.TypeParams)
 	var mod = ctx.GetModuleName()
 	return DescribeTypeWithParams(t, params, mod)
 }
 
-func (ctx ExprContext) DescribeExpectedType(t Type) string {
+func (ctx ExprContext) DescribeInferredType(t Type) string {
 	if ctx.Inferring.Enabled {
 		return DescribeType(t, TypeDescContext {
 			ParamNames:    TypeParamsNames(ctx.TypeParams),
@@ -181,7 +181,7 @@ func (ctx ExprContext) DescribeExpectedType(t Type) string {
 			CurrentModule: ctx.GetModuleName(),
 		})
 	} else {
-		return ctx.DescribeType(t)
+		return ctx.DescribeCertainType(t)
 	}
 }
 

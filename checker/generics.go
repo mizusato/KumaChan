@@ -163,8 +163,8 @@ func GenericFunctionAssignTo (
 		if !(ok) { return Expr{}, &ExprError {
 			Point:    info.ErrorPoint,
 			Concrete: E_NotAssignable {
-				From:   inf_ctx.DescribeExpectedType(f_marked_type),
-				To:     ctx.DescribeType(exp_certain),
+				From:   inf_ctx.DescribeInferredType(f_marked_type),
+				To:     ctx.DescribeCertainType(exp_certain),
 				Reason: "",
 			},
 		} }

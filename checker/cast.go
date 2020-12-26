@@ -34,14 +34,14 @@ func CheckCast(cast ast.Cast, ctx ExprContext) (SemiExpr, *ExprError) {
 				return SemiExpr{}, &ExprError {
 					Point:    typed.Info.ErrorPoint,
 					Concrete: E_UnboxOpaqueType {
-						Type: ctx.DescribeType(typed.Type),
+						Type: ctx.DescribeCertainType(typed.Type),
 					},
 				}
 			case UnboxFailed:
 				return SemiExpr{}, &ExprError {
 					Point:    typed.Info.ErrorPoint,
 					Concrete: E_UnboxFailed {
-						Type: ctx.DescribeType(typed.Type),
+						Type: ctx.DescribeCertainType(typed.Type),
 					},
 				}
 			default:

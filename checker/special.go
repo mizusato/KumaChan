@@ -22,6 +22,7 @@ const KmdSerializerName = "data-serialize"
 const KmdDeserializerName = "data-deserialize"
 const KmdAdapterName = "data-adapt"
 const KmdValidatorName = "data-validate"
+var __Effect = CoreSymbol(stdlib.Effect)
 var __NoExcept = CoreSymbol(stdlib.NoExcept)
 var __Reactive = CoreSymbol(stdlib.Reactive)
 func Reactive(t Type) Type { return &NamedType {

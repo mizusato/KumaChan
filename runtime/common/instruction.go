@@ -34,6 +34,7 @@ const (
 	SUM     // [index, ___ ]: Create a value of a sum type
 	JIF     // [index, dest]: Jump if Index matches the current value
 	JMP     // [ ____, dest]: Jump unconditionally
+	RSW     // [ _________ ]: Reactive switch
 	/* Product Type Operations */
 	PROD    // [size,  _ ]: Create a value of a product type
 	GET     // [index, _ ]: Extract the value of a field

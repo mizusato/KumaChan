@@ -56,10 +56,10 @@ type TR_NonTuple struct {}
 func (impl TR_TupleButOpaque) TupleReprResult() {}
 type TR_TupleButOpaque struct {}
 
-func UnboxTuple(t Type, ctx ExprContext, across_reactive bool) TupleReprResult {
+func UnboxTuple(t Type, ctx ExprContext, cross_reactive bool) TupleReprResult {
 	switch T := t.(type) {
 	case *NamedType:
-		if across_reactive && T.Name == __Reactive {
+		if cross_reactive && T.Name == __Reactive {
 			if !(len(T.Args) == 1) { panic("something went wrong") }
 			var result = UnboxTuple(T.Args[0], ctx, false)
 			switch r := result.(type) {
@@ -116,10 +116,10 @@ type BR_NonBundle struct {}
 func (impl BR_BundleButOpaque) BundleReprResult() {}
 type BR_BundleButOpaque struct {}
 
-func UnboxBundle(t Type, ctx ExprContext, across_reactive bool) BundleReprResult {
+func UnboxBundle(t Type, ctx ExprContext, cross_reactive bool) BundleReprResult {
 	switch T := t.(type) {
 	case *NamedType:
-		if across_reactive && T.Name == __Reactive {
+		if cross_reactive && T.Name == __Reactive {
 			if !(len(T.Args) == 1) { panic("something went wrong") }
 			var result = UnboxBundle(T.Args[0], ctx, false)
 			switch r := result.(type) {

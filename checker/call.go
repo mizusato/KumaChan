@@ -78,7 +78,7 @@ func CallTyped(f Expr, arg SemiExpr, info ExprInfo, ctx ExprContext) (Expr, *Exp
 		return Expr{}, &ExprError {
 			Point:    f.Info.ErrorPoint,
 			Concrete: E_ExprTypeNotCallable {
-				Type: ctx.DescribeType(f.Type),
+				Type: ctx.DescribeCertainType(f.Type),
 			},
 		}
 	}

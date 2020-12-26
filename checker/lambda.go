@@ -68,7 +68,7 @@ func AssignLambdaTo(expected Type, lambda UntypedLambda, info ExprInfo, ctx Expr
 	return Expr{}, &ExprError {
 		Point:    info.ErrorPoint,
 		Concrete: E_LambdaAssignedToNonFuncType {
-			NonFuncType: ctx.DescribeExpectedType(expected),
+			NonFuncType: ctx.DescribeInferredType(expected),
 		},
 	}
 }

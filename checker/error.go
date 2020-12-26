@@ -825,6 +825,17 @@ func (e E_SuperfluousDefaultBranch) ExprErrorDesc() ErrorMessage {
 	return msg
 }
 
+type E_InvalidTypeForReactiveSwitch struct {
+	Type  string
+}
+func (e E_InvalidTypeForReactiveSwitch) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Cannot assign reactive switch to the type")
+	msg.WriteInnerText(TS_INLINE_CODE, e.Type)
+	msg.WriteText(TS_ERROR, "(a type which is not a multi-valued effect)")
+	return msg
+}
+
 type E_TypeParametersUnnecessary struct {}
 func (e E_TypeParametersUnnecessary) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)

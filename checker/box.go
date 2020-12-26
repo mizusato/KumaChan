@@ -33,7 +33,7 @@ func Box (
 				return Expr{}, &ExprError {
 					Point:    to_be_boxed.Info.ErrorPoint,
 					Concrete: E_NotCaseType {
-						Type:  ctx.DescribeType(typed_expr.Type),
+						Type:  ctx.DescribeCertainType(typed_expr.Type),
 						Union: g_type_name.String(),
 					},
 				}

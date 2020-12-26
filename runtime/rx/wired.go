@@ -103,6 +103,22 @@ func ReactiveProject (
 	}
 }
 
+func ReactiveBranch (
+	r Reactive,
+	in  (func(Object) Object),
+	out (func(Object) (Object,bool)),
+) Reactive {
+	return &FilterMappedReactive {
+		AdaptedReactive: &AdaptedReactive {
+			Reactive: r,
+			In: func(_ Object) func(Object) Object {
+				return in
+			},
+		},
+		Out: out,
+	}
+}
+
 
 // Transformation API Implementations
 
@@ -173,6 +189,27 @@ func (p *ProjectedReactive) Update(f (func(Object) Object), key *KeyChain) Effec
 }
 func (p *ProjectedReactive) Project(key *KeyChain) Effect {
 	return p.Reactive.Project(p.ChainedKey(key)).Map(p.Out)
+}
+
+type FilterMappedReactive struct {
+	*AdaptedReactive
+	Out  func(Object) (Object, bool)
+}
+func (m *FilterMappedReactive) Watch() Effect {
+	return m.Reactive.Watch().FilterMap(m.Out)
+}
+func (m *FilterMappedReactive) Update(f (func(Object) Object), key_chain *KeyChain) Effect {
+	return m.Reactive.Update(func(current Object) Object {
+		var current_out, ok = m.Out(current)
+		if ok {
+			return m.In(current)(f(current_out))
+		} else {
+			panic("FilterMappedReactive: invalid update operation")
+		}
+	}, key_chain)
+}
+func (m *FilterMappedReactive) Project(key_chain *KeyChain) Effect {
+	return m.Reactive.Project(key_chain).FilterMap(m.Out)
 }
 
 

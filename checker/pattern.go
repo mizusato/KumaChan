@@ -78,7 +78,7 @@ func PatternFrom (
 				return err_result(E_TupleSizeNotMatching {
 					Required:  required,
 					Given:     given,
-					GivenType: ctx.DescribeType(&AnonymousType { tuple }),
+					GivenType: ctx.DescribeCertainType(&AnonymousType { tuple }),
 				})
 			} else {
 				var occurred = make(map[string] bool)
@@ -146,7 +146,7 @@ func PatternFrom (
 						Point:    ErrorPointFrom(field_map.FieldName.Node),
 						Concrete: E_FieldDoesNotExist {
 							Field:  field_name,
-							Target: ctx.DescribeType(input),
+							Target: ctx.DescribeCertainType(input),
 						},
 					}
 				}
