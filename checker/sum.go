@@ -138,9 +138,12 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 				Point:    ErrorPointFrom(branch.Node),
 				Concrete: E_CheckedBranch {},
 			} }
-			var case_type = &NamedType {
+			var case_type Type = &NamedType {
 				Name: type_sym,
 				Args: case_args,
+			}
+			if across_reactive {
+				case_type = Reactive(case_type)
 			}
 			var maybe_pattern MaybePattern
 			var branch_ctx ExprContext
@@ -473,7 +476,7 @@ func AssignSwitchTo(expected Type, sw SemiTypedSwitch, info ExprInfo, ctx ExprCo
 	if sw.Reactive {
 		switch E := expected.(type) {
 		case *NamedType:
-			if E.Name == __Effect || E.Name == __NoExcept {
+			if E.Name == __EffectMulti || E.Name == __NoExceptMulti {
 				goto ok
 			}
 		}

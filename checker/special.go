@@ -24,6 +24,8 @@ const KmdAdapterName = "data-adapt"
 const KmdValidatorName = "data-validate"
 var __Effect = CoreSymbol(stdlib.Effect)
 var __NoExcept = CoreSymbol(stdlib.NoExcept)
+var __EffectMulti = CoreSymbol(stdlib.EffectMultiValue)
+var __NoExceptMulti = CoreSymbol(stdlib.NoExceptMultiValue)
 var __Reactive = CoreSymbol(stdlib.Reactive)
 func Reactive(t Type) Type { return &NamedType {
 	Name: __Reactive,
