@@ -269,25 +269,36 @@ func (b *BusImpl) removeListener(id uint64) {
 }
 
 type ReactiveImpl struct {
-	bus    *BusImpl
-	state  ReactiveState
+	bus          *BusImpl  // Bus<ReactiveStateChange|Pair<ReactiveSnapshots,Object>>
+	last_change  ReactiveStateChange
+	snapshots    ReactiveSnapshots
 }
-type ReactiveState struct {
+type ReactiveStateChange struct {
 	Value     Object
 	KeyChain  *KeyChain
 }
+type ReactiveSnapshots struct {
+	undo  *Stack  // Stack<ReactiveStateChange>
+	redo  *Stack  // Stack<ReactiveStateChange>
+}
 func CreateReactive(init Object) *ReactiveImpl {
 	return &ReactiveImpl {
-		bus:   CreateBus(),
-		state: ReactiveState { Value: init },
+		bus:         CreateBus(),
+		last_change: ReactiveStateChange {
+			Value:    init,
+			KeyChain: nil,
+		},
 	}
 }
 func (r *ReactiveImpl) Watch() Effect {
 	return NewListener(func(next func(Object)) func() {
-		next(r.state.Value)
+		next(r.last_change.Value)
 		var l = r.bus.addListener(Listener {
-			Notify: func(state Object) {
-				next(state.(ReactiveState).Value)
+			Notify: func(obj Object) {
+				var change, is_change = obj.(ReactiveStateChange)
+				if is_change {
+					next(change.Value)
+				}
 			},
 		})
 		return func() {
@@ -295,44 +306,115 @@ func (r *ReactiveImpl) Watch() Effect {
 		}
 	})
 }
-func (r *ReactiveImpl) Emit(obj Object) Effect {
+func (r *ReactiveImpl) WatchSnapshots() Effect {
+	return NewListener(func(next func(Object)) func() {
+		var l = r.bus.addListener(Listener {
+			Notify: func(obj Object) {
+				var pair, is_pair = obj.(Pair)
+				if is_pair {
+					next(pair)
+				}
+			},
+		})
+		return func() {
+			r.bus.removeListener(l)
+		}
+	})
+}
+func (r *ReactiveImpl) Project(k *KeyChain) Effect {
+	return NewListener(func(next func(Object)) func() {
+		next(r.last_change.Value)
+		var l = r.bus.addListener(Listener {
+			Notify: func(obj Object) {
+				var change, is_change = obj.(ReactiveStateChange)
+				if is_change && k.Includes(change.KeyChain) {
+					next(change.Value)
+				}
+			},
+		})
+		return func() {
+			r.bus.removeListener(l)
+		}
+	})
+}
+func (r *ReactiveImpl) commit(change ReactiveStateChange) {
+	r.last_change = change
+	for _, l := range r.bus.listeners {
+		l.Notify(change)
+	}
+}
+func (r *ReactiveImpl) notifySnapshots() {
+	for _, l := range r.bus.listeners {
+		l.Notify(Pair { r.snapshots, r.last_change.Value })
+	}
+}
+func (r *ReactiveImpl) Emit(new_state Object) Effect {
 	return NewSync(func() (Object, bool) {
-		var new_state = ReactiveState { Value: obj }
-		r.state = new_state
-		for _, l := range r.bus.listeners {
-			l.Notify(new_state)
+		var change = ReactiveStateChange {
+			Value:    new_state,
+			KeyChain: nil,
+		}
+		r.commit(change)
+		if r.snapshots.redo != nil {
+			r.snapshots.redo = nil
+			r.notifySnapshots()
 		}
 		return nil, true
 	})
 }
 func (r *ReactiveImpl) Update(f (func(Object) Object), k *KeyChain) Effect {
 	return NewSync(func() (Object, bool) {
-		var old_state_val = r.state.Value
-		var new_state_val = f(old_state_val)
-		var new_state = ReactiveState {
-			Value:    new_state_val,
+		var old_state = r.last_change.Value
+		var new_state = f(old_state)
+		var change = ReactiveStateChange {
+			Value:    new_state,
 			KeyChain: k,
 		}
-		r.state = new_state
-		for _, l := range r.bus.listeners {
-			l.Notify(new_state)
+		r.commit(change)
+		if r.snapshots.redo != nil {
+			r.snapshots.redo = nil
+			r.notifySnapshots()
 		}
 		return nil, true
 	})
 }
-func (r *ReactiveImpl) Project(k *KeyChain) Effect {
-	return NewListener(func(next func(Object)) func() {
-		next(r.state.Value)
-		var l = r.bus.addListener(Listener {
-			Notify: func(state_ Object) {
-				var state = state_.(ReactiveState)
-				if k.Includes(state.KeyChain) {
-					next(state.Value)
-				}
-			},
-		})
-		return func() {
-			r.bus.removeListener(l)
+func (r *ReactiveImpl) Snapshot() Effect {
+	return NewSync(func() (Object, bool) {
+		r.snapshots.redo = nil
+		r.snapshots.undo = r.snapshots.undo.Pushed(r.last_change)
+		r.notifySnapshots()
+		return nil, true
+	})
+}
+func (r *ReactiveImpl) Undo() Effect {
+	return NewSync(func() (Object, bool) {
+		var top, rest, ok = r.snapshots.undo.Popped()
+		if ok {
+			var current = r.last_change
+			r.snapshots.redo = r.snapshots.redo.Pushed(current)
+			r.snapshots.undo = rest
+			var change = top.(ReactiveStateChange)
+			r.commit(change)
+			r.notifySnapshots()
+			return true, true
+		} else {
+			return false, true
+		}
+	})
+}
+func (r *ReactiveImpl) Redo() Effect {
+	return NewSync(func() (Object, bool) {
+		var top, rest, ok = r.snapshots.redo.Popped()
+		if ok {
+			var current = r.last_change
+			r.snapshots.undo = r.snapshots.undo.Pushed(current)
+			r.snapshots.redo = rest
+			var change = top.(ReactiveStateChange)
+			r.commit(change)
+			r.notifySnapshots()
+			return true, true
+		} else {
+			return false, true
 		}
 	})
 }
