@@ -1,28 +1,31 @@
 package container
 
 import (
-	. "kumachan/runtime/common"
 	"fmt"
-	"reflect"
+	. "kumachan/runtime/common"
 )
 
 
 type List struct {
-	Data   interface {}  // slice<T>
-	Index  Map           // Map<string,ListIndexEntry>
+	Keys   [] String
+	Index  Map  // Map<string,ListEntry>
 }
 
-type ListIndexEntry struct {
+type ListEntry struct {
+	Value     Value
 	Position  uint
 	Revision  uint64
 }
 
 func NewList(array Array, get_key func(Value)(String)) List {
-	var data = array.CopyAsSlice(array.ItemType)
+	var keys = make([] String, array.Length)
 	var index = NewStrMap()
 	for i := uint(0); i < array.Length; i += 1 {
+		var value = array.GetItem(i)
 		var key = get_key(array.GetItem(i))
-		var result, duplicate = index.Inserted(key, ListIndexEntry {
+		keys[i] = key
+		var result, duplicate = index.Inserted(key, ListEntry {
+			Value:    value,
 			Position: i,
 			Revision: 0,
 		})
@@ -32,42 +35,37 @@ func NewList(array Array, get_key func(Value)(String)) List {
 		index = result
 	}
 	return List {
-		Data:  data,
+		Keys:  keys,
 		Index: index,
 	}
 }
 
-func (l List) indexEntry(key String) ListIndexEntry {
+func (l List) mustHaveEntry(key String) ListEntry {
 	var entry, exists = l.Index.Lookup(key)
 	if !(exists) { panic(fmt.Sprintf("key not found: %s", GoStringFromString(key))) }
-	return entry.(ListIndexEntry)
+	return entry.(ListEntry)
 }
 
-func (l List) updatedIndex(key String, entry ListIndexEntry) Map {
+func (l List) updatedIndex(key String, entry ListEntry) Map {
 	var updated, override = l.Index.Inserted(key, entry)
 	if !(override) { panic("something went wrong") }
 	return updated
 }
 
 func (l List) Get(key String) Value {
-	var entry = l.indexEntry(key)
-	return reflect.ValueOf(l.Data).Index(int(entry.Position)).Interface()
+	var entry = l.mustHaveEntry(key)
+	return entry.Value
 }
 
 func (l List) Updated(key String, f func(Value)(Value)) List {
-	var entry = l.indexEntry(key)
-	var old_rv = reflect.ValueOf(l.Data)
-	var new_rv = reflect.MakeSlice(old_rv.Type(), old_rv.Len(), old_rv.Cap())
-	reflect.Copy(new_rv, old_rv)
-	var item_rv = old_rv.Index(int(entry.Position))
-	item_rv.Set(reflect.ValueOf(f(item_rv.Interface())))
-	var new_data = new_rv.Interface()
-	var new_index = l.updatedIndex(key, ListIndexEntry {
+	var entry = l.mustHaveEntry(key)
+	var new_index = l.updatedIndex(key, ListEntry {
+		Value:    f(entry.Value),
 		Position: entry.Position,
 		Revision: (entry.Revision + 1),
 	})
 	return List {
-		Data:  new_data,
+		Keys:  l.Keys,
 		Index: new_index,
 	}
 }
