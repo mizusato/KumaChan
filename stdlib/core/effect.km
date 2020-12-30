@@ -5,9 +5,16 @@ type NoExcept*[+T]   native;  // rx.Effect       (Observable<T>)
 type NoExcept[+T]    protected NoExcept*[T];  // (() => Promise<T>)
 
 // Wired Components
-type Sink[-T]     native;             // rx.Sink
-type Bus[T]       protected Sink[T];  // rx.Bus      (Subject<T>)
-type Reactive[T]  protected Bus[T];   // rx.Reactive (BehaviorSubject<T>)
+type Sink[-T]           native;                 // rx.Sink
+type Bus[T]             protected Sink[T];      // rx.Bus      (Subject<T>)
+type Reactive[T]        protected Bus[T];       // rx.Reactive (BehaviorSubject<T>)
+type ReactiveEntity[T]  protected Reactive[T];  // rx.ReactiveEntity
+// Additions
+type ReactiveSnapshots[+T] {
+    undo: ReactiveSnapshotStack[T],
+    redo: ReactiveSnapshotStack[T]
+};
+type ReactiveSnapshotStack[+T]  native;  // *rx.Stack
 
 // Mutable Containers
 type Mutable[+T]     native;  // rx.Cell
@@ -22,25 +29,35 @@ public function adapt[A,B]: ( &(Sink[A],(&(B)(A))) Sink[B] )
     native 'sink-adapt';
 public function watch[T]:   ( &(Bus[T]) NoExcept*[T] )
     native 'bus-watch';
-public function update[T]:  ( &(Reactive[T],(&(T)(T))) NoExcept[-] )
+public function update[T]:   ( &(Reactive[T],(&(T)(T))) NoExcept[-] )
     native 'reactive-update';
-public function adapt[A,B]: ( &(Reactive[A],(&(A)(&(B)(A)))) Sink[B] )
+public function adapt[A,B]:  ( &(Reactive[A],(&(A)(&(B)(A)))) Sink[B] )
     native 'reactive-adapt';
-public function morph[A,B]: ( &(Reactive[A],(&(A)(&(B)(A))),(&(A)(B))) Reactive[B] )
+public function morph[A,B]:  ( &(Reactive[A],(&(A)(&(B)(A))),(&(A)(B))) Reactive[B] )
     native 'reactive-morph';
+public function snapshot[T]: ( &(Reactive[T]) NoExcept[-] )
+    native 'reactive-snapshot';
+public function undo[T]:       ( &(ReactiveEntity[T]) NoExcept[Bool] )
+    native 'reactive-entity-undo';
+public function redo[T]:       ( &(ReactiveEntity[T]) NoExcept[Bool] )
+    native 'reactive-entity-redo';
+public function watch-diff[T]: ( &(ReactiveEntity[T]) NoExcept*[(ReactiveSnapshots[T],T)] )
+    native 'reactive-entity-watch-diff';
+public function iterate[T]: ( &(ReactiveSnapshotStack[T]) Seq[T] )
+    native 'reactive-snapshot-stack-iterate';
 public function callback[T]:           ( &(&(T)(NoExcept[-])) Sink[T] )
     native 'callback';
 public function new-bus[T]:            ( &() NoExcept[Bus[T]] )
     native 'new-bus';
-public function new-reactive[T]:       ( &(T) NoExcept[Reactive[T]] )
+public function new-reactive[T]:       ( &(T) NoExcept[ReactiveEntity[T]] )
     native 'new-reactive';
-public function with-reactive[T,X,E]:  ( &(T,(&(Reactive[T])(Effect[X,E]))) Effect[X,E] )
+public function with-reactive[T,X,E]:  ( &(T,(&(ReactiveEntity[T])(Effect[X,E]))) Effect[X,E] )
     native 'with-reactive';
-public function with-reactive[T,X]:    ( &(T,(&(Reactive[T])(NoExcept[X]))) NoExcept[X] )
+public function with-reactive[T,X]:    ( &(T,(&(ReactiveEntity[T])(NoExcept[X]))) NoExcept[X] )
     native 'with-reactive';
-public function with-reactive*[T,X,E]: ( &(T,(&(Reactive[T])(Effect*[X,E]))) Effect*[X,E] )
+public function with-reactive*[T,X,E]: ( &(T,(&(ReactiveEntity[T])(Effect*[X,E]))) Effect*[X,E] )
     native 'with-reactive';
-public function with-reactive*[T,X]:   ( &(T,(&(Reactive[T])(NoExcept*[X]))) NoExcept*[X] )
+public function with-reactive*[T,X]:   ( &(T,(&(ReactiveEntity[T])(NoExcept*[X]))) NoExcept*[X] )
     native 'with-reactive';
 
 // Mutable Containers Operations
@@ -62,6 +79,10 @@ public function swap[T]: ( &(Mutable[T],(&(T)(T))) NoExcept[-] )
     native 'mutable-swap';
 
 // Effect Constructors
+public function with[T,E]: ( &(Effect*[T,E],NoExcept[-]) Effect*[T,E] )
+    native 'with';
+public function with[T]:   ( &(NoExcept*[T],NoExcept[-]) NoExcept*[T] )
+    native 'with';
 public function random: ( &() NoExcept[Float] )
     native 'random';
 public function crash: ( &(String) NoExcept[-] )
@@ -226,6 +247,10 @@ public function with-latest-from[A,B,E]: ( &(NoExcept*[A],Effect*[B,E]) Effect*[
     native 'with-latest-from';
 public function with-latest-from[A,B]:   ( &(NoExcept*[A],NoExcept*[B]) NoExcept*[(A,Maybe[B])] )
     native 'with-latest-from';
+public function with-latest-from[A,B,E]: ( &(Effect*[A,E],Reactive[B]) Effect*[(A,B),E] )
+    native 'with-latest-from-reactive';
+public function with-latest-from[A,B]:   ( &(NoExcept*[A],Reactive[B]) NoExcept*[(A,B)] )
+    native 'with-latest-from-reactive';
 public function combine-latest[A,B,E]: ( &(Effect*[A,E],Effect*[B,E]) Effect*[(Maybe[A],Maybe[B]),E] )
     native 'combine-latest';
 public function combine-latest[A,B,E]: ( &(Effect*[A,E],NoExcept*[B]) Effect*[(Maybe[A],Maybe[B]),E] )

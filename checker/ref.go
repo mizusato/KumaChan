@@ -268,7 +268,11 @@ func AssignRefTo(expected Type, ref UntypedRef, info ExprInfo, ctx ExprContext) 
 				RefBody:  r.RefToFunctions,
 				TypeArgs: ref.TypeArgs,
 			}
-			return AssignRefTo(expected, functions, info, ctx)
+			var expr_f, err_f = AssignRefTo(expected, functions, info, ctx)
+			if err_f != nil {
+				return Expr{}, err  // throw the error of local value
+			}
+			return expr_f, nil
 		}
 	default:
 		panic("impossible branch")

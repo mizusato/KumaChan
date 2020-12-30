@@ -3,7 +3,9 @@ package lib
 import (
 	"os"
 	"fmt"
+	"reflect"
 	"math/rand"
+	. "kumachan/error"
 	. "kumachan/runtime/common"
 	"kumachan/runtime/rx"
 	"kumachan/runtime/lib/container"
@@ -17,6 +19,26 @@ func Optional2Maybe(obj rx.Object) Value {
 	} else {
 		return Na()
 	}
+}
+
+type RxStackIterator struct {
+	Stack  *rx.Stack
+}
+func (it RxStackIterator) Next() (Value, container.Seq, bool) {
+	var val, rest, ok = it.Stack.Popped()
+	if ok {
+		return val, RxStackIterator { rest }, true
+	} else {
+		return nil, nil, false
+	}
+}
+func (it RxStackIterator) GetItemType() reflect.Type {
+	return ValueReflectType()
+}
+func (it RxStackIterator) Inspect(_ func(Value)(ErrorMessage)) ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_NORMAL, "[seq rx-stack-iterator]")
+	return msg
 }
 
 var EffectFunctions = map[string] Value {
@@ -60,6 +82,37 @@ var EffectFunctions = map[string] Value {
 			return h.Call(g, obj)
 		}
 		return rx.ReactiveMorph(r, in, out)
+	},
+	"reactive-snapshot": func(r rx.Reactive) rx.Effect {
+		return r.Snapshot()
+	},
+	"reactive-entity-undo": func(r rx.ReactiveEntity) rx.Effect {
+		return r.Undo()
+	},
+	"reactive-entity-redo": func(r rx.ReactiveEntity) rx.Effect {
+		return r.Redo()
+	},
+	"reactive-entity-watch-diff": func(r rx.ReactiveEntity) rx.Effect {
+		return r.WatchDiff().Map(func(obj rx.Object) rx.Object {
+			var pair = obj.(rx.Pair)
+			var snapshots = pair.First.(rx.ReactiveSnapshots)
+			var value = Value(pair.Second)
+			return &ValProd { Elements: [] Value {
+				&ValProd { Elements: [] Value {
+					snapshots.Undo,
+					snapshots.Redo,
+				} },
+				value,
+			} }
+		})
+	},
+	"reactive-snapshot-stack-iterate": func(stack *rx.Stack) container.Seq {
+		return container.MappedSeq {
+			Input:  RxStackIterator { stack },
+			Mapper: func(v Value) Value {
+				return v.(rx.ReactiveStateChange).Value
+			},
+		}
 	},
 	"callback": func(f Value, h InteropContext) rx.Sink {
 		return rx.Callback(func(obj rx.Object) rx.Effect {
@@ -113,6 +166,9 @@ var EffectFunctions = map[string] Value {
 		return cell.Swap(func(v rx.Object) rx.Object {
 			return h.Call(f, v)
 		})
+	},
+	"with": func(main rx.Effect, side rx.Effect) rx.Effect {
+		return rx.Merge([] rx.Effect { main, side.DiscardValues() })
 	},
 	"random": func() rx.Effect {
 		return rx.NewSync(func() (rx.Object, bool) {
@@ -318,6 +374,18 @@ var EffectFunctions = map[string] Value {
 			return &ValProd { Elements: [] Value {
 				pair.First,
 				Optional2Maybe(pair.Second),
+			} }
+		})
+	},
+	"with-latest-from-reactive": func(signal rx.Effect, r rx.Reactive) rx.Effect {
+		return signal.WithLatestFrom(r.Watch()).Map(func(p rx.Object) rx.Object {
+			var pair = p.(rx.Pair)
+			var r_opt = pair.Second.(rx.Optional)
+			if !(r_opt.HasValue) { panic("something went wrong") }
+			var r_value = r_opt.Value
+			return &ValProd { Elements: [] Value {
+				pair.First,
+				r_value,
 			} }
 		})
 	},

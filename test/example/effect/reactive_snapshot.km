@@ -1,0 +1,57 @@
+import UI from 'rename:WebQuick';
+import assets from './assets';
+
+do webui-init 'Reactive Snapshot' DOM;
+
+do webui-inject-css [assets::style-css];
+
+do WebUi::ExitWhenWindowClosed;
+
+private const DOM: NoExcept*[WebUi::Node]
+    ~ with-reactive* &(text) := '',
+    ~ with-reactive* &(editing) := No,
+    render (UI::Container [
+        UI::Dynamic (
+            ~ switch-map &(state) := editing.watch.with-latest-from(text),
+            let (is-editing, text-content) := state,
+            if is-editing:
+                ~ with-reactive* &(buffer) := text-content,
+                yield (UI::Container [
+                    UI::TextInput buffer,
+                    UI::Dynamic (
+                        ~ map* &(content) := watch buffer,
+                        UI::Button 'Confirm' (
+                            editing.emit No
+                            | then (text.snapshot)
+                            | then (text.emit content) ))
+                ]),
+            else:
+                yield (UI::Styled ['row'] (UI::Container [
+                    UI::Styled ['red']
+                        (UI::TextWatch (text.watch)),
+                    UI::Button 'Edit' (editing.emit Yes)
+                ]))
+        ),
+        UI::Dynamic (
+            ~ map* &(snapshots,current) := text.watch-diff,
+            let { undo, redo } := snapshots,
+            let undo := (collect (undo.iterate)),
+            let redo := (collect (redo.iterate)),
+            UI::Container [
+                if $((undo.length) > 0):
+                    UI::Button 'Undo' (text.undo.map(&(_)())),
+                else:
+                    UI::Container [],
+                if $((redo.length) > 0):
+                    UI::Button 'Redo' (text.redo.map(&(_)())),
+                else:
+                    UI::Container [],
+                UI::Styled ['title'] (UI::Text 'undo stack (reversed):'),
+                UI::Container (reverse (undo.map (&(v)(UI::Text (quote v))))),
+                UI::Styled ['title'] (UI::Text 'current:'),
+                UI::Text (quote current),
+                UI::Styled ['title'] (UI::Text 'redo stack:'),
+                UI::Container (redo.map (&(v)(UI::Text (quote v))))
+            ]
+        )
+    ]);

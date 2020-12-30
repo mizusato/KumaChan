@@ -1,0 +1,17 @@
+body {
+  padding: 0.5rem;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+}
+
+.red {
+  color: red;
+}
+
+.title {
+  font-weight: bold;
+  font-size: 110%;
+}

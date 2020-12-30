@@ -30,7 +30,15 @@ type Reactive interface {
 	Bus
 	Update(f func(old_state Object) Object, k *KeyChain) Effect
 	Project(k *KeyChain) Effect
+	Snapshot() Effect
 }
+
+// ReactiveEntity is a Reactive that is NOT derived from another Reactive
+type ReactiveEntity = *ReactiveImpl
+
+
+// Projection Key Chain
+
 type KeyChain struct {
 	Parent  *KeyChain
 	Key     Object  // should be comparable by ==
@@ -157,6 +165,9 @@ func (m *MorphedReactive) Update(f (func(Object) Object), key_chain *KeyChain) E
 func (m *MorphedReactive) Project(key_chain *KeyChain) Effect {
 	return m.Reactive.Project(key_chain).Map(m.Out)
 }
+func (m *MorphedReactive) Snapshot() Effect {
+	return m.Reactive.Snapshot()
+}
 
 type ProjectedReactive struct {
 	Reactive  Reactive
@@ -192,6 +203,9 @@ func (p *ProjectedReactive) Update(f (func(Object) Object), key *KeyChain) Effec
 func (p *ProjectedReactive) Project(key *KeyChain) Effect {
 	return p.Reactive.Project(p.ChainedKey(key)).Map(p.Out)
 }
+func (p *ProjectedReactive) Snapshot() Effect {
+	return p.Reactive.Snapshot()
+}
 
 type FilterMappedReactive struct {
 	*AdaptedReactive
@@ -212,6 +226,9 @@ func (m *FilterMappedReactive) Update(f (func(Object) Object), key_chain *KeyCha
 }
 func (m *FilterMappedReactive) Project(key_chain *KeyChain) Effect {
 	return m.Reactive.Project(key_chain).FilterMap(m.Out)
+}
+func (m *FilterMappedReactive) Snapshot() Effect {
+	return m.Reactive.Snapshot()
 }
 
 
@@ -278,8 +295,8 @@ type ReactiveStateChange struct {
 	KeyChain  *KeyChain
 }
 type ReactiveSnapshots struct {
-	undo  *Stack  // Stack<ReactiveStateChange>
-	redo  *Stack  // Stack<ReactiveStateChange>
+	Undo  *Stack // Stack<ReactiveStateChange>
+	Redo  *Stack // Stack<ReactiveStateChange>
 }
 func CreateReactive(init Object) *ReactiveImpl {
 	return &ReactiveImpl {
@@ -306,8 +323,9 @@ func (r *ReactiveImpl) Watch() Effect {
 		}
 	})
 }
-func (r *ReactiveImpl) WatchSnapshots() Effect {
+func (r *ReactiveImpl) WatchDiff() Effect {
 	return NewListener(func(next func(Object)) func() {
+		next(Pair { r.snapshots, r.last_change.Value})
 		var l = r.bus.addListener(Listener {
 			Notify: func(obj Object) {
 				var pair, is_pair = obj.(Pair)
@@ -343,7 +361,7 @@ func (r *ReactiveImpl) commit(change ReactiveStateChange) {
 		l.Notify(change)
 	}
 }
-func (r *ReactiveImpl) notifySnapshots() {
+func (r *ReactiveImpl) notifyDiff() {
 	for _, l := range r.bus.listeners {
 		l.Notify(Pair { r.snapshots, r.last_change.Value })
 	}
@@ -355,10 +373,10 @@ func (r *ReactiveImpl) Emit(new_state Object) Effect {
 			KeyChain: nil,
 		}
 		r.commit(change)
-		if r.snapshots.redo != nil {
-			r.snapshots.redo = nil
-			r.notifySnapshots()
+		if r.snapshots.Redo != nil {
+			r.snapshots.Redo = nil
 		}
+		r.notifyDiff()
 		return nil, true
 	})
 }
@@ -371,31 +389,31 @@ func (r *ReactiveImpl) Update(f (func(Object) Object), k *KeyChain) Effect {
 			KeyChain: k,
 		}
 		r.commit(change)
-		if r.snapshots.redo != nil {
-			r.snapshots.redo = nil
-			r.notifySnapshots()
+		if r.snapshots.Redo != nil {
+			r.snapshots.Redo = nil
 		}
+		r.notifyDiff()
 		return nil, true
 	})
 }
 func (r *ReactiveImpl) Snapshot() Effect {
 	return NewSync(func() (Object, bool) {
-		r.snapshots.redo = nil
-		r.snapshots.undo = r.snapshots.undo.Pushed(r.last_change)
-		r.notifySnapshots()
+		r.snapshots.Redo = nil
+		r.snapshots.Undo = r.snapshots.Undo.Pushed(r.last_change)
+		r.notifyDiff()
 		return nil, true
 	})
 }
 func (r *ReactiveImpl) Undo() Effect {
 	return NewSync(func() (Object, bool) {
-		var top, rest, ok = r.snapshots.undo.Popped()
+		var top, rest, ok = r.snapshots.Undo.Popped()
 		if ok {
 			var current = r.last_change
-			r.snapshots.redo = r.snapshots.redo.Pushed(current)
-			r.snapshots.undo = rest
+			r.snapshots.Redo = r.snapshots.Redo.Pushed(current)
+			r.snapshots.Undo = rest
 			var change = top.(ReactiveStateChange)
 			r.commit(change)
-			r.notifySnapshots()
+			r.notifyDiff()
 			return true, true
 		} else {
 			return false, true
@@ -404,14 +422,14 @@ func (r *ReactiveImpl) Undo() Effect {
 }
 func (r *ReactiveImpl) Redo() Effect {
 	return NewSync(func() (Object, bool) {
-		var top, rest, ok = r.snapshots.redo.Popped()
+		var top, rest, ok = r.snapshots.Redo.Popped()
 		if ok {
 			var current = r.last_change
-			r.snapshots.undo = r.snapshots.undo.Pushed(current)
-			r.snapshots.redo = rest
+			r.snapshots.Undo = r.snapshots.Undo.Pushed(current)
+			r.snapshots.Redo = rest
 			var change = top.(ReactiveStateChange)
 			r.commit(change)
-			r.notifySnapshots()
+			r.notifyDiff()
 			return true, true
 		} else {
 			return false, true

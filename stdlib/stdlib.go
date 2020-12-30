@@ -36,7 +36,8 @@ var core_types = []string {
 	Seq, Array, Heap, Set, Map,
 	// effect.km
 	EffectMultiValue, Effect, NoExceptMultiValue, NoExcept,
-	Source, Sink, Bus, Reactive,
+	Source, Sink, Bus, Reactive, ReactiveEntity,
+	ReactiveSnapshots, ReactiveSnapshotStack,
 	Mutable, List, Buffer, HashMap,
 	// time.km
 	Time,
@@ -112,6 +113,9 @@ const Source = "Source"
 const Sink = "Sink"
 const Bus = "Bus"
 const Reactive = "Reactive"
+const ReactiveEntity = "ReactiveEntity"
+const ReactiveSnapshots = "ReactiveSnapshots"
+const ReactiveSnapshotStack = "ReactiveSnapshotStack"
 const Mutable = "Mutable"
 const List = "List"
 const Buffer = "Buffer"

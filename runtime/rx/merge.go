@@ -1,7 +1,7 @@
 package rx
 
 
-func Merge(effects []Effect) Effect {
+func Merge(effects [] Effect) Effect {
 	return Effect { func(sched Scheduler, ob *observer) {
 		var ctx, dispose = ob.context.create_disposable_child()
 		var c = new_collector(ob, dispose)
@@ -21,6 +21,17 @@ func Merge(effects []Effect) Effect {
 			})
 		}
 		c.parent_complete()
+	} }
+}
+
+func (e Effect) DiscardValues() Effect {
+	return Effect { func(sched Scheduler, ob *observer) {
+		sched.run(e, &observer{
+			context:  ob.context,
+			next:     func(_ Object) {},
+			error:    ob.error,
+			complete: ob.complete,
+		})
 	} }
 }
 
