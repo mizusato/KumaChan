@@ -13,23 +13,23 @@ private const DOM: NoExcept*[WebUi::Node]
     render (UI::Container [
         UI::Dynamic (
             ~ switch-map &(state) := editing.watch.with-latest-from(text),
-            let (is-editing, text-content) := state,
+            let (is-editing, current-text) := state,
             if is-editing:
-                ~ with-reactive* &(buffer) := text-content,
+                ~ with-reactive* &(buffer) := current-text,
                 yield (UI::Container [
                     UI::TextInput buffer,
                     UI::Dynamic (
-                        ~ map* &(content) := watch buffer,
+                        ~ map* &(new-text) := watch buffer,
                         UI::Button 'Confirm' (
-                            editing.emit No
+                            $(editing <- No)
                             | then (text.snapshot)
-                            | then (text.emit content) ))
+                            | then $(text <- new-text) ))
                 ]),
             else:
                 yield (UI::Styled ['row'] (UI::Container [
                     UI::Styled ['red']
                         (UI::TextWatch (text.watch)),
-                    UI::Button 'Edit' (editing.emit Yes)
+                    UI::Button 'Edit' $(editing <- Yes)
                 ]))
         ),
         UI::Dynamic (

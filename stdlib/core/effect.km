@@ -25,6 +25,8 @@ type HashMap[+K,+V]  native;  // rx.StringHashMap, rx.NumberHashMap
 // Wired Components Operations
 public function emit[T]:    ( &(Sink[T],T) NoExcept[-] )
     native 'sink-emit';
+public function <- [T]:     ( &(Sink[T],T) NoExcept[-] )
+    native 'sink-emit';
 public function adapt[A,B]: ( &(Sink[A],(&(B)(A))) Sink[B] )
     native 'sink-adapt';
 public function watch[T]:   ( &(Bus[T]) NoExcept*[T] )
