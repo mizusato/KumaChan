@@ -295,8 +295,8 @@ type ReactiveStateChange struct {
 	KeyChain  *KeyChain
 }
 type ReactiveSnapshots struct {
-	Undo  *Stack // Stack<ReactiveStateChange>
-	Redo  *Stack // Stack<ReactiveStateChange>
+	Undo  *Stack  // Stack<ReactiveStateChange>
+	Redo  *Stack  // Stack<ReactiveStateChange>
 }
 func CreateReactive(init Object) *ReactiveImpl {
 	return &ReactiveImpl {

@@ -26,7 +26,7 @@ func Merge(effects [] Effect) Effect {
 
 func (e Effect) DiscardValues() Effect {
 	return Effect { func(sched Scheduler, ob *observer) {
-		sched.run(e, &observer{
+		sched.run(e, &observer {
 			context:  ob.context,
 			next:     func(_ Object) {},
 			error:    ob.error,
