@@ -9,9 +9,9 @@ do WebUi::ExitWhenWindowClosed;
 
 private const DOM: NoExcept*[WebUi::Node]
     ~ with-reactive* &(text) := '',
-    ~ with-reactive* &(editing) := No,
     render (UI::Container [
         UI::Dynamic (
+            ~ with-reactive* &(editing) := No,
             ~ switch-map &(state) := editing.watch.with-latest-from(text),
             let (is-editing, current-text) := state,
             if is-editing:
