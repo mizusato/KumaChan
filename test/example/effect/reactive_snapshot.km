@@ -35,8 +35,8 @@ private const DOM: NoExcept*[WebUi::Node]
         UI::Dynamic (
             ~ map* &(snapshots,current) := text.watch-diff,
             let { undo, redo } := snapshots,
-            let undo := (collect (undo.iterate)),
-            let redo := (collect (redo.iterate)),
+            let undo := undo.collect,
+            let redo := redo.collect,
             UI::Container [
                 if $((undo.length) > 0):
                     UI::Button 'Undo' (text.undo.map(&(_)())),

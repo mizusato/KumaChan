@@ -93,26 +93,26 @@ var EffectFunctions = map[string] Value {
 		return r.Redo()
 	},
 	"reactive-entity-watch-diff": func(r rx.ReactiveEntity) rx.Effect {
+		var stack2seq = func(stack *rx.Stack) container.Seq {
+			return container.MappedSeq {
+				Input:  RxStackIterator { stack },
+				Mapper: func(v Value) Value {
+					return v.(rx.ReactiveStateChange).Value
+				},
+			}
+		}
 		return r.WatchDiff().Map(func(obj rx.Object) rx.Object {
 			var pair = obj.(rx.Pair)
 			var snapshots = pair.First.(rx.ReactiveSnapshots)
 			var value = Value(pair.Second)
 			return &ValProd { Elements: [] Value {
 				&ValProd { Elements: [] Value {
-					snapshots.Undo,
-					snapshots.Redo,
+					stack2seq(snapshots.Undo),
+					stack2seq(snapshots.Redo),
 				} },
 				value,
 			} }
 		})
-	},
-	"reactive-snapshot-stack-iterate": func(stack *rx.Stack) container.Seq {
-		return container.MappedSeq {
-			Input:  RxStackIterator { stack },
-			Mapper: func(v Value) Value {
-				return v.(rx.ReactiveStateChange).Value
-			},
-		}
 	},
 	"callback": func(f Value, h InteropContext) rx.Sink {
 		return rx.Callback(func(obj rx.Object) rx.Effect {

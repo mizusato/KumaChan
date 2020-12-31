@@ -9,12 +9,11 @@ type Sink[-T]           native;                 // rx.Sink
 type Bus[T]             protected Sink[T];      // rx.Bus      (Subject<T>)
 type Reactive[T]        protected Bus[T];       // rx.Reactive (BehaviorSubject<T>)
 type ReactiveEntity[T]  protected Reactive[T];  // rx.ReactiveEntity
-// Additions
+// extra
 type ReactiveSnapshots[+T] {
-    undo: ReactiveSnapshotStack[T],
-    redo: ReactiveSnapshotStack[T]
+    undo: Seq[T],
+    redo: Seq[T]
 };
-type ReactiveSnapshotStack[+T]  native;  // *rx.Stack
 
 // Mutable Containers
 type Mutable[+T]     native;  // rx.Cell
@@ -45,8 +44,6 @@ public function redo[T]:       ( &(ReactiveEntity[T]) NoExcept[Bool] )
     native 'reactive-entity-redo';
 public function watch-diff[T]: ( &(ReactiveEntity[T]) NoExcept*[(ReactiveSnapshots[T],T)] )
     native 'reactive-entity-watch-diff';
-public function iterate[T]: ( &(ReactiveSnapshotStack[T]) Seq[T] )
-    native 'reactive-snapshot-stack-iterate';
 public function callback[T]:           ( &(&(T)(NoExcept[-])) Sink[T] )
     native 'callback';
 public function new-bus[T]:            ( &() NoExcept[Bus[T]] )
