@@ -38,12 +38,15 @@ public function morph[A,B]:  ( &(Reactive[A],(&(A)(&(B)(A))),(&(A)(B))) Reactive
     native 'reactive-morph';
 public function snapshot[T]: ( &(Reactive[T]) NoExcept[-] )
     native 'reactive-snapshot';
-public function undo[T]:       ( &(ReactiveEntity[T]) NoExcept[Bool] )
+public function undo[T]:          ( &(ReactiveEntity[T]) NoExcept[Bool] )
     native 'reactive-entity-undo';
-public function redo[T]:       ( &(ReactiveEntity[T]) NoExcept[Bool] )
+public function redo[T]:          ( &(ReactiveEntity[T]) NoExcept[Bool] )
     native 'reactive-entity-redo';
-public function watch-diff[T]: ( &(ReactiveEntity[T]) NoExcept*[(ReactiveSnapshots[T],T)] )
+public function watch-diff[T]:    ( &(ReactiveEntity[T]) NoExcept*[(ReactiveSnapshots[T],T)] )
     native 'reactive-entity-watch-diff';
+// TODO: auto snapshot
+// public function auto-snapshot[T]: ( &(ReactiveEntity[T]) Reactive[T] )
+//     native 'reactive-entity-auto-snapshot';
 public function callback[T]:           ( &(&(T)(NoExcept[-])) Sink[T] )
     native 'callback';
 public function new-bus[T]:            ( &() NoExcept[Bus[T]] )

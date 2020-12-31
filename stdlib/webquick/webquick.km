@@ -14,6 +14,7 @@ type Component union {
     type Checkbox   weak Reactive[Bool];
     type Select     weak (Reactive[String], Array[(String,String)]);
     type Button     weak (String, NoExcept[-]);
+    // TODO: Empty (eliminated in children of Container)
 };
 
 public function dynamic[T]: ( &(NoExcept*[T],(&(T)(Component))) Component )
