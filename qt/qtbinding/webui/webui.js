@@ -230,7 +230,6 @@ window.addEventListener('load', _ => {
             delete elementRegistry[old_id]
             elementRegistry[new_id] = new_el
             if (eventsRegistry[old_id]) {
-                eventsRegistry[new_id] = eventsRegistry[old_id]
                 delete eventsRegistry[old_id]
             }
             runAllUpdateHooks()

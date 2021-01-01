@@ -270,7 +270,7 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 			if old != nil {
 				switch old_content := old.Content.(type) {
 				case *Text:
-					ctx.SetText(old_id, String(""))
+					ctx.SetText(id, String(""))
 					diff_children(Children([] *Node {}), new_children)
 				case *Children:
 					var old_children = *old_content
