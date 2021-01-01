@@ -13,7 +13,8 @@ type TypeDescContext struct {
 	CurrentModule  string
 }
 
-func getCommonPrefixLength(a string, b string) uint {
+func getModuleNameCommonPrefixLength(a string, b string) uint {
+	// TODO: colon
 	var L = uint(0)
 	var A = ([] rune)(a)
 	var B = ([] rune)(b)
@@ -25,6 +26,9 @@ func getCommonPrefixLength(a string, b string) uint {
 		} else {
 			break
 		}
+	}
+	for L > 0 && A[L-1] != '.' && A[L-1] != ':' {
+		L -= 1
 	}
 	return uint(len(string(A[:L])))
 }
@@ -59,7 +63,7 @@ func DescribeType(type_ Type, ctx TypeDescContext) string {
 			buf.WriteString(t.Name.SymbolName)
 		} else {
 			var mod = t.Name.ModuleName
-			var L = getCommonPrefixLength(mod, ctx.CurrentModule)
+			var L = getModuleNameCommonPrefixLength(mod, ctx.CurrentModule)
 			var clear string
 			if L < uint(len(mod)) {
 				clear = mod[L:]
