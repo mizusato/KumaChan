@@ -8,7 +8,8 @@ do webui-inject-css [assets::style-css];
 do WebUi::ExitWhenWindowClosed;
 
 private const DOM: NoExcept*[WebUi::Node]
-    ~ with-reactive* &(text) := '',
+    ~ with-auto-snapshot* &(text, ops) := '',
+    let (text-undo, text-redo, text-diff) := ops,
     render (UI::Container [
         UI::Dynamic (
             ~ with-reactive* &(editing) := No,
@@ -21,31 +22,32 @@ private const DOM: NoExcept*[WebUi::Node]
                     UI::Dynamic (
                         ~ map* &(new-text) := watch buffer,
                         UI::Button 'Confirm' (
-                            $(editing <- No)
-                            | then (text.snapshot)
-                            | then $(text <- new-text) ))
+                            $(editing <- No).then
+                            $(text <- new-text)
+                        ))
                 ]),
             else:
                 yield (UI::Styled ['row'] (UI::Container [
-                    UI::Styled ['red']
-                        (UI::TextWatch (text.watch)),
-                    UI::Button 'Edit' $(editing <- Yes)
+                    UI::Styled ['red'] (UI::TextWatch
+                        (text.watch)),
+                    UI::Button 'Edit'
+                        $(editing <- Yes)
                 ]))
         ),
         UI::Dynamic (
-            ~ map* &(snapshots,current) := text.watch-diff,
+            ~ map* &(snapshots, current) := text-diff,
             let { undo, redo } := snapshots,
             let undo := undo.collect,
             let redo := redo.collect,
             UI::Container [
                 if $((undo.length) > 0):
-                    UI::Button 'Undo' (text.undo.map(&(_)())),
+                    UI::Button 'Undo' (text-undo.map(&(_)())),
                 else:
-                    UI::Container [],
+                    UI::Empty,
                 if $((redo.length) > 0):
-                    UI::Button 'Redo' (text.redo.map(&(_)())),
+                    UI::Button 'Redo' (text-redo.map(&(_)())),
                 else:
-                    UI::Container [],
+                    UI::Empty,
                 UI::Styled ['title'] (UI::Text 'undo stack (reversed):'),
                 UI::Container (reverse (undo.map (&(v)(UI::Text (quote v))))),
                 UI::Styled ['title'] (UI::Text 'current:'),

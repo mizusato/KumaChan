@@ -44,9 +44,8 @@ public function redo[T]:          ( &(ReactiveEntity[T]) NoExcept[Bool] )
     native 'reactive-entity-redo';
 public function watch-diff[T]:    ( &(ReactiveEntity[T]) NoExcept*[(ReactiveSnapshots[T],T)] )
     native 'reactive-entity-watch-diff';
-// TODO: auto snapshot
-// public function auto-snapshot[T]: ( &(ReactiveEntity[T]) Reactive[T] )
-//     native 'reactive-entity-auto-snapshot';
+public function auto-snapshot[T]: ( &(ReactiveEntity[T]) Reactive[T] )
+    native 'reactive-entity-auto-snapshot';
 public function callback[T]:           ( &(&(T)(NoExcept[-])) Sink[T] )
     native 'callback';
 public function new-bus[T]:            ( &() NoExcept[Bus[T]] )
@@ -61,6 +60,14 @@ public function with-reactive*[T,X,E]: ( &(T,(&(ReactiveEntity[T])(Effect*[X,E])
     native 'with-reactive';
 public function with-reactive*[T,X]:   ( &(T,(&(ReactiveEntity[T])(NoExcept*[X]))) NoExcept*[X] )
     native 'with-reactive';
+public function with-auto-snapshot[T,X,E]:  ( &(T,(&(Reactive[T],(NoExcept[-],NoExcept[-],NoExcept*[(ReactiveSnapshots[T],T)]))(Effect[X,E]))) Effect[X,E] )
+    native 'with-auto-snapshot';
+public function with-auto-snapshot[T,X]:    ( &(T,(&(Reactive[T],(NoExcept[-],NoExcept[-],NoExcept*[(ReactiveSnapshots[T],T)]))(NoExcept[X]))) NoExcept[X] )
+    native 'with-auto-snapshot';
+public function with-auto-snapshot*[T,X,E]: ( &(T,(&(Reactive[T],(NoExcept[-],NoExcept[-],NoExcept*[(ReactiveSnapshots[T],T)]))(Effect*[X,E]))) Effect*[X,E] )
+    native 'with-auto-snapshot';
+public function with-auto-snapshot*[T,X]:   ( &(T,(&(Reactive[T],(NoExcept[-],NoExcept[-],NoExcept*[(ReactiveSnapshots[T],T)]))(NoExcept*[X]))) NoExcept*[X] )
+    native 'with-auto-snapshot';
 
 // Mutable Containers Operations
 public function new-mutable[T]: ( &() NoExcept[Mutable[T]] )
@@ -143,6 +150,22 @@ public function then[B,E]: ( &(NoExcept[-], Effect[B,E]) Effect[B,E] )
     native 'then-shortcut';
 public function then[B]:   ( &(NoExcept[-], NoExcept[B]) NoExcept[B] )
     native 'then-shortcut';
+public function then*[A,B,E]: ( &(Effect[A,E],(&(A)(Effect*[B,E]))) Effect*[B,E] )
+    native 'then';
+public function then*[A,B,E]: ( &(Effect[A,E],(&(A)(NoExcept*[B]))) Effect*[B,E] )
+    native 'then';
+public function then*[A,B,E]: ( &(NoExcept[A],(&(A)(Effect*[B,E]))) Effect*[B,E] )
+    native 'then';
+public function then*[A,B]:   ( &(NoExcept[A],(&(A)(NoExcept*[B]))) NoExcept*[B] )
+    native 'then';
+public function then*[B,E]: ( &(Effect[-,E], Effect*[B,E]) Effect*[B,E] )
+    native 'then-shortcut';
+public function then*[B,E]: ( &(Effect[-,E], NoExcept*[B]) Effect*[B,E] )
+    native 'then-shortcut';
+public function then*[B,E]: ( &(NoExcept[-], Effect*[B,E]) Effect*[B,E] )
+    native 'then-shortcut';
+public function then*[B]:   ( &(NoExcept[-], NoExcept*[B]) NoExcept*[B] )
+    native 'then-shortcut';
 public function catch[T,E,F]: ( &(Effect[T,E],(&(E)(Effect[T,F]))) Effect[T,F] )
     native 'catch';
 public function catch[T,E]: ( &(Effect[T,E],(&(E)(NoExcept[T]))) NoExcept[T] )
@@ -224,14 +247,6 @@ public function switch-map[A,B,E]: ( &(Effect*[A,E],(&(A)(NoExcept*[B]))) Effect
 public function switch-map[A,B,E]: ( &(NoExcept*[A],(&(A)(Effect*[B,E]))) Effect*[B,E] )
     native 'switch-map';
 public function switch-map[A,B]:   ( &(NoExcept*[A],(&(A)(NoExcept*[B]))) NoExcept*[B] )
-    native 'switch-map';
-public function then*[A,B,E]: ( &(Effect[A,E],(&(A)(Effect*[B,E]))) Effect*[B,E] )
-    native 'switch-map';
-public function then*[A,B,E]: ( &(Effect[A,E],(&(A)(NoExcept*[B]))) Effect*[B,E] )
-    native 'switch-map';
-public function then*[A,B,E]: ( &(NoExcept[A],(&(A)(Effect*[B,E]))) Effect*[B,E] )
-    native 'switch-map';
-public function then*[A,B]:   ( &(NoExcept[A],(&(A)(NoExcept*[B]))) NoExcept*[B] )
     native 'switch-map';
 public function merge[T,E]: ( &(Array[Effect*[T,E]]) Effect*[T,E] )
     native 'effect-merge';

@@ -231,6 +231,29 @@ func (m *FilterMappedReactive) Snapshot() Effect {
 	return m.Reactive.Snapshot()
 }
 
+type AutoSnapshotReactive struct {
+	Entity  ReactiveEntity
+}
+func (a AutoSnapshotReactive) Watch() Effect {
+	return a.Entity.Watch()
+}
+func (a AutoSnapshotReactive) Emit(obj Object) Effect {
+	return a.Entity.Snapshot().Then(func(_ Object) Effect {
+		return a.Entity.Emit(obj)
+	})
+}
+func (a AutoSnapshotReactive) Update(f func(Object)(Object), key_chain *KeyChain) Effect {
+	return a.Entity.Snapshot().Then(func(_ Object) Effect {
+		return a.Entity.Update(f, key_chain)
+	})
+}
+func (a AutoSnapshotReactive) Project(key_chain *KeyChain) Effect {
+	return a.Entity.Project(key_chain)
+}
+func (_ AutoSnapshotReactive) Snapshot() Effect {
+	panic("suspicious snapshot operation on a auto-snapshot reactive")
+}
+
 
 // Trivial Sink: Callback
 

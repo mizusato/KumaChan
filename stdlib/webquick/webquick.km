@@ -14,7 +14,7 @@ type Component union {
     type Checkbox   weak Reactive[Bool];
     type Select     weak (Reactive[String], Array[(String,String)]);
     type Button     weak (String, NoExcept[-]);
-    // TODO: Empty (eliminated in children of Container)
+    type Empty;
 };
 
 public function dynamic[T]: ( &(NoExcept*[T],(&(T)(Component))) Component )
@@ -104,6 +104,8 @@ public function render: ( &(Component) NoExcept*[WebUi::Node] )
                     (dom-callback (&(_)(action))))
                 (dom-text text)
             ),
+        case Empty:
+            yield (dom-node 'div' [('display','none')]),
         end
     );
 

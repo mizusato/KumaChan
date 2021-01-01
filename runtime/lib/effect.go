@@ -41,6 +41,29 @@ func (it RxStackIterator) Inspect(_ func(Value)(ErrorMessage)) ErrorMessage {
 	return msg
 }
 
+func AdaptReactiveDiff(diff rx.Effect) rx.Effect {
+	var stack2seq = func(stack *rx.Stack) container.Seq {
+		return container.MappedSeq {
+			Input:  RxStackIterator { stack },
+			Mapper: func(v Value) Value {
+				return v.(rx.ReactiveStateChange).Value
+			},
+		}
+	}
+	return diff.Map(func(obj rx.Object) rx.Object {
+		var pair = obj.(rx.Pair)
+		var snapshots = pair.First.(rx.ReactiveSnapshots)
+		var value = Value(pair.Second)
+		return &ValProd { Elements: [] Value {
+			&ValProd { Elements: [] Value {
+				stack2seq(snapshots.Undo),
+				stack2seq(snapshots.Redo),
+			} },
+			value,
+		} }
+	})
+}
+
 var EffectFunctions = map[string] Value {
 	"sink-emit": func(s rx.Sink, v Value) rx.Effect {
 		return s.Emit(v)
@@ -93,26 +116,10 @@ var EffectFunctions = map[string] Value {
 		return r.Redo()
 	},
 	"reactive-entity-watch-diff": func(r rx.ReactiveEntity) rx.Effect {
-		var stack2seq = func(stack *rx.Stack) container.Seq {
-			return container.MappedSeq {
-				Input:  RxStackIterator { stack },
-				Mapper: func(v Value) Value {
-					return v.(rx.ReactiveStateChange).Value
-				},
-			}
-		}
-		return r.WatchDiff().Map(func(obj rx.Object) rx.Object {
-			var pair = obj.(rx.Pair)
-			var snapshots = pair.First.(rx.ReactiveSnapshots)
-			var value = Value(pair.Second)
-			return &ValProd { Elements: [] Value {
-				&ValProd { Elements: [] Value {
-					stack2seq(snapshots.Undo),
-					stack2seq(snapshots.Redo),
-				} },
-				value,
-			} }
-		})
+		return AdaptReactiveDiff(r.WatchDiff())
+	},
+	"reactive-entity-auto-snapshot": func(r rx.ReactiveEntity) rx.Reactive {
+		return rx.AutoSnapshotReactive { Entity: r }
 	},
 	"callback": func(f Value, h InteropContext) rx.Sink {
 		return rx.Callback(func(obj rx.Object) rx.Effect {
@@ -140,7 +147,23 @@ var EffectFunctions = map[string] Value {
 	"with-reactive": func(init Value, f Value, h InteropContext) rx.Effect {
 		return rx.NewSync(func() (rx.Object, bool) {
 			return rx.CreateReactive(init), true
-		}).ConcatMap(func(obj rx.Object) rx.Effect {
+		}).Then(func(obj rx.Object) rx.Effect {
+			return h.Call(f, obj).(rx.Effect)
+		})
+	},
+	"with-auto-snapshot": func(init Value, f Value, h InteropContext) rx.Effect {
+		return rx.NewSync(func() (rx.Object, bool) {
+			var entity = rx.CreateReactive(init)
+			var r = rx.AutoSnapshotReactive { Entity: entity }
+			var undo = entity.Undo()
+			var redo = entity.Redo()
+			var diff = AdaptReactiveDiff(entity.WatchDiff())
+			return &ValProd { Elements: [] Value {
+				r, &ValProd { Elements: [] Value {
+					undo, redo, diff,
+				} },
+			} }, true
+		}).Then(func(obj rx.Object) rx.Effect {
 			return h.Call(f, obj).(rx.Effect)
 		})
 	},
@@ -152,7 +175,7 @@ var EffectFunctions = map[string] Value {
 	"with-mutable": func(init Value, f Value, h InteropContext) rx.Effect {
 		return rx.NewSync(func() (rx.Object, bool) {
 			return rx.CreateCell(init), true
-		}).ConcatMap(func(obj rx.Object) rx.Effect {
+		}).Then(func(obj rx.Object) rx.Effect {
 			return h.Call(f, obj).(rx.Effect)
 		})
 	},
