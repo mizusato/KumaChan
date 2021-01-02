@@ -2,13 +2,11 @@ package container
 
 import (
 	"reflect"
-	. "kumachan/error"
 	. "kumachan/runtime/common"
 )
 
 
 type Seq interface {
-	Inspectable
 	Next() (Value, Seq, bool)
 	GetItemType() reflect.Type
 }
@@ -22,11 +20,6 @@ func (_ EmptySeq) Next() (Value, Seq, bool) {
 func (e EmptySeq) GetItemType() reflect.Type {
 	return e.ItemType
 }
-func (_ EmptySeq) Inspect(_ func(Value)ErrorMessage) ErrorMessage {
-	var msg = make(ErrorMessage, 0)
-	msg.WriteText(TS_NORMAL, "[seq empty]")
-	return msg
-}
 
 type OneShotSeq struct {
 	ItemType  reflect.Type
@@ -38,11 +31,6 @@ func (o OneShotSeq) Next() (Value, Seq, bool) {
 func (o OneShotSeq) GetItemType() reflect.Type {
 	return o.ItemType
 }
-func (_ OneShotSeq) Inspect(_ func(Value)ErrorMessage) ErrorMessage {
-	var msg = make(ErrorMessage, 0)
-	msg.WriteText(TS_NORMAL, "[seq one-shot]")
-	return msg
-}
 
 type ConsSeq struct {
 	Head  Value
@@ -53,11 +41,6 @@ func (p ConsSeq) Next() (Value, Seq, bool) {
 }
 func (p ConsSeq) GetItemType() reflect.Type {
 	return p.Tail.GetItemType()
-}
-func (_ ConsSeq) Inspect(_ func(Value)ErrorMessage) ErrorMessage {
-	var msg = make(ErrorMessage, 0)
-	msg.WriteText(TS_NORMAL, "[seq cons]")
-	return msg
 }
 
 type RangeSeq struct {
@@ -77,11 +60,6 @@ func (r RangeSeq) Next() (Value, Seq, bool) {
 func (_ RangeSeq) GetItemType() reflect.Type {
 	return reflect.TypeOf(uint(0))
 }
-func (_ RangeSeq) Inspect(_ func(Value)ErrorMessage) ErrorMessage {
-	var msg = make(ErrorMessage, 0)
-	msg.WriteText(TS_NORMAL, "[seq range]")
-	return msg
-}
 
 type MappedSeq struct {
 	Input   Seq
@@ -98,11 +76,6 @@ func (m MappedSeq) Next() (Value, Seq, bool) {
 }
 func (_ MappedSeq) GetItemType() reflect.Type {
 	return ValueReflectType()
-}
-func (_ MappedSeq) Inspect(_ func(Value)ErrorMessage) ErrorMessage {
-	var msg = make(ErrorMessage, 0)
-	msg.WriteText(TS_NORMAL, "[seq mapped]")
-	return msg
 }
 
 type OptMappedSeq struct {
@@ -129,11 +102,6 @@ func (o OptMappedSeq) Next() (Value, Seq, bool) {
 func (o OptMappedSeq) GetItemType() reflect.Type {
 	return o.Input.GetItemType()
 }
-func (o OptMappedSeq) Inspect(_ func(Value)ErrorMessage) ErrorMessage {
-	var msg = make(ErrorMessage, 0)
-	msg.WriteText(TS_NORMAL, "[seq opt-mapped]")
-	return msg
-}
 
 
 type FilteredSeq struct {
@@ -155,11 +123,6 @@ func (f FilteredSeq) Next() (Value, Seq, bool) {
 }
 func (f FilteredSeq) GetItemType() reflect.Type {
 	return f.Input.GetItemType()
-}
-func (_ FilteredSeq) Inspect(_ func(Value)ErrorMessage) ErrorMessage {
-	var msg = make(ErrorMessage, 0)
-	msg.WriteText(TS_NORMAL, "[seq filtered]")
-	return msg
 }
 
 type FlatMappedSeq struct {
@@ -194,11 +157,6 @@ func (f FlatMappedSeq) Next() (Value, Seq, bool) {
 func (f FlatMappedSeq) GetItemType() reflect.Type {
 	return f.Input.GetItemType()
 }
-func (f FlatMappedSeq) Inspect(_ func(Value)ErrorMessage) ErrorMessage {
-	var msg = make(ErrorMessage, 0)
-	msg.WriteText(TS_NORMAL, "[seq flat-mapped]")
-	return msg
-}
 
 type ScannedSeq struct {
 	Previous  Value
@@ -221,11 +179,6 @@ func (s ScannedSeq) Next() (Value, Seq, bool) {
 }
 func (_ ScannedSeq) GetItemType() reflect.Type {
 	return ValueReflectType()
-}
-func (_ ScannedSeq) Inspect(_ func(Value)ErrorMessage) ErrorMessage {
-	var msg = make(ErrorMessage, 0)
-	msg.WriteText(TS_NORMAL, "[seq scanned]")
-	return msg
 }
 
 type ChunkedSeq struct {
@@ -268,11 +221,6 @@ func (c ChunkedSeq) GetItemType() reflect.Type {
 	var item_t = c.Remaining.GetItemType()
 	var slice_t = reflect.SliceOf(item_t)
 	return slice_t
-}
-func (_ ChunkedSeq) Inspect(_ func(Value)ErrorMessage) ErrorMessage {
-	var msg = make(ErrorMessage, 0)
-	msg.WriteText(TS_NORMAL, "[seq chunked]")
-	return msg
 }
 
 func SeqCollect(seq Seq) interface{} {

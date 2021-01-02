@@ -87,11 +87,6 @@ func (it ArrayIterator) Next() (Value, Seq, bool) {
 		return nil, nil, false
 	}
 }
-func (_ ArrayIterator) Inspect(_ func(Value)ErrorMessage) ErrorMessage {
-	var msg = make(ErrorMessage, 0)
-	msg.WriteText(TS_NORMAL, "[seq array-iterator]")
-	return msg
-}
 func (it ArrayReversedIterator) GetItemType() reflect.Type {
 	return it.Array.ItemType
 }
@@ -106,11 +101,6 @@ func (it ArrayReversedIterator) Next() (Value, Seq, bool) {
 	} else {
 		return nil, nil, false
 	}
-}
-func (_ ArrayReversedIterator) Inspect(_ func(Value)ErrorMessage) ErrorMessage {
-	var msg = make(ErrorMessage, 0)
-	msg.WriteText(TS_NORMAL, "[seq array-reversed-iterator]")
-	return msg
 }
 
 func (array Array) Iterate() Seq {
@@ -228,11 +218,5 @@ func (m MergeSortIterator) Next() (Value, Seq, bool) {
 			}, true
 		}
 	}
-}
-
-func (_ MergeSortIterator) Inspect(_ func(Value)ErrorMessage) ErrorMessage {
-	var msg = make(ErrorMessage, 0)
-	msg.WriteText(TS_NORMAL, "[seq merge-sort-iterator]")
-	return msg
 }
 

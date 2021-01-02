@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"reflect"
 	"math/rand"
-	. "kumachan/error"
 	. "kumachan/runtime/common"
 	"kumachan/runtime/rx"
 	"kumachan/runtime/lib/container"
@@ -34,11 +33,6 @@ func (it RxStackIterator) Next() (Value, container.Seq, bool) {
 }
 func (it RxStackIterator) GetItemType() reflect.Type {
 	return ValueReflectType()
-}
-func (it RxStackIterator) Inspect(_ func(Value)(ErrorMessage)) ErrorMessage {
-	var msg = make(ErrorMessage, 0)
-	msg.WriteText(TS_NORMAL, "[seq rx-stack-iterator]")
-	return msg
 }
 
 func AdaptReactiveDiff(diff rx.Effect) rx.Effect {
