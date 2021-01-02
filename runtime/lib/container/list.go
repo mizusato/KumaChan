@@ -3,34 +3,56 @@ package container
 import (
 	"fmt"
 	"strconv"
+	"reflect"
+	. "kumachan/error"
 	. "kumachan/runtime/common"
 )
 
 
 type List struct {
-	Keys   [] String
-	Index  Map  // Map<string,ListEntry>
+	keys   [] String
+	index  Map // Map<string,ListEntry>
 }
-
 type ListEntry struct {
 	Value     Value
 	Revision  uint64
 }
-
 type BeforeOrAfter int
 const (
 	Before BeforeOrAfter = iota
 	After
 )
-
 type UpOrDown int
 const (
 	Up UpOrDown = iota
 	Down
 )
-
 func ListFormatKey(key String) string {
 	return strconv.Quote(GoStringFromString(key))
+}
+
+type ListIterator struct {
+	List       List
+	NextIndex  uint
+}
+func (it ListIterator) Next() (Value, Seq, bool) {
+	var l = it.List
+	var i = it.NextIndex
+	if i < l.Length() {
+		var key = l.keys[i]
+		var entry = l.mustHaveEntry(key)
+		var value = entry.Value
+		var pair = &ValProd { Elements: [] Value { key, value } }
+		return pair, ListIterator {
+			List:      l,
+			NextIndex: (i + 1),
+		}, true
+	} else {
+		return nil, nil, false
+	}
+}
+func (it ListIterator) GetItemType() reflect.Type {
+	return ValueReflectType()
 }
 
 func NewList(array Array, get_key func(Value)(String)) List {
@@ -50,22 +72,36 @@ func NewList(array Array, get_key func(Value)(String)) List {
 		index = result
 	}
 	return List {
-		Keys:  keys,
-		Index: index,
+		keys:  keys,
+		index: index,
 	}
+}
+
+func (l List) Inspect(inspect func(Value)ErrorMessage) ErrorMessage {
+	var items = make([] ErrorMessage, 0)
+	for _, key := range l.keys {
+		var entry = l.mustHaveEntry(key)
+		var value = entry.Value
+		var item = make(ErrorMessage, 0)
+		item.WriteAll(inspect(key))
+		item.WriteText(TS_NORMAL, ":")
+		item.Write(T_SPACE)
+		item.WriteAll(inspect(value))
+		items = append(items, item)
+	}
+	return ListErrMsgItems(items, "List")
 }
 
 func (l List) mustHaveEntry(key String) ListEntry {
-	var entry_, exists = l.Index.Lookup(key)
+	var entry, exists = l.index.Lookup(key)
 	if !(exists) {
 		panic(fmt.Sprintf("list: key not found: %s", ListFormatKey(key)))
 	}
-	var entry = entry_.(ListEntry)
-	return entry
+	return entry.(ListEntry)
 }
 
 func (l List) mustGetIndexValueInserted(key String, v Value) Map {
-	var index, override = l.Index.Inserted(key, ListEntry {
+	var index, override = l.index.Inserted(key, ListEntry {
 		Value:    v,
 		Revision: 0,
 	})
@@ -76,7 +112,7 @@ func (l List) mustGetIndexValueInserted(key String, v Value) Map {
 }
 
 func (l List) mustGetIndexValueUpdated(key String, entry ListEntry, v Value) Map {
-	var updated, override = l.Index.Inserted(key, ListEntry {
+	var updated, override = l.index.Inserted(key, ListEntry {
 		Value:    v,
 		Revision: (entry.Revision + 1),
 	})
@@ -89,46 +125,79 @@ func (l List) Get(key String) Value {
 	return entry.Value
 }
 
-func (l List) Updated(key String, f func(Value)(Value)) List {
-	var entry = l.mustHaveEntry(key)
-	var new_index = l.mustGetIndexValueUpdated(key, entry, f(entry.Value))
+func (l List) Length() uint {
+	return uint(len(l.keys))
+}
+
+func (l List) Updated(target String, f func(Value)(Value)) List {
+	var entry = l.mustHaveEntry(target)
+	var new_index = l.mustGetIndexValueUpdated(target, entry, f(entry.Value))
 	return List {
-		Keys:  l.Keys,
-		Index: new_index,
+		keys:  l.keys,
+		index: new_index,
+	}
+}
+
+func (l List) Deleted(target String) List {
+	var _, new_index, ok = l.index.Deleted(target)
+	if !(ok) {
+		panic(fmt.Sprintf("list: key not found: %s", ListFormatKey(target)))
+	} else {
+		var old_keys = l.keys
+		var new_keys = make([] String, (len(old_keys) - 1))
+		var found = false
+		for _, this := range old_keys {
+			if StringCompare(this, target) == Equal {
+				if found {
+					panic("something went wrong")
+				}
+				found = true
+				// do nothing
+			} else {
+				new_keys = append(new_keys, this)
+			}
+		}
+		if !(found) {
+			panic("something went wrong")
+		}
+		return List {
+			keys:  new_keys,
+			index: new_index,
+		}
 	}
 }
 
 func (l List) Prepended(key String, v Value) List {
 	var new_index = l.mustGetIndexValueInserted(key, v)
-	var old_keys = l.Keys
+	var old_keys = l.keys
 	var new_len = uint(1 + len(old_keys))
 	var pos = uint(0)
 	var new_keys = make([] String, new_len)
 	copy(new_keys[1:], old_keys)
 	new_keys[pos] = key
 	return List {
-		Keys:  new_keys,
-		Index: new_index,
+		keys:  new_keys,
+		index: new_index,
 	}
 }
 
 func (l List) Appended(key String, v Value) List {
 	var new_index = l.mustGetIndexValueInserted(key, v)
-	var old_keys = l.Keys
+	var old_keys = l.keys
 	var new_len = uint(1 + len(old_keys))
 	var pos = (new_len - 1)
 	var new_keys = make([] String, new_len)
 	copy(new_keys, old_keys)
 	new_keys[pos] = key
 	return List {
-		Keys:  new_keys,
-		Index: new_index,
+		keys:  new_keys,
+		index: new_index,
 	}
 }
 
 func (l List) Inserted(key String, v Value, pos BeforeOrAfter, pivot String) List {
 	var new_index = l.mustGetIndexValueInserted(key, v)
-	var old_keys = l.Keys
+	var old_keys = l.keys
 	var new_keys = make([] String, 0, (1 + len(old_keys)))
 	var found = false
 	for _, this := range old_keys {
@@ -150,8 +219,8 @@ func (l List) Inserted(key String, v Value, pos BeforeOrAfter, pivot String) Lis
 		panic(fmt.Sprintf("list: pivot key not found: %s", ListFormatKey(key)))
 	}
 	return List {
-		Keys:  new_keys,
-		Index: new_index,
+		keys:  new_keys,
+		index: new_index,
 	}
 }
 
@@ -159,7 +228,7 @@ func (l List) Moved(target String, pos BeforeOrAfter, pivot String) List {
 	if StringCompare(target, pivot) == Equal {
 		return l
 	} else {
-		var old_keys = l.Keys
+		var old_keys = l.keys
 		var new_keys = make([]String, 0, len(old_keys))
 		var target_found = false
 		var pivot_found = false
@@ -189,14 +258,14 @@ func (l List) Moved(target String, pos BeforeOrAfter, pivot String) List {
 			panic(fmt.Sprintf("list: pivot key not found: %s", ListFormatKey(target)))
 		}
 		return List {
-			Keys:  new_keys,
-			Index: l.Index,
+			keys:  new_keys,
+			index: l.index,
 		}
 	}
 }
 
 func (l List) Adjust(target String, direction UpOrDown) (List, bool) {
-	var old_keys = l.Keys
+	var old_keys = l.keys
 	var new_keys = make([]String, len(old_keys))
 	var target_found = false
 	var ok = false
@@ -235,8 +304,8 @@ func (l List) Adjust(target String, direction UpOrDown) (List, bool) {
 		panic(fmt.Sprintf("list: target key not found: %s", ListFormatKey(target)))
 	}
 	return List {
-		Keys:  new_keys,
-		Index: l.Index,
+		keys:  new_keys,
+		index: l.index,
 	}, ok
 }
 
@@ -244,7 +313,7 @@ func (l List) Swapped(a_key String, b_key String) List {
 	if StringCompare(a_key, b_key) == Equal {
 		return l
 	} else {
-		var old_keys = l.Keys
+		var old_keys = l.keys
 		var new_keys = make([] String, len(old_keys))
 		copy(new_keys, old_keys)
 		var a_found = false
@@ -263,8 +332,8 @@ func (l List) Swapped(a_key String, b_key String) List {
 		}
 		if !(a_found && b_found) { panic("something went wrong") }
 		return List {
-			Keys:  new_keys,
-			Index: l.Index,
+			keys:  new_keys,
+			index: l.index,
 		}
 	}
 }
