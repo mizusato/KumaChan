@@ -73,15 +73,15 @@ func KeyChainEqual(a *KeyChain, b *KeyChain) bool {
 
 func SinkAdapt(sink Sink, adapter (func(Object) Object)) Sink {
 	return &AdaptedSink {
-		Sink:    sink,
-		Adapter: adapter,
+		base:    sink,
+		adapter: adapter,
 	}
 }
 
 func ReactiveAdapt(r Reactive, in (func(Object) (func(Object) Object))) Sink {
 	return &AdaptedReactive {
-		Reactive: r,
-		In:       in,
+		base: r,
+		in:   in,
 	}
 }
 
@@ -92,10 +92,10 @@ func ReactiveMorph (
 ) Reactive {
 	return &MorphedReactive {
 		AdaptedReactive: &AdaptedReactive {
-			Reactive: r,
-			In:       in,
+			base: r,
+			in:   in,
 		},
-		Out: out,
+		out: out,
 	}
 }
 
@@ -106,10 +106,10 @@ func ReactiveProject (
 	key  *KeyChain,
 ) Reactive {
 	return &ProjectedReactive {
-		Reactive: r,
-		In:       in,
-		Out:      out,
-		Key:      key,
+		base: r,
+		in:   in,
+		out:  out,
+		key:  key,
 	}
 }
 
@@ -120,12 +120,12 @@ func ReactiveBranch (
 ) Reactive {
 	return &FilterMappedReactive {
 		AdaptedReactive: &AdaptedReactive {
-			Reactive: r,
-			In: func(_ Object) func(Object) Object {
+			base: r,
+			in: func(_ Object) func(Object) Object {
 				return in
 			},
 		},
-		Out: out,
+		out: out,
 	}
 }
 
@@ -133,102 +133,102 @@ func ReactiveBranch (
 // Transformation API Implementations
 
 type AdaptedSink struct {
-	Sink     Sink
-	Adapter  func(Object) Object
+	base     Sink
+	adapter  func(Object) Object
 }
 func (a *AdaptedSink) Emit(obj Object) Effect {
-	return a.Sink.Emit(a.Adapter(obj))
+	return a.base.Emit(a.adapter(obj))
 }
 
 type AdaptedReactive struct {
-	Reactive  Reactive
-	In        func(Object) (func(Object) Object)
+	base  Reactive
+	in    func(Object) (func(Object) Object)
 }
 func (a *AdaptedReactive) Emit(obj Object) Effect {
-	return a.Reactive.Update(func(old_state Object) Object {
-		return a.In(old_state)(obj)
+	return a.base.Update(func(old_state Object) Object {
+		return a.in(old_state)(obj)
 	}, nil)
 }
 
 type MorphedReactive struct {
 	*AdaptedReactive
-	Out  func(Object) Object
+	out  func(Object) Object
 }
 func (m *MorphedReactive) Watch() Effect {
-	return m.Reactive.Watch().Map(m.Out)
+	return m.base.Watch().Map(m.out)
 }
 func (m *MorphedReactive) Update(f (func(Object) Object), key_chain *KeyChain) Effect {
-	return m.Reactive.Update(func(obj Object) Object {
-		return m.In(obj)(f(m.Out(obj)))
+	return m.base.Update(func(obj Object) Object {
+		return m.in(obj)(f(m.out(obj)))
 	}, key_chain)
 }
 func (m *MorphedReactive) Project(key_chain *KeyChain) Effect {
-	return m.Reactive.Project(key_chain).Map(m.Out)
+	return m.base.Project(key_chain).Map(m.out)
 }
 func (m *MorphedReactive) Snapshot() Effect {
-	return m.Reactive.Snapshot()
+	return m.base.Snapshot()
 }
 
 type ProjectedReactive struct {
-	Reactive  Reactive
-	In        (func(Object) (func(Object) Object))
-	Out       (func(Object) Object)
-	Key       *KeyChain
+	base  Reactive
+	in    (func(Object) (func(Object) Object))
+	out   (func(Object) Object)
+	key   *KeyChain
 }
 func (p *ProjectedReactive) ChainedKey(key *KeyChain) *KeyChain {
-	if p.Key == nil && key == nil {
+	if p.key == nil && key == nil {
 		return nil
-	} else if p.Key != nil && key == nil {
-		return p.Key
+	} else if p.key != nil && key == nil {
+		return p.key
 	} else {
 		return &KeyChain {
-			Parent: p.Key,
+			Parent: p.key,
 			Key:    key,
 		}
 	}
 }
 func (p *ProjectedReactive) Watch() Effect {
-	return p.Reactive.Project(p.Key).Map(p.Out)
+	return p.base.Project(p.key).Map(p.out)
 }
 func (p *ProjectedReactive) Emit(obj Object) Effect {
-	return p.Reactive.Update(func(old_state Object) Object {
-		return p.In(old_state)(obj)
-	}, p.Key)
+	return p.base.Update(func(old_state Object) Object {
+		return p.in(old_state)(obj)
+	}, p.key)
 }
 func (p *ProjectedReactive) Update(f (func(Object) Object), key *KeyChain) Effect {
-	return p.Reactive.Update(func(obj Object) Object {
-		return p.In(obj)(f(p.Out(obj)))
+	return p.base.Update(func(obj Object) Object {
+		return p.in(obj)(f(p.out(obj)))
 	}, p.ChainedKey(key))
 }
 func (p *ProjectedReactive) Project(key *KeyChain) Effect {
-	return p.Reactive.Project(p.ChainedKey(key)).Map(p.Out)
+	return p.base.Project(p.ChainedKey(key)).Map(p.out)
 }
 func (p *ProjectedReactive) Snapshot() Effect {
-	return p.Reactive.Snapshot()
+	return p.base.Snapshot()
 }
 
 type FilterMappedReactive struct {
 	*AdaptedReactive
-	Out  func(Object) (Object, bool)
+	out  func(Object) (Object, bool)
 }
 func (m *FilterMappedReactive) Watch() Effect {
-	return m.Reactive.Watch().FilterMap(m.Out)
+	return m.base.Watch().FilterMap(m.out)
 }
 func (m *FilterMappedReactive) Update(f (func(Object) Object), key_chain *KeyChain) Effect {
-	return m.Reactive.Update(func(current Object) Object {
-		var current_out, ok = m.Out(current)
+	return m.base.Update(func(current Object) Object {
+		var current_out, ok = m.out(current)
 		if ok {
-			return m.In(current)(f(current_out))
+			return m.in(current)(f(current_out))
 		} else {
 			panic("FilterMappedReactive: invalid update operation")
 		}
 	}, key_chain)
 }
 func (m *FilterMappedReactive) Project(key_chain *KeyChain) Effect {
-	return m.Reactive.Project(key_chain).FilterMap(m.Out)
+	return m.base.Project(key_chain).FilterMap(m.out)
 }
 func (m *FilterMappedReactive) Snapshot() Effect {
-	return m.Reactive.Snapshot()
+	return m.base.Snapshot()
 }
 
 type AutoSnapshotReactive struct {
