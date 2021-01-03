@@ -266,16 +266,18 @@ func (cb Callback) Emit(obj Object) Effect {
 // Basic Implementations of Bus[T] and Reactive[T]
 
 type BusImpl struct {
-	nextId     uint64
-	listeners  map[uint64] Listener
+	next_id    uint64
+	listeners  [] Listener
+	index      map[uint64] uint
 }
 type Listener struct {
 	Notify  func(Object)
 }
 func CreateBus() *BusImpl {
 	return &BusImpl {
-		nextId:    0,
-		listeners: make(map[uint64] Listener, 0),
+		next_id:   0,
+		listeners: make([] Listener, 0),
+		index:     make(map[uint64] uint),
 	}
 }
 func (b *BusImpl) Watch() Effect {
@@ -297,15 +299,33 @@ func (b *BusImpl) Emit(obj Object) Effect {
 	})
 }
 func (b *BusImpl) addListener(l Listener) uint64 {
-	var id = b.nextId
-	b.listeners[id] = l
-	b.nextId = (id + 1)
+	var id = b.next_id
+	var pos = uint(len(b.listeners))
+	b.listeners = append(b.listeners, l)
+	b.index[id] = pos
+	b.next_id = (id + 1)
 	return id
 }
 func (b *BusImpl) removeListener(id uint64) {
-	var _, exists = b.listeners[id]
+	var pos, exists = b.index[id]
 	if !exists { panic("cannot remove absent listener") }
-	delete(b.listeners, id)
+	// update index
+	delete(b.index, id)
+	for current, _ := range b.index {
+		if current > id {
+			// position left shifted
+			b.index[current] -= 1
+		}
+	}
+	// update queue
+	b.listeners[pos] = Listener {}
+	var L = uint(len(b.listeners))
+	if !(L >= 1) { panic("something went wrong") }
+	for i := pos; i < (L-1); i += 1 {
+		b.listeners[i] = b.listeners[i + 1]
+	}
+	b.listeners[L-1] = Listener {}
+	b.listeners = b.listeners[:L-1]
 }
 
 type ReactiveImpl struct {
