@@ -1,3 +1,4 @@
+// TODO: consider change to public const
 type Component union {
     type Dynamic    weak NoExcept*[Component];
     type Node       weak WebUi::Node;
@@ -6,6 +7,7 @@ type Component union {
     type DynStyled  weak (NoExcept*[Array[String]], Component);
     type DynEnabled weak (NoExcept*[Bool], Component);
     type Container  weak Array[Component];
+    // TODO: type List weak NoExcept*[Array[WebUi::Node]];
     type Focusable  weak (WebUi::Events, Array[Component]);
     type Text       weak String;
     type TextSpace  weak String;

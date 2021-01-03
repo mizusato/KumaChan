@@ -4,6 +4,7 @@ type Array[+T]   native;  // []T, container.Array
 type Heap[+T]    native;  // container.Heap
 type Set[+T]     native;  // container.Set
 type Map[+K,+V]  native;  // container.Map
+type List[+T]    native;  // container.List
 
 
 /* Functions for Seq[T] */
@@ -105,3 +106,37 @@ public function insert*[K,V]: ( &(Map[K,V],K,V) Map[K,V] )
     native 'map-insert*';
 public function delete*[K,V]: ( &(Map[K,V],K) Map[K,V] )
     native 'map-delete*';
+
+
+/* Functions for List[T] */
+
+// TODO
+/*
+public function iterate[T]: ( &(List[T]) Seq[(String,T)] )
+    native 'list-iterate';
+public function length[T]:  ( &(List[T]) Number )
+    native 'list-length';
+public function has[T]:     ( &(List[T],String) Bool )
+    native 'list-has';
+public function get[T]:     ( &(List[T],String) T )
+    native 'list-get';
+public function update[T]:  ( &(List[T],String,(&(T)(T))) List[T] )
+    native 'list-update';
+public function delete[T]:  ( &(List[T],String,(&(T)(T))) List[T] )
+    native 'list-delete';
+public function append[T]:  ( &(List[T],T) List[T] )
+    native 'list-append';
+public function prepend[T]: ( &(List[T],T) List[T] )
+    native 'list-prepend';
+public function insert[T]:  ( &(List[T],{before:String},(String,T)) List[T] )
+    native 'list-insert-before';
+public function insert[T]:  ( &(List[T],{after:String},(String,T)) List[T] )
+    native 'list-insert-after';
+public function move[T]:    ( &(List[T],String,{before:String}) List[T] )
+    native 'list-move-before';
+public function move[T]:    ( &(List[T],String,{after:String}) List[T] )
+    native 'list-move-after';
+public function swap[T]:    ( &(List[T],String,String) List[T] )
+    native 'list-swap';
+*/
+
