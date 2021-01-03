@@ -267,8 +267,8 @@ func (cb Callback) Emit(obj Object) Effect {
 
 type BusImpl struct {
 	next_id    uint64
-	listeners  [] Listener
-	index      map[uint64] uint
+	listeners  [] Listener       // first in, first notified
+	index      map[uint64] uint  // id --> position in listeners
 }
 type Listener struct {
 	Notify  func(Object)
