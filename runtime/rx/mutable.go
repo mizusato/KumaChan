@@ -1,9 +1,5 @@
 package rx
 
-import (
-	"reflect"
-)
-
 
 type Cell struct {
 	value   Object
@@ -25,69 +21,6 @@ func (c *Cell) Set(new_val Object) Effect {
 func (c *Cell) Swap(f func(Object)Object) Effect {
 	return NewSync(func()(Object, bool) {
 		c.value = f(c.value)
-		return nil, true
-	})
-}
-
-type List struct {
-	slice_rv reflect.Value
-}
-func CreateList(l interface{}) List {
-	var rv = reflect.ValueOf(l)
-	if rv.Kind() != reflect.Slice { panic("given value is not a slice") }
-	return List { rv }
-}
-func (l List) ToRaw() Effect {
-	return NewSync(func()(Object, bool) {
-		var copied_rv = reflect.MakeSlice(l.slice_rv.Type(), l.slice_rv.Len(), l.slice_rv.Len())
-		reflect.Copy(copied_rv, l.slice_rv)
-		return copied_rv.Interface(), true
-	})
-}
-func (l List) Length() Effect {
-	return NewSync(func()(Object, bool) {
-		return uint(l.slice_rv.Len()), true
-	})
-}
-func (l List) Get(index uint) Effect {
-	return NewSync(func()(Object, bool) {
-		var val = l.slice_rv.Index(int(index)).Interface()
-		return val, true
-	})
-}
-func (l List) Set(index uint, val Object) Effect {
-	return NewSync(func()(Object, bool) {
-		l.slice_rv.Index(int(index)).Set(reflect.ValueOf(val))
-		return nil, true
-	})
-}
-func (l List) Shift() Effect {
-	return NewSync(func()(Object, bool) {
-		var length = l.slice_rv.Len()
-		if length > 0 {
-			var head = l.slice_rv.Index(0)
-			l.slice_rv = l.slice_rv.Slice(1, length)
-			return Optional { true, head }, true
-		} else {
-			return Optional {}, true
-		}
-	})
-}
-func (l List) Pop() Effect {
-	return NewSync(func()(Object, bool) {
-		var length = l.slice_rv.Len()
-		if length > 0 {
-			var tail = l.slice_rv.Index(length-1)
-			l.slice_rv = l.slice_rv.Slice(0, length-1)
-			return Optional { true, tail }, true
-		} else {
-			return Optional {}, true
-		}
-	})
-}
-func (l List) Push(new_tail Object) Effect {
-	return NewSync(func()(Object, bool) {
-		l.slice_rv = reflect.Append(l.slice_rv, reflect.ValueOf(new_tail))
 		return nil, true
 	})
 }
@@ -189,3 +122,4 @@ func (buf Buffer) Dump() Effect {
 		sender.Complete()
 	})
 }
+
