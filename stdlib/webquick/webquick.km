@@ -5,6 +5,7 @@ type Component union {
     type DynNode    weak NoExcept*[WebUi::Node];
     type Styled     weak (Array[String], Component);
     type DynStyled  weak (NoExcept*[Array[String]], Component);
+    // TODO: type WithEvents weak (Component,WebUi::Events)
     type DynEnabled weak (NoExcept*[Bool], Component);
     type Container  weak Array[Component];
     // TODO: type List weak NoExcept*[Array[WebUi::Node]];
