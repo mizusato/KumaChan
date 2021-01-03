@@ -1,6 +1,13 @@
 package rx
 
 
+type KeyTrackedEffectVector struct {
+	HasKey       func(key string) bool
+	IterateKeys  func(func(string))
+	CloneKeys    func() ([] string)
+	GetEffect    func(key string) Effect  // effect won't change if key persists
+}
+
 func (e Effect) WithLatestFrom(values Effect) Effect {
 	return Effect { func(sched Scheduler, ob *observer) {
 		var ctx, dispose = ob.context.create_disposable_child()
@@ -56,7 +63,9 @@ func CombineLatest(effects ([] Effect)) Effect {
 					var saved_latest = &(values[i].Value)
 					*saved_latest = obj
 					*has_saved = true
-					c.pass(values)
+					var values_clone = make([] Optional, len(values))
+					copy(values_clone, values)
+					c.pass(values_clone)
 				},
 				error: func(err Object) {
 					c.throw(err)
@@ -66,24 +75,25 @@ func CombineLatest(effects ([] Effect)) Effect {
 				},
 			})
 		}
+		c.parent_complete()
 	} }
 }
 
-func CombineLatestWaitAll(effects ([] Effect)) Effect {
-	return CombineLatest(effects).ConcatMap(func(opt_values_ Object) Effect {
-		var opt_values = opt_values_.([] Optional)
-		var values = make([] Object, len(opt_values))
+func CombineLatestWaitReady(effects ([] Effect)) Effect {
+	return CombineLatest(effects).ConcatMap(func(values_ Object) Effect {
+		var values = values_.([] Optional)
+		var ready_values = make([] Object, len(values))
 		var ok = true
-		for i := 0; i < len(opt_values); i += 1 {
-			var opt = opt_values[i]
-			values[i] = opt.Value
+		for i := 0; i < len(values); i += 1 {
+			var opt = values[i]
+			ready_values[i] = opt.Value
 			if !(opt.HasValue) {
 				ok = false
 			}
 		}
 		if ok {
 			return NewSyncSequence(func(next func(Object)) (bool, Object) {
-				next(values)
+				next(ready_values)
 				return true, nil
 			})
 		} else {
@@ -92,5 +102,79 @@ func CombineLatestWaitAll(effects ([] Effect)) Effect {
 			})
 		}
 	})
+}
+
+func KeyTrackedDynamicCombineLatestWaitReady(e Effect) Effect {
+	return Effect { func(sched Scheduler, ob *observer) {
+		var ctx, dispose = ob.context.create_disposable_child()
+		var c = new_collector(ob, dispose)
+		var running = make(map[string] disposeFunc)
+		var values = make(map[string] Object)
+		var keys = make([] string, 0)
+		sched.run(e, &observer {
+			context:  ctx,
+			next: func(obj Object) {
+				var vec = obj.(KeyTrackedEffectVector)
+				var keys_changed = false
+				for _, key := range keys {
+					if !(vec.HasKey(key)) {
+						keys_changed = true
+						running[key](behaviour_cancel)
+						delete(running, key)
+						delete(values, key)  // no-op when entry not existing
+					}
+				}
+				vec.IterateKeys(func(key string) {
+					var _, is_running = running[key]
+					if !(is_running) {
+						keys_changed = true
+						var this_ctx, this_dispose = ctx.create_disposable_child()
+						running[key] = this_dispose
+						c.new_child()
+						var this_effect = vec.GetEffect(key)
+						sched.run(this_effect, &observer {
+							context:  this_ctx,
+							next: func(obj Object) {
+								values[key] = obj
+								var ready_values = make([] Object, len(keys))
+								var all_ready = true
+								for i, k := range keys {
+									var v, exists = values[k]
+									if exists {
+										ready_values[i] = v
+									} else {
+										all_ready = false
+										break
+									}
+								}
+								if all_ready {
+									c.pass(ready_values)
+								} else {
+									// do nothing
+								}
+							},
+							error: func(err Object) {
+								c.throw(err)
+							},
+							complete: func() {
+								c.delete_child()
+							},
+						})
+					}
+				})
+				if keys_changed {
+					keys = vec.CloneKeys()
+				} else {
+					// do nothing
+				}
+			},
+			error: func(err Object) {
+				c.throw(err)
+			},
+			complete: func() {
+				c.parent_complete()
+			},
+		})
+	} }
 }
 

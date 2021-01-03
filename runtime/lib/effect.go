@@ -103,6 +103,53 @@ var EffectFunctions = map[string] Value {
 	"reactive-snapshot": func(r rx.Reactive) rx.Effect {
 		return r.Snapshot()
 	},
+	"reactive-list-consume": func(r rx.Reactive, f Value, h InteropContext) rx.Effect {
+		return rx.KeyTrackedDynamicCombineLatestWaitReady (
+			r.Watch().Map(func(list_ rx.Object) rx.Object {
+				var list = list_.(container.List)
+				return rx.KeyTrackedEffectVector {
+					HasKey: func(key string) bool {
+						var key_string = StringFromGoString(key)
+						return list.Has(key_string)
+					},
+					IterateKeys: func(f func(string)) {
+						list.IterateKeySequence(func(key_string String) {
+							var key = GoStringFromString(key_string)
+							f(key)
+						})
+					},
+					CloneKeys: func() []string {
+						var keys = make([] string, 0, list.Length())
+						list.IterateKeySequence(func(key_string String) {
+							var key = GoStringFromString(key_string)
+							keys = append(keys, key)
+						})
+						return keys
+					},
+					GetEffect: func(key string) rx.Effect {
+						var key_string = StringFromGoString(key)
+						var in = func(old_state rx.Object) func(rx.Object) rx.Object {
+							return func(new_item_value rx.Object) rx.Object {
+								var old_list = old_state.(container.List)
+								var new_list = old_list.Updated(key_string, func(_ Value) Value {
+									return new_item_value
+								})
+								return new_list
+							}
+						}
+						var out = func(state rx.Object) rx.Object {
+							var list = state.(container.List)
+							return list.Get(key_string)
+						}
+						var proj_key = &rx.KeyChain { Key: key }
+						var proj = rx.ReactiveProject(r, in, out, proj_key)
+						var item_effect = h.Call(f, proj).(rx.Effect)
+						return item_effect
+					},
+				}
+			}),
+		)
+	} ,
 	"reactive-entity-undo": func(r rx.ReactiveEntity) rx.Effect {
 		return r.Undo()
 	},
@@ -425,7 +472,7 @@ var EffectFunctions = map[string] Value {
 		for i, el := range tuple.Elements {
 			effects[i] = el.(rx.Effect)
 		}
-		return rx.CombineLatestWaitAll(effects).Map(func(values_ rx.Object) rx.Object {
+		return rx.CombineLatestWaitReady(effects).Map(func(values_ rx.Object) rx.Object {
 			var values = values_.([] Value)
 			return &ValProd { Elements: values }
 		})
@@ -436,7 +483,7 @@ var EffectFunctions = map[string] Value {
 		for i := uint(0); i < array.Length; i += 1 {
 			effects[i] = array.GetItem(i).(rx.Effect)
 		}
-		return rx.CombineLatestWaitAll(effects)
+		return rx.CombineLatestWaitReady(effects)
 	},
 }
 

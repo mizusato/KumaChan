@@ -120,6 +120,11 @@ func (l List) mustGetIndexValueUpdated(key String, entry ListEntry, v Value) Map
 	return updated
 }
 
+func (l List) Has(key String) bool {
+	var _, exists = l.index.Lookup(key)
+	return exists
+}
+
 func (l List) Get(key String) Value {
 	var entry = l.mustHaveEntry(key)
 	return entry.Value
@@ -127,6 +132,12 @@ func (l List) Get(key String) Value {
 
 func (l List) Length() uint {
 	return uint(len(l.keys))
+}
+
+func (l List) IterateKeySequence(f func(String)) {
+	for _, key := range l.keys {
+		f(key)
+	}
 }
 
 func (l List) Updated(target String, f func(Value)(Value)) List {
