@@ -342,4 +342,65 @@ var ContainerFunctions = map[string] Value {
 		var _, result, _ = m.Deleted(k)
 		return result
 	},
+	"list-iterate": func(l List) Seq {
+		return ListIterator {
+			List:      l,
+			NextIndex: 0,
+		}
+	},
+	"list-length": func(l List) uint {
+		return l.Length()
+	},
+	"list-has": func(l List, k String) SumValue {
+		return ToBool(l.Has(k))
+	},
+	"list-get": func(l List, k String) Value {
+		return l.Get(k)
+	},
+	"list-update": func(l List, k String, f Value, h InteropContext) List {
+		return l.Updated(k, func(v Value) Value {
+			return h.Call(f, v)
+		})
+	},
+	"list-delete": func(l List, k String) List {
+		return l.Deleted(k)
+	},
+	"list-prepend": func(l List, k String, v Value) List {
+		return l.Prepended(k, v)
+	},
+	"list-append": func(l List, k String, v Value) List {
+		return l.Appended(k, v)
+	},
+	"list-insert-before": func(l List, pivot_ ProductValue, entry ProductValue) List {
+		var pivot = pivot_.Elements[0].(String)
+		var key = entry.Elements[0].(String)
+		var value = entry.Elements[1]
+		return l.Inserted(key, value, Before, pivot)
+	},
+	"list-insert-after": func(l List, pivot_ ProductValue, entry ProductValue) List {
+		var pivot = pivot_.Elements[0].(String)
+		var key = entry.Elements[0].(String)
+		var value = entry.Elements[1]
+		return l.Inserted(key, value, After, pivot)
+	},
+	"list-move-before": func(l List, key String, pivot_ ProductValue) List {
+		var pivot = pivot_.Elements[0].(String)
+		return l.Moved(key, Before, pivot)
+	},
+	"list-move-after": func(l List, key String, pivot_ ProductValue) List {
+		var pivot = pivot_.Elements[0].(String)
+		return l.Moved(key, After, pivot)
+	},
+	"list-move-up": func(l List, key String) List {
+		l, _ = l.Adjust(key, Up)
+		return l
+	},
+	"list-move-down": func(l List, key String) List {
+		l, _ = l.Adjust(key, Down)
+		return l
+	},
+	"list-swap": func(l List, key_a String, key_b String) List {
+		return l.Swapped(key_a, key_b)
+	},
 }
+

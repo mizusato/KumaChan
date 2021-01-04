@@ -37,11 +37,10 @@ public function morph[A,B]:  ( &(Reactive[A],(&(A)(&(B)(A))),(&(A)(B))) Reactive
     native 'reactive-morph';
 public function snapshot[T]: ( &(Reactive[T]) NoExcept[-] )
     native 'reactive-snapshot';
-// TODO
-// public function consume[T,X,E]: ( &(Reactive[List[T]],(&(Reactive[T])(Effect*[X,E]))) Effect*[Array[X],E] )
-//     native 'reactive-list-consume';
-// public function consume[T,X]:   ( &(Reactive[List[T]],(&(Reactive[T])(NoExcept*[X]))) NoExcept*[Array[X]] )
-//     native 'reactive-list-consume';
+public function consume[T,X,E]: ( &(Reactive[List[T]],(&(Reactive[T])(Effect*[X,E]))) Effect*[Array[X],E] )
+    native 'reactive-list-consume';
+public function consume[T,X]:   ( &(Reactive[List[T]],(&(Reactive[T])(NoExcept*[X]))) NoExcept*[Array[X]] )
+    native 'reactive-list-consume';
 public function undo[T]:          ( &(ReactiveEntity[T]) NoExcept[Bool] )
     native 'reactive-entity-undo';
 public function redo[T]:          ( &(ReactiveEntity[T]) NoExcept[Bool] )
