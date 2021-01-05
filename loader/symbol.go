@@ -7,6 +7,8 @@ import (
 )
 
 
+const SelfModule = "Self"
+
 type Symbol struct {
 	ModuleName  string
 	SymbolName  string
@@ -36,7 +38,6 @@ func (mod *Module) SymbolFromDeclName(name ast.Identifier) Symbol {
 }
 
 func (mod *Module) SymbolFromRef(ref_mod string, name string, specific bool) MaybeSymbol {
-	var self = mod.Name
 	var corresponding, exists = mod.ImpMap[ref_mod]
 	if exists {
 		if ref_mod == "" { panic("something went wrong") }
@@ -60,7 +61,8 @@ func (mod *Module) SymbolFromRef(ref_mod string, name string, specific bool) May
 					return NewSymbol("", sym_name)
 				}
 			}
-		} else if ref_mod == self {
+		} else if ref_mod == SelfModule {
+			var self = mod.Name
 			return NewSymbol(self, name)
 		} else {
 			return nil

@@ -120,7 +120,7 @@ func buildHierarchy (
 					BreadCrumbs: current_breadcrumbs,
 				}
 				var _, exists = imported_map[local_alias]
-				if exists {
+				if exists || local_alias == SelfModule {
 					return nil, false, &Error {
 						Context: im_ctx,
 						Concrete: E_ConflictAlias {

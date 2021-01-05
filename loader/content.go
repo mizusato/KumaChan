@@ -145,7 +145,7 @@ func readModulePath(path string, fs FileSystem, root bool) (ModuleThunk, error) 
 				fmt.Sprintf("invalid module manifest %s: %s",
 					manifest_path, `field "vendor" has an invalid value`))
 		}
-		return ModuleThunk{
+		return ModuleThunk {
 			FilePath:  path,
 			FileInfo:  fd_info,
 			Manifest:  manifest,
@@ -155,7 +155,7 @@ func readModulePath(path string, fs FileSystem, root bool) (ModuleThunk, error) 
 	} else {
 		var content, err = fd.ReadContent()
 		if err != nil { return ModuleThunk{}, err }
-		return ModuleThunk{
+		return ModuleThunk {
 			FilePath: path,
 			FileInfo: fd_info,
 			Manifest: Manifest {
