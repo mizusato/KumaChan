@@ -97,6 +97,14 @@ public function dom-dynamic:
     );
 
 public function dom-dynamic:
+    ( &(String, NoExcept*[Array[Node]])
+        NoExcept*[Node] )
+    ( &(tag, @children)
+        ~ map* &(children) := @children,
+        dom-node tag { content: (dom-children children) }
+    );
+
+public function dom-dynamic:
     ( &(String, NoExcept*[(Styles,Attrs,Events)], Array[NoExcept*[Node]])
         NoExcept*[Node] )
     ( &(tag, @opts, children)

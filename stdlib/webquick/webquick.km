@@ -8,7 +8,7 @@ type Component union {
     // TODO: type WithEvents weak (Component,WebUi::Events)
     type DynEnabled weak (NoExcept*[Bool], Component);
     type Container  weak Array[Component];
-    // TODO: type List weak NoExcept*[Array[WebUi::Node]];
+    type List       weak NoExcept*[Array[WebUi::Node]];
     type Focusable  weak (WebUi::Events, Array[Component]);
     type Text       weak String;
     type TextSpace  weak String;
@@ -51,6 +51,8 @@ public function render: ( &(Component) NoExcept*[WebUi::Node] )
             ]),
         case Container children:
             dom-dynamic 'div' (children.map (&(cpt)(render cpt))),
+        case Self::List @nodes:
+            dom-dynamic 'div' @nodes,
         case Focusable (events, children):
             dom-dynamic 'div'
                 (dom-styles [])
