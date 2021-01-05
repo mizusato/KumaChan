@@ -33,12 +33,12 @@ var core_types = []string {
 	// int.km
 	Int,
 	// containers.km
-	Seq, Array, Heap, Set, Map,
+	Seq, Array, Heap, Set, Map, List, ListKey,
 	// effect.km
 	EffectMultiValue, Effect, NoExceptMultiValue, NoExcept,
 	Source, Sink, Bus, Reactive, ReactiveEntity,
 	ReactiveSnapshots, ReactiveSnapshotStack,
-	Mutable, List, Buffer, HashMap,
+	Mutable, Buffer, HashMap,
 	// time.km
 	Time,
 	// complex.km
@@ -104,6 +104,8 @@ const Array = "Array"
 const Heap = "Heap"
 const Set = "Set"
 const Map = "Map"
+const List = "List"
+const ListKey = "ListKey"
 // effect.km
 const EffectMultiValue = "Effect*"
 const Effect = "Effect"
@@ -117,7 +119,6 @@ const ReactiveEntity = "ReactiveEntity"
 const ReactiveSnapshots = "ReactiveSnapshots"
 const ReactiveSnapshotStack = "ReactiveSnapshotStack"
 const Mutable = "Mutable"
-const List = "List"
 const Buffer = "Buffer"
 const HashMap = "HashMap"
 // time.km

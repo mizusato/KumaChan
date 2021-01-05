@@ -1,4 +1,4 @@
-public const  Stdin: FileReadOnly
+public const Stdin:  FileReadOnly
     native 'OS::Stdin';
 public const Stdout: FileWriteOnly
     native 'OS::Stdout';
@@ -7,26 +7,26 @@ public const Stderr: FileWriteOnly
 
 public function scan:  (&()(Effect[String,I/O::Error]))
     ( &(_)
-        let read := OS::Stdin | read-string,
-        if $(OS::Kind = 'windows'):
+        let read := Stdin | read-string,
+        if $(Kind = 'windows'):
             read | map (&(str)(str.trim-suffix ''..\r)),
         else:
             read
     );
 public function print: (&(String)(Effect[-,I/O::Error]))
-    (&(line)(OS::Stdout | write-string line));
+    (&(line)(Stdout | write-string line));
 public function error: (&(String)(Effect[-,I/O::Error]))
-    (&(line)(OS::Stderr | write-string line));
+    (&(line)(Stderr | write-string line));
 
 public function scanln:  (&()(Effect[String,I/O::Error]))
     ( &(_)
-        let read := OS::Stdin | read-line,
-        if $(OS::Kind = 'windows'):
+        let read := Stdin | read-line,
+        if $(Kind = 'windows'):
             read | map (&(str)(str.trim-suffix ''..\r)),
         else:
             read
     );
 public function println: (&(String)(Effect[-,I/O::Error]))
-    (&(line)(OS::Stdout | write-line line));
+    (&(line)(Stdout | write-line line));
 public function errorln: (&(String)(Effect[-,I/O::Error]))
-    (&(line)(OS::Stderr | write-line line));
+    (&(line)(Stderr | write-line line));

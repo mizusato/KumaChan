@@ -7,28 +7,28 @@ type Value union {
     type Null;
 };
 
-public function json-parse: (&(String)(Result[JSON::Value,String]))
+public function json-parse: (&(String)(Result[Self::Value,String]))
     (&(str)(parse str));
 
-public function json-stringify: (&(JSON::Value)(String))
+public function json-stringify: (&(Self::Value)(String))
     (& (jv)
         switch jv:
-        case JSON::Object (o):
+        case Self::Object (o):
             (o.iterate.map(&(key,value)(
                 ("#:#" (quote key) (json-stringify value))
             )).join(',')."{#}"),
-        case JSON::Array (a):
+        case Self::Array (a):
             (a.iterate.map(json-stringify).join(',')."[#]"),
-        case JSON::Boolean (b):
+        case Self::Boolean (b):
             switch b:
                 case Yes: 'true',
                 case No:  'false',
             end,
-        case JSON::Number (n):
+        case Self::Number (n):
             (str n),
-        case JSON::String (s):
+        case Self::String (s):
             (quote s),
-        case JSON::Null:
+        case Self::Null:
             ('null'),
         end
     );
