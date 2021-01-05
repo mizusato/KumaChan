@@ -401,11 +401,11 @@ var ContainerFunctions = map[string] Value {
 		return l.Moved(key, After, pivot)
 	},
 	"list-move-up": func(l List, key String) List {
-		l, _ = l.Adjust(key, Up)
+		l, _ = l.Adjusted(key, Up)
 		return l
 	},
 	"list-move-down": func(l List, key String) List {
-		l, _ = l.Adjust(key, Down)
+		l, _ = l.Adjusted(key, Down)
 		return l
 	},
 	"list-swap": func(l List, key_a String, key_b String) List {

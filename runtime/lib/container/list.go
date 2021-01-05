@@ -275,17 +275,13 @@ func (l List) Moved(target String, pos BeforeOrAfter, pivot String) List {
 	}
 }
 
-func (l List) Adjust(target String, direction UpOrDown) (List, bool) {
+func (l List) Adjusted(target String, direction UpOrDown) (List, bool) {
 	var old_keys = l.keys
 	var new_keys = make([]String, len(old_keys))
 	var target_found = false
 	var ok = false
 	var skip = false
 	for i, this := range old_keys {
-		if skip {
-			skip = false
-			continue
-		}
 		if StringCompare(this, target) == Equal {
 			if target_found { panic("something went wrong") }
 			target_found = true
@@ -314,6 +310,10 @@ func (l List) Adjust(target String, direction UpOrDown) (List, bool) {
 				panic("impossible branch")
 			}
 		} else {
+			if skip {
+				skip = false
+				continue
+			}
 			new_keys[i] = this
 		}
 	}
