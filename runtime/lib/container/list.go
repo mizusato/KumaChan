@@ -155,7 +155,7 @@ func (l List) Deleted(target String) List {
 		panic(fmt.Sprintf("list: key not found: %s", ListFormatKey(target)))
 	} else {
 		var old_keys = l.keys
-		var new_keys = make([] String, (len(old_keys) - 1))
+		var new_keys = make([] String, 0, (len(old_keys) - 1))
 		var found = false
 		for _, this := range old_keys {
 			if StringCompare(this, target) == Equal {
@@ -280,7 +280,12 @@ func (l List) Adjust(target String, direction UpOrDown) (List, bool) {
 	var new_keys = make([]String, len(old_keys))
 	var target_found = false
 	var ok = false
+	var skip = false
 	for i, this := range old_keys {
+		if skip {
+			skip = false
+			continue
+		}
 		if StringCompare(this, target) == Equal {
 			if target_found { panic("something went wrong") }
 			target_found = true
@@ -299,6 +304,7 @@ func (l List) Adjust(target String, direction UpOrDown) (List, bool) {
 					var next = old_keys[i + 1]
 					new_keys[i] = next
 					new_keys[i + 1] = this
+					skip = true
 					ok = true
 				} else {
 					new_keys[i] = this

@@ -103,6 +103,7 @@ func inspect(value Value, path []uintptr) ErrorMessage {
 	case *reflect.Value:
 		msg.WriteText(TS_NORMAL, "*reflect.Value")
 	case SumValue:
+		// TODO: v.Index should be shown
 		return inspect(v.Value, path)
 	case ProductValue:
 		msg.WriteText(TS_NORMAL, "(")

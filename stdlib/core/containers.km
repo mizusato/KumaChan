@@ -111,7 +111,9 @@ public function delete*[K,V]: ( &(Map[K,V],K) Map[K,V] )
 
 /* Functions for List[T] */
 
-public function iterate[T]: ( &(List[T]) Seq[(ListKey,T)] )
+public function new-list[T]: ( &(Array[T],(&(T)(ListKey))) List[T] )
+    native 'new-list';
+public function iterate[T]:  ( &(List[T]) Seq[(ListKey,T)] )
     native 'list-iterate';
 public function length[T]:  ( &(List[T]) Number )
     native 'list-length';
@@ -123,9 +125,9 @@ public function update[T]:  ( &(List[T],ListKey,(&(T)(T))) List[T] )
     native 'list-update';
 public function delete[T]:  ( &(List[T],ListKey) List[T] )
     native 'list-delete';
-public function prepend[T]: ( &(List[T],T) List[T] )
+public function prepend[T]: ( &(List[T],(ListKey,T)) List[T] )
     native 'list-prepend';
-public function append[T]:  ( &(List[T],T) List[T] )
+public function append[T]:  ( &(List[T],(ListKey,T)) List[T] )
     native 'list-append';
 public function insert[T]:  ( &(List[T],{before:ListKey},(ListKey,T)) List[T] )
     native 'list-insert-before';

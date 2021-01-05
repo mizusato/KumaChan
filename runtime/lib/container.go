@@ -342,6 +342,11 @@ var ContainerFunctions = map[string] Value {
 		var _, result, _ = m.Deleted(k)
 		return result
 	},
+	"new-list": func(v Value, get_key Value, h InteropContext) List {
+		return NewList(ArrayFrom(v), func(item Value) String {
+			return h.Call(get_key, item).(String)
+		})
+	},
 	"list-iterate": func(l List) Seq {
 		return ListIterator {
 			List:      l,
@@ -365,11 +370,15 @@ var ContainerFunctions = map[string] Value {
 	"list-delete": func(l List, k String) List {
 		return l.Deleted(k)
 	},
-	"list-prepend": func(l List, k String, v Value) List {
-		return l.Prepended(k, v)
+	"list-prepend": func(l List, entry ProductValue) List {
+		var key = entry.Elements[0].(String)
+		var value = entry.Elements[1]
+		return l.Prepended(key, value)
 	},
-	"list-append": func(l List, k String, v Value) List {
-		return l.Appended(k, v)
+	"list-append": func(l List, entry ProductValue) List {
+		var key = entry.Elements[0].(String)
+		var value = entry.Elements[1]
+		return l.Appended(key, value)
 	},
 	"list-insert-before": func(l List, pivot_ ProductValue, entry ProductValue) List {
 		var pivot = pivot_.Elements[0].(String)
