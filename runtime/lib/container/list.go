@@ -240,7 +240,7 @@ func (l List) Moved(target String, pos BeforeOrAfter, pivot String) List {
 		return l
 	} else {
 		var old_keys = l.keys
-		var new_keys = make([]String, 0, len(old_keys))
+		var new_keys = make([] String, 0, len(old_keys))
 		var target_found = false
 		var pivot_found = false
 		for _, this := range old_keys {
@@ -277,7 +277,7 @@ func (l List) Moved(target String, pos BeforeOrAfter, pivot String) List {
 
 func (l List) Adjusted(target String, direction UpOrDown) (List, bool) {
 	var old_keys = l.keys
-	var new_keys = make([]String, len(old_keys))
+	var new_keys = make([] String, len(old_keys))
 	var target_found = false
 	var ok = false
 	var skip = false
