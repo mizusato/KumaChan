@@ -141,7 +141,8 @@ window.addEventListener('load', _ => {
         try {
             let listener = create_listener(prevent, stop, handler)
             let el = elementRegistry[id]
-            el.addEventListener(name, listener)
+            let event_kind = name.replace(/\..*/, '')
+            el.addEventListener(event_kind, listener)
             if (!(eventsRegistry[id])) { eventsRegistry[id] = {} }
             eventsRegistry[id][name] = { listener, handler }
             runAllUpdateHooks()
@@ -157,8 +158,9 @@ window.addEventListener('load', _ => {
             let handler = old_event.handler
             let old_listener = old_event.listener
             let listener = create_listener(prevent, stop, handler)
-            el.removeEventListener(name, old_listener)
-            el.addEventListener(name, listener)
+            let event_kind = name.replace(/\..*/, '')
+            el.removeEventListener(event_kind, old_listener)
+            el.addEventListener(event_kind, listener)
             events[name] = { listener, handler }
             runAllUpdateHooks()
         } catch (err) {
@@ -169,7 +171,8 @@ window.addEventListener('load', _ => {
         try {
             let el = elementRegistry[id]
             let event = eventsRegistry[id][name]
-            el.removeEventListener(name, event.listener)
+            let event_kind = name.replace(/\..*/, '')
+            el.removeEventListener(event_kind, event.listener)
             delete eventsRegistry[id][name]
             runAllUpdateHooks()
         } catch (err) {

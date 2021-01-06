@@ -5,7 +5,7 @@ type Component union {
     type DynNode    weak NoExcept*[WebUi::Node];
     type Styled     weak (Array[String], Component);
     type DynStyled  weak (NoExcept*[Array[String]], Component);
-    // TODO: type WithEvents weak (Component,WebUi::Events)
+    type WithEvents weak (Component,WebUi::Events);
     type DynEnabled weak (NoExcept*[Bool], Component);
     type Container  weak Array[Component];
     type List       weak NoExcept*[Array[WebUi::Node]];
@@ -32,13 +32,6 @@ public function render: ( &(Component) NoExcept*[WebUi::Node] )
             yield node,
         case DynNode @node:
             @node,
-        case DynEnabled (@enabled, cpt):
-            ~ map* &(enabled, node) := (combine-latest! @enabled (render cpt)),
-            if enabled:
-                node,
-            else:
-                dom-node-with-attrs node
-                    (dom-attrs [('disabled', 'disabled')]),
         case Styled (classes, cpt):
             ~ map* &(node) := (render cpt),
             dom-node-with-attrs node (dom-attrs [
@@ -49,6 +42,16 @@ public function render: ( &(Component) NoExcept*[WebUi::Node] )
             dom-node-with-attrs node (dom-attrs [
                 ('class', (classes.join ' '))
             ]),
+        case WithEvents (cpt, events):
+            ~ map* &(node) := (render cpt),
+            dom-node-with-events node events,
+        case DynEnabled (@enabled, cpt):
+            ~ map* &(enabled, node) := (combine-latest! @enabled (render cpt)),
+            if enabled:
+                node,
+            else:
+                dom-node-with-attrs node
+                    (dom-attrs [('disabled', 'disabled')]),
         case Container children:
             dom-dynamic 'div' (children.map (&(cpt)(render cpt))),
         case Self::List @nodes:
@@ -113,4 +116,3 @@ public function render: ( &(Component) NoExcept*[WebUi::Node] )
             yield (dom-node 'div' [('display','none')]),
         end
     );
-

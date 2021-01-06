@@ -3,7 +3,7 @@ type Styles native;  // *vdom.Styles
 type Attrs  native;  // *vdom.Attrs
 type Events native;  // *vdom.Events
 type EventOptions  native;  // *vdom.EventOptions
-type EventPayload  native;  // *qt.WebUiEventPayload
+type EventPayload  native;  // *qt.WebUiEventPayload (contains a C++ pointer)
 type EventSink     protected Sink[EventPayload];
 type NodeContent   native;  // vdom.NodeContent
 
@@ -184,6 +184,14 @@ public function dom-event-sink[T]: ( &(Reactive[T],(&(T)(&(EventPayload)(T)))) E
 
 public function dom-callback: ( &((&(EventPayload)(NoExcept[-]))) EventSink )
     (&(cb)(dom-event-sink (callback:[NoExcept[-]] (& e e)) cb));
+    // important: payload will be deleted after `cb` called
+
+public function dom-events-merge: ( &(Array[Events]) Events )
+    native 'webui-dom-events-merge';
+
+public function dom-node-with-events: ( &(Node,Events) Node )
+    native 'webui-dom-node-with-events';
+
 
 public function dom-text: ( &(String) NodeContent )
     native 'webui-dom-text';

@@ -38,16 +38,43 @@ func WebUiMergeStyles(list container.Array) *vdom.Styles {
 	return &vdom.Styles { Data: WebUiAdaptMap(styles) }
 }
 func WebUiMergeAttrs(list container.Array) *vdom.Attrs {
+	var class = StringFromRuneSlice([] rune ("class"))
 	var attrs = container.NewStrMap()
 	for i := uint(0); i < list.Length; i += 1 {
 		var part = list.GetItem(i).(*vdom.Attrs)
 		part.Data.ForEach(func(k_ vdom.String, v_ interface{}) {
 			var k = StringFromRuneSlice(k_)
 			var v = StringFromRuneSlice(v_.([] rune))
-			attrs, _ = attrs.Inserted(k, v)
+			if container.StringCompare(k, class) == Equal {
+				var existing, exists = attrs.Lookup(k)
+				if exists {
+					// merge class list
+					var buf = make([] rune, 0)
+					buf = append(buf, existing.([] rune)...)
+					buf = append(buf, ' ')
+					buf = append(buf, v_.([] rune)...)
+					var v = StringFromRuneSlice(buf)
+					attrs, _ = attrs.Inserted(k, v)
+				} else {
+					attrs, _ = attrs.Inserted(k, v)
+				}
+			} else {
+				attrs, _ = attrs.Inserted(k, v)
+			}
 		})
 	}
 	return &vdom.Attrs { Data: WebUiAdaptMap(attrs) }
+}
+func WebUiMergeEvents(list container.Array) *vdom.Events {
+	var events = container.NewStrMap()
+	for i := uint(0); i < list.Length; i += 1 {
+		var part = list.GetItem(i).(*vdom.Events)
+		part.Data.ForEach(func(k_ vdom.String, v interface{}) {
+			var k = StringFromRuneSlice(k_)
+			events, _ = events.Inserted(k, v)
+		})
+	}
+	return &vdom.Events { Data: WebUiAdaptMap(events) }
 }
 func (m WebUiAdaptedMap) Has(key vdom.String) bool {
 	var key_str = StringFromRuneSlice(key)
@@ -339,6 +366,23 @@ var WebUiFunctions = map[string] interface{} {
 	},
 	"webui-dom-events-zero": func(_ Value) *vdom.Events {
 		return vdom.EmptyEvents
+	},
+	"webui-dom-events-merge": func(v Value) *vdom.Events {
+		var list = container.ArrayFrom(v)
+		return WebUiMergeEvents(list)
+	},
+	"webui-dom-node-with-events": func(node *vdom.Node, events *vdom.Events) *vdom.Node {
+		return &vdom.Node {
+			Tag:     node.Tag,
+			Props:   vdom.Props {
+				Styles: node.Styles,
+				Attrs:  node.Attrs,
+				Events: WebUiMergeEvents(container.ArrayFrom([] *vdom.Events {
+					node.Events, events,
+				})),
+			},
+			Content: node.Content,
+		}
 	},
 	"webui-dom-text": func(text String) vdom.Content {
 		var t = vdom.Text(RuneSliceFromString(text))
