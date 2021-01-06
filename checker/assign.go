@@ -88,7 +88,30 @@ func AssignTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprError) 
 			panic("impossible branch")
 		}
 	})()
-	if err != nil { return Expr{}, err }
+	if err != nil {
+		// assignment failed, try to box an isomorphic supertype
+		var named, is_named = expected.(*NamedType)
+		if is_named {
+			var reg = ctx.GetTypeRegistry()
+			var name = named.Name
+			var g = reg[name]
+			var boxed, is_boxed = g.Value.(*Boxed)
+			if is_boxed && !(boxed.Protected) && !(boxed.Opaque) {
+				var box_expr, box_err = Box (
+					semi, g, name, semi.Info, named.Args,
+					true, semi.Info, ctx,
+				)
+				if box_err != nil {
+					return Expr{}, box_err
+				}
+				return box_expr, nil
+			} else {
+				return Expr{}, err
+			}
+		} else {
+			return Expr{}, err
+		}
+	}
 	return expr, nil
 }
 
