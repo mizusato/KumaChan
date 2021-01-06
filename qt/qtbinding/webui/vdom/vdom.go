@@ -60,6 +60,7 @@ type Events struct {
 type EventOptions struct {
 	Prevent  bool
 	Stop     bool
+	// TODO: Capture bool
 	Handler  EventHandler
 }
 func EventOptionsEqual(a *EventOptions, b *EventOptions) bool {
