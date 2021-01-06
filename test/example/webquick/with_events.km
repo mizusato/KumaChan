@@ -8,26 +8,25 @@ do webui-inject-css [assets::style-css];
 do WebUi::ExitWhenWindowClosed;
 
 public function with-mouse-position:
-    ( &((Float,Float),(&(NoExcept*[(Float,Float)])(Q::Component))) Q::Component )
-    ( &(init,k)
-        Q::Dynamic
+    ( &((Float,Float), (&(NoExcept*[(Float,Float)])(NoExcept*[WebUi::Node])))
+        NoExcept*[WebUi::Node] )
+    ( &(init, k)
         ~ with-reactive* &(pos) := init,
         ~ then* &(x) := random,
-        let cpt := k (watch pos),
-        let cpt := cpt | Q::WithEvents (dom-event ("mousemove.hook#" (str x))
-            (dom-callback ( &(ev)
-                let x := ev.get-float 'offsetX',
-                let y := ev.get-float 'offsetY',
-                $(pos <- (x, y))
-            ))),
-        yield cpt
+        Q::WithEvents
+            (dom-event ("mousemove.hook#" (str x))
+                (dom-callback ( &(ev)
+                    let x := ev.get-float 'offsetX',
+                    let y := ev.get-float 'offsetY',
+                    $(pos <- (x, y))
+                )))
+            (k (watch pos))
     );
 
 private const DOM: NoExcept*[WebUi::Node]
-    render
-    (Q::Styled ['container'] (Q::Container [
+    Q::Styled ['container'] (Q::Container [
         ~ with-mouse-position &(pos) := (0.0, 0.0),
         Q::Styled ['box'] (Q::Container [
             Q::TextWatch (pos | map* (&(x,y)("x=#, y=#" (str x) (str y))))
         ])
-    ]));
+    ]);

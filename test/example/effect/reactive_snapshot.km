@@ -10,50 +10,44 @@ do WebUi::ExitWhenWindowClosed;
 private const DOM: NoExcept*[WebUi::Node]
     ~ with-auto-snapshot* &(text, ops) := '',
     let (text-undo, text-redo, text-diff) := ops,
-    render (UI::Container [
-        UI::Dynamic (
-            ~ with-reactive* &(editing) := No,
-            ~ switch-map &(state) := editing.watch.with-latest-from(text),
-            let (is-editing, current-text) := state,
-            if is-editing:
-                ~ with-reactive* &(buffer) := current-text,
-                yield (UI::Container [
-                    UI::TextInput buffer,
-                    UI::Dynamic (
-                        ~ map* &(new-text) := watch buffer,
-                        UI::Button 'Confirm' (
-                            $(editing <- No).then
-                            $(text <- new-text)
-                        ))
-                ]),
-            else:
-                yield (UI::Styled ['row'] (UI::Container [
-                    UI::Styled ['red'] (UI::TextWatch
-                        (text.watch)),
-                    UI::Button 'Edit'
-                        $(editing <- Yes)
-                ]))
-        ),
-        UI::Dynamic (
-            ~ map* &(snapshots, current) := text-diff,
-            let { undo, redo } := snapshots,
-            let undo := undo.collect,
-            let redo := redo.collect,
+    UI::Container [
+        ~ with-reactive* &(editing) := No,
+        ~ switch-map &(state) := editing.watch.with-latest-from(text),
+        let (is-editing, current-text) := state,
+        if is-editing:
+            ~ with-reactive* &(buffer) := current-text,
             UI::Container [
-                if $((undo.length) > 0):
-                    UI::Button 'Undo' (text-undo.map(&(_)())),
-                else:
-                    UI::Empty,
-                if $((redo.length) > 0):
-                    UI::Button 'Redo' (text-redo.map(&(_)())),
-                else:
-                    UI::Empty,
-                UI::Styled ['title'] (UI::Text 'undo stack (reversed):'),
-                UI::Container (reverse (undo.map (&(v)(UI::Text (quote v))))),
-                UI::Styled ['title'] (UI::Text 'current:'),
-                UI::Text (quote current),
-                UI::Styled ['title'] (UI::Text 'redo stack:'),
-                UI::Container (redo.map (&(v)(UI::Text (quote v))))
-            ]
-        )
-    ]);
+                (UI::TextInput buffer),
+                ~ switch-map &(new-text) := watch buffer,
+                    UI::Button 'Confirm' (
+                        $(editing <- No).then
+                        $(text <- new-text)
+                    )
+            ],
+        else:
+            UI::Styled ['row'] (UI::Container [
+                UI::Styled ['red']
+                    (UI::TextWatch (text.watch)),
+                UI::Button 'Edit' $(editing <- Yes)
+            ]),
+        ~ switch-map &(snapshots, current) := text-diff,
+        let { undo, redo } := snapshots,
+        let undo := undo.collect,
+        let redo := redo.collect,
+        UI::Container [
+            if $((undo.length) > 0):
+                UI::Button 'Undo' (text-undo.map(&(_)())),
+            else:
+                UI::Empty,
+            if $((redo.length) > 0):
+                UI::Button 'Redo' (text-redo.map(&(_)())),
+            else:
+                UI::Empty,
+            UI::Styled ['title'] (UI::Text 'undo stack (reversed):'),
+            UI::Container (reverse (undo.map (&(v)(UI::Text (quote v))))),
+            UI::Styled ['title'] (UI::Text 'current:'),
+            UI::Text (quote current),
+            UI::Styled ['title'] (UI::Text 'redo stack:'),
+            UI::Container (redo.map (&(v)(UI::Text (quote v))))
+        ]
+    ];

@@ -1,118 +1,126 @@
-// TODO: consider change to public const
-type Component union {
-    type Dynamic    weak NoExcept*[Component];
-    type Node       weak WebUi::Node;
-    type DynNode    weak NoExcept*[WebUi::Node];
-    type Styled     weak (Array[String], Component);
-    type DynStyled  weak (NoExcept*[Array[String]], Component);
-    type WithEvents weak (Component,WebUi::Events);
-    type DynEnabled weak (NoExcept*[Bool], Component);
-    type Container  weak Array[Component];
-    type List       weak NoExcept*[Array[WebUi::Node]];
-    type Focusable  weak (WebUi::Events, Array[Component]);
-    type Text       weak String;
-    type TextSpace  weak String;
-    type TextWatch  weak NoExcept*[String];
-    type TextInput  weak Reactive[String];
-    type Checkbox   weak Reactive[Bool];
-    type Select     weak (Reactive[String], Array[(String,String)]);
-    type Button     weak (String, NoExcept[-]);
-    type Empty;
-};
+type Component[Options]
+    ( &(Options) NoExcept*[WebUi::Node] );
 
-public function dynamic[T]: ( &(NoExcept*[T],(&(T)(Component))) Component )
-    (&(e,f)(e.map*(f).Dynamic));
+type Decorator[Options]
+    ( &(Options,NoExcept*[WebUi::Node]) NoExcept*[WebUi::Node] );
 
-public function render: ( &(Component) NoExcept*[WebUi::Node] )
-    ( &(cpt)
-        switch cpt:
-        case Dynamic @cpt:
-            @cpt.switch-map (&(cpt)(render cpt)),
-        case Node node:
-            yield node,
-        case DynNode @node:
-            @node,
-        case Styled (classes, cpt):
-            ~ map* &(node) := (render cpt),
-            dom-node-with-attrs node (dom-attrs [
-                ('class', (classes.join ' '))
-            ]),
-        case DynStyled (@classes, cpt):
-            ~ map* &(classes, node) := (combine-latest! @classes (render cpt)),
-            dom-node-with-attrs node (dom-attrs [
-                ('class', (classes.join ' '))
-            ]),
-        case WithEvents (cpt, events):
-            ~ map* &(node) := (render cpt),
-            dom-node-with-events node events,
-        case DynEnabled (@enabled, cpt):
-            ~ map* &(enabled, node) := (combine-latest! @enabled (render cpt)),
-            if enabled:
-                node,
-            else:
-                dom-node-with-attrs node
-                    (dom-attrs [('disabled', 'disabled')]),
-        case Container children:
-            dom-dynamic 'div' (children.map (&(cpt)(render cpt))),
-        case Self::List @nodes:
-            dom-dynamic 'div' @nodes,
-        case Focusable (events, children):
-            dom-dynamic 'div'
-                (dom-styles [])
-                (dom-attrs [('tabindex','0')])
-                events
-                (children.map (&(cpt)(render cpt))),
-        case Text text:
-            yield (dom-node 'div' text),
-        case TextSpace text:
-            yield (dom-node 'div' [('visibility','hidden')] text),
-        case TextWatch @text:
-            ~ map* &(text) := @text,
-            dom-node 'div' text,
-        case TextInput @text:
-            ~ map* &(text) := watch @text,
-            dom-node 'input'
-                (dom-styles [])
-                (dom-attrs [ ('type', 'text'), ('value', text) ])
-                (dom-event 'input'
-                    (dom-event-sink @text (&(ev)(ev.get-string 'value'))))
-                (dom-children []),
-        case Checkbox @checked:
-            ~ map* &(checked) := watch @checked,
-            dom-node 'input'
-                (dom-styles [])
-                (dom-attrs (
-                    if checked:
-                        ([('type', 'checkbox'), ('checked', 'checked')]),
-                    else:
-                        ([('type', 'checkbox')])
-                ))
-                (dom-event 'change'
-                    (dom-event-sink @checked (&(ev)(ev.get-bool 'checked'))))
-                (dom-children []),
-        case Select (@current, options):
-            ~ map* &(current) := watch @current,
-            dom-node 'select'
-                (dom-styles [])
-                (dom-attrs [('value', current)])
-                (dom-event 'change'
-                    (dom-event-sink @current (&(ev)(ev.get-string 'value'))))
-                (dom-children (
-                    ~ map &(name,desc) := options,
-                    dom-node 'option' {
-                        attrs:   (dom-attrs [('value', name)]),
-                        content: (dom-text desc)
-                    }
-                )),
-        case Button (text, action):
-            yield (dom-node 'button'
-                (dom-styles [])
-                (dom-attrs [])
-                (dom-event 'click'
-                    (dom-callback (&(_)(action))))
-                (dom-text text)
-            ),
-        case Empty:
-            yield (dom-node 'div' [('display','none')]),
-        end
+
+public const Empty: NoExcept*[WebUi::Node]
+    yield (dom-node 'div' [('display','none')]);
+
+public const Static: Component[WebUi::Node]
+    (&(node)(yield node));
+
+public const Container: Component[Array[NoExcept*[WebUi::Node]]]
+    (&(items)(dom-dynamic 'div' items));
+
+public const List: Component[NoExcept*[Array[WebUi::Node]]]
+    (&(items)(dom-dynamic 'div' items));
+
+public const Text: Component[String]
+    (&(text)(yield (dom-node 'div' text)));
+
+public const TextSpace: Component[String]
+    (&(text)(yield (dom-node 'div' [('visibility','hidden')] text)));
+
+public const TextWatch: Component[NoExcept*[String]]
+    ( &(@text)
+        ~ map* &(text) := @text,
+        dom-node 'div' text
+    );
+
+public const TextInput: Component[Reactive[String]]
+    ( &(@text)
+        ~ map* &(text) := watch @text,
+        dom-node 'input'
+            (dom-styles [])
+            (dom-attrs [ ('type', 'text'), ('value', text) ])
+            (dom-event 'input'
+                (dom-event-sink @text (&(ev)(ev.get-string 'value'))))
+            (dom-children [])
+    );
+
+public const Checkbox: Component[Reactive[Bool]]
+    ( &(@checked)
+        ~ map* &(checked) := watch @checked,
+        dom-node 'input'
+            (dom-styles [])
+            (dom-attrs (
+                if checked:
+                    ([('type', 'checkbox'), ('checked', 'checked')]),
+                else:
+                    ([('type', 'checkbox')])
+            ))
+            (dom-event 'change'
+                (dom-event-sink @checked (&(ev)(ev.get-bool 'checked'))))
+            (dom-children [])
+    );
+
+public const Select: Component[(Reactive[String], Array[(String,String)])]
+    ( &(@current, options)
+        ~ map* &(current) := watch @current,
+        dom-node 'select'
+            (dom-styles [])
+            (dom-attrs [('value', current)])
+            (dom-event 'change'
+                (dom-event-sink @current (&(ev)(ev.get-string 'value'))))
+            (dom-children (
+                ~ map &(name,desc) := options,
+                dom-node 'option' {
+                    attrs:   (dom-attrs [('value', name)]),
+                    content: (dom-text desc)
+                }
+            ))
+    );
+
+public const Button: Component[(String, NoExcept[-])]
+    ( &(text, action)
+        yield (dom-node 'button'
+            (dom-styles [])
+            (dom-attrs [])
+            (dom-event 'click'
+                (dom-callback (&(_)(action))))
+            (dom-text text)
+        )
+    );
+
+
+public const Styled: Decorator[Array[String]]
+    ( &(class-list, @node)
+        ~ map* &(node) := @node,
+        dom-node-with-attrs node (dom-attrs [
+            ('class', (class-list.join ' '))
+        ])
+    );
+
+public const DynStyled: Decorator[NoExcept*[Array[String]]]
+    ( &(@class-list, @node)
+        ~ map* &(class-list, node) := (combine-latest! @class-list @node),
+        dom-node-with-attrs node (dom-attrs [
+            ('class', (class-list.join ' '))
+        ])
+    );
+
+public const WithEvents: Decorator[WebUi::Events]
+    ( &(events, @node)
+        ~ map* &(node) := @node,
+        dom-node-with-events node events
+    );
+
+public const Focusable: Decorator[WebUi::Events]
+    ( &(events, @node)
+        ~ map* &(node) := @node,
+        let node := dom-node-with-events node events,
+        let node := dom-node-with-attrs node (dom-attrs [('tabindex','0')]),
+        node
+    );
+
+public const DynEnabled: Decorator[NoExcept*[Bool]]
+    ( &(@enabled, @node)
+        ~ map* &(enabled, node) := (combine-latest! @enabled @node),
+        if enabled:
+            node,
+        else:
+            dom-node-with-attrs node
+                (dom-attrs [('disabled', 'disabled')])
     );
