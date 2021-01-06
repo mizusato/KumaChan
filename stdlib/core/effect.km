@@ -41,9 +41,9 @@ public function consume[T,X,E]: ( &(Reactive[List[T]],(&(Reactive[T])(Effect*[X,
     native 'reactive-list-consume';
 public function consume[T,X]:   ( &(Reactive[List[T]],(&(Reactive[T])(NoExcept*[X]))) NoExcept*[Array[X]] )
     native 'reactive-list-consume';
-public function undo[T]:          ( &(ReactiveEntity[T]) NoExcept[Bool] )
+public function undo[T]:          ( &(ReactiveEntity[T]) NoExcept[-] )
     native 'reactive-entity-undo';
-public function redo[T]:          ( &(ReactiveEntity[T]) NoExcept[Bool] )
+public function redo[T]:          ( &(ReactiveEntity[T]) NoExcept[-] )
     native 'reactive-entity-redo';
 public function watch-diff[T]:    ( &(ReactiveEntity[T]) NoExcept*[(ReactiveSnapshots[T],T)] )
     native 'reactive-entity-watch-diff';

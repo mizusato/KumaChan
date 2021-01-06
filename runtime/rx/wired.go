@@ -457,9 +457,9 @@ func (r *ReactiveImpl) Undo() Effect {
 			var change = top.(ReactiveStateChange)
 			r.commit(change)
 			r.notifyDiff()
-			return true, true
+			return nil, true
 		} else {
-			return false, true
+			return nil, true
 		}
 	})
 }
@@ -473,9 +473,9 @@ func (r *ReactiveImpl) Redo() Effect {
 			var change = top.(ReactiveStateChange)
 			r.commit(change)
 			r.notifyDiff()
-			return true, true
+			return nil, true
 		} else {
-			return false, true
+			return nil, true
 		}
 	})
 }
