@@ -17,7 +17,7 @@ type Manifest struct {
 	Config   Config   `json:"config"`
 }
 type Config struct {
-	UI        kinds.QtUiConfig       `json:"ui"`
+	UI        kinds.QtUiConfig       `json:"qtUi"`
 	PNG       kinds.PNG_Config       `json:"png"`
 	WebAsset  kinds.WebAssetConfig   `json:"webAsset"`
 }
