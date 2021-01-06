@@ -29,10 +29,11 @@ func WebUiMergeStyles(list container.Array) *vdom.Styles {
 	var styles = container.NewStrMap()
 	for i := uint(0); i < list.Length; i += 1 {
 		var part = list.GetItem(i).(*vdom.Styles)
-		part.Data.ForEach(func(k_ vdom.String, v_ interface{}) {
-			var k = StringFromRuneSlice(k_)
-			var v = StringFromRuneSlice(v_.([] rune))
-			styles, _ = styles.Inserted(k, v)
+		part.Data.ForEach(func(k_runes vdom.String, v_obj interface{}) {
+			var v_runes = v_obj.([] rune)
+			var k_str = StringFromRuneSlice(k_runes)
+			var v_str = StringFromRuneSlice(v_runes)
+			styles, _ = styles.Inserted(k_str, v_str)
 		})
 	}
 	return &vdom.Styles { Data: WebUiAdaptMap(styles) }
@@ -42,24 +43,27 @@ func WebUiMergeAttrs(list container.Array) *vdom.Attrs {
 	var attrs = container.NewStrMap()
 	for i := uint(0); i < list.Length; i += 1 {
 		var part = list.GetItem(i).(*vdom.Attrs)
-		part.Data.ForEach(func(k_ vdom.String, v_ interface{}) {
-			var k = StringFromRuneSlice(k_)
-			var v = StringFromRuneSlice(v_.([] rune))
-			if container.StringCompare(k, class) == Equal {
-				var existing, exists = attrs.Lookup(k)
+		part.Data.ForEach(func(k_runes vdom.String, v_obj interface{}) {
+			var k_str = StringFromRuneSlice(k_runes)
+			var v_runes = v_obj.([] rune)
+			if container.StringCompare(k_str, class) == Equal {
+				var existing, exists = attrs.Lookup(k_str)
 				if exists {
 					// merge class list
+					var existing_runes = RuneSliceFromString(existing.(String))
 					var buf = make([] rune, 0)
-					buf = append(buf, existing.([] rune)...)
+					buf = append(buf, existing_runes...)
 					buf = append(buf, ' ')
-					buf = append(buf, v_.([] rune)...)
-					var v = StringFromRuneSlice(buf)
-					attrs, _ = attrs.Inserted(k, v)
+					buf = append(buf, v_runes...)
+					var v_merged_str = StringFromRuneSlice(buf)
+					attrs, _ = attrs.Inserted(k_str, v_merged_str)
 				} else {
-					attrs, _ = attrs.Inserted(k, v)
+					var v_str = StringFromRuneSlice(v_runes)
+					attrs, _ = attrs.Inserted(k_str, v_str)
 				}
 			} else {
-				attrs, _ = attrs.Inserted(k, v)
+				var v_str = StringFromRuneSlice(v_runes)
+				attrs, _ = attrs.Inserted(k_str, v_str)
 			}
 		})
 	}
