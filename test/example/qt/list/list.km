@@ -15,7 +15,7 @@ do @state
         switch current?:
         case Just current:
             let current-item := (list.filter (&{id} $(id = current))),
-            let show-current := (show-item (current-item.get 0)),
+            let show-current := (show-item $(current-item at 0)),
             merge [update-list, show-current],
         case N/A:
             update-list,
