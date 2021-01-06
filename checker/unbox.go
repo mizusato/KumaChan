@@ -59,7 +59,7 @@ type TR_TupleButOpaque struct {}
 func UnboxTuple(t Type, ctx ExprContext, cross_reactive bool) TupleReprResult {
 	switch T := t.(type) {
 	case *NamedType:
-		if cross_reactive && T.Name == __Reactive {
+		if cross_reactive && IsReactive(T) {
 			if !(len(T.Args) == 1) { panic("something went wrong") }
 			var result = UnboxTuple(T.Args[0], ctx, false)
 			switch r := result.(type) {
@@ -89,7 +89,7 @@ func UnboxTuple(t Type, ctx ExprContext, cross_reactive bool) TupleReprResult {
 					}
 				}
 			case *NamedType:
-				return UnboxTuple(inner, ctx, false)
+				return UnboxTuple(inner, ctx, cross_reactive)
 			}
 		}
 		return TR_NonTuple {}
@@ -119,7 +119,7 @@ type BR_BundleButOpaque struct {}
 func UnboxBundle(t Type, ctx ExprContext, cross_reactive bool) BundleReprResult {
 	switch T := t.(type) {
 	case *NamedType:
-		if cross_reactive && T.Name == __Reactive {
+		if cross_reactive && IsReactive(T) {
 			if !(len(T.Args) == 1) { panic("something went wrong") }
 			var result = UnboxBundle(T.Args[0], ctx, false)
 			switch r := result.(type) {
@@ -149,7 +149,7 @@ func UnboxBundle(t Type, ctx ExprContext, cross_reactive bool) BundleReprResult 
 					}
 				}
 			case *NamedType:
-				return UnboxBundle(inner, ctx, false)
+				return UnboxBundle(inner, ctx, cross_reactive)
 			}
 		}
 		return BR_NonBundle {}

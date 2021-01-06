@@ -666,7 +666,7 @@ func (e E_DuplicateBinding) ExprErrorDesc() ErrorMessage {
 	return msg
 }
 
-type E_MatchingNonTupleType struct {}
+type E_MatchingNonTupleType struct {}  // TODO: type description
 func (e E_MatchingNonTupleType) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	msg.WriteText(TS_ERROR,
@@ -674,7 +674,7 @@ func (e E_MatchingNonTupleType) ExprErrorDesc() ErrorMessage {
 	return msg
 }
 
-type E_MatchingOpaqueTupleType struct {}
+type E_MatchingOpaqueTupleType struct {}  // TODO: type description
 func (e E_MatchingOpaqueTupleType) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	msg.WriteText(TS_ERROR,
@@ -682,7 +682,7 @@ func (e E_MatchingOpaqueTupleType) ExprErrorDesc() ErrorMessage {
 	return msg
 }
 
-type E_MatchingNonBundleType struct {}
+type E_MatchingNonBundleType struct {}  // TODO: type description
 func (e E_MatchingNonBundleType) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	msg.WriteText(TS_ERROR,
@@ -690,7 +690,7 @@ func (e E_MatchingNonBundleType) ExprErrorDesc() ErrorMessage {
 	return msg
 }
 
-type E_MatchingOpaqueBundleType struct {}
+type E_MatchingOpaqueBundleType struct {}  // TODO: type description
 func (e E_MatchingOpaqueBundleType) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	msg.WriteText(TS_ERROR,

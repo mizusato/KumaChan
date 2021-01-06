@@ -593,7 +593,7 @@ func AssignMultiSwitchTo(expected Type, msw SemiTypedMultiSwitch, info ExprInfo,
 func ExtractUnion(t Type, ctx ExprContext, cross_reactive bool) (*Union, []Type, bool, bool) {
 	switch T := t.(type) {
 	case *NamedType:
-		if cross_reactive && T.Name == __Reactive {
+		if cross_reactive && IsReactive(T) {
 			if !(len(T.Args) == 1) { panic("something went wrong") }
 			var union, args, _, ok = ExtractUnion(T.Args[0], ctx, false)
 			if ok {
