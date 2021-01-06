@@ -1,7 +1,7 @@
 {
   "name": "WebQuickExampleAssets",
   "config": {
-    "webAsset": {
+    "web_asset": {
       "public": true
     }
   }

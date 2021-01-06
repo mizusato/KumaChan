@@ -52,7 +52,7 @@ func WebAssetLoader() common.UnitFileLoader {
 			"js",    "JS",
 			"ttf",   "TTF",
 		},
-		Name: "webAsset",
+		Name: "web_asset",
 		Load: LoadWebAsset,
 		IsResource: true,
 		GetMIME: func(path string) string {

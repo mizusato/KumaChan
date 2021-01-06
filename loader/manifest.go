@@ -17,9 +17,9 @@ type Manifest struct {
 	Config   Config   `json:"config"`
 }
 type Config struct {
-	UI        kinds.QtUiConfig       `json:"qtUi"`
+	UI        kinds.QtUiConfig       `json:"qt_ui"`
 	PNG       kinds.PNG_Config       `json:"png"`
-	WebAsset  kinds.WebAssetConfig   `json:"webAsset"`
+	WebAsset  kinds.WebAssetConfig   `json:"web_asset"`
 }
 func DefaultManifest(path string) Manifest {
 	// TODO: modules without explicit manifest should inherit

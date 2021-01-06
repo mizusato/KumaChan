@@ -217,7 +217,7 @@ var WebUiFunctions = map[string] interface{} {
 	"webui-init": func(title String, root rx.Effect, h InteropContext) rx.Effect {
 		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
 			// TODO: handle duplicate load (throw an error)
-			var res = h.GetResources("webAsset")
+			var res = h.GetResources("web_asset")
 			WebUiInitAndLoad(h.GetScheduler(), root, title, res)
 			return nil, true
 		})
