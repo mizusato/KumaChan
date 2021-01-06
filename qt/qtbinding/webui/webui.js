@@ -141,6 +141,7 @@ window.addEventListener('load', _ => {
         try {
             let listener = create_listener(prevent, stop, handler)
             let el = elementRegistry[id]
+            // TODO: convenient handling for key events
             let event_kind = name.replace(/\..*/, '')
             el.addEventListener(event_kind, listener)
             if (!(eventsRegistry[id])) { eventsRegistry[id] = {} }

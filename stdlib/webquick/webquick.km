@@ -1,3 +1,5 @@
+// TODO: rename WebQuick to UI, avoid direct use of WebUi
+
 type Component[Options]
     ( &(Options) NoExcept*[WebUi::Node] );
 
