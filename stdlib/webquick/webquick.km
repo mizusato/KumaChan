@@ -1,4 +1,6 @@
-// TODO: rename WebQuick to UI, avoid direct use of WebUi
+// TODO: 1. rename WebQuick to UI
+//       2. merge APIs from WebUi, make some low-level APIs private
+//       3. remove the WebUi module
 
 type Component[Options]
     ( &(Options) NoExcept*[WebUi::Node] );
