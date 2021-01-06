@@ -6,7 +6,8 @@ type Decorator[Options]
 
 
 public const Empty: NoExcept*[WebUi::Node]
-    yield (dom-node 'div' [('display','none')]);
+    (yield ()).then(&(_)(yield (dom-node 'div' [('display','none')])));
+    // note: create a new node each time (a node cannot be used more than once)
 
 public const Static: Component[WebUi::Node]
     (&(node)(yield node));
