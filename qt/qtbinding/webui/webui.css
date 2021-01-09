@@ -2,6 +2,10 @@ html {
     font-family: sans-serif;
 }
 
+* {
+    box-sizing: border-box;
+}
+
 *:not(input):not(button) {
     user-select: none;
     -webkit-user-select: none;

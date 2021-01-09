@@ -565,22 +565,24 @@ func WebUiRemoveAttr(id vdom.String, name vdom.String) {
     var name_, del_key = NewStringFromRunes(name);  defer del_key()
     C.WebUiRemoveAttr(C.QtString(id_), C.QtString(name_))
 }
-func WebUiAttachEvent(id vdom.String, name vdom.String, prevent bool, stop bool, handler vdom.EventHandler) {
+func WebUiAttachEvent(id vdom.String, name vdom.String, prevent bool, stop bool, capture bool, handler vdom.EventHandler) {
     var id_, del_id = NewStringFromRunes(id);  defer del_id()
     var name_, del_name = NewStringFromRunes(name);  defer del_name()
     var prevent_ = MakeBool(prevent)
     var stop_ = MakeBool(stop)
+    var capture_ = MakeBool(capture)
     var handler_id = WebUiRegisterEventHandler(handler)
     var handler_runes = ([] rune)(handler_id)
     var handler_, del_handler = NewStringFromRunes(handler_runes); defer del_handler()
-    C.WebUiAttachEvent(C.QtString(id_), C.QtString(name_), C.QtBool(prevent_), C.QtBool(stop_), C.QtString(handler_))
+    C.WebUiAttachEvent(C.QtString(id_), C.QtString(name_), C.QtBool(prevent_), C.QtBool(stop_), C.QtBool(capture_), C.QtString(handler_))
 }
-func WebUiModifyEvent(id vdom.String, name vdom.String, prevent bool, stop bool) {
+func WebUiModifyEvent(id vdom.String, name vdom.String, prevent bool, stop bool, capture bool) {
     var id_, del_id = NewStringFromRunes(id);  defer del_id()
     var name_, del_name = NewStringFromRunes(name);  defer del_name()
     var prevent_ = MakeBool(prevent)
     var stop_ = MakeBool(stop)
-    C.WebUiModifyEvent(C.QtString(id_), C.QtString(name_), C.QtBool(prevent_), C.QtBool(stop_))
+    var capture_ = MakeBool(capture)
+    C.WebUiModifyEvent(C.QtString(id_), C.QtString(name_), C.QtBool(prevent_), C.QtBool(stop_), C.QtBool(capture_))
 }
 func WebUiDetachEvent(id vdom.String, name vdom.String, handler vdom.EventHandler) {
     var id_, del_id = NewStringFromRunes(id);  defer del_id()

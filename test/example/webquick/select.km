@@ -1,4 +1,4 @@
-import Q from 'rename:WebQuick';
+import UI from 'rename:WebQuick';
 import assets from './assets';
 
 do webui-init 'WebQuick Select' DOM;
@@ -9,10 +9,12 @@ do WebUi::ExitWhenWindowClosed;
 
 private const DOM: NoExcept*[WebUi::Node]
     ~ with-reactive* &(selection) := 'foo',
-    Q::Styled ['container'] (Q::Container [
-        (Q::Styled ['row'] (Q::Container [
-            Q::Select selection [('foo','Foo'),('bar','Bar'),('42','42')],
-            Q::TextWatch (selection.watch)
+    UI::Styled ['container']
+    (UI::Container [
+        (UI::Styled ['row']
+        (UI::Container [
+            UI::Select selection [('foo','Foo'),('bar','Bar'),('42','42')],
+            UI::TextWatch (selection.watch)
         ])),
-        Q::Button 'reset' (selection.update (&(_)('foo')))
+        UI::Button 'reset' (selection.update (&(_)('foo')))
     ]);

@@ -41,7 +41,7 @@ public const TextInput: Component[Reactive[String]]
             (dom-styles [])
             (dom-attrs [ ('type', 'text'), ('value', text) ])
             (dom-event 'input'
-                (dom-event-sink @text (&(ev)(ev.get-string 'value'))))
+                (dom-event-sink @text (&(ev)(ev.get-string 'webuiValue'))))
             (dom-children [])
     );
 
@@ -57,7 +57,7 @@ public const Checkbox: Component[Reactive[Bool]]
                     ([('type', 'checkbox')])
             ))
             (dom-event 'change'
-                (dom-event-sink @checked (&(ev)(ev.get-bool 'checked'))))
+                (dom-event-sink @checked (&(ev)(ev.get-bool 'webuiChecked'))))
             (dom-children [])
     );
 
@@ -68,7 +68,7 @@ public const Select: Component[(Reactive[String], Array[(String,String)])]
             (dom-styles [])
             (dom-attrs [('value', current)])
             (dom-event 'change'
-                (dom-event-sink @current (&(ev)(ev.get-string 'value'))))
+                (dom-event-sink @current (&(ev)(ev.get-string 'webuiValue'))))
             (dom-children (
                 ~ map &(name,desc) := options,
                 dom-node 'option' {

@@ -1,4 +1,3 @@
-* { box-sizing: border-box; }
 .container { padding: 1rem; }
 .row { display: flex; margin: 0.25rem 0; align-items: center; }
 .row > * { margin: 0 0.25rem; }

@@ -16,8 +16,8 @@
  *  @property {Signal.<function(id:string, key:string): void>} EraseStyle
  *  @property {Signal.<function(id:string, name:string, value:string): void>} SetAttr
  *  @property {Signal.<function(id:string, name:string): void>} RemoveAttr
- *  @property {Signal.<function(id:string, name:string, prevent:boolean, stop:boolean, handler: string): void>} AttachEvent
- *  @property {Signal.<function(id:string, name:string, prevent:boolean, stop:boolean): void>} ModifyEvent
+ *  @property {Signal.<function(id:string, name:string, prevent:boolean, stop:boolean, capture: boolean, handler: string): void>} AttachEvent
+ *  @property {Signal.<function(id:string, name:string, prevent:boolean, stop:boolean, capture: boolean): void>} ModifyEvent
  *  @property {Signal.<function(id:string, name:string): void>} DetachEvent
  *  @property {Signal.<function(id:string, content:string): void>} SetText
  *  @property {Signal.<function(parent:string, id:string, tag:string) void>} AppendNode
@@ -32,7 +32,7 @@ const S_GlobalStyle = '#__webui_global_style'
 
 /** @type {Object.<string,HTMLElement>} */
 let elementRegistry = {}
-/** @type {Object.<string, Object.<string, { listener: function, handler: string }>>} */
+/** @type {Object.<string, Object.<string, { listener: function, handler: string, capture: boolean }>>} */
 let eventsRegistry = {}
 function createElement(parent, tag) {
     let parent_el = elementRegistry[parent]
@@ -84,12 +84,19 @@ window.addEventListener('load', _ => {
     let create_listener = (prevent, stop, handler) => ev => {
         if (prevent) { ev.preventDefault() }
         if (stop) { ev.stopPropagation() }
-        if (ev.target) {
-            if (ev.target instanceof HTMLInputElement
-                || ev.target instanceof HTMLSelectElement) {
-                ev.value = ev.target.value
-                ev.checked = ev.target.checked
-            }
+        /** @type {Element} */
+        let target = ev.target
+        /** @type {Element} */
+        let currentTarget = ev.currentTarget
+        if (target instanceof HTMLInputElement
+            || target instanceof HTMLSelectElement) {
+            ev.webuiValue = ev.target.value
+            ev.webuiChecked = ev.target.checked
+        }
+        if (ev instanceof MouseEvent) {
+            let bounds = currentTarget.getBoundingClientRect()
+            ev.webuiCurrentTargetX = Math.round(ev.clientX - bounds.left)
+            ev.webuiCurrentTargetY = Math.round(ev.clientY - bounds.top)
         }
         bridge.EmitEvent(handler, ev)
     }
@@ -137,35 +144,36 @@ window.addEventListener('load', _ => {
             console.log('RemoveAttr', { id, name }, err)
         }
     })
-    bridge.AttachEvent.connect((id, name, prevent, stop, handler) => {
+    bridge.AttachEvent.connect((id, name, prevent, stop, capture, handler) => {
         try {
             let listener = create_listener(prevent, stop, handler)
             let el = elementRegistry[id]
             // TODO: convenient handling for key events
             let event_kind = name.replace(/\..*/, '')
-            el.addEventListener(event_kind, listener)
+            el.addEventListener(event_kind, listener, Boolean(capture))
             if (!(eventsRegistry[id])) { eventsRegistry[id] = {} }
-            eventsRegistry[id][name] = { listener, handler }
+            eventsRegistry[id][name] = { listener, handler, capture }
             runAllUpdateHooks()
         } catch (err) {
-            console.log('AttachEvent', { id, name, prevent, stop, handler }, err)
+            console.log('AttachEvent', { id, name, prevent, stop, capture, handler }, err)
         }
     })
-    bridge.ModifyEvent.connect((id, name, prevent, stop) => {
+    bridge.ModifyEvent.connect((id, name, prevent, capture, stop) => {
         try {
             let el = elementRegistry[id]
             let events = eventsRegistry[id]
             let old_event = events[name]
             let handler = old_event.handler
             let old_listener = old_event.listener
+            let old_capture = old_event.capture
             let listener = create_listener(prevent, stop, handler)
             let event_kind = name.replace(/\..*/, '')
-            el.removeEventListener(event_kind, old_listener)
-            el.addEventListener(event_kind, listener)
-            events[name] = { listener, handler }
+            el.removeEventListener(event_kind, old_listener, Boolean(old_capture))
+            el.addEventListener(event_kind, listener, Boolean(capture))
+            events[name] = { listener, handler, capture }
             runAllUpdateHooks()
         } catch (err) {
-            console.log('ModifyEvent', { id, name, prevent, stop }, err)
+            console.log('ModifyEvent', { id, name, prevent, stop, capture }, err)
         }
     })
     bridge.DetachEvent.connect((id, name) => {

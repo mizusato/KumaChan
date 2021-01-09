@@ -60,17 +60,14 @@ type Events struct {
 type EventOptions struct {
 	Prevent  bool
 	Stop     bool
-	// TODO: Capture bool
+	Capture  bool
 	Handler  EventHandler
 }
 func EventOptionsEqual(a *EventOptions, b *EventOptions) bool {
 	if a == b {
 		return true
 	} else {
-		if a.Handler != b.Handler { return false }
-		if a.Prevent != b.Prevent { return false }
-		if a.Stop != b.Stop { return false }
-		return true
+		return *a == *b
 	}
 }
 
@@ -92,8 +89,8 @@ type DeltaNotifier struct {
 	EraseStyle   func(id String, key String)
 	SetAttr      func(id String, key String, value String)
 	RemoveAttr   func(id String, key String)
-	AttachEvent  func(id String, name String, prevent bool, stop bool, handler EventHandler)
-	ModifyEvent  func(id String, name String, prevent bool, stop bool)
+	AttachEvent  func(id String, name String, prevent bool, stop bool, capture bool, handler EventHandler)
+	ModifyEvent  func(id String, name String, prevent bool, stop bool, capture bool)
 	DetachEvent  func(id String, name String, handler EventHandler)
 	SetText      func(id String, content String)
 	AppendNode   func(parent String, id String, tag String)
@@ -212,12 +209,13 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 					}
 					if new_opts.Handler == old_opts.Handler {
 						ctx.ModifyEvent(id, name,
-							new_opts.Prevent, new_opts.Stop)
+							new_opts.Prevent, new_opts.Stop, new_opts.Capture)
 					} else {
 						ctx.DetachEvent(id, name,
 							old_opts.Handler)
 						ctx.AttachEvent(id, name,
-							new_opts.Prevent, new_opts.Stop, new_opts.Handler)
+							new_opts.Prevent, new_opts.Stop, new_opts.Capture,
+							new_opts.Handler)
 					}
 					skip_event_opts:
 				} else {
@@ -230,7 +228,8 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 			var new_opts = val.(*EventOptions)
 			if !(old != nil && old.Events.Data.Has(new_name)) {
 				 ctx.AttachEvent(id, new_name,
-				 	new_opts.Prevent, new_opts.Stop, new_opts.Handler)
+				 	new_opts.Prevent, new_opts.Stop, new_opts.Capture,
+				 	new_opts.Handler)
 			}
 		})
 		skip_events:

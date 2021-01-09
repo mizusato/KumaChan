@@ -337,10 +337,11 @@ var WebUiFunctions = map[string] interface{} {
 			Content: node.Content,
 		}
 	},
-	"webui-dom-event": func(prevent SumValue, stop SumValue, sink rx.Sink) *vdom.EventOptions {
+	"webui-dom-event": func(prevent SumValue, stop SumValue, capture SumValue, sink rx.Sink) *vdom.EventOptions {
 		return &vdom.EventOptions {
 			Prevent: FromBool(prevent),
 			Stop:    FromBool(stop),
+			Capture: FromBool(capture),
 			Handler: (vdom.EventHandler)(sink),
 		}
 	},

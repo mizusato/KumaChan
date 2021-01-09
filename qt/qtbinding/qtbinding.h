@@ -126,8 +126,8 @@ extern "C" {
     void WebUiRemoveAttr(QtString id, QtString name);
     void WebUiSetAttr(QtString id, QtString name, QtString value);
     void WebUiDetachEvent(QtString id, QtString event);
-    void WebUiModifyEvent(QtString id, QtString event, QtBool prevent, QtBool stop);
-    void WebUiAttachEvent(QtString id, QtString event, QtBool prevent, QtBool stop, QtString handler);
+    void WebUiModifyEvent(QtString id, QtString event, QtBool prevent, QtBool stop, QtBool capture);
+    void WebUiAttachEvent(QtString id, QtString event, QtBool prevent, QtBool stop, QtBool capture, QtString handler);
     void WebUiSetText(QtString id, QtString text);
     void WebUiInsertNode(QtString parent, QtString ref, QtString id, QtString tag);
     void WebUiAppendNode(QtString parent, QtString id, QtString tag);

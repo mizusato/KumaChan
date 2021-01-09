@@ -4,8 +4,8 @@ do WebUi::ExitWhenWindowClosed;
 
 private const DOM: NoExcept*[WebUi::Node]
     ~ with-reactive* &(@text) := '',
-    let input := dom-event-sink @text (&(_)(&(ev)(ev.get-string 'value'))),
-    @text.watch.map* (&(text)(
+    let input := dom-event-sink @text (&(_)(&(ev)(ev.get-string 'webuiValue'))),
+    @text.watch.map* ( &(text)
         (dom-node 'div' [('padding','0.5rem 0.5rem')] [
             (dom-node 'input'
                 (dom-styles [])
@@ -14,4 +14,4 @@ private const DOM: NoExcept*[WebUi::Node]
                 (dom-children [])),
             (dom-node 'div' ("echo: #" text))
         ])
-    ));
+    );

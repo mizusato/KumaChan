@@ -82,12 +82,12 @@ void WebUiDetachEvent(QtString id, QtString event) {
     emit window->bridge->DetachEvent(QtUnwrapString(id), QtUnwrapString(event));
 }
 
-void WebUiModifyEvent(QtString id, QtString event, QtBool prevent, QtBool stop) {
-    emit window->bridge->ModifyEvent(QtUnwrapString(id), QtUnwrapString(event), bool(prevent), bool(stop));
+void WebUiModifyEvent(QtString id, QtString event, QtBool prevent, QtBool stop, QtBool capture) {
+    emit window->bridge->ModifyEvent(QtUnwrapString(id), QtUnwrapString(event), bool(prevent), bool(stop), bool(capture));
 }
 
-void WebUiAttachEvent(QtString id, QtString event, QtBool prevent, QtBool stop, QtString handler) {
-    emit window->bridge->AttachEvent(QtUnwrapString(id), QtUnwrapString(event), bool(prevent), bool(stop), QtUnwrapString(handler));
+void WebUiAttachEvent(QtString id, QtString event, QtBool prevent, QtBool stop, QtBool capture, QtString handler) {
+    emit window->bridge->AttachEvent(QtUnwrapString(id), QtUnwrapString(event), bool(prevent), bool(stop), bool(capture), QtUnwrapString(handler));
 }
 
 void WebUiSetText(QtString id, QtString text) {

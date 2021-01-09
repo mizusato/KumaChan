@@ -41,8 +41,8 @@ signals:
     void RemoveAttr(QString id, QString name);
     void SetAttr(QString id, QString name, QString value);
     void DetachEvent(QString id, QString event);
-    void ModifyEvent(QString id, QString event, bool prevent, bool stop);
-    void AttachEvent(QString id, QString event, bool prevent, bool stop, QString handler);
+    void ModifyEvent(QString id, QString event, bool prevent, bool stop, bool capture);
+    void AttachEvent(QString id, QString event, bool prevent, bool stop, bool capture, QString handler);
     void SetText(QString id, QString text);
     // void InsertNode(QString parent, QString ref, QString id, QString tag);
     void AppendNode(QString parent, QString id, QString tag);

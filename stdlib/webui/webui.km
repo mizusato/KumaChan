@@ -166,15 +166,18 @@ public function dom-events: ( &(Array[(String,EventOptions)]) Events )
 
 public function dom-event: ( &(String,EventSink) Events )
     ( &(name,sink)
-        dom-events [ (name, (dom-event { prevent: No, stop: No, sink })) ]
+        dom-events [ (name, (dom-event {
+            sink,
+            prevent: No, stop: No, capture: No
+        })) ]
     );
 
 public function dom-event:
-    ( & { prevent: Bool, stop: Bool, sink: EventSink } EventOptions )
+    ( & { prevent: Bool, stop: Bool, capture: Bool, sink: EventSink } EventOptions )
     native 'webui-dom-event';
 
 public function dom-event: ( &(EventSink) EventOptions )
-    (&(sink)(dom-event { prevent: No, stop: No, sink }));
+    (&(sink)(dom-event { prevent: No, stop: No, capture: No, sink }));
 
 public function dom-event-sink[T]: ( &(Sink[T],(&(EventPayload)(T))) EventSink )
     native 'webui-dom-event-sink';

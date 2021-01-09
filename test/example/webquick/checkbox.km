@@ -1,4 +1,4 @@
-import Q from 'rename:WebQuick';
+import UI from 'rename:WebQuick';
 import assets from './assets';
 
 do webui-init 'WebQuick Checkbox' DOM;
@@ -9,9 +9,10 @@ do WebUi::ExitWhenWindowClosed;
 
 private const DOM: NoExcept*[WebUi::Node]
     ~ with-reactive* &(ok) := Yes,
-    Q::Styled ['container'] (Q::Container [
-        Q::Checkbox ok,
-        Q::TextWatch
+    UI::Styled ['container']
+    (UI::Container [
+        UI::Checkbox ok,
+        UI::TextWatch
             (ok.watch.map* (&(ok)(if ok: 'checked', else: 'not checked'))),
-        Q::Button 'toggle' (ok.update (&(ok)(not ok)))
+        UI::Button 'toggle' (ok.update (&(ok)(not ok)))
     ]);
