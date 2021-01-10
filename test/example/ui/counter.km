@@ -1,8 +1,8 @@
-do webui-init 'Counter' DOM;
+do ui-init 'Counter' DOM;
 
-do WebUi::ExitWhenWindowClosed;
+do UI::ExitWhenWindowClosed;
 
-private const ControlStyle: WebUi::Styles
+private const ControlStyle: UI::Styles
     dom-styles [
         ('display', 'inline-block'),
         ('font-size', '24px'),
@@ -10,7 +10,7 @@ private const ControlStyle: WebUi::Styles
         ('text-align', 'center')
     ];
 
-private const DOM: NoExcept*[WebUi::Node]
+private const DOM: NoExcept*[UI::Node]
     ~ with-reactive* &(@value) := (:Int: 0),
     let dec := dom-event-sink @value (&(value) (&(_) $(value - 1))),
     let inc := dom-event-sink @value (&(value) (&(_) $(value + 1))),

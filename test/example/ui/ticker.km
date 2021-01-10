@@ -1,4 +1,4 @@
-do webui-init 'Ticker' (
+do ui-init 'Ticker' (
     let hello := (dom-node 'h1' '你好 WebUI'),
     tick { interval: 1000 }
         | scan (:Number: 0) ( &(n,_) $(1 + n) )
@@ -9,4 +9,4 @@ do webui-init 'Ticker' (
             ]))
 );
 
-do WebUi::ExitWhenWindowClosed;
+do UI::ExitWhenWindowClosed;

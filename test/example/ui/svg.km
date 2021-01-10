@@ -1,8 +1,8 @@
-do webui-init 'SVG' DOM;
+do ui-init 'SVG' DOM;
 
-do WebUi::ExitWhenWindowClosed;
+do UI::ExitWhenWindowClosed;
 
-private const DOM: NoExcept*[WebUi::Node]
+private const DOM: NoExcept*[UI::Node]
     tick { interval: 100 }
     | scan 0.0 (&(theta,_)(% (+ theta (/ Math::Tau 80.0)) Math::Tau))
     | map* ( &(theta)

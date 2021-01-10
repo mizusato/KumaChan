@@ -1,8 +1,8 @@
-do webui-init 'Mouse' DOM;
+do ui-init 'Mouse' DOM;
 
-do WebUi::ExitWhenWindowClosed;
+do UI::ExitWhenWindowClosed;
 
-private const DOM: NoExcept*[WebUi::Node]
+private const DOM: NoExcept*[UI::Node]
     ~ with-reactive* &(@value) := 0.0,
     let set-value := dom-event-sink @value (&(_) (&(ev)(ev.get-float 'offsetX'))),
     let square := (dom-node 'div' {

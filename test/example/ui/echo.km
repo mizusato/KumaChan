@@ -1,8 +1,8 @@
-do webui-init 'Echo' DOM;
+do ui-init 'Echo' DOM;
 
-do WebUi::ExitWhenWindowClosed;
+do UI::ExitWhenWindowClosed;
 
-private const DOM: NoExcept*[WebUi::Node]
+private const DOM: NoExcept*[UI::Node]
     ~ with-reactive* &(@text) := '',
     let input := dom-event-sink @text (&(_)(&(ev)(ev.get-string 'webuiValue'))),
     @text.watch.map* ( &(text)

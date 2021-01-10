@@ -3,20 +3,20 @@ type Name {
     last:  String
 };
 
-do webui-init 'Name' DOM;
+do ui-init 'Name' DOM;
 
-do WebUi::ExitWhenWindowClosed;
+do UI::ExitWhenWindowClosed;
 
-private function cpt-label: ( &(String) NoExcept*[WebUi::Node] )
+private function cpt-label: ( &(String) NoExcept*[UI::Node] )
     ( &(text) (yield (dom-node 'span' text)) );
 
-private function cpt-button: ( &(String,WebUi::EventSink) NoExcept*[WebUi::Node] )
+private function cpt-button: ( &(String,UI::EventSink) NoExcept*[UI::Node] )
     ( &(title,sink) (yield (dom-node 'button' {
         content: (dom-text title),
         events:  (dom-event 'click' sink)
     })) );
 
-private function cpt-text-input: ( &(Reactive[String]) NoExcept*[WebUi::Node] )
+private function cpt-text-input: ( &(Reactive[String]) NoExcept*[UI::Node] )
     ( &(@value)
         ~ map* &(value) := watch @value,
         dom-node 'input' (dom-styles [])
@@ -26,7 +26,7 @@ private function cpt-text-input: ( &(Reactive[String]) NoExcept*[WebUi::Node] )
             (dom-children [])
     );
 
-private const DOM: NoExcept*[WebUi::Node]
+private const DOM: NoExcept*[UI::Node]
     ~ with-reactive* &(name) := Name { first: '', last: '' },
     let {first,last} := name,
     dom-dynamic 'div' [('padding','0.5rem 0.5rem')] [

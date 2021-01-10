@@ -1,13 +1,12 @@
-import UI from 'rename:WebQuick';
 import assets from './assets';
 
-do webui-init 'WebQuick Checkbox' DOM;
+do ui-init 'WebQuick Checkbox' DOM;
 
-do webui-inject-css [assets::style-css];
+do ui-inject-css [assets::style-css];
 
-do WebUi::ExitWhenWindowClosed;
+do UI::ExitWhenWindowClosed;
 
-private const DOM: NoExcept*[WebUi::Node]
+private const DOM: NoExcept*[UI::Node]
     ~ with-reactive* &(ok) := Yes,
     UI::Styled ['container']
     (UI::Container [
