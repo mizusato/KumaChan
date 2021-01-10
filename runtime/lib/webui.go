@@ -1,13 +1,13 @@
 package lib
 
 import (
+	"kumachan/rx"
+	"kumachan/util"
+	"kumachan/stdlib"
 	. "kumachan/runtime/common"
-	"kumachan/runtime/rx"
 	"kumachan/runtime/lib/container"
 	"kumachan/runtime/lib/gui/qt"
 	"kumachan/runtime/lib/gui/vdom"
-	"kumachan/util"
-	"kumachan/stdlib"
 )
 
 

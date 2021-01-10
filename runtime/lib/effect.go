@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"reflect"
 	"math/rand"
+	"kumachan/rx"
 	. "kumachan/runtime/common"
-	"kumachan/runtime/rx"
 	"kumachan/runtime/lib/container"
 )
 

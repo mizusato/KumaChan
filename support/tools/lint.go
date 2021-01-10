@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"path/filepath"
 	. "kumachan/util/error"
-	"kumachan/loader"
-	"kumachan/loader/parser/cst"
-	"kumachan/loader/parser/scanner"
-	"kumachan/checker"
-	"kumachan/compiler"
+	"kumachan/compiler/loader"
+	"kumachan/compiler/loader/parser/cst"
+	"kumachan/compiler/loader/parser/scanner"
+	"kumachan/compiler/checker"
+	"kumachan/compiler/generator"
 	"kumachan/runtime/common"
 )
 
@@ -181,10 +181,10 @@ func Lint(req LintRequest, ctx ServerContext) LintResponse {
 		}
 	}
 	var data = make([] common.DataValue, 0)
-	var closures = make([] compiler.FuncNode, 0)
-	var index = make(compiler.Index)
+	var closures = make([] generator.FuncNode, 0)
+	var index = make(generator.Index)
 	var errs_compiler =
-		compiler.CompileModule(checked_mod, index, &data, &closures)
+		generator.CompileModule(checked_mod, index, &data, &closures)
 	if errs_compiler != nil {
 		var errs = make([] LintError, len(errs_compiler))
 		for i, e := range errs_compiler {

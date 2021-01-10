@@ -6,10 +6,10 @@ import (
 	"runtime"
 	"strings"
 	"path/filepath"
-	"kumachan/runtime/rx"
+	"kumachan/rx"
+	"kumachan/stdlib"
 	. "kumachan/runtime/common"
 	. "kumachan/runtime/lib/container"
-	"kumachan/stdlib"
 )
 
 

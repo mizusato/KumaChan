@@ -3,9 +3,9 @@ package vm
 import (
 	"fmt"
 	"reflect"
-	. "kumachan/runtime/common"
-	"kumachan/runtime/rx"
+	"kumachan/rx"
 	"kumachan/runtime/lib"
+	. "kumachan/runtime/common"
 )
 
 

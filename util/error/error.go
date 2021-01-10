@@ -2,8 +2,8 @@ package error
 
 import (
 	"fmt"
-	"kumachan/loader/parser/scanner"
-	"kumachan/loader/parser/ast"
+	"kumachan/compiler/loader/parser/scanner"
+	"kumachan/compiler/loader/parser/ast"
 	"reflect"
 	"strconv"
 	"strings"

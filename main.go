@@ -9,19 +9,19 @@ import (
     "runtime"
     "strconv"
     "io/ioutil"
-    "kumachan/loader"
-    "kumachan/loader/parser"
-    "kumachan/loader/parser/ast"
-    "kumachan/loader/parser/scanner"
-    "kumachan/loader/parser/syntax"
-    "kumachan/loader/parser/transformer"
-    "kumachan/checker"
-    "kumachan/compiler"
+    "kumachan/compiler/loader"
+    "kumachan/compiler/loader/parser"
+    "kumachan/compiler/loader/parser/ast"
+    "kumachan/compiler/loader/parser/scanner"
+    "kumachan/compiler/loader/parser/syntax"
+    "kumachan/compiler/loader/parser/transformer"
+    "kumachan/compiler/checker"
+    "kumachan/compiler/generator"
     "kumachan/runtime/vm"
-    "kumachan/runtime/rx"
     "kumachan/runtime/common"
     "kumachan/runtime/lib/gui/qt"
     . "kumachan/util/error"
+    "kumachan/rx"
     "kumachan/util"
     "kumachan/rpc/kmd"
     "kumachan/support/tools"
@@ -89,9 +89,9 @@ func interpret(path string, args ([] string), max_stack_size int, asm_dump strin
     }
     var compile = func(entry *checker.CheckedModule, sch kmd.SchemaTable) common.Program {
         var data = make([] common.DataValue, 0)
-        var closures = make([] compiler.FuncNode, 0)
-        var idx = make(compiler.Index)
-        var errs = compiler.CompileModule(entry, idx, &data, &closures)
+        var closures = make([] generator.FuncNode, 0)
+        var idx = make(generator.Index)
+        var errs = generator.CompileModule(entry, idx, &data, &closures)
         if errs != nil {
             fmt.Fprintf(os.Stderr, "%s\n", MergeErrors(errs))
             os.Exit(5)
@@ -99,7 +99,7 @@ func interpret(path string, args ([] string), max_stack_size int, asm_dump strin
         var meta = common.ProgramMetaData {
             EntryModulePath: entry.RawModule.Path,
         }
-        var program, _, err = compiler.CreateProgram(meta, idx, data, closures, sch)
+        var program, _, err = generator.CreateProgram(meta, idx, data, closures, sch)
         if err != nil {
             fmt.Fprintf(os.Stderr, "%s\n", MergeErrors([] E { err }))
             os.Exit(6)
@@ -155,16 +155,16 @@ func repl(args ([] string), max_stack_size int) {
     if errs != nil { panic(MergeErrors(errs)) }
     // 4. Compile the module tree
     var data = make([] common.DataValue, 0)
-    var closures = make([] compiler.FuncNode, 0)
-    var idx = make(compiler.Index)
-    errs = compiler.CompileModule(mod, idx, &data, &closures)
+    var closures = make([] generator.FuncNode, 0)
+    var idx = make(generator.Index)
+    errs = generator.CompileModule(mod, idx, &data, &closures)
     if errs != nil { panic(MergeErrors(errs)) }
     // 5. Generate a program and get its dependency locator
     var meta = common.ProgramMetaData {
         EntryModulePath: mod_runtime_path,
     }
     program, dep_locator, err :=
-        compiler.CreateProgram(meta, idx, data, closures, sch)
+        generator.CreateProgram(meta, idx, data, closures, sch)
     if err != nil { panic(err) }
     // 6. Create an incremental compiler
     var mod_info = checker.ModuleInfo {
@@ -173,7 +173,7 @@ func repl(args ([] string), max_stack_size int) {
         Constants: mod.Context.Constants[mod.Name],
         Functions: mod.Context.Functions[mod.Name],
     }
-    var ic = compiler.NewIncrementalCompiler(&mod_info, dep_locator)
+    var ic = generator.NewIncrementalCompiler(&mod_info, dep_locator)
     // 7. Define the REPL
     var wait_m = make(chan *vm.Machine, 1)
     var loop = func() {
@@ -204,7 +204,7 @@ func repl(args ([] string), max_stack_size int) {
             cmd := transformer.Transform(cst).(ast.ReplRoot)
             var expr = ast.ReplCmdGetExpr(cmd.Cmd)
             var temp_name = fmt.Sprintf("Temp%d", cmd_id)
-            var temp_id = compiler.DepConstant {
+            var temp_id = generator.DepConstant {
                 Module: mod.Name,
                 Name:   temp_name,
             }
@@ -221,7 +221,7 @@ func repl(args ([] string), max_stack_size int) {
             switch cmd := cmd.Cmd.(type) {
             case ast.ReplAssign:
                 var alias = string(cmd.Name.Name)
-                ic.SetConstantAlias(temp_id, compiler.DepConstant {
+                ic.SetConstantAlias(temp_id, generator.DepConstant {
                     Module: temp_id.Module,
                     Name:   alias,
                 })
