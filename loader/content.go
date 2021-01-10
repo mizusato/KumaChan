@@ -9,16 +9,15 @@ import (
 	"path/filepath"
 	"encoding/json"
 	"kumachan/util"
-	"kumachan/parser/syntax"
+	"kumachan/loader/parser/syntax"
 	"kumachan/loader/common"
-	"kumachan/loader/kinds"
+	"kumachan/loader/extra"
 )
 
 
 var __UnitFileLoaders = [] common.UnitFileLoader {
-	kinds.WebAssetLoader(),
-	kinds.QtUiLoader(),
-	kinds.PNG_Loader(),
+	extra.WebAssetLoader(),
+	extra.PNG_Loader(),
 }
 
 type ModuleThunk struct {

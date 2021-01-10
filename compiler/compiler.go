@@ -1,11 +1,11 @@
 package compiler
 
 import (
-	. "kumachan/error"
+	. "kumachan/util/error"
 	ch "kumachan/checker"
 	c "kumachan/runtime/common"
 	"kumachan/runtime/lib"
-	"kumachan/kmd"
+	"kumachan/rpc/kmd"
 	"fmt"
 )
 

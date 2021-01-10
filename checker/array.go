@@ -1,7 +1,7 @@
 package checker
 
 import (
-	"kumachan/parser/ast"
+	"kumachan/loader/parser/ast"
 	"kumachan/runtime/common"
 	"reflect"
 	"kumachan/stdlib"

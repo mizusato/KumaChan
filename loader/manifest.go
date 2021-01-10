@@ -2,7 +2,7 @@ package loader
 
 import (
 	"path/filepath"
-	"kumachan/loader/kinds"
+	"kumachan/loader/extra"
 )
 
 
@@ -17,9 +17,8 @@ type Manifest struct {
 	Config   Config   `json:"config"`
 }
 type Config struct {
-	UI        kinds.QtUiConfig       `json:"qt_ui"`
-	PNG       kinds.PNG_Config       `json:"png"`
-	WebAsset  kinds.WebAssetConfig   `json:"web_asset"`
+	PNG       extra.PNG_Config       `json:"png"`
+	WebAsset  extra.WebAssetConfig   `json:"web_asset"`
 }
 func DefaultManifest(path string) Manifest {
 	// TODO: modules without explicit manifest should inherit
@@ -35,9 +34,8 @@ func DefaultManifest(path string) Manifest {
 		Version: "",
 		Name:    base,
 		Config:  Config {
-			UI:       kinds.QtUiConfig { Public: true },
-			PNG:      kinds.PNG_Config { Public: true },
-			WebAsset: kinds.WebAssetConfig { Public: true },
+			PNG:      extra.PNG_Config { Public: true },
+			WebAsset: extra.WebAssetConfig { Public: true },
 		},
 	}
 }

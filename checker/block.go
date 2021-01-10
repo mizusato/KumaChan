@@ -1,7 +1,7 @@
 package checker
 
-import "kumachan/parser/ast"
-import . "kumachan/error"
+import "kumachan/loader/parser/ast"
+import . "kumachan/util/error"
 
 
 func (impl SemiTypedBlock) SemiExprVal() {}

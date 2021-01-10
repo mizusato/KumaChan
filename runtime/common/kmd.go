@@ -1,6 +1,6 @@
 package common
 
-import "kumachan/kmd"
+import "kumachan/rpc/kmd"
 
 
 type KmdApi interface {

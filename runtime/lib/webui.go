@@ -1,11 +1,11 @@
 package lib
 
 import (
-	"kumachan/qt"
-	"kumachan/runtime/rx"
 	. "kumachan/runtime/common"
+	"kumachan/runtime/rx"
 	"kumachan/runtime/lib/container"
-	"kumachan/qt/qtbinding/webui/vdom"
+	"kumachan/runtime/lib/gui/qt"
+	"kumachan/runtime/lib/gui/vdom"
 	"kumachan/util"
 	"kumachan/stdlib"
 )
@@ -112,7 +112,7 @@ func WebUiInitAndLoad (
 		var wait = make(chan struct{})
 		qt.CommitTask(func() {
 			var title_runes = RuneSliceFromString(title)
-			var title, del_title = qt.NewStringFromRunes(title_runes)
+			var title, del_title = qt.NewString(title_runes)
 			defer del_title()
 			qt.WebUiInit(title)
 			wait <- struct{}{}
@@ -150,8 +150,8 @@ func WebUiInitAndLoad (
 
 func __WebUiRegisterAssetFiles(res (map[string] util.Resource)) {
 	for path, item := range res {
-		var path_q, path_del = qt.NewStringFromRunes(([] rune)(path))
-		var mime_q, mime_del = qt.NewStringFromRunes(([] rune)(item.MIME))
+		var path_q, path_del = qt.NewString(([] rune)(path))
+		var mime_q, mime_del = qt.NewString(([] rune)(item.MIME))
 		qt.WebUiRegisterAsset(path_q, mime_q, item.Data)
 		mime_del()
 		path_del()
@@ -166,7 +166,7 @@ func WebUiInjectAssetFiles (
 	var wait = make(chan struct{})
 	qt.CommitTask(func() {
 		for _, f := range files {
-			var path_q, del = qt.NewStringFromRunes(([] rune)(f.Path))
+			var path_q, del = qt.NewString(([] rune)(f.Path))
 			var uuid = inject(path_q)
 			qt.DeleteString(uuid) // unused now
 			del()
@@ -257,10 +257,10 @@ var WebUiFunctions = map[string] interface{} {
 					var weight = RuneSliceFromString(info.Elements[1].(String))
 					var style = RuneSliceFromString(info.Elements[2].(String))
 					var f = item.Elements[1].(stdlib.WebUiResourceFile)
-					var path_q, del1 = qt.NewStringFromRunes(([] rune)(f.Path))
-					var family_q, del2 = qt.NewStringFromRunes(family)
-					var weight_q, del3  = qt.NewStringFromRunes(weight)
-					var style_q, del4 = qt.NewStringFromRunes(style)
+					var path_q, del1 = qt.NewString(([] rune)(f.Path))
+					var family_q, del2 = qt.NewString(family)
+					var weight_q, del3  = qt.NewString(weight)
+					var style_q, del4 = qt.NewString(style)
 					var uuid = qt.WebUiInjectTTF(path_q, family_q, weight_q, style_q)
 					qt.DeleteString(uuid) // unused now
 					del1(); del2(); del3(); del4()

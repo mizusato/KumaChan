@@ -3,7 +3,7 @@ package common
 import (
 	"os"
 	"reflect"
-	. "kumachan/error"
+	. "kumachan/util/error"
 	"kumachan/runtime/rx"
 	"kumachan/util"
 )

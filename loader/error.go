@@ -1,8 +1,8 @@
 package loader
 
 import (
-	. "kumachan/error"
-	"kumachan/parser"
+	. "kumachan/util/error"
+	"kumachan/loader/parser"
 )
 
 

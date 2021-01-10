@@ -4,10 +4,10 @@ import (
 	"os"
 	"sync"
 	"strings"
-	"kumachan/kmd"
+	"kumachan/rpc/kmd"
 	"kumachan/runtime/rx"
 	"kumachan/runtime/lib"
-	. "kumachan/error"
+	. "kumachan/util/error"
 	. "kumachan/runtime/common"
 	"kumachan/util"
 )

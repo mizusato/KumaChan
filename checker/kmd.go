@@ -1,10 +1,10 @@
 package checker
 
 import (
-	. "kumachan/error"
+	. "kumachan/util/error"
 	"kumachan/loader"
-	"kumachan/kmd"
-	"kumachan/parser/ast"
+	"kumachan/rpc/kmd"
+	"kumachan/loader/parser/ast"
 	"kumachan/stdlib"
 )
 

@@ -2,7 +2,7 @@ package compiler
 
 import (
 	ch "kumachan/checker"
-	. "kumachan/error"
+	. "kumachan/util/error"
 	c "kumachan/runtime/common"
 )
 

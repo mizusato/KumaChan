@@ -2,7 +2,7 @@ package container
 
 import (
 	"reflect"
-	. "kumachan/error"
+	. "kumachan/util/error"
 	. "kumachan/runtime/common"
 )
 

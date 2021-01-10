@@ -1,7 +1,7 @@
 package container
 
 import (
-	. "kumachan/error"
+	. "kumachan/util/error"
 	. "kumachan/runtime/common"
 	"kumachan/runtime/lib/container/avl"
 	"kumachan/runtime/lib/container/ltt"

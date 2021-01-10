@@ -9,22 +9,22 @@ import (
     "runtime"
     "strconv"
     "io/ioutil"
-    . "kumachan/error"
-    "kumachan/qt"
-    "kumachan/tools"
-    "kumachan/kmd"
-    "kumachan/util"
     "kumachan/loader"
-    "kumachan/parser"
-    "kumachan/parser/ast"
-    "kumachan/parser/scanner"
-    "kumachan/parser/syntax"
-    "kumachan/parser/transformer"
+    "kumachan/loader/parser"
+    "kumachan/loader/parser/ast"
+    "kumachan/loader/parser/scanner"
+    "kumachan/loader/parser/syntax"
+    "kumachan/loader/parser/transformer"
     "kumachan/checker"
     "kumachan/compiler"
     "kumachan/runtime/vm"
     "kumachan/runtime/rx"
     "kumachan/runtime/common"
+    "kumachan/runtime/lib/gui/qt"
+    . "kumachan/util/error"
+    "kumachan/util"
+    "kumachan/rpc/kmd"
+    "kumachan/support/tools"
 )
 
 
@@ -384,9 +384,9 @@ func main() {
                 if err != nil { panic(err) }
                 repl(program_args, max_stack_size)
             }
-            close(qt.InitRequestSignal)
+            close(qt.InitRequestSignal())
         })()
-        var qt_main, use_qt = <- qt.InitRequestSignal
+        var qt_main, use_qt = <- qt.InitRequestSignal()
         if use_qt {
             qt_main()
         }

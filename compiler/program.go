@@ -2,9 +2,9 @@ package compiler
 
 import (
 	"fmt"
-	. "kumachan/error"
+	. "kumachan/util/error"
 	c "kumachan/runtime/common"
-	"kumachan/kmd"
+	"kumachan/rpc/kmd"
 )
 
 

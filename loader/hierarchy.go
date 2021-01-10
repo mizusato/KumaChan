@@ -3,8 +3,8 @@ package loader
 import (
 	"fmt"
 	"os"
-	. "kumachan/error"
-	"kumachan/parser/ast"
+	. "kumachan/util/error"
+	"kumachan/loader/parser/ast"
 	"strings"
 	"path/filepath"
 )

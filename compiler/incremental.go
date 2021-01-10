@@ -2,8 +2,8 @@ package compiler
 
 import (
 	"kumachan/loader"
-	"kumachan/parser/ast"
-	. "kumachan/error"
+	"kumachan/loader/parser/ast"
+	. "kumachan/util/error"
 	c "kumachan/runtime/common"
 	ch "kumachan/checker"
 )

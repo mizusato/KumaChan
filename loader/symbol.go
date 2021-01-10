@@ -3,7 +3,7 @@ package loader
 import (
 	"fmt"
 	"kumachan/stdlib"
-	"kumachan/parser/ast"
+	"kumachan/loader/parser/ast"
 )
 
 

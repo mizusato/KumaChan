@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"kumachan/util"
-	"kumachan/parser/ast"
+	"kumachan/loader/parser/ast"
 )
 
 

@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"unsafe"
 	"strings"
-	. "kumachan/error"
+	. "kumachan/util/error"
 	"kumachan/stdlib"
 )
 

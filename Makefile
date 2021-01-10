@@ -1,10 +1,10 @@
 ifdef OS	
-	WINDOWS_WORKAROUND = cp qt/build/release/libqtbinding* qt/build/
-	LIBBIN = qt/build/release/qtbinding.dll
+	WINDOWS_WORKAROUND = cp runtime/lib/gui/qt/build/release/libqtbinding* runtime/lib/gui/qt/build/
+	LIBBIN = runtime/lib/gui/qt/build/release/qtbinding.dll
 	EXENAME = kumachan.exe
 else
 	WINDOWS_WORKAROUND = $(NOOP)
-	LIBBIN = qt/build/libqtbinding*
+	LIBBIN = runtime/lib/gui/qt/build/libqtbinding*
 	EXENAME = kumachan
 endif
 
@@ -20,7 +20,7 @@ check:
 
 qt:
 	@echo -e '\033[1mCompiling CGO Qt Binding...\033[0m'
-	cd qt/build && qmake ../qtbinding/qtbinding.pro && $(MAKE)
+	cd runtime/lib/gui/qt/build && qmake ../qtbinding/qtbinding.pro && $(MAKE)
 	$(WINDOWS_WORKAROUND)
 	cp -P $(LIBBIN) build/
 

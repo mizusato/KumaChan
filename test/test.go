@@ -10,10 +10,10 @@ import (
 	"path/filepath"
 	"kumachan/loader"
 	"kumachan/checker"
-	. "kumachan/error"
+	. "kumachan/util/error"
 	"kumachan/compiler"
 	"kumachan/runtime/common"
-	"kumachan/qt"
+	"kumachan/runtime/lib/gui/qt"
 	"kumachan/runtime/vm"
 )
 

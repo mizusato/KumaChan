@@ -3,7 +3,7 @@ package checker
 import (
 	"fmt"
 	"strings"
-	. "kumachan/error"
+	. "kumachan/util/error"
 )
 
 

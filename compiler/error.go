@@ -1,6 +1,6 @@
 package compiler
 
-import . "kumachan/error"
+import . "kumachan/util/error"
 
 
 type Error struct {

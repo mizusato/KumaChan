@@ -3,8 +3,8 @@ package checker
 import (
 	"fmt"
 	"strings"
-	"kumachan/parser/ast"
-	"kumachan/parser/syntax"
+	"kumachan/loader/parser/ast"
+	"kumachan/loader/parser/syntax"
 )
 
 

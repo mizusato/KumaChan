@@ -2,10 +2,10 @@ package lib
 
 import (
 	"fmt"
-	"kumachan/qt"
-	"kumachan/runtime/rx"
 	. "kumachan/runtime/common"
+	"kumachan/runtime/rx"
 	"kumachan/runtime/lib/container"
+	"kumachan/runtime/lib/gui/qt"
 	"kumachan/stdlib"
 )
 

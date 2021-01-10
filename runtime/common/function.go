@@ -3,7 +3,7 @@ package common
 import (
 	"fmt"
 	"strings"
-	. "kumachan/error"
+	. "kumachan/util/error"
 )
 
 
