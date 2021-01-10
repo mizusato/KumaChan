@@ -12,7 +12,7 @@ import (
 	"kumachan/compiler/checker"
 	. "kumachan/util/error"
 	"kumachan/compiler/generator"
-	"kumachan/runtime/common"
+	"kumachan/lang"
 	"kumachan/runtime/lib/gui/qt"
 	"kumachan/runtime/vm"
 )
@@ -39,12 +39,12 @@ func expectStdIO(t *testing.T, path string, in string, expected_out string) {
 	if ldr_err != nil { t.Fatal(ldr_err) }
 	mod, _, sch, errs := checker.TypeCheck(ldr_mod, ldr_idx)
 	if errs != nil { t.Fatal(mergeErrorMessages(errs)) }
-	var data = make([] common.DataValue, 0)
+	var data = make([] lang.DataValue, 0)
 	var closures = make([] generator.FuncNode, 0)
 	var idx = make(generator.Index)
 	errs = generator.CompileModule(mod, idx, &data, &closures)
 	if errs != nil { t.Fatal(mergeErrorMessages(errs)) }
-	var meta = common.ProgramMetaData { EntryModulePath: path}
+	var meta = lang.ProgramMetaData { EntryModulePath: path}
 	program, _, err := generator.CreateProgram(meta, idx, data, closures, sch)
 	if err != nil { t.Fatal(err) }
 	in_read, in_write, e := os.Pipe()
@@ -57,7 +57,7 @@ func expectStdIO(t *testing.T, path string, in string, expected_out string) {
 			MaxStackSize: 65536,
 			Environment:  os.Environ(),
 			Arguments:    [] string { path },
-			StdIO:        common.StdIO {
+			StdIO:        lang.StdIO {
 				Stdin:  in_read,
 				Stdout: out_write,
 				Stderr: os.Stderr,

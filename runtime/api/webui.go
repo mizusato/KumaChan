@@ -1,10 +1,10 @@
-package lib
+package api
 
 import (
 	"kumachan/rx"
 	"kumachan/util"
 	"kumachan/stdlib"
-	. "kumachan/runtime/common"
+	. "kumachan/lang"
 	"kumachan/runtime/lib/container"
 	"kumachan/runtime/lib/gui/qt"
 	"kumachan/runtime/lib/gui/vdom"

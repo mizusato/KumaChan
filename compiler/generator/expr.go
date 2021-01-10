@@ -2,7 +2,7 @@ package generator
 
 import (
 	ch "kumachan/compiler/checker"
-	c "kumachan/runtime/common"
+	"kumachan/lang"
 )
 
 
@@ -42,7 +42,7 @@ func (ctx Context) MakeBranch() Context {
 	}
 }
 
-func (ctx Context) AppendDataRef(v c.DataValue) uint {
+func (ctx Context) AppendDataRef(v lang.DataValue) uint {
 	var refs = ctx.GlobalRefs
 	var index = uint(len(*refs))
 	*refs = append(*refs, RefData { v })
@@ -63,7 +63,7 @@ func (ctx Context) AppendConstRef(ref ch.RefConstant) uint {
 	return index
 }
 
-func (ctx Context) AppendClosureRef(f *c.Function, refs []GlobalRef) uint {
+func (ctx Context) AppendClosureRef(f *lang.Function, refs []GlobalRef) uint {
 	var outer_refs = ctx.GlobalRefs
 	var index = uint(len(*outer_refs))
 	*outer_refs = append(*outer_refs, RefClosure {
@@ -77,7 +77,7 @@ func (ctx Context) AppendClosureRef(f *c.Function, refs []GlobalRef) uint {
 type GlobalRef interface { GlobalRef() }
 
 func (impl RefData) GlobalRef() {}
-type RefData struct { c.DataValue }
+type RefData struct { lang.DataValue }
 
 func (impl RefFun) GlobalRef() {}
 type RefFun ch.AbsRefFunction
@@ -87,7 +87,7 @@ type RefConst ch.RefConstant
 
 func (impl RefClosure) GlobalRef() {}
 type RefClosure struct {
-	Function    *c.Function
+	Function    *lang.Function
 	GlobalRefs  [] GlobalRef
 }
 
@@ -95,7 +95,7 @@ type RefClosure struct {
 func CompileExpr(expr ch.Expr, ctx Context) Code {
 	switch v := expr.Value.(type) {
 	case ch.UnitValue:
-		var inst_nil = c.Instruction { OpCode: c.NIL }
+		var inst_nil = lang.Instruction { OpCode: lang.NIL }
 		return CodeFrom(inst_nil, expr.Info)
 	case ch.IntLiteral:
 		var index = ctx.AppendDataRef(DataInteger(v))
@@ -128,7 +128,7 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 				buf.Write(ref_code)
 			}
 			buf.Write(CodeFrom(InstProduct(n), expr.Info))
-			buf.Write(CodeFrom(c.Instruction { OpCode: c.CTX }, expr.Info))
+			buf.Write(CodeFrom(lang.Instruction { OpCode: lang.CTX }, expr.Info))
 		}
 		return buf.Collect()
 	case ch.RefConstant:
@@ -141,7 +141,7 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 		return CodeFrom(InstLocalRef(offset), expr.Info)
 	case ch.Array:
 		var length = uint(len(v.Items))
-		if length > c.ArrayMaxSize {
+		if length > lang.ArrayMaxSize {
 			panic("array literal length exceeded limit")
 		}
 		var info = ch.GetArrayInfo(length, v.ItemType)
@@ -152,8 +152,8 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 		for _, item := range v.Items {
 			var item_code = CompileExpr(item, ctx)
 			buf.Write(item_code)
-			var inst_append = c.Instruction {
-				OpCode: c.APPEND,
+			var inst_append = lang.Instruction {
+				OpCode: lang.APPEND,
 			}
 			buf.Write(CodeFrom(inst_append, item.Info))
 		}
@@ -232,7 +232,7 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 					panic("impossible branch")
 				}
 			} else {
-				var pop_inst = c.Instruction { OpCode: c.POP }
+				var pop_inst = lang.Instruction { OpCode: lang.POP }
 				branch_buf.Write(CodeFrom(pop_inst, v.Argument.Info))
 			}
 			var expr_code = CompileExpr(b.Value, branch_ctx)
@@ -252,7 +252,7 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 		buf.Write(arg_code)
 		for i := uint(0); i < branch_count; i += 1 {
 			var index = raw_branches[i].Index
-			var jump c.Instruction
+			var jump lang.Instruction
 			if raw_branches[i].IsDefault {
 				jump = InstJump(addrs[i])
 			} else {
@@ -266,7 +266,7 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 			var info = raw_branches[i].Value.Info
 			buf.WriteAbsolute(CodeFrom(goto_tail, info))
 		}
-		var nop = c.Instruction { OpCode: c.NOP }
+		var nop = lang.Instruction { OpCode: lang.NOP }
 		buf.Write(CodeFrom(nop, v.Argument.Info))
 		return buf.Collect()
 	case ch.ReactiveSwitch:
@@ -279,7 +279,7 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 		var buf = MakeCodeBuffer()
 		buf.Write(branches_code)
 		buf.Write(arg_code)
-		var rsw = c.Instruction { OpCode: c.RSW }
+		var rsw = lang.Instruction { OpCode: lang.RSW }
 		buf.Write(CodeFrom(rsw, expr.Info))
 		return buf.Collect()
 	case ch.MultiSwitch:
@@ -315,7 +315,7 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 					panic("something went wrong")
 				}
 			} else {
-				var pop_inst = c.Instruction { OpCode: c.POP }
+				var pop_inst = lang.Instruction { OpCode: lang.POP }
 				branch_buf.Write(CodeFrom(pop_inst, arg.Info))
 			}
 			var expr_code = CompileExpr(b.Value, branch_ctx)
@@ -345,15 +345,15 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 				buf.WriteAbsolute(CodeFrom(jump, arg.Info))
 			} else {
 				var element_indexes = raw_branches[i].Indexes
-				var ms = c.Instruction { OpCode: c.MS }
+				var ms = lang.Instruction { OpCode: lang.MS }
 				buf.WriteAbsolute(CodeFrom(ms, arg.Info))
 				if uint(len(element_indexes)) != A {
 					panic("something went wrong")
 				}
 				for j, el := range element_indexes {
-					var el_inst c.Instruction
+					var el_inst lang.Instruction
 					if el.IsDefault {
-						el_inst = c.Instruction { OpCode: c.MSD }
+						el_inst = lang.Instruction { OpCode: lang.MSD }
 					} else {
 						el_inst = InstMultiSwitchIndex(el.Index)
 					}
@@ -369,7 +369,7 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 			var info = raw_branches[i].Value.Info
 			buf.WriteAbsolute(CodeFrom(goto_tail, info))
 		}
-		var nop = c.Instruction { OpCode: c.NOP }
+		var nop = lang.Instruction { OpCode: lang.NOP }
 		buf.Write(CodeFrom(nop, arg.Info))
 		return buf.Collect()
 	case ch.Lambda:
@@ -422,8 +422,8 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 		var f_code = CompileExpr(v.Function, ctx)
 		buf.Write(arg_code)
 		buf.Write(f_code)
-		var inst_call = c.Instruction {
-			OpCode: c.CALL,
+		var inst_call = lang.Instruction {
+			OpCode: lang.CALL,
 		}
 		buf.Write(CodeFrom(inst_call, expr.Info))
 		return buf.Collect()
@@ -487,17 +487,17 @@ func CompileClosure (
 		}
 		base_context_size += 1
 	}
-	if base_context_size > c.ClosureMaxSize {
+	if base_context_size > lang.ClosureMaxSize {
 		panic("maximum closure size exceeded")
 	}
-	if (base_context_size + base_reserved_size) > c.LocalSlotMaxSize {
+	if (base_context_size + base_reserved_size) > lang.LocalSlotMaxSize {
 		panic("maximum quantity of local bindings exceeded")
 	}
 	var raw_inner_code = inner_buf.Collect()
 	var inst_seq_len = len(raw_inner_code.InstSeq)
-	var final_inst_seq = make([] c.Instruction, inst_seq_len)
+	var final_inst_seq = make([] lang.Instruction, inst_seq_len)
 	for i, inst := range raw_inner_code.InstSeq {
-		if inst.OpCode == c.LOAD || inst.OpCode == c.STORE {
+		if inst.OpCode == lang.LOAD || inst.OpCode == lang.STORE {
 			var offset = inst.GetOffset()
 			var new_offset uint
 			if offset < outer_bindings_size {
@@ -505,10 +505,10 @@ func CompileClosure (
 			} else {
 				new_offset = offset - outer_bindings_size + base_context_size
 			}
-			final_inst_seq[i] = c.Instruction {
+			final_inst_seq[i] = lang.Instruction {
 				OpCode: inst.OpCode,
 				Arg0:   0,
-				Arg1:   c.Long(new_offset),
+				Arg1:   lang.Long(new_offset),
 			}
 		} else {
 			final_inst_seq[i] = inst
@@ -518,14 +518,14 @@ func CompileClosure (
 		InstSeq:   final_inst_seq,
 		SourceMap: raw_inner_code.SourceMap,
 	}
-	var f = &c.Function {
-		Kind:     c.F_USER,
-		Code:     final_inner_code.InstSeq,
-		BaseSize: c.FrameBaseSize {
-			Context:  c.Short(base_context_size),
-			Reserved: c.Long(base_reserved_size),
+	var f = &lang.Function {
+		Kind: lang.F_USER,
+		Code: final_inner_code.InstSeq,
+		BaseSize: lang.FrameBaseSize {
+			Context:  lang.Short(base_context_size),
+			Reserved: lang.Long(base_reserved_size),
 		},
-		Info:     c.FuncInfo {
+		Info:     lang.FuncInfo {
 			Name:      "(closure)",
 			DeclPoint: info.ErrorPoint,
 			SourceMap: final_inner_code.SourceMap,
@@ -540,14 +540,14 @@ func CompileClosure (
 	}
 	var prod_inst = InstProduct(uint(len(context_outer_offsets)))
 	outer_buf.Write(CodeFrom(prod_inst, info))
-	var rec_flag c.Short
+	var rec_flag lang.Short
 	if recursive {
 		rec_flag = 1
 	} else {
 		rec_flag = 0
 	}
-	var ctx_inst = c.Instruction {
-		OpCode: c.CTX,
+	var ctx_inst = lang.Instruction {
+		OpCode: lang.CTX,
 		Arg0:   rec_flag,
 		Arg1:   0,
 	}
@@ -572,6 +572,6 @@ func BindPatternItems (
 		buf.Write(CodeFrom(inst_get, info))
 		buf.Write(CodeFrom(inst_bind, info))
 	}
-	var pop_inst = c.Instruction { OpCode: c.POP }
+	var pop_inst = lang.Instruction { OpCode: lang.POP }
 	buf.Write(CodeFrom(pop_inst, info))
 }

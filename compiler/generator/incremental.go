@@ -4,8 +4,8 @@ import (
 	"kumachan/compiler/loader"
 	"kumachan/compiler/loader/parser/ast"
 	. "kumachan/util/error"
-	c "kumachan/runtime/common"
 	ch "kumachan/compiler/checker"
+	"kumachan/lang"
 )
 
 
@@ -14,7 +14,7 @@ type ExtraDepLocator = func(Dependency) (uint, bool)
 type IncrementalCompiler struct {
 	typeInfo       *ch.ModuleInfo
 	baseLocator    DepLocator
-	addedData      [] c.DataValue
+	addedData      [] lang.DataValue
 	addedClosures  [] FuncNode
 	addedAmount    uint
 	addedDepMap    map[Dependency] uint
@@ -24,7 +24,7 @@ func NewIncrementalCompiler(info *ch.ModuleInfo, base DepLocator) *IncrementalCo
 	return &IncrementalCompiler {
 		typeInfo:      info,
 		baseLocator:   base,
-		addedData:     make([] c.DataValue, 0),
+		addedData:     make([] lang.DataValue, 0),
 		addedClosures: make([] FuncNode, 0),
 		addedAmount:   0,
 		addedDepMap:   make(map[Dependency] uint),
@@ -32,10 +32,10 @@ func NewIncrementalCompiler(info *ch.ModuleInfo, base DepLocator) *IncrementalCo
 }
 
 func (ctx *IncrementalCompiler) AddConstant(id DepConstant, val ast.Expr) (
-	c.FunctionValue, ([] c.Value), error,
+	lang.FunctionValue, ([] lang.Value), error,
 ) {
-	var all_dep_values = make([] c.Value, 0)
-	var closure_deps = make(map[*c.Function] ([] Dependency))
+	var all_dep_values = make([] lang.Value, 0)
+	var closure_deps = make(map[*lang.Function] ([] Dependency))
 	var sym = loader.NewSymbol(id.Module, id.Name)
 	var expr_ctx = ch.ExprContext {
 		ModuleInfo: *(ctx.typeInfo),
@@ -68,7 +68,7 @@ func (ctx *IncrementalCompiler) AddConstant(id DepConstant, val ast.Expr) (
 			case DepClosure:
 				var cl = ctx.addedClosures[D.Index]
 				all_deps = append(all_deps, dep)
-				all_dep_values = append(all_dep_values, &c.ValFunc {
+				all_dep_values = append(all_dep_values, &lang.ValFunc {
 					Underlying: cl.Underlying,
 				})
 				closure_deps[cl.Underlying] = cl.Dependencies
@@ -97,7 +97,7 @@ func (ctx *IncrementalCompiler) AddConstant(id DepConstant, val ast.Expr) (
 		return offset, exists
 	}
 	for _, v := range all_dep_values {
-		var f, is_f = v.(c.FunctionValue)
+		var f, is_f = v.(lang.FunctionValue)
 		if is_f {
 			var f_node = FuncNode {
 				Underlying:   f.Underlying,
@@ -107,7 +107,7 @@ func (ctx *IncrementalCompiler) AddConstant(id DepConstant, val ast.Expr) (
 		}
 	}
 	RelocateCode(&const_f_node, ctx.baseLocator, extraLocator)
-	return &c.ValFunc { Underlying: const_f }, all_dep_values, nil
+	return &lang.ValFunc { Underlying: const_f }, all_dep_values, nil
 }
 
 func (ctx *IncrementalCompiler) SetConstantAlias(id DepConstant, alias DepConstant) {

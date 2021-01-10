@@ -1,4 +1,4 @@
-package lib
+package api
 
 import (
 	"os"
@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"math/rand"
 	"kumachan/rx"
-	. "kumachan/runtime/common"
+	. "kumachan/lang"
 	"kumachan/runtime/lib/container"
 )
 

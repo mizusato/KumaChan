@@ -1,8 +1,8 @@
-package lib
+package api
 
 import (
 	"fmt"
-	. "kumachan/runtime/common"
+	. "kumachan/lang"
 	"kumachan/rx"
 	"kumachan/stdlib"
 	"kumachan/runtime/lib/container"

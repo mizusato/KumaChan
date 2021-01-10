@@ -1,8 +1,8 @@
-package lib
+package api
 
 import (
 	"io"
-	. "kumachan/runtime/common"
+	. "kumachan/lang"
 )
 
 

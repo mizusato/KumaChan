@@ -1,4 +1,4 @@
-package lib
+package api
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"math/big"
 	"encoding/json"
-	. "kumachan/runtime/common"
+	. "kumachan/lang"
 	. "kumachan/runtime/lib/container"
 )
 

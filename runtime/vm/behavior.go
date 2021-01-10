@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"reflect"
 	"kumachan/rx"
-	"kumachan/runtime/lib"
-	. "kumachan/runtime/common"
+	"kumachan/runtime/api"
+	. "kumachan/lang"
 )
 
 
@@ -22,7 +22,7 @@ func execute(p Program, m *Machine) {
 	}
 	for i, _ := range p.Functions {
 		var f = p.Functions[i]
-		m.globalSlot = append(m.globalSlot, f.ToValue(lib.GetNativeFunction))
+		m.globalSlot = append(m.globalSlot, f.ToValue(api.GetNativeFunction))
 	}
 	for i, _ := range p.Closures {
 		var f = p.Closures[i]
@@ -36,7 +36,7 @@ func execute(p Program, m *Machine) {
 			var fv = f.ToValue(nil).(FunctionValue)
 			m.globalSlot = append(m.globalSlot, call(fv, nil, m))
 		case F_NATIVE:
-			var v = lib.GetNativeConstant(f.NativeIndex, nil_ctx_handle)
+			var v = api.GetNativeConstant(f.NativeIndex, nil_ctx_handle)
 			m.globalSlot = append(m.globalSlot, v)
 		case F_PREDEFINED:
 			m.globalSlot = append(m.globalSlot, f.ToValue(nil))

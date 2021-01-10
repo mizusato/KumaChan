@@ -1,7 +1,7 @@
 package avl
 
 import (
-	. "kumachan/runtime/common"
+	. "kumachan/lang"
 )
 
 /* Functional AVL Tree: Underlying Implementation of Ordered Set and Map */

@@ -8,8 +8,8 @@ import (
 	"kumachan/util"
 	"kumachan/rpc/kmd"
 	. "kumachan/util/error"
-	"kumachan/runtime/lib"
-	. "kumachan/runtime/common"
+	"kumachan/runtime/lib/librpc"
+	. "kumachan/lang"
 )
 
 
@@ -54,7 +54,7 @@ func Execute(p Program, opts Options, m_signal (chan <- *Machine)) {
 		contextPool:  pool,
 		scheduler:    sched,
 	}
-	m.kmdTransformer = lib.KmdTransformer(m)
+	m.kmdTransformer = librpc.KmdTransformer(m)
 	if m_signal != nil {
 		m_signal <- m
 	}
@@ -173,11 +173,11 @@ func (h MachineContextHandle) KmdGetTypeFromId(id kmd.TypeId) *kmd.Type {
 }
 
 func (h MachineContextHandle) KmdSerialize(v Value, t *kmd.Type) ([] byte, error) {
-	return lib.KmdSerialize(v, t, h.machine.kmdTransformer)
+	return librpc.KmdSerialize(v, t, h.machine.kmdTransformer)
 }
 
 func (h MachineContextHandle) KmdDeserialize(binary ([] byte), t *kmd.Type) (Value, error) {
-	return lib.KmdDeserialize(binary, t, h.machine.kmdTransformer)
+	return librpc.KmdDeserialize(binary, t, h.machine.kmdTransformer)
 }
 
 func (h MachineContextHandle) GetResources(kind string) (map[string] util.Resource) {

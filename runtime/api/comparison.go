@@ -1,7 +1,7 @@
-package lib
+package api
 
 import (
-	. "kumachan/runtime/common"
+	. "kumachan/lang"
 	. "kumachan/runtime/lib/container"
 	"math/big"
 )

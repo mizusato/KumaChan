@@ -10,7 +10,7 @@ import (
 	"kumachan/compiler/loader/parser/scanner"
 	"kumachan/compiler/checker"
 	"kumachan/compiler/generator"
-	"kumachan/runtime/common"
+	"kumachan/lang"
 )
 
 
@@ -180,7 +180,7 @@ func Lint(req LintRequest, ctx ServerContext) LintResponse {
 			Errors: errs,
 		}
 	}
-	var data = make([] common.DataValue, 0)
+	var data = make([] lang.DataValue, 0)
 	var closures = make([] generator.FuncNode, 0)
 	var index = make(generator.Index)
 	var errs_compiler =

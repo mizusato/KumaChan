@@ -1,9 +1,9 @@
-package lib
+package api
 
 import (
 	"os"
 	"fmt"
-	. "kumachan/runtime/common"
+	. "kumachan/lang"
 )
 
 

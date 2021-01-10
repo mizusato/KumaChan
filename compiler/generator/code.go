@@ -3,18 +3,18 @@ package generator
 import (
 	ch "kumachan/compiler/checker"
 	. "kumachan/util/error"
-	c "kumachan/runtime/common"
+	"kumachan/lang"
 )
 
 
 type Code struct {
-	InstSeq    [] c.Instruction
+	InstSeq    [] lang.Instruction
 	SourceMap  [] ErrorPoint
 }
 
-func CodeFrom(inst c.Instruction, info ch.ExprInfo) Code {
+func CodeFrom(inst lang.Instruction, info ch.ExprInfo) Code {
 	return Code {
-		InstSeq:   [] c.Instruction { inst },
+		InstSeq:   [] lang.Instruction {inst },
 		SourceMap: [] ErrorPoint { info.ErrorPoint },
 	}
 }
@@ -30,7 +30,7 @@ type CodeBuffer struct {
 
 func MakeCodeBuffer() CodeBuffer {
 	var code = &Code {
-		InstSeq:   make([] c.Instruction, 0),
+		InstSeq:   make([] lang.Instruction, 0),
 		SourceMap: make([] ErrorPoint, 0),
 	}
 	return CodeBuffer { code }
@@ -41,13 +41,13 @@ func (buf CodeBuffer) Write(code Code) {
 	var base_size = uint(len(buf.Code.InstSeq))
 	for _, inst := range code.InstSeq {
 		switch inst.OpCode {
-		case c.JIF, c.JMP, c.MSJ:
+		case lang.JIF, lang.JMP, lang.MSJ:
 			var dest_addr = (uint(inst.Arg1) + base_size)
 			ValidateDestAddr(dest_addr)
-			*base = append(*base, c.Instruction {
+			*base = append(*base, lang.Instruction {
 				OpCode: inst.OpCode,
 				Arg0:   inst.Arg0,
-				Arg1:   c.Long(dest_addr),
+				Arg1:   lang.Long(dest_addr),
 			})
 		default:
 			*base = append(*base, inst)
@@ -67,17 +67,17 @@ func (buf CodeBuffer) WriteBranch(code Code, tail_addr uint) {
 	var last_addr = (code.Length() - 1)
 	for _, inst := range code.InstSeq {
 		switch inst.OpCode {
-		case c.JIF, c.JMP, c.MSJ:
+		case lang.JIF, lang.JMP, lang.MSJ:
 			var rel_dest_addr = uint(inst.Arg1)
 			var abs_dest_addr = (rel_dest_addr + base_size)
 			ValidateDestAddr(abs_dest_addr)
 			if rel_dest_addr == last_addr {
 				abs_dest_addr = tail_addr
 			}
-			*base = append(*base, c.Instruction {
+			*base = append(*base, lang.Instruction {
 				OpCode: inst.OpCode,
 				Arg0:   inst.Arg0,
-				Arg1:   c.Long(abs_dest_addr),
+				Arg1:   lang.Long(abs_dest_addr),
 			})
 		default:
 			*base = append(*base, inst)
@@ -93,158 +93,158 @@ func (buf CodeBuffer) Collect() Code {
 }
 
 
-func InstGlobalRef(index uint) c.Instruction {
+func InstGlobalRef(index uint) lang.Instruction {
 	ValidateGlobalIndex(index)
-	var a0, a1 = c.GlobalIndex(index)
-	return c.Instruction {
-		OpCode: c.GLOBAL,
+	var a0, a1 = lang.GlobalIndex(index)
+	return lang.Instruction {
+		OpCode: lang.GLOBAL,
 		Arg0:   a0,
 		Arg1:   a1,
 	}
 }
 
-func InstLocalRef(offset uint) c.Instruction {
+func InstLocalRef(offset uint) lang.Instruction {
 	ValidateLocalOffset(offset)
-	return c.Instruction {
-		OpCode: c.LOAD,
+	return lang.Instruction {
+		OpCode: lang.LOAD,
 		Arg0:   0,
-		Arg1:   c.Long(offset),
+		Arg1:   lang.Long(offset),
 	}
 }
 
-func InstStore(offset uint) c.Instruction {
+func InstStore(offset uint) lang.Instruction {
 	ValidateLocalOffset(offset)
-	return c.Instruction {
-		OpCode: c.STORE,
+	return lang.Instruction {
+		OpCode: lang.STORE,
 		Arg0:   0,
-		Arg1:   c.Long(offset),
+		Arg1:   lang.Long(offset),
 	}
 }
 
-func InstGet(index uint) c.Instruction {
+func InstGet(index uint) lang.Instruction {
 	ValidateProductIndex(index)
-	return c.Instruction {
-		OpCode: c.GET,
-		Arg0:   c.Short(index),
+	return lang.Instruction {
+		OpCode: lang.GET,
+		Arg0:   lang.Short(index),
 		Arg1:   0,
 	}
 }
 
-func InstPopGet(index uint) c.Instruction {
+func InstPopGet(index uint) lang.Instruction {
 	ValidateProductIndex(index)
-	return c.Instruction {
-		OpCode: c.POPGET,
-		Arg0:   c.Short(index),
+	return lang.Instruction {
+		OpCode: lang.POPGET,
+		Arg0:   lang.Short(index),
 		Arg1:   0,
 	}
 }
 
-func InstSet(index uint) c.Instruction {
+func InstSet(index uint) lang.Instruction {
 	ValidateProductIndex(index)
-	return c.Instruction {
-		OpCode: c.SET,
-		Arg0:   c.Short(index),
+	return lang.Instruction {
+		OpCode: lang.SET,
+		Arg0:   lang.Short(index),
 		Arg1:   0,
 	}
 }
 
-func InstProduct(size uint) c.Instruction {
+func InstProduct(size uint) lang.Instruction {
 	ValidateProductSize(size)
-	return c.Instruction {
-		OpCode: c.PROD,
-		Arg0:   c.Short(size),
+	return lang.Instruction {
+		OpCode: lang.PROD,
+		Arg0:   lang.Short(size),
 		Arg1:   0,
 	}
 }
 
-func InstArray(info_index uint) c.Instruction {
+func InstArray(info_index uint) lang.Instruction {
 	ValidateGlobalIndex(info_index)
-	var a0, a1 = c.GlobalIndex(info_index)
-	return c.Instruction {
-		OpCode: c.ARRAY,
+	var a0, a1 = lang.GlobalIndex(info_index)
+	return lang.Instruction {
+		OpCode: lang.ARRAY,
 		Arg0:   a0,
 		Arg1:   a1,
 	}
 }
 
-func InstSum(index uint) c.Instruction {
+func InstSum(index uint) lang.Instruction {
 	ValidateSumIndex(index)
-	return c.Instruction {
-		OpCode: c.SUM,
-		Arg0:   c.Short(index),
+	return lang.Instruction {
+		OpCode: lang.SUM,
+		Arg0:   lang.Short(index),
 		Arg1:   0,
 	}
 }
 
-func InstJumpIf(index uint, dest uint) c.Instruction {
+func InstJumpIf(index uint, dest uint) lang.Instruction {
 	ValidateSumIndex(index)
 	ValidateDestAddr(dest)
-	return c.Instruction {
-		OpCode: c.JIF,
-		Arg0:   c.Short(index),
-		Arg1:   c.Long(dest),
+	return lang.Instruction {
+		OpCode: lang.JIF,
+		Arg0:   lang.Short(index),
+		Arg1:   lang.Long(dest),
 	}
 }
 
-func InstJump(dest uint) c.Instruction {
+func InstJump(dest uint) lang.Instruction {
 	ValidateDestAddr(dest)
-	return c.Instruction {
-		OpCode: c.JMP,
+	return lang.Instruction {
+		OpCode: lang.JMP,
 		Arg0:   0,
-		Arg1:   c.Long(dest),
+		Arg1:   lang.Long(dest),
 	}
 }
 
-func InstMultiSwitchIndex(index uint) c.Instruction {
+func InstMultiSwitchIndex(index uint) lang.Instruction {
 	ValidateSumIndex(index)
-	return c.Instruction {
-		OpCode: c.MSI,
-		Arg0:   c.Short(index),
+	return lang.Instruction {
+		OpCode: lang.MSI,
+		Arg0:   lang.Short(index),
 		Arg1:   0,
 	}
 }
 
-func InstMultiSwitchJump(dest uint) c.Instruction {
+func InstMultiSwitchJump(dest uint) lang.Instruction {
 	ValidateDestAddr(dest)
-	return c.Instruction {
-		OpCode: c.MSJ,
+	return lang.Instruction {
+		OpCode: lang.MSJ,
 		Arg0:   0,
-		Arg1:   c.Long(dest),
+		Arg1:   lang.Long(dest),
 	}
 }
 
 func ValidateGlobalIndex(index uint) {
-	if index >= c.GlobalSlotMaxSize {
+	if index >= lang.GlobalSlotMaxSize {
 		panic("global value index exceeded maximum slot capacity")
 	}
 }
 
 func ValidateLocalOffset(offset uint) {
-	if offset >= c.LocalSlotMaxSize {
+	if offset >= lang.LocalSlotMaxSize {
 		panic("local binding offset exceeded maximum slot capacity")
 	}
 }
 
 func ValidateDestAddr(addr uint) {
-	if addr >= c.FunCodeMaxLength {
+	if addr >= lang.FunCodeMaxLength {
 		panic("destination address exceeded limitation")
 	}
 }
 
 func ValidateProductIndex(index uint) {
-	if index >= c.ProductMaxSize {
+	if index >= lang.ProductMaxSize {
 		panic("value index exceeded maximum capacity of product type")
 	}
 }
 
 func ValidateProductSize(size uint) {
-	if size > c.ProductMaxSize {
+	if size > lang.ProductMaxSize {
 		panic("given size exceeded maximum capacity of product type")
 	}
 }
 
 func ValidateSumIndex(index uint) {
-	if index >= c.SumMaxBranches {
+	if index >= lang.SumMaxBranches {
 		panic("given index exceeded maximum branch limit of sum type")
 	}
 }

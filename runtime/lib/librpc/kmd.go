@@ -1,4 +1,4 @@
-package lib
+package librpc
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"math/big"
 	"kumachan/rpc/kmd"
-	. "kumachan/runtime/common"
+	. "kumachan/lang"
 	"kumachan/runtime/lib/container"
 )
 

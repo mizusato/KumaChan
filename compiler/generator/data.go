@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-	ch "kumachan/compiler/checker"
-	c "kumachan/runtime/common"
 	"strconv"
+	"kumachan/lang"
+	ch "kumachan/compiler/checker"
 )
 
 
 type DataInteger ch.IntLiteral
-func (d DataInteger) ToValue() c.Value {
+func (d DataInteger) ToValue() lang.Value {
 	return d.Value
 }
 func (d DataInteger) String() string {
@@ -19,7 +19,7 @@ func (d DataInteger) String() string {
 }
 
 type DataSmallInteger ch.SmallIntLiteral
-func (d DataSmallInteger) ToValue() c.Value {
+func (d DataSmallInteger) ToValue() lang.Value {
 	return d.Value
 }
 func (d DataSmallInteger) String() string {
@@ -27,7 +27,7 @@ func (d DataSmallInteger) String() string {
 }
 
 type DataFloat ch.FloatLiteral
-func (d DataFloat) ToValue() c.Value {
+func (d DataFloat) ToValue() lang.Value {
 	return d.Value
 }
 func (d DataFloat) String() string {
@@ -35,17 +35,17 @@ func (d DataFloat) String() string {
 }
 
 type DataString struct { Value  [] uint32 }
-func (d DataString) ToValue() c.Value {
+func (d DataString) ToValue() lang.Value {
 	return d.Value
 }
 func (d DataString) String() string {
 	return fmt.Sprintf("STRING %s",
-		strconv.Quote(c.GoStringFromString(d.Value)))
+		strconv.Quote(lang.GoStringFromString(d.Value)))
 }
 
 type DataStringFormatter ch.StringFormatter
-func (d DataStringFormatter) ToValue() c.Value {
-	var format_slice = func(args []c.Value) ([] uint32) {
+func (d DataStringFormatter) ToValue() lang.Value {
+	var format_slice = func(args []lang.Value) ([] uint32) {
 		var buf = make([] uint32, 0)
 		for i, seg := range d.Segments {
 			buf = append(buf, seg...)
@@ -59,24 +59,24 @@ func (d DataStringFormatter) ToValue() c.Value {
 	var f interface{}
 	if d.Arity == 0 {
 		f = func() ([] uint32) {
-			return format_slice([] c.Value {})
+			return format_slice([] lang.Value {})
 		}
 	} else if d.Arity == 1 {
-		f = func(arg c.Value) ([] uint32) {
-			return format_slice([] c.Value { arg })
+		f = func(arg lang.Value) ([] uint32) {
+			return format_slice([] lang.Value {arg })
 		}
 	} else {
-		f = func(arg c.ProductValue) ([] uint32) {
+		f = func(arg lang.ProductValue) ([] uint32) {
 			return format_slice(arg.Elements)
 		}
 	}
-	return c.NativeFunctionValue(c.AdaptNativeFunction(f))
+	return lang.NativeFunctionValue(lang.AdaptNativeFunction(f))
 }
 func (d DataStringFormatter) String() string {
 	var buf strings.Builder
 	fmt.Fprintf(&buf, "FORMAT %d ", d.Arity)
 	for i, item := range d.Segments {
-		buf.WriteString(strconv.Quote(c.GoStringFromString(item)))
+		buf.WriteString(strconv.Quote(lang.GoStringFromString(item)))
 		if i != len(d.Segments)-1 || uint(len(d.Segments)) == d.Arity {
 			buf.WriteString(fmt.Sprintf("$%d", i))
 		}
@@ -84,9 +84,9 @@ func (d DataStringFormatter) String() string {
 	return buf.String()
 }
 
-type DataArrayInfo c.ArrayInfo
-func (d DataArrayInfo) ToValue() c.Value {
-	return c.ArrayInfo(d)
+type DataArrayInfo lang.ArrayInfo
+func (d DataArrayInfo) ToValue() lang.Value {
+	return lang.ArrayInfo(d)
 }
 func (d DataArrayInfo) String() string {
 	return fmt.Sprintf("ARRAY %d %s", d.Length, d.ItemType.String())

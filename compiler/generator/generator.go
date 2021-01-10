@@ -3,8 +3,8 @@ package generator
 import (
 	. "kumachan/util/error"
 	ch "kumachan/compiler/checker"
-	c "kumachan/runtime/common"
-	"kumachan/runtime/lib"
+	"kumachan/lang"
+	"kumachan/runtime/api"
 	"kumachan/rpc/kmd"
 	"fmt"
 )
@@ -22,7 +22,7 @@ type Index  map[string] *CompiledModule
 func CompileModule (
 	mod       *ch.CheckedModule,
 	idx       Index,
-	data      *([] c.DataValue),
+	data      *([] lang.DataValue),
 	closures  *([] FuncNode),
 ) [] E {
 	var _, exists = idx[mod.Name]
@@ -91,13 +91,13 @@ func CompileFunction (
 	mod    string,
 	name   string,
 	point  ErrorPoint,
-) (*c.Function, [] GlobalRef, [] E) {
+) (*lang.Function, [] GlobalRef, [] E) {
 	switch b := body.(type) {
 	case ch.ExprKmdApi:
-		var f c.NativeFunctionValue
+		var f lang.NativeFunctionValue
 		switch id := b.Id.(type) {
 		case kmd.SerializerId:
-			f = func(arg c.Value, h c.InteropContext) c.Value {
+			f = func(arg lang.Value, h lang.InteropContext) lang.Value {
 				var t = h.KmdGetTypeFromId(id.TypeId)
 				var binary, err = h.KmdSerialize(arg, t)
 				if err != nil {
@@ -107,22 +107,22 @@ func CompileFunction (
 				return binary
 			}
 		case kmd.DeserializerId:
-			f = func(arg c.Value, h c.InteropContext) c.Value {
+			f = func(arg lang.Value, h lang.InteropContext) lang.Value {
 				var t = h.KmdGetTypeFromId(id.TypeId)
 				var obj, err = h.KmdDeserialize(arg.([] byte), t)
-				if err != nil { return c.Ng(err) }
-				return c.Ok(obj)
+				if err != nil { return lang.Ng(err) }
+				return lang.Ok(obj)
 			}
 		default:
 			panic("impossible branch")
 		}
-		return &c.Function {
-			Kind:        c.F_PREDEFINED,
+		return &lang.Function {
+			Kind:        lang.F_PREDEFINED,
 			NativeIndex: ^uint(0),
 			Predefined:  f,
 			Code:        nil,
-			BaseSize:    c.FrameBaseSize {},
-			Info: c.FuncInfo {
+			BaseSize:    lang.FrameBaseSize {},
+			Info: lang.FuncInfo {
 				Module:    mod,
 				Name:      name,
 				DeclPoint: point,
@@ -131,13 +131,13 @@ func CompileFunction (
 		}, make([] GlobalRef, 0), nil
 	case ch.ExprPredefinedValue:
 		if len(imp) > 0 { panic("something went wrong") }
-		return &c.Function {
-			Kind:        c.F_PREDEFINED,
+		return &lang.Function {
+			Kind:        lang.F_PREDEFINED,
 			NativeIndex: ^uint(0),
 			Predefined:  b.Value,
 			Code:        nil,
-			BaseSize:    c.FrameBaseSize {},
-			Info: c.FuncInfo {
+			BaseSize:    lang.FrameBaseSize {},
+			Info: lang.FuncInfo {
 				Module:    mod,
 				Name:      name,
 				DeclPoint: point,
@@ -147,7 +147,8 @@ func CompileFunction (
 	case ch.ExprNative:
 		if len(imp) > 0 { panic("something went wrong") }
 		var native_name = b.Name
-		var index, exists = lib.NativeFunctionIndex[native_name]
+		// TODO: decouple with the api module
+		var index, exists = api.NativeFunctionIndex[native_name]
 		var errs [] E = nil
 		if !exists {
 			errs = [] E { &Error {
@@ -155,13 +156,13 @@ func CompileFunction (
 				Concrete: E_NativeFunctionNotFound { native_name },
 			} }
 		}
-		return &c.Function {
-			Kind:        c.F_NATIVE,
+		return &lang.Function {
+			Kind:        lang.F_NATIVE,
 			NativeIndex: index,
 			Predefined:  nil,
 			Code:        nil,
-			BaseSize:    c.FrameBaseSize {},
-			Info:        c.FuncInfo {
+			BaseSize:    lang.FrameBaseSize {},
+			Info:        lang.FuncInfo {
 				Module:    mod,
 				Name:      name,
 				DeclPoint: point,
@@ -194,19 +195,19 @@ func CompileFunction (
 		buf.Write(out_code)
 		var code = buf.Collect()
 		var binding_peek = *(scope.BindingPeek)
-		if (context_size + binding_peek) > c.LocalSlotMaxSize {
+		if (context_size + binding_peek) > lang.LocalSlotMaxSize {
 			panic("maximum quantity of local bindings exceeded")
 		}
-		return &c.Function {
-			Kind:        c.F_USER,
+		return &lang.Function {
+			Kind:        lang.F_USER,
 			NativeIndex: ^uint(0),
 			Predefined:  nil,
 			Code:        code.InstSeq,
-			BaseSize:    c.FrameBaseSize {
-				Context:  c.Short(context_size),
-				Reserved: c.Long(binding_peek),
+			BaseSize:    lang.FrameBaseSize {
+				Context:  lang.Short(context_size),
+				Reserved: lang.Long(binding_peek),
 			},
-			Info:        c.FuncInfo {
+			Info:        lang.FuncInfo {
 				Module:    mod,
 				Name:      name,
 				DeclPoint: point,
@@ -224,16 +225,16 @@ func CompileConstant (
 	mod    string,
 	name   string,
 	point  ErrorPoint,
-) (*c.Function, [] GlobalRef, [] E) {
+) (*lang.Function, [] GlobalRef, [] E) {
 	switch b := body.(type) {
 	case ch.ExprPredefinedValue:
-		return &c.Function {
-			Kind:        c.F_PREDEFINED,
+		return &lang.Function {
+			Kind:        lang.F_PREDEFINED,
 			NativeIndex: ^uint(0),
 			Predefined:  b.Value,
 			Code:        nil,
-			BaseSize:    c.FrameBaseSize {},
-			Info: c.FuncInfo {
+			BaseSize:    lang.FrameBaseSize {},
+			Info: lang.FuncInfo {
 				Module:    mod,
 				Name:      name,
 				DeclPoint: point,
@@ -242,7 +243,7 @@ func CompileConstant (
 		}, make([] GlobalRef, 0), nil
 	case ch.ExprNative:
 		var native_name = b.Name
-		var index, exists = lib.NativeConstantIndex[native_name]
+		var index, exists = api.NativeConstantIndex[native_name]
 		var errs [] E = nil
 		if !exists {
 			errs = [] E { &Error {
@@ -250,13 +251,13 @@ func CompileConstant (
 				Concrete: E_NativeConstantNotFound { native_name },
 			} }
 		}
-		return &c.Function {
-			Kind:        c.F_NATIVE,
+		return &lang.Function {
+			Kind:        lang.F_NATIVE,
 			NativeIndex: index,
 			Predefined:  nil,
 			Code:        nil,
-			BaseSize:    c.FrameBaseSize {},
-			Info: c.FuncInfo {
+			BaseSize:    lang.FrameBaseSize {},
+			Info: lang.FuncInfo {
 				Module:    mod,
 				Name:      name,
 				DeclPoint: point,
@@ -269,19 +270,19 @@ func CompileConstant (
 		var code = CompileExpr(body_expr, ctx)
 		var errs = ctx.LocalScope.CollectUnusedAsErrors()
 		var binding_peek = *(ctx.LocalScope.BindingPeek)
-		if binding_peek > c.LocalSlotMaxSize {
+		if binding_peek > lang.LocalSlotMaxSize {
 			panic("maximum quantity of local bindings exceeded")
 		}
-		return &c.Function {
-			Kind:        c.F_USER,
+		return &lang.Function {
+			Kind:        lang.F_USER,
 			NativeIndex: ^uint(0),
 			Predefined:  nil,
 			Code:        code.InstSeq,
-			BaseSize:    c.FrameBaseSize {
+			BaseSize:    lang.FrameBaseSize {
 				Context:  0,
-				Reserved: c.Long(binding_peek),
+				Reserved: lang.Long(binding_peek),
 			},
-			Info:        c.FuncInfo {
+			Info:        lang.FuncInfo {
 				Module:    mod,
 				Name:      name,
 				DeclPoint: point,

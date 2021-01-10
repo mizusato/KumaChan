@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"reflect"
 	. "kumachan/util/error"
-	. "kumachan/runtime/common"
+	. "kumachan/lang"
 )
 
 

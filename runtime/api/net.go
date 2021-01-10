@@ -1,9 +1,9 @@
-package lib
+package api
 
 import (
 	"net/url"
 	"kumachan/rx"
-	. "kumachan/runtime/common"
+	. "kumachan/lang"
 	. "kumachan/runtime/lib/container"
 )
 

@@ -1,6 +1,6 @@
-package lib
+package api
 
-import . "kumachan/runtime/common"
+import . "kumachan/lang"
 
 
 var NativeFunctionMaps = [] (map[string] interface{}) {

@@ -18,8 +18,8 @@ import (
     "kumachan/compiler/checker"
     "kumachan/compiler/generator"
     "kumachan/runtime/vm"
-    "kumachan/runtime/common"
-    "kumachan/runtime/lib/gui/qt"
+	"kumachan/lang"
+	"kumachan/runtime/lib/gui/qt"
     . "kumachan/util/error"
     "kumachan/rx"
     "kumachan/util"
@@ -87,8 +87,8 @@ func interpret(path string, args ([] string), max_stack_size int, asm_dump strin
         }
         return c_mod, c_idx, schema
     }
-    var compile = func(entry *checker.CheckedModule, sch kmd.SchemaTable) common.Program {
-        var data = make([] common.DataValue, 0)
+    var compile = func(entry *checker.CheckedModule, sch kmd.SchemaTable) lang.Program {
+        var data = make([] lang.DataValue, 0)
         var closures = make([] generator.FuncNode, 0)
         var idx = make(generator.Index)
         var errs = generator.CompileModule(entry, idx, &data, &closures)
@@ -96,7 +96,7 @@ func interpret(path string, args ([] string), max_stack_size int, asm_dump strin
             fmt.Fprintf(os.Stderr, "%s\n", MergeErrors(errs))
             os.Exit(5)
         }
-        var meta = common.ProgramMetaData {
+        var meta = lang.ProgramMetaData {
             EntryModulePath: entry.RawModule.Path,
         }
         var program, _, err = generator.CreateProgram(meta, idx, data, closures, sch)
@@ -106,7 +106,7 @@ func interpret(path string, args ([] string), max_stack_size int, asm_dump strin
         }
         return program
     }
-    var dump_asm = func(program common.Program, file_path string) {
+    var dump_asm = func(program lang.Program, file_path string) {
         var f, err = os.OpenFile(file_path, os.O_WRONLY | os.O_TRUNC | os.O_CREATE, 0666)
         if err != nil {
             fmt.Fprintf(os.Stderr, "cannot open asm dump file: %s", err)
@@ -130,7 +130,7 @@ func interpret(path string, args ([] string), max_stack_size int, asm_dump strin
         MaxStackSize: uint(max_stack_size),
         Environment:  os.Environ(),
         Arguments:    args,
-        StdIO:        common.StdIO {
+        StdIO:        lang.StdIO {
             Stdin:  os.Stdin,
             Stdout: os.Stdout,
             Stderr: os.Stderr,
@@ -154,13 +154,13 @@ func repl(args ([] string), max_stack_size int) {
     mod, _, sch, errs := checker.TypeCheck(ldr_mod, ldr_idx)
     if errs != nil { panic(MergeErrors(errs)) }
     // 4. Compile the module tree
-    var data = make([] common.DataValue, 0)
+    var data = make([] lang.DataValue, 0)
     var closures = make([] generator.FuncNode, 0)
     var idx = make(generator.Index)
     errs = generator.CompileModule(mod, idx, &data, &closures)
     if errs != nil { panic(MergeErrors(errs)) }
     // 5. Generate a program and get its dependency locator
-    var meta = common.ProgramMetaData {
+    var meta = lang.ProgramMetaData {
         EntryModulePath: mod_runtime_path,
     }
     program, dep_locator, err :=
@@ -216,8 +216,8 @@ func repl(args ([] string), max_stack_size int) {
             }
             m.InjectExtraGlobals(dep_vals)
             var ret = m.Call(f, nil)
-            m.InjectExtraGlobals([] common.Value { ret })
-            fmt.Printf("%s %s\n", cmd_label, common.Inspect(ret))
+            m.InjectExtraGlobals([] lang.Value {ret })
+            fmt.Printf("%s %s\n", cmd_label, lang.Inspect(ret))
             switch cmd := cmd.Cmd.(type) {
             case ast.ReplAssign:
                 var alias = string(cmd.Name.Name)
@@ -245,7 +245,7 @@ func repl(args ([] string), max_stack_size int) {
                     select {
                     case eff_v, not_closed := <- ch_values:
                         if not_closed {
-                            var msg = common.Inspect(eff_v)
+                            var msg = lang.Inspect(eff_v)
                             _, err := fmt.Fprintf(os.Stderr,
                                 "%s * value: %s\n", cmd_label_ok, msg)
                             if err != nil { panic(err) }
@@ -257,7 +257,7 @@ func repl(args ([] string), max_stack_size int) {
                         }
                     case eff_err, not_closed := <- ch_error:
                         if not_closed {
-                            var msg = common.Inspect(eff_err)
+                            var msg = lang.Inspect(eff_err)
                             _, err := fmt.Fprintf(os.Stderr,
                                 "%s * error: %s\n", cmd_label_err, msg)
                             if err != nil { panic(err) }
@@ -275,8 +275,8 @@ func repl(args ([] string), max_stack_size int) {
         }
     }
     // 8. Inject the REPL as a side effect of the program
-    var do_repl = &common.Function {
-        Kind:        common.F_PREDEFINED,
+    var do_repl = &lang.Function {
+        Kind: lang.F_PREDEFINED,
         Predefined:  rx.NewGoroutineSingle(func() (rx.Object, bool) {
             loop()
             return nil, true
@@ -289,7 +289,7 @@ func repl(args ([] string), max_stack_size int) {
         MaxStackSize: uint(max_stack_size),
         Environment:  os.Environ(),
         Arguments:    args,
-        StdIO:        common.StdIO {
+        StdIO:        lang.StdIO {
             Stdin:  os.Stdin,
             Stdout: os.Stdout,
             Stderr: os.Stderr,

@@ -7,7 +7,7 @@ import (
 )
 
 
-const lang = "lang"
+const language = "language"
 
 func TestStringWithChars(t *testing.T) {
 	const expected = `Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
@@ -15,13 +15,13 @@ Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliqu
 Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. 
 #(X,Y)
 `
-	var dir_path = getTestDirPath(t, lang)
+	var dir_path = getTestDirPath(t, language)
 	var mod_path = filepath.Join(dir_path, "string", "with_chars.km")
 	expectStdIO(t, mod_path, "", expected)
 }
 
 func TestCps(t *testing.T) {
-	var dir_path = getTestDirPath(t, lang)
+	var dir_path = getTestDirPath(t, language)
 	var mod_path = filepath.Join(dir_path, "sugar", "cps.km")
 	var input = func(a string, b string) string {
 		return fmt.Sprintf("%s\n%s\n", a, b)
@@ -36,13 +36,13 @@ func TestCps(t *testing.T) {
 }
 
 func TestZeroValue(t *testing.T) {
-	var dir_path = getTestDirPath(t, lang)
+	var dir_path = getTestDirPath(t, language)
 	var mod_path = filepath.Join(dir_path, "product", "zero.km")
 	expectStdIO(t, mod_path, "", "(0,0)\n")
 }
 
 func TestMultiSwitch(t *testing.T) {
-	var dir_path = getTestDirPath(t, lang)
+	var dir_path = getTestDirPath(t, language)
 	var mod_path = filepath.Join(dir_path, "sum", "multi_switch.km")
 	var input = func(x string, y string) string {
 		return fmt.Sprintf("%s\n%s\n", x, y)

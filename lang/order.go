@@ -1,4 +1,4 @@
-package common
+package lang
 
 
 type Compare   func(Value,Value) Ordering

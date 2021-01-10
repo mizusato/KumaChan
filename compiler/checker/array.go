@@ -2,7 +2,7 @@ package checker
 
 import (
 	"kumachan/compiler/loader/parser/ast"
-	"kumachan/runtime/common"
+	"kumachan/lang"
 	"reflect"
 	"kumachan/stdlib"
 )
@@ -132,7 +132,7 @@ func AssignArrayTo(expected Type, array SemiTypedArray, info ExprInfo, ctx ExprC
 	}
 }
 
-func GetArrayInfo(length uint, item_type Type) common.ArrayInfo {
+func GetArrayInfo(length uint, item_type Type) lang.ArrayInfo {
 	var item_reflect_type = (func() reflect.Type {
 		switch t := item_type.(type) {
 		case *NamedType:
@@ -144,12 +144,12 @@ func GetArrayInfo(length uint, item_type Type) common.ArrayInfo {
 					return rt
 				}
 			}
-			return common.ValueReflectType()
+			return lang.ValueReflectType()
 		default:
-			return common.ValueReflectType()
+			return lang.ValueReflectType()
 		}
 	})()
-	return common.ArrayInfo {
+	return lang.ArrayInfo {
 		Length:   length,
 		ItemType: item_reflect_type,
 	}

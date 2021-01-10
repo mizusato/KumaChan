@@ -1,4 +1,4 @@
-package lib
+package api
 
 import (
 	"os"
@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"kumachan/rx"
 	"kumachan/stdlib"
-	. "kumachan/runtime/common"
+	. "kumachan/lang"
 	. "kumachan/runtime/lib/container"
 )
 

@@ -1,29 +1,29 @@
-package lib
+package api
 
 import (
 	"math"
 	"math/big"
 	"math/cmplx"
 	"kumachan/util"
-	"kumachan/runtime/common"
+	"kumachan/lang"
 )
 
 
 var MathFunctions = map[string] interface{} {
 	"Float* from Float":     func(x float64)    float64    { return x },
 	"Complex* from Complex": func(z complex128) complex128 { return z },
-	"check-nan-inf-float": func(x float64) common.SumValue {
+	"check-nan-inf-float": func(x float64) lang.SumValue {
 		if util.IsValidFloat(x) {
-			return common.Just(x)
+			return lang.Just(x)
 		} else {
-			return common.Na()
+			return lang.Na()
 		}
 	},
-	"check-nan-inf-complex": func(z complex128) common.SumValue {
+	"check-nan-inf-complex": func(z complex128) lang.SumValue {
 		if util.IsValidComplex(z) {
-			return common.Just(z)
+			return lang.Just(z)
 		} else {
-			return common.Na()
+			return lang.Na()
 		}
 	},
 	"Number from Uint32": func(n uint32) uint {

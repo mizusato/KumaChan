@@ -3,23 +3,23 @@ package generator
 import (
 	"fmt"
 	. "kumachan/util/error"
-	c "kumachan/runtime/common"
+	"kumachan/lang"
 	"kumachan/rpc/kmd"
 )
 
 
 func CreateProgram (
-	metadata  c.ProgramMetaData,
+	metadata  lang.ProgramMetaData,
 	idx       Index,
-	data      [] c.DataValue,
+	data      [] lang.DataValue,
 	closures  [] FuncNode,
 	schema    kmd.SchemaTable,
-) (c.Program, DepLocator, E) {
+) (lang.Program, DepLocator, E) {
 	var no_locator = DepLocator {}
-	var kmd_conf = c.KmdConfig {
+	var kmd_conf = lang.KmdConfig {
 		SchemaTable:       schema,
-		KmdAdapterTable:   make(c.KmdAdapterTable),
-		KmdValidatorTable: make(c.KmdValidatorTable),
+		KmdAdapterTable:   make(lang.KmdAdapterTable),
+		KmdValidatorTable: make(lang.KmdValidatorTable),
 	}
 	var function_index_map = make(map[DepFunction] uint)
 	var functions = make([] FuncNode, 0)
@@ -34,12 +34,12 @@ func CreateProgram (
 					Index:  uint(f_index),
 				}] = global_index
 				if item.IsAdapter {
-					kmd_conf.KmdAdapterTable[item.AdapterId] = c.KmdAdapterInfo {
+					kmd_conf.KmdAdapterTable[item.AdapterId] = lang.KmdAdapterInfo {
 						Index: global_index,
 					}
 				}
 				if item.IsValidator {
-					kmd_conf.KmdValidatorTable[item.ValidatorId] = c.KmdValidatorInfo {
+					kmd_conf.KmdValidatorTable[item.ValidatorId] = lang.KmdValidatorInfo {
 						Index: global_index,
 					}
 				}
@@ -164,7 +164,7 @@ func CreateProgram (
 			}
 		}
 		if len(rest_names) == 0 { panic("something went wrong") }
-		return c.Program{}, no_locator, &Error {
+		return lang.Program{}, no_locator, &Error {
 			Point:    point,
 			Concrete: E_CircularConstantDependency { rest_names },
 		}
@@ -211,14 +211,14 @@ func CreateProgram (
 	for i, _ := range effects {
 		relocate_code(&(effects[i]))
 	}
-	var unwrap = func(list []FuncNode) []*c.Function {
-		var raw = make([]*c.Function, len(list))
+	var unwrap = func(list []FuncNode) []*lang.Function {
+		var raw = make([]*lang.Function, len(list))
 		for i, item := range list {
 			raw[i] = item.Underlying
 		}
 		return raw
 	}
-	return c.Program {
+	return lang.Program {
 		MetaData:   metadata,
 		DataValues: data,
 		Functions:  unwrap(functions),

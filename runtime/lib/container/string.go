@@ -3,7 +3,7 @@ package container
 import (
 	"reflect"
 	"unicode/utf8"
-	. "kumachan/runtime/common"
+	. "kumachan/lang"
 )
 
 

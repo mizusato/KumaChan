@@ -2,7 +2,7 @@ package checker
 
 import (
 	"kumachan/compiler/loader/parser/ast"
-	"kumachan/runtime/common"
+	"kumachan/lang"
 	. "kumachan/util/error"
 )
 
@@ -23,7 +23,7 @@ func ValidateTypeVal(val TypeVal, info TypeNodeInfo, ctx TypeValidationContext) 
 	switch V := val.(type) {
 	case *Union:
 		var case_amount = uint(len(V.CaseTypes))
-		var max = uint(common.SumMaxBranches)
+		var max = uint(lang.SumMaxBranches)
 		if case_amount > max { return &TypeError {
 			Point:    val_point,
 			Concrete: E_TooManyUnionItems {
@@ -105,7 +105,7 @@ func ValidateType(t Type, nodes (map[Type] ast.Node), ctx TypeValidationContext)
 			return nil
 		case Tuple:
 			var count = uint(len(R.Elements))
-			var max = uint(common.ProductMaxSize)
+			var max = uint(lang.ProductMaxSize)
 			if count > max { return &TypeError {
 				Point:    t_point,
 				Concrete: E_TooManyTupleBundleItems {
@@ -120,7 +120,7 @@ func ValidateType(t Type, nodes (map[Type] ast.Node), ctx TypeValidationContext)
 			return nil
 		case Bundle:
 			var count = uint(len(R.Fields))
-			var max = uint(common.ProductMaxSize)
+			var max = uint(lang.ProductMaxSize)
 			if count > max { return &TypeError {
 				Point:    t_point,
 				Concrete: E_TooManyTupleBundleItems {

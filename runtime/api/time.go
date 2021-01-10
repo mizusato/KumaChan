@@ -1,7 +1,7 @@
-package lib
+package api
 
 import (
-	. "kumachan/runtime/common"
+	. "kumachan/lang"
 	"time"
 )
 
