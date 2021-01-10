@@ -1,13 +1,12 @@
-import UI from 'rename:WebQuick';
 import assets from './assets';
 
-do webui-init 'Reactive Snapshot' DOM;
+do ui-init 'Reactive Snapshot' DOM;
 
-do webui-inject-css [assets::style-css];
+do ui-inject-css [assets::style-css];
 
-do WebUi::ExitWhenWindowClosed;
+do UI::ExitWhenWindowClosed;
 
-private const DOM: NoExcept*[WebUi::Node]
+private const DOM: NoExcept*[UI::Node]
     ~ with-auto-snapshot* &(text, ops) := '',
     let (text-undo, text-redo, text-diff) := ops,
     UI::Container [

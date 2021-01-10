@@ -351,6 +351,9 @@ type E_ConflictImplicitContextField struct {
 func (impl E_ImplicitContextOnNativeFunction) FunctionError() {}
 type E_ImplicitContextOnNativeFunction struct {}
 
+func (impl E_NativeFunctionOutsideStandardLibrary) FunctionError() {}
+type E_NativeFunctionOutsideStandardLibrary struct {}
+
 func (E_InvalidOverload) FunctionError() {}
 type E_InvalidOverload struct {
 	BetweenLocal  bool
@@ -398,6 +401,8 @@ func (err *FunctionError) Desc() ErrorMessage {
 	case E_FunctionVarianceDeclared:
 		msg.WriteText(TS_ERROR,
 			"Cannot declare variance of type parameters of functions")
+	case E_NativeFunctionOutsideStandardLibrary:
+		msg.WriteText(TS_ERROR, "Cannot define native function outside standard library")
 	default:
 		panic("unknown error kind")
 	}

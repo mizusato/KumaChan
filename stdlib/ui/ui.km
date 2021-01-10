@@ -1,24 +1,18 @@
-// TODO: 1. merge APIs into WebUi, make some low-level APIs private
-//       2. rename the WebUi module to UI
-
 type Component[Options]
-    ( &(Options) NoExcept*[WebUi::Node] );
+    ( &(Options) NoExcept*[Node] );
 
 type Decorator[Options]
-    ( &(Options,NoExcept*[WebUi::Node]) NoExcept*[WebUi::Node] );
+    ( &(Options,NoExcept*[Node]) NoExcept*[Node] );
 
 
-public const Empty: NoExcept*[WebUi::Node]
+public const Empty: NoExcept*[Node]
     (yield ()).then(&(_)(yield (dom-node 'div' [('display','none')])));
     // note: create a new node each time (a node cannot be used more than once)
 
-public const Static: Component[WebUi::Node]
-    (&(node)(yield node));
-
-public const Container: Component[Array[NoExcept*[WebUi::Node]]]
+public const Container: Component[Array[NoExcept*[Node]]]
     (&(items)(dom-dynamic 'div' items));
 
-public const List: Component[NoExcept*[Array[WebUi::Node]]]
+public const List: Component[NoExcept*[Array[Node]]]
     (&(items)(dom-dynamic 'div' items));
 
 public const Text: Component[String]
@@ -105,13 +99,13 @@ public const DynStyled: Decorator[NoExcept*[Array[String]]]
         ])
     );
 
-public const WithEvents: Decorator[WebUi::Events]
+public const WithEvents: Decorator[Events]
     ( &(events, @node)
         ~ map* &(node) := @node,
         dom-node-with-events node events
     );
 
-public const Focusable: Decorator[WebUi::Events]
+public const Focusable: Decorator[Events]
     ( &(events, @node)
         ~ map* &(node) := @node,
         let node := dom-node-with-events node events,

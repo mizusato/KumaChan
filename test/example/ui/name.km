@@ -22,7 +22,7 @@ private function cpt-text-input: ( &(Reactive[String]) NoExcept*[UI::Node] )
         dom-node 'input' (dom-styles [])
             (dom-attrs [('value',value)])
             (dom-event 'input'
-                (dom-event-sink @value (&(ev)(ev.get-string 'value'))))
+                (dom-event-sink @value (&(ev)(ev.get-string 'webuiValue'))))
             (dom-children [])
     );
 

@@ -26,9 +26,9 @@ func (f WebAssetFile) GetAST() (ast.Root, *parser.Error) {
 		ast_root_node,
 		f.Public,
 		name,
-		stdlib.WebUi,
-		stdlib.WebUi_ResourceFile,
-		stdlib.WebUiResourceFile { Path: path },
+		stdlib.UI,
+		stdlib.WebAsset_T,
+		stdlib.WebAsset { Path: path },
 	)
 	ast_root.Statements = append(ast_root.Statements, const_decl)
 	return ast_root, nil

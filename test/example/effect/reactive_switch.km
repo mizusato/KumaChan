@@ -1,4 +1,3 @@
-import UI from 'rename:WebQuick';
 import assets from './assets';
 
 type Value union {
@@ -6,15 +5,15 @@ type Value union {
      type Single { content: String };
 };
 
-do webui-init 'Reactive Switch' DOM;
+do ui-init 'Reactive Switch' DOM;
 
-do webui-inject-css [assets::style-css];
+do ui-inject-css [assets::style-css];
 
-do WebUi::ExitWhenWindowClosed;
+do UI::ExitWhenWindowClosed;
 
-private const DOM: NoExcept*[WebUi::Node]
+private const DOM: NoExcept*[UI::Node]
     ~ with-reactive* &(v) := Single { content: 'a value' },
-    let editor: NoExcept*[WebUi::Node] :=
+    let editor: NoExcept*[UI::Node] :=
         switch v:
         case Double (x, y):
             UI::Container [

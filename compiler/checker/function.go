@@ -88,10 +88,18 @@ func CollectFunctions (
 	for _, stmt := range stmts {
 		switch decl := stmt.Statement.(type) {
 		case ast.DeclFunction:
-			// 3.1. Get the name of the function and its type parameters
+			// 3.1. Check the validity of the body of the function
+			var _, is_native = decl.Body.Body.(ast.NativeRef)
+			if is_native && !(loader.IsStdLibModule(mod.Name)) {
+				return nil, &FunctionError {
+					Point:    ErrorPointFrom(decl.Body.Node),
+					Concrete: E_NativeFunctionOutsideStandardLibrary {},
+				}
+			}
+			// 3.2. Get the name of the function and its type parameters
 			var name = ast.Id2String(decl.Name)
 			if name == IgnoreMark || strings.HasSuffix(name, FuncSuffix) {
-				// 3.1.1. If the function name is invalid, throw an error.
+				// 3.2.1. If the function name is invalid, throw an error.
 				return nil, &FunctionError {
 					Point:    ErrorPointFrom(decl.Name.Node),
 					Concrete: E_InvalidFunctionName { name },
@@ -106,7 +114,7 @@ func CollectFunctions (
 				Sub:   make(map[uint] Type),
 				Super: make(map[uint] Type),
 			}
-			// 3.2. Create a context for evaluating types
+			// 3.3. Create a context for evaluating types
 			var ctx = TypeContext {
 				TypeBoundsContext: TypeBoundsContext {
 					TypeValidationContext: TypeValidationContext {
@@ -155,7 +163,7 @@ func CollectFunctions (
 					} }
 				}
 			}
-			// 3.3. Collect implicit context value definitions
+			// 3.4. Collect implicit context value definitions
 			var implicit_fields = make(map[string] Field)
 			var implicit_types = make([] Type, len(decl.Implicit))
 			if len(decl.Implicit) > 0 {
@@ -208,7 +216,7 @@ func CollectFunctions (
 					}
 				}
 			}
-			// 3.4. Evaluate the function signature using the created context
+			// 3.5. Evaluate the function signature using the created context
 			var sig, err = TypeFromRepr(ast.VariousRepr {
 				Node: decl.Repr.Node,
 				Repr: decl.Repr,
@@ -227,7 +235,7 @@ func CollectFunctions (
 					}
 				}
 			}
-			// 3.5. Construct a representation and a reference of the function
+			// 3.6. Construct a representation and a reference of the function
 			var func_type = sig.(*AnonymousType).Repr.(Func)
 			var f = &GenericFunction {
 				Public:       decl.Public,
@@ -237,10 +245,10 @@ func CollectFunctions (
 				Body:         decl.Body.Body,
 				Node:         decl.Node,
 			}
-			// 3.6. Check if the name of the function is in use
+			// 3.7. Check if the name of the function is in use
 			var existing, exists = collection[name]
 			if exists {
-				// 3.6.1. If in use, try to overload it
+				// 3.7.1. If in use, try to overload it
 				var index_offset = index_offset_map[name]
 				var err_point = ErrorPointFrom(decl.Name.Node)
 				var err = ValidateOverload (
@@ -257,7 +265,7 @@ func CollectFunctions (
 					Index:      uint(len(existing)) - index_offset,
 				})
 			} else {
-				// 3.6.2. If not, collect the function
+				// 3.7.2. If not, collect the function
 				collection[name] = [] FunctionReference { {
 					IsImported: false,
 					Function:   f,

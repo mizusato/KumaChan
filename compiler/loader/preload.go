@@ -13,11 +13,15 @@ const StdlibFolder = "stdlib"
 var __StdLibModules = stdlib.GetModuleDirectories()
 var __StdLibIndex = make(Index)
 var __StdLibResIndex = make(ResIndex)
-func ImportStdLib (imp_map (map[string] *Module), imp_set (map[string] bool)) {
+func ImportStdLib(imp_map (map[string] *Module), imp_set (map[string] bool)) {
 	for name, mod := range __StdLibIndex {
 		imp_map[name] = mod
 		imp_set[name] = true
 	}
+}
+func IsStdLibModule(name string) bool {
+	var _, is = __StdLibIndex[name]
+	return is
 }
 
 var _ = __Preload()

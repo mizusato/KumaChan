@@ -25,7 +25,7 @@ private function signal [T]:
     ( &(Object,String) Signal[-] )
     native 'qt-signal-no-payload';
 
-public function bind [Obj < Object, T]:
+private function bind [Obj < Object, T]:
     ( &(Obj, Reactive[T], (&(Obj)(Signal[T])), (&(Obj,T)(NoExcept[-])))
         NoExcept[-] )
     ( &(obj, @value, get, set)
@@ -37,14 +37,14 @@ public function bind [Obj < Object, T]:
 private function event[E]: ( &(Object,String,Bool) Event[E] )
     native 'qt-event';
 
-public function listen[T]: ( &(Event[T],(&(T)(NoExcept[-]))) NoExcept[-] )
+private function listen[T]: ( &(Event[T],(&(T)(NoExcept[-]))) NoExcept[-] )
     ( &(ev,f)
         ev  | merge-map (&(payload)(f payload))
             | forever
     );
 
-public function resized: ( &(Object) Event[EventResized] )
+private function resized: ( &(Object) Event[EventResized] )
     (&(object)(event object 'resized' No));
 
-public function closed: ( &(Object) Event[EventClosed] )
+private function closed: ( &(Object) Event[EventClosed] )
     (&(object)(event object 'closed' Yes));

@@ -159,7 +159,7 @@ func __WebUiRegisterAssetFiles(res (map[string] util.Resource)) {
 }
 
 func WebUiInjectAssetFiles (
-	files   ([] stdlib.WebUiResourceFile),
+	files   ([] stdlib.WebAsset),
 	inject  func(qt.String)(qt.String),
 ) {
 	<- __WebUiBridgeLoaded
@@ -205,7 +205,7 @@ var __WebUiUpdateDom = func(new_root *vdom.Node) rx.Effect {
 
 
 var WebUiConstants = map[string] NativeConstant {
-	"WebUi::GetWindow": func(_ InteropContext) Value {
+	"UI::GetWindow": func(_ InteropContext) Value {
 		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
 			<-__WebUiWindowLoaded
 			return qt.WebUiGetWindow(), true
@@ -214,7 +214,7 @@ var WebUiConstants = map[string] NativeConstant {
 }
 
 var WebUiFunctions = map[string] interface{} {
-	"webui-init": func(title String, root rx.Effect, h InteropContext) rx.Effect {
+	"ui-init": func(title String, root rx.Effect, h InteropContext) rx.Effect {
 		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
 			// TODO: handle duplicate load (throw an error)
 			var res = h.GetResources("web_asset")
@@ -222,29 +222,29 @@ var WebUiFunctions = map[string] interface{} {
 			return nil, true
 		})
 	},
-	"webui-inject-css": func(v Value) rx.Effect {
+	"ui-inject-css": func(v Value) rx.Effect {
 		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
 			var array = container.ArrayFrom(v)
-			var files = make([] stdlib.WebUiResourceFile, array.Length)
+			var files = make([] stdlib.WebAsset, array.Length)
 			for i := uint(0); i < array.Length; i += 1 {
-				files[i] = array.GetItem(i).(stdlib.WebUiResourceFile)
+				files[i] = array.GetItem(i).(stdlib.WebAsset)
 			}
 			WebUiInjectAssetFiles(files, qt.WebUiInjectCSS)
 			return nil, true
 		})
 	},
-	"webui-inject-js": func(v Value) rx.Effect {
+	"ui-inject-js": func(v Value) rx.Effect {
 		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
 			var array = container.ArrayFrom(v)
-			var files = make([] stdlib.WebUiResourceFile, array.Length)
+			var files = make([] stdlib.WebAsset, array.Length)
 			for i := uint(0); i < array.Length; i += 1 {
-				files[i] = array.GetItem(i).(stdlib.WebUiResourceFile)
+				files[i] = array.GetItem(i).(stdlib.WebAsset)
 			}
 			WebUiInjectAssetFiles(files, qt.WebUiInjectJS)
 			return nil, true
 		})
 	},
-	"webui-inject-ttf": func(v Value) rx.Effect {
+	"ui-inject-ttf": func(v Value) rx.Effect {
 		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
 			<- __WebUiBridgeLoaded
 			var array = container.ArrayFrom(v)
@@ -256,7 +256,7 @@ var WebUiFunctions = map[string] interface{} {
 					var family = RuneSliceFromString(info.Elements[0].(String))
 					var weight = RuneSliceFromString(info.Elements[1].(String))
 					var style = RuneSliceFromString(info.Elements[2].(String))
-					var f = item.Elements[1].(stdlib.WebUiResourceFile)
+					var f = item.Elements[1].(stdlib.WebAsset)
 					var path_q, del1 = qt.NewString(([] rune)(f.Path))
 					var family_q, del2 = qt.NewString(family)
 					var weight_q, del3  = qt.NewString(weight)
@@ -271,7 +271,7 @@ var WebUiFunctions = map[string] interface{} {
 			return nil, true
 		})
 	},
-	"webui-dom-node": func (
+	"ui-dom-node": func (
 		tag      String,
 		styles   *vdom.Styles,
 		attrs    *vdom.Attrs,
@@ -289,18 +289,18 @@ var WebUiFunctions = map[string] interface{} {
 			Content: content,
 		}
 	},
-	"webui-dom-styles": func(styles container.Map) *vdom.Styles {
+	"ui-dom-styles": func(styles container.Map) *vdom.Styles {
 		if styles.IsEmpty() { return vdom.EmptyStyles }
 		return &vdom.Styles { Data: WebUiAdaptMap(styles) }
 	},
-	"webui-dom-styles-zero": func(_ Value) *vdom.Styles {
+	"ui-dom-styles-zero": func(_ Value) *vdom.Styles {
 		return vdom.EmptyStyles
 	},
-	"webui-dom-styles-merge": func(v Value) *vdom.Styles {
+	"ui-dom-styles-merge": func(v Value) *vdom.Styles {
 		var list = container.ArrayFrom(v)
 		return WebUiMergeStyles(list)
 	},
-	"webui-dom-node-with-styles": func(node *vdom.Node, styles *vdom.Styles) *vdom.Node {
+	"ui-dom-node-with-styles": func(node *vdom.Node, styles *vdom.Styles) *vdom.Node {
 		return &vdom.Node {
 			Tag:     node.Tag,
 			Props:   vdom.Props {
@@ -313,18 +313,18 @@ var WebUiFunctions = map[string] interface{} {
 			Content: node.Content,
 		}
 	},
-	"webui-dom-attrs": func(attrs container.Map) *vdom.Attrs {
+	"ui-dom-attrs": func(attrs container.Map) *vdom.Attrs {
 		if attrs.IsEmpty() { return vdom.EmptyAttrs }
 		return &vdom.Attrs { Data: WebUiAdaptMap(attrs) }
 	},
-	"webui-dom-attrs-zero": func(_ Value) *vdom.Attrs {
+	"ui-dom-attrs-zero": func(_ Value) *vdom.Attrs {
 		return vdom.EmptyAttrs
 	},
-	"webui-dom-attrs-merge": func(v Value) *vdom.Attrs {
+	"ui-dom-attrs-merge": func(v Value) *vdom.Attrs {
 		var list = container.ArrayFrom(v)
 		return WebUiMergeAttrs(list)
 	},
-	"webui-dom-node-with-attrs": func(node *vdom.Node, attrs *vdom.Attrs) *vdom.Node {
+	"ui-dom-node-with-attrs": func(node *vdom.Node, attrs *vdom.Attrs) *vdom.Node {
 		return &vdom.Node {
 			Tag:     node.Tag,
 			Props:   vdom.Props {
@@ -337,7 +337,7 @@ var WebUiFunctions = map[string] interface{} {
 			Content: node.Content,
 		}
 	},
-	"webui-dom-event": func(prevent SumValue, stop SumValue, capture SumValue, sink rx.Sink) *vdom.EventOptions {
+	"ui-dom-event": func(prevent SumValue, stop SumValue, capture SumValue, sink rx.Sink) *vdom.EventOptions {
 		return &vdom.EventOptions {
 			Prevent: FromBool(prevent),
 			Stop:    FromBool(stop),
@@ -345,7 +345,7 @@ var WebUiFunctions = map[string] interface{} {
 			Handler: (vdom.EventHandler)(sink),
 		}
 	},
-	"webui-dom-event-sink": func(s rx.Sink, f Value, h InteropContext) rx.Sink {
+	"ui-dom-event-sink": func(s rx.Sink, f Value, h InteropContext) rx.Sink {
 		var adapter = func(obj rx.Object) rx.Object {
 			var ev = obj.(*qt.WebUiEventPayload)
 			return qt.WebUiConsumeEventPayload(ev, func(ev *qt.WebUiEventPayload) interface{} {
@@ -354,7 +354,7 @@ var WebUiFunctions = map[string] interface{} {
 		}
 		return rx.SinkAdapt(s, adapter)
 	},
-	"webui-dom-event-sink-reactive": func(r rx.Reactive, f Value, h InteropContext) rx.Sink {
+	"ui-dom-event-sink-reactive": func(r rx.Reactive, f Value, h InteropContext) rx.Sink {
 		var in = func(state rx.Object) func(rx.Object) rx.Object {
 			return func(obj rx.Object) rx.Object {
 				var ev = obj.(*qt.WebUiEventPayload)
@@ -365,18 +365,18 @@ var WebUiFunctions = map[string] interface{} {
 		}
 		return rx.ReactiveAdapt(r, in)
 	},
-	"webui-dom-events": func(events container.Map) *vdom.Events {
+	"ui-dom-events": func(events container.Map) *vdom.Events {
 		if events.IsEmpty() { return vdom.EmptyEvents }
 		return &vdom.Events { Data: WebUiAdaptMap(events) }
 	},
-	"webui-dom-events-zero": func(_ Value) *vdom.Events {
+	"ui-dom-events-zero": func(_ Value) *vdom.Events {
 		return vdom.EmptyEvents
 	},
-	"webui-dom-events-merge": func(v Value) *vdom.Events {
+	"ui-dom-events-merge": func(v Value) *vdom.Events {
 		var list = container.ArrayFrom(v)
 		return WebUiMergeEvents(list)
 	},
-	"webui-dom-node-with-events": func(node *vdom.Node, events *vdom.Events) *vdom.Node {
+	"ui-dom-node-with-events": func(node *vdom.Node, events *vdom.Events) *vdom.Node {
 		return &vdom.Node {
 			Tag:     node.Tag,
 			Props:   vdom.Props {
@@ -389,11 +389,11 @@ var WebUiFunctions = map[string] interface{} {
 			Content: node.Content,
 		}
 	},
-	"webui-dom-text": func(text String) vdom.Content {
+	"ui-dom-text": func(text String) vdom.Content {
 		var t = vdom.Text(RuneSliceFromString(text))
 		return &t
 	},
-	"webui-dom-children": func(children Value) vdom.Content {
+	"ui-dom-children": func(children Value) vdom.Content {
 		var arr = container.ArrayFrom(children)
 		if arr.Length == 0 { return vdom.EmptyContent }
 		var children_ = make([] *vdom.Node, arr.Length)
@@ -403,20 +403,20 @@ var WebUiFunctions = map[string] interface{} {
 		var c = vdom.Children(children_)
 		return &c
 	},
-	"webui-dom-content-zero": func(_ Value) vdom.Content {
+	"ui-dom-content-zero": func(_ Value) vdom.Content {
 		return vdom.EmptyContent
 	},
-	"webui-event-payload-get-string": func(ev *qt.WebUiEventPayload, key String) String {
+	"ui-event-payload-get-string": func(ev *qt.WebUiEventPayload, key String) String {
 		return StringFromRuneSlice(qt.WebUiEventPayloadGetRunes(ev, RuneSliceFromString(key)))
 	},
-	"webui-event-payload-get-float": func(ev *qt.WebUiEventPayload, key String) float64 {
+	"ui-event-payload-get-float": func(ev *qt.WebUiEventPayload, key String) float64 {
 		return util.CheckFloat(qt.WebUiEventPayloadGetFloat(ev, RuneSliceFromString(key)))
 	},
-	"webui-event-payload-get-number": func(ev *qt.WebUiEventPayload, key String) uint {
+	"ui-event-payload-get-number": func(ev *qt.WebUiEventPayload, key String) uint {
 		var x = util.CheckFloat(qt.WebUiEventPayloadGetFloat(ev, RuneSliceFromString(key)))
 		return uint(x)
 	},
-	"webui-event-payload-get-bool": func(ev *qt.WebUiEventPayload, key String) SumValue {
+	"ui-event-payload-get-bool": func(ev *qt.WebUiEventPayload, key String) SumValue {
 		return ToBool(qt.WebUiEventPayloadGetBool(ev, RuneSliceFromString(key)))
 	},
 }

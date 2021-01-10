@@ -14,12 +14,11 @@ import (
 /* IMPORTANT: this go file should be consistent with corresponding km files */
 var __ModuleDirectories = [] string {
 	"core", "math", "time", "l10n",
-	"io", "os", "json", "net", "image", "qt", "webui", "webquick",
+	"io", "os", "json", "net", "image", "ui",
 }
 func GetModuleDirectories() ([] string) { return __ModuleDirectories }
 const Core = "Core"
-const OS = "OS"
-const WebUi = "WebUi"
+const UI = "UI"
 var core_types = []string {
 	// types.km
 	Float, FloatIEEE, Number,
@@ -135,12 +134,9 @@ const Range = "Range"
 const Debug = "Debug"
 const Never = "Never"
 
-// os
-const OS_Path = "Path"
-
-// webui
-const WebUi_ResourceFile = "ResourceFile"
-type WebUiResourceFile struct {
+// ui
+const WebAsset_T = "WebAsset"
+type WebAsset struct {
 	Path  string
 }
 
