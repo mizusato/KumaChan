@@ -1,0 +1,106 @@
+type Node        native;  // *vdom.Node
+type Styles      native;  // *vdom.Styles
+type Attrs       native;  // *vdom.Attrs
+type Events      native;  // *vdom.Events
+type NodeContent native;  // vdom.NodeContent
+
+private function dom-node: ( &(String,Styles,Attrs,Events,NodeContent) Node )
+    native 'ui-dom-node';
+private function dom-node: ( &(String,String) Node )
+    ( &(tag, text)
+        dom-node tag
+            (dom-styles [])
+            (dom-attrs [])
+            (dom-events [])
+            (dom-text text)
+    );
+private function dom-node: ( &(String,Array[Node]) Node )
+    ( &(tag, children)
+        dom-node tag
+            (dom-styles [])
+            (dom-attrs [])
+            (dom-events [])
+            (dom-children children)
+    );
+private function dom-node: ( &(String,Array[(String,String)],String) Node )
+    ( &(tag, styles, text)
+        dom-node tag text
+            | with (dom-styles styles)
+    );
+private function dom-node: ( &(String,Array[(String,String)],Array[Node]) Node )
+    ( &(tag, styles, children)
+        dom-node tag children
+            | with (dom-styles styles)
+    );
+
+private function dom-dynamic:
+    ( &(String, NoExcept*[(Styles,Attrs,Events)], NoExcept*[Array[Node]])
+        NoExcept*[Node] )
+    ( &(tag, @opts, @children)
+        ~ map* &(opts,children) := (combine-latest! @opts @children),
+        let (styles,attrs,events) := opts,
+        dom-node tag styles attrs events (dom-children children)
+    );
+private function dom-dynamic:
+    ( &(String, NoExcept*[Array[Node]])
+        NoExcept*[Node] )
+    ( &(tag, @children)
+        ~ map* &(children) := @children,
+        dom-node tag children
+    );
+private function dom-dynamic:
+    ( &(String, NoExcept*[(Styles,Attrs,Events)], Array[NoExcept*[Node]])
+        NoExcept*[Node] )
+    ( &(tag, @opts, children)
+        dom-dynamic tag @opts (combine-latest! children)
+    );
+private function dom-dynamic:
+    ( &(String, Styles, Attrs, Events, Array[NoExcept*[Node]])
+        NoExcept*[Node] )
+    ( &(tag, styles, attrs, events, children)
+        dom-dynamic tag (yield styles attrs events) children
+    );
+private function dom-dynamic:
+    ( &(String, Array[(String,String)], Array[NoExcept*[Node]])
+        NoExcept*[Node] )
+    ( &(tag, styles, children)
+        dom-dynamic tag (dom-styles styles) (dom-attrs []) (dom-events []) children
+    );
+private function dom-dynamic:
+    ( &(String, Array[NoExcept*[Node]])
+        NoExcept*[Node] )
+    ( &(tag, children)
+        dom-dynamic tag (dom-styles []) (dom-attrs []) (dom-events []) children
+    );
+
+private function dom-styles: ( &(Map[String,String]) Styles )
+    native 'ui-dom-styles';
+private function dom-styles: ( &(Array[(String,String)]) Styles )
+    (&(styles)(dom-styles (new-map styles)));
+private function dom-styles-merge: ( &(Array[Styles]) Styles )
+    native 'ui-dom-styles-merge';
+private function with: ( &(Node,Styles) Node )
+    native 'ui-with-styles';
+
+private function dom-attrs: ( &(Map[String,String]) Attrs )
+    native 'ui-dom-attrs';
+private function dom-attrs: ( &(Array[(String,String)]) Attrs )
+    (&(attrs)(dom-attrs (new-map attrs)));
+private function dom-attrs-merge: ( &(Array[Attrs]) Attrs )
+    native 'ui-dom-attrs-merge';
+private function with: ( &(Node,Attrs) Node )
+    native 'ui-with-attrs';
+
+private function dom-events: ( &(Map[String,EventOptions]) Events )
+    native 'ui-dom-events';
+private function dom-events: ( &(Array[(String,EventOptions)]) Events )
+    (&(events)(dom-events (new-map events)));
+private function dom-events-merge: ( &(Array[Events]) Events )
+    native 'ui-dom-events-merge';
+private function with: ( &(Node,Events) Node )
+    native 'ui-with-events';
+
+private function dom-text: ( &(String) NodeContent )
+    native 'ui-dom-text';
+private function dom-children: ( &(Array[Node]) NodeContent )
+    native 'ui-dom-children';

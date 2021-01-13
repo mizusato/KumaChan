@@ -1,6 +1,6 @@
 import assets from './assets';
 
-do ui-init 'WebQuick WithEvents' DOM;
+do ui-init 'UI WithEvents' DOM;
 
 do ui-inject-css [assets::style-css];
 
@@ -12,13 +12,13 @@ public function with-mouse-position:
     ( &(init, k)
         ~ with-reactive* &(pos) := init,
         ~ then* &(x) := random,
-        UI::WithEvents
-            (dom-event ("mousemove.hook#" (str x))
-                (dom-callback ( &(ev)
-                    let x := ev.get-float 'webuiCurrentTargetX',
-                    let y := ev.get-float 'webuiCurrentTargetY',
-                    $(pos <- (x, y))
-                )))
+        UI::WithEvent
+            (("mousemove.hook#" (str x)),
+                (ui-callback
+                    ~ ui-float &(x) := 'webuiCurrentTargetX',
+                    ~ ui-float &(y) := 'webuiCurrentTargetY',
+                    return $(pos <- (x, y))
+                ))
             (k (watch pos))
     );
 

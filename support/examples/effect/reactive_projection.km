@@ -1,0 +1,38 @@
+import assets from './assets';
+
+type Name {
+    first: String,
+    last:  String
+};
+
+do ui-init 'Reactive Projection' DOM;
+
+do ui-inject-css [assets::style-css];
+
+do UI::ExitWhenWindowClosed;
+
+private const DOM: NoExcept*[UI::Node]
+    ~ with-reactive* &(name) := Name { first: '', last: '' },
+    let {first,last} := name,
+    UI::Container [
+        UI::Styled ['row'] (
+        UI::Container [
+            UI::Text 'First Name:',
+            UI::TextInput first,
+            UI::Button 'clear' (first.update (& _ ''))
+        ]),
+        UI::Styled ['row'] (
+        UI::Container [
+            UI::Text 'Last Name:',
+            UI::TextInput last,
+            UI::Button 'clear' (last.update (& _ ''))
+        ]),
+        UI::Styled ['row'] (
+        UI::Container [
+            UI::Text 'Full Name:',
+            UI::Styled ['seal']
+            (UI::TextWatch
+                ~ map* &{first,last} := watch name,
+                "# #" first last)
+        ])
+    ];

@@ -1,12 +1,61 @@
+type MainLoop protected NoExcept[-];
+type WebAsset native;
+type FontInfo (String,String,String);  // family, weight, style
+
+public function ui-init: ( &(String,NoExcept*[Node]) MainLoop )
+    native 'ui-init';
+public function ui-inject-css: ( &(Array[WebAsset]) NoExcept[-] )
+    native 'ui-inject-css';
+public function ui-inject-js:  ( &(Array[WebAsset]) NoExcept[-] )
+    native 'ui-inject-js';
+public function ui-inject-ttf: ( &(Array[(FontInfo,WebAsset)]) NoExcept[-] )
+    native 'ui-inject-ttf';
+public function ui-get-window: ( &() NoExcept[MainWindow] )
+    (&(_)(GetWindow));
+private const GetWindow: NoExcept[MainWindow]
+    native 'UI::GetWindow';
+public const ExitWhenWindowClosed: NoExcept[-]
+    ~ then &(window) := GetWindow,
+    listen (window.closed) (&(_)(exit 0));
+
+
+type Callback     protected (&(EventPayload)(NoExcept[-]));
+
+public function ui-callback: ( &(Callback) EventSink )
+    ( &(cb)
+        dom-event-sink (callback:[NoExcept[-]] (& e e)) cb
+        // important: payload will be deleted after `cb` called
+    );
+public function ui-string: ( &(String,(&(String)(Callback))) Callback )
+    ( &(prop,k)
+        getter-callback prop get-string k
+    );
+public function ui-float:  ( &(String,(&(Float)(Callback))) Callback )
+    ( &(prop,k)
+        getter-callback prop get-float k
+    );
+public function ui-number: ( &(String,(&(Number)(Callback))) Callback )
+    ( &(prop,k)
+        getter-callback prop get-number k
+    );
+public function ui-bool:   ( &(String,(&(Bool)(Callback))) Callback )
+    ( &(prop,k)
+        getter-callback prop get-bool k
+    );
+public function return: ( &(NoExcept[-]) Callback )
+    ( &(action)
+        Callback (&(_)(action))
+    );
+
+
 type Component[Options]
     ( &(Options) NoExcept*[Node] );
 
 type Decorator[Options]
     ( &(Options,NoExcept*[Node]) NoExcept*[Node] );
 
-
 public const Empty: NoExcept*[Node]
-    (yield ()).then(&(_)(yield (dom-node 'div' [('display','none')])));
+    (yield ()).then(&(_)(yield (dom-node 'div' [('display','none')] [])));
     // note: create a new node each time (a node cannot be used more than once)
 
 public const Container: Component[Array[NoExcept*[Node]]]
@@ -64,10 +113,8 @@ public const Select: Component[(Reactive[String], Array[(String,String)])]
                 (dom-event-sink @current (&(ev)(ev.get-string 'webuiValue'))))
             (dom-children (
                 ~ map &(name,desc) := options,
-                dom-node 'option' {
-                    attrs:   (dom-attrs [('value', name)]),
-                    content: (dom-text desc)
-                }
+                dom-node 'option' desc
+                    | with (dom-attrs [('value', name)])
             ))
     );
 
@@ -77,7 +124,7 @@ public const Button: Component[(String, NoExcept[-])]
             (dom-styles [])
             (dom-attrs [])
             (dom-event 'click'
-                (dom-callback (&(_)(action))))
+                (ui-callback (return action)))
             (dom-text text)
         )
     );
@@ -86,7 +133,7 @@ public const Button: Component[(String, NoExcept[-])]
 public const Styled: Decorator[Array[String]]
     ( &(class-list, @node)
         ~ map* &(node) := @node,
-        dom-node-with-attrs node (dom-attrs [
+        node.with (dom-attrs [
             ('class', (class-list.join ' '))
         ])
     );
@@ -94,22 +141,24 @@ public const Styled: Decorator[Array[String]]
 public const DynStyled: Decorator[NoExcept*[Array[String]]]
     ( &(@class-list, @node)
         ~ map* &(class-list, node) := (combine-latest! @class-list @node),
-        dom-node-with-attrs node (dom-attrs [
+        node.with (dom-attrs [
             ('class', (class-list.join ' '))
         ])
     );
 
-public const WithEvents: Decorator[Events]
-    ( &(events, @node)
+public const WithEvent: Decorator[(String,EventSink)]
+    ( &(event, @node)
+        let (name,sink) := event,
         ~ map* &(node) := @node,
-        dom-node-with-events node events
+        node.with (dom-event name sink)
     );
 
-public const Focusable: Decorator[Events]
-    ( &(events, @node)
+public const Focusable: Decorator[(String,EventSink)]
+    ( &(event, @node)
+        let (name,sink) := event,
         ~ map* &(node) := @node,
-        let node := dom-node-with-events node events,
-        let node := dom-node-with-attrs node (dom-attrs [('tabindex','0')]),
+        let node := node.with (dom-event name sink),
+        let node := node.with (dom-attrs [('tabindex','0')]),
         node
     );
 
@@ -119,6 +168,5 @@ public const DynEnabled: Decorator[NoExcept*[Bool]]
         if enabled:
             node,
         else:
-            dom-node-with-attrs node
-                (dom-attrs [('disabled', 'disabled')])
+            node.with (dom-attrs [('disabled', 'disabled')])
     );

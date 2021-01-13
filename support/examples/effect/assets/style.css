@@ -11,6 +11,13 @@ body {
   color: red;
 }
 
+.seal {
+  color: red;
+  border: 1px solid red;
+  display: inline-block;
+  padding: 0.1rem;
+}
+
 .title {
   font-weight: bold;
   font-size: 110%;

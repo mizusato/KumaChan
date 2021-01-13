@@ -300,7 +300,7 @@ var WebUiFunctions = map[string] interface{} {
 		var list = container.ArrayFrom(v)
 		return WebUiMergeStyles(list)
 	},
-	"ui-dom-node-with-styles": func(node *vdom.Node, styles *vdom.Styles) *vdom.Node {
+	"ui-with-styles": func(node *vdom.Node, styles *vdom.Styles) *vdom.Node {
 		return &vdom.Node {
 			Tag:     node.Tag,
 			Props:   vdom.Props {
@@ -324,7 +324,7 @@ var WebUiFunctions = map[string] interface{} {
 		var list = container.ArrayFrom(v)
 		return WebUiMergeAttrs(list)
 	},
-	"ui-dom-node-with-attrs": func(node *vdom.Node, attrs *vdom.Attrs) *vdom.Node {
+	"ui-with-attrs": func(node *vdom.Node, attrs *vdom.Attrs) *vdom.Node {
 		return &vdom.Node {
 			Tag:     node.Tag,
 			Props:   vdom.Props {
@@ -376,7 +376,7 @@ var WebUiFunctions = map[string] interface{} {
 		var list = container.ArrayFrom(v)
 		return WebUiMergeEvents(list)
 	},
-	"ui-dom-node-with-events": func(node *vdom.Node, events *vdom.Events) *vdom.Node {
+	"ui-with-events": func(node *vdom.Node, events *vdom.Events) *vdom.Node {
 		return &vdom.Node {
 			Tag:     node.Tag,
 			Props:   vdom.Props {
