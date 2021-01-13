@@ -1,6 +1,11 @@
+// TODO: split this file
+
+import Qt from './qt';
+
 type MainLoop protected NoExcept[-];
 type WebAsset native;
 type FontInfo (String,String,String);  // family, weight, style
+type Window   protected Qt::MainWindow;
 
 public function ui-init: ( &(String,NoExcept*[Node]) MainLoop )
     native 'ui-init';
@@ -10,16 +15,16 @@ public function ui-inject-js:  ( &(Array[WebAsset]) NoExcept[-] )
     native 'ui-inject-js';
 public function ui-inject-ttf: ( &(Array[(FontInfo,WebAsset)]) NoExcept[-] )
     native 'ui-inject-ttf';
-public function ui-get-window: ( &() NoExcept[MainWindow] )
+public function ui-get-window: ( &() NoExcept[Window] )
     (&(_)(GetWindow));
-private const GetWindow: NoExcept[MainWindow]
+private const GetWindow: NoExcept[Window]
     native 'UI::GetWindow';
 public const ExitWhenWindowClosed: NoExcept[-]
     ~ then &(window) := GetWindow,
     listen (window.closed) (&(_)(exit 0));
 
 
-type Callback     protected (&(EventPayload)(NoExcept[-]));
+type Callback protected (&(EventPayload)(NoExcept[-]));
 
 public function ui-callback: ( &(Callback) EventSink )
     ( &(cb)
