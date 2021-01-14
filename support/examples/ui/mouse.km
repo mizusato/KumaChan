@@ -9,9 +9,9 @@ do UI::ExitWhenWindowClosed;
 public function mouse-position: ( &() UI::Hook[NoExcept*[(Float,Float)]] )
     ( &(_) ( &(k)
         ~ then* &(pos) := new-bus:[(Float,Float)],
-        ~ then* &(x) := random,  // TODO: use uuid instead
+        ~ then* &(id) := random,  // TODO: use uuid instead
         let cpt := (k (watch pos)),
-        cpt | with (ui-event ("mousemove.hook#" (str x))
+        cpt | with (ui-event ("mousemove.hook#" (str id))
             (ui-callback
                 ~ ui-msg-float &(x) := 'webuiCurrentTargetX',
                 ~ ui-msg-float &(y) := 'webuiCurrentTargetY',
