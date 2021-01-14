@@ -1,12 +1,11 @@
 package generator
 
 import (
-	. "kumachan/util/error"
-	ch "kumachan/compiler/checker"
-	"kumachan/lang"
-	"kumachan/runtime/api"
-	"kumachan/rpc/kmd"
 	"fmt"
+	. "kumachan/util/error"
+	"kumachan/lang"
+	"kumachan/rpc/kmd"
+	ch "kumachan/compiler/checker"
 )
 
 
@@ -117,11 +116,10 @@ func CompileFunction (
 			panic("impossible branch")
 		}
 		return &lang.Function {
-			Kind:        lang.F_PREDEFINED,
-			NativeIndex: ^uint(0),
-			Predefined:  f,
-			Code:        nil,
-			BaseSize:    lang.FrameBaseSize {},
+			Kind:       lang.F_PREDEFINED,
+			Predefined: f,
+			Code:       nil,
+			BaseSize:   lang.FrameBaseSize {},
 			Info: lang.FuncInfo {
 				Module:    mod,
 				Name:      name,
@@ -132,11 +130,10 @@ func CompileFunction (
 	case ch.ExprPredefinedValue:
 		if len(imp) > 0 { panic("something went wrong") }
 		return &lang.Function {
-			Kind:        lang.F_PREDEFINED,
-			NativeIndex: ^uint(0),
-			Predefined:  b.Value,
-			Code:        nil,
-			BaseSize:    lang.FrameBaseSize {},
+			Kind:       lang.F_PREDEFINED,
+			Predefined: b.Value,
+			Code:       nil,
+			BaseSize:   lang.FrameBaseSize {},
 			Info: lang.FuncInfo {
 				Module:    mod,
 				Name:      name,
@@ -146,29 +143,20 @@ func CompileFunction (
 		}, make([] GlobalRef, 0), nil
 	case ch.ExprNative:
 		if len(imp) > 0 { panic("something went wrong") }
-		var native_name = b.Name
-		// TODO: decouple with the api module
-		var index, exists = api.NativeFunctionIndex[native_name]
-		var errs [] E = nil
-		if !exists {
-			errs = [] E { &Error {
-				Point:    b.Point,
-				Concrete: E_NativeFunctionNotFound { native_name },
-			} }
-		}
+		var native_id = b.Name
 		return &lang.Function {
-			Kind:        lang.F_NATIVE,
-			NativeIndex: index,
-			Predefined:  nil,
-			Code:        nil,
-			BaseSize:    lang.FrameBaseSize {},
+			Kind:       lang.F_NATIVE,
+			NativeId:   native_id,
+			Predefined: nil,
+			Code:       nil,
+			BaseSize:   lang.FrameBaseSize {},
 			Info:        lang.FuncInfo {
 				Module:    mod,
 				Name:      name,
 				DeclPoint: point,
 				SourceMap: nil,
 			},
-		}, make([]GlobalRef, 0), errs
+		}, make([]GlobalRef, 0), nil
 	case ch.ExprExpr:
 		var body_expr = ch.Expr(b)
 		var lambda = body_expr.Value.(ch.Lambda)
@@ -199,10 +187,9 @@ func CompileFunction (
 			panic("maximum quantity of local bindings exceeded")
 		}
 		return &lang.Function {
-			Kind:        lang.F_USER,
-			NativeIndex: ^uint(0),
-			Predefined:  nil,
-			Code:        code.InstSeq,
+			Kind:       lang.F_USER,
+			Predefined: nil,
+			Code:       code.InstSeq,
 			BaseSize:    lang.FrameBaseSize {
 				Context:  lang.Short(context_size),
 				Reserved: lang.Long(binding_peek),
@@ -229,11 +216,10 @@ func CompileConstant (
 	switch b := body.(type) {
 	case ch.ExprPredefinedValue:
 		return &lang.Function {
-			Kind:        lang.F_PREDEFINED,
-			NativeIndex: ^uint(0),
-			Predefined:  b.Value,
-			Code:        nil,
-			BaseSize:    lang.FrameBaseSize {},
+			Kind:       lang.F_PREDEFINED,
+			Predefined: b.Value,
+			Code:       nil,
+			BaseSize:   lang.FrameBaseSize {},
 			Info: lang.FuncInfo {
 				Module:    mod,
 				Name:      name,
@@ -242,28 +228,20 @@ func CompileConstant (
 			},
 		}, make([] GlobalRef, 0), nil
 	case ch.ExprNative:
-		var native_name = b.Name
-		var index, exists = api.NativeConstantIndex[native_name]
-		var errs [] E = nil
-		if !exists {
-			errs = [] E { &Error {
-				Point:    b.Point,
-				Concrete: E_NativeConstantNotFound { native_name },
-			} }
-		}
+		var native_id = b.Name
 		return &lang.Function {
-			Kind:        lang.F_NATIVE,
-			NativeIndex: index,
-			Predefined:  nil,
-			Code:        nil,
-			BaseSize:    lang.FrameBaseSize {},
+			Kind:       lang.F_NATIVE,
+			NativeId:   native_id,
+			Predefined: nil,
+			Code:       nil,
+			BaseSize:   lang.FrameBaseSize {},
 			Info: lang.FuncInfo {
 				Module:    mod,
 				Name:      name,
 				DeclPoint: point,
 				SourceMap: nil,
 			},
-		}, make([] GlobalRef, 0), errs
+		}, make([] GlobalRef, 0), nil
 	case ch.ExprExpr:
 		var body_expr = ch.Expr(b)
 		var ctx = MakeContext()
@@ -274,10 +252,9 @@ func CompileConstant (
 			panic("maximum quantity of local bindings exceeded")
 		}
 		return &lang.Function {
-			Kind:        lang.F_USER,
-			NativeIndex: ^uint(0),
-			Predefined:  nil,
-			Code:        code.InstSeq,
+			Kind:       lang.F_USER,
+			Predefined: nil,
+			Code:       code.InstSeq,
 			BaseSize:    lang.FrameBaseSize {
 				Context:  0,
 				Reserved: lang.Long(binding_peek),

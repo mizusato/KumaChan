@@ -2,6 +2,7 @@ package lang
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	. "kumachan/util/error"
 )
@@ -14,12 +15,12 @@ const (
 	F_PREDEFINED
 )
 type Function struct {
-	Kind         FunctionKind
-	NativeIndex  uint
-	Predefined   interface{}
-	Code         [] Instruction
-	BaseSize     FrameBaseSize
-	Info         FuncInfo
+	Kind        FunctionKind
+	NativeId    string
+	Predefined  interface{}
+	Code        [] Instruction
+	BaseSize    FrameBaseSize
+	Info        FuncInfo
 }
 
 type FrameBaseSize struct {
@@ -34,7 +35,7 @@ type FuncInfo struct {
 	SourceMap  [] ErrorPoint
 }
 
-func (f *Function) ToValue(native_registry (func(uint) Value)) Value {
+func (f *Function) ToValue(native_registry (func(string) Value)) Value {
 	switch f.Kind {
 	case F_USER:
 		return &ValFunc {
@@ -42,7 +43,7 @@ func (f *Function) ToValue(native_registry (func(uint) Value)) Value {
 			ContextValues: make([]Value, 0, 0),
 		}
 	case F_NATIVE:
-		return native_registry(f.NativeIndex)
+		return native_registry(f.NativeId)
 	case F_PREDEFINED:
 		return f.Predefined
 	default:
@@ -76,7 +77,7 @@ func (f *Function) String() string {
 		}
 		return buf.String()
 	case F_NATIVE:
-		fmt.Fprintf(&buf, "    NATIVE %d", f.NativeIndex)
+		fmt.Fprintf(&buf, "    NATIVE %s", strconv.Quote(f.NativeId))
 		return buf.String()
 	case F_PREDEFINED:
 		fmt.Fprintf(&buf, "    PREDEFINED")

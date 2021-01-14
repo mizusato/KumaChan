@@ -1,6 +1,9 @@
 package api
 
-import . "kumachan/lang"
+import (
+	. "kumachan/lang"
+	"fmt"
+)
 
 
 var NativeFunctionMaps = [] (map[string] interface{}) {
@@ -66,10 +69,15 @@ var _ = (func() interface{} {
 	return nil
 }) ()
 
-func GetNativeFunction(i uint) Value {
-	return NativeFunctionValue(NativeFunctions[i])
+func GetNativeFunction(id string) Value {
+	var f, exists = NativeFunctionMap[id]
+	if !(exists) { panic(fmt.Sprintf("no such native function: %s", id)) }
+	return NativeFunctionValue(f)
 }
 
-func GetNativeConstant(i uint, h InteropContext) Value {
-	return NativeConstants[i](h)
+func GetNativeConstant(id string, h InteropContext) Value {
+	var c, exists = NativeConstantMap[id]
+	if !(exists) { panic(fmt.Sprintf("no such native constant: %s", id)) }
+	return c(h)
 }
+

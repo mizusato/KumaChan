@@ -10,16 +10,6 @@ type Error struct {
 
 type ConcreteError interface { CompilerError() }
 
-func (impl E_NativeFunctionNotFound) CompilerError() {}
-type E_NativeFunctionNotFound struct {
-	Name  string
-}
-
-func (impl E_NativeConstantNotFound) CompilerError() {}
-type E_NativeConstantNotFound struct {
-	Name  string
-}
-
 func (impl E_CircularConstantDependency) CompilerError() {}
 type E_CircularConstantDependency struct {
 	Constants  [] string
@@ -41,12 +31,6 @@ func (err *Error) ErrorConcrete() interface{} {
 func (err *Error) Desc() ErrorMessage {
 	var desc = make(ErrorMessage, 0)
 	switch e := err.Concrete.(type) {
-	case E_NativeFunctionNotFound:
-		desc.WriteText(TS_ERROR, "No such native function:")
-		desc.WriteEndText(TS_INLINE, e.Name)
-	case E_NativeConstantNotFound:
-		desc.WriteText(TS_ERROR, "No such native constant:")
-		desc.WriteEndText(TS_INLINE, e.Name)
 	case E_CircularConstantDependency:
 		desc.WriteText(TS_ERROR,
 			"Circular dependency detected within constants:")

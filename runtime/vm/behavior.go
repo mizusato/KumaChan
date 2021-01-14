@@ -36,7 +36,7 @@ func execute(p Program, m *Machine) {
 			var fv = f.ToValue(nil).(FunctionValue)
 			m.globalSlot = append(m.globalSlot, call(fv, nil, m))
 		case F_NATIVE:
-			var v = api.GetNativeConstant(f.NativeIndex, nil_ctx_handle)
+			var v = api.GetNativeConstant(f.NativeId, nil_ctx_handle)
 			m.globalSlot = append(m.globalSlot, v)
 		case F_PREDEFINED:
 			m.globalSlot = append(m.globalSlot, f.ToValue(nil))
