@@ -328,7 +328,7 @@ func main() {
             fmt.Println("options:")
             fmt.Println("\t--help,-h\tshow help")
             fmt.Println("\t--version,-v\tshow version")
-            fmt.Println("\t--mode={interpreter,repl,tools-server,parser-debug}")
+            fmt.Println("\t--mode={interpreter,tools-server,parser-debug}")
             fmt.Println("\t--asm-dump=[FILE]")
             fmt.Println("\t--max-stack-size=[NUMBER]")
             return
