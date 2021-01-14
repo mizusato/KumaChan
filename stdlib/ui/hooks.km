@@ -1,0 +1,6 @@
+type Hook[T] (&(&(T)(Component))(Component));
+
+public function use[T]: ( &(Hook[T],(&(T)(Component))) Component )
+    ( &(hook,k)
+        k | hook
+    );

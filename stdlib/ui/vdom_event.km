@@ -1,6 +1,12 @@
 type EventOptions native;  // *vdom.EventOptions
 type EventPayload native;  // *qt.WebUiEventPayload (contains a C++ pointer)
+// TODO: consider renaming EventSink and related types
 type EventSink    protected Sink[EventPayload];
+
+private function dom-event-sink[T]: ( &(Sink[T],(&(EventPayload)(T))) EventSink )
+    native 'ui-dom-event-sink';
+private function dom-event-sink[T]: ( &(Reactive[T],(&(T)(&(EventPayload)(T)))) EventSink )
+    native 'ui-dom-event-sink-reactive';
 
 private function getter-callback[T]:
     ( &(String,(&(EventPayload,String)(T)),(&(T)(Callback))) Callback )
@@ -21,9 +27,8 @@ private function get-bool: ( &(EventPayload,String) Bool )
     native 'ui-event-payload-get-bool';
 
 private function dom-event:
-    ( & { prevent: Bool, stop: Bool, capture: Bool, sink: EventSink }
-        EventOptions )
-        native 'ui-dom-event';
+    ( & { prevent: Bool, stop: Bool, capture: Bool, sink: EventSink } EventOptions )
+    native 'ui-dom-event';
 private function dom-event: ( &(EventSink) EventOptions )
     ( &(sink)
         dom-event { prevent: No, stop: No, capture: No, sink }
@@ -35,8 +40,3 @@ private function dom-event: ( &(String,EventSink) Events )
             prevent: No, stop: No, capture: No
         })) ]
     );
-
-private function dom-event-sink[T]: ( &(Sink[T],(&(EventPayload)(T))) EventSink )
-    native 'ui-dom-event-sink';
-private function dom-event-sink[T]: ( &(Reactive[T],(&(T)(&(EventPayload)(T)))) EventSink )
-    native 'ui-dom-event-sink-reactive';

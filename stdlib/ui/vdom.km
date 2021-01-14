@@ -4,6 +4,9 @@ type Attrs       native;  // *vdom.Attrs
 type Events      native;  // *vdom.Events
 type NodeContent native;  // vdom.NodeContent
 
+/// Be careful! This is technically NOT a pure function.
+/// The vDOM driver in `webui.js` uses the memory address of a vNode as an ID.
+/// Therefore, a vNode cannot be used more than once.
 private function dom-node: ( &(String,Styles,Attrs,Events,NodeContent) Node )
     native 'ui-dom-node';
 private function dom-node: ( &(String,String) Node )

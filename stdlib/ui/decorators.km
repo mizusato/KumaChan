@@ -1,0 +1,66 @@
+type Decorator (&(Component)(Component));
+
+public function with: ( &(Component,Decorator) Component )
+    ( &(cpt,f)
+        f cpt
+    );
+public function with[T]: ( &((&(T)(Component)),Decorator) (&(T)(Component)) )
+    ( &(ctor,f)
+    ( &(opts)
+        f (ctor opts)
+    ));
+public function styled[T]: ( &((&(T)(Component)),Array[String]) (&(T)(Component)) )
+    ( &(ctor,class-list)
+        ctor | with (ui-style class-list)
+    );
+
+public function ui-style: ( &(Array[String]) Decorator )
+    ( &(class-list)
+    ( &(cpt)
+        ~ map* &(node) := cpt,
+        node.with (dom-attrs [
+            ('class', (class-list.join ' '))
+        ])
+    ));
+public function ui-style: ( &(NoExcept*[Array[String]]) Decorator )
+    ( &(@class-list)
+    ( &(cpt)
+        ~ map* &(class-list, node) := (combine-latest! @class-list cpt),
+        node.with (dom-attrs [
+            ('class', (class-list.join ' '))
+        ])
+    ));
+public function ui-inline-style: ( &(Array[(String,String)]) Decorator )
+    ( &(rules)
+    ( &(cpt)
+        ~ map* &(node) := cpt,
+        node.with (dom-styles rules)
+    ));
+public function ui-inline-style: ( &(NoExcept*[Array[(String,String)]]) Decorator )
+    ( &(@rules)
+    ( &(cpt)
+        ~ map* &(rules, node) := (combine-latest! @rules cpt),
+        node.with (dom-styles rules)
+    ));
+public function ui-event: ( &(String,EventSink) Decorator )
+    ( &(event)
+    ( &(cpt)
+        let (name,sink) := event,
+        ~ map* &(node) := cpt,
+        node.with (dom-event name sink)
+    ));
+public function ui-focusable: ( &() Decorator )
+    ( &(_)
+    ( &(cpt)
+        ~ map* &(node) := cpt,
+        node.with (dom-attrs [('tabindex','0')])
+    ));
+public function ui-enabled: ( &(NoExcept*[Bool]) Decorator )
+    ( &(@enabled)
+    ( &(cpt)
+        ~ map* &(enabled, node) := (combine-latest! @enabled cpt),
+        if enabled:
+            node,
+        else:
+            node.with (dom-attrs [('disabled', 'disabled')])
+    ));

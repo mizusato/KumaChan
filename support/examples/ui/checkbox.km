@@ -1,17 +1,17 @@
 import assets from './assets';
 
-do ui-init 'WebQuick Checkbox' DOM;
+do ui-init 'Checkbox' Root;
 
 do ui-inject-css [assets::style-css];
 
 do UI::ExitWhenWindowClosed;
 
-private const DOM: NoExcept*[UI::Node]
+private const Root: UI::Component
     ~ with-reactive* &(ok) := Yes,
-    UI::Styled ['container']
-    (UI::Container [
-        UI::Checkbox ok,
-        UI::TextWatch
-            (ok.watch.map* (&(ok)(if ok: 'checked', else: 'not checked'))),
-        UI::Button 'toggle' (ok.update (&(ok)(not ok)))
-    ]);
+    (ui-container.styled ['container']) [
+        ui-checkbox ok,
+        ui-text (ok.watch.map* ( &(ok)
+            if ok: 'checked', else: 'not checked'
+        )),
+        ui-button 'toggle' (ok.update (&(ok)(not ok)))
+    ];

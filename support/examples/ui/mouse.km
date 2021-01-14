@@ -1,0 +1,32 @@
+import assets from './assets';
+
+do ui-init 'Mouse' Root;
+
+do ui-inject-css [assets::style-css];
+
+do UI::ExitWhenWindowClosed;
+
+public function mouse-position: ( &() UI::Hook[NoExcept*[(Float,Float)]] )
+    ( &(_) ( &(k)
+        ~ then* &(pos) := new-bus:[(Float,Float)],
+        ~ then* &(x) := random,  // TODO: use uuid instead
+        let cpt := (k (watch pos)),
+        cpt | with (ui-event ("mousemove.hook#" (str x))
+            (ui-callback
+                ~ ui-msg-float &(x) := 'webuiCurrentTargetX',
+                ~ ui-msg-float &(y) := 'webuiCurrentTargetY',
+                return $(pos <- (x, y))
+            ))
+    ));
+
+private const Root: UI::Component
+    let container := styled ui-container ['container'],
+    let box := styled ui-container ['box'],
+    container [
+        ~ use &(pos) := mouse-position,
+        box [
+            pos | map* ( &(x,y) "x=#, y=#" (str x) (str y) )
+                | start-with ['']
+                | ui-text
+        ]
+    ];

@@ -1,0 +1,75 @@
+type Component NoExcept*[Node]; // Observable<VNode>
+
+public function ui-empty: ( &() Component )
+    ( &(_)
+        yield (dom-node 'div' [('display','none')] [])
+    );
+public function ui-container: ( &(Array[Component]) Component )
+    ( &(items)
+        dom-dynamic 'div' items
+    );
+public function ui-list[T]: ( &(Reactive[List[T]]) Hook[Reactive[T]] )
+    ( &(list)
+    ( &(k)
+        dom-dynamic 'div'
+            ~ consume &(item) := list,
+            k item
+    ));
+public function ui-label: ( &(String) Component )
+    ( &(text)
+        yield (dom-node 'div' text)
+    );
+public function ui-text: ( &(NoExcept*[String]) Component )
+    ( &(@text)
+        ~ map* &(text) := @text,
+        dom-node 'div' text
+    );
+public function ui-text-input: ( &(Reactive[String]) Component )
+    ( &(@text)
+        ~ map* &(text) := watch @text,
+        dom-node 'input'
+            (dom-styles [])
+            (dom-attrs [ ('type', 'text'), ('value', text) ])
+            (dom-event 'input'
+                (dom-event-sink @text (&(ev)(ev.get-string 'webuiValue'))))
+            (dom-children [])
+    );
+public function ui-checkbox: ( &(Reactive[Bool]) Component )
+    ( &(@checked)
+        ~ map* &(checked) := watch @checked,
+        dom-node 'input'
+            (dom-styles [])
+            (dom-attrs (
+                if checked:
+                    ([('type', 'checkbox'), ('checked', 'checked')]),
+                else:
+                    ([('type', 'checkbox')])
+            ))
+            (dom-event 'change'
+                (dom-event-sink @checked (&(ev)(ev.get-bool 'webuiChecked'))))
+            (dom-children [])
+    );
+public function ui-select: ( &(Reactive[String],Array[(String,String)]) Component )
+    ( &(@current,options)
+        ~ map* &(current) := watch @current,
+        dom-node 'select'
+            (dom-styles [])
+            (dom-attrs [('value', current)])
+            (dom-event 'change'
+                (dom-event-sink @current (&(ev)(ev.get-string 'webuiValue'))))
+            (dom-children (
+                ~ map &(name,desc) := options,
+                dom-node 'option' desc
+                    | with (dom-attrs [('value', name)])
+            ))
+    );
+public function ui-button: ( &(String, NoExcept[-]) Component )
+    ( &(text,action)
+        yield (dom-node 'button'
+            (dom-styles [])
+            (dom-attrs [])
+            (dom-event 'click'
+                (ui-callback (return action)))
+            (dom-text text)
+        )
+    );

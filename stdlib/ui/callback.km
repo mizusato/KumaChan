@@ -1,0 +1,27 @@
+type Callback protected (&(EventPayload)(NoExcept[-]));
+
+public function ui-callback: ( &(Callback) EventSink )
+    ( &(cb)
+        dom-event-sink (callback:[NoExcept[-]] (& e e)) cb
+        // important: payload will be deleted after `cb` called
+    );
+public function ui-msg-string: ( &(String,(&(String)(Callback))) Callback )
+    ( &(prop,k)
+        getter-callback prop get-string k
+    );
+public function ui-msg-float:  ( &(String,(&(Float)(Callback))) Callback )
+    ( &(prop,k)
+        getter-callback prop get-float k
+    );
+public function ui-msg-number: ( &(String,(&(Number)(Callback))) Callback )
+    ( &(prop,k)
+        getter-callback prop get-number k
+    );
+public function ui-msg-bool:   ( &(String,(&(Bool)(Callback))) Callback )
+    ( &(prop,k)
+        getter-callback prop get-bool k
+    );
+public function return: ( &(NoExcept[-]) Callback )
+    ( &(action)
+        Callback (&(_)(action))
+    );

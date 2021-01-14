@@ -5,33 +5,33 @@ type Value union {
      type Single { content: String };
 };
 
-do ui-init 'Reactive Switch' DOM;
+do ui-init 'Reactive Switch' Root;
 
 do ui-inject-css [assets::style-css];
 
 do UI::ExitWhenWindowClosed;
 
-private const DOM: NoExcept*[UI::Node]
+private const Root: UI::Component
     ~ with-reactive* &(v) := Single { content: 'a value' },
-    let editor: NoExcept*[UI::Node] :=
+    let editor: UI::Component :=
         switch v:
         case Double (x, y):
-            UI::Container [
-                UI::TextInput x,
-                UI::TextInput y
+            ui-container [
+                ui-text-input x,
+                ui-text-input y
             ],
         case Single {content}:
-            UI::TextInput content,
+            ui-text-input content,
         end,
-    UI::Container [
+    ui-container [
         editor,
-        UI::Button 'init double' (v.emit (Double 'a' 'b')),
-        UI::Button 'init single' (v.emit (Single { content: 'foo' })),
+        ui-button 'init double' $(v <- (Double 'a' 'b')),
+        ui-button 'init single' $(v <- (Single { content: 'foo' })),
         ~ switch-map &(v) := watch v,
             switch v:
             case Double (x, y):
-                UI::Text ("[Double] (#, #)" x y),
+                ui-label ("[Double] (#, #)" x y),
             case Single {content}:
-                UI::Text ("[Single] #" content),
+                ui-label ("[Single] #" content),
             end
     ];

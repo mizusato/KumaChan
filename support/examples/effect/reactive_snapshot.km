@@ -1,52 +1,55 @@
 import assets from './assets';
 
-do ui-init 'Reactive Snapshot' DOM;
+do ui-init 'Reactive Snapshot' Root;
 
 do ui-inject-css [assets::style-css];
 
 do UI::ExitWhenWindowClosed;
 
-private const DOM: NoExcept*[UI::Node]
+private const Root: UI::Component
     ~ with-auto-snapshot* &(text, ops) := '',
     let (text-undo, text-redo, text-diff) := ops,
-    UI::Container [
+    ui-container [
         ~ with-reactive* &(editing) := No,
         ~ switch-map &(state) := editing.watch.with-latest-from(text),
         let (is-editing, current-text) := state,
         if is-editing:
             ~ with-reactive* &(buffer) := current-text,
-            UI::Container [
-                (UI::TextInput buffer),
+            ui-container [
+                (ui-text-input buffer),
                 ~ switch-map &(new-text) := watch buffer,
-                    UI::Button 'Confirm' (
+                    ui-button 'Confirm' (
                         $(editing <- No).then
                         $(text <- new-text)
                     )
             ],
         else:
-            UI::Styled ['row'] (UI::Container [
-                UI::Styled ['red']
-                    (UI::TextWatch (text.watch)),
-                UI::Button 'Edit' $(editing <- Yes)
-            ]),
+            (ui-container.styled ['row']) [
+                ui-text (text.watch)
+                    | with (ui-style ['red']),
+                ui-button 'Edit' $(editing <- Yes)
+            ],
         ~ switch-map &(snapshots, current) := text-diff,
         let { undo, redo } := snapshots,
         let undo := undo.collect,
         let redo := redo.collect,
-        UI::Container [
+        let title := styled ui-label ['title'],
+        ui-container [
             if $((undo.length) > 0):
-                UI::Button 'Undo' text-undo,
+                ui-button 'Undo' text-undo,
             else:
-                UI::Empty,
+                ui-empty,
             if $((redo.length) > 0):
-                UI::Button 'Redo' text-redo,
+                ui-button 'Redo' text-redo,
             else:
-                UI::Empty,
-            UI::Styled ['title'] (UI::Text 'undo stack (reversed):'),
-            UI::Container (reverse (undo.map (&(v)(UI::Text (quote v))))),
-            UI::Styled ['title'] (UI::Text 'current:'),
-            UI::Text (quote current),
-            UI::Styled ['title'] (UI::Text 'redo stack:'),
-            UI::Container (redo.map (&(v)(UI::Text (quote v))))
+                ui-empty,
+            title 'undo stack (reversed):',
+                ui-container (reverse (undo.map ( &(v)
+                    ui-label (quote v)))),
+            title 'current:',
+                ui-label (quote current),
+            title 'redo stack:',
+                ui-container (redo.map (&(v)
+                    ui-label (quote v)))
         ]
     ];
