@@ -189,6 +189,7 @@ var __WebUiVirtualDomDeltaNotifier = &vdom.DeltaNotifier {
 	RemoveNode:  qt.WebUiRemoveNode,
 	UpdateNode:  qt.WebUiUpdateNode,
 	ReplaceNode: qt.WebUiReplaceNode,
+	SwapNode:    qt.WebUiSwapNode,
 }
 var __WebUiVirtualDom *vdom.Node = nil
 var __WebUiUpdateDom = func(new_root *vdom.Node) rx.Effect {

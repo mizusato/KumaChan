@@ -8,13 +8,6 @@ public function ui-container: ( &(Array[Component]) Component )
     ( &(items)
         dom-dynamic 'div' items
     );
-public function ui-list[T]: ( &(Reactive[List[T]]) Hook[Reactive[T]] )
-    ( &(list)
-    ( &(k)
-        dom-dynamic 'div'
-            ~ consume &(item) := list,
-            k item
-    ));
 public function ui-label: ( &(String) Component )
     ( &(text)
         yield (dom-node 'div' text)

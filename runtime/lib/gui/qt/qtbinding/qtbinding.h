@@ -134,6 +134,7 @@ extern "C" {
     void WebUiRemoveNode(QtString parent, QtString id);
     void WebUiUpdateNode(QtString old_id, QtString new_id);
     void WebUiReplaceNode(QtString parent, QtString old_id, QtString id, QtString tag);
+    void WebUiSwapNode(QtString parent, QtString a, QtString b);
 #ifdef __cplusplus
 }
 #endif

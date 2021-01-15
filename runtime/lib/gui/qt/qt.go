@@ -618,4 +618,10 @@ func WebUiReplaceNode(parent Ucs4String, old_id Ucs4String, new_id Ucs4String, t
     var tag_, del_tag = NewString(tag);  defer del_tag()
     C.WebUiReplaceNode(C.QtString(parent_), C.QtString(old_id_), C.QtString(new_id_), C.QtString(tag_))
 }
+func WebUiSwapNode(parent Ucs4String, old_id Ucs4String, new_id Ucs4String) {
+    var parent_, del_parent = NewString(parent);  defer del_parent()
+    var old_id_, del_old_id = NewString(old_id);  defer del_old_id()
+    var new_id_, del_new_id = NewString(new_id);  defer del_new_id()
+    C.WebUiSwapNode(C.QtString(parent_), C.QtString(old_id_), C.QtString(new_id_))
+}
 

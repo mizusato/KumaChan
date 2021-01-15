@@ -44,11 +44,11 @@ signals:
     void ModifyEvent(QString id, QString event, bool prevent, bool stop, bool capture);
     void AttachEvent(QString id, QString event, bool prevent, bool stop, bool capture, QString handler);
     void SetText(QString id, QString text);
-    // void InsertNode(QString parent, QString ref, QString id, QString tag);
     void AppendNode(QString parent, QString id, QString tag);
     void RemoveNode(QString parent, QString id);
     void UpdateNode(QString old_id, QString new_id);
     void ReplaceNode(QString parent, QString old_id, QString id, QString tag);
+    void SwapNode(QString id, QString a, QString b);
 };
 
 struct WebUiAsset {

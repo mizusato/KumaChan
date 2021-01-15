@@ -5,6 +5,7 @@ type Name {
     last:  String
 };
 
+
 do ui-init 'Reactive Projection' Root;
 
 do ui-inject-css [assets::style-css];

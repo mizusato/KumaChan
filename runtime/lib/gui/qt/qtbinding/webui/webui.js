@@ -24,6 +24,7 @@
  *  @property {Signal.<function(parent:string, id:string): void>} RemoveNode
  *  @property {Signal.<function(old_id:string, new_id:string): void>} UpdateNode
  *  @property {Signal.<function(target:string, id:string, tag:string): void>} ReplaceNode
+ *  @property {Signal.<function(parent:string, a:string, b:string): void>} SwapNode
  */
 
 const SVGNS = 'http://www.w3.org/2000/svg'
@@ -247,6 +248,27 @@ window.addEventListener('load', _ => {
             runAllUpdateHooks()
         } catch (err) {
             console.log('ReplaceNode', { parent, old_id, new_id, tag }, err)
+        }
+    })
+    bridge.SwapNode.connect((parent, a, b) => {
+        try {
+            let parent_el = elementRegistry[parent]
+            let a_el = elementRegistry[a]
+            let b_el = elementRegistry[b]
+            if (a_el.nextElementSibling === b_el) {
+                parent_el.insertBefore(b_el, a_el)
+            } else if (b_el.nextElementSibling === a_el) {
+                parent_el.insertBefore(a_el, b_el)
+            } else {
+                let placeholder = createElement(parent, 'div')
+                parent_el.insertBefore(placeholder, b_el)
+                parent_el.insertBefore(b_el, a_el)
+                parent_el.insertBefore(a_el, placeholder)
+                parent_el.removeChild(placeholder)
+            }
+            runAllUpdateHooks()
+        } catch (err) {
+            console.log('SwapNode', { parent, a, b }, err)
         }
     })
     bridge.UpdateRootFontSize.connect(size => {

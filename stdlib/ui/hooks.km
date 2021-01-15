@@ -4,3 +4,11 @@ public function use[T]: ( &(Hook[T],(&(T)(Component))) Component )
     ( &(hook,k)
         k | hook
     );
+
+public function ui-list[T]: ( &(Reactive[List[T]]) Hook[Reactive[T]] )
+    ( &(list)
+    ( &(k)
+        dom-dynamic 'div'
+            ~ consume &(item) := list,
+            k item
+    ));

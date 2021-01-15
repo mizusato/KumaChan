@@ -111,6 +111,25 @@ func KeyTrackedDynamicCombineLatestWaitReady(e Effect) Effect {
 		var running = make(map[string] disposeFunc)
 		var values = make(map[string] Object)
 		var keys = make([] string, 0)
+		var first = true
+		var emit_if_all_ready = func() {
+			var ready_values = make([] Object, len(keys))
+			var all_ready = true
+			for i, k := range keys {
+				var v, exists = values[k]
+				if exists {
+					ready_values[i] = v
+				} else {
+					all_ready = false
+					break
+				}
+			}
+			if all_ready {
+				c.pass(ready_values)
+			} else {
+				// do nothing
+			}
+		}
 		sched.run(e, &observer {
 			context:  ctx,
 			next: func(obj Object) {
@@ -124,7 +143,13 @@ func KeyTrackedDynamicCombineLatestWaitReady(e Effect) Effect {
 						delete(values, key)  // no-op when entry not existing
 					}
 				}
+				var run_queue = make([] func(), 0)
+				var i = 0
 				vec.IterateKeys(func(key string) {
+					if i < len(keys) && keys[i] != key {
+						keys_changed = true
+					}
+					i += 1
 					var _, is_running = running[key]
 					if !(is_running) {
 						keys_changed = true
@@ -132,40 +157,38 @@ func KeyTrackedDynamicCombineLatestWaitReady(e Effect) Effect {
 						running[key] = this_dispose
 						c.new_child()
 						var this_effect = vec.GetEffect(key)
-						sched.run(this_effect, &observer {
-							context:  this_ctx,
-							next: func(obj Object) {
-								values[key] = obj
-								var ready_values = make([] Object, len(keys))
-								var all_ready = true
-								for i, k := range keys {
-									var v, exists = values[k]
-									if exists {
-										ready_values[i] = v
-									} else {
-										all_ready = false
-										break
-									}
-								}
-								if all_ready {
-									c.pass(ready_values)
-								} else {
-									// do nothing
-								}
-							},
-							error: func(err Object) {
-								c.throw(err)
-							},
-							complete: func() {
-								c.delete_child()
-							},
-						})
+						var run = func() {
+							sched.run(this_effect, &observer {
+								context:  this_ctx,
+								next: func(obj Object) {
+									values[key] = obj
+									emit_if_all_ready()
+								},
+								error: func(err Object) {
+									c.throw(err)
+								},
+								complete: func() {
+									c.delete_child()
+								},
+							})
+						}
+						run_queue = append(run_queue, run)
 					}
 				})
 				if keys_changed {
 					keys = vec.CloneKeys()
+					if len(run_queue) == 0 {
+						emit_if_all_ready()
+					}
 				} else {
-					// do nothing
+					if first {
+						c.pass(make([] Object, 0))
+					}
+				}
+				first = false
+				for _, run := range run_queue {
+					// subscription should happen after `keys` updated
+					run()
 				}
 			},
 			error: func(err Object) {

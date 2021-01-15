@@ -286,7 +286,7 @@ func (l List) Adjusted(target String, direction UpOrDown) (List, bool) {
 			if target_found { panic("something went wrong") }
 			target_found = true
 			if direction == Up {
-				if (i - 1) < len(old_keys) {
+				if 0 <= (i - 1) && (i - 1) < len(old_keys) {
 					var prev = old_keys[i - 1]
 					new_keys[i - 1] = this
 					new_keys[i] = prev

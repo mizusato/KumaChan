@@ -94,10 +94,6 @@ void WebUiSetText(QtString id, QtString text) {
     emit window->bridge->SetText(QtUnwrapString(id), QtUnwrapString(text));
 }
 
-// void WebUiInsertNode(QtString parent, QtString ref, QtString id, QtString tag) {
-//     emit window->bridge->InsertNode(QtUnwrapString(parent), QtUnwrapString(ref), QtUnwrapString(id), QtUnwrapString(tag));
-// }
-
 void WebUiAppendNode(QtString parent, QtString id, QtString tag) {
     emit window->bridge->AppendNode(QtUnwrapString(parent), QtUnwrapString(id), QtUnwrapString(tag));
 }
@@ -112,4 +108,8 @@ void WebUiUpdateNode(QtString old_id, QtString new_id) {
 
 void WebUiReplaceNode(QtString parent, QtString old_id, QtString id, QtString tag) {
     emit window->bridge->ReplaceNode(QtUnwrapString(parent), QtUnwrapString(old_id), QtUnwrapString(id), QtUnwrapString(tag));
+}
+
+void WebUiSwapNode(QtString parent, QtString a, QtString b) {
+    emit window->bridge->SwapNode(QtUnwrapString(parent), QtUnwrapString(a), QtUnwrapString(b));
 }
