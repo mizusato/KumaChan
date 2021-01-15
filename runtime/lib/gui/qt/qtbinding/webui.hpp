@@ -35,7 +35,6 @@ signals:
     void InjectJS(QString uuid, QString path);
     void InjectTTF(QString uuid, QString path, QString family, QString weight, QString style);
     void CallMethod(QString id, QString name, QVariantList args);
-    // TODO: use 1 notifier signal instead of many
     void EraseStyle(QString id, QString key);
     void ApplyStyle(QString id, QString key, QString value);
     void RemoveAttr(QString id, QString name);
@@ -49,6 +48,7 @@ signals:
     void UpdateNode(QString old_id, QString new_id);
     void ReplaceNode(QString parent, QString old_id, QString id, QString tag);
     void SwapNode(QString id, QString a, QString b);
+    // TODO: update start/finish signal
 };
 
 struct WebUiAsset {
