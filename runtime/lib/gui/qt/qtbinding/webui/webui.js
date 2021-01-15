@@ -252,6 +252,7 @@ window.addEventListener('load', _ => {
     })
     bridge.SwapNode.connect((parent, a, b) => {
         try {
+            // TODO: keep the focus of inserted node (or its descendent node)
             let parent_el = elementRegistry[parent]
             let a_el = elementRegistry[a]
             let b_el = elementRegistry[b]

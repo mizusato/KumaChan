@@ -435,6 +435,7 @@ func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprErro
 }
 
 func CheckIf(raw ast.If, ctx ExprContext) (SemiExpr, *ExprError) {
+	// TODO: reactive if
 	var if_node = DesugarElseIf(raw)
 	var info = ctx.GetExprInfo(if_node.Node)
 	var cond_semi, err1 = Check(if_node.Condition, ctx)
