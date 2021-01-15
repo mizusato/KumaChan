@@ -8,6 +8,7 @@ import (
 	"kumachan/rx"
 	. "kumachan/lang"
 	"kumachan/runtime/lib/container"
+	"strconv"
 )
 
 
@@ -57,6 +58,8 @@ func AdaptReactiveDiff(diff rx.Effect) rx.Effect {
 		} }
 	})
 }
+
+var nextProcessLevelGlobalId = uint64(0)
 
 var EffectFunctions = map[string] Value {
 	"sink-emit": func(s rx.Sink, v Value) rx.Effect {
@@ -237,6 +240,13 @@ var EffectFunctions = map[string] Value {
 	"random": func() rx.Effect {
 		return rx.NewSync(func() (rx.Object, bool) {
 			return rand.Float64(), true
+		})
+	},
+	"proc-gid": func() rx.Effect {
+		return rx.NewSync(func() (rx.Object, bool) {
+			var id = nextProcessLevelGlobalId
+			nextProcessLevelGlobalId += 1
+			return StringFromGoString(strconv.FormatUint(id, 16)), true
 		})
 	},
 	"crash": func(msg String, h InteropContext) rx.Effect {
