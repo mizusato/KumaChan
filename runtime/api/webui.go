@@ -6,8 +6,8 @@ import (
 	"kumachan/stdlib"
 	. "kumachan/lang"
 	"kumachan/runtime/lib/container"
-	"kumachan/runtime/lib/gui/qt"
-	"kumachan/runtime/lib/gui/vdom"
+	"kumachan/runtime/lib/ui/qt"
+	"kumachan/runtime/lib/ui/vdom"
 )
 
 

@@ -19,7 +19,7 @@ import (
     "kumachan/compiler/generator"
     "kumachan/runtime/vm"
 	"kumachan/lang"
-	"kumachan/runtime/lib/gui/qt"
+	"kumachan/runtime/lib/ui/qt"
     . "kumachan/util/error"
     "kumachan/rx"
     "kumachan/util"

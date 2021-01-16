@@ -13,7 +13,7 @@ import (
 	. "kumachan/util/error"
 	"kumachan/compiler/generator"
 	"kumachan/lang"
-	"kumachan/runtime/lib/gui/qt"
+	"kumachan/runtime/lib/ui/qt"
 	"kumachan/runtime/vm"
 )
 

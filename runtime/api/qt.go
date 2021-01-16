@@ -6,7 +6,7 @@ import (
 	"kumachan/rx"
 	"kumachan/stdlib"
 	"kumachan/runtime/lib/container"
-	"kumachan/runtime/lib/gui/qt"
+	"kumachan/runtime/lib/ui/qt"
 )
 
 
