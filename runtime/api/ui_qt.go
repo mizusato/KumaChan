@@ -6,98 +6,26 @@ import (
 	"kumachan/rx"
 	"kumachan/stdlib"
 	"kumachan/runtime/lib/container"
+	"kumachan/runtime/lib/ui"
 	"kumachan/runtime/lib/ui/qt"
 )
 
 
-type QtSignal struct {
-	Object      qt.Object
-	Signature   string
-	PropMapper  func(qt.Object) interface{}
-}
-func (signal QtSignal) Receive() rx.Effect {
-	return rx.NewGoroutine(func(sender rx.Sender) {
-		var disconnect = qt.Connect(signal.Object, signal.Signature, func() {
-			sender.Next(signal.PropMapper(signal.Object))
-		})
-		sender.Context().WaitDispose(func() {
-			disconnect()
-		})
-	})
-}
-
-type QtEvent struct {
-	Object   qt.Object
-	Kind     qt.EventKind
-	Prevent  bool
-}
-func (event QtEvent) Receive() rx.Effect {
-	return rx.NewGoroutine(func(sender rx.Sender) {
-		var cancel = qt.Listen(event.Object, event.Kind, event.Prevent, func(ev qt.Event) {
-			var obj = (func() Value {
-				switch event.Kind {
-				case qt.EventResize():
-					// Qt::EventResize
-					return &ValProd { Elements: [] Value {
-						ev.ResizeEventGetWidth(),
-						ev.ResizeEventGetHeight(),
-					} }
-				case qt.EventClose():
-					return nil
-				default:
-					panic("something went wrong")
-				}
-			})()
-			sender.Next(obj)
-		})
-		sender.Context().WaitDispose(func() {
-			cancel()
-		})
-	})
-}
-
-func QtFileDialogAdaptArgs (
-	parent  SumValue,
-	title   String,
-	cwd     stdlib.Path,
-	filter  String,
-) (qt.Widget, qt.FileDialogOptions) {
-	var parent_val, ok = Unwrap(parent)
-	var parent_widget qt.Widget
-	if ok {
-		parent_widget = parent_val.(qt.Widget)
-	}
-	var opts = qt.FileDialogOptions {
-		Title:  RuneSliceFromString(title),
-		Cwd:    ([] rune)(cwd.String()),
-		Filter: RuneSliceFromString(filter),
-	}
-	return parent_widget, opts
-}
-
-func CreateQtTaskEffect(action func() interface{}) rx.Effect {
-	return rx.NewCallback(func(callback func(rx.Object)) {
-		qt.CommitTask(func() {
-			callback(action())
-		})
-	})
-}
-
-var QtFunctions = map[string] interface{} {
+var UiQtFunctions = map[string] interface{} {
 	"qt-show": func(widget qt.Widget) rx.Effect {
-		return CreateQtTaskEffect(func() interface{} {
+		return ui.CreateQtTaskEffect(func() interface{} {
 			qt.Show(widget)
 			return nil
 		})
 	},
 	"qt-move-to-screen-center": func(widget qt.Widget) rx.Effect {
-		return CreateQtTaskEffect(func() interface{} {
+		return ui.CreateQtTaskEffect(func() interface{} {
 			qt.MoveToScreenCenter(widget)
 			return nil
 		})
 	},
 	"qt-signal": func(object qt.Object, signature String, mapper Value, h InteropContext) rx.Effect {
-		var source = QtSignal {
+		var source = ui.QtSignal {
 			Object:     object,
 			Signature:  GoStringFromString(signature),
 			PropMapper: func(object qt.Object) interface{} {
@@ -107,7 +35,7 @@ var QtFunctions = map[string] interface{} {
 		return source.Receive()
 	},
 	"qt-signal-no-payload": func(object qt.Object, signature String) rx.Effect {
-		var source = QtSignal {
+		var source = ui.QtSignal {
 			Object:     object,
 			Signature:  GoStringFromString(signature),
 			PropMapper: func(object qt.Object) interface{} {
@@ -129,7 +57,7 @@ var QtFunctions = map[string] interface{} {
 			}
 		})()
 		var prevent_default = FromBool(prevent)
-		var source = QtEvent {
+		var source = ui.QtEvent {
 			Object:  object,
 			Kind:    event_kind,
 			Prevent: prevent_default,
@@ -151,7 +79,7 @@ var QtFunctions = map[string] interface{} {
 	"qt-set-property": func(object qt.Object, prop_name String, prop_type String, value Value) rx.Effect {
 		var prop = GoStringFromString(prop_name)
 		var t = GoStringFromString(prop_type)
-		return CreateQtTaskEffect(func() interface{} {
+		return ui.CreateQtTaskEffect(func() interface{} {
 			switch t {
 			case "String":
 				qt.SetPropRuneString(object, prop, RuneSliceFromString(value.(String)))
@@ -164,7 +92,7 @@ var QtFunctions = map[string] interface{} {
 		})
 	},
 	"qt-list-widget-set-items": func(list qt.Widget, av Value, current SumValue) rx.Effect {
-		return CreateQtTaskEffect(func() interface{} {
+		return ui.CreateQtTaskEffect(func() interface{} {
 			var arr = container.ArrayFrom(av)
 			var current_key ([] rune)
 			var the_current, has_current = Unwrap(current)
@@ -205,7 +133,7 @@ var QtFunctions = map[string] interface{} {
 		}
 	},
 	"qt-dialog-open": func(parent SumValue, title String, cwd stdlib.Path, filter String) rx.Effect {
-		var parent_widget, opts = QtFileDialogAdaptArgs(parent, title, cwd, filter)
+		var parent_widget, opts = ui.QtFileDialogAdaptArgs(parent, title, cwd, filter)
 		return rx.NewCallback(func(ok func(rx.Object)) {
 			qt.CommitTask(func() {
 				var path_runes = qt.FileDialogOpen(parent_widget, opts)
@@ -220,7 +148,7 @@ var QtFunctions = map[string] interface{} {
 		})
 	},
 	"qt-dialog-open*": func(parent SumValue, title String, cwd stdlib.Path, filter String) rx.Effect {
-		var parent_widget, opts = QtFileDialogAdaptArgs(parent, title, cwd, filter)
+		var parent_widget, opts = ui.QtFileDialogAdaptArgs(parent, title, cwd, filter)
 		return rx.NewCallback(func(ok func(rx.Object)) {
 			qt.CommitTask(func() {
 				var str_list = qt.FileDialogOpenMultiple(parent_widget, opts)
@@ -233,7 +161,7 @@ var QtFunctions = map[string] interface{} {
 		})
 	},
 	"qt-dialog-open-dir": func(parent SumValue, title String, cwd stdlib.Path) rx.Effect {
-		var parent_widget, opts = QtFileDialogAdaptArgs(parent, title, cwd, String([] Char {}))
+		var parent_widget, opts = ui.QtFileDialogAdaptArgs(parent, title, cwd, String([] Char {}))
 		return rx.NewCallback(func(ok func(rx.Object)) {
 			qt.CommitTask(func() {
 				var path_runes = qt.FileDialogSelectDirectory(parent_widget, opts)
@@ -248,7 +176,7 @@ var QtFunctions = map[string] interface{} {
 		})
 	},
 	"qt-dialog-save": func(parent SumValue, title String, cwd stdlib.Path, filter String) rx.Effect {
-		var parent_widget, opts = QtFileDialogAdaptArgs(parent, title, cwd, filter)
+		var parent_widget, opts = ui.QtFileDialogAdaptArgs(parent, title, cwd, filter)
 		return rx.NewCallback(func(ok func(rx.Object)) {
 			qt.CommitTask(func() {
 				var path_runes = qt.FileDialogSave(parent_widget, opts)
@@ -263,3 +191,4 @@ var QtFunctions = map[string] interface{} {
 		})
 	},
 }
+

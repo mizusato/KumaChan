@@ -6,7 +6,7 @@ import (
 )
 
 
-type String = [] rune
+type String = ([] rune)
 type Map interface {
 	Has(String) bool
 	Lookup(String) (interface{}, bool)

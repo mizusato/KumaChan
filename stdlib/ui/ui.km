@@ -14,9 +14,9 @@ public function ui-inject-js:  ( &(Array[WebAsset]) NoExcept[-] )
 public function ui-inject-ttf: ( &(Array[(FontInfo,WebAsset)]) NoExcept[-] )
     native 'ui-inject-ttf';
 public function ui-get-window: ( &() NoExcept[Window] )
-    (&(_)(GetWindow));
-private const GetWindow: NoExcept[Window]
-    native 'UI::GetWindow';
-public const ExitWhenWindowClosed: NoExcept[-]
-    ~ then &(window) := GetWindow,
-    listen (window.closed) (&(_)(exit 0));
+    native 'ui-get-window';
+public function ui-exit-when-window-closed: ( &() NoExcept[-] )
+    ( &(_)
+        ~ then &(window) := ui-get-window,
+        listen (window.closed) (&(_)(exit 0))
+    );

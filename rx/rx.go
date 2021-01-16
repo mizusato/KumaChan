@@ -166,6 +166,10 @@ func (s Sender) Complete() {
 }
 
 
+func ScheduleTask(task Effect, sched Scheduler) {
+	sched.RunTopLevel(task, Receiver { Context: Background() })
+}
+
 func NewGoroutine(action func(Sender)) Effect {
 	return Effect { func (sched Scheduler, ob *observer) {
 		go action(Sender { sched: sched, ob: ob })

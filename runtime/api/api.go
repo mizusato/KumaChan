@@ -16,13 +16,12 @@ var NativeFunctionMaps = [] (map[string] interface{}) {
 	IO_Functions,
 	OS_Functions,
 	NetFunctions,
-	QtFunctions,
-	WebUiFunctions,
+	UiFunctions,
+	UiQtFunctions,
 }
 var NativeConstantMaps = [] (map[string] NativeConstant) {
 	TimeConstants,
 	OS_Constants,
-	WebUiConstants,
 }
 
 var NativeFunctionMap    map[string] NativeFunction

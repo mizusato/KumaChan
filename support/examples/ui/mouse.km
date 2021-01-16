@@ -4,7 +4,7 @@ do ui-init 'Mouse' Root;
 
 do ui-inject-css [assets::style-css];
 
-do UI::ExitWhenWindowClosed;
+do ui-exit-when-window-closed;
 
 public function mouse-position: ( &() UI::Hook[NoExcept*[(Float,Float)]] )
     ( &(_) ( &(k)
