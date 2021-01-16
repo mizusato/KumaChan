@@ -319,20 +319,38 @@ function connectUpdateSignals(bridge) {
         }
     })
     connectPatchSignal(bridge.SwapNode, (parent, a, b) => {
+        /** @param {Element} el */
+        let keepFocus = el => {
+            let focus = document.activeElement
+            if (focus && el.contains(focus)) {
+                // @ts-ignore
+                return () => { focus.focus && focus.focus() }
+            } else {
+                return () => {}
+            }
+        }
         try {
             // TODO: keep the focus of inserted node (or its descendent node)
             let parent_el = elementRegistry[parent]
             let a_el = elementRegistry[a]
             let b_el = elementRegistry[b]
             if (a_el.nextElementSibling === b_el) {
+                let restore = keepFocus(b_el)
                 parent_el.insertBefore(b_el, a_el)
+                restore()
             } else if (b_el.nextElementSibling === a_el) {
+                let restore = keepFocus(a_el)
                 parent_el.insertBefore(a_el, b_el)
+                restore()
             } else {
                 let placeholder = createElement(parent, 'div')
                 parent_el.insertBefore(placeholder, b_el)
+                let restore = keepFocus(b_el)
                 parent_el.insertBefore(b_el, a_el)
+                restore()
+                restore = keepFocus(a_el)
                 parent_el.insertBefore(a_el, placeholder)
+                restore()
                 parent_el.removeChild(placeholder)
             }
         } catch (err) {
