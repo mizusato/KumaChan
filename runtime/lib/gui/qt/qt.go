@@ -624,4 +624,7 @@ func WebUiSwapNode(parent Ucs4String, old_id Ucs4String, new_id Ucs4String) {
     var new_id_, del_new_id = NewString(new_id);  defer del_new_id()
     C.WebUiSwapNode(C.QtString(parent_), C.QtString(old_id_), C.QtString(new_id_))
 }
+func WebUiPerformActualRendering() {
+    C.WebUiPerformActualRendering()
+}
 

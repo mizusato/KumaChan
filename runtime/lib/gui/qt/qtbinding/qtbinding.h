@@ -1,5 +1,5 @@
-#ifndef LIB_H
-#define LIB_H
+#ifndef QTBINDING_H
+#define QTBINDING_H
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -135,6 +135,7 @@ extern "C" {
     void WebUiUpdateNode(QtString old_id, QtString new_id);
     void WebUiReplaceNode(QtString parent, QtString old_id, QtString id, QtString tag);
     void WebUiSwapNode(QtString parent, QtString a, QtString b);
+    void WebUiPerformActualRendering();
 #ifdef __cplusplus
 }
 #endif

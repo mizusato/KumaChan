@@ -199,6 +199,7 @@ var __WebUiUpdateDom = func(new_root *vdom.Node) rx.Effect {
 			var prev_root = __WebUiVirtualDom
 			__WebUiVirtualDom = new_root
 			vdom.Diff(ctx, nil, prev_root, new_root)
+			qt.WebUiPerformActualRendering()
 			done(nil)
 		})
 	})

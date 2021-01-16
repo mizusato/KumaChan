@@ -48,7 +48,7 @@ signals:
     void UpdateNode(QString old_id, QString new_id);
     void ReplaceNode(QString parent, QString old_id, QString id, QString tag);
     void SwapNode(QString id, QString a, QString b);
-    // TODO: update start/finish signal
+    void PerformActualRendering();
 };
 
 struct WebUiAsset {

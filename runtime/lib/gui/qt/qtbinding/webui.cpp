@@ -113,3 +113,7 @@ void WebUiReplaceNode(QtString parent, QtString old_id, QtString id, QtString ta
 void WebUiSwapNode(QtString parent, QtString a, QtString b) {
     emit window->bridge->SwapNode(QtUnwrapString(parent), QtUnwrapString(a), QtUnwrapString(b));
 }
+
+void WebUiPerformActualRendering() {
+    emit window->bridge->PerformActualRendering();
+}
