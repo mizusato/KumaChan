@@ -282,21 +282,29 @@ func CreateBus() *BusImpl {
 }
 func (b *BusImpl) Watch() Effect {
 	return NewListener(func(next func(Object)) func() {
-		var l = b.addListener(Listener {
+		var id = b.addListener(Listener {
 			Notify: next,
 		})
 		return func() {
-			b.removeListener(l)
+			b.removeListener(id)
 		}
 	})
 }
 func (b *BusImpl) Emit(obj Object) Effect {
 	return NewSync(func() (Object, bool) {
-		for _, l := range b.listeners {
-			l.Notify(obj)
-		}
+		b.notify(obj)
 		return nil, true
 	})
+}
+func (b *BusImpl) notify(obj Object) {
+	for _, l := range b.copyListeners() {
+		l.Notify(obj)
+	}
+}
+func (b *BusImpl) copyListeners() ([] Listener) {
+	var the_copy = make([] Listener, len(b.listeners))
+	copy(the_copy, b.listeners)
+	return the_copy
 }
 func (b *BusImpl) addListener(l Listener) uint64 {
 	var id = b.next_id
@@ -400,14 +408,10 @@ func (r *ReactiveImpl) Project(k *KeyChain) Effect {
 }
 func (r *ReactiveImpl) commit(change ReactiveStateChange) {
 	r.last_change = change
-	for _, l := range r.bus.listeners {
-		l.Notify(change)
-	}
+	r.bus.notify(change)
 }
 func (r *ReactiveImpl) notifyDiff() {
-	for _, l := range r.bus.listeners {
-		l.Notify(Pair { r.snapshots, r.last_change.Value })
-	}
+	r.bus.notify(Pair { r.snapshots, r.last_change.Value })
 }
 func (r *ReactiveImpl) Emit(new_state Object) Effect {
 	return NewSync(func() (Object, bool) {
