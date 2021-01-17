@@ -30,18 +30,14 @@ private const Root: UI::Component
         ],
         ~ use &(id, index, item) := ui-list list,
         let { content, finished } := item,
-        let is-first := (index.map* (&(index) $(index = 0))),
-        let is-last :=
-            (~ map* &(index,length) := combine-latest! index (list.watch.map*(&(list)(list.length))),
-            $(index = $(length - 1))),
         row [
             ui-checkbox finished,
             ui-text-input content,
             row [
-                ~ switch-map &(is-first) := is-first,
+                ~ use &(is-first) := $(index is-first-in list),
                 if is-first: ui-empty, else:
                     ui-button 'Up' (list.update(&(list)(list.move-up id))),
-                ~ switch-map &(is-last) := is-last,
+                ~ use &(is-last) := $(index is-last-in list),
                 if is-last: ui-empty, else:
                     ui-button 'Down' (list.update(&(list)(list.move-down id))),
                 ui-button 'Remove' (list.update(&(list)(list.delete id)))

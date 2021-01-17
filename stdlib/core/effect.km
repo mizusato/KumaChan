@@ -9,6 +9,7 @@ type Sink[-T]           native;                 // rx.Sink
 type Bus[T]             protected Sink[T];      // rx.Bus      (Subject<T>)
 type Reactive[T]        protected Bus[T];       // rx.Reactive (BehaviorSubject<T>)
 type ReactiveEntity[T]  protected Reactive[T];  // rx.ReactiveEntity
+// TODO: consider adding Computed[T]
 // extra
 type ReactiveSnapshots[+T] {
     undo: Seq[T],

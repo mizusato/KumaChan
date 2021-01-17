@@ -4,8 +4,8 @@ public function use[T]: ( &(Hook[T],(&(T)(Component))) Component )
     ( &(hook,k)
         k | hook
     );
-
-// TODO: public function use[T]: ( &(NoExcept*[T],(&(T)(Component))) Component )
+public function use[T]: ( &(NoExcept*[T],(&(T)(Component))) Component )
+    ( &(e,k) (e.switch-map k) );
 
 public function ui-list[T]: ( &(Reactive[List[T]]) Hook[(ListKey,NoExcept*[Number],Reactive[T])] )
     ( &(list)

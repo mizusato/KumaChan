@@ -143,5 +143,15 @@ public function move-down[T]: ( &(List[T],ListKey) List[T] )
     native 'list-move-down';
 public function swap[T]:      ( &(List[T],ListKey,ListKey) List[T] )
     native 'list-swap';
-// TODO: APIs for Reactive[List[T]]
+
+public function is-first-in[T]: ( &(NoExcept*[Number],Reactive[List[T]]) NoExcept*[Bool] )
+    ( &(@index,_)
+        @index.map* (&(index) $(index = 0))
+    );
+public function is-last-in[T]: ( &(NoExcept*[Number],Reactive[List[T]]) NoExcept*[Bool] )
+    ( &(@index,@list)
+        ~ map* &(index,length) := combine-latest! @index (@list.watch.map* (&(list)(list.length))),
+        $(index = $(length - 1))
+    );
+// TODO: more APIs for Reactive[List[T]]
 
