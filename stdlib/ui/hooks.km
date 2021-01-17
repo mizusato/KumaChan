@@ -5,7 +5,9 @@ public function use[T]: ( &(Hook[T],(&(T)(Component))) Component )
         k | hook
     );
 
-public function ui-list[T]: ( &(Reactive[List[T]]) Hook[Reactive[T]] )
+// TODO: public function use[T]: ( &(NoExcept*[T],(&(T)(Component))) Component )
+
+public function ui-list[T]: ( &(Reactive[List[T]]) Hook[(ListKey,NoExcept*[Number],Reactive[T])] )
     ( &(list)
     ( &(k)
         dom-dynamic 'div'

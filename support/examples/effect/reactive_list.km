@@ -28,16 +28,22 @@ private const Root: UI::Component
                     ))).then $(buffer <- '')
                 ))
         ],
-        ~ use &(item) := ui-list list,
-        let { id, content, finished } := item,
+        ~ use &(id, index, item) := ui-list list,
+        let { content, finished } := item,
+        let is-first := (index.map* (&(index) $(index = 0))),
+        let is-last :=
+            (~ map* &(index,length) := combine-latest! index (list.watch.map*(&(list)(list.length))),
+            $(index = $(length - 1))),
         row [
             ui-checkbox finished,
             ui-text-input content,
-            ~ switch-map &(id) := id.watch,
-            // TODO: enable/disable up/down button accroding to item position
             row [
-                ui-button 'Up'     (list.update(&(list)(list.move-up id))),
-                ui-button 'Down'   (list.update(&(list)(list.move-down id))),
+                ~ switch-map &(is-first) := is-first,
+                if is-first: ui-empty, else:
+                    ui-button 'Up' (list.update(&(list)(list.move-up id))),
+                ~ switch-map &(is-last) := is-last,
+                if is-last: ui-empty, else:
+                    ui-button 'Down' (list.update(&(list)(list.move-down id))),
                 ui-button 'Remove' (list.update(&(list)(list.delete id)))
             ]
         ]

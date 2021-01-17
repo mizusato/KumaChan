@@ -25,6 +25,7 @@ type ProductValue = *ValProd
 type ValProd struct {
 	Elements  [] Value
 }
+// TODO: quick constructors (e.g. Tuple2(a,b), Tuple3(a,b,c))
 
 type FunctionValue = *ValFunc
 type ValFunc struct {

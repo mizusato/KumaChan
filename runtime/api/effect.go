@@ -106,35 +106,35 @@ var EffectFunctions = map[string] Value {
 	"reactive-snapshot": func(r rx.Reactive) rx.Effect {
 		return r.Snapshot()
 	},
-	"reactive-list-consume": func(r rx.Reactive, f Value, h InteropContext) rx.Effect {
+	"reactive-list-consume": func(r rx.Reactive, k Value, h InteropContext) rx.Effect {
 		return rx.KeyTrackedDynamicCombineLatestWaitReady (
 			r.Watch().Map(func(list_ rx.Object) rx.Object {
 				var list = list_.(container.List)
 				return rx.KeyTrackedEffectVector {
-					HasKey: func(key string) bool {
-						var key_string = StringFromGoString(key)
-						return list.Has(key_string)
+					HasKey: func(key_rx string) bool {
+						var key = StringFromGoString(key_rx)
+						return list.Has(key)
 					},
 					IterateKeys: func(f func(string)) {
-						list.IterateKeySequence(func(key_string String) {
-							var key = GoStringFromString(key_string)
-							f(key)
+						list.IterateKeySequence(func(key String) {
+							var key_rx = GoStringFromString(key)
+							f(key_rx)
 						})
 					},
 					CloneKeys: func() []string {
 						var keys = make([] string, 0, list.Length())
-						list.IterateKeySequence(func(key_string String) {
-							var key = GoStringFromString(key_string)
-							keys = append(keys, key)
+						list.IterateKeySequence(func(key String) {
+							var key_rx = GoStringFromString(key)
+							keys = append(keys, key_rx)
 						})
 						return keys
 					},
-					GetEffect: func(key string) rx.Effect {
-						var key_string = StringFromGoString(key)
+					GetEffect: func(key_rx string, index_source rx.Effect) rx.Effect {
+						var key = StringFromGoString(key_rx)
 						var in = func(old_state rx.Object) func(rx.Object) rx.Object {
 							return func(new_item_value rx.Object) rx.Object {
 								var old_list = old_state.(container.List)
-								var new_list = old_list.Updated(key_string, func(_ Value) Value {
+								var new_list = old_list.Updated(key, func(_ Value) Value {
 									return new_item_value
 								})
 								return new_list
@@ -142,11 +142,14 @@ var EffectFunctions = map[string] Value {
 						}
 						var out = func(state rx.Object) rx.Object {
 							var list = state.(container.List)
-							return list.Get(key_string)
+							return list.Get(key)
 						}
-						var proj_key = &rx.KeyChain { Key: key }
+						var proj_key = &rx.KeyChain { Key: key_rx}
 						var proj = rx.ReactiveProject(r, in, out, proj_key)
-						var item_effect = h.Call(f, proj).(rx.Effect)
+						var arg = &ValProd { Elements: [] Value {
+							key, index_source, proj,
+						} }
+						var item_effect = h.Call(k, arg).(rx.Effect)
 						return item_effect
 					},
 				}

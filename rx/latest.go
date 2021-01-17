@@ -5,7 +5,7 @@ type KeyTrackedEffectVector struct {
 	HasKey       func(key string) bool
 	IterateKeys  func(func(string))
 	CloneKeys    func() ([] string)
-	GetEffect    func(key string) Effect  // effect won't change if key persists
+	GetEffect    func(key string, index_source Effect) Effect
 }
 
 func (e Effect) WithLatestFrom(values Effect) Effect {
@@ -110,6 +110,7 @@ func KeyTrackedDynamicCombineLatestWaitReady(e Effect) Effect {
 		var c = new_collector(ob, dispose)
 		var running = make(map[string] disposeFunc)
 		var values = make(map[string] Object)
+		var indexes = make(map[string] *ReactiveImpl)
 		var keys = make([] string, 0)
 		var first = true
 		var emit_if_all_ready = func() {
@@ -140,23 +141,42 @@ func KeyTrackedDynamicCombineLatestWaitReady(e Effect) Effect {
 						keys_changed = true
 						running[key](behaviour_cancel)
 						delete(running, key)
+						indexes[key].Emit(nil)
+						delete(indexes, key)
 						delete(values, key)  // no-op when entry not existing
 					}
 				}
-				var run_queue = make([] func(), 0)
+				var new_subscriptions = make([] func(), 0)
+				var index_updates = make([] func(), 0)
 				var i = 0
 				vec.IterateKeys(func(key string) {
-					if i < len(keys) && keys[i] != key {
+					var key_index = uint(i)
+					var key_added_or_index_changed = false
+					if i >= len(keys) || keys[i] != key {
 						keys_changed = true
+						key_added_or_index_changed = true
 					}
 					i += 1
 					var _, is_running = running[key]
+					if is_running && key_added_or_index_changed {
+						var update = func() {
+							indexes[key].commit(ReactiveStateChange {
+								Value: key_index,
+							})
+						}
+						index_updates = append(index_updates, update)
+					}
 					if !(is_running) {
 						keys_changed = true
 						var this_ctx, this_dispose = ctx.create_disposable_child()
 						running[key] = this_dispose
+						var index = CreateReactive(key_index)
+						indexes[key] = index
+						var index_source = index.Watch().CompleteWhen(func(obj Object) bool {
+							return obj == nil
+						})
 						c.new_child()
-						var this_effect = vec.GetEffect(key)
+						var this_effect = vec.GetEffect(key, index_source)
 						var run = func() {
 							sched.run(this_effect, &observer {
 								context:  this_ctx,
@@ -172,12 +192,12 @@ func KeyTrackedDynamicCombineLatestWaitReady(e Effect) Effect {
 								},
 							})
 						}
-						run_queue = append(run_queue, run)
+						new_subscriptions = append(new_subscriptions, run)
 					}
 				})
 				if keys_changed {
 					keys = vec.CloneKeys()
-					if len(run_queue) == 0 {
+					if len(new_subscriptions) == 0 {
 						emit_if_all_ready()
 					}
 				} else {
@@ -186,7 +206,10 @@ func KeyTrackedDynamicCombineLatestWaitReady(e Effect) Effect {
 					}
 				}
 				first = false
-				for _, run := range run_queue {
+				for _, update := range index_updates {
+					update()
+				}
+				for _, run := range new_subscriptions {
 					// subscription should happen after `keys` updated
 					run()
 				}
