@@ -435,12 +435,24 @@ func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprErro
 }
 
 func CheckIf(raw ast.If, ctx ExprContext) (SemiExpr, *ExprError) {
-	// TODO: reactive if
+	var cond_assign = func(semi SemiExpr, ctx ExprContext) (Expr, bool, *ExprError) {
+		var typed, err1 = AssignTo(__T_Bool, semi, ctx)
+		if err1 == nil {
+			return typed, false, nil
+		} else {
+			var typed, err = AssignTo(Reactive(__T_Bool), semi, ctx)
+			if err == nil {
+				return typed, true, nil
+			} else {
+				return Expr{}, false, err1
+			}
+		}
+	}
 	var if_node = DesugarElseIf(raw)
 	var info = ctx.GetExprInfo(if_node.Node)
 	var cond_semi, err1 = Check(if_node.Condition, ctx)
 	if err1 != nil { return SemiExpr{}, err1 }
-	var cond_typed, err2 = AssignTo(__T_Bool, cond_semi, ctx)
+	var cond_typed, reactive, err2 = cond_assign(cond_semi, ctx)
 	if err2 != nil { return SemiExpr{}, err2 }
 	var yes_semi, err3 = Check(if_node.YesBranch, ctx)
 	if err3 != nil { return SemiExpr{}, err3 }
@@ -465,7 +477,7 @@ func CheckIf(raw ast.If, ctx ExprContext) (SemiExpr, *ExprError) {
 			Branches: []SemiTypedBranch {
 				yes_branch, no_branch,
 			},
-			Reactive: false,
+			Reactive: reactive,
 		},
 	}, nil
 }

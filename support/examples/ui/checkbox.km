@@ -10,8 +10,9 @@ private const Root: UI::Component
     ~ with-reactive* &(ok) := Yes,
     (ui-container.styled ['container']) [
         ui-checkbox ok,
-        ui-text (ok.watch.map* ( &(ok)
-            if ok: 'checked', else: 'not checked'
-        )),
+        if ok:
+            ui-label 'checked',
+        else:
+            ui-label 'not-checked',
         ui-button 'toggle' (ok.update (&(ok)(not ok)))
     ];
