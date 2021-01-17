@@ -203,7 +203,7 @@ func (node *AVL) balanced() *AVL {
 			var left = current.Left
 			var left_state, _ = left.GetBalanceState()
 			switch left_state {
-			case LeftTaller:
+			case LeftTaller, NeitherTaller:
 				var new_right = Node(current.Value, left.Right, current.Right)
 				var new_current = Node(left.Value, left.Left, new_right)
 				return new_current
@@ -214,7 +214,7 @@ func (node *AVL) balanced() *AVL {
 				var new_current = Node(middle.Value, new_left, new_right)
 				return new_current
 			default:
-				panic("invalid usage of balanced()")
+				panic("impossible branch")
 			}
 		case RightTaller:
 			var right = current.Right
@@ -226,12 +226,12 @@ func (node *AVL) balanced() *AVL {
 				var new_right = Node(right.Value, middle.Right, right.Right)
 				var new_current = Node(middle.Value, new_left, new_right)
 				return new_current
-			case RightTaller:
+			case RightTaller, NeitherTaller:
 				var new_left = Node(current.Value, current.Left, right.Left)
 				var new_current = Node(right.Value, new_left, right.Right)
 				return new_current
 			default:
-				panic("invalid usage of balanced()")
+				panic("impossible branch")
 			}
 		default:
 			panic("impossible branch")
