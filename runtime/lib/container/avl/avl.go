@@ -118,12 +118,35 @@ func (node *AVL) Deleted(target Value, cmp Compare) (Value, *AVL, bool) {
 			} else if right == nil {
 				return value, left, true
 			} else {
-				var prior, rest_left, found = left.DeletedMax()
-				assert(found, "left subtree should not be empty")
-				return value, Node(prior, rest_left, right), true
+				var node_state, _ = node.GetBalanceState()
+				if node_state == RightTaller {
+					var successor, rest_right, found = right.DeleteMin()
+					assert(found, "right subtree should not be empty")
+					return value, Node(successor, left, rest_right), true
+				} else {
+					var prior, rest_left, found = left.DeletedMax()
+					assert(found, "left subtree should not be empty")
+					return value, Node(prior, rest_left, right), true
+				}
 			}
 		default:
 			panic("impossible branch")
+		}
+	}
+}
+
+func (node *AVL) DeleteMin() (Value, *AVL, bool) {
+	if node == nil {
+		return nil, nil, false
+	} else {
+		var value = node.Value
+		var left = node.Left
+		var right = node.Right
+		var deleted, rest, found = left.DeleteMin()
+		if found {
+			return deleted, Node(value, rest, right), true
+		} else {
+			return value, right, true
 		}
 	}
 }
