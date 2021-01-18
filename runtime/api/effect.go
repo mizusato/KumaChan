@@ -62,7 +62,7 @@ func AdaptReactiveDiff(diff rx.Effect) rx.Effect {
 var nextProcessLevelGlobalId = uint64(0)
 
 var EffectFunctions = map[string] Value {
-	"sink-emit": func(s rx.Sink, v Value) rx.Effect {
+	"sink-write": func(s rx.Sink, v Value) rx.Effect {
 		return s.Emit(v)
 	},
 	"sink-adapt": func(s rx.Sink, f Value, h InteropContext) rx.Sink {
@@ -105,6 +105,13 @@ var EffectFunctions = map[string] Value {
 	},
 	"reactive-snapshot": func(r rx.Reactive) rx.Effect {
 		return r.Snapshot()
+	},
+	"reactive-read": func(r rx.Reactive) rx.Effect {
+		return r.Watch().TakeOne().Map(func(obj rx.Object) rx.Object {
+			var opt = obj.(rx.Optional)
+			if !(opt.HasValue) { panic("something went wrong") }
+			return opt.Value
+		})
 	},
 	"reactive-list-consume": func(r rx.Reactive, k Value, h InteropContext) rx.Effect {
 		return rx.KeyTrackedDynamicCombineLatestWaitReady (

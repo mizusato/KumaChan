@@ -16,15 +16,17 @@ private const Root: UI::Component
     let center := styled ui-container ['center'],
     let row := styled ui-container ['row'],
     ~ use &(list) := ui-state (empty-list:[Todo]),
+    let add-item-from: (&(Reactive[String])(NoExcept[-])) := ( &(buffer)
+        ~ await &(content) := buffer.read,
+        ~ await &(id) := gen-sequential-id,
+        ~ await list.append (id, (Todo { content, finished: No })),
+        buffer.write('')
+    ),
     center [
         ~ use &(buffer) := ui-state '',
         row [
-            ui-text-input buffer, ((watch buffer).use ( &(content)
-            ui-button 'Add' (
-                ~ await &(id) := gen-sequential-id,
-                ~ await list.append (id, (Todo { content, finished: No })),
-                $(buffer <- '')
-            )))
+            ui-text-input buffer,
+            ui-button 'Add' (add-item-from buffer)
         ],
         ~ use &(id, index, item) := ui-list list,
         let { content, finished } := item,

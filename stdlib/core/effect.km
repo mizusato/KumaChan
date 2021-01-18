@@ -21,10 +21,9 @@ type Buffer          native;  // rx.Buffer
 type HashMap[+K,+V]  native;  // rx.StringHashMap, rx.NumberHashMap
 
 // Wired Components Operations
-public function emit[T]:    ( &(Sink[T],T) NoExcept[-] )
-    native 'sink-emit';
-public function <- [T]:     ( &(Sink[T],T) NoExcept[-] )
-    native 'sink-emit';
+# alias: <-
+public function write[T]:    ( &(Sink[T],T) NoExcept[-] )
+    native 'sink-write';
 public function adapt[A,B]: ( &(Sink[A],(&(B)(A))) Sink[B] )
     native 'sink-adapt';
 public function watch[T]: ( &(Bus[T]) NoExcept*[T] )
@@ -37,6 +36,9 @@ public function morph[A,B]:  ( &(Reactive[A],(&(A)(&(B)(A))),(&(A)(B))) Reactive
     native 'reactive-morph';
 public function snapshot[T]: ( &(Reactive[T]) NoExcept[-] )
     native 'reactive-snapshot';
+# alias: <-
+public function read[T]: ( &(Reactive[T]) NoExcept[T] )
+    native 'reactive-read';
 public function consume[T,X,E]: ( &(Reactive[List[T]],(&(ListKey,NoExcept*[Number],Reactive[T])(Effect*[X,E]))) Effect*[Array[X],E] )
     native 'reactive-list-consume';
 public function consume[T,X]:   ( &(Reactive[List[T]],(&(ListKey,NoExcept*[Number],Reactive[T])(NoExcept*[X]))) NoExcept*[Array[X]] )
