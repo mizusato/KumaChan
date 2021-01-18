@@ -85,194 +85,219 @@ func CollectFunctions (
 			stmts = append(stmts, stmt)
 		}
 	}
+	var decls = make([] ast.DeclFunction, 0)
+	var add_decl = func(decl ast.DeclFunction) {
+		decls = append(decls, decl)
+	}
 	for _, stmt := range stmts {
 		switch decl := stmt.Statement.(type) {
 		case ast.DeclFunction:
-			// 3.1. Check the validity of the body of the function
-			var _, is_native = decl.Body.Body.(ast.NativeRef)
-			if is_native && !(loader.IsStdLibModule(mod.Name)) {
-				return nil, &FunctionError {
-					Point:    ErrorPointFrom(decl.Body.Node),
-					Concrete: E_NativeFunctionOutsideStandardLibrary {},
-				}
-			}
-			// 3.2. Get the name of the function and its type parameters
-			var name = ast.Id2String(decl.Name)
-			if name == IgnoreMark || strings.HasSuffix(name, FuncSuffix) {
-				// 3.2.1. If the function name is invalid, throw an error.
-				return nil, &FunctionError {
-					Point:    ErrorPointFrom(decl.Name.Node),
-					Concrete: E_InvalidFunctionName { name },
-				}
-			}
-			var params, raw_bounds, p_err, p_err_node = CollectTypeParams(decl.Params)
-			if p_err != nil { return nil, &FunctionError {
-				Point:    ErrorPointFrom(p_err_node),
-				Concrete: E_FunctionInvalidTypeParameterName { p_err.Name },
-			} }
-			var bounds = TypeBounds {
-				Sub:   make(map[uint] Type),
-				Super: make(map[uint] Type),
-			}
-			// 3.3. Create a context for evaluating types
-			var ctx = TypeContext {
-				TypeBoundsContext: TypeBoundsContext {
-					TypeValidationContext: TypeValidationContext {
-						TypeConstructContext: TypeConstructContext {
-							Module:     mod,
-							Parameters: params,
-						},
-						Registry: reg,
-					},
-					Bounds: bounds,
+			add_decl(decl)
+			var tags, err = ParseFunctionTags(decl.Tags)
+			if err != nil { return nil, &FunctionError {
+				Point: ErrorPointFrom(err.Tag.Node),
+				Concrete: E_InvalidFunctionTag {
+					Tag:  string(err.Tag.RawContent),
+					Info: err.Info,
 				},
+			} }
+			for _, alias := range tags.AliasList {
+				var draft ast.DeclFunction
+				draft = decl
+				draft.Name = ast.Identifier {
+					Node: decl.Name.Node,
+					Name: ([] rune)(alias),
+				}
+				var additional_copy = draft
+				add_decl(additional_copy)
 			}
-			var bounds_info = make(map[Type] ast.Node)
-			var got_bound = func(m (map[uint] Type), i int, b ast.VariousType) *FunctionError {
-				var t, info, err = TypeNoBoundCheckFrom(b, ctx.TypeValidationContext)
-				if err != nil { return &FunctionError {
-					Point:    err.Point,
-					Concrete: E_InvalidTypeInFunction {
-						TypeError: err,
+		}
+	}
+	for _, decl := range decls {
+		// 3.1. Check the validity of the body of the function
+		var _, is_native = decl.Body.Body.(ast.NativeRef)
+		if is_native && !(loader.IsStdLibModule(mod.Name)) {
+			return nil, &FunctionError {
+				Point:    ErrorPointFrom(decl.Body.Node),
+				Concrete: E_NativeFunctionOutsideStandardLibrary {},
+			}
+		}
+		// 3.2. Get the name of the function and its type parameters
+		var name = ast.Id2String(decl.Name)
+		if name == IgnoreMark || strings.HasSuffix(name, FuncSuffix) {
+			// 3.2.1. If the function name is invalid, throw an error.
+			return nil, &FunctionError {
+				Point:    ErrorPointFrom(decl.Name.Node),
+				Concrete: E_InvalidFunctionName { name },
+			}
+		}
+		var params, raw_bounds, p_err, p_err_node = CollectTypeParams(decl.Params)
+		if p_err != nil { return nil, &FunctionError {
+			Point:    ErrorPointFrom(p_err_node),
+			Concrete: E_FunctionInvalidTypeParameterName { p_err.Name },
+		} }
+		var bounds = TypeBounds {
+			Sub:   make(map[uint] Type),
+			Super: make(map[uint] Type),
+		}
+		// 3.3. Create a context for evaluating types
+		var ctx = TypeContext {
+			TypeBoundsContext: TypeBoundsContext {
+				TypeValidationContext: TypeValidationContext {
+					TypeConstructContext: TypeConstructContext {
+						Module:     mod,
+						Parameters: params,
 					},
-				} }
-				m[uint(i)] = t
-				for k, v := range info {
-					bounds_info[k] = v
-				}
-				return nil
+					Registry: reg,
+				},
+				Bounds: bounds,
+			},
+		}
+		var bounds_info = make(map[Type] ast.Node)
+		var got_bound = func(m (map[uint] Type), i int, b ast.VariousType) *FunctionError {
+			var t, info, err = TypeNoBoundCheckFrom(b, ctx.TypeValidationContext)
+			if err != nil { return &FunctionError {
+				Point:    err.Point,
+				Concrete: E_InvalidTypeInFunction {
+					TypeError: err,
+				},
+			} }
+			m[uint(i)] = t
+			for k, v := range info {
+				bounds_info[k] = v
 			}
-			for i, bound := range raw_bounds {
-				switch b := bound.(type) {
-				case ast.TypeLowerBound:
-					var err = got_bound(bounds.Sub, i, b.BoundType)
-					if err != nil { return nil, err }
-				case ast.TypeHigherBound:
-					var err = got_bound(bounds.Super, i, b.BoundType)
-					if err != nil { return nil, err }
-				}
+			return nil
+		}
+		for i, bound := range raw_bounds {
+			switch b := bound.(type) {
+			case ast.TypeLowerBound:
+				var err = got_bound(bounds.Sub, i, b.BoundType)
+				if err != nil { return nil, err }
+			case ast.TypeHigherBound:
+				var err = got_bound(bounds.Super, i, b.BoundType)
+				if err != nil { return nil, err }
 			}
-			for _, group := range [] (map[uint] Type) { bounds.Super, bounds.Sub } {
-				for _, t := range group {
-					var err = CheckTypeBounds(t, bounds_info, ctx.TypeBoundsContext)
-					if err != nil { return nil, &FunctionError {
-						Point:    err.Point,
-						Concrete: E_InvalidTypeInFunction {
-							TypeError: err,
-						},
-					} }
-				}
-			}
-			// 3.4. Collect implicit context value definitions
-			var implicit_fields = make(map[string] Field)
-			var implicit_types = make([] Type, len(decl.Implicit))
-			if len(decl.Implicit) > 0 {
-				var _, is_native = decl.Body.Body.(ast.NativeRef)
-				if is_native {
-					return nil, &FunctionError {
-						Point:    ErrorPointFrom(decl.Node),
-						Concrete: E_ImplicitContextOnNativeFunction {},
-					}
-				}
-			}
-			for i, item := range decl.Implicit {
-				var item_t, err = TypeFrom(item, ctx)
+		}
+		for _, group := range [] (map[uint] Type) { bounds.Super, bounds.Sub } {
+			for _, t := range group {
+				var err = CheckTypeBounds(t, bounds_info, ctx.TypeBoundsContext)
 				if err != nil { return nil, &FunctionError {
 					Point:    err.Point,
 					Concrete: E_InvalidTypeInFunction {
 						TypeError: err,
 					},
 				} }
-				implicit_types[i] = item_t
 			}
-			for i, t := range implicit_types {
-				var throw = func(problem string) *FunctionError {
-					return &FunctionError {
-						Point:    ErrorPointFrom(decl.Implicit[i].Node),
-						Concrete: E_InvalidImplicitContextType {
-							Reason: problem,
-						},
-					}
-				}
-				var named, is_named = t.(*NamedType)
-				if !(is_named) { return nil, throw("should be a named type") }
-				var g = reg[named.Name]
-				var boxed, is_boxed = g.Value.(*Boxed)
-				if !(is_boxed) { return nil, throw("should be a boxed type") }
-				if !(boxed.Implicit) { return nil,
-					throw("should be declared as a implicit context type") }
-				var inner = FillTypeArgs(boxed.InnerType, named.Args)
-				var bundle = inner.(*AnonymousType).Repr.(Bundle)
-				var offset = uint(len(implicit_fields))
-				for name, field := range bundle.Fields {
-					var _, exists = implicit_fields[name]
-					if exists { return nil, &FunctionError {
-						Point:    ErrorPointFrom(decl.Node),
-						Concrete: E_ConflictImplicitContextField { name },
-					} }
-					implicit_fields[name] = Field {
-						Type:  field.Type,
-						Index: (offset + field.Index),
-					}
+		}
+		// 3.4. Collect implicit context value definitions
+		var implicit_fields = make(map[string] Field)
+		var implicit_types = make([] Type, len(decl.Implicit))
+		if len(decl.Implicit) > 0 {
+			var _, is_native = decl.Body.Body.(ast.NativeRef)
+			if is_native {
+				return nil, &FunctionError {
+					Point:    ErrorPointFrom(decl.Node),
+					Concrete: E_ImplicitContextOnNativeFunction {},
 				}
 			}
-			// 3.5. Evaluate the function signature using the created context
-			var sig, err = TypeFromRepr(ast.VariousRepr {
-				Node: decl.Repr.Node,
-				Repr: decl.Repr,
-			}, ctx)
+		}
+		for i, item := range decl.Implicit {
+			var item_t, err = TypeFrom(item, ctx)
 			if err != nil { return nil, &FunctionError {
 				Point:    err.Point,
 				Concrete: E_InvalidTypeInFunction {
 					TypeError: err,
 				},
 			} }
-			for i, param := range params {
-				if param.Variance != Invariant {
-					return nil, &FunctionError {
-						Point:    ErrorPointFrom(decl.Params[i].Node),
-						Concrete: E_FunctionVarianceDeclared {},
-					}
+			implicit_types[i] = item_t
+		}
+		for i, t := range implicit_types {
+			var throw = func(problem string) *FunctionError {
+				return &FunctionError {
+					Point:    ErrorPointFrom(decl.Implicit[i].Node),
+					Concrete: E_InvalidImplicitContextType {
+						Reason: problem,
+					},
 				}
 			}
-			// 3.6. Construct a representation and a reference of the function
-			var func_type = sig.(*AnonymousType).Repr.(Func)
-			var f = &GenericFunction {
-				Public:       decl.Public,
-				TypeParams:   params,
-				Implicit:     implicit_fields,
-				DeclaredType: func_type,
-				Body:         decl.Body.Body,
-				Node:         decl.Node,
-			}
-			// 3.7. Check if the name of the function is in use
-			var existing, exists = collection[name]
-			if exists {
-				// 3.7.1. If in use, try to overload it
-				var index_offset = index_offset_map[name]
-				var err_point = ErrorPointFrom(decl.Name.Node)
-				var err = ValidateOverload (
-					existing,
-					func_type, implicit_fields,
-					name, TypeParamsNames(params),
-					err_point,
-				)
-				if err != nil { return nil, err }
-				collection[name] = append(existing, FunctionReference {
-					IsImported: false,
-					Function:   f,
-					ModuleName: mod_name,
-					Index:      uint(len(existing)) - index_offset,
-				})
-			} else {
-				// 3.7.2. If not, collect the function
-				collection[name] = [] FunctionReference { {
-					IsImported: false,
-					Function:   f,
-					ModuleName: mod_name,
-					Index:      0,
+			var named, is_named = t.(*NamedType)
+			if !(is_named) { return nil, throw("should be a named type") }
+			var g = reg[named.Name]
+			var boxed, is_boxed = g.Value.(*Boxed)
+			if !(is_boxed) { return nil, throw("should be a boxed type") }
+			if !(boxed.Implicit) { return nil,
+				throw("should be declared as a implicit context type") }
+			var inner = FillTypeArgs(boxed.InnerType, named.Args)
+			var bundle = inner.(*AnonymousType).Repr.(Bundle)
+			var offset = uint(len(implicit_fields))
+			for name, field := range bundle.Fields {
+				var _, exists = implicit_fields[name]
+				if exists { return nil, &FunctionError {
+					Point:    ErrorPointFrom(decl.Node),
+					Concrete: E_ConflictImplicitContextField { name },
 				} }
+				implicit_fields[name] = Field {
+					Type:  field.Type,
+					Index: (offset + field.Index),
+				}
 			}
+		}
+		// 3.5. Evaluate the function signature using the created context
+		var sig, err = TypeFromRepr(ast.VariousRepr {
+			Node: decl.Repr.Node,
+			Repr: decl.Repr,
+		}, ctx)
+		if err != nil { return nil, &FunctionError {
+			Point:    err.Point,
+			Concrete: E_InvalidTypeInFunction {
+				TypeError: err,
+			},
+		} }
+		for i, param := range params {
+			if param.Variance != Invariant {
+				return nil, &FunctionError {
+					Point:    ErrorPointFrom(decl.Params[i].Node),
+					Concrete: E_FunctionVarianceDeclared {},
+				}
+			}
+		}
+		// 3.6. Construct a representation and a reference of the function
+		var func_type = sig.(*AnonymousType).Repr.(Func)
+		var f = &GenericFunction {
+			Public:       decl.Public,
+			TypeParams:   params,
+			Implicit:     implicit_fields,
+			DeclaredType: func_type,
+			Body:         decl.Body.Body,
+			Node:         decl.Node,
+		}
+		// 3.7. Check if the name of the function is in use
+		var existing, exists = collection[name]
+		if exists {
+			// 3.7.1. If in use, try to overload it
+			var index_offset = index_offset_map[name]
+			var err_point = ErrorPointFrom(decl.Name.Node)
+			var err = ValidateOverload (
+				existing,
+				func_type, implicit_fields,
+				name, TypeParamsNames(params),
+				err_point,
+			)
+			if err != nil { return nil, err }
+			collection[name] = append(existing, FunctionReference {
+				IsImported: false,
+				Function:   f,
+				ModuleName: mod_name,
+				Index:      uint(len(existing)) - index_offset,
+			})
+		} else {
+			// 3.7.2. If not, collect the function
+			collection[name] = [] FunctionReference { {
+				IsImported: false,
+				Function:   f,
+				ModuleName: mod_name,
+				Index:      0,
+			} }
 		}
 	}
 	// 4. Register all collected functions of the current module to the store

@@ -333,6 +333,12 @@ type E_InvalidFunctionName struct {
 	Name  string
 }
 
+func (impl E_InvalidFunctionTag) FunctionError() {}
+type E_InvalidFunctionTag struct {
+	Tag   string
+	Info  string
+}
+
 func (impl E_InvalidTypeInFunction) FunctionError() {}
 type E_InvalidTypeInFunction struct {
  	TypeError  *TypeError
@@ -375,6 +381,10 @@ func (err *FunctionError) Desc() ErrorMessage {
 	case E_InvalidFunctionName:
 		msg.WriteText(TS_ERROR, "Invalid function name")
 		msg.WriteEndText(TS_INLINE_CODE, e.Name)
+	case E_InvalidFunctionTag:
+		msg.WriteText(TS_ERROR, "Invalid function tag:")
+		msg.WriteInnerText(TS_INLINE_CODE, fmt.Sprintf("'%s'", e.Tag))
+		msg.WriteText(TS_ERROR, fmt.Sprintf("(%s)", e.Info))
 	case E_InvalidTypeInFunction:
 		msg.WriteAll(e.TypeError.Desc())
 	case E_InvalidImplicitContextType:
