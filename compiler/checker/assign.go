@@ -91,20 +91,25 @@ func AssignTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprError) 
 	if err != nil {
 		// assignment failed, try to box an isomorphic supertype
 		var named, is_named = expected.(*NamedType)
+		if !(is_named) && expected != nil {
+			var point = semi.Info.ErrorPoint
+			var expected_certain, e = GetCertainType(expected, point, ctx)
+			if e == nil {
+				named, is_named = expected_certain.(*NamedType)
+			}
+		}
 		if is_named {
 			var reg = ctx.GetTypeRegistry()
 			var name = named.Name
 			var g = reg[name]
-			var boxed, is_boxed = g.Value.(*Boxed)
-			if is_boxed && !(boxed.Protected) && !(boxed.Opaque) {
-				var box_expr, box_err = Box (
+			var boxed_t, is_boxed = g.Value.(*Boxed)
+			if is_boxed && !(boxed_t.Protected) && !(boxed_t.Opaque) {
+				var boxed, box_err = Box (
 					semi, g, name, semi.Info, named.Args,
 					true, semi.Info, ctx,
 				)
-				if box_err != nil {
-					return Expr{}, box_err
-				}
-				return box_expr, nil
+				if box_err != nil { return Expr{}, box_err }
+				return boxed, nil
 			} else {
 				return Expr{}, err
 			}

@@ -19,7 +19,7 @@ private const Root: UI::Component
     let add-item-from: (&(Reactive[String])(NoExcept[-])) := ( &(buffer)
         ~ await &(content) := buffer.read,
         ~ await &(id) := gen-sequential-id,
-        ~ await list.append (id, (Todo { content, finished: No })),
+        ~ await list.append (id, { content, finished: No }),
         buffer.write('')
     ),
     center [
