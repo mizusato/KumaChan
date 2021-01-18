@@ -245,7 +245,7 @@ var EffectFunctions = map[string] Value {
 			return rand.Float64(), true
 		})
 	},
-	"gen-proc-gid": func() rx.Effect {
+	"gen-sequential-id": func() rx.Effect {
 		return rx.NewSync(func() (rx.Object, bool) {
 			var id = nextProcessLevelGlobalId
 			nextProcessLevelGlobalId += 1

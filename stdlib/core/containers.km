@@ -93,8 +93,8 @@ public function has[T]: ( &(Set[T],T) Bool )
 
 /* Functions of Map[K,V] */
 
-public function new-map[T]: ( &(Array[(String,T)]) Map[String,T] )
-    native 'new-map-str';
+public function create-map[T]: ( &(Array[(String,T)]) Map[String,T] )
+    native 'create-map-str';
 public function entries[K,V]: ( &(Map[K,V]) Array[(K,V)] )
     native 'map-entries';
 public function iterate[K,V]: ( &(Map[K,V]) Seq[(K,V)] )
@@ -111,8 +111,10 @@ public function delete*[K,V]: ( &(Map[K,V],K) Map[K,V] )
 
 /* Functions for List[T] */
 
-public function new-list[T]: ( &(Array[T],(&(T)(ListKey))) List[T] )
-    native 'new-list';
+public function create-list[T]: ( &(Array[T],(&(T)(ListKey))) List[T] )
+    native 'create-list';
+public function empty-list[T]: ( &() List[T] )
+    native 'empty-list';
 public function iterate[T]:  ( &(List[T]) Seq[(ListKey,T)] )
     native 'list-iterate';
 public function length[T]:  ( &(List[T]) Number )
@@ -153,5 +155,25 @@ public function is-last-in[T]: ( &(NoExcept*[Number],Reactive[List[T]]) NoExcept
         ~ map* &(index,length) := combine-latest! @index (@list.watch.map* (&(list)(list.length))),
         $(index = $(length - 1))
     );
-// TODO: more APIs for Reactive[List[T]]
-
+public function update[T]:  ( &(Reactive[List[T]],ListKey,(&(T)(T))) NoExcept[-] )
+    (&(@list,key,f)(@list.update(&(list)(list.update key f))));
+public function delete[T]:  ( &(Reactive[List[T]],ListKey) NoExcept[-] )
+    (&(@list,key)(@list.update(&(list)(list.delete key))));
+public function prepend[T]: ( &(Reactive[List[T]],(ListKey,T)) NoExcept[-] )
+    (&(@list,entry)(@list.update(&(list)(list.prepend entry))));
+public function append[T]:  ( &(Reactive[List[T]],(ListKey,T)) NoExcept[-] )
+    (&(@list,entry)(@list.update(&(list)(list.append entry))));
+public function insert[T]:  ( &(Reactive[List[T]],{before:ListKey},(ListKey,T)) NoExcept[-] )
+    (&(@list,pos,entry)(@list.update(&(list)(list.insert pos entry))));
+public function insert[T]:  ( &(Reactive[List[T]],{after:ListKey},(ListKey,T)) NoExcept[-] )
+    (&(@list,pos,entry)(@list.update(&(list)(list.insert pos entry))));
+public function move[T]:      ( &(Reactive[List[T]],ListKey,{before:ListKey}) NoExcept[-] )
+    (&(@list,key,pos)(@list.update(&(list)(list.move key pos))));
+public function move[T]:      ( &(Reactive[List[T]],ListKey,{after:ListKey}) NoExcept[-] )
+    (&(@list,key,pos)(@list.update(&(list)(list.move key pos))));
+public function move-up[T]:   ( &(Reactive[List[T]],ListKey) NoExcept[-] )
+    (&(@list,key)(@list.update(&(list)(list.move-up key))));
+public function move-down[T]: ( &(Reactive[List[T]],ListKey) NoExcept[-] )
+    (&(@list,key)(@list.update(&(list)(list.move-down key))));
+public function swap[T]:      ( &(Reactive[List[T]],ListKey,ListKey) NoExcept[-] )
+    (&(@list,key1,key2)(@list.update(&(list)(list.swap key1 key2))));

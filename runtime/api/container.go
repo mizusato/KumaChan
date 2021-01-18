@@ -294,7 +294,7 @@ var ContainerFunctions = map[string] Value {
 		var _, exists = set.Lookup(v)
 		return ToBool(exists)
 	},
-	"new-map-str": func(v Value) Map {
+	"create-map-str": func(v Value) Map {
 		var str_arr = ArrayFrom(v)
 		var m = NewStrMap()
 		for i := uint(0); i < str_arr.Length; i += 1 {
@@ -342,10 +342,13 @@ var ContainerFunctions = map[string] Value {
 		var _, result, _ = m.Deleted(k)
 		return result
 	},
-	"new-list": func(v Value, get_key Value, h InteropContext) List {
+	"create-list": func(v Value, get_key Value, h InteropContext) List {
 		return NewList(ArrayFrom(v), func(item Value) String {
 			return h.Call(get_key, item).(String)
 		})
+	},
+	"empty-list": func() List {
+		return NewList(ArrayFrom([] Value {}), nil)
 	},
 	"list-iterate": func(l List) Seq {
 		return ListIterator {

@@ -117,7 +117,7 @@ private function parse: (&(ParserState)(Result[(Value,Number),String]))
                 NG 'unexpected end of input',
             case Just char:
                 if $(char = ^}):
-                    OK ((Self::Object (new-map:[Value] [])), $(pos + 1)),
+                    OK ((Self::Object (create-map:[Value] [])), $(pos + 1)),
                 elif $(Blanks contains char):
                     go-next status,
                 elif $(char = ^"):
@@ -164,7 +164,7 @@ private function parse: (&(ParserState)(Result[(Value,Number),String]))
                     go-next (ParseObjectKey { entries }),
                 elif $(char = ^}):
                     let entries-array := (collect entries),
-                    OK ((Self::Object (new-map entries-array)), $(pos + 1)),
+                    OK ((Self::Object (create-map entries-array)), $(pos + 1)),
                 else:
                     NG ("unexpected char # at #" (str char) (str pos)),
             end,

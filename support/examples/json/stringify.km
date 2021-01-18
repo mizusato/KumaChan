@@ -4,7 +4,7 @@ do
             (JSON::Number 1.23e30),
             (JSON::String '12aaa4'),
             (JSON::Boolean Yes),
-            (JSON::Object (new-map [
+            (JSON::Object (create-map [
                 ('ABC', (JSON::Number 1.0)),
                 ('DEF', (JSON::Boolean No)),
             	('foobar', (JSON::Array [

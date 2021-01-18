@@ -97,8 +97,8 @@ public function with[T]:   ( &(NoExcept*[T],NoExcept[-]) NoExcept*[T] )
     native 'with';
 public function gen-random: ( &() NoExcept[Float] )
     native 'gen-random';
-public function gen-proc-gid: ( &() NoExcept[String] )
-    native 'gen-proc-gid';
+public function gen-sequential-id: ( &() NoExcept[String] )
+    native 'gen-sequential-id';
 public function crash: ( &(String) NoExcept[-] )
     native 'crash';
 public function go[T]: ( &((&()(T))) NoExcept[T] )
@@ -113,6 +113,10 @@ public function yield*[T]: ( &(Seq[T]) NoExcept*[T] )
     native 'yield*-seq';
 public function yield*[T]: ( &(Array[T]) NoExcept*[T] )
     native 'yield*-array';
+public function not:    ( &(NoExcept*[Bool]) NoExcept*[Bool] )
+    (&(e)(e.map* not));
+public function not[E]: ( &(Effect*[Bool,E]) Effect*[Bool,E] )
+    (&(e)(e.map* not));
 public function start-with[T]:   ( &(NoExcept*[T],Array[T]) NoExcept*[T] )
     (&(e,prepended)(concat [(yield* prepended), e]));
 public function start-with[T,E]: ( &(Effect*[T,E],Array[T]) Effect*[T,E] )
@@ -139,36 +143,52 @@ public function forever[E]: ( &(Effect*[-,E]) Effect[-,E] )
     native 'forever';
 public function forever:    ( &(NoExcept*[-]) NoExcept[-] )
     native 'forever';
+# alias: await
 public function then[A,B,E]: ( &(Effect[A,E],(&(A)(Effect[B,E]))) Effect[B,E] )
     native 'then';
+# alias: await
 public function then[A,B,E]: ( &(Effect[A,E],(&(A)(NoExcept[B]))) Effect[B,E] )
     native 'then';
+# alias: await
 public function then[A,B,E]: ( &(NoExcept[A],(&(A)(Effect[B,E]))) Effect[B,E] )
     native 'then';
+# alias: await
 public function then[A,B]:   ( &(NoExcept[A],(&(A)(NoExcept[B]))) NoExcept[B] )
     native 'then';
+# alias: await
 public function then[B,E]: ( &(Effect[-,E], Effect[B,E]) Effect[B,E] )
     native 'then-shortcut';
+# alias: await
 public function then[B,E]: ( &(Effect[-,E], NoExcept[B]) Effect[B,E] )
     native 'then-shortcut';
+# alias: await
 public function then[B,E]: ( &(NoExcept[-], Effect[B,E]) Effect[B,E] )
     native 'then-shortcut';
+# alias: await
 public function then[B]:   ( &(NoExcept[-], NoExcept[B]) NoExcept[B] )
     native 'then-shortcut';
+# alias: await*
 public function then*[A,B,E]: ( &(Effect[A,E],(&(A)(Effect*[B,E]))) Effect*[B,E] )
     native 'then';
+# alias: await*
 public function then*[A,B,E]: ( &(Effect[A,E],(&(A)(NoExcept*[B]))) Effect*[B,E] )
     native 'then';
+# alias: await*
 public function then*[A,B,E]: ( &(NoExcept[A],(&(A)(Effect*[B,E]))) Effect*[B,E] )
     native 'then';
+# alias: await*
 public function then*[A,B]:   ( &(NoExcept[A],(&(A)(NoExcept*[B]))) NoExcept*[B] )
     native 'then';
+# alias: await*
 public function then*[B,E]: ( &(Effect[-,E], Effect*[B,E]) Effect*[B,E] )
     native 'then-shortcut';
+# alias: await*
 public function then*[B,E]: ( &(Effect[-,E], NoExcept*[B]) Effect*[B,E] )
     native 'then-shortcut';
+# alias: await*
 public function then*[B,E]: ( &(NoExcept[-], Effect*[B,E]) Effect*[B,E] )
     native 'then-shortcut';
+# alias: await*
 public function then*[B]:   ( &(NoExcept[-], NoExcept*[B]) NoExcept*[B] )
     native 'then-shortcut';
 public function catch[T,E,F]: ( &(Effect[T,E],(&(E)(Effect[T,F]))) Effect[T,F] )

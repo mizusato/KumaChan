@@ -7,10 +7,16 @@ public function use[T]: ( &(Hook[T],(&(T)(Component))) Component )
 public function use[T]: ( &(NoExcept*[T],(&(T)(Component))) Component )
     ( &(e,k) (e.switch-map k) );
 
+public function ui-state[T]: ( &(T) Hook[Reactive[T]] )
+    ( &(initial)
+    ( &(k)
+        ~ with-reactive* &(r) := initial,
+        r | k
+    ));
 public function ui-list[T]: ( &(Reactive[List[T]]) Hook[(ListKey,NoExcept*[Number],Reactive[T])] )
     ( &(list)
     ( &(k)
         dom-dynamic 'div'
             ~ consume &(item) := list,
-            k item
+            item | k
     ));

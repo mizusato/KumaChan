@@ -80,7 +80,7 @@ private function dom-dynamic:
 private function dom-styles: ( &(Map[String,String]) Styles )
     native 'ui-dom-styles';
 private function dom-styles: ( &(Array[(String,String)]) Styles )
-    (&(styles)(dom-styles (new-map styles)));
+    (&(styles)(dom-styles (create-map styles)));
 private function dom-styles-merge: ( &(Array[Styles]) Styles )
     native 'ui-dom-styles-merge';
 private function with: ( &(Node,Styles) Node )
@@ -89,7 +89,7 @@ private function with: ( &(Node,Styles) Node )
 private function dom-attrs: ( &(Map[String,String]) Attrs )
     native 'ui-dom-attrs';
 private function dom-attrs: ( &(Array[(String,String)]) Attrs )
-    (&(attrs)(dom-attrs (new-map attrs)));
+    (&(attrs)(dom-attrs (create-map attrs)));
 private function dom-attrs-merge: ( &(Array[Attrs]) Attrs )
     native 'ui-dom-attrs-merge';
 private function with: ( &(Node,Attrs) Node )
@@ -98,7 +98,7 @@ private function with: ( &(Node,Attrs) Node )
 private function dom-events: ( &(Map[String,EventOptions]) Events )
     native 'ui-dom-events';
 private function dom-events: ( &(Array[(String,EventOptions)]) Events )
-    (&(events)(dom-events (new-map events)));
+    (&(events)(dom-events (create-map events)));
 private function dom-events-merge: ( &(Array[Events]) Events )
     native 'ui-dom-events-merge';
 private function with: ( &(Node,Events) Node )

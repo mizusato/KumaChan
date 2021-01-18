@@ -1,7 +1,6 @@
 import assets from './assets';
 
 type Todo {
-    id:       String,
     content:  String,
     finished: Bool
 };
@@ -16,20 +15,16 @@ do ui-exit-when-window-closed;
 private const Root: UI::Component
     let center := styled ui-container ['center'],
     let row := styled ui-container ['row'],
-    ~ with-reactive* &(list) := new-list:[Todo] [] ( &{id} (ListKey id) ),
+    ~ use &(list) := ui-state (empty-list:[Todo]),
     center [
-        ~ with-reactive* &(buffer) := '',
+        ~ use &(buffer) := ui-state '',
         row [
-            buffer.ui-text-input,
-            buffer.watch.switch-map( &(content)
-                ui-button 'Add' (
-                    gen-proc-gid
-                        | then ( &(id)
-                            list.update( &(list)
-                                list.append (id, (Todo { id, content, finished: No })
-                            )))
-                        | then $(buffer <- '')
-                ))
+            ui-text-input buffer, ((watch buffer).use ( &(content)
+            ui-button 'Add' (
+                ~ await &(id) := gen-sequential-id,
+                ~ await list.append (id, (Todo { content, finished: No })),
+                $(buffer <- '')
+            )))
         ],
         ~ use &(id, index, item) := ui-list list,
         let { content, finished } := item,
@@ -37,13 +32,11 @@ private const Root: UI::Component
             ui-checkbox finished,
             ui-text-input content,
             row [
-                ~ use &(is-first) := $(index is-first-in list),
-                if is-first: ui-empty, else:
-                    ui-button 'Up' (list.update(&(list)(list.move-up id))),
-                ~ use &(is-last) := $(index is-last-in list),
-                if is-last: ui-empty, else:
-                    ui-button 'Down' (list.update(&(list)(list.move-down id))),
-                ui-button 'Remove' (list.update(&(list)(list.delete id)))
+                ui-button 'Up' (list.move-up id)
+                    | with (ui-show-if (not $(index is-first-in list))),
+                ui-button 'Down' (list.move-down id)
+                    | with (ui-show-if (not $(index is-last-in list))),
+                ui-button 'Remove' (list.delete id)
             ]
         ]
     ];

@@ -14,6 +14,15 @@ public function styled[T]: ( &((&(T)(Component)),Array[String]) (&(T)(Component)
         ctor | with (ui-style class-list)
     );
 
+public function ui-show-if: ( &(NoExcept*[Bool]) Decorator )
+    ( &(@show)
+    ( &(cpt)
+        ~ switch-map &(show) := @show,
+        if show:
+            cpt,
+        else:
+            ui-empty
+    ));
 public function ui-style: ( &(Array[String]) Decorator )
     ( &(class-list)
     ( &(cpt)
