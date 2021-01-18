@@ -23,9 +23,12 @@ private const Root: UI::Component
             buffer.ui-text-input,
             buffer.watch.switch-map( &(content)
                 ui-button 'Add' (
-                    proc-gid.then ( &(id) list.update( &(list)
-                        list.append (id, (Todo { id, content, finished: No })
-                    ))).then $(buffer <- '')
+                    gen-proc-gid
+                        | then ( &(id)
+                            list.update( &(list)
+                                list.append (id, (Todo { id, content, finished: No })
+                            )))
+                        | then $(buffer <- '')
                 ))
         ],
         ~ use &(id, index, item) := ui-list list,

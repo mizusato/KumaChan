@@ -240,12 +240,12 @@ var EffectFunctions = map[string] Value {
 	"with": func(main rx.Effect, side rx.Effect) rx.Effect {
 		return rx.Merge([] rx.Effect { main, side.DiscardValues() })
 	},
-	"random": func() rx.Effect {
+	"gen-random": func() rx.Effect {
 		return rx.NewSync(func() (rx.Object, bool) {
 			return rand.Float64(), true
 		})
 	},
-	"proc-gid": func() rx.Effect {
+	"gen-proc-gid": func() rx.Effect {
 		return rx.NewSync(func() (rx.Object, bool) {
 			var id = nextProcessLevelGlobalId
 			nextProcessLevelGlobalId += 1

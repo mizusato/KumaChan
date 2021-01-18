@@ -9,7 +9,6 @@ type Sink[-T]           native;                 // rx.Sink
 type Bus[T]             protected Sink[T];      // rx.Bus      (Subject<T>)
 type Reactive[T]        protected Bus[T];       // rx.Reactive (BehaviorSubject<T>)
 type ReactiveEntity[T]  protected Reactive[T];  // rx.ReactiveEntity
-// TODO: consider adding Computed[T]
 // extra
 type ReactiveSnapshots[+T] {
     undo: Seq[T],
@@ -96,10 +95,10 @@ public function with[T,E]: ( &(Effect*[T,E],NoExcept[-]) Effect*[T,E] )
     native 'with';
 public function with[T]:   ( &(NoExcept*[T],NoExcept[-]) NoExcept*[T] )
     native 'with';
-public function random: ( &() NoExcept[Float] )
-    native 'random';
-public function proc-gid: ( &() NoExcept[String] )
-    native 'proc-gid';
+public function gen-random: ( &() NoExcept[Float] )
+    native 'gen-random';
+public function gen-proc-gid: ( &() NoExcept[String] )
+    native 'gen-proc-gid';
 public function crash: ( &(String) NoExcept[-] )
     native 'crash';
 public function go[T]: ( &((&()(T))) NoExcept[T] )
