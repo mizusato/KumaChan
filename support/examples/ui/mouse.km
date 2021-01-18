@@ -9,7 +9,7 @@ do ui-exit-when-window-closed;
 public function mouse-position: ( &() UI::Hook[NoExcept*[(Float,Float)]] )
     ( &(_) ( &(k)
         ~ then* &(pos) := new-bus:[(Float,Float)],
-        ~ then* &(id) := proc-gid,
+        ~ then* &(id) := gen-proc-gid,
         let cpt := (k (watch pos)),
         cpt | with (ui-event ("mousemove.hook#" id)
             (ui-callback
