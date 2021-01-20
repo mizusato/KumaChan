@@ -63,7 +63,7 @@ type DeclFunction struct {
 }
 type VariousBody struct {
     Node         `part:"body"`
-    Body  Body   `part:"lambda" fallback:"native"`
+    Body  Body   `part:"lambda" fallback:"native"`  // TODO: use first
 }
 type Body interface { Body() }
 

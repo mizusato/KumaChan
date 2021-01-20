@@ -1,0 +1,74 @@
+TODO
+
+- rename Effect/Effect* to Action/Action*
+
+- use Core::Error instead of I/O::Error (add create-error, wrap-error)
+
+- consider Action[T,E] + Action[T,never] instead of NoExcept[T]
+
+- rpc infrastructures
+
+
+================================
+
+Draft for RPC
+
+
+// service.km (declared to be a service in manifest)
+
+// auto-generated
+type instance native;
+type interface[T] implicit { watch-value: (&(T)(NoExcept*[Int])), ... };
+public function new[T]: ( &(T,interface[T]) instance );
+public function new[T]: implicit[interface[T]] ( &(T) instance );
+public function dial: ( &(RemoteAddr,options) Action[instance,Error] )
+public function dial-console: ( &(Command,options) Action[instance,Error] )
+public function listen: ( (LocalAddr,(&(options)(Action[instance,Error])) NoExcept[-] )
+public function listen-console: ( (&(options)(Action[instance,Error]) NoExcept[-] )
+
+// user-defined things (all involved types are required to be serializable)
+# rpc-options
+type Initial Int;
+# rpc-interface
+public function watch-value: ( &(instance) Action*[Int,Error] );
+# rpc-interface
+public function decrement: ( &(instance) Action[-,Error] );
+# rpc-interface
+public function increment: ( &(instance) Action[-,Error] );
+
+
+// server.km
+
+import CounterService from 'service';
+
+type Counter Reactive[Int];
+
+public function new-counter: ( &(Int) NoExcept[Counter] )
+    (&(initial)(new-reactive:[Int] initial);
+public function watch-value: ( &(Counter) Action*[Int,CallError] )
+    (&(this)(this.watch));
+public function decrement: ( &(Counter) Action[-,CallError] )
+    (&(this)(this.update(&(v)(v - 1))));
+public function increment: ( &(Counter) Action[-,CallError] )
+    (&(this)(this.update(&(v)(v + 1))));
+
+do CounterService::listen (addr 'localhost' '8080') ( &(initial)
+   new-counter initial
+       | then(&(counter)(CounterService::new counter))
+);
+
+
+// client.km
+
+import CounterService from 'service';
+
+do CounterService::dial (addr 'localhost' '8080') (CounterService::Initial 0)
+   | then ( &(counter)
+       counter.increment
+       | then (counter.watch-value.concat-map (&(n)
+           println (str n)
+	   | catch (&(err)(crash err))
+       ))
+   )
+   | catch (&(err)(crash err));
+
