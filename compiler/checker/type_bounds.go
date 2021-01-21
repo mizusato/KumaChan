@@ -158,7 +158,7 @@ func CheckTypeArgBound(arg Type, bound Type, kind TypeBoundKind, nodes func(Type
 	return nil
 }
 
-func CheckTypeArgsBounds(args ([] Type), params ([] TypeParam), bounds TypeBounds, node ast.Node, ctx ExprContext) *ExprError {
+func CheckTypeArgsBounds(args ([] Type), params ([] TypeParam), defaults (map[uint] Type), bounds TypeBounds, node ast.Node, ctx ExprContext) *ExprError {
 	var bound_ctx = ctx.GetTypeContext().TypeBoundsContext
 	var get_node = func(_ Type) ast.Node { return node }
 	var bad_type_arg = func(index uint, err *TypeError) *ExprError {
@@ -172,13 +172,13 @@ func CheckTypeArgsBounds(args ([] Type), params ([] TypeParam), bounds TypeBound
 		}
 	}
 	for index, raw_super := range bounds.Super {
-		var super = FillTypeArgs(raw_super, args)
+		var super = FillTypeArgsWithDefaults(raw_super, args, defaults)
 		var arg = args[index]
 		var err = CheckTypeArgBound(arg, super, SuperBound, get_node, bound_ctx)
 		if err != nil { return bad_type_arg(index, err) }
 	}
 	for index, raw_sub := range bounds.Sub {
-		var sub = FillTypeArgs(raw_sub, args)
+		var sub = FillTypeArgsWithDefaults(raw_sub, args, defaults)
 		var arg = args[index]
 		var err = CheckTypeArgBound(arg, sub, SubBound, get_node, bound_ctx)
 		if err != nil { return bad_type_arg(index, err) }

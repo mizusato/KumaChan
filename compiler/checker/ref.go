@@ -60,7 +60,7 @@ func MakeRefFunction(name string, index uint, type_args ([] Type), node ast.Node
 		Index:  raw_ref.Index,
 	}
 	var f = raw_ref.Function
-	var err = CheckTypeArgsBounds(type_args, f.TypeParams, f.TypeBounds, node, ctx)
+	var err = CheckTypeArgsBounds(type_args, f.TypeParams, nil, f.TypeBounds, node, ctx)
 	if err != nil { return RefFunction{}, nil }
 	var implicit_count = uint(len(f.Implicit))
 	var implicit_refs = make([] Ref, implicit_count)

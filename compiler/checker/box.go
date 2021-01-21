@@ -79,7 +79,7 @@ func Box (
 			Name: g_type_name,
 			Args: given_args,
 		}
-		err = CheckTypeArgsBounds(given_args, g_type.Params, g_type.Bounds, node, ctx)
+		err = CheckTypeArgsBounds(given_args, g_type.Params, g_type.Defaults, g_type.Bounds, node, ctx)
 		if err != nil { return Expr{}, err }
 		var case_info = g_type.CaseInfo
 		return LiftCase(case_info, outer_type, force_exact, Expr {
@@ -110,7 +110,7 @@ func Box (
 		if !(AreTypesEqualInSameCtx(inner_type, expr.Type)) {
 			panic("something went wrong")
 		}
-		err = CheckTypeArgsBounds(inferred_args, g_type.Params, g_type.Bounds, node, ctx)
+		err = CheckTypeArgsBounds(inferred_args, g_type.Params, g_type.Defaults, g_type.Bounds, node, ctx)
 		if err != nil { return Expr{}, err }
 		var case_info = g_type.CaseInfo
 		return LiftCase(case_info, inferred_type, force_exact, Expr {

@@ -268,6 +268,7 @@ func FillTypeArgsWithDefaults(t Type, given_args ([] Type), defaults (map[uint] 
 	}
 }
 
+// TODO: also check usages of this function
 func FillTypeArgs(t Type, given_args ([] Type)) Type {
 	return FillTypeArgsWithDefaults(t, given_args, nil)
 }
