@@ -331,6 +331,7 @@ func DirectAssignType(inferred Type, given Type, d AssignDirection, ctx ExprCont
 					if forward_ok {
 						return &AnonymousType { Tuple { elements } }, true
 					} else {
+						// TODO: remove this workaround after inferring fixed
 						// forward not ok, restore state and try backward
 						restore()
 						var backward_ok = true

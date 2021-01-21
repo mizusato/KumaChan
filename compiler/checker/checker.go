@@ -86,6 +86,8 @@ type TypeArgsInferringContext struct {
 	Enabled      bool
 	Parameters   [] TypeParam
 	Arguments    map[uint] Type  // mutable (interior)
+	// TODO: Arguments map[uint] ActiveType
+	//       type ActiveType (Type, (Exact|OrBigger|OrSmaller))
 }
 func (ctx TypeArgsInferringContext) MergeArgsFrom(another TypeArgsInferringContext) {
 	if ctx.Enabled && another.Enabled {
