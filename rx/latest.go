@@ -1,20 +1,20 @@
 package rx
 
 
-type KeyTrackedEffectVector struct {
+type KeyTrackedActionVector struct {
 	HasKey       func(key string) bool
 	IterateKeys  func(func(string))
 	CloneKeys    func() ([] string)
-	GetEffect    func(key string, index_source Effect) Effect
+	GetAction    func(key string, index_source Action) Action
 }
 
-func (e Effect) WithLatestFrom(values Effect) Effect {
-	return Effect { func(sched Scheduler, ob *observer) {
+func (e Action) WithLatestFrom(source Action) Action {
+	return Action { func(sched Scheduler, ob *observer) {
 		var ctx, dispose = ob.context.create_disposable_child()
 		var c = new_collector(ob, dispose)
 		var current Optional
 		c.new_child()
-		sched.run(values, &observer {
+		sched.run(source, &observer {
 			context: ctx,
 			next: func(value Object) {
 				current = Optional { true, value }
@@ -43,17 +43,17 @@ func (e Effect) WithLatestFrom(values Effect) Effect {
 	} }
 }
 
-func CombineLatest(effects ([] Effect)) Effect {
-	if len(effects) == 0 {
+func CombineLatest(actions ([] Action)) Action {
+	if len(actions) == 0 {
 		return NewSync(func() (Object, bool) {
 			return make([] Optional, 0), true
 		})
 	}
-	return Effect { func(sched Scheduler, ob *observer) {
+	return Action { func(sched Scheduler, ob *observer) {
 		var ctx, dispose = ob.context.create_disposable_child()
 		var c = new_collector(ob, dispose)
-		var values = make([] Optional, len(effects))
-		for i_, e := range effects {
+		var values = make([] Optional, len(actions))
+		for i_, e := range actions {
 			var i = i_
 			c.new_child()
 			sched.run(e, &observer {
@@ -79,8 +79,8 @@ func CombineLatest(effects ([] Effect)) Effect {
 	} }
 }
 
-func CombineLatestWaitReady(effects ([] Effect)) Effect {
-	return CombineLatest(effects).ConcatMap(func(values_ Object) Effect {
+func CombineLatestWaitReady(actions ([] Action)) Action {
+	return CombineLatest(actions).ConcatMap(func(values_ Object) Action {
 		var values = values_.([] Optional)
 		var ready_values = make([] Object, len(values))
 		var ok = true
@@ -104,8 +104,8 @@ func CombineLatestWaitReady(effects ([] Effect)) Effect {
 	})
 }
 
-func KeyTrackedDynamicCombineLatestWaitReady(e Effect) Effect {
-	return Effect { func(sched Scheduler, ob *observer) {
+func KeyTrackedDynamicCombineLatestWaitReady(e Action) Action {
+	return Action { func(sched Scheduler, ob *observer) {
 		var ctx, dispose = ob.context.create_disposable_child()
 		var c = new_collector(ob, dispose)
 		var running = make(map[string] disposeFunc)
@@ -134,7 +134,7 @@ func KeyTrackedDynamicCombineLatestWaitReady(e Effect) Effect {
 		sched.run(e, &observer {
 			context:  ctx,
 			next: func(obj Object) {
-				var vec = obj.(KeyTrackedEffectVector)
+				var vec = obj.(KeyTrackedActionVector)
 				var keys_changed = false
 				for _, key := range keys {
 					if !(vec.HasKey(key)) {
@@ -176,7 +176,7 @@ func KeyTrackedDynamicCombineLatestWaitReady(e Effect) Effect {
 							return obj == nil
 						})
 						c.new_child()
-						var this_effect = vec.GetEffect(key, index_source)
+						var this_effect = vec.GetAction(key, index_source)
 						var run = func() {
 							sched.run(this_effect, &observer {
 								context:  this_ctx,

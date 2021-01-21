@@ -13,7 +13,7 @@ type HttpResponse struct {
 	Body        [] byte
 }
 
-func HttpGet(url *url.URL) Effect {
+func HttpGet(url *url.URL) Action {
 	return NewGoroutine(func(sender Sender) {
 		if sender.Context().AlreadyCancelled() {
 			return

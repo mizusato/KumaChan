@@ -1,0 +1,203 @@
+// Effect Types
+type Action*[[unit] +T, [never] +E]  native;  // rx.Action       (Observable<T,E>)
+type Action [[unit] +T, [never] +E]  protected Action*[T,E];  // (() => Promise<T,E>)
+
+// Wired Components
+type Sink[-T]           native;                 // rx.Sink
+type Bus[T]             protected Sink[T];      // rx.Bus      (Subject<T>)
+type Reactive[T]        protected Bus[T];       // rx.Reactive (BehaviorSubject<T>)
+type ReactiveEntity[T]  protected Reactive[T];  // rx.ReactiveEntity
+// extra
+type ReactiveSnapshots[+T] {
+    undo: Seq[T],
+    redo: Seq[T]
+};
+
+// Mutable Containers
+type Mutable[+T]     native;  // rx.Cell
+type Buffer          native;  // rx.Buffer
+type HashMap[+K,+V]  native;  // rx.StringHashMap, rx.NumberHashMap
+
+// Wired Components Operations
+# alias: <-
+public function write[T]:    ( &(Sink[T],T) Action )
+    native 'sink-write';
+public function adapt[A,B]: ( &(Sink[A],(&(B)(A))) Sink[B] )
+    native 'sink-adapt';
+public function watch[T]: ( &(Bus[T]) Action*[T] )
+    native 'bus-watch';
+public function update[T]:   ( &(Reactive[T],(&(T)(T))) Action )
+    native 'reactive-update';
+public function adapt[A,B]:  ( &(Reactive[A],(&(A)(&(B)(A)))) Sink[B] )
+    native 'reactive-adapt';
+public function morph[A,B]:  ( &(Reactive[A],(&(A)(&(B)(A))),(&(A)(B))) Reactive[B] )
+    native 'reactive-morph';
+public function snapshot[T]: ( &(Reactive[T]) Action )
+    native 'reactive-snapshot';
+# alias: <-
+public function read[T]: ( &(Reactive[T]) Action[T] )
+    native 'reactive-read';
+public function consume[T,X,E]: ( &(Reactive[List[T]],(&(ListKey,Action*[Number],Reactive[T])(Action*[X,E]))) Action*[Array[X],E] )
+    native 'reactive-list-consume';
+public function undo[T]:          ( &(ReactiveEntity[T]) Action )
+    native 'reactive-entity-undo';
+public function redo[T]:          ( &(ReactiveEntity[T]) Action )
+    native 'reactive-entity-redo';
+public function watch-diff[T]:    ( &(ReactiveEntity[T]) Action*[(ReactiveSnapshots[T],T)] )
+    native 'reactive-entity-watch-diff';
+public function auto-snapshot[T]: ( &(ReactiveEntity[T]) Reactive[T] )
+    native 'reactive-entity-auto-snapshot';
+public function callback[T]:           ( &(&(T)(Action)) Sink[T] )
+    native 'callback';
+public function new-bus[T]:            ( &() Action[Bus[T]] )
+    native 'new-bus';
+public function new-reactive[T]:       ( &(T) Action[ReactiveEntity[T]] )
+    native 'new-reactive';
+public function with-reactive[T,X,E]:  ( &(T,(&(ReactiveEntity[T])(Action[X,E]))) Action[X,E] )
+    native 'with-reactive';
+public function with-reactive*[T,X,E]: ( &(T,(&(ReactiveEntity[T])(Action*[X,E]))) Action*[X,E] )
+    native 'with-reactive';
+public function with-auto-snapshot[T,X,E]:  ( &(T,(&(Reactive[T],(Action,Action,Action*[(ReactiveSnapshots[T],T)]))(Action[X,E]))) Action[X,E] )
+    native 'with-auto-snapshot';
+public function with-auto-snapshot*[T,X,E]: ( &(T,(&(Reactive[T],(Action,Action,Action*[(ReactiveSnapshots[T],T)]))(Action*[X,E]))) Action*[X,E] )
+    native 'with-auto-snapshot';
+
+// Mutable Containers Operations
+public function new-mutable[T]: ( &() Action[Mutable[T]] )
+    native 'new-mutable';
+public function with-mutable[T,X,E]:  ( &(T,(&(Mutable[T])(Action[X,E]))) Action[X,E] )
+    native 'with-mutable';
+public function with-mutable*[T,X,E]: ( &(T,(&(Mutable[T])(Action*[X,E]))) Action*[X,E] )
+    native 'with-mutable';
+public function get[T]: ( &(Mutable[T]) Action[T] )
+    native 'mutable-get';
+public function set[T]: ( &(Mutable[T],T) Action )
+    native 'mutable-set';
+public function swap[T]: ( &(Mutable[T],(&(T)(T))) Action )
+    native 'mutable-swap';
+
+// Effect Constructors
+public function with[T,E]: ( &(Action*[T,E],Action) Action*[T,E] )
+    native 'with';
+public function with[T]:   ( &(Action*[T],Action) Action*[T] )
+    native 'with';
+public function gen-random: ( &() Action[Float] )
+    native 'gen-random';
+public function gen-sequential-id: ( &() Action[String] )
+    native 'gen-sequential-id';
+public function crash: ( &(String) Action )
+    native 'crash';
+public function go[T]: ( &((&()(T))) Action[T] )
+    native 'go';
+public function go*[T]: ( &(Seq[T]) Action*[T] )
+    native 'go*';
+public function yield[T]:  ( &(T) Action[T] )
+    native 'yield';
+public function yield*:    ( &(Range) Action*[Number] )
+    native 'yield*-range';
+public function yield*[T]: ( &(Seq[T]) Action*[T] )
+    native 'yield*-seq';
+public function yield*[T]: ( &(Array[T]) Action*[T] )
+    native 'yield*-array';
+public function not[E]: ( &(Action*[Bool,E]) Action*[Bool,E] )
+    (&(e)(e.map* not));
+public function start-with[T,E]: ( &(Action*[T,E],Array[T]) Action*[T,E] )
+    (&(e,prepended)(concat:[T,E] [(yield* prepended), e]));
+public function wait: ( & {timeout:Number} Action )
+    native 'wait';
+public function tick: ( & {interval:Number} Action*[unit] )
+    native 'tick';
+
+// Effect Operators
+public function take-one[T,E]: ( &(Action*[T,E]) Action[Maybe[T],E] )
+    native 'take-one';
+public function wait-complete[E]: ( &(Action*[unit,E]) Action[unit,E] )
+    native 'wait-complete';
+public function forever[E]: ( &(Action*[unit,E]) Action[unit,E] )
+    native 'forever';
+# alias: await
+public function then[A,B,E]: ( &(Action[A,E],(&(A)(Action[B,E]))) Action[B,E] )
+    native 'then';
+# alias: await
+public function then[B,E]: ( &(Action[unit,E], Action[B,E]) Action[B,E] )
+    native 'then-shortcut';
+# alias: await*
+public function then*[A,B,E]: ( &(Action[A,E],(&(A)(Action*[B,E]))) Action*[B,E] )
+    native 'then';
+# alias: await*
+public function then*[B,E]: ( &(Action[unit,E], Action*[B,E]) Action*[B,E] )
+    native 'then-shortcut';
+public function catch[T,E,F]: ( &(Action[T,E],(&(E)(Action[T,F]))) Action[T,F] )
+    native 'catch';
+public function catch*[T,E,F]: ( &(Action*[T,E],(&(E)(Action*[T,F]))) Action*[T,F] )
+    native 'catch';
+public function catch-retry[T,E]: ( &(Action[T,E],(&(E)(Action[Bool]))) Action[T,E] )
+    native 'catch-retry';
+public function catch-throw[T,E,F]: ( &(Action[T,E],(&(E)(F))) Action[T,F] )
+    native 'catch-throw';
+public function throw[T,E]: ( &(E) Action[T,E] )
+    native 'throw';
+public function map[A,B,E]:  ( &(Action[A,E],(&(A)(B))) Action[B,E] )
+    native 'effect-map';
+public function map-to[A,B,E]: ( &(Action[A,E],B) Action[B,E] )
+    (&(e,v)(e | map (&(_)(v))));
+public function map*[A,B,E]: ( &(Action*[A,E],(&(A)(B))) Action*[B,E] )
+    native 'effect-map';
+public function map?[A,B,E]: ( &(Action*[A,E],(&(A)(Maybe[B]))) Action*[B,E] )
+    native 'effect-map?';
+public function map*-to[A,B,E]: ( &(Action*[A,E],B) Action*[B,E] )
+    (&(e,v)(e | map* (&(_)(v))));
+public function filter[T,E]: ( &(Action*[T,E],(&(T)(Bool))) Action*[T,E] )
+    native 'effect-filter';
+public function reduce[T,A,E]: ( &(Action*[T,E],A,(&(A,T)(A))) Action[A,E] )
+    native 'effect-reduce';
+public function scan[T,A,E]: ( &(Action*[T,E],A,(&(A,T)(A))) Action*[A,E] )
+    native 'effect-scan';
+public function debounce[T,E]: ( &(Action*[T,E],Number) Action*[T,E] )
+    native 'debounce-time';
+public function merge-map[A,B,E]: ( &(Action*[A,E],(&(A)(Action*[B,E]))) Action*[B,E] )
+    native 'merge-map';
+public function concat-map[A,B,E]: ( &(Action*[A,E],(&(A)(Action*[B,E]))) Action*[B,E] )
+    native 'concat-map';
+public function mix-map[A,B,E]: ( &(Action*[A,E],Number,(&(A)(Action*[B,E]))) Action*[B,E] )
+    native 'mix-map';
+public function switch-map[A,B,E]: ( &(Action*[A,E],(&(A)(Action*[B,E]))) Action*[B,E] )
+    native 'switch-map';
+public function merge[T,E]: ( &(Array[Action*[T,E]]) Action*[T,E] )
+    native 'effect-merge';
+public function concat[T,E]: ( &(Array[Action*[T,E]]) Action*[T,E] )
+    native 'effect-concat';
+public function with-latest-from[A,B,E]: ( &(Action*[A,E],Action*[B,E]) Action*[(A,Maybe[B]),E] )
+    native 'with-latest-from';
+public function with-latest-from[A,B,E]: ( &(Action*[A,E],Reactive[B]) Action*[(A,B),E] )
+    native 'with-latest-from-reactive';
+public function combine-latest[A,B,E]: ( &(Action*[A,E],Action*[B,E]) Action*[(Maybe[A],Maybe[B]),E] )
+    native 'combine-latest';
+public function combine-latest[A,B,C]:
+    ( &(Action*[A],Action*[B],Action*[C])
+        Action*[(Maybe[A],Maybe[B],Maybe[C])] )
+    native 'combine-latest';
+public function combine-latest[A,B,C,D]:
+    ( &(Action*[A],Action*[B],Action*[C],Action*[D])
+        Action*[(Maybe[A],Maybe[B],Maybe[C],Maybe[D])] )
+    native 'combine-latest';
+public function combine-latest[A,B,C,D,E]:
+    ( &(Action*[A],Action*[B],Action*[C],Action*[D],Action*[E])
+        Action*[(Maybe[A],Maybe[B],Maybe[C],Maybe[D],Maybe[E])] )
+    native 'combine-latest';
+public function combine-latest![A,B,E]: ( &(Action*[A,E],Action*[B,E]) Action*[(A,B),E] )
+    native 'combine-latest!';
+public function combine-latest![A,B,C]:
+    ( &(Action*[A],Action*[B],Action*[C])
+        Action*[(A,B,C)] )
+    native 'combine-latest!';
+public function combine-latest![A,B,C,D]:
+    ( &(Action*[A],Action*[B],Action*[C],Action*[D])
+        Action*[(A,B,C,D)] )
+    native 'combine-latest!';
+public function combine-latest![A,B,C,D,E]:
+    ( &(Action*[A],Action*[B],Action*[C],Action*[D],Action*[E])
+        Action*[(A,B,C,D,E)] )
+    native 'combine-latest!';
+public function combine-latest![T,E]: ( &(Array[Action*[T,E]]) Action*[Array[T],E] )
+    native 'combine-latest!-array';

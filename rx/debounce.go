@@ -6,9 +6,9 @@ import (
 )
 
 
-func (e Effect) DebounceTime(dueTime uint) Effect {
+func (e Action) DebounceTime(dueTime uint) Action {
 	var dur = time.Duration(dueTime) * time.Millisecond
-	return Effect{ func(sched Scheduler, ob *observer) {
+	return Action { func(sched Scheduler, ob *observer) {
 		var mutex sync.Mutex
 		var current Object
 		var current_index = uint64(0)

@@ -3,14 +3,14 @@ package rx
 
 const invalid_no_except = "An effect that assumed to be a no-exception effect has thrown an error"
 
-func Throw(e Object) Effect {
-	return Effect { func(_ Scheduler, ob *observer) {
+func Throw(e Object) Action {
+	return Action { func(_ Scheduler, ob *observer) {
 		ob.error(e)
 	} }
 }
 
-func (e Effect) NoExcept() Effect {
-	return Effect{ func(sched Scheduler, ob *observer) {
+func (e Action) NoExcept() Action {
+	return Action { func(sched Scheduler, ob *observer) {
 		sched.run(e, &observer {
 			context:  ob.context,
 			next:     ob.next,
@@ -22,8 +22,8 @@ func (e Effect) NoExcept() Effect {
 	} }
 }
 
-func (e Effect) Catch(f func(Object)Effect) Effect {
-	return Effect { func(sched Scheduler, ob *observer) {
+func (e Action) Catch(f func(Object) Action) Action {
+	return Action { func(sched Scheduler, ob *observer) {
 		sched.run(e, &observer {
 			context: ob.context,
 			next: func(x Object) {
@@ -40,9 +40,9 @@ func (e Effect) Catch(f func(Object)Effect) Effect {
 	} }
 }
 
-func (e Effect) CatchRetry(f func(Object)Effect) Effect {
-	var try Effect
-	try = Effect { func(sched Scheduler, ob *observer) {
+func (e Action) CatchRetry(f func(Object) Action) Action {
+	var try Action
+	try = Action { func(sched Scheduler, ob *observer) {
 		sched.run(e, &observer {
 			context: ob.context,
 			next: func(x Object) {
@@ -50,7 +50,7 @@ func (e Effect) CatchRetry(f func(Object)Effect) Effect {
 			},
 			error: func(err Object) {
 				var caught_effect =
-					f(err).NoExcept().Then(func(retry Object) Effect {
+					f(err).NoExcept().Then(func(retry Object) Action {
 						if retry.(bool) {
 							return try
 						} else {
@@ -67,8 +67,8 @@ func (e Effect) CatchRetry(f func(Object)Effect) Effect {
 	return try
 }
 
-func (e Effect) CatchThrow(error_mapper func(Object)Object) Effect {
-	return Effect { func(sched Scheduler, ob *observer) {
+func (e Action) CatchThrow(error_mapper func(Object)Object) Action {
+	return Action { func(sched Scheduler, ob *observer) {
 		sched.run(e, &observer {
 			context:  ob.context,
 			next:     ob.next,

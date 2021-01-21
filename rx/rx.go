@@ -3,15 +3,15 @@ package rx
 
 type Object = interface{}
 
-type Effect struct {
+type Action struct {
 	action  func(Scheduler, *observer)
 }
 
 type Scheduler interface {
 	dispatch(event)
 	commit(task)
-	run(Effect, *observer)
-	RunTopLevel(Effect, Receiver)
+	run(Action, *observer)
+	RunTopLevel(Action, Receiver)
 }
 
 type observer struct {
@@ -166,18 +166,18 @@ func (s Sender) Complete() {
 }
 
 
-func ScheduleTask(task Effect, sched Scheduler) {
+func ScheduleTask(task Action, sched Scheduler) {
 	sched.RunTopLevel(task, Receiver { Context: Background() })
 }
 
-func NewGoroutine(action func(Sender)) Effect {
-	return Effect { func (sched Scheduler, ob *observer) {
+func NewGoroutine(action func(Sender)) Action {
+	return Action { func (sched Scheduler, ob *observer) {
 		go action(Sender { sched: sched, ob: ob })
 	} }
 }
 
-func NewGoroutineSingle(action func()(Object,bool)) Effect {
-	return Effect { func(sched Scheduler, ob *observer) {
+func NewGoroutineSingle(action func()(Object,bool)) Action {
+	return Action { func(sched Scheduler, ob *observer) {
 		var sender = Sender { sched: sched, ob: ob }
 		go (func() {
 			var result, ok = action()
@@ -191,8 +191,8 @@ func NewGoroutineSingle(action func()(Object,bool)) Effect {
 	}}
 }
 
-func NewQueued(w *Worker, action func()(Object,bool)) Effect {
-	return Effect { func(sched Scheduler, ob *observer) {
+func NewQueued(w *Worker, action func()(Object,bool)) Action {
+	return Action { func(sched Scheduler, ob *observer) {
 		var sender = Sender { sched: sched, ob: ob }
 		w.Do(func() {
 			var result, ok = action()
@@ -206,8 +206,8 @@ func NewQueued(w *Worker, action func()(Object,bool)) Effect {
 	} }
 }
 
-func NewCallback(action func(func(Object))) Effect {
-	return Effect { func(sched Scheduler, ob *observer) {
+func NewCallback(action func(func(Object))) Action {
+	return Action { func(sched Scheduler, ob *observer) {
 		var sender = Sender { sched: sched, ob: ob }
 		action(func(value Object) {
 			sender.Next(value)
@@ -216,8 +216,8 @@ func NewCallback(action func(func(Object))) Effect {
 	}}
 }
 
-func NewListener(action func(func(Object))(func())) Effect {
-	return Effect { func(sched Scheduler, ob *observer) {
+func NewListener(action func(func(Object))(func())) Action {
+	return Action { func(sched Scheduler, ob *observer) {
 		var h = action(ob.next)
 		if h != nil {
 			ob.context.push_cancel_hook(h)
@@ -225,8 +225,8 @@ func NewListener(action func(func(Object))(func())) Effect {
 	} }
 }
 
-func NewSync(action func()(Object,bool)) Effect {
-	return Effect { func (sched Scheduler, ob *observer) {
+func NewSync(action func()(Object,bool)) Action {
+	return Action { func (sched Scheduler, ob *observer) {
 		var result, ok = action()
 		if ok {
 			ob.next(result)
@@ -237,8 +237,8 @@ func NewSync(action func()(Object,bool)) Effect {
 	} }
 }
 
-func NewSyncSequence(action func(func(Object))(bool,Object)) Effect {
-	return Effect { func (sched Scheduler, ob *observer) {
+func NewSyncSequence(action func(func(Object))(bool,Object)) Action {
+	return Action { func (sched Scheduler, ob *observer) {
 		var ok, err = action(ob.next)
 		if ok {
 			ob.complete()

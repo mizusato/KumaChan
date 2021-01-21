@@ -1,8 +1,8 @@
 package rx
 
 
-func (e Effect) SwitchMap(f func(Object)Effect) Effect {
-	return Effect { func(sched Scheduler, ob *observer) {
+func (e Action) SwitchMap(f func(Object) Action) Action {
+	return Action { func(sched Scheduler, ob *observer) {
 		var ctx, dispose = ob.context.create_disposable_child()
 		var c = new_collector(ob, dispose)
 		var cur_ctx, cur_dispose = ctx.create_disposable_child()

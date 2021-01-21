@@ -16,7 +16,7 @@ private const Root: UI::Component
     let center := styled ui-container ['center'],
     let row := styled ui-container ['row'],
     ~ use &(list) := ui-state (empty-list:[Todo]),
-    let add-item-from: (&(Reactive[String])(NoExcept[-])) := ( &(buffer)
+    let add-item-from: (&(Reactive[String])(Action)) := ( &(buffer)
         ~ await &(content) := buffer.read,
         ~ await &(id) := gen-sequential-id,
         ~ await list.append (id, { content, finished: No }),

@@ -8,7 +8,7 @@ type ErrorKind union {
 
 public function from: ( &(Error) String )
     native 'String from error';
-public function crash: ( &(Error) NoExcept[-] )
+public function crash: ( &(Error) Action )
     ( &(err) (crash ((str err) | "I/O Error: #")) );
 
 public function is:

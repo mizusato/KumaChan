@@ -38,41 +38,41 @@ private function dom-node: ( &(String,Array[(String,String)],Array[Node]) Node )
     );
 
 private function dom-dynamic:
-    ( &(String, NoExcept*[(Styles,Attrs,Events)], NoExcept*[Array[Node]])
-        NoExcept*[Node] )
+    ( &(String, Action*[(Styles,Attrs,Events)], Action*[Array[Node]])
+        Action*[Node] )
     ( &(tag, @opts, @children)
         ~ map* &(opts,children) := (combine-latest! @opts @children),
         let (styles,attrs,events) := opts,
         dom-node tag styles attrs events (dom-children children)
     );
 private function dom-dynamic:
-    ( &(String, NoExcept*[Array[Node]])
-        NoExcept*[Node] )
+    ( &(String, Action*[Array[Node]])
+        Action*[Node] )
     ( &(tag, @children)
         ~ map* &(children) := @children,
         dom-node tag children
     );
 private function dom-dynamic:
-    ( &(String, NoExcept*[(Styles,Attrs,Events)], Array[NoExcept*[Node]])
-        NoExcept*[Node] )
+    ( &(String, Action*[(Styles,Attrs,Events)], Array[Action*[Node]])
+        Action*[Node] )
     ( &(tag, @opts, children)
         dom-dynamic tag @opts (combine-latest! children)
     );
 private function dom-dynamic:
-    ( &(String, Styles, Attrs, Events, Array[NoExcept*[Node]])
-        NoExcept*[Node] )
+    ( &(String, Styles, Attrs, Events, Array[Action*[Node]])
+        Action*[Node] )
     ( &(tag, styles, attrs, events, children)
         dom-dynamic tag (yield styles attrs events) children
     );
 private function dom-dynamic:
-    ( &(String, Array[(String,String)], Array[NoExcept*[Node]])
-        NoExcept*[Node] )
+    ( &(String, Array[(String,String)], Array[Action*[Node]])
+        Action*[Node] )
     ( &(tag, styles, children)
         dom-dynamic tag (dom-styles styles) (dom-attrs []) (dom-events []) children
     );
 private function dom-dynamic:
-    ( &(String, Array[NoExcept*[Node]])
-        NoExcept*[Node] )
+    ( &(String, Array[Action*[Node]])
+        Action*[Node] )
     ( &(tag, children)
         dom-dynamic tag (dom-styles []) (dom-attrs []) (dom-events []) children
     );

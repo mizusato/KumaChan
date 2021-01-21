@@ -312,7 +312,7 @@ func GetKmdSchema (
 	case *Boxed:
 		var inner Type
 		if len(g.Params) > 0 {
-			inner = FillTypeArgs(def.InnerType, args)
+			inner = FillTypeArgsWithDefaults(def.InnerType, args, g.Defaults)
 		} else {
 			inner = def.InnerType
 		}

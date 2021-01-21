@@ -13,79 +13,79 @@ type FileState {
 };
 type FileMode   Uint32;
 
-public function walk-dir: ( &(Path) Effect*[(Path,FileState),I/O::Error] )
+public function walk-dir: ( &(Path) Action*[(Path,FileState),I/O::Error] )
     native 'walk-dir';
-public function list-dir: ( &(Path) Effect*[(Path,FileState),I/O::Error] )
+public function list-dir: ( &(Path) Action*[(Path,FileState),I/O::Error] )
     native 'list-dir';
 
-public function open-read-only: ( &(Path) Effect[FileReadOnly,I/O::Error] )
+public function open-read-only: ( &(Path) Action[FileReadOnly,I/O::Error] )
     native 'open-read-only';
-public function open-read-write: ( &(Path) Effect[FileReadWrite,I/O::Error] )
+public function open-read-write: ( &(Path) Action[FileReadWrite,I/O::Error] )
     native 'open-read-write';
-public function open-read-write-create: ( &(Path) Effect[FileReadWrite,I/O::Error] )
+public function open-read-write-create: ( &(Path) Action[FileReadWrite,I/O::Error] )
     native 'open-read-write-create';
-public function open-overwrite: ( &(Path) Effect[FileWriteOnly,I/O::Error] )
+public function open-overwrite: ( &(Path) Action[FileWriteOnly,I/O::Error] )
     native 'open-overwrite';
-public function open-append: ( &(Path) Effect[FileWriteOnly,I/O::Error] )
+public function open-append: ( &(Path) Action[FileWriteOnly,I/O::Error] )
     native 'open-append';
 
-public function close: ( &(File) NoExcept[-] )
+public function close: ( &(File) Action )
     native 'file-close';
 
-public function get-state: ( &(File) Effect[FileState,I/O::Error] )
+public function get-state: ( &(File) Action[FileState,I/O::Error] )
     native 'file-get-state';
 
-public function read:  ( &(FileReadOnly,Number) Effect[Bytes,I/O::Error] )
+public function read:  ( &(FileReadOnly,Number) Action[Bytes,I/O::Error] )
     native 'file-read';
-public function read:  ( &(FileReadWrite,Number) Effect[Bytes,I/O::Error] )
+public function read:  ( &(FileReadWrite,Number) Action[Bytes,I/O::Error] )
     native 'file-read';
-public function write: ( &(FileWriteOnly,Bytes) Effect[-,I/O::Error] )
+public function write: ( &(FileWriteOnly,Bytes) Action[unit,I/O::Error] )
     native 'file-write';
-public function write: ( &(FileReadWrite,Bytes) Effect[-,I/O::Error] )
+public function write: ( &(FileReadWrite,Bytes) Action[unit,I/O::Error] )
     native 'file-write';
 
-public function seek-start:    ( &(File,Uint64) Effect[Uint64,I/O::Error] )
+public function seek-start:    ( &(File,Uint64) Action[Uint64,I/O::Error] )
     native 'file-seek-start';
-public function seek-forward:  ( &(File,Uint64) Effect[Uint64,I/O::Error] )
+public function seek-forward:  ( &(File,Uint64) Action[Uint64,I/O::Error] )
     native 'file-seek-forward';
-public function seek-backward: ( &(File,Uint64) Effect[Uint64,I/O::Error] )
+public function seek-backward: ( &(File,Uint64) Action[Uint64,I/O::Error] )
     native 'file-seek-backward';
-public function seek-end:      ( &(File,Uint64) Effect[Uint64,I/O::Error] )
+public function seek-end:      ( &(File,Uint64) Action[Uint64,I/O::Error] )
     native 'file-seek-end';
 
-public function read-char:  ( &(FileReadOnly) Effect[Char,I/O::Error] )
+public function read-char:  ( &(FileReadOnly) Action[Char,I/O::Error] )
     native 'file-read-char';
-public function read-char:  ( &(FileReadWrite) Effect[Char,I/O::Error] )
+public function read-char:  ( &(FileReadWrite) Action[Char,I/O::Error] )
     native 'file-read-char';
-public function write-char: ( &(FileWriteOnly,Char) Effect[-,I/O::Error] )
+public function write-char: ( &(FileWriteOnly,Char) Action[unit,I/O::Error] )
     native 'file-write-char';
-public function write-char: ( &(FileReadWrite,Char) Effect[-,I/O::Error] )
+public function write-char: ( &(FileReadWrite,Char) Action[unit,I/O::Error] )
     native 'file-write-char';
 
-public function read-string:  ( &(FileReadOnly) Effect[String,I/O::Error] )
+public function read-string:  ( &(FileReadOnly) Action[String,I/O::Error] )
     native 'file-read-string';
-public function read-string:  ( &(FileReadWrite) Effect[String,I/O::Error] )
+public function read-string:  ( &(FileReadWrite) Action[String,I/O::Error] )
     native 'file-read-string';
-public function write-string: ( &(FileWriteOnly,String) Effect[-,I/O::Error] )
+public function write-string: ( &(FileWriteOnly,String) Action[unit,I/O::Error] )
     native 'file-write-string';
-public function write-string: ( &(FileReadWrite,String) Effect[-,I/O::Error] )
+public function write-string: ( &(FileReadWrite,String) Action[unit,I/O::Error] )
     native 'file-write-string';
 
-public function read-line:  ( &(FileReadOnly) Effect[String,I/O::Error] )
+public function read-line:  ( &(FileReadOnly) Action[String,I/O::Error] )
     native 'file-read-line';
-public function read-line:  ( &(FileReadWrite) Effect[String,I/O::Error] )
+public function read-line:  ( &(FileReadWrite) Action[String,I/O::Error] )
     native 'file-read-line';
-public function write-line: ( &(FileWriteOnly,String) Effect[-,I/O::Error] )
+public function write-line: ( &(FileWriteOnly,String) Action[unit,I/O::Error] )
     native 'file-write-line';
-public function write-line: ( &(FileReadWrite,String) Effect[-,I/O::Error] )
+public function write-line: ( &(FileReadWrite,String) Action[unit,I/O::Error] )
     native 'file-write-line';
 
-public function read-lines: ( &(FileReadOnly) Effect*[String,I/O::Error] )
+public function read-lines: ( &(FileReadOnly) Action*[String,I/O::Error] )
     native 'file-read-lines';
-public function read-lines: ( &(FileReadWrite) Effect*[String,I/O::Error] )
+public function read-lines: ( &(FileReadWrite) Action*[String,I/O::Error] )
     native 'file-read-lines';
 
-public function read-all: ( &(FileReadOnly) Effect[Bytes,I/O::Error] )
+public function read-all: ( &(FileReadOnly) Action[Bytes,I/O::Error] )
     native 'file-read-all';
-public function read-all: ( &(FileReadWrite) Effect[Bytes,I/O::Error] )
+public function read-all: ( &(FileReadWrite) Action[Bytes,I/O::Error] )
     native 'file-read-all';

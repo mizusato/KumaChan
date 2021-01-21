@@ -13,7 +13,7 @@ func (sched TrivialScheduler) commit(t task) {
 	sched.EventLoop.commit(t)
 }
 
-func (sched TrivialScheduler) run(effect Effect, ob *observer) {
+func (sched TrivialScheduler) run(effect Action, ob *observer) {
 	var terminated = false
 	effect.action(sched, &observer {
 		context: ob.context,
@@ -37,7 +37,7 @@ func (sched TrivialScheduler) run(effect Effect, ob *observer) {
 	})
 }
 
-func (sched TrivialScheduler) RunTopLevel(e Effect, r Receiver) {
+func (sched TrivialScheduler) RunTopLevel(e Action, r Receiver) {
 	sched.EventLoop.commit(func() {
 		sched.run(e, &observer {
 			context:  r.Context,

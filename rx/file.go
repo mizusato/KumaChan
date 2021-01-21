@@ -43,27 +43,27 @@ func FileFrom(raw *os.File) File {
 	}
 }
 
-func OpenReadOnly(path string) Effect {
+func OpenReadOnly(path string) Action {
 	return Open(path, os.O_RDONLY, 0)
 }
 
-func OpenReadWrite(path string) Effect {
+func OpenReadWrite(path string) Action {
 	return Open(path, os.O_RDWR, 0)
 }
 
-func OpenReadWriteCreate(path string, perm os.FileMode) Effect {
+func OpenReadWriteCreate(path string, perm os.FileMode) Action {
 	return Open(path, os.O_RDWR | os.O_CREATE, perm)
 }
 
-func OpenOverwrite(path string, perm os.FileMode) Effect {
+func OpenOverwrite(path string, perm os.FileMode) Action {
 	return Open(path, os.O_WRONLY | os.O_APPEND | os.O_CREATE | os.O_TRUNC, perm)
 }
 
-func OpenAppend(path string, perm os.FileMode) Effect {
+func OpenAppend(path string, perm os.FileMode) Action {
 	return Open(path, os.O_WRONLY | os.O_APPEND | os.O_CREATE, perm)
 }
 
-func Open(path string, flag int, perm os.FileMode) Effect {
+func Open(path string, flag int, perm os.FileMode) Action {
 	return NewGoroutine(func(sender Sender) {
 		if sender.Context().AlreadyCancelled() {
 			return
@@ -86,7 +86,7 @@ func Open(path string, flag int, perm os.FileMode) Effect {
 	})
 }
 
-func (f File) Close() Effect {
+func (f File) Close() Action {
 	return NewQueued(f.worker, func() (Object, bool) {
 		_ = f.raw.Close()
 		f.worker.Dispose()
@@ -94,7 +94,7 @@ func (f File) Close() Effect {
 	})
 }
 
-func (f File) State() Effect {
+func (f File) State() Action {
 	return NewQueued(f.worker, func() (Object, bool) {
 		var info, err = f.raw.Stat()
 		if err != nil {
@@ -105,7 +105,7 @@ func (f File) State() Effect {
 	})
 }
 
-func (f File) Read(amount uint) Effect {
+func (f File) Read(amount uint) Action {
 	return NewQueued(f.worker, func() (Object, bool) {
 		var buf = make([] byte, amount)
 		var n, err = f.raw.Read(buf)
@@ -118,7 +118,7 @@ func (f File) Read(amount uint) Effect {
 	})
 }
 
-func (f File) Write(data ([] byte)) Effect {
+func (f File) Write(data ([] byte)) Action {
 	return NewQueued(f.worker, func() (Object, bool) {
 		var _, err = f.raw.Write(data)
 		if err != nil {
@@ -129,7 +129,7 @@ func (f File) Write(data ([] byte)) Effect {
 	})
 }
 
-func (f File) SeekStart(offset uint64) Effect {
+func (f File) SeekStart(offset uint64) Action {
 	return NewQueued(f.worker, func() (Object, bool) {
 		if offset >= math.MaxInt64 { panic("offset overflow") }
 		var new_offset, err = f.raw.Seek(int64(offset), io.SeekStart)
@@ -140,7 +140,7 @@ func (f File) SeekStart(offset uint64) Effect {
 	})
 }
 
-func (f File) SeekForward(delta uint64) Effect {
+func (f File) SeekForward(delta uint64) Action {
 	return NewQueued(f.worker, func() (Object, bool) {
 		if delta >= math.MaxInt64 { panic("offset delta overflow") }
 		var new_offset, err = f.raw.Seek(int64(delta), io.SeekCurrent)
@@ -151,7 +151,7 @@ func (f File) SeekForward(delta uint64) Effect {
 	})
 }
 
-func (f File) SeekBackward(delta uint64) Effect {
+func (f File) SeekBackward(delta uint64) Action {
 	return NewQueued(f.worker, func() (Object, bool) {
 		if delta >= math.MaxInt64 { panic("offset delta overflow") }
 		var new_offset, err = f.raw.Seek((-int64(delta)), io.SeekCurrent)
@@ -162,7 +162,7 @@ func (f File) SeekBackward(delta uint64) Effect {
 	})
 }
 
-func (f File) SeekEnd(offset uint64) Effect {
+func (f File) SeekEnd(offset uint64) Action {
 	return NewQueued(f.worker, func() (Object, bool) {
 		if offset >= math.MaxInt64 { panic("offset overflow") }
 		var new_offset, err = f.raw.Seek((-int64(offset)), io.SeekEnd)
@@ -173,7 +173,7 @@ func (f File) SeekEnd(offset uint64) Effect {
 	})
 }
 
-func (f File) ReadChar() Effect {
+func (f File) ReadChar() Action {
 	return NewQueued(f.worker, func() (Object, bool) {
 		var char rune
 		var _, err = fmt.Fscanf(f.raw, "%c", &char)
@@ -184,7 +184,7 @@ func (f File) ReadChar() Effect {
 	})
 }
 
-func (f File) WriteChar(char rune) Effect {
+func (f File) WriteChar(char rune) Action {
 	return NewQueued(f.worker, func() (Object, bool) {
 		var _, err = fmt.Fprintf(f.raw, "%c", char)
 		if err != nil {
@@ -194,7 +194,7 @@ func (f File) WriteChar(char rune) Effect {
 	})
 }
 
-func (f File) ReadRunes() Effect {
+func (f File) ReadRunes() Action {
 	return NewQueued(f.worker, func() (Object, bool) {
 		var buf = make([] rune, 0)
 		for {
@@ -210,13 +210,13 @@ func (f File) ReadRunes() Effect {
 	})
 }
 
-func (f File) ReadString() Effect {
+func (f File) ReadString() Action {
 	return f.ReadRunes().Map(func(runes Object) Object {
 		return string(runes.([] rune))
 	})
 }
 
-func (f File) ReadLineRunes() Effect {
+func (f File) ReadLineRunes() Action {
 	return NewQueued(f.worker, func() (Object, bool) {
 		var str, err = util.WellBehavedReadLine(f.raw)
 		if err != nil {
@@ -226,13 +226,13 @@ func (f File) ReadLineRunes() Effect {
 	})
 }
 
-func (f File) ReadLine() Effect {
+func (f File) ReadLine() Action {
 	return f.ReadLineRunes().Map(func(runes Object) Object {
 		return string(runes.([] rune))
 	})
 }
 
-func (f File) ReadAll() Effect {
+func (f File) ReadAll() Action {
 	return NewQueued(f.worker, func() (Object, bool) {
 		var bytes, err = ioutil.ReadAll(f.raw)
 		if err != nil {
@@ -242,7 +242,7 @@ func (f File) ReadAll() Effect {
 	})
 }
 
-func (f File) WriteString(str string) Effect {
+func (f File) WriteString(str string) Action {
 	return NewQueued(f.worker, func() (Object, bool) {
 		var _, err = fmt.Fprint(f.raw, str)
 		if err != nil {
@@ -252,7 +252,7 @@ func (f File) WriteString(str string) Effect {
 	})
 }
 
-func (f File) WriteLine(str string) Effect {
+func (f File) WriteLine(str string) Action {
 	return NewQueued(f.worker, func() (Object, bool) {
 		var _, err = fmt.Fprintln(f.raw, str)
 		if err != nil {
@@ -262,7 +262,7 @@ func (f File) WriteLine(str string) Effect {
 	})
 }
 
-func (f File) ReadLinesRuneSlices() Effect {
+func (f File) ReadLinesRuneSlices() Action {
 	// emits rune slices
 	return NewGoroutine(func(s Sender) {
 		f.worker.Do(func() {
@@ -287,7 +287,7 @@ func (f File) ReadLinesRuneSlices() Effect {
 	})
 }
 
-func (f File) ReadLines() Effect {
+func (f File) ReadLines() Action {
 	return f.ReadLinesRuneSlices().Map(func(runes Object) Object {
 		return string(runes.([] rune))
 	})
@@ -299,7 +299,7 @@ type FileItem struct {
 	State  FileState
 }
 
-func WalkDir(root string) Effect {
+func WalkDir(root string) Action {
 	return NewGoroutine(func(sender Sender) {
 		var err = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 			if sender.Context().AlreadyCancelled() {
@@ -319,7 +319,7 @@ func WalkDir(root string) Effect {
 	})
 }
 
-func ListDir(dir_path string) Effect {
+func ListDir(dir_path string) Action {
 	return NewGoroutine(func(sender Sender) {
 		var err = filepath.Walk(dir_path, func(path string, info os.FileInfo, err error) error {
 			if sender.Context().AlreadyCancelled() {

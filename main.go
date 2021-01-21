@@ -226,7 +226,7 @@ func repl(args ([] string), max_stack_size int) {
                     Name:   alias,
                 })
             case ast.ReplDo:
-                var eff, ok = ret.(rx.Effect)
+                var eff, ok = ret.(rx.Action)
                 if !(ok) {
                     fmt.Fprintf(os.Stderr,
                         "%s failure:\nvalue is not an effect\n",

@@ -8,5 +8,5 @@ type Bytes   protected Array[Byte];  // []byte
 type BinaryError native;
 public function from: ( &(BinaryError) String )
     native 'String from error';
-public function crash: ( &(BinaryError) NoExcept[-] )
+public function crash: ( &(BinaryError) Action )
     ( &(err) (crash ((str err) | "Binary Error: #")) );

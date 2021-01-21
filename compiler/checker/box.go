@@ -68,9 +68,11 @@ func Box (
 	}
 	var given_count = uint(len(given_args))
 	var g_type_arity = uint(len(g_type.Params))
+	var max = g_type_arity
+	var min = g_type_arity - uint(len(g_type.Defaults))
 	var node = info.ErrorPoint.Node
-	if given_count == g_type_arity {
-		var inner_type = FillTypeArgs(boxed.InnerType, given_args)
+	if min <= given_count && given_count <= max {
+		var inner_type = FillTypeArgsWithDefaults(boxed.InnerType, given_args, g_type.Defaults)
 		var expr, err = AssignTo(inner_type, to_be_boxed, ctx)
 		if err != nil { return Expr{}, err }
 		var outer_type = &NamedType {

@@ -3,6 +3,6 @@ public const Env: Map[String,String]
 public const Args: Array[String]
     native 'OS::Args';
 
-type ProcessExit protected NoExcept[-];
+type ProcessExit protected Action;
 public function exit: ( &(Uint8) ProcessExit )
     native 'exit';

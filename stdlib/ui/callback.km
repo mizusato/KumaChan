@@ -1,8 +1,8 @@
-type Callback protected (&(EventPayload)(NoExcept[-]));
+type Callback protected (&(EventPayload)(Action));
 
 public function ui-callback: ( &(Callback) EventSink )
     ( &(cb)
-        dom-event-sink (callback:[NoExcept[-]] (& e e)) cb
+        dom-event-sink (callback:[Action] (& e e)) cb
         // important: payload will be deleted after `cb` called
     );
 public function ui-msg-string: ( &(String,(&(String)(Callback))) Callback )
@@ -21,7 +21,7 @@ public function ui-msg-bool:   ( &(String,(&(Bool)(Callback))) Callback )
     ( &(prop,k)
         getter-callback prop get-bool k
     );
-public function return: ( &(NoExcept[-]) Callback )
+public function return: ( &(Action) Callback )
     ( &(action)
         Callback (&(_)(action))
     );

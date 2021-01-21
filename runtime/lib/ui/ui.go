@@ -9,7 +9,7 @@ import (
 )
 
 
-func Init(h InteropContext, root rx.Effect, title String) {
+func Init(h InteropContext, root rx.Action, title String) {
 	var assets = func() (map[string] util.Resource) {
 		return h.GetResources("web_asset")
 	}

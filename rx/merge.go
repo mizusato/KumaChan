@@ -1,11 +1,11 @@
 package rx
 
 
-func Merge(effects [] Effect) Effect {
-	return Effect { func(sched Scheduler, ob *observer) {
+func Merge(actions ([] Action)) Action {
+	return Action { func(sched Scheduler, ob *observer) {
 		var ctx, dispose = ob.context.create_disposable_child()
 		var c = new_collector(ob, dispose)
-		for _, item := range effects {
+		for _, item := range actions {
 			c.new_child()
 			sched.run(item, &observer {
 				context: ctx,
@@ -24,8 +24,8 @@ func Merge(effects [] Effect) Effect {
 	} }
 }
 
-func (e Effect) DiscardValues() Effect {
-	return Effect { func(sched Scheduler, ob *observer) {
+func (e Action) DiscardValues() Action {
+	return Action { func(sched Scheduler, ob *observer) {
 		sched.run(e, &observer {
 			context:  ob.context,
 			next:     func(_ Object) {},
@@ -35,8 +35,8 @@ func (e Effect) DiscardValues() Effect {
 	} }
 }
 
-func (e Effect) MergeMap(f func(Object)Effect) Effect {
-	return Effect { func(sched Scheduler, ob *observer) {
+func (e Action) MergeMap(f func(Object) Action) Action {
+	return Action { func(sched Scheduler, ob *observer) {
 		var ctx, ctx_dispose = ob.context.create_disposable_child()
 		var c = new_collector(ob, ctx_dispose)
 		sched.run(e, &observer {

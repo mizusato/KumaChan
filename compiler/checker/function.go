@@ -233,7 +233,7 @@ func CollectFunctions (
 			if !(is_boxed) { return nil, throw("should be a boxed type") }
 			if !(boxed.Implicit) { return nil,
 				throw("should be declared as a implicit context type") }
-			var inner = FillTypeArgs(boxed.InnerType, named.Args)
+			var inner = FillTypeArgsWithDefaults(boxed.InnerType, named.Args, g.Defaults)
 			var bundle = inner.(*AnonymousType).Repr.(Bundle)
 			var offset = uint(len(implicit_fields))
 			for name, field := range bundle.Fields {

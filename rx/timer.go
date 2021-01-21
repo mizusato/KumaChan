@@ -3,7 +3,7 @@ package rx
 import "time"
 
 
-func Timer(timeout uint) Effect {
+func Timer(timeout uint) Action {
 	return NewGoroutine(func(sender Sender) {
 		var timer = time.NewTimer(time.Duration(timeout) * time.Millisecond)
 		go (func() {
@@ -17,7 +17,7 @@ func Timer(timeout uint) Effect {
 	})
 }
 
-func Ticker(interval uint) Effect {
+func Ticker(interval uint) Action {
 	return NewGoroutine(func(sender Sender) {
 		var ticker = time.NewTicker(time.Duration(interval) * time.Millisecond)
 		go (func() {

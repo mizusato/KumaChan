@@ -1,13 +1,13 @@
 package rx
 
 
-func Mix(effects []Effect, concurrent uint) Effect {
+func Mix(actions ([] Action), concurrent uint) Action {
 	if concurrent == 0 { panic("invalid concurrent amount") }
-	return Effect { func(sched Scheduler, ob *observer) {
+	return Action { func(sched Scheduler, ob *observer) {
 		var ctx, dispose = ob.context.create_disposable_child()
 		var c = new_collector(ob, dispose)
 		var q_sched = QueueSchedulerFrom(sched, concurrent)
-		for _, item := range effects {
+		for _, item := range actions {
 			c.new_child()
 			q_sched.run(item, &observer {
 				context: ctx,
@@ -26,9 +26,9 @@ func Mix(effects []Effect, concurrent uint) Effect {
 	} }
 }
 
-func (e Effect) MixMap(f func(Object)Effect, concurrent uint) Effect {
+func (e Action) MixMap(f func(Object) Action, concurrent uint) Action {
 	if concurrent == 0 { panic("invalid concurrent amount") }
-	return Effect { func(sched Scheduler, ob *observer) {
+	return Action { func(sched Scheduler, ob *observer) {
 		var ctx, dispose = ob.context.create_disposable_child()
 		var c = new_collector(ob, dispose)
 		var q_sched = QueueSchedulerFrom(sched, concurrent)
@@ -61,11 +61,11 @@ func (e Effect) MixMap(f func(Object)Effect, concurrent uint) Effect {
 }
 
 
-func Concat(effects []Effect) Effect {
-	return Mix(effects, 1)
+func Concat(actions ([] Action)) Action {
+	return Mix(actions, 1)
 }
 
-func (e Effect) ConcatMap(f func(Object)Effect) Effect {
+func (e Action) ConcatMap(f func(Object) Action) Action {
 	return e.MixMap(f, 1)
 }
 
@@ -87,7 +87,7 @@ func QueueSchedulerFrom(sched Scheduler, concurrent uint) *QueueScheduler {
 	}
 }
 
-func (qs *QueueScheduler) run(e Effect, ob *observer) {
+func (qs *QueueScheduler) run(e Action, ob *observer) {
 	if qs.running < qs.max_running {
 		qs.running += 1
 		qs.underlying.run(e, &observer{
@@ -116,25 +116,25 @@ func (qs *QueueScheduler) commit(t task) {
 	qs.underlying.commit(t)
 }
 
-func (qs *QueueScheduler) RunTopLevel(e Effect, r Receiver) {
+func (qs *QueueScheduler) RunTopLevel(e Action, r Receiver) {
 	qs.underlying.RunTopLevel(e, r)
 }
 
-type queue  [] Effect
+type queue  [] Action
 func new_queue() *queue {
-	var q = queue(make([] Effect, 0))
+	var q = queue(make([] Action, 0))
 	return &q
 }
-func (q *queue) push(e Effect) {
+func (q *queue) push(e Action) {
 	*q = append(*q, e)
 }
-func (q *queue) pop() (Effect, bool) {
+func (q *queue) pop() (Action, bool) {
 	if len(*q) > 0 {
 		var e = (*q)[0]
-		(*q)[0] = Effect { nil }
+		(*q)[0] = Action {nil }
 		*q = (*q)[1:]
 		return e, true
 	} else {
-		return Effect{}, false
+		return Action {}, false
 	}
 }

@@ -132,90 +132,90 @@ var OS_Functions = map[string] Value {
 		}
 		return path.Join(segments)
 	},
-	"walk-dir": func(dir stdlib.Path) rx.Effect {
+	"walk-dir": func(dir stdlib.Path) rx.Action {
 		return rx.WalkDir(dir.String()).Map(func(val rx.Object) rx.Object {
 			var item = val.(rx.FileItem)
 			return ToTuple2(stdlib.ParsePath(item.Path), Struct2Prod(item.State))
 		})
 	},
-	"list-dir": func(dir stdlib.Path) rx.Effect {
+	"list-dir": func(dir stdlib.Path) rx.Action {
 		return rx.ListDir(dir.String()).Map(func(val rx.Object) rx.Object {
 			var item = val.(rx.FileItem)
 			return ToTuple2(stdlib.ParsePath(item.Path), Struct2Prod(item.State))
 		})
 	},
-	"open-read-only": func(path stdlib.Path) rx.Effect {
+	"open-read-only": func(path stdlib.Path) rx.Action {
 		return rx.OpenReadOnly(path.String())
 	},
-	"open-read-write": func(path stdlib.Path) rx.Effect {
+	"open-read-write": func(path stdlib.Path) rx.Action {
 		return rx.OpenReadWrite(path.String())
 	},
-	"open-read-write-create": func(path stdlib.Path) rx.Effect {
+	"open-read-write-create": func(path stdlib.Path) rx.Action {
 		return rx.OpenReadWriteCreate(path.String(), 0666)
 	},
-	"open-overwrite": func(path stdlib.Path) rx.Effect {
+	"open-overwrite": func(path stdlib.Path) rx.Action {
 		return rx.OpenOverwrite(path.String(), 0666)
 	},
-	"open-append": func(path stdlib.Path) rx.Effect {
+	"open-append": func(path stdlib.Path) rx.Action {
 		return rx.OpenAppend(path.String(), 0666)
 	},
-	"file-close": func(f rx.File) rx.Effect {
+	"file-close": func(f rx.File) rx.Action {
 		return f.Close()
 	},
-	"file-get-state": func(f rx.File) rx.Effect {
+	"file-get-state": func(f rx.File) rx.Action {
 		return f.State().Map(func(state rx.Object) rx.Object {
 			return Struct2Prod(state)
 		})
 	},
-	"file-read": func(f rx.File, amount uint) rx.Effect {
+	"file-read": func(f rx.File, amount uint) rx.Action {
 		return f.Read(amount)
 	},
-	"file-write": func(f rx.File, data ([] byte)) rx.Effect {
+	"file-write": func(f rx.File, data ([] byte)) rx.Action {
 		return f.Write(data)
 	},
-	"file-seek-start": func(f rx.File, offset uint64) rx.Effect {
+	"file-seek-start": func(f rx.File, offset uint64) rx.Action {
 		return f.SeekStart(offset)
 	},
-	"file-seek-forward": func(f rx.File, offset uint64) rx.Effect {
+	"file-seek-forward": func(f rx.File, offset uint64) rx.Action {
 		return f.SeekForward(offset)
 	},
-	"file-seek-backward": func(f rx.File, offset uint64) rx.Effect {
+	"file-seek-backward": func(f rx.File, offset uint64) rx.Action {
 		return f.SeekBackward(offset)
 	},
-	"file-seek-end": func(f rx.File, offset uint64) rx.Effect {
+	"file-seek-end": func(f rx.File, offset uint64) rx.Action {
 		return f.SeekEnd(offset)
 	},
-	"file-read-char": func(f rx.File) rx.Effect {
+	"file-read-char": func(f rx.File) rx.Action {
 		return f.ReadChar()
 	},
-	"file-write-char": func(f rx.File, char Char) rx.Effect {
+	"file-write-char": func(f rx.File, char Char) rx.Action {
 		return f.WriteChar(rune(char))
 	},
-	"file-read-string": func(f rx.File) rx.Effect {
+	"file-read-string": func(f rx.File) rx.Action {
 		return f.ReadRunes().Map(func(line rx.Object) rx.Object {
 			return StringFromRuneSlice(line.([] rune))
 		})
 	},
-	"file-write-string": func(f rx.File, str String) rx.Effect {
+	"file-write-string": func(f rx.File, str String) rx.Action {
 		return f.WriteString(GoStringFromString(str))
 	},
-	"file-read-line": func(f rx.File) rx.Effect {
+	"file-read-line": func(f rx.File) rx.Action {
 		return f.ReadLineRunes().Map(func(line rx.Object) rx.Object {
 			return StringFromRuneSlice(line.([] rune))
 		})
 	},
-	"file-write-line": func(f rx.File, line String) rx.Effect {
+	"file-write-line": func(f rx.File, line String) rx.Action {
 		return f.WriteLine(GoStringFromString(line))
 	},
-	"file-read-lines": func(f rx.File) rx.Effect {
+	"file-read-lines": func(f rx.File) rx.Action {
 		return f.ReadLinesRuneSlices().Map(func(runes rx.Object) rx.Object {
 			return StringFromRuneSlice(runes.([] rune))
 		})
 	},
-	"file-read-all": func(f rx.File) rx.Effect {
+	"file-read-all": func(f rx.File) rx.Action {
 		return f.ReadAll()
 	},
-	"exit": func(code uint8) rx.Effect {
+	"exit": func(code uint8) rx.Action {
 		return rx.NewSync(func() (rx.Object, bool) {
 			os.Exit(int(code))
 			panic("process should have exited")

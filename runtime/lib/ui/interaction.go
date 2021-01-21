@@ -15,8 +15,8 @@ func handleEvent(sched rx.Scheduler) {
 	rx.ScheduleTask(handling, sched)
 }
 
-func scheduleUpdate(sched rx.Scheduler, vdom_source rx.Effect) {
-	var single_update = func(root_node rx.Object) rx.Effect {
+func scheduleUpdate(sched rx.Scheduler, vdom_source rx.Action) {
+	var single_update = func(root_node rx.Object) rx.Action {
 		return virtualDomUpdate(root_node.(*vdom.Node))
 	}
 	var update = vdom_source.ConcatMap(single_update)
@@ -39,7 +39,7 @@ var virtualDomDeltaNotifier = &vdom.DeltaNotifier {
 	SwapNode:    qt.WebUiSwapNode,
 }
 var virtualDomRoot *vdom.Node = nil
-var virtualDomUpdate = func(new_root *vdom.Node) rx.Effect {
+var virtualDomUpdate = func(new_root *vdom.Node) rx.Action {
 	return rx.NewCallback(func(done func(rx.Object)) {
 		qt.CommitTask(func() {
 			var ctx = virtualDomDeltaNotifier

@@ -13,18 +13,18 @@ import (
 
 
 var UiFunctions = map[string] interface{} {
-	"ui-init": func(title String, root rx.Effect, h InteropContext) rx.Effect {
+	"ui-init": func(title String, root rx.Action, h InteropContext) rx.Action {
 		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
 			ui.Init(h, root, title)
 			return nil, true
 		})
 	},
-	"ui-get-window": func() rx.Effect {
+	"ui-get-window": func() rx.Action {
 		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
 			return ui.GetWindow(), true
 		})
 	},
-	"ui-inject-css": func(v Value) rx.Effect {
+	"ui-inject-css": func(v Value) rx.Action {
 		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
 			var array = container.ArrayFrom(v)
 			var files = make([] stdlib.WebAsset, array.Length)
@@ -35,7 +35,7 @@ var UiFunctions = map[string] interface{} {
 			return nil, true
 		})
 	},
-	"ui-inject-js": func(v Value) rx.Effect {
+	"ui-inject-js": func(v Value) rx.Action {
 		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
 			var array = container.ArrayFrom(v)
 			var files = make([] stdlib.WebAsset, array.Length)
@@ -46,7 +46,7 @@ var UiFunctions = map[string] interface{} {
 			return nil, true
 		})
 	},
-	"ui-inject-ttf": func(v Value) rx.Effect {
+	"ui-inject-ttf": func(v Value) rx.Action {
 		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
 			var array = container.ArrayFrom(v)
 			var fonts = make([] ui.Font, array.Length)

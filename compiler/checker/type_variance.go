@@ -142,11 +142,14 @@ func GetVariance(t Type, ctx TypeVarianceContext) ([] TypeVariance) {
 	case *NamedType:
 		var g = ctx.Registry[T.Name]
 		var arity = uint(len(g.Params))
-		if uint(len(T.Args)) != arity { panic("something went wrong") }
 		var params_v = ParamsVarianceVector(g.Params)
 		var args_v = make([][] TypeVariance, arity)
-		for i, arg := range T.Args {
-			args_v[i] = GetVariance(arg, ctx)
+		for i := uint(0); i < arity; i += 1 {
+			if i < uint(len(T.Args)) {
+				args_v[i] = GetVariance(T.Args[i], ctx)
+			} else {
+				args_v[i] = GetVariance(g.Defaults[i], ctx)
+			}
 		}
 		return ctx.DeduceVariance(params_v, args_v)
 	case *AnonymousType:

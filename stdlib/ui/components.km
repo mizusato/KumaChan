@@ -1,4 +1,4 @@
-type Component NoExcept*[Node]; // Observable<VNode>
+type Component Action*[Node]; // Observable<VNode>
 
 public function ui-empty: ( &() Component )
     ( &(_)
@@ -12,7 +12,7 @@ public function ui-label: ( &(String) Component )
     ( &(text)
         yield (dom-node 'div' text)
     );
-public function ui-text: ( &(NoExcept*[String]) Component )
+public function ui-text: ( &(Action*[String]) Component )
     ( &(@text)
         ~ map* &(text) := @text,
         dom-node 'div' text
@@ -56,7 +56,7 @@ public function ui-select: ( &(Reactive[String],Array[(String,String)]) Componen
                     | with (dom-attrs [('value', name)])
             ))
     );
-public function ui-button: ( &(String, NoExcept[-]) Component )
+public function ui-button: ( &(String, Action) Component )
     ( &(text,action)
         yield (dom-node 'button'
             (dom-styles [])

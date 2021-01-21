@@ -4,8 +4,8 @@ package rx
 const single_multiple_return = "An effect that assumed to be a single-valued effect emitted multiple values"
 const single_zero_return = "An effect that assumed to be a single-valued effect completed with zero values emitted"
 
-func (e Effect) Then(f func(Object)Effect) Effect {
-	return Effect { func(sched Scheduler, ob *observer) {
+func (e Action) Then(f func(Object) Action) Action {
+	return Action { func(sched Scheduler, ob *observer) {
 		var returned = false
 		var returned_value Object
 		sched.run(e, &observer {
@@ -31,8 +31,8 @@ func (e Effect) Then(f func(Object)Effect) Effect {
 	} }
 }
 
-func (e Effect) WaitComplete() Effect {
-	return Effect { func(sched Scheduler, ob *observer) {
+func (e Action) WaitComplete() Action {
+	return Action { func(sched Scheduler, ob *observer) {
 		sched.run(e, &observer {
 			context:  ob.context,
 			next:     func(_ Object) {
@@ -47,8 +47,8 @@ func (e Effect) WaitComplete() Effect {
 	} }
 }
 
-func (e Effect) TakeOne() Effect {
-	return Effect { func(sched Scheduler, ob *observer) {
+func (e Action) TakeOne() Action {
+	return Action { func(sched Scheduler, ob *observer) {
 		var ctx, ctx_dispose = ob.context.create_disposable_child()
 		sched.run(e, &observer {
 			context:  ctx,

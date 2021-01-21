@@ -12,19 +12,19 @@ import (
 
 
 var UiQtFunctions = map[string] interface{} {
-	"qt-show": func(widget qt.Widget) rx.Effect {
+	"qt-show": func(widget qt.Widget) rx.Action {
 		return ui.CreateQtTaskEffect(func() interface{} {
 			qt.Show(widget)
 			return nil
 		})
 	},
-	"qt-move-to-screen-center": func(widget qt.Widget) rx.Effect {
+	"qt-move-to-screen-center": func(widget qt.Widget) rx.Action {
 		return ui.CreateQtTaskEffect(func() interface{} {
 			qt.MoveToScreenCenter(widget)
 			return nil
 		})
 	},
-	"qt-signal": func(object qt.Object, signature String, mapper Value, h InteropContext) rx.Effect {
+	"qt-signal": func(object qt.Object, signature String, mapper Value, h InteropContext) rx.Action {
 		var source = ui.QtSignal {
 			Object:     object,
 			Signature:  GoStringFromString(signature),
@@ -34,7 +34,7 @@ var UiQtFunctions = map[string] interface{} {
 		}
 		return source.Receive()
 	},
-	"qt-signal-no-payload": func(object qt.Object, signature String) rx.Effect {
+	"qt-signal-no-payload": func(object qt.Object, signature String) rx.Action {
 		var source = ui.QtSignal {
 			Object:     object,
 			Signature:  GoStringFromString(signature),
@@ -44,7 +44,7 @@ var UiQtFunctions = map[string] interface{} {
 		}
 		return source.Receive()
 	},
-	"qt-event": func(object qt.Object, kind String, prevent SumValue) rx.Effect {
+	"qt-event": func(object qt.Object, kind String, prevent SumValue) rx.Action {
 		var event_kind = (func() qt.EventKind {
 			var k = GoStringFromString(kind)
 			switch k {
@@ -76,7 +76,7 @@ var UiQtFunctions = map[string] interface{} {
 			panic(fmt.Sprintf("unsupported Qt property type %s", t))
 		}
 	},
-	"qt-set-property": func(object qt.Object, prop_name String, prop_type String, value Value) rx.Effect {
+	"qt-set-property": func(object qt.Object, prop_name String, prop_type String, value Value) rx.Action {
 		var prop = GoStringFromString(prop_name)
 		var t = GoStringFromString(prop_type)
 		return ui.CreateQtTaskEffect(func() interface{} {
@@ -91,7 +91,7 @@ var UiQtFunctions = map[string] interface{} {
 			return nil
 		})
 	},
-	"qt-list-widget-set-items": func(list qt.Widget, av Value, current SumValue) rx.Effect {
+	"qt-list-widget-set-items": func(list qt.Widget, av Value, current SumValue) rx.Action {
 		return ui.CreateQtTaskEffect(func() interface{} {
 			var arr = container.ArrayFrom(av)
 			var current_key ([] rune)
@@ -132,7 +132,7 @@ var UiQtFunctions = map[string] interface{} {
 			return Na()
 		}
 	},
-	"qt-dialog-open": func(parent SumValue, title String, cwd stdlib.Path, filter String) rx.Effect {
+	"qt-dialog-open": func(parent SumValue, title String, cwd stdlib.Path, filter String) rx.Action {
 		var parent_widget, opts = ui.QtFileDialogAdaptArgs(parent, title, cwd, filter)
 		return rx.NewCallback(func(ok func(rx.Object)) {
 			qt.CommitTask(func() {
@@ -147,7 +147,7 @@ var UiQtFunctions = map[string] interface{} {
 			})
 		})
 	},
-	"qt-dialog-open*": func(parent SumValue, title String, cwd stdlib.Path, filter String) rx.Effect {
+	"qt-dialog-open*": func(parent SumValue, title String, cwd stdlib.Path, filter String) rx.Action {
 		var parent_widget, opts = ui.QtFileDialogAdaptArgs(parent, title, cwd, filter)
 		return rx.NewCallback(func(ok func(rx.Object)) {
 			qt.CommitTask(func() {
@@ -160,7 +160,7 @@ var UiQtFunctions = map[string] interface{} {
 			})
 		})
 	},
-	"qt-dialog-open-dir": func(parent SumValue, title String, cwd stdlib.Path) rx.Effect {
+	"qt-dialog-open-dir": func(parent SumValue, title String, cwd stdlib.Path) rx.Action {
 		var parent_widget, opts = ui.QtFileDialogAdaptArgs(parent, title, cwd, String([] Char {}))
 		return rx.NewCallback(func(ok func(rx.Object)) {
 			qt.CommitTask(func() {
@@ -175,7 +175,7 @@ var UiQtFunctions = map[string] interface{} {
 			})
 		})
 	},
-	"qt-dialog-save": func(parent SumValue, title String, cwd stdlib.Path, filter String) rx.Effect {
+	"qt-dialog-save": func(parent SumValue, title String, cwd stdlib.Path, filter String) rx.Action {
 		var parent_widget, opts = ui.QtFileDialogAdaptArgs(parent, title, cwd, filter)
 		return rx.NewCallback(func(ok func(rx.Object)) {
 			qt.CommitTask(func() {

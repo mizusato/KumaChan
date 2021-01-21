@@ -1,15 +1,15 @@
 package rx
 
 
-func (e Effect) StartWith(obj Object) Effect {
-	return Effect { func(sched Scheduler, ob *observer) {
+func (e Action) StartWith(obj Object) Action {
+	return Action { func(sched Scheduler, ob *observer) {
 		ob.next(obj)
 		sched.run(e, ob)
 	} }
 }
 
-func (e Effect) Map(f func(Object)(Object)) Effect {
-	return Effect { func(sched Scheduler, ob *observer) {
+func (e Action) Map(f func(Object)(Object)) Action {
+	return Action { func(sched Scheduler, ob *observer) {
 		sched.run(e, &observer {
 			context:  ob.context,
 			next:     func(val Object) {
@@ -21,8 +21,8 @@ func (e Effect) Map(f func(Object)(Object)) Effect {
 	} }
 }
 
-func (e Effect) Filter(f func(Object)(bool)) Effect {
-	return Effect { func(sched Scheduler, ob *observer) {
+func (e Action) Filter(f func(Object)(bool)) Action {
+	return Action { func(sched Scheduler, ob *observer) {
 		sched.run(e, &observer {
 			context:  ob.context,
 			next:     func(val Object) {
@@ -36,8 +36,8 @@ func (e Effect) Filter(f func(Object)(bool)) Effect {
 	}}
 }
 
-func (e Effect) FilterMap(f func(Object)(Object,bool)) Effect {
-	return Effect { func(sched Scheduler, ob *observer) {
+func (e Action) FilterMap(f func(Object)(Object,bool)) Action {
+	return Action { func(sched Scheduler, ob *observer) {
 		sched.run(e, &observer {
 			context:  ob.context,
 			next:     func(val Object) {
@@ -52,8 +52,8 @@ func (e Effect) FilterMap(f func(Object)(Object,bool)) Effect {
 	} }
 }
 
-func (e Effect) Reduce(f func(Object,Object)Object, init Object) Effect {
-	return Effect { func(sched Scheduler, ob *observer) {
+func (e Action) Reduce(f func(Object,Object)Object, init Object) Action {
+	return Action { func(sched Scheduler, ob *observer) {
 		var acc = init
 		sched.run(e, &observer {
 			context:  ob.context,
@@ -69,8 +69,8 @@ func (e Effect) Reduce(f func(Object,Object)Object, init Object) Effect {
 	} }
 }
 
-func (e Effect) Scan(f func(Object,Object)Object, init Object) Effect {
-	return Effect { func(sched Scheduler, ob *observer) {
+func (e Action) Scan(f func(Object,Object)Object, init Object) Action {
+	return Action { func(sched Scheduler, ob *observer) {
 		var acc = init
 		sched.run(e, &observer {
 			context:  ob.context,
@@ -84,9 +84,9 @@ func (e Effect) Scan(f func(Object,Object)Object, init Object) Effect {
 	} }
 }
 
-func (e Effect) Take(amount uint) Effect {
+func (e Action) Take(amount uint) Action {
 	if amount == 0 { panic("take: invalid amount 0") }
-	return Effect { func(sched Scheduler, ob *observer) {
+	return Action { func(sched Scheduler, ob *observer) {
 		var ctx, ctx_dispose = ob.context.create_disposable_child()
 		var taken = uint(0)
 		sched.run(e, &observer {

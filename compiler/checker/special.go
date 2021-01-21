@@ -22,10 +22,8 @@ const KmdSerializerName = "data-serialize"
 const KmdDeserializerName = "data-deserialize"
 const KmdAdapterName = "data-adapt"
 const KmdValidatorName = "data-validate"
-// var __Effect = CoreSymbol(stdlib.Effect)
-var __NoExcept = CoreSymbol(stdlib.NoExcept)
-var __EffectMulti = CoreSymbol(stdlib.EffectMultiValue)
-var __NoExceptMulti = CoreSymbol(stdlib.NoExceptMultiValue)
+var __Action = CoreSymbol(stdlib.Action)
+var __ActionMultiValue = CoreSymbol(stdlib.ActionMultiValue)
 var __Reactive = CoreSymbol(stdlib.Reactive)
 func IsReactive(t *NamedType) bool {
 	return t.Name == __Reactive
@@ -37,7 +35,7 @@ func Reactive(t Type) Type {
 	}
 }
 var __DoType = &NamedType {
-	Name: __NoExcept,
+	Name: __Action,
 	Args: [] Type { &AnonymousType { Unit {} } },
 }
 var __Bool = CoreSymbol(stdlib.Bool)

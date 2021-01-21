@@ -36,7 +36,7 @@ var NetFunctions = map[string] interface{} {
 	"http-response-body": func(res rx.HttpResponse) ([] byte) {
 		return res.Body
 	},
-	"http-get": func(url *url.URL) rx.Effect {
+	"http-get": func(url *url.URL) rx.Action {
 		return rx.HttpGet(url)
 	},
 }

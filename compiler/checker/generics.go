@@ -200,18 +200,27 @@ func GenericFunctionAssignTo (
 }
 
 
-func FillTypeArgs(t Type, given_args ([] Type)) Type {
+// TODO: simplify common patterns of usage of this function
+func FillTypeArgsWithDefaults(t Type, given_args ([] Type), defaults (map[uint] Type)) Type {
 	switch T := t.(type) {
 	case *NeverType:
 		return &NeverType {}
 	case *AnyType:
 		return &AnyType {}
 	case *ParameterType:
-		return given_args[T.Index]
+		if T.Index < uint(len(given_args)) {
+			return given_args[T.Index]
+		} else {
+			if defaults != nil {
+				var t, exists = defaults[T.Index]
+				if exists { return t }
+			}
+			panic("something went wrong")
+		}
 	case *NamedType:
 		var filled = make([]Type, len(T.Args))
 		for i, arg := range T.Args {
-			filled[i] = FillTypeArgs(arg, given_args)
+			filled[i] = FillTypeArgsWithDefaults(arg, given_args, defaults)
 		}
 		return &NamedType {
 			Name: T.Name,
@@ -224,7 +233,7 @@ func FillTypeArgs(t Type, given_args ([] Type)) Type {
 		case Tuple:
 			var filled = make([]Type, len(r.Elements))
 			for i, element := range r.Elements {
-				filled[i] = FillTypeArgs(element, given_args)
+				filled[i] = FillTypeArgsWithDefaults(element, given_args, defaults)
 			}
 			return &AnonymousType {
 				Repr: Tuple {
@@ -235,7 +244,7 @@ func FillTypeArgs(t Type, given_args ([] Type)) Type {
 			var filled = make(map[string]Field, len(r.Fields))
 			for name, field := range r.Fields {
 				filled[name] = Field {
-					Type:  FillTypeArgs(field.Type, given_args),
+					Type:  FillTypeArgsWithDefaults(field.Type, given_args, defaults),
 					Index: field.Index,
 				}
 			}
@@ -247,8 +256,8 @@ func FillTypeArgs(t Type, given_args ([] Type)) Type {
 		case Func:
 			return &AnonymousType {
 				Repr:Func {
-					Input:  FillTypeArgs(r.Input, given_args),
-					Output: FillTypeArgs(r.Output, given_args),
+					Input:  FillTypeArgsWithDefaults(r.Input, given_args, defaults),
+					Output: FillTypeArgsWithDefaults(r.Output, given_args, defaults),
 				},
 			}
 		default:
@@ -257,6 +266,10 @@ func FillTypeArgs(t Type, given_args ([] Type)) Type {
 	default:
 		panic("impossible branch")
 	}
+}
+
+func FillTypeArgs(t Type, given_args ([] Type)) Type {
+	return FillTypeArgsWithDefaults(t, given_args, nil)
 }
 
 func MarkParamsAsBeingInferred(type_ Type) Type {

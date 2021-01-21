@@ -1,10 +1,10 @@
 // QWidget
 type Widget protected Object;
 
-public function show: (&(Widget)(NoExcept[-]))
+public function show: (&(Widget)(Action))
     native 'qt-show';
 
-public function move-to-screen-center: (&(Widget)(NoExcept[-]))
+public function move-to-screen-center: (&(Widget)(Action))
     native 'qt-move-to-screen-center';
 
 
@@ -15,7 +15,7 @@ type MainWindow protected Widget;
 // QLabel
 type Label protected Widget;
 
-public function set-text: ( &(Label,String) NoExcept[-] )
+public function set-text: ( &(Label,String) Action )
     (&(label,text)(set-property label 'text' 'String' text));
 
 
@@ -28,10 +28,10 @@ private function get-text: ( &(Static[LineEdit]) String )
 public function text: ( &(LineEdit) Signal[String] )
     (&(line)(signal line 'textEdited(const QString&)' get-text));
 
-public function enter: ( &(LineEdit) Signal[-] )
+public function enter: ( &(LineEdit) Signal[unit] )
     (&(line)(signal line 'returnPressed()'));
 
-public function set-text: ( &(LineEdit,String) NoExcept[-] )
+public function set-text: ( &(LineEdit,String) Action )
     (&(line,text)(set-property line 'text' 'String' text));
 
 
@@ -49,7 +49,7 @@ public function plain-text!: ( &(PlainTextEdit) Signal[String] )
 // QPushButton
 type PushButton protected Widget;
 
-public function clicked: ( &(PushButton) Signal[-] )
+public function clicked: ( &(PushButton) Signal[unit] )
     (&(button)(signal button 'clicked()'));
 
 
@@ -62,7 +62,7 @@ private function get-checked: ( &(Static[CheckBox]) Bool )
 public function checked: ( &(CheckBox) Signal[Bool] )
     (&(checkbox)(signal checkbox 'clicked(bool)' get-checked));
 
-public function set-checked: ( &(CheckBox,Bool) NoExcept[-] )
+public function set-checked: ( &(CheckBox,Bool) Action )
     (&(checkbox,checked)(set-property checkbox 'checked' 'Bool' checked));
 
 
@@ -75,7 +75,7 @@ private function get-current-text: ( &(Static[ComboBox]) String )
 public function current-text: ( &(ComboBox) Signal[String] )
     (&(combo)(signal combo 'currentTextChanged(const QString&)' get-current-text));
 
-public function set-current-text: ( &(ComboBox,String) NoExcept[-] )
+public function set-current-text: ( &(ComboBox,String) Action )
     (&(combo,text)(set-property combo 'currentText' 'String' text));
 
 
@@ -83,7 +83,7 @@ public function set-current-text: ( &(ComboBox,String) NoExcept[-] )
 type ListWidget protected Widget;
 type ListWidgetItem native;
 
-public function set-items: ( &(ListWidget,Array[ListWidgetItem],Maybe[String]) NoExcept[-] )
+public function set-items: ( &(ListWidget,Array[ListWidgetItem],Maybe[String]) Action )
     native 'qt-list-widget-set-items';
 
 public function list-widget-item: ( &(String,String) ListWidgetItem )

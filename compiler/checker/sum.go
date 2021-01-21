@@ -489,7 +489,7 @@ func AssignSwitchTo(expected Type, sw SemiTypedSwitch, info ExprInfo, ctx ExprCo
 	if sw.Reactive {
 		switch E := expected.(type) {
 		case *NamedType:
-			if E.Name == __EffectMulti || E.Name == __NoExceptMulti {
+			if E.Name == __Action || E.Name == __ActionMultiValue {
 				goto ok
 			}
 		}

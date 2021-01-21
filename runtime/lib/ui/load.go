@@ -11,7 +11,7 @@ var loading = make(chan struct{}, 1)
 var windowLoaded = make(chan struct{})
 var bridgeLoaded = make(chan struct{})
 
-func load(sched rx.Scheduler, root rx.Effect, title String, assets resources) bool {
+func load(sched rx.Scheduler, root rx.Action, title String, assets resources) bool {
 	select {
 	case loading <- struct{}{}:
 		qt.MakeSureInitialized()

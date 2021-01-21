@@ -1,8 +1,8 @@
 package rx
 
 
-func (e Effect) CompleteWhen(p func(Object)(bool)) Effect {
-	return Effect { func(sched Scheduler, ob *observer) {
+func (e Action) CompleteWhen(p func(Object)(bool)) Action {
+	return Action { func(sched Scheduler, ob *observer) {
 		var ctx, ctx_dispose = ob.context.create_disposable_child()
 		sched.run(e, &observer {
 			context:  ctx,
