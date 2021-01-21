@@ -131,11 +131,17 @@ func CollectFunctions (
 				Concrete: E_InvalidFunctionName { name },
 			}
 		}
-		var params, raw_bounds, p_err, p_err_node = CollectTypeParams(decl.Params)
+		var params, raw_bounds, defaults, p_err, p_err_node = CollectTypeParams(decl.Params)
 		if p_err != nil { return nil, &FunctionError {
 			Point:    ErrorPointFrom(p_err_node),
 			Concrete: E_FunctionInvalidTypeParameterName { p_err.Name },
 		} }
+		for _, d := range defaults {
+			if d.HasValue { return nil, &FunctionError {
+				Point:    ErrorPointFrom(d.Node),
+				Concrete: E_FunctionDefaultTypeParameterDeclared {},
+			} }
+		}
 		var bounds = TypeBounds {
 			Sub:   make(map[uint] Type),
 			Super: make(map[uint] Type),

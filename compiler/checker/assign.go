@@ -259,12 +259,23 @@ func DirectAssignType(inferred Type, given Type, d AssignDirection, ctx ExprCont
 		switch T := given.(type) {
 		case *NamedType:
 			if I.Name == T.Name {
-				if len(T.Args) != len(I.Args) {
-					panic("something went wrong")
-				}
 				var name = T.Name
-				var L = len(T.Args)
 				var g = ctx.ModuleInfo.Types[name]
+				var L = len(g.Params)
+				var t_args = make([] Type, L)
+				var i_args = make([] Type, L)
+				for i := 0; i < L; i += 1 {
+					if i < len(T.Args) {
+						t_args[i] = T.Args[i]
+					} else {
+						t_args[i] = g.Defaults[uint(i)]
+					}
+					if i < len(I.Args) {
+						i_args[i] = I.Args[i]
+					} else {
+						i_args[i] = g.Defaults[uint(i)]
+					}
+				}
 				var args = make([] Type, L)
 				for i := 0; i < L; i += 1 {
 					var param_v = g.Params[i].Variance
@@ -272,7 +283,7 @@ func DirectAssignType(inferred Type, given Type, d AssignDirection, ctx ExprCont
 					if d == FromInferred {
 						param_d = InverseDirection(param_d)
 					}
-					var t, ok = AssignType(I.Args[i], T.Args[i], param_d, ctx)
+					var t, ok = AssignType(i_args[i], t_args[i], param_d, ctx)
 					if ok {
 						args[i] = t
 					} else {
@@ -303,6 +314,8 @@ func DirectAssignType(inferred Type, given Type, d AssignDirection, ctx ExprCont
 						return nil, false
 					}
 					var L = len(T_.Elements)
+					var _, restore = ctx.WithInferringStateSaved()
+					var forward_ok = true
 					var elements = make([] Type, L)
 					for i := 0; i < L; i += 1 {
 						var e = I_.Elements[i]
@@ -311,10 +324,34 @@ func DirectAssignType(inferred Type, given Type, d AssignDirection, ctx ExprCont
 						if ok {
 							elements[i] = el_t
 						} else {
+							forward_ok = false
+							break
+						}
+					}
+					if forward_ok {
+						return &AnonymousType { Tuple { elements } }, true
+					} else {
+						// forward not ok, restore state and try backward
+						restore()
+						var backward_ok = true
+						var elements = make([] Type, L)
+						for i := L-1; i >= 0; i -= 1 {
+							var e = I_.Elements[i]
+							var t = T_.Elements[i]
+							var el_t, ok = AssignType(e, t, d, ctx)
+							if ok {
+								elements[i] = el_t
+							} else {
+								backward_ok = false
+								break
+							}
+						}
+						if backward_ok {
+							return &AnonymousType { Tuple { elements } }, true
+						} else {
 							return nil, false
 						}
 					}
-					return &AnonymousType { Tuple { elements } }, true
 				}
 			case Bundle:
 				switch T_ := T.Repr.(type) {

@@ -65,6 +65,7 @@ var __NodeRegistry = []interface{} {
 	BoxedType {},
     UnionType {},
     TypeParam {},
+    TypeParamDefault {},
     VariousTypeBound {},
     TypeLowerBound {},
     TypeHigherBound {},
@@ -78,7 +79,7 @@ var __NodeRegistry = []interface{} {
     Field {},
     ReprFunc {},
     // Expression
-    Expr{},
+    Expr {},
     Terms {},
     VariousTerm {},
     Pipeline {},

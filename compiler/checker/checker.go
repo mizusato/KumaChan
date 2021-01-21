@@ -323,7 +323,7 @@ func (ctx ExprContext) WithInferringEnabled(params ([] TypeParam)) ExprContext {
 	return new_ctx
 }
 
-func (ctx ExprContext) WithInferringContextCloned() ExprContext {
+func (ctx ExprContext) WithInferringStateCloned() ExprContext {
 	if ctx.Inferring.Enabled {
 		var new_ctx ExprContext
 		*(&new_ctx) = ctx
@@ -335,6 +335,26 @@ func (ctx ExprContext) WithInferringContextCloned() ExprContext {
 		return new_ctx
 	} else {
 		return ctx
+	}
+}
+
+func (ctx ExprContext) WithInferringStateSaved() (struct{}, func()) {
+	if ctx.Inferring.Enabled {
+		var args = ctx.Inferring.Arguments
+		var saved = make(map[uint] Type)
+		for k, v := range args {
+			saved[k] = v
+		}
+		return struct{}{}, func() {
+			for k, _ := range args {
+				delete(args, k)
+			}
+			for k, v := range saved {
+				args[k] = v
+			}
+		}
+	} else {
+		return struct{}{}, func() {}
 	}
 }
 

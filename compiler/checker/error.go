@@ -192,6 +192,8 @@ func (impl E_TypeCircularDependency) TypeDeclError() {}
 type E_TypeCircularDependency struct {
 	TypeNames  [] loader.Symbol
 }
+func (impl E_TypeIncompleteDefaultParameters) TypeDeclError() {}
+type E_TypeIncompleteDefaultParameters struct {}
 
 func (err *TypeDeclError) Desc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
@@ -221,6 +223,10 @@ func (err *TypeDeclError) Desc() ErrorMessage {
 				msg.WriteText(TS_ERROR, ", ")
 			}
 		}
+	case E_TypeIncompleteDefaultParameters:
+		msg.WriteText(TS_ERROR, "Incomplete default type parameters. " +
+			"If a parameter has a default value, then all of its following " +
+			"parameters should also have default values.")
 	default:
 		panic("unknown error kind")
 	}
@@ -375,6 +381,9 @@ type E_FunctionInvalidTypeParameterName struct {
 func (impl E_FunctionVarianceDeclared) FunctionError() {}
 type E_FunctionVarianceDeclared struct {}
 
+func (impl E_FunctionDefaultTypeParameterDeclared) FunctionError() {}
+type E_FunctionDefaultTypeParameterDeclared struct {}
+
 func (err *FunctionError) Desc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	switch e := err.Concrete.(type) {
@@ -395,6 +404,8 @@ func (err *FunctionError) Desc() ErrorMessage {
 		msg.WriteEndText(TS_INLINE_CODE, e.FieldName)
 	case E_ImplicitContextOnNativeFunction:
 		msg.WriteText(TS_ERROR, "Cannot use implicit context on a native function")
+	case E_NativeFunctionOutsideStandardLibrary:
+		msg.WriteText(TS_ERROR, "Cannot define native function outside standard library")
 	case E_InvalidOverload:
 		msg.WriteText(TS_ERROR, "Cannot define this function with the name")
 		msg.WriteInnerText(TS_INLINE_CODE, e.AddedName)
@@ -411,8 +422,9 @@ func (err *FunctionError) Desc() ErrorMessage {
 	case E_FunctionVarianceDeclared:
 		msg.WriteText(TS_ERROR,
 			"Cannot declare variance of type parameters of functions")
-	case E_NativeFunctionOutsideStandardLibrary:
-		msg.WriteText(TS_ERROR, "Cannot define native function outside standard library")
+	case E_FunctionDefaultTypeParameterDeclared:
+		msg.WriteText(TS_ERROR,
+			"Cannot declare default type parameter value on functions")
 	default:
 		panic("unknown error kind")
 	}

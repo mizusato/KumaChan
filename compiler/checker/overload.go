@@ -77,7 +77,7 @@ func AssignUndecidedTo(expected Type, call UndecidedCall, info ExprInfo, ctx Exp
 	var available = make([] AvailableCall, 0)
 	var unavailable = make([] UnavailableCall, 0)
 	for _, opt := range call.Calls {
-		var this_call_ctx = ctx.WithInferringContextCloned()
+		var this_call_ctx = ctx.WithInferringStateCloned()
 		var expr, err = TypedAssignTo(expected, opt.Expr, this_call_ctx)
 		if err == nil {
 			available = append(available, AvailableCall {
@@ -169,7 +169,7 @@ func OverloadedAssignTo (
 		var ok_inferring TypeArgsInferringContext
 		var available = make([] *GenericFunction, 0)
 		for i, f := range functions {
-			var this_f_ctx = ctx.WithInferringContextCloned()
+			var this_f_ctx = ctx.WithInferringStateCloned()
 			var index = uint(i)
 			var expr, err = GenericFunctionAssignTo (
 				expected, name, index, f, type_args, info, this_f_ctx,

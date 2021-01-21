@@ -7,7 +7,7 @@ import (
 
 
 const IgnoreMark = "_"
-const UnitAlias = "-"
+const UnitName = "unit"
 const NeverTypeName = "never"
 const AnyTypeName = "any"
 const SuperTypeName = "super"

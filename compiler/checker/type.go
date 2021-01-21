@@ -10,6 +10,7 @@ type GenericType struct {
 	Tags      TypeTags
 	Params    [] TypeParam
 	Bounds    TypeBounds
+	Defaults  map[uint] Type
 	Value     TypeVal
 	Node      ast.Node
 	CaseInfo  CaseInfo

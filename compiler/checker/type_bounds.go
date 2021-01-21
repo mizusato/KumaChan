@@ -80,15 +80,20 @@ func CheckTypeBounds(t Type, nodes (map[Type] ast.Node), ctx TypeBoundsContext) 
 			// refers to a type that does not exist
 			return nil
 		}
+		var L = uint(len(T.Args))
 		for i, super := range g.Bounds.Super {
-			var arg = T.Args[i]
-			var err = CheckTypeArgBound(arg, super, SuperBound, get_node, ctx)
-			if err != nil { return err }
+			if i < L {
+				var arg = T.Args[i]
+				var err = CheckTypeArgBound(arg, super, SuperBound, get_node, ctx)
+				if err != nil { return err }
+			}
 		}
 		for i, sub := range g.Bounds.Sub {
-			var arg = T.Args[i]
-			var err = CheckTypeArgBound(arg, sub, SubBound, get_node, ctx)
-			if err != nil { return err }
+			if i < L {
+				var arg = T.Args[i]
+				var err = CheckTypeArgBound(arg, sub, SubBound, get_node, ctx)
+				if err != nil { return err }
+			}
 		}
 		return nil
 	case *AnonymousType:

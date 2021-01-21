@@ -85,12 +85,14 @@ func ValidateType(t Type, nodes (map[Type] ast.Node), ctx TypeValidationContext)
 			},
 		} }
 		var arity = uint(len(g.Params))
+		var max = arity
+		var min = (arity - uint(len(g.Defaults)))
 		var given_arity = uint(len(T.Args))
-		if arity != given_arity { return &TypeError {
+		if !(min <= given_arity && given_arity <= max) { return &TypeError {
 			Point:    t_point,
 			Concrete: E_WrongParameterQuantity {
 				TypeName: T.Name,
-				Required: arity,
+				Required: arity,  // TODO: more detailed message when defaults available
 				Given:    given_arity,
 			},
 		} }

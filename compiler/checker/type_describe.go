@@ -90,7 +90,7 @@ func DescribeType(type_ Type, ctx TypeDescContext) string {
 	case *AnonymousType:
 		switch r := t.Repr.(type) {
 		case Unit:
-			return "()"
+			return "unit"
 		case Tuple:
 			var buf strings.Builder
 			buf.WriteRune('(')

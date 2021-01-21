@@ -9,7 +9,7 @@ import (
 
 
 var __ReservedTypeNames = [...]string {
-	IgnoreMark, UnitAlias,
+	IgnoreMark, UnitName,
 	NeverTypeName, AnyTypeName, SuperTypeName,
 }
 func IsReservedTypeName(name string) bool {
@@ -42,7 +42,9 @@ type RawTypeRegistry struct {
 	ParamsMap      map[loader.Symbol] ([] TypeParam)
 	// a map from symbol to type parameter bounds
 	BoundsMap      map[loader.Symbol] ([] ast.TypeBound)
-	// a map from case types to their corresponding union information
+	// a map from symbol to type parameter default values
+	DefaultsMap    map[loader.Symbol] ([] ast.TypeParamDefault)
+ 	// a map from case types to their corresponding union information
 	CaseInfoMap    map[loader.Symbol] CaseInfo
 	// a context value to track all visited modules
 	// (same module may appear many times when walking through the hierarchy)
@@ -81,9 +83,16 @@ func GetVarianceFromRawTypeParams(raw_params ([] ast.TypeParam)) ([] TypeVarianc
 	return v
 }
 
-func CollectTypeParams(raw_params ([] ast.TypeParam)) (([] TypeParam), ([] ast.TypeBound), *E_InvalidTypeName, ast.Node) {
+func CollectTypeParams(raw_params ([] ast.TypeParam)) (
+	([] TypeParam),
+	([] ast.TypeBound),
+	([] ast.TypeParamDefault),
+	*E_InvalidTypeName,
+	ast.Node,
+) {
 	var params = make([] TypeParam, len(raw_params))
 	var bounds = make([] ast.TypeBound, len(raw_params))
+	var defaults = make([] ast.TypeParamDefault, len(raw_params))
 	for i, raw_param := range raw_params {
 		var raw_name = ast.Id2String(raw_param.Name)
 		var name = raw_name
@@ -99,15 +108,16 @@ func CollectTypeParams(raw_params ([] ast.TypeParam)) (([] TypeParam), ([] ast.T
 		}
 		if strings.HasSuffix(name, ForceExactSuffix) ||
 			IsReservedTypeName(name) {
-			return nil, nil, &E_InvalidTypeName {name}, raw_param.Node
+			return nil, nil, nil, &E_InvalidTypeName {name}, raw_param.Node
 		}
 		params[i] = TypeParam {
 			Name:     name,
 			Variance: v,
 		}
 		bounds[i] = raw_param.Bound.TypeBound
+		defaults[i] = raw_param.Default
 	}
-	return params, bounds, nil, ast.Node{}
+	return params, bounds, defaults, nil, ast.Node{}
 }
 
 func MakeRawTypeRegistry() RawTypeRegistry {
@@ -115,6 +125,7 @@ func MakeRawTypeRegistry() RawTypeRegistry {
 		DeclMap:       make(map[loader.Symbol] ast.DeclType),
 		ParamsMap:     make(map[loader.Symbol] ([] TypeParam)),
 		BoundsMap:     make(map[loader.Symbol] [] ast.TypeBound),
+		DefaultsMap:   make(map[loader.Symbol] [] ast.TypeParamDefault),
 		CaseInfoMap:   make(map[loader.Symbol] CaseInfo),
 		VisitedMod:    make(map[string] bool),
 	}
@@ -137,19 +148,22 @@ func RegisterRawTypes(mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 	var decls = make([] ast.DeclType, 0)
 	var params_map = make(map[uint] ([] TypeParam))
 	var bounds_map = make(map[uint] ([] ast.TypeBound))
+	var defaults_map = make(map[uint] ([] ast.TypeParamDefault))
 	var case_parent_map = make(map[uint]uint)
 	var case_index_map = make(map[uint]uint)
 	var process_decl_stmt func(ast.DeclType) *TypeDeclError
 	process_decl_stmt = func(s ast.DeclType) *TypeDeclError {
 		var i = uint(len(decls))
 		decls = append(decls, s)
-		var params, bounds, err, err_node = CollectTypeParams(s.Params)
+		var params, bounds, defaults, err, err_node =
+			CollectTypeParams(s.Params)
 		if err != nil { return &TypeDeclError {
 			Point:    ErrorPointFrom(err_node),
 			Concrete: *err,
 		} }
 		params_map[i] = params
 		bounds_map[i] = bounds
+		defaults_map[i] = defaults
 		switch u := s.TypeValue.TypeValue.(type) {
 		case ast.UnionType:
 			for case_index, case_decl := range u.Cases {
@@ -203,6 +217,7 @@ func RegisterRawTypes(mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 		var params = params_map[uint(i)]
 		raw.ParamsMap[type_sym] = params
 		raw.BoundsMap[type_sym] = bounds_map[uint(i)]
+		raw.DefaultsMap[type_sym] = defaults_map[uint(i)]
 		var case_index, is_case_type = case_index_map[uint(i)]
 		if is_case_type {
 			var parent_i = case_parent_map[uint(i)]
@@ -301,7 +316,22 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, TypeDe
 		}
 		var val, err = RawTypeValFrom(t.TypeValue, info, ctx)
 		if err != nil { return nil, nil, raise_all(name, err) }
-		// 3.4. Get bound types
+		// 3.4. Construct a top-level TypeConstructContext
+		//      and construct default types for parameters
+		var top_cons_ctx = TypeConstructContext {
+			Module:     mod,
+			Parameters: make([] TypeParam, 0),
+		}
+		var defaults = make(map[uint] Type)
+		var raw_defaults = raw.DefaultsMap[name]
+		for i, d := range raw_defaults {
+			if d.HasValue {
+				var t, err = RawTypeFrom(d.Value, info.TypeNodeMap, top_cons_ctx)
+				if err != nil { return nil, nil, raise_all(name, err) }
+				defaults[uint(i)] = t
+			}
+		}
+		// 3.5. Get bound types
 		var bounds = TypeBounds {
 			Sub:   make(map[uint] Type),
 			Super: make(map[uint] Type),
@@ -310,21 +340,22 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, TypeDe
 		for i, bound := range raw_bounds {
 			switch b := bound.(type) {
 			case ast.TypeLowerBound:
-				var t, err = RawTypeFrom(b.BoundType, info.TypeNodeMap, ctx.TypeConstructContext)
+				var t, err = RawTypeFrom(b.BoundType, info.TypeNodeMap, cons_ctx)
 				if err != nil { return nil, nil, raise_all(name, err) }
 				bounds.Sub[uint(i)] = t
 			case ast.TypeHigherBound:
-				var t, err = RawTypeFrom(b.BoundType, info.TypeNodeMap, ctx.TypeConstructContext)
+				var t, err = RawTypeFrom(b.BoundType, info.TypeNodeMap, cons_ctx)
 				if err != nil { return nil, nil, raise_all(name, err) }
 				bounds.Super[uint(i)] = t
 			}
 		}
-		// 3.5. Use the generated TypeVal to construct a GenericType
+		// 3.6. Use the generated TypeVal to construct a GenericType
 		//      and register it to the TypeRegistry
 		reg[name] = &GenericType {
 			Tags:     tags,
 			Params:   params,
 			Bounds:   bounds,
+			Defaults: defaults,
 			Value:    val,
 			Node:     t.Node,
 			CaseInfo: raw.CaseInfoMap[name],
@@ -371,20 +402,48 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, TypeDe
 	// 5. Validate types
 	var errs ([] *TypeDeclError) = nil
 	for name, g := range reg {
-		var cons_ctx = TypeConstructContext {
-			Module:     idx[name.ModuleName],
-			Parameters: g.Params,
+		var make_ctx = func(params ([] TypeParam)) TypeValidationContext {
+			var cons_ctx = TypeConstructContext {
+				Module:     idx[name.ModuleName],
+				Parameters: params,
+			}
+			var val_ctx = TypeValidationContext {
+				TypeConstructContext: cons_ctx,
+				Registry: reg,
+			}
+			return val_ctx
 		}
-		var val_ctx = TypeValidationContext {
-			TypeConstructContext: cons_ctx,
-			Registry:             reg,
-		}
+		var g_ctx = make_ctx(g.Params)
+		var top_ctx = make_ctx([] TypeParam {})
 		// 5.1. Validate type values
-		var err = ValidateTypeVal(g.Value, info, val_ctx)
+		var err = ValidateTypeVal(g.Value, info, g_ctx)
 		if err != nil {
 			errs = append(errs, raise(name, err))
 		}
-		// 5.2. Validate bound types
+		// 5.2. Validate default parameter values
+		var defaults = g.Defaults
+		var min_default_index = ^uint(0)
+		for i, t := range defaults {
+			var err = ValidateType(t, info.TypeNodeMap, top_ctx)
+			if err != nil {
+				errs = append(errs, raise(name, err))
+			}
+			if i < min_default_index {
+				min_default_index = i
+			}
+		}
+		if len(defaults) > 0 {
+			for i := min_default_index; i < uint(len(defaults)); i += 1 {
+				var _, default_specified = defaults[i]
+				if !(default_specified) {
+					return nil, nil, [] *TypeDeclError { {
+						Point:    ErrorPointFrom(g.Node),
+						Concrete: E_TypeIncompleteDefaultParameters {},
+					} }
+				}
+			}
+		}
+		// 5.3. Validate bound types
 		for _, bounds := range [](map[uint] Type) { g.Bounds.Sub, g.Bounds.Super } {
 			for _, bound := range bounds {
 				var param, is_param = bound.(*ParameterType)
@@ -392,11 +451,11 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, TypeDe
 					errs = append(errs, raise(name, &TypeError {
 						Point:    ErrorPointFrom(info.TypeNodeMap[bound]),
 						Concrete: E_InvalidBoundType {
-							Type: val_ctx.Parameters[param.Index].Name,
+							Type: g_ctx.Parameters[param.Index].Name,
 						},
 					}))
 				}
-				var err = ValidateType(bound, info.TypeNodeMap, val_ctx)
+				var err = ValidateType(bound, info.TypeNodeMap, g_ctx)
 				if err != nil {
 					errs = append(errs, raise(name, err))
 				}
@@ -405,27 +464,49 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, TypeDe
 	}
 	// 6. Check type bounds
 	for name, g := range reg {
-		var cons_ctx = TypeConstructContext {
-			Module:     idx[name.ModuleName],
-			Parameters: g.Params,
+		var make_ctx = func(params ([] TypeParam)) TypeBoundsContext {
+			var cons_ctx = TypeConstructContext {
+				Module:     idx[name.ModuleName],
+				Parameters: g.Params,
+			}
+			var val_ctx = TypeValidationContext {
+				TypeConstructContext: cons_ctx,
+				Registry: reg,
+			}
+			var bound_ctx = TypeBoundsContext {
+				TypeValidationContext: val_ctx,
+				Bounds: g.Bounds,
+			}
+			return bound_ctx
 		}
-		var val_ctx = TypeValidationContext {
-			TypeConstructContext: cons_ctx,
-			Registry:             reg,
+		var g_ctx = make_ctx(g.Params)
+		var top_ctx = make_ctx([] TypeParam {})
+		var get_node = func(t Type) ast.Node {
+			return info.TypeNodeMap[t]
 		}
-		var bound_ctx = TypeBoundsContext {
-			TypeValidationContext: val_ctx,
-			Bounds:                g.Bounds,
-		}
-		for _, super := range g.Bounds.Super {
-			var err = CheckTypeBounds(super, info.TypeNodeMap, bound_ctx)
+		for _, t := range g.Defaults {
+			var err = CheckTypeBounds(t, info.TypeNodeMap, top_ctx)
 			if err != nil { errs = append(errs, raise(name, err)) }
 		}
-		for _, sub := range g.Bounds.Sub {
-			var err = CheckTypeBounds(sub, info.TypeNodeMap, bound_ctx)
+		for i, super := range g.Bounds.Super {
+			var err = CheckTypeBounds(super, info.TypeNodeMap, top_ctx)
 			if err != nil { errs = append(errs, raise(name, err)) }
+			var t, has_default = g.Defaults[i]
+			if has_default {
+				var err = CheckTypeArgBound(t, super, SuperBound, get_node, top_ctx)
+				if err != nil { errs = append(errs, raise(name, err)) }
+			}
 		}
-		var err = CheckTypeValBounds(g.Value, info, bound_ctx)
+		for i, sub := range g.Bounds.Sub {
+			var err = CheckTypeBounds(sub, info.TypeNodeMap, top_ctx)
+			if err != nil { errs = append(errs, raise(name, err)) }
+			var t, has_default = g.Defaults[i]
+			if has_default {
+				var err = CheckTypeArgBound(t, sub, SubBound, get_node, top_ctx)
+				if err != nil { errs = append(errs, raise(name, err)) }
+			}
+		}
+		var err = CheckTypeValBounds(g.Value, info, g_ctx)
 		if err != nil { errs = append(errs, raise(name, err)) }
 	}
 	if errs != nil { return nil, nil, errs }
@@ -500,7 +581,7 @@ func RawTypeFrom(ast_type ast.VariousType, info (map[Type] ast.Node), ctx TypeCo
 		var ref_mod = string(a.Module.Name)
 		var ref_name = string(a.Id.Name)
 		if ref_mod == "" && len(a.TypeArgs) == 0 {
-			if ref_name == UnitAlias {
+			if ref_name == UnitName {
 				return got(&AnonymousType { Unit{} })
 			} else if ref_name == NeverTypeName {
 				return got(&NeverType {})
@@ -571,34 +652,28 @@ func RawTypeFromRepr(ast_repr ast.VariousRepr, info (map[Type] ast.Node), ctx Ty
 			}
 		}
 	case ast.ReprBundle:
-		if len(a.Fields) == 0 {
-			// there isn't an empty bundle,
-			// assume it to be the unit type
-			return got(&AnonymousType { Unit{} })
-		} else {
-			var fields = make(map[string] Field)
-			for i, f := range a.Fields {
-				var f_name = ast.Id2String(f.Name)
-				if f_name == IgnoreMark {
-					return nil, &TypeError {
-						Point:    ErrorPointFrom(f.Name.Node),
-						Concrete: E_InvalidFieldName { f_name },
-					}
-				}
-				var _, exists = fields[f_name]
-				if exists { return nil, &TypeError {
+		var fields = make(map[string] Field)
+		for i, f := range a.Fields {
+			var f_name = ast.Id2String(f.Name)
+			if f_name == IgnoreMark {
+				return nil, &TypeError {
 					Point:    ErrorPointFrom(f.Name.Node),
-					Concrete: E_DuplicateField { f_name },
-				} }
-				var f_type, err = RawTypeFrom(f.Type, info, ctx)
-				if err != nil { return nil, err }
-				fields[f_name] = Field {
-					Type:  f_type,
-					Index: uint(i),
+					Concrete: E_InvalidFieldName { f_name },
 				}
 			}
-			return got(&AnonymousType { Bundle { fields } })
+			var _, exists = fields[f_name]
+			if exists { return nil, &TypeError {
+				Point:    ErrorPointFrom(f.Name.Node),
+				Concrete: E_DuplicateField { f_name },
+			} }
+			var f_type, err = RawTypeFrom(f.Type, info, ctx)
+			if err != nil { return nil, err }
+			fields[f_name] = Field {
+				Type:  f_type,
+				Index: uint(i),
+			}
 		}
+		return got(&AnonymousType { Bundle { fields } })
 	case ast.ReprFunc:
 		var input, err1 = RawTypeFrom(a.Input, info, ctx)
 		if err1 != nil { return nil, err1 }
