@@ -24,7 +24,7 @@ const (
 
 func CheckTypeValBounds(val TypeVal, info TypeNodeInfo, ctx TypeBoundsContext) *TypeError {
 	switch V := val.(type) {
-	case *Union:
+	case *Enum:
 		var union_b = ctx.Bounds
 		for _, case_t := range V.CaseTypes {
 			var case_g = ctx.Registry[case_t.Name]

@@ -1,4 +1,4 @@
-type Value union {
+type Value enum {
     type Object  Map[String,Value];
     type Array   Array[Value];
     type Boolean Bool;

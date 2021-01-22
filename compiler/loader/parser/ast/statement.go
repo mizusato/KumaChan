@@ -114,9 +114,9 @@ func (impl NativeType) TypeDef() {}
 type NativeType struct {
     Node   `part:"t_native"`
 }
-func (impl UnionType) TypeDef() {}
-type UnionType struct {
-    Node                 `part:"t_union"`
+func (impl EnumType) TypeDef() {}
+type EnumType struct {
+    Node                 `part:"t_enum"`
     Cases  [] DeclType   `list_more:"" item:"decl_type"`
 }
 func (impl ImplicitType) TypeDef() {}

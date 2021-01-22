@@ -93,7 +93,7 @@ func GetIdentifierFullRegexp() *regexp.Regexp {
 
 var __ConditionalKeywords = [...] string {
     "@import", "@from",
-    "@type", "@union", "@native",
+    "@type", "@enum", "@native",
     "@weak", "@protected", "@opaque",
     "@private", "@public", "@function", "@const", "@do",
     "@<", "@>",
@@ -146,9 +146,9 @@ var __SyntaxDefinition = [...] string {
     "decl_type = tags @type name! type_params type_def ;!",
       "tags? = tag tags",
         "tag = Pragma",
-      "type_def = t_native | t_union | t_implicit | t_boxed",
+      "type_def = t_native | t_enum | t_implicit | t_boxed",
         "t_native = @native",
-        "t_union = @union {! decl_type! more_decl_types }!", // TODO: union -> enum
+        "t_enum = @enum {! decl_type! more_decl_types }!",
           "more_decl_types? = decl_type more_decl_types",
         "t_implicit = @implicit repr_bundle",
         "t_boxed = box_option inner_type",

@@ -1,6 +1,6 @@
 import assets from './assets';
 
-type Value union {
+type Value enum {
      type Double (String,String);
      type Single { content: String };
 };

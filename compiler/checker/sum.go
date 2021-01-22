@@ -218,7 +218,7 @@ func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprErro
 	var info = ctx.GetExprInfo(msw.Node)
 	var A = uint(len(msw.Arguments))
 	var args = make([] Expr, A)
-	var unions = make([] *Union, A)
+	var unions = make([] *Enum, A)
 	var unions_args = make([][] Type, A)
 	for i, arg_node := range msw.Arguments {
 		var semi, err1 = Check(arg_node, ctx)
@@ -603,7 +603,7 @@ func AssignMultiSwitchTo(expected Type, msw SemiTypedMultiSwitch, info ExprInfo,
 }
 
 
-func ExtractUnion(t Type, ctx ExprContext, cross_reactive bool) (*Union, []Type, bool, bool) {
+func ExtractUnion(t Type, ctx ExprContext, cross_reactive bool) (*Enum, []Type, bool, bool) {
 	switch T := t.(type) {
 	case *NamedType:
 		if cross_reactive && IsReactive(T) {
@@ -618,7 +618,7 @@ func ExtractUnion(t Type, ctx ExprContext, cross_reactive bool) (*Union, []Type,
 		var reg = ctx.GetTypeRegistry()
 		var g = reg[T.Name]
 		switch gv := g.Value.(type) {
-		case *Union:
+		case *Enum:
 			return gv, T.Args, false, true
 		case *Boxed:
 			var ctx_mod = ctx.GetModuleName()
@@ -669,7 +669,7 @@ func GetMultiSwitchArgumentTuple(msw MultiSwitch, info ExprInfo) Expr {
 	}
 }
 
-func GetCaseInfo(u *Union, args []Type, sym loader.Symbol) (uint, []Type, bool) {
+func GetCaseInfo(u *Enum, args []Type, sym loader.Symbol) (uint, []Type, bool) {
 	for index, case_type := range u.CaseTypes {
 		if case_type.Name == sym {
 			var case_args = make([]Type, len(case_type.Params))

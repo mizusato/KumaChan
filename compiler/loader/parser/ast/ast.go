@@ -63,7 +63,7 @@ var __NodeRegistry = []interface{} {
     NativeType {},
     ImplicitType {},
 	BoxedType {},
-    UnionType {},
+    EnumType {},
     TypeParam {},
     TypeParamDefault {},
     VariousTypeBound {},

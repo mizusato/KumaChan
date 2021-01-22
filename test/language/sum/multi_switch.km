@@ -1,4 +1,4 @@
-type ABC union {
+type ABC enum {
      type A;
      type B;
      type C;

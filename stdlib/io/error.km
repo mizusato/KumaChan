@@ -1,6 +1,6 @@
 type Error native;
 
-type ErrorKind union {
+type ErrorKind enum {
     type EOF;
     type ClosedPipe;
     type UnknownError;

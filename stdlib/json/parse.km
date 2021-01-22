@@ -4,7 +4,7 @@ type ParserState {
     pos:     Number,
     status:  ParserStatus
 };
-type ParserStatus union {
+type ParserStatus enum {
     type ParseValue;
     type ParseObjectKey   { entries: Seq[(String,Value)] };
     type ParseObjectValue { entries: Seq[(String,Value)], key: String };

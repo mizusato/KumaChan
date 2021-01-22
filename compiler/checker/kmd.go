@@ -284,7 +284,7 @@ func IsKmdApiPublic(sym loader.Symbol, reg TypeRegistry) bool {
 		} else {
 			return true
 		}
-	case *Union:
+	case *Enum:
 		for _, case_t := range def.CaseTypes {
 			var case_public = IsKmdApiPublic(case_t.Name, reg)
 			if !(case_public) {
@@ -318,7 +318,7 @@ func GetKmdSchema (
 		}
 		var generic = len(g.Params) > 0
 		return GetKmdInnerTypeSchema(id, generic, inner, p, reg, mapping)
-	case *Union:
+	case *Enum:
 		var index_map = make(map[kmd.TypeId] uint)
 		for i, case_t := range def.CaseTypes {
 			var case_id, exists = mapping[case_t.Name]
@@ -458,7 +458,7 @@ func GetKmdType (
 					}
 				}
 				return kmd.AlgebraicType(kmd.Tuple, id), nil
-			case *Union:
+			case *Enum:
 				return kmd.AlgebraicType(kmd.Union, id), nil
 			}
 		}

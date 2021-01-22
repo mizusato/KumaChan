@@ -165,7 +165,7 @@ func RegisterRawTypes(mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 		bounds_map[i] = bounds
 		defaults_map[i] = defaults
 		switch u := s.TypeValue.TypeValue.(type) {
-		case ast.UnionType:
+		case ast.EnumType:
 			for case_index, case_decl := range u.Cases {
 				var case_i = uint(len(decls))
 				var err = process_decl_stmt(case_decl)
@@ -521,7 +521,7 @@ func RawTypeValFrom(ast_val ast.VariousTypeDef, info TypeNodeInfo, ctx RawTypeCo
 		return val, nil
 	}
 	switch a := ast_val.TypeValue.(type) {
-	case ast.UnionType:
+	case ast.EnumType:
 		var raw_reg = ctx.Registry
 		var case_types = make([] CaseType, len(a.Cases))
 		for i, case_decl := range a.Cases {
@@ -532,7 +532,7 @@ func RawTypeValFrom(ast_val ast.VariousTypeDef, info TypeNodeInfo, ctx RawTypeCo
 				Params: mapping,
 			}
 		}
-		return got(&Union { case_types })
+		return got(&Enum { case_types })
 	case ast.BoxedType:
 		var inner, specified = a.Inner.(ast.VariousType)
 		if specified {

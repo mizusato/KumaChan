@@ -30,8 +30,8 @@ func TypeParamsNames(params ([] TypeParam)) ([] string) {
 
 type TypeVal interface { TypeVal() }
 
-func (impl *Union) TypeVal() {}
-type Union struct {
+func (impl *Enum) TypeVal() {}
+type Enum struct {
 	CaseTypes  [] CaseType
 }
 type CaseType struct {

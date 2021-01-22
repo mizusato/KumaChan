@@ -21,7 +21,7 @@ func (ctx TypeValidationContext) GetVarianceContext() TypeVarianceContext {
 func ValidateTypeVal(val TypeVal, info TypeNodeInfo, ctx TypeValidationContext) *TypeError {
 	var val_point = ErrorPointFrom(info.ValNodeMap[val])
 	switch V := val.(type) {
-	case *Union:
+	case *Enum:
 		var case_amount = uint(len(V.CaseTypes))
 		var max = uint(lang.SumMaxBranches)
 		if case_amount > max { return &TypeError {

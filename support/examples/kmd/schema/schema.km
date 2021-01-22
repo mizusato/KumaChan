@@ -10,7 +10,7 @@ type Point {
 };
 
 # data: name=Chain, ver=v1
-type Chain[+R] union {
+type Chain[+R] enum {
     # data: name=End, ver=v1
     type End;
     # data: name=Next, ver=v1
@@ -18,7 +18,7 @@ type Chain[+R] union {
 };
 
 # data: name=Shape, ver=v1
-type Shape union {
+type Shape enum {
     # data: name=Line, ver=v1
     type Line (Point, Point);
     # data: name=Polygon, ver=v1

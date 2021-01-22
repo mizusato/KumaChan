@@ -109,7 +109,7 @@ func AutoComplete(req AutoCompleteRequest, ctx ServerContext) AutoCompleteRespon
 		switch s := stmt.(type) {
 		case ast.DeclType:
 			switch v := s.TypeValue.TypeValue.(type) {
-			case ast.UnionType:
+			case ast.EnumType:
 				for _, case_decl := range v.Cases {
 					process_statement(case_decl, mod)
 				}
@@ -220,7 +220,7 @@ func AutoComplete(req AutoCompleteRequest, ctx ServerContext) AutoCompleteRespon
 					}
 				case ast.DeclType:
 					switch v := s.TypeValue.TypeValue.(type) {
-					case ast.UnionType:
+					case ast.EnumType:
 						for _, case_decl := range v.Cases {
 							process_core_statement(case_decl)
 						}
