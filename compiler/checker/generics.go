@@ -338,6 +338,7 @@ func GetCertainType(type_ Type, point ErrorPoint, ctx ExprContext) (Type, *ExprE
 		return &AnyType {}, nil
 	case *ParameterType:
 		if T.BeingInferred {
+			// TODO: make active type exact
 			var inferred, exists = ctx.Inferring.Arguments[T.Index]
 			if exists {
 				return inferred, nil
