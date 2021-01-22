@@ -44,15 +44,19 @@ func CheckArray(array ast.Array, ctx ExprContext) (SemiExpr, *ExprError) {
 
 
 func AssignArrayTo(expected Type, array SemiTypedArray, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
+	// TODO: revise this function
 	switch E := expected.(type) {
 	default:
 		var param, is_param = expected.(*ParameterType)
 		if is_param {
 			if param.BeingInferred {
 				if !(ctx.Inferring.Enabled) { panic("something went wrong") }
-				var inferred, exists = ctx.Inferring.Arguments[param.Index]
+				var active, exists = ctx.Inferring.Arguments[param.Index]
 				if exists {
-					return AssignArrayTo(inferred, array, info, ctx)
+					var t = active.CurrentValue
+					var expr, err = AssignArrayTo(t, array, info, ctx)
+					if err != nil { return Expr{}, err }
+					return TypedAssignTo(expected, expr, ctx)
 				}
 			} else {
 				var sub, has_sub = ctx.TypeBounds.Sub[param.Index]

@@ -52,10 +52,16 @@ func AssignLambdaTo(expected Type, lambda UntypedLambda, info ExprInfo, ctx Expr
 			//
 			var output_typed, err3 = AssignTo(output_t, output_semi, inner_ctx)
 			if err3 != nil { return Expr{}, err3 }
+			var output_certain, err4 = GetCertainType(output_t, info.ErrorPoint, inner_ctx)
+			if err4 != nil { panic("something went wrong") }
+			var _, ok = AssignType(output_certain, output_typed.Type, ToInferred, inner_ctx)
+			if !(ok) {
+				panic("type system internal error (likely a bug)")
+			}
 			return Expr {
 				Type:  &AnonymousType { Func {
 					Input:  input_t,
-					Output: output_typed.Type,
+					Output: output_certain,
 				} },
 				Info:  info,
 				Value: Lambda {

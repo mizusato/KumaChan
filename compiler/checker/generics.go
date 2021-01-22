@@ -52,9 +52,9 @@ func GenericFunctionCall (
 		})
 		var inferred_args = make([] Type, type_arity)
 		for i := 0; i < type_arity; i += 1 {
-			var t, exists = inf_ctx.Inferring.Arguments[uint(i)]
+			var active, exists = inf_ctx.Inferring.Arguments[uint(i)]
 			if exists {
-				inferred_args[i] = t
+				inferred_args[i] = active.CurrentValue
 			} else {
 				if output_v[i] == Covariant {
 					inferred_args[i] = &NeverType {}
@@ -69,10 +69,8 @@ func GenericFunctionCall (
 			}
 		}
 		var input_type = FillTypeArgs(raw_input_type, inferred_args)
-		var _, ok = AssignType(input_type, arg_typed.Type, Matching, ctx)
+		var _, ok = AssignType(input_type, arg_typed.Type, ToInferred, ctx)
 		if !(ok) {
-			// var inf_ctx = ctx.WithInferringEnabled(f.TypeParams)
-			// var _, _ = AssignTo(marked_input_type, arg, inf_ctx)
 			panic("type system internal error (likely a bug)")
 		}
 		var output_type = FillTypeArgs(raw_output_type, inferred_args)
@@ -173,17 +171,17 @@ func GenericFunctionAssignTo (
 		}
 		var inferred_args = make([] Type, type_arity)
 		for i := 0; i < type_arity; i += 1 {
-			inferred_args[i] = inf_ctx.Inferring.Arguments[uint(i)]
+			inferred_args[i] = inf_ctx.Inferring.Arguments[uint(i)].CurrentValue
 		}
 		var f_type = FillTypeArgs(f_raw_type, inferred_args)
-		_, ok = AssignType(exp_certain, f_type, Matching, ctx)
+		_, ok = AssignType(f_type, exp_certain, FromInferred, ctx)
 		if !(ok) {
-			panic("something went wrong")
+			panic("type system internal error (likely a bug)")
 		}
 		f_ref, err := MakeRefFunction(name, index, inferred_args, f_node, ctx)
 		if err != nil { return Expr{}, err }
 		return Expr {
-			Type:  f_type,
+			Type:  exp_certain,
 			Value: f_ref,
 			Info:  info,
 		}, nil
@@ -338,10 +336,14 @@ func GetCertainType(type_ Type, point ErrorPoint, ctx ExprContext) (Type, *ExprE
 		return &AnyType {}, nil
 	case *ParameterType:
 		if T.BeingInferred {
-			// TODO: make active type exact
-			var inferred, exists = ctx.Inferring.Arguments[T.Index]
+			var active, exists = ctx.Inferring.Arguments[T.Index]
 			if exists {
-				return inferred, nil
+				ctx.Inferring.Arguments[T.Index] = ActiveType {
+					CurrentValue: active.CurrentValue,
+					Constraint:   AT_Exact,
+				}
+				var t = active.CurrentValue
+				return t, nil
 			} else {
 				return nil, &ExprError {
 					Point:    point,

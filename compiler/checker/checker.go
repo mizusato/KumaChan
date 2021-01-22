@@ -85,9 +85,24 @@ type ExprContext struct {
 type TypeArgsInferringContext struct {
 	Enabled      bool
 	Parameters   [] TypeParam
-	Arguments    map[uint] Type  // mutable (interior)
-	// TODO: Arguments map[uint] ActiveType
-	//       type ActiveType (Type, (Exact|OrBigger|OrSmaller))
+	Arguments    map[uint] ActiveType  // mutable (interior)
+}
+type ActiveType struct {
+	CurrentValue  Type
+	Constraint    ActiveTypeConstraint
+}
+type ActiveTypeConstraint int
+const (
+	AT_Exact ActiveTypeConstraint = iota
+	AT_ExactOrBigger
+	AT_ExactOrSmaller
+)
+func (ctx TypeArgsInferringContext) GetPlainArgs() (map[uint] Type) {
+	var arg_types = make(map[uint] Type)
+	for i, arg := range ctx.Arguments {
+		arg_types[i] = arg.CurrentValue
+	}
+	return arg_types
 }
 func (ctx TypeArgsInferringContext) MergeArgsFrom(another TypeArgsInferringContext) {
 	if ctx.Enabled && another.Enabled {
@@ -179,7 +194,7 @@ func (ctx ExprContext) DescribeInferredType(t Type) string {
 		return DescribeType(t, TypeDescContext {
 			ParamNames:    TypeParamsNames(ctx.TypeParams),
 			InferredNames: TypeParamsNames(ctx.Inferring.Parameters),
-			InferredTypes: ctx.Inferring.Arguments,
+			InferredTypes: ctx.Inferring.GetPlainArgs(),
 			CurrentModule: ctx.GetModuleName(),
 		})
 	} else {
@@ -320,7 +335,7 @@ func (ctx ExprContext) WithInferringEnabled(params ([] TypeParam)) ExprContext {
 	new_ctx.Inferring = TypeArgsInferringContext {
 		Enabled:    true,
 		Parameters: params,
-		Arguments:  make(map[uint] Type),
+		Arguments:  make(map[uint] ActiveType),
 	}
 	return new_ctx
 }
@@ -329,7 +344,7 @@ func (ctx ExprContext) WithInferringStateCloned() ExprContext {
 	if ctx.Inferring.Enabled {
 		var new_ctx ExprContext
 		*(&new_ctx) = ctx
-		var cloned_args = make(map[uint] Type)
+		var cloned_args = make(map[uint] ActiveType)
 		for k, v := range new_ctx.Inferring.Arguments {
 			cloned_args[k] = v
 		}
@@ -337,26 +352,6 @@ func (ctx ExprContext) WithInferringStateCloned() ExprContext {
 		return new_ctx
 	} else {
 		return ctx
-	}
-}
-
-func (ctx ExprContext) WithInferringStateSaved() (struct{}, func()) {
-	if ctx.Inferring.Enabled {
-		var args = ctx.Inferring.Arguments
-		var saved = make(map[uint] Type)
-		for k, v := range args {
-			saved[k] = v
-		}
-		return struct{}{}, func() {
-			for k, _ := range args {
-				delete(args, k)
-			}
-			for k, v := range saved {
-				args[k] = v
-			}
-		}
-	} else {
-		return struct{}{}, func() {}
 	}
 }
 

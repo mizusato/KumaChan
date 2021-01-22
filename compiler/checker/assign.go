@@ -227,11 +227,61 @@ func DirectAssignType(inferred Type, given Type, d AssignDirection, ctx ExprCont
 	case *ParameterType:
 		if I.BeingInferred {
 			if !(ctx.Inferring.Enabled) { panic("something went wrong") }
-			var inferred_t, exists = ctx.Inferring.Arguments[I.Index]
+			var active, exists = ctx.Inferring.Arguments[I.Index]
 			if exists {
-				return DirectAssignType(inferred_t, given, d, ctx)
+				var constraint = active.Constraint
+				var c = active.CurrentValue
+				var r = InverseDirection(d)
+				switch constraint {
+				case AT_ExactOrBigger:
+					var exact_t, ok = DirectAssignType(c, given, d, ctx)
+					if ok {
+						return exact_t, true
+					} else {
+						if d == ToInferred {
+							var _, ok = AssignType(c, given, r, ctx)
+							if ok {
+								ctx.Inferring.Arguments[I.Index] = ActiveType {
+									CurrentValue: given,
+									Constraint:   constraint,
+								}
+								return given, true
+							}
+						}
+						return nil, false
+					}
+				case AT_ExactOrSmaller:
+					var exact_t, ok = DirectAssignType(c, given, d, ctx)
+					if ok {
+						return exact_t, true
+					} else {
+						if d == FromInferred {
+							var _, ok = AssignType(c, given, r, ctx)
+							if ok {
+								ctx.Inferring.Arguments[I.Index] = ActiveType {
+									CurrentValue: given,
+									Constraint:   constraint,
+								}
+							}
+							return given, true
+						}
+						return nil, false
+					}
+				case AT_Exact:
+					return DirectAssignType(c, given, d, ctx)
+				}
 			} else {
-				ctx.Inferring.Arguments[I.Index] = given
+				var constraint ActiveTypeConstraint
+				switch d {
+				case ToInferred:   constraint = AT_ExactOrBigger
+				case FromInferred: constraint = AT_ExactOrSmaller
+				case Matching:     constraint = AT_Exact
+				default: panic("impossible branch")
+				}
+				ctx.Inferring.Arguments[I.Index] = ActiveType {
+					CurrentValue: given,
+					Constraint:   constraint,
+				}
 				return given, true
 			}
 		} else {
@@ -314,8 +364,6 @@ func DirectAssignType(inferred Type, given Type, d AssignDirection, ctx ExprCont
 						return nil, false
 					}
 					var L = len(T_.Elements)
-					var _, restore = ctx.WithInferringStateSaved()
-					var forward_ok = true
 					var elements = make([] Type, L)
 					for i := 0; i < L; i += 1 {
 						var e = I_.Elements[i]
@@ -324,35 +372,10 @@ func DirectAssignType(inferred Type, given Type, d AssignDirection, ctx ExprCont
 						if ok {
 							elements[i] = el_t
 						} else {
-							forward_ok = false
-							break
-						}
-					}
-					if forward_ok {
-						return &AnonymousType { Tuple { elements } }, true
-					} else {
-						// TODO: remove this workaround after inferring fixed
-						// forward not ok, restore state and try backward
-						restore()
-						var backward_ok = true
-						var elements = make([] Type, L)
-						for i := L-1; i >= 0; i -= 1 {
-							var e = I_.Elements[i]
-							var t = T_.Elements[i]
-							var el_t, ok = AssignType(e, t, d, ctx)
-							if ok {
-								elements[i] = el_t
-							} else {
-								backward_ok = false
-								break
-							}
-						}
-						if backward_ok {
-							return &AnonymousType { Tuple { elements } }, true
-						} else {
 							return nil, false
 						}
 					}
+					return &AnonymousType { Tuple { elements } }, true
 				}
 			case Bundle:
 				switch T_ := T.Repr.(type) {

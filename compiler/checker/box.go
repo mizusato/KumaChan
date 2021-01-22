@@ -99,16 +99,17 @@ func Box (
 			}
 		}
 		var inferred_args = make([] Type, g_type_arity)
-		for i, t := range inf_ctx.Inferring.Arguments {
-			inferred_args[i] = t
+		for i, active := range inf_ctx.Inferring.Arguments {
+			inferred_args[i] = active.CurrentValue
 		}
 		var inferred_type = &NamedType {
 			Name: g_type_name,
 			Args: inferred_args,
 		}
 		var inner_type = FillTypeArgs(boxed.InnerType, inferred_args)
-		if !(AreTypesEqualInSameCtx(inner_type, expr.Type)) {
-			panic("something went wrong")
+		var _, ok = AssignType(inner_type, expr.Type, ToInferred, ctx)
+		if !(ok) {
+			panic("type system internal error (likely a bug)")
 		}
 		err = CheckTypeArgsBounds(inferred_args, g_type.Params, g_type.Defaults, g_type.Bounds, node, ctx)
 		if err != nil { return Expr{}, err }
