@@ -387,28 +387,28 @@ var EffectFunctions = map[string] Value {
 	"throw": func(err Value) rx.Action {
 		return rx.Throw(err)
 	},
-	"effect-map": func(e rx.Action, f Value, h InteropContext) rx.Action {
+	"action-map": func(e rx.Action, f Value, h InteropContext) rx.Action {
 		return e.Map(func(val rx.Object) rx.Object {
 			return h.Call(f, val)
 		})
 	},
-	"effect-map?": func(e rx.Action, f Value, h InteropContext) rx.Action {
+	"action-map?": func(e rx.Action, f Value, h InteropContext) rx.Action {
 		return e.FilterMap(func(val rx.Object) (rx.Object, bool) {
 			var maybe_mapped = h.Call(f, val).(SumValue)
 			return Unwrap(maybe_mapped)
 		})
 	},
-	"effect-filter": func(e rx.Action, f Value, h InteropContext) rx.Action {
+	"action-filter": func(e rx.Action, f Value, h InteropContext) rx.Action {
 		return e.Filter(func(val rx.Object) bool {
 			return FromBool((h.Call(f, val)).(SumValue))
 		})
 	},
-	"effect-reduce": func(e rx.Action, init Value, f Value, h InteropContext) rx.Action {
+	"action-reduce": func(e rx.Action, init Value, f Value, h InteropContext) rx.Action {
 		return e.Reduce(func(acc rx.Object, val rx.Object) rx.Object {
 			return h.Call(f, ToTuple2(acc, val))
 		}, init)
 	},
-	"effect-scan": func(e rx.Action, init Value, f Value, h InteropContext) rx.Action {
+	"action-scan": func(e rx.Action, init Value, f Value, h InteropContext) rx.Action {
 		return e.Scan(func(acc rx.Object, val rx.Object) rx.Object {
 			return h.Call(f, ToTuple2(acc, val))
 		}, init)
@@ -436,7 +436,7 @@ var EffectFunctions = map[string] Value {
 			return h.Call(f, val).(rx.Action)
 		}, n)
 	},
-	"effect-merge": func(av Value) rx.Action {
+	"action-merge": func(av Value) rx.Action {
 		var arr = container.ArrayFrom(av)
 		var effects = make([] rx.Action, arr.Length)
 		for i := uint(0); i < arr.Length; i += 1 {
@@ -444,7 +444,7 @@ var EffectFunctions = map[string] Value {
 		}
 		return rx.Merge(effects)
 	},
-	"effect-concat": func(av Value) rx.Action {
+	"action-concat": func(av Value) rx.Action {
 		var arr = container.ArrayFrom(av)
 		var effects = make([] rx.Action, arr.Length)
 		for i := uint(0); i < arr.Length; i += 1 {
