@@ -1,4 +1,3 @@
-// TODO: consider two separate types (no subtyping relationship)
 // Action Types
 type Action*[[unit] +T, [never] +E]  native;  // rx.Action       (Observable<T,E>)
 type Action [[unit] +T, [never] +E]  protected Action*[T,E];  // (() => Promise<T,E>)
@@ -55,21 +54,15 @@ public function new-bus[T]:            ( &() Action[Bus[T]] )
     native 'new-bus';
 public function new-reactive[T]:       ( &(T) Action[ReactiveEntity[T]] )
     native 'new-reactive';
-public function with-reactive[T,X,E]:  ( &(T,(&(ReactiveEntity[T])(Action[X,E]))) Action[X,E] )
+public function with-reactive[T, K < Action*[any,any]]:  ( &(T,(&(ReactiveEntity[T])(K))) K )
     native 'with-reactive';
-public function with-reactive*[T,X,E]: ( &(T,(&(ReactiveEntity[T])(Action*[X,E]))) Action*[X,E] )
-    native 'with-reactive';
-public function with-auto-snapshot[T,X,E]:  ( &(T,(&(Reactive[T],(Action,Action,Action*[(ReactiveSnapshots[T],T)]))(Action[X,E]))) Action[X,E] )
-    native 'with-auto-snapshot';
-public function with-auto-snapshot*[T,X,E]: ( &(T,(&(Reactive[T],(Action,Action,Action*[(ReactiveSnapshots[T],T)]))(Action*[X,E]))) Action*[X,E] )
+public function with-auto-snapshot[T, K < Action*[any,any]]:  ( &(T,(&(Reactive[T],(Action,Action,Action*[(ReactiveSnapshots[T],T)]))(K))) K )
     native 'with-auto-snapshot';
 
 // Mutable Containers Operations
 public function new-mutable[T]: ( &() Action[Mutable[T]] )
     native 'new-mutable';
-public function with-mutable[T,X,E]:  ( &(T,(&(Mutable[T])(Action[X,E]))) Action[X,E] )
-    native 'with-mutable';
-public function with-mutable*[T,X,E]: ( &(T,(&(Mutable[T])(Action*[X,E]))) Action*[X,E] )
+public function with-mutable[T, K < Action*[any,any]]:  ( &(T,(&(Mutable[T])(K))) K )
     native 'with-mutable';
 public function get[T]: ( &(Mutable[T]) Action[T] )
     native 'mutable-get';
@@ -118,19 +111,14 @@ public function wait-complete[E]: ( &(Action*[unit,E]) Action[unit,E] )
 public function forever[E]: ( &(Action*[unit,E]) Action[unit,E] )
     native 'forever';
 # alias: await
-public function then[A,B,E]: ( &(Action[A,E],(&(A)(Action[B,E]))) Action[B,E] )
+public function then[A,E, B < Action*[any,E]]: ( &(Action[A,E],(&(A)(B))) B )
     native 'then';
 # alias: await
-public function then[B,E]: ( &(Action[unit,E], Action[B,E]) Action[B,E] )
-    native 'then-shortcut';
-# alias: await*
-public function then*[A,B,E]: ( &(Action[A,E],(&(A)(Action*[B,E]))) Action*[B,E] )
-    native 'then';
-# alias: await*
-public function then*[B,E]: ( &(Action[unit,E], Action*[B,E]) Action*[B,E] )
+public function then[E, B < Action*[any,E]]: ( &(Action[unit,E], B) B )
     native 'then-shortcut';
 public function catch[T,E,F]: ( &(Action[T,E],(&(E)(Action[T,F]))) Action[T,F] )
     native 'catch';
+// TODO: consider renaming this function
 public function catch*[T,E,F]: ( &(Action*[T,E],(&(E)(Action*[T,F]))) Action*[T,F] )
     native 'catch';
 public function catch-retry[T,E]: ( &(Action[T,E],(&(E)(Action[Bool]))) Action[T,E] )
@@ -139,6 +127,7 @@ public function catch-throw[T,E,F]: ( &(Action[T,E],(&(E)(F))) Action[T,F] )
     native 'catch-throw';
 public function throw[T,E]: ( &(E) Action[T,E] )
     native 'throw';
+// TODO: consider renaming map operations on single valued actions
 public function map[A,B,E]:  ( &(Action[A,E],(&(A)(B))) Action[B,E] )
     native 'action-map';
 public function map-to[A,B,E]: ( &(Action[A,E],B) Action[B,E] )

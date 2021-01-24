@@ -8,8 +8,8 @@ do ui-exit-when-window-closed;
 
 public function mouse-position: ( &() UI::Hook[Action*[(Float,Float)]] )
     ( &(_) ( &(k)
-        ~ await* &(pos) := new-bus:[(Float,Float)],
-        ~ await* &(id) := gen-sequential-id,
+        ~ await &(pos) := new-bus:[(Float,Float)],
+        ~ await &(id) := gen-sequential-id,
         let cpt := (k (watch pos)),
         cpt | with (ui-event ("mousemove.hook#" id)
             (ui-callback

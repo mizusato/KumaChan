@@ -7,7 +7,7 @@ do ui-inject-css [assets::style-css];
 do ui-exit-when-window-closed;
 
 private const Root: UI::Component
-    ~ with-reactive* &(selection) := 'foo',
+    ~ with-reactive &(selection) := 'foo',
     (ui-container.styled ['container']) [
         (ui-container.styled ['row']) [
             ui-select selection [('foo','Foo'),('bar','Bar'),('42','42')],

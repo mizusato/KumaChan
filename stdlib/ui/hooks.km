@@ -10,7 +10,7 @@ public function use[T]: ( &(Action*[T],(&(T)(Component))) Component )
 public function ui-state[T]: ( &(T) Hook[Reactive[T]] )
     ( &(initial)
     ( &(k)
-        ~ with-reactive* &(r) := initial,
+        ~ with-reactive &(r) := initial,
         r | k
     ));
 public function ui-list[T]: ( &(Reactive[List[T]]) Hook[(ListKey,Action*[Number],Reactive[T])] )

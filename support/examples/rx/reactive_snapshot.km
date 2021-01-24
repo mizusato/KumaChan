@@ -7,14 +7,14 @@ do ui-inject-css [assets::style-css];
 do ui-exit-when-window-closed;
 
 private const Root: UI::Component
-    ~ with-auto-snapshot* &(text, ops) := '',
+    ~ with-auto-snapshot &(text, ops) := '',
     let (text-undo, text-redo, text-diff) := ops,
     ui-container [
-        ~ with-reactive* &(editing) := No,
+        ~ with-reactive &(editing) := No,
         ~ switch-map &(state) := editing.watch.with-latest-from(text),
         let (is-editing, current-text) := state,
         if is-editing:
-            ~ with-reactive* &(buffer) := current-text,
+            ~ with-reactive &(buffer) := current-text,
             ui-container [
                 (ui-text-input buffer),
                 ~ switch-map &(new-text) := watch buffer,

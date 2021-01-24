@@ -7,7 +7,7 @@ do ui-inject-css [assets::style-css];
 do ui-exit-when-window-closed;
 
 private const Root: UI::Component
-    ~ with-reactive* &(ok) := Yes,
+    ~ with-reactive &(ok) := Yes,
     (ui-container.styled ['container']) [
         ui-checkbox ok,
         if ok:
