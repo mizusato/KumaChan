@@ -301,6 +301,7 @@ func (b *BusImpl) notify(obj Object) {
 		l.Notify(obj)
 	}
 }
+// TODO: rename listener -> watcher
 func (b *BusImpl) copyListeners() ([] Listener) {
 	var the_copy = make([] Listener, len(b.listeners))
 	copy(the_copy, b.listeners)

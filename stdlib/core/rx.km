@@ -1,7 +1,9 @@
+// TODO: consider two separate types (no subtyping relationship)
 // Action Types
 type Action*[[unit] +T, [never] +E]  native;  // rx.Action       (Observable<T,E>)
 type Action [[unit] +T, [never] +E]  protected Action*[T,E];  // (() => Promise<T,E>)
 
+// TODO: consider Reactive[T] < Computed[T] (read,map,liftA)
 // Wired Components
 type Sink[-T]           native;                 // rx.Sink
 type Bus[T]             protected Sink[T];      // rx.Bus      (Subject<T>)
