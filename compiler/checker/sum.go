@@ -490,7 +490,7 @@ func AssignSwitchTo(expected Type, sw SemiTypedSwitch, info ExprInfo, ctx ExprCo
 		switch E := expected.(type) {
 		case *NamedType:
 		    // TODO: unbox instead of direct name comparison
-			if E.Name == __Action || E.Name == __ActionMultiValue {
+			if E.Name == __ActionMultiValue {
 				goto ok
 			}
 		}
