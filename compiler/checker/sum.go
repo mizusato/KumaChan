@@ -487,20 +487,15 @@ func AssignSwitchTo(expected Type, sw SemiTypedSwitch, info ExprInfo, ctx ExprCo
 	var err1 = RequireExplicitType(expected, info)
 	if err1 != nil { return Expr{}, err1 }
 	if sw.Reactive {
-		switch E := expected.(type) {
-		case *NamedType:
-		    // TODO: unbox instead of direct name comparison
-			if E.Name == __ActionMultiValue {
-				goto ok
+		var _, ok = AssignType(expected, __AnyActionType, FromInferred, ctx)
+		if !(ok) {
+			return Expr{}, &ExprError {
+				Point: info.ErrorPoint,
+				Concrete: E_InvalidTypeForReactiveSwitch {
+					Type: ctx.DescribeInferredType(expected),
+				},
 			}
 		}
-		return Expr{}, &ExprError {
-			Point:    info.ErrorPoint,
-			Concrete: E_InvalidTypeForReactiveSwitch {
-				Type: ctx.DescribeInferredType(expected),
-			},
-		}
-		ok:
 	}
 	var branches = make([] Branch, len(sw.Branches))
 	for i, branch_semi := range sw.Branches {
