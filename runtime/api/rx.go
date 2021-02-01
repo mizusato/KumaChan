@@ -107,11 +107,7 @@ var EffectFunctions = map[string] Value {
 		return r.Snapshot()
 	},
 	"reactive-read": func(r rx.Reactive) rx.Action {
-		return r.Watch().TakeOne().Map(func(obj rx.Object) rx.Object {
-			var opt = obj.(rx.Optional)
-			if !(opt.HasValue) { panic("something went wrong") }
-			return opt.Value
-		})
+		return r.Read()
 	},
 	"reactive-list-consume": func(r rx.Reactive, k Value, h InteropContext) rx.Action {
 		return rx.KeyTrackedDynamicCombineLatestWaitReady (
@@ -156,8 +152,8 @@ var EffectFunctions = map[string] Value {
 						var arg = &ValProd { Elements: [] Value {
 							key, index_source, proj,
 						} }
-						var item_effect = h.Call(k, arg).(rx.Action)
-						return item_effect
+						var item_action = h.Call(k, arg).(rx.Action)
+						return item_action
 					},
 				}
 			}),
@@ -438,19 +434,19 @@ var EffectFunctions = map[string] Value {
 	},
 	"action-merge": func(av Value) rx.Action {
 		var arr = container.ArrayFrom(av)
-		var effects = make([] rx.Action, arr.Length)
+		var actions = make([] rx.Action, arr.Length)
 		for i := uint(0); i < arr.Length; i += 1 {
-			effects[i] = arr.GetItem(i).(rx.Action)
+			actions[i] = arr.GetItem(i).(rx.Action)
 		}
-		return rx.Merge(effects)
+		return rx.Merge(actions)
 	},
 	"action-concat": func(av Value) rx.Action {
 		var arr = container.ArrayFrom(av)
-		var effects = make([] rx.Action, arr.Length)
+		var actions = make([] rx.Action, arr.Length)
 		for i := uint(0); i < arr.Length; i += 1 {
-			effects[i] = arr.GetItem(i).(rx.Action)
+			actions[i] = arr.GetItem(i).(rx.Action)
 		}
-		return rx.Concat(effects)
+		return rx.Concat(actions)
 	},
 	"with-latest-from": func(signal rx.Action, values rx.Action) rx.Action {
 		return signal.WithLatestFrom(values).Map(func(p rx.Object) rx.Object {
@@ -474,13 +470,13 @@ var EffectFunctions = map[string] Value {
 		})
 	},
 	"combine-latest": func(tuple ProductValue) rx.Action {
-		var effects = make([] rx.Action, len(tuple.Elements))
+		var actions = make([] rx.Action, len(tuple.Elements))
 		for i, el := range tuple.Elements {
-			effects[i] = el.(rx.Action)
+			actions[i] = el.(rx.Action)
 		}
-		return rx.CombineLatest(effects).Map(func(raw rx.Object) rx.Object {
+		return rx.CombineLatest(actions).Map(func(raw rx.Object) rx.Object {
 			var raw_values = raw.([] rx.Optional)
-			var values = make([] Value, len(effects))
+			var values = make([] Value, len(actions))
 			for i := 0; i < len(values); i += 1 {
 				values[i] = Optional2Maybe(raw_values[i])
 			}
@@ -488,22 +484,32 @@ var EffectFunctions = map[string] Value {
 		})
 	},
 	"combine-latest!": func(tuple ProductValue) rx.Action {
-		var effects = make([] rx.Action, len(tuple.Elements))
+		var actions = make([] rx.Action, len(tuple.Elements))
 		for i, el := range tuple.Elements {
-			effects[i] = el.(rx.Action)
+			actions[i] = el.(rx.Action)
 		}
-		return rx.CombineLatestWaitReady(effects).Map(func(values_ rx.Object) rx.Object {
+		return rx.CombineLatestWaitReady(actions).Map(func(values_ rx.Object) rx.Object {
 			var values = values_.([] Value)
 			return &ValProd { Elements: values }
 		})
 	},
 	"combine-latest!-array": func(v Value) rx.Action {
 		var array = container.ArrayFrom(v)
-		var effects = make([] rx.Action, array.Length)
+		var actions = make([] rx.Action, array.Length)
 		for i := uint(0); i < array.Length; i += 1 {
-			effects[i] = array.GetItem(i).(rx.Action)
+			actions[i] = array.GetItem(i).(rx.Action)
 		}
-		return rx.CombineLatestWaitReady(effects)
+		return rx.CombineLatestWaitReady(actions)
+	},
+	"computed": func(tuple ProductValue, f Value, h InteropContext) rx.Action {
+		var actions = make([] rx.Action, len(tuple.Elements))
+		for i, el := range tuple.Elements {
+			actions[i] = el.(rx.Action)
+		}
+		return rx.CombineLatestWaitReady(actions).Map(func(values_ rx.Object) rx.Object {
+			var values = values_.([] Value)
+			return h.Call(f, &ValProd { Elements: values })
+		})
 	},
 }
 

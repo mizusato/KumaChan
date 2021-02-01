@@ -10,8 +10,8 @@ package rx
  *    Reactive[A] --> morph[A->B->A,A->B] --> Reactive[B]
  *    Reactive[(A,B)] --> project[A] --> Reactive[A]
  *    Reactive[(A,B)] --> project[B] --> Reactive[B]
- *    Reactive[A|B]   --> branch[A]  --> Reactive[A] (restricted update operation)
- *    Reactive[A|B]   --> branch[B]  --> Reactive[B] (restricted update operation)
+ *    Reactive[A|B]   --> branch[A]  --> Reactive[A] (restricted read/update operation)
+ *    Reactive[A|B]   --> branch[B]  --> Reactive[B] (restricted read/update operation)
  */
 
 // Sink accepts values
@@ -28,6 +28,7 @@ type Bus interface {
 // Reactive accepts and provides values, while holding a current value
 type Reactive interface {
 	Bus
+	Read() Action
 	Update(f func(old_state Object) Object, k *KeyChain) Action
 	Project(k *KeyChain) Action
 	Snapshot() Action
@@ -157,6 +158,9 @@ type MorphedReactive struct {
 func (m *MorphedReactive) Watch() Action {
 	return m.base.Watch().Map(m.out)
 }
+func (m *MorphedReactive) Read() Action {
+	return m.base.Read().Map(m.out)
+}
 func (m *MorphedReactive) Update(f (func(Object) Object), key_chain *KeyChain) Action {
 	return m.base.Update(func(obj Object) Object {
 		return m.in(obj)(f(m.out(obj)))
@@ -190,6 +194,9 @@ func (p *ProjectedReactive) ChainedKey(key *KeyChain) *KeyChain {
 func (p *ProjectedReactive) Watch() Action {
 	return p.base.Project(p.key).Map(p.out)
 }
+func (p *ProjectedReactive) Read() Action {
+	return p.base.Read().Map(p.out)
+}
 func (p *ProjectedReactive) Emit(obj Object) Action {
 	return p.base.Update(func(old_state Object) Object {
 		return p.in(old_state)(obj)
@@ -214,6 +221,16 @@ type FilterMappedReactive struct {
 func (m *FilterMappedReactive) Watch() Action {
 	return m.base.Watch().FilterMap(m.out)
 }
+func (m *FilterMappedReactive) Read() Action {
+	return m.base.Read().Map(func(current Object) Object {
+		var current_out, ok = m.out(current)
+		if ok {
+			return current_out
+		} else {
+			panic("FilterMappedReactive: invalid read operation")
+		}
+	})
+}
 func (m *FilterMappedReactive) Update(f (func(Object) Object), key_chain *KeyChain) Action {
 	return m.base.Update(func(current Object) Object {
 		var current_out, ok = m.out(current)
@@ -236,6 +253,9 @@ type AutoSnapshotReactive struct {
 }
 func (a AutoSnapshotReactive) Watch() Action {
 	return a.Entity.Watch()
+}
+func (a AutoSnapshotReactive) Read() Action {
+	return a.Entity.Read()
 }
 func (a AutoSnapshotReactive) Emit(obj Object) Action {
 	return a.Entity.Snapshot().Then(func(_ Object) Action {
@@ -266,27 +286,27 @@ func (cb Callback) Emit(obj Object) Action {
 // Basic Implementations of Bus[T] and Reactive[T]
 
 type BusImpl struct {
-	next_id    uint64
-	listeners  [] Listener       // first in, first notified
-	index      map[uint64] uint  // id --> position in listeners
+	next_id   uint64
+	watchers  [] Watcher       // first in, first notified
+	index     map[uint64] uint // id --> position in watchers
 }
-type Listener struct {
+type Watcher struct {
 	Notify  func(Object)
 }
 func CreateBus() *BusImpl {
 	return &BusImpl {
-		next_id:   0,
-		listeners: make([] Listener, 0),
-		index:     make(map[uint64] uint),
+		next_id:  0,
+		watchers: make([] Watcher, 0),
+		index:    make(map[uint64] uint),
 	}
 }
 func (b *BusImpl) Watch() Action {
-	return NewListener(func(next func(Object)) func() {
-		var id = b.addListener(Listener {
+	return NewSubscription(func(next func(Object)) func() {
+		var id = b.addWatcher(Watcher {
 			Notify: next,
 		})
 		return func() {
-			b.removeListener(id)
+			b.removeWatcher(id)
 		}
 	})
 }
@@ -297,25 +317,24 @@ func (b *BusImpl) Emit(obj Object) Action {
 	})
 }
 func (b *BusImpl) notify(obj Object) {
-	for _, l := range b.copyListeners() {
-		l.Notify(obj)
+	for _, w := range b.copyWatcher() {
+		w.Notify(obj)
 	}
 }
-// TODO: rename listener -> watcher
-func (b *BusImpl) copyListeners() ([] Listener) {
-	var the_copy = make([] Listener, len(b.listeners))
-	copy(the_copy, b.listeners)
+func (b *BusImpl) copyWatcher() ([] Watcher) {
+	var the_copy = make([] Watcher, len(b.watchers))
+	copy(the_copy, b.watchers)
 	return the_copy
 }
-func (b *BusImpl) addListener(l Listener) uint64 {
+func (b *BusImpl) addWatcher(w Watcher) uint64 {
 	var id = b.next_id
-	var pos = uint(len(b.listeners))
-	b.listeners = append(b.listeners, l)
+	var pos = uint(len(b.watchers))
+	b.watchers = append(b.watchers, w)
 	b.index[id] = pos
 	b.next_id = (id + 1)
 	return id
 }
-func (b *BusImpl) removeListener(id uint64) {
+func (b *BusImpl) removeWatcher(id uint64) {
 	var pos, exists = b.index[id]
 	if !exists { panic("cannot remove absent listener") }
 	// update index
@@ -327,14 +346,14 @@ func (b *BusImpl) removeListener(id uint64) {
 		}
 	}
 	// update queue
-	b.listeners[pos] = Listener {}
-	var L = uint(len(b.listeners))
+	b.watchers[pos] = Watcher {}
+	var L = uint(len(b.watchers))
 	if !(L >= 1) { panic("something went wrong") }
 	for i := pos; i < (L-1); i += 1 {
-		b.listeners[i] = b.listeners[i + 1]
+		b.watchers[i] = b.watchers[i + 1]
 	}
-	b.listeners[L-1] = Listener {}
-	b.listeners = b.listeners[:L-1]
+	b.watchers[L-1] = Watcher {}
+	b.watchers = b.watchers[:L-1]
 }
 
 type ReactiveImpl struct {
@@ -360,9 +379,9 @@ func CreateReactive(init Object) *ReactiveImpl {
 	}
 }
 func (r *ReactiveImpl) Watch() Action {
-	return NewListener(func(next func(Object)) func() {
+	return NewSubscription(func(next func(Object)) func() {
 		next(r.last_change.Value)
-		var l = r.bus.addListener(Listener {
+		var w = r.bus.addWatcher(Watcher{
 			Notify: func(obj Object) {
 				var change, is_change = obj.(ReactiveStateChange)
 				if is_change {
@@ -371,14 +390,19 @@ func (r *ReactiveImpl) Watch() Action {
 			},
 		})
 		return func() {
-			r.bus.removeListener(l)
+			r.bus.removeWatcher(w)
 		}
 	})
 }
+func (r *ReactiveImpl) Read() Action {
+	return NewSync(func() (Object, bool) {
+		return r.last_change.Value, true
+	})
+}
 func (r *ReactiveImpl) WatchDiff() Action {
-	return NewListener(func(next func(Object)) func() {
+	return NewSubscription(func(next func(Object)) func() {
 		next(Pair { r.snapshots, r.last_change.Value})
-		var l = r.bus.addListener(Listener {
+		var w = r.bus.addWatcher(Watcher{
 			Notify: func(obj Object) {
 				var pair, is_pair = obj.(Pair)
 				if is_pair {
@@ -387,14 +411,14 @@ func (r *ReactiveImpl) WatchDiff() Action {
 			},
 		})
 		return func() {
-			r.bus.removeListener(l)
+			r.bus.removeWatcher(w)
 		}
 	})
 }
 func (r *ReactiveImpl) Project(k *KeyChain) Action {
-	return NewListener(func(next func(Object)) func() {
+	return NewSubscription(func(next func(Object)) func() {
 		next(r.last_change.Value)
-		var l = r.bus.addListener(Listener {
+		var w = r.bus.addWatcher(Watcher {
 			Notify: func(obj Object) {
 				var change, is_change = obj.(ReactiveStateChange)
 				if is_change && k.Includes(change.KeyChain) {
@@ -403,7 +427,7 @@ func (r *ReactiveImpl) Project(k *KeyChain) Action {
 			},
 		})
 		return func() {
-			r.bus.removeListener(l)
+			r.bus.removeWatcher(w)
 		}
 	})
 }

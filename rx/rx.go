@@ -216,7 +216,7 @@ func NewCallback(action func(func(Object))) Action {
 	}}
 }
 
-func NewListener(action func(func(Object))(func())) Action {
+func NewSubscription(action func(func(Object))(func())) Action {
 	return Action { func(sched Scheduler, ob *observer) {
 		var h = action(ob.next)
 		if h != nil {

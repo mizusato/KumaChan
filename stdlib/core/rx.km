@@ -2,7 +2,6 @@
 type Action*[[unit] +T, [never] +E]  native;  // rx.Action       (Observable<T,E>)
 type Action [[unit] +T, [never] +E]  protected Action*[T,E];  // (() => Promise<T,E>)
 
-// TODO: consider Reactive[T] < Computed[T] (read,map,liftA)
 // Wired Components
 type Sink[-T]           native;                 // rx.Sink
 type Bus[T]             protected Sink[T];      // rx.Bus      (Subject<T>)
@@ -71,10 +70,8 @@ public function set[T]: ( &(Mutable[T],T) Action )
 public function swap[T]: ( &(Mutable[T],(&(T)(T))) Action )
     native 'mutable-swap';
 
-// Effect Constructors
+// Action Constructors
 public function with[T,E]: ( &(Action*[T,E],Action) Action*[T,E] )
-    native 'with';
-public function with[T]:   ( &(Action*[T],Action) Action*[T] )
     native 'with';
 public function gen-random: ( &() Action[Float] )
     native 'gen-random';
@@ -103,7 +100,7 @@ public function wait: ( & {timeout:Number} Action )
 public function tick: ( & {interval:Number} Action*[unit] )
     native 'tick';
 
-// Effect Operators
+// Action Operators
 public function take-one[T,E]: ( &(Action*[T,E]) Action[Maybe[T],E] )
     native 'take-one';
 public function wait-complete[E]: ( &(Action*[unit,E]) Action[unit,E] )
@@ -162,33 +159,35 @@ public function with-latest-from[A,B,E]: ( &(Action*[A,E],Action*[B,E]) Action*[
     native 'with-latest-from';
 public function with-latest-from[A,B,E]: ( &(Action*[A,E],Reactive[B]) Action*[(A,B),E] )
     native 'with-latest-from-reactive';
-public function combine-latest[A,B,E]: ( &(Action*[A,E],Action*[B,E]) Action*[(Maybe[A],Maybe[B]),E] )
+public function combine-latest[A,B,E]:
+    ( &(Action*[A,E],Action*[B,E])
+        Action*[(Maybe[A],Maybe[B]),E] )
     native 'combine-latest';
-public function combine-latest[A,B,C]:
-    ( &(Action*[A],Action*[B],Action*[C])
-        Action*[(Maybe[A],Maybe[B],Maybe[C])] )
-    native 'combine-latest';
-public function combine-latest[A,B,C,D]:
-    ( &(Action*[A],Action*[B],Action*[C],Action*[D])
-        Action*[(Maybe[A],Maybe[B],Maybe[C],Maybe[D])] )
+public function combine-latest[A,B,C,E]:
+    ( &(Action*[A,E],Action*[B,E],Action*[C,E])
+        Action*[(Maybe[A],Maybe[B],Maybe[C]),E] )
     native 'combine-latest';
 public function combine-latest[A,B,C,D,E]:
-    ( &(Action*[A],Action*[B],Action*[C],Action*[D],Action*[E])
-        Action*[(Maybe[A],Maybe[B],Maybe[C],Maybe[D],Maybe[E])] )
+    ( &(Action*[A,E],Action*[B,E],Action*[C,E],Action*[D,E])
+        Action*[(Maybe[A],Maybe[B],Maybe[C],Maybe[D]),E] )
     native 'combine-latest';
-public function combine-latest![A,B,E]: ( &(Action*[A,E],Action*[B,E]) Action*[(A,B),E] )
+public function combine-latest![A,B,E]:
+    ( &(Action*[A,E],Action*[B,E]) Action*[(A,B),E] )
     native 'combine-latest!';
-public function combine-latest![A,B,C]:
-    ( &(Action*[A],Action*[B],Action*[C])
-        Action*[(A,B,C)] )
-    native 'combine-latest!';
-public function combine-latest![A,B,C,D]:
-    ( &(Action*[A],Action*[B],Action*[C],Action*[D])
-        Action*[(A,B,C,D)] )
+public function combine-latest![A,B,C,E]:
+    ( &(Action*[A,E],Action*[B,E],Action*[C,E]) Action*[(A,B,C),E] )
     native 'combine-latest!';
 public function combine-latest![A,B,C,D,E]:
-    ( &(Action*[A],Action*[B],Action*[C],Action*[D],Action*[E])
-        Action*[(A,B,C,D,E)] )
+    ( &(Action*[A,E],Action*[B,E],Action*[C,E],Action*[D,E]) Action*[(A,B,C,D),E] )
     native 'combine-latest!';
 public function combine-latest![T,E]: ( &(Array[Action*[T,E]]) Action*[Array[T],E] )
     native 'combine-latest!-array';
+public function computed[A,B,E,X]:
+    ( &((Action*[A,E],Action*[B,E]),(&(A,B)(X))) Action*[X,E] )
+    native 'computed';
+public function computed[A,B,C,E,X]:
+    ( &((Action*[A,E],Action*[B,E],Action*[C,E]),(&(A,B,C)(X))) Action*[X,E] )
+    native 'computed';
+public function computed[A,B,C,D,E,X]:
+    ( &((Action*[A,E],Action*[B,E],Action*[C,E],Action*[D,E]),(&(A,B,C,D)(X))) Action*[X,E] )
+    native 'computed';
