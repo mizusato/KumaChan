@@ -43,9 +43,8 @@ func GenerateApiDocs(idx checker.Index) ApiDocIndex {
 				Id:   sym.String(),
 			})
 			if !(g.CaseInfo.IsCaseType) {
-				var name = sym.SymbolName
-				var content = typeDecl(name, g, reg, mod_name)
-				var wrapped = blockWithName(sym.String(), "api", content)
+				var content = typeDecl(sym, g, reg, mod_name)
+				var wrapped = block("api", content)
 				buf.WriteString(string(wrapped))
 				buf.WriteString("\n")
 			}
@@ -71,10 +70,10 @@ func GenerateApiDocs(idx checker.Index) ApiDocIndex {
 	return result
 }
 
-func typeDecl(name string, g *checker.GenericType, reg checker.TypeRegistry, mod string) Html {
-	return block("type",
+func typeDecl(sym loader.Symbol, g *checker.GenericType, reg checker.TypeRegistry, mod string) Html {
+	return blockWithName(sym.String(), "type",
 		inline("header",
-			keyword("type"), text("name", name),
+			keyword("type"), text("name", sym.SymbolName),
 			typeParams(g.Params, g.Defaults, g.Bounds, mod)),
 		block("definition", typeDef(g, reg, mod)))
 }
@@ -90,7 +89,7 @@ func typeParams (
 	}
 	var contents = make([] Html, len(params))
 	for i, p := range params {
-		var c_name = text("name-type", p.Name)
+		var c_name = text("name", p.Name)
 		var c_variance = text("variance", (func() string {
 			switch p.Variance {
 			case checker.Covariant:     return "+"
@@ -139,13 +138,23 @@ func typeDef(g *checker.GenericType, reg checker.TypeRegistry, mod string) Html 
 			if d.Opaque    { return "opaque" }
 			if d.Protected { return "protected" }
 			if d.Weak      { return "weak" }
+			if d.Implicit  { return "implicit" }
 			return ""
 		})()
+		switch T := d.InnerType.(type) {
+		case *checker.AnonymousType:
+			switch T.Repr.(type) {
+			case checker.Unit:
+				if kind == "" {
+					return Html("")
+				}
+			}
+		}
 		var c_kind = (func() Html {
 			if kind != "" {
-				return inline("kind", keyword(kind))
+				return block("kind", modifier(kind))
 			} else {
-				return inline("kind")
+				return block("kind")
 			}
 		})()
 		return block("boxed",
@@ -154,10 +163,10 @@ func typeDef(g *checker.GenericType, reg checker.TypeRegistry, mod string) Html 
 	case *checker.Enum:
 		var cases = make([] Html, len(d.CaseTypes))
 		for i, item := range d.CaseTypes {
-			cases[i] = typeDecl(item.Name.SymbolName, reg[item.Name], reg, mod)
+			cases[i] = typeDecl(item.Name, reg[item.Name], reg, mod)
 		}
-		return block("union",
-			keyword("union"),
+		return block("enum",
+			modifier("enum"),
 			block("cases", cases...))
 	default:
 		panic("impossible branch")
@@ -210,6 +219,13 @@ func typeExpr(t checker.Type, params ([] checker.TypeParam), mod string) Html {
 		case checker.Func:
 			var in = typeExpr(R.Input, params, mod)
 			var out = typeExpr(R.Output, params, mod)
+			switch RT := R.Input.(type) {
+			case *checker.AnonymousType:
+				switch RT.Repr.(type) {
+				case checker.Tuple:
+					return inline("func", in, keyword("→"), out)
+				}
+			}
 			return inline("func",
 				keyword("("), in, keyword(")"), keyword("→"), out)
 		default:
@@ -264,8 +280,11 @@ func text(class string, content string) Html {
 }
 
 func keyword(name string) Html {
-	return Html(fmt.Sprintf("<span class=\"keyword\">%s</span>",
-		escape(name)))
+	return text("keyword", name)
+}
+
+func modifier(name string) Html {
+	return text("modifier", name)
 }
 
 func inline(class string, content... Html) Html {

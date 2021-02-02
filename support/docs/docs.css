@@ -1,0 +1,67 @@
+* {
+    font-family: monospace;
+}
+a {
+    color: unset;
+    text-decoration: none;
+}
+
+.api {
+    margin-bottom: 1rem;
+}
+
+.keyword {
+    color: #A626A4;
+}
+
+.modifier {
+    color: #CF4895;
+}
+
+.boxed > .kind > .keyword {
+    margin: 0 0;
+}
+
+.type > .header > .keyword {
+    margin-right: 0.25rem;
+}
+
+.type > .header > .name, .type-named > .name {
+    color: #C18401;
+}
+
+.type > .definition {
+    margin-left: 2rem;
+}
+
+.field > .name {
+    color: #E45649;
+}
+
+.type-param > .name, .type-parameter {
+    color: #6656E4;
+}
+
+.type-param > .variance {
+    color: #7D728D;
+}
+
+.type-param > .default {
+    margin-right: 0.25rem;
+}
+
+.type-param + .keyword,  {
+    margin-right: 0.25rem;
+}
+
+.field {
+    margin: 0 0.25rem;
+}
+
+.field > .name + .keyword {
+    margin: 0 0.1rem;
+}
+
+.func > .keyword {
+    margin: 0 0.25rem;
+}

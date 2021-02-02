@@ -429,6 +429,7 @@ func main() {
         }
         sort.Strings(modules)
         var buf strings.Builder
+        buf.WriteString("<head><link rel=\"stylesheet\" href=\"docs.css\" /></head>\n")
         for _, mod := range modules {
             buf.WriteString(fmt.Sprintf("<h1>%s</h1>\n", html.EscapeString(mod)))
             buf.WriteString(string(api[mod].Content))
