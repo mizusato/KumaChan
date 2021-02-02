@@ -366,6 +366,11 @@ type E_ImplicitContextOnNativeFunction struct {}
 func (impl E_NativeFunctionOutsideStandardLibrary) FunctionError() {}
 type E_NativeFunctionOutsideStandardLibrary struct {}
 
+func (impl E_MissingFunctionDefinition) FunctionError() {}
+type E_MissingFunctionDefinition struct {
+	FuncName  string
+}
+
 func (E_InvalidOverload) FunctionError() {}
 type E_InvalidOverload struct {
 	BetweenLocal  bool
@@ -406,6 +411,9 @@ func (err *FunctionError) Desc() ErrorMessage {
 		msg.WriteText(TS_ERROR, "Cannot use implicit context on a native function")
 	case E_NativeFunctionOutsideStandardLibrary:
 		msg.WriteText(TS_ERROR, "Cannot define native function outside standard library")
+	case E_MissingFunctionDefinition:
+		msg.WriteText(TS_ERROR, "Missing function definition for")
+		msg.WriteEndText(TS_INLINE_CODE, e.FuncName)
 	case E_InvalidOverload:
 		msg.WriteText(TS_ERROR, "Cannot define this function with the name")
 		msg.WriteInnerText(TS_INLINE_CODE, e.AddedName)

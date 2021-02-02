@@ -122,6 +122,15 @@ func CollectFunctions (
 				Concrete: E_NativeFunctionOutsideStandardLibrary {},
 			}
 		}
+		if decl.Body.Body == nil {
+			// TODO: process abstract functions of rpc service module
+			return nil, &FunctionError {
+				Point:    ErrorPointFrom(decl.Name.Node),
+				Concrete: E_MissingFunctionDefinition {
+					FuncName: ast.Id2String(decl.Name),
+				},
+			}
+		}
 		// 3.2. Get the name of the function and its type parameters
 		var name = ast.Id2String(decl.Name)
 		if name == IgnoreMark || strings.HasSuffix(name, FuncSuffix) {

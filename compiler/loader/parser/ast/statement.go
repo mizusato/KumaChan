@@ -59,11 +59,11 @@ type DeclFunction struct {
     Params    [] TypeParam    `list_more:"type_params" item:"type_param"`
     Implicit  [] VariousType  `list_more:"signature.implicit_input.type_args" item:"type"`
     Repr      ReprFunc        `part:"signature.repr_func"`
-    Body      VariousBody     `part:"body"`
+    Body      VariousBody     `part_opt:"body"`
 }
 type VariousBody struct {
     Node         `part:"body"`
-    Body  Body   `part:"lambda" fallback:"native"`  // TODO: use first
+    Body  Body   `use:"first"`
 }
 type Body interface { Body() }
 
