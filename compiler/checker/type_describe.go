@@ -33,6 +33,9 @@ func getModuleNameCommonPrefixLength(a string, b string) uint {
 }
 
 func GetClearModuleName(mod string, current_mod string) string {
+	if mod == current_mod {
+		return ""
+	}
 	var L = getModuleNameCommonPrefixLength(mod, current_mod)
 	var clear string
 	if L < uint(len(mod)) {

@@ -50,9 +50,10 @@ type Ordering enum {
 type Cast[T,U] implicit {
     from: (& T U)
 };
-type CastTo[T] T;
-public function to[T,U]: implicit[Cast[T,U]] ( &(T) CastTo[U] )
-    (&(t)(CastTo (from t)));
+public function to[T,U]: implicit[Cast[T,U]] ( &(T) U )
+    ( &(t)
+        from t
+    );
 
 public function assume[T]:   ( &((Bool,T),(&()(T))) T )
     ( &(input,k)
