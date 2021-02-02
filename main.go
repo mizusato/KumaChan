@@ -4,6 +4,8 @@ import (
     "io"
     "os"
     "fmt"
+    "sort"
+    "html"
     "reflect"
     "strings"
     "runtime"
@@ -25,6 +27,7 @@ import (
     "kumachan/util"
     "kumachan/rpc/kmd"
     "kumachan/support/tools"
+    "kumachan/support/docs"
 )
 
 
@@ -143,8 +146,8 @@ func repl(args ([] string), max_stack_size int) {
     const mod_ast_path = "."
     const mod_runtime_path = "."
     var mod_thunk = loader.CraftEmptyThunk(loader.Manifest {
-        Vendor:  "repl",
-        Project: "Repl",
+        Vendor:  "",
+        Project: "",
         Name:    "Repl",
     }, mod_ast_path)
     // 2. Load the empty module (stdlib also loaded)
@@ -328,7 +331,7 @@ func main() {
             fmt.Println("options:")
             fmt.Println("\t--help,-h\tshow help")
             fmt.Println("\t--version,-v\tshow version")
-            fmt.Println("\t--mode={interpreter,tools-server,parser-debug}")
+            fmt.Println("\t--mode={interpreter,tools-server,parser-debug,docs}")
             fmt.Println("\t--asm-dump=[FILE]")
             fmt.Println("\t--max-stack-size=[NUMBER]")
             return
@@ -407,6 +410,30 @@ func main() {
         qt.Mock()
         err := tools.Server(os.Stdin, os.Stdout, os.Stderr)
         if err != nil { panic(err) }
+    case "docs":
+        var mod_thunk = loader.CraftEmptyThunk(loader.Manifest {
+            Vendor:  "",
+            Project: "",
+            Name:    "Dummy",
+        }, ".")
+        dummy, ldr_idx, _, ldr_err := loader.LoadEntryThunk(mod_thunk)
+        if ldr_err != nil { panic(ldr_err) }
+        _, idx, _, errs := checker.TypeCheck(dummy, ldr_idx)
+        if errs != nil { panic(MergeErrors(errs)) }
+        var api = docs.GenerateApiDocs(idx)
+        var modules = make([] string, 0)
+        for mod, _ := range api {
+            if mod != dummy.Name {
+                modules = append(modules, mod)
+            }
+        }
+        sort.Strings(modules)
+        var buf strings.Builder
+        for _, mod := range modules {
+            buf.WriteString(fmt.Sprintf("<h1>%s</h1>\n", html.EscapeString(mod)))
+            buf.WriteString(string(api[mod].Content))
+        }
+        fmt.Println(buf.String())
     default:
         fmt.Fprintf(os.Stderr,
             "invalid mode: %s", strconv.Quote(mode))
