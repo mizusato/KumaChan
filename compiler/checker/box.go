@@ -15,9 +15,9 @@ func Box (
 	info         ExprInfo,
 	ctx          ExprContext,
 ) (Expr, *ExprError) {
-	var boxed, is_boxed = g_type.Value.(*Boxed)
+	var boxed, is_boxed = g_type.Definition.(*Boxed)
 	if !is_boxed {
-		var _, is_union = g_type.Value.(*Enum)
+		var _, is_union = g_type.Definition.(*Enum)
 		if is_union {
 			var typed_expr, is_typed = to_be_boxed.Value.(TypedExpr)
 			if is_typed {

@@ -22,7 +22,7 @@ const (
 	SuperBound  TypeBoundKind  =  '<'
 )
 
-func CheckTypeValBounds(val TypeVal, info TypeNodeInfo, ctx TypeBoundsContext) *TypeError {
+func CheckTypeValBounds(val TypeDef, info TypeNodeInfo, ctx TypeBoundsContext) *TypeError {
 	switch V := val.(type) {
 	case *Enum:
 		var union_b = ctx.Bounds

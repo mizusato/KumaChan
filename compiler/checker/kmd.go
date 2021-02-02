@@ -39,7 +39,7 @@ func CollectKmdApi (
 		var conf = g.Tags.DataConfig
 		var labelled_serializable = (conf.Name != "")
 		if labelled_serializable {
-			var _, is_native = g.Value.(*Native)
+			var _, is_native = g.Definition.(*Native)
 			if is_native {
 				return nil, nil, nil, &KmdError {
 					Point:    point,
@@ -71,7 +71,7 @@ func CollectKmdApi (
 	for sym, id := range mapping {
 		var g = reg[sym]
 		if len(g.Params) == 0 {
-			switch def := g.Value.(type) {
+			switch def := g.Definition.(type) {
 			case *Boxed:
 				switch T := def.InnerType.(type) {
 				case *NamedType:
@@ -277,7 +277,7 @@ func CraftKmdApiFunction (
 
 func IsKmdApiPublic(sym loader.Symbol, reg TypeRegistry) bool {
 	var g = reg[sym]
-	switch def := g.Value.(type) {
+	switch def := g.Definition.(type) {
 	case *Boxed:
 		if def.Opaque || def.Protected {
 			return false
@@ -308,7 +308,7 @@ func GetKmdSchema (
 ) (kmd.Schema, *KmdError) {
 	var p = ErrorPointFrom(nodes[sym])
 	var g = reg[sym]
-	switch def := g.Value.(type) {
+	switch def := g.Definition.(type) {
 	case *Boxed:
 		var inner Type
 		if len(g.Params) > 0 {
@@ -448,7 +448,7 @@ func GetKmdType (
 					goto error
 				}
 			}
-			switch def := g.Value.(type) {
+			switch def := g.Definition.(type) {
 			case *Boxed:
 				switch T := def.InnerType.(type) {
 				case *AnonymousType:

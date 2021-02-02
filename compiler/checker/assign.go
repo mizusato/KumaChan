@@ -102,7 +102,7 @@ func AssignTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprError) 
 			var reg = ctx.GetTypeRegistry()
 			var name = named.Name
 			var g = reg[name]
-			var boxed_t, is_boxed = g.Value.(*Boxed)
+			var boxed_t, is_boxed = g.Definition.(*Boxed)
 			if is_boxed && !(boxed_t.Protected) && !(boxed_t.Opaque) {
 				var boxed, box_err = Box (
 					semi, g, name, semi.Info, named.Args,

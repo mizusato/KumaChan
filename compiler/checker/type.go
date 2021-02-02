@@ -7,13 +7,13 @@ import (
 
 
 type GenericType struct {
-	Tags      TypeTags
-	Params    [] TypeParam
-	Bounds    TypeBounds
-	Defaults  map[uint] Type
-	Value     TypeVal
-	Node      ast.Node
-	CaseInfo  CaseInfo
+	Tags        TypeTags
+	Params      [] TypeParam
+	Bounds      TypeBounds
+	Defaults    map[uint] Type
+	Definition  TypeDef
+	Node        ast.Node
+	CaseInfo    CaseInfo
 }
 type TypeParam struct {
 	Name      string
@@ -28,7 +28,7 @@ func TypeParamsNames(params ([] TypeParam)) ([] string) {
 }
 
 
-type TypeVal interface { TypeVal() }
+type TypeDef interface { TypeVal() }
 
 func (impl *Enum) TypeVal() {}
 type Enum struct {

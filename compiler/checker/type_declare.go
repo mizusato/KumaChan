@@ -61,7 +61,7 @@ type CaseInfo struct {
 
 type TypeDeclNodeInfo  map[loader.Symbol] ast.Node
 type TypeNodeInfo struct {
-	ValNodeMap   map[TypeVal] ast.Node
+	ValNodeMap   map[TypeDef] ast.Node
 	TypeNodeMap  map[Type] ast.Node
 }
 
@@ -287,7 +287,7 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, TypeDe
 	var reg = make(TypeRegistry)
 	// 3. Go through all types in the raw registry
 	var info = TypeNodeInfo {
-		ValNodeMap:  make(map[TypeVal] ast.Node),
+		ValNodeMap:  make(map[TypeDef] ast.Node),
 		TypeNodeMap: make(map[Type] ast.Node),
 	}
 	for name, t := range raw.DeclMap {
@@ -305,7 +305,7 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, TypeDe
 		// 3.2. Get parameters
 		var params = raw.ParamsMap[name]
 		// 3.3. Construct a TypeContext and pass it to TypeValFrom()
-		//      to generate a TypeVal and bubble errors
+		//      to generate a TypeDef and bubble errors
 		var cons_ctx = TypeConstructContext {
 			Module:     mod,
 			Parameters: params,
@@ -314,7 +314,7 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, TypeDe
 			TypeConstructContext: cons_ctx,
 			Registry: raw,
 		}
-		var val, err = RawTypeValFrom(t.TypeValue, info, ctx)
+		var definition, err = RawTypeDefFrom(t.TypeValue, info, ctx)
 		if err != nil { return nil, nil, raise_all(name, err) }
 		// 3.4. Construct a top-level TypeConstructContext
 		//      and construct default types for parameters
@@ -349,16 +349,16 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, TypeDe
 				bounds.Super[uint(i)] = t
 			}
 		}
-		// 3.6. Use the generated TypeVal to construct a GenericType
+		// 3.6. Use the generated TypeDef to construct a GenericType
 		//      and register it to the TypeRegistry
 		reg[name] = &GenericType {
-			Tags:     tags,
-			Params:   params,
-			Bounds:   bounds,
-			Defaults: defaults,
-			Value:    val,
-			Node:     t.Node,
-			CaseInfo: raw.CaseInfoMap[name],
+			Tags:       tags,
+			Params:     params,
+			Bounds:     bounds,
+			Defaults:   defaults,
+			Definition: definition,
+			Node:       t.Node,
+			CaseInfo:   raw.CaseInfoMap[name],
 		}
 	}
 	// 4. Validate boxed types
@@ -384,7 +384,7 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, TypeDe
 				// refers to a type that does not exist
 				return nil
 			}
-			var inner_boxed, is_boxed = g.Value.(*Boxed)
+			var inner_boxed, is_boxed = g.Definition.(*Boxed)
 			if is_boxed {
 				var inner_path = append(path, name)
 				return check_cycle(inner_name, inner_boxed, inner_path)
@@ -393,7 +393,7 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, TypeDe
 		return nil
 	}
 	for name, g := range reg {
-		var boxed, is_boxed = g.Value.(*Boxed)
+		var boxed, is_boxed = g.Definition.(*Boxed)
 		if is_boxed {
 			var err = check_cycle(name, boxed, make([]loader.Symbol, 0))
 			if err != nil { return nil, nil, [] *TypeDeclError { err } }
@@ -416,7 +416,7 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, TypeDe
 		var g_ctx = make_ctx(g.Params)
 		var top_ctx = make_ctx([] TypeParam {})
 		// 5.1. Validate type values
-		var err = ValidateTypeVal(g.Value, info, g_ctx)
+		var err = ValidateTypeVal(g.Definition, info, g_ctx)
 		if err != nil {
 			errs = append(errs, raise(name, err))
 		}
@@ -506,7 +506,7 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, TypeDe
 				if err != nil { errs = append(errs, raise(name, err)) }
 			}
 		}
-		var err = CheckTypeValBounds(g.Value, info, g_ctx)
+		var err = CheckTypeValBounds(g.Definition, info, g_ctx)
 		if err != nil { errs = append(errs, raise(name, err)) }
 	}
 	if errs != nil { return nil, nil, errs }
@@ -514,9 +514,9 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, TypeDe
 	return reg, decl_info, nil
 }
 
-/* Transform: ast.TypeDef -> checker.TypeVal */
-func RawTypeValFrom(ast_val ast.VariousTypeDef, info TypeNodeInfo, ctx RawTypeContext) (TypeVal, *TypeError) {
-	var got = func(val TypeVal) (TypeVal, *TypeError) {
+/* Transform: ast.TypeDef -> checker.TypeDef */
+func RawTypeDefFrom(ast_val ast.VariousTypeDef, info TypeNodeInfo, ctx RawTypeContext) (TypeDef, *TypeError) {
+	var got = func(val TypeDef) (TypeDef, *TypeError) {
 		info.ValNodeMap[val] = ast_val.Node
 		return val, nil
 	}

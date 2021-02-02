@@ -15,7 +15,7 @@ func Unbox(t Type, ctx_mod string, reg TypeRegistry) UnboxResult {
 	switch T := t.(type) {
 	case *NamedType:
 		var g = reg[T.Name]
-		switch gv := g.Value.(type) {
+		switch gv := g.Definition.(type) {
 		case *Boxed:
 			var type_mod = T.Name.ModuleName
 			if gv.Opaque && ctx_mod != type_mod {
@@ -34,7 +34,7 @@ func UnboxWeak(t Type, reg TypeRegistry) Type {
 	switch T := t.(type) {
 	case *NamedType:
 		var g = reg[T.Name]
-		switch gv := g.Value.(type) {
+		switch gv := g.Definition.(type) {
 		case *Boxed:
 			if gv.Weak {
 				var filled_inner = FillTypeArgsWithDefaults(gv.InnerType, T.Args, g.Defaults)
@@ -73,7 +73,7 @@ func UnboxTuple(t Type, ctx ExprContext, cross_reactive bool) TupleReprResult {
 			}
 		}
 		var g = ctx.ModuleInfo.Types[T.Name]
-		switch gv := g.Value.(type) {
+		switch gv := g.Definition.(type) {
 		case *Boxed:
 			var inner = FillTypeArgsWithDefaults(gv.InnerType, T.Args, g.Defaults)
 			switch inner_type := inner.(type) {
@@ -133,7 +133,7 @@ func UnboxBundle(t Type, ctx ExprContext, cross_reactive bool) BundleReprResult 
 			}
 		}
 		var g = ctx.ModuleInfo.Types[T.Name]
-		switch gv := g.Value.(type) {
+		switch gv := g.Definition.(type) {
 		case *Boxed:
 			var inner = FillTypeArgsWithDefaults(gv.InnerType, T.Args, g.Defaults)
 			switch inner_type := inner.(type) {
@@ -176,7 +176,7 @@ func UnboxFunc(t Type, ctx ExprContext) FuncReprResult {
 	switch T := t.(type) {
 	case *NamedType:
 		var g = ctx.ModuleInfo.Types[T.Name]
-		switch gv := g.Value.(type) {
+		switch gv := g.Definition.(type) {
 		case *Boxed:
 			var inner = FillTypeArgsWithDefaults(gv.InnerType, T.Args, g.Defaults)
 			switch inner_type := inner.(type) {

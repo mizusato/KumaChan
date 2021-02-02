@@ -613,7 +613,7 @@ func ExtractUnion(t Type, ctx ExprContext, cross_reactive bool) (*Enum, []Type, 
 		}
 		var reg = ctx.GetTypeRegistry()
 		var g = reg[T.Name]
-		switch gv := g.Value.(type) {
+		switch gv := g.Definition.(type) {
 		case *Enum:
 			return gv, T.Args, false, true
 		case *Boxed:

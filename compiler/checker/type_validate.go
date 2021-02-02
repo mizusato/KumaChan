@@ -18,7 +18,7 @@ func (ctx TypeValidationContext) GetVarianceContext() TypeVarianceContext {
 	}
 }
 
-func ValidateTypeVal(val TypeVal, info TypeNodeInfo, ctx TypeValidationContext) *TypeError {
+func ValidateTypeVal(val TypeDef, info TypeNodeInfo, ctx TypeValidationContext) *TypeError {
 	var val_point = ErrorPointFrom(info.ValNodeMap[val])
 	switch V := val.(type) {
 	case *Enum:

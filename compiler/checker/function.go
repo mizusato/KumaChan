@@ -238,7 +238,7 @@ func CollectFunctions (
 			var named, is_named = t.(*NamedType)
 			if !(is_named) { return nil, throw("should be a named type") }
 			var g = reg[named.Name]
-			var boxed, is_boxed = g.Value.(*Boxed)
+			var boxed, is_boxed = g.Definition.(*Boxed)
 			if !(is_boxed) { return nil, throw("should be a boxed type") }
 			if !(boxed.Implicit) { return nil,
 				throw("should be declared as a implicit context type") }

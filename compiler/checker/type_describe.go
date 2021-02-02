@@ -14,7 +14,6 @@ type TypeDescContext struct {
 }
 
 func getModuleNameCommonPrefixLength(a string, b string) uint {
-	// TODO: colon
 	var L = uint(0)
 	var A = ([] rune)(a)
 	var B = ([] rune)(b)
@@ -31,6 +30,20 @@ func getModuleNameCommonPrefixLength(a string, b string) uint {
 		L -= 1
 	}
 	return uint(len(string(A[:L])))
+}
+
+func GetClearModuleName(mod string, current_mod string) string {
+	var L = getModuleNameCommonPrefixLength(mod, current_mod)
+	var clear string
+	if L < uint(len(mod)) {
+		clear = mod[L:]
+	} else {
+		clear = ""
+	}
+	if strings.HasSuffix(clear, ":" + loader.DefaultVersion) {
+		clear = strings.TrimSuffix(clear, ":" + loader.DefaultVersion)
+	}
+	return clear
 }
 
 func DescribeTypeWithParams(type_ Type, params ([] string), mod string) string {
@@ -63,16 +76,7 @@ func DescribeType(type_ Type, ctx TypeDescContext) string {
 			buf.WriteString(t.Name.SymbolName)
 		} else {
 			var mod = t.Name.ModuleName
-			var L = getModuleNameCommonPrefixLength(mod, ctx.CurrentModule)
-			var clear string
-			if L < uint(len(mod)) {
-				clear = mod[L:]
-			} else {
-				clear = ""
-			}
-			if strings.HasSuffix(clear, ":" + loader.DefaultVersion) {
-				clear = strings.TrimSuffix(clear, ":" + loader.DefaultVersion)
-			}
+			var clear = GetClearModuleName(mod, ctx.CurrentModule)
 			var clear_sym = loader.NewSymbol(clear, t.Name.SymbolName)
 			buf.WriteString(clear_sym.String())
 		}
