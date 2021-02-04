@@ -46,7 +46,7 @@ var virtualDomUpdate = func(new_root *vdom.Node) rx.Action {
 	return rx.NewCallback(func(done func(rx.Object)) {
 		// --- <debug> ---
 		fmt.Fprintf(os.Stderr, "\033[1m<!-- Virtual DOM Update -->\033[0m\n")
-		fmt.Fprintf(os.Stderr, vdom.Inspect(new_root))
+		fmt.Fprintf(os.Stderr, "%s\n", vdom.Inspect(new_root))
 		// --- </debug> ---
 		qt.CommitTask(func() {
 			var ctx = virtualDomDeltaNotifier
