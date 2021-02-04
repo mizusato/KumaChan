@@ -470,8 +470,9 @@ func (r *ReactiveImpl) Update(f (func(Object) Object), k *KeyChain) Action {
 }
 func (r *ReactiveImpl) Snapshot() Action {
 	return NewSync(func() (Object, bool) {
+		var current = r.last_change.Value
 		r.snapshots.Redo = nil
-		r.snapshots.Undo = r.snapshots.Undo.Pushed(r.last_change)
+		r.snapshots.Undo = r.snapshots.Undo.Pushed(current)
 		r.notifyDiff()
 		return nil, true
 	})
@@ -480,11 +481,13 @@ func (r *ReactiveImpl) Undo() Action {
 	return NewSync(func() (Object, bool) {
 		var top, rest, ok = r.snapshots.Undo.Popped()
 		if ok {
-			var current = r.last_change
+			var current = r.last_change.Value
 			r.snapshots.Redo = r.snapshots.Redo.Pushed(current)
 			r.snapshots.Undo = rest
-			var change = top.(ReactiveStateChange)
-			r.commit(change)
+			r.commit(ReactiveStateChange {
+				Value:    top,
+				KeyChain: nil,
+			})
 			r.notifyDiff()
 			return nil, true
 		} else {
@@ -496,11 +499,13 @@ func (r *ReactiveImpl) Redo() Action {
 	return NewSync(func() (Object, bool) {
 		var top, rest, ok = r.snapshots.Redo.Popped()
 		if ok {
-			var current = r.last_change
+			var current = r.last_change.Value
 			r.snapshots.Undo = r.snapshots.Undo.Pushed(current)
 			r.snapshots.Redo = rest
-			var change = top.(ReactiveStateChange)
-			r.commit(change)
+			r.commit(ReactiveStateChange {
+				Value:    top,
+				KeyChain: nil,
+			})
 			r.notifyDiff()
 			return nil, true
 		} else {

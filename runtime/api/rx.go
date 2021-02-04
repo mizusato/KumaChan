@@ -38,12 +38,7 @@ func (it RxStackIterator) GetItemType() reflect.Type {
 
 func AdaptReactiveDiff(diff rx.Action) rx.Action {
 	var stack2seq = func(stack *rx.Stack) container.Seq {
-		return container.MappedSeq {
-			Input:  RxStackIterator { stack },
-			Mapper: func(v Value) Value {
-				return v.(rx.ReactiveStateChange).Value
-			},
-		}
+		return RxStackIterator { stack }
 	}
 	return diff.Map(func(obj rx.Object) rx.Object {
 		var pair = obj.(rx.Pair)
