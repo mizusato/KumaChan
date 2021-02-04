@@ -258,14 +258,10 @@ func (a AutoSnapshotReactive) Read() Action {
 	return a.Entity.Read()
 }
 func (a AutoSnapshotReactive) Emit(obj Object) Action {
-	return a.Entity.Snapshot().Then(func(_ Object) Action {
-		return a.Entity.Emit(obj)
-	})
+	return a.Entity.EmitWithSnapshot(obj, true)
 }
 func (a AutoSnapshotReactive) Update(f func(Object)(Object), key_chain *KeyChain) Action {
-	return a.Entity.Snapshot().Then(func(_ Object) Action {
-		return a.Entity.Update(f, key_chain)
-	})
+	return a.Entity.UpdateWithSnapshot(f, key_chain, true)
 }
 func (a AutoSnapshotReactive) Project(key_chain *KeyChain) Action {
 	return a.Entity.Project(key_chain)
@@ -360,6 +356,7 @@ type ReactiveImpl struct {
 	bus          *BusImpl  // Bus<ReactiveStateChange|Pair<ReactiveSnapshots,Object>>
 	last_change  ReactiveStateChange
 	snapshots    ReactiveSnapshots
+	equal        func(Object,Object) bool
 }
 type ReactiveStateChange struct {
 	Value     Object
@@ -369,13 +366,14 @@ type ReactiveSnapshots struct {
 	Undo  *Stack  // Stack<ReactiveStateChange>
 	Redo  *Stack  // Stack<ReactiveStateChange>
 }
-func CreateReactive(init Object) *ReactiveImpl {
+func CreateReactive(init Object, equal (func(Object,Object)(bool))) *ReactiveImpl {
 	return &ReactiveImpl {
-		bus:         CreateBus(),
+		bus: CreateBus(),
 		last_change: ReactiveStateChange {
 			Value:    init,
 			KeyChain: nil,
 		},
+		equal: equal,
 	}
 }
 func (r *ReactiveImpl) Watch() Action {
@@ -401,7 +399,7 @@ func (r *ReactiveImpl) Read() Action {
 }
 func (r *ReactiveImpl) WatchDiff() Action {
 	return NewSubscription(func(next func(Object)) func() {
-		next(Pair { r.snapshots, r.last_change.Value})
+		next(Pair { r.snapshots, r.last_change.Value })
 		var w = r.bus.addWatcher(Watcher{
 			Notify: func(obj Object) {
 				var pair, is_pair = obj.(Pair)
@@ -439,10 +437,20 @@ func (r *ReactiveImpl) notifyDiff() {
 	r.bus.notify(Pair { r.snapshots, r.last_change.Value })
 }
 func (r *ReactiveImpl) Emit(new_state Object) Action {
+	return r.EmitWithSnapshot(new_state, false)
+}
+func (r *ReactiveImpl) EmitWithSnapshot(new_state Object, snapshot bool) Action {
 	return NewSync(func() (Object, bool) {
+		var old_state = r.last_change.Value
+		if r.equal(new_state, old_state) {
+			return nil, true
+		}
 		var change = ReactiveStateChange {
 			Value:    new_state,
 			KeyChain: nil,
+		}
+		if snapshot {
+			r.doSnapshot()
 		}
 		r.commit(change)
 		if r.snapshots.Redo != nil {
@@ -453,12 +461,21 @@ func (r *ReactiveImpl) Emit(new_state Object) Action {
 	})
 }
 func (r *ReactiveImpl) Update(f (func(Object) Object), k *KeyChain) Action {
+	return r.UpdateWithSnapshot(f, k, false)
+}
+func (r *ReactiveImpl) UpdateWithSnapshot(f (func(Object) Object), k *KeyChain, snapshot bool) Action {
 	return NewSync(func() (Object, bool) {
 		var old_state = r.last_change.Value
 		var new_state = f(old_state)
+		if r.equal(old_state, new_state) {
+			return nil, true
+		}
 		var change = ReactiveStateChange {
 			Value:    new_state,
 			KeyChain: k,
+		}
+		if snapshot {
+			r.doSnapshot()
 		}
 		r.commit(change)
 		if r.snapshots.Redo != nil {
@@ -470,12 +487,15 @@ func (r *ReactiveImpl) Update(f (func(Object) Object), k *KeyChain) Action {
 }
 func (r *ReactiveImpl) Snapshot() Action {
 	return NewSync(func() (Object, bool) {
-		var current = r.last_change.Value
-		r.snapshots.Redo = nil
-		r.snapshots.Undo = r.snapshots.Undo.Pushed(current)
+		r.doSnapshot()
 		r.notifyDiff()
 		return nil, true
 	})
+}
+func (r *ReactiveImpl) doSnapshot() {
+	var current = r.last_change.Value
+	r.snapshots.Redo = nil
+	r.snapshots.Undo = r.snapshots.Undo.Pushed(current)
 }
 func (r *ReactiveImpl) Undo() Action {
 	return NewSync(func() (Object, bool) {

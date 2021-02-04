@@ -35,6 +35,27 @@ type ValFunc struct {
 
 type NativeFunctionValue  NativeFunction
 
+func RefEqual(a Value, b Value) bool {
+	var x = reflect.ValueOf(a)
+	var y = reflect.ValueOf(b)
+	var kx = x.Kind()
+	var ky = y.Kind()
+	var tx = x.Type()
+	var ty = y.Type()
+	if tx == ty {
+		var t = tx
+		if kx == reflect.Slice && ky == reflect.Slice {
+			if x.Pointer() == y.Pointer() && x.Len() == y.Len() {
+				return true
+			}
+		}
+		if t.Comparable() {
+			return a == b
+		}
+	}
+	return false
+}
+
 
 type ArrayInfo struct {
 	Length    uint
@@ -43,7 +64,7 @@ type ArrayInfo struct {
 
 
 type Char = uint32
-type String = ([] Char)
+type String = ([] Char)  // IMPORTANT: assumed immutable
 
 func StringFromRuneSlice(runes ([] rune)) String {
 	return *(*([] Char))(unsafe.Pointer(&runes))
@@ -88,7 +109,7 @@ func inspect(value Value, path []uintptr) ErrorMessage {
 				return msg
 			}
 		}
-		var new_path = make([]uintptr, len(path))
+		var new_path = make([] uintptr, len(path))
 		new_path = append(new_path, ptr)
 		path = new_path
 	}

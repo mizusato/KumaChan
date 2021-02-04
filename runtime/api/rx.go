@@ -186,19 +186,19 @@ var EffectFunctions = map[string] Value {
 	},
 	"new-reactive": func(init Value) rx.Action {
 		return rx.NewSync(func() (rx.Object, bool) {
-			return rx.CreateReactive(init), true
+			return rx.CreateReactive(init, RefEqual), true
 		})
 	},
 	"with-reactive": func(init Value, f Value, h InteropContext) rx.Action {
 		return rx.NewSync(func() (rx.Object, bool) {
-			return rx.CreateReactive(init), true
+			return rx.CreateReactive(init, RefEqual), true
 		}).Then(func(obj rx.Object) rx.Action {
 			return h.Call(f, obj).(rx.Action)
 		})
 	},
 	"with-auto-snapshot": func(init Value, f Value, h InteropContext) rx.Action {
 		return rx.NewSync(func() (rx.Object, bool) {
-			var entity = rx.CreateReactive(init)
+			var entity = rx.CreateReactive(init, RefEqual)
 			var r = rx.AutoSnapshotReactive { Entity: entity }
 			var undo = entity.Undo()
 			var redo = entity.Redo()

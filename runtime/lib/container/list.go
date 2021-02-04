@@ -14,8 +14,7 @@ type List struct {
 	index  Map // Map<string,ListEntry>
 }
 type ListEntry struct {
-	Value     Value
-	Revision  uint64
+	Value  Value
 }
 type BeforeOrAfter int
 const (
@@ -64,7 +63,6 @@ func NewList(array Array, get_key func(Value)(String)) List {
 		keys[i] = key
 		var result, duplicate = index.Inserted(key, ListEntry {
 			Value:    value,
-			Revision: 0,
 		})
 		if duplicate {
 			panic(fmt.Sprintf("list: duplicate key: %s", ListFormatKey(key)))
@@ -102,8 +100,7 @@ func (l List) mustHaveEntry(key String) ListEntry {
 
 func (l List) mustGetIndexValueInserted(key String, v Value) Map {
 	var index, override = l.index.Inserted(key, ListEntry {
-		Value:    v,
-		Revision: 0,
+		Value: v,
 	})
 	if override {
 		panic(fmt.Sprintf("list: duplicate key: %s", ListFormatKey(key)))
@@ -114,7 +111,6 @@ func (l List) mustGetIndexValueInserted(key String, v Value) Map {
 func (l List) mustGetIndexValueUpdated(key String, entry ListEntry, v Value) Map {
 	var updated, override = l.index.Inserted(key, ListEntry {
 		Value:    v,
-		Revision: (entry.Revision + 1),
 	})
 	if !(override) { panic("something went wrong") }
 	return updated

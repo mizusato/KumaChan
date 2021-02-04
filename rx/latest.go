@@ -170,7 +170,8 @@ func KeyTrackedDynamicCombineLatestWaitReady(e Action) Action {
 						keys_changed = true
 						var this_ctx, this_dispose = ctx.create_disposable_child()
 						running[key] = this_dispose
-						var index = CreateReactive(key_index)
+						var index = CreateReactive(key_index,
+							func(a Object, b Object) bool { return a == b })
 						indexes[key] = index
 						var index_source = index.Watch().CompleteWhen(func(obj Object) bool {
 							return obj == nil
@@ -206,12 +207,12 @@ func KeyTrackedDynamicCombineLatestWaitReady(e Action) Action {
 					}
 				}
 				first = false
-				for _, update := range index_updates {
-					update()
-				}
-				for _, run := range new_subscriptions {
+				for _, subscribe := range new_subscriptions {
 					// subscription should happen after `keys` updated
-					run()
+					subscribe()
+				}
+				for _, index_update := range index_updates {
+					index_update()
 				}
 			},
 			error: func(err Object) {
