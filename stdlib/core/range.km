@@ -1,6 +1,6 @@
 type Range  protected (Number, Number);  // left-close right-open interval
 
-public function range: ( &(Number,Number) Range )
+public function range: ( &(Number,Number) Range )  // TODO: range -> interval
     ( &(l, r)
         if $(l <= r):
             Range l r,
