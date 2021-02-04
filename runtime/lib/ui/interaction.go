@@ -37,6 +37,7 @@ var virtualDomDeltaNotifier = &vdom.DeltaNotifier {
 	UpdateNode:  qt.WebUiUpdateNode,
 	ReplaceNode: qt.WebUiReplaceNode,
 	SwapNode:    qt.WebUiSwapNode,
+	MoveNode:    qt.WebUiMoveNode,
 }
 var virtualDomRoot *vdom.Node = nil
 var virtualDomUpdate = func(new_root *vdom.Node) rx.Action {

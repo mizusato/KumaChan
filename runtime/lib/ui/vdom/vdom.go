@@ -250,12 +250,6 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 		case *Children:
 			var new_children = *new_content
 			var diff_children = func(old_children Children, new_children Children) {
-				var L int
-				if len(old_children) > len(new_children) {
-					L = len(old_children)
-				} else {
-					L = len(new_children)
-				}
 				var build_index = func(nodes Children) (map[*Node] int, func(*Node) bool) {
 					var index = make(map[*Node] int)
 					for i, node := range nodes {
@@ -272,7 +266,7 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 				var swapped = make(map[int] *Node)
 				var i = 0
 				var j = 0
-				for (i < L && j < L) {
+				for (i < len(old_children)) || (j < len(new_children)) {
 					var old_child *Node = nil
 					var new_child *Node = nil
 					if i < len(old_children) {

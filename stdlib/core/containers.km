@@ -149,11 +149,13 @@ public function swap[T]:      ( &(List[T],ListKey,ListKey) List[T] )
 public function is-first-in[T]: ( &(Action*[Number],Reactive[List[T]]) Action*[Bool] )
     ( &(@index,_)
         @index.map* (&(index) $(index = 0))
+        // TODO: distinct-until-changed
     );
 public function is-last-in[T]: ( &(Action*[Number],Reactive[List[T]]) Action*[Bool] )
     ( &(@index,@list)
         ~ map* &(index,length) := combine-latest! @index (@list.watch.map* (&(list)(list.length))),
         $(index = $(length - 1))
+        // TODO: distinct-until-changed
     );
 public function update[T]:  ( &(Reactive[List[T]],ListKey,(&(T)(T))) Action )
     (&(@list,key,f)(@list.update(&(list)(list.update key f))));
