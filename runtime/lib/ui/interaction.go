@@ -9,12 +9,21 @@ import (
 )
 
 
+var updating = false
+
 func handleEvent(sched rx.Scheduler) {
 	var handler = qt.WebUiGetEventHandler()
 	var payload = qt.WebUiGetEventPayload()
+	if updating {
+		// in order to preserve data consistency,
+		// events emitted during updating are ignored
+		qt.WebUiConsumeEventPayload(payload,
+			func(*qt.WebUiEventPayload) interface{} { return nil })
+		return
+	}
 	var sink = handler.(rx.Sink)
 	var handling = sink.Emit(payload)
-	rx.ScheduleTask(handling, sched)
+	rx.ScheduleTaskWaitTerminate(handling, sched)
 }
 
 func scheduleUpdate(sched rx.Scheduler, vdom_source rx.Action) {
@@ -48,6 +57,7 @@ var virtualDomUpdate = func(new_root *vdom.Node) rx.Action {
 		fmt.Fprintf(os.Stderr, "\033[1m<!-- Virtual DOM Update -->\033[0m\n")
 		fmt.Fprintf(os.Stderr, "%s\n", vdom.Inspect(new_root))
 		// --- </debug> ---
+		updating = true
 		qt.CommitTask(func() {
 			var ctx = virtualDomDeltaNotifier
 			var prev_root = virtualDomRoot
@@ -55,6 +65,11 @@ var virtualDomUpdate = func(new_root *vdom.Node) rx.Action {
 			vdom.Diff(ctx, nil, prev_root, new_root)
 			qt.WebUiPerformActualRendering()
 			done(nil)
+		})
+	}).Then(func(_ rx.Object) rx.Action {
+		return rx.NewSync(func() (rx.Object, bool) {
+			updating = false
+			return nil, true
 		})
 	})
 }

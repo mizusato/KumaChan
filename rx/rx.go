@@ -170,6 +170,15 @@ func ScheduleTask(task Action, sched Scheduler) {
 	sched.RunTopLevel(task, Receiver { Context: Background() })
 }
 
+func ScheduleTaskWaitTerminate(task Action, sched Scheduler) bool {
+	var wait = make(chan bool)
+	sched.RunTopLevel(task, Receiver {
+		Context:   Background(),
+		Terminate: wait,
+	})
+	return <- wait
+}
+
 func NewGoroutine(action func(Sender)) Action {
 	return Action { func (sched Scheduler, ob *observer) {
 		go action(Sender { sched: sched, ob: ob })
