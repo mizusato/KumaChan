@@ -144,8 +144,9 @@ var EffectFunctions = map[string] Value {
 						}
 						var proj_key = &rx.KeyChain { Key: key_rx }
 						var proj = rx.ReactiveProject(r, in, out, proj_key)
+						var view = rx.ReactiveDistinctView(proj, RefEqual)
 						var arg = &ValProd { Elements: [] Value {
-							key, index_source, proj,
+							key, index_source, view,
 						} }
 						var item_action = h.Call(k, arg).(rx.Action)
 						return item_action

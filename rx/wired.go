@@ -130,6 +130,13 @@ func ReactiveBranch (
 	}
 }
 
+func ReactiveDistinctView(r Reactive, eq func(Object,Object)(bool)) Reactive {
+	return DistinctViewReactive {
+		base:  r,
+		equal: eq,
+	}
+}
+
 
 // Transformation API Implementations
 
@@ -268,6 +275,29 @@ func (a AutoSnapshotReactive) Project(key_chain *KeyChain) Action {
 }
 func (_ AutoSnapshotReactive) Snapshot() Action {
 	panic("suspicious snapshot operation on a auto-snapshot reactive")
+}
+
+type DistinctViewReactive struct {
+	base   Reactive
+	equal  func(Object,Object) bool
+}
+func (d DistinctViewReactive) Watch() Action {
+	return d.base.Watch().DistinctUntilChanged(d.equal)
+}
+func (d DistinctViewReactive) Project(key_chain *KeyChain) Action {
+	return d.base.Project(key_chain).DistinctUntilChanged(d.equal)
+}
+func (d DistinctViewReactive) Read() Action {
+	return d.base.Read()
+}
+func (d DistinctViewReactive) Emit(obj Object) Action {
+	return d.base.Emit(obj)
+}
+func (d DistinctViewReactive) Update(f func(Object)(Object), key_chain *KeyChain) Action {
+	return d.base.Update(f, key_chain)
+}
+func (d DistinctViewReactive) Snapshot() Action {
+	return d.base.Snapshot()
 }
 
 

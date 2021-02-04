@@ -5,6 +5,7 @@ type WebAsset native;
 type FontInfo (String,String,String);  // family, weight, style
 type Window   protected Qt::MainWindow;
 
+// TODO: debug option (ON/OFF)
 public function ui-init: ( &(String,Component) MainLoop )
     native 'ui-init';
 public function ui-inject-css: ( &(Array[WebAsset]) Action )
