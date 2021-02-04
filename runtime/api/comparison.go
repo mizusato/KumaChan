@@ -8,6 +8,9 @@ import (
 
 
 var ComparisonFunctions = map[string] interface{} {
+	"sum-index-equal": func(a SumValue, b SumValue) SumValue {
+		return ToBool(a.Index == b.Index)
+	},
 	"=String": func(a String, b String) SumValue {
 		return ToBool(StringCompare(a, b) == Equal)
 	},

@@ -155,6 +155,10 @@ public function merge[T,E]: ( &(Array[Action*[T,E]]) Action*[T,E] )
     native 'action-merge';
 public function concat[T,E]: ( &(Array[Action*[T,E]]) Action*[T,E] )
     native 'action-concat';
+public function distinct-until-changed[T,E]: implicit[Eq[T]] ( &(Action*[T,E]) Action*[T,E] )
+    (&(a)(a.distinct-until-changed(=)));
+public function distinct-until-changed[T,E]: ( &(Action*[T,E],(&(T,T)(Bool))) Action*[T,E] )
+    native 'distinct-until-changed';
 public function with-latest-from[A,B,E]: ( &(Action*[A,E],Action*[B,E]) Action*[(A,Maybe[B]),E] )
     native 'with-latest-from';
 public function with-latest-from[A,B,E]: ( &(Action*[A,E],Reactive[B]) Action*[(A,B),E] )

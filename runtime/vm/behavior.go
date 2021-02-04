@@ -483,32 +483,11 @@ func ConsumeReactiveSum (
 		var _, exists = branches[uint(sum.Index)]
 		return !(exists)
 	})
-	// TODO: distinctUntilChanged operator
 	var changing_index = r.Watch().Map(func(obj rx.Object) rx.Object {
 		var sum = obj.(SumValue)
 		return uint(sum.Index)
-	}).Scan(func(acc rx.Object, this rx.Object)(rx.Object) {
-		if acc == nil {
-			return rx.Pair {
-				First:  nil,
-				Second: this,
-			}
-		} else {
-			var pair = acc.(rx.Pair)
-			return rx.Pair {
-				First:  pair.Second,
-				Second: this,
-			}
-		}
-	}, nil).FilterMap(func(acc rx.Object) (rx.Object, bool) {
-		var pair = acc.(rx.Pair)
-		var prev, has_prev = pair.First.(uint)
-		var this = pair.Second.(uint)
-		if has_prev && prev == this {
-			return nil, false
-		} else {
-			return this, true
-		}
+	}).DistinctUntilChanged(func(a rx.Object, b rx.Object) bool {
+		return (a.(uint) == b.(uint))
 	})
 	return changing_index.SwitchMap(func(obj rx.Object) rx.Action {
 		var case_index = obj.(uint)

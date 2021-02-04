@@ -45,6 +45,8 @@ type Ordering enum {
     type ==;
     type >>;
 };
+public function =: ( &(Bool,Bool) Bool )  native 'sum-index-equal';
+public function =: ( &(Ordering,Ordering) Bool )  native 'sum-index-equal';
 
 // Type Cast
 type Cast[T,U] implicit {

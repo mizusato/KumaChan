@@ -147,7 +147,7 @@ var EffectFunctions = map[string] Value {
 							var list = state.(container.List)
 							return list.Get(key)
 						}
-						var proj_key = &rx.KeyChain { Key: key_rx}
+						var proj_key = &rx.KeyChain { Key: key_rx }
 						var proj = rx.ReactiveProject(r, in, out, proj_key)
 						var arg = &ValProd { Elements: [] Value {
 							key, index_source, proj,
@@ -448,8 +448,14 @@ var EffectFunctions = map[string] Value {
 		}
 		return rx.Concat(actions)
 	},
-	"with-latest-from": func(signal rx.Action, values rx.Action) rx.Action {
-		return signal.WithLatestFrom(values).Map(func(p rx.Object) rx.Object {
+	"distinct-until-changed": func(a rx.Action, eq Value, h InteropContext) rx.Action {
+		return a.DistinctUntilChanged(func(obj1 rx.Object, obj2 rx.Object) bool {
+			var pair = &ValProd { Elements: [] Value { obj1, obj2 } }
+			return FromBool(h.Call(eq, pair).(SumValue))
+		})
+	},
+	"with-latest-from": func(a rx.Action, values rx.Action) rx.Action {
+		return a.WithLatestFrom(values).Map(func(p rx.Object) rx.Object {
 			var pair = p.(rx.Pair)
 			return &ValProd { Elements: [] Value {
 				pair.First,
@@ -457,8 +463,8 @@ var EffectFunctions = map[string] Value {
 			} }
 		})
 	},
-	"with-latest-from-reactive": func(signal rx.Action, r rx.Reactive) rx.Action {
-		return signal.WithLatestFrom(r.Watch()).Map(func(p rx.Object) rx.Object {
+	"with-latest-from-reactive": func(a rx.Action, r rx.Reactive) rx.Action {
+		return a.WithLatestFrom(r.Watch()).Map(func(p rx.Object) rx.Object {
 			var pair = p.(rx.Pair)
 			var r_opt = pair.Second.(rx.Optional)
 			if !(r_opt.HasValue) { panic("something went wrong") }
