@@ -29,3 +29,7 @@ body {
   font-weight: bold;
   font-size: 110%;
 }
+
+.min-width-3 {
+  min-width: 3rem;
+}

@@ -26,6 +26,7 @@
  *      UpdateNode: Signal<(old_id:string, new_id:string) => void>,
  *      ReplaceNode: Signal<(target:string, id:string, tag:string) => void>,
  *      SwapNode: Signal<(parent:string, a:string, b:string) => void>,
+ *      MoveNode: Signal<(parent:string, id:string, pivot:string) => void>,
  *      PerformActualRendering: Signal<() => void>
  *  }} Bridge
  */
@@ -175,6 +176,16 @@ function connectUpdateSignals(bridge) {
         }
         bridge.EmitEvent(handler, ev)
     }
+    /** @param {Element} el */
+    let keepFocus = el => {
+        let focus = document.activeElement
+        if (focus && el.contains(focus)) {
+            // @ts-ignore
+            return () => { focus.focus && focus.focus() }
+        } else {
+            return () => {}
+        }
+    }
     bridge.PerformActualRendering.connect(() => {
         flushPatchOperationQueue()
         runAllUpdateHooks()
@@ -319,16 +330,6 @@ function connectUpdateSignals(bridge) {
         }
     })
     connectPatchSignal(bridge.SwapNode, (parent, a, b) => {
-        /** @param {Element} el */
-        let keepFocus = el => {
-            let focus = document.activeElement
-            if (focus && el.contains(focus)) {
-                // @ts-ignore
-                return () => { focus.focus && focus.focus() }
-            } else {
-                return () => {}
-            }
-        }
         try {
             let parent_el = elementRegistry[parent]
             let a_el = elementRegistry[a]
@@ -354,6 +355,18 @@ function connectUpdateSignals(bridge) {
             }
         } catch (err) {
             console.log('SwapNode', { parent, a, b }, err)
+        }
+    })
+    connectPatchSignal(bridge.MoveNode, (parent, id, pivot) => {
+        try {
+            let parent_el = elementRegistry[parent]
+            let el = elementRegistry[id]
+            let pivot_el = elementRegistry[pivot]
+            let restore = keepFocus(el)
+            parent_el.insertBefore(el, pivot_el)
+            restore()
+        } catch (err) {
+            console.log('MoveNode', { parent, id, pivot }, err)
         }
     })
 }

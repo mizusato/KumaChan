@@ -15,12 +15,17 @@ do ui-exit-when-window-closed;
 private const Root: UI::Component
     let center := styled ui-container ['center'],
     let row := styled ui-container ['row'],
+    let button-small := styled ui-button ['min-width-3'],
     ~ use &(list) := ui-state (empty-list:[Todo]),
     let add-item-from: (&(Reactive[String])(Action)) := ( &(buffer)
         ~ await &(content) := buffer.read,
         ~ await &(id) := gen-sequential-id,
         ~ await list.append (id, { content, finished: No }),
         buffer.write('')
+    ),
+    let insert-item-after: (&(ListKey)(Action)) := ( &(pivot)
+        ~ await &(id) := gen-sequential-id,
+        list.insert {after:pivot} (id, { content: '', finished: No })
     ),
     center [
         ~ use &(buffer) := ui-state '',
@@ -34,11 +39,12 @@ private const Root: UI::Component
             ui-checkbox finished,
             ui-text-input content,
             row [
-                ui-button 'Up' (list.move-up id)
+                button-small '↑' (list.move-up id)
                     | with (ui-show-if (not $(index is-first-in list))),
-                ui-button 'Down' (list.move-down id)
+                button-small '↓' (list.move-down id)
                     | with (ui-show-if (not $(index is-last-in list))),
-                ui-button 'Remove' (list.delete id)
+                button-small '+' (insert-item-after id),
+                button-small '×' (list.delete id)
             ]
         ]
     ];

@@ -47,7 +47,8 @@ signals:
     void RemoveNode(QString parent, QString id);
     void UpdateNode(QString old_id, QString new_id);
     void ReplaceNode(QString parent, QString old_id, QString id, QString tag);
-    void SwapNode(QString id, QString a, QString b);
+    void SwapNode(QString parent, QString a, QString b);
+    void MoveNode(QString parent, QString id, QString pivot);
     void PerformActualRendering();
 };
 

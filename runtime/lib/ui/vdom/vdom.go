@@ -98,6 +98,7 @@ type DeltaNotifier struct {
 	UpdateNode   func(old_id String, new_id String)
 	ReplaceNode  func(parent String, old_id String, new_id String, tag String)
 	SwapNode     func(parent String, a String, b String)
+	MoveNode     func(parent String, id String, pivot String)
 }
 
 func assert(ok bool) {
@@ -267,8 +268,11 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 					return index, has
 				}
 				var old_index, old_has = build_index(old_children)
+				var _, new_has = build_index(new_children)
 				var swapped = make(map[int] *Node)
-				for i := 0; i < L; i += 1 {
+				var i = 0
+				var j = 0
+				for (i < L && j < L) {
 					var old_child *Node = nil
 					var new_child *Node = nil
 					if i < len(old_children) {
@@ -278,8 +282,8 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 							old_child = old_swapped
 						}
 					}
-					if i < len(new_children) {
-						new_child = new_children[i]
+					if j < len(new_children) {
+						new_child = new_children[j]
 					}
 					if new_child != old_child && old_has(new_child) {
 						var node_id = get_addr(node)
@@ -290,9 +294,19 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 						old_index[old_child] = old_index[new_child]
 						old_index[new_child] = t
 						ctx.SwapNode(node_id, old_child_id, new_child_id)
+					} else if new_child != old_child && new_has(old_child) {
+						var node_id = get_addr(node)
+						var old_child_id = get_addr(old_child)
+						var new_child_id = get_addr(new_child)
+						Diff(ctx, node, nil, new_child)
+						ctx.MoveNode(node_id, new_child_id, old_child_id)
+						j += 1
+						continue
 					} else {
 						Diff(ctx, node, old_child, new_child)
 					}
+					i += 1
+					j += 1
 				}
 			}
 			if old != nil {

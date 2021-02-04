@@ -624,6 +624,12 @@ func WebUiSwapNode(parent Ucs4String, old_id Ucs4String, new_id Ucs4String) {
     var new_id_, del_new_id = NewString(new_id);  defer del_new_id()
     C.WebUiSwapNode(C.QtString(parent_), C.QtString(old_id_), C.QtString(new_id_))
 }
+func WebUiMoveNode(parent Ucs4String, id Ucs4String, pivot Ucs4String) {
+    var parent_, del_parent = NewString(parent);  defer del_parent()
+    var id_, del_old_id = NewString(id);  defer del_old_id()
+    var pivot_, del_new_id = NewString(pivot);  defer del_new_id()
+    C.WebUiMoveNode(C.QtString(parent_), C.QtString(id_), C.QtString(pivot_))
+}
 func WebUiPerformActualRendering() {
     C.WebUiPerformActualRendering()
 }

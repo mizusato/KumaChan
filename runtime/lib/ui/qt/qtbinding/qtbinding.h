@@ -135,6 +135,7 @@ extern "C" {
     void WebUiUpdateNode(QtString old_id, QtString new_id);
     void WebUiReplaceNode(QtString parent, QtString old_id, QtString id, QtString tag);
     void WebUiSwapNode(QtString parent, QtString a, QtString b);
+    void WebUiMoveNode(QtString parent, QtString id, QtString pivot);
     void WebUiPerformActualRendering();
 #ifdef __cplusplus
 }

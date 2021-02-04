@@ -114,6 +114,10 @@ void WebUiSwapNode(QtString parent, QtString a, QtString b) {
     emit window->bridge->SwapNode(QtUnwrapString(parent), QtUnwrapString(a), QtUnwrapString(b));
 }
 
+void WebUiMoveNode(QtString parent, QtString id, QtString pivot) {
+    emit window->bridge->MoveNode(QtUnwrapString(parent), QtUnwrapString(id), QtUnwrapString(pivot));
+}
+
 void WebUiPerformActualRendering() {
     emit window->bridge->PerformActualRendering();
 }
