@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"os"
+	"fmt"
 	"kumachan/rx"
 	"kumachan/runtime/lib/ui/qt"
 	"kumachan/runtime/lib/ui/vdom"
@@ -42,6 +44,10 @@ var virtualDomDeltaNotifier = &vdom.DeltaNotifier {
 var virtualDomRoot *vdom.Node = nil
 var virtualDomUpdate = func(new_root *vdom.Node) rx.Action {
 	return rx.NewCallback(func(done func(rx.Object)) {
+		// --- <debug> ---
+		fmt.Fprintf(os.Stderr, "\033[1m<!-- Virtual DOM Update -->\033[0m\n")
+		fmt.Fprintf(os.Stderr, vdom.Inspect(new_root))
+		// --- </debug> ---
 		qt.CommitTask(func() {
 			var ctx = virtualDomDeltaNotifier
 			var prev_root = virtualDomRoot
