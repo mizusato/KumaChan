@@ -7,9 +7,9 @@ import (
 	"kumachan/rx"
 	"kumachan/util"
 	"kumachan/rpc/kmd"
+	. "kumachan/lang"
 	. "kumachan/util/error"
 	"kumachan/runtime/lib/librpc"
-	. "kumachan/lang"
 )
 
 
