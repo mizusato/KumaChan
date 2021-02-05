@@ -35,24 +35,23 @@ func scheduleUpdate(sched rx.Scheduler, vdom_source rx.Action, debug bool) {
 }
 
 var patchOpBuffer = make([] interface {}, 0)
-func clearPatchOperationBuffer() {
-	patchOpBuffer = patchOpBuffer[0:0]
-}
-func serializePathOperations() ([] byte) {
+func serializePatchOperations() ([] byte) {
 	var bin, err = json.Marshal(patchOpBuffer)
 	if err != nil { panic("something went wrong") }
+	patchOpBuffer = patchOpBuffer[0:0]
 	return bin
 }
-var virtualDomDeltaNotifier = patchOperationCollector(&patchOpBuffer)
+var patchOperationCollector = getPatchOperationCollector(&patchOpBuffer)
 var virtualDomRoot *vdom.Node = nil
 var virtualDomUpdate = func(new_root *vdom.Node, debug bool) rx.Action {
 	return rx.NewSync(func() (rx.Object, bool) {
-		var ctx = virtualDomDeltaNotifier
 		var prev_root = virtualDomRoot
 		virtualDomRoot = new_root
-		clearPatchOperationBuffer()
-		vdom.Diff(ctx, nil, prev_root, new_root)
-		var patch_data = serializePathOperations()
+		vdom.Diff(patchOperationCollector, nil, prev_root, new_root)
+		var patch_data = serializePatchOperations()
+		qt.CommitTask(func() {
+			qt.WebUiPatchActualDOM(patch_data)
+		})
 		if debug {
 			var ctx = vdom.InspectContext { GetHandlerId: getEventHandlerId }
 			fmt.Fprintf(os.Stderr, "\033[1m<!-- Virtual DOM Update -->\033[0m\n")
@@ -61,14 +60,11 @@ var virtualDomUpdate = func(new_root *vdom.Node, debug bool) rx.Action {
 			_, _ = os.Stderr.Write(patch_data)
 			fmt.Fprintf(os.Stderr, "\n\n")
 		}
-		qt.CommitTask(func() {
-			qt.WebUiPatchActualDOM(patch_data)
-		})
 		return nil, true
 	})
 }
 
-func patchOperationCollector(buf *([] interface{})) *vdom.DeltaNotifier {
+func getPatchOperationCollector(buf *([] interface{})) *vdom.DeltaNotifier {
 	var writeOperation = func(op string) {
 		*buf = append(*buf, op)
 	}

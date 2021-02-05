@@ -470,8 +470,8 @@ func WebUiInjectJS(path String) String {
 func WebUiInjectTTF(path String, family String, weight String, style String) String {
     return String(C.WebUiInjectTTF(C.QtString(path), C.QtString(family), C.QtString(weight), C.QtString(style)))
 }
-func WebUiPatchActualDOM(operations_data ([] byte)) {
-    var str, del = NewStringFromUtf8Binary(operations_data)
+func WebUiPatchActualDOM(patch_data ([] byte)) {
+    var str, del = NewStringFromUtf8Binary(patch_data)
     defer del()
     C.WebUiPatchActualDOM(C.QtString(str))
 }
