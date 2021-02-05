@@ -110,6 +110,20 @@ func get_addr(ptr interface{}) String {
 	return String(fmt.Sprintf("%X", n))
 }
 
+func detach_all_events(ctx *DeltaNotifier, node *Node) {
+	var node_id = get_addr(node)
+	node.Events.Data.ForEach(func(name String, val interface{}) {
+		var opts = val.(*EventOptions)
+		ctx.DetachEvent(node_id, name, opts.Handler)
+	})
+	var children, has_children = node.Content.(*Children)
+	if has_children {
+		for _, child := range *children {
+			detach_all_events(ctx, child)
+		}
+	}
+}
+
 func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 	assert(ctx != nil)
 	assert(old != nil || new != nil)
@@ -120,10 +134,7 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 	if old == nil {
 		ctx.AppendNode(parent_id, new_id, new.Tag)
 	} else if new == nil {
-		old.Events.Data.ForEach(func(name String, val interface{}) {
-			var opts = val.(*EventOptions)
-			ctx.DetachEvent(old_id, name, opts.Handler)
-		})
+		detach_all_events(ctx, old)
 		ctx.RemoveNode(parent_id, old_id)
 	} else {
 		if str_equal(old.Tag, new.Tag) {

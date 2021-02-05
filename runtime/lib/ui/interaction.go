@@ -57,7 +57,7 @@ var virtualDomUpdate = func(new_root *vdom.Node, debug bool) rx.Action {
 		vdom.Diff(ctx, nil, prev_root, new_root)
 		var patch_data = serializePathOperations()
 		if debug {
-			fmt.Fprintf(os.Stderr, "\033[1m<!--Patch Operation Sequence -->\033[0m\n")
+			fmt.Fprintf(os.Stderr, "\033[1m<!-- Patch Operation Sequence -->\033[0m\n")
 			_, _ = os.Stderr.Write(patch_data)
 			fmt.Fprintf(os.Stderr, "\n\n")
 		}
