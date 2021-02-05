@@ -13,7 +13,6 @@
  *      InjectCSS: Signal<(uuid:string, content:string) => void>,
  *      InjectJS: Signal<(uuid:string, content:string) => void>,
  *      InjectTTF: Signal<(uuid: string, content: string, family: string, weight: string, style: string) => void>,
- *      PerformActualRendering: Signal<() => void>,
  *      PatchActualDOM: Signal<(data:string) => void>
  *  }} Bridge
  */
@@ -68,32 +67,11 @@ function runAllUpdateHooks() {
     }
 }
 
-/** @type {Array<() => void>} */
-let patchOperationQueue = []
-/**
- *  @template T
- *  @param {Signal<T>} signal
- *  @param {T} callback 
- */
-function connectPatchSignal(signal, callback) {
-    // @ts-ignore
-    signal.connect((...args) => {
-        // @ts-ignore
-        patchOperationQueue.push(() => callback(...args))
-    })
-}
-function flushPatchOperationQueue() {
-    for (let f of patchOperationQueue) {
-        f()
-    }
-    patchOperationQueue.length = 0
-}
-
 window.addEventListener('load', _ => {
     let bridge = getBridgeObject()
     connectGeneralSignals(bridge)
     registerBodyElement()
-    connectUpdateSignals(bridge)
+    initializeInteraction(bridge)
     notifyInitialized(bridge)
 })
 
@@ -151,7 +129,7 @@ function connectGeneralSignals(bridge) {
 }
 
 /** @param {Bridge} bridge */
-function connectUpdateSignals(bridge) {
+function initializeInteraction(bridge) {
     /** @type {(parent:string, tag:string) => HTMLElement | SVGElement} */
     let createElement = (parent, tag) => {
         let parent_el = elementRegistry[parent]
@@ -191,10 +169,6 @@ function connectUpdateSignals(bridge) {
             return () => {}
         }
     }
-    bridge.PerformActualRendering.connect(() => {
-        flushPatchOperationQueue()
-        runAllUpdateHooks()
-    })
     /** @type {PatchOperations} */
     let patchOperations = {
         ApplyStyle: (id, key, val) => {
@@ -401,6 +375,7 @@ function connectUpdateSignals(bridge) {
                 }
                 i += 1
             }
+            runAllUpdateHooks()
         } catch (err) {
             console.log(`error patching DOM: ${data}`, err)
         }

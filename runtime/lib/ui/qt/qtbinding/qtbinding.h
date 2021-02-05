@@ -114,29 +114,13 @@ extern "C" {
     void WebUiInit(QtString title, QtBool debug);
     void WebUiLoadView();
     void* WebUiGetWindow();
-    QtString WebUiGetCurrentEventHandler();
-    QtVariantMap WebUiGetCurrentEventPayload();
     void WebUiRegisterAsset(QtString path, QtString mime, const uint8_t* buf, size_t len);
     QtString WebUiInjectCSS(QtString path);
     QtString WebUiInjectJS(QtString path);
     QtString WebUiInjectTTF(QtString path, QtString family, QtString weight, QtString style);
     void WebUiCallMethod(QtString id, QtString name, QtVariantList args);
-    void WebUiEraseStyle(QtString id, QtString key);
-    void WebUiApplyStyle(QtString id, QtString key, QtString value);
-    void WebUiRemoveAttr(QtString id, QtString name);
-    void WebUiSetAttr(QtString id, QtString name, QtString value);
-    void WebUiDetachEvent(QtString id, QtString event);
-    void WebUiModifyEvent(QtString id, QtString event, QtBool prevent, QtBool stop, QtBool capture);
-    void WebUiAttachEvent(QtString id, QtString event, QtBool prevent, QtBool stop, QtBool capture, QtString handler);
-    void WebUiSetText(QtString id, QtString text);
-    void WebUiInsertNode(QtString parent, QtString ref, QtString id, QtString tag);
-    void WebUiAppendNode(QtString parent, QtString id, QtString tag);
-    void WebUiRemoveNode(QtString parent, QtString id);
-    void WebUiUpdateNode(QtString old_id, QtString new_id);
-    void WebUiReplaceNode(QtString parent, QtString old_id, QtString id, QtString tag);
-    void WebUiSwapNode(QtString parent, QtString a, QtString b);
-    void WebUiMoveNode(QtString parent, QtString id, QtString pivot);
-    void WebUiPerformActualRendering();
+    QtString WebUiGetCurrentEventHandler();
+    QtVariantMap WebUiGetCurrentEventPayload();
     void WebUiPatchActualDOM(QtString operations);
 #ifdef __cplusplus
 }

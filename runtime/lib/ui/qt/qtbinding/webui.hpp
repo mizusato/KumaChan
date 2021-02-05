@@ -35,21 +35,6 @@ signals:
     void InjectJS(QString uuid, QString path);
     void InjectTTF(QString uuid, QString path, QString family, QString weight, QString style);
     void CallMethod(QString id, QString name, QVariantList args);
-    void EraseStyle(QString id, QString key);
-    void ApplyStyle(QString id, QString key, QString value);
-    void RemoveAttr(QString id, QString name);
-    void SetAttr(QString id, QString name, QString value);
-    void DetachEvent(QString id, QString event);
-    void ModifyEvent(QString id, QString event, bool prevent, bool stop, bool capture);
-    void AttachEvent(QString id, QString event, bool prevent, bool stop, bool capture, QString handler);
-    void SetText(QString id, QString text);
-    void AppendNode(QString parent, QString id, QString tag);
-    void RemoveNode(QString parent, QString id);
-    void UpdateNode(QString old_id, QString new_id);
-    void ReplaceNode(QString parent, QString old_id, QString id, QString tag);
-    void SwapNode(QString parent, QString a, QString b);
-    void MoveNode(QString parent, QString id, QString pivot);
-    void PerformActualRendering();
     void PatchActualDOM(QString operations);
 };
 
