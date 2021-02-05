@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"reflect"
+	"html"
 )
 
 
@@ -36,7 +37,11 @@ func writeNode (
 	writeLineFeed(buf)
 	switch content := node.Content.(type) {
 	case *Text:
-		writeQuotedString(buf, *content)
+		if len(*content) > 0 {
+			writeBlank(buf, (depth + 1), indent)
+			writeHtmlTextString(buf, *content)
+			writeLineFeed(buf)
+		}
 	case *Children:
 		for _, child := range *content {
 			writeNode(buf, child, ctx, (depth + 1), indent)
@@ -108,6 +113,10 @@ func writeString(buf io.Writer, str String) {
 
 func writeQuotedString(buf io.Writer, str String) {
 	fmt.Fprintf(buf, "%s", strconv.Quote(string(str)))
+}
+
+func writeHtmlTextString(buf io.Writer, str String) {
+	fmt.Fprintf(buf, "%s", html.EscapeString(string(str)))
 }
 
 func writeBlank(buf io.Writer, n uint, chunk_size uint) {
