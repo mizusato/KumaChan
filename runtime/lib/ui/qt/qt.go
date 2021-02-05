@@ -12,6 +12,7 @@ import (
     "unsafe"
     "reflect"
     "kumachan/runtime/lib/ui/qt/cgohelper"
+    "kumachan/runtime/lib/ui/vdom"
 )
 
 
@@ -273,6 +274,20 @@ func NewString(runes Ucs4String) (String, func()) {
     }
 }
 
+func NewStringFromUtf8Binary(buf ([] byte)) (String, func()) {
+    var str C.QtString
+    if len(buf) > 0 {
+        var ptr = (*C.uint8_t)(unsafe.Pointer(&buf[0]))
+        var size = (C.size_t)(len(buf))
+        str = C.QtNewStringUTF8(ptr, size)
+    } else {
+        str = C.QtNewStringUTF8(nil, 0)
+    }
+    return String(str), func() {
+        C.QtDeleteString(str)
+    }
+}
+
 func StringToRunes(str String) ([] rune) {
     var q_str = (C.QtString)(str)
     var size16 = uint(C.QtStringUTF16Length(q_str))
@@ -470,19 +485,21 @@ func WebUiLoadView() {
     C.WebUiLoadView()
 }
 
-var __WebUiEventHandlers = make(map[string] interface{})
-func WebUiGetHandler(id string) interface{} {
-    return __WebUiEventHandlers[id]
+var __WebUiEventHandlers = make(map[string] *vdom.EventHandler)
+func WebUiLookupEventHandler(id string) (*vdom.EventHandler, bool) {
+    var handler, exists = __WebUiEventHandlers[id]
+    return handler, exists
 }
-func WebUiGetHandlerId(handler interface{}) string {
+func WebUiGetEventHandlerId(handler *vdom.EventHandler) string {
     return fmt.Sprintf("%X", reflect.ValueOf(handler).Pointer())
 }
-func WebUiRegisterEventHandler(handler interface{}) string {
-    var id = WebUiGetHandlerId(handler)
+func WebUiRegisterEventHandler(handler *vdom.EventHandler) string {
+    var id = WebUiGetEventHandlerId(handler)
     __WebUiEventHandlers[id] = handler
     return id
 }
-func WebUiUnregisterEventHandler(id string) {
+func WebUiUnregisterEventHandler(handler *vdom.EventHandler) {
+    var id = WebUiGetEventHandlerId(handler)
     delete(__WebUiEventHandlers, id)
 }
 
@@ -508,14 +525,14 @@ func WebUiInjectTTF(path String, family String, weight String, style String) Str
     return String(C.WebUiInjectTTF(C.QtString(path), C.QtString(family), C.QtString(weight), C.QtString(style)))
 }
 
-func WebUiGetEventHandler() interface{} {
-    var raw_id = C.WebUiGetEventHandler()
+func WebUiGetCurrentEventHandler() (*vdom.EventHandler, bool) {
+    var raw_id = C.WebUiGetCurrentEventHandler()
     var id = StringToRunes(String(raw_id))
-    return WebUiGetHandler(string(id))
+    return WebUiLookupEventHandler(string(id))
 }
 
-func WebUiGetEventPayload() *WebUiEventPayload {
-    return &WebUiEventPayload { VariantMap(C.WebUiGetEventPayload()) }
+func WebUiGetCurrentEventPayload() *WebUiEventPayload {
+    return &WebUiEventPayload { VariantMap(C.WebUiGetCurrentEventPayload()) }
 }
 
 func WebUiConsumeEventPayload(ev *WebUiEventPayload, f func(*WebUiEventPayload) interface{}) interface{} {
@@ -565,7 +582,7 @@ func WebUiRemoveAttr(id Ucs4String, name Ucs4String) {
     var name_, del_key = NewString(name);  defer del_key()
     C.WebUiRemoveAttr(C.QtString(id_), C.QtString(name_))
 }
-func WebUiAttachEvent(id Ucs4String, name Ucs4String, prevent bool, stop bool, capture bool, handler interface{}) {
+func WebUiAttachEvent(id Ucs4String, name Ucs4String, prevent bool, stop bool, capture bool, handler *vdom.EventHandler) {
     var id_, del_id = NewString(id);  defer del_id()
     var name_, del_name = NewString(name);  defer del_name()
     var prevent_ = MakeBool(prevent)
@@ -584,11 +601,11 @@ func WebUiModifyEvent(id Ucs4String, name Ucs4String, prevent bool, stop bool, c
     var capture_ = MakeBool(capture)
     C.WebUiModifyEvent(C.QtString(id_), C.QtString(name_), C.QtBool(prevent_), C.QtBool(stop_), C.QtBool(capture_))
 }
-func WebUiDetachEvent(id Ucs4String, name Ucs4String, handler interface{}) {
+func WebUiDetachEvent(id Ucs4String, name Ucs4String, handler *vdom.EventHandler) {
     var id_, del_id = NewString(id);  defer del_id()
     var name_, del_name = NewString(name);  defer del_name()
     C.WebUiDetachEvent(C.QtString(id_), C.QtString(name_))
-    WebUiUnregisterEventHandler(WebUiGetHandlerId(handler))
+    WebUiUnregisterEventHandler(handler)
 }
 func WebUiSetText(id Ucs4String, content Ucs4String) {
     var id_, del_id = NewString(id);  defer del_id()
@@ -632,5 +649,10 @@ func WebUiMoveNode(parent Ucs4String, id Ucs4String, pivot Ucs4String) {
 }
 func WebUiPerformActualRendering() {
     C.WebUiPerformActualRendering()
+}
+func WebUiPatchActualDOM(operations_data ([] byte)) {
+    var str, del = NewStringFromUtf8Binary(operations_data)
+    defer del()
+    C.WebUiPatchActualDOM(C.QtString(str))
 }
 

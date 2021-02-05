@@ -166,11 +166,11 @@ func (s Sender) Complete() {
 }
 
 
-func ScheduleTask(task Action, sched Scheduler) {
+func ScheduleAction(task Action, sched Scheduler) {
 	sched.RunTopLevel(task, Receiver { Context: Background() })
 }
 
-func ScheduleTaskWaitTerminate(task Action, sched Scheduler) bool {
+func ScheduleActionWaitTerminate(task Action, sched Scheduler) bool {
 	var wait = make(chan bool)
 	sched.RunTopLevel(task, Receiver {
 		Context:   Background(),

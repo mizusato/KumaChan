@@ -50,6 +50,7 @@ signals:
     void SwapNode(QString parent, QString a, QString b);
     void MoveNode(QString parent, QString id, QString pivot);
     void PerformActualRendering();
+    void PatchActualDOM(QString operations);
 };
 
 struct WebUiAsset {

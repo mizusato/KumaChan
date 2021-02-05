@@ -13,22 +13,27 @@
  *      InjectCSS: Signal<(uuid:string, content:string) => void>,
  *      InjectJS: Signal<(uuid:string, content:string) => void>,
  *      InjectTTF: Signal<(uuid: string, content: string, family: string, weight: string, style: string) => void>,
- *      ApplyStyle: Signal<(id:string, key:string, value:string) => void>,
- *      EraseStyle: Signal<(id:string, key:string) => void>,
- *      SetAttr: Signal<(id:string, name:string, value:string) => void>,
- *      RemoveAttr: Signal<(id:string, name:string) => void>,
- *      AttachEvent: Signal<(id:string, name:string, prevent:boolean, stop:boolean, capture: boolean, handler: string) => void>,
- *      ModifyEvent: Signal<(id:string, name:string, prevent:boolean, stop:boolean, capture: boolean) => void>,
- *      DetachEvent: Signal<(id:string, name:string) => void>,
- *      SetText: Signal<(id:string, content:string) => void>,
- *      AppendNode: Signal<(parent:string, id:string, tag:string) => void>
- *      RemoveNode: Signal<(parent:string, id:string) => void>,
- *      UpdateNode: Signal<(old_id:string, new_id:string) => void>,
- *      ReplaceNode: Signal<(target:string, id:string, tag:string) => void>,
- *      SwapNode: Signal<(parent:string, a:string, b:string) => void>,
- *      MoveNode: Signal<(parent:string, id:string, pivot:string) => void>,
- *      PerformActualRendering: Signal<() => void>
+ *      PerformActualRendering: Signal<() => void>,
+ *      PatchActualDOM: Signal<(data:string) => void>
  *  }} Bridge
+ */
+/**
+ *  @typedef {{
+ *      ApplyStyle: (id:string, key:string, value:string) => void,
+ *      EraseStyle: (id:string, key:string) => void,
+ *      SetAttr: (id:string, name:string, value:string) => void,
+ *      RemoveAttr: (id:string, name:string) => void,
+ *      AttachEvent: (id:string, name:string, prevent:boolean, stop:boolean, capture: boolean, handler: string) => void,
+ *      ModifyEvent: (id:string, name:string, prevent:boolean, stop:boolean, capture: boolean) => void,
+ *      DetachEvent: (id:string, name:string) => void,
+ *      SetText: (id:string, content:string) => void,
+ *      AppendNode: (parent:string, id:string, tag:string) => void
+ *      RemoveNode: (parent:string, id:string) => void,
+ *      UpdateNode: (old_id:string, new_id:string) => void,
+ *      ReplaceNode: (target:string, id:string, tag:string) => void,
+ *      SwapNode: (parent:string, a:string, b:string) => void,
+ *      MoveNode: (parent:string, id:string, pivot:string) => void
+ *  }} PatchOperations
  */
 
 const SvgXmlNamespace = 'http://www.w3.org/2000/svg'
@@ -190,183 +195,214 @@ function connectUpdateSignals(bridge) {
         flushPatchOperationQueue()
         runAllUpdateHooks()
     })
-    connectPatchSignal(bridge.ApplyStyle, (id, key, val) => {
-        try {
-            elementRegistry[id].style[key] = val
-        } catch (err) {
-            console.log('ApplyStyle', { id, key, val }, err)
-        }
-    })
-    connectPatchSignal(bridge.EraseStyle, (id, key) => {
-        try {
-            elementRegistry[id].style[key] = ''
-        } catch (err) {
-            console.log('EraseStyle', { id, key }, err)
-        }
-    })
-    connectPatchSignal(bridge.SetAttr, (id, name, val) => {
-        try {
-            if (name == 'value') {
-                elementRegistry[id]['value'] = val
-            } else if (name == 'checked' || name == 'disabled') {
-                elementRegistry[id][name] = true
-            } else {
-                elementRegistry[id].setAttribute(name, val)
+    /** @type {PatchOperations} */
+    let patchOperations = {
+        ApplyStyle: (id, key, val) => {
+            try {
+                elementRegistry[id].style[key] = val
+            } catch (err) {
+                console.log('ApplyStyle', { id, key, val }, err)
             }
-        } catch (err) {
-            console.log('SetAttr', { id, name, val }, err)
-        }
-    })
-    connectPatchSignal(bridge.RemoveAttr, (id, name) => {
-        try {
-            if (name == 'value') {
-                elementRegistry[id]['value'] = ''
-            } else if (name == 'checked' || name == 'disabled') {
-                elementRegistry[id][name] = false
-            } else {
-                elementRegistry[id].removeAttribute(name)
+        },
+        EraseStyle: (id, key) => {
+            try {
+                elementRegistry[id].style[key] = ''
+            } catch (err) {
+                console.log('EraseStyle', { id, key }, err)
             }
-        } catch (err) {
-            console.log('RemoveAttr', { id, name }, err)
-        }
-    })
-    connectPatchSignal(bridge.AttachEvent, (id, name, prevent, stop, capture, handler) => {
-        try {
-            let listener = createListener(prevent, stop, handler)
-            let el = elementRegistry[id]
-            // TODO: convenient handling for key events
-            let event_kind = name.replace(/\..*/, '')
-            el.addEventListener(event_kind, listener, Boolean(capture))
-            if (!(eventsRegistry[id])) { eventsRegistry[id] = {} }
-            eventsRegistry[id][name] = { listener, handler, capture }
-        } catch (err) {
-            console.log('AttachEvent', { id, name, prevent, stop, capture, handler }, err)
-        }
-    })
-    connectPatchSignal(bridge.ModifyEvent, (id, name, prevent, capture, stop) => {
-        try {
-            let el = elementRegistry[id]
-            let events = eventsRegistry[id]
-            let old_event = events[name]
-            let handler = old_event.handler
-            let old_listener = old_event.listener
-            let old_capture = old_event.capture
-            let listener = createListener(prevent, stop, handler)
-            let event_kind = name.replace(/\..*/, '')
-            // @ts-ignore
-            el.removeEventListener(event_kind, old_listener, Boolean(old_capture))
-            el.addEventListener(event_kind, listener, Boolean(capture))
-            events[name] = { listener, handler, capture }
-        } catch (err) {
-            console.log('ModifyEvent', { id, name, prevent, stop, capture }, err)
-        }
-    })
-    connectPatchSignal(bridge.DetachEvent, (id, name) => {
-        try {
-            let el = elementRegistry[id]
-            let event = eventsRegistry[id][name]
-            let event_kind = name.replace(/\..*/, '')
-            // @ts-ignore
-            el.removeEventListener(event_kind, event.listener)
-            delete eventsRegistry[id][name]
-        } catch (err) {
-            console.log('DetachEvent', { id, name }, err)
-        }
-    })
-    connectPatchSignal(bridge.SetText, (id, text) => {
-        try {
-            elementRegistry[id].textContent = text
-        } catch (err) {
-            console.log('SetText', { id, text }, err)
-        }
-    })
-    connectPatchSignal(bridge.AppendNode, (parent, id, tag) => {
-        try {
-            let el = createElement(parent, tag)
-            elementRegistry[id] = el
-            elementRegistry[parent].appendChild(el)
-        } catch (err) {
-            console.log('AppendNode', { parent, id, tag }, err)
-        }
-    })
-    connectPatchSignal(bridge.RemoveNode, (parent, id) => {
-        try {
-            elementRegistry[parent].removeChild(elementRegistry[id])
-            delete elementRegistry[id]
-            if (eventsRegistry[id]) {
-                delete eventsRegistry[id]
+        },
+        SetAttr: (id, name, val) => {
+            try {
+                if (name == 'value') {
+                    elementRegistry[id]['value'] = val
+                } else if (name == 'checked' || name == 'disabled') {
+                    elementRegistry[id][name] = true
+                } else {
+                    elementRegistry[id].setAttribute(name, val)
+                }
+            } catch (err) {
+                console.log('SetAttr', { id, name, val }, err)
             }
-        } catch (err) {
-            console.log('RemoveNode', { parent, id }, err)
-        }
-    })
-    connectPatchSignal(bridge.UpdateNode, (old_id, new_id) => {
-        try {
-            let el = elementRegistry[old_id]
-            delete elementRegistry[old_id]
-            elementRegistry[new_id] = el
-            if (eventsRegistry[old_id]) {
-                eventsRegistry[new_id] = eventsRegistry[old_id]
-                delete eventsRegistry[old_id]
+        },
+        RemoveAttr: (id, name) => {
+            try {
+                if (name == 'value') {
+                    elementRegistry[id]['value'] = ''
+                } else if (name == 'checked' || name == 'disabled') {
+                    elementRegistry[id][name] = false
+                } else {
+                    elementRegistry[id].removeAttribute(name)
+                }
+            } catch (err) {
+                console.log('RemoveAttr', { id, name }, err)
             }
-        } catch (err) {
-            console.log('UpdateNode', { old_id, new_id }, err)
-        }
-    })
-    connectPatchSignal(bridge.ReplaceNode, (parent, old_id, new_id, tag) => {
-        try {
-            let parent_el = elementRegistry[parent]
-            let old_el = elementRegistry[old_id]
-            let new_el = createElement(parent, tag)
-            parent_el.insertBefore(new_el, old_el)
-            parent_el.removeChild(old_el)
-            delete elementRegistry[old_id]
-            elementRegistry[new_id] = new_el
-            if (eventsRegistry[old_id]) {
-                delete eventsRegistry[old_id]
+        },
+        AttachEvent: (id, name, prevent, stop, capture, handler) => {
+            try {
+                let listener = createListener(prevent, stop, handler)
+                let el = elementRegistry[id]
+                // TODO: convenient handling for key events
+                let event_kind = name.replace(/\..*/, '')
+                el.addEventListener(event_kind, listener, Boolean(capture))
+                if (!(eventsRegistry[id])) { eventsRegistry[id] = {} }
+                eventsRegistry[id][name] = { listener, handler, capture }
+            } catch (err) {
+                console.log('AttachEvent', { id, name, prevent, stop, capture, handler }, err)
             }
-        } catch (err) {
-            console.log('ReplaceNode', { parent, old_id, new_id, tag }, err)
-        }
-    })
-    connectPatchSignal(bridge.SwapNode, (parent, a, b) => {
-        try {
-            let parent_el = elementRegistry[parent]
-            let a_el = elementRegistry[a]
-            let b_el = elementRegistry[b]
-            if (a_el.nextElementSibling === b_el) {
-                let restore = keepFocus(b_el)
-                parent_el.insertBefore(b_el, a_el)
+        },
+        ModifyEvent: (id, name, prevent, capture, stop) => {
+            try {
+                let el = elementRegistry[id]
+                let events = eventsRegistry[id]
+                let old_event = events[name]
+                let handler = old_event.handler
+                let old_listener = old_event.listener
+                let old_capture = old_event.capture
+                let listener = createListener(prevent, stop, handler)
+                let event_kind = name.replace(/\..*/, '')
+                // @ts-ignore
+                el.removeEventListener(event_kind, old_listener, Boolean(old_capture))
+                el.addEventListener(event_kind, listener, Boolean(capture))
+                events[name] = { listener, handler, capture }
+            } catch (err) {
+                console.log('ModifyEvent', { id, name, prevent, stop, capture }, err)
+            }
+        },
+        DetachEvent: (id, name) => {
+            try {
+                let el = elementRegistry[id]
+                let event = eventsRegistry[id][name]
+                let event_kind = name.replace(/\..*/, '')
+                // @ts-ignore
+                el.removeEventListener(event_kind, event.listener)
+                delete eventsRegistry[id][name]
+            } catch (err) {
+                console.log('DetachEvent', { id, name }, err)
+            }
+        },
+        SetText: (id, text) => {
+            try {
+                elementRegistry[id].textContent = text
+            } catch (err) {
+                console.log('SetText', { id, text }, err)
+            }
+        },
+        AppendNode: (parent, id, tag) => {
+            try {
+                let el = createElement(parent, tag)
+                elementRegistry[id] = el
+                elementRegistry[parent].appendChild(el)
+            } catch (err) {
+                console.log('AppendNode', { parent, id, tag }, err)
+            }
+        },
+        RemoveNode: (parent, id) => {
+            try {
+                elementRegistry[parent].removeChild(elementRegistry[id])
+                delete elementRegistry[id]
+                if (eventsRegistry[id]) {
+                    delete eventsRegistry[id]
+                }
+            } catch (err) {
+                console.log('RemoveNode', { parent, id }, err)
+            }
+        },
+        UpdateNode: (old_id, new_id) => {
+            try {
+                let el = elementRegistry[old_id]
+                delete elementRegistry[old_id]
+                elementRegistry[new_id] = el
+                if (eventsRegistry[old_id]) {
+                    eventsRegistry[new_id] = eventsRegistry[old_id]
+                    delete eventsRegistry[old_id]
+                }
+            } catch (err) {
+                console.log('UpdateNode', { old_id, new_id }, err)
+            }
+        },
+        ReplaceNode: (parent, old_id, new_id, tag) => {
+            try {
+                let parent_el = elementRegistry[parent]
+                let old_el = elementRegistry[old_id]
+                let new_el = createElement(parent, tag)
+                parent_el.insertBefore(new_el, old_el)
+                parent_el.removeChild(old_el)
+                delete elementRegistry[old_id]
+                elementRegistry[new_id] = new_el
+                if (eventsRegistry[old_id]) {
+                    delete eventsRegistry[old_id]
+                }
+            } catch (err) {
+                console.log('ReplaceNode', { parent, old_id, new_id, tag }, err)
+            }
+        },
+        SwapNode: (parent, a, b) => {
+            try {
+                let parent_el = elementRegistry[parent]
+                let a_el = elementRegistry[a]
+                let b_el = elementRegistry[b]
+                if (a_el.nextElementSibling === b_el) {
+                    let restore = keepFocus(b_el)
+                    parent_el.insertBefore(b_el, a_el)
+                    restore()
+                } else if (b_el.nextElementSibling === a_el) {
+                    let restore = keepFocus(a_el)
+                    parent_el.insertBefore(a_el, b_el)
+                    restore()
+                } else {
+                    let placeholder = createElement(parent, 'div')
+                    parent_el.insertBefore(placeholder, b_el)
+                    let restore = keepFocus(b_el)
+                    parent_el.insertBefore(b_el, a_el)
+                    restore()
+                    restore = keepFocus(a_el)
+                    parent_el.insertBefore(a_el, placeholder)
+                    restore()
+                    parent_el.removeChild(placeholder)
+                }
+            } catch (err) {
+                console.log('SwapNode', { parent, a, b }, err)
+            }
+        },
+        MoveNode: (parent, id, pivot) => {
+            try {
+                let parent_el = elementRegistry[parent]
+                let el = elementRegistry[id]
+                let pivot_el = elementRegistry[pivot]
+                let restore = keepFocus(el)
+                parent_el.insertBefore(el, pivot_el)
                 restore()
-            } else if (b_el.nextElementSibling === a_el) {
-                let restore = keepFocus(a_el)
-                parent_el.insertBefore(a_el, b_el)
-                restore()
-            } else {
-                let placeholder = createElement(parent, 'div')
-                parent_el.insertBefore(placeholder, b_el)
-                let restore = keepFocus(b_el)
-                parent_el.insertBefore(b_el, a_el)
-                restore()
-                restore = keepFocus(a_el)
-                parent_el.insertBefore(a_el, placeholder)
-                restore()
-                parent_el.removeChild(placeholder)
+            } catch (err) {
+                console.log('MoveNode', { parent, id, pivot }, err)
+            }
+        }
+    }
+    bridge.PatchActualDOM.connect(data => {
+        try {
+            /** @type {Array<string|boolean>} */
+            let items = JSON.parse(data)
+            let i = 0
+            let L = items.length
+            while (i < L) {
+                /** @type {string} */
+                // @ts-ignore
+                let name = items[i]
+                if (patchOperations[name] instanceof Function) {
+                    /** @type {Function} */
+                    let op = patchOperations[name]
+                    let args = []
+                    for (let j = 0; j < op.length; j += 1) {
+                        i += 1
+                        args.push(items[i])
+                    }
+                    op.apply(null, args)
+                } else {
+                    throw new Error(`unknown patch operation: ${name}`)
+                }
+                i += 1
             }
         } catch (err) {
-            console.log('SwapNode', { parent, a, b }, err)
-        }
-    })
-    connectPatchSignal(bridge.MoveNode, (parent, id, pivot) => {
-        try {
-            let parent_el = elementRegistry[parent]
-            let el = elementRegistry[id]
-            let pivot_el = elementRegistry[pivot]
-            let restore = keepFocus(el)
-            parent_el.insertBefore(el, pivot_el)
-            restore()
-        } catch (err) {
-            console.log('MoveNode', { parent, id, pivot }, err)
+            console.log(`error patching DOM: ${data}`, err)
         }
     })
 }

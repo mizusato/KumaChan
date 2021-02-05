@@ -61,7 +61,7 @@ type EventOptions struct {
 	Prevent  bool
 	Stop     bool
 	Capture  bool
-	Handler  EventHandler
+	Handler  *EventHandler
 }
 func EventOptionsEqual(a *EventOptions, b *EventOptions) bool {
 	if a == b {
@@ -82,16 +82,16 @@ func (impl *Text) NodeContent() {}
 type Text String
 func (impl *Children) NodeContent() {}
 type Children ([] *Node)
-type EventHandler = interface{}
+type EventHandler struct { Handler interface{} }
 
 type DeltaNotifier struct {
 	ApplyStyle   func(id String, key String, value String)
 	EraseStyle   func(id String, key String)
 	SetAttr      func(id String, key String, value String)
 	RemoveAttr   func(id String, key String)
-	AttachEvent  func(id String, name String, prevent bool, stop bool, capture bool, handler EventHandler)
+	AttachEvent  func(id String, name String, prevent bool, stop bool, capture bool, handler *EventHandler)
 	ModifyEvent  func(id String, name String, prevent bool, stop bool, capture bool)
-	DetachEvent  func(id String, name String, handler EventHandler)
+	DetachEvent  func(id String, name String, handler *EventHandler)
 	SetText      func(id String, content String)
 	AppendNode   func(parent String, id String, tag String)
 	RemoveNode   func(parent String, id String)

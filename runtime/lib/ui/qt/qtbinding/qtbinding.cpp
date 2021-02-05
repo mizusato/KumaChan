@@ -204,9 +204,9 @@ size_t QtResizeEventGetHeight(QtEvent ev) {
     return resize->size().height();
 }
 
-QtString QtNewStringUTF8(const char* buf, size_t len) {
+QtString QtNewStringUTF8(const uint8_t* buf, size_t len) {
     QString* ptr = new QString;
-    *ptr = QString::fromUtf8(buf, len);
+    *ptr = QString::fromUtf8((const char*)(buf), len);
     return { (void*) ptr };
 }
 

@@ -24,11 +24,11 @@ void* WebUiGetWindow() {
     return (void*) (window);
 }
 
-QtString WebUiGetEventHandler() {
+QtString WebUiGetCurrentEventHandler() {
     return QtWrapString(window->getEmittedEventHandler());
 }
 
-QtVariantMap WebUiGetEventPayload() {
+QtVariantMap WebUiGetCurrentEventPayload() {
     QVariantMap* m = new QVariantMap;
     *m = window->getEmittedEventPayload();
     return { m };
@@ -120,4 +120,8 @@ void WebUiMoveNode(QtString parent, QtString id, QtString pivot) {
 
 void WebUiPerformActualRendering() {
     emit window->bridge->PerformActualRendering();
+}
+
+void WebUiPatchActualDOM(QtString operations) {
+    emit window->bridge->PatchActualDOM(QtUnwrapString(operations));
 }

@@ -81,7 +81,7 @@ extern "C" {
     void QtRemoveEventListener(void* obj_ptr, QtEventListener listener);
     size_t QtResizeEventGetWidth(QtEvent ev);
     size_t QtResizeEventGetHeight(QtEvent ev);
-    QtString QtNewStringUTF8(const char* buf, size_t len);
+    QtString QtNewStringUTF8(const uint8_t* buf, size_t len);
     QtString QtNewStringUTF32(const uint32_t* buf, size_t len);
     void QtDeleteString(QtString str);
     size_t QtStringListGetSize(QtStringList list);
@@ -114,8 +114,8 @@ extern "C" {
     void WebUiInit(QtString title, QtBool debug);
     void WebUiLoadView();
     void* WebUiGetWindow();
-    QtString WebUiGetEventHandler();
-    QtVariantMap WebUiGetEventPayload();
+    QtString WebUiGetCurrentEventHandler();
+    QtVariantMap WebUiGetCurrentEventPayload();
     void WebUiRegisterAsset(QtString path, QtString mime, const uint8_t* buf, size_t len);
     QtString WebUiInjectCSS(QtString path);
     QtString WebUiInjectJS(QtString path);
@@ -137,6 +137,7 @@ extern "C" {
     void WebUiSwapNode(QtString parent, QtString a, QtString b);
     void WebUiMoveNode(QtString parent, QtString id, QtString pivot);
     void WebUiPerformActualRendering();
+    void WebUiPatchActualDOM(QtString operations);
 #ifdef __cplusplus
 }
 #endif

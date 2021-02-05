@@ -51,12 +51,12 @@ public function ui-inline-style: ( &(Action*[Array[(String,String)]]) Decorator 
         ~ map* &(rules, node) := (combine-latest! @rules cpt),
         node.with (dom-styles rules)
     ));
-public function ui-event: ( &(String,EventSink) Decorator )
+public function ui-event: ( &(String,EventHandler) Decorator )
     ( &(event)
     ( &(cpt)
-        let (name,sink) := event,
+        let (name,handler) := event,
         ~ map* &(node) := cpt,
-        node.with (dom-event name sink)
+        node.with (dom-event name handler)
     ));
 public function ui-focusable: ( &() Decorator )
     ( &(_)

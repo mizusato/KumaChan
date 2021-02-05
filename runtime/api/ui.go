@@ -136,24 +136,25 @@ var UiFunctions = map[string] interface{} {
 			Content: node.Content,
 		}
 	},
-	"ui-dom-event": func(prevent SumValue, stop SumValue, capture SumValue, sink rx.Sink) *vdom.EventOptions {
+	"ui-dom-event": func(prevent SumValue, stop SumValue, capture SumValue, handler *vdom.EventHandler) *vdom.EventOptions {
 		return &vdom.EventOptions {
 			Prevent: FromBool(prevent),
 			Stop:    FromBool(stop),
 			Capture: FromBool(capture),
-			Handler: (vdom.EventHandler)(sink),
+			Handler: handler,
 		}
 	},
-	"ui-dom-event-sink": func(s rx.Sink, f Value, h InteropContext) rx.Sink {
+	"ui-dom-event-handler": func(s rx.Sink, f Value, h InteropContext) *vdom.EventHandler {
 		var adapter = func(obj rx.Object) rx.Object {
 			var ev = obj.(*qt.WebUiEventPayload)
 			return qt.WebUiConsumeEventPayload(ev, func(ev *qt.WebUiEventPayload) interface{} {
 				return h.Call(f, ev)
 			})
 		}
-		return rx.SinkAdapt(s, adapter)
+		var sink = rx.SinkAdapt(s, adapter)
+		return &vdom.EventHandler { Handler: sink }
 	},
-	"ui-dom-event-sink-reactive": func(r rx.Reactive, f Value, h InteropContext) rx.Sink {
+	"ui-dom-event-handler-reactive": func(r rx.Reactive, f Value, h InteropContext) *vdom.EventHandler {
 		var in = func(state rx.Object) func(rx.Object) rx.Object {
 			return func(obj rx.Object) rx.Object {
 				var ev = obj.(*qt.WebUiEventPayload)
@@ -162,7 +163,8 @@ var UiFunctions = map[string] interface{} {
 				})
 			}
 		}
-		return rx.ReactiveAdapt(r, in)
+		var sink = rx.ReactiveAdapt(r, in)
+		return &vdom.EventHandler { Handler: sink }
 	},
 	"ui-dom-events": func(events container.Map) *vdom.Events {
 		if events.IsEmpty() { return vdom.EmptyEvents }

@@ -80,9 +80,9 @@ func writeEvents(buf io.Writer, events *Events) {
 		if opts.Stop {
 			writeStatic(buf, ".stop")
 		}
-		writeStatic(buf, "=[")
-		fmt.Fprintf(buf, "%v", opts.Handler)
-		writeStatic(buf, "]")
+		writeStatic(buf, "=\"")
+		fmt.Fprintf(buf, "%X", reflect.ValueOf(opts.Handler).Pointer())
+		writeStatic(buf, "\"")
 	})
 }
 
