@@ -60,9 +60,9 @@ public function length[T]: ( &(Array[T]) Number )
 public function reverse[T]: ( &(Array[T]) Array[T] )
     native 'array-reverse';
 
-public function slice[T]:      ( &(Array[T],Range) Array[T] )
+public function slice[T]:      ( &(Array[T],Interval) Array[T] )
     native 'array-slice';
-public function slice-view[T]: ( &(Array[T],Range) Array[T] )
+public function slice-view[T]: ( &(Array[T],Interval) Array[T] )
     native 'array-slice-view';
 
 public function map[A,B]:      ( &(Array[A],(&(A)(B))) Array[B] )

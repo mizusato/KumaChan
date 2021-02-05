@@ -45,7 +45,7 @@ var core_types = []string {
 	// string.km
 	Char, String,
 	// range.km
-	Range,
+	Interval,
 	// debugging.km
 	Debug, Never,
 }
@@ -127,7 +127,7 @@ const ComplexIEEE = "Complex*"
 const Char = "Char"
 const String = "String"
 // range.km
-const Range = "Range"
+const Interval = "Interval"
 // debugging.km
 const Debug = "Debug"
 const Never = "Never"

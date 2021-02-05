@@ -1,0 +1,23 @@
+type Interval protected (Number, Number);  // left-close right-open interval
+
+public function interval: ( &(Number,Number) Interval )
+    ( &(l, r)
+        if $(l <= r):
+            Interval l r,
+        else:
+            panic 'invalid interval: left bound bigger than right bound'
+    );
+
+public function interval-inclusive: ( &(Number,Number) Interval )
+    ( &(l, r)
+        if $(l <= r):
+            Interval l $(r + 1),
+        else:
+            panic 'invalid interval: left bound bigger than right bound'
+    );
+
+public function from: ( &(Interval) String )
+    ( &(l, r) ("[#, #)" (str l) (str r)) );
+
+public function iterate: ( &(Interval) Seq[Number] )
+    native 'interval-iterate';

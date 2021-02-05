@@ -293,7 +293,7 @@ var EffectFunctions = map[string] Value {
 			return v, true
 		})
 	},
-	"yield*-range": func(l uint, r uint) rx.Action {
+	"yield*-interval": func(l uint, r uint) rx.Action {
 		return rx.NewSyncSequence(func(next func(rx.Object))(bool,rx.Object) {
 			for i := l; i < r; i += 1 {
 				next(i)

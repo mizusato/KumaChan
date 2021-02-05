@@ -85,8 +85,8 @@ public function go*[T]: ( &(Seq[T]) Action*[T] )
     native 'go*';
 public function yield[T]:  ( &(T) Action[T] )
     native 'yield';
-public function yield*:    ( &(Range) Action*[Number] )
-    native 'yield*-range';
+public function yield*:    ( &(Interval) Action*[Number] )
+    native 'yield*-interval';
 public function yield*[T]: ( &(Seq[T]) Action*[T] )
     native 'yield*-seq';
 public function yield*[T]: ( &(Array[T]) Action*[T] )

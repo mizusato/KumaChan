@@ -43,21 +43,21 @@ func (p ConsSeq) GetItemType() reflect.Type {
 	return p.Tail.GetItemType()
 }
 
-type RangeSeq struct {
+type IntervalSeq struct {
 	Current  uint
 	Bound    uint
 }
-func (r RangeSeq) Next() (Value, Seq, bool) {
+func (r IntervalSeq) Next() (Value, Seq, bool) {
 	if r.Current < r.Bound {
-		return r.Current, RangeSeq {
+		return r.Current, IntervalSeq {
 			Current: r.Current + 1,
 			Bound:   r.Bound,
 		}, true
 	} else {
-		return (^uint(0)), RangeSeq {}, false
+		return (^uint(0)), IntervalSeq{}, false
 	}
 }
-func (_ RangeSeq) GetItemType() reflect.Type {
+func (_ IntervalSeq) GetItemType() reflect.Type {
 	return reflect.TypeOf(uint(0))
 }
 

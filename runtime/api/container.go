@@ -27,8 +27,8 @@ var ContainerFunctions = map[string] Value {
 			panic(fmt.Sprintf("invalid code point 0x%X", n))
 		}
 	},
-	"range-iterate": func(l uint, r uint) Seq {
-		return RangeSeq {
+	"interval-iterate": func(l uint, r uint) Seq {
+		return IntervalSeq {
 			Current: l,
 			Bound:   r,
 		}
