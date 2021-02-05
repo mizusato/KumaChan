@@ -32,6 +32,7 @@ type Options struct {
 	MaxStackSize  uint
 	Environment   [] string
 	Arguments     [] string
+	DebugOptions
 	StdIO
 }
 
@@ -155,8 +156,12 @@ func (h MachineContextHandle) GetArgs() ([] string) {
 	return h.machine.options.Arguments
 }
 
-func (h MachineContextHandle) GetStdIO() (StdIO) {
+func (h MachineContextHandle) GetStdIO() StdIO {
 	return h.machine.options.StdIO
+}
+
+func (h MachineContextHandle) GetDebugOptions() DebugOptions {
+	return h.machine.options.DebugOptions
 }
 
 func (h MachineContextHandle) GetErrorPoint() ErrorPoint {

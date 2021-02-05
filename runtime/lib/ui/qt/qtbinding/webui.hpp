@@ -89,7 +89,7 @@ public:
             QTimer::singleShot(0, this, &WebUiAssetReply::readyRead);
             QTimer::singleShot(0, this, &WebUiAssetReply::finished);
         } else {
-            qDebug() << "[WebUi] asset file not found:" << path;
+            // qDebug() << "[WebUi] asset file not found:" << path;
             setError(ContentNotFoundError, "asset file not found");
             QTimer::singleShot(0, this, &WebUiAssetReply::error404);
             QTimer::singleShot(0, this, &WebUiAssetReply::finished);
@@ -150,7 +150,7 @@ private:
 public:
     WebUiAssetStore* store;
     WebUiBridge* bridge;
-    WebUiWindow(QString title): QMainWindow(nullptr), view(nullptr), debug(true) {
+    WebUiWindow(QString title, bool debug): QMainWindow(nullptr), view(nullptr), debug(debug) {
         setWindowTitle(title);
         store = new WebUiAssetStore(this);
         bridge = new WebUiBridge(this);

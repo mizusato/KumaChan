@@ -8,9 +8,9 @@
 
 static WebUiWindow* window = nullptr;
 
-void WebUiInit(QtString title) {
+void WebUiInit(QtString title, QtBool debug) {
     if (window == nullptr) {
-        window = new WebUiWindow(QtUnwrapString(title));
+        window = new WebUiWindow(QtUnwrapString(title), bool(debug));
     };
 }
 

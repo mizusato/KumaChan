@@ -111,7 +111,7 @@ extern "C" {
     QtStringList QtFileDialogOpenMultiple(void* parent_ptr,  QtString title, QtString cwd, QtString filter);
     QtString QtFileDialogSelectDirectory(void *parent_ptr, QtString title, QtString cwd);
     QtString QtFileDialogSave(void *parent_ptr, QtString title, QtString cwd, QtString filter);
-    void WebUiInit(QtString title);
+    void WebUiInit(QtString title, QtBool debug);
     void WebUiLoadView();
     void* WebUiGetWindow();
     QtString WebUiGetEventHandler();

@@ -13,7 +13,9 @@ func Init(h InteropContext, root rx.Action, title String) {
 	var assets = func() (map[string] util.Resource) {
 		return h.GetResources("web_asset")
 	}
-	var ok = load(h.GetScheduler(), root, title, assets)
+	var debug_opts = h.GetDebugOptions()
+	var debug = debug_opts.DebugUI
+	var ok = load(debug, h.GetScheduler(), root, title, assets)
 	if !(ok) {
 		panic("UI: duplicate initialization operation")
 	}

@@ -26,9 +26,9 @@ func handleEvent(sched rx.Scheduler) {
 	rx.ScheduleTaskWaitTerminate(handling, sched)
 }
 
-func scheduleUpdate(sched rx.Scheduler, vdom_source rx.Action) {
+func scheduleUpdate(sched rx.Scheduler, vdom_source rx.Action, debug bool) {
 	var single_update = func(root_node rx.Object) rx.Action {
-		return virtualDomUpdate(root_node.(*vdom.Node))
+		return virtualDomUpdate(root_node.(*vdom.Node), debug)
 	}
 	var update = vdom_source.ConcatMap(single_update)
 	rx.ScheduleTask(update, sched)
@@ -51,12 +51,12 @@ var virtualDomDeltaNotifier = &vdom.DeltaNotifier {
 	MoveNode:    qt.WebUiMoveNode,
 }
 var virtualDomRoot *vdom.Node = nil
-var virtualDomUpdate = func(new_root *vdom.Node) rx.Action {
+var virtualDomUpdate = func(new_root *vdom.Node, debug bool) rx.Action {
 	return rx.NewCallback(func(done func(rx.Object)) {
-		// --- <debug> ---
-		fmt.Fprintf(os.Stderr, "\033[1m<!-- Virtual DOM Update -->\033[0m\n")
-		fmt.Fprintf(os.Stderr, "%s\n", vdom.Inspect(new_root))
-		// --- </debug> ---
+		if debug {
+			fmt.Fprintf(os.Stderr, "\033[1m<!-- Virtual DOM Update -->\033[0m\n")
+			fmt.Fprintf(os.Stderr, "%s\n", vdom.Inspect(new_root))
+		}
 		updating = true
 		qt.CommitTask(func() {
 			var ctx = virtualDomDeltaNotifier

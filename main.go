@@ -73,7 +73,10 @@ func debug_parser(file io.Reader, name string, root string) {
     }
 }
 
-func interpret(path string, args ([] string), max_stack_size int, asm_dump string) {
+func interpret (
+    path string, args ([] string),
+    max_stack_size int, asm_dump string, debug_opts lang.DebugOptions,
+) {
     var load = func(path string) (*loader.Module, loader.Index, loader.ResIndex) {
         var mod, idx, res, err = loader.LoadEntry(path)
         if err != nil {
@@ -133,7 +136,8 @@ func interpret(path string, args ([] string), max_stack_size int, asm_dump strin
         MaxStackSize: uint(max_stack_size),
         Environment:  os.Environ(),
         Arguments:    args,
-        StdIO:        lang.StdIO {
+        DebugOptions: debug_opts,
+        StdIO: lang.StdIO {
             Stdin:  os.Stdin,
             Stdout: os.Stdout,
             Stderr: os.Stderr,
@@ -141,7 +145,7 @@ func interpret(path string, args ([] string), max_stack_size int, asm_dump strin
     }, nil)
 }
 
-func repl(args ([] string), max_stack_size int) {
+func repl(args ([] string), max_stack_size int, debug_opts lang.DebugOptions) {
     // 1. Craft an empty module
     const mod_ast_path = "."
     const mod_runtime_path = "."
@@ -292,7 +296,8 @@ func repl(args ([] string), max_stack_size int) {
         MaxStackSize: uint(max_stack_size),
         Environment:  os.Environ(),
         Arguments:    args,
-        StdIO:        lang.StdIO {
+        DebugOptions: debug_opts,
+        StdIO: lang.StdIO {
             Stdin:  os.Stdin,
             Stdout: os.Stdout,
             Stderr: os.Stderr,
@@ -308,11 +313,13 @@ func main() {
     var mode = "interpreter"
     var asm_dump = ""
     var max_stack_size_string = "33554432"
+    var debug_options_string = ""
     var no_more_options = false
     var options = map[string] *string {
         "--mode=":           &mode,
         "--asm-dump=":       &asm_dump,
         "--max-stack-size=": &max_stack_size_string,
+        "--debug=":          &debug_options_string,
     }
     var set_option = func(arg string) bool {
         for opt_prefix, val := range options {
@@ -334,6 +341,7 @@ func main() {
             fmt.Println("\t--mode={interpreter,tools-server,parser-debug,docs}")
             fmt.Println("\t--asm-dump=[FILE]")
             fmt.Println("\t--max-stack-size=[NUMBER]")
+            fmt.Println("\t--debug=[ui]")
             return
         } else if (arg == "--version" || arg == "-v") && !(no_more_options) {
             fmt.Println("KumaChan 0.0.0 pre-alpha debugging version")
@@ -358,6 +366,8 @@ func main() {
             strconv.Quote(max_stack_size_string))
         os.Exit(255)
     }
+    var debug_ui = (debug_options_string == "ui")
+    var debug_opts = lang.DebugOptions { DebugUI: debug_ui }
     // perform actions according to specified mode
     switch mode {
     case "interpreter":
@@ -381,11 +391,13 @@ func main() {
                 }
             }
             if got_path {
-                interpret(path, program_args, max_stack_size, asm_dump)
+                interpret(path, program_args,
+                    max_stack_size, asm_dump, debug_opts)
             } else {
                 _, err = fmt.Fprintln(os.Stderr, "Starting REPL...")
                 if err != nil { panic(err) }
-                repl(program_args, max_stack_size)
+                repl(program_args,
+                    max_stack_size, debug_opts)
             }
             close(qt.InitRequestSignal())
         })()

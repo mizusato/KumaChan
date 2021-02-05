@@ -11,7 +11,13 @@ var loading = make(chan struct{}, 1)
 var windowLoaded = make(chan struct{})
 var bridgeLoaded = make(chan struct{})
 
-func load(sched rx.Scheduler, root rx.Action, title String, assets resources) bool {
+func load (
+	debug   bool,
+	sched   rx.Scheduler,
+	root    rx.Action,
+	title   String,
+	assets  resources,
+) bool {
 	select {
 	case loading <- struct{}{}:
 		qt.MakeSureInitialized()
@@ -20,7 +26,7 @@ func load(sched rx.Scheduler, root rx.Action, title String, assets resources) bo
 			var title_runes = RuneSliceFromString(title)
 			var title, del_title = qt.NewString(title_runes)
 			defer del_title()
-			qt.WebUiInit(title)
+			qt.WebUiInit(title, debug)
 			wait <- struct{}{}
 		})
 		<- wait
@@ -30,7 +36,7 @@ func load(sched rx.Scheduler, root rx.Action, title String, assets resources) bo
 		})
 		qt.Connect(window, "loadFinished()", func() {
 			close(bridgeLoaded)
-			scheduleUpdate(sched, root)
+			scheduleUpdate(sched, root, debug)
 		})
 		qt.CommitTask(func() {
 			registerAssetFiles(assets)
@@ -41,7 +47,7 @@ func load(sched rx.Scheduler, root rx.Action, title String, assets resources) bo
 		close(windowLoaded)
 		return true
 	default:
-		<-windowLoaded
+		<- windowLoaded
 		return false
 	}
 }

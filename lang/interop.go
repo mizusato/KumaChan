@@ -15,6 +15,7 @@ type InteropContext interface {
 	GetEnv() ([] string)
 	GetArgs() ([] string)
 	GetStdIO() StdIO
+	GetDebugOptions() DebugOptions
 	GetErrorPoint() ErrorPoint
 	GetEntryModulePath() string
 	KmdApi
@@ -24,6 +25,9 @@ type StdIO struct {
 	Stdin   *os.File
 	Stdout  *os.File
 	Stderr  *os.File
+}
+type DebugOptions struct {
+	DebugUI  bool
 }
 var __t = InteropContext(nil)
 var __InteropContextType = reflect.TypeOf(&__t).Elem()
