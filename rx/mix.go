@@ -90,10 +90,10 @@ func QueueSchedulerFrom(sched Scheduler, concurrent uint) *QueueScheduler {
 func (qs *QueueScheduler) run(e Action, ob *observer) {
 	if qs.running < qs.max_running {
 		qs.running += 1
-		qs.underlying.run(e, &observer{
-			context: ob.context,
-			next:    ob.next,
-			error:   ob.error,
+		qs.underlying.run(e, &observer {
+			context:  ob.context,
+			next:     ob.next,
+			error:    ob.error,
 			complete: func() {
 				ob.complete()
 				qs.running -= 1

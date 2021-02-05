@@ -12,9 +12,10 @@ import (
 
 
 func handleEvent(sched rx.Scheduler) {
-	var handler, valid = qt.WebUiGetCurrentEventHandler()
 	var payload = qt.WebUiGetCurrentEventPayload()
-	if !(valid) {
+	var handler_id = qt.WebUiGetCurrentEventHandler()
+	var handler, exists = lookupEventHandler(string(handler_id))
+	if !(exists) {
 		// events emitted to detached handlers are ignored
 		qt.WebUiConsumeEventPayload(payload,
 			func(*qt.WebUiEventPayload) interface{} { return nil })
@@ -45,11 +46,7 @@ func serializePathOperations() ([] byte) {
 var virtualDomDeltaNotifier = patchOperationCollector(&patchOpBuffer)
 var virtualDomRoot *vdom.Node = nil
 var virtualDomUpdate = func(new_root *vdom.Node, debug bool) rx.Action {
-	return rx.NewCallback(func(done func(rx.Object)) {
-		if debug {
-			fmt.Fprintf(os.Stderr, "\033[1m<!-- Virtual DOM Update -->\033[0m\n")
-			fmt.Fprintf(os.Stderr, "%s", vdom.Inspect(new_root))
-		}
+	return rx.NewSync(func() (rx.Object, bool) {
 		var ctx = virtualDomDeltaNotifier
 		var prev_root = virtualDomRoot
 		virtualDomRoot = new_root
@@ -57,14 +54,17 @@ var virtualDomUpdate = func(new_root *vdom.Node, debug bool) rx.Action {
 		vdom.Diff(ctx, nil, prev_root, new_root)
 		var patch_data = serializePathOperations()
 		if debug {
+			var ctx = vdom.InspectContext { GetHandlerId: getEventHandlerId }
+			fmt.Fprintf(os.Stderr, "\033[1m<!-- Virtual DOM Update -->\033[0m\n")
+			fmt.Fprintf(os.Stderr, "%s", vdom.Inspect(new_root, ctx))
 			fmt.Fprintf(os.Stderr, "\033[1m<!-- Patch Operation Sequence -->\033[0m\n")
 			_, _ = os.Stderr.Write(patch_data)
 			fmt.Fprintf(os.Stderr, "\n\n")
 		}
 		qt.CommitTask(func() {
 			qt.WebUiPatchActualDOM(patch_data)
-			done(nil)
 		})
+		return nil, true
 	})
 }
 
@@ -94,12 +94,12 @@ func patchOperationCollector(buf *([] interface{})) *vdom.DeltaNotifier {
 					writeStringArgument(arg)
 				case *vdom.EventHandler:
 					if op == "AttachEvent" {
-						var id = qt.WebUiRegisterEventHandler(arg)
+						var id = registerEventHandler(arg)
 						// when attaching an event,
 						// pass the handler argument in the form of ID
-						*buf = append(*buf, string(id))
+						*buf = append(*buf, id)
 					} else if op == "DetachEvent" {
-						qt.WebUiUnregisterEventHandler(arg)
+						unregisterEventHandler(arg)
 						// when detaching an event,
 						// the handler argument is not necessary to pass
 					} else {

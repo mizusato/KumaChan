@@ -10,9 +10,7 @@ import "C"
 import (
     "fmt"
     "unsafe"
-    "reflect"
     "kumachan/runtime/lib/ui/qt/cgohelper"
-    "kumachan/runtime/lib/ui/vdom"
 )
 
 
@@ -37,6 +35,13 @@ type Widget interface {
 }
 func (widget) Widget() {}
 type widget struct { object }
+func Show(w Widget) {
+    C.QtWidgetShow(w.ptr())
+}
+
+func MoveToScreenCenter(w Widget) {
+    C.QtWidgetMoveToScreenCenter(w.ptr())
+}
 
 type Ucs4String = [] rune
 type String C.QtString
@@ -60,13 +65,17 @@ const (
     JPEG
 )
 
+type Event C.QtEvent
 type EventKind uint
 func EventMove() EventKind { return EventKind(uint(C.QtEventMove)) }
 func EventResize() EventKind { return EventKind(uint(C.QtEventResize)) }
 func EventClose() EventKind { return EventKind(uint(C.QtEventClose)) }
-
-type Event C.QtEvent
-
+func (ev Event) ResizeEventGetWidth() uint {
+    return uint(C.QtResizeEventGetWidth(C.QtEvent(ev)))
+}
+func (ev Event) ResizeEventGetHeight() uint {
+    return uint(C.QtResizeEventGetHeight(C.QtEvent(ev)))
+}
 
 var mock = false
 var initializing = make(chan struct{}, 1)
@@ -138,14 +147,6 @@ func FindChild(w Widget, name string) (Widget, bool) {
     }
 }
 
-func Show(w Widget) {
-    C.QtWidgetShow(w.ptr())
-}
-
-func MoveToScreenCenter(w Widget) {
-    C.QtWidgetMoveToScreenCenter(w.ptr())
-}
-
 func Connect(obj Object, signal string, callback func()) func() {
     var new_str, del_all_str = str_alloc()
     defer del_all_str()
@@ -210,7 +211,6 @@ func GetPropBool(obj Object, prop string) bool {
     var val = C.QtObjectGetPropBool(obj.ptr(), new_str(prop))
     return (val != 0)
 }
-
 func SetPropBool(obj Object, prop string, val bool) {
     var new_str, del_all_str = str_alloc()
     defer del_all_str()
@@ -222,36 +222,30 @@ func SetPropBool(obj Object, prop string, val bool) {
     }
     C.QtObjectSetPropBool(obj.ptr(), new_str(prop), C.int(int_val))
 }
-
 func GetPropQtString(obj Object, prop string) String {
     var new_str, del_all_str = str_alloc()
     defer del_all_str()
     var value = C.QtObjectGetPropString(obj.ptr(), new_str(prop))
     return String(value)
 }
-
 func SetPropQtString(obj Object, prop string, val String) {
     var new_str, del_all_str = str_alloc()
     defer del_all_str()
     C.QtObjectSetPropString(obj.ptr(), new_str(prop), C.QtString(val))
 }
-
 func GetPropRuneString(obj Object, prop string) ([] rune) {
     var value = GetPropQtString(obj, prop)
     var value_runes = StringToRunes(value)
     return value_runes
 }
-
 func SetPropRuneString(obj Object, prop string, val ([] rune)) {
     var q_val, del_str = NewString(val)
     defer del_str()
     SetPropQtString(obj, prop, q_val)
 }
-
 func GetPropString(obj Object, prop string) string {
     return string(GetPropRuneString(obj, prop))
 }
-
 func SetPropString(obj Object, prop string, value string) {
     SetPropRuneString(obj, prop, ([] rune)(value))
 }
@@ -259,7 +253,6 @@ func SetPropString(obj Object, prop string, value string) {
 func MakeBool(p bool) Bool {
     if p { return Bool(C.int(int(1))) } else { return Bool(C.int(int(0))) }
 }
-
 func NewString(runes Ucs4String) (String, func()) {
     var str C.QtString
     if len(runes) > 0 {
@@ -273,7 +266,6 @@ func NewString(runes Ucs4String) (String, func()) {
         C.QtDeleteString(str)
     }
 }
-
 func NewStringFromUtf8Binary(buf ([] byte)) (String, func()) {
     var str C.QtString
     if len(buf) > 0 {
@@ -287,7 +279,6 @@ func NewStringFromUtf8Binary(buf ([] byte)) (String, func()) {
         C.QtDeleteString(str)
     }
 }
-
 func StringToRunes(str String) ([] rune) {
     var q_str = (C.QtString)(str)
     var size16 = uint(C.QtStringUTF16Length(q_str))
@@ -300,7 +291,6 @@ func StringToRunes(str String) ([] rune) {
     C.QtDeleteString(q_str)
     return buf
 }
-
 func DeleteString(str String) {
     C.QtDeleteString((C.QtString)(str))
 }
@@ -310,12 +300,10 @@ func VariantMapGetRunes(m VariantMap, key String) ([] rune) {
     var val_runes = StringToRunes(String(val))
     return val_runes
 }
-
 func VariantMapGetFloat(m VariantMap, key String) float64 {
     var val = C.QtVariantMapGetFloat(C.QtVariantMap(m), C.QtString(key))
     return float64(val)
 }
-
 func VariantMapGetBool(m VariantMap, key String) bool {
     var val = C.QtVariantMapGetBool(C.QtVariantMap(m), C.QtString(key))
     return (val != 0)
@@ -334,7 +322,6 @@ func NewPixmap(data ([] byte), format ImageDataFormat) (Pixmap, func()) {
         panic("qt pixmap: unsupported image format")
     }
 }
-
 func NewIcon(pm Pixmap) (Icon, func()) {
     var icon = C.QtNewIcon(C.QtPixmap(pm))
     return Icon(icon), func() {
@@ -345,7 +332,6 @@ func NewIcon(pm Pixmap) (Icon, func()) {
 func ListWidgetClear(w Widget) {
     C.QtListWidgetClear(w.ptr())
 }
-
 func ListWidgetSetItems(w Widget, get_item (func(uint) ListWidgetItem), length uint, current ([] rune)) {
     var _, unblock = BlockSignals(w)
     ListWidgetClear(w)
@@ -392,11 +378,9 @@ func ListWidgetSetItems(w Widget, get_item (func(uint) ListWidgetItem), length u
     }
     unblock()
 }
-
 func ListWidgetHasCurrentItem(w Widget) bool {
     return (C.QtListWidgetHasCurrentItem(w.ptr()) != 0)
 }
-
 func ListWidgetGetCurrentItemKey(w Widget) ([] rune) {
     var raw_key = C.QtListWidgetGetCurrentItemKey(w.ptr())
     var key = StringToRunes(String(raw_key))
@@ -459,200 +443,69 @@ func FileDialogSave(parent Widget, opts FileDialogOptions) ([] rune) {
     return StringToRunes(String(raw_path))
 }
 
-func (ev Event) ResizeEventGetWidth() uint {
-    return uint(C.QtResizeEventGetWidth(C.QtEvent(ev)))
-}
-
-func (ev Event) ResizeEventGetHeight() uint {
-    return uint(C.QtResizeEventGetHeight(C.QtEvent(ev)))
-}
-
-
-type WebUiEventPayload struct {
-    Data  VariantMap
-}
-
 var webui_initialized = false
-
 func WebUiInit(title String, debug bool) {
     MakeSureInitialized()
     C.WebUiInit(C.QtString(title), C.int(MakeBool(debug)))
     webui_initialized = true
 }
-
 func WebUiLoadView() {
     if !webui_initialized { panic("webui not initialized") }
     C.WebUiLoadView()
 }
-
-var __WebUiEventHandlers = make(map[string] *vdom.EventHandler)
-func WebUiLookupEventHandler(id string) (*vdom.EventHandler, bool) {
-    var handler, exists = __WebUiEventHandlers[id]
-    return handler, exists
-}
-func WebUiGetEventHandlerId(handler *vdom.EventHandler) string {
-    return fmt.Sprintf("%X", reflect.ValueOf(handler).Pointer())
-}
-func WebUiRegisterEventHandler(handler *vdom.EventHandler) string {
-    var id = WebUiGetEventHandlerId(handler)
-    __WebUiEventHandlers[id] = handler
-    return id
-}
-func WebUiUnregisterEventHandler(handler *vdom.EventHandler) {
-    var id = WebUiGetEventHandlerId(handler)
-    delete(__WebUiEventHandlers, id)
-}
-
 func WebUiGetWindow() Widget {
     return widget { object { C.WebUiGetWindow() } }
 }
-
 func WebUiRegisterAsset(path String, mime String, data ([] byte))  {
     var buf = (*C.uint8_t)(unsafe.Pointer(&data[0]))
     var length = C.size_t(uint(len(data)))
     C.WebUiRegisterAsset(C.QtString(path), C.QtString(mime), buf, length)
 }
-
 func WebUiInjectCSS(path String) String {
     return String(C.WebUiInjectCSS(C.QtString(path)))
 }
-
 func WebUiInjectJS(path String) String {
     return String(C.WebUiInjectJS(C.QtString(path)))
 }
-
 func WebUiInjectTTF(path String, family String, weight String, style String) String {
     return String(C.WebUiInjectTTF(C.QtString(path), C.QtString(family), C.QtString(weight), C.QtString(style)))
 }
-
-func WebUiGetCurrentEventHandler() (*vdom.EventHandler, bool) {
-    var raw_id = C.WebUiGetCurrentEventHandler()
-    var id = StringToRunes(String(raw_id))
-    return WebUiLookupEventHandler(string(id))
+func WebUiPatchActualDOM(operations_data ([] byte)) {
+    var str, del = NewStringFromUtf8Binary(operations_data)
+    defer del()
+    C.WebUiPatchActualDOM(C.QtString(str))
 }
 
+type WebUiEventPayload struct {
+    Data  VariantMap
+}
+func WebUiGetCurrentEventHandler() Ucs4String {
+    var raw_id = C.WebUiGetCurrentEventHandler()
+    var id_str = StringToRunes(String(raw_id))
+    return id_str
+}
 func WebUiGetCurrentEventPayload() *WebUiEventPayload {
     return &WebUiEventPayload { VariantMap(C.WebUiGetCurrentEventPayload()) }
 }
-
 func WebUiConsumeEventPayload(ev *WebUiEventPayload, f func(*WebUiEventPayload) interface{}) interface{} {
     defer func() {
         C.QtDeleteVariantMap(C.QtVariantMap(ev.Data))
     } ()
     return f(ev)
 }
-
 func WebUiEventPayloadGetRunes(ev *WebUiEventPayload, key ([] rune)) ([] rune) {
     var key_str, del = NewString(key)
     defer del()
     return VariantMapGetRunes(ev.Data, key_str)
 }
-
 func WebUiEventPayloadGetFloat(ev *WebUiEventPayload, key ([] rune)) float64 {
     var key_str, del = NewString(key)
     defer del()
     return VariantMapGetFloat(ev.Data, key_str)
 }
-
 func WebUiEventPayloadGetBool(ev *WebUiEventPayload, key ([] rune)) bool {
     var key_str, del = NewString(key)
     defer del()
     return VariantMapGetBool(ev.Data, key_str)
-}
-
-func WebUiApplyStyle(id Ucs4String, key Ucs4String, value Ucs4String) {
-    var id_, del_id = NewString(id);  defer del_id()
-    var key_, del_key = NewString(key);  defer del_key()
-    var value_, del_value = NewString(value);  defer del_value()
-    C.WebUiApplyStyle(C.QtString(id_), C.QtString(key_), C.QtString(value_))
-}
-func WebUiEraseStyle(id Ucs4String, key Ucs4String) {
-    var id_, del_id = NewString(id);  defer del_id()
-    var key_, del_key = NewString(key);  defer del_key()
-    C.WebUiEraseStyle(C.QtString(id_), C.QtString(key_))
-}
-func WebUiSetAttr(id Ucs4String, name Ucs4String, value Ucs4String) {
-    var id_, del_id = NewString(id);  defer del_id()
-    var name_, del_key = NewString(name);  defer del_key()
-    var value_, del_value = NewString(value);  defer del_value()
-    C.WebUiSetAttr(C.QtString(id_), C.QtString(name_), C.QtString(value_))
-}
-func WebUiRemoveAttr(id Ucs4String, name Ucs4String) {
-    var id_, del_id = NewString(id);  defer del_id()
-    var name_, del_key = NewString(name);  defer del_key()
-    C.WebUiRemoveAttr(C.QtString(id_), C.QtString(name_))
-}
-func WebUiAttachEvent(id Ucs4String, name Ucs4String, prevent bool, stop bool, capture bool, handler *vdom.EventHandler) {
-    var id_, del_id = NewString(id);  defer del_id()
-    var name_, del_name = NewString(name);  defer del_name()
-    var prevent_ = MakeBool(prevent)
-    var stop_ = MakeBool(stop)
-    var capture_ = MakeBool(capture)
-    var handler_id = WebUiRegisterEventHandler(handler)
-    var handler_runes = ([] rune)(handler_id)
-    var handler_, del_handler = NewString(handler_runes); defer del_handler()
-    C.WebUiAttachEvent(C.QtString(id_), C.QtString(name_), C.QtBool(prevent_), C.QtBool(stop_), C.QtBool(capture_), C.QtString(handler_))
-}
-func WebUiModifyEvent(id Ucs4String, name Ucs4String, prevent bool, stop bool, capture bool) {
-    var id_, del_id = NewString(id);  defer del_id()
-    var name_, del_name = NewString(name);  defer del_name()
-    var prevent_ = MakeBool(prevent)
-    var stop_ = MakeBool(stop)
-    var capture_ = MakeBool(capture)
-    C.WebUiModifyEvent(C.QtString(id_), C.QtString(name_), C.QtBool(prevent_), C.QtBool(stop_), C.QtBool(capture_))
-}
-func WebUiDetachEvent(id Ucs4String, name Ucs4String, handler *vdom.EventHandler) {
-    var id_, del_id = NewString(id);  defer del_id()
-    var name_, del_name = NewString(name);  defer del_name()
-    C.WebUiDetachEvent(C.QtString(id_), C.QtString(name_))
-    WebUiUnregisterEventHandler(handler)
-}
-func WebUiSetText(id Ucs4String, content Ucs4String) {
-    var id_, del_id = NewString(id);  defer del_id()
-    var content_, del_content = NewString(content);  defer del_content()
-    C.WebUiSetText(C.QtString(id_), C.QtString(content_))
-}
-func WebUiAppendNode(parent Ucs4String, id Ucs4String, tag Ucs4String) {
-    var parent_, del_parent = NewString(parent);  defer del_parent()
-    var id_, del_id = NewString(id);  defer del_id()
-    var tag_, del_tag = NewString(tag);  defer del_tag()
-    C.WebUiAppendNode(C.QtString(parent_), C.QtString(id_), C.QtString(tag_))
-}
-func WebUiRemoveNode(parent Ucs4String, id Ucs4String) {
-    var parent_, del_parent = NewString(parent);  defer del_parent()
-    var id_, del_id = NewString(id);  defer del_id()
-    C.WebUiRemoveNode(C.QtString(parent_), C.QtString(id_))
-}
-func WebUiUpdateNode(old_id Ucs4String, new_id Ucs4String) {
-    var old_id_, del_old_id = NewString(old_id);  defer del_old_id()
-    var new_id_, del_new_id = NewString(new_id);  defer del_new_id()
-    C.WebUiUpdateNode(C.QtString(old_id_), C.QtString(new_id_))
-}
-func WebUiReplaceNode(parent Ucs4String, old_id Ucs4String, new_id Ucs4String, tag Ucs4String) {
-    var parent_, del_parent = NewString(parent);  defer del_parent()
-    var old_id_, del_old_id = NewString(old_id);  defer del_old_id()
-    var new_id_, del_new_id = NewString(new_id);  defer del_new_id()
-    var tag_, del_tag = NewString(tag);  defer del_tag()
-    C.WebUiReplaceNode(C.QtString(parent_), C.QtString(old_id_), C.QtString(new_id_), C.QtString(tag_))
-}
-func WebUiSwapNode(parent Ucs4String, old_id Ucs4String, new_id Ucs4String) {
-    var parent_, del_parent = NewString(parent);  defer del_parent()
-    var old_id_, del_old_id = NewString(old_id);  defer del_old_id()
-    var new_id_, del_new_id = NewString(new_id);  defer del_new_id()
-    C.WebUiSwapNode(C.QtString(parent_), C.QtString(old_id_), C.QtString(new_id_))
-}
-func WebUiMoveNode(parent Ucs4String, id Ucs4String, pivot Ucs4String) {
-    var parent_, del_parent = NewString(parent);  defer del_parent()
-    var id_, del_old_id = NewString(id);  defer del_old_id()
-    var pivot_, del_new_id = NewString(pivot);  defer del_new_id()
-    C.WebUiMoveNode(C.QtString(parent_), C.QtString(id_), C.QtString(pivot_))
-}
-func WebUiPerformActualRendering() {
-    C.WebUiPerformActualRendering()
-}
-func WebUiPatchActualDOM(operations_data ([] byte)) {
-    var str, del = NewStringFromUtf8Binary(operations_data)
-    defer del()
-    C.WebUiPatchActualDOM(C.QtString(str))
 }
 

@@ -9,13 +9,20 @@ import (
 )
 
 
-func Inspect(node *Node) string {
+type InspectContext struct {
+	GetHandlerId  func(*EventHandler) (string, bool)
+}
+
+func Inspect(node *Node, ctx InspectContext) string {
 	var buf strings.Builder
-	writeNode(&buf, node, 0, 2)
+	writeNode(&buf, node, ctx, 0, 2)
 	return buf.String()
 }
 
-func writeNode(buf io.Writer, node *Node, depth uint, indent uint) {
+func writeNode (
+	buf io.Writer, node *Node, ctx InspectContext,
+	depth uint, indent uint,
+) {
 	writeBlank(buf, depth, indent)
 	fmt.Fprintf(buf, "<!-- %X -->", reflect.ValueOf(node).Pointer())
 	writeLineFeed(buf)
@@ -23,7 +30,7 @@ func writeNode(buf io.Writer, node *Node, depth uint, indent uint) {
 	writeStatic(buf, "<")
 	writeString(buf, node.Tag)
 	writeAttrs(buf, node.Attrs)
-	writeEvents(buf, node.Events)
+	writeEvents(buf, node.Events, ctx)
 	writeStyles(buf, node.Styles)
 	writeStatic(buf, ">")
 	writeLineFeed(buf)
@@ -32,7 +39,7 @@ func writeNode(buf io.Writer, node *Node, depth uint, indent uint) {
 		writeQuotedString(buf, *content)
 	case *Children:
 		for _, child := range *content {
-			writeNode(buf, child, (depth + 1), indent)
+			writeNode(buf, child, ctx, (depth + 1), indent)
 		}
 	}
 	writeBlank(buf, depth, indent)
@@ -64,7 +71,7 @@ func writeStyles(buf io.Writer, styles *Styles) {
 	writeStatic(buf, "\"")
 }
 
-func writeEvents(buf io.Writer, events *Events) {
+func writeEvents(buf io.Writer, events *Events, ctx InspectContext) {
 	if events == EmptyEvents { return }
 	events.Data.ForEach(func(name String, opts_ interface{}) {
 		var opts = opts_.(*EventOptions)
@@ -81,7 +88,12 @@ func writeEvents(buf io.Writer, events *Events) {
 			writeStatic(buf, ".stop")
 		}
 		writeStatic(buf, "=\"")
-		fmt.Fprintf(buf, "%X", reflect.ValueOf(opts.Handler).Pointer())
+		var id, exists = ctx.GetHandlerId(opts.Handler)
+		if exists {
+			fmt.Fprintf(buf, "%s", id)
+		} else {
+			fmt.Fprintf(buf, "(invalid)")
+		}
 		writeStatic(buf, "\"")
 	})
 }
