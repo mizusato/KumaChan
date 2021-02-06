@@ -22,6 +22,7 @@ type ModuleApiDoc struct {
 type ApiItem struct {
 	Kind  ApiItemKind
 	Id    string
+	Name  string
 }
 type ApiItemKind string
 const (
@@ -39,13 +40,15 @@ func GenerateApiDocs(idx checker.Index) ApiDocIndex {
 		var reg = mod.Context.Types
 		var outline = make([] ApiItem, 0)
 		var add_type = func(sym loader.Symbol, g *checker.GenericType) {
+			var id = sym.String()
 			outline = append(outline, ApiItem {
 				Kind: ApiType,
-				Id:   sym.String(),
+				Id:   id,
+				Name: sym.SymbolName,
 			})
 			if !(g.CaseInfo.IsCaseType) {
 				var content = typeDecl(sym, g, reg, mod_name)
-				var wrapped = block("api", content)
+				var wrapped = blockWithName(id, "api", content)
 				buf.WriteString(string(wrapped))
 				buf.WriteString("\n")
 			}
@@ -72,7 +75,7 @@ func GenerateApiDocs(idx checker.Index) ApiDocIndex {
 }
 
 func typeDecl(sym loader.Symbol, g *checker.GenericType, reg checker.TypeRegistry, mod string) Html {
-	return blockWithName(sym.String(), "type",
+	return block("type",
 		inline("header",
 			keyword("type"), text("name", sym.SymbolName),
 			typeParams(g.Params, g.Defaults, g.Bounds, mod)),
@@ -174,7 +177,8 @@ func typeDef(g *checker.GenericType, reg checker.TypeRegistry, mod string) Html 
 	case *checker.Enum:
 		var cases = make([] Html, len(d.CaseTypes))
 		for i, item := range d.CaseTypes {
-			cases[i] = typeDecl(item.Name, reg[item.Name], reg, mod)
+			cases[i] = blockWithName(item.Name.String(), "api-inner",
+				typeDecl(item.Name, reg[item.Name], reg, mod))
 		}
 		return block("enum",
 			modifier("enum"),
@@ -309,7 +313,7 @@ func block(class string, content... Html) Html {
 }
 
 func blockWithName(name string, class string, content... Html) Html {
-	return Html(fmt.Sprintf("<div name=\"%s\" class=\"%s\">%s</div>",
+	return Html(fmt.Sprintf("<div id=\"%s\" class=\"%s\">%s</div>",
 		escape(name), escape(class), join(content, Html(""))))
 }
 

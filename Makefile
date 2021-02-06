@@ -32,8 +32,9 @@ resources:
 	@echo -e '\033[1mCopying Resources Files...\033[0m'
 	if [ -d build/resources ]; then rm -r build/resources; fi
 	mkdir build/resources
-	cp support/docs/api_doc.css build/resources
-	cp support/docs/api_browser.ui build/resources
+	cp support/docs/api_doc.css build/resources/
+	cp support/docs/api_browser.ui build/resources/
+	cp -r support/docs/icons build/resources/
 
 deps: check qt stdlib resources
 	$(NOOP)

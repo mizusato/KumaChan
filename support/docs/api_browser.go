@@ -20,6 +20,19 @@ var apiBrowserDocStyle =
 		apiBrowserFontSize,
 		string(util.ReadInterpreterResource("api_doc.css")))
 
+var apiIcons = (func() (map[string] *qt.ImageData) {
+	var result = make(map[string] *qt.ImageData)
+	var names = [] string { "module", "type" }
+	for _, name := range names {
+		var file = fmt.Sprintf("icons/%s.png", name)
+		result[name] = &qt.ImageData {
+			Data:   util.ReadInterpreterResource(file),
+			Format: qt.PNG,
+		}
+	}
+	return result
+})()
+
 type ApiBrowser struct {
 	Window  qt.Widget
 	ApiBrowserWidgets
@@ -73,10 +86,11 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 		return qt.ListWidgetItem {
 			Key:   mod_ucs4,
 			Label: mod_ucs4,
-			Icon:  nil,
+			Icon:  apiIcons["module"],
 		}
 	}
-	qt.ListWidgetSetItems(ui.ModuleList, get_mod_item, uint(len(modules)), nil)
+	var mod_count = uint(len(modules))
+	qt.ListWidgetSetItems(ui.ModuleList, get_mod_item, mod_count, nil)
 	qt.WebViewDisableContextMenu(ui.ContentView)
 	qt.WebViewEnableLinkDelegation(ui.ContentView)
 	go (func() {
@@ -89,7 +103,33 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 			var styled_content_, del = qt.NewStringFromGoString(styled_content)
 			defer del()
 			qt.WebViewSetHTML(ui.ContentView, styled_content_)
+			var outline = mod_data.Outline
+			var get_outline_item = func(i uint) qt.ListWidgetItem {
+				var api = outline[i]
+				return qt.ListWidgetItem {
+					Key:   ([] rune)(api.Id),
+					Label: ([] rune)(api.Name),
+					Icon:  apiKindToIcon(api.Kind),
+				}
+			}
+			var outline_count = uint(len(outline))
+			qt.ListWidgetSetItems(ui.OutlineView, get_outline_item, outline_count, nil)
+		})
+		qt.Connect(ui.OutlineView, "currentRowChanged(int)", func() {
+			var api_id = qt.ListWidgetGetCurrentItemKey(ui.OutlineView)
+			var api_id_, del = qt.NewString(api_id)
+			defer del()
+			qt.WebViewScrollToAnchor(ui.ContentView, api_id_)
 		})
 	})()
+}
+
+func apiKindToIcon(kind ApiItemKind) *qt.ImageData {
+	switch kind {
+	case ApiType:
+		return apiIcons["type"]
+	default:
+		return nil
+	}
 }
 
