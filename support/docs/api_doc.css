@@ -38,29 +38,29 @@ body {
 }
 .description {
     margin: 0.4rem 0 0.6rem 0;
-    color: #555555;
+    color: #686868;
 }
 .description > * {
     font-size: 90%;
 }
 
 .keyword {
-    color: #A626A4;
+    color: #ef1d6a;
 }
 .modifier {
-    color: #CF4895;
+    color: #e953a9;
 }
 .type > .header > .name, .type-named > .name {
-    color: #C18401;
+    color: #e88a10;
 }
 .type-param > .name, .type-parameter {
-    color: #6656E4;
+    color: #6656e4;
 }
 .type-param > .variance {
     color: #7d728d;
 }
 .field > .name {
-    color: #E45649;
+    color: #e45649;
 }
 
 .boxed > .kind > .keyword {

@@ -26,9 +26,9 @@ type ApiItem struct {
 }
 type ApiItemKind string
 const (
-	ApiType      ApiItemKind  =  "type"
-	ApiConstant  ApiItemKind  =  "constant"
-	ApiFunction  ApiItemKind  =  "function"
+	TypeDecl  ApiItemKind = "type"
+	ConstDecl ApiItemKind = "constant"
+	FuncDecl  ApiItemKind = "function"
 )
 
 func GenerateApiDocs(idx checker.Index) ApiDocIndex {
@@ -42,7 +42,7 @@ func GenerateApiDocs(idx checker.Index) ApiDocIndex {
 		var add_type = func(sym loader.Symbol, g *checker.GenericType) {
 			var id = sym.String()
 			outline = append(outline, ApiItem {
-				Kind: ApiType,
+				Kind: TypeDecl,
 				Id:   id,
 				Name: sym.SymbolName,
 			})

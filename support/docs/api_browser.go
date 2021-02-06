@@ -20,19 +20,6 @@ var apiBrowserDocStyle =
 		apiBrowserFontSize,
 		string(util.ReadInterpreterResource("api_doc.css")))
 
-var apiIcons = (func() (map[string] *qt.ImageData) {
-	var result = make(map[string] *qt.ImageData)
-	var names = [] string { "module", "type" }
-	for _, name := range names {
-		var file = fmt.Sprintf("icons/%s.png", name)
-		result[name] = &qt.ImageData {
-			Data:   util.ReadInterpreterResource(file),
-			Format: qt.PNG,
-		}
-	}
-	return result
-})()
-
 type ApiBrowser struct {
 	Window  qt.Widget
 	ApiBrowserWidgets
@@ -86,7 +73,7 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 		return qt.ListWidgetItem {
 			Key:   mod_ucs4,
 			Label: mod_ucs4,
-			Icon:  apiIcons["module"],
+			Icon:  icons["module"],
 		}
 	}
 	var mod_count = uint(len(modules))
@@ -122,14 +109,5 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 			qt.WebViewScrollToAnchor(ui.ContentView, api_id_)
 		})
 	})()
-}
-
-func apiKindToIcon(kind ApiItemKind) *qt.ImageData {
-	switch kind {
-	case ApiType:
-		return apiIcons["type"]
-	default:
-		return nil
-	}
 }
 
