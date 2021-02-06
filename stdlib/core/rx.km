@@ -1,28 +1,61 @@
 // Action Types
-/// Action*[T,E] represents an action that may return 0/finite/infinity T values
+
+/// Action*[T,E] represents an action that may return 0/finite/infinite T values
 /// asynchronously or throw an E error asynchronously.
-/// It is exactly the same concept as what called Observable in ReactiveX.
-type Action*[[unit] +T, [never] +E]  native;  // rx.Action       (Observable<T,E>)
-/// Action[T,E] represents an action that may return exact one T value
+/// It is exactly the same concept as what is called Observable in ReactiveX.
+type Action*[[unit] +T, [never] +E]
+    native; // rx.Action
+
+/// Action[T,E] represents an action that may return exactly one T value
 /// asynchronously or throw an E error asynchronously.
 /// It is a subtype of Action*[T,E] and can be regarded as a lazy Promise.
-type Action [[unit] +T, [never] +E]  protected Action*[T,E];  // (() => Promise<T,E>)
+type Action [[unit] +T, [never] +E]
+    protected Action*[T,E];
+
 
 // Wired Components
-type Sink[-T]           native;                 // rx.Sink
-type Bus[T]             protected Sink[T];      // rx.Bus      (Subject<T>)
-type Reactive[T]        protected Bus[T];       // rx.Reactive (BehaviorSubject<T>)
-type ReactiveEntity[T]  protected Reactive[T];  // rx.ReactiveEntity
-// extra
+
+/// Sink[T] accepts values of type T.
+type Sink[-T]
+    native; // rx.Sink
+
+/// Bus[T] accepts values of type T and provides accepted T values,
+/// similar to the concept of Subject in ReactiveX.
+type Bus[T]
+    protected Sink[T]; // rx.Bus
+
+/// Reactive[T] represents a reactively mutable T value,
+/// similar to the concept of BehaviourSubject in ReactiveX.
+type Reactive[T]
+    protected Bus[T]; // rx.Reactive
+
+/// ReactiveEntity[T] is a subtype of Reactive[T],
+/// which represents an independent reactive entity holding a mutable T value.
+/// That is, different from the general concept of Reactive,
+/// a ReactiveEntity is not derived from other Reactive values.
+/// As a consequence, a ReactiveEntity can store snapshots of previous values
+/// so that it is possible to perform undo/redo operations on it.
+type ReactiveEntity[T]
+    protected Reactive[T];  // rx.ReactiveEntity
+
+
+// Auxiliary Types for Wired Components
+
+/// ReactiveSnapshots[T] represents a structure that
+/// consists of snapshots of the current undo stack and redo stack
+/// of a ReactiveEntity at some point.
 type ReactiveSnapshots[+T] {
     undo: Seq[T],
     redo: Seq[T]
 };
 
+
 // Mutable Containers
+
 type Mutable[+T]     native;  // rx.Cell
 type Buffer          native;  // rx.Buffer
 type HashMap[+K,+V]  native;  // rx.StringHashMap, rx.NumberHashMap
+
 
 // Wired Components Operations
 # alias: <-
