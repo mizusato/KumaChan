@@ -75,7 +75,17 @@ func typeDecl(sym loader.Symbol, g *checker.GenericType, reg checker.TypeRegistr
 		inline("header",
 			keyword("type"), text("name", sym.SymbolName),
 			typeParams(g.Params, g.Defaults, g.Bounds, mod)),
-		block("definition", typeDef(g, reg, mod)))
+		block("definition", typeDef(g, reg, mod)),
+		description(g.Doc))
+}
+
+func description(content string) Html {
+	var lines = strings.Split(content, "\n")
+	var c_lines = make([] Html, len(lines))
+	for i, line := range lines {
+		c_lines[i] = block("line", escape(line))
+	}
+	return block("description", join(c_lines, Html("")))
 }
 
 func typeParams (

@@ -7,6 +7,7 @@ import (
 
 
 type GenericType struct {
+	Doc         string
 	Tags        TypeTags
 	Params      [] TypeParam
 	Bounds      TypeBounds

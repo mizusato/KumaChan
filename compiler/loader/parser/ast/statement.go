@@ -25,6 +25,7 @@ type Do struct {
 func (impl DeclConst) Statement() {}
 type DeclConst struct {
     Node                          `part:"decl_const"`
+    Docs      [] Doc              `list_rec:"docs"`
     Public    bool                `option:"scope.@public"`
     Name      Identifier          `part:"name"`
     Type      VariousType         `part:"type"`
@@ -53,6 +54,7 @@ type KmdApiFuncBody struct {
 func (impl DeclFunction) Statement() {}
 type DeclFunction struct {
     Node                      `part:"decl_func"`
+    Docs      [] Doc          `list_rec:"docs"`
     Tags      [] Tag          `list_rec:"tags"`
     Public    bool            `option:"scope.@public"`
     Name      Identifier      `part:"name"`
@@ -70,10 +72,15 @@ type Body interface { Body() }
 func (impl DeclType) Statement() {}
 type DeclType struct {
     Node                        `part:"decl_type"`
+    Docs       [] Doc           `list_rec:"docs"`
     Tags       [] Tag           `list_rec:"tags"`
     Name       Identifier       `part:"name"`
     Params     [] TypeParam     `list_more:"type_params" item:"type_param"`
     TypeValue  VariousTypeDef   `part:"type_def"`
+}
+type Doc struct {
+    Node                  `part:"doc"`
+    RawContent  [] rune   `content:"Doc"`
 }
 type Tag struct {
     Node                  `part:"tag"`

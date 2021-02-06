@@ -293,7 +293,8 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, TypeDe
 	for name, t := range raw.DeclMap {
 		var mod, mod_exists = idx[name.ModuleName]
 		if !mod_exists { panic("mod " + name.ModuleName + " should exist") }
-		// 3.1. Get tags
+		// 3.1. Get doc and tags
+		var doc = DocStringFromRaw(t.Docs)
 		var tags, tags_err = ParseTypeTags(t.Tags)
 		if tags_err != nil { return nil, nil, [] *TypeDeclError { {
 			Point:    ErrorPointFrom(tags_err.Tag.Node),
@@ -352,6 +353,7 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, TypeDe
 		// 3.6. Use the generated TypeDef to construct a GenericType
 		//      and register it to the TypeRegistry
 		reg[name] = &GenericType {
+			Doc:        doc,
 			Tags:       tags,
 			Params:     params,
 			Bounds:     bounds,

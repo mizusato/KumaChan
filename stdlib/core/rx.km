@@ -1,5 +1,11 @@
 // Action Types
+/// Action*[T,E] represents an action that may return 0/finite/infinity T values
+/// asynchronously or throw an E error asynchronously.
+/// It is exactly the same concept as what called Observable in ReactiveX.
 type Action*[[unit] +T, [never] +E]  native;  // rx.Action       (Observable<T,E>)
+/// Action[T,E] represents an action that may return exact one T value
+/// asynchronously or throw an E error asynchronously.
+/// It is a subtype of Action*[T,E] and can be regarded as a lazy Promise.
 type Action [[unit] +T, [never] +E]  protected Action*[T,E];  // (() => Promise<T,E>)
 
 // Wired Components

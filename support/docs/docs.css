@@ -1,3 +1,6 @@
+body {
+    font-size: 16px;
+}
 * {
     font-family: monospace;
 }
@@ -5,9 +8,19 @@ a {
     color: unset;
     text-decoration: none;
 }
+.description {
+    margin: 0.25rem 0 0.5rem 0;
+    font-family: sans-serif;
+    font-size: 80%;
+    color: #555555;
+}
 
 .api {
     margin-bottom: 1rem;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid #CACACA;
+    border-radius: 0.25rem;
+    background-color: #F3F3F3;
 }
 
 .keyword {
