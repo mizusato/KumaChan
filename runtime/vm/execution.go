@@ -9,8 +9,19 @@ import (
 )
 
 
-func assert(ok bool, msg string) {
-	if !ok { panic(msg) }
+type ExecutionContext struct {
+	dataStack     DataStack
+	callStack     CallStack
+	workingFrame  CallStackFrame
+	indexBufLen   uint
+	indexBuf      [ProductMaxSize] Short
+}
+type DataStack  [] Value
+type CallStack  [] CallStackFrame
+type CallStackFrame struct {
+	function  *Function
+	baseAddr  uint
+	instPtr   uint
 }
 
 func execute(p Program, m *Machine) {
@@ -362,6 +373,10 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 	return ret
 }
 
+
+func assert(ok bool, msg string) {
+	if !ok { panic(msg) }
+}
 
 func (ec *ExecutionContext) getCurrentValue() Value {
 	return ec.dataStack[len(ec.dataStack) - 1]
