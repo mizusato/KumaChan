@@ -133,6 +133,17 @@ QtString QtObjectGetPropString(void* obj_ptr, const char* prop) {
     return QtWrapString(val.toString());
 }
 
+QtBool QtObjectSetPropInt(void* obj_ptr, const char* prop, int val) {
+    QObject* obj = (QObject*) obj_ptr;
+    return obj->setProperty(prop, val);
+}
+
+int QtObjectGetPropInt(void* obj_ptr, const char* prop) {
+    QObject* obj = (QObject*) obj_ptr;
+    QVariant val = obj->property(prop);
+    return val.toInt();
+}
+
 QtConnHandle QtConnect (
         void* obj_ptr,
         const char* signal,
@@ -374,6 +385,13 @@ void QtWebViewDisableContextMenu(void* widget_ptr) {
 void QtWebViewEnableLinkDelegation(void* widget_ptr) {
     QWebView* widget = (QWebView*) widget_ptr;
     widget->page()->setLinkDelegationPolicy(QWebPage::DelegateAllLinks);
+}
+
+void QtWebViewRecordClickedLink(void* widget_ptr) {
+    QWebView* widget = (QWebView*) widget_ptr;
+    QObject::connect(widget, &QWebView::linkClicked, [widget](const QUrl& url)->void {
+        widget->setProperty("qtbindingClickedLinkUrl", url.toString());
+    });
 }
 
 void QtWebViewSetHTML(void* widget_ptr, QtString html) {

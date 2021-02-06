@@ -250,6 +250,16 @@ func GetPropString(obj Object, prop string) string {
 func SetPropString(obj Object, prop string, value string) {
     SetPropRuneString(obj, prop, ([] rune)(value))
 }
+func GetPropInt(obj Object, prop string) int {
+    var new_str, del_all_str = str_alloc()
+    defer del_all_str()
+    return int(C.QtObjectGetPropInt(obj.ptr(), new_str(prop)))
+}
+func SetPropInt(obj Object, prop string, val int) {
+    var new_str, del_all_str = str_alloc()
+    defer del_all_str()
+    C.QtObjectSetPropInt(obj.ptr(), new_str(prop), C.int(val))
+}
 
 func MakeBool(p bool) Bool {
     if p { return Bool(C.int(int(1))) } else { return Bool(C.int(int(0))) }
@@ -402,6 +412,9 @@ func WebViewDisableContextMenu(w Widget) {
 }
 func WebViewEnableLinkDelegation(w Widget) {
     C.QtWebViewEnableLinkDelegation(w.ptr())
+}
+func WebViewRecordClickedLink(w Widget) {
+    C.QtWebViewRecordClickedLink(w.ptr())
 }
 func WebViewSetHTML(w Widget, html String) {
     C.QtWebViewSetHTML(w.ptr(), C.QtString(html))

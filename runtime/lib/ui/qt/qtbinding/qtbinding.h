@@ -72,6 +72,8 @@ extern "C" {
     QtBool QtObjectGetPropBool(void* obj_ptr, const char* prop);
     QtBool QtObjectSetPropString(void* obj_ptr, const char* prop, QtString val);
     QtString QtObjectGetPropString(void* obj_ptr, const char* prop);
+    QtBool QtObjectSetPropInt(void* obj_ptr, const char* prop, int val);
+    int QtObjectGetPropInt(void* obj_ptr, const char* prop);
     QtConnHandle QtConnect(void* obj_ptr, const char* signal, void (*cb)(size_t), size_t payload);
     QtBool QtIsConnectionValid(QtConnHandle handle);
     void QtDisconnect(QtConnHandle handle);
@@ -109,6 +111,7 @@ extern "C" {
     QtString QtListWidgetGetCurrentItemKey(void *widget_ptr);
     void QtWebViewDisableContextMenu(void* widget_ptr);
     void QtWebViewEnableLinkDelegation(void *widget_ptr);
+    void QtWebViewRecordClickedLink(void* widget_ptr);
     void QtWebViewSetHTML(void *widget_ptr, QtString html);
     void QtWebViewScrollToAnchor(void *widget_ptr, QtString anchor);
     QtString QtFileDialogOpen(void* parent_ptr, QtString title, QtString cwd, QtString filter);

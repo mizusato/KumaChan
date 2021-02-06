@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"kumachan/util"
 	"kumachan/runtime/lib/ui/qt"
+	"strings"
 )
 
 
@@ -67,6 +68,10 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 		modules = append(modules, mod)
 	}
 	sort.Strings(modules)
+	var module_index = make(map[string] int)
+	for i, mod := range modules {
+		module_index[mod] = i
+	}
 	var get_mod_item = func(i uint) qt.ListWidgetItem {
 		var mod = modules[i]
 		var mod_ucs4 = ([] rune)(mod)
@@ -80,10 +85,24 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 	qt.ListWidgetSetItems(ui.ModuleList, get_mod_item, mod_count, nil)
 	qt.WebViewDisableContextMenu(ui.ContentView)
 	qt.WebViewEnableLinkDelegation(ui.ContentView)
+	qt.WebViewRecordClickedLink(ui.ContentView)
+	var current_mod = ""
+	var current_outline_index = make(map[string] int)
+	var goto_api = func(mod string, id string) {
+		if mod != current_mod {
+			qt.SetPropInt(ui.ModuleList, "currentRow", module_index[mod])
+		}
+		if id != "" {
+			qt.CommitTask(func() {
+				qt.SetPropInt(ui.OutlineView, "currentRow", current_outline_index[id])
+			})
+		}
+	}
 	go (func() {
 		qt.Connect(ui.ModuleList, "currentRowChanged(int)", func() {
 			var key = qt.ListWidgetGetCurrentItemKey(ui.ModuleList)
 			var mod = string(key)
+			current_mod = mod
 			var mod_data = doc[mod]
 			var content = string(mod_data.Content)
 			var styled_content = (apiBrowserDocStyle + content)
@@ -91,11 +110,15 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 			defer del()
 			qt.WebViewSetHTML(ui.ContentView, styled_content_)
 			var outline = mod_data.Outline
+			current_outline_index = make(map[string] int)
+			for i, item := range outline {
+				current_outline_index[item.Id] = i
+			}
 			var get_outline_item = func(i uint) qt.ListWidgetItem {
 				var api = outline[i]
 				return qt.ListWidgetItem {
-					Key:   ([] rune)(api.Id),
-					Label: ([] rune)(api.Name),
+					Key:   ([]rune)(api.Id),
+					Label: ([]rune)(api.Name),
 					Icon:  apiKindToIcon(api.Kind),
 				}
 			}
@@ -107,6 +130,14 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 			var api_id_, del = qt.NewString(api_id)
 			defer del()
 			qt.WebViewScrollToAnchor(ui.ContentView, api_id_)
+		})
+		qt.Connect(ui.ContentView, "linkClicked(const QUrl&)", func() {
+			var url = qt.GetPropString(ui.ContentView, "qtbindingClickedLinkUrl")
+			var t = strings.Split(url, "#")
+			if len(t) != 2 { return }
+			var mod = t[0]
+			var id = t[1]
+			goto_api(mod, id)
 		})
 	})()
 }
