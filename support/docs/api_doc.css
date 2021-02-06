@@ -1,0 +1,90 @@
+* {
+    font-family: monospace;
+}
+a {
+    color: unset;
+    text-decoration: none;
+}
+body {
+    background-color: hsl(0, 0%, 96%);
+    margin: 1rem 1.5rem 1rem 1.2rem;
+}
+
+/* https://stackoverflow.com/questions/16670931/hide-scroll-bar-but-while-still-being-able-to-scroll */
+::-webkit-scrollbar {
+    width: 0.5rem;
+    height: 0.5rem;
+    background: hsl(0, 0%, 96%);
+}
+/* Optional: show position indicator in red */
+::-webkit-scrollbar-thumb {
+    background: hsla(0, 0%, 70%, 0.3);
+}
+
+.title > .text {
+    font-size: 120%;
+    font-weight: bold;
+}
+.api, .title {
+    overflow: auto;
+    margin-bottom: 1.2rem;
+    padding: 0.8rem 1.2rem;
+    border: 1px solid hsl(0, 0%, 88%);
+    background-color: hsl(0, 0%, 99%);
+    box-shadow: 0.3rem 0.3rem 0.6rem hsl(0, 0%, 80%);
+}
+.type > .definition {
+    margin-left: 4rem;
+}
+.description {
+    margin: 0.4rem 0 0.6rem 0;
+    color: #555555;
+}
+.description > * {
+    font-size: 90%;
+}
+
+.keyword {
+    color: #A626A4;
+}
+.modifier {
+    color: #CF4895;
+}
+.type > .header > .name, .type-named > .name {
+    color: #C18401;
+}
+.type-param > .name, .type-parameter {
+    color: #6656E4;
+}
+.type-param > .variance {
+    color: #7d728d;
+}
+.field > .name {
+    color: #E45649;
+}
+
+.boxed > .kind > .keyword {
+    margin: 0 0;
+}
+.type > .header > .keyword {
+    margin-right: 0.4rem;
+}
+.type-param > .default {
+    margin-right: 0.4rem;
+}
+.type-param + .keyword {
+    margin-right: 0.4rem;
+}
+.bound-super > .keyword, .bound-sub > .keyword {
+    margin: 0.4rem;
+}
+.field {
+    margin: 0 0.4rem;
+}
+.field > .name + .keyword {
+    margin: 0 0.2rem;
+}
+.func > .keyword {
+    margin: 0 0.4rem;
+}
+

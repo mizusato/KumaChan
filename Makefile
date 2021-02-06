@@ -1,4 +1,4 @@
-ifdef OS	
+ifdef OS
 	WINDOWS_WORKAROUND = cp runtime/lib/ui/qt/build/release/libqtbinding* runtime/lib/ui/qt/build/
 	LIBBIN = runtime/lib/ui/qt/build/release/qtbinding.dll
 	EXENAME = kumachan.exe
@@ -7,8 +7,6 @@ else
 	LIBBIN = runtime/lib/ui/qt/build/libqtbinding*
 	EXENAME = kumachan
 endif
-
-.PHONY: check qt interpreter stdlib
 
 default: all
 
@@ -30,8 +28,20 @@ stdlib:
 	cp -rP stdlib build/
 	rm build/stdlib/*.go
 
-interpreter: qt stdlib
+resources:
+	@echo -e '\033[1mCopying Resources Files...\033[0m'
+	if [ -d build/resources ]; then rm -r build/resources; fi
+	mkdir build/resources
+	cp support/docs/api_doc.css build/resources
+	cp support/docs/api_browser.ui build/resources
+
+deps: check qt stdlib resources
+	$(NOOP)
+
+interpreter: deps
 	@echo -e '\033[1mCompiling the Interpreter...\033[0m'
 	go build -o ./build/$(EXENAME) main.go
 
-all: check qt stdlib interpreter
+.PHONY: check qt stdlib resources deps interpreter
+all: interpreter
+

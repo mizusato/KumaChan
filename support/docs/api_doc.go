@@ -33,9 +33,10 @@ const (
 func GenerateApiDocs(idx checker.Index) ApiDocIndex {
 	var result = make(ApiDocIndex)
 	for _, mod := range idx {
-		var mod_name = mod.Name
-		var reg = mod.Context.Types
 		var buf strings.Builder
+		var mod_name = mod.Name
+		buf.WriteString(string(block("title", text("text", mod_name))))
+		var reg = mod.Context.Types
 		var outline = make([] ApiItem, 0)
 		var add_type = func(sym loader.Symbol, g *checker.GenericType) {
 			outline = append(outline, ApiItem {
@@ -169,7 +170,7 @@ func typeDef(g *checker.GenericType, reg checker.TypeRegistry, mod string) Html 
 		})()
 		return block("boxed",
 			c_kind,
-			typeExpr(d.InnerType, g.Params, mod))
+			block("inner", typeExpr(d.InnerType, g.Params, mod)))
 	case *checker.Enum:
 		var cases = make([] Html, len(d.CaseTypes))
 		for i, item := range d.CaseTypes {

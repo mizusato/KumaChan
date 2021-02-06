@@ -16,6 +16,9 @@
 #include <QListWidgetItem>
 #include <QVariantMap>
 #include <QVariantList>
+#include <QWebView>
+#include <QWebPage>
+#include <QWebFrame>
 #include "adapt.hpp"
 #include "qtbinding.hpp"
 #include "qtbinding.h"
@@ -322,7 +325,7 @@ void QtDeletePixmap(QtPixmap pm) {
     delete (QPixmap*)(pm.ptr);
 }
 
-void QtListWidgetClear(void *widget_ptr) {
+void QtListWidgetClear(void* widget_ptr) {
     QListWidget* widget = (QListWidget*) widget_ptr;
     widget->clear();
 }
@@ -357,10 +360,30 @@ QtBool QtListWidgetHasCurrentItem(void* widget_ptr) {
     return (widget->currentRow() != -1);
 }
 
-QtString QtListWidgetGetCurrentItemKey(void *widget_ptr) {
+QtString QtListWidgetGetCurrentItemKey(void* widget_ptr) {
     QListWidget* widget = (QListWidget*) widget_ptr;
     QVariant key_v = widget->currentItem()->data(Qt::UserRole);
     return QtWrapString(key_v.toString());
+}
+
+void QtWebViewDisableContextMenu(void* widget_ptr) {
+    QWebView* widget = (QWebView*) widget_ptr;
+    widget->setContextMenuPolicy(Qt::NoContextMenu);
+}
+
+void QtWebViewEnableLinkDelegation(void* widget_ptr) {
+    QWebView* widget = (QWebView*) widget_ptr;
+    widget->page()->setLinkDelegationPolicy(QWebPage::DelegateAllLinks);
+}
+
+void QtWebViewSetHTML(void* widget_ptr, QtString html) {
+    QWebView* widget = (QWebView*) widget_ptr;
+    widget->page()->mainFrame()->setHtml(QtUnwrapString(html));
+}
+
+void QtWebViewScrollToAnchor(void* widget_ptr, QtString anchor) {
+    QWebView* widget = (QWebView*) widget_ptr;
+    widget->page()->mainFrame()->scrollToAnchor(QtUnwrapString(anchor));
 }
 
 QtString QtFileDialogOpen(void* parent_ptr, QtString title, QtString cwd, QtString filter) {

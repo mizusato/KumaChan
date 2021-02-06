@@ -11,6 +11,7 @@ import (
     "fmt"
     "unsafe"
     "kumachan/runtime/lib/ui/qt/cgohelper"
+    "reflect"
 )
 
 
@@ -51,8 +52,8 @@ type Icon C.QtIcon
 type Pixmap C.QtPixmap
 
 type ListWidgetItem struct {
-    Key    [] rune
-    Label  [] rune
+    Key    Ucs4String
+    Label  Ucs4String
     Icon   *ImageData
 }
 type ImageData struct {
@@ -279,6 +280,15 @@ func NewStringFromUtf8Binary(buf ([] byte)) (String, func()) {
         C.QtDeleteString(str)
     }
 }
+func NewStringFromGoString(go_str string) (String, func()) {
+    var hdr = *(*reflect.StringHeader)(unsafe.Pointer(&go_str))
+    var bin = *(*[]byte)(unsafe.Pointer(&reflect.SliceHeader {
+        Data: hdr.Data,
+        Len:  hdr.Len,
+        Cap:  hdr.Len,
+    }))
+    return NewStringFromUtf8Binary(bin)
+}
 func StringToRunes(str String) ([] rune) {
     var q_str = (C.QtString)(str)
     var size16 = uint(C.QtStringUTF16Length(q_str))
@@ -385,6 +395,19 @@ func ListWidgetGetCurrentItemKey(w Widget) ([] rune) {
     var raw_key = C.QtListWidgetGetCurrentItemKey(w.ptr())
     var key = StringToRunes(String(raw_key))
     return key
+}
+
+func WebViewDisableContextMenu(w Widget) {
+    C.QtWebViewDisableContextMenu(w.ptr())
+}
+func WebViewEnableLinkDelegation(w Widget) {
+    C.QtWebViewEnableLinkDelegation(w.ptr())
+}
+func WebViewSetHTML(w Widget, html String) {
+    C.QtWebViewSetHTML(w.ptr(), C.QtString(html))
+}
+func WebViewScrollToAnchor(w Widget, anchor String) {
+    C.QtWebViewScrollToAnchor(w.ptr(), C.QtString(anchor))
 }
 
 type FileDialogOptions struct {

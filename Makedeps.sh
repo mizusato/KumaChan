@@ -1,3 +1,3 @@
 #!/bin/bash
 
-make qt stdlib
+make deps

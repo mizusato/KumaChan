@@ -107,6 +107,10 @@ extern "C" {
     void QtListWidgetAddItemWithIcon(void* widget_ptr, QtString key_, QtIcon icon_, QtString label_, QtBool as_current);
     QtBool QtListWidgetHasCurrentItem(void* widget_ptr);
     QtString QtListWidgetGetCurrentItemKey(void *widget_ptr);
+    void QtWebViewDisableContextMenu(void* widget_ptr);
+    void QtWebViewEnableLinkDelegation(void *widget_ptr);
+    void QtWebViewSetHTML(void *widget_ptr, QtString html);
+    void QtWebViewScrollToAnchor(void *widget_ptr, QtString anchor);
     QtString QtFileDialogOpen(void* parent_ptr, QtString title, QtString cwd, QtString filter);
     QtStringList QtFileDialogOpenMultiple(void* parent_ptr,  QtString title, QtString cwd, QtString filter);
     QtString QtFileDialogSelectDirectory(void *parent_ptr, QtString title, QtString cwd);

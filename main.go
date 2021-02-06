@@ -4,13 +4,12 @@ import (
     "io"
     "os"
     "fmt"
-    "sort"
-    "html"
     "reflect"
     "strings"
     "runtime"
     "strconv"
     "io/ioutil"
+    . "kumachan/util/error"
     "kumachan/compiler/loader"
     "kumachan/compiler/loader/parser"
     "kumachan/compiler/loader/parser/ast"
@@ -20,9 +19,8 @@ import (
     "kumachan/compiler/checker"
     "kumachan/compiler/generator"
     "kumachan/runtime/vm"
-	"kumachan/lang"
-	"kumachan/runtime/lib/ui/qt"
-    . "kumachan/util/error"
+    "kumachan/runtime/lib/ui/qt"
+    "kumachan/lang"
     "kumachan/rx"
     "kumachan/util"
     "kumachan/rpc/kmd"
@@ -432,21 +430,13 @@ func main() {
         if ldr_err != nil { panic(ldr_err) }
         _, idx, _, errs := checker.TypeCheck(dummy, ldr_idx)
         if errs != nil { panic(MergeErrors(errs)) }
-        var api = docs.GenerateApiDocs(idx)
-        var modules = make([] string, 0)
-        for mod, _ := range api {
-            if mod != dummy.Name {
-                modules = append(modules, mod)
-            }
+        var api_docs = docs.GenerateApiDocs(idx)
+        delete(api_docs, dummy.Name)
+        go docs.RunApiBrowser(api_docs)
+        var qt_main, use_qt = <- qt.InitRequestSignal()
+        if use_qt {
+            qt_main()
         }
-        sort.Strings(modules)
-        var buf strings.Builder
-        buf.WriteString("<head><link rel=\"stylesheet\" href=\"docs.css\" /></head>\n")
-        for _, mod := range modules {
-            buf.WriteString(fmt.Sprintf("<h1>%s</h1>\n", html.EscapeString(mod)))
-            buf.WriteString(string(api[mod].Content))
-        }
-        fmt.Println(buf.String())
     default:
         fmt.Fprintf(os.Stderr,
             "invalid mode: %s", strconv.Quote(mode))
