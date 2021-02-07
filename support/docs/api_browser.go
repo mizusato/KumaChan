@@ -108,38 +108,48 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 	var current_ref = ApiRef { Module: "", Id: "" }
 	var current_outline_index = make(map[string] int)
 	var undo_stack = make([] ApiRef, 0)
-	// var redo_stack = make([] ApiRef, 0)
+	var redo_stack = make([] ApiRef, 0)
 	var jump_state struct {
 		jumping    bool
 		has_step1  bool
+		save       bool
 	}
-	var jump_start = func() {
+	var jump_init = func(save bool) {
 		jump_state.jumping = true
 		jump_state.has_step1 = false
+		jump_state.save = save
 	}
-	var jump_done = func() {
+	var jump_clear = func() {
 		jump_state.jumping = false
 		jump_state.has_step1 = false
+		jump_state.save = true
 	}
+	jump_clear()
 	var is_first_update = true
 	var update_current = func(ref ApiRef, is_step1 bool, is_step2 bool) {
 		if is_first_update { defer (func() { is_first_update = false })() }
-		var jumping = &jump_state.jumping
-		var has_step1 = &jump_state.has_step1
-		if *jumping {
-			if is_step1 { *has_step1 = true }
-			if is_step2 { defer jump_done() }
+		var jumping = jump_state.jumping
+		var save = jump_state.save
+		if jumping && is_step1 {
+			jump_state.has_step1 = true
 		}
-		if (*jumping && *has_step1 && !(is_step1)) || is_first_update {
-			// do nothing
-		} else {
+		var has_step1 = jump_state.has_step1
+		if save &&
+			!(jumping && has_step1 && !(is_step1)) &&
+			!(is_first_update) {
 			undo_stack = append(undo_stack, current_ref)
 		}
 		current_ref = ref
-		fmt.Printf("undo: %+v\ncurrent: %+v\n\n", undo_stack, current_ref)
+		if save {
+			redo_stack = redo_stack[0:0]
+		}
+		fmt.Printf("undo: %+v\n", undo_stack)
+		fmt.Printf("current: %+v\n", current_ref)
+		fmt.Printf("redo: %+v\n\n", redo_stack)
 	}
-	var jump = func(ref ApiRef) {
-		jump_start()
+	var jump = func(ref ApiRef, save bool) {
+		jump_init(save)
+		defer jump_clear()
 		var mod = ref.Module
 		var id = ref.Id
 		if mod != current_ref.Module {
@@ -148,6 +158,20 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 		if id != "" {
 			qt.SetPropInt(ui.OutlineView, "currentRow", current_outline_index[id])
 		}
+	}
+	var undo = func() {
+		if len(undo_stack) == 0 { return }
+		var ref = undo_stack[len(undo_stack)-1]
+		undo_stack = undo_stack[:len(undo_stack)-1]
+		redo_stack = append(redo_stack, current_ref)
+		jump(ref, false)
+	}
+	var redo = func() {
+		if len(redo_stack) == 0 { return }
+		var ref = redo_stack[len(redo_stack)-1]
+		redo_stack = redo_stack[:len(redo_stack)-1]
+		undo_stack = append(undo_stack, current_ref)
+		jump(ref, false)
 	}
 	go (func() {
 		qt.Connect(ui.ModuleList, "currentRowChanged(int)", func() {
@@ -200,10 +224,13 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 			if len(t) != 2 { return }
 			var mod = t[0]
 			var id = t[1]
-			jump(ApiRef { Module: mod, Id: id })
+			jump(ApiRef { Module: mod, Id: id }, true)
 		})
 		qt.Connect(ui.ActionBack, "triggered()", func() {
-			println("back")
+			undo()
+		})
+		qt.Connect(ui.ActionForward, "triggered()", func() {
+			redo()
 		})
 	})()
 }
