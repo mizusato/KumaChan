@@ -16,10 +16,10 @@ import (
 
 
 type Object interface {
-    Object()
-    ptr()  unsafe.Pointer
+    ptr() unsafe.Pointer
+    QtObject()
 }
-func (obj object) Object() {}
+func (obj object) QtObject()           {}
 func (obj object) ptr() unsafe.Pointer { return obj.addr }
 type object struct { addr unsafe.Pointer }
 func ObjectNullablePointer(obj Object) unsafe.Pointer {
@@ -32,13 +32,20 @@ func ObjectNullablePointer(obj Object) unsafe.Pointer {
 
 type Widget interface {
     Object
-    Widget()
+    QtWidget()
 }
-func (widget) Widget() {}
+func (widget) QtWidget() {}
 type widget struct { object }
 func Show(w Widget) {
     C.QtWidgetShow(w.ptr())
 }
+
+type Action interface {
+    Object
+    QtAction()
+}
+func (action) QtAction() {}
+type action struct { object }
 
 func MoveToScreenCenter(w Widget) {
     C.QtWidgetMoveToScreenCenter(w.ptr())
@@ -145,6 +152,20 @@ func FindChild(w Widget, name string) (Widget, bool) {
         return widget{object{ptr}}, true
     } else {
         return widget{}, false
+    }
+}
+
+func FindChildAction(w Widget, name string) (Action, bool) {
+    if mock {
+        return action{}, true
+    }
+    var new_str, del_all_str = str_alloc()
+    defer del_all_str()
+    var ptr = C.QtWidgetFindChildAction(w.ptr(), new_str(name))
+    if ptr != nil {
+        return action{object{ptr}}, true
+    } else {
+        return action{}, false
     }
 }
 

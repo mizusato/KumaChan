@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"sort"
 	"reflect"
+	"strings"
 	"kumachan/util"
 	"kumachan/runtime/lib/ui/qt"
-	"strings"
 )
 
 
@@ -24,12 +24,21 @@ var apiBrowserDocStyle =
 type ApiBrowser struct {
 	Window  qt.Widget
 	ApiBrowserWidgets
+	ApiBrowserActions
 }
-
 type ApiBrowserWidgets struct {
 	ModuleList   qt.Widget
 	ContentView  qt.Widget
 	OutlineView  qt.Widget
+}
+type ApiBrowserActions struct {
+	ActionBack     qt.Action
+	ActionForward  qt.Action
+}
+
+type ApiRef struct {
+	Module  string
+	Id      string
 }
 
 func RunApiBrowser(doc ApiDocIndex) {
@@ -42,14 +51,24 @@ func RunApiBrowser(doc ApiDocIndex) {
 		var widgets_rv = reflect.ValueOf(&widgets).Elem()
 		var widgets_t = widgets_rv.Type()
 		for i := 0; i < widgets_t.NumField(); i += 1 {
-			var widget_name = widgets_t.Field(i).Name
-			var widget, ok = qt.FindChild(window, widget_name)
-			if !(ok) { panic("something went wrong") }
+			var name = widgets_t.Field(i).Name
+			var widget, exists = qt.FindChild(window, name)
+			if !(exists) { panic("something went wrong") }
 			widgets_rv.Field(i).Set(reflect.ValueOf(widget))
+		}
+		var actions = ApiBrowserActions {}
+		var actions_rv = reflect.ValueOf(&actions).Elem()
+		var actions_t = actions_rv.Type()
+		for i := 0; i < actions_t.NumField(); i += 1 {
+			var name = actions_t.Field(i).Name
+			var action, exists = qt.FindChildAction(window, name)
+			if !(exists) { panic("something went wrong") }
+			actions_rv.Field(i).Set(reflect.ValueOf(action))
 		}
 		var ui = ApiBrowser {
 			Window: window,
 			ApiBrowserWidgets: widgets,
+			ApiBrowserActions: actions,
 		}
 		apiBrowserUiLogic(ui, doc)
 		go (func() {
@@ -86,23 +105,57 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 	qt.WebViewDisableContextMenu(ui.ContentView)
 	qt.WebViewEnableLinkDelegation(ui.ContentView)
 	qt.WebViewRecordClickedLink(ui.ContentView)
-	var current_mod = ""
+	var current_ref = ApiRef { Module: "", Id: "" }
 	var current_outline_index = make(map[string] int)
-	var goto_api = func(mod string, id string) {
-		if mod != current_mod {
+	var undo_stack = make([] ApiRef, 0)
+	// var redo_stack = make([] ApiRef, 0)
+	var jump_state struct {
+		jumping    bool
+		has_step1  bool
+	}
+	var jump_start = func() {
+		jump_state.jumping = true
+		jump_state.has_step1 = false
+	}
+	var jump_done = func() {
+		jump_state.jumping = false
+		jump_state.has_step1 = false
+	}
+	var is_first_update = true
+	var update_current = func(ref ApiRef, is_step1 bool, is_step2 bool) {
+		if is_first_update { defer (func() { is_first_update = false })() }
+		var jumping = &jump_state.jumping
+		var has_step1 = &jump_state.has_step1
+		if *jumping {
+			if is_step1 { *has_step1 = true }
+			if is_step2 { defer jump_done() }
+		}
+		if (*jumping && *has_step1 && !(is_step1)) || is_first_update {
+			// do nothing
+		} else {
+			undo_stack = append(undo_stack, current_ref)
+		}
+		current_ref = ref
+		fmt.Printf("undo: %+v\ncurrent: %+v\n\n", undo_stack, current_ref)
+	}
+	var jump = func(ref ApiRef) {
+		jump_start()
+		var mod = ref.Module
+		var id = ref.Id
+		if mod != current_ref.Module {
 			qt.SetPropInt(ui.ModuleList, "currentRow", module_index[mod])
 		}
 		if id != "" {
-			qt.CommitTask(func() {
-				qt.SetPropInt(ui.OutlineView, "currentRow", current_outline_index[id])
-			})
+			qt.SetPropInt(ui.OutlineView, "currentRow", current_outline_index[id])
 		}
 	}
 	go (func() {
 		qt.Connect(ui.ModuleList, "currentRowChanged(int)", func() {
+			if !(qt.ListWidgetHasCurrentItem(ui.ModuleList)) {
+				return
+			}
 			var key = qt.ListWidgetGetCurrentItemKey(ui.ModuleList)
 			var mod = string(key)
-			current_mod = mod
 			var mod_data = doc[mod]
 			var content = string(mod_data.Content)
 			var styled_content = (apiBrowserDocStyle + content)
@@ -124,12 +177,22 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 			}
 			var outline_count = uint(len(outline))
 			qt.ListWidgetSetItems(ui.OutlineView, get_outline_item, outline_count, nil)
+			update_current(ApiRef {
+				Module: mod,
+			}, true, false)
 		})
 		qt.Connect(ui.OutlineView, "currentRowChanged(int)", func() {
+			if !(qt.ListWidgetHasCurrentItem(ui.OutlineView)) {
+				return
+			}
 			var api_id = qt.ListWidgetGetCurrentItemKey(ui.OutlineView)
 			var api_id_, del = qt.NewString(api_id)
 			defer del()
 			qt.WebViewScrollToAnchor(ui.ContentView, api_id_)
+			update_current(ApiRef {
+				Module: current_ref.Module,
+				Id:     string(api_id),
+			}, false, true)
 		})
 		qt.Connect(ui.ContentView, "linkClicked(const QUrl&)", func() {
 			var url = qt.GetPropString(ui.ContentView, "qtbindingClickedLinkUrl")
@@ -137,7 +200,10 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 			if len(t) != 2 { return }
 			var mod = t[0]
 			var id = t[1]
-			goto_api(mod, id)
+			jump(ApiRef { Module: mod, Id: id })
+		})
+		qt.Connect(ui.ActionBack, "triggered()", func() {
+			println("back")
 		})
 	})()
 }

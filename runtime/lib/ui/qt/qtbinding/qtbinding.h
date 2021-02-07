@@ -65,6 +65,7 @@ extern "C" {
     void QtQuit();
     void* QtLoadWidget(const char* definition, const char* directory);
     void* QtWidgetFindChild(void* widget_ptr, const char* name);
+    void* QtWidgetFindChildAction(void* widget_ptr, const char* name);
     void QtWidgetShow(void* widget_ptr);
     void QtWidgetHide(void* widget_ptr);
     void QtWidgetMoveToScreenCenter(void* widget_ptr);

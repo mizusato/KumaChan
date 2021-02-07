@@ -10,6 +10,7 @@
 #include <QVector>
 #include <QVariant>
 #include <QResizeEvent>
+#include <QAction>
 #include <QIcon>
 #include <QPixmap>
 #include <QListWidget>
@@ -92,6 +93,12 @@ void* QtLoadWidget(const char* definition, const char* directory) {
 void* QtWidgetFindChild(void* widget_ptr, const char* name) {
     QWidget* widget = (QWidget*) widget_ptr;
     QWidget* child = widget->findChild<QWidget*>(QString(name));
+    return (void*) child;
+}
+
+void* QtWidgetFindChildAction(void* widget_ptr, const char* name) {
+    QWidget* widget = (QWidget*) widget_ptr;
+    QAction* child = widget->findChild<QAction*>(QString(name));
     return (void*) child;
 }
 
