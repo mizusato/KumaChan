@@ -107,10 +107,14 @@
   </widget>
   <action name="ActionBack">
    <property name="icon">
-    <iconset theme="go-previous"/>
+    <iconset theme="go-previous">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
-    <string>Back</string>
+    <string>&amp;Back</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+Left</string>
    </property>
   </action>
   <action name="ActionForward">
@@ -119,15 +123,22 @@
      <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
-    <string>Forward</string>
+    <string>&amp;Forward</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+Right</string>
    </property>
   </action>
   <action name="ActionSearch">
    <property name="icon">
-    <iconset theme="edit-find"/>
+    <iconset theme="edit-find">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
-    <string>Search</string>
+    <string>&amp;Search</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+F</string>
    </property>
   </action>
  </widget>
