@@ -426,6 +426,11 @@ void QtWebViewScrollToAnchor(void* widget_ptr, QtString anchor) {
     widget->page()->mainFrame()->scrollToAnchor(QtUnwrapString(anchor));
 }
 
+void QtWebViewScrollToTop(void* widget_ptr) {
+    QWebView* widget = (QWebView*) widget_ptr;
+    widget->page()->mainFrame()->setScrollPosition(QPoint(0,0));
+}
+
 QtString QtFileDialogOpen(void* parent_ptr, QtString title, QtString cwd, QtString filter) {
    QWidget* parent = (QWidget*) parent_ptr;
    QString path = QFileDialog::getOpenFileName(

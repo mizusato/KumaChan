@@ -118,6 +118,7 @@ extern "C" {
     void QtWebViewRecordClickedLink(void* widget_ptr);
     void QtWebViewSetHTML(void *widget_ptr, QtString html);
     void QtWebViewScrollToAnchor(void *widget_ptr, QtString anchor);
+    void QtWebViewScrollToTop(void* widget_ptr);
     QtString QtFileDialogOpen(void* parent_ptr, QtString title, QtString cwd, QtString filter);
     QtStringList QtFileDialogOpenMultiple(void* parent_ptr,  QtString title, QtString cwd, QtString filter);
     QtString QtFileDialogSelectDirectory(void *parent_ptr, QtString title, QtString cwd);

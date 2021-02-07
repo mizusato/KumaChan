@@ -451,6 +451,9 @@ func WebViewSetHTML(w Widget, html String) {
 func WebViewScrollToAnchor(w Widget, anchor String) {
     C.QtWebViewScrollToAnchor(w.ptr(), C.QtString(anchor))
 }
+func WebViewScrollToTop(w Widget) {
+    C.QtWebViewScrollToTop(w.ptr())
+}
 
 type FileDialogOptions struct {
     Title   [] rune

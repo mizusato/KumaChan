@@ -200,13 +200,20 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 		defer jump_clear()
 		var mod = ref.Module
 		var id = ref.Id
+		var mod_unchanged = false
 		if mod != current_ref.Module {
 			qt.SetPropInt(ui.ModuleList, "currentRow", module_index[mod])
+		} else {
+			mod_unchanged = true
 		}
 		if id != "" {
 			qt.SetPropInt(ui.OutlineView, "currentRow", current_outline_index[id])
 		} else {
-			qt.SetPropInt(ui.OutlineView, "currentRow", 0)
+			qt.WebViewScrollToTop(ui.ContentView)
+			if mod_unchanged {
+				qt.SetPropInt(ui.OutlineView, "currentRow", -1)
+				update_current(ApiRef { Module: mod, Id: id }, false, true)
+			}
 		}
 	}
 	var undo = func() {
