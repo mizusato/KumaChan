@@ -44,7 +44,7 @@ type RawTypeRegistry struct {
 	BoundsMap      map[loader.Symbol] ([] ast.TypeBound)
 	// a map from symbol to type parameter default values
 	DefaultsMap    map[loader.Symbol] ([] ast.TypeParamDefault)
- 	// a map from case types to their corresponding union information
+ 	// a map from case types to their corresponding enum information
 	CaseInfoMap    map[loader.Symbol] CaseInfo
 	// a context value to track all visited modules
 	// (same module may appear many times when walking through the hierarchy)
@@ -52,9 +52,9 @@ type RawTypeRegistry struct {
 }
 type CaseInfo struct {
 	IsCaseType     bool
-	UnionName      loader.Symbol
-	UnionArity     uint
-	UnionVariance  [] TypeVariance
+	EnumName       loader.Symbol
+	EnumArity      uint
+	EnumVariance   [] TypeVariance
 	CaseIndex      uint
 	CaseParams     [] uint
 }
@@ -144,12 +144,12 @@ func RegisterRawTypes(mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 	if visited { return nil }
 	raw.VisitedMod[mod_name] = true
 	// 2. Extract all type declarations in the module,
-	//    and record the root union types of all case types
+	//    and record the root enum types of all case types
 	var decls = make([] ast.DeclType, 0)
 	var params_map = make(map[uint] ([] TypeParam))
 	var bounds_map = make(map[uint] ([] ast.TypeBound))
 	var defaults_map = make(map[uint] ([] ast.TypeParamDefault))
-	var case_parent_map = make(map[uint]uint)
+	var case_enum_map = make(map[uint]uint)
 	var case_index_map = make(map[uint]uint)
 	var process_decl_stmt func(ast.DeclType) *TypeDeclError
 	process_decl_stmt = func(s ast.DeclType) *TypeDeclError {
@@ -171,7 +171,7 @@ func RegisterRawTypes(mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 				var err = process_decl_stmt(case_decl)
 				if err != nil { return err }
 				case_index_map[case_i] = uint(case_index)
-				case_parent_map[case_i] = i
+				case_enum_map[case_i] = i
 			}
 		}
 		return nil
@@ -220,15 +220,15 @@ func RegisterRawTypes(mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 		raw.DefaultsMap[type_sym] = defaults_map[uint(i)]
 		var case_index, is_case_type = case_index_map[uint(i)]
 		if is_case_type {
-			var parent_i = case_parent_map[uint(i)]
-			var parent = decls[parent_i]
-			var parent_name = mod.SymbolFromDeclName(parent.Name)
-			var parent_params = params_map[parent_i]
+			var enum_i = case_enum_map[uint(i)]
+			var enum = decls[enum_i]
+			var enum_name = mod.SymbolFromDeclName(enum.Name)
+			var enum_params = params_map[enum_i]
 			var mapping = make([] uint, len(d.Params))
 			for p, param := range params {
 				var exists = false
 				var corresponding = ^(uint(0))
-				for parent_p, parent_param := range parent_params {
+				for parent_p, parent_param := range enum_params {
 					if param.Name == parent_param.Name {
 						exists = true
 						corresponding = uint(parent_p)
@@ -241,12 +241,12 @@ func RegisterRawTypes(mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 				mapping[p] = corresponding
 			}
 			raw.CaseInfoMap[type_sym] = CaseInfo {
-				IsCaseType:    true,
-				UnionName:     parent_name,
-				UnionArity:    uint(len(parent.Params)),
-				UnionVariance: GetVarianceFromRawTypeParams(parent.Params),
-				CaseIndex:     case_index,
-				CaseParams:    mapping,
+				IsCaseType:   true,
+				EnumName:     enum_name,
+				EnumArity:    uint(len(enum.Params)),
+				EnumVariance: GetVarianceFromRawTypeParams(enum.Params),
+				CaseIndex:    case_index,
+				CaseParams:   mapping,
 			}
 		} // if is_case_type
 	}

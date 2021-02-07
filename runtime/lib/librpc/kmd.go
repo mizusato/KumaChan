@@ -164,13 +164,13 @@ func KmdTransformer(h KmdTransformContext) kmd.Transformer {
 					}
 					return nil
 				},
-				Union2Case: func(obj kmd.Object) kmd.Object {
+				Enum2Case: func(obj kmd.Object) kmd.Object {
 					var tv = obj.(KmdTypedValue)
 					var sv = tv.Value.(SumValue)
 					var tid = tv.Type.Identifier()
 					var t, exists = conf.SchemaTable[tid]
 					if !(exists) { panic("something went wrong") }
-					var schema = t.(kmd.UnionSchema)
+					var schema = t.(kmd.EnumSchema)
 					for case_tid, index := range schema.CaseIndexMap {
 						if index == uint(sv.Index) {
 							var case_t = conf.GetTypeFromId(case_tid)
@@ -336,17 +336,17 @@ func KmdTransformer(h KmdTransformContext) kmd.Transformer {
 					if err != nil { return nil, err }
 					return tuple, nil
 				},
-				Case2Union: func(obj kmd.Object, union_tid kmd.TypeId, case_tid kmd.TypeId) (kmd.Object, error) {
-					var union_t, exists = conf.SchemaTable[union_tid]
+				Case2Enum: func(obj kmd.Object, enum_tid kmd.TypeId, case_tid kmd.TypeId) (kmd.Object, error) {
+					var enum_t, exists = conf.SchemaTable[enum_tid]
 					if !(exists) { return nil, errors.New(fmt.Sprintf(
-						"type %s does not exist", union_tid)) }
-					var schema, ok = union_t.(kmd.UnionSchema)
+						"type %s does not exist", enum_tid)) }
+					var schema, ok = enum_t.(kmd.EnumSchema)
 					if !(ok) { return nil, errors.New(fmt.Sprintf(
-						"type %s is not a union type", union_tid)) }
+						"type %s is not a enum type", enum_tid)) }
 					var index, is_case = schema.CaseIndexMap[case_tid]
 					if !(is_case) { return nil, errors.New(fmt.Sprintf(
-						"type %s is not a case type of the union type %s",
-						case_tid, union_tid)) }
+						"type %s is not a case type of the enum type %s",
+						case_tid, enum_tid)) }
 					if !(index < ProductMaxSize) {
 						panic("something went wrong")
 					}

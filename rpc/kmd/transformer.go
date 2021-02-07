@@ -32,7 +32,7 @@ type ContainerSerializer struct {
 type AlgebraicSerializer struct {
 	IterateRecord   func(Object, func(string,Object) error) error
 	IterateTuple    func(Object, func(uint,Object) error) error
-	Union2Case      func(Object) Object
+	Enum2Case       func(Object) Object
 }
 
 type Deserializer struct {
@@ -69,5 +69,5 @@ type AlgebraicDeserializer struct {
 	CreateTuple     func(tuple_t TypeId) Object
 	FillElement     func(tuple Object, element uint, value Object)
 	FinishTuple     func(tuple Object, t TypeId) (Object, error)
-	Case2Union      func(obj Object, union_t TypeId, case_t TypeId) (Object, error)
+	Case2Enum       func(obj Object, enum_t TypeId, case_t TypeId) (Object, error)
 }

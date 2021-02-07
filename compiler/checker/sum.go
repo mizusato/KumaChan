@@ -82,8 +82,8 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 	var arg_typed, err2 = AssignTo(nil, arg_semi, ctx)
 	if err2 != nil { return SemiExpr{}, err2 }
 	var arg_type = arg_typed.Type
-	var union, union_args, across_reactive, ok =
-		ExtractUnion(arg_type, ctx, true)
+	var enum, enum_args, across_reactive, ok =
+		ExtractEnum(arg_type, ctx, true)
 	if !(ok) { return SemiExpr{}, &ExprError {
 		Point:    arg_typed.Info.ErrorPoint,
 		Concrete: E_InvalidSwitchArgType {
@@ -125,12 +125,12 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 				} },
 			} }
 			var index, case_args, is_case = GetCaseInfo (
-				union, union_args, type_sym,
+				enum, enum_args, type_sym,
 			)
 			if !is_case { return SemiExpr{}, &ExprError {
 				Point:    ErrorPointFrom(t.Node),
 				Concrete: E_NotBranchType {
-					Union:    ctx.DescribeCertainType(arg_type),
+					Enum:     ctx.DescribeCertainType(arg_type),
 					TypeName: type_sym.String(),
 				},
 			} }
@@ -186,9 +186,9 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 			default_node = branch.Node
 		}
 	}
-	if !has_default && len(checked) != len(union.CaseTypes) {
+	if !has_default && len(checked) != len(enum.CaseTypes) {
 		var missing = make([]string, 0)
-		for _, case_type := range union.CaseTypes {
+		for _, case_type := range enum.CaseTypes {
 			if !checked[case_type.Name] {
 				missing = append(missing, case_type.Name.String())
 			}
@@ -197,7 +197,7 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 			Point:    ErrorPointFrom(sw.Node),
 			Concrete: E_IncompleteMatch { missing },
 		}
-	} else if has_default && len(checked) == len(union.CaseTypes) {
+	} else if has_default && len(checked) == len(enum.CaseTypes) {
 		return SemiExpr{}, &ExprError {
 			Point:    ErrorPointFrom(default_node),
 			Concrete: E_SuperfluousDefaultBranch {},
@@ -218,28 +218,28 @@ func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprErro
 	var info = ctx.GetExprInfo(msw.Node)
 	var A = uint(len(msw.Arguments))
 	var args = make([] Expr, A)
-	var unions = make([] *Enum, A)
-	var unions_args = make([][] Type, A)
+	var enums = make([] *Enum, A)
+	var enums_args = make([][] Type, A)
 	for i, arg_node := range msw.Arguments {
 		var semi, err1 = Check(arg_node, ctx)
 		if err1 != nil { return SemiExpr{}, err1 }
 		var arg_typed, err2 = AssignTo(nil, semi, ctx)
 		if err2 != nil { return SemiExpr{}, err2 }
 		var arg_type = arg_typed.Type
-		var union, union_args, _, is_union = ExtractUnion(arg_type, ctx, false)
-		if !is_union { return SemiExpr{}, &ExprError {
+		var enum, enum_args, _, is_enum = ExtractEnum(arg_type, ctx, false)
+		if !is_enum { return SemiExpr{}, &ExprError {
 			Point:    arg_typed.Info.ErrorPoint,
 			Concrete: E_InvalidSwitchArgType {
 				ArgType: ctx.DescribeCertainType(arg_typed.Type),
 			},
 		} }
 		args[i] = Expr(arg_typed)
-		unions[i] = union
-		unions_args[i] = union_args
+		enums[i] = enum
+		enums_args[i] = enum_args
 	}
 	var checked = make(map[string] bool)
 	var N = uint(1)
-	for _, u := range unions {
+	for _, u := range enums {
 		N *= uint(len(u.CaseTypes))
 	}
 	var has_default = false
@@ -293,12 +293,12 @@ func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprErro
 					} },
 				} }
 				var index, case_args, is_case = GetCaseInfo (
-					unions[i], unions_args[i], type_sym,
+					enums[i], enums_args[i], type_sym,
 				)
 				if !is_case { return SemiExpr{}, &ExprError {
 					Point:    ErrorPointFrom(t.Node),
 					Concrete: E_NotBranchType {
-						Union:    ctx.DescribeCertainType(args[i].Type),
+						Enum:    ctx.DescribeCertainType(args[i].Type),
 						TypeName: type_sym.String(),
 					},
 				} }
@@ -336,7 +336,7 @@ func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprErro
 				} else {
 					var i = len(path)
 					if is_default[i] {
-						var num_cases = uint(len(unions[i].CaseTypes))
+						var num_cases = uint(len(enums[i].CaseTypes))
 						for j := uint(0); j < num_cases; j += 1 {
 							var copied = make([]uint, len(path))
 							copy(copied, path)
@@ -599,14 +599,14 @@ func AssignMultiSwitchTo(expected Type, msw SemiTypedMultiSwitch, info ExprInfo,
 }
 
 
-func ExtractUnion(t Type, ctx ExprContext, cross_reactive bool) (*Enum, []Type, bool, bool) {
+func ExtractEnum(t Type, ctx ExprContext, cross_reactive bool) (*Enum, []Type, bool, bool) {
 	switch T := t.(type) {
 	case *NamedType:
 		if cross_reactive && IsReactive(T) {
 			if !(len(T.Args) == 1) { panic("something went wrong") }
-			var union, args, _, ok = ExtractUnion(T.Args[0], ctx, false)
+			var enum, args, _, ok = ExtractEnum(T.Args[0], ctx, false)
 			if ok {
-				return union, args, true, true
+				return enum, args, true, true
 			} else {
 				return nil, nil, false, false
 			}
@@ -620,7 +620,7 @@ func ExtractUnion(t Type, ctx ExprContext, cross_reactive bool) (*Enum, []Type, 
 			var ctx_mod = ctx.GetModuleName()
 			var unboxed, can_unbox = Unbox(t, ctx_mod, reg).(Unboxed)
 			if can_unbox {
-				return ExtractUnion(unboxed.Type, ctx, cross_reactive)
+				return ExtractEnum(unboxed.Type, ctx, cross_reactive)
 			}
 		}
 	}

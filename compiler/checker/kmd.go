@@ -102,14 +102,14 @@ func CollectKmdApi (
 				var cur = g
 				for cur.CaseInfo.IsCaseType {
 					var case_info = cur.CaseInfo
-					var union_sym = case_info.UnionName
-					var union_id = mapping[union_sym]
-					var m, exists = mono_mapping[union_id]
+					var enum_sym = case_info.EnumName
+					var enum_id = mapping[enum_sym]
+					var m, exists = mono_mapping[enum_id]
 					if exists {
 						mono_types = append(mono_types, m)
 						args_maps = append(args_maps, case_info.CaseParams)
 					}
-					cur = reg[union_sym]
+					cur = reg[enum_sym]
 				}
 			}
 			for i, _ := range mono_types {
@@ -331,7 +331,7 @@ func GetKmdSchema (
 			} }
 			index_map[case_id] = uint(i)
 		}
-		return kmd.UnionSchema {
+		return kmd.EnumSchema {
 			CaseIndexMap: index_map,
 		}, nil
 	default:
@@ -459,7 +459,7 @@ func GetKmdType (
 				}
 				return kmd.AlgebraicType(kmd.Tuple, id), nil
 			case *Enum:
-				return kmd.AlgebraicType(kmd.Union, id), nil
+				return kmd.AlgebraicType(kmd.Enum, id), nil
 			}
 		}
 		error:

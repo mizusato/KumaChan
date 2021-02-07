@@ -127,7 +127,7 @@ func serialize(obj Object, ctx serializeContext, output io.Writer) error {
 			}
 			return serialize(element, element_ctx, output)
 		})
-	case Union:
+	case Enum:
 		var case_ctx = serializeContext {
 			Serializer:   ctx.Serializer,
 			Key:          "",
@@ -135,7 +135,7 @@ func serialize(obj Object, ctx serializeContext, output io.Writer) error {
 			OmitType:     false,
 			OmitAllTypes: false,
 		}
-		return serialize(ctx.Union2Case(obj), case_ctx, output)
+		return serialize(ctx.Enum2Case(obj), case_ctx, output)
 	default:
 		panic("impossible branch")
 	}

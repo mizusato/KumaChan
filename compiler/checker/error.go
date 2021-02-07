@@ -45,8 +45,8 @@ func (impl E_InvalidFieldName) TypeError() {}
 type E_InvalidFieldName struct {
 	Name  string
 }
-func (impl E_TooManyUnionItems) TypeError() {}
-type E_TooManyUnionItems struct {
+func (impl E_TooManyEnumItems) TypeError() {}
+type E_TooManyEnumItems struct {
 	Defined  uint
 	Limit    uint
 }
@@ -62,12 +62,12 @@ type E_BoxedBadVariance struct {
 func (impl E_CaseBadVariance) TypeError() {}
 type E_CaseBadVariance struct {
 	CaseName   string
-	UnionName  string
+	EnumName  string
 }
 func (impl E_CaseBadBounds) TypeError() {}
 type E_CaseBadBounds struct {
 	CaseName   string
-	UnionName  string
+	EnumName  string
 }
 
 func (err *TypeError) Desc() ErrorMessage {
@@ -99,8 +99,8 @@ func (err *TypeError) Desc() ErrorMessage {
 	case E_InvalidFieldName:
 		msg.WriteText(TS_ERROR, "Invalid field name:")
 		msg.WriteEndText(TS_INLINE_CODE, e.Name)
-	case E_TooManyUnionItems:
-		msg.WriteText(TS_ERROR, "Too many union items:")
+	case E_TooManyEnumItems:
+		msg.WriteText(TS_ERROR, "Too many enum items:")
 		msg.WriteInnerText(TS_INLINE, fmt.Sprint(e.Defined))
 		msg.WriteText(TS_ERROR,
 			fmt.Sprintf("items (maximum is %d)", e.Limit))
@@ -124,15 +124,15 @@ func (err *TypeError) Desc() ErrorMessage {
 			"Some parameter variance declaration(s) on the case type")
 		msg.WriteInnerText(TS_INLINE_CODE, e.CaseName)
 		msg.WriteText(TS_ERROR,
-			"is not consistent with its parent union type")
-		msg.WriteEndText(TS_INLINE_CODE, e.UnionName)
+			"is not consistent with its parent enum type")
+		msg.WriteEndText(TS_INLINE_CODE, e.EnumName)
 	case E_CaseBadBounds:
 		msg.WriteText(TS_ERROR,
 			"Some parameter bound declaration(s) on the case type")
 		msg.WriteInnerText(TS_INLINE_CODE, e.CaseName)
 		msg.WriteText(TS_ERROR,
-			"is not consistent with its parent union type")
-		msg.WriteEndText(TS_INLINE_CODE, e.UnionName)
+			"is not consistent with its parent enum type")
+		msg.WriteEndText(TS_INLINE_CODE, e.EnumName)
 	default:
 		panic("unknown error kind")
 	}
@@ -211,7 +211,7 @@ func (err *TypeDeclError) Desc() ErrorMessage {
 	case E_InvalidCaseTypeParam:
 		msg.WriteText(TS_ERROR, "Invalid type parameter")
 		msg.WriteInnerText(TS_INLINE_CODE, e.Name)
-		msg.WriteText(TS_ERROR, "(parameters of a case type should be a subset of its parent union type)")
+		msg.WriteText(TS_ERROR, "(parameters of a case type should be a subset of its parent enum type)")
 	case E_InvalidTypeDecl:
 		msg.WriteAll(e.Detail.Desc())
 	case E_TypeCircularDependency:
@@ -900,15 +900,15 @@ func (e E_WrongMultiBranchTypeQuantity) ExprErrorDesc() ErrorMessage {
 }
 
 type E_NotBranchType struct {
-	Union     string
+	Enum     string
 	TypeName  string
 }
 func (e E_NotBranchType) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	msg.WriteText(TS_ERROR, "The type")
 	msg.WriteInnerText(TS_INLINE_CODE, e.TypeName)
-	msg.WriteText(TS_ERROR, "is not a branch type of the union type")
-	msg.WriteEndText(TS_INLINE_CODE, e.Union)
+	msg.WriteText(TS_ERROR, "is not a branch type of the enum type")
+	msg.WriteEndText(TS_INLINE_CODE, e.Enum)
 	return msg
 }
 
@@ -1168,14 +1168,14 @@ func (e E_NoneOfTypesAssignable) ExprErrorDesc() ErrorMessage {
 
 type E_NotCaseType struct {
 	Type   string
-	Union  string
+	Enum  string
 }
 func (e E_NotCaseType) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	msg.WriteText(TS_ERROR, "The type")
 	msg.WriteInnerText(TS_INLINE_CODE, e.Type)
-	msg.WriteText(TS_ERROR, "is not a case type of the union type")
-	msg.WriteEndText(TS_INLINE_CODE, e.Union)
+	msg.WriteText(TS_ERROR, "is not a case type of the enum type")
+	msg.WriteEndText(TS_INLINE_CODE, e.Enum)
 	return msg
 }
 

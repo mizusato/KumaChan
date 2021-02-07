@@ -308,7 +308,7 @@ func deserialize(input *deserializeReader, ctx deserializeContext) (Object, erro
 				return nil, errors.New("wrong indention")
 			}
 		}
-	case Union:
+	case Enum:
 		n, err := readIndent(input)
 		if err != nil { return nil, err }
 		if n == (ctx.Depth + 1) {
@@ -322,11 +322,11 @@ func deserialize(input *deserializeReader, ctx deserializeContext) (Object, erro
 			}
 			case_value, err := deserialize(input, case_ctx)
 			if err != nil { return nil, err }
-			var union_tid = t.identifier
+			var enum_tid = t.identifier
 			var case_tid = case_t.identifier
-			union_value, err := ctx.Case2Union(case_value, union_tid, case_tid)
+			enum_value, err := ctx.Case2Enum(case_value, enum_tid, case_tid)
 			if err != nil { return nil, err }
-			return union_value, nil
+			return enum_value, nil
 		} else {
 			return nil, errors.New("wrong indention")
 		}

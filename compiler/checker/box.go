@@ -17,7 +17,7 @@ func Box (
 ) (Expr, *ExprError) {
 	var boxed, is_boxed = g_type.Definition.(*Boxed)
 	if !is_boxed {
-		var _, is_enum = g_type.Definition.(*Enum)  // TODO: finish renaming
+		var _, is_enum = g_type.Definition.(*Enum)
 		if is_enum {
 			var typed_expr, is_typed = to_be_boxed.Value.(TypedExpr)
 			if is_typed {
@@ -25,7 +25,7 @@ func Box (
 				if is_named {
 					var named_g = ctx.ModuleInfo.Types[named.Name]
 					var c = named_g.CaseInfo
-					if c.IsCaseType && c.UnionName == g_type_name {
+					if c.IsCaseType && c.EnumName == g_type_name {
 						var expr = Expr(typed_expr)
 						return LiftCase(c, named, false, expr), nil
 					}
@@ -34,7 +34,7 @@ func Box (
 					Point:    to_be_boxed.Info.ErrorPoint,
 					Concrete: E_NotCaseType {
 						Type:  ctx.DescribeCertainType(typed_expr.Type),
-						Union: g_type_name.String(),
+						Enum: g_type_name.String(),
 					},
 				}
 			} else {
@@ -134,15 +134,15 @@ func Box (
 	}
 }
 
-func GetUnionArgs (
+func GetEnumArgs (
 	case_args       [] Type,
-	union_arity     uint,
-	union_variance  [] TypeVariance,
+	enum_arity      uint,
+	enum_variance   [] TypeVariance,
 	mapping         [] uint,
 ) ([] Type) {
-	var mapped = make([] Type, union_arity)
-	for i := uint(0); i < union_arity; i += 1 {
-		var v = union_variance[i]
+	var mapped = make([] Type, enum_arity)
+	for i := uint(0); i < enum_arity; i += 1 {
+		var v = enum_variance[i]
 		switch v {
 		case Covariant:
 			mapped[i] = &NeverType {}
@@ -167,15 +167,15 @@ func LiftCase (
 	if force_exact || !(case_info.IsCaseType) {
 		return expr
 	} else {
-		var union = case_info.UnionName
-		var union_arity = case_info.UnionArity
-		var union_variance = case_info.UnionVariance
+		var enum = case_info.EnumName
+		var enum_arity = case_info.EnumArity
+		var enum_variance = case_info.EnumVariance
 		var mapping = case_info.CaseParams
 		var index = case_info.CaseIndex
-		var args = GetUnionArgs(case_t.Args, union_arity, union_variance, mapping)
+		var args = GetEnumArgs(case_t.Args, enum_arity, enum_variance, mapping)
 		return Expr {
 			Type:  &NamedType {
-				Name: union,
+				Name: enum,
 				Args: args,
 			},
 			Value: Sum {

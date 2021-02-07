@@ -8,7 +8,7 @@ tab 4
 //  ?  optional
 // {}  record
 // ()  tuple
-//  |  union
+//  |  enum
 
 {} org.foobar.point v1
     x float

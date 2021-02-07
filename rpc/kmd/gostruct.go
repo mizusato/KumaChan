@@ -44,7 +44,7 @@ func getInterfaceValueFromType(t reflect.Type) interface{} {
 		return i
 	}
 }
-func isUnionType(t reflect.Type) bool {
+func isEnumType(t reflect.Type) bool {
 	var obj = getInterfaceValueFromType(t)
 	var _, is = obj.(GoInterfaceWorkaround)
 	return is
@@ -114,7 +114,7 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 					if !(exists) {
 						panic(fmt.Sprintf("the type %s does not have an id", t))
 					}
-					return AlgebraicType(Union, id)
+					return AlgebraicType(Enum, id)
 				}
 			} else if t.Kind() == reflect.Struct {
 				var id, exists = types_rev[t]
@@ -165,7 +165,7 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 			return rt
 		case Tuple:
 			panic("tuple is not supported in Go")
-		case Union:
+		case Enum:
 			var rt, ok = opts.Types[t.identifier]
 			if !ok { panic(fmt.Sprintf("unknown type %s", t.identifier)) }
 			return rt
@@ -200,10 +200,10 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 			IterateArray: func(obj Object, f func(uint, Object) error) error {
 				var v = reflect.ValueOf(obj)
 				var elem_t = v.Type().Elem()
-				var is_elem_union = isUnionType(elem_t)
+				var is_elem_enum = isEnumType(elem_t)
 				for i := 0; i < v.Len(); i += 1 {
 					var elem = v.Index(i).Interface()
-					if is_elem_union {
+					if is_elem_enum {
 						elem = GoInterfaceWorkaround {
 							Type:     elem_t,
 							Concrete: elem,
@@ -230,7 +230,7 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 					var field_t = field_info.Type
 					var field_v = v.Field(i)
 					var field_obj = field_v.Interface()
-					if isUnionType(field_t) {
+					if isEnumType(field_t) {
 						field_obj = GoInterfaceWorkaround {
 							Type:     field_t,
 							Concrete: field_obj,
@@ -254,7 +254,7 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 			IterateTuple:  func(Object, func(uint,Object) error) error {
 				panic("tuple is not supported in Go")
 			},
-			Union2Case: func(obj Object) Object {
+			Enum2Case: func(obj Object) Object {
 				var workaround, is_workaround = obj.(GoInterfaceWorkaround)
 				if is_workaround {
 					return workaround.Concrete
@@ -407,18 +407,18 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 			FinishTuple: func(Object, TypeId) (Object, error) {
 				panic("tuple is not supported in Go")
 			},
-			Case2Union: func(obj Object, union_t TypeId, case_t TypeId) (Object, error) {
-				var union_rt, exists = opts.Types[union_t]
+			Case2Enum: func(obj Object, enum_t TypeId, case_t TypeId) (Object, error) {
+				var enum_rt, exists = opts.Types[enum_t]
 				if !(exists) { return nil, errors.New(fmt.Sprintf(
-					"type %s dose not exist", union_t)) }
+					"type %s dose not exist", enum_t)) }
 				var obj_v = reflect.ValueOf(obj)
-				if obj_v.Type().ConvertibleTo(union_rt) {
-					var obj_union_v = obj_v.Convert(union_rt)
-					return obj_union_v.Interface(), nil
+				if obj_v.Type().ConvertibleTo(enum_rt) {
+					var obj_enum_v = obj_v.Convert(enum_rt)
+					return obj_enum_v.Interface(), nil
 				} else {
 					return nil, errors.New(fmt.Sprintf(
-						"%s is not a case type of the union type %s",
-						case_t, union_t))
+						"%s is not a case type of the enum type %s",
+						case_t, enum_t))
 				}
 			},
 		},

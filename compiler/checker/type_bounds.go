@@ -25,7 +25,7 @@ const (
 func CheckTypeValBounds(val TypeDef, info TypeNodeInfo, ctx TypeBoundsContext) *TypeError {
 	switch V := val.(type) {
 	case *Enum:
-		var union_b = ctx.Bounds
+		var enum_b = ctx.Bounds
 		for _, case_t := range V.CaseTypes {
 			var case_g = ctx.Registry[case_t.Name]
 			var case_b = case_g.Bounds
@@ -33,21 +33,21 @@ func CheckTypeValBounds(val TypeDef, info TypeNodeInfo, ctx TypeBoundsContext) *
 			if !(info.IsCaseType) { panic("something went wrong") }
 			for i_, j := range info.CaseParams {
 				var i = uint(i_)
-				if case_b.Sub[i] != union_b.Sub[j] {
+				if case_b.Sub[i] != enum_b.Sub[j] {
 					return &TypeError {
 						Point:    ErrorPointFrom(case_g.Node),
 						Concrete: E_CaseBadBounds {
 							CaseName:  case_t.Name.String(),
-							UnionName: info.UnionName.String(),
+							EnumName:  info.EnumName.String(),
 						},
 					}
 				}
-				if case_b.Super[i] != union_b.Super[j] {
+				if case_b.Super[i] != enum_b.Super[j] {
 					return &TypeError {
 						Point:    ErrorPointFrom(case_g.Node),
 						Concrete: E_CaseBadBounds {
 							CaseName:  case_t.Name.String(),
-							UnionName: info.UnionName.String(),
+							EnumName:  info.EnumName.String(),
 						},
 					}
 				}

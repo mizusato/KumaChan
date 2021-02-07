@@ -19,8 +19,8 @@ type TupleSchema struct {
 	Elements  [] *Type
 }
 
-func (UnionSchema) KmdSchema() {}
-type UnionSchema struct {
+func (EnumSchema) KmdSchema() {}
+type EnumSchema struct {
 	CaseIndexMap  map[TypeId] uint
 }
 

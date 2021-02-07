@@ -19,7 +19,7 @@ const (
 	// Container Types
 	Array; Optional
 	// Algebraic Types
-	Record; Tuple; Union
+	Record; Tuple; Enum
 )
 
 func (t Type) Kind() TypeKind {
@@ -90,7 +90,7 @@ func TypeParse(text string) (*Type, bool) {
 		switch kind_text {
 		case "{}": kind = Record
 		case "()": kind = Tuple
-		case "|":  kind = Union
+		case "|":  kind = Enum
 		default:   panic("impossible branch")
 		}
 		var base, version_text = stringSplitFirstSegment(id_text)
@@ -158,7 +158,7 @@ func (kind TypeKind) String() string {
 	case Optional: return "?"
 	case Record:   return "{}"
 	case Tuple:    return "()"
-	case Union:    return "|"
+	case Enum:     return "|"
 	default:       panic("impossible branch")
 	}
 }

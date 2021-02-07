@@ -26,24 +26,24 @@ func ValidateTypeVal(val TypeDef, info TypeNodeInfo, ctx TypeValidationContext) 
 		var max = uint(lang.SumMaxBranches)
 		if case_amount > max { return &TypeError {
 			Point:    val_point,
-			Concrete: E_TooManyUnionItems {
+			Concrete: E_TooManyEnumItems {
 				Defined: case_amount,
 				Limit:   max,
 			},
 		} }
-		var union_v = ParamsVarianceVector(ctx.Parameters)
+		var enum_v = ParamsVarianceVector(ctx.Parameters)
 		for _, case_t := range V.CaseTypes {
 			var case_g = ctx.Registry[case_t.Name]
 			var case_v = ParamsVarianceVector(case_g.Params)
 			var info = case_g.CaseInfo
 			if !(info.IsCaseType) { panic("something went wrong") }
 			for i, j := range info.CaseParams {
-				if case_v[i] != union_v[j] {
+				if case_v[i] != enum_v[j] {
 					return &TypeError {
 						Point:    ErrorPointFrom(case_g.Node),
 						Concrete: E_CaseBadVariance {
 							CaseName:  case_t.Name.String(),
-							UnionName: info.UnionName.String(),
+							EnumName:  info.EnumName.String(),
 						},
 					}
 				}

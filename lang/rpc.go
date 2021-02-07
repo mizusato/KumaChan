@@ -29,7 +29,7 @@ func (conf KmdConfig) GetTypeFromId(id kmd.TypeId) *kmd.Type {
 	switch conf.SchemaTable[id].(type) {
 	case kmd.RecordSchema: return kmd.AlgebraicType(kmd.Record, id)
 	case kmd.TupleSchema:  return kmd.AlgebraicType(kmd.Tuple, id)
-	case kmd.UnionSchema:  return kmd.AlgebraicType(kmd.Union, id)
+	case kmd.EnumSchema:   return kmd.AlgebraicType(kmd.Enum, id)
 	default:               panic("something went wrong")
 	}
 }
