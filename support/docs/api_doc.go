@@ -153,7 +153,6 @@ func typeDef(g *checker.GenericType, reg checker.TypeRegistry, mod string) Html 
 		var kind = (func() string {
 			if d.Opaque    { return "opaque" }
 			if d.Protected { return "protected" }
-			if d.Weak      { return "weak" }
 			if d.Implicit  { return "implicit" }
 			return ""
 		})()
@@ -170,11 +169,19 @@ func typeDef(g *checker.GenericType, reg checker.TypeRegistry, mod string) Html 
 			if kind != "" {
 				return block("kind", modifier(kind))
 			} else {
-				return block("kind")
+				return Html("")
+			}
+		})()
+		var c_weak = (func() Html {
+			if d.Weak {
+				return block("weak", modifier("weak"))
+			} else {
+				return Html("")
 			}
 		})()
 		return block("boxed",
 			c_kind,
+			c_weak,
 			block("inner", typeExpr(d.InnerType, g.Params, mod)))
 	case *checker.Enum:
 		var cases = make([] Html, len(d.CaseTypes))
