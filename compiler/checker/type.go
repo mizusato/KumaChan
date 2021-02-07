@@ -43,8 +43,8 @@ func (impl *Boxed) CheckerTypeDef() {}
 type Boxed struct {
 	InnerType  Type
 	Implicit   bool
+	Weak       bool
 	// following properties are exclusive
-	Weak       bool  // TODO: make it a standalone option
 	Protected  bool
 	Opaque     bool
 }

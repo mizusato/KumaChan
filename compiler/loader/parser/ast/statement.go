@@ -134,8 +134,9 @@ type ImplicitType struct {
 func (impl BoxedType) TypeDef() {}
 type BoxedType struct {
     Node                   `part:"t_boxed"`
-    Weak       bool        `option:"box_option.@weak"`
     Protected  bool        `option:"box_option.@protected"`
     Opaque     bool        `option:"box_option.@opaque"`
+    Weak       bool        `option:"match_option.@weak"`
     Inner      MaybeType   `part_opt:"inner_type.type"`
 }
+

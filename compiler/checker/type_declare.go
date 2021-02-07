@@ -542,16 +542,16 @@ func RawTypeDefFrom(ast_val ast.VariousTypeDef, info TypeNodeInfo, ctx RawTypeCo
 			if err != nil { return nil, err }
 			return got(&Boxed {
 				InnerType: inner_type,
-				Weak:      a.Weak,
 				Protected: a.Protected,
 				Opaque:    a.Opaque,
+				Weak:      a.Weak,
 			})
 		} else {
 			return got(&Boxed {
 				InnerType: &AnonymousType { Unit{} },
-				Weak:      a.Weak,
 				Protected: a.Protected,
 				Opaque:    a.Opaque,
+				Weak:      a.Weak,
 			})
 		}
 	case ast.ImplicitType:
