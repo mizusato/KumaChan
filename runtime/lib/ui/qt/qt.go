@@ -39,6 +39,18 @@ type widget struct { object }
 func Show(w Widget) {
     C.QtWidgetShow(w.ptr())
 }
+func MoveToScreenCenter(w Widget) {
+    C.QtWidgetMoveToScreenCenter(w.ptr())
+}
+func DialogExec(w Widget) {
+    C.QtDialogExec(w.ptr())
+}
+func DialogAccept(w Widget) {
+    C.QtDialogAccept(w.ptr())
+}
+func DialogReject(w Widget) {
+    C.QtDialogReject(w.ptr())
+}
 
 type Action interface {
     Object
@@ -46,10 +58,6 @@ type Action interface {
 }
 func (action) QtAction() {}
 type action struct { object }
-
-func MoveToScreenCenter(w Widget) {
-    C.QtWidgetMoveToScreenCenter(w.ptr())
-}
 
 type Ucs4String = [] rune
 type String C.QtString

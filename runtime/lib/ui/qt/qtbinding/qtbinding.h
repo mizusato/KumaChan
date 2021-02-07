@@ -69,6 +69,9 @@ extern "C" {
     void QtWidgetShow(void* widget_ptr);
     void QtWidgetHide(void* widget_ptr);
     void QtWidgetMoveToScreenCenter(void* widget_ptr);
+    void QtDialogExec(void *dialog_ptr);
+    void QtDialogAccept(void *dialog_ptr);
+    void QtDialogReject(void *dialog_ptr);
     QtBool QtObjectSetPropBool(void* obj_ptr, const char* prop, QtBool val);
     QtBool QtObjectGetPropBool(void* obj_ptr, const char* prop);
     QtBool QtObjectSetPropString(void* obj_ptr, const char* prop, QtString val);

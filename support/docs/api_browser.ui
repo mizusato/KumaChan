@@ -103,11 +103,11 @@
    </attribute>
    <addaction name="ActionBack"/>
    <addaction name="ActionForward"/>
+   <addaction name="ActionSearch"/>
   </widget>
   <action name="ActionBack">
    <property name="icon">
-    <iconset theme="go-previous">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset theme="go-previous"/>
    </property>
    <property name="text">
     <string>Back</string>
@@ -120,6 +120,14 @@
    </property>
    <property name="text">
     <string>Forward</string>
+   </property>
+  </action>
+  <action name="ActionSearch">
+   <property name="icon">
+    <iconset theme="edit-find"/>
+   </property>
+   <property name="text">
+    <string>Search</string>
    </property>
   </action>
  </widget>

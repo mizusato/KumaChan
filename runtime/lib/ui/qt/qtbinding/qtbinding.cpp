@@ -118,6 +118,21 @@ void QtWidgetMoveToScreenCenter(void* widget_ptr) {
     widget->move(widget->pos() + (screen->geometry().center() - widget->geometry().center()));
 }
 
+void QtDialogExec(void *dialog_ptr) {
+    QDialog* dialog = (QDialog*) dialog_ptr;
+    dialog->exec();
+}
+
+void QtDialogAccept(void *dialog_ptr) {
+    QDialog* dialog = (QDialog*) dialog_ptr;
+    dialog->accept();
+}
+
+void QtDialogReject(void *dialog_ptr) {
+    QDialog* dialog = (QDialog*) dialog_ptr;
+    dialog->reject();
+}
+
 QtBool QtObjectSetPropBool(void* obj_ptr, const char* prop, QtBool val) {
     QObject* obj = (QObject*) obj_ptr;
     return obj->setProperty(prop, (val != 0));

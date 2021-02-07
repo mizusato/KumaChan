@@ -34,6 +34,7 @@ resources:
 	mkdir build/resources
 	cp support/docs/api_doc.css build/resources/
 	cp support/docs/api_browser.ui build/resources/
+	cp support/docs/api_search.ui build/resources/
 	cp -r support/docs/icons build/resources/
 
 deps: check qt stdlib resources

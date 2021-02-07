@@ -8,6 +8,7 @@ import (
 	"strings"
 	"kumachan/util"
 	"kumachan/runtime/lib/ui/qt"
+	"context"
 )
 
 
@@ -15,6 +16,9 @@ const apiBrowserFontSize = 24
 
 var apiBrowserUiXml =
 	string(util.ReadInterpreterResource("api_browser.ui"))
+
+var apiSearchDialogUiXml =
+	string(util.ReadInterpreterResource("api_search.ui"))
 
 var apiBrowserDocStyle =
 	fmt.Sprintf("<style>body { font-size: %dpx; }</style><style>%s</style>",
@@ -25,6 +29,7 @@ type ApiBrowser struct {
 	Window  qt.Widget
 	ApiBrowserWidgets
 	ApiBrowserActions
+	ApiBrowserDialogs
 }
 type ApiBrowserWidgets struct {
 	ModuleList   qt.Widget
@@ -34,18 +39,45 @@ type ApiBrowserWidgets struct {
 type ApiBrowserActions struct {
 	ActionBack     qt.Action
 	ActionForward  qt.Action
+	ActionSearch   qt.Action
+}
+type ApiBrowserDialogs struct {
+	SearchDialog  ApiSearchDialog
+}
+type ApiSearchDialog struct {
+	Dialog  qt.Widget
+	ApiSearchDialogWidgets
+}
+type ApiSearchDialogWidgets struct {
+	KindSelect    qt.Widget
+	ContentInput  qt.Widget
+	ResultList    qt.Widget
 }
 
 type ApiRef struct {
 	Module  string
 	Id      string
 }
+func ApiRefFromHyperRef(href string) (ApiRef, bool) {
+	var t = strings.Split(href, "#")
+	if len(t) != 2 {
+		return ApiRef{}, false
+	}
+	var mod = t[0]
+	var id = t[1]
+	return ApiRef { Module: mod, Id: id }, true
+}
+func (ref ApiRef) HyperRef() string {
+	return fmt.Sprintf("%s#%s", ref.Module, ref.Id)
+}
 
 func RunApiBrowser(doc ApiDocIndex) {
 	qt.MakeSureInitialized()
 	qt.CommitTask(func() {
 		var ui_xml_dir = util.InterpreterResourceFolderPath()
-		var window, ok = qt.LoadWidget(apiBrowserUiXml, ui_xml_dir)
+		window, ok := qt.LoadWidget(apiBrowserUiXml, ui_xml_dir)
+		if !(ok) { panic("something went wrong") }
+		dialog, ok := qt.LoadWidget(apiSearchDialogUiXml, ui_xml_dir)
 		if !(ok) { panic("something went wrong") }
 		var widgets = ApiBrowserWidgets {}
 		var widgets_rv = reflect.ValueOf(&widgets).Elem()
@@ -65,10 +97,26 @@ func RunApiBrowser(doc ApiDocIndex) {
 			if !(exists) { panic("something went wrong") }
 			actions_rv.Field(i).Set(reflect.ValueOf(action))
 		}
+		var dialog_widgets = ApiSearchDialogWidgets {}
+		var dialog_widgets_rv = reflect.ValueOf(&dialog_widgets).Elem()
+		var dialog_widgets_t = dialog_widgets_rv.Type()
+		for i := 0; i < dialog_widgets_t.NumField(); i += 1 {
+			var name = dialog_widgets_t.Field(i).Name
+			var widget, exists = qt.FindChild(dialog, name)
+			if !(exists) { panic("something went wrong") }
+			dialog_widgets_rv.Field(i).Set(reflect.ValueOf(widget))
+		}
+		var dialogs = ApiBrowserDialogs {
+			SearchDialog: ApiSearchDialog {
+				Dialog: dialog,
+				ApiSearchDialogWidgets: dialog_widgets,
+			},
+		}
 		var ui = ApiBrowser {
 			Window: window,
 			ApiBrowserWidgets: widgets,
 			ApiBrowserActions: actions,
+			ApiBrowserDialogs: dialogs,
 		}
 		apiBrowserUiLogic(ui, doc)
 		go (func() {
@@ -143,9 +191,9 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 		if save {
 			redo_stack = redo_stack[0:0]
 		}
-		fmt.Printf("undo: %+v\n", undo_stack)
-		fmt.Printf("current: %+v\n", current_ref)
-		fmt.Printf("redo: %+v\n\n", redo_stack)
+		// fmt.Printf("undo: %+v\n", undo_stack)
+		// fmt.Printf("current: %+v\n", current_ref)
+		// fmt.Printf("redo: %+v\n\n", redo_stack)
 	}
 	var jump = func(ref ApiRef, save bool) {
 		jump_init(save)
@@ -157,6 +205,8 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 		}
 		if id != "" {
 			qt.SetPropInt(ui.OutlineView, "currentRow", current_outline_index[id])
+		} else {
+			qt.SetPropInt(ui.OutlineView, "currentRow", 0)
 		}
 	}
 	var undo = func() {
@@ -209,28 +259,114 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 			if !(qt.ListWidgetHasCurrentItem(ui.OutlineView)) {
 				return
 			}
-			var api_id = qt.ListWidgetGetCurrentItemKey(ui.OutlineView)
-			var api_id_, del = qt.NewString(api_id)
+			var key = qt.ListWidgetGetCurrentItemKey(ui.OutlineView)
+			var id = string(key)
+			var id_, del = qt.NewString(key)
 			defer del()
-			qt.WebViewScrollToAnchor(ui.ContentView, api_id_)
+			qt.WebViewScrollToAnchor(ui.ContentView, id_)
 			update_current(ApiRef {
 				Module: current_ref.Module,
-				Id:     string(api_id),
+				Id:     id,
 			}, false, true)
 		})
 		qt.Connect(ui.ContentView, "linkClicked(const QUrl&)", func() {
 			var url = qt.GetPropString(ui.ContentView, "qtbindingClickedLinkUrl")
-			var t = strings.Split(url, "#")
-			if len(t) != 2 { return }
-			var mod = t[0]
-			var id = t[1]
-			jump(ApiRef { Module: mod, Id: id }, true)
+			var ref, ok = ApiRefFromHyperRef(url)
+			if !(ok) { return }
+			jump(ref, true)
 		})
 		qt.Connect(ui.ActionBack, "triggered()", func() {
 			undo()
 		})
 		qt.Connect(ui.ActionForward, "triggered()", func() {
 			redo()
+		})
+		qt.Connect(ui.ActionSearch, "triggered()", func() {
+			qt.DialogExec(ui.SearchDialog.Dialog)
+		})
+	})()
+	var search_kind = "All"
+	var search_content = ""
+	var dialog = ui.SearchDialog
+	var latest_search_number = uint64(0)
+	var search_ctx, search_cancel = context.WithCancel(context.Background())
+	var search = func() {
+		var filter = search_kind
+		var target = search_content
+		latest_search_number += 1
+		var this_search_number = latest_search_number
+		search_cancel()
+		search_ctx, search_cancel = context.WithCancel(context.Background())
+		var ctx = search_ctx
+		go (func() {
+			if target == "" {
+				qt.CommitTask(func() {
+					if this_search_number != latest_search_number {
+						return
+					}
+					qt.ListWidgetSetItems(dialog.ResultList, nil, 0, nil)
+				})
+				return
+			}
+			var result = make([] ApiItem, 0)
+			for _, mod := range modules {
+				var mod_data = doc[mod]
+				for _, item := range mod_data.Outline {
+					select {
+					case <- ctx.Done():
+						return
+					default:
+					}
+					if filter == "Type" && item.Kind != TypeDecl { continue }
+					if filter == "Constant" && item.Kind != ConstDecl { continue }
+					if filter == "Function" && item.Kind != FuncDecl { continue }
+					var normalized_id = strings.ToLower(item.Id)
+					var normalized_target = strings.ToLower(target)
+					var ok = strings.Contains(normalized_id, normalized_target)
+					if ok {
+						result = append(result, item)
+					}
+				}
+ 			}
+ 			qt.CommitTask(func() {
+ 				if this_search_number != latest_search_number {
+ 					return
+				}
+ 				var get_result_item = func(i uint) qt.ListWidgetItem {
+ 					var item = result[i]
+ 					var ref = ApiRef { Module: item.Mod, Id: item.Id }
+ 					var href = ref.HyperRef()
+ 					return qt.ListWidgetItem {
+						Key:   ([] rune)(href),
+						Label: ([] rune)(item.Id),
+						Icon:  apiKindToIcon(item.Kind),
+					}
+				}
+				var result_size = uint(len(result))
+				qt.ListWidgetSetItems(dialog.ResultList,
+					get_result_item, result_size, nil)
+			})
+		})()
+	}
+	go (func() {
+		qt.Connect(dialog.KindSelect, "currentTextChanged(const QString&)", func() {
+			search_kind = qt.GetPropString(dialog.KindSelect, "currentText")
+			search()
+		})
+		qt.Connect(dialog.ContentInput, "textEdited(const QString&)", func() {
+			search_content = qt.GetPropString(dialog.ContentInput, "text")
+			search()
+		})
+		qt.Connect(dialog.ResultList, "itemActivated(QListWidgetItem*)", func() {
+			if !(qt.ListWidgetHasCurrentItem(dialog.ResultList)) {
+				return
+			}
+			var key = qt.ListWidgetGetCurrentItemKey(dialog.ResultList)
+			var href = string(key)
+			var ref, ok = ApiRefFromHyperRef(href)
+			if !(ok) { return }
+			qt.DialogAccept(dialog.Dialog)
+			jump(ref, true)
 		})
 	})()
 }

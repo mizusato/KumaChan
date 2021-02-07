@@ -22,6 +22,7 @@ type ModuleApiDoc struct {
 type ApiItem struct {
 	Kind  ApiItemKind
 	Id    string
+	Mod   string
 	Name  string
 }
 type ApiItemKind string
@@ -44,6 +45,7 @@ func GenerateApiDocs(idx checker.Index) ApiDocIndex {
 			outline = append(outline, ApiItem {
 				Kind: TypeDecl,
 				Id:   id,
+				Mod:  sym.ModuleName,
 				Name: sym.SymbolName,
 			})
 			if !(g.CaseInfo.IsCaseType) {
