@@ -8,10 +8,10 @@ import (
 	"strings"
 	"path/filepath"
 	"encoding/json"
-	"kumachan/util"
 	"kumachan/compiler/loader/parser/syntax"
 	"kumachan/compiler/loader/common"
 	"kumachan/compiler/loader/extra"
+	"kumachan/lang"
 )
 
 
@@ -106,7 +106,7 @@ func readModulePath(path string, fs FileSystem, root bool) (ModuleThunk, error) 
 					var content, err = ReadFile(item_path, fs)
 					if err != nil { return ModuleThunk{}, err }
 					if loader.IsResource {
-						res[item_path] = util.Resource {
+						res[item_path] = lang.Resource {
 							Kind: loader.Name,
 							MIME: loader.GetMIME(item_path),
 							Data: content,

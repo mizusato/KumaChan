@@ -17,8 +17,8 @@ func Box (
 ) (Expr, *ExprError) {
 	var boxed, is_boxed = g_type.Definition.(*Boxed)
 	if !is_boxed {
-		var _, is_union = g_type.Definition.(*Enum)
-		if is_union {
+		var _, is_enum = g_type.Definition.(*Enum)  // TODO: finish renaming
+		if is_enum {
 			var typed_expr, is_typed = to_be_boxed.Value.(TypedExpr)
 			if is_typed {
 				var named, is_named = typed_expr.Type.(*NamedType)

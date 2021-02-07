@@ -2,13 +2,13 @@ package ui
 
 import (
 	"reflect"
-	"kumachan/util"
 	"kumachan/stdlib"
 	"kumachan/runtime/lib/ui/qt"
+	"kumachan/lang"
 )
 
 
-type resources = func() (map[string] util.Resource)
+type resources = func() (map[string] lang.Resource)
 
 type Font struct {
 	File  stdlib.WebAsset

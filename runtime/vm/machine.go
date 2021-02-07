@@ -3,7 +3,6 @@ package vm
 import (
 	"sync"
 	"kumachan/rx"
-	"kumachan/util"
 	"kumachan/rpc/kmd"
 	"kumachan/runtime/lib/librpc"
 	. "kumachan/lang"
@@ -25,7 +24,7 @@ type Machine struct {
 }
 
 type Options struct {
-	Resources     map[string] util.Resource
+	Resources     map[string] Resource
 	MaxStackSize  uint
 	Environment   [] string
 	Arguments     [] string

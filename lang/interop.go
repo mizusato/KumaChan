@@ -4,7 +4,6 @@ import (
 	"os"
 	"reflect"
 	"kumachan/rx"
-	"kumachan/util"
 	. "kumachan/util/error"
 )
 
@@ -19,7 +18,7 @@ type InteropContext interface {
 	GetErrorPoint() ErrorPoint
 	GetEntryModulePath() string
 	KmdApi
-	GetResources(kind string) (map[string] util.Resource)
+	GetResources(kind string) (map[string] Resource)
 }
 type StdIO struct {
 	Stdin   *os.File

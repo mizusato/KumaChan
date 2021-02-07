@@ -5,8 +5,8 @@ import (
 	"strings"
 	"io/ioutil"
 	"path/filepath"
-	"kumachan/util"
 	"kumachan/compiler/loader/parser/ast"
+	"kumachan/lang"
 )
 
 
@@ -25,7 +25,7 @@ type Module struct {
 	FileInfo os.FileInfo
 }
 type Index     map[string] *Module
-type ResIndex  map[string] util.Resource
+type ResIndex  map[string] lang.Resource
 
 func loadModule (
 	path  string,

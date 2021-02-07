@@ -2,7 +2,6 @@ package ui
 
 import (
 	"kumachan/rx"
-	"kumachan/util"
 	"kumachan/stdlib"
 	. "kumachan/lang"
 	"kumachan/runtime/lib/ui/qt"
@@ -10,7 +9,7 @@ import (
 
 
 func Init(h InteropContext, root rx.Action, title String) {
-	var assets = func() (map[string] util.Resource) {
+	var assets = func() (map[string] Resource) {
 		return h.GetResources("web_asset")
 	}
 	var debug_opts = h.GetDebugOptions()

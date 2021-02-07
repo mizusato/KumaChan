@@ -29,9 +29,9 @@ func TypeParamsNames(params ([] TypeParam)) ([] string) {
 }
 
 
-type TypeDef interface { TypeVal() }
+type TypeDef interface { CheckerTypeDef() }
 
-func (impl *Enum) TypeVal() {}
+func (impl *Enum) CheckerTypeDef() {}
 type Enum struct {
 	CaseTypes  [] CaseType
 }
@@ -39,16 +39,16 @@ type CaseType struct {
 	Name    loader.Symbol
 	Params  [] uint
 }
-func (impl *Boxed) TypeVal() {}
+func (impl *Boxed) CheckerTypeDef() {}
 type Boxed struct {
 	InnerType  Type
 	Implicit   bool
 	// following properties are exclusive
-	Weak       bool
+	Weak       bool  // TODO: make it a standalone option
 	Protected  bool
 	Opaque     bool
 }
-func (impl *Native) TypeVal() {}
+func (impl *Native) CheckerTypeDef() {}
 type Native struct {}
 
 
