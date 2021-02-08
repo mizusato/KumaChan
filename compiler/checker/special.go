@@ -85,5 +85,5 @@ var __IntegerTypeMap = (func() map[loader.Symbol]string {
 })()
 
 func CoreSymbol(name string) loader.Symbol {
-	return loader.NewSymbol(stdlib.Core, name)
+	return loader.MakeSymbol(stdlib.Core, name)
 }

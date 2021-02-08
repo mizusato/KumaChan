@@ -40,33 +40,54 @@ func GenerateApiDocs(idx checker.Index) ApiDocIndex {
 		buf.WriteString(string(block("title", text("text", mod_name))))
 		var reg = mod.Context.Types
 		var outline = make([] ApiItem, 0)
-		var add_type = func(sym loader.Symbol, g *checker.GenericType) {
-			var id = sym.String()
+		var outline_add_item = func(kind ApiItemKind, sym loader.Symbol) {
 			outline = append(outline, ApiItem {
-				Kind: TypeDecl,
-				Id:   id,
+				Kind: kind,
+				Id:   sym.String(),
 				Mod:  sym.ModuleName,
 				Name: sym.SymbolName,
 			})
+		}
+		var add_type = func(sym loader.Symbol, g *checker.GenericType) {
+			outline_add_item(TypeDecl, sym)
+			var id = sym.String()
 			if !(g.CaseInfo.IsCaseType) {
 				var content = typeDecl(sym, g, reg, mod_name)
-				var wrapped = blockWithName(id, "api", content)
+				var wrapped = blockWithName(id, "api toplevel", content)
 				buf.WriteString(string(wrapped))
 				buf.WriteString("\n")
 			}
 		}
-		{
-			var types = make([] loader.Symbol, 0)
-			for sym, _ := range reg {
-				if sym.ModuleName == mod_name {
-					types = append(types, sym)
-				}
+		var add_const = func(name string, constant checker.CheckedConstant) {
+			var sym = loader.MakeSymbol(mod_name, name)
+			outline_add_item(ConstDecl, sym)
+			var id = sym.String()
+			var content = constDecl(sym, constant.Type)
+			var wrapped = blockWithName(id, "api toplevel", content)
+			buf.WriteString(string(wrapped))
+			buf.WriteString("\n")
+		}
+		var types = make([] loader.Symbol, 0)
+		for sym, _ := range reg {
+			if sym.ModuleName == mod_name {
+				types = append(types, sym)
 			}
-			sortSymbols(types)
-			for _, sym := range types {
-				var g = reg[sym]
-				add_type(sym, g)
+		}
+		sortSymbols(types)
+		for _, sym := range types {
+			var g = reg[sym]
+			add_type(sym, g)
+		}
+		var constants = make([] string, 0)
+		for name, constant := range mod.Constants {
+			if constant.Public {
+				constants = append(constants, name)
 			}
+		}
+		sort.Strings(constants)
+		for _, name := range constants {
+			var constant = mod.Constants[name]
+			add_const(name, constant)
 		}
 		result[mod_name] = ModuleApiDoc {
 			Content: Html(buf.String()),
@@ -83,6 +104,12 @@ func typeDecl(sym loader.Symbol, g *checker.GenericType, reg checker.TypeRegistr
 			typeParams(g.Params, g.Defaults, g.Bounds, mod)),
 		block("definition", typeDef(g, reg, mod)),
 		description(g.Doc))
+}
+
+func constDecl(sym loader.Symbol, t checker.Type) Html {
+	return block("constant",
+		inline("header", keyword("const"), text("name", sym.SymbolName),
+			keyword(":"), inline("type", typeExpr(t, nil, sym.ModuleName))))
 }
 
 func description(content string) Html {
@@ -186,7 +213,7 @@ func typeDef(g *checker.GenericType, reg checker.TypeRegistry, mod string) Html 
 	case *checker.Enum:
 		var cases = make([] Html, len(d.CaseTypes))
 		for i, item := range d.CaseTypes {
-			cases[i] = blockWithName(item.Name.String(), "api-inner",
+			cases[i] = blockWithName(item.Name.String(), "api",
 				typeDecl(item.Name, reg[item.Name], reg, mod))
 		}
 		return block("enum",

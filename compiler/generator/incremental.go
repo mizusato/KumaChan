@@ -36,7 +36,7 @@ func (ctx *IncrementalCompiler) AddConstant(id DepConstant, val ast.Expr) (
 ) {
 	var all_dep_values = make([] lang.Value, 0)
 	var closure_deps = make(map[*lang.Function] ([] Dependency))
-	var sym = loader.NewSymbol(id.Module, id.Name)
+	var sym = loader.MakeSymbol(id.Module, id.Name)
 	var expr_ctx = ch.ExprContext {
 		ModuleInfo: *(ctx.typeInfo),
 	}
@@ -111,8 +111,8 @@ func (ctx *IncrementalCompiler) AddConstant(id DepConstant, val ast.Expr) (
 }
 
 func (ctx *IncrementalCompiler) SetConstantAlias(id DepConstant, alias DepConstant) {
-	var sym = loader.NewSymbol(id.Module, id.Name)
-	var alias_sym = loader.NewSymbol(alias.Module, alias.Name)
+	var sym = loader.MakeSymbol(id.Module, id.Name)
+	var alias_sym = loader.MakeSymbol(alias.Module, alias.Name)
 	constant, exists := ctx.typeInfo.Constants[sym]
 	if !(exists) { panic("something went wrong") }
 	ctx.typeInfo.Constants[alias_sym] = constant

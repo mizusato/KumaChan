@@ -21,8 +21,10 @@ type CheckedModule struct {
 	Context    CheckContext
 }
 type CheckedConstant struct {
-	Point  ErrorPoint
-	Value  ExprLike
+	Point   ErrorPoint
+	Public  bool
+	Type    Type
+	Value   ExprLike
 }
 type CheckedFunction struct {
 	Point     ErrorPoint
@@ -219,7 +221,7 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 		if len(sym.SymbolName) > len(ForceExactSuffix) &&
 			strings.HasSuffix(sym.SymbolName, ForceExactSuffix) {
 			var sym_name_force = strings.TrimSuffix(sym.SymbolName, ForceExactSuffix)
-			var sym_force = loader.NewSymbol(sym.ModuleName, sym_name_force)
+			var sym_force = loader.MakeSymbol(sym.ModuleName, sym_name_force)
 			g, exists := ctx.ModuleInfo.Types[sym_force]
 			if exists {
 				return SymType { Type: g, Name: sym_force, ForceExact: true }, true
@@ -276,7 +278,7 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 			return functions, true
 		}
 		var self = ctx.ModuleInfo.Module.Name
-		var sym_this_mod = loader.NewSymbol(self, sym_name)
+		var sym_this_mod = loader.MakeSymbol(self, sym_name)
 		g, exists := lookup_type(sym_this_mod)
 		if exists {
 			return g, true
@@ -526,6 +528,8 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 			continue
 		}
 		var name = sym.SymbolName
+		var t = constant.DeclaredType
+		var public = constant.Public
 		switch val := constant.Value.(type) {
 		case ast.Expr:
 			var semi_expr, err1 = Check(val, expr_ctx)
@@ -533,19 +537,22 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 				errors = append(errors, err1)
 				continue
 			}
-			var t = constant.DeclaredType
 			var expr, err2 = AssignTo(t, semi_expr, expr_ctx)
 			if err2 != nil {
 				errors = append(errors, err2)
 				continue
 			}
 			const_map[name] = CheckedConstant {
-				Point: ErrorPointFrom(constant.Node),
-				Value: ExprExpr(expr),
+				Point:  ErrorPointFrom(constant.Node),
+				Type:   t,
+				Public: public,
+				Value:  ExprExpr(expr),
 			}
 		case ast.NativeRef:
 			const_map[name] = CheckedConstant {
 				Point: ErrorPointFrom(constant.Node),
+				Type:   t,
+				Public: public,
 				Value: ExprNative {
 					Name:  string(val.Id.Value),
 					Point: ErrorPointFrom(val.Node),
@@ -554,6 +561,8 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 		case ast.PredefinedValue:
 			const_map[name] = CheckedConstant {
 				Point: ErrorPointFrom(constant.Node),
+				Type:   t,
+				Public: public,
 				Value: ExprPredefinedValue {
 					Value: val.Value,
 				},

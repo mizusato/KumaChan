@@ -16,7 +16,7 @@ type Symbol struct {
 type MaybeSymbol interface { MaybeSymbol() }
 func (Symbol) MaybeSymbol() {}
 
-func NewSymbol (mod string, sym string) Symbol {
+func MakeSymbol(mod string, sym string) Symbol {
 	return Symbol {
 		ModuleName: mod,
 		SymbolName: sym,
@@ -34,14 +34,14 @@ func (sym Symbol) String() string {
 
 func (mod *Module) SymbolFromDeclName(name ast.Identifier) Symbol {
 	var sym_name = ast.Id2String(name)
-	return NewSymbol(mod.Name, sym_name)
+	return MakeSymbol(mod.Name, sym_name)
 }
 
 func (mod *Module) SymbolFromRef(ref_mod string, name string, specific bool) MaybeSymbol {
 	var corresponding, exists = mod.ImpMap[ref_mod]
 	if exists {
 		if ref_mod == "" { panic("something went wrong") }
-		return NewSymbol (
+		return MakeSymbol(
 			corresponding.Name,
 			name,
 		)
@@ -50,20 +50,20 @@ func (mod *Module) SymbolFromRef(ref_mod string, name string, specific bool) May
 			var sym_name = name
 			if specific {
 				// ::Module <=> Module::Module
-				return NewSymbol(sym_name, sym_name)
+				return MakeSymbol(sym_name, sym_name)
 			} else {
 				var _, exists = __CoreSymbolSet[sym_name]
 				if exists {
 					// Core::Int, Core::Float, Core::Effect, ...
-					return NewSymbol(stdlib.Core, sym_name)
+					return MakeSymbol(stdlib.Core, sym_name)
 				} else {
 					// a, b, c, Self::Type1
-					return NewSymbol("", sym_name)
+					return MakeSymbol("", sym_name)
 				}
 			}
 		} else if ref_mod == SelfModule {
 			var self = mod.Name
-			return NewSymbol(self, name)
+			return MakeSymbol(self, name)
 		} else {
 			return nil
 		}
@@ -76,7 +76,7 @@ func (mod *Module) TypeSymbolFromRef(ref_mod string, name string, specific bool)
 	var sym, ok = maybe_sym.(Symbol)
 	if ok {
 		if sym.ModuleName == "" {
-			return NewSymbol(self, sym.SymbolName)
+			return MakeSymbol(self, sym.SymbolName)
 		} else {
 			return sym
 		}
