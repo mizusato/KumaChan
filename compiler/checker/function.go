@@ -26,7 +26,7 @@ type FunctionReference struct {
 }
 
 // Map from names of available functions in the module to their references
-type FunctionCollection  map[string] []FunctionReference
+type FunctionCollection  map[string] ([] FunctionReference)
 
 // Map from module names to their corresponding function collections
 type FunctionStore map[string] FunctionCollection
