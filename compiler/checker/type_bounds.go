@@ -187,6 +187,63 @@ func CheckTypeArgsBounds(args ([] Type), params ([] TypeParam), defaults (map[ui
 }
 
 func CheckBound(sub Type, super Type, checked (map[Type] bool), ctx TypeBoundsContext) bool {
+	if TypeEqual(sub, super, ctx.Registry) {
+		return true
+	} else {
+		// TODO: extract logic to a standalone function
+		var t1 = NormalizeType(sub, ctx.Registry)
+		var t2 = NormalizeType(super, ctx.Registry)
+		if TypeEqualWithoutContext(t1, &NeverType{}) {
+			return true
+		}
+		if TypeEqualWithoutContext(t2, &AnyType{}) {
+			return true
+		}
+		switch T1 := t1.(type) {
+		case *NamedType:
+			switch T2 := t2.(type) {
+			case *NamedType:
+				if T1.Name == T2.Name {
+					var name = T1.Name
+					var g = ctx.Registry[name]
+					var arity = uint(len(g.Params))
+					var all_ok = true
+					for i := uint(0); i < arity; i += 1 {
+						var ok = false
+						var a1 = T1.Args[i]
+						var a2 = T2.Args[i]
+						if TypeEqualWithoutContext(a1, a2) {
+							ok = true
+							continue
+						}
+						var v = g.Params[i].Variance
+						switch v {
+						case Covariant:
+							if TypeEqualWithoutContext(a1, &NeverType{}) ||
+								TypeEqualWithoutContext(a2, &AnyType{}) {
+								ok = true
+								continue
+							}
+						case Contravariant:
+							if TypeEqualWithoutContext(a1, &AnyType{}) ||
+								TypeEqualWithoutContext(a2, &NeverType{}) {
+								ok = true
+								continue
+							}
+						}
+						if !(ok) {
+							all_ok = false
+							break
+						}
+					}
+					if all_ok {
+						return true
+					}
+				}
+			}
+		}
+	}
+	// TODO: revise the following code
 	var sub_param, sub_is_param = sub.(*ParameterType)
 	if sub_is_param && !(checked[sub]) {
 		checked[sub] = true
@@ -202,9 +259,6 @@ func CheckBound(sub Type, super Type, checked (map[Type] bool), ctx TypeBoundsCo
 		if super_has_sub {
 			return CheckBound(sub, super_sub, checked, ctx)
 		}
-	}
-	if AreTypesEqualInSameCtx(sub, super) {
-		return true
 	}
 	var unboxed, ok = Unbox(sub, ctx.Module.Name, ctx.Registry).(Unboxed)
 	if ok {

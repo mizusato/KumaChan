@@ -39,7 +39,7 @@ func GenericFunctionCall (
 		}
 		return call, nil
 	} else if len(type_args) == 0 {
-		var inf_ctx = ctx.WithInferringEnabled(f.TypeParams)
+		var inf_ctx = ctx.WithInferringEnabled(f.TypeParams, f.TypeBounds)
 		var raw_input_type = f.DeclaredType.Input
 		var raw_output_type = f.DeclaredType.Output
 		var marked_input_type = MarkParamsAsBeingInferred(raw_input_type)
@@ -115,7 +115,7 @@ func GenericFunctionAssignTo (
 	ctx        ExprContext,
 ) (Expr, *ExprError) {
 	var unit_t = &AnonymousType { Unit {} }
-	if AreTypesEqualInSameCtx(f.DeclaredType.Input, unit_t) {
+	if TypeEqualWithoutContext(f.DeclaredType.Input, unit_t) {
 		// globally defined constant-like thunk
 		var arg = LiftTyped(Expr {
 			Type:  unit_t,
@@ -154,7 +154,7 @@ func GenericFunctionAssignTo (
 		}
 		var exp_certain, err = GetCertainType(expected, info.ErrorPoint, ctx)
 		if err != nil { return Expr{}, err }
-		var inf_ctx = ctx.WithInferringEnabled(f.TypeParams)
+		var inf_ctx = ctx.WithInferringEnabled(f.TypeParams, f.TypeBounds)
 		var f_raw_type = &AnonymousType { f.DeclaredType }
 		var f_marked_type = MarkParamsAsBeingInferred(f_raw_type)
 		var _, ok = AssignType(f_marked_type, exp_certain, FromInferred, inf_ctx)

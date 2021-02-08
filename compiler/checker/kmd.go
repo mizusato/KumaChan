@@ -194,7 +194,7 @@ func GetFunctionKmdInfo(name string, t Func, mapping KmdIdMapping) FunctionKmdIn
 			if len(I.Args) == 0 {
 				var in, exists = mapping[I.Name]
 				if exists {
-					if AreTypesEqualInSameCtx(t.Output, __T_Bool) {
+					if TypeEqualWithoutContext(t.Output, __T_Bool) {
 						info.IsValidator = true
 						info.ValidatorId = kmd.ValidatorId(in)
 					}

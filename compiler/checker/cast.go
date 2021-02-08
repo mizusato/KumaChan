@@ -58,11 +58,8 @@ func CheckCast(cast ast.Cast, ctx ExprContext) (SemiExpr, *ExprError) {
 	if err2 != nil { return SemiExpr{}, err2 }
 	var typed, err3 = AssignTo(target, semi, ctx)
 	if err3 != nil { return SemiExpr{}, err3 }
-	if !(AreTypesEqualInSameCtx(typed.Type, target)) {
-		panic("something went wrong")
-	}
 	return LiftTyped(Expr {
-		Type:  typed.Type,
+		Type:  target,
 		Value: typed.Value,
 		Info:  info,
 	}), nil

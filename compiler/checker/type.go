@@ -129,7 +129,67 @@ func TypeFromRepr(ast_repr ast.VariousRepr, ctx TypeContext) (Type, *TypeError) 
 }
 
 
-func AreTypesEqualInSameCtx(type1 Type, type2 Type) bool {
+func NormalizeType(t Type, reg TypeRegistry) Type {
+	switch T := t.(type) {
+	case *AnyType, *NeverType, *ParameterType:
+		return t
+	case *NamedType:
+		var g = reg[T.Name]
+		var arity = uint(len(g.Params))
+		var full_args = make([] Type, arity)
+		for i := uint(0); i < arity; i += 1 {
+			if i < uint(len(T.Args)) {
+				full_args[i] = T.Args[i]
+			} else {
+				var default_, exists = g.Defaults[i]
+				if !(exists) { panic("something went wrong") }
+				full_args[i] = default_
+			}
+		}
+		return &NamedType {
+			Name: T.Name,
+			Args: full_args,
+		}
+	case *AnonymousType:
+		switch R := T.Repr.(type) {
+		case Unit:
+			return t
+		case Tuple:
+			var L = len(R.Elements)
+			var elements = make([] Type, L)
+			for i, el := range R.Elements {
+				elements[i] = NormalizeType(el, reg)
+			}
+			return &AnonymousType { Tuple { elements } }
+		case Bundle:
+			var fields = make(map[string] Field)
+			for name, field := range R.Fields {
+				fields[name] = Field {
+					Type:  NormalizeType(field.Type, reg),
+					Index: field.Index,
+				}
+			}
+			return &AnonymousType { Bundle { fields } }
+		case Func:
+			var input = NormalizeType(R.Input, reg)
+			var output = NormalizeType(R.Output, reg)
+			return &AnonymousType { Func { Input: input, Output: output } }
+		default:
+			panic("impossible branch")
+		}
+	default:
+		panic("impossible branch")
+	}
+}
+
+func TypeEqual(type1 Type, type2 Type, reg TypeRegistry) bool {
+	return TypeEqualWithoutContext (
+		NormalizeType(type1, reg),
+		NormalizeType(type2, reg),
+	)
+}
+
+func TypeEqualWithoutContext(type1 Type, type2 Type) bool {
 	switch t1 := type1.(type) {
 	case *NeverType:
 		switch type2.(type) {
@@ -158,10 +218,12 @@ func AreTypesEqualInSameCtx(type1 Type, type2 Type) bool {
 			if t1.Name == t2.Name {
 				var L1 = len(t1.Args)
 				var L2 = len(t2.Args)
-				if L1 != L2 { panic("type registration went wrong") }
+				if L1 != L2 {
+					return false
+				}
 				var L = L1
 				for i := 0; i < L; i += 1 {
-					if !(AreTypesEqualInSameCtx(t1.Args[i], t2.Args[i])) {
+					if !(TypeEqualWithoutContext(t1.Args[i], t2.Args[i])) {
 						return false
 					}
 				}
@@ -191,7 +253,7 @@ func AreTypesEqualInSameCtx(type1 Type, type2 Type) bool {
 					if L1 == L2 {
 						var L = L1
 						for i := 0; i < L; i += 1 {
-							if !(AreTypesEqualInSameCtx(r1.Elements[i], r2.Elements[i])) {
+							if !(TypeEqualWithoutContext(r1.Elements[i], r2.Elements[i])) {
 								return false
 							}
 						}
@@ -210,7 +272,7 @@ func AreTypesEqualInSameCtx(type1 Type, type2 Type) bool {
 					if L1 == L2 {
 						for name, f1 := range r1.Fields {
 							var f2, exists = r2.Fields[name]
-							if !exists || !(AreTypesEqualInSameCtx(f1.Type, f2.Type)) {
+							if !exists || !(TypeEqualWithoutContext(f1.Type, f2.Type)) {
 								return false
 							}
 						}
@@ -224,10 +286,10 @@ func AreTypesEqualInSameCtx(type1 Type, type2 Type) bool {
 			case Func:
 				switch r2 := t2.Repr.(type) {
 				case Func:
-					if !(AreTypesEqualInSameCtx(r1.Input, r2.Input)) {
+					if !(TypeEqualWithoutContext(r1.Input, r2.Input)) {
 						return false
 					}
-					if !(AreTypesEqualInSameCtx(r1.Output, r2.Output)) {
+					if !(TypeEqualWithoutContext(r1.Output, r2.Output)) {
 						return false
 					}
 					return true

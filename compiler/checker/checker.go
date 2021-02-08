@@ -1,5 +1,6 @@
 package checker
 
+// TODO: split this long file, refactor bad code in this file
 import (
 	"strings"
 	. "kumachan/util/error"
@@ -31,6 +32,14 @@ type CheckedFunction struct {
 	Body      ExprLike
 	Implicit  [] string
 	FunctionKmdInfo
+	CheckedFunctionInfo
+}
+type CheckedFunctionInfo struct {
+	Public       bool
+	Params       [] TypeParam
+	Bounds       TypeBounds
+	Type         Type
+	RawImplicit  [] Type
 }
 type CheckedEffect struct {
 	Point  ErrorPoint
@@ -87,6 +96,7 @@ type ExprContext struct {
 type TypeArgsInferringContext struct {
 	Enabled      bool
 	Parameters   [] TypeParam
+	Bounds       TypeBounds
 	Arguments    map[uint] ActiveType  // mutable (interior)
 }
 type ActiveType struct {
@@ -164,8 +174,6 @@ func CreateExprContext(mod_info ModuleInfo, params ([] TypeParam), bounds TypeBo
 		LocalValues:  make(map[string]Type),
 		Inferring:    TypeArgsInferringContext {
 			Enabled:    false,
-			Parameters: nil,
-			Arguments:  nil,
 		},
 	}
 }
@@ -331,12 +339,23 @@ func (ctx ExprContext) WithAddedLocalValues(added (map[string] Type)) (ExprConte
 	return new_ctx, shadowed
 }
 
-func (ctx ExprContext) WithInferringEnabled(params ([] TypeParam)) ExprContext {
+func (ctx ExprContext) WithInferringEnabled(params ([] TypeParam), bounds TypeBounds) ExprContext {
 	var new_ctx ExprContext
 	*(&new_ctx) = ctx
+	var bounds_copy = TypeBounds {
+		Sub:   make(map[uint] Type),
+		Super: make(map[uint] Type),
+	}
+	for i, t := range bounds.Super {
+		bounds_copy.Super[i] = MarkParamsAsBeingInferred(t)
+	}
+	for i, t := range bounds.Sub {
+		bounds_copy.Sub[i] = MarkParamsAsBeingInferred(t)
+	}
 	new_ctx.Inferring = TypeArgsInferringContext {
 		Enabled:    true,
 		Parameters: params,
+		Bounds:     bounds_copy,
 		Arguments:  make(map[uint] ActiveType),
 	}
 	return new_ctx
@@ -472,12 +491,20 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 	var func_map = make(map[string] ([] CheckedFunction))
 	for name, group := range functions {
 		func_map[name] = make([] CheckedFunction, 0)
-		var add = func(t Func, body ExprLike, imp ([] string), node ast.Node) {
+		var add = func(f *GenericFunction, body ExprLike, implicit ([] string)) {
+			var t = f.DeclaredType
 			func_map[name] = append(func_map[name], CheckedFunction {
-				Point:    ErrorPointFrom(node),
+				Point:    ErrorPointFrom(f.Node),
 				Body:     body,
-				Implicit: imp,
+				Implicit: implicit,
 				FunctionKmdInfo: GetFunctionKmdInfo(name, t, ctx.Mapping),
+				CheckedFunctionInfo: CheckedFunctionInfo {
+					Public: f.Public,
+					Params: f.TypeParams,
+					Bounds: f.TypeBounds,
+					Type:   &AnonymousType { t },
+					RawImplicit: f.RawImplicit,
+				},
 			})
 		}
 		for _, f_ref := range group {
@@ -506,16 +533,14 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 					errors = append(errors, err2)
 					continue
 				}
-				add(f.DeclaredType, ExprExpr(body_expr),
-					implicit_fields, f.Node)
+				add(f, ExprExpr(body_expr), implicit_fields)
 			case ast.NativeRef:
-				add(f.DeclaredType, ExprNative {
+				add(f, ExprNative {
 					Name:  string(body.Id.Value),
 					Point: ErrorPointFrom(body.Node),
-				}, make([] string, 0), f.Node)
+				}, make([] string, 0))
 			case ast.KmdApiFuncBody:
-				add(f.DeclaredType, ExprKmdApi { Id: body.Id },
-					make([] string, 0), f.Node)
+				add(f, ExprKmdApi { Id: body.Id }, make([] string, 0))
 			default:
 				panic("impossible branch")
 			}

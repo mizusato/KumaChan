@@ -65,7 +65,7 @@ func OverloadedCall (
 		}
 		return GenerateCallResult (
 			name, call_info, available, unavailable,
-			false, TypeArgsInferringContext {}, ctx.GetModuleName(),
+			false, TypeArgsInferringContext {}, ctx,
 		)
 	}
 }
@@ -95,7 +95,7 @@ func AssignUndecidedTo(expected Type, call UndecidedCall, info ExprInfo, ctx Exp
 	}
 	semi, err := GenerateCallResult (
 		name, info, available, unavailable,
-		true, ctx.Inferring, ctx.GetModuleName(),
+		true, ctx.Inferring, ctx,
 	)
 	if err != nil { return Expr{}, err }
 	return Expr(semi.Value.(TypedExpr)), nil
@@ -108,8 +108,9 @@ func GenerateCallResult (
 	unavailable  [] UnavailableCall,
 	assigned     bool,
 	inferring    TypeArgsInferringContext,
-	mod_name     string,
+	ctx          ExprContext,
 ) (SemiExpr, *ExprError) {
+	var mod_name = ctx.GetModuleName()
 	if len(available) == 0 {
 		var unavailable_info = make([] UnavailableFuncInfo, len(unavailable))
 		for i, item := range unavailable {
@@ -128,6 +129,32 @@ func GenerateCallResult (
 		return LiftTyped(opt.Expr), nil
 	} else {
 		if assigned {
+			var min_type Type = &AnyType{}
+			var min_index = ^uint(0)
+			var min_not_found = false
+			for i, item := range available {
+				var item_t = item.Expr.Type
+				if TypeEqual(min_type, item_t, ctx.GetTypeRegistry()) {
+					min_not_found = true
+					break
+				}
+				var t, ok = AssignType(min_type, item_t, ToInferred, ctx)
+				if ok {
+					min_type = t
+					min_index = uint(i)
+				} else {
+					var _, ok = AssignType(item_t, min_type, ToInferred, ctx)
+					if !(ok) {
+						min_not_found = true
+						break
+					}
+				}
+			}
+			if !(min_not_found) {
+				var opt = available[min_index]
+				inferring.MergeArgsFrom(opt.Inferring)
+				return LiftTyped(opt.Expr), nil
+			}
 			var available_desc = make([] string, len(available))
 			for i, item := range available {
 				available_desc[i] = DescribeFunction(item.Function, name, mod_name)
@@ -231,13 +258,14 @@ func ValidateOverload (
 	added_fields  map[string] Field,
 	added_name    string,
 	added_params  [] string,
+	reg           TypeRegistry,
 	err_point     ErrorPoint,
 ) *FunctionError {
 	for _, existing := range functions {
 		var existing_p = existing.Function.TypeParams
 		var added_p = added_params
-		var existing_t = &AnonymousType{existing.Function.DeclaredType}
-		var added_t = &AnonymousType{added_type}
+		var existing_t = &AnonymousType { existing.Function.DeclaredType }
+		var added_t = &AnonymousType { added_type }
 		var existing_f = existing.Function.Implicit
 		var added_f = added_fields
 		if len(existing_p) != len(added_p) {
@@ -246,17 +274,17 @@ func ValidateOverload (
 		var L = uint(len(existing_p))
 		var args = make([]Type, L)
 		for i := uint(0); i < L; i += 1 {
-			args[i] = &ParameterType{Index: i}
+			args[i] = &ParameterType { Index: i }
 		}
 		var t1 = FillTypeArgs(existing_t, args)
 		var t2 = FillTypeArgs(added_t, args)
-		if AreTypesEqualInSameCtx(t1, t2) {
-			var f1 = FillTypeArgs(&AnonymousType{Bundle{existing_f}}, args)
-			var f2 = FillTypeArgs(&AnonymousType{Bundle{added_f}}, args)
-			if AreTypesEqualInSameCtx(f1, f2) {
-				return &FunctionError{
+		if TypeEqual(t1, t2, reg) {
+			var f1 = FillTypeArgs(&AnonymousType { Bundle { existing_f } }, args)
+			var f2 = FillTypeArgs(&AnonymousType { Bundle { added_f } }, args)
+			if TypeEqual(f1, f2, reg) {
+				return &FunctionError {
 					Point: err_point,
-					Concrete: E_InvalidOverload{
+					Concrete: E_InvalidOverload {
 						BetweenLocal: !(existing.IsImported),
 						AddedName:    added_name,
 						AddedModule:  existing.ModuleName,

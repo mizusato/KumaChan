@@ -14,6 +14,7 @@ type GenericFunction struct {
 	TypeParams    [] TypeParam
 	TypeBounds    TypeBounds
 	Implicit      map[string] Field
+	RawImplicit   [] Type
 	DeclaredType  Func
 	Body          ast.Body
 }
@@ -58,7 +59,7 @@ func CollectFunctions (
 					// 2.2.1. If the function is exported, import it
 					var _, exists = collection[name]
 					if !exists {
-						collection[name] = make([]FunctionReference, 0)
+						collection[name] = make([] FunctionReference, 0)
 					}
 					// Note: conflict (unsafe overload) must not happen there,
 					//       since public functions have local signatures
@@ -281,7 +282,9 @@ func CollectFunctions (
 		var f = &GenericFunction {
 			Public:       decl.Public,
 			TypeParams:   params,
+			TypeBounds:   bounds,
 			Implicit:     implicit_fields,
+			RawImplicit:  implicit_types,
 			DeclaredType: func_type,
 			Body:         decl.Body.Body,
 			Node:         decl.Node,
@@ -296,6 +299,7 @@ func CollectFunctions (
 				existing,
 				func_type, implicit_fields,
 				name, TypeParamsNames(params),
+				reg,
 				err_point,
 			)
 			if err != nil { return nil, err }

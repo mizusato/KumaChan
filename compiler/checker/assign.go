@@ -147,6 +147,7 @@ func TypedAssignTo(expected Type, expr Expr, ctx ExprContext) (Expr, *ExprError)
 	}
 }
 
+// TODO: use 2 functions: AssignTypeWithInferring and AssignType
 func AssignType(inferred Type, given Type, d AssignDirection, ctx ExprContext) (Type, bool) {
 	var direct_type, ok = DirectAssignType(inferred, given, d, ctx)
 	if ok {
@@ -204,12 +205,18 @@ func DirectAssignType(inferred Type, given Type, d AssignDirection, ctx ExprCont
 		if d == ToInferred {
 			var super, has_super = ctx.TypeBounds.Super[given_param.Index]
 			if has_super {
-				return AssignType(inferred, super, d, ctx)
+				var t, ok = AssignType(inferred, super, d, ctx)
+				if ok {
+					return t, true
+				}
 			}
 		} else if d == FromInferred {
 			var sub, has_sub = ctx.TypeBounds.Sub[given_param.Index]
 			if has_sub {
-				return AssignType(inferred, sub, d, ctx)
+				var t, ok = AssignType(inferred, sub, d, ctx)
+				if ok {
+					return t, true
+				}
 			}
 		}
 	}
@@ -282,6 +289,17 @@ func DirectAssignType(inferred Type, given Type, d AssignDirection, ctx ExprCont
 					CurrentValue: given,
 					Constraint:   constraint,
 				}
+				// TODO: decide: use bounds info when inferring or not
+				// var super, has_super = ctx.Inferring.Bounds.Super[I.Index]
+				// if has_super {
+				//     var _, ok = AssignType(super, given, ToInferred, ctx)
+				//     if !(ok) { return nil, false }
+				// }
+				// var sub, has_sub = ctx.Inferring.Bounds.Sub[I.Index]
+				// if has_sub {
+				//     var _, ok = AssignType(sub, given, FromInferred, ctx)
+				//     if !(ok) { return nil, false }
+				// }
 				return given, true
 			}
 		} else {
