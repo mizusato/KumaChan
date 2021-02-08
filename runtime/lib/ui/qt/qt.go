@@ -65,6 +65,10 @@ type Bool C.int
 type VariantMap C.QtVariantMap
 type Icon C.QtIcon
 type Pixmap C.QtPixmap
+type Point struct {
+    X  int
+    Y  int
+}
 
 type ListWidgetItem struct {
     Key    Ucs4String
@@ -289,6 +293,16 @@ func SetPropInt(obj Object, prop string, val int) {
     defer del_all_str()
     C.QtObjectSetPropInt(obj.ptr(), new_str(prop), C.int(val))
 }
+func GetPropPoint(obj Object, prop string) Point {
+    var new_str, del_all_str = str_alloc()
+    defer del_all_str()
+    return makePoint(C.QtObjectGetPropPoint(obj.ptr(), new_str(prop)))
+}
+func SetPropPoint(obj Object, prop string, p Point) {
+    var new_str, del_all_str = str_alloc()
+    defer del_all_str()
+    C.QtObjectSetPropPoint(obj.ptr(), new_str(prop), makeQtPoint(p))
+}
 
 func MakeBool(p bool) Bool {
     if p { return Bool(C.int(int(1))) } else { return Bool(C.int(int(0))) }
@@ -342,6 +356,13 @@ func StringToRunes(str String) ([] rune) {
 }
 func DeleteString(str String) {
     C.QtDeleteString((C.QtString)(str))
+}
+
+func makeQtPoint(p Point) C.QtPoint {
+    return C.QtMakePoint(C.int(p.X), C.int(p.Y))
+}
+func makePoint(p C.QtPoint) Point {
+    return Point { X: int(C.QtPointGetX(p)), Y: int(C.QtPointGetY(p)) }
 }
 
 func VariantMapGetRunes(m VariantMap, key String) ([] rune) {
@@ -451,8 +472,11 @@ func WebViewSetHTML(w Widget, html String) {
 func WebViewScrollToAnchor(w Widget, anchor String) {
     C.QtWebViewScrollToAnchor(w.ptr(), C.QtString(anchor))
 }
-func WebViewScrollToTop(w Widget) {
-    C.QtWebViewScrollToTop(w.ptr())
+func WebViewGetScroll(w Widget) Point {
+    return makePoint(C.QtWebViewGetScroll(w.ptr()))
+}
+func WebViewSetScroll(w Widget, pos Point) {
+    C.QtWebViewSetScroll(w.ptr(), makeQtPoint(pos));
 }
 
 type FileDialogOptions struct {

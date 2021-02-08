@@ -166,6 +166,19 @@ int QtObjectGetPropInt(void* obj_ptr, const char* prop) {
     return val.toInt();
 }
 
+QtBool QtObjectSetPropPoint(void* obj_ptr, const char* prop, QtPoint val) {
+    QObject* obj = (QObject*) obj_ptr;
+    QPoint p = QPoint(val.x, val.y);
+    return obj->setProperty(prop, p);
+}
+
+QtPoint QtObjectGetPropPoint(void* obj_ptr, const char* prop) {
+    QObject* obj = (QObject*) obj_ptr;
+    QVariant val = obj->property(prop);
+    QPoint point = val.toPoint();
+    return { point.x(), point.y() };
+}
+
 QtConnHandle QtConnect (
         void* obj_ptr,
         const char* signal,
@@ -238,6 +251,18 @@ size_t QtResizeEventGetWidth(QtEvent ev) {
 size_t QtResizeEventGetHeight(QtEvent ev) {
     QResizeEvent* resize = (QResizeEvent*) ev.ptr;
     return resize->size().height();
+}
+
+QtPoint QtMakePoint(int x, int y) {
+    return { x, y };
+}
+
+int QtPointGetX(QtPoint p) {
+    return p.x;
+}
+
+int QtPointGetY(QtPoint p) {
+    return p.y;
 }
 
 QtString QtNewStringUTF8(const uint8_t* buf, size_t len) {
@@ -426,9 +451,14 @@ void QtWebViewScrollToAnchor(void* widget_ptr, QtString anchor) {
     widget->page()->mainFrame()->scrollToAnchor(QtUnwrapString(anchor));
 }
 
-void QtWebViewScrollToTop(void* widget_ptr) {
+QtPoint QtWebViewGetScroll(void* widget_ptr) {
     QWebView* widget = (QWebView*) widget_ptr;
-    widget->page()->mainFrame()->setScrollPosition(QPoint(0,0));
+    return QtObjectGetPropPoint(widget->page()->mainFrame(), "scrollPosition");
+}
+
+void QtWebViewSetScroll(void* widget_ptr, QtPoint pos) {
+    QWebView* widget = (QWebView*) widget_ptr;
+    QtObjectSetPropPoint(widget->page()->mainFrame(), "scrollPosition", pos);
 }
 
 QtString QtFileDialogOpen(void* parent_ptr, QtString title, QtString cwd, QtString filter) {

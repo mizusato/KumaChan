@@ -54,6 +54,10 @@ type ApiSearchDialogWidgets struct {
 	ResultList    qt.Widget
 }
 
+type ApiDocPosition struct {
+	ApiRef
+	Scroll  qt.Point
+}
 type ApiRef struct {
 	Module  string
 	Id      string
@@ -155,8 +159,14 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 	qt.WebViewRecordClickedLink(ui.ContentView)
 	var current_ref = ApiRef { Module: "", Id: "" }
 	var current_outline_index = make(map[string] int)
-	var undo_stack = make([] ApiRef, 0)
-	var redo_stack = make([] ApiRef, 0)
+	var undo_stack = make([] ApiDocPosition, 0)
+	var redo_stack = make([] ApiDocPosition, 0)
+	var get_current_pos = func() ApiDocPosition {
+		return ApiDocPosition {
+			ApiRef: current_ref,
+			Scroll: qt.WebViewGetScroll(ui.ContentView),
+		}
+	}
 	var jump_state struct {
 		jumping    bool
 		has_step1  bool
@@ -185,7 +195,7 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 		if save &&
 			!(jumping && has_step1 && !(is_step1)) &&
 			!(is_first_update) {
-			undo_stack = append(undo_stack, current_ref)
+			undo_stack = append(undo_stack, get_current_pos())
 		}
 		current_ref = ref
 		if save {
@@ -195,8 +205,13 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 		// fmt.Printf("current: %+v\n", current_ref)
 		// fmt.Printf("redo: %+v\n\n", redo_stack)
 	}
-	var jump = func(ref ApiRef, save bool) {
-		jump_init(save)
+	type JumpOptions struct {
+		SaveToUndo     bool
+		SpecifyScroll  bool
+		Scroll         qt.Point
+	}
+	var jump = func(ref ApiRef, opts JumpOptions) {
+		jump_init(opts.SaveToUndo)
 		defer jump_clear()
 		var mod = ref.Module
 		var id = ref.Id
@@ -209,26 +224,36 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 		if id != "" {
 			qt.SetPropInt(ui.OutlineView, "currentRow", current_outline_index[id])
 		} else {
-			qt.WebViewScrollToTop(ui.ContentView)
 			if mod_unchanged {
 				qt.SetPropInt(ui.OutlineView, "currentRow", -1)
 				update_current(ApiRef { Module: mod, Id: id }, false, true)
 			}
 		}
+		if opts.SpecifyScroll {
+			qt.WebViewSetScroll(ui.ContentView, opts.Scroll)
+		}
 	}
 	var undo = func() {
 		if len(undo_stack) == 0 { return }
-		var ref = undo_stack[len(undo_stack)-1]
+		var pos = undo_stack[len(undo_stack)-1]
 		undo_stack = undo_stack[:len(undo_stack)-1]
-		redo_stack = append(redo_stack, current_ref)
-		jump(ref, false)
+		redo_stack = append(redo_stack, get_current_pos())
+		jump(pos.ApiRef, JumpOptions {
+			SaveToUndo:    false,
+			SpecifyScroll: true,
+			Scroll:        pos.Scroll,
+		})
 	}
 	var redo = func() {
 		if len(redo_stack) == 0 { return }
-		var ref = redo_stack[len(redo_stack)-1]
+		var pos = redo_stack[len(redo_stack)-1]
 		redo_stack = redo_stack[:len(redo_stack)-1]
-		undo_stack = append(undo_stack, current_ref)
-		jump(ref, false)
+		undo_stack = append(undo_stack, get_current_pos())
+		jump(pos.ApiRef, JumpOptions {
+			SaveToUndo:    false,
+			SpecifyScroll: true,
+			Scroll:        pos.Scroll,
+		})
 	}
 	go (func() {
 		qt.Connect(ui.ModuleList, "currentRowChanged(int)", func() {
@@ -237,6 +262,7 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 			}
 			var key = qt.ListWidgetGetCurrentItemKey(ui.ModuleList)
 			var mod = string(key)
+			update_current(ApiRef { Module: mod }, true, false)
 			var mod_data = doc[mod]
 			var content = string(mod_data.Content)
 			var styled_content = (apiBrowserDocStyle + content)
@@ -258,9 +284,6 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 			}
 			var outline_count = uint(len(outline))
 			qt.ListWidgetSetItems(ui.OutlineView, get_outline_item, outline_count, nil)
-			update_current(ApiRef {
-				Module: mod,
-			}, true, false)
 		})
 		qt.Connect(ui.OutlineView, "currentRowChanged(int)", func() {
 			if !(qt.ListWidgetHasCurrentItem(ui.OutlineView)) {
@@ -268,19 +291,17 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 			}
 			var key = qt.ListWidgetGetCurrentItemKey(ui.OutlineView)
 			var id = string(key)
+			var mod = current_ref.Module
+			update_current(ApiRef { Module: mod, Id: id }, false, true)
 			var id_, del = qt.NewString(key)
 			defer del()
 			qt.WebViewScrollToAnchor(ui.ContentView, id_)
-			update_current(ApiRef {
-				Module: current_ref.Module,
-				Id:     id,
-			}, false, true)
 		})
 		qt.Connect(ui.ContentView, "linkClicked(const QUrl&)", func() {
 			var url = qt.GetPropString(ui.ContentView, "qtbindingClickedLinkUrl")
 			var ref, ok = ApiRefFromHyperRef(url)
 			if !(ok) { return }
-			jump(ref, true)
+			jump(ref, JumpOptions { SaveToUndo: true })
 		})
 		qt.Connect(ui.ActionBack, "triggered()", func() {
 			undo()
@@ -373,7 +394,7 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 			var ref, ok = ApiRefFromHyperRef(href)
 			if !(ok) { return }
 			qt.DialogAccept(dialog.Dialog)
-			jump(ref, true)
+			jump(ref, JumpOptions { SaveToUndo: true })
 		})
 	})()
 }

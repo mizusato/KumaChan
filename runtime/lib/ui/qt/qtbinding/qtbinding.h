@@ -51,6 +51,12 @@ struct _QtEventListener {
 };
 typedef struct _QtEventListener QtEventListener;
 
+struct _QtPoint {
+    int x;
+    int y;
+};
+typedef struct _QtPoint QtPoint;
+
 extern const size_t QtEventMove;
 extern const size_t QtEventResize;
 extern const size_t QtEventClose;
@@ -78,6 +84,8 @@ extern "C" {
     QtString QtObjectGetPropString(void* obj_ptr, const char* prop);
     QtBool QtObjectSetPropInt(void* obj_ptr, const char* prop, int val);
     int QtObjectGetPropInt(void* obj_ptr, const char* prop);
+    QtBool QtObjectSetPropPoint(void* obj_ptr, const char* prop, QtPoint val);
+    QtPoint QtObjectGetPropPoint(void* obj_ptr, const char* prop);
     QtConnHandle QtConnect(void* obj_ptr, const char* signal, void (*cb)(size_t), size_t payload);
     QtBool QtIsConnectionValid(QtConnHandle handle);
     void QtDisconnect(QtConnHandle handle);
@@ -87,6 +95,9 @@ extern "C" {
     void QtRemoveEventListener(void* obj_ptr, QtEventListener listener);
     size_t QtResizeEventGetWidth(QtEvent ev);
     size_t QtResizeEventGetHeight(QtEvent ev);
+    QtPoint QtMakePoint(int x, int y);
+    int QtPointGetX(QtPoint p);
+    int QtPointGetY(QtPoint p);
     QtString QtNewStringUTF8(const uint8_t* buf, size_t len);
     QtString QtNewStringUTF32(const uint32_t* buf, size_t len);
     void QtDeleteString(QtString str);
@@ -118,7 +129,8 @@ extern "C" {
     void QtWebViewRecordClickedLink(void* widget_ptr);
     void QtWebViewSetHTML(void *widget_ptr, QtString html);
     void QtWebViewScrollToAnchor(void *widget_ptr, QtString anchor);
-    void QtWebViewScrollToTop(void* widget_ptr);
+    QtPoint QtWebViewGetScroll(void* widget_ptr);
+    void QtWebViewSetScroll(void* widget_ptr, QtPoint pos);
     QtString QtFileDialogOpen(void* parent_ptr, QtString title, QtString cwd, QtString filter);
     QtStringList QtFileDialogOpenMultiple(void* parent_ptr,  QtString title, QtString cwd, QtString filter);
     QtString QtFileDialogSelectDirectory(void *parent_ptr, QtString title, QtString cwd);
