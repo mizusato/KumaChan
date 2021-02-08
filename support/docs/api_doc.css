@@ -33,7 +33,7 @@ body {
     background-color: hsl(0, 0%, 99%);
     box-shadow: 0.3rem 0.3rem 0.6rem hsl(0, 0%, 80%);
 }
-.api > .type > .definition {
+.api > .type > .definition, .api > .function > .group {
     margin-left: 4rem;
 }
 .description {
@@ -51,10 +51,13 @@ body {
     color: #e953a9;
 }
 .api > .type > .header > .name, .type-named > .name {
-    color: #e88a10;
+    color: #ea6137;
 }
 .api > .constant > .header > .name {
-    color: #b26a0c;
+    color: #b2750c;
+}
+.api > .function > .header > .name {
+    color: #4078f2;
 }
 .type-param > .name, .type-parameter {
     color: #6656e4;
@@ -66,14 +69,19 @@ body {
     color: #e45649;
 }
 
-.api > .type > .header > .keyword, .api > .constant > .header > .keyword {
+.api > .type > .header > .keyword,
+.api > .constant > .header > .keyword,
+.api > .function > .header > .keyword {
     margin-right: 0.6rem;
 }
 .type-param > .default {
     margin-right: 0.6rem;
 }
-.type-param + .keyword {
+.type-param + .keyword, .element + .keyword {
     margin-right: 0.6rem;
+}
+.implicit {
+    margin-right: 0.8rem;
 }
 .bound-super > .keyword, .bound-sub > .keyword {
     margin: 0.6rem;
@@ -86,5 +94,15 @@ body {
 }
 .func > .keyword {
     margin: 0 0.6rem;
+}
+.func-type-params {
+    margin-right: 0.6rem;
+}
+
+.func-type-params.omit > .type-params {
+    display: none;
+}
+.func-type-params.omit:hover > .type-params {
+    display: unset;
 }
 

@@ -53,7 +53,7 @@ func GenerateApiDocs(idx checker.Index) ApiDocIndex {
 			var id = sym.String()
 			if !(g.CaseInfo.IsCaseType) {
 				var content = typeDecl(sym, g, reg, mod_name)
-				var wrapped = blockWithName(id, "api toplevel", content)
+				var wrapped = blockWithId(id, "api toplevel", content)
 				buf.WriteString(string(wrapped))
 				buf.WriteString("\n")
 			}
@@ -63,7 +63,16 @@ func GenerateApiDocs(idx checker.Index) ApiDocIndex {
 			outline_add_item(ConstDecl, sym)
 			var id = sym.String()
 			var content = constDecl(sym, constant.Type)
-			var wrapped = blockWithName(id, "api toplevel", content)
+			var wrapped = blockWithId(id, "api toplevel", content)
+			buf.WriteString(string(wrapped))
+			buf.WriteString("\n")
+		}
+		var add_function = func(name string, group ([] checker.CheckedFunction)) {
+			var sym = loader.MakeSymbol(mod_name, name)
+			outline_add_item(FuncDecl, sym)
+			var id = sym.String()
+			var content = funcDecl(sym, group)
+			var wrapped = blockWithId(id, "api toplevel", content)
 			buf.WriteString(string(wrapped))
 			buf.WriteString("\n")
 		}
@@ -89,6 +98,25 @@ func GenerateApiDocs(idx checker.Index) ApiDocIndex {
 			var constant = mod.Constants[name]
 			add_const(name, constant)
 		}
+		var functions = make([] string, 0)
+		var function_groups = make(map[string] ([] checker.CheckedFunction))
+		for name, group := range mod.Functions {
+			var public_subgroup = make([] checker.CheckedFunction, 0)
+			for _, f := range group {
+				if f.Public {
+					public_subgroup = append(public_subgroup, f)
+				}
+			}
+			if len(public_subgroup) > 0 {
+				functions = append(functions, name)
+				function_groups[name] = public_subgroup
+			}
+		}
+		sort.Strings(functions)
+		for _, name := range functions {
+			var group = function_groups[name]
+			add_function(name, group)
+		}
 		result[mod_name] = ModuleApiDoc {
 			Content: Html(buf.String()),
 			Outline: outline,
@@ -99,7 +127,7 @@ func GenerateApiDocs(idx checker.Index) ApiDocIndex {
 
 func typeDecl(sym loader.Symbol, g *checker.GenericType, reg checker.TypeRegistry, mod string) Html {
 	return block("type",
-		inline("header",
+		block("header",
 			keyword("type"), text("name", sym.SymbolName),
 			typeParams(g.Params, g.Defaults, g.Bounds, mod)),
 		block("definition", typeDef(g, reg, mod)),
@@ -108,8 +136,59 @@ func typeDecl(sym loader.Symbol, g *checker.GenericType, reg checker.TypeRegistr
 
 func constDecl(sym loader.Symbol, t checker.Type) Html {
 	return block("constant",
-		inline("header", keyword("const"), text("name", sym.SymbolName),
+		block("header", keyword("const"), text("name", sym.SymbolName),
 			keyword(":"), inline("type", typeExpr(t, nil, sym.ModuleName))))
+}
+
+func funcDecl(sym loader.Symbol, group ([] checker.CheckedFunction)) Html {
+	var group_contents = make([] Html, len(group))
+	for i, f := range group {
+		group_contents[i] = funcOverload(sym, f)
+	}
+	return block("function",
+		block("header", keyword("function"), text("name", sym.SymbolName)),
+		block("group", group_contents...))
+}
+
+func funcOverload(sym loader.Symbol, f checker.CheckedFunction) Html {
+	var no_defaults = make(map[uint] checker.Type)
+	var params = f.Params
+	var mod = sym.ModuleName
+	return block("overload",
+		funcTypeParams (
+			typeParams(params, no_defaults, f.Bounds, mod),
+			(len(f.Bounds.Super) + len(f.Bounds.Sub)) == 0,
+		),
+		funcImplicit(f.RawImplicit, params, mod),
+		typeExpr(f.Type, params, mod),
+	)
+}
+
+func funcTypeParams(params Html, omit_by_default bool) Html {
+	if params == Html("") {
+		return Html("")
+	}
+	if omit_by_default {
+		return inline("func-type-params omit", keyword("generic"), params)
+	} else {
+		return inline("func-type-params", keyword("generic"), params)
+	}
+}
+
+func funcImplicit (
+	types  ([] checker.Type),
+	params ([] checker.TypeParam),
+	mod    string,
+) Html {
+	if len(types) == 0 {
+		return Html("")
+	}
+	var type_contents = make([] Html, len(types))
+	for i, t := range types {
+		type_contents[i] = typeExpr(t, params, mod)
+	}
+	return inline("implicit",
+		keyword("["), inline("types", type_contents...), keyword("]"))
 }
 
 func description(content string) Html {
@@ -154,12 +233,12 @@ func typeParams (
 			var super, has_super = bounds.Super[uint(i)]
 			if has_super {
 				return inline("bound-super",
-					keyword("<"), typeExpr(super, params, mod))
+					keyword("⊂"), typeExpr(super, params, mod))
 			} else {
 				var sub, has_sub = bounds.Sub[uint(i)]
 				if has_sub {
 					return inline("bound-sub",
-						keyword(">"), typeExpr(sub, params, mod))
+						keyword("⊃"), typeExpr(sub, params, mod))
 				}
 			}
 			return Html("")
@@ -168,8 +247,10 @@ func typeParams (
 			c_default, c_variance, c_name, c_bound)
 		contents[i] = c_param
 	}
-	return inline("list-type-param",
-		keyword("["), join(contents, keyword(",")), keyword("]"))
+	return inline("type-params",
+		keyword("["),
+		inline("type-param-list", join(contents, keyword(","))),
+		keyword("]"))
 }
 
 func typeDef(g *checker.GenericType, reg checker.TypeRegistry, mod string) Html {
@@ -213,7 +294,7 @@ func typeDef(g *checker.GenericType, reg checker.TypeRegistry, mod string) Html 
 	case *checker.Enum:
 		var cases = make([] Html, len(d.CaseTypes))
 		for i, item := range d.CaseTypes {
-			cases[i] = blockWithName(item.Name.String(), "api",
+			cases[i] = blockWithId(item.Name.String(), "api",
 				typeDecl(item.Name, reg[item.Name], reg, mod))
 		}
 		return block("enum",
@@ -254,10 +335,12 @@ func typeExpr(t checker.Type, params ([] checker.TypeParam), mod string) Html {
 		case checker.Tuple:
 			var elements = make([] Html, len(R.Elements))
 			for i, el := range R.Elements {
-				elements[i] = typeExpr(el, params, mod)
+				elements[i] = inline("element", typeExpr(el, params, mod))
 			}
 			return inline("tuple",
-				keyword("("), join(elements, keyword(",")), keyword(")"))
+				keyword("("),
+				inline("element-list", join(elements, keyword(","))),
+				keyword(")"))
 		case checker.Bundle:
 			var fields = make([] Html, len(R.Fields))
 			for name, f := range R.Fields {
@@ -270,15 +353,30 @@ func typeExpr(t checker.Type, params ([] checker.TypeParam), mod string) Html {
 		case checker.Func:
 			var in = typeExpr(R.Input, params, mod)
 			var out = typeExpr(R.Output, params, mod)
-			switch RT := R.Input.(type) {
+			switch I := R.Input.(type) {
 			case *checker.AnonymousType:
-				switch RT.Repr.(type) {
-				case checker.Tuple:
-					return inline("func", in, keyword("→"), out)
+				switch I.Repr.(type) {
+				case checker.Func:
+					return inline("func",
+						inline("in", keyword("("), in, keyword(")")),
+						keyword("→"),
+						inline("out", out))
+				}
+			}
+			switch O := R.Output.(type) {
+			case *checker.AnonymousType:
+				switch O.Repr.(type) {
+				case checker.Func:
+					return inline("func",
+						inline("in", in),
+						keyword("→"),
+						inline("out",  keyword("("), out, keyword(")")))
 				}
 			}
 			return inline("func",
-				keyword("("), in, keyword(")"), keyword("→"), out)
+				inline("in", in),
+				keyword("→"),
+				inline("out", out))
 		default:
 			panic("impossible branch")
 		}
@@ -348,7 +446,7 @@ func block(class string, content... Html) Html {
 		escape(class), join(content, Html(""))))
 }
 
-func blockWithName(name string, class string, content... Html) Html {
+func blockWithId(name string, class string, content... Html) Html {
 	return Html(fmt.Sprintf("<div id=\"%s\" class=\"%s\">%s</div>",
 		escape(name), escape(class), join(content, Html(""))))
 }

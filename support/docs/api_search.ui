@@ -14,7 +14,8 @@
    <string>Search API</string>
   </property>
   <property name="windowIcon">
-   <iconset theme="system-search"/>
+   <iconset theme="system-search">
+    <normaloff>.</normaloff>.</iconset>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
