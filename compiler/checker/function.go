@@ -10,13 +10,19 @@ import (
 
 type GenericFunction struct {
 	Node          ast.Node
+	Doc           string
 	Public        bool
 	TypeParams    [] TypeParam
 	TypeBounds    TypeBounds
 	Implicit      map[string] Field
-	RawImplicit   [] Type
 	DeclaredType  Func
 	Body          ast.Body
+	GenericFunctionInfo
+}
+type GenericFunctionInfo struct {
+	RawImplicit  [] Type
+	AliasList    [] string
+	IsSelfAlias  bool
 }
 
 type FunctionReference struct {
@@ -87,31 +93,10 @@ func CollectFunctions (
 		}
 	}
 	var decls = make([] ast.DeclFunction, 0)
-	var add_decl = func(decl ast.DeclFunction) {
-		decls = append(decls, decl)
-	}
 	for _, stmt := range stmts {
 		switch decl := stmt.Statement.(type) {
 		case ast.DeclFunction:
-			add_decl(decl)
-			var tags, err = ParseFunctionTags(decl.Tags)
-			if err != nil { return nil, &FunctionError {
-				Point: ErrorPointFrom(err.Tag.Node),
-				Concrete: E_InvalidFunctionTag {
-					Tag:  string(err.Tag.RawContent),
-					Info: err.Info,
-				},
-			} }
-			for _, alias := range tags.AliasList {
-				var draft ast.DeclFunction
-				draft = decl
-				draft.Name = ast.Identifier {
-					Node: decl.Name.Node,
-					Name: ([] rune)(alias),
-				}
-				var additional_copy = draft
-				add_decl(additional_copy)
-			}
+			decls = append(decls, decl)
 		}
 	}
 	for _, decl := range decls {
@@ -132,7 +117,7 @@ func CollectFunctions (
 				},
 			}
 		}
-		// 3.2. Get the name of the function and its type parameters
+		// 3.2. Get the name and type parameters of the function
 		var name = ast.Id2String(decl.Name)
 		if name == IgnoreMark || strings.HasSuffix(name, FuncSuffix) {
 			// 3.2.1. If the function name is invalid, throw an error.
@@ -156,7 +141,17 @@ func CollectFunctions (
 			Sub:   make(map[uint] Type),
 			Super: make(map[uint] Type),
 		}
-		// 3.3. Create a context for evaluating types
+		// 3.3. Get additional information of the function
+		var tags, tags_err = ParseFunctionTags(decl.Tags)
+		if tags_err != nil { return nil, &FunctionError {
+			Point: ErrorPointFrom(tags_err.Tag.Node),
+			Concrete: E_InvalidFunctionTag {
+				Tag:  string(tags_err.Tag.RawContent),
+				Info: tags_err.Info,
+			},
+		} }
+		var alias_list = tags.AliasList
+		// 3.4. Create a context for evaluating types
 		var ctx = TypeContext {
 			TypeBoundsContext: TypeBoundsContext {
 				TypeValidationContext: TypeValidationContext {
@@ -205,7 +200,7 @@ func CollectFunctions (
 				} }
 			}
 		}
-		// 3.4. Collect implicit context value definitions
+		// 3.5. Collect implicit context value definitions
 		var implicit_fields = make(map[string] Field)
 		var implicit_types = make([] Type, len(decl.Implicit))
 		if len(decl.Implicit) > 0 {
@@ -258,15 +253,15 @@ func CollectFunctions (
 				}
 			}
 		}
-		// 3.5. Evaluate the function signature using the created context
-		var sig, err = TypeFromRepr(ast.VariousRepr {
+		// 3.6. Evaluate the function signature using the created context
+		var sig, type_err = TypeFromRepr(ast.VariousRepr {
 			Node: decl.Repr.Node,
 			Repr: decl.Repr,
 		}, ctx)
-		if err != nil { return nil, &FunctionError {
-			Point:    err.Point,
+		if type_err != nil { return nil, &FunctionError {
+			Point:    type_err.Point,
 			Concrete: E_InvalidTypeInFunction {
-				TypeError: err,
+				TypeError: type_err,
 			},
 		} }
 		for i, param := range params {
@@ -277,46 +272,64 @@ func CollectFunctions (
 				}
 			}
 		}
-		// 3.6. Construct a representation and a reference of the function
-		var func_type = sig.(*AnonymousType).Repr.(Func)
-		var f = &GenericFunction {
-			Public:       decl.Public,
-			TypeParams:   params,
-			TypeBounds:   bounds,
-			Implicit:     implicit_fields,
-			RawImplicit:  implicit_types,
-			DeclaredType: func_type,
-			Body:         decl.Body.Body,
-			Node:         decl.Node,
+		var add_function = func(name string, is_alias bool) (struct{}, *FunctionError) {
+			// 3.7. Construct a representation and a reference of the function
+			var func_type = sig.(*AnonymousType).Repr.(Func)
+			var additional = GenericFunctionInfo {
+				RawImplicit: implicit_types,
+				AliasList:   tags.AliasList,
+				IsSelfAlias: is_alias,
+			}
+			var doc = DocStringFromRaw(decl.Docs)
+			var f = &GenericFunction {
+				Node:         decl.Node,
+				Doc:          doc,
+				Public:       decl.Public,
+				TypeParams:   params,
+				TypeBounds:   bounds,
+				Implicit:     implicit_fields,
+				DeclaredType: func_type,
+				Body:         decl.Body.Body,
+				GenericFunctionInfo: additional,
+			}
+			// 3.8. Check if the name of the function is in use
+			var existing, exists = collection[name]
+			if exists {
+				// 3.8.1. If in use, try to overload it
+				var index_offset = index_offset_map[name]
+				var err_point = ErrorPointFrom(decl.Name.Node)
+				var err = ValidateOverload (
+					existing,
+					func_type, implicit_fields,
+					name, TypeParamsNames(params),
+					reg,
+					err_point,
+				)
+				if err != nil {
+					return struct{}{}, err
+				}
+				collection[name] = append(existing, FunctionReference {
+					IsImported: false,
+					Function:   f,
+					ModuleName: mod_name,
+					Index:      uint(len(existing)) - index_offset,
+				})
+			} else {
+				// 3.8.2. If not, collect the function
+				collection[name] = [] FunctionReference { {
+					IsImported: false,
+					Function:   f,
+					ModuleName: mod_name,
+					Index:      0,
+				} }
+			}
+			return struct{}{}, nil
 		}
-		// 3.7. Check if the name of the function is in use
-		var existing, exists = collection[name]
-		if exists {
-			// 3.7.1. If in use, try to overload it
-			var index_offset = index_offset_map[name]
-			var err_point = ErrorPointFrom(decl.Name.Node)
-			var err = ValidateOverload (
-				existing,
-				func_type, implicit_fields,
-				name, TypeParamsNames(params),
-				reg,
-				err_point,
-			)
+		var _, err = add_function(name, false)
+		if err != nil { return nil, err }
+		for _, alias := range alias_list {
+			var _, err = add_function(alias, true)
 			if err != nil { return nil, err }
-			collection[name] = append(existing, FunctionReference {
-				IsImported: false,
-				Function:   f,
-				ModuleName: mod_name,
-				Index:      uint(len(existing)) - index_offset,
-			})
-		} else {
-			// 3.7.2. If not, collect the function
-			collection[name] = [] FunctionReference { {
-				IsImported: false,
-				Function:   f,
-				ModuleName: mod_name,
-				Index:      0,
-			} }
 		}
 	}
 	// 4. Register all collected functions of the current module to the store

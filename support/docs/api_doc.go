@@ -62,7 +62,7 @@ func GenerateApiDocs(idx checker.Index) ApiDocIndex {
 			var sym = loader.MakeSymbol(mod_name, name)
 			outline_add_item(ConstDecl, sym)
 			var id = sym.String()
-			var content = constDecl(sym, constant.Type)
+			var content = constDecl(sym, constant.Type, constant.Doc)
 			var wrapped = blockWithId(id, "api toplevel", content)
 			buf.WriteString(string(wrapped))
 			buf.WriteString("\n")
@@ -71,7 +71,16 @@ func GenerateApiDocs(idx checker.Index) ApiDocIndex {
 			var sym = loader.MakeSymbol(mod_name, name)
 			outline_add_item(FuncDecl, sym)
 			var id = sym.String()
-			var content = funcDecl(sym, group)
+			var filtered = make([] checker.CheckedFunction, 0)
+			for _, f := range group {
+				if !(f.IsSelfAlias) {
+					filtered = append(filtered, f)
+				}
+			}
+			if len(filtered) == 0 {
+				return
+			}
+			var content = funcDecl(sym, filtered)
 			var wrapped = blockWithId(id, "api toplevel", content)
 			buf.WriteString(string(wrapped))
 			buf.WriteString("\n")
@@ -134,10 +143,11 @@ func typeDecl(sym loader.Symbol, g *checker.GenericType, reg checker.TypeRegistr
 		description(g.Doc))
 }
 
-func constDecl(sym loader.Symbol, t checker.Type) Html {
+func constDecl(sym loader.Symbol, t checker.Type, doc string) Html {
 	return block("constant",
 		block("header", keyword("const"), text("name", sym.SymbolName),
-			keyword(":"), inline("type", typeExpr(t, nil, sym.ModuleName))))
+			keyword(":"), inline("type", typeExpr(t, nil, sym.ModuleName))),
+		description(doc))
 }
 
 func funcDecl(sym loader.Symbol, group ([] checker.CheckedFunction)) Html {
@@ -155,6 +165,7 @@ func funcOverload(sym loader.Symbol, f checker.CheckedFunction) Html {
 	var params = f.Params
 	var mod = sym.ModuleName
 	return block("overload",
+		funcAlias(mod, f.AliasList),
 		funcTypeParams (
 			typeParams(params, no_defaults, f.Bounds, mod),
 			(len(f.Bounds.Super) + len(f.Bounds.Sub)) == 0,
@@ -162,6 +173,20 @@ func funcOverload(sym loader.Symbol, f checker.CheckedFunction) Html {
 		funcImplicit(f.RawImplicit, params, mod),
 		typeExpr(f.Type, params, mod),
 	)
+}
+
+func funcAlias(mod string, alias_list ([] string)) Html {
+	if len(alias_list) == 0 {
+		return Html("")
+	}
+	var alias_contents = make([] Html, len(alias_list))
+	for i, alias := range alias_list {
+		var id = (loader.MakeSymbol(mod, alias)).String()
+		alias_contents[i] = inlineWithId(id, "alias-item", text("name", alias))
+	}
+	return inline("alias", keyword("("),
+		inline("alias-list", join(alias_contents, keyword(","))),
+		keyword(")"))
 }
 
 func funcTypeParams(params Html, omit_by_default bool) Html {
@@ -441,14 +466,19 @@ func inline(class string, content... Html) Html {
 		escape(class), join(content, Html(""))))
 }
 
+func inlineWithId(id string, class string, content... Html) Html {
+	return Html(fmt.Sprintf("<span id=\"%s\" class=\"%s\">%s</span>",
+		escape(id), escape(class), join(content, Html(""))))
+}
+
 func block(class string, content... Html) Html {
 	return Html(fmt.Sprintf("<div class=\"%s\">%s</div>",
 		escape(class), join(content, Html(""))))
 }
 
-func blockWithId(name string, class string, content... Html) Html {
+func blockWithId(id string, class string, content... Html) Html {
 	return Html(fmt.Sprintf("<div id=\"%s\" class=\"%s\">%s</div>",
-		escape(name), escape(class), join(content, Html(""))))
+		escape(id), escape(class), join(content, Html(""))))
 }
 
 

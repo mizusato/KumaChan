@@ -120,8 +120,10 @@ public function no-op: ( &() Action*[never,never] )
     native 'no-op';
 public function crash: ( &(String) Action )
     native 'crash';
+/// go(f) returns an action that evaluates f() in a separate goroutine.
 public function go[T]: ( &((&()(T))) Action[T] )
     native 'go';
+/// go*(seq) returns an action that iterates seq in a separate goroutine.
 public function go*[T]: ( &(Seq[T]) Action*[T] )
     native 'go*';
 public function yield[T]:  ( &(T) Action[T] )

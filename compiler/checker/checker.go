@@ -23,9 +23,13 @@ type CheckedModule struct {
 }
 type CheckedConstant struct {
 	Point   ErrorPoint
-	Public  bool
 	Type    Type
 	Value   ExprLike
+	CheckedConstantInfo
+}
+type CheckedConstantInfo struct {
+	Public  bool
+	Doc     string
 }
 type CheckedFunction struct {
 	Point     ErrorPoint
@@ -36,10 +40,13 @@ type CheckedFunction struct {
 }
 type CheckedFunctionInfo struct {
 	Public       bool
+	Doc          string
 	Params       [] TypeParam
 	Bounds       TypeBounds
 	Type         Type
 	RawImplicit  [] Type
+	AliasList    [] string
+	IsSelfAlias  bool
 }
 type CheckedEffect struct {
 	Point  ErrorPoint
@@ -478,6 +485,8 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 		Constants: constants,
 		Functions: functions,
 	}
+	// TODO: throw an error if there is a name conflict
+	//       between constants and functions
 	var errors = make([] E, 0)
 	var imported = make(map[string] *CheckedModule)
 	for alias, imported_item := range mod.ImpMap {
@@ -499,11 +508,13 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 				Implicit: implicit,
 				FunctionKmdInfo: GetFunctionKmdInfo(name, t, ctx.Mapping),
 				CheckedFunctionInfo: CheckedFunctionInfo {
-					Public: f.Public,
-					Params: f.TypeParams,
-					Bounds: f.TypeBounds,
-					Type:   &AnonymousType { t },
+					Public:      f.Public,
+					Params:      f.TypeParams,
+					Bounds:      f.TypeBounds,
+					Type:        &AnonymousType { t },
 					RawImplicit: f.RawImplicit,
+					AliasList:   f.AliasList,
+					IsSelfAlias: f.IsSelfAlias,
 				},
 			})
 		}
@@ -554,7 +565,10 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 		}
 		var name = sym.SymbolName
 		var t = constant.DeclaredType
-		var public = constant.Public
+		var info = CheckedConstantInfo {
+			Public: constant.Public,
+			Doc:    constant.Doc,
+		}
 		switch val := constant.Value.(type) {
 		case ast.Expr:
 			var semi_expr, err1 = Check(val, expr_ctx)
@@ -570,27 +584,27 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 			const_map[name] = CheckedConstant {
 				Point:  ErrorPointFrom(constant.Node),
 				Type:   t,
-				Public: public,
 				Value:  ExprExpr(expr),
+				CheckedConstantInfo: info,
 			}
 		case ast.NativeRef:
 			const_map[name] = CheckedConstant {
 				Point: ErrorPointFrom(constant.Node),
-				Type:   t,
-				Public: public,
+				Type:  t,
 				Value: ExprNative {
 					Name:  string(val.Id.Value),
 					Point: ErrorPointFrom(val.Node),
 				},
+				CheckedConstantInfo: info,
 			}
 		case ast.PredefinedValue:
 			const_map[name] = CheckedConstant {
 				Point: ErrorPointFrom(constant.Node),
-				Type:   t,
-				Public: public,
+				Type:  t,
 				Value: ExprPredefinedValue {
 					Value: val.Value,
 				},
+				CheckedConstantInfo: info,
 			}
 		default:
 			panic("impossible branch")

@@ -9,6 +9,7 @@ import (
 
 type Constant struct {
 	Node          ast.Node
+	Doc           string
 	Public        bool
 	DeclaredType  Type
 	Value         ast.ConstValue
@@ -46,6 +47,7 @@ func CollectConstants(mod *loader.Module, reg TypeRegistry, store ConstantStore)
 		switch decl := stmt.Statement.(type) {
 		case ast.DeclConst:
 			var name = mod.SymbolFromDeclName(decl.Name)
+			var doc = DocStringFromRaw(decl.Docs)
 			if name.SymbolName == IgnoreMark {
 				return nil, &ConstantError {
 					Point:    ErrorPointFrom(decl.Name.Node),
@@ -90,6 +92,7 @@ func CollectConstants(mod *loader.Module, reg TypeRegistry, store ConstantStore)
 			var value = decl.Value.ConstValue
 			var constant = &Constant {
 				Node:         decl.Node,
+				Doc:          doc,
 				Public:       is_public,
 				DeclaredType: declared_type,
 				Value:        value,

@@ -56,7 +56,7 @@ body {
 .api > .constant > .header > .name {
     color: #b2750c;
 }
-.api > .function > .header > .name {
+.api > .function > .header > .name, .alias-item > .name {
     color: #4078f2;
 }
 .type-param > .name, .type-parameter {
@@ -74,10 +74,13 @@ body {
 .api > .function > .header > .keyword {
     margin-right: 0.6rem;
 }
+.alias {
+    margin-right: 0.6rem;
+}
 .type-param > .default {
     margin-right: 0.6rem;
 }
-.type-param + .keyword, .element + .keyword {
+.type-param + .keyword, .element + .keyword, .alias-item + .keyword {
     margin-right: 0.6rem;
 }
 .implicit {

@@ -353,13 +353,13 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, TypeDe
 		// 3.6. Use the generated TypeDef to construct a GenericType
 		//      and register it to the TypeRegistry
 		reg[name] = &GenericType {
+			Node:       t.Node,
 			Doc:        doc,
 			Tags:       tags,
 			Params:     params,
 			Bounds:     bounds,
 			Defaults:   defaults,
 			Definition: definition,
-			Node:       t.Node,
 			CaseInfo:   raw.CaseInfoMap[name],
 		}
 	}

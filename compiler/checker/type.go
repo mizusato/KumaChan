@@ -7,13 +7,13 @@ import (
 
 
 type GenericType struct {
+	Node        ast.Node
 	Doc         string
 	Tags        TypeTags
 	Params      [] TypeParam
 	Bounds      TypeBounds
 	Defaults    map[uint] Type
 	Definition  TypeDef
-	Node        ast.Node
 	CaseInfo    CaseInfo
 }
 type TypeParam struct {
