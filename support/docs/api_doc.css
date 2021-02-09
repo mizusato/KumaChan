@@ -36,12 +36,19 @@ body {
 .api > .type > .definition, .api > .function > .group {
     margin-left: 4rem;
 }
-.description {
-    margin: 0.4rem 0 0.6rem 0;
-    color: #686868;
+.api > .function > .header {
+    margin-bottom: 0.4rem;
 }
-.description > * {
+.overload > .header > .type {
+    display: inline-block;
+}
+.description {
+    margin: 0.4rem 0;
+    color: #686868;
     font-size: 90%;
+}
+.description > .line > pre {
+    margin: 0;
 }
 
 .keyword {

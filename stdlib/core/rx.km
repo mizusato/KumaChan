@@ -122,10 +122,10 @@ public function crash: ( &(String) Action )
     native 'crash';
 /// go(f) returns an action that evaluates f() in a separate goroutine.
 public function go[T]: ( &((&()(T))) Action[T] )
-    native 'go';
-/// go*(seq) returns an action that iterates seq in a separate goroutine.
-public function go*[T]: ( &(Seq[T]) Action*[T] )
-    native 'go*';
+    native 'go-thunk';
+/// go(seq) returns an action that iterates seq in a separate goroutine.
+public function go[T]: ( &(Seq[T]) Action*[T] )
+    native 'go-seq';
 public function yield[T]:  ( &(T) Action[T] )
     native 'yield';
 public function yield*:    ( &(Interval) Action*[Number] )
@@ -154,6 +154,15 @@ public function wait-complete[E]: ( &(Action*[unit,E]) Action[unit,E] )
     native 'wait-complete';
 public function forever[E]: ( &(Action*[unit,E]) Action[unit,E] )
     native 'forever';
+
+/// This function has two kinds of definitions:
+/// 1. then(a1, r1 => a2) returns an action that perfroms a1 first and then
+///   tranforms r1 (the result of a1) into a2 and performs a2.
+/// 2. then(a1, a2) returns an action that performs a1 and then performs a2.
+/// In both cases, the returned action returns the result of a2.
+/// Moreover, this function has an alias called `await`, which is intended
+/// to be used within Flat CPS expressions.
+///
 # alias: await
 public function then[A,B,E, F < E]: ( &(Action[A,E],(&(A)(Action[B,F]))) Action[B,E] )
     native 'then';
@@ -166,6 +175,7 @@ public function then[E,B, F < E]: ( &(Action[unit,E], Action[B,F]) Action[B,E] )
 # alias: await
 public function then[E,B, F < E]: ( &(Action[unit,E], Action*[B,F]) Action*[B,E] )
     native 'then-shortcut';
+
 public function catch[T,E,F]: ( &(Action[T,E],(&(E)(Action[T,F]))) Action[T,F] )
     native 'catch';
 public function catch[T,E,F]: ( &(Action*[T,E],(&(E)(Action*[T,F]))) Action*[T,F] )
@@ -176,7 +186,6 @@ public function catch-throw[T,E,F]: ( &(Action[T,E],(&(E)(F))) Action[T,F] )
     native 'catch-throw';
 public function throw[T,E]: ( &(E) Action[T,E] )
     native 'throw';
-// TODO: consider renaming map operations on single valued actions
 public function map[A,B,E]:  ( &(Action[A,E],(&(A)(B))) Action[B,E] )
     native 'action-map';
 public function map[A,B,E]: ( &(Action*[A,E],(&(A)(B))) Action*[B,E] )

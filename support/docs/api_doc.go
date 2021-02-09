@@ -134,6 +134,21 @@ func GenerateApiDocs(idx checker.Index) ApiDocIndex {
 	return result
 }
 
+func splitDescription(content string) (string, string) {
+	var index = strings.Index(content, "\n\n")
+	if index != -1 {
+		var common = content[:index]
+		var individual = ""
+		var after = (index + 2)
+		if after < len(content) {
+			individual = content[after:]
+		}
+		return common, individual
+	} else {
+		return "", content
+	}
+}
+
 func typeDecl(sym loader.Symbol, g *checker.GenericType, reg checker.TypeRegistry, mod string) Html {
 	return block("type",
 		block("header",
@@ -152,26 +167,35 @@ func constDecl(sym loader.Symbol, t checker.Type, doc string) Html {
 
 func funcDecl(sym loader.Symbol, group ([] checker.CheckedFunction)) Html {
 	var group_contents = make([] Html, len(group))
+	var buf strings.Builder
 	for i, f := range group {
 		group_contents[i] = funcOverload(sym, f)
+		var common, _ = splitDescription(f.Doc)
+		buf.WriteString(common)
+		buf.WriteRune('\n')
 	}
+	var common_desc = buf.String()
 	return block("function",
 		block("header", keyword("function"), text("name", sym.SymbolName)),
-		block("group", group_contents...))
+		block("group", group_contents...),
+		description(common_desc))
 }
 
 func funcOverload(sym loader.Symbol, f checker.CheckedFunction) Html {
 	var no_defaults = make(map[uint] checker.Type)
 	var params = f.Params
 	var mod = sym.ModuleName
+	var _, desc = splitDescription(f.Doc)
 	return block("overload",
-		funcAlias(mod, f.AliasList),
-		funcTypeParams (
-			typeParams(params, no_defaults, f.Bounds, mod),
-			(len(f.Bounds.Super) + len(f.Bounds.Sub)) == 0,
-		),
-		funcImplicit(f.RawImplicit, params, mod),
-		typeExpr(f.Type, params, mod),
+		block("header",
+			funcAlias(mod, f.AliasList),
+			funcTypeParams (
+				typeParams(params, no_defaults, f.Bounds, mod),
+				(len(f.Bounds.Super) + len(f.Bounds.Sub)) == 0,
+			),
+			funcImplicit(f.RawImplicit, params, mod),
+			inline("type", typeExpr(f.Type, params, mod))),
+		description(desc),
 	)
 }
 
@@ -220,7 +244,7 @@ func description(content string) Html {
 	var lines = strings.Split(content, "\n")
 	var c_lines = make([] Html, len(lines))
 	for i, line := range lines {
-		c_lines[i] = block("line", escape(line))
+		c_lines[i] = blockWithSpacePreserved("line", escape(line))
 	}
 	return block("description", join(c_lines, Html("")))
 }
@@ -473,6 +497,11 @@ func inlineWithId(id string, class string, content... Html) Html {
 
 func block(class string, content... Html) Html {
 	return Html(fmt.Sprintf("<div class=\"%s\">%s</div>",
+		escape(class), join(content, Html(""))))
+}
+
+func blockWithSpacePreserved(class string, content... Html) Html {
+	return Html(fmt.Sprintf("<div class=\"%s\"><pre>%s</pre></div>",
 		escape(class), join(content, Html(""))))
 }
 

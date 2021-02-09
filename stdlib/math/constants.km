@@ -1,11 +1,11 @@
-/// τ = 2π
+/// Constant: τ = 2π
 public const Tau: Float
     $(2.0 * Pi);
 
-/// π = arccos(-1)
+/// Constant: π = arccos(-1)
 public const Pi: Float
     acos -1.0;
 
-/// e = exp(1)
+/// Constant: e = exp(1)
 public const E: Float
     exp 1.0;

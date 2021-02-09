@@ -11,7 +11,7 @@ func DocStringFromRaw(raw ([] ast.Doc)) string {
 	for _, line := range raw {
 		var t = string(line.RawContent)
 		t = strings.TrimPrefix(t, "///")
-		t = strings.TrimLeft(t, " ")
+		t = strings.TrimPrefix(t, " ")
 		t = strings.TrimRight(t, " \r")
 		buf.WriteString(t)
 		buf.WriteRune('\n')

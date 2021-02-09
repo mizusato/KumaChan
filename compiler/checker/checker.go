@@ -509,6 +509,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 				FunctionKmdInfo: GetFunctionKmdInfo(name, t, ctx.Mapping),
 				CheckedFunctionInfo: CheckedFunctionInfo {
 					Public:      f.Public,
+					Doc:         f.Doc,
 					Params:      f.TypeParams,
 					Bounds:      f.TypeBounds,
 					Type:        &AnonymousType { t },

@@ -276,12 +276,12 @@ var EffectFunctions = map[string] Value {
 			panic("program should have crashed")
 		})
 	},
-	"go": func(f Value, h InteropContext) rx.Action {
+	"go-thunk": func(f Value, h InteropContext) rx.Action {
 		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
 			return h.Call(f, nil), true
 		})
 	},
-	"go*": func(seq container.Seq, h InteropContext) rx.Action {
+	"go-seq": func(seq container.Seq, h InteropContext) rx.Action {
 		return rx.NewGoroutine(func(sender rx.Sender) {
 			if sender.Context().AlreadyCancelled() { return }
 			for item, rest, ok := seq.Next(); ok; item, rest, ok = rest.Next() {
