@@ -179,8 +179,14 @@ func ScheduleActionWaitTerminate(task Action, sched Scheduler) bool {
 	return <- wait
 }
 
+func Noop() Action {
+	return Action { func(sched Scheduler, ob *observer) {
+		ob.complete()
+	} }
+}
+
 func NewGoroutine(action func(Sender)) Action {
-	return Action { func (sched Scheduler, ob *observer) {
+	return Action { func(sched Scheduler, ob *observer) {
 		go action(Sender { sched: sched, ob: ob })
 	} }
 }
@@ -235,7 +241,7 @@ func NewSubscription(action func(func(Object))(func())) Action {
 }
 
 func NewSync(action func()(Object,bool)) Action {
-	return Action { func (sched Scheduler, ob *observer) {
+	return Action { func(sched Scheduler, ob *observer) {
 		var result, ok = action()
 		if ok {
 			ob.next(result)
@@ -247,7 +253,7 @@ func NewSync(action func()(Object,bool)) Action {
 }
 
 func NewSyncSequence(action func(func(Object))(bool,Object)) Action {
-	return Action { func (sched Scheduler, ob *observer) {
+	return Action { func(sched Scheduler, ob *observer) {
 		var ok, err = action(ob.next)
 		if ok {
 			ob.complete()

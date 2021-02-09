@@ -41,7 +41,7 @@ private function dom-dynamic:
     ( &(String, Action*[(Styles,Attrs,Events)], Action*[Array[Node]])
         Action*[Node] )
     ( &(tag, @opts, @children)
-        ~ map* &(opts,children) := (combine-latest! @opts @children),
+        ~ map &(opts,children) := (combine-latest! @opts @children),
         let (styles,attrs,events) := opts,
         dom-node tag styles attrs events (dom-children children)
     );
@@ -49,7 +49,7 @@ private function dom-dynamic:
     ( &(String, Action*[Array[Node]])
         Action*[Node] )
     ( &(tag, @children)
-        ~ map* &(children) := @children,
+        ~ map &(children) := @children,
         dom-node tag children
     );
 private function dom-dynamic:

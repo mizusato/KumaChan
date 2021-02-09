@@ -251,6 +251,9 @@ var EffectFunctions = map[string] Value {
 			return StringFromGoString(strconv.FormatUint(id, 16)), true
 		})
 	},
+	"no-op": func() rx.Action {
+		return rx.Noop()
+	},
 	"crash": func(msg String, h InteropContext) rx.Action {
 		const bold = "\033[1m"
 		const red = "\033[31m"
@@ -384,7 +387,7 @@ var EffectFunctions = map[string] Value {
 			return h.Call(f, val)
 		})
 	},
-	"action-map?": func(e rx.Action, f Value, h InteropContext) rx.Action {
+	"action-filter-map": func(e rx.Action, f Value, h InteropContext) rx.Action {
 		return e.FilterMap(func(val rx.Object) (rx.Object, bool) {
 			var maybe_mapped = h.Call(f, val).(SumValue)
 			return Unwrap(maybe_mapped)

@@ -31,9 +31,11 @@ func NewIncrementalCompiler(info *ch.ModuleInfo, base DepLocator) *IncrementalCo
 	}
 }
 
-func (ctx *IncrementalCompiler) AddConstant(id DepConstant, val ast.Expr) (
-	lang.FunctionValue, ([] lang.Value), error,
-) {
+func (ctx *IncrementalCompiler) AddConstant (
+	id   DepConstant,
+	t    ch.Type,
+	val  ast.Expr,
+) (lang.FunctionValue, ([] lang.Value), error) {
 	var all_dep_values = make([] lang.Value, 0)
 	var closure_deps = make(map[*lang.Function] ([] Dependency))
 	var sym = loader.MakeSymbol(id.Module, id.Name)
@@ -42,7 +44,7 @@ func (ctx *IncrementalCompiler) AddConstant(id DepConstant, val ast.Expr) (
 	}
 	semi, err := ch.Check(val, expr_ctx)
 	if err != nil { return nil, nil, err }
-	expr, err := ch.AssignTo(nil, semi, expr_ctx)
+	expr, err := ch.AssignTo(t, semi, expr_ctx)
 	if err != nil { return nil, nil, err }
 	const_f, refs, errs := CompileConstant (
 		ch.ExprExpr(expr),

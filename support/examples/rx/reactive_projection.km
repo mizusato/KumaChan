@@ -29,7 +29,7 @@ private const Root: UI::Component
         ],
         row [
             ui-label 'Full Name:',
-            (ui-text (name.watch.map* ( &{first,last} "# #" first last )))
+            (ui-text (name.watch.map ( &{first,last} "# #" first last )))
                 | with (ui-style ['seal'])
         ]
     ];

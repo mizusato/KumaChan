@@ -14,13 +14,13 @@ public function ui-label: ( &(String) Component )
     );
 public function ui-text: ( &(Action*[String]) Component )
     ( &(@text)
-        ~ map* &(text) := @text,
+        ~ map &(text) := @text,
         dom-node 'div' text
     );
 public function ui-text-input: ( &(Reactive[String]) Component )
     ( &(@text)
         let on-input := (dom-event-handler @text (&(ev)(ev.get-string 'webuiValue'))),
-        ~ map* &(text) := watch @text,
+        ~ map &(text) := watch @text,
         dom-node 'input'
             (dom-styles [])
             (dom-attrs [ ('type', 'text'), ('value', text) ])
@@ -30,7 +30,7 @@ public function ui-text-input: ( &(Reactive[String]) Component )
 public function ui-checkbox: ( &(Reactive[Bool]) Component )
     ( &(@checked)
         let on-change := (dom-event-handler @checked (&(ev)(ev.get-bool 'webuiChecked'))),
-        ~ map* &(checked) := watch @checked,
+        ~ map &(checked) := watch @checked,
         dom-node 'input'
             (dom-styles [])
             (dom-attrs (
@@ -45,7 +45,7 @@ public function ui-checkbox: ( &(Reactive[Bool]) Component )
 public function ui-select: ( &(Reactive[String],Array[(String,String)]) Component )
     ( &(@current,options)
         let on-change := (dom-event-handler @current (&(ev)(ev.get-string 'webuiValue'))),
-        ~ map* &(current) := watch @current,
+        ~ map &(current) := watch @current,
         dom-node 'select'
             (dom-styles [])
             (dom-attrs [('value', current)])

@@ -20,13 +20,13 @@ public function nil[T]:  ( &() Seq[T] )
 public function cons[T]: ( &(T,Seq[T]) Seq[T] )
     native 'seq-cons';
 
-public function map[A,B]:      ( &(Seq[A],(&(A)(B))) Seq[B] )
+public function map[A,B]:        ( &(Seq[A],(&(A)(B))) Seq[B] )
     native 'seq-map';
-public function map?[A,B]:     ( &(Seq[A],(&(A)(Maybe[B]))) Seq[B] )
-    native 'seq-map?';
-public function filter[T]:     ( &(Seq[T],(&(T)(Bool))) Seq[T] )
+public function filter-map[A,B]: ( &(Seq[A],(&(A)(Maybe[B]))) Seq[B] )
+    native 'seq-filter-map';
+public function filter[T]:       ( &(Seq[T],(&(T)(Bool))) Seq[T] )
     native 'seq-filter';
-public function flat-map[A,B]: ( &(Seq[A],(&(A)(Seq[B]))) Seq[B] )
+public function flat-map[A,B]:   ( &(Seq[A],(&(A)(Seq[B]))) Seq[B] )
     native 'seq-flat-map';
 
 public function scan[T,A]:   ( &(Seq[T],A,(&(A,T)(A))) Seq[A] )
@@ -149,13 +149,13 @@ public function swap[T]:      ( &(List[T],ListKey,ListKey) List[T] )
 public function is-first-in[T]: ( &(Action*[Number],Reactive[List[T]]) Action*[Bool] )
     ( &(@index,_)
         @index
-            | map* (&(index) $(index = 0))
+            | map (&(index) $(index = 0))
             | distinct-until-changed
     );
 public function is-last-in[T]: ( &(Action*[Number],Reactive[List[T]]) Action*[Bool] )
     ( &(@index,@list)
-        combine-latest! @index (@list.watch.map* (&(list)(list.length)))
-            | map* (&(index,length) $(index = $(length - 1)))
+        combine-latest! @index (@list.watch.map (&(list)(list.length)))
+            | map (&(index,length) $(index = $(length - 1)))
             | distinct-until-changed
     );
 public function update[T]:  ( &(Reactive[List[T]],ListKey,(&(T)(T))) Action )

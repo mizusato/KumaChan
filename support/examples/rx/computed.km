@@ -28,7 +28,7 @@ private const Root: UI::Component
         row [ ui-label 'Price:', float-input price ],
         row [ ui-label 'Quantity:', float-input quantity ],
         ui-text (
-            ~ map* &(total?) := total,
+            ~ map &(total?) := total,
             switch total?:
             case Just total:
                 "Total = #" (str total),

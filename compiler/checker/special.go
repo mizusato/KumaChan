@@ -38,10 +38,12 @@ var __DoType = &NamedType {
 	Name: __Action,
 	Args: [] Type { &AnonymousType { Unit {} } },
 }
+func DoType() Type { return __DoType }
 var __AnyActionType = &NamedType {
 	Name: __ActionMultiValue,
 	Args: [] Type { &AnyType{}, &AnyType{} },
 }
+func AnyActionType() Type { return __AnyActionType }
 var __Bool = CoreSymbol(stdlib.Bool)
 var __T_Bool = &NamedType { Name: __Bool, Args: make([] Type, 0) }
 var __Yes uint = stdlib.YesIndex

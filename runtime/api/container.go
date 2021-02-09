@@ -58,8 +58,7 @@ var ContainerFunctions = map[string] Value {
 			},
 		}
 	},
-	"seq-map?": func(input Seq, f Value, h InteropContext) Seq {
-		// TODO: consider changing "map?" to a more clear name
+	"seq-filter-map": func(input Seq, f Value, h InteropContext) Seq {
 		return OptMappedSeq {
 			Input:      input,
 			MapFilter: func(item Value) Value {

@@ -25,7 +25,7 @@ private const Root: UI::Component
     container [
         ~ use &(pos) := mouse-position,
         box [
-            pos | map* ( &(x,y) "x=#, y=#" (str x) (str y) )
+            pos | map ( &(x,y) "x=#, y=#" (str x) (str y) )
                 | start-with ['']
                 | ui-text
         ]

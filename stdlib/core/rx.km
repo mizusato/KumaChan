@@ -116,6 +116,8 @@ public function gen-random: ( &() Action[Float] )
     native 'gen-random';
 public function gen-sequential-id: ( &() Action[String] )
     native 'gen-sequential-id';
+public function no-op: ( &() Action*[never,never] )
+    native 'no-op';
 public function crash: ( &(String) Action )
     native 'crash';
 public function go[T]: ( &((&()(T))) Action[T] )
@@ -131,7 +133,11 @@ public function yield*[T]: ( &(Seq[T]) Action*[T] )
 public function yield*[T]: ( &(Array[T]) Action*[T] )
     native 'yield*-array';
 public function not[E]: ( &(Action*[Bool,E]) Action*[Bool,E] )
-    (&(e)(e.map* not));
+    (&(p)(p.map not));
+public function and[E]: ( &(Action*[Bool,E],Action*[Bool,E]) Action*[Bool,E] )
+    (&(p,q)(computed (p,q) (&(p,q) $(p and q))));
+public function or[E]: ( &(Action*[Bool,E],Action*[Bool,E]) Action*[Bool,E] )
+    (&(p,q)(computed (p,q) (&(p,q) $(p or q))));
 public function start-with[T,E]: ( &(Action*[T,E],Array[T]) Action*[T,E] )
     (&(e,prepended)(concat:[T,E] [(yield* prepended), e]));
 public function wait: ( & {timeout:Number} Action )
@@ -160,8 +166,7 @@ public function then[E,B, F < E]: ( &(Action[unit,E], Action*[B,F]) Action*[B,E]
     native 'then-shortcut';
 public function catch[T,E,F]: ( &(Action[T,E],(&(E)(Action[T,F]))) Action[T,F] )
     native 'catch';
-// TODO: consider renaming this function
-public function catch*[T,E,F]: ( &(Action*[T,E],(&(E)(Action*[T,F]))) Action*[T,F] )
+public function catch[T,E,F]: ( &(Action*[T,E],(&(E)(Action*[T,F]))) Action*[T,F] )
     native 'catch';
 public function catch-retry[T,E]: ( &(Action[T,E],(&(E)(Action[Bool]))) Action[T,E] )
     native 'catch-retry';
@@ -172,16 +177,16 @@ public function throw[T,E]: ( &(E) Action[T,E] )
 // TODO: consider renaming map operations on single valued actions
 public function map[A,B,E]:  ( &(Action[A,E],(&(A)(B))) Action[B,E] )
     native 'action-map';
+public function map[A,B,E]: ( &(Action*[A,E],(&(A)(B))) Action*[B,E] )
+    native 'action-map';
 public function map-to[A,B,E]: ( &(Action[A,E],B) Action[B,E] )
     (&(e,v)(e | map (&(_)(v))));
-public function map*[A,B,E]: ( &(Action*[A,E],(&(A)(B))) Action*[B,E] )
-    native 'action-map';
-public function map?[A,B,E]: ( &(Action*[A,E],(&(A)(Maybe[B]))) Action*[B,E] )
-    native 'action-map?';
-public function map*-to[A,B,E]: ( &(Action*[A,E],B) Action*[B,E] )
-    (&(e,v)(e | map* (&(_)(v))));
+public function map-to[A,B,E]: ( &(Action*[A,E],B) Action*[B,E] )
+    (&(e,v)(e | map (&(_)(v))));
 public function filter[T,E]: ( &(Action*[T,E],(&(T)(Bool))) Action*[T,E] )
     native 'action-filter';
+public function filter-map[A,B,E]: ( &(Action*[A,E],(&(A)(Maybe[B]))) Action*[B,E] )
+    native 'action-filter-map';
 public function reduce[T,A,E]: ( &(Action*[T,E],A,(&(A,T)(A))) Action[A,E] )
     native 'action-reduce';
 public function scan[T,A,E]: ( &(Action*[T,E],A,(&(A,T)(A))) Action*[A,E] )

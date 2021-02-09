@@ -213,7 +213,10 @@ func repl(args ([] string), max_stack_size int, debug_opts lang.DebugOptions) {
                 Module: mod.Name,
                 Name:   temp_name,
             }
-            f, dep_vals, err := ic.AddConstant(temp_id, expr)
+            var _, is_do = cmd.Cmd.(ast.ReplDo)
+            var t checker.Type = nil
+            if is_do { t = checker.AnyActionType() }
+            f, dep_vals, err := ic.AddConstant(temp_id, t, expr)
             if err != nil {
                 fmt.Fprintf(os.Stderr,
                     "%s error:\n%s\n", cmd_label_err, err)
