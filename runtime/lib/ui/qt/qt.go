@@ -101,7 +101,18 @@ var mock = false
 var initializing = make(chan struct{}, 1)
 var initialized = make(chan struct{})
 var initRequestSignal = make(chan func())
-func InitRequestSignal() (chan func()) { return initRequestSignal }
+// Calling this function will notify that Qt is not used in the entire program
+// so that Main() can return immediately
+func NotifyNotUsed() {
+    close(initRequestSignal)
+}
+// NOTE: should be called on main thread to make QtWebkit work normally
+func Main() {
+    var main, use_qt = <- initRequestSignal
+    if use_qt {
+        main()
+    }
+}
 func Mock() {
     mock = true
 }

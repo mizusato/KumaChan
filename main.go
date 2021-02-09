@@ -400,12 +400,9 @@ func main() {
                 repl(program_args,
                     max_stack_size, debug_opts)
             }
-            close(qt.InitRequestSignal())
+            qt.NotifyNotUsed()
         })()
-        var qt_main, use_qt = <- qt.InitRequestSignal()
-        if use_qt {
-            qt_main()
-        }
+        qt.Main()
     case "parser-debug":
         var program_path string
         var program_file *os.File
@@ -436,10 +433,7 @@ func main() {
         var api_docs = docs.GenerateApiDocs(idx)
         delete(api_docs, dummy.Name)
         go docs.RunApiBrowser(api_docs)
-        var qt_main, use_qt = <- qt.InitRequestSignal()
-        if use_qt {
-            qt_main()
-        }
+        qt.Main()
     default:
         fmt.Fprintf(os.Stderr,
             "invalid mode: %s", strconv.Quote(mode))
