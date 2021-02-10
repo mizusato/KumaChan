@@ -6,10 +6,53 @@ import (
 	"errors"
 	"reflect"
 	"math/big"
-	"kumachan/rpc/kmd"
 	. "kumachan/lang"
+	"kumachan/rpc/kmd"
 	"kumachan/runtime/lib/container"
+	"io"
 )
+
+
+type KmdApiImpl struct {
+	config       KmdConfig
+	transformer  kmd.Transformer
+}
+func KmdCreateApi(ctx KmdTransformContext) KmdApi {
+	return &KmdApiImpl {
+		config:      ctx.KmdGetConfig(),
+		transformer: kmdCreateTransformer(ctx),
+	}
+}
+func (impl *KmdApiImpl) GetTypeFromId(id kmd.TypeId) *kmd.Type {
+	return impl.config.GetTypeFromId(id)
+}
+func (impl *KmdApiImpl) SerializeToStream(v Value, t *kmd.Type, stream io.Writer) error {
+	var serializer = &(impl.transformer.Serializer)
+	var tv = KmdTypedValue {
+		Type:  t,
+		Value: v,
+	}
+	return kmd.Serialize(tv, serializer, stream)
+}
+func (impl *KmdApiImpl) DeserializeFromStream(t *kmd.Type, stream io.Reader) (Value, error) {
+	var ts = &impl.transformer
+	var deserializer = &(ts.Deserializer)
+	obj, real_t, err := kmd.Deserialize(stream, deserializer)
+	if err != nil { return nil, err }
+	obj, err = ts.AssignObject(obj, real_t, t)
+	if err != nil { return nil, err }
+	return obj, nil
+}
+func (impl *KmdApiImpl) Serialize(v Value, t *kmd.Type) ([] byte, error) {
+	var buf bytes.Buffer
+	var err = impl.SerializeToStream(v, t, &buf)
+	if err != nil { return nil, err }
+	return buf.Bytes(), nil
+}
+func (impl *KmdApiImpl) Deserialize(binary ([] byte), t *kmd.Type) (Value, error) {
+	var reader = bytes.NewReader(binary)
+	return impl.DeserializeFromStream(t, reader)
+}
 
 
 type KmdTypedValue struct {
@@ -29,12 +72,12 @@ type KmdTransformContext interface {
 	KmdCallValidator(f Value, x Value) bool
 }
 
-func KmdTransformer(h KmdTransformContext) kmd.Transformer {
-	var conf = h.KmdGetConfig()
+func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
+	var conf = ctx.KmdGetConfig()
 	var validate = func(obj kmd.Object, t kmd.TypeId) error {
 		var v, exists = conf.KmdValidatorTable[kmd.ValidatorId(t)]
 		if exists {
-			var ok = h.KmdCallValidator(v, obj)
+			var ok = ctx.KmdCallValidator(v, obj)
 			if ok {
 				return nil
 			} else {
@@ -239,8 +282,8 @@ func KmdTransformer(h KmdTransformContext) kmd.Transformer {
 						}
 						var info, exists = conf.KmdAdapterTable[adapter_id]
 						if exists {
-							var adapter = h.KmdGetAdapter(info.Index)
-							var adapted = h.KmdCallAdapter(adapter, obj)
+							var adapter = ctx.KmdGetAdapter(info.Index)
+							var adapted = ctx.KmdCallAdapter(adapter, obj)
 							return adapted, nil
 						} else {
 							return nil, errors.New(fmt.Sprintf(
@@ -358,24 +401,5 @@ func KmdTransformer(h KmdTransformContext) kmd.Transformer {
 			},
 		},
 	}
-}
-
-func KmdSerialize(v Value, t *kmd.Type, ts kmd.Transformer) ([] byte, error) {
-	var buf bytes.Buffer
-	var tv = KmdTypedValue {
-		Type:  t,
-		Value: v,
-	}
-	err := kmd.Serialize(tv, ts.Serializer, &buf)
-	if err != nil { return nil, err }
-	return buf.Bytes(), nil
-}
-
-func KmdDeserialize(binary ([] byte), t *kmd.Type, ts kmd.Transformer) (Value, error) {
-	obj, real_t, err := kmd.Deserialize(bytes.NewReader(binary), ts.Deserializer)
-	if err != nil { return nil, err }
-	obj, err = ts.AssignObject(obj, real_t, t)
-	if err != nil { return nil, err }
-	return obj, nil
 }
 

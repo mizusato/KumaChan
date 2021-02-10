@@ -9,7 +9,7 @@ import (
 
 
 type serializeContext struct {
-	Serializer
+	*Serializer
 	Key           string
 	Depth         uint
 	OmitType      bool
@@ -18,9 +18,9 @@ type serializeContext struct {
 const header = "KumaChan Data"
 const omittedType = "-"
 
-func Serialize(root Object, serializer Serializer, output io.Writer) error {
+func Serialize(root Object, serializer *Serializer, output io.Writer) error {
 	var ctx = serializeContext {
-		Serializer: serializer,
+		Serializer:   serializer,
 		Key:          "",
 		Depth:        0,
 		OmitType:     false,

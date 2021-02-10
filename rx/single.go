@@ -1,8 +1,42 @@
 package rx
 
-
 const single_multiple_return = "An effect that assumed to be a single-valued effect emitted multiple values"
 const single_zero_return = "An effect that assumed to be a single-valued effect completed with zero values emitted"
+
+
+func BlockingRunSingle(e Action, sched Scheduler, ctx *Context) (Object, bool) {
+	var chan_ret = make(chan Object)
+	var chan_err = make(chan Object)
+	sched.commit(func() {
+		var returned = false
+		var returned_value Object
+		sched.run(e, &observer {
+			context: ctx,
+			next: func(obj Object) {
+				if returned {
+					panic(single_multiple_return)
+				}
+				returned = true
+				returned_value = obj
+			},
+			error: func(err Object) {
+				chan_err <- err
+			},
+			complete: func() {
+				if !returned {
+					panic(single_zero_return)
+				}
+				chan_ret <- returned_value
+			},
+		})
+	})
+	select {
+	case ret := <- chan_ret:
+		return ret, true
+	case err := <- chan_err:
+		return err, false
+	}
+}
 
 func (e Action) Then(f func(Object) Action) Action {
 	return Action { func(sched Scheduler, ob *observer) {

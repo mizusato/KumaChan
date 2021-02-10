@@ -17,7 +17,7 @@ type InteropContext interface {
 	GetDebugOptions() DebugOptions
 	GetErrorPoint() ErrorPoint
 	GetEntryModulePath() string
-	KmdApi
+	GetKmdApi() KmdApi
 	GetResources(kind string) (map[string] Resource)
 }
 type StdIO struct {

@@ -141,6 +141,10 @@ func (s Sender) Context() *Context {
 	return s.ob.context
 }
 
+func (s Sender) Scheduler() Scheduler {
+	return s.sched
+}
+
 func (s Sender) Next(x Object) {
 	s.sched.dispatch(event {
 		kind:     ev_next,

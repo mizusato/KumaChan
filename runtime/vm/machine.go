@@ -3,7 +3,6 @@ package vm
 import (
 	"sync"
 	"kumachan/rx"
-	"kumachan/rpc/kmd"
 	"kumachan/runtime/lib/librpc"
 	. "kumachan/lang"
 )
@@ -13,14 +12,14 @@ const InitialDataStackCapacity = 16
 const InitialCallStackCapacity = 4
 
 type Machine struct {
-	program         Program
-	options         Options
-	globalSlot      [] Value
-	extraSlot       [] Value
-	extraLock       *sync.Mutex
-	contextPool     *sync.Pool
-	scheduler       rx.Scheduler
-	kmdTransformer  kmd.Transformer
+	program      Program
+	options      Options
+	globalSlot   [] Value
+	extraSlot    [] Value
+	extraLock    *sync.Mutex
+	contextPool  *sync.Pool
+	scheduler    rx.Scheduler
+	kmdApi       KmdApi
 }
 
 type Options struct {
@@ -51,7 +50,7 @@ func Execute(p Program, opts Options, m_signal (chan <- *Machine)) {
 		contextPool:  pool,
 		scheduler:    sched,
 	}
-	m.kmdTransformer = librpc.KmdTransformer(m)
+	m.kmdApi = librpc.KmdCreateApi(m)
 	if m_signal != nil {
 		m_signal <- m
 	}

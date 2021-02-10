@@ -4,8 +4,6 @@ import (
 	"os"
 	"strings"
 	"kumachan/rx"
-	"kumachan/rpc/kmd"
-	"kumachan/runtime/lib/librpc"
 	. "kumachan/lang"
 	. "kumachan/util/error"
 )
@@ -56,19 +54,11 @@ func (h MachineContextHandle) GetEntryModulePath() string {
 	return strings.TrimRight(raw, string([] rune { os.PathSeparator }))
 }
 
-func (h MachineContextHandle) KmdGetTypeFromId(id kmd.TypeId) *kmd.Type {
-	return h.machine.program.KmdConfig.GetTypeFromId(id)
+func (h MachineContextHandle) GetKmdApi() KmdApi {
+	return h.machine.kmdApi
 }
 
-func (h MachineContextHandle) KmdSerialize(v Value, t *kmd.Type) ([] byte, error) {
-	return librpc.KmdSerialize(v, t, h.machine.kmdTransformer)
-}
-
-func (h MachineContextHandle) KmdDeserialize(binary ([] byte), t *kmd.Type) (Value, error) {
-	return librpc.KmdDeserialize(binary, t, h.machine.kmdTransformer)
-}
-
-func (h MachineContextHandle) GetResources(kind string) (map[string]Resource) {
+func (h MachineContextHandle) GetResources(kind string) (map[string] Resource) {
 	var res = make(map[string] Resource)
 	for path, item := range h.machine.options.Resources {
 		if item.Kind == kind {

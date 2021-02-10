@@ -15,7 +15,7 @@ import (
 
 
 type deserializeContext struct {
-	Deserializer
+	*Deserializer
 	Depth        uint
 	RequireKey   bool
 	ReturnKey    *string
@@ -33,7 +33,7 @@ type deserializeReader struct {
 	linesRead        uint
 }
 
-func Deserialize(input io.Reader, deserializer Deserializer) (Object, *Type, error) {
+func Deserialize(input io.Reader, deserializer *Deserializer) (Object, *Type, error) {
 	var t *Type
 	var ctx = deserializeContext {
 		Deserializer: deserializer,

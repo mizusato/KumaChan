@@ -1,12 +1,17 @@
 package lang
 
-import "kumachan/rpc/kmd"
+import (
+	"io"
+	"kumachan/rpc/kmd"
+)
 
 
 type KmdApi interface {
-	KmdGetTypeFromId(id kmd.TypeId) *kmd.Type
-	KmdSerialize(v Value, t *kmd.Type) ([] byte, error)
-	KmdDeserialize(binary ([] byte), t *kmd.Type) (Value, error)
+	GetTypeFromId(id kmd.TypeId) *kmd.Type
+	Serialize(v Value, t *kmd.Type) ([] byte, error)
+	Deserialize(binary ([] byte), t *kmd.Type) (Value, error)
+	SerializeToStream(v Value, t *kmd.Type, stream io.Writer) error
+	DeserializeFromStream(t *kmd.Type, stream io.Reader) (Value, error)
 }
 
 type KmdConfig struct {
@@ -33,3 +38,4 @@ func (conf KmdConfig) GetTypeFromId(id kmd.TypeId) *kmd.Type {
 	default:               panic("something went wrong")
 	}
 }
+

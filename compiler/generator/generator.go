@@ -97,8 +97,9 @@ func CompileFunction (
 		switch id := b.Id.(type) {
 		case kmd.SerializerId:
 			f = func(arg lang.Value, h lang.InteropContext) lang.Value {
-				var t = h.KmdGetTypeFromId(id.TypeId)
-				var binary, err = h.KmdSerialize(arg, t)
+				var api = h.GetKmdApi()
+				var t = api.GetTypeFromId(id.TypeId)
+				var binary, err = api.Serialize(arg, t)
 				if err != nil {
 					var wrapped = fmt.Errorf("serialiation error: %w", err)
 					panic(wrapped)
@@ -107,8 +108,9 @@ func CompileFunction (
 			}
 		case kmd.DeserializerId:
 			f = func(arg lang.Value, h lang.InteropContext) lang.Value {
-				var t = h.KmdGetTypeFromId(id.TypeId)
-				var obj, err = h.KmdDeserialize(arg.([] byte), t)
+				var api = h.GetKmdApi()
+				var t = api.GetTypeFromId(id.TypeId)
+				var obj, err = api.Deserialize(arg.([] byte), t)
 				if err != nil { return lang.Ng(err) }
 				return lang.Ok(obj)
 			}
