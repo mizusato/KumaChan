@@ -1,6 +1,7 @@
 package librpc
 
 import (
+	"io"
 	"fmt"
 	"bytes"
 	"errors"
@@ -9,7 +10,6 @@ import (
 	. "kumachan/lang"
 	"kumachan/rpc/kmd"
 	"kumachan/runtime/lib/container"
-	"io"
 )
 
 

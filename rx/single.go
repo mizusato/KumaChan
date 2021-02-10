@@ -4,6 +4,7 @@ const single_multiple_return = "An effect that assumed to be a single-valued eff
 const single_zero_return = "An effect that assumed to be a single-valued effect completed with zero values emitted"
 
 
+// TODO: use a better function name
 func BlockingRunSingle(e Action, sched Scheduler, ctx *Context) (Object, bool) {
 	var chan_ret = make(chan Object)
 	var chan_err = make(chan Object)
