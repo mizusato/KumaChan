@@ -120,7 +120,9 @@ func validateServiceConfirmation(client_info *ServiceConfirmation, service Servi
 
 func receiveConstructorArgument(conn io.Reader, service Service, opts *ServerOptions) (kmd.Object, error) {
 	var ctor = service.Constructor
-	arg, err := opts.DeserializeFromStream(ctor.ArgType, conn)
+	var decompressed, gz_err = gzip.NewReader(conn)
+	if gz_err != nil { panic(gz_err) }
+	arg, err := opts.DeserializeFromStream(ctor.ArgType, decompressed)
 	if err != nil {
 		return nil, fmt.Errorf("failed to receive ctor argument: %w", err)
 	}
