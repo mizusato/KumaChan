@@ -51,7 +51,7 @@ func Server(service Service, opts *ServerOptions) rx.Action {
 			}
 			sender.Next(conn)
 		}
-	}).ConcatMap(func(raw_conn_ rx.Object) rx.Action {
+	}).MergeMap(func(raw_conn_ rx.Object) rx.Action {
 		var raw_conn = raw_conn_.(net.Conn)
 		var logger = &ServerLogger {
 			LocalAddr:  raw_conn.LocalAddr(),
