@@ -1,8 +1,8 @@
 package rx
 
 import (
-	"net"
 	"io"
+	"net"
 )
 
 
@@ -10,6 +10,7 @@ type WrappedConnection struct {
 	conn     net.Conn
 	sched    Scheduler
 	ob       *observer
+	worker   *Worker
 	context  *Context
 	dispose  disposeFunc
 	closed   chan struct{}
@@ -20,6 +21,9 @@ func (w *WrappedConnection) Context() *Context {
 func (w *WrappedConnection) Scheduler() Scheduler {
 	return w.sched
 }
+func (w *WrappedConnection) Worker() *Worker {
+	return w.worker
+}
 func (w *WrappedConnection) closeProperly(err error) {
 	select {
 	case <- w.closed:
@@ -28,6 +32,7 @@ func (w *WrappedConnection) closeProperly(err error) {
 	}
 	close(w.closed)
 	_ = w.conn.Close()
+	w.worker.Dispose()
 	w.sched.commit(func() {
 		if err != nil {
 			w.ob.error(err)
@@ -68,6 +73,7 @@ func NewConnectionHandler(conn net.Conn, logic (func(*WrappedConnection))) Actio
 			conn:    conn,
 			sched:   sched,
 			ob:      ob,
+			worker:  CreateWorker(),
 			context: ctx,
 			dispose: dispose,
 			closed:  make(chan struct{}),

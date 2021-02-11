@@ -225,6 +225,20 @@ func NewQueued(w *Worker, action func()(Object,bool)) Action {
 	} }
 }
 
+func NewQueuedNoValue(w *Worker, action func()(bool,Object)) Action {
+	return Action { func(sched Scheduler, ob *observer) {
+		var sender = Sender { sched: sched, ob: ob }
+		w.Do(func() {
+			var ok, err = action()
+			if ok {
+				sender.Complete()
+			} else {
+				sender.Error(err)
+			}
+		})
+	} }
+}
+
 func NewCallback(action func(func(Object))) Action {
 	return Action { func(sched Scheduler, ob *observer) {
 		var sender = Sender { sched: sched, ob: ob }

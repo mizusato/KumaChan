@@ -59,9 +59,9 @@ func Server(service Service, opts *ServerOptions) rx.Action {
 				conn.Fatal(err)
 				return struct{}{}
 			}
-			metadata, err := receiveClientMetadata(conn)
+			client_info, err := receiveServiceConfirmation(conn)
 			if err != nil { return fatal(err) }
-			err = validateClientMetadata(metadata, service)
+			err = validateServiceConfirmation(client_info, service)
 			if err != nil { return fatal(err) }
 			arg, err := receiveConstructorArgument(conn, service, opts)
 			if err != nil { return fatal(err) }
@@ -80,35 +80,35 @@ func Server(service Service, opts *ServerOptions) rx.Action {
 	})
 }
 
-const ClientMetadataLength = 1024
-type ClientMetadata struct {
+type ServiceConfirmation struct {
 	ServiceName     string
 	ServiceVersion  string
 }
-func receiveClientMetadata(conn io.Reader) (*ClientMetadata, error) {
-	var buf_ ([ClientMetadataLength] byte)
-	var buf = buf_[:]
-	_, err := io.ReadFull(conn, buf)
+func receiveServiceConfirmation(conn io.Reader) (*ServiceConfirmation, error) {
+	kind, _, payload, err := receiveMessage(conn)
 	if err != nil {
-		return nil, fmt.Errorf("failed to receive client metadata: %w", err)
+		return nil, fmt.Errorf("failed to receive service confirmation: %w", err)
 	}
-	var buf_reader = bytes.NewReader(buf)
+	if kind != "service" {
+		return nil, errors.New(fmt.Sprintf("unexpected message kind: %s", kind))
+	}
+	var buf_reader = bytes.NewReader(payload)
 	var name string
 	var version string
 	_, err = fmt.Fscanf(buf_reader, "%s %s", &name, &version)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse client metadata: %w", err)
 	}
-	return &ClientMetadata {
+	return &ServiceConfirmation {
 		ServiceName:    name,
 		ServiceVersion: version,
 	}, nil
 }
-func validateClientMetadata(metadata *ClientMetadata, service Service) error {
-	if metadata.ServiceName != service.Name {
+func validateServiceConfirmation(client_info *ServiceConfirmation, service Service) error {
+	if client_info.ServiceName != service.Name {
 		return errors.New("service name not correct")
 	}
-	if metadata.ServiceVersion != service.Version {
+	if client_info.ServiceVersion != service.Version {
 		return errors.New("service version not correct")
 	}
 	return nil
@@ -146,47 +146,46 @@ func processMessages(instance Value, conn *rx.WrappedConnection, logger *ServerL
 			arg, err := receiveCallArgument(method, conn, opts)
 			if err != nil { return err }
 			var action = method.GetAction(instance, arg)
-			var worker = rx.CreateWorker()
+			var worker = conn.Worker()
+			var with_worker = func(do (func() error)) rx.Action {
+				return rx.NewQueuedNoValue(worker, func() (bool, rx.Object) {
+					err := do()
+					if err != nil { return false, err }
+					return true, nil
+				})
+			}
 			var send_value = func(value Value) rx.Action {
-				return rx.NewQueued(worker, func() (rx.Object, bool) {
-					err := sendCallReturnValue(value, id, method, conn, opts)
-					if err != nil { return err, false }
-					return nil, true
+				return with_worker(func() error {
+					return sendCallReturnValue(value, id, method, conn, opts)
 				})
 			}
 			var send_exception = func(e Value) rx.Action {
-				return rx.NewQueued(worker, func() (rx.Object, bool) {
-					var e_as_error, e_is_error = e.(error)
-					if !(e_is_error) {
-						panic("invalid exception value thrown by rpc call")
-					}
-					err := sendCallException(e_as_error, id, conn)
-					if err != nil { return err, false }
-					return nil, true
+				var e_as_error, e_is_error = e.(error)
+				if !(e_is_error) { panic("invalid exception") }
+				return with_worker(func() error {
+					return sendCallException(e_as_error, id, conn)
 				})
 			}
 			var send_completion = func(err_val Value) rx.Action {
-				return rx.NewQueued(worker, func() (rx.Object, bool) {
-					err := sendCallCompletion(id, conn)
-					if err != nil { return err, false }
-					return nil, true
+				return with_worker(func() error {
+					return sendCallCompletion(id, conn)
 				})
 			}
-			var watch_normal =
-				action.ConcatMap(send_value).
+			var send_all =
+				action.
+				Catch(send_exception).
+				ConcatMap(send_value).
 				WaitComplete().
-				Then(send_completion)
-			var watch_exception =
-				action.Catch(send_exception)
-			var watch_all =
-				rx.Merge([] rx.Action { watch_normal, watch_exception }).
+				Then(send_completion).
 				Catch(func(err_ rx.Object) rx.Action {
 					logger.LogError(err.(error))
 					return rx.Noop()
 				})
-			rx.ScheduleAction(watch_all, conn.Scheduler())
+			conn.Scheduler().RunTopLevel(send_all, rx.Receiver {
+				Context: conn.Context(),
+			})
 		default:
-			return errors.New(fmt.Sprintf("unknown error kind: %s", kind))
+			return errors.New(fmt.Sprintf("unknown message kind: %s", kind))
 		}
 	}
 }
