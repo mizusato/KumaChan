@@ -3,7 +3,6 @@ package rpc
 import (
 	"kumachan/rx"
 	"kumachan/rpc/kmd"
-	. "kumachan/lang"
 )
 
 
@@ -16,12 +15,12 @@ type Service struct {
 
 type ServiceConstructor struct {
 	ArgType    *kmd.Type
-	GetAction  func(Value) rx.Action
+	GetAction  func(object kmd.Object) rx.Action
 }
 
 type ServiceMethod struct {
 	ArgType    *kmd.Type
 	RetType    *kmd.Type
-	GetAction  func(instance Value, arg Value) rx.Action
+	GetAction  func(instance kmd.Object, arg kmd.Object) rx.Action
 }
 

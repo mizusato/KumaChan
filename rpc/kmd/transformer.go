@@ -4,8 +4,8 @@ import "math/big"
 
 
 type Transformer struct {
-	Serializer
-	Deserializer
+	*Serializer
+	*Deserializer
 }
 
 type Serializer struct {

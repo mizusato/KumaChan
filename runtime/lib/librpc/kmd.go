@@ -27,7 +27,7 @@ func (impl *KmdApiImpl) GetTypeFromId(id kmd.TypeId) *kmd.Type {
 	return impl.config.GetTypeFromId(id)
 }
 func (impl *KmdApiImpl) SerializeToStream(v Value, t *kmd.Type, stream io.Writer) error {
-	var serializer = &(impl.transformer.Serializer)
+	var serializer = impl.transformer.Serializer
 	var tv = KmdTypedValue {
 		Type:  t,
 		Value: v,
@@ -35,8 +35,8 @@ func (impl *KmdApiImpl) SerializeToStream(v Value, t *kmd.Type, stream io.Writer
 	return kmd.Serialize(tv, serializer, stream)
 }
 func (impl *KmdApiImpl) DeserializeFromStream(t *kmd.Type, stream io.Reader) (Value, error) {
-	var ts = &impl.transformer
-	var deserializer = &(ts.Deserializer)
+	var ts = impl.transformer
+	var deserializer = ts.Deserializer
 	obj, real_t, err := kmd.Deserialize(stream, deserializer)
 	if err != nil { return nil, err }
 	obj, err = ts.AssignObject(obj, real_t, t)
@@ -89,7 +89,7 @@ func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
 		}
 	}
 	return kmd.Transformer {
-		Serializer:   kmd.Serializer {
+		Serializer: &kmd.Serializer {
 			DetermineType: func(obj kmd.Object) *kmd.Type {
 				return obj.(KmdTypedValue).Type
 			},
@@ -228,7 +228,7 @@ func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
 				},
 			},
 		},
-		Deserializer: kmd.Deserializer {
+		Deserializer: &kmd.Deserializer {
 			PrimitiveDeserializer: kmd.PrimitiveDeserializer {
 				ReadBool: func(v bool) kmd.Object {
 					return ToBool(v)

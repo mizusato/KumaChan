@@ -1,8 +1,8 @@
 package lang
 
 import (
-	"io"
 	"kumachan/rpc/kmd"
+	"kumachan/rpc"
 )
 
 
@@ -10,8 +10,7 @@ type KmdApi interface {
 	GetTypeFromId(id kmd.TypeId) *kmd.Type
 	Serialize(v Value, t *kmd.Type) ([] byte, error)
 	Deserialize(binary ([] byte), t *kmd.Type) (Value, error)
-	SerializeToStream(v Value, t *kmd.Type, stream io.Writer) error
-	DeserializeFromStream(t *kmd.Type, stream io.Reader) (Value, error)
+	rpc.KmdApi
 }
 
 type KmdConfig struct {

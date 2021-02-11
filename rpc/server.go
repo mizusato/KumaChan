@@ -8,7 +8,7 @@ import (
 	"errors"
 	"compress/gzip"
 	"kumachan/rx"
-	. "kumachan/lang"
+	"kumachan/rpc/kmd"
 )
 
 
@@ -19,6 +19,10 @@ type ServerOptions struct {
 }
 type ServerDebugger interface {
 	LogError(err error, local net.Addr, remote net.Addr)
+}
+type KmdApi interface {
+	SerializeToStream(v kmd.Object, t *kmd.Type, stream io.Writer) error
+	DeserializeFromStream(t *kmd.Type, stream io.Reader) (kmd.Object, error)
 }
 
 type ServerLogger struct {
@@ -114,7 +118,7 @@ func validateServiceConfirmation(client_info *ServiceConfirmation, service Servi
 	return nil
 }
 
-func receiveConstructorArgument(conn io.Reader, service Service, opts *ServerOptions) (Value, error) {
+func receiveConstructorArgument(conn io.Reader, service Service, opts *ServerOptions) (kmd.Object, error) {
 	var ctor = service.Constructor
 	arg, err := opts.DeserializeFromStream(ctor.ArgType, conn)
 	if err != nil {
@@ -122,7 +126,7 @@ func receiveConstructorArgument(conn io.Reader, service Service, opts *ServerOpt
 	}
 	return arg, nil
 }
-func constructServiceInstance(arg Value, conn *rx.WrappedConnection, service Service) (Value, error) {
+func constructServiceInstance(arg kmd.Object, conn *rx.WrappedConnection, service Service) (kmd.Object, error) {
 	var construct = service.Constructor.GetAction(arg)
 	var sched = conn.Scheduler()
 	var ctx = conn.Context()
@@ -133,7 +137,7 @@ func constructServiceInstance(arg Value, conn *rx.WrappedConnection, service Ser
 	return instance, nil
 }
 
-func processMessages(instance Value, conn *rx.WrappedConnection, logger *ServerLogger, service Service, opts *ServerOptions) error {
+func processMessages(instance kmd.Object, conn *rx.WrappedConnection, logger *ServerLogger, service Service, opts *ServerOptions) error {
 	for {
 		var kind, id, payload, err = receiveMessage(conn)
 		if err != nil { return fmt.Errorf("error receiving message: %w", err) }
@@ -154,19 +158,19 @@ func processMessages(instance Value, conn *rx.WrappedConnection, logger *ServerL
 					return true, nil
 				})
 			}
-			var send_value = func(value Value) rx.Action {
+			var send_value = func(value kmd.Object) rx.Action {
 				return with_worker(func() error {
 					return sendCallReturnValue(value, id, method, conn, opts)
 				})
 			}
-			var send_exception = func(e Value) rx.Action {
+			var send_exception = func(e kmd.Object) rx.Action {
 				var e_as_error, e_is_error = e.(error)
 				if !(e_is_error) { panic("invalid exception") }
 				return with_worker(func() error {
 					return sendCallException(e_as_error, id, conn)
 				})
 			}
-			var send_completion = func(err_val Value) rx.Action {
+			var send_completion = func(err_val kmd.Object) rx.Action {
 				return with_worker(func() error {
 					return sendCallCompletion(id, conn)
 				})
@@ -189,7 +193,7 @@ func processMessages(instance Value, conn *rx.WrappedConnection, logger *ServerL
 		}
 	}
 }
-func receiveCallArgument(method ServiceMethod, conn *rx.WrappedConnection, opts *ServerOptions) (Value, error) {
+func receiveCallArgument(method ServiceMethod, conn *rx.WrappedConnection, opts *ServerOptions) (kmd.Object, error) {
 	decompressed, err := gzip.NewReader(conn)
 	if err != nil { panic(err) }
 	arg, err := opts.DeserializeFromStream(method.ArgType, decompressed)
@@ -198,7 +202,7 @@ func receiveCallArgument(method ServiceMethod, conn *rx.WrappedConnection, opts 
 	}
 	return arg, nil
 }
-func sendCallReturnValue(value Value, id uint64, method ServiceMethod, conn *rx.WrappedConnection, opts *ServerOptions) error {
+func sendCallReturnValue(value kmd.Object, id uint64, method ServiceMethod, conn *rx.WrappedConnection, opts *ServerOptions) error {
 	err := sendMessage("value", id, ([] byte {}), conn)
 	if err != nil {
 		return fmt.Errorf("error sending value header: %w", err)

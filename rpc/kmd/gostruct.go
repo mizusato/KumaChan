@@ -424,7 +424,7 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 		},
 	}
 	return Transformer {
-		Serializer:   serializer,
-		Deserializer: deserializer,
+		Serializer:   &serializer,
+		Deserializer: &deserializer,
 	}
 }
