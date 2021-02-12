@@ -8,6 +8,8 @@ TODO
 
 - rpc infrastructures
 
+- use SET for options api ({ ...DefaultOptions, a: 1, b: 2, c: 3 }}
+
 
 ================================
 
