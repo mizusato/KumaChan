@@ -280,3 +280,10 @@ func NewSyncSequence(action func(func(Object))(bool,Object)) Action {
 		}
 	} }
 }
+
+func NewSyncWithSender(action func(Sender)) Action {
+	return Action { func(sched Scheduler, ob *observer) {
+		action(Sender { sched: sched, ob: ob })
+	} }
+}
+

@@ -7,6 +7,11 @@ import (
 )
 
 
+type KmdApi interface {
+	SerializeToStream(v kmd.Object, t *kmd.Type, stream io.Writer) error
+	DeserializeFromStream(t *kmd.Type, stream io.Reader) (kmd.Object, error)
+}
+
 func receiveObject(t *kmd.Type, conn io.Reader, limit uint, api KmdApi) (kmd.Object, error) {
 	var decompressed, gz_err = gzip.NewReader(conn)
 	if gz_err != nil { panic(gz_err) }

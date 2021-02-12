@@ -13,6 +13,13 @@ const MsgCallIdWidth = 16
 const MsgPayloadLengthWidth = 8
 const MsgPayloadLengthMax = 99999999
 
+const MSG_SERVICE = "service"
+const MSG_CREATED = "created"
+const MSG_CALL = "call"
+const MSG_VALUE = "value"
+const MSG_ERROR = "error"
+const MSG_COMPLETE = "complete"
+
 func writeMessageHeaderField(content string, width int, conn io.Writer) error {
 	if len(content) > width {
 		panic(fmt.Sprintf("field content width exceeded maximum (%d)", width))
@@ -77,6 +84,6 @@ func sendError(e error, id uint64, conn io.Writer) error {
 	if len(desc) > MsgPayloadLengthMax {
 		desc = desc[:MsgPayloadLengthMax]
 	}
-	return sendMessage("error", id, ([] byte)(desc), conn)
+	return sendMessage(MSG_ERROR, id, ([] byte)(desc), conn)
 }
 
