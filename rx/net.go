@@ -1,19 +1,24 @@
 package rx
 
 import (
-	"io"
 	"net"
+	"time"
 )
 
 
 type WrappedConnection struct {
 	conn     net.Conn
+	timeout  TimeoutPair
 	sched    Scheduler
 	ob       *observer
 	worker   *Worker
 	context  *Context
 	dispose  disposeFunc
 	closed   chan struct{}
+}
+type TimeoutPair struct {
+	ReadTimeout   time.Duration
+	WriteTimeout  time.Duration
 }
 func (w *WrappedConnection) Context() *Context {
 	return w.context
@@ -43,18 +48,20 @@ func (w *WrappedConnection) closeProperly(err error) {
 	})
 }
 func (w *WrappedConnection) Read(buf ([] byte)) (int, error) {
-	var n, err = w.conn.Read(buf)
-	if err != nil && err != io.EOF {
+	err := w.conn.SetReadDeadline(time.Now().Add(w.timeout.ReadTimeout))
+	if err != nil { return 0, err }
+	n, err := w.conn.Read(buf)
+	if err != nil {
 		w.closeProperly(err)
-		return n, err
 	}
 	return n, err
 }
 func (w *WrappedConnection) Write(buf ([] byte)) (int, error) {
-	var n, err = w.conn.Write(buf)
+	err := w.conn.SetWriteDeadline(time.Now().Add(w.timeout.WriteTimeout))
+	if err != nil { return 0, err }
+	n, err := w.conn.Write(buf)
 	if err != nil {
 		w.closeProperly(err)
-		return n, err
 	}
 	return n, err
 }
@@ -66,11 +73,12 @@ func (w *WrappedConnection) Fatal(err error) {
 	w.closeProperly(err)
 }
 
-func NewConnectionHandler(conn net.Conn, logic (func(*WrappedConnection))) Action {
+func NewConnectionHandler(conn net.Conn, timeout TimeoutPair, logic (func(*WrappedConnection))) Action {
 	return Action { func(sched Scheduler, ob *observer) {
 		var ctx, dispose = ob.context.create_disposable_child()
 		var wrapped = &WrappedConnection {
 			conn:    conn,
+			timeout: timeout,
 			sched:   sched,
 			ob:      ob,
 			worker:  CreateWorker(),

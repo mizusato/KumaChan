@@ -72,3 +72,11 @@ func receiveMessage(conn io.Reader) (string, uint64, ([] byte), error) {
 	return kind, id, buf, nil
 }
 
+func sendError(e error, id uint64, conn io.Writer) error {
+	var desc = e.Error()
+	if len(desc) > MsgPayloadLengthMax {
+		desc = desc[:MsgPayloadLengthMax]
+	}
+	return sendMessage("error", id, ([] byte)(desc), conn)
+}
+

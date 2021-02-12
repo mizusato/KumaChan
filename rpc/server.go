@@ -4,9 +4,9 @@ import (
 	"io"
 	"fmt"
 	"net"
+	"time"
 	"bytes"
 	"errors"
-	"compress/gzip"
 	"kumachan/rx"
 	"kumachan/rpc/kmd"
 )
@@ -15,10 +15,17 @@ import (
 type ServerOptions struct {
 	Listener  net.Listener
 	Debugger  ServerDebugger
+	Limits    ServerLimits
 	KmdApi
 }
 type ServerDebugger interface {
 	LogError(err error, local net.Addr, remote net.Addr)
+}
+type ServerLimits struct {
+	SendTimeout        time.Duration
+	RecvTimeout        time.Duration
+	RecvInterval       time.Duration
+	RecvMaxObjectSize  uint
 }
 type KmdApi interface {
 	SerializeToStream(v kmd.Object, t *kmd.Type, stream io.Writer) error
@@ -34,6 +41,20 @@ func (l ServerLogger) LogError(err error) {
 	if l.Debugger != nil {
 		l.Debugger.LogError(err, l.LocalAddr, l.RemoteAddr)
 	}
+}
+
+type LimitedReader struct {
+	Underlying   io.Reader
+	CurrentRead  uint
+	SizeLimit    uint
+}
+func (l *LimitedReader) Read(buf ([] byte)) (int, error) {
+	var n, err = l.Underlying.Read(buf)
+	l.CurrentRead += uint(n)
+	if l.SizeLimit != 0 && l.CurrentRead > l.SizeLimit {
+		return n, errors.New("object size limit exceeded")
+	}
+	return n, err
 }
 
 func Server(service Service, opts *ServerOptions) rx.Action {
@@ -75,7 +96,11 @@ func Server(service Service, opts *ServerOptions) rx.Action {
 			if err != nil { return fatal(err) }
 			return struct{}{}
 		}
-		return rx.NewConnectionHandler(raw_conn, func(conn *rx.WrappedConnection) {
+		var timeout = rx.TimeoutPair {
+			ReadTimeout:  opts.Limits.RecvTimeout,
+			WriteTimeout: opts.Limits.SendTimeout,
+		}
+		return rx.NewConnectionHandler(raw_conn, timeout, func(conn *rx.WrappedConnection) {
 			handle(conn)
 		}).Catch(func(err rx.Object) rx.Action {
 			logger.LogError(err.(error))
@@ -120,9 +145,8 @@ func validateServiceConfirmation(client_info *ServiceConfirmation, service Servi
 
 func receiveConstructorArgument(conn io.Reader, service Service, opts *ServerOptions) (kmd.Object, error) {
 	var ctor = service.Constructor
-	var decompressed, gz_err = gzip.NewReader(conn)
-	if gz_err != nil { panic(gz_err) }
-	arg, err := opts.DeserializeFromStream(ctor.ArgType, decompressed)
+	var limit = opts.Limits.RecvMaxObjectSize
+	arg, err := receiveObject(ctor.ArgType, conn, limit, opts.KmdApi)
 	if err != nil {
 		return nil, fmt.Errorf("failed to receive ctor argument: %w", err)
 	}
@@ -132,15 +156,30 @@ func constructServiceInstance(arg kmd.Object, conn *rx.WrappedConnection, servic
 	var construct = service.Constructor.GetAction(arg)
 	var sched = conn.Scheduler()
 	var ctx = conn.Context()
-	instance, ok := rx.BlockingRunSingle(construct, sched, ctx)
+	v, ok := rx.BlockingRunSingle(construct, sched, ctx)
 	if !(ok) {
+		var e = v.(error)
+		err := sendConstructorException(e, conn)
+		if err != nil { return nil, err }
 		return nil, errors.New("failed to construct service instance")
 	}
+	var instance = v
 	return instance, nil
+}
+func sendConstructorException(e error, conn *rx.WrappedConnection) error {
+	err := sendError(e, ^uint64(0), conn)
+	if err != nil {
+		return fmt.Errorf("error sending constructor exception: %w", err)
+	}
+	return nil
 }
 
 func processMessages(instance kmd.Object, conn *rx.WrappedConnection, logger *ServerLogger, service Service, opts *ServerOptions) error {
+	var interval = opts.Limits.RecvInterval
 	for {
+		if interval != 0 {
+			<- time.After(interval)
+		}
 		var kind, id, payload, err = receiveMessage(conn)
 		if err != nil { return fmt.Errorf("error receiving message: %w", err) }
 		switch kind {
@@ -196,9 +235,8 @@ func processMessages(instance kmd.Object, conn *rx.WrappedConnection, logger *Se
 	}
 }
 func receiveCallArgument(method ServiceMethod, conn *rx.WrappedConnection, opts *ServerOptions) (kmd.Object, error) {
-	decompressed, err := gzip.NewReader(conn)
-	if err != nil { panic(err) }
-	arg, err := opts.DeserializeFromStream(method.ArgType, decompressed)
+	var limit = opts.Limits.RecvMaxObjectSize
+	arg, err := receiveObject(method.ArgType, conn, limit, opts.KmdApi)
 	if err != nil {
 		return nil, fmt.Errorf("failed to receive method argument: %w", err)
 	}
@@ -207,28 +245,25 @@ func receiveCallArgument(method ServiceMethod, conn *rx.WrappedConnection, opts 
 func sendCallReturnValue(value kmd.Object, id uint64, method ServiceMethod, conn *rx.WrappedConnection, opts *ServerOptions) error {
 	err := sendMessage("value", id, ([] byte {}), conn)
 	if err != nil {
-		return fmt.Errorf("error sending value header: %w", err)
+		return fmt.Errorf("error sending value event header: %w", err)
 	}
-	var compressed = gzip.NewWriter(conn)
-	err = opts.SerializeToStream(value, method.RetType, compressed)
+	err = sendObject(value, method.RetType, conn, opts.KmdApi)
 	if err != nil {
-		return fmt.Errorf("error sending value: %w", err)
+		return fmt.Errorf("error sending value event object: %w", err)
 	}
 	return nil
 }
 func sendCallException(e error, id uint64, conn *rx.WrappedConnection) error {
-	var desc = e.Error()
-	var desc_bin = ([] byte)(desc)
-	err := sendMessage("error", id, desc_bin, conn)
+	err := sendError(e, id, conn)
 	if err != nil {
-		return fmt.Errorf("error sending exception: %w", err)
+		return fmt.Errorf("error sending exception event: %w", err)
 	}
 	return nil
 }
 func sendCallCompletion(id uint64, conn *rx.WrappedConnection) error {
 	err := sendMessage("complete", id, ([] byte {}), conn)
 	if err != nil {
-		return fmt.Errorf("error sending completion: %w", err)
+		return fmt.Errorf("error sending completion event: %w", err)
 	}
 	return nil
 }
