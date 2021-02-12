@@ -18,6 +18,7 @@ public function walk-dir: ( &(Path) Action*[(Path,FileState),I/O::Error] )
 public function list-dir: ( &(Path) Action*[(Path,FileState),I/O::Error] )
     native 'list-dir';
 
+// TODO: use consumer (File -> Action, close on complete) instead of open/close
 public function open-read-only: ( &(Path) Action[FileReadOnly,I/O::Error] )
     native 'open-read-only';
 public function open-read-write: ( &(Path) Action[FileReadWrite,I/O::Error] )
