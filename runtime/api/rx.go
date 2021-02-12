@@ -488,7 +488,7 @@ var EffectFunctions = map[string] Value {
 			return &ValProd { Elements: values }
 		})
 	},
-	"combine-latest!": func(tuple ProductValue) rx.Action {
+	"combine-latest*": func(tuple ProductValue) rx.Action {
 		var actions = make([] rx.Action, len(tuple.Elements))
 		for i, el := range tuple.Elements {
 			actions[i] = el.(rx.Action)
@@ -498,7 +498,7 @@ var EffectFunctions = map[string] Value {
 			return &ValProd { Elements: values }
 		})
 	},
-	"combine-latest!-array": func(v Value) rx.Action {
+	"combine-latest*-array": func(v Value) rx.Action {
 		var array = container.ArrayFrom(v)
 		var actions = make([] rx.Action, array.Length)
 		for i := uint(0); i < array.Length; i += 1 {

@@ -236,17 +236,17 @@ public function combine-latest[A,B,C,D,E]:
     ( &(Action*[A,E],Action*[B,E],Action*[C,E],Action*[D,E])
         Action*[(Maybe[A],Maybe[B],Maybe[C],Maybe[D]),E] )
     native 'combine-latest';
-public function combine-latest![A,B,E]:
+public function combine-latest*[A,B,E]:
     ( &(Action*[A,E],Action*[B,E]) Action*[(A,B),E] )
-    native 'combine-latest!';
-public function combine-latest![A,B,C,E]:
+    native 'combine-latest*';
+public function combine-latest*[A,B,C,E]:
     ( &(Action*[A,E],Action*[B,E],Action*[C,E]) Action*[(A,B,C),E] )
-    native 'combine-latest!';
-public function combine-latest![A,B,C,D,E]:
+    native 'combine-latest*';
+public function combine-latest*[A,B,C,D,E]:
     ( &(Action*[A,E],Action*[B,E],Action*[C,E],Action*[D,E]) Action*[(A,B,C,D),E] )
-    native 'combine-latest!';
-public function combine-latest![T,E]: ( &(Array[Action*[T,E]]) Action*[Array[T],E] )
-    native 'combine-latest!-array';
+    native 'combine-latest*';
+public function combine-latest*[T,E]: ( &(Array[Action*[T,E]]) Action*[Array[T],E] )
+    native 'combine-latest*-array';
 public function computed[A,B,E,X]:
     ( &((Action*[A,E],Action*[B,E]),(&(A,B)(X))) Action*[X,E] )
     native 'computed';

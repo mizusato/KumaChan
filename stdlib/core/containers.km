@@ -154,7 +154,7 @@ public function is-first-in[T]: ( &(Action*[Number],Reactive[List[T]]) Action*[B
     );
 public function is-last-in[T]: ( &(Action*[Number],Reactive[List[T]]) Action*[Bool] )
     ( &(@index,@list)
-        combine-latest! @index (@list.watch.map (&(list)(list.length)))
+        combine-latest* @index (@list.watch.map (&(list)(list.length)))
             | map (&(index,length) $(index = $(length - 1)))
             | distinct-until-changed
     );
