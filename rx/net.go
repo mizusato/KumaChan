@@ -87,6 +87,11 @@ func NewConnectionHandler(conn net.Conn, timeout TimeoutPair, logic (func(*Wrapp
 			closed:  make(chan struct{}),
 		}
 		go logic(wrapped)
+		go (func() {
+			ob.context.WaitDispose(func() {
+				_ = wrapped.Close()
+			})
+		})()
 	} }
 }
 
