@@ -1,8 +1,10 @@
 {
   "name": "EchoService",
   "kind": "service",
-  "service": {
-    "name": "echo",
-    "version": "v1"
+  "config": {
+    "service": {
+      "name": "echo",
+      "version": "v1"
+    }
   }
 }

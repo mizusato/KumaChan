@@ -1,7 +1,20 @@
+# dummy shebang
+
 # service-argument
+# data: name=config, ver=v1
 type Config {
      verbose: Bool
 };
 
+# data: name=request, ver=v1
+type Request {
+    content: String
+};
+
+# data: name=response, ver=v1
+type Response {
+    content: String
+};
+
 # service-method
-public function echo: ( &(instance,String) Action[String,Error] );
+public function echo: ( &(instance,Request) Action[Response,Error] );

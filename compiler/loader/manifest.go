@@ -23,8 +23,8 @@ type Config struct {
 	WebAsset  extra.WebAssetConfig   `json:"web_asset"`
 }
 type ServiceConfig struct {
-	Name     string
-	Version  string
+	Name     string   `json:"name"`
+	Version  string   `json:"version"`
 }
 func DefaultManifest(path string) Manifest {
 	// TODO: modules without explicit manifest should inherit

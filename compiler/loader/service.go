@@ -62,11 +62,11 @@ func DecorateServiceModule(root ast.Root, manifest Manifest, ctx Context) (ast.R
 				if method_occurred[name] {
 					return throw(fmt.Sprintf("duplicate method: %s", name))
 				}
+				method_occurred[name] = true
+				methods = append(methods, decl)
 				if len(decl.Params) > 0 {
 					return throw(fmt.Sprintf("invalid method: %s", name))
 				}
-				method_occurred[name] = true
-				methods = append(methods, decl)
 			}
 		case ast.DeclType:
 			if has_tag(ServiceArgumentTag, decl.Tags) {
@@ -74,10 +74,11 @@ func DecorateServiceModule(root ast.Root, manifest Manifest, ctx Context) (ast.R
 				if arg_type_found {
 					return throw(fmt.Sprintf("duplicate argument type: %s", name))
 				}
+				arg_type_found = true
+				arg_type = decl
 				if len(decl.Params) > 0 {
 					return throw(fmt.Sprintf("invalid argument type: %s", name))
 				}
-				arg_type = decl
 			}
 		}
 	}
@@ -90,13 +91,7 @@ func DecorateServiceModule(root ast.Root, manifest Manifest, ctx Context) (ast.R
 		switch decl := s.Statement.(type) {
 		case ast.DeclFunction:
 			var name = ast.Id2String(decl.Name)
-			if has_tag(ServiceMethodTag, decl.Tags) {
-				decl.Body = ast.VariousBody {
-					Node: decl.Name.Node,
-					Body: ast.ServiceMethodFuncBody { Name: name },
-				}
-				s.Statement = decl
-			} else if name == stdlib.ServiceCreateFunction {
+			if name == stdlib.ServiceCreateFunction {
 				decl.Body = ast.VariousBody {
 					Node: decl.Name.Node,
 					Body: ast.ServiceCreateFuncBody {},
@@ -166,6 +161,17 @@ func DecorateServiceModule(root ast.Root, manifest Manifest, ctx Context) (ast.R
 		statements = append(statements, s)
 	}
 	for _, s := range root.Statements {
+		switch decl := s.Statement.(type) {
+		case ast.DeclFunction:
+			if has_tag(ServiceMethodTag, decl.Tags) {
+				var name = ast.Id2String(decl.Name)
+				decl.Body = ast.VariousBody {
+					Node: decl.Name.Node,
+					Body: ast.ServiceMethodFuncBody { Name: name },
+				}
+				s.Statement = decl
+			}
+		}
 		statements = append(statements, s)
 	}
 	draft.Statements = statements
