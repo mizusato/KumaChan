@@ -14,15 +14,17 @@ const SourceSuffix = ".km"
 const BundleSuffix = ".kmx"
 const ManifestFileName = "module.json"
 const StandaloneScriptModuleName = "Main"
+const ModuleKind_Service = "service"
 
 type Module struct {
-	Vendor   string
-	Project  string
-	Name     string
-	Path     string
-	AST      ast.Root
-	ImpMap   map[string] *Module
-	FileInfo os.FileInfo
+	Vendor    string
+	Project   string
+	Name      string
+	Path      string
+	AST       ast.Root
+	ImpMap    map[string] *Module
+	FileInfo  os.FileInfo
+	Manifest  Manifest
 }
 type Index     map[string] *Module
 type ResIndex  map[string] lang.Resource

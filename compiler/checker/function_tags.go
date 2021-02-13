@@ -11,6 +11,10 @@ import (
 
 type FunctionTags struct {
 	AliasList  [] string
+	FunctionServiceConfig
+}
+type FunctionServiceConfig struct {
+	IsServiceMethod  bool
 }
 
 type FunctionTagParsingError struct {
@@ -22,12 +26,12 @@ func ParseFunctionTags(ast_tags ([] ast.Tag)) (FunctionTags, *FunctionTagParsing
 	var tags = FunctionTags { AliasList: [] string {} }
 	var occurred_alias = make(map[string] bool)
 	for _, ast_tag := range ast_tags {
-		var raw = string(ast_tag.RawContent)
-		raw = strings.TrimRight(raw, "\r")
-		raw = strings.TrimPrefix(raw, "#")
-		raw = strings.Trim(raw, " ")
+		var raw = ast.GetTagContent(ast_tag)
 		if strings.HasPrefix(raw, loader.ServiceTagPrefix) {
-			continue
+			if raw == loader.ServiceMethodTag {
+				tags.IsServiceMethod = true
+				continue
+			}
 		}
 		var t = strings.Split(raw, ":")
 		if len(t) != 2 {

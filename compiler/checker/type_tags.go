@@ -11,6 +11,10 @@ import (
 
 type TypeTags struct {
 	DataConfig  TypeDataConfig
+	TypeServiceConfig
+}
+type TypeServiceConfig struct {
+	IsServiceArgument  bool
 }
 
 type TypeDataConfig struct {
@@ -26,12 +30,12 @@ type TypeTagParsingError struct {
 func ParseTypeTags(ast_tags ([] ast.Tag)) (TypeTags, *TypeTagParsingError) {
 	var tags TypeTags
 	for _, ast_tag := range ast_tags {
-		var raw = string(ast_tag.RawContent)
-		raw = strings.TrimRight(raw, "\r")
-		raw = strings.TrimPrefix(raw, "#")
-		raw = strings.Trim(raw, " ")
+		var raw = ast.GetTagContent(ast_tag)
 		if strings.HasPrefix(raw, loader.ServiceTagPrefix) {
-			continue
+			if raw == loader.ServiceArgumentTag {
+				tags.IsServiceArgument = true
+				continue
+			}
 		}
 		var t = strings.Split(raw, ":")
 		if len(t) != 2 {

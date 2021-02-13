@@ -36,6 +36,8 @@ var core_types = []string {
 	Maybe, Just, Na,
 	Result, Ok, Ng,
 	Ordering, Smaller, Equal, Bigger,
+	// error.km
+	Error,
 	// binary.km
 	Bit, Byte, Word, Dword, Qword, Bytes, BinaryError,
 	// int.km
@@ -96,6 +98,8 @@ const Smaller = "<<"
 const Equal = "=="
 const Bigger = ">>"
 const ( SmallerIndex = iota; EqualIndex; BiggerIndex )
+// error.km
+const Error = "Error"
 // binary.km
 const Bit = "Bit"
 const Byte = "Byte"

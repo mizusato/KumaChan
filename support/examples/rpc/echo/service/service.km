@@ -1,0 +1,7 @@
+# service-argument
+type Config {
+     verbose: Bool
+};
+
+# service-method
+public function echo: ( &(instance,String) Action[String,Error] );

@@ -313,6 +313,14 @@ func __Initialize() {
     __Initialized = true
 }
 
+func GetTagContent(tag Tag) string {
+    var t = string(tag.RawContent)
+    t = strings.TrimSuffix(t, "\r")
+    t = strings.TrimPrefix(t, "#")
+    t = strings.Trim(t, " \t")
+    return t
+}
+
 func GetNodeInfoById (part_id syntax.Id) NodeInfo {
     if !__Initialized {
         __Initialize()
@@ -327,3 +335,4 @@ func GetNodeInfoById (part_id syntax.Id) NodeInfo {
         return info
     }
 }
+

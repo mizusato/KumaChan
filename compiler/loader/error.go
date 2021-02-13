@@ -42,6 +42,10 @@ func (e E_DuplicateImport) LoaderError() {}
 type E_DuplicateImport struct {
 	ModuleName  string
 }
+func (e E_InvalidService) LoaderError() {}
+type E_InvalidService struct {
+	Reason  string
+}
 
 func (err *Error) Desc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
@@ -71,6 +75,9 @@ func (err *Error) Desc() ErrorMessage {
 	case E_DuplicateImport:
 		msg.WriteText(TS_ERROR, "Duplicate import of module")
 		msg.WriteInnerText(TS_INLINE_CODE, e.ModuleName)
+	case E_InvalidService:
+		msg.WriteText(TS_ERROR, "Invalid service module:")
+		msg.WriteEndText(TS_INFO, e.Reason)
 	default:
 		panic("unknown error kind")
 	}

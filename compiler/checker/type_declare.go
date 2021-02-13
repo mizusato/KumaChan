@@ -164,7 +164,7 @@ func RegisterRawTypes(mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 		params_map[i] = params
 		bounds_map[i] = bounds
 		defaults_map[i] = defaults
-		switch u := s.TypeValue.TypeValue.(type) {
+		switch u := s.TypeDef.TypeDef.(type) {
 		case ast.EnumType:
 			for case_index, case_decl := range u.Cases {
 				var case_i = uint(len(decls))
@@ -315,7 +315,7 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, TypeDe
 			TypeConstructContext: cons_ctx,
 			Registry: raw,
 		}
-		var definition, err = RawTypeDefFrom(t.TypeValue, info, ctx)
+		var definition, err = RawTypeDefFrom(t.TypeDef, info, ctx)
 		if err != nil { return nil, nil, raise_all(name, err) }
 		// 3.4. Construct a top-level TypeConstructContext
 		//      and construct default types for parameters
@@ -522,7 +522,7 @@ func RawTypeDefFrom(ast_val ast.VariousTypeDef, info TypeNodeInfo, ctx RawTypeCo
 		info.ValNodeMap[val] = ast_val.Node
 		return val, nil
 	}
-	switch a := ast_val.TypeValue.(type) {
+	switch a := ast_val.TypeDef.(type) {
 	case ast.EnumType:
 		var raw_reg = ctx.Registry
 		var case_types = make([] CaseType, len(a.Cases))

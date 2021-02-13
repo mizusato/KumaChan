@@ -2,10 +2,10 @@
 type instance native;
 
 /// Service constructor argument type.
-type argument ();
+type argument UserDefinedServiceArgument;
 
 /// Service methods, the implicit context used when creating service instances.
-type methods[T] implicit {};
+type methods[instance] implicit { user-defined-service-method: signature };
 
 /// Service identifier, used when calling RPC API functions.
 public const identifier: RPC::ServiceIdentifier[instance,argument];

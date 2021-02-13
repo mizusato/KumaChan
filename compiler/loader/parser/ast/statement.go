@@ -76,7 +76,7 @@ type DeclType struct {
     Tags       [] Tag           `list_rec:"tags"`
     Name       Identifier       `part:"name"`
     Params     [] TypeParam     `list_more:"type_params" item:"type_param"`
-    TypeValue  VariousTypeDef   `part:"type_def"`
+    TypeDef    VariousTypeDef   `part:"type_def"`
 }
 type Doc struct {
     Node                  `part:"doc"`
@@ -113,8 +113,8 @@ type TypeHigherBound struct {
     BoundType  VariousType   `part:"type"`
 }
 type VariousTypeDef struct {
-    Node                 `part:"type_def"`
-    TypeValue  TypeDef   `use:"first"`
+    Node               `part:"type_def"`
+    TypeDef  TypeDef   `use:"first"`
 }
 type TypeDef interface { TypeDef() }
 func (impl NativeType) TypeDef() {}

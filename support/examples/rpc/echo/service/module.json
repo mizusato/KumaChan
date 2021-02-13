@@ -1,0 +1,8 @@
+{
+  "name": "EchoService",
+  "kind": "service",
+  "service": {
+    "name": "echo",
+    "version": "v1"
+  }
+}
