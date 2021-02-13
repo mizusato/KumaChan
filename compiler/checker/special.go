@@ -44,6 +44,17 @@ var __AnyActionType = &NamedType {
 	Args: [] Type { &AnyType{}, &AnyType{} },
 }
 func AnyActionType() Type { return __AnyActionType }
+var __ErrorType = &NamedType {
+	Name: __Error,
+	Args: [] Type {},
+}
+func ServiceInstanceType(mod string) Type {
+	return &NamedType {
+		Name: loader.MakeSymbol(mod, stdlib.ServiceInstanceType),
+		Args: [] Type {},
+	}
+}
+var __Error = CoreSymbol(stdlib.Error)
 var __Bool = CoreSymbol(stdlib.Bool)
 var __T_Bool = &NamedType { Name: __Bool, Args: make([] Type, 0) }
 var __Yes uint = stdlib.YesIndex

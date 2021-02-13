@@ -399,6 +399,11 @@ type E_FunctionVarianceDeclared struct {}
 func (impl E_FunctionDefaultTypeParameterDeclared) FunctionError() {}
 type E_FunctionDefaultTypeParameterDeclared struct {}
 
+func (impl E_InvalidServiceMethodSignature) FunctionError() {}
+type E_InvalidServiceMethodSignature struct {
+	Info  string
+}
+
 func (err *FunctionError) Desc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	switch e := err.Concrete.(type) {
@@ -445,6 +450,9 @@ func (err *FunctionError) Desc() ErrorMessage {
 	case E_FunctionDefaultTypeParameterDeclared:
 		msg.WriteText(TS_ERROR,
 			"Cannot declare default type parameter value on functions")
+	case E_InvalidServiceMethodSignature:
+		msg.WriteText(TS_ERROR, "Invalid service method signature:")
+		msg.WriteEndText(TS_ERROR, e.Info)
 	default:
 		panic("unknown error kind")
 	}
