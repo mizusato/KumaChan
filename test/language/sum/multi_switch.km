@@ -30,7 +30,7 @@ private function from:
 private function f:
 	( &(ABC,ABC) ABC )
 	( &(x,y)
-        switch* (x, y):
+        select (x, y):
 	       case [A,A]: A,
 	       case [A,B]: C,
 	       case [A,C]: B,

@@ -14,7 +14,7 @@ public function crash: ( &(Error) Action )
 public function is:
     ( &(Error,ErrorKind) Bool )
     ( &(err, kind)
-        switch* (err.kind!!, kind):
+        select (err.kind!!, kind):
         case [EOF,EOF]:
             Yes,
         case [ClosedPipe,ClosedPipe]:
