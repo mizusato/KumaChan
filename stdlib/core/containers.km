@@ -20,6 +20,11 @@ public function nil[T]:  ( &() Seq[T] )
 public function cons[T]: ( &(T,Seq[T]) Seq[T] )
     native 'seq-cons';
 
+public function seq: ( & { from: Number, to: Number } Seq[Number] )
+    native 'seq-range-inclusive';
+public function seq: ( & { from: Number, count: Number } Seq[Number] )
+    native 'seq-range-count';
+
 public function map[A,B]:        ( &(Seq[A],(&(A)(B))) Seq[B] )
     native 'seq-map';
 public function filter-map[A,B]: ( &(Seq[A],(&(A)(Maybe[B]))) Seq[B] )
@@ -60,9 +65,9 @@ public function length[T]: ( &(Array[T]) Number )
 public function reverse[T]: ( &(Array[T]) Array[T] )
     native 'array-reverse';
 
-public function slice[T]:      ( &(Array[T],Interval) Array[T] )
+public function slice[T]:      ( &(Array[T],Number,Number) Array[T] )
     native 'array-slice';
-public function slice-view[T]: ( &(Array[T],Interval) Array[T] )
+public function slice-view[T]: ( &(Array[T],Number,Number) Array[T] )
     native 'array-slice-view';
 
 public function map[A,B]:      ( &(Array[A],(&(A)(B))) Array[B] )

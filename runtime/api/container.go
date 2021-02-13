@@ -27,10 +27,17 @@ var ContainerFunctions = map[string] Value {
 			panic(fmt.Sprintf("invalid code point 0x%X", n))
 		}
 	},
-	"interval-iterate": func(l uint, r uint) Seq {
+	"seq-range-inclusive": func(l uint, r uint) Seq {
+		if r < l { panic("invalid sequence: lower bound bigger than upper bound") }
 		return IntervalSeq {
 			Current: l,
-			Bound:   r,
+			Bound:   (r + 1),
+		}
+	},
+	"seq-range-count": func(start uint, n uint) Seq {
+		return IntervalSeq {
+			Current: start,
+			Bound:   (start + n),
 		}
 	},
 	"seq-next": func(seq Seq) SumValue {
@@ -143,15 +150,13 @@ var ContainerFunctions = map[string] Value {
 		var arr = ArrayFrom(v)
 		return arr.Reversed()
 	},
-	"array-slice": func(v Value, range_ ProductValue) Value {
-		var l, r = Tuple2From(range_)
+	"array-slice": func(v Value, l uint, r uint) Value {
 		var arr = ArrayFrom(v)
-		return arr.SliceView(l.(uint), r.(uint)).CopyAsSlice(arr.ItemType)
+		return arr.SliceView(l, r).CopyAsSlice(arr.ItemType)
 	},
-	"array-slice-view": func(v Value, range_ ProductValue) Value {
-		var l, r = Tuple2From(range_)
+	"array-slice-view": func(v Value, l uint, r uint) Value {
 		var arr = ArrayFrom(v)
-		return arr.SliceView(l.(uint), r.(uint))
+		return arr.SliceView(l, r)
 	},
 	"array-map": func(v Value, f Value, h InteropContext) Value {
 		var arr = ArrayFrom(v)

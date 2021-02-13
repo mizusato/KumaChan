@@ -38,8 +38,8 @@ public function parse-float: (&(String)(Maybe[Float]))  native 'parse-float';
 public function or: (&(String,String)(String))
     ( &(str, fallback) (if $(str = ''): fallback, else: str ) );
 
-public function substr: (&(String,Interval)(String))
-    ( &(str,range) (String (str.slice range)) );
+public function substr: (&(String,Number,Number)(String))
+    ( &(str,l,r) (String (str.slice l r)) );
 
 public function find: (&(String,String)(Maybe[Number]))  native 'str-find';
 public function contains: (&(String,String)(Bool))

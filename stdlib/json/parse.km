@@ -207,7 +207,7 @@ private function parse: (&(ParserState)(Result[(Value,Number),String]))
                 if $(char = ^"):
                     let prev := $(input at! $(pos - 1)),
                     if $(prev != ^\):
-                        let raw := (str (input.slice (interval begin pos))),
+                        let raw := (str (input.slice begin pos)),
                         switch (unquote raw):
                         case Just str:
                             OK ((Self::String str), $(pos + 1)),
@@ -222,7 +222,7 @@ private function parse: (&(ParserState)(Result[(Value,Number),String]))
         case ParseNumber {begin}:
             let got-number: (&()(Result[(Value,Number),String]))
                 := (&(_)(
-                    let raw := (str (input.slice (interval begin pos))),
+                    let raw := (str (input.slice begin pos)),
                     switch (parse-float raw):
                     case Just x:
                         OK ((Self::Number x), pos),

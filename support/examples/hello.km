@@ -10,7 +10,7 @@ do println 'Hello World'
     | then   (println (str $(20 ** 11)))
     | then   (println (str (factorial 20)))
     | then   (println 'merge (0..5)')
-    | then   (yield* (interval 0 6)
+    | then   (yield* (seq { from: 0, to: 5 })
                 | merge-map (&(i)(println (str i)))
                 | wait-complete )
     | then   (println 'ticker')
