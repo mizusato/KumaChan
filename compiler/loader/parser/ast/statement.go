@@ -90,7 +90,7 @@ type Doc struct {
 }
 type Tag struct {
     Node                  `part:"tag"`
-    RawContent  [] rune   `content:"Pragma"`
+    RawContent  [] rune   `content:"Tag"`
 }
 type TypeParam struct {
     Node                        `part:"type_param"`

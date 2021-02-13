@@ -1,5 +1,3 @@
-# dummy shebang
-
 # service-argument
 # data: name=config, ver=v1
 type Config {

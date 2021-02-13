@@ -32,7 +32,8 @@ const IdentifierFullRegexp = "^" + IdentifierRegexp + "$"
 
 var __Tokens = [...] Token {
     // pragma and comment
-    Token { Name: "Pragma",   Pattern: r(`#[^`+LF+`]*`) },
+    Token { Name: "Shebang",  Pattern: r(`#![^`+LF+`]*`) },
+    Token { Name: "Tag",      Pattern: r(`#[^`+LF+`]*`) },
     Token { Name: "Comment",  Pattern: r(`/\*([^\*/]|\*[^/]|[^\*]/)*\*/`) },
     Token { Name: "Doc",      Pattern: r(`///[^`+LF+`]*`) },
     Token { Name: "Comment",  Pattern: r(`//[^`+LF+`]*`) },
@@ -117,7 +118,7 @@ func GetKeywordList() ([] string) {
 
 var __SyntaxDefinition = [...] string {
     "root = shebang stmts",
-      "shebang? = Pragma",
+      "shebang? = Shebang",
       "stmts? = stmt stmts",
         "stmt = import | do | decl_type | decl_const | decl_func",
           "import = @import name! @from! string_text! ;!",
@@ -148,7 +149,7 @@ var __SyntaxDefinition = [...] string {
       "docs? = doc docs",
         "doc = Doc",
       "tags? = tag tags",
-        "tag = Pragma",
+        "tag = Tag",
       "type_def = t_native | t_enum | t_implicit | t_boxed",
         "t_native = @native",
         "t_enum = @enum {! decl_type! more_decl_types }!",

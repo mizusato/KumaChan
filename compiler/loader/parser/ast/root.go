@@ -8,7 +8,7 @@ type Root struct {
 }
 type Shebang struct {
     Node                  `part:"shebang"`
-    RawContent  [] rune   `content:"Pragma"`
+    RawContent  [] rune   `content:"Shebang"`
 }
 
 type ReplRoot struct {
