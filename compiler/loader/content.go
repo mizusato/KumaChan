@@ -57,6 +57,7 @@ func readModulePath(path string, fs FileSystem, root bool) (ModuleThunk, error) 
 				has_manifest = true
 			}
 		}
+		// TODO: refactor manifest validation
 		var manifest Manifest
 		if has_manifest {
 			var err = json.Unmarshal(manifest_content, &manifest)
@@ -143,6 +144,20 @@ func readModulePath(path string, fs FileSystem, root bool) (ModuleThunk, error) 
 			return ModuleThunk{}, errors.New (
 				fmt.Sprintf("invalid module manifest %s: %s",
 					manifest_path, `field "vendor" has an invalid value`))
+		}
+		if manifest.Kind == ModuleKind_Service {
+			var name = manifest.Config.Service.Name
+			var version = manifest.Config.Service.Version
+			if !(syntax.GetIdentifierFullRegexp().MatchString(name)) {
+				return ModuleThunk{}, errors.New (
+					fmt.Sprintf("invalid module manifest %s: %s",
+						manifest_path, `field "config.service.name" has an invalid value`))
+			}
+			if !(syntax.GetIdentifierFullRegexp().MatchString(version)) {
+				return ModuleThunk{}, errors.New (
+					fmt.Sprintf("invalid module manifest %s: %s",
+						manifest_path, `field "config.service.version" has an invalid value`))
+			}
 		}
 		return ModuleThunk {
 			FilePath:  path,

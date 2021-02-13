@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"kumachan/compiler/loader/parser/ast"
 	"kumachan/stdlib"
+	"kumachan/lang"
 )
 
 
@@ -87,6 +88,37 @@ func DecorateServiceModule(root ast.Root, manifest Manifest, ctx Context) (ast.R
 	var statements = make([] ast.VariousStatement, 0)
 	for _, s := range __ServiceTemplate.Statements {
 		switch decl := s.Statement.(type) {
+		case ast.DeclFunction:
+			var name = ast.Id2String(decl.Name)
+			if has_tag(ServiceMethodTag, decl.Tags) {
+				decl.Body = ast.VariousBody {
+					Node: decl.Name.Node,
+					Body: ast.ServiceMethodFuncBody { Name: name },
+				}
+				s.Statement = decl
+			} else if name == stdlib.ServiceCreateFunction {
+				decl.Body = ast.VariousBody {
+					Node: decl.Name.Node,
+					Body: ast.ServiceCreateFuncBody {},
+				}
+				s.Statement = decl
+			}
+		case ast.DeclConst:
+			var name = ast.Id2String(decl.Name)
+			if name == stdlib.ServiceIdentifierConst {
+				decl.Value = ast.VariousConstValue {
+					Node:       decl.Name.Node,
+					ConstValue: ast.PredefinedValue {
+						Value: lang.ServiceIdentifier {
+							Vendor:  manifest.Vendor,
+							Project: manifest.Project,
+							Name:    manifest.Config.Service.Name,
+							Version: manifest.Config.Service.Version,
+						},
+					},
+				}
+				s.Statement = decl
+			}
 		case ast.DeclType:
 			var name = ast.Id2String(decl.Name)
 			if name == stdlib.ServiceArgumentType {

@@ -46,10 +46,6 @@ func (impl PredefinedValue) ConstValue() {}
 type PredefinedValue struct {
     Value  interface {}
 }
-func (impl KmdApiFuncBody) Body() {}
-type KmdApiFuncBody struct {
-    Id  kmd.TransformerPartId
-}
 
 func (impl DeclFunction) Statement() {}
 type DeclFunction struct {
@@ -68,6 +64,16 @@ type VariousBody struct {
     Body  Body   `use:"first"`
 }
 type Body interface { Body() }
+func (impl KmdApiFuncBody) Body() {}
+type KmdApiFuncBody struct {
+    Id  kmd.TransformerPartId
+}
+func (impl ServiceMethodFuncBody) Body() {}
+type ServiceMethodFuncBody struct {
+    Name  string
+}
+func (impl ServiceCreateFuncBody) Body() {}
+type ServiceCreateFuncBody struct {}
 
 func (impl DeclType) Statement() {}
 type DeclType struct {

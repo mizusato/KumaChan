@@ -2,6 +2,7 @@ package checker
 
 import (
 	"fmt"
+	"errors"
 	"strings"
 	"kumachan/compiler/loader"
 	"kumachan/compiler/loader/parser/ast"
@@ -15,6 +16,9 @@ type TypeTags struct {
 }
 type TypeServiceConfig struct {
 	IsServiceArgument  bool
+}
+func (tags TypeTags) DeclaredSerializable() bool {
+	return (tags.DataConfig != (TypeDataConfig {}))
 }
 
 type TypeDataConfig struct {
@@ -105,3 +109,11 @@ func ParseTypeTags(ast_tags ([] ast.Tag)) (TypeTags, *TypeTagParsingError) {
 	}
 	return tags, nil
 }
+
+func ValidateTypeTags(tags TypeTags) error {
+	if tags.IsServiceArgument && !(tags.DeclaredSerializable()) {
+		return errors.New("service argument type should be serializable")
+	}
+	return nil
+}
+

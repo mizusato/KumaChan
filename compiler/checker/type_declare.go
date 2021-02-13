@@ -295,12 +295,19 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, TypeDe
 		if !mod_exists { panic("mod " + name.ModuleName + " should exist") }
 		// 3.1. Get doc and tags
 		var doc = DocStringFromRaw(t.Docs)
-		var tags, tags_err = ParseTypeTags(t.Tags)
-		if tags_err != nil { return nil, nil, [] *TypeDeclError { {
-			Point:    ErrorPointFrom(tags_err.Tag.Node),
+		var tags, tags_err1 = ParseTypeTags(t.Tags)
+		if tags_err1 != nil { return nil, nil, [] *TypeDeclError { {
+			Point:    ErrorPointFrom(tags_err1.Tag.Node),
 			Concrete: E_InvalidTypeTag {
-				Tag:  string(tags_err.Tag.RawContent),
-				Info: tags_err.Info,
+				Tag:  string(tags_err1.Tag.RawContent),
+				Info: tags_err1.Info,
+			},
+		} } }
+		var tags_err2 = ValidateTypeTags(tags)
+		if tags_err2 != nil { return nil, nil, [] *TypeDeclError { {
+			Point:    ErrorPointFrom(t.Node),
+			Concrete: E_InvalidTypeTags {
+				Info: tags_err2.Error(),
 			},
 		} } }
 		// 3.2. Get parameters

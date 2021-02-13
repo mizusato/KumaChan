@@ -100,7 +100,17 @@ func CollectFunctions (
 		}
 	}
 	for _, decl := range decls {
-		// 3.1. Check the validity of the body of the function
+		// 3.1. Get doc and tags
+		var doc = DocStringFromRaw(decl.Docs)
+		var tags, tags_err = ParseFunctionTags(decl.Tags)
+		if tags_err != nil { return nil, &FunctionError {
+			Point: ErrorPointFrom(tags_err.Tag.Node),
+			Concrete: E_InvalidFunctionTag {
+				Tag:  string(tags_err.Tag.RawContent),
+				Info: tags_err.Info,
+			},
+		} }
+		// 3.2. Check the validity of the body of the function
 		var _, is_native = decl.Body.Body.(ast.NativeRef)
 		if is_native && !(loader.IsStdLibModule(mod.Name)) {
 			return nil, &FunctionError {
@@ -109,7 +119,6 @@ func CollectFunctions (
 			}
 		}
 		if decl.Body.Body == nil {
-			// TODO: process abstract functions of rpc service module
 			return nil, &FunctionError {
 				Point:    ErrorPointFrom(decl.Name.Node),
 				Concrete: E_MissingFunctionDefinition {
@@ -117,10 +126,10 @@ func CollectFunctions (
 				},
 			}
 		}
-		// 3.2. Get the name and type parameters of the function
+		// 3.3. Get the name and type parameters of the function
 		var name = ast.Id2String(decl.Name)
 		if name == IgnoreMark || strings.HasSuffix(name, FuncSuffix) {
-			// 3.2.1. If the function name is invalid, throw an error.
+			// 3.3.1. If the function name is invalid, throw an error.
 			return nil, &FunctionError {
 				Point:    ErrorPointFrom(decl.Name.Node),
 				Concrete: E_InvalidFunctionName { name },
@@ -131,6 +140,14 @@ func CollectFunctions (
 			Point:    ErrorPointFrom(p_err_node),
 			Concrete: E_FunctionInvalidTypeParameterName { p_err.Name },
 		} }
+		for i, param := range params {
+			if param.Variance != Invariant {
+				return nil, &FunctionError {
+					Point:    ErrorPointFrom(decl.Params[i].Node),
+					Concrete: E_FunctionVarianceDeclared {},
+				}
+			}
+		}
 		for _, d := range defaults {
 			if d.HasValue { return nil, &FunctionError {
 				Point:    ErrorPointFrom(d.Node),
@@ -141,15 +158,6 @@ func CollectFunctions (
 			Sub:   make(map[uint] Type),
 			Super: make(map[uint] Type),
 		}
-		// 3.3. Get additional information of the function
-		var tags, tags_err = ParseFunctionTags(decl.Tags)
-		if tags_err != nil { return nil, &FunctionError {
-			Point: ErrorPointFrom(tags_err.Tag.Node),
-			Concrete: E_InvalidFunctionTag {
-				Tag:  string(tags_err.Tag.RawContent),
-				Info: tags_err.Info,
-			},
-		} }
 		var alias_list = tags.AliasList
 		// 3.4. Create a context for evaluating types
 		var ctx = TypeContext {
@@ -211,6 +219,12 @@ func CollectFunctions (
 					Concrete: E_ImplicitContextOnNativeFunction {},
 				}
 			}
+			if tags.IsServiceMethod {
+				return nil, &FunctionError {
+					Point:    ErrorPointFrom(decl.Node),
+					Concrete: E_ImplicitContextOnServiceMethod {},
+				}
+			}
 		}
 		for i, item := range decl.Implicit {
 			var item_t, err = TypeFrom(item, ctx)
@@ -264,14 +278,7 @@ func CollectFunctions (
 				TypeError: type_err,
 			},
 		} }
-		for i, param := range params {
-			if param.Variance != Invariant {
-				return nil, &FunctionError {
-					Point:    ErrorPointFrom(decl.Params[i].Node),
-					Concrete: E_FunctionVarianceDeclared {},
-				}
-			}
-		}
+		// TODO: check signature serializable for service methods
 		var add_function = func(name string, is_alias bool) (struct{}, *FunctionError) {
 			// 3.7. Construct a representation and a reference of the function
 			var func_type = sig.(*AnonymousType).Repr.(Func)
@@ -280,7 +287,6 @@ func CollectFunctions (
 				AliasList:   tags.AliasList,
 				IsSelfAlias: is_alias,
 			}
-			var doc = DocStringFromRaw(decl.Docs)
 			var f = &GenericFunction {
 				Node:         decl.Node,
 				Doc:          doc,

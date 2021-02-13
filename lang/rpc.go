@@ -1,10 +1,28 @@
 package lang
 
 import (
-	"kumachan/rpc/kmd"
+	"kumachan/rx"
 	"kumachan/rpc"
+	"kumachan/rpc/kmd"
 )
 
+
+type ServiceIdentifier struct {
+	Vendor   string
+	Project  string
+	Name     string
+	Version  string
+}
+
+type ServiceInstance struct {
+	data     Value
+	methods  map[string] (func(data Value, arg Value) rx.Action)
+}
+func (instance ServiceInstance) Call(name string, arg Value) rx.Action {
+	var method, exists = instance.methods[name]
+	if !(exists) { panic("something went wrong") }
+	return method(instance.data, arg)
+}
 
 type KmdApi interface {
 	GetTypeFromId(id kmd.TypeId) *kmd.Type

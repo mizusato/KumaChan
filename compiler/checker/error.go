@@ -179,6 +179,10 @@ type E_InvalidTypeTag struct {
 	Tag   string
 	Info  string
 }
+func (impl E_InvalidTypeTags) TypeDeclError() {}
+type E_InvalidTypeTags struct {
+	Info  string
+}
 func (impl E_InvalidCaseTypeParam) TypeDeclError() {}
 type E_InvalidCaseTypeParam struct {
 	Name  string
@@ -208,6 +212,9 @@ func (err *TypeDeclError) Desc() ErrorMessage {
 		msg.WriteText(TS_ERROR, "Invalid type tag:")
 		msg.WriteInnerText(TS_INLINE_CODE, fmt.Sprintf("'%s'", e.Tag))
 		msg.WriteText(TS_ERROR, fmt.Sprintf("(%s)", e.Info))
+	case E_InvalidTypeTags:
+		msg.WriteText(TS_ERROR, "Invalid type tags:")
+		msg.WriteEndText(TS_ERROR, e.Info)
 	case E_InvalidCaseTypeParam:
 		msg.WriteText(TS_ERROR, "Invalid type parameter")
 		msg.WriteInnerText(TS_INLINE_CODE, e.Name)
@@ -363,6 +370,9 @@ type E_ConflictImplicitContextField struct {
 func (impl E_ImplicitContextOnNativeFunction) FunctionError() {}
 type E_ImplicitContextOnNativeFunction struct {}
 
+func (impl E_ImplicitContextOnServiceMethod) FunctionError() {}
+type E_ImplicitContextOnServiceMethod struct {}
+
 func (impl E_NativeFunctionOutsideStandardLibrary) FunctionError() {}
 type E_NativeFunctionOutsideStandardLibrary struct {}
 
@@ -409,6 +419,8 @@ func (err *FunctionError) Desc() ErrorMessage {
 		msg.WriteEndText(TS_INLINE_CODE, e.FieldName)
 	case E_ImplicitContextOnNativeFunction:
 		msg.WriteText(TS_ERROR, "Cannot use implicit context on a native function")
+	case E_ImplicitContextOnServiceMethod:
+		msg.WriteText(TS_ERROR, "Cannot use implicit context on a service method")
 	case E_NativeFunctionOutsideStandardLibrary:
 		msg.WriteText(TS_ERROR, "Cannot define native function outside standard library")
 	case E_MissingFunctionDefinition:

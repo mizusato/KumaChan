@@ -182,7 +182,7 @@ func GetPrimitiveReflectType(name string) (reflect.Type, bool) {
 	}
 }
 
-// rpc
+// rpc_service_template.km
 const ServiceInstanceType = "instance"
 const ServiceArgumentType = "argument"
 const ServiceMethodsType = "methods"
