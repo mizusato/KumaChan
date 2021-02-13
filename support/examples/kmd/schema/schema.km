@@ -1,5 +1,3 @@
-# no shebang
-
 # data: name=Vector, ver=v1
 type Vector (Float, Float);
 

@@ -6,9 +6,9 @@ type ErrorKind enum {
     type UnknownError;
 };
 
-public function from: ( &(Error) String )
+public function from: ( &(Self::Error) String )
     native 'String from error';
-public function crash: ( &(Error) Action )
+public function crash: ( &(Self::Error) Action )
     ( &(err) (crash ((str err) | "I/O Error: #")) );
 
 public function is:
