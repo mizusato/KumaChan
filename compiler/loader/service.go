@@ -5,9 +5,9 @@ import (
 	"errors"
 	"io/ioutil"
 	"path/filepath"
-	"kumachan/compiler/loader/parser/ast"
+	"kumachan/rpc"
 	"kumachan/stdlib"
-	"kumachan/lang"
+	"kumachan/compiler/loader/parser/ast"
 )
 
 
@@ -104,7 +104,7 @@ func DecorateServiceModule(root ast.Root, manifest Manifest, ctx Context) (ast.R
 				decl.Value = ast.VariousConstValue {
 					Node:       decl.Name.Node,
 					ConstValue: ast.PredefinedValue {
-						Value: lang.ServiceIdentifier {
+						Value: rpc.ServiceIdentifier {
 							Vendor:  manifest.Vendor,
 							Project: manifest.Project,
 							Name:    manifest.Config.Service.Name,

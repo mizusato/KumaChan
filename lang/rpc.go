@@ -7,13 +7,6 @@ import (
 )
 
 
-type ServiceIdentifier struct {
-	Vendor   string
-	Project  string
-	Name     string
-	Version  string
-}
-
 type ServiceInstance struct {
 	data     Value
 	methods  map[string] (func(data Value, arg Value) rx.Action)

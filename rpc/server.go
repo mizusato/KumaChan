@@ -84,36 +84,29 @@ func (l ServerLogger) LogError(err error) {
 	}
 }
 
-type ServiceConfirmation struct {
-	ServiceName     string
-	ServiceVersion  string
-}
-func receiveServiceConfirmation(conn io.Reader) (*ServiceConfirmation, error) {
+func receiveServiceConfirmation(conn io.Reader) (ServiceIdentifier, error) {
 	kind, _, payload, err := receiveMessage(conn)
 	if err != nil {
-		return nil, fmt.Errorf("failed to receive service confirmation: %w", err)
+		return ServiceIdentifier{},
+			fmt.Errorf("failed to receive service confirmation: %w", err)
 	}
 	if kind != MSG_SERVICE {
-		return nil, errors.New(fmt.Sprintf("unexpected message kind: %s", kind))
+		return ServiceIdentifier{},
+			errors.New(fmt.Sprintf("unexpected message kind: %s", kind))
 	}
 	var buf_reader = bytes.NewReader(payload)
-	var name string
-	var version string
-	_, err = fmt.Fscanf(buf_reader, "%s %s", &name, &version)
+	var id ServiceIdentifier
+	_, err = fmt.Fscanf(buf_reader, "%s:%s:%s:%s",
+		&id.Vendor, &id.Project, &id.Name, &id.Version)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse client metadata: %w", err)
+		return ServiceIdentifier{},
+			fmt.Errorf("failed to parse client metadata: %w", err)
 	}
-	return &ServiceConfirmation {
-		ServiceName:    name,
-		ServiceVersion: version,
-	}, nil
+	return id, nil
 }
-func validateServiceConfirmation(client_info *ServiceConfirmation, service Service) error {
-	if client_info.ServiceName != service.Name {
-		return errors.New("service name not correct")
-	}
-	if client_info.ServiceVersion != service.Version {
-		return errors.New("service version not correct")
+func validateServiceConfirmation(id ServiceIdentifier, service Service) error {
+	if id != service.ServiceIdentifier {
+		return errors.New("service id not correct")
 	}
 	return nil
 }

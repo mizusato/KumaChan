@@ -6,17 +6,22 @@ import (
 )
 
 
+
 type Service struct {
-	Name         string
-	Version      string
+	ServiceIdentifier
 	Constructor  ServiceConstructor
 	Methods      map[string] ServiceMethod
 }
 type ServiceInterface struct {
-	Name         string
-	Version      string
+	ServiceIdentifier
 	Constructor  ServiceConstructorInterface
 	Methods      map[string] ServiceMethodInterface
+}
+type ServiceIdentifier struct {
+	Vendor   string
+	Project  string
+	Name     string
+	Version  string
 }
 
 type ServiceConstructor struct {

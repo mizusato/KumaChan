@@ -176,7 +176,8 @@ func (instance *ClientInstance) complete(id uint64) {
 }
 
 func sendServiceConfirmation(conn io.Writer, service ServiceInterface) error {
-	var service_id = fmt.Sprintf("%s %s", service.Name, service.Version)
+	var service_id = fmt.Sprintf("%s:%s:%s:%s",
+		service.Vendor, service.Project, service.Name, service.Version)
 	return sendMessage(MSG_SERVICE, ^uint64(0), ([] byte)(service_id), conn)
 }
 
