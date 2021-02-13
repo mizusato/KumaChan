@@ -16,27 +16,52 @@ TODO
 Draft for RPC
 
 
+// RPC
+type ServiceIdentifier[Instance,Argument];
+type ServerOptions { ... };
+type ClientOptions { ... };
+public const DefaultServerOptions: ServerOptions  native;  // zero
+public const DefaultClientOptions: ClientOptions  native;  // zero
+type ServerBackend native;
+type ClientBackend native;
+public function rpc-tcp-server: ( &(Net::Addr) ServerBackend );
+public function rpc-tcp-client: ( &(Net::Addr) ClientBackend );
+public function rpc-access[Instance,Argument]:
+    ( & {
+        service:  ServiceIdentifier[Instance,Argument],
+        backend:  ClientBackend,
+        options:  ClientOptions,
+        argument: Argument,
+        consumer: ( &(Instance) Action[-] ),
+    } Action[-,Error] );
+public function rpc-serve:
+    ( & {
+        service:     ServiceIdentifier[Instance,Argument],
+        backend:     ServerBackend,
+        options:     ServerOptions,
+        constructor: ( &(Argument) Action[Instance,Error] ),
+    } Action[-,Error] );
+
+
 // service.km (declared to be a service in manifest)
 
 // auto-generated
 type instance native;
-type interface[T] implicit { watch-value: (&(T)(NoExcept*[Int])), ... };
-public function new[T]: ( &(T,interface[T]) instance );
-public function new[T]: implicit[interface[T]] ( &(T) instance );
-public function dial: ( &(RemoteAddr,options) Action[instance,Error] )
-public function dial-console: ( &(Command,options) Action[instance,Error] )
-public function listen: ( (LocalAddr,(&(options)(Action[instance,Error])) NoExcept[-] )
-public function listen-console: ( (&(options)(Action[instance,Error]) NoExcept[-] )
+type argument UserDefinedArgumentType;
+public const identifier RPC::ServiceIdentifier[instance,argument];
+
+type methods[T] implicit { ... };
+public function create[T]: implicit[methods[T]] ( &(T) instance );
 
 // user-defined things (all involved types are required to be serializable)
-# rpc-options
-type Initial Int;
-# rpc-interface
-public function watch-value: ( &(instance) Action*[Int,Error] );
-# rpc-interface
-public function decrement: ( &(instance) Action[-,Error] );
-# rpc-interface
-public function increment: ( &(instance) Action[-,Error] );
+# rpc-argument
+type UserDefinedArgumentType Int;
+# rpc-method
+public function user-defined-method-1: ( &(instance) Action*[Int,Error] );
+# rpc-method
+public function user-defined-method-2: ( &(instance) Action[-,Error] );
+# rpc-method
+public function user-defined-method-3: ( &(instance) Action[-,Error] );
 
 
 // server.km
@@ -54,9 +79,9 @@ public function decrement: ( &(Counter) Action[-,CallError] )
 public function increment: ( &(Counter) Action[-,CallError] )
     (&(this)(this.update(&(v)(v + 1))));
 
-do CounterService::listen (addr 'localhost' '8080') ( &(initial)
+do CounterService::serve (addr 'localhost' '8080') ( &(initial)
    new-counter initial
-       | then(&(counter)(CounterService::new counter))
+       | then(&(counter)(CounterService::create counter))
 );
 
 
@@ -64,7 +89,7 @@ do CounterService::listen (addr 'localhost' '8080') ( &(initial)
 
 import CounterService from 'service';
 
-do CounterService::dial (addr 'localhost' '8080') (CounterService::Initial 0)
+do CounterService::access (addr 'localhost' '8080') (CounterService::Initial 0)
    | then ( &(counter)
        counter.increment
        | then (counter.watch-value.concat-map (&(n)
@@ -73,4 +98,25 @@ do CounterService::dial (addr 'localhost' '8080') (CounterService::Initial 0)
        ))
    )
    | catch (&(err)(crash err));
+
+
+// newly designed api
+
+rpc-access {
+    service:  CounterService::identifier,
+    backend:  rpc-tcp-server (net-addr '127.0.0.1:8001'),
+    options:  RPC::DefaultClientOptions,
+    argument: CounterService::Initial 0,
+    consumer: ( &(instance) (main instance) )
+}
+
+rpc-serve {
+    service:     CounterService::identifier,
+    backend:     rpc-tcp-client (net-addr '127.0.0.1:8001'),
+    options:     RPC::DefaultServerOptions,
+    constructor: ( &(initial)
+        ~ await &(counter) := new-counter initial,
+        CounterService::create counter
+    )
+}
 

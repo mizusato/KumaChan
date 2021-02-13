@@ -1,9 +1,10 @@
 package checker
 
 import (
-	"kumachan/compiler/loader/parser/ast"
-	"strings"
 	"fmt"
+	"strings"
+	"kumachan/compiler/loader"
+	"kumachan/compiler/loader/parser/ast"
 	"kumachan/compiler/loader/parser/syntax"
 )
 
@@ -25,6 +26,9 @@ func ParseFunctionTags(ast_tags ([] ast.Tag)) (FunctionTags, *FunctionTagParsing
 		raw = strings.TrimRight(raw, "\r")
 		raw = strings.TrimPrefix(raw, "#")
 		raw = strings.Trim(raw, " ")
+		if strings.HasPrefix(raw, loader.ServiceTagPrefix) {
+			continue
+		}
 		var t = strings.Split(raw, ":")
 		if len(t) != 2 {
 			return FunctionTags{}, &FunctionTagParsingError {

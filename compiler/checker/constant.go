@@ -90,6 +90,12 @@ func CollectConstants(mod *loader.Module, reg TypeRegistry, store ConstantStore)
 				},
 			} }
 			var value = decl.Value.ConstValue
+			if value == nil { return nil, &ConstantError {
+				Point:    ErrorPointFrom(decl.Name.Node),
+				Concrete: E_MissingConstantDefinition {
+					ConstName: name.SymbolName,
+				},
+			} }
 			var constant = &Constant {
 				Node:         decl.Node,
 				Doc:          doc,

@@ -243,6 +243,14 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 						}
 						if is_recursive { ctx[len(ctx)-1] = fv }
 						ec.pushValue(fv)
+					case NativeFunctionValue:
+						var wrapped = NativeFunction(func(arg Value, h InteropContext) Value {
+							var arg_with_context = &ValProd {
+								Elements: [] Value { arg, prod },
+							}
+							return f(arg_with_context, h)
+						})
+						ec.pushValue(wrapped)
 					default:
 						panic("CTX: cannot inject context for non-function value")
 					}

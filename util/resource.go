@@ -8,11 +8,9 @@ import (
 
 
 var interpreterResourceFolderPath = (func() string {
-	var exe_dir = "."
 	var exe_path, err = os.Executable()
-	if err == nil {
-		exe_dir = filepath.Dir(exe_path)
-	}
+	if err != nil { panic(err) }
+	var exe_dir = filepath.Dir(exe_path)
 	return filepath.Join(exe_dir, "resources")
 })()
 

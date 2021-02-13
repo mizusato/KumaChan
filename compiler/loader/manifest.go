@@ -14,11 +14,17 @@ type Manifest struct {
 	Project  string   `json:"project"`
 	Version  string   `json:"version"`
 	Name     string   `json:"name"`
+	Kind     string   `json:"kind"`
 	Config   Config   `json:"config"`
 }
 type Config struct {
+	Service   ServiceConfig          `json:"service"`
 	PNG       extra.PNG_Config       `json:"png"`
 	WebAsset  extra.WebAssetConfig   `json:"web_asset"`
+}
+type ServiceConfig struct {
+	Name     string
+	Version  string
 }
 func DefaultManifest(path string) Manifest {
 	// TODO: modules without explicit manifest should inherit

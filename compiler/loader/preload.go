@@ -8,9 +8,7 @@ import (
 )
 
 
-const StdlibFolder = "stdlib"
-
-var __StdLibModules = stdlib.GetModuleDirectories()
+var __StdLibModules = stdlib.GetModuleDirectoryNames()
 var __StdLibIndex = make(Index)
 var __StdLibResIndex = make(ResIndex)
 func ImportStdLib(imp_map (map[string] *Module), imp_set (map[string] bool)) {
@@ -31,13 +29,10 @@ func __Preload() interface{} {
 }
 func __PreloadStdLib() {
 	var fs = RealFileSystem {}
-	var exe_path, err = os.Executable()
-	if err != nil { panic(err) }
+	var stdlib_dir = stdlib.GetDirectoryPath()
 	var ctx = MakeEntryContext()
 	for _, name := range __StdLibModules {
-		var file = filepath.Join (
-			filepath.Dir(exe_path), StdlibFolder, name,
-		)
+		var file = filepath.Join (stdlib_dir, name)
 		var _, err = loadModule(file, fs, ctx, __StdLibIndex, __StdLibResIndex)
 		if err != nil {
 			fmt.Fprintf (

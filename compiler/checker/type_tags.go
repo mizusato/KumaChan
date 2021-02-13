@@ -3,6 +3,7 @@ package checker
 import (
 	"fmt"
 	"strings"
+	"kumachan/compiler/loader"
 	"kumachan/compiler/loader/parser/ast"
 	"kumachan/compiler/loader/parser/syntax"
 )
@@ -29,6 +30,9 @@ func ParseTypeTags(ast_tags ([] ast.Tag)) (TypeTags, *TypeTagParsingError) {
 		raw = strings.TrimRight(raw, "\r")
 		raw = strings.TrimPrefix(raw, "#")
 		raw = strings.Trim(raw, " ")
+		if strings.HasPrefix(raw, loader.ServiceTagPrefix) {
+			continue
+		}
 		var t = strings.Split(raw, ":")
 		if len(t) != 2 {
 			return TypeTags{}, &TypeTagParsingError {

@@ -8,15 +8,24 @@ import (
 	"strings"
 	"reflect"
 	"image/png"
+	"path/filepath"
 )
 
 
 /* IMPORTANT: this go file should be consistent with corresponding km files */
 var __ModuleDirectories = [] string {
 	"core", "math", "time", "l10n",
-	"io", "os", "json", "net", "image", "ui",
+	"io", "os", "json", "net", "rpc", "image", "ui",
 }
-func GetModuleDirectories() ([] string) { return __ModuleDirectories }
+func GetModuleDirectoryNames() ([] string) { return __ModuleDirectories }
+func GetDirectoryPath() string {
+	var exe_path, err = os.Executable()
+	if err != nil { panic(err) }
+	var exe_dir = filepath.Dir(exe_path)
+	var stdlib_dir = filepath.Join(exe_dir, "stdlib")
+	return stdlib_dir
+}
+
 const Core = "Core"
 const UI = "UI"
 var core_types = []string {
@@ -168,6 +177,13 @@ func GetPrimitiveReflectType(name string) (reflect.Type, bool) {
 		return nil, false
 	}
 }
+
+// rpc
+const ServiceInstanceType = "instance"
+const ServiceArgumentType = "argument"
+const ServiceMethodsType = "methods"
+const ServiceIdentifierConst = "identifier"
+const ServiceCreateFunction = "create"
 
 // path
 type Path ([] string)

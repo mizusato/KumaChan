@@ -1,0 +1,15 @@
+/// Service instance type.
+type instance native;
+
+/// Service constructor argument type.
+type argument ();
+
+/// Service methods, the implicit context used when creating service instances.
+type methods[T] implicit {};
+
+/// Service identifier, used when calling RPC API functions.
+public const identifier: RPC::ServiceIdentifier[instance,argument];
+
+/// Creates a service instance from a T object and an implicit methods[T].
+public function create[T]: implicit[methods[T]] ( &(T) instance );
+

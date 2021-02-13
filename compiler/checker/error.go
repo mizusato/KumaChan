@@ -487,6 +487,11 @@ type E_ConstConflictWithType struct {
 	Name  string
 }
 
+func (impl E_MissingConstantDefinition) ConstantError() {}
+type E_MissingConstantDefinition struct {
+	ConstName  string
+}
+
 func (err *ConstantError) Desc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	switch e := err.Concrete.(type) {
@@ -503,6 +508,9 @@ func (err *ConstantError) Desc() ErrorMessage {
 		msg.WriteInnerText(TS_INLINE_CODE, e.Name)
 		msg.WriteText(TS_ERROR, "conflict with existing type name")
 		msg.WriteEndText(TS_INLINE_CODE, e.Name)
+	case E_MissingConstantDefinition:
+		msg.WriteText(TS_ERROR, "Missing constant definition for")
+		msg.WriteEndText(TS_INLINE_CODE, e.ConstName)
 	default:
 		panic("unknown error kind")
 	}

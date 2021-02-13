@@ -29,7 +29,7 @@ type DeclConst struct {
     Public    bool                `option:"scope.@public"`
     Name      Identifier          `part:"name"`
     Type      VariousType         `part:"type"`
-    Value     VariousConstValue   `part:"const_value"`
+    Value     VariousConstValue   `part_opt:"const_value"`
 }
 type VariousConstValue struct {
     Node                     `part:"const_value"`

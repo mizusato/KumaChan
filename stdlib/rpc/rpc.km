@@ -1,0 +1,2 @@
+type ServiceIdentifier[Instance,Argument]
+    native;
