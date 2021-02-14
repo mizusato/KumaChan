@@ -27,7 +27,7 @@ type LimitOptions {
 public const DefaultLimitOptions: LimitOptions {
     send-timeout:      10000,
     recv-timeout:      0,
-    recv-interval:     200,
+    recv-interval:     50,
     recv-max-obj-size: 33554432
 };
 public function zero-value: (&()(LimitOptions)) (&(_)(DefaultLimitOptions));
