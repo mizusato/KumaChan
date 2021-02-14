@@ -120,7 +120,7 @@ public function no-op: ( &() Action*[never,never] )
     native 'no-op';
 public function crash: ( &(String) Action )
     native 'crash';
-public function crash: ( &(Error) Action )
+public function crash: ( &(Error) Action )  // TODO: add 'crash-on-error'
     ( &(err) (crash ((str err) | "Error: #")) );
 public function from: ( &(Error) String )  // TODO: move this function
     native 'String from error';
