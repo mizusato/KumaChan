@@ -91,7 +91,6 @@ func CompileFunction (
 ) (*lang.Function, [] GlobalRef, [] E) {
 	switch b := body.(type) {
 	case ch.ExprPredefinedValue:
-		if len(imp) > 0 { panic("something went wrong") }
 		return &lang.Function {
 			Kind:       lang.F_PREDEFINED,
 			Predefined: b.Value,
@@ -105,7 +104,6 @@ func CompileFunction (
 			},
 		}, make([] GlobalRef, 0), nil
 	case ch.ExprNative:
-		if len(imp) > 0 { panic("something went wrong") }
 		var native_id = b.Name
 		return &lang.Function {
 			Kind:       lang.F_NATIVE,
