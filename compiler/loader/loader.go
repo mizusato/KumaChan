@@ -5,8 +5,9 @@ import (
 	"strings"
 	"io/ioutil"
 	"path/filepath"
-	"kumachan/compiler/loader/parser/ast"
+	"kumachan/rpc"
 	"kumachan/lang"
+	"kumachan/compiler/loader/parser/ast"
 )
 
 
@@ -25,6 +26,13 @@ type Module struct {
 	ImpMap    map[string] *Module
 	FileInfo  os.FileInfo
 	Manifest  Manifest
+	ModuleServiceInfo
+}
+type ModuleServiceInfo struct {
+	IsService           bool
+	ServiceIdentifier   rpc.ServiceIdentifier
+	ServiceArgTypeName  string
+	ServiceMethodNames  [] string
 }
 type Index     map[string] *Module
 type ResIndex  map[string] lang.Resource

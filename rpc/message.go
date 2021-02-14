@@ -16,6 +16,7 @@ const MsgPayloadLengthMax = 99999999
 const MSG_SERVICE = "service"
 const MSG_CREATED = "created"
 const MSG_CALL = "call"
+const MSG_CALL_MULTI = "call*"
 const MSG_VALUE = "value"
 const MSG_ERROR = "error"
 const MSG_COMPLETE = "complete"

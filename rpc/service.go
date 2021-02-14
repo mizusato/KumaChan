@@ -1,10 +1,11 @@
 package rpc
 
 import (
+	"io"
+	"fmt"
 	"kumachan/rx"
 	"kumachan/rpc/kmd"
 )
-
 
 
 type Service struct {
@@ -17,28 +18,40 @@ type ServiceInterface struct {
 	Constructor  ServiceConstructorInterface
 	Methods      map[string] ServiceMethodInterface
 }
+type ServiceIndex  map[ServiceIdentifier] ServiceInterface
+
 type ServiceIdentifier struct {
 	Vendor   string
 	Project  string
 	Name     string
 	Version  string
 }
+func DescribeServiceIdentifier(id ServiceIdentifier) string {
+	return fmt.Sprintf("%s:%s:%s:%s",
+		id.Vendor, id.Project, id.Name, id.Version)
+}
+func ParserServiceIdentifier(buf io.Reader) (ServiceIdentifier, error) {
+	var id ServiceIdentifier
+	_, err := fmt.Fscanf(buf, "%s:%s:%s:%s",
+		&id.Vendor, &id.Project, &id.Name, &id.Version)
+	return id, err
+}
 
 type ServiceConstructor struct {
-	ArgType    *kmd.Type
+	ServiceConstructorInterface
 	GetAction  func(object kmd.Object) rx.Action
 }
 type ServiceConstructorInterface struct {
-	ArgType    *kmd.Type
+	ArgType  *kmd.Type
 }
 
 type ServiceMethod struct {
-	ArgType    *kmd.Type
-	RetType    *kmd.Type
+	ServiceMethodInterface
 	GetAction  func(instance kmd.Object, arg kmd.Object) rx.Action
 }
 type ServiceMethodInterface struct {
-	ArgType    *kmd.Type
-	RetType    *kmd.Type
+	ArgType     *kmd.Type
+	RetType     *kmd.Type
+	MultiValue  bool
 }
 

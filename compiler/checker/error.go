@@ -267,6 +267,11 @@ type KmdError struct {
 
 type ConcreteKmdError interface { KmdError() }
 
+func (impl E_KmdDuplicateType) KmdError() {}
+type E_KmdDuplicateType struct {
+	Id  string
+}
+
 func (impl E_KmdOnNative) KmdError() {}
 type E_KmdOnNative struct {}
 
@@ -291,6 +296,9 @@ type E_KmdTypeNotSerializable struct {}
 func (err *KmdError) Desc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	switch e := err.Concrete.(type) {
+	case E_KmdDuplicateType:
+		msg.WriteText(TS_ERROR, "duplicate type definition for KMD type id:")
+		msg.WriteEndText(TS_INLINE, e.Id)
 	case E_KmdOnNative:
 		msg.WriteText(TS_ERROR, "KMD serialization on native types " +
 			"is not supported")
@@ -327,6 +335,57 @@ func (err *KmdError) Message() ErrorMessage {
 }
 
 func (err *KmdError) Error() string {
+	var msg = MsgFailedToCompile(err.Concrete, [] ErrorMessage {
+		err.Message(),
+	})
+	return msg.String()
+}
+
+
+type ServiceError struct {
+	Point     ErrorPoint
+	Concrete  ConcreteServiceError
+}
+type ConcreteServiceError interface { ServiceError() }
+
+func (impl E_ServiceDuplicateModule) ServiceError() {}
+type E_ServiceDuplicateModule struct {
+	Id  string
+}
+
+func (impl E_ServiceMethodInvalidSignature) ServiceError() {}
+type E_ServiceMethodInvalidSignature struct {
+	Reason  string
+}
+
+func (err *ServiceError) Desc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	switch e := err.Concrete.(type) {
+	case E_ServiceDuplicateModule:
+		msg.WriteText(TS_ERROR, "duplicate module for service:")
+		msg.WriteEndText(TS_INLINE, e.Id)
+	case E_ServiceMethodInvalidSignature:
+		msg.WriteText(TS_ERROR, "invalid service method signature:")
+		msg.WriteEndText(TS_ERROR, e.Reason)
+	default:
+		panic("unknown error kind")
+	}
+	return msg
+}
+
+func (err *ServiceError) ErrorPoint() ErrorPoint {
+	return err.Point
+}
+
+func (err *ServiceError) ErrorConcrete() interface{} {
+	return err.Concrete
+}
+
+func (err *ServiceError) Message() ErrorMessage {
+	return FormatErrorAt(err.Point, err.Desc())
+}
+
+func (err *ServiceError) Error() string {
 	var msg = MsgFailedToCompile(err.Concrete, [] ErrorMessage {
 		err.Message(),
 	})
@@ -399,11 +458,6 @@ type E_FunctionVarianceDeclared struct {}
 func (impl E_FunctionDefaultTypeParameterDeclared) FunctionError() {}
 type E_FunctionDefaultTypeParameterDeclared struct {}
 
-func (impl E_InvalidServiceMethodSignature) FunctionError() {}
-type E_InvalidServiceMethodSignature struct {
-	Info  string
-}
-
 func (err *FunctionError) Desc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	switch e := err.Concrete.(type) {
@@ -450,9 +504,6 @@ func (err *FunctionError) Desc() ErrorMessage {
 	case E_FunctionDefaultTypeParameterDeclared:
 		msg.WriteText(TS_ERROR,
 			"Cannot declare default type parameter value on functions")
-	case E_InvalidServiceMethodSignature:
-		msg.WriteText(TS_ERROR, "Invalid service method signature:")
-		msg.WriteEndText(TS_ERROR, e.Info)
 	default:
 		panic("unknown error kind")
 	}

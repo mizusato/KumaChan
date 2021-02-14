@@ -9,7 +9,14 @@ import (
     "runtime"
     "strconv"
     "io/ioutil"
+    "kumachan/lang"
+    "kumachan/rx"
+    "kumachan/rpc"
+    "kumachan/rpc/kmd"
+    "kumachan/util"
     . "kumachan/util/error"
+    "kumachan/support/docs"
+    "kumachan/support/tools"
     "kumachan/compiler/loader"
     "kumachan/compiler/loader/parser"
     "kumachan/compiler/loader/parser/ast"
@@ -20,12 +27,6 @@ import (
     "kumachan/compiler/generator"
     "kumachan/runtime/vm"
     "kumachan/runtime/lib/ui/qt"
-    "kumachan/lang"
-    "kumachan/rx"
-    "kumachan/util"
-    "kumachan/rpc/kmd"
-    "kumachan/support/tools"
-    "kumachan/support/docs"
 )
 
 
@@ -83,15 +84,15 @@ func interpret (
         }
         return mod, idx, res
     }
-    var check = func(mod *loader.Module, idx loader.Index) (*checker.CheckedModule, checker.Index, kmd.SchemaTable) {
-        var c_mod, c_idx, schema, errs = checker.TypeCheck(mod, idx)
+    var check = func(mod *loader.Module, idx loader.Index) (*checker.CheckedModule, checker.Index, kmd.SchemaTable, rpc.ServiceIndex) {
+        var c_mod, c_idx, sch, serv, errs = checker.TypeCheck(mod, idx)
         if errs != nil {
             fmt.Fprintf(os.Stderr, "%s\n", MergeErrors(errs))
             os.Exit(4)
         }
-        return c_mod, c_idx, schema
+        return c_mod, c_idx, sch, serv
     }
-    var compile = func(entry *checker.CheckedModule, sch kmd.SchemaTable) lang.Program {
+    var compile = func(entry *checker.CheckedModule, sch kmd.SchemaTable, serv rpc.ServiceIndex) lang.Program {
         var data = make([] lang.DataValue, 0)
         var closures = make([] generator.FuncNode, 0)
         var idx = make(generator.Index)
@@ -103,7 +104,7 @@ func interpret (
         var meta = lang.ProgramMetaData {
             EntryModulePath: entry.RawModule.Path,
         }
-        var program, _, err = generator.CreateProgram(meta, idx, data, closures, sch)
+        var program, _, err = generator.CreateProgram(meta, idx, data, closures, sch, serv)
         if err != nil {
             fmt.Fprintf(os.Stderr, "%s\n", MergeErrors([] E { err }))
             os.Exit(6)
@@ -124,8 +125,8 @@ func interpret (
         _ = f.Close()
     }
     var mod, idx, res = load(path)
-    var c_mod, _, schema = check(mod, idx)
-    var program = compile(c_mod, schema)
+    var c_mod, _, sch, serv = check(mod, idx)
+    var program = compile(c_mod, sch, serv)
     if asm_dump != "" {
         dump_asm(program, asm_dump)
     }
@@ -156,7 +157,7 @@ func repl(args ([] string), max_stack_size int, debug_opts lang.DebugOptions) {
     ldr_mod, ldr_idx, ldr_res, ldr_err := loader.LoadEntryThunk(mod_thunk)
     if ldr_err != nil { panic(ldr_err) }
     // 3. Type check the module tree
-    mod, _, sch, errs := checker.TypeCheck(ldr_mod, ldr_idx)
+    mod, _, sch, serv, errs := checker.TypeCheck(ldr_mod, ldr_idx)
     if errs != nil { panic(MergeErrors(errs)) }
     // 4. Compile the module tree
     var data = make([] lang.DataValue, 0)
@@ -169,7 +170,7 @@ func repl(args ([] string), max_stack_size int, debug_opts lang.DebugOptions) {
         EntryModulePath: mod_runtime_path,
     }
     program, dep_locator, err :=
-        generator.CreateProgram(meta, idx, data, closures, sch)
+        generator.CreateProgram(meta, idx, data, closures, sch, serv)
     if err != nil { panic(err) }
     // 6. Create an incremental compiler
     var mod_info = checker.ModuleInfo {
@@ -428,7 +429,7 @@ func main() {
         }, ".")
         dummy, ldr_idx, _, ldr_err := loader.LoadEntryThunk(mod_thunk)
         if ldr_err != nil { panic(ldr_err) }
-        _, idx, _, errs := checker.TypeCheck(dummy, ldr_idx)
+        _, idx, _, _, errs := checker.TypeCheck(dummy, ldr_idx)
         if errs != nil { panic(MergeErrors(errs)) }
         var api_docs = docs.GenerateApiDocs(idx)
         delete(api_docs, dummy.Name)

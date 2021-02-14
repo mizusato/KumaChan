@@ -2,9 +2,10 @@ package generator
 
 import (
 	"fmt"
-	. "kumachan/util/error"
-	"kumachan/lang"
+	"kumachan/rpc"
 	"kumachan/rpc/kmd"
+	"kumachan/lang"
+	. "kumachan/util/error"
 )
 
 
@@ -14,12 +15,16 @@ func CreateProgram (
 	data      [] lang.DataValue,
 	closures  [] FuncNode,
 	schema    kmd.SchemaTable,
+	services  rpc.ServiceIndex,
 ) (lang.Program, DepLocator, E) {
 	var no_locator = DepLocator {}
-	var kmd_conf = lang.KmdConfig {
+	var kmd_info = lang.KmdInfo {
 		SchemaTable:       schema,
 		KmdAdapterTable:   make(lang.KmdAdapterTable),
 		KmdValidatorTable: make(lang.KmdValidatorTable),
+	}
+	var rpc_info = lang.RpcInfo{
+		ServiceIndex: services,
 	}
 	var function_index_map = make(map[DepFunction] uint)
 	var functions = make([] FuncNode, 0)
@@ -34,12 +39,12 @@ func CreateProgram (
 					Index:  uint(f_index),
 				}] = global_index
 				if item.IsAdapter {
-					kmd_conf.KmdAdapterTable[item.AdapterId] = lang.KmdAdapterInfo {
+					kmd_info.KmdAdapterTable[item.AdapterId] = lang.KmdAdapterInfo {
 						Index: global_index,
 					}
 				}
 				if item.IsValidator {
-					kmd_conf.KmdValidatorTable[item.ValidatorId] = lang.KmdValidatorInfo {
+					kmd_info.KmdValidatorTable[item.ValidatorId] = lang.KmdValidatorInfo {
 						Index: global_index,
 					}
 				}
@@ -225,7 +230,8 @@ func CreateProgram (
 		Closures:   unwrap(closures),
 		Constants:  unwrap(sorted_constants),
 		Effects:    unwrap(effects),
-		KmdConfig:  kmd_conf,
+		KmdInfo:    kmd_info,
+		RpcInfo:    rpc_info,
 	}, locator, nil
 }
 

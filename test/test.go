@@ -37,15 +37,15 @@ func expectStdIO(t *testing.T, path string, in string, expected_out string) {
 	qt.Mock()
 	ldr_mod, ldr_idx, ldr_res, ldr_err := loader.LoadEntry(path)
 	if ldr_err != nil { t.Fatal(ldr_err) }
-	mod, _, sch, errs := checker.TypeCheck(ldr_mod, ldr_idx)
+	mod, _, sch, serv, errs := checker.TypeCheck(ldr_mod, ldr_idx)
 	if errs != nil { t.Fatal(mergeErrorMessages(errs)) }
 	var data = make([] lang.DataValue, 0)
 	var closures = make([] generator.FuncNode, 0)
 	var idx = make(generator.Index)
 	errs = generator.CompileModule(mod, idx, &data, &closures)
 	if errs != nil { t.Fatal(mergeErrorMessages(errs)) }
-	var meta = lang.ProgramMetaData { EntryModulePath: path}
-	program, _, err := generator.CreateProgram(meta, idx, data, closures, sch)
+	var meta = lang.ProgramMetaData { EntryModulePath: path }
+	program, _, err := generator.CreateProgram(meta, idx, data, closures, sch, serv)
 	if err != nil { t.Fatal(err) }
 	in_read, in_write, e := os.Pipe()
 	if e != nil { panic(e) }

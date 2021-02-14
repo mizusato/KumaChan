@@ -32,12 +32,12 @@ var __ServiceTemplate = (func() ast.Root {
 	return root
 })()
 
-func DecorateServiceModule(root ast.Root, manifest Manifest, ctx Context) (ast.Root, *Error) {
+func DecorateServiceModule(root ast.Root, manifest Manifest, ctx Context) (ast.Root, ModuleServiceInfo, *Error) {
 	if manifest.Kind != ModuleKind_Service {
-		return root, nil
+		return root, ModuleServiceInfo{}, nil
 	}
-	var throw = func(err_msg string) (ast.Root, *Error) {
-		return ast.Root{}, &Error {
+	var throw = func(err_msg string) (ast.Root, ModuleServiceInfo, *Error) {
+		return ast.Root{}, ModuleServiceInfo{}, &Error {
 			Context:  ctx,
 			Concrete: E_InvalidService { Reason: err_msg },
 		}
@@ -49,6 +49,12 @@ func DecorateServiceModule(root ast.Root, manifest Manifest, ctx Context) (ast.R
 			}
 		}
 		return false
+	}
+	var id = rpc.ServiceIdentifier {
+		Vendor:  manifest.Vendor,
+		Project: manifest.Project,
+		Name:    manifest.Config.Service.Name,
+		Version: manifest.Config.Service.Version,
 	}
 	var methods = make([] ast.DeclFunction, 0)
 	var method_occurred = make(map[string] bool)
@@ -104,12 +110,7 @@ func DecorateServiceModule(root ast.Root, manifest Manifest, ctx Context) (ast.R
 				decl.Value = ast.VariousConstValue {
 					Node:       decl.Name.Node,
 					ConstValue: ast.PredefinedValue {
-						Value: rpc.ServiceIdentifier {
-							Vendor:  manifest.Vendor,
-							Project: manifest.Project,
-							Name:    manifest.Config.Service.Name,
-							Version: manifest.Config.Service.Version,
-						},
+						Value: id,
 					},
 				}
 				s.Statement = decl
@@ -175,6 +176,15 @@ func DecorateServiceModule(root ast.Root, manifest Manifest, ctx Context) (ast.R
 		statements = append(statements, s)
 	}
 	draft.Statements = statements
-	return draft, nil
+	var method_names = make([] string, len(methods))
+	for i, decl := range methods { method_names[i] = ast.Id2String(decl.Name) }
+	var arg_type_name = ast.Id2String(arg_type.Name)
+	var info = ModuleServiceInfo {
+		IsService:          true,
+		ServiceIdentifier:  id,
+		ServiceArgTypeName: arg_type_name,
+		ServiceMethodNames: method_names,
+	}
+	return draft, info, nil
 }
 

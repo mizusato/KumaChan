@@ -13,7 +13,8 @@ type Program struct {
 	Closures    [] *Function
 	Constants   [] *Function
 	Effects     [] *Function
-	KmdConfig
+	KmdInfo
+	RpcInfo
 }
 type ProgramMetaData struct {
 	EntryModulePath  string

@@ -120,7 +120,14 @@ func (instance *ClientInstance) Call(method_name string, arg kmd.Object) rx.Acti
 					return struct{}{}
 				}
 				var method_name_bin = ([] byte)(method_name)
-				err := sendMessage(MSG_CALL, id, method_name_bin, conn)
+				var msg_kind = (func() string {
+					if method.MultiValue {
+						return MSG_CALL_MULTI
+					} else {
+						return MSG_CALL
+					}
+				})()
+				err := sendMessage(msg_kind, id, method_name_bin, conn)
 				if err != nil { return fatal(err) }
 				err = sendCallArgument(arg, method, conn, instance.options)
 				if err != nil { return fatal(err) }
@@ -176,8 +183,7 @@ func (instance *ClientInstance) complete(id uint64) {
 }
 
 func sendServiceConfirmation(conn io.Writer, service ServiceInterface) error {
-	var service_id = fmt.Sprintf("%s:%s:%s:%s",
-		service.Vendor, service.Project, service.Name, service.Version)
+	var service_id = DescribeServiceIdentifier(service.ServiceIdentifier)
 	return sendMessage(MSG_SERVICE, ^uint64(0), ([] byte)(service_id), conn)
 }
 

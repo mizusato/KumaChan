@@ -1,11 +1,13 @@
 package checker
 
 import (
-	. "kumachan/util/error"
-	"kumachan/compiler/loader"
+	"errors"
+	"kumachan/rpc"
 	"kumachan/rpc/kmd"
+	"kumachan/compiler/loader"
 	"kumachan/compiler/loader/parser/ast"
 	"kumachan/stdlib"
+	. "kumachan/util/error"
 )
 
 
@@ -88,6 +90,7 @@ func CollectKmdApi (
 		}
 	}
 	for sym, id := range mapping {
+		var point = ErrorPointFrom(nodes[sym])
 		var g = reg[sym]
 		if len(g.Params) > 0 {
 			var mono_types = make([] [] kmd.TypeId, 0)
@@ -126,6 +129,13 @@ func CollectKmdApi (
 						args, mono_id,
 					)
 					if err != nil { return nil, nil, nil, err }
+					_, exists := sch[decorated_id]
+					if exists { return nil, nil, nil, &KmdError {
+						Point:    point,
+						Concrete: E_KmdDuplicateType {
+							Id: decorated_id.String(),
+						},
+					} }
 					sch[decorated_id] = schema
 				}
 			}
@@ -135,6 +145,13 @@ func CollectKmdApi (
 				nil, kmd.TypeId {},
 			)
 			if err != nil { return nil, nil, nil, err }
+			_, exists := sch[id]
+			if exists { return nil, nil, nil, &KmdError {
+				Point:    point,
+				Concrete: E_KmdDuplicateType {
+					Id: id.String(),
+				},
+			} }
 			sch[id] = schema
 		}
 	}
@@ -468,5 +485,146 @@ func GetKmdType (
 		Point:    p,
 		Concrete: E_KmdTypeNotSerializable {},
 	}
+}
+
+
+type ServiceMethodSignature struct {
+	Input       kmd.TypeId
+	Output      kmd.TypeId
+	MultiValue  bool
+}
+
+func CollectServices (
+	index      loader.Index,
+	functions  FunctionStore,
+	reg        TypeRegistry,
+	table      kmd.SchemaTable,
+	mapping    KmdIdMapping,
+) (rpc.ServiceIndex, *ServiceError) {
+	var services = make(rpc.ServiceIndex)
+	for mod_name, mod := range index {
+		if !(mod.IsService) { continue }
+		var id = mod.ServiceIdentifier
+		var arg_type_sym = loader.MakeSymbol(mod_name, mod.ServiceArgTypeName)
+		_, exists := reg[arg_type_sym]
+		if !(exists) { panic("something went wrong") }
+		arg_type_id, exists := mapping[arg_type_sym]
+		if !(exists) { panic("something went wrong") }
+		var arg_type = table.GetTypeFromId(arg_type_id)
+		var ctor = rpc.ServiceConstructorInterface { ArgType: arg_type }
+		var methods = make(map[string] rpc.ServiceMethodInterface)
+		for _, name := range mod.ServiceMethodNames {
+			var group, exists = functions[mod_name][name]
+			if !(exists) { panic("something went wrong") }
+			var filtered = make([] FunctionReference, 0)
+			for _, f := range group {
+				if !(f.IsImported) && f.Function.Tags.IsServiceMethod {
+					filtered = append(filtered, f)
+				}
+			}
+			if len(filtered) != 1 { panic("something went wrong") }
+			var f = filtered[0]
+			var t = f.Function.DeclaredType
+			var sig, err = GetServiceMethodSignature(t, mod_name, reg, table, mapping)
+			if err != nil { return nil, &ServiceError {
+				Point:    ErrorPointFrom(f.Function.Node),
+				Concrete: E_ServiceMethodInvalidSignature {
+					Reason: err.Error(),
+				},
+			} }
+			methods[name] = sig
+		}
+		_, exists = services[id]
+		if exists { return nil, &ServiceError {
+			Point:    ErrorPointFrom(mod.AST.Node),
+			Concrete: E_ServiceDuplicateModule {
+				Id: rpc.DescribeServiceIdentifier(id),
+			},
+		} }
+		services[id] = rpc.ServiceInterface {
+			ServiceIdentifier: id,
+			Constructor:       ctor,
+			Methods:           methods,
+		}
+	}
+	return services, nil
+}
+
+func GetServiceMethodSignature (
+	sig      Func,
+	mod      string,
+	reg      TypeRegistry,
+	table    kmd.SchemaTable,
+	mapping  KmdIdMapping,
+) (rpc.ServiceMethodInterface, error) {
+	var throw = func(err_desc string) (rpc.ServiceMethodInterface, error) {
+		return rpc.ServiceMethodInterface{}, errors.New(err_desc)
+	}
+	var get_type = func(sym loader.Symbol) *kmd.Type {
+		var type_id, exists = mapping[sym]
+		if !(exists) { panic("something went wrong") }
+		return table.GetTypeFromId(type_id)
+	}
+	var result = rpc.ServiceMethodInterface {}
+	var instance_t = ServiceInstanceType(mod)
+	var in = sig.Input
+	var out = sig.Output
+	switch T := in.(type) {
+	case *AnonymousType:
+		switch R := T.Repr.(type) {
+		case Tuple:
+			if len(R.Elements) != 2 {
+				return throw("wrong arity")
+			}
+			var args = R.Elements
+			if !(TypeEqualWithoutContext(args[0], instance_t)) {
+				return throw("first input should be service instance type")
+			}
+			switch req_t := args[1].(type) {
+			default:
+				return throw("second input is invalid")
+			case *NamedType:
+				if len(req_t.Args) != 0 {
+					return throw("second input is invalid")
+				}
+				var g = reg[req_t.Name]
+				if !(g.Tags.DeclaredSerializable()) {
+					return throw("second input should be serializable")
+				}
+				result.ArgType = get_type(req_t.Name)
+				goto in_ok
+			}
+		}
+	}
+	return throw("invalid input type")
+in_ok:
+	switch T := out.(type) {
+	case *NamedType:
+		if T.Name != __Action && T.Name != __ActionMultiValue {
+			return throw("output should be an action type")
+		}
+		result.MultiValue = (T.Name == __ActionMultiValue)
+		if len(T.Args) != 2 {
+			return throw("invalid output type")
+		}
+		if !(TypeEqualWithoutContext(T.Args[1], __ErrorType)) {
+			return throw("invalid exception type")
+		}
+		switch res_t := T.Args[0].(type) {
+		case *NamedType:
+			if len(res_t.Args) != 0 {
+				return throw("invalid output type")
+			}
+			var g = reg[res_t.Name]
+			if !(g.Tags.DeclaredSerializable()) {
+				return throw("output should be serializable")
+			}
+			result.RetType = get_type(res_t.Name)
+			goto out_ok
+		}
+	}
+	return throw("invalid output type")
+out_ok:
+	return result, nil
 }
 

@@ -51,7 +51,8 @@ func buildHierarchy (
 	var file_info = raw_mod.FileInfo
 	var ast_root_node, err2 = raw_mod.Content.Load(ctx)
 	if err2 != nil { return nil, false, err2 }
-	ast_root_node, err3 := DecorateServiceModule(ast_root_node, manifest, ctx)
+	ast_root_node, service_info, err3 :=
+		DecorateServiceModule(ast_root_node, manifest, ctx)
 	if err3 != nil { return nil, false, err3 }
 	/* 3. Check the module name according to ancestor modules */
 	for _, ancestor := range ctx.BreadCrumbs {
@@ -179,6 +180,7 @@ func buildHierarchy (
 			ImpMap:   imported_map,
 			FileInfo: file_info,
 			Manifest: manifest,
+			ModuleServiceInfo: service_info,
 		}
 		idx[module_name] = mod
 		return mod, false, nil

@@ -14,8 +14,8 @@ import (
 
 
 type KmdApiImpl struct {
-	config       KmdConfig
-	transformer  kmd.Transformer
+	config      KmdInfo
+	transformer kmd.Transformer
 }
 func KmdCreateApi(ctx KmdTransformContext) KmdApi {
 	return &KmdApiImpl {
@@ -66,7 +66,7 @@ type KmdFieldValue struct {
 }
 
 type KmdTransformContext interface {
-	KmdGetConfig() KmdConfig
+	KmdGetConfig() KmdInfo
 	KmdGetAdapter(index uint) Value
 	KmdCallAdapter(f Value, x Value) Value
 	KmdCallValidator(f Value, x Value) bool

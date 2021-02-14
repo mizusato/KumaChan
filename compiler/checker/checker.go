@@ -3,10 +3,11 @@ package checker
 // TODO: split this long file, refactor bad code in this file
 import (
 	"strings"
+	"kumachan/rpc"
+	"kumachan/rpc/kmd"
 	. "kumachan/util/error"
 	"kumachan/compiler/loader"
 	"kumachan/compiler/loader/parser/ast"
-	"kumachan/rpc/kmd"
 )
 
 
@@ -439,7 +440,7 @@ func CheckTerm(term ast.VariousTerm, ctx ExprContext) (SemiExpr, *ExprError) {
 
 
 func TypeCheck(entry *loader.Module, raw_index loader.Index) (
-	*CheckedModule, Index, kmd.SchemaTable, [] E,
+	*CheckedModule, Index, kmd.SchemaTable, rpc.ServiceIndex, [] E,
 ) {
 	var types, type_nodes, err1 = RegisterTypes(entry, raw_index)
 	if err1 != nil {
@@ -447,16 +448,18 @@ func TypeCheck(entry *loader.Module, raw_index loader.Index) (
 		for i, e := range err1 {
 			type_errors[i] = e
 		}
-		return nil, nil, nil, type_errors
+		return nil, nil, nil, nil, type_errors
 	}
 	var constants = make(ConstantStore)
 	var functions = make(FunctionStore)
 	var _, err2 = CollectConstants(entry, types, constants)
-	if err2 != nil { return nil, nil, nil, [] E { err2 } }
+	if err2 != nil { return nil, nil, nil, nil, [] E { err2 } }
 	var mapping, sch, inj, err3 = CollectKmdApi(types, type_nodes, raw_index)
-	if err3 != nil { return nil, nil, nil, [] E { err3 } }
+	if err3 != nil { return nil, nil, nil, nil, [] E { err3 } }
 	var _, err4 = CollectFunctions(entry, types, inj, functions)
-	if err4 != nil { return nil, nil, nil, [] E { err4 } }
+	if err4 != nil { return nil, nil, nil, nil, [] E { err4 } }
+	var serv, err5 = CollectServices(raw_index, functions, types, sch, mapping)
+	if err5 != nil { return nil, nil, nil, nil, [] E { err5 } }
 	var ctx = CheckContext {
 		Types:     types,
 		Functions: functions,
@@ -465,8 +468,8 @@ func TypeCheck(entry *loader.Module, raw_index loader.Index) (
 	}
 	var checked_index = make(Index)
 	var checked, errs = TypeCheckModule(entry, checked_index, ctx)
-	if errs != nil { return nil, nil, nil, errs }
-	return checked, checked_index, sch, nil
+	if errs != nil { return nil, nil, nil, nil, errs }
+	return checked, checked_index, sch, serv, nil
 }
 
 func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (

@@ -95,9 +95,7 @@ func receiveServiceConfirmation(conn io.Reader) (ServiceIdentifier, error) {
 			errors.New(fmt.Sprintf("unexpected message kind: %s", kind))
 	}
 	var buf_reader = bytes.NewReader(payload)
-	var id ServiceIdentifier
-	_, err = fmt.Fscanf(buf_reader, "%s:%s:%s:%s",
-		&id.Vendor, &id.Project, &id.Name, &id.Version)
+	id, err := ParserServiceIdentifier(buf_reader)
 	if err != nil {
 		return ServiceIdentifier{},
 			fmt.Errorf("failed to parse client metadata: %w", err)
@@ -160,11 +158,18 @@ func serverProcessMessages(instance kmd.Object, conn *rx.WrappedConnection, logg
 		var kind, id, payload, err = receiveMessage(conn)
 		if err != nil { return fmt.Errorf("error receiving message: %w", err) }
 		switch kind {
-		case MSG_CALL:
+		case MSG_CALL, MSG_CALL_MULTI:
 			var method_name = string(payload)
 			var method, exists = service.Methods[method_name]
-			if !(exists) { return errors.New(fmt.Sprintf(
-				"method '%s' does not exist", method_name)) }
+			if !(exists) {
+				return errors.New(fmt.Sprintf("method '%s' does not exist",
+					method_name))
+			}
+			if (kind == MSG_CALL && method.MultiValue) ||
+				(kind == MSG_CALL_MULTI && !(method.MultiValue)) {
+				return errors.New(fmt.Sprintf("wrong quantifier (method: '%s')",
+					method_name))
+			}
 			arg, err := receiveCallArgument(method, conn, opts)
 			if err != nil { return err }
 			var action = method.GetAction(instance, arg)

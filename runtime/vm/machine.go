@@ -87,8 +87,8 @@ func (m *Machine) InjectExtraGlobals(values ([] Value)) {
 	m.extraSlot = append(m.extraSlot, values...)
 }
 
-func (m *Machine) KmdGetConfig() KmdConfig {
-	return m.program.KmdConfig
+func (m *Machine) KmdGetConfig() KmdInfo {
+	return m.program.KmdInfo
 }
 
 func (m *Machine) KmdGetAdapter(index uint) Value {

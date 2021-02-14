@@ -1,7 +1,6 @@
 package checker
 
 import (
-	"errors"
 	"strings"
 	. "kumachan/util/error"
 	"kumachan/compiler/loader"
@@ -12,6 +11,7 @@ import (
 type GenericFunction struct {
 	Node          ast.Node
 	Doc           string
+	Tags          FunctionTags
 	Public        bool
 	TypeParams    [] TypeParam
 	TypeBounds    TypeBounds
@@ -280,15 +280,6 @@ func CollectFunctions (
 			},
 		} }
 		var func_type = sig.(*AnonymousType).Repr.(Func)
-		if tags.IsServiceMethod {
-			var err = ValidateServiceMethodSignature(func_type, mod_name, ctx)
-			if err != nil { return nil, &FunctionError {
-				Point:    ErrorPointFrom(decl.Repr.Node),
-				Concrete: E_InvalidServiceMethodSignature {
-					Info: err.Error(),
-				},
-			} }
-		}
 		var add_function = func(name string, is_alias bool) (struct{}, *FunctionError) {
 			// 3.7. Construct a representation and a reference of the function
 			var additional = GenericFunctionInfo {
@@ -299,6 +290,7 @@ func CollectFunctions (
 			var f = &GenericFunction {
 				Node:         decl.Node,
 				Doc:          doc,
+				Tags:         tags,
 				Public:       decl.Public,
 				TypeParams:   params,
 				TypeBounds:   bounds,
@@ -351,65 +343,5 @@ func CollectFunctions (
 	store[mod_name] = collection
 	// 5. Return all collected functions of the current module
 	return collection, nil
-}
-
-func ValidateServiceMethodSignature(sig Func, mod string, ctx TypeContext) error {
-	var instance_t = ServiceInstanceType(mod)
-	var in = sig.Input
-	var out = sig.Output
-	switch T := in.(type) {
-	case *AnonymousType:
-		switch R := T.Repr.(type) {
-		case Tuple:
-			if len(R.Elements) != 2 {
-				return errors.New("wrong arity")
-			}
-			var args = R.Elements
-			if !(TypeEqualWithoutContext(args[0], instance_t)) {
-				return errors.New("first input should be service instance type")
-			}
-			switch req_t := args[1].(type) {
-			default:
-				return errors.New("second input is invalid")
-			case *NamedType:
-				if len(req_t.Args) != 0 {
-					return errors.New("second input is invalid")
-				}
-				var g = ctx.Registry[req_t.Name]
-				if !(g.Tags.DeclaredSerializable()) {
-					return errors.New("second input should be serializable")
-				}
-				goto in_ok
-			}
-		}
-	}
-	return errors.New("invalid input type")
-	in_ok:
-	switch T := out.(type) {
-	case *NamedType:
-		if T.Name != __Action && T.Name != __ActionMultiValue {
-			return errors.New("output should be an action type")
-		}
-		if len(T.Args) != 2 {
-			return errors.New("invalid output type")
-		}
-		if !(TypeEqualWithoutContext(T.Args[1], __ErrorType)) {
-			return errors.New("invalid exception type")
-		}
-		switch res_t := T.Args[0].(type) {
-		case *NamedType:
-			if len(res_t.Args) != 0 {
-				return errors.New("invalid output type")
-			}
-			var g = ctx.Registry[res_t.Name]
-			if !(g.Tags.DeclaredSerializable()) {
-				return errors.New("output should be serializable")
-			}
-			goto out_ok
-		}
-	}
-	return errors.New("invalid output type")
-	out_ok:
-	return nil
 }
 
