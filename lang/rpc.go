@@ -8,6 +8,10 @@ import (
 )
 
 
+type RpcApi interface {
+	GetKmdApi() KmdApi
+	GetServiceInterface(rpc.ServiceIdentifier) (rpc.ServiceInterface, bool)
+}
 type RpcInfo struct {
 	rpc.ServiceIndex
 }

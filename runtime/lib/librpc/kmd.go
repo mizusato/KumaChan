@@ -8,18 +8,47 @@ import (
 	"reflect"
 	"math/big"
 	. "kumachan/lang"
+	"kumachan/rpc"
 	"kumachan/rpc/kmd"
 	"kumachan/runtime/lib/container"
 )
 
 
+type RpcApiImpl struct {
+	kmdApi  KmdApi
+	index   rpc.ServiceIndex
+}
+type RpcInfoContext interface {
+	KmdTransformContext
+	GetRpcInfo()  RpcInfo
+}
+func CreateRpcApi(ctx RpcInfoContext) RpcApi {
+	return &RpcApiImpl {
+		kmdApi: CreateKmdApi(ctx),
+		index:  ctx.GetRpcInfo().ServiceIndex,
+	}
+}
+func (impl *RpcApiImpl) GetKmdApi() KmdApi {
+	return impl.kmdApi
+}
+func (impl *RpcApiImpl) GetServiceInterface(id rpc.ServiceIdentifier) (rpc.ServiceInterface, bool) {
+	var i, exists = impl.index[id]
+	return i, exists
+}
+
 type KmdApiImpl struct {
 	config      KmdInfo
 	transformer kmd.Transformer
 }
-func KmdCreateApi(ctx KmdTransformContext) KmdApi {
+type KmdTransformContext interface {
+	KmdGetInfo() KmdInfo
+	KmdGetAdapter(index uint) Value
+	KmdCallAdapter(f Value, x Value) Value
+	KmdCallValidator(f Value, x Value) bool
+}
+func CreateKmdApi(ctx KmdTransformContext) KmdApi {
 	return &KmdApiImpl {
-		config:      ctx.KmdGetConfig(),
+		config:      ctx.KmdGetInfo(),
 		transformer: kmdCreateTransformer(ctx),
 	}
 }
@@ -54,26 +83,16 @@ func (impl *KmdApiImpl) Deserialize(binary ([] byte), t *kmd.Type) (Value, error
 	return impl.DeserializeFromStream(t, reader)
 }
 
-
 type KmdTypedValue struct {
 	Type   *kmd.Type
 	Value  Value
 }
-
 type KmdFieldValue struct {
 	Name   string
 	Value  KmdTypedValue
 }
-
-type KmdTransformContext interface {
-	KmdGetConfig() KmdInfo
-	KmdGetAdapter(index uint) Value
-	KmdCallAdapter(f Value, x Value) Value
-	KmdCallValidator(f Value, x Value) bool
-}
-
 func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
-	var conf = ctx.KmdGetConfig()
+	var conf = ctx.KmdGetInfo()
 	var validate = func(obj kmd.Object, t kmd.TypeId) error {
 		var v, exists = conf.KmdValidatorTable[kmd.ValidatorId(t)]
 		if exists {

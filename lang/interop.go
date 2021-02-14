@@ -18,6 +18,7 @@ type InteropContext interface {
 	GetErrorPoint() ErrorPoint
 	GetEntryModulePath() string
 	GetKmdApi() KmdApi
+	GetRpcApi() RpcApi
 	GetResources(kind string) (map[string] Resource)
 }
 type StdIO struct {

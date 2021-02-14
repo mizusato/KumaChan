@@ -20,6 +20,7 @@ type Machine struct {
 	contextPool  *sync.Pool
 	scheduler    rx.Scheduler
 	kmdApi       KmdApi
+	rpcApi       RpcApi
 }
 
 type Options struct {
@@ -50,7 +51,8 @@ func Execute(p Program, opts Options, m_signal (chan <- *Machine)) {
 		contextPool:  pool,
 		scheduler:    sched,
 	}
-	m.kmdApi = librpc.KmdCreateApi(m)
+	m.kmdApi = librpc.CreateKmdApi(m)
+	m.rpcApi = librpc.CreateRpcApi(m)
 	if m_signal != nil {
 		m_signal <- m
 	}
@@ -87,8 +89,12 @@ func (m *Machine) InjectExtraGlobals(values ([] Value)) {
 	m.extraSlot = append(m.extraSlot, values...)
 }
 
-func (m *Machine) KmdGetConfig() KmdInfo {
+func (m *Machine) KmdGetInfo() KmdInfo {
 	return m.program.KmdInfo
+}
+
+func (m *Machine) GetRpcInfo() RpcInfo {
+	return m.program.RpcInfo
 }
 
 func (m *Machine) KmdGetAdapter(index uint) Value {

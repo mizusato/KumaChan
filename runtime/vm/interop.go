@@ -58,6 +58,10 @@ func (h MachineContextHandle) GetKmdApi() KmdApi {
 	return h.machine.kmdApi
 }
 
+func (h MachineContextHandle) GetRpcApi() RpcApi {
+	return h.machine.rpcApi
+}
+
 func (h MachineContextHandle) GetResources(kind string) (map[string] Resource) {
 	var res = make(map[string] Resource)
 	for path, item := range h.machine.options.Resources {
