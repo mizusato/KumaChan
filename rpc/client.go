@@ -57,18 +57,6 @@ func Client(service ServiceInterface, opts *ClientOptions) rx.Action {
 }
 
 
-type ClientLogger struct {
-	LocalAddr   net.Addr
-	RemoteAddr  net.Addr
-	Output      io.Writer
-}
-func (l ClientLogger) LogError(err error) {
-	if l.Output != nil {
-		fmt.Fprintf(l.Output, "[RPC] [Client %s] server %s: Error: %s",
-			l.LocalAddr, l.RemoteAddr, err.Error())
-	}
-}
-
 type ClientInstance struct {
 	connection  *rx.WrappedConnection
 	requester   *rx.Worker

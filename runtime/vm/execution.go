@@ -244,7 +244,7 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 						if is_recursive { ctx[len(ctx)-1] = fv }
 						ec.pushValue(fv)
 					case NativeFunctionValue:
-						var wrapped = NativeFunction(func(arg Value, h InteropContext) Value {
+						var wrapped = NativeFunctionValue(func(arg Value, h InteropContext) Value {
 							var arg_with_context = &ValProd {
 								Elements: [] Value { arg, prod },
 							}

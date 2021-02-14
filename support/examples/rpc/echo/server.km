@@ -1,0 +1,33 @@
+import Service from './service';
+
+type EchoServer {
+    verbose: Bool
+};
+
+public function new-echo-server:
+    ( &(Service::argument) Action[Service::instance,Error] )
+    ( & { verbose }
+        yield (Service::create (EchoServer { verbose }))
+    );
+
+public function echo:
+    ( &(EchoServer,Service::Request) Action[Service::Response,Error] )
+    ( &(server,req)
+        let {content} := req,
+        let {verbose} := server,
+        if verbose:
+            yield (Service::Response {
+                content: ("Reply: #" content)
+            }),
+        else:
+            yield (Service::Response { content })
+    );
+
+do
+    rpc-serve {
+        service: Service::identifier,
+        backend: rpc-server-cleartext { network: 'tcp', addr: '127.0.0.1:8001' },
+        options: {},
+        constructor: new-echo-server
+    }
+    | catch (&(err)(crash err));

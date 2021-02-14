@@ -1,8 +1,9 @@
 package rpc
 
 import (
-	"io"
 	"fmt"
+	"errors"
+	"strings"
 	"kumachan/rx"
 	"kumachan/rpc/kmd"
 )
@@ -30,11 +31,18 @@ func DescribeServiceIdentifier(id ServiceIdentifier) string {
 	return fmt.Sprintf("%s:%s:%s:%s",
 		id.Vendor, id.Project, id.Name, id.Version)
 }
-func ParserServiceIdentifier(buf io.Reader) (ServiceIdentifier, error) {
-	var id ServiceIdentifier
-	_, err := fmt.Fscanf(buf, "%s:%s:%s:%s",
-		&id.Vendor, &id.Project, &id.Name, &id.Version)
-	return id, err
+func ParseServiceIdentifier(str string) (ServiceIdentifier, error) {
+	var t = strings.Split(str, ":")
+	if len(t) != 4 {
+		return ServiceIdentifier{}, errors.New("bad service identifier")
+	}
+	// TODO: maybe more validations needed
+	return ServiceIdentifier {
+		Vendor:  t[0],
+		Project: t[1],
+		Name:    t[2],
+		Version: t[3],
+	}, nil
 }
 
 type ServiceConstructor struct {

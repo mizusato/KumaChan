@@ -87,6 +87,7 @@ type Tuple struct {
 }
 func (impl Bundle) TypeRepr() {}
 type Bundle struct {
+	// TODO: solve this problem: unordered map can make error position random
 	Fields  map[string] Field
 }
 type Field struct {

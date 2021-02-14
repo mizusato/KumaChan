@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 	"time"
-	"bytes"
 	"errors"
 	"kumachan/rx"
 	"kumachan/rpc/kmd"
@@ -72,18 +71,6 @@ func Server(service Service, opts *ServerOptions) rx.Action {
 }
 
 
-type ServerLogger struct {
-	LocalAddr   net.Addr
-	RemoteAddr  net.Addr
-	Output      io.Writer
-}
-func (l ServerLogger) LogError(err error) {
-	if l.Output != nil {
-		fmt.Fprintf(l.Output, "[RPC] [Server %s] client %s: Error: %s",
-			l.LocalAddr, l.RemoteAddr, err.Error())
-	}
-}
-
 func receiveServiceConfirmation(conn io.Reader) (ServiceIdentifier, error) {
 	kind, _, payload, err := receiveMessage(conn)
 	if err != nil {
@@ -94,11 +81,10 @@ func receiveServiceConfirmation(conn io.Reader) (ServiceIdentifier, error) {
 		return ServiceIdentifier{},
 			errors.New(fmt.Sprintf("unexpected message kind: %s", kind))
 	}
-	var buf_reader = bytes.NewReader(payload)
-	id, err := ParserServiceIdentifier(buf_reader)
+	id, err := ParseServiceIdentifier(string(payload))
 	if err != nil {
 		return ServiceIdentifier{},
-			fmt.Errorf("failed to parse client metadata: %w", err)
+			fmt.Errorf("failed to parse service confirmation: %w", err)
 	}
 	return id, nil
 }

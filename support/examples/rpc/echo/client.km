@@ -1,0 +1,22 @@
+import Service from './service';
+
+public function consume-echo-server:
+    ( &(Service::instance) Action )
+    ( &(server)
+        server.echo { content: 'Hello World' }
+        | then ( &(res)
+            let {content} := res,
+            println ("response: #" content)
+        )
+        | catch (&(err)(crash err))
+    );
+
+do
+    rpc-access {
+        service: Service::identifier,
+        backend: rpc-client-cleartext { network: 'tcp', addr: '127.0.0.1:8001' },
+        options: {},
+        argument: Service::argument (Service::Config { verbose: Yes }),
+        consumer: consume-echo-server
+    }
+    | catch (&(err)(crash err));

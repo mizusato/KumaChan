@@ -48,8 +48,11 @@ func (w *WrappedConnection) closeProperly(err error) {
 	})
 }
 func (w *WrappedConnection) Read(buf ([] byte)) (int, error) {
-	err := w.conn.SetReadDeadline(time.Now().Add(w.timeout.ReadTimeout))
-	if err != nil { return 0, err }
+	var timeout = w.timeout.ReadTimeout
+	if timeout != 0 {
+		err := w.conn.SetReadDeadline(time.Now().Add(timeout))
+		if err != nil { return 0, err }
+	}
 	n, err := w.conn.Read(buf)
 	if err != nil {
 		w.closeProperly(err)
@@ -57,8 +60,11 @@ func (w *WrappedConnection) Read(buf ([] byte)) (int, error) {
 	return n, err
 }
 func (w *WrappedConnection) Write(buf ([] byte)) (int, error) {
-	err := w.conn.SetWriteDeadline(time.Now().Add(w.timeout.WriteTimeout))
-	if err != nil { return 0, err }
+	var timeout = w.timeout.WriteTimeout
+	if timeout != 0 {
+		err := w.conn.SetWriteDeadline(time.Now().Add(timeout))
+		if err != nil { return 0, err }
+	}
 	n, err := w.conn.Write(buf)
 	if err != nil {
 		w.closeProperly(err)
