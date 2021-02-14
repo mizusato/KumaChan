@@ -14,9 +14,9 @@ type ServerOptions { common: CommonOptions };
 type ClientOptions { common: CommonOptions };
 type CommonOptions {
     debug:  Bool,
-    limits: LimitOptions,
+    limits: LimitOptions
 };
-const DefaultCommonOptions: CommonOptions { debug: Yes };
+public const DefaultCommonOptions: CommonOptions { debug: Yes };
 public function zero-value: (&()(CommonOptions)) (&(_)(DefaultCommonOptions));
 type LimitOptions {
     send-timeout:      Number,
@@ -24,21 +24,21 @@ type LimitOptions {
     recv-interval:     Number,
     recv-max-obj-size: Number
 };
-const DefaultLimitOptions: LimitOptions {
+public const DefaultLimitOptions: LimitOptions {
     send-timeout:      10000,
     recv-timeout:      0,
     recv-interval:     200,
-    recv-max-obj-size: 33554432,
+    recv-max-obj-size: 33554432
 };
 public function zero-value: (&()(LimitOptions)) (&(_)(DefaultLimitOptions));
 
-public function rpc-serve:
+public function rpc-serve[Instance,Argument]:
     ( & {
         service:     ServiceIdentifier[Instance,Argument],
         backend:     ServerBackend,
         options:     ServerOptions,
-        constructor: ( &(Argument) Action[Instance,Error] ),
-    } Action[-,Error] )
+        constructor: ( &(Argument) Action[Instance,Error] )
+    } Action[unit,Error] )
     native 'rpc-serve';
 
 public function rpc-access[Instance,Argument]:
@@ -47,8 +47,8 @@ public function rpc-access[Instance,Argument]:
         backend:  ClientBackend,
         options:  ClientOptions,
         argument: Argument,
-        consumer: ( &(Instance) Action[-] ),
-    } Action[-,Error] )
+        consumer: ( &(Instance) Action )
+    } Action[unit,Error] )
     native 'rpc-access';
 
 

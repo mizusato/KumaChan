@@ -28,7 +28,7 @@ var RpcFunctions = map[string] interface{} {
 	) {
 		panic("not implemented")
 	},
-	"rpc-client": func (
+	"rpc-access": func (
 		id        rpc.ServiceIdentifier,
 		backend   librpc.ClientBackend,
 		options   ProductValue,
