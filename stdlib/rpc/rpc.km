@@ -1,2 +1,54 @@
 type ServiceIdentifier[Instance,Argument]
     native;
+
+type ServerBackend native;
+type ClientBackend native;
+public function rpc-server-cleartext:
+    ( & { network: String, addr: String } ServerBackend )
+    native 'rpc-server-cleartext-net';
+public function rpc-client-cleartext:
+    ( & { network: String, addr: String } ClientBackend )
+    native 'rpc-client-cleartext-net';
+
+type ServerOptions { common: CommonOptions };
+type ClientOptions { common: CommonOptions };
+type CommonOptions {
+    debug:  Bool,
+    limits: LimitOptions,
+};
+const DefaultCommonOptions: CommonOptions { debug: Yes };
+public function zero-value: (&()(CommonOptions)) (&(_)(DefaultCommonOptions));
+type LimitOptions {
+    send-timeout:      Number,
+    recv-timeout:      Number,
+    recv-interval:     Number,
+    recv-max-obj-size: Number
+};
+const DefaultLimitOptions: LimitOptions {
+    send-timeout:      10000,
+    recv-timeout:      0,
+    recv-interval:     200,
+    recv-max-obj-size: 33554432,
+};
+public function zero-value: (&()(LimitOptions)) (&(_)(DefaultLimitOptions));
+
+public function rpc-serve:
+    ( & {
+        service:     ServiceIdentifier[Instance,Argument],
+        backend:     ServerBackend,
+        options:     ServerOptions,
+        constructor: ( &(Argument) Action[Instance,Error] ),
+    } Action[-,Error] )
+    native 'rpc-serve';
+
+public function rpc-access[Instance,Argument]:
+    ( & {
+        service:  ServiceIdentifier[Instance,Argument],
+        backend:  ClientBackend,
+        options:  ClientOptions,
+        argument: Argument,
+        consumer: ( &(Instance) Action[-] ),
+    } Action[-,Error] )
+    native 'rpc-access';
+
+

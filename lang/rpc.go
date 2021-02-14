@@ -15,16 +15,23 @@ type RpcApi interface {
 type RpcInfo struct {
 	rpc.ServiceIndex
 }
-type ServiceInstance struct {
-	data     Value
-	methods  [] string
-	vTable   map[string] ServiceMethodImpl
+type ServiceInstance interface {
+	Call(name string, arg Value) rx.Action
 }
-type ServiceMethodImpl (func(data Value, arg Value) rx.Action)
-func (instance ServiceInstance) Call(name string, arg Value) rx.Action {
-	var f, exists = instance.vTable[name]
+type ServerSideServiceInstance struct {
+	data     Value
+	methods  map[string] (func(data Value, arg Value) rx.Action)
+}
+type ClientSideServiceInstance struct {
+	underlying  *rpc.ClientInstance
+}
+func (instance ServerSideServiceInstance) Call(name string, arg Value) rx.Action {
+	var f, exists = instance.methods[name]
 	if !(exists) { panic("something went wrong") }
 	return f(instance.data, arg)
+}
+func (instance ClientSideServiceInstance) Call(name string, arg Value) rx.Action {
+	return instance.underlying.Call(name, arg)
 }
 func CreateServiceMethodCaller(method_name string) NativeFunctionValue {
 	return NativeFunctionValue(func(arg Value, h InteropContext) Value {
@@ -35,18 +42,23 @@ func CreateServiceMethodCaller(method_name string) NativeFunctionValue {
 	})
 }
 func CreateServiceInstance(data Value, impl ([] Value), names ([] string), h InteropContext) ServiceInstance {
-	var table = make(map[string] ServiceMethodImpl)
+	var methods = make(map[string] func(Value,Value)(rx.Action))
 	for i, name := range names {
-		table[name] = ServiceMethodImpl(func(data Value, arg Value) rx.Action {
+		var index = i
+		methods[name] = func(data Value, arg Value) rx.Action {
 			var pair = &ValProd { Elements: [] Value { data, arg } }
-			var ret = h.Call(impl[i], pair)
+			var ret = h.Call(impl[index], pair)
 			return ret.(rx.Action)
-		})
+		}
 	}
-	return ServiceInstance {
+	return ServerSideServiceInstance {
 		data:    data,
-		methods: names,
-		vTable:  table,
+		methods: methods,
+	}
+}
+func AdaptServiceInstance(instance *rpc.ClientInstance) ServiceInstance {
+	return ClientSideServiceInstance {
+		underlying: instance,
 	}
 }
 

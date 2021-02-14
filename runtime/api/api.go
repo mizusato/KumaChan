@@ -16,6 +16,7 @@ var NativeFunctionMaps = [] (map[string] interface{}) {
 	IO_Functions,
 	OS_Functions,
 	NetFunctions,
+	RpcFunctions,
 	UiFunctions,
 	UiQtFunctions,
 }
