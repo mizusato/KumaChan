@@ -5,6 +5,7 @@ import (
 	"strings"
 	"kumachan/rpc"
 	"kumachan/rpc/kmd"
+	"kumachan/lang"
 	. "kumachan/util/error"
 	"kumachan/compiler/loader"
 	"kumachan/compiler/loader/parser/ast"
@@ -69,10 +70,6 @@ type ExprNative struct {
 func (impl ExprPredefinedValue) ExprLike() {}
 type ExprPredefinedValue struct {
 	Value  interface{}
-}
-func (impl ExprKmdApi) ExprLike() {}
-type ExprKmdApi struct {
-	Id  kmd.TransformerPartId
 }
 func (impl ExprExpr) ExprLike() {}
 type ExprExpr Expr
@@ -503,12 +500,16 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 	var func_map = make(map[string] ([] CheckedFunction))
 	for name, group := range functions {
 		func_map[name] = make([] CheckedFunction, 0)
-		var add = func(f *GenericFunction, body ExprLike, implicit ([] string)) {
+		var add = func(f *GenericFunction, body ExprLike) {
 			var t = f.DeclaredType
+			var implicit_fields = make([] string, len(f.Implicit))
+			for name, field := range f.Implicit {
+				implicit_fields[field.Index] = name
+			}
 			func_map[name] = append(func_map[name], CheckedFunction {
 				Point:    ErrorPointFrom(f.Node),
 				Body:     body,
-				Implicit: implicit,
+				Implicit: implicit_fields,
 				FunctionKmdInfo: GetFunctionKmdInfo(name, t, ctx.Mapping),
 				CheckedFunctionInfo: CheckedFunctionInfo {
 					Public:      f.Public,
@@ -529,10 +530,8 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 			var f = f_ref.Function
 			switch body := f.Body.(type) {
 			case ast.Lambda:
-				var implicit_fields = make([] string, len(f.Implicit))
 				var implicit_types = make(map[string] Type)
 				for name, field := range f.Implicit {
-					implicit_fields[field.Index] = name
 					implicit_types[name] = field.Type
 				}
 				var blank_ctx = CreateExprContext(mod_info, f.TypeParams, f.TypeBounds)
@@ -548,14 +547,28 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 					errors = append(errors, err2)
 					continue
 				}
-				add(f, ExprExpr(body_expr), implicit_fields)
+				add(f, ExprExpr(body_expr))
 			case ast.NativeRef:
 				add(f, ExprNative {
 					Name:  string(body.Id.Value),
 					Point: ErrorPointFrom(body.Node),
-				}, make([] string, 0))
+				})
 			case ast.KmdApiFuncBody:
-				add(f, ExprKmdApi { Id: body.Id }, make([] string, 0))
+				var v = lang.CreateKmdApiFunction(body.Id)
+				add(f, ExprPredefinedValue { Value: v })
+			case ast.ServiceMethodFuncBody:
+				var v = lang.CreateServiceMethodCaller(name)
+				add(f, ExprPredefinedValue { Value: v })
+			case ast.ServiceCreateFuncBody:
+				var names = mod.ServiceMethodNames
+				var v = lang.NativeFunctionValue(func(arg lang.Value, h lang.InteropContext) lang.Value {
+					var prod = arg.(lang.ProductValue)
+					var data = prod.Elements[0]
+					var ctx = prod.Elements[1].(lang.ProductValue)
+					var impl = ctx.Elements
+					return lang.CreateServiceInstance(data, impl, names, h)
+				})
+				add(f, ExprPredefinedValue { Value: v })
 			default:
 				panic("impossible branch")
 			}

@@ -1,10 +1,8 @@
 package generator
 
 import (
-	"fmt"
 	. "kumachan/util/error"
 	"kumachan/lang"
-	"kumachan/rpc/kmd"
 	ch "kumachan/compiler/checker"
 )
 
@@ -92,43 +90,6 @@ func CompileFunction (
 	point  ErrorPoint,
 ) (*lang.Function, [] GlobalRef, [] E) {
 	switch b := body.(type) {
-	case ch.ExprKmdApi:
-		var f lang.NativeFunctionValue
-		switch id := b.Id.(type) {
-		case kmd.SerializerId:
-			f = func(arg lang.Value, h lang.InteropContext) lang.Value {
-				var api = h.GetKmdApi()
-				var t = api.GetTypeFromId(id.TypeId)
-				var binary, err = api.Serialize(arg, t)
-				if err != nil {
-					var wrapped = fmt.Errorf("serialiation error: %w", err)
-					panic(wrapped)
-				}
-				return binary
-			}
-		case kmd.DeserializerId:
-			f = func(arg lang.Value, h lang.InteropContext) lang.Value {
-				var api = h.GetKmdApi()
-				var t = api.GetTypeFromId(id.TypeId)
-				var obj, err = api.Deserialize(arg.([] byte), t)
-				if err != nil { return lang.Ng(err) }
-				return lang.Ok(obj)
-			}
-		default:
-			panic("impossible branch")
-		}
-		return &lang.Function {
-			Kind:       lang.F_PREDEFINED,
-			Predefined: f,
-			Code:       nil,
-			BaseSize:   lang.FrameBaseSize {},
-			Info: lang.FuncInfo {
-				Module:    mod,
-				Name:      name,
-				DeclPoint: point,
-				SourceMap: nil,
-			},
-		}, make([] GlobalRef, 0), nil
 	case ch.ExprPredefinedValue:
 		if len(imp) > 0 { panic("something went wrong") }
 		return &lang.Function {
