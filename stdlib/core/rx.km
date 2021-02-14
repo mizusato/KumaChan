@@ -120,6 +120,10 @@ public function no-op: ( &() Action*[never,never] )
     native 'no-op';
 public function crash: ( &(String) Action )
     native 'crash';
+public function crash: ( &(Error) Action )
+    ( &(err) (crash ((str err) | "Error: #")) );
+public function from: ( &(Error) String )  // TODO: move this function
+    native 'String from error';
 /// go(f) returns an action that evaluates f() in a separate goroutine.
 public function go[T]: ( &((&()(T))) Action[T] )
     native 'go-thunk';

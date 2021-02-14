@@ -1,15 +1,10 @@
-type Error native;
+type Error protected Core::Error;
 
 type ErrorKind enum {
     type EOF;
     type ClosedPipe;
     type UnknownError;
 };
-
-public function from: ( &(Self::Error) String )
-    native 'String from error';
-public function crash: ( &(Self::Error) Action )
-    ( &(err) (crash ((str err) | "I/O Error: #")) );
 
 public function is:
     ( &(Error,ErrorKind) Bool )
