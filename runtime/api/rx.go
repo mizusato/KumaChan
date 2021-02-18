@@ -251,9 +251,6 @@ var EffectFunctions = map[string] Value {
 			return StringFromGoString(strconv.FormatUint(id, 16)), true
 		})
 	},
-	"no-op": func() rx.Action {
-		return rx.Noop()
-	},
 	"crash": func(msg String, h InteropContext) rx.Action {
 		const bold = "\033[1m"
 		const red = "\033[31m"

@@ -631,14 +631,24 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 	for _, cmd := range mod.AST.Statements {
 		switch do := cmd.Statement.(type) {
 		case ast.Do:
-			var semi_expr, err1 = Check(do.Effect, expr_ctx)
-			if err1 != nil {
-				errors = append(errors, err1)
+			var semi_expr, err = Check(do.Effect, expr_ctx)
+			if err != nil {
+				errors = append(errors, err)
 				continue
 			}
-			var expr, err2 = AssignTo(__DoType, semi_expr, expr_ctx)
-			if err2 != nil {
-				errors = append(errors, err2)
+			// TODO: enhance code
+			var expr Expr
+			var ok = true
+			for _, t := range __DoTypes {
+				expr, err = AssignTo(t, semi_expr, expr_ctx)
+				if err != nil {
+					errors = append(errors, err)
+					ok = false
+				} else {
+					break
+				}
+			}
+			if !(ok) {
 				continue
 			}
 			do_effects = append(do_effects, CheckedEffect {

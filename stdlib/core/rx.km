@@ -116,11 +116,9 @@ public function gen-random: ( &() Action[Float] )
     native 'gen-random';
 public function gen-sequential-id: ( &() Action[String] )
     native 'gen-sequential-id';
-public function no-op: ( &() Action*[never,never] )
-    native 'no-op';
-public function crash: ( &(String) Action )
+public function crash: ( &(String) Action[never] )
     native 'crash';
-public function crash: ( &(Error) Action )  // TODO: add 'crash-on-error'
+public function crash: ( &(Error) Action[never] )  // TODO: add 'crash-on-error'
     ( &(err) (crash ((str err) | "Error: #")) );
 public function from: ( &(Error) String )  // TODO: move this function
     native 'String from error';

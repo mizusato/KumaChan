@@ -34,11 +34,10 @@ func Reactive(t Type) Type {
 		Args: [] Type { t },
 	}
 }
-var __DoType = &NamedType {
-	Name: __Action,
-	Args: [] Type { &AnonymousType { Unit {} } },
+var __DoTypes = [] Type {
+	&NamedType { Name: __Action, Args: [] Type { &AnonymousType { Unit {} } } },
+	&NamedType { Name: __ActionMultiValue, Args: [] Type { &NeverType {} } },
 }
-func DoType() Type { return __DoType }
 var __AnyActionType = &NamedType {
 	Name: __ActionMultiValue,
 	Args: [] Type { &AnyType{}, &AnyType{} },
