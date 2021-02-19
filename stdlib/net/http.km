@@ -7,5 +7,5 @@ public function header: ( &(HttpResponse) Map[String,Array[String]] )
 public function body: ( &(HttpResponse) Bytes )
     native 'http-response-body';
 
-public function http-get: ( &(URL) Action[HttpResponse,I/O::Error] )
+public function http-get: ( &(URL) Action[HttpResponse,Error] )
     native 'http-get';

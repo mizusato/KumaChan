@@ -156,24 +156,24 @@ public function forever[E]: ( &(Action*[unit,E]) Action[unit,E] )
     native 'forever';
 
 /// This function has two kinds of definitions:
-/// 1. then(a1, r1 => a2) returns an action that perfroms a1 first and then
-///   tranforms r1 (the result of a1) into a2 and performs a2.
+/// 1. then(a1, r1 => a2) returns an action that performs a1 first and then
+///   transforms r1 (the result of a1) into a2 and performs a2.
 /// 2. then(a1, a2) returns an action that performs a1 and then performs a2.
 /// In both cases, the returned action returns the result of a2.
 /// Moreover, this function has an alias called `await`, which is intended
 /// to be used within Flat CPS expressions.
 ///
 # alias: await
-public function then[A,B,E, F < E]: ( &(Action[A,E],(&(A)(Action[B,F]))) Action[B,E] )
+public function then[A,B,E]: ( &(Action[A,E],(&(A)(Action[B,E]))) Action[B,E] )
     native 'then';
 # alias: await
-public function then[A,B,E, F < E]: ( &(Action[A,E],(&(A)(Action*[B,F]))) Action*[B,E] )
+public function then[A,B,E]: ( &(Action[A,E],(&(A)(Action*[B,E]))) Action*[B,E] )
     native 'then';
 # alias: await
-public function then[E,B, F < E]: ( &(Action[unit,E], Action[B,F]) Action[B,E] )
+public function then[E,B]: ( &(Action[unit,E], Action[B,E]) Action[B,E] )
     native 'then-shortcut';
 # alias: await
-public function then[E,B, F < E]: ( &(Action[unit,E], Action*[B,F]) Action*[B,E] )
+public function then[E,B]: ( &(Action[unit,E], Action*[B,E]) Action*[B,E] )
     native 'then-shortcut';
 
 public function catch[T,E,F]: ( &(Action[T,E],(&(E)(Action[T,F]))) Action[T,F] )
