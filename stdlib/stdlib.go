@@ -39,7 +39,7 @@ var core_types = []string {
 	// error.km
 	Error,
 	// binary.km
-	Bit, Byte, Word, Dword, Qword, Bytes, BinaryError,
+	Bit, Byte, Word, Dword, Qword, Bytes,
 	// int.km
 	Int,
 	// containers.km
@@ -107,7 +107,6 @@ const Word = "Word"
 const Dword = "Dword"
 const Qword = "Qword"
 const Bytes = "Bytes"
-const BinaryError = "BinaryError"
 // int.km
 const Int = "Int"
 // containers.km

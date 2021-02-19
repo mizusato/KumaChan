@@ -4,7 +4,7 @@ do open-read-only (OS::EntryModuleDirPath.join ['sample','sample1.kmd'])
     | then ( &(file)
         file.read-all
         | then ( &(binary)
-            let result := (:Result[Data::Canvas,BinaryError]:
+            let result := (:Result[Data::Canvas,Error]:
                 data-deserialize binary),
             switch result:
             case OK canvas:

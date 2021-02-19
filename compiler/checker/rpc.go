@@ -244,7 +244,7 @@ func CraftKmdApiFunction (
 	}
 	var binary_t = make_type(stdlib.Bytes)
 	var object_t = make_type(sym.SymbolName)
-	var error_t = make_type(stdlib.BinaryError)
+	var error_t = make_type(stdlib.Error)
 	var name string
 	var sig ast.ReprFunc
 	switch id.(type) {
