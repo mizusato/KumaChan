@@ -184,7 +184,7 @@ public function catch-retry[T,E]: ( &(Action[T,E],(&(E)(Action[Bool]))) Action[T
     native 'catch-retry';
 public function catch-throw[T,E,F]: ( &(Action[T,E],(&(E)(F))) Action[T,F] )
     native 'catch-throw';
-public function throw[T,E]: ( &(E) Action[T,E] )
+public function throw[E]: ( &(E) Action[never,E] )
     native 'throw';
 public function map[A,B,E]:  ( &(Action[A,E],(&(A)(B))) Action[B,E] )
     native 'action-map';
