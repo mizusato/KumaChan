@@ -3,12 +3,15 @@ import Service from './service';
 public function consume-echo-server:
     ( &(Service::instance) Action )
     ( &(server)
-        server.echo { content: 'Hello World' }
-        | then ( &(res)
-            let {content} := res,
-            println ("response: #" content)
-        )
+        let read-and-request :=
+            ~ await print 'request: ',
+            ~ await &(input) := scanln,
+            ~ await &(res) := server.echo { content: input },
+            let { content } := res,
+            println ("response: #"..\n (quote content)),
+        read-and-request
         | catch (&(err)(crash err))
+        | forever
     );
 
 do
