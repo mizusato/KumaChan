@@ -108,8 +108,12 @@ public function get[K,V]: ( &(Map[K,V],K) Maybe[V] )
     native 'map-get';
 public function get![K,V]: ( &(Map[K,V],K) V )
     native 'map-get!';
+public function insert[K,V]: ( &(Map[K,V],K,V) Maybe[Map[K,V]] )
+    native 'map-insert';
 public function insert*[K,V]: ( &(Map[K,V],K,V) Map[K,V] )
     native 'map-insert*';
+public function delete[K,V]: ( &(Map[K,V],K) Maybe[(V,Map[K,V])] )
+    native 'map-delete';
 public function delete*[K,V]: ( &(Map[K,V],K) Map[K,V] )
     native 'map-delete*';
 

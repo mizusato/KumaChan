@@ -122,6 +122,8 @@ public function crash: ( &(Error) Action[never] )  // TODO: add 'crash-on-error'
     ( &(err) (crash ((str err) | "Error: #")) );
 public function from: ( &(Error) String )  // TODO: move this function
     native 'String from error';
+public function make-error: ( &(String) Error )  // TODO: move this function
+    native 'make-error';
 /// go(f) returns an action that evaluates f() in a separate goroutine.
 public function go[T]: ( &((&()(T))) Action[T] )
     native 'go-thunk';

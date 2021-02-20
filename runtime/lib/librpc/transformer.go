@@ -104,7 +104,7 @@ func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
 					}
 				},
 			},
-			AlgebraicSerializer: kmd.AlgebraicSerializer{
+			AlgebraicSerializer: kmd.AlgebraicSerializer {
 				IterateRecord: func(obj kmd.Object, f func(string, kmd.Object) error) error {
 					var tv = obj.(KmdTypedValue)
 					var pv = tv.Value.(ProductValue)
@@ -116,7 +116,7 @@ func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
 					for name, field := range schema.Fields {
 						var field_t = field.Type
 						var field_v = pv.Elements[field.Index]
-						buffer[field.Index] = KmdFieldValue{
+						buffer[field.Index] = KmdFieldValue {
 							Name:  name,
 							Value: KmdTypedValue {
 								Type:  field_t,

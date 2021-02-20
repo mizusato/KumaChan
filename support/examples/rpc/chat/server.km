@@ -1,0 +1,52 @@
+import Service from './service';
+
+
+type Chat {
+    user: User,
+    bus:  Bus[Service::Message]
+};
+type User {
+    name: String
+};
+
+public function new-chat:
+    ( &(Bus[Service::Message]) Service::constructor )
+    ( &(bus)
+    ( &(login,_)
+        ~ await &(id) := gen-sequential-id,
+        let { nickname } := login,
+        let unique-name := "#-#" id nickname,
+        ~ await println ("# signed in" unique-name),
+        let chat := Chat { bus, user: { name: unique-name } },
+        let instance := Service::create chat,
+        yield instance
+    ));
+
+public function say:
+    ( &(Chat,Service::MessageContent) Action[Service::None,Error] )
+    ( &(chat,content)
+        let {user,bus} := chat,
+        let msg := Service::Message {
+            from: ${user}.name,
+            content
+        },
+        ~ await $(bus <- msg),
+        yield Service::None
+    );
+
+public function messages:
+    ( &(Chat,Service::None) Action*[Service::Message,Error] )
+    ( &(chat,_)
+        let {bus} := chat,
+        bus.watch
+    );
+
+do
+    ~ await &(bus) := new-bus:[Service::Message] (),
+    rpc-serve {
+        service: Service::identifier,
+        backend: rpc-server-cleartext { network: 'tcp', addr: '127.0.0.1:8002' },
+        options: {},
+        constructor: (new-chat bus)
+    }
+    | catch (&(err)(crash err));

@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"math"
+	"errors"
 	"reflect"
 	"strconv"
 	"math/big"
@@ -173,6 +174,9 @@ var ContainerFunctions = map[string] Value {
 	"array-iterate": func(v Value) Seq {
 		return ArrayFrom(v).Iterate()
 	},
+	"make-error": func(msg String) error {
+		return errors.New(GoStringFromString(msg))
+	},
 	"String from error": func(err error) String {
 		return StringFromGoString(err.Error())
 	},
@@ -338,13 +342,29 @@ var ContainerFunctions = map[string] Value {
 			panic(fmt.Sprintf("accessing absent key %s of a map", Inspect(k)))
 		}
 	},
+	"map-insert": func(m Map, k Value, v Value) SumValue {
+		var result, ok = m.Inserted(k, v)
+		if ok {
+			return Just(result)
+		} else {
+			return Na()
+		}
+	},
 	"map-insert*": func(m Map, k Value, v Value) Map {
 		var result, _ = m.Inserted(k, v)
 		return result
 	},
+	"map-delete": func(m Map, k Value) SumValue {
+		var deleted, rest, ok = m.Deleted(k)
+		if ok {
+			return Just(&ValProd { Elements: [] Value { deleted, rest } })
+		} else {
+			return Na()
+		}
+	},
 	"map-delete*": func(m Map, k Value) Map {
-		var _, result, _ = m.Deleted(k)
-		return result
+		var _, rest, _ = m.Deleted(k)
+		return rest
 	},
 	"create-list": func(v Value, get_key Value, h InteropContext) List {
 		return NewList(ArrayFrom(v), func(item Value) String {

@@ -66,6 +66,10 @@ public function assume[T]:   ( &((Bool,T),(&()(T))) T )
             fallback
     );
 
+
+// ----------
+// TODO: rename the following functions
+
 public function maybe[A,B]:  ( &(Maybe[A],(&(A)(B))) Maybe[B] )
     ( &(v?, f)
         switch v?:
@@ -86,9 +90,6 @@ public function maybe[A,B]:  ( &((Maybe[A],B),(&(A)(B))) B )
             fallback,
         end
     );
-
-
-// -----------
 
 public function maybe?[A,B]: ( &(Maybe[A],(&(A)(Maybe[B]))) Maybe[B] )
     ( &(v?, k)
@@ -124,3 +125,4 @@ public function fallback?[T]: ( &(Maybe[T],T) T )
             fallback,
         end
     );
+

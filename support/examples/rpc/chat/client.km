@@ -1,0 +1,35 @@
+import Service from './service';
+
+public function consume-chat:
+    ( &() Service::consumer )
+    ( &(_) ( &(chat)
+        println 'connected'
+            | then (chat.messages())
+            | concat-map ( &(msg)
+                let {from,content} := msg,
+                let {text} := content,
+                println ("#: #" from text)
+            )
+            | wait-complete
+            | with (
+                let try: Action[unit,Error] :=
+                    ~ await &(text) := scanln,
+                    ~ await chat.say (Service::MessageContent { text }),
+                    yield (),
+                try.forever.catch (&(err)(crash err))
+            )
+            | catch (&(err)(crash err))
+    ));
+
+do
+    let try: Action[unit,Error] :=
+        ~ await print '(login) nickname: ',
+        ~ await &(nickname) := scanln,
+        rpc-access {
+            service: Service::identifier,
+            backend: rpc-client-cleartext { network: 'tcp', addr: '127.0.0.1:8002' },
+            options: {},
+            argument: Service::argument (Service::Login { nickname }),
+            consumer: consume-chat
+        },
+    try | catch (&(err)(crash err));

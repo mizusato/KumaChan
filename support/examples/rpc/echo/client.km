@@ -1,6 +1,6 @@
 import Service from './service';
 
-public function consume-echo-server:
+public function consume-echo-service:
     ( &(Service::instance) Action )
     ( &(server)
         let read-and-request :=
@@ -20,6 +20,6 @@ do
         backend: rpc-client-cleartext { network: 'tcp', addr: '127.0.0.1:8001' },
         options: {},
         argument: Service::argument (Service::Config { verbose: Yes }),
-        consumer: consume-echo-server
+        consumer: Service::consumer consume-echo-service
     }
     | catch (&(err)(crash err));

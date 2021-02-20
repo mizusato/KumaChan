@@ -1,4 +1,4 @@
-type ServiceIdentifier[Instance,Argument]
+type ServiceIdentifier[Instance,Argument,Constructor,Consumer]
     native;
 
 type ServerBackend native;
@@ -38,22 +38,22 @@ public function wait-closed: ( &(Connection) Action[unit,Error] )
 public function close: ( &(Connection) Action[unit] )
     native 'rpc-connection-close';
 
-public function rpc-serve[Instance,Argument]:
+public function rpc-serve[Instance,Argument,Constructor,Consumer]:
     ( & {
-        service:     ServiceIdentifier[Instance,Argument],
+        service:     ServiceIdentifier[Instance,Argument,Constructor,Consumer],
         backend:     ServerBackend,
         options:     ServerOptions,
-        constructor: ( &(Argument,Connection) Action[Instance,Error] )
+        constructor: Constructor
     } Action[unit,Error] )
     native 'rpc-serve';
 
-public function rpc-access[Instance,Argument]:
+public function rpc-access[Instance,Argument,Constructor,Consumer]:
     ( & {
-        service:  ServiceIdentifier[Instance,Argument],
+        service:  ServiceIdentifier[Instance,Argument,Constructor,Consumer],
         backend:  ClientBackend,
         options:  ClientOptions,
         argument: Argument,
-        consumer: ( &(Instance) Action )
+        consumer: Consumer
     } Action[unit,Error] )
     native 'rpc-access';
 

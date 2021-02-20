@@ -1,0 +1,25 @@
+# service-argument
+# data: name=Login, ver=v1
+type Login {
+     nickname: String
+};
+
+# data: name=Message, ver=v1
+type Message {
+    from:    String,
+    content: MessageContent
+};
+
+# data: name=MessageContent, ver=v1
+type MessageContent {
+    text: String
+};
+
+# data: name=None, ver=v1
+type None ();
+
+# service-method
+public function say: ( &(instance,MessageContent) Action[None,Error] );
+
+# service-method
+public function messages: ( &(instance,None) Action*[Message,Error] );

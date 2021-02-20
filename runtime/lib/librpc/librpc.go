@@ -70,6 +70,7 @@ func Serve (
 func implementService(i rpc.ServiceInterface, ctor (func(Value,Value) rx.Action)) rpc.Service {
 	var methods = make(map[string] rpc.ServiceMethod)
 	for name, method_info := range i.Methods {
+		var name = name  // spent 3 hours to find out this problem
 		methods[name] = rpc.ServiceMethod {
 			ServiceMethodInterface: method_info,
 			GetAction: func(instance kmd.Object, arg kmd.Object) rx.Action {

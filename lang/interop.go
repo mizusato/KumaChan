@@ -37,17 +37,16 @@ type NativeConstant  func(handle InteropContext) Value
 
 
 func AdaptNativeFunction(f interface{}) NativeFunction {
-	var get_arg_val = func(v Value) reflect.Value {
+	var get_arg_val = func(v Value, t reflect.Type) reflect.Value {
 		if v == nil {
-			return reflect.ValueOf(struct{}{})
-		} else {
-			switch v.(type) {
-			case reflect.Value, *reflect.Value:
-				// reflect.Value should not be used as Value
-				panic("something went wrong")
-			default:
-				return reflect.ValueOf(v)
-			}
+			return reflect.New(t).Elem()
+		}
+		switch v.(type) {
+		case reflect.Value, *reflect.Value:
+			// reflect.Value should not be used as Value
+			panic("something went wrong")
+		default:
+			return reflect.ValueOf(v)
 		}
 	}
 	var f_fit, ok = f.(NativeFunction)
@@ -67,8 +66,8 @@ func AdaptNativeFunction(f interface{}) NativeFunction {
 			var net_arity = arity - 1
 			if net_arity == 1 {
 				return func(arg Value, handle InteropContext) Value {
-					var rv_args = []reflect.Value {
-						get_arg_val(arg),
+					var rv_args = [] reflect.Value {
+						get_arg_val(arg, t.In(0)),
 						reflect.ValueOf(handle),
 					}
 					return AdaptReturnValue(f_rv.Call(rv_args))
@@ -79,9 +78,9 @@ func AdaptNativeFunction(f interface{}) NativeFunction {
 					if len(p.Elements) != net_arity {
 						panic("invalid input quantity")
 					}
-					var rv_args = make([]reflect.Value, arity)
+					var rv_args = make([] reflect.Value, arity)
 					for i, e := range p.Elements {
-						rv_args[i] = get_arg_val(e)
+						rv_args[i] = get_arg_val(e, t.In(i))
 					}
 					rv_args[net_arity] = reflect.ValueOf(handle)
 					return AdaptReturnValue(f_rv.Call(rv_args))
@@ -91,7 +90,7 @@ func AdaptNativeFunction(f interface{}) NativeFunction {
 			if arity == 1 {
 				return func(arg Value, handle InteropContext) Value {
 					return AdaptReturnValue(f_rv.Call([] reflect.Value {
-						get_arg_val(arg),
+						get_arg_val(arg, t.In(0)),
 					}))
 				}
 			} else {
@@ -100,9 +99,9 @@ func AdaptNativeFunction(f interface{}) NativeFunction {
 					if len(p.Elements) != arity {
 						panic("invalid input quantity")
 					}
-					var args = make([]reflect.Value, arity)
+					var args = make([] reflect.Value, arity)
 					for i, e := range p.Elements {
-						args[i] = get_arg_val(e)
+						args[i] = get_arg_val(e, t.In(i))
 					}
 					return AdaptReturnValue(f_rv.Call(args))
 				}

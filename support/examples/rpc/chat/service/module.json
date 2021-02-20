@@ -1,0 +1,10 @@
+{
+  "name": "ChatService",
+  "kind": "service",
+  "config": {
+    "service": {
+      "name": "chat",
+      "version": "v1"
+    }
+  }
+}
