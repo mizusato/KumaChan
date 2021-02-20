@@ -71,8 +71,6 @@ func OverloadedCall (
 }
 
 func AssignUndecidedTo(expected Type, call UndecidedCall, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
-	err := RequireExplicitType(expected, info)
-	if err != nil { return Expr{}, err }
 	var name = call.FuncName
 	var available = make([] AvailableCall, 0)
 	var unavailable = make([] UnavailableCall, 0)
