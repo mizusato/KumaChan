@@ -52,6 +52,15 @@ var RpcFunctions = map[string] interface{} {
 			Address: GoStringFromString(addr),
 		}
 	},
+	"rpc-connection-wait-closed": func(conn *rx.WrappedConnection) rx.Action {
+		return conn.WaitClosed()
+	},
+	"rpc-connection-close": func(conn *rx.WrappedConnection) rx.Action {
+		return rx.NewSync(func() (rx.Object, bool) {
+			_ = conn.Close()
+			return nil, true
+		})
+	},
 	"rpc-serve": func (
 		id        rpc.ServiceIdentifier,
 		backend   librpc.ServerBackend,
@@ -61,8 +70,9 @@ var RpcFunctions = map[string] interface{} {
 	) rx.Action {
 		var api = h.GetRpcApi()
 		var opts = rpcAdaptServerOptions(raw_opts)
-		var wrapped_ctor = func(arg Value) rx.Action {
-			return h.Call(ctor, arg).(rx.Action)
+		var wrapped_ctor = func(arg Value, conn Value) rx.Action {
+			var pair = &ValProd { Elements: [] Value { arg, conn } }
+			return h.Call(ctor, pair).(rx.Action)
 		}
 		return librpc.Serve(id, api, backend, opts, wrapped_ctor)
 	},

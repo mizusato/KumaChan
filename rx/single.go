@@ -82,7 +82,7 @@ func (e Action) WaitComplete() Action {
 	} }
 }
 
-func (e Action) TakeOne() Action {
+func (e Action) TakeOneAsSingle() Action {
 	return Action { func(sched Scheduler, ob *observer) {
 		var ctx, ctx_dispose = ob.context.create_disposable_child()
 		sched.run(e, &observer {

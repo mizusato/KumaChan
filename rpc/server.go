@@ -105,7 +105,7 @@ func receiveConstructorArgument(conn io.Reader, service Service, opts *ServerOpt
 	return arg, nil
 }
 func constructServiceInstance(arg kmd.Object, conn *rx.WrappedConnection, service Service) (kmd.Object, error) {
-	var construct = service.Constructor.GetAction(arg)
+	var construct = service.Constructor.GetAction(arg, conn)
 	var sched = conn.Scheduler()
 	var ctx = conn.Context()
 	v, ok := rx.BlockingRunSingle(construct, sched, ctx)

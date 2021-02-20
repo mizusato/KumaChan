@@ -5,8 +5,9 @@ type EchoServer {
 };
 
 public function new-echo-server:
-    ( &(Service::argument) Action[Service::instance,Error] )
-    ( & { verbose }
+    ( &(Service::argument,RPC::Connection) Action[Service::instance,Error] )
+    ( & (opts,_)
+        let { verbose } := opts,
         yield (Service::create (EchoServer { verbose }))
     );
 

@@ -15,6 +15,7 @@ type WrappedConnection struct {
 	context  *Context
 	dispose  disposeFunc
 	closed   chan struct{}
+	result   Promise
 }
 type TimeoutPair struct {
 	ReadTimeout   time.Duration
@@ -46,6 +47,11 @@ func (w *WrappedConnection) closeProperly(err error) {
 		}
 		w.dispose(behaviour_cancel)
 	})
+	if err != nil {
+		w.result.Reject(err, w.sched)
+	} else {
+		w.result.Resolve(nil, w.sched)
+	}
 }
 func (w *WrappedConnection) Read(buf ([] byte)) (int, error) {
 	var timeout = w.timeout.ReadTimeout
@@ -71,12 +77,15 @@ func (w *WrappedConnection) Write(buf ([] byte)) (int, error) {
 	}
 	return n, err
 }
+func (w *WrappedConnection) Fatal(err error) {
+	w.closeProperly(err)
+}
 func (w *WrappedConnection) Close() error {
 	w.closeProperly(nil)
 	return nil
 }
-func (w *WrappedConnection) Fatal(err error) {
-	w.closeProperly(err)
+func (w *WrappedConnection) WaitClosed() Action {
+	return w.result.Outcome()
 }
 
 func NewConnectionHandler(conn net.Conn, timeout TimeoutPair, logic (func(*WrappedConnection))) Action {
@@ -91,6 +100,7 @@ func NewConnectionHandler(conn net.Conn, timeout TimeoutPair, logic (func(*Wrapp
 			context: ctx,
 			dispose: dispose,
 			closed:  make(chan struct{}),
+			result:  CreatePromise(),
 		}
 		go logic(wrapped)
 		go ob.context.WaitDispose(func() {

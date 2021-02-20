@@ -32,12 +32,18 @@ public const DefaultLimitOptions: LimitOptions {
 };
 public function zero-value: (&()(LimitOptions)) (&(_)(DefaultLimitOptions));
 
+type Connection native;
+public function wait-closed: ( &(Connection) Action[unit,Error] )
+    native 'rpc-connection-wait-closed';
+public function close: ( &(Connection) Action[unit] )
+    native 'rpc-connection-close';
+
 public function rpc-serve[Instance,Argument]:
     ( & {
         service:     ServiceIdentifier[Instance,Argument],
         backend:     ServerBackend,
         options:     ServerOptions,
-        constructor: ( &(Argument) Action[Instance,Error] )
+        constructor: ( &(Argument,Connection) Action[Instance,Error] )
     } Action[unit,Error] )
     native 'rpc-serve';
 

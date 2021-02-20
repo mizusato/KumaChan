@@ -24,11 +24,17 @@ func Merge(actions ([] Action)) Action {
 	} }
 }
 
-func (e Action) DiscardValues() Action {
+func (e Action) With(side Action) Action {
 	return Action { func(sched Scheduler, ob *observer) {
-		sched.run(e, &observer {
+		sched.run(side, &observer {
 			context:  ob.context,
 			next:     func(_ Object) {},
+			error:    func(_ Object) {},
+			complete: func() {},
+		})
+		sched.run(e, &observer {
+			context:  ob.context,
+			next:     ob.next,
 			error:    ob.error,
 			complete: ob.complete,
 		})

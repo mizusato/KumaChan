@@ -46,7 +46,7 @@ func Serve (
 	api          RpcApi,
 	backend      ServerBackend,
 	options      ServerOptions,
-	constructor  func(Value)(rx.Action),
+	constructor  func(arg Value, conn Value)(rx.Action),
 ) rx.Action {
 	return rx.NewSync(func() (rx.Object, bool) {
 		var l, err = backend.Serve()
@@ -67,7 +67,7 @@ func Serve (
 	})
 }
 
-func implementService(i rpc.ServiceInterface, ctor (func(Value) rx.Action)) rpc.Service {
+func implementService(i rpc.ServiceInterface, ctor (func(Value,Value) rx.Action)) rpc.Service {
 	var methods = make(map[string] rpc.ServiceMethod)
 	for name, method_info := range i.Methods {
 		methods[name] = rpc.ServiceMethod {

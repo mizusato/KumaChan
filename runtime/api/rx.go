@@ -237,7 +237,7 @@ var EffectFunctions = map[string] Value {
 		})
 	},
 	"with": func(main rx.Action, side rx.Action) rx.Action {
-		return rx.Merge([] rx.Action {main, side.DiscardValues() })
+		return main.With(side)
 	},
 	"gen-random": func() rx.Action {
 		return rx.NewSync(func() (rx.Object, bool) {
@@ -318,8 +318,8 @@ var EffectFunctions = map[string] Value {
 			return true, nil
 		})
 	},
-	"take-one": func(e rx.Action) rx.Action {
-		return e.TakeOne().Map(func(val rx.Object) rx.Object {
+	"take-one-as-single": func(e rx.Action) rx.Action {
+		return e.TakeOneAsSingle().Map(func(val rx.Object) rx.Object {
 			var opt = val.(rx.Optional)
 			if opt.HasValue {
 				return Just(opt.Value)
