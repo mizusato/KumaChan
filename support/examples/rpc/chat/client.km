@@ -12,7 +12,7 @@ public function consume-chat:
             )
             | wait-complete
             | with (
-                let try: Action[unit,Error] :=
+                let try :=
                     ~ await &(text) := scanln,
                     ~ await chat.say (Service::MessageContent { text }),
                     yield (),
@@ -22,7 +22,7 @@ public function consume-chat:
     ));
 
 do
-    let try: Action[unit,Error] :=
+    let try :=
         ~ await print '(login) nickname: ',
         ~ await &(nickname) := scanln,
         rpc-access {

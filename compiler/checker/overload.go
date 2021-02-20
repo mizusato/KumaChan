@@ -127,7 +127,7 @@ func GenerateCallResult (
 		return LiftTyped(opt.Expr), nil
 	} else {
 		if assigned {
-			var min_type Type = &AnyType{}
+			var min_type Type = &AnyType {}
 			var min_index = ^uint(0)
 			var min_not_found = false
 			for i, item := range available {
@@ -136,9 +136,9 @@ func GenerateCallResult (
 					min_not_found = true
 					break
 				}
-				var t, ok = AssignType(min_type, item_t, ToInferred, ctx)
+				var _, ok = AssignType(min_type, item_t, ToInferred, ctx)
 				if ok {
-					min_type = t
+					min_type = item_t
 					min_index = uint(i)
 				} else {
 					var _, ok = AssignType(item_t, min_type, ToInferred, ctx)
