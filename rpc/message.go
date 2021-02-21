@@ -3,6 +3,7 @@ package rpc
 import (
 	"io"
 	"fmt"
+	"bytes"
 	"strconv"
 	"strings"
 )
@@ -21,7 +22,7 @@ const MSG_VALUE = "value"
 const MSG_ERROR = "error"
 const MSG_COMPLETE = "complete"
 
-func writeMessageHeaderField(content string, width int, conn io.Writer) error {
+func writeMessageHeaderField(content string, width int, w io.Writer) error {
 	if len(content) > width {
 		panic(fmt.Sprintf("field content width exceeded maximum (%d)", width))
 	}
@@ -33,13 +34,13 @@ func writeMessageHeaderField(content string, width int, conn io.Writer) error {
 			buf[i] = ' '
 		}
 	}
-	_, err := conn.Write(buf)
+	_, err := w.Write(buf)
 	return err
 }
 
-func readMessageHeaderField(width int, conn io.Reader) (string, error) {
+func readMessageHeaderField(width int, r io.Reader) (string, error) {
 	var buf = make([] byte, width)
-	_, err := io.ReadFull(conn, buf)
+	_, err := io.ReadFull(r, buf)
 	if err != nil { return "", err }
 	var raw_str = string(buf)
 	var str = strings.TrimRight(raw_str, " ")
@@ -50,15 +51,18 @@ func sendMessage(kind string, id uint64, payload ([] byte), conn io.Writer) erro
 	if len(payload) > MsgPayloadLengthMax {
 		return fmt.Errorf("message payload length exceeded maximum (%d)", MsgPayloadLengthMax)
 	}
-	err := writeMessageHeaderField(kind, MsgKindWidth, conn)
+	var buf bytes.Buffer
+	err := writeMessageHeaderField(kind, MsgKindWidth, &buf)
 	if err != nil { return err }
 	id_string := strconv.FormatUint(id, 16)
-	err = writeMessageHeaderField(id_string, MsgCallIdWidth, conn)
+	err = writeMessageHeaderField(id_string, MsgCallIdWidth, &buf)
 	if err != nil { return err }
 	length := strconv.Itoa(len(payload))
-	err = writeMessageHeaderField(length, MsgPayloadLengthWidth, conn)
+	err = writeMessageHeaderField(length, MsgPayloadLengthWidth, &buf)
 	if err != nil { return err }
-	_, err = conn.Write(payload)
+	_, err = buf.Write(payload)
+	if err != nil { return err }
+	_, err = conn.Write(buf.Bytes())
 	if err != nil { return err }
 	return nil
 }
