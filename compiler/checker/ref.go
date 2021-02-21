@@ -139,7 +139,7 @@ func CheckRef(ref ast.InlineRef, ctx ExprContext) (SemiExpr, *ExprError) {
 		Concrete: E_TypeOrValueNotFound { symbol },
 	} }
 	var type_ctx = ctx.GetTypeContext()
-	var type_args = make([]Type, len(ref.TypeArgs))
+	var type_args = make([] Type, len(ref.TypeArgs))
 	for i, arg_node := range ref.TypeArgs {
 		var t, err = TypeFrom(arg_node, type_ctx)
 		if err != nil { return SemiExpr{}, &ExprError {

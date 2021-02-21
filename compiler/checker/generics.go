@@ -126,8 +126,10 @@ func GenericFunctionAssignTo (
 			f, name, index, type_args, arg, info, info, ctx,
 		)
 		if err == nil {
-			var assigned, err = TypedAssignTo(expected, expr, ctx)
+			var assign_ctx = ctx.WithInferringStateCloned()
+			var assigned, err = TypedAssignTo(expected, expr, assign_ctx)
 			if err == nil {
+				ctx.Inferring.MergeArgsFrom(assign_ctx.Inferring)
 				return assigned, nil
 			}
 		}
