@@ -13,11 +13,16 @@ public function rpc-client-cleartext:
 type ServerOptions { common: CommonOptions };
 type ClientOptions { common: CommonOptions };
 type CommonOptions {
-    debug:  Bool,
+    log:    LogOptions,
     limits: LimitOptions
 };
-public const DefaultCommonOptions: CommonOptions { debug: Yes };
+public const DefaultCommonOptions: CommonOptions {};
 public function zero-value: (&()(CommonOptions)) (&(_)(DefaultCommonOptions));
+type LogOptions {
+    enabled: Bool
+};
+public const DefaultLogOptions: LogOptions { enabled: Yes };
+public function zero-value: (&()(LogOptions)) (&(_)(DefaultLogOptions));
 type LimitOptions {
     send-timeout:      Number,
     recv-timeout:      Number,

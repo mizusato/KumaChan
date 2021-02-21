@@ -14,11 +14,11 @@ type ClientOptions struct {
 	CommonOptions
 }
 type CommonOptions struct {
-	Debug bool
+	LogEnabled  bool
 	rpc.Limits
 }
 func (opts CommonOptions) GetDebugOutput() io.Writer {
-	if opts.Debug {
+	if opts.LogEnabled {
 		return os.Stderr
 	} else {
 		return nil

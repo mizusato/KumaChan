@@ -20,11 +20,12 @@ func rpcAdaptClientOptions(opts ProductValue) librpc.ClientOptions {
 	}
 }
 func rpcAdaptCommonOptions(opts ProductValue) librpc.CommonOptions {
-	var debug = FromBool(opts.Elements[0].(SumValue))
+	var log = opts.Elements[0].(ProductValue)
+	var log_enabled = FromBool(log.Elements[0].(SumValue))
 	var limits = rpcAdaptLimitOptions(opts.Elements[1].(ProductValue))
 	return librpc.CommonOptions {
-		Debug:  debug,
-		Limits: limits,
+		LogEnabled: log_enabled,
+		Limits:     limits,
 	}
 }
 func rpcAdaptLimitOptions(opts ProductValue) rpc.Limits {

@@ -55,10 +55,6 @@ var core_types = []string {
 	Complex, ComplexIEEE,
 	// string.km
 	Char, String,
-	// range.km
-	Interval,
-	// debugging.km
-	Debug, Never,
 }
 // var core_constants = []string {}
 func GetCoreScopedSymbols() []string {
@@ -138,11 +134,6 @@ const ComplexIEEE = "Complex*"
 // string.km
 const Char = "Char"
 const String = "String"
-// range.km
-const Interval = "Interval"
-// debugging.km
-const Debug = "Debug"
-const Never = "Never"
 
 // ui
 const WebAsset_T = "WebAsset"
