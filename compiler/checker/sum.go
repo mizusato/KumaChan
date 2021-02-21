@@ -93,8 +93,9 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 	var checked = make(map[loader.Symbol] bool)
 	var has_default = false
 	var default_node ast.Node
-	var semi_branches = make([]SemiTypedBranch, len(sw.Branches))
-	for i, branch := range sw.Branches {
+	var ast_branches = DesugarBranches(sw.Branches)
+	var semi_branches = make([] SemiTypedBranch, len(ast_branches))
+	for i, branch := range ast_branches {
 		switch t := branch.Type.(type) {
 		case ast.TypeRef:
 			if len(t.TypeArgs) > 0 {
@@ -244,7 +245,7 @@ func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprErro
 	}
 	var has_default = false
 	var default_node ast.Node
-	var semi_branches = make([]SemiTypedMultiBranch, len(msw.Branches))
+	var semi_branches = make([] SemiTypedMultiBranch, len(msw.Branches))
 	for branch_index, branch := range msw.Branches {
 		if len(branch.Types) > 0 {
 			var num_types = uint(len(branch.Types))
@@ -480,6 +481,27 @@ func CheckIf(raw ast.If, ctx ExprContext) (SemiExpr, *ExprError) {
 			Reactive: reactive,
 		},
 	}, nil
+}
+
+func DesugarBranches(raw_branches ([] ast.Branch)) ([] ast.Branch) {
+	var branches = make([] ast.Branch, 0)
+	for _, raw_branch := range raw_branches {
+		if len(raw_branch.Types) == 0 {
+			branches = append(branches, raw_branch)
+			continue
+		}
+		for _, t := range raw_branch.Types {
+			var branch = ast.Branch {
+				Node:    raw_branch.Node,
+				Type:    t,
+				Types:   nil,
+				Pattern: raw_branch.Pattern,
+				Expr:    raw_branch.Expr,
+			}
+			branches = append(branches, branch)
+		}
+	}
+	return branches
 }
 
 

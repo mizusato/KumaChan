@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	. "kumachan/lang"
 	. "kumachan/runtime/lib/container"
+	"kumachan/stdlib"
 )
 
 
@@ -192,6 +193,13 @@ var ContainerFunctions = map[string] Value {
 	},
 	"String from Number": func(x uint) String {
 		return StringFromGoString(fmt.Sprint(x))
+	},
+	"String from Bool": func(p SumValue) String {
+		if FromBool(p) {
+			return StringFromGoString(stdlib.Yes)
+		} else {
+			return StringFromGoString(stdlib.No)
+		}
 	},
 	"String from Float": func(x float64) String {
 		return StringFromGoString(fmt.Sprint(x))

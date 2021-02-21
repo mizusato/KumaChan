@@ -1,8 +1,8 @@
 package test
 
 import (
-	"testing"
 	"fmt"
+	"testing"
 	"path/filepath"
 )
 
@@ -39,6 +39,12 @@ func TestZeroValue(t *testing.T) {
 	var dir_path = getTestDirPath(t, language)
 	var mod_path = filepath.Join(dir_path, "product", "zero.km")
 	expectStdIO(t, mod_path, "", "(0,0)\n")
+}
+
+func TestSwitch(t *testing.T) {
+	var dir_path = getTestDirPath(t, language)
+	var mod_path = filepath.Join(dir_path, "sum", "switch.km")
+	expectStdIO(t, mod_path, "", "Yes\n")
 }
 
 func TestMultiSwitch(t *testing.T) {

@@ -13,6 +13,7 @@ public function str[T]: implicit[Cast[T,String]] (&(T)(String))
 public function from: (&(Array[Char])(String))  native 'String from Array';
 public function from: (&(Char)(String))         native 'String from Char';
 public function from: (&(Number)(String))       native 'String from Number';
+public function from: (&(Bool)(String))         native 'String from Bool';
 public function from: (&(Float)(String))        native 'String from Float';
 public function from: (&(Float*)(String))
     ( &(x*)

@@ -200,8 +200,9 @@ var __SyntaxDefinition = [...] string {
         "branch_list = branch! more_branches",
           "more_branches? = , branch more_branches",
           "branch = branch_key :! expr!",
-            // TODO: support same code for multiple case types
-            "branch_key = @default | Case type_ref! opt_pattern",
+            "branch_key = @default | Case type_ref_list opt_pattern",
+              "type_ref_list = type_ref! more_type_refs",
+                "more_type_refs? = , type_ref! more_type_refs",
               "opt_pattern? = pattern",
       "multi_switch = Select ( exprlist )! :! multi_branch_list ,! @end!",
         "exprlist = expr! more_exprs",

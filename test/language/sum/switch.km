@@ -1,0 +1,34 @@
+type Framework enum {
+    type React;
+    type Vue;
+    type Angular;
+    type Polymer;
+    type Svelte;
+    type Elm;
+    type Purescript;
+};
+
+public function get-color: ( &(Framework) String )
+    ( &(framework)
+        switch framework:
+        case React,Elm: 'lightblue',
+        case Angular,Svelte: 'red',
+        case Vue: 'green',
+        case Polymer: 'pink',
+        case Purescript: 'black',
+        end
+    );
+
+do
+    let p-list := [
+        $((get-color React) = 'lightblue'),
+        $((get-color Vue) = 'green'),
+        $((get-color Angular) = 'red'),
+        $((get-color Polymer) = 'pink'),
+        $((get-color Svelte) = 'red'),
+        $((get-color Elm) = 'lightblue'),
+        $((get-color Purescript) = 'black')
+    ],
+    let ok := p-list | every (&(p)(p)),
+    println (str ok)
+    | catch (&(err)(crash err));

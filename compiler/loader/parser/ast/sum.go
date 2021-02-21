@@ -9,7 +9,8 @@ type Switch struct {
 }
 type Branch struct {
 	Node                    `part:"branch"`
-	Type     MaybeTypeRef   `part_opt:"branch_key.type_ref"`
+	Type     MaybeTypeRef   // generated
+	Types    [] TypeRef     `list_more:"branch_key.type_ref_list" item:"type_ref"`
 	Pattern  MaybePattern   `part_opt:"branch_key.opt_pattern.pattern"`
 	Expr     Expr           `part:"expr"`
 }
