@@ -30,7 +30,7 @@ func registerAssetFiles(assets resources) {
 	}
 }
 func injectAssetFiles(files interface{}, inject func(interface{})(qt.String,[](func()))) {
-	<-bridgeLoaded
+	<- bridgeLoaded
 	var wait = make(chan struct{})
 	qt.CommitTask(func() {
 		var rv = reflect.ValueOf(files)
