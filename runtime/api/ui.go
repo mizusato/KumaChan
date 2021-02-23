@@ -14,18 +14,18 @@ import (
 
 var UiFunctions = map[string] interface{} {
 	"ui-init": func(title String, root rx.Action, h InteropContext) rx.Action {
-		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
+		return rx.NewGoroutineSingle(func(_ *rx.Context) (rx.Object, bool) {
 			ui.Init(h, root, title)
 			return nil, true
 		})
 	},
 	"ui-get-window": func() rx.Action {
-		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
+		return rx.NewGoroutineSingle(func(_ *rx.Context) (rx.Object, bool) {
 			return ui.GetWindow(), true
 		})
 	},
 	"ui-inject-css": func(v Value) rx.Action {
-		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
+		return rx.NewGoroutineSingle(func(_ *rx.Context) (rx.Object, bool) {
 			var array = container.ArrayFrom(v)
 			var files = make([] stdlib.WebAsset, array.Length)
 			for i := uint(0); i < array.Length; i += 1 {
@@ -36,7 +36,7 @@ var UiFunctions = map[string] interface{} {
 		})
 	},
 	"ui-inject-js": func(v Value) rx.Action {
-		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
+		return rx.NewGoroutineSingle(func(_ *rx.Context) (rx.Object, bool) {
 			var array = container.ArrayFrom(v)
 			var files = make([] stdlib.WebAsset, array.Length)
 			for i := uint(0); i < array.Length; i += 1 {
@@ -47,7 +47,7 @@ var UiFunctions = map[string] interface{} {
 		})
 	},
 	"ui-inject-ttf": func(v Value) rx.Action {
-		return rx.NewGoroutineSingle(func() (rx.Object, bool) {
+		return rx.NewGoroutineSingle(func(_ *rx.Context) (rx.Object, bool) {
 			var array = container.ArrayFrom(v)
 			var fonts = make([] ui.Font, array.Length)
 			for i := uint(0); i < array.Length; i += 1 {

@@ -199,11 +199,11 @@ func NewGoroutine(action func(Sender)) Action {
 	} }
 }
 
-func NewGoroutineSingle(action func()(Object,bool)) Action {
+func NewGoroutineSingle(action func(ctx *Context)(Object,bool)) Action {
 	return Action { func(sched Scheduler, ob *observer) {
 		var sender = Sender { sched: sched, ob: ob }
 		go (func() {
-			var result, ok = action()
+			var result, ok = action(sender.Context())
 			if ok {
 				sender.Next(result)
 				sender.Complete()

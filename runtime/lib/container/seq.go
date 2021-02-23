@@ -11,6 +11,8 @@ type Seq interface {
 	GetItemType() reflect.Type
 }
 
+// TODO: custom seq (non-native next())
+
 type EmptySeq struct {
 	ItemType  reflect.Type
 }

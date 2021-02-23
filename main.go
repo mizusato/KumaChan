@@ -286,7 +286,7 @@ func repl(args ([] string), max_stack_size int, debug_opts lang.DebugOptions) {
     // 8. Inject the REPL as a side effect of the program
     var do_repl = &lang.Function {
         Kind: lang.F_PREDEFINED,
-        Predefined:  rx.NewGoroutineSingle(func() (rx.Object, bool) {
+        Predefined:  rx.NewGoroutineSingle(func(_ *rx.Context) (rx.Object, bool) {
             loop()
             return nil, true
         }),
