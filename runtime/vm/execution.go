@@ -39,21 +39,24 @@ func execute(p Program, m *Machine) {
 		var f = p.Closures[i]
 		m.globalSlot = append(m.globalSlot, f.ToValue(nil))
 	}
-	var nil_ctx_handle = MachineContextHandle { machine: m, context: nil }
+	var background = rx.Background()
+	var sync_ctx = background
+	var async_ctx = background
 	for i, _ := range p.Constants {
 		var f = p.Constants[i]
 		switch f.Kind {
 		case F_USER:
 			var fv = f.ToValue(nil).(FunctionValue)
-			m.globalSlot = append(m.globalSlot, call(fv, nil, m))
+			m.globalSlot = append(m.globalSlot, call(fv, nil, m, sync_ctx))
 		case F_NATIVE:
-			var v = api.GetNativeConstant(f.NativeId, nil_ctx_handle)
+			var l = InteropErrorPointLocatorFromStatic(f.Info.DeclPoint)
+			var h = InteropHandle { machine: m, locator: l, sync_ctx: sync_ctx }
+			var v = api.GetNativeConstant(f.NativeId, h)
 			m.globalSlot = append(m.globalSlot, v)
 		case F_PREDEFINED:
 			m.globalSlot = append(m.globalSlot, f.ToValue(nil))
 		}
 	}
-	var ctx = rx.Background()
 	var wg = make(chan bool, len(p.Effects))
 	for i, _ := range p.Effects {
 		var f = p.Effects[i]
@@ -61,7 +64,7 @@ func execute(p Program, m *Machine) {
 			var v = f.ToValue(nil)
 			switch v := v.(type) {
 			case FunctionValue:
-				return (call(v, nil, m)).(rx.Action)
+				return (call(v, nil, m, sync_ctx)).(rx.Action)
 			case rx.Action:
 				return v
 			default:
@@ -69,7 +72,7 @@ func execute(p Program, m *Machine) {
 			}
 		})()
 		m.scheduler.RunTopLevel(e, rx.Receiver {
-			Context:   ctx,
+			Context:   async_ctx,
 			Values:    nil,
 			Error:     nil,
 			Terminate: wg,
@@ -80,8 +83,10 @@ func execute(p Program, m *Machine) {
 	}
 }
 
-func call(f FunctionValue, arg Value, m *Machine) Value {
+func call(f FunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Value {
 	var ec = m.contextPool.Get().(*ExecutionContext)
+	var l = InteropErrorPointLocatorFromExecutionContext(ec)
+	var h = InteropHandle { machine: m, locator: l, sync_ctx: sync_ctx }
 	defer (func() {
 		var err = recover()
 		if err != nil {
@@ -91,6 +96,11 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 	}) ()
 	ec.pushCall(f, arg)
 	outer: for len(ec.callStack) > 0 {
+		if sync_ctx.AlreadyCancelled() {
+			ec.clear()
+			m.contextPool.Put(ec)
+			return nil
+		}
 		var code = ec.workingFrame.function.Code
 		var base_addr = ec.workingFrame.baseAddr
 		var inst_ptr_ref = &(ec.workingFrame.instPtr)
@@ -159,13 +169,13 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 						assert(default_consumer == nil,
 							"RSW: duplicate default branch")
 						default_consumer = func(eff rx.Action) rx.Action {
-							return call(consumer, eff, m).(rx.Action)
+							return call(consumer, eff, m, sync_ctx).(rx.Action)
 						}
 					} else {
 						index, ok := pair.Elements[0].(uint)
 						assert(ok, "RSW: invalid branch")
 						consumers[index] = func(r rx.Reactive) rx.Action {
-							return call(consumer, r, m).(rx.Action)
+							return call(consumer, r, m, sync_ctx).(rx.Action)
 						}
 					}
 				}
@@ -287,7 +297,7 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 					continue outer
 				case NativeFunctionValue:
 					var arg = ec.popValue()
-					var ret = f(arg, MachineContextHandle { context: ec, machine: m })
+					var ret = f(arg, h)
 					ec.pushValue(ret)
 				default:
 					panic("CALL: cannot execute on non-callable value")
@@ -368,6 +378,17 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 		ec.popCall()
 	}
 	var ret = ec.popValue()
+	ec.clear()
+	m.contextPool.Put(ec)
+	return ret
+}
+
+
+func assert(ok bool, msg string) {
+	if !ok { panic(msg) }
+}
+
+func (ec *ExecutionContext) clear() {
 	ec.workingFrame = CallStackFrame {}
 	for i, _ := range ec.callStack {
 		ec.callStack[i] = CallStackFrame {}
@@ -377,13 +398,7 @@ func call(f FunctionValue, arg Value, m *Machine) Value {
 		ec.dataStack[i] = nil
 	}
 	ec.dataStack = ec.dataStack[:0]
-	m.contextPool.Put(ec)
-	return ret
-}
-
-
-func assert(ok bool, msg string) {
-	if !ok { panic(msg) }
+	ec.indexBufLen = 0
 }
 
 func (ec *ExecutionContext) getCurrentValue() Value {

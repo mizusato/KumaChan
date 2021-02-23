@@ -9,13 +9,18 @@ import (
 
 
 type InteropContext interface {
-	Call(fv Value, arg Value) Value
-	GetScheduler() rx.Scheduler
-	GetEnv() ([] string)
-	GetArgs() ([] string)
+	Call(f Value, arg Value) Value
+	CallWithSyncContext(f Value, arg Value, ctx *rx.Context) Value
+	SyncContext() *rx.Context
+	Scheduler() rx.Scheduler
+	ErrorPoint() ErrorPoint
+	Environment
+}
+type Environment interface {
+	GetSysEnv() ([] string)
+	GetSysArgs() ([] string)
 	GetStdIO() StdIO
 	GetDebugOptions() DebugOptions
-	GetErrorPoint() ErrorPoint
 	GetEntryModulePath() string
 	GetKmdApi() KmdApi
 	GetRpcApi() RpcApi

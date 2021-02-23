@@ -55,10 +55,10 @@ var OS_Constants = map[string] NativeConstant {
 		return stdlib.ParsePath(wd)
 	},
 	"OS::Env":     func(h InteropContext) Value {
-		return GetEnv(h.GetEnv())
+		return GetEnv(h.GetSysEnv())
 	},
 	"OS::Args":    func(h InteropContext) Value {
-		return GetArgs(h.GetArgs())
+		return GetArgs(h.GetSysArgs())
 	},
 	"OS::Stdin":   func(h InteropContext) Value {
 		return rx.FileFrom(h.GetStdIO().Stdin)

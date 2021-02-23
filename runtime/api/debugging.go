@@ -11,7 +11,7 @@ var DebuggingFunctions = map[string] interface{} {
 	"trace": func(value Value, h InteropContext) Value {
 		const bold = "\033[1m"
 		const reset = "\033[0m"
-		var point = h.GetErrorPoint()
+		var point = h.ErrorPoint()
 		var source_point = point.Node.Point
 		fmt.Fprintf (
 			os.Stderr, "--- %vtrace:%v (%d, %d) at %s\n",

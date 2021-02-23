@@ -14,7 +14,7 @@ func Init(h InteropContext, root rx.Action, title String) {
 	}
 	var debug_opts = h.GetDebugOptions()
 	var debug = debug_opts.DebugUI
-	var ok = load(debug, h.GetScheduler(), root, title, assets)
+	var ok = load(debug, h.Scheduler(), root, title, assets)
 	if !(ok) {
 		panic("UI: duplicate initialization operation")
 	}

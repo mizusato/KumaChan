@@ -255,7 +255,7 @@ var EffectFunctions = map[string] Value {
 		const bold = "\033[1m"
 		const red = "\033[31m"
 		const reset = "\033[0m"
-		var point = h.GetErrorPoint()
+		var point = h.ErrorPoint()
 		var source_point = point.Node.Point
 		return rx.NewSync(func() (rx.Object, bool) {
 			fmt.Fprintf (

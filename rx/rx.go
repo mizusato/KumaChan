@@ -76,6 +76,10 @@ func (ctx *Context) create_disposable_child() (*Context, disposeFunc) {
 		cancel:    make(chan struct{}),
 		terminate: make(chan struct{}),
 	}
+	if ctx.disposable() && ctx.disposed {
+		child.dispose_recursively(behaviour_cancel)
+		return child, func(disposeBehaviour) {}
+	}
 	ctx.children[child] = struct{}{}
 	return child, func(behaviour disposeBehaviour) {
 		if !(child.disposed) {

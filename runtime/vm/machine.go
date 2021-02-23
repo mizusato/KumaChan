@@ -19,8 +19,7 @@ type Machine struct {
 	extraLock    *sync.Mutex
 	contextPool  *sync.Pool
 	scheduler    rx.Scheduler
-	kmdApi       KmdApi
-	rpcApi       RpcApi
+	GeneratedObjects
 }
 
 type Options struct {
@@ -30,6 +29,12 @@ type Options struct {
 	Arguments     [] string
 	DebugOptions
 	StdIO
+}
+
+type GeneratedObjects struct {
+	kmdApi     KmdApi
+	rpcApi     RpcApi
+	resources  map[string] map[string] Resource  // kind -> path -> res
 }
 
 func Execute(p Program, opts Options, m_signal (chan <- *Machine)) {
@@ -51,12 +56,19 @@ func Execute(p Program, opts Options, m_signal (chan <- *Machine)) {
 		contextPool:  pool,
 		scheduler:    sched,
 	}
-	m.kmdApi = librpc.CreateKmdApi(m)
-	m.rpcApi = librpc.CreateRpcApi(m)
+	m.generateObjects()
 	if m_signal != nil {
 		m_signal <- m
 	}
 	execute(p, m)
+}
+
+func (m *Machine) generateObjects() {
+	m.GeneratedObjects = GeneratedObjects {
+		kmdApi:    librpc.CreateKmdApi(m),
+		rpcApi:    librpc.CreateRpcApi(m),
+		resources: CategorizeResources(m.options.Resources),
+	}
 }
 
 func (m *Machine) GetGlobalValue(index uint) (Value, bool) {
@@ -75,8 +87,8 @@ func (m *Machine) GetGlobalValue(index uint) (Value, bool) {
 	}
 }
 
-func (m *Machine) Call(f FunctionValue, arg Value) Value {
-	return call(f, arg, m)
+func (m *Machine) Call(f FunctionValue, arg Value, ctx *rx.Context) Value {
+	return call(f, arg, m, ctx)
 }
 
 func (m *Machine) GetScheduler() rx.Scheduler {
@@ -105,10 +117,10 @@ func (m *Machine) KmdGetAdapter(index uint) Value {
 }
 
 func (m *Machine) KmdCallAdapter(f Value, x Value) Value {
-	return call(f.(FunctionValue), x, m)
+	return call(f.(FunctionValue), x, m, rx.Background())
 }
 
 func (m *Machine) KmdCallValidator(f Value, x Value) bool {
-	return FromBool(call(f.(FunctionValue), x, m).(SumValue))
+	return FromBool(call(f.(FunctionValue), x, m, rx.Background()).(SumValue))
 }
 

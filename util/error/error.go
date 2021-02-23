@@ -141,7 +141,7 @@ func FormatError (
 	return msg
 }
 
-func FormatErrorAt(point ErrorPoint,desc ErrorMessage) ErrorMessage {
+func FormatErrorAt(point ErrorPoint, desc ErrorMessage) ErrorMessage {
 	var CST = point.Node.CST
 	var Node = point.Node
 	return FormatError (

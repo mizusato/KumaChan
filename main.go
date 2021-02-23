@@ -224,7 +224,7 @@ func repl(args ([] string), max_stack_size int, debug_opts lang.DebugOptions) {
                 continue
             }
             m.InjectExtraGlobals(dep_vals)
-            var ret = m.Call(f, nil)
+            var ret = m.Call(f, nil, rx.Background())
             m.InjectExtraGlobals([] lang.Value {ret })
             fmt.Printf("%s %s\n", cmd_label, lang.Inspect(ret))
             switch cmd := cmd.Cmd.(type) {

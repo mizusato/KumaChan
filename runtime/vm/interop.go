@@ -9,15 +9,28 @@ import (
 )
 
 
-type MachineContextHandle struct {
-	machine  *Machine
-	context  *ExecutionContext
+type InteropHandle struct {
+	machine   *Machine
+	locator   InteropErrorPointLocator
+	sync_ctx  *rx.Context
 }
 
-func (h MachineContextHandle) Call(fv Value, arg Value) Value {
-	switch f := fv.(type) {
+type InteropErrorPointLocator (func() ErrorPoint)
+func InteropErrorPointLocatorFromStatic(p ErrorPoint) InteropErrorPointLocator {
+	return InteropErrorPointLocator(func() ErrorPoint {
+		return p
+	})
+}
+func InteropErrorPointLocatorFromExecutionContext(ec *ExecutionContext) InteropErrorPointLocator {
+	return InteropErrorPointLocator(func() ErrorPoint {
+		return GetFrameErrorPoint(ec.workingFrame)
+	})
+}
+
+func (h InteropHandle) Call(f Value, arg Value) Value {
+	switch f := f.(type) {
 	case FunctionValue:
-		return h.machine.Call(f, arg)
+		return call(f, arg, h.machine, h.sync_ctx)
 	case NativeFunctionValue:
 		return f(arg, h)
 	default:
@@ -25,50 +38,67 @@ func (h MachineContextHandle) Call(fv Value, arg Value) Value {
 	}
 }
 
-func (h MachineContextHandle) GetScheduler() rx.Scheduler {
+func (h InteropHandle) CallWithSyncContext(f Value, arg Value, ctx *rx.Context) Value {
+	switch f := f.(type) {
+	case FunctionValue:
+		return call(f, arg, h.machine, ctx)
+	case NativeFunctionValue:
+		return f(arg, InteropHandle {
+			machine:  h.machine,
+			locator:  h.locator,
+			sync_ctx: ctx,
+		})
+	default:
+		panic("cannot call a non-callable value")
+	}
+}
+
+func (h InteropHandle) SyncContext() *rx.Context {
+	return h.sync_ctx
+}
+
+func (h InteropHandle) Scheduler() rx.Scheduler {
 	return h.machine.scheduler
 }
 
-func (h MachineContextHandle) GetEnv() ([] string) {
+func (h InteropHandle) GetSysEnv() ([] string) {
 	return h.machine.options.Environment
 }
 
-func (h MachineContextHandle) GetArgs() ([] string) {
+func (h InteropHandle) GetSysArgs() ([] string) {
 	return h.machine.options.Arguments
 }
 
-func (h MachineContextHandle) GetStdIO() StdIO {
+func (h InteropHandle) GetStdIO() StdIO {
 	return h.machine.options.StdIO
 }
 
-func (h MachineContextHandle) GetDebugOptions() DebugOptions {
+func (h InteropHandle) GetDebugOptions() DebugOptions {
 	return h.machine.options.DebugOptions
 }
 
-func (h MachineContextHandle) GetErrorPoint() ErrorPoint {
-	return GetFrameErrorPoint(h.context.workingFrame)
+func (h InteropHandle) ErrorPoint() ErrorPoint {
+	return h.locator()
 }
 
-func (h MachineContextHandle) GetEntryModulePath() string {
+func (h InteropHandle) GetEntryModulePath() string {
 	var raw = h.machine.program.MetaData.EntryModulePath
 	return strings.TrimRight(raw, string([] rune { os.PathSeparator }))
 }
 
-func (h MachineContextHandle) GetKmdApi() KmdApi {
+func (h InteropHandle) GetKmdApi() KmdApi {
 	return h.machine.kmdApi
 }
 
-func (h MachineContextHandle) GetRpcApi() RpcApi {
+func (h InteropHandle) GetRpcApi() RpcApi {
 	return h.machine.rpcApi
 }
 
-func (h MachineContextHandle) GetResources(kind string) (map[string] Resource) {
-	var res = make(map[string] Resource)
-	for path, item := range h.machine.options.Resources {
-		if item.Kind == kind {
-			res[path] = item
-		}
+func (h InteropHandle) GetResources(kind string) (map[string] Resource) {
+	var clone = make(map[string] Resource)
+	for path, item := range h.machine.resources[kind] {
+		clone[path] = item
 	}
-	return res
+	return clone
 }
 
