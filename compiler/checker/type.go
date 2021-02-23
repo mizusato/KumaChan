@@ -15,6 +15,7 @@ type GenericType struct {
 	Defaults    map[uint] Type
 	Definition  TypeDef
 	CaseInfo    CaseInfo
+	FieldInfo   map[string] FieldInfo
 }
 type TypeParam struct {
 	Name      string
@@ -26,6 +27,10 @@ func TypeParamsNames(params ([] TypeParam)) ([] string) {
 		draft[i] = params[i].Name
 	}
 	return draft
+}
+type FieldInfo struct {
+	Doc   string
+	Tags  FieldTags
 }
 
 

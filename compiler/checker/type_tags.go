@@ -14,16 +14,15 @@ type TypeTags struct {
 	DataConfig  TypeDataConfig
 	TypeServiceConfig
 }
+type TypeDataConfig struct {
+	Name     string
+	Version  string
+}
 type TypeServiceConfig struct {
 	IsServiceArgument  bool
 }
 func (tags TypeTags) DeclaredSerializable() bool {
 	return (tags.DataConfig != (TypeDataConfig {}))
-}
-
-type TypeDataConfig struct {
-	Name     string
-	Version  string
 }
 
 type TypeTagParsingError struct {
@@ -116,4 +115,17 @@ func ValidateTypeTags(tags TypeTags) error {
 	}
 	return nil
 }
+
+
+type FieldTags struct {}
+
+type FieldTagParsingError struct {
+	Tag   ast.Tag
+	Info  string
+}
+
+func ParseFieldTags(_ ([] ast.Tag)) (FieldTags, *FieldTagParsingError) {
+	return FieldTags{}, nil
+}
+
 

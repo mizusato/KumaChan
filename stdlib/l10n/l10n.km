@@ -1,7 +1,13 @@
 type Locale {
+    /// Primary language.
     language:    LanguageCode,
+    /// Timezone.
     timezone:    Time::Zone,
-    alternative: Maybe[Locale]
+    /// Alternative language, used when primary language not available.
+    alternative: Maybe[LanguageCode]
 };
 
+/// Unix language code with the format "ll_CC", in which
+///   "ll" is an ISO 639-1 language code (lower case) and
+///   "CC" is an ISO 3166-1 country code (upper case).
 type LanguageCode String;

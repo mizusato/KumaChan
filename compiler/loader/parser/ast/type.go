@@ -45,6 +45,8 @@ type ReprBundle struct {
 }
 type Field struct {
     Node                `part:"field"`
+    Docs  [] Doc        `list_rec:"docs"`
+    Tags  [] Tag        `list_rec:"tags"`
     Name  Identifier    `part:"name"`
     Type  VariousType   `part:"type"`
 }

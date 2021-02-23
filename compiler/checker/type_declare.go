@@ -310,6 +310,38 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, TypeDe
 				Info: tags_err2.Error(),
 			},
 		} } }
+		var field_info (map[string] FieldInfo)
+		var boxed, is_boxed = t.TypeDef.TypeDef.(ast.BoxedType)
+		if is_boxed {
+			var inner, has_inner = boxed.Inner.(ast.VariousType)
+			if has_inner {
+				var literal, is_literal = inner.Type.(ast.TypeLiteral)
+				if is_literal {
+					var bundle, is_bundle = literal.Repr.Repr.(ast.ReprBundle)
+					if is_bundle {
+						for _, f := range bundle.Fields {
+							var name = ast.Id2String(f.Name)
+							var doc = DocStringFromRaw(f.Docs)
+							var tags, err = ParseFieldTags(f.Tags)
+							if err != nil { return nil, nil, [] *TypeDeclError { {
+								Point:    ErrorPointFrom(err.Tag.Node),
+								Concrete: E_InvalidFieldTag {
+									Tag:  string(err.Tag.RawContent),
+									Info: err.Info,
+								},
+							} } }
+							if field_info == nil {
+								field_info = make(map[string] FieldInfo)
+							}
+							field_info[name] = FieldInfo {
+								Doc:  doc,
+								Tags: tags,
+							}
+						}
+					}
+				}
+			}
+		}
 		// 3.2. Get parameters
 		var params = raw.ParamsMap[name]
 		// 3.3. Construct a TypeContext and pass it to TypeValFrom()
@@ -368,6 +400,7 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, TypeDe
 			Defaults:   defaults,
 			Definition: definition,
 			CaseInfo:   raw.CaseInfoMap[name],
+			FieldInfo:  field_info,
 		}
 	}
 	// 4. Validate boxed types

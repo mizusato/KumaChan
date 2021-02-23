@@ -179,6 +179,11 @@ type E_InvalidTypeTag struct {
 	Tag   string
 	Info  string
 }
+func (impl E_InvalidFieldTag) TypeDeclError() {}
+type E_InvalidFieldTag struct {
+	Tag   string
+	Info  string
+}
 func (impl E_InvalidTypeTags) TypeDeclError() {}
 type E_InvalidTypeTags struct {
 	Info  string
@@ -210,6 +215,10 @@ func (err *TypeDeclError) Desc() ErrorMessage {
 		msg.WriteEndText(TS_INLINE_CODE, e.TypeName.SymbolName)
 	case E_InvalidTypeTag:
 		msg.WriteText(TS_ERROR, "Invalid type tag:")
+		msg.WriteInnerText(TS_INLINE_CODE, fmt.Sprintf("'%s'", e.Tag))
+		msg.WriteText(TS_ERROR, fmt.Sprintf("(%s)", e.Info))
+	case E_InvalidFieldTag:
+		msg.WriteText(TS_ERROR, "Invalid field tag:")
 		msg.WriteInnerText(TS_INLINE_CODE, fmt.Sprintf("'%s'", e.Tag))
 		msg.WriteText(TS_ERROR, fmt.Sprintf("(%s)", e.Info))
 	case E_InvalidTypeTags:

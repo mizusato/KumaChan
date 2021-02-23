@@ -50,6 +50,9 @@ body {
 .description > .line > pre {
     margin: 0;
 }
+.block-bundle {
+    margin: 0.4rem 0;
+}
 
 .keyword {
     color: #ef1d6a;
@@ -72,7 +75,7 @@ body {
 .type-param > .variance {
     color: #7d728d;
 }
-.field > .name {
+.field > .name, .block-field > .name {
     color: #e45649;
 }
 
@@ -101,6 +104,9 @@ body {
 }
 .field > .name + .keyword {
     margin: 0 0.6rem;
+}
+.block-field > .name + .keyword {
+    margin-right: 0.6rem;
 }
 .func > .keyword {
     margin: 0 0.6rem;

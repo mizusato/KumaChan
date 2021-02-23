@@ -313,15 +313,6 @@ func typeDef(g *checker.GenericType, reg checker.TypeRegistry, mod string) Html 
 			if d.Implicit  { return "implicit" }
 			return ""
 		})()
-		switch T := d.InnerType.(type) {
-		case *checker.AnonymousType:
-			switch T.Repr.(type) {
-			case checker.Unit:
-				if kind == "" {
-					return Html("")
-				}
-			}
-		}
 		var c_kind = (func() Html {
 			if kind != "" {
 				return block("kind", modifier(kind))
@@ -336,6 +327,20 @@ func typeDef(g *checker.GenericType, reg checker.TypeRegistry, mod string) Html 
 				return Html("")
 			}
 		})()
+		switch T := d.InnerType.(type) {
+		case *checker.AnonymousType:
+			switch R := T.Repr.(type) {
+			case checker.Unit:
+				if kind == "" {
+					return Html("")
+				}
+			case checker.Bundle:
+				return block("boxed",
+					c_kind,
+					c_weak,
+					blockBundle(R, g.FieldInfo, g.Params, mod))
+			}
+		}
 		return block("boxed",
 			c_kind,
 			c_weak,
@@ -352,6 +357,23 @@ func typeDef(g *checker.GenericType, reg checker.TypeRegistry, mod string) Html 
 	default:
 		panic("impossible branch")
 	}
+}
+
+func blockBundle(b checker.Bundle, info (map[string] checker.FieldInfo), params ([] checker.TypeParam), mod string) Html {
+	var fields = make([] Html, len(b.Fields))
+	for name, f := range b.Fields {
+		var t = typeExpr(f.Type, params, mod)
+		var desc = (func() Html {
+			if info == nil { return Html("") }
+			var field_info, exists = info[name]
+			if !(exists) { return Html("") }
+			return description(field_info.Doc)
+		})()
+		fields[f.Index] = block("block-field-item",
+			block("block-field", text("name", name), keyword(":"), t),
+			block("field-desc", desc))
+	}
+	return block("inner block-bundle", join(fields, Html("")))
 }
 
 func typeExpr(t checker.Type, params ([] checker.TypeParam), mod string) Html {
