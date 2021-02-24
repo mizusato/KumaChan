@@ -14,14 +14,25 @@ public function styled[T]: ( &((&(T)(Component)),Array[String]) (&(T)(Component)
         ctor | with (ui-style class-list)
     );
 
-public function ui-show-if: ( &(Action*[Bool]) Decorator )
-    ( &(@show)
+public function ui-render-if: ( &(Action*[Bool]) Decorator )
+    ( &(@render)
     ( &(cpt)
-        ~ switch-map &(show) := @show,
-        if show:
+        ~ switch-map &(render) := @render,
+        if render:
             cpt,
         else:
             ui-empty
+    ));
+public function ui-show-if: ( &(Action*[Bool]) Decorator )
+    ( &(@show)
+    ( &(cpt)
+        ~ map &(node,show) := (combine-latest* cpt @show),
+        if show:
+            node,
+        else:
+            node.with (dom-styles [
+                ('display', 'none')
+            ])
     ));
 public function ui-style: ( &(Array[String]) Decorator )
     ( &(class-list)
@@ -38,6 +49,18 @@ public function ui-style: ( &(Action*[Array[String]]) Decorator )
         node.with (dom-attrs [
             ('class', (class-list.join ' '))
         ])
+    ));
+public function ui-attrs: ( &(Array[(String,String)]) Decorator )
+    ( &(attrs)
+    ( &(cpt)
+        ~ map &(node) := cpt,
+        node.with (dom-attrs attrs)
+    ));
+public function ui-attrs: ( &(Action*[Array[(String,String)]]) Decorator )
+    ( &(@attrs)
+    ( &(cpt)
+        ~ map &(attrs, node) := (combine-latest* @attrs cpt),
+        node.with (dom-attrs attrs)
     ));
 public function ui-inline-style: ( &(Array[(String,String)]) Decorator )
     ( &(rules)

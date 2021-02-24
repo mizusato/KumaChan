@@ -125,13 +125,15 @@ public function from: ( &(Error) String )  // TODO: move this function
 public function make-error: ( &(String) Error )  // TODO: move this function
     native 'make-error';
 /// go(f) returns an action that evaluates f() in a separate goroutine.
-public function go[T]: ( &((&()(T))) Action[T] )
+public function go[T]: ( &(&()(T)) Action[T] )
     native 'go-thunk';
 /// go(seq) returns an action that iterates seq in a separate goroutine.
 public function go[T]: ( &(Seq[T]) Action*[T] )
     native 'go-seq';
 public function yield[T]:  ( &(T) Action[T] )
     native 'yield';
+public function yield-thunk[T]: ( &(&()(T)) Action[T] )
+    native 'yield-thunk';
 public function yield*[T]: ( &(Seq[T]) Action*[T] )
     native 'yield*-seq';
 public function yield*[T]: ( &(Array[T]) Action*[T] )

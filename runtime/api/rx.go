@@ -294,6 +294,11 @@ var EffectFunctions = map[string] Value {
 			return v, true
 		})
 	},
+	"yield-thunk": func(f Value, h InteropContext) rx.Action {
+		return rx.NewSync(func() (rx.Object, bool) {
+			return h.Call(f, nil), true
+		})
+	},
 	"yield*-interval": func(l uint, r uint) rx.Action {
 		return rx.NewSyncSequence(func(next func(rx.Object))(bool,rx.Object) {
 			for i := l; i < r; i += 1 {

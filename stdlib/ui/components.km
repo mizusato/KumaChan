@@ -2,7 +2,14 @@ type Component Action*[Node]; // Observable<VNode>
 
 public function ui-empty: ( &() Component )
     ( &(_)
-        yield (dom-node 'div' [('display','none')] [])
+        yield-thunk (&(_)(dom-node 'div' [('display','none')] []))
+    );
+public function ui-element: ( &(String,Array[Component]) Component )
+    ( &(tag,children)
+        if $((children.length) = 0):
+            yield-thunk (&(_)(dom-node tag [])),
+        else:
+            dom-dynamic tag children
     );
 public function ui-container: ( &(Array[Component]) Component )
     ( &(items)

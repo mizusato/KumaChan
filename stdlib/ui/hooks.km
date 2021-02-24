@@ -13,10 +13,14 @@ public function ui-state[T]: ( &(T) Hook[Reactive[T]] )
         ~ with-reactive &(r) := initial,
         r | k
     ));
-public function ui-list[T]: ( &(Reactive[List[T]]) Hook[(ListKey,Action*[Number],Reactive[T])] )
-    ( &(list)
+public function ui-list[T]: ( &(String,Reactive[List[T]]) Hook[(ListKey,Action*[Number],Reactive[T])] )
+    ( &(tag,list)
     ( &(k)
-        dom-dynamic 'div'
+        dom-dynamic tag
             ~ consume &(item) := list,
             item | k
     ));
+public function ui-list[T]: ( &(Reactive[List[T]]) Hook[(ListKey,Action*[Number],Reactive[T])] )
+    ( &(list)
+        ui-list 'div' list
+    );
