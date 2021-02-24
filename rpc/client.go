@@ -198,7 +198,7 @@ func consumeClientInstance(instance *ClientInstance, conn *rx.WrappedConnection,
 		_ = conn.Close()
 		return rx.Noop()
 	})
-	conn.Scheduler().RunTopLevel(consume_and_dispose, rx.Receiver {
+	rx.Schedule(consume_and_dispose, conn.Scheduler(), rx.Receiver {
 		Context:   conn.Context(),
 	})
 }

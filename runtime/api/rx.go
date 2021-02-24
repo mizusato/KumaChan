@@ -3,12 +3,12 @@ package api
 import (
 	"os"
 	"fmt"
+	"strconv"
 	"reflect"
 	"math/rand"
 	"kumachan/rx"
 	. "kumachan/lang"
 	"kumachan/runtime/lib/container"
-	"strconv"
 )
 
 
@@ -52,6 +52,16 @@ func AdaptReactiveDiff(diff rx.Action) rx.Action {
 			value,
 		} }
 	})
+}
+
+func recoverFromSyncCancellationPanic() {
+	var err = recover()
+	var _, is_sync_cancel = err.(SyncCancellationError)
+	if err == nil || is_sync_cancel {
+		// do nothing
+	} else {
+		panic(err)
+	}
 }
 
 var nextProcessLevelGlobalId = uint64(0)
@@ -275,12 +285,14 @@ var EffectFunctions = map[string] Value {
 	},
 	"go-thunk": func(f Value, h InteropContext) rx.Action {
 		return rx.NewGoroutineSingle(func(ctx *rx.Context) (rx.Object, bool) {
+			defer recoverFromSyncCancellationPanic()
 			return h.CallWithSyncContext(f, nil, ctx), true
 		})
 	},
 	"go-seq": func(seq container.Seq, h InteropContext) rx.Action {
 		// TODO: should use CallWithSyncContext(next) when seq is a custom seq
 		return rx.NewGoroutine(func(sender rx.Sender) {
+			// defer recoverFromSyncCancellationPanic()
 			if sender.Context().AlreadyCancelled() { return }
 			for item, rest, ok := seq.Next(); ok; item, rest, ok = rest.Next() {
 				sender.Next(item)
@@ -297,14 +309,6 @@ var EffectFunctions = map[string] Value {
 	"yield-thunk": func(f Value, h InteropContext) rx.Action {
 		return rx.NewSync(func() (rx.Object, bool) {
 			return h.Call(f, nil), true
-		})
-	},
-	"yield*-interval": func(l uint, r uint) rx.Action {
-		return rx.NewSyncSequence(func(next func(rx.Object))(bool,rx.Object) {
-			for i := l; i < r; i += 1 {
-				next(i)
-			}
-			return true, nil
 		})
 	},
 	"yield*-seq": func(seq container.Seq) rx.Action {

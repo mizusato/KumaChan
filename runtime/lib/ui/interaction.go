@@ -23,7 +23,7 @@ func handleEvent(sched rx.Scheduler) {
 	}
 	var sink = handler.Handler.(rx.Sink)
 	var handling = sink.Emit(payload)
-	rx.ScheduleActionWaitTerminate(handling, sched)
+	rx.ScheduleBackgroundWaitTerminate(handling, sched)
 }
 
 func scheduleUpdate(sched rx.Scheduler, vdom_source rx.Action, debug bool) {
@@ -31,7 +31,7 @@ func scheduleUpdate(sched rx.Scheduler, vdom_source rx.Action, debug bool) {
 		return virtualDomUpdate(root_node.(*vdom.Node), debug)
 	}
 	var update = vdom_source.ConcatMap(single_update)
-	rx.ScheduleAction(update, sched)
+	rx.ScheduleBackground(update, sched)
 }
 
 var patchOpBuffer = make([] interface {}, 0)

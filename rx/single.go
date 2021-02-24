@@ -1,11 +1,12 @@
 package rx
 
+import "errors"
+
+
 const single_multiple_return = "An effect that assumed to be a single-valued effect emitted multiple values"
 const single_zero_return = "An effect that assumed to be a single-valued effect completed with zero values emitted"
 
-
-// TODO: use a better function name
-func BlockingRunSingle(e Action, sched Scheduler, ctx *Context) (Object, bool) {
+func ScheduleSingle(e Action, sched Scheduler, ctx *Context) (Object, error) {
 	var chan_ret = make(chan Object)
 	var chan_err = make(chan Object)
 	sched.commit(func() {
@@ -33,9 +34,17 @@ func BlockingRunSingle(e Action, sched Scheduler, ctx *Context) (Object, bool) {
 	})
 	select {
 	case ret := <- chan_ret:
-		return ret, true
-	case err := <- chan_err:
-		return err, false
+		if ctx.AlreadyCancelled() {
+			return nil, errors.New("operation cancelled")
+		}
+		return ret, nil
+	case <- chan_err:
+		if ctx.AlreadyCancelled() {
+			return nil, errors.New("operation cancelled")
+		}
+		return nil, errors.New("exception thrown by scheduled action")
+	case <- ctx.CancelSignal():
+		return nil, errors.New("operation cancelled")
 	}
 }
 

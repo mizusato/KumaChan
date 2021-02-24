@@ -58,6 +58,7 @@ func PatternFrom (
 			},
 		}, nil
 	case ast.PatternTuple:
+		// TODO: length 0 as trivial pattern "_"
 		if len(p.Names) == 1 {
 			// no single-element tuple
 			return Pattern {

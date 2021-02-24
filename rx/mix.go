@@ -116,10 +116,6 @@ func (qs *QueueScheduler) commit(t task) {
 	qs.underlying.commit(t)
 }
 
-func (qs *QueueScheduler) RunTopLevel(e Action, r Receiver) {
-	qs.underlying.RunTopLevel(e, r)
-}
-
 type queue  [] Action
 func new_queue() *queue {
 	var q = queue(make([] Action, 0))
@@ -138,3 +134,4 @@ func (q *queue) pop() (Action, bool) {
 		return Action {}, false
 	}
 }
+

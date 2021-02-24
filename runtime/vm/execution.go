@@ -40,17 +40,15 @@ func execute(p Program, m *Machine) {
 		m.globalSlot = append(m.globalSlot, f.ToValue(nil))
 	}
 	var background = rx.Background()
-	var sync_ctx = background
-	var async_ctx = background
 	for i, _ := range p.Constants {
 		var f = p.Constants[i]
 		switch f.Kind {
 		case F_USER:
 			var fv = f.ToValue(nil).(FunctionValue)
-			m.globalSlot = append(m.globalSlot, call(fv, nil, m, sync_ctx))
+			m.globalSlot = append(m.globalSlot, call(fv, nil, m, background))
 		case F_NATIVE:
 			var l = InteropErrorPointLocatorFromStatic(f.Info.DeclPoint)
-			var h = InteropHandle { machine: m, locator: l, sync_ctx: sync_ctx }
+			var h = InteropHandle { machine: m, locator: l, sync_ctx: background }
 			var v = api.GetNativeConstant(f.NativeId, h)
 			m.globalSlot = append(m.globalSlot, v)
 		case F_PREDEFINED:
@@ -64,15 +62,15 @@ func execute(p Program, m *Machine) {
 			var v = f.ToValue(nil)
 			switch v := v.(type) {
 			case FunctionValue:
-				return (call(v, nil, m, sync_ctx)).(rx.Action)
+				return (call(v, nil, m, background)).(rx.Action)
 			case rx.Action:
 				return v
 			default:
 				panic("something went wrong")
 			}
 		})()
-		m.scheduler.RunTopLevel(e, rx.Receiver {
-			Context:   async_ctx,
+		rx.Schedule(e, m.scheduler, rx.Receiver {
+			Context:   background,
 			Values:    nil,
 			Error:     nil,
 			Terminate: wg,
@@ -90,16 +88,21 @@ func call(f FunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Value {
 	defer (func() {
 		var err = recover()
 		if err != nil {
-			PrintRuntimeErrorMessage(err, ec)
-			panic(err)
+			var _, is_cancel = err.(SyncCancellationError)
+			if is_cancel {
+				ec.clear()
+				m.contextPool.Put(ec)
+				panic(err)
+			} else {
+				PrintRuntimeErrorMessage(err, ec)
+				panic(err)
+			}
 		}
 	}) ()
 	ec.pushCall(f, arg)
 	outer: for len(ec.callStack) > 0 {
 		if sync_ctx.AlreadyCancelled() {
-			ec.clear()
-			m.contextPool.Put(ec)
-			return nil
+			panic(SyncCancellationError {})
 		}
 		var code = ec.workingFrame.function.Code
 		var base_addr = ec.workingFrame.baseAddr

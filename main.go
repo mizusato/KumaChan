@@ -249,7 +249,7 @@ func repl(args ([] string), max_stack_size int, debug_opts lang.DebugOptions) {
                     Values:    ch_values,
                     Error:     ch_error,
                 }
-                sched.RunTopLevel(eff, receiver)
+                rx.Schedule(eff, sched, receiver)
                 outer: for {
                     select {
                     case eff_v, not_closed := <- ch_values:

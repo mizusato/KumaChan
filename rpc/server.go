@@ -108,9 +108,8 @@ func constructServiceInstance(arg kmd.Object, conn *rx.WrappedConnection, servic
 	var construct = service.Constructor.GetAction(arg, conn)
 	var sched = conn.Scheduler()
 	var ctx = conn.Context()
-	v, ok := rx.BlockingRunSingle(construct, sched, ctx)
-	if !(ok) {
-		var e = v.(error)
+	v, e := rx.ScheduleSingle(construct, sched, ctx)
+	if e != nil {
 		err := sendConstructorException(e, conn)
 		if err != nil { return nil, err }
 		return nil, errors.New("failed to construct service instance")
@@ -194,7 +193,7 @@ func serverProcessMessages(instance kmd.Object, conn *rx.WrappedConnection, logg
 					logger.LogError(err.(error))
 					return rx.Noop()
 				})
-			conn.Scheduler().RunTopLevel(send_all, rx.Receiver {
+			rx.Schedule(send_all, conn.Scheduler(), rx.Receiver {
 				Context: conn.Context(),
 			})
 		default:

@@ -11,7 +11,6 @@ type Scheduler interface {
 	dispatch(event)
 	commit(task)
 	run(Action, *observer)
-	RunTopLevel(Action, Receiver)
 }
 
 type observer struct {
@@ -97,6 +96,14 @@ func (ctx *Context) create_disposable_child() (*Context, disposeFunc) {
 	}
 }
 
+func (ctx *Context) CancelSignal() (<- chan struct{}) {
+	if ctx.disposable() {
+		return ctx.cancel
+	} else {
+		return nil
+	}
+}
+
 func (ctx *Context) AlreadyCancelled() bool {
 	if ctx.disposable() {
 		select {
@@ -174,13 +181,45 @@ func (s Sender) Complete() {
 }
 
 
-func ScheduleAction(task Action, sched Scheduler) {
-	sched.RunTopLevel(task, Receiver { Context: Background() })
+func Schedule(action Action, sched Scheduler, r Receiver) {
+	sched.commit(func() {
+		sched.run(action, &observer {
+			context:  r.Context,
+			next: func(x Object) {
+				if r.Values != nil {
+					r.Values <- x
+				}
+			},
+			error: func(e Object) {
+				if r.Error != nil {
+					r.Error <- e
+					close(r.Error)
+				}
+				if r.Terminate != nil {
+					r.Terminate <- false
+				}
+			},
+			complete: func() {
+				if r.Values != nil {
+					close(r.Values)
+				}
+				if r.Terminate != nil {
+					r.Terminate <- true
+				}
+			},
+		})
+	})
 }
 
-func ScheduleActionWaitTerminate(task Action, sched Scheduler) bool {
+func ScheduleBackground(action Action, sched Scheduler) {
+	Schedule(action, sched, Receiver {
+		Context:   Background(),
+	})
+}
+
+func ScheduleBackgroundWaitTerminate(action Action, sched Scheduler) bool {
 	var wait = make(chan bool)
-	sched.RunTopLevel(task, Receiver {
+	Schedule(action, sched, Receiver {
 		Context:   Background(),
 		Terminate: wait,
 	})

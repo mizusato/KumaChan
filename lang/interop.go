@@ -40,6 +40,10 @@ var __InteropContextType = reflect.TypeOf(&__t).Elem()
 type NativeFunction  func(arg Value, handle InteropContext) Value
 type NativeConstant  func(handle InteropContext) Value
 
+type SyncCancellationError struct {}
+func (SyncCancellationError) Error() string {
+	return "synchronous operation cancelled"
+}
 
 func AdaptNativeFunction(f interface{}) NativeFunction {
 	var get_arg_val = func(v Value, t reflect.Type) reflect.Value {

@@ -37,33 +37,3 @@ func (sched TrivialScheduler) run(effect Action, ob *observer) {
 	})
 }
 
-func (sched TrivialScheduler) RunTopLevel(e Action, r Receiver) {
-	sched.EventLoop.commit(func() {
-		sched.run(e, &observer {
-			context:  r.Context,
-			next: func(x Object) {
-				if r.Values != nil {
-					r.Values <- x
-				}
-			},
-			error: func(e Object) {
-				if r.Error != nil {
-					r.Error <- e
-					close(r.Error)
-				}
-				if r.Terminate != nil {
-					r.Terminate <- false
-				}
-			},
-			complete: func() {
-				if r.Values != nil {
-					close(r.Values)
-				}
-				if r.Terminate != nil {
-					r.Terminate <- true
-				}
-			},
-		})
-	})
-}
-

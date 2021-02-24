@@ -26,7 +26,7 @@ func CreatePromise() Promise {
 	return Promise { state }
 }
 func (p *Promise) Resolve(value Object, sched Scheduler) {
-	BlockingRunSingle(p.state.Update(func(state_ Object) Object {
+	_, _ = ScheduleSingle(p.state.Update(func(state_ Object) Object {
 		var draft = state_.(PromiseState)
 		if draft.status != pending {
 			panic("invalid operation")
@@ -37,7 +37,7 @@ func (p *Promise) Resolve(value Object, sched Scheduler) {
 	}, nil), sched, Background())
 }
 func (p *Promise) Reject(err Object, sched Scheduler) {
-	BlockingRunSingle(p.state.Update(func(state_ Object) Object {
+	_, _ = ScheduleSingle(p.state.Update(func(state_ Object) Object {
 		var draft = state_.(PromiseState)
 		if draft.status != pending {
 			panic("invalid operation")
