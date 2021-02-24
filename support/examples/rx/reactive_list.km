@@ -40,9 +40,9 @@ private const Root: UI::Component
             ui-text-input content,
             row [
                 button-small '↑' (list.move-up id)
-                    | with (ui-show-if (not $(index is-first-in list))),
+                    | with (ui-enabled (not $(index is-first-in list))),
                 button-small '↓' (list.move-down id)
-                    | with (ui-show-if (not $(index is-last-in list))),
+                    | with (ui-enabled (not $(index is-last-in list))),
                 button-small '+' (insert-item-after id),
                 button-small '×' (list.delete id)
             ]
