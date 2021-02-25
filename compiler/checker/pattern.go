@@ -58,7 +58,16 @@ func PatternFrom (
 			},
 		}, nil
 	case ast.PatternTuple:
-		// TODO: length 0 as trivial pattern "_"
+		if len(p.Names) == 0 {
+			return Pattern {
+				Point:    ErrorPointFrom(p_node.Node),
+				Concrete: TrivialPattern {
+					ValueName: IgnoreMark,
+					ValueType: input,
+					Point:     ErrorPointFrom(p_node.Node),
+				},
+			}, nil
+		}
 		if len(p.Names) == 1 {
 			// no single-element tuple
 			return Pattern {
@@ -188,7 +197,7 @@ func PatternFrom (
 
 
 func (ctx ExprContext) WithPatternMatching(p Pattern) ExprContext {
-	var added = make(map[string]Type)
+	var added = make(map[string] Type)
 	switch P := p.Concrete.(type) {
 	case TrivialPattern:
 		var reg = ctx.ModuleInfo.Types

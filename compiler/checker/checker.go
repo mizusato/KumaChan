@@ -269,6 +269,9 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 	var mod_name = raw.ModuleName
 	var sym_name = raw.SymbolName
 	if mod_name == "" {
+		if sym_name == IgnoreMark {
+			return nil, false
+		}
 		local, exists := ctx.LocalValues[sym_name]
 		if exists {
 			functions, exists := lookup_functions(sym_name)
