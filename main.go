@@ -192,6 +192,7 @@ func repl(args ([] string), max_stack_size int, debug_opts lang.DebugOptions) {
             _, err := fmt.Fprintf(os.Stderr, "\n\033[1m[%d]\033[0m ", cmd_id)
             if err != nil { panic(err) }
             code, err := util.WellBehavedReadLine(os.Stdin)
+            if err == io.EOF { fmt.Fprintf(os.Stderr, "\n"); os.Exit(0) }
             if err != nil { panic(err) }
             if len(code) == 0 {
                 cmd_id -= 1
