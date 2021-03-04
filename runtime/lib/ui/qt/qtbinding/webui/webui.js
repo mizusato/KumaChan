@@ -105,14 +105,14 @@ function connectGeneralSignals(bridge) {
         let link_tag = document.createElement('link')
         link_tag.dataset['uuid'] = uuid
         link_tag.rel = 'stylesheet'
-        link_tag.href = `asset://${path}`
+        link_tag.href = `asset://default/${path}`
         document.head.appendChild(link_tag)
     })
     bridge.InjectJS.connect((uuid, path) => {
         let script_tag = document.createElement('script')
         script_tag.dataset['uuid'] = uuid
         script_tag.type = 'text/javascript'
-        script_tag.src = `asset://${path}`
+        script_tag.src = `asset://default/${path}`
         document.head.appendChild(script_tag)
     })
     bridge.InjectTTF.connect((uuid, path, family, weight, style) => {

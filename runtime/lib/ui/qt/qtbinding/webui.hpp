@@ -17,6 +17,7 @@
 #include <QDialog>
 #include <QVBoxLayout>
 #include <cmath>
+#include "adapt.hpp"
 
 
 #define WebUiHtmlUrl "qrc:/qtbinding/webui/webui.html"
@@ -116,7 +117,8 @@ public:
     QNetworkReply* createRequest(Operation operation, const QNetworkRequest &request, QIODevice *device) override {
         QUrl url = request.url();
         if (url.scheme() == "asset") {
-            QString path = url.path();
+            QString path_base64 = url.path();
+            QString path = QtDecodeBase64(path_base64);
             // qDebug() << "[asset] request =" << path;
             return new WebUiAssetReply(store, path);
         } else {

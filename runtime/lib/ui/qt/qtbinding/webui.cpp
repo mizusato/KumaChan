@@ -28,17 +28,20 @@ void WebUiRegisterAsset(QtString path, QtString mime, const uint8_t* buf, size_t
 }
 QtString WebUiInjectCSS(QtString path) {
     QString uuid = QUuid::createUuid().toString();
-    emit window->bridge->InjectCSS(uuid, QtUnwrapString(path));
+    QString path_base64 = QtEncodeBase64(QtUnwrapString(path));
+    emit window->bridge->InjectCSS(uuid, path_base64);
     return QtWrapString(uuid);
 }
 QtString WebUiInjectJS(QtString path) {
     QString uuid = QUuid::createUuid().toString();
-    emit window->bridge->InjectJS(uuid, QtUnwrapString(path));
+    QString path_base64 = QtEncodeBase64(QtUnwrapString(path));
+    emit window->bridge->InjectJS(uuid, path_base64);
     return QtWrapString(uuid);
 }
 QtString WebUiInjectTTF(QtString path, QtString family, QtString weight, QtString style) {
     QString uuid = QUuid::createUuid().toString();
-    emit window->bridge->InjectTTF(uuid, QtUnwrapString(path), QtUnwrapString(family), QtUnwrapString(weight), QtUnwrapString(style));
+    QString path_base64 = QtEncodeBase64(QtUnwrapString(path));
+    emit window->bridge->InjectTTF(uuid, path_base64, QtUnwrapString(family), QtUnwrapString(weight), QtUnwrapString(style));
     return QtWrapString(uuid);
 }
 void WebUiCallMethod(QtString id, QtString name, QtVariantList args) {

@@ -1,6 +1,8 @@
 package loader
 
 import (
+	"strings"
+	"net/url"
 	"path/filepath"
 	"kumachan/compiler/loader/extra"
 )
@@ -36,7 +38,7 @@ func DefaultManifest(path string) Manifest {
 	return Manifest {
 		// TODO: sanitize string fields
 		Vendor:  "",
-		Project: dir,
+		Project: url.PathEscape(strings.ReplaceAll(dir, ":", "/")),
 		Version: "",
 		Name:    base,
 		Config:  Config {
