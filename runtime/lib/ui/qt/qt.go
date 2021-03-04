@@ -113,6 +113,20 @@ func Main() {
         main()
     }
 }
+func Quit(after func()) {
+    select {
+    case <- initialized:
+        var wait = make(chan struct{})
+        CommitTask(func() {
+            C.QtQuit()
+            after()
+            wait <- struct{}{}
+        })
+        <- wait
+    default:
+        after()
+    }
+}
 func Mock() {
     mock = true
 }

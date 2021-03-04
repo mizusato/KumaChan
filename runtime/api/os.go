@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"kumachan/rx"
 	"kumachan/stdlib"
+	"kumachan/runtime/lib/ui/qt"
 	. "kumachan/lang"
 	. "kumachan/runtime/lib/container"
 )
@@ -217,7 +218,9 @@ var OS_Functions = map[string] Value {
 	},
 	"exit": func(code uint8) rx.Action {
 		return rx.NewSync(func() (rx.Object, bool) {
-			os.Exit(int(code))
+			qt.Quit(func() {
+				os.Exit(int(code))
+			})
 			panic("process should have exited")
 		})
 	},
