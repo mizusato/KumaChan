@@ -108,7 +108,7 @@
   <action name="ActionBack">
    <property name="icon">
     <iconset theme="go-previous">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>icons/back.png</normaloff>icons/back.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Back</string>
@@ -120,7 +120,7 @@
   <action name="ActionForward">
    <property name="icon">
     <iconset theme="go-next">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>icons/forward.png</normaloff>icons/forward.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Forward</string>
@@ -132,7 +132,7 @@
   <action name="ActionSearch">
    <property name="icon">
     <iconset theme="edit-find">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>icons/find.png</normaloff>icons/find.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Search</string>

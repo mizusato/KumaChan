@@ -1,6 +1,10 @@
 Copyright Info
 
-Some of the files in this folder come from gnome-icon-theme (GPL),
+Some of the files in this folder come from the Oxygen Icon Theme (LGPL),
 including:
+    forward.png
+    back.png
+    find.png
+    exit.png
     module.png
 
