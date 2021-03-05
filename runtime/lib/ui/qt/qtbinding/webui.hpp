@@ -139,7 +139,7 @@ private:
 public:
     WebUiAssetStore* store;
     WebUiBridge* bridge;
-    WebUiWindow(QString title, bool debug): QMainWindow(nullptr), view(nullptr), debug(debug) {
+    WebUiWindow(QString title, bool debug): QMainWindow(nullptr), view(nullptr), debug(debug), inspector(nullptr) {
         setWindowTitle(title);
         store = new WebUiAssetStore(this);
         bridge = new WebUiBridge(this);
@@ -196,16 +196,16 @@ public slots:
         // }
     };
     void showAtScreenCenter() {
+        show();
         int w = width();
         int h = height();
-        // qDebug() << w << h;
+        // qDebug() << "SIZE" << w << "x" << h;
         QScreen *screen = QGuiApplication::primaryScreen();
         QPoint c = screen->geometry().center();
         int cx = c.x();
         int cy = c.y();
-        // qDebug() << cx << cy;
+        // qDebug() << "CENTER" << cx << "," << cy;
         move(cx - w/2, cy - h/2);
-        show();
         if (debug) {
             #ifndef _WIN32
             // inspector crashes on windows
