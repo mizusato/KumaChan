@@ -6,9 +6,10 @@ import (
 	"sort"
 	"reflect"
 	"strings"
+	"context"
+	"runtime"
 	"kumachan/util"
 	"kumachan/runtime/lib/ui/qt"
-	"context"
 )
 
 
@@ -312,6 +313,12 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 		qt.Connect(ui.ActionSearch, "triggered()", func() {
 			qt.DialogExec(ui.SearchDialog.Dialog)
 		})
+		if runtime.GOOS == "windows" {
+			// workaround: no focus by default on Windows
+			qt.CommitTask(func() {
+				qt.SetPropInt(ui.ModuleList, "currentRow", -1)
+			})
+		}
 	})()
 	var search_kind = "All"
 	var search_content = ""
