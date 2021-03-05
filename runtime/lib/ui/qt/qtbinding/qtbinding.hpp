@@ -3,6 +3,8 @@
 #include <QObject>
 #include <QWidget>
 #include <QEvent>
+#include <QUiLoader>
+#include <QWebView>
 #include <cstdlib>
 
 
@@ -73,6 +75,19 @@ public:
             }
         } else {
             return false;
+        }
+    }
+};
+
+class UiLoader: public QUiLoader {
+public:
+    virtual QWidget* createWidget(const QString &className, QWidget *parent = nullptr, const QString &name = QString()) override {
+        if (className == "QWebView") {
+            QWidget* w = new QWebView(parent);
+            w->setObjectName(name);
+            return w;
+        } else {
+            return QUiLoader::createWidget(className, parent, name);
         }
     }
 };

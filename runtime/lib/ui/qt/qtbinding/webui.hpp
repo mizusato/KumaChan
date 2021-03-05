@@ -135,6 +135,7 @@ private:
     QWebPage* page;
     QWebFrame* frame;
     bool debug;
+    QWebInspector* inspector;
 public:
     WebUiAssetStore* store;
     WebUiBridge* bridge;
@@ -147,6 +148,7 @@ public:
         QScreen *screen = QGuiApplication::primaryScreen();
         connect(screen, &QScreen::geometryChanged, this, &WebUiWindow::updateRootFontSize);
         connect(bridge, &WebUiBridge::LoadFinish, this, &WebUiWindow::updateRootFontSize);
+        connect(bridge, &WebUiBridge::LoadFinish, this, &WebUiWindow::showAtScreenCenter);
     }
     void loadView() {
         if (view != nullptr) { return; }
@@ -161,15 +163,6 @@ public:
         });
         view->setUrl(QUrl(WebUiHtmlUrl));
         setCentralWidget(view);
-        show();
-        QScreen *screen = QGuiApplication::primaryScreen();
-        move(screen->geometry().center() - QPoint(width()/2, height()/2));
-        if (debug) {
-            #ifndef _WIN32
-            // inspector crashes on windows
-            openInspector();
-            #endif
-        }
     }
     ~WebUiWindow() {}
 private:
@@ -202,6 +195,24 @@ public slots:
         //     qDebug() << "Event: " << handler;
         // }
     };
+    void showAtScreenCenter() {
+        int w = width();
+        int h = height();
+        // qDebug() << w << h;
+        QScreen *screen = QGuiApplication::primaryScreen();
+        QPoint c = screen->geometry().center();
+        int cx = c.x();
+        int cy = c.y();
+        // qDebug() << cx << cy;
+        move(cx - w/2, cy - h/2);
+        show();
+        if (debug) {
+            #ifndef _WIN32
+            // inspector crashes on windows
+            openInspector();
+            #endif
+        }
+    }
     void updateRootFontSize() {
         QScreen *screen = QGuiApplication::primaryScreen();
         QRect screenGeometry = screen->geometry();
@@ -213,7 +224,10 @@ public slots:
     }
 private:
     void openInspector() {
-        QWebInspector* inspector = new QWebInspector(this);
+        if (inspector != nullptr) {
+            return;
+        }
+        inspector = new QWebInspector(this);
         inspector->setPage(page);
         QDialog* inspector_dialog = new QDialog();
         inspector_dialog->setLayout(new QVBoxLayout());

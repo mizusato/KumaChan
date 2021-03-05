@@ -59,7 +59,7 @@ void QtInit() {
         app = new QApplication(fake_argc, fake_argv);
         app->setQuitOnLastWindowClosed(false);
         bridge = new Bridge();
-        loader = new QUiLoader();
+        loader = new UiLoader();
         qRegisterMetaType<callback_t>();
         initialized = true;
     }
