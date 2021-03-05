@@ -162,6 +162,8 @@ public:
         view->setUrl(QUrl(WebUiHtmlUrl));
         setCentralWidget(view);
         show();
+        QScreen *screen = QGuiApplication::primaryScreen();
+        move(screen->geometry().center() - QPoint(width()/2, height()/2));
         if (debug) {
             #ifndef _WIN32
             // inspector crashes on windows
