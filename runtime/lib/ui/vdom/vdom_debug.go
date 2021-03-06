@@ -78,22 +78,13 @@ func writeStyles(buf io.Writer, styles *Styles) {
 
 func writeEvents(buf io.Writer, events *Events, ctx InspectContext) {
 	if events == EmptyEvents { return }
-	events.Data.ForEach(func(name String, opts_ interface{}) {
-		var opts = opts_.(*EventOptions)
+	events.Data.ForEach(func(name String, handler_ interface{}) {
+		var handler = handler_.(*EventHandler)
 		writeStatic(buf, " ")
 		writeStatic(buf, "@")
 		writeString(buf, name)
-		if opts.Capture {
-			writeStatic(buf, ".capture")
-		}
-		if opts.Prevent {
-			writeStatic(buf, ".prevent")
-		}
-		if opts.Stop {
-			writeStatic(buf, ".stop")
-		}
 		writeStatic(buf, "=\"")
-		var id, exists = ctx.GetHandlerId(opts.Handler)
+		var id, exists = ctx.GetHandlerId(handler)
 		if exists {
 			fmt.Fprintf(buf, "%s", id)
 		} else {

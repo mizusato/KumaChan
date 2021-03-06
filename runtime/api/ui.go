@@ -136,14 +136,6 @@ var UiFunctions = map[string] interface{} {
 			Content: node.Content,
 		}
 	},
-	"ui-dom-event": func(prevent SumValue, stop SumValue, capture SumValue, handler *vdom.EventHandler) *vdom.EventOptions {
-		return &vdom.EventOptions {
-			Prevent: FromBool(prevent),
-			Stop:    FromBool(stop),
-			Capture: FromBool(capture),
-			Handler: handler,
-		}
-	},
 	"ui-dom-event-handler": func(s rx.Sink, f Value, h InteropContext) *vdom.EventHandler {
 		var adapter = func(obj rx.Object) rx.Object {
 			var ev = obj.(*qt.WebUiEventPayload)

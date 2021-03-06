@@ -49,26 +49,16 @@ type Props struct {
 	Events  *Events
 }
 type Attrs struct {
+	// String -> String
 	Data  Map
 }
 type Styles struct {
+	// String -> String
 	Data  Map
 }
 type Events struct {
+	// String -> *EventHandler
 	Data  Map
-}
-type EventOptions struct {
-	Prevent  bool
-	Stop     bool
-	Capture  bool
-	Handler  *EventHandler
-}
-func EventOptionsEqual(a *EventOptions, b *EventOptions) bool {
-	if a == b {
-		return true
-	} else {
-		return *a == *b
-	}
 }
 
 // TODO: change to functions to prevent them from being mutated
@@ -89,8 +79,8 @@ type DeltaNotifier struct {
 	EraseStyle   func(id String, key String)
 	SetAttr      func(id String, key String, value String)
 	RemoveAttr   func(id String, key String)
-	AttachEvent  func(id String, name String, prevent bool, stop bool, capture bool, handler *EventHandler)
-	ModifyEvent  func(id String, name String, prevent bool, stop bool, capture bool)
+	AttachEvent  func(id String, name String, handler *EventHandler)
+	ModifyEvent  func(id String, name String)
 	DetachEvent  func(id String, name String, handler *EventHandler)
 	SetText      func(id String, content String)
 	AppendNode   func(parent String, id String, tag String)
@@ -113,8 +103,8 @@ func get_addr(ptr interface{}) String {
 func detach_all_events(ctx *DeltaNotifier, node *Node) {
 	var node_id = get_addr(node)
 	node.Events.Data.ForEach(func(name String, val interface{}) {
-		var opts = val.(*EventOptions)
-		ctx.DetachEvent(node_id, name, opts.Handler)
+		var handler = val.(*EventHandler)
+		ctx.DetachEvent(node_id, name, handler)
 	})
 	var children, has_children = node.Content.(*Children)
 	if has_children {
@@ -211,37 +201,27 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 			}
 			old_events.Data.ForEach(func(key String, val interface{}) {
 				var old_name = key
-				var old_opts = val.(*EventOptions)
-				var new_opts_, name_in_new = new_events.Data.Lookup(old_name)
+				var old_handler = val.(*EventHandler)
+				var new_handler_, name_in_new = new_events.Data.Lookup(old_name)
 				if name_in_new {
 					var name = old_name
-					var new_opts = new_opts_.(*EventOptions)
-					if EventOptionsEqual(new_opts, old_opts) {
+					var new_handler = new_handler_.(*EventHandler)
+					if new_handler == old_handler {
 						goto skip_event_opts
 					}
-					if new_opts.Handler == old_opts.Handler {
-						ctx.ModifyEvent(id, name,
-							new_opts.Prevent, new_opts.Stop, new_opts.Capture)
-					} else {
-						ctx.DetachEvent(id, name,
-							old_opts.Handler)
-						ctx.AttachEvent(id, name,
-							new_opts.Prevent, new_opts.Stop, new_opts.Capture,
-							new_opts.Handler)
-					}
+					ctx.DetachEvent(id, name, old_handler)
+					ctx.AttachEvent(id, name, new_handler)
 					skip_event_opts:
 				} else {
-					ctx.DetachEvent(id, old_name, old_opts.Handler)
+					ctx.DetachEvent(id, old_name, old_handler)
 				}
 			})
 		}
 		new_events.Data.ForEach(func(key String, val interface{}) {
 			var new_name = key
-			var new_opts = val.(*EventOptions)
+			var new_handler = val.(*EventHandler)
 			if !(old != nil && old.Events.Data.Has(new_name)) {
-				 ctx.AttachEvent(id, new_name,
-				 	new_opts.Prevent, new_opts.Stop, new_opts.Capture,
-				 	new_opts.Handler)
+				 ctx.AttachEvent(id, new_name, new_handler)
 			}
 		})
 		skip_events:

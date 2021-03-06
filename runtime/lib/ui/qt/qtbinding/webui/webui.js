@@ -7,6 +7,18 @@
  */
 /**
  *  @typedef {{
+ *      prevent: boolean,
+ *      stop: boolean,
+ *      capture: boolean,
+ *      exact: boolean,
+ *      key: string,
+ *      ctrl: boolean,
+ *      alt: boolean,
+ *      shift: boolean
+ *  }} EventOptions 
+ */
+/**
+ *  @typedef {{
  *      EmitEvent: (handler:string, event:Object) => void,
  *      LoadFinish: () => void,
  *      UpdateRootFontSize: Signal<(size:number) => void>,
@@ -22,8 +34,7 @@
  *      EraseStyle: (id:string, key:string) => void,
  *      SetAttr: (id:string, name:string, value:string) => void,
  *      RemoveAttr: (id:string, name:string) => void,
- *      AttachEvent: (id:string, name:string, prevent:boolean, stop:boolean, capture: boolean, handler: string) => void,
- *      ModifyEvent: (id:string, name:string, prevent:boolean, stop:boolean, capture: boolean) => void,
+ *      AttachEvent: (id:string, name:string, handler: string) => void,
  *      DetachEvent: (id:string, name:string) => void,
  *      SetText: (id:string, content:string) => void,
  *      AppendNode: (parent:string, id:string, tag:string) => void
@@ -40,7 +51,7 @@ const RootElementSelector = 'html'
 
 /** @type {{ [id:string]: HTMLElement | SVGElement }} */
 let elementRegistry = {}
-/** @type {{ [id:string]: { [name:string]: { listener: function, handler: string, capture: boolean } } }} */
+/** @type {{ [id:string]: { [name:string]: { listener: function, handler: string } } }} */
 let eventsRegistry = {}
 /** @returns {void} */
 function registerBodyElement() {
@@ -139,14 +150,21 @@ function initializeInteraction(bridge) {
             return document.createElement(tag)
         }
     }
-    /** @type {(prevent:boolean, stop:boolean, handler:string) => (ev:any) => void} */
-    let createListener = (prevent, stop, handler) => ev => {
-        if (prevent) { ev.preventDefault() }
-        if (stop) { ev.stopPropagation() }
+    /** @type {(handler:string, opts: EventOptions) => (ev:any) => void} */
+    let createListener = (handler, opts) => ev => {
+        if (opts.prevent) { ev.preventDefault() }
+        if (opts.stop) { ev.stopPropagation() }
         /** @type {Element} */
         let target = ev.target
         /** @type {Element} */
         let currentTarget = ev.currentTarget
+        if (opts.exact && target !== currentTarget) {
+            return
+        }
+        ev['webuiIsExactTarget'] = (target === currentTarget)
+        // TODO: read specified geometry information according to opts
+        // ev['webuiViewportWidth'] = window.innerWidth
+        // ev['webuiViewportHeight'] = window.innerHeight
         if (target instanceof HTMLInputElement
             || target instanceof HTMLSelectElement) {
             ev['webuiValue'] = ev.target.value
@@ -156,6 +174,29 @@ function initializeInteraction(bridge) {
             let bounds = currentTarget.getBoundingClientRect()
             ev['webuiCurrentTargetX'] = Math.round(ev.clientX - bounds.left)
             ev['webuiCurrentTargetY'] = Math.round(ev.clientY - bounds.top)
+        }
+        if (ev instanceof KeyboardEvent) {
+            console.log(opts, ev)
+            let key = ev.key || ev['keyIdentifier']
+            if (key == 'Esc') { key = 'Escape' }
+            if (opts.key != '' && key != opts.key) { return }
+            if (opts.ctrl && !(ev.ctrlKey)) { return }
+            if (opts.alt && !(ev.altKey)) { return }
+            if (opts.shift && !(ev.shiftKey)) { return }
+        }
+        if (ev instanceof FocusEvent) {
+            /** @type {Element} */
+            // @ts-ignore
+            let el = ev.relatedTarget
+            let out = true
+            while (el != null) {
+                if (el === currentTarget) {
+                    out = false
+                    break
+                }
+                el = el.parentElement
+            }
+            ev['webuiFocusWentOutside'] = out
         }
         bridge.EmitEvent(handler, ev)
     }
@@ -168,6 +209,31 @@ function initializeInteraction(bridge) {
         } else {
             return () => {}
         }
+    }
+    /** @type {(name: string) => [string,EventOptions]} */
+    let parseEventName = (name) => {
+        let t = name.split('.')
+        let kind = t[0] || ''
+        t.shift()
+        let raw_opts = t
+        let opts = {
+            prevent: false,
+            stop: false,
+            capture: false,
+            exact: false,
+            key: '',
+            ctrl: false,
+            alt: false,
+            shift: false
+        }
+        for (let raw_opt of raw_opts) {
+            if (opts[raw_opt] === false) {
+                opts[raw_opt] = true
+            } else if (raw_opt.startsWith('key=')) {
+                opts.key = raw_opt.replace('key=', '')
+            }
+        }
+        return [kind, opts]
     }
     /** @type {PatchOperations} */
     let patchOperations = {
@@ -191,6 +257,8 @@ function initializeInteraction(bridge) {
                     elementRegistry[id]['value'] = val
                 } else if (name == 'checked' || name == 'disabled') {
                     elementRegistry[id][name] = true
+                } else if (name == 'webuiAutofocus') {
+                    elementRegistry[id].focus()
                 } else {
                     elementRegistry[id].setAttribute(name, val)
                 }
@@ -211,44 +279,25 @@ function initializeInteraction(bridge) {
                 console.log('RemoveAttr', { id, name }, err)
             }
         },
-        AttachEvent: (id, name, prevent, stop, capture, handler) => {
+        AttachEvent: (id, name, handler) => {
             try {
-                let listener = createListener(prevent, stop, handler)
+                let [kind, opts] = parseEventName(name)
+                let listener = createListener(handler, opts)
                 let el = elementRegistry[id]
-                // TODO: convenient handling for key events
-                let event_kind = name.replace(/\..*/, '')
-                el.addEventListener(event_kind, listener, Boolean(capture))
+                el.addEventListener(kind, listener, opts.capture)
                 if (!(eventsRegistry[id])) { eventsRegistry[id] = {} }
-                eventsRegistry[id][name] = { listener, handler, capture }
+                eventsRegistry[id][name] = { listener, handler }
             } catch (err) {
-                console.log('AttachEvent', { id, name, prevent, stop, capture, handler }, err)
-            }
-        },
-        ModifyEvent: (id, name, prevent, capture, stop) => {
-            try {
-                let el = elementRegistry[id]
-                let events = eventsRegistry[id]
-                let old_event = events[name]
-                let handler = old_event.handler
-                let old_listener = old_event.listener
-                let old_capture = old_event.capture
-                let listener = createListener(prevent, stop, handler)
-                let event_kind = name.replace(/\..*/, '')
-                // @ts-ignore
-                el.removeEventListener(event_kind, old_listener, Boolean(old_capture))
-                el.addEventListener(event_kind, listener, Boolean(capture))
-                events[name] = { listener, handler, capture }
-            } catch (err) {
-                console.log('ModifyEvent', { id, name, prevent, stop, capture }, err)
+                console.log('AttachEvent', { id, name, handler }, err)
             }
         },
         DetachEvent: (id, name) => {
             try {
+                let [kind] = parseEventName(name)
                 let el = elementRegistry[id]
                 let event = eventsRegistry[id][name]
-                let event_kind = name.replace(/\..*/, '')
                 // @ts-ignore
-                el.removeEventListener(event_kind, event.listener)
+                el.removeEventListener(kind, event.listener)
                 delete eventsRegistry[id][name]
             } catch (err) {
                 console.log('DetachEvent', { id, name }, err)

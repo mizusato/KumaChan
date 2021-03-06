@@ -95,9 +95,9 @@ private function dom-attrs-merge: ( &(Array[Attrs]) Attrs )
 private function with: ( &(Node,Attrs) Node )
     native 'ui-with-attrs';
 
-private function dom-events: ( &(Map[String,EventOptions]) Events )
+private function dom-events: ( &(Map[String,EventHandler]) Events )
     native 'ui-dom-events';
-private function dom-events: ( &(Array[(String,EventOptions)]) Events )
+private function dom-events: ( &(Array[(String,EventHandler)]) Events )
     (&(events)(dom-events (create-map events)));
 private function dom-events-merge: ( &(Array[Events]) Events )
     native 'ui-dom-events-merge';

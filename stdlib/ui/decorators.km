@@ -82,10 +82,16 @@ public function ui-event: ( &(String,EventHandler) Decorator )
         node.with (dom-event name handler)
     ));
 public function ui-focusable: ( &() Decorator )
-    ( &(_)
+    ( &()
     ( &(cpt)
         ~ map &(node) := cpt,
         node.with (dom-attrs [('tabindex','0')])
+    ));
+public function ui-autofocus: ( &() Decorator )
+    ( &()
+    ( &(cpt)
+        ~ map &(node) := cpt,
+        node.with (dom-attrs [('webuiAutofocus','webuiAutofocus')])
     ));
 public function ui-enabled: ( &(Action*[Bool]) Decorator )
     ( &(@enabled)

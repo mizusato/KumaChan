@@ -1,6 +1,5 @@
-type EventOptions native;  // *vdom.EventOptions
 type EventPayload native;  // *qt.WebUiEventPayload (contains a C++ pointer)
-type EventHandler native;
+type EventHandler native;  // *vdom.EventHandler
 
 private function dom-event-handler[T]: ( &(Sink[T],(&(EventPayload)(T))) EventHandler )
     native 'ui-dom-event-handler';
@@ -25,17 +24,7 @@ private function get-number: ( &(EventPayload,String) Number )
 private function get-bool: ( &(EventPayload,String) Bool )
     native 'ui-event-payload-get-bool';
 
-private function dom-event:
-    ( & { prevent: Bool, stop: Bool, capture: Bool, handler: EventHandler } EventOptions )
-    native 'ui-dom-event';
-private function dom-event: ( &(EventHandler) EventOptions )
-    ( &(handler)
-        dom-event { prevent: No, stop: No, capture: No, handler }
-    );
 private function dom-event: ( &(String,EventHandler) Events )
     ( &(name,handler)
-        dom-events [ (name, (dom-event {
-            handler,
-            prevent: No, stop: No, capture: No
-        })) ]
+        dom-events [(name,handler)]
     );
