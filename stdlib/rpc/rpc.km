@@ -16,26 +16,26 @@ type CommonOptions {
     log:    LogOptions,
     limits: LimitOptions
 };
-public const DefaultCommonOptions: CommonOptions {};
-public function zero-value: (&()(CommonOptions)) (&(_)(DefaultCommonOptions));
+public const CommonOptionsDefault: CommonOptions {};
+public function zero-value: (&()(CommonOptions)) (&()(CommonOptionsDefault));
 type LogOptions {
     enabled: Bool
 };
-public const DefaultLogOptions: LogOptions { enabled: Yes };
-public function zero-value: (&()(LogOptions)) (&(_)(DefaultLogOptions));
+public const LogOptionsDefault: LogOptions { enabled: Yes };
+public function zero-value: (&()(LogOptions)) (&()(LogOptionsDefault));
 type LimitOptions {
     send-timeout:      Number,
     recv-timeout:      Number,
     recv-interval:     Number,
     recv-max-obj-size: Number
 };
-public const DefaultLimitOptions: LimitOptions {
+public const LimitOptionsDefault: LimitOptions {
     send-timeout:      10000,
     recv-timeout:      0,
     recv-interval:     100,
     recv-max-obj-size: 33554432
 };
-public function zero-value: (&()(LimitOptions)) (&(_)(DefaultLimitOptions));
+public function zero-value: (&()(LimitOptions)) (&()(LimitOptionsDefault));
 
 type Connection native;
 public function wait-closed: ( &(Connection) Action[unit,Error] )
