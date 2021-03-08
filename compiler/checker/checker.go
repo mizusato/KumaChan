@@ -30,8 +30,9 @@ type CheckedConstant struct {
 	CheckedConstantInfo
 }
 type CheckedConstantInfo struct {
-	Public  bool
-	Doc     string
+	Section  string
+	Public   bool
+	Doc      string
 }
 type CheckedFunction struct {
 	Point     ErrorPoint
@@ -41,6 +42,7 @@ type CheckedFunction struct {
 	CheckedFunctionInfo
 }
 type CheckedFunctionInfo struct {
+	Section      string
 	Public       bool
 	Doc          string
 	Params       [] TypeParam
@@ -515,6 +517,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 				Implicit: implicit_fields,
 				FunctionKmdInfo: GetFunctionKmdInfo(name, t, ctx.Mapping),
 				CheckedFunctionInfo: CheckedFunctionInfo {
+					Section:     f.Section,
 					Public:      f.Public,
 					Doc:         f.Doc,
 					Params:      f.TypeParams,
@@ -586,8 +589,9 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 		var name = sym.SymbolName
 		var t = constant.DeclaredType
 		var info = CheckedConstantInfo {
-			Public: constant.Public,
-			Doc:    constant.Doc,
+			Section: constant.Section,
+			Public:  constant.Public,
+			Doc:     constant.Doc,
 		}
 		switch val := constant.Value.(type) {
 		case ast.Expr:

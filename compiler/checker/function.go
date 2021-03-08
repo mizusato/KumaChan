@@ -105,7 +105,7 @@ func CollectFunctions (
 			var i = len(decls)
 			decls = append(decls, decl)
 			if i < len(mod.AST.Statements) {
-				sections = append(sections, section.Get())
+				sections = append(sections, section.GetAt(decl.Node))
 			} else {
 				sections = append(sections, "")
 			}

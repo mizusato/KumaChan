@@ -360,6 +360,15 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 					var ok = strings.Contains(normalized_id, normalized_target)
 					if ok {
 						result = append(result, item)
+					} else if item.Sec != nil {
+						for _, s := range item.Sec {
+							var normalized_s = strings.ToLower(s)
+							var ok = strings.Contains(normalized_s, normalized_target)
+							if ok {
+								result = append(result, item)
+								break
+							}
+						}
 					}
 				}
  			}
@@ -371,9 +380,22 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
  					var item = result[i]
  					var ref = ApiRef { Module: item.Mod, Id: item.Id }
  					var href = ref.HyperRef()
+ 					var label = (func() string {
+ 						var display_name = fmt.Sprintf("%s (%s)", item.Name, item.Mod)
+ 						if item.Sec != nil {
+ 							var t = make([] string, len(item.Sec))
+ 							for i, s := range item.Sec {
+ 								t[i] = fmt.Sprintf("[%s]", s)
+							}
+ 							var sec_desc = strings.Join(t, " ")
+ 							return fmt.Sprintf("%s %s", display_name, sec_desc)
+						} else {
+							return display_name
+						}
+					})()
  					return qt.ListWidgetItem {
 						Key:   ([] rune)(href),
-						Label: ([] rune)(item.Id),
+						Label: ([] rune)(label),
 						Icon:  apiKindToIcon(item.Kind),
 					}
 				}

@@ -1,24 +1,31 @@
 package checker
 
 import (
-	"kumachan/compiler/loader/parser/ast"
 	"strings"
+	"kumachan/compiler/loader/parser/cst"
+	"kumachan/compiler/loader/parser/ast"
 )
 
 
 type CurrentSection struct {
-	title string
+	cst    *cst.Tree
+	title  string
 }
 
 func (s *CurrentSection) SetFrom(title ast.Title) {
 	var str = string(title.Content)
-	str = strings.TrimPrefix(str, "#")
+	str = strings.TrimPrefix(str, "##")
 	str = strings.TrimSuffix(str, "\r")
 	str = strings.Trim(str, " ")
 	s.title = str
+	s.cst = title.Node.CST
 }
 
-func (s *CurrentSection) Get() string {
+func (s *CurrentSection) GetAt(node ast.Node) string {
+	if node.CST != s.cst {
+		s.cst = node.CST
+		s.title = ""
+	}
 	return s.title
 }
 

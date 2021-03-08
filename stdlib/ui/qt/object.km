@@ -1,3 +1,5 @@
+// TODO: remove unused functions in this module and merge this module into UI
+
 type Object      native;  // qt.Object
 type Signal[+T]  protected Action*[T];
 type Event[+T]   protected Action*[T];

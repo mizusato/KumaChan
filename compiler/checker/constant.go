@@ -101,7 +101,7 @@ func CollectConstants(mod *loader.Module, reg TypeRegistry, store ConstantStore)
 				},
 			} }
 			var constant = &Constant {
-				Section:      section.Get(),
+				Section:      section.GetAt(decl.Node),
 				Node:         decl.Node,
 				Doc:          doc,
 				Public:       is_public,

@@ -1,122 +1,12 @@
 TODO
 
-- rename Effect/Effect* to Action/Action*
+- revise lambda syntax and pipeline dot syntax
 
-- use Core::Error instead of I/O::Error (add create-error, wrap-error)
+- UI: Web(main) + Native(supplement)
 
-- consider Action[T,E] + Action[T,never] instead of NoExcept[T]
+- merge Qt module into UI
 
-- rpc infrastructures
+- restore ui xml loader (add widget-specific bind function)
 
-- use SET for options api ({ ...DefaultOptions, a: 1, b: 2, c: 3 }}
-
-
-================================
-
-Draft for RPC
-
-
-// RPC
-type ServiceIdentifier[Instance,Argument];
-type ServerOptions { ... };
-type ClientOptions { ... };
-public const DefaultServerOptions: ServerOptions  native;  // zero
-public const DefaultClientOptions: ClientOptions  native;  // zero
-type ServerBackend native;
-type ClientBackend native;
-public function rpc-tcp-server: ( &(Net::Addr) ServerBackend );
-public function rpc-tcp-client: ( &(Net::Addr) ClientBackend );
-public function rpc-access[Instance,Argument]:
-    ( & {
-        service:  ServiceIdentifier[Instance,Argument],
-        backend:  ClientBackend,
-        options:  ClientOptions,
-        argument: Argument,
-        consumer: ( &(Instance) Action[-] ),
-    } Action[-,Error] );
-public function rpc-serve:
-    ( & {
-        service:     ServiceIdentifier[Instance,Argument],
-        backend:     ServerBackend,
-        options:     ServerOptions,
-        constructor: ( &(Argument) Action[Instance,Error] ),
-    } Action[-,Error] );
-
-
-// service.km (declared to be a service in manifest)
-
-// auto-generated
-type instance native;
-type argument UserDefinedArgumentType;
-public const identifier RPC::ServiceIdentifier[instance,argument];
-
-type methods[T] implicit { ... };
-public function create[T]: implicit[methods[T]] ( &(T) instance );
-
-// user-defined things (all involved types are required to be serializable)
-# rpc-argument
-type UserDefinedArgumentType Int;
-# rpc-method
-public function user-defined-method-1: ( &(instance) Action*[Int,Error] );
-# rpc-method
-public function user-defined-method-2: ( &(instance) Action[-,Error] );
-# rpc-method
-public function user-defined-method-3: ( &(instance) Action[-,Error] );
-
-
-// server.km
-
-import CounterService from 'service';
-
-type Counter Reactive[Int];
-
-public function new-counter: ( &(Int) NoExcept[Counter] )
-    (&(initial)(new-reactive:[Int] initial);
-public function watch-value: ( &(Counter) Action*[Int,CallError] )
-    (&(this)(this.watch));
-public function decrement: ( &(Counter) Action[-,CallError] )
-    (&(this)(this.update(&(v)(v - 1))));
-public function increment: ( &(Counter) Action[-,CallError] )
-    (&(this)(this.update(&(v)(v + 1))));
-
-do CounterService::serve (addr 'localhost' '8080') ( &(initial)
-   new-counter initial
-       | then(&(counter)(CounterService::create counter))
-);
-
-
-// client.km
-
-import CounterService from 'service';
-
-do CounterService::access (addr 'localhost' '8080') (CounterService::Initial 0)
-   | then ( &(counter)
-       counter.increment
-       | then (counter.watch-value.concat-map (&(n)
-           println (str n)
-	   | catch (&(err)(crash err))
-       ))
-   )
-   | catch (&(err)(crash err));
-
-
-// newly designed api
-
-rpc-access {
-    service:  CounterService::identifier,
-    backend:  rpc-tcp-server (net-addr '127.0.0.1:8001'),
-    options:  RPC::DefaultClientOptions,
-    argument: CounterService::Initial 0,
-    consumer: ( &(instance) (main instance) )
-}
-
-rpc-serve {
-    service:     CounterService::identifier,
-    backend:     rpc-tcp-client (net-addr '127.0.0.1:8001'),
-    options:     RPC::DefaultServerOptions,
-    constructor: ( &(initial)
-        ~ await &(counter) := new-counter initial,
-        CounterService::create counter
-    )
-}
+- support: menu, toolbar, popupmenu, modal dialog
 

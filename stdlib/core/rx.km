@@ -1,4 +1,4 @@
-// Action Types
+## Action Types
 
 /// Action*[T,E] represents an action that may return 0/finite/infinite T values
 /// asynchronously or throw an E error asynchronously.
@@ -13,7 +13,7 @@ type Action [[unit] +T, [never] +E]
     protected Action*[T,E];
 
 
-// Wired Components
+## Wired Components
 
 /// Sink[T] accepts values of type T.
 type Sink[-T]
@@ -39,7 +39,7 @@ type ReactiveEntity[T]
     protected Reactive[T];  // rx.ReactiveEntity
 
 
-// Auxiliary Types for Wired Components
+## Auxiliary Types for Wired Components
 
 /// ReactiveSnapshots[T] represents a structure that
 /// consists of snapshots of the current undo stack and redo stack
@@ -50,14 +50,14 @@ type ReactiveSnapshots[+T] {
 };
 
 
-// Mutable Containers
+## Mutable Containers
 
 type Mutable[+T]     native;  // rx.Cell
 type Buffer          native;  // rx.Buffer
 type HashMap[+K,+V]  native;  // rx.StringHashMap, rx.NumberHashMap
 
 
-// Wired Components Operations
+## Wired Components Operations
 # alias: <-
 public function write[T]:    ( &(Sink[T],T) Action )
     native 'sink-write';
@@ -97,7 +97,7 @@ public function with-reactive[T, K < Action*[any,any]]:  ( &(T,(&(ReactiveEntity
 public function with-auto-snapshot[T, K < Action*[any,any]]:  ( &(T,(&(Reactive[T],(Action,Action,Action*[(ReactiveSnapshots[T],T)]))(K))) K )
     native 'with-auto-snapshot';
 
-// Mutable Containers Operations
+## Mutable Containers Operations
 public function new-mutable[T]: ( &() Action[Mutable[T]] )
     native 'new-mutable';
 public function with-mutable[T, K < Action*[any,any]]:  ( &(T,(&(Mutable[T])(K))) K )
@@ -109,7 +109,7 @@ public function set[T]: ( &(Mutable[T],T) Action )
 public function swap[T]: ( &(Mutable[T],(&(T)(T))) Action )
     native 'mutable-swap';
 
-// Action Constructors
+## Action Constructors
 public function with[A < Action*[any,any]]: ( &(A,Action) A )
     native 'with';
 public function gen-random: ( &() Action[Float] )
@@ -151,7 +151,7 @@ public function wait: ( & {timeout:Number} Action )
 public function tick: ( & {interval:Number} Action*[unit] )
     native 'tick';
 
-// Action Operators
+## Action Operators
 public function take-one-as-single[T,E]: ( &(Action*[T,E]) Action[Maybe[T],E] )
     native 'take-one-as-single';
 public function wait-complete[E]: ( &(Action*[unit,E]) Action[unit,E] )

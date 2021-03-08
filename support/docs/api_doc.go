@@ -24,6 +24,7 @@ type ApiItem struct {
 	Id    string
 	Mod   string
 	Name  string
+	Sec   [] string
 }
 type ApiItemKind string
 const (
@@ -40,16 +41,36 @@ func GenerateApiDocs(idx checker.Index) ApiDocIndex {
 		buf.WriteString(string(block("title", text("text", mod_name))))
 		var reg = mod.Context.Types
 		var outline = make([] ApiItem, 0)
-		var outline_add_item = func(kind ApiItemKind, sym loader.Symbol) {
+		var sections = make(map[string] ([] int))
+		var outline_add_item = func(kind ApiItemKind, sym loader.Symbol, sec ([] string)) {
+			var normalized_sec = make([] string, 0)
+			for _, s := range sec {
+				if s != "" {
+					normalized_sec = append(normalized_sec, s)
+				}
+			}
+			if len(normalized_sec) == 0 {
+				normalized_sec = nil
+			}
+			var i = len(outline)
 			outline = append(outline, ApiItem {
 				Kind: kind,
 				Id:   sym.String(),
 				Mod:  sym.ModuleName,
 				Name: sym.SymbolName,
+				Sec:  normalized_sec,
 			})
+			for _, s := range sec {
+				var index_list, exists = sections[s]
+				if exists {
+					sections[s] = append(index_list, i)
+				} else {
+					sections[s] = [] int { i }
+				}
+			}
 		}
 		var add_type = func(sym loader.Symbol, g *checker.GenericType) {
-			outline_add_item(TypeDecl, sym)
+			outline_add_item(TypeDecl, sym, [] string { g.Section })
 			var id = sym.String()
 			if !(g.CaseInfo.IsCaseType) {
 				var content = typeDecl(sym, g, reg, mod_name)
@@ -60,7 +81,7 @@ func GenerateApiDocs(idx checker.Index) ApiDocIndex {
 		}
 		var add_const = func(name string, constant checker.CheckedConstant) {
 			var sym = loader.MakeSymbol(mod_name, name)
-			outline_add_item(ConstDecl, sym)
+			outline_add_item(ConstDecl, sym, [] string { constant.Section })
 			var id = sym.String()
 			var content = constDecl(sym, constant.Type, constant.Doc)
 			var wrapped = blockWithId(id, "api toplevel", content)
@@ -69,7 +90,16 @@ func GenerateApiDocs(idx checker.Index) ApiDocIndex {
 		}
 		var add_function = func(name string, group ([] checker.CheckedFunction)) {
 			var sym = loader.MakeSymbol(mod_name, name)
-			outline_add_item(FuncDecl, sym)
+			var sec = make([] string, 0)
+			var sec_added = make(map[string] bool)
+			for _, f := range group {
+				var s = f.Section
+				if sec_added[s] { continue }
+				sec_added[s] = true
+				sec = append(sec, s)
+			}
+			sort.Strings(sec)
+			outline_add_item(FuncDecl, sym, sec)
 			var id = sym.String()
 			var filtered = make([] checker.CheckedFunction, 0)
 			for _, f := range group {

@@ -154,8 +154,8 @@ func RegisterRawTypes(mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 	var params_map = make(map[uint] ([] TypeParam))
 	var bounds_map = make(map[uint] ([] ast.TypeBound))
 	var defaults_map = make(map[uint] ([] ast.TypeParamDefault))
-	var case_enum_map = make(map[uint]uint)
-	var case_index_map = make(map[uint]uint)
+	var case_enum_map = make(map[uint] uint)
+	var case_index_map = make(map[uint] uint)
 	var section CurrentSection
 	var process_decl_stmt func(ast.DeclType) *TypeDeclError
 	process_decl_stmt = func(s ast.DeclType) *TypeDeclError {
@@ -167,7 +167,7 @@ func RegisterRawTypes(mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 			Point:    ErrorPointFrom(err_node),
 			Concrete: *err,
 		} }
-		section_map[i] = section.Get()
+		section_map[i] = section.GetAt(s.Node)
 		params_map[i] = params
 		bounds_map[i] = bounds
 		defaults_map[i] = defaults
