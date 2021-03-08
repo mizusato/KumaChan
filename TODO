@@ -4,6 +4,8 @@ TODO
 
 - UI: Web(main) + Native(supplement)
 
+- integrate WebUi with Qt Designer (promoted QWidget -> UiView)
+
 - merge Qt module into UI
 
 - restore ui xml loader (add widget-specific bind function)
