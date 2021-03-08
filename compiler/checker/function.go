@@ -9,6 +9,7 @@ import (
 
 
 type GenericFunction struct {
+	Section       string
 	Node          ast.Node
 	Doc           string
 	Tags          FunctionTags
@@ -94,14 +95,25 @@ func CollectFunctions (
 		}
 	}
 	var decls = make([] ast.DeclFunction, 0)
+	var sections = make([] string, 0)
+	var section CurrentSection
 	for _, stmt := range stmts {
 		switch decl := stmt.Statement.(type) {
+		case ast.Title:
+			section.SetFrom(decl)
 		case ast.DeclFunction:
+			var i = len(decls)
 			decls = append(decls, decl)
+			if i < len(mod.AST.Statements) {
+				sections = append(sections, section.Get())
+			} else {
+				sections = append(sections, "")
+			}
 		}
 	}
-	for _, decl := range decls {
-		// 3.1. Get doc and tags
+	for i, decl := range decls {
+		// 3.1. Get section, doc and tags
+		var section = sections[i]
 		var doc = DocStringFromRaw(decl.Docs)
 		var tags, tags_err = ParseFunctionTags(decl.Tags)
 		if tags_err != nil { return nil, &FunctionError {
@@ -288,6 +300,7 @@ func CollectFunctions (
 				IsSelfAlias: is_alias,
 			}
 			var f = &GenericFunction {
+				Section:      section,
 				Node:         decl.Node,
 				Doc:          doc,
 				Tags:         tags,

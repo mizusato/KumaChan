@@ -49,6 +49,7 @@ var __NodeRegistry = []interface{} {
 	ReplEval {},
     // Statement
     VariousStatement {},
+    Title {},
     Import {},
     Identifier {},
     Do {},

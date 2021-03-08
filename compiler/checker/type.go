@@ -7,6 +7,7 @@ import (
 
 
 type GenericType struct {
+	Section     string
 	Node        ast.Node
 	Doc         string
 	Tags        TypeTags

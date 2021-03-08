@@ -33,6 +33,7 @@ const IdentifierFullRegexp = "^" + IdentifierRegexp + "$"
 var __Tokens = [...] Token {
     // pragma and comment
     Token { Name: "Shebang",  Pattern: r(`#![^`+LF+`]*`) },
+    Token { Name: "Title",    Pattern: r(`##[^`+LF+`]*`) },
     Token { Name: "Tag",      Pattern: r(`#[^`+LF+`]*`) },
     Token { Name: "Comment",  Pattern: r(`/\*([^\*/]|\*[^/]|[^\*]/)*\*/`) },
     Token { Name: "Doc",      Pattern: r(`///[^`+LF+`]*`) },
@@ -120,7 +121,8 @@ var __SyntaxDefinition = [...] string {
     "root = shebang stmts",
       "shebang? = Shebang",
       "stmts? = stmt stmts",
-        "stmt = import | do | decl_type | decl_const | decl_func",
+        "stmt = title | import | do | decl_type | decl_const | decl_func",
+          "title = Title",
           "import = @import name! @from! string_text! ;!",
             "name = Name",
           "do = @do expr! ;!",

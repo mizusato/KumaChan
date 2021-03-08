@@ -9,6 +9,12 @@ type VariousStatement struct {
 }
 type Statement interface { Statement() }
 
+func (impl Title) Statement() {}
+type Title struct {
+    Node               `part:"title"`
+    Content  [] rune   `content:"Title"`
+}
+
 func (impl Import) Statement() {}
 type Import struct {
     Node               `part:"import"`
@@ -18,8 +24,8 @@ type Import struct {
 
 func (impl Do) Statement() {}
 type Do struct {
-    Node   `part:"do"`
-    Effect Expr `part:"expr"`
+    Node           `part:"do"`
+    Effect  Expr   `part:"expr"`
 }
 
 func (impl DeclConst) Statement() {}

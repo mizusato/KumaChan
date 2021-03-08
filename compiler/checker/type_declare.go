@@ -34,10 +34,13 @@ type RawTypeContext struct {
 // Final Registry of Types
 type TypeRegistry  map[loader.Symbol] *GenericType
 
+// TODO: integrate all maps
 // Intermediate Registry of Types, Used When Defining Types
 type RawTypeRegistry struct {
 	// a map from symbol to type declaration (AST node)
 	DeclMap        map[loader.Symbol] ast.DeclType
+	// a map from symbol to section title
+	SectionMap     map[loader.Symbol] string
 	// a map from symbol to type parameters
 	ParamsMap      map[loader.Symbol] ([] TypeParam)
 	// a map from symbol to type parameter bounds
@@ -123,6 +126,7 @@ func CollectTypeParams(raw_params ([] ast.TypeParam)) (
 func MakeRawTypeRegistry() RawTypeRegistry {
 	return RawTypeRegistry {
 		DeclMap:       make(map[loader.Symbol] ast.DeclType),
+		SectionMap:    make(map[loader.Symbol] string),
 		ParamsMap:     make(map[loader.Symbol] ([] TypeParam)),
 		BoundsMap:     make(map[loader.Symbol] [] ast.TypeBound),
 		DefaultsMap:   make(map[loader.Symbol] [] ast.TypeParamDefault),
@@ -146,11 +150,13 @@ func RegisterRawTypes(mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 	// 2. Extract all type declarations in the module,
 	//    and record the root enum types of all case types
 	var decls = make([] ast.DeclType, 0)
+	var section_map = make(map[uint] string)
 	var params_map = make(map[uint] ([] TypeParam))
 	var bounds_map = make(map[uint] ([] ast.TypeBound))
 	var defaults_map = make(map[uint] ([] ast.TypeParamDefault))
 	var case_enum_map = make(map[uint]uint)
 	var case_index_map = make(map[uint]uint)
+	var section CurrentSection
 	var process_decl_stmt func(ast.DeclType) *TypeDeclError
 	process_decl_stmt = func(s ast.DeclType) *TypeDeclError {
 		var i = uint(len(decls))
@@ -161,6 +167,7 @@ func RegisterRawTypes(mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 			Point:    ErrorPointFrom(err_node),
 			Concrete: *err,
 		} }
+		section_map[i] = section.Get()
 		params_map[i] = params
 		bounds_map[i] = bounds
 		defaults_map[i] = defaults
@@ -178,6 +185,8 @@ func RegisterRawTypes(mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 	}
 	for _, stmt := range mod.AST.Statements {
 		switch s := stmt.Statement.(type) {
+		case ast.Title:
+			section.SetFrom(s)
 		case ast.DeclType:
 			var err = process_decl_stmt(s)
 			if err != nil { return err }
@@ -215,6 +224,7 @@ func RegisterRawTypes(mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 		//        throw an error.
 		raw.DeclMap[type_sym] = d
 		var params = params_map[uint(i)]
+		raw.SectionMap[type_sym] = section_map[uint(i)]
 		raw.ParamsMap[type_sym] = params
 		raw.BoundsMap[type_sym] = bounds_map[uint(i)]
 		raw.DefaultsMap[type_sym] = defaults_map[uint(i)]
@@ -391,7 +401,9 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, TypeDe
 		}
 		// 3.6. Use the generated TypeDef to construct a GenericType
 		//      and register it to the TypeRegistry
+		var section = raw.SectionMap[name]
 		reg[name] = &GenericType {
+			Section:    section,
 			Node:       t.Node,
 			Doc:        doc,
 			Tags:       tags,

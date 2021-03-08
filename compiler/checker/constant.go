@@ -8,6 +8,7 @@ import (
 
 
 type Constant struct {
+	Section       string
 	Node          ast.Node
 	Doc           string
 	Public        bool
@@ -43,8 +44,11 @@ func CollectConstants(mod *loader.Module, reg TypeRegistry, store ConstantStore)
 			}
 		}
 	}
+	var section CurrentSection
 	for _, stmt := range mod.AST.Statements {
 		switch decl := stmt.Statement.(type) {
+		case ast.Title:
+			section.SetFrom(decl)
 		case ast.DeclConst:
 			var name = mod.SymbolFromDeclName(decl.Name)
 			var doc = DocStringFromRaw(decl.Docs)
@@ -97,6 +101,7 @@ func CollectConstants(mod *loader.Module, reg TypeRegistry, store ConstantStore)
 				},
 			} }
 			var constant = &Constant {
+				Section:      section.Get(),
 				Node:         decl.Node,
 				Doc:          doc,
 				Public:       is_public,
