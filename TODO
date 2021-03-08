@@ -1,5 +1,7 @@
 TODO
 
+- move parser package to lang/
+
 - revise lambda syntax and pipeline dot syntax
 
 - UI: Web(main) + Native(supplement)
