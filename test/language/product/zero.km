@@ -5,7 +5,7 @@ type Point {
      y: Real
 };
 
-public function zero-value: ( &() Real )
+export function zero-value: ( &() Real )
        (&(_)(Real 0.0));
 
 do

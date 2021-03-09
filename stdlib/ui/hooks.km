@@ -1,26 +1,26 @@
 type Hook[T] (&(&(T)(Component))(Component));
 
-public function use[T]: ( &(Hook[T],(&(T)(Component))) Component )
+export function use[T]: ( &(Hook[T],(&(T)(Component))) Component )
     ( &(hook,k)
         k | hook
     );
-public function use[T]: ( &(Action*[T],(&(T)(Component))) Component )
+export function use[T]: ( &(Action*[T],(&(T)(Component))) Component )
     ( &(e,k) (e.switch-map k) );
 
-public function ui-state[T]: ( &(T) Hook[Reactive[T]] )
+export function ui-state[T]: ( &(T) Hook[Reactive[T]] )
     ( &(initial)
     ( &(k)
         ~ with-reactive &(r) := initial,
         r | k
     ));
-public function ui-list[T]: ( &(String,Reactive[List[T]]) Hook[(ListKey,Action*[Number],Reactive[T])] )
+export function ui-list[T]: ( &(String,Reactive[List[T]]) Hook[(ListKey,Action*[Number],Reactive[T])] )
     ( &(tag,list)
     ( &(k)
         dom-dynamic tag
             ~ consume &(item) := list,
             item | k
     ));
-public function ui-list[T]: ( &(Reactive[List[T]]) Hook[(ListKey,Action*[Number],Reactive[T])] )
+export function ui-list[T]: ( &(Reactive[List[T]]) Hook[(ListKey,Action*[Number],Reactive[T])] )
     ( &(list)
         ui-list 'div' list
     );

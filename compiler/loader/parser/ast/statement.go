@@ -32,10 +32,10 @@ func (impl DeclConst) Statement() {}
 type DeclConst struct {
     Node                          `part:"decl_const"`
     Docs      [] Doc              `list_rec:"docs"`
-    Public    bool                `option:"scope.@public"`
+    Public    bool                `option:"scope.@export"`
     Name      Identifier          `part:"name"`
     Type      VariousType         `part:"type"`
-    Value     VariousConstValue   `part_opt:"const_value"`
+    Value     VariousConstValue   `part_opt:"const_def.const_value"`
 }
 type VariousConstValue struct {
     Node                     `part:"const_value"`
@@ -58,11 +58,11 @@ type DeclFunction struct {
     Node                      `part:"decl_func"`
     Docs      [] Doc          `list_rec:"docs"`
     Tags      [] Tag          `list_rec:"tags"`
-    Public    bool            `option:"scope.@public"`
+    Public    bool            `option:"scope.@export"`
     Name      Identifier      `part:"name"`
     Params    [] TypeParam    `list_more:"type_params" item:"type_param"`
-    Implicit  [] VariousType  `list_more:"signature.implicit_input.type_args" item:"type"`
-    Repr      ReprFunc        `part:"signature.repr_func"`
+    Implicit  [] VariousType  `list_more:"sig.implicit_input" item:"type"`
+    Repr      ReprFunc        `part:"sig.repr_func"`
     Body      VariousBody     `part_opt:"body"`
 }
 type VariousBody struct {

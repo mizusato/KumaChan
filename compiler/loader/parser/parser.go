@@ -213,7 +213,7 @@ func Parse(code []rune, root string, name string) (*cst.Tree, *Error) {
     var tokens, info, span_map, s_err = scanner.Scan(code)
     if s_err != nil { return nil, &Error {
         IsScannerError:  true,
-        ScannerError:    s_err,
+        ScannerError:    fmt.Errorf("error scanning '%s': %w", name, s_err),
     } }
     var Root, exists = syntax.Name2Id(root)
     if (!exists) {

@@ -134,7 +134,7 @@ func GetChar(char ast.CharLiteral, ctx ExprContext) (uint32, *ExprError) {
 		}
 	}
 	var c0 = raw[0]
-	if c0 == '^' {
+	if c0 == '`' {
 		return use_rune(raw[1])
 	} else if c0 == '\\' {
 		var c1 = raw[1]

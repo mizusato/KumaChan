@@ -4,14 +4,14 @@ type EchoServer {
     verbose: Bool
 };
 
-public function new-echo-server:
+export function new-echo-server:
     ( &() Service::constructor )
     ( &(_) ( &(opts,_)
         let { verbose } := opts,
         yield (Service::create (EchoServer { verbose }))
     ));
 
-public function echo:
+export function echo:
     ( &(EchoServer,Service::Request) Action[Service::Response,Error] )
     ( &(server,req)
         let {content} := req,

@@ -6,7 +6,7 @@ do ui-inject-css [assets::style-css];
 
 do ui-exit-when-window-closed;
 
-public function float-input: ( &(Reactive[Maybe[Float]]) UI::Component )
+export function float-input: ( &(Reactive[Maybe[Float]]) UI::Component )
     ( &(value)
         ~ use &(buffer) := ui-state '',
         ui-text-input buffer
@@ -14,7 +14,7 @@ public function float-input: ( &(Reactive[Maybe[Float]]) UI::Component )
                 $(value <- (parse-float string)))).forever)
     );
 
-private const Root: UI::Component
+const Root: UI::Component
     let container := styled ui-container ['container'],
     let row := styled ui-container ['row'],
     ~ use &(price) := ui-state (Just 0.0),

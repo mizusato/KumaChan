@@ -1,6 +1,7 @@
 package loader
 
 import (
+	"os"
 	"fmt"
 	"errors"
 	"io/ioutil"
@@ -28,7 +29,10 @@ var __ServiceTemplate = (func() ast.Root {
 		Content: content,
 	}
 	var root, err2 = source.GetAST()
-	if err2 != nil { panic(wrap(errors.New(err2.Desc().StringPlain()))) }
+	if err2 != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err2.Message().String())
+		panic(wrap(errors.New(err2.Desc().StringPlain())))
+	}
 	return root
 })()
 

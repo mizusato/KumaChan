@@ -1,4 +1,4 @@
-private const str1: String
+const str1: String
     'Lorem ipsum dolor sit amet, consectetur adipisicing elit, ' ..
     'sed do eiusmod tempor incididunt ut '
         .. 'labore et dolore magna aliqua. ' .. \n ..
@@ -7,7 +7,7 @@ private const str1: String
     'Duis aute irure dolor in reprehenderit in voluptate '
         ..'velit esse cillum dolore eu fugiat nulla pariatur. ';
 
-private const str2: String
+const str2: String
     (("" .. ^# .. "(#,#)") 'X' 'Y');
 
 do (println str1) | then (println str2) | catch (&(err)(crash err));

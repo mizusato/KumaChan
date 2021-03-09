@@ -6,7 +6,7 @@ do ui-inject-css [assets::style-css];
 
 do ui-exit-when-window-closed;
 
-private const Root: UI::Component
+const Root: UI::Component
     ~ with-auto-snapshot &(text, ops) := '',
     let (text-undo, text-redo, text-diff) := ops,
     ui-container [

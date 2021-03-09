@@ -8,9 +8,9 @@ type NodeContent native;  // vdom.NodeContent
 /// The vDOM driver in `webui.js` uses the memory address of a vNode as an ID.
 /// Therefore, a vNode cannot be used more than once.
 /// In addition, due to some restrictions, a vNode cannot move across subtrees.
-private function dom-node: ( &(String,Styles,Attrs,Events,NodeContent) Node )
+function dom-node: ( &(String,Styles,Attrs,Events,NodeContent) Node )
     native 'ui-dom-node';
-private function dom-node: ( &(String,String) Node )
+function dom-node: ( &(String,String) Node )
     ( &(tag, text)
         dom-node tag
             (dom-styles [])
@@ -18,7 +18,7 @@ private function dom-node: ( &(String,String) Node )
             (dom-events [])
             (dom-text text)
     );
-private function dom-node: ( &(String,Array[Node]) Node )
+function dom-node: ( &(String,Array[Node]) Node )
     ( &(tag, children)
         dom-node tag
             (dom-styles [])
@@ -26,18 +26,18 @@ private function dom-node: ( &(String,Array[Node]) Node )
             (dom-events [])
             (dom-children children)
     );
-private function dom-node: ( &(String,Array[(String,String)],String) Node )
+function dom-node: ( &(String,Array[(String,String)],String) Node )
     ( &(tag, styles, text)
         dom-node tag text
             | with (dom-styles styles)
     );
-private function dom-node: ( &(String,Array[(String,String)],Array[Node]) Node )
+function dom-node: ( &(String,Array[(String,String)],Array[Node]) Node )
     ( &(tag, styles, children)
         dom-node tag children
             | with (dom-styles styles)
     );
 
-private function dom-dynamic:
+function dom-dynamic:
     ( &(String, Action*[(Styles,Attrs,Events)], Action*[Array[Node]])
         Action*[Node] )
     ( &(tag, @opts, @children)
@@ -45,66 +45,66 @@ private function dom-dynamic:
         let (styles,attrs,events) := opts,
         dom-node tag styles attrs events (dom-children children)
     );
-private function dom-dynamic:
+function dom-dynamic:
     ( &(String, Action*[Array[Node]])
         Action*[Node] )
     ( &(tag, @children)
         ~ map &(children) := @children,
         dom-node tag children
     );
-private function dom-dynamic:
+function dom-dynamic:
     ( &(String, Action*[(Styles,Attrs,Events)], Array[Action*[Node]])
         Action*[Node] )
     ( &(tag, @opts, children)
         dom-dynamic tag @opts (combine-latest* children)
     );
-private function dom-dynamic:
+function dom-dynamic:
     ( &(String, Styles, Attrs, Events, Array[Action*[Node]])
         Action*[Node] )
     ( &(tag, styles, attrs, events, children)
         dom-dynamic tag (yield styles attrs events) children
     );
-private function dom-dynamic:
+function dom-dynamic:
     ( &(String, Array[(String,String)], Array[Action*[Node]])
         Action*[Node] )
     ( &(tag, styles, children)
         dom-dynamic tag (dom-styles styles) (dom-attrs []) (dom-events []) children
     );
-private function dom-dynamic:
+function dom-dynamic:
     ( &(String, Array[Action*[Node]])
         Action*[Node] )
     ( &(tag, children)
         dom-dynamic tag (dom-styles []) (dom-attrs []) (dom-events []) children
     );
 
-private function dom-styles: ( &(Map[String,String]) Styles )
+function dom-styles: ( &(Map[String,String]) Styles )
     native 'ui-dom-styles';
-private function dom-styles: ( &(Array[(String,String)]) Styles )
+function dom-styles: ( &(Array[(String,String)]) Styles )
     (&(styles)(dom-styles (create-map styles)));
-private function dom-styles-merge: ( &(Array[Styles]) Styles )
+function dom-styles-merge: ( &(Array[Styles]) Styles )
     native 'ui-dom-styles-merge';
-private function with: ( &(Node,Styles) Node )
+function with: ( &(Node,Styles) Node )
     native 'ui-with-styles';
 
-private function dom-attrs: ( &(Map[String,String]) Attrs )
+function dom-attrs: ( &(Map[String,String]) Attrs )
     native 'ui-dom-attrs';
-private function dom-attrs: ( &(Array[(String,String)]) Attrs )
+function dom-attrs: ( &(Array[(String,String)]) Attrs )
     (&(attrs)(dom-attrs (create-map attrs)));
-private function dom-attrs-merge: ( &(Array[Attrs]) Attrs )
+function dom-attrs-merge: ( &(Array[Attrs]) Attrs )
     native 'ui-dom-attrs-merge';
-private function with: ( &(Node,Attrs) Node )
+function with: ( &(Node,Attrs) Node )
     native 'ui-with-attrs';
 
-private function dom-events: ( &(Map[String,EventHandler]) Events )
+function dom-events: ( &(Map[String,EventHandler]) Events )
     native 'ui-dom-events';
-private function dom-events: ( &(Array[(String,EventHandler)]) Events )
+function dom-events: ( &(Array[(String,EventHandler)]) Events )
     (&(events)(dom-events (create-map events)));
-private function dom-events-merge: ( &(Array[Events]) Events )
+function dom-events-merge: ( &(Array[Events]) Events )
     native 'ui-dom-events-merge';
-private function with: ( &(Node,Events) Node )
+function with: ( &(Node,Events) Node )
     native 'ui-with-events';
 
-private function dom-text: ( &(String) NodeContent )
+function dom-text: ( &(String) NodeContent )
     native 'ui-dom-text';
-private function dom-children: ( &(Array[Node]) NodeContent )
+function dom-children: ( &(Array[Node]) NodeContent )
     native 'ui-dom-children';

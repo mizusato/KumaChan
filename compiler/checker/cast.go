@@ -5,17 +5,15 @@ import (
 )
 
 
-func CheckCast(cast ast.Cast, ctx ExprContext) (SemiExpr, *ExprError) {
-	var info = ctx.GetExprInfo(cast.Node)
+func CheckCast(object SemiExpr, target ast.VariousType, ctx ExprContext) (SemiExpr, *ExprError) {
+	var info = ctx.GetExprInfo(target.Node)
 	var type_ctx = ctx.GetTypeContext()
-	var type_ref, is_type_ref = cast.Target.Type.(ast.TypeRef)
+	var type_ref, is_type_ref = target.Type.(ast.TypeRef)
 	if is_type_ref {
 		if len(type_ref.TypeArgs) == 0 &&
 			len(type_ref.Module.Name) == 0 &&
 			string(type_ref.Id.Name) == SuperTypeName {
-			var semi, err = Check(cast.Object, ctx)
-			if err != nil { return SemiExpr{}, err }
-			var typed, is_typed = semi.Value.(TypedExpr)
+			var typed, is_typed = object.Value.(TypedExpr)
 			if !(is_typed) { return SemiExpr{}, &ExprError {
 				Point:    typed.Info.ErrorPoint,
 				Concrete: E_ExplicitTypeRequired {},
@@ -49,17 +47,15 @@ func CheckCast(cast ast.Cast, ctx ExprContext) (SemiExpr, *ExprError) {
 			}
 		}
 	}
-	var target, err1 = TypeFrom(cast.Target, type_ctx)
+	var target_t, err1 = TypeFrom(target, type_ctx)
 	if err1 != nil { return SemiExpr{}, &ExprError {
 		Point:    err1.Point,
 		Concrete: E_TypeErrorInExpr { err1 },
 	} }
-	var semi, err2 = Check(cast.Object, ctx)
+	var typed, err2 = AssignTo(target_t, object, ctx)
 	if err2 != nil { return SemiExpr{}, err2 }
-	var typed, err3 = AssignTo(target, semi, ctx)
-	if err3 != nil { return SemiExpr{}, err3 }
 	return LiftTyped(Expr {
-		Type:  target,
+		Type:  target_t,
 		Value: typed.Value,
 		Info:  info,
 	}), nil

@@ -1,8 +1,8 @@
-public const Env: Map[String,String]
+export const Env: Map[String,String]
     native 'OS::Env';
-public const Args: Array[String]
+export const Args: Array[String]
     native 'OS::Args';
 
 type ProcessExit protected Action;
-public function exit: ( &(Uint8) ProcessExit )
+export function exit: ( &(Uint8) ProcessExit )
     native 'exit';

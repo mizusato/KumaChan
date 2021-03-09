@@ -1,7 +1,7 @@
 type URL native;
 
-public function parse-url: ( &(String) Maybe[URL] )
+export function parse-url: ( &(String) Maybe[URL] )
     native 'parse-url';
 
-public function url: ( &(String) URL )
+export function url: ( &(String) URL )
     native 'url';

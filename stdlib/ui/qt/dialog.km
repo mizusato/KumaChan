@@ -1,19 +1,19 @@
-public function qt-dialog-open:
+export function qt-dialog-open:
     ( & { parent: Maybe[Widget], title: String, cwd: OS::Path, filter: String }
         Action[Maybe[OS::Path]] )
     native 'qt-dialog-open';
 
-public function qt-dialog-open*:
+export function qt-dialog-open*:
     ( & { parent: Maybe[Widget], title: String, cwd: OS::Path, filter: String }
         Action[Array[OS::Path]] )
     native 'qt-dialog-open*';
 
-public function qt-dialog-open-dir:
+export function qt-dialog-open-dir:
     ( & { parent: Maybe[Widget], title: String, cwd: OS::Path }
         Action[Maybe[OS::Path]] )
     native 'qt-dialog-open-dir';
 
-public function qt-dialog-save:
+export function qt-dialog-save:
     ( & { parent: Maybe[Widget], title: String, cwd: OS::Path, filter: String }
         Action[Maybe[OS::Path]] )
     native 'qt-dialog-save';

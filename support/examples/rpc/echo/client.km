@@ -1,6 +1,6 @@
 import Service from './service';
 
-public function consume-echo-service:
+export function consume-echo-service:
     ( &(Service::instance) Action )
     ( &(server)
         let read-and-request :=

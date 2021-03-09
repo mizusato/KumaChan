@@ -1,4 +1,4 @@
-private function msg-sample: ( &(L10n::Locale,Number) String )
+function msg-sample: ( &(L10n::Locale,Number) String )
     ( &(locale, n)
         let {language} := locale,
         if $(language = 'zh_TW'):
@@ -12,7 +12,7 @@ private function msg-sample: ( &(L10n::Locale,Number) String )
                 "# items received" (str n)
     );
 
-private const locale: L10n::Locale
+const locale: L10n::Locale
     OS::Locale;
 
 do

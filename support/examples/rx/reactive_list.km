@@ -12,7 +12,7 @@ do ui-inject-css [assets::style-css];
 
 do ui-exit-when-window-closed;
 
-private const Root: UI::Component
+const Root: UI::Component
     let center := styled ui-container ['center'],
     let row := styled ui-container ['row'],
     let button-small := styled ui-button ['min-width-3'],

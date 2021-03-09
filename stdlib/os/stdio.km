@@ -1,11 +1,11 @@
-public const Stdin:  FileReadOnly
+export const Stdin:  FileReadOnly
     native 'OS::Stdin';
-public const Stdout: FileWriteOnly
+export const Stdout: FileWriteOnly
     native 'OS::Stdout';
-public const Stderr: FileWriteOnly
+export const Stderr: FileWriteOnly
     native 'OS::Stderr';
 
-public function scan:  (&()(Action[String,Error]))
+export function scan:  (&()(Action[String,Error]))
     ( &(_)
         let read := Stdin | read-string,
         if $(Kind = 'windows'):
@@ -13,12 +13,12 @@ public function scan:  (&()(Action[String,Error]))
         else:
             read
     );
-public function print: (&(String)(Action[unit,Error]))
+export function print: (&(String)(Action[unit,Error]))
     (&(line)(Stdout | write-string line));
-public function error: (&(String)(Action[unit,Error]))
+export function error: (&(String)(Action[unit,Error]))
     (&(line)(Stderr | write-string line));
 
-public function scanln:  (&()(Action[String,Error]))
+export function scanln:  (&()(Action[String,Error]))
     ( &(_)
         let read := Stdin | read-line,
         if $(Kind = 'windows'):
@@ -26,7 +26,7 @@ public function scanln:  (&()(Action[String,Error]))
         else:
             read
     );
-public function println: (&(String)(Action[unit,Error]))
+export function println: (&(String)(Action[unit,Error]))
     (&(line)(Stdout | write-line line));
-public function errorln: (&(String)(Action[unit,Error]))
+export function errorln: (&(String)(Action[unit,Error]))
     (&(line)(Stderr | write-line line));

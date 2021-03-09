@@ -9,7 +9,7 @@ type User {
     name: String
 };
 
-public function new-chat:
+export function new-chat:
     ( &(Bus[Service::Message]) Service::constructor )
     ( &(bus)
     ( &(login,_)
@@ -22,7 +22,7 @@ public function new-chat:
         yield instance
     ));
 
-public function say:
+export function say:
     ( &(Chat,Service::MessageContent) Action[Service::None,Error] )
     ( &(chat,content)
         let {user,bus} := chat,
@@ -34,7 +34,7 @@ public function say:
         yield Service::None
     );
 
-public function messages:
+export function messages:
     ( &(Chat,Service::None) Action*[Service::Message,Error] )
     ( &(chat,_)
         let {bus} := chat,

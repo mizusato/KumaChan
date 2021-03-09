@@ -5,17 +5,17 @@ type WebAsset native;
 type FontInfo (String,String,String);  // family, weight, style
 type Window   protected Qt::MainWindow;
 
-public function ui-init: ( &(String,Component) MainLoop )
+export function ui-init: ( &(String,Component) MainLoop )
     native 'ui-init';
-public function ui-inject-css: ( &(Array[WebAsset]) Action )
+export function ui-inject-css: ( &(Array[WebAsset]) Action )
     native 'ui-inject-css';
-public function ui-inject-js:  ( &(Array[WebAsset]) Action )
+export function ui-inject-js:  ( &(Array[WebAsset]) Action )
     native 'ui-inject-js';
-public function ui-inject-ttf: ( &(Array[(FontInfo,WebAsset)]) Action )
+export function ui-inject-ttf: ( &(Array[(FontInfo,WebAsset)]) Action )
     native 'ui-inject-ttf';
-public function ui-get-window: ( &() Action[Window] )
+export function ui-get-window: ( &() Action[Window] )
     native 'ui-get-window';
-public function ui-exit-when-window-closed: ( &() Action )
+export function ui-exit-when-window-closed: ( &() Action )
     ( &(_)
         ~ then &(window) := ui-get-window,
         listen (window.closed) (&(_)(exit 0))

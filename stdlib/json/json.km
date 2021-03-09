@@ -7,10 +7,10 @@ type Value enum {
     type Null;
 };
 
-public function json-parse: (&(String)(Result[Self::Value,String]))
+export function json-parse: (&(String)(Result[Self::Value,String]))
     (&(str)(parse str));
 
-public function json-stringify: (&(Self::Value)(String))
+export function json-stringify: (&(Self::Value)(String))
     (& (jv)
         switch jv:
         case Self::Object (o):

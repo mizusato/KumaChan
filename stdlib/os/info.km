@@ -1,6 +1,6 @@
-public const Kind: String
+export const Kind: String
     native 'OS::Kind';
-public const Arch: String
+export const Arch: String
     native 'OS::Arch';
-public const Is64Bit: Bool
+export const Is64Bit: Bool
     native 'OS::Is64Bit';

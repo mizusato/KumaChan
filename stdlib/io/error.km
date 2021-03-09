@@ -4,7 +4,7 @@ type ErrorKind enum {
     type UnknownError;
 };
 
-public function is:
+export function is:
     ( &(Error,ErrorKind) Bool )
     ( &(err, kind)
         select (err.kind!!, kind):
@@ -16,7 +16,7 @@ public function is:
             No,
         end
     );
-public function kind:
+export function kind:
     ( &(Error) ErrorKind )
     ( &(err)
         if (err | is-eof):
@@ -27,7 +27,7 @@ public function kind:
             UnknownError
     );
 
-private function is-eof: ( &(Error) Bool )
+function is-eof: ( &(Error) Bool )
     native 'is-eof';
-private function is-closed-pipe: ( &(Error)(Bool) )
+function is-closed-pipe: ( &(Error)(Bool) )
     native 'is-closed-pipe';

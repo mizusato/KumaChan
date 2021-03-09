@@ -179,68 +179,58 @@ func CheckBundle(bundle ast.Bundle, ctx ExprContext) (SemiExpr, *ExprError) {
 	}
 }
 
-func CheckGet(get ast.Get, ctx ExprContext) (SemiExpr, *ExprError) {
-	var base_semi, err = Check(get.Base, ctx)
-	if err != nil { return SemiExpr{}, err }
-	switch b := base_semi.Value.(type) {
+func CheckGet(base SemiExpr, key ast.Identifier, ctx ExprContext) (SemiExpr, *ExprError) {
+	switch b := base.Value.(type) {
 	case TypedExpr:
 		if IsBundleLiteral(Expr(b)) { return SemiExpr{}, &ExprError {
-			Point:    ErrorPointFrom(get.Base.Node),
+			Point:    base.Info.ErrorPoint,
 			Concrete: E_GetFromLiteralBundle {},
 		} }
-		var L = len(get.Path)
-		if !(L >= 1) { panic("something went wrong") }
-		var base = Expr(b)
-		for _, member := range get.Path {
-			switch bundle_ := UnboxBundle(base.Type, ctx, true).(type) {
-			case BR_Bundle:
-				var bundle = bundle_.Bundle
-				var key = ast.Id2String(member.Name)
-				var field, exists = bundle.Fields[key]
-				if !exists { return SemiExpr{}, &ExprError {
-					Point:    ErrorPointFrom(member.Node),
-					Concrete: E_FieldDoesNotExist {
-						Field:  key,
-						Target: ctx.DescribeCertainType(&AnonymousType { bundle }),
-					},
-				} }
-				var t = field.Type
-				if bundle_.AcrossReactive {
-					t = Reactive(t)
-				}
-				var expr = Expr {
-					Type:  t,
-					Value: Get {
-						Product: Expr(base),
-						Index:   field.Index,
-					},
-					Info:  ctx.GetExprInfo(member.Node),
-				}
-				base = expr
-			case BR_BundleButOpaque:
-				return SemiExpr{}, &ExprError {
-					Point:    base.Info.ErrorPoint,
-					Concrete: E_GetFromOpaqueBundle {},
-				}
-			case BR_NonBundle:
-				return SemiExpr{}, &ExprError {
-					Point:    base.Info.ErrorPoint,
-					Concrete: E_GetFromNonBundle {},
-				}
-			default:
-				panic("impossible branch")
+		switch bundle_ := UnboxBundle(b.Type, ctx, true).(type) {
+		case BR_Bundle:
+			var bundle = bundle_.Bundle
+			var key_string = ast.Id2String(key)
+			var field, exists = bundle.Fields[key_string]
+			if !exists { return SemiExpr{}, &ExprError {
+				Point:    ErrorPointFrom(key.Node),
+				Concrete: E_FieldDoesNotExist {
+					Field:  key_string,
+					Target: ctx.DescribeCertainType(&AnonymousType { bundle }),
+				},
+			} }
+			var t = field.Type
+			if bundle_.AcrossReactive {
+				t = Reactive(t)
 			}
+			return LiftTyped(Expr {
+				Type:  t,
+				Value: Get {
+					Product: Expr(b),
+					Index:   field.Index,
+				},
+				Info:  ctx.GetExprInfo(key.Node),
+			}), nil
+		case BR_BundleButOpaque:
+			return SemiExpr{}, &ExprError {
+				Point:    base.Info.ErrorPoint,
+				Concrete: E_GetFromOpaqueBundle {},
+			}
+		case BR_NonBundle:
+			return SemiExpr{}, &ExprError {
+				Point:    base.Info.ErrorPoint,
+				Concrete: E_GetFromNonBundle {},
+			}
+		default:
+			panic("impossible branch")
 		}
-		var final = base
-		return LiftTyped(final), nil
 	case SemiTypedBundle:
 		return SemiExpr{}, &ExprError {
-			Point:    ErrorPointFrom(get.Base.Node),
+			Point:    base.Info.ErrorPoint,
 			Concrete: E_GetFromLiteralBundle {},
 		}
 	default:
 		return SemiExpr{}, &ExprError {
-			Point:    ErrorPointFrom(get.Base.Node),
+			Point:    base.Info.ErrorPoint,
 			Concrete: E_GetFromNonBundle {},
 		}
 	}
@@ -407,6 +397,8 @@ func IsBundleLiteral(expr Expr) bool {
 	return false
 }
 
+// TODO: CraftSemiTypedTuple
+
 func CraftAstTupleTerm(node ast.Node, elements... ast.Expr) ast.VariousTerm {
 	return ast.VariousTerm {
 		Node: node,
@@ -422,9 +414,9 @@ func DesugarOmittedFieldValue(field ast.FieldValue) ast.Expr {
 	case ast.Expr:
 		return val_expr
 	default:
-		return ast.WrapCallAsExpr(ast.Call {
+		return ast.Expr {
 			Node: field.Node,
-			Func: ast.VariousTerm {
+			Term: ast.VariousTerm {
 				Node: field.Node,
 				Term: ast.InlineRef {
 					Node:     field.Node,
@@ -437,6 +429,7 @@ func DesugarOmittedFieldValue(field ast.FieldValue) ast.Expr {
 					TypeArgs: make([]ast.VariousType, 0),
 				},
 			},
-		})
+			Pipeline: nil,
+		}
 	}
 }

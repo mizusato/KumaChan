@@ -18,18 +18,18 @@ type ParserStatus enum {
     type ParseFalse  { begin: Number };
     type ParseBlanks { saved: Value };
 };
-private const Blanks: String
+const Blanks: String
     str [\n, \t, ^ ];
-private const NumberChars: String
+const NumberChars: String
     '0123456789.Ee+-';
-private const TrueChars: String
+const TrueChars: String
     'true';
-private const FalseChars: String
+const FalseChars: String
     'false';
-private const NullChars: String
+const NullChars: String
     'null';
 
-private function parse: (&(String)(Result[Value,String]))
+function parse: (&(String)(Result[Value,String]))
     (&(str)(
         let initial-state := ParserState {
             input:  str,
@@ -44,7 +44,7 @@ private function parse: (&(String)(Result[Value,String]))
         end
     ));
 
-private function parse: (&(ParserState)(Result[(Value,Number),String]))
+function parse: (&(ParserState)(Result[(Value,Number),String]))
     (&(state)(
         let {input,pos,status} := state,
         let go: (&(Number,ParserStatus)(Result[(Value,Number),String]))

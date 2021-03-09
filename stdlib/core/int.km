@@ -1,45 +1,45 @@
 type Int native;  // *big.Int
 
-public function from: (&(Int)(String))  native 'String from Int';
+export function from: (&(Int)(String))  native 'String from Int';
 
-public function  = :(&(Int,Int)(Bool))      native '=Int';
-public function  < :(&(Int,Int)(Bool))      native '<Int';
-public function <> :(&(Int,Int)(Ordering))  native '<>Int';
+export function  = :(&(Int,Int)(Bool))      native '=Int';
+export function  < :(&(Int,Int)(Bool))      native '<Int';
+export function <> :(&(Int,Int)(Ordering))  native '<>Int';
 
-public function + :(&(Int,Int)(Int))  native '+Int';
-public function - :(&(Int,Int)(Int))  native '-Int';
-public function - :(&(Int)(Int))      (&(n)$(0 - n));
-public function * :(&(Int,Int)(Int))  native '*Int';
+export function + :(&(Int,Int)(Int))  native '+Int';
+export function - :(&(Int,Int)(Int))  native '-Int';
+export function - :(&(Int)(Int))      (&(n)$(0 - n));
+export function * :(&(Int,Int)(Int))  native '*Int';
 
-public function quorem: (&(Int,Int)(Int,Int))  native 'quorem';
-public function divmod: (&(Int,Int)(Int,Int))  native 'divmod';
+export function quorem: (&(Int,Int)(Int,Int))  native 'quorem';
+export function divmod: (&(Int,Int)(Int,Int))  native 'divmod';
 
 
-public function / :(&(Int,Int)(Int))
+export function / :(&(Int,Int)(Int))
     ( &(a, b)
         let (q, _) := $(a quorem b),
         q
     );
 
-public function % :(&(Int,Int)(Int))
+export function % :(&(Int,Int)(Int))
     ( &(a, b)
         let (_, r) := $(a quorem b),
         r
     );
 
-public function div: (&(Int,Int)(Int))
+export function div: (&(Int,Int)(Int))
     ( &(a, b)
         let (q, _) := $(a divmod b),
         q
     );
 
-public function mod: (&(Int,Int)(Int))
+export function mod: (&(Int,Int)(Int))
     ( &(a, b)
         let (_, r) := $(a divmod b),
         r
     );
 
-public function ** :(&(Int,Int)(Int))
+export function ** :(&(Int,Int)(Int))
     ( &(n, p)
         let pow: rec (&(Int,Int,Int)(Int)) := ( &(t, n, p)
             switch $(p <> 0):

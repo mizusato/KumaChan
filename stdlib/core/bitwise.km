@@ -1,34 +1,34 @@
 // Bitwise Operation Functions
 
-public function <and>: (&(Bit,Bit)(Bit))  native '&Bit';
-public function  <or>: (&(Bit,Bit)(Bit))  native '|Bit';
-public function <not>: (&(Bit)(Bit))      native '~Bit';
+export function <and>: (&(Bit,Bit)(Bit))  native '&Bit';
+export function  <or>: (&(Bit,Bit)(Bit))  native '|Bit';
+export function <not>: (&(Bit)(Bit))      native '~Bit';
 
-public function <and>: (&(Byte,Byte)(Byte))    native '&Byte';
-public function  <or>: (&(Byte,Byte)(Byte))    native '|Byte';
-public function <not>: (&(Byte)(Byte))         native '~Byte';
-public function <xor>: (&(Byte,Byte)(Byte))    native '^Byte';
-public function <shl>: (&(Byte,Number)(Byte))  native '<<Byte';
-public function <shr>: (&(Byte,Number)(Byte))  native '>>Byte';
+export function <and>: (&(Byte,Byte)(Byte))    native '&Byte';
+export function  <or>: (&(Byte,Byte)(Byte))    native '|Byte';
+export function <not>: (&(Byte)(Byte))         native '~Byte';
+export function <xor>: (&(Byte,Byte)(Byte))    native '^Byte';
+export function <shl>: (&(Byte,Number)(Byte))  native '<<Byte';
+export function <shr>: (&(Byte,Number)(Byte))  native '>>Byte';
 
-public function <and>: (&(Word,Word)(Word))    native '&Word';
-public function  <or>: (&(Word,Word)(Word))    native '|Word';
-public function <not>: (&(Word)(Word))         native '~Word';
-public function <xor>: (&(Word,Word)(Word))    native '^Word';
-public function <shl>: (&(Word,Number)(Word))  native '<<Word';
-public function <shr>: (&(Word,Number)(Word))  native '>>Word';
+export function <and>: (&(Word,Word)(Word))    native '&Word';
+export function  <or>: (&(Word,Word)(Word))    native '|Word';
+export function <not>: (&(Word)(Word))         native '~Word';
+export function <xor>: (&(Word,Word)(Word))    native '^Word';
+export function <shl>: (&(Word,Number)(Word))  native '<<Word';
+export function <shr>: (&(Word,Number)(Word))  native '>>Word';
 
-public function <and>: (&(Dword,Dword)(Dword))   native '&Dword';
-public function  <or>: (&(Dword,Dword)(Dword))   native '|Dword';
-public function <not>: (&(Dword)(Dword))         native '~Dword';
-public function <xor>: (&(Dword,Dword)(Dword))   native '^Dword';
-public function <shl>: (&(Dword,Number)(Dword))  native '<<Dword';
-public function <shr>: (&(Dword,Number)(Dword))  native '>>Dword';
+export function <and>: (&(Dword,Dword)(Dword))   native '&Dword';
+export function  <or>: (&(Dword,Dword)(Dword))   native '|Dword';
+export function <not>: (&(Dword)(Dword))         native '~Dword';
+export function <xor>: (&(Dword,Dword)(Dword))   native '^Dword';
+export function <shl>: (&(Dword,Number)(Dword))  native '<<Dword';
+export function <shr>: (&(Dword,Number)(Dword))  native '>>Dword';
 
-public function <and>: (&(Qword,Qword)(Qword))   native '&Qword';
-public function  <or>: (&(Qword,Qword)(Qword))   native '|Qword';
-public function <not>: (&(Qword)(Qword))         native '~Qword';
-public function <xor>: (&(Qword,Qword)(Qword))   native '^Qword';
-public function <shl>: (&(Qword,Number)(Qword))  native '<<Qword';
-public function <shr>: (&(Qword,Number)(Qword))  native '>>Qword';
+export function <and>: (&(Qword,Qword)(Qword))   native '&Qword';
+export function  <or>: (&(Qword,Qword)(Qword))   native '|Qword';
+export function <not>: (&(Qword)(Qword))         native '~Qword';
+export function <xor>: (&(Qword,Qword)(Qword))   native '^Qword';
+export function <shl>: (&(Qword,Number)(Qword))  native '<<Qword';
+export function <shr>: (&(Qword,Number)(Qword))  native '>>Qword';
 

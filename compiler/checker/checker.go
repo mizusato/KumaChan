@@ -392,15 +392,47 @@ func (ctx ExprContext) GetExprInfo(node ast.Node) ExprInfo {
 
 
 func Check(expr ast.Expr, ctx ExprContext) (SemiExpr, *ExprError) {
-	return CheckCall(DesugarExpr(expr), ctx)
+	var current, err = CheckTerm(expr.Term, ctx)
+	if err != nil { return SemiExpr{}, err }
+	for _, pipe := range expr.Pipeline {
+		var node = pipe.Node
+		switch p := pipe.Pipe.(type) {
+		case ast.PipeFunc:
+			var callee, err = Check(p.Callee, ctx)
+			if err != nil { return SemiExpr{}, err }
+			var pipe_arg_, exists = p.Argument.(ast.Expr)
+			if exists {
+				var pipe_arg, err = Check(pipe_arg_, ctx)
+				if err != nil { return SemiExpr{}, err }
+				var arg = SemiExpr {
+					Value: SemiTypedTuple {
+						Values: [] SemiExpr { current, pipe_arg },
+					},
+					Info:  ctx.GetExprInfo(node),
+				}
+				current, err = CheckDesugaredCall(callee, arg, node, ctx)
+				if err != nil { return SemiExpr{}, err }
+			} else {
+				current, err = CheckDesugaredCall(callee, current, node, ctx)
+				if err != nil { return SemiExpr{}, err }
+			}
+		case ast.PipeGet:
+			current, err = CheckGet(current, p.Key, ctx)
+			if err != nil { return SemiExpr{}, err }
+		case ast.PipeCast:
+			current, err = CheckCast(current, p.Target, ctx)
+			if err != nil { return SemiExpr{}, err }
+		default:
+			panic("impossible branch")
+		}
+	}
+	return current, nil
 }
 
 func CheckTerm(term ast.VariousTerm, ctx ExprContext) (SemiExpr, *ExprError) {
 	switch t := term.Term.(type) {
-	case ast.Call:
+	case ast.VariousCall:
 		return CheckCall(t, ctx)
-	case ast.Cast:
-		return CheckCast(t, ctx)
 	case ast.Lambda:
 		return CheckLambda(t, ctx)
 	case ast.Switch:
@@ -417,10 +449,6 @@ func CheckTerm(term ast.VariousTerm, ctx ExprContext) (SemiExpr, *ExprError) {
 		return CheckTuple(t, ctx)
 	case ast.Bundle:
 		return CheckBundle(t, ctx)
-	case ast.Get:
-		return CheckGet(t, ctx)
-	case ast.Infix:
-		return CheckInfix(t, ctx)
 	case ast.InlineRef:
 		return CheckRef(t, ctx)
 	case ast.Array:

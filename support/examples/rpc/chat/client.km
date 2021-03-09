@@ -1,6 +1,6 @@
 import Service from './service';
 
-public function consume-chat:
+export function consume-chat:
     ( &() Service::consumer )
     ( &(_) ( &(chat)
         println 'connected'

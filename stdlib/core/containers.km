@@ -10,182 +10,182 @@ type ListKey     String;
 
 /* Functions for Seq[T] */
 
-public function collect[T]: ( &(Seq[T]) Array[T] )
+export function collect[T]: ( &(Seq[T]) Array[T] )
     native 'seq-collect';
 
-public function next[T]: ( &(Seq[T]) Maybe[(T,Seq[T])] )
+export function next[T]: ( &(Seq[T]) Maybe[(T,Seq[T])] )
     native 'seq-next';
-public function nil[T]:  ( &() Seq[T] )
+export function nil[T]:  ( &() Seq[T] )
     native 'seq-nil';
-public function cons[T]: ( &(T,Seq[T]) Seq[T] )
+export function cons[T]: ( &(T,Seq[T]) Seq[T] )
     native 'seq-cons';
 
-public function seq: ( & { from: Number, to: Number } Seq[Number] )
+export function seq: ( & { from: Number, to: Number } Seq[Number] )
     native 'seq-range-inclusive';
-public function seq: ( & { from: Number, count: Number } Seq[Number] )
+export function seq: ( & { from: Number, count: Number } Seq[Number] )
     native 'seq-range-count';
 
-public function map[A,B]:        ( &(Seq[A],(&(A)(B))) Seq[B] )
+export function map[A,B]:        ( &(Seq[A],(&(A)(B))) Seq[B] )
     native 'seq-map';
-public function filter-map[A,B]: ( &(Seq[A],(&(A)(Maybe[B]))) Seq[B] )
+export function filter-map[A,B]: ( &(Seq[A],(&(A)(Maybe[B]))) Seq[B] )
     native 'seq-filter-map';
-public function filter[T]:       ( &(Seq[T],(&(T)(Bool))) Seq[T] )
+export function filter[T]:       ( &(Seq[T],(&(T)(Bool))) Seq[T] )
     native 'seq-filter';
-public function flat-map[A,B]:   ( &(Seq[A],(&(A)(Seq[B]))) Seq[B] )
+export function flat-map[A,B]:   ( &(Seq[A],(&(A)(Seq[B]))) Seq[B] )
     native 'seq-flat-map';
 
-public function scan[T,A]:   ( &(Seq[T],A,(&(A,T)(A))) Seq[A] )
+export function scan[T,A]:   ( &(Seq[T],A,(&(A,T)(A))) Seq[A] )
     native 'seq-scan';
-public function reduce[T,A]: ( &(Seq[T],A,(&(A,T)(A))) A )
+export function reduce[T,A]: ( &(Seq[T],A,(&(A,T)(A))) A )
     native 'seq-reduce';
 
-public function some[T]:  ( &(Seq[T],(&(T)(Bool))) Bool )
+export function some[T]:  ( &(Seq[T],(&(T)(Bool))) Bool )
     native 'seq-some';
-public function every[T]: ( &(Seq[T],(&(T)(Bool))) Bool )
+export function every[T]: ( &(Seq[T],(&(T)(Bool))) Bool )
     native 'seq-every';
 
-public function chunk[T]:  ( &(Seq[T],Number) Seq[Array[T]] )
+export function chunk[T]:  ( &(Seq[T],Number) Seq[Array[T]] )
     native 'seq-chunk';
-public function concat[T]: ( &(Array[Seq[T]]) Seq[T] )
+export function concat[T]: ( &(Array[Seq[T]]) Seq[T] )
     (&(array)(array.iterate.flat-map (&(x)(x))));
 
 
 /* Functions of Array[T] */
 
-public function iterate[T]: ( &(Array[T]) Seq[T] )
+export function iterate[T]: ( &(Array[T]) Seq[T] )
     native 'array-iterate';
 
-public function at[T]: ( &(Array[T],Number) Maybe[T] )
+export function at[T]: ( &(Array[T],Number) Maybe[T] )
     native 'array-at';
-public function at![T]: ( &(Array[T],Number) T )
+export function at![T]: ( &(Array[T],Number) T )
     native 'array-at!';
-public function length[T]: ( &(Array[T]) Number )
+export function length[T]: ( &(Array[T]) Number )
     native 'array-length';
 
-public function reverse[T]: ( &(Array[T]) Array[T] )
+export function reverse[T]: ( &(Array[T]) Array[T] )
     native 'array-reverse';
 
-public function slice[T]:      ( &(Array[T],Number,Number) Array[T] )
+export function slice[T]:      ( &(Array[T],Number,Number) Array[T] )
     native 'array-slice';
-public function slice-view[T]: ( &(Array[T],Number,Number) Array[T] )
+export function slice-view[T]: ( &(Array[T],Number,Number) Array[T] )
     native 'array-slice-view';
 
-public function map[A,B]:      ( &(Array[A],(&(A)(B))) Array[B] )
+export function map[A,B]:      ( &(Array[A],(&(A)(B))) Array[B] )
     native 'array-map';
-public function map-view[A,B]: ( &(Array[A],(&(A)(B))) Array[B] )
+export function map-view[A,B]: ( &(Array[A],(&(A)(B))) Array[B] )
     native 'array-map-view';
 
-public function filter[T]: ( &(Array[T],(&(T)(Bool))) Array[T] )
+export function filter[T]: ( &(Array[T],(&(T)(Bool))) Array[T] )
     ( &(arr,f) (arr | iterate | filter f | collect) );
 
-public function scan[T,A]:   ( &(Array[T],A,(&(A,T)(A))) Array[A] )
+export function scan[T,A]:   ( &(Array[T],A,(&(A,T)(A))) Array[A] )
     ( &(arr,init,f) (arr | iterate | scan init f | collect) );
-public function reduce[T,A]: ( &(Array[T],A,(&(A,T)(A))) A )
+export function reduce[T,A]: ( &(Array[T],A,(&(A,T)(A))) A )
     ( &(arr,init,f) (arr | iterate | reduce init f) );
 
-public function some[T]:  ( &(Array[T],(&(T)(Bool))) Bool )
+export function some[T]:  ( &(Array[T],(&(T)(Bool))) Bool )
     ( &(arr,f) (arr | iterate | some f) );
-public function every[T]: ( &(Array[T],(&(T)(Bool))) Bool )
+export function every[T]: ( &(Array[T],(&(T)(Bool))) Bool )
     ( &(arr,f) (arr | iterate | every f) );
 
 
 /* Functions of Set[T] */
 
-public function new-set[T]: ( &((&(T,T)(Ordering)),Array[T]) Set[T] )
+export function new-set[T]: ( &((&(T,T)(Ordering)),Array[T]) Set[T] )
     native 'new-set';
-public function has[T]: ( &(Set[T],T) Bool )
+export function has[T]: ( &(Set[T],T) Bool )
     native 'set-has';
 
 /* Functions of Map[K,V] */
 
-public function create-map[T]: ( &(Array[(String,T)]) Map[String,T] )
+export function create-map[T]: ( &(Array[(String,T)]) Map[String,T] )
     native 'create-map-str';
-public function entries[K,V]: ( &(Map[K,V]) Array[(K,V)] )
+export function entries[K,V]: ( &(Map[K,V]) Array[(K,V)] )
     native 'map-entries';
-public function iterate[K,V]: ( &(Map[K,V]) Seq[(K,V)] )
+export function iterate[K,V]: ( &(Map[K,V]) Seq[(K,V)] )
     ( &(m) (m.entries.iterate) );
-public function get[K,V]: ( &(Map[K,V],K) Maybe[V] )
+export function get[K,V]: ( &(Map[K,V],K) Maybe[V] )
     native 'map-get';
-public function get![K,V]: ( &(Map[K,V],K) V )
+export function get![K,V]: ( &(Map[K,V],K) V )
     native 'map-get!';
-public function insert[K,V]: ( &(Map[K,V],K,V) Maybe[Map[K,V]] )
+export function insert[K,V]: ( &(Map[K,V],K,V) Maybe[Map[K,V]] )
     native 'map-insert';
-public function insert*[K,V]: ( &(Map[K,V],K,V) Map[K,V] )
+export function insert*[K,V]: ( &(Map[K,V],K,V) Map[K,V] )
     native 'map-insert*';
-public function delete[K,V]: ( &(Map[K,V],K) Maybe[(V,Map[K,V])] )
+export function delete[K,V]: ( &(Map[K,V],K) Maybe[(V,Map[K,V])] )
     native 'map-delete';
-public function delete*[K,V]: ( &(Map[K,V],K) Map[K,V] )
+export function delete*[K,V]: ( &(Map[K,V],K) Map[K,V] )
     native 'map-delete*';
 
 
 /* Functions for List[T] */
 
-public function create-list[T]: ( &(Array[T],(&(T)(ListKey))) List[T] )
+export function create-list[T]: ( &(Array[T],(&(T)(ListKey))) List[T] )
     native 'create-list';
-public function empty-list[T]: ( &() List[T] )
+export function empty-list[T]: ( &() List[T] )
     native 'empty-list';
-public function iterate[T]:  ( &(List[T]) Seq[(ListKey,T)] )
+export function iterate[T]:  ( &(List[T]) Seq[(ListKey,T)] )
     native 'list-iterate';
-public function length[T]:  ( &(List[T]) Number )
+export function length[T]:  ( &(List[T]) Number )
     native 'list-length';
-public function has[T]:     ( &(List[T],ListKey) Bool )
+export function has[T]:     ( &(List[T],ListKey) Bool )
     native 'list-has';
-public function get[T]:     ( &(List[T],ListKey) T )
+export function get[T]:     ( &(List[T],ListKey) T )
     native 'list-get';
-public function update[T]:  ( &(List[T],ListKey,(&(T)(T))) List[T] )
+export function update[T]:  ( &(List[T],ListKey,(&(T)(T))) List[T] )
     native 'list-update';
-public function delete[T]:  ( &(List[T],ListKey) List[T] )
+export function delete[T]:  ( &(List[T],ListKey) List[T] )
     native 'list-delete';
-public function prepend[T]: ( &(List[T],(ListKey,T)) List[T] )
+export function prepend[T]: ( &(List[T],(ListKey,T)) List[T] )
     native 'list-prepend';
-public function append[T]:  ( &(List[T],(ListKey,T)) List[T] )
+export function append[T]:  ( &(List[T],(ListKey,T)) List[T] )
     native 'list-append';
-public function insert[T]:  ( &(List[T],{before:ListKey},(ListKey,T)) List[T] )
+export function insert[T]:  ( &(List[T],{before:ListKey},(ListKey,T)) List[T] )
     native 'list-insert-before';
-public function insert[T]:  ( &(List[T],{after:ListKey},(ListKey,T)) List[T] )
+export function insert[T]:  ( &(List[T],{after:ListKey},(ListKey,T)) List[T] )
     native 'list-insert-after';
-public function move[T]:      ( &(List[T],ListKey,{before:ListKey}) List[T] )
+export function move[T]:      ( &(List[T],ListKey,{before:ListKey}) List[T] )
     native 'list-move-before';
-public function move[T]:      ( &(List[T],ListKey,{after:ListKey}) List[T] )
+export function move[T]:      ( &(List[T],ListKey,{after:ListKey}) List[T] )
     native 'list-move-after';
-public function move-up[T]:   ( &(List[T],ListKey) List[T] )
+export function move-up[T]:   ( &(List[T],ListKey) List[T] )
     native 'list-move-up';
-public function move-down[T]: ( &(List[T],ListKey) List[T] )
+export function move-down[T]: ( &(List[T],ListKey) List[T] )
     native 'list-move-down';
-public function swap[T]:      ( &(List[T],ListKey,ListKey) List[T] )
+export function swap[T]:      ( &(List[T],ListKey,ListKey) List[T] )
     native 'list-swap';
 
-public function is-first-in[T]: ( &(Action*[Number],Reactive[List[T]]) Action*[Bool] )
+export function is-first-in[T]: ( &(Action*[Number],Reactive[List[T]]) Action*[Bool] )
     ( &(@index,_)
         @index
             | map (&(index) $(index = 0))
             | distinct-until-changed
     );
-public function is-last-in[T]: ( &(Action*[Number],Reactive[List[T]]) Action*[Bool] )
+export function is-last-in[T]: ( &(Action*[Number],Reactive[List[T]]) Action*[Bool] )
     ( &(@index,@list)
         combine-latest* @index (@list.watch.map (&(list)(list.length)))
             | map (&(index,length) $(index = $(length - 1)))
             | distinct-until-changed
     );
-public function update[T]:  ( &(Reactive[List[T]],ListKey,(&(T)(T))) Action )
+export function update[T]:  ( &(Reactive[List[T]],ListKey,(&(T)(T))) Action )
     (&(@list,key,f)(@list.update(&(list)(list.update key f))));
-public function delete[T]:  ( &(Reactive[List[T]],ListKey) Action )
+export function delete[T]:  ( &(Reactive[List[T]],ListKey) Action )
     (&(@list,key)(@list.update(&(list)(list.delete key))));
-public function prepend[T]: ( &(Reactive[List[T]],(ListKey,T)) Action )
+export function prepend[T]: ( &(Reactive[List[T]],(ListKey,T)) Action )
     (&(@list,entry)(@list.update(&(list)(list.prepend entry))));
-public function append[T]:  ( &(Reactive[List[T]],(ListKey,T)) Action )
+export function append[T]:  ( &(Reactive[List[T]],(ListKey,T)) Action )
     (&(@list,entry)(@list.update(&(list)(list.append entry))));
-public function insert[T]:  ( &(Reactive[List[T]],{before:ListKey},(ListKey,T)) Action )
+export function insert[T]:  ( &(Reactive[List[T]],{before:ListKey},(ListKey,T)) Action )
     (&(@list,pos,entry)(@list.update(&(list)(list.insert pos entry))));
-public function insert[T]:  ( &(Reactive[List[T]],{after:ListKey},(ListKey,T)) Action )
+export function insert[T]:  ( &(Reactive[List[T]],{after:ListKey},(ListKey,T)) Action )
     (&(@list,pos,entry)(@list.update(&(list)(list.insert pos entry))));
-public function move[T]:      ( &(Reactive[List[T]],ListKey,{before:ListKey}) Action )
+export function move[T]:      ( &(Reactive[List[T]],ListKey,{before:ListKey}) Action )
     (&(@list,key,pos)(@list.update(&(list)(list.move key pos))));
-public function move[T]:      ( &(Reactive[List[T]],ListKey,{after:ListKey}) Action )
+export function move[T]:      ( &(Reactive[List[T]],ListKey,{after:ListKey}) Action )
     (&(@list,key,pos)(@list.update(&(list)(list.move key pos))));
-public function move-up[T]:   ( &(Reactive[List[T]],ListKey) Action )
+export function move-up[T]:   ( &(Reactive[List[T]],ListKey) Action )
     (&(@list,key)(@list.update(&(list)(list.move-up key))));
-public function move-down[T]: ( &(Reactive[List[T]],ListKey) Action )
+export function move-down[T]: ( &(Reactive[List[T]],ListKey) Action )
     (&(@list,key)(@list.update(&(list)(list.move-down key))));
-public function swap[T]:      ( &(Reactive[List[T]],ListKey,ListKey) Action )
+export function swap[T]:      ( &(Reactive[List[T]],ListKey,ListKey) Action )
     (&(@list,key1,key2)(@list.update(&(list)(list.swap key1 key2))));

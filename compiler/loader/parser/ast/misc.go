@@ -1,13 +1,6 @@
 package ast
 
 
-func (impl Cast) Term() {}
-type Cast struct {
-	Node                  `part:"cast"`
-	Target  VariousType   `part:"type"`
-	Object  Expr          `part:"expr"`
-}
-
 func (impl Lambda) Body() {}
 func (impl Lambda) Term() {}
 type Lambda struct {
@@ -46,14 +39,6 @@ type CpsBinding struct {
 	Type     MaybeType        `part_opt:"binding_type.type"`
 }
 
-
-func (impl Infix) Term() {}
-type Infix struct {
-	Node                    `part:"infix"`
-	Operand1  VariousTerm   `part:"operand1.term"`
-	Operand2  VariousTerm   `part:"operand2.term"`
-	Operator  VariousTerm   `part:"operator.term"`
-}
 
 func (impl InlineRef) Term() {}
 type InlineRef struct {

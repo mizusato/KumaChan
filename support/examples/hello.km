@@ -20,7 +20,7 @@ do println 'Hello World'
                 | wait-complete )  // TODO: cancel
     | catch  (&(_)(exit 1));
 
-private function factorial: (&(Int)(Int))
+function factorial: (&(Int)(Int))
     ( &(n)
         if $(n <= 1):
             1,

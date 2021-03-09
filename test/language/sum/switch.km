@@ -8,7 +8,7 @@ type Framework enum {
     type Purescript;
 };
 
-public function get-color: ( &(Framework) String )
+export function get-color: ( &(Framework) String )
     ( &(framework)
         switch framework:
         case React,Elm: 'lightblue',

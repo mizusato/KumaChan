@@ -1,7 +1,6 @@
 package checker
 
 import (
-	"kumachan/compiler/loader/parser/scanner"
 	"kumachan/compiler/loader/parser/ast"
 )
 
@@ -18,46 +17,58 @@ type Call struct {
 	Argument  Expr
 }
 
-
-func CheckCall(call ast.Call, ctx ExprContext) (SemiExpr, *ExprError) {
-	var arg_node, has_arg = call.Arg.(ast.Call)
-	if has_arg {
-		arg, err := CheckCall(arg_node, ctx)
+func CheckCall(call ast.VariousCall, ctx ExprContext) (SemiExpr, *ExprError) {
+	switch c := call.Call.(type) {
+	case ast.CallPrefix:
+		callee, err := Check(c.Callee, ctx)
 		if err != nil { return SemiExpr{}, err }
-		callee, err := CheckTerm(call.Func, ctx)
+		arg, err := Check(c.Argument, ctx)
 		if err != nil { return SemiExpr{}, err }
-		var info = ctx.GetExprInfo(call.Node)
-		var f_info = callee.Info
-		switch f := callee.Value.(type) {
-		case TypedExpr:
-			var expr, err = CallTyped(Expr(f), arg, info, ctx)
-			if err != nil { return SemiExpr{}, err }
-			return LiftTyped(expr), nil
-		case UntypedLambda:
-			var typed, err = CallUntypedLambda(arg, f, f_info, info, ctx)
-			if err != nil { return SemiExpr{}, err }
-			return LiftTyped(typed), nil
-		case UntypedRef:
-			return CallUntypedRef(arg, f, f_info, info, ctx)
-		case SemiTypedSwitch,
-			SemiTypedBlock:
-			return SemiExpr{}, &ExprError {
-				Point:    f_info.ErrorPoint,
-				Concrete: E_ExplicitTypeRequired {},
-			}
-		default:
-			return SemiExpr{}, &ExprError {
-				Point:    f_info.ErrorPoint,
-				Concrete: E_ExprNotCallable {},
-			}
+		return CheckDesugaredCall(callee, arg, call.Node, ctx)
+	case ast.CallInfix:
+		callee, err := Check(c.Operator, ctx)
+		if err != nil { return SemiExpr{}, err }
+		left, err := Check(c.Left, ctx)
+		if err != nil { return SemiExpr{}, err }
+		right, err := Check(c.Right, ctx)
+		var arg = SemiExpr {
+			Value: SemiTypedTuple {
+				Values: [] SemiExpr { left, right },
+			},
+			Info:  ctx.GetExprInfo(call.Node),
 		}
-	} else {
-		return CheckTerm(call.Func, ctx)
+		return CheckDesugaredCall(callee, arg, call.Node, ctx)
+	default:
+		panic("impossible branch")
 	}
 }
 
-func CheckInfix(infix ast.Infix, ctx ExprContext) (SemiExpr, *ExprError) {
-	return CheckCall(DesugarInfix(infix), ctx)
+func CheckDesugaredCall(callee SemiExpr, arg SemiExpr, node ast.Node, ctx ExprContext) (SemiExpr, *ExprError) {
+	var info = ctx.GetExprInfo(node)
+	var f_info = callee.Info
+	switch f := callee.Value.(type) {
+	case TypedExpr:
+		var expr, err = CallTyped(Expr(f), arg, info, ctx)
+		if err != nil { return SemiExpr{}, err }
+		return LiftTyped(expr), nil
+	case UntypedLambda:
+		var typed, err = CallUntypedLambda(arg, f, f_info, info, ctx)
+		if err != nil { return SemiExpr{}, err }
+		return LiftTyped(typed), nil
+	case UntypedRef:
+		return CallUntypedRef(arg, f, f_info, info, ctx)
+	case SemiTypedSwitch,
+		SemiTypedBlock:
+		return SemiExpr{}, &ExprError {
+			Point:    f_info.ErrorPoint,
+			Concrete: E_ExplicitTypeRequired {},
+		}
+	default:
+		return SemiExpr{}, &ExprError {
+			Point:    f_info.ErrorPoint,
+			Concrete: E_ExprNotCallable {},
+		}
+	}
 }
 
 func CallTyped(f Expr, arg SemiExpr, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
@@ -84,151 +95,21 @@ func CallTyped(f Expr, arg SemiExpr, info ExprInfo, ctx ExprContext) (Expr, *Exp
 	}
 }
 
-
 func CraftAstCallExpr(f ast.VariousTerm, arg ast.VariousTerm, node ast.Node) ast.Expr {
-	var call = ast.Call {
-		Node: node,
-		Func: f,
-		Arg:  ast.Call {
-			Node: arg.Node,
-			Func: arg,
-			Arg:  nil,
-		},
-	}
-	return ast.WrapCallAsExpr(call)
-}
-
-func DesugarExpr(expr ast.Expr) ast.Call {
-	return DesugarPipeline(DesugarTerms(expr.Terms), expr.Pipeline)
-}
-
-func DesugarTerms(terms ast.Terms) ast.Call {
-	if len(terms.Terms) == 0 { panic("something went wrong") }
-	var callee = terms.Terms[0]
-	var args = terms.Terms[1:]
-	if len(args) == 0 {
-		return ast.Call {
-			Node: terms.Node,
-			Func: callee,
-			Arg:  nil,
-		}
-	} else if len(args) == 1 {
-		return ast.Call {
-			Node: terms.Node,
-			Func: callee,
-			Arg:  ast.Call {
-				Node: terms.Node,
-				Func: args[0],
-				Arg:  nil,
-			},
-		}
-	} else {
-		var elements = make([] ast.Expr, len(args))
-		for i, arg := range args {
-			elements[i] = ast.WrapCallAsExpr(ast.Call {
-				Node: arg.Node,
-				Func: arg,
-				Arg:  nil,
-			})
-		}
-		return ast.Call {
-			Node: terms.Node,
-			Func: callee,
-			Arg:  ast.Call {
-				Node: terms.Node,
-				Func: ast.VariousTerm {
-					Node: terms.Node,
-					Term: ast.Tuple {
-						Node:     terms.Node,
-						Elements: elements,
-					},
-				},
-				Arg:  nil,
-			},
-		}
-	}
-}
-
-func DesugarPipeline(left ast.Call, p ast.MaybePipeline) ast.Call {
-	var pipeline, ok = p.(ast.Pipeline)
-	if !ok {
-		return left
-	}
-	var f = pipeline.Func
-	var maybe_right = pipeline.Arg
-	var right, exists = maybe_right.(ast.Terms)
-	var arg ast.VariousTerm
-	var current_node ast.Node
-	if exists {
-		var elements = make([] ast.Expr, 0, (1 + len(right.Terms)))
-		elements = append(elements, ast.WrapCallAsExpr(left))
-		for _, r := range right.Terms {
-			elements = append(elements, ast.WrapTermAsExpr(r))
-		}
-		arg = ast.VariousTerm {
-			Node: pipeline.Operator.Node,
-			Term: ast.Tuple {
-				Node:     pipeline.Operator.Node,
-				Elements: elements,
-			},
-		}
-		current_node = ast.Node {
-			CST:   pipeline.Node.CST,
-			Point: pipeline.Node.Point,
-			Span:  scanner.Span {
-				Start: pipeline.Node.Span.Start,
-				End:   right.Span.End,
-			},
-		}
-	} else {
-		arg = ast.WrapCallAsTerm(left)
-		current_node = ast.Node {
-			CST:   pipeline.Node.CST,
-			Point: pipeline.Node.Point,
-			Span:  scanner.Span {
-				Start: pipeline.Node.Span.Start,
-				End:   pipeline.Func.Span.End,
-			},
-		}
-	}
-	var current = ast.Call {
-		Node:  current_node,
-		Func:  f,
-		Arg:   ast.Call {
-			Node: arg.Node,
-			Func: arg,
-			Arg:  nil,
-		},
-	}
-	return DesugarPipeline(current, pipeline.Next)
-}
-
-func DesugarInfix(infix ast.Infix) ast.Call {
-	return ast.Call {
-		Node: infix.Node,
-		Func: infix.Operator,
-		Arg:  ast.Call {
-			Node: infix.Node,
-			Func: ast.VariousTerm {
-				Node: infix.Node,
-				Term: ast.Tuple {
-					Node:     infix.Node,
-					Elements: []ast.Expr {
-						ast.WrapCallAsExpr(ast.Call {
-							Node: infix.Operand1.Node,
-							Func: infix.Operand1,
-							Arg:  nil,
-						}),
-						ast.WrapCallAsExpr(ast.Call {
-							Node: infix.Operand2.Node,
-							Func: infix.Operand2,
-							Arg:  nil,
-						}),
-					},
+	return ast.Expr {
+		Node:     node,
+		Term:     ast.VariousTerm {
+			Node: node,
+			Term: ast.VariousCall {
+				Node: node,
+				Call: ast.CallPrefix {
+					Node:     node,
+					Callee:   ast.WrapTermAsExpr(f),
+					Argument: ast.WrapTermAsExpr(arg),
 				},
 			},
-			Arg:  nil,
 		},
+		Pipeline: nil,
 	}
 }
 

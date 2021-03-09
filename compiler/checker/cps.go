@@ -4,10 +4,10 @@ import "kumachan/compiler/loader/parser/ast"
 
 
 func CheckCps(cps ast.Cps, ctx ExprContext) (SemiExpr, *ExprError)  {
-	return CheckCall(DesugarCps(cps), ctx)
+	return Check(DesugarCps(cps), ctx)
 }
 
-func DesugarCps(cps ast.Cps) ast.Call {
+func DesugarCps(cps ast.Cps) ast.Expr {
 	var input = cps.Input
 	var output = cps.Output
 	var callee = ast.VariousTerm {
@@ -44,23 +44,26 @@ func DesugarCps(cps ast.Cps) ast.Call {
 			},
 		})
 	}
-	return ast.Call {
+	var arg = ast.VariousTerm {
 		Node: cps.Node,
-		Func: callee,
-		Arg:  ast.Call {
+		Term: ast.Tuple {
 			Node: cps.Node,
-			Func: ast.VariousTerm {
-				Node: cps.Node,
-				Term: ast.Tuple {
-					Node: cps.Node,
-					Elements: []ast.Expr {
-						input,
-						cont,
-					},
-				},
+			Elements: [] ast.Expr {
+				input,
+				cont,
 			},
-			Arg:  nil,
 		},
 	}
+	return ast.WrapTermAsExpr(ast.VariousTerm {
+		Node: cps.Node,
+		Term: ast.VariousCall {
+			Node: cps.Node,
+			Call: ast.CallPrefix {
+				Node:     cps.Node,
+				Callee:   ast.WrapTermAsExpr(callee),
+				Argument: ast.WrapTermAsExpr(arg),
+			},
+		},
+	})
 }
 

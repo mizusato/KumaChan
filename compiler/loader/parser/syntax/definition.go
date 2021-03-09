@@ -12,11 +12,11 @@ const RootPartName = "root"
 const ReplRootPartName = "repl_root"
 const IdentifierPartName = "Name"
 var __EscapeMap = map[string] string {
-    "_bang1":  "!",
-    "_bang2":  "!!",
-    "_bar1":   "|",
-    "_bar2":   "||",
-    "_at":     "@",
+    "_bang1": "!",
+    "_bang2": "!!",
+    "_bar1":  "|",
+    "_bar2":  "||",
+    "_at":    "@",
 }
 var __IgnoreTokens = [...] string {
     "Comment",
@@ -26,7 +26,7 @@ var __IgnoreTokens = [...] string {
 
 const LF = `\n`
 const Blanks = ` \t\r　`
-const Symbols = `\{\}\[\]\(\)\.,:;~#\$\^\&\|\\'"` + "`"
+const Symbols = `\{\}\[\]\(\)\.,:;#\&\\'"` + "`"
 const IdentifierRegexp = `[^`+Symbols+Blanks+LF+`]+`
 const IdentifierFullRegexp = "^" + IdentifierRegexp + "$"
 
@@ -50,7 +50,7 @@ var __Tokens = [...] Token {
     Token { Name: "Float",  Pattern: r(`\-?\d+(\.\d+)?[Ee][\+\-]?\d+`) },
     Token { Name: "Float",  Pattern: r(`\-?\d+\.\d+`) },
     Token { Name: "Int",    Pattern: r(`\-?\d[\d_]*`) },
-    Token { Name: "Char",   Pattern: r(`\^.`) },
+    Token { Name: "Char",   Pattern: r("`.") },
     Token { Name: "Char",   Pattern: r(`\\u[0-9A-Fa-f]+`) },
     Token { Name: "Char",   Pattern: r(`\\[a-z]`) },
     // symbols
@@ -61,27 +61,22 @@ var __Tokens = [...] Token {
     Token { Name: "{",    Pattern: r(`\{`) },
     Token { Name: "}",    Pattern: r(`\}`) },
     Token { Name: "...",  Pattern: r(`\.\.\.`) },
-    Token { Name: "..",   Pattern: r(`\.\.`) },
+    Token { Name: "..",   Pattern: r(`\.\.`) },  // Reserved
     Token { Name: ".",    Pattern: r(`\.`) },
     Token { Name: ",",    Pattern: r(`\,`) },
     Token { Name: "::",   Pattern: r(`\:\:`) },
     Token { Name: ":=",   Pattern: r(`\:\=`) },
     Token { Name: ":",    Pattern: r(`\:`) },
     Token { Name: ";",    Pattern: r(`\;`) },
-    Token { Name: "`",    Pattern: r("`") },   // Reserved
-    Token { Name: "$",    Pattern: r(`\$`) },
-    Token { Name: "~",    Pattern: r(`\~`) },
     Token { Name: "&",    Pattern: r(`\&`) },
-    Token { Name: "|",    Pattern: r(`\|`) },
     // keywords
     Token { Name: "If",         Pattern: r(`if`),         Keyword: true },
     Token { Name: "Elif",       Pattern: r(`elif`),       Keyword: true },
     Token { Name: "Else",       Pattern: r(`else`),       Keyword: true },
-    Token { Name: "Select",     Pattern: r(`select`),     Keyword: true },
     Token { Name: "Switch",     Pattern: r(`switch`),     Keyword: true },
+    Token { Name: "Select",     Pattern: r(`select`),     Keyword: true },
     Token { Name: "Case",       Pattern: r(`case`),       Keyword: true },
     Token { Name: "Let",        Pattern: r(`let`),        Keyword: true },
-    Token { Name: "Lambda",     Pattern: r(`lambda`),     Keyword: true },
     // identifier
     Token { Name: "Name", Pattern: r(IdentifierRegexp) },
 }
@@ -97,10 +92,10 @@ func GetIdentifierFullRegexp() *regexp.Regexp {
 var __ConditionalKeywords = [...] string {
     "@import", "@from",
     "@type", "@enum", "@native",
-    "@weak", "@protected", "@opaque",
-    "@private", "@public", "@function", "@const", "@do",
-    "@<", "@>",
-    "@implicit", "@default", "@end", "@rec",
+    "@weak", "@protected", "@opaque", "@implicit",
+    "@export", "@function", "@const", "@do",
+    "@<", "@>", "@=>",
+    "@default", "@end", "@rec",
 }
 func GetKeywordList() ([] string) {
     var list = make([] string, 0)
@@ -130,7 +125,6 @@ var __SyntaxDefinition = [...] string {
         "repl_assign = name := expr!",
         "repl_do = @do expr!",
         "repl_eval = expr!",
-    "docs? = doc docs", "doc = Doc", "tags? = tag tags", "tag = Tag",
     "type = type_literal | type_ref",
       "type_ref = module_prefix name type_args",
         "module_prefix? = name :: | ::",
@@ -144,11 +138,12 @@ var __SyntaxDefinition = [...] string {
             "field_list = field! more_fields",
               "field = docs tags name :! type!",
               "more_fields? = , field! more_fields",
-          "repr_func = ( lambda_header input_type! output_type! )!",
-            "lambda_header = Lambda | & ",
+          "repr_func = & input_type! @=> output_type!",
             "input_type = type",
             "output_type = type",
     "decl_type = docs tags @type name! type_params type_def ;!",
+      "docs? = doc docs", "doc = Doc",
+      "tags? = tag tags", "tag = Tag",
       "type_def = t_native | t_enum | t_implicit | t_boxed",
         "t_native = @native",
         "t_enum = @enum {! decl_type! more_decl_types }!",
@@ -165,13 +160,13 @@ var __SyntaxDefinition = [...] string {
             "type_hi_bound = @< type!",
             "type_lo_bound = @> type!",
           "type_param_default? = [ type! ]!",
-    "decl_func = docs tags scope @function name! type_params :! signature! body ;!",
-      "scope = @public | @private",
-      "signature = implicit_input repr_func",
-        "implicit_input? = @implicit type_args!",
+    "decl_func = docs tags scope @function name! :! type_params sig! body ;!",
+      "scope? = @export",
+      "sig = implicit_input repr_func",
+        "implicit_input? = ( type! more_types )!",
       "body? = native | lambda",
         "native = @native string_text!",
-        "lambda = ( lambda_header pattern! expr! )!",
+        "lambda = & pattern! @=> expr!",
           "pattern = pattern_trivial | pattern_tuple | pattern_bundle",
             "pattern_trivial = name",
             "pattern_tuple = ( ) | ( namelist )!",
@@ -182,19 +177,26 @@ var __SyntaxDefinition = [...] string {
                 "more_field_maps? = , field_map more_field_maps",
                 "field_map = name field_map_to",
                   "field_map_to? = : name",
-    "decl_const = docs scope @const name! :! type! const_value ;!",
-      "const_value? = native | expr",
-    "expr = terms pipeline",
-      "terms = term more_terms",
-        "more_terms? = term more_terms",
-      "pipeline? = pipe_op pipe_func pipe_arg pipeline",
-        "pipe_op = _bar1 | . ",
-        "pipe_func = term!",
-        "pipe_arg? = terms",
-    "term = cast | lambda | multi_switch | switch | if " +
-        "| block | cps | bundle | get | tuple | infix | inline_ref " +
+    "decl_const = docs scope @const name! :! type! const_def ;!",
+      "const_def? = := const_value",
+      "const_value = native | expr!",
+    "expr = term pipes",
+      "pipes? = . pipe! pipes",
+        "pipe = pipe_func | pipe_get | pipe_cast",
+          "pipe_func = { callee! pipe_func_arg }!",
+            "callee = expr",
+            "pipe_func_arg? = expr",
+          "pipe_get = name",
+          "pipe_cast = [ type! ]!",
+    "term = call | lambda | multi_switch | switch | if " +
+        "| block | cps | bundle | tuple | inline_ref " +
         "| array | int | float | formatter | string | char",
-      "cast = ( : type! :! expr! )!",
+      "call = call_prefix | call_infix",
+        "call_prefix = { callee expr }!",
+        "call_infix = ( infix_left operator infix_right! )!",
+          "infix_left = expr",
+          "operator = expr",
+          "infix_right = expr",
       "switch = Switch expr :! branch_list ,! @end!",
         "branch_list = branch! more_branches",
           "more_branches? = , branch more_branches",
@@ -226,8 +228,8 @@ var __SyntaxDefinition = [...] string {
           "binding_type? = : rec_opt type!",
             "rec_opt? = @rec",
         "block_value = ,! expr!",
-      "cps = ~ inline_ref! cps_binding cps_input ,! cps_output",
-        "cps_binding? = lambda_header pattern binding_type := ",
+      "cps = & inline_ref! cps_binding cps_input ,! cps_output",
+        "cps_binding? = pattern binding_type := ",
         "cps_input = expr!",
         "cps_output = expr!",
       "bundle = { } | { update pairlist }!",
@@ -235,14 +237,7 @@ var __SyntaxDefinition = [...] string {
           "more_pairs? = , pair! more_pairs",
           "pair = name : expr! | name",
         "update? = ... expr! ,!",
-      "get = $ { expr! }! member! more_members",
-        "more_members? = member more_members",
-        "member = . name!",
       "tuple = ( ) | ( exprlist )!",
-      "infix = $ (! operand1 operator operand2 )!",
-        "operand1 = term!",
-        "operator = term!",
-        "operand2 = term!",
       "inline_ref = module_prefix name inline_type_args",
         "inline_type_args? = : [ type! more_types ]!",
       "array = [ ] | [ exprlist ]!",

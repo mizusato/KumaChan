@@ -1,11 +1,11 @@
 /// Constant: τ = 2π
-public const Tau: Float
+export const Tau: Float
     $(2.0 * Pi);
 
 /// Constant: π = arccos(-1)
-public const Pi: Float
+export const Pi: Float
     acos -1.0;
 
 /// Constant: e = exp(1)
-public const E: Float
+export const E: Float
     exp 1.0;

@@ -59,104 +59,104 @@ type HashMap[+K,+V]  native;  // rx.StringHashMap, rx.NumberHashMap
 
 ## Wired Components Operations
 # alias: <-
-public function write[T]:    ( &(Sink[T],T) Action )
+export function write[T]:    ( &(Sink[T],T) Action )
     native 'sink-write';
-public function adapt[A,B]: ( &(Sink[A],(&(B)(A))) Sink[B] )
+export function adapt[A,B]: ( &(Sink[A],(&(B)(A))) Sink[B] )
     native 'sink-adapt';
-public function watch[T]: ( &(Bus[T]) Action*[T] )
+export function watch[T]: ( &(Bus[T]) Action*[T] )
     native 'bus-watch';
-public function update[T]:   ( &(Reactive[T],(&(T)(T))) Action )
+export function update[T]:   ( &(Reactive[T],(&(T)(T))) Action )
     native 'reactive-update';
-public function adapt[A,B]:  ( &(Reactive[A],(&(A)(&(B)(A)))) Sink[B] )
+export function adapt[A,B]:  ( &(Reactive[A],(&(A)(&(B)(A)))) Sink[B] )
     native 'reactive-adapt';
-public function morph[A,B]:  ( &(Reactive[A],(&(A)(&(B)(A))),(&(A)(B))) Reactive[B] )
+export function morph[A,B]:  ( &(Reactive[A],(&(A)(&(B)(A))),(&(A)(B))) Reactive[B] )
     native 'reactive-morph';
-public function snapshot[T]: ( &(Reactive[T]) Action )
+export function snapshot[T]: ( &(Reactive[T]) Action )
     native 'reactive-snapshot';
 # alias: <-
-public function read[T]: ( &(Reactive[T]) Action[T] )
+export function read[T]: ( &(Reactive[T]) Action[T] )
     native 'reactive-read';
-public function consume[T,X,E]: ( &(Reactive[List[T]],(&(ListKey,Action*[Number],Reactive[T])(Action*[X,E]))) Action*[Array[X],E] )
+export function consume[T,X,E]: ( &(Reactive[List[T]],(&(ListKey,Action*[Number],Reactive[T])(Action*[X,E]))) Action*[Array[X],E] )
     native 'reactive-list-consume';
-public function undo[T]:          ( &(ReactiveEntity[T]) Action )
+export function undo[T]:          ( &(ReactiveEntity[T]) Action )
     native 'reactive-entity-undo';
-public function redo[T]:          ( &(ReactiveEntity[T]) Action )
+export function redo[T]:          ( &(ReactiveEntity[T]) Action )
     native 'reactive-entity-redo';
-public function watch-diff[T]:    ( &(ReactiveEntity[T]) Action*[(ReactiveSnapshots[T],T)] )
+export function watch-diff[T]:    ( &(ReactiveEntity[T]) Action*[(ReactiveSnapshots[T],T)] )
     native 'reactive-entity-watch-diff';
-public function auto-snapshot[T]: ( &(ReactiveEntity[T]) Reactive[T] )
+export function auto-snapshot[T]: ( &(ReactiveEntity[T]) Reactive[T] )
     native 'reactive-entity-auto-snapshot';
-public function callback[T]:           ( &(&(T)(Action)) Sink[T] )
+export function callback[T]:           ( &(&(T)(Action)) Sink[T] )
     native 'callback';
-public function new-bus[T]:            ( &() Action[Bus[T]] )
+export function new-bus[T]:            ( &() Action[Bus[T]] )
     native 'new-bus';
-public function new-reactive[T]:       ( &(T) Action[ReactiveEntity[T]] )
+export function new-reactive[T]:       ( &(T) Action[ReactiveEntity[T]] )
     native 'new-reactive';
-public function with-reactive[T, K < Action*[any,any]]:  ( &(T,(&(ReactiveEntity[T])(K))) K )
+export function with-reactive[T, K < Action*[any,any]]:  ( &(T,(&(ReactiveEntity[T])(K))) K )
     native 'with-reactive';
-public function with-auto-snapshot[T, K < Action*[any,any]]:  ( &(T,(&(Reactive[T],(Action,Action,Action*[(ReactiveSnapshots[T],T)]))(K))) K )
+export function with-auto-snapshot[T, K < Action*[any,any]]:  ( &(T,(&(Reactive[T],(Action,Action,Action*[(ReactiveSnapshots[T],T)]))(K))) K )
     native 'with-auto-snapshot';
 
 ## Mutable Containers Operations
-public function new-mutable[T]: ( &() Action[Mutable[T]] )
+export function new-mutable[T]: ( &() Action[Mutable[T]] )
     native 'new-mutable';
-public function with-mutable[T, K < Action*[any,any]]:  ( &(T,(&(Mutable[T])(K))) K )
+export function with-mutable[T, K < Action*[any,any]]:  ( &(T,(&(Mutable[T])(K))) K )
     native 'with-mutable';
-public function get[T]: ( &(Mutable[T]) Action[T] )
+export function get[T]: ( &(Mutable[T]) Action[T] )
     native 'mutable-get';
-public function set[T]: ( &(Mutable[T],T) Action )
+export function set[T]: ( &(Mutable[T],T) Action )
     native 'mutable-set';
-public function swap[T]: ( &(Mutable[T],(&(T)(T))) Action )
+export function swap[T]: ( &(Mutable[T],(&(T)(T))) Action )
     native 'mutable-swap';
 
 ## Action Constructors
-public function with[A < Action*[any,any]]: ( &(A,Action) A )
+export function with[A < Action*[any,any]]: ( &(A,Action) A )
     native 'with';
-public function gen-random: ( &() Action[Float] )
+export function gen-random: ( &() Action[Float] )
     native 'gen-random';
-public function gen-sequential-id: ( &() Action[String] )
+export function gen-sequential-id: ( &() Action[String] )
     native 'gen-sequential-id';
-public function crash: ( &(String) Action[never] )
+export function crash: ( &(String) Action[never] )
     native 'crash';
-public function crash: ( &(Error) Action[never] )  // TODO: add 'crash-on-error'
+export function crash: ( &(Error) Action[never] )  // TODO: add 'crash-on-error'
     ( &(err) (crash ((str err) | "Error: #")) );
-public function from: ( &(Error) String )  // TODO: move this function
+export function from: ( &(Error) String )  // TODO: move this function
     native 'String from error';
-public function make-error: ( &(String) Error )  // TODO: move this function
+export function make-error: ( &(String) Error )  // TODO: move this function
     native 'make-error';
 /// go(f) returns an action that evaluates f() in a separate goroutine.
-public function go[T]: ( &(&()(T)) Action[T] )
+export function go[T]: ( &(&()(T)) Action[T] )
     native 'go-thunk';
 /// go(seq) returns an action that iterates seq in a separate goroutine.
-public function go[T]: ( &(Seq[T]) Action*[T] )
+export function go[T]: ( &(Seq[T]) Action*[T] )
     native 'go-seq';
-public function yield[T]:  ( &(T) Action[T] )
+export function yield[T]:  ( &(T) Action[T] )
     native 'yield';
-public function yield-thunk[T]: ( &(&()(T)) Action[T] )
+export function yield-thunk[T]: ( &(&()(T)) Action[T] )
     native 'yield-thunk';
-public function yield*[T]: ( &(Seq[T]) Action*[T] )
+export function yield*[T]: ( &(Seq[T]) Action*[T] )
     native 'yield*-seq';
-public function yield*[T]: ( &(Array[T]) Action*[T] )
+export function yield*[T]: ( &(Array[T]) Action*[T] )
     native 'yield*-array';
-public function not[E]: ( &(Action*[Bool,E]) Action*[Bool,E] )
+export function not[E]: ( &(Action*[Bool,E]) Action*[Bool,E] )
     (&(p)(p.map not));
-public function and[E]: ( &(Action*[Bool,E],Action*[Bool,E]) Action*[Bool,E] )
+export function and[E]: ( &(Action*[Bool,E],Action*[Bool,E]) Action*[Bool,E] )
     (&(p,q)(computed (p,q) (&(p,q) $(p and q))));
-public function or[E]: ( &(Action*[Bool,E],Action*[Bool,E]) Action*[Bool,E] )
+export function or[E]: ( &(Action*[Bool,E],Action*[Bool,E]) Action*[Bool,E] )
     (&(p,q)(computed (p,q) (&(p,q) $(p or q))));
-public function start-with[T,E]: ( &(Action*[T,E],Array[T]) Action*[T,E] )
+export function start-with[T,E]: ( &(Action*[T,E],Array[T]) Action*[T,E] )
     (&(e,prepended)(concat:[T,E] [(yield* prepended), e]));
-public function wait: ( & {timeout:Number} Action )
+export function wait: ( & {timeout:Number} Action )
     native 'wait';
-public function tick: ( & {interval:Number} Action*[unit] )
+export function tick: ( & {interval:Number} Action*[unit] )
     native 'tick';
 
 ## Action Operators
-public function take-one-as-single[T,E]: ( &(Action*[T,E]) Action[Maybe[T],E] )
+export function take-one-as-single[T,E]: ( &(Action*[T,E]) Action[Maybe[T],E] )
     native 'take-one-as-single';
-public function wait-complete[E]: ( &(Action*[unit,E]) Action[unit,E] )
+export function wait-complete[E]: ( &(Action*[unit,E]) Action[unit,E] )
     native 'wait-complete';
-public function forever[E]: ( &(Action*[unit,E]) Action[never,E] )
+export function forever[E]: ( &(Action*[unit,E]) Action[never,E] )
     native 'forever';
 
 /// This function has two kinds of definitions:
@@ -168,95 +168,95 @@ public function forever[E]: ( &(Action*[unit,E]) Action[never,E] )
 /// to be used within Flat CPS expressions.
 ///
 # alias: await
-public function then[A,B,E]: ( &(Action[A,E],(&(A)(Action[B,E]))) Action[B,E] )
+export function then[A,B,E]: ( &(Action[A,E],(&(A)(Action[B,E]))) Action[B,E] )
     native 'then';
 # alias: await
-public function then[A,B,E]: ( &(Action[A,E],(&(A)(Action*[B,E]))) Action*[B,E] )
+export function then[A,B,E]: ( &(Action[A,E],(&(A)(Action*[B,E]))) Action*[B,E] )
     native 'then';
 # alias: await
-public function then[E,B]: ( &(Action[unit,E], Action[B,E]) Action[B,E] )
+export function then[E,B]: ( &(Action[unit,E], Action[B,E]) Action[B,E] )
     native 'then-shortcut';
 # alias: await
-public function then[E,B]: ( &(Action[unit,E], Action*[B,E]) Action*[B,E] )
+export function then[E,B]: ( &(Action[unit,E], Action*[B,E]) Action*[B,E] )
     native 'then-shortcut';
 
-public function catch[T,E,F]: ( &(Action[T,E],(&(E)(Action[T,F]))) Action[T,F] )
+export function catch[T,E,F]: ( &(Action[T,E],(&(E)(Action[T,F]))) Action[T,F] )
     native 'catch';
-public function catch[T,E,F]: ( &(Action*[T,E],(&(E)(Action*[T,F]))) Action*[T,F] )
+export function catch[T,E,F]: ( &(Action*[T,E],(&(E)(Action*[T,F]))) Action*[T,F] )
     native 'catch';
-public function catch-retry[T,E]: ( &(Action[T,E],(&(E)(Action[Bool]))) Action[T,E] )
+export function catch-retry[T,E]: ( &(Action[T,E],(&(E)(Action[Bool]))) Action[T,E] )
     native 'catch-retry';
-public function catch-throw[T,E,F]: ( &(Action[T,E],(&(E)(F))) Action[T,F] )
+export function catch-throw[T,E,F]: ( &(Action[T,E],(&(E)(F))) Action[T,F] )
     native 'catch-throw';
-public function throw[E]: ( &(E) Action[never,E] )
+export function throw[E]: ( &(E) Action[never,E] )
     native 'throw';
-public function map[A,B,E]:  ( &(Action[A,E],(&(A)(B))) Action[B,E] )
+export function map[A,B,E]:  ( &(Action[A,E],(&(A)(B))) Action[B,E] )
     native 'action-map';
-public function map[A,B,E]: ( &(Action*[A,E],(&(A)(B))) Action*[B,E] )
+export function map[A,B,E]: ( &(Action*[A,E],(&(A)(B))) Action*[B,E] )
     native 'action-map';
-public function map-to[A,B,E]: ( &(Action[A,E],B) Action[B,E] )
+export function map-to[A,B,E]: ( &(Action[A,E],B) Action[B,E] )
     (&(e,v)(e | map (&(_)(v))));
-public function map-to[A,B,E]: ( &(Action*[A,E],B) Action*[B,E] )
+export function map-to[A,B,E]: ( &(Action*[A,E],B) Action*[B,E] )
     (&(e,v)(e | map (&(_)(v))));
-public function filter[T,E]: ( &(Action*[T,E],(&(T)(Bool))) Action*[T,E] )
+export function filter[T,E]: ( &(Action*[T,E],(&(T)(Bool))) Action*[T,E] )
     native 'action-filter';
-public function filter-map[A,B,E]: ( &(Action*[A,E],(&(A)(Maybe[B]))) Action*[B,E] )
+export function filter-map[A,B,E]: ( &(Action*[A,E],(&(A)(Maybe[B]))) Action*[B,E] )
     native 'action-filter-map';
-public function reduce[T,A,E]: ( &(Action*[T,E],A,(&(A,T)(A))) Action[A,E] )
+export function reduce[T,A,E]: ( &(Action*[T,E],A,(&(A,T)(A))) Action[A,E] )
     native 'action-reduce';
-public function scan[T,A,E]: ( &(Action*[T,E],A,(&(A,T)(A))) Action*[A,E] )
+export function scan[T,A,E]: ( &(Action*[T,E],A,(&(A,T)(A))) Action*[A,E] )
     native 'action-scan';
-public function debounce[T,E]: ( &(Action*[T,E],Number) Action*[T,E] )
+export function debounce[T,E]: ( &(Action*[T,E],Number) Action*[T,E] )
     native 'debounce-time';
-public function merge-map[A,B,E]: ( &(Action*[A,E],(&(A)(Action*[B,E]))) Action*[B,E] )
+export function merge-map[A,B,E]: ( &(Action*[A,E],(&(A)(Action*[B,E]))) Action*[B,E] )
     native 'merge-map';
-public function concat-map[A,B,E]: ( &(Action*[A,E],(&(A)(Action*[B,E]))) Action*[B,E] )
+export function concat-map[A,B,E]: ( &(Action*[A,E],(&(A)(Action*[B,E]))) Action*[B,E] )
     native 'concat-map';
-public function mix-map[A,B,E]: ( &(Action*[A,E],Number,(&(A)(Action*[B,E]))) Action*[B,E] )
+export function mix-map[A,B,E]: ( &(Action*[A,E],Number,(&(A)(Action*[B,E]))) Action*[B,E] )
     native 'mix-map';
-public function switch-map[A,B,E]: ( &(Action*[A,E],(&(A)(Action*[B,E]))) Action*[B,E] )
+export function switch-map[A,B,E]: ( &(Action*[A,E],(&(A)(Action*[B,E]))) Action*[B,E] )
     native 'switch-map';
-public function merge[T,E]: ( &(Array[Action*[T,E]]) Action*[T,E] )
+export function merge[T,E]: ( &(Array[Action*[T,E]]) Action*[T,E] )
     native 'action-merge';
-public function concat[T,E]: ( &(Array[Action*[T,E]]) Action*[T,E] )
+export function concat[T,E]: ( &(Array[Action*[T,E]]) Action*[T,E] )
     native 'action-concat';
-public function distinct-until-changed[T,E]: implicit[Eq[T]] ( &(Action*[T,E]) Action*[T,E] )
+export function distinct-until-changed[T,E]: implicit[Eq[T]] ( &(Action*[T,E]) Action*[T,E] )
     (&(a)(a.distinct-until-changed(=)));
-public function distinct-until-changed[T,E]: ( &(Action*[T,E],(&(T,T)(Bool))) Action*[T,E] )
+export function distinct-until-changed[T,E]: ( &(Action*[T,E],(&(T,T)(Bool))) Action*[T,E] )
     native 'distinct-until-changed';
-public function with-latest-from[A,B,E]: ( &(Action*[A,E],Action*[B,E]) Action*[(A,Maybe[B]),E] )
+export function with-latest-from[A,B,E]: ( &(Action*[A,E],Action*[B,E]) Action*[(A,Maybe[B]),E] )
     native 'with-latest-from';
-public function with-latest-from[A,B,E]: ( &(Action*[A,E],Reactive[B]) Action*[(A,B),E] )
+export function with-latest-from[A,B,E]: ( &(Action*[A,E],Reactive[B]) Action*[(A,B),E] )
     native 'with-latest-from-reactive';
-public function combine-latest[A,B,E]:
+export function combine-latest[A,B,E]:
     ( &(Action*[A,E],Action*[B,E])
         Action*[(Maybe[A],Maybe[B]),E] )
     native 'combine-latest';
-public function combine-latest[A,B,C,E]:
+export function combine-latest[A,B,C,E]:
     ( &(Action*[A,E],Action*[B,E],Action*[C,E])
         Action*[(Maybe[A],Maybe[B],Maybe[C]),E] )
     native 'combine-latest';
-public function combine-latest[A,B,C,D,E]:
+export function combine-latest[A,B,C,D,E]:
     ( &(Action*[A,E],Action*[B,E],Action*[C,E],Action*[D,E])
         Action*[(Maybe[A],Maybe[B],Maybe[C],Maybe[D]),E] )
     native 'combine-latest';
-public function combine-latest*[A,B,E]:
+export function combine-latest*[A,B,E]:
     ( &(Action*[A,E],Action*[B,E]) Action*[(A,B),E] )
     native 'combine-latest*';
-public function combine-latest*[A,B,C,E]:
+export function combine-latest*[A,B,C,E]:
     ( &(Action*[A,E],Action*[B,E],Action*[C,E]) Action*[(A,B,C),E] )
     native 'combine-latest*';
-public function combine-latest*[A,B,C,D,E]:
+export function combine-latest*[A,B,C,D,E]:
     ( &(Action*[A,E],Action*[B,E],Action*[C,E],Action*[D,E]) Action*[(A,B,C,D),E] )
     native 'combine-latest*';
-public function combine-latest*[T,E]: ( &(Array[Action*[T,E]]) Action*[Array[T],E] )
+export function combine-latest*[T,E]: ( &(Array[Action*[T,E]]) Action*[Array[T],E] )
     native 'combine-latest*-array';
-public function computed[A,B,E,X]:
+export function computed[A,B,E,X]:
     ( &((Action*[A,E],Action*[B,E]),(&(A,B)(X))) Action*[X,E] )
     native 'computed';
-public function computed[A,B,C,E,X]:
+export function computed[A,B,C,E,X]:
     ( &((Action*[A,E],Action*[B,E],Action*[C,E]),(&(A,B,C)(X))) Action*[X,E] )
     native 'computed';
-public function computed[A,B,C,D,E,X]:
+export function computed[A,B,C,D,E,X]:
     ( &((Action*[A,E],Action*[B,E],Action*[C,E],Action*[D,E]),(&(A,B,C,D)(X))) Action*[X,E] )
     native 'computed';

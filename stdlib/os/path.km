@@ -1,19 +1,19 @@
 type Path native;
 
-public const Cwd: Path
+export const Cwd: Path
     native 'OS::Cwd';
 
-public const EntryModulePath: Path
+export const EntryModulePath: Path
     native 'OS::EntryModulePath';
 
-public const EntryModuleDirPath: Path
+export const EntryModuleDirPath: Path
     native 'OS::EntryModuleDirPath';
 
-public function parse-path: ( &(String) Path )
+export function parse-path: ( &(String) Path )
     native 'parse-path';
 
-public function from: ( &(Path) String )
+export function from: ( &(Path) String )
     native 'String from Path';
 
-public function join: ( &(Path,Array[String]) Path )
+export function join: ( &(Path,Array[String]) Path )
     native 'path-join';

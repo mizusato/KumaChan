@@ -4,7 +4,7 @@ type ABC enum {
      type C;
 };
 
-private function parse-abc:
+function parse-abc:
     ( &(String) ABC )
     ( &(str)
         if $(str = 'A'):
@@ -17,7 +17,7 @@ private function parse-abc:
             panic 'invalid ABC'
     );
 
-private function from:
+function from:
     ( &(ABC) String )
 	( &(x)
         switch x:
@@ -27,7 +27,7 @@ private function from:
         end
     );
 
-private function f:
+function f:
 	( &(ABC,ABC) ABC )
 	( &(x,y)
         select (x, y):

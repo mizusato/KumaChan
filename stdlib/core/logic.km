@@ -1,7 +1,7 @@
 // Logic Functions
-public function not: (&(Bool)(Bool))
+export function not: (&(Bool)(Bool))
     (&(p)(if p: No, else: Yes));
-public function and: (&(Bool,Bool)(Bool))
+export function and: (&(Bool,Bool)(Bool))
     (&(p,q)(if p: (if q: Yes, else: No), else: No));
-public function  or: (&(Bool,Bool)(Bool))
+export function  or: (&(Bool,Bool)(Bool))
     (&(p,q)(if p: Yes, else: (if q: Yes, else: No)));

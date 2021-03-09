@@ -1,10 +1,10 @@
 // QWidget
 type Widget protected Object;
 
-public function show: (&(Widget)(Action))
+export function show: (&(Widget)(Action))
     native 'qt-show';
 
-public function move-to-screen-center: (&(Widget)(Action))
+export function move-to-screen-center: (&(Widget)(Action))
     native 'qt-move-to-screen-center';
 
 
@@ -15,33 +15,33 @@ type MainWindow protected Widget;
 // QLabel
 type Label protected Widget;
 
-public function set-text: ( &(Label,String) Action )
+export function set-text: ( &(Label,String) Action )
     (&(label,text)(set-property label 'text' 'String' text));
 
 
 // QLineEdit
 type LineEdit protected Widget;
 
-private function get-text: ( &(Static[LineEdit]) String )
+function get-text: ( &(Static[LineEdit]) String )
     (&(line)(get-property line 'text' 'String'));
 
-public function text: ( &(LineEdit) Signal[String] )
+export function text: ( &(LineEdit) Signal[String] )
     (&(line)(signal line 'textEdited(const QString&)' get-text));
 
-public function enter: ( &(LineEdit) Signal[unit] )
+export function enter: ( &(LineEdit) Signal[unit] )
     (&(line)(signal line 'returnPressed()'));
 
-public function set-text: ( &(LineEdit,String) Action )
+export function set-text: ( &(LineEdit,String) Action )
     (&(line,text)(set-property line 'text' 'String' text));
 
 
 // QPlainTextEdit
 type PlainTextEdit protected Widget;
 
-private function get-plain-text: ( &(Static[PlainTextEdit]) String )
+function get-plain-text: ( &(Static[PlainTextEdit]) String )
     (&(plain)(get-property plain 'plainText' 'String'));
 
-public function plain-text!: ( &(PlainTextEdit) Signal[String] )
+export function plain-text!: ( &(PlainTextEdit) Signal[String] )
     (&(plain)(signal plain 'textChanged()' get-plain-text));
     // no user edit signal
 
@@ -49,33 +49,33 @@ public function plain-text!: ( &(PlainTextEdit) Signal[String] )
 // QPushButton
 type PushButton protected Widget;
 
-public function clicked: ( &(PushButton) Signal[unit] )
+export function clicked: ( &(PushButton) Signal[unit] )
     (&(button)(signal button 'clicked()'));
 
 
 // QCheckBox
 type CheckBox protected Widget;
 
-private function get-checked: ( &(Static[CheckBox]) Bool )
+function get-checked: ( &(Static[CheckBox]) Bool )
     (&(checkbox)(get-property checkbox 'checked' 'Bool'));
 
-public function checked: ( &(CheckBox) Signal[Bool] )
+export function checked: ( &(CheckBox) Signal[Bool] )
     (&(checkbox)(signal checkbox 'clicked(bool)' get-checked));
 
-public function set-checked: ( &(CheckBox,Bool) Action )
+export function set-checked: ( &(CheckBox,Bool) Action )
     (&(checkbox,checked)(set-property checkbox 'checked' 'Bool' checked));
 
 
 // QComboBox
 type ComboBox protected Widget;
 
-private function get-current-text: ( &(Static[ComboBox]) String )
+function get-current-text: ( &(Static[ComboBox]) String )
     (&(combo)(get-property combo 'currentText' 'String'));
 
-public function current-text: ( &(ComboBox) Signal[String] )
+export function current-text: ( &(ComboBox) Signal[String] )
     (&(combo)(signal combo 'currentTextChanged(const QString&)' get-current-text));
 
-public function set-current-text: ( &(ComboBox,String) Action )
+export function set-current-text: ( &(ComboBox,String) Action )
     (&(combo,text)(set-property combo 'currentText' 'String' text));
 
 
@@ -83,17 +83,17 @@ public function set-current-text: ( &(ComboBox,String) Action )
 type ListWidget protected Widget;
 type ListWidgetItem native;
 
-public function set-items: ( &(ListWidget,Array[ListWidgetItem],Maybe[String]) Action )
+export function set-items: ( &(ListWidget,Array[ListWidgetItem],Maybe[String]) Action )
     native 'qt-list-widget-set-items';
 
-public function list-widget-item: ( &(String,String) ListWidgetItem )
+export function list-widget-item: ( &(String,String) ListWidgetItem )
     native 'qt-list-widget-item';
 
-public function list-widget-item: ( &(String,Image::PNG,String) ListWidgetItem )
+export function list-widget-item: ( &(String,Image::PNG,String) ListWidgetItem )
     native 'qt-list-widget-item-with-icon-png';
 
-private function get-current-item: ( &(Static[ListWidget]) Maybe[String] )
+function get-current-item: ( &(Static[ListWidget]) Maybe[String] )
     native 'qt-list-widget-get-current';
 
-public function current-item: ( &(ListWidget) Signal[Maybe[String]] )
+export function current-item: ( &(ListWidget) Signal[Maybe[String]] )
     (&(list)(signal list 'currentRowChanged(int)' get-current-item));
