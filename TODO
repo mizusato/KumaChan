@@ -33,23 +33,27 @@ assign integer literal to float
 
 "#{0} #{1}"
 
-&(x:Int):Int => (x + 1)
+public -> export
 
-public -> export, specify type in pattern
+export function >: [T] (Ord[T])
+    &(T,T) => Bool
+    &(a,b) => (b < a);
 
-export function > :
-    [T] (Ord[T])
-    &(a:T, b:T): Bool => (b < a);
+export fun println:
+    &(String) => Action[unit,Error]
+    native 'println';
 
 const x: Int := 1;
+
+const Args: Array[String] := native 'os::Args';
 
 module name lowercase
 
 { ui::button action }.{ with { ui::style ['big'] } }
 
 \u0020
-\(LF)
-\大
+\n
+`大
 
 & await name := scanln,
 & await { println { "Hello #{0}" name } }
