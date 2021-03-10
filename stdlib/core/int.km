@@ -1,66 +1,66 @@
 type Int native;  // *big.Int
 
-export function from: (&(Int)(String))  native 'String from Int';
+export function convert: &(Int) => String  native 'String from Int';
 
-export function  = :(&(Int,Int)(Bool))      native '=Int';
-export function  < :(&(Int,Int)(Bool))      native '<Int';
-export function <> :(&(Int,Int)(Ordering))  native '<>Int';
+export function  =: &(Int,Int) => Bool      native '=Int';
+export function  <: &(Int,Int) => Bool      native '<Int';
+export function <>: &(Int,Int) => Ordering  native '<>Int';
 
-export function + :(&(Int,Int)(Int))  native '+Int';
-export function - :(&(Int,Int)(Int))  native '-Int';
-export function - :(&(Int)(Int))      (&(n)$(0 - n));
-export function * :(&(Int,Int)(Int))  native '*Int';
+export function +: &(Int,Int) => Int  native '+Int';
+export function -: &(Int,Int) => Int  native '-Int';
+export function -: &(Int) => Int      &(n) => (0 - n);
+export function *: &(Int,Int) => Int  native '*Int';
 
-export function quorem: (&(Int,Int)(Int,Int))  native 'quorem';
-export function divmod: (&(Int,Int)(Int,Int))  native 'divmod';
+export function quorem: &(Int,Int) => Int,Int  native 'quorem';
+export function divmod: &(Int,Int) => Int,Int  native 'divmod';
 
 
-export function / :(&(Int,Int)(Int))
-    ( &(a, b)
-        let (q, _) := $(a quorem b),
-        q
-    );
+export function /:
+    &(Int,Int) => Int
+    &(a, b) =>
+        let (q, _) := (a quorem b),
+        q;
 
-export function % :(&(Int,Int)(Int))
-    ( &(a, b)
-        let (_, r) := $(a quorem b),
-        r
-    );
+export function %:
+    &(Int,Int) => Int
+    &(a, b) =>
+        let (_, r) := (a quorem b),
+        r;
 
-export function div: (&(Int,Int)(Int))
-    ( &(a, b)
-        let (q, _) := $(a divmod b),
-        q
-    );
+export function div:
+    &(Int,Int) => Int
+    &(a, b) =>
+        let (q, _) := (a divmod b),
+        q;
 
-export function mod: (&(Int,Int)(Int))
-    ( &(a, b)
-        let (_, r) := $(a divmod b),
-        r
-    );
+export function mod:
+    &(Int,Int) => Int
+    &(a, b) =>
+        let (_, r) := (a divmod b),
+        r;
 
-export function ** :(&(Int,Int)(Int))
-    ( &(n, p)
-        let pow: rec (&(Int,Int,Int)(Int)) := ( &(t, n, p)
-            switch $(p <> 0):
+export function **:
+    &(Int,Int) => Int
+    &(n, p) =>
+        let pow: rec &(Int,Int,Int) => Int := &(t, n, p) =>
+            switch (p <> 0):
             case <<:
                 panic 'taking negative power of a Int value is not supported',
             case ==:
-                if $(n = 0):
+                if (n = 0):
                     panic 'cannot evaluate 0 to the power of 0',
                 else:
                     t,
             case >>:
-                if $(p = 1):
-                    $(t * n),
+                if (p = 1):
+                    (t * n),
                 else:
-                    let (q, r) := $(p divmod 2),
-                    let square := $(n * n),
-                    if $(r = 1):
-                        (pow $(t * n) square q),
+                    let (q, r) := (p divmod 2),
+                    let square := (n * n),
+                    if (r = 1):
+                        { pow ((t * n), square, q) },
                     else:
-                        (pow t square q),
+                        { pow (t, square, q) },
             end
         ),
-        (pow 1 n p)
-    );
+        { pow (1, n, p) };

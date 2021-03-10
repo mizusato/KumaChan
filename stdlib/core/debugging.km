@@ -1,5 +1,11 @@
-// Debugging Functions
-export function trace[T]: ( &(T) T )
-    native 'trace';  // side-effect: log input value in stderr
-export function panic: ( &(String) never )
-    native 'panic';  // side-effect: crash immediately
+## Debugging Functions
+
+/// trace(v) writes the description of v into stderr and returns it back.
+export function trace:[T]
+    &(T) => T
+    native 'trace';
+
+/// panic(msg) causes a panic with message msg.
+export function panic:
+    &(String) => never
+    native 'panic';

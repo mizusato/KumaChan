@@ -1,27 +1,23 @@
 type Callback protected (&(EventPayload)(Action));
 
-export function ui-callback: ( &(Callback) EventHandler )
-    ( &(cb)
-        dom-event-handler (callback:[Action] (& e e)) cb
+export function ui-callback:
+    &(Callback) => EventHandler
+    &(cb) => (
+        { dom-event-handler ({callback:[Action] (& e => e)}, cb) }
         // important: payload will be deleted after `cb` called
     );
-export function ui-msg-string: ( &(String,(&(String)(Callback))) Callback )
-    ( &(prop,k)
-        getter-callback prop get-string k
-    );
-export function ui-msg-float:  ( &(String,(&(Float)(Callback))) Callback )
-    ( &(prop,k)
-        getter-callback prop get-float k
-    );
-export function ui-msg-number: ( &(String,(&(Number)(Callback))) Callback )
-    ( &(prop,k)
-        getter-callback prop get-number k
-    );
-export function ui-msg-bool:   ( &(String,(&(Bool)(Callback))) Callback )
-    ( &(prop,k)
-        getter-callback prop get-bool k
-    );
-export function return: ( &(Action) Callback )
-    ( &(action)
-        Callback (&(_)(action))
-    );
+export function ui-msg-string:
+    &(String, &(String) => Callback) => Callback
+    &(prop,k) => { getter-callback (prop, get-string, k) };
+export function ui-msg-float:
+    &(String, &(Float) => Callback) => Callback
+    &(prop,k) => { getter-callback (prop, get-float, k) };
+export function ui-msg-number:
+    &(String, &(Number) => Callback) => Callback
+    &(prop,k) => { getter-callback (prop, get-number, k) };
+export function ui-msg-bool:
+    &(String, &(Bool) => Callback) => Callback
+    &(prop,k) => { getter-callback (prop, get-bool, k) };
+export function return:
+    &(Action) => Callback
+    &(action) => &() => action;

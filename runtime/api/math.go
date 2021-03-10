@@ -101,19 +101,19 @@ var MathFunctions = map[string] interface{} {
 	"%Float": func(a float64, b float64) float64 {
 		return util.CheckFloat(math.Mod(a, b))
 	},
-	"+Float!": func(a float64, b float64) float64 {
+	"+Float*": func(a float64, b float64) float64 {
 		return a + b
 	},
-	"-Float!":  func(a float64, b float64) float64 {
+	"-Float*":  func(a float64, b float64) float64 {
 		return a - b
 	},
-	"*Float!": func(a float64, b float64) float64 {
+	"*Float*": func(a float64, b float64) float64 {
 		return a * b
 	},
-	"/Float!": func(a float64, b float64) float64 {
+	"/Float*": func(a float64, b float64) float64 {
 		return a / b
 	},
-	"%Float!": func(a float64, b float64) float64 {
+	"%Float*": func(a float64, b float64) float64 {
 		return math.Mod(a, b)
 	},
 	"+Int8": func(a int8, b int8) int8 {
@@ -301,21 +301,21 @@ var MathFunctions = map[string] interface{} {
 	"atan2": func(y float64, x float64) float64 {
 		return util.CheckFloat(math.Atan2(y, x))
 	},
-	"floor!":     math.Floor,
-	"ceil!":      math.Ceil,
-	"round!":     math.Round,
-	"real-**!":   math.Pow,
-	"real-sqrt!": math.Sqrt,
-	"real-cbrt!": math.Cbrt,
-	"real-exp!":  math.Exp,
-	"real-log!":  math.Log,
-	"real-sin!":  math.Sin,
-	"real-cos!":  math.Cos,
-	"real-tan!":  math.Tan,
-	"real-asin!": math.Asin,
-	"real-acos!": math.Acos,
-	"real-atan!": math.Atan,
-	"atan2!":     math.Atan2,
+	"floor*":     math.Floor,
+	"ceil*":      math.Ceil,
+	"round*":     math.Round,
+	"real-***":   math.Pow,
+	"real-sqrt*": math.Sqrt,
+	"real-cbrt*": math.Cbrt,
+	"real-exp*":  math.Exp,
+	"real-log*":  math.Log,
+	"real-sin*":  math.Sin,
+	"real-cos*":  math.Cos,
+	"real-tan*":  math.Tan,
+	"real-asin*": math.Asin,
+	"real-acos*": math.Acos,
+	"real-atan*": math.Atan,
+	"atan2*":     math.Atan2,
 	// complex
 	"complex": func(re float64, im float64) complex128 {
 		return complex(re, im)
@@ -381,40 +381,40 @@ var MathFunctions = map[string] interface{} {
 	"complex/f": func(z complex128, f float64) complex128 {
 		return util.CheckComplex(z / complex(f, 0))
 	},
-	"+complex!": func(z1 complex128, z2 complex128) complex128 {
+	"+complex*": func(z1 complex128, z2 complex128) complex128 {
 		return (z1 + z2)
 	},
-	"f+complex!": func(f float64, z complex128) complex128 {
+	"f+complex*": func(f float64, z complex128) complex128 {
 		return (complex(f, 0) + z)
 	},
-	"complex+f!": func(z complex128, f float64) complex128 {
+	"complex+f*": func(z complex128, f float64) complex128 {
 		return (z + complex(f, 0))
 	},
-	"-complex!": func(z1 complex128, z2 complex128) complex128 {
+	"-complex*": func(z1 complex128, z2 complex128) complex128 {
 		return (z1 - z2)
 	},
-	"f-complex!": func(f float64, z complex128) complex128 {
+	"f-complex*": func(f float64, z complex128) complex128 {
 		return (complex(f, 0) - z)
 	},
-	"complex-f!": func(z complex128, f float64) complex128 {
+	"complex-f*": func(z complex128, f float64) complex128 {
 		return (z - complex(f, 0))
 	},
-	"*complex!": func(z1 complex128, z2 complex128) complex128 {
+	"*complex*": func(z1 complex128, z2 complex128) complex128 {
 		return (z1 * z2)
 	},
-	"f*complex!": func(f float64, z complex128) complex128 {
+	"f*complex*": func(f float64, z complex128) complex128 {
 		return (complex(f, 0) * z)
 	},
-	"complex*f!": func(z complex128, f float64) complex128 {
+	"complex*f*": func(z complex128, f float64) complex128 {
 		return (z * complex(f, 0))
 	},
-	"/complex!": func(z1 complex128, z2 complex128) complex128 {
+	"/complex*": func(z1 complex128, z2 complex128) complex128 {
 		return (z1 / z2)
 	},
-	"f/complex!": func(f float64, z complex128) complex128 {
+	"f/complex*": func(f float64, z complex128) complex128 {
 		return (complex(f, 0) / z)
 	},
-	"complex/f!": func(z complex128, f float64) complex128 {
+	"complex/f*": func(z complex128, f float64) complex128 {
 		return (z / complex(f, 0))
 	},
 	"complex-exp": func(z complex128) complex128 {
@@ -449,19 +449,19 @@ var MathFunctions = map[string] interface{} {
 		var norm, arg = cmplx.Polar(z)
 		return util.CheckComplex(cmplx.Rect(math.Cbrt(norm), (arg / 3.0)))
 	},
-	"complex-exp!":  cmplx.Exp,
-	"complex-log!":  cmplx.Log,
-	"complex-sin!":  cmplx.Sin,
-	"complex-cos!":  cmplx.Cos,
-	"complex-tan!":  cmplx.Tan,
-	"complex-asin!": cmplx.Asin,
-	"complex-acos!": cmplx.Acos,
-	"complex-atan!": cmplx.Atan,
-	"complex-sqrt!": func(z complex128) complex128 {
+	"complex-exp*":  cmplx.Exp,
+	"complex-log*":  cmplx.Log,
+	"complex-sin*":  cmplx.Sin,
+	"complex-cos*":  cmplx.Cos,
+	"complex-tan*":  cmplx.Tan,
+	"complex-asin*": cmplx.Asin,
+	"complex-acos*": cmplx.Acos,
+	"complex-atan*": cmplx.Atan,
+	"complex-sqrt*": func(z complex128) complex128 {
 		var norm, arg = cmplx.Polar(z)
 		return cmplx.Rect(math.Sqrt(norm), (arg / 2.0))
 	},
-	"complex-cbrt!": func(z complex128) complex128 {
+	"complex-cbrt*": func(z complex128) complex128 {
 		var norm, arg = cmplx.Polar(z)
 		return cmplx.Rect(math.Cbrt(norm), (arg / 3.0))
 	},

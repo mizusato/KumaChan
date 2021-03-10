@@ -17,14 +17,22 @@ type Uint32  native;  // uint32
 type Uint64  native;  // uint64
 
 // Integer Conversions
-export function from: (&(Uint32)(Number))  native 'Number from Uint32';
-export function from: (&(Uint16)(Number))  native 'Number from Uint16';
-export function from: (&(Uint8)(Number))  native 'Number from Uint8';
+export function convert:
+    &(Uint32) => Number
+    native 'Number from Uint32';
+export function convert:
+    &(Uint16) => Number
+    native 'Number from Uint16';
+export function convert:
+    &(Uint8) => Number
+    native 'Number from Uint8';
 
 // Float <-> Float*
-export function from: ( &(Float) Float* )
+export function convert:
+    &(Float) => Float*
     native 'Float* from Float';
-export function check-nan-inf: ( &(Float*) Maybe[Float] )
+export function check-nan-inf:
+    &(Float*) => Maybe[Float]
     native 'check-nan-inf-float';
 
 // Basic Sum Types
@@ -45,64 +53,65 @@ type Ordering enum {
     type ==;
     type >>;
 };
-export function =: ( &(Bool,Bool) Bool )  native 'sum-index-equal';
-export function =: ( &(Ordering,Ordering) Bool )  native 'sum-index-equal';
+export function =:
+    &(Bool,Bool) => Bool
+    native 'sum-index-equal';
+export function =:
+    &(Ordering,Ordering) => Bool
+    native 'sum-index-equal';
 
-// Type Cast
-type Cast[T,U] implicit {
-    from: (& T U)
+// Type Conversion
+type Conv[T,U] implicit {
+    convert: (& T U)
 };
-export function to[T,U]: implicit[Cast[T,U]] ( &(T) U )
-    ( &(t)
-        from t
-    );
 
-export function assume[T]:   ( &((Bool,T),(&()(T))) T )
-    ( &(input,k)
+export function assume:[T]
+    &((Bool,T), &()=>T) => T
+    &(input, k) =>
         let (cond, fallback) := input,
         if cond:
-            k(),
+            { k () },
         else:
-            fallback
-    );
+            fallback;
 
 
 // ----------
 // TODO: rename the following functions
 
-export function maybe[A,B]:  ( &(Maybe[A],(&(A)(B))) Maybe[B] )
-    ( &(v?, f)
+export function maybe:[A,B]
+    &(Maybe[A], &(A) => B)) => Maybe[B]
+    &(v?, f) =>
         switch v?:
         case Just v:
-            Just (f v),
+            { Just { f v } },
         case N/A:
             N/A,
-        end
-    );
+        end;
 
-export function maybe[A,B]:  ( &((Maybe[A],B),(&(A)(B))) B )
-    ( &(input, f)
+export function maybe:[A,B]
+    &((Maybe[A],B), &(A) => B) => B
+    &(input, f) =>
         let (v?, fallback) := input,
         switch v?:
         case Just v:
-            f v,
+            { f v },
         case N/A:
             fallback,
-        end
-    );
+        end;
 
-export function maybe?[A,B]: ( &(Maybe[A],(&(A)(Maybe[B]))) Maybe[B] )
-    ( &(v?, k)
+export function maybe?:[A,B]
+    &(Maybe[A], &(A) => Maybe[B]) => Maybe[B]
+    &(v?, k) =>
         switch v?:
         case Just v:
-            (k v),
+            { k v },
         case N/A:
             N/A,
-        end
-    );
+        end;
 
-export function unwrap?[T]: ( &(Maybe[Maybe[T]]) Maybe[T] )
-    ( &(v??)
+export function unwrap?:[T]
+    &(Maybe[Maybe[T]]) => Maybe[T]
+    &(v??) =>
         switch v??:
         case Just v?:
             switch v?:
@@ -113,16 +122,15 @@ export function unwrap?[T]: ( &(Maybe[Maybe[T]]) Maybe[T] )
             end,
         case N/A:
             N/A,
-        end
-    );
+        end;
 
-export function fallback?[T]: ( &(Maybe[T],T) T )
-    ( & (t?, fallback)
+export function fallback?:[T]
+    &(Maybe[T], T) => T
+    &(t?, fallback) =>
         switch t?:
         case Just t:
             t,
         case N/A:
             fallback,
-        end
-    );
+        end;
 

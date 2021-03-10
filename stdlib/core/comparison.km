@@ -1,59 +1,80 @@
 type Eq[T] implicit {
-    = : (&(T,T)(Bool))
+    = : &(T,T) => Bool
 };
+
 type Ord[T] implicit {
-    < : (&(T,T)(Bool))
+    < : &(T,T) => Bool
 };
 
-export function != [T]: implicit[Eq[T]]  (&(T,T)(Bool))
-    (&(a,b)(not $(a = b)));
-export function  > [T]: implicit[Ord[T]] (&(T,T)(Bool))
-    (&(a,b)($(b < a)));
-export function <= [T]: implicit[Ord[T]] (&(T,T)(Bool))
-    (&(a,b)(not $(b < a)));
-export function >= [T]: implicit[Ord[T]] (&(T,T)(Bool))
-    (&(a,b)(not $(a < b)));
-export function min[T]: implicit[Ord[T]] (&(T,T)(T))
-    (&(a,b)(if $(a < b): a, else: b));
-export function max[T]: implicit[Ord[T]] (&(T,T)(T))
-    (&(a,b)(if $(b < a): a, else: b));
 
-export function  = :(&(Number,Number)(Bool))      native '=Number';
-export function  < :(&(Number,Number)(Bool))      native '<Number';
-export function <> :(&(Number,Number)(Ordering))  native '<>Number';
+export function !=:
+    [T] (Eq[T]) 
+    &(T,T) => Bool
+    &(a,b) => { not (a = b) };
 
-export function  = :(&(Uint8,Uint8)(Bool))      native '=Uint8';
-export function  < :(&(Uint8,Uint8)(Bool))      native '<Uint8';
-export function <> :(&(Uint8,Uint8)(Ordering))  native '<>Uint8';
+export function >:
+    [T] (Ord[T])
+    &(T,T) => Bool
+    &(a,b) => (b < a);
 
-export function  = :(&(Uint16,Uint16)(Bool))      native '=Uint16';
-export function  < :(&(Uint16,Uint16)(Bool))      native '<Uint16';
-export function <> :(&(Uint16,Uint16)(Ordering))  native '<>Uint16';
+export function <=:
+    [T] (Ord[T])
+    &(T,T) => Bool
+    &(a,b) => { not (b < a) };
 
-export function  = :(&(Uint32,Uint32)(Bool))      native '=Uint32';
-export function  < :(&(Uint32,Uint32)(Bool))      native '<Uint32';
-export function <> :(&(Uint32,Uint32)(Ordering))  native '<>Uint32';
+export function >=:
+    [T] (Ord[T])
+    &(T,T) => Bool
+    &(a,b) => { not (a < b) };
 
-export function  = :(&(Uint64,Uint64)(Bool))      native '=Uint64';
-export function  < :(&(Uint64,Uint64)(Bool))      native '<Uint64';
-export function <> :(&(Uint64,Uint64)(Ordering))  native '<>Uint64';
+export function min:
+    [T] (Ord[T])
+    &(T,T) => T
+    &(a,b) => (if (a < b): a, else: b);
 
-export function  = :(&(Float,Float)(Bool))      native '=Float';
-export function  < :(&(Float,Float)(Bool))      native '<Float';
-export function <> :(&(Float,Float)(Ordering))  native '<>Float';
+export function max:
+    [T] (Ord[T])
+    &(T,T) => T
+    &(a,b) => (if $(b < a): a, else: b);
 
-export function  = :(&(Int8,Int8)(Bool))      native '=Int8';
-export function  < :(&(Int8,Int8)(Bool))      native '<Int8';
-export function <> :(&(Int8,Int8)(Ordering))  native '<>Int8';
 
-export function  = :(&(Int16,Int16)(Bool))      native '=Int16';
-export function  < :(&(Int16,Int16)(Bool))      native '<Int16';
-export function <> :(&(Int16,Int16)(Ordering))  native '<>Int16';
+export function  =: &(Number,Number) => Bool      native '=Number';
+export function  <: &(Number,Number) => Bool      native '<Number';
+export function <>: &(Number,Number) => Ordering  native '<>Number';
 
-export function  = :(&(Int32,Int32)(Bool))      native '=Int32';
-export function  < :(&(Int32,Int32)(Bool))      native '<Int32';
-export function <> :(&(Int32,Int32)(Ordering))  native '<>Int32';
+export function  =: &(Uint8,Uint8) => Bool      native '=Uint8';
+export function  <: &(Uint8,Uint8) => Bool      native '<Uint8';
+export function <>: &(Uint8,Uint8) => Ordering  native '<>Uint8';
 
-export function  = :(&(Int64,Int64)(Bool))      native '=Int64';
-export function  < :(&(Int64,Int64)(Bool))      native '<Int64';
-export function <> :(&(Int64,Int64)(Ordering))  native '<>Int64';
+export function  =: &(Uint16,Uint16) => Bool      native '=Uint16';
+export function  <: &(Uint16,Uint16) => Bool      native '<Uint16';
+export function <>: &(Uint16,Uint16) => Ordering  native '<>Uint16';
+
+export function  =: &(Uint32,Uint32) => Bool      native '=Uint32';
+export function  <: &(Uint32,Uint32) => Bool      native '<Uint32';
+export function <>: &(Uint32,Uint32) => Ordering  native '<>Uint32';
+
+export function  =: &(Uint64,Uint64) => Bool      native '=Uint64';
+export function  <: &(Uint64,Uint64) => Bool      native '<Uint64';
+export function <>: &(Uint64,Uint64) => Ordering  native '<>Uint64';
+
+export function  =: &(Float,Float) => Bool      native '=Float';
+export function  <: &(Float,Float) => Bool      native '<Float';
+export function <>: &(Float,Float) => Ordering  native '<>Float';
+
+export function  =: &(Int8,Int8) => Bool      native '=Int8';
+export function  <: &(Int8,Int8) => Bool      native '<Int8';
+export function <>: &(Int8,Int8) => Ordering  native '<>Int8';
+
+export function  =: &(Int16,Int16) => Bool      native '=Int16';
+export function  <: &(Int16,Int16) => Bool      native '<Int16';
+export function <>: &(Int16,Int16) => Ordering  native '<>Int16';
+
+export function  =: &(Int32,Int32) => Bool      native '=Int32';
+export function  <: &(Int32,Int32) => Bool      native '<Int32';
+export function <>: &(Int32,Int32) => Ordering  native '<>Int32';
+
+export function  =: &(Int64,Int64) => Bool      native '=Int64';
+export function  <: &(Int64,Int64) => Bool      native '<Int64';
+export function <>: &(Int64,Int64) => Ordering  native '<>Int64';
+

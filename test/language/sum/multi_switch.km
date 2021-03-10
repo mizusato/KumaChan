@@ -17,7 +17,7 @@ function parse-abc:
             panic 'invalid ABC'
     );
 
-function from:
+function convert:
     ( &(ABC) String )
 	( &(x)
         switch x:

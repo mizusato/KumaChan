@@ -26,66 +26,123 @@ export function str:
     &(T) => String
     &(x) => { from x };
 
-export function from: (&(Array[Char])(String))  native 'String from Array';
-export function from: (&(Char)(String))         native 'String from Char';
-export function from: (&(Number)(String))       native 'String from Number';
-export function from: (&(Bool)(String))         native 'String from Bool';
-export function from: (&(Float)(String))        native 'String from Float';
-export function from: (&(Float*)(String))
-    ( &(x*)
-        switch (check-nan-inf x*):
-            case Just x: (:String: from x),
+export function convert:
+    &(Array[Char]) => String
+    native 'String from Array';
+
+export function convert:
+    &(Char) => String
+    native 'String from Char';
+
+export function convert:
+    &(Number) => String
+    native 'String from Number';
+
+export function convert:
+    &(Bool) => String
+    native 'String from Bool';
+
+export function convert:
+    &(Float) => String
+    native 'String from Float';
+
+export function convert:
+    &(Float*) => String
+    &(x*) =>
+        switch { check-nan-inf x* }:
+            case Just x:  { from x },
             case N/A:    'INVALID',
-        end
-    );
+        end;
 
-// encodes string into UTF-8 byte sequence
-export function encode:  (&(String)(Bytes))         native 'encode-utf8';
-// decodes string from UTF-8 byte sequence
-export function decode:  (&(Bytes)(Maybe[String]))  native 'decode-utf8';
-// decodes string from UTF-8 byte sequence (outputs \uFFFD on errors)
-export function decode!: (&(Bytes)(String))         native 'force-decode-utf8';
+/// encodes string into UTF-8 byte sequence
+export function encode:
+    &(String) => Bytes
+    native 'encode-utf8';
 
-export function quote:   (&(String)(String))         native 'quote';
-export function unquote: (&(String)(Maybe[String]))  native 'unquote';
+/// decodes string from UTF-8 byte sequence
+export function decode:
+    &(Bytes) => Maybe[String]
+    native 'decode-utf8';
+
+/// decodes string from UTF-8 byte sequence (outputs \uFFFD on error)
+export function decode!:
+    &(Bytes) => String
+    native 'force-decode-utf8';
+
+export function quote:
+    &(String) => String
+    native 'quote';
+
+export function unquote:
+    &(String) => Maybe[String]
+    native 'unquote';
 
 // TODO: parse-int
-export function parse-float: (&(String)(Maybe[Float]))  native 'parse-float';
+export function parse-float:
+    &(String) => Maybe[Float]
+    native 'parse-float';
 
-export function or: (&(String,String)(String))
-    ( &(str, fallback) (if $(str = ''): fallback, else: str ) );
+export function substr:
+    &(String,(Number,Number)) => String
+    &(str,range) => str.{ slice range };
 
-export function substr: (&(String,Number,Number)(String))
-    ( &(str,l,r) (String (str.slice l r)) );
+export function find:
+    &(String,String) => Maybe[Number]
+    native 'str-find';
 
-export function find: (&(String,String)(Maybe[Number]))  native 'str-find';
-export function contains: (&(String,String)(Bool))
-    ( &(str,sub)
-        switch (str.find sub):
+export function contains:
+    &(String,String) => Bool
+    &(str,sub) =>
+        switch str.{find(sub)}:
             case Just _: Yes,
             case N/A:    No,
-        end
-    );
-export function contains: (&(String,Char)(Bool))
-    ( &(str,char)(str.some (&(c) $(c = char))) );
+        end;
 
-export function concat: (&(Array[String])(String))      native 'str-concat';
-export function split:  (&(String,String)(Seq[String])) native 'str-split';
-export function join:   (&(Seq[String],String)(String)) native 'str-join';
-export function join:   (&(Seq[String],Char)(String))
-    (&(seq,char)(seq.join (String [char])));
-export function join:   (&(Array[String],String)(String))
-    (&(arr,sep)(arr.iterate.join sep));
-export function join:   (&(Array[String],Char)(String))
-    (&(arr,char)(arr.iterate.join char));
+export function contains:
+    &(String,Char) => Bool
+    &(str,char) =>
+        str. { some &(c) => (c = char) };
 
-export function trim: (&(String,Char)(String))
+export function concat:
+    &(Array[String]) => String
+    native 'str-concat';
+
+export function split:
+    &(String,String) => Seq[String]
+    native 'str-split';
+
+export function join:
+    &(Seq[String],String) => String
+    native 'str-join';
+
+export function join:
+    &(Seq[String],Char) => String
+    &(seq,char) => seq.{join({String [char]})};
+
+export function join:
+    &(Array[String],String) => String
+    &(arr,sep) => arr.{iterate}.{join(sep)};
+
+export function join:
+    &(Array[String],Char) => String
+    &(arr,char) => arr.{iterate}.{join(char)};
+
+export function trim:
+    &(String,Char) => String
     native 'trim';
-export function trim-left: (&(String,Char)(String))
+
+export function trim-left:
+    &(String,Char) => String
     native 'trim-left';
-export function trim-right: (&(String,Char)(String))
+
+export function trim-right:
+    &(String,Char) => String
     native 'trim-right';
-export function trim-prefix: (&(String,String)(String))
+
+export function trim-prefix:
+    &(String,String) => String)
     native 'trim-prefix';
-export function trim-suffix: (&(String,String)(String))
+
+export function trim-suffix:
+    &(String,String) => String
     native 'trim-suffix';

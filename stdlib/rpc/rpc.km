@@ -4,10 +4,10 @@ type ServiceIdentifier[Instance,Argument,Constructor,Consumer]
 type ServerBackend native;
 type ClientBackend native;
 export function rpc-server-cleartext:
-    ( & { network: String, addr: String } ServerBackend )
+    & { network: String, addr: String } => ServerBackend
     native 'rpc-server-cleartext-net';
 export function rpc-client-cleartext:
-    ( & { network: String, addr: String } ClientBackend )
+    & { network: String, addr: String } => ClientBackend
     native 'rpc-client-cleartext-net';
 
 type ServerOptions { common: CommonOptions };
@@ -38,28 +38,32 @@ export const LimitOptionsDefault: LimitOptions {
 export function zero-value: (&()(LimitOptions)) (&()(LimitOptionsDefault));
 
 type Connection native;
-export function wait-closed: ( &(Connection) Action[unit,Error] )
+export function wait-closed:
+    &(Connection) => Action[unit,Error]
     native 'rpc-connection-wait-closed';
-export function close: ( &(Connection) Action[unit] )
+export function close:
+    &(Connection) => Action[unit]
     native 'rpc-connection-close';
 
 export function rpc-serve[Instance,Argument,Constructor,Consumer]:
-    ( & {
+    & {
         service:     ServiceIdentifier[Instance,Argument,Constructor,Consumer],
         backend:     ServerBackend,
         options:     ServerOptions,
         constructor: Constructor
-    } Action[unit,Error] )
+    }
+    => Action[unit,Error]
     native 'rpc-serve';
 
 export function rpc-access[Instance,Argument,Constructor,Consumer]:
-    ( & {
+    & {
         service:  ServiceIdentifier[Instance,Argument,Constructor,Consumer],
         backend:  ClientBackend,
         options:  ClientOptions,
         argument: Argument,
         consumer: Consumer
-    } Action[unit,Error] )
+    }
+    => Action[unit,Error]
     native 'rpc-access';
 
 

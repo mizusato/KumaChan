@@ -1,3 +1,7 @@
+// TODO: use const error code instead
+//       (type ErrorKind opaque Number)
+//       (const EOF: ErrorKind := native 'ErrorCodeEOF')
+
 type ErrorKind enum {
     type EOF;
     type ClosedPipe;
@@ -5,8 +9,8 @@ type ErrorKind enum {
 };
 
 export function is:
-    ( &(Error,ErrorKind) Bool )
-    ( &(err, kind)
+    &(Error,ErrorKind) => Bool
+    &(err, kind) =>
         select (err.kind!!, kind):
         case [EOF,EOF]:
             Yes,
@@ -14,20 +18,22 @@ export function is:
             Yes,
         default:
             No,
-        end
-    );
+        end;
+
 export function kind:
-    ( &(Error) ErrorKind )
-    ( &(err)
+    &(Error) => ErrorKind
+    &(err) =>
         if (err | is-eof):
             EOF,
         elif (err | is-closed-pipe):
             ClosedPipe,
         else:
-            UnknownError
-    );
+            UnknownError;
 
-function is-eof: ( &(Error) Bool )
+function is-eof:
+    &(Error) => Bool
     native 'is-eof';
-function is-closed-pipe: ( &(Error)(Bool) )
+
+function is-closed-pipe:
+    &(Error) => Bool
     native 'is-closed-pipe';

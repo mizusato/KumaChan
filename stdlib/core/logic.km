@@ -1,7 +1,13 @@
-// Logic Functions
-export function not: (&(Bool)(Bool))
-    (&(p)(if p: No, else: Yes));
-export function and: (&(Bool,Bool)(Bool))
-    (&(p,q)(if p: (if q: Yes, else: No), else: No));
-export function  or: (&(Bool,Bool)(Bool))
-    (&(p,q)(if p: Yes, else: (if q: Yes, else: No)));
+## Boolean Operators
+
+export function not:
+    &(Bool) => Bool
+    &(p) => (if p: No, else: Yes);
+
+export function and:
+    &(Bool,Bool) => Bool
+    &(p,q) => (if p: (if q: Yes, else: No), else: No);
+
+export function or:
+    &(Bool,Bool) => Bool
+    &(p,q) => (if p: Yes, else: (if q: Yes, else: No));

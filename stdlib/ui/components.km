@@ -1,9 +1,9 @@
 type Component Action*[Node]; // Observable<VNode>
 
-export function ui-empty: ( &() Component )
-    ( &(_)
-        yield-thunk (&(_)(dom-node 'div' [('display','none')] []))
-    );
+export function ui-empty:
+    &() => Component
+    &() => { yield-thunk &(_) =>
+        { dom-node ('div', [('display','none')], []) } };
 export function ui-element: ( &(String,Array[Component]) Component )
     ( &(tag,children)
         if $((children.length) = 0):

@@ -4,5 +4,6 @@ export const Args: Array[String]
     native 'OS::Args';
 
 type ProcessExit protected Action;
-export function exit: ( &(Uint8) ProcessExit )
+export function exit:
+    &(Uint8) => ProcessExit
     native 'exit';

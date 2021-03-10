@@ -13,80 +13,114 @@ type FileState {
 };
 type FileMode   Uint32;
 
-export function walk-dir: ( &(Path) Action*[(Path,FileState),Error] )
+export function walk-dir:
+    &(Path) => Action*[(Path,FileState),Error]
     native 'walk-dir';
-export function list-dir: ( &(Path) Action*[(Path,FileState),Error] )
+
+export function list-dir:
+    &(Path) => Action*[(Path,FileState),Error]
     native 'list-dir';
 
 // TODO: use consumer (File -> Action, close on complete) instead of open/close
-export function open-read-only: ( &(Path) Action[FileReadOnly,Error] )
+export function open-read-only:
+    &(Path) => Action[FileReadOnly,Error]
     native 'open-read-only';
-export function open-read-write: ( &(Path) Action[FileReadWrite,Error] )
+export function open-read-write:
+    &(Path) => Action[FileReadWrite,Error]
     native 'open-read-write';
-export function open-read-write-create: ( &(Path) Action[FileReadWrite,Error] )
+export function open-read-write-create:
+    &(Path) => Action[FileReadWrite,Error]
     native 'open-read-write-create';
-export function open-overwrite: ( &(Path) Action[FileWriteOnly,Error] )
+export function open-overwrite:
+    &(Path) => Action[FileWriteOnly,Error]
     native 'open-overwrite';
-export function open-append: ( &(Path) Action[FileWriteOnly,Error] )
+export function open-append:
+    &(Path) => Action[FileWriteOnly,Error]
     native 'open-append';
 
-export function close: ( &(File) Action )
+export function close:
+    &(File) => Action
     native 'file-close';
 
-export function get-state: ( &(File) Action[FileState,Error] )
+export function get-state:
+    &(File) => Action[FileState,Error]
     native 'file-get-state';
 
-export function read:  ( &(FileReadOnly,Number) Action[Bytes,Error] )
+export function read:
+    &(FileReadOnly,Number) => Action[Bytes,Error]
     native 'file-read';
-export function read:  ( &(FileReadWrite,Number) Action[Bytes,Error] )
+export function read:
+    &(FileReadWrite,Number) => Action[Bytes,Error]
     native 'file-read';
-export function write: ( &(FileWriteOnly,Bytes) Action[unit,Error] )
+export function write:
+    &(FileWriteOnly,Bytes) => Action[unit,Error]
     native 'file-write';
-export function write: ( &(FileReadWrite,Bytes) Action[unit,Error] )
+export function write:
+    &(FileReadWrite,Bytes) => Action[unit,Error]
     native 'file-write';
 
-export function seek-start:    ( &(File,Uint64) Action[Uint64,Error] )
+export function seek-start:
+    &(File,Uint64) => Action[Uint64,Error]
     native 'file-seek-start';
-export function seek-forward:  ( &(File,Uint64) Action[Uint64,Error] )
+export function seek-forward:
+    &(File,Uint64) => Action[Uint64,Error]
     native 'file-seek-forward';
-export function seek-backward: ( &(File,Uint64) Action[Uint64,Error] )
+export function seek-backward:
+    &(File,Uint64) => Action[Uint64,Error]
     native 'file-seek-backward';
-export function seek-end:      ( &(File,Uint64) Action[Uint64,Error] )
+export function seek-end:
+    &(File,Uint64) => Action[Uint64,Error]
     native 'file-seek-end';
 
-export function read-char:  ( &(FileReadOnly) Action[Char,Error] )
+export function read-char:
+    &(FileReadOnly) => Action[Char,Error]
     native 'file-read-char';
-export function read-char:  ( &(FileReadWrite) Action[Char,Error] )
+export function read-char:
+    &(FileReadWrite) => Action[Char,Error]
     native 'file-read-char';
-export function write-char: ( &(FileWriteOnly,Char) Action[unit,Error] )
+export function write-char:
+    &(FileWriteOnly,Char) => Action[unit,Error]
     native 'file-write-char';
-export function write-char: ( &(FileReadWrite,Char) Action[unit,Error] )
+export function write-char:
+    &(FileReadWrite,Char) => Action[unit,Error]
     native 'file-write-char';
 
-export function read-string:  ( &(FileReadOnly) Action[String,Error] )
+export function read-string:
+    &(FileReadOnly) => Action[String,Error]
     native 'file-read-string';
-export function read-string:  ( &(FileReadWrite) Action[String,Error] )
+export function read-string:
+    &(FileReadWrite) => Action[String,Error]
     native 'file-read-string';
-export function write-string: ( &(FileWriteOnly,String) Action[unit,Error] )
+export function write-string:
+    &(FileWriteOnly,String) => Action[unit,Error]
     native 'file-write-string';
-export function write-string: ( &(FileReadWrite,String) Action[unit,Error] )
+export function write-string:
+    &(FileReadWrite,String) => Action[unit,Error]
     native 'file-write-string';
 
-export function read-line:  ( &(FileReadOnly) Action[String,Error] )
+export function read-line:
+    &(FileReadOnly) => Action[String,Error]
     native 'file-read-line';
-export function read-line:  ( &(FileReadWrite) Action[String,Error] )
+export function read-line:
+    &(FileReadWrite) => Action[String,Error]
     native 'file-read-line';
-export function write-line: ( &(FileWriteOnly,String) Action[unit,Error] )
+export function write-line:
+    &(FileWriteOnly,String) => Action[unit,Error]
     native 'file-write-line';
-export function write-line: ( &(FileReadWrite,String) Action[unit,Error] )
+export function write-line:
+    &(FileReadWrite,String) => Action[unit,Error]
     native 'file-write-line';
 
-export function read-lines: ( &(FileReadOnly) Action*[String,Error] )
+export function read-lines:
+    &(FileReadOnly) => Action*[String,Error]
     native 'file-read-lines';
-export function read-lines: ( &(FileReadWrite) Action*[String,Error] )
+export function read-lines:
+    &(FileReadWrite) => Action*[String,Error]
     native 'file-read-lines';
 
-export function read-all: ( &(FileReadOnly) Action[Bytes,Error] )
+export function read-all:
+    &(FileReadOnly) => Action[Bytes,Error]
     native 'file-read-all';
-export function read-all: ( &(FileReadWrite) Action[Bytes,Error] )
+export function read-all:
+    &(FileReadWrite) => Action[Bytes,Error]
     native 'file-read-all';

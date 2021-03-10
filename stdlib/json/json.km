@@ -7,28 +7,34 @@ type Value enum {
     type Null;
 };
 
-export function json-parse: (&(String)(Result[Self::Value,String]))
-    (&(str)(parse str));
+// TODO: implement json parser using parser combinators
 
-export function json-stringify: (&(Self::Value)(String))
-    (& (jv)
-        switch jv:
-        case Self::Object (o):
-            (o.iterate.map(&(key,value)(
-                ("#:#" (quote key) (json-stringify value))
-            )).join(',')."{#}"),
-        case Self::Array (a):
-            (a.iterate.map(json-stringify).join(',')."[#]"),
-        case Self::Boolean (b):
-            switch b:
+export function json-stringify:
+    &(Self::Value) => String
+    &(v) =>
+        switch v:
+        case Self::Object object:
+            object
+                . { iterate }
+                . { map &(key,value) =>
+                    { "#:#" ({quote key}, {json-stringify value}) } }
+                . { join ',' }
+                . { "{#}" },
+        case Self::Array array:
+            array
+                . { iterate }
+                . { map json-stringify }
+                . { join ',' }
+                . { "[#]" },
+        case Self::Boolean boolean:
+            switch boolean:
                 case Yes: 'true',
                 case No:  'false',
             end,
-        case Self::Number (n):
-            (str n),
-        case Self::String (s):
-            (quote s),
+        case Self::Number number:
+            { str number },
+        case Self::String string:
+            { quote string },
         case Self::Null:
-            ('null'),
-        end
-    );
+            'null',
+        end;

@@ -1,11 +1,17 @@
 type HttpResponse native;
 
-export function status-code: ( &(HttpResponse) Number )
+export function status-code:
+    &(HttpResponse) => Number
     native 'http-response-status-code';
-export function header: ( &(HttpResponse) Map[String,Array[String]] )
+
+export function header:
+    &(HttpResponse) => Map[String,Array[String]]
     native 'http-response-header';
-export function body: ( &(HttpResponse) Bytes )
+
+export function body:
+    &(HttpResponse) => Bytes
     native 'http-response-body';
 
-export function http-get: ( &(URL) Action[HttpResponse,Error] )
+export function http-get:
+    &(URL) => Action[HttpResponse,Error]
     native 'http-get';

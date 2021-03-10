@@ -5,28 +5,32 @@ export const Stdout: FileWriteOnly
 export const Stderr: FileWriteOnly
     native 'OS::Stderr';
 
-export function scan:  (&()(Action[String,Error]))
+export function scan:
+    &() => Action[String,Error]
     ( &(_)
-        let read := Stdin | read-string,
-        if $(Kind = 'windows'):
-            read | map (&(str)(str.trim-suffix ''..\r)),
+        let read := Stdin.{read-string},
+        if (Kind = 'windows'):
+            read. { map &(str) => str.{trim-suffix(\r.[String])} },
         else:
-            read
-    );
-export function print: (&(String)(Action[unit,Error]))
-    (&(line)(Stdout | write-string line));
-export function error: (&(String)(Action[unit,Error]))
-    (&(line)(Stderr | write-string line));
+            read;
+export function print:
+    &(String) => Action[unit,Error]
+    &(s) => Stdout.{write-string(s)};
+export function error:
+    &(String) => Action[unit,Error]
+    &(s) => Stderr.{write-string(s)};
 
-export function scanln:  (&()(Action[String,Error]))
-    ( &(_)
-        let read := Stdin | read-line,
-        if $(Kind = 'windows'):
-            read | map (&(str)(str.trim-suffix ''..\r)),
+export function scanln:
+    &() => Action[String,Error]
+    &() =>
+        let read := Stdin.{read-line},
+        if (Kind = 'windows'):
+            read. { map &(str) => str.{trim-suffix(\r.[String])} },
         else:
-            read
-    );
-export function println: (&(String)(Action[unit,Error]))
-    (&(line)(Stdout | write-line line));
-export function errorln: (&(String)(Action[unit,Error]))
-    (&(line)(Stderr | write-line line));
+            read;
+export function println:
+    &(String) => Action[unit,Error]
+    &(l) => Stdout.{write-line(l)};
+export function errorln:
+    &(String) => Action[unit,Error]
+    &(l) => Stderr.{write-line(l)};
