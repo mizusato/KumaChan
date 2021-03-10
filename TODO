@@ -1,8 +1,18 @@
 TODO
 
+- rename tools (tools-server) to atom (atom-plugin)
+
 - move parser package to lang/
 
-- revise lambda syntax and pipeline dot syntax
+- tuple input APIs --> bundle input
+
+- "check-nan-inf" --> "convert T -> Maybe[U]"
+
+- consider type Const[T] protected T ('literal': Const[String])
+
+- unused private const/function warning
+
+- crash report window
 
 - UI: Web(main) + Native(supplement)
 
