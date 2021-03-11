@@ -182,7 +182,7 @@ var __SyntaxDefinition = [...] string {
       "const_def? = := const_value",
       "const_value = native | expr!",
     "expr = term pipes",
-          "pipes? = . pipe! pipes",
+      "pipes? = . pipe! pipes",
         "pipe = pipe_func | pipe_get | pipe_cast",
           "pipe_func = { callee! pipe_func_arg }!",
             "callee = expr",
