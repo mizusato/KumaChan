@@ -6,7 +6,7 @@ import (
 	"math/big"
 	. "kumachan/util/error"
 	"kumachan/stdlib"
-	"kumachan/compiler/loader/parser/ast"
+	"kumachan/lang/parser/ast"
 )
 
 

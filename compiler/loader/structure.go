@@ -1,10 +1,10 @@
 package loader
 
 import (
-	"kumachan/compiler/loader/parser"
-	"kumachan/compiler/loader/parser/ast"
-	"kumachan/compiler/loader/parser/syntax"
-	"kumachan/compiler/loader/parser/transformer"
+	"kumachan/lang/parser"
+	"kumachan/lang/parser/ast"
+	"kumachan/lang/parser/syntax"
+	"kumachan/lang/parser/transformer"
 	"kumachan/compiler/loader/common"
 )
 

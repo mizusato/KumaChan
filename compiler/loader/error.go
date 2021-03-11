@@ -2,7 +2,7 @@ package loader
 
 import (
 	. "kumachan/util/error"
-	"kumachan/compiler/loader/parser"
+	"kumachan/lang/parser"
 )
 
 

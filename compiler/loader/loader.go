@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"kumachan/rpc"
 	"kumachan/lang"
-	"kumachan/compiler/loader/parser/ast"
+	"kumachan/lang/parser/ast"
 )
 
 

@@ -1,7 +1,7 @@
 package parser
 
-import "kumachan/compiler/loader/parser/cst"
-import "kumachan/compiler/loader/parser/syntax"
+import "kumachan/lang/parser/cst"
+import "kumachan/lang/parser/syntax"
 import . "kumachan/util/error"
 
 

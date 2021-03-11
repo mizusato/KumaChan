@@ -2,7 +2,7 @@ package generator
 
 import (
 	"kumachan/compiler/loader"
-	"kumachan/compiler/loader/parser/ast"
+	"kumachan/lang/parser/ast"
 	. "kumachan/util/error"
 	ch "kumachan/compiler/checker"
 	"kumachan/lang"

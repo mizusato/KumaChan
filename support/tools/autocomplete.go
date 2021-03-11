@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 	"path/filepath"
-	"kumachan/compiler/loader/parser/syntax"
+	"kumachan/lang/parser/syntax"
 	"kumachan/compiler/loader"
-	"kumachan/compiler/loader/parser/ast"
+	"kumachan/lang/parser/ast"
 	"kumachan/stdlib"
 	"sort"
 )

@@ -1,6 +1,6 @@
 package checker
 
-import "kumachan/compiler/loader/parser/ast"
+import "kumachan/lang/parser/ast"
 
 
 func CheckCps(cps ast.Cps, ctx ExprContext) (SemiExpr, *ExprError)  {

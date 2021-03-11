@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"strconv"
 	"kumachan/stdlib"
-	"kumachan/compiler/loader/parser/ast"
+	"kumachan/lang/parser/ast"
 )
 
 

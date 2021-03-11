@@ -5,7 +5,7 @@ import (
 	"strings"
 	. "kumachan/util/error"
 	"kumachan/compiler/loader"
-	"kumachan/compiler/loader/parser/ast"
+	"kumachan/lang/parser/ast"
 )
 
 
