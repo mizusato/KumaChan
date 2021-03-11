@@ -47,9 +47,15 @@ export function flat-map:[A,B]
 export function scan:[T,A]
     &(Seq[T], A, &(A,T) => A) => Seq[A]
     native 'seq-scan';
+export function scan:[T,A]
+    &(Seq[T], (A, &(A,T) => A)) => Seq[A]
+    &(seq,opts) => let (init,f) := opts, { scan (seq,init,f) };
 export function reduce:[T,A]
     &(Seq[T], A, &(A,T) => A) => A
     native 'seq-reduce';
+export function reduce:[T,A]
+    &(Seq[T], (A, &(A,T) => A)) => A
+    &(seq,opts) => let (init,f) := opts, { reduce (seq,init,f) };
 
 export function some:[T]
     &(Seq[T], &(T) => Bool) => Bool
@@ -89,10 +95,15 @@ export function reverse:[T]
 export function slice:[T]
     &(Array[T], Number, Number) => Array[T]
     native 'array-slice';
-
+export function slice:[T]
+    &(Array[T], (Number,Number)) => Array[T]
+    &(a,range) => let (l,r) := range, { slice (a,l,r) };
 export function slice-view:[T]
-    ( &(Array[T],Number,Number) Array[T] )
+    &(Array[T], Number, Number) => Array[T]
     native 'array-slice-view';
+export function slice-view:[T]
+    &(Array[T], (Number,Number)) => Array[T]
+    &(a,range) => let (l,r) := range, { slice-view (a,l,r) };
 
 export function map:[A,B]
     &(Array[A], &(A) => B) => Array[B]
@@ -106,16 +117,16 @@ export function filter:[T]
     &(arr,f) => arr.{iterate}.{filter(f)}.{collect};
 
 export function scan:[T,A]
-    &(Array[T], A, &(A,T) => A) => Array[A]
-    &(arr,init,f) => arr.{iterate}.{scan(init,f)}.{collect};
+    &(Array[T], (A, &(A,T) => A)) => Array[A]
+    &(arr,opts) => arr.{iterate}.{scan(opts)}.{collect};
 export function reduce:[T,A]
-    &(Array[T], A, &(A,T) => A) => A
-    &(arr,init,f) => arr.{iterate}.{reduce(init,f)};
+    &(Array[T], (A, &(A,T) => A)) => A
+    &(arr,opts) => arr.{iterate}.{reduce(opts)};
 
-export function some[T]:
+export function some:[T]
     &(Array[T], &(T) => Bool) => Bool
     &(arr,f) => arr.{iterate}.{some(f)};
-export function every[T]:
+export function every:[T]
     &(Array[T], &(T) => Bool) => Bool
     &(arr,f) => arr.{iterate}.{every(f)};
 
@@ -224,7 +235,8 @@ export function is-first-in:[T]
 export function is-last-in:[T]
     &(Action*[Number], Reactive[List[T]]) => Action*[Bool]
     &(@index,@list) =>
-        { combine-latest* (@index, @list.{watch}.{map(length)}) }
+        let @length := ({ watch @list } map &(list) => list.{length}),
+        { combine-latest* (@index, @length) }
             . { map &(index,length) => (index = (length - 1)) }
             . { distinct-until-changed };
 

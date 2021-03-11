@@ -138,7 +138,7 @@ var __SyntaxDefinition = [...] string {
             "field_list = field! more_fields",
               "field = docs tags name :! type!",
               "more_fields? = , field! more_fields",
-          "repr_func = & input_type! @=> output_type!",
+          "repr_func = & input_type! @=>! output_type!",
             "input_type = type",
             "output_type = type",
     "decl_type = docs tags @type name! type_params type_def ;!",

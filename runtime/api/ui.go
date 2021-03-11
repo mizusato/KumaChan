@@ -70,22 +70,16 @@ var UiFunctions = map[string] interface{} {
 			return nil, true
 		})
 	},
-	"ui-dom-node": func (
-		tag      String,
-		styles   *vdom.Styles,
-		attrs    *vdom.Attrs,
-		events   *vdom.Events,
-		content  vdom.Content,
-	) *vdom.Node {
-		var tag_ = RuneSliceFromString(tag)
+	"ui-dom-node": func(tag_ String) *vdom.Node {
+		var tag = RuneSliceFromString(tag_)
 		return &vdom.Node {
-			Tag:     tag_,
-			Props:   vdom.Props {
-				Styles: styles,
-				Attrs:  attrs,
-				Events: events,
+			Tag: tag,
+			Props: vdom.Props {
+				Styles: vdom.EmptyStyles,
+				Attrs:  vdom.EmptyAttrs,
+				Events: vdom.EmptyEvents,
 			},
-			Content: content,
+			Content: vdom.EmptyContent,
 		}
 	},
 	"ui-dom-styles": func(styles container.Map) *vdom.Styles {
@@ -94,10 +88,6 @@ var UiFunctions = map[string] interface{} {
 	},
 	"ui-dom-styles-zero": func(_ Value) *vdom.Styles {
 		return vdom.EmptyStyles
-	},
-	"ui-dom-styles-merge": func(v Value) *vdom.Styles {
-		var list = container.ArrayFrom(v)
-		return ui.VdomMergeStyles(list)
 	},
 	"ui-with-styles": func(node *vdom.Node, styles *vdom.Styles) *vdom.Node {
 		return &vdom.Node {
@@ -118,10 +108,6 @@ var UiFunctions = map[string] interface{} {
 	},
 	"ui-dom-attrs-zero": func(_ Value) *vdom.Attrs {
 		return vdom.EmptyAttrs
-	},
-	"ui-dom-attrs-merge": func(v Value) *vdom.Attrs {
-		var list = container.ArrayFrom(v)
-		return ui.VdomMergeAttrs(list)
 	},
 	"ui-with-attrs": func(node *vdom.Node, attrs *vdom.Attrs) *vdom.Node {
 		return &vdom.Node {
@@ -165,10 +151,6 @@ var UiFunctions = map[string] interface{} {
 	"ui-dom-events-zero": func(_ Value) *vdom.Events {
 		return vdom.EmptyEvents
 	},
-	"ui-dom-events-merge": func(v Value) *vdom.Events {
-		var list = container.ArrayFrom(v)
-		return ui.VdomMergeEvents(list)
-	},
 	"ui-with-events": func(node *vdom.Node, events *vdom.Events) *vdom.Node {
 		return &vdom.Node {
 			Tag:     node.Tag,
@@ -198,6 +180,13 @@ var UiFunctions = map[string] interface{} {
 	},
 	"ui-dom-content-zero": func(_ Value) vdom.Content {
 		return vdom.EmptyContent
+	},
+	"ui-with-content": func(node *vdom.Node, content vdom.Content) *vdom.Node {
+		return &vdom.Node {
+			Tag:     node.Tag,
+			Props:   node.Props,
+			Content: content,
+		}
 	},
 	"ui-event-payload-get-string": func(ev *qt.WebUiEventPayload, key String) String {
 		return StringFromRuneSlice(qt.WebUiEventPayloadGetRunes(ev, RuneSliceFromString(key)))

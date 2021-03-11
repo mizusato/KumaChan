@@ -22,9 +22,9 @@ export function <> :
     native '<>String';
 
 export function str:
-    [T] (Cast[T,String])
+    [T] (Conv[T,String])
     &(T) => String
-    &(x) => { from x };
+    &(x) => { convert x };
 
 export function convert:
     &(Array[Char]) => String
@@ -50,7 +50,7 @@ export function convert:
     &(Float*) => String
     &(x*) =>
         switch { check-nan-inf x* }:
-            case Just x:  { from x },
+            case Just x:  { convert x },
             case N/A:    'INVALID',
         end;
 
@@ -84,7 +84,7 @@ export function parse-float:
 
 export function substr:
     &(String,(Number,Number)) => String
-    &(str,range) => str.{ slice range };
+    &(str,range) => { String str.{ slice range } };
 
 export function find:
     &(String,String) => Maybe[Number]
@@ -140,7 +140,7 @@ export function trim-right:
     native 'trim-right';
 
 export function trim-prefix:
-    &(String,String) => String)
+    &(String,String) => String
     native 'trim-prefix';
 
 export function trim-suffix:

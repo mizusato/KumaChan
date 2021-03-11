@@ -1,26 +1,23 @@
-type Hook[T] (&(&(T)(Component))(Component));
+type Hook[T]
+    &(&(T) => Component) => Component;
 
-export function use[T]: ( &(Hook[T],(&(T)(Component))) Component )
-    ( &(hook,k)
-        k | hook
-    );
-export function use[T]: ( &(Action*[T],(&(T)(Component))) Component )
-    ( &(e,k) (e.switch-map k) );
+export function use:[T]
+    &(Hook[T], &(T) => Component) => Component
+    &(hook, k) => { hook(k) };
 
-export function ui-state[T]: ( &(T) Hook[Reactive[T]] )
-    ( &(initial)
-    ( &(k)
-        ~ with-reactive &(r) := initial,
-        r | k
-    ));
-export function ui-list[T]: ( &(String,Reactive[List[T]]) Hook[(ListKey,Action*[Number],Reactive[T])] )
-    ( &(tag,list)
-    ( &(k)
-        dom-dynamic tag
-            ~ consume &(item) := list,
-            item | k
-    ));
-export function ui-list[T]: ( &(Reactive[List[T]]) Hook[(ListKey,Action*[Number],Reactive[T])] )
-    ( &(list)
-        ui-list 'div' list
-    );
+export function ui-state:[T]
+    &(T) => Hook[Reactive[T]]
+    &(initial) => &(k) =>
+        & with-reactive r := initial,
+        { k(r) };
+
+// TODO: should return Hook[bundle] instead of Hook[tuple]
+export function ui-list:[T]
+    &(String, Reactive[List[T]]) => Hook[(ListKey,Action*[Number],Reactive[T])]
+    &(tag, list) => &(k) =>
+        let children := (list consume &(item) => { k(item) }),
+        { dom-dynamic (tag, children) };
+
+export function ui-list:[T]
+    &(Reactive[List[T]]) => Hook[(ListKey,Action*[Number],Reactive[T])]
+    &(list) => { ui-list ('div',list) };

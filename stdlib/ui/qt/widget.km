@@ -1,10 +1,12 @@
 // QWidget
 type Widget protected Object;
 
-export function show: (&(Widget)(Action))
+export function show:
+    &(Widget) => Action
     native 'qt-show';
 
-export function move-to-screen-center: (&(Widget)(Action))
+export function move-to-screen-center:
+    &(Widget) => Action
     native 'qt-move-to-screen-center';
 
 
@@ -15,85 +17,105 @@ type MainWindow protected Widget;
 // QLabel
 type Label protected Widget;
 
-export function set-text: ( &(Label,String) Action )
-    (&(label,text)(set-property label 'text' 'String' text));
+export function set-text:
+    &(Label, String) => Action
+    &(label, text) => { set-property (label,'text','String',text) };
 
 
 // QLineEdit
 type LineEdit protected Widget;
 
-function get-text: ( &(Static[LineEdit]) String )
-    (&(line)(get-property line 'text' 'String'));
+function get-text:
+    &(Static[LineEdit]) => String
+    &(line) => { get-property (line,'text','String') };
 
-export function text: ( &(LineEdit) Signal[String] )
-    (&(line)(signal line 'textEdited(const QString&)' get-text));
+export function text:
+    &(LineEdit) => Signal[String]
+    &(line) => { signal (line,'textEdited(const QString&)',get-text) };
 
-export function enter: ( &(LineEdit) Signal[unit] )
-    (&(line)(signal line 'returnPressed()'));
+export function enter:
+    &(LineEdit) => Signal[unit]
+    &(line) => { signal (line,'returnPressed()') };
 
-export function set-text: ( &(LineEdit,String) Action )
-    (&(line,text)(set-property line 'text' 'String' text));
+export function set-text:
+    &(LineEdit, String) => Action
+    &(line, text) => { set-property (line,'text','String',text) };
 
 
 // QPlainTextEdit
 type PlainTextEdit protected Widget;
 
-function get-plain-text: ( &(Static[PlainTextEdit]) String )
-    (&(plain)(get-property plain 'plainText' 'String'));
+function get-plain-text:
+    &(Static[PlainTextEdit]) => String
+    &(plain) => { get-property (plain,'plainText','String') };
 
-export function plain-text!: ( &(PlainTextEdit) Signal[String] )
-    (&(plain)(signal plain 'textChanged()' get-plain-text));
-    // no user edit signal
+export function plain-text*:
+    &(PlainTextEdit) => Signal[String]
+    &(plain) => { signal (plain,'textChanged()',get-plain-text) }
+    /* no user edit signal */;
 
 
 // QPushButton
 type PushButton protected Widget;
 
-export function clicked: ( &(PushButton) Signal[unit] )
-    (&(button)(signal button 'clicked()'));
+export function clicked:
+    &(PushButton) => Signal[unit]
+    &(button) => { signal (button,'clicked()') };
 
 
 // QCheckBox
 type CheckBox protected Widget;
 
-function get-checked: ( &(Static[CheckBox]) Bool )
-    (&(checkbox)(get-property checkbox 'checked' 'Bool'));
+function get-checked:
+    &(Static[CheckBox]) => Bool
+    &(checkbox) => { get-property (checkbox,'checked','Bool') };
 
-export function checked: ( &(CheckBox) Signal[Bool] )
-    (&(checkbox)(signal checkbox 'clicked(bool)' get-checked));
+export function checked:
+    &(CheckBox) => Signal[Bool]
+    &(checkbox) => { signal (checkbox,'clicked(bool)',get-checked) };
 
-export function set-checked: ( &(CheckBox,Bool) Action )
-    (&(checkbox,checked)(set-property checkbox 'checked' 'Bool' checked));
+export function set-checked:
+    &(CheckBox, Bool) => Action
+    &(checkbox,checked) => { set-property (checkbox,'checked','Bool',checked) };
 
 
 // QComboBox
 type ComboBox protected Widget;
 
-function get-current-text: ( &(Static[ComboBox]) String )
-    (&(combo)(get-property combo 'currentText' 'String'));
+function get-current-text:
+    &(Static[ComboBox]) => String
+    &(combo) => { get-property (combo,'currentText','String') };
 
-export function current-text: ( &(ComboBox) Signal[String] )
-    (&(combo)(signal combo 'currentTextChanged(const QString&)' get-current-text));
+export function current-text:
+    &(ComboBox) => Signal[String]
+    &(combo) => { signal (combo,'currentTextChanged(const QString&)',get-current-text) };
 
-export function set-current-text: ( &(ComboBox,String) Action )
-    (&(combo,text)(set-property combo 'currentText' 'String' text));
+export function set-current-text:
+    &(ComboBox, String) => Action
+    &(combo, text) => { set-property (combo,'currentText','String',text) };
 
 
 // QListWidget
 type ListWidget protected Widget;
 type ListWidgetItem native;
 
-export function set-items: ( &(ListWidget,Array[ListWidgetItem],Maybe[String]) Action )
+export function set-items:
+    &(ListWidget,Array[ListWidgetItem],Maybe[String]) => Action
     native 'qt-list-widget-set-items';
 
-export function list-widget-item: ( &(String,String) ListWidgetItem )
+export function list-widget-item:
+    &(String,String) => ListWidgetItem
     native 'qt-list-widget-item';
 
-export function list-widget-item: ( &(String,Image::PNG,String) ListWidgetItem )
+export function list-widget-item:
+    &(String,Image::PNG,String) => ListWidgetItem
     native 'qt-list-widget-item-with-icon-png';
 
-function get-current-item: ( &(Static[ListWidget]) Maybe[String] )
+function get-current-item:
+    &(Static[ListWidget]) => Maybe[String]
     native 'qt-list-widget-get-current';
 
-export function current-item: ( &(ListWidget) Signal[Maybe[String]] )
-    (&(list)(signal list 'currentRowChanged(int)' get-current-item));
+export function current-item:
+    &(ListWidget) => Signal[Maybe[String]]
+    &(list) => { signal (list,'currentRowChanged(int)',get-current-item) };
+

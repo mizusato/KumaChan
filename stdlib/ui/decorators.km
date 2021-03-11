@@ -1,104 +1,97 @@
-type Decorator (&(Component)(Component));
+type Decorator
+    &(Component) => Component;
 
-export function with: ( &(Component,Decorator) Component )
-    ( &(cpt,f)
-        f cpt
-    );
-export function with[T]: ( &((&(T)(Component)),Decorator) (&(T)(Component)) )
-    ( &(ctor,f)
-    ( &(opts)
-        f (ctor opts)
-    ));
-export function styled[T]: ( &((&(T)(Component)),Array[String]) (&(T)(Component)) )
-    ( &(ctor,class-list)
-        ctor | with (ui-style class-list)
-    );
+export function with:
+    &(Component,Decorator) => Component
+    &(cpt,f) => { f(cpt) };
 
-export function ui-render-if: ( &(Action*[Bool]) Decorator )
-    ( &(@render)
-    ( &(cpt)
-        ~ switch-map &(render) := @render,
+export function with:[T]
+    &((&(T) => Component), Decorator) => (&(T) => Component)
+    &(ctor,f) => (&(arg) => { f { ctor(arg) } });
+
+export function styled:[T]
+    &((&(T) => Component), Array[String]) => (&(T) => Component)
+    &(ctor, class-list) => (ctor with { ui-style class-list });
+
+export function ui-render-if:
+    &(Action*[Bool]) => Decorator
+    &(@render) => &(cpt) =>
+        & switch-map render := @render,
         if render:
             cpt,
         else:
-            ui-empty
-    ));
-export function ui-show-if: ( &(Action*[Bool]) Decorator )
-    ( &(@show)
-    ( &(cpt)
-        ~ map &(node,show) := (combine-latest* cpt @show),
+            ui-empty;
+
+export function ui-show-if:
+    &(Action*[Bool]) => Decorator
+    &(@show) => &(@node) =>
+        & computed (node, show) := (@node, @show),
         if show:
             node,
         else:
-            node.with (dom-styles [
-                ('display', 'none')
-            ])
-    ));
-export function ui-style: ( &(Array[String]) Decorator )
-    ( &(class-list)
-    ( &(cpt)
-        ~ map &(node) := cpt,
-        node.with (dom-attrs [
-            ('class', (class-list.join ' '))
-        ])
-    ));
-export function ui-style: ( &(Action*[Array[String]]) Decorator )
-    ( &(@class-list)
-    ( &(cpt)
-        ~ map &(class-list, node) := (combine-latest* @class-list cpt),
-        node.with (dom-attrs [
-            ('class', (class-list.join ' '))
-        ])
-    ));
-export function ui-attrs: ( &(Array[(String,String)]) Decorator )
-    ( &(attrs)
-    ( &(cpt)
-        ~ map &(node) := cpt,
-        node.with (dom-attrs attrs)
-    ));
-export function ui-attrs: ( &(Action*[Array[(String,String)]]) Decorator )
-    ( &(@attrs)
-    ( &(cpt)
-        ~ map &(attrs, node) := (combine-latest* @attrs cpt),
-        node.with (dom-attrs attrs)
-    ));
-export function ui-inline-style: ( &(Array[(String,String)]) Decorator )
-    ( &(rules)
-    ( &(cpt)
-        ~ map &(node) := cpt,
-        node.with (dom-styles rules)
-    ));
-export function ui-inline-style: ( &(Action*[Array[(String,String)]]) Decorator )
-    ( &(@rules)
-    ( &(cpt)
-        ~ map &(rules, node) := (combine-latest* @rules cpt),
-        node.with (dom-styles rules)
-    ));
-export function ui-event: ( &(String,EventHandler) Decorator )
-    ( &(event)
-    ( &(cpt)
-        let (name,handler) := event,
-        ~ map &(node) := cpt,
-        node.with (dom-event name handler)
-    ));
-export function ui-focusable: ( &() Decorator )
-    ( &()
-    ( &(cpt)
-        ~ map &(node) := cpt,
-        node.with (dom-attrs [('tabindex','0')])
-    ));
-export function ui-autofocus: ( &() Decorator )
-    ( &()
-    ( &(cpt)
-        ~ map &(node) := cpt,
-        node.with (dom-attrs [('webuiAutofocus','webuiAutofocus')])
-    ));
-export function ui-enabled: ( &(Action*[Bool]) Decorator )
-    ( &(@enabled)
-    ( &(cpt)
-        ~ map &(enabled, node) := (combine-latest* @enabled cpt),
+            (node with { dom-styles [('display','none')] });
+
+export function ui-style:
+    &(Array[String]) => Decorator
+    &(class-list) => &(@node) =>
+        let class := (class-list join ' '),
+        (@node map &(node) => (node with { dom-attrs [('class',class)] }));
+
+export function ui-style:
+    &(Action*[Array[String]]) => Decorator
+    &(@class-list) => &(@node) =>
+        & computed (class-list, node) := (@class-list, @node),
+        let class := (class-list join ' '),
+        (node with { dom-attrs [('class',class)] });
+
+export function ui-attrs:
+    &(Array[(String,String)]) => Decorator
+    &(attrs) => &(@node) =>
+        & map node := @node,
+        (node with { dom-attrs attrs });
+
+export function ui-attrs:
+    &(Action*[Array[(String,String)]]) => Decorator
+    &(@attrs) => &(@node) =>
+        & computed (attrs, node) := (@attrs, @node),
+        (node with { dom-attrs attrs });
+
+export function ui-inline-style:
+    &(Array[(String,String)]) => Decorator
+    &(rules) => &(@node) =>
+        & map node := @node,
+        (node with { dom-styles rules });
+
+export function ui-inline-style:
+    &(Action*[Array[(String,String)]]) => Decorator
+    &(@rules) => &(@node) =>
+        & computed (rules, node) := (@rules, @node),
+        (node with { dom-styles rules });
+
+export function ui-event:
+    &(String,EventHandler) => Decorator
+    &(name,handler) => &(@node) =>
+        & map node := @node,
+        (node with { dom-event (name,handler) });
+
+export function ui-focusable:
+    &() => Decorator
+    &() => &(@node) =>
+        & map node := @node,
+        (node with { dom-attrs [('tabindex','0')] });
+
+export function ui-autofocus:
+    &() => Decorator
+    &() => &(@node) =>
+        & map node := @node,
+        (node with { dom-attrs [('webuiAutofocus','webuiAutofocus')] });
+
+export function ui-enabled:
+    &(Action*[Bool]) => Decorator
+    &(@enabled) => &(@node) =>
+        & computed (enabled, node) := (@enabled, @node),
         if enabled:
             node,
         else:
-            node.with (dom-attrs [('disabled', 'disabled')])
-    ));
+            (node with { dom-attrs [('disabled', 'disabled')] });
+

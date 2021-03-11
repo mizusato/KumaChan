@@ -177,6 +177,9 @@ var EffectFunctions = map[string] Value {
 	"reactive-entity-auto-snapshot": func(r rx.ReactiveEntity) rx.Reactive {
 		return rx.AutoSnapshotReactive { Entity: r }
 	},
+	"blackhole": func() rx.Sink {
+		return rx.BlackHole{}
+	},
 	"callback": func(f Value, h InteropContext) rx.Sink {
 		return rx.Callback(func(obj rx.Object) rx.Action {
 			return h.Call(f, obj).(rx.Action)

@@ -1,16 +1,16 @@
-export const Stdin:  FileReadOnly
+export const Stdin: FileReadOnly :=
     native 'OS::Stdin';
-export const Stdout: FileWriteOnly
+export const Stdout: FileWriteOnly :=
     native 'OS::Stdout';
-export const Stderr: FileWriteOnly
+export const Stderr: FileWriteOnly :=
     native 'OS::Stderr';
 
 export function scan:
     &() => Action[String,Error]
-    ( &(_)
+    &() =>
         let read := Stdin.{read-string},
-        if (Kind = 'windows'):
-            read. { map &(str) => str.{trim-suffix(\r.[String])} },
+        if (Self::Name = 'windows'):
+            (read map &(str) => str.{trim-suffix(''..\r)}),
         else:
             read;
 export function print:
@@ -24,8 +24,8 @@ export function scanln:
     &() => Action[String,Error]
     &() =>
         let read := Stdin.{read-line},
-        if (Kind = 'windows'):
-            read. { map &(str) => str.{trim-suffix(\r.[String])} },
+        if (Self::Name = 'windows'):
+            (read map &(str) => str.{trim-suffix(''..\r)}),
         else:
             read;
 export function println:

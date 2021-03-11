@@ -111,7 +111,8 @@ func buildTree(root syntax.Id, tokens scanner.Tokens) ([]cst.TreeNode, *Error) {
             // if part_type is Recursive, empty match <=> node.Length == 0
             // if part_type is otherwise, empty match <=> node.Amount == 0
             // if node.part is required, it should not be empty
-            if node.Part.Required && node.Length == 0 && node.Amount == 0 {
+            if node.Part.Required && ((node.Status == cst.Failed) ||
+                (node.Length == 0 && node.Amount == 0)) {
                 // PrintBareTree(tree)
                 return tree, &Error {
                     HasExpectedPart: true,

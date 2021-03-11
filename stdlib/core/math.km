@@ -34,7 +34,7 @@ export function  log: &(Float*) => Float*  native 'real-log*';
 
 export function log:
     & { base:Float, x:Float } => Float
-    & { base, x } ({log x} / {log base});
+    & { base, x } => ({log x} / {log base});
 export function log2:
     &(Float) => Float
     &(x) => { log { base: 2.0, x } };

@@ -1,7 +1,7 @@
 type Zone native;  // *time.Location
 
-export const UTC: Zone
+export const UTC: Zone :=
     native 'Time::UTC';
 
-export const Local: Zone
+export const Local: Zone :=
     native 'Time::Local';

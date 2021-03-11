@@ -13,40 +13,42 @@ type EventResized {
 };
 type EventClosed {};
 
-function get-property[O < Object, T]: ( &(Static[O],String,String) T )
+function get-property: [Obj < Object, T]
+    &(Static[Obj], String, String) => T
     native 'qt-get-property';
 
-function set-property[T]: ( &(Object,String,String,T) Action )
+function set-property: [T]
+    &(Object, String, String, T) => Action
     native 'qt-set-property';
 
-function signal [O < Object, T]:
-    ( &(O,String,(&(Static[O])(T))) Signal[T] )
+function signal: [Obj < Object, T]
+    &(Obj, String, &(Static[Obj]) => T) => Signal[T]
     native 'qt-signal';
 
-function signal [T]:
-    ( &(Object,String) Signal[unit] )
+function signal: [T]
+    &(Object, String) => Signal[unit]
     native 'qt-signal-no-payload';
 
-function event[E]: ( &(Object,String,Bool) Event[E] )
+function event: [T]
+    &(Object, String, Bool) => Event[T]
     native 'qt-event';
 
-export function bind [Obj < Object, T]:
-    ( &(Obj, Reactive[T], (&(Obj)(Signal[T])), (&(Obj,T)(Action)))
-        Action )
-    ( &(obj, @value, get, set)
-        let @get := obj.get.concat-map (&(value)(@value.update (&(_)(value)))),
-        let @set := @value.watch.concat-map (&(value)(obj.set value)),
-        (merge [@get, @set]).forever
-    );
+export function bind: [Obj < Object, T]
+    &(Obj, Reactive[T], (&(Obj) => Signal[T]), (&(Obj,T) => Action)) => Action
+    &(obj, @value, get, set) =>
+        let @get := obj.{get}.{concat-map &(value) => (@value <- value)},
+        let @set := @value.{watch}.{concat-map &(value) => (obj set value)},
+        [@get,@set].{merge}.{forever};
 
-export function listen[T]: ( &(Event[T],(&(T)(Action))) Action )
-    ( &(ev,f)
-        ev  | merge-map (&(payload)(f payload))
-            | forever
-    );
+export function listen:[T]
+    &(Event[T], &(T) => Action) => Action
+    &(ev, f) => (ev merge-map &(payload) => { f(payload) }).{forever};
 
-export function resized: ( &(Object) Event[EventResized] )
-    (&(object)(event object 'resized' No));
+export function resized:
+    &(Object) => Event[EventResized]
+    &(object) => { event (object,'resized',No) };
 
-export function closed: ( &(Object) Event[EventClosed] )
-    (&(object)(event object 'closed' Yes));
+export function closed:
+    &(Object) => Event[EventClosed]
+    &(object) => { event (object,'closed',Yes) };
+

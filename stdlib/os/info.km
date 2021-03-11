@@ -1,6 +1,6 @@
-export const Kind: String
-    native 'OS::Kind';
-export const Arch: String
+export const Name: String :=
+    native 'OS::Name';
+export const Arch: String :=
     native 'OS::Arch';
-export const Is64Bit: Bool
+export const Is64Bit: Bool :=
     native 'OS::Is64Bit';

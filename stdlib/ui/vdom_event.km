@@ -1,30 +1,34 @@
 type EventPayload native;  // *qt.WebUiEventPayload (contains a C++ pointer)
 type EventHandler native;  // *vdom.EventHandler
 
-function dom-event-handler[T]: ( &(Sink[T],(&(EventPayload)(T))) EventHandler )
+function dom-event-handler:[T]
+    &(Sink[T], &(EventPayload) => T) => EventHandler
     native 'ui-dom-event-handler';
-function dom-event-handler[T]: ( &(Reactive[T],(&(T)(&(EventPayload)(T)))) EventHandler )
+
+function dom-event-handler:[T]
+    &(Reactive[T], &(T) => &(EventPayload) => T) => EventHandler
     native 'ui-dom-event-handler-reactive';
 
-function getter-callback[T]:
-    ( &(String,(&(EventPayload,String)(T)),(&(T)(Callback))) Callback )
-    ( &(prop,getter,k)
-        Callback ( &(ev)
-            let next := (k (ev.getter(prop))),
-            next ev
-        )
-    );
+function getter-callback:[T]
+    &(String, (&(EventPayload,String) => T), (&(T) => Callback)) => Callback
+    &(prop,getter,k) => { Callback &(ev) =>
+        let val := { getter (ev,prop) },
+        let next := { k val },
+        { next(ev) } };
 
-function get-string: ( &(EventPayload,String) String )
+function get-string:
+    &(EventPayload, String) => String
     native 'ui-event-payload-get-string';
-function get-float: ( &(EventPayload,String) Float )
+function get-float:
+    &(EventPayload, String) => Float
     native 'ui-event-payload-get-float';
-function get-number: ( &(EventPayload,String) Number )
+function get-number:
+    &(EventPayload, String) => Number
     native 'ui-event-payload-get-number';
-function get-bool: ( &(EventPayload,String) Bool )
+function get-bool:
+    &(EventPayload, String) => Bool
     native 'ui-event-payload-get-bool';
 
-function dom-event: ( &(String,EventHandler) Events )
-    ( &(name,handler)
-        dom-events [(name,handler)]
-    );
+function dom-event:
+    &(String, EventHandler) => Events
+    &(name,handler) => { dom-events [(name,handler)] };

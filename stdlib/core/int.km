@@ -11,8 +11,8 @@ export function -: &(Int,Int) => Int  native '-Int';
 export function -: &(Int) => Int      &(n) => (0 - n);
 export function *: &(Int,Int) => Int  native '*Int';
 
-export function quorem: &(Int,Int) => Int,Int  native 'quorem';
-export function divmod: &(Int,Int) => Int,Int  native 'divmod';
+export function quorem: &(Int,Int) => (Int,Int)  native 'quorem';
+export function divmod: &(Int,Int) => (Int,Int)  native 'divmod';
 
 
 export function /:
@@ -45,10 +45,10 @@ export function **:
         let pow: rec &(Int,Int,Int) => Int := &(t, n, p) =>
             switch (p <> 0):
             case <<:
-                panic 'taking negative power of a Int value is not supported',
+                { panic 'taking negative power of a Int value is not supported' },
             case ==:
                 if (n = 0):
-                    panic 'cannot evaluate 0 to the power of 0',
+                    { panic 'cannot evaluate 0 to the power of 0' },
                 else:
                     t,
             case >>:
@@ -61,6 +61,5 @@ export function **:
                         { pow ((t * n), square, q) },
                     else:
                         { pow (t, square, q) },
-            end
-        ),
+            end,
         { pow (1, n, p) };

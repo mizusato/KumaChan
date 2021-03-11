@@ -35,11 +35,11 @@ const Root: UI::Component
         let redo := redo.collect,
         let title := styled ui-label ['title'],
         ui-container [
-            if $((undo.length) > 0):
+            if $((undo.{length}) > 0):
                 ui-button 'Undo' text-undo,
             else:
                 ui-empty,
-            if $((redo.length) > 0):
+            if $((redo.{length}) > 0):
                 ui-button 'Redo' text-redo,
             else:
                 ui-empty,

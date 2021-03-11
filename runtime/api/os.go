@@ -41,7 +41,7 @@ func GetSystemLanguage() string {
 }
 
 var OS_Constants = map[string] NativeConstant {
-	"OS::Kind":    func(h InteropContext) Value {
+	"OS::Name":    func(h InteropContext) Value {
 		return StringFromGoString(runtime.GOOS)
 	},
 	"OS::Arch":    func(h InteropContext) Value {

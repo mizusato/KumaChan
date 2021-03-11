@@ -35,7 +35,7 @@ export function min:
 export function max:
     [T] (Ord[T])
     &(T,T) => T
-    &(a,b) => (if $(b < a): a, else: b);
+    &(a,b) => (if (b < a): a, else: b);
 
 
 export function  =: &(Number,Number) => Bool      native '=Number';

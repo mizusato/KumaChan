@@ -16,26 +16,26 @@ type CommonOptions {
     log:    LogOptions,
     limits: LimitOptions
 };
-export const CommonOptionsDefault: CommonOptions {};
-export function zero-value: (&()(CommonOptions)) (&()(CommonOptionsDefault));
+export const CommonOptionsDefault: CommonOptions := {};
+export function zero-value: &() => CommonOptions &() => CommonOptionsDefault;
 type LogOptions {
     enabled: Bool
 };
-export const LogOptionsDefault: LogOptions { enabled: Yes };
-export function zero-value: (&()(LogOptions)) (&()(LogOptionsDefault));
+export const LogOptionsDefault: LogOptions := { enabled: Yes };
+export function zero-value: &() => LogOptions &() => LogOptionsDefault;
 type LimitOptions {
     send-timeout:      Number,
     recv-timeout:      Number,
     recv-interval:     Number,
     recv-max-obj-size: Number
 };
-export const LimitOptionsDefault: LimitOptions {
+export const LimitOptionsDefault: LimitOptions := {
     send-timeout:      10000,
     recv-timeout:      0,
     recv-interval:     100,
     recv-max-obj-size: 33554432
 };
-export function zero-value: (&()(LimitOptions)) (&()(LimitOptionsDefault));
+export function zero-value: &() => LimitOptions &() => LimitOptionsDefault;
 
 type Connection native;
 export function wait-closed:
@@ -45,7 +45,7 @@ export function close:
     &(Connection) => Action[unit]
     native 'rpc-connection-close';
 
-export function rpc-serve[Instance,Argument,Constructor,Consumer]:
+export function rpc-serve:[Instance,Argument,Constructor,Consumer]
     & {
         service:     ServiceIdentifier[Instance,Argument,Constructor,Consumer],
         backend:     ServerBackend,
@@ -55,7 +55,7 @@ export function rpc-serve[Instance,Argument,Constructor,Consumer]:
     => Action[unit,Error]
     native 'rpc-serve';
 
-export function rpc-access[Instance,Argument,Constructor,Consumer]:
+export function rpc-access:[Instance,Argument,Constructor,Consumer]
     & {
         service:  ServiceIdentifier[Instance,Argument,Constructor,Consumer],
         backend:  ClientBackend,

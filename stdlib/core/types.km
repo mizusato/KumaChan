@@ -62,11 +62,11 @@ export function =:
 
 // Type Conversion
 type Conv[T,U] implicit {
-    convert: (& T U)
+    convert: &(T) => U
 };
 
 export function assume:[T]
-    &((Bool,T), &()=>T) => T
+    &((Bool,T), &() => T) => T
     &(input, k) =>
         let (cond, fallback) := input,
         if cond:
@@ -79,7 +79,7 @@ export function assume:[T]
 // TODO: rename the following functions
 
 export function maybe:[A,B]
-    &(Maybe[A], &(A) => B)) => Maybe[B]
+    &(Maybe[A], &(A) => B) => Maybe[B]
     &(v?, f) =>
         switch v?:
         case Just v:
@@ -94,7 +94,7 @@ export function maybe:[A,B]
         let (v?, fallback) := input,
         switch v?:
         case Just v:
-            { f v },
+            { f(v) },
         case N/A:
             fallback,
         end;
@@ -116,7 +116,7 @@ export function unwrap?:[T]
         case Just v?:
             switch v?:
             case Just v:
-                Just v,
+                { Just v },
             case N/A:
                 N/A,
             end,

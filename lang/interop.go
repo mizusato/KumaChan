@@ -68,7 +68,7 @@ func AdaptNativeFunction(f interface{}) NativeFunction {
 	var arity = t.NumIn()
 	if arity == 0 {
 		return func(_ Value, handle InteropContext) Value {
-			return AdaptReturnValue(f_rv.Call([]reflect.Value {}))
+			return AdaptReturnValue(f_rv.Call([] reflect.Value {}))
 		}
 	} else {
 		if t.In(arity-1).AssignableTo(__InteropContextType) {

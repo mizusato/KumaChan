@@ -11,7 +11,7 @@ type ErrorKind enum {
 export function is:
     &(Error,ErrorKind) => Bool
     &(err, kind) =>
-        select (err.kind!!, kind):
+        select (err.{kind}, kind):
         case [EOF,EOF]:
             Yes,
         case [ClosedPipe,ClosedPipe]:
@@ -23,9 +23,9 @@ export function is:
 export function kind:
     &(Error) => ErrorKind
     &(err) =>
-        if (err | is-eof):
+        if (err.{is-eof}):
             EOF,
-        elif (err | is-closed-pipe):
+        elif (err.{is-closed-pipe}):
             ClosedPipe,
         else:
             UnknownError;

@@ -49,8 +49,6 @@ var core_types = []string {
 	Source, Sink, Bus, Reactive, ReactiveEntity,
 	ReactiveSnapshots, ReactiveSnapshotStack,
 	Mutable, Buffer, HashMap,
-	// time.km
-	Time,
 	// complex.km
 	Complex, ComplexIEEE,
 	// string.km
@@ -126,8 +124,6 @@ const ReactiveSnapshotStack = "ReactiveSnapshotStack"
 const Mutable = "Mutable"
 const Buffer = "Buffer"
 const HashMap = "HashMap"
-// time.km
-const Time = "Time"
 // complex.km
 const Complex = "Complex"
 const ComplexIEEE = "Complex*"

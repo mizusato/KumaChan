@@ -24,7 +24,7 @@ func IsStdLibModule(name string) bool {
 
 var _ = __Preload()
 func __Preload() interface{} {
-	// __PreloadStdLib()
+	__PreloadStdLib()
 	return nil
 }
 func __PreloadStdLib() {

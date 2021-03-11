@@ -76,7 +76,7 @@ export function adapt:[A,B]
     &(Reactive[A], &(A) => &(B) => A) => Sink[B]
     native 'reactive-adapt';
 export function morph:[A,B]
-    &(Reactive[A], (&(A) => &(B) => A), (&(A) => B)) => Reactive[B] )
+    &(Reactive[A], (&(A) => &(B) => A), (&(A) => B)) => Reactive[B]
     native 'reactive-morph';
 export function snapshot:[T]
     &(Reactive[T]) => Action
@@ -100,6 +100,9 @@ export function watch-diff:[T]
 export function auto-snapshot:[T]
     &(ReactiveEntity[T]) => Reactive[T]
     native 'reactive-entity-auto-snapshot';
+export function blackhole:
+    &() => Sink[any]
+    native 'blackhole';
 export function callback:[T]
     &(&(T) => Action) => Sink[T]
     native 'callback';
@@ -172,7 +175,7 @@ export function yield-thunk:[T]
 export function yield*:[T]
     &(Seq[T]) => Action*[T]
     native 'yield*-seq';
-export function yield*[T]:
+export function yield*:[T]
     &(Array[T]) => Action*[T]
     native 'yield*-array';
 export function not:[E]
@@ -214,7 +217,7 @@ export function forever:[E]
 /// to be used within Flat CPS expressions.
 ///
 # alias: await
-export function then[A,B,E]:
+export function then:[A,B,E]
     &(Action[A,E], &(A) => Action[B,E]) => Action[B,E]
     native 'then';
 # alias: await
@@ -234,13 +237,13 @@ export function catch:[T,E,F]
     &(Action[T,E], &(E) => Action[T,F]) => Action[T,F]
     native 'catch';
 export function catch:[T,E,F]
-    &(Action*[T,E], &(E) => Action*[T,F]) => Action*[T,F] )
+    &(Action*[T,E], &(E) => Action*[T,F]) => Action*[T,F]
     native 'catch';
 export function catch-retry:[T,E]
-    &(Action[T,E], &(E) => Action[Bool]) => Action[T,E] )
+    &(Action[T,E], &(E) => Action[Bool]) => Action[T,E]
     native 'catch-retry';
 export function catch-throw:[T,E,F]
-    &(Action[T,E], &(E) => F) => Action[T,F] )
+    &(Action[T,E], &(E) => F) => Action[T,F]
     native 'catch-throw';
 export function throw:[E]
     &(E) => Action[never,E]
@@ -260,7 +263,7 @@ export function map-to:[A,B,E]
 export function filter:[T,E]
     &(Action*[T,E], &(T) => Bool) => Action*[T,E]
     native 'action-filter';
-export function filter-map[A,B,E]:
+export function filter-map:[A,B,E]
     &(Action*[A,E], &(A) => Maybe[B]) => Action*[B,E]
     native 'action-filter-map';
 export function reduce:[T,A,E]
@@ -287,7 +290,7 @@ export function switch-map:[A,B,E]
 export function merge:[T,E]
     &(Array[Action*[T,E]]) => Action*[T,E]
     native 'action-merge';
-export function concat[T,E]:
+export function concat:[T,E]
     &(Array[Action*[T,E]]) => Action*[T,E]
     native 'action-concat';
 export function distinct-until-changed:

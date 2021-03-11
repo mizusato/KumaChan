@@ -301,7 +301,14 @@ func (d DistinctViewReactive) Snapshot() Action {
 }
 
 
-// Trivial Sink: Callback
+// Trivial Sink: BlackHole and Callback
+
+type BlackHole struct{}
+func (_ BlackHole) Emit(_ Object) Action {
+	return NewSync(func() (Object, bool) {
+		return nil, true
+	})
+}
 
 type Callback  func(Object) Action
 func (cb Callback) Emit(obj Object) Action {

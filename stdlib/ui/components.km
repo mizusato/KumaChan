@@ -1,75 +1,76 @@
-type Component Action*[Node]; // Observable<VNode>
+type Component Action*[Node];  // Observable<VNode>
 
 export function ui-empty:
     &() => Component
-    &() => { yield-thunk &(_) =>
-        { dom-node ('div', [('display','none')], []) } };
-export function ui-element: ( &(String,Array[Component]) Component )
-    ( &(tag,children)
-        if $((children.length) = 0):
-            yield-thunk (&(_)(dom-node tag [])),
+    &() => { yield-thunk &() =>
+        { dom-node 'div' }
+            . { with { dom-styles [('display','none')] } } };
+
+export function ui-element:
+    &(String, Array[Component]) => Component
+    &(tag, children) =>
+        if ((children.{length}) = 0):
+            { yield-thunk &() => { dom-node tag } },
         else:
-            dom-dynamic tag children
-    );
-export function ui-container: ( &(Array[Component]) Component )
-    ( &(items)
-        dom-dynamic 'div' items
-    );
-export function ui-label: ( &(String) Component )
-    ( &(text)
-        yield (dom-node 'div' text)
-    );
-export function ui-text: ( &(Action*[String]) Component )
-    ( &(@text)
-        ~ map &(text) := @text,
-        dom-node 'div' text
-    );
-export function ui-text-input: ( &(Reactive[String]) Component )
-    ( &(@text)
-        let on-input := (dom-event-handler @text (&(ev)(ev.get-string 'webuiValue'))),
-        ~ map &(text) := watch @text,
-        dom-node 'input'
-            (dom-styles [])
-            (dom-attrs [ ('type', 'text'), ('value', text) ])
-            (dom-event 'input' on-input)
-            (dom-children [])
-    );
-export function ui-checkbox: ( &(Reactive[Bool]) Component )
-    ( &(@checked)
-        let on-change := (dom-event-handler @checked (&(ev)(ev.get-bool 'webuiChecked'))),
-        ~ map &(checked) := watch @checked,
-        dom-node 'input'
-            (dom-styles [])
-            (dom-attrs (
+            { dom-dynamic (tag, children) };
+
+export function ui-container:
+    &(Array[Component]) => Component
+    &(children) => { dom-dynamic ('div', children) };
+
+export function ui-label:
+    &(String) => Component
+    &(text) => { yield-thunk &() => { dom-node ('div', text) } };
+
+export function ui-text:
+    &(Action*[String]) => Component
+    &(@text) => { map (@text, (&(text) => { dom-node ('div', text) })) };
+
+export function ui-text-input:
+    &(Reactive[String]) => Component
+    &(@text) =>
+        let on-input := { dom-event-handler
+            (@text, &(ev) => (ev get-string 'webuiValue')) },
+        & map text := { watch @text },
+        { dom-node 'input' }
+            . { with { dom-attrs [('type','text'),('value',text)] } }
+            . { with { dom-event ('input',on-input) } };
+
+export function ui-checkbox:
+    &(Reactive[Bool]) => Component
+    &(@checked) =>
+        let on-change := { dom-event-handler
+            (@checked, &(ev) => (ev get-bool 'webuiChecked')) },
+        & map checked := { watch @checked },
+        { dom-node 'input' }
+            . { with { dom-attrs
                 if checked:
-                    ([('type', 'checkbox'), ('checked', 'checked')]),
+                    ([('type','checkbox'), ('checked','checked')]),
                 else:
-                    ([('type', 'checkbox')])
-            ))
-            (dom-event 'change' on-change)
-            (dom-children [])
-    );
-export function ui-select: ( &(Reactive[String],Array[(String,String)]) Component )
-    ( &(@current,options)
-        let on-change := (dom-event-handler @current (&(ev)(ev.get-string 'webuiValue'))),
-        ~ map &(current) := watch @current,
-        dom-node 'select'
-            (dom-styles [])
-            (dom-attrs [('value', current)])
-            (dom-event 'change' on-change)
-            (dom-children (
-                ~ map &(name,desc) := options,
-                dom-node 'option' desc
-                    | with (dom-attrs [('value', name)])
-            ))
-    );
-export function ui-button: ( &(String, Action) Component )
-    ( &(text,action)
-        yield (dom-node 'button'
-            (dom-styles [])
-            (dom-attrs [])
-            (dom-event 'click'
-                (ui-callback (return action)))
-            (dom-text text)
-        )
-    );
+                    ([('type','checkbox')])
+            } }
+            . { with { dom-event
+                ('change',on-change)
+            } };
+
+export function ui-select:
+    &(Reactive[String], Array[(String,String)]) => Component
+    &(@current, options) =>
+        let on-change := { dom-event-handler
+            (@current, &(ev) => (ev get-string 'webuiValue')) },
+        let children := (options map &(name,desc) =>
+            { dom-node ('option', desc) }
+                . { with { dom-attrs [('value',name)] } }),
+        & map current := { watch @current },
+        { dom-node 'select' }
+            . { with { dom-attrs [('value',current)] } }
+            . { with { dom-event ('change',on-change) } }
+            . { with { dom-children children } };
+
+export function ui-button:
+    &(String, Action) => Component
+    &(text, action) =>
+        let handler := { ui-callback { return action } },
+        { yield-thunk &() =>
+            { dom-node ('button', text) }
+                . { with { dom-event ('click',handler) } } };

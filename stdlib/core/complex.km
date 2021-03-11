@@ -26,7 +26,7 @@ export function convert:
     &(x) => { complex (x, 0.0) };
 export function convert:
     &(Float*) => Complex*
-    &(x) => { complex (x, (convert 0.0).[Float*]) };
+    &(x) => { complex (x, {convert 0.0}.[Float*]) };
 
 export function convert:
     &(Complex) => String
@@ -34,7 +34,7 @@ export function convert:
 export function convert:
     &(Complex*) => String
     &(z*) =>
-        switch (check-nan-inf z*):
+        switch {check-nan-inf z*}:
             case Just z: { convert z }.[String],
             case N/A:    'INVALID',
         end;

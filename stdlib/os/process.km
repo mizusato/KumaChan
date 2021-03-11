@@ -1,6 +1,6 @@
-export const Env: Map[String,String]
+export const Env: Map[String,String] :=
     native 'OS::Env';
-export const Args: Array[String]
+export const Args: Array[String] :=
     native 'OS::Args';
 
 type ProcessExit protected Action;
