@@ -1,4 +1,4 @@
-package tools
+package atom
 
 import (
 	"io"
@@ -10,11 +10,11 @@ import (
 )
 
 
-type ServerContext struct {
+type LangServerContext struct {
 	DebugLog     func(info string)
 }
 
-func Server(input io.Reader, output io.Writer, debug io.Writer) error {
+func LangServer(input io.Reader, output io.Writer, debug io.Writer) error {
 	input = bufio.NewReader(input)
 	var write_line = func(line ([] byte)) error {
 		_, err := output.Write(line)
@@ -23,7 +23,7 @@ func Server(input io.Reader, output io.Writer, debug io.Writer) error {
 		if err != nil { return err }
 		return nil
 	}
-	var ctx = ServerContext {
+	var ctx = LangServerContext{
 		DebugLog: func(info string) { _, _ = fmt.Fprintln(debug, info) },
 	}
 	for {
@@ -60,3 +60,4 @@ func Server(input io.Reader, output io.Writer, debug io.Writer) error {
 		}
 	}
 }
+

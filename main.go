@@ -15,7 +15,7 @@ import (
     "kumachan/util"
     . "kumachan/util/error"
     "kumachan/support/docs"
-    "kumachan/support/tools"
+    "kumachan/support/atom"
     "kumachan/compiler/loader"
     "kumachan/compiler/checker"
     "kumachan/compiler/generator"
@@ -341,7 +341,7 @@ func main() {
             fmt.Println("options:")
             fmt.Println("\t--help,-h\tshow help")
             fmt.Println("\t--version,-v\tshow version")
-            fmt.Println("\t--mode={interpreter,tools-server,parser-debug,docs}")
+            fmt.Println("\t--mode={interpreter,docs,parser-debug,atom-lang-server}")
             fmt.Println("\t--asm-dump=[FILE]")
             fmt.Println("\t--max-stack-size=[NUMBER]")
             fmt.Println("\t--debug=[ui]")
@@ -418,9 +418,9 @@ func main() {
             program_file = f
         }
         debug_parser(program_file, program_path, syntax.RootPartName)
-    case "tools-server":
+    case "atom-lang-server":
         qt.Mock()
-        err := tools.Server(os.Stdin, os.Stdout, os.Stderr)
+        err := atom.LangServer(os.Stdin, os.Stdout, os.Stderr)
         if err != nil { panic(err) }
     case "docs":
         var mod_thunk = loader.CraftEmptyThunk(loader.Manifest {

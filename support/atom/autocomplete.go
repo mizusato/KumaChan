@@ -1,15 +1,15 @@
-package tools
+package atom
 
 import (
 	"os"
 	"fmt"
+	"sort"
 	"strings"
 	"path/filepath"
+	"kumachan/lang/parser/ast"
 	"kumachan/lang/parser/syntax"
 	"kumachan/compiler/loader"
-	"kumachan/lang/parser/ast"
 	"kumachan/stdlib"
-	"sort"
 )
 
 
@@ -33,7 +33,7 @@ type AutoCompleteSuggestion struct {
 	Display  string   `json:"displayText,omitempty"`
 }
 
-func AutoComplete(req AutoCompleteRequest, ctx ServerContext) AutoCompleteResponse {
+func AutoComplete(req AutoCompleteRequest, ctx LangServerContext) AutoCompleteResponse {
 	const double_colon = "::"
 	var get_search_text = func() (string, string) {
 		var raw_text = req.PrecedingText

@@ -1,16 +1,16 @@
-package tools
+package atom
 
 import (
 	"os"
 	"fmt"
 	"path/filepath"
-	. "kumachan/util/error"
-	"kumachan/compiler/loader"
+	"kumachan/lang"
 	"kumachan/lang/parser/cst"
 	"kumachan/lang/parser/scanner"
+	. "kumachan/util/error"
+	"kumachan/compiler/loader"
 	"kumachan/compiler/checker"
 	"kumachan/compiler/generator"
-	"kumachan/lang"
 )
 
 
@@ -99,7 +99,7 @@ func GetError(e E, tip string) LintError {
 	}
 }
 
-func Lint(req LintRequest, ctx ServerContext) LintResponse {
+func Lint(req LintRequest, ctx LangServerContext) LintResponse {
 	var dir = filepath.Dir(req.Path)
 	var manifest_path = filepath.Join(dir, loader.ManifestFileName)
 	for _, visited := range req.VisitedModules {
