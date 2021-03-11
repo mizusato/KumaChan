@@ -40,6 +40,7 @@ type Bool enum {
     type Yes;
     type No;
 };
+// TODO: consider renaming "Just"
 type Maybe[+T] enum {
     type Just[+T] weak T;
     type N/A;

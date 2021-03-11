@@ -330,6 +330,7 @@ export function combine-latest*:[A,B,C,D,E]
 export function combine-latest*:[T,E]
     &(Array[Action*[T,E]]) => Action*[Array[T],E]
     native 'combine-latest*-array';
+// TODO: consider computed (reactive1, reactive2)
 export function computed:[A,B,E,X]
     &((Action*[A,E],Action*[B,E]), &(A,B) => X) => Action*[X,E]
     native 'computed';
