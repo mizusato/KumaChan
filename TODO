@@ -16,7 +16,7 @@ TODO
 
 - UI: Web(main) + Native(supplement)
 
-- integrate WebUi with Qt Designer (promoted QWidget -> UiView)
+- integrate WebUi with Qt Designer (promoted QWidget -> WebUiWebView)
 
 - merge Qt module into UI
 
