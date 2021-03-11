@@ -189,7 +189,7 @@ export function or:[E]
     &(p,q) => { computed ((p,q), &(p,q) => (p or q)) };
 export function start-with:[T,E]
     &(Action*[T,E], Array[T]) => Action*[T,E]
-    &(e, prepended) => { concat:[T,E] [{yield* prepended}, e] };
+    &(e, prepended) => { concat:::[T,E] [{yield* prepended}, e] };
 export function wait:
     & { timeout: Number } => Action
     native 'wait';

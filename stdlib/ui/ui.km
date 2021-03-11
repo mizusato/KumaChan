@@ -23,5 +23,5 @@ export function ui-get-window:
 export function ui-exit-when-window-closed:
     &() => Action
     &() =>
-        & await window := ui-get-window,
+        & window := await ui-get-window,
         { listen (window.{closed}, &() => { exit 0 }) };

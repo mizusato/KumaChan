@@ -8,7 +8,7 @@ export function use:[T]
 export function ui-state:[T]
     &(T) => Hook[Reactive[T]]
     &(initial) => &(k) =>
-        & with-reactive r := initial,
+        & r := with-reactive initial,
         { k(r) };
 
 // TODO: should return Hook[bundle] instead of Hook[tuple]

@@ -31,7 +31,7 @@ export function ui-text-input:
     &(@text) =>
         let on-input := { dom-event-handler
             (@text, &(ev) => (ev get-string 'webuiValue')) },
-        & map text := { watch @text },
+        & text := map { watch @text },
         { dom-node 'input' }
             . { with { dom-attrs [('type','text'),('value',text)] } }
             . { with { dom-event ('input',on-input) } };
@@ -41,7 +41,7 @@ export function ui-checkbox:
     &(@checked) =>
         let on-change := { dom-event-handler
             (@checked, &(ev) => (ev get-bool 'webuiChecked')) },
-        & map checked := { watch @checked },
+        & checked := map { watch @checked },
         { dom-node 'input' }
             . { with { dom-attrs
                 if checked:
@@ -61,7 +61,7 @@ export function ui-select:
         let children := (options map &(name,desc) =>
             { dom-node ('option', desc) }
                 . { with { dom-attrs [('value',name)] } }),
-        & map current := { watch @current },
+        & current := map { watch @current },
         { dom-node 'select' }
             . { with { dom-attrs [('value',current)] } }
             . { with { dom-event ('change',on-change) } }

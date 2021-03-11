@@ -16,7 +16,7 @@ export function styled:[T]
 export function ui-render-if:
     &(Action*[Bool]) => Decorator
     &(@render) => &(cpt) =>
-        & switch-map render := @render,
+        & render := switch-map @render,
         if render:
             cpt,
         else:
@@ -25,7 +25,7 @@ export function ui-render-if:
 export function ui-show-if:
     &(Action*[Bool]) => Decorator
     &(@show) => &(@node) =>
-        & computed (node, show) := (@node, @show),
+        & (node, show) := computed (@node, @show),
         if show:
             node,
         else:
@@ -40,56 +40,56 @@ export function ui-style:
 export function ui-style:
     &(Action*[Array[String]]) => Decorator
     &(@class-list) => &(@node) =>
-        & computed (class-list, node) := (@class-list, @node),
+        & (class-list, node) := computed (@class-list, @node),
         let class := (class-list join ' '),
         (node with { dom-attrs [('class',class)] });
 
 export function ui-attrs:
     &(Array[(String,String)]) => Decorator
     &(attrs) => &(@node) =>
-        & map node := @node,
+        & node := map @node,
         (node with { dom-attrs attrs });
 
 export function ui-attrs:
     &(Action*[Array[(String,String)]]) => Decorator
     &(@attrs) => &(@node) =>
-        & computed (attrs, node) := (@attrs, @node),
+        & (attrs, node) := computed (@attrs, @node),
         (node with { dom-attrs attrs });
 
 export function ui-inline-style:
     &(Array[(String,String)]) => Decorator
     &(rules) => &(@node) =>
-        & map node := @node,
+        & node := map @node,
         (node with { dom-styles rules });
 
 export function ui-inline-style:
     &(Action*[Array[(String,String)]]) => Decorator
     &(@rules) => &(@node) =>
-        & computed (rules, node) := (@rules, @node),
+        & (rules, node) := computed (@rules, @node),
         (node with { dom-styles rules });
 
 export function ui-event:
     &(String,EventHandler) => Decorator
     &(name,handler) => &(@node) =>
-        & map node := @node,
+        & node := map @node,
         (node with { dom-event (name,handler) });
 
 export function ui-focusable:
     &() => Decorator
     &() => &(@node) =>
-        & map node := @node,
+        & node := map @node,
         (node with { dom-attrs [('tabindex','0')] });
 
 export function ui-autofocus:
     &() => Decorator
     &() => &(@node) =>
-        & map node := @node,
+        & node := map @node,
         (node with { dom-attrs [('webuiAutofocus','webuiAutofocus')] });
 
 export function ui-enabled:
     &(Action*[Bool]) => Decorator
     &(@enabled) => &(@node) =>
-        & computed (enabled, node) := (@enabled, @node),
+        & (enabled, node) := computed (@enabled, @node),
         if enabled:
             node,
         else:

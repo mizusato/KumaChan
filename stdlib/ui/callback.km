@@ -5,7 +5,7 @@ type Callback
 export function ui-callback:
     &(Callback) => EventHandler
     &(cb) => (
-        { dom-event-handler ({callback:[Action] (& e => e)}, cb) }
+        { dom-event-handler ({callback:::[Action] (& e => e)}, cb) }
         // important: payload will be deleted after `cb` called
     );
 
