@@ -1,32 +1,34 @@
 import assets from './assets';
 
-do ui-init 'Mouse' Root;
+do { ui-init ('Mouse', Root) };
 
-do ui-inject-css [assets::style-css];
+do { ui-inject-css [assets::style-css] };
 
 do ui-exit-when-window-closed;
 
-export function mouse-position: ( &() UI::Hook[Action*[(Float,Float)]] )
-    ( &(_) ( &(k)
-        ~ await &(pos) := new-bus:[(Float,Float)],
-        ~ await &(id) := gen-sequential-id,
-        let cpt := (k (watch pos)),
-        cpt | with (ui-event ("mousemove.hook#" id)
-            (ui-callback
-                ~ ui-msg-float &(x) := 'webuiCurrentTargetX',
-                ~ ui-msg-float &(y) := 'webuiCurrentTargetY',
-                return $(pos <- (x, y))
-            ))
-    ));
+// TODO: mouse enter => Just pos, mouse out => N/A
+function mouse-position:
+    &() => UI::Hook[Action*[(Float,Float)]]
+    &() => &(k) =>
+        &(pos) := await new-bus:::[(Float,Float)],
+        &(id) := await gen-sequential-id,
+        let cpt := { k { watch pos } },
+        (cpt with { ui-event ({ "mousemove.hook#" id },
+            { ui-callback
+                &(x) := ui-msg-float 'webuiCurrentTargetX',
+                &(y) := ui-msg-float 'webuiCurrentTargetY',
+                { return (pos <- (x, y)) }
+            }) });
 
-const Root: UI::Component
-    let container := styled ui-container ['container'],
-    let box := styled ui-container ['box'],
-    container [
-        ~ use &(pos) := mouse-position,
-        box [
-            pos | map ( &(x,y) "x=#, y=#" (str x) (str y) )
-                | start-with ['']
-                | ui-text
-        ]
-    ];
+const Root: UI::Component :=
+    let container := { styled (ui-container, ['container']) },
+    let box := { styled (ui-container, ['box']) },
+    { container [
+        &(pos) := use mouse-position,
+        { box [
+            pos
+                . { map &(x,y) => { "x=#, y=#" (x.{str}, y.{str}) } }
+                . { start-with [''] }
+                . { ui-text }
+        ] }
+    ] };

@@ -1,18 +1,18 @@
 import assets from './assets';
 
-do ui-init 'Checkbox' Root;
+do { ui-init ('Checkbox', Root) };
 
-do ui-inject-css [assets::style-css];
+do { ui-inject-css [assets::style-css] };
 
 do ui-exit-when-window-closed;
 
-const Root: UI::Component
-    ~ with-reactive &(ok) := Yes,
-    (ui-container.styled ['container']) [
-        ui-checkbox ok,
+const Root: UI::Component :=
+    & ok := use { ui-state Yes },
+    { (ui-container styled ['container']) [
+        { ui-checkbox ok },
         if ok:
-            ui-label 'checked',
+            { ui-label 'checked' },
         else:
-            ui-label 'not-checked',
-        ui-button 'toggle' (ok.update (&(ok)(not ok)))
-    ];
+            { ui-label 'not-checked' },
+        { ui-button ('toggle', (ok update &(ok) => {not ok})) }
+    ] };

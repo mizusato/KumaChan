@@ -1,17 +1,17 @@
 import assets from './assets';
 
-do ui-init 'Select' Root;
+do { ui-init ('Select', Root) };
 
-do ui-inject-css [assets::style-css];
+do { ui-inject-css [assets::style-css] };
 
 do ui-exit-when-window-closed;
 
-const Root: UI::Component
-    ~ with-reactive &(selection) := 'foo',
-    (ui-container.styled ['container']) [
-        (ui-container.styled ['row']) [
-            ui-select selection [('foo','Foo'),('bar','Bar'),('42','42')],
-            ui-text (selection.watch)
-        ],
-        ui-button 'reset' (selection.update (&(_)('foo')))
-    ];
+const Root: UI::Component :=
+    & selection := use { ui-state 'foo' },
+    { (ui-container styled ['container']) [
+        { (ui-container styled ['row']) [
+            { ui-select (selection, [('foo','Foo'),('bar','Bar'),('42','42')]) },
+            { ui-text selection.{watch} }
+        ] },
+        { ui-button ('reset', (selection <- 'foo')) }
+    ] };
