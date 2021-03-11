@@ -61,7 +61,7 @@ var __Tokens = [...] Token {
     Token { Name: "{",    Pattern: r(`\{`) },
     Token { Name: "}",    Pattern: r(`\}`) },
     Token { Name: "...",  Pattern: r(`\.\.\.`) },
-    Token { Name: "..",   Pattern: r(`\.\.`) },  // Reserved
+    Token { Name: "..",   Pattern: r(`\.\.`) },
     Token { Name: ".",    Pattern: r(`\.`) },
     Token { Name: ",",    Pattern: r(`\,`) },
     Token { Name: "::",   Pattern: r(`\:\:`) },
