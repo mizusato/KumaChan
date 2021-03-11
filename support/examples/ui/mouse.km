@@ -10,13 +10,13 @@ do ui-exit-when-window-closed;
 function mouse-position:
     &() => UI::Hook[Action*[(Float,Float)]]
     &() => &(k) =>
-        &(pos) := await new-bus:::[(Float,Float)],
-        &(id) := await gen-sequential-id,
+        & pos := await new-bus:::[(Float,Float)],
+        & id := await gen-sequential-id,
         let cpt := { k { watch pos } },
         (cpt with { ui-event ({ "mousemove.hook#" id },
             { ui-callback
-                &(x) := ui-msg-float 'webuiCurrentTargetX',
-                &(y) := ui-msg-float 'webuiCurrentTargetY',
+                & x := ui-msg-float 'webuiCurrentTargetX',
+                & y := ui-msg-float 'webuiCurrentTargetY',
                 { return (pos <- (x, y)) }
             }) });
 
@@ -24,7 +24,7 @@ const Root: UI::Component :=
     let container := { styled (ui-container, ['container']) },
     let box := { styled (ui-container, ['box']) },
     { container [
-        &(pos) := use mouse-position,
+        & pos := use mouse-position,
         { box [
             pos
                 . { map &(x,y) => { "x=#, y=#" (x.{str}, y.{str}) } }

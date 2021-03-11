@@ -9,7 +9,7 @@ do ui-exit-when-window-closed;
 function float-input:
     &(Reactive[Maybe[Float]]) => UI::Component
     &(value) =>
-        &(buffer) := use { ui-state '' },
+        & buffer := use { ui-state '' },
         { ui-text-input buffer }
             . { with buffer.{watch}.{concat-map &(string) =>  // TODO: connect
                 (value <- { parse-float string })}.{forever} };
@@ -17,18 +17,18 @@ function float-input:
 const Root: UI::Component :=
     let container := (ui-container styled ['container']),
     let row := (ui-container styled ['row']),
-    &(price) := use { ui-state { Just 0.0 } },
-    &(quantity) := use { ui-state { Just 0.0 } },
+    & price := use { ui-state { Just 0.0 } },
+    & quantity := use { ui-state { Just 0.0 } },
     let total :=
-        &(price?, quantity?) := computed (price.{watch}, quantity.{watch}),
-        &(price) := maybe? price?,
-        &(quantity) := maybe? quantity?,
+        & (price?, quantity?) := computed (price.{watch}, quantity.{watch}),
+        & price := maybe? price?,
+        & quantity := maybe? quantity?,
         { Just (price * quantity) },
     { container [
         { row [ { ui-label 'Price:' }, { float-input price } ] },
         { row [ { ui-label 'Quantity:' }, { float-input quantity } ] },
         { ui-text
-            &(total?) := map total,
+            & total? := map total,
             switch total?:
             case Just total:
                 { "Total = #" total.{str} },
