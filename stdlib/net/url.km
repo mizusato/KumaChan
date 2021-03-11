@@ -4,6 +4,6 @@ export function parse-url:
     &(String) => Maybe[URL]
     native 'parse-url';
 
-export function url:
+export function url!:
     &(String) => URL
-    native 'url';
+    native 'url!';

@@ -17,7 +17,7 @@ var NetFunctions = map[string] interface{} {
 			return Just(url)
 		}
 	},
-	"url": func(str String) *url.URL {
+	"url!": func(str String) *url.URL {
 		var url, err = url.Parse(GoStringFromString(str))
 		if err != nil { panic(err) }
 		return url
