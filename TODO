@@ -1,5 +1,7 @@
 TODO
 
+- api doc hide types that are not used (directly/indirectly) by public functions and constants
+
 - tuple input APIs --> bundle input
 
 - "check-nan-inf" --> "convert T -> Maybe[U]"
