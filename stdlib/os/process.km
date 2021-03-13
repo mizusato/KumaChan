@@ -1,7 +1,7 @@
 export const Env: Map[String,String] :=
-    native 'OS::Env';
+    native 'os::Env';
 export const Args: Array[String] :=
-    native 'OS::Args';
+    native 'os::Args';
 
 type ProcessExit protected Action;
 export function exit:

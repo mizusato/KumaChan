@@ -1,2 +1,2 @@
-export const Locale: L10n::Locale :=
-    native 'OS::Locale';
+export const Locale: l10n::Locale :=
+    native 'os::Locale';

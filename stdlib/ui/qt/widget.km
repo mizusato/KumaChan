@@ -108,7 +108,7 @@ export function list-widget-item:
     native 'qt-list-widget-item';
 
 export function list-widget-item:
-    &(String,Image::PNG,String) => ListWidgetItem
+    &(String,image::PNG,String) => ListWidgetItem
     native 'qt-list-widget-item-with-icon-png';
 
 function get-current-item:

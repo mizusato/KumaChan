@@ -41,36 +41,36 @@ func GetSystemLanguage() string {
 }
 
 var OS_Constants = map[string] NativeConstant {
-	"OS::Name":    func(h InteropContext) Value {
+	"os::Name":    func(h InteropContext) Value {
 		return StringFromGoString(runtime.GOOS)
 	},
-	"OS::Arch":    func(h InteropContext) Value {
+	"os::Arch":    func(h InteropContext) Value {
 		return StringFromGoString(runtime.GOARCH)
 	},
-	"OS::Is64Bit": func(h InteropContext) Value {
+	"os::Is64Bit": func(h InteropContext) Value {
 		return ToBool(uint64(^uintptr(0)) == ^uint64(0))
 	},
-	"OS::Cwd":     func(h InteropContext) Value {
+	"os::Cwd":     func(h InteropContext) Value {
 		var wd, err = os.Getwd()
 		if err != nil { panic("unable to get current working directory") }
 		return stdlib.ParsePath(wd)
 	},
-	"OS::Env":     func(h InteropContext) Value {
+	"os::Env":     func(h InteropContext) Value {
 		return GetEnv(h.GetSysEnv())
 	},
-	"OS::Args":    func(h InteropContext) Value {
+	"os::Args":    func(h InteropContext) Value {
 		return GetArgs(h.GetSysArgs())
 	},
-	"OS::Stdin":   func(h InteropContext) Value {
+	"os::Stdin":   func(h InteropContext) Value {
 		return rx.FileFrom(h.GetStdIO().Stdin)
 	},
-	"OS::Stdout":  func(h InteropContext) Value {
+	"os::Stdout":  func(h InteropContext) Value {
 		return rx.FileFrom(h.GetStdIO().Stdout)
 	},
-	"OS::Stderr":  func(h InteropContext) Value {
+	"os::Stderr":  func(h InteropContext) Value {
 		return rx.FileFrom(h.GetStdIO().Stderr)
 	},
-	"OS::Locale":  func(h InteropContext) Value {
+	"os::Locale":  func(h InteropContext) Value {
 		var locale = Locale {
 			Language:    StringFromGoString(GetSystemLanguage()),
 			TimeZone:    time.Local,
@@ -78,10 +78,10 @@ var OS_Constants = map[string] NativeConstant {
 		}
 		return Struct2Prod(locale)
 	},
-	"OS::EntryModulePath": func(h InteropContext) Value {
+	"os::EntryModulePath": func(h InteropContext) Value {
 		return stdlib.ParsePath(h.GetEntryModulePath())
 	},
-	"OS::EntryModuleDirPath": func(h InteropContext) Value {
+	"os::EntryModuleDirPath": func(h InteropContext) Value {
 		var p = h.GetEntryModulePath()
 		return stdlib.ParsePath(filepath.Dir(p))
 	},

@@ -2,7 +2,7 @@ type Locale {
     /// Primary language.
     language:    LanguageCode,
     /// Timezone.
-    timezone:    Time::Zone,
+    timezone:    time::Zone,
     /// Alternative language, used when primary language not available.
     alternative: Maybe[LanguageCode]
 };

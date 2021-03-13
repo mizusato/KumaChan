@@ -1,9 +1,9 @@
 export const Stdin: FileReadOnly :=
-    native 'OS::Stdin';
+    native 'os::Stdin';
 export const Stdout: FileWriteOnly :=
-    native 'OS::Stdout';
+    native 'os::Stdout';
 export const Stderr: FileWriteOnly :=
-    native 'OS::Stderr';
+    native 'os::Stderr';
 
 export function scan:
     &() => Action[String,Error]

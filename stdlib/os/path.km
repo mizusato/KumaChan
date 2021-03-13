@@ -1,13 +1,13 @@
 type Path native;
 
 export const Cwd: Path :=
-    native 'OS::Cwd';
+    native 'os::Cwd';
 
 export const EntryModulePath: Path :=
-    native 'OS::EntryModulePath';
+    native 'os::EntryModulePath';
 
 export const EntryModuleDirPath: Path :=
-    native 'OS::EntryModuleDirPath';
+    native 'os::EntryModuleDirPath';
 
 export function parse-path:
     &(String) => Path

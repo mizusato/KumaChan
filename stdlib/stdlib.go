@@ -26,8 +26,8 @@ func GetDirectoryPath() string {
 	return stdlib_dir
 }
 
-const Core = "Core"
-const UI = "UI"
+const Core = "core"
+const UI = "ui"
 var core_types = []string {
 	// types.km
 	Float, FloatIEEE, Number,

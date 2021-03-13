@@ -1,6 +1,6 @@
 export const Name: String :=
-    native 'OS::Name';
+    native 'os::Name';
 export const Arch: String :=
-    native 'OS::Arch';
+    native 'os::Arch';
 export const Is64Bit: Bool :=
-    native 'OS::Is64Bit';
+    native 'os::Is64Bit';

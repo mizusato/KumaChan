@@ -1,6 +1,6 @@
 import Data from './schema';
 
-do open-read-only (OS::EntryModuleDirPath.join ['sample','sample1.kmd'])
+do open-read-only (os::EntryModuleDirPath.join ['sample','sample1.kmd'])
     | then ( &(file)
         file.read-all
         | then ( &(binary)
