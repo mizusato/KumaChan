@@ -9,12 +9,12 @@ import (
 
 
 type UnitFileLoader struct {
-	Extensions [] string
-	Name       string
-	IsResource bool
-	Load       func(path string, content ([] byte), config interface{},
-					) (UnitFile, error)
-	GetMIME    func(path string) string
+	Extensions  [] string
+	Name        string
+	IsResource  bool
+	Load        func(path string, content ([] byte), config interface{}) (
+					UnitFile, error)
+	GetMIME     func(path string) string
 }
 
 type UnitFile interface {
@@ -44,7 +44,7 @@ func CreateConstant (
 	}
 	return ast.VariousStatement {
 		Node:      dummy_node,
-		Statement: ast.DeclConst{
+		Statement: ast.DeclConst {
 			Node:   dummy_node,
 			Public: public,
 			Name:   id(name),

@@ -8,6 +8,8 @@
 #include <cstdlib>
 
 
+#define CALLBACK_BLOCKED "qtbindingCallbackBlocked"
+
 typedef void (*callback_t)(size_t);
 Q_DECLARE_METATYPE(callback_t);
 
@@ -35,13 +37,17 @@ class CallbackObject final: public QObject {
 public:
     callback_t cb;
     size_t payload;
-    CallbackObject(callback_t cb, size_t payload): QObject(nullptr) {
+    CallbackObject(QObject* parent, callback_t cb, size_t payload): QObject(parent) {
         this->cb = cb;
         this->payload = payload;
     };
     virtual ~CallbackObject() {};
 public slots:
     void slot() {
+        QVariant v = parent()->property(CALLBACK_BLOCKED);
+        if (v.isValid() && v.toBool() == true) {
+            return;
+        };
         cb(payload);
     };
 };

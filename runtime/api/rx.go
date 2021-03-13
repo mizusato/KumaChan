@@ -67,6 +67,9 @@ func recoverFromSyncCancellationPanic() {
 var nextProcessLevelGlobalId = uint64(0)
 
 var EffectFunctions = map[string] Value {
+	"connect": func(source rx.Action, sink rx.Sink) rx.Action {
+		return rx.Connect(source, sink)
+	},
 	"sink-write": func(s rx.Sink, v Value) rx.Action {
 		return s.Emit(v)
 	},
@@ -203,14 +206,14 @@ var EffectFunctions = map[string] Value {
 			return rx.CreateReactive(init, RefEqual), true
 		})
 	},
-	"with-reactive": func(init Value, f Value, h InteropContext) rx.Action {
+	"reactive": func(init Value, f Value, h InteropContext) rx.Action {
 		return rx.NewSync(func() (rx.Object, bool) {
 			return rx.CreateReactive(init, RefEqual), true
 		}).Then(func(obj rx.Object) rx.Action {
 			return h.Call(f, obj).(rx.Action)
 		})
 	},
-	"with-auto-snapshot": func(init Value, f Value, h InteropContext) rx.Action {
+	"reactive+snapshot": func(init Value, f Value, h InteropContext) rx.Action {
 		return rx.NewSync(func() (rx.Object, bool) {
 			var entity = rx.CreateReactive(init, RefEqual)
 			var r = rx.AutoSnapshotReactive { Entity: entity }

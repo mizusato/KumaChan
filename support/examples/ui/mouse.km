@@ -8,7 +8,7 @@ do ui-exit-when-window-closed;
 
 // TODO: mouse enter => Just pos, mouse out => N/A
 function mouse-position:
-    &() => UI::Hook[Action*[(Float,Float)]]
+    &() => ui::Hook[Action*[(Float,Float)]]
     &() => &(k) =>
         & pos := await new-bus:::[(Float,Float)],
         & id := await gen-sequential-id,
@@ -20,7 +20,7 @@ function mouse-position:
                 { return (pos <- (x, y)) }
             }) });
 
-const Root: UI::Component :=
+const Root: ui::Component :=
     let container := { styled (ui-container, ['container']) },
     let box := { styled (ui-container, ['box']) },
     { container [
@@ -29,6 +29,6 @@ const Root: UI::Component :=
             pos
                 . { map &(x,y) => { "x=#, y=#" (x.{str}, y.{str}) } }
                 . { start-with [''] }
-                . { ui-text }
+                . { ui-label-dynamic }
         ] }
     ] };

@@ -26,8 +26,8 @@ func GetDirectoryPath() string {
 	return stdlib_dir
 }
 
-const Core = "core"
-const UI = "ui"
+const Mod_core = "core"
+const Mod_ui = "ui"
 var core_types = []string {
 	// types.km
 	Float, FloatIEEE, Number,
@@ -224,5 +224,23 @@ func (img *PNG) GetPixelData() image.Image {
 	var decoded, err = png.Decode(reader)
 	if err != nil { panic(fmt.Errorf("failed to decode png data: %w", err)) }
 	return decoded
+}
+
+
+// ui
+var qtWidgetTypeNameMap = map[string] string {
+	"Widget":        "Widget",
+	"MainWindow":    "Window",
+	"Label":         "NativeLabel",
+	"LineEdit":      "NativeInput",
+	"PlainTextEdit": "NativeInputMultiLine",
+	"PushButton":    "NativeButton",
+	"CheckBox":      "NativeCheckbox",
+	"ComboBox":      "NativeSelect",
+	"ListWidget":    "NativeList",
+}
+func GetQtWidgetTypeName(widget_name string) (string, bool) {
+	var type_name, exists = qtWidgetTypeNameMap[widget_name]
+	return type_name, exists
 }
 

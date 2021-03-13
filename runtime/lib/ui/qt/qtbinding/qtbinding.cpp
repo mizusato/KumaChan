@@ -186,7 +186,7 @@ QtConnHandle QtConnect (
         size_t payload
 ) {
     QObject* target_obj = (QObject*) obj_ptr;
-    CallbackObject* cb_obj = new CallbackObject(cb, payload);
+    CallbackObject* cb_obj = new CallbackObject(target_obj, cb, payload);
     __QtConnHandle* handle = new __QtConnHandle;
     handle->conn = QtDynamicConnect(target_obj, signal, cb_obj, "slot()");
     handle->cb_obj = cb_obj;
@@ -211,6 +211,11 @@ void QtDisconnect(QtConnHandle handle) {
 void QtBlockSignals(void* obj_ptr, QtBool block) {
     QObject* obj = (QObject*) obj_ptr;
     obj->blockSignals(bool(block));
+}
+
+void QtBlockCallbacks(void* obj_ptr, QtBool block) {
+    QObject* obj = (QObject*) obj_ptr;
+    obj->setProperty(CALLBACK_BLOCKED, bool(block));
 }
 
 QtEventListener QtAddEventListener (

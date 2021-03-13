@@ -1,0 +1,8 @@
+function signal: [Obj < Object, T]
+    &(Obj, String, &(Static[Obj]) => T) => Action*[T]
+    native 'qt-signal';
+
+function signal: [T]
+    &(Object, String) => Action*[unit]
+    native 'qt-signal-no-payload';
+

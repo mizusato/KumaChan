@@ -70,7 +70,13 @@ func KeyChainEqual(a *KeyChain, b *KeyChain) bool {
 }
 
 
-// Transformation APIs
+// Operators
+
+func Connect(source Action, sink Sink) Action {
+	return source.ConcatMap(func(value Object) Action {
+		return sink.Emit(value)
+	}).WaitComplete()
+}
 
 func SinkAdapt(sink Sink, adapter (func(Object) Object)) Sink {
 	return &AdaptedSink {
@@ -138,7 +144,7 @@ func ReactiveDistinctView(r Reactive, eq func(Object,Object)(bool)) Reactive {
 }
 
 
-// Transformation API Implementations
+// Operators Implementations
 
 type AdaptedSink struct {
 	base     Sink

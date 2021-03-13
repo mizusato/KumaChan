@@ -13,13 +13,14 @@ import (
 
 var UiQtFunctions = map[string] interface{} {
 	"qt-show": func(widget qt.Widget) rx.Action {
-		return ui.CreateQtTaskEffect(func() interface{} {
+		return ui.CreateQtTaskAction(func() interface{} {
 			qt.Show(widget)
 			return nil
 		})
 	},
-	"qt-move-to-screen-center": func(widget qt.Widget) rx.Action {
-		return ui.CreateQtTaskEffect(func() interface{} {
+	"qt-show-at-center": func(widget qt.Widget) rx.Action {
+		return ui.CreateQtTaskAction(func() interface{} {
+			qt.Show(widget)
 			qt.MoveToScreenCenter(widget)
 			return nil
 		})
@@ -48,9 +49,9 @@ var UiQtFunctions = map[string] interface{} {
 		var event_kind = (func() qt.EventKind {
 			var k = GoStringFromString(kind)
 			switch k {
-			case "resized":
+			case "resize":
 				return qt.EventResize()
-			case "closed":
+			case "close":
 				return qt.EventClose()
 			default:
 				panic(fmt.Sprintf("unsupported Qt event kind %s", k))
@@ -72,6 +73,13 @@ var UiQtFunctions = map[string] interface{} {
 			return String(StringFromRuneSlice(qt.GetPropRuneString(object, prop)))
 		case "Bool":
 			return ToBool(qt.GetPropBool(object, prop))
+		case "MaybeNumber":
+			var v = qt.GetPropInt(object, prop)
+			if v < 0 {
+				return Na()
+			} else {
+				return Just(uint(v))
+			}
 		default:
 			panic(fmt.Sprintf("unsupported Qt property type %s", t))
 		}
@@ -79,12 +87,21 @@ var UiQtFunctions = map[string] interface{} {
 	"qt-set-property": func(object qt.Object, prop_name String, prop_type String, value Value) rx.Action {
 		var prop = GoStringFromString(prop_name)
 		var t = GoStringFromString(prop_type)
-		return ui.CreateQtTaskEffect(func() interface{} {
+		return ui.CreateQtTaskAction(func() interface{} {
+			var _, unblock = qt.BlockCallbacks(object)
+			defer unblock()
 			switch t {
 			case "String":
 				qt.SetPropRuneString(object, prop, RuneSliceFromString(value.(String)))
 			case "Bool":
 				qt.SetPropBool(object, prop, FromBool(value.(SumValue)))
+			case "MaybeNumber":
+				var v, ok = Unwrap(value.(SumValue))
+				if ok {
+					qt.SetPropInt(object, prop, int(v.(uint)))
+				} else {
+					qt.SetPropInt(object, prop, -1)
+				}
 			default:
 				panic(fmt.Sprintf("unsupported Qt property type %s", t))
 			}
@@ -92,7 +109,7 @@ var UiQtFunctions = map[string] interface{} {
 		})
 	},
 	"qt-list-widget-set-items": func(list qt.Widget, av Value, current SumValue) rx.Action {
-		return ui.CreateQtTaskEffect(func() interface{} {
+		return ui.CreateQtTaskAction(func() interface{} {
 			var arr = container.ArrayFrom(av)
 			var current_key ([] rune)
 			var the_current, has_current = Unwrap(current)

@@ -7,14 +7,14 @@ do { ui-inject-css [assets::style-css] };
 do ui-exit-when-window-closed;
 
 function float-input:
-    &(Reactive[Maybe[Float]]) => UI::Component
+    &(Reactive[Maybe[Float]]) => ui::Component
     &(value) =>
         & buffer := use { ui-state '' },
-        { ui-text-input buffer }
-            . { with buffer.{watch}.{concat-map &(string) =>  // TODO: connect
-                (value <- { parse-float string })}.{forever} };
+        { ui-input buffer }
+            . { with ({ watch buffer } connect { callback:::[String] &(string) =>
+                (value <- { parse-float string }) }) };
 
-const Root: UI::Component :=
+const Root: ui::Component :=
     let container := (ui-container styled ['container']),
     let row := (ui-container styled ['row']),
     & price := use { ui-state { Just 0.0 } },
@@ -27,7 +27,7 @@ const Root: UI::Component :=
     { container [
         { row [ { ui-label 'Price:' }, { float-input price } ] },
         { row [ { ui-label 'Quantity:' }, { float-input quantity } ] },
-        { ui-text
+        { ui-label-dynamic
             & total? := map total,
             switch total?:
             case Just total:

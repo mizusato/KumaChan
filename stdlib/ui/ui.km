@@ -1,27 +1,31 @@
-import Qt from './qt';
+type WebAsset
+    native;
 
-type MainLoop protected Action;
-type WebAsset native;
-type FontInfo (String,String,String);  // family, weight, style
-type Window   protected Qt::MainWindow;
+type FontInfo
+    (String,String,String);  // family, weight, style
 
 export function ui-init:
-    &(String, Component) => MainLoop
+    &(String, Component) => Action
     native 'ui-init';
+
 export function ui-inject-css:
     &(Array[WebAsset]) => Action
     native 'ui-inject-css';
+
 export function ui-inject-js:
     &(Array[WebAsset]) => Action
     native 'ui-inject-js';
+
 export function ui-inject-ttf:
     &(Array[(FontInfo,WebAsset)]) => Action
     native 'ui-inject-ttf';
+
 export function ui-get-window:
     &() => Action[Window]
     native 'ui-get-window';
+
 export function ui-exit-when-window-closed:
     &() => Action
     &() =>
         & window := await ui-get-window,
-        { listen (window.{closed}, &() => { exit 0 }) };
+        window.{on-close}.{concat-map &() => {exit 0}}.{wait-complete};

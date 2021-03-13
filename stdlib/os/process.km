@@ -3,7 +3,7 @@ export const Env: Map[String,String] :=
 export const Args: Array[String] :=
     native 'os::Args';
 
-type ProcessExit protected Action;
+type ProcessExit protected Action[never];
 export function exit:
     &(Uint8) => ProcessExit
     native 'exit';

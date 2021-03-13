@@ -506,7 +506,7 @@ func link(sym loader.Symbol, current_mod string) Html {
 	var href = fmt.Sprintf("%s#%s", sym.ModuleName, sym.String())
 	var c_module = (func() Html {
 		var clear = checker.GetClearModuleName(sym.ModuleName, current_mod)
-		if clear == "" || sym.ModuleName == stdlib.Core {
+		if clear == "" || sym.ModuleName == stdlib.Mod_core {
 			return Html("")
 		} else {
 			return text("symbol-module", clear)

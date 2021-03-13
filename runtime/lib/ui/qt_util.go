@@ -54,7 +54,7 @@ func (event QtEvent) Receive() rx.Action {
 	})
 }
 
-func CreateQtTaskEffect(action func() interface{}) rx.Action {
+func CreateQtTaskAction(action func() interface{}) rx.Action {
 	return rx.NewCallback(func(callback func(rx.Object)) {
 		qt.CommitTask(func() {
 			callback(action())

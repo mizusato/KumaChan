@@ -26,7 +26,7 @@ func (f WebAssetFile) GetAST() (ast.Root, *parser.Error) {
 		ast_root_node,
 		f.Public,
 		name,
-		stdlib.UI,
+		stdlib.Mod_ui,
 		stdlib.WebAsset_T,
 		stdlib.WebAsset { Path: path },
 	)

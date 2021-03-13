@@ -22,11 +22,11 @@ export function ui-label:
     &(String) => Component
     &(text) => { yield-thunk &() => { dom-node ('div', text) } };
 
-export function ui-text:
+export function ui-label-dynamic:
     &(Action*[String]) => Component
     &(@text) => { map (@text, (&(text) => { dom-node ('div', text) })) };
 
-export function ui-text-input:
+export function ui-input:
     &(Reactive[String]) => Component
     &(@text) =>
         let on-input := { dom-event-handler

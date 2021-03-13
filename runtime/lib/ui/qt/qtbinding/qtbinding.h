@@ -90,6 +90,7 @@ extern "C" {
     QtBool QtIsConnectionValid(QtConnHandle handle);
     void QtDisconnect(QtConnHandle handle);
     void QtBlockSignals(void* obj_ptr, QtBool block);
+    void QtBlockCallbacks(void* obj_ptr, QtBool block);
     QtEventListener QtAddEventListener(void* obj_ptr, size_t kind, QtBool prevent, void (*cb)(size_t), size_t payload);
     QtEvent QtGetCurrentEvent(QtEventListener listener);
     void QtRemoveEventListener(void* obj_ptr, QtEventListener listener);

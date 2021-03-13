@@ -1,0 +1,23 @@
+type NativeEvent[+T]
+    protected
+    Action*[T];
+
+function native-event:[T]
+    &(Object, String, Bool) => NativeEvent[T]
+    native 'qt-event';
+
+
+type OnResize {
+    width:  Number,
+    height: Number
+};
+
+export function on-resize:
+    &(Object) => NativeEvent[OnResize]
+    &(object) => { native-event (object,'resize',No) };
+
+
+export function on-close:
+    &(Object) => NativeEvent[unit]
+    &(object) => { native-event (object,'close',Yes) };
+

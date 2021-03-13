@@ -69,7 +69,7 @@ func LoadPNG(path string, content ([] byte), i_config interface{}) (common.UnitF
 
 func PNG_Loader() common.UnitFileLoader {
 	return common.UnitFileLoader {
-		Extensions: [] string { "png", "PNG" },
+		Extensions: [] string { "png" },
 		Name:       "png",
 		Load:       LoadPNG,
 		IsResource: true,

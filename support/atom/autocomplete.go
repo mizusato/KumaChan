@@ -235,7 +235,7 @@ func AutoComplete(req AutoCompleteRequest, ctx LangServerContext) AutoCompleteRe
 					}
 				}
 			}
-			var core_mod = idx[stdlib.Core]
+			var core_mod = idx[stdlib.Mod_core]
 			for _, stmt := range core_mod.AST.Statements {
 				process_core_statement(stmt.Statement)
 			}

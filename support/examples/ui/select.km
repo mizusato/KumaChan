@@ -6,12 +6,12 @@ do { ui-inject-css [assets::style-css] };
 
 do ui-exit-when-window-closed;
 
-const Root: UI::Component :=
+const Root: ui::Component :=
     & selection := use { ui-state 'foo' },
     { (ui-container styled ['container']) [
         { (ui-container styled ['row']) [
             { ui-select (selection, [('foo','Foo'),('bar','Bar'),('42','42')]) },
-            { ui-text selection.{watch} }
+            { ui-label-dynamic selection.{watch} }
         ] },
         { ui-button ('reset', (selection <- 'foo')) }
     ] };

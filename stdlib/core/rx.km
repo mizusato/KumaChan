@@ -59,6 +59,12 @@ type HashMap[+K,+V]  native;  // rx.StringHashMap, rx.NumberHashMap
 
 ## Wired Components Operations
 // TODO: to be semantic: tuple input --> bundle input
+export function connect:[T]
+    &(Action*[T], Sink[T]) => Action
+    native 'connect';
+export function connect:[T]
+    &(Reactive[T], Sink[T]) => Action
+    &(r,sink) => ({watch(r)} connect sink);
 # alias: <-
 export function write:[T]
     &(Sink[T], T) => Action
@@ -112,12 +118,12 @@ export function new-bus:[T]
 export function new-reactive:[T]
     &(T) => Action[ReactiveEntity[T]]
     native 'new-reactive';
-export function with-reactive: [T, K < Action*[any,any]]
+export function reactive: [T, K < Action*[any,any]]
     &(T, &(ReactiveEntity[T]) => K) => K
-    native 'with-reactive';
-export function with-auto-snapshot: [T, K < Action*[any,any]]
+    native 'reactive';
+export function reactive+snapshot: [T, K < Action*[any,any]]
     &(T, &(Reactive[T],(Action,Action,Action*[(ReactiveSnapshots[T],T)])) => K) => K
-    native 'with-auto-snapshot';
+    native 'reactive+snapshot';
 
 ## Mutable Containers Operations
 export function new-mutable:[T]

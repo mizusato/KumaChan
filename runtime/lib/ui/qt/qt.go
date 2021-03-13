@@ -243,6 +243,13 @@ func BlockSignals(obj Object) (error, func()) {
     }
 }
 
+func BlockCallbacks(obj Object) (error, func()) {
+    C.QtBlockCallbacks(obj.ptr(), 1)
+    return nil, func() {
+        C.QtBlockCallbacks(obj.ptr(), 0)
+    }
+}
+
 func Listen(obj Object, kind EventKind, prevent bool, callback func(Event)) func() {
     var l C.QtEventListener
     var cb, del_cb = cgohelper.NewCallback(func() {
@@ -428,6 +435,9 @@ func ListWidgetClear(w Widget) {
     C.QtListWidgetClear(w.ptr())
 }
 func ListWidgetSetItems(w Widget, get_item (func(uint) ListWidgetItem), length uint, current ([] rune)) {
+    // note: block signals instead of callbacks because
+    //       this function is also used from the interpreter side,
+    //       e.g. api browser
     var _, unblock = BlockSignals(w)
     ListWidgetClear(w)
     var icon_pool = make(map[*ImageData] struct { icon Icon; del func() })

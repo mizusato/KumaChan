@@ -1,0 +1,139 @@
+type Widget
+    protected
+    Object;
+
+export function show:
+    &(Widget) => Action
+    native 'qt-show';
+
+export function show-at-center:
+    &(Widget) => Action
+    native 'qt-show-at-center';
+
+
+type Window
+    protected
+    Widget;
+
+
+type NativeLabel
+    protected
+    Widget;
+
+export function bind:
+    &(NativeLabel, Action*[String]) => Action
+    &(label, @text) => {
+        bind-property {
+            object: label,
+            prop:   'text',
+            type:   PropTypeString,
+            source: @text
+        } };
+
+
+type NativeInput
+    protected
+    Widget;
+
+function bind:
+    &(NativeInput, Reactive[String]) => Action
+    &(input, @text) => {
+        bind-property {
+            object: input,
+            prop:   'text',
+            type:   PropTypeString,
+            notify: 'textEdited(const QString&)',
+            sync:   @text
+        } };
+
+export function activated:
+    &(NativeInput) => Action*[unit]
+    &(input) => { signal (input, 'returnPressed()') };
+
+
+type NativeInputMultiLine
+    protected
+    Widget;
+
+function bind:
+    &(NativeInputMultiLine, Reactive[String]) => Action
+    &(input, @text) => {
+        bind-property {
+            object: input,
+            prop:   'plainText',
+            type:   PropTypeString,
+            notify: 'textChanged()',
+            sync:   @text
+        } };
+
+
+type NativeButton
+    protected
+    Widget;
+
+export function activated:
+    &(NativeButton) => Action*[unit]
+    &(button) => { signal (button,'clicked()') };
+
+
+type NativeCheckBox
+    protected
+    Widget;
+
+function bind:
+    &(NativeCheckBox, Reactive[Bool]) => Action
+    &(checkbox, @checked) => {
+        bind-property {
+            object: checkbox,
+            prop:   'checked',
+            type:   PropTypeBool,
+            notify: 'stateChanged(int)',
+            sync:   @checked
+        } };
+
+
+type NativeSelect
+    protected
+    Widget;
+
+function bind:
+    &(NativeSelect, Reactive[Maybe[Number]]) => Action
+    &(select-widget, @index) => {
+        bind-property {
+            object: select-widget,
+            prop:   'currentIndex',
+            type:   PropTypeMaybeNumber,
+            notify: 'activated(int)',
+            sync:   @index
+        } };
+
+// NativeList
+type NativeList
+    protected
+    Widget;
+
+type NativeListItem
+    native;
+
+// TODO: bind { items: Action*[List[String]], current: Reactive[ListKey] }
+/*
+export function set-items:
+    &(NativeList,Array[NativeListItem],Maybe[String]) => Action
+    native 'qt-list-widget-set-items';
+
+export function list-widget-item:
+    &(String,String) => NativeListItem
+    native 'qt-list-widget-item';
+
+export function list-widget-item:
+    &(String,image::PNG,String) => NativeListItem
+    native 'qt-list-widget-item-with-icon-png';
+
+function get-current-item:
+    &(Static[NativeList]) => Maybe[String]
+    native 'qt-list-widget-get-current';
+
+export function current-item:
+    &(NativeList) => Action*[Maybe[String]]
+    &(list) => { signal (list,'currentRowChanged(int)',get-current-item) };
+*/

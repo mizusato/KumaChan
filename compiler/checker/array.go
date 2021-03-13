@@ -142,7 +142,7 @@ func GetArrayInfo(length uint, item_type Type) lang.ArrayInfo {
 		case *NamedType:
 			var mod_name = t.Name.ModuleName
 			var sym_name = t.Name.SymbolName
-			if mod_name == stdlib.Core && len(t.Args) == 0 {
+			if mod_name == stdlib.Mod_core && len(t.Args) == 0 {
 				var rt, ok = stdlib.GetPrimitiveReflectType(sym_name)
 				if ok {
 					return rt
