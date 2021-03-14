@@ -1,5 +1,7 @@
 TODO
 
+- consider zero-value:[T] &() => Maybe[T]
+
 - api doc hide types that are not used (directly/indirectly) by public functions and constants
 
 - tuple input APIs --> bundle input
