@@ -6,12 +6,12 @@ export function dialog-open:
 export function dialog-open-multiple:
     & { parent: Maybe[Widget], title: String, cwd: os::Path, filter: String }
         => Action[Array[os::Path]]
-    native 'qt-dialog-open*';
+    native 'qt-dialog-open-multiple';
 
 export function dialog-open-directory:
     & { parent: Maybe[Widget], title: String, cwd: os::Path }
         => Action[Maybe[os::Path]]
-    native 'qt-dialog-open-dir';
+    native 'qt-dialog-open-directory';
 
 export function dialog-save:
     & { parent: Maybe[Widget], title: String, cwd: os::Path, filter: String }

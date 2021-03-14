@@ -164,7 +164,7 @@ var ContainerFunctions = map[string] Value {
 		var arr = ArrayFrom(v)
 		return arr.MapView(func(item Value) Value {
 			return h.Call(f, item)
-		}).CopyAsSlice(arr.ItemType)
+		}).CopyAsSlice(ValueReflectType())
 	},
 	"array-map-view": func(v Value, f Value, h InteropContext) Value {
 		var arr = ArrayFrom(v)

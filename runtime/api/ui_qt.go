@@ -180,7 +180,7 @@ var UiQtFunctions = map[string] interface{} {
 			})
 		})
 	},
-	"qt-dialog-open*": func(parent SumValue, title String, cwd stdlib.Path, filter String) rx.Action {
+	"qt-dialog-open-multiple": func(parent SumValue, title String, cwd stdlib.Path, filter String) rx.Action {
 		var parent_widget, opts = ui.QtFileDialogAdaptArgs(parent, title, cwd, filter)
 		return rx.NewCallback(func(ok func(rx.Object)) {
 			qt.CommitTask(func() {
@@ -193,7 +193,7 @@ var UiQtFunctions = map[string] interface{} {
 			})
 		})
 	},
-	"qt-dialog-open-dir": func(parent SumValue, title String, cwd stdlib.Path) rx.Action {
+	"qt-dialog-open-directory": func(parent SumValue, title String, cwd stdlib.Path) rx.Action {
 		var parent_widget, opts = ui.QtFileDialogAdaptArgs(parent, title, cwd, String([] Char {}))
 		return rx.NewCallback(func(ok func(rx.Object)) {
 			qt.CommitTask(func() {
