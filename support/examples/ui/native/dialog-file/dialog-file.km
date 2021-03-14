@@ -1,0 +1,86 @@
+do DialogDemoWindow.{show-at-center};
+
+do DialogDemoWindow.{on-close}.{concat-map &() => {exit 0}}.{wait-complete};
+
+do
+    & @text := reactive '',
+    let @line := { merge [@open, @open-multiple, @open-directory, @save] },
+    (LogBox bind @text)
+        . { with @line
+            .{ concat-map &(line) =>
+                @text.{update &(text) => {"##"..\n (text,line)}} }
+            .{ wait-complete } };
+
+
+const @open: Action*[String] :=
+    ButtonOpen.{activated}
+        . { concat-map &() =>
+            { ui::dialog-open {
+                parent: { Just DialogDemoWindow },
+                title:  'Open',
+                cwd:    os::Cwd,
+                filter: 'Text files (*.txt);;Markdown files (*.md)'
+            } } }
+        . { map &(path?) =>
+            switch path?:
+            case Just path:
+                { "open: #" { str path } },
+            case N/A:
+                'open: (cancelled)',
+            end
+        };
+
+const @open-multiple: Action*[String] :=
+    ButtonOpenMultiple.{activated}
+        . { concat-map &() =>
+            { ui::dialog-open-multiple {
+                parent: { Just DialogDemoWindow },
+                title:  'Open Multiple',
+                cwd:    os::Cwd,
+                filter: 'Text files (*.txt)'
+            } } }
+        . { map &(path-list) =>
+            if (path-list.{length} > 0):
+                { "open multiple: #"
+                    path-list
+                        . { map &(path) => { str path } }
+                        . { map "'#'" }
+                        . { join ' ' } },
+            else:
+                'open multiple: (cancelled)'
+        };
+
+const @open-directory: Action*[String] :=
+    ButtonOpenDirectory.{activated}
+        . { concat-map &() =>
+            { ui::dialog-open-directory {
+                parent: { Just DialogDemoWindow },
+                title:  'Open Directory',
+                cwd:    os::Cwd
+            } } }
+        . { map &(path?) =>
+            switch path?:
+            case Just path:
+                { "open directory: #" { str path } },
+            case N/A:
+                'open directory: (cancelled)',
+            end
+        };
+
+const @save: Action*[String] :=
+    ButtonSave.{activated}
+        . { concat-map &() =>
+            { ui::dialog-save {
+                parent: { Just DialogDemoWindow },
+                title:  'Save',
+                cwd:    os::Cwd,
+                filter: 'Text files (*.txt)'
+            } } }
+        . { map &(path?) =>
+            switch path?:
+            case Just path:
+                { "save: #" { str path } },
+            case N/A:
+                'save: (cancelled)',
+            end
+        };
