@@ -37,8 +37,8 @@ func (f WebAssetFile) GetAST() (ast.Root, *parser.Error) {
 type WebAssetConfig struct {
 	Public  bool   `json:"public"`
 }
-func LoadWebAsset(path string, _ ([] byte), i_config interface{}) (common.UnitFile, error) {
-	var config = i_config.(WebAssetConfig)
+func LoadWebAsset(path string, _ ([] byte), config_ interface{}) (common.UnitFile, error) {
+	var config = config_.(WebAssetConfig)
 	return WebAssetFile {
 		Path:   path,
 		Public: config.Public,

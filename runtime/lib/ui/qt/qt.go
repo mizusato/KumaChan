@@ -89,7 +89,10 @@ func (ev Event) ResizeEventGetHeight() uint {
     return uint(C.QtResizeEventGetHeight(C.QtEvent(ev)))
 }
 
-var mock = false
+var debugEnabled = false
+func EnableDebug() {
+    debugEnabled = true
+}
 var initializing = make(chan struct{}, 1)
 var initialized = make(chan struct{})
 var initRequestSignal = make(chan func())
@@ -119,20 +122,13 @@ func Quit(after func()) {
         after()
     }
 }
-func Mock() {
-    // TODO: will be unnecessary after loader decoupled with runtime
-    mock = true
-}
 // TODO: rename this function
-func MakeSureInitialized(debug bool) {
-    if mock {
-        return
-    }
+func MakeSureInitialized() {
     select {
     case initializing <- struct{}{}:
         var wait = make(chan struct{})
         initRequestSignal <- func() {
-            C.QtInit(C.int(MakeBool(debug)))
+            C.QtInit(C.int(MakeBool(debugEnabled)))
             wait <- struct{}{}
             C.QtMain()
         }
@@ -145,10 +141,6 @@ func MakeSureInitialized(debug bool) {
 
 // Invokes the operation callback in the main thread of Qt.
 func CommitTask(operation func()) {
-    if mock {
-        go operation()
-        return
-    }
     var delete_callback (func() bool)
     var f = func() {
         operation()
@@ -159,9 +151,6 @@ func CommitTask(operation func()) {
 }
 
 func LoadWidget(def string, dir string) (Widget, bool) {
-    if mock {
-        return widget{}, true
-    }
     var new_str, del_all_str = str_alloc()
     defer del_all_str()
     var ptr = C.QtLoadWidget(new_str(def), new_str(dir))
@@ -173,9 +162,6 @@ func LoadWidget(def string, dir string) (Widget, bool) {
 }
 
 func FindChild(w Widget, name string) (Widget, bool) {
-    if mock {
-        return widget{}, true
-    }
     var new_str, del_all_str = str_alloc()
     defer del_all_str()
     var ptr = C.QtWidgetFindChild(w.ptr(), new_str(name))
@@ -187,9 +173,6 @@ func FindChild(w Widget, name string) (Widget, bool) {
 }
 
 func FindChildAction(w Widget, name string) (Action, bool) {
-    if mock {
-        return action{}, true
-    }
     var new_str, del_all_str = str_alloc()
     defer del_all_str()
     var ptr = C.QtWidgetFindChildAction(w.ptr(), new_str(name))

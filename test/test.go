@@ -8,12 +8,11 @@ import (
 	"strconv"
 	"io/ioutil"
 	"path/filepath"
+	. "kumachan/util/error"
 	"kumachan/compiler/loader"
 	"kumachan/compiler/checker"
-	. "kumachan/util/error"
 	"kumachan/compiler/generator"
 	"kumachan/lang"
-	"kumachan/runtime/lib/ui/qt"
 	"kumachan/runtime/vm"
 )
 
@@ -34,7 +33,6 @@ func mergeErrorMessages(errs ([] E)) ErrorMessage {
 }
 
 func expectStdIO(t *testing.T, path string, in string, expected_out string) {
-	qt.Mock()
 	ldr_mod, ldr_idx, ldr_res, ldr_err := loader.LoadEntry(path)
 	if ldr_err != nil { t.Fatal(ldr_err) }
 	mod, _, sch, serv, errs := checker.TypeCheck(ldr_mod, ldr_idx)

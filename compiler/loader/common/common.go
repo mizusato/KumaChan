@@ -50,7 +50,7 @@ func CreateConstant (
 			Name:   id(name),
 			Type:   ast.VariousType {
 				Node: dummy_node,
-				Type: ast.TypeRef{
+				Type: ast.TypeRef {
 					Node:     dummy_node,
 					Module:   id(type_mod),
 					Specific: true,

@@ -1,0 +1,27 @@
+type Data {
+    a: Bool,
+    b: Maybe[Number],
+    c: String,
+    d: String
+};
+
+do Window.{show-at-center};
+
+do Window.{on-close}.{concat-map &() => { exit 0 }}.{wait-complete};
+
+do
+    let default-article := 'Lorem Ipsum',
+    & data := reactive { Data { a: No, b: N/A, c: '', d: default-article } },
+    let {a,b,c,d} := data,
+    let apply-bindings := { merge [
+        (InputCheckBox bind a),
+        (InputComboBox bind b),
+        (InputLineEdit bind c),
+        (InputPlainTextEdit bind d),
+        (ButtonClear.{activated}.{concat-map &() => (c <- '')}),
+        (ValueCheckBox bind a.{watch}.{map &(a) => if a: 'Yes', else: 'No'}),
+        (ValueComboBox bind b.{watch}.{map &(b) => switch b: case Just b: {str b}, case N/A: 'N/A', end}),
+        (ValueLineEdit bind c.{watch}),
+        (ValuePlainTextEdit bind d.{watch})
+    ] },
+    apply-bindings.{wait-complete};

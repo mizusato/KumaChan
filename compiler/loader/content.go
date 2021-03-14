@@ -18,6 +18,7 @@ import (
 var __UnitFileLoaders = [] common.UnitFileLoader {
 	extra.WebAssetLoader(),
 	extra.PNG_Loader(),
+	extra.UiXmlLoader(),
 }
 
 type ModuleThunk struct {

@@ -40,7 +40,7 @@ type NativeInput
     protected
     Widget;
 
-function bind:
+export function bind:
     &(NativeInput, Reactive[String]) => Action
     &(input, @text) => {
         bind-property {
@@ -60,7 +60,7 @@ type NativeInputMultiLine
     protected
     Widget;
 
-function bind:
+export function bind:
     &(NativeInputMultiLine, Reactive[String]) => Action
     &(input, @text) => {
         bind-property {
@@ -81,12 +81,12 @@ export function activated:
     &(button) => { signal (button,'clicked()') };
 
 
-type NativeCheckBox
+type NativeCheckbox
     protected
     Widget;
 
-function bind:
-    &(NativeCheckBox, Reactive[Bool]) => Action
+export function bind:
+    &(NativeCheckbox, Reactive[Bool]) => Action
     &(checkbox, @checked) => {
         bind-property {
             object: checkbox,
@@ -101,7 +101,7 @@ type NativeSelect
     protected
     Widget;
 
-function bind:
+export function bind:
     &(NativeSelect, Reactive[Maybe[Number]]) => Action
     &(select-widget, @index) => {
         bind-property {

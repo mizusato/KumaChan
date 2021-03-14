@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"kumachan/rx"
 	"kumachan/runtime/api"
+	"kumachan/runtime/lib/ui"
 	. "kumachan/lang"
 )
 
@@ -33,38 +34,61 @@ func execute(p Program, m *Machine) {
 	}
 	for i, _ := range p.Functions {
 		var f = p.Functions[i]
-		m.globalSlot = append(m.globalSlot, f.ToValue(api.GetNativeFunction))
+		var v = (func() Value {
+			switch f.Kind {
+			case F_USER:
+				return &ValFunc { Underlying: f }
+			case F_NATIVE:
+				return api.GetNativeFunctionValue(f.NativeId)
+			case F_PREDEFINED:
+				return f.Predefined
+			default:
+				panic("impossible branch")
+			}
+		})()
+		m.globalSlot = append(m.globalSlot, v)
 	}
 	for i, _ := range p.Closures {
 		var f = p.Closures[i]
-		m.globalSlot = append(m.globalSlot, f.ToValue(nil))
+		if f.Kind != F_USER { panic("something went wrong") }
+		var v = &ValFunc { Underlying: f }
+		m.globalSlot = append(m.globalSlot, v)
 	}
 	var background = rx.Background()
 	for i, _ := range p.Constants {
 		var f = p.Constants[i]
-		switch f.Kind {
-		case F_USER:
-			var fv = f.ToValue(nil).(FunctionValue)
-			m.globalSlot = append(m.globalSlot, call(fv, nil, m, background))
-		case F_NATIVE:
-			var l = InteropErrorPointLocatorFromStatic(f.Info.DeclPoint)
-			var h = InteropHandle { machine: m, locator: l, sync_ctx: background }
-			var v = api.GetNativeConstant(f.NativeId, h)
-			m.globalSlot = append(m.globalSlot, v)
-		case F_PREDEFINED:
-			m.globalSlot = append(m.globalSlot, f.ToValue(nil))
-		}
+		var v = (func() Value {
+			switch f.Kind {
+			case F_USER:
+				var evaluate = &ValFunc { Underlying: f }
+				return call(evaluate, nil, m, background)
+			case F_NATIVE:
+				var l = InteropErrorPointLocatorFromStatic(f.Info.DeclPoint)
+				var h = InteropHandle { machine: m, locator: l, sync_ctx: background }
+				return api.GetNativeConstantValue(f.NativeId, h)
+			case F_PREDEFINED:
+				switch v := f.Predefined.(type) {
+				case UiObjectThunk:
+					return ui.EvaluateObjectThunk(v)
+				default:
+					return v
+				}
+			default:
+				panic("impossible branch")
+			}
+		})()
+		m.globalSlot = append(m.globalSlot, v)
 	}
 	var wg = make(chan bool, len(p.Effects))
 	for i, _ := range p.Effects {
 		var f = p.Effects[i]
 		var e = (func() rx.Action {
-			var v = f.ToValue(nil)
-			switch v := v.(type) {
-			case FunctionValue:
-				return (call(v, nil, m, background)).(rx.Action)
-			case rx.Action:
-				return v
+			switch f.Kind {
+			case F_USER:
+				var evaluate = &ValFunc { Underlying: f }
+				return (call(evaluate, nil, m, background)).(rx.Action)
+			case F_PREDEFINED:
+				return f.Predefined.(rx.Action)
 			default:
 				panic("something went wrong")
 			}

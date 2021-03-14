@@ -77,7 +77,7 @@ func (ref ApiRef) HyperRef() string {
 }
 
 func RunApiBrowser(doc ApiDocIndex) {
-	qt.MakeSureInitialized(false)
+	qt.MakeSureInitialized()
 	qt.CommitTask(func() {
 		var ui_xml_dir = util.InterpreterResourceFolderPath()
 		window, ok := qt.LoadWidget(apiBrowserUiXml, ui_xml_dir)

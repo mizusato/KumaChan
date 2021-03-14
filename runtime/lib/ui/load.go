@@ -22,7 +22,7 @@ func load (
 ) bool {
 	select {
 	case loading <- struct{}{}:
-		qt.MakeSureInitialized(debug)
+		qt.MakeSureInitialized()
 		var wait = make(chan struct{})
 		var dialog qt.Widget
 		var del_dialog func()

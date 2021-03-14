@@ -45,8 +45,8 @@ type PNG_Config struct {
 	Public  bool   `json:"public"`
 	Decode  bool   `json:"decode"`
 }
-func LoadPNG(path string, content ([] byte), i_config interface{}) (common.UnitFile, error) {
-	var config = i_config.(PNG_Config)
+func LoadPNG(path string, content ([] byte), config_ interface{}) (common.UnitFile, error) {
+	var config = config_.(PNG_Config)
 	if config.Decode {
 		var reader = bytes.NewReader(content)
 		var decoded, err = png.Decode(reader)

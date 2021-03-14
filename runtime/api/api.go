@@ -69,13 +69,13 @@ var _ = (func() interface{} {
 	return nil
 }) ()
 
-func GetNativeFunction(id string) Value {
+func GetNativeFunctionValue(id string) Value {
 	var f, exists = NativeFunctionMap[id]
 	if !(exists) { panic(fmt.Sprintf("no such native function: %s", id)) }
 	return NativeFunctionValue(f)
 }
 
-func GetNativeConstant(id string, h InteropContext) Value {
+func GetNativeConstantValue(id string, h InteropContext) Value {
 	var c, exists = NativeConstantMap[id]
 	if !(exists) { panic(fmt.Sprintf("no such native constant: %s", id)) }
 	return c(h)

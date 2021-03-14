@@ -92,7 +92,23 @@ var UiQtFunctions = map[string] interface{} {
 			defer unblock()
 			switch t {
 			case "String":
-				qt.SetPropRuneString(object, prop, RuneSliceFromString(value.(String)))
+				// workaround: block data reflow of 2-way bindings
+				var current_value = qt.GetPropRuneString(object, prop)
+				var new_value = RuneSliceFromString(value.(String))
+				if len(current_value) == len(new_value) {
+					var L = len(current_value)
+					var all_equal = true
+					for i := 0; i < L; i += 1 {
+						if current_value[i] != new_value[i] {
+							all_equal = false
+							break
+						}
+					}
+					if all_equal {
+						break
+					}
+				}
+				qt.SetPropRuneString(object, prop, new_value)
 			case "Bool":
 				qt.SetPropBool(object, prop, FromBool(value.(SumValue)))
 			case "MaybeNumber":

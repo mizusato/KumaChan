@@ -111,7 +111,7 @@ func CompileFunction (
 			Predefined: nil,
 			Code:       nil,
 			BaseSize:   lang.FrameBaseSize {},
-			Info:        lang.FuncInfo {
+			Info:       lang.FuncInfo {
 				Module:    mod,
 				Name:      name,
 				DeclPoint: point,
@@ -151,11 +151,11 @@ func CompileFunction (
 			Kind:       lang.F_USER,
 			Predefined: nil,
 			Code:       code.InstSeq,
-			BaseSize:    lang.FrameBaseSize {
+			BaseSize:   lang.FrameBaseSize {
 				Context:  lang.Short(context_size),
 				Reserved: lang.Long(binding_peek),
 			},
-			Info:        lang.FuncInfo {
+			Info:       lang.FuncInfo {
 				Module:    mod,
 				Name:      name,
 				DeclPoint: point,
@@ -216,11 +216,11 @@ func CompileConstant (
 			Kind:       lang.F_USER,
 			Predefined: nil,
 			Code:       code.InstSeq,
-			BaseSize:    lang.FrameBaseSize {
+			BaseSize:   lang.FrameBaseSize {
 				Context:  0,
 				Reserved: lang.Long(binding_peek),
 			},
-			Info:        lang.FuncInfo {
+			Info:       lang.FuncInfo {
 				Module:    mod,
 				Name:      name,
 				DeclPoint: point,

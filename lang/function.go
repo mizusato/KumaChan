@@ -35,20 +35,18 @@ type FuncInfo struct {
 	SourceMap  [] ErrorPoint
 }
 
-func (f *Function) ToValue(native_registry (func(string) Value)) Value {
-	switch f.Kind {
-	case F_USER:
-		return &ValFunc {
-			Underlying:    f,
-			ContextValues: make([]Value, 0, 0),
-		}
-	case F_NATIVE:
-		return native_registry(f.NativeId)
-	case F_PREDEFINED:
-		return f.Predefined
-	default:
-		panic("impossible branch")
-	}
+type UiObjectThunk struct {
+	Object  string
+	Group   *UiObjectGroup
+}
+
+type UiObjectGroup struct {
+	GroupName  string
+	BaseDir    string
+	XmlDef     string
+	RootName   string
+	Widgets    [] string
+	Actions    [] string
 }
 
 func (f *Function) String() string {

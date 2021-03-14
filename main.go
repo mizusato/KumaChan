@@ -371,6 +371,9 @@ func main() {
     }
     var debug_ui = (debug_options_string == "ui")
     var debug_opts = lang.DebugOptions { DebugUI: debug_ui }
+    if debug_ui {
+        qt.EnableDebug()
+    }
     // perform actions according to specified mode
     switch mode {
     case "interpreter":
@@ -419,7 +422,6 @@ func main() {
         }
         debug_parser(program_file, program_path, syntax.RootPartName)
     case "atom-lang-server":
-        qt.Mock()
         err := atom.LangServer(os.Stdin, os.Stdout, os.Stderr)
         if err != nil { panic(err) }
     case "docs":

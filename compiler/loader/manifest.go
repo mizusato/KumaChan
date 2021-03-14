@@ -23,6 +23,7 @@ type Config struct {
 	Service   ServiceConfig          `json:"service"`
 	PNG       extra.PNG_Config       `json:"png"`
 	WebAsset  extra.WebAssetConfig   `json:"web_asset"`
+	UiXml     extra.UiXmlConfig      `json:"ui_xml"`
 }
 type ServiceConfig struct {
 	Name     string   `json:"name"`
