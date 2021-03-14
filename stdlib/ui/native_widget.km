@@ -11,6 +11,11 @@ export function show-at-center:
     native 'qt-show-at-center';
 
 
+type Dialog
+    protected
+    Widget;
+
+
 type Window
     protected
     Widget;

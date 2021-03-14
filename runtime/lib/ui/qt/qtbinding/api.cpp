@@ -55,7 +55,7 @@ static UiLoader*
 static bool
     initialized = false;
 
-void QtInit(bool debug) {
+void QtInit(QtBool debug) {
     static int fake_argc = 1;
     static char fake_arg[] = {'Q','t','A','p','p','\0'};
     static char* fake_argv[] = { fake_arg };
@@ -122,23 +122,7 @@ void QtWidgetHide(void* widget_ptr) {
 
 void QtWidgetMoveToScreenCenter(void* widget_ptr) {
     QWidget* widget = (QWidget*) widget_ptr;
-    QScreen* screen = QGuiApplication::primaryScreen();
-    widget->move(widget->pos() + (screen->geometry().center() - widget->geometry().center()));
-}
-
-void QtDialogExec(void *dialog_ptr) {
-    QDialog* dialog = (QDialog*) dialog_ptr;
-    dialog->exec();
-}
-
-void QtDialogAccept(void *dialog_ptr) {
-    QDialog* dialog = (QDialog*) dialog_ptr;
-    dialog->accept();
-}
-
-void QtDialogReject(void *dialog_ptr) {
-    QDialog* dialog = (QDialog*) dialog_ptr;
-    dialog->reject();
+    MoveToScreenCenter(widget);
 }
 
 QtBool QtObjectSetPropBool(void* obj_ptr, const char* prop, QtBool val) {
@@ -374,6 +358,11 @@ QtIcon QtNewIcon(QtPixmap pm) {
     return { (void*) ptr };
 }
 
+QtIcon QtNewIconEmpty() {
+    QIcon* ptr = new QIcon();
+    return { (void*) ptr };
+}
+
 void QtDeleteIcon(QtIcon icon) {
     delete (QIcon*)(icon.ptr);
 }
@@ -474,6 +463,32 @@ void QtWebViewSetScroll(void* widget_ptr, QtPoint pos) {
     QtObjectSetPropPoint(widget->page()->mainFrame(), "scrollPosition", pos);
 }
 
+void QtDialogExec(void *dialog_ptr) {
+    QDialog* dialog = (QDialog*) dialog_ptr;
+    dialog->exec();
+}
+
+void QtDialogAccept(void *dialog_ptr) {
+    QDialog* dialog = (QDialog*) dialog_ptr;
+    dialog->accept();
+}
+
+void QtDialogReject(void *dialog_ptr) {
+    QDialog* dialog = (QDialog*) dialog_ptr;
+    dialog->reject();
+}
+
+void QtDialogShowModal(void* dialog_ptr) {
+    QDialog* dialog = (QDialog*) dialog_ptr;
+    dialog->open();
+}
+
+void QtDialogSetParent(void* dialog_ptr, void* parent_ptr) {
+    QDialog* dialog = (QDialog*) dialog_ptr;
+    QWidget* parent = (QWidget*) parent_ptr;
+    dialog->setParent(parent);
+}
+
 QtString QtFileDialogOpen(void* parent_ptr, QtString title, QtString cwd, QtString filter) {
    QWidget* parent = (QWidget*) parent_ptr;
    QString path = QFileDialog::getOpenFileName(
@@ -515,6 +530,10 @@ QtString QtFileDialogSave(void *parent_ptr, QtString title, QtString cwd, QtStri
     return WrapString(path);
 }
 
+void WebViewLoadContent(void* view_ptr) {
+    WebView* view = (WebView*) view_ptr;
+    view->LoadContent();
+}
 void WebViewRegisterAsset(void* view_ptr, QtString path, QtString mime, const uint8_t* buf, size_t len) {
     WebView* view = (WebView*) view_ptr;
     QByteArray data = QByteArray::fromRawData((const char*)(buf), len);
@@ -560,5 +579,26 @@ QtVariantMap WebViewGetCurrentEventPayload(void* view_ptr) {
 void WebViewPatchActualDOM(void* view_ptr, QtString operations) {
     WebView* view = (WebView*) view_ptr;
     emit view->getBridge()->PatchActualDOM(UnwrapString(operations));
+}
+
+void* WebDialogCreate(void* parent_ptr, QtIcon icon, QtString title, int width, int height, QtBool closable) {
+    WebDialog* dialog = new WebDialog(
+        (QWidget*) parent_ptr,
+        *(QIcon*) icon.ptr,
+        UnwrapString(title),
+        QSize(width, height),
+        bool(closable)
+    );
+    return (void*) dialog;
+}
+
+void* WebDialogGetWebView(void* dialog_ptr) {
+    WebDialog* dialog = (WebDialog*) dialog_ptr;
+    return (void*) dialog->getWebView();
+}
+
+void WebDialogDispose(void* dialog_ptr) {
+    WebDialog* dialog = (WebDialog*) dialog_ptr;
+    dialog->deleteLater();
 }
 

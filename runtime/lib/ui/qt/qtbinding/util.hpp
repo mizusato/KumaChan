@@ -21,6 +21,7 @@ QString DecodeBase64(QString str);
 
 int Get1remPixels();
 QSize GetSizeFromRelative(QSize size_rem);
+void MoveToScreenCenter(QWidget* widget);
 
 bool DebugEnabled();
 void EnableDebug();

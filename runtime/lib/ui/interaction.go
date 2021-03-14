@@ -11,14 +11,14 @@ import (
 )
 
 
-func handleEvent(sched rx.Scheduler) {
-	var payload = qt.WebUiGetCurrentEventPayload()
-	var handler_id = qt.WebUiGetCurrentEventHandler()
+func handleEvent(view qt.Widget, sched rx.Scheduler) {
+	var payload = qt.WebViewGetCurrentEventPayload(view)
+	var handler_id = qt.WebViewGetCurrentEventHandler(view)
 	var handler, exists = lookupEventHandler(string(handler_id))
 	if !(exists) {
 		// events emitted to detached handlers are ignored
-		qt.WebUiConsumeEventPayload(payload,
-			func(*qt.WebUiEventPayload) interface{} { return nil })
+		qt.WebViewConsumeEventPayload(payload,
+			func(*qt.WebViewEventPayload) interface{} { return nil })
 		return
 	}
 	var sink = handler.Handler.(rx.Sink)
@@ -26,42 +26,44 @@ func handleEvent(sched rx.Scheduler) {
 	rx.ScheduleBackgroundWaitTerminate(handling, sched)
 }
 
-func scheduleUpdate(sched rx.Scheduler, vdom_source rx.Action, debug bool) {
-	var single_update = func(root_node rx.Object) rx.Action {
-		return virtualDomUpdate(root_node.(*vdom.Node), debug)
-	}
-	var update = vdom_source.ConcatMap(single_update)
+func scheduleUpdate(view qt.Widget, sched rx.Scheduler, vdom_source rx.Action, debug bool) {
+	var single_update = virtualDomUpdate(view, debug)
+	var update = vdom_source.ConcatMap(func(new_root rx.Object) rx.Action {
+		return single_update(new_root.(*vdom.Node))
+	})
 	rx.ScheduleBackground(update, sched)
 }
 
-var patchOpBuffer = make([] interface {}, 0)
-func serializePatchOperations() ([] byte) {
-	var bin, err = json.Marshal(patchOpBuffer)
-	if err != nil { panic("something went wrong") }
-	patchOpBuffer = patchOpBuffer[0:0]
-	return bin
-}
-var patchOperationCollector = getPatchOperationCollector(&patchOpBuffer)
-var virtualDomRoot *vdom.Node = nil
-var virtualDomUpdate = func(new_root *vdom.Node, debug bool) rx.Action {
-	return rx.NewSync(func() (rx.Object, bool) {
-		var prev_root = virtualDomRoot
-		virtualDomRoot = new_root
-		vdom.Diff(patchOperationCollector, nil, prev_root, new_root)
-		var patch_data = serializePatchOperations()
-		qt.CommitTask(func() {
-			qt.WebUiPatchActualDOM(patch_data)
+var virtualDomUpdate = func(view qt.Widget, debug bool) func(*vdom.Node)(rx.Action) {
+	var patchOpBuffer = make([] interface {}, 0)
+	var serializePatchOperations = func() ([] byte) {
+		var bin, err = json.Marshal(patchOpBuffer)
+		if err != nil { panic("something went wrong") }
+		patchOpBuffer = patchOpBuffer[0:0]
+		return bin
+	}
+	var patchOperationCollector = getPatchOperationCollector(&patchOpBuffer)
+	var virtualDomRoot *vdom.Node = nil
+	return func(new_root *vdom.Node) rx.Action {
+		return rx.NewSync(func() (rx.Object, bool) {
+			var prev_root = virtualDomRoot
+			virtualDomRoot = new_root
+			vdom.Diff(patchOperationCollector, nil, prev_root, new_root)
+			var patch_data = serializePatchOperations()
+			qt.CommitTask(func() {
+				qt.WebViewPatchActualDOM(view, patch_data)
+			})
+			if debug {
+				var ctx = vdom.InspectContext { GetHandlerId: getEventHandlerId }
+				fmt.Fprintf(os.Stderr, "\033[1m<!-- Virtual DOM Update -->\033[0m\n")
+				fmt.Fprintf(os.Stderr, "%s", vdom.Inspect(new_root, ctx))
+				fmt.Fprintf(os.Stderr, "\033[1m<!-- Patch Operation Sequence -->\033[0m\n")
+				_, _ = os.Stderr.Write(patch_data)
+				fmt.Fprintf(os.Stderr, "\n\n")
+			}
+			return nil, true
 		})
-		if debug {
-			var ctx = vdom.InspectContext { GetHandlerId: getEventHandlerId }
-			fmt.Fprintf(os.Stderr, "\033[1m<!-- Virtual DOM Update -->\033[0m\n")
-			fmt.Fprintf(os.Stderr, "%s", vdom.Inspect(new_root, ctx))
-			fmt.Fprintf(os.Stderr, "\033[1m<!-- Patch Operation Sequence -->\033[0m\n")
-			_, _ = os.Stderr.Write(patch_data)
-			fmt.Fprintf(os.Stderr, "\n\n")
-		}
-		return nil, true
-	})
+	}
 }
 
 func getPatchOperationCollector(buf *([] interface{})) *vdom.DeltaNotifier {

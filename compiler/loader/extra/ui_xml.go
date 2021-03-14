@@ -91,7 +91,7 @@ func LoadUiXml(path string, content ([] byte), i_config interface{}) (common.Uni
 	var ui QtUi
 	var err = xml.Unmarshal(content, &ui)
 	if err != nil { return nil, err }
-	qt.MakeSureInitialized()
+	qt.MakeSureInitialized(false)
 	var widgets = make(map[string] QtWidget)
 	var result = make(chan error)
 	qt.CommitTask(func() {

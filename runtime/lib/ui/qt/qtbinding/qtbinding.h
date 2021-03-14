@@ -65,7 +65,7 @@ extern const size_t QtEventClose;
 #ifdef __cplusplus
 extern "C" {
 #endif
-    void QtInit(bool debug);
+    void QtInit(QtBool debug);
     int QtMain();
     void QtCommitTask(void (*cb)(size_t), size_t payload);
     void QtExit(int code);
@@ -76,9 +76,6 @@ extern "C" {
     void QtWidgetShow(void* widget_ptr);
     void QtWidgetHide(void* widget_ptr);
     void QtWidgetMoveToScreenCenter(void* widget_ptr);
-    void QtDialogExec(void *dialog_ptr);
-    void QtDialogAccept(void *dialog_ptr);
-    void QtDialogReject(void *dialog_ptr);
     QtBool QtObjectSetPropBool(void* obj_ptr, const char* prop, QtBool val);
     QtBool QtObjectGetPropBool(void* obj_ptr, const char* prop);
     QtBool QtObjectSetPropString(void* obj_ptr, const char* prop, QtString val);
@@ -117,6 +114,7 @@ extern "C" {
     size_t QtStringUTF16Length(QtString str);
     size_t QtStringWriteToUTF32Buffer(QtString str, uint32_t *buf);
     QtIcon QtNewIcon(QtPixmap pm);
+    QtIcon QtNewIconEmpty();
     void QtDeleteIcon(QtIcon icon);
     QtPixmap QtNewPixmapPNG(const uint8_t* buf, size_t len);
     QtPixmap QtNewPixmapJPEG(const uint8_t* buf, size_t len);
@@ -132,12 +130,18 @@ extern "C" {
     void QtWebViewSetHTML(void *widget_ptr, QtString html);
     void QtWebViewScrollToAnchor(void *widget_ptr, QtString anchor);
     QtPoint QtWebViewGetScroll(void* widget_ptr);
+    void QtDialogExec(void *dialog_ptr);
+    void QtDialogAccept(void *dialog_ptr);
+    void QtDialogReject(void *dialog_ptr);
     void QtWebViewSetScroll(void* widget_ptr, QtPoint pos);
+    void QtDialogShowModal(void* dialog_ptr);
+    void QtDialogSetParent(void* dialog_ptr, void* parent_ptr);
     QtString QtFileDialogOpen(void* parent_ptr, QtString title, QtString cwd, QtString filter);
     QtStringList QtFileDialogOpenMultiple(void* parent_ptr,  QtString title, QtString cwd, QtString filter);
     QtString QtFileDialogSelectDirectory(void *parent_ptr, QtString title, QtString cwd);
     QtString QtFileDialogSave(void* parent_ptr, QtString title, QtString cwd, QtString filter);
     // Web
+    void WebViewLoadContent(void* view_ptr);
     void WebViewRegisterAsset(void* view_ptr, QtString path, QtString mime, const uint8_t* buf, size_t len);
     QtString WebViewInjectCSS(void* view_ptr, QtString path);
     QtString WebViewInjectJS(void* view_ptr, QtString path);
@@ -146,6 +150,9 @@ extern "C" {
     QtString WebViewGetCurrentEventHandler(void* view_ptr);
     QtVariantMap WebViewGetCurrentEventPayload(void* view_ptr);
     void WebViewPatchActualDOM(void* view_ptr, QtString operations);
+    void* WebDialogCreate(void* parent_ptr, QtIcon icon, QtString title, int width, int height, QtBool closable);
+    void* WebDialogGetWebView(void* dialog_ptr);
+    void WebDialogDispose(void* dialog_ptr);
 #ifdef __cplusplus
 }
 #endif

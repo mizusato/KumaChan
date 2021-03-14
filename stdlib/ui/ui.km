@@ -20,12 +20,14 @@ export function ui-inject-ttf:
     &(Array[(FontInfo,WebAsset)]) => Action
     native 'ui-inject-ttf';
 
-export function ui-get-window:
-    &() => Action[Window]
-    native 'ui-get-window';
+export function ui-get-dialog:
+    &() => Action[Dialog]
+    native 'ui-get-dialog';
 
 export function ui-exit-when-window-closed:
     &() => Action
     &() =>
-        & window := await ui-get-window,
-        window.{on-close}.{concat-map &() => {exit 0}}.{wait-complete};
+        & dialog := await ui-get-dialog,
+        { signal (dialog, 'rejected()') }
+            . { concat-map &() => { exit(0) } }
+            . { wait-complete };

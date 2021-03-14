@@ -31,6 +31,10 @@ QSize GetSizeFromRelative(QSize size_rem) {
     int unit = Get1remPixels();
     return QSize((unit * size_rem.width()), (unit * size_rem.height()));
 }
+void MoveToScreenCenter(QWidget* widget) {
+    QScreen* screen = QGuiApplication::primaryScreen();
+    widget->move(widget->pos() + (screen->geometry().center() - widget->geometry().center()));
+}
 
 bool debugEnabled
     = false;

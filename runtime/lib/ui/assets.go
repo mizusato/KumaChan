@@ -20,11 +20,11 @@ type FontInfo struct {
 	Style   qt.Ucs4String
 }
 
-func registerAssetFiles(assets resources) {
+func registerAssetFiles(view qt.Widget, assets resources) {
 	for path, item := range assets() {
 		var path_q, path_del = qt.NewString(([] rune)(path))
 		var mime_q, mime_del = qt.NewString(([] rune)(item.MIME))
-		qt.WebUiRegisterAsset(path_q, mime_q, item.Data)
+		qt.WebViewRegisterAsset(view, path_q, mime_q, item.Data)
 		mime_del()
 		path_del()
 	}

@@ -19,17 +19,11 @@ type Object interface {
     ptr() unsafe.Pointer
     QtObject()
 }
-func (obj object) QtObject()           {}
+func (obj object) QtObject() {}
 func (obj object) ptr() unsafe.Pointer { return obj.addr }
 type object struct { addr unsafe.Pointer }
-func ObjectNullablePointer(obj Object) unsafe.Pointer {
-    if obj == nil {
-        return nil
-    } else {
-        return obj.ptr()
-    }
-}
 
+// TODO: subclasses
 type Widget interface {
     Object
     QtWidget()
@@ -42,14 +36,12 @@ func Show(w Widget) {
 func MoveToScreenCenter(w Widget) {
     C.QtWidgetMoveToScreenCenter(w.ptr())
 }
-func DialogExec(w Widget) {
-    C.QtDialogExec(w.ptr())
-}
-func DialogAccept(w Widget) {
-    C.QtDialogAccept(w.ptr())
-}
-func DialogReject(w Widget) {
-    C.QtDialogReject(w.ptr())
+func ParentNullable(widget Widget) unsafe.Pointer {
+    if widget == nil {
+        return nil
+    } else {
+        return widget.ptr()
+    }
 }
 
 type Action interface {
@@ -128,9 +120,11 @@ func Quit(after func()) {
     }
 }
 func Mock() {
+    // TODO: will be unnecessary after loader decoupled with runtime
     mock = true
 }
-func MakeSureInitialized() {
+// TODO: rename this function
+func MakeSureInitialized(debug bool) {
     if mock {
         return
     }
@@ -138,7 +132,7 @@ func MakeSureInitialized() {
     case initializing <- struct{}{}:
         var wait = make(chan struct{})
         initRequestSignal <- func() {
-            C.QtInit()
+            C.QtInit(C.int(MakeBool(debug)))
             wait <- struct{}{}
             C.QtMain()
         }
@@ -430,6 +424,12 @@ func NewIcon(pm Pixmap) (Icon, func()) {
         C.QtDeleteIcon(icon)
     }
 }
+func NewIconEmpty() (Icon, func()) {
+    var icon = C.QtNewIconEmpty()
+    return Icon(icon), func() {
+        C.QtDeleteIcon(icon)
+    }
+}
 
 func ListWidgetClear(w Widget) {
     C.QtListWidgetClear(w.ptr())
@@ -492,26 +492,39 @@ func ListWidgetGetCurrentItemKey(w Widget) ([] rune) {
     return key
 }
 
-func WebViewDisableContextMenu(w Widget) {
+func BaseWebViewDisableContextMenu(w Widget) {
     C.QtWebViewDisableContextMenu(w.ptr())
 }
-func WebViewEnableLinkDelegation(w Widget) {
+func BaseWebViewEnableLinkDelegation(w Widget) {
     C.QtWebViewEnableLinkDelegation(w.ptr())
 }
-func WebViewRecordClickedLink(w Widget) {
+func BaseWebViewRecordClickedLink(w Widget) {
     C.QtWebViewRecordClickedLink(w.ptr())
 }
-func WebViewSetHTML(w Widget, html String) {
+func BaseWebViewSetHTML(w Widget, html String) {
     C.QtWebViewSetHTML(w.ptr(), C.QtString(html))
 }
-func WebViewScrollToAnchor(w Widget, anchor String) {
+func BaseWebViewScrollToAnchor(w Widget, anchor String) {
     C.QtWebViewScrollToAnchor(w.ptr(), C.QtString(anchor))
 }
-func WebViewGetScroll(w Widget) Point {
+func BaseWebViewGetScroll(w Widget) Point {
     return makePoint(C.QtWebViewGetScroll(w.ptr()))
 }
-func WebViewSetScroll(w Widget, pos Point) {
+func BaseWebViewSetScroll(w Widget, pos Point) {
     C.QtWebViewSetScroll(w.ptr(), makeQtPoint(pos));
+}
+
+func DialogExec(w Widget) {
+    C.QtDialogExec(w.ptr())
+}
+func DialogAccept(w Widget) {
+    C.QtDialogAccept(w.ptr())
+}
+func DialogReject(w Widget) {
+    C.QtDialogReject(w.ptr())
+}
+func DialogShowModal(w Widget) {
+    C.QtDialogShowModal(w.ptr())
 }
 
 type FileDialogOptions struct {
@@ -530,7 +543,7 @@ func fileDialogAdaptOptions(opts FileDialogOptions) (String, String, String, fun
     }
 }
 func FileDialogOpen(parent Widget, opts FileDialogOptions) ([] rune) {
-    var parent_ptr = ObjectNullablePointer(parent)
+    var parent_ptr = ParentNullable(parent)
     var title, cwd, filter, del = fileDialogAdaptOptions(opts)
     defer del()
     var raw_path = C.QtFileDialogOpen(parent_ptr,
@@ -538,7 +551,7 @@ func FileDialogOpen(parent Widget, opts FileDialogOptions) ([] rune) {
     return StringToRunes(String(raw_path))
 }
 func FileDialogOpenMultiple(parent Widget, opts FileDialogOptions) ([][] rune) {
-    var parent_ptr = ObjectNullablePointer(parent)
+    var parent_ptr = ParentNullable(parent)
     var title, cwd, filter, del = fileDialogAdaptOptions(opts)
     defer del()
     var raw_path_list = C.QtFileDialogOpenMultiple(parent_ptr,
@@ -554,7 +567,7 @@ func FileDialogOpenMultiple(parent Widget, opts FileDialogOptions) ([][] rune) {
     return path_list
 }
 func FileDialogSelectDirectory(parent Widget, opts FileDialogOptions) ([] rune) {
-    var parent_ptr = ObjectNullablePointer(parent)
+    var parent_ptr = ParentNullable(parent)
     var title, cwd, _, del = fileDialogAdaptOptions(opts)
     defer del()
     var raw_path = C.QtFileDialogSelectDirectory(parent_ptr,
@@ -562,7 +575,7 @@ func FileDialogSelectDirectory(parent Widget, opts FileDialogOptions) ([] rune) 
     return StringToRunes(String(raw_path))
 }
 func FileDialogSave(parent Widget, opts FileDialogOptions) ([] rune) {
-    var parent_ptr = ObjectNullablePointer(parent)
+    var parent_ptr = ParentNullable(parent)
     var title, cwd, filter, del = fileDialogAdaptOptions(opts)
     defer del()
     var raw_path = C.QtFileDialogSave(parent_ptr,
@@ -570,69 +583,70 @@ func FileDialogSave(parent Widget, opts FileDialogOptions) ([] rune) {
     return StringToRunes(String(raw_path))
 }
 
-var webui_initialized = false
-func WebUiInit(title String, debug bool) {
-    MakeSureInitialized()
-    C.WebUiInit(C.QtString(title), C.int(MakeBool(debug)))
-    webui_initialized = true
+func WebViewLoadContent(view Widget) {
+    C.WebViewLoadContent(view.ptr())
 }
-func WebUiLoadView() {
-    if !webui_initialized { panic("webui not initialized") }
-    C.WebUiLoadView()
-}
-func WebUiGetWindow() Widget {
-    return widget { object { C.WebUiGetWindow() } }
-}
-func WebUiRegisterAsset(path String, mime String, data ([] byte))  {
+func WebViewRegisterAsset(view Widget, path String, mime String, data ([] byte))  {
     var buf = (*C.uint8_t)(unsafe.Pointer(&data[0]))
     var length = C.size_t(uint(len(data)))
-    C.WebUiRegisterAsset(C.QtString(path), C.QtString(mime), buf, length)
+    C.WebViewRegisterAsset(view.ptr(), C.QtString(path), C.QtString(mime), buf, length)
 }
-func WebUiInjectCSS(path String) String {
-    return String(C.WebUiInjectCSS(C.QtString(path)))
+func WebViewInjectCSS(view Widget, path String) String {
+    return String(C.WebViewInjectCSS(view.ptr(), C.QtString(path)))
 }
-func WebUiInjectJS(path String) String {
-    return String(C.WebUiInjectJS(C.QtString(path)))
+func WebViewInjectJS(view Widget, path String) String {
+    return String(C.WebViewInjectJS(view.ptr(), C.QtString(path)))
 }
-func WebUiInjectTTF(path String, family String, weight String, style String) String {
-    return String(C.WebUiInjectTTF(C.QtString(path), C.QtString(family), C.QtString(weight), C.QtString(style)))
+func WebViewInjectTTF(view Widget, path String, family String, weight String, style String) String {
+    return String(C.WebViewInjectTTF(view.ptr(), C.QtString(path), C.QtString(family), C.QtString(weight), C.QtString(style)))
 }
-func WebUiPatchActualDOM(patch_data ([] byte)) {
+func WebViewPatchActualDOM(view Widget, patch_data ([] byte)) {
     var str, del = NewStringFromUtf8Binary(patch_data)
     defer del()
-    C.WebUiPatchActualDOM(C.QtString(str))
+    C.WebViewPatchActualDOM(view.ptr(), C.QtString(str))
 }
 
-type WebUiEventPayload struct {
+type WebViewEventPayload struct {
     Data  VariantMap
 }
-func WebUiGetCurrentEventHandler() Ucs4String {
-    var raw_id = C.WebUiGetCurrentEventHandler()
+func WebViewGetCurrentEventHandler(view Widget) Ucs4String {
+    var raw_id = C.WebViewGetCurrentEventHandler(view.ptr())
     var id_str = StringToRunes(String(raw_id))
     return id_str
 }
-func WebUiGetCurrentEventPayload() *WebUiEventPayload {
-    return &WebUiEventPayload { VariantMap(C.WebUiGetCurrentEventPayload()) }
+func WebViewGetCurrentEventPayload(view Widget) *WebViewEventPayload {
+    return &WebViewEventPayload{VariantMap(C.WebViewGetCurrentEventPayload(view.ptr())) }
 }
-func WebUiConsumeEventPayload(ev *WebUiEventPayload, f func(*WebUiEventPayload) interface{}) interface{} {
+func WebViewConsumeEventPayload(ev *WebViewEventPayload, f func(*WebViewEventPayload) interface{}) interface{} {
     defer func() {
         C.QtDeleteVariantMap(C.QtVariantMap(ev.Data))
     } ()
     return f(ev)
 }
-func WebUiEventPayloadGetRunes(ev *WebUiEventPayload, key ([] rune)) ([] rune) {
+func WebViewEventPayloadGetRunes(ev *WebViewEventPayload, key ([] rune)) ([] rune) {
     var key_str, del = NewString(key)
     defer del()
     return VariantMapGetRunes(ev.Data, key_str)
 }
-func WebUiEventPayloadGetFloat(ev *WebUiEventPayload, key ([] rune)) float64 {
+func WebViewEventPayloadGetFloat(ev *WebViewEventPayload, key ([] rune)) float64 {
     var key_str, del = NewString(key)
     defer del()
     return VariantMapGetFloat(ev.Data, key_str)
 }
-func WebUiEventPayloadGetBool(ev *WebUiEventPayload, key ([] rune)) bool {
+func WebViewEventPayloadGetBool(ev *WebViewEventPayload, key ([] rune)) bool {
     var key_str, del = NewString(key)
     defer del()
     return VariantMapGetBool(ev.Data, key_str)
+}
+
+func WebDialogCreate(parent Widget, icon Icon, title String, width int, height int, closable bool) (Widget,func()) {
+    var ptr = C.WebDialogCreate(ParentNullable(parent), C.QtIcon(icon), C.QtString(title), C.int(width), C.int(height), C.int(MakeBool(closable)))
+    return widget { object { ptr } }, func() {
+        C.WebDialogDispose(ptr)
+    }
+}
+func WebDialogGetWebView(dialog Widget) Widget {
+    var ptr = C.WebDialogGetWebView(dialog.ptr())
+    return widget { object { ptr } }
 }
 

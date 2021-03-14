@@ -77,7 +77,7 @@ func (ref ApiRef) HyperRef() string {
 }
 
 func RunApiBrowser(doc ApiDocIndex) {
-	qt.MakeSureInitialized()
+	qt.MakeSureInitialized(false)
 	qt.CommitTask(func() {
 		var ui_xml_dir = util.InterpreterResourceFolderPath()
 		window, ok := qt.LoadWidget(apiBrowserUiXml, ui_xml_dir)
@@ -155,9 +155,9 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 	}
 	var mod_count = uint(len(modules))
 	qt.ListWidgetSetItems(ui.ModuleList, get_mod_item, mod_count, nil)
-	qt.WebViewDisableContextMenu(ui.ContentView)
-	qt.WebViewEnableLinkDelegation(ui.ContentView)
-	qt.WebViewRecordClickedLink(ui.ContentView)
+	qt.BaseWebViewDisableContextMenu(ui.ContentView)
+	qt.BaseWebViewEnableLinkDelegation(ui.ContentView)
+	qt.BaseWebViewRecordClickedLink(ui.ContentView)
 	var current_ref = ApiRef { Module: "", Id: "" }
 	var current_outline_index = make(map[string] int)
 	var undo_stack = make([] ApiDocPosition, 0)
@@ -165,7 +165,7 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 	var get_current_pos = func() ApiDocPosition {
 		return ApiDocPosition {
 			ApiRef: current_ref,
-			Scroll: qt.WebViewGetScroll(ui.ContentView),
+			Scroll: qt.BaseWebViewGetScroll(ui.ContentView),
 		}
 	}
 	var jump_state struct {
@@ -231,7 +231,7 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 			}
 		}
 		if opts.SpecifyScroll {
-			qt.WebViewSetScroll(ui.ContentView, opts.Scroll)
+			qt.BaseWebViewSetScroll(ui.ContentView, opts.Scroll)
 		}
 	}
 	var undo = func() {
@@ -269,7 +269,7 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 			var styled_content = (apiBrowserDocStyle + content)
 			var styled_content_, del = qt.NewStringFromGoString(styled_content)
 			defer del()
-			qt.WebViewSetHTML(ui.ContentView, styled_content_)
+			qt.BaseWebViewSetHTML(ui.ContentView, styled_content_)
 			var outline = mod_data.Outline
 			current_outline_index = make(map[string] int)
 			for i, item := range outline {
@@ -296,7 +296,7 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 			update_current(ApiRef { Module: mod, Id: id }, false, true)
 			var id_, del = qt.NewString(key)
 			defer del()
-			qt.WebViewScrollToAnchor(ui.ContentView, id_)
+			qt.BaseWebViewScrollToAnchor(ui.ContentView, id_)
 		})
 		qt.Connect(ui.ContentView, "linkClicked(const QUrl&)", func() {
 			var url = qt.GetPropString(ui.ContentView, "qtbindingClickedLinkUrl")

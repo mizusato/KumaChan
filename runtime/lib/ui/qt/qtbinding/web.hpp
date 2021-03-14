@@ -20,7 +20,7 @@
 #include "util.hpp"
 
 
-#define WebUiHtmlUrl "qrc:/qtbinding/web/content.html"
+#define WebViewContent "qrc:/qtbinding/web/content.html"
 
 class WebBridge final: public QObject {
     Q_OBJECT
@@ -138,13 +138,6 @@ public:
         initAssetStore();
         initBridge();
         setContextMenuPolicy(Qt::NoContextMenu);
-        setUrl(QUrl(WebUiHtmlUrl));
-        if (DebugEnabled()) {
-            #ifndef _WIN32
-            // inspector crashes on windows
-            openInspector();
-            #endif
-        }
     }
     ~WebView() {}
     WebBridge* getBridge() {
@@ -152,6 +145,23 @@ public:
     }
     WebAssetStore* getStore() {
         return store;
+    }
+private:
+    bool contentLoaded = false;
+public:
+    void LoadContent() {
+        if (contentLoaded) {
+            return;
+        } else {
+            contentLoaded = true;
+        }
+        setUrl(QUrl(WebViewContent));
+        if (DebugEnabled()) {
+            #ifndef _WIN32
+            // inspector crashes on windows
+            openInspector();
+            #endif
+        }
     }
 signals:
     void loadFinished();
@@ -193,11 +203,13 @@ private:
         connect(bridge, &WebBridge::LoadFinish, this, &WebView::bridgeLoaded);
     }
     void syncRootFontSizeWithScreenSize() {
+        updateRootFontSize();
         QScreen *screen = QGuiApplication::primaryScreen();
-        connect(screen, &QScreen::geometryChanged, [this] ()->void {
-            int fontSize = Get1remPixels();
-            bridge->UpdateRootFontSize(double(fontSize));
-        });
+        connect(screen, &QScreen::geometryChanged, this, &WebView::updateRootFontSize);
+    }
+    void updateRootFontSize() {
+        int fontSize = Get1remPixels();
+        bridge->UpdateRootFontSize(double(fontSize));
     }
 private:
     QWebInspector* inspector = nullptr;
@@ -209,7 +221,7 @@ private:
         page()->settings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, true);
         inspector->setPage(page());
         QDialog* inspector_dialog = new QDialog(this);
-        inspector_dialog->setLayout(new QVBoxLayout());
+        inspector_dialog->setLayout(new QVBoxLayout(inspector_dialog));
         inspector_dialog->layout()->addWidget(inspector);
         inspector_dialog->setModal(false);
         inspector_dialog->resize(800, 360);
@@ -217,6 +229,40 @@ private:
         inspector_dialog->setWindowTitle(tr("Webkit Inspector"));
         inspector_dialog->show();
         inspector_dialog->raise();
+        MoveToScreenCenter(inspector_dialog);
+    }
+};
+
+class WebDialog final: public QDialog {
+    Q_OBJECT
+private:
+    bool closable;
+    WebView* view;
+public:
+    WebDialog(QWidget* parent, QIcon icon, QString title, QSize size_rem, bool closable): QDialog(parent), closable(closable) {
+        view = new WebView(this);
+        setLayout(new QVBoxLayout(this));
+        layout()->addWidget(view);
+        layout()->setContentsMargins(0, 0, 0, 0);
+        setWindowIcon(icon);
+        setWindowTitle(title);
+        resize(GetSizeFromRelative(size_rem));
+        if (!(closable)) {
+            setWindowFlag(Qt::CustomizeWindowHint);
+            setWindowFlag(Qt::WindowTitleHint);
+        }
+    }
+    ~WebDialog() {}
+    WebView* getWebView() {
+        return view;
+    }
+public slots:
+    virtual void reject() override {
+        if (!(closable)) {
+            // it is not clear whether custom window hint works on all platforms
+            return;
+        }
+        QDialog::reject();
     }
 };
 

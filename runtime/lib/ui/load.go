@@ -8,8 +8,10 @@ import (
 
 
 var loading = make(chan struct{}, 1)
-var windowLoaded = make(chan struct{})
+var dialogLoaded = make(chan struct{})
 var bridgeLoaded = make(chan struct{})
+var singletonDialog qt.Widget
+var singletonView qt.Widget
 
 func load (
 	debug   bool,
@@ -20,34 +22,42 @@ func load (
 ) bool {
 	select {
 	case loading <- struct{}{}:
-		qt.MakeSureInitialized()
+		qt.MakeSureInitialized(debug)
 		var wait = make(chan struct{})
+		var dialog qt.Widget
+		var del_dialog func()
 		qt.CommitTask(func() {
 			var title_runes = RuneSliceFromString(title)
 			var title, del_title = qt.NewString(title_runes)
 			defer del_title()
-			qt.WebUiInit(title, debug)
+			var icon, del_icon = qt.NewIconEmpty()
+			defer del_icon()
+			dialog, del_dialog = qt.WebDialogCreate(nil, icon, title, 40, 30, true)
+			qt.DialogShowModal(dialog)
 			wait <- struct{}{}
 		})
 		<- wait
-		var window = qt.WebUiGetWindow()
-		qt.Connect(window, "eventEmitted()", func() {
-			handleEvent(sched)
+		var view = qt.WebDialogGetWebView(dialog)
+		qt.Connect(view, "eventEmitted()", func() {
+			handleEvent(view, sched)
 		})
-		qt.Connect(window, "loadFinished()", func() {
+		qt.Connect(view, "loadFinished()", func() {
+			select { case <- bridgeLoaded: panic("unexpected page refresh"); default: }
 			close(bridgeLoaded)
-			scheduleUpdate(sched, root, debug)
+			scheduleUpdate(view, sched, root, debug)
 		})
 		qt.CommitTask(func() {
-			registerAssetFiles(assets)
-			qt.WebUiLoadView()
+			registerAssetFiles(view, assets)
+			qt.WebViewLoadContent(view)
 			wait <- struct{}{}
 		})
 		<- wait
-		close(windowLoaded)
+		singletonDialog = dialog
+		singletonView = view
+		close(dialogLoaded)
 		return true
 	default:
-		<- windowLoaded
+		<-dialogLoaded
 		return false
 	}
 }
