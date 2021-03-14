@@ -1,0 +1,26 @@
+do DemoWindow.{show-at-center};
+
+do DemoWindow.{on-close}.{concat-map &() => {exit 0}}.{wait-complete};
+
+do DemoWindow.{on-resize}
+    . { concat-map &{width,height} =>
+        { println { "Current Size: (#, #)" (width.{str}, height.{str}) } } }
+    . { catch &(err) =>
+        { crash err } }
+    . { wait-complete };
+
+do ChangeTextButton.{activated}
+    . { concat-map &() => { gen-random () } }
+    . { map &(x) => { str x } }
+    . { &(@text) => (TextDisplay bind @text) };
+
+do
+    & buf := reactive 'Hello World',
+    (TextInput bind buf)
+        . { with (TextDisplay bind buf.{watch}.{debounce 300}) }
+        . { with buf.{watch}
+                . { concat-map &(text) =>
+                    { println { "Current Text: #" text } } }
+                . { catch &(err) => { crash err } }
+                . { wait-complete }
+        };
