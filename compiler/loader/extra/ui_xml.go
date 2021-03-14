@@ -8,7 +8,7 @@ import (
 	"kumachan/lang/parser"
 	"kumachan/lang/parser/ast"
 	"kumachan/compiler/loader/common"
-	"kumachan/runtime/lib/ui/qt"
+	"kumachan/runtime/lib/ui/qt"  // TODO: defer dependency to runtime packages
 	"kumachan/stdlib"
 )
 
