@@ -1,6 +1,5 @@
 #include <QApplication>
 #include <QScreen>
-#include <QMetaMethod>
 #include <QDir>
 #include <QFileDialog>
 #include <QUiLoader>
@@ -20,37 +19,43 @@
 #include <QWebView>
 #include <QWebPage>
 #include <QWebFrame>
-#include "adapt.hpp"
-#include "qtbinding.hpp"
+#include <QUuid>
+#include "util.hpp"
+#include "web.hpp"
 #include "qtbinding.h"
 
+
+class UiLoader: public QUiLoader {
+public:
+    virtual QWidget* createWidget(const QString &className, QWidget *parent = nullptr, const QString &name = QString()) override {
+        if (className == "QWebView") {
+            QWidget* w = new QWebView(parent);
+            w->setObjectName(name);
+            return w;
+        } else if (className == "WebView") {
+            QWidget* w = new WebView(parent);
+            w->setObjectName(name);
+            return w;
+        } else {
+            return QUiLoader::createWidget(className, parent, name);
+        }
+    }
+};
 
 const size_t QtEventMove = QEvent::Move;
 const size_t QtEventResize = QEvent::Resize;
 const size_t QtEventClose = QEvent::Close;
 
-QMetaObject::Connection QtDynamicConnect (
-        QObject* emitter , const QString& signalName,
-        QObject* receiver, const QString& slotName
-);
-
-struct __QtConnHandle {
-    QMetaObject::Connection
-        conn;
-    CallbackObject*
-        cb_obj;
-};
-
 static QApplication*
     app = nullptr;
-static Bridge*
-    bridge = nullptr;
-static QUiLoader*
+static CallbackExecutor*
+    executor = nullptr;
+static UiLoader*
     loader = nullptr;
 static bool
     initialized = false;
 
-void QtInit() {
+void QtInit(bool debug) {
     static int fake_argc = 1;
     static char fake_arg[] = {'Q','t','A','p','p','\0'};
     static char* fake_argv[] = { fake_arg };
@@ -58,9 +63,12 @@ void QtInit() {
         QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
         app = new QApplication(fake_argc, fake_argv);
         app->setQuitOnLastWindowClosed(false);
-        bridge = new Bridge();
+        executor = new CallbackExecutor();
         loader = new UiLoader();
         qRegisterMetaType<callback_t>();
+        if (debug) {
+            EnableDebug();
+        }
         initialized = true;
     }
 }
@@ -70,7 +78,7 @@ int QtMain() {
 }
 
 void QtCommitTask(callback_t cb, size_t payload) {
-    bridge->QueueCallback(cb, payload);
+    emit executor->QueueCallback(cb, payload);
 }
 
 void QtExit(int code) {
@@ -146,13 +154,13 @@ QtBool QtObjectGetPropBool(void* obj_ptr, const char* prop) {
 
 QtBool QtObjectSetPropString(void* obj_ptr, const char* prop, QtString val) {
     QObject* obj = (QObject*) obj_ptr;
-    return obj->setProperty(prop, QtUnwrapString(val));
+    return obj->setProperty(prop, UnwrapString(val));
 }
 
 QtString QtObjectGetPropString(void* obj_ptr, const char* prop) {
     QObject* obj = (QObject*) obj_ptr;
     QVariant val = obj->property(prop);
-    return QtWrapString(val.toString());
+    return WrapString(val.toString());
 }
 
 QtBool QtObjectSetPropInt(void* obj_ptr, const char* prop, int val) {
@@ -187,19 +195,19 @@ QtConnHandle QtConnect (
 ) {
     QObject* target_obj = (QObject*) obj_ptr;
     CallbackObject* cb_obj = new CallbackObject(target_obj, cb, payload);
-    __QtConnHandle* handle = new __QtConnHandle;
+    ConnectionHandle* handle = new ConnectionHandle;
     handle->conn = QtDynamicConnect(target_obj, signal, cb_obj, "slot()");
     handle->cb_obj = cb_obj;
     return { (void*) handle };
 }
 
 QtBool QtIsConnectionValid(QtConnHandle handle) {
-    __QtConnHandle* h = (__QtConnHandle*) handle.ptr;
+    ConnectionHandle* h = (ConnectionHandle*) handle.ptr;
     return bool(h->conn);
 };
 
 void QtDisconnect(QtConnHandle handle) {
-    __QtConnHandle* h = (__QtConnHandle*) handle.ptr;
+    ConnectionHandle* h = (ConnectionHandle*) handle.ptr;
     if (!(h->conn)) {
         QObject::disconnect(h->conn);
     }
@@ -287,11 +295,11 @@ void QtDeleteString(QtString str) {
 }
 
 size_t QtStringUTF16Length(QtString str) {
-    return QtUnwrapString(str).length();
+    return UnwrapString(str).length();
 }
 
 size_t QtStringWriteToUTF32Buffer(QtString str, uint32_t *buf) {
-    QVector<uint> vec = QtUnwrapString(str).toUcs4();
+    const QVector<uint> vec = UnwrapString(str).toUcs4();
     size_t len = 0;
     for(auto rune: vec) {
         *buf = rune;
@@ -308,7 +316,7 @@ size_t QtStringListGetSize(QtStringList list) {
 
 QtString QtStringListGetItem(QtStringList list, size_t index) {
     QStringList* ptr = (QStringList*) (list.ptr);
-    return QtWrapString(ptr->at(index));
+    return WrapString(ptr->at(index));
 }
 
 void QtDeleteStringList(QtStringList list) {
@@ -326,7 +334,7 @@ void QtVariantListAppendNumber(QtVariantList l, double n) {
 
 void QtVariantListAppendString(QtVariantList l, QtString str) {
     QVariantList* ptr = (QVariantList*) l.ptr;
-    ptr->append(QtUnwrapString(str));
+    ptr->append(UnwrapString(str));
 }
 
 void QtDeleteVariantList(QtVariantList l) {
@@ -335,15 +343,15 @@ void QtDeleteVariantList(QtVariantList l) {
 
 QtString QtVariantMapGetString(QtVariantMap m, QtString key) {
     QVariantMap* ptr = (QVariantMap*) m.ptr;
-    QString key_ = QtUnwrapString(key);
+    QString key_ = UnwrapString(key);
     QVariant val_ = (*ptr)[key_];
-    QtString val = QtWrapString(val_.toString());
+    QtString val = WrapString(val_.toString());
     return val;
 }
 
 double QtVariantMapGetFloat(QtVariantMap m, QtString key) {
     QVariantMap* ptr = (QVariantMap*) m.ptr;
-    QString key_ = QtUnwrapString(key);
+    QString key_ = UnwrapString(key);
     QVariant val_ = (*ptr)[key_];
     double val = val_.toDouble();
     return val;
@@ -351,7 +359,7 @@ double QtVariantMapGetFloat(QtVariantMap m, QtString key) {
 
 QtBool QtVariantMapGetBool(QtVariantMap m, QtString key) {
     QVariantMap* ptr = (QVariantMap*) m.ptr;
-    QString key_ = QtUnwrapString(key);
+    QString key_ = UnwrapString(key);
     QVariant val_ = (*ptr)[key_];
     int val = val_.toBool();
     return val;
@@ -395,8 +403,8 @@ void QtListWidgetClear(void* widget_ptr) {
 
 void QtListWidgetAddItem(void* widget_ptr, QtString key_, QtString label_, QtBool as_current) {
     QListWidget* widget = (QListWidget*) widget_ptr;
-    QString key = QtUnwrapString(key_);
-    QString label = QtUnwrapString(label_);
+    QString key = UnwrapString(key_);
+    QString label = UnwrapString(label_);
     QListWidgetItem* item = new QListWidgetItem(label, widget);
     item->setData(Qt::UserRole, key);
     widget->addItem(item);
@@ -407,8 +415,8 @@ void QtListWidgetAddItem(void* widget_ptr, QtString key_, QtString label_, QtBoo
 
 void QtListWidgetAddItemWithIcon(void* widget_ptr, QtString key_, QtIcon icon_, QtString label_, QtBool as_current) {
     QListWidget* widget = (QListWidget*) widget_ptr;
-    QString key = QtUnwrapString(key_);
-    QString label = QtUnwrapString(label_);
+    QString key = UnwrapString(key_);
+    QString label = UnwrapString(label_);
     QIcon* icon = (QIcon*) icon_.ptr;
     QListWidgetItem* item = new QListWidgetItem(*icon, label, widget);
     item->setData(Qt::UserRole, key);
@@ -426,7 +434,7 @@ QtBool QtListWidgetHasCurrentItem(void* widget_ptr) {
 QtString QtListWidgetGetCurrentItemKey(void* widget_ptr) {
     QListWidget* widget = (QListWidget*) widget_ptr;
     QVariant key_v = widget->currentItem()->data(Qt::UserRole);
-    return QtWrapString(key_v.toString());
+    return WrapString(key_v.toString());
 }
 
 void QtWebViewDisableContextMenu(void* widget_ptr) {
@@ -448,12 +456,12 @@ void QtWebViewRecordClickedLink(void* widget_ptr) {
 
 void QtWebViewSetHTML(void* widget_ptr, QtString html) {
     QWebView* widget = (QWebView*) widget_ptr;
-    widget->page()->mainFrame()->setHtml(QtUnwrapString(html));
+    widget->page()->mainFrame()->setHtml(UnwrapString(html));
 }
 
 void QtWebViewScrollToAnchor(void* widget_ptr, QtString anchor) {
     QWebView* widget = (QWebView*) widget_ptr;
-    widget->page()->mainFrame()->scrollToAnchor(QtUnwrapString(anchor));
+    widget->page()->mainFrame()->scrollToAnchor(UnwrapString(anchor));
 }
 
 QtPoint QtWebViewGetScroll(void* widget_ptr) {
@@ -470,10 +478,10 @@ QtString QtFileDialogOpen(void* parent_ptr, QtString title, QtString cwd, QtStri
    QWidget* parent = (QWidget*) parent_ptr;
    QString path = QFileDialog::getOpenFileName(
                parent,
-               QtUnwrapString(title),
-               QtUnwrapString(cwd),
-               QtUnwrapString(filter));
-   return QtWrapString(path);
+               UnwrapString(title),
+               UnwrapString(cwd),
+               UnwrapString(filter));
+   return WrapString(path);
 }
 
 QtStringList QtFileDialogOpenMultiple(void* parent_ptr,  QtString title, QtString cwd, QtString filter) {
@@ -481,9 +489,9 @@ QtStringList QtFileDialogOpenMultiple(void* parent_ptr,  QtString title, QtStrin
     QStringList* path_list = new QStringList;
     *path_list = QFileDialog::getOpenFileNames(
                 parent,
-                QtUnwrapString(title),
-                QtUnwrapString(cwd),
-                QtUnwrapString(filter));
+                UnwrapString(title),
+                UnwrapString(cwd),
+                UnwrapString(filter));
     QtStringList wrapped = { path_list };
     return wrapped;
 }
@@ -492,39 +500,65 @@ QtString QtFileDialogSelectDirectory(void *parent_ptr, QtString title, QtString 
     QWidget* parent = (QWidget*) parent_ptr;
     QString path = QFileDialog::getExistingDirectory(
                 parent,
-                QtUnwrapString(title),
-                QtUnwrapString(cwd));
-    return QtWrapString(path);
+                UnwrapString(title),
+                UnwrapString(cwd));
+    return WrapString(path);
 }
 
 QtString QtFileDialogSave(void *parent_ptr, QtString title, QtString cwd, QtString filter) {
     QWidget* parent = (QWidget*) parent_ptr;
     QString path = QFileDialog::getSaveFileName(
                 parent,
-                QtUnwrapString(title),
-                QtUnwrapString(cwd),
-                QtUnwrapString(filter));
-    return QtWrapString(path);
+                UnwrapString(title),
+                UnwrapString(cwd),
+                UnwrapString(filter));
+    return WrapString(path);
 }
 
-QMetaObject::Connection QtDynamicConnect (
-        QObject* emitter , const QString& signalName,
-        QObject* receiver, const QString& slotName
-) {
-    /* ref: https://stackoverflow.com/questions/26208851/qt-connecting-signals-and-slots-from-text */
-    int index = emitter->metaObject()
-                ->indexOfSignal(QMetaObject::normalizedSignature(qPrintable(signalName)));
-    if (index == -1) {
-        qWarning("Wrong signal name: %s", qPrintable(signalName));
-        return QMetaObject::Connection();
-    }
-    QMetaMethod signal = emitter->metaObject()->method(index);
-    index = receiver->metaObject()
-            ->indexOfSlot(QMetaObject::normalizedSignature(qPrintable(slotName)));
-    if (index == -1) {
-        qWarning("Wrong slot name: %s", qPrintable(slotName));
-        return QMetaObject::Connection();
-    }
-    QMetaMethod slot = receiver->metaObject()->method(index);
-    return QObject::connect(emitter, signal, receiver, slot);
+void WebViewRegisterAsset(void* view_ptr, QtString path, QtString mime, const uint8_t* buf, size_t len) {
+    WebView* view = (WebView*) view_ptr;
+    QByteArray data = QByteArray::fromRawData((const char*)(buf), len);
+    view->getStore()->InsertItem(UnwrapString(path), UnwrapString(mime), data);
 }
+QtString WebViewInjectCSS(void* view_ptr, QtString path) {
+    WebView* view = (WebView*) view_ptr;
+    QString uuid = QUuid::createUuid().toString();
+    QString path_base64 = EncodeBase64(UnwrapString(path));
+    emit view->getBridge()->InjectCSS(uuid, path_base64);
+    return WrapString(uuid);
+}
+QtString WebViewInjectJS(void* view_ptr, QtString path) {
+    WebView* view = (WebView*) view_ptr;
+    QString uuid = QUuid::createUuid().toString();
+    QString path_base64 = EncodeBase64(UnwrapString(path));
+    emit view->getBridge()->InjectJS(uuid, path_base64);
+    return WrapString(uuid);
+}
+QtString WebViewInjectTTF(void* view_ptr, QtString path, QtString family, QtString weight, QtString style) {
+    WebView* view = (WebView*) view_ptr;
+    QString uuid = QUuid::createUuid().toString();
+    QString path_base64 = EncodeBase64(UnwrapString(path));
+    emit view->getBridge()->InjectTTF(uuid, path_base64, UnwrapString(family), UnwrapString(weight), UnwrapString(style));
+    return WrapString(uuid);
+}
+void WebViewCallMethod(void* view_ptr, QtString id, QtString name, QtVariantList args) {
+    WebView* view = (WebView*) view_ptr;
+    QVariantList args_copy = *(QVariantList*)(args.ptr);
+    emit view->getBridge()->CallMethod(UnwrapString(id), UnwrapString(name), args_copy);
+}
+
+QtString WebViewGetCurrentEventHandler(void* view_ptr) {
+    WebView* view = (WebView*) view_ptr;
+    return WrapString(view->getEmittedEventHandler());
+}
+QtVariantMap WebViewGetCurrentEventPayload(void* view_ptr) {
+    WebView* view = (WebView*) view_ptr;
+    QVariantMap* m = new QVariantMap;
+    *m = view->getEmittedEventPayload();
+    return { m };
+}
+void WebViewPatchActualDOM(void* view_ptr, QtString operations) {
+    WebView* view = (WebView*) view_ptr;
+    emit view->getBridge()->PatchActualDOM(UnwrapString(operations));
+}
+

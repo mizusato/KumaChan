@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+
 struct _QtConnHandle {
     void* ptr;
 };
@@ -64,7 +65,7 @@ extern const size_t QtEventClose;
 #ifdef __cplusplus
 extern "C" {
 #endif
-    void QtInit();
+    void QtInit(bool debug);
     int QtMain();
     void QtCommitTask(void (*cb)(size_t), size_t payload);
     void QtExit(int code);
@@ -135,20 +136,19 @@ extern "C" {
     QtString QtFileDialogOpen(void* parent_ptr, QtString title, QtString cwd, QtString filter);
     QtStringList QtFileDialogOpenMultiple(void* parent_ptr,  QtString title, QtString cwd, QtString filter);
     QtString QtFileDialogSelectDirectory(void *parent_ptr, QtString title, QtString cwd);
-    QtString QtFileDialogSave(void *parent_ptr, QtString title, QtString cwd, QtString filter);
-    void WebUiInit(QtString title, QtBool debug);
-    void WebUiLoadView();
-    void* WebUiGetWindow();
-    void WebUiRegisterAsset(QtString path, QtString mime, const uint8_t* buf, size_t len);
-    QtString WebUiInjectCSS(QtString path);
-    QtString WebUiInjectJS(QtString path);
-    QtString WebUiInjectTTF(QtString path, QtString family, QtString weight, QtString style);
-    void WebUiCallMethod(QtString id, QtString name, QtVariantList args);
-    QtString WebUiGetCurrentEventHandler();
-    QtVariantMap WebUiGetCurrentEventPayload();
-    void WebUiPatchActualDOM(QtString operations);
+    QtString QtFileDialogSave(void* parent_ptr, QtString title, QtString cwd, QtString filter);
+    // Web
+    void WebViewRegisterAsset(void* view_ptr, QtString path, QtString mime, const uint8_t* buf, size_t len);
+    QtString WebViewInjectCSS(void* view_ptr, QtString path);
+    QtString WebViewInjectJS(void* view_ptr, QtString path);
+    QtString WebViewInjectTTF(void* view_ptr, QtString path, QtString family, QtString weight, QtString style);
+    void WebViewCallMethod(void* view_ptr, QtString id, QtString name, QtVariantList args);
+    QtString WebViewGetCurrentEventHandler(void* view_ptr);
+    QtVariantMap WebViewGetCurrentEventPayload(void* view_ptr);
+    void WebViewPatchActualDOM(void* view_ptr, QtString operations);
 #ifdef __cplusplus
 }
 #endif
 
 #endif
+

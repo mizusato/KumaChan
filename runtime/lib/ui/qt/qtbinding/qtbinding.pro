@@ -1,10 +1,9 @@
 CONFIG += c++11
-HEADERS += qtbinding.hpp \
-    adapt.hpp \
-    webui.hpp
-SOURCES += qtbinding.cpp \
-    adapt.cpp \
-    webui.cpp
+HEADERS += qtbinding.h \
+    util.hpp \
+    web.hpp
+SOURCES += util.cpp \
+    api.cpp
 TARGET = qtbinding
 TEMPLATE = lib
 QT += core widgets uitools webkitwidgets

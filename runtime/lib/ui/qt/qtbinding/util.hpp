@@ -1,11 +1,29 @@
-#ifndef QTBINDING_HPP
-#define QTBINDING_HPP
+#ifndef UTIL_HPP
+#define UTIL_HPP
+
 #include <QObject>
+#include <QMetaMethod>
 #include <QWidget>
 #include <QEvent>
-#include <QUiLoader>
-#include <QWebView>
 #include <cstdlib>
+#include <cmath>
+#include "qtbinding.h"
+
+
+#define BaseSize 18.0
+#define BaseScreen 768.0
+
+QtString WrapString(QString str);
+QString UnwrapString(QtString str);
+
+QString EncodeBase64(QString str);
+QString DecodeBase64(QString str);
+
+int Get1remPixels();
+QSize GetSizeFromRelative(QSize size_rem);
+
+bool DebugEnabled();
+void EnableDebug();
 
 
 #define CALLBACK_BLOCKED "qtbindingCallbackBlocked"
@@ -13,17 +31,30 @@
 typedef void (*callback_t)(size_t);
 Q_DECLARE_METATYPE(callback_t);
 
-class Bridge final: public QObject {
+class CallbackObject;
+struct ConnectionHandle {
+    QMetaObject::Connection
+        conn;
+    CallbackObject*
+        cb_obj;
+};
+
+QMetaObject::Connection QtDynamicConnect (
+        QObject* emitter , const QString& signalName,
+        QObject* receiver, const QString& slotName
+);
+
+class CallbackExecutor final: public QObject {
     Q_OBJECT
 public:
-    Bridge(QWidget *parent = nullptr): QObject(parent) {
+    CallbackExecutor(QWidget *parent = nullptr): QObject(parent) {
         QObject::connect (
-            this, &Bridge::QueueCallback,
-            this, &Bridge::__InvokeCallback,
+            this, &CallbackExecutor::QueueCallback,
+            this, &CallbackExecutor::__InvokeCallback,
             Qt::QueuedConnection
         );
     };
-    virtual ~Bridge() {};
+    virtual ~CallbackExecutor() {};
 signals:
     void QueueCallback(callback_t cb, size_t payload);
 private slots:
@@ -85,17 +116,5 @@ public:
     }
 };
 
-class UiLoader: public QUiLoader {
-public:
-    virtual QWidget* createWidget(const QString &className, QWidget *parent = nullptr, const QString &name = QString()) override {
-        if (className == "QWebView") {
-            QWidget* w = new QWebView(parent);
-            w->setObjectName(name);
-            return w;
-        } else {
-            return QUiLoader::createWidget(className, parent, name);
-        }
-    }
-};
+#endif  // UTIL_HPP
 
-#endif  // QTBINDING_HPP

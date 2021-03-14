@@ -1,7 +1,7 @@
 <RCC>
     <qresource prefix="/qtbinding">
-        <file>webui/webui.js</file>
-        <file>webui/webui.html</file>
-        <file>webui/webui.css</file>
+        <file>web/bridge.js</file>
+        <file>web/content.html</file>
+        <file>web/normalize.css</file>
     </qresource>
 </RCC>

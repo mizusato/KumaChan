@@ -89,21 +89,21 @@ window.addEventListener('load', _ => {
 /** @returns {Bridge} */
 function getBridgeObject() {
     // @ts-ignore
-    if (typeof WebUI == 'undefined') {
-        console.error('[WebUI] Bridge Object Not Found')
-        throw new Error('[WebUI] Initialization Failed - Bridge Object Not Found')
+    if (typeof WebBridge == 'undefined') {
+        console.error('[QtBinding] Bridge Object Not Found')
+        throw new Error('[QtBinding] Initialization Failed - Bridge Object Not Found')
     }
     /** @type {Bridge} */
     // @ts-ignore
-    let bridge = WebUI
-    console.log('[WebUI] Bridge Object Found', bridge)
+    let bridge = WebBridge
+    console.log('[QtBinding] Bridge Object Found', bridge)
     return bridge
 }
 
 /** @param {Bridge} bridge */
 function notifyInitialized(bridge) {
     bridge.LoadFinish()
-    console.log('[WebUI] Bridge JS-Side Initialized')
+    console.log('[QtBinding] Bridge JS-Side Initialized')
 }
 
 /** @param {Bridge} bridge */
