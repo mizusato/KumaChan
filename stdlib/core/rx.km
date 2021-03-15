@@ -63,14 +63,20 @@ export function connect:[T]
     &(Action*[T], Sink[T]) => Action
     native 'connect';
 export function connect:[T]
-    &(Reactive[T], Sink[T]) => Action
+    &(Bus[T], Sink[T]) => Action
     &(r,sink) => ({watch(r)} connect sink);
 export function connect:[T,E]
     &(Action*[T], &(T) => Action[unit,E]) => Action[unit,E]
     &(signal, receiver) => signal.{concat-map &(x) => {receiver(x)}}.{wait-complete};
+export function connect:[T,E]
+    &(Bus[T], &(T) => Action[unit,E]) => Action[unit,E]
+    &(bus, receiver) => bus.{watch}.{connect(receiver)};
 export function connect:[E]
     &(Action*, Action[unit,E]) => Action[unit,E]
     &(signal, receiver) => signal.{concat-map &() => receiver}.{wait-complete};
+export function connect:[E]
+    &(Bus[unit], Action[unit,E]) => Action[unit,E]
+    &(bus, receiver) => bus.{watch}.{connect(receiver)};
 # alias: <-
 export function write:[T]
     &(Sink[T], T) => Action

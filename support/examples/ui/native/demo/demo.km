@@ -17,7 +17,7 @@ do
     & buf := reactive 'Hello World',
     (TextInput bind buf)
         . { with (TextDisplay bind buf.{watch}.{debounce 300}) }
-        . { with buf.{watch}
+        . { with buf
                 . { connect &(text) =>
                     { println { "Current Text: #" text } } }
                 . { catch &(err) => { crash err } }

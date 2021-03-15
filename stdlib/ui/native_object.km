@@ -35,8 +35,8 @@ function bind-property: [T]
         source: Action*[T] }
         => Action
     & { object, prop, type, source } =>
-        (source connect { callback:::[T] &(value) => {
-            set-property (object, prop, type, value) } });
+        (source connect &(value) => {
+            set-property (object, prop, type, value) });
 
 function bind-property: [T]
     & { object: Object,

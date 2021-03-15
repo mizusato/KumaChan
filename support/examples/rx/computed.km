@@ -11,8 +11,8 @@ function float-input:
     &(value) =>
         & buffer := use { ui-state '' },
         { ui-input buffer }
-            . { with ({ watch buffer } connect { callback:::[String] &(string) =>
-                (value <- { parse-float string }) }) };
+            . { with (buffer connect &(string) =>
+                (value <- { parse-float string })) };
 
 const Root: ui::Component :=
     let container := (ui-container styled ['container']),
