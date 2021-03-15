@@ -65,6 +65,12 @@ export function connect:[T]
 export function connect:[T]
     &(Reactive[T], Sink[T]) => Action
     &(r,sink) => ({watch(r)} connect sink);
+export function connect:[T,E]
+    &(Action*[T], &(T) => Action[unit,E]) => Action[unit,E]
+    &(signal, receiver) => signal.{concat-map &(x) => {receiver(x)}}.{wait-complete};
+export function connect:[E]
+    &(Action*, Action[unit,E]) => Action[unit,E]
+    &(signal, receiver) => signal.{concat-map &() => receiver}.{wait-complete};
 # alias: <-
 export function write:[T]
     &(Sink[T], T) => Action
@@ -296,6 +302,9 @@ export function switch-map:[A,B,E]
 export function merge:[T,E]
     &(Array[Action*[T,E]]) => Action*[T,E]
     native 'action-merge';
+export function merge:[E]
+    &(Array[Action[unit,E]]) => Action[unit,E]
+    &(actions) => { merge:::[unit,E] actions }.{ wait-complete };
 export function concat:[T,E]
     &(Array[Action*[T,E]]) => Action*[T,E]
     native 'action-concat';

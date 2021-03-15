@@ -1,15 +1,15 @@
 do DialogDemoWindow.{show-at-center};
 
-do DialogDemoWindow.{on-close}.{concat-map &() => {exit 0}}.{wait-complete};
+do DialogDemoWindow.{on-close}.{connect {exit 0}};
 
 do
     & @text := reactive '',
     let @line := { merge [@open, @open-multiple, @open-directory, @save] },
     (LogBox bind @text)
         . { with @line
-            .{ concat-map &(line) =>
+            .{ connect &(line) =>
                 @text.{update &(text) => {"##"..\n (text,line)}} }
-            .{ wait-complete } };
+            };
 
 
 const @open: Action*[String] :=
