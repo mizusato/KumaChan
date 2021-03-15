@@ -54,7 +54,3 @@ function bind-property: [T]
             (source connect sync),
         { merge [read, write]  }. { wait-complete };
 
-
-type Icon
-    native;
-

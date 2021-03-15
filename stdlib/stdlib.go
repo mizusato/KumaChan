@@ -239,6 +239,7 @@ var qtWidgetTypeNameMap = map[string] string {
 	"ComboBox":      "NativeSelect",
 	"ListWidget":    "NativeList",
 }
+const QtActionType = "Command"
 func GetQtWidgetTypeName(widget_name string) (string, bool) {
 	var type_name, exists = qtWidgetTypeNameMap[widget_name]
 	return type_name, exists

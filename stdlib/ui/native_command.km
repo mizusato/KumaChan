@@ -1,0 +1,8 @@
+type Command
+    protected
+    Object;
+
+export function activated:
+    &(Command) => Action*[unit]
+    &(command) => { signal (command, 'triggered()') };
+

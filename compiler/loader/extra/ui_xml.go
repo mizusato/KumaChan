@@ -83,6 +83,21 @@ func (f UiXmlFile) GetAST() (ast.Root, *parser.Error) {
 		)
 		ast_root.Statements = append(ast_root.Statements, const_decl)
 	}
+	for name, _ := range f.Actions {
+		var thunk = lang.UiObjectThunk {
+			Object: name,
+			Group:  group,
+		}
+		var const_decl = common.CreateConstant (
+			ast_root_node,
+			f.Config.Public,
+			name,
+			stdlib.Mod_ui,
+			stdlib.QtActionType,
+			thunk,
+		)
+		ast_root.Statements = append(ast_root.Statements, const_decl)
+	}
 	return ast_root, nil
 }
 
@@ -120,6 +135,10 @@ func LoadUiXml(path string, content ([] byte), config_ interface{}) (common.Unit
 	widgets[root_name] = UiXmlWidgetInfo {
 		Class: ui.RootWidget.Class,
 	}
+	var actions = make(map[string] struct{})
+	for _, item := range ui.RootWidget.Actions {
+		actions[item.Name] = struct{}{}
+	}
 	// TODO: collect ui.RootWidget.Actions
 	var add_children func(def UiXmlWidget)
 	add_children = func(def UiXmlWidget) {
@@ -150,6 +169,7 @@ func LoadUiXml(path string, content ([] byte), config_ interface{}) (common.Unit
 		Content: content_string,
 		Root:    root_name,
 		Widgets: widgets,
+		Actions: actions,
 		Config:  config,
 	}, nil
 }
