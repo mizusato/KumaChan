@@ -25,14 +25,13 @@ func load (
 		qt.MakeSureInitialized()
 		var wait = make(chan struct{})
 		var dialog qt.Widget
-		var del_dialog func()
 		qt.CommitTask(func() {
 			var title_runes = RuneSliceFromString(title)
 			var title, del_title = qt.NewString(title_runes)
 			defer del_title()
 			var icon, del_icon = qt.NewIconEmpty()
 			defer del_icon()
-			dialog, del_dialog = qt.WebDialogCreate(nil, icon, title, 40, 30, true)
+			dialog, _ = qt.WebDialogCreate(nil, icon, title, 40, 30, true)
 			qt.DialogShowModal(dialog)
 			wait <- struct{}{}
 		})
