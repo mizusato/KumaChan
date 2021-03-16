@@ -5,31 +5,29 @@ type ABC enum {
 };
 
 function parse-abc:
-    ( &(String) ABC )
-    ( &(str)
-        if $(str = 'A'):
+    &(String) => ABC
+    &(str) =>
+        if (str = 'A'):
             A,
-        elif $(str = 'B'):
+        elif (str = 'B'):
             B,
-        elif $(str = 'C'):
+        elif (str = 'C'):
             C,
         else:
-            panic 'invalid ABC'
-    );
+            { panic 'invalid ABC' };
 
 function convert:
-    ( &(ABC) String )
-	( &(x)
+    &(ABC) => String
+	&(x) =>
         switch x:
 	       case A: 'A',
 	       case B: 'B',
 	       case C: 'C',
-        end
-    );
+        end;
 
 function f:
-	( &(ABC,ABC) ABC )
-	( &(x,y)
+	&(ABC,ABC) => ABC
+	&(x,y) =>
         select (x, y):
 	       case [A,A]: A,
 	       case [A,B]: C,
@@ -38,15 +36,14 @@ function f:
 	       case [C,A]: B,
 	       case [C,B]: A,
 	       case [C,C]: C,
-        end
-    );
+        end;
 
-do scanln ()
-    | then ( &(x-str)
-        scanln()
-        | then ( &(y-str)
-            let z := (f (parse-abc x-str) (parse-abc y-str)),
-            println (str z)
-        )
-    )
-    | catch (&(_)(crash 'I/O Error'));
+do { scanln () }
+    . { then &(x-str) =>
+        { scanln () }
+        . { then &(y-str) =>
+            let z := { f ({parse-abc(x-str)}, {parse-abc(y-str)}) },
+            { println z.{str} }
+        }
+    }
+    . { catch &(err) => { crash err } };

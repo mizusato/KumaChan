@@ -1,6 +1,6 @@
 do
-    let seq := 1.0 | cons (2.0 | cons (nil ())),
-    let eff := yield* $(0.0 cons seq),
-    eff | concat-map (&(x)(println (str x)))
-        | catch      (&(err)(crash err))
-        | wait-complete;
+    let seq := (1.0 cons (2.0 cons nil)),
+    { yield* (0.0 cons seq) }
+        . { concat-map &(x) => { println { str x } } }
+        . { catch &(err) => { crash err } }
+        . { wait-complete };

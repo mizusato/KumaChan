@@ -1,29 +1,29 @@
 import Data from './schema';
 
-do (println (decode! (data-serialize canvas)))
-    | catch (&(err)(crash err));
+do { println { decode! { data-serialize canvas } } }
+    . { catch &(err) => { crash err } };
 
-const canvas: Data::Canvas
-    Data::Canvas {
+const canvas: Data::Canvas :=
+    { Data::Canvas {
         shapes: [
-            (Data::Line
-                (Data::Point { name: 'A', pos: (Data::Vector 1.0 2.0) })
-                (Data::Point { name: 'B', pos: (Data::Vector 3.0 4.0) })),
-            (Data::Polygon {
+            { Data::Line (
+                { Data::Point { name: 'A', pos: { Data::Vector (1.0, 2.0) } } },
+                { Data::Point { name: 'B', pos: { Data::Vector (3.0, 4.0) } } }) },
+            { Data::Polygon {
                 points: [
-                    (Data::Point { name: 'O', pos: (Data::Vector 0.0 0.0)}),
-                    (Data::Point { name: 'C', pos: (Data::Vector -1.5 0.5)}),
-                    (Data::Point { name: 'D', pos: (Data::Vector -1.5 -2.0)})
+                    { Data::Point { name: 'O', pos: { Data::Vector (0.0, 0.0) } } },
+                    { Data::Point { name: 'C', pos: { Data::Vector (-1.5, 0.5) } } },
+                    { Data::Point { name: 'D', pos: { Data::Vector (-1.5, -2.0) } } }
                 ]
-            }),
-            (Data::Circle {
-                center: (Data::Point { name: 'P', pos: (Data::Vector 5.0 5.0) }),
+            } },
+            { Data::Circle {
+                center: { Data::Point { name: 'P', pos: { Data::Vector (5.0, 5.0) } } },
                 radius: 15.5
-            }),
-            (Data::Curve (
-                Data::Next (Data::Point { name: 'C1', pos: (Data::Vector 0.0 0.0) },
-                Data::Curve! (Data::Next (Data::Point { name: 'C2', pos: (Data::Vector 5.0 5.0) },
-                Data::Curve! (Data::End))))
-            ))
+            } },
+            { Data::Curve
+                { Data::Next ({ Data::Point { name: 'C1', pos: { Data::Vector (0.0, 0.0) } } },
+                { Data::Curve! { Data::Next ({ Data::Point { name: 'C2', pos: { Data::Vector (5.0, 5.0) } } },
+                { Data::Curve! Data::End }) } } ) }
+            }
         ]
-    };
+    } };

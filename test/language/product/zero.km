@@ -5,11 +5,12 @@ type Point {
      y: Real
 };
 
-export function zero-value: ( &() Real )
-       (&(_)(Real 0.0));
+export function zero-value:
+    &() => Real
+    &() => 0.0;
 
 do
-    let p := Point {},
+    let p := { Point {} },
     let {x,y} := p,
-    println ("(#,#)" (str x) (str y))
-    | catch (&(err)(crash err));
+    { println { "(#,#)" (x.{str}, y.{str}) } }
+        . { catch &(err) => { crash err } };

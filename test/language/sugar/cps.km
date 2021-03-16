@@ -1,19 +1,17 @@
 do
-    ~ catch &(err) := (
-        ~ then println 'Number a:',
-        ~ then &(str-a) := scanln (),
-        ~ then println 'Number b:',
-        ~ then &(str-b) := scanln (),
-        let sum? := (
-            ~ maybe? &(a) := str-a | parse-float,
-            ~ maybe? &(b) := str-b | parse-float,
-            Just $(a + b)
-        ),
+    & err := catch
+        & await { println 'Number a:' },
+        & str-a := await { scanln () },
+        & await { println 'Number b:' },
+        & str-b := await { scanln () },
+        let sum? :=
+            & a := maybe? str-a.{parse-float},
+            & b := maybe? str-b.{parse-float},
+            { Just (a + b) },
         switch sum?:
         case Just sum:
-            println (str sum),
+            { println { str sum } },
         case N/A:
-            println 'N/A',
-        end
-    ),
-    crash err;
+            { println 'N/A' },
+        end,
+    { crash err };
