@@ -33,4 +33,4 @@ do
         . { every &(framework, color) =>
             (framework.{get-color} = color) },
     { println { str ok } }
-    . { catch &(err) => { crash err } };
+    . { catch-crash };

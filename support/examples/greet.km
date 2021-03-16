@@ -1,4 +1,4 @@
 do { print 'Enter Your Name: ' }
    . { then { scanln () } }
    . { then &(name) => { println {"Hello, #" name} } }
-   . { catch &(err) => { crash err } };
+   . { catch-crash };

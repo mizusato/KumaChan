@@ -46,4 +46,4 @@ do { scanln () }
             { println z.{str} }
         }
     }
-    . { catch &(err) => { crash err } };
+    . { catch-crash };

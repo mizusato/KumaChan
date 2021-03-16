@@ -6,4 +6,4 @@ do
             . { filter &(x) => (x != 50.0) }
             . { reduce (0.0, &(sum,x) => (sum + x)) },
     { println { str sum } }
-        . { catch &(err) => { crash err } };
+        . { catch-crash };

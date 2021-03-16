@@ -260,9 +260,21 @@ export function catch:[T,E,F]
 export function catch-retry:[T,E]
     &(Action[T,E], &(E) => Action[Bool]) => Action[T,E]
     native 'catch-retry';
+export function catch-retry:[T,E]
+    &(Action*[T,E], &(E) => Action[Bool]) => Action*[T,E]
+    native 'catch-retry';
 export function catch-throw:[T,E,F]
     &(Action[T,E], &(E) => F) => Action[T,F]
     native 'catch-throw';
+export function catch-throw:[T,E,F]
+    &(Action*[T,E], &(E) => F) => Action*[T,F]
+    native 'catch-throw';
+export function catch-crash:[T]
+    &(Action[T,Error]) => Action[T]
+    &(action) => action.{ catch &(err) => { crash err } };
+export function catch-crash:[T]
+    &(Action*[T,Error]) => Action*[T]
+    &(action) => action.{ catch &(err) => { crash err } };
 export function throw:[E]
     &(E) => Action[never,E]
     native 'throw';

@@ -20,5 +20,5 @@ do
         . { with buf
                 . { connect &(text) =>
                     { println { "Current Text: #" text } } }
-                . { catch &(err) => { crash err } }
+                . { catch-crash }
         };
