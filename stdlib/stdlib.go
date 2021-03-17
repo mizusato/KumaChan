@@ -229,15 +229,17 @@ func (img *PNG) GetPixelData() image.Image {
 
 // ui
 var qtWidgetTypeNameMap = map[string] string {
-	"Widget":        "Widget",
-	"MainWindow":    "Window",
-	"Label":         "NativeLabel",
-	"LineEdit":      "NativeInput",
-	"PlainTextEdit": "NativeInputMultiLine",
-	"PushButton":    "NativeButton",
-	"CheckBox":      "NativeCheckbox",
-	"ComboBox":      "NativeSelect",
-	"ListWidget":    "NativeList",
+	"QWidget":        "Widget",
+	"QMainWindow":    "Window",
+	"QWebView":       "PlainWebView",
+	"WebView":        "WebView",
+	"QLabel":         "NativeLabel",
+	"QLineEdit":      "NativeInput",
+	"QPlainTextEdit": "NativeInputMultiLine",
+	"QPushButton":    "NativeButton",
+	"QCheckBox":      "NativeCheckbox",
+	"QComboBox":      "NativeSelect",
+	"QListWidget":    "NativeList",
 }
 const QtActionType = "Command"
 func GetQtWidgetTypeName(widget_name string) (string, bool) {

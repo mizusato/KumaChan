@@ -15,10 +15,22 @@ type Dialog
     protected
     Widget;
 
-
 type Window
     protected
     Widget;
+
+
+type BaseWebView
+    protected
+    Widget;
+
+type PlainWebView
+    protected
+    BaseWebView;
+
+type WebView
+    protected
+    BaseWebView;
 
 
 type NativeLabel

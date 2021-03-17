@@ -13,6 +13,20 @@ import (
 
 
 var UiFunctions = map[string] interface{} {
+	"ui-bind": func(view qt.Widget, root rx.Action, h InteropContext) rx.Action {
+		var debug = h.GetDebugOptions().DebugUI
+		var sched = h.Scheduler()
+		var assets = func() (map[string] Resource) {
+			return h.GetResources("web_asset")
+		}
+		return rx.NewSubscription(func(_ func(rx.Object)) func() {
+			return ui.Bind(view, root, ui.BindOptions {
+				Debug:  debug,
+				Sched:  sched,
+				Assets: assets,
+			})
+		})
+	},
 	"ui-init": func(title String, root rx.Action, h InteropContext) rx.Action {
 		return rx.NewGoroutineSingle(func(_ *rx.Context) (rx.Object, bool) {
 			ui.Init(h, root, title)

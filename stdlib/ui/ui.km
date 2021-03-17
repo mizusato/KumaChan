@@ -4,6 +4,10 @@ type WebAsset
 type FontInfo
     (String,String,String);  // family, weight, style
 
+export function bind:
+    &(WebView, Component) => Action
+    native 'ui-bind';
+
 export function ui-init:
     &(String, Component) => Action
     native 'ui-init';

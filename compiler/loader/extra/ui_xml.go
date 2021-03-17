@@ -13,15 +13,27 @@ import (
 
 
 var __UiXmlWidgetDefaultNames = map[string] ([] string) {
-	"Widget": { "widget", "centralWidget" },
-	"MainWindow": { "MainWindow" },
-	"Label": { "label" },
-	"LineEdit": { "input" },
-	"PlainTextEdit": { "plainTextEdit" },
-	"PushButton": { "button" },
-	"CheckBox": { "checkBox" },
-	"ComboBox": { "comboBox" },
-	"ListWidget": { "listWidget" },
+	"QWidget": { "widget", "centralWidget" },
+	"QMainWindow": { "MainWindow" },
+	"QWebView": { "webView" },
+	"WebView": { "widget", "webView" },
+	"QLabel": { "label" },
+	"QLineEdit": { "input" },
+	"QPlainTextEdit": { "plainTextEdit" },
+	"QPushButton": { "button" },
+	"QCheckBox": { "checkBox" },
+	"QComboBox": { "comboBox" },
+	"QListWidget": { "listWidget" },
+}
+func __IsUiXmlDefaultName(name string, class string) bool {
+	var default_names = __UiXmlWidgetDefaultNames[class]
+	for _, default_name := range default_names {
+		if name == default_name ||
+			strings.HasPrefix(name, (default_name + "_")) {
+			return true
+		}
+	}
+	return false
 }
 
 type UiXmlFile struct {
@@ -56,16 +68,8 @@ func (f UiXmlFile) GetAST() (ast.Root, *parser.Error) {
 	}
 	var ast_root = common.CreateEmptyAST(f.Path)
 	var ast_root_node = ast_root.Node
-	outer: for name, widget := range f.Widgets {
-		var normalized_class = strings.TrimPrefix(widget.Class, "Q")
-		var default_names = __UiXmlWidgetDefaultNames[normalized_class]
-		for _, default_name := range default_names {
-			if name == default_name ||
-				strings.HasPrefix(name, (default_name + "_")) {
-				continue outer
-			}
-		}
-		var type_name, exists = stdlib.GetQtWidgetTypeName(normalized_class)
+	for name, widget := range f.Widgets {
+		var type_name, exists = stdlib.GetQtWidgetTypeName(widget.Class)
 		if !(exists) {
 			continue
 		}
@@ -132,8 +136,11 @@ func LoadUiXml(path string, content ([] byte), config_ interface{}) (common.Unit
 	if err != nil { return nil, err }
 	var widgets = make(map[string] UiXmlWidgetInfo)
 	var root_name = ui.RootWidget.Name
-	widgets[root_name] = UiXmlWidgetInfo {
-		Class: ui.RootWidget.Class,
+	var root_class = ui.RootWidget.Class
+	if !(__IsUiXmlDefaultName(root_name, root_class)) {
+		widgets[root_name] = UiXmlWidgetInfo{
+			Class: root_class,
+		}
 	}
 	var actions = make(map[string] struct{})
 	for _, item := range ui.RootWidget.Actions {
@@ -149,15 +156,22 @@ func LoadUiXml(path string, content ([] byte), config_ interface{}) (common.Unit
 		var consume_layout func(UiXmlLayout)
 		consume_layout = func(layout UiXmlLayout) {
 			for _, item := range layout.Items {
-				all_children = append(all_children, item.Widget)
-				consume_layout(item.Layout)
+				if item.Widget.Name != "" {
+					all_children = append(all_children, item.Widget)
+				}
+				if item.Layout.Items != nil {
+					consume_layout(item.Layout)
+				}
 			}
 		}
 		consume_layout(def.Layout)
 		for _, child := range all_children {
 			var name = child.Name
-			widgets[name] = UiXmlWidgetInfo {
-				Class: child.Class,
+			var class = child.Class
+			if !(__IsUiXmlDefaultName(name, class)) {
+				widgets[name] = UiXmlWidgetInfo {
+					Class: class,
+				}
 			}
 			add_children(child)
 		}
