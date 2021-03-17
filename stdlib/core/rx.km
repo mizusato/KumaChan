@@ -59,6 +59,9 @@ type HashMap[+K,+V]  native;  // rx.StringHashMap, rx.NumberHashMap
 
 ## Wired Components Operations
 // TODO: to be semantic: tuple input --> bundle input
+// TODO: remove connect(Action*,Sink),
+//       only preserve connect(Bus,Sink)
+//       change return value type to Action[never]
 export function connect:[T]
     &(Action*[T], Sink[T]) => Action
     native 'connect';

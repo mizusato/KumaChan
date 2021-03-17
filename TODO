@@ -1,6 +1,6 @@
 TODO
 
-- solve problem: too many "wait-complete"
+- revise resource management of wired components, files, ...
 
 - consider zero-value:[T] &() => Maybe[T]
 
