@@ -38,11 +38,17 @@ func GenericFunctionCall (
 			Info:  call_info,
 		}
 		return call, nil
-	} else if len(type_args) == 0 {
+	} else if len(type_args) < type_arity {
 		var inf_ctx = ctx.WithInferringEnabled(f.TypeParams, f.TypeBounds)
 		var raw_input_type = f.DeclaredType.Input
 		var raw_output_type = f.DeclaredType.Output
 		var marked_input_type = MarkParamsAsBeingInferred(raw_input_type)
+		for i, given_arg := range type_args {
+			inf_ctx.Inferring.Arguments[uint(i)] = ActiveType {
+				CurrentValue: given_arg,
+				Constraint:   AT_Exact,
+			}
+		}
 		// var marked_output_type = MarkParamsAsBeingInferred(raw_output_type)
 		var arg_typed, err = AssignTo(marked_input_type, arg, inf_ctx)
 		if err != nil { return Expr{}, err }
@@ -147,7 +153,7 @@ func GenericFunctionAssignTo (
 			Info:  info,
 		}
 		return TypedAssignTo(expected, f_expr, ctx)
-	} else if len(type_args) == 0 {
+	} else if len(type_args) < type_arity {
 		if expected == nil {
 			return Expr{}, &ExprError {
 				Point:    info.ErrorPoint,
@@ -159,6 +165,12 @@ func GenericFunctionAssignTo (
 		var inf_ctx = ctx.WithInferringEnabled(f.TypeParams, f.TypeBounds)
 		var f_raw_type = &AnonymousType { f.DeclaredType }
 		var f_marked_type = MarkParamsAsBeingInferred(f_raw_type)
+		for i, given_arg := range type_args {
+			inf_ctx.Inferring.Arguments[uint(i)] = ActiveType {
+				CurrentValue: given_arg,
+				Constraint:   AT_Exact,
+			}
+		}
 		var _, ok = AssignType(f_marked_type, exp_certain, FromInferred, inf_ctx)
 		if !(ok) { return Expr{}, &ExprError {
 			Point:    info.ErrorPoint,

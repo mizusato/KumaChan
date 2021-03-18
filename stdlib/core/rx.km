@@ -140,12 +140,9 @@ export function blackhole:
 export function callback:[T]
     &(&(T) => Action) => Sink[T]
     native 'callback';
-export function new-bus:[T]
-    &() => Action[Bus[T]]
-    native 'new-bus';
-export function new-reactive:[T]
-    &(T) => Action[ReactiveEntity[T]]
-    native 'new-reactive';
+export function bus: [T, K < Action*[any,any]]
+    &(unit, &(Bus[T]) => K) => K
+    native 'bus';
 export function reactive: [T, K < Action*[any,any]]
     &(T, &(ReactiveEntity[T]) => K) => K
     native 'reactive';

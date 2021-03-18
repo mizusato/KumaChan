@@ -9,7 +9,7 @@ do DemoWindow.{on-resize}
 
 do
     & buf := reactive 'Hello World',
-    & display := reactive '',
+    & display := reactive 'Hello World',
     { merge [
         (buf connect &(text) =>
             { println { "Current Text: #" text } } .{ catch-crash }),

@@ -188,22 +188,11 @@ var EffectFunctions = map[string] Value {
 			return h.Call(f, obj).(rx.Action)
 		})
 	},
-	"new-bus": func() rx.Action {
+	"bus": func(_ Value, f Value, h InteropContext) rx.Action {
 		return rx.NewSync(func() (rx.Object, bool) {
 			return rx.CreateBus(), true
-		})
-	},
-	"with-bus": func(f Value, h InteropContext) rx.Action {
-		// this func is not useful due to the limitation of type inference
-		return rx.NewSync(func() (rx.Object, bool) {
-			return rx.CreateBus(), true
-		}).ConcatMap(func(obj rx.Object) rx.Action {
+		}).Then(func(obj rx.Object) rx.Action {
 			return h.Call(f, obj).(rx.Action)
-		})
-	},
-	"new-reactive": func(init Value) rx.Action {
-		return rx.NewSync(func() (rx.Object, bool) {
-			return rx.CreateReactive(init, RefEqual), true
 		})
 	},
 	"reactive": func(init Value, f Value, h InteropContext) rx.Action {
