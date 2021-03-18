@@ -11,13 +11,15 @@ do
     & buf := reactive 'Hello World',
     & display := reactive '',
     { merge [
+        (buf connect &(text) =>
+            { println { "Current Text: #" text } } .{ catch-crash }),
         (TextInput bind buf),
         (TextDisplay bind display.{watch}),
-        (buf.{watch}.{debounce 300}.{connect &(text) => (display <- text)}),
+        buf.{watch}
+            . { debounce 300 }
+            . { connect display },
         ChangeTextButton.{activated}
             . { concat-map &() => { gen-random () } }
             . { map &(x) => { str x } }
-            . { connect &(text) => (buf <- text) },
-        (buf connect &(text) =>
-            { println { "Current Text: #" text } } .{ catch-crash })
+            . { connect display }
     ] };
