@@ -38,7 +38,7 @@ type NativeLabel
     Widget;
 
 export function bind:
-    &(NativeLabel, Action*[String]) => Action
+    &(NativeLabel, Computed[String]) => Action[never]
     &(label, @text) => {
         bind-property {
             object: label,
@@ -53,7 +53,7 @@ type NativeInput
     Widget;
 
 export function bind:
-    &(NativeInput, Reactive[String]) => Action
+    &(NativeInput, Reactive[String]) => Action[never]
     &(input, @text) => {
         bind-property {
             object: input,
@@ -64,7 +64,7 @@ export function bind:
         } };
 
 export function activated:
-    &(NativeInput) => Action*[unit]
+    &(NativeInput) => Source[unit]
     &(input) => { signal (input, 'returnPressed()') };
 
 
@@ -73,7 +73,7 @@ type NativeInputMultiLine
     Widget;
 
 export function bind:
-    &(NativeInputMultiLine, Reactive[String]) => Action
+    &(NativeInputMultiLine, Reactive[String]) => Action[never]
     &(input, @text) => {
         bind-property {
             object: input,
@@ -89,7 +89,7 @@ type NativeButton
     Widget;
 
 export function activated:
-    &(NativeButton) => Action*[unit]
+    &(NativeButton) => Source[unit]
     &(button) => { signal (button,'clicked()') };
 
 
@@ -98,7 +98,7 @@ type NativeCheckbox
     Widget;
 
 export function bind:
-    &(NativeCheckbox, Reactive[Bool]) => Action
+    &(NativeCheckbox, Reactive[Bool]) => Action[never]
     &(checkbox, @checked) => {
         bind-property {
             object: checkbox,
@@ -114,7 +114,7 @@ type NativeSelect
     Widget;
 
 export function bind:
-    &(NativeSelect, Reactive[Maybe[Number]]) => Action
+    &(NativeSelect, Reactive[Maybe[Number]]) => Action[never]
     &(select-widget, @index) => {
         bind-property {
             object: select-widget,

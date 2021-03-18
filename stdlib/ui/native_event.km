@@ -1,9 +1,5 @@
-type NativeEvent[+T]
-    protected
-    Action*[T];
-
 function native-event:[T]
-    &(Object, String, Bool) => NativeEvent[T]
+    &(Object, String, Bool) => Source[T]
     native 'qt-event';
 
 
@@ -13,11 +9,11 @@ type OnResize {
 };
 
 export function on-resize:
-    &(Object) => NativeEvent[OnResize]
+    &(Object) => Source[OnResize]
     &(object) => { native-event (object,'resize',No) };
 
 
 export function on-close:
-    &(Object) => NativeEvent[unit]
+    &(Object) => Source[unit]
     &(object) => { native-event (object,'close',Yes) };
 

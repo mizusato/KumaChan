@@ -8,7 +8,7 @@ do ui-exit-when-window-closed;
 
 // TODO: mouse enter => Just pos, mouse out => N/A
 function mouse-position:
-    &() => ui::Hook[Action*[(Float,Float)]]
+    &() => ui::Hook[Source[(Float,Float)]]
     &() => &(k) =>
         & pos := await new-bus:::[(Float,Float)],
         & id := await gen-sequential-id,

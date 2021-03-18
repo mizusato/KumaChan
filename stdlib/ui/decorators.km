@@ -14,7 +14,7 @@ export function styled:[T]
     &(ctor, class-list) => (ctor with { ui-style class-list });
 
 export function ui-render-if:
-    &(Action*[Bool]) => Decorator
+    &(Computed[Bool]) => Decorator
     &(@render) => &(cpt) =>
         & render := switch-map @render,
         if render:
@@ -23,7 +23,7 @@ export function ui-render-if:
             ui-empty;
 
 export function ui-show-if:
-    &(Action*[Bool]) => Decorator
+    &(Computed[Bool]) => Decorator
     &(@show) => &(@node) =>
         & (node, show) := computed (@node, @show),
         if show:
@@ -38,7 +38,7 @@ export function ui-style:
         (@node map &(node) => (node with { dom-attrs [('class',class)] }));
 
 export function ui-style:
-    &(Action*[Array[String]]) => Decorator
+    &(Computed[Array[String]]) => Decorator
     &(@class-list) => &(@node) =>
         & (class-list, node) := computed (@class-list, @node),
         let class := (class-list join ' '),
@@ -51,7 +51,7 @@ export function ui-attrs:
         (node with { dom-attrs attrs });
 
 export function ui-attrs:
-    &(Action*[Array[(String,String)]]) => Decorator
+    &(Computed[Array[(String,String)]]) => Decorator
     &(@attrs) => &(@node) =>
         & (attrs, node) := computed (@attrs, @node),
         (node with { dom-attrs attrs });
@@ -63,7 +63,7 @@ export function ui-inline-style:
         (node with { dom-styles rules });
 
 export function ui-inline-style:
-    &(Action*[Array[(String,String)]]) => Decorator
+    &(Computed[Array[(String,String)]]) => Decorator
     &(@rules) => &(@node) =>
         & (rules, node) := computed (@rules, @node),
         (node with { dom-styles rules });
@@ -87,7 +87,7 @@ export function ui-autofocus:
         (node with { dom-attrs [('webuiAutofocus','webuiAutofocus')] });
 
 export function ui-enabled:
-    &(Action*[Bool]) => Decorator
+    &(Computed[Bool]) => Decorator
     &(@enabled) => &(@node) =>
         & (enabled, node) := computed (@enabled, @node),
         if enabled:

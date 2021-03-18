@@ -12,7 +12,7 @@ do
             };
 
 
-const @open: Action*[String] :=
+const @open: Source[String] :=
     ButtonOpen.{activated}
         . { concat-map &() =>
             { ui::dialog-open {
@@ -30,7 +30,7 @@ const @open: Action*[String] :=
             end
         };
 
-const @open-multiple: Action*[String] :=
+const @open-multiple: Source[String] :=
     ButtonOpenMultiple.{activated}
         . { concat-map &() =>
             { ui::dialog-open-multiple {
@@ -50,7 +50,7 @@ const @open-multiple: Action*[String] :=
                 'open multiple: (cancelled)'
         };
 
-const @open-directory: Action*[String] :=
+const @open-directory: Source[String] :=
     ButtonOpenDirectory.{activated}
         . { concat-map &() =>
             { ui::dialog-open-directory {
@@ -67,7 +67,7 @@ const @open-directory: Action*[String] :=
             end
         };
 
-const @save: Action*[String] :=
+const @save: Source[String] :=
     ButtonSave.{activated}
         . { concat-map &() =>
             { ui::dialog-save {

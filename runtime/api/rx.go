@@ -312,11 +312,6 @@ var EffectFunctions = map[string] Value {
 			return v, true
 		})
 	},
-	"yield-thunk": func(f Value, h InteropContext) rx.Action {
-		return rx.NewSync(func() (rx.Object, bool) {
-			return h.Call(f, nil), true
-		})
-	},
 	"yield*-seq": func(seq container.Seq) rx.Action {
 		return rx.NewSyncSequence(func(next func(rx.Object))(bool,rx.Object) {
 			for item, rest, ok := seq.Next(); ok; item, rest, ok = rest.Next() {
@@ -346,6 +341,18 @@ var EffectFunctions = map[string] Value {
 	},
 	"assume-except": func(v Value) Value {
 		return v
+	},
+	"start-with": func(following rx.Action, head_ Value) rx.Action {
+		var head = container.ArrayFrom(head_)
+		return rx.Concat([] rx.Action {
+			rx.NewSyncSequence(func(next func(rx.Object))(bool,rx.Object) {
+				for i := uint(0); i < head.Length; i += 1 {
+					next(head.GetItem(i))
+				}
+				return true, nil
+			}),
+			following,
+		})
 	},
 	"wait": func(bundle ProductValue) rx.Action {
 		var timeout = SingleValueFromBundle(bundle).(uint)

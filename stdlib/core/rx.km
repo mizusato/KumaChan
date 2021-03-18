@@ -12,6 +12,16 @@ type Action*[[unit] +T, [never] +E]
 type Action [[unit] +T, [never] +E]
     protected Action*[T,E];
 
+/// Source[T] represents an action that subscribes to a discrete data source.
+type Source[+T]
+    protected
+    Action*[T];
+
+/// Computed[T] represents an action that subscribes to a continuous data source.
+type Computed[+T]
+    protected
+    Source[T];
+
 
 ## Wired Components
 
@@ -63,23 +73,23 @@ type HashMap[+K,+V]  native;  // rx.StringHashMap, rx.NumberHashMap
 //       only preserve connect(Bus,Sink)
 //       change return value type to Action[never]
 export function connect:[T]
-    &(Action*[T], Sink[T]) => Action
+    &(Source[T], Sink[T]) => Action[never]
     native 'connect';
 export function connect:[T]
-    &(Bus[T], Sink[T]) => Action
-    &(r,sink) => ({watch(r)} connect sink);
+    &(Bus[T], Sink[T]) => Action[never]
+    &(bus, sink) => ({watch(bus)} connect sink);
 export function connect:[T,E]
-    &(Action*[T], &(T) => Action[unit,E]) => Action[unit,E]
-    &(signal, receiver) => signal.{concat-map &(x) => {receiver(x)}}.{wait-complete};
+    &(Source[T], &(T) => Action) => Action[never]
+    &(source, receiver) => (source connect {callback(receiver)});
 export function connect:[T,E]
-    &(Bus[T], &(T) => Action[unit,E]) => Action[unit,E]
-    &(bus, receiver) => bus.{watch}.{connect(receiver)};
+    &(Bus[T], &(T) => Action) => Action[never]
+    &(bus, receiver) => ({watch(bus)} connect {callback(receiver)});
 export function connect:[E]
-    &(Action*, Action[unit,E]) => Action[unit,E]
-    &(signal, receiver) => signal.{concat-map &() => receiver}.{wait-complete};
+    &(Source[unit], Action) => Action[never]
+    &(source, receiver) => (source connect &() => receiver);
 export function connect:[E]
-    &(Bus[unit], Action[unit,E]) => Action[unit,E]
-    &(bus, receiver) => bus.{watch}.{connect(receiver)};
+    &(Bus[unit], Action) => Action[never]
+    &(bus, receiver) => (bus connect &() => receiver);
 # alias: <-
 export function write:[T]
     &(Sink[T], T) => Action
@@ -88,7 +98,10 @@ export function adapt:[A,B]
     &(Sink[A], &(B) => A) => Sink[B]
     native 'sink-adapt';
 export function watch:[T]
-    &(Bus[T]) => Action*[T]
+    &(Bus[T]) => Source[T]
+    native 'bus-watch';
+export function watch:[T]
+    &(Reactive[T]) => Computed[T]
     native 'bus-watch';
 export function update:[T]
     &(Reactive[T], &(T) => T) => Action
@@ -106,8 +119,8 @@ export function snapshot:[T]
 export function read:[T]
     &(Reactive[T]) => Action[T]
     native 'reactive-read';
-export function consume:[T,X,E]
-    &(Reactive[List[T]], &(ListKey,Action*[Number],Reactive[T]) => Action*[X,E]) => Action*[Array[X],E]
+export function consume:[T,X]
+    &(Reactive[List[T]], &(ListKey,Computed[Number],Reactive[T]) => Computed[X]) => Computed[Array[X]]
     native 'reactive-list-consume';
 export function undo:[T]
     &(ReactiveEntity[T]) => Action
@@ -190,9 +203,6 @@ export function go:[T]
 export function yield:[T]
     &(T) => Action[T]
     native 'yield';
-export function yield-thunk:[T]
-    &(&() => (T)) => Action[T]
-    native 'yield-thunk';
 export function yield*:[T]
     &(Seq[T]) => Action*[T]
     native 'yield*-seq';
@@ -200,17 +210,20 @@ export function yield*:[T]
     &(Array[T]) => Action*[T]
     native 'yield*-array';
 export function not:[E]
-    &(Action*[Bool,E]) => Action*[Bool,E]
+    &(Computed[Bool]) => Computed[Bool]
     &(p) => p.{map(not)};
 export function and:[E]
-    &(Action*[Bool,E], Action*[Bool,E]) => Action*[Bool,E]
+    &(Computed[Bool], Computed[Bool]) => Computed[Bool]
     &(p,q) => { computed ((p,q), &(p,q) => (p and q)) };
 export function or:[E]
-    &(Action*[Bool,E], Action*[Bool,E]) => Action*[Bool,E]
+    &(Computed[Bool], Computed[Bool]) => Computed[Bool]
     &(p,q) => { computed ((p,q), &(p,q) => (p or q)) };
 export function start-with:[T,E]
     &(Action*[T,E], Array[T]) => Action*[T,E]
-    &(e, prepended) => { concat:::[T,E] [{yield* prepended}, e] };
+    native 'start-with';
+export function start-with:[T,E]
+    &(Source[T], Array[T]) => Computed[T]
+    native 'start-with';
 export function wait:
     & { timeout: Number } => Action
     native 'wait';
@@ -246,12 +259,28 @@ export function then:[A,B,E]
     &(Action[A,E], &(A) => Action*[B,E]) => Action*[B,E]
     native 'then';
 # alias: await
+export function then:[A,B]
+    &(Action[A], &(A) => Source[B]) => Source[B]
+    native 'then';
+# alias: await
+export function then:[A,B]
+    &(Action[A], &(A) => Computed[B]) => Computed[B]
+    native 'then';
+# alias: await
 export function then:[E,B]
     &(Action[unit,E], Action[B,E]) => Action[B,E]
     native 'then-shortcut';
 # alias: await
 export function then:[E,B]
     &(Action[unit,E], Action*[B,E]) => Action*[B,E]
+    native 'then-shortcut';
+# alias: await
+export function then:[B]
+    &(Action, Source[B]) => Source[B]
+    native 'then-shortcut';
+# alias: await
+export function then:[B]
+    &(Action, Computed[B]) => Computed[B]
     native 'then-shortcut';
 
 export function catch:[T,E,F]
@@ -287,6 +316,12 @@ export function map:[A,B,E]
 export function map:[A,B,E]
     &(Action*[A,E], &(A) => B) => Action*[B,E]
     native 'action-map';
+export function map:[A,B]
+    &(Source[A], &(A) => B) => Source[B]
+    native 'action-map';
+export function map:[A,B]
+    &(Computed[A], &(A) => B) => Computed[B]
+    native 'action-map';
 export function map-to:[A,B,E]
     &(Action[A,E], B) => Action[B,E]
     &(e,v) => e.{map(&() => v)};
@@ -295,6 +330,9 @@ export function map-to:[A,B,E]
     &(e,v) => e.{map(&() => v)};
 export function filter:[T,E]
     &(Action*[T,E], &(T) => Bool) => Action*[T,E]
+    native 'action-filter';
+export function filter:[T]
+    &(Source[T], &(T) => Bool) => Source[T]
     native 'action-filter';
 export function filter-map:[A,B,E]
     &(Action*[A,E], &(A) => Maybe[B]) => Action*[B,E]
@@ -305,8 +343,17 @@ export function reduce:[T,A,E]
 export function scan:[T,A,E]
     &(Action*[T,E], A, &(A,T) => A) => Action*[A,E]
     native 'action-scan';
+export function scan:[T,A]
+    &(Source[T], A, &(A,T) => A) => Source[A]
+    native 'action-scan';
 export function debounce:[T,E]
     &(Action*[T,E], Number) => Action*[T,E]
+    native 'debounce-time';
+export function debounce:[T]
+    &(Source[T], Number) => Source[T]
+    native 'debounce-time';
+export function debounce:[T]
+    &(Computed[T], Number) => Source[T]
     native 'debounce-time';
 export function merge-map:[A,B,E]
     &(Action*[A,E], &(A) => Action*[B,E]) => Action*[B,E]
@@ -314,18 +361,30 @@ export function merge-map:[A,B,E]
 export function concat-map:[A,B,E]
     &(Action*[A,E], &(A) => Action*[B,E]) => Action*[B,E]
     native 'concat-map';
+export function concat-map:[A,B]
+    &(Source[A], &(A) => Action*[B]) => Source[B]
+    native 'concat-map';
 export function mix-map:[A,B,E]
     &(Action*[A,E], Number, &(A) => Action*[B,E]) => Action*[B,E]
     native 'mix-map';
 export function switch-map:[A,B,E]
     &(Action*[A,E], &(A) => Action*[B,E]) => Action*[B,E]
     native 'switch-map';
+export function switch-map:[A,B]
+    &(Source[A], &(A) => Action*[B]) => Source[B]
+    native 'switch-map';
+export function switch-map:[A,B]
+    &(Computed[A], &(A) => Computed[B]) => Computed[B]
+    native 'switch-map';
 export function merge:[T,E]
     &(Array[Action*[T,E]]) => Action*[T,E]
     native 'action-merge';
 export function merge:[E]
-    &(Array[Action[unit,E]]) => Action[unit,E]
-    &(actions) => { merge:::[unit,E] actions }.{ wait-complete };
+    &(Array[Action[never]]) => Action[never]
+    native 'action-merge';
+export function merge:[T]
+    &(Array[Source[T]]) => Source[T]
+    native 'action-merge';
 export function concat:[T,E]
     &(Array[Action*[T,E]]) => Action*[T,E]
     native 'action-concat';
@@ -366,13 +425,25 @@ export function combine-latest*:[A,B,C,D,E]
 export function combine-latest*:[T,E]
     &(Array[Action*[T,E]]) => Action*[Array[T],E]
     native 'combine-latest*-array';
+export function combine:[A,B]
+    &(Computed[A],Computed[B]) => Computed[(A,B)]
+    native 'combine-latest*';
+export function combine:[A,B,C]
+    &(Computed[A],Computed[B],Computed[C]) => Computed[(A,B,C)]
+    native 'combine-latest*';
+export function combine:[A,B,C,D]
+    &(Computed[A],Computed[B],Computed[C],Computed[D]) => Computed[(A,B,C,D)]
+    native 'combine-latest*';
+export function combine:[T]
+    &(Array[Computed[T]]) => Computed[Array[T]]
+    native 'combine-latest*-array';
 // TODO: consider computed (reactive1, reactive2)
-export function computed:[A,B,E,X]
-    &((Action*[A,E],Action*[B,E]), &(A,B) => X) => Action*[X,E]
+export function computed:[A,B,X]
+    &((Computed[A],Computed[B]), &(A,B) => X) => Computed[X]
     native 'computed';
-export function computed:[A,B,C,E,X]
-    &((Action*[A,E],Action*[B,E],Action*[C,E]), &(A,B,C) => X) => Action*[X,E]
+export function computed:[A,B,C,X]
+    &((Computed[A],Computed[B],Computed[C]), &(A,B,C) => X) => Computed[X]
     native 'computed';
-export function computed:[A,B,C,D,E,X]
-    &((Action*[A,E],Action*[B,E],Action*[C,E],Action*[D,E]), &(A,B,C,D) => X) => Action*[X,E]
+export function computed:[A,B,C,D,X]
+    &((Computed[A],Computed[B],Computed[C],Computed[D]), &(A,B,C,D) => X) => Computed[X]
     native 'computed';

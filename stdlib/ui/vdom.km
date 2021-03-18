@@ -29,14 +29,14 @@ function dom-node:
             . { with { dom-children children } };
 
 function dom-dynamic:
-    &(String, Action*[Array[Node]]) => Action*[Node]
+    &(String, Computed[Array[Node]]) => Computed[Node]
     &(tag, @children) =>
         (@children map &(children) => { dom-node (tag, children) });
 
 function dom-dynamic:
-    &(String, Array[Action*[Node]]) => Action*[Node]
-    &(tag, actions) =>
-        { dom-dynamic (tag, actions.{combine-latest*}) };
+    &(String, Array[Computed[Node]]) => Computed[Node]
+    &(tag, sources) =>
+        { dom-dynamic (tag, {combine(sources)}) };
 
 
 function dom-styles:

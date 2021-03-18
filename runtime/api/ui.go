@@ -84,6 +84,11 @@ var UiFunctions = map[string] interface{} {
 			return nil, true
 		})
 	},
+	"ui-static-component": func(thunk Value, h InteropContext) rx.Action {
+		return rx.NewSync(func() (rx.Object, bool) {
+			return h.Call(thunk, nil), true
+		})
+	},
 	"ui-dom-node": func(tag_ String) *vdom.Node {
 		var tag = RuneSliceFromString(tag_)
 		return &vdom.Node {

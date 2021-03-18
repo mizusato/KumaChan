@@ -5,11 +5,11 @@ type FontInfo
     (String,String,String);  // family, weight, style
 
 export function bind:
-    &(WebView, Component) => Action
+    &(WebView, Component) => Action[never]
     native 'ui-bind';
 
 export function ui-init:
-    &(String, Component) => Action
+    &(String, Component) => Action[never]
     native 'ui-init';
 
 export function ui-inject-css:
@@ -29,9 +29,8 @@ export function ui-get-dialog:
     native 'ui-get-dialog';
 
 export function ui-exit-when-window-closed:
-    &() => Action
+    &() => Action[never]
     &() =>
         & dialog := await ui-get-dialog,
         { signal (dialog, 'rejected()') }
-            . { concat-map &() => { exit(0) } }
-            . { wait-complete };
+            . { connect { exit(0) } };

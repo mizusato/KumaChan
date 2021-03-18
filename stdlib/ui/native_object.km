@@ -32,8 +32,8 @@ function bind-property: [T]
     & { object: Object,
         prop:   String,
         type:   PropType,
-        source: Action*[T] }
-        => Action
+        source: Source[T] }
+        => Action[never]
     & { object, prop, type, source } =>
         (source connect &(value) => {
             set-property (object, prop, type, value) });
@@ -43,7 +43,8 @@ function bind-property: [T]
         prop:   String,
         type:   PropType,
         notify: String,
-        sync:   Reactive[T] } => Action
+        sync:   Reactive[T] }
+        => Action[never]
     & { object, prop, type, notify, sync } =>
         let write :=
             let source := { watch sync },
