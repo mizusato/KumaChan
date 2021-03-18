@@ -10,7 +10,7 @@ do ui-exit-when-window-closed;
 function mouse-position:
     &() => ui::Hook[Source[(Float,Float)]]
     &() => &(k) =>
-        & pos := bus:::[(Float,Float)] (),
+        & pos := bus::[(Float,Float)] (),
         & id := await gen-sequential-id,
         let cpt := { k { watch pos } },
         (cpt with { ui-event ({ "mousemove.hook#" id },
