@@ -20,17 +20,18 @@ type Call struct {
 func CheckCall(call ast.VariousCall, ctx ExprContext) (SemiExpr, *ExprError) {
 	switch c := call.Call.(type) {
 	case ast.CallPrefix:
-		callee, err := Check(c.Callee, ctx)
-		if err != nil { return SemiExpr{}, err }
-		arg, err := Check(c.Argument, ctx)
-		if err != nil { return SemiExpr{}, err }
+		var callee, err1 = Check(c.Callee, ctx)
+		if err1 != nil { return SemiExpr{}, err1 }
+		var arg, err2 = Check(c.Argument, ctx)
+		if err2 != nil { return SemiExpr{}, err2 }
 		return CheckDesugaredCall(callee, arg, call.Node, ctx)
 	case ast.CallInfix:
-		callee, err := Check(c.Operator, ctx)
-		if err != nil { return SemiExpr{}, err }
-		left, err := Check(c.Left, ctx)
-		if err != nil { return SemiExpr{}, err }
-		right, err := Check(c.Right, ctx)
+		var callee, err1 = Check(c.Operator, ctx)
+		if err1 != nil { return SemiExpr{}, err1 }
+		var left, err2 = Check(c.Left, ctx)
+		if err2 != nil { return SemiExpr{}, err2 }
+		var right, err3 = Check(c.Right, ctx)
+		if err3 != nil { return SemiExpr{}, err3 }
 		var arg = SemiExpr {
 			Value: SemiTypedTuple {
 				Values: [] SemiExpr { left, right },
