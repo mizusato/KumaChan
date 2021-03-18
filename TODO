@@ -1,5 +1,7 @@
 TODO
 
+- to be semantic: tuple input --> bundle input
+
 - revise resource management of wired components, files, ...
 
 - consider zero-value:[T] &() => Maybe[T]
