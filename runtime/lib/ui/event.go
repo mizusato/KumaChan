@@ -2,8 +2,8 @@ package ui
 
 import (
 	"sync"
-	"kumachan/runtime/lib/ui/vdom"
 	"strconv"
+	"kumachan/runtime/lib/ui/vdom"
 )
 
 

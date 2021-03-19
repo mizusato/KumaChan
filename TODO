@@ -1,8 +1,10 @@
 TODO
 
-- to be semantic: tuple input --> bundle input
+- revise Context().WaitDispose()
 
 - revise resource management of wired components, files, ...
+
+- to be semantic: tuple input --> bundle input
 
 - consider zero-value:[T] &() => Maybe[T]
 
