@@ -131,7 +131,10 @@ func AutoComplete(req AutoCompleteRequest, ctx LangServerContext) AutoCompleteRe
 				})
 			}
 		case ast.DeclConst:
-			if !(input_mod == mod) {
+			if (mod != "" && !(s.Public)) {
+				return
+			}
+			if input_mod != mod {
 				return
 			}
 			if !(quick_check(s.Name)) {
@@ -148,16 +151,11 @@ func AutoComplete(req AutoCompleteRequest, ctx LangServerContext) AutoCompleteRe
 				})
 			}
 		case ast.DeclFunction:
-			if input_mod == "" {
-				// lookup in all modules
-				if !(mod == "" || (mod != "" && s.Public)) {
-					return
-				}
-			} else {
-				// lookup in a specific module
-				if !(input_mod == mod) {
-					return
-				}
+			if (mod != "" && !(s.Public)) {
+				return
+			}
+			if (input_mod != "" && input_mod != mod) {
+				return
 			}
 			if !(quick_check(s.Name)) {
 				return
@@ -210,6 +208,7 @@ func AutoComplete(req AutoCompleteRequest, ctx LangServerContext) AutoCompleteRe
 			process_core_statement = func(stmt ast.Statement) {
 				switch s := stmt.(type) {
 				case ast.DeclConst:
+					if !(s.Public) { return }
 					var name = ast.Id2String(s.Name)
 					if strings.HasPrefix(name, input) {
 						suggestions = append(suggestions, AutoCompleteSuggestion {

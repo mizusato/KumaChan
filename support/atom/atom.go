@@ -23,7 +23,7 @@ func LangServer(input io.Reader, output io.Writer, debug io.Writer) error {
 		if err != nil { return err }
 		return nil
 	}
-	var ctx = LangServerContext{
+	var ctx = LangServerContext {
 		DebugLog: func(info string) { _, _ = fmt.Fprintln(debug, info) },
 	}
 	for {

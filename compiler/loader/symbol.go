@@ -7,7 +7,7 @@ import (
 )
 
 
-const SelfModule = "Self"
+const SelfModule = "self"
 
 type Symbol struct {
 	ModuleName  string

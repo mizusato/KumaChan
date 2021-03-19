@@ -10,31 +10,31 @@ type Value enum {
 // TODO: implement json parser using parser combinators
 
 export function json-stringify:
-    &(Self::Value) => String
+    &(self::Value) => String
     &(v) =>
         switch v:
-        case Self::Object object:
+        case self::Object object:
             object
                 . { iterate }
                 . { map &(key,value) =>
                     { "#:#" ({quote key}, {json-stringify value}) } }
                 . { join ',' }
                 . { "{#}" },
-        case Self::Array array:
+        case self::Array array:
             array
                 . { iterate }
                 . { map json-stringify }
                 . { join ',' }
                 . { "[#]" },
-        case Self::Boolean boolean:
+        case self::Boolean boolean:
             switch boolean:
                 case Yes: 'true',
                 case No:  'false',
             end,
-        case Self::Number number:
+        case self::Number number:
             { str number },
-        case Self::String string:
+        case self::String string:
             { quote string },
-        case Self::Null:
+        case self::Null:
             'null',
         end;

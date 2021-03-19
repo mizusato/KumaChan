@@ -9,7 +9,7 @@ export function scan:
     &() => Action[String,Error]
     &() =>
         let read := Stdin.{read-string},
-        if (Self::Name = 'windows'):
+        if (self::Name = 'windows'):
             (read map &(str) => str.{trim-suffix(''..\r)}),
         else:
             read;
@@ -24,7 +24,7 @@ export function scanln:
     &() => Action[String,Error]
     &() =>
         let read := Stdin.{read-line},
-        if (Self::Name = 'windows'):
+        if (self::Name = 'windows'):
             (read map &(str) => str.{trim-suffix(''..\r)}),
         else:
             read;
