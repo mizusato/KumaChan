@@ -14,12 +14,9 @@ type QtSignal struct {
 	PropMapper  func(qt.Object) interface{}
 }
 func (signal QtSignal) Receive() rx.Action {
-	return rx.NewGoroutine(func(sender rx.Sender) {
-		var disconnect = qt.Connect(signal.Object, signal.Signature, func() {
+	return rx.NewSubscriptionWithSender(func(sender rx.Sender) func() {
+		return qt.Connect(signal.Object, signal.Signature, func() {
 			sender.Next(signal.PropMapper(signal.Object))
-		})
-		sender.Context().WaitDispose(func() {
-			disconnect()
 		})
 	})
 }
@@ -30,8 +27,8 @@ type QtEvent struct {
 	Prevent  bool
 }
 func (event QtEvent) Receive() rx.Action {
-	return rx.NewGoroutine(func(sender rx.Sender) {
-		var cancel = qt.Listen(event.Object, event.Kind, event.Prevent, func(ev qt.Event) {
+	return rx.NewSubscriptionWithSender(func(sender rx.Sender) func() {
+		return qt.Listen(event.Object, event.Kind, event.Prevent, func(ev qt.Event) {
 			var obj = (func() Value {
 				switch event.Kind {
 				case qt.EventResize():
@@ -47,9 +44,6 @@ func (event QtEvent) Receive() rx.Action {
 				}
 			})()
 			sender.Next(obj)
-		})
-		sender.Context().WaitDispose(func() {
-			cancel()
 		})
 	})
 }

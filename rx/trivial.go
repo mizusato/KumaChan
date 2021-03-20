@@ -13,9 +13,12 @@ func (sched TrivialScheduler) commit(t task) {
 	sched.EventLoop.commit(t)
 }
 
-func (sched TrivialScheduler) run(effect Action, ob *observer) {
+func (sched TrivialScheduler) run(action Action, ob *observer) {
+	if ob.context.disposed {
+		panic("cannot run an action within a disposed context")
+	}
 	var terminated = false
-	effect.action(sched, &observer {
+	action.action(sched, &observer {
 		context: ob.context,
 		next: func(x Object) {
 			if !terminated && !ob.context.disposed {

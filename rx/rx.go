@@ -301,6 +301,15 @@ func NewSubscription(action func(func(Object))(func())) Action {
 	} }
 }
 
+func NewSubscriptionWithSender(action func(Sender)(func())) Action {
+	return Action { func(sched Scheduler, ob *observer) {
+		var h = action(Sender { sched: sched, ob: ob })
+		if h != nil {
+			ob.context.push_cancel_hook(h)
+		}
+	} }
+}
+
 func NewSync(action func()(Object,bool)) Action {
 	return Action { func(sched Scheduler, ob *observer) {
 		var result, ok = action()

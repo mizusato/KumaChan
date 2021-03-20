@@ -27,7 +27,9 @@ func Mix(actions ([] Action), concurrent uint) Action {
 }
 
 func (e Action) MixMap(f func(Object) Action, concurrent uint) Action {
-	if concurrent == 0 { panic("invalid concurrent amount") }
+	if concurrent == 0 {
+		panic("invalid concurrent amount")
+	}
 	return Action { func(sched Scheduler, ob *observer) {
 		var ctx, dispose = ob.context.create_disposable_child()
 		var c = new_collector(ob, dispose)

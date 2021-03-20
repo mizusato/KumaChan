@@ -1,7 +1,5 @@
 TODO
 
-- revise Context().WaitDispose()
-
 - revise resource management of wired components, files, ...
 
 - to be semantic: tuple input --> bundle input

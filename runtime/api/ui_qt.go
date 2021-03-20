@@ -90,9 +90,10 @@ var UiQtFunctions = map[string] interface{} {
 		return ui.CreateQtTaskAction(func() interface{} {
 			var _, unblock = qt.BlockCallbacks(object)
 			defer unblock()
+			// workaround: block data reflow of 2-way bindings
+			//             (read and compare before writing)
 			switch t {
 			case "String":
-				// workaround: block data reflow of 2-way bindings
 				var current_value = qt.GetPropRuneString(object, prop)
 				var new_value = RuneSliceFromString(value.(String))
 				if len(current_value) == len(new_value) {
@@ -110,14 +111,26 @@ var UiQtFunctions = map[string] interface{} {
 				}
 				qt.SetPropRuneString(object, prop, new_value)
 			case "Bool":
-				qt.SetPropBool(object, prop, FromBool(value.(SumValue)))
-			case "MaybeNumber":
-				var v, ok = Unwrap(value.(SumValue))
-				if ok {
-					qt.SetPropInt(object, prop, int(v.(uint)))
-				} else {
-					qt.SetPropInt(object, prop, -1)
+				var current_value = qt.GetPropBool(object, prop)
+				var new_value = FromBool(value.(SumValue))
+				if new_value == current_value {
+					break
 				}
+				qt.SetPropBool(object, prop, new_value)
+			case "MaybeNumber":
+				var current_value = qt.GetPropInt(object, prop)
+				var new_value = (func() int {
+					var v, ok = Unwrap(value.(SumValue))
+					if ok {
+						return int(v.(uint))
+					} else {
+						return -1
+					}
+				})()
+				if new_value == current_value {
+					break
+				}
+				qt.SetPropInt(object, prop, new_value)
 			default:
 				panic(fmt.Sprintf("unsupported Qt property type %s", t))
 			}
