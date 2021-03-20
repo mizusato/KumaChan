@@ -243,7 +243,8 @@ func AutoComplete(req AutoCompleteRequest, ctx LangServerContext) AutoCompleteRe
 	keywords:
 	if len(input) > 0 && input_mod == "" {
 		for _, kw := range Keywords {
-			if len(kw) > 1 && strings.HasPrefix(kw, input) {
+			if len(kw) > 1 && ('a' <= kw[0] && kw[0] <= 'z') &&
+				strings.HasPrefix(kw, input) {
 				suggestions = append(suggestions, AutoCompleteSuggestion {
 					Text:    kw,
 					Replace: input,
