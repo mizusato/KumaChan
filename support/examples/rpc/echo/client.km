@@ -1,25 +1,24 @@
-import Service from './service';
+import service from './service';
 
 export function consume-echo-service:
-    ( &(Service::instance) Action )
-    ( &(server)
+    &(service::instance) => Action
+    &(server) =>
         let read-and-request :=
-            ~ await print 'request: ',
-            ~ await &(input) := scanln,
-            ~ await &(res) := server.echo { content: input },
+            & await { print 'request: ' },
+            & input := await scanln,
+            & res := await server.{ echo { content: input } },
             let { content } := res,
-            println ("response: #"..\n (quote content)),
+            { println { "response: #"..\n { quote content } } },
         read-and-request
-        | catch (&(err)(crash err))
-        | forever
-    );
+            . { forever }
+            . { catch-crash };
 
 do
-    rpc-access {
-        service: Service::identifier,
-        backend: rpc-client-cleartext { network: 'tcp', addr: '127.0.0.1:8001' },
+    { rpc::access {
+        service: service::identifier,
+        backend: { rpc::client-cleartext { network: 'tcp', addr: '127.0.0.1:8001' } },
         options: {},
-        argument: Service::argument (Service::Config { verbose: Yes }),
-        consumer: Service::consumer consume-echo-service
-    }
-    | catch (&(err)(crash err));
+        argument: { service::argument { service::Config { verbose: Yes } } },
+        consumer: { service::consumer consume-echo-service }
+    } }
+    . { catch-crash };

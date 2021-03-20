@@ -1,34 +1,32 @@
-import Service from './service';
+import service from './service';
 
 type EchoServer {
     verbose: Bool
 };
 
 export function new-echo-server:
-    ( &() Service::constructor )
-    ( &(_) ( &(opts,_)
+    &() => service::constructor
+    &() => &(opts,_) =>
         let { verbose } := opts,
-        yield (Service::create (EchoServer { verbose }))
-    ));
+        { yield { service::create { EchoServer { verbose } } } };
 
 export function echo:
-    ( &(EchoServer,Service::Request) Action[Service::Response,Error] )
-    ( &(server,req)
+    &(EchoServer,service::Request) => Action[service::Response,Error]
+    &(server,req) =>
         let {content} := req,
         let {verbose} := server,
         if verbose:
-            yield (Service::Response {
-                content: ("Reply: #" content)
-            }),
+            { yield { service::Response {
+                content: { "Reply: #" content }
+            } } },
         else:
-            yield (Service::Response { content })
-    );
+            { yield { service::Response { content } } };
 
 do
-    rpc-serve {
-        service: Service::identifier,
-        backend: rpc-server-cleartext { network: 'tcp', addr: '127.0.0.1:8001' },
+    { rpc::serve {
+        service: service::identifier,
+        backend: { rpc::server-cleartext { network: 'tcp', addr: '127.0.0.1:8001' } },
         options: {},
         constructor: new-echo-server
-    }
-    | catch (&(err)(crash err));
+    } }
+    . { catch-crash };
