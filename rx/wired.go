@@ -29,7 +29,7 @@ type Bus interface {
 type Reactive interface {
 	Bus
 	Read() Action
-	Update(f func(old_state Object) Object, k *KeyChain) Action
+	Update(f func(old_state Object)(Object), k *KeyChain) Action
 	Project(k *KeyChain) Action
 	Snapshot() Action
 }

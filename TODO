@@ -1,5 +1,7 @@
 TODO
 
+- gen-sequential-id return Uint64
+
 - revise resource management of wired components, files, ...
 
 - to be semantic: tuple input --> bundle input

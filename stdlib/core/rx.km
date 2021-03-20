@@ -60,6 +60,12 @@ type ReactiveSnapshots[+T] {
 };
 
 
+## Lock Types
+
+type Mutex[+T]
+    native;
+
+
 ## Mutable Containers
 
 type Mutable[+T]     native;  // rx.Cell
@@ -163,6 +169,14 @@ export function swap:[T]
     &(Mutable[T], &(T) => T) => Action
     native 'mutable-swap';
 
+## Locks Operations
+export function mutex: [T, K < Action*[any,any]]
+    &(T, &(Mutex[T]) => K) => K
+    native 'mutex';
+export function lock: [T, K < Action*[any]]
+    &(Mutex[T], &(T) => K) => K
+    native 'mutex-lock';
+
 ## Action Constructors
 export function with: [A < Action*[any,any]]
     &(A, Action) => A
@@ -225,6 +239,10 @@ export function tick:
     native 'tick';
 
 ## Action Operators
+# alias: <-
+export function read:[T]
+    &(Computed[T]) => Action[T]
+    native 'computed-read';
 export function take-one-as-single:[T,E]
     &(Action*[T,E]) => Action[Maybe[T],E]
     native 'take-one-as-single';

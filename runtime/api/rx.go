@@ -82,6 +82,19 @@ var EffectFunctions = map[string] Value {
 	"bus-watch": func(b rx.Bus) rx.Action {
 		return b.Watch()
 	},
+	"computed-read": func(computed rx.Action) rx.Action {
+		return computed.TakeOneAsSingle().Map(func(opt_ rx.Object) rx.Object {
+			var opt = opt_.(rx.Optional)
+			if opt.HasValue {
+				return opt.Value
+			} else {
+				panic("something went wrong")
+			}
+		})
+	},
+	"reactive-read": func(r rx.Reactive) rx.Action {
+		return r.Read()
+	},
 	"reactive-update": func(r rx.Reactive, f Value, h InteropContext) rx.Action {
 		return r.Update(func(old_state rx.Object) rx.Object {
 			var new_state = h.Call(f, old_state)
@@ -113,9 +126,6 @@ var EffectFunctions = map[string] Value {
 	},
 	"reactive-snapshot": func(r rx.Reactive) rx.Action {
 		return r.Snapshot()
-	},
-	"reactive-read": func(r rx.Reactive) rx.Action {
-		return r.Read()
 	},
 	"reactive-list-consume": func(r rx.Reactive, k Value, h InteropContext) rx.Action {
 		return rx.KeyTrackedDynamicCombineLatestWaitReady (
@@ -195,14 +205,14 @@ var EffectFunctions = map[string] Value {
 			return h.Call(f, obj).(rx.Action)
 		})
 	},
-	"reactive": func(init Value, f Value, h InteropContext) rx.Action {
+	"reactive": func(init Value, k Value, h InteropContext) rx.Action {
 		return rx.NewSync(func() (rx.Object, bool) {
 			return rx.CreateReactive(init, RefEqual), true
-		}).Then(func(obj rx.Object) rx.Action {
-			return h.Call(f, obj).(rx.Action)
+		}).Then(func(r rx.Object) rx.Action {
+			return h.Call(k, r).(rx.Action)
 		})
 	},
-	"reactive+snapshot": func(init Value, f Value, h InteropContext) rx.Action {
+	"reactive+snapshot": func(init Value, k Value, h InteropContext) rx.Action {
 		return rx.NewSync(func() (rx.Object, bool) {
 			var entity = rx.CreateReactive(init, RefEqual)
 			var r = rx.AutoSnapshotReactive { Entity: entity }
@@ -214,8 +224,18 @@ var EffectFunctions = map[string] Value {
 					undo, redo, diff,
 				} },
 			} }, true
-		}).Then(func(obj rx.Object) rx.Action {
-			return h.Call(f, obj).(rx.Action)
+		}).Then(func(r rx.Object) rx.Action {
+			return h.Call(k, r).(rx.Action)
+		})
+	},
+	"mutex": func(res Value, k Value, h InteropContext) rx.Action {
+		return rx.NewMutex(res).Then(func(mu rx.Object) rx.Action {
+			return h.Call(k, mu).(rx.Action)
+		})
+	},
+	"mutex-lock": func(mu *rx.Mutex, k Value, h InteropContext) rx.Action {
+		return mu.Lock(func(res rx.Object) rx.Action {
+			return h.Call(k, res).(rx.Action)
 		})
 	},
 	"new-mutable": func(init Value) rx.Action {

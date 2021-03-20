@@ -129,7 +129,7 @@ func (q *queue) push(e Action) {
 func (q *queue) pop() (Action, bool) {
 	if len(*q) > 0 {
 		var e = (*q)[0]
-		(*q)[0] = Action {nil }
+		(*q)[0] = Action { nil }
 		*q = (*q)[1:]
 		return e, true
 	} else {
