@@ -45,7 +45,9 @@ var core_types = []string {
 	// containers.km
 	Seq, Array, Heap, Set, Map, List, ListKey,
 	// rx.km
-	Action, ActionMultiValue, Atomic, Computed, Source,
+	ActionMultiValue,
+	Action, Atomic,
+	Source, Computed,
 	Sink, Bus, Reactive, ReactiveEntity,
 	ReactiveSnapshots, Mutex,
 	Mutable, Buffer, HashMap,
