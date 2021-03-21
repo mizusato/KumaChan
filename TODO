@@ -1,5 +1,9 @@
 TODO
 
+- rx.Yield(obj)  // replace some rx.NewSync(...)
+
+- split rx.km
+
 - gen-sequential-id return Uint64
 
 - revise resource management of wired components, files, ...
