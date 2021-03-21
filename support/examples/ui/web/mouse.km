@@ -6,7 +6,7 @@ do { ui-inject-css [assets::style-css] };
 
 do ui-exit-when-window-closed;
 
-// TODO: mouse enter => Just pos, mouse out => N/A
+// TODO: mouse enter => Just pos, mouse out => Null
 function mouse-position:
     &() => ui::Hook[Source[(Float,Float)]]
     &() => &(k) =>

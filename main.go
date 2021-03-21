@@ -115,12 +115,12 @@ func interpret (
         var f, err = os.OpenFile(file_path, os.O_WRONLY | os.O_TRUNC | os.O_CREATE, 0666)
         if err != nil {
             fmt.Fprintf(os.Stderr, "cannot open asm dump file: %s", err)
-            os.Exit(254)
+            os.Exit(99)
         }
         _, err = fmt.Fprint(f, program.String())
         if err != nil {
             fmt.Fprintf(os.Stderr, "error writing to asm dump file: %s", err)
-            os.Exit(254)
+            os.Exit(99)
         }
         _ = f.Close()
     }
@@ -354,7 +354,7 @@ func main() {
                 fmt.Fprintf(os.Stderr,
                     "invalid option: %s\n",
                     strconv.Quote(arg))
-                os.Exit(255)
+                os.Exit(100)
                 return
             }
         } else {
@@ -367,7 +367,7 @@ func main() {
         fmt.Fprintf(os.Stderr,
             "invalid max-stack-size: %s",
             strconv.Quote(max_stack_size_string))
-        os.Exit(255)
+        os.Exit(100)
     }
     var debug_ui = (debug_options_string == "ui")
     var debug_opts = lang.DebugOptions { DebugUI: debug_ui }

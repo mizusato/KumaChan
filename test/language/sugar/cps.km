@@ -11,7 +11,7 @@ do
         switch sum?:
         case Just sum:
             { println { str sum } },
-        case N/A:
-            { println 'N/A' },
+        case Null:
+            { println 'Null' },
         end,
     { crash err };

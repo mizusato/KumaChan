@@ -28,7 +28,7 @@ function new-chat:
             case Just new-users:
                 & do { write (users, new-users) },
                 { yield Yes },
-            case N/A:
+            case Null:
                 { yield No },
             end,
         & ok := await try-login,

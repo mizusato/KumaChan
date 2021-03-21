@@ -36,7 +36,7 @@ export function convert:
     &(z*) =>
         switch {check-nan-inf z*}:
             case Just z: { convert z }.[String],
-            case N/A:    'INVALID',
+            case Null:    'INVALID',
         end;
 
 export function <conj>: &(Complex) => Complex  native '<conj>';

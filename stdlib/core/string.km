@@ -51,7 +51,7 @@ export function convert:
     &(x*) =>
         switch { check-nan-inf x* }:
             case Just x:  { convert x },
-            case N/A:    'INVALID',
+            case Null:    'INVALID',
         end;
 
 /// encodes string into UTF-8 byte sequence
@@ -95,7 +95,7 @@ export function contains:
     &(str,sub) =>
         switch str.{find(sub)}:
             case Just _: Yes,
-            case N/A:    No,
+            case Null:    No,
         end;
 
 export function contains:

@@ -32,7 +32,7 @@ const Root: ui::Component :=
             switch total?:
             case Just total:
                 { "Total = #" total.{str} },
-            case N/A:
+            case Null:
                 'invalid input',
             end
         }

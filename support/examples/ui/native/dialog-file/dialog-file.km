@@ -25,7 +25,7 @@ const @open: Source[String] :=
             switch path?:
             case Just path:
                 { "open: #" { str path } },
-            case N/A:
+            case Null:
                 'open: (cancelled)',
             end
         };
@@ -62,7 +62,7 @@ const @open-directory: Source[String] :=
             switch path?:
             case Just path:
                 { "open directory: #" { str path } },
-            case N/A:
+            case Null:
                 'open directory: (cancelled)',
             end
         };
@@ -80,7 +80,7 @@ const @save: Source[String] :=
             switch path?:
             case Just path:
                 { "save: #" { str path } },
-            case N/A:
+            case Null:
                 'save: (cancelled)',
             end
         };

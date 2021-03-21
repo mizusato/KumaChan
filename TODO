@@ -1,5 +1,7 @@
 TODO
 
+- move advanced math functions to math module
+
 - split rx.km
 
 - gen-sequential-id return Uint64

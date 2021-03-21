@@ -43,7 +43,7 @@ type Bool enum {
 // TODO: consider renaming "Just"
 type Maybe[+T] enum {
     type Just[+T] weak T;
-    type N/A;
+    type Null;
 };
 type Result[+T,+E] enum {
     type OK[+T] weak T;
@@ -85,8 +85,8 @@ export function maybe:[A,B]
         switch v?:
         case Just v:
             { Just { f v } },
-        case N/A:
-            N/A,
+        case Null:
+            Null,
         end;
 
 export function maybe:[A,B]
@@ -96,7 +96,7 @@ export function maybe:[A,B]
         switch v?:
         case Just v:
             { f(v) },
-        case N/A:
+        case Null:
             fallback,
         end;
 
@@ -106,8 +106,8 @@ export function maybe?:[A,B]
         switch v?:
         case Just v:
             { k v },
-        case N/A:
-            N/A,
+        case Null:
+            Null,
         end;
 
 export function unwrap?:[T]
@@ -118,11 +118,11 @@ export function unwrap?:[T]
             switch v?:
             case Just v:
                 { Just v },
-            case N/A:
-                N/A,
+            case Null:
+                Null,
             end,
-        case N/A:
-            N/A,
+        case Null:
+            Null,
         end;
 
 export function fallback?:[T]
@@ -131,7 +131,7 @@ export function fallback?:[T]
         switch t?:
         case Just t:
             t,
-        case N/A:
+        case Null:
             fallback,
         end;
 
