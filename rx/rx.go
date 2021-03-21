@@ -339,3 +339,12 @@ func NewSyncWithSender(action func(Sender)) Action {
 	} }
 }
 
+func NewConstant(values... Object) Action {
+	return Action { func(sched Scheduler, ob *observer) {
+		for _, value := range values {
+			ob.next(value)
+		}
+		ob.complete()
+	} }
+}
+

@@ -11,7 +11,7 @@ function mouse-position:
     &() => ui::Hook[Source[(Float,Float)]]
     &() => &(k) =>
         & pos := bus::[(Float,Float)] (),
-        & id := await gen-sequential-id,
+        & id := do gen-sequential-id,
         let cpt := { k { watch pos } },
         (cpt with { ui-event ({ "mousemove.hook#" id },
             { ui-callback

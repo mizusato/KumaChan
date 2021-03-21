@@ -21,12 +21,12 @@ function new-chat:
         let { nickname } := login,
         let id := nickname,
         let user := { User { conn } },
-        let try-login: Action[Bool] :=
+        let try-login: Atomic[Bool] :=
             let { users } := ctx,
-            & old-users := await { <- users },
-            switch old-users.{ insert (id,user) }:
+            & old-users := do { read users },
+            switch old-users.{ insert (id, user) }:
             case Just new-users:
-                & await (users <- new-users),
+                & do { write (users, new-users) },
                 { yield Yes },
             case N/A:
                 { yield No },
@@ -51,7 +51,7 @@ function say:
             from: chat.id,
             content
         } },
-        & await (chat.ctx.msg-bus <- msg),
+        & do (chat.ctx.msg-bus <- msg),
         { yield service::None };
 
 function messages:

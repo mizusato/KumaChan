@@ -45,7 +45,7 @@ var core_types = []string {
 	// containers.km
 	Seq, Array, Heap, Set, Map, List, ListKey,
 	// rx.km
-	Action, ActionMultiValue, Computed, Source,
+	Action, ActionMultiValue, Atomic, Computed, Source,
 	Sink, Bus, Reactive, ReactiveEntity,
 	ReactiveSnapshots, Mutex,
 	Mutable, Buffer, HashMap,
@@ -114,8 +114,9 @@ const ListKey = "ListKey"
 // effect.km
 const Action = "Action"
 const ActionMultiValue = "Action*"
-const Source = "Source"
+const Atomic = "Atomic"
 const Computed = "Computed"
+const Source = "Source"
 const Sink = "Sink"
 const Bus = "Bus"
 const Reactive = "Reactive"

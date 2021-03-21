@@ -1,9 +1,9 @@
 type Object
     native;  // qt.Object
 
-type Static[+O < Object]
+type Static[+Obj < Object]
     opaque
-    O;
+    Obj;
 
 
 type PropType

@@ -1,8 +1,9 @@
 package rx
 
 
-const single_multiple_return = "An effect that assumed to be a single-valued effect emitted multiple values"
-const single_zero_return = "An effect that assumed to be a single-valued effect completed with zero values emitted"
+const single_multiple_return = "An action that assumed to be a single-valued effect emitted multiple values"
+const single_zero_return = "An action that assumed to be a single-valued effect completed with zero values emitted"
+const sync_did_not_complete = "An action that assumed synchronous did not complete synchronously"
 
 func ScheduleSingle(e Action, sched Scheduler, ctx *Context) (Optional, bool) {
 	var chan_ret = make(chan Object)
@@ -105,3 +106,32 @@ func (e Action) TakeOneAsSingle() Action {
 		})
 	} }
 }
+
+func (e Action) TakeOneAsSingleAssumeSync() Action {
+	return Action { func(sched Scheduler, ob *observer) {
+		var ctx, ctx_dispose = ob.context.create_disposable_child()
+		var completed = false
+		sched.run(e, &observer {
+			context:  ctx,
+			next: func(val Object) {
+				ctx_dispose(behaviour_cancel)
+				ob.next(Optional { true, val })
+				ob.complete()
+			},
+			error: func(err Object) {
+				ctx_dispose(behaviour_terminate)
+				ob.error(err)
+			},
+			complete: func() {
+				ctx_dispose(behaviour_terminate)
+				ob.next(Optional {} )
+				ob.complete()
+				completed = true
+			},
+		})
+		if !(completed) {
+			panic(sync_did_not_complete)
+		}
+	} }
+}
+

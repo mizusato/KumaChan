@@ -120,9 +120,7 @@ func constructServiceInstance(arg kmd.Object, conn *rx.WrappedConnection, servic
 	}
 	var instance = opt_instance.Value
 	var destruct_on_close = conn.OnClose().Catch(func(_ rx.Object) rx.Action {
-		return rx.NewSync(func() (rx.Object, bool) {
-			return nil, true
-		})
+		return rx.NewConstant(nil)
 	}).Then(func(_ rx.Object) rx.Action {
 		return service.Destructor.GetAction(instance)
 	})

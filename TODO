@@ -1,10 +1,10 @@
 TODO
 
-- rx.Yield(obj)  // replace some rx.NewSync(...)
-
 - split rx.km
 
 - gen-sequential-id return Uint64
+
+- methods for Reactive[Map[K,V]]
 
 - revise resource management of wired components, files, ...
 
@@ -14,8 +14,6 @@ TODO
 
 - api doc hide types that are not used (directly/indirectly) by public functions and constants
 
-- tuple input APIs --> bundle input
-
 - "check-nan-inf" --> "convert T -> Maybe[U]"
 
 - consider type Const[T] protected T ('literal': Const[String])
@@ -24,62 +22,5 @@ TODO
 
 - crash report window
 
-- UI: Web(main) + Native(supplement)
-
-- integrate WebUi with Qt Designer (promoted QWidget -> WebUiWebView)
-
-- merge Qt module into UI
-
-- restore ui xml loader (add widget-specific bind function)
-
 - support: menu, toolbar, popupmenu, modal dialog
-
---------------
-
-New Syntax Draft
-
-expr = term ( . { term term? } | . name | . [ type ] )*
-call = { term term } | ( term term term )
-
-struct.field
-value.[Cast]
-input.{ pipeline arg }
-
-remove `use` (Action*)
-
-assign integer literal to float
-
-"string #{interpolation}" --> & { interpolation: impl(Str) } => native
-
-"#{0} #{1}"
-
-public -> export
-
-export function >: [T] (Ord[T])
-    &(T,T) => Bool
-    &(a,b) => (b < a);
-
-export fun println:
-    &(String) => Action[unit,Error]
-    native 'println';
-
-const x: Int := 1;
-
-const Args: Array[String] := native 'os::Args';
-
-module name lowercase
-
-{ ui::button action }.{ with { ui::style ['big'] } }
-
-\u0020
-\n
-`大
-
-& await name := scanln,
-& await { println { "Hello #{0}" name } }
-& { exit 0 }
-
-& maybe? x := x?,
-& maybe? y := y?,
-{ Just (x + y) }
 

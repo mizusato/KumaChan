@@ -45,9 +45,7 @@ func (e Action) WithLatestFrom(source Action) Action {
 
 func CombineLatest(actions ([] Action)) Action {
 	if len(actions) == 0 {
-		return NewSync(func() (Object, bool) {
-			return make([] Optional, 0), true
-		})
+		return NewConstant(make([] Optional, 0))
 	}
 	return Action { func(sched Scheduler, ob *observer) {
 		var ctx, dispose = ob.context.create_disposable_child()

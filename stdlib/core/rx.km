@@ -3,14 +3,22 @@
 /// Action*[T,E] represents an action that may return 0/finite/infinite T values
 /// asynchronously or throw an E error asynchronously.
 /// It is exactly the same concept as what is called Observable in ReactiveX.
-type Action*[[unit] +T, [never] +E]
+type Action* [[unit] +T, [never] +E]
     native; // rx.Action
 
 /// Action[T,E] represents an action that may return exactly one T value
 /// asynchronously or throw an E error asynchronously.
 /// It is a subtype of Action*[T,E] and can be regarded as a lazy Promise.
 type Action [[unit] +T, [never] +E]
-    protected Action*[T,E];
+    protected
+    Action*[T,E];
+
+/// Atomic[T] represents an action that returns a T value synchronously.
+/// It is possible to use the `do` function to concatenate
+/// multiple Atomic actions into a single Atomic action.
+type Atomic [[unit] T]
+    protected
+    Action[T];
 
 /// Source[T] represents an action that subscribes to a discrete data source.
 type Source[+T]
@@ -94,7 +102,7 @@ export function connect:[E]
     &(bus, receiver) => (bus connect &() => receiver);
 # alias: <-
 export function write:[T]
-    &(Sink[T], T) => Action
+    &(Sink[T], T) => Atomic
     native 'sink-write';
 export function adapt:[A,B]
     &(Sink[A], &(B) => A) => Sink[B]
@@ -106,7 +114,7 @@ export function watch:[T]
     &(Reactive[T]) => Computed[T]
     native 'bus-watch';
 export function update:[T]
-    &(Reactive[T], &(T) => T) => Action
+    &(Reactive[T], &(T) => T) => Atomic
     native 'reactive-update';
 export function adapt:[A,B]
     &(Reactive[A], &(A) => &(B) => A) => Sink[B]
@@ -115,20 +123,20 @@ export function morph:[A,B]
     &(Reactive[A], (&(A) => &(B) => A), (&(A) => B)) => Reactive[B]
     native 'reactive-morph';
 export function snapshot:[T]
-    &(Reactive[T]) => Action
+    &(Reactive[T]) => Atomic
     native 'reactive-snapshot';
 # alias: <-
 export function read:[T]
-    &(Reactive[T]) => Action[T]
+    &(Reactive[T]) => Atomic[T]
     native 'reactive-read';
 export function consume:[T,X]
     &(Reactive[List[T]], &(ListKey,Computed[Number],Reactive[T]) => Computed[X]) => Computed[Array[X]]
     native 'reactive-list-consume';
 export function undo:[T]
-    &(ReactiveEntity[T]) => Action
+    &(ReactiveEntity[T]) => Atomic
     native 'reactive-entity-undo';
 export function redo:[T]
-    &(ReactiveEntity[T]) => Action
+    &(ReactiveEntity[T]) => Atomic
     native 'reactive-entity-redo';
 export function watch-diff:[T]
     &(ReactiveEntity[T]) => Action*[(ReactiveSnapshots[T],T)]
@@ -188,10 +196,10 @@ export function with: [A < Action*[any,any]]
     &(A, Action) => A
     native 'with';
 export function gen-random:
-    &() => Action[Float]
+    &() => Atomic[Float]
     native 'gen-random';
 export function gen-sequential-id:
-    &() => Action[String]
+    &() => Atomic[String]
     native 'gen-sequential-id';
 export function crash:
     &(String) => Action[never]
@@ -214,7 +222,7 @@ export function go:[T]
     &(Seq[T]) => Action*[T]
     native 'go-seq';
 export function yield:[T]
-    &(T) => Action[T]
+    &(T) => Atomic[T]
     native 'yield';
 export function yield*:[T]
     &(Seq[T]) => Action*[T]
@@ -247,7 +255,7 @@ export function tick:
 ## Action Operators
 # alias: <-
 export function read:[T]
-    &(Computed[T]) => Action[T]
+    &(Computed[T]) => Atomic[T]
     native 'computed-read';
 export function take-one-as-single:[T,E]
     &(Action*[T,E]) => Action[Maybe[T],E]
@@ -280,10 +288,6 @@ export function then:[A,B]
     &(Action[A], &(A) => Source[B]) => Source[B]
     native 'then';
 # alias: await
-export function then:[A,B]
-    &(Action[A], &(A) => Computed[B]) => Computed[B]
-    native 'then';
-# alias: await
 export function then:[E,B]
     &(Action[unit,E], Action[B,E]) => Action[B,E]
     native 'then-shortcut';
@@ -295,9 +299,18 @@ export function then:[E,B]
 export function then:[B]
     &(Action, Source[B]) => Source[B]
     native 'then-shortcut';
-# alias: await
-export function then:[B]
-    &(Action, Computed[B]) => Computed[B]
+
+export function do:[A,B]
+    &(Atomic[A], &(A) => Atomic[B]) => Atomic[B]
+    native 'then';
+export function do:[A,B]
+    &(Atomic[A], &(A) => Computed[B]) => Computed[B]
+    native 'then';
+export function do:[B]
+    &(Atomic, Atomic[B]) => Atomic[B]
+    native 'then-shortcut';
+export function do:[B]
+    &(Atomic, Computed[B]) => Computed[B]
     native 'then-shortcut';
 
 export function catch:[T,E,F]
@@ -409,8 +422,22 @@ export function distinct-until-changed:
     [T,E] (Eq[T])
     &(Action*[T,E]) => Action*[T,E]
     &(a) => { distinct-until-changed (a, =) };
+export function distinct-until-changed:
+    [T] (Eq[T])
+    &(Source[T]) => Source[T]
+    &(a) => { distinct-until-changed (a, =) };
+export function distinct-until-changed:
+    [T] (Eq[T])
+    &(Computed[T]) => Computed[T]
+    &(a) => { distinct-until-changed (a, =) };
 export function distinct-until-changed:[T,E]
     &(Action*[T,E], &(T,T) => Bool) => Action*[T,E]
+    native 'distinct-until-changed';
+export function distinct-until-changed:[T]
+    &(Source[T], &(T,T) => Bool) => Source[T]
+    native 'distinct-until-changed';
+export function distinct-until-changed:[T]
+    &(Computed[T], &(T,T) => Bool) => Computed[T]
     native 'distinct-until-changed';
 export function with-latest-from:[A,B,E]
     &(Action*[A,E], Action*[B,E]) => Action*[(A,Maybe[B]),E]

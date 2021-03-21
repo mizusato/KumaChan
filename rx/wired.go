@@ -311,9 +311,7 @@ func (d DistinctViewReactive) Snapshot() Action {
 
 type BlackHole struct{}
 func (_ BlackHole) Emit(_ Object) Action {
-	return NewSync(func() (Object, bool) {
-		return nil, true
-	})
+	return NewConstant(nil)
 }
 
 type Callback  func(Object) Action
@@ -509,7 +507,7 @@ func (r *ReactiveImpl) Update(f (func(Object) Object), k *KeyChain) Action {
 func (r *ReactiveImpl) UpdateWithSnapshot(f (func(Object) Object), k *KeyChain, snapshot bool) Action {
 	return NewSync(func() (Object, bool) {
 		var old_state = r.last_change.Value
-		var new_state = f(old_state)  // TODO: consider optional new state
+		var new_state = f(old_state)
 		if r.equal(old_state, new_state) {
 			return nil, true
 		}

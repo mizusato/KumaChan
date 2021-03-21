@@ -83,7 +83,7 @@ var EffectFunctions = map[string] Value {
 		return b.Watch()
 	},
 	"computed-read": func(computed rx.Action) rx.Action {
-		return computed.TakeOneAsSingle().Map(func(opt_ rx.Object) rx.Object {
+		return computed.TakeOneAsSingleAssumeSync().Map(func(opt_ rx.Object) rx.Object {
 			var opt = opt_.(rx.Optional)
 			if opt.HasValue {
 				return opt.Value
@@ -317,9 +317,7 @@ var EffectFunctions = map[string] Value {
 		})
 	},
 	"yield": func(v Value) rx.Action {
-		return rx.NewSync(func() (rx.Object, bool) {
-			return v, true
-		})
+		return rx.NewConstant(v)
 	},
 	"yield*-seq": func(seq container.Seq) rx.Action {
 		return rx.NewSyncSequence(func(next func(rx.Object))(bool,rx.Object) {
@@ -347,9 +345,6 @@ var EffectFunctions = map[string] Value {
 				return Na()
 			}
 		})
-	},
-	"assume-except": func(v Value) Value {
-		return v
 	},
 	"start-with": func(following rx.Action, head_ Value) rx.Action {
 		var head = container.ArrayFrom(head_)
