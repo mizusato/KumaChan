@@ -47,7 +47,7 @@ var core_types = []string {
 	// rx.km
 	Action, ActionMultiValue, Computed, Source,
 	Sink, Bus, Reactive, ReactiveEntity,
-	ReactiveSnapshots, ReactiveSnapshotStack,
+	ReactiveSnapshots, Mutex,
 	Mutable, Buffer, HashMap,
 	// complex.km
 	Complex, ComplexIEEE,
@@ -121,7 +121,7 @@ const Bus = "Bus"
 const Reactive = "Reactive"
 const ReactiveEntity = "ReactiveEntity"
 const ReactiveSnapshots = "ReactiveSnapshots"
-const ReactiveSnapshotStack = "ReactiveSnapshotStack"
+const Mutex = "Mutex"
 const Mutable = "Mutable"
 const Buffer = "Buffer"
 const HashMap = "HashMap"

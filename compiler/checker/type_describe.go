@@ -129,12 +129,17 @@ func DescribeType(type_ Type, ctx TypeDescContext) string {
 			buf.WriteString(" }")
 			return buf.String()
 		case Func:
+			var input_desc = DescribeType(r.Input, ctx)
+			var need_wrap =
+				!(strings.HasPrefix(input_desc, "(") ||
+				strings.HasPrefix(input_desc, "{"))
 			var buf strings.Builder
-			buf.WriteString("(λ ")
-			buf.WriteString(DescribeType(r.Input, ctx))
-			buf.WriteString(" ")
+			buf.WriteString("λ")
+			if need_wrap { buf.WriteString("(") }
+			buf.WriteString(input_desc)
+			if need_wrap { buf.WriteString(")") }
+			buf.WriteString(" => ")
 			buf.WriteString(DescribeType(r.Output, ctx))
-			buf.WriteString(")")
 			return buf.String()
 		default:
 			panic("impossible branch")

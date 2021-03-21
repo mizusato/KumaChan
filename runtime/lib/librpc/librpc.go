@@ -56,7 +56,10 @@ func Serve (
 		var l = l_.(net.Listener)
 		var service, ok = api.GetServiceInterface(id)
 		if !(ok) { panic(fmt.Sprintf("service %s does not exist", id)) }
-		var service_impl = implementService(service, constructor)
+		var destructor = func(instance Value) rx.Action {
+			return instance.(ServerSideServiceInstance).Delete()
+		}
+		var service_impl = implementService(service, constructor, destructor)
 		var full_options = &rpc.ServerOptions {
 			Listener:    l,
 			DebugOutput: options.GetDebugOutput(),
@@ -67,7 +70,7 @@ func Serve (
 	})
 }
 
-func implementService(i rpc.ServiceInterface, ctor (func(Value,Value) rx.Action)) rpc.Service {
+func implementService(i rpc.ServiceInterface, ctor (func(Value,Value) rx.Action), dtor (func(Value) rx.Action)) rpc.Service {
 	var methods = make(map[string] rpc.ServiceMethod)
 	for name, method_info := range i.Methods {
 		var name = name  // spent 3 hours to find out this problem
@@ -83,6 +86,9 @@ func implementService(i rpc.ServiceInterface, ctor (func(Value,Value) rx.Action)
 		Constructor: rpc.ServiceConstructor {
 			ServiceConstructorInterface: i.Constructor,
 			GetAction: ctor,
+		},
+		Destructor: rpc.ServiceDestructor {
+			GetAction: dtor,
 		},
 		Methods: methods,
 	}

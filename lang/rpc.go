@@ -20,10 +20,14 @@ type ServiceInstance interface {
 }
 type ServerSideServiceInstance struct {
 	data     Value
+	dtor     func(data Value) rx.Action
 	methods  map[string] (func(data Value, arg Value) rx.Action)
 }
 type ClientSideServiceInstance struct {
 	underlying  *rpc.ClientInstance
+}
+func (instance ServerSideServiceInstance) Delete() rx.Action {
+	return instance.dtor(instance.data)
 }
 func (instance ServerSideServiceInstance) Call(name string, arg Value) rx.Action {
 	var f, exists = instance.methods[name]
@@ -41,18 +45,28 @@ func CreateServiceMethodCaller(method_name string) NativeFunctionValue {
 		return instance.Call(method_name, method_arg)
 	})
 }
-func CreateServiceInstance(data Value, impl ([] Value), names ([] string), h InteropContext) ServiceInstance {
+func CreateServiceInstance (
+	data          Value,
+	dtor_impl     Value,
+	methods_impl  [] Value,
+	method_names  [] string,
+	h             InteropContext,
+) ServiceInstance {
 	var methods = make(map[string] func(Value,Value)(rx.Action))
-	for i, name := range names {
+	for i, name := range method_names {
 		var index = i
 		methods[name] = func(data Value, arg Value) rx.Action {
 			var pair = &ValProd { Elements: [] Value { data, arg } }
-			var ret = h.Call(impl[index], pair)
+			var ret = h.Call(methods_impl[index], pair)
 			return ret.(rx.Action)
 		}
 	}
+	var dtor = func(data Value) rx.Action {
+		return h.Call(dtor_impl, data).(rx.Action)
+	}
 	return ServerSideServiceInstance {
 		data:    data,
+		dtor:    dtor,
 		methods: methods,
 	}
 }

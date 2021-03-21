@@ -12,6 +12,7 @@ import (
 type Service struct {
 	ServiceIdentifier
 	Constructor  ServiceConstructor
+	Destructor   ServiceDestructor
 	Methods      map[string] ServiceMethod
 }
 type ServiceInterface struct {
@@ -47,10 +48,14 @@ func ParseServiceIdentifier(str string) (ServiceIdentifier, error) {
 
 type ServiceConstructor struct {
 	ServiceConstructorInterface
-	GetAction  func(object kmd.Object, conn interface{}) rx.Action
+	GetAction  func(arg kmd.Object, conn interface{}) rx.Action
 }
 type ServiceConstructorInterface struct {
 	ArgType  *kmd.Type
+}
+
+type ServiceDestructor struct {
+	GetAction  func(instance kmd.Object) rx.Action
 }
 
 type ServiceMethod struct {

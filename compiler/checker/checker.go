@@ -599,8 +599,9 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 					var prod = arg.(lang.ProductValue)
 					var data = prod.Elements[0]
 					var ctx = prod.Elements[1].(lang.ProductValue)
-					var impl = ctx.Elements
-					return lang.CreateServiceInstance(data, impl, names, h)
+					var dtor = ctx.Elements[0]
+					var methods = ctx.Elements[1:]
+					return lang.CreateServiceInstance(data, dtor, methods, names, h)
 				})
 				add(f, ExprPredefinedValue { Value: v })
 			default:

@@ -10,6 +10,11 @@ type argument
 type constructor
     &(argument, rpc::Connection) => Action[instance,Error];
 
+/// Service destructor type
+type destructor[T]
+    implicit
+    { delete: &(T) => Action };
+
 /// Service consumer type.
 type consumer
     &(instance) => Action;
@@ -24,6 +29,6 @@ export const identifier:
 
 /// Creates a service instance from a T object and an implicit methods[T].
 export function create:
-    [T] (methods[T])
+    [T] (destructor[T],methods[T])
     &(T) => instance;
 

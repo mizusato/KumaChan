@@ -170,6 +170,12 @@ export function swap:[T]
     native 'mutable-swap';
 
 ## Locks Operations
+export function reactive+mutex: [T, K < Action*[any,any]]
+    &(T, &(Mutex[ReactiveEntity[T]]) => K) => K
+    &(init, k) =>
+        & r := reactive::[T,K] init,
+        & mu := mutex::[ReactiveEntity[T],K] r,
+        { k mu };
 export function mutex: [T, K < Action*[any,any]]
     &(T, &(Mutex[T]) => K) => K
     native 'mutex';

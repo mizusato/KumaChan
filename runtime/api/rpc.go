@@ -53,9 +53,6 @@ var RpcFunctions = map[string] interface{} {
 			Address: GoStringFromString(addr),
 		}
 	},
-	"rpc-connection-wait-closed": func(conn *rx.WrappedConnection) rx.Action {
-		return conn.WaitClosed()
-	},
 	"rpc-connection-close": func(conn *rx.WrappedConnection) rx.Action {
 		return rx.NewSync(func() (rx.Object, bool) {
 			_ = conn.Close()

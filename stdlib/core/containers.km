@@ -158,10 +158,10 @@ export function get!:[K,V]
     &(Map[K,V], K) => V
     native 'map-get!';
 export function insert:[K,V]
-    &(Map[K,V], K, V) => Maybe[Map[K,V]]
+    &(Map[K,V], (K, V)) => Maybe[Map[K,V]]
     native 'map-insert';
 export function insert*:[K,V]
-    &(Map[K,V], K, V) => Map[K,V]
+    &(Map[K,V], (K, V)) => Map[K,V]
     native 'map-insert*';
 export function delete:[K,V]
     &(Map[K,V], K) => Maybe[(V,Map[K,V])]

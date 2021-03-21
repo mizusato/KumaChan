@@ -1,46 +1,72 @@
 import service from './service';
 
 
-type Chat {
-    user: User,
-    bus:  Bus[service::Message]
+type Server {
+    users:   Reactive[Map[String,User]],
+    msg-bus: Bus[service::Message]
 };
+
 type User {
-    name: String
+    conn: rpc::Connection
 };
 
-export function new-chat:
-    &(Bus[service::Message]) => service::constructor
-    &(msg-bus) => &(login,_) =>
-        &(id) := await gen-sequential-id,
-        let { nickname } := login,
-        let unique-name := { "#-#" (id, nickname) },
-        & await { println { "# signed in" unique-name } },
-        let chat := { Chat { bus: msg-bus, user: { name: unique-name } } },
-        let instance := { service::create chat },
-        { yield instance };
+type Chat {
+    id:  String,
+    ctx: Server
+};
 
-export function say:
+function new-chat:
+    &(Server) => service::constructor
+    &(ctx) => &(login,conn) =>
+        let { nickname } := login,
+        let id := nickname,
+        let user := { User { conn } },
+        let try-login: Action[Bool] :=
+            let { users } := ctx,
+            & old-users := await { <- users },
+            switch old-users.{ insert (id,user) }:
+            case Just new-users:
+                & await (users <- new-users),
+                { yield Yes },
+            case N/A:
+                { yield No },
+            end,
+        & ok := await try-login,
+        if ok:
+            let chat := { Chat { ctx, id } },
+            let instance := { service::create chat },
+            { yield instance },
+        else:
+            { throw { make-error { "nickname '#' is in use" id } } };
+
+function delete:
+    &(Chat) => Action
+    &(chat) =>
+        chat.ctx.users.{update &(old-users) => old-users.{delete* chat.id}};
+
+function say:
     &(Chat,service::MessageContent) => Action[service::None,Error]
     &(chat,content) =>
         let msg := { service::Message {
-            from: chat.user.name,
+            from: chat.id,
             content
         } },
-        & await (chat.bus <- msg),
+        & await (chat.ctx.msg-bus <- msg),
         { yield service::None };
 
-export function messages:
+function messages:
     &(Chat,service::None) => Action*[service::Message,Error]
     &(chat,_) =>
-        {watch chat.bus};
+        {watch chat.ctx.msg-bus};
 
 do
+    & users := reactive { create-map::[User] [] },
     & msg-bus := bus::[service::Message] (),
+    let ctx := { Server { users, msg-bus } },
     { rpc::serve {
         service: service::identifier,
         backend: { rpc::server-cleartext { network: 'tcp', addr: '127.0.0.1:8002' } },
         options: {},
-        constructor: { new-chat msg-bus }
+        constructor: { new-chat ctx }
     } }
     . { catch-crash };

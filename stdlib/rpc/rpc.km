@@ -38,9 +38,6 @@ export const LimitOptionsDefault: LimitOptions := {
 export function zero-value: &() => LimitOptions &() => LimitOptionsDefault;
 
 type Connection native;
-export function wait-closed:
-    &(Connection) => Action[unit,Error]
-    native 'rpc-connection-wait-closed';
 export function close:
     &(Connection) => Action[unit]
     native 'rpc-connection-close';

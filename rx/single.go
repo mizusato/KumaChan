@@ -1,12 +1,10 @@
 package rx
 
-import "errors"
-
 
 const single_multiple_return = "An effect that assumed to be a single-valued effect emitted multiple values"
 const single_zero_return = "An effect that assumed to be a single-valued effect completed with zero values emitted"
 
-func ScheduleSingle(e Action, sched Scheduler, ctx *Context) (Object, error) {
+func ScheduleSingle(e Action, sched Scheduler, ctx *Context) (Optional, bool) {
 	var chan_ret = make(chan Object)
 	var chan_err = make(chan Object)
 	sched.commit(func() {
@@ -34,17 +32,11 @@ func ScheduleSingle(e Action, sched Scheduler, ctx *Context) (Object, error) {
 	})
 	select {
 	case ret := <- chan_ret:
-		if ctx.AlreadyCancelled() {
-			return nil, errors.New("operation cancelled")
-		}
-		return ret, nil
-	case <- chan_err:
-		if ctx.AlreadyCancelled() {
-			return nil, errors.New("operation cancelled")
-		}
-		return nil, errors.New("exception thrown by scheduled action")
+		return Optional { true, ret }, true
+	case err := <- chan_err:
+		return Optional { false, err }, true
 	case <- ctx.CancelSignal():
-		return nil, errors.New("operation cancelled")
+		return Optional{}, false
 	}
 }
 

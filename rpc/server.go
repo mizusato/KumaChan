@@ -108,15 +108,27 @@ func constructServiceInstance(arg kmd.Object, conn *rx.WrappedConnection, servic
 	var construct = service.Constructor.GetAction(arg, conn)
 	var sched = conn.Scheduler()
 	var ctx = conn.Context()
-	v, e := rx.ScheduleSingle(construct, sched, ctx)
-	if e != nil {
+	opt_instance, ok := rx.ScheduleSingle(construct, sched, ctx)
+	if !(ok) {
+		return nil, errors.New("service instance construction was cancelled")
+	}
+	if !(opt_instance.HasValue) {
+		var e = opt_instance.Value.(error)
 		err := sendConstructorException(e, conn)
 		if err != nil { return nil, err }
-		return nil, errors.New("failed to construct service instance")
+		return nil, errors.New("service instance construction failed")
 	}
+	var instance = opt_instance.Value
+	var destruct_on_close = conn.OnClose().Catch(func(_ rx.Object) rx.Action {
+		return rx.NewSync(func() (rx.Object, bool) {
+			return nil, true
+		})
+	}).Then(func(_ rx.Object) rx.Action {
+		return service.Destructor.GetAction(instance)
+	})
+	rx.ScheduleBackground(destruct_on_close, conn.Scheduler())
 	err := sendInstanceCreated(conn)
 	if err != nil { return nil, err }
-	var instance = v
 	return instance, nil
 }
 func sendConstructorException(e error, conn *rx.WrappedConnection) error {

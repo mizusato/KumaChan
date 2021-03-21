@@ -350,15 +350,21 @@ var ContainerFunctions = map[string] Value {
 			panic(fmt.Sprintf("accessing absent key %s of a map", Inspect(k)))
 		}
 	},
-	"map-insert": func(m Map, k Value, v Value) SumValue {
-		var result, ok = m.Inserted(k, v)
-		if ok {
+	"map-insert": func(m Map, entry_ Value) SumValue {
+		var entry = entry_.(ProductValue)
+		var k = entry.Elements[0]
+		var v = entry.Elements[1]
+		var result, override = m.Inserted(k, v)
+		if !(override) {
 			return Just(result)
 		} else {
 			return Na()
 		}
 	},
-	"map-insert*": func(m Map, k Value, v Value) Map {
+	"map-insert*": func(m Map, entry_ Value) Map {
+		var entry = entry_.(ProductValue)
+		var k = entry.Elements[0]
+		var v = entry.Elements[1]
 		var result, _ = m.Inserted(k, v)
 		return result
 	},

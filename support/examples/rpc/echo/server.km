@@ -10,6 +10,10 @@ export function new-echo-server:
         let { verbose } := opts,
         { yield { service::create { EchoServer { verbose } } } };
 
+export function delete:
+    &(EchoServer) => Action
+    &(_) => { yield () };
+
 export function echo:
     &(EchoServer,service::Request) => Action[service::Response,Error]
     &(server,req) =>

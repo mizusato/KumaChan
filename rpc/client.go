@@ -182,12 +182,17 @@ func sendConstructorArgument(conn io.Writer, service ServiceInterface, opts *Cli
 }
 
 func receiveInstanceCreated(conn io.Reader) error {
-	kind, _, _, err := receiveMessage(conn)
+	kind, _, payload, err := receiveMessage(conn)
 	if err != nil {
 		return fmt.Errorf("failed to receive instance created notification: %w", err)
 	}
 	if kind != MSG_CREATED {
-		return errors.New(fmt.Sprintf("unexpected message kind: %s", kind))
+		if kind == MSG_ERROR {
+			var desc = string(payload)
+			return errors.New(desc)
+		} else {
+			return errors.New(fmt.Sprintf("unexpected message kind: %s", kind))
+		}
 	}
 	return nil
 }

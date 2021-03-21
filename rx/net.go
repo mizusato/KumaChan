@@ -84,7 +84,7 @@ func (w *WrappedConnection) Close() error {
 	w.closeProperly(nil)
 	return nil
 }
-func (w *WrappedConnection) WaitClosed() Action {
+func (w *WrappedConnection) OnClose() Action {
 	return w.result.Outcome()
 }
 
