@@ -3,12 +3,12 @@ package api
 import (
 	"os"
 	"fmt"
-	"strconv"
 	"reflect"
 	"math/rand"
 	"kumachan/rx"
 	. "kumachan/lang"
 	"kumachan/runtime/lib/container"
+	"strconv"
 )
 
 
@@ -269,11 +269,18 @@ var EffectFunctions = map[string] Value {
 			return rand.Float64(), true
 		})
 	},
-	"gen-sequential-id": func() rx.Action {
+	"gen-monotonic-id-string": func() rx.Action {
 		return rx.NewSync(func() (rx.Object, bool) {
 			var id = nextProcessLevelGlobalId
 			nextProcessLevelGlobalId += 1
 			return StringFromGoString(strconv.FormatUint(id, 16)), true
+		})
+	},
+	"gen-monotonic-id": func() rx.Action {
+		return rx.NewSync(func() (rx.Object, bool) {
+			var id = nextProcessLevelGlobalId
+			nextProcessLevelGlobalId += 1
+			return id, true
 		})
 	},
 	"crash": func(msg String, h InteropContext) rx.Action {

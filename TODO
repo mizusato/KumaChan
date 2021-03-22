@@ -2,8 +2,6 @@ TODO
 
 - split rx.km
 
-- gen-sequential-id return Uint64
-
 - methods for Reactive[Map[K,V]]
 
 - revise resource management of wired components, files, ...

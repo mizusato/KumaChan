@@ -198,9 +198,12 @@ export function with: [A < Action*[any,any]]
 export function gen-random:
     &() => Atomic[Float]
     native 'gen-random';
-export function gen-sequential-id:
+export function gen-monotonic-id:
+    &() => Atomic[Uint64]
+    native 'gen-monotonic-id';
+export function gen-monotonic-id-string:
     &() => Atomic[String]
-    native 'gen-sequential-id';
+    native 'gen-monotonic-id-string';
 export function crash:
     &(String) => Action[never]
     native 'crash';
