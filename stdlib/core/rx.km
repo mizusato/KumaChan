@@ -22,11 +22,16 @@ type Atomic [[unit] T]
     Action[T];
 
 /// Source[T] represents an action that subscribes to a discrete data source.
+/// It is a subtype of Action*[T]. Different from general Action*, a Source
+/// never completes.
 type Source[+T]
     protected
     Action*[T];
 
 /// Computed[T] represents an action that subscribes to a continuous data source.
+/// It is a subtype of Source[T]. Different from general Source, a Computed
+/// has a current value and always produces its current value synchronously
+/// as its first value.
 type Computed[+T]
     protected
     Source[T];
@@ -193,6 +198,7 @@ export function lock: [T, K < Action*[any]]
     native 'mutex-lock';
 
 ## Action Constructors
+// TODO: as-source, as-computed
 export function with: [A < Action*[any,any]]
     &(A, Action) => A
     native 'with';
@@ -310,7 +316,7 @@ export function do:[A,B]
 export function do:[B]
     &(Atomic, Atomic[B]) => Atomic[B]
     native 'do-shortcut';
-export function do: [A,S < Source[any]]
+export function do: [A, S < Source[any]]
     &(Atomic[A], &(A) => S) => S
     native 'do-source';
 export function do: [S < Source[any]]
