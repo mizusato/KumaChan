@@ -1,8 +1,9 @@
 package rx
 
 
-const single_multiple_return = "An action that assumed to be a single-valued effect emitted multiple values"
-const single_zero_return = "An action that assumed to be a single-valued effect completed with zero values emitted"
+const single_multiple_return = "An action that assumed to be a single-valued action emitted multiple values"
+const single_zero_return = "An action that assumed to be a single-valued action completed with zero values emitted"
+const single_unexpected_exception = "An action that assumed to be a single-valued action produced an unexpected exception"
 const sync_did_not_complete = "An action that assumed synchronous did not complete synchronously"
 
 func ScheduleSingle(e Action, sched Scheduler, ctx *Context) (Optional, bool) {
@@ -21,6 +22,9 @@ func ScheduleSingle(e Action, sched Scheduler, ctx *Context) (Optional, bool) {
 				returned_value = obj
 			},
 			error: func(err Object) {
+				if returned {
+					panic(single_unexpected_exception)
+				}
 				chan_err <- err
 			},
 			complete: func() {
@@ -55,6 +59,9 @@ func (e Action) Then(f func(Object)(Action)) Action {
 				returned_value = x
 			},
 			error: func(e Object) {
+				if returned {
+					panic(single_unexpected_exception)
+				}
 				ob.error(e)
 			},
 			complete: func() {
@@ -83,6 +90,9 @@ func (e Action) ThenAssumeSync(f func(Object)(Action)) Action {
 				returned.Value = x
 			},
 			error: func(err Object) {
+				if returned.HasValue {
+					panic(single_unexpected_exception)
+				}
 				exception.HasValue = true
 				exception.Value = err
 			},
