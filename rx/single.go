@@ -41,7 +41,7 @@ func ScheduleSingle(e Action, sched Scheduler, ctx *Context) (Optional, bool) {
 	}
 }
 
-func (e Action) Then(f func(Object) Action) Action {
+func (e Action) Then(f func(Object)(Action)) Action {
 	return Action { func(sched Scheduler, ob *observer) {
 		var returned = false
 		var returned_value Object
@@ -65,6 +65,44 @@ func (e Action) Then(f func(Object) Action) Action {
 				sched.run(next, ob)
 			},
 		})
+	} }
+}
+
+func (e Action) ThenAssumeSync(f func(Object)(Action)) Action {
+	return Action { func(sched Scheduler, ob *observer) {
+		var returned = Optional {}
+		var exception = Optional {}
+		var completed = false
+		sched.run(e, &observer {
+			context: Background(), // chained sync action cannot be interrupted
+			next: func(x Object) {
+				if returned.HasValue {
+					panic(single_multiple_return)
+				}
+				returned.HasValue = true
+				returned.Value = x
+			},
+			error: func(err Object) {
+				exception.HasValue = true
+				exception.Value = err
+			},
+			complete: func() {
+				if !(returned.HasValue) {
+					panic(single_zero_return)
+				}
+				completed = true
+			},
+		})
+		if exception.HasValue {
+			ob.error(exception.Value)
+		} else if !(completed) {
+			panic(sync_did_not_complete)
+		} else if !(returned.HasValue) {
+			panic("something went wrong")
+		} else {
+			var next = f(returned.Value)
+			sched.run(next, ob)
+		}
 	} }
 }
 

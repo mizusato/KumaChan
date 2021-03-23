@@ -15,7 +15,8 @@ type Action [[unit] +T, [never] +E]
 
 /// Atomic[T] represents an action that returns a T value synchronously.
 /// It is possible to use the `do` function to concatenate
-/// multiple Atomic actions into a single Atomic action.
+/// multiple Atomic actions into a single Atomic action which
+/// cannot be cancelled half-way.
 type Atomic [[unit] T]
     protected
     Action[T];
@@ -305,16 +306,16 @@ export function then:[B]
 
 export function do:[A,B]
     &(Atomic[A], &(A) => Atomic[B]) => Atomic[B]
-    native 'then';
+    native 'then-sync';
 export function do:[A,B]
     &(Atomic[A], &(A) => Computed[B]) => Computed[B]
-    native 'then';
+    native 'then-sync';
 export function do:[B]
     &(Atomic, Atomic[B]) => Atomic[B]
-    native 'then-shortcut';
+    native 'then-sync-shortcut';
 export function do:[B]
     &(Atomic, Computed[B]) => Computed[B]
-    native 'then-shortcut';
+    native 'then-sync-shortcut';
 
 export function catch:[T,E,F]
     &(Action[T,E], &(E) => Action[T,F]) => Action[T,F]
