@@ -1,5 +1,7 @@
 TODO
 
+- revise array/seq methods
+
 - split rx.km
 
 - methods for Reactive[Map[K,V]]
@@ -8,7 +10,7 @@ TODO
 
 - to be semantic: tuple input --> bundle input
 
-- consider zero-value:[T] &() => Maybe[T]
+- consider zero-value:[T] &() => Optional[T]  // type Optional[T] Maybe[T]
 
 - api doc hide types that are not used (directly/indirectly) by public functions and constants
 
