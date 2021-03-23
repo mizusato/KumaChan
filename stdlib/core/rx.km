@@ -310,12 +310,12 @@ export function do:[A,B]
 export function do:[B]
     &(Atomic, Atomic[B]) => Atomic[B]
     native 'do-shortcut';
-export function do:[A,B]
-    &(Atomic[A], &(A) => Computed[B]) => Computed[B]
-    native 'do-computed';
-export function do:[B]
-    &(Atomic, Computed[B]) => Computed[B]
-    native 'do-computed-shortcut';
+export function do: [A,S < Source[any]]
+    &(Atomic[A], &(A) => S) => S
+    native 'do-source';
+export function do: [S < Source[any]]
+    &(Atomic, S) => S
+    native 'do-source-shortcut';
 
 export function catch:[T,E,F]
     &(Action[T,E], &(E) => Action[T,F]) => Action[T,F]

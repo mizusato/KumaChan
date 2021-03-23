@@ -403,12 +403,12 @@ var EffectFunctions = map[string] Value {
 			return b
 		})
 	},
-	"do-computed": func(e rx.Action, f Value, h InteropContext) rx.Action {
+	"do-source": func(e rx.Action, f Value, h InteropContext) rx.Action {
 		return e.SyncThen(func(val rx.Object) rx.Action {
 			return h.Call(f, val).(rx.Action)
 		})
 	},
-	"do-computed-shortcut": func(a rx.Action, b rx.Action) rx.Action {
+	"do-source-shortcut": func(a rx.Action, b rx.Action) rx.Action {
 		return a.SyncThen(func(_ rx.Object) rx.Action {
 			return b
 		})
