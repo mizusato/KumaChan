@@ -163,6 +163,9 @@ public:
             #endif
         }
     }
+    bool IsContentLoaded() {
+        return contentLoaded;
+    }
 signals:
     void loadFinished();
     void eventEmitted();

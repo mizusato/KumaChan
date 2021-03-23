@@ -1,8 +1,0 @@
-{
-  "name": "ui-example-assets",
-  "config": {
-    "web_asset": {
-      "public": true
-    }
-  }
-}

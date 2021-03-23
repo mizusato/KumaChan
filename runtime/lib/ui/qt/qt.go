@@ -61,6 +61,7 @@ type Point struct {
     X  int
     Y  int
 }
+func getBool(number C.int) bool { return (number != 0) }
 
 type ListWidgetItem struct {
     Key    Ucs4String
@@ -128,7 +129,7 @@ func MakeSureInitialized() {
     case initializing <- struct{}{}:
         var wait = make(chan struct{})
         initRequestSignal <- func() {
-            C.QtInit(C.int(MakeBool(debugEnabled)))
+            C.QtInit(MakeBool(debugEnabled))
             wait <- struct{}{}
             C.QtMain()
         }
@@ -197,7 +198,7 @@ func Connect(obj Object, signal string, callback func()) func() {
         channel <- conn
     })
     var conn = <- channel
-    if int(C.QtIsConnectionValid(conn)) != 0 {
+    if getBool(C.QtIsConnectionValid(conn)) {
         return func() {
             CommitTask(func() {
                 C.QtDisconnect(conn)
@@ -235,8 +236,8 @@ func Listen(obj Object, kind EventKind, prevent bool, callback func(Event)) func
     })
     var ok = make(chan struct{})
     CommitTask(func() {
-        var prevent_ = MakeBool(prevent)
-        l = C.QtAddEventListener(obj.ptr(), C.size_t(kind), C.int(prevent_), cgo_callback, C.size_t(cb))
+        var prevent_flag = MakeBool(prevent)
+        l = C.QtAddEventListener(obj.ptr(), C.size_t(kind), prevent_flag, cgo_callback, C.size_t(cb))
         ok <- struct{} {}
     })
     <- ok
@@ -252,7 +253,7 @@ func GetPropBool(obj Object, prop string) bool {
     var new_str, del_all_str = str_alloc()
     defer del_all_str()
     var val = C.QtObjectGetPropBool(obj.ptr(), new_str(prop))
-    return (val != 0)
+    return getBool(val)
 }
 func SetPropBool(obj Object, prop string, val bool) {
     var new_str, del_all_str = str_alloc()
@@ -313,8 +314,8 @@ func SetPropPoint(obj Object, prop string, p Point) {
     C.QtObjectSetPropPoint(obj.ptr(), new_str(prop), makeQtPoint(p))
 }
 
-func MakeBool(p bool) Bool {
-    if p { return Bool(C.int(int(1))) } else { return Bool(C.int(int(0))) }
+func MakeBool(p bool) C.int {
+    if p { return C.int(int(1)) } else { return C.int(int(0)) }
 }
 func NewString(runes Ucs4String) (String, func()) {
     var str C.QtString
@@ -385,7 +386,7 @@ func VariantMapGetFloat(m VariantMap, key String) float64 {
 }
 func VariantMapGetBool(m VariantMap, key String) bool {
     var val = C.QtVariantMapGetBool(C.QtVariantMap(m), C.QtString(key))
-    return (val != 0)
+    return getBool(val)
 }
 
 func NewPixmap(data ([] byte), format ImageDataFormat) (Pixmap, func()) {
@@ -467,7 +468,7 @@ func ListWidgetSetItems(w Widget, get_item (func(uint) ListWidgetItem), length u
     unblock()
 }
 func ListWidgetHasCurrentItem(w Widget) bool {
-    return (C.QtListWidgetHasCurrentItem(w.ptr()) != 0)
+    return getBool(C.QtListWidgetHasCurrentItem(w.ptr()))
 }
 func ListWidgetGetCurrentItemKey(w Widget) ([] rune) {
     var raw_key = C.QtListWidgetGetCurrentItemKey(w.ptr())
@@ -569,6 +570,9 @@ func FileDialogSave(parent Widget, opts FileDialogOptions) ([] rune) {
 func WebViewLoadContent(view Widget) {
     C.WebViewLoadContent(view.ptr())
 }
+func WebViewIsContentLoaded(view Widget) bool {
+    return getBool(C.WebViewIsContentLoaded(view.ptr()))
+}
 func WebViewRegisterAsset(view Widget, path String, mime String, data ([] byte))  {
     var buf = (*C.uint8_t)(unsafe.Pointer(&data[0]))
     var length = C.size_t(uint(len(data)))
@@ -620,16 +624,5 @@ func WebViewEventPayloadGetBool(ev *WebViewEventPayload, key ([] rune)) bool {
     var key_str, del = NewString(key)
     defer del()
     return VariantMapGetBool(ev.Data, key_str)
-}
-
-func WebDialogCreate(parent Widget, icon Icon, title String, width int, height int, closable bool) (Widget,func()) {
-    var ptr = C.WebDialogCreate(ParentNullable(parent), C.QtIcon(icon), C.QtString(title), C.int(width), C.int(height), C.int(MakeBool(closable)))
-    return widget { object { ptr } }, func() {
-        C.WebDialogDispose(ptr)
-    }
-}
-func WebDialogGetWebView(dialog Widget) Widget {
-    var ptr = C.WebDialogGetWebView(dialog.ptr())
-    return widget { object { ptr } }
 }
 

@@ -16,9 +16,7 @@ var UiFunctions = map[string] interface{} {
 	"ui-bind": func(view qt.Widget, root rx.Action, h InteropContext) rx.Action {
 		var debug = h.GetDebugOptions().DebugUI
 		var sched = h.Scheduler()
-		var assets = func() (map[string] Resource) {
-			return h.GetResources("web_asset")
-		}
+		var assets = h.GetResources("web_asset")
 		return rx.NewSubscription(func(_ func(rx.Object)) func() {
 			return ui.Bind(view, root, ui.BindOptions {
 				Debug:  debug,
@@ -27,60 +25,49 @@ var UiFunctions = map[string] interface{} {
 			})
 		})
 	},
-	"ui-init": func(title String, root rx.Action, h InteropContext) rx.Action {
-		return rx.NewGoroutineSingle(func(_ *rx.Context) (rx.Object, bool) {
-			ui.Init(h, root, title)
-			return nil, true
-		})
-	},
-	"ui-get-dialog": func() rx.Action {
-		return rx.NewGoroutineSingle(func(_ *rx.Context) (rx.Object, bool) {
-			return ui.GetDialog(), true
-		})
-	},
-	"ui-inject-css": func(v Value) rx.Action {
-		return rx.NewGoroutineSingle(func(_ *rx.Context) (rx.Object, bool) {
+	"ui-inject-ttf": func(view qt.Widget, v Value) rx.Action {
+		return rx.NewSync(func() (rx.Object, bool) {
 			var array = container.ArrayFrom(v)
-			var files = make([] stdlib.WebAsset, array.Length)
-			for i := uint(0); i < array.Length; i += 1 {
-				files[i] = array.GetItem(i).(stdlib.WebAsset)
-			}
-			ui.InjectCSS(files)
-			return nil, true
-		})
-	},
-	"ui-inject-js": func(v Value) rx.Action {
-		return rx.NewGoroutineSingle(func(_ *rx.Context) (rx.Object, bool) {
-			var array = container.ArrayFrom(v)
-			var files = make([] stdlib.WebAsset, array.Length)
-			for i := uint(0); i < array.Length; i += 1 {
-				files[i] = array.GetItem(i).(stdlib.WebAsset)
-			}
-			ui.InjectJS(files)
-			return nil, true
-		})
-	},
-	"ui-inject-ttf": func(v Value) rx.Action {
-		return rx.NewGoroutineSingle(func(_ *rx.Context) (rx.Object, bool) {
-			var array = container.ArrayFrom(v)
-			var fonts = make([] ui.Font, array.Length)
+			var fonts = make([] ui.TTF, array.Length)
 			for i := uint(0); i < array.Length; i += 1 {
 				var item = array.GetItem(i).(ProductValue)
 				var info = item.Elements[0].(ProductValue)
 				var family = RuneSliceFromString(info.Elements[0].(String))
 				var weight = RuneSliceFromString(info.Elements[1].(String))
 				var style = RuneSliceFromString(info.Elements[2].(String))
-				var file = item.Elements[1].(stdlib.WebAsset)
-				fonts[i] = ui.Font {
+				var file = item.Elements[1].(stdlib.AssetFile)
+				fonts[i] = ui.TTF {
 					File: file,
-					Info: ui.FontInfo {
+					Font: ui.FontName {
 						Family: family,
 						Weight: weight,
 						Style:  style,
 					},
 				}
 			}
-			ui.InjectTTF(fonts)
+			ui.InjectTTF(view, fonts)
+			return nil, true
+		})
+	},
+	"ui-inject-css": func(view qt.Widget, v Value) rx.Action {
+		return rx.NewSync(func() (rx.Object, bool) {
+			var array = container.ArrayFrom(v)
+			var files = make([] stdlib.AssetFile, array.Length)
+			for i := uint(0); i < array.Length; i += 1 {
+				files[i] = array.GetItem(i).(stdlib.AssetFile)
+			}
+			ui.InjectCSS(view, files)
+			return nil, true
+		})
+	},
+	"ui-inject-js": func(view qt.Widget, v Value) rx.Action {
+		return rx.NewSync(func() (rx.Object, bool) {
+			var array = container.ArrayFrom(v)
+			var files = make([] stdlib.AssetFile, array.Length)
+			for i := uint(0); i < array.Length; i += 1 {
+				files[i] = array.GetItem(i).(stdlib.AssetFile)
+			}
+			ui.InjectJS(view, files)
 			return nil, true
 		})
 	},

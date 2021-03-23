@@ -142,6 +142,7 @@ extern "C" {
     QtString QtFileDialogSave(void* parent_ptr, QtString title, QtString cwd, QtString filter);
     // Web
     void WebViewLoadContent(void* view_ptr);
+    QtBool WebViewIsContentLoaded(void* view_ptr);
     void WebViewRegisterAsset(void* view_ptr, QtString path, QtString mime, const uint8_t* buf, size_t len);
     QtString WebViewInjectCSS(void* view_ptr, QtString path);
     QtString WebViewInjectJS(void* view_ptr, QtString path);

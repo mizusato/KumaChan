@@ -2,22 +2,26 @@ type Widget
     protected
     Object;
 
-export function show:
-    &(Widget) => Action
-    native 'qt-show';
 
-export function show-at-center:
-    &(Widget) => Action
-    native 'qt-show-at-center';
-
+type WidgetTopLevel
+    protected
+    Widget;
 
 type Dialog
     protected
-    Widget;
+    WidgetTopLevel;
 
 type Window
     protected
-    Widget;
+    WidgetTopLevel;
+
+export function show:
+    &(WidgetTopLevel) => Action
+    native 'qt-show';
+
+export function show-at-center:
+    &(WidgetTopLevel) => Action
+    native 'qt-show-at-center';
 
 
 type BaseWebView
@@ -31,6 +35,10 @@ type PlainWebView
 type WebView
     protected
     BaseWebView;
+
+export function bind:
+    &(WebView, Component) => Action[never]
+    native 'ui-bind';
 
 
 type NativeLabel

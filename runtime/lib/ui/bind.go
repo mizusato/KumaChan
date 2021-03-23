@@ -6,16 +6,10 @@ import (
 )
 
 
-var loading = make(chan struct{}, 1)
-var dialogLoaded = make(chan struct{})
-var bridgeLoaded = make(chan struct{})
-var singletonDialog qt.Widget
-var singletonView qt.Widget
-
 type BindOptions struct {
 	Debug   bool
 	Sched   rx.Scheduler
-	Assets  resources
+	Assets  AssetIndex
 }
 
 var activeBindings = make(map[qt.Widget] struct{})
@@ -36,10 +30,13 @@ func Bind(view qt.Widget, root rx.Action, opts BindOptions) func() {
 	cancel2 := qt.Connect(view, "loadFinished()", func() {
 		scheduleUpdate(view, sched, root, debug)
 	})
+	var wait = make(chan struct{})
 	qt.CommitTask(func() {
 		registerAssetFiles(view, assets)
 		qt.WebViewLoadContent(view)
+		wait <- struct{}{}
 	})
+	<- wait
 	activeBindings[view] = struct{}{}
 	return func() {
 		cancel1()

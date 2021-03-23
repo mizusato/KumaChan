@@ -1,0 +1,10 @@
+do Window.{on-close}.{connect {exit 0}};
+
+do Window.{show-at-center};
+
+do (WebView inject-assets [{ ui::CSS { file: style-css } }]);
+
+export function mount:
+    &(ui::Component) => Action[never]
+    &(cpt) => (WebView bind cpt);
+

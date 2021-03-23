@@ -1,10 +1,6 @@
-import assets from './assets';
+import window from './window';
 
-do { ui-init ('Select', Root) };
-
-do { ui-inject-css [assets::style-css] };
-
-do ui-exit-when-window-closed;
+do { window::mount Root };
 
 const Root: ui::Component :=
     & selection := use { ui-state 'foo' },

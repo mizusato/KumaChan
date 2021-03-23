@@ -13,7 +13,7 @@ import (
 
 
 var __UiXmlWidgetDefaultNames = map[string] ([] string) {
-	"QWidget": { "widget", "centralWidget" },
+	"QWidget": { "widget", "centralwidget" },
 	"QMainWindow": { "MainWindow" },
 	"QWebView": { "webView" },
 	"WebView": { "widget", "webView" },

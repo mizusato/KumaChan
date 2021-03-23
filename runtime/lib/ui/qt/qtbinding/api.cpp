@@ -534,6 +534,10 @@ void WebViewLoadContent(void* view_ptr) {
     WebView* view = (WebView*) view_ptr;
     view->LoadContent();
 }
+QtBool WebViewIsContentLoaded(void* view_ptr) {
+    WebView* view = (WebView*) view_ptr;
+    return view->IsContentLoaded();
+}
 void WebViewRegisterAsset(void* view_ptr, QtString path, QtString mime, const uint8_t* buf, size_t len) {
     WebView* view = (WebView*) view_ptr;
     QByteArray data = QByteArray::fromRawData((const char*)(buf), len);

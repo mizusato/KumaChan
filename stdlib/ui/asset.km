@@ -1,0 +1,60 @@
+type Asset enum {
+    type TTF { file: AssetFile, font: FontName };
+    type CSS { file: AssetFile };
+    type JS { file: AssetFile };
+};
+
+type AssetFile
+    native;
+
+type FontName {
+    family: String,
+    weight: String,
+    style:  String
+};
+
+function inject-css:
+    &(WebView, Array[AssetFile]) => Action
+    native 'ui-inject-css';
+
+function inject-js:
+    &(WebView, Array[AssetFile]) => Action
+    native 'ui-inject-js';
+
+function inject-ttf:
+    &(WebView, Array[(AssetFile,FontName)]) => Action
+    native 'ui-inject-ttf';
+
+export function inject-assets:
+    &(WebView, Array[Asset]) => Action
+    &(view, assets) =>
+        let all-ttf := assets.{iterate}.{ filter-map &(asset) =>
+            switch asset:
+            case TTF {file,font}:
+                { Just (file, font) },
+            default:
+                Null,
+            end
+        },
+        let all-css := assets.{iterate}.{ filter-map &(asset) =>
+            switch asset:
+            case CSS {file}:
+                { Just file },
+            default:
+                Null,
+            end
+        },
+        let all-js := assets.{iterate}.{ filter-map &(asset) =>
+            switch asset:
+            case JS {file}:
+                { Just file },
+            default:
+                Null,
+            end
+        },
+        { wait-complete { concat [
+            view. { inject-ttf all-ttf.{collect} },
+            view. { inject-css all-css.{collect} },
+            view. { inject-js  all-js.{collect} }
+        ] } };
+

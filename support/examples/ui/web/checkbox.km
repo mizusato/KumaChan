@@ -1,10 +1,6 @@
-import assets from './assets';
+import window from './window';
 
-do { ui-init ('Checkbox', Root) };
-
-do { ui-inject-css [assets::style-css] };
-
-do ui-exit-when-window-closed;
+do { window::mount Root };
 
 const Root: ui::Component :=
     & ok := use { ui-state Yes },

@@ -1,10 +1,6 @@
-import assets from './assets';
+import window from './window';
 
-do { ui-init ('Mouse', Root) };
-
-do { ui-inject-css [assets::style-css] };
-
-do ui-exit-when-window-closed;
+do { window::mount Root };
 
 // TODO: mouse enter => Just pos, mouse out => Null
 function mouse-position:

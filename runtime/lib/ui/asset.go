@@ -31,25 +31,33 @@ func registerAssetFiles(view qt.Widget, assets AssetIndex) {
 	}
 }
 
-func injectAssetFiles(files interface{}, inject func(interface{})(qt.String,[](func()))) {
-	var wait = make(chan struct{})
-	qt.CommitTask(func() {
+func injectAssetFiles(view qt.Widget, files interface{}, inject func(qt.Widget,interface{})(qt.String,[](func()))) {
+	var inject_all = func() {
 		var rv = reflect.ValueOf(files)
 		for i := 0; i < rv.Len(); i += 1 {
 			var f = rv.Index(i).Interface()
-			var uuid, deferred = inject(f)
+			var uuid, deferred = inject(view, f)
 			qt.DeleteString(uuid) // unused now
-			for _, f := range deferred {
-				f()
+			for _, clean := range deferred {
+				clean()
 			}
+		}
+	}
+	// inject after loaded
+	qt.Connect(view, "loadFinished()", inject_all)
+	// inject immediately if already loaded
+	var wait = make(chan struct{})
+	qt.CommitTask(func() {
+		if qt.WebViewIsContentLoaded(view) {
+			inject_all()
 		}
 		wait <- struct{}{}
 	})
-	<- wait
+	<-wait
 }
 
 func InjectTTF(view qt.Widget, fonts ([] TTF)) {
-	injectAssetFiles(fonts, func(ttf_ interface{}) (qt.String, []func()) {
+	injectAssetFiles(view, fonts, func(view qt.Widget, ttf_ interface{}) (qt.String, []func()) {
 		var ttf = ttf_.(TTF)
 		var path_q, del1 = qt.NewString(([] rune)(ttf.File.Path))
 		var family_q, del2 = qt.NewString(ttf.Font.Family)
@@ -61,7 +69,7 @@ func InjectTTF(view qt.Widget, fonts ([] TTF)) {
 }
 
 func InjectJS(view qt.Widget, files ([] stdlib.AssetFile)) {
-	injectAssetFiles(files, func(file interface{}) (qt.String, [](func())) {
+	injectAssetFiles(view, files, func(view qt.Widget, file interface{}) (qt.String, [](func())) {
 		var path = file.(stdlib.AssetFile).Path
 		var path_q, del = qt.NewString(([] rune)(path))
 		var uuid = qt.WebViewInjectJS(view, path_q)
@@ -70,7 +78,7 @@ func InjectJS(view qt.Widget, files ([] stdlib.AssetFile)) {
 }
 
 func InjectCSS(view qt.Widget, files ([] stdlib.AssetFile)) {
-	injectAssetFiles(files, func(file interface{}) (qt.String, []func()) {
+	injectAssetFiles(view, files, func(view qt.Widget, file interface{}) (qt.String, []func()) {
 		var path = file.(stdlib.AssetFile).Path
 		var path_q, del = qt.NewString(([] rune)(path))
 		var uuid = qt.WebViewInjectCSS(view, path_q)

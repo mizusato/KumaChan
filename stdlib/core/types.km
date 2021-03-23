@@ -61,6 +61,11 @@ export function =:
     &(Ordering,Ordering) => Bool
     native 'sum-index-equal';
 
+type Optional[+T] Maybe[T];
+export function zero-value:
+    &() => Optional[never]
+    &() => Null;
+
 // Type Conversion
 type Conv[T,U] implicit {
     convert: &(T) => U

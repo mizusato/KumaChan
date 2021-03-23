@@ -27,8 +27,8 @@ func (f WebAssetFile) GetAST() (ast.Root, *parser.Error) {
 		f.Public,
 		name,
 		stdlib.Mod_ui,
-		stdlib.WebAsset_T,
-		stdlib.WebAsset { Path: path },
+		stdlib.AssetFile_T,
+		stdlib.AssetFile { Path: path },
 	)
 	ast_root.Statements = append(ast_root.Statements, const_decl)
 	return ast_root, nil

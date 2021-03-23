@@ -1,10 +1,6 @@
-import assets from './assets';
+import window from '../ui/web/window';
 
-do { ui-init ('Computed', Root) };
-
-do { ui-inject-css [assets::style-css] };
-
-do ui-exit-when-window-closed;
+do { window::mount Root };
 
 function float-input:
     &(Reactive[Maybe[Float]]) => ui::Component

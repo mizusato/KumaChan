@@ -36,6 +36,7 @@ var core_types = []string {
 	Maybe, Just, Na,
 	Result, Ok, Ng,
 	Ordering, Smaller, Equal, Bigger,
+	Optional,
 	// error.km
 	Error,
 	// binary.km
@@ -94,6 +95,7 @@ const Smaller = "<<"
 const Equal = "=="
 const Bigger = ">>"
 const ( SmallerIndex = iota; EqualIndex; BiggerIndex )
+const Optional = "Optional"
 // error.km
 const Error = "Error"
 // binary.km
@@ -136,8 +138,8 @@ const Char = "Char"
 const String = "String"
 
 // ui
-const WebAsset_T = "WebAsset"
-type WebAsset struct {
+const AssetFile_T = "AssetFile"
+type AssetFile struct {
 	Path  string
 }
 
