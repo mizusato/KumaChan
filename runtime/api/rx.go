@@ -393,13 +393,23 @@ var EffectFunctions = map[string] Value {
 			return b
 		})
 	},
-	"then-sync": func(e rx.Action, f Value, h InteropContext) rx.Action {
-		return e.ThenAssumeSync(func(val rx.Object) rx.Action {
+	"do": func(e rx.Action, f Value, h InteropContext) rx.Action {
+		return e.ChainSync(func(val rx.Object) rx.Action {
 			return h.Call(f, val).(rx.Action)
 		})
 	},
-	"then-sync-shortcut": func(a rx.Action, b rx.Action) rx.Action {
-		return a.ThenAssumeSync(func(_ rx.Object) rx.Action {
+	"do-shortcut": func(a rx.Action, b rx.Action) rx.Action {
+		return a.ChainSync(func(_ rx.Object) rx.Action {
+			return b
+		})
+	},
+	"do-computed": func(e rx.Action, f Value, h InteropContext) rx.Action {
+		return e.SyncThen(func(val rx.Object) rx.Action {
+			return h.Call(f, val).(rx.Action)
+		})
+	},
+	"do-computed-shortcut": func(a rx.Action, b rx.Action) rx.Action {
+		return a.SyncThen(func(_ rx.Object) rx.Action {
 			return b
 		})
 	},

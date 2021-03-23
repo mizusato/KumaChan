@@ -306,16 +306,16 @@ export function then:[B]
 
 export function do:[A,B]
     &(Atomic[A], &(A) => Atomic[B]) => Atomic[B]
-    native 'then-sync';
-export function do:[A,B]
-    &(Atomic[A], &(A) => Computed[B]) => Computed[B]
-    native 'then-sync';
+    native 'do';
 export function do:[B]
     &(Atomic, Atomic[B]) => Atomic[B]
-    native 'then-sync-shortcut';
+    native 'do-shortcut';
+export function do:[A,B]
+    &(Atomic[A], &(A) => Computed[B]) => Computed[B]
+    native 'do-computed';
 export function do:[B]
     &(Atomic, Computed[B]) => Computed[B]
-    native 'then-sync-shortcut';
+    native 'do-computed-shortcut';
 
 export function catch:[T,E,F]
     &(Action[T,E], &(E) => Action[T,F]) => Action[T,F]
