@@ -198,7 +198,9 @@ export function lock: [T, K < Action*[any]]
     native 'mutex-lock';
 
 ## Action Constructors
-// TODO: as-source, as-computed
+export function as-source:[T]
+    &(Action*[T]) => Source[T]
+    native 'as-source';
 export function with: [A < Action*[any,any]]
     &(A, Action) => A
     native 'with';

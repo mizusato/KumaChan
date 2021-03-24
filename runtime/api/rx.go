@@ -261,6 +261,9 @@ var EffectFunctions = map[string] Value {
 			return h.Call(f, v)
 		})
 	},
+	"as-source": func(action rx.Action) rx.Action {
+		return action.DiscardComplete()
+	},
 	"with": func(main rx.Action, side rx.Action) rx.Action {
 		return main.With(side)
 	},

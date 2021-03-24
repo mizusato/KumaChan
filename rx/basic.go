@@ -109,3 +109,17 @@ func (e Action) Take(amount uint) Action {
 		})
 	} }
 }
+
+func (e Action) DiscardComplete() Action {
+	return Action { func(sched Scheduler, ob *observer) {
+		sched.run(e, &observer {
+			context:  ob.context,
+			next:     ob.next,
+			error:    ob.error,
+			complete: func() {
+				// no-op
+			},
+		})
+	} }
+}
+
