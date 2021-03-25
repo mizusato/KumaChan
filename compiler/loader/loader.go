@@ -2,8 +2,6 @@ package loader
 
 import (
 	"os"
-	"strings"
-	"io/ioutil"
 	"path/filepath"
 	"kumachan/rpc"
 	"kumachan/lang"
@@ -12,7 +10,6 @@ import (
 
 
 const SourceSuffix = ".km"
-const BundleSuffix = ".kmx"
 const ManifestFileName = "module.json"
 const StandaloneScriptModuleName = "Main"
 const ModuleKind_Service = "service"
@@ -102,49 +99,10 @@ func entryPathToAbsPath(path string) (string, *Error) {
 func LoadEntry(path string) (*Module, Index, ResIndex, *Error) {
 	var abs_path, e = entryPathToAbsPath(path)
 	if e != nil { return nil, nil, nil, e }
-	path = abs_path
-	if strings.HasSuffix(path, BundleSuffix) {
-		return loadEntryZipFile(path)
-	} else {
-		return loadEntry(path, RealFileSystem {})
-	}
+	return loadEntry(abs_path, RealFileSystem {})
 }
 
 func LoadEntryThunk(raw_mod ModuleThunk) (*Module, Index, ResIndex, *Error) {
 	return loadEntryThunk(raw_mod, RealFileSystem {})
-}
-
-func loadEntryZipFile(path string) (*Module, Index, ResIndex, *Error) {
-	var content, err = ioutil.ReadFile(path)
-	if err != nil { return nil, nil, nil, &Error {
-		Context:  MakeEntryContext(),
-		Concrete: E_ReadFileFailed {
-			FilePath: path,
-			Message:  err.Error(),
-		},
-	} }
-	return LoadEntryZipData(content, path)
-}
-
-func LoadEntryWithinFileSystem(path string, fs FileSystem) (*Module, Index, ResIndex, *Error) {
-	var _, is_real_fs = fs.(RealFileSystem)
-	if is_real_fs {
-		var abs_path, err = entryPathToAbsPath(path)
-		if err != nil { return nil, nil, nil, err }
-		path = abs_path
-	}
-	return loadEntry(path, fs)
-}
-
-func LoadEntryZipData(data ([] byte), dummy_path string) (*Module, Index, ResIndex, *Error) {
-	var fs, err = LoadZipFile(data, dummy_path)
-	if err != nil { return nil, nil, nil, &Error {
-		Context:  MakeEntryContext(),
-		Concrete: E_ReadFileFailed {
-			FilePath: dummy_path,
-			Message:  err.Error(),
-		},
-	} }
-	return loadEntry(dummy_path, fs)
 }
 
