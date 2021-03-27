@@ -1,5 +1,7 @@
 TODO
 
+- { computed (reactive1, reactive2) }
+
 - consider renaming catch-crash to crash-on-error
 
 - extra info in Error (*ErrorWithExtraInfo implements error) (send through rpc)
