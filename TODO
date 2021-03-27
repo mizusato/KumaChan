@@ -1,5 +1,7 @@
 TODO
 
+- consider renaming catch-crash to crash-on-error
+
 - String / json::Object matching: consider possible APIs
 
 - revise array/seq methods
