@@ -239,7 +239,7 @@ func Just(v Value) SumValue {
 
 func Na() SumValue {
 	return &ValSum {
-		Index: stdlib.NaIndex,
+		Index: stdlib.NullIndex,
 		Value: nil,
 	}
 }

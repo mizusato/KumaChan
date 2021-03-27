@@ -47,6 +47,12 @@ func TestSwitch(t *testing.T) {
 	expectStdIO(t, mod_path, "", "Yes\n")
 }
 
+func TestPipeSwitch(t *testing.T) {
+	var dir_path = getTestDirPath(t, language)
+	var mod_path = filepath.Join(dir_path, "sum", "pipe_switch.km")
+	expectStdIO(t, mod_path, "", "1,null,bad\n")
+}
+
 func TestMultiSwitch(t *testing.T) {
 	var dir_path = getTestDirPath(t, language)
 	var mod_path = filepath.Join(dir_path, "sum", "multi_switch.km")

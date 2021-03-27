@@ -396,6 +396,7 @@ func Check(expr ast.Expr, ctx ExprContext) (SemiExpr, *ExprError) {
 	if err != nil { return SemiExpr{}, err }
 	for _, pipe := range expr.Pipeline {
 		var node = pipe.Node
+		var info = ctx.GetExprInfo(node)
 		switch p := pipe.Pipe.(type) {
 		case ast.PipeFunc:
 			var callee, err = Check(p.Callee, ctx)
@@ -417,10 +418,13 @@ func Check(expr ast.Expr, ctx ExprContext) (SemiExpr, *ExprError) {
 				if err != nil { return SemiExpr{}, err }
 			}
 		case ast.PipeGet:
-			current, err = CheckGet(current, p.Key, ctx)
+			current, err = CheckGet(current, p.Key, info, ctx)
 			if err != nil { return SemiExpr{}, err }
 		case ast.PipeCast:
-			current, err = CheckCast(current, p.Target, ctx)
+			current, err = CheckCast(current, p.Target, info, ctx)
+			if err != nil { return SemiExpr{}, err }
+		case ast.PipeSwitch:
+			current, err = CheckPipeSwitch(current, p.Type, info, ctx)
 			if err != nil { return SemiExpr{}, err }
 		default:
 			panic("impossible branch")

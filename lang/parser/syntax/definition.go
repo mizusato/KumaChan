@@ -183,12 +183,13 @@ var __SyntaxDefinition = [...] string {
       "const_value = native | expr!",
     "expr = term pipes",
       "pipes? = . pipe! pipes",
-        "pipe = pipe_func | pipe_get | pipe_cast",
+        "pipe = pipe_func | pipe_get | pipe_cast | pipe_switch",
           "pipe_func = { callee! pipe_func_arg }!",
             "callee = expr",
             "pipe_func_arg? = expr",
           "pipe_get = name",
           "pipe_cast = [ type! ]!",
+          "pipe_switch = ( type_ref! )!",
     "term = call | lambda | multi_switch | switch | if " +
         "| block | cps | bundle | tuple | inline_ref " +
         "| array | int | float | formatter | string | char",
@@ -213,7 +214,7 @@ var __SyntaxDefinition = [...] string {
           "more_multi_branches? = , multi_branch more_multi_branches",
           "multi_branch = multi_branch_key :! expr!",
             "multi_branch_key = @default | Case multi_type_ref! multi_pattern",
-              "multi_type_ref = [! type_ref_list ]!",
+              "multi_type_ref = (! type_ref_list )!",
                 "type_ref_list = type_ref! more_type_refs",
                   "more_type_refs? = , type_ref! more_type_refs",
               "multi_pattern? = pattern_tuple",

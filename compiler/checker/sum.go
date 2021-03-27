@@ -6,6 +6,7 @@ import (
 	. "kumachan/util/error"
 	"kumachan/compiler/loader"
 	"kumachan/lang/parser/ast"
+	"kumachan/stdlib"
 )
 
 
@@ -74,6 +75,72 @@ type MultiBranch struct {
 	Value      Expr
 }
 
+type CaseTypeInfo struct {
+	Name   loader.Symbol
+	Index  uint
+	Args   [] Type
+}
+
+
+func GetCaseType (
+	ref        ast.TypeRef,
+	enum_type  Type,
+	enum_def   *Enum,
+	enum_args  [] Type,
+	empty_ok   bool,
+	ctx        ExprContext,
+) (CaseTypeInfo, *ExprError) {
+	if len(ref.TypeArgs) > 0 {
+		return CaseTypeInfo{}, &ExprError {
+			Point:    ErrorPointFrom(ref.Node),
+			Concrete: E_TypeParametersUnnecessary {},
+		}
+	}
+	if empty_ok {
+		if ast.Id2String(ref.Module) == "" &&
+			ast.Id2String(ref.Id) == IgnoreMark {
+			return CaseTypeInfo {
+				Index: BadIndex,
+			}, nil
+		}
+	}
+	var maybe_sym = ctx.ModuleInfo.Module.SymbolFromTypeRef(ref)
+	var case_sym, ok = maybe_sym.(loader.Symbol)
+	if !ok { return CaseTypeInfo{}, &ExprError {
+		Point:    ErrorPointFrom(ref.Module.Node),
+		Concrete: E_TypeErrorInExpr { &TypeError {
+			Point:    ErrorPointFrom(ref.Module.Node),
+			Concrete: E_ModuleOfTypeRefNotFound {
+				Name: ast.Id2String(ref.Module),
+			},
+		} },
+	} }
+	var _, exists = ctx.ModuleInfo.Types[case_sym]
+	if !exists { return CaseTypeInfo{}, &ExprError {
+		Point:    ErrorPointFrom(ref.Node),
+		Concrete: E_TypeErrorInExpr { &TypeError {
+			Point:    ErrorPointFrom(ref.Node),
+			Concrete: E_TypeNotFound {
+				Name: case_sym,
+			},
+		} },
+	} }
+	var case_index, case_args, is_case = GetCaseInfo (
+		enum_def, enum_args, case_sym,
+	)
+	if !is_case { return CaseTypeInfo{}, &ExprError {
+		Point:    ErrorPointFrom(ref.Node),
+		Concrete: E_NotBranchType {
+			Enum:     ctx.DescribeCertainType(enum_type),
+			TypeName: case_sym.String(),
+		},
+	} }
+	return CaseTypeInfo {
+		Name:  case_sym,
+		Index: case_index,
+		Args:  case_args,
+	}, nil
+}
 
 func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(sw.Node)
@@ -98,49 +165,19 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 	for i, branch := range ast_branches {
 		switch t := branch.Type.(type) {
 		case ast.TypeRef:
-			if len(t.TypeArgs) > 0 {
-				return SemiExpr{}, &ExprError {
-					Point:    ErrorPointFrom(t.Node),
-					Concrete: E_TypeParametersUnnecessary {},
-				}
-			}
-			var maybe_type_sym = ctx.ModuleInfo.Module.SymbolFromTypeRef(t)
-			var type_sym, ok = maybe_type_sym.(loader.Symbol)
-			if !ok { return SemiExpr{}, &ExprError {
-				Point:    ErrorPointFrom(t.Module.Node),
-				Concrete: E_TypeErrorInExpr { &TypeError {
-					Point:    ErrorPointFrom(t.Module.Node),
-					Concrete: E_ModuleOfTypeRefNotFound {
-						Name: ast.Id2String(t.Module),
-					},
-				} },
-			}}
-			var _, exists = ctx.ModuleInfo.Types[type_sym]
-			if !exists { return SemiExpr{}, &ExprError {
-				Point:    ErrorPointFrom(t.Node),
-				Concrete: E_TypeErrorInExpr { &TypeError {
-					Point:    ErrorPointFrom(t.Node),
-					Concrete: E_TypeNotFound {
-						Name: type_sym,
-					},
-				} },
-			} }
-			var index, case_args, is_case = GetCaseInfo (
-				enum, enum_args, type_sym,
+			var case_info, case_err = GetCaseType (
+				t, arg_type, enum, enum_args, false, ctx,
 			)
-			if !is_case { return SemiExpr{}, &ExprError {
-				Point:    ErrorPointFrom(t.Node),
-				Concrete: E_NotBranchType {
-					Enum:     ctx.DescribeCertainType(arg_type),
-					TypeName: type_sym.String(),
-				},
-			} }
-			if checked[type_sym] { return SemiExpr{}, &ExprError {
+			if case_err != nil { return SemiExpr{}, case_err }
+			var case_sym = case_info.Name
+			var case_args = case_info.Args
+			var case_index = case_info.Index
+			if checked[case_sym] { return SemiExpr{}, &ExprError {
 				Point:    ErrorPointFrom(branch.Node),
 				Concrete: E_CheckedBranch {},
 			} }
 			var case_type Type = &NamedType {
-				Name: type_sym,
+				Name: case_sym,
 				Args: case_args,
 			}
 			if across_reactive {
@@ -162,11 +199,11 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 			if err != nil { return SemiExpr{}, err }
 			semi_branches[i] = SemiTypedBranch {
 				IsDefault: false,
-				Index:     index,
+				Index:     case_index,
 				Pattern:   maybe_pattern,
 				Value:     semi,
 			}
-			checked[type_sym] = true
+			checked[case_sym] = true
 		default:
 			if has_default {
 				return SemiExpr{}, &ExprError {
@@ -215,6 +252,86 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 	}
 }
 
+func CheckPipeSwitch(arg SemiExpr, ref ast.TypeRef, info ExprInfo, ctx ExprContext) (SemiExpr, *ExprError) {
+	var arg_typed, err2 = AssignTo(nil, arg, ctx)
+	if err2 != nil { return SemiExpr{}, err2 }
+	var arg_type = arg_typed.Type
+	var enum, enum_args, across_reactive, ok =
+		ExtractEnum(arg_type, ctx, true)
+	if !(ok) || across_reactive { return SemiExpr{}, &ExprError {
+		Point:    arg_typed.Info.ErrorPoint,
+		Concrete: E_InvalidSwitchArgType {
+			ArgType: ctx.DescribeCertainType(arg_typed.Type),
+		},
+	} }
+	var case_info, case_err = GetCaseType (
+		ref, arg_type, enum, enum_args, false, ctx,
+	)
+	if case_err != nil { return SemiExpr{}, case_err }
+	var case_type Type = &NamedType {
+		Name: case_info.Name,
+		Args: case_info.Args,
+	}
+	var maybe_case_type = &NamedType {
+		Name: __Maybe,
+		Args: [] Type { case_type },
+	}
+	var point = ErrorPointFrom(ref.Node)
+	var value_name = "PIPE_MATCH_VALUE"
+	var ok_branch = Branch {
+		IsDefault: false,
+		Index: case_info.Index,
+		Pattern: Pattern {
+			Point: point,
+			Concrete: TrivialPattern {
+				ValueName: value_name,
+				ValueType: case_type,
+				Point:     point,
+			},
+		},
+		Value:     Expr {
+			Info: info,
+			Type: maybe_case_type,
+			Value: Sum {
+				Index: stdlib.JustIndex,
+				Value: Expr {
+					Info:  info,
+					Type:  case_type,
+					Value: RefLocal { Name: value_name },
+				},
+			},
+		},
+	}
+	var fallback_branch = Branch {
+		IsDefault: true,
+		Index: BadIndex,
+		Pattern: nil,
+		Value: Expr {
+			Info: info,
+			Type: maybe_case_type,
+			Value: Sum {
+				Index: stdlib.NullIndex,
+				Value: Expr {
+					Info:  info,
+					Type:  &AnonymousType { Unit {} },
+					Value: UnitValue {},
+				},
+			},
+		},
+	}
+	return LiftTyped(Expr {
+		Info: info,
+		Type: maybe_case_type,
+		Value: Switch {
+			Argument: arg_typed,
+			Branches: [] Branch {
+				ok_branch,
+				fallback_branch,
+			},
+		},
+	}), nil
+}
+
 func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(msw.Node)
 	var A = uint(len(msw.Arguments))
@@ -260,54 +377,24 @@ func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprErro
 			var types = make([]Type, A)
 			var is_default = make([]bool, A)
 			for i, t := range branch.Types {
-				if len(t.TypeArgs) > 0 {
-					return SemiExpr{}, &ExprError {
-						Point:    ErrorPointFrom(t.Node),
-						Concrete: E_TypeParametersUnnecessary {},
-					}
-				}
-				var maybe_type_sym = ctx.ModuleInfo.Module.SymbolFromTypeRef(t)
-				var type_sym, ok = maybe_type_sym.(loader.Symbol)
-				if !ok { return SemiExpr{}, &ExprError {
-					Point:    ErrorPointFrom(t.Module.Node),
-					Concrete: E_TypeErrorInExpr { &TypeError {
-						Point:    ErrorPointFrom(t.Module.Node),
-						Concrete: E_ModuleOfTypeRefNotFound {
-							Name: ast.Id2String(t.Module),
-						},
-					} },
-				}}
-				if (type_sym.SymbolName == IgnoreMark) {
+				var case_info, case_err = GetCaseType (
+					t, args[i].Type, enums[i], enums_args[i], true, ctx,
+				)
+				if case_err != nil { return SemiExpr{}, case_err }
+				var case_sym = case_info.Name
+				var case_args = case_info.Args
+				var case_index = case_info.Index
+				if (case_index == BadIndex) {
 					indexes[i] = BadIndex
 					types[i] = &AnonymousType { Unit {} }
 					is_default[i] = true
 					continue
 				}
-				var _, exists = ctx.ModuleInfo.Types[type_sym]
-				if !exists { return SemiExpr{}, &ExprError {
-					Point:    ErrorPointFrom(t.Node),
-					Concrete: E_TypeErrorInExpr { &TypeError {
-						Point:    ErrorPointFrom(t.Node),
-						Concrete: E_TypeNotFound {
-							Name: type_sym,
-						},
-					} },
-				} }
-				var index, case_args, is_case = GetCaseInfo (
-					enums[i], enums_args[i], type_sym,
-				)
-				if !is_case { return SemiExpr{}, &ExprError {
-					Point:    ErrorPointFrom(t.Node),
-					Concrete: E_NotBranchType {
-						Enum:    ctx.DescribeCertainType(args[i].Type),
-						TypeName: type_sym.String(),
-					},
-				} }
 				var el_case_type = &NamedType {
-					Name: type_sym,
+					Name: case_sym,
 					Args: case_args,
 				}
-				indexes[i] = index
+				indexes[i] = case_index
 				types[i] = el_case_type
 				is_default[i] = false
 			}

@@ -179,7 +179,7 @@ func CheckBundle(bundle ast.Bundle, ctx ExprContext) (SemiExpr, *ExprError) {
 	}
 }
 
-func CheckGet(base SemiExpr, key ast.Identifier, ctx ExprContext) (SemiExpr, *ExprError) {
+func CheckGet(base SemiExpr, key ast.Identifier, info ExprInfo, ctx ExprContext) (SemiExpr, *ExprError) {
 	switch b := base.Value.(type) {
 	case TypedExpr:
 		if IsBundleLiteral(Expr(b)) { return SemiExpr{}, &ExprError {
@@ -208,7 +208,7 @@ func CheckGet(base SemiExpr, key ast.Identifier, ctx ExprContext) (SemiExpr, *Ex
 					Product: Expr(b),
 					Index:   field.Index,
 				},
-				Info:  ctx.GetExprInfo(key.Node),
+				Info:  info,
 			}), nil
 		case BR_BundleButOpaque:
 			return SemiExpr{}, &ExprError {

@@ -1,0 +1,27 @@
+do
+    let r1: Result[Number,String] := { OK 1.[Number] },
+    let r2: Result[Number,String] := { NG 'bad' },
+    let s1: String :=
+        switch r1.(OK):
+        case Just num:
+            num.{str},
+        default:
+            'null',
+        end,
+    let s2: String :=
+        switch r2.(OK):
+        case Just num:
+            num.{str},
+        default:
+            'null',
+        end,
+    let s3: String :=
+        switch r2.(NG):
+        case Just err:
+            err.{str},
+        default:
+            'null',
+        end,
+    { println { "#,#,#" (s1,s2,s3) } }
+        . { catch-crash };
+

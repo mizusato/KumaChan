@@ -28,14 +28,14 @@ function convert:
 function f:
 	&(ABC,ABC) => ABC
 	&(x,y) =>
-        select (x, y):
-	       case [A,A]: A,
-	       case [A,B]: C,
-	       case [A,C]: B,
-	       case [B,_]: B,
-	       case [C,A]: B,
-	       case [C,B]: A,
-	       case [C,C]: C,
+        select (x,y):
+	       case (A,A): A,
+	       case (A,B): C,
+	       case (A,C): B,
+	       case (B,_): B,
+	       case (C,A): B,
+	       case (C,B): A,
+	       case (C,C): C,
         end;
 
 do { scanln () }

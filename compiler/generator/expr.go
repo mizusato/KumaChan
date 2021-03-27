@@ -566,12 +566,12 @@ func BindPatternItems (
 		ErrorPoint: pattern.Point,
 	}
 	for _, item := range items {
-		var inst_get = InstGet(item.Index)
+		var get = InstGet(item.Index)
 		var offset = scope.AddBinding(item.Name, item.Point)
-		var inst_bind = InstStore(offset)
-		buf.Write(CodeFrom(inst_get, info))
-		buf.Write(CodeFrom(inst_bind, info))
+		var store = InstStore(offset)
+		buf.Write(CodeFrom(get, info))
+		buf.Write(CodeFrom(store, info))
 	}
-	var pop_inst = lang.Instruction { OpCode: lang.POP }
-	buf.Write(CodeFrom(pop_inst, info))
+	var pop = lang.Instruction { OpCode: lang.POP }
+	buf.Write(CodeFrom(pop, info))
 }

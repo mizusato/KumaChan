@@ -64,5 +64,9 @@ type PipeCast struct {
     Node                  `part:"pipe_cast"`
     Target  VariousType   `part:"type"`
 }
-
+func (impl PipeSwitch) Pipe() {}
+type PipeSwitch struct {
+    Node            `part:"pipe_switch"`
+    Type  TypeRef   `part:"type_ref"`
+}
 

@@ -5,8 +5,7 @@ import (
 )
 
 
-func CheckCast(object SemiExpr, target ast.VariousType, ctx ExprContext) (SemiExpr, *ExprError) {
-	var info = ctx.GetExprInfo(target.Node)
+func CheckCast(object SemiExpr, target ast.VariousType, info ExprInfo, ctx ExprContext) (SemiExpr, *ExprError) {
 	var type_ctx = ctx.GetTypeContext()
 	var type_ref, is_type_ref = target.Type.(ast.TypeRef)
 	if is_type_ref {

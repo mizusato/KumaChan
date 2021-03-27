@@ -33,7 +33,7 @@ var core_types = []string {
 	Float, FloatIEEE, Number,
 	Int64, Uint64, Int32, Uint32, Int16, Uint16, Int8, Uint8,
 	Bool, Yes, No,
-	Maybe, Just, Na,
+	Maybe, Just, Null,
 	Result, Ok, Ng,
 	Ordering, Smaller, Equal, Bigger,
 	Optional,
@@ -84,8 +84,8 @@ const No = "No"
 const ( YesIndex = iota; NoIndex )
 const Maybe = "Maybe"
 const Just = "Just"
-const Na = "Null"
-const ( JustIndex = iota; NaIndex )
+const Null = "Null"
+const ( JustIndex = iota; NullIndex )
 const Result = "Result"
 const Ok = "OK"
 const Ng = "NG"

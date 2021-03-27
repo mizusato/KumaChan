@@ -12,9 +12,9 @@ export function is:
     &(Error,ErrorKind) => Bool
     &(err, kind) =>
         select (err.{kind}, kind):
-        case [EOF,EOF]:
+        case (EOF, EOF):
             Yes,
-        case [ClosedPipe,ClosedPipe]:
+        case (ClosedPipe, ClosedPipe):
             Yes,
         default:
             No,
