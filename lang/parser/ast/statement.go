@@ -1,6 +1,6 @@
 package ast
 
-import "kumachan/rpc/kmd"
+import "kumachan/misc/rpc/kmd"
 
 
 type VariousStatement struct {

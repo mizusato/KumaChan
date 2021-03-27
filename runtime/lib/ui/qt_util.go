@@ -2,7 +2,7 @@ package ui
 
 import (
 	"kumachan/runtime/lib/ui/qt"
-	"kumachan/rx"
+	"kumachan/misc/rx"
 	"kumachan/stdlib"
 	. "kumachan/lang"
 )

@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"kumachan/rx"
+	"kumachan/misc/rx"
 	"kumachan/runtime/lib/ui/qt"
 )
 

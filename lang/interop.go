@@ -3,8 +3,8 @@ package lang
 import (
 	"os"
 	"reflect"
-	"kumachan/rx"
-	. "kumachan/util/error"
+	"kumachan/misc/rx"
+	. "kumachan/misc/util/error"
 )
 
 

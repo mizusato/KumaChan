@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	. "kumachan/util/error"
+	. "kumachan/misc/util/error"
 )
 
 

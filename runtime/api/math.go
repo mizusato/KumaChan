@@ -4,7 +4,7 @@ import (
 	"math"
 	"math/big"
 	"math/cmplx"
-	"kumachan/util"
+	"kumachan/misc/util"
 	"kumachan/lang"
 )
 

@@ -2,8 +2,8 @@ package api
 
 import (
 	"time"
-	"kumachan/rx"
-	"kumachan/rpc"
+	"kumachan/misc/rx"
+	"kumachan/misc/rpc"
 	"kumachan/runtime/lib/librpc"
 	. "kumachan/lang"
 )

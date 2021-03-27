@@ -2,7 +2,7 @@ package container
 
 import (
 	"reflect"
-	. "kumachan/util/error"
+	. "kumachan/misc/util/error"
 	. "kumachan/lang"
 )
 

@@ -6,8 +6,8 @@ import (
 	"net"
 	"time"
 	"errors"
-	"kumachan/rx"
-	"kumachan/rpc/kmd"
+	"kumachan/misc/rx"
+	"kumachan/misc/rpc/kmd"
 )
 
 

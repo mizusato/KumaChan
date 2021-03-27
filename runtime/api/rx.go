@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"math/rand"
-	"kumachan/rx"
+	"kumachan/misc/rx"
 	. "kumachan/lang"
 	"kumachan/runtime/lib/container"
 	"strconv"

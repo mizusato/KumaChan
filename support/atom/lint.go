@@ -7,7 +7,7 @@ import (
 	"kumachan/lang"
 	"kumachan/lang/parser/cst"
 	"kumachan/lang/parser/scanner"
-	. "kumachan/util/error"
+	. "kumachan/misc/util/error"
 	"kumachan/compiler/loader"
 	"kumachan/compiler/checker"
 	"kumachan/compiler/generator"

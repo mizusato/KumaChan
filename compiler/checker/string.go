@@ -4,7 +4,7 @@ import (
 	"unsafe"
 	"strings"
 	"math/big"
-	. "kumachan/util/error"
+	. "kumachan/misc/util/error"
 	"kumachan/stdlib"
 	"kumachan/lang/parser/ast"
 )

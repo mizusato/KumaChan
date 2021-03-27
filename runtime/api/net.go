@@ -2,7 +2,7 @@ package api
 
 import (
 	"net/url"
-	"kumachan/rx"
+	"kumachan/misc/rx"
 	. "kumachan/lang"
 	. "kumachan/runtime/lib/container"
 )

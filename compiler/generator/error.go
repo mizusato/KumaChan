@@ -1,6 +1,6 @@
 package generator
 
-import . "kumachan/util/error"
+import . "kumachan/misc/util/error"
 
 
 type Error struct {

@@ -3,9 +3,9 @@ package vm
 import (
 	"os"
 	"strings"
-	"kumachan/rx"
+	"kumachan/misc/rx"
 	. "kumachan/lang"
-	. "kumachan/util/error"
+	. "kumachan/misc/util/error"
 )
 
 

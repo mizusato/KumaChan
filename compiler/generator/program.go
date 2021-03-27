@@ -2,10 +2,10 @@ package generator
 
 import (
 	"fmt"
-	"kumachan/rpc"
-	"kumachan/rpc/kmd"
+	"kumachan/misc/rpc"
+	"kumachan/misc/rpc/kmd"
 	"kumachan/lang"
-	. "kumachan/util/error"
+	. "kumachan/misc/util/error"
 )
 
 

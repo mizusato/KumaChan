@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"encoding/json"
-	"kumachan/rx"
+	"kumachan/misc/rx"
 	"kumachan/runtime/lib/ui/qt"
 	"kumachan/runtime/lib/ui/vdom"
 )

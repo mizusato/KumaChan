@@ -1,8 +1,8 @@
 package api
 
 import (
-	"kumachan/rx"
-	"kumachan/util"
+	"kumachan/misc/rx"
+	"kumachan/misc/util"
 	"kumachan/stdlib"
 	. "kumachan/lang"
 	"kumachan/runtime/lib/container"

@@ -2,7 +2,7 @@ package vm
 
 import (
 	"sync"
-	"kumachan/rx"
+	"kumachan/misc/rx"
 	"kumachan/runtime/lib/librpc"
 	. "kumachan/lang"
 )

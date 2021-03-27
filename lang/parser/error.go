@@ -2,7 +2,7 @@ package parser
 
 import "kumachan/lang/parser/cst"
 import "kumachan/lang/parser/syntax"
-import . "kumachan/util/error"
+import . "kumachan/misc/util/error"
 
 
 type Error struct {

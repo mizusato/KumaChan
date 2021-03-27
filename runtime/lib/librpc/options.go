@@ -3,7 +3,7 @@ package librpc
 import (
 	"os"
 	"io"
-	"kumachan/rpc"
+	"kumachan/misc/rpc"
 )
 
 

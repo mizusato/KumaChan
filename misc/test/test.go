@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"io/ioutil"
 	"path/filepath"
-	. "kumachan/util/error"
+	. "kumachan/misc/util/error"
 	"kumachan/compiler/loader"
 	"kumachan/compiler/checker"
 	"kumachan/compiler/generator"
@@ -21,7 +21,7 @@ func getTestDirPath(t *testing.T, kind string) string {
 	var exe_path, err = os.Executable()
 	if err != nil { t.Fatal(err) }
 	var project_path = filepath.Dir(filepath.Dir(exe_path))
-	return filepath.Join(project_path, "test", kind)
+	return filepath.Join(project_path, "misc", "test", kind)
 }
 
 func mergeErrorMessages(errs ([] E)) ErrorMessage {

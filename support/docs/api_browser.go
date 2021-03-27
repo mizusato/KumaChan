@@ -8,7 +8,7 @@ import (
 	"strings"
 	"context"
 	"runtime"
-	"kumachan/util"
+	"kumachan/misc/util"
 	"kumachan/runtime/lib/ui/qt"
 )
 

@@ -1,6 +1,6 @@
 package checker
 
-import . "kumachan/util/error"
+import . "kumachan/misc/util/error"
 
 
 func GenericFunctionCall (

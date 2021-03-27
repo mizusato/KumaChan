@@ -5,7 +5,7 @@ import (
 	"errors"
 	"reflect"
 	"math/big"
-	"kumachan/rpc/kmd"
+	"kumachan/misc/rpc/kmd"
 	"kumachan/runtime/lib/container"
 	. "kumachan/lang"
 )

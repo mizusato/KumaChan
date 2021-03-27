@@ -2,7 +2,7 @@ package checker
 
 import (
 	"fmt"
-	. "kumachan/util/error"
+	. "kumachan/misc/util/error"
 	"kumachan/compiler/loader"
 )
 

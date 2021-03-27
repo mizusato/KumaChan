@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"strings"
 	"path/filepath"
-	"kumachan/rx"
+	"kumachan/misc/rx"
 	"kumachan/stdlib"
 	"kumachan/runtime/lib/ui/qt"
 	. "kumachan/lang"

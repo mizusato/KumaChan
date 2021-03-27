@@ -2,7 +2,7 @@ package loader
 
 import (
 	"os"
-	. "kumachan/util/error"
+	. "kumachan/misc/util/error"
 )
 
 

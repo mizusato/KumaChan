@@ -4,7 +4,7 @@ import (
 	"os"
 	"fmt"
 	"reflect"
-	. "kumachan/util/error"
+	. "kumachan/misc/util/error"
 )
 
 func PrintRuntimeErrorMessage(err interface{}, ec *ExecutionContext) {

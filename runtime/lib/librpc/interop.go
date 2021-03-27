@@ -4,8 +4,8 @@ import (
 	"io"
 	"bytes"
 	. "kumachan/lang"
-	"kumachan/rpc"
-	"kumachan/rpc/kmd"
+	"kumachan/misc/rpc"
+	"kumachan/misc/rpc/kmd"
 )
 
 

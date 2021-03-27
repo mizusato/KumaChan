@@ -6,7 +6,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"path/filepath"
-	"kumachan/rpc"
+	"kumachan/misc/rpc"
 	"kumachan/stdlib"
 	"kumachan/lang/parser/ast"
 )

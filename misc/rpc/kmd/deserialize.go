@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"math/big"
 	"io/ioutil"
-	"kumachan/util"
+	"kumachan/misc/util"
 	"encoding/base64"
 )
 

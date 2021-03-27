@@ -2,12 +2,12 @@ package checker
 
 import (
 	"errors"
-	"kumachan/rpc"
-	"kumachan/rpc/kmd"
+	"kumachan/misc/rpc"
+	"kumachan/misc/rpc/kmd"
 	"kumachan/compiler/loader"
 	"kumachan/lang/parser/ast"
 	"kumachan/stdlib"
-	. "kumachan/util/error"
+	. "kumachan/misc/util/error"
 )
 
 

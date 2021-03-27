@@ -2,7 +2,7 @@ package docs
 
 import (
 	"fmt"
-	"kumachan/util"
+	"kumachan/misc/util"
 	"kumachan/runtime/lib/ui/qt"
 )
 

@@ -3,7 +3,7 @@ package loader
 import (
 	"os"
 	"path/filepath"
-	"kumachan/rpc"
+	"kumachan/misc/rpc"
 	"kumachan/lang"
 	"kumachan/lang/parser/ast"
 )

@@ -10,7 +10,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"path/filepath"
-	"kumachan/util"
+	"kumachan/misc/util"
 )
 
 

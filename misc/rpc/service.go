@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"errors"
 	"strings"
-	"kumachan/rx"
-	"kumachan/rpc/kmd"
+	"kumachan/misc/rx"
+	"kumachan/misc/rpc/kmd"
 )
 
 

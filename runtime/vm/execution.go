@@ -3,7 +3,7 @@ package vm
 import (
 	"fmt"
 	"reflect"
-	"kumachan/rx"
+	"kumachan/misc/rx"
 	"kumachan/runtime/api"
 	"kumachan/runtime/lib/ui"
 	. "kumachan/lang"

@@ -3,7 +3,7 @@ package api
 import (
 	"fmt"
 	. "kumachan/lang"
-	"kumachan/rx"
+	"kumachan/misc/rx"
 	"kumachan/stdlib"
 	"kumachan/runtime/lib/container"
 	"kumachan/runtime/lib/ui"

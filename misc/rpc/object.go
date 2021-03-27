@@ -6,7 +6,7 @@ import (
 	"errors"
 	"compress/gzip"
 	"encoding/binary"
-	"kumachan/rpc/kmd"
+	"kumachan/misc/rpc/kmd"
 )
 
 

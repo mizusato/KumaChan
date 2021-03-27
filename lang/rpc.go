@@ -2,9 +2,9 @@ package lang
 
 import (
 	"fmt"
-	"kumachan/rx"
-	"kumachan/rpc"
-	"kumachan/rpc/kmd"
+	"kumachan/misc/rx"
+	"kumachan/misc/rpc"
+	"kumachan/misc/rpc/kmd"
 )
 
 
