@@ -217,7 +217,7 @@ func repl(args ([] string), max_stack_size int, debug_opts lang.DebugOptions) {
             }
             var _, is_do = cmd.Cmd.(ast.ReplDo)
             var t checker.Type = nil
-            if is_do { t = checker.AnyActionType() }
+            if is_do { t = checker.VariousEffectType() }
             f, dep_vals, err := ic.AddConstant(temp_id, t, expr)
             if err != nil {
                 fmt.Fprintf(os.Stderr,
@@ -236,7 +236,7 @@ func repl(args ([] string), max_stack_size int, debug_opts lang.DebugOptions) {
                     Name:   alias,
                 })
             case ast.ReplDo:
-                var eff, ok = ret.(rx.Action)
+                var eff, ok = ret.(rx.Observable)
                 if !(ok) {
                     fmt.Fprintf(os.Stderr,
                         "%s failure:\nvalue is not an effect\n",

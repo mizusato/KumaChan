@@ -47,14 +47,14 @@ func (p *Promise) Reject(err Object, sched Scheduler) {
 		return draft
 	}, nil), sched, Background())
 }
-func (p *Promise) Outcome() Action {
+func (p *Promise) Outcome() Observable {
 	return p.state.Watch().
 		Filter(func(state_ Object) bool {
 			var state = state_.(PromiseState)
 			return state.status != pending
 		}).
 		Take(1).
-		MergeMap(func(state_ Object) Action {
+		MergeMap(func(state_ Object) Observable {
 			var state = state_.(PromiseState)
 			return NewSync(func() (Object, bool) {
 				if state.status == rejected {

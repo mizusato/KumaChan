@@ -48,19 +48,19 @@ func ParseServiceIdentifier(str string) (ServiceIdentifier, error) {
 
 type ServiceConstructor struct {
 	ServiceConstructorInterface
-	GetAction  func(arg kmd.Object, conn interface{}) rx.Action
+	GetAction  func(arg kmd.Object, conn interface{}) rx.Observable
 }
 type ServiceConstructorInterface struct {
 	ArgType  *kmd.Type
 }
 
 type ServiceDestructor struct {
-	GetAction  func(instance kmd.Object) rx.Action
+	GetAction  func(instance kmd.Object) rx.Observable
 }
 
 type ServiceMethod struct {
 	ServiceMethodInterface
-	GetAction  func(instance kmd.Object, arg kmd.Object) rx.Action
+	GetAction  func(instance kmd.Object, arg kmd.Object) rx.Observable
 }
 type ServiceMethodInterface struct {
 	ArgType     *kmd.Type

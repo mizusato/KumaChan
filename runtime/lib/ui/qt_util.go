@@ -13,7 +13,7 @@ type QtSignal struct {
 	Signature   string
 	PropMapper  func(qt.Object) interface{}
 }
-func (signal QtSignal) Receive() rx.Action {
+func (signal QtSignal) Receive() rx.Observable {
 	return rx.NewSubscriptionWithSender(func(sender rx.Sender) func() {
 		return qt.Connect(signal.Object, signal.Signature, func() {
 			sender.Next(signal.PropMapper(signal.Object))
@@ -26,7 +26,7 @@ type QtEvent struct {
 	Kind     qt.EventKind
 	Prevent  bool
 }
-func (event QtEvent) Receive() rx.Action {
+func (event QtEvent) Receive() rx.Observable {
 	return rx.NewSubscriptionWithSender(func(sender rx.Sender) func() {
 		return qt.Listen(event.Object, event.Kind, event.Prevent, func(ev qt.Event) {
 			var obj = (func() Value {
@@ -48,7 +48,7 @@ func (event QtEvent) Receive() rx.Action {
 	})
 }
 
-func CreateQtTaskAction(action func() interface{}) rx.Action {
+func CreateQtTaskAction(action func() interface{}) rx.Observable {
 	return rx.NewCallback(func(callback func(rx.Object)) {
 		qt.CommitTask(func() {
 			callback(action())

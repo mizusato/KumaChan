@@ -15,12 +15,12 @@ type ClientOptions struct {
 	Connection           net.Conn
 	DebugOutput          io.Writer
 	ConstructorArgument  kmd.Object
-	InstanceConsumer     func(*ClientInstance) rx.Action
+	InstanceConsumer     func(*ClientInstance) rx.Observable
 	Limits
 	KmdApi
 }
 
-func Client(service ServiceInterface, opts *ClientOptions) rx.Action {
+func Client(service ServiceInterface, opts *ClientOptions) rx.Observable {
 	var raw_conn = opts.Connection
 	var logger = ClientLogger {
 		LocalAddr:  raw_conn.LocalAddr(),
@@ -50,7 +50,7 @@ func Client(service ServiceInterface, opts *ClientOptions) rx.Action {
 	}
 	return rx.NewConnectionHandler(raw_conn, timeout, func(conn *rx.WrappedConnection) {
 		handle(conn)
-	}).Catch(func(err rx.Object) rx.Action {
+	}).Catch(func(err rx.Object) rx.Observable {
 		logger.LogError(err.(error))
 		return rx.Throw(err)
 	})
@@ -88,7 +88,7 @@ func createClientInstance(conn *rx.WrappedConnection, logger ClientLogger, servi
 		},
 	}
 }
-func (instance *ClientInstance) Call(method_name string, arg kmd.Object) rx.Action {
+func (instance *ClientInstance) Call(method_name string, arg kmd.Object) rx.Observable {
 	var method, exists = instance.service.Methods[method_name]
 	if !(exists) { panic("something went wrong") }
 	return rx.NewSyncWithSender(func(sender rx.Sender) {
@@ -199,7 +199,7 @@ func receiveInstanceCreated(conn io.Reader) error {
 
 func consumeClientInstance(instance *ClientInstance, conn *rx.WrappedConnection, opts *ClientOptions) {
 	var consume = opts.InstanceConsumer(instance)
-	var consume_and_dispose = consume.WaitComplete().Then(func(_ rx.Object) rx.Action {
+	var consume_and_dispose = consume.WaitComplete().Then(func(_ rx.Object) rx.Observable {
 		_ = conn.Close()
 		return rx.Noop()
 	})

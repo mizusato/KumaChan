@@ -13,7 +13,7 @@ import (
 
 
 var UiFunctions = map[string] interface{} {
-	"ui-bind": func(view qt.Widget, root rx.Action, h InteropContext) rx.Action {
+	"ui-bind": func(view qt.Widget, root rx.Observable, h InteropContext) rx.Observable {
 		var debug = h.GetDebugOptions().DebugUI
 		var sched = h.Scheduler()
 		var assets = h.GetResources("web_asset")
@@ -25,7 +25,7 @@ var UiFunctions = map[string] interface{} {
 			})
 		})
 	},
-	"ui-inject-ttf": func(view qt.Widget, v Value) rx.Action {
+	"ui-inject-ttf": func(view qt.Widget, v Value) rx.Observable {
 		return rx.NewSync(func() (rx.Object, bool) {
 			var array = container.ArrayFrom(v)
 			var fonts = make([] ui.TTF, array.Length)
@@ -49,7 +49,7 @@ var UiFunctions = map[string] interface{} {
 			return nil, true
 		})
 	},
-	"ui-inject-css": func(view qt.Widget, v Value) rx.Action {
+	"ui-inject-css": func(view qt.Widget, v Value) rx.Observable {
 		return rx.NewSync(func() (rx.Object, bool) {
 			var array = container.ArrayFrom(v)
 			var files = make([] stdlib.AssetFile, array.Length)
@@ -60,7 +60,7 @@ var UiFunctions = map[string] interface{} {
 			return nil, true
 		})
 	},
-	"ui-inject-js": func(view qt.Widget, v Value) rx.Action {
+	"ui-inject-js": func(view qt.Widget, v Value) rx.Observable {
 		return rx.NewSync(func() (rx.Object, bool) {
 			var array = container.ArrayFrom(v)
 			var files = make([] stdlib.AssetFile, array.Length)
@@ -71,7 +71,7 @@ var UiFunctions = map[string] interface{} {
 			return nil, true
 		})
 	},
-	"ui-static-component": func(thunk Value, h InteropContext) rx.Action {
+	"ui-static-component": func(thunk Value, h InteropContext) rx.Observable {
 		return rx.NewSync(func() (rx.Object, bool) {
 			return h.Call(thunk, nil), true
 		})

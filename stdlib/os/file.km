@@ -14,11 +14,11 @@ type FileState {
 type FileMode   Uint32;
 
 export function walk-dir:
-    &(Path) => Action*[(Path,FileState),Error]
+    &(Path) => Observable[(Path,FileState),Error]
     native 'walk-dir';
 
 export function list-dir:
-    &(Path) => Action*[(Path,FileState),Error]
+    &(Path) => Observable[(Path,FileState),Error]
     native 'list-dir';
 
 // TODO: use consumer (File -> Action, close on complete) instead of open/close
@@ -112,10 +112,10 @@ export function write-line:
     native 'file-write-line';
 
 export function read-lines:
-    &(FileReadOnly) => Action*[String,Error]
+    &(FileReadOnly) => Observable[String,Error]
     native 'file-read-lines';
 export function read-lines:
-    &(FileReadWrite) => Action*[String,Error]
+    &(FileReadWrite) => Observable[String,Error]
     native 'file-read-lines';
 
 export function read-all:

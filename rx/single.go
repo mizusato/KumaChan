@@ -5,7 +5,7 @@ const single_multiple_return = "An action that assumed to be a single-valued act
 const single_zero_return = "An action that assumed to be a single-valued action completed with zero values emitted"
 const single_unexpected_exception = "An action that assumed to be a single-valued action produced an unexpected exception"
 
-func ScheduleSingle(e Action, sched Scheduler, ctx *Context) (Optional, bool) {
+func ScheduleSingle(e Observable, sched Scheduler, ctx *Context) (Optional, bool) {
 	var chan_ret = make(chan Object)
 	var chan_err = make(chan Object)
 	sched.commit(func() {
@@ -44,8 +44,8 @@ func ScheduleSingle(e Action, sched Scheduler, ctx *Context) (Optional, bool) {
 	}
 }
 
-func (e Action) Then(f func(Object)(Action)) Action {
-	return Action { func(sched Scheduler, ob *observer) {
+func (e Observable) Then(f func(Object)(Observable)) Observable {
+	return Observable { func(sched Scheduler, ob *observer) {
 		var returned = false
 		var returned_value Object
 		sched.run(e, &observer {
@@ -74,8 +74,8 @@ func (e Action) Then(f func(Object)(Action)) Action {
 	} }
 }
 
-func (e Action) WaitComplete() Action {
-	return Action { func(sched Scheduler, ob *observer) {
+func (e Observable) WaitComplete() Observable {
+	return Observable { func(sched Scheduler, ob *observer) {
 		sched.run(e, &observer {
 			context:  ob.context,
 			next:     func(_ Object) {
@@ -90,8 +90,8 @@ func (e Action) WaitComplete() Action {
 	} }
 }
 
-func (e Action) TakeOneAsSingle() Action {
-	return Action { func(sched Scheduler, ob *observer) {
+func (e Observable) TakeOneAsSingle() Observable {
+	return Observable { func(sched Scheduler, ob *observer) {
 		var ctx, ctx_dispose = ob.context.create_disposable_child()
 		sched.run(e, &observer {
 			context:  ctx,

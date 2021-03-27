@@ -225,7 +225,7 @@ export function swap:[T]
     &(List[T], ListKey, ListKey) => List[T]
     native 'list-swap';
 
-// TODO: type ListItemIndexWatch protected Action*[Number]
+// TODO: type ListItemIndexWatch protected Observable[Number]
 export function is-first-in:[T]
     &(Computed[Number], Reactive[List[T]]) => Computed[Bool]
     &(@index, _) =>

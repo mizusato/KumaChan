@@ -1,8 +1,8 @@
 package rx
 
 
-func Merge(actions ([] Action)) Action {
-	return Action { func(sched Scheduler, ob *observer) {
+func Merge(actions ([] Observable)) Observable {
+	return Observable { func(sched Scheduler, ob *observer) {
 		var ctx, dispose = ob.context.create_disposable_child()
 		var c = new_collector(ob, dispose)
 		for _, item := range actions {
@@ -24,8 +24,8 @@ func Merge(actions ([] Action)) Action {
 	} }
 }
 
-func (e Action) With(side Action) Action {
-	return Action { func(sched Scheduler, ob *observer) {
+func (e Observable) With(side Observable) Observable {
+	return Observable { func(sched Scheduler, ob *observer) {
 		sched.run(side, &observer {
 			context:  ob.context,
 			next:     func(_ Object) {},
@@ -41,8 +41,8 @@ func (e Action) With(side Action) Action {
 	} }
 }
 
-func (e Action) MergeMap(f func(Object) Action) Action {
-	return Action { func(sched Scheduler, ob *observer) {
+func (e Observable) MergeMap(f func(Object) Observable) Observable {
+	return Observable { func(sched Scheduler, ob *observer) {
 		var ctx, ctx_dispose = ob.context.create_disposable_child()
 		var c = new_collector(ob, ctx_dispose)
 		sched.run(e, &observer {

@@ -1,8 +1,8 @@
 package rx
 
 
-func (e Action) DistinctUntilChanged(eq func(Object,Object)(bool)) Action {
-	return Action { func(sched Scheduler, ob *observer) {
+func (e Observable) DistinctUntilChanged(eq func(Object,Object)(bool)) Observable {
+	return Observable { func(sched Scheduler, ob *observer) {
 		var prev = Optional {}
 		sched.run(e, &observer{
 			context:  ob.context,

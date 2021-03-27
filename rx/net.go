@@ -84,12 +84,12 @@ func (w *WrappedConnection) Close() error {
 	w.closeProperly(nil)
 	return nil
 }
-func (w *WrappedConnection) OnClose() Action {
+func (w *WrappedConnection) OnClose() Observable {
 	return w.result.Outcome()
 }
 
-func NewConnectionHandler(conn net.Conn, timeout TimeoutPair, logic (func(*WrappedConnection))) Action {
-	return Action { func(sched Scheduler, ob *observer) {
+func NewConnectionHandler(conn net.Conn, timeout TimeoutPair, logic (func(*WrappedConnection))) Observable {
+	return Observable { func(sched Scheduler, ob *observer) {
 		var ctx, dispose = ob.context.create_disposable_child()
 		var wrapped = &WrappedConnection {
 			conn:    conn,

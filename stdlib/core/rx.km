@@ -1,34 +1,34 @@
-## Action Types
+## Effect Types
 
-/// Action*[T,E] represents an action that may return 0/finite/infinite T values
-/// asynchronously or throw an E error asynchronously.
-/// It is exactly the same concept as what is called Observable in ReactiveX.
-type Action* [[unit] +T, [never] +E]
-    native; // rx.Action
+/// Observable[T,E] represents an effect that may return 0/finite/infinite
+/// T values, or throw an E error half-way, synchronously or asynchronously.
+type Observable [[unit] +T, [never] +E]
+    native; // rx.Observable
 
-/// Action[T,E] represents an action that may return exactly one T value
-/// asynchronously or throw an E error asynchronously.
-/// It is a subtype of Action*[T,E] and can be regarded as a lazy Promise.
+/// Action[T,E] represents an effect that may return a T value,
+/// or throw an E error, synchronously or asynchronously.
+/// It is a subtype of Observable[T,E] and can be regarded as a lazy Promise.
 type Action [[unit] +T, [never] +E]
     protected
-    Action*[T,E];
+    Observable[T,E];
 
-/// Atomic[T] represents an action that returns a T value synchronously.
-/// It is possible to use the `do` function to concatenate
-/// multiple Atomic actions into a single Atomic action which
-/// cannot be cancelled half-way.
+/// Atomic[T] represents an effect that returns a T value synchronously.
+/// It is a subtype of Action[T]. Different from general Action, an Atomic
+/// is guaranteed synchronous and cannot be cancelled half-way.
+/// There is a `do` function, which can be used to concatenate
+/// multiple Atomic effects into a single Atomic effect.
 type Atomic [[unit] T]
     protected
     Action[T];
 
-/// Source[T] represents an action that subscribes to a discrete data source.
-/// It is a subtype of Action*[T]. Different from general Action*, a Source
+/// Source[T] represents an effect that subscribes to a discrete data source.
+/// It is a subtype of Observable[T]. Different from general Observable, a Source
 /// never completes.
 type Source[+T]
     protected
-    Action*[T];
+    Observable[T];
 
-/// Computed[T] represents an action that subscribes to a continuous data source.
+/// Computed[T] represents an effect that subscribes to a continuous data source.
 /// It is a subtype of Source[T]. Different from general Source, a Computed
 /// has a current value and always produces its current value synchronously
 /// as its first value.
@@ -145,7 +145,7 @@ export function redo:[T]
     &(ReactiveEntity[T]) => Atomic
     native 'reactive-entity-redo';
 export function watch-diff:[T]
-    &(ReactiveEntity[T]) => Action*[(ReactiveSnapshots[T],T)]
+    &(ReactiveEntity[T]) => Observable[(ReactiveSnapshots[T],T)]
     native 'reactive-entity-watch-diff';
 export function auto-snapshot:[T]
     &(ReactiveEntity[T]) => Reactive[T]
@@ -156,21 +156,21 @@ export function blackhole:
 export function callback:[T]
     &(&(T) => Action) => Sink[T]
     native 'callback';
-export function bus: [T, K < Action*[any,any]]
+export function bus: [T, K < Observable[any,any]]
     &(unit, &(Bus[T]) => K) => K
     native 'bus';
-export function reactive: [T, K < Action*[any,any]]
+export function reactive: [T, K < Observable[any,any]]
     &(T, &(ReactiveEntity[T]) => K) => K
     native 'reactive';
-export function reactive+snapshot: [T, K < Action*[any,any]]
-    &(T, &(Reactive[T],(Action,Action,Action*[(ReactiveSnapshots[T],T)])) => K) => K
+export function reactive+snapshot: [T, K < Observable[any,any]]
+    &(T, &(Reactive[T],(Action,Action,Observable[(ReactiveSnapshots[T],T)])) => K) => K
     native 'reactive+snapshot';
 
 ## Mutable Containers Operations
 export function new-mutable:[T]
     &() => Action[Mutable[T]]
     native 'new-mutable';
-export function with-mutable: [T, K < Action*[any,any]]
+export function with-mutable: [T, K < Observable[any,any]]
     &(T, &(Mutable[T]) => K) => K
     native 'with-mutable';
 export function get:[T]
@@ -184,24 +184,18 @@ export function swap:[T]
     native 'mutable-swap';
 
 ## Locks Operations
-export function reactive+mutex: [T, K < Action*[any,any]]
-    &(T, &(Mutex[ReactiveEntity[T]]) => K) => K
-    &(init, k) =>
-        & r := reactive::[T,K] init,
-        & mu := mutex::[ReactiveEntity[T],K] r,
-        { k mu };
-export function mutex: [T, K < Action*[any,any]]
+export function mutex: [T, K < Observable[any,any]]
     &(T, &(Mutex[T]) => K) => K
     native 'mutex';
-export function lock: [T, K < Action*[any]]
+export function lock: [T, K < Observable[any]]
     &(Mutex[T], &(T) => K) => K
     native 'mutex-lock';
 
-## Action Constructors
+## Effect Constructors
 export function as-source:[T]
-    &(Action*[T]) => Source[T]
+    &(Observable[T]) => Source[T]
     native 'as-source';
-export function with: [A < Action*[any,any]]
+export function with: [A < Observable[any,any]]
     &(A, Action) => A
     native 'with';
 export function gen-random:
@@ -216,7 +210,7 @@ export function gen-monotonic-id-string:
 export function crash:
     &(String) => Action[never]
     native 'crash';
-export function crash:  // TODO: add 'crash-on-error'
+export function crash:
     &(Error) => Action[never]
     &(err) => { crash err.{str}.{"Error: #"} };
 export function convert:  // TODO: move this function
@@ -231,16 +225,16 @@ export function go:[T]
     native 'go-thunk';
 /// go(seq) returns an action that iterates seq in a separate goroutine.
 export function go:[T]
-    &(Seq[T]) => Action*[T]
+    &(Seq[T]) => Observable[T]
     native 'go-seq';
 export function yield:[T]
     &(T) => Atomic[T]
     native 'yield';
 export function yield*:[T]
-    &(Seq[T]) => Action*[T]
+    &(Seq[T]) => Observable[T]
     native 'yield*-seq';
 export function yield*:[T]
-    &(Array[T]) => Action*[T]
+    &(Array[T]) => Observable[T]
     native 'yield*-array';
 export function not:[E]
     &(Computed[Bool]) => Computed[Bool]
@@ -252,7 +246,7 @@ export function or:[E]
     &(Computed[Bool], Computed[Bool]) => Computed[Bool]
     &(p,q) => { computed ((p,q), &(p,q) => (p or q)) };
 export function start-with:[T,E]
-    &(Action*[T,E], Array[T]) => Action*[T,E]
+    &(Observable[T,E], Array[T]) => Observable[T,E]
     native 'start-with';
 export function start-with:[T,E]
     &(Source[T], Array[T]) => Computed[T]
@@ -261,22 +255,22 @@ export function wait:
     & { timeout: Number } => Action
     native 'wait';
 export function tick:
-    & { interval: Number } => Action*[unit]
+    & { interval: Number } => Observable[unit]
     native 'tick';
 
-## Action Operators
+## Effect Operators
 # alias: <-
 export function read:[T]
     &(Computed[T]) => Atomic[T]
     native 'computed-read';
 export function take-one-as-single:[T,E]
-    &(Action*[T,E]) => Action[Maybe[T],E]
+    &(Observable[T,E]) => Action[Maybe[T],E]
     native 'take-one-as-single';
 export function wait-complete:[E]
-    &(Action*[unit,E]) => Action[unit,E]
+    &(Observable[unit,E]) => Action[unit,E]
     native 'wait-complete';
 export function forever:[E]
-    &(Action*[unit,E]) => Action[never,E]
+    &(Observable[unit,E]) => Action[never,E]
     native 'forever';
 
 /// This function has two kinds of definitions:
@@ -293,7 +287,7 @@ export function then:[A,B,E]
     native 'then';
 # alias: await
 export function then:[A,B,E]
-    &(Action[A,E], &(A) => Action*[B,E]) => Action*[B,E]
+    &(Action[A,E], &(A) => Observable[B,E]) => Observable[B,E]
     native 'then';
 # alias: await
 export function then:[A,B]
@@ -305,7 +299,7 @@ export function then:[E,B]
     native 'then-shortcut';
 # alias: await
 export function then:[E,B]
-    &(Action[unit,E], Action*[B,E]) => Action*[B,E]
+    &(Action[unit,E], Observable[B,E]) => Observable[B,E]
     native 'then-shortcut';
 # alias: await
 export function then:[B]
@@ -329,25 +323,25 @@ export function catch:[T,E,F]
     &(Action[T,E], &(E) => Action[T,F]) => Action[T,F]
     native 'catch';
 export function catch:[T,E,F]
-    &(Action*[T,E], &(E) => Action*[T,F]) => Action*[T,F]
+    &(Observable[T,E], &(E) => Observable[T,F]) => Observable[T,F]
     native 'catch';
 export function catch-retry:[T,E]
     &(Action[T,E], &(E) => Action[Bool]) => Action[T,E]
     native 'catch-retry';
 export function catch-retry:[T,E]
-    &(Action*[T,E], &(E) => Action[Bool]) => Action*[T,E]
+    &(Observable[T,E], &(E) => Action[Bool]) => Observable[T,E]
     native 'catch-retry';
 export function catch-throw:[T,E,F]
     &(Action[T,E], &(E) => F) => Action[T,F]
     native 'catch-throw';
 export function catch-throw:[T,E,F]
-    &(Action*[T,E], &(E) => F) => Action*[T,F]
+    &(Observable[T,E], &(E) => F) => Observable[T,F]
     native 'catch-throw';
 export function catch-crash:[T]
     &(Action[T,Error]) => Action[T]
     &(action) => action.{ catch &(err) => { crash err } };
 export function catch-crash:[T]
-    &(Action*[T,Error]) => Action*[T]
+    &(Observable[T,Error]) => Observable[T]
     &(action) => action.{ catch &(err) => { crash err } };
 export function throw:[E]
     &(E) => Action[never,E]
@@ -356,7 +350,7 @@ export function map:[A,B,E]
     &(Action[A,E], &(A) => B) => Action[B,E]
     native 'action-map';
 export function map:[A,B,E]
-    &(Action*[A,E], &(A) => B) => Action*[B,E]
+    &(Observable[A,E], &(A) => B) => Observable[B,E]
     native 'action-map';
 export function map:[A,B]
     &(Source[A], &(A) => B) => Source[B]
@@ -368,28 +362,28 @@ export function map-to:[A,B,E]
     &(Action[A,E], B) => Action[B,E]
     &(e,v) => e.{map(&() => v)};
 export function map-to:[A,B,E]
-    &(Action*[A,E], B) => Action*[B,E]
+    &(Observable[A,E], B) => Observable[B,E]
     &(e,v) => e.{map(&() => v)};
 export function filter:[T,E]
-    &(Action*[T,E], &(T) => Bool) => Action*[T,E]
+    &(Observable[T,E], &(T) => Bool) => Observable[T,E]
     native 'action-filter';
 export function filter:[T]
     &(Source[T], &(T) => Bool) => Source[T]
     native 'action-filter';
 export function filter-map:[A,B,E]
-    &(Action*[A,E], &(A) => Maybe[B]) => Action*[B,E]
+    &(Observable[A,E], &(A) => Maybe[B]) => Observable[B,E]
     native 'action-filter-map';
 export function reduce:[T,A,E]
-    &(Action*[T,E], A, &(A,T) => A) => Action[A,E]
+    &(Observable[T,E], A, &(A,T) => A) => Action[A,E]
     native 'action-reduce';
 export function scan:[T,A,E]
-    &(Action*[T,E], A, &(A,T) => A) => Action*[A,E]
+    &(Observable[T,E], A, &(A,T) => A) => Observable[A,E]
     native 'action-scan';
 export function scan:[T,A]
     &(Source[T], A, &(A,T) => A) => Source[A]
     native 'action-scan';
 export function debounce:[T,E]
-    &(Action*[T,E], Number) => Action*[T,E]
+    &(Observable[T,E], Number) => Observable[T,E]
     native 'debounce-time';
 export function debounce:[T]
     &(Source[T], Number) => Source[T]
@@ -398,28 +392,28 @@ export function debounce:[T]
     &(Computed[T], Number) => Source[T]
     native 'debounce-time';
 export function merge-map:[A,B,E]
-    &(Action*[A,E], &(A) => Action*[B,E]) => Action*[B,E]
+    &(Observable[A,E], &(A) => Observable[B,E]) => Observable[B,E]
     native 'merge-map';
 export function concat-map:[A,B,E]
-    &(Action*[A,E], &(A) => Action*[B,E]) => Action*[B,E]
+    &(Observable[A,E], &(A) => Observable[B,E]) => Observable[B,E]
     native 'concat-map';
 export function concat-map:[A,B]
-    &(Source[A], &(A) => Action*[B]) => Source[B]
+    &(Source[A], &(A) => Observable[B]) => Source[B]
     native 'concat-map';
 export function mix-map:[A,B,E]
-    &(Action*[A,E], Number, &(A) => Action*[B,E]) => Action*[B,E]
+    &(Observable[A,E], Number, &(A) => Observable[B,E]) => Observable[B,E]
     native 'mix-map';
 export function switch-map:[A,B,E]
-    &(Action*[A,E], &(A) => Action*[B,E]) => Action*[B,E]
+    &(Observable[A,E], &(A) => Observable[B,E]) => Observable[B,E]
     native 'switch-map';
 export function switch-map:[A,B]
-    &(Source[A], &(A) => Action*[B]) => Source[B]
+    &(Source[A], &(A) => Observable[B]) => Source[B]
     native 'switch-map';
 export function switch-map:[A,B]
     &(Computed[A], &(A) => Computed[B]) => Computed[B]
     native 'switch-map';
 export function merge:[T,E]
-    &(Array[Action*[T,E]]) => Action*[T,E]
+    &(Array[Observable[T,E]]) => Observable[T,E]
     native 'action-merge';
 export function merge:[E]
     &(Array[Action[never]]) => Action[never]
@@ -428,11 +422,11 @@ export function merge:[T]
     &(Array[Source[T]]) => Source[T]
     native 'action-merge';
 export function concat:[T,E]
-    &(Array[Action*[T,E]]) => Action*[T,E]
+    &(Array[Observable[T,E]]) => Observable[T,E]
     native 'action-concat';
 export function distinct-until-changed:
     [T,E] (Eq[T])
-    &(Action*[T,E]) => Action*[T,E]
+    &(Observable[T,E]) => Observable[T,E]
     &(a) => { distinct-until-changed (a, =) };
 export function distinct-until-changed:
     [T] (Eq[T])
@@ -443,7 +437,7 @@ export function distinct-until-changed:
     &(Computed[T]) => Computed[T]
     &(a) => { distinct-until-changed (a, =) };
 export function distinct-until-changed:[T,E]
-    &(Action*[T,E], &(T,T) => Bool) => Action*[T,E]
+    &(Observable[T,E], &(T,T) => Bool) => Observable[T,E]
     native 'distinct-until-changed';
 export function distinct-until-changed:[T]
     &(Source[T], &(T,T) => Bool) => Source[T]
@@ -452,34 +446,34 @@ export function distinct-until-changed:[T]
     &(Computed[T], &(T,T) => Bool) => Computed[T]
     native 'distinct-until-changed';
 export function with-latest-from:[A,B,E]
-    &(Action*[A,E], Action*[B,E]) => Action*[(A,Maybe[B]),E]
+    &(Observable[A,E], Observable[B,E]) => Observable[(A,Maybe[B]),E]
     native 'with-latest-from';
 export function with-latest-from:[A,B,E]
-    &(Action*[A,E], Reactive[B]) => Action*[(A,B),E]
+    &(Observable[A,E], Reactive[B]) => Observable[(A,B),E]
     native 'with-latest-from-reactive';
 export function combine-latest:[A,B,E]
-    &(Action*[A,E], Action*[B,E]) =>
-        Action*[(Maybe[A],Maybe[B]),E]
+    &(Observable[A,E], Observable[B,E]) =>
+        Observable[(Maybe[A],Maybe[B]),E]
     native 'combine-latest';
 export function combine-latest:[A,B,C,E]
-    &(Action*[A,E],Action*[B,E],Action*[C,E]) =>
-        Action*[(Maybe[A],Maybe[B],Maybe[C]),E]
+    &(Observable[A,E],Observable[B,E],Observable[C,E]) =>
+        Observable[(Maybe[A],Maybe[B],Maybe[C]),E]
     native 'combine-latest';
 export function combine-latest:[A,B,C,D,E]
-    &(Action*[A,E],Action*[B,E],Action*[C,E],Action*[D,E]) =>
-        Action*[(Maybe[A],Maybe[B],Maybe[C],Maybe[D]),E]
+    &(Observable[A,E],Observable[B,E],Observable[C,E],Observable[D,E]) =>
+        Observable[(Maybe[A],Maybe[B],Maybe[C],Maybe[D]),E]
     native 'combine-latest';
 export function combine-latest*:[A,B,E]
-    &(Action*[A,E],Action*[B,E]) => Action*[(A,B),E]
+    &(Observable[A,E],Observable[B,E]) => Observable[(A,B),E]
     native 'combine-latest*';
 export function combine-latest*:[A,B,C,E]
-    &(Action*[A,E],Action*[B,E],Action*[C,E]) => Action*[(A,B,C),E]
+    &(Observable[A,E],Observable[B,E],Observable[C,E]) => Observable[(A,B,C),E]
     native 'combine-latest*';
 export function combine-latest*:[A,B,C,D,E]
-    &(Action*[A,E],Action*[B,E],Action*[C,E],Action*[D,E]) => Action*[(A,B,C,D),E]
+    &(Observable[A,E],Observable[B,E],Observable[C,E],Observable[D,E]) => Observable[(A,B,C,D),E]
     native 'combine-latest*';
 export function combine-latest*:[T,E]
-    &(Array[Action*[T,E]]) => Action*[Array[T],E]
+    &(Array[Observable[T,E]]) => Observable[Array[T],E]
     native 'combine-latest*-array';
 export function combine:[A,B]
     &(Computed[A],Computed[B]) => Computed[(A,B)]

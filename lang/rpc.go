@@ -16,25 +16,25 @@ type RpcInfo struct {
 	rpc.ServiceIndex
 }
 type ServiceInstance interface {
-	Call(name string, arg Value) rx.Action
+	Call(name string, arg Value) rx.Observable
 }
 type ServerSideServiceInstance struct {
 	data     Value
-	dtor     func(data Value) rx.Action
-	methods  map[string] (func(data Value, arg Value) rx.Action)
+	dtor     func(data Value) rx.Observable
+	methods  map[string] (func(data Value, arg Value) rx.Observable)
 }
 type ClientSideServiceInstance struct {
 	underlying  *rpc.ClientInstance
 }
-func (instance ServerSideServiceInstance) Delete() rx.Action {
+func (instance ServerSideServiceInstance) Delete() rx.Observable {
 	return instance.dtor(instance.data)
 }
-func (instance ServerSideServiceInstance) Call(name string, arg Value) rx.Action {
+func (instance ServerSideServiceInstance) Call(name string, arg Value) rx.Observable {
 	var f, exists = instance.methods[name]
 	if !(exists) { panic("something went wrong") }
 	return f(instance.data, arg)
 }
-func (instance ClientSideServiceInstance) Call(name string, arg Value) rx.Action {
+func (instance ClientSideServiceInstance) Call(name string, arg Value) rx.Observable {
 	return instance.underlying.Call(name, arg)
 }
 func CreateServiceMethodCaller(method_name string) NativeFunctionValue {
@@ -52,17 +52,17 @@ func CreateServiceInstance (
 	method_names  [] string,
 	h             InteropContext,
 ) ServiceInstance {
-	var methods = make(map[string] func(Value,Value)(rx.Action))
+	var methods = make(map[string] func(Value,Value)(rx.Observable))
 	for i, name := range method_names {
 		var index = i
-		methods[name] = func(data Value, arg Value) rx.Action {
+		methods[name] = func(data Value, arg Value) rx.Observable {
 			var pair = &ValProd { Elements: [] Value { data, arg } }
 			var ret = h.Call(methods_impl[index], pair)
-			return ret.(rx.Action)
+			return ret.(rx.Observable)
 		}
 	}
-	var dtor = func(data Value) rx.Action {
-		return h.Call(dtor_impl, data).(rx.Action)
+	var dtor = func(data Value) rx.Observable {
+		return h.Call(dtor_impl, data).(rx.Observable)
 	}
 	return ServerSideServiceInstance {
 		data:    data,

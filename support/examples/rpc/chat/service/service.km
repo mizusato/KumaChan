@@ -22,4 +22,4 @@ type None ();
 export function say: &(instance,MessageContent) => Action[None,Error];
 
 # service-method
-export function messages: &(instance,None) => Action*[Message,Error];
+export function messages: &(instance,None) => Observable[Message,Error];

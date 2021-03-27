@@ -7,18 +7,18 @@ type Cell struct {
 func CreateCell(init_val Object) *Cell {
 	return &Cell { init_val }
 }
-func (c *Cell) Get() Action {
+func (c *Cell) Get() Observable {
 	return NewSync(func()(Object, bool) {
 		return c.value, true
 	})
 }
-func (c *Cell) Set(new_val Object) Action {
+func (c *Cell) Set(new_val Object) Observable {
 	return NewSync(func()(Object, bool) {
 		c.value = new_val
 		return nil, true
 	})
 }
-func (c *Cell) Swap(f func(Object)Object) Action {
+func (c *Cell) Swap(f func(Object)Object) Observable {
 	return NewSync(func()(Object, bool) {
 		c.value = f(c.value)
 		return nil, true
@@ -29,13 +29,13 @@ type StringHashMap  map[string] Object
 func CreateStringHashMap(m map[string] Object) StringHashMap {
 	return StringHashMap(m)
 }
-func (m StringHashMap) Has(key string) Action {
+func (m StringHashMap) Has(key string) Observable {
 	return NewSync(func()(Object, bool) {
 		var _, exists = m[key]
 		return exists, true
 	})
 }
-func (m StringHashMap) Get(key string) Action {
+func (m StringHashMap) Get(key string) Observable {
 	return NewSync(func()(Object, bool) {
 		var val, exists = m[key]
 		if exists {
@@ -45,13 +45,13 @@ func (m StringHashMap) Get(key string) Action {
 		}
 	})
 }
-func (m StringHashMap) Set(key string, val Object) Action {
+func (m StringHashMap) Set(key string, val Object) Observable {
 	return NewSync(func()(Object, bool) {
 		m[key] = val
 		return nil, true
 	})
 }
-func (m StringHashMap) Delete(key string) Action {
+func (m StringHashMap) Delete(key string) Observable {
 	return NewSync(func()(Object, bool) {
 		var deleted, exists = m[key]
 		if exists {
@@ -67,13 +67,13 @@ type NumberHashMap  map[uint] Object
 func CreateNumberHashMap(m map[uint] Object) NumberHashMap {
 	return NumberHashMap(m)
 }
-func (m NumberHashMap) Has(key uint) Action {
+func (m NumberHashMap) Has(key uint) Observable {
 	return NewSync(func()(Object, bool) {
 		var _, exists = m[key]
 		return exists, true
 	})
 }
-func (m NumberHashMap) Get(key uint) Action {
+func (m NumberHashMap) Get(key uint) Observable {
 	return NewSync(func()(Object, bool) {
 		var val, exists = m[key]
 		if exists {
@@ -83,13 +83,13 @@ func (m NumberHashMap) Get(key uint) Action {
 		}
 	})
 }
-func (m NumberHashMap) Set(key uint, val Object) Action {
+func (m NumberHashMap) Set(key uint, val Object) Observable {
 	return NewSync(func()(Object, bool) {
 		m[key] = val
 		return nil, true
 	})
 }
-func (m NumberHashMap) Delete(key uint) Action {
+func (m NumberHashMap) Delete(key uint) Observable {
 	return NewSync(func()(Object, bool) {
 		var deleted, exists = m[key]
 		if exists {
@@ -108,13 +108,13 @@ func CreateBuffer(capacity uint) Buffer {
 	var data = make([] byte, 0, capacity)
 	return Buffer { &data }
 }
-func (buf Buffer) Write(bytes ([] byte)) Action {
+func (buf Buffer) Write(bytes ([] byte)) Observable {
 	return NewSync(func() (Object, bool) {
 		*buf.data = append(*buf.data, bytes...)
 		return nil, true
 	})
 }
-func (buf Buffer) Dump() Action {
+func (buf Buffer) Dump() Observable {
 	return NewGoroutine(func(sender Sender) {
 		var dumped = make([] byte, len(*buf.data))
 		copy(dumped, *buf.data)

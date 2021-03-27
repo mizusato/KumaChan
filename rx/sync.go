@@ -3,7 +3,7 @@ package rx
 
 const sync_did_not_complete = "An action that assumed synchronous did not complete synchronously"
 
-func runSync(action Action, sched Scheduler, error func(Object)) (Object,bool) {
+func runSync(action Observable, sched Scheduler, error func(Object)) (Object,bool) {
 	var returned = Optional {}
 	var exception = Optional {}
 	var completed = false
@@ -42,8 +42,8 @@ func runSync(action Action, sched Scheduler, error func(Object)) (Object,bool) {
 	}
 }
 
-func (e Action) SyncThen(f func(Object)(Action)) Action {
-	return Action { func(sched Scheduler, ob *observer) {
+func (e Observable) SyncThen(f func(Object)(Observable)) Observable {
+	return Observable { func(sched Scheduler, ob *observer) {
 		var x, ok = runSync(e, sched, ob.error)
 		if ok {
 			var next = f(x)
@@ -52,8 +52,8 @@ func (e Action) SyncThen(f func(Object)(Action)) Action {
 	} }
 }
 
-func (e Action) ChainSync(f func(Object)(Action)) Action {
-	return Action { func(sched Scheduler, ob *observer) {
+func (e Observable) ChainSync(f func(Object)(Observable)) Observable {
+	return Observable { func(sched Scheduler, ob *observer) {
 		var x, ok = runSync(e, sched, ob.error)
 		if ok {
 			var next = f(x)
@@ -66,8 +66,8 @@ func (e Action) ChainSync(f func(Object)(Action)) Action {
 	} }
 }
 
-func (e Action) TakeOneAsSingleAssumeSync() Action {
-	return Action { func(sched Scheduler, ob *observer) {
+func (e Observable) TakeOneAsSingleAssumeSync() Observable {
+	return Observable { func(sched Scheduler, ob *observer) {
 		var ctx, ctx_dispose = ob.context.create_disposable_child()
 		var completed = false
 		sched.run(e, &observer {

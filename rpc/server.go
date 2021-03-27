@@ -18,7 +18,7 @@ type ServerOptions struct {
 	KmdApi
 }
 
-func Server(service Service, opts *ServerOptions) rx.Action {
+func Server(service Service, opts *ServerOptions) rx.Observable {
 	return rx.NewGoroutine(func(sender rx.Sender) {
 		var l = opts.Listener
 		go sender.Context().WaitDispose(func() {
@@ -33,7 +33,7 @@ func Server(service Service, opts *ServerOptions) rx.Action {
 			}
 			sender.Next(conn)
 		}
-	}).MergeMap(func(raw_conn_ rx.Object) rx.Action {
+	}).MergeMap(func(raw_conn_ rx.Object) rx.Observable {
 		var raw_conn = raw_conn_.(net.Conn)
 		var logger = &ServerLogger {
 			LocalAddr:  raw_conn.LocalAddr(),
@@ -63,7 +63,7 @@ func Server(service Service, opts *ServerOptions) rx.Action {
 		}
 		return rx.NewConnectionHandler(raw_conn, timeout, func(conn *rx.WrappedConnection) {
 			handle(conn)
-		}).Catch(func(err rx.Object) rx.Action {
+		}).Catch(func(err rx.Object) rx.Observable {
 			logger.LogError(err.(error))
 			return rx.Noop()
 		})
@@ -119,9 +119,9 @@ func constructServiceInstance(arg kmd.Object, conn *rx.WrappedConnection, servic
 		return nil, errors.New("service instance construction failed")
 	}
 	var instance = opt_instance.Value
-	var destruct_on_close = conn.OnClose().Catch(func(_ rx.Object) rx.Action {
+	var destruct_on_close = conn.OnClose().Catch(func(_ rx.Object) rx.Observable {
 		return rx.NewConstant(nil)
-	}).Then(func(_ rx.Object) rx.Action {
+	}).Then(func(_ rx.Object) rx.Observable {
 		return service.Destructor.GetAction(instance)
 	})
 	rx.ScheduleBackground(destruct_on_close, conn.Scheduler())
@@ -169,26 +169,26 @@ func serverProcessMessages(instance kmd.Object, conn *rx.WrappedConnection, logg
 			if err != nil { return err }
 			var action = method.GetAction(instance, arg)
 			var worker = conn.Worker()
-			var with_worker = func(do (func() error)) rx.Action {
+			var with_worker = func(do (func() error)) rx.Observable {
 				return rx.NewQueuedNoValue(worker, func() (bool, rx.Object) {
 					err := do()
 					if err != nil { return false, err }
 					return true, nil
 				})
 			}
-			var send_value = func(value kmd.Object) rx.Action {
+			var send_value = func(value kmd.Object) rx.Observable {
 				return with_worker(func() error {
 					return sendCallReturnValue(value, id, method, conn, opts)
 				})
 			}
-			var send_exception = func(e kmd.Object) rx.Action {
+			var send_exception = func(e kmd.Object) rx.Observable {
 				var e_as_error, e_is_error = e.(error)
 				if !(e_is_error) { panic("invalid exception") }
 				return with_worker(func() error {
 					return sendCallException(e_as_error, id, conn)
 				})
 			}
-			var send_completion = func(err_val kmd.Object) rx.Action {
+			var send_completion = func(err_val kmd.Object) rx.Observable {
 				return with_worker(func() error {
 					return sendCallCompletion(id, conn)
 				})
@@ -199,7 +199,7 @@ func serverProcessMessages(instance kmd.Object, conn *rx.WrappedConnection, logg
 				ConcatMap(send_value).
 				WaitComplete().
 				Then(send_completion).
-				Catch(func(err_ rx.Object) rx.Action {
+				Catch(func(err_ rx.Object) rx.Observable {
 					logger.LogError(err.(error))
 					return rx.Noop()
 				})

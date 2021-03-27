@@ -5,11 +5,11 @@ type KeyTrackedActionVector struct {
 	HasKey       func(key string) bool
 	IterateKeys  func(func(string))
 	CloneKeys    func() ([] string)
-	GetAction    func(key string, index_source Action) Action
+	GetAction    func(key string, index_source Observable) Observable
 }
 
-func (e Action) WithLatestFrom(source Action) Action {
-	return Action { func(sched Scheduler, ob *observer) {
+func (e Observable) WithLatestFrom(source Observable) Observable {
+	return Observable { func(sched Scheduler, ob *observer) {
 		var ctx, dispose = ob.context.create_disposable_child()
 		var c = new_collector(ob, dispose)
 		var current Optional
@@ -43,11 +43,11 @@ func (e Action) WithLatestFrom(source Action) Action {
 	} }
 }
 
-func CombineLatest(actions ([] Action)) Action {
+func CombineLatest(actions ([] Observable)) Observable {
 	if len(actions) == 0 {
 		return NewConstant(make([] Optional, 0))
 	}
-	return Action { func(sched Scheduler, ob *observer) {
+	return Observable { func(sched Scheduler, ob *observer) {
 		var ctx, dispose = ob.context.create_disposable_child()
 		var c = new_collector(ob, dispose)
 		var values = make([] Optional, len(actions))
@@ -77,8 +77,8 @@ func CombineLatest(actions ([] Action)) Action {
 	} }
 }
 
-func CombineLatestWaitReady(actions ([] Action)) Action {
-	return CombineLatest(actions).ConcatMap(func(values_ Object) Action {
+func CombineLatestWaitReady(actions ([] Observable)) Observable {
+	return CombineLatest(actions).ConcatMap(func(values_ Object) Observable {
 		var values = values_.([] Optional)
 		var ready_values = make([] Object, len(values))
 		var ok = true
@@ -102,8 +102,8 @@ func CombineLatestWaitReady(actions ([] Action)) Action {
 	})
 }
 
-func KeyTrackedDynamicCombineLatestWaitReady(e Action) Action {
-	return Action { func(sched Scheduler, ob *observer) {
+func KeyTrackedDynamicCombineLatestWaitReady(e Observable) Observable {
+	return Observable { func(sched Scheduler, ob *observer) {
 		var ctx, dispose = ob.context.create_disposable_child()
 		var c = new_collector(ob, dispose)
 		var running = make(map[string] disposeFunc)

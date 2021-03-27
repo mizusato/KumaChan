@@ -596,7 +596,7 @@ func AssignSwitchTo(expected Type, sw SemiTypedSwitch, info ExprInfo, ctx ExprCo
 	var err1 = RequireExplicitType(expected, info)
 	if err1 != nil { return Expr{}, err1 }
 	if sw.Reactive {
-		var _, ok = AssignType(expected, __AnyActionType, FromInferred, ctx)
+		var _, ok = AssignType(expected, __VariousEffectType, FromInferred, ctx)
 		if !(ok) {
 			return Expr{}, &ExprError {
 				Point: info.ErrorPoint,

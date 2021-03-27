@@ -22,8 +22,8 @@ const KmdSerializerName = "data-serialize"
 const KmdDeserializerName = "data-deserialize"
 const KmdAdapterName = "data-adapt"
 const KmdValidatorName = "data-validate"
+var __Observable = CoreSymbol(stdlib.Observable)
 var __Action = CoreSymbol(stdlib.Action)
-var __ActionMultiValue = CoreSymbol(stdlib.ActionMultiValue)
 var __Reactive = CoreSymbol(stdlib.Reactive)
 func IsReactive(t *NamedType) bool {
 	return t.Name == __Reactive
@@ -36,13 +36,13 @@ func Reactive(t Type) Type {
 }
 var __DoTypes = [] Type {
 	&NamedType { Name: __Action, Args: [] Type { &AnonymousType { Unit {} } } },
-	&NamedType { Name: __ActionMultiValue, Args: [] Type { &NeverType {} } },
+	&NamedType { Name: __Observable, Args: [] Type { &NeverType {} } },
 }
-var __AnyActionType = &NamedType {
-	Name: __ActionMultiValue,
+var __VariousEffectType = &NamedType {
+	Name: __Observable,
 	Args: [] Type { &AnyType{}, &AnyType{} },
 }
-func AnyActionType() Type { return __AnyActionType }
+func VariousEffectType() Type { return __VariousEffectType }
 var __ErrorType = &NamedType {
 	Name: __Error,
 	Args: [] Type {},

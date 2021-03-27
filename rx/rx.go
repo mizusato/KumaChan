@@ -3,14 +3,14 @@ package rx
 
 type Object = interface{}
 
-type Action struct {
-	action  func(Scheduler, *observer)
+type Observable struct {
+	effect  func(Scheduler, *observer)
 }
 
 type Scheduler interface {
 	dispatch(event)
 	commit(task)
-	run(Action, *observer)
+	run(Observable, *observer)
 }
 
 type observer struct {
@@ -181,7 +181,7 @@ func (s Sender) Complete() {
 }
 
 
-func Schedule(action Action, sched Scheduler, r Receiver) {
+func Schedule(action Observable, sched Scheduler, r Receiver) {
 	sched.commit(func() {
 		sched.run(action, &observer {
 			context:  r.Context,
@@ -211,13 +211,13 @@ func Schedule(action Action, sched Scheduler, r Receiver) {
 	})
 }
 
-func ScheduleBackground(action Action, sched Scheduler) {
+func ScheduleBackground(action Observable, sched Scheduler) {
 	Schedule(action, sched, Receiver {
 		Context:   Background(),
 	})
 }
 
-func ScheduleBackgroundWaitTerminate(action Action, sched Scheduler) bool {
+func ScheduleBackgroundWaitTerminate(action Observable, sched Scheduler) bool {
 	var wait = make(chan bool)
 	Schedule(action, sched, Receiver {
 		Context:   Background(),
@@ -226,20 +226,20 @@ func ScheduleBackgroundWaitTerminate(action Action, sched Scheduler) bool {
 	return <- wait
 }
 
-func Noop() Action {
-	return Action { func(sched Scheduler, ob *observer) {
+func Noop() Observable {
+	return Observable { func(sched Scheduler, ob *observer) {
 		ob.complete()
 	} }
 }
 
-func NewGoroutine(action func(Sender)) Action {
-	return Action { func(sched Scheduler, ob *observer) {
+func NewGoroutine(action func(Sender)) Observable {
+	return Observable { func(sched Scheduler, ob *observer) {
 		go action(Sender { sched: sched, ob: ob })
 	} }
 }
 
-func NewGoroutineSingle(action func(ctx *Context)(Object,bool)) Action {
-	return Action { func(sched Scheduler, ob *observer) {
+func NewGoroutineSingle(action func(ctx *Context)(Object,bool)) Observable {
+	return Observable { func(sched Scheduler, ob *observer) {
 		var sender = Sender { sched: sched, ob: ob }
 		go (func() {
 			var result, ok = action(sender.Context())
@@ -253,8 +253,8 @@ func NewGoroutineSingle(action func(ctx *Context)(Object,bool)) Action {
 	}}
 }
 
-func NewQueued(w *Worker, action func()(Object,bool)) Action {
-	return Action { func(sched Scheduler, ob *observer) {
+func NewQueued(w *Worker, action func()(Object,bool)) Observable {
+	return Observable { func(sched Scheduler, ob *observer) {
 		var sender = Sender { sched: sched, ob: ob }
 		w.Do(func() {
 			var result, ok = action()
@@ -268,8 +268,8 @@ func NewQueued(w *Worker, action func()(Object,bool)) Action {
 	} }
 }
 
-func NewQueuedNoValue(w *Worker, action func()(bool,Object)) Action {
-	return Action { func(sched Scheduler, ob *observer) {
+func NewQueuedNoValue(w *Worker, action func()(bool,Object)) Observable {
+	return Observable { func(sched Scheduler, ob *observer) {
 		var sender = Sender { sched: sched, ob: ob }
 		w.Do(func() {
 			var ok, err = action()
@@ -282,8 +282,8 @@ func NewQueuedNoValue(w *Worker, action func()(bool,Object)) Action {
 	} }
 }
 
-func NewCallback(action func(func(Object))) Action {
-	return Action { func(sched Scheduler, ob *observer) {
+func NewCallback(action func(func(Object))) Observable {
+	return Observable { func(sched Scheduler, ob *observer) {
 		var sender = Sender { sched: sched, ob: ob }
 		action(func(value Object) {
 			sender.Next(value)
@@ -292,8 +292,8 @@ func NewCallback(action func(func(Object))) Action {
 	}}
 }
 
-func NewSubscription(action func(func(Object))(func())) Action {
-	return Action { func(sched Scheduler, ob *observer) {
+func NewSubscription(action func(func(Object))(func())) Observable {
+	return Observable { func(sched Scheduler, ob *observer) {
 		var h = action(ob.next)
 		if h != nil {
 			ob.context.push_cancel_hook(h)
@@ -301,8 +301,8 @@ func NewSubscription(action func(func(Object))(func())) Action {
 	} }
 }
 
-func NewSubscriptionWithSender(action func(Sender)(func())) Action {
-	return Action { func(sched Scheduler, ob *observer) {
+func NewSubscriptionWithSender(action func(Sender)(func())) Observable {
+	return Observable { func(sched Scheduler, ob *observer) {
 		var h = action(Sender { sched: sched, ob: ob })
 		if h != nil {
 			ob.context.push_cancel_hook(h)
@@ -310,8 +310,8 @@ func NewSubscriptionWithSender(action func(Sender)(func())) Action {
 	} }
 }
 
-func NewSync(action func()(Object,bool)) Action {
-	return Action { func(sched Scheduler, ob *observer) {
+func NewSync(action func()(Object,bool)) Observable {
+	return Observable { func(sched Scheduler, ob *observer) {
 		var result, ok = action()
 		if ok {
 			ob.next(result)
@@ -322,8 +322,8 @@ func NewSync(action func()(Object,bool)) Action {
 	} }
 }
 
-func NewSyncSequence(action func(func(Object))(bool,Object)) Action {
-	return Action { func(sched Scheduler, ob *observer) {
+func NewSyncSequence(action func(func(Object))(bool,Object)) Observable {
+	return Observable { func(sched Scheduler, ob *observer) {
 		var ok, err = action(ob.next)
 		if ok {
 			ob.complete()
@@ -333,14 +333,14 @@ func NewSyncSequence(action func(func(Object))(bool,Object)) Action {
 	} }
 }
 
-func NewSyncWithSender(action func(Sender)) Action {
-	return Action { func(sched Scheduler, ob *observer) {
+func NewSyncWithSender(action func(Sender)) Observable {
+	return Observable { func(sched Scheduler, ob *observer) {
 		action(Sender { sched: sched, ob: ob })
 	} }
 }
 
-func NewConstant(values... Object) Action {
-	return Action { func(sched Scheduler, ob *observer) {
+func NewConstant(values... Object) Observable {
+	return Observable { func(sched Scheduler, ob *observer) {
 		for _, value := range values {
 			ob.next(value)
 		}

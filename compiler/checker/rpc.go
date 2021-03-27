@@ -600,10 +600,10 @@ func GetServiceMethodSignature (
 in_ok:
 	switch T := out.(type) {
 	case *NamedType:
-		if T.Name != __Action && T.Name != __ActionMultiValue {
+		if T.Name != __Action && T.Name != __Observable {
 			return throw("output should be an action type")
 		}
-		result.MultiValue = (T.Name == __ActionMultiValue)
+		result.MultiValue = (T.Name == __Observable)
 		if len(T.Args) != 2 {
 			return throw("invalid output type")
 		}

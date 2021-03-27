@@ -140,7 +140,7 @@ type NativeList
 type NativeListItem
     native;
 
-// TODO: bind { items: Action*[List[String]], current: Reactive[ListKey] }
+// TODO: bind { items: Observable[List[String]], current: Reactive[ListKey] }
 /*
 export function set-items:
     &(NativeList,Array[NativeListItem],Maybe[String]) => Action
@@ -159,6 +159,6 @@ function get-current-item:
     native 'qt-list-widget-get-current';
 
 export function current-item:
-    &(NativeList) => Action*[Maybe[String]]
+    &(NativeList) => Observable[Maybe[String]]
     &(list) => { signal (list,'currentRowChanged(int)',get-current-item) };
 */

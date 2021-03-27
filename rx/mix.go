@@ -1,9 +1,9 @@
 package rx
 
 
-func Mix(actions ([] Action), concurrent uint) Action {
+func Mix(actions ([] Observable), concurrent uint) Observable {
 	if concurrent == 0 { panic("invalid concurrent amount") }
-	return Action { func(sched Scheduler, ob *observer) {
+	return Observable { func(sched Scheduler, ob *observer) {
 		var ctx, dispose = ob.context.create_disposable_child()
 		var c = new_collector(ob, dispose)
 		var q_sched = QueueSchedulerFrom(sched, concurrent)
@@ -26,11 +26,11 @@ func Mix(actions ([] Action), concurrent uint) Action {
 	} }
 }
 
-func (e Action) MixMap(f func(Object) Action, concurrent uint) Action {
+func (e Observable) MixMap(f func(Object) Observable, concurrent uint) Observable {
 	if concurrent == 0 {
 		panic("invalid concurrent amount")
 	}
-	return Action { func(sched Scheduler, ob *observer) {
+	return Observable { func(sched Scheduler, ob *observer) {
 		var ctx, dispose = ob.context.create_disposable_child()
 		var c = new_collector(ob, dispose)
 		var q_sched = QueueSchedulerFrom(sched, concurrent)
@@ -63,11 +63,11 @@ func (e Action) MixMap(f func(Object) Action, concurrent uint) Action {
 }
 
 
-func Concat(actions ([] Action)) Action {
+func Concat(actions ([] Observable)) Observable {
 	return Mix(actions, 1)
 }
 
-func (e Action) ConcatMap(f func(Object) Action) Action {
+func (e Observable) ConcatMap(f func(Object) Observable) Observable {
 	return e.MixMap(f, 1)
 }
 
@@ -89,7 +89,7 @@ func QueueSchedulerFrom(sched Scheduler, concurrent uint) *QueueScheduler {
 	}
 }
 
-func (qs *QueueScheduler) run(e Action, ob *observer) {
+func (qs *QueueScheduler) run(e Observable, ob *observer) {
 	if qs.running < qs.max_running {
 		qs.running += 1
 		qs.underlying.run(e, &observer {
@@ -118,22 +118,22 @@ func (qs *QueueScheduler) commit(t task) {
 	qs.underlying.commit(t)
 }
 
-type queue  [] Action
+type queue  [] Observable
 func new_queue() *queue {
-	var q = queue(make([] Action, 0))
+	var q = queue(make([] Observable, 0))
 	return &q
 }
-func (q *queue) push(e Action) {
+func (q *queue) push(e Observable) {
 	*q = append(*q, e)
 }
-func (q *queue) pop() (Action, bool) {
+func (q *queue) pop() (Observable, bool) {
 	if len(*q) > 0 {
 		var e = (*q)[0]
-		(*q)[0] = Action { nil }
+		(*q)[0] = Observable { nil }
 		*q = (*q)[1:]
 		return e, true
 	} else {
-		return Action {}, false
+		return Observable {}, false
 	}
 }
 

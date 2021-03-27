@@ -13,15 +13,15 @@ func CreateMutex(res Object, sched Scheduler) *Mutex {
 	}
 }
 
-func NewMutex(res Object) Action {
-	return Action { func(sched Scheduler, ob *observer) {
+func NewMutex(res Object) Observable {
+	return Observable { func(sched Scheduler, ob *observer) {
 		ob.next(CreateMutex(res, sched))
 		ob.complete()
 	} }
 }
 
-func (mu *Mutex) Lock(mutation func(Object)(Action)) Action {
-	return Action { func(sched Scheduler, ob *observer) {
+func (mu *Mutex) Lock(mutation func(Object)(Observable)) Observable {
+	return Observable { func(sched Scheduler, ob *observer) {
 		mu.sched.run(mutation(mu.resource), &observer {
 			context: Background(),  // atomic mutation is NOT cancellable
 			next: ob.next,

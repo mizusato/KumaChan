@@ -26,15 +26,15 @@ func handleEvent(view qt.Widget, sched rx.Scheduler) {
 	rx.ScheduleBackgroundWaitTerminate(handling, sched)
 }
 
-func scheduleUpdate(view qt.Widget, sched rx.Scheduler, vdom_source rx.Action, debug bool) {
+func scheduleUpdate(view qt.Widget, sched rx.Scheduler, vdom_source rx.Observable, debug bool) {
 	var single_update = virtualDomUpdate(view, debug)
-	var update = vdom_source.ConcatMap(func(new_root rx.Object) rx.Action {
+	var update = vdom_source.ConcatMap(func(new_root rx.Object) rx.Observable {
 		return single_update(new_root.(*vdom.Node))
 	})
 	rx.ScheduleBackground(update, sched)
 }
 
-var virtualDomUpdate = func(view qt.Widget, debug bool) func(*vdom.Node)(rx.Action) {
+var virtualDomUpdate = func(view qt.Widget, debug bool) func(*vdom.Node)(rx.Observable) {
 	var patchOpBuffer = make([] interface {}, 0)
 	var serializePatchOperations = func() ([] byte) {
 		var bin, err = json.Marshal(patchOpBuffer)
@@ -44,7 +44,7 @@ var virtualDomUpdate = func(view qt.Widget, debug bool) func(*vdom.Node)(rx.Acti
 	}
 	var patchOperationCollector = getPatchOperationCollector(&patchOpBuffer)
 	var virtualDomRoot *vdom.Node = nil
-	return func(new_root *vdom.Node) rx.Action {
+	return func(new_root *vdom.Node) rx.Observable {
 		return rx.NewSync(func() (rx.Object, bool) {
 			var prev_root = virtualDomRoot
 			virtualDomRoot = new_root

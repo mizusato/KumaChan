@@ -133,90 +133,90 @@ var OS_Functions = map[string] Value {
 		}
 		return path.Join(segments)
 	},
-	"walk-dir": func(dir stdlib.Path) rx.Action {
+	"walk-dir": func(dir stdlib.Path) rx.Observable {
 		return rx.WalkDir(dir.String()).Map(func(val rx.Object) rx.Object {
 			var item = val.(rx.FileItem)
 			return ToTuple2(stdlib.ParsePath(item.Path), Struct2Prod(item.State))
 		})
 	},
-	"list-dir": func(dir stdlib.Path) rx.Action {
+	"list-dir": func(dir stdlib.Path) rx.Observable {
 		return rx.ListDir(dir.String()).Map(func(val rx.Object) rx.Object {
 			var item = val.(rx.FileItem)
 			return ToTuple2(stdlib.ParsePath(item.Path), Struct2Prod(item.State))
 		})
 	},
-	"open-read-only": func(path stdlib.Path) rx.Action {
+	"open-read-only": func(path stdlib.Path) rx.Observable {
 		return rx.OpenReadOnly(path.String())
 	},
-	"open-read-write": func(path stdlib.Path) rx.Action {
+	"open-read-write": func(path stdlib.Path) rx.Observable {
 		return rx.OpenReadWrite(path.String())
 	},
-	"open-read-write-create": func(path stdlib.Path) rx.Action {
+	"open-read-write-create": func(path stdlib.Path) rx.Observable {
 		return rx.OpenReadWriteCreate(path.String(), 0666)
 	},
-	"open-overwrite": func(path stdlib.Path) rx.Action {
+	"open-overwrite": func(path stdlib.Path) rx.Observable {
 		return rx.OpenOverwrite(path.String(), 0666)
 	},
-	"open-append": func(path stdlib.Path) rx.Action {
+	"open-append": func(path stdlib.Path) rx.Observable {
 		return rx.OpenAppend(path.String(), 0666)
 	},
-	"file-close": func(f rx.File) rx.Action {
+	"file-close": func(f rx.File) rx.Observable {
 		return f.Close()
 	},
-	"file-get-state": func(f rx.File) rx.Action {
+	"file-get-state": func(f rx.File) rx.Observable {
 		return f.State().Map(func(state rx.Object) rx.Object {
 			return Struct2Prod(state)
 		})
 	},
-	"file-read": func(f rx.File, amount uint) rx.Action {
+	"file-read": func(f rx.File, amount uint) rx.Observable {
 		return f.Read(amount)
 	},
-	"file-write": func(f rx.File, data ([] byte)) rx.Action {
+	"file-write": func(f rx.File, data ([] byte)) rx.Observable {
 		return f.Write(data)
 	},
-	"file-seek-start": func(f rx.File, offset uint64) rx.Action {
+	"file-seek-start": func(f rx.File, offset uint64) rx.Observable {
 		return f.SeekStart(offset)
 	},
-	"file-seek-forward": func(f rx.File, offset uint64) rx.Action {
+	"file-seek-forward": func(f rx.File, offset uint64) rx.Observable {
 		return f.SeekForward(offset)
 	},
-	"file-seek-backward": func(f rx.File, offset uint64) rx.Action {
+	"file-seek-backward": func(f rx.File, offset uint64) rx.Observable {
 		return f.SeekBackward(offset)
 	},
-	"file-seek-end": func(f rx.File, offset uint64) rx.Action {
+	"file-seek-end": func(f rx.File, offset uint64) rx.Observable {
 		return f.SeekEnd(offset)
 	},
-	"file-read-char": func(f rx.File) rx.Action {
+	"file-read-char": func(f rx.File) rx.Observable {
 		return f.ReadChar()
 	},
-	"file-write-char": func(f rx.File, char Char) rx.Action {
+	"file-write-char": func(f rx.File, char Char) rx.Observable {
 		return f.WriteChar(rune(char))
 	},
-	"file-read-string": func(f rx.File) rx.Action {
+	"file-read-string": func(f rx.File) rx.Observable {
 		return f.ReadRunes().Map(func(line rx.Object) rx.Object {
 			return StringFromRuneSlice(line.([] rune))
 		})
 	},
-	"file-write-string": func(f rx.File, str String) rx.Action {
+	"file-write-string": func(f rx.File, str String) rx.Observable {
 		return f.WriteString(GoStringFromString(str))
 	},
-	"file-read-line": func(f rx.File) rx.Action {
+	"file-read-line": func(f rx.File) rx.Observable {
 		return f.ReadLineRunes().Map(func(line rx.Object) rx.Object {
 			return StringFromRuneSlice(line.([] rune))
 		})
 	},
-	"file-write-line": func(f rx.File, line String) rx.Action {
+	"file-write-line": func(f rx.File, line String) rx.Observable {
 		return f.WriteLine(GoStringFromString(line))
 	},
-	"file-read-lines": func(f rx.File) rx.Action {
+	"file-read-lines": func(f rx.File) rx.Observable {
 		return f.ReadLinesRuneSlices().Map(func(runes rx.Object) rx.Object {
 			return StringFromRuneSlice(runes.([] rune))
 		})
 	},
-	"file-read-all": func(f rx.File) rx.Action {
+	"file-read-all": func(f rx.File) rx.Observable {
 		return f.ReadAll()
 	},
-	"exit": func(code uint8) rx.Action {
+	"exit": func(code uint8) rx.Observable {
 		return rx.NewSync(func() (rx.Object, bool) {
 			qt.Quit(func() {
 				os.Exit(int(code))

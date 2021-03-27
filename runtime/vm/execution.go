@@ -82,13 +82,13 @@ func execute(p Program, m *Machine) {
 	var wg = make(chan bool, len(p.Effects))
 	for i, _ := range p.Effects {
 		var f = p.Effects[i]
-		var e = (func() rx.Action {
+		var e = (func() rx.Observable {
 			switch f.Kind {
 			case F_USER:
 				var evaluate = &ValFunc { Underlying: f }
-				return (call(evaluate, nil, m, background)).(rx.Action)
+				return (call(evaluate, nil, m, background)).(rx.Observable)
 			case F_PREDEFINED:
-				return f.Predefined.(rx.Action)
+				return f.Predefined.(rx.Observable)
 			default:
 				panic("something went wrong")
 			}
@@ -184,8 +184,8 @@ func call(f FunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Value {
 				assert(ok, "RSW: cannot execute on non-reactive value")
 				p, ok := ec.popValue().(ProductValue)
 				assert(ok, "RSW: invalid branches")
-				var consumers = make(map[uint] (func(rx.Reactive) rx.Action))
-				var default_consumer (func(rx.Action) rx.Action)
+				var consumers = make(map[uint] (func(rx.Reactive) rx.Observable))
+				var default_consumer (func(rx.Observable) rx.Observable)
 				for _, element := range p.Elements {
 					pair, ok := element.(ProductValue)
 					assert(ok, "RSW: invalid branch")
@@ -195,14 +195,14 @@ func call(f FunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Value {
 					if pair.Elements[0] == nil {
 						assert(default_consumer == nil,
 							"RSW: duplicate default branch")
-						default_consumer = func(eff rx.Action) rx.Action {
-							return call(consumer, eff, m, sync_ctx).(rx.Action)
+						default_consumer = func(eff rx.Observable) rx.Observable {
+							return call(consumer, eff, m, sync_ctx).(rx.Observable)
 						}
 					} else {
 						index, ok := pair.Elements[0].(uint)
 						assert(ok, "RSW: invalid branch")
-						consumers[index] = func(r rx.Reactive) rx.Action {
-							return call(consumer, r, m, sync_ctx).(rx.Action)
+						consumers[index] = func(r rx.Reactive) rx.Observable {
+							return call(consumer, r, m, sync_ctx).(rx.Observable)
 						}
 					}
 				}
@@ -521,9 +521,9 @@ func ProjectReactiveProduct(r rx.Reactive, index uint) rx.Reactive {
 
 func ConsumeReactiveSum (
 	r                 rx.Reactive,
-	consumers         (map[uint] (func(rx.Reactive) rx.Action)),
-	default_consumer  (func(rx.Action) rx.Action),
-) rx.Action {
+	consumers         (map[uint] (func(rx.Reactive) rx.Observable)),
+	default_consumer  (func(rx.Observable) rx.Observable),
+) rx.Observable {
 	var branches = make(map[uint] rx.Reactive)
 	for _i, _ := range consumers {
 		var case_index = _i
@@ -554,7 +554,7 @@ func ConsumeReactiveSum (
 	}).DistinctUntilChanged(func(a rx.Object, b rx.Object) bool {
 		return (a.(uint) == b.(uint))
 	})
-	return changing_index.SwitchMap(func(obj rx.Object) rx.Action {
+	return changing_index.SwitchMap(func(obj rx.Object) rx.Observable {
 		var case_index = obj.(uint)
 		var branch, exists = branches[case_index]
 		if exists {

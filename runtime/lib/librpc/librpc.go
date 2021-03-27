@@ -16,17 +16,17 @@ func Access (
 	backend   ClientBackend,
 	options   ClientOptions,
 	argument  Value,
-	consumer  func(Value)(rx.Action),
-) rx.Action {
+	consumer  func(Value)(rx.Observable),
+) rx.Observable {
 	return rx.NewSync(func() (rx.Object, bool) {
 		var conn, err = backend.Access()
 		if err != nil { return err, false }
 		return conn, true
-	}).Then(func(conn_ rx.Object) rx.Action {
+	}).Then(func(conn_ rx.Object) rx.Observable {
 		var conn = conn_.(net.Conn)
 		var service, ok = api.GetServiceInterface(id)
 		if !(ok) { panic(fmt.Sprintf("service %s does not exist", id)) }
-		var wrapped_consumer = func(instance *rpc.ClientInstance) rx.Action {
+		var wrapped_consumer = func(instance *rpc.ClientInstance) rx.Observable {
 			return consumer(AdaptServiceInstance(instance))
 		}
 		var full_options = &rpc.ClientOptions {
@@ -46,17 +46,17 @@ func Serve (
 	api          RpcApi,
 	backend      ServerBackend,
 	options      ServerOptions,
-	constructor  func(arg Value, conn Value)(rx.Action),
-) rx.Action {
+	constructor  func(arg Value, conn Value)(rx.Observable),
+) rx.Observable {
 	return rx.NewSync(func() (rx.Object, bool) {
 		var l, err = backend.Serve()
 		if err != nil { return err, false }
 		return l, true
-	}).Then(func(l_ rx.Object) rx.Action {
+	}).Then(func(l_ rx.Object) rx.Observable {
 		var l = l_.(net.Listener)
 		var service, ok = api.GetServiceInterface(id)
 		if !(ok) { panic(fmt.Sprintf("service %s does not exist", id)) }
-		var destructor = func(instance Value) rx.Action {
+		var destructor = func(instance Value) rx.Observable {
 			return instance.(ServerSideServiceInstance).Delete()
 		}
 		var service_impl = implementService(service, constructor, destructor)
@@ -70,13 +70,13 @@ func Serve (
 	})
 }
 
-func implementService(i rpc.ServiceInterface, ctor (func(Value,Value) rx.Action), dtor (func(Value) rx.Action)) rpc.Service {
+func implementService(i rpc.ServiceInterface, ctor (func(Value,Value) rx.Observable), dtor (func(Value) rx.Observable)) rpc.Service {
 	var methods = make(map[string] rpc.ServiceMethod)
 	for name, method_info := range i.Methods {
 		var name = name  // spent 3 hours to find out this problem
 		methods[name] = rpc.ServiceMethod {
 			ServiceMethodInterface: method_info,
-			GetAction: func(instance kmd.Object, arg kmd.Object) rx.Action {
+			GetAction: func(instance kmd.Object, arg kmd.Object) rx.Observable {
 				return instance.(ServerSideServiceInstance).Call(name, arg)
 			},
 		}

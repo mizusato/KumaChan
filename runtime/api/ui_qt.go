@@ -12,20 +12,20 @@ import (
 
 
 var UiQtFunctions = map[string] interface{} {
-	"qt-show": func(widget qt.Widget) rx.Action {
+	"qt-show": func(widget qt.Widget) rx.Observable {
 		return ui.CreateQtTaskAction(func() interface{} {
 			qt.Show(widget)
 			return nil
 		})
 	},
-	"qt-show-at-center": func(widget qt.Widget) rx.Action {
+	"qt-show-at-center": func(widget qt.Widget) rx.Observable {
 		return ui.CreateQtTaskAction(func() interface{} {
 			qt.Show(widget)
 			qt.MoveToScreenCenter(widget)
 			return nil
 		})
 	},
-	"qt-signal": func(object qt.Object, signature String, mapper Value, h InteropContext) rx.Action {
+	"qt-signal": func(object qt.Object, signature String, mapper Value, h InteropContext) rx.Observable {
 		var source = ui.QtSignal {
 			Object:     object,
 			Signature:  GoStringFromString(signature),
@@ -35,7 +35,7 @@ var UiQtFunctions = map[string] interface{} {
 		}
 		return source.Receive()
 	},
-	"qt-signal-no-payload": func(object qt.Object, signature String) rx.Action {
+	"qt-signal-no-payload": func(object qt.Object, signature String) rx.Observable {
 		var source = ui.QtSignal {
 			Object:     object,
 			Signature:  GoStringFromString(signature),
@@ -45,7 +45,7 @@ var UiQtFunctions = map[string] interface{} {
 		}
 		return source.Receive()
 	},
-	"qt-event": func(object qt.Object, kind String, prevent SumValue) rx.Action {
+	"qt-event": func(object qt.Object, kind String, prevent SumValue) rx.Observable {
 		var event_kind = (func() qt.EventKind {
 			var k = GoStringFromString(kind)
 			switch k {
@@ -84,7 +84,7 @@ var UiQtFunctions = map[string] interface{} {
 			panic(fmt.Sprintf("unsupported Qt property type %s", t))
 		}
 	},
-	"qt-set-property": func(object qt.Object, prop_name String, prop_type String, value Value) rx.Action {
+	"qt-set-property": func(object qt.Object, prop_name String, prop_type String, value Value) rx.Observable {
 		var prop = GoStringFromString(prop_name)
 		var t = GoStringFromString(prop_type)
 		return ui.CreateQtTaskAction(func() interface{} {
@@ -137,7 +137,7 @@ var UiQtFunctions = map[string] interface{} {
 			return nil
 		})
 	},
-	"qt-list-widget-set-items": func(list qt.Widget, av Value, current SumValue) rx.Action {
+	"qt-list-widget-set-items": func(list qt.Widget, av Value, current SumValue) rx.Observable {
 		return ui.CreateQtTaskAction(func() interface{} {
 			var arr = container.ArrayFrom(av)
 			var current_key ([] rune)
@@ -178,7 +178,7 @@ var UiQtFunctions = map[string] interface{} {
 			return Na()
 		}
 	},
-	"qt-dialog-open": func(parent SumValue, title String, cwd stdlib.Path, filter String) rx.Action {
+	"qt-dialog-open": func(parent SumValue, title String, cwd stdlib.Path, filter String) rx.Observable {
 		var parent_widget, opts = ui.QtFileDialogAdaptArgs(parent, title, cwd, filter)
 		return rx.NewCallback(func(ok func(rx.Object)) {
 			qt.CommitTask(func() {
@@ -193,7 +193,7 @@ var UiQtFunctions = map[string] interface{} {
 			})
 		})
 	},
-	"qt-dialog-open-multiple": func(parent SumValue, title String, cwd stdlib.Path, filter String) rx.Action {
+	"qt-dialog-open-multiple": func(parent SumValue, title String, cwd stdlib.Path, filter String) rx.Observable {
 		var parent_widget, opts = ui.QtFileDialogAdaptArgs(parent, title, cwd, filter)
 		return rx.NewCallback(func(ok func(rx.Object)) {
 			qt.CommitTask(func() {
@@ -206,7 +206,7 @@ var UiQtFunctions = map[string] interface{} {
 			})
 		})
 	},
-	"qt-dialog-open-directory": func(parent SumValue, title String, cwd stdlib.Path) rx.Action {
+	"qt-dialog-open-directory": func(parent SumValue, title String, cwd stdlib.Path) rx.Observable {
 		var parent_widget, opts = ui.QtFileDialogAdaptArgs(parent, title, cwd, String([] Char {}))
 		return rx.NewCallback(func(ok func(rx.Object)) {
 			qt.CommitTask(func() {
@@ -221,7 +221,7 @@ var UiQtFunctions = map[string] interface{} {
 			})
 		})
 	},
-	"qt-dialog-save": func(parent SumValue, title String, cwd stdlib.Path, filter String) rx.Action {
+	"qt-dialog-save": func(parent SumValue, title String, cwd stdlib.Path, filter String) rx.Observable {
 		var parent_widget, opts = ui.QtFileDialogAdaptArgs(parent, title, cwd, filter)
 		return rx.NewCallback(func(ok func(rx.Object)) {
 			qt.CommitTask(func() {

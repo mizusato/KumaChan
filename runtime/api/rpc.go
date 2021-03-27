@@ -53,7 +53,7 @@ var RpcFunctions = map[string] interface{} {
 			Address: GoStringFromString(addr),
 		}
 	},
-	"rpc-connection-close": func(conn *rx.WrappedConnection) rx.Action {
+	"rpc-connection-close": func(conn *rx.WrappedConnection) rx.Observable {
 		return rx.NewSync(func() (rx.Object, bool) {
 			_ = conn.Close()
 			return nil, true
@@ -65,12 +65,12 @@ var RpcFunctions = map[string] interface{} {
 		raw_opts  ProductValue,
 		ctor      Value,
 		h         InteropContext,
-	) rx.Action {
+	) rx.Observable {
 		var api = h.GetRpcApi()
 		var opts = rpcAdaptServerOptions(raw_opts)
-		var wrapped_ctor = func(arg Value, conn Value) rx.Action {
+		var wrapped_ctor = func(arg Value, conn Value) rx.Observable {
 			var pair = &ValProd { Elements: [] Value { arg, conn } }
-			return h.Call(ctor, pair).(rx.Action)
+			return h.Call(ctor, pair).(rx.Observable)
 		}
 		return librpc.Serve(id, api, backend, opts, wrapped_ctor)
 	},
@@ -81,11 +81,11 @@ var RpcFunctions = map[string] interface{} {
 		argument  Value,
 		consumer  Value,
 		h         InteropContext,
-	) rx.Action {
+	) rx.Observable {
 		var api = h.GetRpcApi()
 		var opts = rpcAdaptClientOptions(raw_opts)
-		var wrapped_consumer = func(instance Value) rx.Action {
-			return h.Call(consumer, instance).(rx.Action)
+		var wrapped_consumer = func(instance Value) rx.Observable {
+			return h.Call(consumer, instance).(rx.Observable)
 		}
 		return librpc.Access(id, api, backend, opts, argument, wrapped_consumer)
 	},

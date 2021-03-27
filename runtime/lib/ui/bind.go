@@ -14,7 +14,7 @@ type BindOptions struct {
 
 var activeBindings = make(map[qt.Widget] struct{})
 
-func Bind(view qt.Widget, root rx.Action, opts BindOptions) func() {
+func Bind(view qt.Widget, root rx.Observable, opts BindOptions) func() {
 	var _, exists = activeBindings[view]
 	if exists {
 		panic("Cannot bind a WebView to multiple root components. " +

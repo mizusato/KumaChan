@@ -55,7 +55,7 @@ function say:
         { yield service::None };
 
 function messages:
-    &(Chat,service::None) => Action*[service::Message,Error]
+    &(Chat,service::None) => Observable[service::Message,Error]
     &(chat,_) =>
         {watch chat.ctx.msg-bus};
 
