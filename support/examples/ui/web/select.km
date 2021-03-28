@@ -3,11 +3,11 @@ import window from './window';
 do { window::mount Root };
 
 const Root: ui::Component :=
-    & selection := use { ui-state 'foo' },
-    { (ui-container styled ['container']) [
-        { (ui-container styled ['row']) [
-            { ui-select (selection, [('foo','Foo'),('bar','Bar'),('42','42')]) },
-            { ui-label-dynamic selection.{watch} }
+    & selection := use { State 'foo' },
+    { { StyledContainer ['container'] } [
+        { { StyledContainer ['row'] } [
+            { Select (selection, [('foo','Foo'),('bar','Bar'),('42','42')]) },
+            { Label selection.{watch} }
         ] },
-        { ui-button ('reset', (selection <- 'foo')) }
+        { Button ('reset', (selection <- 'foo')) }
     ] };

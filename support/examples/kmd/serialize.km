@@ -1,7 +1,7 @@
 import Data from './schema';
 
 do { println { decode! { data-serialize canvas } } }
-    . { catch-crash };
+    . { crash-on-error };
 
 const canvas: Data::Canvas :=
     { Data::Canvas {

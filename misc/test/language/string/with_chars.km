@@ -13,4 +13,4 @@ const str2: String :=
 do
     { println str1 }
         . { then { println str2 } }
-        . { catch-crash };
+        . { crash-on-error };

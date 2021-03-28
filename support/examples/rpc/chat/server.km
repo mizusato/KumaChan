@@ -69,4 +69,4 @@ do
         options: {},
         constructor: { new-chat ctx }
     } }
-    . { catch-crash };
+    . { crash-on-error };

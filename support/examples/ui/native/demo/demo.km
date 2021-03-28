@@ -5,14 +5,14 @@ do DemoWindow.{on-close}.{connect {exit 0}};
 do DemoWindow.{on-resize}
     . { connect &{width,height} =>
         { println { "Current Size: (#, #)" (width.{str}, height.{str}) } }
-            .{ catch-crash } };
+            .{ crash-on-error } };
 
 do
     & buf := reactive 'Hello World',
     & display := reactive 'Hello World',
     { merge [
         (buf connect &(text) =>
-            { println { "Current Text: #" text } } .{ catch-crash }),
+            { println { "Current Text: #" text } } .{ crash-on-error }),
         (TextInput bind buf),
         (TextDisplay bind display.{watch}),
         buf.{watch}

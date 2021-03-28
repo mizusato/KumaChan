@@ -15,4 +15,4 @@ do { open-read-only (os::EntryModuleDirPath join ['sample','sample1.kmd']) }
                     { println { "Deserialization Error: #" err.{str} } },
                 end
             } }
-    . { catch-crash };
+    . { crash-on-error };

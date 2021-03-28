@@ -2,96 +2,89 @@ type Decorator
     &(Component) => Component;
 
 export function with:
-    &(Component,Decorator) => Component
-    &(cpt,f) => { f(cpt) };
+    &(Component, Decorator) => Component
+    &(cpt, f) => { f(cpt) };
+
+export function with:
+    &(Component, Array[Decorator]) => Component
+    &(cpt, @f) => cpt.{apply-all @f.{iterate}};
 
 export function with:[T]
     &((&(T) => Component), Decorator) => (&(T) => Component)
-    &(ctor,f) => (&(arg) => { f { ctor(arg) } });
+    &(ctor, f) => (&(arg) => { f { ctor(arg) } });
 
-export function styled:[T]
-    &((&(T) => Component), Array[String]) => (&(T) => Component)
-    &(ctor, class-list) => (ctor with { ui-style class-list });
+export function with:[T]
+    &((&(T) => Component), Array[Decorator]) => (&(T) => Component)
+    &(ctor, @f) => (&(arg) => {ctor(arg)}.{apply-all @f.{iterate}});
 
-export function ui-render-if:
+export function RenderCond:
     &(Computed[Bool]) => Decorator
     &(@render) => &(cpt) =>
         & render := switch-map @render,
         if render:
             cpt,
         else:
-            ui-empty;
+            Empty;
 
-export function ui-show-if:
+export function ShowCond:
     &(Computed[Bool]) => Decorator
     &(@show) => &(@node) =>
         & (node, show) := computed (@node, @show),
         if show:
             node,
         else:
-            (node with { dom-styles [('display','none')] });
+            (node with { create-styles [('display','none')] });
 
-export function ui-style:
+export function Style:
     &(Array[String]) => Decorator
     &(class-list) => &(@node) =>
         let class := (class-list join ' '),
-        (@node map &(node) => (node with { dom-attrs [('class',class)] }));
+        (@node map &(node) => (node with { create-attrs [('class',class)] }));
 
-export function ui-style:
+export function Style:
     &(Computed[Array[String]]) => Decorator
     &(@class-list) => &(@node) =>
         & (class-list, node) := computed (@class-list, @node),
         let class := (class-list join ' '),
-        (node with { dom-attrs [('class',class)] });
+        (node with { create-attrs [('class',class)] });
 
-export function ui-attrs:
-    &(Array[(String,String)]) => Decorator
-    &(attrs) => &(@node) =>
-        & node := map @node,
-        (node with { dom-attrs attrs });
-
-export function ui-attrs:
-    &(Computed[Array[(String,String)]]) => Decorator
-    &(@attrs) => &(@node) =>
-        & (attrs, node) := computed (@attrs, @node),
-        (node with { dom-attrs attrs });
-
-export function ui-inline-style:
+export function InlineStyle:
     &(Array[(String,String)]) => Decorator
     &(rules) => &(@node) =>
         & node := map @node,
-        (node with { dom-styles rules });
+        (node with { create-styles rules });
 
-export function ui-inline-style:
+export function InlineStyle:
     &(Computed[Array[(String,String)]]) => Decorator
     &(@rules) => &(@node) =>
         & (rules, node) := computed (@rules, @node),
-        (node with { dom-styles rules });
+        (node with { create-styles rules });
 
-export function ui-event:
-    &(String,EventHandler) => Decorator
-    &(name,handler) => &(@node) =>
+export function Event:
+    &(String,EventPayloadConsumer) => Decorator
+    &(name,consumer) => &(@node) =>
+        let handler := consumer.{convert}.[EventHandler],
         & node := map @node,
-        (node with { dom-event (name,handler) });
+        (node with { create-events [(name,handler)] });
 
-export function ui-focusable:
+export function Focusable:
     &() => Decorator
     &() => &(@node) =>
         & node := map @node,
-        (node with { dom-attrs [('tabindex','0')] });
+        (node with { create-attrs [('tabindex','0')] });
 
-export function ui-autofocus:
+export function Autofocus:
     &() => Decorator
     &() => &(@node) =>
         & node := map @node,
-        (node with { dom-attrs [('webuiAutofocus','webuiAutofocus')] });
+        (node with { create-attrs [('webuiAutofocus','webuiAutofocus')] });
 
-export function ui-enabled:
+export function EnableCond:
     &(Computed[Bool]) => Decorator
     &(@enabled) => &(@node) =>
         & (enabled, node) := computed (@enabled, @node),
         if enabled:
             node,
         else:
-            (node with { dom-attrs [('disabled', 'disabled')] });
+            (node with { create-attrs [('disabled', 'disabled')] });
 

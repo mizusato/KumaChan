@@ -11,7 +11,7 @@ export function consume-echo-service:
             { println { "response: #"..\n { quote content } } },
         read-and-request
             . { forever }
-            . { catch-crash };
+            . { crash-on-error };
 
 do
     { rpc::access {
@@ -21,4 +21,4 @@ do
         argument: { service::argument { service::Config { verbose: Yes } } },
         consumer: { service::consumer consume-echo-service }
     } }
-    . { catch-crash };
+    . { crash-on-error };

@@ -49,13 +49,16 @@ export function scan:[T,A]
     native 'seq-scan';
 export function scan:[T,A]
     &(Seq[T], (A, &(A,T) => A)) => Seq[A]
-    &(seq,opts) => let (init,f) := opts, { scan (seq,init,f) };
+    &(seq, opts) => let (init,f) := opts, { scan (seq,init,f) };
 export function reduce:[T,A]
     &(Seq[T], A, &(A,T) => A) => A
     native 'seq-reduce';
 export function reduce:[T,A]
     &(Seq[T], (A, &(A,T) => A)) => A
-    &(seq,opts) => let (init,f) := opts, { reduce (seq,init,f) };
+    &(seq, opts) => let (init,f) := opts, { reduce (seq,init,f) };
+export function apply-all:[T]
+    &(T, Seq[&(T) => T]) => T
+    &(init, @f) => @f.{ reduce (init, &(x,f) => { f(x) }) };
 
 export function some:[T]
     &(Seq[T], &(T) => Bool) => Bool

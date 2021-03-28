@@ -3,86 +3,84 @@ type Styles      native;  // *vdom.Styles
 type Attrs       native;  // *vdom.Attrs
 type Events      native;  // *vdom.Events
 type NodeContent native;  // vdom.NodeContent
-
-// TODO: type Tag String;
-
+type Tag String;
 
 /// Be careful! This is technically NOT a pure function.
 /// The vDOM driver in `webui.js` uses the memory address of a vNode as an ID.
 /// Therefore, a vNode cannot be used more than once.
 /// In addition, due to some restrictions, a vNode cannot move across subtrees.
 ///
-function dom-node:
-    &(String) => Node
+function create-node:
+    &(Tag) => Node
     native 'ui-dom-node';
 
-function dom-node:
-    &(String,String) => Node
+function create-node:
+    &(Tag, String) => Node
     &(tag, text) =>
-        { dom-node tag }
-            . { with { dom-text text } };
+        { create-node tag }
+            . { with { create-content-text text } };
 
-function dom-node:
-    &(String,Array[Node]) => Node
+function create-node:
+    &(Tag, Array[Node]) => Node
     &(tag, children) =>
-        { dom-node tag }
-            . { with { dom-children children } };
+        { create-node tag }
+            . { with { create-content-children children } };
 
-function dom-dynamic:
-    &(String, Computed[Array[Node]]) => Computed[Node]
+function create-computed-node:
+    &(Tag, Computed[Array[Node]]) => Computed[Node]
     &(tag, @children) =>
-        (@children map &(children) => { dom-node (tag, children) });
+        (@children map &(children) => { create-node (tag, children) });
 
-function dom-dynamic:
-    &(String, Array[Computed[Node]]) => Computed[Node]
+function create-computed-node:
+    &(Tag, Array[Computed[Node]]) => Computed[Node]
     &(tag, sources) =>
-        { dom-dynamic (tag, {combine(sources)}) };
+        { create-computed-node (tag, {combine(sources)}) };
 
 
-function dom-styles:
+function create-styles:
     &(Map[String,String]) => Styles
     native 'ui-dom-styles';
 
-function dom-styles:
+function create-styles:
     &(Array[(String,String)]) => Styles
-    &(styles) => { dom-styles { create-map styles } };
+    &(styles) => { create-styles { create-map styles } };
 
 function with:
     &(Node, Styles) => Node
     native 'ui-with-styles';
 
 
-function dom-attrs:
+function create-attrs:
     &(Map[String,String]) => Attrs
     native 'ui-dom-attrs';
 
-function dom-attrs:
+function create-attrs:
     &(Array[(String,String)]) => Attrs
-    &(attrs) => { dom-attrs { create-map attrs } };
+    &(attrs) => { create-attrs { create-map attrs } };
 
 function with:
     &(Node, Attrs) => Node
     native 'ui-with-attrs';
 
 
-function dom-events:
+function create-events:
     &(Map[String,EventHandler]) => Events
     native 'ui-dom-events';
 
-function dom-events:
+function create-events:
     &(Array[(String,EventHandler)]) => Events
-    &(events) => { dom-events  { create-map events } };
+    &(events) => { create-events  { create-map events } };
 
 function with:
     &(Node, Events) => Node
     native 'ui-with-events';
 
 
-function dom-text:
+function create-content-text:
     &(String) => NodeContent
     native 'ui-dom-text';
 
-function dom-children:
+function create-content-children:
     &(Array[Node]) => NodeContent
     native 'ui-dom-children';
 

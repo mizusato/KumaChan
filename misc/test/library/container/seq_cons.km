@@ -2,5 +2,5 @@ do
     let seq := (1.0 cons (2.0 cons nil)),
     { yield* (0.0 cons seq) }
         . { concat-map &(x) => { println { str x } } }
-        . { catch-crash }
+        . { crash-on-error }
         . { wait-complete };

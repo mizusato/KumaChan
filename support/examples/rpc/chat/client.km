@@ -8,13 +8,13 @@ export function consume-chat:
             . { concat-map &(msg) =>
                 { println { "#: #" (msg.from, msg.content.text) } } }
             . { wait-complete }
-            . { catch-crash }
+            . { crash-on-error }
             . { with
                 let read-and-send :=
                     & text := await scanln,
                     & await chat.{ say { service::MessageContent { text } } },
                     { yield () },
-                read-and-send.{forever}.{catch-crash} };
+                read-and-send.{forever}.{crash-on-error} };
 
 do
     let try :=
@@ -27,4 +27,4 @@ do
             argument: { service::argument { service::Login { nickname } } },
             consumer: consume-chat
         } },
-    try.{catch-crash};
+    try.{crash-on-error};

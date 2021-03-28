@@ -3,11 +3,11 @@ do Window.{show-at-center};
 do Window.{on-close}.{connect {exit 0}};
 
 do
-    & buf := reactive '',
+    & buf := do { create-reactive '' },
     { merge [
         (InputBox bind buf),
-        (MainView bind { ui-container [
-            { ui-label 'Echo:' },
-            { ui-label-dynamic buf.{watch} }
+        (MainView bind { Container [
+            { Label 'Echo:' },
+            { Label buf.{watch} }
         ] })
     ] };

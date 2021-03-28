@@ -13,4 +13,4 @@ do
     let p := { Point {} },
     let {x,y} := p,
     { println { "(#,#)" (x.{str}, y.{str}) } }
-        . { catch-crash };
+        . { crash-on-error };

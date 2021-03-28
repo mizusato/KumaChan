@@ -1,17 +1,13 @@
 type EventPayload native;  // *qt.WebUiEventPayload (contains a C++ pointer)
 type EventHandler native;  // *vdom.EventHandler
 
-function dom-event-handler:[T]
+function create-event-handler:[T]
     &(Sink[T], &(EventPayload) => T) => EventHandler
     native 'ui-dom-event-handler';
 
-function dom-event-handler:[T]
-    &(Reactive[T], &(T) => &(EventPayload) => T) => EventHandler
-    native 'ui-dom-event-handler-reactive';
-
 function getter-callback:[T]
-    &(String, (&(EventPayload,String) => T), (&(T) => Callback)) => Callback
-    &(prop,getter,k) => { Callback &(ev) =>
+    &(String, (&(EventPayload,String) => T), (&(T) => EventPayloadConsumer)) => EventPayloadConsumer
+    &(prop,getter,k) => { EventPayloadConsumer &(ev) =>
         let val := { getter (ev,prop) },
         let next := { k val },
         { next(ev) } };
@@ -29,6 +25,3 @@ function get-bool:
     &(EventPayload, String) => Bool
     native 'ui-event-payload-get-bool';
 
-function dom-event:
-    &(String, EventHandler) => Events
-    &(name,handler) => { dom-events [(name,handler)] };

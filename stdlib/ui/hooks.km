@@ -5,19 +5,9 @@ export function use:[T]
     &(Hook[T], &(T) => Component) => Component
     &(hook, k) => { hook(k) };
 
-export function ui-state:[T]
+export function State:[T]
     &(T) => Hook[Reactive[T]]
     &(initial) => &(k) =>
-        & r := reactive initial,
+        & r := do { create-reactive initial },
         { k(r) };
 
-// TODO: should return Hook[bundle] instead of Hook[tuple]
-export function ui-list:[T]
-    &(String, Reactive[List[T]]) => Hook[(ListKey,Computed[Number],Reactive[T])]
-    &(tag, list) => &(k) =>
-        let children := (list consume &(item) => { k(item) }),
-        { dom-dynamic (tag, children) };
-
-export function ui-list:[T]
-    &(Reactive[List[T]]) => Hook[(ListKey,Computed[Number],Reactive[T])]
-    &(list) => { ui-list ('div',list) };

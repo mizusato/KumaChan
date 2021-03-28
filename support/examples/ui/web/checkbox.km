@@ -3,12 +3,12 @@ import window from './window';
 do { window::mount Root };
 
 const Root: ui::Component :=
-    & ok := use { ui-state Yes },
-    { (ui-container styled ['container']) [
-        { ui-checkbox ok },
+    & ok := use { State Yes },
+    { { StyledContainer ['container'] } [
+        { Checkbox ok },
         if ok:
-            { ui-label 'checked' },
+            { Label 'checked' },
         else:
-            { ui-label 'not-checked' },
-        { ui-button ('toggle', (ok update &(ok) => {not ok})) }
+            { Label 'not-checked' },
+        { Button ('toggle', (ok update not)) }
     ] };

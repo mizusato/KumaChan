@@ -33,4 +33,4 @@ do
         options: {},
         constructor: new-echo-server
     } }
-    . { catch-crash };
+    . { crash-on-error };

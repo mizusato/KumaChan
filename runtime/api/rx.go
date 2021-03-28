@@ -190,26 +190,22 @@ var EffectFunctions = map[string] Value {
 	"reactive-entity-auto-snapshot": func(r rx.ReactiveEntity) rx.Reactive {
 		return rx.AutoSnapshotReactive { Entity: r }
 	},
-	"blackhole": func() rx.Sink {
+	"Blackhole": func() rx.Sink {
 		return rx.BlackHole{}
 	},
-	"callback": func(f Value, h InteropContext) rx.Sink {
+	"Callback": func(f Value, h InteropContext) rx.Sink {
 		return rx.Callback(func(obj rx.Object) rx.Observable {
 			return h.Call(f, obj).(rx.Observable)
 		})
 	},
-	"bus": func(_ Value, f Value, h InteropContext) rx.Observable {
+	"create-bus": func(_ Value) rx.Observable {
 		return rx.NewSync(func() (rx.Object, bool) {
 			return rx.CreateBus(), true
-		}).Then(func(obj rx.Object) rx.Observable {
-			return h.Call(f, obj).(rx.Observable)
 		})
 	},
-	"reactive": func(init Value, k Value, h InteropContext) rx.Observable {
+	"create-reactive": func(init Value) rx.Observable {
 		return rx.NewSync(func() (rx.Object, bool) {
 			return rx.CreateReactive(init, RefEqual), true
-		}).Then(func(r rx.Object) rx.Observable {
-			return h.Call(k, r).(rx.Observable)
 		})
 	},
 	"reactive+snapshot": func(init Value, k Value, h InteropContext) rx.Observable {
@@ -397,21 +393,11 @@ var EffectFunctions = map[string] Value {
 		})
 	},
 	"do": func(e rx.Observable, f Value, h InteropContext) rx.Observable {
-		return e.ChainSync(func(val rx.Object) rx.Observable {
-			return h.Call(f, val).(rx.Observable)
-		})
-	},
-	"do-shortcut": func(a rx.Observable, b rx.Observable) rx.Observable {
-		return a.ChainSync(func(_ rx.Object) rx.Observable {
-			return b
-		})
-	},
-	"do-source": func(e rx.Observable, f Value, h InteropContext) rx.Observable {
 		return e.SyncThen(func(val rx.Object) rx.Observable {
 			return h.Call(f, val).(rx.Observable)
 		})
 	},
-	"do-source-shortcut": func(a rx.Observable, b rx.Observable) rx.Observable {
+	"do-shortcut": func(a rx.Observable, b rx.Observable) rx.Observable {
 		return a.SyncThen(func(_ rx.Object) rx.Observable {
 			return b
 		})

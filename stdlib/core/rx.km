@@ -96,10 +96,10 @@ export function connect:[T]
     &(bus, sink) => ({watch(bus)} connect sink);
 export function connect:[T,E]
     &(Source[T], &(T) => Action) => Action[never]
-    &(source, receiver) => (source connect {callback(receiver)});
+    &(source, receiver) => (source connect {Callback(receiver)});
 export function connect:[T,E]
     &(Bus[T], &(T) => Action) => Action[never]
-    &(bus, receiver) => ({watch(bus)} connect {callback(receiver)});
+    &(bus, receiver) => ({watch(bus)} connect {Callback(receiver)});
 export function connect:[E]
     &(Source[unit], Action) => Action[never]
     &(source, receiver) => (source connect &() => receiver);
@@ -135,6 +135,7 @@ export function snapshot:[T]
 export function read:[T]
     &(Reactive[T]) => Atomic[T]
     native 'reactive-read';
+// TODO: should provide bundle instead of tuple
 export function consume:[T,X]
     &(Reactive[List[T]], &(ListKey,Computed[Number],Reactive[T]) => Computed[X]) => Computed[Array[X]]
     native 'reactive-list-consume';
@@ -150,21 +151,18 @@ export function watch-diff:[T]
 export function auto-snapshot:[T]
     &(ReactiveEntity[T]) => Reactive[T]
     native 'reactive-entity-auto-snapshot';
-export function blackhole:
+export function Blackhole:
     &() => Sink[any]
-    native 'blackhole';
-export function callback:[T]
+    native 'Blackhole';
+export function Callback:[T]
     &(&(T) => Action) => Sink[T]
-    native 'callback';
-export function bus: [T, K < Observable[any,any]]
-    &(unit, &(Bus[T]) => K) => K
-    native 'bus';
-export function reactive: [T, K < Observable[any,any]]
-    &(T, &(ReactiveEntity[T]) => K) => K
-    native 'reactive';
-export function reactive+snapshot: [T, K < Observable[any,any]]
-    &(T, &(Reactive[T],(Action,Action,Observable[(ReactiveSnapshots[T],T)])) => K) => K
-    native 'reactive+snapshot';
+    native 'Callback';
+export function create-bus:[T]
+    &() => Atomic[Bus[T]]
+    native 'create-bus';
+export function create-reactive:[T]
+    &(T) => Atomic[ReactiveEntity[T]]
+    native 'create-reactive';
 
 ## Mutable Containers Operations
 export function new-mutable:[T]
@@ -306,18 +304,12 @@ export function then:[B]
     &(Action, Source[B]) => Source[B]
     native 'then-shortcut';
 
-export function do:[A,B]
-    &(Atomic[A], &(A) => Atomic[B]) => Atomic[B]
+export function do: [A, K < Observable[any,any]]
+    &(Atomic[A], &(A) => K) => K
     native 'do';
-export function do:[B]
-    &(Atomic, Atomic[B]) => Atomic[B]
+export function do: [K < Observable[any,any]]
+    &(Atomic, K) => K
     native 'do-shortcut';
-export function do: [A, S < Source[any]]
-    &(Atomic[A], &(A) => S) => S
-    native 'do-source';
-export function do: [S < Source[any]]
-    &(Atomic, S) => S
-    native 'do-source-shortcut';
 
 export function catch:[T,E,F]
     &(Action[T,E], &(E) => Action[T,F]) => Action[T,F]
@@ -337,10 +329,10 @@ export function catch-throw:[T,E,F]
 export function catch-throw:[T,E,F]
     &(Observable[T,E], &(E) => F) => Observable[T,F]
     native 'catch-throw';
-export function catch-crash:[T]
+export function crash-on-error:[T]
     &(Action[T,Error]) => Action[T]
     &(action) => action.{ catch &(err) => { crash err } };
-export function catch-crash:[T]
+export function crash-on-error:[T]
     &(Observable[T,Error]) => Observable[T]
     &(action) => action.{ catch &(err) => { crash err } };
 export function throw:[E]
@@ -487,7 +479,6 @@ export function combine:[A,B,C,D]
 export function combine:[T]
     &(Array[Computed[T]]) => Computed[Array[T]]
     native 'combine-latest*-array';
-// TODO: consider computed (reactive1, reactive2)
 export function computed:[A,B,X]
     &((Computed[A],Computed[B]), &(A,B) => X) => Computed[X]
     native 'computed';

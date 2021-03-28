@@ -23,5 +23,5 @@ do
             'null',
         end,
     { println { "#,#,#" (s1,s2,s3) } }
-        . { catch-crash };
+        . { crash-on-error };
 

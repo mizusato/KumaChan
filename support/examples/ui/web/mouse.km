@@ -3,28 +3,27 @@ import window from './window';
 do { window::mount Root };
 
 // TODO: mouse enter => Just pos, mouse out => Null
-function mouse-position:
+function MousePosition:
     &() => ui::Hook[Source[(Float,Float)]]
     &() => &(k) =>
-        & pos := bus::[(Float,Float)] (),
+        & pos := do { create-bus::[(Float,Float)] () },
         & id := do { gen-monotonic-id-string () },
         let cpt := { k { watch pos } },
-        (cpt with { ui-event ({ "mousemove.hook#" id },
-            { ui-callback
-                & x := ui-msg-float 'webuiCurrentTargetX',
-                & y := ui-msg-float 'webuiCurrentTargetY',
-                { return (pos <- (x, y)) }
-            }) });
+        (cpt with { Event ({ "mousemove.hook#" id },
+            & x := extract-float 'webuiCurrentTargetX',
+            & y := extract-float 'webuiCurrentTargetY',
+            { trigger (pos <- (x, y)) }
+        )});
 
 const Root: ui::Component :=
-    let container := { styled (ui-container, ['container']) },
-    let box := { styled (ui-container, ['box']) },
+    let container := { StyledContainer ['container'] },
+    let box := { StyledContainer ['box'] },
     { container [
-        & pos := use mouse-position,
+        & pos := use MousePosition,
         { box [
             pos
                 . { map &(x,y) => { "x=#, y=#" (x.{str}, y.{str}) } }
                 . { start-with [''] }
-                . { ui-label-dynamic }
+                . { Label }
         ] }
     ] };

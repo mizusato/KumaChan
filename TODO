@@ -1,10 +1,12 @@
 TODO
 
-- { computed (reactive1, reactive2) }
-
-- consider renaming catch-crash to crash-on-error
+- consider using same name for constructors and types (function Map, type Map)
 
 - extra info in Error (*ErrorWithExtraInfo implements error) (send through rpc)
+
+- nested *ErrorWithExtraInfo
+
+- json parser based on parser combinators
 
 - String / json::Object matching: consider possible APIs
 
