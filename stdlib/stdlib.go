@@ -30,7 +30,7 @@ const Mod_core = "core"
 const Mod_ui = "ui"
 var core_types = []string {
 	// types.km
-	Float, FloatIEEE, Number,
+	Real, Float, Number,
 	Int64, Uint64, Int32, Uint32, Int16, Uint16, Int8, Uint8,
 	Bool, Yes, No,
 	Maybe, Just, Null,
@@ -53,7 +53,7 @@ var core_types = []string {
 	ReactiveSnapshots, Mutex,
 	Mutable, Buffer, HashMap,
 	// complex.km
-	Complex, ComplexIEEE,
+	Complex, FloatComplex,
 	// string.km
 	Char, String,
 }
@@ -67,8 +67,8 @@ func GetCoreScopedSymbols() []string {
 }
 
 // types.km
+const Real = "Real"
 const Float = "Float"
-const FloatIEEE = "Float*"
 const Number = "Number"
 const Int64 = "Int64"
 const Uint64 = "Uint64"
@@ -132,7 +132,7 @@ const Buffer = "Buffer"
 const HashMap = "HashMap"
 // complex.km
 const Complex = "Complex"
-const ComplexIEEE = "Complex*"
+const FloatComplex = "FloatComplex"
 // string.km
 const Char = "Char"
 const String = "String"
@@ -147,7 +147,7 @@ func GetPrimitiveReflectType(name string) (reflect.Type, bool) {
 	switch name {
 	case Number:
 		return reflect.TypeOf(uint(0)), true
-	case Float:
+	case Real, Float:
 		return reflect.TypeOf(float64(0)), true
 	case Bit:
 		return reflect.TypeOf(true), true
@@ -167,7 +167,7 @@ func GetPrimitiveReflectType(name string) (reflect.Type, bool) {
 		return reflect.TypeOf(int32(0)), true
 	case Int64:
 		return reflect.TypeOf(int64(0)), true
-	case Complex:
+	case Complex, FloatComplex:
 		return reflect.TypeOf(complex128(complex(0,1))), true
 	default:
 		return nil, false

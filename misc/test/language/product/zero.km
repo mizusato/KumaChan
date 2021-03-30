@@ -1,4 +1,4 @@
-type Real Float;
+type Real Real;
 
 type Point {
      x: Real,

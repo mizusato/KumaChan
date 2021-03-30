@@ -13,7 +13,7 @@ import (
 
 var __KmdPrimitiveTypes = map[loader.Symbol] kmd.TypeKind {
 	__Bool:   kmd.Bool,
-	__Float:  kmd.Float,
+	__Real:   kmd.Float,
 	__Uint32: kmd.Uint32,
 	__Int32:  kmd.Int32,
 	__Uint64: kmd.Uint64,

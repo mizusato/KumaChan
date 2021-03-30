@@ -16,7 +16,7 @@ function get-string:
     &(EventPayload, String) => String
     native 'ui-event-payload-get-string';
 function get-float:
-    &(EventPayload, String) => Float
+    &(EventPayload, String) => Real
     native 'ui-event-payload-get-float';
 function get-number:
     &(EventPayload, String) => Number

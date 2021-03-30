@@ -2,8 +2,8 @@ import window from '../ui/web/window';
 
 do { window::mount Root };
 
-function FloatInput:
-    &(Reactive[Maybe[Float]]) => ui::Component
+function RealInput:
+    &(Reactive[Maybe[Real]]) => ui::Component
     &(value) =>
         & buffer := use { State '' },
         { Input buffer }
@@ -21,8 +21,8 @@ const Root: ui::Component :=
         & quantity := maybe? quantity?,
         { Just (price * quantity) },
     { container [
-        { row [ { Label 'Price:' }, { FloatInput price } ] },
-        { row [ { Label 'Quantity:' }, { FloatInput quantity } ] },
+        { row [ { Label 'Price:' }, { RealInput price } ] },
+        { row [ { Label 'Quantity:' }, { RealInput quantity } ] },
         { Label
             & total? := map total,
             switch total?:

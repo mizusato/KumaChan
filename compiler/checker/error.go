@@ -775,6 +775,15 @@ func (e E_IntegerAssignedToNonIntegerType) ExprErrorDesc() ErrorMessage {
 	return msg
 }
 
+type E_IntegerNotRepresentableByFloatType struct {}
+func (e E_IntegerNotRepresentableByFloatType) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR,
+		"Integer literal is too big to be represented " +
+		"by a floating-point type")
+	return msg
+}
+
 type E_IntegerOverflow struct {
 	Kind  string
 }

@@ -30,19 +30,19 @@ export function *: &(Uint64,Uint64) => Uint64  native '*Uint64';
 export function /: &(Uint64,Uint64) => Uint64  native '/Uint64';
 export function %: &(Uint64,Uint64) => Uint64  native '%Uint64';
 
+export function +: &(Real,Real) => Real  native '+Real';
+export function -: &(Real,Real) => Real  native '-Real';
+export function -: &(Real) => Real        &(x) => (0.0 - x);
+export function *: &(Real,Real) => Real  native '*Real';
+export function /: &(Real,Real) => Real  native '/Real';
+export function %: &(Real,Real) => Real  native '%Real';
+
 export function +: &(Float,Float) => Float  native '+Float';
 export function -: &(Float,Float) => Float  native '-Float';
-export function -: &(Float) => Float        &(x) => (0.0 - x);
+export function -: &(Float) => Float         &(x) => ((0.0).[Float] - x);
 export function *: &(Float,Float) => Float  native '*Float';
 export function /: &(Float,Float) => Float  native '/Float';
 export function %: &(Float,Float) => Float  native '%Float';
-
-export function +: &(Float*,Float*) => Float*  native '+Float*';
-export function -: &(Float*,Float*) => Float*  native '-Float*';
-export function -: &(Float*) => Float*         &(x) => ({ convert 0.0 }.[Float*] - x);
-export function *: &(Float*,Float*) => Float*  native '*Float*';
-export function /: &(Float*,Float*) => Float*  native '/Float*';
-export function %: &(Float*,Float*) => Float*  native '%Float*';
 
 export function +: &(Int8,Int8) => Int8  native '+Int8';
 export function -: &(Int8,Int8) => Int8  native '-Int8';

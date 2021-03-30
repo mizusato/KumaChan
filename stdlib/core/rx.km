@@ -197,7 +197,7 @@ export function with: [A < Observable[any,any]]
     &(A, Action) => A
     native 'with';
 export function gen-random:
-    &() => Atomic[Float]
+    &() => Atomic[Real]
     native 'gen-random';
 export function gen-monotonic-id:
     &() => Atomic[Uint64]

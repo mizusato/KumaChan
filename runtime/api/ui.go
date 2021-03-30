@@ -198,10 +198,10 @@ var UiFunctions = map[string] interface{} {
 		return StringFromRuneSlice(qt.WebViewEventPayloadGetRunes(ev, RuneSliceFromString(key)))
 	},
 	"ui-event-payload-get-float": func(ev *qt.WebViewEventPayload, key String) float64 {
-		return util.CheckFloat(qt.WebViewEventPayloadGetFloat(ev, RuneSliceFromString(key)))
+		return util.CheckReal(qt.WebViewEventPayloadGetFloat(ev, RuneSliceFromString(key)))
 	},
 	"ui-event-payload-get-number": func(ev *qt.WebViewEventPayload, key String) uint {
-		var x = util.CheckFloat(qt.WebViewEventPayloadGetFloat(ev, RuneSliceFromString(key)))
+		var x = util.CheckReal(qt.WebViewEventPayloadGetFloat(ev, RuneSliceFromString(key)))
 		return uint(x)
 	},
 	"ui-event-payload-get-bool": func(ev *qt.WebViewEventPayload, key String) SumValue {

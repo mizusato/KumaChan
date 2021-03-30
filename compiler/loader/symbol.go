@@ -54,7 +54,7 @@ func (mod *Module) SymbolFromRef(ref_mod string, name string, specific bool) May
 			} else {
 				var _, exists = __CoreSymbolSet[sym_name]
 				if exists {
-					// core::Int, core::Float, core::Effect, ...
+					// core::Int, core::Real, core::Effect, ...
 					return MakeSymbol(stdlib.Mod_core, sym_name)
 				} else {
 					// a, b, c, Self::Type1

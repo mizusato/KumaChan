@@ -46,14 +46,6 @@ export function convert:
     &(Float) => String
     native 'String from Float';
 
-export function convert:
-    &(Float*) => String
-    &(x*) =>
-        switch { check-nan-inf x* }:
-            case Just x:  { convert x },
-            case Null:    'INVALID',
-        end;
-
 /// encodes string into UTF-8 byte sequence
 export function encode:
     &(String) => Bytes
@@ -79,7 +71,7 @@ export function unquote:
 
 // TODO: parse-int
 export function parse-float:
-    &(String) => Maybe[Float]
+    &(String) => Maybe[Real]
     native 'parse-float';
 
 export function substr:

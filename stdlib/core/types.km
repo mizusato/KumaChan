@@ -3,9 +3,11 @@
  *             with the `stdlib.go` file.
  */
 
+// TODO: split this file
+
 // Basic Numeric Types
-type Float   native;  // float64 except NaN and Infinity values
-type Float*  native;  // float64
+type Real    protected Float;  // float64 except NaN and Infinity values
+type Float   native;  // float64
 type Number  native;  // uint (size_t), with overflow/underflow checking
 type Int8    native;  // int8
 type Int16   native;  // int16
@@ -27,13 +29,9 @@ export function convert:
     &(Uint8) => Number
     native 'Number from Uint8';
 
-// Float <-> Float*
 export function convert:
-    &(Float) => Float*
-    native 'Float* from Float';
-export function check-nan-inf:
-    &(Float*) => Maybe[Float]
-    native 'check-nan-inf-float';
+    &(Float) => Maybe[Real]
+    native 'Float to Maybe[Real]';
 
 // Basic Sum Types
 type Bool enum {

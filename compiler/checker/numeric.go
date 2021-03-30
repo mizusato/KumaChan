@@ -9,6 +9,9 @@ import (
 )
 
 
+const MaxSafeIntegerToDouble = 9007199254740991
+const MinSafeIntegerToDouble = -9007199254740991
+
 func (impl UntypedInteger) SemiExprVal() {}
 type UntypedInteger struct {
 	Value   *big.Int
@@ -75,7 +78,7 @@ func CheckFloat(f ast.FloatLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
 	if err != nil { panic("invalid float literal got from parser") }
 	return LiftTyped(Expr {
 		Type:  &NamedType {
-			Name: __Float,
+			Name: __Real,
 			Args: make([]Type, 0),
 		},
 		Value: FloatLiteral { value },
@@ -99,14 +102,31 @@ func AssignIntegerTo(expected Type, integer UntypedInteger, info ExprInfo, ctx E
 			if ok {
 				return Expr {
 					Type:  expected_certain,
-					Info:  info,
 					Value: val,
+					Info:  info,
 				}, nil
 			} else {
 				return Expr{}, &ExprError {
 					Point:    info.ErrorPoint,
 					Concrete: E_IntegerOverflow { kind },
 				}
+			}
+		}
+		if sym == __Real || sym == __Float {
+			var v_big = integer.Value
+			if v_big.IsInt64() {
+				var v = v_big.Int64()
+				if MinSafeIntegerToDouble <= v && v <= MaxSafeIntegerToDouble {
+					return Expr {
+						Type:  expected_certain,
+						Value: FloatLiteral { Value: float64(v) },
+						Info:  info,
+					}, nil
+				}
+			}
+			return Expr{}, &ExprError {
+				Point:    info.ErrorPoint,
+				Concrete: E_IntegerNotRepresentableByFloatType {},
 			}
 		}
 	}

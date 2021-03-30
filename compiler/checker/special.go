@@ -58,6 +58,7 @@ var __Bool = CoreSymbol(stdlib.Bool)
 var __T_Bool = &NamedType { Name: __Bool, Args: make([] Type, 0) }
 var __Yes uint = stdlib.YesIndex
 var __Maybe = CoreSymbol(stdlib.Maybe)
+var __Real = CoreSymbol(stdlib.Real)
 var __Float = CoreSymbol(stdlib.Float)
 var __String = CoreSymbol(stdlib.String)
 var __T_String = &NamedType { Name: __String, Args: make([] Type, 0) }
@@ -88,8 +89,8 @@ var __IntegerTypes = []loader.Symbol {
 	__Int8,  __Uint8,  __Byte,
 	__Bit,
 }
-var __IntegerTypeMap = (func() map[loader.Symbol]string {
-	var int_type_map = make(map[loader.Symbol]string)
+var __IntegerTypeMap = (func() (map[loader.Symbol] string) {
+	var int_type_map = make(map[loader.Symbol] string)
 	for _, sym := range __IntegerTypes {
 		int_type_map[sym] = sym.SymbolName
 	}

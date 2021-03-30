@@ -4,9 +4,9 @@ do { window::mount Root };
 
 // TODO: mouse enter => Just pos, mouse out => Null
 function MousePosition:
-    &() => ui::Hook[Source[(Float,Float)]]
+    &() => ui::Hook[Source[(Real,Real)]]
     &() => &(k) =>
-        & pos := do { create-bus::[(Float,Float)] () },
+        & pos := do { create-bus::[(Real,Real)] () },
         & id := do { gen-monotonic-id-string () },
         let cpt := { k { watch pos } },
         (cpt with { Event ({ "mousemove.hook#" id },

@@ -1,63 +1,67 @@
 /// τ = 2π
-export const Tau: Float := (2.0 * Pi);
+export const Tau: Real := (2.0 * Pi);
 
 /// π = arccos(-1)
-export const Pi: Float := { acos -1.0 };
+export const Pi: Real := { acos -1.0 };
 
 /// e = exp(1)
-export const E: Float := { exp 1.0 };
+export const E: Real := { exp 1.0 };
 
-export function floor: &(Float) => Float  native 'floor';
-export function  ceil: &(Float) => Float  native 'ceil';
-export function round: &(Float) => Float  native 'round';
+export function floor: &(Real) => Real  native 'floor';
+export function  ceil: &(Real) => Real  native 'ceil';
+export function round: &(Real) => Real  native 'round';
 
-export function **: &(Float,Float) => Float  native 'real-**';
+export function **: &(Real,Real) => Real  native 'real-**';
 
-export function  sin: &(Float) => Float  native 'real-sin';
-export function  cos: &(Float) => Float  native 'real-cos';
-export function  tan: &(Float) => Float  native 'real-tan';
-export function asin: &(Float) => Float  native 'real-asin';
-export function acos: &(Float) => Float  native 'real-acos';
-export function atan: &(Float) => Float  native 'real-atan';
-export function atan2: &({ y:Float, x:Float }) => Float  native 'atan2';
+export function  sin: &(Real) => Real  native 'real-sin';
+export function  cos: &(Real) => Real  native 'real-cos';
+export function  tan: &(Real) => Real  native 'real-tan';
+export function asin: &(Real) => Real  native 'real-asin';
+export function acos: &(Real) => Real  native 'real-acos';
+export function atan: &(Real) => Real  native 'real-atan';
+export function atan2: &({ y:Real, x:Real }) => Real  native 'atan2';
 
-export function sqrt: &(Float) => Float  native 'real-sqrt';
-export function cbrt: &(Float) => Float  native 'real-cbrt';
-export function  exp: &(Float) => Float  native 'real-exp';
-export function  log: &(Float) => Float  native 'real-log';
+export function sqrt: &(Real) => Real  native 'real-sqrt';
+export function cbrt: &(Real) => Real  native 'real-cbrt';
+export function  exp: &(Real) => Real  native 'real-exp';
+export function  log: &(Real) => Real  native 'real-log';
 
-export function **: &(Float*,Float*) => Float*  native 'real-***';
+export function floor: &(Float) => Float  native '[f] floor';
+export function  ceil: &(Float) => Float  native '[f] ceil';
+export function round: &(Float) => Float  native '[f] round';
 
-export function  sin: &(Float*) => Float*  native 'real-sin*';
-export function  cos: &(Float*) => Float*  native 'real-cos*';
-export function  tan: &(Float*) => Float*  native 'real-tan*';
-export function asin: &(Float*) => Float*  native 'real-asin*';
-export function acos: &(Float*) => Float*  native 'real-acos*';
-export function atan: &(Float*) => Float*  native 'real-atan*';
-export function atan2: &({ y:Float*, x:Float* }) => Float*  native 'atan2*';
+export function **: &(Float,Float) => Float  native '[f] real-**';
 
-export function sqrt: &(Float*) => Float*  native 'real-sqrt*';
-export function cbrt: &(Float*) => Float*  native 'real-cbrt*';
-export function  exp: &(Float*) => Float*  native 'real-exp*';
-export function  log: &(Float*) => Float*  native 'real-log*';
+export function  sin: &(Float) => Float  native '[f] real-sin';
+export function  cos: &(Float) => Float  native '[f] real-cos';
+export function  tan: &(Float) => Float  native '[f] real-tan';
+export function asin: &(Float) => Float  native '[f] real-asin';
+export function acos: &(Float) => Float  native '[f] real-acos';
+export function atan: &(Float) => Float  native '[f] real-atan';
+export function atan2: &({ y:Float, x:Float }) => Float  native 'atan2*';
+
+export function sqrt: &(Float) => Float  native '[f] real-sqrt';
+export function cbrt: &(Float) => Float  native '[f] real-cbrt';
+export function  exp: &(Float) => Float  native '[f] real-exp';
+export function  log: &(Float) => Float  native '[f] real-log';
+
+export function log:
+    & { base:Real, x:Real } => Real
+    & { base, x } => ({log x} / {log base});
+export function log2:
+    &(Real) => Real
+    &(x) => { log { base: 2.0, x } };
+export function log10:
+    &(Real) => Real
+    &(x) => { log { base: 10.0, x } };
 
 export function log:
     & { base:Float, x:Float } => Float
     & { base, x } => ({log x} / {log base});
 export function log2:
     &(Float) => Float
-    &(x) => { log { base: 2.0, x } };
+    &(x) => { log { base: (2.0).[Float], x } };
 export function log10:
     &(Float) => Float
-    &(x) => { log { base: 10.0, x } };
-
-export function log:
-    & { base:Float*, x:Float* } => Float*
-    & { base, x } => ({log x} / {log base});
-export function log2:
-    &(Float*) => Float*
-    &(x) => { log { base: { convert 2.0 }.[Float*], x } };
-export function log10:
-    &(Float*) => Float*
-    &(x) => { log { base: { convert 10.0 }.[Float*], x } };
+    &(x) => { log { base: (10.0).[Float], x } };
 

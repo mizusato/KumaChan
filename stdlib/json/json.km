@@ -2,7 +2,7 @@ type Value enum {
     type Object  Map[String,Value];
     type Array   Array[Value];
     type Boolean Bool;
-    type Number  Float;
+    type Number  Real;
     type String  String;
     type Null;
 };

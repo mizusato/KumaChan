@@ -14,7 +14,7 @@ export function extract-string:
     &(prop,k) => { getter-callback (prop, get-string, k) };
 
 export function extract-float:
-    &(String, &(Float) => EventPayloadConsumer) => EventPayloadConsumer
+    &(String, &(Real) => EventPayloadConsumer) => EventPayloadConsumer
     &(prop,k) => { getter-callback (prop, get-float, k) };
 
 export function extract-number:

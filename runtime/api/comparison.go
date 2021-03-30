@@ -51,13 +51,13 @@ var ComparisonFunctions = map[string] interface{} {
 			return ToOrdering(Equal)
 		}
 	},
-	"=Float": func(a float64, b float64) SumValue {
+	"=Real": func(a float64, b float64) SumValue {
 		return ToBool(a == b)
 	},
-	"<Float": func(a float64, b float64) SumValue {
+	"<Real": func(a float64, b float64) SumValue {
 		return ToBool(a < b)
 	},
-	"<>Float": func(a float64, b float64) SumValue {
+	"<>Real": func(a float64, b float64) SumValue {
 		if a < b {
 			return ToOrdering(Smaller)
 		} else if a > b {

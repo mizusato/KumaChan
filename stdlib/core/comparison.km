@@ -58,9 +58,9 @@ export function  =: &(Uint64,Uint64) => Bool      native '=Uint64';
 export function  <: &(Uint64,Uint64) => Bool      native '<Uint64';
 export function <>: &(Uint64,Uint64) => Ordering  native '<>Uint64';
 
-export function  =: &(Float,Float) => Bool      native '=Float';
-export function  <: &(Float,Float) => Bool      native '<Float';
-export function <>: &(Float,Float) => Ordering  native '<>Float';
+export function  =: &(Real,Real) => Bool      native '=Real';
+export function  <: &(Real,Real) => Bool      native '<Real';
+export function <>: &(Real,Real) => Ordering  native '<>Real';
 
 export function  =: &(Int8,Int8) => Bool      native '=Int8';
 export function  <: &(Int8,Int8) => Bool      native '<Int8';

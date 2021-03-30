@@ -6,17 +6,17 @@ import (
 )
 
 
-func CheckFloat(x float64) float64 {
+func CheckReal(x float64) float64 {
 	if math.IsNaN(x) {
-		panic("Float Overflow: NaN")
+		panic("Real Overflow: NaN")
 	}
 	if math.IsInf(x, 0) {
-		panic("Float Overflow: Infinity")
+		panic("Real Overflow: Infinity")
 	}
 	return x
 }
 
-func IsValidFloat(x float64) bool {
+func IsValidReal(x float64) bool {
 	if math.IsNaN(x) || math.IsInf(x, 0) {
 		return false
 	}
