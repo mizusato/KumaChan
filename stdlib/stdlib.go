@@ -14,7 +14,7 @@ import (
 
 /* IMPORTANT: this go file should be consistent with corresponding km files */
 var __ModuleDirectories = [] string {
-	"core", "math", "time", "l10n",
+	"core", "time", "l10n",
 	"io", "os", "json", "net", "rpc", "image", "ui",
 }
 func GetModuleDirectoryNames() ([] string) { return __ModuleDirectories }

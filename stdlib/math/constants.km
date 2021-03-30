@@ -1,8 +1,0 @@
-/// Constant: τ = 2π
-export const Tau: Float := (2.0 * Pi);
-
-/// Constant: π = arccos(-1)
-export const Pi: Float := { acos -1.0 };
-
-/// Constant: e = exp(1)
-export const E: Float := { exp 1.0 };

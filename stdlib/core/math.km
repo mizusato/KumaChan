@@ -1,3 +1,12 @@
+/// τ = 2π
+export const Tau: Float := (2.0 * Pi);
+
+/// π = arccos(-1)
+export const Pi: Float := { acos -1.0 };
+
+/// e = exp(1)
+export const E: Float := { exp 1.0 };
+
 export function floor: &(Float) => Float  native 'floor';
 export function  ceil: &(Float) => Float  native 'ceil';
 export function round: &(Float) => Float  native 'round';
