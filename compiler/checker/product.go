@@ -335,7 +335,7 @@ func AssignBundleTo(expected Type, bundle SemiTypedBundle, info ExprInfo, ctx Ex
 					values[field.Index] = value
 				} else {
 					var node = info.ErrorPoint.Node
-					var getter = CraftAstRefTerm(ZeroValueGetter, node)
+					var getter = CraftAstRefTerm(DefaultValueGetter, node)
 					var unit = CraftAstTupleTerm(node)
 					var getter_call = CraftAstCallExpr(getter, unit, node)
 					var zero, err = AssignAstExprTo(field.Type, getter_call, ctx)

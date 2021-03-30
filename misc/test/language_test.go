@@ -35,9 +35,9 @@ func TestCps(t *testing.T) {
 	expectStdIO(t, mod_path, input("bad", "bad"), output("Null"))
 }
 
-func TestZeroValue(t *testing.T) {
+func TestDefaultValue(t *testing.T) {
 	var dir_path = getTestDirPath(t, language)
-	var mod_path = filepath.Join(dir_path, "product", "zero.km")
+	var mod_path = filepath.Join(dir_path, "product", "default.km")
 	expectStdIO(t, mod_path, "", "(0,0)\n")
 }
 

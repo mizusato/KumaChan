@@ -1,13 +1,11 @@
-type Real Real;
+type Scalar Real;
 
 type Point {
-     x: Real,
-     y: Real
+     x: Scalar,
+     y: Scalar
 };
 
-export function zero-value:
-    &() => Real
-    &() => 0.0;
+export const DefaultValue: Scalar := 0.0;
 
 do
     let p := { Point {} },

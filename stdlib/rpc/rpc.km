@@ -16,26 +16,23 @@ type CommonOptions {
     log:    LogOptions,
     limits: LimitOptions
 };
-export const CommonOptionsDefault: CommonOptions := {};
-export function zero-value: &() => CommonOptions &() => CommonOptionsDefault;
+export const DefaultValue: CommonOptions := {};
 type LogOptions {
     enabled: Bool
 };
-export const LogOptionsDefault: LogOptions := { enabled: Yes };
-export function zero-value: &() => LogOptions &() => LogOptionsDefault;
+export const DefaultValue: LogOptions := { enabled: Yes };
 type LimitOptions {
     send-timeout:      Number,
     recv-timeout:      Number,
     recv-interval:     Number,
     recv-max-obj-size: Number
 };
-export const LimitOptionsDefault: LimitOptions := {
+export const DefaultValue: LimitOptions := {
     send-timeout:      10000,
     recv-timeout:      0,
     recv-interval:     100,
     recv-max-obj-size: 33554432
 };
-export function zero-value: &() => LimitOptions &() => LimitOptionsDefault;
 
 type Connection native;
 export function close:

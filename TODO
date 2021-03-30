@@ -1,7 +1,5 @@
 TODO
 
-- zero-value --> ZeroValue
-
 - use same name for constructors and types (function Map, type Map)
 
 - extra info in Error (*ErrorWithExtraInfo implements error) (send through rpc)
@@ -25,8 +23,6 @@ TODO
 - revise resource management of wired components, files, ...
 
 - to be semantic: tuple input --> bundle input
-
-- consider zero-value:[T] &() => Optional[T]  // type Optional[T] Maybe[T]
 
 - api doc hide types that are not used (directly/indirectly) by public functions and constants
 

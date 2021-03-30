@@ -60,9 +60,7 @@ export function =:
     native 'sum-index-equal';
 
 type Optional[+T] Maybe[T];
-export function zero-value:
-    &() => Optional[never]
-    &() => Null;
+export const DefaultValue: Optional[never] := Null;
 
 // Type Conversion
 type Conv[T,U] implicit {
