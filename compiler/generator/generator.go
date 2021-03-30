@@ -9,7 +9,6 @@ import (
 
 type CompiledModule struct {
 	Functions   map[string] ([] FuncNode)
-	Constants   map[string] FuncNode
 	Effects     [] FuncNode
 }
 
@@ -34,7 +33,6 @@ func CompileModule (
 		}
 	}
 	var functions = make(map[string] ([] FuncNode))
-	var constants = make(map[string] FuncNode)
 	var effects = make([] FuncNode, 0)
 	for name, instances := range mod.Functions {
 		for _, item := range instances {
@@ -42,8 +40,11 @@ func CompileModule (
 				item.Body, item.Implicit, mod.Name, name, item.Point,
 			)
 			if err != nil { errs = append(errs, err...) }
+			var is_thunk = item.IsUnitInput
 			var kmd_info = item.FunctionKmdInfo
-			var f = FuncNodeFrom(f_raw, refs, data, closures, kmd_info)
+			var f = FuncNodeFrom (
+				f_raw, refs, data, closures, is_thunk, kmd_info,
+			)
 			var existing, exists = functions[name]
 			if exists {
 				functions[name] = append(existing, f)
@@ -52,26 +53,22 @@ func CompileModule (
 			}
 		}
 	}
-	for name, item := range mod.Constants {
-		var f, refs, err = CompileConstant (
-			item.Value, mod.Name, name, item.Point,
+	for _, item := range mod.Effects {
+		var body = ch.BodyThunk {
+			Value: item.Value,
+		}
+		var f, refs, err = CompileFunction (
+			body, ([] string {}), mod.Name, "(do)", item.Point,
 		)
 		if err != nil {
 			errs = append(errs, err...)
 		}
-		constants[name] = FuncNodeFrom(f, refs, data, closures, __NoKmdInfo)
-	}
-	for _, item := range mod.Effects {
-		var value = ch.ExprExpr(item.Value)
-		var f, refs, err = CompileConstant(value, mod.Name, "(do)", item.Point)
-		if err != nil {
-			errs = append(errs, err...)
-		}
-		effects = append(effects, FuncNodeFrom(f, refs, data, closures, __NoKmdInfo))
+		effects = append(effects, FuncNodeFrom (
+			f, refs, data, closures, true, __NoKmdInfo,
+		))
 	}
 	idx[mod.Name] = &CompiledModule {
 		Functions: functions,
-		Constants: constants,
 		Effects:   effects,
 	}
 	if len(errs) != 0 {
@@ -83,19 +80,23 @@ func CompileModule (
 
 
 func CompileFunction (
-	body   ch.ExprLike,
+	body   ch.Body,
 	imp    [] string,
 	mod    string,
 	name   string,
 	point  ErrorPoint,
 ) (*lang.Function, [] GlobalRef, [] E) {
+	var imp_size = uint(len(imp))
+	if imp_size > lang.ClosureMaxSize {
+		panic("something went wrong")
+	}
 	switch b := body.(type) {
-	case ch.ExprPredefinedValue:
+	case ch.BodyGenerated:
 		return &lang.Function {
-			Kind:       lang.F_PREDEFINED,
-			Predefined: b.Value,
-			Code:       nil,
-			BaseSize:   lang.FrameBaseSize {},
+			Kind:      lang.F_GENERATED,
+			Generated: b.Value,
+			Code:      nil,
+			BaseSize:  lang.FrameBaseSize {},
 			Info: lang.FuncInfo {
 				Module:    mod,
 				Name:      name,
@@ -103,30 +104,65 @@ func CompileFunction (
 				SourceMap: nil,
 			},
 		}, make([] GlobalRef, 0), nil
-	case ch.ExprNative:
+	case ch.BodyRuntimeGenerated:
+		return &lang.Function {
+			Kind:      lang.F_RUNTIME_GENERATED,
+			Generated: b.Value,
+			Code:      nil,
+			BaseSize:  lang.FrameBaseSize {},
+			Info: lang.FuncInfo {
+				Module:    mod,
+				Name:      name,
+				DeclPoint: point,
+				SourceMap: nil,
+			},
+		}, make([] GlobalRef, 0), nil
+	case ch.BodyNative:
 		var native_id = b.Name
 		return &lang.Function {
-			Kind:       lang.F_NATIVE,
-			NativeId:   native_id,
-			Predefined: nil,
-			Code:       nil,
-			BaseSize:   lang.FrameBaseSize {},
+			Kind:      lang.F_NATIVE,
+			NativeId:  native_id,
+			Generated: nil,
+			Code:      nil,
+			BaseSize:  lang.FrameBaseSize {},
 			Info:       lang.FuncInfo {
 				Module:    mod,
 				Name:      name,
 				DeclPoint: point,
 				SourceMap: nil,
 			},
-		}, make([]GlobalRef, 0), nil
-	case ch.ExprExpr:
-		var body_expr = ch.Expr(b)
-		var lambda = body_expr.Value.(ch.Lambda)
-		var pattern = lambda.Input
-		var context_size = uint(len(imp))
+		}, make([] GlobalRef, 0), nil
+	case ch.BodyThunk:
 		var ctx = MakeContextWithImplicit(imp)
 		var scope = ctx.LocalScope
+		var code = CompileExpr(b.Value, ctx)
+		var errs = scope.CollectUnusedAsErrors()
+		var binding_peek = *(scope.BindingPeek)
+		if (imp_size + binding_peek) > lang.LocalSlotMaxSize {
+			panic("maximum quantity of local bindings exceeded")
+		}
+		return &lang.Function {
+			Kind:      lang.F_USER,
+			Generated: nil,
+			Code:      code.InstSeq,
+			BaseSize:   lang.FrameBaseSize {
+				Context:  lang.Short(imp_size),
+				Reserved: lang.Long(binding_peek),
+			},
+			Info:       lang.FuncInfo {
+				Module:    mod,
+				Name:      name,
+				DeclPoint: point,
+				SourceMap: code.SourceMap,
+			},
+		}, *(ctx.GlobalRefs), errs
+	case ch.BodyLambda:
+		var ctx = MakeContextWithImplicit(imp)
+		var scope = ctx.LocalScope
+		var info = b.Info
+		var lambda = b.Lambda
+		var pattern = lambda.Input
 		var buf = MakeCodeBuffer()
-		var info = body_expr.Info
 		switch p := pattern.Concrete.(type) {
 		case ch.TrivialPattern:
 			var offset = scope.AddBinding(p.ValueName, p.Point)
@@ -140,19 +176,19 @@ func CompileFunction (
 			panic("impossible branch")
 		}
 		var out_code = CompileExpr(lambda.Output, ctx)
-		var errs = ctx.LocalScope.CollectUnusedAsErrors()
+		var errs = scope.CollectUnusedAsErrors()
 		buf.Write(out_code)
 		var code = buf.Collect()
 		var binding_peek = *(scope.BindingPeek)
-		if (context_size + binding_peek) > lang.LocalSlotMaxSize {
+		if (imp_size + binding_peek) > lang.LocalSlotMaxSize {
 			panic("maximum quantity of local bindings exceeded")
 		}
 		return &lang.Function {
-			Kind:       lang.F_USER,
-			Predefined: nil,
-			Code:       code.InstSeq,
+			Kind:      lang.F_USER,
+			Generated: nil,
+			Code:      code.InstSeq,
 			BaseSize:   lang.FrameBaseSize {
-				Context:  lang.Short(context_size),
+				Context:  lang.Short(imp_size),
 				Reserved: lang.Long(binding_peek),
 			},
 			Info:       lang.FuncInfo {
@@ -167,67 +203,3 @@ func CompileFunction (
 	}
 }
 
-
-func CompileConstant (
-	body   ch.ExprLike,
-	mod    string,
-	name   string,
-	point  ErrorPoint,
-) (*lang.Function, [] GlobalRef, [] E) {
-	switch b := body.(type) {
-	case ch.ExprPredefinedValue:
-		return &lang.Function {
-			Kind:       lang.F_PREDEFINED,
-			Predefined: b.Value,
-			Code:       nil,
-			BaseSize:   lang.FrameBaseSize {},
-			Info: lang.FuncInfo {
-				Module:    mod,
-				Name:      name,
-				DeclPoint: point,
-				SourceMap: nil,
-			},
-		}, make([] GlobalRef, 0), nil
-	case ch.ExprNative:
-		var native_id = b.Name
-		return &lang.Function {
-			Kind:       lang.F_NATIVE,
-			NativeId:   native_id,
-			Predefined: nil,
-			Code:       nil,
-			BaseSize:   lang.FrameBaseSize {},
-			Info: lang.FuncInfo {
-				Module:    mod,
-				Name:      name,
-				DeclPoint: point,
-				SourceMap: nil,
-			},
-		}, make([] GlobalRef, 0), nil
-	case ch.ExprExpr:
-		var body_expr = ch.Expr(b)
-		var ctx = MakeContext()
-		var code = CompileExpr(body_expr, ctx)
-		var errs = ctx.LocalScope.CollectUnusedAsErrors()
-		var binding_peek = *(ctx.LocalScope.BindingPeek)
-		if binding_peek > lang.LocalSlotMaxSize {
-			panic("maximum quantity of local bindings exceeded")
-		}
-		return &lang.Function {
-			Kind:       lang.F_USER,
-			Predefined: nil,
-			Code:       code.InstSeq,
-			BaseSize:   lang.FrameBaseSize {
-				Context:  0,
-				Reserved: lang.Long(binding_peek),
-			},
-			Info:       lang.FuncInfo {
-				Module:    mod,
-				Name:      name,
-				DeclPoint: point,
-				SourceMap: code.SourceMap,
-			},
-		}, *(ctx.GlobalRefs), errs
-	default:
-		panic("impossible branch")
-	}
-}

@@ -28,9 +28,6 @@ var NativeConstantMaps = [] (map[string] NativeConstant) {
 var NativeFunctionMap    map[string] NativeFunction
 var NativeFunctionIndex  map[string] uint
 var NativeFunctions      [] NativeFunction
-var NativeConstantMap    map[string] NativeConstant
-var NativeConstantIndex  map[string] uint
-var NativeConstants      [] NativeConstant
 var _ = (func() interface{} {
 	NativeFunctionMap = make(map[string] NativeFunction)
 	for _, category := range NativeFunctionMaps {
@@ -38,6 +35,13 @@ var _ = (func() interface{} {
 			var _, exists = NativeFunctionMap[name]
 			if exists { panic("duplicate native function name " + name) }
 			NativeFunctionMap[name] = AdaptNativeFunction(f)
+		}
+	}
+	for _, category := range NativeConstantMaps {
+		for name, constant := range category {
+			var _, exists = NativeFunctionMap[name]
+			if exists { panic("duplicate native function name " + name) }
+			NativeFunctionMap[name] = constant.ToFunction()
 		}
 	}
 	NativeFunctionIndex = make(map[string] uint, len(NativeFunctionMap))
@@ -48,24 +52,6 @@ var _ = (func() interface{} {
 		NativeFunctions[i] = f
 		i += 1
 	}
-	// ---------------
-	NativeConstantMap = make(map[string] NativeConstant)
-	for _, category := range NativeConstantMaps {
-		for name, v := range category {
-			var _, exists = NativeConstantMap[name]
-			if exists { panic("duplicate native constant name " + name) }
-			NativeConstantMap[name] = v
-		}
-	}
-	NativeConstantIndex = make(map[string] uint)
-	NativeConstants = make([] NativeConstant, len(NativeConstantMap))
-	i = 0
-	for name, v := range NativeConstantMap {
-		NativeConstantIndex[name] = i
-		NativeConstants[i] = v
-		i += 1
-	}
-	// ---------------
 	return nil
 }) ()
 
@@ -73,11 +59,5 @@ func GetNativeFunctionValue(id string) Value {
 	var f, exists = NativeFunctionMap[id]
 	if !(exists) { panic(fmt.Sprintf("no such native function: %s", id)) }
 	return NativeFunctionValue(f)
-}
-
-func GetNativeConstantValue(id string, h InteropContext) Value {
-	var c, exists = NativeConstantMap[id]
-	if !(exists) { panic(fmt.Sprintf("no such native constant: %s", id)) }
-	return c(h)
 }
 

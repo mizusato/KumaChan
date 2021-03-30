@@ -22,6 +22,11 @@ const (
 	SuperBound  TypeBoundKind  =  '<'
 )
 
+var __NoBounds = TypeBounds {
+	Sub:   make(map[uint] Type),
+	Super: make(map[uint] Type),
+}
+
 func CheckTypeValBounds(val TypeDef, info TypeNodeInfo, ctx TypeBoundsContext) *TypeError {
 	switch V := val.(type) {
 	case *Enum:

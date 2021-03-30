@@ -10,9 +10,9 @@ type Error struct {
 
 type ConcreteError interface { CompilerError() }
 
-func (impl E_CircularConstantDependency) CompilerError() {}
-type E_CircularConstantDependency struct {
-	Constants  [] string
+func (impl E_CircularThunkDependency) CompilerError() {}
+type E_CircularThunkDependency struct {
+	Names  [] string
 }
 
 func (impl E_UnusedBinding) CompilerError() {}
@@ -31,13 +31,14 @@ func (err *Error) ErrorConcrete() interface{} {
 func (err *Error) Desc() ErrorMessage {
 	var desc = make(ErrorMessage, 0)
 	switch e := err.Concrete.(type) {
-	case E_CircularConstantDependency:
+	case E_CircularThunkDependency:
 		desc.WriteText(TS_ERROR,
-			"Circular dependency detected within constants:")
+			"Circular dependency detected within thunks:")
 		desc.Write(T_SPACE)
-		for i, item := range e.Constants {
-			desc.WriteText(TS_INLINE_CODE, item)
-			if i != len(e.Constants)-1 {
+		var names = e.Names
+		for i, name := range names {
+			desc.WriteText(TS_INLINE_CODE, name)
+			if i != len(names)-1 {
 				desc.WriteText(TS_ERROR, ", ")
 			}
 		}

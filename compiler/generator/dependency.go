@@ -9,6 +9,7 @@ import (
 type FuncNode struct {
 	Underlying    *lang.Function
 	Dependencies  [] Dependency
+	IsThunk       bool
 	ch.FunctionKmdInfo
 }
 var __NoKmdInfo = ch.FunctionKmdInfo {}
@@ -25,11 +26,6 @@ type DepFunction struct {
 	Name    string
 	Index   uint
 }
-func (impl DepConstant) Dependency() {}
-type DepConstant struct {
-	Module  string
-	Name    string
-}
 func (impl DepData) Dependency() {}
 type DepData struct {
 	Index  uint
@@ -44,12 +40,14 @@ func FuncNodeFrom (
 	refs      [] GlobalRef,
 	data      *([] lang.DataValue),
 	closures  *([] FuncNode),
+	is_thunk  bool,
 	kmd_info  ch.FunctionKmdInfo,
 ) FuncNode {
 	var deps = RefsToDeps(refs, data, closures)
 	return FuncNode {
 		Underlying:      f,
 		Dependencies:    deps,
+		IsThunk:         is_thunk,
 		FunctionKmdInfo: kmd_info,
 	}
 }
@@ -74,6 +72,7 @@ func RefsToDeps (
 				r.GlobalRefs,
 				data,
 				closures,
+				false,
 				__NoKmdInfo,
 			)
 			var index = uint(len(*closures))
@@ -86,11 +85,6 @@ func RefsToDeps (
 				Module: r.Module,
 				Name:   r.Name,
 				Index:  r.Index,
-			}
-		case RefConst:
-			deps[i] = DepConstant {
-				Module: r.Name.ModuleName,
-				Name:   r.Name.SymbolName,
 			}
 		default:
 			panic("impossible branch")

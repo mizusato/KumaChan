@@ -12,15 +12,16 @@ type FunctionKind int
 const (
 	F_USER FunctionKind = iota
 	F_NATIVE
-	F_PREDEFINED
+	F_GENERATED
+	F_RUNTIME_GENERATED
 )
 type Function struct {
-	Kind        FunctionKind
-	NativeId    string
-	Predefined  interface{}
-	Code        [] Instruction
-	BaseSize    FrameBaseSize
-	Info        FuncInfo
+	Kind       FunctionKind
+	NativeId   string
+	Generated  interface{}
+	Code       [] Instruction
+	BaseSize   FrameBaseSize
+	Info       FuncInfo
 }
 
 type FrameBaseSize struct {
@@ -77,8 +78,11 @@ func (f *Function) String() string {
 	case F_NATIVE:
 		fmt.Fprintf(&buf, "    NATIVE %s", strconv.Quote(f.NativeId))
 		return buf.String()
-	case F_PREDEFINED:
-		fmt.Fprintf(&buf, "    PREDEFINED")
+	case F_GENERATED:
+		fmt.Fprintf(&buf, "    GENERATED")
+		return buf.String()
+	case F_RUNTIME_GENERATED:
+		fmt.Fprintf(&buf, "    RUNTIME_GENERATED")
 		return buf.String()
 	default:
 		panic("impossible branch")

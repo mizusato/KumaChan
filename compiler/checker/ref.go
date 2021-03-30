@@ -159,12 +159,6 @@ func CheckRef(ref ast.InlineRef, ctx ExprContext) (SemiExpr, *ExprError) {
 			Value: RefLocal { symbol.SymbolName },
 			Info:  info,
 		}), nil
-	case SymConst:
-		return LiftTyped(Expr {
-			Type:  s.Const.DeclaredType,
-			Value: RefConstant { s.Name },
-			Info:  info,
-		}), nil
 	case SymTypeParam:
 		return SemiExpr{}, &ExprError {
 			Point:    ErrorPointFrom(ref.Id.Node),

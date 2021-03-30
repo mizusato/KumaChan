@@ -176,7 +176,6 @@ func repl(args ([] string), max_stack_size int, debug_opts lang.DebugOptions) {
     var mod_info = checker.ModuleInfo {
         Module:    mod.RawModule,
         Types:     mod.Context.Types,
-        Constants: mod.Context.Constants[mod.Name],
         Functions: mod.Context.Functions[mod.Name],
     }
     var ic = generator.NewIncrementalCompiler(&mod_info, dep_locator)
@@ -211,30 +210,23 @@ func repl(args ([] string), max_stack_size int, debug_opts lang.DebugOptions) {
             cmd := transformer.Transform(cst).(ast.ReplRoot)
             var expr = ast.ReplCmdGetExpr(cmd.Cmd)
             var temp_name = fmt.Sprintf("Temp%d", cmd_id)
-            var temp_id = generator.DepConstant {
-                Module: mod.Name,
-                Name:   temp_name,
-            }
             var _, is_do = cmd.Cmd.(ast.ReplDo)
             var t checker.Type = nil
             if is_do { t = checker.VariousEffectType() }
-            f, dep_vals, err := ic.AddConstant(temp_id, t, expr)
+            f, dep_values, err := ic.AddTempThunk(temp_name, t, expr)
             if err != nil {
                 fmt.Fprintf(os.Stderr,
                     "%s error:\n%s\n", cmd_label_err, err)
                 continue
             }
-            m.InjectExtraGlobals(dep_vals)
+            m.InjectExtraGlobals(dep_values)
             var ret = m.Call(f, nil, rx.Background())
-            m.InjectExtraGlobals([] lang.Value {ret })
+            m.InjectExtraGlobals([] lang.Value { f })
             fmt.Printf("%s %s\n", cmd_label, lang.Inspect(ret))
             switch cmd := cmd.Cmd.(type) {
             case ast.ReplAssign:
                 var alias = string(cmd.Name.Name)
-                ic.SetConstantAlias(temp_id, generator.DepConstant {
-                    Module: temp_id.Module,
-                    Name:   alias,
-                })
+                ic.SetTempThunkAlias(temp_name, alias)
             case ast.ReplDo:
                 var eff, ok = ret.(rx.Observable)
                 if !(ok) {
@@ -286,8 +278,8 @@ func repl(args ([] string), max_stack_size int, debug_opts lang.DebugOptions) {
     }
     // 8. Inject the REPL as a side effect of the program
     var do_repl = &lang.Function {
-        Kind: lang.F_PREDEFINED,
-        Predefined:  rx.NewGoroutineSingle(func(_ *rx.Context) (rx.Object, bool) {
+        Kind: lang.F_RUNTIME_GENERATED,
+        Generated: rx.NewGoroutineSingle(func(_ *rx.Context) (rx.Object, bool) {
             loop()
             return nil, true
         }),

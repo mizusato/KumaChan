@@ -29,7 +29,6 @@ type ApiItem struct {
 type ApiItemKind string
 const (
 	TypeDecl  ApiItemKind = "type"
-	ConstDecl ApiItemKind = "constant"
 	FuncDecl  ApiItemKind = "function"
 )
 
@@ -79,15 +78,6 @@ func GenerateApiDocs(idx checker.Index) ApiDocIndex {
 				buf.WriteString("\n")
 			}
 		}
-		var add_const = func(name string, constant checker.CheckedConstant) {
-			var sym = loader.MakeSymbol(mod_name, name)
-			outline_add_item(ConstDecl, sym, [] string { constant.Section })
-			var id = sym.String()
-			var content = constDecl(sym, constant.Type, constant.Doc)
-			var wrapped = blockWithId(id, "api toplevel", content)
-			buf.WriteString(string(wrapped))
-			buf.WriteString("\n")
-		}
 		var add_function = func(name string, group ([] checker.CheckedFunction)) {
 			var sym = loader.MakeSymbol(mod_name, name)
 			var sec = make([] string, 0)
@@ -125,17 +115,6 @@ func GenerateApiDocs(idx checker.Index) ApiDocIndex {
 		for _, sym := range types {
 			var g = reg[sym]
 			add_type(sym, g)
-		}
-		var constants = make([] string, 0)
-		for name, constant := range mod.Constants {
-			if constant.Public {
-				constants = append(constants, name)
-			}
-		}
-		sort.Strings(constants)
-		for _, name := range constants {
-			var constant = mod.Constants[name]
-			add_const(name, constant)
 		}
 		var functions = make([] string, 0)
 		var function_groups = make(map[string] ([] checker.CheckedFunction))
@@ -188,13 +167,6 @@ func typeDecl(sym loader.Symbol, g *checker.GenericType, reg checker.TypeRegistr
 		description(g.Doc))
 }
 
-func constDecl(sym loader.Symbol, t checker.Type, doc string) Html {
-	return block("constant",
-		block("header", keyword("const"), text("name", sym.SymbolName),
-			keyword(":"), inline("type", typeExpr(t, nil, sym.ModuleName))),
-		description(doc))
-}
-
 func funcDecl(sym loader.Symbol, group ([] checker.CheckedFunction)) Html {
 	var group_contents = make([] Html, len(group))
 	var buf strings.Builder
@@ -219,12 +191,13 @@ func funcOverload(sym loader.Symbol, f checker.CheckedFunction) Html {
 	return block("overload",
 		block("header",
 			funcAlias(mod, f.AliasList),
+			funcConst(f.IsFromConst),
 			funcTypeParams (
 				typeParams(params, no_defaults, f.Bounds, mod),
 				(len(f.Bounds.Super) + len(f.Bounds.Sub)) == 0,
 			),
 			funcImplicit(f.RawImplicit, params, mod),
-			inline("type", typeExpr(f.Type, params, mod))),
+			inline("type", funcType(f.Type, params, mod, f.IsFromConst))),
 		description(desc),
 	)
 }
@@ -241,6 +214,14 @@ func funcAlias(mod string, alias_list ([] string)) Html {
 	return inline("alias", keyword("("),
 		inline("alias-list", join(alias_contents, keyword(","))),
 		keyword(")"))
+}
+
+func funcConst(is_from_const bool) Html {
+	if is_from_const {
+		return inline("const-badge", keyword("const"))
+	} else {
+		return Html("")
+	}
 }
 
 func funcTypeParams(params Html, omit_by_default bool) Html {
@@ -268,6 +249,27 @@ func funcImplicit (
 	}
 	return inline("implicit",
 		keyword("["), inline("types", type_contents...), keyword("]"))
+}
+
+func funcType (
+	t         checker.Type,
+	params    [] checker.TypeParam,
+	mod       string,
+	is_const  bool,
+) Html {
+	if is_const {
+		var unit = &checker.AnonymousType { Repr: checker.Unit {} }
+		switch T := t.(type) {
+		case *checker.AnonymousType:
+			switch R := T.Repr.(type) {
+			case checker.Func:
+				if checker.TypeEqualWithoutContext(R.Input, unit) {
+					return typeExpr(R.Output, params, mod)
+				}
+			}
+		}
+	}
+	return typeExpr(t, params, mod)
 }
 
 func description(content string) Html {

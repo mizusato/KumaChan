@@ -435,6 +435,12 @@ type E_ConflictImplicitContextField struct {
 	FieldName  string
 }
 
+func (impl E_TooManyImplicitContextField) FunctionError() {}
+type E_TooManyImplicitContextField struct {
+	Defined  uint
+	Limit    uint
+}
+
 func (impl E_ImplicitContextOnNativeFunction) FunctionError() {}
 type E_ImplicitContextOnNativeFunction struct {}
 
@@ -485,6 +491,11 @@ func (err *FunctionError) Desc() ErrorMessage {
 	case E_ConflictImplicitContextField:
 		msg.WriteText(TS_ERROR, "Conflict implicit context field:")
 		msg.WriteEndText(TS_INLINE_CODE, e.FieldName)
+	case E_TooManyImplicitContextField:
+		msg.WriteText(TS_ERROR, "Too many implicit context:")
+		msg.WriteInnerText(TS_INLINE, fmt.Sprint(e.Defined))
+		msg.WriteText(TS_ERROR,
+			fmt.Sprintf("fields (maximum is %d)", e.Limit))
 	case E_ImplicitContextOnNativeFunction:
 		msg.WriteText(TS_ERROR, "Cannot use implicit context on a native function")
 	case E_ImplicitContextOnServiceMethod:
@@ -533,84 +544,6 @@ func (err *FunctionError) Message() ErrorMessage {
 
 func (err *FunctionError) Error() string {
 	var msg = MsgFailedToCompile(err.Concrete, [] ErrorMessage {
-		err.Message(),
-	})
-	return msg.String()
-}
-
-
-type ConstantError struct {
-	Point     ErrorPoint
-	Concrete  ConcreteConstantError
-}
-
-type ConcreteConstantError interface { ConstantError() }
-
-func (impl E_InvalidConstName) ConstantError() {}
-type E_InvalidConstName struct {
-	Name  string
-}
-
-func (impl E_DuplicateConstDecl) ConstantError() {}
-type E_DuplicateConstDecl struct {
-	Name  string
-}
-
-func (impl E_ConstTypeInvalid) ConstantError() {}
-type E_ConstTypeInvalid struct {
-	ConstName  string
-	TypeError  *TypeError
-}
-
-func (impl E_ConstConflictWithType) ConstantError() {}
-type E_ConstConflictWithType struct {
-	Name  string
-}
-
-func (impl E_MissingConstantDefinition) ConstantError() {}
-type E_MissingConstantDefinition struct {
-	ConstName  string
-}
-
-func (err *ConstantError) Desc() ErrorMessage {
-	var msg = make(ErrorMessage, 0)
-	switch e := err.Concrete.(type) {
-	case E_InvalidConstName:
-		msg.WriteText(TS_ERROR, "Invalid constant name")
-		msg.WriteEndText(TS_INLINE_CODE, e.Name)
-	case E_DuplicateConstDecl:
-		msg.WriteText(TS_ERROR, "Duplicate declaration of constant")
-		msg.WriteEndText(TS_INLINE_CODE, e.Name)
-	case E_ConstTypeInvalid:
-		msg.WriteAll(e.TypeError.Desc())
-	case E_ConstConflictWithType:
-		msg.WriteText(TS_ERROR, "The constant name")
-		msg.WriteInnerText(TS_INLINE_CODE, e.Name)
-		msg.WriteText(TS_ERROR, "conflict with existing type name")
-		msg.WriteEndText(TS_INLINE_CODE, e.Name)
-	case E_MissingConstantDefinition:
-		msg.WriteText(TS_ERROR, "Missing constant definition for")
-		msg.WriteEndText(TS_INLINE_CODE, e.ConstName)
-	default:
-		panic("unknown error kind")
-	}
-	return msg
-}
-
-func (err *ConstantError) ErrorPoint() ErrorPoint {
-	return err.Point
-}
-
-func (err *ConstantError) ErrorConcrete() interface{} {
-	return err.Concrete
-}
-
-func (err *ConstantError) Message() ErrorMessage {
-	return FormatErrorAt(err.Point, err.Desc())
-}
-
-func (err *ConstantError) Error() string {
-	var msg = MsgFailedToCompile(err.Concrete, []ErrorMessage {
 		err.Message(),
 	})
 	return msg.String()

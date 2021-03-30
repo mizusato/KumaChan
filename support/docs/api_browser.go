@@ -353,7 +353,6 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 					default:
 					}
 					if filter == "Type" && item.Kind != TypeDecl { continue }
-					if filter == "Constant" && item.Kind != ConstDecl { continue }
 					if filter == "Function" && item.Kind != FuncDecl { continue }
 					var normalized_id = strings.ToLower(item.Id)
 					var normalized_target = strings.ToLower(target)

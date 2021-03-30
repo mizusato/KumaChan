@@ -2,9 +2,10 @@ package checker
 
 import (
 	"strings"
-	. "kumachan/misc/util/error"
-	"kumachan/compiler/loader"
+	"kumachan/lang"
 	"kumachan/lang/parser/ast"
+	"kumachan/compiler/loader"
+	. "kumachan/misc/util/error"
 )
 
 
@@ -25,6 +26,7 @@ type GenericFunctionInfo struct {
 	RawImplicit  [] Type
 	AliasList    [] string
 	IsSelfAlias  bool
+	IsFromConst  bool
 }
 
 type FunctionReference struct {
@@ -97,18 +99,23 @@ func CollectFunctions (
 	var decls = make([] ast.DeclFunction, 0)
 	var sections = make([] string, 0)
 	var section CurrentSection
+	var collect = func(decl ast.DeclFunction) {
+		var i = len(decls)
+		decls = append(decls, decl)
+		if i < len(mod.AST.Statements) {
+			sections = append(sections, section.GetAt(decl.Node))
+		} else {
+			sections = append(sections, "")
+		}
+	}
 	for _, stmt := range stmts {
 		switch decl := stmt.Statement.(type) {
 		case ast.Title:
 			section.SetFrom(decl)
 		case ast.DeclFunction:
-			var i = len(decls)
-			decls = append(decls, decl)
-			if i < len(mod.AST.Statements) {
-				sections = append(sections, section.GetAt(decl.Node))
-			} else {
-				sections = append(sections, "")
-			}
+			collect(decl)
+		case ast.DeclConst:
+			collect(DesugarConstant(decl))
 		}
 	}
 	for i, decl := range decls {
@@ -280,6 +287,17 @@ func CollectFunctions (
 				}
 			}
 		}
+		var implicit_count = uint(len(implicit_fields))
+		var implicit_max = uint(lang.ClosureMaxSize)
+		if implicit_count > implicit_max {
+			return nil, &FunctionError {
+				Point:    ErrorPointFrom(decl.Implicit[i].Node),
+				Concrete: E_TooManyImplicitContextField {
+					Defined: implicit_count,
+					Limit:   implicit_max,
+				},
+			}
+		}
 		// 3.6. Evaluate the function signature using the created context
 		var sig, type_err = TypeFromRepr(ast.VariousRepr {
 			Node: decl.Repr.Node,
@@ -298,6 +316,7 @@ func CollectFunctions (
 				RawImplicit: implicit_types,
 				AliasList:   tags.AliasList,
 				IsSelfAlias: is_alias,
+				IsFromConst: decl.IsConst,
 			}
 			var f = &GenericFunction {
 				Section:      section,

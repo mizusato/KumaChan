@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"kumachan/misc/rx"
 	"kumachan/runtime/api"
-	"kumachan/runtime/lib/ui"
 	. "kumachan/lang"
+	"kumachan/runtime/lib/ui"
 )
 
 
@@ -26,79 +26,61 @@ type CallStackFrame struct {
 }
 
 func execute(p Program, m *Machine) {
-	var L = len(p.Functions) + len(p.Constants) + len(p.Constants)
+	var L = len(p.DataValues) + len(p.Functions) + len(p.Closures)
 	assert(L <= GlobalSlotMaxSize, "maximum global slot size exceeded")
-	m.globalSlot = make([]Value, 0, L)
-	for _, v := range p.DataValues {
-		m.globalSlot = append(m.globalSlot, v.ToValue())
+	m.globalSlot = make([] Value, L)
+	var ptr = 0
+	var add_global = func(v Value) {
+		m.globalSlot[ptr] = v
+		ptr += 1
 	}
-	for i, _ := range p.Functions {
-		var f = p.Functions[i]
-		var v = (func() Value {
-			switch f.Kind {
-			case F_USER:
-				return &ValFunc { Underlying: f }
-			case F_NATIVE:
-				return api.GetNativeFunctionValue(f.NativeId)
-			case F_PREDEFINED:
-				return f.Predefined
+	for _, data := range p.DataValues {
+		add_global(data.ToValue())
+	}
+	for _, f := range p.Functions {
+		switch f.Kind {
+		case F_USER:
+			add_global(&ValFunc { Underlying: f })
+		case F_NATIVE:
+			add_global(api.GetNativeFunctionValue(f.NativeId))
+		case F_GENERATED:
+			add_global(f.Generated)
+		case F_RUNTIME_GENERATED:
+			switch seed := f.Generated.(type) {
+			case UiObjectThunk:
+				add_global(ui.EvaluateObjectThunk(seed))
 			default:
-				panic("impossible branch")
+				panic("unknown runtime function generation seed")
 			}
-		})()
-		m.globalSlot = append(m.globalSlot, v)
+		default:
+			panic("impossible branch")
+		}
 	}
-	for i, _ := range p.Closures {
-		var f = p.Closures[i]
+	for _, f := range p.Closures {
 		if f.Kind != F_USER { panic("something went wrong") }
 		var v = &ValFunc { Underlying: f }
-		m.globalSlot = append(m.globalSlot, v)
+		add_global(v)
 	}
 	var background = rx.Background()
-	for i, _ := range p.Constants {
-		var f = p.Constants[i]
-		var v = (func() Value {
-			switch f.Kind {
-			case F_USER:
-				var evaluate = &ValFunc { Underlying: f }
-				return call(evaluate, nil, m, background)
-			case F_NATIVE:
-				var l = InteropErrorPointLocatorFromStatic(f.Info.DeclPoint)
-				var h = InteropHandle { machine: m, locator: l, sync_ctx: background }
-				return api.GetNativeConstantValue(f.NativeId, h)
-			case F_PREDEFINED:
-				switch v := f.Predefined.(type) {
-				case UiObjectThunk:
-					return ui.EvaluateObjectThunk(v)
-				default:
-					return v
-				}
-			default:
-				panic("impossible branch")
-			}
-		})()
-		m.globalSlot = append(m.globalSlot, v)
-	}
 	var wg = make(chan bool, len(p.Effects))
-	for i, _ := range p.Effects {
-		var f = p.Effects[i]
-		var e = (func() rx.Observable {
-			switch f.Kind {
-			case F_USER:
-				var evaluate = &ValFunc { Underlying: f }
-				return (call(evaluate, nil, m, background)).(rx.Observable)
-			case F_PREDEFINED:
-				return f.Predefined.(rx.Observable)
-			default:
-				panic("something went wrong")
-			}
-		})()
-		rx.Schedule(e, m.scheduler, rx.Receiver {
-			Context:   background,
-			Values:    nil,
-			Error:     nil,
-			Terminate: wg,
-		})
+	for _, f := range p.Effects {
+		switch f.Kind {
+		case F_USER:
+			var evaluate = &ValFunc { Underlying: f }
+			var e = (call(evaluate, nil, m, background)).(rx.Observable)
+			rx.Schedule(e, m.scheduler, rx.Receiver {
+				Context:   background,
+				Terminate: wg,
+			})
+		case F_RUNTIME_GENERATED:
+			var  e = f.Generated.(rx.Observable)
+			rx.Schedule(e, m.scheduler, rx.Receiver {
+				Context:   background,
+				Terminate: wg,
+			})
+		default:
+			panic("something went wrong")
+		}
 	}
 	for i := 0; i < len(p.Effects); i += 1 {
 		<- wg

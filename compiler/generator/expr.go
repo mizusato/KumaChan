@@ -11,14 +11,6 @@ type Context struct {
 	LocalScope  *Scope
 }
 
-func MakeContext() Context {
-	var refs = make([] GlobalRef, 0)
-	return Context {
-		GlobalRefs: &refs,
-		LocalScope: MakeScope(),
-	}
-}
-
 func MakeContextWithImplicit(fields ([] string)) Context {
 	var refs = make([] GlobalRef, 0)
 	return Context {

@@ -22,6 +22,7 @@ type TypeParam struct {
 	Name      string
 	Variance  TypeVariance
 }
+var __NoParams = make([] TypeParam, 0)
 func TypeParamsNames(params ([] TypeParam)) ([] string) {
 	var draft = make([] string, len(params))
 	for i, _ := range draft {

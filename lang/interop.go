@@ -39,6 +39,11 @@ var __InteropContextType = reflect.TypeOf(&__t).Elem()
 
 type NativeFunction  func(arg Value, handle InteropContext) Value
 type NativeConstant  func(handle InteropContext) Value
+func (c NativeConstant) ToFunction() NativeFunction {
+	return func(_ Value, h InteropContext) Value {
+		return c(h)
+	}
+}
 
 type SyncCancellationError struct {}
 func (SyncCancellationError) Error() string {

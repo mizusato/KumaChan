@@ -40,11 +40,6 @@
        </item>
        <item>
         <property name="text">
-         <string>Constant</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
          <string>Function</string>
         </property>
        </item>

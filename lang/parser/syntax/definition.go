@@ -178,7 +178,7 @@ var __SyntaxDefinition = [...] string {
                 "more_field_maps? = , field_map more_field_maps",
                 "field_map = name field_map_to",
                   "field_map_to? = : name",
-    "decl_const = docs scope @const name! :! type! const_def ;!",
+    "decl_const = docs tags scope @const name! :! type! const_def ;!",
       "const_def? = := const_value",
       "const_value = native | expr!",
     "expr = term pipes",

@@ -28,16 +28,26 @@ func CreateProgram (
 	}
 	var function_index_map = make(map[DepFunction] uint)
 	var functions = make([] FuncNode, 0)
+	var thunk_index_map = make(map[DepFunction] uint)
+	var thunk_names = make([] string, 0)
+	var thunks = make([] FuncNode, 0)
 	for mod_name, mod := range idx {
 		for f_name, items := range mod.Functions {
 			for f_index, item := range items {
 				var global_index = uint(len(functions))
 				functions = append(functions, item)
-				function_index_map[DepFunction {
+				var dep = DepFunction {
 					Module: mod_name,
 					Name:   f_name,
 					Index:  uint(f_index),
-				}] = global_index
+				}
+				function_index_map[dep] = global_index
+				if item.IsThunk {
+					var name = fmt.Sprintf("%s::%s", mod_name, f_name)
+					thunk_index_map[dep] = uint(len(thunk_index_map))
+					thunk_names = append(thunk_names, name)
+					thunks = append(thunks, item)
+				}
 				if item.IsAdapter {
 					kmd_info.KmdAdapterTable[item.AdapterId] = lang.KmdAdapterInfo {
 						Index: global_index,
@@ -49,21 +59,6 @@ func CreateProgram (
 					}
 				}
 			}
-		}
-	}
-	var constant_index_map = make(map[DepConstant] uint)
-	var constant_names = make([] string, 0)
-	var constants = make([] FuncNode, 0)
-	for mod_name, mod := range idx {
-		for item_name, item := range mod.Constants {
-			var global_index = uint(len(constants))
-			constants = append(constants, item)
-			constant_names = append(constant_names,
-				fmt.Sprintf("%s::%s", mod_name, item_name))
-			constant_index_map[DepConstant {
-				Module: mod_name,
-				Name:   item_name,
-			}] = global_index
 		}
 	}
 	var effects = make([] FuncNode, 0)
@@ -78,31 +73,37 @@ func CreateProgram (
 			panic("something went wrong")
 		}
 	}
-	var get_constant_index = func(d DepConstant) uint {
-		var index, exists = constant_index_map[d]
-		if exists {
-			return index
-		} else {
-			panic("something went wrong")
-		}
+	var get_thunk_index = func(d DepFunction) (uint, bool) {
+		var index, exists = thunk_index_map[d]
+		return index, exists
 	}
-	var constant_dep_map = make([][] uint, len(constants))
-	for constant_index, constant := range constants {
+	var thunk_dep_map = make([][] uint, len(thunks))
+	for thunk_index, thunk := range thunks {
 		var dep_indexes = make([] uint, 0)
-		for _, dep := range constant.Dependencies {
+		for _, dep := range thunk.Dependencies {
 			switch d := dep.(type) {
-			case DepConstant:
-				dep_indexes = append(dep_indexes, get_constant_index(d))
 			case DepFunction:
+				{
+					var dep_index, this_is_thunk = get_thunk_index(d)
+					if this_is_thunk {
+						dep_indexes = append(dep_indexes, dep_index)
+						break
+					}
+				}
 				var visited_index_map = make(map[uint] bool)
 				var collect_indirect func(FuncNode)
 				collect_indirect = func(f FuncNode) {
 					for _, f_dep := range f.Dependencies {
 						switch concrete_f_dep := f_dep.(type) {
-						case DepConstant:
-							dep_indexes = append(dep_indexes,
-								get_constant_index(concrete_f_dep))
 						case DepFunction:
+							{
+								var dep_index, this_is_thunk =
+									get_thunk_index(concrete_f_dep)
+								if this_is_thunk {
+									dep_indexes = append(dep_indexes, dep_index)
+									break
+								}
+							}
 							var f_index = get_function_index(concrete_f_dep)
 							var _, exists = visited_index_map[f_index]
 							if exists { return }
@@ -121,16 +122,16 @@ func CreateProgram (
 				collect_indirect(functions[f_index])
 			}
 		}
-		constant_dep_map[constant_index] = dep_indexes
+		thunk_dep_map[thunk_index] = dep_indexes
 	}
-	var L = uint(len(constants))
+	var L = uint(len(thunks))
 	var in_degrees = make([] uint, L)
 	var inv_map = make([][] uint, L)
 	for i := uint(0); i < L; i += 1 {
 		inv_map[i] = make([] uint, 0)
 	}
 	for i := uint(0); i < L; i += 1 {
-		var deps = constant_dep_map[i]
+		var deps = thunk_dep_map[i]
 		in_degrees[i] = uint(len(deps))
 		for _, dep := range deps {
 			inv_map[dep] = append(inv_map[dep], i)
@@ -142,14 +143,10 @@ func CreateProgram (
 			queue = append(queue, i)
 		}
 	}
-	var sorted2raw = make([] uint, L)
-	var raw2sorted = make([] uint, L)
 	var sorted_count = uint(0)
 	for len(queue) > 0 {
 		var i = queue[0]
 		queue = queue[1:]
-		sorted2raw[sorted_count] = i
-		raw2sorted[i] = sorted_count
 		sorted_count += 1
 		for _, j := range inv_map[i] {
 			if in_degrees[j] < 1 { panic("something went wrong") }
@@ -164,25 +161,20 @@ func CreateProgram (
 		var point ErrorPoint
 		for i := uint(0); i < L; i += 1 {
 			if in_degrees[i] > 0 {
-				rest_names = append(rest_names, constant_names[i])
-				point = constants[i].Underlying.Info.DeclPoint
+				rest_names = append(rest_names, thunk_names[i])
+				point = thunks[i].Underlying.Info.DeclPoint
 			}
 		}
 		if len(rest_names) == 0 { panic("something went wrong") }
 		return lang.Program{}, no_locator, &Error {
 			Point:    point,
-			Concrete: E_CircularConstantDependency { rest_names },
+			Concrete: E_CircularThunkDependency { rest_names },
 		}
-	}
-	var sorted_constants = make([] FuncNode, L)
-	for i := uint(0); i < L; i += 1 {
-		sorted_constants[i] = constants[sorted2raw[i]]
 	}
 	var base_data = uint(0)
 	var base_function = base_data + uint(len(data))
 	var base_closure = base_function + uint(len(functions))
-	var base_constant = base_closure + uint(len(closures))
-	var base_extra = base_constant + uint(len(constants))
+	var base_extra = base_closure + uint(len(closures))
 	var get_dep_addr = func(dep Dependency) (uint, bool) {
 		switch d := dep.(type) {
 		case DepData:
@@ -191,8 +183,6 @@ func CreateProgram (
 			return base_function + function_index_map[d], true
 		case DepClosure:
 			return base_closure + d.Index, true
-		case DepConstant:
-			return base_constant + raw2sorted[constant_index_map[d]], true
 		default:
 			return ^uint(0), false
 		}
@@ -210,9 +200,6 @@ func CreateProgram (
 	for i, _ := range closures {
 		relocate_code(&(closures[i]))
 	}
-	for i, _ := range sorted_constants {
-		relocate_code(&(sorted_constants[i]))
-	}
 	for i, _ := range effects {
 		relocate_code(&(effects[i]))
 	}
@@ -228,7 +215,6 @@ func CreateProgram (
 		DataValues: data,
 		Functions:  unwrap(functions),
 		Closures:   unwrap(closures),
-		Constants:  unwrap(sorted_constants),
 		Effects:    unwrap(effects),
 		KmdInfo:    kmd_info,
 		RpcInfo:    rpc_info,

@@ -28,9 +28,7 @@ func (g EvaluatedObjectGroup) GetObjectValue(name string) lang.Value {
 
 func EvaluateObjectThunk(thunk lang.UiObjectThunk) lang.Value {
 	var evaluated, exists = evaluatedObjectGroups[thunk.Group]
-	if exists {
-		return evaluated.GetObjectValue(thunk.Object)
-	} else {
+	if !(exists) {
 		var group = thunk.Group
 		var wait = make(chan struct{})
 		qt.MakeSureInitialized()
@@ -65,7 +63,10 @@ func EvaluateObjectThunk(thunk lang.UiObjectThunk) lang.Value {
 			wait <- struct{}{}
 		})
 		<- wait
-		return evaluated.GetObjectValue(thunk.Object)
 	}
+	var stored = evaluated.GetObjectValue(thunk.Object)
+	return lang.NativeFunctionValue(func(_ lang.Value, _ lang.InteropContext) lang.Value {
+		return stored
+	})
 }
 

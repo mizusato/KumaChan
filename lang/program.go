@@ -11,7 +11,6 @@ type Program struct {
 	DataValues  [] DataValue
 	Functions   [] *Function
 	Closures    [] *Function
-	Constants   [] *Function
 	Effects     [] *Function
 	KmdInfo
 	RpcInfo
@@ -47,11 +46,6 @@ func (p Program) String() string {
 		i += 1
 	}
 	buf.WriteString(";;\n")
-	buf.WriteString("code constants:\n")
-	for _, item := range p.Constants {
-		fmt.Fprintf(&buf, "[%d] %s\n", i, item.String())
-		i += 1
-	}
 	buf.WriteString(";;\n")
 	buf.WriteString("code effects:\n")
 	for _, item := range p.Effects {

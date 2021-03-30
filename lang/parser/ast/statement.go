@@ -32,6 +32,7 @@ func (impl DeclConst) Statement() {}
 type DeclConst struct {
     Node                          `part:"decl_const"`
     Docs      [] Doc              `list_rec:"docs"`
+    Tags      [] Tag              `list_rec:"tags"`
     Public    bool                `option:"scope.@export"`
     Name      Identifier          `part:"name"`
     Type      VariousType         `part:"type"`
@@ -64,12 +65,17 @@ type DeclFunction struct {
     Implicit  [] VariousType  `list_more:"sig.implicit_input" item:"type"`
     Repr      ReprFunc        `part:"sig.repr_func"`
     Body      VariousBody     `part_opt:"body"`
+    IsConst   bool            // whether it is desugared from a ConstDecl
 }
 type VariousBody struct {
     Node         `part:"body"`
     Body  Body   `use:"first"`
 }
 type Body interface { Body() }
+func (impl PredefinedThunk) Body() {}
+type PredefinedThunk struct {
+    Value  interface {}
+}
 func (impl KmdApiFuncBody) Body() {}
 type KmdApiFuncBody struct {
     Id  kmd.TransformerPartId

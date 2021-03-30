@@ -1,7 +1,6 @@
 package generator
 
 import (
-	"kumachan/compiler/loader"
 	"kumachan/lang/parser/ast"
 	. "kumachan/misc/util/error"
 	ch "kumachan/compiler/checker"
@@ -31,14 +30,14 @@ func NewIncrementalCompiler(info *ch.ModuleInfo, base DepLocator) *IncrementalCo
 	}
 }
 
-func (ctx *IncrementalCompiler) AddConstant (
-	id   DepConstant,
-	t    ch.Type,
-	val  ast.Expr,
+func (ctx *IncrementalCompiler) AddTempThunk (
+	name  string,
+	t     ch.Type,
+	val   ast.Expr,
 ) (lang.FunctionValue, ([] lang.Value), error) {
+	var mod_name = ctx.typeInfo.Module.Name
 	var all_dep_values = make([] lang.Value, 0)
 	var closure_deps = make(map[*lang.Function] ([] Dependency))
-	var sym = loader.MakeSymbol(id.Module, id.Name)
 	var expr_ctx = ch.ExprContext {
 		ModuleInfo: *(ctx.typeInfo),
 	}
@@ -46,17 +45,21 @@ func (ctx *IncrementalCompiler) AddConstant (
 	if err != nil { return nil, nil, err }
 	expr, err := ch.AssignTo(t, semi, expr_ctx)
 	if err != nil { return nil, nil, err }
-	const_f, refs, errs := CompileConstant (
-		ch.ExprExpr(expr),
-		ctx.typeInfo.Module.Name,
-		id.Name,
+	var body = ch.BodyThunk {
+		Value: expr,
+	}
+	thunk_f, refs, errs := CompileFunction (
+		body,
+		[] string {},
+		mod_name,
+		name,
 		ErrorPointFrom(val.Node),
 	)
 	if errs != nil { return nil, nil, MergeErrors(errs) }
-	var const_deps = RefsToDeps(refs, &ctx.addedData, &ctx.addedClosures)
-	var const_f_node = FuncNode {
-		Underlying:   const_f,
-		Dependencies: const_deps,
+	var deps = RefsToDeps(refs, &ctx.addedData, &ctx.addedClosures)
+	var f_node = FuncNode {
+		Underlying:   thunk_f,
+		Dependencies: deps,
 	}
 	var all_deps = make([] Dependency, 0)
 	var collect_all_deps func([] Dependency)
@@ -80,21 +83,47 @@ func (ctx *IncrementalCompiler) AddConstant (
 			}
 		}
 	}
-	collect_all_deps(const_deps)
+	collect_all_deps(deps)
 	for i, dep := range all_deps {
 		ctx.addedDepMap[dep] = (ctx.addedAmount + uint(i))
 	}
 	// note: shadowing is ok
-	var const_offset = ctx.addedAmount + uint(len(all_deps))
-	ctx.addedDepMap[id] = const_offset
+	var f_offset = ctx.addedAmount + uint(len(all_deps))
+	ctx.addedDepMap[DepFunction {
+		Module: mod_name,
+		Name:   name,
+		Index:  0,
+	}] = f_offset
 	ctx.addedAmount += (uint(len(all_deps)) + 1)
-	ctx.typeInfo.Constants[sym] = &ch.Constant {
-		Node:         val.Node,
-		Public:       true,
-		DeclaredType: expr.Type,
-		Value:        val,
+	ctx.typeInfo.Functions[name] = [] ch.FunctionReference {
+		ch.FunctionReference {
+			ModuleName: mod_name,
+			Index:      0,
+			IsImported: false,
+			Function:   &ch.GenericFunction {
+				Section:    "",
+				Node:       val.Node,
+				Doc:        "",
+				Tags:       ch.FunctionTags {},
+				Public:     true,
+				TypeParams: [] ch.TypeParam {},
+				TypeBounds: ch.TypeBounds {},
+				Implicit:   nil,
+				DeclaredType: ch.Func {
+					Input:  &ch.AnonymousType { Repr: ch.Unit {} },
+					Output: expr.Type,
+				},
+				Body: nil,  // unnecessary
+				GenericFunctionInfo: ch.GenericFunctionInfo {
+					RawImplicit: [] ch.Type {},
+					AliasList:   [] string {},
+					IsSelfAlias: false,
+					IsFromConst: true,
+				},
+			},
+		},
 	}
-	var extraLocator = func(dep Dependency) (uint, bool) {
+	var extra_locator = func(dep Dependency) (uint, bool) {
 		var offset, exists = ctx.addedDepMap[dep]
 		return offset, exists
 	}
@@ -105,21 +134,30 @@ func (ctx *IncrementalCompiler) AddConstant (
 				Underlying:   f.Underlying,
 				Dependencies: closure_deps[f.Underlying],
 			}
-			RelocateCode(&f_node, ctx.baseLocator, extraLocator)
+			RelocateCode(&f_node, ctx.baseLocator, extra_locator)
 		}
 	}
-	RelocateCode(&const_f_node, ctx.baseLocator, extraLocator)
-	return &lang.ValFunc { Underlying: const_f }, all_dep_values, nil
+	RelocateCode(&f_node, ctx.baseLocator, extra_locator)
+	return &lang.ValFunc { Underlying: thunk_f }, all_dep_values, nil
 }
 
-func (ctx *IncrementalCompiler) SetConstantAlias(id DepConstant, alias DepConstant) {
-	var sym = loader.MakeSymbol(id.Module, id.Name)
-	var alias_sym = loader.MakeSymbol(alias.Module, alias.Name)
-	constant, exists := ctx.typeInfo.Constants[sym]
+func (ctx *IncrementalCompiler) SetTempThunkAlias(name string, alias string) {
+	var mod_name = ctx.typeInfo.Module.Name
+	group, exists := ctx.typeInfo.Functions[name]
 	if !(exists) { panic("something went wrong") }
-	ctx.typeInfo.Constants[alias_sym] = constant
-	index, exists := ctx.addedDepMap[id]
+	if !(len(group) == 1) { panic("something went wrong") }
+	thunk := group[0]
+	ctx.typeInfo.Functions[alias] = [] ch.FunctionReference { thunk }
+	global_index, exists := ctx.addedDepMap[DepFunction {
+		Module: mod_name,
+		Name:   name,
+		Index:  0,
+	}]
 	if !(exists) { panic("something went wrong") }
-	ctx.addedDepMap[alias] = index
+	ctx.addedDepMap[DepFunction {
+		Module: mod_name,
+		Name:   alias,
+		Index:  0,
+	}] = global_index
 }
 

@@ -18,26 +18,14 @@ type CheckedModule struct {
 	Name       string
 	RawModule  *loader.Module
 	Imported   map[string] *CheckedModule
-	Constants  map[string] CheckedConstant
 	Functions  map[string] ([] CheckedFunction)
 	Effects    [] CheckedEffect
 	Context    CheckContext
 }
-type CheckedConstant struct {
-	Point   ErrorPoint
-	Type    Type
-	Value   ExprLike
-	CheckedConstantInfo
-}
-type CheckedConstantInfo struct {
-	Section  string
-	Public   bool
-	Doc      string
-}
 type CheckedFunction struct {
-	Point     ErrorPoint
-	Body      ExprLike
-	Implicit  [] string
+	Point    ErrorPoint
+	Body     Body
+	Implicit [] string
 	FunctionKmdInfo
 	CheckedFunctionInfo
 }
@@ -51,6 +39,8 @@ type CheckedFunctionInfo struct {
 	RawImplicit  [] Type
 	AliasList    [] string
 	IsSelfAlias  bool
+	IsFromConst  bool
+	IsUnitInput  bool
 }
 type CheckedEffect struct {
 	Point  ErrorPoint
@@ -63,32 +53,41 @@ type FunctionKmdInfo struct {
 	ValidatorId  kmd.ValidatorId
 }
 
-type ExprLike interface { ExprLike() }
-func (impl ExprNative) ExprLike() {}
-type ExprNative struct {
+type Body interface { CheckerBody() }
+func (impl BodyLambda) CheckerBody() {}
+type BodyLambda struct {
+	Info    ExprInfo
+	Lambda  Lambda
+}
+func (impl BodyThunk) CheckerBody() {}
+type BodyThunk struct {
+	Value  Expr
+}
+func (impl BodyNative) CheckerBody() {}
+type BodyNative struct {
 	Name   string
 	Point  ErrorPoint
 }
-func (impl ExprPredefinedValue) ExprLike() {}
-type ExprPredefinedValue struct {
+func (impl BodyGenerated) CheckerBody() {}
+type BodyGenerated struct {
 	Value  interface{}
 }
-func (impl ExprExpr) ExprLike() {}
-type ExprExpr Expr
+func (impl BodyRuntimeGenerated) CheckerBody() {}
+type BodyRuntimeGenerated struct {
+	Value  interface{}
+}
 
 type Index  map[string] *CheckedModule
 
 type CheckContext struct {
 	Types      TypeRegistry
 	Functions  FunctionStore
-	Constants  ConstantStore
 	Mapping    KmdIdMapping
 }
 
 type ModuleInfo struct {
 	Module     *loader.Module
 	Types      TypeRegistry
-	Constants  ConstantCollection
 	Functions  FunctionCollection
 }
 
@@ -161,8 +160,6 @@ func LiftTyped(expr Expr) SemiExpr {
 type Sym interface { Sym() }
 func (impl SymLocalValue) Sym() {}
 type SymLocalValue struct { ValueType Type }
-func (impl SymConst) Sym() {}
-type SymConst struct { Const *Constant; Name loader.Symbol }
 func (impl SymTypeParam) Sym() {}
 type SymTypeParam struct { Index uint }
 func (impl SymType) Sym() {}
@@ -286,14 +283,14 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 				return SymLocalValue { ValueType: local }, true
 			}
 		}
+		functions, exists := lookup_functions(sym_name)
+		if exists {
+			return functions, true
+		}
 		for index, param := range ctx.TypeParams {
 			if param.Name == sym_name {
 				return SymTypeParam { Index: uint(index) }, true
 			}
-		}
-		functions, exists := lookup_functions(sym_name)
-		if exists {
-			return functions, true
 		}
 		var self = ctx.ModuleInfo.Module.Name
 		var sym_this_mod = loader.MakeSymbol(self, sym_name)
@@ -301,20 +298,8 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 		if exists {
 			return g, true
 		}
-		constant, exists := ctx.ModuleInfo.Constants[sym_this_mod]
-		if exists {
-			return SymConst { Const: constant, Name: sym_this_mod }, true
-		}
 		return nil, false
 	} else {
-		g, exists := lookup_type(raw)
-		if exists {
-			return g, true
-		}
-		constant, exists := ctx.ModuleInfo.Constants[raw]
-		if exists {
-			return SymConst { Const: constant, Name: raw }, true
-		}
 		f_refs, exists := ctx.ModuleInfo.Functions[raw.SymbolName]
 		if exists {
 			var functions = make([] *GenericFunction, 0)
@@ -325,6 +310,10 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 				Name:      raw.SymbolName,
 				Functions: functions,
 			}, true
+		}
+		g, exists := lookup_type(raw)
+		if exists {
+			return g, true
 		}
 		return nil, false
 	}
@@ -484,20 +473,16 @@ func TypeCheck(entry *loader.Module, raw_index loader.Index) (
 		}
 		return nil, nil, nil, nil, type_errors
 	}
-	var constants = make(ConstantStore)
 	var functions = make(FunctionStore)
-	var _, err2 = CollectConstants(entry, types, constants)
+	var mapping, sch, inj, err2 = CollectKmdApi(types, type_nodes, raw_index)
 	if err2 != nil { return nil, nil, nil, nil, [] E { err2 } }
-	var mapping, sch, inj, err3 = CollectKmdApi(types, type_nodes, raw_index)
+	var _, err3 = CollectFunctions(entry, types, inj, functions)
 	if err3 != nil { return nil, nil, nil, nil, [] E { err3 } }
-	var _, err4 = CollectFunctions(entry, types, inj, functions)
+	var serv, err4 = CollectServices(raw_index, functions, types, sch, mapping)
 	if err4 != nil { return nil, nil, nil, nil, [] E { err4 } }
-	var serv, err5 = CollectServices(raw_index, functions, types, sch, mapping)
-	if err5 != nil { return nil, nil, nil, nil, [] E { err5 } }
 	var ctx = CheckContext {
 		Types:     types,
 		Functions: functions,
-		Constants: constants,
 		Mapping:   mapping,
 	}
 	var checked_index = make(Index)
@@ -515,11 +500,9 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 		return existing, nil
 	}
 	var functions = ctx.Functions[mod_name]
-	var constants = ctx.Constants[mod_name]
 	var mod_info = ModuleInfo {
 		Module:    mod,
 		Types:     ctx.Types,
-		Constants: constants,
 		Functions: functions,
 	}
 	// TODO: throw an error if there is a name conflict
@@ -537,12 +520,22 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 	var func_map = make(map[string] ([] CheckedFunction))
 	for name, group := range functions {
 		func_map[name] = make([] CheckedFunction, 0)
-		var add = func(f *GenericFunction, body ExprLike) {
+		var add = func(f *GenericFunction, body Body) {
 			var t = f.DeclaredType
 			var implicit_fields = make([] string, len(f.Implicit))
 			for name, field := range f.Implicit {
 				implicit_fields[field.Index] = name
 			}
+			var is_unit_input = (func() bool {
+				switch T := t.Input.(type) {
+				case *AnonymousType:
+					switch T.Repr.(type) {
+					case Unit:
+						return true
+					}
+				}
+				return false
+			})()
 			func_map[name] = append(func_map[name], CheckedFunction {
 				Point:    ErrorPointFrom(f.Node),
 				Body:     body,
@@ -558,6 +551,8 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 					RawImplicit: f.RawImplicit,
 					AliasList:   f.AliasList,
 					IsSelfAlias: f.IsSelfAlias,
+					IsFromConst: f.IsFromConst,
+					IsUnitInput: is_unit_input,
 				},
 			})
 		}
@@ -574,29 +569,43 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 				}
 				var blank_ctx = CreateExprContext(mod_info, f.TypeParams, f.TypeBounds)
 				var f_expr_ctx, _ = blank_ctx.WithAddedLocalValues(implicit_types)
-				var lambda, err1 = CheckLambda(body, f_expr_ctx)
+				var lambda_semi, err1 = CheckLambda(body, f_expr_ctx)
 				if err1 != nil {
 					errors = append(errors, err1)
 					continue
 				}
 				var t = &AnonymousType { f.DeclaredType }
-				var body_expr, err2 = AssignTo(t, lambda, f_expr_ctx)
+				var lambda_expr, err2 = AssignTo(t, lambda_semi, f_expr_ctx)
 				if err2 != nil {
 					errors = append(errors, err2)
 					continue
 				}
-				add(f, ExprExpr(body_expr))
+				add(f, BodyLambda {
+					Info:   lambda_expr.Info,
+					Lambda: lambda_expr.Value.(Lambda),
+				})
 			case ast.NativeRef:
-				add(f, ExprNative {
+				add(f, BodyNative {
 					Name:  string(body.Id.Value),
 					Point: ErrorPointFrom(body.Node),
 				})
+			case ast.PredefinedThunk:
+				var stored = body.Value
+				switch stored.(type) {
+				case lang.UiObjectThunk:
+					add(f, BodyRuntimeGenerated { Value: stored })
+				default:
+					var v = lang.NativeFunctionValue(func(_ lang.Value, _ lang.InteropContext) lang.Value {
+						return stored
+					})
+					add(f, BodyGenerated { Value: v })
+				}
 			case ast.KmdApiFuncBody:
 				var v = lang.CreateKmdApiFunction(body.Id)
-				add(f, ExprPredefinedValue { Value: v })
+				add(f, BodyGenerated { Value: v })
 			case ast.ServiceMethodFuncBody:
 				var v = lang.CreateServiceMethodCaller(name)
-				add(f, ExprPredefinedValue { Value: v })
+				add(f, BodyGenerated { Value: v })
 			case ast.ServiceCreateFuncBody:
 				var names = mod.ServiceMethodNames
 				var v = lang.NativeFunctionValue(func(arg lang.Value, h lang.InteropContext) lang.Value {
@@ -607,66 +616,13 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 					var methods = ctx.Elements[1:]
 					return lang.CreateServiceInstance(data, dtor, methods, names, h)
 				})
-				add(f, ExprPredefinedValue { Value: v })
+				add(f, BodyGenerated { Value: v })
 			default:
 				panic("impossible branch")
 			}
 		}
 	}
 	var expr_ctx = CreateExprContext(mod_info, __NoParams, __NoBounds)
-	var const_map = make(map[string] CheckedConstant)
-	for sym, constant := range constants {
-		if sym.ModuleName != mod_name {
-			continue
-		}
-		var name = sym.SymbolName
-		var t = constant.DeclaredType
-		var info = CheckedConstantInfo {
-			Section: constant.Section,
-			Public:  constant.Public,
-			Doc:     constant.Doc,
-		}
-		switch val := constant.Value.(type) {
-		case ast.Expr:
-			var semi_expr, err1 = Check(val, expr_ctx)
-			if err1 != nil {
-				errors = append(errors, err1)
-				continue
-			}
-			var expr, err2 = AssignTo(t, semi_expr, expr_ctx)
-			if err2 != nil {
-				errors = append(errors, err2)
-				continue
-			}
-			const_map[name] = CheckedConstant {
-				Point:  ErrorPointFrom(constant.Node),
-				Type:   t,
-				Value:  ExprExpr(expr),
-				CheckedConstantInfo: info,
-			}
-		case ast.NativeRef:
-			const_map[name] = CheckedConstant {
-				Point: ErrorPointFrom(constant.Node),
-				Type:  t,
-				Value: ExprNative {
-					Name:  string(val.Id.Value),
-					Point: ErrorPointFrom(val.Node),
-				},
-				CheckedConstantInfo: info,
-			}
-		case ast.PredefinedValue:
-			const_map[name] = CheckedConstant {
-				Point: ErrorPointFrom(constant.Node),
-				Type:  t,
-				Value: ExprPredefinedValue {
-					Value: val.Value,
-				},
-				CheckedConstantInfo: info,
-			}
-		default:
-			panic("impossible branch")
-		}
-	}
 	var do_effects = make([] CheckedEffect, 0)
 	for _, cmd := range mod.AST.Statements {
 		switch do := cmd.Statement.(type) {
@@ -707,7 +663,6 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 			Name:      mod_name,
 			RawModule: mod,
 			Imported:  imported,
-			Constants: const_map,
 			Functions: func_map,
 			Effects:   do_effects,
 			Context:   ctx,

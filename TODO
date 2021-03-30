@@ -1,6 +1,10 @@
 TODO
 
-- consider (constant xxx) as sugar of (function xxx)
+- move math constants to core module
+
+- assign integer literals to Float
+
+- zero-value --> ZeroValue
 
 - consider using same name for constructors and types (function Map, type Map)
 

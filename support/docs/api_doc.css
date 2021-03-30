@@ -63,9 +63,6 @@ body {
 .api > .type > .header > .name, .type-named > .name {
     color: #ea6137;
 }
-.api > .constant > .header > .name {
-    color: #b2750c;
-}
 .api > .function > .header > .name, .alias-item > .name {
     color: #4078f2;
 }
@@ -80,11 +77,13 @@ body {
 }
 
 .api > .type > .header > .keyword,
-.api > .constant > .header > .keyword,
 .api > .function > .header > .keyword {
     margin-right: 0.6rem;
 }
 .alias {
+    margin-right: 0.6rem;
+}
+.const-badge {
     margin-right: 0.6rem;
 }
 .type-param > .default {
