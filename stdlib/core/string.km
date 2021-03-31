@@ -70,9 +70,9 @@ export function unquote:
     native 'unquote';
 
 // TODO: parse-int
-export function parse-float:
+export function parse-real:
     &(String) => Maybe[Real]
-    native 'parse-float';
+    native 'parse-real';
 
 export function substr:
     &(String,(Number,Number)) => String

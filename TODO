@@ -1,7 +1,5 @@
 TODO
 
-- use same name for constructors and types (function Map, type Map)
-
 - extra info in Error (*ErrorWithExtraInfo implements error) (send through rpc)
 
 - nested *ErrorWithExtraInfo

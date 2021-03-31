@@ -259,7 +259,7 @@ var ContainerFunctions = map[string] Value {
 		}
 		return Just(buf)
 	},
-	"parse-float": func(str String) SumValue {
+	"parse-real": func(str String) SumValue {
 		var x, err = strconv.ParseFloat(GoStringFromString(str), 64)
 		if err != nil {
 			return Na()

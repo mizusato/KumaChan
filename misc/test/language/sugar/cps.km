@@ -5,8 +5,8 @@ do
         & await { println 'Number b:' },
         & str-b := await { scanln () },
         let sum? :=
-            & a := maybe? str-a.{parse-float},
-            & b := maybe? str-b.{parse-float},
+            & a := maybe? str-a.{parse-real},
+            & b := maybe? str-b.{parse-real},
             { Just (a + b) },
         switch sum?:
         case Just sum:

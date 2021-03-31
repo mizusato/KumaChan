@@ -78,9 +78,9 @@ export function assume:[T]
 
 
 // ----------
-// TODO: rename the following functions
 
-export function maybe:[A,B]
+// Functor(Maybe)
+export function map:[A,B]
     &(Maybe[A], &(A) => B) => Maybe[B]
     &(v?, f) =>
         switch v?:
@@ -90,18 +90,8 @@ export function maybe:[A,B]
             Null,
         end;
 
-export function maybe:[A,B]
-    &((Maybe[A],B), &(A) => B) => B
-    &(input, f) =>
-        let (v?, fallback) := input,
-        switch v?:
-        case Just v:
-            { f(v) },
-        case Null:
-            fallback,
-        end;
-
-export function maybe?:[A,B]
+// Monad(Maybe)
+export function get:[A,B]
     &(Maybe[A], &(A) => Maybe[B]) => Maybe[B]
     &(v?, k) =>
         switch v?:
@@ -111,22 +101,36 @@ export function maybe?:[A,B]
             Null,
         end;
 
-export function unwrap?:[T]
-    &(Maybe[Maybe[T]]) => Maybe[T]
-    &(v??) =>
-        switch v??:
-        case Just v?:
-            switch v?:
-            case Just v:
-                { Just v },
-            case Null:
-                Null,
-            end,
+// Applicative(Maybe)
+export function Maybe:[A,B,T]
+    &((Maybe[A],Maybe[B]), &(A,B) => T) => Maybe[T]
+    &(pair, f) =>
+        let (a?, b?) := pair,
+        & a := get a?,
+        & b := get b?,
+        { Just { f(a,b) } };
+
+export function Maybe:[A,B,C,T]
+    &((Maybe[A],Maybe[B],Maybe[C]), &(A,B,C) => T) => Maybe[T]
+    &(triple, f) =>
+        let (a?, b?, c?) := triple,
+        & a := get a?,
+        & b := get b?,
+        & c := get c?,
+        { Just { f(a,b,c) } };
+
+export function consume:[A,T]
+    &((Maybe[A],T), &(A) => T) => T
+    &(input, f) =>
+        let (v?, fallback) := input,
+        switch v?:
+        case Just v:
+            { f(v) },
         case Null:
-            Null,
+            fallback,
         end;
 
-export function fallback?:[T]
+export function ??:[T]
     &(Maybe[T], T) => T
     &(t?, fallback) =>
         switch t?:
@@ -135,4 +139,3 @@ export function fallback?:[T]
         case Null:
             fallback,
         end;
-
