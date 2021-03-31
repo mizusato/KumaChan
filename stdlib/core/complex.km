@@ -1,21 +1,27 @@
 type Complex
     protected
     FloatComplex; // complex128 except NaN and Infinity values
+
 type FloatComplex
     native; // complex128
 
-export function complex:
+
+export function Complex:
     &(Real,Real) => Complex
-    native 'complex';
-export function polar:
-    &(Real,Real) => Complex
-    native 'polar';
-export function complex:
+    native 'Complex';
+
+export function Complex:
+    & { norm: Real, arg: Real } => Complex
+    native 'ComplexPolar';
+
+export function Complex:
     &(Float,Float) => FloatComplex
-    native 'complex';
+    native 'ComplexFloat';
+
 export function polar:
-    &(Float,Float) => FloatComplex
-    native 'polar';
+    & { norm: Real, arg: Real } => FloatComplex
+    native 'ComplexFloatPolar';
+
 
 export function convert:
     &(FloatComplex) => Maybe[Complex]
@@ -23,10 +29,11 @@ export function convert:
 
 export function convert:
     &(Real) => Complex
-    &(x) => { complex (x, 0.0) };
+    &(x) => { Complex (x, 0.0) };
+
 export function convert:
     &(Float) => FloatComplex
-    &(x) => { complex (x, (0.0).[Float]) };
+    &(x) => { Complex (x, (0.0).[Float]) };
 
 export function convert:
     &(FloatComplex) => String

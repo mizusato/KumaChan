@@ -145,7 +145,7 @@ export function has:[T]
 
 /* Functions of Map[K,V] */
 
-export function create-map:[T]
+export function Map:[T]
     &(Array[(String,T)]) => Map[String,T]
     native 'create-map-str';
 export function entries:[K,V]
@@ -176,10 +176,10 @@ export function delete*:[K,V]
 
 /* Functions for List[T] */
 
-export function create-list:[T]
+export function List:[T]
     &(Array[T], &(T) => ListKey) => List[T]
     native 'create-list';
-export function empty-list:[T]
+export function List:[T]
     &() => List[T]
     native 'empty-list';
 export function iterate:[T]

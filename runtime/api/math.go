@@ -315,14 +315,24 @@ var MathFunctions = map[string] interface{} {
 	"[f] real-atan": math.Atan,
 	"atan2*":     math.Atan2,
 	// complex
-	"complex": func(re float64, im float64) complex128 {
+	"Complex": func(re float64, im float64) complex128 {
 		return complex(re, im)
 	},
-	"polar": func(norm float64, arg float64) complex128 {
+	"ComplexFloat": func(re float64, im float64) complex128 {
+		return complex(re, im)
+	},
+	"ComplexPolar": func(norm float64, arg float64) complex128 {
 		if norm >= 0 {
 			return complex((norm * math.Cos(arg)), (norm * math.Sin(arg)))
 		} else {
 			panic("negative norm")
+		}
+	},
+	"ComplexFloatPolar": func(norm float64, arg float64) complex128 {
+		if norm >= 0 {
+			return complex((norm * math.Cos(arg)), (norm * math.Sin(arg)))
+		} else {
+			return cmplx.NaN()
 		}
 	},
 	"<real>": func(z complex128) float64 {

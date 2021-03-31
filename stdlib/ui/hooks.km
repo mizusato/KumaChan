@@ -8,6 +8,11 @@ export function use:[T]
 export function State:[T]
     &(T) => Hook[Reactive[T]]
     &(initial) => &(k) =>
-        & r := do { create-reactive initial },
+        & r := sync { Reactive initial },
         { k(r) };
 
+export function Effect:
+    &(Action[never]) => Hook[unit]
+    &(effect) => &(k) =>
+        { k() }
+            .{ with effect };

@@ -3,7 +3,7 @@ do Window.{show-at-center};
 do Window.{on-close}.{connect {exit 0}};
 
 do
-    & buf := do { create-reactive '' },
+    & buf := sync { Reactive '' },
     { merge [
         (InputBox bind buf),
         (MainView bind { Container [

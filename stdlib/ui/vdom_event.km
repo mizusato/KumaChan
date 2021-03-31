@@ -1,7 +1,7 @@
 type EventPayload native;  // *qt.WebUiEventPayload (contains a C++ pointer)
 type EventHandler native;  // *vdom.EventHandler
 
-function create-event-handler:[T]
+function EventHandler:[T]
     &(Sink[T], &(EventPayload) => T) => EventHandler
     native 'ui-dom-event-handler';
 

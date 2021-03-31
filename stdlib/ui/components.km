@@ -7,20 +7,20 @@ function StaticComponent:
 export function Empty:
     &() => Component
     &() => { StaticComponent &() =>
-        { create-node 'div' }
-            . { with { create-styles [('display','none')] } } };
+        { Node 'div' }
+            . { with { Styles [('display','none')] } } };
 
 export function Element:
     &(Tag, Array[Component]) => Component
     &(tag, children) =>
         if ((children.{length}) = 0):
-            { StaticComponent &() => { create-node tag } },
+            { StaticComponent &() => { Node tag } },
         else:
-            { create-computed-node (tag, children) };
+            { Node (tag, children) };
 
 export function Container:
     &(Array[Component]) => Component
-    &(children) => { create-computed-node ('div', children) };
+    &(children) => { Node ('div', children) };
 
 export function StyledContainer:
     &(Array[String]) => &(Array[Component]) => Component
@@ -28,66 +28,66 @@ export function StyledContainer:
 
 export function Label:
     &(String) => Component
-    &(text) => { StaticComponent &() => { create-node ('div', text) } };
+    &(text) => { StaticComponent &() => { Node ('div', text) } };
 
 export function Label:
     &(Computed[String]) => Component
-    &(@text) => { map (@text, (&(text) => { create-node ('div', text) })) };
+    &(@text) => { map (@text, (&(text) => { Node ('div', text) })) };
 
 export function Input:
     &(Reactive[String]) => Component
     &(@text) =>
-        let on-input := { create-event-handler
+        let on-input := { EventHandler
             (@text, &(ev) => (ev get-string 'webuiValue')) },
         & text := map { watch @text },
-        { create-node 'input' }
-            . { with { create-attrs [('type','text'),('value',text)] } }
-            . { with { create-events [('input',on-input)] } };
+        { Node 'input' }
+            . { with { Attrs [('type','text'),('value',text)] } }
+            . { with { Events [('input',on-input)] } };
 
 export function Checkbox:
     &(Reactive[Bool]) => Component
     &(@checked) =>
-        let on-change := { create-event-handler
+        let on-change := { EventHandler
             (@checked, &(ev) => (ev get-bool 'webuiChecked')) },
         & checked := map { watch @checked },
-        { create-node 'input' }
-            . { with { create-attrs
+        { Node 'input' }
+            . { with { Attrs
                 if checked:
                     ([('type','checkbox'), ('checked','checked')]),
                 else:
                     ([('type','checkbox')])
             } }
-            . { with { create-events
+            . { with { Events
                 [ ('change',on-change) ]
             } };
 
 export function Select:
     &(Reactive[String], Array[(String,String)]) => Component
     &(@current, options) =>
-        let on-change := { create-event-handler
+        let on-change := { EventHandler
             (@current, &(ev) => (ev get-string 'webuiValue')) },
         let children := (options map &(name,desc) =>
-            { create-node ('option', desc) }
-                . { with { create-attrs [('value',name)] } }),
+            { Node ('option', desc) }
+                . { with { Attrs [('value',name)] } }),
         & current := map { watch @current },
-        { create-node 'select' }
-            . { with { create-attrs [('value',current)] } }
-            . { with { create-events [('change',on-change)] } }
-            . { with { create-content-children children } };
+        { Node 'select' }
+            . { with { Attrs [('value',current)] } }
+            . { with { Events [('change',on-change)] } }
+            . { with { Content children } };
 
 export function Button:
     &(String, Action) => Component
     &(text, action) =>
         let handler := { trigger action }.{convert}.[EventHandler],
         { StaticComponent &() =>
-            { create-node ('button', text) }
-                . { with { create-events [('click',handler)] } } };
+            { Node ('button', text) }
+                . { with { Events [('click',handler)] } } };
 
 export function ListView:[T]
     &(Tag, Reactive[List[T]], &(ListKey,Computed[Number],Reactive[T]) => Component) => Component
     &(tag, list, f) =>
         let children := (list consume &(item) => { f(item) }),
-        { create-computed-node (tag, children) };
+        { Node (tag, children) };
 
 export function ListView:[T]
     &(Reactive[List[T]], &(ListKey,Computed[Number],Reactive[T]) => Component) => Component

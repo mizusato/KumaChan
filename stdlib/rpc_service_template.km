@@ -1,34 +1,33 @@
 /// Service instance type.
-type instance
+type Instance
     native;
 
 /// Service constructor argument type.
-type argument
+type Argument
     UserDefinedServiceArgument;
 
 /// Service constructor type.
-type constructor
-    &(argument, rpc::Connection) => Action[instance,Error];
+type Constructor
+    &(Argument, rpc::Connection) => Action[Instance,Error];
 
 /// Service destructor type
-type destructor[T]
+type Destructor[T]
     implicit
     { delete: &(T) => Action };
 
 /// Service consumer type.
-type consumer
-    &(instance) => Action;
+type Consumer
+    &(Instance) => Action;
 
 /// Service methods, the implicit context used when creating service instances.
-type methods[instance]
+type Methods[Instance]
     implicit { user-defined-service-method: signature };
 
 /// Service identifier, used when calling RPC API functions.
-export const identifier:
-    rpc::ServiceIdentifier[instance,argument,constructor,consumer];
+export const Identifier:
+    rpc::ServiceIdentifier[Instance,Argument,Constructor,Consumer];
 
 /// Creates a service instance from a T object and an implicit methods[T].
 export function create:
-    [T] (destructor[T],methods[T])
-    &(T) => instance;
-
+    [T] (Destructor[T],Methods[T])
+    &(T) => Instance;

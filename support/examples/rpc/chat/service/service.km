@@ -19,7 +19,7 @@ type MessageContent {
 type None ();
 
 # service-method
-export function say: &(instance,MessageContent) => Action[None,Error];
+export function say: &(Instance,MessageContent) => Action[None,Error];
 
 # service-method
-export function messages: &(instance,None) => Observable[Message,Error];
+export function messages: &(Instance,None) => Observable[Message,Error];

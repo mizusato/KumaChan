@@ -1,7 +1,7 @@
 import service from './service';
 
 export function consume-echo-service:
-    &(service::instance) => Action
+    &(service::Instance) => Action
     &(server) =>
         let read-and-request :=
             & await { print 'request: ' },
@@ -14,11 +14,11 @@ export function consume-echo-service:
             . { crash-on-error };
 
 do
-    { rpc::access {
-        service: service::identifier,
-        backend: { rpc::client-cleartext { network: 'tcp', addr: '127.0.0.1:8001' } },
+    { access {
+        service: service::Identifier,
+        backend: { ClientCleartext { network: 'tcp', addr: '127.0.0.1:8001' } },
         options: {},
-        argument: { service::argument { service::Config { verbose: Yes } } },
-        consumer: { service::consumer consume-echo-service }
+        argument: { service::Argument { service::Config { verbose: Yes } } },
+        consumer: { service::Consumer consume-echo-service }
     } }
     . { crash-on-error };

@@ -5,7 +5,7 @@ type EventPayloadConsumer
 function convert:
     &(EventPayloadConsumer) => EventHandler
     &(cb) => (
-        { create-event-handler ({Callback::[Action] (& e => e)}, cb) }
+        { EventHandler ({Callback::[Action] (& e => e)}, cb) }
         // important: payload will be deleted after `cb` called
     );
 

@@ -1,7 +1,7 @@
 import service from './service';
 
 export function consume-chat:
-    &() => service::consumer
+    &() => service::Consumer
     &() => &(chat) =>
         { println 'connected' }
             . { then chat.{ messages () } }
@@ -20,11 +20,11 @@ do
     let try :=
         & await { print '(login) nickname: ' },
         & nickname := await scanln,
-        { rpc::access {
-            service: service::identifier,
-            backend: { rpc::client-cleartext { network: 'tcp', addr: '127.0.0.1:8002' } },
+        { access {
+            service: service::Identifier,
+            backend: { ClientCleartext { network: 'tcp', addr: '127.0.0.1:8002' } },
             options: {},
-            argument: { service::argument { service::Login { nickname } } },
+            argument: { service::Argument { service::Login { nickname } } },
             consumer: consume-chat
         } },
     try.{crash-on-error};

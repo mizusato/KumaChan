@@ -175,10 +175,10 @@ func GetPrimitiveReflectType(name string) (reflect.Type, bool) {
 }
 
 // rpc_service_template.km
-const ServiceInstanceType = "instance"
-const ServiceArgumentType = "argument"
-const ServiceMethodsType = "methods"
-const ServiceIdentifierConst = "identifier"
+const ServiceInstanceType = "Instance"
+const ServiceArgumentType = "Argument"
+const ServiceMethodsType = "Methods"
+const ServiceIdentifierConst = "Identifier"
 const ServiceCreateFunction = "create"
 
 // path

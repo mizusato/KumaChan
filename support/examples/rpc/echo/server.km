@@ -5,7 +5,7 @@ type EchoServer {
 };
 
 export function new-echo-server:
-    &() => service::constructor
+    &() => service::Constructor
     &() => &(opts,_) =>
         let { verbose } := opts,
         { yield { service::create { EchoServer { verbose } } } };
@@ -27,9 +27,9 @@ export function echo:
             { yield { service::Response { content } } };
 
 do
-    { rpc::serve {
-        service: service::identifier,
-        backend: { rpc::server-cleartext { network: 'tcp', addr: '127.0.0.1:8001' } },
+    { serve {
+        service: service::Identifier,
+        backend: { ServerCleartext { network: 'tcp', addr: '127.0.0.1:8001' } },
         options: {},
         constructor: new-echo-server
     } }

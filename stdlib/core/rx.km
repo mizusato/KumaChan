@@ -157,10 +157,10 @@ export function Blackhole:
 export function Callback:[T]
     &(&(T) => Action) => Sink[T]
     native 'Callback';
-export function create-bus:[T]
+export function Bus:[T]
     &() => Atomic[Bus[T]]
     native 'create-bus';
-export function create-reactive:[T]
+export function Reactive:[T]
     &(T) => Atomic[ReactiveEntity[T]]
     native 'create-reactive';
 
@@ -190,7 +190,7 @@ export function lock: [T, K < Observable[any]]
     native 'mutex-lock';
 
 ## Effect Constructors
-export function as-source:[T]
+export function Source:[T]
     &(Observable[T]) => Source[T]
     native 'as-source';
 export function with: [A < Observable[any,any]]
@@ -239,10 +239,10 @@ export function not:[E]
     &(p) => p.{map(not)};
 export function and:[E]
     &(Computed[Bool], Computed[Bool]) => Computed[Bool]
-    &(p,q) => { computed ((p,q), &(p,q) => (p and q)) };
+    &(p,q) => { Computed ((p,q), &(p,q) => (p and q)) };
 export function or:[E]
     &(Computed[Bool], Computed[Bool]) => Computed[Bool]
-    &(p,q) => { computed ((p,q), &(p,q) => (p or q)) };
+    &(p,q) => { Computed ((p,q), &(p,q) => (p or q)) };
 export function start-with:[T,E]
     &(Observable[T,E], Array[T]) => Observable[T,E]
     native 'start-with';
@@ -304,12 +304,12 @@ export function then:[B]
     &(Action, Source[B]) => Source[B]
     native 'then-shortcut';
 
-export function do: [A, K < Observable[any,any]]
+export function sync: [A, K < Observable[any,any]]
     &(Atomic[A], &(A) => K) => K
-    native 'do';
-export function do: [K < Observable[any,any]]
+    native 'sync';
+export function sync: [K < Observable[any,any]]
     &(Atomic, K) => K
-    native 'do-shortcut';
+    native 'sync-shortcut';
 
 export function catch:[T,E,F]
     &(Action[T,E], &(E) => Action[T,F]) => Action[T,F]
@@ -479,12 +479,12 @@ export function combine:[A,B,C,D]
 export function combine:[T]
     &(Array[Computed[T]]) => Computed[Array[T]]
     native 'combine-latest*-array';
-export function computed:[A,B,X]
+export function Computed:[A,B,X]
     &((Computed[A],Computed[B]), &(A,B) => X) => Computed[X]
     native 'computed';
-export function computed:[A,B,C,X]
+export function Computed:[A,B,C,X]
     &((Computed[A],Computed[B],Computed[C]), &(A,B,C) => X) => Computed[X]
     native 'computed';
-export function computed:[A,B,C,D,X]
+export function Computed:[A,B,C,D,X]
     &((Computed[A],Computed[B],Computed[C],Computed[D]), &(A,B,C,D) => X) => Computed[X]
     native 'computed';

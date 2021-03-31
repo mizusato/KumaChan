@@ -3,10 +3,10 @@ type ServiceIdentifier[Instance,Argument,Constructor,Consumer]
 
 type ServerBackend native;
 type ClientBackend native;
-export function server-cleartext:
+export function ServerCleartext:
     & { network: String, addr: String } => ServerBackend
     native 'rpc-server-cleartext-net';
-export function client-cleartext:
+export function ClientCleartext:
     & { network: String, addr: String } => ClientBackend
     native 'rpc-client-cleartext-net';
 
@@ -40,24 +40,18 @@ export function close:
     native 'rpc-connection-close';
 
 export function serve:[Instance,Argument,Constructor,Consumer]
-    & {
-        service:     ServiceIdentifier[Instance,Argument,Constructor,Consumer],
+    & { service:     ServiceIdentifier[Instance,Argument,Constructor,Consumer],
         backend:     ServerBackend,
         options:     ServerOptions,
-        constructor: Constructor
-    }
-    => Action[unit,Error]
+        constructor: Constructor }
+             =>      Action[unit,Error]
     native 'rpc-serve';
 
 export function access:[Instance,Argument,Constructor,Consumer]
-    & {
-        service:  ServiceIdentifier[Instance,Argument,Constructor,Consumer],
+    & { service:  ServiceIdentifier[Instance,Argument,Constructor,Consumer],
         backend:  ClientBackend,
         options:  ClientOptions,
         argument: Argument,
-        consumer: Consumer
-    }
-    => Action[unit,Error]
+        consumer: Consumer }
+            =>    Action[unit,Error]
     native 'rpc-access';
-
-

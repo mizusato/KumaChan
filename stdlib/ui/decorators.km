@@ -29,62 +29,61 @@ export function RenderCond:
 export function ShowCond:
     &(Computed[Bool]) => Decorator
     &(@show) => &(@node) =>
-        & (node, show) := computed (@node, @show),
+        & (node, show) := Computed (@node, @show),
         if show:
             node,
         else:
-            (node with { create-styles [('display','none')] });
+            (node with { Styles [('display','none')] });
 
 export function Style:
     &(Array[String]) => Decorator
     &(class-list) => &(@node) =>
         let class := (class-list join ' '),
-        (@node map &(node) => (node with { create-attrs [('class',class)] }));
+        (@node map &(node) => (node with { Attrs [('class',class)] }));
 
 export function Style:
     &(Computed[Array[String]]) => Decorator
     &(@class-list) => &(@node) =>
-        & (class-list, node) := computed (@class-list, @node),
+        & (class-list, node) := Computed (@class-list, @node),
         let class := (class-list join ' '),
-        (node with { create-attrs [('class',class)] });
+        (node with { Attrs [('class',class)] });
 
 export function InlineStyle:
     &(Array[(String,String)]) => Decorator
     &(rules) => &(@node) =>
         & node := map @node,
-        (node with { create-styles rules });
+        (node with { Styles rules });
 
 export function InlineStyle:
     &(Computed[Array[(String,String)]]) => Decorator
     &(@rules) => &(@node) =>
-        & (rules, node) := computed (@rules, @node),
-        (node with { create-styles rules });
+        & (rules, node) := Computed (@rules, @node),
+        (node with { Styles rules });
 
 export function Event:
     &(String,EventPayloadConsumer) => Decorator
     &(name,consumer) => &(@node) =>
         let handler := consumer.{convert}.[EventHandler],
         & node := map @node,
-        (node with { create-events [(name,handler)] });
+        (node with { Events [(name,handler)] });
 
 export function Focusable:
     &() => Decorator
     &() => &(@node) =>
         & node := map @node,
-        (node with { create-attrs [('tabindex','0')] });
+        (node with { Attrs [('tabindex','0')] });
 
 export function Autofocus:
     &() => Decorator
     &() => &(@node) =>
         & node := map @node,
-        (node with { create-attrs [('webuiAutofocus','webuiAutofocus')] });
+        (node with { Attrs [('webuiAutofocus','webuiAutofocus')] });
 
 export function EnableCond:
     &(Computed[Bool]) => Decorator
     &(@enabled) => &(@node) =>
-        & (enabled, node) := computed (@enabled, @node),
+        & (enabled, node) := Computed (@enabled, @node),
         if enabled:
             node,
         else:
-            (node with { create-attrs [('disabled', 'disabled')] });
-
+            (node with { Attrs [('disabled', 'disabled')] });

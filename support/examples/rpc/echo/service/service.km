@@ -15,4 +15,4 @@ type Response {
 };
 
 # service-method
-export function echo: &(instance,Request) => Action[Response,Error];
+export function echo: &(Instance,Request) => Action[Response,Error];

@@ -16,17 +16,17 @@ type Chat {
 };
 
 function new-chat:
-    &(Server) => service::constructor
+    &(Server) => service::Constructor
     &(ctx) => &(login,conn) =>
         let { nickname } := login,
         let id := nickname,
         let user := { User { conn } },
         let try-login: Atomic[Bool] :=
             let { users } := ctx,
-            & old-users := do { read users },
+            & old-users := sync { read users },
             switch old-users.{ insert (id, user) }:
             case Just new-users:
-                & do { write (users, new-users) },
+                & sync { write (users, new-users) },
                 { yield Yes },
             case Null:
                 { yield No },
@@ -51,7 +51,7 @@ function say:
             from: chat.id,
             content
         } },
-        & do (chat.ctx.msg-bus <- msg),
+        & sync (chat.ctx.msg-bus <- msg),
         { yield service::None };
 
 function messages:
@@ -60,12 +60,12 @@ function messages:
         {watch chat.ctx.msg-bus};
 
 do
-    & users := reactive { create-map::[User] [] },
-    & msg-bus := bus::[service::Message] (),
+    & users := sync { Reactive { Map::[User] [] } },
+    & msg-bus := sync { Bus::[service::Message] () },
     let ctx := { Server { users, msg-bus } },
-    { rpc::serve {
-        service: service::identifier,
-        backend: { rpc::server-cleartext { network: 'tcp', addr: '127.0.0.1:8002' } },
+    { serve {
+        service: service::Identifier,
+        backend: { ServerCleartext { network: 'tcp', addr: '127.0.0.1:8002' } },
         options: {},
         constructor: { new-chat ctx }
     } }

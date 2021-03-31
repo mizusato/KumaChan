@@ -5,10 +5,9 @@ do { window::mount Root };
 function RealInput:
     &(Reactive[Maybe[Real]]) => ui::Component
     &(value) =>
-        & buffer := use { State '' },
-        { Input buffer }
-            . { with (buffer connect &(string) =>
-                (value <- { parse-float string })) };
+        & buf := use { State '' },
+        & use { Effect (buf connect &(s) => (value <- { parse-float s })) },
+        { Input buf };
 
 const Root: ui::Component :=
     let container := { StyledContainer ['container'] },
@@ -16,7 +15,7 @@ const Root: ui::Component :=
     & price := use { State { Just 0.0 } },
     & quantity := use { State { Just 0.0 } },
     let total :=
-        & (price?, quantity?) := computed (price.{watch}, quantity.{watch}),
+        & (price?, quantity?) := Computed (price.{watch}, quantity.{watch}),
         & price := maybe? price?,
         & quantity := maybe? quantity?,
         { Just (price * quantity) },

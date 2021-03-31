@@ -392,12 +392,12 @@ var EffectFunctions = map[string] Value {
 			return b
 		})
 	},
-	"do": func(e rx.Observable, f Value, h InteropContext) rx.Observable {
+	"sync": func(e rx.Observable, f Value, h InteropContext) rx.Observable {
 		return e.SyncThen(func(val rx.Object) rx.Observable {
 			return h.Call(f, val).(rx.Observable)
 		})
 	},
-	"do-shortcut": func(a rx.Observable, b rx.Observable) rx.Observable {
+	"sync-shortcut": func(a rx.Observable, b rx.Observable) rx.Observable {
 		return a.SyncThen(func(_ rx.Object) rx.Observable {
 			return b
 		})
