@@ -39,7 +39,7 @@ export function Input:
     &(@text) =>
         let on-input := { EventHandler
             (@text, &(ev) => (ev get-string 'webuiValue')) },
-        & text := map { watch @text },
+        | text := map { watch @text },
         { Node 'input' }
             . { with { Attrs [('type','text'),('value',text)] } }
             . { with { Events [('input',on-input)] } };
@@ -49,7 +49,7 @@ export function Checkbox:
     &(@checked) =>
         let on-change := { EventHandler
             (@checked, &(ev) => (ev get-bool 'webuiChecked')) },
-        & checked := map { watch @checked },
+        | checked := map { watch @checked },
         { Node 'input' }
             . { with { Attrs
                 if checked:
@@ -69,7 +69,7 @@ export function Select:
         let children := (options map &(name,desc) =>
             { Node ('option', desc) }
                 . { with { Attrs [('value',name)] } }),
-        & current := map { watch @current },
+        | current := map { watch @current },
         { Node 'select' }
             . { with { Attrs [('value',current)] } }
             . { with { Events [('change',on-change)] } }

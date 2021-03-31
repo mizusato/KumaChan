@@ -106,17 +106,17 @@ export function Maybe:[A,B,T]
     &((Maybe[A],Maybe[B]), &(A,B) => T) => Maybe[T]
     &(pair, f) =>
         let (a?, b?) := pair,
-        & a := get a?,
-        & b := get b?,
+        | a := get a?,
+        | b := get b?,
         { Just { f(a,b) } };
 
 export function Maybe:[A,B,C,T]
     &((Maybe[A],Maybe[B],Maybe[C]), &(A,B,C) => T) => Maybe[T]
     &(triple, f) =>
         let (a?, b?, c?) := triple,
-        & a := get a?,
-        & b := get b?,
-        & c := get c?,
+        | a := get a?,
+        | b := get b?,
+        | c := get c?,
         { Just { f(a,b,c) } };
 
 export function consume:[A,T]

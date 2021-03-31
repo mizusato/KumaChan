@@ -5,27 +5,27 @@ do { window::mount Root };
 function RealInput:
     &(Reactive[Maybe[Real]]) => ui::Component
     &(value) =>
-        & buf := use { State '' },
-        & use { Effect
-            & content := connect buf,
+        | buf := use { State '' },
+        | use { Effect
+            | content := connect buf,
             (value <- { parse-real content }) },
         { Input buf };
 
 const Root: ui::Component :=
     let container := { StyledContainer ['container'] },
     let row := { StyledContainer ['row'] },
-    & price := use { State { Just 0.0 } },
-    & quantity := use { State { Just 0.0 } },
+    | price := use { State { Just 0.0 } },
+    | quantity := use { State { Just 0.0 } },
     let total :=
-        & (p?, q?) := Computed (price.{watch}, quantity.{watch}),
-        & (p, q) := Maybe (p?, q?),
+        | (p?, q?) := Computed (price.{watch}, quantity.{watch}),
+        | (p, q) := Maybe (p?, q?),
         (p * q),
     { container [
         { row [ { Label 'Price:' }, { RealInput price } ] },
         { row [ { Label 'Quantity:' }, { RealInput quantity } ] },
         { Label
-            & total? := map total,
-            & total := consume (total?, 'invalid input'),
+            | total? := map total,
+            | total := consume (total?, 'invalid input'),
             { "Total = #" total.{str} }
         }
     ] };

@@ -3,7 +3,7 @@ import window from './window';
 do { window::mount Root };
 
 const Root: ui::Component :=
-    & selection := use { State 'foo' },
+    | selection := use { State 'foo' },
     { { StyledContainer ['container'] } [
         { { StyledContainer ['row'] } [
             { Select (selection, [('foo','Foo'),('bar','Bar'),('42','42')]) },

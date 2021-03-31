@@ -20,7 +20,7 @@ export function with:[T]
 export function RenderCond:
     &(Computed[Bool]) => Decorator
     &(@render) => &(cpt) =>
-        & render := switch-map @render,
+        | render := switch-map @render,
         if render:
             cpt,
         else:
@@ -29,7 +29,7 @@ export function RenderCond:
 export function ShowCond:
     &(Computed[Bool]) => Decorator
     &(@show) => &(@node) =>
-        & (node, show) := Computed (@node, @show),
+        | (node, show) := Computed (@node, @show),
         if show:
             node,
         else:
@@ -44,45 +44,45 @@ export function Style:
 export function Style:
     &(Computed[Array[String]]) => Decorator
     &(@class-list) => &(@node) =>
-        & (class-list, node) := Computed (@class-list, @node),
+        | (class-list, node) := Computed (@class-list, @node),
         let class := (class-list join ' '),
         (node with { Attrs [('class',class)] });
 
 export function InlineStyle:
     &(Array[(String,String)]) => Decorator
     &(rules) => &(@node) =>
-        & node := map @node,
+        | node := map @node,
         (node with { Styles rules });
 
 export function InlineStyle:
     &(Computed[Array[(String,String)]]) => Decorator
     &(@rules) => &(@node) =>
-        & (rules, node) := Computed (@rules, @node),
+        | (rules, node) := Computed (@rules, @node),
         (node with { Styles rules });
 
 export function Event:
     &(String,EventPayloadConsumer) => Decorator
     &(name,consumer) => &(@node) =>
         let handler := consumer.{convert}.[EventHandler],
-        & node := map @node,
+        | node := map @node,
         (node with { Events [(name,handler)] });
 
 export function Focusable:
     &() => Decorator
     &() => &(@node) =>
-        & node := map @node,
+        | node := map @node,
         (node with { Attrs [('tabindex','0')] });
 
 export function Autofocus:
     &() => Decorator
     &() => &(@node) =>
-        & node := map @node,
+        | node := map @node,
         (node with { Attrs [('webuiAutofocus','webuiAutofocus')] });
 
 export function EnableCond:
     &(Computed[Bool]) => Decorator
     &(@enabled) => &(@node) =>
-        & (enabled, node) := Computed (@enabled, @node),
+        | (enabled, node) := Computed (@enabled, @node),
         if enabled:
             node,
         else:

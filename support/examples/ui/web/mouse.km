@@ -5,12 +5,12 @@ do { window::mount Root };
 // TODO: mouse enter => Just pos, mouse out => Null
 const MousePosition: ui::Hook[Source[(Real,Real)]] :=
     &(k) =>
-        & pos := sync { Bus::[(Real,Real)] () },
-        & id := sync { gen-monotonic-id-string () },
+        | pos := sync { Bus::[(Real,Real)] () },
+        | id := sync { gen-monotonic-id-string () },
         let cpt := { k { watch pos } },
         (cpt with { Event ({ "mousemove.hook#" id },
-            & x := extract-float 'webuiCurrentTargetX',
-            & y := extract-float 'webuiCurrentTargetY',
+            | x := extract-float 'webuiCurrentTargetX',
+            | y := extract-float 'webuiCurrentTargetY',
             { trigger (pos <- (x, y)) }
         )});
 
@@ -18,7 +18,7 @@ const Root: ui::Component :=
     let container := { StyledContainer ['container'] },
     let box := { StyledContainer ['box'] },
     { container [
-        & pos := use MousePosition,
+        | pos := use MousePosition,
         { box [
             pos
                 . { map &(x,y) => { "x=#, y=#" (x.{str}, y.{str}) } }

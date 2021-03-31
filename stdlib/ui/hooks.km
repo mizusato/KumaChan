@@ -8,7 +8,7 @@ export function use:[T]
 export function State:[T]
     &(T) => Hook[Reactive[T]]
     &(initial) => &(k) =>
-        & r := sync { Reactive initial },
+        | r := sync { Reactive initial },
         { k(r) };
 
 export function Effect:

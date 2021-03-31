@@ -4,9 +4,9 @@ export function consume-echo-service:
     &(service::Instance) => Action
     &(server) =>
         let read-and-request :=
-            & await { print 'request: ' },
-            & input := await scanln,
-            & res := await server.{ echo { content: input } },
+            | await { print 'request: ' },
+            | input := await scanln,
+            | res := await server.{ echo { content: input } },
             let { content } := res,
             { println { "response: #"..\n { quote content } } },
         read-and-request

@@ -26,7 +26,7 @@ var __IgnoreTokens = [...] string {
 
 const LF = `\n`
 const Blanks = ` \t\r　`
-const Symbols = `\{\}\[\]\(\)\.,:;#\&\\'"` + "`"
+const Symbols = `\{\}\[\]\(\)\.,:;#\&\|\\'"` + "`"
 const IdentifierRegexp = `[^`+Symbols+Blanks+LF+`]+`
 const IdentifierFullRegexp = "^" + IdentifierRegexp + "$"
 
@@ -70,6 +70,7 @@ var __Tokens = [...] Token {
     Token { Name: ":",    Pattern: r(`\:`) },
     Token { Name: ";",    Pattern: r(`\;`) },
     Token { Name: "&",    Pattern: r(`\&`) },
+    Token { Name: "|",    Pattern: r(`\|`) },
     // keywords
     Token { Name: "If",         Pattern: r(`if`),         Keyword: true },
     Token { Name: "Elif",       Pattern: r(`elif`),       Keyword: true },
@@ -230,7 +231,7 @@ var __SyntaxDefinition = [...] string {
           "binding_type? = : rec_opt type!",
             "rec_opt? = @rec",
         "block_value = ,! expr!",
-      "cps = & cps_binding inline_ref! cps_input ,! cps_output",
+      "cps = _bar1 cps_binding inline_ref! cps_input ,! cps_output",
         "cps_binding? = pattern binding_type := ",
         "cps_input = expr!",
         "cps_output = expr!",

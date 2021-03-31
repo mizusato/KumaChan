@@ -11,15 +11,15 @@ export function consume-chat:
             . { crash-on-error }
             . { with
                 let read-and-send :=
-                    & text := await scanln,
-                    & await chat.{ say { service::MessageContent { text } } },
+                    | text := await scanln,
+                    | await chat.{ say { service::MessageContent { text } } },
                     { yield () },
                 read-and-send.{forever}.{crash-on-error} };
 
 do
     let try :=
-        & await { print '(login) nickname: ' },
-        & nickname := await scanln,
+        | await { print '(login) nickname: ' },
+        | nickname := await scanln,
         { access {
             service: service::Identifier,
             backend: { ClientCleartext { network: 'tcp', addr: '127.0.0.1:8002' } },

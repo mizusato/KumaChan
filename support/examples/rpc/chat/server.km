@@ -23,15 +23,15 @@ function new-chat:
         let user := { User { conn } },
         let try-login: Atomic[Bool] :=
             let { users } := ctx,
-            & old-users := sync { read users },
+            | old-users := sync { read users },
             switch old-users.{ insert (id, user) }:
             case Just new-users:
-                & sync { write (users, new-users) },
+                | sync { write (users, new-users) },
                 { yield Yes },
             case Null:
                 { yield No },
             end,
-        & ok := await try-login,
+        | ok := await try-login,
         if ok:
             let chat := { Chat { ctx, id } },
             let instance := { service::create chat },
@@ -51,7 +51,7 @@ function say:
             from: chat.id,
             content
         } },
-        & sync (chat.ctx.msg-bus <- msg),
+        | sync (chat.ctx.msg-bus <- msg),
         { yield service::None };
 
 function messages:
@@ -60,8 +60,8 @@ function messages:
         {watch chat.ctx.msg-bus};
 
 do
-    & users := sync { Reactive { Map::[User] [] } },
-    & msg-bus := sync { Bus::[service::Message] () },
+    | users := sync { Reactive { Map::[User] [] } },
+    | msg-bus := sync { Bus::[service::Message] () },
     let ctx := { Server { users, msg-bus } },
     { serve {
         service: service::Identifier,

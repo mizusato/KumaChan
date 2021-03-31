@@ -3,7 +3,7 @@ import window from './window';
 do { window::mount Root };
 
 const Root: ui::Component :=
-    & ok := use { State Yes },
+    | ok := use { State Yes },
     { { StyledContainer ['container'] } [
         { Checkbox ok },
         if ok:

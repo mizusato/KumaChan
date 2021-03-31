@@ -8,8 +8,8 @@ do DemoWindow.{on-resize}
             .{ crash-on-error } };
 
 do
-    & buf := reactive 'Hello World',
-    & display := reactive 'Hello World',
+    | buf := reactive 'Hello World',
+    | display := reactive 'Hello World',
     { merge [
         (buf connect &(text) =>
             { println { "Current Text: #" text } } .{ crash-on-error }),
