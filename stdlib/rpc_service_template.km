@@ -8,16 +8,16 @@ type Argument
 
 /// Service constructor type.
 type Constructor
-    &(Argument, rpc::Connection) => Action[Instance,Error];
+    &(Argument, rpc::Connection) => Async[Instance,Error];
 
 /// Service destructor type
 type Destructor[T]
     implicit
-    { delete: &(T) => Action };
+    { delete: &(T) => Async };
 
 /// Service consumer type.
 type Consumer
-    &(Instance) => Action;
+    &(Instance) => Async;
 
 /// Service methods, the implicit context used when creating service instances.
 type Methods[Instance]

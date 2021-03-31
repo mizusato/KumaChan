@@ -3,7 +3,7 @@ do DialogDemoWindow.{show-at-center};
 do DialogDemoWindow.{on-close}.{connect {exit 0}};
 
 do
-    & @text := reactive '',
+    | @text := sync { Reactive '' },
     let @line := { merge [@open, @open-multiple, @open-directory, @save] },
     (LogBox bind @text)
         . { with @line

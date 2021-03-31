@@ -1,11 +1,11 @@
-do (scanln ())
-    | then (&(line)(
-    	let result := (json-parse line),
+do scanln
+    . { then &(line) =>
+    	let result := { json-parse line },
     	switch result:
-    	case OK (v):
-    	    (println (v | json-stringify)),
+    	case OK v:
+    	    { println { json-stringify v } },
     	case NG err:
-    	    (errorln err),
+    	    { errorln err },
     	end
-    ))
-    | catch (&(err)(crash err));
+    }
+    . { crash-on-error };

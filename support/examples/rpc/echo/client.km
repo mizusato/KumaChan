@@ -1,7 +1,7 @@
 import service from './service';
 
 export function consume-echo-service:
-    &(service::Instance) => Action
+    &(service::Instance) => Async
     &(server) =>
         let read-and-request :=
             | await { print 'request: ' },

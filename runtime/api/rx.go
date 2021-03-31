@@ -438,12 +438,16 @@ var EffectFunctions = map[string] Value {
 			return FromBool((h.Call(f, val)).(SumValue))
 		})
 	},
-	"action-reduce": func(e rx.Observable, init Value, f Value, h InteropContext) rx.Observable {
+	"action-reduce": func(e rx.Observable, opts ProductValue, h InteropContext) rx.Observable {
+		var init = opts.Elements[0]
+		var f = opts.Elements[1]
 		return e.Reduce(func(acc rx.Object, val rx.Object) rx.Object {
 			return h.Call(f, ToTuple2(acc, val))
 		}, init)
 	},
-	"action-scan": func(e rx.Observable, init Value, f Value, h InteropContext) rx.Observable {
+	"action-scan": func(e rx.Observable, opts ProductValue, h InteropContext) rx.Observable {
+		var init = opts.Elements[0]
+		var f = opts.Elements[1]
 		return e.Scan(func(acc rx.Object, val rx.Object) rx.Object {
 			return h.Call(f, ToTuple2(acc, val))
 		}, init)

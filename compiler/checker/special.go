@@ -23,7 +23,7 @@ const KmdDeserializerName = "data-deserialize"
 const KmdAdapterName = "data-adapt"
 const KmdValidatorName = "data-validate"
 var __Observable = CoreSymbol(stdlib.Observable)
-var __Action = CoreSymbol(stdlib.Action)
+var __Action = CoreSymbol(stdlib.Async)
 var __Reactive = CoreSymbol(stdlib.Reactive)
 func IsReactive(t *NamedType) bool {
 	return t.Name == __Reactive

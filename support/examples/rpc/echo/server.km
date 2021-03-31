@@ -11,11 +11,11 @@ export function new-echo-server:
         { yield { service::create { EchoServer { verbose } } } };
 
 export function delete:
-    &(EchoServer) => Action
+    &(EchoServer) => Async
     &(_) => { yield () };
 
 export function echo:
-    &(EchoServer,service::Request) => Action[service::Response,Error]
+    &(EchoServer,service::Request) => Async[service::Response,Error]
     &(server,req) =>
         let {content} := req,
         let {verbose} := server,

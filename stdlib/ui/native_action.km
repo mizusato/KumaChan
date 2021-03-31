@@ -1,0 +1,8 @@
+type Action
+    protected
+    Object;
+
+export function activated:
+    &(Action) => Source[unit]
+    &(action) => { signal (action, 'triggered()') };
+

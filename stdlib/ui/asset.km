@@ -14,19 +14,19 @@ type FontName {
 };
 
 function inject-css:
-    &(WebView, Array[AssetFile]) => Action
+    &(WebView, Array[AssetFile]) => Async
     native 'ui-inject-css';
 
 function inject-js:
-    &(WebView, Array[AssetFile]) => Action
+    &(WebView, Array[AssetFile]) => Async
     native 'ui-inject-js';
 
 function inject-ttf:
-    &(WebView, Array[(AssetFile,FontName)]) => Action
+    &(WebView, Array[(AssetFile,FontName)]) => Async
     native 'ui-inject-ttf';
 
 export function inject-assets:
-    &(WebView, Array[Asset]) => Action
+    &(WebView, Array[Asset]) => Async
     &(view, assets) =>
         let all-ttf := assets.{iterate}.{ filter-map &(asset) =>
             switch asset:

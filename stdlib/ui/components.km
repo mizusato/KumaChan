@@ -76,7 +76,7 @@ export function Select:
             . { with { Content children } };
 
 export function Button:
-    &(String, Action) => Component
+    &(String, Async) => Component
     &(text, action) =>
         let handler := { trigger action }.{convert}.[EventHandler],
         { StaticComponent &() =>

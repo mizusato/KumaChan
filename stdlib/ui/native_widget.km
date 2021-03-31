@@ -16,11 +16,11 @@ type Window
     WidgetTopLevel;
 
 export function show:
-    &(WidgetTopLevel) => Action
+    &(WidgetTopLevel) => Async
     native 'qt-show';
 
 export function show-at-center:
-    &(WidgetTopLevel) => Action
+    &(WidgetTopLevel) => Async
     native 'qt-show-at-center';
 
 
@@ -37,7 +37,7 @@ type WebView
     BaseWebView;
 
 export function bind:
-    &(WebView, Component) => Action[never]
+    &(WebView, Component) => Async[never]
     native 'ui-bind';
 
 
@@ -46,7 +46,7 @@ type NativeLabel
     Widget;
 
 export function bind:
-    &(NativeLabel, Computed[String]) => Action[never]
+    &(NativeLabel, Computed[String]) => Async[never]
     &(label, @text) => {
         bind-property {
             object: label,
@@ -61,7 +61,7 @@ type NativeInput
     Widget;
 
 export function bind:
-    &(NativeInput, Reactive[String]) => Action[never]
+    &(NativeInput, Reactive[String]) => Async[never]
     &(input, @text) => {
         bind-property {
             object: input,
@@ -81,7 +81,7 @@ type NativeInputMultiLine
     Widget;
 
 export function bind:
-    &(NativeInputMultiLine, Reactive[String]) => Action[never]
+    &(NativeInputMultiLine, Reactive[String]) => Async[never]
     &(input, @text) => {
         bind-property {
             object: input,
@@ -106,7 +106,7 @@ type NativeCheckbox
     Widget;
 
 export function bind:
-    &(NativeCheckbox, Reactive[Bool]) => Action[never]
+    &(NativeCheckbox, Reactive[Bool]) => Async[never]
     &(checkbox, @checked) => {
         bind-property {
             object: checkbox,
@@ -122,7 +122,7 @@ type NativeSelect
     Widget;
 
 export function bind:
-    &(NativeSelect, Reactive[Maybe[Number]]) => Action[never]
+    &(NativeSelect, Reactive[Maybe[Number]]) => Async[never]
     &(select-widget, @index) => {
         bind-property {
             object: select-widget,
@@ -143,7 +143,7 @@ type NativeListItem
 // TODO: bind { items: Observable[List[String]], current: Reactive[ListKey] }
 /*
 export function set-items:
-    &(NativeList,Array[NativeListItem],Maybe[String]) => Action
+    &(NativeList,Array[NativeListItem],Maybe[String]) => Async
     native 'qt-list-widget-set-items';
 
 export function list-widget-item:

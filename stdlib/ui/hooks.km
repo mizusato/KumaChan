@@ -12,7 +12,7 @@ export function State:[T]
         { k(r) };
 
 export function Effect:
-    &(Action[never]) => Hook[unit]
+    &(Async[never]) => Hook[unit]
     &(effect) => &(k) =>
         { k() }
             .{ with effect };

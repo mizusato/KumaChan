@@ -244,35 +244,35 @@ export function is-last-in:[T]
             . { distinct-until-changed };
 
 export function update:[T]
-    &(Reactive[List[T]], ListKey, &(T) => T) => Atomic
+    &(Reactive[List[T]], ListKey, &(T) => T) => Sync
     &(@list,key,f) => @list.{ update &(list) => {update(list,key,f)} };
 export function delete:[T]
-    &(Reactive[List[T]], ListKey) => Atomic
+    &(Reactive[List[T]], ListKey) => Sync
     &(@list,key) => @list.{ update &(list) => {delete(list,key)} };
 export function prepend:[T]
-    &(Reactive[List[T]], (ListKey,T)) => Atomic
+    &(Reactive[List[T]], (ListKey,T)) => Sync
     &(@list,entry) => @list.{ update &(list) => {prepend(list,entry)} };
 export function append:[T]
-    &(Reactive[List[T]], (ListKey,T)) => Atomic
+    &(Reactive[List[T]], (ListKey,T)) => Sync
     &(@list,entry) => @list.{ update &(list) => {append(list,entry)} };
 export function insert:[T]
-    &(Reactive[List[T]], {before:ListKey}, (ListKey,T)) => Atomic
+    &(Reactive[List[T]], {before:ListKey}, (ListKey,T)) => Sync
     &(@list,pos,entry) => @list.{ update &(list) => {insert(list,pos,entry)} };
 export function insert:[T]
-    &(Reactive[List[T]], {after:ListKey}, (ListKey,T)) => Atomic
+    &(Reactive[List[T]], {after:ListKey}, (ListKey,T)) => Sync
     &(@list,pos,entry) => @list.{ update &(list) => {insert(list,pos,entry)} };
 export function move:[T]
-    &(Reactive[List[T]], ListKey, {before:ListKey}) => Atomic
+    &(Reactive[List[T]], ListKey, {before:ListKey}) => Sync
     &(@list,key,pos) => @list.{ update &(list) => {move(list,key,pos)} };
 export function move:[T]
-    &(Reactive[List[T]], ListKey, {after:ListKey}) => Atomic
+    &(Reactive[List[T]], ListKey, {after:ListKey}) => Sync
     &(@list,key,pos) => @list.{ update &(list) => {move(list,key,pos)} };
 export function move-up:[T]
-    &(Reactive[List[T]], ListKey) => Atomic
+    &(Reactive[List[T]], ListKey) => Sync
     &(@list,key) => @list.{ update &(list) => {move-up(list,key)} };
 export function move-down:[T]
-    &(Reactive[List[T]], ListKey) => Atomic
+    &(Reactive[List[T]], ListKey) => Sync
     &(@list,key) => @list.{ update &(list) => {move-down(list,key)} };
 export function swap:[T]
-    &(Reactive[List[T]], ListKey, ListKey) => Atomic
+    &(Reactive[List[T]], ListKey, ListKey) => Sync
     &(@list,key1,key2) => @list.{ update &(list) => {swap(list,key1,key2)} };

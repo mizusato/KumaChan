@@ -17,13 +17,13 @@ const Root: UI::Component
     let row := styled ui-container ['row'],
     let button-small := styled ui-button ['min-width-3'],
     ~ use &(list) := ui-state (empty-list:[Todo]),
-    let add-item-from: (&(Reactive[String])(Action)) := ( &(buffer)
+    let add-item-from: (&(Reactive[String])(Async)) := ( &(buffer)
         ~ await &(content) := buffer.read,
         ~ await &(id) := gen-sequential-id,
         ~ await list.append (id, { content, finished: No }),
         buffer.write('')
     ),
-    let insert-item-after: (&(ListKey)(Action)) := ( &(pivot)
+    let insert-item-after: (&(ListKey)(Async)) := ( &(pivot)
         ~ await &(id) := gen-sequential-id,
         list.insert {after:pivot} (id, { content: '', finished: No })
     ),

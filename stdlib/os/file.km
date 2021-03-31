@@ -21,94 +21,94 @@ export function list-dir:
     &(Path) => Observable[(Path,FileState),Error]
     native 'list-dir';
 
-// TODO: use consumer (File -> Action, close on complete) instead of open/close
+// TODO: use consumer (File -> Async, close on complete) instead of open/close
 export function open-read-only:
-    &(Path) => Action[FileReadOnly,Error]
+    &(Path) => Async[FileReadOnly,Error]
     native 'open-read-only';
 export function open-read-write:
-    &(Path) => Action[FileReadWrite,Error]
+    &(Path) => Async[FileReadWrite,Error]
     native 'open-read-write';
 export function open-read-write-create:
-    &(Path) => Action[FileReadWrite,Error]
+    &(Path) => Async[FileReadWrite,Error]
     native 'open-read-write-create';
 export function open-overwrite:
-    &(Path) => Action[FileWriteOnly,Error]
+    &(Path) => Async[FileWriteOnly,Error]
     native 'open-overwrite';
 export function open-append:
-    &(Path) => Action[FileWriteOnly,Error]
+    &(Path) => Async[FileWriteOnly,Error]
     native 'open-append';
 
 export function close:
-    &(File) => Action
+    &(File) => Async
     native 'file-close';
 
 export function get-state:
-    &(File) => Action[FileState,Error]
+    &(File) => Async[FileState,Error]
     native 'file-get-state';
 
 export function read:
-    &(FileReadOnly,Number) => Action[Bytes,Error]
+    &(FileReadOnly,Number) => Async[Bytes,Error]
     native 'file-read';
 export function read:
-    &(FileReadWrite,Number) => Action[Bytes,Error]
+    &(FileReadWrite,Number) => Async[Bytes,Error]
     native 'file-read';
 export function write:
-    &(FileWriteOnly,Bytes) => Action[unit,Error]
+    &(FileWriteOnly,Bytes) => Async[unit,Error]
     native 'file-write';
 export function write:
-    &(FileReadWrite,Bytes) => Action[unit,Error]
+    &(FileReadWrite,Bytes) => Async[unit,Error]
     native 'file-write';
 
 export function seek-start:
-    &(File,Uint64) => Action[Uint64,Error]
+    &(File,Uint64) => Async[Uint64,Error]
     native 'file-seek-start';
 export function seek-forward:
-    &(File,Uint64) => Action[Uint64,Error]
+    &(File,Uint64) => Async[Uint64,Error]
     native 'file-seek-forward';
 export function seek-backward:
-    &(File,Uint64) => Action[Uint64,Error]
+    &(File,Uint64) => Async[Uint64,Error]
     native 'file-seek-backward';
 export function seek-end:
-    &(File,Uint64) => Action[Uint64,Error]
+    &(File,Uint64) => Async[Uint64,Error]
     native 'file-seek-end';
 
 export function read-char:
-    &(FileReadOnly) => Action[Char,Error]
+    &(FileReadOnly) => Async[Char,Error]
     native 'file-read-char';
 export function read-char:
-    &(FileReadWrite) => Action[Char,Error]
+    &(FileReadWrite) => Async[Char,Error]
     native 'file-read-char';
 export function write-char:
-    &(FileWriteOnly,Char) => Action[unit,Error]
+    &(FileWriteOnly,Char) => Async[unit,Error]
     native 'file-write-char';
 export function write-char:
-    &(FileReadWrite,Char) => Action[unit,Error]
+    &(FileReadWrite,Char) => Async[unit,Error]
     native 'file-write-char';
 
 export function read-string:
-    &(FileReadOnly) => Action[String,Error]
+    &(FileReadOnly) => Async[String,Error]
     native 'file-read-string';
 export function read-string:
-    &(FileReadWrite) => Action[String,Error]
+    &(FileReadWrite) => Async[String,Error]
     native 'file-read-string';
 export function write-string:
-    &(FileWriteOnly,String) => Action[unit,Error]
+    &(FileWriteOnly,String) => Async[unit,Error]
     native 'file-write-string';
 export function write-string:
-    &(FileReadWrite,String) => Action[unit,Error]
+    &(FileReadWrite,String) => Async[unit,Error]
     native 'file-write-string';
 
 export function read-line:
-    &(FileReadOnly) => Action[String,Error]
+    &(FileReadOnly) => Async[String,Error]
     native 'file-read-line';
 export function read-line:
-    &(FileReadWrite) => Action[String,Error]
+    &(FileReadWrite) => Async[String,Error]
     native 'file-read-line';
 export function write-line:
-    &(FileWriteOnly,String) => Action[unit,Error]
+    &(FileWriteOnly,String) => Async[unit,Error]
     native 'file-write-line';
 export function write-line:
-    &(FileReadWrite,String) => Action[unit,Error]
+    &(FileReadWrite,String) => Async[unit,Error]
     native 'file-write-line';
 
 export function read-lines:
@@ -119,8 +119,8 @@ export function read-lines:
     native 'file-read-lines';
 
 export function read-all:
-    &(FileReadOnly) => Action[Bytes,Error]
+    &(FileReadOnly) => Async[Bytes,Error]
     native 'file-read-all';
 export function read-all:
-    &(FileReadWrite) => Action[Bytes,Error]
+    &(FileReadWrite) => Async[Bytes,Error]
     native 'file-read-all';

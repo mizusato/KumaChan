@@ -1,17 +1,17 @@
 do
     let v :=
-        (JSON::Array [
-            (JSON::Number 1.23e30),
-            (JSON::String '12aaa4'),
-            (JSON::Boolean Yes),
-            (JSON::Object (Map [
-                ('ABC', (JSON::Number 1.0)),
-                ('DEF', (JSON::Boolean No)),
-            	('foobar', (JSON::Array [
-                    (JSON::Null),
-                    (JSON::String 'baz')
-            	]))
-            ]))
-        ]),
-    println (json-stringify v)
-            | catch (&(_)(crash 'I/O Error'));
+        { json::Array [
+            { json::Number 1.23e30 },
+            { json::String '12aaa4' },
+            { json::Boolean Yes },
+            { json::Object { Map [
+                ('ABC', { json::Number 1.0 }),
+                ('DEF', { json::Boolean No }),
+            	('foobar', { json::Array [
+                    json::Null,
+                    { json::String 'baz' }
+            	]})
+            ] } }
+        ] },
+    { println { json-stringify v } }
+        . { crash-on-error };

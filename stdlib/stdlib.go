@@ -47,7 +47,7 @@ var core_types = []string {
 	Seq, Array, Heap, Set, Map, List, ListKey,
 	// rx.km
 	Observable,
-	Action, Atomic,
+	Async, Sync,
 	Source, Computed,
 	Sink, Bus, Reactive, ReactiveEntity,
 	ReactiveSnapshots, Mutex,
@@ -117,8 +117,8 @@ const List = "List"
 const ListKey = "ListKey"
 // rx.km
 const Observable = "Observable"
-const Action = "Action"
-const Atomic = "Atomic"
+const Async = "Async"
+const Sync = "Sync"
 const Source = "Source"
 const Computed = "Computed"
 const Sink = "Sink"
@@ -247,7 +247,7 @@ var qtWidgetTypeNameMap = map[string] string {
 	"QComboBox":      "NativeSelect",
 	"QListWidget":    "NativeList",
 }
-const QtActionType = "Command"
+const QtActionType = "Action"
 func GetQtWidgetTypeName(widget_name string) (string, bool) {
 	var type_name, exists = qtWidgetTypeNameMap[widget_name]
 	return type_name, exists

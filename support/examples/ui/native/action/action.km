@@ -3,7 +3,7 @@ do Window.{show-at-center};
 do Window.{on-close}.{connect {exit 0}};
 
 do
-    | buf := reactive 'command example',
+    | buf := sync { Reactive 'command example' },
     (Label bind buf.{watch})
         . { with CommandOpen.{activated}.{connect (buf <- 'activated: open')} }
         . { with CommandSave.{activated}.{connect (buf <- 'activated: save')} }

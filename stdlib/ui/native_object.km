@@ -25,7 +25,7 @@ function get-property: [Obj < Object, T]
     native 'qt-get-property';
 
 function set-property: [T]
-    &(Object, String, PropType, T) => Action
+    &(Object, String, PropType, T) => Async
     native 'qt-set-property';
 
 function bind-property: [T]
@@ -33,7 +33,7 @@ function bind-property: [T]
         prop:   String,
         type:   PropType,
         source: Source[T] }
-        => Action[never]
+        => Async[never]
     & { object, prop, type, source } =>
         (source connect &(value) => {
             set-property (object, prop, type, value) });
@@ -44,7 +44,7 @@ function bind-property: [T]
         type:   PropType,
         notify: String,
         sync:   Reactive[T] }
-        => Action[never]
+        => Async[never]
     & { object, prop, type, notify, sync } =>
         let write :=
             let source := { watch sync },

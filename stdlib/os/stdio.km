@@ -6,7 +6,7 @@ export const Stderr: FileWriteOnly :=
     native 'os::Stderr';
 
 export function scan:
-    &() => Action[String,Error]
+    &() => Async[String,Error]
     &() =>
         let read := Stdin.{read-string},
         if (self::Name = 'windows'):
@@ -14,14 +14,14 @@ export function scan:
         else:
             read;
 export function print:
-    &(String) => Action[unit,Error]
+    &(String) => Async[unit,Error]
     &(s) => Stdout.{write-string(s)};
 export function error:
-    &(String) => Action[unit,Error]
+    &(String) => Async[unit,Error]
     &(s) => Stderr.{write-string(s)};
 
 export function scanln:
-    &() => Action[String,Error]
+    &() => Async[String,Error]
     &() =>
         let read := Stdin.{read-line},
         if (self::Name = 'windows'):
@@ -29,8 +29,8 @@ export function scanln:
         else:
             read;
 export function println:
-    &(String) => Action[unit,Error]
+    &(String) => Async[unit,Error]
     &(l) => Stdout.{write-line(l)};
 export function errorln:
-    &(String) => Action[unit,Error]
+    &(String) => Async[unit,Error]
     &(l) => Stderr.{write-line(l)};

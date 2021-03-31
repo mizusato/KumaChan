@@ -13,5 +13,5 @@ export function body:
     native 'http-response-body';
 
 export function http-get:
-    &(URL) => Action[HttpResponse,Error]
+    &(URL) => Async[HttpResponse,Error]
     native 'http-get';

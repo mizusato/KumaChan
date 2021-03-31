@@ -36,7 +36,7 @@ export const DefaultValue: LimitOptions := {
 
 type Connection native;
 export function close:
-    &(Connection) => Action[unit]
+    &(Connection) => Async[unit]
     native 'rpc-connection-close';
 
 export function serve:[Instance,Argument,Constructor,Consumer]
@@ -44,7 +44,7 @@ export function serve:[Instance,Argument,Constructor,Consumer]
         backend:     ServerBackend,
         options:     ServerOptions,
         constructor: Constructor }
-             =>      Action[unit,Error]
+             =>      Async[unit,Error]
     native 'rpc-serve';
 
 export function access:[Instance,Argument,Constructor,Consumer]
@@ -53,5 +53,5 @@ export function access:[Instance,Argument,Constructor,Consumer]
         options:  ClientOptions,
         argument: Argument,
         consumer: Consumer }
-            =>    Action[unit,Error]
+            =>    Async[unit,Error]
     native 'rpc-access';

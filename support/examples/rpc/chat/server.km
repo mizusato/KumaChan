@@ -21,7 +21,7 @@ function new-chat:
         let { nickname } := login,
         let id := nickname,
         let user := { User { conn } },
-        let try-login: Atomic[Bool] :=
+        let try-login: Sync[Bool] :=
             let { users } := ctx,
             | old-users := sync { read users },
             switch old-users.{ insert (id, user) }:
@@ -40,12 +40,12 @@ function new-chat:
             { throw { make-error { "nickname '#' is in use" id } } };
 
 function delete:
-    &(Chat) => Action
+    &(Chat) => Async
     &(chat) =>
         chat.ctx.users.{update &(old-users) => old-users.{delete* chat.id}};
 
 function say:
-    &(Chat,service::MessageContent) => Action[service::None,Error]
+    &(Chat,service::MessageContent) => Async[service::None,Error]
     &(chat,content) =>
         let msg := { service::Message {
             from: chat.id,

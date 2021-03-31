@@ -1,11 +1,11 @@
 type EventPayloadConsumer
     protected
-    &(EventPayload) => Action;
+    &(EventPayload) => Async;
 
 function convert:
     &(EventPayloadConsumer) => EventHandler
     &(cb) => (
-        { EventHandler ({Callback::[Action] (& e => e)}, cb) }
+        { EventHandler ({Callback::[Async] (& e => e)}, cb) }
         // important: payload will be deleted after `cb` called
     );
 
@@ -26,6 +26,6 @@ export function extract-bool:
     &(prop,k) => { getter-callback (prop, get-bool, k) };
 
 export function trigger:
-    &(Action) => EventPayloadConsumer
+    &(Async) => EventPayloadConsumer
     &(action) => { EventPayloadConsumer &() => action };
 

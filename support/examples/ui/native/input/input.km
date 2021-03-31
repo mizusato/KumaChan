@@ -10,7 +10,7 @@ do Window.{show-at-center};
 do Window.{on-close}.{connect {exit 0}};
 
 do
-    | data := reactive { Data { a: No, b: Null, c: '', d: 'Lorem Ipsum' } },
+    | data := sync { Reactive { Data { a: No, b: Null, c: '', d: 'Lorem Ipsum' } } },
     let {a,b,c,d} := data,
     { merge [
         (InputCheckBox bind a),
