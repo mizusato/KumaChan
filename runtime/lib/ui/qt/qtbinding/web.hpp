@@ -102,7 +102,11 @@ public:
     }
 public slots:
     void error404() {
-        errorOccurred(ContentNotFoundError);
+        #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+            errorOccurred(ContentNotFoundError);
+        #else
+            error(ContentNotFoundError);
+        #endif
     };
 };
 
