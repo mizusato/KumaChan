@@ -1,13 +1,5 @@
 TODO
 
-- extra info in Error (*ErrorWithExtraInfo implements error) (send through rpc)
-
-- nested *ErrorWithExtraInfo
-
-- type ErrorExtraInfoKey (String, ErrorExtraInfo)
-
-- type ErrorExtraInfo enum { ... }
-
 - json parser based on parser combinators
 
 - String / json::Object matching: consider possible APIs

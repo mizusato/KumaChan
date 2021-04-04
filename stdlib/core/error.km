@@ -1,1 +1,22 @@
 type Error native;
+
+export function convert:
+    &(Error) => String
+    native 'String from error';
+
+export function make-error:
+    &(String) => Error
+    native 'make-error';
+
+export function make-error:
+    & { message: String, data: Array[(String,String)] } => Error
+    native 'make-error-with-data';
+
+export function get-data:
+    &(Error,{key:String,fallback:String}) => String
+    native 'error-get-data';
+
+export function get-data:
+    &(Error,String) => String
+    &(err,key) => (err get-data { key, fallback: '' });
+

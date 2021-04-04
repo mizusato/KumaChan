@@ -4,8 +4,10 @@ import (
 	"io"
 	"fmt"
 	"bytes"
-	"strconv"
+	"errors"
 	"strings"
+	"strconv"
+	"encoding/json"
 )
 
 
@@ -13,6 +15,7 @@ const MsgKindWidth = 8
 const MsgCallIdWidth = 16
 const MsgPayloadLengthWidth = 8
 const MsgPayloadLengthMax = 99999999
+const MsgPlainErrorPrefix = '}'
 
 const MSG_SERVICE = "service"
 const MSG_CREATED = "created"
@@ -21,6 +24,19 @@ const MSG_CALL_MULTI = "call*"
 const MSG_VALUE = "value"
 const MSG_ERROR = "error"
 const MSG_COMPLETE = "complete"
+
+type ErrorWithExtraData struct {
+	Desc  string               `json:"desc"`
+	Data  map[string] string   `json:"data"`
+}
+func (e *ErrorWithExtraData) Error() string {
+	return e.Desc
+}
+func (e *ErrorWithExtraData) Serialize() ([] byte) {
+	var content, err = json.Marshal(e)
+	if err != nil { panic(err) }
+	return content
+}
 
 func writeMessageHeaderField(content string, width int, w io.Writer) error {
 	if len(content) > width {
@@ -85,10 +101,37 @@ func receiveMessage(conn io.Reader) (string, uint64, ([] byte), error) {
 }
 
 func sendError(e error, id uint64, conn io.Writer) error {
-	var desc = e.Error()
-	if len(desc) > MsgPayloadLengthMax {
-		desc = desc[:MsgPayloadLengthMax]
+	var bin ([] byte)
+	var e_with_extra, with_extra = e.(*ErrorWithExtraData)
+	if with_extra {
+		bin = e_with_extra.Serialize()
 	}
-	return sendMessage(MSG_ERROR, id, ([] byte)(desc), conn)
+	const max = MsgPayloadLengthMax
+	var size_with_extra = len(bin)
+	if size_with_extra == 0 ||  // e is NOT of type *ErrorWithExtraData
+		size_with_extra > max { // or maximum payload size exceeded
+		var desc = e.Error()
+		var str = (string([] rune { MsgPlainErrorPrefix }) + desc)
+		bin = ([] byte)(str)
+		if len(bin) > max {
+			bin = bin[:max]
+		}
+	}
+	return sendMessage(MSG_ERROR, id, ([] byte)(bin), conn)
+}
+
+func deserializeError(payload ([] byte)) error {
+	var e ErrorWithExtraData
+	var unmarshal_err = json.Unmarshal(payload, &e)
+	if unmarshal_err == nil {
+		return &e
+	} else {
+		var str = string(payload)
+		if strings.HasPrefix(str, string([] rune { MsgPlainErrorPrefix })) {
+			return errors.New(str[1:])
+		} else {
+			return errors.New("unknown error (invalid payload format)")
+		}
+	}
 }
 

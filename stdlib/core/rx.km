@@ -211,12 +211,6 @@ export function crash:
 export function crash:
     &(Error) => Async[never]
     &(err) => { crash err.{str}.{"Error: #"} };
-export function convert:  // TODO: move this function
-    &(Error) => String
-    native 'String from error';
-export function make-error:  // TODO: move this function
-    &(String) => Error
-    native 'make-error';
 /// go(f) returns an action that evaluates f() in a separate goroutine.
 export function go:[T]
     &(&() => T) => Async[T]

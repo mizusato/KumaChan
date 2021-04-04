@@ -8,6 +8,7 @@ import (
 
 var NativeFunctionMaps = [] (map[string] interface{}) {
 	DebuggingFunctions,
+	ErrorFunctions,
 	MathFunctions,
 	ComparisonFunctions,
 	ContainerFunctions,

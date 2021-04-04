@@ -1,3 +1,6 @@
+export const ERR_KIND: String := 'kind';
+export const ERR_NAME_IN_USE: String := 'name-in-use';
+
 # service-argument
 # data: name=Login, ver=v1
 type Login {

@@ -3,7 +3,6 @@ package api
 import (
 	"fmt"
 	"math"
-	"errors"
 	"reflect"
 	"strconv"
 	"math/big"
@@ -174,9 +173,6 @@ var ContainerFunctions = map[string] Value {
 	},
 	"array-iterate": func(v Value) Seq {
 		return ArrayFrom(v).Iterate()
-	},
-	"make-error": func(msg String) error {
-		return errors.New(GoStringFromString(msg))
 	},
 	"String from error": func(err error) String {
 		return StringFromGoString(err.Error())

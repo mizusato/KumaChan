@@ -188,8 +188,7 @@ func receiveInstanceCreated(conn io.Reader) error {
 	}
 	if kind != MSG_CREATED {
 		if kind == MSG_ERROR {
-			var desc = string(payload)
-			return errors.New(desc)
+			return deserializeError(payload)
 		} else {
 			return errors.New(fmt.Sprintf("unexpected message kind: %s", kind))
 		}
@@ -228,8 +227,7 @@ func clientProcessMessages(instance *ClientInstance, conn *rx.WrappedConnection,
 			if err != nil { return fmt.Errorf("error receiving value object: %w", err) }
 			instance.next(id, value)
 		case MSG_ERROR:
-			var desc = string(payload)
-			var e = errors.New(desc)
+			var e = deserializeError(payload)
 			instance.error(id, e)
 		case MSG_COMPLETE:
 			instance.complete(id)

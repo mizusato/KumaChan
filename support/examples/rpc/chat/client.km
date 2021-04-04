@@ -17,7 +17,7 @@ export function consume-chat:
                 read-and-send.{forever}.{crash-on-error} };
 
 do
-    let try :=
+    let login-and-chat :=
         | await { print '(login) nickname: ' },
         | nickname := await scanln,
         { access {
@@ -27,4 +27,14 @@ do
             argument: { service::Argument { service::Login { nickname } } },
             consumer: consume-chat
         } },
-    try.{crash-on-error};
+    login-and-chat
+        . { catch-retry &(err) =>
+            let kind := (err get-data service::ERR_KIND),
+            if (kind = service::ERR_NAME_IN_USE):
+                | await { println '*** This name is in use. Try another.' }
+                    .{ crash-on-error },
+                { yield Yes },
+            else:
+                { yield No }
+        }
+        . { crash-on-error };

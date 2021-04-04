@@ -37,7 +37,10 @@ function new-chat:
             let instance := { service::create chat },
             { yield instance },
         else:
-            { throw { make-error { "nickname '#' is in use" id } } };
+            { throw { make-error {
+                message: { "nickname '#' is in use" id },
+                data: [(service::ERR_KIND, service::ERR_NAME_IN_USE)]
+            } } };
 
 function delete:
     &(Chat) => Async
