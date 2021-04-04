@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Command</string>
+   <string>Action</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QHBoxLayout" name="horizontalLayout">
@@ -45,9 +45,9 @@
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="CommandOpen"/>
-    <addaction name="CommandSave"/>
-    <addaction name="CommandClose"/>
+    <addaction name="ActionOpen"/>
+    <addaction name="ActionSave"/>
+    <addaction name="ActionClose"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
@@ -61,11 +61,11 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="CommandOpen"/>
-   <addaction name="CommandSave"/>
-   <addaction name="CommandClose"/>
+   <addaction name="ActionOpen"/>
+   <addaction name="ActionSave"/>
+   <addaction name="ActionClose"/>
   </widget>
-  <action name="CommandOpen">
+  <action name="ActionOpen">
    <property name="icon">
     <iconset theme="document-open">
      <normaloff>.</normaloff>.</iconset>
@@ -77,7 +77,7 @@
     <string>Ctrl+O</string>
    </property>
   </action>
-  <action name="CommandSave">
+  <action name="ActionSave">
    <property name="icon">
     <iconset theme="document-save">
      <normaloff>.</normaloff>.</iconset>
@@ -89,7 +89,7 @@
     <string>Ctrl+S</string>
    </property>
   </action>
-  <action name="CommandClose">
+  <action name="ActionClose">
    <property name="icon">
     <iconset theme="window-close">
      <normaloff>.</normaloff>.</iconset>
