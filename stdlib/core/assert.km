@@ -1,0 +1,8 @@
+export function panic:
+    &(String) => never
+    native 'panic';
+
+export function assert:[T]
+    &(Bool, &() => T) => T
+   native 'assert';
+

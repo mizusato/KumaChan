@@ -5,7 +5,3 @@ export function trace:[T]
     &(T) => T
     native 'trace';
 
-/// panic(msg) causes a panic with message msg.
-export function panic:
-    &(String) => never
-    native 'panic';

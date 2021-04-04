@@ -22,7 +22,4 @@ var DebuggingFunctions = map[string] interface{} {
 		fmt.Fprintf(os.Stderr, "%s\n", repr.String())
 		return value
 	},
-	"panic": func(msg String) struct{} {
-		panic("programmed panic: " + GoStringFromString(msg))
-	},
 }

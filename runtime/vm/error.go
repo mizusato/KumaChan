@@ -26,6 +26,7 @@ func PrintRuntimeErrorMessage(err interface{}, ec *ExecutionContext) {
 	buf.WriteAll(FormatErrorAtFrame(ec.workingFrame, frame_msg))
 	var L = len(ec.callStack)
 	for i := (L-1); i >= 1; i -= 1 {
+		// note: due to tail call optimization, some frames are NOT listed
 		buf.WriteText(TS_NORMAL, "\n*\n")
 		var callee = ec.callStack[i]
 		var callee_name = callee.function.Info.Name
