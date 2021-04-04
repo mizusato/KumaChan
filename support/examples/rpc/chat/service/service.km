@@ -25,4 +25,4 @@ type None ();
 export function say: &(Instance,MessageContent) => Async[None,Error];
 
 # service-method
-export function messages: &(Instance,None) => Observable[Message,Error];
+export function receive-messages: &(Instance,None) => Observable[Message,Error];

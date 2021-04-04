@@ -57,7 +57,7 @@ function say:
         | sync (chat.ctx.msg-bus <- msg),
         { yield service::None };
 
-function messages:
+function receive-messages:
     &(Chat,service::None) => Observable[service::Message,Error]
     &(chat,_) =>
         {watch chat.ctx.msg-bus};

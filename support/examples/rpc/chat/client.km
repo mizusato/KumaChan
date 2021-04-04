@@ -4,7 +4,7 @@ export function consume-chat:
     &() => service::Consumer
     &() => &(chat) =>
         { println 'connected' }
-            . { then chat.{ messages () } }
+            . { then chat.{ receive-messages () } }
             . { concat-map &(msg) =>
                 { println { "#: #" (msg.from, msg.content.text) } } }
             . { wait-complete }
