@@ -2,6 +2,7 @@ package lang
 
 import (
 	"os"
+	"sync"
 	"reflect"
 	"kumachan/misc/rx"
 	. "kumachan/misc/util/error"
@@ -40,8 +41,17 @@ var __InteropContextType = reflect.TypeOf(&__t).Elem()
 type NativeFunction  func(arg Value, handle InteropContext) Value
 type NativeConstant  func(handle InteropContext) Value
 func (c NativeConstant) ToFunction() NativeFunction {
+	var mu sync.Mutex
+	var evaluated = false
+	var value Value
 	return func(_ Value, h InteropContext) Value {
-		return c(h)
+		mu.Lock()
+		defer mu.Unlock()
+		if !(evaluated) {
+			value = c(h)
+			evaluated = true
+		}
+		return value
 	}
 }
 
