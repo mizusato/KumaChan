@@ -73,7 +73,7 @@ export function bind:
 
 export function activated:
     &(NativeInput) => Source[unit]
-    &(input) => { signal (input, 'returnPressed()') };
+    &(input) => { Signal (input, 'returnPressed()') };
 
 
 type NativeInputMultiLine
@@ -98,7 +98,7 @@ type NativeButton
 
 export function activated:
     &(NativeButton) => Source[unit]
-    &(button) => { signal (button,'clicked()') };
+    &(button) => { Signal (button,'clicked()') };
 
 
 type NativeCheckbox
@@ -160,5 +160,5 @@ function get-current-item:
 
 export function current-item:
     &(NativeList) => Observable[Maybe[String]]
-    &(list) => { signal (list,'currentRowChanged(int)',get-current-item) };
+    &(list) => { Signal (list,'currentRowChanged(int)',get-current-item) };
 */

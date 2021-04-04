@@ -1,8 +1,8 @@
-function signal: [Obj < Object, T]
+function Signal: [Obj < Object, T]
     &(Obj, String, &(Static[Obj]) => T) => Source[T]
     native 'qt-signal';
 
-function signal: [T]
+function Signal:
     &(Object, String) => Source[unit]
     native 'qt-signal-no-payload';
 

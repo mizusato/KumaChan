@@ -4,5 +4,5 @@ type Action
 
 export function activated:
     &(Action) => Source[unit]
-    &(action) => { signal (action, 'triggered()') };
+    &(action) => { Signal (action, 'triggered()') };
 

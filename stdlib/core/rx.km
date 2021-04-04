@@ -94,16 +94,16 @@ export function connect:[T]
 export function connect:[T]
     &(Bus[T], Sink[T]) => Async[never]
     &(bus, sink) => ({watch(bus)} connect sink);
-export function connect:[T,E]
+export function connect:[T]
     &(Source[T], &(T) => Async) => Async[never]
     &(source, receiver) => (source connect {Callback(receiver)});
-export function connect:[T,E]
+export function connect:[T]
     &(Bus[T], &(T) => Async) => Async[never]
     &(bus, receiver) => ({watch(bus)} connect {Callback(receiver)});
-export function connect:[E]
+export function connect:
     &(Source[unit], Async) => Async[never]
     &(source, receiver) => (source connect &() => receiver);
-export function connect:[E]
+export function connect:
     &(Bus[unit], Async) => Async[never]
     &(bus, receiver) => (bus connect &() => receiver);
 # alias: <-
@@ -240,7 +240,7 @@ export function or:[E]
 export function start-with:[T,E]
     &(Observable[T,E], Array[T]) => Observable[T,E]
     native 'start-with';
-export function start-with:[T,E]
+export function start-with:[T]
     &(Source[T], Array[T]) => Computed[T]
     native 'start-with';
 export function wait:
@@ -401,7 +401,7 @@ export function switch-map:[A,B]
 export function merge:[T,E]
     &(Array[Observable[T,E]]) => Observable[T,E]
     native 'action-merge';
-export function merge:[E]
+export function merge:
     &(Array[Async[never]]) => Async[never]
     native 'action-merge';
 export function merge:[T]

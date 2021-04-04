@@ -50,7 +50,7 @@ function bind-property: [T]
             let source := { watch sync },
             { bind-property { object, prop, type, source } },
         let read :=
-            let source := { signal (object, notify, &(object) => {
+            let source := { Signal (object, notify, &(object) => {
                 get-property (object, prop, type) }.[T]) },
             (source connect sync),
         { merge [read, write] };
