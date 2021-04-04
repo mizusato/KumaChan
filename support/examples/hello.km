@@ -4,8 +4,8 @@ do { println 'Hello World' }
     . { then { println 'timer' } }
     . { then { wait { timeout: 2000 } } }
     . { then { println { str { exp { log { Complex (5.0, 5.0) } } } } } }
-    . { then { println (2.0 * { Complex (0.0, 1.0) }).{sqrt}.{atan}.{tan}.{str} } }
-    . { then { println (2.0 * { Complex (0.0, 1.0) }).{sqrt}.{atan}.{tan}.{str} } }
+    . { then { println (2.0 * { Complex (0.0, 1.0) }).{sqrt}.{asin}.{sin}.{str} } }
+    . { then { println (2.0 * { Complex (0.0, 1.0) }).{sqrt}.{acos}.{cos}.{str} } }
     . { then { println (2.0 * { Complex (0.0, 1.0) }).{sqrt}.{atan}.{tan}.{str} } }
     . { then { println { str (20.[Int] ** 11) } } }
     . { then { println { str { factorial 20 } } } }
