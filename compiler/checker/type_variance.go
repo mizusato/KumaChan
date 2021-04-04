@@ -25,7 +25,7 @@ func (ctx TypeVarianceContext) DeduceVariance(params_v ([] TypeVariance), args_v
 		for j := uint(0); j < n; j += 1 {
 			v = CombineVariance(v, ApplyVariance(params_v[j], args_v[j][i]))
 		}
-		result[i] = TypeVariance(v)
+		result[i] = v
 	}
 	return result
 }
@@ -69,13 +69,7 @@ func ApplyVariance(param TypeVariance, arg TypeVariance) TypeVariance {
 			return Invariant
 		}
 	} else if arg == Bivariant {
-		if param == Bivariant {
-			return Bivariant
-		} else if param == Covariant || param == Contravariant {
-			return param
-		} else {
-			return Invariant
-		}
+		return Bivariant
 	} else {
 		return Invariant
 	}
