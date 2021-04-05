@@ -1,6 +1,6 @@
 TODO
 
-- explicit-call flag should be only available when input is unit
+- explicit-call flag should not hide function from circular check (apply flag to all involved functions instead)
 
 - json parser: track error position (ParserError[E] { pos: Number, cause: E })
 
