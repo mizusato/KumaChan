@@ -76,7 +76,11 @@ export function parse-real:
 
 export function substr:
     &(String,(Number,Number)) => String
-    &(str,range) => { String str.{ slice range } };
+    native 'substr';
+
+export function substr-view:
+    &(String,(Number,Number)) => String
+    native 'substr-view';
 
 export function find:
     &(String,String) => Maybe[Number]
@@ -138,3 +142,11 @@ export function trim-prefix:
 export function trim-suffix:
     &(String,String) => String
     native 'trim-suffix';
+
+export function has-prefix:
+    &(String,String) => Bool
+    native 'has-prefix';
+
+export function has-suffix:
+    &(String,String) => Bool
+    native 'has-suffix';

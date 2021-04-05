@@ -9,10 +9,11 @@ import (
 type FuncNode struct {
 	Underlying    *lang.Function
 	Dependencies  [] Dependency
-	IsThunk       bool
+	ch.FunctionGeneratorFlags
 	ch.FunctionKmdInfo
 }
-var __NoKmdInfo = ch.FunctionKmdInfo {}
+var __DefaultFlags = ch.FunctionGeneratorFlags {}
+var __DefaultKmdInfo = ch.FunctionKmdInfo {}
 
 type Dependency interface { Dependency() }
 type DepLocator struct {
@@ -40,14 +41,14 @@ func FuncNodeFrom (
 	refs      [] GlobalRef,
 	data      *([] lang.DataValue),
 	closures  *([] FuncNode),
-	is_thunk  bool,
+	flags     ch.FunctionGeneratorFlags,
 	kmd_info  ch.FunctionKmdInfo,
 ) FuncNode {
 	var deps = RefsToDeps(refs, data, closures)
 	return FuncNode {
-		Underlying:      f,
-		Dependencies:    deps,
-		IsThunk:         is_thunk,
+		Underlying: f,
+		Dependencies: deps,
+		FunctionGeneratorFlags: flags,
 		FunctionKmdInfo: kmd_info,
 	}
 }
@@ -72,8 +73,8 @@ func RefsToDeps (
 				r.GlobalRefs,
 				data,
 				closures,
-				false,
-				__NoKmdInfo,
+				__DefaultFlags,
+				__DefaultKmdInfo,
 			)
 			var index = uint(len(*closures))
 			*closures = append(*closures, cl)

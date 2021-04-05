@@ -46,7 +46,7 @@ func AssignLambdaTo(expected Type, lambda UntypedLambda, info ExprInfo, ctx Expr
 			var pattern, err1 = PatternFrom(lambda.Input, input_t, ctx)
 			if err1 != nil { return Expr{}, err1 }
 			//
-			var inner_ctx = ctx.WithPatternMatching(pattern)
+			var inner_ctx = ctx.WithPatternMatching(pattern, nil)
 			var output_semi, err2 = Check(lambda.Output, inner_ctx)
 			if err2 != nil { return Expr{}, err2 }
 			//
@@ -96,7 +96,7 @@ func CallUntypedLambda (
 	}
 	var pattern, err1 = PatternFrom(lambda.Input, input_typed.Type, ctx)
 	if err1 != nil { return Expr{}, err1 }
-	var inner_ctx = ctx.WithPatternMatching(pattern)
+	var inner_ctx = ctx.WithPatternMatching(pattern, nil)
 	var output, err2 = Check(lambda.Output, inner_ctx)
 	if err2 != nil { return Expr{}, err2 }
 	var output_typed, output_is_typed = output.Value.(TypedExpr)

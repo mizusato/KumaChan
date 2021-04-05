@@ -121,8 +121,10 @@ func GenericFunctionAssignTo (
 	ctx        ExprContext,
 ) (Expr, *ExprError) {
 	var unit_t = &AnonymousType { Unit {} }
-	if TypeEqualWithoutContext(f.DeclaredType.Input, unit_t) {
-		// globally defined constant-like thunk
+	if TypeEqualWithoutContext(f.DeclaredType.Input, unit_t) &&
+		!(f.Tags.ExplicitCall) {
+		// implicitly call a unit-input function with a unit value,
+		// unless ExplicitCall flag is set
 		var arg = LiftTyped(Expr {
 			Type:  unit_t,
 			Value: UnitValue {},

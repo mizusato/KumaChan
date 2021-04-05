@@ -73,16 +73,17 @@ func Box (
 	var node = info.ErrorPoint.Node
 	if min <= given_count && given_count <= max {
 		var inner_type = FillTypeArgsWithDefaults(boxed.InnerType, given_args, g_type.Defaults)
-		var expr, err = AssignTo(inner_type, to_be_boxed, ctx)
-		if err != nil { return Expr{}, err }
-		var outer_type = &NamedType {
+		var expr, err1 = AssignTo(inner_type, to_be_boxed, ctx)
+		if err1 != nil { return Expr{}, err1 }
+		var outer_type, err2 = GetCertainType(&NamedType {
 			Name: g_type_name,
 			Args: given_args,
-		}
-		err = CheckTypeArgsBounds(given_args, g_type.Params, g_type.Defaults, g_type.Bounds, node, ctx)
-		if err != nil { return Expr{}, err }
+		}, info.ErrorPoint, ctx)
+		if err2 != nil { return Expr{}, err2 }
+		var err3 = CheckTypeArgsBounds(given_args, g_type.Params, g_type.Defaults, g_type.Bounds, node, ctx)
+		if err3 != nil { return Expr{}, err3 }
 		var case_info = g_type.CaseInfo
-		return LiftCase(case_info, outer_type, force_exact, Expr {
+		return LiftCase(case_info, outer_type.(*NamedType), force_exact, Expr {
 			Type:  outer_type,
 			Value: expr.Value,
 			Info:  info,

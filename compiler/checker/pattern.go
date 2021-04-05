@@ -196,7 +196,7 @@ func PatternFrom (
 }
 
 
-func (ctx ExprContext) WithPatternMatching(p Pattern) ExprContext {
+func (ctx ExprContext) WithPatternMatching(p Pattern, storage (map[string] Type)) ExprContext {
 	var added = make(map[string] Type)
 	switch P := p.Concrete.(type) {
 	case TrivialPattern:
@@ -213,7 +213,12 @@ func (ctx ExprContext) WithPatternMatching(p Pattern) ExprContext {
 	default:
 		panic("impossible branch")
 	}
-	var new_ctx, _ = ctx.WithAddedLocalValues(added)
+	if storage != nil {
+		for k, v := range added {
+			storage[k] = v
+		}
+	}
+	var new_ctx = ctx.WithAddedLocalValues(added)
 	return new_ctx
 }
 

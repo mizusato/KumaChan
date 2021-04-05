@@ -190,7 +190,7 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 				var pattern, err = PatternFrom(pattern_node, case_type, ctx)
 				if err != nil { return SemiExpr{}, err }
 				maybe_pattern = pattern
-				branch_ctx = ctx.WithPatternMatching(pattern)
+				branch_ctx = ctx.WithPatternMatching(pattern, nil)
 			default:
 				maybe_pattern = nil
 				branch_ctx = ctx
@@ -457,7 +457,7 @@ func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprErro
 				var pattern, err = PatternFrom(adapted, case_type, ctx)
 				if err != nil { return SemiExpr{}, err }
 				maybe_pattern = pattern
-				branch_ctx = ctx.WithPatternMatching(pattern)
+				branch_ctx = ctx.WithPatternMatching(pattern, nil)
 			default:
 				maybe_pattern = nil
 				branch_ctx = ctx

@@ -40,10 +40,10 @@ func CompileModule (
 				item.Body, item.Implicit, mod.Name, name, item.Point,
 			)
 			if err != nil { errs = append(errs, err...) }
-			var is_thunk = item.IsUnitInput
+			var flags = item.FunctionGeneratorFlags
 			var kmd_info = item.FunctionKmdInfo
 			var f = FuncNodeFrom (
-				f_raw, refs, data, closures, is_thunk, kmd_info,
+				f_raw, refs, data, closures, flags, kmd_info,
 			)
 			var existing, exists = functions[name]
 			if exists {
@@ -64,7 +64,7 @@ func CompileModule (
 			errs = append(errs, err...)
 		}
 		effects = append(effects, FuncNodeFrom (
-			f, refs, data, closures, true, __NoKmdInfo,
+			f, refs, data, closures, __DefaultFlags, __DefaultKmdInfo,
 		))
 	}
 	idx[mod.Name] = &CompiledModule {

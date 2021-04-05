@@ -129,7 +129,7 @@ func (array Array) MapView(f func(Value)Value) Array {
 
 func (array Array) SliceView(low uint, high uint) Array {
 	var L = array.Length
-	if !(low <= high && low < L && high <= L) {
+	if !(low <= high && low <= L && high <= L) {
 		panic("invalid slice bounds")
 	}
 	return Array {

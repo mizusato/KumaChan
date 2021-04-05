@@ -76,6 +76,17 @@ export function assume:[T]
         else:
             fallback;
 
+// ----------
+
+export function map:[A,B,E]
+    &(Result[A,E], &(A) => B) => Result[B,E]
+    &(ra, f) =>
+        switch ra:
+        case OK a:
+            { OK { f(a) } },
+        case NG err:
+            { NG err },
+        end;
 
 // ----------
 
@@ -138,4 +149,14 @@ export function ??:[T]
             t,
         case Null:
             fallback,
+        end;
+
+export function convert:[T]
+    &(Maybe[T]) => Bool
+    &(t?) =>
+        switch t?:
+        case Just _:
+            Yes,
+        case Null:
+            No,
         end;

@@ -3,15 +3,15 @@ do
         { json::Array [
             { json::Number 1.23e30 },
             { json::String '12aaa4' },
-            { json::Boolean Yes },
+            { json::Bool Yes },
             { json::Object { Map [
                 ('ABC', { json::Number 1.0 }),
-                ('DEF', { json::Boolean No }),
+                ('DEF', { json::Bool No }),
             	('foobar', { json::Array [
                     json::Null,
                     { json::String 'baz' }
             	]})
             ] } }
         ] },
-    { println { json-stringify v } }
+    { println { json::stringify v } }
         . { crash-on-error };

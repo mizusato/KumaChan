@@ -42,7 +42,7 @@ func CreateProgram (
 					Index:  uint(f_index),
 				}
 				function_index_map[dep] = global_index
-				if item.IsThunk {
+				if item.ConsideredThunk {
 					var name = fmt.Sprintf("%s::%s", mod_name, f_name)
 					thunk_index_map[dep] = uint(len(thunk_index_map))
 					thunk_names = append(thunk_names, name)
@@ -80,48 +80,38 @@ func CreateProgram (
 	var thunk_dep_map = make([][] uint, len(thunks))
 	for thunk_index, thunk := range thunks {
 		var dep_indexes = make([] uint, 0)
-		for _, dep := range thunk.Dependencies {
-			switch d := dep.(type) {
-			case DepFunction:
-				{
-					var dep_index, this_is_thunk = get_thunk_index(d)
-					if this_is_thunk {
-						dep_indexes = append(dep_indexes, dep_index)
-						break
-					}
-				}
-				var visited_index_map = make(map[uint] bool)
-				var collect_indirect func(FuncNode)
-				collect_indirect = func(f FuncNode) {
-					for _, f_dep := range f.Dependencies {
-						switch concrete_f_dep := f_dep.(type) {
-						case DepFunction:
-							{
-								var dep_index, this_is_thunk =
-									get_thunk_index(concrete_f_dep)
-								if this_is_thunk {
-									dep_indexes = append(dep_indexes, dep_index)
-									break
-								}
-							}
-							var f_index = get_function_index(concrete_f_dep)
-							var _, exists = visited_index_map[f_index]
-							if exists { return }
-							visited_index_map[f_index] = true
-							collect_indirect(functions[f_index])
-						case DepClosure:
-							var closure = closures[concrete_f_dep.Index]
-							collect_indirect(closure)
-						default:
-							// do nothing
+		var visited_index_map = make(map[uint] bool)
+		var collect_deps_from func(FuncNode)
+		collect_deps_from = func(f FuncNode) {
+			for _, f_dep := range f.Dependencies {
+				switch concrete_f_dep := f_dep.(type) {
+				case DepFunction:
+					{
+						var dep_index, this_is_thunk =
+							get_thunk_index(concrete_f_dep)
+						if this_is_thunk {
+							dep_indexes = append(dep_indexes, dep_index)
+							break
 						}
 					}
+					var dep_f_index = get_function_index(concrete_f_dep)
+					var _, exists = visited_index_map[dep_f_index]
+					if !(exists) {
+						visited_index_map[dep_f_index] = true
+						var dep_f = functions[dep_f_index]
+						if !(dep_f.HideFromCircularCheck) {
+							collect_deps_from(dep_f)
+						}
+					}
+				case DepClosure:
+					var closure = closures[concrete_f_dep.Index]
+					collect_deps_from(closure)
+				default:
+					// do nothing
 				}
-				var f_index = get_function_index(d)
-				visited_index_map[f_index] = true
-				collect_indirect(functions[f_index])
 			}
 		}
+		collect_deps_from(thunk)
 		thunk_dep_map[thunk_index] = dep_indexes
 	}
 	var L = uint(len(thunks))

@@ -1,5 +1,11 @@
 TODO
 
+- json parser: track error position (ParserError[E] { pos: Number, cause: E })
+
+- consider type LiteralString protected String, LiteralArray, LiteralNonEmptyArray ...
+
+- support rpc method with zero argument (send a empty binary)
+
 - json parser based on parser combinators
 
 - String / json::Object matching: consider possible APIs
@@ -15,10 +21,6 @@ TODO
 - to be semantic: tuple input --> bundle input
 
 - api doc hide types that are not used (directly/indirectly) by public functions and constants
-
-- "check-nan-inf" --> "convert T -> Maybe[U]"
-
-- consider type Const[T] protected T ('literal': Const[String])
 
 - unused private const/function warning
 

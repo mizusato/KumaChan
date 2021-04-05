@@ -116,6 +116,20 @@ func StringFastCompare(a String, b String) Ordering {
 	}
 }
 
+func StringCopy(s String) String {
+	var draft = make(String, len(s))
+	copy(draft, s)
+	return draft
+}
+
+func StringSliceView(s String, l uint, r uint) String {
+	var length = uint(len(s))
+	if !(l <= length && r <= length && l <= r) {
+		panic("invalid substring interval")
+	}
+	return StringFromRuneSlice(RuneSliceFromString(s)[l:r])
+}
+
 func StringConcat(arr Array) String {
 	var buf = make(String, 0)
 	for i := uint(0); i < arr.Length; i += 1 {
@@ -187,6 +201,19 @@ func StringTrimPrefix(str String, prefix String) String {
 	}
 }
 
+func StringHasPrefix(str String, prefix String) bool {
+	if len(prefix) <= len(str) {
+		for i := 0; i < len(prefix); i += 1 {
+			if prefix[i] != str[i] {
+				return false
+			}
+		}
+		return true
+	} else {
+		return false
+	}
+}
+
 func StringTrimSuffix(str String, suffix String) String {
 	if len(str) > 0 && len(suffix) > 0 && len(suffix) <= len(str) {
 		var j = len(suffix)-1
@@ -199,6 +226,23 @@ func StringTrimSuffix(str String, suffix String) String {
 		return str[:len(str)-len(suffix)]
 	} else {
 		return str
+	}
+}
+
+func StringHasSuffix(str String, suffix String) bool {
+	if len(suffix) == 0 {
+		return true
+	} else if len(suffix) <= len(str) {
+		var j = len(suffix)-1
+		for i := len(str)-1; i >= len(str)-len(suffix); i -= 1 {
+			if suffix[j] != str[i] {
+				return false
+			}
+			j -= 1
+		}
+		return true
+	} else {
+		return false
 	}
 }
 

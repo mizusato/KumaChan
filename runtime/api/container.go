@@ -3,8 +3,8 @@ package api
 import (
 	"fmt"
 	"math"
-	"reflect"
 	"strconv"
+	"reflect"
 	"math/big"
 	"encoding/json"
 	. "kumachan/lang"
@@ -267,6 +267,16 @@ var ContainerFunctions = map[string] Value {
 			}
 		}
 	},
+	"substr": func(str String, interval ProductValue) String {
+		var l = interval.Elements[0].(uint)
+		var r = interval.Elements[1].(uint)
+		return StringCopy(StringSliceView(str, l, r))
+	},
+	"substr-view": func(str String, interval ProductValue) String {
+		var l = interval.Elements[0].(uint)
+		var r = interval.Elements[1].(uint)
+		return StringSliceView(str, l ,r)
+	},
 	"str-concat": func(v Value) String {
 		return StringConcat(ArrayFrom(v))
 	},
@@ -285,6 +295,12 @@ var ContainerFunctions = map[string] Value {
 	"trim-right": StringTrimRight,
 	"trim-prefix": StringTrimPrefix,
 	"trim-suffix": StringTrimSuffix,
+	"has-prefix": func(str String, prefix String) SumValue {
+		return ToBool(StringHasPrefix(str, prefix))
+	},
+	"has-suffix": func(str String, suffix String) SumValue {
+		return ToBool(StringHasSuffix(str, suffix))
+	},
 	"new-set": func(cmp_ Value, values_ Value, h InteropContext) Set {
 		var values = ArrayFrom(values_)
 		var cmp = Compare(func(a Value, b Value) Ordering {

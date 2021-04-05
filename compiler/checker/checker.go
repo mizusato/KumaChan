@@ -40,7 +40,11 @@ type CheckedFunctionInfo struct {
 	AliasList    [] string
 	IsSelfAlias  bool
 	IsFromConst  bool
-	IsUnitInput  bool
+	FunctionGeneratorFlags
+}
+type FunctionGeneratorFlags struct {
+	ConsideredThunk        bool
+	HideFromCircularCheck  bool
 }
 type CheckedEffect struct {
 	Point  ErrorPoint
@@ -319,14 +323,9 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 	}
 }
 
-func (ctx ExprContext) WithAddedLocalValues(added (map[string] Type)) (ExprContext, string) {
+func (ctx ExprContext) WithAddedLocalValues(added (map[string] Type)) ExprContext {
 	var merged = make(map[string] Type)
-	var shadowed = ""
 	for name, t := range ctx.LocalValues {
-		var _, exists = added[name]
-		if exists {
-			shadowed = name
-		}
 		merged[name] = t
 	}
 	for name, t := range added {
@@ -335,7 +334,7 @@ func (ctx ExprContext) WithAddedLocalValues(added (map[string] Type)) (ExprConte
 	var new_ctx ExprContext
 	*(&new_ctx) = ctx
 	new_ctx.LocalValues = merged
-	return new_ctx, shadowed
+	return new_ctx
 }
 
 func (ctx ExprContext) WithInferringEnabled(params ([] TypeParam), bounds TypeBounds) ExprContext {
@@ -536,6 +535,8 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 				}
 				return false
 			})()
+			var considered_thunk = is_unit_input && !(f.Tags.ExplicitCall)
+			var hide_from_circular_check = f.Tags.ExplicitCall
 			func_map[name] = append(func_map[name], CheckedFunction {
 				Point:    ErrorPointFrom(f.Node),
 				Body:     body,
@@ -551,8 +552,10 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 					RawImplicit: f.RawImplicit,
 					AliasList:   f.AliasList,
 					IsSelfAlias: f.IsSelfAlias,
-					IsFromConst: f.IsFromConst,
-					IsUnitInput: is_unit_input,
+					FunctionGeneratorFlags: FunctionGeneratorFlags {
+						ConsideredThunk:       considered_thunk,
+						HideFromCircularCheck: hide_from_circular_check,
+					},
 				},
 			})
 		}
@@ -568,7 +571,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 					implicit_types[name] = field.Type
 				}
 				var blank_ctx = CreateExprContext(mod_info, f.TypeParams, f.TypeBounds)
-				var f_expr_ctx, _ = blank_ctx.WithAddedLocalValues(implicit_types)
+				var f_expr_ctx = blank_ctx.WithAddedLocalValues(implicit_types)
 				var lambda_semi, err1 = CheckLambda(body, f_expr_ctx)
 				if err1 != nil {
 					errors = append(errors, err1)

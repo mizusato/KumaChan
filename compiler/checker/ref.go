@@ -303,8 +303,10 @@ func CallUntypedRef (
 		)
 	case UntypedRefToFunctionsAndLocalValue:
 		var local = ref_body.RefToLocalValue
-		var expr, err = CallTyped(local, arg, call_info, ctx)
-		if err == nil {
+		var _, is_func = UnboxFunc(local.Type, ctx).(Func)
+		if is_func {
+			var expr, err = CallTyped(local, arg, call_info, ctx)
+			if err != nil { return SemiExpr{}, err }
 			return LiftTyped(expr), nil
 		} else {
 			var functions = UntypedRef {

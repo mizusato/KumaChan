@@ -33,7 +33,7 @@ func (err *Error) Desc() ErrorMessage {
 	switch e := err.Concrete.(type) {
 	case E_CircularThunkDependency:
 		desc.WriteText(TS_ERROR,
-			"Circular dependency detected within thunks:")
+			"Circular dependency detected among thunks:")
 		desc.Write(T_SPACE)
 		var names = e.Names
 		for i, name := range names {

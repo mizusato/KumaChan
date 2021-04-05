@@ -6,6 +6,7 @@ import . "kumachan/misc/util/error"
 
 func (impl SemiTypedBlock) SemiExprVal() {}
 type SemiTypedBlock struct {
+	Locals    map[string] Type
 	Bindings  [] Binding
 	Returned  SemiExpr
 }
@@ -26,7 +27,8 @@ func CheckBlock(block ast.Block, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(block.Node)
 	var type_ctx = ctx.GetTypeContext()
 	var current_ctx = ctx
-	var bindings = make([]Binding, len(block.Bindings))
+	var bindings = make([] Binding, len(block.Bindings))
+	var locals = make(map[string] Type)
 	for i, b := range block.Bindings {
 		var t Type
 		switch type_node := b.Type.(type) {
@@ -49,7 +51,7 @@ func CheckBlock(block ast.Block, ctx ExprContext) (SemiExpr, *ExprError) {
 			}
 			var pattern, err1 = PatternFrom(b.Pattern, t, current_ctx)
 			if err1 != nil { return SemiExpr{}, err1 }
-			var rec_ctx = current_ctx.WithPatternMatching(pattern)
+			var rec_ctx = current_ctx.WithPatternMatching(pattern, locals)
 			var semi, err2 = Check(b.Value, rec_ctx)
 			if err2 != nil { return SemiExpr{}, err2 }
 			var typed, err3 = AssignTo(t, semi, rec_ctx)
@@ -76,7 +78,7 @@ func CheckBlock(block ast.Block, ctx ExprContext) (SemiExpr, *ExprError) {
 			var non_nil_t = typed.Type
 			var pattern, err3 = PatternFrom(b.Pattern, non_nil_t, current_ctx)
 			if err3 != nil { return SemiExpr{}, err3 }
-			var next_ctx = current_ctx.WithPatternMatching(pattern)
+			var next_ctx = current_ctx.WithPatternMatching(pattern, locals)
 			bindings[i] = Binding {
 				Pattern: pattern,
 				Value:   typed,
@@ -99,6 +101,7 @@ func CheckBlock(block ast.Block, ctx ExprContext) (SemiExpr, *ExprError) {
 	} else {
 		return SemiExpr {
 			Value: SemiTypedBlock {
+				Locals:   locals,
 				Bindings: bindings,
 				Returned: ret,
 			},
@@ -111,7 +114,8 @@ func CheckBlock(block ast.Block, ctx ExprContext) (SemiExpr, *ExprError) {
 func AssignBlockTo(expected Type, block SemiTypedBlock, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
 	var bindings = block.Bindings
 	var ret_semi = block.Returned
-	var ret_typed, err = AssignTo(expected, ret_semi, ctx)
+	var ret_ctx = ctx.WithAddedLocalValues(block.Locals)
+	var ret_typed, err = AssignTo(expected, ret_semi, ret_ctx)
 	if err != nil { return Expr{}, err }
 	return Expr {
 		Type:  ret_typed.Type,

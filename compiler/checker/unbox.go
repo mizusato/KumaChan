@@ -190,12 +190,17 @@ func UnboxFunc(t Type, ctx ExprContext) FuncReprResult {
 					} else {
 						return inner_repr
 					}
+				default:
+					return FR_NonFunc {}
 				}
 			case *NamedType:
-				UnboxFunc(inner, ctx)
+				return UnboxFunc(inner, ctx)
+			default:
+				return FR_NonFunc {}
 			}
+		default:
+			return FR_NonFunc {}
 		}
-		return FR_NonFunc {}
 	case *AnonymousType:
 		switch r := T.Repr.(type) {
 		case Func:

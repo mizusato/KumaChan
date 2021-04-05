@@ -13,10 +13,13 @@ type ListKey     String;
 export function collect:[T]
     &(Seq[T]) => Array[T]
     native 'seq-collect';
-
 export function next:[T]
     &(Seq[T]) => Maybe[(T,Seq[T])]
     native 'seq-next';
+export function is-nil:[T]
+    &(Seq[T]) => Bool
+    &(seq) => { not seq.{next}.{convert}.[Bool] };
+
 export function nil:[T]
     &() => Seq[T]
     native 'seq-nil';
