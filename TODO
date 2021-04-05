@@ -1,5 +1,7 @@
 TODO
 
+- explicit-call flag should be only available when input is unit
+
 - json parser: track error position (ParserError[E] { pos: Number, cause: E })
 
 - consider type LiteralString protected String, LiteralArray, LiteralNonEmptyArray ...
