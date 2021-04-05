@@ -24,8 +24,6 @@ function WrappedList:[T]
     & { item, sep, prefix, suffix } =>
         let item := (item with-ignored Blank),
         let sep := (sep with-ignored Blank),
-        let prefix := (prefix with-ignored Blank),
-        let suffix := (suffix with-ignored Blank),
         | apply prefix,
         | list := apply { repeat { item, sep } },
         | apply suffix,
@@ -41,7 +39,7 @@ const ValueParser: ValueParserType :=
 const ObjectParser: ValueParserType :=
     let entry :=
         | key := apply StringParser!,
-        | apply { Keyword ':' },
+        | apply ({ Keyword ':' } with-ignored Blank),
         | value := apply ValueParser,
         { output (key,value) },
     let entries := { WrappedList {
