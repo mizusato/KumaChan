@@ -44,5 +44,21 @@ var ErrorFunctions = map[string] interface{} {
 			return fallback
 		}
 	},
+	"error-wrap": func(e error, f Value, h InteropContext) error {
+		var wrap_desc = func(desc string) string {
+			var desc_str = StringFromGoString(desc)
+			var wrapped_str = h.Call(f, desc_str).(String)
+			return GoStringFromString(wrapped_str)
+		}
+		var e_with_extra, with_extra = e.(*rpc.ErrorWithExtraData)
+		if with_extra {
+			return &rpc.ErrorWithExtraData {
+				Desc: wrap_desc(e_with_extra.Desc),
+				Data: e_with_extra.Data,
+			}
+		} else {
+			return errors.New(wrap_desc(e.Error()))
+		}
+	},
 }
 

@@ -7,7 +7,7 @@ function Keyword:
 function Char:
     & { accept: Array[Char] } => Parser[Char,Error]
     & { accept } =>
-        let err := { make-error 'unexpected character' },
+        let err := { make-error 'unexpected character or EOF' },
         { choose (accept map &(char) =>
             ({ consume ([char].{convert}.[String], err) } map &() => char)) };
 
@@ -112,8 +112,8 @@ const StringParser!: Parser[self::String,Error] :=
                 let input := (input substr-view ((end + 1), input.{length})),
                 { OK (value, input) },
             case Null:
-                { NG err },
+                { NG (err, input) },
             end,
         case Null:
-            { NG err },
+            { NG (err, input) },
         end;
