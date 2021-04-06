@@ -32,6 +32,7 @@ function WrappedList:[T]
 # explicit-call
 const ValueParser: ValueParserType :=
     { choose [
+        { throw { make-error 'parser stuck' } },
         { make-lazy ObjectParser }, { make-lazy ArrayParser },
         StringParser, NumberParser, BoolParser, NullParser
     ] };

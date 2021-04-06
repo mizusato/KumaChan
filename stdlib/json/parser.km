@@ -1,5 +1,7 @@
 type Parser[+T,+E]
     &(String) => Result[(T,String),(E,String)];
+    // note: the error type (E,String) is currently an ad-hoc implementation
+    //       (fatal errors and non-fatal errors should be distinguished)
 
 function make-lazy:[T,E]
     &(&() => Parser[T,E]) => Parser[T,E]
@@ -70,8 +72,16 @@ function choose:[T,E]
             switch { parse-previous input }:
             case OK parsed:
                 { OK parsed },
-            case NG _:
-                { parse-this input },
+            case NG (previous-err, previous-remaining):
+                switch { parse-this input }:
+                case OK parsed:
+                    { OK parsed },
+                case NG (this-err, this-remaining):
+                    if (this-remaining.{length} < previous-remaining.{length}):
+                        { NG (this-err, this-remaining) },
+                    else:
+                        { NG (previous-err, previous-remaining) },
+                end,
             end
         ));
 
@@ -105,11 +115,11 @@ function repeat:[T,E]
                     case NG _:
                         { OK (seq, input) },
                     end,
-                case NG (err, input):
+                case NG err:
                     if seq.{is-nil}:
                         { OK (nil, input) },
                     else:
-                        { NG (err, input) },
+                        { NG err },
                 end,
         { proceed (input, nil) }
             . { map &(seq, input) => (seq.{collect}.{reverse}, input) };

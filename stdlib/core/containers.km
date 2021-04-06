@@ -27,11 +27,11 @@ export function cons:[T]
     &(T,Seq[T]) => Seq[T]
     native 'seq-cons';
 
-export function seq:
+export function Seq:
     & { from: Number, to: Number } => Seq[Number]
     native 'seq-range-inclusive';
-export function seq:
-    & { start: Number, count: Number } => Seq[Number]
+export function Seq:
+    & { initial: Number, count: Number } => Seq[Number]
     native 'seq-range-count';
 
 export function map:[A,B]
