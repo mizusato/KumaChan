@@ -1,7 +1,5 @@
 TODO
 
-- fix { choose [ parsers ... ] }: pick up error with minimum remaining input
-
 - consider renaming make-error, etc.
 
 - check unused binding in case

@@ -1,6 +1,6 @@
 type Parser[+T,+E]
     &(String) => Result[(T,String),(E,String)];
-    // note: the error type (E,String) is currently an ad-hoc implementation
+    // note: currently, the error type (E,String) is an ad-hoc implementation
     //       (fatal errors and non-fatal errors should be distinguished)
 
 function make-lazy:[T,E]
@@ -20,8 +20,8 @@ function throw:[T,E]
 function consume:[E]
     &(String, E) => Parser[unit,E]
     &(target, err) => &(input) =>
-        if input.[String].{ has-prefix target }:
-            let input := input.{substr-view (target.{length}, input.{length})},
+        if (input.[String] has-prefix target):
+            let input := (input substr-view (target.{length}, input.{length})),
             { OK ((), input) },
         else:
             { NG (err, input) };
@@ -68,19 +68,19 @@ function choose:[T,E]
     &(parsers) =>
         let first := (parsers at! 0),
         let rest := (parsers slice-view (1, parsers.{length})),
-        (rest reduce (first, &(parse-previous, parse-this) => &(input) =>
-            switch { parse-previous input }:
+        (rest reduce (first, &(parse-prev, parse-this) => &(input) =>
+            switch { parse-prev input }:
             case OK parsed:
                 { OK parsed },
-            case NG (previous-err, previous-remaining):
+            case NG (prev-err, prev-remaining):
                 switch { parse-this input }:
                 case OK parsed:
                     { OK parsed },
                 case NG (this-err, this-remaining):
-                    if (this-remaining.{length} < previous-remaining.{length}):
+                    if (this-remaining.{length} < prev-remaining.{length}):
                         { NG (this-err, this-remaining) },
                     else:
-                        { NG (previous-err, previous-remaining) },
+                        { NG (prev-err, prev-remaining) },
                 end,
             end
         ));
