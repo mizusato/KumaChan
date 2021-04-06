@@ -43,8 +43,7 @@ type CheckedFunctionInfo struct {
 	FunctionGeneratorFlags
 }
 type FunctionGeneratorFlags struct {
-	ConsideredThunk        bool
-	HideFromCircularCheck  bool
+	ConsideredThunk  bool
 }
 type CheckedEffect struct {
 	Point  ErrorPoint
@@ -536,7 +535,6 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 				return false
 			})()
 			var considered_thunk = is_unit_input && !(f.Tags.ExplicitCall)
-			var hide_from_circular_check = f.Tags.ExplicitCall
 			func_map[name] = append(func_map[name], CheckedFunction {
 				Point:    ErrorPointFrom(f.Node),
 				Body:     body,
@@ -553,8 +551,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 					AliasList:   f.AliasList,
 					IsSelfAlias: f.IsSelfAlias,
 					FunctionGeneratorFlags: FunctionGeneratorFlags {
-						ConsideredThunk:       considered_thunk,
-						HideFromCircularCheck: hide_from_circular_check,
+						ConsideredThunk: considered_thunk,
 					},
 				},
 			})

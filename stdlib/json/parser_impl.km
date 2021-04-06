@@ -29,6 +29,7 @@ function WrappedList:[T]
         | apply suffix,
         { output list };
 
+# explicit-call
 const ValueParser: ValueParserType :=
     { choose [
         { make-lazy ObjectParser }, { make-lazy ArrayParser },
@@ -40,7 +41,7 @@ const ObjectParser: ValueParserType :=
     let entry :=
         | key := apply StringParser!,
         | apply ({ Keyword ':' } with-ignored Blank),
-        | value := apply ValueParser,
+        | value := apply { ValueParser () },
         { output (key,value) },
     let entries := { WrappedList {
         item:   entry,
@@ -53,7 +54,7 @@ const ObjectParser: ValueParserType :=
 # explicit-call
 const ArrayParser: ValueParserType :=
     let items := { WrappedList {
-        item:   ValueParser,
+        item:   { ValueParser () },
         sep:    { Keyword ',' },
         prefix: { Keyword '[' },
         suffix: { Keyword ']' }

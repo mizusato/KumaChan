@@ -1,7 +1,5 @@
 TODO
 
-- explicit-call flag should not hide function from circular check (apply flag to all involved functions instead)
-
 - json parser: track error position (ParserError[E] { pos: Number, cause: E })
 
 - consider type LiteralString protected String, LiteralArray, LiteralNonEmptyArray ...

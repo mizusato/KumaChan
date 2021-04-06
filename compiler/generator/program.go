@@ -99,9 +99,7 @@ func CreateProgram (
 					if !(exists) {
 						visited_index_map[dep_f_index] = true
 						var dep_f = functions[dep_f_index]
-						if !(dep_f.HideFromCircularCheck) {
-							collect_deps_from(dep_f)
-						}
+						collect_deps_from(dep_f)
 					}
 				case DepClosure:
 					var closure = closures[concrete_f_dep.Index]
