@@ -47,7 +47,7 @@ export function parse:
                 { OK value },
             else:
                 let pos := (input.{length} - remaining.{length}),
-                { NG { make-error 'redundant input after parsed content'
+                { NG { Error 'redundant input after parsed content'
                     . { &(msg) => { "# (at position #)" (msg, pos.{str}) } } } },
         case NG (err, remaining):
             let all := input.{length},

@@ -37,7 +37,7 @@ function new-chat:
             let instance := { service::create chat },
             { yield instance },
         else:
-            { throw { make-error {
+            { throw { Error {
                 message: { "nickname '#' is in use" id },
                 data: [(service::ERR_KIND, service::ERR_NAME_IN_USE)]
             } } };

@@ -2,12 +2,12 @@ type ValueParserType Parser[Value,Error];
 
 function Keyword:
     &(String) => Parser[unit,Error]
-    &(keyword) => { consume (keyword, { make-error { "expect '#'" keyword } }) };
+    &(keyword) => { consume (keyword, { Error { "expect '#'" keyword } }) };
 
 function Char:
     & { accept: Array[Char] } => Parser[Char,Error]
     & { accept } =>
-        let err := { make-error 'unexpected character or EOF' },
+        let err := { Error 'unexpected character or EOF' },
         { choose (accept map &(char) =>
             ({ consume ([char].{convert}.[String], err) } map &() => char)) };
 
@@ -32,7 +32,7 @@ function WrappedList:[T]
 # explicit-call
 const ValueParser: ValueParserType :=
     { choose [
-        { throw { make-error 'parser stuck' } },
+        { throw { Error 'parser stuck' } },
         { make-lazy ObjectParser }, { make-lazy ArrayParser },
         StringParser, NumberParser, BoolParser, NullParser
     ] };
@@ -83,14 +83,14 @@ const NumberParser: ValueParserType :=
     case Just x:
         { output { self::Number x } },
     case Null:
-        { throw { make-error 'invalid number' } },
+        { throw { Error 'invalid number' } },
     end;
 
 const StringParser: ValueParserType :=
     (StringParser! map &(string) => { self::Value string });
 
 const StringParser!: Parser[self::String,Error] :=
-    let err := { make-error 'invalid string' },
+    let err := { Error 'invalid string' },
     | apply { consume ('"', err) },
     &(input) =>
         let proceed: rec
