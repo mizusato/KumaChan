@@ -17,13 +17,13 @@ func CreateProgram (
 	schema    kmd.SchemaTable,
 	services  rpc.ServiceIndex,
 ) (lang.Program, DepLocator, E) {
-	var no_locator = DepLocator {}
+	// TODO: split this big function and make it return multiple errors ([] E)
 	var kmd_info = lang.KmdInfo {
 		SchemaTable:       schema,
 		KmdAdapterTable:   make(lang.KmdAdapterTable),
 		KmdValidatorTable: make(lang.KmdValidatorTable),
 	}
-	var rpc_info = lang.RpcInfo{
+	var rpc_info = lang.RpcInfo {
 		ServiceIndex: services,
 	}
 	var function_index_map = make(map[DepFunction] uint)
@@ -73,6 +73,59 @@ func CreateProgram (
 			panic("something went wrong")
 		}
 	}
+	var used = make([] bool, len(functions))
+	var visited = make([] bool, len(functions))
+	var mark_dep_used func(FuncNode, bool, uint)
+	mark_dep_used = func(f FuncNode, do_skip bool, skip uint) {
+		for _, dep := range f.Dependencies {
+			switch D := dep.(type) {
+			case DepClosure:
+				mark_dep_used(closures[D.Index], do_skip, skip)
+			case DepFunction:
+				var index = get_function_index(D)
+				if visited[index] {
+					continue
+				} else {
+					visited[index] = true
+				}
+				if do_skip {
+					if index != skip {
+						used[index] = true
+					}
+				} else {
+					used[index] = true
+				}
+				mark_dep_used(functions[index], do_skip, skip)
+			}
+		}
+	}
+	for i, f := range functions {
+		if f.Exported {
+			mark_dep_used(f, true, uint(i))
+		}
+	}
+	for _, e := range effects {
+		mark_dep_used(e, false, ^uint(0))
+	}
+	var unused = make([] uint, 0)
+	for i, f := range functions {
+		if !(f.Exported) && !(used[i]) {
+			unused = append(unused, uint(i))
+		}
+	}
+	if len(unused) > 0 {
+		var first_info = functions[unused[0]].Underlying.Info
+		var point = first_info.DeclPoint
+		var all_names = make([] string, len(unused))
+		for i, index := range unused {
+			var info = functions[index].Underlying.Info
+			all_names[i] = fmt.Sprintf("%s::%s", info.Module, info.Name)
+		}
+		return lang.Program{}, DepLocator{}, &Error {
+			Point:    point,
+			Concrete: E_UnusedPrivateFunctions { Names: all_names },
+		}
+	}
 	var get_thunk_index = func(d DepFunction) (uint, bool) {
 		var index, exists = thunk_index_map[d]
 		return index, exists
@@ -84,17 +137,17 @@ func CreateProgram (
 		var collect_deps_from func(FuncNode)
 		collect_deps_from = func(f FuncNode) {
 			for _, f_dep := range f.Dependencies {
-				switch concrete_f_dep := f_dep.(type) {
+				switch D := f_dep.(type) {
 				case DepFunction:
 					{
 						var dep_index, this_is_thunk =
-							get_thunk_index(concrete_f_dep)
+							get_thunk_index(D)
 						if this_is_thunk {
 							dep_indexes = append(dep_indexes, dep_index)
 							break
 						}
 					}
-					var dep_f_index = get_function_index(concrete_f_dep)
+					var dep_f_index = get_function_index(D)
 					var _, exists = visited_index_map[dep_f_index]
 					if !(exists) {
 						visited_index_map[dep_f_index] = true
@@ -102,7 +155,7 @@ func CreateProgram (
 						collect_deps_from(dep_f)
 					}
 				case DepClosure:
-					var closure = closures[concrete_f_dep.Index]
+					var closure = closures[D.Index]
 					collect_deps_from(closure)
 				default:
 					// do nothing
@@ -154,7 +207,7 @@ func CreateProgram (
 			}
 		}
 		if len(rest_names) == 0 { panic("something went wrong") }
-		return lang.Program{}, no_locator, &Error {
+		return lang.Program{}, DepLocator{}, &Error {
 			Point:    point,
 			Concrete: E_CircularThunkDependency { rest_names },
 		}

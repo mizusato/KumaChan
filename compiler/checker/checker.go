@@ -43,6 +43,7 @@ type CheckedFunctionInfo struct {
 	FunctionGeneratorFlags
 }
 type FunctionGeneratorFlags struct {
+	Exported         bool
 	ConsideredThunk  bool
 }
 type CheckedEffect struct {
@@ -551,6 +552,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 					AliasList:   f.AliasList,
 					IsSelfAlias: f.IsSelfAlias,
 					FunctionGeneratorFlags: FunctionGeneratorFlags {
+						Exported:        f.Public,
 						ConsideredThunk: considered_thunk,
 					},
 				},
