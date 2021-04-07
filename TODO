@@ -1,22 +1,18 @@
 TODO
 
-- String / json::Object matching: consider possible APIs (json::Consumer etc.)
+- Doc: api doc hide types that are not used (directly/indirectly) by public functions and constants
 
-- revise array/seq methods
+- Code: split rx.km
 
-- split rx.km
+- API: to be semantic: tuple input --> bundle input
 
-- methods for Reactive[Map[K,V]]
+- API: revise array/seq methods
 
-- revise resource management of wired components, files, ...
+- API: revise Reactive[List[T]] methods, consider methods for Reactive[Map[K,V]]
 
-- to be semantic: tuple input --> bundle input
+- API: revise resource management of wired components, files, ...
 
-- api doc hide types that are not used (directly/indirectly) by public functions and constants
+- GUI: crash report window
 
-- unused private const/function warning
-
-- crash report window
-
-- support: menu, toolbar, popupmenu, modal dialog
+- GUI: support: menu, toolbar, popupmenu, modal dialog
 
