@@ -4,14 +4,15 @@ import (
 	"errors"
 	"kumachan/misc/rpc"
 	"kumachan/misc/rpc/kmd"
-	"kumachan/compiler/loader"
+	"kumachan/lang"
 	"kumachan/lang/parser/ast"
+	"kumachan/compiler/loader"
 	"kumachan/stdlib"
 	. "kumachan/misc/util/error"
 )
 
 
-var __KmdPrimitiveTypes = map[loader.Symbol] kmd.TypeKind {
+var __KmdPrimitiveTypes = map[lang.Symbol] kmd.TypeKind {
 	__Bool:   kmd.Bool,
 	__Real:   kmd.Float,
 	__Uint32: kmd.Uint32,
@@ -23,7 +24,7 @@ var __KmdPrimitiveTypes = map[loader.Symbol] kmd.TypeKind {
 	__Bytes:  kmd.Binary,
 }
 
-type KmdIdMapping  map[loader.Symbol] kmd.TypeId
+type KmdIdMapping  map[lang.Symbol] kmd.TypeId
 
 type KmdStmtInjection  map[string] []ast.VariousStatement
 
@@ -223,7 +224,7 @@ func GetFunctionKmdInfo(name string, t Func, mapping KmdIdMapping) FunctionKmdIn
 }
 
 func CraftKmdApiFunction (
-	sym   loader.Symbol,
+	sym   lang.Symbol,
 	reg   TypeRegistry,
 	nodes TypeDeclNodeInfo,
 	id    kmd.TransformerPartId,
@@ -292,7 +293,7 @@ func CraftKmdApiFunction (
 	}
 }
 
-func IsKmdApiPublic(sym loader.Symbol, reg TypeRegistry) bool {
+func IsKmdApiPublic(sym lang.Symbol, reg TypeRegistry) bool {
 	var g = reg[sym]
 	switch def := g.Definition.(type) {
 	case *Boxed:
@@ -316,7 +317,7 @@ func IsKmdApiPublic(sym loader.Symbol, reg TypeRegistry) bool {
 
 func GetKmdSchema (
 	id       kmd.TypeId,
-	sym      loader.Symbol,
+	sym      lang.Symbol,
 	nodes    TypeDeclNodeInfo,
 	reg      TypeRegistry,
 	mapping  KmdIdMapping,
@@ -505,7 +506,7 @@ func CollectServices (
 	for mod_name, mod := range index {
 		if !(mod.IsService) { continue }
 		var id = mod.ServiceIdentifier
-		var arg_type_sym = loader.MakeSymbol(mod_name, mod.ServiceArgTypeName)
+		var arg_type_sym = lang.MakeSymbol(mod_name, mod.ServiceArgTypeName)
 		_, exists := reg[arg_type_sym]
 		if !(exists) { panic("something went wrong") }
 		arg_type_id, exists := mapping[arg_type_sym]
@@ -560,7 +561,7 @@ func GetServiceMethodSignature (
 	var throw = func(err_desc string) (rpc.ServiceMethodInterface, error) {
 		return rpc.ServiceMethodInterface{}, errors.New(err_desc)
 	}
-	var get_type = func(sym loader.Symbol) *kmd.Type {
+	var get_type = func(sym lang.Symbol) *kmd.Type {
 		var type_id, exists = mapping[sym]
 		if !(exists) { panic("something went wrong") }
 		return table.GetTypeFromId(type_id)

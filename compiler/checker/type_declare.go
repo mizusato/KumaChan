@@ -2,9 +2,10 @@ package checker
 
 import (
 	"strings"
-	. "kumachan/misc/util/error"
-	"kumachan/compiler/loader"
+	"kumachan/lang"
 	"kumachan/lang/parser/ast"
+	"kumachan/compiler/loader"
+	. "kumachan/misc/util/error"
 )
 
 
@@ -32,37 +33,37 @@ type RawTypeContext struct {
 }
 
 // Final Registry of Types
-type TypeRegistry  map[loader.Symbol] *GenericType
+type TypeRegistry  map[lang.Symbol] *GenericType
 
 // TODO: integrate all maps
 // Intermediate Registry of Types, Used When Defining Types
 type RawTypeRegistry struct {
 	// a map from symbol to type declaration (AST node)
-	DeclMap        map[loader.Symbol] ast.DeclType
+	DeclMap        map[lang.Symbol] ast.DeclType
 	// a map from symbol to section title
-	SectionMap     map[loader.Symbol] string
+	SectionMap     map[lang.Symbol] string
 	// a map from symbol to type parameters
-	ParamsMap      map[loader.Symbol] ([] TypeParam)
+	ParamsMap      map[lang.Symbol] ([] TypeParam)
 	// a map from symbol to type parameter bounds
-	BoundsMap      map[loader.Symbol] ([] ast.TypeBound)
+	BoundsMap      map[lang.Symbol] ([] ast.TypeBound)
 	// a map from symbol to type parameter default values
-	DefaultsMap    map[loader.Symbol] ([] ast.TypeParamDefault)
+	DefaultsMap    map[lang.Symbol] ([] ast.TypeParamDefault)
  	// a map from case types to their corresponding enum information
-	CaseInfoMap    map[loader.Symbol] CaseInfo
+	CaseInfoMap    map[lang.Symbol] CaseInfo
 	// a context value to track all visited modules
 	// (same module may appear many times when walking through the hierarchy)
 	VisitedMod     map[string] bool
 }
 type CaseInfo struct {
-	IsCaseType     bool
-	EnumName       loader.Symbol
-	EnumArity      uint
-	EnumVariance   [] TypeVariance
-	CaseIndex      uint
-	CaseParams     [] uint
+	IsCaseType    bool
+	EnumName      lang.Symbol
+	EnumArity     uint
+	EnumVariance  [] TypeVariance
+	CaseIndex     uint
+	CaseParams    [] uint
 }
 
-type TypeDeclNodeInfo  map[loader.Symbol] ast.Node
+type TypeDeclNodeInfo  map[lang.Symbol] ast.Node
 type TypeNodeInfo struct {
 	ValNodeMap   map[TypeDef] ast.Node
 	TypeNodeMap  map[Type] ast.Node
@@ -125,12 +126,12 @@ func CollectTypeParams(raw_params ([] ast.TypeParam)) (
 
 func MakeRawTypeRegistry() RawTypeRegistry {
 	return RawTypeRegistry {
-		DeclMap:       make(map[loader.Symbol] ast.DeclType),
-		SectionMap:    make(map[loader.Symbol] string),
-		ParamsMap:     make(map[loader.Symbol] ([] TypeParam)),
-		BoundsMap:     make(map[loader.Symbol] [] ast.TypeBound),
-		DefaultsMap:   make(map[loader.Symbol] [] ast.TypeParamDefault),
-		CaseInfoMap:   make(map[loader.Symbol] CaseInfo),
+		DeclMap:       make(map[lang.Symbol] ast.DeclType),
+		SectionMap:    make(map[lang.Symbol] string),
+		ParamsMap:     make(map[lang.Symbol] ([] TypeParam)),
+		BoundsMap:     make(map[lang.Symbol] [] ast.TypeBound),
+		DefaultsMap:   make(map[lang.Symbol] [] ast.TypeParamDefault),
+		CaseInfoMap:   make(map[lang.Symbol] CaseInfo),
 		VisitedMod:    make(map[string] bool),
 	}
 }
@@ -273,7 +274,7 @@ func RegisterRawTypes(mod *loader.Module, raw RawTypeRegistry) *TypeDeclError {
 }
 
 func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, TypeDeclNodeInfo, ([] *TypeDeclError)) {
-	var raise = func(name loader.Symbol, err *TypeError) *TypeDeclError {
+	var raise = func(name lang.Symbol, err *TypeError) *TypeDeclError {
 		return &TypeDeclError {
 			Point: err.Point,
 			Concrete: E_InvalidTypeDecl {
@@ -282,7 +283,7 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, TypeDe
 			},
 		}
 	}
-	var raise_all = func(name loader.Symbol, err *TypeError) ([] *TypeDeclError) {
+	var raise_all = func(name lang.Symbol, err *TypeError) ([] *TypeDeclError) {
 		return [] *TypeDeclError { raise(name, err) }
 	}
 	var decl_info = make(TypeDeclNodeInfo)
@@ -416,9 +417,9 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, TypeDe
 		}
 	}
 	// 4. Validate boxed types
-	var check_cycle func(loader.Symbol, *Boxed, []loader.Symbol) *TypeDeclError
+	var check_cycle func(lang.Symbol, *Boxed, ([] lang.Symbol)) *TypeDeclError
 	check_cycle = func (
-		name loader.Symbol, t *Boxed, path []loader.Symbol,
+		name lang.Symbol, t *Boxed, path ([] lang.Symbol),
 	) *TypeDeclError {
 		for _, visited := range path {
 			if visited == name {
@@ -449,7 +450,7 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, TypeDe
 	for name, g := range reg {
 		var boxed, is_boxed = g.Definition.(*Boxed)
 		if is_boxed {
-			var err = check_cycle(name, boxed, make([]loader.Symbol, 0))
+			var err = check_cycle(name, boxed, make([] lang.Symbol, 0))
 			if err != nil { return nil, nil, [] *TypeDeclError { err } }
 		}
 	}
@@ -650,7 +651,7 @@ func RawTypeFrom(ast_type ast.VariousType, info (map[Type] ast.Node), ctx TypeCo
 		}
 		var sym = ctx.Module.SymbolFromTypeRef(a)
 		switch s := sym.(type) {
-		case loader.Symbol:
+		case lang.Symbol:
 			var args = make([] Type, len(a.TypeArgs))
 			for i, ast_arg := range a.TypeArgs {
 				var arg, err = RawTypeFrom(ast_arg, info, ctx)

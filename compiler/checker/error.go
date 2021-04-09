@@ -2,8 +2,8 @@ package checker
 
 import (
 	"fmt"
+	"kumachan/lang"
 	. "kumachan/misc/util/error"
-	"kumachan/compiler/loader"
 )
 
 
@@ -20,11 +20,11 @@ type E_ModuleOfTypeRefNotFound struct {
 }
 func (impl E_TypeNotFound) TypeError() {}
 type E_TypeNotFound struct {
-	Name   loader.Symbol
+	Name  lang.Symbol
 }
 func (impl E_WrongParameterQuantity) TypeError() {}
 type E_WrongParameterQuantity struct {
-	TypeName  loader.Symbol
+	TypeName  lang.Symbol
 	Required  uint
 	Given     uint
 }
@@ -172,7 +172,7 @@ type E_InvalidTypeName struct {
 }
 func (impl E_DuplicateTypeDecl) TypeDeclError() {}
 type E_DuplicateTypeDecl struct {
-	TypeName  loader.Symbol
+	TypeName  lang.Symbol
 }
 func (impl E_InvalidTypeTag) TypeDeclError() {}
 type E_InvalidTypeTag struct {
@@ -194,12 +194,12 @@ type E_InvalidCaseTypeParam struct {
 }
 func (impl E_InvalidTypeDecl) TypeDeclError() {}
 type E_InvalidTypeDecl struct {
-	TypeName  loader.Symbol
+	TypeName  lang.Symbol
 	Detail    *TypeError
 }
 func (impl E_TypeCircularDependency) TypeDeclError() {}
 type E_TypeCircularDependency struct {
-	TypeNames  [] loader.Symbol
+	TypeNames  [] lang.Symbol
 }
 func (impl E_TypeIncompleteDefaultParameters) TypeDeclError() {}
 type E_TypeIncompleteDefaultParameters struct {}
@@ -981,7 +981,7 @@ func (e E_ModuleNotFound) ExprErrorDesc() ErrorMessage {
 }
 
 type E_TypeOrValueNotFound struct {
-	Symbol  loader.Symbol
+	Symbol  lang.Symbol
 }
 func (e E_TypeOrValueNotFound) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
@@ -1038,7 +1038,7 @@ func (e E_ExplicitTypeParamsRequired) ExprErrorDesc() ErrorMessage {
 }
 
 type E_TypeUsedAsValue struct {
-	TypeName  loader.Symbol
+	TypeName  lang.Symbol
 }
 func (e E_TypeUsedAsValue) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)

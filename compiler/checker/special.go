@@ -1,7 +1,7 @@
 package checker
 
 import (
-	"kumachan/compiler/loader"
+	"kumachan/lang"
 	"kumachan/stdlib"
 )
 
@@ -49,7 +49,7 @@ var __ErrorType = &NamedType {
 }
 func ServiceInstanceType(mod string) Type {
 	return &NamedType {
-		Name: loader.MakeSymbol(mod, stdlib.ServiceInstanceType),
+		Name: lang.MakeSymbol(mod, stdlib.ServiceInstanceType),
 		Args: [] Type {},
 	}
 }
@@ -81,7 +81,7 @@ var __Uint8 = CoreSymbol(stdlib.Uint8)
 var __Byte = CoreSymbol(stdlib.Byte)
 var __Bit = CoreSymbol(stdlib.Bit)
 var __Bytes = CoreSymbol(stdlib.Bytes)
-var __IntegerTypes = []loader.Symbol {
+var __IntegerTypes = [] lang.Symbol {
 	__Int,   __Number,
 	__Int64, __Uint64, __Qword,
 	__Int32, __Uint32, __Dword, __Char,
@@ -89,14 +89,14 @@ var __IntegerTypes = []loader.Symbol {
 	__Int8,  __Uint8,  __Byte,
 	__Bit,
 }
-var __IntegerTypeMap = (func() (map[loader.Symbol] string) {
-	var int_type_map = make(map[loader.Symbol] string)
+var __IntegerTypeMap = (func() (map[lang.Symbol] string) {
+	var int_type_map = make(map[lang.Symbol] string)
 	for _, sym := range __IntegerTypes {
 		int_type_map[sym] = sym.SymbolName
 	}
 	return int_type_map
 })()
 
-func CoreSymbol(name string) loader.Symbol {
-	return loader.MakeSymbol(stdlib.Mod_core, name)
+func CoreSymbol(name string) lang.Symbol {
+	return lang.MakeSymbol(stdlib.Mod_core, name)
 }

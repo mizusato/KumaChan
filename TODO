@@ -1,7 +1,5 @@
 TODO
 
-- move loader.Symbol to lang.Symbol
-
 - Code: split rx.km
 
 - API: to be semantic: tuple input --> bundle input

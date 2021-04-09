@@ -24,7 +24,7 @@ type CheckedModule struct {
 	CheckedModuleInfo
 }
 type CheckedModuleInfo struct {
-	ExportedTypes  map[string] map[loader.Symbol] bool
+	ExportedTypes  map[string] map[lang.Symbol] bool
 }
 type CheckedFunction struct {
 	Point    ErrorPoint
@@ -92,9 +92,9 @@ type CheckContext struct {
 	Functions  FunctionStore
 	Mapping    KmdIdMapping
 }
-func (ctx CheckContext) CollectExportedTypes() (map[string] map[loader.Symbol] bool) {
-	var collect_symbols func(Type, string, (map[loader.Symbol] bool))
-	collect_symbols = func(t Type, mod string, exported (map[loader.Symbol] bool)) {
+func (ctx CheckContext) CollectExportedTypes() (map[string] map[lang.Symbol] bool) {
+	var collect_symbols func(Type, string, (map[lang.Symbol] bool))
+	collect_symbols = func(t Type, mod string, exported (map[lang.Symbol] bool)) {
 		switch T := t.(type) {
 		case *NamedType:
 			var sym = T.Name
@@ -131,9 +131,9 @@ func (ctx CheckContext) CollectExportedTypes() (map[string] map[loader.Symbol] b
 			}
 		}
 	}
-	var all_exported = make(map[string] map[loader.Symbol] bool)
+	var all_exported = make(map[string] map[lang.Symbol] bool)
 	for mod, functions := range ctx.Functions {
-		var mod_exported = make(map[loader.Symbol] bool)
+		var mod_exported = make(map[lang.Symbol] bool)
 		all_exported[mod] = mod_exported
 		for _, group := range functions {
 			for _, f := range group {
@@ -226,7 +226,7 @@ type SymLocalValue struct { ValueType Type }
 func (impl SymTypeParam) Sym() {}
 type SymTypeParam struct { Index uint }
 func (impl SymType) Sym() {}
-type SymType struct { Type *GenericType; Name loader.Symbol; ForceExact bool }
+type SymType struct { Type *GenericType; Name lang.Symbol; ForceExact bool }
 func (impl SymFunctions) Sym() {}
 type SymFunctions struct { Functions []*GenericFunction; Name string }
 func (impl SymLocalAndFunc) Sym() {}
@@ -287,8 +287,8 @@ func (ctx ExprContext) GetTypeRegistry() TypeRegistry {
 	return ctx.ModuleInfo.Types
 }
 
-func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
-	var lookup_type = func(sym loader.Symbol) (Sym, bool) {
+func (ctx ExprContext) LookupSymbol(raw lang.Symbol) (Sym, bool) {
+	var lookup_type = func(sym lang.Symbol) (Sym, bool) {
 		g, exists := ctx.ModuleInfo.Types[sym]
 		if exists {
 			return SymType { Type: g, Name: sym }, true
@@ -296,7 +296,7 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 		if len(sym.SymbolName) > len(ForceExactSuffix) &&
 			strings.HasSuffix(sym.SymbolName, ForceExactSuffix) {
 			var sym_name_force = strings.TrimSuffix(sym.SymbolName, ForceExactSuffix)
-			var sym_force = loader.MakeSymbol(sym.ModuleName, sym_name_force)
+			var sym_force = lang.MakeSymbol(sym.ModuleName, sym_name_force)
 			g, exists := ctx.ModuleInfo.Types[sym_force]
 			if exists {
 				return SymType { Type: g, Name: sym_force, ForceExact: true }, true
@@ -356,7 +356,7 @@ func (ctx ExprContext) LookupSymbol(raw loader.Symbol) (Sym, bool) {
 			}
 		}
 		var self = ctx.ModuleInfo.Module.Name
-		var sym_this_mod = loader.MakeSymbol(self, sym_name)
+		var sym_this_mod = lang.MakeSymbol(self, sym_name)
 		g, exists := lookup_type(sym_this_mod)
 		if exists {
 			return g, true
