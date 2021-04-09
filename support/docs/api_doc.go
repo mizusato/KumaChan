@@ -226,7 +226,7 @@ func funcAlias(mod string, alias_list ([] string)) Html {
 	}
 	var alias_contents = make([] Html, len(alias_list))
 	for i, alias := range alias_list {
-		var id = (lang.MakeSymbol(mod, alias)).String()
+		var id = IdWithPrefix(lang.MakeSymbol(mod, alias).String(), FuncDecl)
 		alias_contents[i] = inlineWithId(id, "alias-item", text("name", alias))
 	}
 	return inline("alias", keyword("("),
