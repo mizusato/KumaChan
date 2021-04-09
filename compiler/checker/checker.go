@@ -21,6 +21,10 @@ type CheckedModule struct {
 	Functions  map[string] ([] CheckedFunction)
 	Effects    [] CheckedEffect
 	Context    CheckContext
+	CheckedModuleInfo
+}
+type CheckedModuleInfo struct {
+	ExportedTypes  map[string] map[loader.Symbol] bool
 }
 type CheckedFunction struct {
 	Point    ErrorPoint
@@ -87,6 +91,61 @@ type CheckContext struct {
 	Types      TypeRegistry
 	Functions  FunctionStore
 	Mapping    KmdIdMapping
+}
+func (ctx CheckContext) CollectExportedTypes() (map[string] map[loader.Symbol] bool) {
+	var collect_symbols func(Type, string, (map[loader.Symbol] bool))
+	collect_symbols = func(t Type, mod string, exported (map[loader.Symbol] bool)) {
+		switch T := t.(type) {
+		case *NamedType:
+			var sym = T.Name
+			if (sym.ModuleName != mod) {
+				return
+			}
+			if (exported[sym]) {
+				return
+			}
+			exported[sym] = true
+			var g = ctx.Types[sym]
+			switch D := g.Definition.(type) {
+			case *Boxed:
+				collect_symbols(D.InnerType, mod, exported)
+			case *Enum:
+				for _, case_info := range D.CaseTypes {
+					var case_t = &NamedType { Name: case_info.Name }
+					collect_symbols(case_t, mod, exported)
+				}
+			}
+		case *AnonymousType:
+			switch R := T.Repr.(type) {
+			case Tuple:
+				for _, el := range R.Elements {
+					collect_symbols(el, mod, exported)
+				}
+			case Bundle:
+				for _, field := range R.Fields {
+					collect_symbols(field.Type, mod, exported)
+				}
+			case Func:
+				collect_symbols(R.Input, mod, exported)
+				collect_symbols(R.Output, mod, exported)
+			}
+		}
+	}
+	var all_exported = make(map[string] map[loader.Symbol] bool)
+	for mod, functions := range ctx.Functions {
+		var mod_exported = make(map[loader.Symbol] bool)
+		all_exported[mod] = mod_exported
+		for _, group := range functions {
+			for _, f := range group {
+				if f.IsImported || !(f.Function.Public) {
+					continue
+				}
+				var t = &AnonymousType { Repr: f.Function.DeclaredType }
+				collect_symbols(t, mod, mod_exported)
+			}
+		}
+	}
+	return all_exported
 }
 
 type ModuleInfo struct {
@@ -551,6 +610,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 					RawImplicit: f.RawImplicit,
 					AliasList:   f.AliasList,
 					IsSelfAlias: f.IsSelfAlias,
+					IsFromConst: f.IsFromConst,
 					FunctionGeneratorFlags: FunctionGeneratorFlags {
 						Exported:        f.Public,
 						ConsideredThunk: considered_thunk,
@@ -668,6 +728,9 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 			Functions: func_map,
 			Effects:   do_effects,
 			Context:   ctx,
+			CheckedModuleInfo: CheckedModuleInfo {
+				ExportedTypes: ctx.CollectExportedTypes(),
+			},
 		}
 		index[mod_name] = checked
 		return checked, nil

@@ -31,6 +31,16 @@ const (
 	TypeDecl  ApiItemKind = "type"
 	FuncDecl  ApiItemKind = "function"
 )
+func IdWithPrefix(id string, kind ApiItemKind) string {
+	switch kind {
+	case TypeDecl:
+		return ("type|" + id)
+	case FuncDecl:
+		return ("func|" + id)
+	default:
+		panic("impossible branch")
+	}
+}
 
 func GenerateApiDocs(idx checker.Index) ApiDocIndex {
 	var result = make(ApiDocIndex)
@@ -73,7 +83,10 @@ func GenerateApiDocs(idx checker.Index) ApiDocIndex {
 			var id = sym.String()
 			if !(g.CaseInfo.IsCaseType) {
 				var content = typeDecl(sym, g, reg, mod_name)
-				var wrapped = blockWithId(id, "api toplevel", content)
+				var wrapped = blockWithId (
+					IdWithPrefix(id, TypeDecl),
+					"api toplevel", content,
+				)
 				buf.WriteString(string(wrapped))
 				buf.WriteString("\n")
 			}
@@ -101,14 +114,19 @@ func GenerateApiDocs(idx checker.Index) ApiDocIndex {
 				return
 			}
 			var content = funcDecl(sym, filtered)
-			var wrapped = blockWithId(id, "api toplevel", content)
+			var wrapped = blockWithId (
+				IdWithPrefix(id, FuncDecl),
+				"api toplevel", content,
+			)
 			buf.WriteString(string(wrapped))
 			buf.WriteString("\n")
 		}
 		var types = make([] loader.Symbol, 0)
 		for sym, _ := range reg {
 			if sym.ModuleName == mod_name {
-				types = append(types, sym)
+				if mod.ExportedTypes[mod_name][sym] {
+					types = append(types, sym)
+				}
 			}
 		}
 		sortSymbols(types)
@@ -380,8 +398,10 @@ func typeDef(g *checker.GenericType, reg checker.TypeRegistry, mod string) Html 
 	case *checker.Enum:
 		var cases = make([] Html, len(d.CaseTypes))
 		for i, item := range d.CaseTypes {
-			cases[i] = blockWithId(item.Name.String(), "api",
-				typeDecl(item.Name, reg[item.Name], reg, mod))
+			cases[i] = blockWithId (
+				IdWithPrefix(item.Name.String(), TypeDecl),
+				"api", typeDecl(item.Name, reg[item.Name], reg, mod),
+			)
 		}
 		return block("enum",
 			modifier("enum"),

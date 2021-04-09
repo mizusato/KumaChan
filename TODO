@@ -1,6 +1,6 @@
 TODO
 
-- Doc: api doc hide types that are not used (directly/indirectly) by public functions and constants
+- move loader.Symbol to lang.Symbol
 
 - Code: split rx.km
 

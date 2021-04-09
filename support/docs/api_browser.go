@@ -273,13 +273,14 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 			var outline = mod_data.Outline
 			current_outline_index = make(map[string] int)
 			for i, item := range outline {
-				current_outline_index[item.Id] = i
+				var id = IdWithPrefix(item.Id, item.Kind)
+				current_outline_index[id] = i
 			}
 			var get_outline_item = func(i uint) qt.ListWidgetItem {
 				var api = outline[i]
 				return qt.ListWidgetItem {
-					Key:   ([]rune)(api.Id),
-					Label: ([]rune)(api.Name),
+					Key:   ([] rune)(IdWithPrefix(api.Id, api.Kind)),
+					Label: ([] rune)(api.Name),
 					Icon:  apiKindToIcon(api.Kind),
 				}
 			}
@@ -377,7 +378,10 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 				}
  				var get_result_item = func(i uint) qt.ListWidgetItem {
  					var item = result[i]
- 					var ref = ApiRef { Module: item.Mod, Id: item.Id }
+ 					var ref = ApiRef {
+ 						Module: item.Mod,
+ 						Id:     IdWithPrefix(item.Id, item.Kind),
+ 					}
  					var href = ref.HyperRef()
  					var label = (func() string {
  						var display_name = fmt.Sprintf("%s (%s)", item.Name, item.Mod)
