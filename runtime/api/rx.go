@@ -234,29 +234,6 @@ var EffectFunctions = map[string] Value {
 			return h.Call(k, res).(rx.Observable)
 		})
 	},
-	"new-mutable": func(init Value) rx.Observable {
-		return rx.NewSync(func() (rx.Object, bool) {
-			return rx.CreateCell(init), true
-		})
-	},
-	"with-mutable": func(init Value, f Value, h InteropContext) rx.Observable {
-		return rx.NewSync(func() (rx.Object, bool) {
-			return rx.CreateCell(init), true
-		}).Then(func(obj rx.Object) rx.Observable {
-			return h.Call(f, obj).(rx.Observable)
-		})
-	},
-	"mutable-get": func(cell rx.Cell) rx.Observable {
-		return cell.Get()
-	},
-	"mutable-set": func(cell rx.Cell, v Value) rx.Observable {
-		return cell.Set(v)
-	},
-	"mutable-swap": func(cell rx.Cell, f Value, h InteropContext) rx.Observable {
-		return cell.Swap(func(v rx.Object) rx.Object {
-			return h.Call(f, v)
-		})
-	},
 	"as-source": func(action rx.Observable) rx.Observable {
 		return action.DiscardComplete()
 	},

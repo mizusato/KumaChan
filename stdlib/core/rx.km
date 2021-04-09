@@ -82,7 +82,6 @@ type Mutex[+T]
 
 ## Mutable Containers
 
-type Mutable[+T]     native;  // rx.Cell
 type Buffer          native;  // rx.Buffer
 type HashMap[+K,+V]  native;  // rx.StringHashMap, rx.NumberHashMap
 
@@ -165,24 +164,10 @@ export function Reactive:[T]
     native 'create-reactive';
 
 ## Mutable Containers Operations
-export function new-mutable:[T]
-    &() => Async[Mutable[T]]
-    native 'new-mutable';
-export function with-mutable: [T, K < Observable[any,any]]
-    &(T, &(Mutable[T]) => K) => K
-    native 'with-mutable';
-export function get:[T]
-    &(Mutable[T]) => Async[T]
-    native 'mutable-get';
-export function set:[T]
-    &(Mutable[T], T) => Async
-    native 'mutable-set';
-export function swap:[T]
-    &(Mutable[T], &(T) => T) => Async
-    native 'mutable-swap';
+// TODO
 
 ## Locks Operations
-export function mutex: [T, K < Observable[any,any]]
+export function Mutex: [T, K < Observable[any,any]]
     &(T, &(Mutex[T]) => K) => K
     native 'mutex';
 export function lock: [T, K < Observable[any]]
@@ -193,6 +178,15 @@ export function lock: [T, K < Observable[any]]
 export function Source:[T]
     &(Observable[T]) => Source[T]
     native 'as-source';
+export function Computed:[A,B,X]
+    &((Computed[A],Computed[B]), &(A,B) => X) => Computed[X]
+    native 'computed';
+export function Computed:[A,B,C,X]
+    &((Computed[A],Computed[B],Computed[C]), &(A,B,C) => X) => Computed[X]
+    native 'computed';
+export function Computed:[A,B,C,D,X]
+    &((Computed[A],Computed[B],Computed[C],Computed[D]), &(A,B,C,D) => X) => Computed[X]
+    native 'computed';
 export function with: [A < Observable[any,any]]
     &(A, Async) => A
     native 'with';
@@ -473,12 +467,3 @@ export function combine:[A,B,C,D]
 export function combine:[T]
     &(Array[Computed[T]]) => Computed[Array[T]]
     native 'combine-latest*-array';
-export function Computed:[A,B,X]
-    &((Computed[A],Computed[B]), &(A,B) => X) => Computed[X]
-    native 'computed';
-export function Computed:[A,B,C,X]
-    &((Computed[A],Computed[B],Computed[C]), &(A,B,C) => X) => Computed[X]
-    native 'computed';
-export function Computed:[A,B,C,D,X]
-    &((Computed[A],Computed[B],Computed[C],Computed[D]), &(A,B,C,D) => X) => Computed[X]
-    native 'computed';

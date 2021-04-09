@@ -1,7 +1,5 @@
 TODO
 
-- Code: split rx.km
-
 - API: to be semantic: tuple input --> bundle input
 
 - API: revise array/seq methods
