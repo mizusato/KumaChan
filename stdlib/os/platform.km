@@ -1,0 +1,9 @@
+type PlatformInfo {
+    system: String,
+    arch: String,
+    is-64-bit: Bool
+};
+
+export const PlatformInfo: PlatformInfo :=
+    native 'os::PlatformInfo';
+

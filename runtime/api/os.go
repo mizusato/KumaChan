@@ -41,36 +41,34 @@ func GetSystemLanguage() string {
 }
 
 var OS_Constants = map[string] NativeConstant {
-	"os::Name":    func(h InteropContext) Value {
-		return StringFromGoString(runtime.GOOS)
+	"os::PlatformInfo": func(h InteropContext) Value {
+		return &ValProd { Elements: [] Value {
+			StringFromGoString(runtime.GOOS),
+			StringFromGoString(runtime.GOARCH),
+			ToBool(uint64(^uintptr(0)) == ^uint64(0)),
+		} }
 	},
-	"os::Arch":    func(h InteropContext) Value {
-		return StringFromGoString(runtime.GOARCH)
-	},
-	"os::Is64Bit": func(h InteropContext) Value {
-		return ToBool(uint64(^uintptr(0)) == ^uint64(0))
-	},
-	"os::Cwd":     func(h InteropContext) Value {
+	"os::Cwd": func(h InteropContext) Value {
 		var wd, err = os.Getwd()
 		if err != nil { panic("unable to get current working directory") }
 		return stdlib.ParsePath(wd)
 	},
-	"os::Env":     func(h InteropContext) Value {
+	"os::Env": func(h InteropContext) Value {
 		return GetEnv(h.GetSysEnv())
 	},
-	"os::Args":    func(h InteropContext) Value {
+	"os::Args": func(h InteropContext) Value {
 		return GetArgs(h.GetSysArgs())
 	},
-	"os::Stdin":   func(h InteropContext) Value {
+	"os::Stdin": func(h InteropContext) Value {
 		return rx.FileFrom(h.GetStdIO().Stdin)
 	},
-	"os::Stdout":  func(h InteropContext) Value {
+	"os::Stdout": func(h InteropContext) Value {
 		return rx.FileFrom(h.GetStdIO().Stdout)
 	},
-	"os::Stderr":  func(h InteropContext) Value {
+	"os::Stderr": func(h InteropContext) Value {
 		return rx.FileFrom(h.GetStdIO().Stderr)
 	},
-	"os::Locale":  func(h InteropContext) Value {
+	"os::Locale": func(h InteropContext) Value {
 		var locale = Locale {
 			Language:    StringFromGoString(GetSystemLanguage()),
 			TimeZone:    time.Local,

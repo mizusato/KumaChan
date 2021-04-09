@@ -1,6 +1,0 @@
-export const Name: String :=
-    native 'os::Name';
-export const Arch: String :=
-    native 'os::Arch';
-export const Is64Bit: Bool :=
-    native 'os::Is64Bit';

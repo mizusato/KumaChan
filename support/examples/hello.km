@@ -1,6 +1,7 @@
 do { println 'Hello World' }
-    . { then { println { "[OS Info] Name=#, Arch=# (#)" (
-        os::Name, os::Arch, (if os::Is64Bit: '64bit', else: '32bit')) } } }
+    . { then { println { "[OS Info] system=#, arch=# (#)"
+        let { system, arch, is-64-bit } := os::PlatformInfo,
+        (system, arch, (if is-64-bit: '64-bit', else: '32-bit')) } } }
     . { then { println 'timer' } }
     . { then { wait { timeout: 2000 } } }
     . { then { println { str { exp { log { Complex (5.0, 5.0) } } } } } }

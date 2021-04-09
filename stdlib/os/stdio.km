@@ -9,7 +9,7 @@ export function scan:
     &() => Async[String,Error]
     &() =>
         let read := Stdin.{read-string},
-        if (self::Name = 'windows'):
+        if (PlatformInfo.system = 'windows'):
             (read map &(str) => str.{trim-suffix(''..\r)}),
         else:
             read;
@@ -24,7 +24,7 @@ export function scanln:
     &() => Async[String,Error]
     &() =>
         let read := Stdin.{read-line},
-        if (self::Name = 'windows'):
+        if (PlatformInfo.system = 'windows'):
             (read map &(str) => str.{trim-suffix(''..\r)}),
         else:
             read;

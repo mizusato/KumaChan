@@ -181,6 +181,17 @@ func CheckBundle(bundle ast.Bundle, ctx ExprContext) (SemiExpr, *ExprError) {
 
 func CheckGet(base SemiExpr, key ast.Identifier, info ExprInfo, ctx ExprContext) (SemiExpr, *ExprError) {
 	switch b := base.Value.(type) {
+	case UntypedRef:
+		// TODO: find bundle in output types of overloaded functions
+		var expr, err = AssignTo(nil, base, ctx)
+		if err == nil {
+			return CheckGet(LiftTyped(expr), key, info, ctx)
+		} else {
+			return SemiExpr{}, &ExprError {
+				Point:    base.Info.ErrorPoint,
+				Concrete: E_ExplicitTypeRequired {},
+			}
+		}
 	case TypedExpr:
 		if IsBundleLiteral(Expr(b)) { return SemiExpr{}, &ExprError {
 			Point:    base.Info.ErrorPoint,
