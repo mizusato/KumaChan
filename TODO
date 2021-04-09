@@ -1,5 +1,7 @@
 TODO
 
+- Array[T]: don't assume random access (e.g. proceed() instead of at(i+1))
+
 - API: to be semantic: tuple input --> bundle input
 
 - API: revise array/seq methods
