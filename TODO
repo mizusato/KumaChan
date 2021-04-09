@@ -2,6 +2,8 @@ TODO
 
 - Array[T]: don't assume random access (e.g. proceed() instead of at(i+1))
 
+- consider renaming Array and remove HashMap, etc.
+
 - API: to be semantic: tuple input --> bundle input
 
 - API: revise array/seq methods
