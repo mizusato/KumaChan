@@ -33,8 +33,8 @@ var core_types = []string {
 	Real, Float, Number,
 	Int64, Uint64, Int32, Uint32, Int16, Uint16, Int8, Uint8,
 	Bool, Yes, No,
-	Maybe, Just, Null,
-	Result, Ok, Ng,
+	Maybe, Some, None,
+	Result, Success, Failure,
 	Ordering, Smaller, Equal, Bigger,
 	Optional,
 	// error.km
@@ -83,13 +83,13 @@ const Yes = "Yes"
 const No = "No"
 const ( YesIndex = iota; NoIndex )
 const Maybe = "Maybe"
-const Just = "Just"
-const Null = "Null"
-const ( JustIndex = iota; NullIndex )
+const Some = "Some"
+const None = "None"
+const ( SomeIndex = iota; NoneIndex )
 const Result = "Result"
-const Ok = "OK"
-const Ng = "NG"
-const ( OkIndex = iota; NgIndex )
+const Success = "Success"
+const Failure = "Failure"
+const ( SuccessIndex = iota; FailureIndex )
 const Ordering = "Ordering"
 const Smaller = "<<"
 const Equal = "=="

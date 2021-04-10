@@ -54,7 +54,7 @@ type PrimitiveDeserializer struct {
 type ContainerDeserializer struct {
 	CreateArray  func(array_t *Type) Object
 	AppendItem   func(array_ptr *Object, item Object)
-	Just         func(obj Object, opt_t *Type) Object
+	Some         func(obj Object, opt_t *Type) Object
 	Nothing      func(opt_t *Type) Object
 }
 type AlgebraicDeserializer struct {

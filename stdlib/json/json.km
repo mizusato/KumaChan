@@ -42,16 +42,16 @@ export function parse:
     &(input) =>
         let process := { ValueParser () },
         switch { process input }:
-        case OK (value, remaining):
+        case Success (value, remaining):
             if (remaining.{length} = 0):
-                { OK value },
+                { Success value },
             else:
                 let pos := (input.{length} - remaining.{length}),
-                { NG { Error 'redundant input after parsed content'
+                { Failure { Error 'redundant input after parsed content'
                     . { &(msg) => { "# (at position #)" (msg, pos.{str}) } } } },
-        case NG (err, remaining):
+        case Failure (err, remaining):
             let all := input.{length},
             let rest := remaining.{length},
             let pos: Number := if (rest > 0): (all - rest), else: (all - 1),
-            { NG (err wrap &(msg) => { "# (at position #)" (msg, pos.{str}) }) },
+            { Failure (err wrap &(msg) => { "# (at position #)" (msg, pos.{str}) }) },
         end;

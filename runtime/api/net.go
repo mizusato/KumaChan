@@ -14,7 +14,7 @@ var NetFunctions = map[string] interface{} {
 		if err != nil {
 			return Na()
 		} else {
-			return Just(url)
+			return Some(url)
 		}
 	},
 	"url!": func(str String) *url.URL {

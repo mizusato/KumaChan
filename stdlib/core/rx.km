@@ -213,6 +213,8 @@ export function go:[T]
 export function go:[T]
     &(Seq[T]) => Observable[T]
     native 'go-seq';
+export const Noop: Sync :=
+    { yield () };
 export function yield:[T]
     &(T) => Sync[T]
     native 'yield';

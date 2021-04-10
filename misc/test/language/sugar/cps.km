@@ -7,11 +7,11 @@ do
         let sum? :=
             | a := maybe? str-a.{parse-real},
             | b := maybe? str-b.{parse-real},
-            { Just (a + b) },
+            { Some (a + b) },
         switch sum?:
-        case Just sum:
+        case Some sum:
             { println { str sum } },
-        case Null:
-            { println 'Null' },
+        case None:
+            { println 'None' },
         end,
     { crash err };

@@ -1,23 +1,23 @@
 do
-    let r1: Result[Number,String] := { OK 1.[Number] },
-    let r2: Result[Number,String] := { NG 'bad' },
+    let r1: Result[Number,String] := { Success 1.[Number] },
+    let r2: Result[Number,String] := { Failure 'bad' },
     let s1: String :=
-        switch r1.(OK):
-        case Just num:
+        switch r1.(Success):
+        case Some num:
             num.{str},
         default:
             'null',
         end,
     let s2: String :=
-        switch r2.(OK):
-        case Just num:
+        switch r2.(Success):
+        case Some num:
             num.{str},
         default:
             'null',
         end,
     let s3: String :=
         switch r2.(NG):
-        case Just err:
+        case Some err:
             err.{str},
         default:
             'null',

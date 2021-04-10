@@ -216,7 +216,7 @@ func deserialize(input *deserializeReader, ctx deserializeContext) (Object, erro
 			}
 			inner, err := deserialize(input, inner_ctx)
 			if err != nil { return nil, err }
-			return ctx.Just(inner, t), nil
+			return ctx.Some(inner, t), nil
 		} else if n <= ctx.Depth {
 			unreadIndent(input, n)
 			return ctx.Nothing(t), nil

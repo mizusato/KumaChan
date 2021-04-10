@@ -38,14 +38,13 @@ type Bool enum {
     type Yes;
     type No;
 };
-// TODO: consider renaming "Just"
 type Maybe[+T] enum {
-    type Just[+T] weak T;
-    type Null;
+    type Some[+T] weak T;
+    type None;
 };
 type Result[+T,+E] enum {
-    type OK[+T] weak T;
-    type NG[+E] weak E;
+    type Success[+T] weak T;
+    type Failure[+E] weak E;
 };
 type Ordering enum {
     type <<;
@@ -60,7 +59,7 @@ export function =:
     native 'sum-index-equal';
 
 type Optional[+T] Maybe[T];
-export const DefaultValue: Optional[never] := Null;
+export const DefaultValue: Optional[never] := None;
 
 // Type Conversion
 type Conv[T,U] implicit {
@@ -82,10 +81,10 @@ export function map:[A,B,E]
     &(Result[A,E], &(A) => B) => Result[B,E]
     &(ra, f) =>
         switch ra:
-        case OK a:
-            { OK { f(a) } },
-        case NG err:
-            { NG err },
+        case Success a:
+            { Success { f(a) } },
+        case Failure err:
+            { Failure err },
         end;
 
 // ----------
@@ -95,10 +94,10 @@ export function map:[A,B]
     &(Maybe[A], &(A) => B) => Maybe[B]
     &(v?, f) =>
         switch v?:
-        case Just v:
-            { Just { f v } },
-        case Null:
-            Null,
+        case Some v:
+            { Some { f v } },
+        case None:
+            None,
         end;
 
 // Monad(Maybe)
@@ -106,10 +105,10 @@ export function get:[A,B]
     &(Maybe[A], &(A) => Maybe[B]) => Maybe[B]
     &(v?, k) =>
         switch v?:
-        case Just v:
+        case Some v:
             { k v },
-        case Null:
-            Null,
+        case None:
+            None,
         end;
 
 // Applicative(Maybe)
@@ -119,7 +118,7 @@ export function Maybe:[A,B,T]
         let (a?, b?) := pair,
         | a := get a?,
         | b := get b?,
-        { Just { f(a,b) } };
+        { Some { f(a,b) } };
 
 export function Maybe:[A,B,C,T]
     &((Maybe[A],Maybe[B],Maybe[C]), &(A,B,C) => T) => Maybe[T]
@@ -128,16 +127,16 @@ export function Maybe:[A,B,C,T]
         | a := get a?,
         | b := get b?,
         | c := get c?,
-        { Just { f(a,b,c) } };
+        { Some { f(a,b,c) } };
 
 export function consume:[A,T]
     &((Maybe[A],T), &(A) => T) => T
     &(input, f) =>
         let (v?, fallback) := input,
         switch v?:
-        case Just v:
+        case Some v:
             { f(v) },
-        case Null:
+        case None:
             fallback,
         end;
 
@@ -145,9 +144,9 @@ export function ??:[T]
     &(Maybe[T], T) => T
     &(t?, fallback) =>
         switch t?:
-        case Just t:
+        case Some t:
             t,
-        case Null:
+        case None:
             fallback,
         end;
 
@@ -155,8 +154,8 @@ export function convert:[T]
     &(Maybe[T]) => Bool
     &(t?) =>
         switch t?:
-        case Just _:
+        case Some _:
             Yes,
-        case Null:
+        case None:
             No,
         end;

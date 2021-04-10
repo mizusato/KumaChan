@@ -15,7 +15,7 @@ import (
 func Optional2Maybe(obj rx.Object) Value {
 	var opt = obj.(rx.Optional)
 	if opt.HasValue {
-		return Just(opt.Value)
+		return Some(opt.Value)
 	} else {
 		return Na()
 	}
@@ -323,7 +323,7 @@ var EffectFunctions = map[string] Value {
 		return e.TakeOneAsSingle().Map(func(val rx.Object) rx.Object {
 			var opt = val.(rx.Optional)
 			if opt.HasValue {
-				return Just(opt.Value)
+				return Some(opt.Value)
 			} else {
 				return Na()
 			}

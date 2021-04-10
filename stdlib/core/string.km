@@ -90,8 +90,8 @@ export function contains:
     &(String,String) => Bool
     &(str,sub) =>
         switch str.{find(sub)}:
-            case Just _: Yes,
-            case Null:    No,
+            case Some _: Yes,
+            case None:    No,
         end;
 
 export function contains:

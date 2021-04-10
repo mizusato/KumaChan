@@ -11,20 +11,20 @@ function make-lazy:[T,E]
 
 function output:[T,E]
     &(T) => Parser[T,E]
-    &(value) => &(input) => { OK (value, input) };
+    &(value) => &(input) => { Success (value, input) };
 
 function throw:[T,E]
     &(E) => Parser[T,E]
-    &(err) => &(input) => { NG (err, input) };
+    &(err) => &(input) => { Failure (err, input) };
 
 function consume:[E]
     &(String, E) => Parser[unit,E]
     &(target, err) => &(input) =>
         if (input.[String] has-prefix target):
             let input := (input substr-view (target.{length}, input.{length})),
-            { OK ((), input) },
+            { Success ((), input) },
         else:
-            { NG (err, input) };
+            { Failure (err, input) };
 
 function with-ignored:[T,E]
     &(Parser[T,E], Parser[unit,E]) => Parser[T,E]
@@ -33,9 +33,9 @@ function with-ignored:[T,E]
             &(String) => String :=
             &(input) =>
                 switch { parse-blank input }:
-                case OK (_, input):
+                case Success (_, input):
                     { parse-blanks input },
-                case NG _:
+                case Failure _:
                     input,
                 end,
         &(input) =>
@@ -46,21 +46,21 @@ function map:[A,B,E]
     &(Parser[A,E], &(A) => B) => Parser[B,E]
     &(parse-a, a->b) => &(input) =>
         switch { parse-a input }:
-        case OK (a, input):
-            { OK ({ a->b a }, input) },
-        case NG err:
-            { NG err },
+        case Success (a, input):
+            { Success ({ a->b a }, input) },
+        case Failure err:
+            { Failure err },
         end;
 
 function apply:[T,R,E]
     &(Parser[T,E], &(T) => Parser[R,E]) => Parser[R,E]
     &(parse, k) => &(input) =>
         switch { parse input }:
-        case OK (value, input):
+        case Success (value, input):
             let parse-next := { k(value) },
             { parse-next input },
-        case NG err:
-            { NG err },
+        case Failure err:
+            { Failure err },
         end;
 
 function choose:[T,E]
@@ -70,17 +70,17 @@ function choose:[T,E]
         let rest := (parsers slice-view (1, parsers.{length})),
         (rest reduce (first, &(parse-prev, parse-this) => &(input) =>
             switch { parse-prev input }:
-            case OK parsed:
-                { OK parsed },
-            case NG (prev-err, prev-remaining):
+            case Success parsed:
+                { Success parsed },
+            case Failure (prev-err, prev-remaining):
                 switch { parse-this input }:
-                case OK parsed:
-                    { OK parsed },
-                case NG (this-err, this-remaining):
+                case Success parsed:
+                    { Success parsed },
+                case Failure (this-err, this-remaining):
                     if (this-remaining.{length} < prev-remaining.{length}):
-                        { NG (this-err, this-remaining) },
+                        { Failure (this-err, this-remaining) },
                     else:
-                        { NG (prev-err, prev-remaining) },
+                        { Failure (prev-err, prev-remaining) },
                 end,
             end
         ));
@@ -92,10 +92,10 @@ function repeat:[T,E]
             &(String, Seq[T]) => Result[(Seq[T],String),(E,String)] :=
             &(input, seq) =>
                 switch { item input }:
-                case OK (value, input):
+                case Success (value, input):
                     { proceed (input, (value cons seq)) },
-                case NG _:
-                    { OK (seq, input) },
+                case Failure _:
+                    { Success (seq, input) },
                 end,
         { proceed (input, nil) }
             . { map &(seq, input) => (seq.{collect}.{reverse}, input) };
@@ -107,19 +107,19 @@ function repeat:[T,E]
             &(String, Seq[T]) => Result[(Seq[T],String),(E,String)] :=
             &(input, seq) =>
                 switch { item input }:
-                case OK (value, input):
+                case Success (value, input):
                     let seq := (value cons seq),
                     switch { sep input }:
-                    case OK (_, input):
+                    case Success (_, input):
                         { proceed (input, seq) },
-                    case NG _:
-                        { OK (seq, input) },
+                    case Failure _:
+                        { Success (seq, input) },
                     end,
-                case NG err:
+                case Failure err:
                     if seq.{is-nil}:
-                        { OK (nil, input) },
+                        { Success (nil, input) },
                     else:
-                        { NG err },
+                        { Failure err },
                 end,
         { proceed (input, nil) }
             . { map &(seq, input) => (seq.{collect}.{reverse}, input) };

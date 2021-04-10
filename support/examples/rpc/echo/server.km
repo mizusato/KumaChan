@@ -12,7 +12,7 @@ export function new-echo-server:
 
 export function delete:
     &(EchoServer) => Async
-    &(_) => { yield () };
+    &(_) => Noop;
 
 export function echo:
     &(EchoServer,service::Request) => Async[service::Response,Error]

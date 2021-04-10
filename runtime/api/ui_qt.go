@@ -78,7 +78,7 @@ var UiQtFunctions = map[string] interface{} {
 			if v < 0 {
 				return Na()
 			} else {
-				return Just(uint(v))
+				return Some(uint(v))
 			}
 		default:
 			panic(fmt.Sprintf("unsupported Qt property type %s", t))
@@ -173,7 +173,7 @@ var UiQtFunctions = map[string] interface{} {
 	"qt-list-widget-get-current": func(list qt.Widget) Value {
 		if qt.ListWidgetHasCurrentItem(list) {
 			var key_runes = qt.ListWidgetGetCurrentItemKey(list)
-			return Just(StringFromRuneSlice(key_runes))
+			return Some(StringFromRuneSlice(key_runes))
 		} else {
 			return Na()
 		}
@@ -186,7 +186,7 @@ var UiQtFunctions = map[string] interface{} {
 				var path_str = string(path_runes)
 				if path_str != "" {
 					var path = stdlib.ParsePath(string(path_str))
-					ok(Just(path))
+					ok(Some(path))
 				} else {
 					ok(Na())
 				}
@@ -214,7 +214,7 @@ var UiQtFunctions = map[string] interface{} {
 				var path_str = string(path_runes)
 				if path_str != "" {
 					var path = stdlib.ParsePath(string(path_str))
-					ok(Just(path))
+					ok(Some(path))
 				} else {
 					ok(Na())
 				}
@@ -229,7 +229,7 @@ var UiQtFunctions = map[string] interface{} {
 				var path_str = string(path_runes)
 				if path_str != "" {
 					var path = stdlib.ParsePath(string(path_str))
-					ok(Just(path))
+					ok(Some(path))
 				} else {
 					ok(Na())
 				}

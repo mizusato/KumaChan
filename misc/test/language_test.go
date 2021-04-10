@@ -30,9 +30,9 @@ func TestCps(t *testing.T) {
 		return fmt.Sprintf("Number a:\nNumber b:\n%s\n", c)
 	}
 	expectStdIO(t, mod_path, input("1", "2"), output("3"))
-	expectStdIO(t, mod_path, input("1", "bad"), output("Null"))
-	expectStdIO(t, mod_path, input("bad", "2"), output("Null"))
-	expectStdIO(t, mod_path, input("bad", "bad"), output("Null"))
+	expectStdIO(t, mod_path, input("1", "bad"), output("None"))
+	expectStdIO(t, mod_path, input("bad", "2"), output("None"))
+	expectStdIO(t, mod_path, input("bad", "bad"), output("None"))
 }
 
 func TestDefaultValue(t *testing.T) {

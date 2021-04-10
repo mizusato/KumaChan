@@ -14,8 +14,8 @@ function RealInput:
 const Root: ui::Component :=
     let container := { StyledContainer ['container'] },
     let row := { StyledContainer ['row'] },
-    | price := use { State { Just 0.0 } },
-    | quantity := use { State { Just 0.0 } },
+    | price := use { State { Some 0.0 } },
+    | quantity := use { State { Some 0.0 } },
     let total :=
         | (p?, q?) := Computed (price.{watch}, quantity.{watch}),
         | (p, q) := Maybe (p?, q?),

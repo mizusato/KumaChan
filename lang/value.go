@@ -230,36 +230,36 @@ func ToOrdering(o Ordering) SumValue {
 	}
 }
 
-func Just(v Value) SumValue {
+func Some(v Value) SumValue {
 	return &ValSum {
-		Index: stdlib.JustIndex,
+		Index: stdlib.SomeIndex,
 		Value: v,
 	}
 }
 
 func Na() SumValue {
 	return &ValSum {
-		Index: stdlib.NullIndex,
+		Index: stdlib.NoneIndex,
 		Value: nil,
 	}
 }
 
 func Ok(v Value) SumValue {
 	return &ValSum {
-		Index: stdlib.OkIndex,
+		Index: stdlib.SuccessIndex,
 		Value: v,
 	}
 }
 
 func Ng(v Value) SumValue {
 	return &ValSum {
-		Index: stdlib.NgIndex,
+		Index: stdlib.FailureIndex,
 		Value: v,
 	}
 }
 
 func Unwrap(maybe SumValue) (Value, bool) {
-	if maybe.Index == stdlib.JustIndex {
+	if maybe.Index == stdlib.SomeIndex {
 		return maybe.Value, true
 	} else {
 		return nil, false

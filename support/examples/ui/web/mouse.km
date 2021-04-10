@@ -2,7 +2,7 @@ import window from './window';
 
 do { window::mount Root };
 
-// TODO: mouse enter => Just pos, mouse out => Null
+// TODO: mouse enter => Some pos, mouse out => None
 const MousePosition: ui::Hook[Source[(Real,Real)]] :=
     &(k) =>
         | pos := sync { Bus::[(Real,Real)] () },

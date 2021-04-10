@@ -16,7 +16,7 @@ import (
 var ContainerFunctions = map[string] Value {
 	"chr": func(n uint) SumValue {
 		if n <= 0x10FFFF && !(0xD800 <= n && n <= 0xDFFF) {
-			return Just(uint32(n))
+			return Some(uint32(n))
 		} else {
 			return Na()
 		}
@@ -44,7 +44,7 @@ var ContainerFunctions = map[string] Value {
 	"seq-next": func(seq Seq) SumValue {
 		var item, rest, exists = seq.Next()
 		if exists {
-			return Just(ToTuple2(item, rest))
+			return Some(ToTuple2(item, rest))
 		} else {
 			return Na()
 		}
@@ -127,7 +127,7 @@ var ContainerFunctions = map[string] Value {
 	"array-at": func(v Value, index uint) SumValue {
 		var arr = ArrayFrom(v)
 		if index < arr.Length {
-			return Just(arr.GetItem(index))
+			return Some(arr.GetItem(index))
 		} else {
 			return Na()
 		}
@@ -206,7 +206,7 @@ var ContainerFunctions = map[string] Value {
 	"decode-utf8": func(bytes ([] byte)) SumValue {
 		var str, ok = StringDecode(bytes, UTF8)
 		if ok {
-			return Just(str)
+			return Some(str)
 		} else {
 			return Na()
 		}
@@ -253,7 +253,7 @@ var ContainerFunctions = map[string] Value {
 			buf = append(buf, Char(r))
 			s = rest
 		}
-		return Just(buf)
+		return Some(buf)
 	},
 	"parse-real": func(str String) SumValue {
 		var x, err = strconv.ParseFloat(GoStringFromString(str), 64)
@@ -263,7 +263,7 @@ var ContainerFunctions = map[string] Value {
 			if math.IsInf(x, 0) || math.IsNaN(x) {
 				return Na()
 			} else {
-				return Just(x)
+				return Some(x)
 			}
 		}
 	},
@@ -283,7 +283,7 @@ var ContainerFunctions = map[string] Value {
 	"str-find": func(str String, sub String) SumValue {
 		var index, ok = StringFind(str, sub)
 		if ok {
-			return Just(index)
+			return Some(index)
 		} else {
 			return Na()
 		}
@@ -349,7 +349,7 @@ var ContainerFunctions = map[string] Value {
 	"map-get": func(m Map, k Value) SumValue {
 		var v, exists = m.Lookup(k)
 		if exists {
-			return Just(v)
+			return Some(v)
 		} else {
 			return Na()
 		}
@@ -368,7 +368,7 @@ var ContainerFunctions = map[string] Value {
 		var v = entry.Elements[1]
 		var result, override = m.Inserted(k, v)
 		if !(override) {
-			return Just(result)
+			return Some(result)
 		} else {
 			return Na()
 		}
@@ -383,7 +383,7 @@ var ContainerFunctions = map[string] Value {
 	"map-delete": func(m Map, k Value) SumValue {
 		var deleted, rest, ok = m.Deleted(k)
 		if ok {
-			return Just(&ValProd { Elements: [] Value { deleted, rest } })
+			return Some(&ValProd { Elements: [] Value { deleted, rest } })
 		} else {
 			return Na()
 		}

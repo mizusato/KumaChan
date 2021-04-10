@@ -25,10 +25,10 @@ function new-chat:
             let { users } := ctx,
             | old-users := sync { read users },
             switch old-users.{ insert (id, user) }:
-            case Just new-users:
+            case Some new-users:
                 | sync { write (users, new-users) },
                 { yield Yes },
-            case Null:
+            case None:
                 { yield No },
             end,
         | ok := await try-login,

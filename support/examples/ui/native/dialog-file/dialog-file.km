@@ -16,16 +16,16 @@ const @open: Source[String] :=
     ButtonOpen.{activated}
         . { concat-map &() =>
             { ui::dialog-open {
-                parent: { Just DialogDemoWindow },
+                parent: { Some DialogDemoWindow },
                 title:  'Open',
                 cwd:    os::Cwd,
                 filter: 'Text files (*.txt);;Markdown files (*.md)'
             } } }
         . { map &(path?) =>
             switch path?:
-            case Just path:
+            case Some path:
                 { "open: #" { str path } },
-            case Null:
+            case None:
                 'open: (cancelled)',
             end
         };
@@ -34,7 +34,7 @@ const @open-multiple: Source[String] :=
     ButtonOpenMultiple.{activated}
         . { concat-map &() =>
             { ui::dialog-open-multiple {
-                parent: { Just DialogDemoWindow },
+                parent: { Some DialogDemoWindow },
                 title:  'Open Multiple',
                 cwd:    os::Cwd,
                 filter: 'Text files (*.txt)'
@@ -54,15 +54,15 @@ const @open-directory: Source[String] :=
     ButtonOpenDirectory.{activated}
         . { concat-map &() =>
             { ui::dialog-open-directory {
-                parent: { Just DialogDemoWindow },
+                parent: { Some DialogDemoWindow },
                 title:  'Open Directory',
                 cwd:    os::Cwd
             } } }
         . { map &(path?) =>
             switch path?:
-            case Just path:
+            case Some path:
                 { "open directory: #" { str path } },
-            case Null:
+            case None:
                 'open directory: (cancelled)',
             end
         };
@@ -71,16 +71,16 @@ const @save: Source[String] :=
     ButtonSave.{activated}
         . { concat-map &() =>
             { ui::dialog-save {
-                parent: { Just DialogDemoWindow },
+                parent: { Some DialogDemoWindow },
                 title:  'Save',
                 cwd:    os::Cwd,
                 filter: 'Text files (*.txt)'
             } } }
         . { map &(path?) =>
             switch path?:
-            case Just path:
+            case Some path:
                 { "save: #" { str path } },
-            case Null:
+            case None:
                 'save: (cancelled)',
             end
         };

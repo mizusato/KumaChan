@@ -300,7 +300,7 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 				var appended = appended_v.Interface()
 				*array = appended
 			},
-			Just: func(obj Object, opt_t *Type) Object {
+			Some: func(obj Object, opt_t *Type) Object {
 				var opt_rt = get_reflect_type(opt_t)
 				var v = reflect.ValueOf(obj)
 				var just_v = v.Convert(opt_rt)

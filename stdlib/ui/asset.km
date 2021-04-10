@@ -31,25 +31,25 @@ export function inject-assets:
         let all-ttf := assets.{iterate}.{ filter-map &(asset) =>
             switch asset:
             case TTF {file,font}:
-                { Just (file, font) },
+                { Some (file, font) },
             default:
-                Null,
+                None,
             end
         },
         let all-css := assets.{iterate}.{ filter-map &(asset) =>
             switch asset:
             case CSS {file}:
-                { Just file },
+                { Some file },
             default:
-                Null,
+                None,
             end
         },
         let all-js := assets.{iterate}.{ filter-map &(asset) =>
             switch asset:
             case JS {file}:
-                { Just file },
+                { Some file },
             default:
-                Null,
+                None,
             end
         },
         { wait-complete { concat [

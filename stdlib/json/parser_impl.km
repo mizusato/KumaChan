@@ -80,9 +80,9 @@ const BoolParser: ValueParserType :=
 const NumberParser: ValueParserType :=
     | chars := apply { repeat { Char { accept: '0123456789.Ee+-' } } },
     switch { parse-real chars.{convert}.[String] }:
-    case Just x:
+    case Some x:
         { output { self::Number x } },
-    case Null:
+    case None:
         { throw { Error 'invalid number' } },
     end;
 
@@ -97,24 +97,24 @@ const StringParser!: Parser[self::String,Error] :=
             &(Number) => Maybe[Number] :=
             &(pos) =>
                 | prev := get
-                    if (pos > 0): (input at (pos - 1)), else: { Just `" },
+                    if (pos > 0): (input at (pos - 1)), else: { Some `" },
                 | this := get
                     (input at pos),
                 if ((this = `") and (prev != `\)):
-                    { Just pos },
+                    { Some pos },
                 else:
                     { proceed (pos + 1) },
         switch { proceed 0 }:
-        case Just end:
+        case Some end:
             let raw := (input substr-view (0, end)).[String],
             switch { unquote raw }:
-            case Just content:
+            case Some content:
                 let value := { self::String! content },
                 let input := (input substr-view ((end + 1), input.{length})),
-                { OK (value, input) },
-            case Null:
-                { NG (err, input) },
+                { Success (value, input) },
+            case None:
+                { Failure (err, input) },
             end,
-        case Null:
-            { NG (err, input) },
+        case None:
+            { Failure (err, input) },
         end;

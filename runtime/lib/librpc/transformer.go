@@ -212,8 +212,8 @@ func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
 					var appended = appended_v.Interface()
 					*array_ptr = appended
 				},
-				Just: func(obj kmd.Object, _ *kmd.Type) kmd.Object {
-					return Just(obj)
+				Some: func(obj kmd.Object, _ *kmd.Type) kmd.Object {
+					return Some(obj)
 				},
 				Nothing: func(_ *kmd.Type) kmd.Object {
 					return Na()

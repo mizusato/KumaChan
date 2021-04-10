@@ -12,14 +12,14 @@ import (
 var MathFunctions = map[string] interface{} {
 	"Float to Maybe[Real]": func(x float64) lang.SumValue {
 		if util.IsValidReal(x) {
-			return lang.Just(x)
+			return lang.Some(x)
 		} else {
 			return lang.Na()
 		}
 	},
 	"FloatComplex to Maybe[Complex]": func(z complex128) lang.SumValue {
 		if util.IsValidComplex(z) {
-			return lang.Just(z)
+			return lang.Some(z)
 		} else {
 			return lang.Na()
 		}

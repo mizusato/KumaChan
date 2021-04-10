@@ -8,7 +8,7 @@ do
                 ('ABC', { json::Number 1.0 }),
                 ('DEF', { json::Bool No }),
             	('foobar', { json::Array [
-                    json::Null,
+                    json::None,
                     { json::String 'baz' }
             	]})
             ] } }

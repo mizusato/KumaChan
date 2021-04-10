@@ -293,7 +293,7 @@ func CheckPipeSwitch(arg SemiExpr, ref ast.TypeRef, info ExprInfo, ctx ExprConte
 			Info: info,
 			Type: maybe_case_type,
 			Value: Sum {
-				Index: stdlib.JustIndex,
+				Index: stdlib.SomeIndex,
 				Value: Expr {
 					Info:  info,
 					Type:  case_type,
@@ -310,7 +310,7 @@ func CheckPipeSwitch(arg SemiExpr, ref ast.TypeRef, info ExprInfo, ctx ExprConte
 			Info: info,
 			Type: maybe_case_type,
 			Value: Sum {
-				Index: stdlib.NullIndex,
+				Index: stdlib.NoneIndex,
 				Value: Expr {
 					Info:  info,
 					Type:  &AnonymousType { Unit {} },
