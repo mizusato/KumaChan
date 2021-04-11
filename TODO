@@ -1,7 +1,5 @@
 TODO
 
-- service::None
-
 - API: revise array/seq methods
 
 - API: revise Reactive[List[T]] methods, consider methods for Reactive[Map[K,V]]
