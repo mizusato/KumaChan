@@ -1,5 +1,9 @@
 TODO
 
+- val.{Constructor} instead of val.{convert}.[Type]
+
+- rx examples syntax migration
+
 - API: to be semantic: tuple input --> bundle input
 
 - API: revise array/seq methods
