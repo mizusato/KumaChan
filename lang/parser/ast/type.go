@@ -15,7 +15,6 @@ func (impl TypeRef) Type()  {}
 type TypeRef struct {
     Node                       `part:"type_ref"`
     Module    Identifier       `part_opt:"module_prefix.name"`
-    Specific  bool             `option:"module_prefix.::"`
     Id        Identifier       `part:"name"`
     TypeArgs  [] VariousType   `list_more:"type_args" item:"type"`
 }

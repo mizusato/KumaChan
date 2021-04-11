@@ -17,7 +17,6 @@ func (mod *Module) SymbolFromDeclName(name ast.Identifier) lang.Symbol {
 func (mod *Module) SymbolFromRef (
 	ref_mod   string,
 	name      string,
-	specific  bool,
 	use_core  bool,
 ) lang.MaybeSymbol {
 	var corresponding, exists = mod.ImpMap[ref_mod]
@@ -30,10 +29,7 @@ func (mod *Module) SymbolFromRef (
 	} else {
 		if ref_mod == "" {
 			var sym_name = name
-			if specific {
-				// ::Module <=> Module::Module
-				return lang.MakeSymbol(sym_name, sym_name)
-			} else if use_core {
+			if use_core {
 				var _, exists = __CoreSymbolSet[sym_name]
 				if exists {
 					// core::Int, core::Real, core::Observable, ...
@@ -53,9 +49,9 @@ func (mod *Module) SymbolFromRef (
 	}
 }
 
-func (mod *Module) TypeSymbolFromRef(ref_mod string, name string, specific bool) lang.MaybeSymbol {
+func (mod *Module) TypeSymbolFromRef(ref_mod string, name string) lang.MaybeSymbol {
 	var self = mod.Name
-	var maybe_sym = mod.SymbolFromRef(ref_mod, name, specific, true)
+	var maybe_sym = mod.SymbolFromRef(ref_mod, name, true)
 	var sym, ok = maybe_sym.(lang.Symbol)
 	if ok {
 		if sym.ModuleName == "" {
@@ -71,15 +67,13 @@ func (mod *Module) TypeSymbolFromRef(ref_mod string, name string, specific bool)
 func (mod *Module) SymbolFromInlineRef(ref ast.InlineRef) lang.MaybeSymbol {
 	var ref_mod = ast.Id2String(ref.Module)
 	var name = ast.Id2String(ref.Id)
-	var specific = ref.Specific
-	return mod.SymbolFromRef(ref_mod, name, specific, false)
+	return mod.SymbolFromRef(ref_mod, name, false)
 }
 
 func (mod *Module) SymbolFromTypeRef(ref ast.TypeRef) lang.MaybeSymbol {
 	var ref_mod = ast.Id2String(ref.Module)
 	var name = ast.Id2String(ref.Id)
-	var specific = ref.Specific
-	return mod.TypeSymbolFromRef(ref_mod, name, specific)
+	return mod.TypeSymbolFromRef(ref_mod, name)
 }
 
 

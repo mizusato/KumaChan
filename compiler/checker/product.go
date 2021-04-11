@@ -435,7 +435,6 @@ func DesugarOmittedFieldValue(field ast.FieldValue) ast.Expr {
 						Node: field.Node,
 						Name: []rune(""),
 					},
-					Specific: false,
 					Id:       field.Key,
 					TypeArgs: make([]ast.VariousType, 0),
 				},

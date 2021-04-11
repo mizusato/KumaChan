@@ -44,7 +44,6 @@ func (impl InlineRef) Term() {}
 type InlineRef struct {
 	Node                       `part:"inline_ref"`
 	Module    Identifier       `part_opt:"module_prefix.name"`
-	Specific  bool             `option:"module_prefix.::"`
 	Id        Identifier       `part:"name"`
 	TypeArgs  [] VariousType   `list_more:"inline_type_args" item:"type"`
 }

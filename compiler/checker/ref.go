@@ -107,7 +107,6 @@ func CraftAstRef(name string, node ast.Node) ast.InlineRef {
 			Node: node,
 			Name: [] rune {},
 		},
-		Specific: false,
 		Id:       ast.Identifier {
 			Node: node,
 			Name: ([] rune)(name),

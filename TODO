@@ -1,18 +1,16 @@
 TODO
 
-- ::Type not consistent anymore
-
 - service::None
 
 - nil -> Nil
 
 - iterate -> Seq, collect -> List
 
-- API: to be semantic: tuple input --> bundle input
-
 - API: revise array/seq methods
 
 - API: revise Reactive[List[T]] methods, consider methods for Reactive[Map[K,V]]
+
+- API: to be semantic: tuple input --> bundle input
 
 - API: revise resource management of wired components, files, ...
 
