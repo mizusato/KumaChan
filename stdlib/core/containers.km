@@ -127,6 +127,12 @@ export function reduce:[T,A]
 export function scan:[T,A]
     &(List[T], (A, &(A,T) => A)) => List[A]
     &(list, opts) => { Seq list } .{ scan opts } .{ List };
+export function some:[T]
+    &(List[T], &(T) => Bool) => Bool
+    &(list, p) => ({ Seq list } some p);
+export function every:[T]
+    &(List[T], &(T) => Bool) => Bool
+    &(list, p) => ({ Seq list } every p);
 
 /* Functions of Set[T] */
 
