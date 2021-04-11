@@ -1,8 +1,10 @@
 TODO
 
-- Array[T]: don't assume random access (e.g. proceed() instead of at(i+1))
+- consider renaming Seq::next()
 
-- consider renaming Array and remove HashMap, etc.
+- consider remove HashMap, etc.
+
+- Pair(), Triple(), etc. instead of &ValProd ...
 
 - API: to be semantic: tuple input --> bundle input
 

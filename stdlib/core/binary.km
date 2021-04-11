@@ -3,5 +3,5 @@ type Byte    Uint8;
 type Word    Uint16;
 type Dword   Uint32;
 type Qword   Uint64;
-type Bytes   protected Array[Byte];  // []byte
+type Bytes   protected List[Byte];  // []byte
 

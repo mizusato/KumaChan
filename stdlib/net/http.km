@@ -5,7 +5,7 @@ export function status-code:
     native 'http-response-status-code';
 
 export function header:
-    &(HttpResponse) => Map[String,Array[String]]
+    &(HttpResponse) => Map[String,List[String]]
     native 'http-response-header';
 
 export function body:

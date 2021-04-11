@@ -23,7 +23,7 @@ const Root: UI::Component
         ~ await list.append (id, { content, finished: No }),
         buffer.write('')
     ),
-    let insert-item-after: (&(ListKey)(Async)) := ( &(pivot)
+    let insert-item-after: (&(FlexListKey)(Async)) := ( &(pivot)
         ~ await &(id) := gen-sequential-id,
         list.insert {after:pivot} (id, { content: '', finished: No })
     ),

@@ -5,7 +5,7 @@ export function dialog-open:
 
 export function dialog-open-multiple:
     & { parent: Optional[Widget], title: String, cwd: os::Path, filter: String }
-        => Async[Array[os::Path]]
+        => Async[List[os::Path]]
     native 'qt-dialog-open-multiple';
 
 export function dialog-open-directory:

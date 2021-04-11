@@ -17,7 +17,7 @@ func Optional2Maybe(obj rx.Object) Value {
 	if opt.HasValue {
 		return Some(opt.Value)
 	} else {
-		return Na()
+		return None()
 	}
 }
 
@@ -127,10 +127,10 @@ var EffectFunctions = map[string] Value {
 	"reactive-snapshot": func(r rx.Reactive) rx.Observable {
 		return r.Snapshot()
 	},
-	"reactive-list-consume": func(r rx.Reactive, k Value, h InteropContext) rx.Observable {
+	"reactive-flex-consume": func(r rx.Reactive, k Value, h InteropContext) rx.Observable {
 		return rx.KeyTrackedDynamicCombineLatestWaitReady (
 			r.Watch().Map(func(list_ rx.Object) rx.Object {
-				var list = list_.(container.List)
+				var list = list_.(container.FlexList)
 				return rx.KeyTrackedActionVector {
 					HasKey: func(key_rx string) bool {
 						var key = StringFromGoString(key_rx)
@@ -154,7 +154,7 @@ var EffectFunctions = map[string] Value {
 						var key = StringFromGoString(key_rx)
 						var in = func(old_state rx.Object) func(rx.Object) rx.Object {
 							return func(new_item_value rx.Object) rx.Object {
-								var old_list = old_state.(container.List)
+								var old_list = old_state.(container.FlexList)
 								var new_list = old_list.Updated(key, func(_ Value) Value {
 									return new_item_value
 								})
@@ -162,7 +162,7 @@ var EffectFunctions = map[string] Value {
 							}
 						}
 						var out = func(state rx.Object) rx.Object {
-							var list = state.(container.List)
+							var list = state.(container.FlexList)
 							return list.Get(key)
 						}
 						var proj_key = &rx.KeyChain { Key: key_rx }
@@ -311,11 +311,11 @@ var EffectFunctions = map[string] Value {
 		})
 	},
 	"yield*-array": func(av Value) rx.Observable {
-		var arr = container.ArrayFrom(av)
+		var list = container.ListFrom(av)
 		return rx.NewSyncSequence(func(next func(rx.Object))(bool,rx.Object) {
-			for i := uint(0); i < arr.Length; i += 1 {
-				next(arr.GetItem(i))
-			}
+			list.ForEach(func(_ uint, item Value) {
+				next(item)
+			})
 			return true, nil
 		})
 	},
@@ -325,17 +325,17 @@ var EffectFunctions = map[string] Value {
 			if opt.HasValue {
 				return Some(opt.Value)
 			} else {
-				return Na()
+				return None()
 			}
 		})
 	},
 	"start-with": func(following rx.Observable, head_ Value) rx.Observable {
-		var head = container.ArrayFrom(head_)
+		var head = container.ListFrom(head_)
 		return rx.Concat([] rx.Observable {
 			rx.NewSyncSequence(func(next func(rx.Object))(bool,rx.Object) {
-				for i := uint(0); i < head.Length; i += 1 {
-					next(head.GetItem(i))
-				}
+				head.ForEach(func(_ uint, item Value) {
+					next(item)
+				})
 				return true, nil
 			}),
 			following,
@@ -399,30 +399,30 @@ var EffectFunctions = map[string] Value {
 	"throw": func(err Value) rx.Observable {
 		return rx.Throw(err)
 	},
-	"action-map": func(e rx.Observable, f Value, h InteropContext) rx.Observable {
+	"observable-map": func(e rx.Observable, f Value, h InteropContext) rx.Observable {
 		return e.Map(func(val rx.Object) rx.Object {
 			return h.Call(f, val)
 		})
 	},
-	"action-filter-map": func(e rx.Observable, f Value, h InteropContext) rx.Observable {
+	"observable-filter-map": func(e rx.Observable, f Value, h InteropContext) rx.Observable {
 		return e.FilterMap(func(val rx.Object) (rx.Object, bool) {
 			var maybe_mapped = h.Call(f, val).(SumValue)
 			return Unwrap(maybe_mapped)
 		})
 	},
-	"action-filter": func(e rx.Observable, f Value, h InteropContext) rx.Observable {
+	"observable-filter": func(e rx.Observable, f Value, h InteropContext) rx.Observable {
 		return e.Filter(func(val rx.Object) bool {
 			return FromBool((h.Call(f, val)).(SumValue))
 		})
 	},
-	"action-reduce": func(e rx.Observable, opts ProductValue, h InteropContext) rx.Observable {
+	"observable-reduce": func(e rx.Observable, opts ProductValue, h InteropContext) rx.Observable {
 		var init = opts.Elements[0]
 		var f = opts.Elements[1]
 		return e.Reduce(func(acc rx.Object, val rx.Object) rx.Object {
 			return h.Call(f, ToTuple2(acc, val))
 		}, init)
 	},
-	"action-scan": func(e rx.Observable, opts ProductValue, h InteropContext) rx.Observable {
+	"observable-scan": func(e rx.Observable, opts ProductValue, h InteropContext) rx.Observable {
 		var init = opts.Elements[0]
 		var f = opts.Elements[1]
 		return e.Scan(func(acc rx.Object, val rx.Object) rx.Object {
@@ -452,21 +452,13 @@ var EffectFunctions = map[string] Value {
 			return h.Call(f, val).(rx.Observable)
 		}, n)
 	},
-	"action-merge": func(av Value) rx.Observable {
-		var arr = container.ArrayFrom(av)
-		var actions = make([] rx.Observable, arr.Length)
-		for i := uint(0); i < arr.Length; i += 1 {
-			actions[i] = arr.GetItem(i).(rx.Observable)
-		}
-		return rx.Merge(actions)
+	"observable-merge": func(av Value) rx.Observable {
+		var list = container.ListFrom(av)
+		return rx.Merge(list.CopyAsObservables())
 	},
-	"action-concat": func(av Value) rx.Observable {
-		var arr = container.ArrayFrom(av)
-		var actions = make([] rx.Observable, arr.Length)
-		for i := uint(0); i < arr.Length; i += 1 {
-			actions[i] = arr.GetItem(i).(rx.Observable)
-		}
-		return rx.Concat(actions)
+	"observable-concat": func(av Value) rx.Observable {
+		var list = container.ListFrom(av)
+		return rx.Concat(list.CopyAsObservables())
 	},
 	"distinct-until-changed": func(a rx.Observable, eq Value, h InteropContext) rx.Observable {
 		return a.DistinctUntilChanged(func(obj1 rx.Object, obj2 rx.Object) bool {
@@ -520,12 +512,8 @@ var EffectFunctions = map[string] Value {
 		})
 	},
 	"combine-latest*-array": func(v Value) rx.Observable {
-		var array = container.ArrayFrom(v)
-		var actions = make([] rx.Observable, array.Length)
-		for i := uint(0); i < array.Length; i += 1 {
-			actions[i] = array.GetItem(i).(rx.Observable)
-		}
-		return rx.CombineLatestWaitReady(actions)
+		var list = container.ListFrom(v)
+		return rx.CombineLatestWaitReady(list.CopyAsObservables())
 	},
 	"computed": func(tuple ProductValue, f Value, h InteropContext) rx.Observable {
 		var actions = make([] rx.Observable, len(tuple.Elements))

@@ -1,5 +1,5 @@
 type Char    protected Uint32;       // container.Char (uint32)
-type String  protected Array[Char];  // container.String ([] uint32)
+type String  protected List[Char];  // container.String ([] uint32)
 
 export function chr:
     &(Number) => Maybe[Char]
@@ -27,8 +27,8 @@ export function str:
     &(x) => { convert x };
 
 export function convert:
-    &(Array[Char]) => String
-    native 'String from Array';
+    &(List[Char]) => String
+    native 'String from List';
 
 export function convert:
     &(Char) => String
@@ -74,13 +74,13 @@ export function parse-real:
     &(String) => Maybe[Real]
     native 'parse-real';
 
-export function substr:
-    &(String,(Number,Number)) => String
-    native 'substr';
+export function shift:
+    &(String) => Maybe[(Char,String)]
+    native 'str-shift';
 
-export function substr-view:
-    &(String,(Number,Number)) => String
-    native 'substr-view';
+export function shift-prefix:
+    &(String,String) => Maybe[String]
+    native 'str-shift-prefix';
 
 export function find:
     &(String,String) => Maybe[Number]
@@ -96,11 +96,11 @@ export function contains:
 
 export function contains:
     &(String,Char) => Bool
-    &(str,char) =>
-        str. { some &(c) => (c = char) };
+    &(s,char) =>
+        ({ iterate s } some &(c) => (c = char));
 
 export function concat:
-    &(Array[String]) => String
+    &(List[String]) => String
     native 'str-concat';
 
 export function split:
@@ -116,11 +116,11 @@ export function join:
     &(seq,char) => seq.{join({String [char]})};
 
 export function join:
-    &(Array[String],String) => String
+    &(List[String],String) => String
     &(arr,sep) => arr.{iterate}.{join(sep)};
 
 export function join:
-    &(Array[String],Char) => String
+    &(List[String],Char) => String
     &(arr,char) => arr.{iterate}.{join(char)};
 
 export function trim:

@@ -11,7 +11,7 @@ export function Empty:
             . { with { Styles [('display','none')] } } };
 
 export function Element:
-    &(Tag, Array[Component]) => Component
+    &(Tag, List[Component]) => Component
     &(tag, children) =>
         if ((children.{length}) = 0):
             { StaticComponent &() => { Node tag } },
@@ -19,11 +19,11 @@ export function Element:
             { Node (tag, children) };
 
 export function Container:
-    &(Array[Component]) => Component
+    &(List[Component]) => Component
     &(children) => { Node ('div', children) };
 
 export function StyledContainer:
-    &(Array[String]) => &(Array[Component]) => Component
+    &(List[String]) => &(List[Component]) => Component
     &(@class) => &(children) => { Container children }.{ with {Style @class} };
 
 export function Label:
@@ -62,7 +62,7 @@ export function Checkbox:
             } };
 
 export function Select:
-    &(Reactive[String], Array[(String,String)]) => Component
+    &(Reactive[String], List[(String,String)]) => Component
     &(@current, options) =>
         let on-change := { EventHandler
             (@current, &(ev) => (ev get-string 'webuiValue')) },
@@ -84,12 +84,12 @@ export function Button:
                 . { with { Events [('click',handler)] } } };
 
 export function ListView:[T]
-    &(Tag, Reactive[List[T]], &(ListKey,Computed[Number],Reactive[T]) => Component) => Component
+    &(Tag, Reactive[FlexList[T]], &(FlexListKey,Computed[Number],Reactive[T]) => Component) => Component
     &(tag, list, f) =>
         let children := (list consume &(item) => { f(item) }),
         { Node (tag, children) };
 
 export function ListView:[T]
-    &(Reactive[List[T]], &(ListKey,Computed[Number],Reactive[T]) => Component) => Component
+    &(Reactive[FlexList[T]], &(FlexListKey,Computed[Number],Reactive[T]) => Component) => Component
     &(list, f) => { ListView ('div', list, f) };
 

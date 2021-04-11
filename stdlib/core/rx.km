@@ -82,8 +82,7 @@ type Mutex[+T]
 
 ## Mutable Containers
 
-type Buffer          native;  // rx.Buffer
-type HashMap[+K,+V]  native;  // rx.StringHashMap, rx.NumberHashMap
+type Buffer native;  // rx.Buffer
 
 
 ## Wired Components Operations
@@ -136,8 +135,8 @@ export function read:[T]
     native 'reactive-read';
 // TODO: should provide bundle instead of tuple
 export function consume:[T,X]
-    &(Reactive[List[T]], &(ListKey,Computed[Number],Reactive[T]) => Computed[X]) => Computed[Array[X]]
-    native 'reactive-list-consume';
+    &(Reactive[FlexList[T]], &(FlexListKey,Computed[Number],Reactive[T]) => Computed[X]) => Computed[List[X]]
+    native 'reactive-flex-consume';
 export function undo:[T]
     &(ReactiveEntity[T]) => Sync
     native 'reactive-entity-undo';
@@ -222,7 +221,7 @@ export function yield*:[T]
     &(Seq[T]) => Observable[T]
     native 'yield*-seq';
 export function yield*:[T]
-    &(Array[T]) => Observable[T]
+    &(List[T]) => Observable[T]
     native 'yield*-array';
 export function not:[E]
     &(Computed[Bool]) => Computed[Bool]
@@ -234,10 +233,10 @@ export function or:[E]
     &(Computed[Bool], Computed[Bool]) => Computed[Bool]
     &(p,q) => { Computed ((p,q), &(p,q) => (p or q)) };
 export function start-with:[T,E]
-    &(Observable[T,E], Array[T]) => Observable[T,E]
+    &(Observable[T,E], List[T]) => Observable[T,E]
     native 'start-with';
 export function start-with:[T]
-    &(Source[T], Array[T]) => Computed[T]
+    &(Source[T], List[T]) => Computed[T]
     native 'start-with';
 export function wait:
     & { timeout: Number } => Async
@@ -330,16 +329,16 @@ export function throw:[E]
     native 'throw';
 export function map:[A,B,E]
     &(Async[A,E], &(A) => B) => Async[B,E]
-    native 'action-map';
+    native 'observable-map';
 export function map:[A,B,E]
     &(Observable[A,E], &(A) => B) => Observable[B,E]
-    native 'action-map';
+    native 'observable-map';
 export function map:[A,B]
     &(Source[A], &(A) => B) => Source[B]
-    native 'action-map';
+    native 'observable-map';
 export function map:[A,B]
     &(Computed[A], &(A) => B) => Computed[B]
-    native 'action-map';
+    native 'observable-map';
 export function map-to:[A,B,E]
     &(Async[A,E], B) => Async[B,E]
     &(e,v) => e.{map(&() => v)};
@@ -348,22 +347,22 @@ export function map-to:[A,B,E]
     &(e,v) => e.{map(&() => v)};
 export function filter:[T,E]
     &(Observable[T,E], &(T) => Bool) => Observable[T,E]
-    native 'action-filter';
+    native 'observable-filter';
 export function filter:[T]
     &(Source[T], &(T) => Bool) => Source[T]
-    native 'action-filter';
+    native 'observable-filter';
 export function filter-map:[A,B,E]
     &(Observable[A,E], &(A) => Maybe[B]) => Observable[B,E]
-    native 'action-filter-map';
+    native 'observable-filter-map';
 export function reduce:[T,A,E]
     &(Observable[T,E], (A, &(A,T) => A)) => Async[A,E]
-    native 'action-reduce';
+    native 'observable-reduce';
 export function scan:[T,A,E]
     &(Observable[T,E], (A, &(A,T) => A)) => Observable[A,E]
-    native 'action-scan';
+    native 'observable-scan';
 export function scan:[T,A]
     &(Source[T], (A, &(A,T) => A)) => Source[A]
-    native 'action-scan';
+    native 'observable-scan';
 export function debounce:[T,E]
     &(Observable[T,E], Number) => Observable[T,E]
     native 'debounce-time';
@@ -395,17 +394,17 @@ export function switch-map:[A,B]
     &(Computed[A], &(A) => Computed[B]) => Computed[B]
     native 'switch-map';
 export function merge:[T,E]
-    &(Array[Observable[T,E]]) => Observable[T,E]
-    native 'action-merge';
+    &(List[Observable[T,E]]) => Observable[T,E]
+    native 'observable-merge';
 export function merge:
-    &(Array[Async[never]]) => Async[never]
-    native 'action-merge';
+    &(List[Async[never]]) => Async[never]
+    native 'observable-merge';
 export function merge:[T]
-    &(Array[Source[T]]) => Source[T]
-    native 'action-merge';
+    &(List[Source[T]]) => Source[T]
+    native 'observable-merge';
 export function concat:[T,E]
-    &(Array[Observable[T,E]]) => Observable[T,E]
-    native 'action-concat';
+    &(List[Observable[T,E]]) => Observable[T,E]
+    native 'observable-concat';
 export function distinct-until-changed:
     [T,E] (Eq[T])
     &(Observable[T,E]) => Observable[T,E]
@@ -455,7 +454,7 @@ export function combine-latest*:[A,B,C,D,E]
     &(Observable[A,E],Observable[B,E],Observable[C,E],Observable[D,E]) => Observable[(A,B,C,D),E]
     native 'combine-latest*';
 export function combine-latest*:[T,E]
-    &(Array[Observable[T,E]]) => Observable[Array[T],E]
+    &(List[Observable[T,E]]) => Observable[List[T],E]
     native 'combine-latest*-array';
 export function combine:[A,B]
     &(Computed[A],Computed[B]) => Computed[(A,B)]
@@ -467,5 +466,5 @@ export function combine:[A,B,C,D]
     &(Computed[A],Computed[B],Computed[C],Computed[D]) => Computed[(A,B,C,D)]
     native 'combine-latest*';
 export function combine:[T]
-    &(Array[Computed[T]]) => Computed[Array[T]]
+    &(List[Computed[T]]) => Computed[List[T]]
     native 'combine-latest*-array';

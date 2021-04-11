@@ -6,7 +6,7 @@ export function with:
     &(cpt, f) => { f(cpt) };
 
 export function with:
-    &(Component, Array[Decorator]) => Component
+    &(Component, List[Decorator]) => Component
     &(cpt, @f) => cpt.{apply-all @f.{iterate}};
 
 export function with:[T]
@@ -14,7 +14,7 @@ export function with:[T]
     &(ctor, f) => (&(arg) => { f { ctor(arg) } });
 
 export function with:[T]
-    &((&(T) => Component), Array[Decorator]) => (&(T) => Component)
+    &((&(T) => Component), List[Decorator]) => (&(T) => Component)
     &(ctor, @f) => (&(arg) => {ctor(arg)}.{apply-all @f.{iterate}});
 
 export function RenderCond:
@@ -36,26 +36,26 @@ export function ShowCond:
             (node with { Styles [('display','none')] });
 
 export function Style:
-    &(Array[String]) => Decorator
+    &(List[String]) => Decorator
     &(class-list) => &(@node) =>
         let class := (class-list join ' '),
         (@node map &(node) => (node with { Attrs [('class',class)] }));
 
 export function Style:
-    &(Computed[Array[String]]) => Decorator
+    &(Computed[List[String]]) => Decorator
     &(@class-list) => &(@node) =>
         | (class-list, node) := Computed (@class-list, @node),
         let class := (class-list join ' '),
         (node with { Attrs [('class',class)] });
 
 export function InlineStyle:
-    &(Array[(String,String)]) => Decorator
+    &(List[(String,String)]) => Decorator
     &(rules) => &(@node) =>
         | node := map @node,
         (node with { Styles rules });
 
 export function InlineStyle:
-    &(Computed[Array[(String,String)]]) => Decorator
+    &(Computed[List[(String,String)]]) => Decorator
     &(@rules) => &(@node) =>
         | (rules, node) := Computed (@rules, @node),
         (node with { Styles rules });

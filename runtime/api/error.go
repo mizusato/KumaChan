@@ -15,13 +15,13 @@ var ErrorFunctions = map[string] interface{} {
 	"make-error-with-data": func(msg_ String, data_ Value) error {
 		var msg = GoStringFromString(msg_)
 		var data = make(map[string] string)
-		var data_items = container.ArrayFrom(data_)
-		for i := uint(0); i < data_items.Length; i += 1 {
-			var p = data_items.GetItem(i).(ProductValue)
+		var data_items = container.ListFrom(data_)
+		data_items.ForEach(func(i uint, p_ Value) {
+			var p = p_.(ProductValue)
 			var k = GoStringFromString(p.Elements[0].(String))
 			var v = GoStringFromString(p.Elements[1].(String))
 			data[k] = v
-		}
+		})
 		return &rpc.ErrorWithExtraData {
 			Desc: msg,
 			Data: data,

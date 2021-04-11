@@ -2,351 +2,366 @@ package container
 
 import (
 	"fmt"
-	"strconv"
 	"reflect"
-	. "kumachan/misc/util/error"
+	"kumachan/misc/rx"
 	. "kumachan/lang"
+	. "kumachan/misc/util/error"
 )
 
 
 type List struct {
-	keys   [] String
-	index  Map // Map<string,ListEntry>
+	head  uint
+	tail  uint
+	rev   bool  // whether head and tail are reversed when they are equal
+	data  reflect.Value  // [] T
 }
-type ListEntry struct {
-	Value  Value
+func (l List) EmptyListOfSameType() List {
+	return List {
+		head: 0,
+		tail: 0,
+		data: reflect.MakeSlice(l.data.Type(), 0, 0),
+	}
 }
-type BeforeOrAfter int
-const (
-	Before BeforeOrAfter = iota
-	After
-)
-type UpOrDown int
-const (
-	Up UpOrDown = iota
-	Down
-)
-func ListFormatKey(key String) string {
-	return strconv.Quote(GoStringFromString(key))
+func (l List) Length() uint {
+	if l.data.Len() > 0 {
+		if l.head <= l.tail {
+			return (l.tail - l.head + 1)
+		} else {
+			return (l.head - l.tail + 1)
+		}
+	} else {
+		return 0
+	}
+}
+func (l List) at(index uint) Value {
+	if !(index < l.Length()) {
+		panic("list index out of range")
+	}
+	if l.head <= l.tail {
+		return l.data.Index(int(l.head + index)).Interface()
+	} else {
+		return l.data.Index(int(l.head - index)).Interface()
+	}
+}
+
+func ListFrom(value Value) List {
+	var get_slice = func (v interface{}) (reflect.Value, bool) {
+		var rv = reflect.ValueOf(v)
+		var t = rv.Type()
+		if t.Kind() == reflect.Slice {
+			return rv, true
+		} else {
+			return reflect.ValueOf(nil), false
+		}
+	}
+	var slice, ok = get_slice(value)
+	if ok {
+		return List {
+			head: 0,
+			tail: uint(slice.Len() - 1),
+			rev:  false,
+			data: slice,
+		}
+	} else {
+		return value.(List)
+	}
+}
+
+func (l List) ItemType() reflect.Type {
+	return l.data.Type().Elem()
+}
+
+func (l List) ForEach(f func(uint, Value)) {
+	var L = l.Length()
+	for i := uint(0); i < L; i += 1 {
+		f(i, l.at(i))
+	}
+}
+
+func (l List) ForEachWithError(f func(uint, Value) error) error {
+	var L = l.Length()
+	for i := uint(0); i < L; i += 1 {
+		var err = f(i, l.at(i))
+		if err != nil { return err }
+	}
+	return nil
+}
+
+func (l List) CopyAsSlice() Value {
+	var L = l.Length()
+	var slice_rv = reflect.MakeSlice(l.data.Type(), int(L), int(L))
+	for i := uint(0); i < L; i += 1 {
+		slice_rv.Index(int(i)).Set(reflect.ValueOf(l.at(i)))
+	}
+	var slice = slice_rv.Interface()
+	return slice
+}
+
+func (l List) CopyAsString() String {
+	var L = l.Length()
+	var s = make(String, L, L)
+	for i := uint(0); i < L; i += 1 {
+		s[i] = l.at(i).(Char)
+	}
+	return s
+}
+
+func (l List) CopyAsObservables() ([] rx.Observable) {
+	var slice = make([] rx.Observable, l.Length())
+	l.ForEach(func(i uint, item Value) {
+		slice[i] = item.(rx.Observable)
+	})
+	return slice
+}
+
+func (l List) CopyAsGoStrings() ([] string) {
+	var slice = make([] string, l.Length())
+	l.ForEach(func(i uint, item Value) {
+		slice[i] = GoStringFromString(item.(String))
+	})
+	return slice
+
+}
+
+func (l List) Reversed() Value {
+	return List {
+		head: l.tail,
+		tail: l.head,
+		rev:  !(l.rev),
+		data: l.data,
+	}
+}
+
+func (l List) Iterate() Seq {
+	return ListIterator {
+		List:      l,
+		NextIndex: 0,
+	}
+}
+
+func (l List) Sort(lt LessThanOperator) Seq {
+	var slice = l.CopyAsSlice()
+	return mergeSort(reflect.ValueOf(slice), lt)
+}
+
+func (l List) Shifted() (Value, List, bool) {
+	if l.head < l.tail {
+		return l.at(0), List {
+			head: (l.head + 1),
+			tail: l.tail,
+			data: l.data,
+		}, true
+	} else if l.head > l.tail {
+		return l.at(0), List {
+			head: (l.head - 1),
+			tail: l.tail,
+			rev:  true,
+			data: l.data,
+		}, true
+	} else {
+		if l.Length() > 0 {
+			return l.at(0), l.EmptyListOfSameType(), true
+		} else {
+			return nil, List{}, false
+		}
+	}
+}
+
+func (l List) Popped() (Value, List, bool) {
+	if l.head < l.tail {
+		var last = l.at(l.Length() - 1)
+		return last, List {
+			head: l.head,
+			tail: (l.tail - 1),
+			data: l.data,
+		}, true
+	} else if l.head > l.tail {
+		var last = l.at(l.Length() - 1)
+		return last, List {
+			head: l.head,
+			tail: (l.tail + 1),
+			rev:  true,
+			data: l.data,
+		},true
+	} else {
+		if l.Length() > 0 {
+			var last = l.at(l.Length() - 1)
+			return last, l.EmptyListOfSameType(), true
+		} else {
+			return nil, List{}, false
+		}
+	}
+}
+
+func (l List) Unshifted() List {
+	if l.head < l.tail || (l.head == l.tail && !(l.rev)) {
+		if l.head > 0 {
+			return List {
+				head: (l.head - 1),
+				tail: l.tail,
+				data: l.data,
+			}
+		} else {
+			return l
+		}
+	} else if l.head > l.tail || (l.head == l.tail && l.rev) {
+		if (l.head + 1) < uint(l.data.Len()) {
+			return List {
+				head: (l.head + 1),
+				tail: l.tail,
+				data: l.data,
+			}
+		} else {
+			return l
+		}
+	} else {
+		panic("impossible branch")
+	}
+}
+
+func (l List) Unpopped() List {
+	if l.head < l.tail || (l.head == l.tail && !(l.rev)) {
+		if (l.tail + 1) < uint(l.data.Len()) {
+			return List {
+				head: l.head,
+				tail: (l.tail + 1),
+				data: l.data,
+			}
+		} else {
+			return l
+		}
+	} else if l.head > l.tail || (l.head == l.tail && l.rev) {
+		if l.tail > 0 {
+			return List {
+				head: l.head,
+				tail: (l.tail - 1),
+				data: l.data,
+			}
+		} else {
+			return l
+		}
+	} else {
+		panic("impossible branch")
+	}
+}
+
+func (l List) Inspect(inspect func(Value)(ErrorMessage)) ErrorMessage {
+	var L = l.data.Len()
+	var head = l.head
+	var tail = l.tail
+	var items = make([] ErrorMessage, 0)
+	for i := 0; i < L; i += 1 {
+		var entry_msg = make(ErrorMessage, 0)
+		if head == tail && l.rev {
+			entry_msg.WriteText(TS_BOLD, "(reversed)")
+		}
+		if uint(i) == head {
+			entry_msg.WriteText(TS_BOLD, "[head] --> ")
+		}
+		if uint(i) == tail {
+			entry_msg.WriteText(TS_BOLD, "[tail] --> ")
+		}
+		entry_msg.WriteText(TS_NORMAL, fmt.Sprintf("[%d]", i))
+		entry_msg.Write(T_SPACE)
+		entry_msg.WriteAll(inspect(l.data.Index(i).Interface()))
+		items = append(items, entry_msg)
+	}
+	var title = fmt.Sprintf("List(%d)[%d,%d]", L, head, tail)
+	return ListErrMsgItems(items, title)
 }
 
 type ListIterator struct {
 	List       List
 	NextIndex  uint
 }
+func (it ListIterator) GetItemType() reflect.Type {
+	return it.List.ItemType()
+}
 func (it ListIterator) Next() (Value, Seq, bool) {
-	var l = it.List
-	var i = it.NextIndex
-	if i < l.Length() {
-		var key = l.keys[i]
-		var entry = l.mustHaveEntry(key)
-		var value = entry.Value
-		var pair = &ValProd { Elements: [] Value { key, value } }
-		return pair, ListIterator {
-			List:      l,
-			NextIndex: (i + 1),
+	var list = it.List
+	var next = it.NextIndex
+	if next < list.Length() {
+		return list.at(next), ListIterator {
+			List:      list,
+			NextIndex: (next + 1),
 		}, true
 	} else {
 		return nil, nil, false
 	}
 }
-func (it ListIterator) GetItemType() reflect.Type {
-	return ValueReflectType()
-}
 
-func NewList(array Array, get_key func(Value)(String)) List {
-	var keys = make([] String, array.Length)
-	var index = NewStrMap()
-	for i := uint(0); i < array.Length; i += 1 {
-		var value = array.GetItem(i)
-		var key = get_key(array.GetItem(i))
-		keys[i] = key
-		var result, duplicate = index.Inserted(key, ListEntry {
-			Value:    value,
-		})
-		if duplicate {
-			panic(fmt.Sprintf("list: duplicate key: %s", ListFormatKey(key)))
+type MergeSortIterator struct {
+	Left   Seq
+	Right  Seq
+	LtOp   LessThanOperator
+}
+func mergeSort(slice_rv reflect.Value, lt LessThanOperator) Seq {
+	var item_type = slice_rv.Type().Elem()
+	var L = slice_rv.Len()
+	if L == 0 {
+		return EmptySeq { item_type }
+	} else if L == 1 {
+		return OneShotSeq {
+			ItemType: item_type,
+			Item:     slice_rv.Index(0).Interface(),
 		}
-		index = result
-	}
-	return List {
-		keys:  keys,
-		index: index,
-	}
-}
-
-func (l List) Inspect(inspect func(Value)ErrorMessage) ErrorMessage {
-	var items = make([] ErrorMessage, 0)
-	for _, key := range l.keys {
-		var entry = l.mustHaveEntry(key)
-		var value = entry.Value
-		var item = make(ErrorMessage, 0)
-		item.WriteAll(inspect(key))
-		item.WriteText(TS_NORMAL, ":")
-		item.Write(T_SPACE)
-		item.WriteAll(inspect(value))
-		items = append(items, item)
-	}
-	return ListErrMsgItems(items, "List")
-}
-
-func (l List) mustHaveEntry(key String) ListEntry {
-	var entry, exists = l.index.Lookup(key)
-	if !(exists) {
-		panic(fmt.Sprintf("list: key not found: %s", ListFormatKey(key)))
-	}
-	return entry.(ListEntry)
-}
-
-func (l List) mustGetIndexValueInserted(key String, v Value) Map {
-	var index, override = l.index.Inserted(key, ListEntry {
-		Value: v,
-	})
-	if override {
-		panic(fmt.Sprintf("list: duplicate key: %s", ListFormatKey(key)))
-	}
-	return index
-}
-
-func (l List) mustGetIndexValueUpdated(key String, entry ListEntry, v Value) Map {
-	var updated, override = l.index.Inserted(key, ListEntry {
-		Value:    v,
-	})
-	if !(override) { panic("something went wrong") }
-	return updated
-}
-
-func (l List) Has(key String) bool {
-	var _, exists = l.index.Lookup(key)
-	return exists
-}
-
-func (l List) Get(key String) Value {
-	var entry = l.mustHaveEntry(key)
-	return entry.Value
-}
-
-func (l List) Length() uint {
-	return uint(len(l.keys))
-}
-
-func (l List) IterateKeySequence(f func(String)) {
-	for _, key := range l.keys {
-		f(key)
-	}
-}
-
-func (l List) Updated(target String, f func(Value)(Value)) List {
-	var entry = l.mustHaveEntry(target)
-	var new_index = l.mustGetIndexValueUpdated(target, entry, f(entry.Value))
-	return List {
-		keys:  l.keys,
-		index: new_index,
-	}
-}
-
-func (l List) Deleted(target String) List {
-	var _, new_index, ok = l.index.Deleted(target)
-	if !(ok) {
-		panic(fmt.Sprintf("list: key not found: %s", ListFormatKey(target)))
 	} else {
-		var old_keys = l.keys
-		var new_keys = make([] String, 0, (len(old_keys) - 1))
-		var found = false
-		for _, this := range old_keys {
-			if StringCompare(this, target) == Equal {
-				if found {
-					panic("something went wrong")
-				}
-				found = true
-				// do nothing
+		var M = (L / 2)
+		var left = slice_rv.Slice(0, M)
+		var right = slice_rv.Slice(M, L)
+		return MergeSortIterator {
+			Left:  mergeSort(left, lt),
+			Right: mergeSort(right, lt),
+			LtOp:  lt,
+		}
+	}
+}
+func (m MergeSortIterator) GetItemType() reflect.Type {
+	var lt = m.Left.GetItemType()
+	var rt = m.Right.GetItemType()
+	if rt.AssignableTo(lt) {
+		return lt
+	} else {
+		panic("something went wrong")
+	}
+}
+func (m MergeSortIterator) Next() (Value, Seq, bool) {
+	var left = m.Left
+	var right = m.Right
+	var lt = m.LtOp
+	var l, l_rest, l_exists = left.Next()
+	var r, r_rest, r_exists = right.Next()
+	if !l_exists && !r_exists {
+		return nil, nil, false
+	} else {
+		var order_preserved bool
+		if l_exists && r_exists {
+			if !(lt(r, l)) {
+				// `l` is smaller than or equal to `r`
+				order_preserved = true
 			} else {
-				new_keys = append(new_keys, this)
+				// `l` is greater than `r`
+				order_preserved = false
 			}
-		}
-		if !(found) {
-			panic("something went wrong")
-		}
-		return List {
-			keys:  new_keys,
-			index: new_index,
-		}
-	}
-}
-
-func (l List) Prepended(key String, v Value) List {
-	var new_index = l.mustGetIndexValueInserted(key, v)
-	var old_keys = l.keys
-	var new_len = uint(1 + len(old_keys))
-	var pos = uint(0)
-	var new_keys = make([] String, new_len)
-	copy(new_keys[1:], old_keys)
-	new_keys[pos] = key
-	return List {
-		keys:  new_keys,
-		index: new_index,
-	}
-}
-
-func (l List) Appended(key String, v Value) List {
-	var new_index = l.mustGetIndexValueInserted(key, v)
-	var old_keys = l.keys
-	var new_len = uint(1 + len(old_keys))
-	var pos = (new_len - 1)
-	var new_keys = make([] String, new_len)
-	copy(new_keys, old_keys)
-	new_keys[pos] = key
-	return List {
-		keys:  new_keys,
-		index: new_index,
-	}
-}
-
-func (l List) Inserted(key String, v Value, pos BeforeOrAfter, pivot String) List {
-	var new_index = l.mustGetIndexValueInserted(key, v)
-	var old_keys = l.keys
-	var new_keys = make([] String, 0, (1 + len(old_keys)))
-	var found = false
-	for _, this := range old_keys {
-		if StringCompare(this, pivot) == Equal {
-			if found { panic("something went wrong") }
-			found = true
-			if pos == Before {
-				new_keys = append(new_keys, key)
-				new_keys = append(new_keys, this)
-			} else if pos == After {
-				new_keys = append(new_keys, this)
-				new_keys = append(new_keys, key)
-			}
+		} else if l_exists {
+			order_preserved = true
+		} else if r_exists {
+			order_preserved = false
 		} else {
-			new_keys = append(new_keys, this)
+			panic("impossible branch")
 		}
-	}
-	if !(found) {
-		panic(fmt.Sprintf("list: pivot key not found: %s", ListFormatKey(key)))
-	}
-	return List {
-		keys:  new_keys,
-		index: new_index,
-	}
-}
-
-func (l List) Moved(target String, pos BeforeOrAfter, pivot String) List {
-	if StringCompare(target, pivot) == Equal {
-		return l
-	} else {
-		var old_keys = l.keys
-		var new_keys = make([] String, 0, len(old_keys))
-		var target_found = false
-		var pivot_found = false
-		for _, this := range old_keys {
-			if StringCompare(this, target) == Equal {
-				if target_found { panic("something went wrong") }
-				target_found = true
-				// do nothing
-			} else if StringCompare(this, pivot) == Equal {
-				if pivot_found { panic("something went wrong") }
-				pivot_found = true
-				if pos == Before {
-					new_keys = append(new_keys, target)
-					new_keys = append(new_keys, this)
-				} else if pos == After {
-					new_keys = append(new_keys, this)
-					new_keys = append(new_keys, target)
-				}
-			} else {
-				new_keys = append(new_keys, this)
-			}
-		}
-		if !(target_found) {
-			panic(fmt.Sprintf("list: target key not found: %s", ListFormatKey(target)))
-		}
-		if !(pivot_found) {
-			panic(fmt.Sprintf("list: pivot key not found: %s", ListFormatKey(target)))
-		}
-		return List {
-			keys:  new_keys,
-			index: l.index,
-		}
-	}
-}
-
-func (l List) Adjusted(target String, direction UpOrDown) (List, bool) {
-	var old_keys = l.keys
-	var new_keys = make([] String, len(old_keys))
-	var target_found = false
-	var ok = false
-	var skip = false
-	for i, this := range old_keys {
-		if StringCompare(this, target) == Equal {
-			if target_found { panic("something went wrong") }
-			target_found = true
-			if direction == Up {
-				if 0 <= (i - 1) && (i - 1) < len(old_keys) {
-					var prev = old_keys[i - 1]
-					new_keys[i - 1] = this
-					new_keys[i] = prev
-					ok = true
-				} else {
-					new_keys[i] = this
-					ok = false
-				}
-			} else if direction == Down {
-				if (i + 1) < len(old_keys) {
-					var next = old_keys[i + 1]
-					new_keys[i] = next
-					new_keys[i + 1] = this
-					skip = true
-					ok = true
-				} else {
-					new_keys[i] = this
-					ok = false
-				}
-			} else {
-				panic("impossible branch")
-			}
+		if order_preserved {
+			return l, MergeSortIterator {
+				Left:  l_rest,
+				Right: right,
+				LtOp:  lt,
+			}, true
 		} else {
-			if skip {
-				skip = false
-				continue
-			}
-			new_keys[i] = this
-		}
-	}
-	if !(target_found) {
-		panic(fmt.Sprintf("list: target key not found: %s", ListFormatKey(target)))
-	}
-	return List {
-		keys:  new_keys,
-		index: l.index,
-	}, ok
-}
-
-func (l List) Swapped(a_key String, b_key String) List {
-	if StringCompare(a_key, b_key) == Equal {
-		return l
-	} else {
-		var old_keys = l.keys
-		var new_keys = make([] String, len(old_keys))
-		copy(new_keys, old_keys)
-		var a_found = false
-		var b_found = false
-		for i := 0; i < len(new_keys); i += 1 {
-			var this = &new_keys[i]
-			if StringCompare(*this, a_key) == Equal {
-				if a_found { panic("something went wrong") }
-				a_found = true
-				*this = b_key
-			} else if StringCompare(*this, b_key) == Equal {
-				if b_found { panic("something went wrong") }
-				b_found = true
-				*this = a_key
-			}
-		}
-		if !(a_found && b_found) { panic("something went wrong") }
-		return List {
-			keys:  new_keys,
-			index: l.index,
+			return r, MergeSortIterator {
+				Left:  left,
+				Right: r_rest,
+				LtOp:  lt,
+			}, true
 		}
 	}
 }

@@ -44,7 +44,7 @@ var core_types = []string {
 	// int.km
 	Int,
 	// containers.km
-	Seq, Array, Heap, Set, Map, List, ListKey,
+	Seq, List, Heap, Set, Map, FlexList, FlexListKey,
 	// rx.km
 	Observable,
 	Async, Sync,
@@ -109,12 +109,12 @@ const Bytes = "Bytes"
 const Int = "Int"
 // containers.km
 const Seq = "Seq"
-const Array = "Array"
+const List = "List"
 const Heap = "Heap"
 const Set = "Set"
 const Map = "Map"
-const List = "List"
-const ListKey = "ListKey"
+const FlexList = "FlexList"
+const FlexListKey = "FlexListKey"
 // rx.km
 const Observable = "Observable"
 const Async = "Async"

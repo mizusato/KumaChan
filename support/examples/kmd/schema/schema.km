@@ -21,7 +21,7 @@ type Shape enum {
     type Line (Point, Point);
     # data: name=Polygon, ver=v1
     type Polygon {
-        points: Array[Point]
+        points: List[Point]
     };
     # data: name=Curve, ver=v1
     type Curve Chain[Curve];
@@ -34,5 +34,5 @@ type Shape enum {
 
 # data: name=Canvas, ver=v1
 type Canvas {
-    shapes: Array[Shape]
+    shapes: List[Shape]
 };

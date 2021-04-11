@@ -18,5 +18,5 @@ export function convert:
     native 'String from Path';
 
 export function join:
-    &(Path,Array[String]) => Path
+    &(Path,List[String]) => Path
     native 'path-join';

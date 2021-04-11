@@ -20,11 +20,12 @@ function throw:[T,E]
 function consume:[E]
     &(String, E) => Parser[unit,E]
     &(target, err) => &(input) =>
-        if (input.[String] has-prefix target):
-            let input := (input substr-view (target.{length}, input.{length})),
+        switch (input.[String] shift-prefix target):
+        case Some input:
             { Success ((), input) },
-        else:
-            { Failure (err, input) };
+        case None:
+            { Failure (err, input) },
+        end;
 
 function with-ignored:[T,E]
     &(Parser[T,E], Parser[unit,E]) => Parser[T,E]
@@ -64,10 +65,9 @@ function apply:[T,R,E]
         end;
 
 function choose:[T,E]
-    &(Array[Parser[T,E]]) => Parser[T,E]
+    &(List[Parser[T,E]]) => Parser[T,E]
     &(parsers) =>
-        let first := (parsers at! 0),
-        let rest := (parsers slice-view (1, parsers.{length})),
+        | (first, rest) := assert-some { shift parsers },
         (rest reduce (first, &(parse-prev, parse-this) => &(input) =>
             switch { parse-prev input }:
             case Success parsed:
@@ -86,7 +86,7 @@ function choose:[T,E]
         ));
 
 function repeat:[T,E]
-    &(Parser[T,E]) => Parser[Array[T],E]
+    &(Parser[T,E]) => Parser[List[T],E]
     &(item) => &(input) =>
         let proceed: rec
             &(String, Seq[T]) => Result[(Seq[T],String),(E,String)] :=
@@ -101,7 +101,7 @@ function repeat:[T,E]
             . { map &(seq, input) => (seq.{collect}.{reverse}, input) };
 
 function repeat:[T,E]
-    & { item: Parser[T,E], sep: Parser[unit,E] } => Parser[Array[T],E]
+    & { item: Parser[T,E], sep: Parser[unit,E] } => Parser[List[T],E]
     & { item, sep } => &(input) =>
         let proceed: rec
             &(String, Seq[T]) => Result[(Seq[T],String),(E,String)] :=

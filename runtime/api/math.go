@@ -14,14 +14,14 @@ var MathFunctions = map[string] interface{} {
 		if util.IsValidReal(x) {
 			return lang.Some(x)
 		} else {
-			return lang.Na()
+			return lang.None()
 		}
 	},
 	"FloatComplex to Maybe[Complex]": func(z complex128) lang.SumValue {
 		if util.IsValidComplex(z) {
 			return lang.Some(z)
 		} else {
-			return lang.Na()
+			return lang.None()
 		}
 	},
 	"Number from Uint32": func(n uint32) uint {

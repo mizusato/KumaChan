@@ -78,13 +78,13 @@ func AssignArrayTo(expected Type, array SemiTypedArray, info ExprInfo, ctx ExprC
 		var array_t Type
 		if len(array.Items) == 0 {
 			array_t = &NamedType {
-				Name: __Array,
+				Name: __List,
 				Args: []Type { &NeverType {} },
 			}
 		} else {
 			if item_type == nil { panic("something went wrong") }
 			array_t = &NamedType {
-				Name: __Array,
+				Name: __List,
 				Args: []Type { item_type },
 			}
 		}
@@ -95,13 +95,13 @@ func AssignArrayTo(expected Type, array SemiTypedArray, info ExprInfo, ctx ExprC
 		}
 		return TypedAssignTo(expected, typed_array, ctx)
 	case *NamedType:
-		if E.Name == __Array {
+		if E.Name == __List {
 			if len(E.Args) != 1 { panic("something went wrong") }
 			var item_expected = E.Args[0]
 			if len(array.Items) == 0 {
 				var empty_array = Expr {
 					Type:  &NamedType {
-						Name: __Array,
+						Name: __List,
 						Args: [] Type { &NeverType {} },
 					},
 					Value: Array { Items: [] Expr {}, ItemType: nil },
@@ -120,7 +120,7 @@ func AssignArrayTo(expected Type, array SemiTypedArray, info ExprInfo, ctx ExprC
 			if err != nil { return Expr{}, err }
 			return Expr {
 				Type:  &NamedType {
-					Name: __Array,
+					Name: __List,
 					Args: []Type { item_type },
 				},
 				Info:  info,

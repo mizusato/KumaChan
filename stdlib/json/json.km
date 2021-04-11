@@ -1,6 +1,6 @@
 type Value enum {
     type Object  Map[String,Value];
-    type Array   Array[Value];
+    type Array   List[Value];
     type Bool    Bool;
     type Number  Real;
     type String  String;

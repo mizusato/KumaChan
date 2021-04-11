@@ -448,7 +448,7 @@ func GetKmdType (
 			var arg = T.Args[0]
 			var arg_t, err = GetKmdType(arg, p, reg, mapping, false, kmd.TypeId {})
 			if err != nil { return nil, err }
-			if T.Name == __Array {
+			if T.Name == __List {
 				return kmd.ContainerType(kmd.Array, arg_t), nil
 			} else if T.Name == __Maybe {
 				return kmd.ContainerType(kmd.Optional, arg_t), nil

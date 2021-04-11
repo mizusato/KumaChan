@@ -77,18 +77,15 @@ func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
 			ContainerSerializer: kmd.ContainerSerializer {
 				IterateArray: func(obj kmd.Object, f func(uint, kmd.Object) error) error {
 					var tv = obj.(KmdTypedValue)
-					var arr = container.ArrayFrom(tv.Value)
-					for i := uint(0); i < arr.Length; i += 1 {
-						var item_v = arr.GetItem(i)
+					var list = container.ListFrom(tv.Value)
+					return list.ForEachWithError(func(i uint, item_v Value) error {
 						var item_t = tv.Type.ElementType()
 						var item_tv = KmdTypedValue {
 							Type:  item_t,
 							Value: item_v,
 						}
-						err := f(i, item_tv)
-						if err != nil { return err }
-					}
-					return nil
+						return f(i, item_tv)
+					})
 				},
 				UnwrapOptional: func(obj kmd.Object) (kmd.Object, bool) {
 					var tv = obj.(KmdTypedValue)
@@ -216,7 +213,7 @@ func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
 					return Some(obj)
 				},
 				Nothing: func(_ *kmd.Type) kmd.Object {
-					return Na()
+					return None()
 				},
 			},
 			AlgebraicDeserializer: kmd.AlgebraicDeserializer {

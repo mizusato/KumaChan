@@ -140,10 +140,10 @@ type NativeList
 type NativeListItem
     native;
 
-// TODO: bind { items: Observable[List[String]], current: Reactive[ListKey] }
+// TODO: bind { items: Observable[FlexList[String]], current: Reactive[FlexListKey] }
 /*
 export function set-items:
-    &(NativeList,Array[NativeListItem],Maybe[String]) => Async
+    &(NativeList,List[NativeListItem],Maybe[String]) => Async
     native 'qt-list-widget-set-items';
 
 export function list-widget-item:

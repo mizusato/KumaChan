@@ -72,7 +72,7 @@ var OS_Constants = map[string] NativeConstant {
 		var locale = Locale {
 			Language:    StringFromGoString(GetSystemLanguage()),
 			TimeZone:    time.Local,
-			Alternative: Na(),
+			Alternative: None(),
 		}
 		return Struct2Prod(locale)
 	},
@@ -86,7 +86,7 @@ var OS_Constants = map[string] NativeConstant {
 }
 
 func GetEnv(raw ([] string)) Map {
-	var m = NewStrMap()
+	var m = NewMapOfStringKey()
 	for _, item := range raw {
 		var str = StringFromGoString(item)
 		var k = make(String, 0)
@@ -124,12 +124,8 @@ var OS_Functions = map[string] Value {
 		return stdlib.ParsePath(GoStringFromString(str))
 	},
 	"path-join": func(path stdlib.Path, raw Value) stdlib.Path {
-		var arr = ArrayFrom(raw)
-		var segments = make([] string, arr.Length)
-		for i := uint(0); i < arr.Length; i += 1 {
-			segments[i] = GoStringFromString(arr.GetItem(i).(String))
-		}
-		return path.Join(segments)
+		var segments = ListFrom(raw)
+		return path.Join(segments.CopyAsGoStrings())
 	},
 	"walk-dir": func(dir stdlib.Path) rx.Observable {
 		return rx.WalkDir(dir.String()).Map(func(val rx.Object) rx.Object {

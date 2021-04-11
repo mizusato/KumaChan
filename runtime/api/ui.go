@@ -27,10 +27,10 @@ var UiFunctions = map[string] interface{} {
 	},
 	"ui-inject-ttf": func(view qt.Widget, v Value) rx.Observable {
 		return rx.NewSync(func() (rx.Object, bool) {
-			var array = container.ArrayFrom(v)
-			var fonts = make([] ui.TTF, array.Length)
-			for i := uint(0); i < array.Length; i += 1 {
-				var item = array.GetItem(i).(ProductValue)
+			var list = container.ListFrom(v)
+			var fonts = make([] ui.TTF, list.Length())
+			list.ForEach(func(i uint, item_ Value) {
+				var item = item_.(ProductValue)
 				var info = item.Elements[0].(ProductValue)
 				var family = RuneSliceFromString(info.Elements[0].(String))
 				var weight = RuneSliceFromString(info.Elements[1].(String))
@@ -44,29 +44,29 @@ var UiFunctions = map[string] interface{} {
 						Style:  style,
 					},
 				}
-			}
+			})
 			ui.InjectTTF(view, fonts)
 			return nil, true
-		})
+		}, )
 	},
 	"ui-inject-css": func(view qt.Widget, v Value) rx.Observable {
 		return rx.NewSync(func() (rx.Object, bool) {
-			var array = container.ArrayFrom(v)
-			var files = make([] stdlib.AssetFile, array.Length)
-			for i := uint(0); i < array.Length; i += 1 {
-				files[i] = array.GetItem(i).(stdlib.AssetFile)
-			}
+			var list = container.ListFrom(v)
+			var files = make([] stdlib.AssetFile, list.Length())
+			list.ForEach(func(i uint, item Value) {
+				files[i] = item.(stdlib.AssetFile)
+			})
 			ui.InjectCSS(view, files)
 			return nil, true
-		})
+		}, )
 	},
 	"ui-inject-js": func(view qt.Widget, v Value) rx.Observable {
 		return rx.NewSync(func() (rx.Object, bool) {
-			var array = container.ArrayFrom(v)
-			var files = make([] stdlib.AssetFile, array.Length)
-			for i := uint(0); i < array.Length; i += 1 {
-				files[i] = array.GetItem(i).(stdlib.AssetFile)
-			}
+			var list = container.ListFrom(v)
+			var files = make([] stdlib.AssetFile, list.Length())
+			list.ForEach(func(i uint, item Value) {
+				files[i] = item.(stdlib.AssetFile)
+			})
 			ui.InjectJS(view, files)
 			return nil, true
 		})
@@ -100,7 +100,7 @@ var UiFunctions = map[string] interface{} {
 			Tag:     node.Tag,
 			Props:   vdom.Props {
 				Attrs:  node.Attrs,
-				Styles: ui.VdomMergeStyles(container.ArrayFrom([] *vdom.Styles {
+				Styles: ui.VdomMergeStyles(container.ListFrom([] *vdom.Styles {
 					node.Styles, styles,
 				})),
 				Events: node.Events,
@@ -119,7 +119,7 @@ var UiFunctions = map[string] interface{} {
 		return &vdom.Node {
 			Tag:     node.Tag,
 			Props:   vdom.Props {
-				Attrs:  ui.VdomMergeAttrs(container.ArrayFrom([] *vdom.Attrs {
+				Attrs:  ui.VdomMergeAttrs(container.ListFrom([] *vdom.Attrs {
 					node.Attrs, attrs,
 				})),
 				Styles: node.Styles,
@@ -163,7 +163,7 @@ var UiFunctions = map[string] interface{} {
 			Props:   vdom.Props {
 				Styles: node.Styles,
 				Attrs:  node.Attrs,
-				Events: ui.VdomMergeEvents(container.ArrayFrom([] *vdom.Events {
+				Events: ui.VdomMergeEvents(container.ListFrom([] *vdom.Events {
 					node.Events, events,
 				})),
 			},
@@ -175,13 +175,13 @@ var UiFunctions = map[string] interface{} {
 		return &t
 	},
 	"ui-dom-children": func(children_ Value) vdom.Content {
-		var arr = container.ArrayFrom(children_)
-		if arr.Length == 0 { return vdom.EmptyContent }
-		var children = make([] *vdom.Node, arr.Length)
-		for i := uint(0); i < arr.Length; i += 1 {
-			children[i] = arr.GetItem(i).(*vdom.Node)
-		}
-		var boxed = vdom.Children(children)
+		var list = container.ListFrom(children_)
+		if list.Length() == 0 { return vdom.EmptyContent }
+		var children = make([] *vdom.Node, list.Length())
+		list.ForEach(func(i uint, item Value) {
+			children[i] = item.(*vdom.Node)
+		})
+	var boxed = vdom.Children(children)
 		return &boxed
 	},
 	"ui-dom-content-zero": func(_ Value) vdom.Content {

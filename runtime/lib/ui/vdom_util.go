@@ -37,24 +37,24 @@ func (m VdomMap) ForEach(f func(key vdom.String, val interface{})) {
 	})
 }
 
-func VdomMergeStyles(list container.Array) *vdom.Styles {
-	var styles = container.NewStrMap()
-	for i := uint(0); i < list.Length; i += 1 {
-		var part = list.GetItem(i).(*vdom.Styles)
+func VdomMergeStyles(list container.List) *vdom.Styles {
+	var styles = container.NewMapOfStringKey()
+	list.ForEach(func(_ uint, part_ Value) {
+		var part = part_.(*vdom.Styles)
 		part.Data.ForEach(func(k_runes vdom.String, v_obj interface{}) {
 			var v_runes = v_obj.([] rune)
 			var k_str = StringFromRuneSlice(k_runes)
 			var v_str = StringFromRuneSlice(v_runes)
 			styles, _ = styles.Inserted(k_str, v_str)
 		})
-	}
+	})
 	return &vdom.Styles { Data: VdomAdaptMap(styles) }
 }
-func VdomMergeAttrs(list container.Array) *vdom.Attrs {
+func VdomMergeAttrs(list container.List) *vdom.Attrs {
 	var class = StringFromRuneSlice([] rune ("class"))
-	var attrs = container.NewStrMap()
-	for i := uint(0); i < list.Length; i += 1 {
-		var part = list.GetItem(i).(*vdom.Attrs)
+	var attrs = container.NewMapOfStringKey()
+	list.ForEach(func(_ uint, part_ Value) {
+		var part = part_.(*vdom.Attrs)
 		part.Data.ForEach(func(k_runes vdom.String, v_obj interface{}) {
 			var k_str = StringFromRuneSlice(k_runes)
 			var v_runes = v_obj.([] rune)
@@ -78,18 +78,18 @@ func VdomMergeAttrs(list container.Array) *vdom.Attrs {
 				attrs, _ = attrs.Inserted(k_str, v_str)
 			}
 		})
-	}
+	})
 	return &vdom.Attrs { Data: VdomAdaptMap(attrs) }
 }
-func VdomMergeEvents(list container.Array) *vdom.Events {
-	var events = container.NewStrMap()
-	for i := uint(0); i < list.Length; i += 1 {
-		var part = list.GetItem(i).(*vdom.Events)
+func VdomMergeEvents(list container.List) *vdom.Events {
+	var events = container.NewMapOfStringKey()
+	list.ForEach(func(_ uint, part_ Value) {
+		var part = part_.(*vdom.Events)
 		part.Data.ForEach(func(k_ vdom.String, v interface{}) {
 			var k = StringFromRuneSlice(k_)
 			events, _ = events.Inserted(k, v)
 		})
-	}
+	})
 	return &vdom.Events { Data: VdomAdaptMap(events) }
 }
 

@@ -23,18 +23,18 @@ function Node:
             . { with { Content text } };
 
 function Node:
-    &(Tag, Array[Node]) => Node
+    &(Tag, List[Node]) => Node
     &(tag, children) =>
         { Node tag }
             . { with { Content children } };
 
 function Node:
-    &(Tag, Computed[Array[Node]]) => Computed[Node]
+    &(Tag, Computed[List[Node]]) => Computed[Node]
     &(tag, @children) =>
         (@children map &(children) => { Node (tag, children) });
 
 function Node:
-    &(Tag, Array[Computed[Node]]) => Computed[Node]
+    &(Tag, List[Computed[Node]]) => Computed[Node]
     &(tag, sources) =>
         { Node (tag, {combine(sources)}) };
 
@@ -44,7 +44,7 @@ function Styles:
     native 'ui-dom-styles';
 
 function Styles:
-    &(Array[(String,String)]) => Styles
+    &(List[(String,String)]) => Styles
     &(styles) => { Styles { Map styles } };
 
 function with:
@@ -57,7 +57,7 @@ function Attrs:
     native 'ui-dom-attrs';
 
 function Attrs:
-    &(Array[(String,String)]) => Attrs
+    &(List[(String,String)]) => Attrs
     &(attrs) => { Attrs { Map attrs } };
 
 function with:
@@ -70,7 +70,7 @@ function Events:
     native 'ui-dom-events';
 
 function Events:
-    &(Array[(String,EventHandler)]) => Events
+    &(List[(String,EventHandler)]) => Events
     &(events) => { Events  { Map events } };
 
 function with:
@@ -83,7 +83,7 @@ function Content:
     native 'ui-dom-text';
 
 function Content:
-    &(Array[Node]) => Content
+    &(List[Node]) => Content
     native 'ui-dom-children';
 
 function with:

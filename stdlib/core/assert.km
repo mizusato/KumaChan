@@ -4,5 +4,9 @@ export function panic:
 
 export function assert:[T]
     &(Bool, &() => T) => T
-   native 'assert';
+    native 'assert';
+
+export function assert-some:[T,R]
+    &(Maybe[T], &(T) => R) => R
+    native 'assert-some';
 

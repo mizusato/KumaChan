@@ -5,7 +5,7 @@ function Keyword:
     &(keyword) => { consume (keyword, { Error { "expect '#'" keyword } }) };
 
 function Char:
-    & { accept: Array[Char] } => Parser[Char,Error]
+    & { accept: List[Char] } => Parser[Char,Error]
     & { accept } =>
         let err := { Error 'unexpected character or EOF' },
         { choose (accept map &(char) =>
@@ -20,7 +20,7 @@ function WrappedList:[T]
         sep:    Parser[unit,Error],
         prefix: Parser[unit,Error],
         suffix: Parser[unit,Error] }
-          =>    Parser[Array[T],Error]
+          =>    Parser[List[T],Error]
     & { item, sep, prefix, suffix } =>
         let item := (item with-ignored Blank),
         let sep := (sep with-ignored Blank),
@@ -94,23 +94,21 @@ const StringParser!: Parser[self::String,Error] :=
     | apply { consume ('"', err) },
     &(input) =>
         let proceed: rec
-            &(Number) => Maybe[Number] :=
-            &(pos) =>
-                | prev := get
-                    if (pos > 0): (input at (pos - 1)), else: { Some `" },
-                | this := get
-                    (input at pos),
+            &(Seq[Char], String) => Maybe[(Seq[Char],String)] :=
+            &(chars, input) =>
+                | (this, input) := get { shift input },
+                | (prev, _) := get chars.{next},
+                let chars := (this cons chars),
                 if ((this = `") and (prev != `\)):
-                    { Some pos },
+                    { Some (chars, input) },
                 else:
-                    { proceed (pos + 1) },
-        switch { proceed 0 }:
-        case Some end:
-            let raw := (input substr-view (0, end)).[String],
+                    { proceed (chars, input) },
+        switch { proceed ((`" cons nil), input) }:
+        case Some (chars, input):
+            let raw := chars.{collect}.{reverse}.{convert}.[String],
             switch { unquote raw }:
             case Some content:
                 let value := { self::String! content },
-                let input := (input substr-view ((end + 1), input.{length})),
                 { Success (value, input) },
             case None:
                 { Failure (err, input) },

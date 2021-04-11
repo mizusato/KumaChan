@@ -1,6 +1,6 @@
 export const Env: Map[String,String] :=
     native 'os::Env';
-export const Args: Array[String] :=
+export const Args: List[String] :=
     native 'os::Args';
 
 type ProcessExit protected Async[never];

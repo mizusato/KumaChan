@@ -12,7 +12,7 @@ var NetFunctions = map[string] interface{} {
 	"parse-url": func(str String) SumValue {
 		var url, err = url.Parse(GoStringFromString(str))
 		if err != nil {
-			return Na()
+			return None()
 		} else {
 			return Some(url)
 		}
@@ -27,7 +27,7 @@ var NetFunctions = map[string] interface{} {
 	},
 	"http-response-header": func(res rx.HttpResponse) Map {
 		var h = res.Header
-		var m = NewStrMap()
+		var m = NewMapOfStringKey()
 		for k, v := range h {
 			m, _ = m.Inserted(k, v)
 		}

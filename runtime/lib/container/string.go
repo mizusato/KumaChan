@@ -12,7 +12,7 @@ const (
 	UTF8  Encoding  =  iota
 )
 
-func StringForceDecode(bytes Bytes, e Encoding) String {
+func StringForceDecode(bytes ([] byte), e Encoding) String {
 	switch e {
 	case UTF8:
 		var str = make(String, 0, len(bytes) / 4)
@@ -27,7 +27,7 @@ func StringForceDecode(bytes Bytes, e Encoding) String {
 	}
 }
 
-func StringDecode(bytes Bytes, e Encoding) (String, bool) {
+func StringDecode(bytes ([] byte), e Encoding) (String, bool) {
 	switch e {
 	case UTF8:
 		var str = make(String, 0, len(bytes) / 4)
@@ -47,10 +47,10 @@ func StringDecode(bytes Bytes, e Encoding) (String, bool) {
 	}
 }
 
-func StringEncode(str String, e Encoding) Bytes {
+func StringEncode(str String, e Encoding) ([] byte) {
 	switch e {
 	case UTF8:
-		var buf = make(Bytes, 0, len(str))
+		var buf = make([] byte, 0, len(str))
 		var chunk ([4] byte)
 		for _, r := range str {
 			var size = utf8.EncodeRune(chunk[:], rune(r))
@@ -130,12 +130,11 @@ func StringSliceView(s String, l uint, r uint) String {
 	return StringFromRuneSlice(RuneSliceFromString(s)[l:r])
 }
 
-func StringConcat(arr Array) String {
+func StringConcat(l List) String {
 	var buf = make(String, 0)
-	for i := uint(0); i < arr.Length; i += 1 {
-		var item = (arr.GetItem(i)).(String)
-		buf = append(buf, item...)
-	}
+	l.ForEach(func(i uint, item Value) {
+		buf = append(buf, item.(String)...)
+	})
 	return buf
 }
 

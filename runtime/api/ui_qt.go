@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"reflect"
 	. "kumachan/lang"
 	"kumachan/misc/rx"
 	"kumachan/stdlib"
@@ -76,7 +77,7 @@ var UiQtFunctions = map[string] interface{} {
 		case "MaybeNumber":
 			var v = qt.GetPropInt(object, prop)
 			if v < 0 {
-				return Na()
+				return None()
 			} else {
 				return Some(uint(v))
 			}
@@ -139,7 +140,6 @@ var UiQtFunctions = map[string] interface{} {
 	},
 	"qt-list-widget-set-items": func(list qt.Widget, av Value, current SumValue) rx.Observable {
 		return ui.CreateQtTaskAction(func() interface{} {
-			var arr = container.ArrayFrom(av)
 			var current_key ([] rune)
 			var the_current, has_current = Unwrap(current)
 			if has_current {
@@ -147,9 +147,12 @@ var UiQtFunctions = map[string] interface{} {
 			} else {
 				current_key = nil
 			}
+			var items = container.ListFrom(av)
+			var items_slice = items.CopyAsSlice()
+			var items_slice_rv = reflect.ValueOf(items_slice)
 			qt.ListWidgetSetItems(list, func(i uint) qt.ListWidgetItem {
-				return arr.GetItem(i).(qt.ListWidgetItem)
-			}, arr.Length, current_key)
+				return items_slice_rv.Index(int(i)).Interface().(qt.ListWidgetItem)
+			}, uint(items_slice_rv.Len()), current_key)
 			return nil
 		})
 	},
@@ -175,7 +178,7 @@ var UiQtFunctions = map[string] interface{} {
 			var key_runes = qt.ListWidgetGetCurrentItemKey(list)
 			return Some(StringFromRuneSlice(key_runes))
 		} else {
-			return Na()
+			return None()
 		}
 	},
 	"qt-dialog-open": func(parent SumValue, title String, cwd stdlib.Path, filter String) rx.Observable {
@@ -188,7 +191,7 @@ var UiQtFunctions = map[string] interface{} {
 					var path = stdlib.ParsePath(string(path_str))
 					ok(Some(path))
 				} else {
-					ok(Na())
+					ok(None())
 				}
 			})
 		})
@@ -216,7 +219,7 @@ var UiQtFunctions = map[string] interface{} {
 					var path = stdlib.ParsePath(string(path_str))
 					ok(Some(path))
 				} else {
-					ok(Na())
+					ok(None())
 				}
 			})
 		})
@@ -231,7 +234,7 @@ var UiQtFunctions = map[string] interface{} {
 					var path = stdlib.ParsePath(string(path_str))
 					ok(Some(path))
 				} else {
-					ok(Na())
+					ok(None())
 				}
 			})
 		})

@@ -1,17 +1,29 @@
-// Container Types
-type Seq[+T]     native;  // container.Seq
-type Array[+T]   native;  // []T, container.Array
-type Heap[+T]    native;  // container.Heap
-type Set[+T]     native;  // container.Set
-type Map[+K,+V]  native;  // container.Map
-type List[+T]    native;  // container.List
-type ListKey     String;
+## Container Types
+type Seq[+T]
+    native; // container.Seq
+type List[+T]
+    native; // container.List, ([] T)
+type FlexList[+T]
+    native; // container.FlexList
+type Set[+T]
+    native; // container.Set
+type Map[+K,+V]
+    native; // container.Map
+type Queue[+T]
+    native; // container.Queue
+type PriorityQueue[+T]
+    native; // container.PriorityQueue
 
+## Auxiliary Types for Containers
+type FlexListKey
+    String;
+
+## Container Operations
 
 /* Functions for Seq[T] */
 
 export function collect:[T]
-    &(Seq[T]) => Array[T]
+    &(Seq[T]) => List[T]
     native 'seq-collect';
 export function next:[T]
     &(Seq[T]) => Maybe[(T,Seq[T])]
@@ -71,76 +83,52 @@ export function every:[T]
     native 'seq-every';
 
 export function chunk:[T]
-    &(Seq[T], Number) => Seq[Array[T]]
+    &(Seq[T], Number) => Seq[List[T]]
     native 'seq-chunk';
 export function concat:[T]
-    &(Array[Seq[T]]) => Seq[T]
+    &(List[Seq[T]]) => Seq[T]
     &(array) => array.{iterate}.{flat-map(&(items) => items)};
 
 
-/* Functions of Array[T] */
+/* Functions of List[T] */
 
 export function iterate:[T]
-    &(Array[T]) => Seq[T]
-    native 'array-iterate';
-
-export function at:[T]
-    &(Array[T], Number) => Maybe[T]
-    native 'array-at';
-export function at!:[T]
-    &(Array[T], Number) => T
-    native 'array-at!';
+    &(List[T]) => Seq[T]
+    native 'list-iterate';
 export function length:[T]
-    &(Array[T]) => Number
-    native 'array-length';
-
+    &(List[T]) => Number
+    native 'list-length';
 export function reverse:[T]
-    &(Array[T]) => Array[T]
-    native 'array-reverse';
+    &(List[T]) => List[T]
+    native 'list-reverse';
 
-export function slice:[T]
-    &(Array[T], Number, Number) => Array[T]
-    native 'array-slice';
-export function slice:[T]
-    &(Array[T], (Number,Number)) => Array[T]
-    &(a,range) => let (l,r) := range, { slice (a,l,r) };
-export function slice-view:[T]
-    &(Array[T], Number, Number) => Array[T]
-    native 'array-slice-view';
-export function slice-view:[T]
-    &(Array[T], (Number,Number)) => Array[T]
-    &(a,range) => let (l,r) := range, { slice-view (a,l,r) };
+export function shift:[T]
+    &(List[T]) => Maybe[(T,List[T])]
+    native 'list-shift';
+export function pop:[T]
+    &(List[T]) => Maybe[(List[T],T)]
+    native 'list-pop';
+export function unshift:[T]
+    &(List[T]) => List[T]
+    native 'list-unshift';
+export function unpop:[T]
+    &(List[T]) => List[T]
+    native 'list-unpop';
 
 export function map:[A,B]
-    &(Array[A], &(A) => B) => Array[B]
-    native 'array-map';
-export function map-view:[A,B]
-    &(Array[A], &(A) => B) => Array[B]
-    native 'array-map-view';
-
+    &(List[A], &(A) => B) => List[B]
+    &(list, f) => { collect ({ iterate list } map f) };
 export function filter:[T]
-    &(Array[T], &(T) => Bool) => Array[T]
-    &(arr,f) => arr.{iterate}.{filter(f)}.{collect};
-
-export function scan:[T,A]
-    &(Array[T], (A, &(A,T) => A)) => Array[A]
-    &(arr,opts) => arr.{iterate}.{scan(opts)}.{collect};
+    &(List[T], &(T) => Bool) => List[T]
+    &(list, f) => { collect ({ iterate list } filter f) };
 export function reduce:[T,A]
-    &(Array[T], (A, &(A,T) => A)) => A
-    &(arr,opts) => arr.{iterate}.{reduce(opts)};
-
-export function some:[T]
-    &(Array[T], &(T) => Bool) => Bool
-    &(arr,f) => arr.{iterate}.{some(f)};
-export function every:[T]
-    &(Array[T], &(T) => Bool) => Bool
-    &(arr,f) => arr.{iterate}.{every(f)};
-
+    &(List[T], (A, &(A,T) => A)) => A
+    &(list, opts) => { reduce ({ iterate list }, opts) };
 
 /* Functions of Set[T] */
 
 export function new-set:[T]
-    &(&(T,T) => Ordering, Array[T]) => Set[T]
+    &(&(T,T) => Ordering, List[T]) => Set[T]
     native 'new-set';
 export function has:[T]
     &(Set[T], T) => Bool
@@ -149,10 +137,10 @@ export function has:[T]
 /* Functions of Map[K,V] */
 
 export function Map:[T]
-    &(Array[(String,T)]) => Map[String,T]
+    &(List[(String,T)]) => Map[String,T]
     native 'create-map-str';
 export function entries:[K,V]
-    &(Map[K,V]) => Array[(K,V)]
+    &(Map[K,V]) => List[(K,V)]
     native 'map-entries';
 export function iterate:[K,V]
     &(Map[K,V]) => Seq[(K,V)]
@@ -177,69 +165,69 @@ export function delete*:[K,V]
     native 'map-delete*';
 
 
-/* Functions for List[T] */
+/* Functions for FlexList[T] */
 
 export function List:[T]
-    &(Array[T], &(T) => ListKey) => List[T]
+    &(List[T], &(T) => FlexListKey) => FlexList[T]
     native 'create-list';
 export function List:[T]
-    &() => List[T]
+    &() => FlexList[T]
     native 'empty-list';
 export function iterate:[T]
-    &(List[T]) => Seq[(ListKey,T)]
-    native 'list-iterate';
+    &(FlexList[T]) => Seq[(FlexListKey,T)]
+    native 'flex-iterate';
 export function length:[T]
-    &(List[T]) => Number
-    native 'list-length';
+    &(FlexList[T]) => Number
+    native 'flex-length';
 export function has:[T]
-    &(List[T], ListKey) => Bool
-    native 'list-has';
+    &(FlexList[T], FlexListKey) => Bool
+    native 'flex-has';
 export function get:[T]
-    &(List[T], ListKey) => T
-    native 'list-get';
+    &(FlexList[T], FlexListKey) => T
+    native 'flex-get';
 export function update:[T]
-    &(List[T], ListKey, &(T) => T) => List[T]
-    native 'list-update';
+    &(FlexList[T], FlexListKey, &(T) => T) => FlexList[T]
+    native 'flex-update';
 export function delete:[T]
-    &(List[T], ListKey) => List[T]
-    native 'list-delete';
+    &(FlexList[T], FlexListKey) => FlexList[T]
+    native 'flex-delete';
 export function prepend:[T]
-    &(List[T], (ListKey,T)) => List[T]
-    native 'list-prepend';
+    &(FlexList[T], (FlexListKey,T)) => FlexList[T]
+    native 'flex-prepend';
 export function append:[T]
-    &(List[T], (ListKey,T)) => List[T]
-    native 'list-append';
+    &(FlexList[T], (FlexListKey,T)) => FlexList[T]
+    native 'flex-append';
 export function insert:[T]
-    &(List[T], {before:ListKey}, (ListKey,T)) => List[T]
-    native 'list-insert-before';
+    &(FlexList[T], {before:FlexListKey}, (FlexListKey,T)) => FlexList[T]
+    native 'flex-insert-before';
 export function insert:[T]
-    &(List[T], {after:ListKey}, (ListKey,T)) => List[T]
-    native 'list-insert-after';
+    &(FlexList[T], {after:FlexListKey}, (FlexListKey,T)) => FlexList[T]
+    native 'flex-insert-after';
 export function move:[T]
-    &(List[T], ListKey, {before:ListKey}) => List[T]
-    native 'list-move-before';
+    &(FlexList[T], FlexListKey, {before:FlexListKey}) => FlexList[T]
+    native 'flex-move-before';
 export function move:[T]
-    &(List[T], ListKey, {after:ListKey}) => List[T]
-    native 'list-move-after';
+    &(FlexList[T], FlexListKey, {after:FlexListKey}) => FlexList[T]
+    native 'flex-move-after';
 export function move-up:[T]
-    &(List[T], ListKey) => List[T]
-    native 'list-move-up';
+    &(FlexList[T], FlexListKey) => FlexList[T]
+    native 'flex-move-up';
 export function move-down:[T]
-    &(List[T], ListKey) => List[T]
-    native 'list-move-down';
+    &(FlexList[T], FlexListKey) => FlexList[T]
+    native 'flex-move-down';
 export function swap:[T]
-    &(List[T], ListKey, ListKey) => List[T]
-    native 'list-swap';
+    &(FlexList[T], FlexListKey, FlexListKey) => FlexList[T]
+    native 'flex-swap';
 
 // TODO: type ListItemIndexWatch protected Observable[Number]
 export function is-first-in:[T]
-    &(Computed[Number], Reactive[List[T]]) => Computed[Bool]
+    &(Computed[Number], Reactive[FlexList[T]]) => Computed[Bool]
     &(@index, _) =>
         @index
             . { map &(index) => (index = 0) }
             . { distinct-until-changed };
 export function is-last-in:[T]
-    &(Computed[Number], Reactive[List[T]]) => Computed[Bool]
+    &(Computed[Number], Reactive[FlexList[T]]) => Computed[Bool]
     &(@index,@list) =>
         let @length := ({ watch @list } map &(list) => list.{length}),
         { combine (@index, @length) }
@@ -247,35 +235,35 @@ export function is-last-in:[T]
             . { distinct-until-changed };
 
 export function update:[T]
-    &(Reactive[List[T]], ListKey, &(T) => T) => Sync
+    &(Reactive[FlexList[T]], FlexListKey, &(T) => T) => Sync
     &(@list,key,f) => @list.{ update &(list) => {update(list,key,f)} };
 export function delete:[T]
-    &(Reactive[List[T]], ListKey) => Sync
+    &(Reactive[FlexList[T]], FlexListKey) => Sync
     &(@list,key) => @list.{ update &(list) => {delete(list,key)} };
 export function prepend:[T]
-    &(Reactive[List[T]], (ListKey,T)) => Sync
+    &(Reactive[FlexList[T]], (FlexListKey,T)) => Sync
     &(@list,entry) => @list.{ update &(list) => {prepend(list,entry)} };
 export function append:[T]
-    &(Reactive[List[T]], (ListKey,T)) => Sync
+    &(Reactive[FlexList[T]], (FlexListKey,T)) => Sync
     &(@list,entry) => @list.{ update &(list) => {append(list,entry)} };
 export function insert:[T]
-    &(Reactive[List[T]], {before:ListKey}, (ListKey,T)) => Sync
+    &(Reactive[FlexList[T]], {before:FlexListKey}, (FlexListKey,T)) => Sync
     &(@list,pos,entry) => @list.{ update &(list) => {insert(list,pos,entry)} };
 export function insert:[T]
-    &(Reactive[List[T]], {after:ListKey}, (ListKey,T)) => Sync
+    &(Reactive[FlexList[T]], {after:FlexListKey}, (FlexListKey,T)) => Sync
     &(@list,pos,entry) => @list.{ update &(list) => {insert(list,pos,entry)} };
 export function move:[T]
-    &(Reactive[List[T]], ListKey, {before:ListKey}) => Sync
+    &(Reactive[FlexList[T]], FlexListKey, {before:FlexListKey}) => Sync
     &(@list,key,pos) => @list.{ update &(list) => {move(list,key,pos)} };
 export function move:[T]
-    &(Reactive[List[T]], ListKey, {after:ListKey}) => Sync
+    &(Reactive[FlexList[T]], FlexListKey, {after:FlexListKey}) => Sync
     &(@list,key,pos) => @list.{ update &(list) => {move(list,key,pos)} };
 export function move-up:[T]
-    &(Reactive[List[T]], ListKey) => Sync
+    &(Reactive[FlexList[T]], FlexListKey) => Sync
     &(@list,key) => @list.{ update &(list) => {move-up(list,key)} };
 export function move-down:[T]
-    &(Reactive[List[T]], ListKey) => Sync
+    &(Reactive[FlexList[T]], FlexListKey) => Sync
     &(@list,key) => @list.{ update &(list) => {move-down(list,key)} };
 export function swap:[T]
-    &(Reactive[List[T]], ListKey, ListKey) => Sync
+    &(Reactive[FlexList[T]], FlexListKey, FlexListKey) => Sync
     &(@list,key1,key2) => @list.{ update &(list) => {swap(list,key1,key2)} };

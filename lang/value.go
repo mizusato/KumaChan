@@ -237,7 +237,7 @@ func Some(v Value) SumValue {
 	}
 }
 
-func Na() SumValue {
+func None() SumValue {
 	return &ValSum {
 		Index: stdlib.NoneIndex,
 		Value: nil,

@@ -15,5 +15,13 @@ var AssertionFunctions = map[string] interface{} {
 			panic("assertion failed")
 		}
 	},
+	"assert-some": func(maybe_v SumValue, k Value, h InteropContext) Value {
+		var v, ok = Unwrap(maybe_v)
+		if ok {
+			return h.Call(k, v)
+		} else {
+			panic("assertion failed")
+		}
+	},
 }
 

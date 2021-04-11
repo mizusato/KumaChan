@@ -5,7 +5,7 @@ export function Error:
     native 'make-error';
 
 export function Error:
-    & { message: String, data: Array[(String,String)] } => Error
+    & { message: String, data: List[(String,String)] } => Error
     native 'make-error-with-data';
 
 export function convert:
