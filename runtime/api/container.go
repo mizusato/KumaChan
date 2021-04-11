@@ -40,10 +40,10 @@ var ContainerFunctions = map[string] Value {
 			Bound:   (start + n),
 		}
 	},
-	"seq-next": func(seq Seq) SumValue {
+	"seq-shift": func(seq Seq) SumValue {
 		var item, rest, exists = seq.Next()
 		if exists {
-			return Some(ToTuple2(item, rest))
+			return Some(Tuple(item, rest))
 		} else {
 			return None()
 		}
@@ -95,13 +95,13 @@ var ContainerFunctions = map[string] Value {
 			Previous: init,
 			Rest:     input,
 			Reducer: func(prev Value, cur Value) Value {
-				return h.Call(f, ToTuple2(prev, cur))
+				return h.Call(f, Tuple(prev, cur))
 			},
 		}
 	},
 	"seq-reduce": func(input Seq, init Value, f Value, h InteropContext) Value {
 		return SeqReduce(input, init, func(prev Value, cur Value) Value {
-			return h.Call(f, ToTuple2(prev, cur))
+			return h.Call(f, Tuple(prev, cur))
 		})
 	},
 	"seq-some": func(input Seq, f Value, h InteropContext) SumValue {
@@ -137,7 +137,7 @@ var ContainerFunctions = map[string] Value {
 	"list-shift": func(v Value) SumValue {
 		var item, rest, ok = ListFrom(v).Shifted()
 		if ok {
-			return Some(&ValProd { Elements: [] Value { item, rest } })
+			return Some(Tuple(item, rest))
 		} else {
 			return None()
 		}
@@ -145,7 +145,7 @@ var ContainerFunctions = map[string] Value {
 	"list-pop": func(v Value) SumValue {
 		var item, rest, ok = ListFrom(v).Popped()
 		if ok {
-			return Some(&ValProd { Elements: [] Value { item, rest } })
+			return Some(Tuple(item, rest))
 		} else {
 			return None()
 		}
@@ -268,7 +268,7 @@ var ContainerFunctions = map[string] Value {
 	},
 	"str-shift": func(str String) SumValue {
 		if len(str) > 0 {
-			return Some(&ValProd { Elements: [] Value { str[0], str[1:] } })
+			return Some(Tuple(str[0], str[1:]))
 		} else {
 			return None()
 		}
@@ -304,7 +304,7 @@ var ContainerFunctions = map[string] Value {
 	"new-set": func(cmp_ Value, values_ Value, h InteropContext) Set {
 		var values = ListFrom(values_)
 		var cmp = Compare(func(a Value, b Value) Ordering {
-			var t = h.Call(cmp_, &ValProd{Elements: [] Value { a, b }})
+			var t = h.Call(cmp_, Tuple(a, b))
 			return FromOrdering(t.(SumValue))
 		})
 		var set = NewSet(cmp)
@@ -339,9 +339,7 @@ var ContainerFunctions = map[string] Value {
 		var entries = make([] ProductValue, 0, m.Size())
 		m.AVL.Walk(func(v Value) {
 			var entry = v.(MapEntry)
-			entries = append(entries, &ValProd {
-				Elements: [] Value { entry.Key, entry.Value },
-			})
+			entries = append(entries, Tuple(entry.Key, entry.Value))
 		})
 		return entries
 	},
@@ -382,7 +380,7 @@ var ContainerFunctions = map[string] Value {
 	"map-delete": func(m Map, k Value) SumValue {
 		var deleted, rest, ok = m.Deleted(k)
 		if ok {
-			return Some(&ValProd { Elements: [] Value { deleted, rest } })
+			return Some(Tuple(deleted, rest))
 		} else {
 			return None()
 		}

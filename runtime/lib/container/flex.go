@@ -41,7 +41,7 @@ func (it FlexListIterator) Next() (Value, Seq, bool) {
 		var key = l.keys[i]
 		var entry = l.mustHaveEntry(key)
 		var value = entry.Value
-		var pair = &ValProd { Elements: [] Value { key, value } }
+		var pair = Tuple(key, value)
 		return pair, FlexListIterator {
 			List:      l,
 			NextIndex: (i + 1),

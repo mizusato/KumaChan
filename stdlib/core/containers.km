@@ -25,12 +25,12 @@ type FlexListKey
 export function collect:[T]
     &(Seq[T]) => List[T]
     native 'seq-collect';
-export function next:[T]
+export function shift:[T]
     &(Seq[T]) => Maybe[(T,Seq[T])]
-    native 'seq-next';
+    native 'seq-shift';
 export function is-nil:[T]
     &(Seq[T]) => Bool
-    &(seq) => { not seq.{next}.{convert}.[Bool] };
+    &(seq) => { not seq.{shift}.{convert}.[Bool] };
 
 export function nil:[T]
     &() => Seq[T]

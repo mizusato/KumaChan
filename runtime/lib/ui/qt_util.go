@@ -33,10 +33,10 @@ func (event QtEvent) Receive() rx.Observable {
 				switch event.Kind {
 				case qt.EventResize():
 					// Qt::EventResize
-					return &ValProd { Elements: [] Value {
+					return Tuple(
 						ev.ResizeEventGetWidth(),
 						ev.ResizeEventGetHeight(),
-					} }
+					)
 				case qt.EventClose():
 					return nil
 				default:

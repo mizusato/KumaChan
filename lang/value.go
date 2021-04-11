@@ -175,8 +175,12 @@ func Tuple2From(t ProductValue) (Value, Value) {
 	return t.Elements[0], t.Elements[1]
 }
 
-func ToTuple2(a Value, b Value) ProductValue {
-	return &ValProd { [] Value { a, b } }
+func Tuple(elements... Value) ProductValue {
+	return &ValProd { elements }
+}
+
+func TupleOf(elements ([] Value)) ProductValue {
+	return &ValProd { elements }
 }
 
 func SingleValueFromBundle(b ProductValue) Value {

@@ -56,7 +56,7 @@ func CreateServiceInstance (
 	for i, name := range method_names {
 		var index = i
 		methods[name] = func(data Value, arg Value) rx.Observable {
-			var pair = &ValProd { Elements: [] Value { data, arg } }
+			var pair = Tuple(data, arg)
 			var ret = h.Call(methods_impl[index], pair)
 			return ret.(rx.Observable)
 		}

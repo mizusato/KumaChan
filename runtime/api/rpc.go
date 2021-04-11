@@ -69,7 +69,7 @@ var RpcFunctions = map[string] interface{} {
 		var api = h.GetRpcApi()
 		var opts = rpcAdaptServerOptions(raw_opts)
 		var wrapped_ctor = func(arg Value, conn Value) rx.Observable {
-			var pair = &ValProd { Elements: [] Value { arg, conn } }
+			var pair = Tuple(arg, conn)
 			return h.Call(ctor, pair).(rx.Observable)
 		}
 		return librpc.Serve(id, api, backend, opts, wrapped_ctor)

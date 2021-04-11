@@ -44,13 +44,13 @@ func AdaptReactiveDiff(diff rx.Observable) rx.Observable {
 		var pair = obj.(rx.Pair)
 		var snapshots = pair.First.(rx.ReactiveSnapshots)
 		var value = Value(pair.Second)
-		return &ValProd { Elements: [] Value {
-			&ValProd { Elements: [] Value {
+		return Tuple(
+			Tuple(
 				stack2seq(snapshots.Undo),
 				stack2seq(snapshots.Redo),
-			} },
+			),
 			value,
-		} }
+		)
 	})
 }
 
@@ -168,9 +168,7 @@ var EffectFunctions = map[string] Value {
 						var proj_key = &rx.KeyChain { Key: key_rx }
 						var proj = rx.ReactiveProject(r, in, out, proj_key)
 						var view = rx.ReactiveDistinctView(proj, RefEqual)
-						var arg = &ValProd { Elements: [] Value {
-							key, index_source, view,
-						} }
+						var arg = Tuple(key, index_source, view)
 						var item_action = h.Call(k, arg).(rx.Observable)
 						return item_action
 					},
@@ -215,11 +213,7 @@ var EffectFunctions = map[string] Value {
 			var undo = entity.Undo()
 			var redo = entity.Redo()
 			var diff = AdaptReactiveDiff(entity.WatchDiff())
-			return &ValProd { Elements: [] Value {
-				r, &ValProd { Elements: [] Value {
-					undo, redo, diff,
-				} },
-			} }, true
+			return Tuple(r, Tuple(undo, redo, diff)), true
 		}).Then(func(r rx.Object) rx.Observable {
 			return h.Call(k, r).(rx.Observable)
 		})
@@ -419,14 +413,14 @@ var EffectFunctions = map[string] Value {
 		var init = opts.Elements[0]
 		var f = opts.Elements[1]
 		return e.Reduce(func(acc rx.Object, val rx.Object) rx.Object {
-			return h.Call(f, ToTuple2(acc, val))
+			return h.Call(f, Tuple(acc, val))
 		}, init)
 	},
 	"observable-scan": func(e rx.Observable, opts ProductValue, h InteropContext) rx.Observable {
 		var init = opts.Elements[0]
 		var f = opts.Elements[1]
 		return e.Scan(func(acc rx.Object, val rx.Object) rx.Object {
-			return h.Call(f, ToTuple2(acc, val))
+			return h.Call(f, Tuple(acc, val))
 		}, init)
 	},
 	"debounce-time": func(e rx.Observable, dueTime uint) rx.Observable {
@@ -462,17 +456,14 @@ var EffectFunctions = map[string] Value {
 	},
 	"distinct-until-changed": func(a rx.Observable, eq Value, h InteropContext) rx.Observable {
 		return a.DistinctUntilChanged(func(obj1 rx.Object, obj2 rx.Object) bool {
-			var pair = &ValProd { Elements: [] Value { obj1, obj2 } }
+			var pair = Tuple(obj1, obj2)
 			return FromBool(h.Call(eq, pair).(SumValue))
 		})
 	},
 	"with-latest-from": func(a rx.Observable, values rx.Observable) rx.Observable {
 		return a.WithLatestFrom(values).Map(func(p rx.Object) rx.Object {
 			var pair = p.(rx.Pair)
-			return &ValProd { Elements: [] Value {
-				pair.First,
-				Optional2Maybe(pair.Second),
-			} }
+			return Tuple(pair.First, Optional2Maybe(pair.Second))
 		})
 	},
 	"with-latest-from-reactive": func(a rx.Observable, r rx.Reactive) rx.Observable {
@@ -481,10 +472,7 @@ var EffectFunctions = map[string] Value {
 			var r_opt = pair.Second.(rx.Optional)
 			if !(r_opt.HasValue) { panic("something went wrong") }
 			var r_value = r_opt.Value
-			return &ValProd { Elements: [] Value {
-				pair.First,
-				r_value,
-			} }
+			return Tuple(pair.First, r_value)
 		})
 	},
 	"combine-latest": func(tuple ProductValue) rx.Observable {
@@ -498,7 +486,7 @@ var EffectFunctions = map[string] Value {
 			for i := 0; i < len(values); i += 1 {
 				values[i] = Optional2Maybe(raw_values[i])
 			}
-			return &ValProd { Elements: values }
+			return TupleOf(values)
 		})
 	},
 	"combine-latest*": func(tuple ProductValue) rx.Observable {
@@ -508,7 +496,7 @@ var EffectFunctions = map[string] Value {
 		}
 		return rx.CombineLatestWaitReady(actions).Map(func(values_ rx.Object) rx.Object {
 			var values = values_.([] Value)
-			return &ValProd { Elements: values }
+			return TupleOf(values)
 		})
 	},
 	"combine-latest*-array": func(v Value) rx.Observable {
@@ -522,7 +510,7 @@ var EffectFunctions = map[string] Value {
 		}
 		return rx.CombineLatestWaitReady(actions).Map(func(values_ rx.Object) rx.Object {
 			var values = values_.([] Value)
-			return h.Call(f, &ValProd { Elements: values })
+			return h.Call(f, TupleOf(values))
 		})
 	},
 }

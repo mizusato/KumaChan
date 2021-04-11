@@ -144,6 +144,6 @@ func AdaptReturnValue(values ([] reflect.Value)) Value {
 		for i, e := range values {
 			elements[i] = e.Interface()
 		}
-		return &ValProd { elements }
+		return TupleOf(elements)
 	}
 }

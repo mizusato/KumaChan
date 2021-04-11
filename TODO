@@ -1,11 +1,5 @@
 TODO
 
-- consider renaming Seq::next()
-
-- consider remove HashMap, etc.
-
-- Pair(), Triple(), etc. instead of &ValProd ...
-
 - API: to be semantic: tuple input --> bundle input
 
 - API: revise array/seq methods

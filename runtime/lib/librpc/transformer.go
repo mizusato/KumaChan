@@ -269,9 +269,7 @@ func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
 					if !(exists) { panic("something went wrong") }
 					var schema = t.(kmd.RecordSchema)
 					var size = len(schema.Fields)
-					return &ValProd {
-						Elements: make([] Value, size),
-					}
+					return TupleOf(make([] Value, size))
 				},
 				FillField: func(record kmd.Object, index uint, value kmd.Object) {
 					var record_pv = record.(ProductValue)
@@ -306,9 +304,7 @@ func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
 					if !(exists) { panic("something went wrong") }
 					var schema = t.(kmd.TupleSchema)
 					var size = len(schema.Elements)
-					return &ValProd {
-						Elements: make([] Value, size),
-					}
+					return TupleOf(make([] Value, size))
 				},
 				FillElement: func(tuple kmd.Object, i uint, value kmd.Object) {
 					var tuple_pv = tuple.(ProductValue)

@@ -196,9 +196,7 @@ func call(f FunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Value {
 				for i := uint(0); i < size; i += 1 {
 					elements[size-1-i] = ec.popValue()
 				}
-				ec.pushValue(&ValProd {
-					Elements: elements,
-				})
+				ec.pushValue(TupleOf(elements))
 			case GET:
 				var index = inst.GetShortIndexOrSize()
 				switch v := ec.getCurrentValue().(type) {
@@ -237,9 +235,7 @@ func call(f FunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Value {
 					var draft = make([] Value, L)
 					copy(draft, prod.Elements)
 					draft[index] = value
-					ec.pushValue(&ValProd {
-						Elements: draft,
-					})
+					ec.pushValue(TupleOf(draft))
 				default:
 					panic("SET: cannot execute on non-product value")
 				}
@@ -264,9 +260,7 @@ func call(f FunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Value {
 						ec.pushValue(fv)
 					case NativeFunctionValue:
 						var wrapped = NativeFunctionValue(func(arg Value, h InteropContext) Value {
-							var arg_with_context = &ValProd {
-								Elements: [] Value { arg, prod },
-							}
+							var arg_with_context = Tuple(arg, prod)
 							return f(arg_with_context, h)
 						})
 						ec.pushValue(wrapped)
@@ -372,7 +366,7 @@ func call(f FunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Value {
 					for i, e := range prod.Elements {
 						narrowed[i] = e.(SumValue).Value
 					}
-					ec.pushValue(&ValProd { Elements: narrowed })
+					ec.pushValue(TupleOf(narrowed))
 					var new_inst_ptr = inst.GetDestAddr()
 					assert(new_inst_ptr < uint(len(code)),
 						"MSJ: invalid address")
@@ -491,7 +485,7 @@ func ProjectReactiveProduct(r rx.Reactive, index uint) rx.Reactive {
 			var draft = make([] Value, L)
 			copy(draft, prod.Elements)
 			draft[index] = obj
-			return &ValProd { Elements: draft }
+			return TupleOf(draft)
 		}
 	}
 	var out = func(state rx.Object) rx.Object {

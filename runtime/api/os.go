@@ -42,11 +42,11 @@ func GetSystemLanguage() string {
 
 var OS_Constants = map[string] NativeConstant {
 	"os::PlatformInfo": func(h InteropContext) Value {
-		return &ValProd { Elements: [] Value {
+		return Tuple(
 			StringFromGoString(runtime.GOOS),
 			StringFromGoString(runtime.GOARCH),
 			ToBool(uint64(^uintptr(0)) == ^uint64(0)),
-		} }
+		)
 	},
 	"os::Cwd": func(h InteropContext) Value {
 		var wd, err = os.Getwd()
@@ -130,13 +130,13 @@ var OS_Functions = map[string] Value {
 	"walk-dir": func(dir stdlib.Path) rx.Observable {
 		return rx.WalkDir(dir.String()).Map(func(val rx.Object) rx.Object {
 			var item = val.(rx.FileItem)
-			return ToTuple2(stdlib.ParsePath(item.Path), Struct2Prod(item.State))
+			return Tuple(stdlib.ParsePath(item.Path), Struct2Prod(item.State))
 		})
 	},
 	"list-dir": func(dir stdlib.Path) rx.Observable {
 		return rx.ListDir(dir.String()).Map(func(val rx.Object) rx.Object {
 			var item = val.(rx.FileItem)
-			return ToTuple2(stdlib.ParsePath(item.Path), Struct2Prod(item.State))
+			return Tuple(stdlib.ParsePath(item.Path), Struct2Prod(item.State))
 		})
 	},
 	"open-read-only": func(path stdlib.Path) rx.Observable {

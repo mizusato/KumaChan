@@ -97,7 +97,7 @@ const StringParser!: Parser[self::String,Error] :=
             &(Seq[Char], String) => Maybe[(Seq[Char],String)] :=
             &(chars, input) =>
                 | (this, input) := get { shift input },
-                | (prev, _) := get chars.{next},
+                | (prev, _) := get { shift chars },
                 let chars := (this cons chars),
                 if ((this = `") and (prev != `\)):
                     { Some (chars, input) },
