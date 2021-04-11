@@ -5,5 +5,5 @@ do
             . { map &(x) => (10.0 * x) }
             . { filter &(x) => (x != 50.0) }
             . { reduce (0.0, &(sum,x) => (sum + x)) },
-    { println { str sum } }
+    { println { String sum } }
         . { crash-on-error };

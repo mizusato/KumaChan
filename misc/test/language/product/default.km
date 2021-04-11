@@ -10,5 +10,5 @@ export const DefaultValue: Scalar := 0.0;
 do
     let p := { Point {} },
     let {x,y} := p,
-    { println { "(#,#)" (x.{str}, y.{str}) } }
+    { println { "(#,#)" (x.{String}, y.{String}) } }
         . { crash-on-error };

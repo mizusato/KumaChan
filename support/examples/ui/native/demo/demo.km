@@ -4,7 +4,7 @@ do DemoWindow.{on-close}.{connect {exit 0}};
 
 do DemoWindow.{on-resize}
     . { connect &{width,height} =>
-        { println { "Current Size: (#, #)" (width.{str}, height.{str}) } }
+        { println { "Current Size: (#, #)" (width.{String}, height.{String}) } }
             .{ crash-on-error } };
 
 do
@@ -20,6 +20,6 @@ do
             . { connect display },
         ChangeTextButton.{activated}
             . { concat-map &() => { gen-random () } }
-            . { map &(x) => { str x } }
+            . { map &(x) => { String x } }
             . { connect display }
     ] };

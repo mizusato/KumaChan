@@ -30,7 +30,7 @@ export function shift:[T]
     native 'seq-shift';
 export function is-nil:[T]
     &(Seq[T]) => Bool
-    &(seq) => { not seq.{shift}.{convert}.[Bool] };
+    &(seq) => { not seq.{shift}.{Bool} };
 
 export function nil:[T]
     &() => Seq[T]

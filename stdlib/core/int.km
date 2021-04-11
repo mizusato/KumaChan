@@ -1,6 +1,6 @@
 type Int native;  // *big.Int
 
-export function convert: &(Int) => String  native 'String from Int';
+export function String: &(Int) => String  native 'String from Int';
 
 export function  =: &(Int,Int) => Bool      native '=Int';
 export function  <: &(Int,Int) => Bool      native '<Int';

@@ -78,7 +78,7 @@ export function Select:
 export function Button:
     &(String, Async) => Component
     &(text, action) =>
-        let handler := { trigger action }.{convert}.[EventHandler],
+        let handler := { trigger action }.{EventHandler},
         { StaticComponent &() =>
             { Node ('button', text) }
                 . { with { Events [('click',handler)] } } };

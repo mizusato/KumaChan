@@ -13,7 +13,7 @@ export function parse-path:
     &(String) => Path
     native 'parse-path';
 
-export function convert:
+export function String:
     &(Path) => String
     native 'String from Path';
 

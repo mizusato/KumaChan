@@ -10,7 +10,7 @@ do
             { Some (a + b) },
         switch sum?:
         case Some sum:
-            { println { str sum }.{trace} },
+            { println { String sum } },
         case None:
             { println 'None' },
         end,

@@ -8,7 +8,7 @@ export function Error:
     & { message: String, data: List[(String,String)] } => Error
     native 'make-error-with-data';
 
-export function convert:
+export function String:
     &(Error) => String
     native 'String from error';
 

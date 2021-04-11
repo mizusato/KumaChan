@@ -16,7 +16,7 @@ function parse-abc:
         else:
             { panic 'invalid ABC' };
 
-function convert:
+function String:
     &(ABC) => String
 	&(x) =>
         switch x:
@@ -43,7 +43,7 @@ do { scanln () }
         { scanln () }
         . { then &(y-str) =>
             let z := { f ({parse-abc(x-str)}, {parse-abc(y-str)}) },
-            { println z.{str} }
+            { println z.{String} }
         }
     }
     . { crash-on-error };

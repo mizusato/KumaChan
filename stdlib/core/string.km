@@ -1,13 +1,9 @@
 type Char    protected Uint32;       // container.Char (uint32)
 type String  protected List[Char];  // container.String ([] uint32)
 
-export function chr:
+export function Char?:
     &(Number) => Maybe[Char]
     native 'chr';
-
-export function chr!:
-    &(Number) => Char
-    native 'chr!';
 
 export function = :
     &(String,String) => Bool
@@ -21,28 +17,23 @@ export function <> :
     &(String,String) => Ordering
     native '<>String';
 
-export function str:
-    [T] (Conv[T,String])
-    &(T) => String
-    &(x) => { convert x };
-
-export function convert:
+export function String:
     &(List[Char]) => String
     native 'String from List';
 
-export function convert:
+export function String:
     &(Char) => String
     native 'String from Char';
 
-export function convert:
+export function String:
     &(Number) => String
     native 'String from Number';
 
-export function convert:
+export function String:
     &(Bool) => String
     native 'String from Bool';
 
-export function convert:
+export function String:
     &(Float) => String
     native 'String from Float';
 

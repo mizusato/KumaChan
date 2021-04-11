@@ -24,7 +24,7 @@ type UndecidedCall struct {
 }
 
 func OverloadedCall (
-	functions  [] *GenericFunction,
+	functions  [] SymFunctionReference,
 	name       string,
 	type_args  [] Type,
 	arg        SemiExpr,
@@ -34,7 +34,7 @@ func OverloadedCall (
 ) (SemiExpr, *ExprError) {
 	if len(functions) == 0 { panic("something went wrong") }
 	if len(functions) == 1 {
-		var f = functions[0]
+		var f = functions[0].Function
 		call, err := GenericFunctionCall (
 			f, name, 0, type_args,
 			arg, f_info, call_info, ctx,
@@ -44,8 +44,9 @@ func OverloadedCall (
 	} else {
 		var available = make([] AvailableCall, 0)
 		var unavailable = make([] UnavailableCall, 0)
-		for i, f := range functions {
-			var index = uint(i)
+		for _, f_ref := range functions {
+			var index = f_ref.Index
+			var f = f_ref.Function
 			var expr, err = GenericFunctionCall (
 				f, name, index, type_args,
 				arg, f_info, call_info, ctx,
@@ -175,7 +176,7 @@ func GenerateCallResult (
 
 func OverloadedAssignTo (
 	expected   Type,
-	functions  [] *GenericFunction,
+	functions  [] SymFunctionReference,
 	name       string,
 	type_args  [] Type,
 	info       ExprInfo,
@@ -184,7 +185,7 @@ func OverloadedAssignTo (
 	var mod_name = ctx.GetModuleName()
 	if len(functions) == 0 { panic("something went wrong") }
 	if len(functions) == 1 {
-		var f = functions[0]
+		var f = functions[0].Function
 		return GenericFunctionAssignTo (
 			expected, name, 0, f, type_args, info, ctx,
 		)
@@ -193,9 +194,10 @@ func OverloadedAssignTo (
 		var ok_expr Expr
 		var ok_inferring TypeArgsInferringContext
 		var available = make([] *GenericFunction, 0)
-		for i, f := range functions {
+		for _, f_ref := range functions {
+			var index = f_ref.Index
+			var f = f_ref.Function
 			var this_f_ctx = ctx.WithInferringStateCloned()
-			var index = uint(i)
 			var expr, err = GenericFunctionAssignTo (
 				expected, name, index, f, type_args, info, this_f_ctx,
 			)

@@ -19,17 +19,17 @@ type Uint32  native;  // uint32
 type Uint64  native;  // uint64
 
 // Integer Conversions
-export function convert:
+export function Number:
     &(Uint32) => Number
     native 'Number from Uint32';
-export function convert:
+export function Number:
     &(Uint16) => Number
     native 'Number from Uint16';
-export function convert:
+export function Number:
     &(Uint8) => Number
     native 'Number from Uint8';
 
-export function convert:
+export function Real?:
     &(Float) => Maybe[Real]
     native 'Float to Maybe[Real]';
 
@@ -60,11 +60,6 @@ export function =:
 
 type Optional[+T] Maybe[T];
 export const DefaultValue: Optional[never] := None;
-
-// Type Conversion
-type Conv[T,U] implicit {
-    convert: &(T) => U
-};
 
 export function assume:[T]
     &((Bool,T), &() => T) => T
@@ -150,7 +145,7 @@ export function ??:[T]
             fallback,
         end;
 
-export function convert:[T]
+export function Bool:[T]
     &(Maybe[T]) => Bool
     &(t?) =>
         switch t?:

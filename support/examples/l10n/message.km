@@ -3,14 +3,14 @@ function msg-sample:
     &(locale, n) =>
         let {language} := locale,
         if (language = 'zh_TW'):
-            { "收到 # 筆資料" { str n } },
+            { "收到 # 筆資料" { String n } },
         elif (language = 'zh_CN'):
-            { "收到 # 条数据" { str n } },
+            { "收到 # 条数据" { String n } },
         else:
             if (n = 1):
                 'one item received',
             else:
-                { "# items received" { str n } };
+                { "# items received" { String n } };
 
 const locale: l10n::Locale :=
     os::Locale;

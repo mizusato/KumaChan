@@ -21,7 +21,7 @@ const Root: ui::Component :=
         | pos := use MousePosition,
         { box [
             pos
-                . { map &(x,y) => { "x=#, y=#" (x.{str}, y.{str}) } }
+                . { map &(x,y) => { "x=#, y=#" (x.{String}, y.{String}) } }
                 . { start-with [''] }
                 . { Label }
         ] }

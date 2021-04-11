@@ -24,7 +24,7 @@ const @open: Source[String] :=
         . { map &(path?) =>
             switch path?:
             case Some path:
-                { "open: #" { str path } },
+                { "open: #" { String path } },
             case None:
                 'open: (cancelled)',
             end
@@ -43,7 +43,7 @@ const @open-multiple: Source[String] :=
             if (path-list.{length} > 0):
                 { "open multiple: #"
                     path-list
-                        . { map &(path) => { str path } }
+                        . { map &(path) => { String path } }
                         . { map "'#'" }
                         . { join ' ' } },
             else:
@@ -61,7 +61,7 @@ const @open-directory: Source[String] :=
         . { map &(path?) =>
             switch path?:
             case Some path:
-                { "open directory: #" { str path } },
+                { "open directory: #" { String path } },
             case None:
                 'open directory: (cancelled)',
             end
@@ -79,7 +79,7 @@ const @save: Source[String] :=
         . { map &(path?) =>
             switch path?:
             case Some path:
-                { "save: #" { str path } },
+                { "save: #" { String path } },
             case None:
                 'save: (cancelled)',
             end

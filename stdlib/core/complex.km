@@ -14,30 +14,30 @@ export function Complex:
     & { norm: Real, arg: Real } => Complex
     native 'ComplexPolar';
 
-export function Complex:
+export function FloatComplex:
     &(Float,Float) => FloatComplex
-    native 'ComplexFloat';
+    native 'FloatComplex';
 
-export function polar:
+export function FloatComplex:
     & { norm: Real, arg: Real } => FloatComplex
-    native 'ComplexFloatPolar';
+    native 'FloatComplexPolar';
 
 
-export function convert:
+export function Complex?:
     &(FloatComplex) => Maybe[Complex]
     native 'FloatComplex to Maybe[Complex]';
 
-export function convert:
+export function Complex:
     &(Real) => Complex
     &(x) => { Complex (x, 0.0) };
 
-export function convert:
+export function FloatComplex:
     &(Float) => FloatComplex
-    &(x) => { Complex (x, (0.0).[Float]) };
+    &(x) => { FloatComplex (x, (0.0).[Float]) };
 
-export function convert:
+export function String:
     &(FloatComplex) => String
-    &(z) => { "(# + #i)" (z.{<real>}.{str}, z.{<imag>}.{str}) };
+    &(z) => { "(# + #i)" (z.{<real>}.{String}, z.{<imag>}.{String}) };
 
 export function <conj>: &(Complex) => Complex  native '<conj>';
 export function <real>: &(Complex) => Real     native '<real>';

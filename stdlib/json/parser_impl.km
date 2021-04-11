@@ -4,15 +4,15 @@ function Keyword:
     &(String) => Parser[unit,Error]
     &(keyword) => { consume (keyword, { Error { "expect '#'" keyword } }) };
 
-function Char:
+function Chars:
     & { accept: List[Char] } => Parser[Char,Error]
     & { accept } =>
         let err := { Error 'unexpected character or EOF' },
         { choose (accept map &(char) =>
-            ({ consume ([char].{convert}.[String], err) } map &() => char)) };
+            ({ consume ([char].{String}, err) } map &() => char)) };
 
 const Blank: Parser[unit,Error] :=
-    { Char { accept: (' '..\t..\r..\n) } }
+    { Chars { accept: (' '..\t..\r..\n) } }
         . { map &() => () };
 
 function WrappedList:[T]
@@ -78,8 +78,8 @@ const BoolParser: ValueParserType :=
     { choose [TrueParser, FalseParser] };
 
 const NumberParser: ValueParserType :=
-    | chars := apply { repeat { Char { accept: '0123456789.Ee+-' } } },
-    switch { parse-real chars.{convert}.[String] }:
+    | chars := apply { repeat { Chars { accept: '0123456789.Ee+-' } } },
+    switch { parse-real chars.{String} }:
     case Some x:
         { output { self::Number x } },
     case None:
@@ -105,7 +105,7 @@ const StringParser!: Parser[self::String,Error] :=
                     { proceed (chars, input) },
         switch { proceed ((`"` cons nil), input) }:
         case Some (chars, input):
-            let raw := chars.{collect}.{reverse}.{convert}.[String],
+            let raw := chars.{collect}.{reverse}.{String},
             switch { unquote raw }:
             case Some content:
                 let value := { self::String! content },

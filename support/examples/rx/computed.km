@@ -26,6 +26,6 @@ const Root: ui::Component :=
         { Label
             | total? := map total,
             | total := consume (total?, 'invalid input'),
-            { "Total = #" total.{str} }
+            { "Total = #" total.{String} }
         }
     ] };

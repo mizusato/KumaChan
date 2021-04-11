@@ -6,6 +6,8 @@ import (
 	. "kumachan/misc/util/error"
 )
 
+// TODO: refactor this file
+
 
 func (impl UntypedRef) SemiExprVal() {}
 type UntypedRef struct {
@@ -22,8 +24,10 @@ type UntypedRefToType struct {
 }
 func (impl UntypedRefToFunctions) UntypedRefBody() {}
 type UntypedRefToFunctions struct {
-	FuncName   string
-	Functions  [] *GenericFunction
+	FuncName    string
+	Functions   [] SymFunctionReference
+	TypeExists  bool
+	RefToType   UntypedRefToType
 }
 func (impl UntypedRefToFunctionsAndLocalValue) UntypedRefBody() {}
 type UntypedRefToFunctionsAndLocalValue struct {
@@ -177,23 +181,45 @@ func CheckRef(ref ast.InlineRef, ctx ExprContext) (SemiExpr, *ExprError) {
 			Info:  info,
 		}, nil
 	case SymFunctions:
+		var ref_to_type UntypedRefToType
+		var type_exists = s.TypeExists
+		if type_exists {
+			ref_to_type = UntypedRefToType {
+				TypeName:   s.TypeSym.Name,
+				Type:       s.TypeSym.Type,
+				ForceExact: s.TypeSym.ForceExact,
+			}
+		}
 		return SemiExpr {
 			Value: UntypedRef {
 				RefBody:  UntypedRefToFunctions {
-					FuncName:  s.Name,
-					Functions: s.Functions,
+					FuncName:   s.Name,
+					Functions:  s.Functions,
+					TypeExists: type_exists,
+					RefToType:  ref_to_type,
 				},
 				TypeArgs: type_args,
 			},
 			Info:  info,
 		}, nil
 	case SymLocalAndFunc:
+		var ref_to_type UntypedRefToType
+		var type_exists = s.Func.TypeExists
+		if type_exists {
+			ref_to_type = UntypedRefToType {
+				TypeName:   s.Func.TypeSym.Name,
+				Type:       s.Func.TypeSym.Type,
+				ForceExact: s.Func.TypeSym.ForceExact,
+			}
+		}
 		if len(type_args) > 0 {
 			return SemiExpr {
 				Value: UntypedRef {
 					RefBody:  UntypedRefToFunctions {
-						FuncName:  s.Func.Name,
-						Functions: s.Func.Functions,
+						FuncName:   s.Func.Name,
+						Functions:  s.Func.Functions,
+						TypeExists: type_exists,
+						RefToType:  ref_to_type,
 					},
 					TypeArgs: type_args,
 				},
@@ -204,8 +230,10 @@ func CheckRef(ref ast.InlineRef, ctx ExprContext) (SemiExpr, *ExprError) {
 				Value: UntypedRef {
 					RefBody:  UntypedRefToFunctionsAndLocalValue {
 						RefToFunctions:  UntypedRefToFunctions {
-							FuncName:  s.Func.Name,
-							Functions: s.Func.Functions,
+							FuncName:   s.Func.Name,
+							Functions:  s.Func.Functions,
+							TypeExists: type_exists,
+							RefToType:  ref_to_type,
 						},
 						RefToLocalValue: Expr {
 							Type:  s.Local.ValueType,
@@ -297,10 +325,24 @@ func CallUntypedRef (
 		var functions = ref_body.Functions
 		var name = ref_body.FuncName
 		var type_args = ref.TypeArgs
-		return OverloadedCall (
+		var semi, err = OverloadedCall (
 			functions, name, type_args,
 			arg, ref_info, call_info, ctx,
 		)
+		if err != nil {
+			if ref_body.TypeExists {
+				var rt = ref_body.RefToType
+				var expr, box_err = Box (
+					arg, rt.Type, rt.TypeName, ref_info, type_args,
+					rt.ForceExact, call_info, ctx,
+				)
+				if box_err != nil { return SemiExpr{}, err }
+				return LiftTyped(expr), nil
+			} else {
+				return SemiExpr{}, err
+			}
+		}
+		return semi, nil
 	case UntypedRefToFunctionsAndLocalValue:
 		var local = ref_body.RefToLocalValue
 		var _, is_func = UnboxFunc(local.Type, ctx).(Func)

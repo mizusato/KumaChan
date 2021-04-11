@@ -9,6 +9,7 @@ import (
 	. "kumachan/misc/util/error"
 	"kumachan/compiler/loader"
 	"kumachan/lang/parser/ast"
+	"kumachan/stdlib"
 )
 
 
@@ -222,15 +223,35 @@ func LiftTyped(expr Expr) SemiExpr {
 
 type Sym interface { Sym() }
 func (impl SymLocalValue) Sym() {}
-type SymLocalValue struct { ValueType Type }
+type SymLocalValue struct {
+	ValueType  Type
+}
 func (impl SymTypeParam) Sym() {}
-type SymTypeParam struct { Index uint }
+type SymTypeParam struct {
+	Index  uint
+}
 func (impl SymType) Sym() {}
-type SymType struct { Type *GenericType; Name lang.Symbol; ForceExact bool }
+type SymType struct {
+	Type        *GenericType
+	Name        lang.Symbol
+	ForceExact  bool
+}
 func (impl SymFunctions) Sym() {}
-type SymFunctions struct { Functions []*GenericFunction; Name string }
+type SymFunctions struct {
+	Functions   [] SymFunctionReference
+	Name        string
+	TypeExists  bool
+	TypeSym     SymType
+}
+type SymFunctionReference struct {
+	Function  *GenericFunction
+	Index     uint
+}
 func (impl SymLocalAndFunc) Sym() {}
-type SymLocalAndFunc struct { Local SymLocalValue; Func SymFunctions }
+type SymLocalAndFunc struct {
+	Local  SymLocalValue
+	Func   SymFunctions
+}
 
 
 func CreateExprContext(mod_info ModuleInfo, params ([] TypeParam), bounds TypeBounds) ExprContext {
@@ -288,8 +309,20 @@ func (ctx ExprContext) GetTypeRegistry() TypeRegistry {
 }
 
 func (ctx ExprContext) LookupSymbol(raw lang.Symbol) (Sym, bool) {
-	var lookup_type = func(sym lang.Symbol) (Sym, bool) {
-		g, exists := ctx.ModuleInfo.Types[sym]
+	// TODO: rename the Sym type and refactor this function
+	var self = ctx.ModuleInfo.Module.Name
+	var lookup_type func(lang.Symbol) (SymType, bool)
+	lookup_type = func(sym lang.Symbol) (SymType, bool) {
+		if sym.ModuleName == "" {
+			var core_sym = lang.MakeSymbol(stdlib.Mod_core, sym.SymbolName)
+			var g, exists = lookup_type(core_sym)
+			if exists {
+				return g, true
+			}
+			var self_sym = lang.MakeSymbol(self, sym.SymbolName)
+			return lookup_type(self_sym)
+		}
+		var g, exists = ctx.ModuleInfo.Types[sym]
 		if exists {
 			return SymType { Type: g, Name: sym }, true
 		}
@@ -297,12 +330,12 @@ func (ctx ExprContext) LookupSymbol(raw lang.Symbol) (Sym, bool) {
 			strings.HasSuffix(sym.SymbolName, ForceExactSuffix) {
 			var sym_name_force = strings.TrimSuffix(sym.SymbolName, ForceExactSuffix)
 			var sym_force = lang.MakeSymbol(sym.ModuleName, sym_name_force)
-			g, exists := ctx.ModuleInfo.Types[sym_force]
+			var g, exists = ctx.ModuleInfo.Types[sym_force]
 			if exists {
 				return SymType { Type: g, Name: sym_force, ForceExact: true }, true
 			}
 		}
-		return nil, false
+		return SymType{}, false
 	}
 	var lookup_functions = func(sym_name string) (SymFunctions, bool) {
 		var real_sym_name = sym_name
@@ -317,13 +350,19 @@ func (ctx ExprContext) LookupSymbol(raw lang.Symbol) (Sym, bool) {
 			}
 		}
 		if exists {
-			var functions = make([] *GenericFunction, len(f_refs))
+			var functions = make([] SymFunctionReference, len(f_refs))
 			for i, ref := range f_refs {
-				functions[i] = ref.Function
+				functions[i] = SymFunctionReference {
+					Function: ref.Function,
+					Index:    uint(i),
+				}
 			}
+			var g, exists = lookup_type(raw)
 			return SymFunctions {
-				Name:      real_sym_name,
-				Functions: functions,
+				Name:       real_sym_name,
+				Functions:  functions,
+				TypeExists: exists,
+				TypeSym:    g,
 			}, true
 		}
 		return SymFunctions{}, false
@@ -355,24 +394,32 @@ func (ctx ExprContext) LookupSymbol(raw lang.Symbol) (Sym, bool) {
 				return SymTypeParam { Index: uint(index) }, true
 			}
 		}
-		var self = ctx.ModuleInfo.Module.Name
-		var sym_this_mod = lang.MakeSymbol(self, sym_name)
-		g, exists := lookup_type(sym_this_mod)
+		g, exists := lookup_type(raw)
 		if exists {
 			return g, true
 		}
 		return nil, false
 	} else {
-		f_refs, exists := ctx.ModuleInfo.Functions[raw.SymbolName]
+		f_refs, exists := ctx.ModuleInfo.Functions[sym_name]
 		if exists {
-			var functions = make([] *GenericFunction, 0)
-			for _, ref := range f_refs {
-				functions = append(functions, ref.Function)
+			var functions = make([] SymFunctionReference, 0)
+			for i, ref := range f_refs {
+				if ref.ModuleName == mod_name {
+					functions = append(functions, SymFunctionReference {
+						Function: ref.Function,
+						Index:    uint(i),
+					})
+				}
 			}
-			return SymFunctions {
-				Name:      raw.SymbolName,
-				Functions: functions,
-			}, true
+			if len(functions) > 0 {
+				var g, exists = lookup_type(raw)
+				return SymFunctions {
+					Name:       raw.SymbolName,
+					Functions:  functions,
+					TypeExists: exists,
+					TypeSym:    g,
+				}, true
+			}
 		}
 		g, exists := lookup_type(raw)
 		if exists {

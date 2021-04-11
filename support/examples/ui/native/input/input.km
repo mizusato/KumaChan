@@ -19,7 +19,7 @@ do
         (InputPlainTextEdit bind d),
         (ButtonClear.{activated}.{connect (c <- '')}),
         (ValueCheckBox bind a.{watch}.{map &(a) => if a: 'Yes', else: 'No'}),
-        (ValueComboBox bind b.{watch}.{map &(b) => switch b: case Some b: {str b}, case None: 'None', end}),
+        (ValueComboBox bind b.{watch}.{map &(b) => switch b: case Some b: b.{String}, case None: 'None', end}),
         (ValueLineEdit bind c.{watch}),
         (ValuePlainTextEdit bind d.{watch})
     ] };

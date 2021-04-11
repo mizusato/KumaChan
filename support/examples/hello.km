@@ -4,20 +4,20 @@ do { println 'Hello World' }
         (system, arch, (if is-64-bit: '64-bit', else: '32-bit')) } } }
     . { then { println 'timer' } }
     . { then { wait { timeout: 2000 } } }
-    . { then { println { str { exp { log { Complex (5.0, 5.0) } } } } } }
-    . { then { println (2.0 * { Complex (0.0, 1.0) }).{sqrt}.{asin}.{sin}.{str} } }
-    . { then { println (2.0 * { Complex (0.0, 1.0) }).{sqrt}.{acos}.{cos}.{str} } }
-    . { then { println (2.0 * { Complex (0.0, 1.0) }).{sqrt}.{atan}.{tan}.{str} } }
-    . { then { println { str (20.[Int] ** 11) } } }
-    . { then { println { str { factorial 20 } } } }
+    . { then { println { String { exp { log { Complex (5.0, 5.0) } } } } } }
+    . { then { println (2.0 * { Complex (0.0, 1.0) }).{sqrt}.{asin}.{sin}.{String} } }
+    . { then { println (2.0 * { Complex (0.0, 1.0) }).{sqrt}.{acos}.{cos}.{String} } }
+    . { then { println (2.0 * { Complex (0.0, 1.0) }).{sqrt}.{atan}.{tan}.{String} } }
+    . { then { println { String (20.[Int] ** 11) } } }
+    . { then { println { String { factorial 20 } } } }
     . { then { println 'merge (0..5)' } }
     . { then { yield* { Seq { from: 0, to: 5 } } }
-                . { merge-map &(i) => { println { str i } } }
+                . { merge-map &(i) => { println { String i } } }
                 . { wait-complete } }
     . { then { println 'ticker' } }
     . { then { tick { interval: 1000 } }
                 . { scan        (0.[Number], &(n, _) => (1 + n)) }
-                . { concat-map  &(n) => { println { str n } } }
+                . { concat-map  &(n) => { println { String n } } }
                 . { wait-complete } }  // TODO: cancel
     . { crash-on-error };
 

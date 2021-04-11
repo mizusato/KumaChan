@@ -33,5 +33,5 @@ do
         . { iterate }
         . { every &(framework, color) =>
             (framework.{get-color} = color) },
-    { println { str ok } }
+    { println { String ok } }
     . { crash-on-error };

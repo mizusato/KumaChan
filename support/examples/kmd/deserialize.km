@@ -12,7 +12,7 @@ do { open-read-only (os::EntryModuleDirPath join ['sample','sample1.kmd']) }
                     let _ := { trace canvas },
                     { println 'Deserialization Finished' },
                 case Failure err:
-                    { println { "Deserialization Error: #" err.{str} } },
+                    { println { "Deserialization Error: #" err.{String} } },
                 end
             } }
     . { crash-on-error };

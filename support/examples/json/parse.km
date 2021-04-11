@@ -5,7 +5,7 @@ do scanln
     	case Success v:
     	    { println { json::stringify v } },
     	case Failure err:
-    	    { errorln { str err } },
+    	    { errorln { String err } },
     	end
     }
     . { crash-on-error };

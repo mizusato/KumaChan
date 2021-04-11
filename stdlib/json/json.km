@@ -30,7 +30,7 @@ export function stringify:
                 case No:  'false',
             end,
         case self::Number number:
-            { str number },
+            { String number },
         case self::String string:
             { quote string },
         case self::Null:
@@ -48,10 +48,10 @@ export function parse:
             else:
                 let pos := (input.{length} - remaining.{length}),
                 { Failure { Error 'redundant input after parsed content'
-                    . { &(msg) => { "# (at position #)" (msg, pos.{str}) } } } },
+                    . { &(msg) => { "# (at position #)" (msg, pos.{String}) } } } },
         case Failure (err, remaining):
             let all := input.{length},
             let rest := remaining.{length},
             let pos: Number := if (rest > 0): (all - rest), else: (all - 1),
-            { Failure (err wrap &(msg) => { "# (at position #)" (msg, pos.{str}) }) },
+            { Failure (err wrap &(msg) => { "# (at position #)" (msg, pos.{String}) }) },
         end;

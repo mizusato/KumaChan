@@ -63,7 +63,7 @@ export function InlineStyle:
 export function Event:
     &(String,EventPayloadConsumer) => Decorator
     &(name,consumer) => &(@node) =>
-        let handler := consumer.{convert}.[EventHandler],
+        let handler := consumer.{EventHandler},
         | node := map @node,
         (node with { Events [(name,handler)] });
 

@@ -2,7 +2,7 @@ type EventPayloadConsumer
     protected
     &(EventPayload) => Async;
 
-function convert:
+function EventHandler:
     &(EventPayloadConsumer) => EventHandler
     &(cb) => (
         { EventHandler ({Callback::[Async] (& e => e)}, cb) }
