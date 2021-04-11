@@ -18,11 +18,11 @@ type MessageContent {
     text: String
 };
 
-# data: name=None, ver=v1
-type None ();
+# data: name=Nothing, ver=v1
+type Nothing ();
 
 # service-method
-export function say: &(Instance,MessageContent) => Async[None,Error];
+export function say: &(Instance,MessageContent) => Async[Nothing,Error];
 
 # service-method
-export function receive-messages: &(Instance,None) => Observable[Message,Error];
+export function receive-messages: &(Instance,Nothing) => Observable[Message,Error];

@@ -48,17 +48,17 @@ function delete:
         chat.ctx.users.{update &(old-users) => old-users.{delete* chat.id}};
 
 function say:
-    &(Chat,service::MessageContent) => Async[service::None,Error]
+    &(Chat,service::MessageContent) => Async[service::Nothing,Error]
     &(chat,content) =>
         let msg := { service::Message {
             from: chat.id,
             content
         } },
         | sync (chat.ctx.msg-bus <- msg),
-        { yield service::None };
+        { yield service::Nothing };
 
 function receive-messages:
-    &(Chat,service::None) => Observable[service::Message,Error]
+    &(Chat,service::Nothing) => Observable[service::Message,Error]
     &(chat,_) =>
         {watch chat.ctx.msg-bus};
 
