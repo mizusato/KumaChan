@@ -98,7 +98,7 @@ function repeat:[T,E]
                     { Success (seq, input) },
                 end,
         { proceed (input, Nil) }
-            . { map &(seq, input) => (seq.{collect}.{reverse}, input) };
+            . { map &(seq, input) => (seq.{List}.{reverse}, input) };
 
 function repeat:[T,E]
     & { item: Parser[T,E], sep: Parser[unit,E] } => Parser[List[T],E]
@@ -122,4 +122,4 @@ function repeat:[T,E]
                         { Failure err },
                 end,
         { proceed (input, Nil) }
-            . { map &(seq, input) => (seq.{collect}.{reverse}, input) };
+            . { map &(seq, input) => (seq.{List}.{reverse}, input) };

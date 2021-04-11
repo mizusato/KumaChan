@@ -22,7 +22,7 @@ type FlexListKey
 
 /* Functions for Seq[T] */
 
-export function collect:[T]
+export function List:[T]
     &(Seq[T]) => List[T]
     native 'seq-collect';
 export function shift:[T]
@@ -87,12 +87,12 @@ export function chunk:[T]
     native 'seq-chunk';
 export function concat:[T]
     &(List[Seq[T]]) => Seq[T]
-    &(array) => array.{iterate}.{flat-map(&(items) => items)};
+    &(array) => array.{Seq}.{flat-map(&(items) => items)};
 
 
 /* Functions of List[T] */
 
-export function iterate:[T]
+export function Seq:[T]
     &(List[T]) => Seq[T]
     native 'list-iterate';
 export function length:[T]
@@ -117,13 +117,16 @@ export function unpop:[T]
 
 export function map:[A,B]
     &(List[A], &(A) => B) => List[B]
-    &(list, f) => { collect ({ iterate list } map f) };
+    &(list, f) => { Seq list } .{ map f } .{ List };
 export function filter:[T]
     &(List[T], &(T) => Bool) => List[T]
-    &(list, f) => { collect ({ iterate list } filter f) };
+    &(list, f) => { Seq list } .{ filter f } .{ List };
 export function reduce:[T,A]
     &(List[T], (A, &(A,T) => A)) => A
-    &(list, opts) => { reduce ({ iterate list }, opts) };
+    &(list, opts) => { Seq list } .{ reduce opts };
+export function scan:[T,A]
+    &(List[T], (A, &(A,T) => A)) => List[A]
+    &(list, opts) => { Seq list } .{ scan opts } .{ List };
 
 /* Functions of Set[T] */
 
@@ -139,12 +142,9 @@ export function has:[T]
 export function Map:[T]
     &(List[(String,T)]) => Map[String,T]
     native 'create-map-str';
-export function entries:[K,V]
+export function List:[K,V]
     &(Map[K,V]) => List[(K,V)]
     native 'map-entries';
-export function iterate:[K,V]
-    &(Map[K,V]) => Seq[(K,V)]
-    &(m) => m.{entries}.{iterate};
 export function get:[K,V]
     &(Map[K,V], K) => Maybe[V]
     native 'map-get';
@@ -173,7 +173,7 @@ export function FlexList:[T]
 export function FlexList:[T]
     &() => FlexList[T]
     native 'create-flex-empty';
-export function iterate:[T]
+export function Seq:[T]
     &(FlexList[T]) => Seq[(FlexListKey,T)]
     native 'flex-iterate';
 export function length:[T]

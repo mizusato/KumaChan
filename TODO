@@ -2,10 +2,6 @@ TODO
 
 - service::None
 
-- nil -> Nil
-
-- iterate -> Seq, collect -> List
-
 - API: revise array/seq methods
 
 - API: revise Reactive[List[T]] methods, consider methods for Reactive[Map[K,V]]

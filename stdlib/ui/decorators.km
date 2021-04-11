@@ -7,7 +7,7 @@ export function with:
 
 export function with:
     &(Component, List[Decorator]) => Component
-    &(cpt, @f) => cpt.{apply-all @f.{iterate}};
+    &(cpt, @f) => cpt.{apply-all @f.{Seq}};
 
 export function with:[T]
     &((&(T) => Component), Decorator) => (&(T) => Component)
@@ -15,7 +15,7 @@ export function with:[T]
 
 export function with:[T]
     &((&(T) => Component), List[Decorator]) => (&(T) => Component)
-    &(ctor, @f) => (&(arg) => {ctor(arg)}.{apply-all @f.{iterate}});
+    &(ctor, @f) => (&(arg) => {ctor(arg)}.{apply-all @f.{Seq}});
 
 export function RenderCond:
     &(Computed[Bool]) => Decorator

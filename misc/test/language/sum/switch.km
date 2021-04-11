@@ -30,7 +30,7 @@ do
         (Purescript, 'black')
     ],
     let ok := checklist
-        . { iterate }
+        . { Seq }
         . { every &(framework, color) =>
             (framework.{get-color} = color) },
     { println { String ok } }

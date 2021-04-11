@@ -28,7 +28,7 @@ function inject-ttf:
 export function inject-assets:
     &(WebView, List[Asset]) => Async
     &(view, assets) =>
-        let all-ttf := assets.{iterate}.{ filter-map &(asset) =>
+        let all-ttf := assets.{Seq}.{ filter-map &(asset) =>
             switch asset:
             case TTF {file,font}:
                 { Some (file, font) },
@@ -36,7 +36,7 @@ export function inject-assets:
                 None,
             end
         },
-        let all-css := assets.{iterate}.{ filter-map &(asset) =>
+        let all-css := assets.{Seq}.{ filter-map &(asset) =>
             switch asset:
             case CSS {file}:
                 { Some file },
@@ -44,7 +44,7 @@ export function inject-assets:
                 None,
             end
         },
-        let all-js := assets.{iterate}.{ filter-map &(asset) =>
+        let all-js := assets.{Seq}.{ filter-map &(asset) =>
             switch asset:
             case JS {file}:
                 { Some file },
@@ -53,8 +53,8 @@ export function inject-assets:
             end
         },
         { wait-complete { concat [
-            view. { inject-ttf all-ttf.{collect} },
-            view. { inject-css all-css.{collect} },
-            view. { inject-js  all-js.{collect} }
+            view. { inject-ttf all-ttf.{List} },
+            view. { inject-css all-css.{List} },
+            view. { inject-js  all-js.{List} }
         ] } };
 

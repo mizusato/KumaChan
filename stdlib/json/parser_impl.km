@@ -105,7 +105,7 @@ const StringParser!: Parser[self::String,Error] :=
                     { proceed (chars, input) },
         switch { proceed ((`"` cons Nil), input) }:
         case Some (chars, input):
-            let raw := chars.{collect}.{reverse}.{String},
+            let raw := chars.{List}.{reverse}.{String},
             switch { unquote raw }:
             case Some content:
                 let value := { self::String! content },

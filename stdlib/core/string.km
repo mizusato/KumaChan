@@ -88,7 +88,7 @@ export function contains:
 export function contains:
     &(String,Char) => Bool
     &(s,char) =>
-        ({ iterate s } some &(c) => (c = char));
+        ({ Seq s } some &(c) => (c = char));
 
 export function concat:
     &(List[String]) => String
@@ -108,11 +108,11 @@ export function join:
 
 export function join:
     &(List[String],String) => String
-    &(arr,sep) => arr.{iterate}.{join(sep)};
+    &(arr,sep) => arr.{Seq}.{join(sep)};
 
 export function join:
     &(List[String],Char) => String
-    &(arr,char) => arr.{iterate}.{join(char)};
+    &(arr,char) => arr.{Seq}.{join(char)};
 
 export function trim:
     &(String,Char) => String

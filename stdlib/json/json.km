@@ -13,14 +13,15 @@ export function stringify:
         switch v:
         case self::Object object:
             object
-                . { iterate }
+                . { List }
+                . { Seq }
                 . { map &(key,value) =>
                     { "#:#" ({quote key}, {self::stringify value}) } }
                 . { join ',' }
                 . { "{#}" },
         case self::Array array:
             array
-                . { iterate }
+                . { Seq }
                 . { map self::stringify }
                 . { join ',' }
                 . { "[#]" },
