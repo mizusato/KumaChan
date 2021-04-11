@@ -32,8 +32,8 @@ export function is-nil:[T]
     &(Seq[T]) => Bool
     &(seq) => { not seq.{shift}.{Bool} };
 
-export function nil:[T]
-    &() => Seq[T]
+export function Nil:
+    &() => Seq[never]
     native 'seq-nil';
 export function cons:[T]
     &(T,Seq[T]) => Seq[T]

@@ -97,7 +97,7 @@ function repeat:[T,E]
                 case Failure _:
                     { Success (seq, input) },
                 end,
-        { proceed (input, nil) }
+        { proceed (input, Nil) }
             . { map &(seq, input) => (seq.{collect}.{reverse}, input) };
 
 function repeat:[T,E]
@@ -117,9 +117,9 @@ function repeat:[T,E]
                     end,
                 case Failure err:
                     if seq.{is-nil}:
-                        { Success (nil, input) },
+                        { Success (Nil, input) },
                     else:
                         { Failure err },
                 end,
-        { proceed (input, nil) }
+        { proceed (input, Nil) }
             . { map &(seq, input) => (seq.{collect}.{reverse}, input) };
