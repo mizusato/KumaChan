@@ -5,12 +5,12 @@ do
         | await { println 'Number b:' },
         | str-b := await { scanln () },
         let sum? :=
-            | a := maybe? str-a.{parse-real},
-            | b := maybe? str-b.{parse-real},
+            | a := get str-a.{parse-real},
+            | b := get str-b.{parse-real},
             { Some (a + b) },
         switch sum?:
         case Some sum:
-            { println { str sum } },
+            { println { str sum }.{trace} },
         case None:
             { println 'None' },
         end,

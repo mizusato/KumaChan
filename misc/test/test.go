@@ -8,11 +8,12 @@ import (
 	"strconv"
 	"io/ioutil"
 	"path/filepath"
+	"kumachan/misc/rx"
 	. "kumachan/misc/util/error"
+	"kumachan/lang"
 	"kumachan/compiler/loader"
 	"kumachan/compiler/checker"
 	"kumachan/compiler/generator"
-	"kumachan/lang"
 	"kumachan/runtime/vm"
 )
 
@@ -56,9 +57,9 @@ func expectStdIO(t *testing.T, path string, in string, expected_out string) {
 			Environment:  os.Environ(),
 			Arguments:    [] string { path },
 			StdIO:        lang.StdIO {
-				Stdin:  in_read,
-				Stdout: out_write,
-				Stderr: os.Stderr,
+				Stdin:  rx.FileFrom(in_read),
+				Stdout: rx.FileFrom(out_write),
+				Stderr: rx.FileFrom(os.Stderr),
 			},
 		}, nil)
 		var e = out_write.Close()

@@ -253,7 +253,16 @@ var EffectFunctions = map[string] Value {
 			return id, true
 		})
 	},
-	"crash": func(msg String, h InteropContext) rx.Observable {
+	"crash": func(v Value, h InteropContext) rx.Observable {
+		var msg string
+		switch V := v.(type) {
+		case String:
+			msg = GoStringFromString(V)
+		case error:
+			msg = V.Error()
+		default:
+			panic("crash: unknown error value type")
+		}
 		const bold = "\033[1m"
 		const red = "\033[31m"
 		const reset = "\033[0m"
@@ -268,7 +277,7 @@ var EffectFunctions = map[string] Value {
 			)
 			fmt.Fprintf (
 				os.Stderr, "%v%s%v\n",
-				bold+red, GoStringFromString(msg), reset,
+				bold+red, msg, reset,
 			)
 			os.Exit(255)
 			// noinspection GoUnreachableCode

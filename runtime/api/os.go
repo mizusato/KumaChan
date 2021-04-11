@@ -39,6 +39,11 @@ func GetSystemLanguage() string {
 		return "C"
 	}
 }
+var cwd = (func() stdlib.Path {
+	var wd, err = os.Getwd()
+	if err != nil { panic("unable to get current working directory") }
+	return stdlib.ParsePath(wd)
+})()
 
 var OS_Constants = map[string] NativeConstant {
 	"os::PlatformInfo": func(h InteropContext) Value {
@@ -49,9 +54,7 @@ var OS_Constants = map[string] NativeConstant {
 		)
 	},
 	"os::Cwd": func(h InteropContext) Value {
-		var wd, err = os.Getwd()
-		if err != nil { panic("unable to get current working directory") }
-		return stdlib.ParsePath(wd)
+		return cwd
 	},
 	"os::Env": func(h InteropContext) Value {
 		return GetEnv(h.GetSysEnv())
@@ -60,13 +63,13 @@ var OS_Constants = map[string] NativeConstant {
 		return GetArgs(h.GetSysArgs())
 	},
 	"os::Stdin": func(h InteropContext) Value {
-		return rx.FileFrom(h.GetStdIO().Stdin)
+		return h.GetStdIO().Stdin
 	},
 	"os::Stdout": func(h InteropContext) Value {
-		return rx.FileFrom(h.GetStdIO().Stdout)
+		return h.GetStdIO().Stdout
 	},
 	"os::Stderr": func(h InteropContext) Value {
-		return rx.FileFrom(h.GetStdIO().Stderr)
+		return h.GetStdIO().Stderr
 	},
 	"os::Locale": func(h InteropContext) Value {
 		var locale = Locale {

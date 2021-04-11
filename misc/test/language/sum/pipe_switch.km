@@ -16,7 +16,7 @@ do
             'null',
         end,
     let s3: String :=
-        switch r2.(NG):
+        switch r2.(Failure):
         case Some err:
             err.{str},
         default:

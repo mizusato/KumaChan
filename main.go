@@ -30,6 +30,12 @@ import (
 )
 
 
+var stdio = lang.StdIO {
+    Stdin:  rx.FileFrom(os.Stdin),
+    Stdout: rx.FileFrom(os.Stdout),
+    Stderr: rx.FileFrom(os.Stderr),
+}
+
 func debug_parser(file io.Reader, name string, root string) {
     var code_bytes, e = ioutil.ReadAll(file)
     if e != nil { panic(e) }
@@ -136,11 +142,7 @@ func interpret (
         Environment:  os.Environ(),
         Arguments:    args,
         DebugOptions: debug_opts,
-        StdIO: lang.StdIO {
-            Stdin:  os.Stdin,
-            Stdout: os.Stdout,
-            Stderr: os.Stderr,
-        },
+        StdIO:        stdio,
     }, nil)
 }
 
@@ -292,11 +294,7 @@ func repl(args ([] string), max_stack_size int, debug_opts lang.DebugOptions) {
         Environment:  os.Environ(),
         Arguments:    args,
         DebugOptions: debug_opts,
-        StdIO: lang.StdIO {
-            Stdin:  os.Stdin,
-            Stdout: os.Stdout,
-            Stderr: os.Stderr,
-        },
+        StdIO:        stdio,
     }, wait_m)
 }
 

@@ -99,11 +99,11 @@ const StringParser!: Parser[self::String,Error] :=
                 | (this, input) := get { shift input },
                 | (prev, _) := get { shift chars },
                 let chars := (this cons chars),
-                if ((this = `") and (prev != `\)):
+                if ((this = `"`) and (prev != `\`)):
                     { Some (chars, input) },
                 else:
                     { proceed (chars, input) },
-        switch { proceed ((`" cons nil), input) }:
+        switch { proceed ((`"` cons nil), input) }:
         case Some (chars, input):
             let raw := chars.{collect}.{reverse}.{convert}.[String],
             switch { unquote raw }:
