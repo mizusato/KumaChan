@@ -389,12 +389,12 @@ var ContainerFunctions = map[string] Value {
 		var _, rest, _ = m.Deleted(k)
 		return rest
 	},
-	"create-list": func(v Value, get_key Value, h InteropContext) FlexList {
+	"create-flex": func(v Value, get_key Value, h InteropContext) FlexList {
 		return NewFlexList(ListFrom(v), func(item Value) String {
 			return h.Call(get_key, item).(String)
 		})
 	},
-	"empty-list": func() FlexList {
+	"create-flex-empty": func() FlexList {
 		return NewFlexList(ListFrom([] Value {}), nil)
 	},
 	"flex-iterate": func(l FlexList) Seq {

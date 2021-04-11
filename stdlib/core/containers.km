@@ -167,12 +167,12 @@ export function delete*:[K,V]
 
 /* Functions for FlexList[T] */
 
-export function List:[T]
+export function FlexList:[T]
     &(List[T], &(T) => FlexListKey) => FlexList[T]
-    native 'create-list';
-export function List:[T]
+    native 'create-flex';
+export function FlexList:[T]
     &() => FlexList[T]
-    native 'empty-list';
+    native 'create-flex-empty';
 export function iterate:[T]
     &(FlexList[T]) => Seq[(FlexListKey,T)]
     native 'flex-iterate';

@@ -1,35 +1,30 @@
-import assets from './assets';
+import window from '../ui/web/window';
+
+do { window::mount Root };
 
 type Name {
     first: String,
     last:  String
 };
 
-
-do ui-init 'Reactive Projection' Root;
-
-do ui-inject-css [assets::style-css];
-
-do ui-exit-when-window-closed;
-
-const Root: UI::Component
-    ~ with-reactive &(name) := Name { first: '', last: '' },
+const Root: ui::Component :=
+    | name := use { State { Name { first: '', last: '' } } },
     let {first,last} := name,
-    let row := styled ui-container ['row'],
-    ui-container [
-        row [
-            ui-label 'First Name:',
-            ui-text-input first,
-            ui-button 'clear' (first.update (& _ ''))
-        ],
-        row [
-            ui-label 'Last Name:',
-            ui-text-input last,
-            ui-button 'clear' (last.update (& _ ''))
-        ],
-        row [
-            ui-label 'Full Name:',
-            (ui-text (name.watch.map ( &{first,last} "# #" first last )))
-                | with (ui-style ['seal'])
-        ]
-    ];
+    let row := { StyledContainer ['row'] },
+    { { StyledContainer ['container'] } [
+        { row [
+            { Label 'First Name:' },
+            { Input first },
+            { Button ('clear', (first update &() => '')) }
+        ] },
+        { row [
+            { Label 'Last Name:' },
+            { Input last },
+            { Button ('clear', (last update &() => '')) }
+        ] },
+        { row [
+            { Label 'Full Name:' },
+            { Label ({ watch name } map &{first,last} => { "# #" (first, last) }) }
+                . { with { Style ['seal'] } }
+        ] }
+    ] };

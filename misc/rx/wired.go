@@ -280,7 +280,7 @@ func (a AutoSnapshotReactive) Project(key_chain *KeyChain) Observable {
 	return a.Entity.Project(key_chain)
 }
 func (_ AutoSnapshotReactive) Snapshot() Observable {
-	panic("suspicious snapshot operation on a auto-snapshot reactive")
+	panic("suspicious snapshot operation on an auto-snapshot reactive")
 }
 
 type DistinctViewReactive struct {

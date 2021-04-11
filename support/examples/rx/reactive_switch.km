@@ -1,37 +1,33 @@
-import assets from './assets';
+import window from '../ui/web/window';
+
+do { window::mount Root };
 
 type Value enum {
      type Double (String,String);
      type Single { content: String };
 };
 
-do ui-init 'Reactive Switch' Root;
-
-do ui-inject-css [assets::style-css];
-
-do ui-exit-when-window-closed;
-
-const Root: UI::Component
-    ~ with-reactive &(v) := Single { content: 'a value' },
-    let editor: UI::Component :=
+const Root: ui::Component :=
+    | v := use { State { Single { content: 'a value' } } },
+    let editor: ui::Component :=
         switch v:
         case Double (x, y):
-            ui-container [
-                ui-text-input x,
-                ui-text-input y
-            ],
+            { Container [
+                { Input x },
+                { Input y }
+            ] },
         case Single {content}:
-            ui-text-input content,
+            { Input content },
         end,
-    ui-container [
+    { { StyledContainer ['container'] } [
         editor,
-        ui-button 'init double' $(v <- (Double 'a' 'b')),
-        ui-button 'init single' $(v <- (Single { content: 'foo' })),
-        ~ switch-map &(v) := watch v,
+        { Button ('init double', (v <- { Double ('a', 'b') })) },
+        { Button ('init single', (v <- { Single { content: 'foo' } })) },
+        | v := switch-map { watch v },
             switch v:
             case Double (x, y):
-                ui-label ("[Double] (#, #)" x y),
+                { Label { "[Double] (#, #)" (x, y) } },
             case Single {content}:
-                ui-label ("[Single] #" content),
+                { Label { "[Single] #" content } },
             end
-    ];
+    ] };

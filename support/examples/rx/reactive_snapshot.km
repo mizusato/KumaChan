@@ -1,55 +1,49 @@
-import assets from './assets';
+import window from '../ui/web/window';
 
-do ui-init 'Reactive Snapshot' Root;
+do { window::mount Root };
 
-do ui-inject-css [assets::style-css];
-
-do ui-exit-when-window-closed;
-
-const Root: UI::Component
-    ~ with-auto-snapshot &(text, ops) := '',
-    let (text-undo, text-redo, text-diff) := ops,
-    ui-container [
-        ~ with-reactive &(editing) := No,
-        ~ switch-map &(state) := editing.watch.with-latest-from(text),
+const Root: ui::Component :=
+    | (text, undo, redo, diff) := use { StateAutoSnapshot '' },
+    { { StyledContainer ['container'] } [
+        | editing := use { State No },
+        | state := switch-map editing.{watch}.{with-latest-from(text)},
         let (is-editing, current-text) := state,
         if is-editing:
-            ~ with-reactive &(buffer) := current-text,
-            ui-container [
-                (ui-text-input buffer),
-                ~ switch-map &(new-text) := watch buffer,
-                    ui-button 'Confirm' (
-                        $(editing <- No).then
-                        $(text <- new-text)
-                    )
-            ],
+            | buffer := use { State current-text },
+            { Container [
+                { Input buffer },
+                | new-text := switch-map { watch buffer },
+                    { Button ('Confirm', (
+                        (editing <- No) then
+                        (text <- new-text)
+                    )) }
+            ] },
         else:
-            (ui-container.styled ['row']) [
-                ui-text (text.watch)
-                    | with (ui-style ['red']),
-                ui-button 'Edit' $(editing <- Yes)
-            ],
-        ~ switch-map &(snapshots, current) := text-diff,
-        let { undo, redo } := snapshots,
-        let undo := undo.collect,
-        let redo := redo.collect,
-        let title := styled ui-label ['title'],
-        ui-container [
-            if $((undo.{length}) > 0):
-                ui-button 'Undo' text-undo,
+            { { StyledContainer ['row'] } [
+                ({ Label { watch text } } with { Style ['red'] }),
+                { Button ('Edit', (editing <- Yes)) }
+            ] },
+        | (snapshots, current) := switch-map diff,
+        let { undo-stack, redo-stack } := snapshots,
+        let undo-stack := undo-stack.{collect},
+        let redo-stack := redo-stack.{collect},
+        let title := (Label.[&(String) => ui::Component] with { Style ['title'] }),
+        { Container [
+            if ((undo-stack.{length}) > 0):
+                { Button ('Undo', undo) },
             else:
-                ui-empty,
-            if $((redo.{length}) > 0):
-                ui-button 'Redo' text-redo,
+                Empty,
+            if ((redo-stack.{length}) > 0):
+                { Button ('Redo', redo) },
             else:
-                ui-empty,
-            title 'undo stack (reversed):',
-                ui-container (reverse (undo.map ( &(v)
-                    ui-label (quote v)))),
-            title 'current:',
-                ui-label (quote current),
-            title 'redo stack:',
-                ui-container (redo.map (&(v)
-                    ui-label (quote v)))
-        ]
-    ];
+                Empty,
+            { title 'undo stack (reversed):' },
+                { Container ({ reverse undo-stack } map &(v) =>
+                    { Label { quote v } }) },
+            { title 'current:' },
+                { Label { quote current } },
+            { title 'redo stack:' },
+                { Container (redo-stack map &(v) =>
+                    { Label { quote v } }) }
+        ] }
+    ] };

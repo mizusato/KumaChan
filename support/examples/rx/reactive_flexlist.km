@@ -1,0 +1,45 @@
+import window from '../ui/web/window';
+
+do { window::mount Root };
+
+type Todo {
+    content:  String,
+    finished: Bool
+};
+
+const Root: ui::Component :=
+    let center := { StyledContainer ['center'] },
+    let row := { StyledContainer ['row'] },
+    let button-small := (Button with { Style ['min-width-3'] }),
+    | list := use { State { FlexList::[Todo] () } },
+    let add-item-from: &(Reactive[String]) => Sync :=
+        &(buffer) =>
+            | content := sync { <- buffer },
+            | id := sync gen-monotonic-id-string,
+            | sync (list append (id, { content, finished: No })),
+            (buffer <- ''),
+    let insert-item-after: &(FlexListKey) => Sync :=
+        &(pivot) =>
+            | id := sync gen-monotonic-id-string,
+            { insert (list, {after:pivot}, (id, { content: '', finished: No })) },
+    { center [
+        | buffer := use { State '' },
+        { row [
+            { Input buffer },
+            { Button ('Add', { add-item-from buffer }) }
+        ] },
+        | (id, index, item) := ListView list,
+        let { content, finished } := item,
+        { row [
+            { Checkbox finished },
+            { Input content },
+            { row [
+                { button-small ('↑', (list move-up id)) }
+                    . { with { EnableCond { not (index is-first-in list) } } },
+                { button-small ('↓', (list move-down id)) }
+                    . { with { EnableCond { not (index is-last-in list) } } },
+                { button-small ('+', { insert-item-after id }) },
+                { button-small ('×', (list delete id)) }
+            ] }
+        ] }
+    ] };

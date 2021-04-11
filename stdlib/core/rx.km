@@ -69,8 +69,8 @@ type ReactiveEntity[T]
 /// consists of snapshots of the current undo stack and redo stack
 /// of a ReactiveEntity at some point.
 type ReactiveSnapshots[+T] {
-    undo: Seq[T],
-    redo: Seq[T]
+    undo-stack: Seq[T],
+    redo-stack: Seq[T]
 };
 
 
@@ -144,7 +144,7 @@ export function redo:[T]
     &(ReactiveEntity[T]) => Sync
     native 'reactive-entity-redo';
 export function watch-diff:[T]
-    &(ReactiveEntity[T]) => Observable[(ReactiveSnapshots[T],T)]
+    &(ReactiveEntity[T]) => Computed[(ReactiveSnapshots[T],T)]
     native 'reactive-entity-watch-diff';
 export function auto-snapshot:[T]
     &(ReactiveEntity[T]) => Reactive[T]
@@ -223,13 +223,13 @@ export function yield*:[T]
 export function yield*:[T]
     &(List[T]) => Observable[T]
     native 'yield*-array';
-export function not:[E]
+export function not:
     &(Computed[Bool]) => Computed[Bool]
     &(p) => p.{map(not)};
-export function and:[E]
+export function and:
     &(Computed[Bool], Computed[Bool]) => Computed[Bool]
     &(p,q) => { Computed ((p,q), &(p,q) => (p and q)) };
-export function or:[E]
+export function or:
     &(Computed[Bool], Computed[Bool]) => Computed[Bool]
     &(p,q) => { Computed ((p,q), &(p,q) => (p or q)) };
 export function start-with:[T,E]
@@ -431,6 +431,12 @@ export function with-latest-from:[A,B,E]
     native 'with-latest-from';
 export function with-latest-from:[A,B,E]
     &(Observable[A,E], Reactive[B]) => Observable[(A,B),E]
+    native 'with-latest-from-reactive';
+export function with-latest-from:[A,B]
+    &(Source[A], Reactive[B]) => Source[(A,B)]
+    native 'with-latest-from-reactive';
+export function with-latest-from:[A,B]
+    &(Computed[A], Reactive[B]) => Computed[(A,B)]
     native 'with-latest-from-reactive';
 export function combine-latest:[A,B,E]
     &(Observable[A,E], Observable[B,E]) =>

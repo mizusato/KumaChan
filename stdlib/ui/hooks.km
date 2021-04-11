@@ -16,3 +16,9 @@ export function Effect:
     &(effect) => &(k) =>
         { k() }
             .{ with effect };
+
+export function StateAutoSnapshot:[T]
+    &(T) => Hook[(Reactive[T],Sync,Sync,Computed[(ReactiveSnapshots[T],T)])]
+    &(initial) => &(k) =>
+        | r := sync { Reactive initial },
+            { k (r.{auto-snapshot}, r.{undo}, r.{redo}, r.{watch-diff}) };
