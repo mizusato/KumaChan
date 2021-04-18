@@ -215,7 +215,7 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 						pattern,       p.Items,
 						branch_scope,  branch_buf,
 					)
-				case ch.BundlePattern:
+				case ch.RecordPattern:
 					BindPatternItems (
 						pattern,       p.Items,
 						branch_scope,  branch_buf,
@@ -394,7 +394,7 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 					b.Pattern,       p.Items,
 					ctx.LocalScope,  buf,
 				)
-			case ch.BundlePattern:
+			case ch.RecordPattern:
 				var val_code = CompileExpr(b.Value, ctx)
 				buf.Write(val_code)
 				BindPatternItems (
@@ -443,7 +443,7 @@ func CompileClosure (
 		inner_buf.Write(CodeFrom(inst_store, info))
 	case ch.TuplePattern:
 		BindPatternItems(pattern, p.Items, inner_scope, inner_buf)
-	case ch.BundlePattern:
+	case ch.RecordPattern:
 		BindPatternItems(pattern, p.Items, inner_scope, inner_buf)
 	default:
 		panic("impossible branch")

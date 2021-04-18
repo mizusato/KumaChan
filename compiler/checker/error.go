@@ -50,8 +50,8 @@ type E_TooManyEnumItems struct {
 	Defined  uint
 	Limit    uint
 }
-func (impl E_TooManyTupleBundleItems) TypeError() {}
-type E_TooManyTupleBundleItems struct {
+func (impl E_TooManyTupleRecordItems) TypeError() {}
+type E_TooManyTupleRecordItems struct {
 	Defined  uint
 	Limit    uint
 }
@@ -104,7 +104,7 @@ func (err *TypeError) Desc() ErrorMessage {
 		msg.WriteInnerText(TS_INLINE, fmt.Sprint(e.Defined))
 		msg.WriteText(TS_ERROR,
 			fmt.Sprintf("items (maximum is %d)", e.Limit))
-	case E_TooManyTupleBundleItems:
+	case E_TooManyTupleRecordItems:
 		msg.WriteText(TS_ERROR, "Too many elements/fields:")
 		msg.WriteInnerText(TS_INLINE, fmt.Sprint(e.Defined))
 		msg.WriteText(TS_ERROR,
@@ -579,49 +579,49 @@ func (e E_ExprDuplicateField) ExprErrorDesc() ErrorMessage {
 	return msg
 }
 
-type E_GetFromNonBundle struct {}
-func (e E_GetFromNonBundle) ExprErrorDesc() ErrorMessage {
+type E_GetFromNonRecord struct {}
+func (e E_GetFromNonRecord) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	msg.WriteText(TS_ERROR,
-		"Cannot perform field access on a value of non-bundle type")
+		"Cannot perform field access on a value of non-record type")
 	return msg
 }
 
-type E_GetFromLiteralBundle struct {}
-func (e E_GetFromLiteralBundle) ExprErrorDesc() ErrorMessage {
+type E_GetFromLiteralRecord struct {}
+func (e E_GetFromLiteralRecord) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
-	msg.WriteText(TS_ERROR, "Suspicious field access on bundle literal")
+	msg.WriteText(TS_ERROR, "Suspicious field access on record literal")
 	return msg
 }
 
-type E_GetFromOpaqueBundle struct {}
-func (e E_GetFromOpaqueBundle) ExprErrorDesc() ErrorMessage {
-	var msg = make(ErrorMessage, 0)
-	msg.WriteText(TS_ERROR,
-		"Cannot perform field access on a value of opaque bundle type")
-	return msg
-}
-
-type E_SetToNonBundle struct {}
-func (e E_SetToNonBundle) ExprErrorDesc() ErrorMessage {
+type E_GetFromOpaqueRecord struct {}
+func (e E_GetFromOpaqueRecord) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	msg.WriteText(TS_ERROR,
-		"Cannot perform field update on a value of non-bundle type")
+		"Cannot perform field access on a value of opaque record type")
 	return msg
 }
 
-type E_SetToLiteralBundle struct {}
-func (e E_SetToLiteralBundle) ExprErrorDesc() ErrorMessage {
-	var msg = make(ErrorMessage, 0)
-	msg.WriteText(TS_ERROR, "Suspicious field update on bundle literal")
-	return msg
-}
-
-type E_SetToOpaqueBundle struct {}
-func (e E_SetToOpaqueBundle) ExprErrorDesc() ErrorMessage {
+type E_SetToNonRecord struct {}
+func (e E_SetToNonRecord) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	msg.WriteText(TS_ERROR,
-		"Cannot perform field update on a value of opaque bundle type")
+		"Cannot perform field update on a value of non-record type")
+	return msg
+}
+
+type E_SetToLiteralRecord struct {}
+func (e E_SetToLiteralRecord) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Suspicious field update on record literal")
+	return msg
+}
+
+type E_SetToOpaqueRecord struct {}
+func (e E_SetToOpaqueRecord) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR,
+		"Cannot perform field update on a value of opaque record type")
 	return msg
 }
 
@@ -738,19 +738,19 @@ func (e E_MatchingOpaqueTupleType) ExprErrorDesc() ErrorMessage {
 	return msg
 }
 
-type E_MatchingNonBundleType struct {}  // TODO: type description
-func (e E_MatchingNonBundleType) ExprErrorDesc() ErrorMessage {
+type E_MatchingNonRecordType struct {}  // TODO: type description
+func (e E_MatchingNonRecordType) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	msg.WriteText(TS_ERROR,
-		"Cannot perform bundle destruction on a value of non-bundle type")
+		"Cannot perform record destruction on a value of non-record type")
 	return msg
 }
 
-type E_MatchingOpaqueBundleType struct {}  // TODO: type description
-func (e E_MatchingOpaqueBundleType) ExprErrorDesc() ErrorMessage {
+type E_MatchingOpaqueRecordType struct {}  // TODO: type description
+func (e E_MatchingOpaqueRecordType) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	msg.WriteText(TS_ERROR,
-		"Cannot perform bundle destruction on a value of opaque bundle type")
+		"Cannot perform record destruction on a value of opaque record type")
 	return msg
 }
 
@@ -815,14 +815,14 @@ func (e E_TupleAssignedToNonTupleType) ExprErrorDesc() ErrorMessage {
 	return msg
 }
 
-type E_BundleAssignedToNonBundleType struct {
-	NonBundleType  string
+type E_RecordAssignedToNonRecordType struct {
+	NonRecordType  string
 }
-func (e E_BundleAssignedToNonBundleType) ExprErrorDesc() ErrorMessage {
+func (e E_RecordAssignedToNonRecordType) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	msg.WriteText(TS_ERROR,
-		"Cannot assign bundle literal to the non-bundle type")
-	msg.WriteEndText(TS_INLINE_CODE, e.NonBundleType)
+		"Cannot assign record literal to the non-record type")
+	msg.WriteEndText(TS_INLINE_CODE, e.NonRecordType)
 	return msg
 }
 

@@ -328,9 +328,9 @@ func RegisterTypes(entry *loader.Module, idx loader.Index) (TypeRegistry, TypeDe
 			if has_inner {
 				var literal, is_literal = inner.Type.(ast.TypeLiteral)
 				if is_literal {
-					var bundle, is_bundle = literal.Repr.Repr.(ast.ReprBundle)
-					if is_bundle {
-						for _, f := range bundle.Fields {
+					var record, is_record = literal.Repr.Repr.(ast.ReprRecord)
+					if is_record {
+						for _, f := range record.Fields {
 							var name = ast.Id2String(f.Name)
 							var doc = DocStringFromRaw(f.Docs)
 							var tags, err = ParseFieldTags(f.Tags)
@@ -706,7 +706,7 @@ func RawTypeFromRepr(ast_repr ast.VariousRepr, info (map[Type] ast.Node), ctx Ty
 				return got(&AnonymousType { Tuple { elements } })
 			}
 		}
-	case ast.ReprBundle:
+	case ast.ReprRecord:
 		var fields = make(map[string] Field)
 		for i, f := range a.Fields {
 			var f_name = ast.Id2String(f.Name)
@@ -728,7 +728,7 @@ func RawTypeFromRepr(ast_repr ast.VariousRepr, info (map[Type] ast.Node), ctx Ty
 				Index: uint(i),
 			}
 		}
-		return got(&AnonymousType { Bundle { fields } })
+		return got(&AnonymousType { Record { fields } })
 	case ast.ReprFunc:
 		var input, err1 = RawTypeFrom(a.Input, info, ctx)
 		if err1 != nil { return nil, err1 }

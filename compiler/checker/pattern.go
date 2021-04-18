@@ -23,8 +23,8 @@ func (impl TuplePattern) CheckerPattern() {}
 type TuplePattern struct {
 	Items  [] PatternItem
 }
-func (impl BundlePattern) CheckerPattern() {}
-type BundlePattern struct {
+func (impl RecordPattern) CheckerPattern() {}
+type RecordPattern struct {
 	Items  [] PatternItem
 }
 
@@ -135,19 +135,19 @@ func PatternFrom (
 		default:
 			panic("impossible branch")
 		}
-	case ast.PatternBundle:
-		switch bundle_ := UnboxBundle(input, ctx, true).(type) {
-		case BR_Bundle:
-			var bundle = bundle_.Bundle
+	case ast.PatternRecord:
+		switch record_ := UnboxRecord(input, ctx, true).(type) {
+		case BR_Record:
+			var record = record_.Record
 			var occurred = make(map[string]  bool)
 			var items = make([] PatternItem, len(p.FieldMaps))
 			for i, field_map := range p.FieldMaps {
 				var field_name = ast.Id2String(field_map.FieldName)
 				var value_name = ast.Id2String(field_map.ValueName)
-				var field, exists = bundle.Fields[field_name]
+				var field, exists = record.Fields[field_name]
 				if exists && field_name == IgnoreMark {
 					// field should not be named using IgnoreMark;
-					// IgnoreMark used in bundle pattern considered
+					// IgnoreMark used in record pattern considered
 					//   as "field does not exist" error
 					panic("something went wrong")
 				}
@@ -169,7 +169,7 @@ func PatternFrom (
 				}
 				occurred[value_name] = true
 				var t = field.Type
-				if bundle_.AcrossReactive {
+				if record_.AcrossReactive {
 					t = Reactive(t)
 				}
 				items[i] = PatternItem {
@@ -181,12 +181,12 @@ func PatternFrom (
 			}
 			return Pattern {
 				Point:    ErrorPointFrom(p_node.Node),
-				Concrete: BundlePattern { items },
+				Concrete: RecordPattern { items },
 			}, nil
-		case BR_NonBundle:
-			return err_result(E_MatchingNonBundleType {})
-		case BR_BundleButOpaque:
-			return err_result(E_MatchingOpaqueBundleType {})
+		case BR_NonRecord:
+			return err_result(E_MatchingNonRecordType {})
+		case BR_RecordButOpaque:
+			return err_result(E_MatchingOpaqueRecordType {})
 		default:
 			panic("impossible branch")
 		}
@@ -206,7 +206,7 @@ func (ctx ExprContext) WithPatternMatching(p Pattern, storage (map[string] Type)
 		for _, item := range P.Items {
 			added[item.Name] = item.Type
 		}
-	case BundlePattern:
+	case RecordPattern:
 		for _, item := range P.Items {
 			added[item.Name] = item.Type
 		}

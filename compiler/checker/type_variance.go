@@ -158,14 +158,14 @@ func GetVariance(t Type, ctx TypeVarianceContext) ([] TypeVariance) {
 				elements_v[i] = GetVariance(el, ctx)
 			}
 			return ctx.DeduceVariance(tuple_v, elements_v)
-		case Bundle:
+		case Record:
 			var n = uint(len(R.Fields))
-			var bundle_v = FilledVarianceVector(Covariant, n)
+			var record_v = FilledVarianceVector(Covariant, n)
 			var fields_v = make([][] TypeVariance, n)
 			for _, field := range R.Fields {
 				fields_v[field.Index] = GetVariance(field.Type, ctx)
 			}
-			return ctx.DeduceVariance(bundle_v, fields_v)
+			return ctx.DeduceVariance(record_v, fields_v)
 		case Func:
 			var input_v = GetVariance(R.Input, ctx)
 			var output_v = GetVariance(R.Output, ctx)

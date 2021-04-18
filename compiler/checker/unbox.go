@@ -105,27 +105,27 @@ func UnboxTuple(t Type, ctx ExprContext, cross_reactive bool) TupleReprResult {
 	}
 }
 
-type BundleReprResult interface { BundleReprResult() }
-func (impl BR_Bundle) BundleReprResult() {}
-type BR_Bundle struct {
-	Bundle          Bundle
+type RecordReprResult interface { RecordReprResult() }
+func (impl BR_Record) RecordReprResult() {}
+type BR_Record struct {
+	Record          Record
 	AcrossReactive  bool
 }
-func (impl BR_NonBundle) BundleReprResult() {}
-type BR_NonBundle struct {}
-func (impl BR_BundleButOpaque) BundleReprResult() {}
-type BR_BundleButOpaque struct {}
+func (impl BR_NonRecord) RecordReprResult() {}
+type BR_NonRecord struct {}
+func (impl BR_RecordButOpaque) RecordReprResult() {}
+type BR_RecordButOpaque struct {}
 
-func UnboxBundle(t Type, ctx ExprContext, cross_reactive bool) BundleReprResult {
+func UnboxRecord(t Type, ctx ExprContext, cross_reactive bool) RecordReprResult {
 	switch T := t.(type) {
 	case *NamedType:
 		if cross_reactive && IsReactive(T) {
 			if !(len(T.Args) == 1) { panic("something went wrong") }
-			var result = UnboxBundle(T.Args[0], ctx, false)
+			var result = UnboxRecord(T.Args[0], ctx, false)
 			switch r := result.(type) {
-			case BR_Bundle:
-				return BR_Bundle {
-					Bundle:         r.Bundle,
+			case BR_Record:
+				return BR_Record {
+					Record:         r.Record,
 					AcrossReactive: true,
 				}
 			default:
@@ -139,29 +139,29 @@ func UnboxBundle(t Type, ctx ExprContext, cross_reactive bool) BundleReprResult 
 			switch inner_type := inner.(type) {
 			case *AnonymousType:
 				switch inner_repr := inner_type.Repr.(type) {
-				case Bundle:
+				case Record:
 					var ctx_mod = ctx.GetModuleName()
 					var type_mod = T.Name.ModuleName
 					if gv.Opaque && ctx_mod != type_mod {
-						return BR_BundleButOpaque {}
+						return BR_RecordButOpaque {}
 					} else {
-						return BR_Bundle { Bundle: inner_repr }
+						return BR_Record { Record: inner_repr }
 					}
 				}
 			case *NamedType:
-				return UnboxBundle(inner, ctx, cross_reactive)
+				return UnboxRecord(inner, ctx, cross_reactive)
 			}
 		}
-		return BR_NonBundle {}
+		return BR_NonRecord {}
 	case *AnonymousType:
 		switch r := T.Repr.(type) {
-		case Bundle:
-			return BR_Bundle { Bundle: r }
+		case Record:
+			return BR_Record { Record: r }
 		default:
-			return BR_NonBundle {}
+			return BR_NonRecord {}
 		}
 	default:
-		return BR_NonBundle {}
+		return BR_NonRecord {}
 	}
 }
 

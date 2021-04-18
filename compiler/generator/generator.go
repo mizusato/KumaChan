@@ -170,7 +170,7 @@ func CompileFunction (
 			buf.Write(CodeFrom(bind_inst, info))
 		case ch.TuplePattern:
 			BindPatternItems(pattern, p.Items, scope, buf)
-		case ch.BundlePattern:
+		case ch.RecordPattern:
 			BindPatternItems(pattern, p.Items, scope, buf)
 		default:
 			panic("impossible branch")

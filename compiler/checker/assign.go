@@ -72,8 +72,8 @@ func AssignTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprError) 
 			return AssignIntegerTo(expected, semi_value, semi.Info, ctx)
 		case SemiTypedTuple:
 			return AssignTupleTo(expected, semi_value, semi.Info, ctx)
-		case SemiTypedBundle:
-			return AssignBundleTo(expected, semi_value, semi.Info, ctx)
+		case SemiTypedRecord:
+			return AssignRecordTo(expected, semi_value, semi.Info, ctx)
 		case SemiTypedArray:
 			return AssignArrayTo(expected, semi_value, semi.Info, ctx)
 		case SemiTypedBlock:
@@ -395,9 +395,9 @@ func DirectAssignType(inferred Type, given Type, d AssignDirection, ctx ExprCont
 					}
 					return &AnonymousType { Tuple { elements } }, true
 				}
-			case Bundle:
+			case Record:
 				switch T_ := T.Repr.(type) {
-				case Bundle:
+				case Record:
 					if len(I_.Fields) != len(T_.Fields) {
 						return nil, false
 					}
@@ -421,7 +421,7 @@ func DirectAssignType(inferred Type, given Type, d AssignDirection, ctx ExprCont
 							return nil, false
 						}
 					}
-					return &AnonymousType { Bundle { fields } }, true
+					return &AnonymousType { Record { fields } }, true
 				}
 			case Func:
 				switch T_ := T.Repr.(type) {

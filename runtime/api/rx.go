@@ -344,12 +344,12 @@ var EffectFunctions = map[string] Value {
 			following,
 		})
 	},
-	"wait": func(bundle ProductValue) rx.Observable {
-		var timeout = SingleValueFromBundle(bundle).(uint)
+	"wait": func(record ProductValue) rx.Observable {
+		var timeout = SingleValueFromRecord(record).(uint)
 		return rx.Timer(timeout)
 	},
-	"tick": func(bundle ProductValue) rx.Observable {
-		var interval = SingleValueFromBundle(bundle).(uint)
+	"tick": func(record ProductValue) rx.Observable {
+		var interval = SingleValueFromRecord(record).(uint)
 		return rx.Ticker(interval)
 	},
 	"wait-complete": func(e rx.Observable) rx.Observable {

@@ -273,9 +273,9 @@ func CollectFunctions (
 			if !(boxed.Implicit) { return nil,
 				throw("should be declared as a implicit context type") }
 			var inner = FillTypeArgsWithDefaults(boxed.InnerType, named.Args, g.Defaults)
-			var bundle = inner.(*AnonymousType).Repr.(Bundle)
+			var record = inner.(*AnonymousType).Repr.(Record)
 			var offset = uint(len(implicit_fields))
-			for name, field := range bundle.Fields {
+			for name, field := range record.Fields {
 				var _, exists = implicit_fields[name]
 				if exists { return nil, &FunctionError {
 					Point:    ErrorPointFrom(decl.Node),

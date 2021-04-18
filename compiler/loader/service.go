@@ -155,7 +155,7 @@ func DecorateServiceModule(root ast.Root, manifest Manifest, ctx Context) (ast.R
 				}
 				decl.TypeDef.TypeDef = ast.ImplicitType {
 					Node: decl.TypeDef.Node,
-					Repr: ast.ReprBundle {
+					Repr: ast.ReprRecord {
 						Node:   decl.TypeDef.Node,
 						Fields: fields,
 					},

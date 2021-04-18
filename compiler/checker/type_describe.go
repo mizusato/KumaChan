@@ -110,7 +110,7 @@ func DescribeType(type_ Type, ctx TypeDescContext) string {
 			}
 			buf.WriteRune(')')
 			return buf.String()
-		case Bundle:
+		case Record:
 			var field_types = make([] Type, len(r.Fields))
 			var field_names = make([] string, len(r.Fields))
 			for name, field := range r.Fields {

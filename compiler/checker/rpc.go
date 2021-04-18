@@ -409,7 +409,7 @@ func GetKmdInnerTypeSchema (
 				elements[i] = el_t
 			}
 			return kmd.TupleSchema { Elements: elements }, nil
-		case Bundle:
+		case Record:
 			var fields = make(map[string] kmd.RecordField)
 			for name, field := range R.Fields {
 				var field_t, err = GetKmdType(field.Type, p, reg, mapping, false, kmd.TypeId {})
@@ -471,7 +471,7 @@ func GetKmdType (
 				switch T := def.InnerType.(type) {
 				case *AnonymousType:
 					switch T.Repr.(type) {
-					case Bundle:
+					case Record:
 						return kmd.AlgebraicType(kmd.Record, id), nil
 					}
 				}

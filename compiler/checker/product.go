@@ -11,8 +11,8 @@ type SemiTypedTuple struct {
 	Values  [] SemiExpr
 }
 
-func (impl SemiTypedBundle) SemiExprVal() {}
-type SemiTypedBundle struct {
+func (impl SemiTypedRecord) SemiExprVal() {}
+type SemiTypedRecord struct {
 	Index     map[string] uint
 	Values    [] SemiExpr
 	KeyNodes  [] ast.Node
@@ -64,28 +64,28 @@ func CheckTuple(tuple ast.Tuple, ctx ExprContext) (SemiExpr, *ExprError) {
 	}
 }
 
-func CheckBundle(bundle ast.Bundle, ctx ExprContext) (SemiExpr, *ExprError) {
-	var info = ctx.GetExprInfo(bundle.Node)
-	switch update := bundle.Update.(type) {
+func CheckRecord(record ast.Record, ctx ExprContext) (SemiExpr, *ExprError) {
+	var info = ctx.GetExprInfo(record.Node)
+	switch update := record.Update.(type) {
 	case ast.Update:
 		var base_semi, err = Check(update.Base, ctx)
 		if err != nil { return SemiExpr{}, err }
 		switch b := base_semi.Value.(type) {
 		case TypedExpr:
-			if IsBundleLiteral(Expr(b)) { return SemiExpr{}, &ExprError {
+			if IsRecordLiteral(Expr(b)) { return SemiExpr{}, &ExprError {
 				Point:    ErrorPointFrom(update.Base.Node),
-				Concrete: E_SetToLiteralBundle {},
+				Concrete: E_SetToLiteralRecord {},
 			} }
-			var L = len(bundle.Values)
+			var L = len(record.Values)
 			if !(L >= 1) { panic("something went wrong") }
 			var base = Expr(b)
-			switch target_ := UnboxBundle(base.Type, ctx, false).(type) {
-			case BR_Bundle:
+			switch target_ := UnboxRecord(base.Type, ctx, false).(type) {
+			case BR_Record:
 				if target_.AcrossReactive { panic("something went wrong") }
-				var target = target_.Bundle
+				var target = target_.Record
 				var occurred_names = make(map[string] bool)
 				var current_base = base
-				for _, field := range bundle.Values {
+				for _, field := range record.Values {
 					var name = ast.Id2String(field.Key)
 					var target_field, exists = target.Fields[name]
 					if !exists {
@@ -125,36 +125,36 @@ func CheckBundle(bundle ast.Bundle, ctx ExprContext) (SemiExpr, *ExprError) {
 					Value: TypedExpr(final),
 					Info:  info,
 				}, nil
-			case BR_BundleButOpaque:
+			case BR_RecordButOpaque:
 				return SemiExpr{}, &ExprError {
 					Point:    base.Info.ErrorPoint,
-					Concrete: E_SetToOpaqueBundle {},
+					Concrete: E_SetToOpaqueRecord {},
 				}
-			case BR_NonBundle:
+			case BR_NonRecord:
 				return SemiExpr{}, &ExprError {
 					Point:    base.Info.ErrorPoint,
-					Concrete: E_SetToNonBundle {},
+					Concrete: E_SetToNonRecord {},
 				}
 			default:
 				panic("impossible branch")
 			}
-		case SemiTypedBundle:
+		case SemiTypedRecord:
 			return SemiExpr{}, &ExprError {
 				Point:    ErrorPointFrom(update.Base.Node),
-				Concrete: E_SetToLiteralBundle {},
+				Concrete: E_SetToLiteralRecord {},
 			}
 		default:
 			return SemiExpr{}, &ExprError {
 				Point:    ErrorPointFrom(update.Base.Node),
-				Concrete: E_SetToNonBundle {},
+				Concrete: E_SetToNonRecord {},
 			}
 		}
 	default:
-		var L = len(bundle.Values)
+		var L = len(record.Values)
 		var f_exprs = make([] SemiExpr, L)
 		var f_index_map = make(map[string] uint, L)
 		var f_key_nodes = make([] ast.Node, L)
-		for i, field := range bundle.Values {
+		for i, field := range record.Values {
 			var name = ast.Id2String(field.Key)
 			var _, exists = f_index_map[name]
 			if exists { return SemiExpr{}, &ExprError {
@@ -169,7 +169,7 @@ func CheckBundle(bundle ast.Bundle, ctx ExprContext) (SemiExpr, *ExprError) {
 			f_key_nodes[i] = field.Key.Node
 		}
 		return SemiExpr {
-			Value: SemiTypedBundle {
+			Value: SemiTypedRecord {
 				Index:    f_index_map,
 				Values:   f_exprs,
 				KeyNodes: f_key_nodes,
@@ -182,7 +182,7 @@ func CheckBundle(bundle ast.Bundle, ctx ExprContext) (SemiExpr, *ExprError) {
 func CheckGet(base SemiExpr, key ast.Identifier, info ExprInfo, ctx ExprContext) (SemiExpr, *ExprError) {
 	switch b := base.Value.(type) {
 	case UntypedRef:
-		// TODO: find bundle in output types of overloaded functions
+		// TODO: find record in output types of overloaded functions
 		var expr, err = AssignTo(nil, base, ctx)
 		if err == nil {
 			return CheckGet(LiftTyped(expr), key, info, ctx)
@@ -193,24 +193,24 @@ func CheckGet(base SemiExpr, key ast.Identifier, info ExprInfo, ctx ExprContext)
 			}
 		}
 	case TypedExpr:
-		if IsBundleLiteral(Expr(b)) { return SemiExpr{}, &ExprError {
+		if IsRecordLiteral(Expr(b)) { return SemiExpr{}, &ExprError {
 			Point:    base.Info.ErrorPoint,
-			Concrete: E_GetFromLiteralBundle {},
+			Concrete: E_GetFromLiteralRecord {},
 		} }
-		switch bundle_ := UnboxBundle(b.Type, ctx, true).(type) {
-		case BR_Bundle:
-			var bundle = bundle_.Bundle
+		switch record_ := UnboxRecord(b.Type, ctx, true).(type) {
+		case BR_Record:
+			var record = record_.Record
 			var key_string = ast.Id2String(key)
-			var field, exists = bundle.Fields[key_string]
+			var field, exists = record.Fields[key_string]
 			if !exists { return SemiExpr{}, &ExprError {
 				Point:    ErrorPointFrom(key.Node),
 				Concrete: E_FieldDoesNotExist {
 					Field:  key_string,
-					Target: ctx.DescribeCertainType(&AnonymousType { bundle }),
+					Target: ctx.DescribeCertainType(&AnonymousType { record }),
 				},
 			} }
 			var t = field.Type
-			if bundle_.AcrossReactive {
+			if record_.AcrossReactive {
 				t = Reactive(t)
 			}
 			return LiftTyped(Expr {
@@ -221,28 +221,28 @@ func CheckGet(base SemiExpr, key ast.Identifier, info ExprInfo, ctx ExprContext)
 				},
 				Info:  info,
 			}), nil
-		case BR_BundleButOpaque:
+		case BR_RecordButOpaque:
 			return SemiExpr{}, &ExprError {
 				Point:    base.Info.ErrorPoint,
-				Concrete: E_GetFromOpaqueBundle {},
+				Concrete: E_GetFromOpaqueRecord {},
 			}
-		case BR_NonBundle:
+		case BR_NonRecord:
 			return SemiExpr{}, &ExprError {
 				Point:    base.Info.ErrorPoint,
-				Concrete: E_GetFromNonBundle {},
+				Concrete: E_GetFromNonRecord {},
 			}
 		default:
 			panic("impossible branch")
 		}
-	case SemiTypedBundle:
+	case SemiTypedRecord:
 		return SemiExpr{}, &ExprError {
 			Point:    base.Info.ErrorPoint,
-			Concrete: E_GetFromLiteralBundle {},
+			Concrete: E_GetFromLiteralRecord {},
 		}
 	default:
 		return SemiExpr{}, &ExprError {
 			Point:    base.Info.ErrorPoint,
-			Concrete: E_GetFromNonBundle {},
+			Concrete: E_GetFromNonRecord {},
 		}
 	}
 }
@@ -321,26 +321,26 @@ func AssignTupleTo(expected Type, tuple SemiTypedTuple, info ExprInfo, ctx ExprC
 	}
 }
 
-func AssignBundleTo(expected Type, bundle SemiTypedBundle, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
+func AssignRecordTo(expected Type, record SemiTypedRecord, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
 	var err = RequireExplicitType(expected, info)
 	if err != nil { return Expr{}, err }
 	switch E := expected.(type) {
 	case *AnonymousType:
-		switch bundle_t := E.Repr.(type) {
+		switch record_t := E.Repr.(type) {
 		case Unit:
-			if len(bundle.Values) == 0 {
+			if len(record.Values) == 0 {
 				return Expr {
 					Type:  &AnonymousType { Unit {} },
 					Value: UnitValue {},
 					Info:  info,
 				}, nil
 			}
-		case Bundle:
-			var values = make([] Expr, len(bundle_t.Fields))
-			for field_name, field := range bundle_t.Fields {
-				var given_index, exists = bundle.Index[field_name]
+		case Record:
+			var values = make([] Expr, len(record_t.Fields))
+			for field_name, field := range record_t.Fields {
+				var given_index, exists = record.Index[field_name]
 				if exists {
-					var given_value = bundle.Values[given_index]
+					var given_value = record.Values[given_index]
 					var value, err = AssignTo(field.Type, given_value, ctx)
 					if err != nil { return Expr{}, err }
 					values[field.Index] = value
@@ -360,10 +360,10 @@ func AssignBundleTo(expected Type, bundle SemiTypedBundle, info ExprInfo, ctx Ex
 					values[field.Index] = zero
 				}
 			}
-			for given_field_name, index := range bundle.Index {
-				var _, exists = bundle_t.Fields[given_field_name]
+			for given_field_name, index := range record.Index {
+				var _, exists = record_t.Fields[given_field_name]
 				if !exists {
-					var key_node = bundle.KeyNodes[index]
+					var key_node = record.KeyNodes[index]
 					return Expr{}, &ExprError {
 						Point:    ErrorPointFrom(key_node),
 						Concrete: E_SuperfluousField { given_field_name },
@@ -371,13 +371,13 @@ func AssignBundleTo(expected Type, bundle SemiTypedBundle, info ExprInfo, ctx Ex
 				}
 			}
 			var final_fields = make(map[string]Field)
-			for field_name, field := range bundle_t.Fields {
+			for field_name, field := range record_t.Fields {
 				final_fields[field_name] = Field {
 					Type:  values[field.Index].Type,
 					Index: field.Index,
 				}
 			}
-			var final_t = &AnonymousType { Bundle{ final_fields } }
+			var final_t = &AnonymousType { Record{ final_fields } }
 			return Expr {
 				Type:  final_t,
 				Info:  info,
@@ -387,20 +387,20 @@ func AssignBundleTo(expected Type, bundle SemiTypedBundle, info ExprInfo, ctx Ex
 	}
 	return  Expr{}, &ExprError {
 		Point:    info.ErrorPoint,
-		Concrete: E_BundleAssignedToNonBundleType {
-			NonBundleType: ctx.DescribeInferredType(expected),
+		Concrete: E_RecordAssignedToNonRecordType {
+			NonRecordType: ctx.DescribeInferredType(expected),
 		},
 	}
 }
 
 
-func IsBundleLiteral(expr Expr) bool {
+func IsRecordLiteral(expr Expr) bool {
 	switch expr.Value.(type) {
 	case Product:
 		switch t := expr.Type.(type) {
 		case *AnonymousType:
 			switch t.Repr.(type) {
-			case Bundle:
+			case Record:
 				return true
 			}
 		}

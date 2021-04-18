@@ -37,9 +37,9 @@ type ReprTuple struct {
     Elements  [] VariousType   `list_more:"type_list" item:"type"`
 }
 
-func (impl ReprBundle) Repr() {}
-type ReprBundle struct {
-    Node               `part:"repr_bundle"`
+func (impl ReprRecord) Repr() {}
+type ReprRecord struct {
+    Node               `part:"repr_record"`
     Fields  [] Field   `list_more:"field_list" item:"field"`
 }
 type Field struct {

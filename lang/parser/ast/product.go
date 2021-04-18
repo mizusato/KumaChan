@@ -7,9 +7,9 @@ type Tuple struct {
 	Elements  [] Expr   `list_more:"exprlist" item:"expr"`
 }
 
-func (impl Bundle) Term() {}
-type Bundle struct {
-	Node                    `part:"bundle"`
+func (impl Record) Term() {}
+type Record struct {
+	Node                    `part:"record"`
 	Update  MaybeUpdate     `part_opt:"update"`
 	Values  [] FieldValue   `list_more:"pairlist" item:"pair"`
 }

@@ -23,9 +23,9 @@ type PatternTuple struct {
 	Names  [] Identifier   `list_more:"namelist" item:"name"`
 }
 
-func (impl PatternBundle) Pattern() {}
-type PatternBundle struct {
-	Node                     `part:"pattern_bundle"`
+func (impl PatternRecord) Pattern() {}
+type PatternRecord struct {
+	Node                     `part:"pattern_record"`
 	FieldMaps  [] FieldMap   `list_more:"field_map_list" item:"field_map"`
 }
 

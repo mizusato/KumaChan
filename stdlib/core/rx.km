@@ -133,7 +133,7 @@ export function snapshot:[T]
 export function read:[T]
     &(Reactive[T]) => Sync[T]
     native 'reactive-read';
-// TODO: should provide bundle instead of tuple
+// TODO: should provide record instead of tuple
 export function consume:[T,X]
     &(Reactive[FlexList[T]], &(FlexListKey,Computed[Number],Reactive[T]) => Computed[X]) => Computed[List[X]]
     native 'reactive-flex-consume';

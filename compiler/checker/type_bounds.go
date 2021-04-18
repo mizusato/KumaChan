@@ -111,7 +111,7 @@ func CheckTypeBounds(t Type, nodes (map[Type] ast.Node), ctx TypeBoundsContext) 
 				if err != nil { return err }
 			}
 			return nil
-		case Bundle:
+		case Record:
 			for _, f := range R.Fields {
 				var err = CheckTypeBounds(f.Type, nodes, ctx)
 				if err != nil { return err }

@@ -384,11 +384,11 @@ func typeDef(g *checker.GenericType, reg checker.TypeRegistry, mod string) Html 
 				if kind == "" {
 					return Html("")
 				}
-			case checker.Bundle:
+			case checker.Record:
 				return block("boxed",
 					c_kind,
 					c_weak,
-					blockBundle(R, g.FieldInfo, g.Params, mod))
+					blockRecord(R, g.FieldInfo, g.Params, mod))
 			}
 		}
 		return block("boxed",
@@ -411,7 +411,7 @@ func typeDef(g *checker.GenericType, reg checker.TypeRegistry, mod string) Html 
 	}
 }
 
-func blockBundle(b checker.Bundle, info (map[string] checker.FieldInfo), params ([] checker.TypeParam), mod string) Html {
+func blockRecord(b checker.Record, info (map[string] checker.FieldInfo), params ([] checker.TypeParam), mod string) Html {
 	var fields = make([] Html, len(b.Fields))
 	for name, f := range b.Fields {
 		var t = typeExpr(f.Type, params, mod)
@@ -425,7 +425,7 @@ func blockBundle(b checker.Bundle, info (map[string] checker.FieldInfo), params 
 			block("block-field", text("name", name), keyword(":"), t),
 			block("field-desc", desc))
 	}
-	return block("inner block-bundle", join(fields, Html("")))
+	return block("inner block-record", join(fields, Html("")))
 }
 
 func typeExpr(t checker.Type, params ([] checker.TypeParam), mod string) Html {
@@ -464,14 +464,14 @@ func typeExpr(t checker.Type, params ([] checker.TypeParam), mod string) Html {
 				keyword("("),
 				inline("element-list", join(elements, keyword(","))),
 				keyword(")"))
-		case checker.Bundle:
+		case checker.Record:
 			var fields = make([] Html, len(R.Fields))
 			for name, f := range R.Fields {
 				var t = typeExpr(f.Type, params, mod)
 				fields[f.Index] = inline("field",
 					text("name", name), keyword(":"), t)
 			}
-			return inline("bundle",
+			return inline("record",
 				keyword("{"), join(fields, keyword(",")), keyword("}"))
 		case checker.Func:
 			var in = typeExpr(R.Input, params, mod)

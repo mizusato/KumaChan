@@ -183,8 +183,8 @@ func TupleOf(elements ([] Value)) ProductValue {
 	return &ValProd { elements }
 }
 
-func SingleValueFromBundle(b ProductValue) Value {
-	if len(b.Elements) != 1 { panic("bundle size is not 1") }
+func SingleValueFromRecord(b ProductValue) Value {
+	if len(b.Elements) != 1 { panic("record size is not 1") }
 	return b.Elements[0]
 }
 

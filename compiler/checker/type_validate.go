@@ -110,7 +110,7 @@ func ValidateType(t Type, nodes (map[Type] ast.Node), ctx TypeValidationContext)
 			var max = uint(lang.ProductMaxSize)
 			if count > max { return &TypeError {
 				Point:    t_point,
-				Concrete: E_TooManyTupleBundleItems {
+				Concrete: E_TooManyTupleRecordItems {
 					Defined: count,
 					Limit:   max,
 				},
@@ -120,12 +120,12 @@ func ValidateType(t Type, nodes (map[Type] ast.Node), ctx TypeValidationContext)
 				if err != nil { return err }
 			}
 			return nil
-		case Bundle:
+		case Record:
 			var count = uint(len(R.Fields))
 			var max = uint(lang.ProductMaxSize)
 			if count > max { return &TypeError {
 				Point:    t_point,
-				Concrete: E_TooManyTupleBundleItems {
+				Concrete: E_TooManyTupleRecordItems {
 					Defined: count,
 					Limit:   max,
 				},

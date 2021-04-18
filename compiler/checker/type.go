@@ -92,8 +92,8 @@ func (impl Tuple) TypeRepr() {}
 type Tuple struct {
 	Elements  [] Type
 }
-func (impl Bundle) TypeRepr() {}
-type Bundle struct {
+func (impl Record) TypeRepr() {}
+type Record struct {
 	// TODO: solve this problem: unordered map can make error position random
 	Fields  map[string] Field
 }
@@ -169,7 +169,7 @@ func NormalizeType(t Type, reg TypeRegistry) Type {
 				elements[i] = NormalizeType(el, reg)
 			}
 			return &AnonymousType { Tuple { elements } }
-		case Bundle:
+		case Record:
 			var fields = make(map[string] Field)
 			for name, field := range R.Fields {
 				fields[name] = Field {
@@ -177,7 +177,7 @@ func NormalizeType(t Type, reg TypeRegistry) Type {
 					Index: field.Index,
 				}
 			}
-			return &AnonymousType { Bundle { fields } }
+			return &AnonymousType { Record { fields } }
 		case Func:
 			var input = NormalizeType(R.Input, reg)
 			var output = NormalizeType(R.Output, reg)
@@ -272,9 +272,9 @@ func TypeEqualWithoutContext(type1 Type, type2 Type) bool {
 				default:
 					return false
 				}
-			case Bundle:
+			case Record:
 				switch r2 := t2.Repr.(type) {
-				case Bundle:
+				case Record:
 					var L1 = len(r1.Fields)
 					var L2 = len(r2.Fields)
 					if L1 == L2 {

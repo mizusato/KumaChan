@@ -2,7 +2,7 @@ TODO
 
 - API: revise Reactive[FlexList[T]] methods, consider methods for Reactive[Map[K,V]]
 
-- API: to be semantic: tuple input --> bundle input
+- API: to be semantic: tuple input --> record input
 
 - API: revise resource management of wired components, files, ...
 

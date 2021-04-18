@@ -147,7 +147,7 @@ type EnumType struct {
 func (impl ImplicitType) TypeDef() {}
 type ImplicitType struct {
     Node               `part:"t_implicit"`
-    Repr  ReprBundle   `part:"repr_bundle"`
+    Repr  ReprRecord   `part:"repr_record"`
 }
 func (impl BoxedType) TypeDef() {}
 type BoxedType struct {

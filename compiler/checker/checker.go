@@ -122,7 +122,7 @@ func (ctx CheckContext) CollectExportedTypes() (map[string] map[lang.Symbol] boo
 				for _, el := range R.Elements {
 					collect_symbols(el, mod, exported)
 				}
-			case Bundle:
+			case Record:
 				for _, field := range R.Fields {
 					collect_symbols(field.Type, mod, exported)
 				}
@@ -545,8 +545,8 @@ func CheckTerm(term ast.VariousTerm, ctx ExprContext) (SemiExpr, *ExprError) {
 		return CheckCps(t, ctx)
 	case ast.Tuple:
 		return CheckTuple(t, ctx)
-	case ast.Bundle:
-		return CheckBundle(t, ctx)
+	case ast.Record:
+		return CheckRecord(t, ctx)
 	case ast.InlineRef:
 		return CheckRef(t, ctx)
 	case ast.Array:

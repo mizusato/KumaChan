@@ -279,8 +279,8 @@ func ValidateOverload (
 		var t1 = FillTypeArgs(existing_t, args)
 		var t2 = FillTypeArgs(added_t, args)
 		if TypeEqual(t1, t2, reg) {
-			var f1 = FillTypeArgs(&AnonymousType { Bundle { existing_f } }, args)
-			var f2 = FillTypeArgs(&AnonymousType { Bundle { added_f } }, args)
+			var f1 = FillTypeArgs(&AnonymousType { Record { existing_f } }, args)
+			var f2 = FillTypeArgs(&AnonymousType { Record { added_f } }, args)
 			if TypeEqual(f1, f2, reg) {
 				return &FunctionError {
 					Point: err_point,

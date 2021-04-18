@@ -254,7 +254,7 @@ func FillTypeArgsWithDefaults(t Type, given_args ([] Type), defaults (map[uint] 
 					Elements: filled,
 				},
 			}
-		case Bundle:
+		case Record:
 			var filled = make(map[string]Field, len(r.Fields))
 			for name, field := range r.Fields {
 				filled[name] = Field {
@@ -263,7 +263,7 @@ func FillTypeArgsWithDefaults(t Type, given_args ([] Type), defaults (map[uint] 
 				}
 			}
 			return &AnonymousType {
-				Repr: Bundle {
+				Repr: Record {
 					Fields: filled,
 				},
 			}
@@ -317,7 +317,7 @@ func MarkParamsAsBeingInferred(type_ Type) Type {
 				marked_elements[i] = MarkParamsAsBeingInferred(el)
 			}
 			return &AnonymousType { Tuple { marked_elements } }
-		case Bundle:
+		case Record:
 			var marked_fields = make(map[string]Field)
 			for name, f := range r.Fields {
 				marked_fields[name] = Field {
@@ -325,7 +325,7 @@ func MarkParamsAsBeingInferred(type_ Type) Type {
 					Index: f.Index,
 				}
 			}
-			return &AnonymousType { Bundle { marked_fields } }
+			return &AnonymousType { Record { marked_fields } }
 		case Func:
 			var marked_input = MarkParamsAsBeingInferred(r.Input)
 			var marked_output = MarkParamsAsBeingInferred(r.Output)
@@ -396,7 +396,7 @@ func GetCertainType(type_ Type, point ErrorPoint, ctx ExprContext) (Type, *ExprE
 					Elements: result_elements,
 				},
 			}, nil
-		case Bundle:
+		case Record:
 			var result_fields = make(map[string]Field, len(r.Fields))
 			for name, field := range r.Fields {
 				var t, err = GetCertainType(field.Type, point, ctx)
@@ -407,7 +407,7 @@ func GetCertainType(type_ Type, point ErrorPoint, ctx ExprContext) (Type, *ExprE
 				}
 			}
 			return &AnonymousType {
-				Repr: Bundle {
+				Repr: Record {
 					Fields: result_fields,
 				},
 			}, nil
