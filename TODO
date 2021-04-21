@@ -1,5 +1,9 @@
 TODO
 
+- Type: union supertype: union { ...Another, type Added; }
+
+- Loader: interface module, inheritance (import 'inherit:another'), service < interface
+
 - API: revise Reactive[FlexList[T]] methods, consider methods for Reactive[Map[K,V]]
 
 - API: to be semantic: tuple input --> record input
