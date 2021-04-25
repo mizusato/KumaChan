@@ -1,8 +1,12 @@
 TODO
 
-- Type: union supertype: union { ...Another, type Added; }
+- Type: enum supertype: enum { ...Another, type Added; }
 
 - Loader: interface module, inheritance (import 'inherit:another'), service < interface
+
+- KMD: data-validate only for protected/opaque types
+
+- KMD: automatic validator call when boxing a value
 
 - API: revise Reactive[FlexList[T]] methods, consider methods for Reactive[Map[K,V]]
 
