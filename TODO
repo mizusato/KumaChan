@@ -1,6 +1,10 @@
 TODO
 
-- Runtime: Consider UTF-8 string and StringIterator < Seq[Char]
+- GUI: qt widget tree instead of Web DOM
+
+- Primitive: Consider UTF-8 string + Iterator[String,StringCharInfo(pos,remaining...)],
+
+- Primitive: Iterator[T,I] (proceed => (T,I,Iterator[T,I]))
 
 - Type: enum supertype: enum { ...Another, type Added; }
 
