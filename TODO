@@ -1,5 +1,7 @@
 TODO
 
+- Runtime: Consider UTF-8 string and StringIterator < Seq[Char]
+
 - Type: enum supertype: enum { ...Another, type Added; }
 
 - KMD: data-validate only for protected/opaque types
