@@ -1,6 +1,6 @@
 TODO
 
-- GUI: qt widget tree instead of Web DOM
+- GUI: migrate to QWebEngine
 
 - Primitive: Consider UTF-8 string + Iterator[String,StringCharInfo(pos,remaining...)],
 
