@@ -41,6 +41,10 @@ function bind:
     native 'ui-bind';
 
 export function bind:
+    &(WebView, Component) => Async[never]
+    &(view, root) => { bind (view, root, []) };
+
+export function bind:
     &(WebView, { root: Component, assets: List[Asset] }) => Async[never]
     &(view, opts) =>
         let { root, assets } := opts,

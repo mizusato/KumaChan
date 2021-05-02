@@ -6,11 +6,8 @@ do
     | buf := sync { Reactive '' },
     { merge [
         (InputBox bind buf),
-        (MainView bind {
-            root: { Container [
-                { Label 'Echo:' },
-                { Label buf.{watch} }
-            ] },
-            assets: []
-        } )
+        (MainView bind { Container [
+            { Label 'Echo:' },
+            { Label buf.{watch} }
+        ] })
     ] };
