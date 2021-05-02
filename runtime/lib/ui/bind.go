@@ -7,9 +7,10 @@ import (
 
 
 type BindOptions struct {
-	Debug   bool
-	Sched   rx.Scheduler
-	Assets  AssetIndex
+	Debug       bool
+	Sched       rx.Scheduler
+	AssetIndex  AssetIndex
+	AssetsUsed  [] Asset
 }
 
 var activeBindings = make(map[qt.Widget] struct{})
@@ -23,16 +24,18 @@ func Bind(view qt.Widget, root rx.Observable, opts BindOptions) func() {
 	}
 	var debug = opts.Debug
 	var sched = opts.Sched
-	var assets = opts.Assets
+	var asset_index = opts.AssetIndex
+	var assets_used = opts.AssetsUsed
 	cancel1 := qt.Connect(view, "eventEmitted()", func() {
 		handleEvent(view, sched)
 	})
 	cancel2 := qt.Connect(view, "loadFinished()", func() {
+		injectAssetFiles(view, assets_used)
 		scheduleUpdate(view, sched, root, debug)
 	})
 	var wait = make(chan struct{})
 	qt.CommitTask(func() {
-		registerAssetFiles(view, assets)
+		registerAssetFiles(view, asset_index, assets_used)
 		qt.WebViewLoadContent(view)
 		wait <- struct{}{}
 	})

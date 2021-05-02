@@ -36,9 +36,15 @@ type WebView
     protected
     BaseWebView;
 
-export function bind:
-    &(WebView, Component) => Async[never]
+function bind:
+    &(WebView, Component, List[Asset]) => Async[never]
     native 'ui-bind';
+
+export function bind:
+    &(WebView, { root: Component, assets: List[Asset] }) => Async[never]
+    &(view, opts) =>
+        let { root, assets } := opts,
+        { bind (view, root, assets) };
 
 
 type NativeLabel

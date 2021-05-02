@@ -23,7 +23,7 @@ type Environment interface {
 	GetEntryModulePath() string
 	GetKmdApi() KmdApi
 	GetRpcApi() RpcApi
-	GetResources(kind string) (map[string] Resource)
+	GetResource(kind string, path string) (Resource, bool)
 }
 type StdIO struct {
 	Stdin   rx.File

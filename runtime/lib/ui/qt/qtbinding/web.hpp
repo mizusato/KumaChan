@@ -194,15 +194,10 @@ public:
         return store;
     }
 private:
-    bool contentLoadStarted = false;
     bool contentLoaded = false;
 public:
     void LoadContent() {
-        if (contentLoadStarted) {
-            return;
-        } else {
-            contentLoadStarted = true;
-        }
+        contentLoaded = false;
         setUrl(QUrl(WebViewContent));
         if (DebugEnabled()) {
             openInspector();

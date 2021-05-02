@@ -13,63 +13,44 @@ import (
 
 
 var UiFunctions = map[string] interface{} {
-	"ui-bind": func(view qt.Widget, root rx.Observable, h InteropContext) rx.Observable {
+	"ui-bind": func(view qt.Widget, root rx.Observable, assets Value, h InteropContext) rx.Observable {
 		var debug = h.GetDebugOptions().DebugUI
 		var sched = h.Scheduler()
-		var assets = h.GetResources("web_asset")
+		var asset_index = ui.AssetIndex(func(path string) (Resource, bool) {
+			return h.GetResource("web_asset", path)
+		})
+		var l = container.ListFrom(assets)
+		var assets_used = make([] ui.Asset, l.Length())
+		l.ForEach(func(i uint, v Value) {
+			assets_used[i] = v.(ui.Asset)
+		})
 		return rx.NewSubscription(func(_ func(rx.Object)) func() {
 			return ui.Bind(view, root, ui.BindOptions {
-				Debug:  debug,
-				Sched:  sched,
-				Assets: assets,
+				Debug:      debug,
+				Sched:      sched,
+				AssetIndex: asset_index,
+				AssetsUsed: assets_used,
 			})
 		})
 	},
-	"ui-inject-ttf": func(view qt.Widget, v Value) rx.Observable {
-		return rx.NewSync(func() (rx.Object, bool) {
-			var list = container.ListFrom(v)
-			var fonts = make([] ui.TTF, list.Length())
-			list.ForEach(func(i uint, item_ Value) {
-				var item = item_.(ProductValue)
-				var info = item.Elements[0].(ProductValue)
-				var family = RuneSliceFromString(info.Elements[0].(String))
-				var weight = RuneSliceFromString(info.Elements[1].(String))
-				var style = RuneSliceFromString(info.Elements[2].(String))
-				var file = item.Elements[1].(stdlib.AssetFile)
-				fonts[i] = ui.TTF {
-					File: file,
-					Font: ui.FontName {
-						Family: family,
-						Weight: weight,
-						Style:  style,
-					},
-				}
-			})
-			ui.InjectTTF(view, fonts)
-			return nil, true
-		}, )
+	"ui::TTF": func(info ProductValue, file stdlib.AssetFile) ui.TTF {
+		var family = RuneSliceFromString(info.Elements[0].(String))
+		var weight = RuneSliceFromString(info.Elements[1].(String))
+		var style = RuneSliceFromString(info.Elements[2].(String))
+		return ui.TTF {
+			File: file,
+			Font: ui.FontName {
+				Family: family,
+				Weight: weight,
+				Style:  style,
+			},
+		}
 	},
-	"ui-inject-css": func(view qt.Widget, v Value) rx.Observable {
-		return rx.NewSync(func() (rx.Object, bool) {
-			var list = container.ListFrom(v)
-			var files = make([] stdlib.AssetFile, list.Length())
-			list.ForEach(func(i uint, item Value) {
-				files[i] = item.(stdlib.AssetFile)
-			})
-			ui.InjectCSS(view, files)
-			return nil, true
-		}, )
+	"ui::CSS": func(file stdlib.AssetFile) ui.CSS {
+		return ui.CSS { File: file }
 	},
-	"ui-inject-js": func(view qt.Widget, v Value) rx.Observable {
-		return rx.NewSync(func() (rx.Object, bool) {
-			var list = container.ListFrom(v)
-			var files = make([] stdlib.AssetFile, list.Length())
-			list.ForEach(func(i uint, item Value) {
-				files[i] = item.(stdlib.AssetFile)
-			})
-			ui.InjectJS(view, files)
-			return nil, true
-		})
+	"ui::JS": func(file stdlib.AssetFile) ui.JS {
+		return ui.JS { File: file }
 	},
 	"ui-static-component": func(thunk Value, h InteropContext) rx.Observable {
 		return rx.NewSync(func() (rx.Object, bool) {

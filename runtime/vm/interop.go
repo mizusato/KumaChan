@@ -94,11 +94,9 @@ func (h InteropHandle) GetRpcApi() RpcApi {
 	return h.machine.rpcApi
 }
 
-func (h InteropHandle) GetResources(kind string) (map[string] Resource) {
-	var clone = make(map[string] Resource)
-	for path, item := range h.machine.resources[kind] {
-		clone[path] = item
-	}
-	return clone
+func (h InteropHandle) GetResource(kind string, path string) (Resource, bool) {
+	var category = h.machine.resources[kind]
+	var res, exists = category[path]
+	return res, exists
 }
 

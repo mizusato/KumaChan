@@ -1,28 +1,19 @@
 package ui
 
 import (
-	"reflect"
 	"kumachan/lang"
 	"kumachan/stdlib"
 	"kumachan/runtime/lib/ui/qt"
 )
 
 
-type AssetIndex = (map[string] lang.Resource)
+type AssetIndex = func(path string) (lang.Resource, bool)
 
-type TTF struct {
-	File  stdlib.AssetFile
-	Font  FontName
-}
-
-type FontName struct {
-	Family  qt.Ucs4String
-	Weight  qt.Ucs4String
-	Style   qt.Ucs4String
-}
-
-func registerAssetFiles(view qt.Widget, assets AssetIndex) {
-	for path, item := range assets {
+func registerAssetFiles(view qt.Widget, assets AssetIndex, selected ([] Asset)) {
+	for _, selection := range selected {
+		var path = selection.GetPath()
+		var item, exists = assets(path)
+		if !(exists) { panic("something went wrong") }
 		var path_q, path_del = qt.NewString(([] rune)(path))
 		var mime_q, mime_del = qt.NewString(([] rune)(item.MIME))
 		qt.WebViewRegisterAsset(view, path_q, mime_q, item.Data)
@@ -31,55 +22,59 @@ func registerAssetFiles(view qt.Widget, assets AssetIndex) {
 	}
 }
 
-func injectAssetFiles(view qt.Widget, files interface{}, inject func(qt.Widget,interface{})(qt.String,[](func()))) {
-	var injected = false
-	var inject_all = func() {
-		if !(qt.WebViewIsContentLoaded(view)) { return }
-		if (injected) { return }
-		injected = true
-		var rv = reflect.ValueOf(files)
-		for i := 0; i < rv.Len(); i += 1 {
-			var f = rv.Index(i).Interface()
-			var uuid, deferred = inject(view, f)
-			qt.DeleteString(uuid) // unused now
-			for _, clean := range deferred {
-				clean()
-			}
-		}
+func injectAssetFiles(view qt.Widget, selected ([] Asset)) {
+	for _, selection := range selected {
+		selection.InjectTo(view)
 	}
-	// inject after loaded
-	qt.Connect(view, "loadFinished()", inject_all)
-	// inject immediately if already loaded
-	qt.CommitTask(inject_all)
 }
 
-func InjectTTF(view qt.Widget, fonts ([] TTF)) {
-	injectAssetFiles(view, fonts, func(view qt.Widget, ttf_ interface{}) (qt.String, []func()) {
-		var ttf = ttf_.(TTF)
-		var path_q, del1 = qt.NewString(([] rune)(ttf.File.Path))
-		var family_q, del2 = qt.NewString(ttf.Font.Family)
-		var weight_q, del3  = qt.NewString(ttf.Font.Weight)
-		var style_q, del4 = qt.NewString(ttf.Font.Style)
-		var uuid = qt.WebViewInjectTTF(view, path_q, family_q, weight_q, style_q)
-		return uuid, [] func() { del4, del3, del2, del1 }
-	})
+
+type Asset interface {
+	GetPath() string
+	InjectTo(view qt.Widget)
 }
 
-func InjectJS(view qt.Widget, files ([] stdlib.AssetFile)) {
-	injectAssetFiles(view, files, func(view qt.Widget, file interface{}) (qt.String, [](func())) {
-		var path = file.(stdlib.AssetFile).Path
-		var path_q, del = qt.NewString(([] rune)(path))
-		var uuid = qt.WebViewInjectJS(view, path_q)
-		return uuid, [] func() { del }
-	})
+type CSS struct {
+	File  stdlib.AssetFile
+}
+func (css CSS) GetPath() string { return css.File.Path }
+func (css CSS) InjectTo(view qt.Widget) {
+	var path = css.File.Path
+	var path_q, del = qt.NewString(([] rune)(path))
+	defer del()
+	var uuid = qt.WebViewInjectCSS(view, path_q)
+	qt.DeleteString(uuid)  // not used now
 }
 
-func InjectCSS(view qt.Widget, files ([] stdlib.AssetFile)) {
-	injectAssetFiles(view, files, func(view qt.Widget, file interface{}) (qt.String, []func()) {
-		var path = file.(stdlib.AssetFile).Path
-		var path_q, del = qt.NewString(([] rune)(path))
-		var uuid = qt.WebViewInjectCSS(view, path_q)
-		return uuid, [] func() { del }
-	})
+type JS struct {
+	File  stdlib.AssetFile
 }
+func (js JS) GetPath() string { return js.File.Path }
+func (js JS) InjectTo(view qt.Widget) {
+	var path = js.File.Path
+	var path_q, del = qt.NewString(([] rune)(path))
+	defer del()
+	var uuid = qt.WebViewInjectJS(view, path_q)
+	qt.DeleteString(uuid)  // not used now
+}
+
+type TTF struct {
+	File  stdlib.AssetFile
+	Font  FontName
+}
+type FontName struct {
+	Family  qt.Ucs4String
+	Weight  qt.Ucs4String
+	Style   qt.Ucs4String
+}
+func (ttf TTF) GetPath() string { return ttf.File.Path }
+func (ttf TTF) InjectTo(view qt.Widget) {
+	var path_q, del1 = qt.NewString(([] rune)(ttf.File.Path)); defer del1()
+	var family_q, del2 = qt.NewString(ttf.Font.Family); defer del2()
+	var weight_q, del3  = qt.NewString(ttf.Font.Weight); defer del3()
+	var style_q, del4 = qt.NewString(ttf.Font.Style); defer del4()
+	var uuid = qt.WebViewInjectTTF(view, path_q, family_q, weight_q, style_q)
+	qt.DeleteString(uuid)  // not used now
+}
+
 

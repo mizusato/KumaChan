@@ -1,8 +1,5 @@
-type Asset enum {
-    type TTF { file: AssetFile, font: FontName };
-    type CSS { file: AssetFile };
-    type JS { file: AssetFile };
-};
+type Asset
+    native;
 
 type AssetFile
     native;
@@ -13,48 +10,15 @@ type FontName {
     style:  String
 };
 
-function inject-css:
-    &(WebView, List[AssetFile]) => Async
-    native 'ui-inject-css';
+export function CSS:
+    &(AssetFile) => Asset
+    native 'ui::CSS';
 
-function inject-js:
-    &(WebView, List[AssetFile]) => Async
-    native 'ui-inject-js';
+export function JS:
+    &(AssetFile) => Asset
+    native 'ui::JS';
 
-function inject-ttf:
-    &(WebView, List[(AssetFile,FontName)]) => Async
-    native 'ui-inject-ttf';
-
-export function inject-assets:
-    &(WebView, List[Asset]) => Async
-    &(view, assets) =>
-        let all-ttf := assets.{Seq}.{ filter-map &(asset) =>
-            switch asset:
-            case TTF {file,font}:
-                { Some (file, font) },
-            default:
-                None,
-            end
-        },
-        let all-css := assets.{Seq}.{ filter-map &(asset) =>
-            switch asset:
-            case CSS {file}:
-                { Some file },
-            default:
-                None,
-            end
-        },
-        let all-js := assets.{Seq}.{ filter-map &(asset) =>
-            switch asset:
-            case JS {file}:
-                { Some file },
-            default:
-                None,
-            end
-        },
-        { wait-complete { concat [
-            view. { inject-ttf all-ttf.{List} },
-            view. { inject-css all-css.{List} },
-            view. { inject-js  all-js.{List} }
-        ] } };
+export function TTF:
+    &(FontName, AssetFile) => Asset
+    native 'ui::TTF';
 
