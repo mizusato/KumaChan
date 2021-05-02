@@ -1,6 +1,6 @@
 ifdef OS
 	MSVC_CHECK = cl /?
-	PLATFORM_MAKE = cmd /c "vcvars64.bat && nmake"
+	PLATFORM_MAKE = cmd <<< "vcvars64.bat && nmake && exit || exit 1"
 	LIB_PROJECT = qtbinding_windows.pro
 	LIB_BIN = runtime/lib/ui/qt/build/release/qtbinding.dll
 	EXENAME = kumachan.exe

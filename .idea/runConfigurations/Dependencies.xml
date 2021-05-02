@@ -1,13 +1,8 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Dependencies" type="ShConfigurationType">
-    <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
-    <option name="SCRIPT_PATH" value="$PROJECT_DIR$/Makedeps.sh" />
-    <option name="SCRIPT_OPTIONS" value="" />
-    <option name="INDEPENDENT_SCRIPT_WORKING_DIRECTORY" value="true" />
-    <option name="SCRIPT_WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-    <option name="INDEPENDENT_INTERPRETER_PATH" value="true" />
-    <option name="INTERPRETER_PATH" value="/bin/bash" />
-    <option name="INTERPRETER_OPTIONS" value="" />
+  <configuration default="false" name="Dependencies" type="MAKEFILE_TARGET_RUN_CONFIGURATION" factoryName="Makefile">
+    <makefile filename="Makefile" target="deps" workingDirectory="$PROJECT_DIR$" arguments="">
+      <envs />
+    </makefile>
     <method v="2" />
   </configuration>
 </component>
