@@ -1,6 +1,6 @@
 TODO
 
-- GUI: migrate to QWebEngine
+- GUI: More elegant web asset injection (inject by the `bind` function)
 
 - Primitive: Consider UTF-8 string + Iterator[String,StringCharInfo(pos,remaining...)],
 

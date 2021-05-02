@@ -194,20 +194,18 @@ public:
         return store;
     }
 private:
+    bool contentLoadStarted = false;
     bool contentLoaded = false;
 public:
     void LoadContent() {
-        if (contentLoaded) {
+        if (contentLoadStarted) {
             return;
         } else {
-            contentLoaded = true;
+            contentLoadStarted = true;
         }
         setUrl(QUrl(WebViewContent));
         if (DebugEnabled()) {
-            #ifndef _WIN32
-            // inspector crashes on windows
             openInspector();
-            #endif
         }
     }
     bool IsContentLoaded() {
@@ -228,6 +226,7 @@ public:
         // }
     }
     void finishLoad() override {
+        contentLoaded = true;
         syncRootFontSizeWithScreenSize();
         emit loadFinished();
     }

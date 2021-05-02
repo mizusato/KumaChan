@@ -32,7 +32,11 @@ func registerAssetFiles(view qt.Widget, assets AssetIndex) {
 }
 
 func injectAssetFiles(view qt.Widget, files interface{}, inject func(qt.Widget,interface{})(qt.String,[](func()))) {
+	var injected = false
 	var inject_all = func() {
+		if !(qt.WebViewIsContentLoaded(view)) { return }
+		if (injected) { return }
+		injected = true
 		var rv = reflect.ValueOf(files)
 		for i := 0; i < rv.Len(); i += 1 {
 			var f = rv.Index(i).Interface()
@@ -46,14 +50,7 @@ func injectAssetFiles(view qt.Widget, files interface{}, inject func(qt.Widget,i
 	// inject after loaded
 	qt.Connect(view, "loadFinished()", inject_all)
 	// inject immediately if already loaded
-	var wait = make(chan struct{})
-	qt.CommitTask(func() {
-		if qt.WebViewIsContentLoaded(view) {
-			inject_all()
-		}
-		wait <- struct{}{}
-	})
-	<-wait
+	qt.CommitTask(inject_all)
 }
 
 func InjectTTF(view qt.Widget, fonts ([] TTF)) {
