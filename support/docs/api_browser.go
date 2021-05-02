@@ -15,6 +15,9 @@ import (
 
 const apiBrowserFontSize = 24
 
+const apiBrowserDummyUrlRootPrefix = "dummy://dummy/"
+const apiBrowserDummyBaseUrl = (apiBrowserDummyUrlRootPrefix + "dummy")
+
 var apiBrowserUiXml =
 	string(util.ReadInterpreterResource("api_browser.ui"))
 
@@ -135,6 +138,10 @@ func RunApiBrowser(doc ApiDocIndex) {
 }
 
 func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
+	// TODO: The interop between ListWidget and QWebEngineWidget
+	//       is a disaster. The doc browser should be refactored
+	//       completely using the language itself and become
+	//       a part of the (planned) IDE project.
 	var modules = make([] string, 0)
 	for mod, _ := range doc {
 		modules = append(modules, mod)
@@ -157,15 +164,16 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 	qt.ListWidgetSetItems(ui.ModuleList, get_mod_item, mod_count, nil)
 	qt.BaseWebViewDisableContextMenu(ui.ContentView)
 	qt.BaseWebViewEnableLinkDelegation(ui.ContentView)
-	qt.BaseWebViewRecordClickedLink(ui.ContentView)
 	var current_ref = ApiRef { Module: "", Id: "" }
 	var current_outline_index = make(map[string] int)
+	var current_scroll = func() {}
 	var undo_stack = make([] ApiDocPosition, 0)
 	var redo_stack = make([] ApiDocPosition, 0)
 	var get_current_pos = func() ApiDocPosition {
+		var scroll_point = qt.BaseWebViewGetScroll(ui.ContentView)
 		return ApiDocPosition {
 			ApiRef: current_ref,
-			Scroll: qt.BaseWebViewGetScroll(ui.ContentView),
+			Scroll: scroll_point,
 		}
 	}
 	var jump_state struct {
@@ -214,6 +222,17 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 	var jump = func(ref ApiRef, opts JumpOptions) {
 		jump_init(opts.SaveToUndo)
 		defer jump_clear()
+		if opts.SpecifyScroll {
+			current_scroll = func() {
+				qt.BaseWebViewSetScroll(ui.ContentView, opts.Scroll)
+			}
+		} else {
+			current_scroll = func() {
+				var id_, del = qt.NewString(([] rune)(ref.Id))
+				defer del()
+				qt.BaseWebViewScrollToAnchor(ui.ContentView, id_)
+			}
+		}
 		var mod = ref.Module
 		var id = ref.Id
 		var mod_unchanged = false
@@ -229,9 +248,6 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 				qt.SetPropInt(ui.OutlineView, "currentRow", -1)
 				update_current(ApiRef { Module: mod, Id: id }, false, true)
 			}
-		}
-		if opts.SpecifyScroll {
-			qt.BaseWebViewSetScroll(ui.ContentView, opts.Scroll)
 		}
 	}
 	var undo = func() {
@@ -266,10 +282,16 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 			update_current(ApiRef { Module: mod }, true, false)
 			var mod_data = doc[mod]
 			var content = string(mod_data.Content)
-			var styled_content = (apiBrowserDocStyle + content)
-			var styled_content_, del = qt.NewStringFromGoString(styled_content)
-			defer del()
-			qt.BaseWebViewSetHTML(ui.ContentView, styled_content_)
+			var buf strings.Builder
+			buf.WriteString("<!DOCTYPE html>")
+			buf.WriteString(apiBrowserDocStyle)
+			buf.WriteString(content)
+			var styled_content = buf.String()
+			var styled_content_, del1 = qt.NewStringFromGoString(styled_content)
+			defer del1()
+			var base_url_, del2 = qt.NewStringFromGoString(apiBrowserDummyBaseUrl)
+			defer del2()
+			qt.BaseWebViewSetHTML(ui.ContentView, styled_content_, base_url_)
 			var outline = mod_data.Outline
 			current_outline_index = make(map[string] int)
 			for i, item := range outline {
@@ -297,13 +319,30 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 			update_current(ApiRef { Module: mod, Id: id }, false, true)
 			var id_, del = qt.NewString(key)
 			defer del()
+			// NOTE: The following operation is not valid when module changed,
+			//       it will print a JS error message in stderr.
 			qt.BaseWebViewScrollToAnchor(ui.ContentView, id_)
 		})
-		qt.Connect(ui.ContentView, "linkClicked(const QUrl&)", func() {
-			var url = qt.GetPropString(ui.ContentView, "qtbindingClickedLinkUrl")
-			var ref, ok = ApiRefFromHyperRef(url)
-			if !(ok) { return }
-			jump(ref, JumpOptions { SaveToUndo: true })
+		qt.Listen(ui.ContentView, qt.EventDynamicPropertyChange(), false, func(ev qt.Event) {
+			const propClickedLinkUrl = "qtbindingClickedLinkUrl"
+			var prop = string(ev.DynamicPropertyChangeEventGetPropertyName())
+			if (prop == propClickedLinkUrl) {
+				var url = qt.GetPropString(ui.ContentView, propClickedLinkUrl)
+				url = strings.TrimPrefix(url, apiBrowserDummyUrlRootPrefix)
+				url = strings.ReplaceAll(url, "#type%7C", "#type|")
+				var ref, ok = ApiRefFromHyperRef(url)
+				if !(ok) { return }
+				jump(ref, JumpOptions { SaveToUndo: true })
+			}
+		})
+		qt.Connect(ui.ContentView, "loadFinished(bool)", func() {
+			// NOTE: When the bool value passed by the signal is false,
+			//       it means an invalid load, and this callback should be
+			//       a no-op. However, due to the limitation of the qtbinding
+			//       library, we cannot extract the bool value.
+			//       The following line maybe cause a JS error message
+			//       in stderr when a cross-module link activated.
+			current_scroll()
 		})
 		qt.Connect(ui.ActionBack, "triggered()", func() {
 			undo()

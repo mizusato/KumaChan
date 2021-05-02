@@ -450,7 +450,7 @@ func typeExpr(t checker.Type, params ([] checker.TypeParam), mod string) Html {
 			}
 		})()
 		return inline("type-named",
-			inline("name", link(T.Name, mod)), c_args)
+			inline("name", link(T.Name, TypeDecl, mod)), c_args)
 	case *checker.AnonymousType:
 		switch R := T.Repr.(type) {
 		case checker.Unit:
@@ -524,8 +524,9 @@ func join(items ([] Html), sep Html) Html {
 	return Html(buf.String())
 }
 
-func link(sym lang.Symbol, current_mod string) Html {
-	var href = fmt.Sprintf("%s#%s", sym.ModuleName, sym.String())
+func link(sym lang.Symbol, kind ApiItemKind, current_mod string) Html {
+	var id = IdWithPrefix(sym.String(), kind)
+	var href = fmt.Sprintf("%s#%s", sym.ModuleName, id)
 	var c_module = (func() Html {
 		var clear = checker.GetClearModuleName(sym.ModuleName, current_mod)
 		if clear == "" || sym.ModuleName == stdlib.Mod_core {

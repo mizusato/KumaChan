@@ -56,7 +56,8 @@ func WebAssetLoader() common.UnitFileLoader {
 		Load: LoadWebAsset,
 		IsResource: true,
 		GetMIME: func(path string) string {
-			var ext = filepath.Ext(path)
+			// NOTE: 1 hour wasted on the additional dot
+			var ext = strings.TrimPrefix(filepath.Ext(path), ".")
 			switch ext {
 			case "css", "CSS":   return "text/css"
 			case "js", "JS":     return "text/javascript"

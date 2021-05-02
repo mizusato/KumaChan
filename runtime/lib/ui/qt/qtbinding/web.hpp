@@ -6,40 +6,74 @@
 #include <QMainWindow>
 #include <QCloseEvent>
 #include <QUrl>
-#include <QWebView>
-#include <QWebPage>
-#include <QWebFrame>
-#include <QWebInspector>
-#include <QNetworkAccessManager>
-#include <QNetworkProxy>
-#include <QNetworkReply>
-#include <QTimer>
 #include <QDialog>
 #include <QVBoxLayout>
+#include <QBuffer>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QWebEngineView>
+#include <QWebEngineProfile>
+#include <QWebEngineUrlSchemeHandler>
+#include <QWebEngineUrlRequestJob>
 #include <cmath>
 #include "util.hpp"
 
 
 #define WebViewContent "qrc:/qtbinding/web/content.html"
+#define WebAssetScheme "asset"
 
 class WebBridge final: public QObject {
     Q_OBJECT
+private:
+    QWebEngineView* view;
 public:
-    WebBridge(QWebView* parent): QObject(parent) {
-        QWebFrame* frame = parent->page()->mainFrame();
-        connect(frame, &QWebFrame::javaScriptWindowObjectCleared, [frame,this] () -> void {
-            frame->addToJavaScriptWindowObject("WebBridge", this);
-        });
-    };
-signals:
-    void LoadFinish();
-    void EmitEvent(QString handler, QVariantMap event);
-    void UpdateRootFontSize(double size);
-    void InjectCSS(QString uuid, QString path);
-    void InjectJS(QString uuid, QString path);
-    void InjectTTF(QString uuid, QString path, QString family, QString weight, QString style);
-    void CallMethod(QString id, QString name, QVariantList args);
-    void PatchActualDOM(QString operations);
+    WebBridge(QWebEngineView* parent): QObject(parent), view(parent) {};
+private:
+    void RunJS(QString method, QJsonObject args) {
+        QString msg = QString::fromUtf8(QJsonDocument(args).toJson());
+        QString script = QString("WebBridge.%1(%2);").arg(method, msg);
+        view->page()->runJavaScript(script);
+    }
+public:
+    void UpdateRootFontSize(double size) {
+        QJsonObject args;
+        args["size"] = qreal(size);
+        RunJS("UpdateRootFontSize", args);
+    }
+    void InjectCSS(QString uuid, QString path) {
+        QJsonObject args;
+        args["uuid"] = uuid;
+        args["path"] = path;
+        RunJS("InjectCSS", args);
+    }
+    void InjectJS(QString uuid, QString path) {
+        QJsonObject args;
+        args["uuid"] = uuid;
+        args["path"] = path;
+        RunJS("InjectJS", args);
+    }
+    void InjectTTF(QString uuid, QString path, QString family, QString weight, QString style) {
+        QJsonObject args;
+        args["uuid"] = uuid;
+        args["path"] = path;
+        args["family"] = family;
+        args["weight"] = weight;
+        args["style"] = style;
+        RunJS("InjectTTF", args);
+    }
+    void CallMethod(QString id, QString method, QVariantList args) {
+        QJsonObject bridge_args;
+        bridge_args["id"] = id;
+        bridge_args["method"] = method;
+        bridge_args["args"] = QJsonArray::fromVariantList(args);
+        RunJS("CallMethod", bridge_args);
+    }
+    void PatchActualDOM(QString data) {
+        QJsonObject args;
+        args["data"] = data;
+        RunJS("PatchActualDOM", args);
+    }
 };
 
 struct WebAsset {
@@ -62,84 +96,93 @@ public:
     };
 };
 
-class WebAssetReply final: public QNetworkReply {
+class WebAssetSchemeHandler: public QWebEngineUrlSchemeHandler {
     Q_OBJECT
-    WebAsset asset;
-    qint64 offset;
-public:
-    WebAssetReply(WebAssetStore* store, QString path): QNetworkReply() {
-        offset = 0;
-        asset = store->LookupItem(path);
-        if (asset.exists) {
-            open(ReadOnly | Unbuffered);
-            setHeader(QNetworkRequest::ContentTypeHeader, QVariant(asset.mime));
-            setHeader(QNetworkRequest::ContentLengthHeader, asset.content.size());
-            metaDataChanged();
-            QTimer::singleShot(0, this, &WebAssetReply::metaDataChanged);
-            QTimer::singleShot(0, this, &WebAssetReply::readyRead);
-            QTimer::singleShot(0, this, &WebAssetReply::finished);
-        } else {
-            // qDebug() << "[WebUi] asset file not found:" << path;
-            setError(ContentNotFoundError, "asset file not found");
-            QTimer::singleShot(0, this, &WebAssetReply::error404);
-            QTimer::singleShot(0, this, &WebAssetReply::finished);
-        }
-    };
-    void abort() override {};
-    qint64 readData(char *data, qint64 maxSize) override {
-        if (offset < asset.content.size()) {
-            qint64 number = qMin(maxSize, asset.content.size() - offset);
-            memcpy(data, asset.content.constData() + offset, number);
-            offset += number;
-            return number;
-        } else {
-            return -1;
-        }
-    };
-    qint64 bytesAvailable() const override {
-        qint64 bc = QIODevice::bytesAvailable() + asset.content.size() - offset;
-        return bc;
-    }
-public slots:
-    void error404() {
-        #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
-            errorOccurred(ContentNotFoundError);
-        #else
-            error(ContentNotFoundError);
-        #endif
-    };
-};
-
-class WebNetworkAccessManager final: public QNetworkAccessManager {
-    Q_OBJECT
-    QNetworkAccessManager* existing;
+private:
     WebAssetStore* store;
 public:
-    WebNetworkAccessManager(QNetworkAccessManager* existing, WebAssetStore* store, QObject *parent) : QNetworkAccessManager(parent), existing(existing), store(store) {
-        setCache(existing->cache());
-        setCookieJar(existing->cookieJar());
-        setProxy(existing->proxy());
-        setProxyFactory(existing->proxyFactory());
-    }
-    QNetworkReply* createRequest(Operation operation, const QNetworkRequest &request, QIODevice *device) override {
-        QUrl url = request.url();
-        if (url.scheme() == "asset") {
-            QString path_base64 = url.path();
-            QString path = DecodeBase64(path_base64);
-            // qDebug() << "[asset] request =" << path;
-            return new WebAssetReply(store, path);
+    WebAssetSchemeHandler(QObject* parent, WebAssetStore* store):
+        QWebEngineUrlSchemeHandler(parent), store(store) {};
+    void requestStarted(QWebEngineUrlRequestJob* req) {
+        QUrl url = req->requestUrl();
+        QString raw_path = url.path();
+        QString path = DecodeBase64(raw_path);
+        WebAsset asset = store->LookupItem(path);
+        if (asset.exists) {
+            QByteArray* data = new QByteArray(asset.content);
+            QBuffer* buf = new QBuffer(data, nullptr);
+            QByteArray* contentType = new QByteArray(asset.mime.toUtf8());
+            req->reply(*contentType, buf);
+            connect(req, &QObject::destroyed, [contentType,buf,data] ()->void {
+                delete contentType;
+                delete buf;
+                delete data;
+            });
         } else {
-            // qDebug() << "[other] request =" << url.toString();
-            return QNetworkAccessManager::createRequest(operation, request, device);
+            req->fail(QWebEngineUrlRequestJob::UrlNotFound);
         }
     }
 };
 
-class WebView final: public QWebView {
+class WebViewInterface {
+public:
+    virtual void emitEvent(QString handler, QVariantMap payload) = 0;
+    virtual void finishLoad() = 0;
+};
+
+class WebViewPage final: public QWebEnginePage {
+    Q_OBJECT
+private:
+    WebViewInterface* view;
+public:
+    WebViewPage(QWebEngineProfile* profile, QObject* parent, WebViewInterface* view):
+        QWebEnginePage(profile, parent), view(view) {}
+    void javaScriptAlert(const QUrl &securityOrigin, const QString &msg) override {
+        // We abuse the blocking nature of the alert() function to
+        // achieve synchronous IPC between Qt and Web Contents.
+        static_cast<void>(securityOrigin);
+        QString ipc_prefix = "IPC:";
+        if (msg.startsWith(ipc_prefix)) {
+            QString ipc_payload = msg.mid(ipc_prefix.length());
+            QJsonDocument doc = QJsonDocument::fromJson(ipc_payload.toUtf8());
+            if (doc.isNull()) { return; }
+            auto obj = doc.object();
+            auto method = obj["method"].toString();
+            if (method == "finishLoad") {
+                view->finishLoad();
+            } else if (method == "emitEvent") {
+                auto args = obj["args"].toObject();
+                QString handler = args["handler"].toString();
+                QVariantMap payload = args["payload"].toObject().toVariantMap();
+                view->emitEvent(handler, payload);
+            }
+        }
+    }
+    bool javaScriptConfirm(const QUrl &securityOrigin, const QString &msg) override {
+        static_cast<void>(securityOrigin);
+        static_cast<void>(msg);
+        // reserved
+        return false;
+    }
+    bool javaScriptPrompt(const QUrl &securityOrigin, const QString &msg, const QString &defaultValue, QString *result) override {
+        static_cast<void>(securityOrigin);
+        static_cast<void>(msg);
+        static_cast<void>(defaultValue);
+        static_cast<void>(result);
+        // reserved
+        return false;
+    }
+    void javaScriptConsoleMessage(JavaScriptConsoleMessageLevel level, const QString &message, int lineNumber, const QString &sourceID) override {
+        QWebEnginePage::javaScriptConsoleMessage(level, message, lineNumber, sourceID);
+        // reserved
+    }
+};
+
+class WebView final: public QWebEngineView, public WebViewInterface {
     Q_OBJECT
 public:
-    WebView(QWidget* parent): QWebView(parent) {
-        initAssetStore();
+    WebView(QWidget* parent): QWebEngineView(parent) {
+        initPage();
         initBridge();
         setContextMenuPolicy(Qt::NoContextMenu);
     }
@@ -173,21 +216,20 @@ public:
 signals:
     void loadFinished();
     void eventEmitted();
-private slots:
-    void bridgeLoaded() {
-        syncRootFontSizeWithScreenSize();
-        connect(bridge, &WebBridge::EmitEvent, this, &WebView::emitEvent);
-        emit loadFinished();
-    }
-    void emitEvent(QString handler, QVariantMap event) {
+public:
+    void emitEvent(QString handler, QVariantMap payload) override {
         emittedEventHandler = handler;
-        emittedEventPayload = event;
+        emittedEventPayload = payload;
         emit eventEmitted();
         emittedEventHandler = "";
         emittedEventPayload = QVariantMap();
         // if (debug) {
         //     qDebug() << "Event: " << handler;
         // }
+    }
+    void finishLoad() override {
+        syncRootFontSizeWithScreenSize();
+        emit loadFinished();
     }
 private:
     QString emittedEventHandler;
@@ -197,17 +239,18 @@ public:
     QVariantMap getEmittedEventPayload() const { return emittedEventPayload; }
 private:
     WebAssetStore* store = nullptr;
-    void initAssetStore() {
+    void initPage() {
         store = new WebAssetStore(this);
-        auto old_nm = page()->networkAccessManager();
-        auto new_nm = new WebNetworkAccessManager(old_nm, store, this);
-        page()->setNetworkAccessManager(new_nm);
+        WebAssetSchemeHandler* handler = new WebAssetSchemeHandler(this, store);
+        QWebEngineProfile* profile = new QWebEngineProfile(this);
+        profile->installUrlSchemeHandler(WebAssetScheme, handler);
+        WebViewPage* page = new WebViewPage(profile, this, this);
+        setPage(page);
     };
 private:
     WebBridge* bridge;
     void initBridge() {
         bridge = new WebBridge(this);
-        connect(bridge, &WebBridge::LoadFinish, this, &WebView::bridgeLoaded);
     }
     void syncRootFontSizeWithScreenSize() {
         updateRootFontSize();
@@ -219,21 +262,20 @@ private:
         bridge->UpdateRootFontSize(double(fontSize));
     }
 private:
-    QWebInspector* inspector = nullptr;
+    QDialog* inspector_dialog = nullptr;
     void openInspector() {
-        if (inspector != nullptr) {
+        if (inspector_dialog != nullptr) {
             return;
         }
-        inspector = new QWebInspector(this);
-        page()->settings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, true);
-        inspector->setPage(page());
-        QDialog* inspector_dialog = new QDialog(this);
+        QWebEngineView* inspector = new QWebEngineView(this);
+        inspector->page()->setInspectedPage(this->page());
+        inspector_dialog = new QDialog(this);
         inspector_dialog->setLayout(new QVBoxLayout(inspector_dialog));
         inspector_dialog->layout()->addWidget(inspector);
         inspector_dialog->setModal(false);
         inspector_dialog->resize(800, 360);
         inspector_dialog->layout()->setContentsMargins(0, 0, 0, 0);
-        inspector_dialog->setWindowTitle(tr("Webkit Inspector"));
+        inspector_dialog->setWindowTitle(tr("WebEngine Inspector"));
         inspector_dialog->show();
         inspector_dialog->raise();
         MoveToScreenCenter(inspector_dialog);

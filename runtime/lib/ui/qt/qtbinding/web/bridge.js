@@ -1,11 +1,4 @@
 /**
- *  @template T
- *  @typedef {{
- *      connect: (callback: T) => void,
- *      disconnect: (callback: T) => void
- *  }} Signal
- */
-/**
  *  @typedef {{
  *      prevent: boolean,
  *      stop: boolean,
@@ -19,13 +12,14 @@
  */
 /**
  *  @typedef {{
- *      EmitEvent: (handler:string, event:Object) => void,
- *      LoadFinish: () => void,
- *      UpdateRootFontSize: Signal<(size:number) => void>,
- *      InjectCSS: Signal<(uuid:string, content:string) => void>,
- *      InjectJS: Signal<(uuid:string, content:string) => void>,
- *      InjectTTF: Signal<(uuid: string, content: string, family: string, weight: string, style: string) => void>,
- *      PatchActualDOM: Signal<(data:string) => void>
+ *      finishLoad: () => void,
+ *      emitEvent: (args: { handler:string, payload:Object }) => void,
+ *      UpdateRootFontSize: (args: { size:number }) => void,
+ *      InjectCSS: (args: { uuid:string, path:string }) => void,
+ *      InjectJS: (args: { uuid:string, path:string }) => void,
+ *      InjectTTF: (args: { uuid:string, path:string, family:string, weight:string, style:string }) => void,
+ *      CallMethod: (args: { id:string, method:string, args:any[] }) => void,
+ *      PatchActualDOM: (args: { data:string }) => void
  *  }} Bridge
  */
 /**
@@ -86,6 +80,27 @@ window.addEventListener('load', _ => {
     notifyInitialized(bridge)
 })
 
+/** @type {Bridge} */
+let WebBridge = {
+    finishLoad: () => {
+        alert(`IPC:${JSON.stringify({method:"finishLoad"})}`)
+    },
+    emitEvent: args => {
+        alert(`IPC:${JSON.stringify({method:"emitEvent",args})}`)
+    },
+    UpdateRootFontSize: null,
+    InjectCSS: null,
+    InjectJS: null,
+    InjectTTF: null,
+    CallMethod: null,
+    PatchActualDOM: null
+}
+// TODO: Refactor this file
+// NOTE: The following code assumes the WebBridge object is injected from
+//       outside, which is not a valid assumption anymore
+//       because the implementation changed from QtWebkit to QtWebEngine.
+//       It still works but the code is a bit confusing.
+
 /** @returns {Bridge} */
 function getBridgeObject() {
     // @ts-ignore
@@ -102,41 +117,45 @@ function getBridgeObject() {
 
 /** @param {Bridge} bridge */
 function notifyInitialized(bridge) {
-    bridge.LoadFinish()
+    bridge.finishLoad()
     console.log('[QtBinding] Bridge JS-Side Initialized')
 }
 
 /** @param {Bridge} bridge */
 function connectGeneralSignals(bridge) {
-    bridge.UpdateRootFontSize.connect(size => {
+    bridge.UpdateRootFontSize = ({size}) => {
         let root = document.querySelector(RootElementSelector)
         root.style.fontSize = `${size}px`
-    })
-    bridge.InjectCSS.connect((uuid, path) => {
+    }
+    bridge.InjectCSS = ({uuid, path}) => {
         let link_tag = document.createElement('link')
         link_tag.dataset['uuid'] = uuid
         link_tag.rel = 'stylesheet'
-        link_tag.href = `asset://default/${path}`
+        link_tag.href = `asset:///${path}`
         document.head.appendChild(link_tag)
-    })
-    bridge.InjectJS.connect((uuid, path) => {
+    }
+    bridge.InjectJS = ({uuid, path}) => {
         let script_tag = document.createElement('script')
         script_tag.dataset['uuid'] = uuid
         script_tag.type = 'text/javascript'
-        script_tag.src = `asset://default/${path}`
+        script_tag.src = `asset:///${path}`
         document.head.appendChild(script_tag)
-    })
-    bridge.InjectTTF.connect((uuid, path, family, weight, style) => {
+    }
+    bridge.InjectTTF = ({uuid, path, family, weight, style}) => {
         let style_tag = document.createElement('style')
         style_tag.dataset['uuid'] = uuid
         style_tag.textContent = `@font-face {
             font-family: '${family}';
-            src: url(asset://${path}) format('truetype');
+            src: url(asset:///${path}) format('truetype');
             font-weight: ${weight};
             font-style: ${style};
         }`
         document.head.appendChild(style_tag)
-    })
+    }
+    bridge.CallMethod = _ => {
+        // TODO: implementation
+        throw new Error('bridge.CallMethod(): not implemented')
+    }
 }
 
 /** @param {Bridge} bridge */
@@ -198,7 +217,7 @@ function initializeInteraction(bridge) {
             }
             ev['webuiFocusWentOutside'] = out
         }
-        bridge.EmitEvent(handler, ev)
+        bridge.emitEvent({ handler, payload: ev })
     }
     /** @param {Element} el */
     let keepFocus = el => {
@@ -400,16 +419,14 @@ function initializeInteraction(bridge) {
             }
         }
     }
-    bridge.PatchActualDOM.connect(data => {
+    bridge.PatchActualDOM = ({data}) => {
         try {
-            /** @type {Array<string|boolean>} */
+            /** @type {unknown[]} */
             let items = JSON.parse(data)
             let i = 0
             let L = items.length
             while (i < L) {
-                /** @type {string} */
-                // @ts-ignore
-                let name = items[i]
+                let name = String(items[i])
                 if (patchOperations[name] instanceof Function) {
                     /** @type {Function} */
                     let op = patchOperations[name]
@@ -428,6 +445,6 @@ function initializeInteraction(bridge) {
         } catch (err) {
             console.log(`error patching DOM: ${data}`, err)
         }
-    })
+    }
 }
 

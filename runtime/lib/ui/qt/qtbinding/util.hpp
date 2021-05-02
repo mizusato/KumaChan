@@ -5,6 +5,7 @@
 #include <QMetaMethod>
 #include <QWidget>
 #include <QEvent>
+#include <QWebEnginePage>
 #include <cstdlib>
 #include <cmath>
 #include "qtbinding.h"
@@ -113,6 +114,20 @@ public:
             }
         } else {
             return false;
+        }
+    }
+};
+
+class LinkDelegatedPage: public QWebEnginePage {
+public:
+    LinkDelegatedPage(QObject* parent): QWebEnginePage(parent) {}
+    bool acceptNavigationRequest(const QUrl &url, NavigationType type, bool isMainFrame) override {
+        if (type == NavigationTypeLinkClicked) {
+            parent()->setProperty("qtbindingClickedLinkUrl", url.toString());
+            emit loadFinished(false);
+            return false;
+        } else {
+            return QWebEnginePage::acceptNavigationRequest(url, type, isMainFrame);
         }
     }
 };

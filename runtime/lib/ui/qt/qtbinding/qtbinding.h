@@ -61,6 +61,7 @@ typedef struct _QtPoint QtPoint;
 extern const size_t QtEventMove;
 extern const size_t QtEventResize;
 extern const size_t QtEventClose;
+extern const size_t QtEventDynamicPropertyChange;
 
 #ifdef __cplusplus
 extern "C" {
@@ -94,6 +95,7 @@ extern "C" {
     void QtRemoveEventListener(void* obj_ptr, QtEventListener listener);
     size_t QtResizeEventGetWidth(QtEvent ev);
     size_t QtResizeEventGetHeight(QtEvent ev);
+    QtString QtDynamicPropertyChangeEventGetPropertyName(QtEvent ev);
     QtPoint QtMakePoint(int x, int y);
     int QtPointGetX(QtPoint p);
     int QtPointGetY(QtPoint p);
@@ -126,8 +128,7 @@ extern "C" {
     QtString QtListWidgetGetCurrentItemKey(void *widget_ptr);
     void QtWebViewDisableContextMenu(void* widget_ptr);
     void QtWebViewEnableLinkDelegation(void *widget_ptr);
-    void QtWebViewRecordClickedLink(void* widget_ptr);
-    void QtWebViewSetHTML(void *widget_ptr, QtString html);
+    void QtWebViewSetHTML(void *widget_ptr, QtString html, QtString base_url);
     void QtWebViewScrollToAnchor(void *widget_ptr, QtString anchor);
     QtPoint QtWebViewGetScroll(void* widget_ptr);
     void QtDialogExec(void *dialog_ptr);

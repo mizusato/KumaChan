@@ -71,7 +71,7 @@ var UiQtFunctions = map[string] interface{} {
 		var t = GoStringFromString(prop_type)
 		switch t {
 		case "String":
-			return String(StringFromRuneSlice(qt.GetPropRuneString(object, prop)))
+			return String(StringFromRuneSlice(qt.GetPropUcs4String(object, prop)))
 		case "Bool":
 			return ToBool(qt.GetPropBool(object, prop))
 		case "MaybeNumber":
@@ -95,7 +95,7 @@ var UiQtFunctions = map[string] interface{} {
 			//             (read and compare before writing)
 			switch t {
 			case "String":
-				var current_value = qt.GetPropRuneString(object, prop)
+				var current_value = qt.GetPropUcs4String(object, prop)
 				var new_value = RuneSliceFromString(value.(String))
 				if len(current_value) == len(new_value) {
 					var L = len(current_value)
@@ -110,7 +110,7 @@ var UiQtFunctions = map[string] interface{} {
 						break
 					}
 				}
-				qt.SetPropRuneString(object, prop, new_value)
+				qt.SetPropUcs4String(object, prop, new_value)
 			case "Bool":
 				var current_value = qt.GetPropBool(object, prop)
 				var new_value = FromBool(value.(SumValue))

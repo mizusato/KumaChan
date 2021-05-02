@@ -83,11 +83,15 @@ type EventKind uint
 func EventMove() EventKind { return EventKind(uint(C.QtEventMove)) }
 func EventResize() EventKind { return EventKind(uint(C.QtEventResize)) }
 func EventClose() EventKind { return EventKind(uint(C.QtEventClose)) }
+func EventDynamicPropertyChange() EventKind { return EventKind(uint(C.QtEventDynamicPropertyChange)) }
 func (ev Event) ResizeEventGetWidth() uint {
     return uint(C.QtResizeEventGetWidth(C.QtEvent(ev)))
 }
 func (ev Event) ResizeEventGetHeight() uint {
     return uint(C.QtResizeEventGetHeight(C.QtEvent(ev)))
+}
+func (ev Event) DynamicPropertyChangeEventGetPropertyName() Ucs4String {
+    return StringToRunes(String(C.QtDynamicPropertyChangeEventGetPropertyName(C.QtEvent(ev))))
 }
 
 var debugEnabled = false
@@ -266,32 +270,32 @@ func SetPropBool(obj Object, prop string, val bool) {
     }
     C.QtObjectSetPropBool(obj.ptr(), new_str(prop), C.int(int_val))
 }
-func GetPropQtString(obj Object, prop string) String {
+func getPropQtString(obj Object, prop string) String {
     var new_str, del_all_str = str_alloc()
     defer del_all_str()
     var value = C.QtObjectGetPropString(obj.ptr(), new_str(prop))
     return String(value)
 }
-func SetPropQtString(obj Object, prop string, val String) {
+func setPropQtString(obj Object, prop string, val String) {
     var new_str, del_all_str = str_alloc()
     defer del_all_str()
     C.QtObjectSetPropString(obj.ptr(), new_str(prop), C.QtString(val))
 }
-func GetPropRuneString(obj Object, prop string) ([] rune) {
-    var value = GetPropQtString(obj, prop)
+func GetPropUcs4String(obj Object, prop string) Ucs4String {
+    var value = getPropQtString(obj, prop)
     var value_runes = StringToRunes(value)
     return value_runes
 }
-func SetPropRuneString(obj Object, prop string, val ([] rune)) {
+func SetPropUcs4String(obj Object, prop string, val Ucs4String) {
     var q_val, del_str = NewString(val)
     defer del_str()
-    SetPropQtString(obj, prop, q_val)
+    setPropQtString(obj, prop, q_val)
 }
 func GetPropString(obj Object, prop string) string {
-    return string(GetPropRuneString(obj, prop))
+    return string(GetPropUcs4String(obj, prop))
 }
 func SetPropString(obj Object, prop string, value string) {
-    SetPropRuneString(obj, prop, ([] rune)(value))
+    SetPropUcs4String(obj, prop, ([] rune)(value))
 }
 func GetPropInt(obj Object, prop string) int {
     var new_str, del_all_str = str_alloc()
@@ -302,16 +306,6 @@ func SetPropInt(obj Object, prop string, val int) {
     var new_str, del_all_str = str_alloc()
     defer del_all_str()
     C.QtObjectSetPropInt(obj.ptr(), new_str(prop), C.int(val))
-}
-func GetPropPoint(obj Object, prop string) Point {
-    var new_str, del_all_str = str_alloc()
-    defer del_all_str()
-    return makePoint(C.QtObjectGetPropPoint(obj.ptr(), new_str(prop)))
-}
-func SetPropPoint(obj Object, prop string, p Point) {
-    var new_str, del_all_str = str_alloc()
-    defer del_all_str()
-    C.QtObjectSetPropPoint(obj.ptr(), new_str(prop), makeQtPoint(p))
 }
 
 func MakeBool(p bool) C.int {
@@ -482,11 +476,8 @@ func BaseWebViewDisableContextMenu(w Widget) {
 func BaseWebViewEnableLinkDelegation(w Widget) {
     C.QtWebViewEnableLinkDelegation(w.ptr())
 }
-func BaseWebViewRecordClickedLink(w Widget) {
-    C.QtWebViewRecordClickedLink(w.ptr())
-}
-func BaseWebViewSetHTML(w Widget, html String) {
-    C.QtWebViewSetHTML(w.ptr(), C.QtString(html))
+func BaseWebViewSetHTML(w Widget, html String, base_url String) {
+    C.QtWebViewSetHTML(w.ptr(), C.QtString(html), C.QtString(base_url))
 }
 func BaseWebViewScrollToAnchor(w Widget, anchor String) {
     C.QtWebViewScrollToAnchor(w.ptr(), C.QtString(anchor))

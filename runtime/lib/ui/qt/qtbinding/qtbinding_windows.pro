@@ -6,7 +6,7 @@ SOURCES += util.cpp \
     api.cpp
 TARGET = qtbinding
 TEMPLATE = lib
-QT += core widgets uitools webkitwidgets
+QT += core widgets uitools webenginecore webenginewidgets
 
 RESOURCES += \
     qtbinding.qrc

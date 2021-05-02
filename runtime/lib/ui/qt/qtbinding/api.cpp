@@ -16,10 +16,9 @@
 #include <QListWidgetItem>
 #include <QVariantMap>
 #include <QVariantList>
-#include <QWebView>
-#include <QWebPage>
-#include <QWebFrame>
 #include <QUuid>
+#include <QWebEngineView>
+#include <QWebEngineUrlScheme>
 #include "util.hpp"
 #include "web.hpp"
 #include "qtbinding.h"
@@ -28,8 +27,8 @@
 class UiLoader: public QUiLoader {
 public:
     virtual QWidget* createWidget(const QString &className, QWidget *parent = nullptr, const QString &name = QString()) override {
-        if (className == "QWebView") {
-            QWidget* w = new QWebView(parent);
+        if (className == "QWebEngineView") {
+            QWidget* w = new QWebEngineView(parent);
             w->setObjectName(name);
             return w;
         } else if (className == "WebView") {
@@ -45,6 +44,7 @@ public:
 const size_t QtEventMove = QEvent::Move;
 const size_t QtEventResize = QEvent::Resize;
 const size_t QtEventClose = QEvent::Close;
+const size_t QtEventDynamicPropertyChange = QEvent::DynamicPropertyChange;
 
 static QApplication*
     app = nullptr;
@@ -60,12 +60,23 @@ void QtInit(QtBool debug) {
     static char fake_arg[] = {'Q','t','A','p','p','\0'};
     static char* fake_argv[] = { fake_arg };
     if (!(initialized)) {
-        QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+        // schemes need to be configured before a QGuiApplication or QApplication instance is created
+        QWebEngineUrlScheme scheme(WebAssetScheme);
+        scheme.setSyntax(QWebEngineUrlScheme::Syntax::Path);
+        scheme.setDefaultPort(QWebEngineUrlScheme::SpecialPort::PortUnspecified);
+        scheme.setFlags(
+            QWebEngineUrlScheme::SecureScheme |
+            QWebEngineUrlScheme::CorsEnabled |
+            QWebEngineUrlScheme::LocalScheme |
+            QWebEngineUrlScheme::LocalAccessAllowed
+        );
+        QWebEngineUrlScheme::registerScheme(scheme);
+        // ------------------------
         app = new QApplication(fake_argc, fake_argv);
         app->setQuitOnLastWindowClosed(false);
+        qRegisterMetaType<callback_t>();
         executor = new CallbackExecutor();
         loader = new UiLoader();
-        qRegisterMetaType<callback_t>();
         if (debug) {
             EnableDebug();
         }
@@ -158,17 +169,12 @@ int QtObjectGetPropInt(void* obj_ptr, const char* prop) {
     return val.toInt();
 }
 
-QtBool QtObjectSetPropPoint(void* obj_ptr, const char* prop, QtPoint val) {
-    QObject* obj = (QObject*) obj_ptr;
-    QPoint p = QPoint(val.x, val.y);
-    return obj->setProperty(prop, p);
+QPoint UnwrapPoint(QtPoint p) {
+    return QPoint(p.x, p.y);
 }
 
-QtPoint QtObjectGetPropPoint(void* obj_ptr, const char* prop) {
-    QObject* obj = (QObject*) obj_ptr;
-    QVariant val = obj->property(prop);
-    QPoint point = val.toPoint();
-    return { point.x(), point.y() };
+QtPoint WrapPoint(QPoint p) {
+    return { p.x(), p.y() };
 }
 
 QtConnHandle QtConnect (
@@ -248,6 +254,11 @@ size_t QtResizeEventGetWidth(QtEvent ev) {
 size_t QtResizeEventGetHeight(QtEvent ev) {
     QResizeEvent* resize = (QResizeEvent*) ev.ptr;
     return resize->size().height();
+}
+
+QtString QtDynamicPropertyChangeEventGetPropertyName(QtEvent ev) {
+    QDynamicPropertyChangeEvent* change = (QDynamicPropertyChangeEvent*) ev.ptr;
+    return WrapString(QString::fromUtf8(change->propertyName()));
 }
 
 QtPoint QtMakePoint(int x, int y) {
@@ -427,40 +438,49 @@ QtString QtListWidgetGetCurrentItemKey(void* widget_ptr) {
 }
 
 void QtWebViewDisableContextMenu(void* widget_ptr) {
-    QWebView* widget = (QWebView*) widget_ptr;
+    QWebEngineView* widget = (QWebEngineView*) widget_ptr;
     widget->setContextMenuPolicy(Qt::NoContextMenu);
 }
 
 void QtWebViewEnableLinkDelegation(void* widget_ptr) {
-    QWebView* widget = (QWebView*) widget_ptr;
-    widget->page()->setLinkDelegationPolicy(QWebPage::DelegateAllLinks);
+    QWebEngineView* widget = (QWebEngineView*) widget_ptr;
+    auto g = widget->geometry();
+    widget->setPage(new LinkDelegatedPage(widget));
+    widget->setGeometry(g);
 }
 
-void QtWebViewRecordClickedLink(void* widget_ptr) {
-    QWebView* widget = (QWebView*) widget_ptr;
-    QObject::connect(widget, &QWebView::linkClicked, [widget](const QUrl& url)->void {
-        widget->setProperty("qtbindingClickedLinkUrl", url.toString());
-    });
-}
-
-void QtWebViewSetHTML(void* widget_ptr, QtString html) {
-    QWebView* widget = (QWebView*) widget_ptr;
-    widget->page()->mainFrame()->setHtml(UnwrapString(html));
+void QtWebViewSetHTML(void* widget_ptr, QtString html, QtString base_url) {
+    QWebEngineView* widget = (QWebEngineView*) widget_ptr;
+    widget->setHtml(UnwrapString(html), UnwrapString(base_url));
 }
 
 void QtWebViewScrollToAnchor(void* widget_ptr, QtString anchor) {
-    QWebView* widget = (QWebView*) widget_ptr;
-    widget->page()->mainFrame()->scrollToAnchor(UnwrapString(anchor));
+    QWebEngineView* widget = (QWebEngineView*) widget_ptr;
+    QJsonObject args;
+    args["anchor"] = UnwrapString(anchor);
+    QString args_json = QString::fromUtf8(QJsonDocument(args).toJson());
+    QString script = QString(
+        "(({anchor})=>{document.getElementById(anchor).scrollIntoView()})(%1)"
+    ).arg(args_json);
+    widget->page()->runJavaScript(script);
 }
 
 QtPoint QtWebViewGetScroll(void* widget_ptr) {
-    QWebView* widget = (QWebView*) widget_ptr;
-    return QtObjectGetPropPoint(widget->page()->mainFrame(), "scrollPosition");
+    QWebEngineView* widget = (QWebEngineView*) widget_ptr;
+    return WrapPoint((widget->page()->scrollPosition()).toPoint());
 }
 
 void QtWebViewSetScroll(void* widget_ptr, QtPoint pos) {
-    QWebView* widget = (QWebView*) widget_ptr;
-    QtObjectSetPropPoint(widget->page()->mainFrame(), "scrollPosition", pos);
+    QWebEngineView* widget = (QWebEngineView*) widget_ptr;
+    QJsonObject args;
+    args["x"] = qreal(pos.x);
+    args["y"] = qreal(pos.y);
+    QString args_json = QString::fromUtf8(QJsonDocument(args).toJson());
+    QString scrolling = "document.scrollingElement";
+    QString script = QString(
+        "((scrolling,{x,y})=>{scrolling.scrollLeft=x;scrolling.scrollTop=y;})(%1,%2)"
+    ).arg(scrolling, args_json);
+    widget->page()->runJavaScript(script);
 }
 
 void QtDialogExec(void *dialog_ptr) {
