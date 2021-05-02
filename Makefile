@@ -1,10 +1,14 @@
 ifdef OS
-	WINDOWS_WORKAROUND = cp runtime/lib/ui/qt/build/release/libqtbinding* runtime/lib/ui/qt/build/
-	LIBBIN = runtime/lib/ui/qt/build/release/qtbinding.dll
+	MSVC_CHECK = cl /?
+	PLATFORM_MAKE = cmd /c "vcvars64.bat && nmake"
+	LIB_PROJECT = qtbinding_windows.pro
+	LIB_BIN = runtime/lib/ui/qt/build/release/qtbinding.dll
 	EXENAME = kumachan.exe
 else
-	WINDOWS_WORKAROUND = $(NOOP)
-	LIBBIN = runtime/lib/ui/qt/build/libqtbinding*
+	MSVC_CHECK = $(NOOP)
+	PLATFORM_MAKE = $(MAKE)
+	LIB_PROJECT = qtbinding.pro
+	LIB_BIN = runtime/lib/ui/qt/build/libqtbinding*
 	EXENAME = kumachan
 endif
 
@@ -13,14 +17,14 @@ default: all
 check:
 	@echo -e '\033[1mChecking for Qt...\033[0m'
 	qmake -v
+	$(MSVC_CHECK)
 	@echo -e '\033[1mChecking for Go...\033[0m'
 	go version
 
 qt:
 	@echo -e '\033[1mCompiling CGO Qt Binding...\033[0m'
-	cd runtime/lib/ui/qt/build && qmake ../qtbinding/qtbinding.pro && $(MAKE)
-	$(WINDOWS_WORKAROUND)
-	cp -P $(LIBBIN) build/
+	cd runtime/lib/ui/qt/build && qmake ../qtbinding/$(LIB_PROJECT) && $(PLATFORM_MAKE)
+	cp -P $(LIB_BIN) build/
 
 stdlib:
 	@echo -e '\033[1mCopying Standard Library Files...\033[0m'
