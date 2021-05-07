@@ -23,14 +23,14 @@ type Sync [[unit] T]
 
 /// Source[T] represents an effect that subscribes to a discrete data source.
 /// It is a subtype of Observable[T]. Different from general Observable, a Source
-/// never completes.
+/// never terminates.
 type Source[+T]
     protected
     Observable[T];
 
 /// Computed[T] represents an effect that subscribes to a continuous data source.
 /// It is a subtype of Source[T]. Different from general Source, a Computed
-/// has a current value and always produces its current value synchronously
+/// holds a current value and always produces its current value synchronously
 /// as its first value.
 type Computed[+T]
     protected
