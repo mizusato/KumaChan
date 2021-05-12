@@ -14,7 +14,7 @@ TODO
 
 - API: to be semantic: tuple input --> record input
 
-- API: revise resource management of wired components, files, ...
+- API: revise resource management of files, ... (consider Disposable[T] monad)
 
 - GUI: crash report window
 
