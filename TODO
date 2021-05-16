@@ -16,6 +16,8 @@ TODO
 
 - API: revise resource management of files, ... (consider Disposable[T] monad)
 
+- GUI: setAttributeNS() for SVG elements
+
 - GUI: crash report window
 
 - GUI: support: menu, toolbar, popupmenu, modal dialog
