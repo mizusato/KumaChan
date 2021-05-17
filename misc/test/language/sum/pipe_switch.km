@@ -18,7 +18,7 @@ do
     let s3: String :=
         switch r2.(Failure):
         case Some err:
-            err.{String},
+            err,
         default:
             'null',
         end,
