@@ -6,39 +6,18 @@ import (
 )
 
 
-type String = ([] rune)
 type Map interface {
-	Has(String) bool
-	Lookup(String) (interface{}, bool)
-	ForEach(func(String,interface{}))
+	Has(string) bool
+	Lookup(string) (interface{}, bool)
+	ForEach(func(string,interface{}))
 }
 type EmptyMap struct {}
-func (_ EmptyMap) Has(String) bool { return false }
-func (_ EmptyMap) Lookup(String) (interface{},bool) { return nil, false }
-func (_ EmptyMap) ForEach(func(String,interface{})) {}
-func str_equal(a String, b String) bool {
-	if len(a) != len(b) { return false }
-	var L = len(a)
-	for i := 0; i < L; i += 1 {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
-}
-func str_limited_equal(a String, b String) bool {
-	const max_chars = 1024
-	if len(a) != len(b) { return false }
-	var L = len(a)
-	if L > max_chars { return false }
-	for i := 0; i < L; i += 1 {
-		if a[i] != b[i] { return false }
-	}
-	return true
-}
+func (_ EmptyMap) Has(string) bool { return false }
+func (_ EmptyMap) Lookup(string) (interface{},bool) { return nil, false }
+func (_ EmptyMap) ForEach(func(string,interface{})) {}
 
 type Node struct {
-	Tag  String
+	Tag  string
 	Props
 	Content
 }
@@ -49,15 +28,15 @@ type Props struct {
 	Events  *Events
 }
 type Attrs struct {
-	// String -> String
+	// string -> string
 	Data  Map
 }
 type Styles struct {
-	// String -> String
+	// string -> string
 	Data  Map
 }
 type Events struct {
-	// String -> *EventHandler
+	// string -> *EventHandler
 	Data  Map
 }
 
@@ -69,40 +48,40 @@ var EmptyContent = &Children {}
 
 type Content interface { NodeContent() }
 func (impl *Text) NodeContent() {}
-type Text String
+type Text string
 func (impl *Children) NodeContent() {}
 type Children ([] *Node)
 type EventHandler struct { Handler interface{} }
 
 type DeltaNotifier struct {
-	ApplyStyle   func(id String, key String, value String)
-	EraseStyle   func(id String, key String)
-	SetAttr      func(id String, key String, value String)
-	RemoveAttr   func(id String, key String)
-	AttachEvent  func(id String, name String, handler *EventHandler)
-	ModifyEvent  func(id String, name String)
-	DetachEvent  func(id String, name String, handler *EventHandler)
-	SetText      func(id String, content String)
-	AppendNode   func(parent String, id String, tag String)
-	RemoveNode   func(parent String, id String)
-	UpdateNode   func(old_id String, new_id String)
-	ReplaceNode  func(parent String, old_id String, new_id String, tag String)
-	SwapNode     func(parent String, a String, b String)
-	MoveNode     func(parent String, id String, pivot String)
+	ApplyStyle   func(id string, key string, value string)
+	EraseStyle   func(id string, key string)
+	SetAttr      func(id string, key string, value string)
+	RemoveAttr   func(id string, key string)
+	AttachEvent  func(id string, name string, handler *EventHandler)
+	ModifyEvent  func(id string, name string)
+	DetachEvent  func(id string, name string, handler *EventHandler)
+	SetText      func(id string, content string)
+	AppendNode   func(parent string, id string, tag string)
+	RemoveNode   func(parent string, id string)
+	UpdateNode   func(old_id string, new_id string)
+	ReplaceNode  func(parent string, old_id string, new_id string, tag string)
+	SwapNode     func(parent string, a string, b string)
+	MoveNode     func(parent string, id string, pivot string)
 }
 
 func assert(ok bool) {
 	if !(ok) { panic("assertion failed") }
 }
 
-func get_addr(ptr interface{}) String {
+func get_addr(ptr interface{}) string {
 	var n = reflect.ValueOf(ptr).Pointer()
-	return String(fmt.Sprintf("%X", n))
+	return string(fmt.Sprintf("%X", n))
 }
 
 func detach_all_events(ctx *DeltaNotifier, node *Node) {
 	var node_id = get_addr(node)
-	node.Events.Data.ForEach(func(name String, val interface{}) {
+	node.Events.Data.ForEach(func(name string, val interface{}) {
 		var handler = val.(*EventHandler)
 		ctx.DetachEvent(node_id, name, handler)
 	})
@@ -127,7 +106,7 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 		detach_all_events(ctx, old)
 		ctx.RemoveNode(parent_id, old_id)
 	} else {
-		if str_equal(old.Tag, new.Tag) {
+		if (old.Tag == new.Tag) {
 			ctx.UpdateNode(old_id, new_id)
 		} else {
 			ctx.ReplaceNode(parent_id, old_id, new_id, new.Tag)
@@ -143,20 +122,20 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 			if new_styles == old_styles {
 				goto skip_styles
 			}
-			old_styles.Data.ForEach(func(key String, _ interface{}) {
+			old_styles.Data.ForEach(func(key string, _ interface{}) {
 				if !(new_styles.Data.Has(key)) {
 					ctx.EraseStyle(id, key)
 				}
 			})
 		}
-		new_styles.Data.ForEach(func(key String, val_ interface{}) {
-			var val = val_.(String)
+		new_styles.Data.ForEach(func(key string, val_ interface{}) {
+			var val = val_.(string)
 			if old != nil {
 				var old_val_, exists = old.Styles.Data.Lookup(key)
 				if exists {
 					if exists {
-						var old_val = old_val_.(String)
-						if str_equal(old_val, val) {
+						var old_val = old_val_.(string)
+						if old_val == val {
 							goto skip_this_style
 						}
 					}
@@ -172,19 +151,19 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 			if new_attrs == old_attrs {
 				goto skip_attrs
 			}
-			old_attrs.Data.ForEach(func(name String, _ interface{}) {
+			old_attrs.Data.ForEach(func(name string, _ interface{}) {
 				if !(new_attrs.Data.Has(name)) {
 					ctx.RemoveAttr(id, name)
 				}
 			})
 		}
-		new_attrs.Data.ForEach(func(name String, val_ interface{}) {
-			var val = val_.(String)
+		new_attrs.Data.ForEach(func(name string, val_ interface{}) {
+			var val = val_.(string)
 			if old != nil {
 				var old_val_, exists = old.Attrs.Data.Lookup(name)
 				if exists {
-					var old_val = old_val_.(String)
-					if str_equal(old_val, val) {
+					var old_val = old_val_.(string)
+					if old_val == val {
 						goto skip_this_attr
 					}
 				}
@@ -199,7 +178,7 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 			if old_events == new_events {
 				goto skip_events
 			}
-			old_events.Data.ForEach(func(key String, val interface{}) {
+			old_events.Data.ForEach(func(key string, val interface{}) {
 				var old_name = key
 				var old_handler = val.(*EventHandler)
 				var new_handler_, name_in_new = new_events.Data.Lookup(old_name)
@@ -217,7 +196,7 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 				}
 			})
 		}
-		new_events.Data.ForEach(func(key String, val interface{}) {
+		new_events.Data.ForEach(func(key string, val interface{}) {
 			var new_name = key
 			var new_handler = val.(*EventHandler)
 			if !(old != nil && old.Events.Data.Has(new_name)) {
@@ -232,11 +211,11 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 		case *Text:
 			if old != nil {
 				var old_content, is_text = old.Content.(*Text)
-				if is_text && str_limited_equal(*old_content, *new_content) {
+				if is_text && (*old_content == *new_content) {
 					goto skip_text
 				}
 			}
-			ctx.SetText(id, String(*new_content))
+			ctx.SetText(id, string(*new_content))
 			skip_text:;
 		case *Children:
 			var new_children = *new_content
@@ -300,7 +279,7 @@ func Diff(ctx *DeltaNotifier, parent *Node, old *Node, new *Node) {
 			if old != nil {
 				switch old_content := old.Content.(type) {
 				case *Text:
-					ctx.SetText(id, String(""))
+					ctx.SetText(id, string(""))
 					diff_children(Children([] *Node {}), new_children)
 				case *Children:
 					var old_children = *old_content

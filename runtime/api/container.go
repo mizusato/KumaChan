@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 	"math/big"
+	"unicode/utf8"
 	"encoding/json"
 	. "kumachan/lang"
 	. "kumachan/runtime/lib/container"
@@ -15,14 +17,14 @@ import (
 var ContainerFunctions = map[string] Value {
 	"chr": func(n uint) SumValue {
 		if n <= 0x10FFFF && !(0xD800 <= n && n <= 0xDFFF) {
-			return Some(uint32(n))
+			return Some(rune(n))
 		} else {
 			return None()
 		}
 	},
-	"chr!": func(n uint) uint32 {
+	"chr!": func(n uint) rune {
 		if n <= 0x10FFFF && !(0xD800 <= n && n <= 0xDFFF) {
-			return uint32(n)
+			return rune(n)
 		} else {
 			panic(fmt.Sprintf("invalid code point 0x%X", n))
 		}
@@ -156,33 +158,36 @@ var ContainerFunctions = map[string] Value {
 	"list-unpop": func(v Value) List {
 		return ListFrom(v).Unpopped()
 	},
-	"String from error": func(err error) String {
-		return StringFromGoString(err.Error())
+	"Seq from String": func(s string) Seq {
+		return &StringIterator { Operand: s }
+	},
+	"String from error": func(err error) string {
+		return err.Error()
 	},
 	"String from List": func(v Value) Value {
 		var arr = ListFrom(v)
 		return arr.CopyAsString()
 	},
-	"String from Char": func(char Char) String {
-		return [] Char { char }
+	"String from Char": func(char rune) string {
+		return string([] rune { char })
 	},
-	"String from Int": func(n *big.Int) String {
-		return StringFromGoString(n.String())
+	"String from Int": func(n *big.Int) string {
+		return n.String()
 	},
-	"String from Number": func(x uint) String {
-		return StringFromGoString(fmt.Sprint(x))
+	"String from Number": func(x uint) string {
+		return fmt.Sprint(x)
 	},
-	"String from Bool": func(p SumValue) String {
+	"String from Bool": func(p SumValue) string {
 		if FromBool(p) {
-			return StringFromGoString(stdlib.Yes)
+			return stdlib.Yes
 		} else {
-			return StringFromGoString(stdlib.No)
+			return stdlib.No
 		}
 	},
-	"String from Float": func(x float64) String {
-		return StringFromGoString(fmt.Sprint(x))
+	"String from Float": func(x float64) string {
+		return fmt.Sprint(x)
 	},
-	"encode-utf8": func(str String) []byte {
+	"encode-utf8": func(str string) ([] byte) {
 		return StringEncode(str, UTF8)
 	},
 	"decode-utf8": func(bytes ([] byte)) SumValue {
@@ -193,11 +198,11 @@ var ContainerFunctions = map[string] Value {
 			return None()
 		}
 	},
-	"force-decode-utf8": func(bytes ([] byte)) String {
+	"force-decode-utf8": func(bytes ([] byte)) string {
 		return StringForceDecode(bytes, UTF8)
 	},
-	"quote": func(str String) String {
-		var buf = make([] Char, 0, len(str)+2)
+	"quote": func(str string) string {
+		var buf = make([] rune, 0, len(str)+2)
 		buf = append(buf, '"')
 		for _, char := range str {
 			switch char {
@@ -211,22 +216,21 @@ var ContainerFunctions = map[string] Value {
 			case '\t':
 				buf = append(buf, '\\', 't')
 			default:
-				if strconv.IsPrint(rune(char)) {
+				if strconv.IsPrint(char) {
 					buf = append(buf, char)
 				} else {
-					var bin, err = json.Marshal(string([] rune { rune(char) }))
+					var bin, err = json.Marshal(string([] rune { char }))
 					if err != nil { panic("something went wrong") }
-					var escaped = StringFromGoString(string(bin[1:len(bin)-1]))
+					var escaped = ([] rune)(string(bin[1:len(bin)-1]))
 					buf = append(buf, escaped...)
 				}
 			}
 		}
 		buf = append(buf, '"')
-		return buf
+		return string(buf)
 	},
-	"unquote": func(str String) SumValue {
-		var buf = make([] Char, 0)
-		var s = GoStringFromString(str)
+	"unquote": func(s string) SumValue {
+		var buf strings.Builder
 		if !(len(s) >= 2 && s[0] == '"' && s[len(s)-1] == '"') {
 			return None()
 		}
@@ -236,13 +240,14 @@ var ContainerFunctions = map[string] Value {
 			if err != nil {
 				return None()
 			}
-			buf = append(buf, Char(r))
+			buf.WriteRune(r)
 			s = rest
 		}
-		return Some(buf)
+		var unquoted = buf.String()
+		return Some(unquoted)
 	},
-	"parse-real": func(str String) SumValue {
-		var x, err = strconv.ParseFloat(GoStringFromString(str), 64)
+	"parse-real": func(str string) SumValue {
+		var x, err = strconv.ParseFloat(str, 64)
 		if err != nil {
 			return None()
 		} else {
@@ -253,53 +258,45 @@ var ContainerFunctions = map[string] Value {
 			}
 		}
 	},
-	"substr": func(str String, interval ProductValue) String {
-		var l = interval.Elements[0].(uint)
-		var r = interval.Elements[1].(uint)
-		return StringCopy(StringSliceView(str, l, r))
-	},
-	"substr-view": func(str String, interval ProductValue) String {
-		var l = interval.Elements[0].(uint)
-		var r = interval.Elements[1].(uint)
-		return StringSliceView(str, l ,r)
-	},
-	"str-concat": func(v Value) String {
+	"str-concat": func(v Value) string {
 		return StringConcat(ListFrom(v))
 	},
-	"str-shift": func(str String) SumValue {
+	"str-contains": func(operand string, sub string) SumValue {
+		return ToBool(StringHasSubstring(operand, sub))
+	},
+	"str-length": func(str string) uint {
+		return uint(len(str))
+	},
+	"str-shift": func(str string) SumValue {
 		if len(str) > 0 {
-			return Some(Tuple(str[0], str[1:]))
+			for _, char := range str {
+				var rest = str[utf8.RuneLen(char):]
+				return Some(Tuple(char, rest))
+			}
+			panic("impossible branch")
 		} else {
 			return None()
 		}
 	},
-	"str-shift-prefix": func(str String, prefix String) SumValue {
-		if StringHasPrefix(str, prefix) {
+	"str-shift-prefix": func(str string, prefix string) SumValue {
+		if strings.HasPrefix(str, prefix) {
 			return Some(str[len(prefix):])
-		} else {
-			return None()
-		}
-	},
-	"str-find": func(str String, sub String) SumValue {
-		var index, ok = StringFind(str, sub)
-		if ok {
-			return Some(index)
 		} else {
 			return None()
 		}
 	},
 	"str-split": StringSplit,
 	"str-join": StringJoin,
-	"trim": StringTrim,
-	"trim-left": StringTrimLeft,
-	"trim-right": StringTrimRight,
-	"trim-prefix": StringTrimPrefix,
-	"trim-suffix": StringTrimSuffix,
-	"has-prefix": func(str String, prefix String) SumValue {
-		return ToBool(StringHasPrefix(str, prefix))
+	"trim": strings.Trim,
+	"trim-left": strings.TrimLeft,
+	"trim-right": strings.TrimRight,
+	"trim-prefix": strings.TrimPrefix,
+	"trim-suffix": strings.TrimSuffix,
+	"has-prefix": func(str string, prefix string) SumValue {
+		return ToBool(strings.HasPrefix(str, prefix))
 	},
-	"has-suffix": func(str String, suffix String) SumValue {
-		return ToBool(StringHasSuffix(str, suffix))
+	"has-suffix": func(str string, suffix string) SumValue {
+		return ToBool(strings.HasSuffix(str, suffix))
 	},
 	"new-set": func(cmp_ Value, values_ Value, h InteropContext) Set {
 		var values = ListFrom(values_)
@@ -325,10 +322,11 @@ var ContainerFunctions = map[string] Value {
 		var entries = ListFrom(v)
 		var m = NewMapOfStringKey()
 		entries.ForEach(func(i uint, item Value) {
-			var key, value = Tuple2From(item.(ProductValue))
-			var result, override = m.Inserted(key.(String), value)
+			var key_, value = Tuple2From(item.(ProductValue))
+			var key = key_.(string)
+			var result, override = m.Inserted(key, value)
 			if override {
-				var key_desc = strconv.Quote(GoStringFromString(key.(String)))
+				var key_desc = strconv.Quote(key)
 				panic("duplicate map key " + key_desc)
 			}
 			m = result
@@ -390,8 +388,8 @@ var ContainerFunctions = map[string] Value {
 		return rest
 	},
 	"create-flex": func(v Value, get_key Value, h InteropContext) FlexList {
-		return NewFlexList(ListFrom(v), func(item Value) String {
-			return h.Call(get_key, item).(String)
+		return NewFlexList(ListFrom(v), func(item Value) string {
+			return h.Call(get_key, item).(string)
 		})
 	},
 	"create-flex-empty": func() FlexList {
@@ -406,59 +404,59 @@ var ContainerFunctions = map[string] Value {
 	"flex-length": func(l FlexList) uint {
 		return l.Length()
 	},
-	"flex-has": func(l FlexList, k String) SumValue {
+	"flex-has": func(l FlexList, k string) SumValue {
 		return ToBool(l.Has(k))
 	},
-	"flex-get": func(l FlexList, k String) Value {
+	"flex-get": func(l FlexList, k string) Value {
 		return l.Get(k)
 	},
-	"flex-update": func(l FlexList, k String, f Value, h InteropContext) FlexList {
+	"flex-update": func(l FlexList, k string, f Value, h InteropContext) FlexList {
 		return l.Updated(k, func(v Value) Value {
 			return h.Call(f, v)
 		})
 	},
-	"flex-delete": func(l FlexList, k String) FlexList {
+	"flex-delete": func(l FlexList, k string) FlexList {
 		return l.Deleted(k)
 	},
 	"flex-prepend": func(l FlexList, entry ProductValue) FlexList {
-		var key = entry.Elements[0].(String)
+		var key = entry.Elements[0].(string)
 		var value = entry.Elements[1]
 		return l.Prepended(key, value)
 	},
 	"flex-append": func(l FlexList, entry ProductValue) FlexList {
-		var key = entry.Elements[0].(String)
+		var key = entry.Elements[0].(string)
 		var value = entry.Elements[1]
 		return l.Appended(key, value)
 	},
 	"flex-insert-before": func(l FlexList, pivot_ ProductValue, entry ProductValue) FlexList {
-		var pivot = pivot_.Elements[0].(String)
-		var key = entry.Elements[0].(String)
+		var pivot = pivot_.Elements[0].(string)
+		var key = entry.Elements[0].(string)
 		var value = entry.Elements[1]
 		return l.Inserted(key, value, Before, pivot)
 	},
 	"flex-insert-after": func(l FlexList, pivot_ ProductValue, entry ProductValue) FlexList {
-		var pivot = pivot_.Elements[0].(String)
-		var key = entry.Elements[0].(String)
+		var pivot = pivot_.Elements[0].(string)
+		var key = entry.Elements[0].(string)
 		var value = entry.Elements[1]
 		return l.Inserted(key, value, After, pivot)
 	},
-	"flex-move-before": func(l FlexList, key String, pivot_ ProductValue) FlexList {
-		var pivot = pivot_.Elements[0].(String)
+	"flex-move-before": func(l FlexList, key string, pivot_ ProductValue) FlexList {
+		var pivot = pivot_.Elements[0].(string)
 		return l.Moved(key, Before, pivot)
 	},
-	"flex-move-after": func(l FlexList, key String, pivot_ ProductValue) FlexList {
-		var pivot = pivot_.Elements[0].(String)
+	"flex-move-after": func(l FlexList, key string, pivot_ ProductValue) FlexList {
+		var pivot = pivot_.Elements[0].(string)
 		return l.Moved(key, After, pivot)
 	},
-	"flex-move-up": func(l FlexList, key String) FlexList {
+	"flex-move-up": func(l FlexList, key string) FlexList {
 		l, _ = l.Adjusted(key, Up)
 		return l
 	},
-	"flex-move-down": func(l FlexList, key String) FlexList {
+	"flex-move-down": func(l FlexList, key string) FlexList {
 		l, _ = l.Adjusted(key, Down)
 		return l
 	},
-	"flex-swap": func(l FlexList, key_a String, key_b String) FlexList {
+	"flex-swap": func(l FlexList, key_a string, key_b string) FlexList {
 		return l.Swapped(key_a, key_b)
 	},
 }

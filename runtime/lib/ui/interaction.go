@@ -73,7 +73,7 @@ func getPatchOperationCollector(buf *([] interface{})) *vdom.DeltaNotifier {
 	var writeBoolArgument = func(arg bool) {
 		*buf = append(*buf, arg)
 	}
-	var writeStringArgument = func(arg vdom.String) {
+	var writeStringArgument = func(arg string) {
 		*buf = append(*buf, string(arg))
 	}
 	var v = reflect.ValueOf(&vdom.DeltaNotifier {})
@@ -88,7 +88,7 @@ func getPatchOperationCollector(buf *([] interface{})) *vdom.DeltaNotifier {
 				switch arg := arg.(type) {
 				case bool:
 					writeBoolArgument(arg)
-				case vdom.String:
+				case string:
 					writeStringArgument(arg)
 				case *vdom.EventHandler:
 					if op == "AttachEvent" {

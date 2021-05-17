@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"strconv"
 	"unsafe"
-	"strings"
 	. "kumachan/misc/util/error"
 	"kumachan/stdlib"
 )
@@ -61,31 +60,6 @@ type ArrayInfo struct {
 	Length    uint
 	ItemType  reflect.Type
 }
-
-
-type Char = uint32
-type String = ([] Char)  // IMPORTANT: assumed immutable
-
-func StringFromRuneSlice(runes ([] rune)) String {
-	return *(*([] Char))(unsafe.Pointer(&runes))
-}
-
-func RuneSliceFromString(str String) ([] rune) {
-	return *(*([] rune))(unsafe.Pointer(&str))
-}
-
-func StringFromGoString(bytes string) String {
-	return StringFromRuneSlice(([] rune)(bytes))
-}
-
-func GoStringFromString(str String) string {
-	var buf strings.Builder
-	for _, char := range str {
-		buf.WriteRune(rune(char))
-	}
-	return buf.String()
-}
-
 
 type Inspectable interface {
 	Inspect(inspect func(Value)ErrorMessage) ErrorMessage
@@ -302,8 +276,8 @@ func ToValue(go_value interface{}) Value {
 	switch v := go_value.(type) {
 	case bool:
 		return ToBool(v)
-	case string:
-		return StringFromGoString(v)
+	// TODO: `rune` should be converted but it is a type alias of int32,
+	//       consider how to fix this problem
 	default:
 		return v
 	}

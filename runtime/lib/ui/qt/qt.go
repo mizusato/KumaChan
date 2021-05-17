@@ -51,7 +51,6 @@ type Action interface {
 func (action) QtAction() {}
 type action struct { object }
 
-type Ucs4String = [] rune
 type String C.QtString
 type Bool C.int
 type VariantMap C.QtVariantMap
@@ -64,8 +63,8 @@ type Point struct {
 func getBool(number C.int) bool { return (number != 0) }
 
 type ListWidgetItem struct {
-    Key    Ucs4String
-    Label  Ucs4String
+    Key    string
+    Label  string
     Icon   *ImageData
 }
 type ImageData struct {
@@ -90,8 +89,8 @@ func (ev Event) ResizeEventGetWidth() uint {
 func (ev Event) ResizeEventGetHeight() uint {
     return uint(C.QtResizeEventGetHeight(C.QtEvent(ev)))
 }
-func (ev Event) DynamicPropertyChangeEventGetPropertyName() Ucs4String {
-    return StringToRunes(String(C.QtDynamicPropertyChangeEventGetPropertyName(C.QtEvent(ev))))
+func (ev Event) DynamicPropertyChangeEventGetPropertyName() string {
+    return ConsumeString(String(C.QtDynamicPropertyChangeEventGetPropertyName(C.QtEvent(ev))))
 }
 
 var debugEnabled = false
@@ -281,21 +280,15 @@ func setPropQtString(obj Object, prop string, val String) {
     defer del_all_str()
     C.QtObjectSetPropString(obj.ptr(), new_str(prop), C.QtString(val))
 }
-func GetPropUcs4String(obj Object, prop string) Ucs4String {
+func GetPropString(obj Object, prop string) string {
     var value = getPropQtString(obj, prop)
-    var value_runes = StringToRunes(value)
+    var value_runes = ConsumeString(value)
     return value_runes
 }
-func SetPropUcs4String(obj Object, prop string, val Ucs4String) {
+func SetPropString(obj Object, prop string, val string) {
     var q_val, del_str = NewString(val)
     defer del_str()
     setPropQtString(obj, prop, q_val)
-}
-func GetPropString(obj Object, prop string) string {
-    return string(GetPropUcs4String(obj, prop))
-}
-func SetPropString(obj Object, prop string, value string) {
-    SetPropUcs4String(obj, prop, ([] rune)(value))
 }
 func GetPropInt(obj Object, prop string) int {
     var new_str, del_all_str = str_alloc()
@@ -311,14 +304,15 @@ func SetPropInt(obj Object, prop string, val int) {
 func MakeBool(p bool) C.int {
     if p { return C.int(int(1)) } else { return C.int(int(0)) }
 }
-func NewString(runes Ucs4String) (String, func()) {
+func NewString(data string) (String, func()) {
     var str C.QtString
-    if len(runes) > 0 {
-        var ptr = (*C.uint32_t)(unsafe.Pointer(&runes[0]))
-        var size = (C.size_t)(len(runes))
-        str = C.QtNewStringUTF32(ptr, size)
+    if len(data) > 0 {
+        var hdr = (*reflect.StringHeader)(unsafe.Pointer(&data))
+        var ptr = (*C.uint8_t)(unsafe.Pointer(hdr.Data))
+        var size = (C.size_t)(len(data))
+        str = C.QtNewStringUTF8(ptr, size)
     } else {
-        str = C.QtNewStringUTF32(nil, 0)
+        str = C.QtNewStringUTF8(nil, 0)
     }
     return String(str), func() {
         C.QtDeleteString(str)
@@ -337,16 +331,7 @@ func NewStringFromUtf8Binary(buf ([] byte)) (String, func()) {
         C.QtDeleteString(str)
     }
 }
-func NewStringFromGoString(go_str string) (String, func()) {
-    var hdr = *(*reflect.StringHeader)(unsafe.Pointer(&go_str))
-    var bin = *(*[]byte)(unsafe.Pointer(&reflect.SliceHeader {
-        Data: hdr.Data,
-        Len:  hdr.Len,
-        Cap:  hdr.Len,
-    }))
-    return NewStringFromUtf8Binary(bin)
-}
-func StringToRunes(str String) ([] rune) {
+func ConsumeString(str String) string {
     var q_str = (C.QtString)(str)
     var size16 = uint(C.QtStringUTF16Length(q_str))
     var buf = make([] rune, size16)
@@ -356,7 +341,7 @@ func StringToRunes(str String) ([] rune) {
         buf = buf[:size32]
     }
     C.QtDeleteString(q_str)
-    return buf
+    return string(buf)
 }
 func DeleteString(str String) {
     C.QtDeleteString((C.QtString)(str))
@@ -369,9 +354,9 @@ func makePoint(p C.QtPoint) Point {
     return Point { X: int(C.QtPointGetX(p)), Y: int(C.QtPointGetY(p)) }
 }
 
-func VariantMapGetRunes(m VariantMap, key String) ([] rune) {
+func VariantMapGetString(m VariantMap, key String) string {
     var val = C.QtVariantMapGetString(C.QtVariantMap(m), C.QtString(key))
-    var val_runes = StringToRunes(String(val))
+    var val_runes = ConsumeString(String(val))
     return val_runes
 }
 func VariantMapGetFloat(m VariantMap, key String) float64 {
@@ -464,9 +449,9 @@ func ListWidgetSetItems(w Widget, get_item (func(uint) ListWidgetItem), length u
 func ListWidgetHasCurrentItem(w Widget) bool {
     return getBool(C.QtListWidgetHasCurrentItem(w.ptr()))
 }
-func ListWidgetGetCurrentItemKey(w Widget) ([] rune) {
+func ListWidgetGetCurrentItemKey(w Widget) string {
     var raw_key = C.QtListWidgetGetCurrentItemKey(w.ptr())
-    var key = StringToRunes(String(raw_key))
+    var key = ConsumeString(String(raw_key))
     return key
 }
 
@@ -503,9 +488,9 @@ func DialogShowModal(w Widget) {
 }
 
 type FileDialogOptions struct {
-    Title   [] rune
-    Cwd     [] rune
-    Filter  [] rune
+    Title   string
+    Cwd     string
+    Filter  string
 }
 func fileDialogAdaptOptions(opts FileDialogOptions) (String, String, String, func()) {
     var title, del_title = NewString(opts.Title)
@@ -517,45 +502,45 @@ func fileDialogAdaptOptions(opts FileDialogOptions) (String, String, String, fun
         del_filter()
     }
 }
-func FileDialogOpen(parent Widget, opts FileDialogOptions) ([] rune) {
+func FileDialogOpen(parent Widget, opts FileDialogOptions) string {
     var parent_ptr = ParentNullable(parent)
     var title, cwd, filter, del = fileDialogAdaptOptions(opts)
     defer del()
     var raw_path = C.QtFileDialogOpen(parent_ptr,
         C.QtString(title), C.QtString(cwd), C.QtString(filter))
-    return StringToRunes(String(raw_path))
+    return ConsumeString(String(raw_path))
 }
-func FileDialogOpenMultiple(parent Widget, opts FileDialogOptions) ([][] rune) {
+func FileDialogOpenMultiple(parent Widget, opts FileDialogOptions) ([] string) {
     var parent_ptr = ParentNullable(parent)
     var title, cwd, filter, del = fileDialogAdaptOptions(opts)
     defer del()
     var raw_path_list = C.QtFileDialogOpenMultiple(parent_ptr,
         C.QtString(title), C.QtString(cwd), C.QtString(filter))
-    var path_list = make([][] rune, 0)
+    var path_list = make([] string, 0)
     var L = uint(C.QtStringListGetSize(raw_path_list))
     for i := uint(0); i < L; i += 1 {
         var raw_item = C.QtStringListGetItem(raw_path_list, C.size_t(i))
-        var item = StringToRunes(String(raw_item))
+        var item = ConsumeString(String(raw_item))
         path_list = append(path_list, item)
     }
     C.QtDeleteStringList(raw_path_list)
     return path_list
 }
-func FileDialogSelectDirectory(parent Widget, opts FileDialogOptions) ([] rune) {
+func FileDialogSelectDirectory(parent Widget, opts FileDialogOptions) string {
     var parent_ptr = ParentNullable(parent)
     var title, cwd, _, del = fileDialogAdaptOptions(opts)
     defer del()
     var raw_path = C.QtFileDialogSelectDirectory(parent_ptr,
         C.QtString(title), C.QtString(cwd))
-    return StringToRunes(String(raw_path))
+    return ConsumeString(String(raw_path))
 }
-func FileDialogSave(parent Widget, opts FileDialogOptions) ([] rune) {
+func FileDialogSave(parent Widget, opts FileDialogOptions) string {
     var parent_ptr = ParentNullable(parent)
     var title, cwd, filter, del = fileDialogAdaptOptions(opts)
     defer del()
     var raw_path = C.QtFileDialogSave(parent_ptr,
         C.QtString(title), C.QtString(cwd), C.QtString(filter))
-    return StringToRunes(String(raw_path))
+    return ConsumeString(String(raw_path))
 }
 
 func WebViewLoadContent(view Widget) {
@@ -587,9 +572,9 @@ func WebViewPatchActualDOM(view Widget, patch_data ([] byte)) {
 type WebViewEventPayload struct {
     Data  VariantMap
 }
-func WebViewGetCurrentEventHandler(view Widget) Ucs4String {
+func WebViewGetCurrentEventHandler(view Widget) string {
     var raw_id = C.WebViewGetCurrentEventHandler(view.ptr())
-    var id_str = StringToRunes(String(raw_id))
+    var id_str = ConsumeString(String(raw_id))
     return id_str
 }
 func WebViewGetCurrentEventPayload(view Widget) *WebViewEventPayload {
@@ -601,17 +586,17 @@ func WebViewConsumeEventPayload(ev *WebViewEventPayload, f func(*WebViewEventPay
     } ()
     return f(ev)
 }
-func WebViewEventPayloadGetRunes(ev *WebViewEventPayload, key ([] rune)) ([] rune) {
+func WebViewEventPayloadGetString(ev *WebViewEventPayload, key string) string {
     var key_str, del = NewString(key)
     defer del()
-    return VariantMapGetRunes(ev.Data, key_str)
+    return VariantMapGetString(ev.Data, key_str)
 }
-func WebViewEventPayloadGetFloat(ev *WebViewEventPayload, key ([] rune)) float64 {
+func WebViewEventPayloadGetFloat(ev *WebViewEventPayload, key string) float64 {
     var key_str, del = NewString(key)
     defer del()
     return VariantMapGetFloat(ev.Data, key_str)
 }
-func WebViewEventPayloadGetBool(ev *WebViewEventPayload, key ([] rune)) bool {
+func WebViewEventPayloadGetBool(ev *WebViewEventPayload, key string) bool {
     var key_str, del = NewString(key)
     defer del()
     return VariantMapGetBool(ev.Data, key_str)

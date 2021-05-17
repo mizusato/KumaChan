@@ -191,6 +191,9 @@ func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 			return nil, false
 		}
 	case stdlib.Uint32, stdlib.Dword, stdlib.Char:
+		// note on the Char type:
+		//   assume unsigned here and
+		//   convert to singed value later (with codepoint validation)
 		if value.IsUint64() {
 			var x = value.Uint64()
 			if x <= math.MaxUint32 {

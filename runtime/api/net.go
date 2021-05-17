@@ -9,16 +9,16 @@ import (
 
 
 var NetFunctions = map[string] interface{} {
-	"parse-url": func(str String) SumValue {
-		var url, err = url.Parse(GoStringFromString(str))
+	"parse-url": func(str string) SumValue {
+		var url, err = url.Parse(str)
 		if err != nil {
 			return None()
 		} else {
 			return Some(url)
 		}
 	},
-	"url!": func(str String) *url.URL {
-		var url, err = url.Parse(GoStringFromString(str))
+	"url!": func(str string) *url.URL {
+		var url, err = url.Parse(str)
 		if err != nil { panic(err) }
 		return url
 	},

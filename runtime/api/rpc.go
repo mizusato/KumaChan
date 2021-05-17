@@ -41,16 +41,16 @@ func rpcAdaptLimitOptions(opts ProductValue) rpc.Limits {
 }
 
 var RpcFunctions = map[string] interface{} {
-	"rpc-server-cleartext-net": func(network String, addr String) librpc.ServerBackend {
+	"rpc-server-cleartext-net": func(network string, addr string) librpc.ServerBackend {
 		return librpc.ServerCleartextNet {
-			Network: GoStringFromString(network),
-			Address: GoStringFromString(addr),
+			Network: network,
+			Address: addr,
 		}
 	},
-	"rpc-client-cleartext-net": func(network String, addr String) librpc.ClientBackend {
+	"rpc-client-cleartext-net": func(network string, addr string) librpc.ClientBackend {
 		return librpc.ClientCleartextNet {
-			Network: GoStringFromString(network),
-			Address: GoStringFromString(addr),
+			Network: network,
+			Address: addr,
 		}
 	},
 	"rpc-connection-close": func(conn *rx.WrappedConnection) rx.Observable {

@@ -4,8 +4,8 @@ import . "kumachan/lang"
 
 
 var AssertionFunctions = map[string] interface{} {
-	"panic": func(msg String) struct{} {
-		panic("programmed panic: " + GoStringFromString(msg))
+	"panic": func(msg string) struct{} {
+		panic("programmed panic: " + msg)
 	},
 	"assert": func(ok_ SumValue, k Value, h InteropContext) Value {
 		var ok = FromBool(ok_)

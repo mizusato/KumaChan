@@ -66,9 +66,7 @@ func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
 					return obj.(KmdTypedValue).Value.(*big.Int)
 				},
 				WriteString: func(obj kmd.Object) string {
-					var tv = obj.(KmdTypedValue)
-					var str = tv.Value.(String)
-					return GoStringFromString(str)
+					return obj.(KmdTypedValue).Value.(string)
 				},
 				WriteBinary: func(obj kmd.Object) ([] byte) {
 					return obj.(KmdTypedValue).Value.([] byte)
@@ -185,9 +183,7 @@ func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
 				ReadUint64: func(v uint64) kmd.Object { return v },
 				ReadInt64:  func(v int64) kmd.Object { return v },
 				ReadInt:    func(v *big.Int) kmd.Object { return v },
-				ReadString: func(v string) kmd.Object {
-					return StringFromGoString(v)
-				},
+				ReadString: func(v string) kmd.Object { return v },
 				ReadBinary: func(v ([] byte)) kmd.Object { return v },
 			},
 			ContainerDeserializer: kmd.ContainerDeserializer{

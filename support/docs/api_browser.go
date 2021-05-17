@@ -153,10 +153,9 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 	}
 	var get_mod_item = func(i uint) qt.ListWidgetItem {
 		var mod = modules[i]
-		var mod_ucs4 = ([] rune)(mod)
 		return qt.ListWidgetItem {
-			Key:   mod_ucs4,
-			Label: mod_ucs4,
+			Key:   mod,
+			Label: mod,
 			Icon:  icons["module"],
 		}
 	}
@@ -228,7 +227,7 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 			}
 		} else {
 			current_scroll = func() {
-				var id_, del = qt.NewString(([] rune)(ref.Id))
+				var id_, del = qt.NewString(ref.Id)
 				defer del()
 				qt.BaseWebViewScrollToAnchor(ui.ContentView, id_)
 			}
@@ -287,9 +286,9 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 			buf.WriteString(apiBrowserDocStyle)
 			buf.WriteString(content)
 			var styled_content = buf.String()
-			var styled_content_, del1 = qt.NewStringFromGoString(styled_content)
+			var styled_content_, del1 = qt.NewString(styled_content)
 			defer del1()
-			var base_url_, del2 = qt.NewStringFromGoString(apiBrowserDummyBaseUrl)
+			var base_url_, del2 = qt.NewString(apiBrowserDummyBaseUrl)
 			defer del2()
 			qt.BaseWebViewSetHTML(ui.ContentView, styled_content_, base_url_)
 			var outline = mod_data.Outline
@@ -301,8 +300,8 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 			var get_outline_item = func(i uint) qt.ListWidgetItem {
 				var api = outline[i]
 				return qt.ListWidgetItem {
-					Key:   ([] rune)(IdWithPrefix(api.Id, api.Kind)),
-					Label: ([] rune)(api.Name),
+					Key:   IdWithPrefix(api.Id, api.Kind),
+					Label: api.Name,
 					Icon:  apiKindToIcon(api.Kind),
 				}
 			}
@@ -436,8 +435,8 @@ func apiBrowserUiLogic(ui ApiBrowser, doc ApiDocIndex) {
 						}
 					})()
  					return qt.ListWidgetItem {
-						Key:   ([] rune)(href),
-						Label: ([] rune)(label),
+						Key:   href,
+						Label: label,
 						Icon:  apiKindToIcon(item.Kind),
 					}
 				}

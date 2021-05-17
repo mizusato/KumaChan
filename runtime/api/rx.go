@@ -132,26 +132,22 @@ var EffectFunctions = map[string] Value {
 			r.Watch().Map(func(list_ rx.Object) rx.Object {
 				var list = list_.(container.FlexList)
 				return rx.KeyTrackedActionVector {
-					HasKey: func(key_rx string) bool {
-						var key = StringFromGoString(key_rx)
+					HasKey: func(key string) bool {
 						return list.Has(key)
 					},
 					IterateKeys: func(f func(string)) {
-						list.IterateKeySequence(func(key String) {
-							var key_rx = GoStringFromString(key)
-							f(key_rx)
+						list.IterateKeySequence(func(key string) {
+							f(key)
 						})
 					},
 					CloneKeys: func() []string {
 						var keys = make([] string, 0, list.Length())
-						list.IterateKeySequence(func(key String) {
-							var key_rx = GoStringFromString(key)
-							keys = append(keys, key_rx)
+						list.IterateKeySequence(func(key string) {
+							keys = append(keys, key)
 						})
 						return keys
 					},
-					GetAction: func(key_rx string, index_source rx.Observable) rx.Observable {
-						var key = StringFromGoString(key_rx)
+					GetAction: func(key string, index_source rx.Observable) rx.Observable {
 						var in = func(old_state rx.Object) func(rx.Object) rx.Object {
 							return func(new_item_value rx.Object) rx.Object {
 								var old_list = old_state.(container.FlexList)
@@ -165,7 +161,7 @@ var EffectFunctions = map[string] Value {
 							var list = state.(container.FlexList)
 							return list.Get(key)
 						}
-						var proj_key = &rx.KeyChain { Key: key_rx }
+						var proj_key = &rx.KeyChain { Key: key }
 						var proj = rx.ReactiveProject(r, in, out, proj_key)
 						var view = rx.ReactiveDistinctView(proj, RefEqual)
 						var arg = Tuple(key, index_source, view)
@@ -243,7 +239,7 @@ var EffectFunctions = map[string] Value {
 		return rx.NewSync(func() (rx.Object, bool) {
 			var id = nextProcessLevelGlobalId
 			nextProcessLevelGlobalId += 1
-			return StringFromGoString(strconv.FormatUint(id, 16)), true
+			return strconv.FormatUint(id, 16), true
 		})
 	},
 	"gen-monotonic-id": func() rx.Observable {
@@ -256,8 +252,8 @@ var EffectFunctions = map[string] Value {
 	"crash": func(v Value, h InteropContext) rx.Observable {
 		var msg string
 		switch V := v.(type) {
-		case String:
-			msg = GoStringFromString(V)
+		case string:
+			msg = V
 		case error:
 			msg = V.Error()
 		default:

@@ -9,17 +9,16 @@ import (
 
 
 var ErrorFunctions = map[string] interface{} {
-	"make-error": func(msg String) error {
-		return errors.New(GoStringFromString(msg))
+	"make-error": func(msg string) error {
+		return errors.New(msg)
 	},
-	"make-error-with-data": func(msg_ String, data_ Value) error {
-		var msg = GoStringFromString(msg_)
+	"make-error-with-data": func(msg string, data_ Value) error {
 		var data = make(map[string] string)
 		var data_items = container.ListFrom(data_)
 		data_items.ForEach(func(i uint, p_ Value) {
 			var p = p_.(ProductValue)
-			var k = GoStringFromString(p.Elements[0].(String))
-			var v = GoStringFromString(p.Elements[1].(String))
+			var k = p.Elements[0].(string)
+			var v = p.Elements[1].(string)
 			data[k] = v
 		})
 		return &rpc.ErrorWithExtraData {
@@ -27,15 +26,13 @@ var ErrorFunctions = map[string] interface{} {
 			Data: data,
 		}
 	},
-	"error-get-data": func(e error, opts ProductValue) String {
-		var key = opts.Elements[0].(String)
-		var fallback = opts.Elements[1].(String)
+	"error-get-data": func(e error, opts ProductValue) string {
+		var key = opts.Elements[0].(string)
+		var fallback = opts.Elements[1].(string)
 		var e_with_extra, with_extra = e.(*rpc.ErrorWithExtraData)
 		if with_extra {
-			var k = GoStringFromString(key)
-			var v, exists = e_with_extra.Data[k]
+			var value, exists = e_with_extra.Data[key]
 			if exists {
-				var value = StringFromGoString(v)
 				return value
 			} else {
 				return fallback
@@ -46,9 +43,8 @@ var ErrorFunctions = map[string] interface{} {
 	},
 	"error-wrap": func(e error, f Value, h InteropContext) error {
 		var wrap_desc = func(desc string) string {
-			var desc_str = StringFromGoString(desc)
-			var wrapped_str = h.Call(f, desc_str).(String)
-			return GoStringFromString(wrapped_str)
+			var wrapped_str = h.Call(f, desc).(string)
+			return wrapped_str
 		}
 		var e_with_extra, with_extra = e.(*rpc.ErrorWithExtraData)
 		if with_extra {

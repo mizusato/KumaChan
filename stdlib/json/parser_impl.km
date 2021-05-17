@@ -12,7 +12,7 @@ function Chars:
             ({ consume ([char].{String}, err) } map &() => char)) };
 
 const Blank: Parser[unit,Error] :=
-    { Chars { accept: (' '..\t..\r..\n) } }
+    { Chars { accept: { List (' '..\t..\r..\n) } } }
         . { map &() => () };
 
 function WrappedList:[T]
@@ -78,7 +78,7 @@ const BoolParser: ValueParserType :=
     { choose [TrueParser, FalseParser] };
 
 const NumberParser: ValueParserType :=
-    | chars := apply { repeat { Chars { accept: '0123456789.Ee+-' } } },
+    | chars := apply { repeat { Chars { accept: { List '0123456789.Ee+-' } } } },
     switch { parse-real chars.{String} }:
     case Some x:
         { output { self::Number x } },

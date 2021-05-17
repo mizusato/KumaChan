@@ -1,9 +1,19 @@
-type Char    protected Uint32;       // container.Char (uint32)
-type String  protected List[Char];  // container.String ([] uint32)
+type Char   native;  // rune (int32)
+type String native;  // string
+
+export function  =: &(Char,Char) => Bool      native '=Int32';
 
 export function Char?:
     &(Number) => Maybe[Char]
     native 'chr';
+
+export function Seq:
+    &(String) => Seq[Char]
+    native 'Seq from String';
+
+export function List:
+    &(String) => List[Char]
+    &(str) => str.{Seq}.{List};
 
 export function = :
     &(String,String) => Bool
@@ -65,6 +75,10 @@ export function parse-real:
     &(String) => Maybe[Real]
     native 'parse-real';
 
+export function length:
+    &(String) => Number
+    native 'str-length';
+
 export function shift:
     &(String) => Maybe[(Char,String)]
     native 'str-shift';
@@ -73,17 +87,9 @@ export function shift-prefix:
     &(String,String) => Maybe[String]
     native 'str-shift-prefix';
 
-export function find:
-    &(String,String) => Maybe[Number]
-    native 'str-find';
-
 export function contains:
     &(String,String) => Bool
-    &(str,sub) =>
-        switch str.{find(sub)}:
-            case Some _: Yes,
-            case None:    No,
-        end;
+    native 'str-contains';
 
 export function contains:
     &(String,Char) => Bool

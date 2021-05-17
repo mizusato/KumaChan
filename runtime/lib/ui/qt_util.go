@@ -58,9 +58,9 @@ func CreateQtTaskAction(action func() interface{}) rx.Observable {
 
 func QtFileDialogAdaptArgs (
 	parent  SumValue,
-	title   String,
+	title   string,
 	cwd     stdlib.Path,
-	filter  String,
+	filter  string,
 ) (qt.Widget, qt.FileDialogOptions) {
 	var parent_val, ok = Unwrap(parent)
 	var parent_widget qt.Widget
@@ -68,9 +68,9 @@ func QtFileDialogAdaptArgs (
 		parent_widget = parent_val.(qt.Widget)
 	}
 	var opts = qt.FileDialogOptions {
-		Title:  RuneSliceFromString(title),
-		Cwd:    ([] rune)(cwd.String()),
-		Filter: RuneSliceFromString(filter),
+		Title:  title,
+		Cwd:    cwd.String(),
+		Filter: filter,
 	}
 	return parent_widget, opts
 }

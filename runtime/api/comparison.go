@@ -11,13 +11,13 @@ var ComparisonFunctions = map[string] interface{} {
 	"sum-index-equal": func(a SumValue, b SumValue) SumValue {
 		return ToBool(a.Index == b.Index)
 	},
-	"=String": func(a String, b String) SumValue {
+	"=String": func(a string, b string) SumValue {
 		return ToBool(StringCompare(a, b) == Equal)
 	},
-	"<String": func(a String, b String) SumValue {
+	"<String": func(a string, b string) SumValue {
 		return ToBool(StringCompare(a, b) == Smaller)
 	},
-	"<>String": func(a String, b String) SumValue {
+	"<>String": func(a string, b string) SumValue {
 		return ToOrdering(StringCompare(a, b))
 	},
 	"=Int": func(a *big.Int, b *big.Int) SumValue {

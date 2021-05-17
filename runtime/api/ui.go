@@ -34,9 +34,9 @@ var UiFunctions = map[string] interface{} {
 		})
 	},
 	"ui::TTF": func(info ProductValue, file stdlib.AssetFile) ui.TTF {
-		var family = RuneSliceFromString(info.Elements[0].(String))
-		var weight = RuneSliceFromString(info.Elements[1].(String))
-		var style = RuneSliceFromString(info.Elements[2].(String))
+		var family = info.Elements[0].(string)
+		var weight = info.Elements[1].(string)
+		var style = info.Elements[2].(string)
 		return ui.TTF {
 			File: file,
 			Font: ui.FontName {
@@ -57,8 +57,7 @@ var UiFunctions = map[string] interface{} {
 			return h.Call(thunk, nil), true
 		})
 	},
-	"ui-dom-node": func(tag_ String) *vdom.Node {
-		var tag = RuneSliceFromString(tag_)
+	"ui-dom-node": func(tag string) *vdom.Node {
 		return &vdom.Node {
 			Tag: tag,
 			Props: vdom.Props {
@@ -151,8 +150,8 @@ var UiFunctions = map[string] interface{} {
 			Content: node.Content,
 		}
 	},
-	"ui-dom-text": func(text String) vdom.Content {
-		var t = vdom.Text(RuneSliceFromString(text))
+	"ui-dom-text": func(text string) vdom.Content {
+		var t = vdom.Text(text)
 		return &t
 	},
 	"ui-dom-children": func(children_ Value) vdom.Content {
@@ -175,18 +174,18 @@ var UiFunctions = map[string] interface{} {
 			Content: content,
 		}
 	},
-	"ui-event-payload-get-string": func(ev *qt.WebViewEventPayload, key String) String {
-		return StringFromRuneSlice(qt.WebViewEventPayloadGetRunes(ev, RuneSliceFromString(key)))
+	"ui-event-payload-get-string": func(ev *qt.WebViewEventPayload, key string) string {
+		return qt.WebViewEventPayloadGetString(ev, key)
 	},
-	"ui-event-payload-get-float": func(ev *qt.WebViewEventPayload, key String) float64 {
-		return util.CheckReal(qt.WebViewEventPayloadGetFloat(ev, RuneSliceFromString(key)))
+	"ui-event-payload-get-float": func(ev *qt.WebViewEventPayload, key string) float64 {
+		return util.CheckReal(qt.WebViewEventPayloadGetFloat(ev, key))
 	},
-	"ui-event-payload-get-number": func(ev *qt.WebViewEventPayload, key String) uint {
-		var x = util.CheckReal(qt.WebViewEventPayloadGetFloat(ev, RuneSliceFromString(key)))
+	"ui-event-payload-get-number": func(ev *qt.WebViewEventPayload, key string) uint {
+		var x = util.CheckReal(qt.WebViewEventPayloadGetFloat(ev, key))
 		return uint(x)
 	},
-	"ui-event-payload-get-bool": func(ev *qt.WebViewEventPayload, key String) SumValue {
-		return ToBool(qt.WebViewEventPayloadGetBool(ev, RuneSliceFromString(key)))
+	"ui-event-payload-get-bool": func(ev *qt.WebViewEventPayload, key string) SumValue {
+		return ToBool(qt.WebViewEventPayloadGetBool(ev, key))
 	},
 }
 

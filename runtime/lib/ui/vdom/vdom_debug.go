@@ -39,7 +39,7 @@ func writeNode (
 	case *Text:
 		if len(*content) > 0 {
 			writeBlank(buf, (depth + 1), indent)
-			writeHtmlTextString(buf, *content)
+			writeHtmlTextString(buf, string(*content))
 			writeLineFeed(buf)
 		}
 	case *Children:
@@ -56,21 +56,21 @@ func writeNode (
 
 func writeAttrs(buf io.Writer, attrs *Attrs) {
 	if attrs == EmptyAttrs { return }
-	attrs.Data.ForEach(func(key String, value interface{}) {
+	attrs.Data.ForEach(func(key string, value interface{}) {
 		writeStatic(buf, " ")
 		writeString(buf, key)
 		writeStatic(buf, "=")
-		writeQuotedString(buf, value.(String))
+		writeQuotedString(buf, value.(string))
 	})
 }
 
 func writeStyles(buf io.Writer, styles *Styles) {
 	if styles == EmptyStyles { return }
 	writeStatic(buf, " style=\"")
-	styles.Data.ForEach(func(name String, value interface{}) {
+	styles.Data.ForEach(func(name string, value interface{}) {
 		writeString(buf, name)
 		writeStatic(buf, ":")
-		writeString(buf, value.(String))
+		writeString(buf, value.(string))
 		writeStatic(buf, ";")
 	})
 	writeStatic(buf, "\"")
@@ -78,7 +78,7 @@ func writeStyles(buf io.Writer, styles *Styles) {
 
 func writeEvents(buf io.Writer, events *Events, ctx InspectContext) {
 	if events == EmptyEvents { return }
-	events.Data.ForEach(func(name String, handler_ interface{}) {
+	events.Data.ForEach(func(name string, handler_ interface{}) {
 		var handler = handler_.(*EventHandler)
 		writeStatic(buf, " ")
 		writeStatic(buf, "@")
@@ -98,15 +98,15 @@ func writeStatic(buf io.Writer, content string) {
 	fmt.Fprintf(buf, "%s", content)
 }
 
-func writeString(buf io.Writer, str String) {
+func writeString(buf io.Writer, str string) {
 	fmt.Fprintf(buf, "%s", string(str))
 }
 
-func writeQuotedString(buf io.Writer, str String) {
+func writeQuotedString(buf io.Writer, str string) {
 	fmt.Fprintf(buf, "%s", strconv.Quote(string(str)))
 }
 
-func writeHtmlTextString(buf io.Writer, str String) {
+func writeHtmlTextString(buf io.Writer, str string) {
 	fmt.Fprintf(buf, "%s", html.EscapeString(string(str)))
 }
 

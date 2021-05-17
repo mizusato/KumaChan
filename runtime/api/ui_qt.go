@@ -26,36 +26,35 @@ var UiQtFunctions = map[string] interface{} {
 			return nil
 		})
 	},
-	"qt-signal": func(object qt.Object, signature String, mapper Value, h InteropContext) rx.Observable {
+	"qt-signal": func(object qt.Object, signature string, mapper Value, h InteropContext) rx.Observable {
 		var source = ui.QtSignal {
 			Object:     object,
-			Signature:  GoStringFromString(signature),
+			Signature:  signature,
 			PropMapper: func(object qt.Object) interface{} {
 				return h.Call(mapper, object)
 			},
 		}
 		return source.Receive()
 	},
-	"qt-signal-no-payload": func(object qt.Object, signature String) rx.Observable {
+	"qt-signal-no-payload": func(object qt.Object, signature string) rx.Observable {
 		var source = ui.QtSignal {
 			Object:     object,
-			Signature:  GoStringFromString(signature),
+			Signature:  signature,
 			PropMapper: func(object qt.Object) interface{} {
 				return nil
 			},
 		}
 		return source.Receive()
 	},
-	"qt-event": func(object qt.Object, kind String, prevent SumValue) rx.Observable {
+	"qt-event": func(object qt.Object, kind string, prevent SumValue) rx.Observable {
 		var event_kind = (func() qt.EventKind {
-			var k = GoStringFromString(kind)
-			switch k {
+			switch kind {
 			case "resize":
 				return qt.EventResize()
 			case "close":
 				return qt.EventClose()
 			default:
-				panic(fmt.Sprintf("unsupported Qt event kind %s", k))
+				panic(fmt.Sprintf("unsupported Qt event kind %s", kind))
 			}
 		})()
 		var prevent_default = FromBool(prevent)
@@ -66,12 +65,10 @@ var UiQtFunctions = map[string] interface{} {
 		}
 		return source.Receive()
 	},
-	"qt-get-property": func(object qt.Object, prop_name String, prop_type String) Value {
-		var prop = GoStringFromString(prop_name)
-		var t = GoStringFromString(prop_type)
+	"qt-get-property": func(object qt.Object, prop string, t string) Value {
 		switch t {
 		case "String":
-			return String(StringFromRuneSlice(qt.GetPropUcs4String(object, prop)))
+			return qt.GetPropString(object, prop)
 		case "Bool":
 			return ToBool(qt.GetPropBool(object, prop))
 		case "MaybeNumber":
@@ -85,9 +82,7 @@ var UiQtFunctions = map[string] interface{} {
 			panic(fmt.Sprintf("unsupported Qt property type %s", t))
 		}
 	},
-	"qt-set-property": func(object qt.Object, prop_name String, prop_type String, value Value) rx.Observable {
-		var prop = GoStringFromString(prop_name)
-		var t = GoStringFromString(prop_type)
+	"qt-set-property": func(object qt.Object, prop string, t string, value Value) rx.Observable {
 		return ui.CreateQtTaskAction(func() interface{} {
 			var _, unblock = qt.BlockCallbacks(object)
 			defer unblock()
@@ -95,8 +90,8 @@ var UiQtFunctions = map[string] interface{} {
 			//             (read and compare before writing)
 			switch t {
 			case "String":
-				var current_value = qt.GetPropUcs4String(object, prop)
-				var new_value = RuneSliceFromString(value.(String))
+				var current_value = qt.GetPropString(object, prop)
+				var new_value = value.(string)
 				if len(current_value) == len(new_value) {
 					var L = len(current_value)
 					var all_equal = true
@@ -110,7 +105,7 @@ var UiQtFunctions = map[string] interface{} {
 						break
 					}
 				}
-				qt.SetPropUcs4String(object, prop, new_value)
+				qt.SetPropString(object, prop, new_value)
 			case "Bool":
 				var current_value = qt.GetPropBool(object, prop)
 				var new_value = FromBool(value.(SumValue))
@@ -143,7 +138,7 @@ var UiQtFunctions = map[string] interface{} {
 			var current_key ([] rune)
 			var the_current, has_current = Unwrap(current)
 			if has_current {
-				current_key = RuneSliceFromString(the_current.(String))
+				current_key = ([] rune)(the_current.(string))
 			} else {
 				current_key = nil
 			}
@@ -156,17 +151,17 @@ var UiQtFunctions = map[string] interface{} {
 			return nil
 		})
 	},
-	"qt-list-widget-item": func(key String, label String) qt.ListWidgetItem {
+	"qt-list-widget-item": func(key string, label string) qt.ListWidgetItem {
 		return qt.ListWidgetItem {
-			Key:   RuneSliceFromString(key),
-			Label: RuneSliceFromString(label),
+			Key:   key,
+			Label: label,
 			Icon:  nil,
 		}
 	},
-	"qt-list-widget-item-with-icon-png": func(key String, png *stdlib.PNG, label String) qt.ListWidgetItem {
+	"qt-list-widget-item-with-icon-png": func(key string, png *stdlib.PNG, label string) qt.ListWidgetItem {
 		return qt.ListWidgetItem {
-			Key:   RuneSliceFromString(key),
-			Label: RuneSliceFromString(label),
+			Key:   key,
+			Label: label,
 			Icon:  &qt.ImageData {
 				Data:   png.Data,
 				Format: qt.PNG,
@@ -176,12 +171,13 @@ var UiQtFunctions = map[string] interface{} {
 	"qt-list-widget-get-current": func(list qt.Widget) Value {
 		if qt.ListWidgetHasCurrentItem(list) {
 			var key_runes = qt.ListWidgetGetCurrentItemKey(list)
-			return Some(StringFromRuneSlice(key_runes))
+			var key = string(key_runes)
+			return Some(key)
 		} else {
 			return None()
 		}
 	},
-	"qt-dialog-open": func(parent SumValue, title String, cwd stdlib.Path, filter String) rx.Observable {
+	"qt-dialog-open": func(parent SumValue, title string, cwd stdlib.Path, filter string) rx.Observable {
 		var parent_widget, opts = ui.QtFileDialogAdaptArgs(parent, title, cwd, filter)
 		return rx.NewCallback(func(ok func(rx.Object)) {
 			qt.CommitTask(func() {
@@ -196,7 +192,7 @@ var UiQtFunctions = map[string] interface{} {
 			})
 		})
 	},
-	"qt-dialog-open-multiple": func(parent SumValue, title String, cwd stdlib.Path, filter String) rx.Observable {
+	"qt-dialog-open-multiple": func(parent SumValue, title string, cwd stdlib.Path, filter string) rx.Observable {
 		var parent_widget, opts = ui.QtFileDialogAdaptArgs(parent, title, cwd, filter)
 		return rx.NewCallback(func(ok func(rx.Object)) {
 			qt.CommitTask(func() {
@@ -209,8 +205,8 @@ var UiQtFunctions = map[string] interface{} {
 			})
 		})
 	},
-	"qt-dialog-open-directory": func(parent SumValue, title String, cwd stdlib.Path) rx.Observable {
-		var parent_widget, opts = ui.QtFileDialogAdaptArgs(parent, title, cwd, String([] Char {}))
+	"qt-dialog-open-directory": func(parent SumValue, title string, cwd stdlib.Path) rx.Observable {
+		var parent_widget, opts = ui.QtFileDialogAdaptArgs(parent, title, cwd, "")
 		return rx.NewCallback(func(ok func(rx.Object)) {
 			qt.CommitTask(func() {
 				var path_runes = qt.FileDialogSelectDirectory(parent_widget, opts)
@@ -224,7 +220,7 @@ var UiQtFunctions = map[string] interface{} {
 			})
 		})
 	},
-	"qt-dialog-save": func(parent SumValue, title String, cwd stdlib.Path, filter String) rx.Observable {
+	"qt-dialog-save": func(parent SumValue, title string, cwd stdlib.Path, filter string) rx.Observable {
 		var parent_widget, opts = ui.QtFileDialogAdaptArgs(parent, title, cwd, filter)
 		return rx.NewCallback(func(ok func(rx.Object)) {
 			qt.CommitTask(func() {

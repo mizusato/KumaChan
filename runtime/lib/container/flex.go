@@ -10,7 +10,7 @@ import (
 
 
 type FlexList struct {
-	keys   [] String
+	keys   [] string
 	index  Map // Map<string,FlexListEntry>
 }
 type FlexListEntry struct {
@@ -26,8 +26,8 @@ const (
 	Up UpOrDown = iota
 	Down
 )
-func FlexListFormatKey(key String) string {
-	return strconv.Quote(GoStringFromString(key))
+func FlexListFormatKey(key string) string {
+	return strconv.Quote(key)
 }
 
 type FlexListIterator struct {
@@ -54,9 +54,9 @@ func (it FlexListIterator) GetItemType() reflect.Type {
 	return ValueReflectType()
 }
 
-func NewFlexList(l List, get_key func(Value)(String)) FlexList {
+func NewFlexList(l List, get_key func(Value)(string)) FlexList {
 	var L = l.Length()
-	var keys = make([] String, L)
+	var keys = make([] string, L)
 	var index = NewMapOfStringKey()
 	for i := uint(0); i < L; i += 1 {
 		var value = l.at(i)
@@ -91,7 +91,7 @@ func (l FlexList) Inspect(inspect func(Value)ErrorMessage) ErrorMessage {
 	return ListErrMsgItems(items, "FlexList")
 }
 
-func (l FlexList) mustHaveEntry(key String) FlexListEntry {
+func (l FlexList) mustHaveEntry(key string) FlexListEntry {
 	var entry, exists = l.index.Lookup(key)
 	if !(exists) {
 		panic(fmt.Sprintf("FlexList: key not found: %s", FlexListFormatKey(key)))
@@ -99,7 +99,7 @@ func (l FlexList) mustHaveEntry(key String) FlexListEntry {
 	return entry.(FlexListEntry)
 }
 
-func (l FlexList) mustGetIndexValueInserted(key String, v Value) Map {
+func (l FlexList) mustGetIndexValueInserted(key string, v Value) Map {
 	var index, override = l.index.Inserted(key, FlexListEntry{
 		Value: v,
 	})
@@ -109,7 +109,7 @@ func (l FlexList) mustGetIndexValueInserted(key String, v Value) Map {
 	return index
 }
 
-func (l FlexList) mustGetIndexValueUpdated(key String, v Value) Map {
+func (l FlexList) mustGetIndexValueUpdated(key string, v Value) Map {
 	var updated, override = l.index.Inserted(key, FlexListEntry {
 		Value:    v,
 	})
@@ -117,12 +117,12 @@ func (l FlexList) mustGetIndexValueUpdated(key String, v Value) Map {
 	return updated
 }
 
-func (l FlexList) Has(key String) bool {
+func (l FlexList) Has(key string) bool {
 	var _, exists = l.index.Lookup(key)
 	return exists
 }
 
-func (l FlexList) Get(key String) Value {
+func (l FlexList) Get(key string) Value {
 	var entry = l.mustHaveEntry(key)
 	return entry.Value
 }
@@ -131,13 +131,13 @@ func (l FlexList) Length() uint {
 	return uint(len(l.keys))
 }
 
-func (l FlexList) IterateKeySequence(f func(String)) {
+func (l FlexList) IterateKeySequence(f func(string)) {
 	for _, key := range l.keys {
 		f(key)
 	}
 }
 
-func (l FlexList) Updated(target String, f func(Value)(Value)) FlexList {
+func (l FlexList) Updated(target string, f func(Value)(Value)) FlexList {
 	var entry = l.mustHaveEntry(target)
 	var new_index = l.mustGetIndexValueUpdated(target, f(entry.Value))
 	return FlexList {
@@ -146,16 +146,16 @@ func (l FlexList) Updated(target String, f func(Value)(Value)) FlexList {
 	}
 }
 
-func (l FlexList) Deleted(target String) FlexList {
+func (l FlexList) Deleted(target string) FlexList {
 	var _, new_index, ok = l.index.Deleted(target)
 	if !(ok) {
 		panic(fmt.Sprintf("FlexList: key not found: %s", FlexListFormatKey(target)))
 	} else {
 		var old_keys = l.keys
-		var new_keys = make([] String, 0, (len(old_keys) - 1))
+		var new_keys = make([] string, 0, (len(old_keys) - 1))
 		var found = false
 		for _, this := range old_keys {
-			if StringCompare(this, target) == Equal {
+			if this == target {
 				if found {
 					panic("something went wrong")
 				}
@@ -175,12 +175,12 @@ func (l FlexList) Deleted(target String) FlexList {
 	}
 }
 
-func (l FlexList) Prepended(key String, v Value) FlexList {
+func (l FlexList) Prepended(key string, v Value) FlexList {
 	var new_index = l.mustGetIndexValueInserted(key, v)
 	var old_keys = l.keys
 	var new_len = uint(1 + len(old_keys))
 	var pos = uint(0)
-	var new_keys = make([] String, new_len)
+	var new_keys = make([] string, new_len)
 	copy(new_keys[1:], old_keys)
 	new_keys[pos] = key
 	return FlexList {
@@ -189,12 +189,12 @@ func (l FlexList) Prepended(key String, v Value) FlexList {
 	}
 }
 
-func (l FlexList) Appended(key String, v Value) FlexList {
+func (l FlexList) Appended(key string, v Value) FlexList {
 	var new_index = l.mustGetIndexValueInserted(key, v)
 	var old_keys = l.keys
 	var new_len = uint(1 + len(old_keys))
 	var pos = (new_len - 1)
-	var new_keys = make([] String, new_len)
+	var new_keys = make([] string, new_len)
 	copy(new_keys, old_keys)
 	new_keys[pos] = key
 	return FlexList {
@@ -203,13 +203,13 @@ func (l FlexList) Appended(key String, v Value) FlexList {
 	}
 }
 
-func (l FlexList) Inserted(key String, v Value, pos BeforeOrAfter, pivot String) FlexList {
+func (l FlexList) Inserted(key string, v Value, pos BeforeOrAfter, pivot string) FlexList {
 	var new_index = l.mustGetIndexValueInserted(key, v)
 	var old_keys = l.keys
-	var new_keys = make([] String, 0, (1 + len(old_keys)))
+	var new_keys = make([] string, 0, (1 + len(old_keys)))
 	var found = false
 	for _, this := range old_keys {
-		if StringCompare(this, pivot) == Equal {
+		if this == pivot {
 			if found { panic("something went wrong") }
 			found = true
 			if pos == Before {
@@ -232,20 +232,20 @@ func (l FlexList) Inserted(key String, v Value, pos BeforeOrAfter, pivot String)
 	}
 }
 
-func (l FlexList) Moved(target String, pos BeforeOrAfter, pivot String) FlexList {
-	if StringCompare(target, pivot) == Equal {
+func (l FlexList) Moved(target string, pos BeforeOrAfter, pivot string) FlexList {
+	if target == pivot {
 		return l
 	} else {
 		var old_keys = l.keys
-		var new_keys = make([] String, 0, len(old_keys))
+		var new_keys = make([] string, 0, len(old_keys))
 		var target_found = false
 		var pivot_found = false
 		for _, this := range old_keys {
-			if StringCompare(this, target) == Equal {
+			if this == target {
 				if target_found { panic("something went wrong") }
 				target_found = true
 				// do nothing
-			} else if StringCompare(this, pivot) == Equal {
+			} else if this == pivot {
 				if pivot_found { panic("something went wrong") }
 				pivot_found = true
 				if pos == Before {
@@ -272,14 +272,14 @@ func (l FlexList) Moved(target String, pos BeforeOrAfter, pivot String) FlexList
 	}
 }
 
-func (l FlexList) Adjusted(target String, direction UpOrDown) (FlexList, bool) {
+func (l FlexList) Adjusted(target string, direction UpOrDown) (FlexList, bool) {
 	var old_keys = l.keys
-	var new_keys = make([] String, len(old_keys))
+	var new_keys = make([] string, len(old_keys))
 	var target_found = false
 	var ok = false
 	var skip = false
 	for i, this := range old_keys {
-		if StringCompare(this, target) == Equal {
+		if this == target {
 			if target_found { panic("something went wrong") }
 			target_found = true
 			if direction == Up {
@@ -323,22 +323,22 @@ func (l FlexList) Adjusted(target String, direction UpOrDown) (FlexList, bool) {
 	}, ok
 }
 
-func (l FlexList) Swapped(a_key String, b_key String) FlexList {
-	if StringCompare(a_key, b_key) == Equal {
+func (l FlexList) Swapped(a_key string, b_key string) FlexList {
+	if a_key == b_key {
 		return l
 	} else {
 		var old_keys = l.keys
-		var new_keys = make([] String, len(old_keys))
+		var new_keys = make([] string, len(old_keys))
 		copy(new_keys, old_keys)
 		var a_found = false
 		var b_found = false
 		for i := 0; i < len(new_keys); i += 1 {
 			var this = &new_keys[i]
-			if StringCompare(*this, a_key) == Equal {
+			if *this == a_key {
 				if a_found { panic("something went wrong") }
 				a_found = true
 				*this = b_key
-			} else if StringCompare(*this, b_key) == Equal {
+			} else if *this == b_key {
 				if b_found { panic("something went wrong") }
 				b_found = true
 				*this = a_key

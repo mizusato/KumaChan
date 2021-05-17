@@ -25,9 +25,9 @@ func NewMap(cmp Compare) Map {
 }
 func NewMapOfStringKey() Map {
 	return NewMap(func(k1 Value, k2 Value) Ordering {
-		var s1 = k1.(String)
-		var s2 = k2.(String)
-		return StringFastCompare(s1, s2)
+		var s1 = k1.(string)
+		var s2 = k2.(string)
+		return StringCompare(s1, s2)
 	})
 }
 func (m Map) IsEmpty() bool {

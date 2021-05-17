@@ -8,6 +8,8 @@ TODO
 
 - Primitive: check overflow / underflow in interop api func wrapper
 
+- Data: should all value be pointer/primitive? (aka no non-primitive value type)
+
 - Type: enum supertype: enum { ...Another, type Added; }
 
 - KMD: data-validate only for protected/opaque types
@@ -21,6 +23,8 @@ TODO
 - API: revise resource management of files, ... (consider Disposable[T] monad)
 
 - API: categorize API functions according to usage, corresponding types, ...
+
+- API: separate string APIs from `api/container.go` and `lib/container/string.go`
 
 - GUI: setAttributeNS() for SVG elements
 

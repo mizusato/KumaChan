@@ -34,39 +34,38 @@ func (d DataFloat) String() string {
 	return fmt.Sprintf("FLOAT %f", d.Value)
 }
 
-type DataString struct { Value  [] uint32 }
+type DataString struct { Value string }
 func (d DataString) ToValue() lang.Value {
 	return d.Value
 }
 func (d DataString) String() string {
-	return fmt.Sprintf("STRING %s",
-		strconv.Quote(lang.GoStringFromString(d.Value)))
+	return fmt.Sprintf("STRING %s", strconv.Quote(d.Value))
 }
 
 type DataStringFormatter ch.StringFormatter
 func (d DataStringFormatter) ToValue() lang.Value {
-	var format_slice = func(args []lang.Value) ([] uint32) {
-		var buf = make([] uint32, 0)
+	var format_slice = func(args ([] lang.Value)) string {
+		var buf strings.Builder
 		for i, seg := range d.Segments {
-			buf = append(buf, seg...)
+			buf.WriteString(seg)
 			if uint(i) < d.Arity {
-				var chars = args[i].([] uint32)
-				buf = append(buf, chars...)
+				var item = args[i].(string)
+				buf.WriteString(item)
 			}
 		}
-		return buf
+		return buf.String()
 	}
 	var f interface{}
 	if d.Arity == 0 {
-		f = func() ([] uint32) {
+		f = func() string {
 			return format_slice([] lang.Value {})
 		}
 	} else if d.Arity == 1 {
-		f = func(arg lang.Value) ([] uint32) {
+		f = func(arg lang.Value) string {
 			return format_slice([] lang.Value {arg })
 		}
 	} else {
-		f = func(arg lang.ProductValue) ([] uint32) {
+		f = func(arg lang.ProductValue) string {
 			return format_slice(arg.Elements)
 		}
 	}
@@ -76,7 +75,7 @@ func (d DataStringFormatter) String() string {
 	var buf strings.Builder
 	fmt.Fprintf(&buf, "FORMAT %d ", d.Arity)
 	for i, item := range d.Segments {
-		buf.WriteString(strconv.Quote(lang.GoStringFromString(item)))
+		buf.WriteString(strconv.Quote(item))
 		if i != len(d.Segments)-1 || uint(len(d.Segments)) == d.Arity {
 			buf.WriteString(fmt.Sprintf("$%d", i))
 		}

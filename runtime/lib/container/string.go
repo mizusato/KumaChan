@@ -2,6 +2,7 @@ package container
 
 import (
 	"reflect"
+	"strings"
 	"unicode/utf8"
 	. "kumachan/lang"
 )
@@ -12,294 +13,133 @@ const (
 	UTF8  Encoding  =  iota
 )
 
-func StringForceDecode(bytes ([] byte), e Encoding) String {
+func StringForceDecode(bytes ([] byte), e Encoding) string {
 	switch e {
 	case UTF8:
-		var str = make(String, 0, len(bytes) / 4)
+		var buf strings.Builder
 		for len(bytes) > 0 {
 			var char, size = utf8.DecodeRune(bytes)
-			str = append(str, Char(char))
+			buf.WriteRune(char)
 			bytes = bytes[size:]
 		}
-		return str
+		return buf.String()
 	default:
 		panic("unknown or unimplemented encoding")
 	}
 }
 
-func StringDecode(bytes ([] byte), e Encoding) (String, bool) {
+func StringDecode(bytes ([] byte), e Encoding) (string, bool) {
 	switch e {
 	case UTF8:
-		var str = make(String, 0, len(bytes) / 4)
+		var buf strings.Builder
 		for len(bytes) > 0 {
 			var char, size = utf8.DecodeRune(bytes)
 			if char == utf8.RuneError && size == 1 {
 				// Note: An error should be thrown when input is invalid
 				//       to ensure this function to be invertible.
-				return nil, false
+				return "", false
 			}
-			str = append(str, Char(char))
+			buf.WriteRune(char)
 			bytes = bytes[size:]
 		}
-		return str, true
+		return buf.String(), true
 	default:
 		panic("unknown or unimplemented encoding")
 	}
 }
 
-func StringEncode(str String, e Encoding) ([] byte) {
+func StringEncode(str string, e Encoding) ([] byte) {
 	switch e {
 	case UTF8:
-		var buf = make([] byte, 0, len(str))
-		var chunk ([4] byte)
-		for _, r := range str {
-			var size = utf8.EncodeRune(chunk[:], rune(r))
-			for i := 0; i < size; i += 1 {
-				buf = append(buf, chunk[i])
-			}
-		}
-		return buf
+		return ([] byte)(str)
 	default:
 		panic("unknown or unimplemented encoding")
 	}
 }
 
-func StringCompare(a String, b String) Ordering {
-	if len(a) <= len(b) {
-		var result = Equal
-		var first_different = true
-		for i := 0; i < len(b); i += 1 {
-			if i < len(a) {
-				if a[i] < b[i] {
-					if first_different {
-						result = Smaller
-						first_different = false
-					}
-				}
-				if a[i] > b[i] {
-					if first_different {
-						result = Bigger
-						first_different = false
-					}
-				}
-			} else {
-				if first_different {
-					// b starts with a and longer than a
-					return Smaller
-				} else {
-					return result
-				}
-			}
-		}
-		return result
+func StringCompare(a string, b string) Ordering {
+	if a < b {
+		return Smaller
+	} else if a > b {
+		return Bigger
 	} else {
-		return StringCompare(b, a).Reversed()
-	}
-}
-
-func StringFastCompare(a String, b String) Ordering {
-	if len(a) <= len(b) {
-		for i := 0; i < len(b); i += 1 {
-			if i < len(a) {
-				if a[i] < b[i] {
-					return Smaller
-				} else if a[i] > b[i] {
-					return Bigger
-				}
-			} else {
-				return Smaller
-			}
-		}
 		return Equal
-	} else {
-		return StringFastCompare(b, a).Reversed()
 	}
 }
 
-func StringCopy(s String) String {
-	var draft = make(String, len(s))
-	copy(draft, s)
-	return draft
-}
-
-func StringSliceView(s String, l uint, r uint) String {
-	var length = uint(len(s))
-	if !(l <= length && r <= length && l <= r) {
-		panic("invalid substring interval")
-	}
-	return StringFromRuneSlice(RuneSliceFromString(s)[l:r])
-}
-
-func StringConcat(l List) String {
-	var buf = make(String, 0)
+func StringConcat(l List) string {
+	var buf strings.Builder
 	l.ForEach(func(i uint, item Value) {
-		buf = append(buf, item.(String)...)
+		buf.WriteString(item.(string))
 	})
-	return buf
+	return buf.String()
 }
 
-func StringFind(str String, sub String) (uint, bool) {
-	var L = uint(len(str))
-	var M = uint(len(sub))
-	outer: for i := uint(0); i < L; i += 1 {
-		var ok = true
-		for j := uint(0); j < M; j += 1 {
-			var k = i + j
-			if !(k < L) {
-				ok = false
-				break outer
-			}
-			if str[k] != sub[j] {
-				ok = false
-				break
-			}
-		}
-		if ok {
-			return i, true
-		}
+func StringHasSubstring(operand string, sub string) bool {
+	return (strings.Index(operand, sub) != -1)
+}
+
+type StringIterator struct {
+	Operand  string
+}
+func (it *StringIterator) GetItemType() reflect.Type {
+	return reflect.TypeOf(rune(0))
+}
+func (it *StringIterator) Next() (Value, Seq, bool) {
+	if it == nil || it.Operand == "" {
+		return nil, nil, false
 	}
-	return (^uint(0)), false
-}
-
-func StringTrim(str String, char Char) String {
-	return StringTrimRight(StringTrimLeft(str, char), char)
-}
-
-func StringTrimLeft(str String, char Char) String {
-	for len(str) > 0 && str[0] == char {
-		if len(str) >= 2 {
-			str = str[1:]
-		} else {
-			str = String([] Char {})
-		}
+	var op = it.Operand
+	for _, char := range op {
+		var rest = op[utf8.RuneLen(char):]
+		return char, &StringIterator { rest }, true
 	}
-	return str
-}
-
-func StringTrimRight(str String, char Char) String {
-	for len(str) > 0 && str[len(str)-1] == char {
-		str = str[:len(str)-1]
-	}
-	return str
-}
-
-func StringTrimPrefix(str String, prefix String) String {
-	if len(prefix) <= len(str) {
-		for i := 0; i < len(prefix); i += 1 {
-			if prefix[i] != str[i] {
-				return str
-			}
-		}
-		if len(prefix) < len(str) {
-			return str[len(prefix):]
-		} else {
-			return String([] Char {})
-		}
-	} else {
-		return str
-	}
-}
-
-func StringHasPrefix(str String, prefix String) bool {
-	if len(prefix) <= len(str) {
-		for i := 0; i < len(prefix); i += 1 {
-			if prefix[i] != str[i] {
-				return false
-			}
-		}
-		return true
-	} else {
-		return false
-	}
-}
-
-func StringTrimSuffix(str String, suffix String) String {
-	if len(str) > 0 && len(suffix) > 0 && len(suffix) <= len(str) {
-		var j = len(suffix)-1
-		for i := len(str)-1; i >= len(str)-len(suffix); i -= 1 {
-			if suffix[j] != str[i] {
-				return str
-			}
-			j -= 1
-		}
-		return str[:len(str)-len(suffix)]
-	} else {
-		return str
-	}
-}
-
-func StringHasSuffix(str String, suffix String) bool {
-	if len(suffix) == 0 {
-		return true
-	} else if len(suffix) <= len(str) {
-		var j = len(suffix)-1
-		for i := len(str)-1; i >= len(str)-len(suffix); i -= 1 {
-			if suffix[j] != str[i] {
-				return false
-			}
-			j -= 1
-		}
-		return true
-	} else {
-		return false
-	}
+	panic("impossible branch")
 }
 
 type StringSplitIterator struct {
-	Operand    String
-	Separator  String
-	LastIndex  uint
+	Operand    string
+	Separator  string
 }
 func (it *StringSplitIterator) GetItemType() reflect.Type {
-	return reflect.TypeOf(StringFromGoString(""))
+	return reflect.TypeOf("")
 }
 func (it *StringSplitIterator) Next() (Value, Seq, bool) {
-	if it == nil { return nil, nil, false }
-	var L = uint(len(it.Operand))
-	var M = uint(len(it.Separator))
-	outer: for i := it.LastIndex; i < L; i += 1 {
-		var ok = true
-		for j := uint(0); j < M; j += 1 {
-			var k = i + j
-			if !(k < L) {
-				ok = false
-				break outer
-			}
-			if it.Operand[k] != it.Separator[j] {
-				ok = false
-				break
-			}
-		}
-		if ok {
-			var item = append(String{}, it.Operand[it.LastIndex:i]...)
+	if it == nil || it.Operand == "" {
+		return nil, nil, false
+	}
+	var op = it.Operand
+	var sep = it.Separator
+	for i, _ := range op {
+		if strings.HasPrefix(op[i:], sep) {
+			var item = op[:i]
+			var next_op = op[i+len(sep):]
 			var rest = &StringSplitIterator {
-				Operand:   it.Operand,
-				Separator: it.Separator,
-				LastIndex: (i + M),
+				Operand:   next_op,
+				Separator: sep,
 			}
-			return item, rest, ok
+			return item, rest, true
 		}
 	}
-	var item = append(String{}, it.Operand[it.LastIndex:]...)
-	return item, EmptySeq { ItemType: it.GetItemType() }, true
+	return op, EmptySeq { ItemType: it.GetItemType() }, true
 }
-func StringSplit(str String, sep String) Seq {
+func StringSplit(str string, sep string) Seq {
 	return &StringSplitIterator {
 		Operand:   str,
 		Separator: sep,
-		LastIndex: 0,
 	}
 }
 
-func StringJoin(seq Seq, sep String) String {
-	var buf = make(String, 0)
+func StringJoin(seq Seq, sep string) string {
+	var buf strings.Builder
 	var index = uint(0)
 	for v,rest,ok := seq.Next(); ok; v,rest,ok = rest.Next() {
 		if index > 0 {
-			buf = append(buf, sep...)
+			buf.WriteString(sep)
 		}
-		buf = append(buf, v.(String)...)
+		buf.WriteString(v.(string))
 		index += 1
 	}
-	return buf
+	return buf.String()
 }
+

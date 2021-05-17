@@ -6,6 +6,7 @@ import (
 	"kumachan/misc/rx"
 	. "kumachan/lang"
 	. "kumachan/misc/util/error"
+	"strings"
 )
 
 
@@ -97,13 +98,13 @@ func (l List) CopyAsSlice() Value {
 	return slice
 }
 
-func (l List) CopyAsString() String {
+func (l List) CopyAsString() string {
 	var L = l.Length()
-	var s = make(String, L, L)
+	var buf strings.Builder
 	for i := uint(0); i < L; i += 1 {
-		s[i] = l.at(i).(Char)
+		buf.WriteRune(l.at(i).(rune))
 	}
-	return s
+	return buf.String()
 }
 
 func (l List) CopyAsObservables() ([] rx.Observable) {
@@ -114,10 +115,10 @@ func (l List) CopyAsObservables() ([] rx.Observable) {
 	return slice
 }
 
-func (l List) CopyAsGoStrings() ([] string) {
+func (l List) CopyAsStringSlice() ([] string) {
 	var slice = make([] string, l.Length())
 	l.ForEach(func(i uint, item Value) {
-		slice[i] = GoStringFromString(item.(String))
+		slice[i] = item.(string)
 	})
 	return slice
 

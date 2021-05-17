@@ -15,7 +15,7 @@ import (
 
 
 type Locale struct {
-	Language     String
+	Language     string
 	TimeZone     *time.Location
 	Alternative  SumValue
 }
@@ -48,8 +48,8 @@ var cwd = (func() stdlib.Path {
 var OS_Constants = map[string] NativeConstant {
 	"os::PlatformInfo": func(h InteropContext) Value {
 		return Tuple(
-			StringFromGoString(runtime.GOOS),
-			StringFromGoString(runtime.GOARCH),
+			runtime.GOOS,
+			runtime.GOARCH,
 			ToBool(uint64(^uintptr(0)) == ^uint64(0)),
 		)
 	},
@@ -73,7 +73,7 @@ var OS_Constants = map[string] NativeConstant {
 	},
 	"os::Locale": func(h InteropContext) Value {
 		var locale = Locale {
-			Language:    StringFromGoString(GetSystemLanguage()),
+			Language:    GetSystemLanguage(),
 			TimeZone:    time.Local,
 			Alternative: None(),
 		}
@@ -91,44 +91,42 @@ var OS_Constants = map[string] NativeConstant {
 func GetEnv(raw ([] string)) Map {
 	var m = NewMapOfStringKey()
 	for _, item := range raw {
-		var str = StringFromGoString(item)
-		var k = make(String, 0)
-		var v = make(String, 0)
+		var k_runes = make([] rune, 0)
+		var v_runes = make([] rune, 0)
 		var cut = false
-		for _, r := range str {
+		for _, r := range item {
 			if !cut && r == '=' {
 				cut = true
 				continue
 			}
 			if cut {
-				v = append(v, r)
+				v_runes = append(v_runes, r)
 			} else {
-				k = append(k, r)
+				k_runes = append(k_runes, r)
 			}
 		}
+		var k = string(k_runes)
+		var v = string(v_runes)
 		m, _ = m.Inserted(k, v)
 	}
 	return m
 }
-
-func GetArgs(raw ([] string)) ([] String) {
-	var args = make([] String, len(raw))
-	for i, raw_arg := range raw {
-		args[i] = StringFromGoString(raw_arg)
-	}
+func GetArgs(raw ([] string)) ([] string) {
+	var args = make([] string, len(raw))
+	copy(args, raw)
 	return args
 }
 
 var OS_Functions = map[string] Value {
-	"String from Path": func(path stdlib.Path) String {
-		return StringFromGoString(path.String())
+	"String from Path": func(path stdlib.Path) string {
+		return path.String()
 	},
-	"parse-path": func(str String) stdlib.Path {
-		return stdlib.ParsePath(GoStringFromString(str))
+	"parse-path": func(str string) stdlib.Path {
+		return stdlib.ParsePath(str)
 	},
 	"path-join": func(path stdlib.Path, raw Value) stdlib.Path {
 		var segments = ListFrom(raw)
-		return path.Join(segments.CopyAsGoStrings())
+		return path.Join(segments.CopyAsStringSlice())
 	},
 	"walk-dir": func(dir stdlib.Path) rx.Observable {
 		return rx.WalkDir(dir.String()).Map(func(val rx.Object) rx.Object {
@@ -186,28 +184,28 @@ var OS_Functions = map[string] Value {
 	"file-read-char": func(f rx.File) rx.Observable {
 		return f.ReadChar()
 	},
-	"file-write-char": func(f rx.File, char Char) rx.Observable {
-		return f.WriteChar(rune(char))
+	"file-write-char": func(f rx.File, char rune) rx.Observable {
+		return f.WriteChar(char)
 	},
 	"file-read-string": func(f rx.File) rx.Observable {
 		return f.ReadRunes().Map(func(line rx.Object) rx.Object {
-			return StringFromRuneSlice(line.([] rune))
+			return string(line.([] rune))
 		})
 	},
-	"file-write-string": func(f rx.File, str String) rx.Observable {
-		return f.WriteString(GoStringFromString(str))
+	"file-write-string": func(f rx.File, str string) rx.Observable {
+		return f.WriteString(str)
 	},
 	"file-read-line": func(f rx.File) rx.Observable {
 		return f.ReadLineRunes().Map(func(line rx.Object) rx.Object {
-			return StringFromRuneSlice(line.([] rune))
+			return string(line.([] rune))
 		})
 	},
-	"file-write-line": func(f rx.File, line String) rx.Observable {
-		return f.WriteLine(GoStringFromString(line))
+	"file-write-line": func(f rx.File, line string) rx.Observable {
+		return f.WriteLine(line)
 	},
 	"file-read-lines": func(f rx.File) rx.Observable {
 		return f.ReadLinesRuneSlices().Map(func(runes rx.Object) rx.Object {
-			return StringFromRuneSlice(runes.([] rune))
+			return string(runes.([] rune))
 		})
 	},
 	"file-read-all": func(f rx.File) rx.Observable {
@@ -222,3 +220,4 @@ var OS_Functions = map[string] Value {
 		})
 	},
 }
+
