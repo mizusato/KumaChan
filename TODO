@@ -20,6 +20,8 @@ TODO
 
 - API: revise resource management of files, ... (consider Disposable[T] monad)
 
+- API: categorize API functions according to usage, corresponding types, ...
+
 - GUI: setAttributeNS() for SVG elements
 
 - GUI: crash report window
