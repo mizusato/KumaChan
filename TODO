@@ -4,6 +4,8 @@ TODO
 
 - Primitive: Iterator[T,I] (proceed => (T,I,Iterator[T,I]))
 
+- Primitive: ConstExpr[T] for literals
+
 - Type: enum supertype: enum { ...Another, type Added; }
 
 - KMD: data-validate only for protected/opaque types
