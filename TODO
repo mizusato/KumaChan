@@ -6,6 +6,8 @@ TODO
 
 - Primitive: HardCodedString < String for literals
 
+- Primitive: check overflow / underflow in interop api func wrapper
+
 - Type: enum supertype: enum { ...Another, type Added; }
 
 - KMD: data-validate only for protected/opaque types
