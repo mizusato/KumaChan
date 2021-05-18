@@ -1,5 +1,9 @@
 TODO
 
+- ErrorMessage: "array" --> "list"
+
+- TypeSystem: assign Integer(default) to uncertain types
+
 - Rx: RefEqual apply on Watch() (+DistinctUntilChanged) instead of Emit()/Update()
 
 - KMD: migrate to new numeric types, add other primitives
