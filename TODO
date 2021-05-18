@@ -1,16 +1,18 @@
 TODO
 
-- RPC: migrate to new numeric types, add other primitives
+- Rx: RefEqual apply on Watch() (+DistinctUntilChanged) instead of Emit()/Update()
 
-- Lang: Path/To/Function as namespace?
-
-- Data: should all value be pointer/primitive? (aka no non-primitive value type)
+- KMD: migrate to new numeric types, add other primitives
 
 - Type: enum supertype: enum { ...Another, type Added; }
 
 - KMD: data-validate only for protected/opaque types
 
 - KMD: automatic validator call when boxing a value
+
+- Data: should all value be pointer/primitive? (aka no non-primitive value type)
+
+- Lang: Path/To/Function as namespace?
 
 - API: revise Reactive[FlexList[T]] methods, consider methods for Reactive[Map[K,V]]
 

@@ -58,7 +58,7 @@ func RefEqual(a Value, b Value) bool {
 			}
 		}
 		if t.Comparable() {
-			return a == b
+			return a == b  // TODO: revise this line
 		}
 	}
 	return false
