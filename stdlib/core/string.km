@@ -1,6 +1,8 @@
 type Char   native;  // rune (int32)
 type String native;  // string
 
+type HardCodedString protected String;  // string literals
+
 export function  =: &(Char,Char) => Bool      native '=Int32';
 
 export function Char?:

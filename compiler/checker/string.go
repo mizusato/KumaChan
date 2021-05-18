@@ -37,10 +37,7 @@ func CheckString(s ast.StringLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
 	var value = string(buf)
 	var info = ctx.GetExprInfo(s.Node)
 	return LiftTyped(Expr {
-		Type:  &NamedType {
-			Name: __String,
-			Args: make([]Type, 0),
-		},
+		Type:  __T_HardCodedString,
 		Info:  info,
 		Value: StringLiteral { value },
 	}), nil

@@ -4,6 +4,7 @@ export function URL?:
     &(String) => Maybe[URL]
     native 'parse-url';
 
-export function URL!:
-    &(String) => URL
+export function URL:
+    &(HardCodedString) => URL
     native 'url!';
+

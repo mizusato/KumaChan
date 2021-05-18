@@ -55,7 +55,7 @@ var core_types = []string {
 	// complex.km
 	Complex, FloatComplex,
 	// string.km
-	Char, String,
+	Char, String, HardCodedString,
 }
 // var core_constants = []string {}
 func GetCoreScopedSymbols() []string {
@@ -136,6 +136,7 @@ const FloatComplex = "FloatComplex"
 // string.km
 const Char = "Char"
 const String = "String"
+const HardCodedString = "HardCodedString"
 
 // ui
 const AssetFile_T = "AssetFile"

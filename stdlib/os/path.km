@@ -9,7 +9,7 @@ export const EntryModulePath: Path :=
 export const EntryModuleDirPath: Path :=
     native 'os::EntryModuleDirPath';
 
-export function parse-path:
+export function Path:
     &(String) => Path
     native 'parse-path';
 
