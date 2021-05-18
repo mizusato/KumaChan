@@ -48,6 +48,15 @@ func RefEqual(a Value, b Value) bool {
 				return true
 			}
 		}
+		var u, is_string = a.(string)
+		var v, _ = b.(string)
+		if is_string {
+			var uh = (*reflect.StringHeader)(unsafe.Pointer(&u))
+			var vh = (*reflect.StringHeader)(unsafe.Pointer(&v))
+			if uh.Data == vh.Data && uh.Len == vh.Len {
+				return true
+			}
+		}
 		if t.Comparable() {
 			return a == b
 		}
