@@ -2,44 +2,63 @@ package api
 
 import (
 	"fmt"
-	"math"
 	"strconv"
 	"strings"
 	"math/big"
 	"unicode/utf8"
 	"encoding/json"
+	"kumachan/stdlib"
+	"kumachan/misc/util"
 	. "kumachan/lang"
 	. "kumachan/runtime/lib/container"
-	"kumachan/stdlib"
 )
 
 
+func Chr(n_ *big.Int) (rune, bool) {
+	if !(n_.IsUint64()) {
+		return -1, false
+	}
+	var n = n_.Uint64()
+	if n <= 0x10FFFF && !(0xD800 <= n && n <= 0xDFFF) {
+		return rune(n), true
+	} else {
+		return -1, false
+	}
+}
+
 var ContainerFunctions = map[string] Value {
-	"chr": func(n uint) SumValue {
-		if n <= 0x10FFFF && !(0xD800 <= n && n <= 0xDFFF) {
-			return Some(rune(n))
+	"=Char": func(a rune, b rune) bool {
+		return (a == b)
+	},
+	"chr": func(n *big.Int) SumValue {
+		var char, ok = Chr(n)
+		if ok {
+			return Some(char)
 		} else {
 			return None()
 		}
 	},
-	"chr!": func(n uint) rune {
-		if n <= 0x10FFFF && !(0xD800 <= n && n <= 0xDFFF) {
-			return rune(n)
+	"chr!": func(n *big.Int) rune {
+		var char, ok = Chr(n)
+		if ok {
+			return char
 		} else {
 			panic(fmt.Sprintf("invalid code point 0x%X", n))
 		}
 	},
-	"seq-range-inclusive": func(l uint, r uint) Seq {
-		if r < l { panic("invalid sequence: lower bound bigger than upper bound") }
+	"seq-range-inclusive": func(l *big.Int, r *big.Int) Seq {
+		if r.Cmp(l) < 0 {
+			panic("invalid sequence: lower bound bigger than upper bound")
+		}
 		return IntervalSeq {
 			Current: l,
-			Bound:   (r + 1),
+			Bound:   big.NewInt(0).Add(r, big.NewInt(1)),
 		}
 	},
-	"seq-range-count": func(start uint, n uint) Seq {
+	"seq-range-count": func(start *big.Int, n *big.Int) Seq {
 		return IntervalSeq {
 			Current: start,
-			Bound:   (start + n),
+			Bound:   big.NewInt(0).Add(start, n),
 		}
 	},
 	"seq-shift": func(seq Seq) SumValue {
@@ -116,9 +135,9 @@ var ContainerFunctions = map[string] Value {
 			return FromBool(h.Call(f, item).(SumValue))
 		}))
 	},
-	"seq-chunk": func(input Seq, size uint) Value {
+	"seq-chunk": func(input Seq, size *big.Int) Value {
 		return ChunkedSeq {
-			ChunkSize: size,
+			ChunkSize: util.GetUintNumber(size),
 			Remaining: input,
 		}
 	},
@@ -171,11 +190,8 @@ var ContainerFunctions = map[string] Value {
 	"String from Char": func(char rune) string {
 		return string([] rune { char })
 	},
-	"String from Int": func(n *big.Int) string {
+	"String from Integer": func(n *big.Int) string {
 		return n.String()
-	},
-	"String from Number": func(x uint) string {
-		return fmt.Sprint(x)
 	},
 	"String from Bool": func(p SumValue) string {
 		if FromBool(p) {
@@ -185,6 +201,9 @@ var ContainerFunctions = map[string] Value {
 		}
 	},
 	"String from Float": func(x float64) string {
+		return fmt.Sprint(x)
+	},
+	"String from Complex": func(x complex128) string {
 		return fmt.Sprint(x)
 	},
 	"encode-utf8": func(str string) ([] byte) {
@@ -246,16 +265,12 @@ var ContainerFunctions = map[string] Value {
 		var unquoted = buf.String()
 		return Some(unquoted)
 	},
-	"parse-real": func(str string) SumValue {
+	"parse-float": func(str string) SumValue {
 		var x, err = strconv.ParseFloat(str, 64)
-		if err != nil {
+		if err != nil || !(util.IsNormalFloat(x)) {
 			return None()
 		} else {
-			if math.IsInf(x, 0) || math.IsNaN(x) {
-				return None()
-			} else {
-				return Some(x)
-			}
+			return Some(x)
 		}
 	},
 	"str-concat": func(v Value) string {
@@ -264,8 +279,8 @@ var ContainerFunctions = map[string] Value {
 	"str-contains": func(operand string, sub string) SumValue {
 		return ToBool(StringHasSubstring(operand, sub))
 	},
-	"str-length": func(str string) uint {
-		return uint(len(str))
+	"str-length": func(str string) *big.Int {
+		return big.NewInt(int64(len(str)))
 	},
 	"str-shift": func(str string) SumValue {
 		if len(str) > 0 {
@@ -401,8 +416,8 @@ var ContainerFunctions = map[string] Value {
 			NextIndex: 0,
 		}
 	},
-	"flex-length": func(l FlexList) uint {
-		return l.Length()
+	"flex-length": func(l FlexList) *big.Int {
+		return util.GetNumberUint(l.Length())
 	},
 	"flex-has": func(l FlexList, k string) SumValue {
 		return ToBool(l.Has(k))

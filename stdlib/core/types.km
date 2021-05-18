@@ -5,34 +5,6 @@
 
 // TODO: split this file
 
-// Basic Numeric Types
-type Real    protected Float;  // float64 except NaN and Infinity values
-type Float   native;  // float64
-type Number  native;  // uint (size_t), with overflow/underflow checking
-type Int8    native;  // int8
-type Int16   native;  // int16
-type Int32   native;  // int32
-type Int64   native;  // int64
-type Uint8   native;  // uint8
-type Uint16  native;  // uint16
-type Uint32  native;  // uint32
-type Uint64  native;  // uint64
-
-// Integer Conversions
-export function Number:
-    &(Uint32) => Number
-    native 'Number from Uint32';
-export function Number:
-    &(Uint16) => Number
-    native 'Number from Uint16';
-export function Number:
-    &(Uint8) => Number
-    native 'Number from Uint8';
-
-export function Real?:
-    &(Float) => Maybe[Real]
-    native 'Float to Maybe[Real]';
-
 // Basic Sum Types
 type Bool enum {
     type Yes;

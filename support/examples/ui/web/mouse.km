@@ -3,9 +3,9 @@ import window from './window';
 do { window::mount Root };
 
 // TODO: mouse enter => Some pos, mouse out => None
-const MousePosition: ui::Hook[Source[(Real,Real)]] :=
+const MousePosition: ui::Hook[Source[(NormalFloat,NormalFloat)]] :=
     &(k) =>
-        | pos := sync { Bus::[(Real,Real)] () },
+        | pos := sync { Bus::[(NormalFloat,NormalFloat)] () },
         | id := sync { gen-monotonic-id-string () },
         let cpt := { k { watch pos } },
         (cpt with { Event ({ "mousemove.hook#" id },

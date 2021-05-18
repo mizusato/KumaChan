@@ -1,4 +1,4 @@
-type Scalar Real;
+type Scalar Float;
 
 type Point {
      x: Scalar,

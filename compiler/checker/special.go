@@ -58,37 +58,31 @@ var __Bool = CoreSymbol(stdlib.Bool)
 var __T_Bool = &NamedType { Name: __Bool, Args: make([] Type, 0) }
 var __Yes uint = stdlib.YesIndex
 var __Maybe = CoreSymbol(stdlib.Maybe)
-var __Real = CoreSymbol(stdlib.Real)
 var __Float = CoreSymbol(stdlib.Float)
+var __NormalFloat = CoreSymbol(stdlib.NormalFloat)
 var __String = CoreSymbol(stdlib.String)
 var __T_String = &NamedType { Name: __String, Args: make([] Type, 0) }
 var __HardCodedString = CoreSymbol(stdlib.HardCodedString)
 var __T_HardCodedString = &NamedType { Name: __HardCodedString, Args: make([] Type, 0) }
 var __List = CoreSymbol(stdlib.List)
-var __Int = CoreSymbol(stdlib.Int)
+var __Integer = CoreSymbol(stdlib.Integer)
 var __Number = CoreSymbol(stdlib.Number)
-var __Int64 = CoreSymbol(stdlib.Int64)
-var __Uint64 = CoreSymbol(stdlib.Uint64)
+var __T_Integer = &NamedType { Name: __Integer, Args: make([] Type, 0) }
+var __T_Number = &NamedType { Name: __Number, Args: make([] Type, 0) }
 var __Qword = CoreSymbol(stdlib.Qword)
-var __Int32 = CoreSymbol(stdlib.Int32)
-var __Uint32 = CoreSymbol(stdlib.Uint32)
 var __Dword = CoreSymbol(stdlib.Dword)
 var __Char = CoreSymbol(stdlib.Char)
 var __T_Char = &NamedType { Name: __Char, Args: make([] Type, 0) }
-var __Int16 = CoreSymbol(stdlib.Int16)
-var __Uint16 = CoreSymbol(stdlib.Uint16)
 var __Word = CoreSymbol(stdlib.Word)
-var __Int8 = CoreSymbol(stdlib.Int8)
-var __Uint8 = CoreSymbol(stdlib.Uint8)
 var __Byte = CoreSymbol(stdlib.Byte)
 var __Bit = CoreSymbol(stdlib.Bit)
 var __Bytes = CoreSymbol(stdlib.Bytes)
 var __IntegerTypes = [] lang.Symbol {
-	__Int,   __Number,
-	__Int64, __Uint64, __Qword,
-	__Int32, __Uint32, __Dword, __Char,
-	__Int16, __Uint16, __Word,
-	__Int8,  __Uint8,  __Byte,
+	__Integer, __Number,
+	__Qword,
+	__Dword, __Char,
+	__Word,
+	__Byte,
 	__Bit,
 }
 var __IntegerTypeMap = (func() (map[lang.Symbol] string) {
@@ -102,3 +96,4 @@ var __IntegerTypeMap = (func() (map[lang.Symbol] string) {
 func CoreSymbol(name string) lang.Symbol {
 	return lang.MakeSymbol(stdlib.Mod_core, name)
 }
+

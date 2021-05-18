@@ -3,7 +3,8 @@ type String native;  // string
 
 type HardCodedString protected String;  // string literals
 
-export function  =: &(Char,Char) => Bool      native '=Int32';
+export function =: &(Char,Char) => Bool
+    native '=Char';
 
 export function Char?:
     &(Number) => Maybe[Char]
@@ -38,16 +39,8 @@ export function String:
     native 'String from Char';
 
 export function String:
-    &(Number) => String
-    native 'String from Number';
-
-export function String:
     &(Bool) => String
     native 'String from Bool';
-
-export function String:
-    &(Float) => String
-    native 'String from Float';
 
 /// encodes string into UTF-8 byte sequence
 export function encode:
@@ -73,9 +66,9 @@ export function unquote:
     native 'unquote';
 
 // TODO: parse-int
-export function parse-real:
-    &(String) => Maybe[Real]
-    native 'parse-real';
+export function parse-float:
+    &(String) => Maybe[NormalFloat]
+    native 'parse-float';
 
 export function length:
     &(String) => Number

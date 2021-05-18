@@ -1,10 +1,11 @@
 package api
 
 import (
+	"math/big"
 	"kumachan/misc/rx"
-	"kumachan/misc/util"
 	"kumachan/stdlib"
 	. "kumachan/lang"
+	"kumachan/misc/util"
 	"kumachan/runtime/lib/container"
 	"kumachan/runtime/lib/ui"
 	"kumachan/runtime/lib/ui/qt"
@@ -178,11 +179,18 @@ var UiFunctions = map[string] interface{} {
 		return qt.WebViewEventPayloadGetString(ev, key)
 	},
 	"ui-event-payload-get-float": func(ev *qt.WebViewEventPayload, key string) float64 {
-		return util.CheckReal(qt.WebViewEventPayloadGetFloat(ev, key))
+		var x = qt.WebViewEventPayloadGetFloat(ev, key)
+		if !(util.IsNormalFloat(x)) {
+			panic("invalid float got from JS side")
+		}
+		return x
 	},
-	"ui-event-payload-get-number": func(ev *qt.WebViewEventPayload, key string) uint {
-		var x = util.CheckReal(qt.WebViewEventPayloadGetFloat(ev, key))
-		return uint(x)
+	"ui-event-payload-get-integer": func(ev *qt.WebViewEventPayload, key string) *big.Int {
+		var x = qt.WebViewEventPayloadGetFloat(ev, key)
+		if !(util.IsNormalFloat(x)) {
+			panic("invalid float got from JS side")
+		}
+		return big.NewInt(int64(x))
 	},
 	"ui-event-payload-get-bool": func(ev *qt.WebViewEventPayload, key string) SumValue {
 		return ToBool(qt.WebViewEventPayloadGetBool(ev, key))

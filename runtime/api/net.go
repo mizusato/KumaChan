@@ -2,9 +2,11 @@ package api
 
 import (
 	"net/url"
+	"math/big"
 	"kumachan/misc/rx"
 	. "kumachan/lang"
 	. "kumachan/runtime/lib/container"
+	"kumachan/misc/util"
 )
 
 
@@ -22,8 +24,8 @@ var NetFunctions = map[string] interface{} {
 		if err != nil { panic(err) }
 		return url
 	},
-	"http-response-status-code": func(res rx.HttpResponse) uint {
-		return res.StatusCode
+	"http-response-status-code": func(res rx.HttpResponse) *big.Int {
+		return util.GetNumberUint(res.StatusCode)
 	},
 	"http-response-header": func(res rx.HttpResponse) Map {
 		var h = res.Header

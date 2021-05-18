@@ -121,7 +121,9 @@ func deserialize(input *deserializeReader, ctx deserializeContext) (Object, erro
 	case Float:
 		return readPrimitive(input, ctx.Depth, func(str string) (Object, error) {
 			value, err := strconv.ParseFloat(str, 64)
-			if err != nil { return nil, fmt.Errorf("invalid float: %w", err) }
+			if err != nil || !(util.IsNormalFloat(value)) {
+				return nil, fmt.Errorf("invalid float: %w", err)
+			}
 			return ctx.ReadFloat(value), nil
 		})
 	case Uint32:

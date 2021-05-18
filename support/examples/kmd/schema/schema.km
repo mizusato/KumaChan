@@ -1,5 +1,5 @@
 # data: name=Vector, ver=v1
-type Vector (Real, Real);
+type Vector (NormalFloat, NormalFloat);
 
 # data: name=Point, ver=v1
 type Point {
@@ -28,7 +28,7 @@ type Shape enum {
     # data: name=Circle, ver=v1
     type Circle {
         center: Point,
-        radius: Real
+        radius: NormalFloat
     };
 };
 

@@ -1,0 +1,44 @@
+// Basic Numeric Types
+
+type Integer  native;  // *big.Int
+type Float    native;  // float64
+type Complex  native;  // complex128
+
+type Number         protected Integer;  // non-negative Integer
+type NormalFloat    protected Float;    // normal Float (excluding NaN & ±∞)
+type NormalComplex  protected Complex;  // normal Complex (excluding norm NaN & ∞)
+
+export function Number?: &(Integer) => Maybe[Number]
+    native 'Number?';
+export function NormalFloat?: &(Float) => Maybe[NormalFloat]
+    native 'NormalFloat?';
+export function NormalComplex?: &(Complex) => Maybe[NormalComplex]
+    native 'NormalComplex?';
+
+export function String: &(Integer) => String  native 'String from Integer';
+export function String: &(Float) => String    native 'String from Float';
+export function String: &(Complex) => String  native 'String from Complex';
+
+export function Complex: &(Float,Float) => Complex
+    native 'Complex';
+export function Complex: &(NormalFloat,NormalFloat) => NormalComplex
+    native 'Complex';
+
+export function <conj>: &(Complex) => Complex  native '<conj>';
+export function <real>: &(Complex) => Float    native '<real>';
+export function <imag>: &(Complex) => Float    native '<imag>';
+export function <norm>: &(Complex) => Float    native '<norm>';
+export function <arg>:  &(Complex) => Float    native '<arg>';
+
+export function <conj>: &(NormalComplex) => NormalFloat  native '<conj>';
+export function <real>: &(NormalComplex) => NormalFloat  native '<real>';
+export function <imag>: &(NormalComplex) => NormalFloat  native '<imag>';
+export function <norm>: &(NormalComplex) => NormalFloat  native '<norm>';
+export function <arg>:  &(NormalComplex) => NormalFloat  native '<arg>';
+
+export function  =: &(Integer,Integer) => Bool      native '=Integer';
+export function  <: &(Integer,Integer) => Bool      native '<Integer';
+export function <>: &(Integer,Integer) => Ordering  native '<>Integer';
+
+export function  <: &(NormalFloat,NormalFloat) => Bool  native '<NormalFloat';
+

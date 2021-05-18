@@ -2,6 +2,7 @@ package container
 
 import (
 	"reflect"
+	"math/big"
 	. "kumachan/lang"
 )
 
@@ -46,21 +47,21 @@ func (p ConsSeq) GetItemType() reflect.Type {
 }
 
 type IntervalSeq struct {
-	Current  uint
-	Bound    uint
+	Current  *big.Int
+	Bound    *big.Int
 }
 func (r IntervalSeq) Next() (Value, Seq, bool) {
-	if r.Current < r.Bound {
+	if r.Current.Cmp(r.Bound) < 0 {
 		return r.Current, IntervalSeq {
-			Current: r.Current + 1,
+			Current: big.NewInt(0).Add(r.Current, big.NewInt(1)),
 			Bound:   r.Bound,
 		}, true
 	} else {
-		return (^uint(0)), IntervalSeq{}, false
+		return nil, IntervalSeq{}, false
 	}
 }
 func (_ IntervalSeq) GetItemType() reflect.Type {
-	return reflect.TypeOf(uint(0))
+	return reflect.TypeOf(big.NewInt(0))
 }
 
 type MappedSeq struct {

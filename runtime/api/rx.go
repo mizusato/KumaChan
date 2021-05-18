@@ -4,11 +4,13 @@ import (
 	"os"
 	"fmt"
 	"reflect"
+	"strconv"
+	"math/big"
 	"math/rand"
 	"kumachan/misc/rx"
+	"kumachan/misc/util"
 	. "kumachan/lang"
 	"kumachan/runtime/lib/container"
-	"strconv"
 )
 
 
@@ -246,7 +248,7 @@ var EffectFunctions = map[string] Value {
 		return rx.NewSync(func() (rx.Object, bool) {
 			var id = nextProcessLevelGlobalId
 			nextProcessLevelGlobalId += 1
-			return id, true
+			return util.GetNumberUint64(id), true
 		})
 	},
 	"crash": func(v Value, h InteropContext) rx.Observable {
@@ -341,12 +343,12 @@ var EffectFunctions = map[string] Value {
 		})
 	},
 	"wait": func(record ProductValue) rx.Observable {
-		var timeout = SingleValueFromRecord(record).(uint)
-		return rx.Timer(timeout)
+		var timeout = SingleValueFromRecord(record).(*big.Int)
+		return rx.Timer(util.GetUintNumber(timeout))
 	},
 	"tick": func(record ProductValue) rx.Observable {
-		var interval = SingleValueFromRecord(record).(uint)
-		return rx.Ticker(interval)
+		var interval = SingleValueFromRecord(record).(*big.Int)
+		return rx.Ticker(util.GetUintNumber(interval))
 	},
 	"wait-complete": func(e rx.Observable) rx.Observable {
 		return e.WaitComplete()
@@ -428,8 +430,8 @@ var EffectFunctions = map[string] Value {
 			return h.Call(f, Tuple(acc, val))
 		}, init)
 	},
-	"debounce-time": func(e rx.Observable, dueTime uint) rx.Observable {
-		return e.DebounceTime(dueTime)
+	"debounce-time": func(e rx.Observable, dueTime *big.Int) rx.Observable {
+		return e.DebounceTime(util.GetUintNumber(dueTime))
 	},
 	"switch-map": func(e rx.Observable, f Value, h InteropContext) rx.Observable {
 		return e.SwitchMap(func(val rx.Object) rx.Observable {
@@ -446,10 +448,10 @@ var EffectFunctions = map[string] Value {
 			return h.Call(f, val).(rx.Observable)
 		})
 	},
-	"mix-map": func(e rx.Observable, n uint, f Value, h InteropContext) rx.Observable {
+	"mix-map": func(e rx.Observable, n *big.Int, f Value, h InteropContext) rx.Observable {
 		return e.MixMap(func(val rx.Object) rx.Observable {
 			return h.Call(f, val).(rx.Observable)
-		}, n)
+		}, util.GetUintNumber(n))
 	},
 	"observable-merge": func(av Value) rx.Observable {
 		var list = container.ListFrom(av)

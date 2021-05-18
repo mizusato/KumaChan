@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"reflect"
+	"math/big"
 	. "kumachan/lang"
 	"kumachan/misc/rx"
 	"kumachan/stdlib"
@@ -76,7 +77,7 @@ var UiQtFunctions = map[string] interface{} {
 			if v < 0 {
 				return None()
 			} else {
-				return Some(uint(v))
+				return Some(big.NewInt(int64(v)))
 			}
 		default:
 			panic(fmt.Sprintf("unsupported Qt property type %s", t))
@@ -118,7 +119,7 @@ var UiQtFunctions = map[string] interface{} {
 				var new_value = (func() int {
 					var v, ok = Unwrap(value.(SumValue))
 					if ok {
-						return int(v.(uint))
+						return int(v.(*big.Int).Int64())
 					} else {
 						return -1
 					}

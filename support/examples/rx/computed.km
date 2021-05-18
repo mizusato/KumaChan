@@ -2,13 +2,13 @@ import window from '../ui/web/window';
 
 do { window::mount Root };
 
-function RealInput:
-    &(Reactive[Maybe[Real]]) => ui::Component
+function FloatInput:
+    &(Reactive[Maybe[NormalFloat]]) => ui::Component
     &(value) =>
-        | buf := use { State '' },
+        | buf := use { State::[String] '' },
         | use { Effect
             | content := connect buf,
-            (value <- { parse-real content }) },
+            (value <- { parse-float content }) },
         { Input buf };
 
 const Root: ui::Component :=
@@ -21,8 +21,8 @@ const Root: ui::Component :=
         | (p, q) := Maybe (p?, q?),
         (p * q),
     { container [
-        { row [ { Label 'Price:' }, { RealInput price } ] },
-        { row [ { Label 'Quantity:' }, { RealInput quantity } ] },
+        { row [ { Label 'Price:' }, { FloatInput price } ] },
+        { row [ { Label 'Quantity:' }, { FloatInput quantity } ] },
         { Label
             | total? := map total,
             | total := consume (total?, 'invalid input'),

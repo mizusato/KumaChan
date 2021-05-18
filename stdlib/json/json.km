@@ -2,7 +2,7 @@ type Value enum {
     type Object  Map[String,Value];
     type Array   List[Value];
     type Bool    Bool;
-    type Number  Real;
+    type Number  NormalFloat;
     type String  String;
     type Null;
 };
@@ -53,6 +53,6 @@ export function parse:
         case Failure (err, remaining):
             let all := input.{length},
             let rest := remaining.{length},
-            let pos: Number := if (rest > 0): (all - rest), else: (all - 1),
+            let pos: Number := if (rest > 0): (all -! rest), else: (all -! 1),
             { Failure (err wrap &(msg) => { "# (at position #)" (msg, pos.{String}) }) },
         end;

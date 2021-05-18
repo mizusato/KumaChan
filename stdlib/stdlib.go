@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"image/png"
 	"path/filepath"
+	"math/big"
 )
 
 
@@ -30,19 +31,19 @@ const Mod_core = "core"
 const Mod_ui = "ui"
 var core_types = []string {
 	// types.km
-	Real, Float, Number,
-	Int64, Uint64, Int32, Uint32, Int16, Uint16, Int8, Uint8,
 	Bool, Yes, No,
 	Maybe, Some, None,
 	Result, Success, Failure,
 	Ordering, Smaller, Equal, Bigger,
 	Optional,
+	// numeric.km
+	Integer, Number,
+	Float, NormalFloat,
+	Complex, NormalComplex,
 	// error.km
 	Error,
 	// binary.km
 	Bit, Byte, Word, Dword, Qword, Bytes,
-	// int.km
-	Int,
 	// containers.km
 	Seq, List, Heap, Set, Map, FlexList, FlexListKey,
 	// rx.km
@@ -52,32 +53,16 @@ var core_types = []string {
 	Sink, Bus, Reactive, ReactiveEntity,
 	ReactiveSnapshots, Mutex,
 	Mutable, Buffer, HashMap,
-	// complex.km
-	Complex, FloatComplex,
 	// string.km
 	Char, String, HardCodedString,
 }
-// var core_constants = []string {}
 func GetCoreScopedSymbols() []string {
 	var list = make([]string, 0)
 	list = append(list, core_types...)
-	// Using public constants in Core violates shadowing rules
-	// list = append(list, core_constants...)
 	return list
 }
 
 // types.km
-const Real = "Real"
-const Float = "Float"
-const Number = "Number"
-const Int64 = "Int64"
-const Uint64 = "Uint64"
-const Int32 = "Int32"
-const Uint32 = "Uint32"
-const Int16 = "Int16"
-const Uint16 = "Uint16"
-const Int8 = "Int8"
-const Uint8 = "Uint8"
 const Bool = "Bool"
 const Yes = "Yes"
 const No = "No"
@@ -105,8 +90,13 @@ const Word = "Word"
 const Dword = "Dword"
 const Qword = "Qword"
 const Bytes = "Bytes"
-// int.km
-const Int = "Int"
+// numeric.km
+const Number = "Number"
+const Integer = "Integer"
+const Float = "Float"
+const NormalFloat = "NormalFloat"
+const Complex = "Complex"
+const NormalComplex = "NormalComplex"
 // containers.km
 const Seq = "Seq"
 const List = "List"
@@ -130,9 +120,6 @@ const Mutex = "Mutex"
 const Mutable = "Mutable"
 const Buffer = "Buffer"
 const HashMap = "HashMap"
-// complex.km
-const Complex = "Complex"
-const FloatComplex = "FloatComplex"
 // string.km
 const Char = "Char"
 const String = "String"
@@ -146,30 +133,24 @@ type AssetFile struct {
 
 func GetPrimitiveReflectType(name string) (reflect.Type, bool) {
 	switch name {
-	case Number:
-		return reflect.TypeOf(uint(0)), true
-	case Real, Float:
+	case Integer, Number:
+		return reflect.TypeOf(big.NewInt(0)), true
+	case Float, NormalFloat:
 		return reflect.TypeOf(float64(0)), true
+	case Complex, NormalComplex:
+		return reflect.TypeOf(complex128(complex(0,1))), true
 	case Bit:
 		return reflect.TypeOf(true), true
-	case Uint8, Byte:
+	case Byte:
 		return reflect.TypeOf(uint8(0)), true
-	case Uint16, Word:
+	case Word:
 		return reflect.TypeOf(uint16(0)), true
-	case Uint32, Dword:
+	case Dword:
 		return reflect.TypeOf(uint32(0)), true
-	case Uint64, Qword:
+	case Qword:
 		return reflect.TypeOf(uint64(0)), true
-	case Int8:
-		return reflect.TypeOf(int8(0)), true
-	case Int16:
-		return reflect.TypeOf(int16(0)), true
-	case Int32, Char:
+	case Char:
 		return reflect.TypeOf(int32(0)), true
-	case Int64:
-		return reflect.TypeOf(int64(0)), true
-	case Complex, FloatComplex:
-		return reflect.TypeOf(complex128(complex(0,1))), true
 	default:
 		return nil, false
 	}

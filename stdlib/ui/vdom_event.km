@@ -16,11 +16,11 @@ function get-string:
     &(EventPayload, String) => String
     native 'ui-event-payload-get-string';
 function get-float:
-    &(EventPayload, String) => Real
+    &(EventPayload, String) => NormalFloat
     native 'ui-event-payload-get-float';
-function get-number:
-    &(EventPayload, String) => Number
-    native 'ui-event-payload-get-number';
+function get-integer:
+    &(EventPayload, String) => Integer
+    native 'ui-event-payload-get-integer';
 function get-bool:
     &(EventPayload, String) => Bool
     native 'ui-event-payload-get-bool';

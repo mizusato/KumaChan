@@ -2,10 +2,12 @@ package api
 
 import (
 	"time"
+	"math/big"
 	"kumachan/misc/rx"
 	"kumachan/misc/rpc"
 	"kumachan/runtime/lib/librpc"
 	. "kumachan/lang"
+	"kumachan/misc/util"
 )
 
 
@@ -30,13 +32,14 @@ func rpcAdaptCommonOptions(opts ProductValue) librpc.CommonOptions {
 }
 func rpcAdaptLimitOptions(opts ProductValue) rpc.Limits {
 	var ms = func(v Value) time.Duration {
-		return (time.Millisecond * time.Duration(v.(uint)))
+		var n = v.(*big.Int)
+		return (time.Millisecond * time.Duration(util.GetUintNumber(n)))
 	}
 	return rpc.Limits {
 		SendTimeout:       ms(opts.Elements[0]),
 		RecvTimeout:       ms(opts.Elements[1]),
 		RecvInterval:      ms(opts.Elements[2]),
-		RecvMaxObjectSize: opts.Elements[3].(uint),
+		RecvMaxObjectSize: util.GetUintNumber(opts.Elements[3].(*big.Int)),
 	}
 }
 

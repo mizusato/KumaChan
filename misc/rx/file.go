@@ -5,9 +5,9 @@ import (
 	"io"
 	"fmt"
 	"time"
-	"math"
 	"bufio"
 	"errors"
+	"math/big"
 	"io/ioutil"
 	"path/filepath"
 	"kumachan/misc/util"
@@ -20,7 +20,7 @@ type File struct {
 }
 type FileState struct {
 	Name     string
-	Size     uint64
+	Size     *big.Int
 	Mode     uint32
 	IsDir    bool
 	ModTime  time.Time
@@ -28,7 +28,7 @@ type FileState struct {
 func FileStateFromInfo(info os.FileInfo) FileState {
 	return FileState {
 		Name:    info.Name(),
-		Size:    uint64(info.Size()),
+		Size:    big.NewInt(info.Size()),
 		Mode:    uint32(info.Mode()),
 		IsDir:   info.IsDir(),
 		ModTime: info.ModTime(),
@@ -129,10 +129,9 @@ func (f File) Write(data ([] byte)) Observable {
 	})
 }
 
-func (f File) SeekStart(offset uint64) Observable {
+func (f File) SeekStart(offset int64) Observable {
 	return NewQueued(f.worker, func() (Object, bool) {
-		if offset >= math.MaxInt64 { panic("offset overflow") }
-		var new_offset, err = f.raw.Seek(int64(offset), io.SeekStart)
+		var new_offset, err = f.raw.Seek(offset, io.SeekStart)
 		if err != nil {
 			return err, false
 		}
@@ -140,10 +139,9 @@ func (f File) SeekStart(offset uint64) Observable {
 	})
 }
 
-func (f File) SeekForward(delta uint64) Observable {
+func (f File) SeekDelta(delta int64) Observable {
 	return NewQueued(f.worker, func() (Object, bool) {
-		if delta >= math.MaxInt64 { panic("offset delta overflow") }
-		var new_offset, err = f.raw.Seek(int64(delta), io.SeekCurrent)
+		var new_offset, err = f.raw.Seek(delta, io.SeekCurrent)
 		if err != nil {
 			return err, false
 		}
@@ -151,21 +149,9 @@ func (f File) SeekForward(delta uint64) Observable {
 	})
 }
 
-func (f File) SeekBackward(delta uint64) Observable {
+func (f File) SeekEnd(offset int64) Observable {
 	return NewQueued(f.worker, func() (Object, bool) {
-		if delta >= math.MaxInt64 { panic("offset delta overflow") }
-		var new_offset, err = f.raw.Seek((-int64(delta)), io.SeekCurrent)
-		if err != nil {
-			return err, false
-		}
-		return new_offset, true
-	})
-}
-
-func (f File) SeekEnd(offset uint64) Observable {
-	return NewQueued(f.worker, func() (Object, bool) {
-		if offset >= math.MaxInt64 { panic("offset overflow") }
-		var new_offset, err = f.raw.Seek((-int64(offset)), io.SeekEnd)
+		var new_offset, err = f.raw.Seek(offset, io.SeekEnd)
 		if err != nil {
 			return err, false
 		}

@@ -6,12 +6,12 @@ type FileReadWrite  protected File;
 type FileState {
     // rx.FileState
     name:     String,
-    size:     Uint64,
+    size:     Number,
     mode:     FileMode,
     is-dir:   Bool,
     mod-time: time::Time
 };
-type FileMode   Uint32;
+type FileMode native;
 
 export function walk-dir:
     &(Path) => Observable[(Path,FileState),Error]
@@ -60,16 +60,13 @@ export function write:
     native 'file-write';
 
 export function seek-start:
-    &(File,Uint64) => Async[Uint64,Error]
+    &(File,Integer) => Async[Integer,Error]
     native 'file-seek-start';
-export function seek-forward:
-    &(File,Uint64) => Async[Uint64,Error]
-    native 'file-seek-forward';
-export function seek-backward:
-    &(File,Uint64) => Async[Uint64,Error]
-    native 'file-seek-backward';
+export function seek-delta:
+    &(File,Integer) => Async[Integer,Error]
+    native 'file-seek-delta';
 export function seek-end:
-    &(File,Uint64) => Async[Uint64,Error]
+    &(File,Integer) => Async[Integer,Error]
     native 'file-seek-end';
 
 export function read-char:

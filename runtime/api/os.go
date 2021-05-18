@@ -5,9 +5,11 @@ import (
 	"time"
 	"runtime"
 	"strings"
+	"math/big"
 	"path/filepath"
 	"kumachan/misc/rx"
 	"kumachan/stdlib"
+	"kumachan/misc/util"
 	"kumachan/runtime/lib/ui/qt"
 	. "kumachan/lang"
 	. "kumachan/runtime/lib/container"
@@ -163,23 +165,20 @@ var OS_Functions = map[string] Value {
 			return Struct2Prod(state)
 		})
 	},
-	"file-read": func(f rx.File, amount uint) rx.Observable {
-		return f.Read(amount)
+	"file-read": func(f rx.File, amount *big.Int) rx.Observable {
+		return f.Read(util.GetUintNumber(amount))
 	},
 	"file-write": func(f rx.File, data ([] byte)) rx.Observable {
 		return f.Write(data)
 	},
-	"file-seek-start": func(f rx.File, offset uint64) rx.Observable {
-		return f.SeekStart(offset)
+	"file-seek-start": func(f rx.File, offset *big.Int) rx.Observable {
+		return f.SeekStart(util.GetInt64Integer(offset))
 	},
-	"file-seek-forward": func(f rx.File, offset uint64) rx.Observable {
-		return f.SeekForward(offset)
+	"file-seek-delta": func(f rx.File, offset *big.Int) rx.Observable {
+		return f.SeekDelta(util.GetInt64Integer(offset))
 	},
-	"file-seek-backward": func(f rx.File, offset uint64) rx.Observable {
-		return f.SeekBackward(offset)
-	},
-	"file-seek-end": func(f rx.File, offset uint64) rx.Observable {
-		return f.SeekEnd(offset)
+	"file-seek-end": func(f rx.File, offset *big.Int) rx.Observable {
+		return f.SeekEnd(util.GetInt64Integer(offset))
 	},
 	"file-read-char": func(f rx.File) rx.Observable {
 		return f.ReadChar()
@@ -211,10 +210,10 @@ var OS_Functions = map[string] Value {
 	"file-read-all": func(f rx.File) rx.Observable {
 		return f.ReadAll()
 	},
-	"exit": func(code uint8) rx.Observable {
+	"exit": func(code *big.Int) rx.Observable {
 		return rx.NewSync(func() (rx.Object, bool) {
 			qt.Quit(func() {
-				os.Exit(int(code))
+				os.Exit(int(code.Int64()))
 			})
 			panic("process should have exited")
 		})

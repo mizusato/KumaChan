@@ -89,7 +89,7 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 	case ch.UnitValue:
 		var inst_nil = lang.Instruction { OpCode: lang.NIL }
 		return CodeFrom(inst_nil, expr.Info)
-	case ch.IntLiteral:
+	case ch.IntegerLiteral:
 		var index = ctx.AppendDataRef(DataInteger(v))
 		return CodeFrom(InstGlobalRef(index), expr.Info)
 	case ch.SmallIntLiteral:

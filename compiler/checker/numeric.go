@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"strconv"
 	"kumachan/stdlib"
+	"kumachan/misc/util"
 	"kumachan/lang/parser/ast"
 )
 
@@ -17,8 +18,8 @@ type UntypedInteger struct {
 	Value   *big.Int
 }
 
-func (impl IntLiteral) ExprVal() {}
-type IntLiteral struct {
+func (impl IntegerLiteral) ExprVal() {}
+type IntegerLiteral struct {
 	Value  *big.Int
 }
 
@@ -75,10 +76,12 @@ func CheckInteger(i ast.IntegerLiteral, ctx ExprContext) (SemiExpr, *ExprError) 
 func CheckFloat(f ast.FloatLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(f.Node)
 	var value, err = strconv.ParseFloat(string(f.Value), 64)
-	if err != nil { panic("invalid float literal got from parser") }
+	if err != nil || !(util.IsNormalFloat(value)) {
+		panic("invalid float literal got from parser")
+	}
 	return LiftTyped(Expr {
 		Type:  &NamedType {
-			Name: __Real,
+			Name: __NormalFloat,
 			Args: make([]Type, 0),
 		},
 		Value: FloatLiteral { value },
@@ -88,8 +91,20 @@ func CheckFloat(f ast.FloatLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
 
 
 func AssignIntegerTo(expected Type, integer UntypedInteger, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
-	var err = RequireExplicitType(expected, info)
-	if err != nil { return Expr{}, err }
+	if expected == nil {
+		var v = integer.Value
+		var t Type
+		if util.IsNonNegative(v) {
+			t = __T_Number
+		} else {
+			t = __T_Integer
+		}
+		return Expr {
+			Type:  t,
+			Value: IntegerLiteral { v },
+			Info:  info,
+		}, nil
+	}
 	expected_certain, err := GetCertainType(expected, info.ErrorPoint, ctx)
 	if err != nil { return Expr{}, err }
 	switch E := expected_certain.(type) {
@@ -112,7 +127,7 @@ func AssignIntegerTo(expected Type, integer UntypedInteger, info ExprInfo, ctx E
 				}
 			}
 		}
-		if sym == __Real || sym == __Float {
+		if sym == __Float || sym == __NormalFloat {
 			var v_big = integer.Value
 			if v_big.IsInt64() {
 				var v = v_big.Int64()
@@ -140,36 +155,15 @@ func AssignIntegerTo(expected Type, integer UntypedInteger, info ExprInfo, ctx E
 
 func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 	switch expected_kind {
-	case stdlib.Int:
-		return IntLiteral { value }, true
+	case stdlib.Integer:
+		return IntegerLiteral { value }, true
 	case stdlib.Number:
-		if value.IsUint64() {
-			var n = value.Uint64()
-			if uint64(^uintptr(0)) == ^uint64(0) {
-				return SmallIntLiteral {
-					Value: uint(n),
-				}, true
-			} else {
-				if n <= math.MaxUint32 {
-					return SmallIntLiteral {
-						Value: uint(n),
-					}, true
-				} else {
-					return nil, false
-				}
-			}
+		if util.IsNonNegative(value) {
+			return IntegerLiteral { value }, true
 		} else {
 			return nil, false
 		}
-	case stdlib.Int64:
-		if value.IsInt64() {
-			return SmallIntLiteral {
-				Value: int64(value.Int64()),
-			}, true
-		} else {
-			return nil, false
-		}
-	case stdlib.Uint64, stdlib.Qword:
+	case stdlib.Qword:
 		if value.IsUint64() {
 			return SmallIntLiteral {
 				Value: uint64(value.Uint64()),
@@ -177,20 +171,7 @@ func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 		} else {
 			return nil, false
 		}
-	case stdlib.Int32:
-		if value.IsInt64() {
-			var x = value.Int64()
-			if math.MinInt32 <= x && x <= math.MaxInt32 {
-				return SmallIntLiteral {
-					Value: int32(x),
-				}, true
-			} else {
-				return nil, false
-			}
-		} else {
-			return nil, false
-		}
-	case stdlib.Uint32, stdlib.Dword, stdlib.Char:
+	case stdlib.Dword, stdlib.Char:
 		// note on the Char type:
 		//   assume unsigned here and
 		//   convert to singed value later (with codepoint validation)
@@ -206,20 +187,7 @@ func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 		} else {
 			return nil, false
 		}
-	case stdlib.Int16:
-		if value.IsInt64() {
-			var x = value.Int64()
-			if math.MinInt16 <= x && x <= math.MaxInt16 {
-				return SmallIntLiteral {
-					Value: int16(x),
-				}, true
-			} else {
-				return nil, false
-			}
-		} else {
-			return nil, false
-		}
-	case stdlib.Uint16, stdlib.Word:
+	case stdlib.Word:
 		if value.IsUint64() {
 			var x = value.Uint64()
 			if x <= math.MaxUint16 {
@@ -232,20 +200,7 @@ func AdaptInteger(expected_kind string, value *big.Int) (ExprVal, bool) {
 		} else {
 			return nil, false
 		}
-	case stdlib.Int8:
-		if value.IsInt64() {
-			var x = value.Int64()
-			if math.MinInt8 <= x && x <= math.MaxInt8 {
-				return SmallIntLiteral {
-					Value: int8(x),
-				}, true
-			} else {
-				return nil, false
-			}
-		} else {
-			return nil, false
-		}
-	case stdlib.Uint8, stdlib.Byte:
+	case stdlib.Byte:
 		if value.IsUint64() {
 			var x = value.Uint64()
 			if x <= math.MaxUint8 {

@@ -79,7 +79,7 @@ const BoolParser: ValueParserType :=
 
 const NumberParser: ValueParserType :=
     | chars := apply { repeat { Chars { accept: { List '0123456789.Ee+-' } } } },
-    switch { parse-real chars.{String} }:
+    switch { parse-float chars.{String} }:
     case Some x:
         { output { self::Number x } },
     case None:

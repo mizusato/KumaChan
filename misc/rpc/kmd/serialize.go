@@ -3,8 +3,10 @@ package kmd
 import (
 	"io"
 	"fmt"
+	"errors"
 	"strconv"
 	"encoding/base64"
+	"kumachan/misc/util"
 )
 
 
@@ -56,7 +58,11 @@ func serialize(obj Object, ctx serializeContext, output io.Writer) error {
 			return writePrimitive(output, "false", ctx.Depth)
 		}
 	case Float:
-		return writePrimitive(output, ctx.WriteFloat(obj), ctx.Depth)
+		val := ctx.WriteFloat(obj)
+		if !(util.IsNormalFloat(val)) {
+			return errors.New("kmd: unable to serialize abnormal float value")
+		}
+		return writePrimitive(output, val, ctx.Depth)
 	case Uint32:
 		return writePrimitive(output, ctx.WriteUint32(obj), ctx.Depth)
 	case Int32:

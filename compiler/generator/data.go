@@ -10,7 +10,7 @@ import (
 )
 
 
-type DataInteger ch.IntLiteral
+type DataInteger ch.IntegerLiteral
 func (d DataInteger) ToValue() lang.Value {
 	return d.Value
 }

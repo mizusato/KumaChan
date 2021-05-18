@@ -5,5 +5,5 @@ export const Args: List[String] :=
 
 type ProcessExit protected Async[never];
 export function exit:
-    &(Uint8) => ProcessExit
+    &(Integer) => ProcessExit
     native 'exit';

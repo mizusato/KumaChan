@@ -190,10 +190,10 @@ export function with: [A < Observable[any,any]]
     &(A, Async) => A
     native 'with';
 export function gen-random:
-    &() => Sync[Real]
+    &() => Sync[NormalFloat]
     native 'gen-random';
 export function gen-monotonic-id:
-    &() => Sync[Uint64]
+    &() => Sync[Number]
     native 'gen-monotonic-id';
 export function gen-monotonic-id-string:
     &() => Sync[String]

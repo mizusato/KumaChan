@@ -1,67 +1,88 @@
+## Math Constants
 /// τ = 2π
-export const Tau: Real := (2.0 * Pi);
+export const Tau: Float := (2.0 * Pi);
 
 /// π = arccos(-1)
-export const Pi: Real := { acos -1.0 };
+export const Pi: Float := { acos -1.0 };
 
 /// e = exp(1)
-export const E: Real := { exp 1.0 };
+export const E: Float := { exp 1.0 };
 
-export function floor: &(Real) => Real  native 'floor';
-export function  ceil: &(Real) => Real  native 'ceil';
-export function round: &(Real) => Real  native 'round';
 
-export function **: &(Real,Real) => Real  native 'real-**';
+## Math Basic Operators
 
-export function  sin: &(Real) => Real  native 'real-sin';
-export function  cos: &(Real) => Real  native 'real-cos';
-export function  tan: &(Real) => Real  native 'real-tan';
-export function asin: &(Real) => Real  native 'real-asin';
-export function acos: &(Real) => Real  native 'real-acos';
-export function atan: &(Real) => Real  native 'real-atan';
-export function atan2: &({ y:Real, x:Real }) => Real  native 'atan2';
+export function +: &(Integer,Integer) => Integer  native 'i+i';
+export function -: &(Integer,Integer) => Integer  native 'i-i';
+export function -: &(Integer) => Integer          native '-i';
+export function *: &(Integer,Integer) => Integer  native 'i*i';
+export function /: &(Integer,Integer) => Integer  native 'i/i';
+export function %: &(Integer,Integer) => Integer  native 'i%i';
 
-export function sqrt: &(Real) => Real  native 'real-sqrt';
-export function cbrt: &(Real) => Real  native 'real-cbrt';
-export function  exp: &(Real) => Real  native 'real-exp';
-export function  log: &(Real) => Real  native 'real-log';
+export function +: &(Number,Number) => Number  native 'i+i';
+export function *: &(Number,Number) => Number  native 'i*i';
+export function /: &(Number,Number) => Number  native 'i/i';
+export function %: &(Number,Number) => Number  native 'i%i';
 
-export function floor: &(Float) => Float  native '[f] floor';
-export function  ceil: &(Float) => Float  native '[f] ceil';
-export function round: &(Float) => Float  native '[f] round';
+export function -!: &(Number,Number) => Number  native 'n-!n';
 
-export function **: &(Float,Float) => Float  native '[f] real-**';
+export function +: &(Float,Float) => Float  native 'f+f';
+export function -: &(Float,Float) => Float  native 'f-f';
+export function -: &(Float) => Float        native '-f';
+export function *: &(Float,Float) => Float  native 'f*f';
+export function /: &(Float,Float) => Float  native 'f/f';
+export function %: &(Float,Float) => Float  native 'f%f';
 
-export function  sin: &(Float) => Float  native '[f] real-sin';
-export function  cos: &(Float) => Float  native '[f] real-cos';
-export function  tan: &(Float) => Float  native '[f] real-tan';
-export function asin: &(Float) => Float  native '[f] real-asin';
-export function acos: &(Float) => Float  native '[f] real-acos';
-export function atan: &(Float) => Float  native '[f] real-atan';
-export function atan2: &({ y:Float, x:Float }) => Float  native 'atan2*';
+export function +: &(Complex,Complex) => Complex  native 'c+c';
+export function +: &(Float,Complex)   => Complex  native 'f+c';
+export function +: &(Complex,Float)   => Complex  native 'c+f';
+export function -: &(Complex,Complex) => Complex  native 'c-c';
+export function -: &(Float,Complex)   => Complex  native 'f-c';
+export function -: &(Complex,Float)   => Complex  native 'c-f';
+export function -: &(Complex) => Complex          native '-c';
+export function *: &(Complex,Complex) => Complex  native 'c*c';
+export function *: &(Float,Complex)   => Complex     native 'f*c';
+export function *: &(Complex,Float)   => Complex     native 'c*f';
+export function /: &(Complex,Complex) => Complex  native 'c/c';
+export function /: &(Float,Complex)   => Complex     native 'f/c';
+export function /: &(Complex,Float)   => Complex     native 'c/f';
 
-export function sqrt: &(Float) => Float  native '[f] real-sqrt';
-export function cbrt: &(Float) => Float  native '[f] real-cbrt';
-export function  exp: &(Float) => Float  native '[f] real-exp';
-export function  log: &(Float) => Float  native '[f] real-log';
 
-export function log:
-    & { base:Real, x:Real } => Real
-    & { base, x } => ({log x} / {log base});
-export function log2:
-    &(Real) => Real
-    &(x) => { log { base: 2.0, x } };
-export function log10:
-    &(Real) => Real
-    &(x) => { log { base: 10.0, x } };
+## Math Advanced Operators
 
-export function log:
-    & { base:Float, x:Float } => Float
-    & { base, x } => ({log x} / {log base});
-export function log2:
-    &(Float) => Float
-    &(x) => { log { base: (2.0).[Float], x } };
-export function log10:
-    &(Float) => Float
-    &(x) => { log { base: (10.0).[Float], x } };
+export function **:     &(Integer,Integer) => Integer            native 'i**i';
+export function modexp: &(Integer,Integer,Number) => Integer     native 'modexp';
+export function quorem: &(Integer,Integer) => (Integer,Integer)  native 'quorem';
+export function divmod: &(Integer,Integer) => (Integer,Integer)  native 'divmod';
+
+export function **:    &(Float,Float) => Float  native 'f**f';
+export function floor: &(Float) => Float        native 'floor';
+export function ceil:  &(Float) => Float        native 'ceil';
+export function round: &(Float) => Float        native 'round';
+
+export function sqrt: &(Float) => Float  native 'float-sqrt';
+export function cbrt: &(Float) => Float  native 'float-cbrt';
+export function  exp: &(Float) => Float  native 'float-exp';
+export function  log: &(Float) => Float  native 'float-log';
+
+export function  sin: &(Float) => Float  native 'float-sin';
+export function  cos: &(Float) => Float  native 'float-cos';
+export function  tan: &(Float) => Float  native 'float-tan';
+export function asin: &(Float) => Float  native 'float-asin';
+export function acos: &(Float) => Float  native 'float-acos';
+export function atan: &(Float) => Float  native 'float-atan';
+
+export function atan2: &({ y:Float, x:Float }) => Float
+    native 'atan2';
+
+export function sqrt: &(Complex) => Complex  native 'complex-sqrt';
+export function cbrt: &(Complex) => Complex  native 'complex-cbrt';
+export function  exp: &(Complex) => Complex  native 'complex-exp';
+export function  log: &(Complex) => Complex  native 'complex-log';
+
+export function  sin: &(Complex) => Complex  native 'complex-sin';
+export function  cos: &(Complex) => Complex  native 'complex-cos';
+export function  tan: &(Complex) => Complex  native 'complex-tan';
+export function asin: &(Complex) => Complex  native 'complex-asin';
+export function acos: &(Complex) => Complex  native 'complex-acos';
+export function atan: &(Complex) => Complex  native 'complex-atan';
 
