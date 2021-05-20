@@ -832,7 +832,7 @@ type E_ArrayAssignedToNonArrayType struct {
 func (e E_ArrayAssignedToNonArrayType) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	msg.WriteText(TS_ERROR,
-		"Cannot assign array literal to the non-array type")
+		"Cannot assign list literal to the non-list type")
 	msg.WriteEndText(TS_INLINE_CODE, e.NonArrayType)
 	return msg
 

@@ -14,10 +14,6 @@ syntax 2: (struct: FieldRef[parent,struct]) .& field => FieldRef[parent,fieldTyp
 
 - Lang: consider prefix for special identifier used by compiler (e.g. @DefaultValue)
 
-- ErrorMessage: "array" --> "list"
-
-- TypeSystem: assign Integer(default) to uncertain types
-
 - KMD: migrate to new numeric types, add other primitives
 
 - Type: enum supertype: enum { ...Another, type Added; }

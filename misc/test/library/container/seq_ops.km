@@ -1,7 +1,6 @@
 do
     let sum :=
         [1, 2, 3, 4, 5]
-            . [List[Integer]]
             . { Seq }
             . { map &(x) => (10 * x) }
             . { filter &(x) => (x != 50) }

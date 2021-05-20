@@ -91,7 +91,7 @@ func CheckFloat(f ast.FloatLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
 
 
 func AssignIntegerTo(expected Type, integer UntypedInteger, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
-	if expected == nil {
+	var assign_default = func() (Expr, *ExprError) {
 		var v = integer.Value
 		var t Type
 		if util.IsNonNegative(v) {
@@ -99,14 +99,20 @@ func AssignIntegerTo(expected Type, integer UntypedInteger, info ExprInfo, ctx E
 		} else {
 			t = __T_Integer
 		}
-		return Expr {
+		var default_expr = Expr {
 			Type:  t,
 			Value: IntegerLiteral { v },
 			Info:  info,
-		}, nil
+		}
+		return TypedAssignTo(expected, default_expr, ctx)
+	}
+	if expected == nil {
+		return assign_default()
 	}
 	expected_certain, err := GetCertainType(expected, info.ErrorPoint, ctx)
-	if err != nil { return Expr{}, err }
+	if err != nil {
+		return assign_default()
+	}
 	switch E := expected_certain.(type) {
 	case *NamedType:
 		var sym = E.Name
