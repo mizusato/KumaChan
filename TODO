@@ -1,8 +1,16 @@
 TODO
 
-- Lang: prefix for special identifier used by compiler (e.g. @DefaultValue)
+** Reactive[Struct] refactor plan (generalized projection)
+type FieldRef[S,F] (Maybe[F] => (S, F));  // or ProjRef[S,F]
+e.g. project: &(Reactive[S], S => FieldRef[S,F]) => Reactive[F]
+e.g. project: &(Maybe[S], S => FieldRef[S,F]) => FieldRef[Maybe[S],Maybe[F]]
+--> &(Reactive[Maybe[S]]) => Reactive[Maybe[F]]
+--> &(Reactive[V[S]]) => Reactive[V[F]] (V = ValidationState)
+syntax 1: struct .& field => FieldRef[structType,fieldType]
+syntax 2: (struct: FieldRef[parent,struct]) .& field => FieldRef[parent,fieldType]
+(no special "."/switch syntax for Reactive)
 
-- Lang: generic morph() (Wrapper[S], &S => F, &(S,F) => S) => T
+- Lang: consider prefix for special identifier used by compiler (e.g. @DefaultValue)
 
 - ErrorMessage: "array" --> "list"
 
