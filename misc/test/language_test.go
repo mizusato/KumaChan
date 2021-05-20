@@ -41,6 +41,12 @@ func TestDefaultValue(t *testing.T) {
 	expectStdIO(t, mod_path, "", "(0,0)\n")
 }
 
+func TestPipeProj(t *testing.T) {
+	var dir_path = getTestDirPath(t, language)
+	var mod_path = filepath.Join(dir_path, "product", "pipe_proj.km")
+	expectStdIO(t, mod_path, "", "(1,2)\n1\n(3,2)\n(1,-9)\n1\n[(1,4),(3,2)]\n[(1,2),(5,2)]\n")
+}
+
 func TestSwitch(t *testing.T) {
 	var dir_path = getTestDirPath(t, language)
 	var mod_path = filepath.Join(dir_path, "sum", "switch.km")
