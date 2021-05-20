@@ -257,7 +257,7 @@ func call(f FunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Value {
 							return Tuple(prod, prod.Elements[index])
 						}
 					}))
-				case NativeFunctionValue:
+				case FunctionValue, NativeFunctionValue:
 					var base = v
 					ec.pushValue(NativeFunctionValue(func(arg Value, h InteropContext) Value {
 						var t = h.Call(base, None())
