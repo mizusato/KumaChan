@@ -7,9 +7,9 @@ import (
 	"image"
 	"strings"
 	"reflect"
+	"math/big"
 	"image/png"
 	"path/filepath"
-	"math/big"
 )
 
 
@@ -29,9 +29,9 @@ func GetDirectoryPath() string {
 
 const Mod_core = "core"
 const Mod_ui = "ui"
-var core_types = []string {
+var core_types = [] string {
 	// types.km
-	Bool, Yes, No,
+	ProjRef, Bool, Yes, No,
 	Maybe, Some, None,
 	Result, Success, Failure,
 	Ordering, Smaller, Equal, Bigger,
@@ -63,6 +63,7 @@ func GetCoreScopedSymbols() []string {
 }
 
 // types.km
+const ProjRef = "ProjRef"
 const Bool = "Bool"
 const Yes = "Yes"
 const No = "No"

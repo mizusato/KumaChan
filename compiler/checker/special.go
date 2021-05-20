@@ -34,6 +34,27 @@ func Reactive(t Type) Type {
 		Args: [] Type { t },
 	}
 }
+var __ProjRef = CoreSymbol(stdlib.ProjRef)
+var __ProjRefParams = [] TypeParam {
+	TypeParam {
+		Name:     "T",
+		Variance: Invariant,
+	},
+	TypeParam {
+		Name:     "C",
+		Variance: Covariant,
+	},
+}
+var __ProjRefToBeInferred = MarkParamsAsBeingInferred(ProjRef(
+	&ParameterType { Index: 0 },
+	&ParameterType { Index: 1 },
+))
+func ProjRef(t Type, c Type) Type {
+	return &NamedType {
+		Name: __ProjRef,
+		Args: [] Type { t, c },
+	}
+}
 var __DoTypes = [] Type {
 	&NamedType { Name: __Action, Args: [] Type { &AnonymousType { Unit {} } } },
 	&NamedType { Name: __Observable, Args: [] Type { &NeverType {} } },

@@ -4,6 +4,8 @@
  */
 
 // TODO: split this file
+type ProjRef[+T,C]
+    &(Maybe[C]) => (T, C);
 
 // Basic Sum Types
 type Bool enum {

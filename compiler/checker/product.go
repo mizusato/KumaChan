@@ -29,6 +29,12 @@ type Get struct {
 	Index    uint
 }
 
+func (impl Proj) ExprVal() {}
+type Proj struct {
+	Product  Expr
+	Index    uint
+}
+
 func (impl Set) ExprVal() {}
 type Set struct {
 	Product   Expr
@@ -243,6 +249,92 @@ func CheckGet(base SemiExpr, key ast.Identifier, info ExprInfo, ctx ExprContext)
 		return SemiExpr{}, &ExprError {
 			Point:    base.Info.ErrorPoint,
 			Concrete: E_GetFromNonRecord {},
+		}
+	}
+}
+
+func CheckProj(base SemiExpr, key ast.Identifier, info ExprInfo, ctx ExprContext) (SemiExpr, *ExprError) {
+	var inf_ctx = ctx.WithInferringEnabled(__ProjRefParams, __NoBounds)
+	var base_assigned, err = AssignTo(__ProjRefToBeInferred, base, inf_ctx)
+	if err == nil {
+		var args = inf_ctx.Inferring.GetPlainArgs()
+		var ref_base_t = args[0]
+		var ref_field_t = args[1]
+		switch record_ := UnboxRecord(ref_field_t, ctx, false).(type) {
+		case BR_Record:
+			var record = record_.Record
+			var key_string = ast.Id2String(key)
+			var next_field, exists = record.Fields[key_string]
+			if !exists { return SemiExpr{}, &ExprError {
+				Point:    ErrorPointFrom(key.Node),
+				Concrete: E_FieldDoesNotExist {
+					Field:  key_string,
+					Target: ctx.DescribeCertainType(&AnonymousType { record }),
+				},
+			} }
+			return LiftTyped(Expr {
+				Type:  ProjRef(ref_base_t, next_field.Type),
+				Value: Proj {
+					Product: base_assigned,
+					Index:   next_field.Index,
+				},
+				Info:  info,
+			}), nil
+		case BR_RecordButOpaque:
+			return SemiExpr{}, &ExprError {
+				Point:    base.Info.ErrorPoint,
+				Concrete: E_GetFromOpaqueRecord {},
+			}
+		case BR_NonRecord:
+			return SemiExpr{}, &ExprError {
+				Point:    base.Info.ErrorPoint,
+				Concrete: E_GetFromNonRecord {},
+			}
+		default:
+			panic("impossible branch")
+		}
+	} else {
+		var base_typed, is_typed = base.Value.(TypedExpr)
+		if is_typed {
+			var base_type = base_typed.Type
+			switch record_ := UnboxRecord(base_type, ctx, false).(type) {
+			case BR_Record:
+				var record = record_.Record
+				var key_string = ast.Id2String(key)
+				var field, exists = record.Fields[key_string]
+				if !exists { return SemiExpr{}, &ExprError {
+					Point:    ErrorPointFrom(key.Node),
+					Concrete: E_FieldDoesNotExist {
+						Field:  key_string,
+						Target: ctx.DescribeCertainType(&AnonymousType { record }),
+					},
+				} }
+				return LiftTyped(Expr {
+					Type:  ProjRef(base_type, field.Type),
+					Value: Proj {
+						Product: Expr(base_typed),
+						Index:   field.Index,
+					},
+					Info:  info,
+				}), nil
+			case BR_RecordButOpaque:
+				return SemiExpr{}, &ExprError {
+					Point:    base.Info.ErrorPoint,
+					Concrete: E_GetFromOpaqueRecord {},
+				}
+			case BR_NonRecord:
+				return SemiExpr{}, &ExprError {
+					Point:    base.Info.ErrorPoint,
+					Concrete: E_GetFromNonRecord {},
+				}
+			default:
+				panic("impossible branch")
+			}
+		} else {
+			return SemiExpr{}, &ExprError {
+				Point:    base.Info.ErrorPoint,
+				Concrete: E_GetFromNonRecord {},
+			}
 		}
 	}
 }

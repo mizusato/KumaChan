@@ -86,6 +86,7 @@ var __NodeRegistry = []interface{} {
     VariousPipe {},
     PipeFunc {},
     PipeGet {},
+    PipeProj {},
     PipeCast {},
     PipeSwitch {},
     // Term

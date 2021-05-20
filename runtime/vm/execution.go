@@ -239,6 +239,47 @@ func call(f FunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Value {
 				default:
 					panic("SET: cannot execute on non-product value")
 				}
+			case PROJ:
+				var index = inst.GetShortIndexOrSize()
+				switch v := ec.popValue().(type) {
+				case ProductValue:
+					var prod = v
+					var L = uint(len(prod.Elements))
+					assert(index < L, "PROJ: invalid index")
+					ec.pushValue(NativeFunctionValue(func(arg Value, _ InteropContext) Value {
+						var new_value, update = Unwrap(arg.(SumValue))
+						if update {
+							var draft =  make([] Value, L)
+							copy(draft, prod.Elements)
+							draft[index] = new_value
+							return Tuple(TupleOf(draft), new_value)
+						} else {
+							return Tuple(prod, prod.Elements[index])
+						}
+					}))
+				case NativeFunctionValue:
+					var base = v
+					ec.pushValue(NativeFunctionValue(func(arg Value, h InteropContext) Value {
+						var t = h.Call(base, None())
+						var prod = t.(ProductValue).Elements[1].(ProductValue)
+						var L = uint(len(prod.Elements))
+						assert(index < L, "PROJ: invalid index")
+						var new_field_value, update = Unwrap(arg.(SumValue))
+						if update {
+							var draft =  make([] Value, L)
+							copy(draft, prod.Elements)
+							draft[index] = new_field_value
+							var new_prod_value = TupleOf(draft)
+							var t = h.Call(base, Some(new_prod_value))
+							var new_base_value = t.(ProductValue).Elements[0]
+							return Tuple(new_base_value, new_field_value)
+						} else {
+							return Tuple(prod, prod.Elements[index])
+						}
+					}))
+				default:
+					panic("proj: invalid operand")
+				}
 			case CTX:
 				var is_recursive = (inst.Arg0 != 0)
 				switch prod := ec.popValue().(type) {

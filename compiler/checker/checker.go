@@ -514,6 +514,9 @@ func Check(expr ast.Expr, ctx ExprContext) (SemiExpr, *ExprError) {
 		case ast.PipeGet:
 			current, err = CheckGet(current, p.Key, info, ctx)
 			if err != nil { return SemiExpr{}, err }
+		case ast.PipeProj:
+			current, err = CheckProj(current, p.Key, info, ctx)
+			if err != nil { return SemiExpr{}, err }
 		case ast.PipeCast:
 			current, err = CheckCast(current, p.Target, info, ctx)
 			if err != nil { return SemiExpr{}, err }

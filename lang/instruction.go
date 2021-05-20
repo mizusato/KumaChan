@@ -40,6 +40,7 @@ const (
 	GET     // [index, _ ]: Extract the value of a field
 	POPGET  // [index, _ ]: Replace current value into the value of a field
 	SET     // [index, _ ]: Perform a functional update on a field
+	PROJ    // [index, _ ]: Construct a functional reference on a field
 	/* Function Type Operations */
 	CTX     // [rec, _ ]: Use the current value as the context of a closure
 	CALL    // [ __, _ ]: Call a (native)function (pop func, pop arg, push ret)
@@ -106,6 +107,8 @@ func (inst Instruction) String() string {
 		return fmt.Sprintf("POPGET %d", inst.GetShortIndexOrSize())
 	case SET:
 		return fmt.Sprintf("SET %d", inst.GetShortIndexOrSize())
+	case PROJ:
+		return fmt.Sprintf("PROJ %d", inst.GetShortIndexOrSize())
 	case CTX:
 		if inst.Arg0 != 0 {
 			return "CTX REC"

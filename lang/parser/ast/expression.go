@@ -59,6 +59,11 @@ type PipeGet struct {
     Node               `part:"pipe_get"`
     Key   Identifier   `part:"name"`
 }
+func (impl PipeProj) Pipe() {}
+type PipeProj struct {
+    Node               `part:"pipe_proj"`
+    Key   Identifier   `part:"name"`
+}
 func (impl PipeCast) Pipe() {}
 type PipeCast struct {
     Node                  `part:"pipe_cast"`

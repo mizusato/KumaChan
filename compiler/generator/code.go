@@ -148,6 +148,15 @@ func InstSet(index uint) lang.Instruction {
 	}
 }
 
+func InstProj(index uint) lang.Instruction {
+	ValidateProductIndex(index)
+	return lang.Instruction {
+		OpCode: lang.PROJ,
+		Arg0:   lang.Short(index),
+		Arg1:   0,
+	}
+}
+
 func InstProduct(size uint) lang.Instruction {
 	ValidateProductSize(size)
 	return lang.Instruction {
