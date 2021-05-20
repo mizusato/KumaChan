@@ -1,5 +1,9 @@
 TODO
 
+- Lang: prefix for special identifier used by compiler (e.g. @DefaultValue)
+
+- Lang: generic morph() (Wrapper[S], &S => F, &(S,F) => S) => T
+
 - ErrorMessage: "array" --> "list"
 
 - TypeSystem: assign Integer(default) to uncertain types
