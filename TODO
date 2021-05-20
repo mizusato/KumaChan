@@ -10,7 +10,9 @@ syntax 1: struct .& field => FieldRef[structType,fieldType]
 syntax 2: (struct: FieldRef[parent,struct]) .& field => FieldRef[parent,fieldType]
 (no special "."/switch syntax for Reactive)
 
-- Rx: RefEqual apply on Watch() (+DistinctUntilChanged) instead of Emit()/Update()
+- Atom: tree-sitter parser update
+
+- Rx: RefEqual in DistinctWatch() (standalone new func) instead of Emit()/Update()
 
 - Lang: consider prefix for special identifier used by compiler (e.g. @DefaultValue)
 
@@ -22,7 +24,7 @@ syntax 2: (struct: FieldRef[parent,struct]) .& field => FieldRef[parent,fieldTyp
 
 - KMD: data-validate only for protected/opaque types
 
-- KMD: automatic validator call when boxing a value
+- KMD: automatic validator call when boxing a value (box to Maybe[T])
 
 - Data: should all value be pointer/primitive? (aka no non-primitive value type)
 
