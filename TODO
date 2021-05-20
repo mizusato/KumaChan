@@ -10,13 +10,13 @@ syntax 1: struct .& field => FieldRef[structType,fieldType]
 syntax 2: (struct: FieldRef[parent,struct]) .& field => FieldRef[parent,fieldType]
 (no special "."/switch syntax for Reactive)
 
+- Rx: RefEqual apply on Watch() (+DistinctUntilChanged) instead of Emit()/Update()
+
 - Lang: consider prefix for special identifier used by compiler (e.g. @DefaultValue)
 
 - ErrorMessage: "array" --> "list"
 
 - TypeSystem: assign Integer(default) to uncertain types
-
-- Rx: RefEqual apply on Watch() (+DistinctUntilChanged) instead of Emit()/Update()
 
 - KMD: migrate to new numeric types, add other primitives
 

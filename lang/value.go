@@ -37,31 +37,49 @@ type NativeFunctionValue  NativeFunction
 func RefEqual(a Value, b Value) bool {
 	var x = reflect.ValueOf(a)
 	var y = reflect.ValueOf(b)
-	var kx = x.Kind()
-	var ky = y.Kind()
 	var tx = x.Type()
 	var ty = y.Type()
 	if tx == ty {
 		var t = tx
-		if kx == reflect.Slice && ky == reflect.Slice {
-			if x.Pointer() == y.Pointer() && x.Len() == y.Len() {
-				return true
-			}
-		}
-		var u, is_string = a.(string)
-		var v, _ = b.(string)
-		if is_string {
+		switch t.Kind() {
+		case reflect.Struct:
+			return false
+		case reflect.Array:
+			return false
+		case reflect.Interface:
+			panic("impossible branch")
+		case reflect.Ptr:
+			return (x.Pointer() == y.Pointer())
+		case reflect.UnsafePointer:
+			return (x.Pointer() == y.Pointer())
+		case reflect.Chan:
+			return (x.Pointer() == y.Pointer())
+		case reflect.Func:
+			// WARNING: this will read a private field of reflect.Value
+			var u = reflect.ValueOf(&x).Elem().FieldByName("ptr").Pointer()
+			var v = reflect.ValueOf(&y).Elem().FieldByName("ptr").Pointer()
+			return (u == v)
+		case reflect.Slice:
+			return (x.Pointer() == y.Pointer() && x.Len() == y.Len())
+		case reflect.Map:
+			return (x.Pointer() == y.Pointer())
+		case reflect.String:
+			var u = x.String()
+			var v = y.String()
 			var uh = (*reflect.StringHeader)(unsafe.Pointer(&u))
 			var vh = (*reflect.StringHeader)(unsafe.Pointer(&v))
-			if uh.Data == vh.Data && uh.Len == vh.Len {
-				return true
+			return (uh.Data == vh.Data && uh.Len == vh.Len)
+		default:
+			if t.Comparable() {
+				// number kinds and miscellaneous kinds
+				return (a == b)
+			} else {
+				return false
 			}
 		}
-		if t.Comparable() {
-			return a == b  // TODO: revise this line
-		}
+	} else {
+		return false
 	}
-	return false
 }
 
 
