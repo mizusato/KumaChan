@@ -1,14 +1,35 @@
 TODO
 
 ** Reactive[Struct] refactor plan (generalized projection)
-type FieldRef[S,F] (Maybe[F] => (S, F));  // or ProjRef[S,F]
-e.g. project: &(Reactive[S], S => FieldRef[S,F]) => Reactive[F]
-e.g. project: &(Maybe[S], S => FieldRef[S,F]) => FieldRef[Maybe[S],Maybe[F]]
+type ProjRef[S,F] (Maybe[F] => (S, F));
+e.g. project: &(Reactive[S], S => ProjRef[S,F]) => Reactive[F]
+e.g. project: &(Maybe[S], S => ProjRef[S,F]) => ProjRef[Maybe[S],Maybe[F]]
 --> &(Reactive[Maybe[S]]) => Reactive[Maybe[F]]
 --> &(Reactive[W[S]]) => Reactive[V[F]] (W = WithValidation, V = ValidationState)
-syntax 1: struct .& field => FieldRef[structType,fieldType]
-syntax 2: (struct: FieldRef[parent,struct]) .& field => FieldRef[parent,fieldType]
-(no special "."/switch syntax for Reactive)
+syntax: struct .& field => ProjRef[structType,fieldType]
+   or   (struct: ProjRef[parent,struct]) .& field => ProjRef[parent,fieldType]
+(no special "."/switch syntax for Reactive)  // reconsider this !!!
+
+** Reactive[Enum] refactor plan (generalized choice)
+type ChoiceRef[T,C] (&(Maybe[C]) => (T, Maybe[C]))
+syntax 1: enum-or-choice/proj-ref.&(Branch) : ChoiceRef[E,Branch]
+a?.&(Some).&b
+e.g. choose: Reactive[E] => (ChoiceRef[E,C]) => Reactive[Maybe[C]]
+syntax 2:
+switch::[E] :
+case B1 b1:  // b1: &E => ChoiceRef[E,B1]
+    v1,
+case B2 b2:  // b2: &E => ChoiceRef[E,B2]
+    v2,
+...,
+default:
+    vd,
+end
+// evaluates to ([v1, v2, ...], { Some vd })
+type ReactiveChoiceConsumer[E, X < AnyEffect] (Reactive[E] => Computed[Maybe[X]])
+ctor: (&(E) => ChoiceRef[E,B], Reactive[B] => X) => ReactiveChoiceConsumer[E,X]
+e.g. choose:
+(Reactive[E], (List[ReactiveChoiceConsumer[E,X]], Maybe[ReactiveChoiceConsumer[E,X]])) => X
 
 - Atom: tree-sitter parser update
 
