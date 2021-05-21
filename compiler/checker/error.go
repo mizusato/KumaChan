@@ -1283,6 +1283,8 @@ func (err *ExprError) Error() string {
 }
 
 func (err* ExprError) GetInnerMost() *ExprError {
+	// NOTE: there are some problems about the behavior of this function,
+	//       but it is OK since it is only used for the ad-hoc plugin for Atom
 	type item struct {
 		error  *ExprError
 		depth  int

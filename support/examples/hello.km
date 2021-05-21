@@ -8,7 +8,7 @@ do { println 'Hello World' }
     . { then { println (2.0 * { Complex (0.0, 1.0) }).{sqrt}.{asin}.{sin}.{String} } }
     . { then { println (2.0 * { Complex (0.0, 1.0) }).{sqrt}.{acos}.{cos}.{String} } }
     . { then { println (2.0 * { Complex (0.0, 1.0) }).{sqrt}.{atan}.{tan}.{String} } }
-    . { then { println { String (20.[Int] ** 11) } } }
+    . { then { println { String (20.[Integer] ** 11) } } }
     . { then { println { String { factorial 20 } } } }
     . { then { println 'merge (0..5)' } }
     . { then { yield* { Seq { from: 0, to: 5 } } }
@@ -22,7 +22,7 @@ do { println 'Hello World' }
     . { crash-on-error };
 
 function factorial:
-    &(Int) => Int
+    &(Integer) => Integer
     &(n) =>
         if (n <= 1):
             1,

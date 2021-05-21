@@ -19,8 +19,6 @@ export function String: &(Integer) => String  native 'String from Integer';
 export function String: &(Float) => String    native 'String from Float';
 export function String: &(Complex) => String  native 'String from Complex';
 
-export function Complex: &(Float,Float) => Complex
-    native 'Complex';
 export function Complex: &(NormalFloat,NormalFloat) => NormalComplex
     native 'Complex';
 
