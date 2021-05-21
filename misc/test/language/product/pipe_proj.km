@@ -16,13 +16,13 @@ function String: &(Matrix) => String
 
 do
         let p := { Vector { x: 1, y: 2 } },
-        let (_,q1) := { p.&x None },
-        let (q2,_) := { p.&x { Some 3 } },
-        let (q3,_) := { p.&y { Some -9 } },
+        let q1 := { <- p.&x },
+        let q2 := (p.&x <- 3),
+        let q3 := (p.&y <- -9),
         let u := { Matrix { start:p, size: q2 } },
-        let (_,v1) := { u.&start.&x None },
-        let (v2,_) := { u.&start.&y { Some 4 } },
-        let (v3,_) := { u.&size.&x { Some 5 } },
+        let v1 := { <- u.&start.&x },
+        let v2 := (u.&start.&y <- 4),
+        let v3 := (u.&size.&x <- 5),
         let str := [
             p.{String},
             q1.{String},
