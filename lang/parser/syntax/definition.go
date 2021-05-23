@@ -189,6 +189,7 @@ var __SyntaxDefinition = [...] string {
             "callee = expr",
             "pipe_func_arg? = expr",
           "pipe_get = name",
+          // TODO: rename to pipe_ref_field, add pipe_ref_branch
           "pipe_proj = & name",
           "pipe_cast = [ type! ]!",
           "pipe_switch = ( type_ref! )!",
