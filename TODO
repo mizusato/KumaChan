@@ -20,6 +20,8 @@ chaining: a?.&(Some).&b
 
 - API: consider renaming wait and tick
 
+- Rx: reactive: morph with custom update behavior
+
 - Lang: consider prefix for special identifier used by compiler (e.g. @DefaultValue)
 
 - Lang: permit anonymous record expression (currently requires explicit type)
