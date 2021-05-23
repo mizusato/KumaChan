@@ -34,13 +34,18 @@ const (
 	SUM     // [index, ___ ]: Create a value of a sum type
 	JIF     // [index, dest]: Jump if Index matches the current value
 	JMP     // [ ____, dest]: Jump unconditionally
-	RSW     // [ _________ ]: Reactive switch
+	RSW     // TODO: to be removed
+	BRS     // [index, ___ ]: Branch functional reference on a sum value
+	BRB     // [index, ___ ]: Branch functional reference on a branch reference
+	BRF     // [index, ___ ]: Branch functional reference on a field reference
 	/* Product Type Operations */
 	PROD    // [size,  _ ]: Create a value of a product type
 	GET     // [index, _ ]: Extract the value of a field
 	POPGET  // [index, _ ]: Replace current value into the value of a field
 	SET     // [index, _ ]: Perform a functional update on a field
-	PROJ    // [index, _ ]: Construct a functional reference on a field
+	FRP     // [index, _ ]: Field functional reference on a product value
+	FRF     // [index, _ ]: Field functional reference on a field reference
+	FRB     // [index, _ ]: Field functional reference on a branch reference
 	/* Function Type Operations */
 	CTX     // [rec, _ ]: Use the current value as the context of a closure
 	CALL    // [ __, _ ]: Call a (native)function (pop func, pop arg, push ret)
@@ -99,6 +104,12 @@ func (inst Instruction) String() string {
 			inst.GetShortIndexOrSize(), inst.GetDestAddr())
 	case JMP:
 		return fmt.Sprintf("JMP %d", inst.GetDestAddr())
+	case BRS:
+		return fmt.Sprintf("BRS %d", inst.GetShortIndexOrSize())
+	case BRB:
+		return fmt.Sprintf("BRB %d", inst.GetShortIndexOrSize())
+	case BRF:
+		return fmt.Sprintf("BRF %d", inst.GetShortIndexOrSize())
 	case PROD:
 		return fmt.Sprintf("PROD %d", inst.GetShortIndexOrSize())
 	case GET:
@@ -107,8 +118,12 @@ func (inst Instruction) String() string {
 		return fmt.Sprintf("POPGET %d", inst.GetShortIndexOrSize())
 	case SET:
 		return fmt.Sprintf("SET %d", inst.GetShortIndexOrSize())
-	case PROJ:
-		return fmt.Sprintf("PROJ %d", inst.GetShortIndexOrSize())
+	case FRP:
+		return fmt.Sprintf("FRP %d", inst.GetShortIndexOrSize())
+	case FRF:
+		return fmt.Sprintf("FRF %d", inst.GetShortIndexOrSize())
+	case FRB:
+		return fmt.Sprintf("FRB %d", inst.GetShortIndexOrSize())
 	case CTX:
 		if inst.Arg0 != 0 {
 			return "CTX REC"

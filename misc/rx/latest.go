@@ -108,7 +108,7 @@ func KeyTrackedDynamicCombineLatestWaitReady(e Observable) Observable {
 		var c = new_collector(ob, dispose)
 		var running = make(map[string] disposeFunc)
 		var values = make(map[string] Object)
-		var indexes = make(map[string] *ReactiveImpl)
+		var indexes = make(map[string] ReactiveEntity)
 		var keys = make([] string, 0)
 		var first = true
 		var emit_if_all_ready = func() {
@@ -158,9 +158,7 @@ func KeyTrackedDynamicCombineLatestWaitReady(e Observable) Observable {
 					var _, is_running = running[key]
 					if is_running && key_added_or_index_changed {
 						var update = func() {
-							indexes[key].commit(ReactiveStateChange {
-								Value: key_index,
-							})
+							indexes[key].commit(key_index)
 						}
 						index_updates = append(index_updates, update)
 					}
@@ -168,12 +166,14 @@ func KeyTrackedDynamicCombineLatestWaitReady(e Observable) Observable {
 						keys_changed = true
 						var this_ctx, this_dispose = ctx.create_disposable_child()
 						running[key] = this_dispose
-						var index = CreateReactive(key_index,
-							func(a Object, b Object) bool { return a == b })
+						var index = CreateReactive(key_index)
 						indexes[key] = index
-						var index_source = index.Watch().CompleteWhen(func(obj Object) bool {
-							return obj == nil
-						})
+						var index_source =
+							DistinctWatch(index, func(a Object, b Object) bool {
+								return a == b
+							}).CompleteWhen(func(obj Object) bool {
+								return obj == nil
+							})
 						c.new_child()
 						var this_effect = vec.GetAction(key, index_source)
 						var run = func() {

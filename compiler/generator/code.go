@@ -148,10 +148,38 @@ func InstSet(index uint) lang.Instruction {
 	}
 }
 
-func InstProj(index uint) lang.Instruction {
+func InstRef(index uint, k ch.ReferenceKind, o ch.ReferenceOperand) lang.Instruction {
 	ValidateProductIndex(index)
+	var op = (func() lang.OpType {
+		switch k {
+		case ch.RK_Branch:
+			switch o {
+			case ch.RO_Enum:
+				return lang.BRS
+			case ch.RO_CaseRef:
+				return lang.BRB
+			case ch.RO_ProjRef:
+				return lang.BRF
+			default:
+				panic("invalid operand")
+			}
+		case ch.RK_Field:
+			switch o {
+			case ch.RO_Record:
+				return lang.FRP
+			case ch.RO_ProjRef:
+				return lang.FRF
+			case ch.RO_CaseRef:
+				return lang.FRB
+			default:
+				panic("invalid operand")
+			}
+		default:
+			panic("impossible branch")
+		}
+	})()
 	return lang.Instruction {
-		OpCode: lang.PROJ,
+		OpCode: op,
 		Arg0:   lang.Short(index),
 		Arg1:   0,
 	}

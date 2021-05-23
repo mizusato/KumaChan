@@ -24,50 +24,19 @@ type Bus interface {
 	Sink
 	Watch() Observable
 }
+func DistinctWatch(b Bus, eq func(Object,Object)(bool)) Observable {
+	return b.Watch().DistinctUntilChanged(eq)
+}
 
 // Reactive accepts and provides values, while holding a current value
 type Reactive interface {
 	Bus
 	Read() Observable
-	Update(f func(old_state Object)(Object), k *KeyChain) Observable
-	Project(k *KeyChain) Observable
-	Snapshot() Observable
+	Update(f func(old_state Object)(Object)) Observable
 }
 
 // ReactiveEntity is a Reactive that is NOT derived from another Reactive
 type ReactiveEntity = *ReactiveImpl
-
-
-// Projection Key Chain
-
-type KeyChain struct {
-	Parent  *KeyChain
-	Key     Object  // should be comparable by ==
-}
-func (k *KeyChain) Includes(another *KeyChain) bool {
-	if KeyChainEqual(k, another) {
-		return true
-	} else {
-		if k != nil {
-			return k.Parent.Includes(another)
-		} else {
-			return false
-		}
-	}
-}
-func KeyChainEqual(a *KeyChain, b *KeyChain) bool {
-	if a == nil && b == nil {
-		return true
-	} else if a == nil || b == nil {
-		return false
-	} else {
-		if a.Key == b.Key && a.Parent == b.Parent {
-			return true
-		} else {
-			return false
-		}
-	}
-}
 
 
 // Operators
@@ -106,20 +75,6 @@ func ReactiveMorph (
 	}
 }
 
-func ReactiveProject (
-	r    Reactive,
-	in   (func(Object) (func(Object) Object)),
-	out  (func(Object) Object),
-	key  *KeyChain,
-) Reactive {
-	return &ProjectedReactive {
-		base: r,
-		in:   in,
-		out:  out,
-		key:  key,
-	}
-}
-
 func ReactiveBranch (
 	r Reactive,
 	in  (func(Object) Object),
@@ -133,13 +88,6 @@ func ReactiveBranch (
 			},
 		},
 		out: out,
-	}
-}
-
-func ReactiveDistinctView(r Reactive, eq func(Object,Object)(bool)) Reactive {
-	return DistinctViewReactive {
-		base:  r,
-		equal: eq,
 	}
 }
 
@@ -161,7 +109,7 @@ type AdaptedReactive struct {
 func (a *AdaptedReactive) Emit(obj Object) Observable {
 	return a.base.Update(func(old_state Object) Object {
 		return a.in(old_state)(obj)
-	}, nil)
+	})
 }
 
 type MorphedReactive struct {
@@ -174,57 +122,10 @@ func (m *MorphedReactive) Watch() Observable {
 func (m *MorphedReactive) Read() Observable {
 	return m.base.Read().Map(m.out)
 }
-func (m *MorphedReactive) Update(f (func(Object) Object), key_chain *KeyChain) Observable {
+func (m *MorphedReactive) Update(f (func(Object) Object)) Observable {
 	return m.base.Update(func(obj Object) Object {
 		return m.in(obj)(f(m.out(obj)))
-	}, key_chain)
-}
-func (m *MorphedReactive) Project(key_chain *KeyChain) Observable {
-	return m.base.Project(key_chain).Map(m.out)
-}
-func (m *MorphedReactive) Snapshot() Observable {
-	return m.base.Snapshot()
-}
-
-type ProjectedReactive struct {
-	base  Reactive
-	in    (func(Object) (func(Object) Object))
-	out   (func(Object) Object)
-	key   *KeyChain
-}
-func (p *ProjectedReactive) ChainedKey(key *KeyChain) *KeyChain {
-	if p.key == nil && key == nil {
-		return nil
-	} else if p.key != nil && key == nil {
-		return p.key
-	} else {
-		return &KeyChain {
-			Parent: p.key,
-			Key:    key,
-		}
-	}
-}
-func (p *ProjectedReactive) Watch() Observable {
-	return p.base.Project(p.key).Map(p.out)
-}
-func (p *ProjectedReactive) Read() Observable {
-	return p.base.Read().Map(p.out)
-}
-func (p *ProjectedReactive) Emit(obj Object) Observable {
-	return p.base.Update(func(old_state Object) Object {
-		return p.in(old_state)(obj)
-	}, p.key)
-}
-func (p *ProjectedReactive) Update(f (func(Object) Object), key *KeyChain) Observable {
-	return p.base.Update(func(obj Object) Object {
-		return p.in(obj)(f(p.out(obj)))
-	}, p.ChainedKey(key))
-}
-func (p *ProjectedReactive) Project(key *KeyChain) Observable {
-	return p.base.Project(p.ChainedKey(key)).Map(p.out)
-}
-func (p *ProjectedReactive) Snapshot() Observable {
-	return p.base.Snapshot()
+	})
 }
 
 type FilterMappedReactive struct {
@@ -244,7 +145,7 @@ func (m *FilterMappedReactive) Read() Observable {
 		}
 	})
 }
-func (m *FilterMappedReactive) Update(f (func(Object) Object), key_chain *KeyChain) Observable {
+func (m *FilterMappedReactive) Update(f (func(Object) Object)) Observable {
 	return m.base.Update(func(current Object) Object {
 		var current_out, ok = m.out(current)
 		if ok {
@@ -252,58 +153,7 @@ func (m *FilterMappedReactive) Update(f (func(Object) Object), key_chain *KeyCha
 		} else {
 			panic("FilterMappedReactive: invalid update operation")
 		}
-	}, key_chain)
-}
-func (m *FilterMappedReactive) Project(key_chain *KeyChain) Observable {
-	return m.base.Project(key_chain).FilterMap(m.out)
-}
-func (m *FilterMappedReactive) Snapshot() Observable {
-	return m.base.Snapshot()
-}
-
-type AutoSnapshotReactive struct {
-	Entity  ReactiveEntity
-}
-func (a AutoSnapshotReactive) Watch() Observable {
-	return a.Entity.Watch()
-}
-func (a AutoSnapshotReactive) Read() Observable {
-	return a.Entity.Read()
-}
-func (a AutoSnapshotReactive) Emit(obj Object) Observable {
-	return a.Entity.EmitWithSnapshot(obj, true)
-}
-func (a AutoSnapshotReactive) Update(f func(Object)(Object), key_chain *KeyChain) Observable {
-	return a.Entity.UpdateWithSnapshot(f, key_chain, true)
-}
-func (a AutoSnapshotReactive) Project(key_chain *KeyChain) Observable {
-	return a.Entity.Project(key_chain)
-}
-func (_ AutoSnapshotReactive) Snapshot() Observable {
-	panic("suspicious snapshot operation on an auto-snapshot reactive")
-}
-
-type DistinctViewReactive struct {
-	base   Reactive
-	equal  func(Object,Object) bool
-}
-func (d DistinctViewReactive) Watch() Observable {
-	return d.base.Watch().DistinctUntilChanged(d.equal)
-}
-func (d DistinctViewReactive) Project(key_chain *KeyChain) Observable {
-	return d.base.Project(key_chain).DistinctUntilChanged(d.equal)
-}
-func (d DistinctViewReactive) Read() Observable {
-	return d.base.Read()
-}
-func (d DistinctViewReactive) Emit(obj Object) Observable {
-	return d.base.Emit(obj)
-}
-func (d DistinctViewReactive) Update(f func(Object)(Object), key_chain *KeyChain) Observable {
-	return d.base.Update(f, key_chain)
-}
-func (d DistinctViewReactive) Snapshot() Observable {
-	return d.base.Snapshot()
+	})
 }
 
 
@@ -394,38 +244,25 @@ func (b *BusImpl) removeWatcher(id uint64) {
 }
 
 type ReactiveImpl struct {
-	bus          *BusImpl  // Bus<ReactiveStateChange|Pair<ReactiveSnapshots,Object>>
-	last_change  ReactiveStateChange
-	snapshots    ReactiveSnapshots
-	equal        func(Object,Object) bool
+	bus    *BusImpl
+	value  Object
 }
-type ReactiveStateChange struct {
-	Value     Object
-	KeyChain  *KeyChain
-}
-type ReactiveSnapshots struct {
-	Undo  *Stack  // Stack<ReactiveStateChange>
-	Redo  *Stack  // Stack<ReactiveStateChange>
-}
-func CreateReactive(init Object, equal (func(Object,Object)(bool))) *ReactiveImpl {
+func CreateReactive(init Object) ReactiveEntity {
 	return &ReactiveImpl {
-		bus: CreateBus(),
-		last_change: ReactiveStateChange {
-			Value:    init,
-			KeyChain: nil,
-		},
-		equal: equal,
+		bus:   CreateBus(),
+		value: init,
 	}
+}
+func (r *ReactiveImpl) commit(new_value Object) {
+	r.value = new_value
+	r.bus.notify(new_value)
 }
 func (r *ReactiveImpl) Watch() Observable {
 	return NewSubscription(func(next func(Object)) func() {
-		next(r.last_change.Value)
-		var w = r.bus.addWatcher(Watcher{
+		next(r.value)
+		var w = r.bus.addWatcher(Watcher {
 			Notify: func(obj Object) {
-				var change, is_change = obj.(ReactiveStateChange)
-				if is_change {
-					next(change.Value)
-				}
+				next(obj)
 			},
 		})
 		return func() {
@@ -435,143 +272,21 @@ func (r *ReactiveImpl) Watch() Observable {
 }
 func (r *ReactiveImpl) Read() Observable {
 	return NewSync(func() (Object, bool) {
-		return r.last_change.Value, true
+		return r.value, true
 	})
 }
-func (r *ReactiveImpl) WatchDiff() Observable {
-	return NewSubscription(func(next func(Object)) func() {
-		next(Pair { r.snapshots, r.last_change.Value })
-		var w = r.bus.addWatcher(Watcher{
-			Notify: func(obj Object) {
-				var pair, is_pair = obj.(Pair)
-				if is_pair {
-					next(pair)
-				}
-			},
-		})
-		return func() {
-			r.bus.removeWatcher(w)
-		}
-	})
-}
-func (r *ReactiveImpl) Project(k *KeyChain) Observable {
-	return NewSubscription(func(next func(Object)) func() {
-		next(r.last_change.Value)
-		var w = r.bus.addWatcher(Watcher {
-			Notify: func(obj Object) {
-				var change, is_change = obj.(ReactiveStateChange)
-				if is_change && k.Includes(change.KeyChain) {
-					next(change.Value)
-				}
-			},
-		})
-		return func() {
-			r.bus.removeWatcher(w)
-		}
-	})
-}
-func (r *ReactiveImpl) commit(change ReactiveStateChange) {
-	r.last_change = change
-	r.bus.notify(change)
-}
-func (r *ReactiveImpl) notifyDiff() {
-	r.bus.notify(Pair { r.snapshots, r.last_change.Value })
-}
-func (r *ReactiveImpl) Emit(new_state Object) Observable {
-	return r.EmitWithSnapshot(new_state, false)
-}
-func (r *ReactiveImpl) EmitWithSnapshot(new_state Object, snapshot bool) Observable {
+func (r *ReactiveImpl) Emit(new_value Object) Observable {
 	return NewSync(func() (Object, bool) {
-		var old_state = r.last_change.Value
-		if r.equal(new_state, old_state) {
-			return nil, true
-		}
-		var change = ReactiveStateChange {
-			Value:    new_state,
-			KeyChain: nil,
-		}
-		if snapshot {
-			r.doSnapshot()
-		}
-		r.commit(change)
-		if r.snapshots.Redo != nil {
-			r.snapshots.Redo = nil
-		}
-		r.notifyDiff()
+		r.commit(new_value)
 		return nil, true
 	})
 }
-func (r *ReactiveImpl) Update(f (func(Object) Object), k *KeyChain) Observable {
-	return r.UpdateWithSnapshot(f, k, false)
-}
-func (r *ReactiveImpl) UpdateWithSnapshot(f (func(Object) Object), k *KeyChain, snapshot bool) Observable {
+func (r *ReactiveImpl) Update(f (func(Object) Object)) Observable {
 	return NewSync(func() (Object, bool) {
-		var old_state = r.last_change.Value
-		var new_state = f(old_state)
-		if r.equal(old_state, new_state) {
-			return nil, true
-		}
-		var change = ReactiveStateChange {
-			Value:    new_state,
-			KeyChain: k,
-		}
-		if snapshot {
-			r.doSnapshot()
-		}
-		r.commit(change)
-		if r.snapshots.Redo != nil {
-			r.snapshots.Redo = nil
-		}
-		r.notifyDiff()
+		var old_value = r.value
+		var new_value = f(old_value)
+		r.commit(new_value)
 		return nil, true
-	})
-}
-func (r *ReactiveImpl) Snapshot() Observable {
-	return NewSync(func() (Object, bool) {
-		r.doSnapshot()
-		r.notifyDiff()
-		return nil, true
-	})
-}
-func (r *ReactiveImpl) doSnapshot() {
-	var current = r.last_change.Value
-	r.snapshots.Redo = nil
-	r.snapshots.Undo = r.snapshots.Undo.Pushed(current)
-}
-func (r *ReactiveImpl) Undo() Observable {
-	return NewSync(func() (Object, bool) {
-		var top, rest, ok = r.snapshots.Undo.Popped()
-		if ok {
-			var current = r.last_change.Value
-			r.snapshots.Redo = r.snapshots.Redo.Pushed(current)
-			r.snapshots.Undo = rest
-			r.commit(ReactiveStateChange {
-				Value:    top,
-				KeyChain: nil,
-			})
-			r.notifyDiff()
-			return nil, true
-		} else {
-			return nil, true
-		}
-	})
-}
-func (r *ReactiveImpl) Redo() Observable {
-	return NewSync(func() (Object, bool) {
-		var top, rest, ok = r.snapshots.Redo.Popped()
-		if ok {
-			var current = r.last_change.Value
-			r.snapshots.Undo = r.snapshots.Undo.Pushed(current)
-			r.snapshots.Redo = rest
-			r.commit(ReactiveStateChange {
-				Value:    top,
-				KeyChain: nil,
-			})
-			r.notifyDiff()
-			return nil, true
-		} else {
-			return nil, true
-		}
 	})
 }
 

@@ -63,18 +63,7 @@ type ReactiveEntity[T]
     protected Reactive[T];  // rx.ReactiveEntity
 
 
-## Auxiliary Types for Wired Components
-
-/// ReactiveSnapshots[T] represents a structure that
-/// consists of snapshots of the current undo stack and redo stack
-/// of a ReactiveEntity at some point.
-type ReactiveSnapshots[+T] {
-    undo-stack: Seq[T],
-    redo-stack: Seq[T]
-};
-
-
-## Lock Types
+## Synchronization Types
 
 type Mutex[+T]
     native;
@@ -126,9 +115,6 @@ export function adapt:[A,B]
 export function morph:[A,B]
     &(Reactive[A], (&(A) => &(B) => A), (&(A) => B)) => Reactive[B]
     native 'reactive-morph';
-export function snapshot:[T]
-    &(Reactive[T]) => Sync
-    native 'reactive-snapshot';
 # alias: <-
 export function read:[T]
     &(Reactive[T]) => Sync[T]
@@ -137,18 +123,6 @@ export function read:[T]
 export function consume:[T,X]
     &(Reactive[FlexList[T]], &(FlexListKey,Computed[Number],Reactive[T]) => Computed[X]) => Computed[List[X]]
     native 'reactive-flex-consume';
-export function undo:[T]
-    &(ReactiveEntity[T]) => Sync
-    native 'reactive-entity-undo';
-export function redo:[T]
-    &(ReactiveEntity[T]) => Sync
-    native 'reactive-entity-redo';
-export function watch-diff:[T]
-    &(ReactiveEntity[T]) => Computed[(ReactiveSnapshots[T],T)]
-    native 'reactive-entity-watch-diff';
-export function auto-snapshot:[T]
-    &(ReactiveEntity[T]) => Reactive[T]
-    native 'reactive-entity-auto-snapshot';
 export function Blackhole:
     &() => Sink[any]
     native 'Blackhole';
@@ -242,7 +216,7 @@ export function wait:
     & { timeout: Number } => Async
     native 'wait';
 export function tick:
-    & { interval: Number } => Observable[unit]
+    & { interval: Number } => Source[unit]
     native 'tick';
 
 ## Effect Operators

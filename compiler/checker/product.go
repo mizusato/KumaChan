@@ -29,11 +29,25 @@ type Get struct {
 	Index    uint
 }
 
-func (impl Proj) ExprVal() {}
-type Proj struct {
-	Product  Expr
+func (impl Reference) ExprVal() {}
+type Reference struct {
+	Base     Expr
 	Index    uint
+	Kind     ReferenceKind
+	Operand  ReferenceOperand
 }
+type ReferenceKind int
+const (
+	RK_Field ReferenceKind = iota
+	RK_Branch
+)
+type ReferenceOperand int
+const (
+	RO_Record ReferenceOperand = iota
+	RO_Enum
+	RO_ProjRef
+	RO_CaseRef
+)
 
 func (impl Set) ExprVal() {}
 type Set struct {
@@ -274,9 +288,11 @@ func CheckProj(base SemiExpr, key ast.Identifier, info ExprInfo, ctx ExprContext
 			} }
 			return LiftTyped(Expr {
 				Type:  ProjRef(ref_base_t, next_field.Type),
-				Value: Proj {
-					Product: base_assigned,
+				Value: Reference {
+					Base:    base_assigned,
 					Index:   next_field.Index,
+					Kind:    RK_Field,
+					Operand: RO_ProjRef,
 				},
 				Info:  info,
 			}), nil
@@ -311,9 +327,11 @@ func CheckProj(base SemiExpr, key ast.Identifier, info ExprInfo, ctx ExprContext
 				} }
 				return LiftTyped(Expr {
 					Type:  ProjRef(base_type, field.Type),
-					Value: Proj {
-						Product: Expr(base_typed),
+					Value: Reference {
+						Base:    Expr(base_typed),
 						Index:   field.Index,
+						Kind:    RK_Field,
+						Operand: RO_Record,
 					},
 					Info:  info,
 				}), nil

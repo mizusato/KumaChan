@@ -18,8 +18,6 @@ chaining: a?.&(Some).&b
 
 - Atom: tree-sitter parser update
 
-- Rx: RefEqual in DistinctWatch() (standalone new func) instead of Emit()/Update()
-
 - API: consider renaming wait and tick
 
 - Lang: consider prefix for special identifier used by compiler (e.g. @DefaultValue)

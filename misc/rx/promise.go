@@ -19,10 +19,7 @@ func CreatePromise() Promise {
 	var init = PromiseState {
 		status: pending,
 	}
-	var eq = func(Object,Object) bool {
-		return false
-	}
-	var state = CreateReactive(init, eq)
+	var state = CreateReactive(init)
 	return Promise { state }
 }
 func (p *Promise) Resolve(value Object, sched Scheduler) {
@@ -34,7 +31,7 @@ func (p *Promise) Resolve(value Object, sched Scheduler) {
 		draft.status = resolved
 		draft.value = value
 		return draft
-	}, nil), sched, Background())
+	}), sched, Background())
 }
 func (p *Promise) Reject(err Object, sched Scheduler) {
 	_, _ = ScheduleSingle(p.state.Update(func(state_ Object) Object {
@@ -45,7 +42,7 @@ func (p *Promise) Reject(err Object, sched Scheduler) {
 		draft.status = rejected
 		draft.value = err
 		return draft
-	}, nil), sched, Background())
+	}), sched, Background())
 }
 func (p *Promise) Outcome() Observable {
 	return p.state.Watch().

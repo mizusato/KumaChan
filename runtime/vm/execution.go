@@ -239,13 +239,13 @@ func call(f FunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Value {
 				default:
 					panic("SET: cannot execute on non-product value")
 				}
-			case PROJ:
+			case FRP:
 				var index = inst.GetShortIndexOrSize()
 				switch v := ec.popValue().(type) {
 				case ProductValue:
 					var prod = v
 					var L = uint(len(prod.Elements))
-					assert(index < L, "PROJ: invalid index")
+					assert(index < L, "FRP: invalid index")
 					ec.pushValue(NativeFunctionValue(func(arg Value, _ InteropContext) Value {
 						var new_value, update = Unwrap(arg.(SumValue))
 						if update {
@@ -257,13 +257,19 @@ func call(f FunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Value {
 							return Tuple(prod, prod.Elements[index])
 						}
 					}))
+				default:
+					panic("proj: invalid operand")
+				}
+			case FRF:
+				var index = inst.GetShortIndexOrSize()
+				switch v := ec.popValue().(type) {
 				case FunctionValue, NativeFunctionValue:
 					var base = v
 					ec.pushValue(NativeFunctionValue(func(arg Value, h InteropContext) Value {
 						var t = h.Call(base, None())
 						var prod = t.(ProductValue).Elements[1].(ProductValue)
 						var L = uint(len(prod.Elements))
-						assert(index < L, "PROJ: invalid index")
+						assert(index < L, "FRP: invalid index")
 						var new_field_value, update = Unwrap(arg.(SumValue))
 						if update {
 							var draft =  make([] Value, L)
@@ -533,7 +539,7 @@ func ProjectReactiveProduct(r rx.Reactive, index uint) rx.Reactive {
 		var prod = state.(ProductValue)
 		return prod.Elements[index]
 	}
-	return rx.ReactiveProject(r, in, out, &rx.KeyChain { Key: index })
+	return rx.ReactiveMorph(r, in, out)
 }
 
 func ConsumeReactiveSum (

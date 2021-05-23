@@ -175,11 +175,11 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 		var inst_set = InstSet(v.Index)
 		buf.Write(CodeFrom(inst_set, expr.Info))
 		return buf.Collect()
-	case ch.Proj:
+	case ch.Reference:
 		var buf = MakeCodeBuffer()
-		var base_code = CompileExpr(v.Product, ctx)
+		var base_code = CompileExpr(v.Base, ctx)
 		buf.Write(base_code)
-		var inst_proj = InstProj(v.Index)
+		var inst_proj = InstRef(v.Index, v.Kind, v.Operand)
 		buf.Write(CodeFrom(inst_proj, expr.Info))
 		return buf.Collect()
 	case ch.Sum:

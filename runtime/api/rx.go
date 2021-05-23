@@ -3,7 +3,6 @@ package api
 import (
 	"os"
 	"fmt"
-	"reflect"
 	"strconv"
 	"math/big"
 	"math/rand"
@@ -23,39 +22,6 @@ func Optional2Maybe(obj rx.Object) Value {
 	}
 }
 
-type RxStackIterator struct {
-	Stack  *rx.Stack
-}
-func (it RxStackIterator) Next() (Value, container.Seq, bool) {
-	var val, rest, ok = it.Stack.Popped()
-	if ok {
-		return val, RxStackIterator { rest }, true
-	} else {
-		return nil, nil, false
-	}
-}
-func (it RxStackIterator) GetItemType() reflect.Type {
-	return ValueReflectType()
-}
-
-func AdaptReactiveDiff(diff rx.Observable) rx.Observable {
-	var stack2seq = func(stack *rx.Stack) container.Seq {
-		return RxStackIterator { stack }
-	}
-	return diff.Map(func(obj rx.Object) rx.Object {
-		var pair = obj.(rx.Pair)
-		var snapshots = pair.First.(rx.ReactiveSnapshots)
-		var value = Value(pair.Second)
-		return Tuple(
-			Tuple(
-				stack2seq(snapshots.Undo),
-				stack2seq(snapshots.Redo),
-			),
-			value,
-		)
-	})
-}
-
 func recoverFromSyncCancellationPanic() {
 	var err = recover()
 	var _, is_sync_cancel = err.(SyncCancellationError)
@@ -67,6 +33,7 @@ func recoverFromSyncCancellationPanic() {
 }
 
 var nextProcessLevelGlobalId = uint64(0)
+
 
 var EffectFunctions = map[string] Value {
 	"connect": func(source rx.Observable, sink rx.Sink) rx.Observable {
@@ -82,7 +49,12 @@ var EffectFunctions = map[string] Value {
 		return rx.SinkAdapt(s, adapter)
 	},
 	"bus-watch": func(b rx.Bus) rx.Observable {
-		return b.Watch()
+		var r, is_reactive = b.(rx.Reactive)
+		if is_reactive {
+			return rx.DistinctWatch(r, RefEqual)
+		} else {
+			return b.Watch()
+		}
 	},
 	"computed-read": func(computed rx.Observable) rx.Observable {
 		return computed.TakeOneAsSingleAssumeSync().Map(func(opt_ rx.Object) rx.Object {
@@ -101,7 +73,7 @@ var EffectFunctions = map[string] Value {
 		return r.Update(func(old_state rx.Object) rx.Object {
 			var new_state = h.Call(f, old_state)
 			return new_state
-		}, nil)
+		})
 	},
 	"reactive-adapt": func(r rx.Reactive, f Value, h InteropContext) rx.Sink {
 		var in = func(old_state rx.Object) (func(rx.Object) rx.Object) {
@@ -125,9 +97,6 @@ var EffectFunctions = map[string] Value {
 			return h.Call(g, obj)
 		}
 		return rx.ReactiveMorph(r, in, out)
-	},
-	"reactive-snapshot": func(r rx.Reactive) rx.Observable {
-		return r.Snapshot()
 	},
 	"reactive-flex-consume": func(r rx.Reactive, k Value, h InteropContext) rx.Observable {
 		return rx.KeyTrackedDynamicCombineLatestWaitReady (
@@ -163,10 +132,8 @@ var EffectFunctions = map[string] Value {
 							var list = state.(container.FlexList)
 							return list.Get(key)
 						}
-						var proj_key = &rx.KeyChain { Key: key }
-						var proj = rx.ReactiveProject(r, in, out, proj_key)
-						var view = rx.ReactiveDistinctView(proj, RefEqual)
-						var arg = Tuple(key, index_source, view)
+						var proj = rx.ReactiveMorph(r, in, out)
+						var arg = Tuple(key, index_source, proj)
 						var item_action = h.Call(k, arg).(rx.Observable)
 						return item_action
 					},
@@ -174,18 +141,6 @@ var EffectFunctions = map[string] Value {
 			}),
 		)
 	} ,
-	"reactive-entity-undo": func(r rx.ReactiveEntity) rx.Observable {
-		return r.Undo()
-	},
-	"reactive-entity-redo": func(r rx.ReactiveEntity) rx.Observable {
-		return r.Redo()
-	},
-	"reactive-entity-watch-diff": func(r rx.ReactiveEntity) rx.Observable {
-		return AdaptReactiveDiff(r.WatchDiff())
-	},
-	"reactive-entity-auto-snapshot": func(r rx.ReactiveEntity) rx.Reactive {
-		return rx.AutoSnapshotReactive { Entity: r }
-	},
 	"Blackhole": func() rx.Sink {
 		return rx.BlackHole{}
 	},
@@ -201,19 +156,7 @@ var EffectFunctions = map[string] Value {
 	},
 	"create-reactive": func(init Value) rx.Observable {
 		return rx.NewSync(func() (rx.Object, bool) {
-			return rx.CreateReactive(init, RefEqual), true
-		})
-	},
-	"reactive+snapshot": func(init Value, k Value, h InteropContext) rx.Observable {
-		return rx.NewSync(func() (rx.Object, bool) {
-			var entity = rx.CreateReactive(init, RefEqual)
-			var r = rx.AutoSnapshotReactive { Entity: entity }
-			var undo = entity.Undo()
-			var redo = entity.Redo()
-			var diff = AdaptReactiveDiff(entity.WatchDiff())
-			return Tuple(r, Tuple(undo, redo, diff)), true
-		}).Then(func(r rx.Object) rx.Observable {
-			return h.Call(k, r).(rx.Observable)
+			return rx.CreateReactive(init), true
 		})
 	},
 	"mutex": func(res Value, k Value, h InteropContext) rx.Observable {

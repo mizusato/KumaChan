@@ -16,6 +16,7 @@ do { println 'Hello World' }
                 . { wait-complete } }
     . { then { println 'ticker' } }
     . { then { tick { interval: 1000 } }
+                . [Observable[unit]]  // TODO: is this cast avoidable?
                 . { scan        (0.[Number], &(n, _) => (1 + n)) }
                 . { concat-map  &(n) => { println { String n } } }
                 . { wait-complete } }  // TODO: cancel
