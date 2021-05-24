@@ -54,6 +54,8 @@ chaining: a?.&(Some).&b
 
 - API: categorize API functions according to usage, corresponding types, ...
 
+- API: better native function names
+
 - API: separate string APIs from `api/container.go` and `lib/container/string.go`
 
 - GUI: qtbinding C side int vs. go side int (not the same type, fix it)

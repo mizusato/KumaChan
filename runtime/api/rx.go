@@ -336,8 +336,8 @@ var EffectFunctions = map[string] Value {
 			following,
 		})
 	},
-	"start-with-to-computed": func(following rx.Observable, head_ Value) rx.Observable {
-		var head = container.ListFrom(head_)
+	"start-with-to-computed": func(following rx.Observable, head_ ProductValue) rx.Observable {
+		var head = container.ListFrom(SingleValueFromRecord(head_))
 		return rx.Concat([] rx.Observable {
 			rx.NewSyncSequence(func(next func(rx.Object))(bool,rx.Object) {
 				head.ForEach(func(_ uint, item Value) {

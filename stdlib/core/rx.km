@@ -209,8 +209,8 @@ export function or:
 export function start-with:[T,E]
     &(Observable[T,E], List[T]) => Observable[T,E]
     native 'start-with';
-export function start-with:[T]
-    &(Source[T], List[T]) => Computed[T]
+export function Computed:[T]
+    &(Source[T], { beginning: List[T] }) => Computed[T]
     native 'start-with-to-computed';
 export function wait:
     & { timeout: Number } => Async
