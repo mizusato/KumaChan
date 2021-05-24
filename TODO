@@ -20,7 +20,7 @@ chaining: a?.&(Some).&b
 
 - API: consider renaming wait and tick
 
-- Rx: apply DistinctUntilChanged on methods (map/...) of Computed
+- API: type Provider[T,A] (Computed[T], Sink[A]);
 
 - Rx: reactive: morph with custom update behavior
 

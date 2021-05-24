@@ -211,7 +211,7 @@ export function start-with:[T,E]
     native 'start-with';
 export function start-with:[T]
     &(Source[T], List[T]) => Computed[T]
-    native 'start-with';
+    native 'start-with-to-computed';
 export function wait:
     & { timeout: Number } => Async
     native 'wait';
@@ -312,7 +312,7 @@ export function map:[A,B]
     native 'observable-map';
 export function map:[A,B]
     &(Computed[A], &(A) => B) => Computed[B]
-    native 'observable-map';
+    native 'computed-map';
 export function map-to:[A,B,E]
     &(Async[A,E], B) => Async[B,E]
     &(e,v) => e.{map(&() => v)};
@@ -366,7 +366,7 @@ export function switch-map:[A,B]
     native 'switch-map';
 export function switch-map:[A,B]
     &(Computed[A], &(A) => Computed[B]) => Computed[B]
-    native 'switch-map';
+    native 'switch-map-computed';
 export function merge:[T,E]
     &(List[Observable[T,E]]) => Observable[T,E]
     native 'observable-merge';
@@ -387,18 +387,11 @@ export function distinct-until-changed:
     [T] (Eq[T])
     &(Source[T]) => Source[T]
     &(a) => { distinct-until-changed (a, =) };
-export function distinct-until-changed:
-    [T] (Eq[T])
-    &(Computed[T]) => Computed[T]
-    &(a) => { distinct-until-changed (a, =) };
 export function distinct-until-changed:[T,E]
     &(Observable[T,E], &(T,T) => Bool) => Observable[T,E]
     native 'distinct-until-changed';
 export function distinct-until-changed:[T]
     &(Source[T], &(T,T) => Bool) => Source[T]
-    native 'distinct-until-changed';
-export function distinct-until-changed:[T]
-    &(Computed[T], &(T,T) => Bool) => Computed[T]
     native 'distinct-until-changed';
 export function with-latest-from:[A,B,E]
     &(Observable[A,E], Observable[B,E]) => Observable[(A,Maybe[B]),E]
@@ -411,7 +404,7 @@ export function with-latest-from:[A,B]
     native 'with-latest-from-reactive';
 export function with-latest-from:[A,B]
     &(Computed[A], Reactive[B]) => Computed[(A,B)]
-    native 'with-latest-from-reactive';
+    native 'with-latest-from-reactive-to-computed';
 export function combine-latest:[A,B,E]
     &(Observable[A,E], Observable[B,E]) =>
         Observable[(Maybe[A],Maybe[B]),E]
@@ -438,13 +431,13 @@ export function combine-latest*:[T,E]
     native 'combine-latest*-array';
 export function combine:[A,B]
     &(Computed[A],Computed[B]) => Computed[(A,B)]
-    native 'combine-latest*';
+    native 'combine';
 export function combine:[A,B,C]
     &(Computed[A],Computed[B],Computed[C]) => Computed[(A,B,C)]
-    native 'combine-latest*';
+    native 'combine';
 export function combine:[A,B,C,D]
     &(Computed[A],Computed[B],Computed[C],Computed[D]) => Computed[(A,B,C,D)]
-    native 'combine-latest*';
+    native 'combine';
 export function combine:[T]
     &(List[Computed[T]]) => Computed[List[T]]
-    native 'combine-latest*-array';
+    native 'combine-array';

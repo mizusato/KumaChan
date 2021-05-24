@@ -10,6 +10,7 @@ import (
 	"kumachan/misc/util"
 	. "kumachan/lang"
 	"kumachan/runtime/lib/container"
+	"reflect"
 )
 
 
@@ -20,6 +21,56 @@ func Optional2Maybe(obj rx.Object) Value {
 	} else {
 		return None()
 	}
+}
+
+func DistinctProductValues(e rx.Observable) rx.Observable {
+	return e.DistinctUntilChanged(func(a rx.Object, b rx.Object) bool {
+		if RefEqual(a, b) { return true }
+		var pa = a.(ProductValue)
+		var pb = b.(ProductValue)
+		if len(pa.Elements) != len(pb.Elements) {
+			panic("something went wrong")
+		}
+		for i, _ := range pa.Elements {
+			var this_equal = RefEqual(pa.Elements[i], pb.Elements[i])
+			if !(this_equal) {
+				return false
+			}
+		}
+		return true
+	})
+}
+
+func DistinctSliceValues(e rx.Observable) rx.Observable {
+	return e.DistinctUntilChanged(func(a rx.Object, b rx.Object) bool {
+		if RefEqual(a, b) { return true }
+		var ra = reflect.ValueOf(a)
+		var rb = reflect.ValueOf(b)
+		if ra.Kind() != reflect.Slice || rb.Kind() != reflect.Slice ||
+			ra.Len() != rb.Len() {
+			panic("something went wrong")
+		}
+		for i := 0; i < ra.Len(); i += 1 {
+			var u = ra.Index(i).Interface()
+			var v = rb.Index(i).Interface()
+			if !(RefEqual(u, v)) {
+				return false
+			}
+		}
+		return true
+	})
+}
+
+func CombineComputedAsProductValues(items ([] rx.Observable)) rx.Observable {
+	return DistinctProductValues(
+		rx.CombineLatestWaitReady(items).Map(func(values_ rx.Object) rx.Object {
+			var values = values_.([] Value)
+			return TupleOf(values)
+		}))
+}
+
+func CombineComputedAsSliceValues(items ([] rx.Observable)) rx.Observable {
+	return DistinctSliceValues(rx.CombineLatestWaitReady(items))
 }
 
 func recoverFromSyncCancellationPanic() {
@@ -285,6 +336,18 @@ var EffectFunctions = map[string] Value {
 			following,
 		})
 	},
+	"start-with-to-computed": func(following rx.Observable, head_ Value) rx.Observable {
+		var head = container.ListFrom(head_)
+		return rx.Concat([] rx.Observable {
+			rx.NewSyncSequence(func(next func(rx.Object))(bool,rx.Object) {
+				head.ForEach(func(_ uint, item Value) {
+					next(item)
+				})
+				return true, nil
+			}),
+			following,
+		}).DistinctUntilChanged(RefEqual)
+	},
 	"wait": func(record ProductValue) rx.Observable {
 		var timeout = SingleValueFromRecord(record).(*big.Int)
 		return rx.Timer(util.GetUintNumber(timeout))
@@ -348,6 +411,11 @@ var EffectFunctions = map[string] Value {
 			return h.Call(f, val)
 		})
 	},
+	"computed-map": func(e rx.Observable, f Value, h InteropContext) rx.Observable {
+		return e.Map(func(val rx.Object) rx.Object {
+			return h.Call(f, val)
+		}).DistinctUntilChanged(RefEqual)
+	},
 	"observable-filter-map": func(e rx.Observable, f Value, h InteropContext) rx.Observable {
 		return e.FilterMap(func(val rx.Object) (rx.Object, bool) {
 			var maybe_mapped = h.Call(f, val).(SumValue)
@@ -380,6 +448,11 @@ var EffectFunctions = map[string] Value {
 		return e.SwitchMap(func(val rx.Object) rx.Observable {
 			return h.Call(f, val).(rx.Observable)
 		})
+	},
+	"switch-map-computed": func(e rx.Observable, f Value, h InteropContext) rx.Observable {
+		return e.SwitchMap(func(val rx.Object) rx.Observable {
+			return h.Call(f, val).(rx.Observable)
+		}).DistinctUntilChanged(RefEqual)
 	},
 	"merge-map": func(e rx.Observable, f Value, h InteropContext) rx.Observable {
 		return e.MergeMap(func(val rx.Object) rx.Observable {
@@ -425,6 +498,15 @@ var EffectFunctions = map[string] Value {
 			return Tuple(pair.First, r_value)
 		})
 	},
+	"with-latest-from-reactive-to-computed": func(a rx.Observable, r rx.Reactive) rx.Observable {
+		return DistinctProductValues(a.WithLatestFrom(r.Watch()).Map(func(p rx.Object) rx.Object {
+			var pair = p.(rx.Pair)
+			var r_opt = pair.Second.(rx.Optional)
+			if !(r_opt.HasValue) { panic("something went wrong") }
+			var r_value = r_opt.Value
+			return Tuple(pair.First, r_value)
+		}))
+	},
 	"combine-latest": func(tuple ProductValue) rx.Observable {
 		var actions = make([] rx.Observable, len(tuple.Elements))
 		for i, el := range tuple.Elements {
@@ -439,28 +521,38 @@ var EffectFunctions = map[string] Value {
 			return TupleOf(values)
 		})
 	},
-	"combine-latest*": func(tuple ProductValue) rx.Observable {
-		var actions = make([] rx.Observable, len(tuple.Elements))
+	"combine": func(tuple ProductValue) rx.Observable {
+		var items = make([] rx.Observable, len(tuple.Elements))
 		for i, el := range tuple.Elements {
-			actions[i] = el.(rx.Observable)
+			items[i] = el.(rx.Observable)
 		}
-		return rx.CombineLatestWaitReady(actions).Map(func(values_ rx.Object) rx.Object {
+		return CombineComputedAsProductValues(items)
+	},
+	"combine-array": func(list_ Value) rx.Observable {
+		var list = container.ListFrom(list_)
+		return CombineComputedAsSliceValues(list.CopyAsObservables())
+	},
+	"combine-latest*": func(tuple ProductValue) rx.Observable {
+		var items = make([] rx.Observable, len(tuple.Elements))
+		for i, el := range tuple.Elements {
+			items[i] = el.(rx.Observable)
+		}
+		return rx.CombineLatestWaitReady(items).Map(func(values_ rx.Object) rx.Object {
 			var values = values_.([] Value)
 			return TupleOf(values)
 		})
 	},
-	"combine-latest*-array": func(v Value) rx.Observable {
-		var list = container.ListFrom(v)
+	"combine-latest*-array": func(list_ Value) rx.Observable {
+		var list = container.ListFrom(list_)
 		return rx.CombineLatestWaitReady(list.CopyAsObservables())
 	},
 	"computed": func(tuple ProductValue, f Value, h InteropContext) rx.Observable {
-		var actions = make([] rx.Observable, len(tuple.Elements))
+		var items = make([] rx.Observable, len(tuple.Elements))
 		for i, el := range tuple.Elements {
-			actions[i] = el.(rx.Observable)
+			items[i] = el.(rx.Observable)
 		}
-		return rx.CombineLatestWaitReady(actions).Map(func(values_ rx.Object) rx.Object {
-			var values = values_.([] Value)
-			return h.Call(f, TupleOf(values))
+		return CombineComputedAsProductValues(items).Map(func(values rx.Object) rx.Object {
+			return h.Call(f, values)
 		})
 	},
 }

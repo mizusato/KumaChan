@@ -230,15 +230,13 @@ export function is-first-in:[T]
     &(Computed[Number], Reactive[FlexList[T]]) => Computed[Bool]
     &(@index, _) =>
         @index
-            . { map &(index) => (index = 0) }
-            . { distinct-until-changed };
+            . { map &(index) => (index = 0) };
 export function is-last-in:[T]
     &(Computed[Number], Reactive[FlexList[T]]) => Computed[Bool]
     &(@index,@list) =>
         let @length := ({ watch @list } map &(list) => list.{length}),
         { combine (@index, @length) }
-            . { map &(index,length) => (index = (length - 1)) }
-            . { distinct-until-changed };
+            . { map &(index,length) => (index = (length - 1)) };
 
 export function update:[T]
     &(Reactive[FlexList[T]], FlexListKey, &(T) => T) => Sync
