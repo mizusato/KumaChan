@@ -5,11 +5,11 @@ type Point {
 
 do
     let l := [{ Point { x:1, y: 2 } }, { Point { x:3, y: 4 } }],
-    let p := { &[.y] { Point { x: 0, y: -1 } } },
-    let q := l.{ map &[.x] }.{ map &[] },
+    let p := { | [.y] { Point { x: 0, y: -1 } } },
+    let q := l.{ map | [.x] }.{ map | [] },
     let str := [
         p.{String},
-        q.{ map &[.{String}] }.{ join ', ' }
+        q.{ map | [.{String}] }.{ join ', ' }
     ].{ join \n },
     { println str }
         . { crash-on-error };
