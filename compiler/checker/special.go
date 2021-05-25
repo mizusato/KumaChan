@@ -23,17 +23,7 @@ const KmdDeserializerName = "data-deserialize"
 const KmdAdapterName = "data-adapt"
 const KmdValidatorName = "data-validate"
 var __Observable = CoreSymbol(stdlib.Observable)
-var __Action = CoreSymbol(stdlib.Async)
-var __Reactive = CoreSymbol(stdlib.Reactive)
-func IsReactive(t *NamedType) bool {
-	return t.Name == __Reactive
-}
-func Reactive(t Type) Type {
-	return &NamedType {
-		Name: __Reactive,
-		Args: [] Type { t },
-	}
-}
+var __Async = CoreSymbol(stdlib.Async)
 var __ProjRef = CoreSymbol(stdlib.ProjRef)
 var __CaseRef = CoreSymbol(stdlib.CaseRef)
 var __ProjRefParams = [] TypeParam {
@@ -77,7 +67,7 @@ func CaseRef(t Type, c Type) Type {
 	}
 }
 var __DoTypes = [] Type {
-	&NamedType { Name: __Action, Args: [] Type { &AnonymousType { Unit {} } } },
+	&NamedType { Name: __Async, Args: [] Type {&AnonymousType {Unit {} } } },
 	&NamedType { Name: __Observable, Args: [] Type { &NeverType {} } },
 }
 var __VariousEffectType = &NamedType {

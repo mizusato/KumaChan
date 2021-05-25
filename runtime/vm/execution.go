@@ -161,35 +161,6 @@ func call(f FunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Value {
 				var ok = new_inst_ptr < uint(len(code))
 				assert(ok, "JMP: invalid address")
 				*inst_ptr_ref = new_inst_ptr
-			case RSW:
-				arg, ok := ec.popValue().(rx.Reactive)
-				assert(ok, "RSW: cannot execute on non-reactive value")
-				p, ok := ec.popValue().(ProductValue)
-				assert(ok, "RSW: invalid branches")
-				var consumers = make(map[uint] (func(rx.Reactive) rx.Observable))
-				var default_consumer (func(rx.Observable) rx.Observable)
-				for _, element := range p.Elements {
-					pair, ok := element.(ProductValue)
-					assert(ok, "RSW: invalid branch")
-					assert(len(pair.Elements) == 2, "RSW: invalid branch")
-					consumer, ok := pair.Elements[1].(FunctionValue)
-					assert(ok, "RSW: invalid branch")
-					if pair.Elements[0] == nil {
-						assert(default_consumer == nil,
-							"RSW: duplicate default branch")
-						default_consumer = func(eff rx.Observable) rx.Observable {
-							return call(consumer, eff, m, sync_ctx).(rx.Observable)
-						}
-					} else {
-						index, ok := pair.Elements[0].(uint)
-						assert(ok, "RSW: invalid branch")
-						consumers[index] = func(r rx.Reactive) rx.Observable {
-							return call(consumer, r, m, sync_ctx).(rx.Observable)
-						}
-					}
-				}
-				var eff = ConsumeReactiveSum(arg, consumers, default_consumer)
-				ec.pushValue(eff)
 			case PROD:
 				var size = inst.GetShortIndexOrSize()
 				var elements = make([] Value, size)
@@ -205,9 +176,6 @@ func call(f FunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Value {
 					assert(index < uint(len(prod.Elements)),
 						"GET: invalid index")
 					ec.pushValue(prod.Elements[index])
-				case rx.Reactive:
-					var r = v
-					ec.pushValue(ProjectReactiveProduct(r, index))
 				default:
 					panic("GET: cannot execute on non-product value")
 				}
@@ -219,9 +187,6 @@ func call(f FunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Value {
 					assert(index < uint(len(prod.Elements)),
 						"POPGET: invalid index")
 					ec.pushValue(prod.Elements[index])
-				case rx.Reactive:
-					var r = v
-					ec.pushValue(ProjectReactiveProduct(r, index))
 				default:
 					panic("POPGET: cannot execute on non-product value")
 				}
@@ -240,7 +205,7 @@ func call(f FunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Value {
 					panic("SET: cannot execute on non-product value")
 				}
 			case BRS, BRB, BRF, FRP, FRF:
-				CreateRef(ec, inst)
+				createRef(ec, inst)
 			case CTX:
 				var is_recursive = (inst.Arg0 != 0)
 				switch prod := ec.popValue().(type) {
@@ -479,7 +444,7 @@ func (ec *ExecutionContext) popTailCall() {
 	ec.workingFrame = popped
 }
 
-func CreateRef(ec *ExecutionContext, inst Instruction) {
+func createRef(ec *ExecutionContext, inst Instruction) {
 	var index = inst.GetShortIndexOrSize()
 	switch inst.OpCode {
 	case BRS:
@@ -604,72 +569,4 @@ func CreateRef(ec *ExecutionContext, inst Instruction) {
 	}
 }
 
-func ProjectReactiveProduct(r rx.Reactive, index uint) rx.Reactive {
-	var in = func(old_state rx.Object) func(rx.Object) rx.Object {
-		return func(obj rx.Object) rx.Object {
-			var prod = old_state.(ProductValue)
-			var L = uint(len(prod.Elements))
-			var draft = make([] Value, L)
-			copy(draft, prod.Elements)
-			draft[index] = obj
-			return TupleOf(draft)
-		}
-	}
-	var out = func(state rx.Object) rx.Object {
-		var prod = state.(ProductValue)
-		return prod.Elements[index]
-	}
-	return rx.ReactiveMorph(r, in, out)
-}
-
-func ConsumeReactiveSum (
-	r                 rx.Reactive,
-	consumers         (map[uint] (func(rx.Reactive) rx.Observable)),
-	default_consumer  (func(rx.Observable) rx.Observable),
-) rx.Observable {
-	var branches = make(map[uint] rx.Reactive)
-	for _i, _ := range consumers {
-		var case_index = _i
-		var in = func(obj rx.Object) rx.Object {
-			return &ValSum {
-				Index: Short(case_index),
-				Value: obj,
-			}
-		}
-		var out = func(obj rx.Object) (rx.Object, bool) {
-			var sum = obj.(SumValue)
-			if uint(sum.Index) == case_index {
-				return sum.Value, true
-			} else {
-				return nil, false
-			}
-		}
-		branches[case_index] = rx.ReactiveBranch(r, in, out)
-	}
-	var default_branch = r.Watch().Filter(func(obj rx.Object) bool {
-		var sum = obj.(SumValue)
-		var _, exists = branches[uint(sum.Index)]
-		return !(exists)
-	})
-	var changing_index = r.Watch().Map(func(obj rx.Object) rx.Object {
-		var sum = obj.(SumValue)
-		return uint(sum.Index)
-	}).DistinctUntilChanged(func(a rx.Object, b rx.Object) bool {
-		return (a.(uint) == b.(uint))
-	})
-	return changing_index.SwitchMap(func(obj rx.Object) rx.Observable {
-		var case_index = obj.(uint)
-		var branch, exists = branches[case_index]
-		if exists {
-			var consumer = consumers[case_index]
-			return consumer(branch)
-		} else {
-			if default_consumer != nil {
-				return default_consumer(default_branch)
-			} else {
-				panic("something went wrong")
-			}
-		}
-	})
-}
 

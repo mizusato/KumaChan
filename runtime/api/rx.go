@@ -184,7 +184,10 @@ var EffectFunctions = map[string] Value {
 							return list.Get(key)
 						}
 						var proj = rx.ReactiveMorph(r, in, out)
-						var arg = Tuple(key, index_source, proj)
+						var idx = index_source.Map(func(n rx.Object) rx.Object {
+							return util.GetNumberUint(n.(uint))
+						})
+						var arg = Tuple(key, idx, proj)
 						var item_action = h.Call(k, arg).(rx.Observable)
 						return item_action
 					},

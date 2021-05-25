@@ -112,9 +112,18 @@ export function update:[T]
 export function adapt:[A,B]
     &(Reactive[A], &(A) => &(B) => A) => Sink[B]
     native 'reactive-adapt';
-export function morph:[A,B]
+function morph:[A,B]
     &(Reactive[A], (&(A) => &(B) => A), (&(A) => B)) => Reactive[B]
     native 'reactive-morph';
+export function morph:[A,B]
+    &(Reactive[A], { in: &(A) => &(B) => A, out: &(A) => B }) => Reactive[B]
+    &(r, f) => { morph (r, f.in, f.out) };
+export function proj:[A,B]
+    &(Reactive[A], &(A) => ProjRef[A,B]) => Reactive[B]
+    &(r, ref) => (r morph {
+        in:  (&a => &b => { write (a.{ref}, b) }) .[&(A) => &(B) => A],
+        out: (&a => { read a.{ref} }) .[&(A) => B]
+    });
 # alias: <-
 export function read:[T]
     &(Reactive[T]) => Sync[T]

@@ -79,7 +79,7 @@ func PatternFrom (
 				},
 			}, nil
 		}
-		switch tuple_ := UnboxTuple(input, ctx, true).(type) {
+		switch tuple_ := UnboxTuple(input, ctx).(type) {
 		case TR_Tuple:
 			var tuple = tuple_.Tuple
 			var required = len(p.Names)
@@ -108,9 +108,6 @@ func PatternFrom (
 						}
 						occurred[name] = true
 						var t = tuple.Elements[i]
-						if tuple_.AcrossReactive {
-							t = Reactive(t)
-						}
 						items = append(items, PatternItem {
 							Name:  ast.Id2String(identifier),
 							Index: uint(i),
@@ -136,7 +133,7 @@ func PatternFrom (
 			panic("impossible branch")
 		}
 	case ast.PatternRecord:
-		switch record_ := UnboxRecord(input, ctx, true).(type) {
+		switch record_ := UnboxRecord(input, ctx).(type) {
 		case BR_Record:
 			var record = record_.Record
 			var occurred = make(map[string]  bool)
@@ -169,9 +166,6 @@ func PatternFrom (
 				}
 				occurred[value_name] = true
 				var t = field.Type
-				if record_.AcrossReactive {
-					t = Reactive(t)
-				}
 				items[i] = PatternItem {
 					Name:  value_name,
 					Index: field.Index,

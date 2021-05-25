@@ -48,30 +48,16 @@ func UnboxWeak(t Type, reg TypeRegistry) Type {
 type TupleReprResult interface { TupleReprResult() }
 func (impl TR_Tuple) TupleReprResult() {}
 type TR_Tuple struct {
-	Tuple           Tuple
-	AcrossReactive  bool
+	Tuple  Tuple
 }
 func (impl TR_NonTuple) TupleReprResult() {}
 type TR_NonTuple struct {}
 func (impl TR_TupleButOpaque) TupleReprResult() {}
 type TR_TupleButOpaque struct {}
 
-func UnboxTuple(t Type, ctx ExprContext, cross_reactive bool) TupleReprResult {
+func UnboxTuple(t Type, ctx ExprContext) TupleReprResult {
 	switch T := t.(type) {
 	case *NamedType:
-		if cross_reactive && IsReactive(T) {
-			if !(len(T.Args) == 1) { panic("something went wrong") }
-			var result = UnboxTuple(T.Args[0], ctx, false)
-			switch r := result.(type) {
-			case TR_Tuple:
-				return TR_Tuple {
-					Tuple:          r.Tuple,
-					AcrossReactive: true,
-				}
-			default:
-				return result
-			}
-		}
 		var g = ctx.ModuleInfo.Types[T.Name]
 		switch gv := g.Definition.(type) {
 		case *Boxed:
@@ -89,7 +75,7 @@ func UnboxTuple(t Type, ctx ExprContext, cross_reactive bool) TupleReprResult {
 					}
 				}
 			case *NamedType:
-				return UnboxTuple(inner, ctx, cross_reactive)
+				return UnboxTuple(inner, ctx)
 			}
 		}
 		return TR_NonTuple {}
@@ -108,30 +94,16 @@ func UnboxTuple(t Type, ctx ExprContext, cross_reactive bool) TupleReprResult {
 type RecordReprResult interface { RecordReprResult() }
 func (impl BR_Record) RecordReprResult() {}
 type BR_Record struct {
-	Record          Record
-	AcrossReactive  bool
+	Record  Record
 }
 func (impl BR_NonRecord) RecordReprResult() {}
 type BR_NonRecord struct {}
 func (impl BR_RecordButOpaque) RecordReprResult() {}
 type BR_RecordButOpaque struct {}
 
-func UnboxRecord(t Type, ctx ExprContext, cross_reactive bool) RecordReprResult {
+func UnboxRecord(t Type, ctx ExprContext) RecordReprResult {
 	switch T := t.(type) {
 	case *NamedType:
-		if cross_reactive && IsReactive(T) {
-			if !(len(T.Args) == 1) { panic("something went wrong") }
-			var result = UnboxRecord(T.Args[0], ctx, false)
-			switch r := result.(type) {
-			case BR_Record:
-				return BR_Record {
-					Record:         r.Record,
-					AcrossReactive: true,
-				}
-			default:
-				return result
-			}
-		}
 		var g = ctx.ModuleInfo.Types[T.Name]
 		switch gv := g.Definition.(type) {
 		case *Boxed:
@@ -149,7 +121,7 @@ func UnboxRecord(t Type, ctx ExprContext, cross_reactive bool) RecordReprResult 
 					}
 				}
 			case *NamedType:
-				return UnboxRecord(inner, ctx, cross_reactive)
+				return UnboxRecord(inner, ctx)
 			}
 		}
 		return BR_NonRecord {}

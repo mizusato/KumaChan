@@ -23,7 +23,6 @@ func (impl SemiTypedSwitch) SemiExprVal() {}
 type SemiTypedSwitch struct {
 	Argument  Expr
 	Branches  [] SemiTypedBranch
-	Reactive  bool
 }
 type SemiTypedBranch struct {
 	IsDefault  bool
@@ -57,11 +56,6 @@ type Branch struct {
 	Index      uint
 	Pattern    MaybePattern
 	Value      Expr
-}
-func (impl ReactiveSwitch) ExprVal() {}
-type ReactiveSwitch struct {
-	Argument  Expr
-	Branches  Product
 }
 func (impl MultiSwitch) ExprVal() {}
 type MultiSwitch struct {
@@ -149,8 +143,7 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 	var arg_typed, err2 = AssignTo(nil, arg_semi, ctx)
 	if err2 != nil { return SemiExpr{}, err2 }
 	var arg_type = arg_typed.Type
-	var enum, enum_args, across_reactive, ok =
-		ExtractEnum(arg_type, ctx, true)
+	var enum, enum_args, ok = ExtractEnum(arg_type, ctx)
 	if !(ok) { return SemiExpr{}, &ExprError {
 		Point:    arg_typed.Info.ErrorPoint,
 		Concrete: E_InvalidSwitchArgType {
@@ -179,9 +172,6 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 			var case_type Type = &NamedType {
 				Name: case_sym,
 				Args: case_args,
-			}
-			if across_reactive {
-				case_type = Reactive(case_type)
 			}
 			var maybe_pattern MaybePattern
 			var branch_ctx ExprContext
@@ -245,7 +235,6 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 			Value: SemiTypedSwitch {
 				Argument: Expr(arg_typed),
 				Branches: semi_branches,
-				Reactive: across_reactive,
 			},
 			Info: info,
 		}, nil
@@ -256,9 +245,8 @@ func CheckPipeSwitch(base SemiExpr, ref ast.TypeRef, info ExprInfo, ctx ExprCont
 	var arg_typed, err2 = AssignTo(nil, base, ctx)
 	if err2 != nil { return SemiExpr{}, err2 }
 	var arg_type = arg_typed.Type
-	var enum, enum_args, across_reactive, ok =
-		ExtractEnum(arg_type, ctx, true)
-	if !(ok) || across_reactive { return SemiExpr{}, &ExprError {
+	var enum, enum_args, ok = ExtractEnum(arg_type, ctx)
+	if !(ok) { return SemiExpr{}, &ExprError {
 		Point:    arg_typed.Info.ErrorPoint,
 		Concrete: E_InvalidSwitchArgType {
 			ArgType: ctx.DescribeCertainType(arg_typed.Type),
@@ -334,7 +322,7 @@ func CheckPipeSwitch(base SemiExpr, ref ast.TypeRef, info ExprInfo, ctx ExprCont
 
 func CheckRefBranch(base SemiExpr, ref ast.TypeRef, info ExprInfo, ctx ExprContext) (SemiExpr, *ExprError) {
 	var get_case_info = func(t Type) (Type, uint, *ExprError) {
-		var enum, enum_args, _, ok = ExtractEnum(t, ctx, false)
+		var enum, enum_args, ok = ExtractEnum(t, ctx)
 		if !(ok) { return nil, BadIndex, &ExprError {
 			Point:    base.Info.ErrorPoint,
 			Concrete: E_InvalidSwitchArgType {
@@ -422,7 +410,7 @@ func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprErro
 		var arg_typed, err2 = AssignTo(nil, semi, ctx)
 		if err2 != nil { return SemiExpr{}, err2 }
 		var arg_type = arg_typed.Type
-		var enum, enum_args, _, is_enum = ExtractEnum(arg_type, ctx, false)
+		var enum, enum_args, is_enum = ExtractEnum(arg_type, ctx)
 		if !is_enum { return SemiExpr{}, &ExprError {
 			Point:    arg_typed.Info.ErrorPoint,
 			Concrete: E_InvalidSwitchArgType {
@@ -601,24 +589,11 @@ func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprErro
 }
 
 func CheckIf(raw ast.If, ctx ExprContext) (SemiExpr, *ExprError) {
-	var cond_assign = func(semi SemiExpr, ctx ExprContext) (Expr, bool, *ExprError) {
-		var typed, err1 = AssignTo(__T_Bool, semi, ctx)
-		if err1 == nil {
-			return typed, false, nil
-		} else {
-			var typed, err = AssignTo(Reactive(__T_Bool), semi, ctx)
-			if err == nil {
-				return typed, true, nil
-			} else {
-				return Expr{}, false, err1
-			}
-		}
-	}
 	var if_node = DesugarElseIf(raw)
 	var info = ctx.GetExprInfo(if_node.Node)
 	var cond_semi, err1 = Check(if_node.Condition, ctx)
 	if err1 != nil { return SemiExpr{}, err1 }
-	var cond_typed, reactive, err2 = cond_assign(cond_semi, ctx)
+	var cond_typed, err2 = AssignTo(__T_Bool, cond_semi, ctx)
 	if err2 != nil { return SemiExpr{}, err2 }
 	var yes_semi, err3 = Check(if_node.YesBranch, ctx)
 	if err3 != nil { return SemiExpr{}, err3 }
@@ -643,7 +618,6 @@ func CheckIf(raw ast.If, ctx ExprContext) (SemiExpr, *ExprError) {
 			Branches: []SemiTypedBranch {
 				yes_branch, no_branch,
 			},
-			Reactive: reactive,
 		},
 	}, nil
 }
@@ -673,17 +647,6 @@ func DesugarBranches(raw_branches ([] ast.Branch)) ([] ast.Branch) {
 func AssignSwitchTo(expected Type, sw SemiTypedSwitch, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
 	var err1 = RequireExplicitType(expected, info)
 	if err1 != nil { return Expr{}, err1 }
-	if sw.Reactive {
-		var _, ok = AssignType(expected, __VariousEffectType, FromInferred, ctx)
-		if !(ok) {
-			return Expr{}, &ExprError {
-				Point: info.ErrorPoint,
-				Concrete: E_InvalidTypeForReactiveSwitch {
-					Type: ctx.DescribeInferredType(expected),
-				},
-			}
-		}
-	}
 	var branches = make([] Branch, len(sw.Branches))
 	for i, branch_semi := range sw.Branches {
 		var typed, err = AssignTo(expected, branch_semi.Value, ctx)
@@ -697,66 +660,14 @@ func AssignSwitchTo(expected Type, sw SemiTypedSwitch, info ExprInfo, ctx ExprCo
 	}
 	var t, err2 = GetCertainType(expected, info.ErrorPoint, ctx)
 	if err2 != nil { return Expr{}, err2 }
-	if sw.Reactive {
-		var elements = make([] Expr, len(branches))
-		for i, b := range branches {
-			var index Expr
-			if b.IsDefault {
-				index = Expr {
-					Type:  nil,
-					Value: UnitValue {},
-					Info:  b.Value.Info,
-				}
-			} else {
-				index = Expr {
-					Type:  nil,
-					Value: SmallIntLiteral { Value: b.Index },
-					Info:  b.Value.Info,
-				}
-			}
-			var pattern, ok = b.Pattern.(Pattern)
-			if !(ok) {
-				pattern = Pattern {
-					Point:    b.Value.Info.ErrorPoint,
-					Concrete: TrivialPattern {
-						ValueName: IgnoreMark,
-						ValueType: nil,
-						Point:     b.Value.Info.ErrorPoint,
-					},
-				}
-			}
-			var pair = Product { Values: [] Expr {
-				index, {
-					Type: nil,
-					Value: Lambda {
-						Input:  pattern,
-						Output: b.Value,
-					},
-				},
-			} }
-			elements[i] = Expr {
-				Type:  nil,
-				Value: pair,
-				Info:  b.Value.Info,
-			}
-		}
-		return Expr {
-			Type:  t,
-			Value: ReactiveSwitch {
-				Argument: sw.Argument,
-				Branches: Product { Values: elements },
-			},
-		}, nil
-	} else {
-		return Expr {
-			Type:  t,
-			Value: Switch {
-				Argument: sw.Argument,
-				Branches: branches,
-			},
-			Info:  info,
-		}, nil
-	}
+	return Expr {
+		Type:  t,
+		Value: Switch {
+			Argument: sw.Argument,
+			Branches: branches,
+		},
+		Info:  info,
+	}, nil
 }
 
 func AssignMultiSwitchTo(expected Type, msw SemiTypedMultiSwitch, info ExprInfo, ctx ExprContext) (Expr, *ExprError) {
@@ -786,32 +697,23 @@ func AssignMultiSwitchTo(expected Type, msw SemiTypedMultiSwitch, info ExprInfo,
 }
 
 // TODO: function name should be consistent with Unbox*** (rename this or rename others)
-func ExtractEnum(t Type, ctx ExprContext, cross_reactive bool) (*Enum, []Type, bool, bool) {
+func ExtractEnum(t Type, ctx ExprContext) (*Enum, []Type, bool) {
 	switch T := t.(type) {
 	case *NamedType:
-		if cross_reactive && IsReactive(T) {
-			if !(len(T.Args) == 1) { panic("something went wrong") }
-			var enum, args, _, ok = ExtractEnum(T.Args[0], ctx, false)
-			if ok {
-				return enum, args, true, true
-			} else {
-				return nil, nil, false, false
-			}
-		}
 		var reg = ctx.GetTypeRegistry()
 		var g = reg[T.Name]
 		switch gv := g.Definition.(type) {
 		case *Enum:
-			return gv, T.Args, false, true
+			return gv, T.Args, true
 		case *Boxed:
 			var ctx_mod = ctx.GetModuleName()
 			var unboxed, can_unbox = Unbox(t, ctx_mod, reg).(Unboxed)
 			if can_unbox {
-				return ExtractEnum(unboxed.Type, ctx, cross_reactive)
+				return ExtractEnum(unboxed.Type, ctx)
 			}
 		}
 	}
-	return nil, nil, false, false
+	return nil, nil, false
 }
 
 func DesugarElseIf(raw ast.If) ast.If {

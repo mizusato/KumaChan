@@ -34,7 +34,6 @@ const (
 	SUM     // [index, ___ ]: Create a value of a sum type
 	JIF     // [index, dest]: Jump if Index matches the current value
 	JMP     // [ ____, dest]: Jump unconditionally
-	RSW     // TODO: to be removed
 	BRS     // [index, ___ ]: Branch functional reference on a sum value
 	BRB     // [index, ___ ]: Branch functional reference on a branch reference
 	BRF     // [index, ___ ]: Branch functional reference on a field reference

@@ -23,13 +23,14 @@ const Root: ui::Component :=
             | id := sync gen-monotonic-id-string,
             { insert (list, {after:pivot}, (id, { content: '', finished: No })) },
     { center [
-        | buffer := use { State '' },
+        | buffer := use { State::[String] '' },
         { row [
             { Input buffer },
             { Button ('Add', { add-item-from buffer }) }
         ] },
         | (id, index, item) := ListView list,
-        let { content, finished } := item,
+        let content := (item proj &(i) => i.& content),
+        let finished := (item proj &(i) => i.& finished),
         { row [
             { Checkbox finished },
             { Input content },

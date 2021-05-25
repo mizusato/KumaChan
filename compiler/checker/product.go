@@ -99,9 +99,8 @@ func CheckRecord(record ast.Record, ctx ExprContext) (SemiExpr, *ExprError) {
 			var L = len(record.Values)
 			if !(L >= 1) { panic("something went wrong") }
 			var base = Expr(b)
-			switch target_ := UnboxRecord(base.Type, ctx, false).(type) {
+			switch target_ := UnboxRecord(base.Type, ctx).(type) {
 			case BR_Record:
-				if target_.AcrossReactive { panic("something went wrong") }
 				var target = target_.Record
 				var occurred_names = make(map[string] bool)
 				var current_base = base
@@ -217,7 +216,7 @@ func CheckGet(base SemiExpr, key ast.Identifier, info ExprInfo, ctx ExprContext)
 			Point:    base.Info.ErrorPoint,
 			Concrete: E_GetFromLiteralRecord {},
 		} }
-		switch record_ := UnboxRecord(b.Type, ctx, true).(type) {
+		switch record_ := UnboxRecord(b.Type, ctx).(type) {
 		case BR_Record:
 			var record = record_.Record
 			var key_string = ast.Id2String(key)
@@ -230,9 +229,6 @@ func CheckGet(base SemiExpr, key ast.Identifier, info ExprInfo, ctx ExprContext)
 				},
 			} }
 			var t = field.Type
-			if record_.AcrossReactive {
-				t = Reactive(t)
-			}
 			return LiftTyped(Expr {
 				Type:  t,
 				Value: Get {
@@ -269,7 +265,7 @@ func CheckGet(base SemiExpr, key ast.Identifier, info ExprInfo, ctx ExprContext)
 
 func CheckRefField(base SemiExpr, key ast.Identifier, info ExprInfo, ctx ExprContext) (SemiExpr, *ExprError) {
 	var get_field_info = func(t Type) (Type, uint, *ExprError) {
-		switch record_ := UnboxRecord(t, ctx, false).(type) {
+		switch record_ := UnboxRecord(t, ctx).(type) {
 		case BR_Record:
 			var record = record_.Record
 			var key_string = ast.Id2String(key)
@@ -344,7 +340,7 @@ func CheckRefField(base SemiExpr, key ast.Identifier, info ExprInfo, ctx ExprCon
 		var base_typed, err = AssignTo(nil, base, ctx)
 		if err != nil { return SemiExpr{}, err }
 		var base_type = base_typed.Type
-		switch record_ := UnboxRecord(base_type, ctx, false).(type) {
+		switch record_ := UnboxRecord(base_type, ctx).(type) {
 		case BR_Record:
 			var record = record_.Record
 			var key_string = ast.Id2String(key)

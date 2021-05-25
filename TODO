@@ -1,21 +1,5 @@
 TODO
 
-** Reactive[Struct] refactor plan (generalized projection)
-type ProjRef[S,F] (Maybe[F] => (S, F));
-e.g. project: &(Reactive[S], S => ProjRef[S,F]) => Reactive[F]
-e.g. project: &(Maybe[S], S => ProjRef[S,F]) => ProjRef[Maybe[S],Maybe[F]]
---> &(Reactive[Maybe[S]]) => Reactive[Maybe[F]]
---> &(Reactive[W[S]]) => Reactive[V[F]] (W = WithValidation, V = ValidationState)
-syntax: struct .& field => ProjRef[structType,fieldType]
-   or   (struct: ProjRef[parent,struct]) .& field => ProjRef[parent,fieldType]
-(no special "."/switch syntax for Reactive)  // reconsider this !!!
-
-** Reactive[Enum] refactor plan (generalized case projection)
-type CaseRef[T,C] (&(Maybe[C]) => (T, Maybe[C]))
-syntax: enum-or-case/proj-ref.&(Branch) : CaseRef[E,Branch]
-e.g. choose: Reactive[E] => (CaseRef[E,C]) => Provider[Maybe[C], C]
-chaining: a?.&(Some).&b
-
 - API: type Provider[T,A] (Computed[T], Sink[A]);
 
 - API: consider renaming wait and tick
@@ -29,6 +13,10 @@ chaining: a?.&(Some).&b
 - Lang: consider prefix for special identifier used by compiler (e.g. @DefaultValue)
 
 - Lang: permit anonymous record expression (currently requires explicit type)
+
+- Lang: type inference for field of anonymous record input
+
+- Lang: fix the order randomness of field assignment of anonymous record input
 
 - Lang: consider renaming Product -> Record, Sum -> Enum
 

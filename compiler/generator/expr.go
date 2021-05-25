@@ -268,19 +268,6 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 		var nop = lang.Instruction { OpCode: lang.NOP }
 		buf.Write(CodeFrom(nop, v.Argument.Info))
 		return buf.Collect()
-	case ch.ReactiveSwitch:
-		var arg_code = CompileExpr(v.Argument, ctx)
-		var branches_code = CompileExpr(ch.Expr {
-			Type:  nil,
-			Value: v.Branches,
-			Info:  expr.Info,
-		}, ctx)
-		var buf = MakeCodeBuffer()
-		buf.Write(branches_code)
-		buf.Write(arg_code)
-		var rsw = lang.Instruction { OpCode: lang.RSW }
-		buf.Write(CodeFrom(rsw, expr.Info))
-		return buf.Collect()
 	case ch.MultiSwitch:
 		var arg = ch.GetMultiSwitchArgumentTuple(v, expr.Info)
 		var A = uint(len(v.Arguments))
