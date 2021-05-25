@@ -239,53 +239,8 @@ func call(f FunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Value {
 				default:
 					panic("SET: cannot execute on non-product value")
 				}
-			case FRP:
-				var index = inst.GetShortIndexOrSize()
-				switch v := ec.popValue().(type) {
-				case ProductValue:
-					var prod = v
-					var L = uint(len(prod.Elements))
-					assert(index < L, "FRP: invalid index")
-					ec.pushValue(NativeFunctionValue(func(arg Value, _ InteropContext) Value {
-						var new_value, update = Unwrap(arg.(SumValue))
-						if update {
-							var draft =  make([] Value, L)
-							copy(draft, prod.Elements)
-							draft[index] = new_value
-							return Tuple(TupleOf(draft), new_value)
-						} else {
-							return Tuple(prod, prod.Elements[index])
-						}
-					}))
-				default:
-					panic("proj: invalid operand")
-				}
-			case FRF:
-				var index = inst.GetShortIndexOrSize()
-				switch v := ec.popValue().(type) {
-				case FunctionValue, NativeFunctionValue:
-					var base = v
-					ec.pushValue(NativeFunctionValue(func(arg Value, h InteropContext) Value {
-						var t = h.Call(base, None())
-						var prod = t.(ProductValue).Elements[1].(ProductValue)
-						var L = uint(len(prod.Elements))
-						assert(index < L, "FRP: invalid index")
-						var new_field_value, update = Unwrap(arg.(SumValue))
-						if update {
-							var draft =  make([] Value, L)
-							copy(draft, prod.Elements)
-							draft[index] = new_field_value
-							var new_prod_value = TupleOf(draft)
-							var t = h.Call(base, Some(new_prod_value))
-							var new_base_value = t.(ProductValue).Elements[0]
-							return Tuple(new_base_value, new_field_value)
-						} else {
-							return Tuple(prod, prod.Elements[index])
-						}
-					}))
-				default:
-					panic("proj: invalid operand")
-				}
+			case BRS, BRB, BRF, FRP, FRF:
+				CreateRef(ec, inst)
 			case CTX:
 				var is_recursive = (inst.Arg0 != 0)
 				switch prod := ec.popValue().(type) {
@@ -522,6 +477,131 @@ func (ec *ExecutionContext) popTailCall() {
 	ec.callStack = ec.callStack[:cur]
 	ec.popValuesTo(ec.workingFrame.baseAddr)
 	ec.workingFrame = popped
+}
+
+func CreateRef(ec *ExecutionContext, inst Instruction) {
+	var index = inst.GetShortIndexOrSize()
+	switch inst.OpCode {
+	case BRS:
+		var sum, ok = ec.popValue().(SumValue)
+		assert(ok, "BRS: invalid operand")
+		ec.pushValue(NativeFunctionValue(func(arg Value, _ InteropContext) Value {
+			var new_value, update = Unwrap(arg.(SumValue))
+			if update {
+				return Tuple(&ValSum {
+					Index: Short(index),
+					Value: new_value,
+				}, arg)
+			} else {
+				if uint(sum.Index) == index {
+					return Tuple(sum, Some(sum.Value))
+				} else {
+					return Tuple(sum, None())
+				}
+			}
+		}))
+	case BRB:
+		switch base := ec.popValue().(type) {
+		case FunctionValue, NativeFunctionValue:
+			ec.pushValue(NativeFunctionValue(func(arg Value, h InteropContext) Value {
+				var t = h.Call(base, None())
+				var pair = t.(ProductValue).Elements
+				var base_sum = pair[0]
+				var base_branch = pair[1]
+				var value, has_value = Unwrap(base_branch.(SumValue))
+				var new_value, update = Unwrap(arg.(SumValue))
+				if has_value {
+					if update {
+						var u = h.Call(base, Some(&ValSum{
+							Index: Short(index),
+							Value: new_value,
+						}))
+						return Tuple(u.(ProductValue).Elements[0], arg)
+					} else {
+						var sum = value.(SumValue)
+						if uint(sum.Index) == index {
+							return Tuple(base_sum, Some(sum.Value))
+						} else {
+							return Tuple(base_sum, None())
+						}
+					}
+				} else {
+					return Tuple(base_sum, None())
+				}
+			}))
+		default:
+			panic("BRB: invalid operand")
+		}
+	case BRF:
+		switch base := ec.popValue().(type) {
+		case FunctionValue, NativeFunctionValue:
+			ec.pushValue(NativeFunctionValue(func(arg Value, h InteropContext) Value {
+				var new_value, update = Unwrap(arg.(SumValue))
+				if update {
+					var t = h.Call(base, Some(&ValSum {
+						Index: Short(index),
+						Value: new_value,
+					}))
+					return Tuple(t.(ProductValue).Elements[0], arg)
+				} else {
+					var value = h.Call(base, None())
+					var pair = value.(ProductValue).Elements
+					var base_prod = pair[0]
+					var base_field = pair[1]
+					var sum = base_field.(SumValue)
+					if uint(sum.Index) == index {
+						return Tuple(base_prod, Some(sum.Value))
+					} else {
+						return Tuple(base_prod, None())
+					}
+				}
+			}))
+		default:
+			panic("BRF: invalid operand")
+		}
+	case FRP:
+		var prod, ok = ec.popValue().(ProductValue)
+		assert(ok, "FRP: invalid operand")
+		var L = uint(len(prod.Elements))
+		assert(index < L, "FRP: invalid index")
+		ec.pushValue(NativeFunctionValue(func(arg Value, _ InteropContext) Value {
+			var new_value, update = Unwrap(arg.(SumValue))
+			if update {
+				var draft =  make([] Value, L)
+				copy(draft, prod.Elements)
+				draft[index] = new_value
+				return Tuple(TupleOf(draft), new_value)
+			} else {
+				return Tuple(prod, prod.Elements[index])
+			}
+		}))
+	case FRF:
+		switch base := ec.popValue().(type) {
+		case FunctionValue, NativeFunctionValue:
+			ec.pushValue(NativeFunctionValue(func(arg Value, h InteropContext) Value {
+				var t = h.Call(base, None())
+				var prod = t.(ProductValue).Elements[1].(ProductValue)
+				var L = uint(len(prod.Elements))
+				assert(index < L, "FRF: invalid index")
+				var new_field_value, update = Unwrap(arg.(SumValue))
+				if update {
+					var draft =  make([] Value, L)
+					copy(draft, prod.Elements)
+					draft[index] = new_field_value
+					var new_prod_value = TupleOf(draft)
+					var t = h.Call(base, Some(new_prod_value))
+					var new_base_value = t.(ProductValue).Elements[0]
+					return Tuple(new_base_value, new_field_value)
+				} else {
+					return Tuple(prod, prod.Elements[index])
+				}
+			}))
+		default:
+			panic("FRF: invalid operand")
+		}
+	default:
+		panic("something went wrong")
+	}
 }
 
 func ProjectReactiveProduct(r rx.Reactive, index uint) rx.Reactive {

@@ -59,9 +59,9 @@ type PipeGet struct {
     Node               `part:"pipe_get"`
     Key   Identifier   `part:"name"`
 }
-func (impl PipeProj) Pipe() {}
-type PipeProj struct {
-    Node               `part:"pipe_proj"`
+func (impl PipeRefField) Pipe() {}
+type PipeRefField struct {
+    Node               `part:"pipe_ref_field"`
     Key   Identifier   `part:"name"`
 }
 func (impl PipeCast) Pipe() {}
@@ -72,6 +72,11 @@ type PipeCast struct {
 func (impl PipeSwitch) Pipe() {}
 type PipeSwitch struct {
     Node            `part:"pipe_switch"`
+    Type  TypeRef   `part:"type_ref"`
+}
+func (impl PipeRefBranch) Pipe() {}
+type PipeRefBranch struct {
+    Node            `part:"pipe_ref_branch"`
     Type  TypeRef   `part:"type_ref"`
 }
 

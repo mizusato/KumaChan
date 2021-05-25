@@ -184,15 +184,17 @@ var __SyntaxDefinition = [...] string {
       "const_value = native | expr!",
     "expr = term pipes",
       "pipes? = . pipe! pipes",
-        "pipe = pipe_func | pipe_get | pipe_proj | pipe_cast | pipe_switch",
+        "pipe = pipe_func | pipe_cast " +
+            "| pipe_get | pipe_ref_field " +
+            "| pipe_switch | pipe_ref_branch",
           "pipe_func = { callee! pipe_func_arg }!",
             "callee = expr",
             "pipe_func_arg? = expr",
-          "pipe_get = name",
-          // TODO: rename to pipe_ref_field, add pipe_ref_branch
-          "pipe_proj = & name",
           "pipe_cast = [ type! ]!",
+          "pipe_get = name",
+          "pipe_ref_field = & name",
           "pipe_switch = ( type_ref! )!",
+          "pipe_ref_branch = & ( type_ref! )!",
     "term = call | lambda | multi_switch | switch | if " +
         "| block | cps | record | tuple | inline_ref " +
         "| array | int | float | formatter | string | char",

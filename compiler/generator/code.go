@@ -169,8 +169,6 @@ func InstRef(index uint, k ch.ReferenceKind, o ch.ReferenceOperand) lang.Instruc
 				return lang.FRP
 			case ch.RO_ProjRef:
 				return lang.FRF
-			case ch.RO_CaseRef:
-				return lang.FRB
 			default:
 				panic("invalid operand")
 			}

@@ -252,8 +252,8 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 	}
 }
 
-func CheckPipeSwitch(arg SemiExpr, ref ast.TypeRef, info ExprInfo, ctx ExprContext) (SemiExpr, *ExprError) {
-	var arg_typed, err2 = AssignTo(nil, arg, ctx)
+func CheckPipeSwitch(base SemiExpr, ref ast.TypeRef, info ExprInfo, ctx ExprContext) (SemiExpr, *ExprError) {
+	var arg_typed, err2 = AssignTo(nil, base, ctx)
 	if err2 != nil { return SemiExpr{}, err2 }
 	var arg_type = arg_typed.Type
 	var enum, enum_args, across_reactive, ok =
@@ -330,6 +330,84 @@ func CheckPipeSwitch(arg SemiExpr, ref ast.TypeRef, info ExprInfo, ctx ExprConte
 			},
 		},
 	}), nil
+}
+
+func CheckRefBranch(base SemiExpr, ref ast.TypeRef, info ExprInfo, ctx ExprContext) (SemiExpr, *ExprError) {
+	var get_case_info = func(t Type) (Type, uint, *ExprError) {
+		var enum, enum_args, _, ok = ExtractEnum(t, ctx, false)
+		if !(ok) { return nil, BadIndex, &ExprError {
+			Point:    base.Info.ErrorPoint,
+			Concrete: E_InvalidSwitchArgType {
+				ArgType: ctx.DescribeCertainType(t),
+			},
+		} }
+		var case_info, err = GetCaseType(ref, t, enum, enum_args, false, ctx)
+		if err != nil { return nil, BadIndex, err }
+		var case_type = &NamedType {
+			Name: case_info.Name,
+			Args: case_info.Args,
+		}
+		return case_type, case_info.Index, nil
+	}
+	{
+		var inf_ctx = ctx.WithInferringEnabled(__CaseRefParams, __NoBounds)
+		var base_assigned, err = AssignTo(__CaseRefToBeInferred, base, inf_ctx)
+		if err == nil {
+			var args = inf_ctx.Inferring.GetPlainArgs()
+			var ref_base_t = args[0]
+			var ref_case_t = args[1]
+			var case_type, case_index, err = get_case_info(ref_case_t)
+			if err != nil { return SemiExpr{}, err }
+			return LiftTyped(Expr {
+				Type:  CaseRef(ref_base_t, case_type),
+				Value: Reference {
+					Base:    base_assigned,
+					Index:   case_index,
+					Kind:    RK_Branch,
+					Operand: RO_CaseRef,
+				},
+				Info:  info,
+			}), nil
+		}
+	}
+	{
+		var inf_ctx = ctx.WithInferringEnabled(__ProjRefParams, __NoBounds)
+		var base_assigned, err = AssignTo(__ProjRefToBeInferred, base, inf_ctx)
+		if err == nil {
+			var args = inf_ctx.Inferring.GetPlainArgs()
+			var ref_base_t = args[0]
+			var ref_field_t = args[1]
+			var case_type, case_index, err = get_case_info(ref_field_t)
+			if err != nil { return SemiExpr{}, err }
+			return LiftTyped(Expr {
+				Type:  CaseRef(ref_base_t, case_type),
+				Value: Reference {
+					Base:    base_assigned,
+					Index:   case_index,
+					Kind:    RK_Branch,
+					Operand: RO_ProjRef,
+				},
+				Info:  info,
+			}), nil
+		}
+	}
+	{
+		var base_typed, err1 = AssignTo(nil, base, ctx)
+		if err1 != nil { return SemiExpr{}, err1 }
+		var base_type = base_typed.Type
+		var case_type, case_index, err2 = get_case_info(base_type)
+		if err2 != nil { return SemiExpr{}, err2 }
+		return LiftTyped(Expr {
+			Type:  CaseRef(base_type, case_type),
+			Value: Reference {
+				Base:    base_typed,
+				Index:   case_index,
+				Kind:    RK_Branch,
+				Operand: RO_Enum,
+			},
+			Info:  info,
+		}), nil
+	}
 }
 
 func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprError) {
@@ -707,7 +785,7 @@ func AssignMultiSwitchTo(expected Type, msw SemiTypedMultiSwitch, info ExprInfo,
 	}, nil
 }
 
-
+// TODO: function name should be consistent with Unbox*** (rename this or rename others)
 func ExtractEnum(t Type, ctx ExprContext, cross_reactive bool) (*Enum, []Type, bool, bool) {
 	switch T := t.(type) {
 	case *NamedType:

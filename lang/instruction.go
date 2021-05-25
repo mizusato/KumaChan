@@ -45,7 +45,6 @@ const (
 	SET     // [index, _ ]: Perform a functional update on a field
 	FRP     // [index, _ ]: Field functional reference on a product value
 	FRF     // [index, _ ]: Field functional reference on a field reference
-	FRB     // [index, _ ]: Field functional reference on a branch reference
 	/* Function Type Operations */
 	CTX     // [rec, _ ]: Use the current value as the context of a closure
 	CALL    // [ __, _ ]: Call a (native)function (pop func, pop arg, push ret)
@@ -122,8 +121,6 @@ func (inst Instruction) String() string {
 		return fmt.Sprintf("FRP %d", inst.GetShortIndexOrSize())
 	case FRF:
 		return fmt.Sprintf("FRF %d", inst.GetShortIndexOrSize())
-	case FRB:
-		return fmt.Sprintf("FRB %d", inst.GetShortIndexOrSize())
 	case CTX:
 		if inst.Arg0 != 0 {
 			return "CTX REC"

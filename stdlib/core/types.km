@@ -6,13 +6,23 @@
 // TODO: split this file
 type ProjRef[+T,C]
     &(Maybe[C]) => (T, C);
+type CaseRef[+T,C]
+    &(Maybe[C]) => (T, Maybe[C]);
 # alias: <-
 export function read:[T,C]
     &(ProjRef[T,C]) => C
     &(f) => let (_, c) := { f None }, c;
 # alias: <-
+export function read:[T,C]
+    &(CaseRef[T,C]) => Maybe[C]
+    &(f) => let (_, c?) := { f None }, c?;
+# alias: <-
 export function write:[T,C]
     &(ProjRef[T,C], C) => T
+    &(f,c) => let (t, _) := { f { Some c } }, t;
+# alias: <-
+export function write:[T,C]
+    &(CaseRef[T,C], C) => T
     &(f,c) => let (t, _) := { f { Some c } }, t;
 
 // Basic Sum Types

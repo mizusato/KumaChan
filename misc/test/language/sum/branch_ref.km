@@ -1,0 +1,56 @@
+type Value enum {
+    type Num Float;
+    type Text String;
+};
+
+type ValuePair {
+    first: Value,
+    second: Value
+};
+
+function String:
+    &(Value) => String
+    &(val) =>
+        switch val:
+        case Num x:
+            { String x },
+        case Text t:
+            { quote t },
+        end;
+
+function String:
+    &(Result[Value,Value]) => String
+    &(result) =>
+        switch result:
+        case Success val:
+            val.{String}.{"(ok #)"},
+        case Failure val:
+            val.{String}.{"(failed #)"},
+        end;
+
+do
+    // TODO: test for the whole return value of ref call (pair[0], pair[1])
+    let a: Result[Value,Value] := { Success { Num 1 } },
+    let b: Result[Value,Value] := { Failure { Text '2' } },
+    let c := { ValuePair { first: { Num 3 }, second: { Text '3' } } },
+    | p1 := assert-some { <- a.&(Success) },
+    | p2 := assert-some { <- b.&(Failure).&(Text) }.{ map &t => t.{Value} },
+    let q1 := (a.&(Success) <- { Num 77 }),
+    let q2 := (a.&(Success) <- { Text '88' }),
+    let q3 := (b.&(Failure).&(Text) <- '99'),
+    let r := (b.&(Success).&(Text) <- 'bad'),
+    | s1 := assert-some { <- c.&first.&(Num) },
+    let { s2: second } := (c.&second.&(Text) <- '9'),
+    let str := [
+        p1.{String},
+        p2.{String},
+        q1.{String},
+        q2.{String},
+        q3.{String},
+        r.{String},
+        s1.{String},
+        s2.{String}
+    ].{join \n},
+    { println str }
+    . { crash-on-error };
+

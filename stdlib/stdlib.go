@@ -31,7 +31,7 @@ const Mod_core = "core"
 const Mod_ui = "ui"
 var core_types = [] string {
 	// types.km
-	ProjRef, Bool, Yes, No,
+	ProjRef, CaseRef, Bool, Yes, No,
 	Maybe, Some, None,
 	Result, Success, Failure,
 	Ordering, Smaller, Equal, Bigger,
@@ -64,6 +64,7 @@ func GetCoreScopedSymbols() []string {
 
 // types.km
 const ProjRef = "ProjRef"
+const CaseRef = "CaseRef"
 const Bool = "Bool"
 const Yes = "Yes"
 const No = "No"

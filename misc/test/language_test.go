@@ -41,9 +41,9 @@ func TestDefaultValue(t *testing.T) {
 	expectStdIO(t, mod_path, "", "(0,0)\n")
 }
 
-func TestPipeProj(t *testing.T) {
+func TestFieldRef(t *testing.T) {
 	var dir_path = getTestDirPath(t, language)
-	var mod_path = filepath.Join(dir_path, "product", "pipe_proj.km")
+	var mod_path = filepath.Join(dir_path, "product", "field_ref.km")
 	expectStdIO(t, mod_path, "", "(1,2)\n1\n(3,2)\n(1,-9)\n1\n[(1,4),(3,2)]\n[(1,2),(5,2)]\n")
 }
 
@@ -57,6 +57,12 @@ func TestPipeSwitch(t *testing.T) {
 	var dir_path = getTestDirPath(t, language)
 	var mod_path = filepath.Join(dir_path, "sum", "pipe_switch.km")
 	expectStdIO(t, mod_path, "", "1,null,bad\n")
+}
+
+func TestBranchRef(t *testing.T) {
+	var dir_path = getTestDirPath(t, language)
+	var mod_path = filepath.Join(dir_path, "sum", "branch_ref.km")
+	expectStdIO(t, mod_path, "", "1\n\"2\"\n(ok 77)\n(ok \"88\")\n(failed \"99\")\n(failed \"2\")\n3\n\"9\"\n")
 }
 
 func TestMultiSwitch(t *testing.T) {
