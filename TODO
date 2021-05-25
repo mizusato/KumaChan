@@ -4,10 +4,6 @@ TODO
 
 - API: consider renaming wait and tick
 
-- Atom: tree-sitter parser update
-
-- Rx: reactive: morph with custom update behavior
-
 - Lang: revise overloading rule (consider introducing input-based precedence)
 
 - Lang: consider prefix for special identifier used by compiler (e.g. @DefaultValue)
