@@ -9,6 +9,12 @@ type Lambda struct {
 	Output  Expr             `part:"expr"`
 }
 
+func (impl PipelineLambda) Term() {}
+type PipelineLambda struct {
+	Node                       `part:"pipeline_lambda"`
+	Pipeline  [] VariousPipe   `list_rec:"pipes"`
+}
+
 func (impl Block) Term() {}
 type Block struct {
 	Node                  `part:"block"`

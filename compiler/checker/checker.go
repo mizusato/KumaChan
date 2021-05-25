@@ -484,11 +484,16 @@ func (ctx ExprContext) GetExprInfo(node ast.Node) ExprInfo {
 	return ExprInfo { ErrorPoint: ErrorPointFrom(node) }
 }
 
-
 func Check(expr ast.Expr, ctx ExprContext) (SemiExpr, *ExprError) {
-	var current, err = CheckTerm(expr.Term, ctx)
+	var base, err = CheckTerm(expr.Term, ctx)
 	if err != nil { return SemiExpr{}, err }
-	for _, pipe := range expr.Pipeline {
+	return CheckPipeline(base, expr.Pipeline, ctx)
+}
+
+func CheckPipeline(base SemiExpr, pipes ([] ast.VariousPipe), ctx ExprContext) (SemiExpr, *ExprError) {
+	var current = base
+	var err *ExprError
+	for _, pipe := range pipes {
 		var node = pipe.Node
 		var info = ctx.GetExprInfo(node)
 		switch p := pipe.Pipe.(type) {
@@ -539,6 +544,8 @@ func CheckTerm(term ast.VariousTerm, ctx ExprContext) (SemiExpr, *ExprError) {
 		return CheckCall(t, ctx)
 	case ast.Lambda:
 		return CheckLambda(t, ctx)
+	case ast.PipelineLambda:
+		return CheckPipelineLambda(t, ctx)
 	case ast.Switch:
 		return CheckSwitch(t, ctx)
 	case ast.MultiSwitch:

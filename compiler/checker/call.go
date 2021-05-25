@@ -56,6 +56,8 @@ func CheckDesugaredCall(callee SemiExpr, arg SemiExpr, node ast.Node, ctx ExprCo
 		var typed, err = CallUntypedLambda(arg, f, f_info, info, ctx)
 		if err != nil { return SemiExpr{}, err }
 		return LiftTyped(typed), nil
+	case UntypedPipelineLambda:
+		return CheckPipeline(arg, f.Pipeline, ctx)
 	case UntypedRef:
 		return CallUntypedRef(arg, f, f_info, info, ctx)
 	case SemiTypedSwitch,

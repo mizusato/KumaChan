@@ -195,7 +195,7 @@ var __SyntaxDefinition = [...] string {
           "pipe_ref_field = & name",
           "pipe_switch = ( type_ref! )!",
           "pipe_ref_branch = & ( type_ref! )!",
-    "term = call | lambda | multi_switch | switch | if " +
+    "term = call | pipeline_lambda | lambda | multi_switch | switch | if " +
         "| block | cps | record | tuple | inline_ref " +
         "| array | int | float | formatter | string | char",
       "call = call_prefix | call_infix",
@@ -204,6 +204,7 @@ var __SyntaxDefinition = [...] string {
           "infix_left = expr",
           "operator = expr",
           "infix_right = expr",
+      "pipeline_lambda = & [ pipes ]!",
       "switch = Switch expr :! branch_list ,! @end!",
         "branch_list = branch! more_branches",
           "more_branches? = , branch more_branches",

@@ -68,6 +68,8 @@ func AssignTo(expected Type, semi SemiExpr, ctx ExprContext) (Expr, *ExprError) 
 			return AssignUndecidedTo(expected, semi_value, semi.Info, ctx)
 		case UntypedLambda:
 			return AssignLambdaTo(expected, semi_value, semi.Info, ctx)
+		case UntypedPipelineLambda:
+			return AssignPipelineLambdaTo(expected, semi_value, semi.Info, ctx)
 		case UntypedInteger:
 			return AssignIntegerTo(expected, semi_value, semi.Info, ctx)
 		case SemiTypedTuple:

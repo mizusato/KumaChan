@@ -13,6 +13,8 @@ type Pattern struct {
 	Concrete  ConcretePattern
 }
 type ConcretePattern interface { CheckerPattern() }
+func (impl NullPattern) CheckerPattern() {}
+type NullPattern struct {}
 func (impl TrivialPattern) CheckerPattern() {}
 type TrivialPattern struct {
 	ValueName  string

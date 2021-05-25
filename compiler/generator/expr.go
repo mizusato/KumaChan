@@ -360,6 +360,8 @@ func CompileExpr(expr ch.Expr, ctx Context) Code {
 		return buf.Collect()
 	case ch.Lambda:
 		return CompileClosure(v, expr.Info, false, "", ctx)
+	case ch.PipelineLambdaArgument:
+		return CodeFrom(lang.Instruction { OpCode: lang.NOP }, expr.Info)
 	case ch.Block:
 		var buf = MakeCodeBuffer()
 		for _, b := range v.Bindings {
@@ -431,6 +433,8 @@ func CompileClosure (
 	var inner_buf = MakeCodeBuffer()
 	var pattern = lambda.Input
 	switch p := pattern.Concrete.(type) {
+	case ch.NullPattern:
+		// do nothing
 	case ch.TrivialPattern:
 		var offset = inner_scope.AddBinding(p.ValueName, p.Point)
 		var inst_store = InstStore(offset)

@@ -391,8 +391,7 @@ func (ec *ExecutionContext) popValue() Value {
 
 func (ec *ExecutionContext) popValuesTo(addr uint) {
 	var L = uint(len(ec.dataStack))
-	assert(L > 0, "cannot pop empty data stack")
-	assert(addr < L, "invalid data stack address")
+	assert(addr <= L, "invalid data stack address")
 	for i := addr; i < L; i += 1 {
 		ec.dataStack[i] = nil
 	}

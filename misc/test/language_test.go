@@ -35,6 +35,12 @@ func TestCps(t *testing.T) {
 	expectStdIO(t, mod_path, input("bad", "bad"), output("None"))
 }
 
+func TestPipelineLambda(t *testing.T) {
+	var dir_path = getTestDirPath(t, language)
+	var mod_path = filepath.Join(dir_path, "sugar", "pipeline_lambda.km")
+	expectStdIO(t, mod_path, "", "-1\n1, 3\n")
+}
+
 func TestDefaultValue(t *testing.T) {
 	var dir_path = getTestDirPath(t, language)
 	var mod_path = filepath.Join(dir_path, "product", "default.km")
