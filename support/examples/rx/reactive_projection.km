@@ -10,8 +10,8 @@ type Name {
 const Root: ui::Component :=
     | name := use { State { Name { first: '', last: '' } } },
     let row := { StyledContainer ['row'] },
-    let first := (name proj & [.& first]),
-    let last := (name proj & [.& last]),
+    let first := (name proj | [ .& first ]),
+    let last := (name proj | [ .& last ]),
     { { StyledContainer ['container'] } [
         { row [
             { Label 'First Name:' },

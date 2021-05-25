@@ -29,8 +29,8 @@ const Root: ui::Component :=
             { Button ('Add', { add-item-from buffer }) }
         ] },
         | (id, index, item) := ListView list,
-        let content := (item proj & [.& content]),
-        let finished := (item proj & [.& finished]),
+        let content := (item proj | [ .& content ]),
+        let finished := (item proj | [ .& finished ]),
         { row [
             { Checkbox finished },
             { Input content },
