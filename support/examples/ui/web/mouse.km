@@ -22,7 +22,7 @@ const Root: ui::Component :=
         { box [
             pos
                 . { map &(x,y) => { "x=#, y=#" (x.{String}, y.{String}) } }
-                . { start-with [''] }
+                . { Computed { beginning: [''] } }
                 . { Label }
         ] }
     ] };
