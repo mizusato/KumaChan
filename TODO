@@ -1,40 +1,47 @@
 TODO
 
-- API: type Provider[T,A] (Computed[T], Sink[A]);
-
-- API: consider renaming wait and tick
-
-- Lang: revise overloading rule (consider introducing input-based precedence)
-
-- Lang: consider prefix for special identifier used by compiler (e.g. @DefaultValue)
-
-- Lang: permit anonymous record expression (currently requires explicit type)
-
-- Lang: type inference for field of anonymous record input
-
-- Lang: fix the order randomness of field assignment of anonymous record input
+## Fundamental
 
 - Lang: consider renaming Product -> Record, Sum -> Enum
 
-- Compiler: revise FuncInfo.SourceMap (try to reduce space usage)
+- Type: enum supertype: enum { ...Another, type Added; }
 
 - KMD: migrate to new numeric types, add other primitives
 
-- Type: enum supertype: enum { ...Another, type Added; }
+- Lang:
+    consider prefix for special identifier used by compiler
+    e.g. @default, @validate, @adapt
 
-- KMD: data-validate only for (and required for) protected/opaque types
+- KMD: validator only for (and required for) serializable protected/opaque types
 
-- KMD: automatic validator call when boxing a value (box to Maybe[T])
-
-- Data: should all value be pointer/primitive? (aka no non-primitive value type)
+- Lang: no non-primitive value type (make all values primitive/ref), `is` operator
 
 - Lang: Path/To/Function as namespace?
 
-- API: revise Reactive[FlexList[T]] methods, consider methods for Reactive[Map[K,V]]
 
-- API: to be semantic: tuple input --> record input
+## Refinement
 
-- API: revise resource management of files, ... (consider Disposable[T] monad)
+- GUI: qtbinding C side int vs. go side int (not the same type, fix it)
+
+- API: consider renaming wait and tick
+
+- GUI: setAttributeNS() for SVG elements
+
+- Compiler: revise FuncInfo.SourceMap (try to reduce space usage)
+
+
+## Type System Refactor
+
+- Lang: bidirectional type inference
+
+- Lang: revise overloading rule (consider introducing input-based precedence)
+
+- Lang: permit anonymous record expression (currently requires explicit type)
+
+- Lang: fix the order randomness of field assignment of anonymous record input
+
+
+## API Refactor
 
 - API: categorize API functions according to usage, corresponding types, ...
 
@@ -42,11 +49,19 @@ TODO
 
 - API: separate string APIs from `api/container.go` and `lib/container/string.go`
 
-- GUI: qtbinding C side int vs. go side int (not the same type, fix it)
+- API: to be semantic: tuple input --> record input
 
-- GUI: setAttributeNS() for SVG elements
+- API: revise Reactive[FlexList[T]] methods, consider methods for Reactive[Map[K,V]]
+
+- API: revise resource management of files, ... (consider Disposable[T] monad)
+
+
+## GUI Enhancement
+
+- API: type Provider[T,A] (Computed[T], Sink[A]);
 
 - GUI: crash report window
 
 - GUI: support: menu, toolbar, popupmenu, modal dialog
+
 
