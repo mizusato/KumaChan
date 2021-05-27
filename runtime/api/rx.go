@@ -23,11 +23,11 @@ func Optional2Maybe(obj rx.Object) Value {
 	}
 }
 
-func DistinctProductValues(e rx.Observable) rx.Observable {
+func DistinctTupleValues(e rx.Observable) rx.Observable {
 	return e.DistinctUntilChanged(func(a rx.Object, b rx.Object) bool {
 		if RefEqual(a, b) { return true }
-		var pa = a.(ProductValue)
-		var pb = b.(ProductValue)
+		var pa = a.(TupleValue)
+		var pb = b.(TupleValue)
 		if len(pa.Elements) != len(pb.Elements) {
 			panic("something went wrong")
 		}
@@ -61,8 +61,8 @@ func DistinctSliceValues(e rx.Observable) rx.Observable {
 	})
 }
 
-func CombineComputedAsProductValues(items ([] rx.Observable)) rx.Observable {
-	return DistinctProductValues(
+func CombineComputedAsTupleValues(items ([] rx.Observable)) rx.Observable {
+	return DistinctTupleValues(
 		rx.CombineLatestWaitReady(items).Map(func(values_ rx.Object) rx.Object {
 			var values = values_.([] Value)
 			return TupleOf(values)
@@ -339,7 +339,7 @@ var EffectFunctions = map[string] Value {
 			following,
 		})
 	},
-	"start-with-to-computed": func(following rx.Observable, head_ ProductValue) rx.Observable {
+	"start-with-to-computed": func(following rx.Observable, head_ TupleValue) rx.Observable {
 		var head = container.ListFrom(SingleValueFromRecord(head_))
 		return rx.Concat([] rx.Observable {
 			rx.NewSyncSequence(func(next func(rx.Object))(bool,rx.Object) {
@@ -351,11 +351,11 @@ var EffectFunctions = map[string] Value {
 			following,
 		}).DistinctUntilChanged(RefEqual)
 	},
-	"wait": func(record ProductValue) rx.Observable {
+	"wait": func(record TupleValue) rx.Observable {
 		var timeout = SingleValueFromRecord(record).(*big.Int)
 		return rx.Timer(util.GetUintNumber(timeout))
 	},
-	"tick": func(record ProductValue) rx.Observable {
+	"tick": func(record TupleValue) rx.Observable {
 		var interval = SingleValueFromRecord(record).(*big.Int)
 		return rx.Ticker(util.GetUintNumber(interval))
 	},
@@ -397,7 +397,7 @@ var EffectFunctions = map[string] Value {
 	"catch-retry": func(e rx.Observable, f Value, h InteropContext) rx.Observable {
 		return e.CatchRetry(func(err rx.Object) rx.Observable {
 			return h.Call(f, err).(rx.Observable).Map(func(retry rx.Object) rx.Object {
-				return FromBool(retry.(SumValue))
+				return FromBool(retry.(EnumValue))
 			})
 		})
 	},
@@ -421,23 +421,23 @@ var EffectFunctions = map[string] Value {
 	},
 	"observable-filter-map": func(e rx.Observable, f Value, h InteropContext) rx.Observable {
 		return e.FilterMap(func(val rx.Object) (rx.Object, bool) {
-			var maybe_mapped = h.Call(f, val).(SumValue)
+			var maybe_mapped = h.Call(f, val).(EnumValue)
 			return Unwrap(maybe_mapped)
 		})
 	},
 	"observable-filter": func(e rx.Observable, f Value, h InteropContext) rx.Observable {
 		return e.Filter(func(val rx.Object) bool {
-			return FromBool((h.Call(f, val)).(SumValue))
+			return FromBool((h.Call(f, val)).(EnumValue))
 		})
 	},
-	"observable-reduce": func(e rx.Observable, opts ProductValue, h InteropContext) rx.Observable {
+	"observable-reduce": func(e rx.Observable, opts TupleValue, h InteropContext) rx.Observable {
 		var init = opts.Elements[0]
 		var f = opts.Elements[1]
 		return e.Reduce(func(acc rx.Object, val rx.Object) rx.Object {
 			return h.Call(f, Tuple(acc, val))
 		}, init)
 	},
-	"observable-scan": func(e rx.Observable, opts ProductValue, h InteropContext) rx.Observable {
+	"observable-scan": func(e rx.Observable, opts TupleValue, h InteropContext) rx.Observable {
 		var init = opts.Elements[0]
 		var f = opts.Elements[1]
 		return e.Scan(func(acc rx.Object, val rx.Object) rx.Object {
@@ -483,7 +483,7 @@ var EffectFunctions = map[string] Value {
 	"distinct-until-changed": func(a rx.Observable, eq Value, h InteropContext) rx.Observable {
 		return a.DistinctUntilChanged(func(obj1 rx.Object, obj2 rx.Object) bool {
 			var pair = Tuple(obj1, obj2)
-			return FromBool(h.Call(eq, pair).(SumValue))
+			return FromBool(h.Call(eq, pair).(EnumValue))
 		})
 	},
 	"with-latest-from": func(a rx.Observable, values rx.Observable) rx.Observable {
@@ -502,7 +502,7 @@ var EffectFunctions = map[string] Value {
 		})
 	},
 	"with-latest-from-reactive-to-computed": func(a rx.Observable, r rx.Reactive) rx.Observable {
-		return DistinctProductValues(a.WithLatestFrom(r.Watch()).Map(func(p rx.Object) rx.Object {
+		return DistinctTupleValues(a.WithLatestFrom(r.Watch()).Map(func(p rx.Object) rx.Object {
 			var pair = p.(rx.Pair)
 			var r_opt = pair.Second.(rx.Optional)
 			if !(r_opt.HasValue) { panic("something went wrong") }
@@ -510,7 +510,7 @@ var EffectFunctions = map[string] Value {
 			return Tuple(pair.First, r_value)
 		}))
 	},
-	"combine-latest": func(tuple ProductValue) rx.Observable {
+	"combine-latest": func(tuple TupleValue) rx.Observable {
 		var actions = make([] rx.Observable, len(tuple.Elements))
 		for i, el := range tuple.Elements {
 			actions[i] = el.(rx.Observable)
@@ -524,18 +524,18 @@ var EffectFunctions = map[string] Value {
 			return TupleOf(values)
 		})
 	},
-	"combine": func(tuple ProductValue) rx.Observable {
+	"combine": func(tuple TupleValue) rx.Observable {
 		var items = make([] rx.Observable, len(tuple.Elements))
 		for i, el := range tuple.Elements {
 			items[i] = el.(rx.Observable)
 		}
-		return CombineComputedAsProductValues(items)
+		return CombineComputedAsTupleValues(items)
 	},
 	"combine-array": func(list_ Value) rx.Observable {
 		var list = container.ListFrom(list_)
 		return CombineComputedAsSliceValues(list.CopyAsObservables())
 	},
-	"combine-latest*": func(tuple ProductValue) rx.Observable {
+	"combine-latest*": func(tuple TupleValue) rx.Observable {
 		var items = make([] rx.Observable, len(tuple.Elements))
 		for i, el := range tuple.Elements {
 			items[i] = el.(rx.Observable)
@@ -549,12 +549,12 @@ var EffectFunctions = map[string] Value {
 		var list = container.ListFrom(list_)
 		return rx.CombineLatestWaitReady(list.CopyAsObservables())
 	},
-	"computed": func(tuple ProductValue, f Value, h InteropContext) rx.Observable {
+	"computed": func(tuple TupleValue, f Value, h InteropContext) rx.Observable {
 		var items = make([] rx.Observable, len(tuple.Elements))
 		for i, el := range tuple.Elements {
 			items[i] = el.(rx.Observable)
 		}
-		return CombineComputedAsProductValues(items).Map(func(values rx.Object) rx.Object {
+		return CombineComputedAsTupleValues(items).Map(func(values rx.Object) rx.Object {
 			return h.Call(f, values)
 		})
 	},

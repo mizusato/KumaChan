@@ -29,10 +29,10 @@ func InteropErrorPointLocatorFromExecutionContext(ec *ExecutionContext) InteropE
 
 func (h InteropHandle) Call(f Value, arg Value) Value {
 	switch f := f.(type) {
-	case FunctionValue:
+	case UserFunctionValue:
 		return call(f, arg, h.machine, h.sync_ctx)
 	case NativeFunctionValue:
-		return f(arg, h)
+		return (*f)(arg, h)
 	default:
 		panic("cannot call a non-callable value")
 	}
@@ -40,10 +40,10 @@ func (h InteropHandle) Call(f Value, arg Value) Value {
 
 func (h InteropHandle) CallWithSyncContext(f Value, arg Value, ctx *rx.Context) Value {
 	switch f := f.(type) {
-	case FunctionValue:
+	case UserFunctionValue:
 		return call(f, arg, h.machine, ctx)
 	case NativeFunctionValue:
-		return f(arg, InteropHandle {
+		return (*f)(arg, InteropHandle {
 			machine:  h.machine,
 			locator:  h.locator,
 			sync_ctx: ctx,

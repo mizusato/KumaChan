@@ -57,9 +57,9 @@ var _ = (func() interface{} {
 	return nil
 }) ()
 
-func GetNativeFunctionValue(id string) Value {
+func GetNativeFunctionValue(id string) NativeFunctionValue {
 	var f, exists = NativeFunctionMap[id]
 	if !(exists) { panic(fmt.Sprintf("no such native function: %s", id)) }
-	return NativeFunctionValue(f)
+	return ValNativeFun(f)
 }
 

@@ -87,7 +87,7 @@ func (m *Machine) GetGlobalValue(index uint) (Value, bool) {
 	}
 }
 
-func (m *Machine) Call(f FunctionValue, arg Value, ctx *rx.Context) Value {
+func (m *Machine) Call(f UserFunctionValue, arg Value, ctx *rx.Context) Value {
 	return call(f, arg, m, ctx)
 }
 
@@ -111,16 +111,16 @@ func (m *Machine) GetRpcInfo() RpcInfo {
 
 func (m *Machine) KmdGetAdapter(index uint) Value {
 	var adapter = m.globalSlot[index]
-	var _, ok = adapter.(FunctionValue)
+	var _, ok = adapter.(UserFunctionValue)
 	if !(ok) { panic("something went wrong") }
 	return adapter
 }
 
 func (m *Machine) KmdCallAdapter(f Value, x Value) Value {
-	return call(f.(FunctionValue), x, m, rx.Background())
+	return call(f.(UserFunctionValue), x, m, rx.Background())
 }
 
 func (m *Machine) KmdCallValidator(f Value, x Value) bool {
-	return FromBool(call(f.(FunctionValue), x, m, rx.Background()).(SumValue))
+	return FromBool(call(f.(UserFunctionValue), x, m, rx.Background()).(EnumValue))
 }
 

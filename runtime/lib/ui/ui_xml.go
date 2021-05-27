@@ -65,7 +65,7 @@ func EvaluateObjectThunk(thunk lang.UiObjectThunk) lang.Value {
 		<- wait
 	}
 	var stored = evaluated.GetObjectValue(thunk.Object)
-	return lang.NativeFunctionValue(func(_ lang.Value, _ lang.InteropContext) lang.Value {
+	return lang.ValNativeFun(func(_ lang.Value, _ lang.InteropContext) lang.Value {
 		return stored
 	})
 }

@@ -47,7 +47,7 @@ var UiQtFunctions = map[string] interface{} {
 		}
 		return source.Receive()
 	},
-	"qt-event": func(object qt.Object, kind string, prevent SumValue) rx.Observable {
+	"qt-event": func(object qt.Object, kind string, prevent EnumValue) rx.Observable {
 		var event_kind = (func() qt.EventKind {
 			switch kind {
 			case "resize":
@@ -109,7 +109,7 @@ var UiQtFunctions = map[string] interface{} {
 				qt.SetPropString(object, prop, new_value)
 			case "Bool":
 				var current_value = qt.GetPropBool(object, prop)
-				var new_value = FromBool(value.(SumValue))
+				var new_value = FromBool(value.(EnumValue))
 				if new_value == current_value {
 					break
 				}
@@ -117,7 +117,7 @@ var UiQtFunctions = map[string] interface{} {
 			case "MaybeNumber":
 				var current_value = qt.GetPropInt(object, prop)
 				var new_value = (func() int {
-					var v, ok = Unwrap(value.(SumValue))
+					var v, ok = Unwrap(value.(EnumValue))
 					if ok {
 						return int(v.(*big.Int).Int64())
 					} else {
@@ -134,7 +134,7 @@ var UiQtFunctions = map[string] interface{} {
 			return nil
 		})
 	},
-	"qt-list-widget-set-items": func(list qt.Widget, av Value, current SumValue) rx.Observable {
+	"qt-list-widget-set-items": func(list qt.Widget, av Value, current EnumValue) rx.Observable {
 		return ui.CreateQtTaskAction(func() interface{} {
 			var current_key ([] rune)
 			var the_current, has_current = Unwrap(current)
@@ -178,7 +178,7 @@ var UiQtFunctions = map[string] interface{} {
 			return None()
 		}
 	},
-	"qt-dialog-open": func(parent SumValue, title string, cwd stdlib.Path, filter string) rx.Observable {
+	"qt-dialog-open": func(parent EnumValue, title string, cwd stdlib.Path, filter string) rx.Observable {
 		var parent_widget, opts = ui.QtFileDialogAdaptArgs(parent, title, cwd, filter)
 		return rx.NewCallback(func(ok func(rx.Object)) {
 			qt.CommitTask(func() {
@@ -193,7 +193,7 @@ var UiQtFunctions = map[string] interface{} {
 			})
 		})
 	},
-	"qt-dialog-open-multiple": func(parent SumValue, title string, cwd stdlib.Path, filter string) rx.Observable {
+	"qt-dialog-open-multiple": func(parent EnumValue, title string, cwd stdlib.Path, filter string) rx.Observable {
 		var parent_widget, opts = ui.QtFileDialogAdaptArgs(parent, title, cwd, filter)
 		return rx.NewCallback(func(ok func(rx.Object)) {
 			qt.CommitTask(func() {
@@ -206,7 +206,7 @@ var UiQtFunctions = map[string] interface{} {
 			})
 		})
 	},
-	"qt-dialog-open-directory": func(parent SumValue, title string, cwd stdlib.Path) rx.Observable {
+	"qt-dialog-open-directory": func(parent EnumValue, title string, cwd stdlib.Path) rx.Observable {
 		var parent_widget, opts = ui.QtFileDialogAdaptArgs(parent, title, cwd, "")
 		return rx.NewCallback(func(ok func(rx.Object)) {
 			qt.CommitTask(func() {
@@ -221,7 +221,7 @@ var UiQtFunctions = map[string] interface{} {
 			})
 		})
 	},
-	"qt-dialog-save": func(parent SumValue, title string, cwd stdlib.Path, filter string) rx.Observable {
+	"qt-dialog-save": func(parent EnumValue, title string, cwd stdlib.Path, filter string) rx.Observable {
 		var parent_widget, opts = ui.QtFileDialogAdaptArgs(parent, title, cwd, filter)
 		return rx.NewCallback(func(ok func(rx.Object)) {
 			qt.CommitTask(func() {

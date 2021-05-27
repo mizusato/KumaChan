@@ -34,7 +34,7 @@ func (ctx *IncrementalCompiler) AddTempThunk (
 	name  string,
 	t     ch.Type,
 	val   ast.Expr,
-) (lang.FunctionValue, ([] lang.Value), error) {
+) (lang.UserFunctionValue, ([] lang.Value), error) {
 	var mod_name = ctx.typeInfo.Module.Name
 	var all_dep_values = make([] lang.Value, 0)
 	var closure_deps = make(map[*lang.Function] ([] Dependency))
@@ -73,7 +73,7 @@ func (ctx *IncrementalCompiler) AddTempThunk (
 			case DepClosure:
 				var cl = ctx.addedClosures[D.Index]
 				all_deps = append(all_deps, dep)
-				all_dep_values = append(all_dep_values, &lang.ValFunc {
+				all_dep_values = append(all_dep_values, &lang.ValFun {
 					Underlying: cl.Underlying,
 				})
 				closure_deps[cl.Underlying] = cl.Dependencies
@@ -128,7 +128,7 @@ func (ctx *IncrementalCompiler) AddTempThunk (
 		return offset, exists
 	}
 	for _, v := range all_dep_values {
-		var f, is_f = v.(lang.FunctionValue)
+		var f, is_f = v.(lang.UserFunctionValue)
 		if is_f {
 			var f_node = FuncNode {
 				Underlying:   f.Underlying,
@@ -138,7 +138,7 @@ func (ctx *IncrementalCompiler) AddTempThunk (
 		}
 	}
 	RelocateCode(&f_node, ctx.baseLocator, extra_locator)
-	return &lang.ValFunc { Underlying: thunk_f }, all_dep_values, nil
+	return &lang.ValFun { Underlying: thunk_f }, all_dep_values, nil
 }
 
 func (ctx *IncrementalCompiler) SetTempThunkAlias(name string, alias string) {

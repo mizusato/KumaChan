@@ -45,7 +45,7 @@ func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
 			PrimitiveSerializer: kmd.PrimitiveSerializer {
 				WriteBool: func(obj kmd.Object) bool {
 					var tv = obj.(KmdTypedValue)
-					return FromBool(tv.Value.(SumValue))
+					return FromBool(tv.Value.(EnumValue))
 				},
 				WriteFloat: func(obj kmd.Object) float64 {
 					return obj.(KmdTypedValue).Value.(float64)
@@ -87,7 +87,7 @@ func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
 				},
 				UnwrapOptional: func(obj kmd.Object) (kmd.Object, bool) {
 					var tv = obj.(KmdTypedValue)
-					var sv = tv.Value.(SumValue)
+					var sv = tv.Value.(EnumValue)
 					var inner, ok = Unwrap(sv)
 					if ok {
 						return KmdTypedValue {
@@ -102,7 +102,7 @@ func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
 			AlgebraicSerializer: kmd.AlgebraicSerializer {
 				IterateRecord: func(obj kmd.Object, f func(string, kmd.Object) error) error {
 					var tv = obj.(KmdTypedValue)
-					var pv = tv.Value.(ProductValue)
+					var pv = tv.Value.(TupleValue)
 					var tid = tv.Type.Identifier()
 					var t, exists = conf.SchemaTable[tid]
 					if !(exists) { panic("something went wrong") }
@@ -134,7 +134,7 @@ func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
 					var t, exists = conf.SchemaTable[tid]
 					if !(exists) { panic("something went wrong") }
 					var schema = t.(kmd.TupleSchema)
-					var pv, is_pv = tv.Value.(ProductValue)
+					var pv, is_pv = tv.Value.(TupleValue)
 					if !(is_pv) {
 						return f(0, KmdTypedValue {
 							Type:  schema.Elements[0],
@@ -153,7 +153,7 @@ func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
 				},
 				Enum2Case: func(obj kmd.Object) kmd.Object {
 					var tv = obj.(KmdTypedValue)
-					var sv = tv.Value.(SumValue)
+					var sv = tv.Value.(EnumValue)
 					var tid = tv.Type.Identifier()
 					var t, exists = conf.SchemaTable[tid]
 					if !(exists) { panic("something went wrong") }
@@ -268,7 +268,7 @@ func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
 					return TupleOf(make([] Value, size))
 				},
 				FillField: func(record kmd.Object, index uint, value kmd.Object) {
-					var record_pv = record.(ProductValue)
+					var record_pv = record.(TupleValue)
 					record_pv.Elements[index] = value
 				},
 				FinishRecord: func(record kmd.Object, t kmd.TypeId) (kmd.Object, error) {
@@ -303,11 +303,11 @@ func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
 					return TupleOf(make([] Value, size))
 				},
 				FillElement: func(tuple kmd.Object, i uint, value kmd.Object) {
-					var tuple_pv = tuple.(ProductValue)
+					var tuple_pv = tuple.(TupleValue)
 					tuple_pv.Elements[i] = value
 				},
 				FinishTuple: func(tuple kmd.Object, t kmd.TypeId) (kmd.Object, error) {
-					var tuple_pv = tuple.(ProductValue)
+					var tuple_pv = tuple.(TupleValue)
 					if len(tuple_pv.Elements) == 0 {
 						tuple = nil
 					} else if len(tuple_pv.Elements) == 1 {
@@ -331,7 +331,7 @@ func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
 					if !(index < ProductMaxSize) {
 						panic("something went wrong")
 					}
-					return &ValSum {
+					return &ValEnum {
 						Index: Short(index),
 						Value: obj,
 					}, nil

@@ -92,7 +92,7 @@ func (o OptMappedSeq) Next() (Value, Seq, bool) {
 			Input:      rest,
 			MapFilter:  o.MapFilter,
 		}
-		var ok_v, ok = Unwrap(o.MapFilter(v).(SumValue))
+		var ok_v, ok = Unwrap(o.MapFilter(v).(EnumValue))
 		if ok {
 			return ok_v, filtered_rest, true
 		} else {

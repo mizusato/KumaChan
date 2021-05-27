@@ -19,7 +19,7 @@ import (
 type Locale struct {
 	Language     string
 	TimeZone     *time.Location
-	Alternative  SumValue
+	Alternative  EnumValue
 }
 func GetSystemLanguage() string {
 	if runtime.GOOS == "windows" {

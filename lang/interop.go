@@ -87,7 +87,7 @@ func AdaptNativeFunction(f interface{}) NativeFunction {
 				}
 			} else {
 				return func(arg Value, handle InteropContext) Value {
-					var p = arg.(ProductValue)
+					var p = arg.(TupleValue)
 					if len(p.Elements) != net_arity {
 						panic("invalid input quantity")
 					}
@@ -108,7 +108,7 @@ func AdaptNativeFunction(f interface{}) NativeFunction {
 				}
 			} else {
 				return func(arg Value, handle InteropContext) Value {
-					var p = arg.(ProductValue)
+					var p = arg.(TupleValue)
 					if len(p.Elements) != arity {
 						panic("invalid input quantity")
 					}

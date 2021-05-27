@@ -65,11 +65,11 @@ func (d DataStringFormatter) ToValue() lang.Value {
 			return format_slice([] lang.Value {arg })
 		}
 	} else {
-		f = func(arg lang.ProductValue) string {
+		f = func(arg lang.TupleValue) string {
 			return format_slice(arg.Elements)
 		}
 	}
-	return lang.NativeFunctionValue(lang.AdaptNativeFunction(f))
+	return lang.ValNativeFun(lang.AdaptNativeFunction(f))
 }
 func (d DataStringFormatter) String() string {
 	var buf strings.Builder

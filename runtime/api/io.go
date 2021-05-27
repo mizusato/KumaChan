@@ -7,10 +7,10 @@ import (
 
 
 var IO_Functions = map[string] Value {
-	"is-eof": func(err error) SumValue {
+	"is-eof": func(err error) EnumValue {
 		return ToBool(err == io.EOF)
 	},
-	"is-closed-pipe": func(err error) SumValue {
+	"is-closed-pipe": func(err error) EnumValue {
 		return ToBool(err == io.ErrClosedPipe)
 	},
 }

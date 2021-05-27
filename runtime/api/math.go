@@ -10,21 +10,21 @@ import (
 
 
 var MathFunctions = map[string] interface{} {
-	"Number?": func(n *big.Int) SumValue {
+	"Number?": func(n *big.Int) EnumValue {
 		if util.IsNonNegative(n) {
 			return Some(n)
 		} else {
 			return None()
 		}
 	},
-	"NormalFloat?": func(x float64) SumValue {
+	"NormalFloat?": func(x float64) EnumValue {
 		if util.IsNormalFloat(x) {
 			return Some(x)
 		} else {
 			return None()
 		}
 	},
-	"NormalComplex?": func(z complex128) SumValue {
+	"NormalComplex?": func(z complex128) EnumValue {
 		if util.IsNormalComplex(z) {
 			return Some(z)
 		} else {

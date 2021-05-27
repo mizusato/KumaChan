@@ -717,7 +717,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 				case lang.UiObjectThunk:
 					add(f, BodyRuntimeGenerated { Value: stored })
 				default:
-					var v = lang.NativeFunctionValue(func(_ lang.Value, _ lang.InteropContext) lang.Value {
+					var v = lang.ValNativeFun(func(_ lang.Value, _ lang.InteropContext) lang.Value {
 						return stored
 					})
 					add(f, BodyGenerated { Value: v })
@@ -730,10 +730,10 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 				add(f, BodyGenerated { Value: v })
 			case ast.ServiceCreateFuncBody:
 				var names = mod.ServiceMethodNames
-				var v = lang.NativeFunctionValue(func(arg lang.Value, h lang.InteropContext) lang.Value {
-					var prod = arg.(lang.ProductValue)
+				var v = lang.ValNativeFun(func(arg lang.Value, h lang.InteropContext) lang.Value {
+					var prod = arg.(lang.TupleValue)
 					var data = prod.Elements[0]
-					var ctx = prod.Elements[1].(lang.ProductValue)
+					var ctx = prod.Elements[1].(lang.TupleValue)
 					var dtor = ctx.Elements[0]
 					var methods = ctx.Elements[1:]
 					return lang.CreateServiceInstance(data, dtor, methods, names, h)

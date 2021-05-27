@@ -11,7 +11,7 @@ import (
 
 
 var NetFunctions = map[string] interface{} {
-	"parse-url": func(str string) SumValue {
+	"parse-url": func(str string) EnumValue {
 		var url, err = url.Parse(str)
 		if err != nil {
 			return None()

@@ -57,7 +57,7 @@ func CreateQtTaskAction(action func() interface{}) rx.Observable {
 }
 
 func QtFileDialogAdaptArgs (
-	parent  SumValue,
+	parent  EnumValue,
 	title   string,
 	cwd     stdlib.Path,
 	filter  string,

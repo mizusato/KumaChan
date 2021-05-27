@@ -38,8 +38,8 @@ func (instance ClientSideServiceInstance) Call(name string, arg Value) rx.Observ
 	return instance.underlying.Call(name, arg)
 }
 func CreateServiceMethodCaller(method_name string) NativeFunctionValue {
-	return NativeFunctionValue(func(arg Value, h InteropContext) Value {
-		var prod = arg.(ProductValue)
+	return ValNativeFun(func(arg Value, h InteropContext) Value {
+		var prod = arg.(TupleValue)
 		var instance = prod.Elements[0].(ServiceInstance)
 		var method_arg = prod.Elements[1]
 		return instance.Call(method_name, method_arg)
@@ -98,7 +98,7 @@ type KmdValidatorInfo   struct {
 func CreateKmdApiFunction(id kmd.TransformerPartId) NativeFunctionValue {
 	switch id := id.(type) {
 	case kmd.SerializerId:
-		return func(arg Value, h InteropContext) Value {
+		return ValNativeFun(func(arg Value, h InteropContext) Value {
 			var api = h.GetKmdApi()
 			var t = api.GetTypeFromId(id.TypeId)
 			var binary, err = api.Serialize(arg, t)
@@ -107,15 +107,15 @@ func CreateKmdApiFunction(id kmd.TransformerPartId) NativeFunctionValue {
 				panic(wrapped)
 			}
 			return binary
-		}
+		})
 	case kmd.DeserializerId:
-		return func(arg Value, h InteropContext) Value {
+		return ValNativeFun(func(arg Value, h InteropContext) Value {
 			var api = h.GetKmdApi()
 			var t = api.GetTypeFromId(id.TypeId)
 			var obj, err = api.Deserialize(arg.([] byte), t)
 			if err != nil { return Ng(err) }
 			return Ok(obj)
-		}
+		})
 	default:
 		panic("impossible branch")
 	}

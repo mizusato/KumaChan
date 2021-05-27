@@ -34,7 +34,7 @@ var UiFunctions = map[string] interface{} {
 			})
 		})
 	},
-	"ui::TTF": func(info ProductValue, file stdlib.AssetFile) ui.TTF {
+	"ui::TTF": func(info TupleValue, file stdlib.AssetFile) ui.TTF {
 		var family = info.Elements[0].(string)
 		var weight = info.Elements[1].(string)
 		var style = info.Elements[2].(string)
@@ -192,7 +192,7 @@ var UiFunctions = map[string] interface{} {
 		}
 		return big.NewInt(int64(x))
 	},
-	"ui-event-payload-get-bool": func(ev *qt.WebViewEventPayload, key string) SumValue {
+	"ui-event-payload-get-bool": func(ev *qt.WebViewEventPayload, key string) EnumValue {
 		return ToBool(qt.WebViewEventPayloadGetBool(ev, key))
 	},
 }

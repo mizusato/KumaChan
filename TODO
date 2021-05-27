@@ -2,8 +2,6 @@ TODO
 
 ## Fundamental
 
-- Lang: consider renaming Product -> Record, Sum -> Enum
-
 - Type: enum supertype: enum { ...Another, type Added; }
 
 - KMD: migrate to new numeric types, add other primitives

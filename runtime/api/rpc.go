@@ -11,26 +11,26 @@ import (
 )
 
 
-func rpcAdaptServerOptions(opts ProductValue) librpc.ServerOptions {
+func rpcAdaptServerOptions(opts TupleValue) librpc.ServerOptions {
 	return librpc.ServerOptions {
-		CommonOptions: rpcAdaptCommonOptions(opts.Elements[0].(ProductValue)),
+		CommonOptions: rpcAdaptCommonOptions(opts.Elements[0].(TupleValue)),
 	}
 }
-func rpcAdaptClientOptions(opts ProductValue) librpc.ClientOptions {
+func rpcAdaptClientOptions(opts TupleValue) librpc.ClientOptions {
 	return librpc.ClientOptions {
-		CommonOptions: rpcAdaptCommonOptions(opts.Elements[0].(ProductValue)),
+		CommonOptions: rpcAdaptCommonOptions(opts.Elements[0].(TupleValue)),
 	}
 }
-func rpcAdaptCommonOptions(opts ProductValue) librpc.CommonOptions {
-	var log = opts.Elements[0].(ProductValue)
-	var log_enabled = FromBool(log.Elements[0].(SumValue))
-	var limits = rpcAdaptLimitOptions(opts.Elements[1].(ProductValue))
+func rpcAdaptCommonOptions(opts TupleValue) librpc.CommonOptions {
+	var log = opts.Elements[0].(TupleValue)
+	var log_enabled = FromBool(log.Elements[0].(EnumValue))
+	var limits = rpcAdaptLimitOptions(opts.Elements[1].(TupleValue))
 	return librpc.CommonOptions {
 		LogEnabled: log_enabled,
 		Limits:     limits,
 	}
 }
-func rpcAdaptLimitOptions(opts ProductValue) rpc.Limits {
+func rpcAdaptLimitOptions(opts TupleValue) rpc.Limits {
 	var ms = func(v Value) time.Duration {
 		var n = v.(*big.Int)
 		return (time.Millisecond * time.Duration(util.GetUintNumber(n)))
@@ -65,7 +65,7 @@ var RpcFunctions = map[string] interface{} {
 	"rpc-serve": func (
 		id        rpc.ServiceIdentifier,
 		backend   librpc.ServerBackend,
-		raw_opts  ProductValue,
+		raw_opts  TupleValue,
 		ctor      Value,
 		h         InteropContext,
 	) rx.Observable {
@@ -80,7 +80,7 @@ var RpcFunctions = map[string] interface{} {
 	"rpc-access": func (
 		id        rpc.ServiceIdentifier,
 		backend   librpc.ClientBackend,
-		raw_opts  ProductValue,
+		raw_opts  TupleValue,
 		argument  Value,
 		consumer  Value,
 		h         InteropContext,

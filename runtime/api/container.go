@@ -30,7 +30,7 @@ var ContainerFunctions = map[string] Value {
 	"=Char": func(a rune, b rune) bool {
 		return (a == b)
 	},
-	"chr": func(n *big.Int) SumValue {
+	"chr": func(n *big.Int) EnumValue {
 		var char, ok = Chr(n)
 		if ok {
 			return Some(char)
@@ -61,7 +61,7 @@ var ContainerFunctions = map[string] Value {
 			Bound:   big.NewInt(0).Add(start, n),
 		}
 	},
-	"seq-shift": func(seq Seq) SumValue {
+	"seq-shift": func(seq Seq) EnumValue {
 		var item, rest, exists = seq.Next()
 		if exists {
 			return Some(Tuple(item, rest))
@@ -98,7 +98,7 @@ var ContainerFunctions = map[string] Value {
 		return FilteredSeq {
 			Input:  input,
 			Filter: func(item Value) bool {
-				return FromBool(h.Call(f, item).(SumValue))
+				return FromBool(h.Call(f, item).(EnumValue))
 			},
 		}
 	},
@@ -125,14 +125,14 @@ var ContainerFunctions = map[string] Value {
 			return h.Call(f, Tuple(prev, cur))
 		})
 	},
-	"seq-some": func(input Seq, f Value, h InteropContext) SumValue {
+	"seq-some": func(input Seq, f Value, h InteropContext) EnumValue {
 		return ToBool(SeqSome(input, func(item Value) bool {
-			return FromBool(h.Call(f, item).(SumValue))
+			return FromBool(h.Call(f, item).(EnumValue))
 		}))
 	},
-	"seq-every": func(input Seq, f Value, h InteropContext) SumValue {
+	"seq-every": func(input Seq, f Value, h InteropContext) EnumValue {
 		return ToBool(SeqEvery(input, func(item Value) bool {
-			return FromBool(h.Call(f, item).(SumValue))
+			return FromBool(h.Call(f, item).(EnumValue))
 		}))
 	},
 	"seq-chunk": func(input Seq, size *big.Int) Value {
@@ -155,7 +155,7 @@ var ContainerFunctions = map[string] Value {
 	"list-iterate": func(v Value) Seq {
 		return ListFrom(v).Iterate()
 	},
-	"list-shift": func(v Value) SumValue {
+	"list-shift": func(v Value) EnumValue {
 		var item, rest, ok = ListFrom(v).Shifted()
 		if ok {
 			return Some(Tuple(item, rest))
@@ -163,7 +163,7 @@ var ContainerFunctions = map[string] Value {
 			return None()
 		}
 	},
-	"list-pop": func(v Value) SumValue {
+	"list-pop": func(v Value) EnumValue {
 		var item, rest, ok = ListFrom(v).Popped()
 		if ok {
 			return Some(Tuple(item, rest))
@@ -193,7 +193,7 @@ var ContainerFunctions = map[string] Value {
 	"String from Integer": func(n *big.Int) string {
 		return n.String()
 	},
-	"String from Bool": func(p SumValue) string {
+	"String from Bool": func(p EnumValue) string {
 		if FromBool(p) {
 			return stdlib.Yes
 		} else {
@@ -209,7 +209,7 @@ var ContainerFunctions = map[string] Value {
 	"encode-utf8": func(str string) ([] byte) {
 		return StringEncode(str, UTF8)
 	},
-	"decode-utf8": func(bytes ([] byte)) SumValue {
+	"decode-utf8": func(bytes ([] byte)) EnumValue {
 		var str, ok = StringDecode(bytes, UTF8)
 		if ok {
 			return Some(str)
@@ -248,7 +248,7 @@ var ContainerFunctions = map[string] Value {
 		buf = append(buf, '"')
 		return string(buf)
 	},
-	"unquote": func(s string) SumValue {
+	"unquote": func(s string) EnumValue {
 		var buf strings.Builder
 		if !(len(s) >= 2 && s[0] == '"' && s[len(s)-1] == '"') {
 			return None()
@@ -265,7 +265,7 @@ var ContainerFunctions = map[string] Value {
 		var unquoted = buf.String()
 		return Some(unquoted)
 	},
-	"parse-float": func(str string) SumValue {
+	"parse-float": func(str string) EnumValue {
 		var x, err = strconv.ParseFloat(str, 64)
 		if err != nil || !(util.IsNormalFloat(x)) {
 			return None()
@@ -276,13 +276,13 @@ var ContainerFunctions = map[string] Value {
 	"str-concat": func(v Value) string {
 		return StringConcat(ListFrom(v))
 	},
-	"str-contains": func(operand string, sub string) SumValue {
+	"str-contains": func(operand string, sub string) EnumValue {
 		return ToBool(StringHasSubstring(operand, sub))
 	},
 	"str-length": func(str string) *big.Int {
 		return big.NewInt(int64(len(str)))
 	},
-	"str-shift": func(str string) SumValue {
+	"str-shift": func(str string) EnumValue {
 		if len(str) > 0 {
 			for _, char := range str {
 				var rest = str[utf8.RuneLen(char):]
@@ -293,7 +293,7 @@ var ContainerFunctions = map[string] Value {
 			return None()
 		}
 	},
-	"str-shift-prefix": func(str string, prefix string) SumValue {
+	"str-shift-prefix": func(str string, prefix string) EnumValue {
 		if strings.HasPrefix(str, prefix) {
 			return Some(str[len(prefix):])
 		} else {
@@ -307,17 +307,17 @@ var ContainerFunctions = map[string] Value {
 	"trim-right": strings.TrimRight,
 	"trim-prefix": strings.TrimPrefix,
 	"trim-suffix": strings.TrimSuffix,
-	"has-prefix": func(str string, prefix string) SumValue {
+	"has-prefix": func(str string, prefix string) EnumValue {
 		return ToBool(strings.HasPrefix(str, prefix))
 	},
-	"has-suffix": func(str string, suffix string) SumValue {
+	"has-suffix": func(str string, suffix string) EnumValue {
 		return ToBool(strings.HasSuffix(str, suffix))
 	},
 	"new-set": func(cmp_ Value, values_ Value, h InteropContext) Set {
 		var values = ListFrom(values_)
 		var cmp = Compare(func(a Value, b Value) Ordering {
 			var t = h.Call(cmp_, Tuple(a, b))
-			return FromOrdering(t.(SumValue))
+			return FromOrdering(t.(EnumValue))
 		})
 		var set = NewSet(cmp)
 		values.ForEach(func(i uint, item Value) {
@@ -329,7 +329,7 @@ var ContainerFunctions = map[string] Value {
 		})
 		return set
 	},
-	"set-has": func(set Set, v Value) SumValue {
+	"set-has": func(set Set, v Value) EnumValue {
 		var _, exists = set.Lookup(v)
 		return ToBool(exists)
 	},
@@ -337,7 +337,7 @@ var ContainerFunctions = map[string] Value {
 		var entries = ListFrom(v)
 		var m = NewMapOfStringKey()
 		entries.ForEach(func(i uint, item Value) {
-			var key_, value = Tuple2From(item.(ProductValue))
+			var key_, value = Tuple2From(item.(TupleValue))
 			var key = key_.(string)
 			var result, override = m.Inserted(key, value)
 			if override {
@@ -348,15 +348,15 @@ var ContainerFunctions = map[string] Value {
 		})
 		return m
 	},
-	"map-entries": func(m Map) ([] ProductValue) {
-		var entries = make([] ProductValue, 0, m.Size())
+	"map-entries": func(m Map) ([] TupleValue) {
+		var entries = make([] TupleValue, 0, m.Size())
 		m.AVL.Walk(func(v Value) {
 			var entry = v.(MapEntry)
 			entries = append(entries, Tuple(entry.Key, entry.Value))
 		})
 		return entries
 	},
-	"map-get": func(m Map, k Value) SumValue {
+	"map-get": func(m Map, k Value) EnumValue {
 		var v, exists = m.Lookup(k)
 		if exists {
 			return Some(v)
@@ -372,8 +372,8 @@ var ContainerFunctions = map[string] Value {
 			panic(fmt.Sprintf("accessing absent key %s of a map", Inspect(k)))
 		}
 	},
-	"map-insert": func(m Map, entry_ Value) SumValue {
-		var entry = entry_.(ProductValue)
+	"map-insert": func(m Map, entry_ Value) EnumValue {
+		var entry = entry_.(TupleValue)
 		var k = entry.Elements[0]
 		var v = entry.Elements[1]
 		var result, override = m.Inserted(k, v)
@@ -384,13 +384,13 @@ var ContainerFunctions = map[string] Value {
 		}
 	},
 	"map-insert*": func(m Map, entry_ Value) Map {
-		var entry = entry_.(ProductValue)
+		var entry = entry_.(TupleValue)
 		var k = entry.Elements[0]
 		var v = entry.Elements[1]
 		var result, _ = m.Inserted(k, v)
 		return result
 	},
-	"map-delete": func(m Map, k Value) SumValue {
+	"map-delete": func(m Map, k Value) EnumValue {
 		var deleted, rest, ok = m.Deleted(k)
 		if ok {
 			return Some(Tuple(deleted, rest))
@@ -419,7 +419,7 @@ var ContainerFunctions = map[string] Value {
 	"flex-length": func(l FlexList) *big.Int {
 		return util.GetNumberUint(l.Length())
 	},
-	"flex-has": func(l FlexList, k string) SumValue {
+	"flex-has": func(l FlexList, k string) EnumValue {
 		return ToBool(l.Has(k))
 	},
 	"flex-get": func(l FlexList, k string) Value {
@@ -433,33 +433,33 @@ var ContainerFunctions = map[string] Value {
 	"flex-delete": func(l FlexList, k string) FlexList {
 		return l.Deleted(k)
 	},
-	"flex-prepend": func(l FlexList, entry ProductValue) FlexList {
+	"flex-prepend": func(l FlexList, entry TupleValue) FlexList {
 		var key = entry.Elements[0].(string)
 		var value = entry.Elements[1]
 		return l.Prepended(key, value)
 	},
-	"flex-append": func(l FlexList, entry ProductValue) FlexList {
+	"flex-append": func(l FlexList, entry TupleValue) FlexList {
 		var key = entry.Elements[0].(string)
 		var value = entry.Elements[1]
 		return l.Appended(key, value)
 	},
-	"flex-insert-before": func(l FlexList, pivot_ ProductValue, entry ProductValue) FlexList {
+	"flex-insert-before": func(l FlexList, pivot_ TupleValue, entry TupleValue) FlexList {
 		var pivot = pivot_.Elements[0].(string)
 		var key = entry.Elements[0].(string)
 		var value = entry.Elements[1]
 		return l.Inserted(key, value, Before, pivot)
 	},
-	"flex-insert-after": func(l FlexList, pivot_ ProductValue, entry ProductValue) FlexList {
+	"flex-insert-after": func(l FlexList, pivot_ TupleValue, entry TupleValue) FlexList {
 		var pivot = pivot_.Elements[0].(string)
 		var key = entry.Elements[0].(string)
 		var value = entry.Elements[1]
 		return l.Inserted(key, value, After, pivot)
 	},
-	"flex-move-before": func(l FlexList, key string, pivot_ ProductValue) FlexList {
+	"flex-move-before": func(l FlexList, key string, pivot_ TupleValue) FlexList {
 		var pivot = pivot_.Elements[0].(string)
 		return l.Moved(key, Before, pivot)
 	},
-	"flex-move-after": func(l FlexList, key string, pivot_ ProductValue) FlexList {
+	"flex-move-after": func(l FlexList, key string, pivot_ TupleValue) FlexList {
 		var pivot = pivot_.Elements[0].(string)
 		return l.Moved(key, After, pivot)
 	},

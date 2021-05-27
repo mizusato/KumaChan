@@ -14,25 +14,27 @@ type Value = interface {}
 var __ValueReflectType = reflect.TypeOf((*Value)(nil)).Elem()
 func ValueReflectType() reflect.Type { return __ValueReflectType }
 
-type SumValue = *ValSum
-type ValSum struct {
+type EnumValue = *ValEnum
+type ValEnum struct {
 	Index  Short
 	Value  Value
 }
 
-type ProductValue = *ValProd
-type ValProd struct {
+type TupleValue = *ValTup
+type ValTup struct {
 	Elements  [] Value
 }
-// TODO: quick constructors (e.g. Tuple2(a,b), Tuple3(a,b,c))
 
-type FunctionValue = *ValFunc
-type ValFunc struct {
+type UserFunctionValue = *ValFun
+type ValFun struct {
 	Underlying     *Function
 	ContextValues  [] Value
 }
 
-type NativeFunctionValue  NativeFunction
+type NativeFunctionValue = *NativeFunction
+func ValNativeFun(f NativeFunction) NativeFunctionValue {
+	return &f
+}
 
 func RefEqual(a Value, b Value) bool {
 	var x = reflect.ValueOf(a)
@@ -125,10 +127,10 @@ func inspect(value Value, path []uintptr) ErrorMessage {
 		msg.WriteText(TS_NORMAL, "reflect.Value")
 	case *reflect.Value:
 		msg.WriteText(TS_NORMAL, "*reflect.Value")
-	case SumValue:
+	case EnumValue:
 		// TODO: v.Index should be shown
 		return inspect(v.Value, path)
-	case ProductValue:
+	case TupleValue:
 		msg.WriteText(TS_NORMAL, "(")
 		for i, e := range v.Elements {
 			msg.WriteAll(inspect(e, path))
@@ -137,7 +139,7 @@ func inspect(value Value, path []uintptr) ErrorMessage {
 			}
 		}
 		msg.WriteText(TS_NORMAL, ")")
-	case FunctionValue:
+	case UserFunctionValue:
 		var name = v.Underlying.Info.Name
 		msg.WriteText(TS_NORMAL, fmt.Sprintf("[func %s]", name))
 	case NativeFunctionValue:
@@ -171,25 +173,25 @@ func inspect(value Value, path []uintptr) ErrorMessage {
 	return msg
 }
 
-func Tuple2From(t ProductValue) (Value, Value) {
+func Tuple2From(t TupleValue) (Value, Value) {
 	if len(t.Elements) != 2 { panic("tuple size is not 2") }
 	return t.Elements[0], t.Elements[1]
 }
 
-func Tuple(elements... Value) ProductValue {
-	return &ValProd { elements }
+func Tuple(elements... Value) TupleValue {
+	return &ValTup { elements }
 }
 
-func TupleOf(elements ([] Value)) ProductValue {
-	return &ValProd { elements }
+func TupleOf(elements ([] Value)) TupleValue {
+	return &ValTup { elements }
 }
 
-func SingleValueFromRecord(b ProductValue) Value {
+func SingleValueFromRecord(b TupleValue) Value {
 	if len(b.Elements) != 1 { panic("record size is not 1") }
 	return b.Elements[0]
 }
 
-func FromBool(p SumValue) bool {
+func FromBool(p EnumValue) bool {
 	if p.Value != nil { panic("something went wrong") }
 	if p.Index == stdlib.YesIndex {
 		return true
@@ -200,15 +202,15 @@ func FromBool(p SumValue) bool {
 	}
 }
 
-func ToBool(p bool) SumValue {
+func ToBool(p bool) EnumValue {
 	if p == true {
-		return &ValSum { Index: stdlib.YesIndex }
+		return &ValEnum { Index: stdlib.YesIndex }
 	} else {
-		return &ValSum { Index: stdlib.NoIndex }
+		return &ValEnum { Index: stdlib.NoIndex }
 	}
 }
 
-func FromOrdering(o SumValue) Ordering {
+func FromOrdering(o EnumValue) Ordering {
 	if o.Value != nil { panic("something went wrong") }
 	switch o.Index {
 	case stdlib.SmallerIndex:
@@ -222,48 +224,48 @@ func FromOrdering(o SumValue) Ordering {
 	}
 }
 
-func ToOrdering(o Ordering) SumValue {
+func ToOrdering(o Ordering) EnumValue {
 	switch o {
 	case Smaller:
-		return &ValSum { Index: stdlib.SmallerIndex }
+		return &ValEnum { Index: stdlib.SmallerIndex }
 	case Equal:
-		return &ValSum { Index: stdlib.EqualIndex }
+		return &ValEnum { Index: stdlib.EqualIndex }
 	case Bigger:
-		return &ValSum { Index: stdlib.BiggerIndex }
+		return &ValEnum { Index: stdlib.BiggerIndex }
 	default:
 		panic("impossible branch")
 	}
 }
 
-func Some(v Value) SumValue {
-	return &ValSum {
+func Some(v Value) EnumValue {
+	return &ValEnum {
 		Index: stdlib.SomeIndex,
 		Value: v,
 	}
 }
 
-func None() SumValue {
-	return &ValSum {
+func None() EnumValue {
+	return &ValEnum {
 		Index: stdlib.NoneIndex,
 		Value: nil,
 	}
 }
 
-func Ok(v Value) SumValue {
-	return &ValSum {
+func Ok(v Value) EnumValue {
+	return &ValEnum {
 		Index: stdlib.SuccessIndex,
 		Value: v,
 	}
 }
 
-func Ng(v Value) SumValue {
-	return &ValSum {
+func Ng(v Value) EnumValue {
+	return &ValEnum {
 		Index: stdlib.FailureIndex,
 		Value: v,
 	}
 }
 
-func Unwrap(maybe SumValue) (Value, bool) {
+func Unwrap(maybe EnumValue) (Value, bool) {
 	if maybe.Index == stdlib.SomeIndex {
 		return maybe.Value, true
 	} else {
@@ -287,7 +289,7 @@ func FromQword(v Value) uint64 {
 	return v.(uint64)
 }
 
-func Struct2Prod(v interface{}) ProductValue {
+func Struct2Prod(v interface{}) TupleValue {
 	var rv = reflect.ValueOf(v)
 	if rv.Kind() != reflect.Struct {
 		panic("struct expected")
@@ -296,7 +298,7 @@ func Struct2Prod(v interface{}) ProductValue {
 	for i := 0; i < rv.NumField(); i += 1 {
 		elements[i] = ToValue(rv.Field(i).Interface())
 	}
-	return &ValProd { elements }
+	return &ValTup { elements }
 }
 
 func ToValue(go_value interface{}) Value {

@@ -16,7 +16,7 @@ var ErrorFunctions = map[string] interface{} {
 		var data = make(map[string] string)
 		var data_items = container.ListFrom(data_)
 		data_items.ForEach(func(i uint, p_ Value) {
-			var p = p_.(ProductValue)
+			var p = p_.(TupleValue)
 			var k = p.Elements[0].(string)
 			var v = p.Elements[1].(string)
 			data[k] = v
@@ -26,7 +26,7 @@ var ErrorFunctions = map[string] interface{} {
 			Data: data,
 		}
 	},
-	"error-get-data": func(e error, opts ProductValue) string {
+	"error-get-data": func(e error, opts TupleValue) string {
 		var key = opts.Elements[0].(string)
 		var fallback = opts.Elements[1].(string)
 		var e_with_extra, with_extra = e.(*rpc.ErrorWithExtraData)
