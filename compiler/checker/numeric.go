@@ -76,7 +76,13 @@ func CheckInteger(i ast.IntegerLiteral, ctx ExprContext) (SemiExpr, *ExprError) 
 func CheckFloat(f ast.FloatLiteral, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(f.Node)
 	var value, err = strconv.ParseFloat(string(f.Value), 64)
-	if err != nil || !(util.IsNormalFloat(value)) {
+	if err != nil {
+		return SemiExpr{}, &ExprError {
+			Point:    info.ErrorPoint,
+			Concrete: E_FloatOverflow {},
+		}
+	}
+	if !(util.IsNormalFloat(value)) {
 		panic("invalid float literal got from parser")
 	}
 	return LiftTyped(Expr {

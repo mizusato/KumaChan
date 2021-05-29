@@ -811,12 +811,19 @@ func (e E_IntegerNotRepresentableByFloatType) ExprErrorDesc() ErrorMessage {
 	return msg
 }
 
+type E_FloatOverflow struct {}
+func (e E_FloatOverflow) ExprErrorDesc() ErrorMessage {
+	var msg = make(ErrorMessage, 0)
+	msg.WriteText(TS_ERROR, "Float literal overflow")
+	return msg
+}
+
 type E_IntegerOverflow struct {
 	Kind  string
 }
 func (e E_IntegerOverflow) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
-	msg.WriteText(TS_ERROR, "Integer literal overflows")
+	msg.WriteText(TS_ERROR, "Integer literal overflow")
 	msg.WriteEndText(TS_INLINE, e.Kind)
 	return msg
 }
