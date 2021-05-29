@@ -155,7 +155,7 @@ func InstRef(index uint, k ch.ReferenceKind, o ch.ReferenceOperand) lang.Instruc
 		case ch.RK_Branch:
 			switch o {
 			case ch.RO_Enum:
-				return lang.BRS
+				return lang.BR
 			case ch.RO_CaseRef:
 				return lang.BRB
 			case ch.RO_ProjRef:
@@ -166,7 +166,7 @@ func InstRef(index uint, k ch.ReferenceKind, o ch.ReferenceOperand) lang.Instruc
 		case ch.RK_Field:
 			switch o {
 			case ch.RO_Record:
-				return lang.FRP
+				return lang.FR
 			case ch.RO_ProjRef:
 				return lang.FRF
 			default:
@@ -186,7 +186,7 @@ func InstRef(index uint, k ch.ReferenceKind, o ch.ReferenceOperand) lang.Instruc
 func InstProduct(size uint) lang.Instruction {
 	ValidateProductSize(size)
 	return lang.Instruction {
-		OpCode: lang.PROD,
+		OpCode: lang.TUP,
 		Arg0:   lang.Short(size),
 		Arg1:   0,
 	}
@@ -205,7 +205,7 @@ func InstArray(info_index uint) lang.Instruction {
 func InstSum(index uint) lang.Instruction {
 	ValidateSumIndex(index)
 	return lang.Instruction {
-		OpCode: lang.SUM,
+		OpCode: lang.ENUM,
 		Arg0:   lang.Short(index),
 		Arg1:   0,
 	}

@@ -136,7 +136,7 @@ func call(f UserFunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Valu
 				var offset = inst.GetOffset()
 				var value = ec.popValue()
 				ec.dataStack[base_addr + offset] = value
-			case SUM:
+			case ENUM:
 				var index = inst.GetShortIndexOrSize()
 				var value = ec.popValue()
 				ec.pushValue(&ValEnum {
@@ -144,11 +144,11 @@ func call(f UserFunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Valu
 					Value: value,
 				})
 			case JIF:
-				var sum, ok = ec.getCurrentValue().(EnumValue)
+				var enum, ok = ec.getCurrentValue().(EnumValue)
 				assert(ok, "JIF: cannot execute on non-enum value")
-				if sum.Index == inst.GetShortIndexOrSize() {
+				if enum.Index == inst.GetShortIndexOrSize() {
 					ec.popValue()
-					ec.pushValue(sum.Value)
+					ec.pushValue(enum.Value)
 					var new_inst_ptr = inst.GetDestAddr()
 					assert(new_inst_ptr < uint(len(code)),
 						"JIF: invalid address")
@@ -161,7 +161,7 @@ func call(f UserFunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Valu
 				var ok = new_inst_ptr < uint(len(code))
 				assert(ok, "JMP: invalid address")
 				*inst_ptr_ref = new_inst_ptr
-			case PROD:
+			case TUP:
 				var size = inst.GetShortIndexOrSize()
 				var elements = make([] Value, size)
 				for i := uint(0); i < size; i += 1 {
@@ -172,10 +172,10 @@ func call(f UserFunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Valu
 				var index = inst.GetShortIndexOrSize()
 				switch v := ec.getCurrentValue().(type) {
 				case TupleValue:
-					var prod = v
-					assert(index < uint(len(prod.Elements)),
+					var tup = v
+					assert(index < uint(len(tup.Elements)),
 						"GET: invalid index")
-					ec.pushValue(prod.Elements[index])
+					ec.pushValue(tup.Elements[index])
 				default:
 					panic("GET: cannot execute on non-tuple value")
 				}
@@ -183,34 +183,34 @@ func call(f UserFunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Valu
 				var index = inst.GetShortIndexOrSize()
 				switch v := ec.popValue().(type) {
 				case TupleValue:
-					var prod = v
-					assert(index < uint(len(prod.Elements)),
+					var tup = v
+					assert(index < uint(len(tup.Elements)),
 						"POPGET: invalid index")
-					ec.pushValue(prod.Elements[index])
+					ec.pushValue(tup.Elements[index])
 				default:
 					panic("POPGET: cannot execute on non-tuple value")
 				}
 			case SET:
 				var index = inst.GetShortIndexOrSize()
 				var value = ec.popValue()
-				switch prod := ec.popValue().(type) {
+				switch tup := ec.popValue().(type) {
 				case TupleValue:
-					var L = uint(len(prod.Elements))
+					var L = uint(len(tup.Elements))
 					assert(index < L, "SET: invalid index")
 					var draft = make([] Value, L)
-					copy(draft, prod.Elements)
+					copy(draft, tup.Elements)
 					draft[index] = value
 					ec.pushValue(TupleOf(draft))
 				default:
 					panic("SET: cannot execute on non-tuple value")
 				}
-			case BRS, BRB, BRF, FRP, FRF:
+			case BR, BRB, BRF, FR, FRF:
 				createRef(ec, inst)
 			case CTX:
 				var is_recursive = (inst.Arg0 != 0)
-				switch prod := ec.popValue().(type) {
+				switch tup := ec.popValue().(type) {
 				case TupleValue:
-					var ctx = prod.Elements
+					var ctx = tup.Elements
 					switch f := ec.popValue().(type) {
 					case UserFunctionValue:
 						var required = int(f.Underlying.BaseSize.Context)
@@ -227,7 +227,7 @@ func call(f UserFunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Valu
 						ec.pushValue(fv)
 					case NativeFunctionValue:
 						var wrapped = ValNativeFun(func(arg Value, h InteropContext) Value {
-							var arg_with_context = Tuple(arg, prod)
+							var arg_with_context = Tuple(arg, tup)
 							return (*f)(arg_with_context, h)
 						})
 						ec.pushValue(wrapped)
@@ -307,19 +307,19 @@ func call(f UserFunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Valu
 				ec.indexBuf[ec.indexBufLen] = ^(uint(0))
 				ec.indexBufLen += 1
 			case MSJ:
-				var prod, ok = ec.getCurrentValue().(TupleValue)
+				var tup, ok = ec.getCurrentValue().(TupleValue)
 				assert(ok, "MSJ: cannot execute on non-tuple value")
-				assert(uint(len(prod.Elements)) == ec.indexBufLen,
+				assert(uint(len(tup.Elements)) == ec.indexBufLen,
 					"MSJ: wrong index quantity")
 				var matching = true
-				for i, e := range prod.Elements {
-					var sum, ok = e.(EnumValue)
+				for i, e := range tup.Elements {
+					var enum, ok = e.(EnumValue)
 					assert(ok, "MSJ: non-enum element value occurred")
 					var desired = ec.indexBuf[i]
 					if desired == ^(uint(0)) {
 						continue
 					} else {
-						if sum.Index == desired {
+						if enum.Index == desired {
 							continue
 						} else {
 							matching = false
@@ -329,8 +329,8 @@ func call(f UserFunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Valu
 				}
 				if matching {
 					ec.popValue()
-					var narrowed = make([] Value, len(prod.Elements))
-					for i, e := range prod.Elements {
+					var narrowed = make([] Value, len(tup.Elements))
+					for i, e := range tup.Elements {
 						narrowed[i] = e.(EnumValue).Value
 					}
 					ec.pushValue(TupleOf(narrowed))
@@ -446,9 +446,9 @@ func (ec *ExecutionContext) popTailCall() {
 func createRef(ec *ExecutionContext, inst Instruction) {
 	var index = inst.GetShortIndexOrSize()
 	switch inst.OpCode {
-	case BRS:
-		var sum, ok = ec.popValue().(EnumValue)
-		assert(ok, "BRS: invalid operand")
+	case BR:
+		var enum, ok = ec.popValue().(EnumValue)
+		assert(ok, "BR: invalid operand")
 		ec.pushValue(ValNativeFun(func(arg Value, _ InteropContext) Value {
 			var new_value, update = Unwrap(arg.(EnumValue))
 			if update {
@@ -457,10 +457,10 @@ func createRef(ec *ExecutionContext, inst Instruction) {
 					Value: new_value,
 				}, arg)
 			} else {
-				if sum.Index == index {
-					return Tuple(sum, Some(sum.Value))
+				if enum.Index == index {
+					return Tuple(enum, Some(enum.Value))
 				} else {
-					return Tuple(sum, None())
+					return Tuple(enum, None())
 				}
 			}
 		}))
@@ -470,7 +470,7 @@ func createRef(ec *ExecutionContext, inst Instruction) {
 			ec.pushValue(ValNativeFun(func(arg Value, h InteropContext) Value {
 				var t = h.Call(base, None())
 				var pair = t.(TupleValue).Elements
-				var base_sum = pair[0]
+				var base_enum = pair[0]
 				var base_branch = pair[1]
 				var value, has_value = Unwrap(base_branch.(EnumValue))
 				var new_value, update = Unwrap(arg.(EnumValue))
@@ -482,15 +482,15 @@ func createRef(ec *ExecutionContext, inst Instruction) {
 						}))
 						return Tuple(u.(TupleValue).Elements[0], arg)
 					} else {
-						var sum = value.(EnumValue)
-						if sum.Index == index {
-							return Tuple(base_sum, Some(sum.Value))
+						var enum = value.(EnumValue)
+						if enum.Index == index {
+							return Tuple(base_enum, Some(enum.Value))
 						} else {
-							return Tuple(base_sum, None())
+							return Tuple(base_enum, None())
 						}
 					}
 				} else {
-					return Tuple(base_sum, None())
+					return Tuple(base_enum, None())
 				}
 			}))
 		default:
@@ -510,33 +510,33 @@ func createRef(ec *ExecutionContext, inst Instruction) {
 				} else {
 					var value = h.Call(base, None())
 					var pair = value.(TupleValue).Elements
-					var base_prod = pair[0]
+					var base_tup = pair[0]
 					var base_field = pair[1]
-					var sum = base_field.(EnumValue)
-					if sum.Index == index {
-						return Tuple(base_prod, Some(sum.Value))
+					var enum = base_field.(EnumValue)
+					if enum.Index == index {
+						return Tuple(base_tup, Some(enum.Value))
 					} else {
-						return Tuple(base_prod, None())
+						return Tuple(base_tup, None())
 					}
 				}
 			}))
 		default:
 			panic("BRF: invalid operand")
 		}
-	case FRP:
-		var prod, ok = ec.popValue().(TupleValue)
-		assert(ok, "FRP: invalid operand")
-		var L = uint(len(prod.Elements))
-		assert(index < L, "FRP: invalid index")
+	case FR:
+		var tup, ok = ec.popValue().(TupleValue)
+		assert(ok, "FR: invalid operand")
+		var L = uint(len(tup.Elements))
+		assert(index < L, "FR: invalid index")
 		ec.pushValue(ValNativeFun(func(arg Value, _ InteropContext) Value {
 			var new_value, update = Unwrap(arg.(EnumValue))
 			if update {
 				var draft =  make([] Value, L)
-				copy(draft, prod.Elements)
+				copy(draft, tup.Elements)
 				draft[index] = new_value
 				return Tuple(TupleOf(draft), new_value)
 			} else {
-				return Tuple(prod, prod.Elements[index])
+				return Tuple(tup, tup.Elements[index])
 			}
 		}))
 	case FRF:
@@ -544,20 +544,20 @@ func createRef(ec *ExecutionContext, inst Instruction) {
 		case UserFunctionValue, NativeFunctionValue:
 			ec.pushValue(ValNativeFun(func(arg Value, h InteropContext) Value {
 				var t = h.Call(base, None())
-				var prod = t.(TupleValue).Elements[1].(TupleValue)
-				var L = uint(len(prod.Elements))
+				var tup = t.(TupleValue).Elements[1].(TupleValue)
+				var L = uint(len(tup.Elements))
 				assert(index < L, "FRF: invalid index")
 				var new_field_value, update = Unwrap(arg.(EnumValue))
 				if update {
 					var draft =  make([] Value, L)
-					copy(draft, prod.Elements)
+					copy(draft, tup.Elements)
 					draft[index] = new_field_value
-					var new_prod_value = TupleOf(draft)
-					var t = h.Call(base, Some(new_prod_value))
+					var new_tup_value = TupleOf(draft)
+					var t = h.Call(base, Some(new_tup_value))
 					var new_base_value = t.(TupleValue).Elements[0]
 					return Tuple(new_base_value, new_field_value)
 				} else {
-					return Tuple(prod, prod.Elements[index])
+					return Tuple(tup, tup.Elements[index])
 				}
 			}))
 		default:
