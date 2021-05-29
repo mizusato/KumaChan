@@ -40,7 +40,7 @@ const ValueParser: ValueParserType :=
 # explicit-call
 const ObjectParser: ValueParserType :=
     let entry :=
-        | key := apply StringParser!,
+        | key := apply StringParser*,
         | apply ({ Keyword ':' } with-ignored Blank),
         | value := apply { ValueParser () },
         { output (key,value) },
@@ -87,9 +87,9 @@ const NumberParser: ValueParserType :=
     end;
 
 const StringParser: ValueParserType :=
-    (StringParser! map &(string) => { self::Value string });
+    (StringParser* map &(string) => { self::Value string });
 
-const StringParser!: Parser[self::String,Error] :=
+const StringParser*: Parser[self::String,Error] :=
     let err := { Error 'invalid string' },
     | apply { consume ('"', err) },
     &(input) =>
@@ -108,7 +108,7 @@ const StringParser!: Parser[self::String,Error] :=
             let raw := chars.{List}.{reverse}.{String},
             switch { unquote raw }:
             case Some content:
-                let value := { self::String! content },
+                let value := { self::String* content },
                 { Success (value, input) },
             case None:
                 { Failure (err, input) },

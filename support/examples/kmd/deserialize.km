@@ -6,7 +6,7 @@ do { open-read-only (os::EntryModuleDirPath join ['sample','sample1.kmd']) }
             . { read-all }
             . { then &(binary) =>
                 let result: Result[Data::Canvas,Error] :=
-                    { data-deserialize binary },
+                    { @deserialize binary },
                 switch result:
                 case Success canvas:
                     let _ := { trace canvas },

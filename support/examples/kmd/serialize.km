@@ -1,6 +1,6 @@
 import Data from './schema';
 
-do { println { decode! { data-serialize canvas } } }
+do { println { decode! { @serialize canvas } } }
     . { crash-on-error };
 
 const canvas: Data::Canvas :=
@@ -22,8 +22,8 @@ const canvas: Data::Canvas :=
             } },
             { Data::Curve
                 { Data::Next ({ Data::Point { name: 'C1', pos: { Data::Vector (0.0, 0.0) } } },
-                { Data::Curve! { Data::Next ({ Data::Point { name: 'C2', pos: { Data::Vector (5.0, 5.0) } } },
-                { Data::Curve! Data::End }) } } ) }
+                { Data::Curve* { Data::Next ({ Data::Point { name: 'C2', pos: { Data::Vector (5.0, 5.0) } } },
+                { Data::Curve* Data::End }) } } ) }
             }
         ]
     } };

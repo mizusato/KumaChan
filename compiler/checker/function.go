@@ -1,7 +1,6 @@
 package checker
 
 import (
-	"strings"
 	"kumachan/lang"
 	"kumachan/lang/parser/ast"
 	"kumachan/compiler/loader"
@@ -148,7 +147,7 @@ func CollectFunctions (
 		}
 		// 3.3. Get the name and type parameters of the function
 		var name = ast.Id2String(decl.Name)
-		if name == IgnoreMark || strings.HasSuffix(name, FuncSuffix) {
+		if name == IgnoreMark {
 			// 3.3.1. If the function name is invalid, throw an error.
 			return nil, &FunctionError {
 				Point:    ErrorPointFrom(decl.Name.Node),

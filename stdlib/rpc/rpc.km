@@ -16,18 +16,18 @@ type CommonOptions {
     log:    LogOptions,
     limits: LimitOptions
 };
-export const DefaultValue: CommonOptions := {};
+export const @default: CommonOptions := {};
 type LogOptions {
     enabled: Bool
 };
-export const DefaultValue: LogOptions := { enabled: Yes };
+export const @default: LogOptions := { enabled: Yes };
 type LimitOptions {
     send-timeout:      Number,
     recv-timeout:      Number,
     recv-interval:     Number,
     recv-max-obj-size: Number
 };
-export const DefaultValue: LimitOptions := {
+export const @default: LimitOptions := {
     send-timeout:      10000,
     recv-timeout:      0,
     recv-interval:     100,

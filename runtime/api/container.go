@@ -27,8 +27,8 @@ func Chr(n_ *big.Int) (rune, bool) {
 }
 
 var ContainerFunctions = map[string] Value {
-	"=Char": func(a rune, b rune) bool {
-		return (a == b)
+	"=Char": func(a rune, b rune) EnumValue {
+		return ToBool(a == b)
 	},
 	"chr": func(n *big.Int) EnumValue {
 		var char, ok = Chr(n)

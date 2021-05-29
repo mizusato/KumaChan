@@ -145,7 +145,7 @@ func call(f UserFunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Valu
 				})
 			case JIF:
 				var sum, ok = ec.getCurrentValue().(EnumValue)
-				assert(ok, "JIF: cannot execute on non-sum value")
+				assert(ok, "JIF: cannot execute on non-enum value")
 				if sum.Index == inst.GetShortIndexOrSize() {
 					ec.popValue()
 					ec.pushValue(sum.Value)
@@ -177,7 +177,7 @@ func call(f UserFunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Valu
 						"GET: invalid index")
 					ec.pushValue(prod.Elements[index])
 				default:
-					panic("GET: cannot execute on non-product value")
+					panic("GET: cannot execute on non-tuple value")
 				}
 			case POPGET:
 				var index = inst.GetShortIndexOrSize()
@@ -188,7 +188,7 @@ func call(f UserFunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Valu
 						"POPGET: invalid index")
 					ec.pushValue(prod.Elements[index])
 				default:
-					panic("POPGET: cannot execute on non-product value")
+					panic("POPGET: cannot execute on non-tuple value")
 				}
 			case SET:
 				var index = inst.GetShortIndexOrSize()
@@ -202,7 +202,7 @@ func call(f UserFunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Valu
 					draft[index] = value
 					ec.pushValue(TupleOf(draft))
 				default:
-					panic("SET: cannot execute on non-product value")
+					panic("SET: cannot execute on non-tuple value")
 				}
 			case BRS, BRB, BRF, FRP, FRF:
 				createRef(ec, inst)
@@ -235,7 +235,7 @@ func call(f UserFunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Valu
 						panic("CTX: cannot inject context for non-function value")
 					}
 				default:
-					panic("CTX: cannot use non-product value as context")
+					panic("CTX: cannot use non-tuple value as context")
 				}
 			case CALL:
 				switch f := ec.popValue().(type) {
@@ -308,13 +308,13 @@ func call(f UserFunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Valu
 				ec.indexBufLen += 1
 			case MSJ:
 				var prod, ok = ec.getCurrentValue().(TupleValue)
-				assert(ok, "MSJ: cannot execute on non-product value")
+				assert(ok, "MSJ: cannot execute on non-tuple value")
 				assert(uint(len(prod.Elements)) == ec.indexBufLen,
 					"MSJ: wrong index quantity")
 				var matching = true
 				for i, e := range prod.Elements {
 					var sum, ok = e.(EnumValue)
-					assert(ok, "MSJ: non-sum element value occurred")
+					assert(ok, "MSJ: non-enum element value occurred")
 					var desired = ec.indexBuf[i]
 					if desired == ^(uint(0)) {
 						continue

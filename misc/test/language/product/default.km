@@ -5,7 +5,7 @@ type Point {
      y: Scalar
 };
 
-export const DefaultValue: Scalar := 0.0;
+export const @default: Scalar := 0.0;
 
 do
     let p := { Point {} },

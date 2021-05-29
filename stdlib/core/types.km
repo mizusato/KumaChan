@@ -51,7 +51,7 @@ export function =:
     native 'enum-index-equal';
 
 type Optional[+T] Maybe[T];
-export const DefaultValue: Optional[never] := None;
+export const @default: Optional[never] := None;
 
 export function assume:[T]
     &((Bool,T), &() => T) => T

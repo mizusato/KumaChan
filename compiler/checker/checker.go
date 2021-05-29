@@ -338,17 +338,7 @@ func (ctx ExprContext) LookupSymbol(raw lang.Symbol) (Sym, bool) {
 		return SymType{}, false
 	}
 	var lookup_functions = func(sym_name string) (SymFunctions, bool) {
-		var real_sym_name = sym_name
 		f_refs, exists := ctx.ModuleInfo.Functions[sym_name]
-		if !exists &&
-			len(sym_name) > len(FuncSuffix) &&
-			strings.HasSuffix(sym_name, FuncSuffix) {
-			var func_sym_name = strings.TrimSuffix(sym_name, FuncSuffix)
-			f_refs, exists = ctx.ModuleInfo.Functions[func_sym_name]
-			if exists {
-				real_sym_name = func_sym_name
-			}
-		}
 		if exists {
 			var functions = make([] SymFunctionReference, len(f_refs))
 			for i, ref := range f_refs {
@@ -359,7 +349,7 @@ func (ctx ExprContext) LookupSymbol(raw lang.Symbol) (Sym, bool) {
 			}
 			var g, exists = lookup_type(raw)
 			return SymFunctions {
-				Name:       real_sym_name,
+				Name:       sym_name,
 				Functions:  functions,
 				TypeExists: exists,
 				TypeSym:    g,
