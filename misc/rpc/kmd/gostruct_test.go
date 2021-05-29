@@ -26,6 +26,7 @@ type Circle struct {
 }
 
 var sampleOptions = GoStructOptions {
+	IntegerKind: BigInt,
 	StringKind: GoString,
 	Types: map[TypeId] reflect.Type {
 		TheTypeId("kmd.test", "go", "Shape", "v1"): reflect.TypeOf(new(Shape)).Elem(),

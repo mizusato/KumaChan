@@ -15,15 +15,11 @@ type Serializer struct {
 	AlgebraicSerializer
 }
 type PrimitiveSerializer struct {
-	WriteBool    func(Object) bool
-	WriteFloat   func(Object) float64
-	WriteUint32  func(Object) uint32
-	WriteInt32   func(Object) int32
-	WriteUint64  func(Object) uint64
-	WriteInt64   func(Object) int64
-	WriteInt     func(Object) *big.Int
-	WriteString  func(Object) string
-	WriteBinary  func(Object) ([] byte)
+	WriteBool     func(Object) bool
+	WriteFloat    func(Object) float64
+	WriteInteger  func(Object) *big.Int
+	WriteString   func(Object) string
+	WriteBinary   func(Object) ([] byte)
 }
 type ContainerSerializer struct {
 	IterateArray    func(Object, func(uint,Object) error) error
@@ -41,15 +37,11 @@ type Deserializer struct {
 	AlgebraicDeserializer
 }
 type PrimitiveDeserializer struct {
-	ReadBool    func(bool) Object
-	ReadFloat   func(float64) Object
-	ReadUint32  func(uint32) Object
-	ReadInt32   func(int32) Object
-	ReadUint64  func(uint64) Object
-	ReadInt64   func(int64) Object
-	ReadInt     func(*big.Int) Object
-	ReadString  func(string) Object
-	ReadBinary  func([] byte) Object
+	ReadBool     func(bool) Object
+	ReadFloat    func(float64) Object
+	ReadInteger  func(*big.Int) (Object, bool)
+	ReadString   func(string) Object
+	ReadBinary   func([] byte) Object
 }
 type ContainerDeserializer struct {
 	CreateArray  func(array_t *Type) Object
@@ -71,3 +63,4 @@ type AlgebraicDeserializer struct {
 	FinishTuple     func(tuple Object, t TypeId) (Object, error)
 	Case2Enum       func(obj Object, enum_t TypeId, case_t TypeId) (Object, error)
 }
+

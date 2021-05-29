@@ -14,7 +14,7 @@ import (
 
 var __KmdPrimitiveTypes = map[lang.Symbol] kmd.TypeKind {
 	__Bool:        kmd.Bool,
-	__Integer:     kmd.Int,
+	__Integer:     kmd.Integer,
 	__NormalFloat: kmd.Float,
 	__String:      kmd.String,
 	__Bytes:       kmd.Binary,

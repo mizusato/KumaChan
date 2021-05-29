@@ -8,14 +8,14 @@ import (
 
 type Object = interface{}
 type Type struct {
-	kind        TypeKind
-	elementType *Type  // only available in Container Types
-	identifier  TypeId // only available in Algebraic Types
+	kind         TypeKind
+	elementType  *Type  // only available in Container Types
+	identifier   TypeId // only available in Algebraic Types
 }
 type TypeKind uint
 const (
 	// Primitive Types
-	Bool TypeKind = iota; Float; Uint32; Int32; Uint64; Int64; Int; String; Binary
+	Bool TypeKind = iota; Float; Integer; String; Binary
 	// Container Types
 	Array; Optional
 	// Algebraic Types
@@ -105,16 +105,12 @@ func TypeParse(text string) (*Type, bool) {
 	} else {
 		var kind_text = text
 		switch kind_text {
-		case "bool":   return PrimitiveType(Bool), true
-		case "float":  return PrimitiveType(Float), true
-		case "uint32": return PrimitiveType(Uint32), true
-		case "int32":  return PrimitiveType(Int32), true
-		case "uint64": return PrimitiveType(Uint64), true
-		case "int64":  return PrimitiveType(Int64), true
-		case "int":    return PrimitiveType(Int), true
-		case "string": return PrimitiveType(String), true
-		case "binary": return PrimitiveType(Binary), true
-		default:       return nil, false
+		case "bool":    return PrimitiveType(Bool), true
+		case "float":   return PrimitiveType(Float), true
+		case "integer": return PrimitiveType(Integer), true
+		case "string":  return PrimitiveType(String), true
+		case "binary":  return PrimitiveType(Binary), true
+		default:        return nil, false
 		}
 	}
 }
@@ -147,11 +143,7 @@ func (kind TypeKind) String() string {
 	switch kind {
 	case Bool:     return "bool"
 	case Float:    return "float"
-	case Uint32:   return "uint32"
-	case Int32:    return "int32"
-	case Uint64:   return "uint64"
-	case Int64:    return "int64"
-	case Int:      return "int"
+	case Integer:  return "integer"
 	case String:   return "string"
 	case Binary:   return "binary"
 	case Array:    return "[]"

@@ -126,36 +126,17 @@ func deserialize(input *deserializeReader, ctx deserializeContext) (Object, erro
 			}
 			return ctx.ReadFloat(value), nil
 		})
-	case Uint32:
-		return readPrimitive(input, ctx.Depth, func(str string) (Object, error) {
-			value, err := strconv.ParseUint(str, 10, 32)
-			if err != nil { return nil, fmt.Errorf("invalid uint32: %w", err) }
-			return ctx.ReadUint32(uint32(value)), nil
-		})
-	case Int32:
-		return readPrimitive(input, ctx.Depth, func(str string) (Object, error) {
-			value, err := strconv.ParseInt(str, 10, 32)
-			if err != nil { return nil, fmt.Errorf("invalid int32: %w", err) }
-			return ctx.ReadInt32(int32(value)), nil
-		})
-	case Uint64:
-		return readPrimitive(input, ctx.Depth, func(str string) (Object, error) {
-			value, err := strconv.ParseUint(str, 10, 64)
-			if err != nil { return nil, fmt.Errorf("invalid uint64: %w", err) }
-			return ctx.ReadUint64(value), nil
-		})
-	case Int64:
-		return readPrimitive(input, ctx.Depth, func(str string) (Object, error) {
-			value, err := strconv.ParseInt(str, 10, 64)
-			if err != nil { return nil, fmt.Errorf("invalid int64: %w", err) }
-			return ctx.ReadInt64(value), nil
-		})
-	case Int:
+	case Integer:
 		return readPrimitive(input, ctx.Depth, func(str string) (Object, error) {
 			var value big.Int
 			var _, ok = value.SetString(str, 10)
 			if !(ok) { return nil, errors.New("invalid int") }
-			return ctx.ReadInt(&value), nil
+			var obj, fit = ctx.ReadInteger(&value)
+			if fit {
+				return obj, nil
+			} else {
+				return nil, errors.New("integer overflow")
+			}
 		})
 	case String:
 		return readPrimitive(input, ctx.Depth, func(str string) (Object, error) {

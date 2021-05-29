@@ -50,19 +50,7 @@ func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
 				WriteFloat: func(obj kmd.Object) float64 {
 					return obj.(KmdTypedValue).Value.(float64)
 				},
-				WriteUint32: func(obj kmd.Object) uint32 {
-					return obj.(KmdTypedValue).Value.(uint32)
-				},
-				WriteInt32: func(obj kmd.Object) int32 {
-					return obj.(KmdTypedValue).Value.(int32)
-				},
-				WriteUint64: func(obj kmd.Object) uint64 {
-					return obj.(KmdTypedValue).Value.(uint64)
-				},
-				WriteInt64:  func(obj kmd.Object) int64 {
-					return obj.(KmdTypedValue).Value.(int64)
-				},
-				WriteInt:    func(obj kmd.Object) *big.Int {
+				WriteInteger:    func(obj kmd.Object) *big.Int {
 					return obj.(KmdTypedValue).Value.(*big.Int)
 				},
 				WriteString: func(obj kmd.Object) string {
@@ -177,12 +165,10 @@ func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
 				ReadBool: func(v bool) kmd.Object {
 					return ToBool(v)
 				},
-				ReadFloat:  func(v float64) kmd.Object { return v },
-				ReadUint32: func(v uint32) kmd.Object { return v },
-				ReadInt32:  func(v int32) kmd.Object { return v },
-				ReadUint64: func(v uint64) kmd.Object { return v },
-				ReadInt64:  func(v int64) kmd.Object { return v },
-				ReadInt:    func(v *big.Int) kmd.Object { return v },
+				ReadFloat: func(v float64) kmd.Object { return v },
+				ReadInteger: func(v *big.Int) (kmd.Object, bool) {
+					return v, true
+				},
 				ReadString: func(v string) kmd.Object { return v },
 				ReadBinary: func(v ([] byte)) kmd.Object { return v },
 			},
@@ -191,10 +177,6 @@ func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
 					switch array_t.ElementType().Kind() {
 					case kmd.Bool:   return make([] bool, 0)
 					case kmd.Float:  return make([] float64, 0)
-					case kmd.Uint32: return make([] uint32, 0)
-					case kmd.Int32:  return make([] int32, 0)
-					case kmd.Uint64: return make([] uint64, 0)
-					case kmd.Int64:  return make([] int64, 0)
 					default:         return make([] Value, 0)
 					}
 				},

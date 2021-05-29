@@ -63,16 +63,8 @@ func serialize(obj Object, ctx serializeContext, output io.Writer) error {
 			return errors.New("kmd: unable to serialize abnormal float value")
 		}
 		return writePrimitive(output, val, ctx.Depth)
-	case Uint32:
-		return writePrimitive(output, ctx.WriteUint32(obj), ctx.Depth)
-	case Int32:
-		return writePrimitive(output, ctx.WriteInt32(obj), ctx.Depth)
-	case Uint64:
-		return writePrimitive(output, ctx.WriteUint64(obj), ctx.Depth)
-	case Int64:
-		return writePrimitive(output, ctx.WriteInt64(obj), ctx.Depth)
-	case Int:
-		return writePrimitive(output, ctx.WriteInt(obj), ctx.Depth)
+	case Integer:
+		return writePrimitive(output, ctx.WriteInteger(obj), ctx.Depth)
 	case String:
 		var str = ctx.WriteString(obj)
 		return writePrimitive(output, strconv.Quote(str), ctx.Depth)
@@ -162,3 +154,4 @@ func writePrimitive(output io.Writer, content interface{}, depth uint) error {
 	if err != nil { return err }
 	return nil
 }
+

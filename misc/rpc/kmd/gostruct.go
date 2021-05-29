@@ -12,14 +12,20 @@ const Tag = "kmd"
 const TagIgnore = "kmd_ignore"
 const MaybeMethod = "Maybe"
 
+type IntegerKind uint
+const (
+	BigInt IntegerKind = iota
+	Int64
+)
 type StringKind uint
 const (
 	GoString StringKind = iota
 	RuneSlice
 )
 type GoStructOptions struct {
+	Types  map[TypeId] reflect.Type
+	IntegerKind
 	StringKind
-	Types               map[TypeId] reflect.Type
 	GoStructSerializerOptions
 	GoStructDeserializerOptions
 }
@@ -66,30 +72,20 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 			return PrimitiveType(Bool)
 		case float64:
 			return PrimitiveType(Float)
-		case uint32:
-			return PrimitiveType(Uint32)
-		case int32:
-			return PrimitiveType(Int32)
-		case uint64:
-			return PrimitiveType(Uint64)
-		case int64:
-			return PrimitiveType(Int64)
 		case *big.Int:
-			return PrimitiveType(Int)
+			if opts.IntegerKind != BigInt { panic("inconsistent integer kind") }
+			return PrimitiveType(Integer)
+		case int64:
+			if opts.IntegerKind != Int64 { panic("inconsistent integer kind") }
+			return PrimitiveType(Integer)
 		case string:
-			if opts.StringKind == GoString {
-				return PrimitiveType(String)
-			} else {
-				panic("inconsistent string kind")
-			}
+			if opts.StringKind != GoString { panic("inconsistent string kind") }
+			return PrimitiveType(String)
+		case [] rune:
+			if opts.StringKind != RuneSlice { panic("inconsistent string kind") }
+			return PrimitiveType(String)
 		case [] byte:
 			return PrimitiveType(Binary)
-		case [] rune:
-			if opts.StringKind == RuneSlice {
-				return PrimitiveType(String)
-			} else {
-				panic("inconsistent string kind")
-			}
 		default:
 			var t reflect.Type
 			var workaround, is_workaround = obj.(GoInterfaceWorkaround)
@@ -132,17 +128,22 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 		switch t.kind {
 		case Bool:   return reflect.TypeOf(true)
 		case Float:  return reflect.TypeOf(float64(0.0))
-		case Uint32: return reflect.TypeOf(uint32(0))
-		case Int32:  return reflect.TypeOf(int32(0))
-		case Uint64: return reflect.TypeOf(uint64(0))
-		case Int64:  return reflect.TypeOf(int64(0))
-		case Int:    return reflect.TypeOf((*big.Int)(nil))
+		case Integer:
+			switch opts.IntegerKind {
+			case BigInt:
+				return reflect.TypeOf((*big.Int)(nil))
+			case Int64:
+				return reflect.TypeOf(int64(0))
+			default:
+				panic("impossible branch")
+			}
 		case String:
-			if opts.StringKind == GoString {
+			switch opts.StringKind {
+			case GoString:
 				return reflect.TypeOf("")
-			} else if opts.StringKind == RuneSlice {
+			case RuneSlice:
 				return reflect.TypeOf(([] rune)(""))
-			} else {
+			default:
 				panic("impossible branch")
 			}
 		case Binary:
@@ -176,19 +177,25 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 	var serializer = Serializer {
 		DetermineType: determine_type,
 		PrimitiveSerializer: PrimitiveSerializer {
-			WriteBool:   func(obj Object) bool { return obj.(bool) },
-			WriteFloat:  func(obj Object) float64 { return obj.(float64) },
-			WriteUint32: func(obj Object) uint32 { return obj.(uint32) },
-			WriteInt32:  func(obj Object) int32 { return obj.(int32) },
-			WriteUint64: func(obj Object) uint64 { return obj.(uint64) },
-			WriteInt64:  func(obj Object) int64 { return obj.(int64) },
-			WriteInt:    func(obj Object) *big.Int { return obj.(*big.Int) },
+			WriteBool:    func(obj Object) bool { return obj.(bool) },
+			WriteFloat:   func(obj Object) float64 { return obj.(float64) },
+			WriteInteger: func(obj Object) *big.Int {
+				switch opts.IntegerKind {
+				case BigInt:
+					return obj.(*big.Int)
+				case Int64:
+					return big.NewInt(obj.(int64))
+				default:
+					panic("impossible branch")
+				}
+			},
 			WriteString: func(obj Object) string {
-				if opts.StringKind == GoString {
+				switch opts.StringKind {
+				case GoString:
 					return obj.(string)
-				} else if opts.StringKind == RuneSlice {
+				case RuneSlice:
 					return string(obj.([] rune))
-				} else {
+				default:
 					panic("impossible branch")
 				}
 			},
@@ -266,19 +273,29 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 	}
 	var deserializer = Deserializer {
 		PrimitiveDeserializer: PrimitiveDeserializer {
-			ReadBool:   func(obj bool) Object { return obj },
-			ReadFloat:  func(obj float64) Object { return obj },
-			ReadUint32: func(obj uint32) Object { return obj },
-			ReadInt32:  func(obj int32) Object { return obj },
-			ReadUint64: func(obj uint64) Object { return obj },
-			ReadInt64:  func(obj int64) Object { return obj },
-			ReadInt:    func(obj *big.Int) Object { return obj },
+			ReadBool:    func(obj bool) Object { return obj },
+			ReadFloat:   func(obj float64) Object { return obj },
+			ReadInteger: func(obj *big.Int) (Object, bool) {
+				switch opts.IntegerKind {
+				case BigInt:
+					return obj, true
+				case Int64:
+					if obj.IsInt64() {
+						return obj.Int64(), true
+					} else {
+						return nil, false
+					}
+				default:
+					panic("impossible branch")
+				}
+			},
 			ReadString: func(str string) Object {
-				if opts.StringKind == GoString {
+				switch opts.StringKind {
+				case GoString:
 					return str
-				} else if opts.StringKind == RuneSlice {
+				case RuneSlice:
 					return ([] rune)(str)
-				} else {
+				default:
 					panic("impossible branch")
 				}
 			},
