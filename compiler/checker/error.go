@@ -302,6 +302,21 @@ type E_KmdCaseNotSerializable struct {
 func (impl E_KmdTypeNotSerializable) KmdError() {}
 type E_KmdTypeNotSerializable struct {}
 
+func (impl E_KmdDuplicateAdapter) KmdError() {}
+type E_KmdDuplicateAdapter struct {}
+
+func (impl E_KmdDuplicateValidator) KmdError() {}
+type E_KmdDuplicateValidator struct {}
+
+func (impl E_KmdValidatorNotInSameModule) KmdError() {}
+type E_KmdValidatorNotInSameModule struct {}
+
+func (impl E_KmdMissingValidator) KmdError() {}
+type E_KmdMissingValidator struct {}
+
+func (impl E_KmdSuspiciousValidator) KmdError() {}
+type E_KmdSuspiciousValidator struct {}
+
 func (err *KmdError) Desc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
 	switch e := err.Concrete.(type) {
@@ -325,6 +340,18 @@ func (err *KmdError) Desc() ErrorMessage {
 		msg.WriteText(TS_ERROR, "is not KMD serializable")
 	case E_KmdTypeNotSerializable:
 		msg.WriteText(TS_ERROR, "This type is not KMD serializable")
+	case E_KmdDuplicateAdapter:
+		msg.WriteText(TS_ERROR, "Duplicate adapter")
+	case E_KmdDuplicateValidator:
+		msg.WriteText(TS_ERROR, "Duplicate validator")
+	case E_KmdValidatorNotInSameModule:
+		msg.WriteText(TS_ERROR,
+			"Validator should be defined in the same module with its input type")
+	case E_KmdMissingValidator:
+		msg.WriteText(TS_ERROR, "Missing validator for this type")
+	case E_KmdSuspiciousValidator:
+		msg.WriteText(TS_ERROR, "Suspicious validator defined on this type")
+		msg.WriteEndText(TS_INFO, "(maybe the type should be protected or opaque)")
 	default:
 		panic("unknown error kind")
 	}

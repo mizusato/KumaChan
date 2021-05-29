@@ -48,8 +48,9 @@ type CheckedFunctionInfo struct {
 	FunctionGeneratorFlags
 }
 type FunctionGeneratorFlags struct {
-	Exported         bool
-	ConsideredThunk  bool
+	Exported        bool
+	ConsideredThunk bool
+	KmdRelated      bool
 }
 type CheckedEffect struct {
 	Point  ErrorPoint
@@ -60,6 +61,8 @@ type FunctionKmdInfo struct {
 	AdapterId    kmd.AdapterId
 	IsValidator  bool
 	ValidatorId  kmd.ValidatorId
+	KmdIn        lang.Symbol
+	KmdOut       lang.Symbol
 }
 
 type Body interface { CheckerBody() }
@@ -594,8 +597,10 @@ func TypeCheck(entry *loader.Module, raw_index loader.Index) (
 		Mapping:   mapping,
 	}
 	var checked_index = make(Index)
-	var checked, errs = TypeCheckModule(entry, checked_index, ctx)
-	if errs != nil { return nil, nil, nil, nil, errs }
+	var checked, errs1 = TypeCheckModule(entry, checked_index, ctx)
+	if errs1 != nil { return nil, nil, nil, nil, errs1 }
+	var errs2 = EnforceGoodKmdFunctions(types, checked_index)
+	if errs2 != nil { return nil, nil, nil, nil, errs2 }
 	return checked, checked_index, sch, serv, nil
 }
 
@@ -645,11 +650,15 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 				return false
 			})()
 			var considered_thunk = is_unit_input && !(f.Tags.ExplicitCall)
+			var kmd_info = GetFunctionKmdInfo(name, t, ctx.Mapping)
+			var _, is_kmd_api = f.Body.(ast.KmdApiFuncBody)
+			var is_kmd_user_func = kmd_info.IsAdapter || kmd_info.IsValidator
+			var is_kmd_related = is_kmd_api || is_kmd_user_func
 			func_map[name] = append(func_map[name], CheckedFunction {
 				Point:    ErrorPointFrom(f.Node),
 				Body:     body,
 				Implicit: implicit_fields,
-				FunctionKmdInfo: GetFunctionKmdInfo(name, t, ctx.Mapping),
+				FunctionKmdInfo:     kmd_info,
 				CheckedFunctionInfo: CheckedFunctionInfo {
 					Section:     f.Section,
 					Public:      f.Public,
@@ -664,6 +673,7 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 					FunctionGeneratorFlags: FunctionGeneratorFlags {
 						Exported:        f.Public,
 						ConsideredThunk: considered_thunk,
+						KmdRelated:      is_kmd_related,
 					},
 				},
 			})

@@ -37,9 +37,8 @@ type KmdApiImpl struct {
 }
 type KmdTransformContext interface {
 	KmdGetInfo() KmdInfo
-	KmdGetAdapter(index uint) Value
-	KmdCallAdapter(f Value, x Value) Value
-	KmdCallValidator(f Value, x Value) bool
+	KmdCallAdapter(info KmdAdapterInfo, x Value) Value
+	KmdCallValidator(info KmdValidatorInfo, x Value) bool
 }
 func CreateKmdApi(ctx KmdTransformContext) KmdApi {
 	return &KmdApiImpl {

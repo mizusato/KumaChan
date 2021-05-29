@@ -1,0 +1,40 @@
+# data: name=Range, ver=latest
+type Range protected {
+    a: Integer,
+    b: Integer
+};
+
+function @validate: &(Range) => Bool
+    & {a, b} => (a <= b);
+
+const Data1: String := 'KumaChan Data
+{} ..Range latest
+ a integer
+  1
+ b integer
+  2';
+
+const Data2: String := 'KumaChan Data
+{} ..Range latest
+ a integer
+  3
+ b integer
+  2';
+
+function describe-deserialized:
+    &(String) => String
+    &(data) =>
+        switch { @deserialize { encode data } }.[Result[Range,Error]]:
+        case Success range:
+            let { a, b } := range,
+            { "(#, #)" (a.{String}, b.{String}) },
+        case Failure err:
+            err.{String},
+        end;
+
+do
+    [{ describe-deserialized Data1 }, { describe-deserialized Data2 }]
+        . { join \n }
+        . { println }
+        . { crash-on-error };
+

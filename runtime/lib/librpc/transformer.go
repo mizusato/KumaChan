@@ -211,8 +211,7 @@ func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
 						}
 						var info, exists = conf.KmdAdapterTable[adapter_id]
 						if exists {
-							var adapter = ctx.KmdGetAdapter(info.Index)
-							var adapted = ctx.KmdCallAdapter(adapter, obj)
+							var adapted = ctx.KmdCallAdapter(info, obj)
 							return adapted, nil
 						} else {
 							return nil, errors.New(fmt.Sprintf(

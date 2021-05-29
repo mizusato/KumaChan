@@ -109,18 +109,15 @@ func (m *Machine) GetRpcInfo() RpcInfo {
 	return m.program.RpcInfo
 }
 
-func (m *Machine) KmdGetAdapter(index uint) Value {
-	var adapter = m.globalSlot[index]
-	var _, ok = adapter.(UserFunctionValue)
-	if !(ok) { panic("something went wrong") }
-	return adapter
-}
-
-func (m *Machine) KmdCallAdapter(f Value, x Value) Value {
+func (m *Machine) KmdCallAdapter(info KmdAdapterInfo, x Value) Value {
+	var f, exists = m.GetGlobalValue(info.Index)
+	if !(exists) { panic("something went wrong") }
 	return call(f.(UserFunctionValue), x, m, rx.Background())
 }
 
-func (m *Machine) KmdCallValidator(f Value, x Value) bool {
+func (m *Machine) KmdCallValidator(info KmdValidatorInfo, x Value) bool {
+	var f, exists = m.GetGlobalValue(info.Index)
+	if !(exists) { panic("something went wrong") }
 	return FromBool(call(f.(UserFunctionValue), x, m, rx.Background()).(EnumValue))
 }
 

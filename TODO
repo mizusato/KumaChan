@@ -1,12 +1,5 @@
 TODO
 
-## Fundamental
-
-- KMD: validator only for (and required for) serializable protected/opaque types
-
-- Lang: no non-primitive value type (make all values primitive/ref), `is` operator
-
-
 ## Refinement
 
 - GUI: qtbinding C side int vs. go side int (not the same type, fix it)

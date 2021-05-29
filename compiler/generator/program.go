@@ -48,16 +48,6 @@ func CreateProgram (
 					thunk_names = append(thunk_names, name)
 					thunks = append(thunks, item)
 				}
-				if item.IsAdapter {
-					kmd_info.KmdAdapterTable[item.AdapterId] = lang.KmdAdapterInfo {
-						Index: global_index,
-					}
-				}
-				if item.IsValidator {
-					kmd_info.KmdValidatorTable[item.ValidatorId] = lang.KmdValidatorInfo {
-						Index: global_index,
-					}
-				}
 			}
 		}
 	}
@@ -109,7 +99,7 @@ func CreateProgram (
 	}
 	var unused = make([] uint, 0)
 	for i, f := range functions {
-		if !(f.Exported) && !(used[i]) {
+		if !(f.Exported) && !(f.KmdRelated) && !(used[i]) {
 			unused = append(unused, uint(i))
 		}
 	}
@@ -244,12 +234,25 @@ func CreateProgram (
 	for i, _ := range effects {
 		relocate_code(&(effects[i]))
 	}
-	var unwrap = func(list []FuncNode) []*lang.Function {
-		var raw = make([]*lang.Function, len(list))
+	var unwrap = func(list ([] FuncNode)) ([] *lang.Function) {
+		var raw = make([] *lang.Function, len(list))
 		for i, item := range list {
 			raw[i] = item.Underlying
 		}
 		return raw
+	}
+	for index, f := range functions {
+		var global_index = (base_function + uint(index))
+		if f.IsAdapter {
+			kmd_info.KmdAdapterTable[f.AdapterId] = lang.KmdAdapterInfo {
+				Index: global_index,
+			}
+		}
+		if f.IsValidator {
+			kmd_info.KmdValidatorTable[f.ValidatorId] = lang.KmdValidatorInfo {
+				Index: global_index,
+			}
+		}
 	}
 	return lang.Program {
 		MetaData:   metadata,

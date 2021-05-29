@@ -1,0 +1,6 @@
+# data: name=Range, ver=latest
+type Range protected {
+    a: Integer,
+    b: Integer
+};
+

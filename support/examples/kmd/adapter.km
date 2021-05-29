@@ -1,0 +1,35 @@
+# data: name=Vec, ver=v2
+type Vec2 {
+    x: NormalFloat,
+    y: NormalFloat
+};
+
+# data: name=Vec, ver=v3
+type Vec3 {
+    x: NormalFloat,
+    y: NormalFloat,
+    z: NormalFloat
+};
+
+function @adapt:
+    &(Vec2) => Vec3
+    & { x, y } => { Vec3 { x, y, z: 0 } };
+
+const Data: String := 'KumaChan Data
+{} ..Vec v2
+ x float
+  1
+ y float
+  2';
+
+do
+    switch { @deserialize { encode Data } }.[Result[Vec3,Error]]:
+    case Success vec:
+        let { x, y, z } := vec,
+        let desc := { "(#, #, #)" (x.{String}, y.{String}, z.{String}) },
+        { println desc }
+            . { crash-on-error },
+    case Failure err:
+        { crash err },
+    end;
+

@@ -179,24 +179,94 @@ func CollectKmdApi (
 	return mapping, sch, inj, nil
 }
 
+func EnforceGoodKmdFunctions(types TypeRegistry, idx Index) ([] E) {
+	type AdapterKey struct {
+		In   lang.Symbol
+		Out  lang.Symbol
+	}
+	var errs = make([] E, 0)
+	var add_error = func(p ErrorPoint, e ConcreteKmdError) {
+		errs = append(errs, &KmdError {
+			Point:    p,
+			Concrete: e,
+		})
+	}
+	var has_adapter = make(map[AdapterKey] bool)
+	var has_validator = make(map[lang.Symbol] bool)
+	for mod_name, mod := range idx {
+		for _, group := range mod.Functions {
+			for _, item := range group {
+				if item.IsAdapter {
+					var key = AdapterKey {
+						In:  item.KmdIn,
+						Out: item.KmdOut,
+					}
+					if has_adapter[key] {
+						add_error(item.Point, E_KmdDuplicateAdapter {})
+					} else {
+						has_adapter[key] = true
+					}
+				}
+				if item.IsValidator {
+					var type_name = item.KmdIn
+					if has_validator[type_name] {
+						add_error(item.Point, E_KmdDuplicateValidator {})
+					} else {
+						if type_name.ModuleName != mod_name {
+							add_error(item.Point, E_KmdValidatorNotInSameModule {})
+						} else {
+							has_validator[type_name] = true
+						}
+					}
+				}
+			}
+		}
+	}
+	for type_name, t := range types {
+		if t.Tags.DeclaredSerializable() {
+			var boxed, is_boxed = t.Definition.(*Boxed)
+			if is_boxed {
+				if boxed.Protected || boxed.Opaque {
+					if !(has_validator[type_name]) {
+						add_error(ErrorPointFrom(t.Node), E_KmdMissingValidator {})
+					}
+				} else {
+					if has_validator[type_name] {
+						add_error(ErrorPointFrom(t.Node), E_KmdSuspiciousValidator {})
+					}
+				}
+			}
+		}
+	}
+	if len(errs) > 0 {
+		return errs
+	} else {
+		return nil
+	}
+}
+
 func GetFunctionKmdInfo(name string, t Func, mapping KmdIdMapping) FunctionKmdInfo {
 	var info FunctionKmdInfo
 	if name == KmdAdapterName {
 		switch I := t.Input.(type) {
 		case *NamedType:
 			if len(I.Args) == 0 {
-				var in, exists = mapping[I.Name]
+				var in_name = I.Name
+				var in, exists = mapping[in_name]
 				if exists {
 					switch O := t.Output.(type) {
 					case *NamedType:
 						if len(O.Args) == 0 {
-							var out, exists = mapping[O.Name]
+							var out_name = O.Name
+							var out, exists = mapping[out_name]
 							if exists {
 								info.IsAdapter = true
 								info.AdapterId = kmd.AdapterId {
 									From: in,
 									To:   out,
 								}
+								info.KmdIn = in_name
+								info.KmdOut = out_name
 							}
 						}
 					}
@@ -207,11 +277,13 @@ func GetFunctionKmdInfo(name string, t Func, mapping KmdIdMapping) FunctionKmdIn
 		switch I := t.Input.(type) {
 		case *NamedType:
 			if len(I.Args) == 0 {
-				var in, exists = mapping[I.Name]
+				var in_name = I.Name
+				var in, exists = mapping[in_name]
 				if exists {
 					if TypeEqualWithoutContext(t.Output, __T_Bool) {
 						info.IsValidator = true
 						info.ValidatorId = kmd.ValidatorId(in)
+						info.KmdIn = in_name
 					}
 				}
 			}
