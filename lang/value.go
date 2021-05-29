@@ -36,6 +36,9 @@ func ValNativeFun(f NativeFunction) NativeFunctionValue {
 	return &f
 }
 
+// RefEqual tests the equality of its inputs.
+// It basically compares pointers but looks into 1-struct / enum.
+// IMPORTANT: should be only used on values of same checker.Type
 func RefEqual(a Value, b Value) bool {
 	return refEqual(reflect.ValueOf(a), reflect.ValueOf(b))
 }
@@ -59,7 +62,15 @@ func refEqual(x reflect.Value, y reflect.Value) bool {
 		case reflect.Interface:
 			panic("impossible branch")
 		case reflect.Ptr:
-			return (x.Pointer() == y.Pointer())
+			if x.Pointer() == y.Pointer() {
+				return true
+			} else if t == reflect.TypeOf(&ValEnum {}) {
+				var a = x.Interface().(EnumValue)
+				var b = y.Interface().(EnumValue)
+				return (a.Index == b.Index && RefEqual(a.Value, b.Value))
+			} else {
+				return false
+			}
 		case reflect.UnsafePointer:
 			return (x.Pointer() == y.Pointer())
 		case reflect.Chan:

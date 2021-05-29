@@ -1,5 +1,5 @@
-export function is:
-    &(any,any) => Bool
+export function is:[T]
+    &(T,T) => Bool
     native 'is';
 
 type Eq[T] implicit {

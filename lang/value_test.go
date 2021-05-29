@@ -31,6 +31,13 @@ func TestRefEqual(t *testing.T) {
 	var s1 = "Hello"
 	var s2 = string([] rune {'H','e','l','l','o'})
 	var s3 = "World"
+	var t1 = &ValTup { Elements: [] Value { 1 } }
+	var t2 = &ValTup { Elements: [] Value { 2 } }
+	var e1 = &ValEnum { Index: 1, Value: 2 }
+	var e2 = &ValEnum { Index: 1, Value: 2 }
+	var e3 = &ValEnum { Index: 2, Value: 2 }
+	var e4 = &ValEnum { Index: 2, Value: 1 }
+	var e5 = &ValEnum { Index: 1, Value: 1 }
 	var check = func(p bool, expected bool, msg string) {
 		if p != expected {
 			t.Fatal("wrong behaviour of RefEqual: " + msg)
@@ -90,5 +97,14 @@ func TestRefEqual(t *testing.T) {
 	check(RefEqual('1', '2'), false, "rune (different)")
 	check(RefEqual(1.0, 1.0), true, "float64 (same)")
 	check(RefEqual(1.0, 2.0), false, "float64 (different)")
+	// tuple
+	check(RefEqual(t1, t1), true, "tuple 1")
+	check(RefEqual(t1, t2), false, "tuple 2")
+	// enum
+	check(RefEqual(e1, e1), true, "enum 1")
+	check(RefEqual(e1, e2), true, "enum 2")
+	check(RefEqual(e1, e3), false, "enum 3")
+	check(RefEqual(e1, e4), false, "enum 4")
+	check(RefEqual(e1, e5), false, "enum 5")
 }
 
