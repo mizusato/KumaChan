@@ -5,9 +5,9 @@ import (
 	"html"
 	"sort"
 	"strings"
-	"kumachan/compiler/checker"
+	"kumachan/interpreter/compiler/checker"
 	"kumachan/stdlib"
-	"kumachan/lang"
+	"kumachan/interpreter/base"
 )
 
 
@@ -51,7 +51,7 @@ func GenerateApiDocs(idx checker.Index) ApiDocIndex {
 		var reg = mod.Context.Types
 		var outline = make([] ApiItem, 0)
 		var sections = make(map[string] ([] int))
-		var outline_add_item = func(kind ApiItemKind, sym lang.Symbol, sec ([] string)) {
+		var outline_add_item = func(kind ApiItemKind, sym base.Symbol, sec ([] string)) {
 			var normalized_sec = make([] string, 0)
 			for _, s := range sec {
 				if s != "" {
@@ -78,7 +78,7 @@ func GenerateApiDocs(idx checker.Index) ApiDocIndex {
 				}
 			}
 		}
-		var add_type = func(sym lang.Symbol, g *checker.GenericType) {
+		var add_type = func(sym base.Symbol, g *checker.GenericType) {
 			outline_add_item(TypeDecl, sym, [] string { g.Section })
 			var id = sym.String()
 			if !(g.CaseInfo.IsCaseType) {
@@ -92,7 +92,7 @@ func GenerateApiDocs(idx checker.Index) ApiDocIndex {
 			}
 		}
 		var add_function = func(name string, group ([] checker.CheckedFunction)) {
-			var sym = lang.MakeSymbol(mod_name, name)
+			var sym = base.MakeSymbol(mod_name, name)
 			var sec = make([] string, 0)
 			var sec_added = make(map[string] bool)
 			for _, f := range group {
@@ -121,7 +121,7 @@ func GenerateApiDocs(idx checker.Index) ApiDocIndex {
 			buf.WriteString(string(wrapped))
 			buf.WriteString("\n")
 		}
-		var types = make([]lang.Symbol, 0)
+		var types = make([]base.Symbol, 0)
 		for sym, _ := range reg {
 			if sym.ModuleName == mod_name {
 				if mod.ExportedTypes[mod_name][sym] {
@@ -176,7 +176,7 @@ func splitDescription(content string) (string, string) {
 	}
 }
 
-func typeDecl(sym lang.Symbol, g *checker.GenericType, reg checker.TypeRegistry, mod string) Html {
+func typeDecl(sym base.Symbol, g *checker.GenericType, reg checker.TypeRegistry, mod string) Html {
 	return block("type",
 		block("header",
 			keyword("type"), text("name", sym.SymbolName),
@@ -185,7 +185,7 @@ func typeDecl(sym lang.Symbol, g *checker.GenericType, reg checker.TypeRegistry,
 		description(g.Doc))
 }
 
-func funcDecl(sym lang.Symbol, group ([] checker.CheckedFunction)) Html {
+func funcDecl(sym base.Symbol, group ([] checker.CheckedFunction)) Html {
 	var group_contents = make([] Html, len(group))
 	var buf strings.Builder
 	for i, f := range group {
@@ -201,7 +201,7 @@ func funcDecl(sym lang.Symbol, group ([] checker.CheckedFunction)) Html {
 		description(common_desc))
 }
 
-func funcOverload(sym lang.Symbol, f checker.CheckedFunction) Html {
+func funcOverload(sym base.Symbol, f checker.CheckedFunction) Html {
 	var no_defaults = make(map[uint] checker.Type)
 	var params = f.Params
 	var mod = sym.ModuleName
@@ -226,7 +226,7 @@ func funcAlias(mod string, alias_list ([] string)) Html {
 	}
 	var alias_contents = make([] Html, len(alias_list))
 	for i, alias := range alias_list {
-		var id = IdWithPrefix(lang.MakeSymbol(mod, alias).String(), FuncDecl)
+		var id = IdWithPrefix(base.MakeSymbol(mod, alias).String(), FuncDecl)
 		alias_contents[i] = inlineWithId(id, "alias-item", text("name", alias))
 	}
 	return inline("alias", keyword("("),
@@ -524,7 +524,7 @@ func join(items ([] Html), sep Html) Html {
 	return Html(buf.String())
 }
 
-func link(sym lang.Symbol, kind ApiItemKind, current_mod string) Html {
+func link(sym base.Symbol, kind ApiItemKind, current_mod string) Html {
 	var id = IdWithPrefix(sym.String(), kind)
 	var href = fmt.Sprintf("%s#%s", sym.ModuleName, id)
 	var c_module = (func() Html {
@@ -586,11 +586,11 @@ func blockWithId(id string, class string, content... Html) Html {
 }
 
 
-func sortSymbols(list ([]lang.Symbol)) {
+func sortSymbols(list ([]base.Symbol)) {
 	sort.Sort(SymbolList(list))
 }
 
-type SymbolList ([]lang.Symbol)
+type SymbolList ([]base.Symbol)
 func (l SymbolList) Len() int {
 	return len(l)
 }

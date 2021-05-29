@@ -6,9 +6,9 @@ import (
 	"sort"
 	"strings"
 	"path/filepath"
-	"kumachan/lang/parser/ast"
-	"kumachan/lang/parser/syntax"
-	"kumachan/compiler/loader"
+	"kumachan/interpreter/base/parser/ast"
+	"kumachan/interpreter/base/parser/syntax"
+	"kumachan/interpreter/compiler/loader"
 	"kumachan/stdlib"
 )
 

@@ -6,7 +6,7 @@ import (
 	"bufio"
 	"strings"
 	"encoding/json"
-	"kumachan/misc/util"
+	"kumachan/standalone/util"
 )
 
 
