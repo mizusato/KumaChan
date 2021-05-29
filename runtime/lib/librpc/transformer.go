@@ -150,7 +150,7 @@ func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
 					if !(exists) { panic("something went wrong") }
 					var schema = t.(kmd.EnumSchema)
 					for case_tid, index := range schema.CaseIndexMap {
-						if index == uint(sv.Index) {
+						if index == sv.Index {
 							var case_t = conf.GetTypeFromId(case_tid)
 							var case_v = sv.Value
 							return KmdTypedValue {
@@ -319,7 +319,7 @@ func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
 						panic("something went wrong")
 					}
 					return &ValEnum {
-						Index: Short(index),
+						Index: index,
 						Value: obj,
 					}, nil
 				},

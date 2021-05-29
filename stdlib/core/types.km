@@ -45,10 +45,10 @@ type Ordering enum {
 };
 export function =:
     &(Bool,Bool) => Bool
-    native 'sum-index-equal';
+    native 'enum-index-equal';
 export function =:
     &(Ordering,Ordering) => Bool
-    native 'sum-index-equal';
+    native 'enum-index-equal';
 
 type Optional[+T] Maybe[T];
 export const DefaultValue: Optional[never] := None;

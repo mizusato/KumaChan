@@ -77,10 +77,6 @@ func (inst Instruction) GetShortIndexOrSize() uint {
 	return uint(inst.Arg0)
 }
 
-func (inst Instruction) GetRawShortIndexOrSize() Short {
-	return inst.Arg0
-}
-
 func (inst Instruction) String() string {
 	switch inst.OpCode {
 	case NOP:

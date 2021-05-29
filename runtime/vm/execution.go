@@ -15,7 +15,7 @@ type ExecutionContext struct {
 	callStack     CallStack
 	workingFrame  CallStackFrame
 	indexBufLen   uint
-	indexBuf      [ProductMaxSize] Short
+	indexBuf      [ProductMaxSize] uint
 }
 type DataStack  [] Value
 type CallStack  [] CallStackFrame
@@ -137,7 +137,7 @@ func call(f UserFunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Valu
 				var value = ec.popValue()
 				ec.dataStack[base_addr + offset] = value
 			case SUM:
-				var index = inst.GetRawShortIndexOrSize()
+				var index = inst.GetShortIndexOrSize()
 				var value = ec.popValue()
 				ec.pushValue(&ValEnum {
 					Index: index,
@@ -146,7 +146,7 @@ func call(f UserFunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Valu
 			case JIF:
 				var sum, ok = ec.getCurrentValue().(EnumValue)
 				assert(ok, "JIF: cannot execute on non-sum value")
-				if sum.Index == inst.GetRawShortIndexOrSize() {
+				if sum.Index == inst.GetShortIndexOrSize() {
 					ec.popValue()
 					ec.pushValue(sum.Value)
 					var new_inst_ptr = inst.GetDestAddr()
@@ -298,13 +298,13 @@ func call(f UserFunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Valu
 			case MSI:
 				assert(ec.indexBufLen < ProductMaxSize,
 					"MSI: index buffer overflow")
-				var index = inst.GetRawShortIndexOrSize()
+				var index = inst.GetShortIndexOrSize()
 				ec.indexBuf[ec.indexBufLen] = index
 				ec.indexBufLen += 1
 			case MSD:
 				assert(ec.indexBufLen < ProductMaxSize,
 					"MSD: index buffer overflow")
-				ec.indexBuf[ec.indexBufLen] = ^(Short(0))
+				ec.indexBuf[ec.indexBufLen] = ^(uint(0))
 				ec.indexBufLen += 1
 			case MSJ:
 				var prod, ok = ec.getCurrentValue().(TupleValue)
@@ -316,7 +316,7 @@ func call(f UserFunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Valu
 					var sum, ok = e.(EnumValue)
 					assert(ok, "MSJ: non-sum element value occurred")
 					var desired = ec.indexBuf[i]
-					if desired == ^(Short(0)) {
+					if desired == ^(uint(0)) {
 						continue
 					} else {
 						if sum.Index == desired {
@@ -453,11 +453,11 @@ func createRef(ec *ExecutionContext, inst Instruction) {
 			var new_value, update = Unwrap(arg.(EnumValue))
 			if update {
 				return Tuple(&ValEnum {
-					Index: Short(index),
+					Index: index,
 					Value: new_value,
 				}, arg)
 			} else {
-				if uint(sum.Index) == index {
+				if sum.Index == index {
 					return Tuple(sum, Some(sum.Value))
 				} else {
 					return Tuple(sum, None())
@@ -477,13 +477,13 @@ func createRef(ec *ExecutionContext, inst Instruction) {
 				if has_value {
 					if update {
 						var u = h.Call(base, Some(&ValEnum{
-							Index: Short(index),
+							Index: index,
 							Value: new_value,
 						}))
 						return Tuple(u.(TupleValue).Elements[0], arg)
 					} else {
 						var sum = value.(EnumValue)
-						if uint(sum.Index) == index {
+						if sum.Index == index {
 							return Tuple(base_sum, Some(sum.Value))
 						} else {
 							return Tuple(base_sum, None())
@@ -503,7 +503,7 @@ func createRef(ec *ExecutionContext, inst Instruction) {
 				var new_value, update = Unwrap(arg.(EnumValue))
 				if update {
 					var t = h.Call(base, Some(&ValEnum {
-						Index: Short(index),
+						Index: index,
 						Value: new_value,
 					}))
 					return Tuple(t.(TupleValue).Elements[0], arg)
@@ -513,7 +513,7 @@ func createRef(ec *ExecutionContext, inst Instruction) {
 					var base_prod = pair[0]
 					var base_field = pair[1]
 					var sum = base_field.(EnumValue)
-					if uint(sum.Index) == index {
+					if sum.Index == index {
 						return Tuple(base_prod, Some(sum.Value))
 					} else {
 						return Tuple(base_prod, None())

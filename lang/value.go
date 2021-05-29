@@ -16,7 +16,7 @@ func ValueReflectType() reflect.Type { return __ValueReflectType }
 
 type EnumValue = *ValEnum
 type ValEnum struct {
-	Index  Short
+	Index  uint
 	Value  Value
 }
 

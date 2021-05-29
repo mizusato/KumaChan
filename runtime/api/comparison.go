@@ -8,7 +8,7 @@ import (
 
 
 var ComparisonFunctions = map[string] interface{} {
-	"sum-index-equal": func(a EnumValue, b EnumValue) EnumValue {
+	"enum-index-equal": func(a EnumValue, b EnumValue) EnumValue {
 		return ToBool(a.Index == b.Index)
 	},
 	"=String": func(a string, b string) EnumValue {
