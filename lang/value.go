@@ -40,7 +40,11 @@ func ValNativeFun(f NativeFunction) NativeFunctionValue {
 // It basically compares pointers but looks into 1-struct / enum.
 // IMPORTANT: should be only used on values of same checker.Type
 func RefEqual(a Value, b Value) bool {
-	return refEqual(reflect.ValueOf(a), reflect.ValueOf(b))
+	if a == nil || b == nil {
+		return (a == nil && b == nil)
+	} else {
+		return refEqual(reflect.ValueOf(a), reflect.ValueOf(b))
+	}
 }
 
 func refEqual(x reflect.Value, y reflect.Value) bool {

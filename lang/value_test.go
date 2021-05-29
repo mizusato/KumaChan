@@ -48,6 +48,10 @@ func TestRefEqual(t *testing.T) {
 	check(RefEqual("1", 1), false, "different kind 2")
 	check(RefEqual(int(1), uint(1)), false, "different kind 3")
 	check(RefEqual(uint32(1), uint64(1)), false, "different kind 4")
+	// nil
+	check(RefEqual(nil, nil), true, "nil 1")
+	check(RefEqual(nil, &stub1), false, "nil 2")
+	check(RefEqual(&stub1, nil), false, "nil 3")
 	// struct with 0 element (always true)
 	check(RefEqual(struct{}{}, struct{}{}), true, "struct[0]")
 	// struct with 1 element (forward)
