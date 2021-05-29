@@ -8,6 +8,9 @@ import (
 
 
 var ComparisonFunctions = map[string] interface{} {
+	"is": func(a Value, b Value) EnumValue {
+		return ToBool(RefEqual(a, b))
+	},
 	"enum-index-equal": func(a EnumValue, b EnumValue) EnumValue {
 		return ToBool(a.Index == b.Index)
 	},

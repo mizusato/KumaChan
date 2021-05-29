@@ -6,7 +6,10 @@ import (
 )
 
 
-type Stub struct { Something int }
+type Stub struct {
+	Something  int
+	Extra      bool
+}
 func (*Stub) Method() {}
 func (*Stub) AnotherMethod() {}
 
@@ -38,9 +41,14 @@ func TestRefEqual(t *testing.T) {
 	check(RefEqual("1", 1), false, "different kind 2")
 	check(RefEqual(int(1), uint(1)), false, "different kind 3")
 	check(RefEqual(uint32(1), uint64(1)), false, "different kind 4")
-	// struct (value type: always false)
-	check(RefEqual(stub1, stub1), false, "struct 1")
-	check(RefEqual(stub1, stub2), false, "struct 2")
+	// struct with 0 element (always true)
+	check(RefEqual(struct{}{}, struct{}{}), true, "struct[0]")
+	// struct with 1 element (forward)
+	check(RefEqual(struct{a int}{a: 1}, struct{a int}{a: 1}), true, "struct[1] 1")
+	check(RefEqual(struct{a int}{a: 1}, struct{a int}{a: 2}), false, "struct[1] 2")
+	// struct with 2+ elements (value type: always false)
+	check(RefEqual(stub1, stub1), false, "struct[2] 1")
+	check(RefEqual(stub1, stub2), false, "struct[2] 2")
 	// array (value type: always false)
 	check(RefEqual([...] int {1,2}, [...] int {1,2}), false, "array 1")
 	check(RefEqual([...] int {1,2}, [...] int {0xbadbeef}), false, "array 2")

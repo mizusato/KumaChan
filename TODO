@@ -2,10 +2,6 @@ TODO
 
 ## Fundamental
 
-- Lang:
-    consider prefix for special identifier used by compiler
-    e.g. @default, @validate, @adapt
-
 - KMD: validator only for (and required for) serializable protected/opaque types
 
 - Lang: no non-primitive value type (make all values primitive/ref), `is` operator
@@ -24,13 +20,13 @@ TODO
 
 ## Type System Refactor
 
-- Lang: bidirectional type inference
-
-- Lang: revise overloading rule (consider introducing input-based precedence)
-
 - Lang: permit anonymous record expression (currently requires explicit type)
 
 - Lang: fix the order randomness of field assignment of anonymous record input
+
+- Lang: bidirectional type inference
+
+- Lang: revise overloading rule (consider introducing input-based precedence)
 
 
 ## API Refactor

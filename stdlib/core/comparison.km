@@ -1,3 +1,7 @@
+export function is:
+    &(any,any) => Bool
+    native 'is';
+
 type Eq[T] implicit {
     = : &(T,T) => Bool
 };

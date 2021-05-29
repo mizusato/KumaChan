@@ -37,15 +37,23 @@ func ValNativeFun(f NativeFunction) NativeFunctionValue {
 }
 
 func RefEqual(a Value, b Value) bool {
-	var x = reflect.ValueOf(a)
-	var y = reflect.ValueOf(b)
+	return refEqual(reflect.ValueOf(a), reflect.ValueOf(b))
+}
+
+func refEqual(x reflect.Value, y reflect.Value) bool {
 	var tx = x.Type()
 	var ty = y.Type()
 	if tx == ty {
 		var t = tx
 		switch t.Kind() {
 		case reflect.Struct:
-			return false
+			if t.NumField() == 0 {
+				return true
+			} else if t.NumField() == 1 {
+				return refEqual(x.Field(0), y.Field(0))
+			} else {
+				return false
+			}
 		case reflect.Array:
 			return false
 		case reflect.Interface:
@@ -71,13 +79,18 @@ func RefEqual(a Value, b Value) bool {
 			var uh = (*reflect.StringHeader)(unsafe.Pointer(&u))
 			var vh = (*reflect.StringHeader)(unsafe.Pointer(&v))
 			return (uh.Data == vh.Data && uh.Len == vh.Len)
+		case reflect.Int, reflect.Int64, reflect.Int32, reflect.Int16, reflect.Int8:
+			return x.Int() == y.Int()
+		case reflect.Uint, reflect.Uintptr, reflect.Uint64, reflect.Uint32, reflect.Uint16, reflect.Uint8:
+			return x.Uint() == y.Uint()
+		case reflect.Bool:
+			return x.Bool() == y.Bool()
+		case reflect.Float64, reflect.Float32:
+			return x.Float() == y.Float()
+		case reflect.Complex128, reflect.Complex64:
+			return x.Complex() == y.Complex()
 		default:
-			if t.Comparable() {
-				// number kinds and miscellaneous kinds
-				return (a == b)
-			} else {
-				return false
-			}
+			return false
 		}
 	} else {
 		return false
