@@ -50,7 +50,10 @@ func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
 				WriteFloat: func(obj kmd.Object) float64 {
 					return obj.(KmdTypedValue).Value.(float64)
 				},
-				WriteInteger:    func(obj kmd.Object) *big.Int {
+				WriteComplex: func(obj kmd.Object) complex128 {
+					return obj.(KmdTypedValue).Value.(complex128)
+				},
+				WriteInteger: func(obj kmd.Object) *big.Int {
 					return obj.(KmdTypedValue).Value.(*big.Int)
 				},
 				WriteString: func(obj kmd.Object) string {
@@ -166,6 +169,7 @@ func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
 					return ToBool(v)
 				},
 				ReadFloat: func(v float64) kmd.Object { return v },
+				ReadComplex: func(v complex128) kmd.Object { return v },
 				ReadInteger: func(v *big.Int) (kmd.Object, bool) {
 					return v, true
 				},
@@ -175,8 +179,9 @@ func kmdCreateTransformer(ctx KmdTransformContext) kmd.Transformer {
 			ContainerDeserializer: kmd.ContainerDeserializer{
 				CreateArray: func(array_t *kmd.Type) kmd.Object {
 					switch array_t.ElementType().Kind() {
-					case kmd.Bool:   return make([] bool, 0)
-					case kmd.Float:  return make([] float64, 0)
+					case kmd.Bool:    return make([] bool, 0)
+					case kmd.Float:   return make([] float64, 0)
+					case kmd.Complex: return make([] complex128, 0)
 					default:         return make([] Value, 0)
 					}
 				},

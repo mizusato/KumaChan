@@ -60,7 +60,13 @@ func serialize(obj Object, ctx serializeContext, output io.Writer) error {
 	case Float:
 		val := ctx.WriteFloat(obj)
 		if !(util.IsNormalFloat(val)) {
-			return errors.New("kmd: unable to serialize abnormal float value")
+			return errors.New("kmd: refused to serialize an abnormal float value")
+		}
+		return writePrimitive(output, val, ctx.Depth)
+	case Complex:
+		val := ctx.WriteComplex(obj)
+		if !(util.IsNormalComplex(val)) {
+			return errors.New("kmd: refused to serialize an abnormal complex value")
 		}
 		return writePrimitive(output, val, ctx.Depth)
 	case Integer:

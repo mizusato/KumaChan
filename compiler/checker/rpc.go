@@ -13,11 +13,12 @@ import (
 
 
 var __KmdPrimitiveTypes = map[lang.Symbol] kmd.TypeKind {
-	__Bool:        kmd.Bool,
-	__Integer:     kmd.Integer,
-	__NormalFloat: kmd.Float,
-	__String:      kmd.String,
-	__Bytes:       kmd.Binary,
+	__Bool:          kmd.Bool,
+	__Integer:       kmd.Integer,
+	__NormalFloat:   kmd.Float,
+	__NormalComplex: kmd.Complex,
+	__String:        kmd.String,
+	__Bytes:         kmd.Binary,
 }
 
 type KmdIdMapping  map[lang.Symbol] kmd.TypeId

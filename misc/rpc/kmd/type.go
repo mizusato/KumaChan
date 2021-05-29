@@ -15,7 +15,7 @@ type Type struct {
 type TypeKind uint
 const (
 	// Primitive Types
-	Bool TypeKind = iota; Float; Integer; String; Binary
+	Bool TypeKind = iota; Float; Complex; Integer; String; Binary
 	// Container Types
 	Array; Optional
 	// Algebraic Types
@@ -107,6 +107,7 @@ func TypeParse(text string) (*Type, bool) {
 		switch kind_text {
 		case "bool":    return PrimitiveType(Bool), true
 		case "float":   return PrimitiveType(Float), true
+		case "complex": return PrimitiveType(Complex), true
 		case "integer": return PrimitiveType(Integer), true
 		case "string":  return PrimitiveType(String), true
 		case "binary":  return PrimitiveType(Binary), true
@@ -143,6 +144,7 @@ func (kind TypeKind) String() string {
 	switch kind {
 	case Bool:     return "bool"
 	case Float:    return "float"
+	case Complex:  return "complex"
 	case Integer:  return "integer"
 	case String:   return "string"
 	case Binary:   return "binary"

@@ -92,6 +92,7 @@ var __Yes uint = stdlib.YesIndex
 var __Maybe = CoreSymbol(stdlib.Maybe)
 var __Float = CoreSymbol(stdlib.Float)
 var __NormalFloat = CoreSymbol(stdlib.NormalFloat)
+var __NormalComplex = CoreSymbol(stdlib.NormalComplex)
 var __String = CoreSymbol(stdlib.String)
 var __T_String = &NamedType { Name: __String, Args: make([] Type, 0) }
 var __HardCodedString = CoreSymbol(stdlib.HardCodedString)

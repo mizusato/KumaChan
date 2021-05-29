@@ -2,8 +2,6 @@ TODO
 
 ## Fundamental
 
-- KMD: migrate to new numeric types, add other primitives
-
 - Lang:
     consider prefix for special identifier used by compiler
     e.g. @default, @validate, @adapt

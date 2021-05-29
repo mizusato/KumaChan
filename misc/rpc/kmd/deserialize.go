@@ -121,10 +121,24 @@ func deserialize(input *deserializeReader, ctx deserializeContext) (Object, erro
 	case Float:
 		return readPrimitive(input, ctx.Depth, func(str string) (Object, error) {
 			value, err := strconv.ParseFloat(str, 64)
-			if err != nil || !(util.IsNormalFloat(value)) {
+			if err != nil {
 				return nil, fmt.Errorf("invalid float: %w", err)
 			}
+			if !(util.IsNormalFloat(value)) {
+				return nil, errors.New("invalid float")
+			}
 			return ctx.ReadFloat(value), nil
+		})
+	case Complex:
+		return readPrimitive(input, ctx.Depth, func(str string) (Object, error) {
+			value, err := strconv.ParseComplex(str, 128)
+			if err != nil {
+				return nil, fmt.Errorf("invalid complex: %w", err)
+			}
+			if !(util.IsNormalComplex(value)) {
+				return nil, errors.New("invalid complex")
+			}
+			return ctx.ReadComplex(value), nil
 		})
 	case Integer:
 		return readPrimitive(input, ctx.Depth, func(str string) (Object, error) {
@@ -135,7 +149,7 @@ func deserialize(input *deserializeReader, ctx deserializeContext) (Object, erro
 			if fit {
 				return obj, nil
 			} else {
-				return nil, errors.New("integer overflow")
+				return nil, errors.New("integer too big")
 			}
 		})
 	case String:

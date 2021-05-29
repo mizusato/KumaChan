@@ -17,6 +17,7 @@ type Serializer struct {
 type PrimitiveSerializer struct {
 	WriteBool     func(Object) bool
 	WriteFloat    func(Object) float64
+	WriteComplex  func(Object) complex128
 	WriteInteger  func(Object) *big.Int
 	WriteString   func(Object) string
 	WriteBinary   func(Object) ([] byte)
@@ -39,6 +40,7 @@ type Deserializer struct {
 type PrimitiveDeserializer struct {
 	ReadBool     func(bool) Object
 	ReadFloat    func(float64) Object
+	ReadComplex  func(complex128) Object
 	ReadInteger  func(*big.Int) (Object, bool)
 	ReadString   func(string) Object
 	ReadBinary   func([] byte) Object

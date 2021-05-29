@@ -72,6 +72,8 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 			return PrimitiveType(Bool)
 		case float64:
 			return PrimitiveType(Float)
+		case complex128:
+			return PrimitiveType(Complex)
 		case *big.Int:
 			if opts.IntegerKind != BigInt { panic("inconsistent integer kind") }
 			return PrimitiveType(Integer)
@@ -126,8 +128,9 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 	var get_reflect_type func(*Type) reflect.Type
 	get_reflect_type = func(t *Type) reflect.Type {
 		switch t.kind {
-		case Bool:   return reflect.TypeOf(true)
-		case Float:  return reflect.TypeOf(float64(0.0))
+		case Bool:    return reflect.TypeOf(true)
+		case Float:   return reflect.TypeOf(float64(0.0))
+		case Complex: return reflect.TypeOf(complex128(complex(0.0, 0.0)))
 		case Integer:
 			switch opts.IntegerKind {
 			case BigInt:
@@ -179,6 +182,7 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 		PrimitiveSerializer: PrimitiveSerializer {
 			WriteBool:    func(obj Object) bool { return obj.(bool) },
 			WriteFloat:   func(obj Object) float64 { return obj.(float64) },
+			WriteComplex: func(obj Object) complex128 { return obj.(complex128) },
 			WriteInteger: func(obj Object) *big.Int {
 				switch opts.IntegerKind {
 				case BigInt:
@@ -275,6 +279,7 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 		PrimitiveDeserializer: PrimitiveDeserializer {
 			ReadBool:    func(obj bool) Object { return obj },
 			ReadFloat:   func(obj float64) Object { return obj },
+			ReadComplex: func(obj complex128) Object { return obj },
 			ReadInteger: func(obj *big.Int) (Object, bool) {
 				switch opts.IntegerKind {
 				case BigInt:
