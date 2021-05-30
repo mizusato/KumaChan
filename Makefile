@@ -2,13 +2,13 @@ ifdef OS
 	MSVC_CHECK = cl /?
 	PLATFORM_MAKE = cmd <<< "vcvars64.bat && nmake && exit || exit 1"
 	LIB_PROJECT = qtbinding_windows.pro
-	LIB_BIN = interpreter/runtime/lib/ui/qt/build/release/qtbinding.dll
+	LIB_BIN = standalone/qt/build/release/qtbinding.dll
 	EXENAME = kumachan.exe
 else
 	MSVC_CHECK = $(NOOP)
 	PLATFORM_MAKE = $(MAKE)
 	LIB_PROJECT = qtbinding.pro
-	LIB_BIN = interpreter/runtime/lib/ui/qt/build/libqtbinding*
+	LIB_BIN = standalone/qt/build/libqtbinding*
 	EXENAME = kumachan
 endif
 
@@ -23,7 +23,7 @@ check:
 
 qt:
 	@echo -e '\033[1mCompiling CGO Qt Binding...\033[0m'
-	cd interpreter/runtime/lib/ui/qt/build && qmake ../qtbinding/$(LIB_PROJECT) && $(PLATFORM_MAKE)
+	cd standalone/qt/build && qmake ../qtbinding/$(LIB_PROJECT) && $(PLATFORM_MAKE)
 	cp -P $(LIB_BIN) build/
 
 stdlib:

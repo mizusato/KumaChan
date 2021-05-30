@@ -1,4 +1,4 @@
-package base
+package def
 
 
 type Compare   func(Value,Value) Ordering

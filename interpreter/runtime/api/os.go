@@ -10,8 +10,8 @@ import (
 	"kumachan/standalone/rx"
 	"kumachan/stdlib"
 	"kumachan/standalone/util"
-	"kumachan/interpreter/runtime/lib/ui/qt"
-	. "kumachan/interpreter/base"
+	"kumachan/standalone/qt"
+	. "kumachan/interpreter/def"
 	. "kumachan/interpreter/runtime/lib/container"
 )
 

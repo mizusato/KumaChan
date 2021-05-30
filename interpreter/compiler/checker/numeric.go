@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"kumachan/stdlib"
 	"kumachan/standalone/util"
-	"kumachan/interpreter/base/parser/ast"
+	"kumachan/interpreter/parser/ast"
 )
 
 

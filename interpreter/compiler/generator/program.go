@@ -4,26 +4,26 @@ import (
 	"fmt"
 	"kumachan/standalone/rpc"
 	"kumachan/standalone/rpc/kmd"
-	"kumachan/interpreter/base"
+	"kumachan/interpreter/def"
 	. "kumachan/standalone/util/error"
 )
 
 
 func CreateProgram (
-	metadata  base.ProgramMetaData,
+	metadata  def.ProgramMetaData,
 	idx       Index,
-	data      [] base.DataValue,
+	data      [] def.DataValue,
 	closures  [] FuncNode,
 	schema    kmd.SchemaTable,
 	services  rpc.ServiceIndex,
-) (base.Program, DepLocator, E) {
+) (def.Program, DepLocator, E) {
 	// TODO: split this big function and make it return multiple errors ([] E)
-	var kmd_info = base.KmdInfo {
+	var kmd_info = def.KmdInfo {
 		SchemaTable:       schema,
-		KmdAdapterTable:   make(base.KmdAdapterTable),
-		KmdValidatorTable: make(base.KmdValidatorTable),
+		KmdAdapterTable:   make(def.KmdAdapterTable),
+		KmdValidatorTable: make(def.KmdValidatorTable),
 	}
-	var rpc_info = base.RpcInfo {
+	var rpc_info = def.RpcInfo {
 		ServiceIndex: services,
 	}
 	var function_index_map = make(map[DepFunction] uint)
@@ -111,7 +111,7 @@ func CreateProgram (
 			var info = functions[index].Underlying.Info
 			all_names[i] = fmt.Sprintf("%s::%s", info.Module, info.Name)
 		}
-		return base.Program{}, DepLocator{}, &Error {
+		return def.Program{}, DepLocator{}, &Error {
 			Point:    point,
 			Concrete: E_UnusedPrivateFunctions { Names: all_names },
 		}
@@ -197,7 +197,7 @@ func CreateProgram (
 			}
 		}
 		if len(rest_names) == 0 { panic("something went wrong") }
-		return base.Program{}, DepLocator{}, &Error {
+		return def.Program{}, DepLocator{}, &Error {
 			Point:    point,
 			Concrete: E_CircularThunkDependency { rest_names },
 		}
@@ -234,8 +234,8 @@ func CreateProgram (
 	for i, _ := range effects {
 		relocate_code(&(effects[i]))
 	}
-	var unwrap = func(list ([] FuncNode)) ([] *base.Function) {
-		var raw = make([] *base.Function, len(list))
+	var unwrap = func(list ([] FuncNode)) ([] *def.Function) {
+		var raw = make([] *def.Function, len(list))
 		for i, item := range list {
 			raw[i] = item.Underlying
 		}
@@ -244,17 +244,17 @@ func CreateProgram (
 	for index, f := range functions {
 		var global_index = (base_function + uint(index))
 		if f.IsAdapter {
-			kmd_info.KmdAdapterTable[f.AdapterId] = base.KmdAdapterInfo {
+			kmd_info.KmdAdapterTable[f.AdapterId] = def.KmdAdapterInfo {
 				Index: global_index,
 			}
 		}
 		if f.IsValidator {
-			kmd_info.KmdValidatorTable[f.ValidatorId] = base.KmdValidatorInfo {
+			kmd_info.KmdValidatorTable[f.ValidatorId] = def.KmdValidatorInfo {
 				Index: global_index,
 			}
 		}
 	}
-	return base.Program {
+	return def.Program {
 		MetaData:   metadata,
 		DataValues: data,
 		Functions:  unwrap(functions),

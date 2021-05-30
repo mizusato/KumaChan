@@ -2,11 +2,11 @@ package parser
 
 import (
 	"fmt"
-	"kumachan/interpreter/base/parser/cst"
+	"kumachan/interpreter/parser/cst"
 )
 import "strings"
 import "unicode/utf8"
-import "kumachan/interpreter/base/parser/syntax"
+import "kumachan/interpreter/parser/syntax"
 
 
 func GetUtf8Length(s string) int {

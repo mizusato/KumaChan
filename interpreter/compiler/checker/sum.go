@@ -3,8 +3,8 @@ package checker
 import (
 	"fmt"
 	"strings"
-	"kumachan/interpreter/base"
-	"kumachan/interpreter/base/parser/ast"
+	"kumachan/interpreter/def"
+	"kumachan/interpreter/parser/ast"
 	"kumachan/stdlib"
 	. "kumachan/standalone/util/error"
 )
@@ -70,7 +70,7 @@ type MultiBranch struct {
 }
 
 type CaseTypeInfo struct {
-	Name  base.Symbol
+	Name  def.Symbol
 	Index uint
 	Args  [] Type
 }
@@ -99,7 +99,7 @@ func GetCaseType (
 		}
 	}
 	var maybe_sym = ctx.ModuleInfo.Module.SymbolFromTypeRef(ref)
-	var case_sym, ok = maybe_sym.(base.Symbol)
+	var case_sym, ok = maybe_sym.(def.Symbol)
 	if !ok { return CaseTypeInfo{}, &ExprError {
 		Point:    ErrorPointFrom(ref.Module.Node),
 		Concrete: E_TypeErrorInExpr { &TypeError {
@@ -150,7 +150,7 @@ func CheckSwitch(sw ast.Switch, ctx ExprContext) (SemiExpr, *ExprError) {
 			ArgType: ctx.DescribeCertainType(arg_typed.Type),
 		},
 	} }
-	var checked = make(map[base.Symbol] bool)
+	var checked = make(map[def.Symbol] bool)
 	var has_default = false
 	var default_node ast.Node
 	var ast_branches = DesugarBranches(sw.Branches)
@@ -754,7 +754,7 @@ func GetMultiSwitchArgumentTuple(msw MultiSwitch, info ExprInfo) Expr {
 	}
 }
 
-func GetCaseInfo(u *Enum, args ([] Type), sym base.Symbol) (uint, ([] Type), bool) {
+func GetCaseInfo(u *Enum, args ([] Type), sym def.Symbol) (uint, ([] Type), bool) {
 	for index, case_type := range u.CaseTypes {
 		if case_type.Name == sym {
 			var case_args = make([] Type, len(case_type.Params))

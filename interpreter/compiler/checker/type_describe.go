@@ -2,7 +2,7 @@ package checker
 
 import (
 	"strings"
-	"kumachan/interpreter/base"
+	"kumachan/interpreter/def"
 	"kumachan/interpreter/compiler/loader"
 )
 
@@ -81,7 +81,7 @@ func DescribeType(type_ Type, ctx TypeDescContext) string {
 		} else {
 			var mod = t.Name.ModuleName
 			var clear = GetClearModuleName(mod, ctx.CurrentModule)
-			var clear_sym = base.MakeSymbol(clear, t.Name.SymbolName)
+			var clear_sym = def.MakeSymbol(clear, t.Name.SymbolName)
 			buf.WriteString(clear_sym.String())
 		}
 		if len(t.Args) > 0 {

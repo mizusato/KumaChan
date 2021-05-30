@@ -1,7 +1,7 @@
 package container
 
 import (
-	. "kumachan/interpreter/base"
+	. "kumachan/interpreter/def"
 )
 
 

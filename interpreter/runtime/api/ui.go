@@ -4,11 +4,11 @@ import (
 	"math/big"
 	"kumachan/standalone/rx"
 	"kumachan/stdlib"
-	. "kumachan/interpreter/base"
+	. "kumachan/interpreter/def"
 	"kumachan/standalone/util"
 	"kumachan/interpreter/runtime/lib/container"
 	"kumachan/interpreter/runtime/lib/ui"
-	"kumachan/interpreter/runtime/lib/ui/qt"
+	"kumachan/standalone/qt"
 	"kumachan/interpreter/runtime/lib/ui/vdom"
 )
 

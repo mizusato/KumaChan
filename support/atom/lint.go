@@ -4,9 +4,9 @@ import (
 	"os"
 	"fmt"
 	"path/filepath"
-	"kumachan/interpreter/base"
-	"kumachan/interpreter/base/parser/cst"
-	"kumachan/interpreter/base/parser/scanner"
+	"kumachan/interpreter/def"
+	"kumachan/interpreter/parser/cst"
+	"kumachan/interpreter/parser/scanner"
 	. "kumachan/standalone/util/error"
 	"kumachan/interpreter/compiler/loader"
 	"kumachan/interpreter/compiler/checker"
@@ -180,7 +180,7 @@ func Lint(req LintRequest, ctx LangServerContext) LintResponse {
 			Errors: errs,
 		}
 	}
-	var data = make([] base.DataValue, 0)
+	var data = make([] def.DataValue, 0)
 	var closures = make([] generator.FuncNode, 0)
 	var index = make(generator.Index)
 	var errs_compiler =

@@ -3,10 +3,10 @@ package transformer
 import "fmt"
 import "reflect"
 import "strings"
-import "kumachan/interpreter/base/parser"
-import "kumachan/interpreter/base/parser/cst"
-import "kumachan/interpreter/base/parser/syntax"
-import . "kumachan/interpreter/base/parser/ast"
+import "kumachan/interpreter/parser"
+import "kumachan/interpreter/parser/cst"
+import "kumachan/interpreter/parser/syntax"
+import . "kumachan/interpreter/parser/ast"
 
 /**
  *  Syntax Tree Transformer

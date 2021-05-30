@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"reflect"
 	"math/big"
-	. "kumachan/interpreter/base"
+	. "kumachan/interpreter/def"
 	"kumachan/standalone/rx"
 	"kumachan/stdlib"
 	"kumachan/interpreter/runtime/lib/container"
 	"kumachan/interpreter/runtime/lib/ui"
-	"kumachan/interpreter/runtime/lib/ui/qt"
+	"kumachan/standalone/qt"
 )
 
 

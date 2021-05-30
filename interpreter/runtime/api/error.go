@@ -2,7 +2,7 @@ package api
 
 import (
 	"errors"
-	. "kumachan/interpreter/base"
+	. "kumachan/interpreter/def"
 	"kumachan/standalone/rpc"
 	"kumachan/interpreter/runtime/lib/container"
 )

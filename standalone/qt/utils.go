@@ -6,7 +6,7 @@ typedef void (*CgoCallback)(size_t);
 void CgoInvokeCallback(size_t id);
 */
 import "C"
-import "kumachan/interpreter/runtime/lib/ui/qt/cgohelper"
+import "kumachan/standalone/qt/cgohelper"
 
 func str_alloc() (func(string) *C.char, func()) {
 	var alloc, dealloc = cgohelper.CreateStringAllocator()

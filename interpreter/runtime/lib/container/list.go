@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"kumachan/standalone/rx"
-	. "kumachan/interpreter/base"
+	. "kumachan/interpreter/def"
 	. "kumachan/standalone/util/error"
 	"strings"
 )

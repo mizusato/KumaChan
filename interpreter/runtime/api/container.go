@@ -9,7 +9,7 @@ import (
 	"encoding/json"
 	"kumachan/stdlib"
 	"kumachan/standalone/util"
-	. "kumachan/interpreter/base"
+	. "kumachan/interpreter/def"
 	. "kumachan/interpreter/runtime/lib/container"
 )
 

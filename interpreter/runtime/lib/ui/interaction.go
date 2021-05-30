@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"encoding/json"
 	"kumachan/standalone/rx"
-	"kumachan/interpreter/runtime/lib/ui/qt"
+	"kumachan/standalone/qt"
 	"kumachan/interpreter/runtime/lib/ui/vdom"
 )
 

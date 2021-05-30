@@ -1,8 +1,8 @@
 package checker
 
 import (
-	"kumachan/interpreter/base"
-	"kumachan/interpreter/base/parser/ast"
+	"kumachan/interpreter/def"
+	"kumachan/interpreter/parser/ast"
 	. "kumachan/standalone/util/error"
 )
 
@@ -18,7 +18,7 @@ type UntypedRef struct {
 type UntypedRefBody interface { UntypedRefBody() }
 func (impl UntypedRefToType) UntypedRefBody() {}
 type UntypedRefToType struct {
-	TypeName   base.Symbol
+	TypeName   def.Symbol
 	Type       *GenericType
 	ForceExact bool
 }
@@ -40,7 +40,7 @@ type Ref interface { ExprVal; Ref() }
 func (impl RefConstant) ExprVal() {}
 func (impl RefConstant) Ref() {}
 type RefConstant struct {
-	Name base.Symbol
+	Name def.Symbol
 }
 
 func (impl RefFunction) ExprVal() {}
@@ -131,7 +131,7 @@ type RefLocal struct {
 func CheckRef(ref ast.InlineRef, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(ref.Node)
 	var maybe_symbol = ctx.ModuleInfo.Module.SymbolFromInlineRef(ref)
-	var symbol, ok = maybe_symbol.(base.Symbol)
+	var symbol, ok = maybe_symbol.(def.Symbol)
 	if !ok { return SemiExpr{}, &ExprError {
 		Point:    ErrorPointFrom(ref.Module.Node),
 		Concrete: E_ModuleNotFound { ast.Id2String(ref.Module) },

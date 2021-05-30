@@ -1,10 +1,10 @@
 package ui
 
 import (
-	"kumachan/interpreter/runtime/lib/ui/qt"
+	"kumachan/standalone/qt"
 	"kumachan/standalone/rx"
 	"kumachan/stdlib"
-	. "kumachan/interpreter/base"
+	. "kumachan/interpreter/def"
 )
 
 

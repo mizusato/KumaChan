@@ -5,10 +5,10 @@ import (
 	"strings"
 	"kumachan/standalone/rpc"
 	"kumachan/standalone/rpc/kmd"
-	"kumachan/interpreter/base"
+	"kumachan/interpreter/def"
 	. "kumachan/standalone/util/error"
 	"kumachan/interpreter/compiler/loader"
-	"kumachan/interpreter/base/parser/ast"
+	"kumachan/interpreter/parser/ast"
 	"kumachan/stdlib"
 )
 
@@ -25,7 +25,7 @@ type CheckedModule struct {
 	CheckedModuleInfo
 }
 type CheckedModuleInfo struct {
-	ExportedTypes  map[string] map[base.Symbol] bool
+	ExportedTypes  map[string] map[def.Symbol] bool
 }
 type CheckedFunction struct {
 	Point    ErrorPoint
@@ -61,8 +61,8 @@ type FunctionKmdInfo struct {
 	AdapterId   kmd.AdapterId
 	IsValidator bool
 	ValidatorId kmd.ValidatorId
-	KmdIn       base.Symbol
-	KmdOut      base.Symbol
+	KmdIn       def.Symbol
+	KmdOut      def.Symbol
 }
 
 type Body interface { CheckerBody() }
@@ -96,9 +96,9 @@ type CheckContext struct {
 	Functions  FunctionStore
 	Mapping    KmdIdMapping
 }
-func (ctx CheckContext) CollectExportedTypes() (map[string] map[base.Symbol] bool) {
-	var collect_symbols func(Type, string, (map[base.Symbol] bool))
-	collect_symbols = func(t Type, mod string, exported (map[base.Symbol] bool)) {
+func (ctx CheckContext) CollectExportedTypes() (map[string] map[def.Symbol] bool) {
+	var collect_symbols func(Type, string, (map[def.Symbol] bool))
+	collect_symbols = func(t Type, mod string, exported (map[def.Symbol] bool)) {
 		switch T := t.(type) {
 		case *NamedType:
 			var sym = T.Name
@@ -135,9 +135,9 @@ func (ctx CheckContext) CollectExportedTypes() (map[string] map[base.Symbol] boo
 			}
 		}
 	}
-	var all_exported = make(map[string] map[base.Symbol] bool)
+	var all_exported = make(map[string] map[def.Symbol] bool)
 	for mod, functions := range ctx.Functions {
-		var mod_exported = make(map[base.Symbol] bool)
+		var mod_exported = make(map[def.Symbol] bool)
 		all_exported[mod] = mod_exported
 		for _, group := range functions {
 			for _, f := range group {
@@ -236,7 +236,7 @@ type SymTypeParam struct {
 func (impl SymType) Sym() {}
 type SymType struct {
 	Type       *GenericType
-	Name       base.Symbol
+	Name       def.Symbol
 	ForceExact bool
 }
 func (impl SymFunctions) Sym() {}
@@ -311,18 +311,18 @@ func (ctx ExprContext) GetTypeRegistry() TypeRegistry {
 	return ctx.ModuleInfo.Types
 }
 
-func (ctx ExprContext) LookupSymbol(raw base.Symbol) (Sym, bool) {
+func (ctx ExprContext) LookupSymbol(raw def.Symbol) (Sym, bool) {
 	// TODO: rename the Sym type and refactor this function
 	var self = ctx.ModuleInfo.Module.Name
-	var lookup_type func(base.Symbol) (SymType, bool)
-	lookup_type = func(sym base.Symbol) (SymType, bool) {
+	var lookup_type func(def.Symbol) (SymType, bool)
+	lookup_type = func(sym def.Symbol) (SymType, bool) {
 		if sym.ModuleName == "" {
-			var core_sym = base.MakeSymbol(stdlib.Mod_core, sym.SymbolName)
+			var core_sym = def.MakeSymbol(stdlib.Mod_core, sym.SymbolName)
 			var g, exists = lookup_type(core_sym)
 			if exists {
 				return g, true
 			}
-			var self_sym = base.MakeSymbol(self, sym.SymbolName)
+			var self_sym = def.MakeSymbol(self, sym.SymbolName)
 			return lookup_type(self_sym)
 		}
 		var g, exists = ctx.ModuleInfo.Types[sym]
@@ -332,7 +332,7 @@ func (ctx ExprContext) LookupSymbol(raw base.Symbol) (Sym, bool) {
 		if len(sym.SymbolName) > len(ForceExactSuffix) &&
 			strings.HasSuffix(sym.SymbolName, ForceExactSuffix) {
 			var sym_name_force = strings.TrimSuffix(sym.SymbolName, ForceExactSuffix)
-			var sym_force = base.MakeSymbol(sym.ModuleName, sym_name_force)
+			var sym_force = def.MakeSymbol(sym.ModuleName, sym_name_force)
 			var g, exists = ctx.ModuleInfo.Types[sym_force]
 			if exists {
 				return SymType { Type: g, Name: sym_force, ForceExact: true }, true
@@ -714,29 +714,29 @@ func TypeCheckModule(mod *loader.Module, index Index, ctx CheckContext) (
 			case ast.PredefinedThunk:
 				var stored = body.Value
 				switch stored.(type) {
-				case base.UiObjectThunk:
+				case def.UiObjectThunk:
 					add(f, BodyRuntimeGenerated { Value: stored })
 				default:
-					var v = base.ValNativeFun(func(_ base.Value, _ base.InteropContext) base.Value {
+					var v = def.ValNativeFun(func(_ def.Value, _ def.InteropContext) def.Value {
 						return stored
 					})
 					add(f, BodyGenerated { Value: v })
 				}
 			case ast.KmdApiFuncBody:
-				var v = base.CreateKmdApiFunction(body.Id)
+				var v = def.CreateKmdApiFunction(body.Id)
 				add(f, BodyGenerated { Value: v })
 			case ast.ServiceMethodFuncBody:
-				var v = base.CreateServiceMethodCaller(name)
+				var v = def.CreateServiceMethodCaller(name)
 				add(f, BodyGenerated { Value: v })
 			case ast.ServiceCreateFuncBody:
 				var names = mod.ServiceMethodNames
-				var v = base.ValNativeFun(func(arg base.Value, h base.InteropContext) base.Value {
-					var prod = arg.(base.TupleValue)
+				var v = def.ValNativeFun(func(arg def.Value, h def.InteropContext) def.Value {
+					var prod = arg.(def.TupleValue)
 					var data = prod.Elements[0]
-					var ctx = prod.Elements[1].(base.TupleValue)
+					var ctx = prod.Elements[1].(def.TupleValue)
 					var dtor = ctx.Elements[0]
 					var methods = ctx.Elements[1:]
-					return base.CreateServiceInstance(data, dtor, methods, names, h)
+					return def.CreateServiceInstance(data, dtor, methods, names, h)
 				})
 				add(f, BodyGenerated { Value: v })
 			default:

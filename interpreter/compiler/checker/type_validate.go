@@ -1,8 +1,8 @@
 package checker
 
 import (
-	"kumachan/interpreter/base/parser/ast"
-	"kumachan/interpreter/base"
+	"kumachan/interpreter/parser/ast"
+	"kumachan/interpreter/def"
 	. "kumachan/standalone/util/error"
 )
 
@@ -23,7 +23,7 @@ func ValidateTypeVal(val TypeDef, info TypeNodeInfo, ctx TypeValidationContext) 
 	switch V := val.(type) {
 	case *Enum:
 		var case_amount = uint(len(V.CaseTypes))
-		var max = uint(base.SumMaxBranches)
+		var max = uint(def.SumMaxBranches)
 		if case_amount > max { return &TypeError {
 			Point:    val_point,
 			Concrete: E_TooManyEnumItems {
@@ -107,7 +107,7 @@ func ValidateType(t Type, nodes (map[Type] ast.Node), ctx TypeValidationContext)
 			return nil
 		case Tuple:
 			var count = uint(len(R.Elements))
-			var max = uint(base.ProductMaxSize)
+			var max = uint(def.ProductMaxSize)
 			if count > max { return &TypeError {
 				Point:    t_point,
 				Concrete: E_TooManyTupleRecordItems {
@@ -122,7 +122,7 @@ func ValidateType(t Type, nodes (map[Type] ast.Node), ctx TypeValidationContext)
 			return nil
 		case Record:
 			var count = uint(len(R.Fields))
-			var max = uint(base.ProductMaxSize)
+			var max = uint(def.ProductMaxSize)
 			if count > max { return &TypeError {
 				Point:    t_point,
 				Concrete: E_TooManyTupleRecordItems {

@@ -2,7 +2,7 @@ package loader
 
 import (
 	. "kumachan/standalone/util/error"
-	"kumachan/interpreter/base/parser"
+	"kumachan/interpreter/parser"
 )
 
 

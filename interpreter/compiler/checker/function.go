@@ -1,8 +1,8 @@
 package checker
 
 import (
-	"kumachan/interpreter/base"
-	"kumachan/interpreter/base/parser/ast"
+	"kumachan/interpreter/def"
+	"kumachan/interpreter/parser/ast"
 	"kumachan/interpreter/compiler/loader"
 	. "kumachan/standalone/util/error"
 )
@@ -287,7 +287,7 @@ func CollectFunctions (
 			}
 		}
 		var implicit_count = uint(len(implicit_fields))
-		var implicit_max = uint(base.ClosureMaxSize)
+		var implicit_max = uint(def.ClosureMaxSize)
 		if implicit_count > implicit_max {
 			return nil, &FunctionError {
 				Point:    ErrorPointFrom(decl.Implicit[i].Node),

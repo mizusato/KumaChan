@@ -1,7 +1,7 @@
 package parser
 
-import "kumachan/interpreter/base/parser/cst"
-import "kumachan/interpreter/base/parser/syntax"
+import "kumachan/interpreter/parser/cst"
+import "kumachan/interpreter/parser/syntax"
 import . "kumachan/standalone/util/error"
 
 

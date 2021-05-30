@@ -1,7 +1,7 @@
 package api
 
 import (
-	. "kumachan/interpreter/base"
+	. "kumachan/interpreter/def"
 	. "kumachan/interpreter/runtime/lib/container"
 	"math/big"
 )

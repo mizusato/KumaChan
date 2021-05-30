@@ -2,7 +2,7 @@ package checker
 
 import (
 	"fmt"
-	"kumachan/interpreter/base"
+	"kumachan/interpreter/def"
 	. "kumachan/standalone/util/error"
 )
 
@@ -20,11 +20,11 @@ type E_ModuleOfTypeRefNotFound struct {
 }
 func (impl E_TypeNotFound) TypeError() {}
 type E_TypeNotFound struct {
-	Name base.Symbol
+	Name def.Symbol
 }
 func (impl E_WrongParameterQuantity) TypeError() {}
 type E_WrongParameterQuantity struct {
-	TypeName base.Symbol
+	TypeName def.Symbol
 	Required uint
 	Given    uint
 }
@@ -172,7 +172,7 @@ type E_InvalidTypeName struct {
 }
 func (impl E_DuplicateTypeDecl) TypeDeclError() {}
 type E_DuplicateTypeDecl struct {
-	TypeName base.Symbol
+	TypeName def.Symbol
 }
 func (impl E_InvalidTypeTag) TypeDeclError() {}
 type E_InvalidTypeTag struct {
@@ -194,12 +194,12 @@ type E_InvalidCaseTypeParam struct {
 }
 func (impl E_InvalidTypeDecl) TypeDeclError() {}
 type E_InvalidTypeDecl struct {
-	TypeName base.Symbol
+	TypeName def.Symbol
 	Detail   *TypeError
 }
 func (impl E_TypeCircularDependency) TypeDeclError() {}
 type E_TypeCircularDependency struct {
-	TypeNames  [] base.Symbol
+	TypeNames  [] def.Symbol
 }
 func (impl E_TypeIncompleteDefaultParameters) TypeDeclError() {}
 type E_TypeIncompleteDefaultParameters struct {}
@@ -1015,7 +1015,7 @@ func (e E_ModuleNotFound) ExprErrorDesc() ErrorMessage {
 }
 
 type E_TypeOrValueNotFound struct {
-	Symbol base.Symbol
+	Symbol def.Symbol
 }
 func (e E_TypeOrValueNotFound) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)
@@ -1072,7 +1072,7 @@ func (e E_ExplicitTypeParamsRequired) ExprErrorDesc() ErrorMessage {
 }
 
 type E_TypeUsedAsValue struct {
-	TypeName base.Symbol
+	TypeName def.Symbol
 }
 func (e E_TypeUsedAsValue) ExprErrorDesc() ErrorMessage {
 	var msg = make(ErrorMessage, 0)

@@ -1,13 +1,13 @@
 package generator
 
 import (
-	"kumachan/interpreter/base"
+	"kumachan/interpreter/def"
 	ch "kumachan/interpreter/compiler/checker"
 )
 
 
 type FuncNode struct {
-	Underlying    *base.Function
+	Underlying    *def.Function
 	Dependencies  [] Dependency
 	ch.FunctionGeneratorFlags
 	ch.FunctionKmdInfo
@@ -37,9 +37,9 @@ type DepClosure struct {
 }
 
 func FuncNodeFrom (
-	f         *base.Function,
+	f         *def.Function,
 	refs      [] GlobalRef,
-	data      *([] base.DataValue),
+	data      *([] def.DataValue),
 	closures  *([] FuncNode),
 	flags     ch.FunctionGeneratorFlags,
 	kmd_info  ch.FunctionKmdInfo,
@@ -55,7 +55,7 @@ func FuncNodeFrom (
 
 func RefsToDeps (
 	refs      [] GlobalRef,
-	data      *([] base.DataValue),
+	data      *([] def.DataValue),
 	closures  *([] FuncNode),
 ) ([] Dependency) {
 	var deps = make([] Dependency, len(refs))
@@ -98,7 +98,7 @@ func RelocateCode(f *FuncNode, locator DepLocator, extra ExtraDepLocator) {
 	var inst_seq = f.Underlying.Code
 	for i, _ := range inst_seq {
 		switch inst_seq[i].OpCode {
-		case base.GLOBAL, base.ARRAY:
+		case def.GLOBAL, def.ARRAY:
 			var relative_index = inst_seq[i].GetGlobalIndex()
 			var dep = f.Dependencies[relative_index]
 			var absolute_index uint
@@ -117,7 +117,7 @@ func RelocateCode(f *FuncNode, locator DepLocator, extra ExtraDepLocator) {
 				absolute_index = index
 			}
 			ValidateGlobalIndex(absolute_index)
-			var a0, a1 = base.GlobalIndex(absolute_index)
+			var a0, a1 = def.GlobalIndex(absolute_index)
 			inst_seq[i].Arg0 = a0
 			inst_seq[i].Arg1 = a1
 		}

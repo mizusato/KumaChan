@@ -1,6 +1,6 @@
 package checker
 
-import "kumachan/interpreter/base/parser/ast"
+import "kumachan/interpreter/parser/ast"
 
 
 func DesugarConstant(decl ast.DeclConst) ast.DeclFunction {

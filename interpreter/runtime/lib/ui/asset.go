@@ -1,13 +1,13 @@
 package ui
 
 import (
-	"kumachan/interpreter/base"
+	"kumachan/interpreter/def"
 	"kumachan/stdlib"
-	"kumachan/interpreter/runtime/lib/ui/qt"
+	"kumachan/standalone/qt"
 )
 
 
-type AssetIndex = func(path string) (base.Resource, bool)
+type AssetIndex = func(path string) (def.Resource, bool)
 
 func registerAssetFiles(view qt.Widget, assets AssetIndex, selected ([] Asset)) {
 	for _, selection := range selected {

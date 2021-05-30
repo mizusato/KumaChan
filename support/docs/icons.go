@@ -3,7 +3,7 @@ package docs
 import (
 	"fmt"
 	"kumachan/standalone/util"
-	"kumachan/interpreter/runtime/lib/ui/qt"
+	"kumachan/standalone/qt"
 )
 
 

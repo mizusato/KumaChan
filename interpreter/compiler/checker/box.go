@@ -1,14 +1,14 @@
 package checker
 
 import (
-	"kumachan/interpreter/base"
+	"kumachan/interpreter/def"
 )
 
 
 func Box (
 	to_be_boxed  SemiExpr,
 	g_type       *GenericType,
-	g_type_name  base.Symbol,
+	g_type_name  def.Symbol,
 	g_type_info  ExprInfo,
 	given_args   [] Type,
 	force_exact  bool,

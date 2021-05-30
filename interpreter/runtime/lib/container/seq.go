@@ -3,7 +3,7 @@ package container
 import (
 	"reflect"
 	"math/big"
-	. "kumachan/interpreter/base"
+	. "kumachan/interpreter/def"
 )
 
 

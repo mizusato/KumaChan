@@ -1,6 +1,6 @@
 package checker
 
-import "kumachan/interpreter/base/parser/ast"
+import "kumachan/interpreter/parser/ast"
 import . "kumachan/standalone/util/error"
 
 

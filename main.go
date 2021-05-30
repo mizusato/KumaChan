@@ -20,17 +20,17 @@ import (
     "kumachan/interpreter/compiler/checker"
     "kumachan/interpreter/compiler/generator"
     "kumachan/interpreter/runtime/vm"
-    "kumachan/interpreter/runtime/lib/ui/qt"
-    "kumachan/interpreter/base"
-    "kumachan/interpreter/base/parser"
-    "kumachan/interpreter/base/parser/ast"
-    "kumachan/interpreter/base/parser/scanner"
-    "kumachan/interpreter/base/parser/syntax"
-    "kumachan/interpreter/base/parser/transformer"
+    "kumachan/standalone/qt"
+	"kumachan/interpreter/def"
+	"kumachan/interpreter/parser"
+	"kumachan/interpreter/parser/ast"
+	"kumachan/interpreter/parser/scanner"
+	"kumachan/interpreter/parser/syntax"
+	"kumachan/interpreter/parser/transformer"
 )
 
 
-var stdio = base.StdIO {
+var stdio = def.StdIO {
     Stdin:  rx.FileFrom(os.Stdin),
     Stdout: rx.FileFrom(os.Stdout),
     Stderr: rx.FileFrom(os.Stderr),
@@ -80,7 +80,7 @@ func debug_parser(file io.Reader, name string, root string) {
 
 func interpret (
     path string, args ([] string),
-    max_stack_size int, asm_dump string, debug_opts base.DebugOptions,
+    max_stack_size int, asm_dump string, debug_opts def.DebugOptions,
 ) {
     var load = func(path string) (*loader.Module, loader.Index, loader.ResIndex) {
         var mod, idx, res, err = loader.LoadEntry(path)
@@ -98,8 +98,8 @@ func interpret (
         }
         return c_mod, c_idx, sch, serv
     }
-    var compile = func(entry *checker.CheckedModule, sch kmd.SchemaTable, serv rpc.ServiceIndex) base.Program {
-        var data = make([] base.DataValue, 0)
+    var compile = func(entry *checker.CheckedModule, sch kmd.SchemaTable, serv rpc.ServiceIndex) def.Program {
+        var data = make([] def.DataValue, 0)
         var closures = make([] generator.FuncNode, 0)
         var idx = make(generator.Index)
         var errs = generator.CompileModule(entry, idx, &data, &closures)
@@ -107,7 +107,7 @@ func interpret (
             fmt.Fprintf(os.Stderr, "%s\n", MergeErrors(errs))
             os.Exit(5)
         }
-        var meta = base.ProgramMetaData {
+        var meta = def.ProgramMetaData {
             EntryModulePath: entry.RawModule.Path,
         }
         var program, _, err = generator.CreateProgram(meta, idx, data, closures, sch, serv)
@@ -117,7 +117,7 @@ func interpret (
         }
         return program
     }
-    var dump_asm = func(program base.Program, file_path string) {
+    var dump_asm = func(program def.Program, file_path string) {
         var f, err = os.OpenFile(file_path, os.O_WRONLY | os.O_TRUNC | os.O_CREATE, 0666)
         if err != nil {
             fmt.Fprintf(os.Stderr, "cannot open asm dump file: %s", err)
@@ -146,7 +146,7 @@ func interpret (
     }, nil)
 }
 
-func repl(args ([] string), max_stack_size int, debug_opts base.DebugOptions) {
+func repl(args ([] string), max_stack_size int, debug_opts def.DebugOptions) {
     // 1. Craft an empty module
     const mod_ast_path = "."
     const mod_runtime_path = "."
@@ -162,13 +162,13 @@ func repl(args ([] string), max_stack_size int, debug_opts base.DebugOptions) {
     mod, _, sch, serv, errs := checker.TypeCheck(ldr_mod, ldr_idx)
     if errs != nil { panic(MergeErrors(errs)) }
     // 4. Compile the module tree
-    var data = make([] base.DataValue, 0)
+    var data = make([] def.DataValue, 0)
     var closures = make([] generator.FuncNode, 0)
     var idx = make(generator.Index)
     errs = generator.CompileModule(mod, idx, &data, &closures)
     if errs != nil { panic(MergeErrors(errs)) }
     // 5. Generate a program and get its dependency locator
-    var meta = base.ProgramMetaData {
+    var meta = def.ProgramMetaData {
         EntryModulePath: mod_runtime_path,
     }
     program, dep_locator, err :=
@@ -223,8 +223,8 @@ func repl(args ([] string), max_stack_size int, debug_opts base.DebugOptions) {
             }
             m.InjectExtraGlobals(dep_values)
             var ret = m.Call(f, nil, rx.Background())
-            m.InjectExtraGlobals([] base.Value { f })
-            fmt.Printf("%s %s\n", cmd_label, base.Inspect(ret))
+            m.InjectExtraGlobals([] def.Value { f })
+            fmt.Printf("%s %s\n", cmd_label, def.Inspect(ret))
             switch cmd := cmd.Cmd.(type) {
             case ast.ReplAssign:
                 var alias = string(cmd.Name.Name)
@@ -249,7 +249,7 @@ func repl(args ([] string), max_stack_size int, debug_opts base.DebugOptions) {
                     select {
                     case eff_v, not_closed := <- ch_values:
                         if not_closed {
-                            var msg = base.Inspect(eff_v)
+                            var msg = def.Inspect(eff_v)
                             _, err := fmt.Fprintf(os.Stderr,
                                 "%s * value: %s\n", cmd_label_ok, msg)
                             if err != nil { panic(err) }
@@ -261,7 +261,7 @@ func repl(args ([] string), max_stack_size int, debug_opts base.DebugOptions) {
                         }
                     case eff_err, not_closed := <- ch_error:
                         if not_closed {
-                            var msg = base.Inspect(eff_err)
+                            var msg = def.Inspect(eff_err)
                             _, err := fmt.Fprintf(os.Stderr,
                                 "%s * error: %s\n", cmd_label_err, msg)
                             if err != nil { panic(err) }
@@ -279,8 +279,8 @@ func repl(args ([] string), max_stack_size int, debug_opts base.DebugOptions) {
         }
     }
     // 8. Inject the REPL as a side effect of the program
-    var do_repl = &base.Function {
-        Kind: base.F_RUNTIME_GENERATED,
+    var do_repl = &def.Function {
+        Kind: def.F_RUNTIME_GENERATED,
         Generated: rx.NewGoroutineSingle(func(_ *rx.Context) (rx.Object, bool) {
             loop()
             return nil, true
@@ -360,7 +360,7 @@ func main() {
         os.Exit(100)
     }
     var debug_ui = (debug_options_string == "ui")
-    var debug_opts = base.DebugOptions { DebugUI: debug_ui }
+    var debug_opts = def.DebugOptions { DebugUI: debug_ui }
     if debug_ui {
         qt.EnableDebug()
     }

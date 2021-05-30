@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"math/cmplx"
 	"kumachan/standalone/util"
-	. "kumachan/interpreter/base"
+	. "kumachan/interpreter/def"
 )
 
 

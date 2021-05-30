@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"strings"
 	"unicode/utf8"
-	. "kumachan/interpreter/base"
+	. "kumachan/interpreter/def"
 )
 
 

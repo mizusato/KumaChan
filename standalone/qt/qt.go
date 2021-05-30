@@ -10,7 +10,7 @@ import "C"
 import (
     "fmt"
     "unsafe"
-    "kumachan/interpreter/runtime/lib/ui/qt/cgohelper"
+    "kumachan/standalone/qt/cgohelper"
     "reflect"
 )
 

@@ -1,8 +1,8 @@
 package checker
 
 import (
-	"kumachan/interpreter/base"
-	"kumachan/interpreter/base/parser/ast"
+	"kumachan/interpreter/def"
+	"kumachan/interpreter/parser/ast"
 )
 
 
@@ -43,7 +43,7 @@ type Enum struct {
 	CaseTypes  [] CaseType
 }
 type CaseType struct {
-	Name   base.Symbol
+	Name   def.Symbol
 	Params [] uint
 }
 func (impl *Boxed) CheckerTypeDef() {}
@@ -71,7 +71,7 @@ type ParameterType struct {
 }
 func (impl *NamedType) CheckerType() {}
 type NamedType struct {
-	Name base.Symbol
+	Name def.Symbol
 	Args [] Type
 }
 func (impl *AnonymousType) CheckerType() {}

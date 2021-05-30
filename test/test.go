@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"kumachan/standalone/rx"
 	. "kumachan/standalone/util/error"
-	"kumachan/interpreter/base"
+	"kumachan/interpreter/def"
 	"kumachan/interpreter/compiler/loader"
 	"kumachan/interpreter/compiler/checker"
 	"kumachan/interpreter/compiler/generator"
@@ -38,12 +38,12 @@ func expectStdIO(t *testing.T, path string, in string, expected_out string) {
 	if ldr_err != nil { t.Fatal(ldr_err) }
 	mod, _, sch, serv, errs := checker.TypeCheck(ldr_mod, ldr_idx)
 	if errs != nil { t.Fatal(mergeErrorMessages(errs)) }
-	var data = make([] base.DataValue, 0)
+	var data = make([] def.DataValue, 0)
 	var closures = make([] generator.FuncNode, 0)
 	var idx = make(generator.Index)
 	errs = generator.CompileModule(mod, idx, &data, &closures)
 	if errs != nil { t.Fatal(mergeErrorMessages(errs)) }
-	var meta = base.ProgramMetaData { EntryModulePath: path }
+	var meta = def.ProgramMetaData { EntryModulePath: path }
 	program, _, err := generator.CreateProgram(meta, idx, data, closures, sch, serv)
 	if err != nil { t.Fatal(err) }
 	in_read, in_write, e := os.Pipe()
@@ -56,7 +56,7 @@ func expectStdIO(t *testing.T, path string, in string, expected_out string) {
 			MaxStackSize: 65536,
 			Environment:  os.Environ(),
 			Arguments:    [] string { path },
-			StdIO:        base.StdIO {
+			StdIO:        def.StdIO {
 				Stdin:  rx.FileFrom(in_read),
 				Stdout: rx.FileFrom(out_write),
 				Stderr: rx.FileFrom(os.Stderr),

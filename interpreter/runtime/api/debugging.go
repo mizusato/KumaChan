@@ -3,7 +3,7 @@ package api
 import (
 	"os"
 	"fmt"
-	. "kumachan/interpreter/base"
+	. "kumachan/interpreter/def"
 )
 
 

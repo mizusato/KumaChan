@@ -5,13 +5,13 @@ import (
 	"reflect"
 	"strings"
 	"strconv"
-	"kumachan/interpreter/base"
+	"kumachan/interpreter/def"
 	ch "kumachan/interpreter/compiler/checker"
 )
 
 
 type DataInteger ch.IntegerLiteral
-func (d DataInteger) ToValue() base.Value {
+func (d DataInteger) ToValue() def.Value {
 	return d.Value
 }
 func (d DataInteger) String() string {
@@ -19,7 +19,7 @@ func (d DataInteger) String() string {
 }
 
 type DataSmallInteger ch.SmallIntLiteral
-func (d DataSmallInteger) ToValue() base.Value {
+func (d DataSmallInteger) ToValue() def.Value {
 	return d.Value
 }
 func (d DataSmallInteger) String() string {
@@ -27,7 +27,7 @@ func (d DataSmallInteger) String() string {
 }
 
 type DataFloat ch.FloatLiteral
-func (d DataFloat) ToValue() base.Value {
+func (d DataFloat) ToValue() def.Value {
 	return d.Value
 }
 func (d DataFloat) String() string {
@@ -35,7 +35,7 @@ func (d DataFloat) String() string {
 }
 
 type DataString struct { Value string }
-func (d DataString) ToValue() base.Value {
+func (d DataString) ToValue() def.Value {
 	return d.Value
 }
 func (d DataString) String() string {
@@ -43,8 +43,8 @@ func (d DataString) String() string {
 }
 
 type DataStringFormatter ch.StringFormatter
-func (d DataStringFormatter) ToValue() base.Value {
-	var format_slice = func(args ([] base.Value)) string {
+func (d DataStringFormatter) ToValue() def.Value {
+	var format_slice = func(args ([] def.Value)) string {
 		var buf strings.Builder
 		for i, seg := range d.Segments {
 			buf.WriteString(seg)
@@ -58,18 +58,18 @@ func (d DataStringFormatter) ToValue() base.Value {
 	var f interface{}
 	if d.Arity == 0 {
 		f = func() string {
-			return format_slice([] base.Value {})
+			return format_slice([] def.Value {})
 		}
 	} else if d.Arity == 1 {
-		f = func(arg base.Value) string {
-			return format_slice([] base.Value { arg })
+		f = func(arg def.Value) string {
+			return format_slice([] def.Value { arg })
 		}
 	} else {
-		f = func(arg base.TupleValue) string {
+		f = func(arg def.TupleValue) string {
 			return format_slice(arg.Elements)
 		}
 	}
-	return base.ValNativeFun(base.AdaptNativeFunction(f))
+	return def.ValNativeFun(def.AdaptNativeFunction(f))
 }
 func (d DataStringFormatter) String() string {
 	var buf strings.Builder
@@ -83,9 +83,9 @@ func (d DataStringFormatter) String() string {
 	return buf.String()
 }
 
-type DataArrayInfo base.ArrayInfo
-func (d DataArrayInfo) ToValue() base.Value {
-	return base.ArrayInfo(d)
+type DataArrayInfo def.ArrayInfo
+func (d DataArrayInfo) ToValue() def.Value {
+	return def.ArrayInfo(d)
 }
 func (d DataArrayInfo) String() string {
 	return fmt.Sprintf("ARRAY %d %s", d.Length, d.ItemType.String())

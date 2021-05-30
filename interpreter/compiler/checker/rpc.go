@@ -4,15 +4,15 @@ import (
 	"errors"
 	"kumachan/standalone/rpc"
 	"kumachan/standalone/rpc/kmd"
-	"kumachan/interpreter/base"
-	"kumachan/interpreter/base/parser/ast"
+	"kumachan/interpreter/def"
+	"kumachan/interpreter/parser/ast"
 	"kumachan/interpreter/compiler/loader"
 	"kumachan/stdlib"
 	. "kumachan/standalone/util/error"
 )
 
 
-var __KmdPrimitiveTypes = map[base.Symbol] kmd.TypeKind {
+var __KmdPrimitiveTypes = map[def.Symbol] kmd.TypeKind {
 	__Bool:          kmd.Bool,
 	__Integer:       kmd.Integer,
 	__NormalFloat:   kmd.Float,
@@ -21,7 +21,7 @@ var __KmdPrimitiveTypes = map[base.Symbol] kmd.TypeKind {
 	__Bytes:         kmd.Binary,
 }
 
-type KmdIdMapping  map[base.Symbol] kmd.TypeId
+type KmdIdMapping  map[def.Symbol] kmd.TypeId
 
 type KmdStmtInjection  map[string] []ast.VariousStatement
 
@@ -181,8 +181,8 @@ func CollectKmdApi (
 
 func EnforceGoodKmdFunctions(types TypeRegistry, idx Index) ([] E) {
 	type AdapterKey struct {
-		In  base.Symbol
-		Out base.Symbol
+		In  def.Symbol
+		Out def.Symbol
 	}
 	var errs = make([] E, 0)
 	var add_error = func(p ErrorPoint, e ConcreteKmdError) {
@@ -192,7 +192,7 @@ func EnforceGoodKmdFunctions(types TypeRegistry, idx Index) ([] E) {
 		})
 	}
 	var has_adapter = make(map[AdapterKey] bool)
-	var has_validator = make(map[base.Symbol] bool)
+	var has_validator = make(map[def.Symbol] bool)
 	for mod_name, mod := range idx {
 		for _, group := range mod.Functions {
 			for _, item := range group {
@@ -293,7 +293,7 @@ func GetFunctionKmdInfo(name string, t Func, mapping KmdIdMapping) FunctionKmdIn
 }
 
 func CraftKmdApiFunction (
-	sym   base.Symbol,
+	sym   def.Symbol,
 	reg   TypeRegistry,
 	nodes TypeDeclNodeInfo,
 	id    kmd.TransformerPartId,
@@ -362,7 +362,7 @@ func CraftKmdApiFunction (
 	}
 }
 
-func IsKmdApiPublic(sym base.Symbol, reg TypeRegistry) bool {
+func IsKmdApiPublic(sym def.Symbol, reg TypeRegistry) bool {
 	var g = reg[sym]
 	switch def := g.Definition.(type) {
 	case *Boxed:
@@ -386,7 +386,7 @@ func IsKmdApiPublic(sym base.Symbol, reg TypeRegistry) bool {
 
 func GetKmdSchema (
 	id       kmd.TypeId,
-	sym      base.Symbol,
+	sym      def.Symbol,
 	nodes    TypeDeclNodeInfo,
 	reg      TypeRegistry,
 	mapping  KmdIdMapping,
@@ -575,7 +575,7 @@ func CollectServices (
 	for mod_name, mod := range index {
 		if !(mod.IsService) { continue }
 		var id = mod.ServiceIdentifier
-		var arg_type_sym = base.MakeSymbol(mod_name, mod.ServiceArgTypeName)
+		var arg_type_sym = def.MakeSymbol(mod_name, mod.ServiceArgTypeName)
 		_, exists := reg[arg_type_sym]
 		if !(exists) { panic("something went wrong") }
 		arg_type_id, exists := mapping[arg_type_sym]
@@ -630,7 +630,7 @@ func GetServiceMethodSignature (
 	var throw = func(err_desc string) (rpc.ServiceMethodInterface, error) {
 		return rpc.ServiceMethodInterface{}, errors.New(err_desc)
 	}
-	var get_type = func(sym base.Symbol) *kmd.Type {
+	var get_type = func(sym def.Symbol) *kmd.Type {
 		var type_id, exists = mapping[sym]
 		if !(exists) { panic("something went wrong") }
 		return table.GetTypeFromId(type_id)

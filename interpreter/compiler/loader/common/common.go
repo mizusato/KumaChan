@@ -1,10 +1,10 @@
 package common
 
 import (
-	"kumachan/interpreter/base/parser"
-	"kumachan/interpreter/base/parser/ast"
-	"kumachan/interpreter/base/parser/syntax"
-	"kumachan/interpreter/base/parser/transformer"
+	"kumachan/interpreter/parser"
+	"kumachan/interpreter/parser/ast"
+	"kumachan/interpreter/parser/syntax"
+	"kumachan/interpreter/parser/transformer"
 )
 
 

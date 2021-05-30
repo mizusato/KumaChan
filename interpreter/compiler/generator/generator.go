@@ -2,7 +2,7 @@ package generator
 
 import (
 	. "kumachan/standalone/util/error"
-	"kumachan/interpreter/base"
+	"kumachan/interpreter/def"
 	ch "kumachan/interpreter/compiler/checker"
 )
 
@@ -18,7 +18,7 @@ type Index  map[string] *CompiledModule
 func CompileModule (
 	mod       *ch.CheckedModule,
 	idx       Index,
-	data      *([] base.DataValue),
+	data      *([] def.DataValue),
 	closures  *([] FuncNode),
 ) [] E {
 	var _, exists = idx[mod.Name]
@@ -85,19 +85,19 @@ func CompileFunction (
 	mod    string,
 	name   string,
 	point  ErrorPoint,
-) (*base.Function, [] GlobalRef, [] E) {
+) (*def.Function, [] GlobalRef, [] E) {
 	var imp_size = uint(len(imp))
-	if imp_size > base.ClosureMaxSize {
+	if imp_size > def.ClosureMaxSize {
 		panic("something went wrong")
 	}
 	switch b := body.(type) {
 	case ch.BodyGenerated:
-		return &base.Function {
-			Kind:      base.F_GENERATED,
+		return &def.Function {
+			Kind:      def.F_GENERATED,
 			Generated: b.Value,
 			Code:      nil,
-			BaseSize:  base.FrameBaseSize {},
-			Info: base.FuncInfo {
+			BaseSize:  def.FrameBaseSize {},
+			Info: def.FuncInfo {
 				Module:    mod,
 				Name:      name,
 				DeclPoint: point,
@@ -105,12 +105,12 @@ func CompileFunction (
 			},
 		}, make([] GlobalRef, 0), nil
 	case ch.BodyRuntimeGenerated:
-		return &base.Function {
-			Kind:      base.F_RUNTIME_GENERATED,
+		return &def.Function {
+			Kind:      def.F_RUNTIME_GENERATED,
 			Generated: b.Value,
 			Code:      nil,
-			BaseSize:  base.FrameBaseSize {},
-			Info: base.FuncInfo {
+			BaseSize:  def.FrameBaseSize {},
+			Info: def.FuncInfo {
 				Module:    mod,
 				Name:      name,
 				DeclPoint: point,
@@ -119,13 +119,13 @@ func CompileFunction (
 		}, make([] GlobalRef, 0), nil
 	case ch.BodyNative:
 		var native_id = b.Name
-		return &base.Function {
-			Kind:      base.F_NATIVE,
+		return &def.Function {
+			Kind:      def.F_NATIVE,
 			NativeId:  native_id,
 			Generated: nil,
 			Code:      nil,
-			BaseSize:  base.FrameBaseSize {},
-			Info:       base.FuncInfo {
+			BaseSize:  def.FrameBaseSize {},
+			Info:       def.FuncInfo {
 				Module:    mod,
 				Name:      name,
 				DeclPoint: point,
@@ -138,18 +138,18 @@ func CompileFunction (
 		var code = CompileExpr(b.Value, ctx)
 		var errs = scope.CollectUnusedAsErrors()
 		var binding_peek = *(scope.BindingPeek)
-		if (imp_size + binding_peek) > base.LocalSlotMaxSize {
+		if (imp_size + binding_peek) > def.LocalSlotMaxSize {
 			panic("maximum quantity of local bindings exceeded")
 		}
-		return &base.Function {
-			Kind:      base.F_USER,
+		return &def.Function {
+			Kind:      def.F_USER,
 			Generated: nil,
 			Code:      code.InstSeq,
-			BaseSize:   base.FrameBaseSize {
-				Context:  base.Short(imp_size),
-				Reserved: base.Long(binding_peek),
+			BaseSize:   def.FrameBaseSize {
+				Context:  def.Short(imp_size),
+				Reserved: def.Long(binding_peek),
 			},
-			Info:       base.FuncInfo {
+			Info:       def.FuncInfo {
 				Module:    mod,
 				Name:      name,
 				DeclPoint: point,
@@ -180,18 +180,18 @@ func CompileFunction (
 		buf.Write(out_code)
 		var code = buf.Collect()
 		var binding_peek = *(scope.BindingPeek)
-		if (imp_size + binding_peek) > base.LocalSlotMaxSize {
+		if (imp_size + binding_peek) > def.LocalSlotMaxSize {
 			panic("maximum quantity of local bindings exceeded")
 		}
-		return &base.Function {
-			Kind:      base.F_USER,
+		return &def.Function {
+			Kind:      def.F_USER,
 			Generated: nil,
 			Code:      code.InstSeq,
-			BaseSize:   base.FrameBaseSize {
-				Context:  base.Short(imp_size),
-				Reserved: base.Long(binding_peek),
+			BaseSize:   def.FrameBaseSize {
+				Context:  def.Short(imp_size),
+				Reserved: def.Long(binding_peek),
 			},
-			Info:       base.FuncInfo {
+			Info:       def.FuncInfo {
 				Module:    mod,
 				Name:      name,
 				DeclPoint: point,

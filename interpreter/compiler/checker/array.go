@@ -1,8 +1,8 @@
 package checker
 
 import (
-	"kumachan/interpreter/base/parser/ast"
-	"kumachan/interpreter/base"
+	"kumachan/interpreter/parser/ast"
+	"kumachan/interpreter/def"
 	"reflect"
 	"kumachan/stdlib"
 )
@@ -136,7 +136,7 @@ func AssignArrayTo(expected Type, array SemiTypedArray, info ExprInfo, ctx ExprC
 	}
 }
 
-func GetArrayInfo(length uint, item_type Type) base.ArrayInfo {
+func GetArrayInfo(length uint, item_type Type) def.ArrayInfo {
 	var item_reflect_type = (func() reflect.Type {
 		switch t := item_type.(type) {
 		case *NamedType:
@@ -148,12 +148,12 @@ func GetArrayInfo(length uint, item_type Type) base.ArrayInfo {
 					return rt
 				}
 			}
-			return base.ValueReflectType()
+			return def.ValueReflectType()
 		default:
-			return base.ValueReflectType()
+			return def.ValueReflectType()
 		}
 	})()
-	return base.ArrayInfo {
+	return def.ArrayInfo {
 		Length:   length,
 		ItemType: item_reflect_type,
 	}

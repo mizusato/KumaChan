@@ -4,7 +4,7 @@ import (
 	"sync"
 	"kumachan/standalone/rx"
 	"kumachan/interpreter/runtime/lib/librpc"
-	. "kumachan/interpreter/base"
+	. "kumachan/interpreter/def"
 )
 
 

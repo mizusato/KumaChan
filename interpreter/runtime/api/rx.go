@@ -8,7 +8,7 @@ import (
 	"math/rand"
 	"kumachan/standalone/rx"
 	"kumachan/standalone/util"
-	. "kumachan/interpreter/base"
+	. "kumachan/interpreter/def"
 	"kumachan/interpreter/runtime/lib/container"
 	"reflect"
 )

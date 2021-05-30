@@ -4,9 +4,9 @@ import (
 	"strings"
 	"encoding/xml"
 	"path/filepath"
-	"kumachan/interpreter/base"
-	"kumachan/interpreter/base/parser"
-	"kumachan/interpreter/base/parser/ast"
+	"kumachan/interpreter/def"
+	"kumachan/interpreter/parser"
+	"kumachan/interpreter/parser/ast"
 	"kumachan/interpreter/compiler/loader/common"
 	"kumachan/stdlib"
 )
@@ -58,7 +58,7 @@ func (f UiXmlFile) GetAST() (ast.Root, *parser.Error) {
 	for name, _ := range f.Actions {
 		action_list = append(action_list, name)
 	}
-	var group = &base.UiObjectGroup {
+	var group = &def.UiObjectGroup {
 		GroupName: f.Path,
 		BaseDir:   filepath.Dir(f.Path),
 		XmlDef:    f.Content,
@@ -73,7 +73,7 @@ func (f UiXmlFile) GetAST() (ast.Root, *parser.Error) {
 		if !(exists) {
 			continue
 		}
-		var thunk = base.UiObjectThunk {
+		var thunk = def.UiObjectThunk {
 			Object: name,
 			Group:  group,
 		}
@@ -88,7 +88,7 @@ func (f UiXmlFile) GetAST() (ast.Root, *parser.Error) {
 		ast_root.Statements = append(ast_root.Statements, const_decl)
 	}
 	for name, _ := range f.Actions {
-		var thunk = base.UiObjectThunk {
+		var thunk = def.UiObjectThunk {
 			Object: name,
 			Group:  group,
 		}

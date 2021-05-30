@@ -4,8 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"kumachan/standalone/rpc"
-	"kumachan/interpreter/base"
-	"kumachan/interpreter/base/parser/ast"
+	"kumachan/interpreter/def"
+	"kumachan/interpreter/parser/ast"
 )
 
 
@@ -32,7 +32,7 @@ type ModuleServiceInfo struct {
 	ServiceMethodNames  [] string
 }
 type Index     map[string] *Module
-type ResIndex  map[string] base.Resource
+type ResIndex  map[string] def.Resource
 
 func loadModule (
 	path  string,

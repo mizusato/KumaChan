@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"kumachan/standalone/rx"
 	"kumachan/interpreter/runtime/api"
-	. "kumachan/interpreter/base"
+	. "kumachan/interpreter/def"
 	"kumachan/interpreter/runtime/lib/ui"
 )
 

@@ -3,7 +3,7 @@ package librpc
 import (
 	"io"
 	"bytes"
-	. "kumachan/interpreter/base"
+	. "kumachan/interpreter/def"
 	"kumachan/standalone/rpc"
 	"kumachan/standalone/rpc/kmd"
 )

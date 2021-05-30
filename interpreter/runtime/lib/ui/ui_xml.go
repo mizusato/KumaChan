@@ -2,8 +2,8 @@ package ui
 
 import (
 	"fmt"
-	"kumachan/interpreter/base"
-	"kumachan/interpreter/runtime/lib/ui/qt"
+	"kumachan/interpreter/def"
+	"kumachan/standalone/qt"
 )
 
 
@@ -12,8 +12,8 @@ type EvaluatedObjectGroup struct {
 	Widgets  map[string] qt.Widget
 	Actions  map[string] qt.Action
 }
-var evaluatedObjectGroups = make(map[*base.UiObjectGroup] EvaluatedObjectGroup)
-func (g EvaluatedObjectGroup) GetObjectValue(name string) base.Value {
+var evaluatedObjectGroups = make(map[*def.UiObjectGroup] EvaluatedObjectGroup)
+func (g EvaluatedObjectGroup) GetObjectValue(name string) def.Value {
 	var widget, is_widget = g.Widgets[name]
 	if is_widget {
 		return widget
@@ -26,7 +26,7 @@ func (g EvaluatedObjectGroup) GetObjectValue(name string) base.Value {
 		name, g.Name))
 }
 
-func EvaluateObjectThunk(thunk base.UiObjectThunk) base.Value {
+func EvaluateObjectThunk(thunk def.UiObjectThunk) def.Value {
 	var evaluated, exists = evaluatedObjectGroups[thunk.Group]
 	if !(exists) {
 		var group = thunk.Group
@@ -65,7 +65,7 @@ func EvaluateObjectThunk(thunk base.UiObjectThunk) base.Value {
 		<- wait
 	}
 	var stored = evaluated.GetObjectValue(thunk.Object)
-	return base.ValNativeFun(func(_ base.Value, _ base.InteropContext) base.Value {
+	return def.ValNativeFun(func(_ def.Value, _ def.InteropContext) def.Value {
 		return stored
 	})
 }
