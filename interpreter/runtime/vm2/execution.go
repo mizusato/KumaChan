@@ -49,6 +49,7 @@ func execFrame(ctx Context, m *Machine, frame *Frame) Value {
 						wg.Done()
 					}
 				}
+				// TODO: prevent "busy" wait (e.g. execute flows[0] here)
 				wg.Wait()
 				if err != nil {
 					panic(err)
