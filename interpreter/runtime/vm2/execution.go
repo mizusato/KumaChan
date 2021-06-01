@@ -27,23 +27,27 @@ func execBranch(ctx Context, m *Machine, f UsualFuncValue, arg Value, frame *Fra
 func execFrame(ctx Context, m *Machine, frame *Frame) Value {
 	var f = frame.Func()
 	if m.options.ParallelEnabled {
-		for _, stage := range f.Entity.Code.Stages {
-			var num_of_flows = uint(len(stage))
+		for _, flows := range f.Entity.Code.Stages {
+			var num_of_flows = uint(len(flows))
 			if num_of_flows == 1 {
-				var flow = stage[0]
+				var flow = flows[0]
 				execFlow(ctx, m, frame, flow)
 			} else {
 				var wg sync.WaitGroup
 				var err interface{}
 				wg.Add(int(num_of_flows))
-				for _, flow := range stage {
-					m.parallel.Execute(func() {
+				for _, flow := range flows {
+					var ok = m.parallel.Execute(func() {
 						defer (func() {
 							err = recover()
 							wg.Done()
 						})()
 						execFlow(ctx, m, frame, flow)
 					})
+					if !(ok) {
+						execFlow(ctx, m, frame, flow)
+						wg.Done()
+					}
 				}
 				wg.Wait()
 				if err != nil {

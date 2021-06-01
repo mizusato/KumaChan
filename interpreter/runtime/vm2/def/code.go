@@ -7,7 +7,7 @@ type Code struct {
 	Length  LocalSize  // len(InsSeq) + len(/* InsSeq of branches */)
 	ExtMap  ExternalIndexMapping
 	Static  AddrSpace
-	Stages  [] Stage
+	Stages  [] [] Flow
 }
 func (code *Code) FrameRequiredSize() LocalSize {
 	return code.Length
@@ -17,8 +17,6 @@ func (code *Code) GetSizeInsValue(i LocalAddr) LocalSize {
 }
 
 type AddrSpace ([] Value)
-
-type Stage  [] Flow
 
 type Flow struct {
 	Start  LocalAddr
