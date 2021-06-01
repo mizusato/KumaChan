@@ -67,8 +67,9 @@ func (e ExternalIndexMapping) SelectChooseBranch (
 type OpCode uint8
 const (
 	SIZE    OpCode = iota  // whole instruction as an unsigned number
-	STATIC  // [ ____ ___ SRC! ]: Copy the value from a static address
-	FRAME   // [ ____ ___ SRC  ]: Copy the value from a stack frame address
+	STATIC  // [ ____ ___ PTR  ]: Copy a value from a static address
+	CTX     // [ ____ ___ PTR  ]: Copy a value from a context address
+	FRAME   // [ ____ ___ SRC  ]: Copy a value from a stack frame address
 	ENUM    // [ OBJ  IDX ____ ]: Create a enum value
 	SWITCH  // [ OBJ  EXT SRC* ]: Choose a branch by a enum value
 	SELECT  // [ OBJ* EXT SRC* ]: Choose a branch by a tuple of enum values
@@ -100,6 +101,8 @@ func (inst Instruction) String() string {
 		return fmt.Sprintf("SIZE == %d", inst.ToSize())
 	case STATIC:
 		return fmt.Sprintf("STATIC (%d)", inst.Src)
+	case CTX:
+		return fmt.Sprintf("CTX (%d)", inst.Src)
 	case FRAME:
 		return fmt.Sprintf("FRAME %d", inst.Src)
 	case ENUM:
