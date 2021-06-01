@@ -12,6 +12,10 @@ import (
 
 type Context = *rx.Context
 
+func assert(ok bool, msg string) {
+	if !(ok) { panic(msg) }
+}
+
 func call(ctx Context, m *Machine, f UsualFuncValue, arg Value) Value {
 	return execFrame(ctx, m, CreateFrame(f, arg))
 }
@@ -30,12 +34,21 @@ func execFrame(ctx Context, m *Machine, frame *Frame) Value {
 				execFlow(ctx, m, frame, flow)
 			} else {
 				var wg sync.WaitGroup
+				var err interface{}
+				wg.Add(int(num_of_flows))
 				for _, flow := range stage {
-					m.parallel.Execute(ctx, &wg, func() {
+					m.parallel.Execute(func() {
+						defer (func() {
+							err = recover()
+							wg.Done()
+						})()
 						execFlow(ctx, m, frame, flow)
 					})
 				}
 				wg.Wait()
+				if err != nil {
+					panic(err)
+				}
 			}
 		}
 	} else {
@@ -48,9 +61,6 @@ func execFrame(ctx Context, m *Machine, frame *Frame) Value {
 func execFlow(ctx Context, m *Machine, frame *Frame, flow Flow) {
 	var code = frame.Code()
 	for i := flow.Start; i <= flow.End; i += 1 {
-		if ctx.AlreadyCancelled() {
-			return
-		}
 		var this = code.InsSeq[i]
 		var dst = frame.DataDstRef(i)
 		switch this.OpCode {
@@ -197,6 +207,9 @@ func execFlow(ctx Context, m *Machine, frame *Frame, flow Flow) {
 			context[len(context) - 1] = closure
 			*dst = closure
 		case CALL:
+			if ctx.AlreadyCancelled() {
+				panic(ExecutionCancelled {})
+			}
 			var f = frame.Data(this.Obj)
 			var arg = frame.Data(this.Src)
 			switch f := f.(type) {
@@ -214,9 +227,4 @@ func execFlow(ctx Context, m *Machine, frame *Frame, flow Flow) {
 	}
 }
 
-func assert(ok bool, msg string) {
-	if !(ok) {
-		panic(msg)
-	}
-}
 

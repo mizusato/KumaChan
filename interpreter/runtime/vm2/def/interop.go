@@ -1,6 +1,11 @@
 package def
 
 
+type ExecutionCancelled struct {}
+func (_ ExecutionCancelled) Error() string {
+	return "execution cancelled"
+}
+
 type InteropContext interface {
 	Call(f Value, arg Value) Value
 	// TODO
