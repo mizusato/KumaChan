@@ -13,7 +13,21 @@ type InteropHandle struct {
 func (h InteropHandle) Call(f Value, arg Value) Value {
 	switch f := f.(type) {
 	case UsualFuncValue:
-		return call(h.context, h.machine, f, arg)
+		var ret = make(chan func() (interface{}, Value), 1)
+		go call(h.context, h.machine, f, arg, func(e interface{}, v Value) {
+			select {
+			case ret <- (func() (interface{}, Value) {
+				return e, v
+			}):
+			default:
+				panic("something went wrong")
+			}
+		})
+		var e, v = (<- ret)()
+		if e != nil {
+			panic(e)
+		}
+		return v
 	case NativeFuncValue:
 		return (*f)(arg, h)
 	default:

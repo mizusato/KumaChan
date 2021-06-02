@@ -30,12 +30,11 @@ func (p GoroutinePool) Dispose() {
 	close(p.runQueue)
 }
 
-func (p GoroutinePool) Execute(f func()) bool {
+func (p GoroutinePool) Execute(f func()) {
 	select {
 	case p.runQueue <- f:
-		return true
 	default:
-		return false
+		f()
 	}
 }
 
