@@ -24,6 +24,11 @@ func (h InteropHandle) Call(f Value, arg Value) Value {
 			}
 		})
 		var e, v = (<- ret)()
+		select {
+		case ret <- nil:
+		default:
+			panic("something went wrong")
+		}
 		if e != nil {
 			panic(e)
 		}
