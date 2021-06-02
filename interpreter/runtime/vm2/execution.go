@@ -24,54 +24,57 @@ func call(ctx Context, m *Machine, f UsualFuncValue, arg Value, kv ContVal) {
 	execFrame(ctx, m, CreateFrame(f, arg), kv)
 }
 
+func callTailRec(ctx Context, m *Machine, f UsualFuncValue, arg Value, frame *Frame, kv ContVal) {
+	execFrame(ctx, m, frame.TailRec(f, arg), kv)
+}
+
 func execBranch(ctx Context, m *Machine, f UsualFuncValue, arg Value, frame *Frame, kv ContVal) {
 	execFrame(ctx, m, frame.Branch(f, arg), kv)
 }
 
 func execFrame(ctx Context, m *Machine, frame *Frame, kv ContVal) {
-	var f = frame.Func()
 	var k = Cont(func(e interface{}) {
 		if e != nil {
 			kv(frame.WrapPanic(e), nil)
 		} else {
-			kv(nil, frame.Data(frame.Last()))
+			kv(nil, frame.Data(frame.LastDataAddr()))
 		}
 	})
 	if m.options.ParallelEnabled {
-		execParallel(ctx, m, frame, f.Entity.Code.Stages, k)
+		execParallel(ctx, m, frame, 0, k)
 	} else {
-		var flow = Flow { Start: 0, End: frame.Last() }
+		var flow = Flow { Start: 0, End: frame.LastInsAddr() }
 		execFlow(ctx, m, frame, flow, k)
 	}
 }
 
-func execParallel(ctx Context, m *Machine, frame *Frame, stages ([] Stage), k0 Cont) {
+func execParallel(ctx Context, m *Machine, frame *Frame, stage uint, k0 Cont) {
 	var once sync.Once
 	var k = Cont(func(e interface{}) {
 		once.Do(func() {
 			k0(e)
 		})
 	})
-	if len(stages) == 0 {
+	var stages = frame.Code().Stages
+	if stage >= uint(len(stages)) {
 		k(nil)
 		return
 	}
-	var stage = stages[0]
-	var rest_stages = stages[1:]
-	var num_of_flows = uint(len(stage))
+	var this_stage = stages[stage]
+	var num_of_flows = uint(len(this_stage))
 	if num_of_flows == 0 { panic("bad bytecode: empty stage") }
 	if num_of_flows == 1 {
-		var flow = stage.TheOnlyFlow()
+		var flow = this_stage.TheOnlyFlow()
 		execFlow(ctx, m, frame, flow, func(e interface{}) {
 			if e != nil {
 				k(e)
 				return
 			}
-			execParallel(ctx, m, frame, rest_stages, k)
+			execParallel(ctx, m, frame, (stage + 1), k)
 		})
 	} else {
 		var sem = make(chan struct{}, (num_of_flows - 1))
-		stage.ForEachFlow(func(flow Flow) {
+		this_stage.ForEachFlow(func(flow Flow) {
 			m.parallel.Execute(func() {
 				execFlow(ctx, m, frame, flow, func(e interface{}) {
 					if e != nil {
@@ -81,7 +84,7 @@ func execParallel(ctx Context, m *Machine, frame *Frame, stages ([] Stage), k0 C
 					select {
 					case sem <- struct{}{}:
 					default:
-						execParallel(ctx, m, frame, rest_stages, k)
+						execParallel(ctx, m, frame, (stage + 1), k)
 					}
 				})
 			})
@@ -272,7 +275,12 @@ func execIns(ctx Context, m *Machine, frame *Frame, i LocalAddr, end LocalAddr, 
 		var arg = frame.Data(ins.Src)
 		switch f := f.(type) {
 		case UsualFuncValue:
-			call(ctx, m, f, arg, kv_dst); return
+			if i == end && end == frame.LastInsAddr() &&
+			frame.Func().Entity == f.Entity {
+				callTailRec(ctx, m, f, arg, frame, kv_dst); return
+			} else {
+				call(ctx, m, f, arg, kv_dst); return
+			}
 		case NativeFuncValue:
 			var h = InteropHandle { context: ctx, machine: m }
 			*dst = (*f)(arg, h)

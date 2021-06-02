@@ -36,8 +36,12 @@ func (r *Frame) Code() *Code {
 	return &(r.function.Entity.Code)
 }
 
-func (r *Frame) Last() LocalAddr {
+func (r *Frame) LastDataAddr() LocalAddr {
 	return LocalAddr(uint(len(r.data)) - 1)
+}
+
+func (r *Frame) LastInsAddr() LocalAddr {
+	return LocalAddr(uint(len(r.function.Entity.Code.InsSeq)) - 1)
 }
 
 func (r *Frame) Branch(f UsualFuncValue, arg Value) *Frame {
@@ -46,6 +50,14 @@ func (r *Frame) Branch(f UsualFuncValue, arg Value) *Frame {
 			Entity:  f.Entity,
 			Context: r.function.Context,
 		},
+		argument: arg,
+		data:     r.data,
+	}
+}
+
+func (r *Frame) TailRec(f UsualFuncValue, arg Value) *Frame {
+	return &Frame {
+		function: f,
 		argument: arg,
 		data:     r.data,
 	}
