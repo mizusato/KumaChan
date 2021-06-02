@@ -97,37 +97,8 @@ func (it *StringIterator) Next() (Value, Seq, bool) {
 	panic("impossible branch")
 }
 
-type StringSplitIterator struct {
-	Operand    string
-	Separator  string
-}
-func (it *StringSplitIterator) GetItemType() reflect.Type {
-	return reflect.TypeOf("")
-}
-func (it *StringSplitIterator) Next() (Value, Seq, bool) {
-	if it == nil || it.Operand == "" {
-		return nil, nil, false
-	}
-	var op = it.Operand
-	var sep = it.Separator
-	for i, _ := range op {
-		if strings.HasPrefix(op[i:], sep) {
-			var item = op[:i]
-			var next_op = op[i+len(sep):]
-			var rest = &StringSplitIterator {
-				Operand:   next_op,
-				Separator: sep,
-			}
-			return item, rest, true
-		}
-	}
-	return op, EmptySeq { ItemType: it.GetItemType() }, true
-}
 func StringSplit(str string, sep string) Seq {
-	return &StringSplitIterator {
-		Operand:   str,
-		Separator: sep,
-	}
+	return ListFrom(strings.Split(str, sep)).Iterate()
 }
 
 func StringJoin(seq Seq, sep string) string {
