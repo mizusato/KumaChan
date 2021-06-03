@@ -24,67 +24,73 @@ func CreateFrame(f UsualFuncValue, arg Value) *Frame {
 	}
 }
 
-func (r *Frame) Func() UsualFuncValue {
-	return r.function
+func (u *Frame) Func() UsualFuncValue {
+	return u.function
 }
 
-func (r *Frame) Arg() Value {
-	return r.argument
+func (u *Frame) Arg() Value {
+	return u.argument
 }
 
-func (r *Frame) Code() *Code {
-	return &(r.function.Entity.Code)
+func (u *Frame) Code() *Code {
+	return &(u.function.Entity.Code)
 }
 
-func (r *Frame) LastDataAddr() LocalAddr {
-	return LocalAddr(uint(len(r.data)) - 1)
+func (u *Frame) LastDataAddr() LocalAddr {
+	return LocalAddr(uint(len(u.data)) - 1)
 }
 
-func (r *Frame) LastInsAddr() LocalAddr {
-	return LocalAddr(uint(len(r.function.Entity.Code.InsSeq)) - 1)
+func (u *Frame) LastInsAddr() LocalAddr {
+	return LocalAddr(uint(len(u.function.Entity.Code.InsSeq)) - 1)
 }
 
-func (r *Frame) Branch(f UsualFuncValue, arg Value) *Frame {
+func (u *Frame) Branch(f UsualFuncValue, arg Value) *Frame {
 	return &Frame {
 		function: &ValFunc {
 			Entity:  f.Entity,
-			Context: r.function.Context,
+			Context: u.function.Context,
 		},
 		argument: arg,
-		data:     r.data,
+		data:     u.data,
 	}
 }
 
-func (r *Frame) TailRec(f UsualFuncValue, arg Value) *Frame {
-	return &Frame {
-		function: f,
-		argument: arg,
-		data:     r.data,
+func (u *Frame) TailCall(f UsualFuncValue, arg Value) *Frame {
+	if u.function.Entity == f.Entity {
+		return &Frame {
+			function: f,
+			argument: arg,
+			data:     u.data,
+		}
+	} else {
+		var new_frame = CreateFrame(f, arg)
+		u.data = new_frame.data
+		return new_frame
 	}
 }
 
-func (r *Frame) Static(addr LocalAddr) Value {
-	return r.function.Entity.Code.Static[addr]
+func (u *Frame) Static(addr LocalAddr) Value {
+	return u.function.Entity.Code.Static[addr]
 }
 
-func (r *Frame) Context(addr LocalAddr) Value {
-	return r.function.Context[addr]
+func (u *Frame) Context(addr LocalAddr) Value {
+	return u.function.Context[addr]
 }
 
-func (r *Frame) Data(addr LocalAddr) Value {
-	return r.data[addr]
+func (u *Frame) Data(addr LocalAddr) Value {
+	return u.data[addr]
 }
 
-func (r *Frame) DataRange(addr LocalAddr, size LocalSize) ([] Value) {
-	var u = (addr + 1)
-	return r.data[u: (u + size)]
+func (u *Frame) DataRange(addr LocalAddr, size LocalSize) ([] Value) {
+	var start = (addr + 1)
+	return u.data[start: (start + size)]
 }
 
-func (r *Frame) DataDstRef(instruction_index LocalAddr) *Value {
-	return &(r.data[(instruction_index + r.function.Entity.Code.Offset)])
+func (u *Frame) DataDstRef(instruction_index LocalAddr) *Value {
+	return &(u.data[(instruction_index + u.function.Entity.Code.Offset)])
 }
 
-func (r *Frame) WrapPanic(e interface{}) interface{} {
+func (u *Frame) WrapPanic(e interface{}) interface{} {
 	return e  // TODO
 }
 
