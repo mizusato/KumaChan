@@ -55,7 +55,7 @@ func execParallel(ctx Context, m *Machine, u *Frame, stage uint, k0 Cont) {
 			k0(e)
 		})
 	})
-	var stages = u.Code().Stages
+	var stages = u.Code().Stages()
 	if stage >= uint(len(stages)) {
 		k(nil)
 		return
@@ -108,7 +108,7 @@ func execIns(ctx Context, m *Machine, u *Frame, i LocalAddr, end LocalAddr, k Co
 		k(nil)
 		return
 	}
-	var ins = code.InsSeq[i]
+	var inst = code.Inst(i)
 	var dst = u.DataDstRef(i)
 	var kv_dst = ContVal(func(e interface{}, v Value) {
 		if e != nil {
@@ -124,38 +124,33 @@ func execIns(ctx Context, m *Machine, u *Frame, i LocalAddr, end LocalAddr, k Co
 		})()
 		execIns(ctx, m, u, (i + 1), end, k)
 	})
-	switch ins.OpCode {
+	var op = inst.OpCode
+	switch op {
 	case SIZE:
-		// do nothing
+		*dst = inst.ToSize()
 	case ARG:
 		*dst = u.Arg()
 	case STATIC:
-		*dst = u.Static(ins.Src)
+		*dst = u.Static(inst.Src)
 	case CTX:
-		*dst = u.Context(ins.Src)
+		*dst = u.Context(inst.Src)
 	case FRAME:
-		*dst = u.Data(ins.Src)
+		*dst = u.Data(inst.Src)
 	case ENUM:
 		*dst = &ValEnum {
-			Index: ins.Idx,
-			Value: u.Data(ins.Obj),
+			Index: inst.Idx,
+			Value: u.Data(inst.Obj),
 		}
 	case SWITCH:
-		var branches_addr = ins.Src
-		var obj = u.Data(ins.Obj)
+		var obj = u.Data(inst.Obj)
 		var enum = obj.(EnumValue)
 		var vec = CreateShortIndexVectorSingleElement(enum.Index)
-		var target = code.ExtMap.ChooseBranch(ins.ExtIdx, vec)
-		var num_of_branches = code.GetSizeInsValue(branches_addr)
-		assert(target < num_of_branches, "SWITCH: invalid branch index")
-		var branch = u.Data(branches_addr + 1 + target)
-		var f, ok = branch.(UsualFuncValue)
-		assert(ok, "SWITCH: invalid branch")
+		var target = code.ChooseBranch(inst.ExtIdx, vec)
+		var f = code.BranchFuncValue(target)
 		execBranch(ctx, m, f, enum.Value, u, kv_dst); return
 	case SELECT:
-		var objects_addr = ins.Obj
-		var branches_addr = ins.Src
-		var num_of_objects = code.GetSizeInsValue(objects_addr)
+		var objects_addr = inst.Obj
+		var num_of_objects = u.DataGetSizeAt(objects_addr)
 		assert(uint(num_of_objects) < MaxShortIndexVectorElements,
 			"SELECT: too many operands")
 		var objects = u.DataRange(objects_addr, num_of_objects)
@@ -167,54 +162,50 @@ func execIns(ctx Context, m *Machine, u *Frame, i LocalAddr, end LocalAddr, k Co
 			values[n] = enum.Value
 		}
 		var vec = CreateShortIndexVector(indexes)
-		var target = code.ExtMap.ChooseBranch(ins.ExtIdx, vec)
-		var num_of_branches = code.GetSizeInsValue(branches_addr)
-		assert(target < num_of_branches, "SELECT: invalid branch index")
-		var branch = u.Data(branches_addr + 1 + target)
-		var f, ok = branch.(UsualFuncValue)
-		assert(ok, "SELECT: invalid branch")
+		var target = code.ChooseBranch(inst.ExtIdx, vec)
+		var f = code.BranchFuncValue(target)
 		execBranch(ctx, m, f, values, u, kv_dst); return
 	case BR:
-		var enum = u.Data(ins.Obj).(EnumValue)
-		*dst = BranchRef(enum, ins.Idx)
+		var enum = u.Data(inst.Obj).(EnumValue)
+		*dst = BranchRef(enum, inst.Idx)
 	case BRC:
-		var base_ref = u.Data(ins.Obj)
-		*dst = BranchRefFromCaseRef(base_ref, ins.Idx)
+		var base_ref = u.Data(inst.Obj)
+		*dst = BranchRefFromCaseRef(base_ref, inst.Idx)
 	case BRP:
-		var base_ref = u.Data(ins.Obj)
-		*dst = BranchRefFromProjRef(base_ref, ins.Idx)
+		var base_ref = u.Data(inst.Obj)
+		*dst = BranchRefFromProjRef(base_ref, inst.Idx)
 	case TUPLE:
-		var objects_addr = ins.Obj
-		var num_of_objects = code.GetSizeInsValue(objects_addr)
+		var objects_addr = inst.Obj
+		var num_of_objects = u.DataGetSizeAt(objects_addr)
 		var elements = make([] Value, num_of_objects)
 		copy(elements, u.DataRange(objects_addr, num_of_objects))
 		*dst = TupleOf(elements)
 	case GET:
-		var tuple = u.Data(ins.Obj).(TupleValue)
-		*dst = tuple.Elements[ins.Idx]
+		var tuple = u.Data(inst.Obj).(TupleValue)
+		*dst = tuple.Elements[inst.Idx]
 	case SET:
-		var tuple = u.Data(ins.Obj).(TupleValue)
-		var new_element = u.Data(ins.Src)
+		var tuple = u.Data(inst.Obj).(TupleValue)
+		var new_element = u.Data(inst.Src)
 		var new_elements = make([] Value, len(tuple.Elements))
 		copy(new_elements, tuple.Elements)
-		new_elements[ins.Idx] = new_element
+		new_elements[inst.Idx] = new_element
 		*dst = TupleOf(new_elements)
 	case FR:
-		var tuple = u.Data(ins.Obj).(TupleValue)
-		*dst = FieldRef(tuple, ins.Idx)
+		var tuple = u.Data(inst.Obj).(TupleValue)
+		*dst = FieldRef(tuple, inst.Idx)
 	case FRP:
-		var base_ref = u.Data(ins.Obj)
-		*dst = FieldRefFromProjRef(base_ref, ins.Idx)
+		var base_ref = u.Data(inst.Obj)
+		*dst = FieldRefFromProjRef(base_ref, inst.Idx)
 	case LSV:
-		var objects_addr = ins.Obj
-		var num_of_objects = code.GetSizeInsValue(objects_addr)
+		var objects_addr = inst.Obj
+		var num_of_objects = u.DataGetSizeAt(objects_addr)
 		var list = make([] Value, num_of_objects)
 		copy(list, u.DataRange(objects_addr, num_of_objects))
 		*dst = list
 	case LSC:
-		var objects_addr = ins.Obj
-		var num_of_objects = code.GetSizeInsValue(objects_addr)
-		var t = GetCompactArrayType(ins.Idx)
+		var objects_addr = inst.Obj
+		var num_of_objects = u.DataGetSizeAt(objects_addr)
+		var t = GetCompactArrayType(inst.Idx)
 		var length = int(num_of_objects)
 		var r_list = reflect.MakeSlice(t, length, length)
 		var objects = u.DataRange(objects_addr, num_of_objects)
@@ -227,52 +218,39 @@ func execIns(ctx Context, m *Machine, u *Frame, i LocalAddr, end LocalAddr, k Co
 		panic("not implemented")  // TODO
 	case MPI:
 		panic("not implemented")  // TODO
-	case CL:
-		var values_addr = ins.Src
-		var num_of_values = code.GetSizeInsValue(values_addr)
+	case CL, CLR:
+		var src = inst.Src
+		var src_length = u.DataGetSizeAt(src)
+		var num_of_values = src_length
+		if op == CLR { num_of_values += 1 }
 		var context = make([] Value, num_of_values)
-		copy(context, u.DataRange(values_addr, num_of_values))
-		var f = u.Data(ins.Obj)
-		switch f := f.(type) {
+		copy(context, u.DataRange(src, src_length))
+		var closure Value
+		switch f := u.Data(inst.Obj).(type) {
 		case UsualFuncValue:
 			var required = f.Entity.ContextLength
-			assert(required == num_of_values, "CL: invalid context length")
+			assert(num_of_values == required, "CL: invalid context length")
 			assert(len(f.Context) == 0, "CL: operand is already a closure")
-			*dst = &ValFunc {
+			closure = &ValFunc {
 				Entity:  f.Entity,
 				Context: context,
 			}
 		case NativeFuncValue:
-			*dst = ValNativeFunc(func(arg Value, h InteropContext) Value {
+			closure = ValNativeFunc(func(arg Value, h InteropContext) Value {
 				var arg_with_context = Tuple(arg, context)
 				return (*f)(arg_with_context, h)
 			})
 		default:
 			panic("CL: invalid operand")
 		}
-	case CLR:
-		var f, ok = u.Data(ins.Obj).(UsualFuncValue)
-		assert(ok, "CLR: invalid operand")
-		var usual_values_addr = ins.Src
-		var num_of_usual_values = code.GetSizeInsValue(usual_values_addr)
-		var num_of_values = uint(num_of_usual_values + 1)
-		var required = uint(f.Entity.ContextLength)
-		assert(required == num_of_values, "CLR: invalid context length")
-		assert(len(f.Context) == 0, "CLR: operand is already a closure")
-		var context = make([] Value, num_of_values)
-		copy(context, u.DataRange(usual_values_addr, num_of_usual_values))
-		var closure = &ValFunc {
-			Entity:  f.Entity,
-			Context: context,
-		}
-		context[len(context) - 1] = closure
+		if op == CLR { context[num_of_values - 1] = closure }
 		*dst = closure
 	case CALL:
 		if ctx.AlreadyCancelled() {
 			panic(ExecutionCancelled {})
 		}
-		var f = u.Data(ins.Obj)
-		var arg = u.Data(ins.Src)
+		var f = u.Data(inst.Obj)
+		var arg = u.Data(inst.Src)
 		switch f := f.(type) {
 		case UsualFuncValue:
 			if i == end && end == u.LastInsAddr() {

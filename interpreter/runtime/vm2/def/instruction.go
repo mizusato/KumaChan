@@ -60,13 +60,13 @@ var _ = (func() struct{} {
 type ExternalIndexMapping ([] ExternalIndexMap)
 type ExternalIndexMap struct {
 	HasDefault  bool
-	Default     LocalAddr
-	VectorMap   map[ShortIndexVector] LocalAddr
+	Default     uint
+	VectorMap   map[ShortIndexVector] uint
 }
 func (all ExternalIndexMapping) ChooseBranch (
 	ptr  ExternalIndexMapPointer,
 	vec  ShortIndexVector,
-) LocalAddr {
+) uint {
 	if !(uint(ptr) < uint(len(all))) { panic("invalid ExtIdx") }
 	var m = &all[ptr]
 	var branch, found = m.VectorMap[vec]
@@ -89,8 +89,8 @@ const (
 	CTX     // [ ____ ___ PTR  ]: Copy a value from a context address
 	FRAME   // [ ____ ___ SRC  ]: Copy a value from a stack frame address
 	ENUM    // [ OBJ  IDX ____ ]: Create a enum value
-	SWITCH  // [ OBJ  EXT SRC* ]: Choose a branch by a enum value
-	SELECT  // [ OBJ* EXT SRC* ]: Choose a branch by several enum values
+	SWITCH  // [ OBJ  EXT ____ ]: Choose a branch by a enum value
+	SELECT  // [ OBJ* EXT ____ ]: Choose a branch by several enum values
 	BR      // [ OBJ  IDX ____ ]: Make a functional branch ref on a enum value
 	BRC     // [ OBJ  IDX ____ ]: Make a functional branch ref on a case ref
 	BRP     // [ OBJ  IDX ____ ]: Make a functional branch ref on a proj ref

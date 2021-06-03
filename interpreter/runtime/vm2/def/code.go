@@ -2,18 +2,40 @@ package def
 
 
 type Code struct {
-	InsSeq  [] Instruction
-	Offset  LocalSize
-	Length  LocalSize  // len(InsSeq) + len(/* InsSeq of branches */)
-	ExtMap  ExternalIndexMapping
-	Static  AddrSpace
-	Stages  [] Stage
+	instOffset  LocalSize
+	instList    [] Instruction
+	instExtMap  ExternalIndexMapping
+	branches    [] *FunctionEntity
+	frameSize   LocalSize // len(instList) + len(/* instList of branches */)
+	static      AddrSpace
+	stages      [] Stage
 }
-func (code *Code) FrameRequiredSize() LocalSize {
-	return code.Length
+func (code *Code) FrameSize() LocalSize {
+	return code.frameSize
 }
-func (code *Code) GetSizeInsValue(i LocalAddr) LocalSize {
-	return code.InsSeq[i].ToSize()
+func (code *Code) Inst(i LocalAddr) Instruction {
+	return code.instList[i]
+}
+func (code *Code) InstCount() LocalSize {
+	return LocalSize(len(code.instList))
+}
+func (code *Code) InstDstAddr(i LocalAddr) LocalAddr {
+	return (i + code.instOffset)
+}
+func (code *Code) Static(s LocalAddr) Value {
+	return code.static[s]
+}
+func (code *Code) Stages() ([] Stage) {
+	return code.stages
+}
+func (code *Code) ChooseBranch(ptr ExternalIndexMapPointer, vec ShortIndexVector) uint {
+	return code.instExtMap.ChooseBranch(ptr, vec)
+}
+func (code *Code) BranchFuncValue(index uint) UsualFuncValue {
+	return &ValFunc {
+		Entity:  code.branches[index],
+		Context: nil,
+	}
 }
 
 type AddrSpace ([] Value)
@@ -42,4 +64,17 @@ type FunctionEntityInfo struct {
 	ContextLength  LocalSize
 }
 
+func CreateFunctionEntity (
+	trunk     [] Instruction,
+	info      FunctionEntityInfo,
+	branches  [] [] Instruction,
+	b_info    [] FunctionEntityInfo,
+	static    AddrSpace,
+) *FunctionEntity {
+	panic("not implemented") // TODO
+}
+
+func analyzeStages(instList ([] Instruction)) ([] Stage) {
+	panic("not implemented") // TODO
+}
 

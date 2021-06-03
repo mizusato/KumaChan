@@ -14,7 +14,7 @@ type Frame struct {
 
 func CreateFrame(f UsualFuncValue, arg Value) *Frame {
 	const CacheLinePadLength = LocalSize(64 / unsafe.Sizeof(Value(nil)))
-	var req_size = f.Entity.Code.FrameRequiredSize()
+	var req_size = f.Entity.Code.FrameSize()
 	var alloc_size = (req_size + CacheLinePadLength)
 	var data = make(AddrSpace, req_size, alloc_size)
 	return &Frame {
@@ -41,7 +41,7 @@ func (u *Frame) LastDataAddr() LocalAddr {
 }
 
 func (u *Frame) LastInsAddr() LocalAddr {
-	return LocalAddr(uint(len(u.function.Entity.Code.InsSeq)) - 1)
+	return LocalAddr(u.function.Entity.Code.InstCount() - 1)
 }
 
 func (u *Frame) Branch(f UsualFuncValue, arg Value) *Frame {
@@ -70,7 +70,7 @@ func (u *Frame) TailCall(f UsualFuncValue, arg Value) *Frame {
 }
 
 func (u *Frame) Static(addr LocalAddr) Value {
-	return u.function.Entity.Code.Static[addr]
+	return u.function.Entity.Code.Static(addr)
 }
 
 func (u *Frame) Context(addr LocalAddr) Value {
@@ -81,13 +81,17 @@ func (u *Frame) Data(addr LocalAddr) Value {
 	return u.data[addr]
 }
 
+func (u *Frame) DataGetSizeAt(addr LocalAddr) LocalSize {
+	return u.data[addr].(LocalSize)
+}
+
 func (u *Frame) DataRange(addr LocalAddr, size LocalSize) ([] Value) {
 	var start = (addr + 1)
 	return u.data[start: (start + size)]
 }
 
-func (u *Frame) DataDstRef(instruction_index LocalAddr) *Value {
-	return &(u.data[(instruction_index + u.function.Entity.Code.Offset)])
+func (u *Frame) DataDstRef(i LocalAddr) *Value {
+	return &(u.data[u.function.Entity.Code.InstDstAddr(i)])
 }
 
 func (u *Frame) WrapPanic(e interface{}) interface{} {
