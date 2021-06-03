@@ -13,6 +13,8 @@ TODO
 
 ## Type System Refactor
 
+- Lang: type alias (specified by tag "# alias", just like function alias)
+
 - Lang: permit anonymous record expression (currently requires explicit type)
 
 - Lang: fix the order randomness of field assignment of anonymous record input
