@@ -28,7 +28,7 @@ func callAtTail(ctx Context, m *Machine, f UsualFuncValue, arg Value, u *Frame, 
 	execFrame(ctx, m, u.TailCall(f, arg), kv)
 }
 
-func execBranch(ctx Context, m *Machine, f UsualFuncValue, arg Value, u *Frame, kv ContVal) {
+func callBranch(ctx Context, m *Machine, f UsualFuncValue, arg Value, u *Frame, kv ContVal) {
 	execFrame(ctx, m, u.Branch(f, arg), kv)
 }
 
@@ -152,7 +152,7 @@ func execIns(ctx Context, m *Machine, u *Frame, i LocalAddr, end LocalAddr, k Co
 		var vec = CreateShortIndexVectorSingleElement(enum.Index)
 		var target = code.ChooseBranch(inst.ExtIdx, vec)
 		var f = code.BranchFuncValue(target)
-		execBranch(ctx, m, f, enum.Value, u, kv_dst); return
+		callBranch(ctx, m, f, enum.Value, u, kv_dst); return
 	case SELECT:
 		var objects_addr = inst.Obj
 		var num_of_objects = u.DataGetSizeAt(objects_addr)
@@ -169,7 +169,7 @@ func execIns(ctx Context, m *Machine, u *Frame, i LocalAddr, end LocalAddr, k Co
 		var vec = CreateShortIndexVector(indexes)
 		var target = code.ChooseBranch(inst.ExtIdx, vec)
 		var f = code.BranchFuncValue(target)
-		execBranch(ctx, m, f, values, u, kv_dst); return
+		callBranch(ctx, m, f, values, u, kv_dst); return
 	case BR:
 		var enum = u.Data(inst.Obj).(EnumValue)
 		*dst = BranchRef(enum, inst.Idx)

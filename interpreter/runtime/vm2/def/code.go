@@ -74,20 +74,20 @@ type FunctionEntity struct {
 type FunctionEntityInfo struct {
 	ContextLength  LocalSize
 }
-type RawCodeBranch struct {
+type BranchData struct {
 	InstList   [] Instruction
 	ExtIdxMap  ExternalIndexMapping
 	Stages     [] Stage
-	Branches   [] RawCodeBranch
+	Branches   [] BranchData
 	Info       FunctionEntityInfo
 }
-func CreateFunctionEntity(trunk RawCodeBranch, static AddrSpace) *FunctionEntity {
+func CreateFunctionEntity(trunk BranchData, static AddrSpace) *FunctionEntity {
 	var frame_size = uint(0)
 	var f = createFunctionEntity(0, &frame_size, trunk, static)
 	f.Code.frameSize = LocalSize(frame_size)
 	return f
 }
-func createFunctionEntity(offset uint, fs *uint, this RawCodeBranch, static AddrSpace) *FunctionEntity {
+func createFunctionEntity(offset uint, fs *uint, this BranchData, static AddrSpace) *FunctionEntity {
 	var required_fs = offset + uint(len(this.InstList))
 	if required_fs >= MaxFrameValues { panic("frame too big") }
 	if required_fs > *fs {
