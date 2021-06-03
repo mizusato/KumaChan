@@ -11,6 +11,7 @@ type Code struct {
 	stages      [] Stage
 }
 func (code *Code) FrameSize() LocalSize {
+	if code.frameSize == 0 { panic("something went wrong") }
 	return code.frameSize
 }
 func (code *Code) Inst(i LocalAddr) Instruction {
@@ -63,18 +64,42 @@ type FunctionEntity struct {
 type FunctionEntityInfo struct {
 	ContextLength  LocalSize
 }
-
-func CreateFunctionEntity (
-	trunk     [] Instruction,
-	info      FunctionEntityInfo,
-	branches  [] [] Instruction,
-	b_info    [] FunctionEntityInfo,
-	static    AddrSpace,
-) *FunctionEntity {
-	panic("not implemented") // TODO
+type RawCodeBranch struct {
+	content   [] Instruction
+	external  ExternalIndexMapping
+	info      FunctionEntityInfo
+	branches  [] RawCodeBranch
 }
-
-func analyzeStages(instList ([] Instruction)) ([] Stage) {
+func CreateFunctionEntity(trunk RawCodeBranch, static AddrSpace) *FunctionEntity {
+	var frame_size = uint(0)
+	var f = createFunctionEntity(0, &frame_size, trunk, static)
+	f.Code.frameSize = LocalSize(frame_size)
+	return f
+}
+func createFunctionEntity(offset uint, fs *uint, this RawCodeBranch, static AddrSpace) *FunctionEntity {
+	var required_fs = offset + uint(len(this.content))
+	if required_fs >= MaxFrameValues { panic("frame too big") }
+	if required_fs > *fs {
+		*fs = required_fs
+	}
+	var branch_entities = make([] *FunctionEntity, len(this.branches))
+	for i, b := range this.branches {
+		branch_entities[i] = createFunctionEntity(required_fs, fs, b, static)
+	}
+	return &FunctionEntity {
+		Code: Code {
+			instOffset: LocalSize(offset),
+			instList:   this.content,
+			instExtMap: this.external,
+			branches:   branch_entities,
+			frameSize:  0,
+			static:     static,
+			stages:     analyzeStages(offset, this.content),
+		},
+		FunctionEntityInfo: this.info,
+	}
+}
+func analyzeStages(offset uint, instList ([] Instruction)) ([] Stage) {
 	panic("not implemented") // TODO
 }
 
