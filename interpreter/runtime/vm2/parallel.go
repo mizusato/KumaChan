@@ -10,7 +10,6 @@ const GoroutinePoolRunQueueSize = 32768
 type GoroutinePool struct {
 	runQueue  chan func()
 }
-
 func CreateGoroutinePool() GoroutinePool {
 	var p = GoroutinePool {
 		runQueue: make(chan func(), GoroutinePoolRunQueueSize),
@@ -25,11 +24,9 @@ func CreateGoroutinePool() GoroutinePool {
 	}
 	return p
 }
-
 func (p GoroutinePool) Dispose() {
 	close(p.runQueue)
 }
-
 func (p GoroutinePool) Execute(f func()) {
 	select {
 	case p.runQueue <- f:
@@ -37,5 +34,4 @@ func (p GoroutinePool) Execute(f func()) {
 		f()
 	}
 }
-
 

@@ -128,9 +128,9 @@ func (inst Instruction) String() string {
 	case ENUM:
 		return fmt.Sprintf("ENUM %d [%d]", inst.Obj, inst.Idx)
 	case SWITCH:
-		return fmt.Sprintf("SWITCH %d [<%d>] %d*", inst.Obj, inst.ExtIdx, inst.Src)
+		return fmt.Sprintf("SWITCH %d [<%d>]", inst.Obj, inst.ExtIdx)
 	case SELECT:
-		return fmt.Sprintf("SELECT %d* [<%d>] %d*", inst.Obj, inst.ExtIdx, inst.Src)
+		return fmt.Sprintf("SELECT %d* [<%d>]", inst.Obj, inst.ExtIdx)
 	case BR:
 		return fmt.Sprintf("BR %d [%d]", inst.Obj, inst.Idx)
 	case BRC:

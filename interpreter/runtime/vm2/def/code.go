@@ -2,13 +2,13 @@ package def
 
 
 type Code struct {
-	instOffset  LocalSize
-	instList    [] Instruction
-	instExtMap  ExternalIndexMapping
-	branches    [] *FunctionEntity
-	frameSize   LocalSize // len(instList) + len(/* instList of branches */)
-	static      AddrSpace
-	stages      [] Stage
+	dstOffset  LocalSize
+	instList   [] Instruction
+	extIdxMap  ExternalIndexMapping
+	stages     [] Stage
+	branches   [] *FunctionEntity
+	frameSize  LocalSize // len(instList) + len(/* instList of branches */)
+	static     AddrSpace
 }
 func (code *Code) FrameSize() LocalSize {
 	if code.frameSize == 0 { panic("something went wrong") }
@@ -21,7 +21,7 @@ func (code *Code) InstCount() LocalSize {
 	return LocalSize(len(code.instList))
 }
 func (code *Code) InstDstAddr(i LocalAddr) LocalAddr {
-	return (i + code.instOffset)
+	return (i + code.dstOffset)
 }
 func (code *Code) Static(s LocalAddr) Value {
 	return code.static[s]
@@ -30,7 +30,7 @@ func (code *Code) Stages() ([] Stage) {
 	return code.stages
 }
 func (code *Code) ChooseBranch(ptr ExternalIndexMapPointer, vec ShortIndexVector) uint {
-	return code.instExtMap.ChooseBranch(ptr, vec)
+	return code.extIdxMap.ChooseBranch(ptr, vec)
 }
 func (code *Code) BranchFuncValue(index uint) UsualFuncValue {
 	return &ValFunc {
@@ -42,8 +42,18 @@ func (code *Code) BranchFuncValue(index uint) UsualFuncValue {
 type AddrSpace ([] Value)
 
 type Flow struct {
-	Start  LocalAddr
-	End    LocalAddr
+	SimpleFlow
+	NestedFlow
+}
+type SimpleFlow struct {
+	Start   LocalAddr
+	End     LocalAddr
+}
+type NestedFlow struct {
+	Stages  [] Stage
+}
+func (flow Flow) Simple() bool {
+	return (flow.Stages == nil)
 }
 
 type Stage ([] Flow)
@@ -65,10 +75,11 @@ type FunctionEntityInfo struct {
 	ContextLength  LocalSize
 }
 type RawCodeBranch struct {
-	content   [] Instruction
-	external  ExternalIndexMapping
-	info      FunctionEntityInfo
-	branches  [] RawCodeBranch
+	InstList   [] Instruction
+	ExtIdxMap  ExternalIndexMapping
+	Stages     [] Stage
+	Branches   [] RawCodeBranch
+	Info       FunctionEntityInfo
 }
 func CreateFunctionEntity(trunk RawCodeBranch, static AddrSpace) *FunctionEntity {
 	var frame_size = uint(0)
@@ -77,29 +88,26 @@ func CreateFunctionEntity(trunk RawCodeBranch, static AddrSpace) *FunctionEntity
 	return f
 }
 func createFunctionEntity(offset uint, fs *uint, this RawCodeBranch, static AddrSpace) *FunctionEntity {
-	var required_fs = offset + uint(len(this.content))
+	var required_fs = offset + uint(len(this.InstList))
 	if required_fs >= MaxFrameValues { panic("frame too big") }
 	if required_fs > *fs {
 		*fs = required_fs
 	}
-	var branch_entities = make([] *FunctionEntity, len(this.branches))
-	for i, b := range this.branches {
+	var branch_entities = make([] *FunctionEntity, len(this.Branches))
+	for i, b := range this.Branches {
 		branch_entities[i] = createFunctionEntity(required_fs, fs, b, static)
 	}
 	return &FunctionEntity {
 		Code: Code {
-			instOffset: LocalSize(offset),
-			instList:   this.content,
-			instExtMap: this.external,
-			branches:   branch_entities,
-			frameSize:  0,
-			static:     static,
-			stages:     analyzeStages(offset, this.content),
+			dstOffset: LocalSize(offset),
+			instList:  this.InstList,
+			extIdxMap: this.ExtIdxMap,
+			stages:    this.Stages,
+			branches:  branch_entities,
+			frameSize: 0,
+			static:    static,
 		},
-		FunctionEntityInfo: this.info,
+		FunctionEntityInfo: this.Info,
 	}
-}
-func analyzeStages(offset uint, instList ([] Instruction)) ([] Stage) {
-	panic("not implemented") // TODO
 }
 

@@ -41,26 +41,27 @@ func execFrame(ctx Context, m *Machine, u *Frame, kv ContVal) {
 		}
 	})
 	if m.options.ParallelEnabled {
-		execParallel(ctx, m, u, 0, k)
+		var stages = u.Code().Stages()
+		execParallel(ctx, m, u, stages, k)
 	} else {
-		var flow = Flow { Start: 0, End: u.LastInsAddr() }
+		var flow = Flow { SimpleFlow: SimpleFlow { Start: 0, End: u.LastInsAddr() } }
 		execFlow(ctx, m, u, flow, k)
 	}
 }
 
-func execParallel(ctx Context, m *Machine, u *Frame, stage uint, k0 Cont) {
+func execParallel(ctx Context, m *Machine, u *Frame, stages ([] Stage), k0 Cont) {
 	var once sync.Once
 	var k = Cont(func(e interface{}) {
 		once.Do(func() {
 			k0(e)
 		})
 	})
-	var stages = u.Code().Stages()
-	if stage >= uint(len(stages)) {
+	if len(stages) == 0 {
 		k(nil)
 		return
 	}
-	var this_stage = stages[stage]
+	var this_stage = stages[0]
+	var remaining_stages = stages[1:]
 	var num_of_flows = uint(len(this_stage))
 	if num_of_flows == 0 { panic("bad bytecode: empty stage") }
 	if num_of_flows == 1 {
@@ -70,7 +71,7 @@ func execParallel(ctx Context, m *Machine, u *Frame, stage uint, k0 Cont) {
 				k(e)
 				return
 			}
-			execParallel(ctx, m, u, (stage + 1), k)
+			execParallel(ctx, m, u, remaining_stages, k)
 		})
 	} else {
 		var sem = make(chan struct{}, (num_of_flows - 1))
@@ -84,7 +85,7 @@ func execParallel(ctx Context, m *Machine, u *Frame, stage uint, k0 Cont) {
 					select {
 					case sem <- struct{}{}:
 					default:
-						execParallel(ctx, m, u, (stage + 1), k)
+						execParallel(ctx, m, u, remaining_stages, k)
 					}
 				})
 			})
@@ -93,13 +94,17 @@ func execParallel(ctx Context, m *Machine, u *Frame, stage uint, k0 Cont) {
 }
 
 func execFlow(ctx Context, m *Machine, frame *Frame, flow Flow, k Cont) {
-	defer (func() {
-		var e = recover()
-		if e != nil {
-			k(e)
-		}
-	})()
-	execIns(ctx, m, frame, flow.Start, flow.End, k)
+	if flow.Simple() {
+		defer (func() {
+			var e = recover()
+			if e != nil {
+				k(e)
+			}
+		})()
+		execIns(ctx, m, frame, flow.Start, flow.End, k)
+	} else {
+		execParallel(ctx, m, frame, flow.Stages, k)
+	}
 }
 
 func execIns(ctx Context, m *Machine, u *Frame, i LocalAddr, end LocalAddr, k Cont) {
