@@ -2,6 +2,8 @@ TODO
 
 ## Refinement
 
+- Package: `parser` -> `lang/textual/parser`, `parser/ast` -> `lang/textual/ast`, ...
+
 - GUI: qtbinding C side int vs. go side int (not the same type, fix it)
 
 - API: consider renaming wait and tick
