@@ -6,8 +6,8 @@ import (
     "image/png"
 	"path/filepath"
 	"kumachan/interpreter/compiler/loader/common"
-	"kumachan/interpreter/parser/ast"
-	"kumachan/interpreter/parser"
+	"kumachan/interpreter/lang/textual/ast"
+	"kumachan/interpreter/lang/textual/parser"
 	"kumachan/stdlib"
 )
 

@@ -1,9 +1,9 @@
 package parser
 
 import "fmt"
-import "kumachan/interpreter/parser/cst"
-import "kumachan/interpreter/parser/syntax"
-import "kumachan/interpreter/parser/scanner"
+import "kumachan/interpreter/lang/textual/cst"
+import "kumachan/interpreter/lang/textual/syntax"
+import "kumachan/interpreter/lang/textual/scanner"
 
 
 /**

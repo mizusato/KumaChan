@@ -8,7 +8,7 @@ import (
 	"strings"
 	"path/filepath"
 	"encoding/json"
-	"kumachan/interpreter/parser/syntax"
+	"kumachan/interpreter/lang/textual/syntax"
 	"kumachan/interpreter/compiler/loader/common"
 	"kumachan/interpreter/compiler/loader/extra"
 	"kumachan/interpreter/def"

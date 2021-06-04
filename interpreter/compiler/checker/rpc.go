@@ -5,7 +5,7 @@ import (
 	"kumachan/standalone/rpc"
 	"kumachan/standalone/rpc/kmd"
 	"kumachan/interpreter/def"
-	"kumachan/interpreter/parser/ast"
+	"kumachan/interpreter/lang/textual/ast"
 	"kumachan/interpreter/compiler/loader"
 	"kumachan/stdlib"
 	. "kumachan/standalone/util/error"

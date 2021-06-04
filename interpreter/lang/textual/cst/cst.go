@@ -1,8 +1,8 @@
 package cst
 
 import (
-	"kumachan/interpreter/parser/scanner"
-	"kumachan/interpreter/parser/syntax"
+	"kumachan/interpreter/lang/textual/scanner"
+	"kumachan/interpreter/lang/textual/syntax"
 )
 
 

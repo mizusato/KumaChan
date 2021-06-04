@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"kumachan/standalone/rpc"
 	"kumachan/stdlib"
-	"kumachan/interpreter/parser/ast"
+	"kumachan/interpreter/lang/textual/ast"
 )
 
 

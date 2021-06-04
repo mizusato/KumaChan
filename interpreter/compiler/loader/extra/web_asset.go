@@ -3,8 +3,8 @@ package extra
 import (
 	"strings"
 	"path/filepath"
-	"kumachan/interpreter/parser"
-	"kumachan/interpreter/parser/ast"
+	"kumachan/interpreter/lang/textual/parser"
+	"kumachan/interpreter/lang/textual/ast"
 	"kumachan/interpreter/compiler/loader/common"
 	"kumachan/stdlib"
 )

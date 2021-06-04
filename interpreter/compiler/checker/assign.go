@@ -2,7 +2,7 @@ package checker
 
 import (
 	. "kumachan/standalone/util/error"
-	"kumachan/interpreter/parser/ast"
+	"kumachan/interpreter/lang/textual/ast"
 )
 
 

@@ -4,9 +4,9 @@ import (
     "fmt"
     "reflect"
     "strings"
-	"kumachan/interpreter/parser/cst"
-	"kumachan/interpreter/parser/scanner"
-	"kumachan/interpreter/parser/syntax"
+	"kumachan/interpreter/lang/textual/cst"
+	"kumachan/interpreter/lang/textual/scanner"
+	"kumachan/interpreter/lang/textual/syntax"
 )
 
 

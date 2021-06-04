@@ -4,7 +4,7 @@ import (
     "io"
     "fmt"
     "errors"
-	"kumachan/interpreter/parser/syntax"
+	"kumachan/interpreter/lang/textual/syntax"
 )
 
 

@@ -2,8 +2,8 @@ package checker
 
 import (
 	"strings"
-	"kumachan/interpreter/parser/cst"
-	"kumachan/interpreter/parser/ast"
+	"kumachan/interpreter/lang/textual/cst"
+	"kumachan/interpreter/lang/textual/ast"
 )
 
 

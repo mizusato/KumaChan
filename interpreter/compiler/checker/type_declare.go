@@ -3,7 +3,7 @@ package checker
 import (
 	"strings"
 	"kumachan/interpreter/def"
-	"kumachan/interpreter/parser/ast"
+	"kumachan/interpreter/lang/textual/ast"
 	"kumachan/interpreter/compiler/loader"
 	. "kumachan/standalone/util/error"
 )

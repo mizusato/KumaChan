@@ -6,8 +6,8 @@ import (
 	"sort"
 	"strings"
 	"path/filepath"
-	"kumachan/interpreter/parser/ast"
-	"kumachan/interpreter/parser/syntax"
+	"kumachan/interpreter/lang/textual/ast"
+	"kumachan/interpreter/lang/textual/syntax"
 	"kumachan/interpreter/compiler/loader"
 	"kumachan/stdlib"
 )
