@@ -228,18 +228,34 @@ func execIns(ctx Context, m *Machine, u *Frame, ipp *LocalAddr, end LocalAddr, k
 	case MPI:
 		panic("not implemented")  // TODO
 	case CL, CLR:
-		var src = inst.Src
-		var src_length = u.DataGetSizeAt(src)
-		var num_of_values = src_length
+		var ptr = inst.Src
+		var objects_addr = inst.Obj
+		var num_of_objects = u.DataGetSizeAt(objects_addr)
+		var num_of_values = num_of_objects
 		if op == CLR { num_of_values += 1 }
 		var context = make([] Value, num_of_values)
-		copy(context, u.DataRange(src, src_length))
+		copy(context, u.DataRange(objects_addr, num_of_objects))
+		var entity = u.Func().Entity.Code.ClosureEntity(ptr)
+		var required = entity.ContextLength
+		assert(num_of_values == required, "CL: invalid context length")
+		var closure = &ValFunc {
+			Entity:  entity,
+			Context: context,
+		}
+		if op == CLR { context[num_of_values - 1] = closure }
+		*dst = closure
+	case INJ:
+		var f = u.Data(inst.Src)
+		var objects_addr = inst.Obj
+		var num_of_objects = u.DataGetSizeAt(objects_addr)
+		var context = make([] Value, num_of_objects)
+		copy(context, u.DataRange(objects_addr, num_of_objects))
 		var closure Value
-		switch f := u.Data(inst.Obj).(type) {
+		switch f := f.(type) {
 		case UsualFuncValue:
 			var required = f.Entity.ContextLength
-			assert(num_of_values == required, "CL: invalid context length")
-			assert(len(f.Context) == 0, "CL: operand is already a closure")
+			assert(num_of_objects == required, "INJ: invalid context length")
+			assert(len(f.Context) == 0, "INJ: operand is already a closure")
 			closure = &ValFunc {
 				Entity:  f.Entity,
 				Context: context,
@@ -250,9 +266,8 @@ func execIns(ctx Context, m *Machine, u *Frame, ipp *LocalAddr, end LocalAddr, k
 				return (*f)(arg_with_context, h)
 			})
 		default:
-			panic("CL: invalid operand")
+			panic("INJ: invalid operand")
 		}
-		if op == CLR { context[num_of_values - 1] = closure }
 		*dst = closure
 	case CALL:
 		if ctx.AlreadyCancelled() {

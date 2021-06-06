@@ -39,6 +39,9 @@ func (code *Code) BranchFuncValue(index uint) UsualFuncValue {
 		Context: nil,
 	}
 }
+func (code *Code) ClosureEntity(index LocalAddr) *FunctionEntity {
+	return code.closures[index]
+}
 
 type AddrSpace ([] Value)
 

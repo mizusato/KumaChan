@@ -52,6 +52,7 @@ const MaxBranchExpressions = (1 << ExternalIndexMapPointerSize)
 const MaxFrameValues = ((1 << LocalAddrSize) - 1)
 const MaxInsSeqLength = ((1 << LocalAddrSize) - 1)
 const MaxStaticValues = (1 << LocalAddrSize)
+const MaxClosures = (1 << LocalAddrSize)
 const MaxClosureContexts = (1 << LocalAddrSize)
 
 type Instruction struct {
@@ -113,8 +114,9 @@ const (
 	LSC     // [ OBJ* IDX ____ ]: Create a compact list according to type info
 	MPS     // [ OBJ* ___ SRC* ]: Create a map with string key
 	MPI     // [ OBJ* ___ SRC* ]: Create a map with integer key
-	CL      // [ OBJ  ___ SRC* ]: Create a closure
-	CLR     // [ OBJ  ___ SRC* ]: Create a self-referential closure
+	CL      // [ OBJ* ___ PTR  ]: Create a closure
+	CLR     // [ OBJ* ___ PTR  ]: Create a self-referential closure
+	INJ     // [ OBJ* ___ SRC  ]: Inject context values to a function value
 	CALL    // [ OBJ  ___ SRC  ]: Call a function
 )
 
@@ -166,9 +168,11 @@ func (inst Instruction) String() string {
 	case MPI:
 		return fmt.Sprintf("MPI %d* %d*", inst.Obj, inst.Src)
 	case CL:
-		return fmt.Sprintf("CL %d %d*", inst.Obj, inst.Src)
+		return fmt.Sprintf("CL %d* (%d)", inst.Obj, inst.Src)
 	case CLR:
-		return fmt.Sprintf("CLR %d %d*", inst.Obj, inst.Src)
+		return fmt.Sprintf("CLR %d* (%d)", inst.Obj, inst.Src)
+	case INJ:
+		return fmt.Sprintf("INJ %d* %d", inst.Obj, inst.Src)
 	case CALL:
 		return fmt.Sprintf("CALL %d %d", inst.Obj, inst.Src)
 	default:
