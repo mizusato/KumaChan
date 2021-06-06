@@ -11,7 +11,6 @@ type Frame struct {
 	function  UsualFuncValue
 	argument  Value
 	data      AddrSpace
-	// TODO: backtrace
 }
 
 func CreateFrame(f UsualFuncValue, arg Value) *Frame {
