@@ -1,4 +1,0 @@
-type Foo (Int);
-type Bar { data: String };
-type Baz[A,B] (A, B);
-type FooBarBaz (Baz[Foo,Bar]);

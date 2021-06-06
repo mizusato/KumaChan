@@ -1,10 +1,10 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="go test kumachan/interpreter/def" type="GoTestRunConfiguration" factoryName="Go Test" nameIsGenerated="true">
+  <configuration default="false" name="go test kumachan/interpreter/runtime/def" type="GoTestRunConfiguration" factoryName="Go Test" nameIsGenerated="true">
     <module name="KumaChan" />
-    <working_directory value="$PROJECT_DIR$/interpreter/def" />
+    <working_directory value="$PROJECT_DIR$/interpreter/runtime/def" />
     <root_directory value="$PROJECT_DIR$" />
     <kind value="PACKAGE" />
-    <package value="kumachan/interpreter/def" />
+    <package value="kumachan/interpreter/runtime/def" />
     <directory value="$PROJECT_DIR$" />
     <filePath value="$PROJECT_DIR$" />
     <framework value="gotest" />
