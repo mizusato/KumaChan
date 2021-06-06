@@ -76,7 +76,7 @@ func execParallel(ctx Context, m *Machine, u *Frame, stages ([] Stage), k0 Cont)
 	} else {
 		var sem = make(chan struct{}, (num_of_flows - 1))
 		this_stage.ForEachFlow(func(flow Flow) {
-			m.parallel.Execute(func() {
+			m.pool.Execute(func() {
 				execFlow(ctx, m, u, flow, func(e interface{}) {
 					if e != nil {
 						k(e)
@@ -268,7 +268,15 @@ func execIns(ctx Context, m *Machine, u *Frame, ipp *LocalAddr, end LocalAddr, k
 				call(ctx, m, f, arg, kv_dst); return
 			}
 		case NativeFuncValue:
-			var h = InteropHandle { context: ctx, machine: m }
+			var l = Location {
+				Function: u.Func().Entity,
+				InstPtr:  ip,
+			}
+			var h = InteropHandle {
+				context:  ctx,
+				machine:  m,
+				location: l,
+			}
 			*dst = (*f)(arg, h)
 		default:
 			panic("CALL: operand not callable")

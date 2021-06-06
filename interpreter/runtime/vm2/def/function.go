@@ -3,6 +3,7 @@ package def
 import (
 	"fmt"
 	"strings"
+	"strconv"
 	. "kumachan/standalone/util/error"
 )
 
@@ -12,33 +13,43 @@ type FunctionEntity struct {
 	FunctionEntityInfo
 }
 type FunctionInfo struct {
+	Symbol  Symbol
 	Name    string
 	Decl    ErrorPoint
 	SrcMap  [] ErrorPoint  // TODO: reduce memory usage
 }
 type FunctionEntityInfo struct {
 	FunctionInfo
+	IsEffect       bool
 	ContextLength  LocalSize
 }
 
-type FunctionSeed interface { FunctionSeed(); fmt.Stringer }
+type FunctionSeed interface {
+	FunctionSeed()
+	fmt.Stringer
+}
 
-func (*FunctionSeedLibraryNative) FunctionSeed() {}
+func (_ *FunctionSeedLibraryNative) FunctionSeed() {}
+func (s *FunctionSeedLibraryNative) String() string { return strconv.Quote(s.Id) }
 type FunctionSeedLibraryNative struct {
 	Id    string
 	Info  FunctionInfo
 }
 
-func (*FunctionSeedGeneratedNative) FunctionSeed() {}
+func (_ *FunctionSeedGeneratedNative) FunctionSeed() {}
+func (s *FunctionSeedGeneratedNative) String() string { return s.Data.String() }
 type FunctionSeedGeneratedNative struct {
 	Data  GeneratedNativeFunctionSeed
 	Info  FunctionInfo
 }
-type GeneratedNativeFunctionSeed interface { GeneratedNativeFunctionSeed() }
+type GeneratedNativeFunctionSeed interface {
+	GeneratedNativeFunctionSeed()
+	fmt.Stringer
+}
 
 func (*FunctionSeedUsual) FunctionSeed() {}
 type FunctionSeedUsual struct {
-	Trunk   BranchData
+	Trunk   *BranchData
 	Static  [] StaticValueSeed
 	CtxLen  LocalSize
 }
@@ -46,12 +57,19 @@ type BranchData struct {
 	InstList   [] Instruction
 	ExtIdxMap  ExternalIndexMapping
 	Stages     [] Stage
-	Branches   [] BranchData
+	Branches   [] *BranchData
+	Closures   [] *FunctionSeedUsual
 	Info       FunctionInfo
 }
-type StaticValueSeed interface { Evaluate() Value; fmt.Stringer }
+type StaticValueSeed interface {
+	Evaluate() Value
+	fmt.Stringer
+}
 
-func CreateFunctionEntity(seed FunctionSeedUsual) *FunctionEntity {
+func GetTrunkSymbol(seed *FunctionSeedUsual) Symbol {
+	return seed.Trunk.Info.Symbol
+}
+func CreateFunctionEntity(seed *FunctionSeedUsual) *FunctionEntity {
 	var static = make(AddrSpace, len(seed.Static))
 	for i, s := range seed.Static {
 		static[i] = s.Evaluate()
@@ -62,15 +80,19 @@ func CreateFunctionEntity(seed FunctionSeedUsual) *FunctionEntity {
 	f.ContextLength = seed.CtxLen
 	return f
 }
-func createFunctionEntity(offset uint, fs *uint, this BranchData, static AddrSpace) *FunctionEntity {
+func createFunctionEntity(offset uint, fs *uint, this *BranchData, static AddrSpace) *FunctionEntity {
 	var required_fs = offset + uint(len(this.InstList))
 	if required_fs >= MaxFrameValues { panic("frame too big") }
 	if required_fs > *fs {
 		*fs = required_fs
 	}
-	var branch_entities = make([] *FunctionEntity, len(this.Branches))
+	var branches = make([] *FunctionEntity, len(this.Branches))
 	for i, b := range this.Branches {
-		branch_entities[i] = createFunctionEntity(required_fs, fs, b, static)
+		branches[i] = createFunctionEntity(required_fs, fs, b, static)
+	}
+	var closures = make([] *FunctionEntity, len(this.Closures))
+	for i, cl := range this.Closures {
+		closures[i] = CreateFunctionEntity(cl)
 	}
 	return &FunctionEntity {
 		Code: Code {
@@ -78,7 +100,8 @@ func createFunctionEntity(offset uint, fs *uint, this BranchData, static AddrSpa
 			instList:  this.InstList,
 			extIdxMap: this.ExtIdxMap,
 			stages:    this.Stages,
-			branches:  branch_entities,
+			branches:  branches,
+			closures:  closures,
 			frameSize: 0,
 			static:    static,
 		},
@@ -102,23 +125,35 @@ type UiObjectGroup struct {
 	Widgets    [] string
 	Actions    [] string
 }
+func (seed *UiObjectSeed) String() string {
+	return fmt.Sprintf("%s %s %s",
+		strconv.Quote(seed.Object),
+		strconv.Quote(seed.Group.GroupName),
+		strconv.Quote(seed.Group.BaseDir))
+}
 
 func (f *FunctionSeedUsual) String() string {
 	var buf strings.Builder
-	fmt.Fprintf(&buf, "function usual (%d)", f.CtxLen)
-	fmt.Fprintf(&buf, "   ; %s", f.Trunk.Info.Name)
+	buf.WriteString(".function")
+	buf.WriteRune('\n')
+	f.writeContent(&buf)
+	return buf.String()
+}
+
+func (f *FunctionSeedUsual) writeContent(buf *strings.Builder) string {
+	fmt.Fprintf(buf, "   .FUNC %d   ; %s", f.CtxLen, f.Trunk.Info.Name)
 	var point = f.Trunk.Info.Decl.Node.Point
 	var file = f.Trunk.Info.Decl.Node.CST.Name
-	fmt.Fprintf(&buf, " at (%d, %d) in %s", point.Row, point.Col, file)
+	fmt.Fprintf(buf, " at (%d, %d) in %s", point.Row, point.Col, file)
 	buf.WriteRune('\n')
 	buf.WriteString(".static")
 	buf.WriteRune('\n')
 	for i, s := range f.Static {
-		fmt.Fprintf(&buf, "    [%d] %s", i, s)
+		fmt.Fprintf(buf, "    [%d] %s", i, s)
 	}
 	buf.WriteString(".code")
 	buf.WriteRune('\n')
-	writeBranchData(&buf, 0, [] uint {}, &(f.Trunk))
+	writeBranchData(buf, 0, [] uint {}, f.Trunk)
 	return buf.String()
 }
 
@@ -215,7 +250,11 @@ func writeBranchData (
 		copy(b_path, path)
 		b_path = append(b_path, uint(i))
 		var b_offset = (offset + uint(len(branch.InstList)))
-		writeBranchData(buf, b_offset, b_path, &b)
+		writeBranchData(buf, b_offset, b_path, b)
+	}
+	for i, cl := range branch.Closures {
+		fmt.Fprintf(buf, ".closure-%d", i)
+		cl.writeContent(buf)
 	}
 }
 

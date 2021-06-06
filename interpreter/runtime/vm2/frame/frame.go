@@ -105,8 +105,10 @@ func (u *Frame) WrapPanic(e interface{}, ip LocalAddr) interface{} {
 			Content:   e,
 			FrameAddr: reflect.ValueOf(u).Pointer(),
 			FrameData: u.data,
-			Function:  u.function.Entity,
-			InstPtr:   ip,
+			Location: Location {
+				Function: u.function.Entity,
+				InstPtr:  ip,
+			},
 		}
 	}
 }

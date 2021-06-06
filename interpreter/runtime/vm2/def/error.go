@@ -10,8 +10,11 @@ type RuntimeError struct {
 	Content    interface{}
 	FrameAddr  uintptr
 	FrameData  AddrSpace
-	Function   *FunctionEntity
-	InstPtr    LocalAddr
+	Location
+}
+type Location struct {
+	Function  *FunctionEntity
+	InstPtr   LocalAddr
 }
 
 func (err *RuntimeError) Error() string {

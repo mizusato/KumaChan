@@ -7,6 +7,7 @@ type Code struct {
 	extIdxMap  ExternalIndexMapping
 	stages     [] Stage
 	branches   [] *FunctionEntity
+	closures   [] *FunctionEntity
 	frameSize  LocalSize // len(instList) + len(/* instList of branches */)
 	static     AddrSpace
 }
