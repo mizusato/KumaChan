@@ -31,6 +31,16 @@ func CreateShortIndexVector(indexes ([] ShortIndex)) ShortIndexVector {
 	}
 	return vec
 }
+func (vec ShortIndexVector) Decode() ([] ShortIndex) {
+	const mask = ((1 << (ShortIndexSize * 8)) - 1)
+	const shift = (ShortIndexSize * 8)
+	return [] ShortIndex {
+		ShortIndex(vec & mask),
+		ShortIndex((vec >> (shift)) & mask),
+		ShortIndex((vec >> (2 * shift)) & mask),
+		ShortIndex((vec >> (3 * shift)) & mask),
+	}
+}
 
 type LocalAddr uint16
 type LocalSize = LocalAddr

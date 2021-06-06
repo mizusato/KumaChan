@@ -35,7 +35,7 @@ func callBranch(ctx Context, m *Machine, f UsualFuncValue, arg Value, u *Frame, 
 func execFrame(ctx Context, m *Machine, u *Frame, kv ContVal) {
 	var k = Cont(func(e interface{}) {
 		if e != nil {
-			kv(u.WrapPanic(e), nil)
+			kv(e, nil)
 		} else {
 			kv(nil, u.Data(u.LastDataAddr()))
 		}
@@ -93,28 +93,31 @@ func execParallel(ctx Context, m *Machine, u *Frame, stages ([] Stage), k0 Cont)
 	}
 }
 
-func execFlow(ctx Context, m *Machine, frame *Frame, flow Flow, k Cont) {
+func execFlow(ctx Context, m *Machine, u *Frame, flow Flow, k Cont) {
 	if flow.Simple() {
+		var ipp = new(LocalAddr)
 		defer (func() {
 			var e = recover()
 			if e != nil {
-				k(e)
+				k(u.WrapPanic(e, *ipp))
 			}
 		})()
-		execIns(ctx, m, frame, flow.Start, flow.End, k)
+		*ipp = flow.Start
+		execIns(ctx, m, u, ipp, flow.End, k)
 	} else {
-		execParallel(ctx, m, frame, flow.Stages, k)
+		execParallel(ctx, m, u, flow.Stages, k)
 	}
 }
 
-func execIns(ctx Context, m *Machine, u *Frame, i LocalAddr, end LocalAddr, k Cont) {
+func execIns(ctx Context, m *Machine, u *Frame, ipp *LocalAddr, end LocalAddr, k Cont) {
 	var code = u.Code()
-	if i > end {
+	var ip = *ipp
+	if ip > end {
 		k(nil)
 		return
 	}
-	var inst = code.Inst(i)
-	var dst = u.DataDstRef(i)
+	var inst = code.Inst(ip)
+	var dst = u.DataDstRef(ip)
 	var kv_dst = ContVal(func(e interface{}, v Value) {
 		if e != nil {
 			k(e)
@@ -124,10 +127,11 @@ func execIns(ctx Context, m *Machine, u *Frame, i LocalAddr, end LocalAddr, k Co
 		defer (func() {
 			var e = recover()
 			if e != nil {
-				k(e)
+				k(u.WrapPanic(e, *ipp))
 			}
 		})()
-		execIns(ctx, m, u, (i + 1), end, k)
+		*ipp = (ip + 1)
+		execIns(ctx, m, u, ipp, end, k)
 	})
 	var op = inst.OpCode
 	switch op {
@@ -258,7 +262,7 @@ func execIns(ctx Context, m *Machine, u *Frame, i LocalAddr, end LocalAddr, k Co
 		var arg = u.Data(inst.Src)
 		switch f := f.(type) {
 		case UsualFuncValue:
-			if i == end && end == u.LastInsAddr() {
+			if ip == end && end == u.LastInsAddr() {
 				callAtTail(ctx, m, f, arg, u, kv_dst); return
 			} else {
 				call(ctx, m, f, arg, kv_dst); return
@@ -270,9 +274,10 @@ func execIns(ctx Context, m *Machine, u *Frame, i LocalAddr, end LocalAddr, k Co
 			panic("CALL: operand not callable")
 		}
 	default:
-		panic(fmt.Sprintf("invalid instruction at %d", i))
+		panic(fmt.Sprintf("invalid instruction at %d", ip))
 	}
-	execIns(ctx, m, u, (i + 1), end, k)
+	*ipp = (ip + 1)
+	execIns(ctx, m, u, ipp, end, k)
 }
 
 

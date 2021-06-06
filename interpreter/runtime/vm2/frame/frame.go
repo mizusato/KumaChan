@@ -2,6 +2,7 @@ package frame
 
 import (
 	"unsafe"
+	"reflect"
 	. "kumachan/interpreter/runtime/vm2/def"
 )
 
@@ -10,6 +11,7 @@ type Frame struct {
 	function  UsualFuncValue
 	argument  Value
 	data      AddrSpace
+	// TODO: backtrace
 }
 
 func CreateFrame(f UsualFuncValue, arg Value) *Frame {
@@ -94,8 +96,19 @@ func (u *Frame) DataDstRef(i LocalAddr) *Value {
 	return &(u.data[u.function.Entity.Code.InstDstAddr(i)])
 }
 
-func (u *Frame) WrapPanic(e interface{}) interface{} {
-	return e  // TODO
+func (u *Frame) WrapPanic(e interface{}, ip LocalAddr) interface{} {
+	var cancel, is_cancel = e.(ExecutionCancelled)
+	if is_cancel {
+		return cancel
+	} else {
+		return &RuntimeError {
+			Content:   e,
+			FrameAddr: reflect.ValueOf(u).Pointer(),
+			FrameData: u.data,
+			Function:  u.function.Entity,
+			InstPtr:   ip,
+		}
+	}
 }
 
 
