@@ -9,7 +9,7 @@ type Code struct {
 	branches   [] *FunctionEntity
 	closures   [] *FunctionEntity
 	frameSize  LocalSize // len(instList) + len(/* instList of branches */)
-	static     AddrSpace
+	static     [] *Value
 }
 func (code *Code) FrameSize() LocalSize {
 	if code.frameSize == 0 { panic("something went wrong") }
@@ -25,7 +25,7 @@ func (code *Code) InstDstAddr(i LocalAddr) LocalAddr {
 	return (i + code.dstOffset)
 }
 func (code *Code) Static(s LocalAddr) Value {
-	return code.static[s]
+	return *(code.static[s])
 }
 func (code *Code) Stages() ([] Stage) {
 	return code.stages

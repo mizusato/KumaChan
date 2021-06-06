@@ -29,8 +29,9 @@ type Options struct {
 }
 
 type GeneratedObjects struct {
-	functions  map[Symbol] Value
-	effects    [] Symbol
+	functions  [] Value
+	funcMap    map[Symbol] uint
+	effects    [] uint
 	kmdApi     KmdApi
 	rpcApi     RpcApi
 	resources  map[string] map[string] Resource  // kind -> path -> res
@@ -55,45 +56,42 @@ func Execute(p Program, opts Options, ret (chan <- *Machine)) {
 }
 
 func generateObjects(m *Machine) {
-	var functions = make(map[Symbol] Value)
-	var effects = make([] Symbol, 0)
-	for _, seed := range m.program.Functions {
-		var usual, is_usual = seed.(*FunctionSeedUsual)
-		if is_usual {
-			var sym = GetTrunkSymbol(usual)
-			functions[sym] = &ValFunc {}
-		}
+	var program_functions = m.program.Functions
+	var functions = make([] Value, len(program_functions))
+	var funcMap = make(map[Symbol] uint)
+	var effects = make([] uint, 0)
+	for i, seed := range program_functions {
+		var info = seed.GetInfo()
+		funcMap[info.Symbol] = uint(i)
 	}
-	for _, seed := range m.program.Functions {
-		var f, info = (func() (Value, FunctionInfo) {
-			// TODO: use interface method + pass lambda instead of type switch
-			switch s := seed.(type) {
-			case *FunctionSeedUsual:
-				var sym = GetTrunkSymbol(s)
-				var entity = CreateFunctionEntity(s)
-				if entity.IsEffect {
-					effects = append(effects, sym)
-				}
-				var v = functions[sym].(UsualFuncValue)
-				v.Entity = entity
-				return v, entity.FunctionInfo
-			case *FunctionSeedLibraryNative:
-				return api.GetNativeFunctionValue(s.Id), s.Info
-			case *FunctionSeedGeneratedNative:
-				switch data := s.Data.(type) {
-				case *UiObjectSeed:
-					return ui.EvaluateObjectThunk(data), s.Info
-				default:
-					panic("unknown function generation seed")
-				}
-			default:
-				panic("unknown function seed kind")
+	var ctx = FunctionSeedEvaluator {
+		ProcessEntity: func(entity *FunctionEntity) {
+			if entity.IsEffect {
+				var index, exists = funcMap[entity.Symbol]
+				if !(exists) { panic("something went wrong") }
+				effects = append(effects, index)
 			}
-		})()
-		functions[info.Symbol] = f
+		},
+		GetNativeFuncValue: func(id string) Value {
+			return api.GetNativeFunctionValue(id)
+		},
+		GeneratedNativeFunctionSeedEvaluator: GeneratedNativeFunctionSeedEvaluator {
+			EvaluateUiObjectSeed: ui.EvaluateObjectThunk,
+		},
+		StaticValueSeedEvaluator: StaticValueSeedEvaluator {
+			GetFunctionReference: func(sym Symbol) *Value {
+				var index, exists = funcMap[sym]
+				if !(exists) { panic("something went wrong") }
+				return &(functions[index])
+			},
+		},
+	}
+	for i, seed := range program_functions {
+		functions[i] = seed.Evaluate(ctx)
 	}
 	m.GeneratedObjects = GeneratedObjects {
 		functions: functions,
+		funcMap:   funcMap,
 		effects:   effects,
 		kmdApi:    librpc.CreateKmdApi(m),
 		rpcApi:    librpc.CreateRpcApi(m),
@@ -106,8 +104,8 @@ func runAllEffects(m *Machine) {
 	for _, e := range m.options.InjectedEffects {
 		effects = append(effects, e)
 	}
-	for _, sym := range m.effects {
-		var f = m.functions[sym].(UsualFuncValue)
+	for _, index := range m.effects {
+		var f = m.functions[index].(UsualFuncValue)
 		var v = m.Call(rx.Background(), f, nil)
 		var e = v.(rx.Observable)
 		effects = append(effects, e)
@@ -148,8 +146,12 @@ func (m *Machine) Call(ctx Context, f UsualFuncValue, arg Value) Value {
 }
 
 func (m *Machine) GetFuncValue(sym Symbol) (Value, bool) {
-	var f, exists = m.GeneratedObjects.functions[sym]
-	return f, exists
+	var index, exists = m.GeneratedObjects.funcMap[sym]
+	if exists {
+		return m.functions[index], true
+	} else {
+		return nil, false
+	}
 }
 
 func (m *Machine) GetScheduler() rx.Scheduler {

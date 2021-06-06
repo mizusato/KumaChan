@@ -25,32 +25,41 @@ type FunctionEntityInfo struct {
 }
 
 type FunctionSeed interface {
-	FunctionSeed()
+	Evaluate(ctx FunctionSeedEvaluator) Value
+	GetInfo() FunctionInfo
 	fmt.Stringer
 }
+type FunctionSeedEvaluator struct {
+	ProcessEntity       func(entity *FunctionEntity)
+	GetNativeFuncValue  func(id string) Value
+	GeneratedNativeFunctionSeedEvaluator
+	StaticValueSeedEvaluator
+}
 
-func (_ *FunctionSeedLibraryNative) FunctionSeed() {}
-func (s *FunctionSeedLibraryNative) String() string { return strconv.Quote(s.Id) }
 type FunctionSeedLibraryNative struct {
 	Id    string
 	Info  FunctionInfo
 }
+func (s *FunctionSeedLibraryNative) GetInfo() FunctionInfo { return s.Info }
+func (s *FunctionSeedLibraryNative) String() string { return strconv.Quote(s.Id) }
+func (s *FunctionSeedLibraryNative) Evaluate(ctx FunctionSeedEvaluator) Value {
+	return ctx.GetNativeFuncValue(s.Id)
+}
 
-func (_ *FunctionSeedGeneratedNative) FunctionSeed() {}
-func (s *FunctionSeedGeneratedNative) String() string { return s.Data.String() }
 type FunctionSeedGeneratedNative struct {
 	Data  GeneratedNativeFunctionSeed
 	Info  FunctionInfo
 }
-type GeneratedNativeFunctionSeed interface {
-	GeneratedNativeFunctionSeed()
-	fmt.Stringer
+func (s *FunctionSeedGeneratedNative) GetInfo() FunctionInfo { return s.Info }
+func (s *FunctionSeedGeneratedNative) String() string { return s.Data.String() }
+func (s *FunctionSeedGeneratedNative) Evaluate(ctx FunctionSeedEvaluator) Value {
+	return s.Data.Evaluate(ctx.GeneratedNativeFunctionSeedEvaluator)
 }
 
-func (*FunctionSeedUsual) FunctionSeed() {}
 type FunctionSeedUsual struct {
 	Trunk   *BranchData
 	Static  [] StaticValueSeed
+	IsEff   bool
 	CtxLen  LocalSize
 }
 type BranchData struct {
@@ -61,26 +70,38 @@ type BranchData struct {
 	Closures   [] *FunctionSeedUsual
 	Info       FunctionInfo
 }
-type StaticValueSeed interface {
-	Evaluate() Value
-	fmt.Stringer
+func (seed *FunctionSeedUsual) GetInfo() FunctionInfo {
+	return seed.Trunk.Info
+}
+func (seed *FunctionSeedUsual) String() string {
+	var buf strings.Builder
+	buf.WriteString(".function")
+	buf.WriteRune('\n')
+	seed.writeContent(&buf)
+	return buf.String()
+}
+func (seed *FunctionSeedUsual) Evaluate(ctx FunctionSeedEvaluator) Value {
+	var entity = CreateFunctionEntity(seed, ctx.StaticValueSeedEvaluator)
+	ctx.ProcessEntity(entity)
+	return &ValFunc {
+		Entity:  entity,
+		Context: nil,
+	}
 }
 
-func GetTrunkSymbol(seed *FunctionSeedUsual) Symbol {
-	return seed.Trunk.Info.Symbol
-}
-func CreateFunctionEntity(seed *FunctionSeedUsual) *FunctionEntity {
-	var static = make(AddrSpace, len(seed.Static))
+func CreateFunctionEntity(seed *FunctionSeedUsual, ctx StaticValueSeedEvaluator) *FunctionEntity {
+	var static = make([] *Value, len(seed.Static))
 	for i, s := range seed.Static {
-		static[i] = s.Evaluate()
+		static[i] = s.Evaluate(ctx)
 	}
 	var frame_size = uint(0)
-	var f = createFunctionEntity(0, &frame_size, seed.Trunk, static)
+	var f = createFunctionEntity(0, &frame_size, seed.Trunk, static, ctx)
 	f.Code.frameSize = LocalSize(frame_size)
+	f.IsEffect = seed.IsEff
 	f.ContextLength = seed.CtxLen
 	return f
 }
-func createFunctionEntity(offset uint, fs *uint, this *BranchData, static AddrSpace) *FunctionEntity {
+func createFunctionEntity(offset uint, fs *uint, this *BranchData, static ([] *Value), ctx StaticValueSeedEvaluator) *FunctionEntity {
 	var required_fs = offset + uint(len(this.InstList))
 	if required_fs >= MaxFrameValues { panic("frame too big") }
 	if required_fs > *fs {
@@ -88,11 +109,11 @@ func createFunctionEntity(offset uint, fs *uint, this *BranchData, static AddrSp
 	}
 	var branches = make([] *FunctionEntity, len(this.Branches))
 	for i, b := range this.Branches {
-		branches[i] = createFunctionEntity(required_fs, fs, b, static)
+		branches[i] = createFunctionEntity(required_fs, fs, b, static, ctx)
 	}
 	var closures = make([] *FunctionEntity, len(this.Closures))
 	for i, cl := range this.Closures {
-		closures[i] = CreateFunctionEntity(cl)
+		closures[i] = CreateFunctionEntity(cl, ctx)
 	}
 	return &FunctionEntity {
 		Code: Code {
@@ -112,48 +133,20 @@ func createFunctionEntity(offset uint, fs *uint, this *BranchData, static AddrSp
 	}
 }
 
-func (*UiObjectSeed) GeneratedNativeFunctionSeed() {}
-type UiObjectSeed struct {
-	Object  string
-	Group   *UiObjectGroup
-}
-type UiObjectGroup struct {
-	GroupName  string
-	BaseDir    string
-	XmlDef     string
-	RootName   string
-	Widgets    [] string
-	Actions    [] string
-}
-func (seed *UiObjectSeed) String() string {
-	return fmt.Sprintf("%s %s %s",
-		strconv.Quote(seed.Object),
-		strconv.Quote(seed.Group.GroupName),
-		strconv.Quote(seed.Group.BaseDir))
-}
-
-func (f *FunctionSeedUsual) String() string {
-	var buf strings.Builder
-	buf.WriteString(".function")
-	buf.WriteRune('\n')
-	f.writeContent(&buf)
-	return buf.String()
-}
-
-func (f *FunctionSeedUsual) writeContent(buf *strings.Builder) string {
-	fmt.Fprintf(buf, "   .FUNC %d   ; %s", f.CtxLen, f.Trunk.Info.Name)
-	var point = f.Trunk.Info.Decl.Node.Point
-	var file = f.Trunk.Info.Decl.Node.CST.Name
+func (seed *FunctionSeedUsual) writeContent(buf *strings.Builder) string {
+	fmt.Fprintf(buf, "   .FUNC %d   ; %s", seed.CtxLen, seed.Trunk.Info.Name)
+	var point = seed.Trunk.Info.Decl.Node.Point
+	var file = seed.Trunk.Info.Decl.Node.CST.Name
 	fmt.Fprintf(buf, " at (%d, %d) in %s", point.Row, point.Col, file)
 	buf.WriteRune('\n')
 	buf.WriteString(".static")
 	buf.WriteRune('\n')
-	for i, s := range f.Static {
+	for i, s := range seed.Static {
 		fmt.Fprintf(buf, "    [%d] %s", i, s)
 	}
 	buf.WriteString(".code")
 	buf.WriteRune('\n')
-	writeBranchData(buf, 0, [] uint {}, f.Trunk)
+	writeBranchData(buf, 0, [] uint {}, seed.Trunk)
 	return buf.String()
 }
 
