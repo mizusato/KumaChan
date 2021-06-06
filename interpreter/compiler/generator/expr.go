@@ -2,7 +2,7 @@ package generator
 
 import (
 	ch "kumachan/interpreter/compiler/checker"
-	"kumachan/interpreter/def"
+	"kumachan/interpreter/runtime/def"
 )
 
 

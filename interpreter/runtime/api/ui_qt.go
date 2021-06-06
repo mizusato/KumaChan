@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"math/big"
-	. "kumachan/interpreter/def"
+	. "kumachan/interpreter/runtime/def"
 	"kumachan/standalone/rx"
 	"kumachan/stdlib"
 	"kumachan/interpreter/runtime/lib/container"

@@ -2,7 +2,7 @@ package checker
 
 import (
 	"fmt"
-	"kumachan/interpreter/def"
+	"kumachan/interpreter/runtime/def"
 	. "kumachan/standalone/util/error"
 )
 

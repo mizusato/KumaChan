@@ -7,7 +7,7 @@ import (
 	"math/big"
 	"kumachan/standalone/rpc/kmd"
 	"kumachan/interpreter/runtime/lib/container"
-	. "kumachan/interpreter/def"
+	. "kumachan/interpreter/runtime/def"
 )
 
 

@@ -1,4 +1,4 @@
-package vm2
+package vm
 
 import (
 	"runtime"

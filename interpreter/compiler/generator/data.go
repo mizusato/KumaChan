@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"strings"
 	"strconv"
-	"kumachan/interpreter/def"
+	"kumachan/interpreter/runtime/def"
 	ch "kumachan/interpreter/compiler/checker"
 )
 

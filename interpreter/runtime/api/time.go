@@ -1,7 +1,7 @@
 package api
 
 import (
-	. "kumachan/interpreter/def"
+	. "kumachan/interpreter/runtime/def"
 	"time"
 )
 

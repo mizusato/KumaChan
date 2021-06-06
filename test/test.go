@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"kumachan/standalone/rx"
 	. "kumachan/standalone/util/error"
-	"kumachan/interpreter/def"
+	"kumachan/interpreter/runtime/def"
 	"kumachan/interpreter/compiler/loader"
 	"kumachan/interpreter/compiler/checker"
 	"kumachan/interpreter/compiler/generator"

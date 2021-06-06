@@ -7,7 +7,7 @@ import (
 	"strings"
 	"kumachan/interpreter/compiler/checker"
 	"kumachan/stdlib"
-	"kumachan/interpreter/def"
+	"kumachan/interpreter/runtime/def"
 )
 
 

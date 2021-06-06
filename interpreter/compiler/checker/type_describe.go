@@ -2,7 +2,7 @@ package checker
 
 import (
 	"strings"
-	"kumachan/interpreter/def"
+	"kumachan/interpreter/runtime/def"
 	"kumachan/interpreter/compiler/loader"
 )
 

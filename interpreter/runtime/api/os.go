@@ -11,7 +11,7 @@ import (
 	"kumachan/stdlib"
 	"kumachan/standalone/util"
 	"kumachan/standalone/qt"
-	. "kumachan/interpreter/def"
+	. "kumachan/interpreter/runtime/def"
 	. "kumachan/interpreter/runtime/lib/container"
 )
 

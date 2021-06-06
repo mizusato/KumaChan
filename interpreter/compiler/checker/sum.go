@@ -3,7 +3,7 @@ package checker
 import (
 	"fmt"
 	"strings"
-	"kumachan/interpreter/def"
+	"kumachan/interpreter/runtime/def"
 	"kumachan/interpreter/lang/textual/ast"
 	"kumachan/stdlib"
 	. "kumachan/standalone/util/error"

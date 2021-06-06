@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"math/big"
 	"kumachan/standalone/rx"
-	. "kumachan/interpreter/def"
+	. "kumachan/interpreter/runtime/def"
 	. "kumachan/interpreter/runtime/lib/container"
 	"kumachan/standalone/util"
 )

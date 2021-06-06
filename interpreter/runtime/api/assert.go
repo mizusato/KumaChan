@@ -1,6 +1,6 @@
 package api
 
-import . "kumachan/interpreter/def"
+import . "kumachan/interpreter/runtime/def"
 
 
 var AssertionFunctions = map[string] interface{} {

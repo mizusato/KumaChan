@@ -3,7 +3,7 @@ package ui
 import (
 	"kumachan/interpreter/runtime/lib/container"
 	"kumachan/interpreter/runtime/lib/ui/vdom"
-	. "kumachan/interpreter/def"
+	. "kumachan/interpreter/runtime/def"
 	"strings"
 )
 

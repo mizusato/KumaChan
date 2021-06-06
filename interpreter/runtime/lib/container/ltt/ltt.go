@@ -1,7 +1,7 @@
 package ltt
 
 import (
-	. "kumachan/interpreter/def"
+	. "kumachan/interpreter/runtime/def"
 )
 
 /* Functional Leftist Tree: Implementation of Queue and Priority Queue */

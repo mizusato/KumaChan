@@ -3,7 +3,7 @@ package frame
 import (
 	"unsafe"
 	"reflect"
-	. "kumachan/interpreter/runtime/vm2/def"
+	. "kumachan/interpreter/runtime/def"
 )
 
 

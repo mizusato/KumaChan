@@ -2,7 +2,7 @@ package checker
 
 import (
 	"kumachan/interpreter/lang/textual/ast"
-	"kumachan/interpreter/def"
+	"kumachan/interpreter/runtime/def"
 	"reflect"
 	"kumachan/stdlib"
 )

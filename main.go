@@ -21,7 +21,7 @@ import (
     "kumachan/interpreter/compiler/generator"
     "kumachan/interpreter/runtime/vm"
     "kumachan/standalone/qt"
-	"kumachan/interpreter/def"
+	"kumachan/interpreter/runtime/def"
 	"kumachan/interpreter/lang/textual/parser"
 	"kumachan/interpreter/lang/textual/ast"
 	"kumachan/interpreter/lang/textual/scanner"

@@ -1,7 +1,7 @@
 package loader
 
 import (
-	"kumachan/interpreter/def"
+	"kumachan/interpreter/runtime/def"
 	"kumachan/interpreter/lang/textual/ast"
 	"kumachan/stdlib"
 )

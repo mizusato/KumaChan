@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"kumachan/standalone/rx"
 	"kumachan/stdlib"
-	. "kumachan/interpreter/def"
+	. "kumachan/interpreter/runtime/def"
 	"kumachan/standalone/util"
 	"kumachan/interpreter/runtime/lib/container"
 	"kumachan/interpreter/runtime/lib/ui"

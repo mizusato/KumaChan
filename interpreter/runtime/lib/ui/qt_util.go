@@ -4,7 +4,7 @@ import (
 	"kumachan/standalone/qt"
 	"kumachan/standalone/rx"
 	"kumachan/stdlib"
-	. "kumachan/interpreter/def"
+	. "kumachan/interpreter/runtime/def"
 )
 
 

@@ -11,7 +11,7 @@ import (
 	"kumachan/interpreter/lang/textual/syntax"
 	"kumachan/interpreter/compiler/loader/common"
 	"kumachan/interpreter/compiler/loader/extra"
-	"kumachan/interpreter/def"
+	"kumachan/interpreter/runtime/def"
 )
 
 

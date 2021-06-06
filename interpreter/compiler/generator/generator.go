@@ -2,7 +2,7 @@ package generator
 
 import (
 	. "kumachan/standalone/util/error"
-	"kumachan/interpreter/def"
+	"kumachan/interpreter/runtime/def"
 	ch "kumachan/interpreter/compiler/checker"
 )
 

@@ -2,7 +2,7 @@ package ui
 
 import (
 	"fmt"
-	"kumachan/interpreter/def"
+	"kumachan/interpreter/runtime/def"
 	"kumachan/standalone/qt"
 )
 

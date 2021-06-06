@@ -2,570 +2,305 @@ package vm
 
 import (
 	"fmt"
+	"sync"
 	"reflect"
 	"kumachan/standalone/rx"
-	"kumachan/interpreter/runtime/api"
-	. "kumachan/interpreter/def"
-	"kumachan/interpreter/runtime/lib/ui"
+	. "kumachan/interpreter/runtime/def"
+	. "kumachan/interpreter/runtime/vm/frame"
 )
 
 
-type ExecutionContext struct {
-	dataStack     DataStack
-	callStack     CallStack
-	workingFrame  CallStackFrame
-	indexBufLen   uint
-	indexBuf      [ProductMaxSize] uint
-}
-type DataStack  [] Value
-type CallStack  [] CallStackFrame
-type CallStackFrame struct {
-	function  *Function
-	baseAddr  uint
-	instPtr   uint
-}
+type Context = *rx.Context
 
-func execute(p Program, m *Machine) {
-	var L = len(p.DataValues) + len(p.Functions) + len(p.Closures)
-	assert(L <= GlobalSlotMaxSize, "maximum global slot size exceeded")
-	m.globalSlot = make([] Value, L)
-	var ptr = 0
-	var add_global = func(v Value) {
-		m.globalSlot[ptr] = v
-		ptr += 1
-	}
-	for _, data := range p.DataValues {
-		add_global(data.ToValue())
-	}
-	for _, f := range p.Functions {
-		switch f.Kind {
-		case F_USER:
-			add_global(&ValFun { Underlying: f })
-		case F_NATIVE:
-			add_global(api.GetNativeFunctionValue(f.NativeId))
-		case F_GENERATED:
-			add_global(f.Generated)
-		case F_RUNTIME_GENERATED:
-			switch seed := f.Generated.(type) {
-			case UiObjectThunk:
-				add_global(ui.EvaluateObjectThunk(seed))
-			default:
-				panic("unknown runtime function generation seed")
-			}
-		default:
-			panic("impossible branch")
-		}
-	}
-	for _, f := range p.Closures {
-		if f.Kind != F_USER { panic("something went wrong") }
-		var v = &ValFun { Underlying: f }
-		add_global(v)
-	}
-	var background = rx.Background()
-	var wg = make(chan bool, len(p.Effects))
-	for _, f := range p.Effects {
-		switch f.Kind {
-		case F_USER:
-			var evaluate = &ValFun { Underlying: f }
-			var e = (call(evaluate, nil, m, background)).(rx.Observable)
-			rx.Schedule(e, m.scheduler, rx.Receiver {
-				Context:   background,
-				Terminate: wg,
-			})
-		case F_RUNTIME_GENERATED:
-			var  e = f.Generated.(rx.Observable)
-			rx.Schedule(e, m.scheduler, rx.Receiver {
-				Context:   background,
-				Terminate: wg,
-			})
-		default:
-			panic("something went wrong")
-		}
-	}
-	for i := 0; i < len(p.Effects); i += 1 {
-		<- wg
-	}
-}
+type Cont = func(e interface{})
 
-func call(f UserFunctionValue, arg Value, m *Machine, sync_ctx *rx.Context) Value {
-	var ec = m.contextPool.Get().(*ExecutionContext)
-	var l = InteropErrorPointLocatorFromExecutionContext(ec)
-	var h = InteropHandle { machine: m, locator: l, sync_ctx: sync_ctx }
-	defer (func() {
-		var err = recover()
-		if err != nil {
-			var _, is_cancel = err.(SyncCancellationError)
-			if is_cancel {
-				ec.clear()
-				m.contextPool.Put(ec)
-				panic(err)
-			} else {
-				PrintRuntimeErrorMessage(err, ec)
-				panic(err)
-			}
-		}
-	}) ()
-	ec.pushCall(f, arg)
-	outer: for len(ec.callStack) > 0 {
-		if sync_ctx.AlreadyCancelled() {
-			panic(SyncCancellationError {})
-		}
-		var code = ec.workingFrame.function.Code
-		var base_addr = ec.workingFrame.baseAddr
-		var inst_ptr_ref = &(ec.workingFrame.instPtr)
-		for *inst_ptr_ref < uint(len(code)) {
-			var inst = code[*inst_ptr_ref]
-			*inst_ptr_ref += 1
-			switch inst.OpCode {
-			case NOP:
-				// do nothing
-			case NIL:
-				ec.pushValue(nil)
-			case POP:
-				ec.popValue()
-			case GLOBAL:
-				var index = inst.GetGlobalIndex()
-				var v, exists = m.GetGlobalValue(index)
-				if !(exists) { panic("GLOBAL: value index out of range") }
-				ec.pushValue(v)
-			case LOAD:
-				var offset = inst.GetOffset()
-				var value = ec.dataStack[base_addr + offset]
-				ec.pushValue(value)
-			case STORE:
-				var offset = inst.GetOffset()
-				var value = ec.popValue()
-				ec.dataStack[base_addr + offset] = value
-			case ENUM:
-				var index = inst.GetShortIndexOrSize()
-				var value = ec.popValue()
-				ec.pushValue(&ValEnum {
-					Index: index,
-					Value: value,
-				})
-			case JIF:
-				var enum, ok = ec.getCurrentValue().(EnumValue)
-				assert(ok, "JIF: cannot execute on non-enum value")
-				if enum.Index == inst.GetShortIndexOrSize() {
-					ec.popValue()
-					ec.pushValue(enum.Value)
-					var new_inst_ptr = inst.GetDestAddr()
-					assert(new_inst_ptr < uint(len(code)),
-						"JIF: invalid address")
-					*inst_ptr_ref = new_inst_ptr
-				} else {
-					// do nothing
-				}
-			case JMP:
-				var new_inst_ptr = inst.GetDestAddr()
-				var ok = new_inst_ptr < uint(len(code))
-				assert(ok, "JMP: invalid address")
-				*inst_ptr_ref = new_inst_ptr
-			case TUP:
-				var size = inst.GetShortIndexOrSize()
-				var elements = make([] Value, size)
-				for i := uint(0); i < size; i += 1 {
-					elements[size-1-i] = ec.popValue()
-				}
-				ec.pushValue(TupleOf(elements))
-			case GET:
-				var index = inst.GetShortIndexOrSize()
-				switch v := ec.getCurrentValue().(type) {
-				case TupleValue:
-					var tup = v
-					assert(index < uint(len(tup.Elements)),
-						"GET: invalid index")
-					ec.pushValue(tup.Elements[index])
-				default:
-					panic("GET: cannot execute on non-tuple value")
-				}
-			case POPGET:
-				var index = inst.GetShortIndexOrSize()
-				switch v := ec.popValue().(type) {
-				case TupleValue:
-					var tup = v
-					assert(index < uint(len(tup.Elements)),
-						"POPGET: invalid index")
-					ec.pushValue(tup.Elements[index])
-				default:
-					panic("POPGET: cannot execute on non-tuple value")
-				}
-			case SET:
-				var index = inst.GetShortIndexOrSize()
-				var value = ec.popValue()
-				switch tup := ec.popValue().(type) {
-				case TupleValue:
-					var L = uint(len(tup.Elements))
-					assert(index < L, "SET: invalid index")
-					var draft = make([] Value, L)
-					copy(draft, tup.Elements)
-					draft[index] = value
-					ec.pushValue(TupleOf(draft))
-				default:
-					panic("SET: cannot execute on non-tuple value")
-				}
-			case BR, BRB, BRF, FR, FRF:
-				createRef(ec, inst)
-			case CTX:
-				var is_recursive = (inst.Arg0 != 0)
-				switch tup := ec.popValue().(type) {
-				case TupleValue:
-					var ctx = tup.Elements
-					switch f := ec.popValue().(type) {
-					case UserFunctionValue:
-						var required = int(f.Underlying.BaseSize.Context)
-						var given = len(ctx)
-						if is_recursive { given += 1 }
-						assert(given == required, "CTX: invalid context size")
-						assert((len(f.ContextValues) == 0), "CTX: context already injected")
-						if is_recursive { ctx = append(ctx, nil) }
-						var fv = &ValFun {
-							Underlying:    f.Underlying,
-							ContextValues: ctx,
-						}
-						if is_recursive { ctx[len(ctx)-1] = fv }
-						ec.pushValue(fv)
-					case NativeFunctionValue:
-						var wrapped = ValNativeFun(func(arg Value, h InteropContext) Value {
-							var arg_with_context = Tuple(arg, tup)
-							return (*f)(arg_with_context, h)
-						})
-						ec.pushValue(wrapped)
-					default:
-						panic("CTX: cannot inject context for non-function value")
-					}
-				default:
-					panic("CTX: cannot use non-tuple value as context")
-				}
-			case CALL:
-				switch f := ec.popValue().(type) {
-				case UserFunctionValue:
-					// check if the function is valid
-					var required = int(f.Underlying.BaseSize.Context)
-					var current = len(f.ContextValues)
-					assert(current == required,
-						"CALL: missing correct context")
-					var arg = ec.popValue()
-					// tail call optimization
-					var L = uint(len(code))
-					var next_inst_ptr = *inst_ptr_ref
-					if next_inst_ptr < L {
-						var next = code[next_inst_ptr]
-						if next.OpCode == JMP && next.GetDestAddr() == L-1 {
-							ec.popTailCall()
-						}
-					} else {
-						ec.popTailCall()
-					}
-					// push the function to call stack
-					ec.pushCall(f, arg)
-					// check if call stack size exceeded
-					var stack_size = uint(len(ec.dataStack))
-					assert(stack_size < m.options.MaxStackSize,
-						"CALL: stack overflow")
-					// work on the pushed new frame
-					continue outer
-				case NativeFunctionValue:
-					var arg = ec.popValue()
-					var ret = (*f)(arg, h)
-					ec.pushValue(ret)
-				default:
-					panic("CALL: cannot execute on non-callable value")
-				}
-			case ARRAY:
-				var id = inst.GetGlobalIndex()
-				var info_v, exists = m.GetGlobalValue(id)
-				if !(exists) { panic("ARRAY: info index out of range") }
-				var info = info_v.(ArrayInfo)
-				var t = reflect.SliceOf(info.ItemType)
-				var rv = reflect.MakeSlice(t, 0, int(info.Length))
-				var v = rv.Interface()
-				ec.pushValue(v)
-			case APPEND:
-				var item = ec.popValue()
-				var item_rv = reflect.ValueOf(item)
-				var arr = ec.popValue()
-				var arr_rv = reflect.ValueOf(arr)
-				if arr_rv.Kind() == reflect.Slice {
-					var appended_rv = reflect.Append(arr_rv, item_rv)
-					var appended = appended_rv.Interface()
-					ec.pushValue(appended)
-				} else {
-					panic("APPEND: cannot append to non-slice value")
-				}
-			case MS:
-				ec.indexBufLen = 0
-			case MSI:
-				assert(ec.indexBufLen < ProductMaxSize,
-					"MSI: index buffer overflow")
-				var index = inst.GetShortIndexOrSize()
-				ec.indexBuf[ec.indexBufLen] = index
-				ec.indexBufLen += 1
-			case MSD:
-				assert(ec.indexBufLen < ProductMaxSize,
-					"MSD: index buffer overflow")
-				ec.indexBuf[ec.indexBufLen] = ^(uint(0))
-				ec.indexBufLen += 1
-			case MSJ:
-				var tup, ok = ec.getCurrentValue().(TupleValue)
-				assert(ok, "MSJ: cannot execute on non-tuple value")
-				assert(uint(len(tup.Elements)) == ec.indexBufLen,
-					"MSJ: wrong index quantity")
-				var matching = true
-				for i, e := range tup.Elements {
-					var enum, ok = e.(EnumValue)
-					assert(ok, "MSJ: non-enum element value occurred")
-					var desired = ec.indexBuf[i]
-					if desired == ^(uint(0)) {
-						continue
-					} else {
-						if enum.Index == desired {
-							continue
-						} else {
-							matching = false
-							break
-						}
-					}
-				}
-				if matching {
-					ec.popValue()
-					var narrowed = make([] Value, len(tup.Elements))
-					for i, e := range tup.Elements {
-						narrowed[i] = e.(EnumValue).Value
-					}
-					ec.pushValue(TupleOf(narrowed))
-					var new_inst_ptr = inst.GetDestAddr()
-					assert(new_inst_ptr < uint(len(code)),
-						"MSJ: invalid address")
-					*inst_ptr_ref = new_inst_ptr
-				} else {
-					// do nothing
-				}
-			default:
-				panic(fmt.Sprintf("invalid instruction %+v", inst))
-			}
-		}
-		ec.popCall()
-	}
-	var ret = ec.popValue()
-	ec.clear()
-	m.contextPool.Put(ec)
-	return ret
-}
-
+type ContVal = func(e interface{}, v Value)
 
 func assert(ok bool, msg string) {
-	if !ok { panic(msg) }
+	if !(ok) { panic(msg) }
 }
 
-func (ec *ExecutionContext) clear() {
-	ec.workingFrame = CallStackFrame {}
-	for i, _ := range ec.callStack {
-		ec.callStack[i] = CallStackFrame {}
-	}
-	ec.callStack = ec.callStack[:0]
-	for i, _ := range ec.dataStack {
-		ec.dataStack[i] = nil
-	}
-	ec.dataStack = ec.dataStack[:0]
-	ec.indexBufLen = 0
+func call(ctx Context, m *Machine, f UsualFuncValue, arg Value, kv ContVal) {
+	execFrame(ctx, m, CreateFrame(f, arg), kv)
 }
 
-func (ec *ExecutionContext) getCurrentValue() Value {
-	return ec.dataStack[len(ec.dataStack) - 1]
+func callAtTail(ctx Context, m *Machine, f UsualFuncValue, arg Value, u *Frame, kv ContVal) {
+	execFrame(ctx, m, u.TailCall(f, arg), kv)
 }
 
-func (ec *ExecutionContext) pushValue(v Value) {
-	ec.dataStack = append(ec.dataStack, v)
+func callBranch(ctx Context, m *Machine, f UsualFuncValue, arg Value, u *Frame, kv ContVal) {
+	execFrame(ctx, m, u.Branch(f, arg), kv)
 }
 
-func (ec *ExecutionContext) popValue() Value {
-	var L = len(ec.dataStack)
-	assert(L > 0, "cannot pop empty data stack")
-	var cur = (L - 1)
-	var popped = ec.dataStack[cur]
-	ec.dataStack[cur] = nil
-	ec.dataStack = ec.dataStack[:cur]
-	return popped
-}
-
-func (ec *ExecutionContext) popValuesTo(addr uint) {
-	var L = uint(len(ec.dataStack))
-	assert(addr <= L, "invalid data stack address")
-	for i := addr; i < L; i += 1 {
-		ec.dataStack[i] = nil
-	}
-	ec.dataStack = ec.dataStack[:addr]
-}
-
-func (ec *ExecutionContext) pushCall(f UserFunctionValue, arg Value) {
-	var context_size = int(f.Underlying.BaseSize.Context)
-	var reserved_size = int(f.Underlying.BaseSize.Reserved)
-	assert(context_size == len(f.ContextValues),
-		"invalid number of context values")
-	var new_base_addr = uint(len(ec.dataStack))
-	for i := 0; i < context_size; i += 1 {
-		ec.pushValue(f.ContextValues[i])
-	}
-	for i := 0; i < reserved_size; i += 1 {
-		ec.pushValue(nil)
-	}
-	ec.pushValue(arg)
-	ec.callStack = append(ec.callStack, ec.workingFrame)
-	ec.workingFrame = CallStackFrame {
-		function: f.Underlying,
-		baseAddr: new_base_addr,
-		instPtr:  0,
+func execFrame(ctx Context, m *Machine, u *Frame, kv ContVal) {
+	var k = Cont(func(e interface{}) {
+		if e != nil {
+			kv(e, nil)
+		} else {
+			kv(nil, u.Data(u.LastDataAddr()))
+		}
+	})
+	if m.options.ParallelEnabled {
+		var stages = u.Code().Stages()
+		execParallel(ctx, m, u, stages, k)
+	} else {
+		var flow = Flow { SimpleFlow: SimpleFlow { Start: 0, End: u.LastInsAddr() } }
+		execFlow(ctx, m, u, flow, k)
 	}
 }
 
-func (ec *ExecutionContext) popCall() {
-	var L = len(ec.callStack)
-	assert(L > 0, "cannot pop empty call stack")
-	var cur = (L - 1)
-	var popped = ec.callStack[cur]
-	ec.callStack[cur] = CallStackFrame {}
-	ec.callStack = ec.callStack[:cur]
-	var ret = ec.popValue()
-	ec.popValuesTo(ec.workingFrame.baseAddr)
-	ec.pushValue(ret)
-	ec.workingFrame = popped
+func execParallel(ctx Context, m *Machine, u *Frame, stages ([] Stage), k0 Cont) {
+	var once sync.Once
+	var k = Cont(func(e interface{}) {
+		once.Do(func() {
+			k0(e)
+		})
+	})
+	if len(stages) == 0 {
+		k(nil)
+		return
+	}
+	var this_stage = stages[0]
+	var remaining_stages = stages[1:]
+	var num_of_flows = uint(len(this_stage))
+	if num_of_flows == 0 { panic("bad bytecode: empty stage") }
+	if num_of_flows == 1 {
+		var flow = this_stage.TheOnlyFlow()
+		execFlow(ctx, m, u, flow, func(e interface{}) {
+			if e != nil {
+				k(e)
+				return
+			}
+			execParallel(ctx, m, u, remaining_stages, k)
+		})
+	} else {
+		var sem = make(chan struct{}, (num_of_flows - 1))
+		this_stage.ForEachFlow(func(flow Flow) {
+			m.pool.Execute(func() {
+				execFlow(ctx, m, u, flow, func(e interface{}) {
+					if e != nil {
+						k(e)
+						return
+					}
+					select {
+					case sem <- struct{}{}:
+					default:
+						execParallel(ctx, m, u, remaining_stages, k)
+					}
+				})
+			})
+		})
+	}
 }
 
-func (ec *ExecutionContext) popTailCall() {
-	var L = len(ec.callStack)
-	assert(L > 0, "cannot pop empty call stack")
-	var cur = (L - 1)
-	var popped = ec.callStack[cur]
-	ec.callStack[cur] = CallStackFrame {}
-	ec.callStack = ec.callStack[:cur]
-	ec.popValuesTo(ec.workingFrame.baseAddr)
-	ec.workingFrame = popped
+func execFlow(ctx Context, m *Machine, u *Frame, flow Flow, k Cont) {
+	if flow.Simple() {
+		var ipp = new(LocalAddr)
+		defer (func() {
+			var e = recover()
+			if e != nil {
+				k(u.WrapPanic(e, *ipp))
+			}
+		})()
+		*ipp = flow.Start
+		execIns(ctx, m, u, ipp, flow.End, k)
+	} else {
+		execParallel(ctx, m, u, flow.Stages, k)
+	}
 }
 
-func createRef(ec *ExecutionContext, inst Instruction) {
-	var index = inst.GetShortIndexOrSize()
-	switch inst.OpCode {
+func execIns(ctx Context, m *Machine, u *Frame, ipp *LocalAddr, end LocalAddr, k Cont) {
+	var code = u.Code()
+	var ip = *ipp
+	if ip > end {
+		k(nil)
+		return
+	}
+	var inst = code.Inst(ip)
+	var dst = u.DataDstRef(ip)
+	var kv_dst = ContVal(func(e interface{}, v Value) {
+		if e != nil {
+			k(e)
+			return
+		}
+		*dst = v
+		defer (func() {
+			var e = recover()
+			if e != nil {
+				k(u.WrapPanic(e, *ipp))
+			}
+		})()
+		*ipp = (ip + 1)
+		execIns(ctx, m, u, ipp, end, k)
+	})
+	var op = inst.OpCode
+	switch op {
+	case SIZE:
+		*dst = inst.ToSize()
+	case ARG:
+		*dst = u.Arg()
+	case STATIC:
+		*dst = u.Static(inst.Src)
+	case CTX:
+		*dst = u.Context(inst.Src)
+	case FRAME:
+		*dst = u.Data(inst.Src)
+	case ENUM:
+		*dst = &ValEnum {
+			Index: inst.Idx,
+			Value: u.Data(inst.Obj),
+		}
+	case SWITCH:
+		var obj = u.Data(inst.Obj)
+		var enum = obj.(EnumValue)
+		var vec = CreateShortIndexVectorSingleElement(enum.Index)
+		var target = code.ChooseBranch(inst.ExtIdx, vec)
+		var f = code.BranchFuncValue(target)
+		callBranch(ctx, m, f, enum.Value, u, kv_dst); return
+	case SELECT:
+		var objects_addr = inst.Obj
+		var num_of_objects = u.DataGetSizeAt(objects_addr)
+		assert(uint(num_of_objects) < MaxShortIndexVectorElements,
+			"SELECT: too many operands")
+		var objects = u.DataRange(objects_addr, num_of_objects)
+		var indexes = make([] ShortIndex, num_of_objects)
+		var values = make([] Value, num_of_objects)
+		for n := uint(0); n < uint(num_of_objects); n += 1 {
+			var enum = objects[n].(EnumValue)
+			indexes[n] = enum.Index
+			values[n] = enum.Value
+		}
+		var vec = CreateShortIndexVector(indexes)
+		var target = code.ChooseBranch(inst.ExtIdx, vec)
+		var f = code.BranchFuncValue(target)
+		callBranch(ctx, m, f, values, u, kv_dst); return
 	case BR:
-		var enum, ok = ec.popValue().(EnumValue)
-		assert(ok, "BR: invalid operand")
-		ec.pushValue(ValNativeFun(func(arg Value, _ InteropContext) Value {
-			var new_value, update = Unwrap(arg.(EnumValue))
-			if update {
-				return Tuple(&ValEnum {
-					Index: index,
-					Value: new_value,
-				}, arg)
-			} else {
-				if enum.Index == index {
-					return Tuple(enum, Some(enum.Value))
-				} else {
-					return Tuple(enum, None())
-				}
-			}
-		}))
-	case BRB:
-		switch base := ec.popValue().(type) {
-		case UserFunctionValue, NativeFunctionValue:
-			ec.pushValue(ValNativeFun(func(arg Value, h InteropContext) Value {
-				var t = h.Call(base, None())
-				var pair = t.(TupleValue).Elements
-				var base_enum = pair[0]
-				var base_branch = pair[1]
-				var value, has_value = Unwrap(base_branch.(EnumValue))
-				var new_value, update = Unwrap(arg.(EnumValue))
-				if has_value {
-					if update {
-						var u = h.Call(base, Some(&ValEnum{
-							Index: index,
-							Value: new_value,
-						}))
-						return Tuple(u.(TupleValue).Elements[0], arg)
-					} else {
-						var enum = value.(EnumValue)
-						if enum.Index == index {
-							return Tuple(base_enum, Some(enum.Value))
-						} else {
-							return Tuple(base_enum, None())
-						}
-					}
-				} else {
-					return Tuple(base_enum, None())
-				}
-			}))
-		default:
-			panic("BRB: invalid operand")
-		}
-	case BRF:
-		switch base := ec.popValue().(type) {
-		case UserFunctionValue, NativeFunctionValue:
-			ec.pushValue(ValNativeFun(func(arg Value, h InteropContext) Value {
-				var new_value, update = Unwrap(arg.(EnumValue))
-				if update {
-					var t = h.Call(base, Some(&ValEnum {
-						Index: index,
-						Value: new_value,
-					}))
-					return Tuple(t.(TupleValue).Elements[0], arg)
-				} else {
-					var value = h.Call(base, None())
-					var pair = value.(TupleValue).Elements
-					var base_tup = pair[0]
-					var base_field = pair[1]
-					var enum = base_field.(EnumValue)
-					if enum.Index == index {
-						return Tuple(base_tup, Some(enum.Value))
-					} else {
-						return Tuple(base_tup, None())
-					}
-				}
-			}))
-		default:
-			panic("BRF: invalid operand")
-		}
+		var enum = u.Data(inst.Obj).(EnumValue)
+		*dst = BranchRef(enum, inst.Idx)
+	case BRC:
+		var base_ref = u.Data(inst.Obj)
+		*dst = BranchRefFromCaseRef(base_ref, inst.Idx)
+	case BRP:
+		var base_ref = u.Data(inst.Obj)
+		*dst = BranchRefFromProjRef(base_ref, inst.Idx)
+	case TUPLE:
+		var objects_addr = inst.Obj
+		var num_of_objects = u.DataGetSizeAt(objects_addr)
+		var elements = make([] Value, num_of_objects)
+		copy(elements, u.DataRange(objects_addr, num_of_objects))
+		*dst = TupleOf(elements)
+	case GET:
+		var tuple = u.Data(inst.Obj).(TupleValue)
+		*dst = tuple.Elements[inst.Idx]
+	case SET:
+		var tuple = u.Data(inst.Obj).(TupleValue)
+		var new_element = u.Data(inst.Src)
+		var new_elements = make([] Value, len(tuple.Elements))
+		copy(new_elements, tuple.Elements)
+		new_elements[inst.Idx] = new_element
+		*dst = TupleOf(new_elements)
 	case FR:
-		var tup, ok = ec.popValue().(TupleValue)
-		assert(ok, "FR: invalid operand")
-		var L = uint(len(tup.Elements))
-		assert(index < L, "FR: invalid index")
-		ec.pushValue(ValNativeFun(func(arg Value, _ InteropContext) Value {
-			var new_value, update = Unwrap(arg.(EnumValue))
-			if update {
-				var draft =  make([] Value, L)
-				copy(draft, tup.Elements)
-				draft[index] = new_value
-				return Tuple(TupleOf(draft), new_value)
-			} else {
-				return Tuple(tup, tup.Elements[index])
+		var tuple = u.Data(inst.Obj).(TupleValue)
+		*dst = FieldRef(tuple, inst.Idx)
+	case FRP:
+		var base_ref = u.Data(inst.Obj)
+		*dst = FieldRefFromProjRef(base_ref, inst.Idx)
+	case LSV:
+		var objects_addr = inst.Obj
+		var num_of_objects = u.DataGetSizeAt(objects_addr)
+		var list = make([] Value, num_of_objects)
+		copy(list, u.DataRange(objects_addr, num_of_objects))
+		*dst = list
+	case LSC:
+		var objects_addr = inst.Obj
+		var num_of_objects = u.DataGetSizeAt(objects_addr)
+		var t = GetCompactArrayType(inst.Idx)
+		var length = int(num_of_objects)
+		var r_list = reflect.MakeSlice(t, length, length)
+		var objects = u.DataRange(objects_addr, num_of_objects)
+		for index, item := range objects {
+			r_list.Index(index).Set(reflect.ValueOf(item))
+		}
+		var list = r_list.Interface()
+		*dst = list
+	case MPS:
+		panic("not implemented")  // TODO
+	case MPI:
+		panic("not implemented")  // TODO
+	case CL, CLR:
+		var ptr = inst.Src
+		var objects_addr = inst.Obj
+		var num_of_objects = u.DataGetSizeAt(objects_addr)
+		var num_of_values = num_of_objects
+		if op == CLR { num_of_values += 1 }
+		var context = make([] Value, num_of_values)
+		copy(context, u.DataRange(objects_addr, num_of_objects))
+		var entity = u.Func().Entity.Code.ClosureEntity(ptr)
+		var required = entity.ContextLength
+		assert(num_of_values == required, "CL: invalid context length")
+		var closure = &ValFunc {
+			Entity:  entity,
+			Context: context,
+		}
+		if op == CLR { context[num_of_values - 1] = closure }
+		*dst = closure
+	case INJ:
+		var f = u.Data(inst.Src)
+		var objects_addr = inst.Obj
+		var num_of_objects = u.DataGetSizeAt(objects_addr)
+		var context = make([] Value, num_of_objects)
+		copy(context, u.DataRange(objects_addr, num_of_objects))
+		var closure Value
+		switch f := f.(type) {
+		case UsualFuncValue:
+			var required = f.Entity.ContextLength
+			assert(num_of_objects == required, "INJ: invalid context length")
+			assert(len(f.Context) == 0, "INJ: operand is already a closure")
+			closure = &ValFunc {
+				Entity:  f.Entity,
+				Context: context,
 			}
-		}))
-	case FRF:
-		switch base := ec.popValue().(type) {
-		case UserFunctionValue, NativeFunctionValue:
-			ec.pushValue(ValNativeFun(func(arg Value, h InteropContext) Value {
-				var t = h.Call(base, None())
-				var tup = t.(TupleValue).Elements[1].(TupleValue)
-				var L = uint(len(tup.Elements))
-				assert(index < L, "FRF: invalid index")
-				var new_field_value, update = Unwrap(arg.(EnumValue))
-				if update {
-					var draft =  make([] Value, L)
-					copy(draft, tup.Elements)
-					draft[index] = new_field_value
-					var new_tup_value = TupleOf(draft)
-					var t = h.Call(base, Some(new_tup_value))
-					var new_base_value = t.(TupleValue).Elements[0]
-					return Tuple(new_base_value, new_field_value)
-				} else {
-					return Tuple(tup, tup.Elements[index])
-				}
-			}))
+		case NativeFuncValue:
+			closure = ValNativeFunc(func(arg Value, h InteropContext) Value {
+				var arg_with_context = Tuple(arg, context)
+				return (*f)(arg_with_context, h)
+			})
 		default:
-			panic("FRF: invalid operand")
+			panic("INJ: invalid operand")
+		}
+		*dst = closure
+	case CALL:
+		if ctx.AlreadyCancelled() {
+			panic(ExecutionCancelled {})
+		}
+		var f = u.Data(inst.Obj)
+		var arg = u.Data(inst.Src)
+		switch f := f.(type) {
+		case UsualFuncValue:
+			if ip == end && end == u.LastInsAddr() {
+				callAtTail(ctx, m, f, arg, u, kv_dst); return
+			} else {
+				call(ctx, m, f, arg, kv_dst); return
+			}
+		case NativeFuncValue:
+			var l = Location {
+				Function: u.Func().Entity,
+				InstPtr:  ip,
+			}
+			var h = InteropHandle {
+				context:  ctx,
+				machine:  m,
+				location: l,
+			}
+			*dst = (*f)(arg, h)
+		default:
+			panic("CALL: operand not callable")
 		}
 	default:
-		panic("something went wrong")
+		panic(fmt.Sprintf("invalid instruction at %d", ip))
 	}
+	*ipp = (ip + 1)
+	execIns(ctx, m, u, ipp, end, k)
 }
 
 

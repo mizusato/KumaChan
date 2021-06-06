@@ -6,7 +6,7 @@ import (
 	"kumachan/standalone/rx"
 	"kumachan/standalone/rpc"
 	"kumachan/standalone/rpc/kmd"
-	. "kumachan/interpreter/def"
+	. "kumachan/interpreter/runtime/def"
 )
 
 

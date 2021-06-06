@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"kumachan/standalone/rpc"
 	"kumachan/standalone/rpc/kmd"
-	"kumachan/interpreter/def"
+	"kumachan/interpreter/runtime/def"
 	. "kumachan/standalone/util/error"
 )
 

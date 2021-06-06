@@ -2,7 +2,7 @@ package api
 
 import (
 	"io"
-	. "kumachan/interpreter/def"
+	. "kumachan/interpreter/runtime/def"
 )
 
 

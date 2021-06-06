@@ -4,7 +4,7 @@ import (
 	"errors"
 	"kumachan/standalone/rpc"
 	"kumachan/standalone/rpc/kmd"
-	"kumachan/interpreter/def"
+	"kumachan/interpreter/runtime/def"
 	"kumachan/interpreter/lang/textual/ast"
 	"kumachan/interpreter/compiler/loader"
 	"kumachan/stdlib"
