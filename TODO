@@ -19,6 +19,8 @@ TODO
 
 - Lang: consider curried function as method: &(Instance) => &(In) => Out
 
+- Lang: consider curried input as implicit input: &(Ord[T]) => &(T,T) => Bool
+
 - Lang: separate interface/implicit
 
 type I interface (Base1,Base2) { method: &(A) => B }
