@@ -1,4 +1,4 @@
-package typedef
+package typsys
 
 import "reflect"
 

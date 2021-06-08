@@ -2,15 +2,15 @@ package checked
 
 import (
 	. "kumachan/standalone/util/error"
-	"kumachan/interpreter/compiler/checker2/typedef"
+	"kumachan/interpreter/compiler/checker2/typsys"
 	"kumachan/interpreter/lang/common/name"
 )
 
 
 type Expr struct {
-	Type  typedef.Type
-	Info  ExprInfo
-	Expr  ExprContent
+	Type typsys.Type
+	Info ExprInfo
+	Expr ExprContent
 }
 type ExprInfo struct {
 	Point  ErrorPoint
