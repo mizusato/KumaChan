@@ -73,7 +73,7 @@ func TestBranchRef(t *testing.T) {
 
 func TestMultiSwitch(t *testing.T) {
 	var dir_path = getTestDirPath(t, language)
-	var mod_path = filepath.Join(dir_path, "sum", "multi_switch.km")
+	var mod_path = filepath.Join(dir_path, "sum", "select.km")
 	var input = func(x string, y string) string {
 		return fmt.Sprintf("%s\n%s\n", x, y)
 	}

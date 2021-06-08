@@ -541,7 +541,7 @@ func CheckTerm(term ast.VariousTerm, ctx ExprContext) (SemiExpr, *ExprError) {
 		return CheckPipelineLambda(t, ctx)
 	case ast.Switch:
 		return CheckSwitch(t, ctx)
-	case ast.MultiSwitch:
+	case ast.Select:
 		return CheckMultiSwitch(t, ctx)
 	case ast.If:
 		return CheckIf(t, ctx)

@@ -398,7 +398,7 @@ func CheckRefBranch(base SemiExpr, ref ast.TypeRef, info ExprInfo, ctx ExprConte
 	}
 }
 
-func CheckMultiSwitch(msw ast.MultiSwitch, ctx ExprContext) (SemiExpr, *ExprError) {
+func CheckMultiSwitch(msw ast.Select, ctx ExprContext) (SemiExpr, *ExprError) {
 	var info = ctx.GetExprInfo(msw.Node)
 	var A = uint(len(msw.Arguments))
 	var args = make([] Expr, A)
@@ -622,18 +622,18 @@ func CheckIf(raw ast.If, ctx ExprContext) (SemiExpr, *ExprError) {
 	}, nil
 }
 
-func DesugarBranches(raw_branches ([] ast.Branch)) ([] ast.Branch) {
-	var branches = make([] ast.Branch, 0)
+func DesugarBranches(raw_branches ([] ast.SwitchBranch)) ([] ast.SwitchBranch) {
+	var branches = make([] ast.SwitchBranch, 0)
 	for _, raw_branch := range raw_branches {
-		if len(raw_branch.Types) == 0 {
+		if len(raw_branch.Cases) == 0 {
 			branches = append(branches, raw_branch)
 			continue
 		}
-		for _, t := range raw_branch.Types {
-			var branch = ast.Branch {
+		for _, t := range raw_branch.Cases {
+			var branch = ast.SwitchBranch {
 				Node:    raw_branch.Node,
 				Type:    t,
-				Types:   nil,
+				Cases:   nil,
 				Pattern: raw_branch.Pattern,
 				Expr:    raw_branch.Expr,
 			}

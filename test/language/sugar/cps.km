@@ -1,12 +1,12 @@
 do
-    | err := catch
-        | await { println 'Number a:' },
-        | str-a := await { scanln () },
-        | await { println 'Number b:' },
-        | str-b := await { scanln () },
+    \ err := catch
+        \ await { println 'Number a:' },
+        \ str-a := await { scanln () },
+        \ await { println 'Number b:' },
+        \ str-b := await { scanln () },
         let sum? :=
-            | a := get str-a.{parse-float},
-            | b := get str-b.{parse-float},
+            \ a := get str-a.{parse-float},
+            \ b := get str-b.{parse-float},
             { Some (a + b) },
         switch sum?:
         case Some sum:

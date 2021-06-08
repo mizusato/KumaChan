@@ -2,7 +2,7 @@ package checked
 
 import (
 	. "kumachan/standalone/util/error"
-	"kumachan/interpreter/compiler/checker/typedef"
+	"kumachan/interpreter/compiler/checker2/typedef"
 	"kumachan/interpreter/lang/common/name"
 )
 

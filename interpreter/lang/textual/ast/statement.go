@@ -56,16 +56,16 @@ type PredefinedValue struct {
 
 func (impl DeclFunction) Statement() {}
 type DeclFunction struct {
-    Node                      `part:"decl_func"`
-    Docs      [] Doc          `list_rec:"docs"`
-    Tags      [] Tag          `list_rec:"tags"`
-    Public    bool            `option:"scope.@export"`
-    Name      Identifier      `part:"name"`
-    Params    [] TypeParam    `list_more:"type_params" item:"type_param"`
-    Implicit  [] VariousType  `list_more:"sig.implicit_input" item:"type"`
-    Repr      ReprFunc        `part:"sig.repr_func"`
-    Body      VariousBody     `part_opt:"body"`
-    IsConst   bool            // whether it is desugared from a ConstDecl
+    Node                     `part:"decl_func"`
+    Docs      [] Doc         `list_rec:"docs"`
+    Tags      [] Tag         `list_rec:"tags"`
+    Public    bool           `option:"scope.@export"`
+    Name      Identifier     `part:"name"`
+    Params    [] TypeParam   `list_more:"type_params" item:"type_param"`
+    Implicit  ReprRecord     `part_opt:"sig.implicit.repr_record"`
+    Repr      ReprFunc       `part:"sig.repr_func"`
+    Body      VariousBody    `part_opt:"body"`
+    IsConst   bool           // whether it is desugared from a ConstDecl
 }
 type VariousBody struct {
     Node         `part:"body"`
@@ -94,6 +94,7 @@ type DeclType struct {
     Tags       [] Tag           `list_rec:"tags"`
     Name       Identifier       `part:"name"`
     Params     [] TypeParam     `list_more:"type_params" item:"type_param"`
+    Impl       [] TypeRef       `list_more:"impl.type_ref_list" item:"type_ref"`
     TypeDef    VariousTypeDef   `part:"type_def"`
 }
 type Doc struct {
@@ -144,10 +145,10 @@ type EnumType struct {
     Node                 `part:"t_enum"`
     Cases  [] DeclType   `list_more:"" item:"decl_type"`
 }
-func (impl ImplicitType) TypeDef() {}
-type ImplicitType struct {
-    Node               `part:"t_implicit"`
-    Repr  ReprRecord   `part:"repr_record"`
+func (impl InterfaceType) TypeDef() {}
+type InterfaceType struct {
+    Node                  `part:"t_interface"`
+    Methods  ReprRecord   `part:"repr_record"`
 }
 func (impl BoxedType) TypeDef() {}
 type BoxedType struct {

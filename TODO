@@ -23,11 +23,26 @@ TODO
 
 - Lang: separate interface/implicit
 
-type I interface (Base1,Base2) { method: &(A) => B }
+type I (Base1,Base2) interface { method: &(A) => B }
 
-type I[A,B] implicit { foo: Foo[A], bar: Bar[B] }
+type Op= [T] &(T,T) => Bool;
 
-- Lang: implicit: pass the whole record instead of fields
+type Op< [T] &(T,T) => Bool;
+
+export function > :
+    [T] { <: Op<[T] }
+    &(T, T) => Bool
+    &(a, b) => (b < a);
+
+|None|
+|Some| 1
+|Success| 1
+{ |Point| (x, y) }
+| .&x |
+||
+
+\ x := await foo,
+bar
 
 - Lang: consider inner.[Boxed], { | [.[Boxed]] inner }
 
