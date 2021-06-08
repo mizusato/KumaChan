@@ -35,7 +35,8 @@ export function > :
     &(a, b) => (b < a);
 
 |None|
-|Some| 1
+|Some| 1 : Maybe[Integer]
+|exact:Some| 1 : Some[Integer]
 |Success| 1
 { |Point| (x, y) }
 | .&x |
@@ -44,7 +45,7 @@ export function > :
 \ x := await foo,
 bar
 
-- Lang: consider inner.[Boxed], { | [.[Boxed]] inner }
+type check: (expected, ast-node, inferred) => Result[(expr, new-inferred)]
 
 - Lang: type alias (specified by tag "# alias", just like function alias)
 
