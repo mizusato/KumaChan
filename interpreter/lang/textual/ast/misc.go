@@ -9,6 +9,13 @@ type Lambda struct {
 	Output  Expr             `part:"expr"`
 }
 
+func (impl ConstructorLambda) Term() {}
+type ConstructorLambda struct {
+	Node             `part:"ctor_lambda"`
+	Type   TypeRef   `part:"type_ref"`
+	Exact  bool      `option:"ctor_modifier.@exact"`
+}
+
 func (impl PipelineLambda) Term() {}
 type PipelineLambda struct {
 	Node                       `part:"pipeline_lambda"`
@@ -17,7 +24,7 @@ type PipelineLambda struct {
 
 func (impl Block) Term() {}
 type Block struct {
-	Node                  `part:"block"`
+	Node                   `part:"block"`
 	Bindings  [] Binding   `list_more:"" item:"binding"`
 	Return    Expr         `part:"block_value.expr"`
 }

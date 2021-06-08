@@ -102,6 +102,7 @@ var __NodeRegistry = []interface{} {
     If {},
     ElIf {},
     Lambda {},
+    ConstructorLambda {},
     PipelineLambda {},
     VariousPattern {},
 	PatternTrivial {},

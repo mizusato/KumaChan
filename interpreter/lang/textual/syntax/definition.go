@@ -93,7 +93,7 @@ var __ConditionalKeywords = [...] string {
     "@type", "@enum", "@interface", "@native",
     "@weak", "@protected", "@opaque", "@implicit",
     "@export", "@function", "@const", "@do",
-    "@<", "@>", "@=>",
+    "@<", "@>", "@=>", "@exact",
     "@default", "@end", "@rec",
 }
 func GetKeywordList() ([] string) {
@@ -205,7 +205,8 @@ var __SyntaxDefinition = [...] string {
           "infix_left = expr",
           "operator = expr",
           "infix_right = expr",
-      "ctor_lambda = bar type_ref bar!",
+      "ctor_lambda = bar ctor_modifier type_ref bar!",
+        "ctor_modifier? = @exact : ",
       "pipeline_lambda = bar pipes bar!",
       "switch = Switch expr :! sw_branch_list ,! @end!",
         "sw_branch_list = sw_branch! more_sw_branches",
