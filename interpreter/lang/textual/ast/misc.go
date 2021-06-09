@@ -39,7 +39,7 @@ type Binding struct {
 func (impl Cps) Term() {}
 type Cps struct {
 	Node                       `part:"cps"`
-	Callee   InlineRef         `part:"inline_ref"`
+	Callee   Expr              `part:"callee.expr"`
 	Binding  MaybeCpsBinding   `part_opt:"cps_binding"`
 	Input    Expr              `part:"cps_input.expr"`
 	Output   Expr              `part:"cps_output.expr"`

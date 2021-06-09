@@ -91,7 +91,7 @@ func GetIdentifierFullRegexp() *regexp.Regexp {
 var __ConditionalKeywords = [...] string {
     "@import", "@from",
     "@type", "@enum", "@interface", "@native",
-    "@weak", "@protected", "@opaque", "@implicit",
+    "@weak", "@protected", "@opaque",
     "@export", "@function", "@const", "@do",
     "@<", "@>", "@=>", "@exact",
     "@default", "@end", "@rec",
@@ -237,7 +237,7 @@ var __SyntaxDefinition = [...] string {
           "binding_type? = : rec_opt type!",
             "rec_opt? = @rec",
         "block_value = ,! expr!",
-      "cps = \\ cps_binding inline_ref! cps_input ,! cps_output",
+      "cps = \\ cps_binding callee! cps_input ,! cps_output",
         "cps_binding? = pattern binding_type := ",
         "cps_input = expr!",
         "cps_output = expr!",
