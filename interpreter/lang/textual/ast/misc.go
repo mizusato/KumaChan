@@ -49,7 +49,7 @@ func (impl CpsBinding) Maybe(CpsBinding,MaybeCpsBinding) {}
 type CpsBinding struct {
 	Node                      `part:"cps_binding"`
 	Pattern  VariousPattern   `part:"pattern"`
-	Type     MaybeType        `part_opt:"binding_type.type"`
+	Type     MaybeType        `part_opt:"cps_binding_type.type"`
 }
 
 
