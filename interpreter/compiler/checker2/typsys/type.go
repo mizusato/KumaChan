@@ -22,15 +22,9 @@ type TopType struct {}
 func (BottomType) _Type() {}
 type BottomType struct {}
 
-func (*OrdinaryType) _Type() {}
-type OrdinaryType struct {
-	Def   *TypeDef
-	Args  [] Type
-}
-
-func (*ParameterType) _Type() {}
+func (ParameterType) _Type() {}
 type ParameterType struct {
-	Index  uint
+	Id  uintptr
 }
 
 func (*NestedType) _Type() {}
@@ -40,6 +34,12 @@ type NestedType struct {
 
 
 type NestedTypeContent interface { nestedTypeContent() }
+
+func (Ref) nestedTypeContent() {}
+type Ref struct {
+	Def   *TypeDef
+	Args  [] Type
+}
 
 func (Tuple) nestedTypeContent() {}
 type Tuple struct {
