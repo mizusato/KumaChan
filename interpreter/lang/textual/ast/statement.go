@@ -28,6 +28,14 @@ type Do struct {
     Effect  Expr   `part:"expr"`
 }
 
+func (impl Alias) Statement() {}
+type Alias struct {
+    Node                 `part:"alias"`
+    Name    Identifier   `part:"name"`
+    Module  Identifier   `part_opt:"alias_target.module_prefix.name"`
+    Item    Identifier   `part:"alias_target.name"`
+}
+
 func (impl DeclConst) Statement() {}
 type DeclConst struct {
     Node                          `part:"decl_const"`

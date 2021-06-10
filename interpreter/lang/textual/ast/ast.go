@@ -53,6 +53,7 @@ var __NodeRegistry = []interface{} {
     Import {},
     Identifier {},
     Do {},
+    Alias {},
     DeclConst {},
     VariousConstValue {},
     DeclFunction {},
