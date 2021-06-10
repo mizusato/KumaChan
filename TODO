@@ -45,9 +45,11 @@ export function > :
 \ x := await foo,
 bar
 
-type check: (expected, ast-node, inferred) => Result[(expr, new-inferred)]
+- Lang: type check: (expected, ast-node, inferred) => Result[(expr, new-inferred)]
 
-- Lang: type alias (specified by tag "# alias", just like function alias)
+- Lang: bounds should only allow certain types (cannot include parameters)
+
+- Lang: type/function alias Name = ref (just a Name replacement)
 
 - Lang: permit anonymous record expression (currently requires explicit type)
 

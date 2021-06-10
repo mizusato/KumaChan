@@ -26,10 +26,9 @@ type DispatchTable struct {
 }
 type Parameter struct {
 	Name      string
-	Variance  Variance
-	SupBound  Type  // nullable
-	InfBound  Type  // nullable
 	Default   Type  // nullable
+	Variance  Variance
+	Bound     Bound
 }
 type Variance int
 const (
@@ -37,6 +36,16 @@ const (
 	Covariant
 	Contravariant
 	Bivariant
+)
+type Bound struct {
+	Kind   BoundKind
+	Value  Type  // is null when Kind = NullBound
+}
+type BoundKind int
+const (
+	NullBound BoundKind = iota
+	SupBound
+	InfBound
 )
 
 

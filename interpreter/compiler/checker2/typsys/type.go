@@ -7,9 +7,6 @@ import (
 
 type Type interface { _Type() }
 
-func (*InferredType) _Type() {}
-type InferredType struct {}
-
 func (*UnknownType) _Type() {}
 type UnknownType struct {}
 
@@ -24,7 +21,7 @@ type BottomType struct {}
 
 func (ParameterType) _Type() {}
 type ParameterType struct {
-	Id  uintptr
+	Parameter  *Parameter
 }
 
 func (*NestedType) _Type() {}
