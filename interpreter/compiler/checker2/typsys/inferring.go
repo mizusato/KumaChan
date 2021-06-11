@@ -13,11 +13,22 @@ type InferringState struct {
 	targets  map[*Parameter] struct{}
 	mapping  map[*Parameter] beingInferredParameterState
 }
+func (s *InferringState) WithMappingCloned() *InferringState {
+	var cloned_mapping = make(map[*Parameter] beingInferredParameterState)
+	for k, v := range s.mapping {
+		cloned_mapping[k] = v
+	}
+	return &InferringState {
+		targets: s.targets,
+		mapping: cloned_mapping,
+	}
+}
 
 type beingInferredParameterState struct {
 	status           activeInferredTypeStatus
 	currentInferred  Type
 }
+// TODO: maybe should not be called "status" (not changing)
 type activeInferredTypeStatus int
 const (
 	typeFixed activeInferredTypeStatus = iota
