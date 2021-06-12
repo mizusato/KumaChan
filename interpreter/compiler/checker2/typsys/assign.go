@@ -103,11 +103,13 @@ func Assign(to Type, from Type, ctx AssignContext) (bool, *InferringState) {
 			}
 		}
 	}
-	var _, to_top = to.(TopType)
-	var _, from_bottom = from.(BottomType)
-	if to_top || from_bottom {
-		return true, ctx.Inferring
+	// TODO
+	if ctx.UseSubtyping {
+		var _, to_top = to.(TopType)
+		var _, from_bottom = from.(BottomType)
+		if to_top || from_bottom {
+			return true, ctx.Inferring
+		}
 	}
-	panic("not implemented") // TODO
 }
 
