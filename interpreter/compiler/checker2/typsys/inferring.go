@@ -30,7 +30,7 @@ func (s *InferringState) assertCertainType(t Type) {
 	}
 }
 func (s *InferringState) withMappingCloned() *InferringState {
-	var cloned_mapping = make(map[*Parameter]parameterInferringState)
+	var cloned_mapping = make(map[*Parameter] parameterInferringState)
 	for k, v := range s.mapping {
 		cloned_mapping[k] = v
 	}
@@ -48,7 +48,7 @@ func (s *InferringState) withNewParameterState(p *Parameter, c inferredTypeConst
 	s.assertCertainType(t)
 	{
 		var s = s.withMappingCloned()
-		s.mapping[p] = parameterInferringState{
+		s.mapping[p] = parameterInferringState {
 			constraint:      c,
 			currentInferred: t,
 		}
@@ -59,7 +59,7 @@ func (s *InferringState) withInferredTypeUpdate(p *Parameter, ps parameterInferr
 	s.assertCertainType(t)
 	{
 		var s = s.withMappingCloned()
-		s.mapping[p] = parameterInferringState{
+		s.mapping[p] = parameterInferringState {
 			constraint:      ps.constraint,
 			currentInferred: t,
 		}

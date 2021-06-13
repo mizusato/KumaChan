@@ -7,7 +7,17 @@ type AssignContext struct {
 	inferring  *InferringState
 }
 func (ctx *AssignContext) ApplyNewInferringState(s *InferringState) {
-	ctx.inferring = s
+	if s != nil {
+		ctx.inferring = s
+	}
+}
+
+func parametersVarianceVector(parameters ([] Parameter)) ([] Variance) {
+	var v = make([] Variance, len(parameters))
+	for i, p := range parameters {
+		v[i] = p.Variance
+	}
+	return v
 }
 
 func assignFromBeingInferred(to Type, p *Parameter, ctx AssignContext) (bool, *InferringState) {
@@ -18,10 +28,10 @@ func assignFromBeingInferred(to Type, p *Parameter, ctx AssignContext) (bool, *I
 			if ctx.subtyping && ps.constraint == typeCanWiden {
 				return true, ctx.inferring.withInferredTypeUpdate(p, ps, to)
 			} else {
-				return true, ctx.inferring
+				return true, nil
 			}
 		} else {
-			return false, ctx.inferring
+			return false, nil
 		}
 	} else {
 		var c inferredTypeConstraint
@@ -43,10 +53,10 @@ func assignToBeingInferred(p *Parameter, from Type, ctx AssignContext) (bool, *I
 			if ctx.subtyping && ps.constraint == typeCanNarrow {
 				return true, ctx.inferring.withInferredTypeUpdate(p, ps, from)
 			} else {
-				return true, ctx.inferring
+				return true, nil
 			}
 		} else {
-			return false, ctx.inferring
+			return false, nil
 		}
 	} else {
 		var c inferredTypeConstraint
@@ -69,6 +79,170 @@ func assignWithoutInferring(to Type, from Type, ctx AssignContext) bool {
 	return ok
 }
 
+func assignDirect(to Type, from Type, ctx AssignContext) (bool, *InferringState) {
+	// 1. UnknownType
+	var _, to_unknown = to.(*UnknownType)
+	var _, from_unknown = from.(*UnknownType)
+	if to_unknown || from_unknown {
+		return false, nil
+	}
+	// 2. UnitType
+	var _, to_unit = to.(UnitType)
+	var _, from_unit = from.(UnitType)
+	if to_unit || from_unit {
+		return (to_unit && from_unit), nil
+	}
+	// 3. TopType
+	var _, to_top = to.(TopType)
+	var _, from_top = from.(TopType)
+	if to_top || from_top {
+		return (to_top && from_top), nil
+	}
+	// 4. BottomType
+	var _, to_bottom = to.(BottomType)
+	var _, from_bottom = from.(BottomType)
+	if to_bottom || from_bottom {
+		return (to_bottom && from_bottom), nil
+	}
+	// 5. ParameterType
+	{
+		var T, to_param = to.(ParameterType)
+		var F, from_param = from.(ParameterType)
+		if to_param || from_param {
+			if to_param && from_param {
+				return (T == F), nil
+			} else {
+				return false, nil
+			}
+		}
+	}
+	// 6. NestedType
+	{
+		var T, to_nested = to.(*NestedType)
+		var F, from_nested = from.(*NestedType)
+		if to_nested || from_nested {
+			if !(to_nested && from_nested) {
+				return false, nil
+			}
+			// 6.1. Ref
+			{
+				var T, to_ref = T.Content.(Ref)
+				var F, from_ref = F.Content.(Ref)
+				if to_ref || from_ref {
+					if !(to_ref && from_ref) {
+						return false, nil
+					}
+					if T.Def == F.Def {
+						var d = T.Def
+						if len(T.Args) != len(F.Args) {
+							panic("something went wrong")
+						}
+						var v = parametersVarianceVector(d.Parameters)
+						if len(T.Args) != len(v) {
+							panic("something went wrong")
+						}
+						return assignVector(T.Args, F.Args, v, ctx)
+					} else {
+						return false, nil
+					}
+				}
+			}
+			// 6.2. Tuple
+			{
+				var T, to_tuple = T.Content.(Tuple)
+				var F, from_tuple = F.Content.(Tuple)
+				if to_tuple || from_tuple {
+					if !(to_tuple && from_tuple) {
+						return false, nil
+					}
+					return assignVector(T.Elements, F.Elements, nil, ctx)
+				}
+			}
+			// 6.3. Record
+			{
+				var T, to_record = T.Content.(Record)
+				var F, from_record = F.Content.(Record)
+				if to_record || from_record {
+					if !(to_record && from_record) {
+						return false, nil
+					}
+					return assignFields(T.Fields, F.Fields, ctx)
+				}
+			}
+			// 6.4. Lambda
+			{
+				var T, to_lambda = T.Content.(Lambda)
+				var F, from_lambda = F.Content.(Lambda)
+				if to_lambda || from_lambda {
+					if !(to_lambda && from_lambda) {
+						return false, nil
+					}
+					var to_io = [] Type { T.Input, T.Output }
+					var from_io = [] Type { F.Input, F.Output }
+					var v = [] Variance { Contravariant, Covariant }
+					return assignVector(to_io, from_io, v, ctx)
+				}
+			}
+		}
+	}
+	return false, nil
+}
+
+func assignVector(to ([] Type), from ([] Type), v ([] Variance), ctx AssignContext) (bool, *InferringState) {
+	if len(to) != len(from) {
+		return false, nil
+	}
+	var L = len(to)
+	for i := 0; i < L; i += 1 {
+		var this_ctx = ctx
+		var this_to Type
+		var this_from Type
+		var this_v Variance
+		if i < len(v) {
+			this_v = v[i]
+		} else {
+			this_v = Covariant
+		}
+		switch this_v {
+		case Invariant:
+			this_ctx.subtyping = false
+			this_to = to[i]
+			this_from = from[i]
+		case Covariant:
+			this_to = to[i]
+			this_from = from[i]
+		case Contravariant:
+			this_to = from[i]
+			this_from = to[i]
+		default:
+			panic("something went wrong")
+		}
+		var ok, s = Assign(this_to, this_from, this_ctx)
+		if !(ok) {
+			return false, nil
+		}
+		ctx.ApplyNewInferringState(s)
+	}
+	return true, ctx.inferring
+}
+
+func assignFields(to ([] Field), from ([] Field), ctx AssignContext) (bool, *InferringState) {
+	if len(to) != len(from) {
+		return false, nil
+	}
+	var L = len(to)
+	var to_types = make([] Type, L)
+	var from_types = make([] Type, L)
+	for i := 0; i < L; i += 1 {
+		if to[i].Name != from[i].Name {
+			return false, nil
+		}
+		to_types[i] = to[i].Type
+		from_types[i] = from[i].Type
+	}
+	return assignVector(to_types, from_types, nil, ctx)
+}
+
 func Assign(to Type, from Type, ctx AssignContext) (bool, *InferringState) {
 	if ctx.inferring != nil {
 		var T, to_param = to.(ParameterType)
@@ -77,7 +251,7 @@ func Assign(to Type, from Type, ctx AssignContext) (bool, *InferringState) {
 		var from_being_inferred = ctx.inferring.IsTargetType(F, from_param)
 		if to_being_inferred && from_being_inferred {
 			if T == F {
-				return true, ctx.inferring
+				return true, nil
 			} else {
 				return false, nil
 			}
@@ -87,16 +261,20 @@ func Assign(to Type, from Type, ctx AssignContext) (bool, *InferringState) {
 			return assignToBeingInferred(T.Parameter, from, ctx)
 		}
 	}
-	switch T := to.(type) {
-	// TODO
+	{
+		var ok, s = assignDirect(to, from, ctx)
+		if ok {
+			return true, s
+		}
 	}
 	if ctx.subtyping {
 		var _, to_top = to.(TopType)
 		var _, from_bottom = from.(BottomType)
 		if to_top || from_bottom {
-			return true, ctx.inferring
+			return true, nil
 		}
 		// TODO
 	}
 }
+
 
