@@ -10,7 +10,7 @@ import (
 
 const Tag = "kmd"
 const TagIgnore = "kmd_ignore"
-const MaybeMethod = "Maybe"
+const MaybeMethod = "maybe"
 
 type IntegerKind uint
 const (
@@ -102,7 +102,7 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 			} else if t.Kind() == reflect.Interface {
 				if t.NumMethod() == 1 && t.Method(0).Name == MaybeMethod {
 					if t.Method(0).Type.NumIn() != 2 {
-						panic(fmt.Sprintf("%s: Maybe() method should have signature (T,MaybeT)", t))
+						panic(fmt.Sprintf("%s: maybe() method should have signature (T,MaybeT)", t))
 					}
 					var elem_t = t.Method(0).Type.In(0)
 					var elem = getInterfaceValueFromType(elem_t)
@@ -157,10 +157,10 @@ func CreateGoStructTransformer(opts GoStructOptions) Transformer {
 			var elem_t = get_reflect_type(t.elementType)
 			var method, ok = elem_t.MethodByName(MaybeMethod)
 			if !ok {
-				panic(fmt.Sprintf("%s: Maybe() method not found", elem_t))
+				panic(fmt.Sprintf("%s: maybe() method not found", elem_t))
 			}
 			if method.Type.NumIn() != 2 {
-				panic(fmt.Sprintf("%s: Maybe() method should have signature (T,MaybeT)", elem_t))
+				panic(fmt.Sprintf("%s: maybe() method should have signature (T,MaybeT)", elem_t))
 			}
 			return method.Type.In(1)
 		case Record:
