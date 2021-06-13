@@ -3,12 +3,14 @@ package typsys
 import (
 	"kumachan/interpreter/lang/common/attr"
 	"kumachan/interpreter/lang/common/name"
+	"kumachan/interpreter/lang/common/source"
 )
 
 
 type TypeDef struct {
 	Attr        attr.TypeAttr
 	Name        name.TypeName
+	Location    source.Location
 	Implements  [] DispatchTable
 	Parameters  [] Parameter
 	Content     TypeDefContent
