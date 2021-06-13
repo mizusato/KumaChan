@@ -12,12 +12,84 @@ func (ctx *AssignContext) ApplyNewInferringState(s *InferringState) {
 	}
 }
 
-func parametersVarianceVector(parameters ([] Parameter)) ([] Variance) {
-	var v = make([] Variance, len(parameters))
-	for i, p := range parameters {
-		v[i] = p.Variance
+func Assign(to Type, from Type, ctx AssignContext) (bool, *InferringState) {
+	// 1. Deal with parameter inferring
+	if ctx.inferring != nil {
+		var T, to_param = to.(ParameterType)
+		var F, from_param = from.(ParameterType)
+		var to_being_inferred = ctx.inferring.IsTargetType(T, to_param)
+		var from_being_inferred = ctx.inferring.IsTargetType(F, from_param)
+		if to_being_inferred && from_being_inferred {
+			if T == F {
+				return true, nil
+			} else {
+				return false, nil
+			}
+		} else if !(to_being_inferred) && from_being_inferred {
+			return assignFromBeingInferred(to, F.Parameter, ctx)
+		} else if to_being_inferred && !(from_being_inferred) {
+			return assignToBeingInferred(T.Parameter, from, ctx)
+		} else {
+			goto direct
+		}
 	}
-	return v
+	// 2. Check structural equality and recurse into nested cases
+	direct:
+	{
+		var ok, s = assignDirect(to, from, ctx)
+		if ok {
+			return true, s
+		} else {
+			goto subtyping
+		}
+	}
+	// 3. Apply subtyping rules
+	subtyping:
+	if ctx.subtyping {
+		// 3.1. TopType and BottomType
+		var _, to_top = to.(TopType)
+		var _, from_bottom = from.(BottomType)
+		if to_top || from_bottom {
+			return true, nil
+		} else {
+			goto bound
+		}
+		// 3.2. ParameterType (Bound)
+		bound:
+		{
+			var T, to_param = to.(ParameterType)
+			var F, from_param = from.(ParameterType)
+			if to_param && from_param {
+				return (T == F), nil
+			} else if !(to_param) && from_param {
+				if F.Parameter.Bound.Kind == SupBound {
+					var from_sup = F.Parameter.Bound.Value
+					return Assign(to, from_sup, ctx)
+				} else {
+					return false, nil
+				}
+			} else if to_param && !(from_param) {
+				if T.Parameter.Bound.Kind == InfBound {
+					var to_inf = T.Parameter.Bound.Value
+					return Assign(to_inf, from, ctx)
+				} else {
+					return false, nil
+				}
+			} else {
+				goto unbox
+			}
+		}
+		// 3.3. Ref of Boxed (Unbox)
+		unbox:
+		var from_sup, ok = Unbox(from, ctx.module)
+		if ok {
+			return Assign(to, from_sup, ctx)
+		} else {
+			goto final
+		}
+	}
+	final:
+	return false, nil
 }
 
 func assignFromBeingInferred(to Type, p *Parameter, ctx AssignContext) (bool, *InferringState) {
@@ -188,6 +260,14 @@ func assignDirect(to Type, from Type, ctx AssignContext) (bool, *InferringState)
 	return false, nil
 }
 
+func parametersVarianceVector(parameters ([] Parameter)) ([] Variance) {
+	var v = make([] Variance, len(parameters))
+	for i, p := range parameters {
+		v[i] = p.Variance
+	}
+	return v
+}
+
 func assignVector(to ([] Type), from ([] Type), v ([] Variance), ctx AssignContext) (bool, *InferringState) {
 	if len(to) != len(from) {
 		return false, nil
@@ -243,86 +323,6 @@ func assignFields(to ([] Field), from ([] Field), ctx AssignContext) (bool, *Inf
 		from_types[i] = from[i].Type
 	}
 	return assignVector(to_types, from_types, nil, ctx)
-}
-
-func Assign(to Type, from Type, ctx AssignContext) (bool, *InferringState) {
-	// 1. Deal with parameter inferring
-	if ctx.inferring != nil {
-		var T, to_param = to.(ParameterType)
-		var F, from_param = from.(ParameterType)
-		var to_being_inferred = ctx.inferring.IsTargetType(T, to_param)
-		var from_being_inferred = ctx.inferring.IsTargetType(F, from_param)
-		if to_being_inferred && from_being_inferred {
-			if T == F {
-				return true, nil
-			} else {
-				return false, nil
-			}
-		} else if !(to_being_inferred) && from_being_inferred {
-			return assignFromBeingInferred(to, F.Parameter, ctx)
-		} else if to_being_inferred && !(from_being_inferred) {
-			return assignToBeingInferred(T.Parameter, from, ctx)
-		} else {
-			goto direct
-		}
-	}
-	// 2. Check structural equality and recurse into nested cases
-	direct:
-	{
-		var ok, s = assignDirect(to, from, ctx)
-		if ok {
-			return true, s
-		} else {
-			goto subtyping
-		}
-	}
-	// 3. Apply subtyping rules
-	subtyping:
-	if ctx.subtyping {
-		// 3.1. TopType and BottomType
-		var _, to_top = to.(TopType)
-		var _, from_bottom = from.(BottomType)
-		if to_top || from_bottom {
-			return true, nil
-		} else {
-			goto bound
-		}
-		// 3.2. ParameterType (Bound)
-		bound:
-		{
-			var T, to_param = to.(ParameterType)
-			var F, from_param = from.(ParameterType)
-			if to_param && from_param {
-				return (T == F), nil
-			} else if !(to_param) && from_param {
-				if F.Parameter.Bound.Kind == SupBound {
-					var from_sup = F.Parameter.Bound.Value
-					return Assign(to, from_sup, ctx)
-				} else {
-					return false, nil
-				}
-			} else if to_param && !(from_param) {
-				if T.Parameter.Bound.Kind == InfBound {
-					var to_inf = T.Parameter.Bound.Value
-					return Assign(to_inf, from, ctx)
-				} else {
-					return false, nil
-				}
-			} else {
-				goto unbox
-			}
-		}
-		// 3.3. Ref of Boxed (Unbox)
-		unbox:
-		var from_sup, ok = Unbox(from, ctx.module)
-		if ok {
-			return Assign(to, from_sup, ctx)
-		} else {
-			goto final
-		}
-	}
-	final:
-	return false, nil
 }
 
 
