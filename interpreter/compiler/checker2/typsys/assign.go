@@ -36,7 +36,7 @@ func assignFromBeingInferred(to Type, p *Parameter, ctx AssignContext) (bool, *I
 	} else {
 		var c inferredTypeConstraint
 		if ctx.subtyping {
-			// 2. constraint
+			// 2. constraint of new state
 			c = typeCanNarrow
 		} else {
 			c = typeFixed
@@ -61,7 +61,7 @@ func assignToBeingInferred(p *Parameter, from Type, ctx AssignContext) (bool, *I
 	} else {
 		var c inferredTypeConstraint
 		if ctx.subtyping {
-			// 2. constraint
+			// 2. constraint of new state
 			c = typeCanWiden
 		} else {
 			c = typeFixed
@@ -209,9 +209,11 @@ func assignVector(to ([] Type), from ([] Type), v ([] Variance), ctx AssignConte
 			this_to = to[i]
 			this_from = from[i]
 		case Covariant:
+			this_ctx.subtyping = ctx.subtyping
 			this_to = to[i]
 			this_from = from[i]
 		case Contravariant:
+			this_ctx.subtyping = ctx.subtyping
 			this_to = from[i]
 			this_from = to[i]
 		default:
@@ -244,6 +246,7 @@ func assignFields(to ([] Field), from ([] Field), ctx AssignContext) (bool, *Inf
 }
 
 func Assign(to Type, from Type, ctx AssignContext) (bool, *InferringState) {
+	// 1. Deal with parameter inferring
 	if ctx.inferring != nil {
 		var T, to_param = to.(ParameterType)
 		var F, from_param = from.(ParameterType)
@@ -259,22 +262,67 @@ func Assign(to Type, from Type, ctx AssignContext) (bool, *InferringState) {
 			return assignFromBeingInferred(to, F.Parameter, ctx)
 		} else if to_being_inferred && !(from_being_inferred) {
 			return assignToBeingInferred(T.Parameter, from, ctx)
+		} else {
+			goto direct
 		}
 	}
+	// 2. Check structural equality and recurse into nested cases
+	direct:
 	{
 		var ok, s = assignDirect(to, from, ctx)
 		if ok {
 			return true, s
+		} else {
+			goto subtyping
 		}
 	}
+	// 3. Apply subtyping rules
+	subtyping:
 	if ctx.subtyping {
+		// 3.1. TopType and BottomType
 		var _, to_top = to.(TopType)
 		var _, from_bottom = from.(BottomType)
 		if to_top || from_bottom {
 			return true, nil
+		} else {
+			goto bound
 		}
-		// TODO
+		// 3.2. ParameterType (Bound)
+		bound:
+		{
+			var T, to_param = to.(ParameterType)
+			var F, from_param = from.(ParameterType)
+			if to_param && from_param {
+				return (T == F), nil
+			} else if !(to_param) && from_param {
+				if F.Parameter.Bound.Kind == SupBound {
+					var from_sup = F.Parameter.Bound.Value
+					return Assign(to, from_sup, ctx)
+				} else {
+					return false, nil
+				}
+			} else if to_param && !(from_param) {
+				if T.Parameter.Bound.Kind == InfBound {
+					var to_inf = T.Parameter.Bound.Value
+					return Assign(to_inf, from, ctx)
+				} else {
+					return false, nil
+				}
+			} else {
+				goto unbox
+			}
+		}
+		// 3.3. Ref of Boxed (Unbox)
+		unbox:
+		var from_sup, ok = Unbox(from, ctx.module)
+		if ok {
+			return Assign(to, from_sup, ctx)
+		} else {
+			goto final
+		}
 	}
+	final:
+	return false, nil
 }
 
 
