@@ -11,10 +11,26 @@ type InferringFailureResult struct {
 
 type InferringState struct {
 	targets  map[*Parameter] struct{}
-	mapping  map[*Parameter] beingInferredParameterState
+	mapping  map[*Parameter] parameterInferringState
 }
-func (s *InferringState) WithMappingCloned() *InferringState {
-	var cloned_mapping = make(map[*Parameter] beingInferredParameterState)
+func (s *InferringState) assertInferringTarget(p *Parameter) {
+	if !(s.IsTarget(p)) {
+		panic("something went wrong")
+	}
+}
+func (s *InferringState) assertCertainType(t Type) {
+	if s != nil {
+		TypeOpMap(t, func(t Type) (Type, bool) {
+			var T, is_param = t.(ParameterType)
+			if s.IsTargetType(T, is_param) {
+				panic("something went wrong")
+			}
+			return nil, false
+		})
+	}
+}
+func (s *InferringState) withMappingCloned() *InferringState {
+	var cloned_mapping = make(map[*Parameter]parameterInferringState)
 	for k, v := range s.mapping {
 		cloned_mapping[k] = v
 	}
@@ -23,19 +39,56 @@ func (s *InferringState) WithMappingCloned() *InferringState {
 		mapping: cloned_mapping,
 	}
 }
+func (s *InferringState) currentInferredParameterState(p *Parameter) (parameterInferringState, bool) {
+	s.assertInferringTarget(p)
+	var ps, exists = s.mapping[p]
+	return ps, exists
+}
+func (s *InferringState) withNewParameterState(p *Parameter, c inferredTypeConstraint, t Type) *InferringState {
+	s.assertCertainType(t)
+	{
+		var s = s.withMappingCloned()
+		s.mapping[p] = parameterInferringState{
+			constraint:      c,
+			currentInferred: t,
+		}
+		return s
+	}
+}
+func (s *InferringState) withInferredTypeUpdate(p *Parameter, ps parameterInferringState, t Type) *InferringState {
+	s.assertCertainType(t)
+	{
+		var s = s.withMappingCloned()
+		s.mapping[p] = parameterInferringState{
+			constraint:      ps.constraint,
+			currentInferred: t,
+		}
+		return s
+	}
+}
+func (s *InferringState) IsTarget(p *Parameter) bool {
+	var _, is_being_inferred = s.targets[p]
+	return is_being_inferred
+}
+func (s *InferringState) IsTargetType(T ParameterType, ok bool) bool {
+	if ok {
+		return s.IsTarget(T.Parameter)
+	} else {
+		return false
+	}
+}
 
-type beingInferredParameterState struct {
-	status           activeInferredTypeStatus
+type parameterInferringState struct {
+	constraint       inferredTypeConstraint
 	currentInferred  Type
 }
-// TODO: maybe should not be called "status" (not changing)
-type activeInferredTypeStatus int
+type inferredTypeConstraint int
 const (
-	typeFixed activeInferredTypeStatus = iota
+	typeFixed inferredTypeConstraint = iota
 	typeCanWiden
 	typeCanNarrow
 )
-func activeInferredTypeStatusFromBound(kind BoundKind) activeInferredTypeStatus {
+func activeInferredTypeStatusFromBound(kind BoundKind) inferredTypeConstraint {
 	switch kind {
 	case SupBound:
 		return typeCanNarrow
@@ -45,7 +98,7 @@ func activeInferredTypeStatusFromBound(kind BoundKind) activeInferredTypeStatus 
 		panic("invalid argument")
 	}
 }
-func (c activeInferredTypeStatus) OperatorString() string {
+func (c inferredTypeConstraint) OperatorString() string {
 	switch c {
 	case typeFixed:     return "="
 	case typeCanWiden:  return ">"
@@ -56,19 +109,19 @@ func (c activeInferredTypeStatus) OperatorString() string {
 
 func StartInferring(targets ([] *Parameter)) *InferringState {
 	var target_set = make(map[*Parameter] struct{})
-	var mapping = make(map[*Parameter] beingInferredParameterState)
+	var mapping = make(map[*Parameter]parameterInferringState)
 	for _, p := range targets {
 		target_set[p] = struct{}{}
 		if p.Bound.Kind != NullBound {
 			var bound_kind = p.Bound.Kind
 			var bound_t = p.Bound.Value
-			mapping[p] = beingInferredParameterState {
-				status:          activeInferredTypeStatusFromBound(bound_kind),
+			mapping[p] = parameterInferringState {
+				constraint:      activeInferredTypeStatusFromBound(bound_kind),
 				currentInferred: bound_t,
 			}
 		}
 	}
-	return &InferringState{
+	return &InferringState {
 		targets: target_set,
 		mapping: mapping,
 	}
@@ -89,9 +142,9 @@ func GetInferringResult(s *InferringState) (*InferringSuccessResult, *InferringF
 		for p, ps := range s.mapping {
 			mapping[p] = ps.currentInferred
 		}
-		return &InferringSuccessResult{mapping }, nil
+		return &InferringSuccessResult { mapping }, nil
 	} else {
-		return nil, &InferringFailureResult{missing }
+		return nil, &InferringFailureResult { missing }
 	}
 }
 

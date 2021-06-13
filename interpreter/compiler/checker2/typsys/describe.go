@@ -26,7 +26,7 @@ func DescribeType(t Type, s *InferringState) string {
 			var ps, exists = s.mapping[T.Parameter]
 			if exists {
 				var name = T.Parameter.Name
-				var op = ps.status.OperatorString()
+				var op = ps.constraint.OperatorString()
 				var current = DescribeType(ps.currentInferred, nil)
 				return fmt.Sprintf("[%s(%s)%s]", name, op, current)
 			} else {

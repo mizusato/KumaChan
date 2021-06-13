@@ -2,114 +2,101 @@ package typsys
 
 
 type AssignContext struct {
-	Module         string
-	UseSubtyping   bool
-	Inferring      *InferringState
+	module     string
+	subtyping  bool
+	inferring  *InferringState
+}
+func (ctx *AssignContext) ApplyNewInferringState(s *InferringState) {
+	ctx.inferring = s
 }
 
-func assertCertainType(t Type, s *InferringState) Type {
-	if s != nil {
-		return TypeOpMap(t, func(t Type) (Type, bool) {
-			var T, is_param = t.(ParameterType)
-			if !(is_param) { return nil, false }
-			var _, is_target = s.targets[T.Parameter]
-			if !(is_target) { return nil, false }
-			panic("invalid assignment")
-		})
+func assignFromBeingInferred(to Type, p *Parameter, ctx AssignContext) (bool, *InferringState) {
+	var ps, exists = ctx.inferring.currentInferredParameterState(p)
+	if exists {
+		if assignWithoutInferring(to, ps.currentInferred, ctx) {
+			// 1. update condition
+			if ctx.subtyping && ps.constraint == typeCanWiden {
+				return true, ctx.inferring.withInferredTypeUpdate(p, ps, to)
+			} else {
+				return true, ctx.inferring
+			}
+		} else {
+			return false, ctx.inferring
+		}
 	} else {
-		return t
+		var c inferredTypeConstraint
+		if ctx.subtyping {
+			// 2. constraint
+			c = typeCanNarrow
+		} else {
+			c = typeFixed
+		}
+		return true, ctx.inferring.withNewParameterState(p, c, to)
 	}
+}
+
+func assignToBeingInferred(p *Parameter, from Type, ctx AssignContext) (bool, *InferringState) {
+	var ps, exists = ctx.inferring.currentInferredParameterState(p)
+	if exists {
+		if assignWithoutInferring(ps.currentInferred, from, ctx) {
+			// 1. update condition
+			if ctx.subtyping && ps.constraint == typeCanNarrow {
+				return true, ctx.inferring.withInferredTypeUpdate(p, ps, from)
+			} else {
+				return true, ctx.inferring
+			}
+		} else {
+			return false, ctx.inferring
+		}
+	} else {
+		var c inferredTypeConstraint
+		if ctx.subtyping {
+			// 2. constraint
+			c = typeCanWiden
+		} else {
+			c = typeFixed
+		}
+		return true, ctx.inferring.withNewParameterState(p, c, from)
+	}
+}
+
+func assignWithoutInferring(to Type, from Type, ctx AssignContext) bool {
+	var ok, _ = Assign(to, from, AssignContext {
+		module:    ctx.module,
+		subtyping: ctx.subtyping,
+		inferring: nil,
+	})
+	return ok
 }
 
 func Assign(to Type, from Type, ctx AssignContext) (bool, *InferringState) {
-	if ctx.Inferring != nil {
+	if ctx.inferring != nil {
 		var T, to_param = to.(ParameterType)
 		var F, from_param = from.(ParameterType)
-		var t_being_inferred = false
-		if to_param {
-			_, t_being_inferred = ctx.Inferring.targets[T.Parameter]
-		}
-		var from_being_inferred = false
-		if from_param {
-			_, from_being_inferred = ctx.Inferring.targets[F.Parameter]
-		}
-		if t_being_inferred && from_being_inferred {
-			panic("invalid assignment")
-		} else if !(t_being_inferred) && from_being_inferred {
-			to = assertCertainType(to, ctx.Inferring)
-			var ps, exists = ctx.Inferring.mapping[F.Parameter]
-			if exists {
-				var from_current = ps.currentInferred
-				var ok, s = Assign(to, from_current, ctx)
-				if s != ctx.Inferring { panic("something went wrong") }
-				if ok {
-					if ctx.UseSubtyping && ps.status == typeCanWiden {
-						s = s.WithMappingCloned()
-						ps.currentInferred = to
-						s.mapping[F.Parameter] = ps
-						return true, s
-					} else {
-						return true, s
-					}
-				} else {
-					return false, ctx.Inferring
-				}
+		var to_being_inferred = ctx.inferring.IsTargetType(T, to_param)
+		var from_being_inferred = ctx.inferring.IsTargetType(F, from_param)
+		if to_being_inferred && from_being_inferred {
+			if T == F {
+				return true, ctx.inferring
 			} else {
-				var s = ctx.Inferring.WithMappingCloned()
-				var init_status activeInferredTypeStatus
-				if ctx.UseSubtyping {
-					init_status = typeCanNarrow
-				} else {
-					init_status = typeFixed
-				}
-				s.mapping[F.Parameter] = beingInferredParameterState {
-					status:          init_status,
-					currentInferred: to,
-				}
-				return true, s
+				return false, nil
 			}
-		} else if t_being_inferred && !(from_being_inferred) {
-			from = assertCertainType(from, ctx.Inferring)
-			var ps, exists = ctx.Inferring.mapping[T.Parameter]
-			if exists {
-				var to_current = ps.currentInferred
-				var ok, s = Assign(to_current, from, ctx)
-				if s != ctx.Inferring { panic("something went wrong") }
-				if ok {
-					if ctx.UseSubtyping && ps.status == typeCanNarrow {
-						s = s.WithMappingCloned()
-						ps.currentInferred = from
-						s.mapping[T.Parameter] = ps
-						return true, s
-					} else {
-						return true, s
-					}
-				} else {
-					return false, ctx.Inferring
-				}
-			} else {
-				var s = ctx.Inferring.WithMappingCloned()
-				var init_status activeInferredTypeStatus
-				if ctx.UseSubtyping {
-					init_status = typeCanWiden
-				} else {
-					init_status = typeFixed
-				}
-				s.mapping[T.Parameter] = beingInferredParameterState {
-					status:          init_status,
-					currentInferred: from,
-				}
-				return true, s
-			}
+		} else if !(to_being_inferred) && from_being_inferred {
+			return assignFromBeingInferred(to, F.Parameter, ctx)
+		} else if to_being_inferred && !(from_being_inferred) {
+			return assignToBeingInferred(T.Parameter, from, ctx)
 		}
 	}
+	switch T := to.(type) {
 	// TODO
-	if ctx.UseSubtyping {
+	}
+	if ctx.subtyping {
 		var _, to_top = to.(TopType)
 		var _, from_bottom = from.(BottomType)
 		if to_top || from_bottom {
-			return true, ctx.Inferring
+			return true, ctx.inferring
 		}
+		// TODO
 	}
 }
 
