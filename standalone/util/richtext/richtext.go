@@ -4,10 +4,22 @@ package richtext
 type Text struct {
 	Blocks  [] Block  `kmd:"blocks"`
 }
+func (t *Text) Write(blocks ...Block) {
+	t.Blocks = append(t.Blocks, blocks...)
+}
+func (t *Text) WriteText(another Text) {
+	t.Blocks = append(t.Blocks, another.Blocks...)
+}
 
 type Block struct {
 	Indent  int64    `kmd:"indent"`
 	Lines   [] Line  `kmd:"lines"`
+}
+func (b *Block) WriteLine(content string, tags ...string) {
+	b.Lines = append(b.Lines, Line { [] Span { {
+		Content: content,
+		Tags:    tags,
+	} } })
 }
 
 type Line struct {
@@ -15,9 +27,9 @@ type Line struct {
 }
 
 type Span struct {
-	Text  string     `kmd:"text"`
-	Tags  [] string  `kmd:"tags"`
-	Link  MaybeLink  `kmd:"link"` // for doc links
+	Content  string     `kmd:"content"`
+	Tags     [] string  `kmd:"tags"`
+	Link     MaybeLink  `kmd:"link"` // for doc links
 }
 const (
 	TAG_DOC = "doc"

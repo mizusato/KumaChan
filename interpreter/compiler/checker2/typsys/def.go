@@ -10,6 +10,7 @@ import (
 type TypeDef struct {
 	Attr        attr.TypeAttr
 	Name        name.TypeName
+	Section     string
 	Location    source.Location
 	Implements  [] DispatchTable
 	Parameters  [] Parameter
