@@ -1,20 +1,13 @@
-package ast
+package transformer
 
 import (
     "fmt"
     "reflect"
     "strings"
-	"kumachan/interpreter/lang/textual/cst"
-	"kumachan/interpreter/lang/textual/scanner"
-	"kumachan/interpreter/lang/textual/syntax"
+    . "kumachan/interpreter/lang/ast"
+    "kumachan/interpreter/lang/textual/syntax"
 )
 
-
-type Node struct {
-    CST    *cst.Tree
-    Point  scanner.Point
-    Span   scanner.Span
-}
 
 type NodeInfo struct {
     Type       reflect.Type
@@ -39,7 +32,7 @@ type NodeListInfo struct {
     TailId  syntax.Id
 }
 
-var __NodeRegistry = []interface{} {
+var nodeRegistry = [] interface{} {
     // Root
 	Root {},
 	Shebang {},
@@ -131,11 +124,9 @@ var __NodeRegistry = []interface{} {
     CharLiteral {},
 }
 
-var __NodeInfoMap = map[syntax.Id] NodeInfo {}
+var nodeInfoMap = map[syntax.Id] NodeInfo {}
 
-var __Initialized = false
-
-func __Initialize() {
+var _ = (func() struct{} {
     var get_field_tag = func(f reflect.StructField) (string, string) {
         var kinds = []string {
             "use",
@@ -173,7 +164,7 @@ func __Initialize() {
             return get_part_id(path[0]), get_parts_id(path)
         }
     }
-    for _, node := range __NodeRegistry {
+    for _, node := range nodeRegistry {
         var T = reflect.TypeOf(node)
         if T.Kind() != reflect.Struct {
             panic("invalid node")
@@ -316,24 +307,13 @@ func __Initialize() {
                 // no tag found, do nothing
             }
         }
-        __NodeInfoMap[node_id] = info
+        nodeInfoMap[node_id] = info
     }
-    __Initialized = true
-}
+    return struct{}{}
+})()
 
-func GetTagContent(tag Tag) string {
-    var t = string(tag.RawContent)
-    t = strings.TrimSuffix(t, "\r")
-    t = strings.TrimPrefix(t, "#")
-    t = strings.Trim(t, " \t")
-    return t
-}
-
-func GetNodeInfoById (part_id syntax.Id) NodeInfo {
-    if !__Initialized {
-        __Initialize()
-    }
-    var info, exists = __NodeInfoMap[part_id]
+func getNodeInfoById(part_id syntax.Id) NodeInfo {
+    var info, exists = nodeInfoMap[part_id]
     if !exists {
         panic(fmt.Sprintf (
             "node info of part `%v` does not exist",
@@ -343,4 +323,5 @@ func GetNodeInfoById (part_id syntax.Id) NodeInfo {
         return info
     }
 }
+
 

@@ -3,7 +3,7 @@ package loader
 import (
 	"os"
 	"path/filepath"
-	"kumachan/interpreter/lang/textual/ast"
+	"kumachan/interpreter/lang/ast"
 	"kumachan/interpreter/compiler/loader/common"
 )
 

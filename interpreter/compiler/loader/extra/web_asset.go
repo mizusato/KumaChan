@@ -4,7 +4,7 @@ import (
 	"strings"
 	"path/filepath"
 	"kumachan/interpreter/lang/textual/parser"
-	"kumachan/interpreter/lang/textual/ast"
+	"kumachan/interpreter/lang/ast"
 	"kumachan/interpreter/compiler/loader/common"
 	"kumachan/stdlib"
 )

@@ -1,8 +1,11 @@
 package parser
 
-import "kumachan/interpreter/lang/textual/cst"
-import "kumachan/interpreter/lang/textual/syntax"
-import . "kumachan/standalone/util/error"
+import (
+    . "kumachan/standalone/util/error"
+    "kumachan/standalone/util/richtext"
+    "kumachan/interpreter/lang/textual/cst"
+    "kumachan/interpreter/lang/textual/syntax"
+)
 
 
 type Error struct {
@@ -18,15 +21,15 @@ func (err *Error) IsEmptyTree() bool {
     return err.NodeIndex < 0 || len(err.Tree.Tokens) == 0
 }
 
-func (err *Error) Desc() ErrorMessage {
+func (err *Error) Desc() richtext.Block {
     if err.IsScannerError {
-        var desc = make(ErrorMessage, 0)
-        desc.WriteText(TS_ERROR, err.ScannerError.Error())
+        var desc richtext.Block
+        desc.WriteLine(err.ScannerError.Error(), richtext.TAG_ERR_NORMAL)
         return desc
     }
     if err.IsEmptyTree() {
-        var desc = make(ErrorMessage, 0)
-        desc.WriteText(TS_ERROR, "empty input")
+        var desc richtext.Block
+        desc.WriteLine("empty input", richtext.TAG_ERR_NORMAL)
         return desc
     }
     var node = err.Tree.Nodes[err.NodeIndex]
@@ -36,36 +39,37 @@ func (err *Error) Desc() ErrorMessage {
     } else {
         got = syntax.Id2Name(err.Tree.Tokens[node.Pos].Id)
     }
-    var desc = make(ErrorMessage, 0)
+    var desc richtext.Block
     if err.HasExpectedPart {
-        desc.WriteText(TS_ERROR, "Syntax unit")
-        desc.WriteInnerText(TS_INLINE, syntax.Id2Name(err.ExpectedPart))
-        desc.WriteText(TS_ERROR, "expected")
+        desc.WriteSpan("Syntax unit", richtext.TAG_ERR_NORMAL)
+        desc.WriteSpan(syntax.Id2Name(err.ExpectedPart), richtext.TAG_ERR_INLINE)
+        desc.WriteSpan("expected", richtext.TAG_ERR_NORMAL)
     } else {
-        desc.WriteText(TS_ERROR, "Parser stuck")
+        desc.WriteSpan("Parser stuck", richtext.TAG_ERR_NORMAL)
     }
-    desc.Write(T_SPACE)
-    desc.WriteText(TS_ERROR, "(got")
-    desc.Write(T_SPACE)
-    desc.WriteText(TS_INLINE, got)
-    desc.WriteText(TS_ERROR, ")")
+    desc.WriteSpan("(", richtext.TAG_ERR_NORMAL)
+    desc.WriteSpan("got", richtext.TAG_ERR_NORMAL)
+    desc.WriteSpan(got, richtext.TAG_ERR_INLINE)
+    desc.WriteSpan(")", richtext.TAG_ERR_NORMAL)
     return desc
 }
 
-func (err *Error) Message() ErrorMessage {
+func (err *Error) Message() richtext.Text {
     if err.IsScannerError {
-        return err.Desc()
+        return err.Desc().ToText()
     }
     if err.IsEmptyTree() {
-        return err.Desc()
+        return err.Desc().ToText()
     }
     var tree = err.Tree
     var token = cst.GetNodeFirstToken(tree, err.NodeIndex)
     var point = tree.Info[token.Span.Start]
     var desc = err.Desc()
-    return FormatError (
-        tree.Code,  tree.Info,  tree.SpanMap,
-        tree.Name,  point,      token.Span,
-        ERR_FOV,    TS_SPOT,    desc,
+    const FOV = 5
+    return cst.FormatError (
+        tree.Code, tree.Info, tree.SpanMap,
+        point, token.Span, FOV, desc,
     )
 }
+
+

@@ -3,7 +3,7 @@ package error
 import (
 	"fmt"
 	"kumachan/interpreter/lang/textual/scanner"
-	"kumachan/interpreter/lang/textual/ast"
+	"kumachan/interpreter/lang/ast"
 	"reflect"
 	"strconv"
 	"strings"

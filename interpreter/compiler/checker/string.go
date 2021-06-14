@@ -5,7 +5,7 @@ import (
 	"math/big"
 	. "kumachan/standalone/util/error"
 	"kumachan/stdlib"
-	"kumachan/interpreter/lang/textual/ast"
+	"kumachan/interpreter/lang/ast"
 )
 
 

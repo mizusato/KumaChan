@@ -1,6 +1,9 @@
 package ast
 
-import "kumachan/standalone/rpc/kmd"
+import (
+    "strings"
+    "kumachan/standalone/rpc/kmd"
+)
 
 
 type VariousStatement struct {
@@ -166,4 +169,13 @@ type BoxedType struct {
     Weak       bool        `option:"match_option.@weak"`
     Inner      MaybeType   `part_opt:"inner_type.type"`
 }
+
+func GetTagContent(tag Tag) string {
+    var t = string(tag.RawContent)
+    t = strings.TrimSuffix(t, "\r")
+    t = strings.TrimPrefix(t, "#")
+    t = strings.Trim(t, " \t")
+    return t
+}
+
 

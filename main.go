@@ -23,7 +23,7 @@ import (
     "kumachan/standalone/qt"
 	"kumachan/interpreter/runtime/def"
 	"kumachan/interpreter/lang/textual/parser"
-	"kumachan/interpreter/lang/textual/ast"
+	"kumachan/interpreter/lang/ast"
 	"kumachan/interpreter/lang/textual/scanner"
 	"kumachan/interpreter/lang/textual/syntax"
 	"kumachan/interpreter/lang/textual/transformer"

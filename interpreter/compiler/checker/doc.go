@@ -2,7 +2,7 @@ package checker
 
 import (
 	"strings"
-	"kumachan/interpreter/lang/textual/ast"
+	"kumachan/interpreter/lang/ast"
 )
 
 

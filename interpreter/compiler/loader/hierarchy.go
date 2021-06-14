@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 	. "kumachan/standalone/util/error"
-	"kumachan/interpreter/lang/textual/ast"
+	"kumachan/interpreter/lang/ast"
 	"strings"
 	"path/filepath"
 )

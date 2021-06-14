@@ -2,7 +2,7 @@ package loader
 
 import (
 	"kumachan/interpreter/lang/textual/parser"
-	"kumachan/interpreter/lang/textual/ast"
+	"kumachan/interpreter/lang/ast"
 	"kumachan/interpreter/lang/textual/syntax"
 	"kumachan/interpreter/lang/textual/transformer"
 	"kumachan/interpreter/compiler/loader/common"

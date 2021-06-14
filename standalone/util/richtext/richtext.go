@@ -15,11 +15,29 @@ type Block struct {
 	Indent  int64    `kmd:"indent"`
 	Lines   [] Line  `kmd:"lines"`
 }
+func (b Block) ToText() Text {
+	return Text { Blocks: [] Block { b } }
+}
 func (b *Block) WriteLine(content string, tags ...string) {
 	b.Lines = append(b.Lines, Line { [] Span { {
 		Content: content,
 		Tags:    tags,
 	} } })
+}
+func (b *Block) WriteSpan(content string, tags ...string) {
+	var span = Span {
+		Content: content,
+		Tags:    tags,
+	}
+	if len(b.Lines) > 0 {
+		var last = &(b.Lines[len(b.Lines) - 1])
+		last.Spans = append(last.Spans, span)
+	} else {
+		b.Lines = append(b.Lines, Line { Spans: [] Span { span } })
+	}
+}
+func (b *Block) WriteLineFeed() {
+	b.Lines = append(b.Lines, Line { Spans: [] Span {} })
 }
 
 type Line struct {
@@ -33,10 +51,12 @@ type Span struct {
 }
 const (
 	TAG_DOC = "doc"
+	TAG_SRC_NORMAL = "source"
 	TAG_SRC_KEYWORD = "keyword"
 	TAG_SRC_FUNCTION = "function"
 	TAG_SRC_CONST = "const"
 	TAG_SRC_COMMENT = "comment"
+	TAG_SRC_HIGHLIGHT = "highlight"
 	TAG_ERR_NORMAL = "error"
 	TAG_ERR_NOTE = "note"
 	TAG_ERR_EM = "em"

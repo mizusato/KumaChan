@@ -3,10 +3,11 @@ package transformer
 import "fmt"
 import "reflect"
 import "strings"
+import "kumachan/interpreter/lang/common/source"
 import "kumachan/interpreter/lang/textual/parser"
 import "kumachan/interpreter/lang/textual/cst"
 import "kumachan/interpreter/lang/textual/syntax"
-import . "kumachan/interpreter/lang/textual/ast"
+import . "kumachan/interpreter/lang/ast"
 
 /**
  *  Syntax Tree Transformer
@@ -47,13 +48,13 @@ func Transform(tree Tree) interface{} {
     var transform Transformer
     transform = func (tree Tree, ptr Pointer) reflect.Value {
         var parser_node = &tree.Nodes[ptr]
-        var info = GetNodeInfoById(parser_node.Part.Id)
+        var info = getNodeInfoById(parser_node.Part.Id)
         var node = reflect.New(info.Type)
         var meta = node.Elem().FieldByName("Node").Addr().Interface().(*Node)
-        meta.CST = tree
-        meta.Span = parser_node.Span
-        if meta.Span.Start < len(tree.Info) {
-            meta.Point = tree.Info[meta.Span.Start]
+        meta.Location.File = tree
+        meta.Location.Pos = source.Position {
+            StartTokenIndex: uint32(parser_node.Span.Start),
+            EndTokenIndex:   uint32(parser_node.Span.End),
         }
         var transform_dived = func (child_info *NodeChildInfo, f Transformer) {
             var field_index = child_info.FieldIndex

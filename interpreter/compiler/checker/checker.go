@@ -8,7 +8,7 @@ import (
 	"kumachan/interpreter/runtime/def"
 	. "kumachan/standalone/util/error"
 	"kumachan/interpreter/compiler/loader"
-	"kumachan/interpreter/lang/textual/ast"
+	"kumachan/interpreter/lang/ast"
 	"kumachan/stdlib"
 )
 
