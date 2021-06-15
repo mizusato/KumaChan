@@ -23,6 +23,12 @@ type Error struct {
 	Location  Location
 	Content   ErrorContent
 }
+func MakeError(loc Location, content ErrorContent) *Error {
+	return &Error {
+		Location: loc,
+		Content:  content,
+	}
+}
 type ErrorContent interface {
 	DescribeError() richtext.Block
 }

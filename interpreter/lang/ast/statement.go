@@ -43,7 +43,7 @@ func (impl DeclConst) Statement() {}
 type DeclConst struct {
     Node                          `part:"decl_const"`
     Docs      [] Doc              `list_rec:"docs"`
-    Tags      [] Tag              `list_rec:"tags"`
+    Meta      Meta                `part:"meta"`
     Public    bool                `option:"scope.@export"`
     Name      Identifier          `part:"name"`
     Type      VariousType         `part:"type"`
@@ -69,7 +69,7 @@ func (impl DeclFunction) Statement() {}
 type DeclFunction struct {
     Node                     `part:"decl_func"`
     Docs      [] Doc         `list_rec:"docs"`
-    Tags      [] Tag         `list_rec:"tags"`
+    Meta      Meta           `part:"meta"`
     Public    bool           `option:"scope.@export"`
     Name      Identifier     `part:"name"`
     Params    [] TypeParam   `list_more:"type_params" item:"type_param"`
@@ -102,7 +102,7 @@ func (impl DeclType) Statement() {}
 type DeclType struct {
     Node                        `part:"decl_type"`
     Docs       [] Doc           `list_rec:"docs"`
-    Tags       [] Tag           `list_rec:"tags"`
+    Meta       Meta             `part:"meta"`
     Name       Identifier       `part:"name"`
     Params     [] TypeParam     `list_more:"type_params" item:"type_param"`
     Impl       [] TypeRef       `list_more:"impl.type_ref_list" item:"type_ref"`
@@ -112,9 +112,13 @@ type Doc struct {
     Node                  `part:"doc"`
     RawContent  [] rune   `content:"Doc"`
 }
-type Tag struct {
-    Node                  `part:"tag"`
-    RawContent  [] rune   `content:"Tag"`
+type Meta struct {
+    Node                 `part:"meta"`
+    Items  [] MetaItem   `list_rec:"meta_items"`
+}
+type MetaItem struct {
+    Node                  `part:"meta_item"`
+    RawContent  [] rune   `content:"Meta"`
 }
 type TypeParam struct {
     Node                        `part:"type_param"`
@@ -170,12 +174,30 @@ type BoxedType struct {
     Inner      MaybeType   `part_opt:"inner_type.type"`
 }
 
-func GetTagContent(tag Tag) string {
-    var t = string(tag.RawContent)
-    t = strings.TrimSuffix(t, "\r")
-    t = strings.TrimPrefix(t, "#")
-    t = strings.Trim(t, " \t")
-    return t
+func GetDocContent(raw ([] Doc)) string {
+    var buf strings.Builder
+    for _, line := range raw {
+        var t = string(line.RawContent)
+        t = strings.TrimPrefix(t, "///")
+        t = strings.TrimPrefix(t, " ")
+        t = strings.TrimRight(t, " \r")
+        buf.WriteString(t)
+        buf.WriteRune('\n')
+    }
+    return buf.String()
+}
+
+func GetMetadataContent(meta Meta) string {
+    var buf strings.Builder
+    for _, item := range meta.Items {
+        var t = string(item.RawContent)
+        t = strings.TrimSuffix(t, "\r")
+        t = strings.TrimPrefix(t, "#")
+        t = strings.Trim(t, " \t")
+        buf.WriteString(t)
+        buf.WriteRune('\n')
+    }
+    return buf.String()
 }
 
 

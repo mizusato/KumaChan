@@ -3,12 +3,6 @@ package source
 import "kumachan/standalone/util/richtext"
 
 
-type File interface {
-	GetPath() string
-	DescribePosition(Position) string
-	FormatMessage(Position, richtext.Block) richtext.Text
-}
-
 type Location struct {
 	File  File
 	Pos   Position
@@ -21,6 +15,17 @@ func (l Location) PosDesc() string {
 }
 func (l Location) FormatMessage(b richtext.Block) richtext.Text {
 	return l.File.FormatMessage(l.Pos, b)
+}
+
+type Section struct {
+	Name   string
+	Start  Location
+}
+
+type File interface {
+	GetPath() string
+	DescribePosition(Position) string
+	FormatMessage(Position, richtext.Block) richtext.Text
 }
 
 type Position struct {

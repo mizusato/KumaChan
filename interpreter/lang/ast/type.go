@@ -15,7 +15,7 @@ func (impl TypeRef) Type()  {}
 type TypeRef struct {
     Node                       `part:"type_ref"`
     Module    Identifier       `part_opt:"module_prefix.name"`
-    Id        Identifier       `part:"name"`
+    Item      Identifier       `part:"name"`
     TypeArgs  [] VariousType   `list_more:"type_args" item:"type"`
 }
 
@@ -45,7 +45,7 @@ type ReprRecord struct {
 type Field struct {
     Node                `part:"field"`
     Docs  [] Doc        `list_rec:"docs"`
-    Tags  [] Tag        `list_rec:"tags"`
+    Meta  Meta          `part:"meta"`
     Name  Identifier    `part:"name"`
     Type  VariousType   `part:"type"`
 }

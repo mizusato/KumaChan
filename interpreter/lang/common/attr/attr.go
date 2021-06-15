@@ -1,41 +1,37 @@
 package attr
 
+import "kumachan/interpreter/lang/common/source"
 
-type RawAttr struct {
-	RawDoc   [] string
-	RawTags  map[string] string
-}
 
-type Attr struct {
-	Doc  string
+type Attrs struct {
+	Location  source.Location
+	Section   *source.Section
+	Doc       string
 }
-type TypeAttr struct {
-	Attr
-	TypeTags
+type TypeAttrs struct {
+	Attrs
+	Metadata  TypeMetadata
 }
 type FieldAttr struct {
-	Attr
-	FieldTags
+	Attrs
+	// TODO
 }
 type FuncAttr struct {
-	Attr
-	FuncTags
+	Attrs
+	// TODO
 }
 
-type Tags struct {
-	Custom  map[string] string
+type TypeMetadata struct {
+	Data     TypeDataConfig     `json:"data"`
+	Service  TypeServiceConfig  `json:"service"`
 }
-type TypeTags struct {
-	Tags
-	// TODO
+type TypeDataConfig struct {
+	Name     string  `json:"name"`
+	Version  string  `json:"version"`
 }
-type FieldTags struct {
-	Tags
-	// TODO
-}
-type FuncTags struct {
-	Tags
-	// TODO
+type TypeServiceConfig struct {
+	Name     string  `json:"name"`
+	Version  string  `json:"version"`
 }
 
 

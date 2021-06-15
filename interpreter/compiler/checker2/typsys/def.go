@@ -3,25 +3,20 @@ package typsys
 import (
 	"kumachan/interpreter/lang/common/attr"
 	"kumachan/interpreter/lang/common/name"
-	"kumachan/interpreter/lang/common/source"
 )
 
 
 type TypeDef struct {
-	Attr        attr.TypeAttr
+	attr.TypeAttrs
 	Name        name.TypeName
-	Section     string
-	Location    source.Location
 	Implements  [] DispatchTable
 	Parameters  [] Parameter
 	Content     TypeDefContent
 	CaseInfo
 }
 type CaseInfo struct {
-	IsCaseType  bool
 	Enum        *TypeDef
 	CaseIndex   uint
-	CaseParams  [] uint
 }
 type DispatchTable struct {
 	Interface  *TypeDef  // Content should be an *Interface

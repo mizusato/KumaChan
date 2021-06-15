@@ -77,7 +77,7 @@ func (mod *Module) SymbolFromTypeRef(ref ast.TypeRef) def.MaybeSymbol {
 }
 
 
-var __CoreSymbols = stdlib.GetCoreScopedSymbols()
+var __CoreSymbols = stdlib.CoreTypeNames()
 var __CoreSymbolSet = func() map[string] bool {
 	var set = make(map[string] bool)
 	for _, name := range __CoreSymbols {

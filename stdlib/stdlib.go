@@ -56,8 +56,8 @@ var core_types = [] string {
 	// string.km
 	Char, String, HardCodedString,
 }
-func GetCoreScopedSymbols() []string {
-	var list = make([]string, 0)
+func CoreTypeNames() ([] string) {
+	var list = make([] string, 0)
 	list = append(list, core_types...)
 	return list
 }

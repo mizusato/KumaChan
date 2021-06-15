@@ -14,6 +14,12 @@ func (n Name) String() string {
 type TypeName struct {
 	Name
 }
+func MakeTypeName(mod string, item string) TypeName {
+	return TypeName { Name: Name {
+		ModuleName: mod,
+		ItemName:   item,
+	} }
+}
 
 type FunctionName struct {
 	Name
