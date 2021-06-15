@@ -1,6 +1,7 @@
 package checker2
 
 import (
+	"strings"
 	"encoding/json"
 	"kumachan/interpreter/lang/common/name"
 	"kumachan/interpreter/lang/common/source"
@@ -9,7 +10,6 @@ import (
 	"kumachan/interpreter/compiler/checker2/typsys"
 	"kumachan/interpreter/compiler/loader"
 	"kumachan/stdlib"
-	"strings"
 )
 
 
@@ -147,30 +147,32 @@ func registerType (
 		},
 		Metadata: meta,
 	}
-	var params ([] typsys.Parameter)
-	if ci.Enum != nil {
-		if len(decl.Params) > 0 {
-			return nil, source.MakeError(loc, E_TypeParametersOnCaseType {})
-		}
-		params = ci.Enum.Parameters
-	} else {
-		var params_ = make([] typsys.Parameter, len(decl.Params))
-		for i, p := range decl.Params {
-			var n, v, ok = ParameterNameVarianceFromIdentifier(p.Name)
-			if !(ok) {
-				return nil, source.MakeError(p.Name.Location, E_InvalidTypeName {
-					Name: ast.Id2String(p.Name),
-				})
+	var params, params_err = (func() ([] typsys.Parameter, *source.Error) {
+		if ci.Enum != nil {
+			if len(decl.Params) > 0 {
+				return nil, source.MakeError(loc, E_TypeParametersOnCaseType {})
 			}
-			params_[i] = typsys.Parameter {
-				Name:     n,
-				Default:  nil, // TODO
-				Variance: v,
-				Bound:    typsys.Bound {}, // TODO
+			return ci.Enum.Parameters, nil
+		} else {
+			var params = make([] typsys.Parameter, len(decl.Params))
+			for i, p := range decl.Params {
+				var n, v, ok = ParameterNameVarianceFromIdentifier(p.Name)
+				if !(ok) {
+					return nil, source.MakeError(p.Name.Location, E_InvalidTypeName {
+						Name: ast.Id2String(p.Name),
+					})
+				}
+				params[i] = typsys.Parameter {
+					Name:     n,
+					Default:  nil, // TODO
+					Variance: v,
+					Bound:    typsys.Bound {}, // TODO
+				}
 			}
+			return params, nil
 		}
-		params = params_
-	}
+	})()
+	if params_err != nil { return nil, params_err }
 	*draft = typsys.TypeDef {
 		TypeAttrs:  attrs,
 		Name:       type_name,
