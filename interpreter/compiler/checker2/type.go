@@ -88,6 +88,7 @@ func TypeNameListFrom(ref_list ([] ast.TypeRef), mod *loader.Module) ([] name.Ty
 func collectTypes(mod *loader.Module, reg TypeRegistry) *source.Error {
 	var err = registerTypes(mod, reg)
 	if err != nil { return err }
+	// TODO: alias handling
 	// TODO
 }
 
