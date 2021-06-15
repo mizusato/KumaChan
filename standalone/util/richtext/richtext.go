@@ -50,17 +50,17 @@ type Span struct {
 	Link     MaybeLink  `kmd:"link"` // for doc links
 }
 const (
-	TAG_DOC = "doc"
-	TAG_SRC_NORMAL = "source"
-	TAG_SRC_KEYWORD = "keyword"
+	TAG_DOC          = "doc"
+	TAG_EM           = "em"
+	TAG_SRC_NORMAL   = "source"
+	TAG_SRC_KEYWORD  = "keyword"
 	TAG_SRC_FUNCTION = "function"
-	TAG_SRC_CONST = "const"
-	TAG_SRC_COMMENT = "comment"
-	TAG_SRC_HIGHLIGHT = "highlight"
-	TAG_ERR_NORMAL = "error"
-	TAG_ERR_NOTE = "note"
-	TAG_ERR_EM = "em"
-	TAG_ERR_INLINE = "inline"
+	TAG_SRC_CONST    = "const"
+	TAG_SRC_COMMENT  = "comment"
+	TAG_HIGHLIGHT    = "highlight"
+	TAG_ERR_NORMAL   = "error"
+	TAG_ERR_NOTE     = "note"
+	TAG_ERR_INLINE   = "inline"
 )
 
 type MaybeLink interface { maybe(Link, MaybeLink) }

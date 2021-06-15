@@ -37,9 +37,7 @@ func (e *Error) Error() string {
 		Description: e.Content.DescribeError(),
 		Location:    e.Location,
 	}
-	return msg.ToFullText().RenderLinear(richtext.RenderOptionsLinear {
-		UseAnsiColor: false,
-	})
+	return msg.ToFullText().RenderLinear(richtext.RenderOptionsLinear {})
 }
 
 type ErrorMessage struct {
@@ -50,7 +48,7 @@ func (msg ErrorMessage) ToFullText() richtext.Text {
 	var t richtext.Text
 	var header_block richtext.Block
 	var header = fmt.Sprintf("--- %s at %s", msg.Location.PosDesc(), msg.Location.FilePath())
-	header_block.WriteLine(header, richtext.TAG_ERR_EM)
+	header_block.WriteLine(header, richtext.TAG_EM)
 	t.Write(header_block)
 	t.WriteText(msg.Location.FormatMessage(msg.Description))
 	return t

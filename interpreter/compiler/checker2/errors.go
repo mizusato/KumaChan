@@ -9,7 +9,7 @@ import (
 
 func makeErrorDescBlankBlock() richtext.Block {
 	var b richtext.Block
-	b.WriteSpan("Error: ", richtext.TAG_ERR_EM)
+	b.WriteSpan("Error: ", richtext.TAG_EM)
 	return b
 }
 func makeErrorDescBlock(msg string) richtext.Block {

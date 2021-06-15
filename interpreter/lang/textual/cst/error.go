@@ -69,7 +69,7 @@ func FormatError (
 			var pos = (row.Start + j)
 			if pos == spot.Start {
 				commit()
-				style = richtext.TAG_SRC_HIGHLIGHT
+				style = richtext.TAG_HIGHLIGHT
 			}
 			if pos == spot.End {
 				commit()
@@ -79,7 +79,7 @@ func FormatError (
 		}
 		if row.End == spot.Start {
 			commit()
-			style = richtext.TAG_SRC_HIGHLIGHT
+			style = richtext.TAG_HIGHLIGHT
 		}
 		if row.End == spot.End {
 			commit()
