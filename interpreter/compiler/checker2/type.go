@@ -1,18 +1,26 @@
 package checker2
 
 import (
+	"encoding/json"
 	"kumachan/interpreter/lang/common/name"
 	"kumachan/interpreter/lang/common/source"
+	"kumachan/interpreter/lang/ast"
+	"kumachan/interpreter/lang/common/attr"
 	"kumachan/interpreter/compiler/checker2/typsys"
 	"kumachan/interpreter/compiler/loader"
-	"kumachan/interpreter/lang/ast"
 	"kumachan/stdlib"
-	"kumachan/interpreter/lang/common/attr"
-	"encoding/json"
+	"strings"
 )
 
 
 type TypeRegistry (map[name.TypeName] *typsys.TypeDef)
+
+type typeDraftPair struct {
+	draft  *typsys.TypeDef
+	decl   *ast.DeclType
+}
+type _typeDraftMap ([] typeDraftPair)
+type typeDraftMap *_typeDraftMap
 
 var coreTypes = (func() (map[string] struct{}) {
 	var set = make(map[string] struct{})
@@ -23,8 +31,30 @@ var coreTypes = (func() (map[string] struct{}) {
 	return set
 })()
 
-func TypeNameFromIdentifier(id ast.Identifier, mod *loader.Module) name.TypeName {
-	return name.MakeTypeName(mod.Name, ast.Id2String(id))
+func TypeNameFromIdentifier(id ast.Identifier, mod *loader.Module) (name.TypeName, bool) {
+	var n = ast.Id2String(id)
+	if CheckTypeName(n) {
+		return name.MakeTypeName(mod.Name, n), true
+	} else {
+		return name.TypeName{}, false
+	}
+}
+
+func ParameterNameVarianceFromIdentifier(id ast.Identifier) (string, typsys.Variance, bool) {
+	var n = ast.Id2String(id)
+	var v = typsys.Invariant
+	if strings.HasPrefix(n, CovariantPrefix) {
+		n = strings.TrimPrefix(n, CovariantPrefix)
+		v = typsys.Covariant
+	} else if strings.HasPrefix(n, ContravariantPrefix) {
+		n = strings.TrimPrefix(n, ContravariantPrefix)
+		v = typsys.Contravariant
+	}
+	if CheckTypeName(n) {
+		return n, v, true
+	} else {
+		return "", -1, false
+	}
 }
 
 func TypeNameFromTypeRef(ref ast.TypeRef, mod *loader.Module) name.TypeName {
@@ -62,6 +92,7 @@ func collectTypes(mod *loader.Module, reg TypeRegistry) *source.Error {
 }
 
 func registerTypes(mod *loader.Module, reg TypeRegistry) *source.Error {
+	var dm = typeDraftMap(new(_typeDraftMap))
 	var sb SectionBuffer
 	for _, stmt := range mod.AST.Statements {
 		var title, is_title = stmt.Statement.(ast.Title)
@@ -70,7 +101,7 @@ func registerTypes(mod *loader.Module, reg TypeRegistry) *source.Error {
 		}
 		var decl, is_type_decl = stmt.Statement.(ast.DeclType)
 		if !(is_type_decl) { continue }
-		var _, err = registerType(decl, &sb, mod, reg, (typsys.CaseInfo {}))
+		var _, err = registerType(&decl, dm, &sb, mod, reg, (typsys.CaseInfo {}))
 		if err != nil { return err }
 	}
 	for _, imported := range mod.ImpMap {
@@ -81,16 +112,22 @@ func registerTypes(mod *loader.Module, reg TypeRegistry) *source.Error {
 }
 
 func registerType (
-	decl  ast.DeclType,
+	decl  *ast.DeclType,
+	dm    typeDraftMap,
 	sb    *SectionBuffer,
 	mod   *loader.Module,
 	reg   TypeRegistry,
 	ci    typsys.CaseInfo,
 ) (*typsys.TypeDef, *source.Error) {
-	var type_name = TypeNameFromIdentifier(decl.Name, mod)
-	// TODO: check name
-	var def = new(typsys.TypeDef)
-	reg[type_name] = def
+	var type_name, type_name_ok = TypeNameFromIdentifier(decl.Name, mod)
+	if !(type_name_ok) {
+		return nil, source.MakeError(decl.Name.Location, E_InvalidTypeName {
+			Name: ast.Id2String(decl.Name),
+		})
+	}
+	var draft = new(typsys.TypeDef)
+	reg[type_name] = draft
+	*dm = append(*dm, typeDraftPair { draft: draft, decl: decl })
 	var loc = decl.Location
 	var doc = ast.GetDocContent(decl.Docs)
 	var section = sb.GetFrom(loc)
@@ -117,9 +154,24 @@ func registerType (
 		}
 		params = ci.Enum.Parameters
 	} else {
-		// TODO
+		var params_ = make([] typsys.Parameter, len(decl.Params))
+		for i, p := range decl.Params {
+			var n, v, ok = ParameterNameVarianceFromIdentifier(p.Name)
+			if !(ok) {
+				return nil, source.MakeError(p.Name.Location, E_InvalidTypeName {
+					Name: ast.Id2String(p.Name),
+				})
+			}
+			params_[i] = typsys.Parameter {
+				Name:     n,
+				Default:  nil, // TODO
+				Variance: v,
+				Bound:    typsys.Bound {}, // TODO
+			}
+		}
+		params = params_
 	}
-	*def = typsys.TypeDef {
+	*draft = typsys.TypeDef {
 		TypeAttrs:  attrs,
 		Name:       type_name,
 		Implements: nil, // TODO
@@ -131,15 +183,15 @@ func registerType (
 	var case_defs = make([] *typsys.TypeDef, len(enum.Cases))
 	if is_enum {
 		for i, c := range enum.Cases {
-			var ct, err = registerType(c, sb, mod, reg, typsys.CaseInfo {
-				Enum:      def,
+			var ct, err = registerType(&c, dm, sb, mod, reg, typsys.CaseInfo {
+				Enum:      draft,
 				CaseIndex: uint(i),
 			})
 			case_defs[i] = ct
 			if err != nil { return nil, err }
 		}
 	}
-	return def, nil
+	return draft, nil
 }
 
 
