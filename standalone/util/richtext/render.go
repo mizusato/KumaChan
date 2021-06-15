@@ -44,7 +44,7 @@ func (t Text) RenderLinear(opts RenderOptionsLinear) string {
 	return buf.String()
 }
 
-func (t Text) RenderHtml(_ RenderOptionsHtml) string {
+func (t Text) RenderHtml(_ RenderOptionsHtml) Html {
 	panic("not implemented")  // TODO
 }
 
