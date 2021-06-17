@@ -45,6 +45,13 @@ export function > :
 \ x := await foo,
 bar
 
+type type[T] protected Type;
+type Type native;
+type value[T] protected Value;
+type Value native;
+|reflect::type[Foo]|
+|reflect::Value| "abc"
+
 - Lang: type check: (expected, ast-node, inferred) => Result[(expr, new-inferred)]
 
 - Lang: bounds should only allow certain types (cannot include parameters)
