@@ -73,4 +73,45 @@ func (e E_TypeConflictWithAlias) DescribeError() richtext.Block {
 	return b
 }
 
+type E_TypeNotFound struct {
+	Which  string
+}
+func (e E_TypeNotFound) DescribeError() richtext.Block {
+	var b = makeErrorDescBlankBlock()
+	b.WriteSpan("no such type:", richtext.TAG_ERR_NORMAL)
+	b.WriteSpan(e.Which, richtext.TAG_ERR_INLINE)
+	return b
+}
+
+type E_TypeWrongParameterQuantity struct {
+	Which  string
+	Given  uint
+	Least  uint
+	Total  uint
+}
+func (e E_TypeWrongParameterQuantity) DescribeError() richtext.Block {
+	var b = makeErrorDescBlankBlock()
+	b.WriteSpan("wrong parameter quantity for type", richtext.TAG_ERR_NORMAL)
+	b.WriteSpan(e.Which, richtext.TAG_ERR_INLINE)
+	var arity string
+	if e.Least != e.Total {
+		arity = fmt.Sprintf("total %d [at least %d]", e.Total, e.Least)
+	} else {
+		arity = fmt.Sprintf("total %d", e.Total)
+	}
+	var arity_note = fmt.Sprintf("(%s required but %d given)", arity, e.Given)
+	b.WriteSpan(arity_note, richtext.TAG_ERR_NOTE)
+	return b
+}
+
+type E_TypeDuplicateField struct {
+	Which  string
+}
+func (e E_TypeDuplicateField) DescribeError() richtext.Block {
+	var b = makeErrorDescBlankBlock()
+	b.WriteSpan("duplicate field:", richtext.TAG_ERR_NORMAL)
+	b.WriteSpan(e.Which, richtext.TAG_ERR_INLINE)
+	return b
+}
+
 

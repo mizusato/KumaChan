@@ -1,6 +1,7 @@
 package checker2
 
 import (
+	"fmt"
 	"kumachan/interpreter/lang/common/name"
 	"kumachan/interpreter/lang/common/source"
 	"kumachan/interpreter/compiler/loader"
@@ -15,6 +16,14 @@ type AliasDef struct {
 	From      name.Name
 	To        name.Name
 	Location  source.Location
+}
+
+func DescribeNameWithPossibleAlias(n name.Name, to name.Name) string {
+	if to != (name.Name {}) {
+		return fmt.Sprintf("%s (aka %s)", n, to)
+	} else {
+		return n.String()
+	}
 }
 
 func NameFrom(id_mod ast.Identifier, id_item ast.Identifier, mod *loader.Module) name.Name {
