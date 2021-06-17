@@ -124,12 +124,7 @@ type TypeParam struct {
     Node                        `part:"type_param"`
     Name     Identifier         `part:"name"`
     Bound    VariousTypeBound   `part_opt:"type_bound"`
-    Default  TypeParamDefault   `part_opt:"type_param_default"`
-}
-type TypeParamDefault struct {
-    Node                    `part:"type_param_default"`
-    HasValue  bool          `option:"type"`
-    Value     VariousType   `part:"type"`
+    Default  MaybeType          `part_opt:"type_param_default.type"`
 }
 type VariousTypeBound struct {
     Node                   `part:"type_bound"`
