@@ -50,7 +50,8 @@ type Type native;
 type value[T] protected Value;
 type Value native;
 |reflect::type[Foo]|
-|reflect::Value| "abc"
+|reflect::value| "abc"
+// type assertion etc. implemented by (native) functions
 
 - Lang: type check: (expected, ast-node, inferred) => Result[(expr, new-inferred)]
 
