@@ -3,6 +3,7 @@ package typsys
 import (
 	"kumachan/interpreter/lang/common/attr"
 	"kumachan/interpreter/lang/common/name"
+	"kumachan/interpreter/lang/common/source"
 )
 
 
@@ -45,6 +46,14 @@ const (
 	SupBound
 	InfBound
 )
+func (def *TypeDef) ForEachParameter(f func(uint,*Parameter)(*source.Error)) *source.Error {
+	for i := range def.Parameters {
+		var p = &(def.Parameters[i])
+		var err = f(uint(i), p)
+		if err != nil { return err }
+	}
+	return nil
+}
 
 
 type TypeDefContent interface { typeDef() }
@@ -57,11 +66,10 @@ type Enum struct {
 func (*Interface) typeDef() {}
 type Interface struct {
 	Included  [] IncludedInterface
-	Content   Record
+	Methods   Record
 }
 type IncludedInterface struct {
 	Interface  *TypeDef
-	Content    [] uint
 }
 
 func (*Boxed) typeDef() {}

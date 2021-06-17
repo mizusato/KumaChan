@@ -1,6 +1,7 @@
 package checker2
 
 import (
+	"sort"
 	"strings"
 	"encoding/json"
 	"kumachan/interpreter/lang/common/name"
@@ -13,9 +14,35 @@ import (
 )
 
 
-type TypeRegistry (map[name.TypeName] TypeDefItem)
+type TypeRegistry (map[name.TypeName] TypeDef)
+type TypeList ([] TypeDefWithModule)
+type TypeDefWithModule struct {
+	TypeDef
+	Module  *loader.Module
+}
+func (l TypeList) Less(i int, j int) bool {
+	var u = l[i].Name
+	var v = l[j].Name
+	if u.ModuleName < v.ModuleName {
+		return true
+	} else if u.ModuleName == v.ModuleName {
+		return (u.ItemName < v.ItemName)
+	} else {
+		return false
+	}
+}
+func (l TypeList) Len() int {
+	return len(l)
+}
+func (l TypeList) Swap(i int, j int) {
+	var I = &(l[i])
+	var J = &(l[j])
+	var t = *I
+	*I = *J
+	*J = t
+}
 
-type TypeDefItem struct {
+type TypeDef struct {
 	*typsys.TypeDef
 	AstNode  *ast.DeclType
 }
@@ -73,26 +100,151 @@ var __DefaultInit, defaultWrite = (func() (typsys.Type, func(typsys.Type)(typsys
 var __BoundInit, boundWrite = (func() (typsys.Bound, func(typsys.Bound)(typsys.Bound)) {
 	return typsys.Bound {}, func(b typsys.Bound) typsys.Bound { return b }
 })()
-var __ImplInit, implWrite = (func() (([] typsys.DispatchTable), func([] typsys.DispatchTable)([] typsys.DispatchTable)) {
-	return nil, func(d ([] typsys.DispatchTable)) ([] typsys.DispatchTable) { return d }
-})()
 var __ContentInit, contentWrite = (func() (typsys.TypeDefContent, func(typsys.TypeDefContent)(typsys.TypeDefContent)) {
 	return nil, func(c typsys.TypeDefContent) typsys.TypeDefContent { return c }
 })()
+var __ImplInit, implWrite = (func() (([] typsys.DispatchTable), func([] typsys.DispatchTable)([] typsys.DispatchTable)) {
+	return nil, func(d ([] typsys.DispatchTable)) ([] typsys.DispatchTable) { return d }
+})()
 
-func collectTypes(entry *loader.Module, al AliasRegistry) (TypeRegistry, *source.Error) {
+func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (TypeRegistry, *source.Error) {
 	var reg = make(TypeRegistry)
 	var err = registerTypes(entry, reg)
 	if err != nil { return nil, err }
-	for type_name, def := range reg {
-		var _, conflict = al[type_name.Name]
+	var types = make(TypeList, 0, len(reg))
+	for _, def := range reg {
+		var mod, exists = idx[def.Name.ModuleName]
+		if !(exists) { panic("something went wrong") }
+		types = append(types, TypeDefWithModule {
+			TypeDef: def,
+			Module:  mod,
+		})
+	}
+	sort.Sort(types)
+	for _, def := range types {
+		var _, conflict = al[def.Name.Name]
 		if conflict {
 			return nil, source.MakeError(def.Location, E_TypeConflictWithAlias {
-				Which: type_name.String(),
+				Which: def.Name.String(),
 			})
 		}
 	}
-	// TODO
+	for _, def := range types {
+		var ctx = TypeConsContext {
+			Module:   def.Module,
+			TypeReg:  reg,
+			AliasReg: al,
+		}
+		var err = def.ForEachParameter(func(i uint, p *typsys.Parameter) *source.Error {
+			var p_node = &(def.AstNode.Params[i])
+			var default_, has_default = p_node.Default.(ast.VariousType)
+			if has_default {
+				var raw, err = newType(default_, ctx)
+				if err != nil { return err }
+				p.Default = defaultWrite(raw.Type)
+			}
+			// TODO: validate bound (default type)
+			// TODO: validate bounds (default type)
+			return nil
+		})
+		if err != nil { return nil, err }
+	}
+	for _, def := range types {
+		var ctx = TypeConsContext {
+			Module:   def.Module,
+			TypeReg:  reg,
+			AliasReg: al,
+		}
+		var err = def.ForEachParameter(func(i uint, p *typsys.Parameter) *source.Error {
+			var p_node = &(def.AstNode.Params[i])
+			switch B := p_node.Bound.TypeBound.(type) {
+			case ast.TypeLowerBound:
+				var raw, err = newType(B.BoundType, ctx)
+				if err != nil { return err }
+				p.Bound = boundWrite(typsys.Bound {
+					Kind:  typsys.InfBound,
+					Value: raw.Type,
+				})
+			case ast.TypeHigherBound:
+				var raw, err = newType(B.BoundType, ctx)
+				if err != nil { return err }
+				p.Bound = boundWrite(typsys.Bound {
+					Kind:  typsys.SupBound,
+					Value: raw.Type,
+				})
+			}
+			// TODO: validate bounds (bound type)
+			return nil
+		})
+		if err != nil { return nil, err }
+	}
+	for _, def := range types {
+		var ctx = TypeConsContext {
+			Module:   def.Module,
+			TypeReg:  reg,
+			AliasReg: al,
+			ParamVec: def.Parameters,
+		}
+		switch content := def.AstNode.TypeDef.TypeDef.(type) {
+		case ast.BoxedType:
+			var kind = typsys.Isomorphic
+			if content.Protected { kind = typsys.Protected }
+			if content.Opaque { kind = typsys.Opaque }
+			var weak = content.Weak
+			var inner, err = (func() (typsys.Type, *source.Error) {
+				var inner_node, exists = content.Inner.(ast.VariousType)
+				if exists {
+					var raw, err = newType(inner_node, ctx)
+					if err != nil { return nil, err }
+					return raw.Type, nil
+				} else {
+					return typsys.UnitType {}, nil
+				}
+			})()
+			if err != nil { return nil, err }
+			def.Content = contentWrite(&typsys.Boxed {
+				BoxKind:      kind,
+				WeakWrapping: weak,
+				InnerType:    inner,
+			})
+			// TODO: validate circular (inner type)
+			// TODO: validate variance (inner type)
+			// TODO: validate bounds (inner type)
+		case ast.EnumType:
+			if def.Content == nil { panic("something went wrong") }
+			// content already generated
+		case ast.InterfaceType:
+			var raw, err = newTypeFromRepr(content.Methods, ctx)
+			if err != nil { return nil, err }
+			var methods = raw.Type.(*typsys.NestedType).Content.(typsys.Record)
+			var impl_names = TypeNameListFrom(def.AstNode.Impl, def.Module)
+			var included = make([] typsys.IncludedInterface, len(impl_names))
+			for i, n := range impl_names {
+				var def, exists = reg[n]
+				if !(exists) {
+					var loc = def.AstNode.Impl[i].Location
+					return nil, source.MakeError(loc, E_TypeNotFound {
+						Which: n.String(),
+					})
+				}
+				included[i] = typsys.IncludedInterface {
+					Interface: def.TypeDef,
+				}
+				// TODO: validate circular (included)
+				// TODO: validate if content is interface (included)
+				// TODO: validate method conflict (included)
+				// TODO: validate variance (methods)
+				// TODO: validate bounds (methods)
+			}
+			def.Content = contentWrite(&typsys.Interface {
+				Included: included,
+				Methods:  methods,
+			})
+		case ast.NativeType:
+			def.Content = contentWrite(&typsys.Native {})
+		}
+	}
+	// TODO: validation
 }
 
 func registerTypes(mod *loader.Module, reg TypeRegistry) *source.Error {
@@ -128,7 +280,7 @@ func registerType (
 		})
 	}
 	var def = new(typsys.TypeDef)
-	reg[type_name] = TypeDefItem {
+	reg[type_name] = TypeDef {
 		TypeDef: def,
 		AstNode: decl,
 	}
@@ -196,6 +348,9 @@ func registerType (
 			case_defs[i] = ct
 			if err != nil { return nil, err }
 		}
+		def.Content = contentWrite(&typsys.Enum {
+			CaseTypes: case_defs,
+		})
 	}
 	return def, nil
 }
@@ -204,8 +359,9 @@ type TypeConsContext struct {
 	Module    *loader.Module
 	TypeReg   TypeRegistry
 	AliasReg  AliasRegistry
+	ParamVec  [] typsys.Parameter
 }
-func (ctx TypeConsContext) ResolveName(n name.TypeName) (TypeDefItem, string, bool) {
+func (ctx TypeConsContext) ResolveGlobalName(n name.TypeName) (TypeDef, string, bool) {
 	var alias, is_alias = ctx.AliasReg[n.Name]
 	if is_alias {
 		n = name.TypeName { Name: alias.To }
@@ -217,8 +373,8 @@ func (ctx TypeConsContext) ResolveName(n name.TypeName) (TypeDefItem, string, bo
 type RawType struct {
 	Type  typsys.Type
 }
-func newSpecialType(item_name string) (RawType, bool) {
-	switch item_name {
+func newSpecialType(which string) (RawType, bool) {
+	switch which {
 	case typsys.TypeNameUnknown:
 		return RawType { Type: &typsys.UnknownType {} }, true
 	case typsys.TypeNameUnit:
@@ -230,6 +386,15 @@ func newSpecialType(item_name string) (RawType, bool) {
 	default:
 		return RawType {}, false
 	}
+}
+func newParameterType(which string, params ([] typsys.Parameter)) (RawType, bool) {
+	for i := range params {
+		var p = &(params[i])
+		if which == p.Name {
+			return RawType { typsys.ParameterType { Parameter: p } }, true
+		}
+	}
+	return RawType {}, false
 }
 func newType(t ast.VariousType, ctx TypeConsContext) (RawType, *source.Error) {
 	switch T := t.Type.(type) {
@@ -250,8 +415,12 @@ func newType(t ast.VariousType, ctx TypeConsContext) (RawType, *source.Error) {
 				}
 				return special, nil
 			}
+			var param, is_param = newParameterType(item_name, ctx.ParamVec)
+			if is_param {
+				return param, nil
+			}
 		}
-		var def, n_desc, exists = ctx.ResolveName(n)
+		var def, n_desc, exists = ctx.ResolveGlobalName(n)
 		if !(exists) {
 			return RawType {}, source.MakeError(def.Location, E_TypeNotFound {
 				Which: n_desc,
@@ -297,68 +466,71 @@ func newType(t ast.VariousType, ctx TypeConsContext) (RawType, *source.Error) {
 		}
 		return RawType { Type: ret }, nil
 	case ast.TypeLiteral:
-		switch R := T.Repr.Repr.(type) {
-		case ast.ReprTuple:
-			var num_elements = uint(len(R.Elements))
-			if num_elements == 0 {
-				return RawType { Type: typsys.UnitType {} }, nil
-			} else {
-				var elements = make([] typsys.Type, num_elements)
-				for i, t := range R.Elements {
-					var raw, err = newType(t, ctx)
-					if err != nil { return RawType {}, err }
-					elements[i] = raw.Type
-				}
-				var tuple = typsys.Tuple { Elements: elements }
-				var ret = &typsys.NestedType { Content: tuple }
-				return RawType { Type: ret }, nil
-			}
-		case ast.ReprRecord:
-			var fields = make([] typsys.Field, len(R.Fields))
-			var index_map = make(map[string] uint)
-			for i, field := range R.Fields {
-				var index = uint(i)
-				var field_name = ast.Id2String(field.Name)
-				var _, exists = index_map[field_name]
-				if exists {
-					return RawType {}, source.MakeError(field.Name.Location,
-						E_TypeDuplicateField { Which: field_name })
-				}
-				index_map[field_name] = index
-				var raw, err = newType(field.Type, ctx)
+		return newTypeFromRepr(T.Repr.Repr, ctx)
+	default:
+		panic("impossible branch")
+	}
+}
+func newTypeFromRepr(r ast.Repr, ctx TypeConsContext) (RawType, *source.Error) {
+	switch R := r.(type) {
+	case ast.ReprTuple:
+		var num_elements = uint(len(R.Elements))
+		if num_elements == 0 {
+			return RawType { Type: typsys.UnitType {} }, nil
+		} else {
+			var elements = make([] typsys.Type, num_elements)
+			for i, t := range R.Elements {
+				var raw, err = newType(t, ctx)
 				if err != nil { return RawType {}, err }
-				fields[i] = typsys.Field {
-					Attr: attr.FieldAttr {
-						Attrs: attr.Attrs {
-							Location: field.Location,
-							Section:  nil,
-							Doc:      ast.GetDocContent(field.Docs),
-						},
-					},
-					Name: field_name,
-					Type: raw.Type,
-				}
+				elements[i] = raw.Type
 			}
-			var record = typsys.Record {
-				FieldIndexMap: index_map,
-				Fields:        fields,
-			}
-			var ret = &typsys.NestedType { Content: record }
+			var tuple = typsys.Tuple { Elements: elements }
+			var ret = &typsys.NestedType { Content: tuple }
 			return RawType { Type: ret }, nil
-		case ast.ReprFunc:
-			var input, err1 = newType(R.Input, ctx)
-			if err1 != nil { return RawType {}, err1 }
-			var output, err2 = newType(R.Output, ctx)
-			if err2 != nil { return RawType {}, err2 }
-			var lambda = typsys.Lambda {
-				Input:  input.Type,
-				Output: output.Type,
-			}
-			var ret = &typsys.NestedType { Content: lambda }
-			return RawType { Type: ret }, nil
-		default:
-			panic("impossible branch")
 		}
+	case ast.ReprRecord:
+		var fields = make([] typsys.Field, len(R.Fields))
+		var index_map = make(map[string] uint)
+		for i, field := range R.Fields {
+			var index = uint(i)
+			var field_name = ast.Id2String(field.Name)
+			var _, exists = index_map[field_name]
+			if exists {
+				return RawType {}, source.MakeError(field.Name.Location,
+					E_TypeDuplicateField { Which: field_name })
+			}
+			index_map[field_name] = index
+			var raw, err = newType(field.Type, ctx)
+			if err != nil { return RawType {}, err }
+			fields[i] = typsys.Field {
+				Attr: attr.FieldAttr {
+					Attrs: attr.Attrs {
+						Location: field.Location,
+						Section:  nil,
+						Doc:      ast.GetDocContent(field.Docs),
+					},
+				},
+				Name: field_name,
+				Type: raw.Type,
+			}
+		}
+		var record = typsys.Record {
+			FieldIndexMap: index_map,
+			Fields:        fields,
+		}
+		var ret = &typsys.NestedType { Content: record }
+		return RawType { Type: ret }, nil
+	case ast.ReprFunc:
+		var input, err1 = newType(R.Input, ctx)
+		if err1 != nil { return RawType {}, err1 }
+		var output, err2 = newType(R.Output, ctx)
+		if err2 != nil { return RawType {}, err2 }
+		var lambda = typsys.Lambda {
+			Input:  input.Type,
+			Output: output.Type,
+		}
+		var ret = &typsys.NestedType { Content: lambda }
+		return RawType { Type: ret }, nil
 	default:
 		panic("impossible branch")
 	}
