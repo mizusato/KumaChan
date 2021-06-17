@@ -36,7 +36,7 @@ func TypeNameFromIdentifier(id ast.Identifier, mod *loader.Module) (name.TypeNam
 	if CheckTypeName(n) {
 		return name.MakeTypeName(mod.Name, n), true
 	} else {
-		return name.TypeName{}, false
+		return name.TypeName {}, false
 	}
 }
 
@@ -58,23 +58,7 @@ func ParameterNameVarianceFromIdentifier(id ast.Identifier) (string, typsys.Vari
 }
 
 func TypeNameFromTypeRef(ref ast.TypeRef, mod *loader.Module) name.TypeName {
-	var ref_mod = ast.Id2String(ref.Module)
-	var ref_item = ast.Id2String(ref.Item)
-	if ref_mod == "" {
-		var _, is_core_type = coreTypes[ref_item]
-		if is_core_type {
-			return name.MakeTypeName(stdlib.Mod_core, ref_item)
-		} else {
-			return name.MakeTypeName(mod.Name, ref_item)
-		}
-	} else {
-		var imported, found = mod.ImpMap[ref_mod]
-		if found {
-			return name.MakeTypeName(imported.Name, ref_item)
-		} else {
-			return name.MakeTypeName("", ref_item)
-		}
-	}
+	return name.TypeName { Name: NameFrom(ref.Module, ref.Item, mod) }
 }
 
 func TypeNameListFrom(ref_list ([] ast.TypeRef), mod *loader.Module) ([] name.TypeName) {
@@ -85,10 +69,18 @@ func TypeNameListFrom(ref_list ([] ast.TypeRef), mod *loader.Module) ([] name.Ty
 	return list
 }
 
-func collectTypes(mod *loader.Module, reg TypeRegistry) *source.Error {
-	var err = registerTypes(mod, reg)
-	if err != nil { return err }
-	// TODO: alias handling
+func collectTypes(entry *loader.Module, al AliasRegistry) (TypeRegistry, *source.Error) {
+	var reg = make(TypeRegistry)
+	var err = registerTypes(entry, reg)
+	if err != nil { return nil, err }
+	for type_name, def := range reg {
+		var _, conflict = al[type_name.Name]
+		if conflict {
+			return nil, source.MakeError(def.Location, E_TypeConflictWithAlias {
+				Which: type_name.String(),
+			})
+		}
+	}
 	// TODO
 }
 

@@ -18,6 +18,27 @@ func makeErrorDescBlock(msg string) richtext.Block {
 	return b
 }
 
+type E_DuplicateAlias struct {
+	Which  string
+}
+func (e E_DuplicateAlias) DescribeError() richtext.Block {
+	var b = makeErrorDescBlankBlock()
+	b.WriteSpan("duplicate alias:", richtext.TAG_ERR_NORMAL)
+	b.WriteSpan(e.Which, richtext.TAG_ERR_INLINE)
+	return b
+}
+
+type E_InvalidAlias struct {
+	Which  string
+}
+func (e E_InvalidAlias) DescribeError() richtext.Block {
+	var b = makeErrorDescBlankBlock()
+	b.WriteSpan("invalid alias:", richtext.TAG_ERR_NORMAL)
+	b.WriteSpan(e.Which, richtext.TAG_ERR_INLINE)
+	b.WriteSpan("(alias cannot point to another alias)", richtext.TAG_ERR_NOTE)
+	return b
+}
+
 type E_InvalidMetadata struct {
 	Reason  string
 }
@@ -39,4 +60,17 @@ func (e E_TypeParametersOnCaseType) DescribeError() richtext.Block {
 	var msg = "cannot specify explicit type parameters on case types"
 	return makeErrorDescBlock(msg)
 }
+
+type E_TypeConflictWithAlias struct {
+	Which  string
+}
+func (e E_TypeConflictWithAlias) DescribeError() richtext.Block {
+	var b = makeErrorDescBlankBlock()
+	b.WriteSpan("type name", richtext.TAG_ERR_NORMAL)
+	b.WriteSpan(e.Which, richtext.TAG_ERR_INLINE)
+	b.WriteSpan("conflicts with alias declaration", richtext.TAG_ERR_NORMAL)
+	b.WriteSpan(e.Which, richtext.TAG_ERR_INLINE)
+	return b
+}
+
 
