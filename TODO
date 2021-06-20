@@ -2,6 +2,8 @@ TODO
 
 ## Refinement
 
+- Rx: combine-latest 1 update per tick (?)
+
 - VM: constant thunk
 
 - GUI: qtbinding C side int vs. go side int (not the same type, fix it)
