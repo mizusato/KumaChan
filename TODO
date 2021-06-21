@@ -10,6 +10,8 @@ TODO
 
 - API: consider renaming wait and tick
 
+- API: liftA2 on Async[T]
+
 - GUI: setAttributeNS() for SVG elements
 
 - Compiler: revise FuncInfo.SourceMap (try to reduce space usage)
