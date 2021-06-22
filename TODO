@@ -29,6 +29,8 @@ type Cell[T] protected {
 
 \ buf := go { Reactive '' },
 
+- FlexList: consider refactor using balanced tree + inline index
+
 - VM: constant thunk
 
 - GUI: qtbinding C side int vs. go side int (not the same type, fix it)
