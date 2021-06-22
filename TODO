@@ -12,6 +12,7 @@ TODO
     compute: ((Computed[A], Computed[B]), (A,B) => T) => Computed[T]
     sample: (Source[A], Computed[B]) => Source[(A,B)]  // with-latest-from
     sample: (Source[A], (Computed[B], (A,B) => T)) => Source[T]
+    // compute & sample: <= 1 update / 1 tick
 
 type Bus[T] protected {
     in: Sink[T],
