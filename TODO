@@ -2,15 +2,21 @@ TODO
 
 ## Refinement
 
-- Rx: combine-latest 1 update per tick (?)
+- Rx: `combine`: rename to `compute`; `Computed`: rename to `map`
+
+- Rx: `with-latest-from` (computed/reactive) :
+      rename to `sample`
+
+- Rx: `map` (computed), `sample` (computed/reactive) :
+      1 update per tick (?)
+
+- Rx: await/sync (Async[A], Async[B]),  // no `then`
 
 - VM: constant thunk
 
 - GUI: qtbinding C side int vs. go side int (not the same type, fix it)
 
 - API: consider renaming wait and tick
-
-- API: liftA2 on Async[T]
 
 - GUI: setAttributeNS() for SVG elements
 
