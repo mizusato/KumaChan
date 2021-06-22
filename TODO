@@ -2,15 +2,31 @@ TODO
 
 ## Refinement
 
-- Rx: `combine`: rename to `compute`; `Computed`: rename to `map`
+- Lang: CPS: unit-input lambda instead of (a,k)
 
-- Rx: `with-latest-from` (computed/reactive) :
-      rename to `sample`
+- Rx:
+    Async: (() => T) => Async[T]
+    go: Sync => K   // sync
+    go: Async => ...  // then (await)
+    compute: (Computed[A], Computed[B]) => Computed[(A,B)]  // combine
+    compute: ((Computed[A], Computed[B]), (A,B) => T) => Computed[T]
+    sample: (Source[A], Computed[B]) => Source[(A,B)]  // with-latest-from
+    sample: (Source[A], (Computed[B], (A,B) => T)) => Source[T]
 
-- Rx: `map` (computed), `sample` (computed/reactive) :
-      1 update per tick (?)
+type Bus[T] protected {
+    in: Sink[T],
+    out: Source[T]
+}
 
-- Rx: await/sync (Async[A], Async[B]),  // no `then`
+// Reactive
+type Cell[T] protected {
+    in: Sink[T],
+    out: Computed[T]
+}
+// type Cell (RecordValue);
+// (in,out,rx.Reactive)
+
+\ buf := go { Reactive '' },
 
 - VM: constant thunk
 
