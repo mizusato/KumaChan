@@ -64,6 +64,7 @@ var nodeRegistry = [] interface{} {
     VariousTypeBound {},
     TypeLowerBound {},
     TypeHigherBound {},
+    TypeDeclRef {},
     // Type
     VariousType {},
     TypeRef {},

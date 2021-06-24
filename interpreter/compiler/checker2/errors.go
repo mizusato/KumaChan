@@ -167,4 +167,19 @@ func (e E_BadImplemented) DescribeError() richtext.Block {
 	return b
 }
 
+type E_InvalidVarianceOnParameters struct {
+	Which  [] string
+}
+func (e E_InvalidVarianceOnParameters) DescribeError() richtext.Block {
+	var b = makeErrorDescBlankBlock()
+	b.WriteSpan("invalid variance declared on parameters:", richtext.TAG_ERR_NORMAL)
+	for i, t := range e.Which {
+		if i > 0 {
+			b.WriteSpan(",", richtext.TAG_ERR_NORMAL)
+		}
+		b.WriteSpan(t, richtext.TAG_ERR_INLINE)
+	}
+	return b
+}
+
 

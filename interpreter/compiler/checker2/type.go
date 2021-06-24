@@ -86,10 +86,10 @@ func TypeNameFromTypeRef(ref ast.TypeRef, mod *loader.Module) name.TypeName {
 	return name.TypeName { Name: NameFrom(ref.Module, ref.Item, mod) }
 }
 
-func TypeNameListFrom(ref_list ([] ast.TypeRef), mod *loader.Module) ([] name.TypeName) {
+func TypeNameListFrom(ref_list ([] ast.TypeDeclRef), mod *loader.Module) ([] name.TypeName) {
 	var list = make([] name.TypeName, len(ref_list))
 	for i, ref := range ref_list {
-		list[i] = TypeNameFromTypeRef(ref, mod)
+		list[i] = name.TypeName { Name: NameFrom(ref.Module, ref.Item, mod) }
 	}
 	return list
 }
@@ -106,7 +106,7 @@ var __ContentInit, contentWrite = (func() (typsys.TypeDefContent, func(typsys.Ty
 	return nil,
 		func(c typsys.TypeDefContent) typsys.TypeDefContent { return c }
 })()
-var __ImplInit, implWrite = (func() (([] typsys.DispatchTable), func([] typsys.DispatchTable)([] typsys.DispatchTable)) {
+var __TableInit, tableWrite = (func() (([] typsys.DispatchTable), func([] typsys.DispatchTable)([] typsys.DispatchTable)) {
 	return nil,
 		func(d ([] typsys.DispatchTable)) ([] typsys.DispatchTable) { return d }
 })()
@@ -188,6 +188,7 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 					Which: n.String(),
 				})
 			}
+			// TODO: check for parameter compatibility
 		}
 	}
 	// Construct default parameter types
@@ -348,7 +349,7 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 		}
 		return result
 	}
-	var err1 = check1_circular_box(func() *source.Error {
+	{ var err = check1_circular_box(func() *source.Error {
 		var bad = check_circular(func(def *typsys.TypeDef) ([] *typsys.TypeDef) {
 			var box, is_box = def.Content.(*typsys.Box)
 			if is_box {
@@ -370,8 +371,8 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 			return nil
 		}
 	})
-	if err1 != nil { return nil, err1 }
-	var err2 = check2_circular_interface(func() *source.Error {
+	if err != nil { return nil, err } }
+	{ var err = check2_circular_interface(func() *source.Error {
 		var bad = check_circular(func(def *typsys.TypeDef) ([] *typsys.TypeDef) {
 			var interface_, is_interface = def.Content.(*typsys.Interface)
 			if is_interface {
@@ -388,7 +389,42 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 			return nil
 		}
 	})
-	if err2 != nil { return nil, err2 }
+	if err != nil { return nil, err } }
+	{ var err = check3_boxed_variance(func() *source.Error {
+		for _, def := range types {
+			var box, is_box = def.Content.(*typsys.Box)
+			if is_box {
+				var v = typsys.GetVariance(box.InnerType, def.Parameters)
+				var ok, invalid = typsys.MatchVariance(def.Parameters, v)
+				if !(ok) {
+					var loc = def.AstNode.Name.Location
+					return source.MakeError(loc, E_InvalidVarianceOnParameters {
+						Which: invalid,
+					})
+				}
+			}
+		}
+		return nil
+	})
+	if err != nil { return nil, err } }
+	{ var err = check4_interface_variance(func() *source.Error {
+		for _, def := range types {
+			var interface_, is_interface = def.Content.(*typsys.Interface)
+			if is_interface {
+				var t = &typsys.NestedType { Content: interface_.Methods }
+				var v = typsys.GetVariance(t, def.Parameters)
+				var ok, invalid = typsys.MatchVariance(def.Parameters, v)
+				if !(ok) {
+					var loc = def.AstNode.Name.Location
+					return source.MakeError(loc, E_InvalidVarianceOnParameters {
+						Which: invalid,
+					})
+				}
+			}
+		}
+		return nil
+	})
+	if err != nil { return nil, err } }
 	// TODO
 }
 
@@ -455,6 +491,7 @@ func registerType (
 			}
 			return ci.Enum.Parameters, nil
 		} else {
+			// TODO: parameter quantity limit
 			var params = make([] typsys.Parameter, len(decl.Params))
 			for i, p := range decl.Params {
 				var n, v, ok = ParameterNameVarianceFromIdentifier(p.Name)
@@ -477,7 +514,7 @@ func registerType (
 	*def = typsys.TypeDef {
 		TypeAttrs:  attrs,
 		Name:       type_name,
-		Implements: __ImplInit,
+		Implements: __TableInit,
 		Parameters: params,
 		Content:    __ContentInit,
 		CaseInfo:   ci,

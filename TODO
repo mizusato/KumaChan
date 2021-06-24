@@ -37,6 +37,8 @@ type Cell[T] protected {
 
 - GUI: qtbinding C side int vs. go side int (not the same type, fix it)
 
+- API: consider "NOT" instead of "not"
+
 - API: consider renaming wait and tick
 
 - GUI: setAttributeNS() for SVG elements

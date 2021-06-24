@@ -105,7 +105,7 @@ type DeclType struct {
     Meta       Meta             `part:"meta"`
     Name       Identifier       `part:"name"`
     Params     [] TypeParam     `list_more:"type_params" item:"type_param"`
-    Impl       [] TypeRef       `list_more:"impl.type_ref_list" item:"type_ref"`
+    Impl       [] TypeDeclRef   `list_more:"impl" item:"type_decl_ref"`
     TypeDef    VariousTypeDef   `part:"type_def"`
 }
 type Doc struct {
@@ -140,6 +140,11 @@ func (impl TypeHigherBound) TypeBound() {}
 type TypeHigherBound struct {
     Node                     `part:"type_hi_bound"`
     BoundType  VariousType   `part:"type"`
+}
+type TypeDeclRef struct {
+    Node                 `part:"type_decl_ref"`
+    Module  Identifier   `part_opt:"module_prefix.name"`
+    Item    Identifier   `part:"name"`
 }
 type VariousTypeDef struct {
     Node               `part:"type_def"`

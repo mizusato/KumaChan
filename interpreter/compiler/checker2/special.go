@@ -5,7 +5,8 @@ import (
 	"strings"
 )
 
-const BlankIdentifier = "_"
+const BlankIdentifier = "_" // TODO: --> DiscardableIdentifier (blank: within AST)
+// TODO: semantics of these prefixes/suffixes should be achieved within AST
 const ExactSuffix = "*"
 const CovariantPrefix = "+"
 const ContravariantPrefix = "-"
