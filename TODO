@@ -33,6 +33,8 @@ type Cell[T] protected {
 
 - VM: constant thunk
 
+- Code: AST node renaming
+
 - GUI: qtbinding C side int vs. go side int (not the same type, fix it)
 
 - API: consider renaming wait and tick

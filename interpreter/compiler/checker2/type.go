@@ -122,31 +122,28 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 	//   (2) an interface must NOT include itself directly or indirectly.
 	var must_check_circular_box, check1_circular_box = reminder()
 	var must_check_circular_interface, check2_circular_interface = reminder()
-	// 2. interface hierarchy:
-	//   (*) for a interface type,
-	//     (a) its included types must be interface types,
-	//     (b) method names must NOT conflict with its ancestors.
-	var must_check_interface_hierarchy, check3_interface_hierarchy = reminder()
-	// 3. variance:
+	// 2. variance:
 	//   (1) variance defined on parameters of a box must be valid.
 	//   (2) variance defined on parameters of an interface must be valid.
-	var must_check_boxed_variance, check4_boxed_variance = reminder()
-	var must_check_interface_variance, check5_interface_variance = reminder()
-	// 4. bound:
+	var must_check_boxed_variance, check3_boxed_variance = reminder()
+	var must_check_interface_variance, check4_interface_variance = reminder()
+	// 3. bound:
 	//   (1) the default type of a parameter must satisfy its bound.
 	//   (2) arguments of reference types in default types must satisfy bounds.
 	//   (3) arguments of reference types in bounds must satisfy bounds.
 	//   (4) arguments of reference types in box must satisfy bounds.
 	//   (5) arguments of reference types in interface must satisfy bounds.
-	var must_check_default_type_bound, check6_default_type_bound = reminder()
-	var must_check_default_type_bounds, check7_default_type_bounds = reminder()
-	var must_check_bound_type_bounds, check8_bound_type_bounds = reminder()
-	var must_check_boxed_bounds, check9_boxed_bounds = reminder()
-	var must_check_interface_bounds, check10_interface_bounds = reminder()
+	var must_check_default_type_bound, check5_default_type_bound = reminder()
+	var must_check_default_type_bounds, check6_default_type_bounds = reminder()
+	var must_check_bound_type_bounds, check7_bound_type_bounds = reminder()
+	var must_check_boxed_bounds, check8_boxed_bounds = reminder()
+	var must_check_interface_bounds, check9_interface_bounds = reminder()
 	// *************
+	// Register types
 	var reg = make(TypeRegistry)
 	var err = registerTypes(entry, reg)
 	if err != nil { return nil, err }
+	// Create an ordered type definition list
 	var types = make(TypeList, 0, len(reg))
 	for _, def := range reg {
 		var mod, exists = idx[def.Name.ModuleName]
@@ -157,6 +154,7 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 		})
 	}
 	sort.Sort(types)
+	// Check for conflicts with alias
 	for _, def := range types {
 		var _, conflict = al[def.Name.Name]
 		if conflict {
@@ -165,6 +163,34 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 			})
 		}
 	}
+	// Check implemented types
+	for _, def := range types {
+		var impl_names = TypeNameListFrom(def.AstNode.Impl, def.Module)
+		var occurred_names = make(map[name.TypeName] struct{})
+		for i, n := range impl_names {
+			var loc = def.AstNode.Impl[i].Location
+			var _, occurred = occurred_names[n]
+			if occurred {
+				return nil, source.MakeError(loc, E_DuplicateImplemented {
+					Which: n.String(),
+				})
+			}
+			occurred_names[n] = struct{}{}
+			var def, exists = reg[n]
+			if !(exists) {
+				return nil, source.MakeError(loc, E_TypeNotFound {
+					Which: n.String(),
+				})
+			}
+			var _, ok = def.AstNode.TypeDef.TypeDef.(ast.InterfaceType)
+			if !(ok) {
+				return nil, source.MakeError(loc, E_BadImplemented {
+					Which: n.String(),
+				})
+			}
+		}
+	}
+	// Construct default parameter types
 	for _, def := range types {
 		var ctx = TypeConsContext {
 			Module:   def.Module,
@@ -185,6 +211,7 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 		})
 		if err != nil { return nil, err }
 	}
+	// Construct parameter bound types
 	for _, def := range types {
 		var ctx = TypeConsContext {
 			Module:   def.Module,
@@ -214,6 +241,7 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 		})
 		if err != nil { return nil, err }
 	}
+	// Construct contents
 	for _, def := range types {
 		var ctx = TypeConsContext {
 			Module:   def.Module,
@@ -254,7 +282,7 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 			if err != nil { return nil, err }
 			var methods = raw.Type.(*typsys.NestedType).Content.(typsys.Record)
 			var impl_names = TypeNameListFrom(def.AstNode.Impl, def.Module)
-			var included = make([] typsys.IncludedInterface, len(impl_names))
+			var included = make([] *typsys.TypeDef, len(impl_names))
 			for i, n := range impl_names {
 				var def, exists = reg[n]
 				if !(exists) {
@@ -263,11 +291,8 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 						Which: n.String(),
 					})
 				}
-				included[i] = typsys.IncludedInterface {
-					Interface: def.TypeDef,
-				}
+				included[i] = def.TypeDef
 				_ = must_check_circular_interface
-				_ = must_check_interface_hierarchy
 				_ = must_check_interface_variance
 				_ = must_check_interface_bounds
 			}
@@ -279,6 +304,7 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 			def.Content = contentWrite(&typsys.Native {})
 		}
 	}
+	// Perform all postponed checks
 	var check_circular = func(get_deps func(*typsys.TypeDef)([] *typsys.TypeDef)) ([] *typsys.TypeDef) {
 		var in = make(map[*typsys.TypeDef] uint)
 		var q = make([] *typsys.TypeDef, 0)
@@ -347,13 +373,9 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 	if err1 != nil { return nil, err1 }
 	var err2 = check2_circular_interface(func() *source.Error {
 		var bad = check_circular(func(def *typsys.TypeDef) ([] *typsys.TypeDef) {
-			var I, is_I = def.Content.(*typsys.Interface)
-			if is_I {
-				var deps = make([] *typsys.TypeDef, len(I.Included))
-				for i, inc := range I.Included {
-					deps[i] = inc.Interface
-				}
-				return deps
+			var interface_, is_interface = def.Content.(*typsys.Interface)
+			if is_interface {
+				return interface_.Included
 			} else {
 				return nil
 			}
@@ -367,7 +389,7 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 		}
 	})
 	if err2 != nil { return nil, err2 }
-	// TODO: validation
+	// TODO
 }
 
 func registerTypes(mod *loader.Module, reg TypeRegistry) *source.Error {

@@ -146,4 +146,25 @@ func (e E_CircularInterfaceDefinition) DescribeError() richtext.Block {
 	return b
 }
 
+type E_DuplicateImplemented struct {
+	Which  string
+}
+func (e E_DuplicateImplemented) DescribeError() richtext.Block {
+	var b = makeErrorDescBlankBlock()
+	b.WriteSpan("duplicated implemented type:", richtext.TAG_ERR_NORMAL)
+	b.WriteSpan(e.Which, richtext.TAG_ERR_INLINE)
+	return b
+}
+
+type E_BadImplemented struct {
+	Which  string
+}
+func (e E_BadImplemented) DescribeError() richtext.Block {
+	var b = makeErrorDescBlankBlock()
+	b.WriteSpan("bad implemented type:", richtext.TAG_ERR_NORMAL)
+	b.WriteSpan(e.Which, richtext.TAG_ERR_INLINE)
+	b.WriteSpan("(should be an interface type)", richtext.TAG_ERR_NOTE)
+	return b
+}
+
 

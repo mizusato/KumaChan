@@ -65,11 +65,8 @@ type Enum struct {
 
 func (*Interface) typeDef() {}
 type Interface struct {
-	Included  [] IncludedInterface
+	Included  [] *TypeDef
 	Methods   Record
-}
-type IncludedInterface struct {
-	Interface  *TypeDef
 }
 
 func (*Box) typeDef() {}
