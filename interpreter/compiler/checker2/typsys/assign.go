@@ -79,7 +79,7 @@ func Assign(to Type, from Type, ctx AssignContext) (bool, *InferringState) {
 				goto unbox
 			}
 		}
-		// 3.3. Ref of Boxed (Unbox)
+		// 3.3. Ref of Box (Unbox)
 		unbox:
 		var from_sup, ok = Unbox(from, ctx.module)
 		if ok {

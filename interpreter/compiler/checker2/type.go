@@ -95,49 +95,54 @@ func TypeNameListFrom(ref_list ([] ast.TypeRef), mod *loader.Module) ([] name.Ty
 }
 
 var __DefaultInit, defaultWrite = (func() (typsys.Type, func(typsys.Type)(typsys.Type)) {
-	return nil, func(t typsys.Type) typsys.Type { return t }
+	return nil,
+		func(t typsys.Type) typsys.Type { return t }
 })()
 var __BoundInit, boundWrite = (func() (typsys.Bound, func(typsys.Bound)(typsys.Bound)) {
-	return typsys.Bound {}, func(b typsys.Bound) typsys.Bound { return b }
+	return typsys.Bound {},
+		func(b typsys.Bound) typsys.Bound { return b }
 })()
 var __ContentInit, contentWrite = (func() (typsys.TypeDefContent, func(typsys.TypeDefContent)(typsys.TypeDefContent)) {
-	return nil, func(c typsys.TypeDefContent) typsys.TypeDefContent { return c }
+	return nil,
+		func(c typsys.TypeDefContent) typsys.TypeDefContent { return c }
 })()
 var __ImplInit, implWrite = (func() (([] typsys.DispatchTable), func([] typsys.DispatchTable)([] typsys.DispatchTable)) {
-	return nil, func(d ([] typsys.DispatchTable)) ([] typsys.DispatchTable) { return d }
+	return nil,
+		func(d ([] typsys.DispatchTable)) ([] typsys.DispatchTable) { return d }
 })()
 
 func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (TypeRegistry, *source.Error) {
-	var reminder = func() (struct{}, func(func())) {
-		return struct{}{}, func(f func()) { f() }
+	var reminder = func() (struct{}, func(func()(*source.Error)) *source.Error) {
+		return struct{}{},
+			func(f func()(*source.Error)) *source.Error { return f() }
 	}
 	// *** Postponed Checks ***
 	// 1. circular:
 	//   (1) a box must NOT unbox to a ref to itself directly or indirectly.
 	//   (2) an interface must NOT include itself directly or indirectly.
-	var must_check_circular_box, check_circular_box = reminder()
-	var must_check_circular_interface, check_circular_interface = reminder()
+	var must_check_circular_box, check1_circular_box = reminder()
+	var must_check_circular_interface, check2_circular_interface = reminder()
 	// 2. interface hierarchy:
 	//   (*) for a interface type,
 	//     (a) its included types must be interface types,
 	//     (b) method names must NOT conflict with its ancestors.
-	var must_check_interface_hierarchy, check_interface_hierarchy = reminder()
+	var must_check_interface_hierarchy, check3_interface_hierarchy = reminder()
 	// 3. variance:
 	//   (1) variance defined on parameters of a box must be valid.
 	//   (2) variance defined on parameters of an interface must be valid.
-	var must_check_boxed_variance, check_boxed_variance = reminder()
-	var must_check_interface_variance, check_interface_variance = reminder()
+	var must_check_boxed_variance, check4_boxed_variance = reminder()
+	var must_check_interface_variance, check5_interface_variance = reminder()
 	// 4. bound:
 	//   (1) the default type of a parameter must satisfy its bound.
 	//   (2) arguments of reference types in default types must satisfy bounds.
 	//   (3) arguments of reference types in bounds must satisfy bounds.
 	//   (4) arguments of reference types in box must satisfy bounds.
 	//   (5) arguments of reference types in interface must satisfy bounds.
-	var must_check_default_type_bound, check_default_type_bound = reminder()
-	var must_check_default_type_bounds, check_default_type_bounds = reminder()
-	var must_check_bound_type_bounds, check_bound_type_bounds = reminder()
-	var must_check_boxed_bounds, check_boxed_bounds = reminder()
-	var must_check_interface_bounds, check_interface_bounds = reminder()
+	var must_check_default_type_bound, check6_default_type_bound = reminder()
+	var must_check_default_type_bounds, check7_default_type_bounds = reminder()
+	var must_check_bound_type_bounds, check8_bound_type_bounds = reminder()
+	var must_check_boxed_bounds, check9_boxed_bounds = reminder()
+	var must_check_interface_bounds, check10_interface_bounds = reminder()
 	// *************
 	var reg = make(TypeRegistry)
 	var err = registerTypes(entry, reg)
@@ -233,7 +238,7 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 				}
 			})()
 			if err != nil { return nil, err }
-			def.Content = contentWrite(&typsys.Boxed {
+			def.Content = contentWrite(&typsys.Box {
 				BoxKind:      kind,
 				WeakWrapping: weak,
 				InnerType:    inner,
@@ -274,6 +279,94 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 			def.Content = contentWrite(&typsys.Native {})
 		}
 	}
+	var check_circular = func(get_deps func(*typsys.TypeDef)([] *typsys.TypeDef)) ([] *typsys.TypeDef) {
+		var in = make(map[*typsys.TypeDef] uint)
+		var q = make([] *typsys.TypeDef, 0)
+		for _, def := range types {
+			var deps = get_deps(def.TypeDef.TypeDef)
+			for _, dep := range deps {
+				in[dep] += 1
+			}
+		}
+		for def, n := range in {
+			if n == 0 {
+				q = append(q, def)
+			}
+		}
+		for len(q) > 0 {
+			var head = q[0]
+			q = q[1:]
+			var deps = get_deps(head)
+			for _, dep := range deps {
+				var current = in[dep]
+				if !(current >= 1) { panic("something went wrong") }
+				var updated = (current - 1)
+				in[dep] = updated
+				if updated == 0 {
+					q = append(q, dep)
+				}
+			}
+		}
+		var bad = make([] *typsys.TypeDef, 0)
+		for def, n := range in {
+			if n > 0 {
+				bad = append(bad, def)
+			}
+		}
+		return bad
+	}
+	var defs_to_strings = func(defs ([] *typsys.TypeDef)) ([] string) {
+		var result = make([] string, len(defs))
+		for i, def := range defs {
+			result[i] = def.Name.String()
+		}
+		return result
+	}
+	var err1 = check1_circular_box(func() *source.Error {
+		var bad = check_circular(func(def *typsys.TypeDef) ([] *typsys.TypeDef) {
+			var box, is_box = def.Content.(*typsys.Box)
+			if is_box {
+				var nested, is_nested = box.InnerType.(*typsys.NestedType)
+				if is_nested {
+					var ref, is_ref = nested.Content.(typsys.Ref)
+					if is_ref {
+						return [] *typsys.TypeDef { ref.Def }
+					}
+				}
+			}
+			return nil
+		})
+		if len(bad) > 0 {
+			return source.MakeError(bad[0].Location, E_CircularSubtypingDefinition {
+				Which: defs_to_strings(bad),
+			})
+		} else {
+			return nil
+		}
+	})
+	if err1 != nil { return nil, err1 }
+	var err2 = check2_circular_interface(func() *source.Error {
+		var bad = check_circular(func(def *typsys.TypeDef) ([] *typsys.TypeDef) {
+			var I, is_I = def.Content.(*typsys.Interface)
+			if is_I {
+				var deps = make([] *typsys.TypeDef, len(I.Included))
+				for i, inc := range I.Included {
+					deps[i] = inc.Interface
+				}
+				return deps
+			} else {
+				return nil
+			}
+		})
+		if len(bad) > 0 {
+			return source.MakeError(bad[0].Location, E_CircularInterfaceDefinition {
+				Which: defs_to_strings(bad),
+			})
+		} else {
+			return nil
+		}
+	})
+	if err2 != nil { return nil, err2 }
 	// TODO: validation
 }
 

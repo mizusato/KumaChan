@@ -72,8 +72,8 @@ type IncludedInterface struct {
 	Interface  *TypeDef
 }
 
-func (*Boxed) typeDef() {}
-type Boxed struct {
+func (*Box) typeDef() {}
+type Box struct {
 	BoxKind       BoxKind
 	WeakWrapping  bool
 	InnerType     Type

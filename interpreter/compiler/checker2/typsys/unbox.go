@@ -6,17 +6,17 @@ func Unbox(t Type, mod string) (Type, bool) {
 	if !(is_nested) { return nil, false }
 	var ref, is_ref = nested.Content.(Ref)
 	if !(is_ref) { return nil, false }
-	var boxed, is_boxed = ref.Def.Content.(*Boxed)
-	if !(is_boxed) { return nil, false }
-	if boxed.BoxKind == Protected || boxed.BoxKind == Opaque {
+	var box, is_box = ref.Def.Content.(*Box)
+	if !(is_box) { return nil, false }
+	if box.BoxKind == Protected || box.BoxKind == Opaque {
 		if mod != ref.Def.Name.ModuleName {
 			return nil, false
 		}
 	}
-	return boxed.inflatedInnerType(ref), true
+	return box.inflatedInnerType(ref), true
 }
 
-func (boxed *Boxed) inflatedInnerType(ref Ref) Type {
+func (boxed *Box) inflatedInnerType(ref Ref) Type {
 	if ref.Def.Content != boxed {
 		panic("invalid argument")
 	}

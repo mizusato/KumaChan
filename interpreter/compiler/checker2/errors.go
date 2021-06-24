@@ -114,4 +114,36 @@ func (e E_TypeDuplicateField) DescribeError() richtext.Block {
 	return b
 }
 
+type E_CircularSubtypingDefinition struct {
+	Which  [] string
+}
+func (e E_CircularSubtypingDefinition) DescribeError() richtext.Block {
+	var b = makeErrorDescBlankBlock()
+	b.WriteSpan("circular subtyping definition:", richtext.TAG_ERR_NORMAL)
+	b.WriteSpan("cycle(s) detected within types:", richtext.TAG_ERR_NORMAL)
+	for i, t := range e.Which {
+		if i > 0 {
+			b.WriteSpan(",", richtext.TAG_ERR_NORMAL)
+		}
+		b.WriteSpan(t, richtext.TAG_ERR_INLINE)
+	}
+	return b
+}
+
+type E_CircularInterfaceDefinition struct {
+	Which  [] string
+}
+func (e E_CircularInterfaceDefinition) DescribeError() richtext.Block {
+	var b = makeErrorDescBlankBlock()
+	b.WriteSpan("circular interface definition:", richtext.TAG_ERR_NORMAL)
+	b.WriteSpan("cycle(s) detected within types:", richtext.TAG_ERR_NORMAL)
+	for i, t := range e.Which {
+		if i > 0 {
+			b.WriteSpan(",", richtext.TAG_ERR_NORMAL)
+		}
+		b.WriteSpan(t, richtext.TAG_ERR_INLINE)
+	}
+	return b
+}
+
 
