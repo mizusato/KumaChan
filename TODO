@@ -48,6 +48,8 @@ type Cell[T] protected {
 
 ## Type System Refactor
 
+- Lang: only function can have bounds (type def cannot)
+
 - Lang: consider { instance.method arg }, type A (I1, I2) { ... };
 
 - Lang: consider curried function as method: &(Instance) => &(In) => Out
