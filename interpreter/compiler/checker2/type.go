@@ -108,6 +108,37 @@ var __ImplInit, implWrite = (func() (([] typsys.DispatchTable), func([] typsys.D
 })()
 
 func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (TypeRegistry, *source.Error) {
+	var reminder = func() (struct{}, func(func())) {
+		return struct{}{}, func(f func()) { f() }
+	}
+	// *** Postponed Checks ***
+	// 1. circular:
+	//   (1) a box must NOT unbox to a ref to itself directly or indirectly.
+	//   (2) an interface must NOT include itself directly or indirectly.
+	var must_check_circular_box, check_circular_box = reminder()
+	var must_check_circular_interface, check_circular_interface = reminder()
+	// 2. interface hierarchy:
+	//   (*) for a interface type,
+	//     (a) its included types must be interface types,
+	//     (b) method names must NOT conflict with its ancestors.
+	var must_check_interface_hierarchy, check_interface_hierarchy = reminder()
+	// 3. variance:
+	//   (1) variance defined on parameters of a box must be valid.
+	//   (2) variance defined on parameters of an interface must be valid.
+	var must_check_boxed_variance, check_boxed_variance = reminder()
+	var must_check_interface_variance, check_interface_variance = reminder()
+	// 4. bound:
+	//   (1) the default type of a parameter must satisfy its bound.
+	//   (2) arguments of reference types in default types must satisfy bounds.
+	//   (3) arguments of reference types in bounds must satisfy bounds.
+	//   (4) arguments of reference types in box must satisfy bounds.
+	//   (5) arguments of reference types in interface must satisfy bounds.
+	var must_check_default_type_bound, check_default_type_bound = reminder()
+	var must_check_default_type_bounds, check_default_type_bounds = reminder()
+	var must_check_bound_type_bounds, check_bound_type_bounds = reminder()
+	var must_check_boxed_bounds, check_boxed_bounds = reminder()
+	var must_check_interface_bounds, check_interface_bounds = reminder()
+	// *************
 	var reg = make(TypeRegistry)
 	var err = registerTypes(entry, reg)
 	if err != nil { return nil, err }
@@ -143,8 +174,8 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 				if err != nil { return err }
 				p.Default = defaultWrite(raw.Type)
 			}
-			// TODO: validate bound (default type)
-			// TODO: validate bounds (default type)
+			_ = must_check_default_type_bound
+			_ = must_check_default_type_bounds
 			return nil
 		})
 		if err != nil { return nil, err }
@@ -173,7 +204,7 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 					Value: raw.Type,
 				})
 			}
-			// TODO: validate bounds (bound type)
+			_ = must_check_bound_type_bounds
 			return nil
 		})
 		if err != nil { return nil, err }
@@ -207,9 +238,9 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 				WeakWrapping: weak,
 				InnerType:    inner,
 			})
-			// TODO: validate circular (inner type)
-			// TODO: validate variance (inner type)
-			// TODO: validate bounds (inner type)
+			_ = must_check_circular_box
+			_ = must_check_boxed_variance
+			_ = must_check_boxed_bounds
 		case ast.EnumType:
 			if def.Content == nil { panic("something went wrong") }
 			// content already generated
@@ -230,11 +261,10 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 				included[i] = typsys.IncludedInterface {
 					Interface: def.TypeDef,
 				}
-				// TODO: validate circular (included)
-				// TODO: validate if content is interface (included)
-				// TODO: validate method conflict (included)
-				// TODO: validate variance (methods)
-				// TODO: validate bounds (methods)
+				_ = must_check_circular_interface
+				_ = must_check_interface_hierarchy
+				_ = must_check_interface_variance
+				_ = must_check_interface_bounds
 			}
 			def.Content = contentWrite(&typsys.Interface {
 				Included: included,
