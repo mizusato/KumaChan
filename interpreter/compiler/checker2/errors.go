@@ -167,6 +167,16 @@ func (e E_BadImplemented) DescribeError() richtext.Block {
 	return b
 }
 
+type E_TooManyTypeParameters struct {
+	TypeName  string
+}
+func (e E_TooManyTypeParameters) DescribeError() richtext.Block {
+	var b = makeErrorDescBlankBlock()
+	b.WriteSpan("too many type parameters declared on type", richtext.TAG_ERR_NORMAL)
+	b.WriteSpan(e.TypeName, richtext.TAG_ERR_INLINE)
+	return b
+}
+
 type E_InvalidVarianceOnParameters struct {
 	Which  [] string
 }
@@ -179,6 +189,20 @@ func (e E_InvalidVarianceOnParameters) DescribeError() richtext.Block {
 		}
 		b.WriteSpan(t, richtext.TAG_ERR_INLINE)
 	}
+	return b
+}
+
+type E_ImplementedIncompatibleParameters struct {
+	TypeName       string
+	InterfaceName  string
+}
+func (e E_ImplementedIncompatibleParameters) DescribeError() richtext.Block {
+	var b = makeErrorDescBlankBlock()
+	b.WriteSpan("type", richtext.TAG_ERR_NORMAL)
+	b.WriteSpan(e.TypeName, richtext.TAG_ERR_INLINE)
+	b.WriteSpan("cannot implement the interface", richtext.TAG_ERR_NORMAL)
+	b.WriteSpan(e.InterfaceName, richtext.TAG_ERR_INLINE)
+	b.WriteSpan("(parameters incompatible)", richtext.TAG_ERR_NOTE)
 	return b
 }
 

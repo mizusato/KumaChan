@@ -143,19 +143,35 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 				})
 			}
 			occurred_names[n] = struct{}{}
-			var def, exists = reg[n]
+			var impl_def, exists = reg[n]
 			if !(exists) {
 				return nil, source.MakeError(loc, E_TypeNotFound {
 					Which: n.String(),
 				})
 			}
-			var _, ok = def.AstNode.TypeDef.TypeDef.(ast.InterfaceType)
+			var _, ok = impl_def.AstNode.TypeDef.TypeDef.(ast.InterfaceType)
 			if !(ok) {
 				return nil, source.MakeError(loc, E_BadImplemented {
 					Which: n.String(),
 				})
 			}
-			// TODO: check for parameter compatibility
+			var impl_params = impl_def.Parameters
+			if len(impl_params) != len(def.Parameters) {
+				return nil, source.MakeError(loc, E_ImplementedIncompatibleParameters{
+					TypeName:      def.Name.String(),
+					InterfaceName: n.String(),
+				})
+			}
+			for j := range impl_params {
+				var vi = impl_params[j].Variance
+				var v = def.Parameters[j].Variance
+				if vi != typsys.Invariant && v != vi {
+					return nil, source.MakeError(loc, E_ImplementedIncompatibleParameters{
+						TypeName:      def.Name.String(),
+						InterfaceName: n.String(),
+					})
+				}
+			}
 		}
 	}
 	// Construct default parameter types
@@ -358,7 +374,7 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 		return nil
 	})
 	if err != nil { return nil, err } }
-	// TODO
+	return reg, nil
 }
 
 func registerTypes(mod *loader.Module, reg TypeRegistry) *source.Error {
@@ -424,8 +440,12 @@ func registerType (
 			}
 			return ci.Enum.Parameters, nil
 		} else {
-			// TODO: parameter quantity limit
-			var params = make([] typsys.Parameter, len(decl.Params))
+			var arity = len(decl.Params)
+			if arity > MAX_TYPE_PARAMETERS {
+				return nil, source.MakeError(decl.Name.Location,
+					E_TooManyTypeParameters { TypeName: type_name.String() })
+			}
+			var params = make([] typsys.Parameter, arity)
 			for i, p := range decl.Params {
 				if p.In && p.Out { panic("something went wrong") }
 				var v = typsys.Invariant

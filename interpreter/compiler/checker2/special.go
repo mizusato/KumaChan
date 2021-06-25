@@ -5,6 +5,7 @@ import (
 )
 
 
+const MAX_TYPE_PARAMETERS = 8
 const Discarded = "_" // TODO: (blank: within AST)
 
 var typeBadNames = [] string {
