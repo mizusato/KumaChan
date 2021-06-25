@@ -7,13 +7,25 @@ import (
 )
 
 
-type Errors ([] Error)
-func (es Errors) Error() string {
-	if len(es) == 0 {
+type Errors ([] *Error)
+func ErrorsFrom(err *Error) Errors {
+	if err != nil {
+		return Errors([] *Error { err })
+	} else {
+		return nil
+	}
+}
+func ErrorsJoin(errs *Errors, err *Error) {
+	if err != nil {
+		*errs = append(*errs, err)
+	}
+}
+func (errs Errors) Error() string {
+	if len(errs) == 0 {
 		panic("invalid operation")
 	}
-	var all = make([] string, len(es))
-	for i, e := range es {
+	var all = make([] string, len(errs))
+	for i, e := range errs {
 		all[i] = e.Error()
 	}
 	return strings.Join(all, "\n")

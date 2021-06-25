@@ -58,7 +58,7 @@ func newParameterType(which string, params ([] typsys.Parameter)) (RawType, bool
 func newType(t ast.VariousType, ctx TypeConsContext) (RawType, *source.Error) {
 	switch T := t.Type.(type) {
 	case ast.TypeRef:
-		var n = typeNameFromTypeRef(T, ctx.Module)
+		var n = name.TypeName { Name: NameFrom(T.Module, T.Item, ctx.Module) }
 		if n.ModuleName == "" {
 			var item_name = n.ItemName
 			var special, is_special = newSpecialType(item_name)

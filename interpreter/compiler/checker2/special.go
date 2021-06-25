@@ -25,7 +25,7 @@ var typeBadNames = [] string {
 	typsys.TypeNameTop,
 	typsys.TypeNameBottom,
 }
-func checkTypeName(name string) bool {
+func isValidTypeItemName(name string) bool {
 	for _, full := range typeBadNames {
 		if name == full {
 			return false
