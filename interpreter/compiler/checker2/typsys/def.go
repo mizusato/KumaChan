@@ -10,7 +10,8 @@ import (
 type TypeDef struct {
 	attr.TypeAttrs
 	Name        name.TypeName
-	Implements  [] DispatchTable
+	Implements  [] *TypeDef
+	Tables      [] DispatchTable
 	Parameters  [] Parameter
 	Content     TypeDefContent
 	CaseInfo
@@ -20,7 +21,7 @@ type CaseInfo struct {
 	CaseIndex   uint
 }
 type DispatchTable struct {
-	Interface  *TypeDef  // Content should be an *Interface
+	Interface  *Interface
 	Methods    [] name.FunctionName
 }
 type Parameter struct {
@@ -65,7 +66,7 @@ type Enum struct {
 
 func (*Interface) typeDef() {}
 type Interface struct {
-	Included  [] *TypeDef  // Content should be an *Interface
+	Included  [] *Interface
 	Methods   Record
 }
 

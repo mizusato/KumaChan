@@ -9,7 +9,6 @@ import (
 	"kumachan/interpreter/lang/common/attr"
 	"kumachan/interpreter/compiler/checker2/typsys"
 	"kumachan/interpreter/compiler/loader"
-	"kumachan/stdlib"
 )
 
 
@@ -19,98 +18,44 @@ type TypeDefWithModule struct {
 	TypeDef
 	Module  *loader.Module
 }
-func (l TypeList) Less(i int, j int) bool {
-	var u = l[i].Name
-	var v = l[j].Name
-	if u.ModuleName < v.ModuleName {
-		return true
-	} else if u.ModuleName == v.ModuleName {
-		return (u.ItemName < v.ItemName)
-	} else {
-		return false
-	}
-}
-func (l TypeList) Len() int {
-	return len(l)
-}
-func (l TypeList) Swap(i int, j int) {
-	var I = &(l[i])
-	var J = &(l[j])
-	var t = *I
-	*I = *J
-	*J = t
-}
-
 type TypeDef struct {
 	*typsys.TypeDef
 	AstNode  *ast.DeclType
 }
 
-var coreTypes = (func() (map[string] struct{}) {
-	var set = make(map[string] struct{})
-	var list = stdlib.CoreTypeNames()
-	for _, name := range list {
-		set[name] = struct{}{}
-	}
-	return set
-})()
-
-func TypeNameFromIdentifier(id ast.Identifier, mod *loader.Module) (name.TypeName, bool) {
-	var n = ast.Id2String(id)
-	if CheckTypeName(n) {
-		return name.MakeTypeName(mod.Name, n), true
-	} else {
-		return name.TypeName {}, false
-	}
-}
-
-func TypeNameFromTypeRef(ref ast.TypeRef, mod *loader.Module) name.TypeName {
-	return name.TypeName { Name: NameFrom(ref.Module, ref.Item, mod) }
-}
-
-func TypeNameListFrom(ref_list ([] ast.TypeDeclRef), mod *loader.Module) ([] name.TypeName) {
-	var list = make([] name.TypeName, len(ref_list))
-	for i, ref := range ref_list {
-		list[i] = name.TypeName { Name: NameFrom(ref.Module, ref.Item, mod) }
-	}
-	return list
-}
-
-var __DefaultInit, defaultWrite = (func() (typsys.Type, func(typsys.Type)(typsys.Type)) {
+var defaultInit, defaultWrite = (func() (typsys.Type, func(typsys.Type)(typsys.Type)) {
 	return nil,
 		func(t typsys.Type) typsys.Type { return t }
 })()
-var __ContentInit, contentWrite = (func() (typsys.TypeDefContent, func(typsys.TypeDefContent)(typsys.TypeDefContent)) {
+var contentInit, contentWrite = (func() (typsys.TypeDefContent, func(typsys.TypeDefContent)(typsys.TypeDefContent)) {
 	return nil,
 		func(c typsys.TypeDefContent) typsys.TypeDefContent { return c }
 })()
-var __TableInit, tableWrite = (func() (([] typsys.DispatchTable), func([] typsys.DispatchTable)([] typsys.DispatchTable)) {
+var tableInit, tableWrite = (func() (([] typsys.DispatchTable), func([] typsys.DispatchTable)([] typsys.DispatchTable)) {
 	return nil,
 		func(d ([] typsys.DispatchTable)) ([] typsys.DispatchTable) { return d }
 })()
 
 func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (TypeRegistry, *source.Error) {
-	var reminder = func() (struct{}, func(func()(*source.Error)) *source.Error) {
+	var step_ = func(types TypeList) (func(func(TypeDefWithModule)(*source.Error)) *source.Error) {
+		return func(f func(TypeDefWithModule) *source.Error) *source.Error {
+			for _, def := range types {
+				var err = f(def)
+				if err != nil { return err }
+			}
+			return nil
+		}
+	}
+	var check = func() (struct{}, func(func()(*source.Error)) *source.Error) {
 		return struct{}{},
 			func(f func()(*source.Error)) *source.Error { return f() }
 	}
-	// *** Postponed Checks ***
-	// 1. circular:
-	//   (1) a box must NOT unbox to a ref to itself directly or indirectly.
-	//   (2) an interface must NOT include itself directly or indirectly.
-	var must_check_circular_box, check1_circular_box = reminder()
-	var must_check_circular_interface, check2_circular_interface = reminder()
-	// 2. variance:
-	//   (1) variance defined on parameters of a box must be valid.
-	//   (2) variance defined on parameters of an interface must be valid.
-	var must_check_boxed_variance, check3_boxed_variance = reminder()
-	var must_check_interface_variance, check4_interface_variance = reminder()
-	// *************
-	// Register types
+	// ************************
+	// --- register types ---
 	var reg = make(TypeRegistry)
 	var err = registerTypes(entry, reg)
 	if err != nil { return nil, err }
-	// Create an ordered type definition list
+	// --- create an ordered type definition list ---
 	var types = make(TypeList, 0, len(reg))
 	for _, def := range reg {
 		var mod, exists = idx[def.Name.ModuleName]
@@ -121,67 +66,104 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 		})
 	}
 	sort.Sort(types)
-	// Check for conflicts with alias
-	for _, def := range types {
+	// ************************
+	// --- main steps ---
+	var step = step_(types)
+	// 1. check for name conflicts with alias
+	//   (*) a type cannot have a name that is identical to an alias.
+	var step1_check_alias = step
+	// 2. fill implemented interface list
+	//   (1) a type cannot have two or more identical implemented types.
+	//   (2) an implemented type must be an interface type.
+	//   (3) compatible parameters are required for implemented interfaces.
+	var step2_fill_impl = step
+	// 3. construct default parameter types
+	//   (1) construct the default type for each type parameter.
+	var step3_construct_default = step
+	// 4. construct contents
+	//   (1) construct the inner type for each box type.
+	//   (2) construct the methods record for each interface type.
+	//   (3) contents of enum types should have been constructed.
+	//   (4) construct a unique content for each native type.
+	var step4_construct_content = step
+	// --- additional checks ---
+	// 1. check for circular definition
+	//   (1) a box must NOT unbox to a ref to itself directly or indirectly.
+	//   (2) an interface must NOT include itself directly or indirectly.
+	var must_check_circular_box, check1_circular_box = check()
+	var must_check_circular_interface, check2_circular_interface = check()
+	// 2. check for variance validity
+	//   (1) variance defined on parameters of a box must be valid.
+	//   (2) variance defined on parameters of an interface must be valid.
+	var must_check_boxed_variance, check3_boxed_variance = check()
+	var must_check_interface_variance, check4_interface_variance = check()
+	// ************************
+	{ var err = step1_check_alias(func(def TypeDefWithModule) *source.Error {
 		var _, conflict = al[def.Name.Name]
 		if conflict {
-			return nil, source.MakeError(def.Location, E_TypeConflictWithAlias {
-				Which: def.Name.String(),
-			})
+			return source.MakeError(def.Location,
+				E_TypeConflictWithAlias { Which: def.Name.String() })
+		} else {
+			return nil
 		}
-	}
-	// Check implemented types
-	for _, def := range types {
-		var impl_names = TypeNameListFrom(def.AstNode.Impl, def.Module)
+	})
+	if err != nil { return nil, err } }
+	// ---------
+	{ var err = step2_fill_impl(func(def TypeDefWithModule) *source.Error {
+		var impl_names = typeNameListFrom(def.AstNode.Impl, def.Module)
+		var impl_defs = make([] *typsys.TypeDef, len(impl_names))
 		var occurred_names = make(map[name.TypeName] struct{})
 		for i, n := range impl_names {
 			var loc = def.AstNode.Impl[i].Location
 			var _, occurred = occurred_names[n]
 			if occurred {
-				return nil, source.MakeError(loc, E_DuplicateImplemented {
-					Which: n.String(),
-				})
+				return source.MakeError(loc,
+					E_DuplicateImplemented { Which: n.String() })
 			}
 			occurred_names[n] = struct{}{}
 			var impl_def, exists = reg[n]
 			if !(exists) {
-				return nil, source.MakeError(loc, E_TypeNotFound {
-					Which: n.String(),
-				})
+				return source.MakeError(loc,
+					E_TypeNotFound { Which: n.String() })
 			}
 			var _, ok = impl_def.AstNode.TypeDef.TypeDef.(ast.InterfaceType)
 			if !(ok) {
-				return nil, source.MakeError(loc, E_BadImplemented {
-					Which: n.String(),
-				})
+				return source.MakeError(loc,
+					E_BadImplemented { Which: n.String() })
 			}
 			var impl_params = impl_def.Parameters
 			if len(impl_params) != len(def.Parameters) {
-				return nil, source.MakeError(loc, E_ImplementedIncompatibleParameters{
-					TypeName:      def.Name.String(),
-					InterfaceName: n.String(),
-				})
+				return source.MakeError(loc,
+					E_ImplementedIncompatibleParameters {
+						TypeName:      def.Name.String(),
+						InterfaceName: n.String(),
+					})
 			}
 			for j := range impl_params {
 				var vi = impl_params[j].Variance
 				var v = def.Parameters[j].Variance
 				if vi != typsys.Invariant && v != vi {
-					return nil, source.MakeError(loc, E_ImplementedIncompatibleParameters{
-						TypeName:      def.Name.String(),
-						InterfaceName: n.String(),
-					})
+					return source.MakeError(loc,
+						E_ImplementedIncompatibleParameters {
+							TypeName:      def.Name.String(),
+							InterfaceName: n.String(),
+						})
 				}
 			}
+			impl_defs[i] = impl_def.TypeDef
 		}
-	}
-	// Construct default parameter types
-	for _, def := range types {
+		def.Implements = impl_defs
+		return nil
+	})
+	if err != nil { return nil, err } }
+	// ---------
+	{ var err = step3_construct_default(func(def TypeDefWithModule) *source.Error {
 		var ctx = TypeConsContext {
 			Module:   def.Module,
 			TypeReg:  reg,
 			AliasReg: al,
 		}
-		var err = def.ForEachParameter(func(i uint, p *typsys.Parameter) *source.Error {
+		return def.ForEachParameter(func(i uint, p *typsys.Parameter) *source.Error {
 			var p_node = &(def.AstNode.Params[i])
 			var default_, has_default = p_node.Default.(ast.VariousType)
 			if has_default {
@@ -191,10 +173,10 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 			}
 			return nil
 		})
-		if err != nil { return nil, err }
-	}
-	// Construct contents
-	for _, def := range types {
+	})
+	if err != nil { return nil, err } }
+	// ---------
+	{ var err = step4_construct_content(func(def TypeDefWithModule) *source.Error {
 		var ctx = TypeConsContext {
 			Module:   def.Module,
 			TypeReg:  reg,
@@ -217,7 +199,7 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 					return typsys.UnitType {}, nil
 				}
 			})()
-			if err != nil { return nil, err }
+			if err != nil { return err }
 			def.Content = contentWrite(&typsys.Box {
 				BoxKind:      kind,
 				WeakWrapping: weak,
@@ -225,24 +207,20 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 			})
 			_ = must_check_circular_box
 			_ = must_check_boxed_variance
-		case ast.EnumType:
-			if def.Content == nil { panic("something went wrong") }
-			// content already generated
 		case ast.InterfaceType:
 			var raw, err = newTypeFromRepr(content.Methods, ctx)
-			if err != nil { return nil, err }
+			if err != nil { return err }
 			var methods = raw.Type.(*typsys.NestedType).Content.(typsys.Record)
-			var impl_names = TypeNameListFrom(def.AstNode.Impl, def.Module)
-			var included = make([] *typsys.TypeDef, len(impl_names))
+			var impl_names = typeNameListFrom(def.AstNode.Impl, def.Module)
+			var included = make([] *typsys.Interface, len(impl_names))
 			for i, n := range impl_names {
 				var def, exists = reg[n]
 				if !(exists) {
 					var loc = def.AstNode.Impl[i].Location
-					return nil, source.MakeError(loc, E_TypeNotFound {
-						Which: n.String(),
-					})
+					return source.MakeError(loc,
+						E_TypeNotFound { Which: n.String() })
 				}
-				included[i] = def.TypeDef
+				included[i] = def.TypeDef.Content.(*typsys.Interface)
 				_ = must_check_circular_interface
 				_ = must_check_interface_variance
 			}
@@ -250,11 +228,16 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 				Included: included,
 				Methods:  methods,
 			})
+		case ast.EnumType:
+			if def.Content == nil { panic("something went wrong") }
+			// content already generated
 		case ast.NativeType:
 			def.Content = contentWrite(&typsys.Native {})
 		}
-	}
-	// Perform all postponed checks
+		return nil
+	})
+	if err != nil { return nil, err } }
+	// ************************
 	var check_circular = func(get_deps func(*typsys.TypeDef)([] *typsys.TypeDef)) ([] *typsys.TypeDef) {
 		var in = make(map[*typsys.TypeDef] uint)
 		var q = make([] *typsys.TypeDef, 0)
@@ -298,6 +281,7 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 		}
 		return result
 	}
+	// ---------
 	{ var err = check1_circular_box(func() *source.Error {
 		var bad = check_circular(func(def *typsys.TypeDef) ([] *typsys.TypeDef) {
 			var box, is_box = def.Content.(*typsys.Box)
@@ -321,11 +305,12 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 		}
 	})
 	if err != nil { return nil, err } }
+	// ---------
 	{ var err = check2_circular_interface(func() *source.Error {
 		var bad = check_circular(func(def *typsys.TypeDef) ([] *typsys.TypeDef) {
-			var interface_, is_interface = def.Content.(*typsys.Interface)
+			var _, is_interface = def.Content.(*typsys.Interface)
 			if is_interface {
-				return interface_.Included
+				return def.Implements
 			} else {
 				return nil
 			}
@@ -339,6 +324,7 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 		}
 	})
 	if err != nil { return nil, err } }
+	// ---------
 	{ var err = check3_boxed_variance(func() *source.Error {
 		for _, def := range types {
 			var box, is_box = def.Content.(*typsys.Box)
@@ -356,6 +342,7 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 		return nil
 	})
 	if err != nil { return nil, err } }
+	// ---------
 	{ var err = check4_interface_variance(func() *source.Error {
 		for _, def := range types {
 			var interface_, is_interface = def.Content.(*typsys.Interface)
@@ -374,6 +361,7 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 		return nil
 	})
 	if err != nil { return nil, err } }
+	// ---------
 	return reg, nil
 }
 
@@ -403,7 +391,7 @@ func registerType (
 	reg   TypeRegistry,
 	ci    typsys.CaseInfo,
 ) (*typsys.TypeDef, *source.Error) {
-	var type_name, type_name_ok = TypeNameFromIdentifier(decl.Name, mod)
+	var type_name, type_name_ok = typeNameFromIdentifier(decl.Name, mod)
 	if !(type_name_ok) {
 		return nil, source.MakeError(decl.Name.Location, E_InvalidTypeName {
 			Name: ast.Id2String(decl.Name),
@@ -456,14 +444,14 @@ func registerType (
 					v = typsys.Covariant
 				}
 				var n = ast.Id2String(p.Name)
-				if !(CheckTypeName(n)) {
+				if !(checkTypeName(n)) {
 					return nil, source.MakeError(p.Name.Location, E_InvalidTypeName {
 						Name: ast.Id2String(p.Name),
 					})
 				}
 				params[i] = typsys.Parameter {
 					Name:     n,
-					Default:  __DefaultInit,
+					Default:  defaultInit,
 					Variance: v,
 				}
 			}
@@ -474,9 +462,9 @@ func registerType (
 	*def = typsys.TypeDef {
 		TypeAttrs:  attrs,
 		Name:       type_name,
-		Implements: __TableInit,
+		Tables:     tableInit,
 		Parameters: params,
-		Content:    __ContentInit,
+		Content:    contentInit,
 		CaseInfo:   ci,
 	}
 	var enum, is_enum = decl.TypeDef.TypeDef.(ast.EnumType)
@@ -497,185 +485,46 @@ func registerType (
 	return def, nil
 }
 
-type TypeConsContext struct {
-	Module    *loader.Module
-	TypeReg   TypeRegistry
-	AliasReg  AliasRegistry
-	ParamVec  [] typsys.Parameter
-}
-func (ctx TypeConsContext) ResolveGlobalName(n name.TypeName) (TypeDef, string, bool) {
-	var alias, is_alias = ctx.AliasReg[n.Name]
-	if is_alias {
-		n = name.TypeName { Name: alias.To }
-	}
-	var desc = DescribeNameWithPossibleAlias(n.Name, alias.To)
-	var def, exists = ctx.TypeReg[n]
-	return def, desc, exists
-}
-type RawType struct {
-	Type  typsys.Type
-}
-func newSpecialType(which string) (RawType, bool) {
-	switch which {
-	case typsys.TypeNameUnknown:
-		return RawType { Type: &typsys.UnknownType {} }, true
-	case typsys.TypeNameUnit:
-		return RawType { Type: typsys.UnitType {} }, true
-	case typsys.TypeNameTop:
-		return RawType { Type: typsys.TopType {} }, true
-	case typsys.TypeNameBottom:
-		return RawType { Type: typsys.BottomType {} }, true
-	default:
-		return RawType {}, false
+
+func (l TypeList) Less(i int, j int) bool {
+	var u = l[i].Name
+	var v = l[j].Name
+	if u.ModuleName < v.ModuleName {
+		return true
+	} else if u.ModuleName == v.ModuleName {
+		return (u.ItemName < v.ItemName)
+	} else {
+		return false
 	}
 }
-func newParameterType(which string, params ([] typsys.Parameter)) (RawType, bool) {
-	for i := range params {
-		var p = &(params[i])
-		if which == p.Name {
-			return RawType { typsys.ParameterType { Parameter: p } }, true
-		}
-	}
-	return RawType {}, false
+func (l TypeList) Len() int {
+	return len(l)
 }
-func newType(t ast.VariousType, ctx TypeConsContext) (RawType, *source.Error) {
-	switch T := t.Type.(type) {
-	case ast.TypeRef:
-		var n = TypeNameFromTypeRef(T, ctx.Module)
-		if n.ModuleName == "" {
-			var item_name = n.ItemName
-			var special, is_special = newSpecialType(item_name)
-			if is_special {
-				var num_args = uint(len(T.TypeArgs))
-				if num_args > 0 {
-					return RawType {}, source.MakeError(T.Location, E_TypeWrongParameterQuantity{
-						Which: item_name,
-						Given: num_args,
-						Least: 0,
-						Total: 0,
-					})
-				}
-				return special, nil
-			}
-			var param, is_param = newParameterType(item_name, ctx.ParamVec)
-			if is_param {
-				return param, nil
-			}
-		}
-		var def, n_desc, exists = ctx.ResolveGlobalName(n)
-		if !(exists) {
-			return RawType {}, source.MakeError(def.Location, E_TypeNotFound {
-				Which: n_desc,
-			})
-		}
-		var arity = uint(len(def.Parameters))
-		var least_arity = arity
-		if arity > 0 {
-			for i := (arity - 1); i >= 0; i -= 1 {
-				if def.Parameters[i].Default != nil {
-					least_arity -= 1
-				} else {
-					break
-				}
-			}
-		}
-		var num_args = uint(len(T.TypeArgs))
-		if !(least_arity <= num_args && num_args <= arity) {
-			return RawType {}, source.MakeError(T.Location, E_TypeWrongParameterQuantity {
-				Which: n_desc,
-				Given: num_args,
-				Least: least_arity,
-				Total: arity,
-			})
-		}
-		var args = make([] typsys.Type, arity)
-		for i := uint(0); i < arity; i += 1 {
-			var arg typsys.Type
-			if i < num_args {
-				var raw, err = newType(T.TypeArgs[i], ctx)
-				if err != nil { return RawType {}, err }
-				arg = raw.Type
-			} else {
-				arg = def.Parameters[i].Default
-			}
-			if arg == nil { panic("something went wrong") }
-		}
-		var ret = &typsys.NestedType {
-			Content: typsys.Ref {
-				Def:  def.TypeDef,
-				Args: args,
-			},
-		}
-		return RawType { Type: ret }, nil
-	case ast.TypeLiteral:
-		return newTypeFromRepr(T.Repr.Repr, ctx)
-	default:
-		panic("impossible branch")
+func (l TypeList) Swap(i int, j int) {
+	var I = &(l[i])
+	var J = &(l[j])
+	var t = *I
+	*I = *J
+	*J = t
+}
+
+func typeNameFromIdentifier(id ast.Identifier, mod *loader.Module) (name.TypeName, bool) {
+	var n = ast.Id2String(id)
+	if checkTypeName(n) {
+		return name.MakeTypeName(mod.Name, n), true
+	} else {
+		return name.TypeName {}, false
 	}
 }
-func newTypeFromRepr(r ast.Repr, ctx TypeConsContext) (RawType, *source.Error) {
-	switch R := r.(type) {
-	case ast.ReprTuple:
-		var num_elements = uint(len(R.Elements))
-		if num_elements == 0 {
-			return RawType { Type: typsys.UnitType {} }, nil
-		} else {
-			var elements = make([] typsys.Type, num_elements)
-			for i, t := range R.Elements {
-				var raw, err = newType(t, ctx)
-				if err != nil { return RawType {}, err }
-				elements[i] = raw.Type
-			}
-			var tuple = typsys.Tuple { Elements: elements }
-			var ret = &typsys.NestedType { Content: tuple }
-			return RawType { Type: ret }, nil
-		}
-	case ast.ReprRecord:
-		var fields = make([] typsys.Field, len(R.Fields))
-		var index_map = make(map[string] uint)
-		for i, field := range R.Fields {
-			var index = uint(i)
-			var field_name = ast.Id2String(field.Name)
-			var _, exists = index_map[field_name]
-			if exists {
-				return RawType {}, source.MakeError(field.Name.Location,
-					E_TypeDuplicateField { Which: field_name })
-			}
-			index_map[field_name] = index
-			var raw, err = newType(field.Type, ctx)
-			if err != nil { return RawType {}, err }
-			fields[i] = typsys.Field {
-				Attr: attr.FieldAttr {
-					Attrs: attr.Attrs {
-						Location: field.Location,
-						Section:  nil,
-						Doc:      ast.GetDocContent(field.Docs),
-					},
-				},
-				Name: field_name,
-				Type: raw.Type,
-			}
-		}
-		var record = typsys.Record {
-			FieldIndexMap: index_map,
-			Fields:        fields,
-		}
-		var ret = &typsys.NestedType { Content: record }
-		return RawType { Type: ret }, nil
-	case ast.ReprFunc:
-		var input, err1 = newType(R.Input, ctx)
-		if err1 != nil { return RawType {}, err1 }
-		var output, err2 = newType(R.Output, ctx)
-		if err2 != nil { return RawType {}, err2 }
-		var lambda = typsys.Lambda {
-			Input:  input.Type,
-			Output: output.Type,
-		}
-		var ret = &typsys.NestedType { Content: lambda }
-		return RawType { Type: ret }, nil
-	default:
-		panic("impossible branch")
+func typeNameFromTypeRef(ref ast.TypeRef, mod *loader.Module) name.TypeName {
+	return name.TypeName { Name: NameFrom(ref.Module, ref.Item, mod) }
+}
+func typeNameListFrom(ref_list ([] ast.TypeDeclRef), mod *loader.Module) ([] name.TypeName) {
+	var list = make([] name.TypeName, len(ref_list))
+	for i, ref := range ref_list {
+		list[i] = name.TypeName { Name: NameFrom(ref.Module, ref.Item, mod) }
 	}
+	return list
 }
 
 
