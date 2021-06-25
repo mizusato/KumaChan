@@ -67,16 +67,36 @@ type PredefinedValue struct {
 
 func (impl DeclFunction) Statement() {}
 type DeclFunction struct {
-    Node                     `part:"decl_func"`
-    Docs      [] Doc         `list_rec:"docs"`
-    Meta      Meta           `part:"meta"`
-    Public    bool           `option:"scope.@export"`
-    Name      Identifier     `part:"name"`
-    Params    [] TypeParam   `list_more:"type_params" item:"type_param"`
-    Implicit  ReprRecord     `part_opt:"sig.implicit.repr_record"`
-    Repr      ReprFunc       `part:"sig.repr_func"`
-    Body      VariousBody    `part_opt:"body"`
-    IsConst   bool           // whether it is desugared from a ConstDecl
+    Node                         `part:"decl_func"`
+    Docs      [] Doc             `list_rec:"docs"`
+    Meta      Meta               `part:"meta"`
+    Public    bool               `option:"scope.@export"`
+    Name      Identifier         `part:"name"`
+    Params    [] FuncTypeParam   `list_more:"sig.func_type_params" item:"func_type_param"`
+    Implicit  ReprRecord         `part_opt:"sig.implicit.repr_record"`
+    Repr      ReprFunc           `part:"sig.repr_func"`
+    Body      VariousBody        `part_opt:"body"`
+    IsConst   bool               // whether it is desugared from a ConstDecl
+}
+type FuncTypeParam struct {
+    Node                        `part:"func_type_param"`
+    Name     Identifier         `part:"name"`
+    Bound    VariousTypeBound   `part_opt:"type_bound"`
+}
+type VariousTypeBound struct {
+    Node                   `part:"bound"`
+    TypeBound  TypeBound   `use:"first"`
+}
+type TypeBound interface { TypeBound() }
+func (impl TypeLowerBound) TypeBound() {}
+type TypeLowerBound struct {
+    Node                     `part:"lo_bound"`
+    BoundType  VariousType   `part:"type"`
+}
+func (impl TypeHigherBound) TypeBound() {}
+type TypeHigherBound struct {
+    Node                     `part:"hi_bound"`
+    BoundType  VariousType   `part:"type"`
 }
 type VariousBody struct {
     Node         `part:"body"`
@@ -123,23 +143,9 @@ type MetaItem struct {
 type TypeParam struct {
     Node                        `part:"type_param"`
     Name     Identifier         `part:"name"`
-    Bound    VariousTypeBound   `part_opt:"type_bound"`
-    Default  MaybeType          `part_opt:"type_param_default.type"`
-}
-type VariousTypeBound struct {
-    Node                   `part:"type_bound"`
-    TypeBound  TypeBound   `use:"first"`
-}
-type TypeBound interface { TypeBound() }
-func (impl TypeLowerBound) TypeBound() {}
-type TypeLowerBound struct {
-    Node                     `part:"type_lo_bound"`
-    BoundType  VariousType   `part:"type"`
-}
-func (impl TypeHigherBound) TypeBound() {}
-type TypeHigherBound struct {
-    Node                     `part:"type_hi_bound"`
-    BoundType  VariousType   `part:"type"`
+    In       bool               `option:"variance.@in"`
+    Out      bool               `option:"variance.@out"`
+    Default  MaybeType          `part_opt:"default_type.type"`
 }
 type TypeDeclRef struct {
     Node                 `part:"type_decl_ref"`

@@ -2,7 +2,6 @@ package checker2
 
 import (
 	"sort"
-	"strings"
 	"encoding/json"
 	"kumachan/interpreter/lang/common/name"
 	"kumachan/interpreter/lang/common/source"
@@ -65,23 +64,6 @@ func TypeNameFromIdentifier(id ast.Identifier, mod *loader.Module) (name.TypeNam
 	}
 }
 
-func ParameterNameVarianceFromIdentifier(id ast.Identifier) (string, typsys.Variance, bool) {
-	var n = ast.Id2String(id)
-	var v = typsys.Invariant
-	if strings.HasPrefix(n, CovariantPrefix) {
-		n = strings.TrimPrefix(n, CovariantPrefix)
-		v = typsys.Covariant
-	} else if strings.HasPrefix(n, ContravariantPrefix) {
-		n = strings.TrimPrefix(n, ContravariantPrefix)
-		v = typsys.Contravariant
-	}
-	if CheckTypeName(n) {
-		return n, v, true
-	} else {
-		return "", -1, false
-	}
-}
-
 func TypeNameFromTypeRef(ref ast.TypeRef, mod *loader.Module) name.TypeName {
 	return name.TypeName { Name: NameFrom(ref.Module, ref.Item, mod) }
 }
@@ -97,10 +79,6 @@ func TypeNameListFrom(ref_list ([] ast.TypeDeclRef), mod *loader.Module) ([] nam
 var __DefaultInit, defaultWrite = (func() (typsys.Type, func(typsys.Type)(typsys.Type)) {
 	return nil,
 		func(t typsys.Type) typsys.Type { return t }
-})()
-var __BoundInit, boundWrite = (func() (typsys.Bound, func(typsys.Bound)(typsys.Bound)) {
-	return typsys.Bound {},
-		func(b typsys.Bound) typsys.Bound { return b }
 })()
 var __ContentInit, contentWrite = (func() (typsys.TypeDefContent, func(typsys.TypeDefContent)(typsys.TypeDefContent)) {
 	return nil,
@@ -127,17 +105,6 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 	//   (2) variance defined on parameters of an interface must be valid.
 	var must_check_boxed_variance, check3_boxed_variance = reminder()
 	var must_check_interface_variance, check4_interface_variance = reminder()
-	// 3. bound:
-	//   (1) the default type of a parameter must satisfy its bound.
-	//   (2) arguments of reference types in default types must satisfy bounds.
-	//   (3) arguments of reference types in bounds must satisfy bounds.
-	//   (4) arguments of reference types in box must satisfy bounds.
-	//   (5) arguments of reference types in interface must satisfy bounds.
-	var must_check_default_type_bound, check5_default_type_bound = reminder()
-	var must_check_default_type_bounds, check6_default_type_bounds = reminder()
-	var must_check_bound_type_bounds, check7_bound_type_bounds = reminder()
-	var must_check_boxed_bounds, check8_boxed_bounds = reminder()
-	var must_check_interface_bounds, check9_interface_bounds = reminder()
 	// *************
 	// Register types
 	var reg = make(TypeRegistry)
@@ -206,38 +173,6 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 				if err != nil { return err }
 				p.Default = defaultWrite(raw.Type)
 			}
-			_ = must_check_default_type_bound
-			_ = must_check_default_type_bounds
-			return nil
-		})
-		if err != nil { return nil, err }
-	}
-	// Construct parameter bound types
-	for _, def := range types {
-		var ctx = TypeConsContext {
-			Module:   def.Module,
-			TypeReg:  reg,
-			AliasReg: al,
-		}
-		var err = def.ForEachParameter(func(i uint, p *typsys.Parameter) *source.Error {
-			var p_node = &(def.AstNode.Params[i])
-			switch B := p_node.Bound.TypeBound.(type) {
-			case ast.TypeLowerBound:
-				var raw, err = newType(B.BoundType, ctx)
-				if err != nil { return err }
-				p.Bound = boundWrite(typsys.Bound {
-					Kind:  typsys.InfBound,
-					Value: raw.Type,
-				})
-			case ast.TypeHigherBound:
-				var raw, err = newType(B.BoundType, ctx)
-				if err != nil { return err }
-				p.Bound = boundWrite(typsys.Bound {
-					Kind:  typsys.SupBound,
-					Value: raw.Type,
-				})
-			}
-			_ = must_check_bound_type_bounds
 			return nil
 		})
 		if err != nil { return nil, err }
@@ -274,7 +209,6 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 			})
 			_ = must_check_circular_box
 			_ = must_check_boxed_variance
-			_ = must_check_boxed_bounds
 		case ast.EnumType:
 			if def.Content == nil { panic("something went wrong") }
 			// content already generated
@@ -295,7 +229,6 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 				included[i] = def.TypeDef
 				_ = must_check_circular_interface
 				_ = must_check_interface_variance
-				_ = must_check_interface_bounds
 			}
 			def.Content = contentWrite(&typsys.Interface {
 				Included: included,
@@ -494,8 +427,16 @@ func registerType (
 			// TODO: parameter quantity limit
 			var params = make([] typsys.Parameter, len(decl.Params))
 			for i, p := range decl.Params {
-				var n, v, ok = ParameterNameVarianceFromIdentifier(p.Name)
-				if !(ok) {
+				if p.In && p.Out { panic("something went wrong") }
+				var v = typsys.Invariant
+				if p.In {
+					v = typsys.Contravariant
+				}
+				if p.Out {
+					v = typsys.Covariant
+				}
+				var n = ast.Id2String(p.Name)
+				if !(CheckTypeName(n)) {
 					return nil, source.MakeError(p.Name.Location, E_InvalidTypeName {
 						Name: ast.Id2String(p.Name),
 					})
@@ -504,7 +445,6 @@ func registerType (
 					Name:     n,
 					Default:  __DefaultInit,
 					Variance: v,
-					Bound:    __BoundInit,
 				}
 			}
 			return params, nil
@@ -638,7 +578,7 @@ func newType(t ast.VariousType, ctx TypeConsContext) (RawType, *source.Error) {
 			} else {
 				arg = def.Parameters[i].Default
 			}
-			if arg == nil {panic("something went wrong") }
+			if arg == nil { panic("something went wrong") }
 		}
 		var ret = &typsys.NestedType {
 			Content: typsys.Ref {
