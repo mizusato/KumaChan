@@ -26,9 +26,9 @@ type DispatchTable struct {
 }
 type Parameter struct {
 	Name      string
-	Default   Type  // nullable
-	Variance  Variance
-	Bound     Bound
+	Default   Type      // only available in type definition
+	Variance  Variance  // only available in type definition
+	Bound     Bound     // only available in function definition
 }
 type Variance int
 const (

@@ -163,7 +163,7 @@ func newTypeFromRepr(r ast.Repr, ctx TypeConsContext) (RawType, *source.Error) {
 			var raw, err = newType(field.Type, ctx)
 			if err != nil { return RawType {}, err }
 			fields[i] = typsys.Field {
-				Attr: attr.FieldAttr {
+				Attr: attr.FieldAttrs {
 					Attrs: attr.Attrs {
 						Location: field.Location,
 						Section:  nil,

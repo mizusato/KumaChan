@@ -44,6 +44,16 @@ func (e E_InvalidAlias) DescribeError() richtext.Block {
 	return b
 }
 
+type E_DuplicateTypeDefinition struct {
+	Which  string
+}
+func (e E_DuplicateTypeDefinition) DescribeError() richtext.Block {
+	var b = makeErrorDescBlankBlock()
+	b.WriteSpan("duplicate definition for type", richtext.TAG_ERR_NORMAL)
+	b.WriteSpan(e.Which, richtext.TAG_ERR_INLINE)
+	return b
+}
+
 type E_InvalidMetadata struct {
 	Reason  string
 }

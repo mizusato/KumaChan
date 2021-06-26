@@ -4,6 +4,7 @@
       <option name="IMPORT_SORTING" value="NONE" />
       <option name="MOVE_ALL_STDLIB_IMPORTS_IN_ONE_GROUP" value="true" />
       <option name="GROUP_STDLIB_IMPORTS" value="true" />
+      <option name="LOCAL_PACKAGE_PREFIXES" />
     </GoCodeStyleSettings>
   </code_scheme>
 </component>

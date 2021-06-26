@@ -49,7 +49,7 @@ type Record struct {
 	Fields         [] Field
 }
 type Field struct {
-	Attr  attr.FieldAttr
+	Attr  attr.FieldAttrs
 	Name  string
 	Type  Type
 }

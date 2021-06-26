@@ -13,8 +13,8 @@ import (
 
 
 type TypeRegistry (map[name.TypeName] TypeDef)
-type TypeList ([] TypeDefWithModule)
-type TypeDefWithModule struct {
+type typeList ([] typeDefWithModule)
+type typeDefWithModule struct {
 	TypeDef
 	Module  *loader.Module
 }
@@ -22,7 +22,7 @@ type TypeDef struct {
 	*typsys.TypeDef
 	AstNode  *ast.DeclType
 }
-func (l TypeList) Less(i int, j int) bool {
+func (l typeList) Less(i int, j int) bool {
 	var u = l[i].Name
 	var v = l[j].Name
 	if u.ModuleName < v.ModuleName {
@@ -33,10 +33,10 @@ func (l TypeList) Less(i int, j int) bool {
 		return false
 	}
 }
-func (l TypeList) Len() int {
+func (l typeList) Len() int {
 	return len(l)
 }
-func (l TypeList) Swap(i int, j int) {
+func (l typeList) Swap(i int, j int) {
 	var I = &(l[i])
 	var J = &(l[j])
 	var t = *I
@@ -58,8 +58,8 @@ var tableInit, tableWrite = (func() (([] typsys.DispatchTable), func([] typsys.D
 })()
 
 func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (TypeRegistry, source.Errors) {
-	var step_ = func(types TypeList) (func(func(TypeDefWithModule)(*source.Error)) source.Errors) {
-		return func(f func(TypeDefWithModule) *source.Error) source.Errors {
+	var step_ = func(types typeList) (func(func(typeDefWithModule)(*source.Error)) source.Errors) {
+		return func(f func(typeDefWithModule) *source.Error) source.Errors {
 			var errs source.Errors
 			for _, def := range types {
 				source.ErrorsJoin(&errs, f(def))
@@ -67,22 +67,22 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 			return errs
 		}
 	}
-	var check = func() (struct{}, func(func()(*source.Error)) source.Errors) {
-		return struct{}{}, func(f func()(*source.Error)) source.Errors {
-			return source.ErrorsFrom(f())
+	var check = func() (struct{}, func(func()(source.Errors)) source.Errors) {
+		return struct{}{}, func(f func()(source.Errors)) source.Errors {
+			return f()
 		}
 	}
 	// ************************
 	// --- register types ---
 	var reg = make(TypeRegistry)
 	var err = registerTypes(entry, reg)
-	if err != nil { return nil, source.ErrorsFrom(err) }
+	if err != nil { return nil, err }
 	// --- create an ordered type definition list ---
-	var types = make(TypeList, 0, len(reg))
+	var types = make(typeList, 0, len(reg))
 	for _, def := range reg {
 		var mod, exists = idx[def.Name.ModuleName]
 		if !(exists) { panic("something went wrong") }
-		types = append(types, TypeDefWithModule {
+		types = append(types, typeDefWithModule{
 			TypeDef: def,
 			Module:  mod,
 		})
@@ -120,7 +120,7 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 	var must_check_boxed_variance, check3_boxed_variance = check()
 	var must_check_interface_variance, check4_interface_variance = check()
 	// ************************
-	{ var err = step1_check_alias(func(def TypeDefWithModule) *source.Error {
+	{ var err = step1_check_alias(func(def typeDefWithModule) *source.Error {
 		var _, conflict = al[def.Name.Name]
 		if conflict {
 			return source.MakeError(def.Location,
@@ -131,7 +131,7 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 	})
 	if err != nil { return nil, err } }
 	// ---------
-	{ var err = step2_fill_impl(func(def TypeDefWithModule) *source.Error {
+	{ var err = step2_fill_impl(func(def typeDefWithModule) *source.Error {
 		var impl_names = make([] name.TypeName, len(def.AstNode.Impl))
 		for i, ref := range def.AstNode.Impl {
 			impl_names[i] = name.TypeName {
@@ -189,7 +189,7 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 	})
 	if err != nil { return nil, err } }
 	// ---------
-	{ var err = step3_construct_default(func(def TypeDefWithModule) *source.Error {
+	{ var err = step3_construct_default(func(def typeDefWithModule) *source.Error {
 		var ctx = TypeConsContext {
 			Module:   def.Module,
 			TypeReg:  reg,
@@ -218,7 +218,7 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 	})
 	if err != nil { return nil, err } }
 	// ---------
-	{ var err = step4_construct_content(func(def TypeDefWithModule) *source.Error {
+	{ var err = step4_construct_content(func(def typeDefWithModule) *source.Error {
 		var ctx = TypeConsContext {
 			Module:   def.Module,
 			TypeReg:  reg,
@@ -316,7 +316,8 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 		return result
 	}
 	// ---------
-	{ var err = check1_circular_box(func() *source.Error {
+	{ var errs source.Errors
+	{ var err = check1_circular_box(func() source.Errors {
 		var bad = check_circular(func(def *typsys.TypeDef) ([] *typsys.TypeDef) {
 			var box, is_box = def.Content.(*typsys.Box)
 			if is_box {
@@ -331,16 +332,16 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 			return nil
 		})
 		if len(bad) > 0 {
-			return source.MakeError(bad[0].Location, E_CircularSubtypingDefinition {
-				Which: defs_to_strings(bad),
-			})
+			var err = source.MakeError(bad[0].Location,
+				E_CircularSubtypingDefinition { Which: defs_to_strings(bad) })
+			return source.ErrorsFrom(err)
 		} else {
 			return nil
 		}
 	})
-	if err != nil { return nil, err } }
+	source.ErrorsJoinAll(&errs, err) }
 	// ---------
-	{ var err = check2_circular_interface(func() *source.Error {
+	{ var err = check2_circular_interface(func() source.Errors {
 		var bad = check_circular(func(def *typsys.TypeDef) ([] *typsys.TypeDef) {
 			var _, is_interface = def.Content.(*typsys.Interface)
 			if is_interface {
@@ -350,16 +351,17 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 			}
 		})
 		if len(bad) > 0 {
-			return source.MakeError(bad[0].Location, E_CircularInterfaceDefinition {
-				Which: defs_to_strings(bad),
-			})
+			var err = source.MakeError(bad[0].Location,
+				E_CircularInterfaceDefinition { Which: defs_to_strings(bad) })
+			return source.ErrorsFrom(err)
 		} else {
 			return nil
 		}
 	})
-	if err != nil { return nil, err } }
+	source.ErrorsJoinAll(&errs, err) }
 	// ---------
-	{ var err = check3_boxed_variance(func() *source.Error {
+	{ var err = check3_boxed_variance(func() source.Errors {
+		var errs source.Errors
 		for _, def := range types {
 			var box, is_box = def.Content.(*typsys.Box)
 			if is_box {
@@ -367,16 +369,18 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 				var ok, invalid = typsys.MatchVariance(def.Parameters, v)
 				if !(ok) {
 					var loc = def.AstNode.Name.Location
-					return source.MakeError(loc,
+					var err = source.MakeError(loc,
 						E_InvalidVarianceOnParameters { Which: invalid })
+					source.ErrorsJoin(&errs, err)
 				}
 			}
 		}
-		return nil
+		return errs
 	})
-	if err != nil { return nil, err } }
+	source.ErrorsJoinAll(&errs, err) }
 	// ---------
-	{ var err = check4_interface_variance(func() *source.Error {
+	{ var err = check4_interface_variance(func() source.Errors {
+		var errs source.Errors
 		for _, def := range types {
 			var interface_, is_interface = def.Content.(*typsys.Interface)
 			if is_interface {
@@ -385,20 +389,23 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 				var ok, invalid = typsys.MatchVariance(def.Parameters, v)
 				if !(ok) {
 					var loc = def.AstNode.Name.Location
-					return source.MakeError(loc,
+					var err = source.MakeError(loc,
 						E_InvalidVarianceOnParameters { Which: invalid })
+					source.ErrorsJoin(&errs, err)
 				}
 			}
 		}
-		return nil
+		return errs
 	})
-	if err != nil { return nil, err } }
+	source.ErrorsJoinAll(&errs, err) }
+	if errs != nil { return nil, errs } }
 	// ---------
 	return reg, nil
 }
 
-func registerTypes(mod *loader.Module, reg TypeRegistry) *source.Error {
+func registerTypes(mod *loader.Module, reg TypeRegistry) source.Errors {
 	var sb SectionBuffer
+	var errs source.Errors
 	for _, stmt := range mod.AST.Statements {
 		var title, is_title = stmt.Statement.(ast.Title)
 		if is_title {
@@ -407,13 +414,13 @@ func registerTypes(mod *loader.Module, reg TypeRegistry) *source.Error {
 		var decl, is_type_decl = stmt.Statement.(ast.DeclType)
 		if !(is_type_decl) { continue }
 		var _, err = registerType(&decl, &sb, mod, reg, (typsys.CaseInfo {}))
-		if err != nil { return err }
+		source.ErrorsJoin(&errs, err)
 	}
 	for _, imported := range mod.ImpMap {
 		var err = registerTypes(imported, reg)
-		if err != nil { return err }
+		source.ErrorsJoinAll(&errs, err)
 	}
-	return nil
+	return errs
 }
 
 func registerType (
@@ -429,6 +436,11 @@ func registerType (
 			E_InvalidTypeName { Name: type_item_name })
 	}
 	var type_name = name.MakeTypeName(mod.Name, type_item_name)
+	var _, exists = reg[type_name]
+	if exists {
+		return nil, source.MakeError(decl.Name.Location,
+			E_DuplicateTypeDefinition { Which: type_name.String() })
+	}
 	var def = new(typsys.TypeDef)
 	reg[type_name] = TypeDef {
 		TypeDef: def,

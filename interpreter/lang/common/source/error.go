@@ -20,6 +20,11 @@ func ErrorsJoin(errs *Errors, err *Error) {
 		*errs = append(*errs, err)
 	}
 }
+func ErrorsJoinAll(errs *Errors, another Errors) {
+	for _, err := range another {
+		*errs = append(*errs, err)
+	}
+}
 func (errs Errors) Error() string {
 	if len(errs) == 0 {
 		panic("invalid operation")

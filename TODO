@@ -2,7 +2,7 @@ TODO
 
 ## Refinement
 
-- Lang: CPS: unit-input lambda instead of (a,k)
+- Lang: CPS: unit-input lambda instead of (a,k)  // e.g. considering assert()
 
 - Rx:
     Async: (() => T) => Async[T]
@@ -55,8 +55,6 @@ type Cell[T] protected {
 - Lang: consider curried function as method: &(Instance) => &(In) => Out
 
 - Lang: consider curried input as implicit input: &(Ord[T]) => &(T,T) => Bool
-
-- Lang: separate interface/implicit
 
 type I (Base1,Base2) interface { method: &(A) => B }
 

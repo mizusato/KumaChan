@@ -12,11 +12,11 @@ type TypeAttrs struct {
 	Attrs
 	Metadata  TypeMetadata
 }
-type FieldAttr struct {
+type FieldAttrs struct {
 	Attrs
 	// TODO
 }
-type FuncAttr struct {
+type FuncAttrs struct {
 	Attrs
 	// TODO
 }
