@@ -93,6 +93,7 @@ func newType(t ast.VariousType, ctx TypeConsContext) (typsys.Type, *source.Error
 				}
 			}
 		}
+		// TODO: quantity limit
 		var num_args = uint(len(T.TypeArgs))
 		if !(least_arity <= num_args && num_args <= arity) {
 			return nil, source.MakeError(T.Location, E_TypeWrongParameterQuantity {
@@ -134,6 +135,7 @@ func newType(t ast.VariousType, ctx TypeConsContext) (typsys.Type, *source.Error
 func newTypeFromRepr(r ast.Repr, ctx TypeConsContext) (typsys.Type, *source.Error) {
 	switch R := r.(type) {
 	case ast.ReprTuple:
+		// TODO: quantity limit
 		var num_elements = uint(len(R.Elements))
 		if num_elements == 0 {
 			return typsys.UnitType {}, nil
@@ -148,6 +150,7 @@ func newTypeFromRepr(r ast.Repr, ctx TypeConsContext) (typsys.Type, *source.Erro
 			return &typsys.NestedType { Content: tuple }, nil
 		}
 	case ast.ReprRecord:
+		// TODO: quantity limit
 		var fields = make([] typsys.Field, len(R.Fields))
 		var index_map = make(map[string] uint)
 		for i, field := range R.Fields {
