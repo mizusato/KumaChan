@@ -6,6 +6,13 @@ type AssignContext struct {
 	subtyping  bool
 	inferring  *InferringState
 }
+func MakeAssignContext(mod string, s *InferringState) AssignContext {
+	return AssignContext {
+		module:    mod,
+		subtyping: true,
+		inferring: s,
+	}
+}
 func (ctx *AssignContext) ApplyNewInferringState(s *InferringState) {
 	if s != nil {
 		ctx.inferring = s
@@ -209,7 +216,7 @@ func assignDirect(to Type, from Type, ctx AssignContext) (bool, *InferringState)
 						if len(T.Args) != len(F.Args) {
 							panic("something went wrong")
 						}
-						var v = parametersVarianceVector(d.Parameters)
+						var v = ParametersVarianceVector(d.Parameters)
 						if len(T.Args) != len(v) {
 							panic("something went wrong")
 						}
@@ -258,14 +265,6 @@ func assignDirect(to Type, from Type, ctx AssignContext) (bool, *InferringState)
 		}
 	}
 	return false, nil
-}
-
-func parametersVarianceVector(parameters ([] Parameter)) ([] Variance) {
-	var v = make([] Variance, len(parameters))
-	for i, p := range parameters {
-		v[i] = p.Variance
-	}
-	return v
 }
 
 func assignVector(to ([] Type), from ([] Type), v ([] Variance), ctx AssignContext) (bool, *InferringState) {

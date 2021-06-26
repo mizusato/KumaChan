@@ -8,6 +8,7 @@ import (
 	"kumachan/interpreter/lang/common/source"
 	"kumachan/interpreter/compiler/checker2/typsys"
 	"kumachan/interpreter/compiler/loader"
+	"kumachan/interpreter/compiler/checker2/checked"
 )
 
 
@@ -25,14 +26,120 @@ type FunctionSignature struct {
 	InputOutput      typsys.Lambda
 }
 type FunctionBody interface { functionBody() }
+func (OrdinaryBody) functionBody() {}
+type OrdinaryBody struct {
+	Expr  checked.Expr
+}
+func (NativeBody) functionBody() {}
+type NativeBody struct {
+	Id  string
+}
 
 type FunctionRegistry (map[name.Name] ([] *Function))
+type functionList ([] functionWithModule)
+type functionWithModule struct {
+	*Function
+	Module  *loader.Module
+}
+func (l functionList) Less(i int, j int) bool {
+	var u = l[i].Name
+	var v = l[j].Name
+	if u.ModuleName < v.ModuleName {
+		return true
+	} else if u.ModuleName == v.ModuleName {
+		return (u.ItemName < v.ItemName)
+	} else {
+		return false
+	}
+}
+func (l functionList) Len() int {
+	return len(l)
+}
+func (l functionList) Swap(i int, j int) {
+	var I = &(l[i])
+	var J = &(l[j])
+	var t = *I
+	*I = *J
+	*J = t
+}
 
 var bodyInit, bodyWrite = (func() (FunctionBody, func(FunctionBody)(FunctionBody)) {
 	return nil, func(body FunctionBody) FunctionBody { return body }
 })()
 
-// TODO: note: check conflicts with alias
+func collectFunctions (
+	entry  *loader.Module,
+	idx    loader.Index,
+	al     AliasRegistry,
+	types  TypeRegistry,
+) (FunctionRegistry, source.Errors) {
+	var reg = make(FunctionRegistry)
+	var err = registerFunctions(entry, reg, al, types)
+	if err != nil { return nil, err }
+	var functions = make(functionList, 0, len(reg))
+	for _, group := range reg {
+		for _, f := range group {
+			var mod, exists = idx[f.Name.ModuleName]
+			if !(exists) { panic("something went wrong") }
+			functions = append(functions, functionWithModule {
+				Function: f,
+				Module:   mod,
+			})
+		}
+	}
+	var all_reg = &Registry {
+		Aliases:   al,
+		Types:     types,
+		Functions: reg,
+	}
+	var step = func(f func(functionWithModule) *source.Error) source.Errors {
+		var errs source.Errors
+		for _, function := range functions {
+			source.ErrorsJoin(&errs, f(function))
+		}
+		return errs
+	}
+	var step1_check_alias = step
+	var step2_generate_body = step
+	{ var err = step1_check_alias(func(f functionWithModule) *source.Error {
+		var _, conflict = al[f.Name.Name]
+		if conflict {
+			return source.MakeError(f.Location,
+				E_FunctionConflictWithAlias { Which: f.Name.String() })
+		} else {
+			return nil
+		}
+	})
+	if err != nil { return nil, err } }
+	{ var err = step2_generate_body(func(f functionWithModule) *source.Error {
+		var body, err = (func() (FunctionBody, *source.Error) {
+			switch ast_body := f.AstNode.Body.Body.(type) {
+			case ast.Lambda:
+				var ctx = ExprContext {
+					Registry:   all_reg,
+					Module:     f.Module,
+					Parameters: f.Signature.TypeParameters,
+					Inferring:  nil,
+				}
+				var expected = &typsys.NestedType {
+					Content: f.Signature.InputOutput,
+				}
+				var expr, _, err = CheckLambda(ast_body)(expected, ctx)
+				if err != nil { return nil, err }
+				return OrdinaryBody { Expr: expr }, nil
+			case ast.NativeRef:
+				return NativeBody { Id: string(ast_body.Id.Value) }, nil
+			default:
+				panic("unimplemented")  // TODO: more cases
+			}
+		})()
+		if err != nil { return err }
+		f.Body = body
+		return nil
+	})
+	if err != nil { return nil, err } }
+	return reg, nil
+}
 
 func registerFunctions (
 	mod    *loader.Module,
@@ -54,12 +161,12 @@ func registerFunctions (
 }
 
 func registerFunction (
-	decl *ast.DeclFunction,
-	sb *SectionBuffer,
-	mod *loader.Module,
-	reg FunctionRegistry,
+	decl   *ast.DeclFunction,
+	sb     *SectionBuffer,
+	mod    *loader.Module,
+	reg    FunctionRegistry,
 	al     AliasRegistry,
-	types TypeRegistry,
+	types  TypeRegistry,
 ) (*Function, *source.Error) {
 	var loc = decl.Name.Location
 	var func_item_name = ast.Id2String(decl.Name)

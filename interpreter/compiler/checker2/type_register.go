@@ -82,7 +82,7 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 	for _, def := range reg {
 		var mod, exists = idx[def.Name.ModuleName]
 		if !(exists) { panic("something went wrong") }
-		types = append(types, typeDefWithModule{
+		types = append(types, typeDefWithModule {
 			TypeDef: def,
 			Module:  mod,
 		})

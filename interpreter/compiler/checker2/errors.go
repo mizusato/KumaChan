@@ -224,4 +224,16 @@ func (e E_InvalidFunctionName) DescribeError() richtext.Block {
 	return makeErrorDescBlock(msg)
 }
 
+type E_FunctionConflictWithAlias struct {
+	Which  string
+}
+func (e E_FunctionConflictWithAlias) DescribeError() richtext.Block {
+	var b = makeErrorDescBlankBlock()
+	b.WriteSpan("function name", richtext.TAG_ERR_NORMAL)
+	b.WriteSpan(e.Which, richtext.TAG_ERR_INLINE)
+	b.WriteSpan("conflicts with alias declaration", richtext.TAG_ERR_NORMAL)
+	b.WriteSpan(e.Which, richtext.TAG_ERR_INLINE)
+	return b
+}
+
 
