@@ -34,7 +34,8 @@ func (t Text) RenderLinear(opts RenderOptionsLinear) string {
 					var next = l.Spans[(i + 1)]
 					if !(strings.HasSuffix(span.Content, " ")) &&
 						!(strings.HasPrefix(next.Content, " ")) &&
-						next.Content != "," {
+						next.Content != "," &&
+						next.Content != ":" {
 						buf.WriteRune(' ')
 					}
 				}

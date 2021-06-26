@@ -11,7 +11,6 @@ type TypeDef struct {
 	attr.TypeAttrs
 	Name        name.TypeName
 	Implements  [] *TypeDef
-	Tables      [] DispatchTable
 	Parameters  [] Parameter
 	Content     TypeDefContent
 	CaseInfo
@@ -19,10 +18,6 @@ type TypeDef struct {
 type CaseInfo struct {
 	Enum        *TypeDef
 	CaseIndex   uint
-}
-type DispatchTable struct {
-	Interface  *Interface
-	Methods    [] name.FunctionName
 }
 type Parameter struct {
 	Name      string
@@ -66,8 +61,7 @@ type Enum struct {
 
 func (*Interface) typeDef() {}
 type Interface struct {
-	Included  [] *Interface
-	Methods   Record
+	Methods  Record
 }
 
 func (*Box) typeDef() {}

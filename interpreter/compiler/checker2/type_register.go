@@ -52,12 +52,12 @@ var contentInit, contentWrite = (func() (typsys.TypeDefContent, func(typsys.Type
 	return nil,
 		func(c typsys.TypeDefContent) typsys.TypeDefContent { return c }
 })()
-var tableInit, tableWrite = (func() (([] typsys.DispatchTable), func([] typsys.DispatchTable)([] typsys.DispatchTable)) {
-	return nil,
-		func(d ([] typsys.DispatchTable)) ([] typsys.DispatchTable) { return d }
-})()
 
-func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (TypeRegistry, source.Errors) {
+func collectTypes (
+	entry  *loader.Module,
+	idx    loader.Index,
+	al     AliasRegistry,
+) (TypeRegistry, typeList, source.Errors) {
 	var step_ = func(types typeList) (func(func(typeDefWithModule)(*source.Error)) source.Errors) {
 		return func(f func(typeDefWithModule) *source.Error) source.Errors {
 			var errs source.Errors
@@ -76,7 +76,7 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 	// --- register types ---
 	var reg = make(TypeRegistry)
 	var err = registerTypes(entry, reg)
-	if err != nil { return nil, err }
+	if err != nil { return nil, nil, err }
 	// --- create an ordered type definition list ---
 	var types = make(typeList, 0, len(reg))
 	for _, def := range reg {
@@ -129,7 +129,7 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 			return nil
 		}
 	})
-	if err != nil { return nil, err } }
+	if err != nil { return nil, nil, err } }
 	// ---------
 	{ var err = step2_fill_impl(func(def typeDefWithModule) *source.Error {
 		var impl_names = make([] name.TypeName, len(def.AstNode.Impl))
@@ -187,7 +187,7 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 		def.Implements = impl_defs
 		return nil
 	})
-	if err != nil { return nil, err } }
+	if err != nil { return nil, nil, err } }
 	// ---------
 	{ var err = step3_construct_default(func(def typeDefWithModule) *source.Error {
 		var ctx = TypeConsContext {
@@ -216,7 +216,7 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 		}
 		return nil
 	})
-	if err != nil { return nil, err } }
+	if err != nil { return nil, nil, err } }
 	// ---------
 	{ var err = step4_construct_content(func(def typeDefWithModule) *source.Error {
 		var ctx = TypeConsContext {
@@ -230,46 +230,48 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 			return source.MakeError(def.AstNode.Name.Location,
 				E_BlankTypeDefinition {})
 		}
-		switch content := ast_content.TypeDef.(type) {
-		case ast.BoxedType:
-			var kind = typsys.Isomorphic
-			if content.Protected { kind = typsys.Protected }
-			if content.Opaque { kind = typsys.Opaque }
-			var weak = content.Weak
-			var inner, err = newType(content.Inner, ctx)
-			if err != nil { return err }
-			def.Content = contentWrite(&typsys.Box {
-				BoxKind:      kind,
-				WeakWrapping: weak,
-				InnerType:    inner,
-			})
-			_ = must_check_circular_box
-			_ = must_check_boxed_variance
-		case ast.InterfaceType:
-			var methods_t, err = newTypeFromRepr(content.Methods, ctx)
-			if err != nil { return err }
-			var methods = methods_t.(*typsys.NestedType).Content.(typsys.Record)
-			var included = make([] *typsys.Interface, len(def.Implements))
-			for i, impl_def := range def.Implements {
-				included[i] = impl_def.Content.(*typsys.Interface)
+		var content, err = (func() (typsys.TypeDefContent, *source.Error) {
+			switch content := ast_content.TypeDef.(type) {
+			case ast.BoxedType:
+				var kind = typsys.Isomorphic
+				if content.Protected { kind = typsys.Protected }
+				if content.Opaque { kind = typsys.Opaque }
+				var weak = content.Weak
+				var inner, err = newType(content.Inner, ctx)
+				if err != nil { return nil, err }
+				_ = must_check_circular_box
+				_ = must_check_boxed_variance
+				return &typsys.Box {
+					BoxKind:      kind,
+					WeakWrapping: weak,
+					InnerType:    inner,
+				}, nil
+			case ast.InterfaceType:
+				var methods_t, err = newTypeFromRepr(content.Methods, ctx)
+				if err != nil { return nil, err }
+				var methods = methods_t.(*typsys.NestedType).Content.(typsys.Record)
+				var included = make([] *typsys.Interface, len(def.Implements))
+				for i, impl_def := range def.Implements {
+					included[i] = impl_def.Content.(*typsys.Interface)
+				}
+				_ = must_check_circular_interface
+				_ = must_check_interface_variance
+				return &typsys.Interface { Methods: methods }, nil
+			case ast.EnumType:
+				// content already generated
+				if def.Content == nil { panic("something went wrong") }
+				return def.Content, nil
+			case ast.NativeType:
+				return &typsys.Native {}, nil
+			default:
+				panic("impossible branch")
 			}
-			def.Content = contentWrite(&typsys.Interface {
-				Included: included,
-				Methods:  methods,
-			})
-			_ = must_check_circular_interface
-			_ = must_check_interface_variance
-		case ast.EnumType:
-			if def.Content == nil { panic("something went wrong") }
-			// content already generated
-		case ast.NativeType:
-			def.Content = contentWrite(&typsys.Native {})
-		default:
-			panic("impossible branch")
-		}
+		})()
+		if err != nil { return err }
+		def.Content = contentWrite(content)
 		return nil
 	})
-	if err != nil { return nil, err } }
+	if err != nil { return nil, nil, err } }
 	// ************************
 	var check_circular = func(get_deps func(*typsys.TypeDef)([] *typsys.TypeDef)) ([] *typsys.TypeDef) {
 		var in = make(map[*typsys.TypeDef] uint)
@@ -397,9 +399,9 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 		return errs
 	})
 	source.ErrorsJoinAll(&errs, err) }
-	if errs != nil { return nil, errs } }
+	if errs != nil { return nil, nil, errs } }
 	// ---------
-	return reg, nil
+	return reg, types, nil
 }
 
 func registerTypes(mod *loader.Module, reg TypeRegistry) source.Errors {
@@ -502,7 +504,6 @@ func registerType (
 	*def = typsys.TypeDef {
 		TypeAttrs:  attrs,
 		Name:       type_name,
-		Tables:     tableInit,
 		Parameters: params,
 		Content:    contentInit,
 		CaseInfo:   ci,

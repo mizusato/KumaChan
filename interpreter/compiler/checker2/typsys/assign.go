@@ -13,6 +13,13 @@ func MakeAssignContext(mod string, s *InferringState) AssignContext {
 		inferring: s,
 	}
 }
+func MakeAssignContextWithoutSubtyping(s *InferringState) AssignContext {
+	return AssignContext {
+		module:    "",
+		subtyping: false,
+		inferring: s,
+	}
+}
 func (ctx *AssignContext) ApplyNewInferringState(s *InferringState) {
 	if s != nil {
 		ctx.inferring = s

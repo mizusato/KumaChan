@@ -72,10 +72,10 @@ func collectFunctions (
 	idx    loader.Index,
 	al     AliasRegistry,
 	types  TypeRegistry,
-) (FunctionRegistry, source.Errors) {
+) (FunctionRegistry, functionList, source.Errors) {
 	var reg = make(FunctionRegistry)
 	var err = registerFunctions(entry, reg, al, types)
-	if err != nil { return nil, err }
+	if err != nil { return nil, nil, err }
 	var functions = make(functionList, 0, len(reg))
 	for _, group := range reg {
 		for _, f := range group {
@@ -110,10 +110,10 @@ func collectFunctions (
 			return nil
 		}
 	})
-	if err != nil { return nil, err } }
+	if err != nil { return nil, nil, err } }
 	{ var err = step2_generate_body(func(f functionWithModule) *source.Error {
 		var body, err = (func() (FunctionBody, *source.Error) {
-			switch ast_body := f.AstNode.Body.Body.(type) {
+			switch body := f.AstNode.Body.Body.(type) {
 			case ast.Lambda:
 				var ctx = ExprContext {
 					Registry:   all_reg,
@@ -124,21 +124,21 @@ func collectFunctions (
 				var expected = &typsys.NestedType {
 					Content: f.Signature.InputOutput,
 				}
-				var expr, _, err = CheckLambda(ast_body)(expected, ctx)
+				var expr, _, err = CheckLambda(body)(expected, ctx)
 				if err != nil { return nil, err }
 				return OrdinaryBody { Expr: expr }, nil
 			case ast.NativeRef:
-				return NativeBody { Id: string(ast_body.Id.Value) }, nil
+				return NativeBody { Id: string(body.Id.Value) }, nil
 			default:
 				panic("unimplemented")  // TODO: more cases
 			}
 		})()
 		if err != nil { return err }
-		f.Body = body
+		f.Body = bodyWrite(body)
 		return nil
 	})
-	if err != nil { return nil, err } }
-	return reg, nil
+	if err != nil { return nil, nil, err } }
+	return reg, functions, nil
 }
 
 func registerFunctions (

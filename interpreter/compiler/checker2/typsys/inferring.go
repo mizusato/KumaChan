@@ -107,10 +107,11 @@ func (c inferredTypeConstraint) OperatorString() string {
 	}
 }
 
-func StartInferring(targets ([] *Parameter)) *InferringState {
+func StartInferring(targets ([] Parameter)) *InferringState {
 	var target_set = make(map[*Parameter] struct{})
 	var mapping = make(map[*Parameter]parameterInferringState)
-	for _, p := range targets {
+	for i := range targets {
+		var p = &(targets[i])
 		target_set[p] = struct{}{}
 		if p.Bound.Kind != NullBound {
 			var bound_kind = p.Bound.Kind

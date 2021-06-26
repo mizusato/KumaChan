@@ -18,6 +18,26 @@ func makeErrorDescBlock(msg string) richtext.Block {
 	return b
 }
 
+type ImplErrorInfo struct {
+	Concrete   string
+	Interface  string
+	Method     string
+}
+func (info ImplErrorInfo) Describe(problem string) richtext.Block {
+	var b = makeErrorDescBlankBlock()
+	b.WriteSpan("type", richtext.TAG_ERR_NORMAL)
+	b.WriteSpan(info.Concrete, richtext.TAG_ERR_INLINE)
+	b.WriteSpan("cannot implement interface", richtext.TAG_ERR_NORMAL)
+	b.WriteSpan(info.Interface, richtext.TAG_ERR_INLINE)
+	b.WriteSpan(": method", richtext.TAG_ERR_NORMAL)
+	b.WriteSpan(info.Method, richtext.TAG_ERR_INLINE)
+	b.WriteSpan("not found:", richtext.TAG_ERR_NORMAL)
+	b.WriteSpan(problem, richtext.TAG_ERR_NORMAL)
+	return b
+}
+
+// ****************************************************************************
+
 type E_BlankTypeDefinition struct {}
 func (E_BlankTypeDefinition) DescribeError() richtext.Block {
 	return makeErrorDescBlock("blank type definition")
@@ -234,6 +254,27 @@ func (e E_FunctionConflictWithAlias) DescribeError() richtext.Block {
 	b.WriteSpan("conflicts with alias declaration", richtext.TAG_ERR_NORMAL)
 	b.WriteSpan(e.Which, richtext.TAG_ERR_INLINE)
 	return b
+}
+
+type E_ImplMethodNoSuchFunction struct {
+	ImplErrorInfo
+}
+func (e E_ImplMethodNoSuchFunction) DescribeError() richtext.Block {
+	return e.Describe("no corresponding functions")
+}
+
+type E_ImplMethodNoneCompatible struct {
+	ImplErrorInfo
+}
+func (e E_ImplMethodNoneCompatible) DescribeError() richtext.Block {
+	return e.Describe("none of corresponding functions compatible")
+}
+
+type E_ImplMethodDuplicateCompatible struct {
+	ImplErrorInfo
+}
+func (e E_ImplMethodDuplicateCompatible) DescribeError() richtext.Block {
+	return e.Describe("multiple corresponding functions compatible")
 }
 
 
