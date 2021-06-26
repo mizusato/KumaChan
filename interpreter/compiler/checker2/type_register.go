@@ -153,7 +153,12 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 				return source.MakeError(loc,
 					E_TypeNotFound { Which: n.String() })
 			}
-			var _, ok = impl_def.AstNode.TypeDef.TypeDef.(ast.InterfaceType)
+			var ok = (func() bool {
+				var ast_content, specified = impl_def.AstNode.TypeDef.(ast.VariousTypeDef)
+				if !(specified) { return false }
+				var _, ok = ast_content.TypeDef.(ast.InterfaceType)
+				return ok
+			})()
 			if !(ok) {
 				return source.MakeError(loc,
 					E_BadImplemented { Which: n.String() })
@@ -220,23 +225,20 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 			AliasReg: al,
 			ParamVec: def.Parameters,
 		}
-		switch content := def.AstNode.TypeDef.TypeDef.(type) {
+		var ast_content, specified = def.AstNode.TypeDef.(ast.VariousTypeDef)
+		if !(specified) {
+			return source.MakeError(def.AstNode.Name.Location,
+				E_BlankTypeDefinition {})
+		}
+		switch content := ast_content.TypeDef.(type) {
 		case ast.BoxedType:
 			var kind = typsys.Isomorphic
 			if content.Protected { kind = typsys.Protected }
 			if content.Opaque { kind = typsys.Opaque }
 			var weak = content.Weak
-			var inner, err = (func() (typsys.Type, *source.Error) {
-				var inner_node, exists = content.Inner.(ast.VariousType)
-				if exists {
-					var raw, err = newType(inner_node, ctx)
-					if err != nil { return nil, err }
-					return raw.Type, nil
-				} else {
-					return typsys.UnitType {}, nil
-				}
-			})()
+			var raw, err = newType(content.Inner, ctx)
 			if err != nil { return err }
+			var inner = raw.Type
 			def.Content = contentWrite(&typsys.Box {
 				BoxKind:      kind,
 				WeakWrapping: weak,
@@ -263,6 +265,8 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 			// content already generated
 		case ast.NativeType:
 			def.Content = contentWrite(&typsys.Native {})
+		default:
+			panic("impossible branch")
 		}
 		return nil
 	})
@@ -457,7 +461,7 @@ func registerType (
 			return ci.Enum.Parameters, nil
 		} else {
 			var arity = len(decl.Params)
-			if arity > MAX_TYPE_PARAMETERS {
+			if arity > MaxTypeParameters {
 				return nil, source.MakeError(decl.Name.Location,
 					E_TooManyTypeParameters { TypeName: type_name.String() })
 			}
@@ -494,7 +498,12 @@ func registerType (
 		Content:    contentInit,
 		CaseInfo:   ci,
 	}
-	var enum, is_enum = decl.TypeDef.TypeDef.(ast.EnumType)
+	var enum, is_enum = (func() (ast.EnumType, bool) {
+		var ast_content, specified = decl.TypeDef.(ast.VariousTypeDef)
+		if !(specified) { return ast.EnumType {}, false }
+		var enum, is_enum = ast_content.TypeDef.(ast.EnumType)
+		return enum, is_enum
+	})()
 	var case_defs = make([] *typsys.TypeDef, len(enum.Cases))
 	if is_enum {
 		for i, c := range enum.Cases {

@@ -63,8 +63,8 @@ const (
 	TAG_ERR_INLINE   = "inline"
 )
 
-type MaybeLink interface { maybe(Link, MaybeLink) }
-func (Link) maybe(Link, MaybeLink) {}
+type MaybeLink interface { Maybe(Link, MaybeLink) }
+func (Link) Maybe(Link, MaybeLink) {}
 type Link struct {
 	Page    string   `kmd:"page"`
 	Anchor  string   `kmd:"anchor"`

@@ -18,6 +18,11 @@ func makeErrorDescBlock(msg string) richtext.Block {
 	return b
 }
 
+type E_BlankTypeDefinition struct {}
+func (E_BlankTypeDefinition) DescribeError() richtext.Block {
+	return makeErrorDescBlock("blank type definition")
+}
+
 type E_DuplicateAlias struct {
 	Which  string
 }

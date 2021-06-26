@@ -23,6 +23,11 @@ type VariousTerm struct {
 }
 type Term interface { Term() }
 
+func (impl TermBlank) Term() {}
+type TermBlank struct {
+    Node `part:"term_blank"`
+}
+
 func (impl VariousCall) Term() {}
 type VariousCall struct {
     Node         `part:"call"`

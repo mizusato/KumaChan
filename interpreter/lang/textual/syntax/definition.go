@@ -69,13 +69,14 @@ var __Tokens = [...] Token {
     Token { Name: "|",    Pattern: r(`\|`) },
     Token { Name: `\`,    Pattern: r(`\\`) },
     // keywords
-    Token { Name: "If",         Pattern: r(`if`),         Keyword: true },
-    Token { Name: "Elif",       Pattern: r(`elif`),       Keyword: true },
-    Token { Name: "Else",       Pattern: r(`else`),       Keyword: true },
-    Token { Name: "Switch",     Pattern: r(`switch`),     Keyword: true },
-    Token { Name: "Select",     Pattern: r(`select`),     Keyword: true },
-    Token { Name: "Case",       Pattern: r(`case`),       Keyword: true },
-    Token { Name: "Let",        Pattern: r(`let`),        Keyword: true },
+    Token { Name: "If",           Pattern: r(`if`),      Keyword: true },
+    Token { Name: "Elif",         Pattern: r(`elif`),    Keyword: true },
+    Token { Name: "Else",         Pattern: r(`else`),    Keyword: true },
+    Token { Name: "Switch",       Pattern: r(`switch`),  Keyword: true },
+    Token { Name: "Select",       Pattern: r(`select`),  Keyword: true },
+    Token { Name: "Case",         Pattern: r(`case`),    Keyword: true },
+    Token { Name: "Let",          Pattern: r(`let`),     Keyword: true },
+    Token { Name: "Placeholder",  Pattern: r(`__`),      Keyword: true },
     // identifier
     Token { Name: "Name", Pattern: r(IdentifierRegexp) },
 }
@@ -93,8 +94,8 @@ var __ConditionalKeywords = [...] string {
     "@type", "@enum", "@interface", "@native",
     "@weak", "@protected", "@opaque",
     "@export", "@function", "@const", "@do", "@alias",
-    "@<", "@>", "@=>", "@exact",
-    "@default", "@end", "@rec",
+    "@in", "@out", "@=", "@<", "@>",
+    "@=>", "@exact", "@default", "@end", "@rec",
 }
 func GetKeywordList() ([] string) {
     var list = make([] string, 0)
@@ -126,7 +127,8 @@ var __SyntaxDefinition = [...] string {
         "repl_assign = name := expr!",
         "repl_do = @do expr!",
         "repl_eval = expr!",
-    "type = type_literal | type_ref",
+    "type = type_blank | type_ref | type_literal",
+      "type_blank = Placeholder",
       "type_ref = module_prefix name type_args",
         "module_prefix? = name :: | ::",
         "type_args? = [ type! more_types ]!",
@@ -151,7 +153,7 @@ var __SyntaxDefinition = [...] string {
       "impl? = ( type_decl_ref! more_type_decl_refs )!",
         "more_type_decl_refs? = , type_decl_ref! more_type_decl_refs",
         "type_decl_ref = module_prefix name",
-      "type_def = t_native | t_enum | t_interface | t_boxed",
+      "type_def? = t_native | t_enum | t_interface | t_boxed",
         "t_native = @native",
         "t_enum = @enum {! decl_type! more_decl_types }!",
           "more_decl_types? = decl_type more_decl_types",
@@ -159,7 +161,7 @@ var __SyntaxDefinition = [...] string {
         "t_boxed = box_option match_option inner_type",
           "box_option? = @protected | @opaque",
           "match_option? = @weak",
-          "inner_type? = type",
+          "inner_type = type",
       "type_params? = [ type_param! more_type_params ]!",
         "more_type_params? = , type_param more_type_params",
         "type_param = variance name default_type",
@@ -204,10 +206,11 @@ var __SyntaxDefinition = [...] string {
           "pipe_ref_field = & name",
           "pipe_switch = ( type_ref! )!",
           "pipe_ref_branch = & ( type_ref! )!",
-    "term = call | ctor_lambda | pipeline_lambda | lambda " +
+    "term = term_blank | call | ctor_lambda | pipeline_lambda | lambda " +
         "| switch | select | if " +
         "| block | cps | record | tuple | inline_ref " +
         "| array | int | float | formatter | string | char",
+      "term_blank = Placeholder",
       "call = call_prefix | call_infix",
         "call_prefix = { callee expr }!",
         "call_infix = ( infix_left operator infix_right! )!",

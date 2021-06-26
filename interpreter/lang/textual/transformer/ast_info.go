@@ -68,6 +68,7 @@ var nodeRegistry = [] interface{} {
     TypeDeclRef {},
     // Type
     VariousType {},
+    TypeBlank {},
     TypeRef {},
     TypeLiteral {},
     VariousRepr {},
@@ -86,6 +87,7 @@ var nodeRegistry = [] interface{} {
     PipeSwitch {},
     PipeRefBranch {},
     // Term
+    TermBlank {},
     VariousCall {},
     CallPrefix {},
     CallInfix {},

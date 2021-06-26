@@ -126,7 +126,7 @@ type DeclType struct {
     Name       Identifier       `part:"name"`
     Params     [] TypeParam     `list_more:"type_params" item:"type_param"`
     Impl       [] TypeDeclRef   `list_more:"impl" item:"type_decl_ref"`
-    TypeDef    VariousTypeDef   `part:"type_def"`
+    TypeDef    MaybeTypeDef     `part_opt:"type_def"`
 }
 type Doc struct {
     Node                  `part:"doc"`
@@ -152,6 +152,8 @@ type TypeDeclRef struct {
     Module  Identifier   `part_opt:"module_prefix.name"`
     Item    Identifier   `part:"name"`
 }
+type MaybeTypeDef interface { Maybe(VariousTypeDef, MaybeTypeDef) }
+func (impl VariousTypeDef) Maybe(VariousTypeDef, MaybeTypeDef) {}
 type VariousTypeDef struct {
     Node               `part:"type_def"`
     TypeDef  TypeDef   `use:"first"`
@@ -159,7 +161,7 @@ type VariousTypeDef struct {
 type TypeDef interface { TypeDef() }
 func (impl NativeType) TypeDef() {}
 type NativeType struct {
-    Node   `part:"t_native"`
+    Node `part:"t_native"`
 }
 func (impl EnumType) TypeDef() {}
 type EnumType struct {
@@ -173,11 +175,11 @@ type InterfaceType struct {
 }
 func (impl BoxedType) TypeDef() {}
 type BoxedType struct {
-    Node                   `part:"t_boxed"`
-    Protected  bool        `option:"box_option.@protected"`
-    Opaque     bool        `option:"box_option.@opaque"`
-    Weak       bool        `option:"match_option.@weak"`
-    Inner      MaybeType   `part_opt:"inner_type.type"`
+    Node                     `part:"t_boxed"`
+    Protected  bool          `option:"box_option.@protected"`
+    Opaque     bool          `option:"box_option.@opaque"`
+    Weak       bool          `option:"match_option.@weak"`
+    Inner      VariousType   `part:"inner_type.type"`
 }
 
 func GetDocContent(raw ([] Doc)) string {
