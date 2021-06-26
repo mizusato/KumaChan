@@ -11,8 +11,8 @@ const ShortIndexSize = unsafe.Sizeof(ShortIndex(0))
 type ShortSize = ShortIndex
 const ShortSizeMax = (1 << (8 * ShortIndexSize))
 
-type ExternalIndexMapPointer uint16
-const ExternalIndexMapPointerSize = unsafe.Sizeof(ExternalIndexMapPointer(0))
+type ExternalBranchMapIndex uint16
+const ExternalIndexMapPointerSize = unsafe.Sizeof(ExternalBranchMapIndex(0))
 
 type ShortIndexVector uint32
 const ShortIndexVectorSize = unsafe.Sizeof(ShortIndexVector(0))
@@ -58,7 +58,7 @@ const MaxClosureContexts = (1 << LocalAddrSize)
 type Instruction struct {
 	OpCode  OpCode
 	Idx     ShortIndex
-	ExtIdx  ExternalIndexMapPointer
+	ExtIdx  ExternalBranchMapIndex
 	Obj     LocalAddr
 	Src     LocalAddr
 }
@@ -68,14 +68,14 @@ var _ = (func() struct{} {
 	return struct{}{}
 })()
 
-type ExternalIndexMapping ([] ExternalIndexMap)
-type ExternalIndexMap struct {
+type ExternalBranchMapping ([] ExternalBranchMap)
+type ExternalBranchMap struct {
 	HasDefault  bool
 	Default     uint
 	VectorMap   map[ShortIndexVector] uint
 }
-func (all ExternalIndexMapping) ChooseBranch (
-	ptr  ExternalIndexMapPointer,
+func (all ExternalBranchMapping) ChooseBranch (
+	ptr  ExternalBranchMapIndex,
 	vec  ShortIndexVector,
 ) uint {
 	if !(uint(ptr) < uint(len(all))) { panic("invalid ExtIdx") }
@@ -110,6 +110,8 @@ const (
 	SET     // [ OBJ  IDX SRC  ]: Perform a functional update on a tuple value
 	FR      // [ OBJ  IDX ____ ]: Make a functional field ref on a tuple value
 	FRP     // [ OBJ  IDX ____ ]: Make a functional field ref on a proj ref
+	CI      // [ OBJ  ___ PTR  ]: Create an interface from a concrete value
+	CII     // [ OBJ  ___ PTR  ]: Create an interface from an interface value
 	LSV     // [ OBJ* ___ ____ ]: Create a variant list
 	LSC     // [ OBJ* IDX ____ ]: Create a compact list according to type info
 	MPS     // [ OBJ* ___ SRC* ]: Create a map with string key
@@ -159,6 +161,10 @@ func (inst Instruction) String() string {
 		return fmt.Sprintf("FR %d [%d]", inst.Obj, inst.Idx)
 	case FRP:
 		return fmt.Sprintf("FRP %d [%d]", inst.Obj, inst.Idx)
+	case CI:
+		return fmt.Sprintf("CI %d (%d)", inst.Obj, inst.Src)
+	case CII:
+		return fmt.Sprintf("CII %d (%d)", inst.Obj, inst.Src)
 	case LSV:
 		return fmt.Sprintf("LSV %d*", inst.Obj)
 	case LSC:

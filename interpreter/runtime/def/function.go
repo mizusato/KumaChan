@@ -57,18 +57,23 @@ func (s *FunctionSeedGeneratedNative) Evaluate(ctx FunctionSeedEvaluator) Value 
 }
 
 type FunctionSeedUsual struct {
-	Trunk   *BranchData
-	Static  [] StaticValueSeed
-	IsEff   bool
-	CtxLen  LocalSize
+	Trunk      *BranchData
+	Static     [] StaticValueSeed
+	GenStatic  *GeneratedStaticData
+	IsEffect   bool
+	CtxLength  LocalSize
 }
 type BranchData struct {
-	InstList   [] Instruction
-	ExtIdxMap  ExternalIndexMapping
-	Stages     [] Stage
-	Branches   [] *BranchData
-	Closures   [] *FunctionSeedUsual
-	Info       FunctionInfo
+	InstList  [] Instruction
+	ExtMap    ExternalBranchMapping
+	Stages    [] Stage
+	Branches  [] *BranchData
+	Closures  [] *FunctionSeedUsual
+	Info      FunctionInfo
+}
+type GeneratedStaticData struct {
+	DispatchTables  [] *DispatchTable
+	TransformPaths  [] *InterfaceTransformPath
 }
 func (seed *FunctionSeedUsual) GetInfo() FunctionInfo {
 	return seed.Trunk.Info
@@ -94,14 +99,23 @@ func CreateFunctionEntity(seed *FunctionSeedUsual, ctx StaticValueSeedEvaluator)
 	for i, s := range seed.Static {
 		static[i] = s.Evaluate(ctx)
 	}
+	var gen = seed.GenStatic
+	var trunk = seed.Trunk
 	var frame_size = uint(0)
-	var f = createFunctionEntity(0, &frame_size, seed.Trunk, static, ctx)
+	var f = createFunctionEntity(0, &frame_size, trunk, static, gen, ctx)
 	f.Code.frameSize = LocalSize(frame_size)
-	f.IsEffect = seed.IsEff
-	f.ContextLength = seed.CtxLen
+	f.IsEffect = seed.IsEffect
+	f.ContextLength = seed.CtxLength
 	return f
 }
-func createFunctionEntity(offset uint, fs *uint, this *BranchData, static ([] *Value), ctx StaticValueSeedEvaluator) *FunctionEntity {
+func createFunctionEntity (
+	offset   uint,
+	fs      *uint,
+	this    *BranchData,
+	static  ([] *Value),
+	gen     *GeneratedStaticData,
+	ctx     StaticValueSeedEvaluator,
+) *FunctionEntity {
 	var required_fs = offset + uint(len(this.InstList))
 	if required_fs >= MaxFrameValues { panic("frame too big") }
 	if required_fs > *fs {
@@ -109,7 +123,7 @@ func createFunctionEntity(offset uint, fs *uint, this *BranchData, static ([] *V
 	}
 	var branches = make([] *FunctionEntity, len(this.Branches))
 	for i, b := range this.Branches {
-		branches[i] = createFunctionEntity(required_fs, fs, b, static, ctx)
+		branches[i] = createFunctionEntity(required_fs, fs, b, static, gen, ctx)
 	}
 	var closures = make([] *FunctionEntity, len(this.Closures))
 	for i, cl := range this.Closures {
@@ -119,12 +133,13 @@ func createFunctionEntity(offset uint, fs *uint, this *BranchData, static ([] *V
 		Code: Code {
 			dstOffset: LocalSize(offset),
 			instList:  this.InstList,
-			extIdxMap: this.ExtIdxMap,
+			extMap:    this.ExtMap,
 			stages:    this.Stages,
 			branches:  branches,
 			closures:  closures,
 			frameSize: 0,
 			static:    static,
+			genStatic: gen,
 		},
 		FunctionEntityInfo: FunctionEntityInfo {
 			FunctionInfo:  this.Info,
@@ -134,10 +149,10 @@ func createFunctionEntity(offset uint, fs *uint, this *BranchData, static ([] *V
 }
 
 func (seed *FunctionSeedUsual) writeContent(buf *strings.Builder) string {
-	fmt.Fprintf(buf, "   .FUNC %d   ; %s", seed.CtxLen, seed.Trunk.Info.Name)
-	var point = seed.Trunk.Info.Decl.Node.Point
-	var file = seed.Trunk.Info.Decl.Node.CST.Name
-	fmt.Fprintf(buf, " at (%d, %d) in %s", point.Row, point.Col, file)
+	fmt.Fprintf(buf, "   .FUNC %d   ; %s", seed.CtxLength, seed.Trunk.Info.Name)
+	var point = seed.Trunk.Info.Decl.Node.Location.PosDesc()
+	var file = seed.Trunk.Info.Decl.Node.Location.FilePath()
+	fmt.Fprintf(buf, " at %s in %s", point, file)
 	buf.WriteRune('\n')
 	buf.WriteString(".static")
 	buf.WriteRune('\n')
@@ -166,10 +181,10 @@ func writeBranchData (
 		fmt.Fprintf(buf, ".branch-%s", strings.Join(t, "-"))
 	}
 	buf.WriteRune('\n')
-	if len(branch.ExtIdxMap) != 0 {
+	if len(branch.ExtMap) != 0 {
 		buf.WriteString(".ext")
 		buf.WriteRune('\n')
-		for i, m := range branch.ExtIdxMap {
+		for i, m := range branch.ExtMap {
 			var default_target string
 			if m.HasDefault {
 				default_target = "()"
@@ -231,9 +246,9 @@ func writeBranchData (
 		if i < len(branch.Info.SrcMap) {
 			var point = branch.Info.SrcMap[i]
 			var n = point.Node
-			fmt.Fprintf(buf, "   ; (%d, %d)", n.Point.Row, n.Point.Col)
-			if point.Node.CST != branch.Info.Decl.Node.CST {
-				fmt.Fprintf(buf, " in %s", point.Node.CST.Name)
+			fmt.Fprintf(buf, "   ; %s", n.Location.PosDesc())
+			if n.Location.File != branch.Info.Decl.Node.Location.File {
+				fmt.Fprintf(buf, " in %s", n.Location.FilePath())
 			}
 		}
 		buf.WriteRune('\n')

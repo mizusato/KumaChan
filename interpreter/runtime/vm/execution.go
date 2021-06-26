@@ -205,6 +205,25 @@ func execIns(ctx Context, m *Machine, u *Frame, ipp *LocalAddr, end LocalAddr, k
 	case FRP:
 		var base_ref = u.Data(inst.Obj)
 		*dst = FieldRefFromProjRef(base_ref, inst.Idx)
+	case CI:
+		var ptr = inst.Src
+		var obj = u.Data(inst.Obj)
+		*dst = &ValInterface {
+			ConcreteValue: obj,
+			DispatchTable: u.Code().DispatchTable(ptr),
+		}
+	case CII:
+		var ptr = inst.Src
+		var iv = u.Data(inst.Obj).(InterfaceValue)
+		var t = iv.DispatchTable
+		var path = *(u.Code().InterfaceTransformPath(ptr))
+		for _, index := range path {
+			t = t.Included[index]
+		}
+		*dst = &ValInterface {
+			ConcreteValue: iv.ConcreteValue,
+			DispatchTable: t,
+		}
 	case LSV:
 		var objects_addr = inst.Obj
 		var num_of_objects = u.DataGetSizeAt(objects_addr)

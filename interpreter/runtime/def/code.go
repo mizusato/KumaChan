@@ -4,12 +4,13 @@ package def
 type Code struct {
 	dstOffset  LocalSize
 	instList   [] Instruction
-	extIdxMap  ExternalIndexMapping
+	extMap     ExternalBranchMapping
 	stages     [] Stage
 	branches   [] *FunctionEntity
 	closures   [] *FunctionEntity
 	frameSize  LocalSize // len(instList) + len(/* instList of branches */)
 	static     [] *Value
+	genStatic  *GeneratedStaticData
 }
 func (code *Code) FrameSize() LocalSize {
 	if code.frameSize == 0 { panic("something went wrong") }
@@ -30,8 +31,8 @@ func (code *Code) Static(s LocalAddr) Value {
 func (code *Code) Stages() ([] Stage) {
 	return code.stages
 }
-func (code *Code) ChooseBranch(ptr ExternalIndexMapPointer, vec ShortIndexVector) uint {
-	return code.extIdxMap.ChooseBranch(ptr, vec)
+func (code *Code) ChooseBranch(ptr ExternalBranchMapIndex, vec ShortIndexVector) uint {
+	return code.extMap.ChooseBranch(ptr, vec)
 }
 func (code *Code) BranchFuncValue(index uint) UsualFuncValue {
 	return &ValFunc {
@@ -41,6 +42,12 @@ func (code *Code) BranchFuncValue(index uint) UsualFuncValue {
 }
 func (code *Code) ClosureEntity(index LocalAddr) *FunctionEntity {
 	return code.closures[index]
+}
+func (code *Code) DispatchTable(index LocalAddr) *DispatchTable {
+	return code.genStatic.DispatchTables[index]
+}
+func (code *Code) InterfaceTransformPath(index LocalAddr) *InterfaceTransformPath {
+	return code.genStatic.TransformPaths[index]
 }
 
 type AddrSpace ([] Value)

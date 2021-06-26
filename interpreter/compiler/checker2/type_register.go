@@ -184,6 +184,7 @@ func collectTypes (
 			}
 			impl_defs[i] = impl_def.TypeDef
 		}
+		// TODO: quantity limit
 		def.Implements = impl_defs
 		return nil
 	})

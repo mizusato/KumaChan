@@ -31,6 +31,17 @@ func ValNativeFunc(f NativeFunction) NativeFuncValue {
 	return &f
 }
 
+type InterfaceValue = *ValInterface
+type ValInterface struct {
+	ConcreteValue  Value
+	DispatchTable  *DispatchTable
+}
+type DispatchTable struct {
+	Methods   [] Value
+	Included  [] *DispatchTable
+}
+type InterfaceTransformPath ([] uint)
+
 func Tuple(elements... Value) TupleValue {
 	return &ValTup { elements }
 }

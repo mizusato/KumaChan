@@ -22,6 +22,7 @@ type Section struct {
 	Start  Location
 }
 
+// note: File should be comparable
 type File interface {
 	GetPath() string
 	DescribePosition(Position) string

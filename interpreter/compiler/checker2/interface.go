@@ -7,13 +7,10 @@ import (
 )
 
 
-type DispatchMapping (map[ImplPair] DispatchTable)
+type DispatchMapping (map[ImplPair] ([] *Function))
 type ImplPair struct {
 	ConcreteType   *typsys.TypeDef
 	InterfaceType  *typsys.TypeDef
-}
-type DispatchTable struct {
-	Methods  [] *Function
 }
 
 func generateDispatchMapping (
@@ -99,7 +96,7 @@ func generateDispatchMapping (
 					ConcreteType:  con,
 					InterfaceType: impl,
 				}
-				mapping[pair] = DispatchTable { Methods: methods }
+				mapping[pair] = methods
 			}
 			return nil
 		})()
