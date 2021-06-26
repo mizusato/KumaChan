@@ -200,11 +200,11 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 			var p_node = &(def.AstNode.Params[i])
 			var default_, has_default = p_node.Default.(ast.VariousType)
 			if has_default {
-				var raw, err = newType(default_, ctx)
+				var t, err = newType(default_, ctx)
 				if err != nil { return err }
 				defaults = append(defaults, struct { *typsys.Parameter; typsys.Type } {
 					Parameter: p,
-					Type:      raw.Type,
+					Type:      t,
 				})
 			}
 			return nil
@@ -236,9 +236,8 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 			if content.Protected { kind = typsys.Protected }
 			if content.Opaque { kind = typsys.Opaque }
 			var weak = content.Weak
-			var raw, err = newType(content.Inner, ctx)
+			var inner, err = newType(content.Inner, ctx)
 			if err != nil { return err }
-			var inner = raw.Type
 			def.Content = contentWrite(&typsys.Box {
 				BoxKind:      kind,
 				WeakWrapping: weak,
@@ -247,9 +246,9 @@ func collectTypes(entry *loader.Module, idx loader.Index, al AliasRegistry) (Typ
 			_ = must_check_circular_box
 			_ = must_check_boxed_variance
 		case ast.InterfaceType:
-			var raw, err = newTypeFromRepr(content.Methods, ctx)
+			var methods_t, err = newTypeFromRepr(content.Methods, ctx)
 			if err != nil { return err }
-			var methods = raw.Type.(*typsys.NestedType).Content.(typsys.Record)
+			var methods = methods_t.(*typsys.NestedType).Content.(typsys.Record)
 			var included = make([] *typsys.Interface, len(def.Implements))
 			for i, impl_def := range def.Implements {
 				included[i] = impl_def.Content.(*typsys.Interface)
@@ -408,9 +407,7 @@ func registerTypes(mod *loader.Module, reg TypeRegistry) source.Errors {
 	var errs source.Errors
 	for _, stmt := range mod.AST.Statements {
 		var title, is_title = stmt.Statement.(ast.Title)
-		if is_title {
-			sb.SetFrom(title)
-		}
+		if is_title { sb.SetFrom(title) }
 		var decl, is_type_decl = stmt.Statement.(ast.DeclType)
 		if !(is_type_decl) { continue }
 		var _, err = registerType(&decl, &sb, mod, reg, (typsys.CaseInfo {}))
@@ -430,15 +427,16 @@ func registerType (
 	reg   TypeRegistry,
 	ci    typsys.CaseInfo,
 ) (*typsys.TypeDef, *source.Error) {
+	var loc = decl.Name.Location
 	var type_item_name = ast.Id2String(decl.Name)
 	if !(isValidTypeItemName(type_item_name)) {
-		return nil, source.MakeError(decl.Name.Location,
+		return nil, source.MakeError(loc,
 			E_InvalidTypeName { Name: type_item_name })
 	}
 	var type_name = name.MakeTypeName(mod.Name, type_item_name)
 	var _, exists = reg[type_name]
 	if exists {
-		return nil, source.MakeError(decl.Name.Location,
+		return nil, source.MakeError(loc,
 			E_DuplicateTypeDefinition { Which: type_name.String() })
 	}
 	var def = new(typsys.TypeDef)
@@ -446,14 +444,13 @@ func registerType (
 		TypeDef: def,
 		AstNode: decl,
 	}
-	var loc = decl.Location
 	var doc = ast.GetDocContent(decl.Docs)
-	var section = sb.GetFrom(loc)
+	var section = sb.GetFrom(decl.Location.File)
 	var meta attr.TypeMetadata
 	var meta_text = ast.GetMetadataContent(decl.Meta)
 	var meta_err = json.Unmarshal(([] byte)(meta_text), &meta)
 	if meta_err != nil {
-		return nil, source.MakeError(loc,
+		return nil, source.MakeError(decl.Meta.Location,
 			E_InvalidMetadata { Reason: meta_err.Error() })
 	}
 	var attrs = attr.TypeAttrs {
@@ -474,8 +471,8 @@ func registerType (
 		} else {
 			var arity = len(decl.Params)
 			if arity > MaxTypeParameters {
-				return nil, source.MakeError(decl.Name.Location,
-					E_TooManyTypeParameters { TypeName: type_name.String() })
+				return nil, source.MakeError(loc,
+					E_TooManyTypeParameters {})
 			}
 			var params = make([] typsys.Parameter, arity)
 			for i, p := range decl.Params {

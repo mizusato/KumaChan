@@ -182,14 +182,9 @@ func (e E_BadImplemented) DescribeError() richtext.Block {
 	return b
 }
 
-type E_TooManyTypeParameters struct {
-	TypeName  string
-}
+type E_TooManyTypeParameters struct {}
 func (e E_TooManyTypeParameters) DescribeError() richtext.Block {
-	var b = makeErrorDescBlankBlock()
-	b.WriteSpan("too many type parameters declared on type", richtext.TAG_ERR_NORMAL)
-	b.WriteSpan(e.TypeName, richtext.TAG_ERR_INLINE)
-	return b
+	return makeErrorDescBlock("too many type parameters")
 }
 
 type E_InvalidVarianceOnParameters struct {
@@ -219,6 +214,14 @@ func (e E_ImplementedIncompatibleParameters) DescribeError() richtext.Block {
 	b.WriteSpan(e.InterfaceName, richtext.TAG_ERR_INLINE)
 	b.WriteSpan("(parameters incompatible)", richtext.TAG_ERR_NOTE)
 	return b
+}
+
+type E_InvalidFunctionName struct {
+	Name  string
+}
+func (e E_InvalidFunctionName) DescribeError() richtext.Block {
+	var msg = fmt.Sprintf("invalid function name: %s", strconv.Quote(e.Name))
+	return makeErrorDescBlock(msg)
 }
 
 

@@ -14,11 +14,11 @@ type TypeAttrs struct {
 }
 type FieldAttrs struct {
 	Attrs
-	// TODO
+	Metadata  FieldMetadata
 }
-type FuncAttrs struct {
+type FunctionAttrs struct {
 	Attrs
-	// TODO
+	Metadata  FunctionMetadata
 }
 
 type TypeMetadata struct {
@@ -32,6 +32,14 @@ type TypeDataConfig struct {
 type TypeServiceConfig struct {
 	Name     string  `json:"name"`
 	Version  string  `json:"version"`
+}
+
+type FieldMetadata struct {
+	// TODO
+}
+
+type FunctionMetadata struct {
+	// TODO
 }
 
 

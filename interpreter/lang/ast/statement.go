@@ -74,7 +74,7 @@ type DeclFunction struct {
     Name      Identifier         `part:"name"`
     Params    [] FuncTypeParam   `list_more:"sig.func_type_params" item:"func_type_param"`
     Implicit  ReprRecord         `part_opt:"sig.implicit.repr_record"`
-    Repr      ReprFunc           `part:"sig.repr_func"`
+    InOut     ReprFunc           `part:"sig.repr_func"`
     Body      VariousBody        `part_opt:"body"`
     IsConst   bool               // whether it is desugared from a ConstDecl
 }
@@ -84,19 +84,19 @@ type FuncTypeParam struct {
     Bound    VariousTypeBound   `part_opt:"type_bound"`
 }
 type VariousTypeBound struct {
-    Node                   `part:"bound"`
-    TypeBound  TypeBound   `use:"first"`
+    Node           `part:"bound"`
+    Bound  Bound   `use:"first"`
 }
-type TypeBound interface { TypeBound() }
-func (impl TypeLowerBound) TypeBound() {}
+type Bound interface { Bound() }
+func (impl TypeLowerBound) Bound() {}
 type TypeLowerBound struct {
-    Node                     `part:"lo_bound"`
-    BoundType  VariousType   `part:"type"`
+    Node                 `part:"lo_bound"`
+    Value  VariousType   `part:"type"`
 }
-func (impl TypeHigherBound) TypeBound() {}
+func (impl TypeHigherBound) Bound() {}
 type TypeHigherBound struct {
-    Node                     `part:"hi_bound"`
-    BoundType  VariousType   `part:"type"`
+    Node                 `part:"hi_bound"`
+    Value  VariousType   `part:"type"`
 }
 type VariousBody struct {
     Node         `part:"body"`

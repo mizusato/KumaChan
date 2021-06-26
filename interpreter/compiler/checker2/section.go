@@ -22,11 +22,11 @@ func (sb *SectionBuffer) SetFrom(title ast.Title) {
 	}
 }
 
-func (sb *SectionBuffer) GetFrom(location source.Location) *source.Section {
+func (sb *SectionBuffer) GetFrom(file source.File) *source.Section {
 	if sb.current == nil {
 		return nil
 	} else {
-		if location.File == sb.current.Start.File {
+		if file == sb.current.Start.File {
 			return sb.current
 		} else {
 			sb.current = nil

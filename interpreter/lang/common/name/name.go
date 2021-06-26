@@ -26,9 +26,9 @@ func MakeTypeName(mod string, item string) TypeName {
 
 type FunctionName struct {
 	Name
-	InstanceIndex  uint
+	Index  uint
 }
 func (n FunctionName) String() string {
-	return fmt.Sprintf("%s::%s#%d", n.ModuleName, n.ItemName, n.InstanceIndex)
+	return fmt.Sprintf("%s::%s#%d", n.ModuleName, n.ItemName, n.Index)
 }
 
