@@ -21,6 +21,10 @@ func generateDispatchMapping (
 	var impls_cache = make(map[*typsys.TypeDef] ([] *typsys.TypeDef))
 	var errs source.Errors
 	for _, def := range types {
+		var _, is_interface = def.Content.(*typsys.Interface)
+		if is_interface {
+			continue
+		}
 		var con = def.TypeDef.TypeDef
 		var con_t typsys.Type = &typsys.NestedType {
 			Content: typsys.Ref {
@@ -71,6 +75,7 @@ func generateDispatchMapping (
 						if !(in_ok) {
 							continue
 						}
+						// TODO: revise inferring APIs
 						ctx.ApplyNewInferringState(s1)
 						var out_ok, _ = typsys.Assign(method_t, io.Output, ctx)
 						if out_ok {
@@ -116,6 +121,8 @@ func getAllImpls (
 	}
 	var impls = make([] *typsys.TypeDef, 0)
 	for _, impl := range def.Implements {
+		var _, is_interface = impl.Content.(*typsys.Interface)
+		if !(is_interface) { panic("something went wrong") }
 		impls = append(impls, getAllImpls(impl, cache)...)
 	}
 	impls = append(impls, def.Implements...)
