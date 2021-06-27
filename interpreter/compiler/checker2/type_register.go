@@ -132,6 +132,10 @@ func collectTypes (
 	if err != nil { return nil, nil, err } }
 	// ---------
 	{ var err = step2_fill_impl(func(def typeDefWithModule) *source.Error {
+		if len(def.AstNode.Impl) > MaxImplemented {
+			return source.MakeError(def.Location,
+				E_TooManyImplemented {})
+		}
 		var impl_names = make([] name.TypeName, len(def.AstNode.Impl))
 		for i, ref := range def.AstNode.Impl {
 			impl_names[i] = name.TypeName {
@@ -184,7 +188,6 @@ func collectTypes (
 			}
 			impl_defs[i] = impl_def.TypeDef
 		}
-		// TODO: quantity limit
 		def.Implements = impl_defs
 		return nil
 	})
@@ -458,7 +461,7 @@ func registerType (
 	}
 	var attrs = attr.TypeAttrs {
 		Attrs: attr.Attrs {
-			Location: loc,
+			Location: decl.Location,
 			Section:  section,
 			Doc:      doc,
 		},

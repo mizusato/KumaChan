@@ -7,6 +7,7 @@ import (
 
 
 const MaxTypeParameters = 8
+const MaxImplemented = 8
 const Discarded = "_" // TODO: (blank: within AST)
 
 var coreTypes = (func() (map[string] struct{}) {

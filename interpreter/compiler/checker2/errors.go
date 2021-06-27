@@ -222,6 +222,11 @@ func (e E_InvalidVarianceOnParameters) DescribeError() richtext.Block {
 	return b
 }
 
+type E_TooManyImplemented struct {}
+func (e E_TooManyImplemented) DescribeError() richtext.Block {
+	return makeErrorDescBlock("too many implemented interfaces")
+}
+
 type E_ImplementedIncompatibleParameters struct {
 	TypeName       string
 	InterfaceName  string

@@ -55,6 +55,11 @@ func newParameterType(which string, params ([] typsys.Parameter)) (typsys.Type, 
 func newType(t ast.VariousType, ctx TypeConsContext) (typsys.Type, *source.Error) {
 	switch T := t.Type.(type) {
 	case ast.TypeRef:
+		var num_args = uint(len(T.TypeArgs))
+		if num_args > MaxTypeParameters {
+			return nil, source.MakeError(T.Location,
+				E_TooManyTypeParameters {})
+		}
 		var n = name.TypeName { Name: NameFrom(T.Module, T.Item, ctx.Module) }
 		if n.ModuleName == "" {
 			var item_name = n.ItemName
@@ -78,7 +83,7 @@ func newType(t ast.VariousType, ctx TypeConsContext) (typsys.Type, *source.Error
 		}
 		var def, n_desc, exists = ctx.ResolveGlobalName(n)
 		if !(exists) {
-			return nil, source.MakeError(def.Location, E_TypeNotFound {
+			return nil, source.MakeError(T.Location, E_TypeNotFound {
 				Which: n_desc,
 			})
 		}
@@ -93,15 +98,14 @@ func newType(t ast.VariousType, ctx TypeConsContext) (typsys.Type, *source.Error
 				}
 			}
 		}
-		// TODO: quantity limit
-		var num_args = uint(len(T.TypeArgs))
 		if !(least_arity <= num_args && num_args <= arity) {
-			return nil, source.MakeError(T.Location, E_TypeWrongParameterQuantity {
-				Which: n_desc,
-				Given: num_args,
-				Least: least_arity,
-				Total: arity,
-			})
+			return nil, source.MakeError(T.Location,
+				E_TypeWrongParameterQuantity {
+					Which: n_desc,
+					Given: num_args,
+					Least: least_arity,
+					Total: arity,
+				})
 		}
 		var args = make([] typsys.Type, arity)
 		var err = def.ForEachParameter(func(i uint, p *typsys.Parameter) *source.Error {
