@@ -71,13 +71,12 @@ func generateDispatchMapping (
 						var io = f.Signature.InputOutput
 						var s0 = typsys.StartInferring(con.Parameters)
 						var ctx = typsys.MakeAssignContextWithoutSubtyping(s0)
-						var in_ok, s1 = typsys.Assign(io.Input, con_t, ctx)
+						var assignable = typsys.MakeAssigner(&ctx)
+						var in_ok = assignable(io.Input, con_t)
 						if !(in_ok) {
 							continue
 						}
-						// TODO: revise inferring APIs
-						ctx.ApplyNewInferringState(s1)
-						var out_ok, _ = typsys.Assign(method_t, io.Output, ctx)
+						var out_ok = assignable(method_t, io.Output)
 						if out_ok {
 							if found {
 								return source.MakeError(con.Location,

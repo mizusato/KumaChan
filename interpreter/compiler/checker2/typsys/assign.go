@@ -1,6 +1,18 @@
 package typsys
 
 
+func MakeAssigner(ctx_ptr *AssignContext) func(to Type, from Type) bool {
+	return func(to Type, from Type) bool {
+		var ok, s = Assign(to, from, *ctx_ptr)
+		if ok {
+			ApplyNewInferringState(ctx_ptr, s)
+			return true
+		} else {
+			return false
+		}
+	}
+}
+
 type AssignContext struct {
 	module     string
 	subtyping  bool
@@ -20,7 +32,7 @@ func MakeAssignContextWithoutSubtyping(s *InferringState) AssignContext {
 		inferring: s,
 	}
 }
-func (ctx *AssignContext) ApplyNewInferringState(s *InferringState) {
+func ApplyNewInferringState(ctx *AssignContext, s *InferringState) {
 	if s != nil {
 		ctx.inferring = s
 	}
@@ -309,7 +321,7 @@ func assignVector(to ([] Type), from ([] Type), v ([] Variance), ctx AssignConte
 		if !(ok) {
 			return false, nil
 		}
-		ctx.ApplyNewInferringState(s)
+		ApplyNewInferringState(&ctx, s)
 	}
 	return true, ctx.inferring
 }
