@@ -2,17 +2,21 @@ TODO
 
 ## Refinement
 
+- Lang: string interpolation by implicit context "#{i} * #{j} = #{k}"
+
 - Lang: CPS: unit-input lambda instead of (a,k)  // e.g. considering assert()
 
 - Rx:
     Async: (() => T) => Async[T]
-    go: Sync => K   // sync
-    go: Async => ...  // then (await)
-    compute: (Computed[A], Computed[B]) => Computed[(A,B)]  // combine
-    compute: ((Computed[A], Computed[B]), (A,B) => T) => Computed[T]
+    bind: Sync => K   // sync
+    bind: Async => ...  // then (await)
+    zip: (Computed[A], Computed[B]) => Computed[(A,B)]  // combine
+    zip: List[Computed[T]] => Computed[List[T]]  // combine-latest
+    map: ((Computed[A], Computed[B]), (A,B) => T) => Computed[T]
     sample: (Source[A], Computed[B]) => Source[(A,B)]  // with-latest-from
     sample: (Source[A], (Computed[B], (A,B) => T)) => Source[T]
     // compute & sample: <= 1 update / 1 tick
+    reduce -> fold
 
 type Bus[T] protected {
     in: Sink[T],
@@ -47,6 +51,8 @@ type Cell[T] protected {
 
 
 ## Type System Refactor
+
+- Lang: non-inclusive bound (< any, > never)
 
 - Lang: only function can have bounds (type def cannot)
 
