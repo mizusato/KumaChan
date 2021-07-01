@@ -20,7 +20,11 @@ type ExprContext struct {
 	LocalBindingMap
 	*typsys.InferringState
 }
-type LocalBindingMap (map[string] typsys.Type)
+type LocalBindingMap (map[string] LocalBinding)
+type LocalBinding struct {
+	Type      typsys.Type
+	Location  source.Location
+}
 
 type ExprChecker func
 	(expected typsys.Type, ctx ExprContext) (
