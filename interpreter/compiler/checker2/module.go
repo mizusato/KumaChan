@@ -44,7 +44,7 @@ func (mvs ModuleVisitedSet) Visited(mod *loader.Module) bool {
 	return visited
 }
 
-func TraverseStatements (
+func traverseStatements (
 	mod  *loader.Module,
 	mic  ModuleInfoCollection,
 	sc   SectionCollection,
@@ -55,7 +55,7 @@ func TraverseStatements (
 		return nil
 	}
 	{ var err = mod.ForEachImported(func(imported *loader.Module) source.Errors {
-		return TraverseStatements(imported, mic, sc, mvs, f)
+		return traverseStatements(imported, mic, sc, mvs, f)
 	})
 	if err != nil {
 		return err

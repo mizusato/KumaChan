@@ -51,7 +51,7 @@ func registerAlias (
 	mvs  ModuleVisitedSet,
 	reg  AliasRegistry,
 ) source.Errors {
-	return TraverseStatements(mod, mic, sc, mvs, func(stmt ast.VariousStatement, sec *source.Section, mi *ModuleInfo) *source.Error {
+	return traverseStatements(mod, mic, sc, mvs, func(stmt ast.VariousStatement, sec *source.Section, mi *ModuleInfo) *source.Error {
 		var alias, is_alias = stmt.Statement.(ast.Alias)
 		if !(is_alias) { return nil }
 		var from = name.MakeName(mod.Name, ast.Id2String(alias.Name))

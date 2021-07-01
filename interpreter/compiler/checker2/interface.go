@@ -25,7 +25,7 @@ func generateDispatchMapping (
 		if is_interface {
 			continue
 		}
-		var con = def.TypeDef.TypeDef
+		var con = def.TypeDef
 		var con_t typsys.Type = &typsys.NestedType {
 			Content: typsys.Ref {
 				Def:  con,

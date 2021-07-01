@@ -111,8 +111,7 @@ func collectFunctions (
 			case ast.Lambda:
 				var ctx = ExprContext {
 					Registry:   all_reg,
-					ModInfo:    f.ModInfo,
-					Inferring:  nil,
+					ModuleInfo: f.ModInfo,
 				}
 				var expected = &typsys.NestedType {
 					Content: f.Signature.InputOutput,
@@ -143,10 +142,17 @@ func registerFunctions (
 	al     AliasRegistry,
 	types  TypeRegistry,
 ) source.Errors {
-	return TraverseStatements(mod, mic, sc, mvs, func(stmt ast.VariousStatement, sec *source.Section, mi *ModuleInfo) *source.Error {
-		var decl, is_func_decl = stmt.Statement.(ast.DeclFunction)
-		if !(is_func_decl) { return nil }
-		var _, err = registerFunction(&decl, sec, mi, reg, al, types)
+	return traverseStatements(mod, mic, sc, mvs, func(stmt ast.VariousStatement, sec *source.Section, mi *ModuleInfo) *source.Error {
+		var decl *ast.DeclFunction
+		switch stmt := stmt.Statement.(type) {
+		case ast.DeclFunction:
+			decl = &stmt
+		case ast.DeclConst:
+			decl = desugarConst(&stmt)
+		default:
+			return nil
+		}
+		var _, err = registerFunction(decl, sec, mi, reg, al, types)
 		return err
 	})
 }
@@ -261,5 +267,60 @@ func registerFunction (
 	return f, nil
 }
 
+func desugarConst(decl *ast.DeclConst) *ast.DeclFunction {
+	var type_node = decl.Type.Node
+	var unit_type = ast.VariousType {
+		Node: type_node,
+		Type: ast.TypeLiteral {
+			Node: type_node,
+			Repr: ast.VariousRepr {
+				Node: type_node,
+				Repr: ast.ReprTuple {
+					Elements: [] ast.VariousType {},
+				},
+			},
+		},
+	}
+	var value_node = decl.Value.Node
+	var unit_pattern = ast.VariousPattern {
+		Node:    value_node,
+		Pattern: ast.PatternTuple {
+			Node:  value_node,
+			Names: [] ast.Identifier {},
+		},
+	}
+	var body ast.Body
+	switch v := decl.Value.ConstValue.(type) {
+	case ast.Expr:
+		body = ast.Lambda {
+			Node:   value_node,
+			Input:  unit_pattern,
+			Output: v,
+		}
+	case ast.NativeRef:
+		body = v
+	case ast.PredefinedValue:
+		body = ast.PredefinedThunk { Value: v.Value }
+	}
+	return &ast.DeclFunction {
+		Node:     decl.Node,
+		Docs:     decl.Docs,
+		Meta:     decl.Meta,
+		Public:   decl.Public,
+		Name:     decl.Name,
+		Params:   nil,
+		Implicit: ast.ReprRecord {},
+		InOut:    ast.ReprFunc {
+			Node:   type_node,
+			Input:  unit_type,
+			Output: decl.Type,
+		},
+		Body:     ast.VariousBody {
+			Node: value_node,
+			Body: body,
+		},
+		IsConst:  true,
+	}
+}
 
 

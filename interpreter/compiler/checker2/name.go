@@ -16,12 +16,12 @@ func NameFrom(id_mod ast.Identifier, id_item ast.Identifier, mi *ModuleInfo) nam
 		if is_core_type {
 			return name.MakeName(stdlib.Mod_core, ref_item)
 		} else {
-			return name.MakeName(mi.ModuleName, ref_item)
+			return name.MakeName(mi.ModName, ref_item)
 		}
 	} else {
-		var imported, found = mi.ImportMapping[ref_mod]
+		var imported, found = mi.ModImported[ref_mod]
 		if found {
-			return name.MakeName(imported, ref_item)
+			return name.MakeName(imported.ModName, ref_item)
 		} else {
 			return name.MakeName(ref_mod, ref_item)
 		}

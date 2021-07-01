@@ -411,7 +411,7 @@ func registerTypes (
 	mvs  ModuleVisitedSet,
 	reg  TypeRegistry,
 ) source.Errors {
-	return TraverseStatements(mod, mic, sc, mvs, func(stmt ast.VariousStatement, sec *source.Section, mi *ModuleInfo) *source.Error {
+	return traverseStatements(mod, mic, sc, mvs, func(stmt ast.VariousStatement, sec *source.Section, mi *ModuleInfo) *source.Error {
 		var decl, is_type_decl = stmt.Statement.(ast.DeclType)
 		if !(is_type_decl) { return nil }
 		var _, err = registerType(&decl, sec, mi, reg, (typsys.CaseInfo {}))

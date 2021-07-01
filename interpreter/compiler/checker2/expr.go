@@ -1,11 +1,10 @@
 package checker2
 
 import (
-	"kumachan/interpreter/compiler/loader"
-	"kumachan/interpreter/compiler/checker2/typsys"
-	"kumachan/interpreter/lang/ast"
-	"kumachan/interpreter/compiler/checker2/checked"
 	"kumachan/interpreter/lang/common/source"
+	"kumachan/interpreter/lang/ast"
+	"kumachan/interpreter/compiler/checker2/typsys"
+	"kumachan/interpreter/compiler/checker2/checked"
 )
 
 
@@ -17,10 +16,11 @@ type Registry struct {
 
 type ExprContext struct {
 	*Registry
-	ModInfo     *ModuleInfo
-	Inferring   *typsys.InferringState
-	LocalScope  map[string] typsys.Type
+	*ModuleInfo
+	LocalBindingMap
+	*typsys.InferringState
 }
+type LocalBindingMap (map[string] typsys.Type)
 
 type ExprChecker func
 	(expected typsys.Type, ctx ExprContext) (
