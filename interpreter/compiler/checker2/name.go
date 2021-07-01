@@ -4,12 +4,11 @@ import (
 	"fmt"
 	"kumachan/interpreter/lang/ast"
 	"kumachan/interpreter/lang/common/name"
-	"kumachan/interpreter/compiler/loader"
 	"kumachan/stdlib"
 )
 
 
-func NameFrom(id_mod ast.Identifier, id_item ast.Identifier, mod *loader.Module) name.Name {
+func NameFrom(id_mod ast.Identifier, id_item ast.Identifier, mi *ModuleInfo) name.Name {
 	var ref_mod = ast.Id2String(id_mod)
 	var ref_item = ast.Id2String(id_item)
 	if ref_mod == "" {
@@ -17,12 +16,12 @@ func NameFrom(id_mod ast.Identifier, id_item ast.Identifier, mod *loader.Module)
 		if is_core_type {
 			return name.MakeName(stdlib.Mod_core, ref_item)
 		} else {
-			return name.MakeName(mod.Name, ref_item)
+			return name.MakeName(mi.ModuleName, ref_item)
 		}
 	} else {
-		var imported, found = mod.ImpMap[ref_mod]
+		var imported, found = mi.ImportMapping[ref_mod]
 		if found {
-			return name.MakeName(imported.Name, ref_item)
+			return name.MakeName(imported, ref_item)
 		} else {
 			return name.MakeName(ref_mod, ref_item)
 		}

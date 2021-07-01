@@ -13,14 +13,11 @@ import (
 
 
 type TypeRegistry (map[name.TypeName] TypeDef)
-type typeList ([] typeDefWithModule)
-type typeDefWithModule struct {
-	TypeDef
-	Module  *loader.Module
-}
+type typeList ([] TypeDef)
 type TypeDef struct {
 	*typsys.TypeDef
 	AstNode  *ast.DeclType
+	ModInfo  *ModuleInfo
 }
 func (l typeList) Less(i int, j int) bool {
 	var u = l[i].Name
@@ -55,11 +52,12 @@ var contentInit, contentWrite = (func() (typsys.TypeDefContent, func(typsys.Type
 
 func collectTypes (
 	entry  *loader.Module,
-	idx    loader.Index,
+	mic    ModuleInfoCollection,
+	sc     SectionCollection,
 	al     AliasRegistry,
 ) (TypeRegistry, typeList, source.Errors) {
-	var step_ = func(types typeList) (func(func(typeDefWithModule)(*source.Error)) source.Errors) {
-		return func(f func(typeDefWithModule) *source.Error) source.Errors {
+	var step_ = func(types typeList) (func(func(TypeDef)(*source.Error)) source.Errors) {
+		return func(f func(TypeDef) *source.Error) source.Errors {
 			var errs source.Errors
 			for _, def := range types {
 				source.ErrorsJoin(&errs, f(def))
@@ -75,17 +73,15 @@ func collectTypes (
 	// ************************
 	// --- register types ---
 	var reg = make(TypeRegistry)
-	var err = registerTypes(entry, reg)
-	if err != nil { return nil, nil, err }
+	var mvs = make(ModuleVisitedSet)
+	{ var err = registerTypes(entry, mic, sc, mvs, reg)
+	if err != nil {
+		return nil, nil, err
+	} }
 	// --- create an ordered type definition list ---
 	var types = make(typeList, 0, len(reg))
 	for _, def := range reg {
-		var mod, exists = idx[def.Name.ModuleName]
-		if !(exists) { panic("something went wrong") }
-		types = append(types, typeDefWithModule {
-			TypeDef: def,
-			Module:  mod,
-		})
+		types = append(types, def)
 	}
 	sort.Sort(types)
 	// ************************
@@ -120,7 +116,7 @@ func collectTypes (
 	var must_check_boxed_variance, check3_boxed_variance = check()
 	var must_check_interface_variance, check4_interface_variance = check()
 	// ************************
-	{ var err = step1_check_alias(func(def typeDefWithModule) *source.Error {
+	{ var err = step1_check_alias(func(def TypeDef) *source.Error {
 		var _, conflict = al[def.Name.Name]
 		if conflict {
 			return source.MakeError(def.Location,
@@ -131,7 +127,7 @@ func collectTypes (
 	})
 	if err != nil { return nil, nil, err } }
 	// ---------
-	{ var err = step2_fill_impl(func(def typeDefWithModule) *source.Error {
+	{ var err = step2_fill_impl(func(def TypeDef) *source.Error {
 		if len(def.AstNode.Impl) > MaxImplemented {
 			return source.MakeError(def.Location,
 				E_TooManyImplemented {})
@@ -139,7 +135,7 @@ func collectTypes (
 		var impl_names = make([] name.TypeName, len(def.AstNode.Impl))
 		for i, ref := range def.AstNode.Impl {
 			impl_names[i] = name.TypeName {
-				Name: NameFrom(ref.Module, ref.Item, def.Module),
+				Name: NameFrom(ref.Module, ref.Item, def.ModInfo),
 			}
 		}
 		var impl_defs = make([] *typsys.TypeDef, len(impl_names))
@@ -193,9 +189,9 @@ func collectTypes (
 	})
 	if err != nil { return nil, nil, err } }
 	// ---------
-	{ var err = step3_construct_default(func(def typeDefWithModule) *source.Error {
+	{ var err = step3_construct_default(func(def TypeDef) *source.Error {
 		var ctx = TypeConsContext {
-			Module:   def.Module,
+			ModInfo:  def.ModInfo,
 			TypeReg:  reg,
 			AliasReg: al,
 		}
@@ -222,9 +218,9 @@ func collectTypes (
 	})
 	if err != nil { return nil, nil, err } }
 	// ---------
-	{ var err = step4_construct_content(func(def typeDefWithModule) *source.Error {
+	{ var err = step4_construct_content(func(def TypeDef) *source.Error {
 		var ctx = TypeConsContext {
-			Module:   def.Module,
+			ModInfo:  def.ModInfo,
 			TypeReg:  reg,
 			AliasReg: al,
 			ParamVec: def.Parameters,
@@ -281,7 +277,7 @@ func collectTypes (
 		var in = make(map[*typsys.TypeDef] uint)
 		var q = make([] *typsys.TypeDef, 0)
 		for _, def := range types {
-			var deps = get_deps(def.TypeDef.TypeDef)
+			var deps = get_deps(def.TypeDef)
 			for _, dep := range deps {
 				in[dep] += 1
 			}
@@ -408,28 +404,25 @@ func collectTypes (
 	return reg, types, nil
 }
 
-func registerTypes(mod *loader.Module, reg TypeRegistry) source.Errors {
-	var sb SectionBuffer
-	var errs source.Errors
-	for _, stmt := range mod.AST.Statements {
-		var title, is_title = stmt.Statement.(ast.Title)
-		if is_title { sb.SetFrom(title) }
+func registerTypes (
+	mod  *loader.Module,
+	mic  ModuleInfoCollection,
+	sc   SectionCollection,
+	mvs  ModuleVisitedSet,
+	reg  TypeRegistry,
+) source.Errors {
+	return TraverseStatements(mod, mic, sc, mvs, func(stmt ast.VariousStatement, sec *source.Section, mi *ModuleInfo) *source.Error {
 		var decl, is_type_decl = stmt.Statement.(ast.DeclType)
-		if !(is_type_decl) { continue }
-		var _, err = registerType(&decl, &sb, mod, reg, (typsys.CaseInfo {}))
-		source.ErrorsJoin(&errs, err)
-	}
-	for _, imported := range mod.ImpMap {
-		var err = registerTypes(imported, reg)
-		source.ErrorsJoinAll(&errs, err)
-	}
-	return errs
+		if !(is_type_decl) { return nil }
+		var _, err = registerType(&decl, sec, mi, reg, (typsys.CaseInfo {}))
+		return err
+	})
 }
 
 func registerType (
 	decl  *ast.DeclType,
-	sb    *SectionBuffer,
-	mod   *loader.Module,
+	sec   *source.Section,
+	mi    *ModuleInfo,
 	reg   TypeRegistry,
 	ci    typsys.CaseInfo,
 ) (*typsys.TypeDef, *source.Error) {
@@ -439,7 +432,7 @@ func registerType (
 		return nil, source.MakeError(loc,
 			E_InvalidTypeName { Name: type_item_name })
 	}
-	var type_name = name.MakeTypeName(mod.Name, type_item_name)
+	var type_name = name.MakeTypeName(mi.ModName, type_item_name)
 	var _, exists = reg[type_name]
 	if exists {
 		return nil, source.MakeError(loc,
@@ -449,9 +442,9 @@ func registerType (
 	reg[type_name] = TypeDef {
 		TypeDef: def,
 		AstNode: decl,
+		ModInfo: mi,
 	}
 	var doc = ast.GetDocContent(decl.Docs)
-	var section = sb.GetFrom(decl.Location.File)
 	var meta attr.TypeMetadata
 	var meta_text = ast.GetMetadataContent(decl.Meta)
 	var meta_err = json.Unmarshal(([] byte)(meta_text), &meta)
@@ -462,7 +455,7 @@ func registerType (
 	var attrs = attr.TypeAttrs {
 		Attrs: attr.Attrs {
 			Location: decl.Location,
-			Section:  section,
+			Section:  sec,
 			Doc:      doc,
 		},
 		Metadata: meta,
@@ -521,7 +514,7 @@ func registerType (
 	var case_defs = make([] *typsys.TypeDef, len(enum.Cases))
 	if is_enum {
 		for i, c := range enum.Cases {
-			var ct, err = registerType(&c, sb, mod, reg, typsys.CaseInfo {
+			var ct, err = registerType(&c, sec, mi, reg, typsys.CaseInfo {
 				Enum:      def,
 				CaseIndex: uint(i),
 			})

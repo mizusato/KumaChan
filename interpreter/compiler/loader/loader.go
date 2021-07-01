@@ -2,10 +2,12 @@ package loader
 
 import (
 	"os"
+	"sort"
 	"path/filepath"
 	"kumachan/standalone/rpc"
 	"kumachan/interpreter/runtime/def"
 	"kumachan/interpreter/lang/ast"
+	"kumachan/interpreter/lang/common/source"
 )
 
 
@@ -25,6 +27,20 @@ type Module struct {
 	Manifest  Manifest
 	ModuleServiceInfo
 }
+func (mod *Module) ForEachImported(f func(*Module)(source.Errors)) source.Errors {
+	// TODO: change the type of ImpMap to avoid sorting
+	var names = make([] string, 0, len(mod.ImpMap))
+	for preferred_name, _ := range mod.ImpMap {
+		names = append(names, preferred_name)
+	}
+	sort.Strings(names)
+	var errs source.Errors
+	for _, preferred_name := range names {
+		source.ErrorsJoinAll(&errs, f(mod.ImpMap[preferred_name]))
+	}
+	return errs
+}
+
 type ModuleServiceInfo struct {
 	IsService           bool
 	ServiceIdentifier   rpc.ServiceIdentifier

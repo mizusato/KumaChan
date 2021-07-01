@@ -7,12 +7,11 @@ import (
 	"kumachan/interpreter/lang/common/source"
 	"kumachan/interpreter/lang/common/attr"
 	"kumachan/interpreter/compiler/checker2/typsys"
-	"kumachan/interpreter/compiler/loader"
 )
 
 
 type TypeConsContext struct {
-	Module    *loader.Module
+	ModInfo   *ModuleInfo
 	TypeReg   TypeRegistry
 	AliasReg  AliasRegistry
 	ParamVec  [] typsys.Parameter
@@ -60,7 +59,7 @@ func newType(t ast.VariousType, ctx TypeConsContext) (typsys.Type, *source.Error
 			return nil, source.MakeError(T.Location,
 				E_TooManyTypeParameters {})
 		}
-		var n = name.TypeName { Name: NameFrom(T.Module, T.Item, ctx.Module) }
+		var n = name.TypeName { Name: NameFrom(T.Module, T.Item, ctx.ModInfo) }
 		if n.ModuleName == "" {
 			var item_name = n.ItemName
 			var special, is_special = newSpecialType(item_name)

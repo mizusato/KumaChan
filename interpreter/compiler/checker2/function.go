@@ -15,6 +15,7 @@ import (
 type Function struct {
 	attr.FunctionAttrs
 	AstNode     *ast.DeclFunction
+	ModInfo     *ModuleInfo
 	Exported    bool
 	Name        name.FunctionName
 	Signature   FunctionSignature
@@ -28,7 +29,7 @@ type FunctionSignature struct {
 type FunctionBody interface { functionBody() }
 func (OrdinaryBody) functionBody() {}
 type OrdinaryBody struct {
-	Expr  checked.Expr
+	Expr  *checked.Expr
 }
 func (NativeBody) functionBody() {}
 type NativeBody struct {
@@ -36,11 +37,7 @@ type NativeBody struct {
 }
 
 type FunctionRegistry (map[name.Name] ([] *Function))
-type functionList ([] functionWithModule)
-type functionWithModule struct {
-	*Function
-	Module  *loader.Module
-}
+type functionList ([] *Function)
 func (l functionList) Less(i int, j int) bool {
 	var u = l[i].Name
 	var v = l[j].Name
@@ -69,22 +66,19 @@ var bodyInit, bodyWrite = (func() (FunctionBody, func(FunctionBody)(FunctionBody
 
 func collectFunctions (
 	entry  *loader.Module,
-	idx    loader.Index,
+	mic    ModuleInfoCollection,
+	sc     SectionCollection,
 	al     AliasRegistry,
 	types  TypeRegistry,
 ) (FunctionRegistry, functionList, source.Errors) {
 	var reg = make(FunctionRegistry)
-	var err = registerFunctions(entry, reg, al, types)
+	var mvs = make(ModuleVisitedSet)
+	var err = registerFunctions(entry, mic, sc, mvs, reg, al, types)
 	if err != nil { return nil, nil, err }
 	var functions = make(functionList, 0, len(reg))
 	for _, group := range reg {
 		for _, f := range group {
-			var mod, exists = idx[f.Name.ModuleName]
-			if !(exists) { panic("something went wrong") }
-			functions = append(functions, functionWithModule {
-				Function: f,
-				Module:   mod,
-			})
+			functions = append(functions, f)
 		}
 	}
 	var all_reg = &Registry {
@@ -92,7 +86,7 @@ func collectFunctions (
 		Types:     types,
 		Functions: reg,
 	}
-	var step = func(f func(functionWithModule) *source.Error) source.Errors {
+	var step = func(f func(*Function) *source.Error) source.Errors {
 		var errs source.Errors
 		for _, function := range functions {
 			source.ErrorsJoin(&errs, f(function))
@@ -101,7 +95,7 @@ func collectFunctions (
 	}
 	var step1_check_alias = step
 	var step2_generate_body = step
-	{ var err = step1_check_alias(func(f functionWithModule) *source.Error {
+	{ var err = step1_check_alias(func(f *Function) *source.Error {
 		var _, conflict = al[f.Name.Name]
 		if conflict {
 			return source.MakeError(f.Location,
@@ -111,14 +105,13 @@ func collectFunctions (
 		}
 	})
 	if err != nil { return nil, nil, err } }
-	{ var err = step2_generate_body(func(f functionWithModule) *source.Error {
+	{ var err = step2_generate_body(func(f *Function) *source.Error {
 		var body, err = (func() (FunctionBody, *source.Error) {
 			switch body := f.AstNode.Body.Body.(type) {
 			case ast.Lambda:
 				var ctx = ExprContext {
 					Registry:   all_reg,
-					Module:     f.Module,
-					Parameters: f.Signature.TypeParameters,
+					ModInfo:    f.ModInfo,
 					Inferring:  nil,
 				}
 				var expected = &typsys.NestedType {
@@ -143,27 +136,25 @@ func collectFunctions (
 
 func registerFunctions (
 	mod    *loader.Module,
+	mic    ModuleInfoCollection,
+	sc     SectionCollection,
+	mvs    ModuleVisitedSet,
 	reg    FunctionRegistry,
 	al     AliasRegistry,
 	types  TypeRegistry,
 ) source.Errors {
-	var sb SectionBuffer
-	var errs source.Errors
-	for _, stmt := range mod.AST.Statements {
-		var title, is_title = stmt.Statement.(ast.Title)
-		if is_title { sb.SetFrom(title) }
+	return TraverseStatements(mod, mic, sc, mvs, func(stmt ast.VariousStatement, sec *source.Section, mi *ModuleInfo) *source.Error {
 		var decl, is_func_decl = stmt.Statement.(ast.DeclFunction)
-		if !(is_func_decl) { continue }
-		var _, err = registerFunction(&decl, &sb, mod, reg, al, types)
-		source.ErrorsJoin(&errs, err)
-	}
-	return errs
+		if !(is_func_decl) { return nil }
+		var _, err = registerFunction(&decl, sec, mi, reg, al, types)
+		return err
+	})
 }
 
 func registerFunction (
 	decl   *ast.DeclFunction,
-	sb     *SectionBuffer,
-	mod    *loader.Module,
+	sec    *source.Section,
+	mi     *ModuleInfo,
 	reg    FunctionRegistry,
 	al     AliasRegistry,
 	types  TypeRegistry,
@@ -174,14 +165,13 @@ func registerFunction (
 		return nil, source.MakeError(loc,
 			E_InvalidFunctionName { Name: func_item_name })
 	}
-	var n = name.MakeName(mod.Name, func_item_name)
+	var n = name.MakeName(mi.ModName, func_item_name)
 	var f = new(Function)
 	var existing, _ = reg[n]
 	reg[n] = append(existing, f)
 	var index = uint(len(existing))
 	var func_name = name.FunctionName { Name: n, Index: index }
 	var doc = ast.GetDocContent(decl.Docs)
-	var section = sb.GetFrom(decl.Location.File)
 	var meta attr.FunctionMetadata
 	var meta_text = ast.GetMetadataContent(decl.Meta)
 	var meta_err = json.Unmarshal(([] byte)(meta_text), &meta)
@@ -192,14 +182,14 @@ func registerFunction (
 	var attrs = attr.FunctionAttrs {
 		Attrs:    attr.Attrs {
 			Location: loc,
-			Section:  section,
+			Section:  sec,
 			Doc:      doc,
 		},
 		Metadata: meta,
 	}
 	var params, params_err = (func() ([] typsys.Parameter, *source.Error) {
 		var bound_ctx = TypeConsContext {
-			Module:   mod,
+			ModInfo:  mi,
 			TypeReg:  types,
 			AliasReg: al,
 		}
@@ -239,7 +229,7 @@ func registerFunction (
 	})()
 	if params_err != nil { return nil, params_err }
 	var ctx = TypeConsContext {
-		Module:   mod,
+		ModInfo:  mi,
 		TypeReg:  types,
 		AliasReg: al,
 		ParamVec: params,
