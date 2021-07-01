@@ -55,7 +55,11 @@ func TypeOpMap(t Type, f func(t Type)(Type,bool)) Type {
 }
 
 func TypeOpEqual(t1 Type, t2 Type) bool {
-	if t1 == t2 {
+	var _, t1_is_unknown = t1.(*UnknownType)
+	var _, t2_is_unknown = t2.(*UnknownType)
+	if t1_is_unknown || t2_is_unknown {
+		return false
+	} else if t1 == t2 {
 		return true
 	} else {
 		var t1_nested, t1_is_nested = t1.(*NestedType)
