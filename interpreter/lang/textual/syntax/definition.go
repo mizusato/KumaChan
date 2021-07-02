@@ -45,7 +45,7 @@ var __Tokens = [...] Token {
     Token { Name: "Int",    Pattern: r(`\-?0[bB][01]+`) },
     Token { Name: "Float",  Pattern: r(`\-?\d+(\.\d+)?[Ee][\+\-]?\d+`) },
     Token { Name: "Float",  Pattern: r(`\-?\d+\.\d+`) },
-    Token { Name: "Int",    Pattern: r(`\-?\d[\d_]*`) },
+    Token { Name: "Int",    Pattern: r(`\-?\d+`) },
     Token { Name: "Char",   Pattern: r("`.`") },
     Token { Name: "Char",   Pattern: r(`\\u[0-9A-Fa-f]+`) },
     Token { Name: "Char",   Pattern: r(`\\[a-z]`) },

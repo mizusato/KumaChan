@@ -4,8 +4,12 @@ import (
 	"math"
 	"math/big"
 	"math/cmplx"
+	"strconv"
 )
 
+
+const MaxSafeIntegerToDouble = 9007199254740991
+const MinSafeIntegerToDouble = -9007199254740991
 
 func GetNumberUint(small uint) *big.Int {
 	var n big.Int
@@ -55,4 +59,51 @@ func IsNormalComplex(z complex128) bool {
 	}
 	return true
 }
+
+func WellBehavedParseInteger(chars ([] rune)) (*big.Int, bool) {
+	var abs_chars ([] rune)
+	if chars[0] == '-' {
+		abs_chars = chars[1:]
+	} else {
+		abs_chars = chars
+	}
+	var has_base_prefix = false
+	if len(abs_chars) >= 2 {
+		var c1 = abs_chars[0]
+		var c2 = abs_chars[1]
+		if c1 == '0' &&
+		(c2 == 'x' || c2 == 'o' || c2 == 'b' ||
+		c2 == 'X' || c2 == 'O' || c2 == 'B') {
+			has_base_prefix = true
+		}
+	}
+	var str = string(chars)
+	if has_base_prefix {
+		return big.NewInt(0).SetString(str, 0)
+	} else {
+		// avoid "0" prefix to be recognized as octal with base 0
+		return big.NewInt(0).SetString(str, 10)
+	}
+}
+
+func IntegerToDouble(value *big.Int) (float64, bool) {
+	if value.IsInt64() {
+		var i64 = value.Int64()
+		var ok = MinSafeIntegerToDouble <= i64 && i64 <= MaxSafeIntegerToDouble
+		if ok {
+			return float64(i64), true
+		} else {
+			return math.NaN(), false
+		}
+	} else {
+		return math.NaN(), false
+	}
+}
+
+func ParseDouble(chars ([] rune)) (float64, bool) {
+	var value, err = strconv.ParseFloat(string(chars), 64)
+	if err != nil { return math.NaN(), false }
+	return value, true
+}
+
 

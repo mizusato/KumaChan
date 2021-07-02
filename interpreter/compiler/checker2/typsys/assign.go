@@ -39,6 +39,9 @@ func ApplyNewInferringState(ctx *AssignContext, s *InferringState) {
 }
 
 func Assign(to Type, from Type, ctx AssignContext) (bool, *InferringState) {
+	if to == nil || from == nil {
+		panic("something went wrong")
+	}
 	// 1. Deal with parameter inferring
 	if ctx.inferring != nil {
 		var T, to_param = to.(ParameterType)

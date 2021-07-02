@@ -1,9 +1,9 @@
 package checked
 
 import (
-	. "kumachan/standalone/util/error"
 	"kumachan/interpreter/compiler/checker2/typsys"
 	"kumachan/interpreter/lang/common/name"
+	"kumachan/interpreter/lang/common/source"
 )
 
 
@@ -13,7 +13,7 @@ type Expr struct {
 	Expr ExprContent
 }
 type ExprInfo struct {
-	Point  ErrorPoint
+	Location  source.Location
 }
 type ExprContent interface { implExpr() }
 
@@ -46,5 +46,15 @@ const (
 	RO_ProjRef
 	RO_CaseRef
 )
+
+func (FloatLiteral) implExpr() {}
+type FloatLiteral struct {
+	Value  float64
+}
+
+func (IntegerLiteral) implExpr() {}
+type IntegerLiteral struct {
+	Value  interface{}
+}
 
 

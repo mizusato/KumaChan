@@ -282,4 +282,53 @@ func (e E_ImplMethodDuplicateCompatible) DescribeError() richtext.Block {
 	return e.Describe("multiple corresponding functions compatible")
 }
 
+type E_IntegerNotRepresentableByFloatType struct {}
+func (e E_IntegerNotRepresentableByFloatType) DescribeError() richtext.Block {
+	return makeErrorDescBlock (
+		"integer literal is too big to be represented " +
+		"using a floating-point type",
+	)
+}
+
+type E_IntegerOverflowUnderflow struct {
+	TypeName  string
+}
+func (e E_IntegerOverflowUnderflow) DescribeError() richtext.Block {
+	var b = makeErrorDescBlankBlock()
+	b.WriteSpan(
+		"integer literal is not representable by the type",
+		richtext.TAG_ERR_NORMAL)
+	b.WriteSpan(e.TypeName, richtext.TAG_ERR_INLINE)
+	return b
+}
+
+type E_IntegerAssignedToIncompatibleType struct {
+	TypeName  string
+}
+func (e E_IntegerAssignedToIncompatibleType) DescribeError() richtext.Block {
+	var b = makeErrorDescBlankBlock()
+	b.WriteSpan(
+		"cannot assign an integer literal to the incompatible type",
+		richtext.TAG_ERR_NORMAL)
+	b.WriteSpan(e.TypeName, richtext.TAG_ERR_INLINE)
+	return b
+}
+
+type E_FloatOverflowUnderflow struct {}
+func (e E_FloatOverflowUnderflow) DescribeError() richtext.Block {
+	return makeErrorDescBlock("float literal value too big")
+}
+
+type E_FloatAssignedToIncompatibleType struct {
+	TypeName  string
+}
+func (e E_FloatAssignedToIncompatibleType) DescribeError() richtext.Block {
+	var b = makeErrorDescBlankBlock()
+	b.WriteSpan(
+		"cannot assign a float literal to the incompatible type",
+		richtext.TAG_ERR_NORMAL)
+	b.WriteSpan(e.TypeName, richtext.TAG_ERR_INLINE)
+	return b
+}
+
 

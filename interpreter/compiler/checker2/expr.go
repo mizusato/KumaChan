@@ -25,35 +25,45 @@ type LocalBinding struct {
 	Type      typsys.Type
 	Location  source.Location
 }
+func (ctx ExprContext) AssignContext() typsys.AssignContext {
+	return typsys.MakeAssignContext(ctx.ModName, ctx.InferringState)
+}
+func (ctx ExprContext) DescribeType(t typsys.Type, s *typsys.InferringState) string {
+	if s != nil {
+		return typsys.DescribeType(t, s)
+	} else {
+		return typsys.DescribeType(t, ctx.InferringState)
+	}
+}
 
 type ExprChecker func
 	(expected typsys.Type, ctx ExprContext) (
 	*checked.Expr, *typsys.InferringState, *source.Error)
 
-func Check(expr ast.Expr) ExprChecker {
+func check(expr ast.Expr) ExprChecker {
 	return ExprChecker(func(expected typsys.Type, ctx ExprContext) (*checked.Expr, *typsys.InferringState, *source.Error) {
 		var L = len(expr.Pipeline)
 		if L == 0 {
-			return CheckTerm(expr.Term)(expected, ctx)
+			return checkTerm(expr.Term)(expected, ctx)
 		} else {
-			var current, _, err = CheckTerm(expr.Term)(nil, ctx)
+			var current, _, err = checkTerm(expr.Term)(nil, ctx)
 			if err != nil { return nil, nil, err }
 			var last = (L - 1)
 			for _, pipe := range expr.Pipeline[:last] {
-				var new_current, _, err  = CheckPipe(current, pipe)(nil, ctx)
+				var new_current, _, err  = checkPipe(current, pipe)(nil, ctx)
 				if err != nil { return nil, nil, err }
 				current = new_current
 			}
-			return CheckPipe(current, expr.Pipeline[last])(expected, ctx)
+			return checkPipe(current, expr.Pipeline[last])(expected, ctx)
 		}
 	})
 }
 
-func CheckTerm(term ast.VariousTerm) ExprChecker {
+func checkTerm(term ast.VariousTerm) ExprChecker {
 	// TODO
 }
 
-func CheckPipe(in *checked.Expr, pipe ast.VariousPipe) ExprChecker {
+func checkPipe(in *checked.Expr, pipe ast.VariousPipe) ExprChecker {
 	// TODO
 }
 
