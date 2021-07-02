@@ -331,4 +331,26 @@ func (e E_FloatAssignedToIncompatibleType) DescribeError() richtext.Block {
 	return b
 }
 
+type E_InvalidChar struct {
+	Content  string
+}
+func (e E_InvalidChar) DescribeError() richtext.Block {
+	var b = makeErrorDescBlankBlock()
+	b.WriteSpan("invalid character", richtext.TAG_ERR_NORMAL)
+	b.WriteSpan(e.Content, richtext.TAG_ERR_INLINE)
+	return b
+}
+
+type E_CharAssignedToIncompatibleType struct {
+	TypeName  string
+}
+func (e E_CharAssignedToIncompatibleType) DescribeError() richtext.Block {
+	var b = makeErrorDescBlankBlock()
+	b.WriteSpan(
+		"cannot assign a character literal to the incompatible type",
+		richtext.TAG_ERR_NORMAL)
+	b.WriteSpan(e.TypeName, richtext.TAG_ERR_INLINE)
+	return b
+}
+
 

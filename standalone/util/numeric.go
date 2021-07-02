@@ -5,6 +5,8 @@ import (
 	"math/big"
 	"math/cmplx"
 	"strconv"
+	"unicode/utf8"
+	"unicode"
 )
 
 
@@ -104,6 +106,61 @@ func ParseDouble(chars ([] rune)) (float64, bool) {
 	var value, err = strconv.ParseFloat(string(chars), 64)
 	if err != nil { return math.NaN(), false }
 	return value, true
+}
+
+func ParseRune(chars ([] rune)) (rune, bool) {
+	const E = utf8.RuneError
+	var invalid = func() (rune, bool) {
+		return E, false
+	}
+	var got = func(r rune) (rune, bool) {
+		return r, true
+	}
+	if len(chars) == 0 {
+		return invalid()
+	} else if len(chars) == 1 {
+		return got(chars[0])
+	} else {
+		var c0 = chars[0]
+		if c0 == '`' {
+			return got(chars[1])
+		} else if c0 == '\\' {
+			var c1 = chars[1]
+			switch c1 {
+			case 'n':
+				return got('\n')
+			case 'r':
+				return got('\r')
+			case 't':
+				return got('\t')
+			case 'e':
+				return got('\033')
+			case 'b':
+				return got('\b')
+			case 'a':
+				return got('\a')
+			case 'f':
+				return got('\f')
+			case 'u':
+				var code_point_raw = string(chars[2:])
+				var n, ok1 = big.NewInt(0).SetString(code_point_raw, 16)
+				if !ok1 { return invalid() }
+				var min = big.NewInt(0)
+				var max = big.NewInt(unicode.MaxRune)
+				var ok2 = ((min.Cmp(n) <= 0) && (n.Cmp(max) <= 0))
+				if !ok2 { return invalid() }
+				// note: due to `rune` is an alias of `int32`,
+				//       we should convert `uint32` to `int32` here
+				// TODO: validate codepoint
+				return got(rune(n.Int64()))
+			default:
+				return invalid()
+			}
+		} else {
+			return invalid()
+		}
+	}
+
 }
 
 

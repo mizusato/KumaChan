@@ -9,6 +9,38 @@ import (
 )
 
 
+func checkChar(C ast.CharLiteral) ExprChecker {
+	return ExprChecker(func(expected typsys.Type, ctx ExprContext) (*checked.Expr, *typsys.InferringState, *source.Error) {
+		var loc = C.Location
+		var info = checked.ExprInfo { Location: loc }
+		var value, ok = util.ParseRune(C.Value)
+		if !(ok) {
+			return nil, nil, source.MakeError(loc,
+				E_InvalidChar { Content: string(C.Value) })
+		}
+		var expr = &checked.Expr {
+			Type: coreChar(ctx.Types),
+			Info: info,
+			Expr: checked.IntegerLiteral { Value: value },
+		}
+		// TODO: extract common logic for nil expected type
+		if expected == nil {
+			return expr, nil, nil
+		} else {
+			var assign_ctx = ctx.AssignContext()
+			var ok, s = typsys.Assign(expected, expr.Type, assign_ctx)
+			if ok {
+				return expr, s, nil
+			} else {
+				return nil, nil, source.MakeError(loc,
+					E_CharAssignedToIncompatibleType {
+						TypeName: typsys.DescribeType(expected, nil),
+					})
+			}
+		}
+	})
+}
+
 func checkFloat(F ast.FloatLiteral) ExprChecker {
 	return ExprChecker(func(expected typsys.Type, ctx ExprContext) (*checked.Expr, *typsys.InferringState, *source.Error) {
 		var loc = F.Location
