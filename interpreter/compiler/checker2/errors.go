@@ -13,6 +13,7 @@ func makeErrorDescBlankBlock() richtext.Block {
 	return b
 }
 func makeErrorDescBlock(msg string) richtext.Block {
+	// TODO: msg ...string (interleaved)
 	var b = makeErrorDescBlankBlock()
 	b.WriteSpan(msg, richtext.TAG_ERR_NORMAL)
 	return b
@@ -302,33 +303,9 @@ func (e E_IntegerOverflowUnderflow) DescribeError() richtext.Block {
 	return b
 }
 
-type E_IntegerAssignedToIncompatibleType struct {
-	TypeName  string
-}
-func (e E_IntegerAssignedToIncompatibleType) DescribeError() richtext.Block {
-	var b = makeErrorDescBlankBlock()
-	b.WriteSpan(
-		"cannot assign an integer literal to the incompatible type",
-		richtext.TAG_ERR_NORMAL)
-	b.WriteSpan(e.TypeName, richtext.TAG_ERR_INLINE)
-	return b
-}
-
 type E_FloatOverflowUnderflow struct {}
 func (e E_FloatOverflowUnderflow) DescribeError() richtext.Block {
 	return makeErrorDescBlock("float literal value too big")
-}
-
-type E_FloatAssignedToIncompatibleType struct {
-	TypeName  string
-}
-func (e E_FloatAssignedToIncompatibleType) DescribeError() richtext.Block {
-	var b = makeErrorDescBlankBlock()
-	b.WriteSpan(
-		"cannot assign a float literal to the incompatible type",
-		richtext.TAG_ERR_NORMAL)
-	b.WriteSpan(e.TypeName, richtext.TAG_ERR_INLINE)
-	return b
 }
 
 type E_InvalidChar struct {
@@ -341,15 +318,16 @@ func (e E_InvalidChar) DescribeError() richtext.Block {
 	return b
 }
 
-type E_CharAssignedToIncompatibleType struct {
-	TypeName  string
+type E_NotAssignable struct {
+	From  string
+	To    string
 }
-func (e E_CharAssignedToIncompatibleType) DescribeError() richtext.Block {
+func (e E_NotAssignable) DescribeError() richtext.Block {
 	var b = makeErrorDescBlankBlock()
-	b.WriteSpan(
-		"cannot assign a character literal to the incompatible type",
-		richtext.TAG_ERR_NORMAL)
-	b.WriteSpan(e.TypeName, richtext.TAG_ERR_INLINE)
+	b.WriteSpan("type", richtext.TAG_ERR_NORMAL)
+	b.WriteSpan(e.From, richtext.TAG_ERR_INLINE)
+	b.WriteSpan("cannot be assigned to the type", richtext.TAG_ERR_NORMAL)
+	b.WriteSpan(e.To, richtext.TAG_ERR_INLINE)
 	return b
 }
 

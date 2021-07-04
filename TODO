@@ -57,6 +57,7 @@ type Cell[T] protected {
 - Lang: only function can have bounds (type def cannot)
 
 - Lang: consider { instance.method arg }, type A (I1, I2) { ... };
+        (syntax obj.method also apply to concrete type)
 
 - Lang: consider curried function as method: &(Instance) => &(In) => Out
 

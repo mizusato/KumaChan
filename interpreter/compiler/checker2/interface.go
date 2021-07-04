@@ -71,22 +71,24 @@ func generateDispatchMapping (
 						var io = f.Signature.InputOutput
 						var s0 = typsys.StartInferring(con.Parameters)
 						var ctx = typsys.MakeAssignContextWithoutSubtyping(s0)
-						var assignable = typsys.MakeAssigner(&ctx)
-						var in_ok = assignable(io.Input, con_t)
+						var in_ok, s1 = typsys.Assign(io.Input, con_t, ctx)
 						if !(in_ok) {
 							continue
 						}
-						var out_ok = assignable(method_t, io.Output)
-						if out_ok {
-							if found {
-								return source.MakeError(con.Location,
-									E_ImplMethodDuplicateCompatible {
-										ImplErrorInfo: info,
-									})
-							}
-							method_f = f
-							found = true
+						typsys.ApplyNewInferringState(&ctx, s1)
+						var out_ok, s2 = typsys.Assign(method_t, io.Output, ctx)
+						if !(out_ok) {
+							continue
 						}
+						typsys.ApplyNewInferringState(&ctx, s2)
+						if found {
+							return source.MakeError(con.Location,
+								E_ImplMethodDuplicateCompatible {
+									ImplErrorInfo: info,
+								})
+						}
+						method_f = f
+						found = true
 					}
 					if !(found) {
 						return source.MakeError(con.Location,

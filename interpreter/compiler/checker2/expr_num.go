@@ -1,6 +1,9 @@
 package checker2
 
 import (
+	"math"
+	"unicode"
+	"math/big"
 	"kumachan/interpreter/lang/ast"
 	"kumachan/interpreter/lang/common/source"
 	"kumachan/interpreter/compiler/checker2/typsys"
@@ -9,8 +12,54 @@ import (
 )
 
 
+type smallNumericTypeInfo struct {
+	which  nominalType
+	adapt  smallNumericTypeAdapter
+}
+type smallNumericTypeAdapter func(*big.Int)(interface{}, bool)
+
+var smallNumericTypes = [] smallNumericTypeInfo {
+	{ which: coreNormalFloat, adapt: normalFloatAdapt },
+	{ which: coreFloat, adapt: normalFloatAdapt },
+	{ which: coreQword, adapt: uintAdapt(math.MaxUint64, func(v *big.Int) interface{} {
+		return v.Uint64()
+	}) },
+	{ which: coreDword, adapt: uintAdapt(math.MaxUint32, func(v *big.Int) interface{} {
+		return uint32(v.Uint64())
+	}) },
+	{ which: coreChar, adapt: uintAdapt(unicode.MaxRune, func(v *big.Int) interface{} {
+		return rune(v.Uint64())
+	}) },
+	{ which: coreWord, adapt: uintAdapt(math.MaxUint16, func(v *big.Int) interface{} {
+		return uint16(v.Uint64())
+	}) },
+	{ which: coreByte, adapt: uintAdapt(math.MaxUint8, func(v *big.Int) interface{} {
+		return byte(v.Uint64())
+	}) },
+}
+
+func normalFloatAdapt(v *big.Int) (interface{}, bool) {
+	var float_v, ok = util.IntegerToDouble(v)
+	return float_v, ok
+}
+func intAdapt(min int64, max uint64, cast func(*big.Int)(interface{})) smallNumericTypeAdapter {
+	return smallNumericTypeAdapter(func(value *big.Int) (interface{}, bool) {
+		var min = big.NewInt(0).SetInt64(min)
+		var max = big.NewInt(0).SetUint64(max)
+		if (min.Cmp(value) <= 0) && (value.Cmp(max) <= 0) {
+			return cast(value), true
+		} else {
+			return nil, false
+		}
+	})
+}
+func uintAdapt(max uint64, cast func(*big.Int)(interface{})) smallNumericTypeAdapter {
+	return intAdapt(0, max, cast)
+}
+
+
 func checkChar(C ast.CharLiteral) ExprChecker {
-	return ExprChecker(func(expected typsys.Type, ctx ExprContext) (*checked.Expr, *typsys.InferringState, *source.Error) {
+	return ExprChecker(func(expected typsys.Type, s *typsys.InferringState, ctx ExprContext) (*checked.Expr, *typsys.InferringState, *source.Error) {
 		var loc = C.Location
 		var info = checked.ExprInfo { Location: loc }
 		var value, ok = util.ParseRune(C.Value)
@@ -18,31 +67,17 @@ func checkChar(C ast.CharLiteral) ExprChecker {
 			return nil, nil, source.MakeError(loc,
 				E_InvalidChar { Content: string(C.Value) })
 		}
-		var expr = &checked.Expr {
-			Type: coreChar(ctx.Types),
-			Info: info,
-			Expr: checked.IntegerLiteral { Value: value },
-		}
-		// TODO: extract common logic for nil expected type
-		if expected == nil {
-			return expr, nil, nil
-		} else {
-			var assign_ctx = ctx.AssignContext()
-			var ok, s = typsys.Assign(expected, expr.Type, assign_ctx)
-			if ok {
-				return expr, s, nil
-			} else {
-				return nil, nil, source.MakeError(loc,
-					E_CharAssignedToIncompatibleType {
-						TypeName: typsys.DescribeType(expected, nil),
-					})
-			}
-		}
+		return ctx.applyFinalCheck(expected, s,
+			assign(&checked.Expr {
+				Type: coreChar(ctx.Types),
+				Info: info,
+				Expr: checked.NumericLiteral { Value: value },
+			}))
 	})
 }
 
 func checkFloat(F ast.FloatLiteral) ExprChecker {
-	return ExprChecker(func(expected typsys.Type, ctx ExprContext) (*checked.Expr, *typsys.InferringState, *source.Error) {
+	return ExprChecker(func(expected typsys.Type, s *typsys.InferringState, ctx ExprContext) (*checked.Expr, *typsys.InferringState, *source.Error) {
 		var loc = F.Location
 		var info = checked.ExprInfo { Location: loc }
 		var value, ok = util.ParseDouble(F.Value)
@@ -53,98 +88,65 @@ func checkFloat(F ast.FloatLiteral) ExprChecker {
 		if !(util.IsNormalFloat(value)) {
 			panic("invalid float literal got from parser")
 		}
-		var expr = &checked.Expr {
-			Type: coreNormalFloat(ctx.Types),
-			Info: info,
-			Expr: checked.FloatLiteral { Value: value },
-		}
-		if expected == nil {
-			return expr, nil, nil
-		} else {
-			var assign_ctx = ctx.AssignContext()
-			var ok, s = typsys.Assign(expected, expr.Type, assign_ctx)
-			if ok {
-				return expr, s, nil
-			} else {
-				return nil, nil, source.MakeError(loc,
-					E_FloatAssignedToIncompatibleType {
-						TypeName: typsys.DescribeType(expected, nil),
-					})
-			}
-		}
+		return ctx.applyFinalCheck(expected, s,
+			assign(&checked.Expr {
+				Type: coreNormalFloat(ctx.Types),
+				Info: info,
+				Expr: checked.NumericLiteral { Value: value },
+			}))
 	})
 }
 
 func checkInteger(I ast.IntegerLiteral) ExprChecker {
-	return ExprChecker(func(expected typsys.Type, ctx ExprContext) (*checked.Expr, *typsys.InferringState, *source.Error) {
+	return ExprChecker(func(expected typsys.Type, s *typsys.InferringState, ctx ExprContext) (*checked.Expr, *typsys.InferringState, *source.Error) {
 		var loc = I.Location
 		var info = checked.ExprInfo { Location: loc }
 		var value, ok = util.WellBehavedParseInteger(I.Value)
 		if !(ok) { panic("something went wrong") }
-		var get_big_min_t = func()(typsys.Type) {
+		var big_min_t = (func() typsys.Type {
 			if util.IsNonNegative(value) {
 				return coreNumber(ctx.Types)
 			} else {
 				return coreInteger(ctx.Types)
 			}
-		}
-		if expected == nil {
-			var big_min_t = get_big_min_t()
-			return &checked.Expr {
+		})()
+		var expr, err = ctx.applyIntermediateCheck(expected, &s,
+			assign(&checked.Expr {
 				Type: big_min_t,
 				Info: info,
-				Expr: checked.IntegerLiteral { Value: value },
-			}, nil, nil
+				Expr: checked.NumericLiteral { Value: value },
+			}))
+		if err == nil {
+			return expr, s, nil
 		} else {
-			for _, float_t := range floatTypes {
-				if typeEqual(expected, float_t, ctx.Types) {
-					var float_value, ok = util.IntegerToDouble(value)
+			for _, t := range smallNumericTypes {
+				if t.which.isEqualTo(expected, ctx.Types) {
+					var adapted, ok = t.adapt(value)
 					if ok {
 						return &checked.Expr {
 							Type: expected,
 							Info: info,
-							Expr: checked.FloatLiteral { Value: float_value },
+							Expr: checked.NumericLiteral {
+								Value: adapted,
+							},
 						}, nil, nil
 					} else {
-						return nil, nil, source.MakeError(loc,
-							E_IntegerNotRepresentableByFloatType {})
-					}
-				}
-			}
-			for _, int_t := range integerTypes {
-				if typeEqual(expected, int_t.which, ctx.Types) {
-					var adapted, ok = int_t.adapt(value)
-					if ok {
-						return &checked.Expr {
-							Type: expected,
-							Info: info,
-							Expr: checked.IntegerLiteral { Value: adapted },
-						}, nil, nil
-					} else {
-						return nil, nil, source.MakeError(loc,
-							E_IntegerOverflowUnderflow {
-								TypeName: typsys.DescribeType(expected, nil),
-							})
+						var _, is_float = adapted.(float64)
+						if is_float {
+							return nil, nil, source.MakeError(loc,
+								E_IntegerNotRepresentableByFloatType {})
+						} else {
+							return nil, nil, source.MakeError(loc,
+								E_IntegerOverflowUnderflow {
+									TypeName: typsys.DescribeType(expected, nil),
+								})
+						}
 					}
 				} else {
 					// continue
 				}
 			}
-			var assign_ctx = ctx.AssignContext()
-			var big_min_t = get_big_min_t()
-			var ok, s = typsys.Assign(expected, big_min_t, assign_ctx)
-			if ok {
-				return &checked.Expr {
-					Type: big_min_t,
-					Info: info,
-					Expr: checked.IntegerLiteral { Value: value },
-				}, s, nil
-			} else {
-				return nil, nil, source.MakeError(loc,
-					E_IntegerAssignedToIncompatibleType {
-						TypeName: ctx.DescribeType(expected, nil),
-					})
-			}
+			return nil, nil, err
 		}
 	})
 }

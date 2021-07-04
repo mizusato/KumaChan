@@ -5,8 +5,8 @@ import (
 	"math/big"
 	"math/cmplx"
 	"strconv"
-	"unicode/utf8"
 	"unicode"
+	"unicode/utf8"
 )
 
 
@@ -149,9 +149,6 @@ func ParseRune(chars ([] rune)) (rune, bool) {
 				var max = big.NewInt(unicode.MaxRune)
 				var ok2 = ((min.Cmp(n) <= 0) && (n.Cmp(max) <= 0))
 				if !ok2 { return invalid() }
-				// note: due to `rune` is an alias of `int32`,
-				//       we should convert `uint32` to `int32` here
-				// TODO: validate codepoint
 				return got(rune(n.Int64()))
 			default:
 				return invalid()
@@ -160,7 +157,6 @@ func ParseRune(chars ([] rune)) (rune, bool) {
 			return invalid()
 		}
 	}
-
 }
 
 

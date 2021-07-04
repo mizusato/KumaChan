@@ -47,14 +47,9 @@ const (
 	RO_CaseRef
 )
 
-func (FloatLiteral) implExpr() {}
-type FloatLiteral struct {
-	Value  float64
-}
-
-func (IntegerLiteral) implExpr() {}
-type IntegerLiteral struct {
-	Value  interface{}
+func (NumericLiteral) implExpr() {}
+type NumericLiteral struct {
+	Value  interface {}
 }
 
 

@@ -1,18 +1,6 @@
 package typsys
 
 
-func MakeAssigner(ctx_ptr *AssignContext) func(to Type, from Type) bool {
-	return func(to Type, from Type) bool {
-		var ok, s = Assign(to, from, *ctx_ptr)
-		if ok {
-			ApplyNewInferringState(ctx_ptr, s)
-			return true
-		} else {
-			return false
-		}
-	}
-}
-
 type AssignContext struct {
 	module     string
 	subtyping  bool
