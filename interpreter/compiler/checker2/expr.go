@@ -24,10 +24,6 @@ type LocalBinding struct {
 	Name      string
 	Type      typsys.Type
 	Location  source.Location
-	LocalBindingInfo
-}
-type LocalBindingInfo struct {
-	Used  bool  // mutable
 }
 func (lm localBindingMap) clone() localBindingMap {
 	var clone = make(localBindingMap)
@@ -51,17 +47,11 @@ func (lm localBindingMap) add(loc source.Location, name string, t typsys.Type) {
 		Name:     name,
 		Type:     t,
 		Location: loc,
-		LocalBindingInfo: LocalBindingInfo { Used: false },
 	}
 }
 func (lm localBindingMap) lookup(name string) (*LocalBinding, bool) {
 	var binding, exists = lm[name]
-	if exists {
-		binding.Used = true
-		return binding, true
-	} else {
-		return nil, false
-	}
+	return binding, exists
 }
 func (ctx ExprContext) withLocalBindings(lm localBindingMap) ExprContext {
 	return ExprContext {

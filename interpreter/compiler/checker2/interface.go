@@ -1,13 +1,12 @@
 package checker2
 
 import (
+	"kumachan/interpreter/lang/common/name"
 	"kumachan/interpreter/lang/common/source"
 	"kumachan/interpreter/compiler/checker2/typsys"
-	"kumachan/interpreter/lang/common/name"
 )
 
 
-// TODO: consider field getter methods { Index uint }
 type DispatchMapping (map[ImplPair] ([] *Function))
 type ImplPair struct {
 	ConcreteType   *typsys.TypeDef

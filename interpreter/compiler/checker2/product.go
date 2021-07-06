@@ -8,6 +8,13 @@ import (
 )
 
 
+func getTuple(t typsys.Type) (typsys.Tuple, bool) {
+	var nested, is_nested = t.(*typsys.NestedType)
+	if !(is_nested) { return typsys.Tuple {}, false }
+	var tuple, is_tuple = nested.Content.(typsys.Tuple)
+	return tuple, is_tuple
+}
+
 func unboxTuple(t typsys.Type, mod string) (typsys.Tuple, bool) {
 	var nested, is_nested = t.(*typsys.NestedType)
 	if is_nested {
@@ -47,9 +54,8 @@ func checkTuple(T ast.Tuple) ExprChecker {
 			}
 			return cc.ok(tuple_t, checked.Tuple { Elements: elements })
 		} else {
-			// TODO: FIXME: exact tuple instead of unbox tuple
-			var tuple, accept_tuple = unboxTuple(expected, ctx.ModName)
-			if !(accept_tuple) {
+			var tuple, is_tuple = getTuple(expected)
+			if !(is_tuple) {
 				return cc.error(
 					E_TupleAssignedToIncompatible {
 						TypeName: typsys.DescribeType(expected, s),
