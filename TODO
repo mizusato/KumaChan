@@ -52,8 +52,6 @@ type Cell[T] protected {
 
 ## Type System Refactor
 
-- Lang: non-inclusive bound (< any, > never)
-
 - Lang: only function can have bounds (type def cannot)
 
 - Lang: consider { instance.method arg }, type A (I1, I2) { ... };

@@ -109,7 +109,20 @@ func Assign(to Type, from Type, ctx AssignContext) (bool, *InferringState) {
 	return false, nil
 }
 
+func checkOpenBounds(t Type, p *Parameter) bool {
+	if p.Bound.Kind == OpenBottomBound && TypeOpEqual(t, BottomType {}) {
+		return false
+	} else if p.Bound.Kind == OpenTopBound && TypeOpEqual(t, TopType {}) {
+		return false
+	} else {
+		return true
+	}
+}
+
 func assignFromBeingInferred(to Type, p *Parameter, ctx AssignContext) (bool, *InferringState) {
+	if !(checkOpenBounds(to, p)) {
+		return false, nil
+	}
 	var ps, exists = ctx.inferring.currentInferredParameterState(p)
 	if exists {
 		if assignWithoutInferring(to, ps.currentInferred, ctx) {
@@ -135,6 +148,9 @@ func assignFromBeingInferred(to Type, p *Parameter, ctx AssignContext) (bool, *I
 }
 
 func assignToBeingInferred(p *Parameter, from Type, ctx AssignContext) (bool, *InferringState) {
+	if !(checkOpenBounds(from, p)) {
+		return false, nil
+	}
 	var ps, exists = ctx.inferring.currentInferredParameterState(p)
 	if exists {
 		if assignWithoutInferring(ps.currentInferred, from, ctx) {

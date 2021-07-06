@@ -116,7 +116,7 @@ func collectFunctions (
 				var expected = &typsys.NestedType {
 					Content: f.Signature.InputOutput,
 				}
-				var expr, _, err = CheckLambda(body)(expected, ctx)
+				var expr, _, err = CheckLambda(body)(expected, nil, ctx)
 				if err != nil { return nil, err }
 				return OrdinaryBody { Expr: expr }, nil
 			case ast.NativeRef:
@@ -216,13 +216,34 @@ func registerFunction (
 				case ast.TypeLowerBound:
 					var v, err = newType(bound.Value, bound_ctx)
 					if err != nil { return typsys.Bound{}, nil }
-					return typsys.Bound { Kind: typsys.InfBound, Value: v }, nil
+					if typsys.TypeOpEqual(v, typsys.BottomType {}) {
+						return typsys.Bound {
+							Kind: typsys.OpenBottomBound,
+						}, nil
+					} else {
+						return typsys.Bound {
+							Kind:  typsys.InfBound,
+							Value: v,
+						}, nil
+					}
 				case ast.TypeHigherBound:
 					var v, err = newType(bound.Value, bound_ctx)
 					if err != nil { return typsys.Bound{}, nil }
-					return typsys.Bound { Kind: typsys.SupBound, Value: v }, nil
+					if typsys.TypeOpEqual(v, typsys.TopType {}) {
+						return typsys.Bound {
+							Kind:  typsys.OpenTopBound,
+						}, nil
+					} else {
+						return typsys.Bound {
+							Kind:  typsys.SupBound,
+							Value: v,
+						}, nil
+					}
+
 				default:
-					return typsys.Bound { Kind:  typsys.NullBound }, nil
+					return typsys.Bound {
+						Kind: typsys.NullBound,
+					}, nil
 				}
 			})()
 			if err != nil { return nil, err }

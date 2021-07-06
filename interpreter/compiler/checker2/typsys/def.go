@@ -34,13 +34,15 @@ const (
 )
 type Bound struct {
 	Kind   BoundKind
-	Value  Type  // is null when Kind = NullBound
+	Value  Type  // is null when Kind = null | open*
 }
 type BoundKind int
 const (
 	NullBound BoundKind = iota
 	SupBound
 	InfBound
+	OpenTopBound
+	OpenBottomBound
 )
 func (def *TypeDef) ForEachParameter(f func(uint,*Parameter)(*source.Error)) *source.Error {
 	for i := range def.Parameters {
