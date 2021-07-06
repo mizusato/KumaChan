@@ -31,15 +31,13 @@ func unboxTuple(t typsys.Type, mod string) (typsys.Tuple, bool) {
 
 func checkTuple(T ast.Tuple) ExprChecker {
 	return ExprChecker(func(expected typsys.Type, s *typsys.InferringState, ctx ExprContext) (*checked.Expr, *typsys.InferringState, *source.Error) {
-		var loc = T.Location
-		var info = checked.ExprInfoFrom(loc)
+		var cc = makeCheckContext(T.Location, &s, ctx, nil)
 		if expected == nil {
 			var L = len(T.Elements)
 			var elements = make([] *checked.Expr, L)
 			var types = make([] typsys.Type, L)
 			for i := 0; i < L; i += 1 {
-				var el_chk = check(T.Elements[i])
-				var el, err = ctx.applyIntermediateCheck(nil, &s, el_chk)
+				var el, err = cc.checkExpr(nil, T.Elements[i])
 				if err != nil { return nil, nil, err }
 				elements[i] = el
 				types[i] = el.Type
@@ -47,15 +45,11 @@ func checkTuple(T ast.Tuple) ExprChecker {
 			var tuple_t = &typsys.NestedType {
 				Content: typsys.Tuple { Elements: types },
 			}
-			return &checked.Expr {
-				Type: tuple_t,
-				Info: info,
-				Expr: checked.Tuple { Elements: elements },
-			}, s, nil
+			return cc.ok(tuple_t, checked.Tuple { Elements: elements })
 		} else {
 			var tuple, accept_tuple = unboxTuple(expected, ctx.ModName)
 			if !(accept_tuple) {
-				return nil, nil, source.MakeError(loc,
+				return cc.error(
 					E_TupleAssignedToIncompatible {
 						TypeName: typsys.DescribeType(expected, s),
 					})
@@ -63,7 +57,7 @@ func checkTuple(T ast.Tuple) ExprChecker {
 			var L = len(T.Elements)
 			var L_required = len(tuple.Elements)
 			if L != L_required {
-				return nil, nil, source.MakeError(loc,
+				return cc.error(
 					E_TupleSizeNotMatching {
 						Required: uint(L_required),
 						Given:    uint(L),
@@ -71,17 +65,12 @@ func checkTuple(T ast.Tuple) ExprChecker {
 			}
 			var elements = make([] *checked.Expr, L)
 			for i := 0; i < L; i += 1 {
-				var el_t = tuple.Elements[i]
-				var el_chk = check(T.Elements[i])
-				var el, err = ctx.applyIntermediateCheck(el_t, &s, el_chk)
+				var el, err = cc.checkExpr(tuple.Elements[i], T.Elements[i])
 				if err != nil { return nil, nil, err }
 				elements[i] = el
 			}
-			return &checked.Expr {
-				Type: &typsys.NestedType { Content: tuple },
-				Info: info,
-				Expr: checked.Tuple { Elements: elements },
-			}, s, nil
+			var tuple_t = &typsys.NestedType { Content: tuple }
+			return cc.ok(tuple_t, checked.Tuple { Elements: elements })
 		}
 	})
 }

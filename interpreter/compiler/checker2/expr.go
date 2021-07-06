@@ -17,12 +17,59 @@ type Registry struct {
 type ExprContext struct {
 	*Registry
 	*ModuleInfo
-	LocalBindingMap
+	localBindingMap
 }
-type LocalBindingMap (map[string] LocalBinding)
+type localBindingMap (map[string] *LocalBinding)
 type LocalBinding struct {
+	Name      string
 	Type      typsys.Type
 	Location  source.Location
+	LocalBindingInfo
+}
+type LocalBindingInfo struct {
+	Used  bool  // mutable
+}
+func (lm localBindingMap) clone() localBindingMap {
+	var clone = make(localBindingMap)
+	for k, v := range lm {
+		clone[k] = v
+	}
+	return clone
+}
+func (lm localBindingMap) mergedTo(another localBindingMap) localBindingMap {
+	if another != nil {
+		for k, v := range lm {
+			another[k] = v
+		}
+		return another
+	} else {
+		return lm.clone()
+	}
+}
+func (lm localBindingMap) add(loc source.Location, name string, t typsys.Type) {
+	lm[name] = &LocalBinding {
+		Name:     name,
+		Type:     t,
+		Location: loc,
+		LocalBindingInfo: LocalBindingInfo { Used: false },
+	}
+}
+func (lm localBindingMap) lookup(name string) (*LocalBinding, bool) {
+	var binding, exists = lm[name]
+	if exists {
+		binding.Used = true
+		return binding, true
+	} else {
+		return nil, false
+	}
+}
+func (ctx ExprContext) withLocalBindings(lm localBindingMap) ExprContext {
+	return ExprContext {
+		Registry:        ctx.Registry,
+		ModuleInfo:      ctx.ModuleInfo,
+		localBindingMap: ctx.localBindingMap.mergedTo(lm),
+	}
+
 }
 func (ctx ExprContext) makeAssignContext(s *typsys.InferringState) typsys.AssignContext {
 	return typsys.MakeAssignContext(ctx.ModName, s)
@@ -71,6 +118,56 @@ func assign(expr *checked.Expr) ExprChecker {
 			}
 		}
 	})
+}
+
+type checkContext struct {
+	location     source.Location
+	inferring    **typsys.InferringState
+	exprContext  ExprContext
+}
+func makeCheckContext(loc source.Location, s_ptr **typsys.InferringState, ctx ExprContext, lm localBindingMap) checkContext {
+	if s_ptr == nil {
+		panic("invalid argument")
+	}
+	return checkContext {
+		location:    loc,
+		inferring:   s_ptr,
+		exprContext: ctx.withLocalBindings(lm),
+	}
+}
+func (cc checkContext) fork() checkContext {
+	var s = *(cc.inferring)
+	return checkContext {
+		location:    cc.location,
+		inferring:   &s,
+		exprContext: cc.exprContext,
+	}
+}
+func (cc checkContext) checkExpr(expected typsys.Type, node ast.Expr) (*checked.Expr, *source.Error) {
+	var expr, s, err = check(node)(expected, *(cc.inferring), cc.exprContext)
+	if err != nil { return nil, err }
+	*(cc.inferring) = s
+	return expr, nil
+}
+func (cc checkContext) assign(expected typsys.Type, t typsys.Type, content checked.ExprContent) (*checked.Expr, *typsys.InferringState, *source.Error) {
+	return assign(&checked.Expr {
+		Type: t,
+		Info: checked.ExprInfoFrom(cc.location),
+		Expr: content,
+	})(expected, *(cc.inferring), cc.exprContext)
+}
+func (cc checkContext) ok(t typsys.Type, content checked.ExprContent) (*checked.Expr, *typsys.InferringState, *source.Error) {
+	return &checked.Expr {
+		Type: t,
+		Info: checked.ExprInfoFrom(cc.location),
+		Expr: content,
+	}, *(cc.inferring), nil
+}
+func (cc checkContext) error(content source.ErrorContent) (*checked.Expr, *typsys.InferringState, *source.Error) {
+	return nil, nil, source.MakeError(cc.location, content)
+}
+func (cc checkContext) propagate(err *source.Error) (*checked.Expr, *typsys.InferringState, *source.Error) {
+	return nil, nil, err
 }
 
 func check(expr ast.Expr) ExprChecker {
