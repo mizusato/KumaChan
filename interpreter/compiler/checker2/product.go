@@ -47,6 +47,7 @@ func checkTuple(T ast.Tuple) ExprChecker {
 			}
 			return cc.ok(tuple_t, checked.Tuple { Elements: elements })
 		} else {
+			// TODO: FIXME: exact tuple instead of unbox tuple
 			var tuple, accept_tuple = unboxTuple(expected, ctx.ModName)
 			if !(accept_tuple) {
 				return cc.error(
