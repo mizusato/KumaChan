@@ -331,4 +331,30 @@ func (e E_NotAssignable) DescribeError() richtext.Block {
 	return b
 }
 
+type E_TupleAssignedToIncompatible struct {
+	TypeName  string
+}
+func (e E_TupleAssignedToIncompatible) DescribeError() richtext.Block {
+	var b = makeErrorDescBlankBlock()
+	b.WriteSpan(
+		"tuple literal cannot be assigned to incompatible type",
+		richtext.TAG_ERR_NORMAL)
+	b.WriteSpan(e.TypeName, richtext.TAG_ERR_INLINE)
+	return b
+}
+
+type E_TupleSizeNotMatching struct {
+	Required  uint
+	Given     uint
+}
+func (e E_TupleSizeNotMatching) DescribeError() richtext.Block {
+	var b = makeErrorDescBlankBlock()
+	b.WriteSpan("tuple size not matching: ", richtext.TAG_ERR_NORMAL)
+	b.WriteSpan(fmt.Sprint(e.Required), richtext.TAG_ERR_INLINE)
+	b.WriteSpan("required but", richtext.TAG_ERR_NORMAL)
+	b.WriteSpan(fmt.Sprint(e.Given), richtext.TAG_ERR_INLINE)
+	b.WriteSpan("given", richtext.TAG_ERR_NORMAL)
+	return b
+}
+
 

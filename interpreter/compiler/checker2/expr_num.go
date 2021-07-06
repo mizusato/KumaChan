@@ -61,7 +61,7 @@ func uintAdapt(max uint64, cast func(*big.Int)(interface{})) smallNumericTypeAda
 func checkChar(C ast.CharLiteral) ExprChecker {
 	return ExprChecker(func(expected typsys.Type, s *typsys.InferringState, ctx ExprContext) (*checked.Expr, *typsys.InferringState, *source.Error) {
 		var loc = C.Location
-		var info = checked.ExprInfo { Location: loc }
+		var info = checked.ExprInfoFrom(loc)
 		var value, ok = util.ParseRune(C.Value)
 		if !(ok) {
 			return nil, nil, source.MakeError(loc,
@@ -79,7 +79,7 @@ func checkChar(C ast.CharLiteral) ExprChecker {
 func checkFloat(F ast.FloatLiteral) ExprChecker {
 	return ExprChecker(func(expected typsys.Type, s *typsys.InferringState, ctx ExprContext) (*checked.Expr, *typsys.InferringState, *source.Error) {
 		var loc = F.Location
-		var info = checked.ExprInfo { Location: loc }
+		var info = checked.ExprInfoFrom(loc)
 		var value, ok = util.ParseDouble(F.Value)
 		if !(ok) {
 			return nil, nil, source.MakeError(loc,
@@ -100,7 +100,7 @@ func checkFloat(F ast.FloatLiteral) ExprChecker {
 func checkInteger(I ast.IntegerLiteral) ExprChecker {
 	return ExprChecker(func(expected typsys.Type, s *typsys.InferringState, ctx ExprContext) (*checked.Expr, *typsys.InferringState, *source.Error) {
 		var loc = I.Location
-		var info = checked.ExprInfo { Location: loc }
+		var info = checked.ExprInfoFrom(loc)
 		var value, ok = util.WellBehavedParseInteger(I.Value)
 		if !(ok) { panic("something went wrong") }
 		var big_min_t = (func() typsys.Type {
@@ -138,7 +138,7 @@ func checkInteger(I ast.IntegerLiteral) ExprChecker {
 						} else {
 							return nil, nil, source.MakeError(loc,
 								E_IntegerOverflowUnderflow {
-									TypeName: typsys.DescribeType(expected, nil),
+									TypeName: typsys.DescribeType(expected, s),
 								})
 						}
 					}

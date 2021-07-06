@@ -15,6 +15,9 @@ type Expr struct {
 type ExprInfo struct {
 	Location  source.Location
 }
+func ExprInfoFrom(loc source.Location) ExprInfo {
+	return ExprInfo { Location: loc }
+}
 type ExprContent interface { implExpr() }
 
 func (FuncName) implExpr() {}
@@ -25,6 +28,11 @@ type FuncName struct {
 func (LocalName) implExpr() {}
 type LocalName struct {
 	Name  string
+}
+
+func (Tuple) implExpr() {}
+type Tuple struct {
+	Elements  [] *Expr
 }
 
 func (InteriorRef) implExpr() {}

@@ -50,7 +50,7 @@ func (ctx ExprContext) applyIntermediateCheck (
 }
 
 type ExprChecker func
-	(expected typsys.Type, s0 *typsys.InferringState, ctx ExprContext) (
+	(expected typsys.Type, s *typsys.InferringState, ctx ExprContext) (
 	*checked.Expr, *typsys.InferringState, *source.Error)
 
 func assign(expr *checked.Expr) ExprChecker {
@@ -93,14 +93,23 @@ func check(expr ast.Expr) ExprChecker {
 }
 
 func checkTerm(term ast.VariousTerm) ExprChecker {
-	// TODO
+	switch T := term.Term.(type) {
+	case ast.CharLiteral:
+		return checkChar(T)
+	case ast.FloatLiteral:
+		return checkFloat(T)
+	case ast.IntegerLiteral:
+		return checkInteger(T)
+	case ast.Tuple:
+		return checkTuple(T)
+	}
 }
 
 func checkPipe(in *checked.Expr, pipe ast.VariousPipe) ExprChecker {
 	// TODO
 }
 
-func CheckLambda(lambda ast.Lambda) ExprChecker {
+func checkLambda(lambda ast.Lambda) ExprChecker {
 	// TODO
 }
 
