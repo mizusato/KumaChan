@@ -7,6 +7,7 @@ import (
 )
 
 
+// TODO: consider field getter methods { Index uint }
 type DispatchMapping (map[ImplPair] ([] *Function))
 type ImplPair struct {
 	ConcreteType   *typsys.TypeDef
