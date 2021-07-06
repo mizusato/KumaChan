@@ -42,12 +42,8 @@ func (lm localBindingMap) mergedTo(another localBindingMap) localBindingMap {
 		return lm.clone()
 	}
 }
-func (lm localBindingMap) add(loc source.Location, name string, t typsys.Type) {
-	lm[name] = &LocalBinding {
-		Name:     name,
-		Type:     t,
-		Location: loc,
-	}
+func (lm localBindingMap) add(binding *LocalBinding) {
+	lm[binding.Name] = binding
 }
 func (lm localBindingMap) lookup(name string) (*LocalBinding, bool) {
 	var binding, exists = lm[name]

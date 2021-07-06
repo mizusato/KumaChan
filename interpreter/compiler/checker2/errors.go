@@ -340,4 +340,42 @@ func (e E_TupleSizeNotMatching) DescribeError() richtext.Block {
 	)
 }
 
+type E_CannotMatchTuple struct {
+	TypeName  string
+}
+func (e E_CannotMatchTuple) DescribeError() richtext.Block {
+	return makeErrorDescBlock (
+		"cannot match tuple from type", e.TypeName,
+	)
+}
+
+type E_CannotMatchRecord struct {
+	TypeName  string
+}
+func (e E_CannotMatchRecord) DescribeError() richtext.Block {
+	return makeErrorDescBlock (
+		"cannot match record from type", e.TypeName,
+	)
+}
+
+type E_DuplicateBinding struct {
+	BindingName  string
+}
+func (e E_DuplicateBinding) DescribeError() richtext.Block {
+	return makeErrorDescBlock (
+		"duplicate binding", e.BindingName,
+	)
+}
+
+type E_FieldNotFound struct {
+	FieldName  string
+	TypeName   string
+}
+func (e E_FieldNotFound) DescribeError() richtext.Block {
+	return makeErrorDescBlock (
+		"field", e.FieldName,
+		"does not exist in type", e.TypeName,
+	)
+}
+
 
