@@ -3,6 +3,7 @@ package checker2
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"kumachan/standalone/util/richtext"
 )
 
@@ -12,10 +13,21 @@ func makeErrorDescBlankBlock() richtext.Block {
 	b.WriteSpan("Error: ", richtext.TAG_EM)
 	return b
 }
-func makeErrorDescBlock(msg string) richtext.Block {
-	// TODO: msg ...string (interleaved)
+func makeErrorDescBlock(msg ...string) richtext.Block {
 	var b = makeErrorDescBlankBlock()
-	b.WriteSpan(msg, richtext.TAG_ERR_NORMAL)
+	for i, span := range msg {
+		b.WriteSpan(span, (func() string {
+			if (i % 2) == 0 {
+				if strings.HasPrefix(span, "(") && strings.HasSuffix(span, ")") {
+					return richtext.TAG_ERR_NOTE
+				} else {
+					return richtext.TAG_ERR_NORMAL
+				}
+			} else {
+				return richtext.TAG_ERR_INLINE
+			}
+		})())
+	}
 	return b
 }
 
@@ -25,16 +37,10 @@ type ImplErrorInfo struct {
 	Method     string
 }
 func (info ImplErrorInfo) Describe(problem string) richtext.Block {
-	var b = makeErrorDescBlankBlock()
-	b.WriteSpan("type", richtext.TAG_ERR_NORMAL)
-	b.WriteSpan(info.Concrete, richtext.TAG_ERR_INLINE)
-	b.WriteSpan("cannot implement interface", richtext.TAG_ERR_NORMAL)
-	b.WriteSpan(info.Interface, richtext.TAG_ERR_INLINE)
-	b.WriteSpan(": method", richtext.TAG_ERR_NORMAL)
-	b.WriteSpan(info.Method, richtext.TAG_ERR_INLINE)
-	b.WriteSpan("not found:", richtext.TAG_ERR_NORMAL)
-	b.WriteSpan(problem, richtext.TAG_ERR_NORMAL)
-	return b
+	return makeErrorDescBlock (
+		"type", info.Concrete, "cannot implement interface", info.Interface,
+		": method", info.Method, "not found:", problem,
+	)
 }
 
 // ****************************************************************************
@@ -48,75 +54,71 @@ type E_DuplicateAlias struct {
 	Which  string
 }
 func (e E_DuplicateAlias) DescribeError() richtext.Block {
-	var b = makeErrorDescBlankBlock()
-	b.WriteSpan("duplicate alias:", richtext.TAG_ERR_NORMAL)
-	b.WriteSpan(e.Which, richtext.TAG_ERR_INLINE)
-	return b
+	return makeErrorDescBlock (
+		"duplicate alias:", e.Which,
+	)
 }
 
 type E_InvalidAlias struct {
 	Which  string
 }
 func (e E_InvalidAlias) DescribeError() richtext.Block {
-	var b = makeErrorDescBlankBlock()
-	b.WriteSpan("invalid alias:", richtext.TAG_ERR_NORMAL)
-	b.WriteSpan(e.Which, richtext.TAG_ERR_INLINE)
-	b.WriteSpan("(alias cannot point to another alias)", richtext.TAG_ERR_NOTE)
-	return b
+	return makeErrorDescBlock (
+		"invalid alias:", e.Which,
+		"(alias cannot point to another alias)",
+	)
 }
 
 type E_DuplicateTypeDefinition struct {
 	Which  string
 }
 func (e E_DuplicateTypeDefinition) DescribeError() richtext.Block {
-	var b = makeErrorDescBlankBlock()
-	b.WriteSpan("duplicate definition for type", richtext.TAG_ERR_NORMAL)
-	b.WriteSpan(e.Which, richtext.TAG_ERR_INLINE)
-	return b
+	return makeErrorDescBlock (
+		"duplicate definition for type", e.Which,
+	)
 }
 
 type E_InvalidMetadata struct {
 	Reason  string
 }
 func (e E_InvalidMetadata) DescribeError() richtext.Block {
-	var msg = fmt.Sprintf("invalid metadata: %s", e.Reason)
-	return makeErrorDescBlock(msg)
+	return makeErrorDescBlock (
+		fmt.Sprintf("invalid metadata: %s", e.Reason),
+	)
 }
 
 type E_InvalidTypeName struct {
 	Name  string
 }
 func (e E_InvalidTypeName) DescribeError() richtext.Block {
-	var msg = fmt.Sprintf("invalid type name: %s", strconv.Quote(e.Name))
-	return makeErrorDescBlock(msg)
+	return makeErrorDescBlock (
+		fmt.Sprintf("invalid type name: %s", strconv.Quote(e.Name)),
+	)
 }
 
 type E_TypeParametersOnCaseType struct {}
 func (e E_TypeParametersOnCaseType) DescribeError() richtext.Block {
-	var msg = "cannot specify explicit type parameters on case types"
-	return makeErrorDescBlock(msg)
+	return makeErrorDescBlock (
+		"cannot specify explicit type parameters on case types",
+	)
 }
 
 type E_TypeConflictWithAlias struct {
 	Which  string
 }
 func (e E_TypeConflictWithAlias) DescribeError() richtext.Block {
-	var b = makeErrorDescBlankBlock()
-	b.WriteSpan("type name", richtext.TAG_ERR_NORMAL)
-	b.WriteSpan(e.Which, richtext.TAG_ERR_INLINE)
-	b.WriteSpan("conflicts with alias declaration", richtext.TAG_ERR_NORMAL)
-	b.WriteSpan(e.Which, richtext.TAG_ERR_INLINE)
-	return b
+	return makeErrorDescBlock (
+		"type name", e.Which, "conflicts with alias declaration", e.Which,
+	)
 }
 
 type E_TypeNotFound struct {
 	Which  string
 }
 func (e E_TypeNotFound) DescribeError() richtext.Block {
-	var b = makeErrorDescBlankBlock()
-	b.WriteSpan("no such type:", richtext.TAG_ERR_NORMAL)
-	b.WriteSpan(e.Which, richtext.TAG_ERR_INLINE)
-	return b
+	return makeErrorDescBlock (
+		"no such type:", e.Which,
+	)
 }
 
 type E_TypeWrongParameterQuantity struct {
@@ -126,9 +128,6 @@ type E_TypeWrongParameterQuantity struct {
 	Total  uint
 }
 func (e E_TypeWrongParameterQuantity) DescribeError() richtext.Block {
-	var b = makeErrorDescBlankBlock()
-	b.WriteSpan("wrong parameter quantity for type", richtext.TAG_ERR_NORMAL)
-	b.WriteSpan(e.Which, richtext.TAG_ERR_INLINE)
 	var arity string
 	if e.Least != e.Total {
 		arity = fmt.Sprintf("total %d [at least %d]", e.Total, e.Least)
@@ -136,18 +135,19 @@ func (e E_TypeWrongParameterQuantity) DescribeError() richtext.Block {
 		arity = fmt.Sprintf("total %d", e.Total)
 	}
 	var arity_note = fmt.Sprintf("(%s required but %d given)", arity, e.Given)
-	b.WriteSpan(arity_note, richtext.TAG_ERR_NOTE)
-	return b
+	return makeErrorDescBlock (
+		"wrong parameter quantity for type", e.Which,
+		arity_note,
+	)
 }
 
 type E_TypeDuplicateField struct {
 	Which  string
 }
 func (e E_TypeDuplicateField) DescribeError() richtext.Block {
-	var b = makeErrorDescBlankBlock()
-	b.WriteSpan("duplicate field:", richtext.TAG_ERR_NORMAL)
-	b.WriteSpan(e.Which, richtext.TAG_ERR_INLINE)
-	return b
+	return makeErrorDescBlock (
+		"duplicate field:", e.Which,
+	)
 }
 
 type E_CircularSubtypingDefinition struct {
@@ -186,21 +186,19 @@ type E_DuplicateImplemented struct {
 	Which  string
 }
 func (e E_DuplicateImplemented) DescribeError() richtext.Block {
-	var b = makeErrorDescBlankBlock()
-	b.WriteSpan("duplicated implemented type:", richtext.TAG_ERR_NORMAL)
-	b.WriteSpan(e.Which, richtext.TAG_ERR_INLINE)
-	return b
+	return makeErrorDescBlock (
+		"duplicated implemented type:", e.Which,
+	)
 }
 
 type E_BadImplemented struct {
 	Which  string
 }
 func (e E_BadImplemented) DescribeError() richtext.Block {
-	var b = makeErrorDescBlankBlock()
-	b.WriteSpan("bad implemented type:", richtext.TAG_ERR_NORMAL)
-	b.WriteSpan(e.Which, richtext.TAG_ERR_INLINE)
-	b.WriteSpan("(should be an interface type)", richtext.TAG_ERR_NOTE)
-	return b
+	return makeErrorDescBlock (
+		"bad implemented type:", e.Which,
+		"(should be an interface type)",
+	)
 }
 
 type E_TooManyTypeParameters struct {}
@@ -233,33 +231,30 @@ type E_ImplementedIncompatibleParameters struct {
 	InterfaceName  string
 }
 func (e E_ImplementedIncompatibleParameters) DescribeError() richtext.Block {
-	var b = makeErrorDescBlankBlock()
-	b.WriteSpan("type", richtext.TAG_ERR_NORMAL)
-	b.WriteSpan(e.TypeName, richtext.TAG_ERR_INLINE)
-	b.WriteSpan("cannot implement the interface", richtext.TAG_ERR_NORMAL)
-	b.WriteSpan(e.InterfaceName, richtext.TAG_ERR_INLINE)
-	b.WriteSpan("(parameters incompatible)", richtext.TAG_ERR_NOTE)
-	return b
+	return makeErrorDescBlock (
+		"type", e.TypeName,
+		"cannot implement the interface", e.InterfaceName,
+		"(parameters incompatible)",
+	)
 }
 
 type E_InvalidFunctionName struct {
 	Name  string
 }
 func (e E_InvalidFunctionName) DescribeError() richtext.Block {
-	var msg = fmt.Sprintf("invalid function name: %s", strconv.Quote(e.Name))
-	return makeErrorDescBlock(msg)
+	return makeErrorDescBlock (
+		fmt.Sprintf("invalid function name: %s", strconv.Quote(e.Name)),
+	)
 }
 
 type E_FunctionConflictWithAlias struct {
 	Which  string
 }
 func (e E_FunctionConflictWithAlias) DescribeError() richtext.Block {
-	var b = makeErrorDescBlankBlock()
-	b.WriteSpan("function name", richtext.TAG_ERR_NORMAL)
-	b.WriteSpan(e.Which, richtext.TAG_ERR_INLINE)
-	b.WriteSpan("conflicts with alias declaration", richtext.TAG_ERR_NORMAL)
-	b.WriteSpan(e.Which, richtext.TAG_ERR_INLINE)
-	return b
+	return makeErrorDescBlock (
+		"function name", e.Which,
+		"conflicts with alias declaration", e.Which,
+	)
 }
 
 type E_ImplMethodNoSuchFunction struct {
@@ -295,12 +290,9 @@ type E_IntegerOverflowUnderflow struct {
 	TypeName  string
 }
 func (e E_IntegerOverflowUnderflow) DescribeError() richtext.Block {
-	var b = makeErrorDescBlankBlock()
-	b.WriteSpan(
-		"integer literal is not representable by the type",
-		richtext.TAG_ERR_NORMAL)
-	b.WriteSpan(e.TypeName, richtext.TAG_ERR_INLINE)
-	return b
+	return makeErrorDescBlock (
+		"integer literal is not representable by the type", e.TypeName,
+	)
 }
 
 type E_FloatOverflowUnderflow struct {}
@@ -312,10 +304,9 @@ type E_InvalidChar struct {
 	Content  string
 }
 func (e E_InvalidChar) DescribeError() richtext.Block {
-	var b = makeErrorDescBlankBlock()
-	b.WriteSpan("invalid character", richtext.TAG_ERR_NORMAL)
-	b.WriteSpan(e.Content, richtext.TAG_ERR_INLINE)
-	return b
+	return makeErrorDescBlock (
+		"invalid character", e.Content,
+	)
 }
 
 type E_NotAssignable struct {
@@ -323,24 +314,19 @@ type E_NotAssignable struct {
 	To    string
 }
 func (e E_NotAssignable) DescribeError() richtext.Block {
-	var b = makeErrorDescBlankBlock()
-	b.WriteSpan("type", richtext.TAG_ERR_NORMAL)
-	b.WriteSpan(e.From, richtext.TAG_ERR_INLINE)
-	b.WriteSpan("cannot be assigned to the type", richtext.TAG_ERR_NORMAL)
-	b.WriteSpan(e.To, richtext.TAG_ERR_INLINE)
-	return b
+	return makeErrorDescBlock (
+		"type", e.From,
+		"cannot be assigned to the type", e.To,
+	)
 }
 
 type E_TupleAssignedToIncompatible struct {
 	TypeName  string
 }
 func (e E_TupleAssignedToIncompatible) DescribeError() richtext.Block {
-	var b = makeErrorDescBlankBlock()
-	b.WriteSpan(
-		"tuple literal cannot be assigned to incompatible type",
-		richtext.TAG_ERR_NORMAL)
-	b.WriteSpan(e.TypeName, richtext.TAG_ERR_INLINE)
-	return b
+	return makeErrorDescBlock (
+		"tuple literal cannot be assigned to incompatible type", e.TypeName,
+	)
 }
 
 type E_TupleSizeNotMatching struct {
@@ -348,13 +334,10 @@ type E_TupleSizeNotMatching struct {
 	Given     uint
 }
 func (e E_TupleSizeNotMatching) DescribeError() richtext.Block {
-	var b = makeErrorDescBlankBlock()
-	b.WriteSpan("tuple size not matching: ", richtext.TAG_ERR_NORMAL)
-	b.WriteSpan(fmt.Sprint(e.Required), richtext.TAG_ERR_INLINE)
-	b.WriteSpan("required but", richtext.TAG_ERR_NORMAL)
-	b.WriteSpan(fmt.Sprint(e.Given), richtext.TAG_ERR_INLINE)
-	b.WriteSpan("given", richtext.TAG_ERR_NORMAL)
-	return b
+	return makeErrorDescBlock (
+		"tuple size not matching: " +
+		fmt.Sprintf("%d required but %d given", e.Required, e.Given),
+	)
 }
 
 
