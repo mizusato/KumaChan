@@ -19,12 +19,7 @@ type ExprContext struct {
 	*ModuleInfo
 	localBindingMap
 }
-type localBindingMap (map[string] *LocalBinding)
-type LocalBinding struct {
-	Name      string
-	Type      typsys.Type
-	Location  source.Location
-}
+type localBindingMap (map[string] *checked.LocalBinding)
 func (lm localBindingMap) clone() localBindingMap {
 	var clone = make(localBindingMap)
 	for k, v := range lm {
@@ -42,10 +37,10 @@ func (lm localBindingMap) mergedTo(another localBindingMap) localBindingMap {
 		return lm.clone()
 	}
 }
-func (lm localBindingMap) add(binding *LocalBinding) {
+func (lm localBindingMap) add(binding *checked.LocalBinding) {
 	lm[binding.Name] = binding
 }
-func (lm localBindingMap) lookup(name string) (*LocalBinding, bool) {
+func (lm localBindingMap) lookup(name string) (*checked.LocalBinding, bool) {
 	var binding, exists = lm[name]
 	return binding, exists
 }
@@ -55,31 +50,9 @@ func (ctx ExprContext) withLocalBindings(lm localBindingMap) ExprContext {
 		ModuleInfo:      ctx.ModuleInfo,
 		localBindingMap: ctx.localBindingMap.mergedTo(lm),
 	}
-
 }
 func (ctx ExprContext) makeAssignContext(s *typsys.InferringState) typsys.AssignContext {
 	return typsys.MakeAssignContext(ctx.ModName, s)
-}
-func (ctx ExprContext) applyFinalCheck (
-	expected  typsys.Type,
-	s         *typsys.InferringState,
-	checker   ExprChecker,
-) (*checked.Expr, *typsys.InferringState, *source.Error) {
-	return checker(expected, s, ctx)
-}
-func (ctx ExprContext) applyIntermediateCheck (
-	expected  typsys.Type,
-	s_ptr     **typsys.InferringState,
-	checker   ExprChecker,
-) (*checked.Expr, *source.Error) {
-	if s_ptr == nil {
-		panic("invalid argument")
-	} else {
-		var expr, s, err = checker(expected, nil, ctx)
-		if err != nil { return nil, err }
-		*s_ptr = s
-		return expr, nil
-	}
 }
 
 type ExprChecker func
@@ -129,7 +102,12 @@ func (cc checkContext) fork() checkContext {
 		exprContext: cc.exprContext,
 	}
 }
-func (cc checkContext) checkExpr(expected typsys.Type, node ast.Expr) (*checked.Expr, *source.Error) {
+func (cc checkContext) productPatternMatch(pattern ast.VariousPattern, in typsys.Type) (checked.ProductPatternInfo, *source.Error) {
+	var mod = cc.exprContext.ModName
+	var lm = cc.exprContext.localBindingMap
+	return productPatternMatch(pattern, in, mod, lm)
+}
+func (cc checkContext) checkChildNode(expected typsys.Type, node ast.Expr) (*checked.Expr, *source.Error) {
 	var expr, s, err = check(node)(expected, *(cc.inferring), cc.exprContext)
 	if err != nil { return nil, err }
 	*(cc.inferring) = s
@@ -153,6 +131,9 @@ func (cc checkContext) error(content source.ErrorContent) (*checked.Expr, *typsy
 	return nil, nil, source.MakeError(cc.location, content)
 }
 func (cc checkContext) propagate(err *source.Error) (*checked.Expr, *typsys.InferringState, *source.Error) {
+	if err == nil {
+		panic("something went wrong")
+	}
 	return nil, nil, err
 }
 
@@ -185,14 +166,14 @@ func checkTerm(term ast.VariousTerm) ExprChecker {
 		return checkInteger(T)
 	case ast.Tuple:
 		return checkTuple(T)
+	case ast.Lambda:
+		return checkLambda(T)
+	default:
+		// TODO
 	}
 }
 
 func checkPipe(in *checked.Expr, pipe ast.VariousPipe) ExprChecker {
-	// TODO
-}
-
-func checkLambda(lambda ast.Lambda) ExprChecker {
 	// TODO
 }
 

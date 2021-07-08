@@ -61,3 +61,22 @@ type NumericLiteral struct {
 }
 
 
+type LocalBinding struct {
+	Name     string
+	Type     typsys.Type
+	Location source.Location
+}
+
+type ProductPatternInfo ([]ProductPatternItemInfo)
+type ProductPatternItemInfo struct {
+	Binding *LocalBinding
+	Index1  uint // 0 = whole, 1 = .0
+}
+
+func (Lambda) implExpr() {}
+type Lambda struct {
+	In   ProductPatternInfo
+	Out  *Expr
+}
+
+

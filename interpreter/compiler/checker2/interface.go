@@ -131,7 +131,7 @@ func getAllImpls (
 	return impls
 }
 
-func methodConcreteType(
+func methodConcreteType (
 	con       *typsys.TypeDef,
 	impl      *typsys.TypeDef,
 	raw_type  typsys.Type,

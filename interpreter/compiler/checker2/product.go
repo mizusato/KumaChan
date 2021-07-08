@@ -8,13 +8,35 @@ import (
 )
 
 
-type ProductPatternInfo ([] ProductPatternItemInfo)
-type ProductPatternItemInfo struct {
-	Binding  *LocalBinding
-	Index1   uint  // 0 = whole, 1 = .0
+func productPatternMatch(pattern ast.VariousPattern, in typsys.Type, mod string, lm localBindingMap) (checked.ProductPatternInfo, *source.Error) {
+	switch P := pattern.Pattern.(type) {
+	case ast.PatternTrivial:
+		return patternMatchTrivial(P, in, mod, lm)
+	case ast.PatternTuple:
+		return patternMatchTuple(P, in, mod, lm)
+	case ast.PatternRecord:
+		return patternMatchRecord(P, in, mod, lm)
+	default:
+		panic("impossible branch")
+	}
 }
 
-func patternMatchTuple(pattern ast.PatternTuple, in typsys.Type, mod string, lm localBindingMap) (ProductPatternInfo, *source.Error) {
+// TODO: extract common part of function signatures
+func patternMatchTrivial(pattern ast.PatternTrivial, in typsys.Type, mod string, lm localBindingMap) (checked.ProductPatternInfo, *source.Error) {
+	in = unboxWeak(in, mod)
+	var binding = &checked.LocalBinding {
+		Name:     ast.Id2String(pattern.Name),
+		Type:     in,
+		Location: pattern.Location,
+	}
+	lm.add(binding)
+	return checked.ProductPatternInfo([] checked.ProductPatternItemInfo { {
+		Binding: binding,
+		Index1:  0,
+	}}), nil
+}
+
+func patternMatchTuple(pattern ast.PatternTuple, in typsys.Type, mod string, lm localBindingMap) (checked.ProductPatternInfo, *source.Error) {
 	var tuple, ok = unboxTuple(in, mod)
 	if !(ok) {
 		return nil, source.MakeError(pattern.Location,
@@ -32,7 +54,7 @@ func patternMatchTuple(pattern ast.PatternTuple, in typsys.Type, mod string, lm 
 			})
 	}
 	var occurred = make(map[string] struct{})
-	var info = make(ProductPatternInfo, L)
+	var info = make(checked.ProductPatternInfo, L)
 	for i := 0; i < L; i += 1 {
 		var id = pattern.Names[i]
 		var loc = id.Location
@@ -49,12 +71,12 @@ func patternMatchTuple(pattern ast.PatternTuple, in typsys.Type, mod string, lm 
 				})
 		}
 		var t = tuple.Elements[i]
-		var binding = &LocalBinding {
+		var binding = &checked.LocalBinding {
 			Name:     name,
 			Type:     t,
 			Location: loc,
 		}
-		info[i] = ProductPatternItemInfo {
+		info[i] = checked.ProductPatternItemInfo {
 			Binding: binding,
 			Index1:  uint(i + 1),
 		}
@@ -65,7 +87,7 @@ func patternMatchTuple(pattern ast.PatternTuple, in typsys.Type, mod string, lm 
 	return info, nil
 }
 
-func patternMatchRecord(pattern ast.PatternRecord, in typsys.Type, mod string, lm localBindingMap) (ProductPatternInfo, *source.Error) {
+func patternMatchRecord(pattern ast.PatternRecord, in typsys.Type, mod string, lm localBindingMap) (checked.ProductPatternInfo, *source.Error) {
 	var record, ok = unboxRecord(in, mod)
 	if !(ok) {
 		return nil, source.MakeError(pattern.Location,
@@ -74,7 +96,7 @@ func patternMatchRecord(pattern ast.PatternRecord, in typsys.Type, mod string, l
 			})
 	}
 	var occurred = make(map[string] struct{})
-	var info = make(ProductPatternInfo, len(pattern.FieldMaps))
+	var info = make(checked.ProductPatternInfo, len(pattern.FieldMaps))
 	for i, m := range pattern.FieldMaps {
 		var binding_name = ast.Id2String(m.ValueName)
 		var binding_loc = m.ValueName.Location
@@ -92,12 +114,12 @@ func patternMatchRecord(pattern ast.PatternRecord, in typsys.Type, mod string, l
 		if field_exists {
 			var field = record.Fields[field_index]
 			var t = field.Type
-			var binding = &LocalBinding {
+			var binding = &checked.LocalBinding {
 				Name:     binding_name,
 				Type:     t,
 				Location: binding_loc,
 			}
-			info[i] = ProductPatternItemInfo {
+			info[i] = checked.ProductPatternItemInfo {
 				Binding: binding,
 				Index1:  (1 + field_index),
 			}
@@ -124,12 +146,20 @@ func getRecord(t typsys.Type) (typsys.Record, bool) {
 	var record, is_tuple = nested.Content.(typsys.Record)
 	return record, is_tuple
 }
+func unboxWeak(t typsys.Type, mod string) typsys.Type {
+	var inner, box, exists = typsys.Unbox(t, mod)
+	if exists && box.WeakWrapping {
+		return unboxWeak(inner, mod)
+	} else {
+		return t
+	}
+}
 func unboxTuple(t typsys.Type, mod string) (typsys.Tuple, bool) {
 	var tuple, is_tuple = getTuple(t)
 	if is_tuple {
 		return tuple, true
 	} else {
-		var inner, exists = typsys.Unbox(t, mod)
+		var inner, _, exists = typsys.Unbox(t, mod)
 		if exists {
 			return unboxTuple(inner, mod)
 		} else {
@@ -142,7 +172,7 @@ func unboxRecord(t typsys.Type, mod string) (typsys.Record, bool) {
 	if is_record {
 		return record, true
 	} else {
-		var inner, exists = typsys.Unbox(t, mod)
+		var inner, _, exists = typsys.Unbox(t, mod)
 		if exists {
 			return unboxRecord(inner, mod)
 		} else {
@@ -160,8 +190,8 @@ func checkTuple(T ast.Tuple) ExprChecker {
 			var elements = make([] *checked.Expr, L)
 			var types = make([] typsys.Type, L)
 			for i := 0; i < L; i += 1 {
-				var el, err = cc.checkExpr(nil, T.Elements[i])
-				if err != nil { return nil, nil, err }
+				var el, err = cc.checkChildNode(nil, T.Elements[i])
+				if err != nil { return cc.propagate(err) }
 				elements[i] = el
 				types[i] = el.Type
 			}
@@ -188,8 +218,8 @@ func checkTuple(T ast.Tuple) ExprChecker {
 			}
 			var elements = make([] *checked.Expr, L)
 			for i := 0; i < L; i += 1 {
-				var el, err = cc.checkExpr(tuple.Elements[i], T.Elements[i])
-				if err != nil { return nil, nil, err }
+				var el, err = cc.checkChildNode(tuple.Elements[i], T.Elements[i])
+				if err != nil { return cc.propagate(err) }
 				elements[i] = el
 			}
 			var tuple_t = &typsys.NestedType { Content: tuple }
@@ -197,5 +227,7 @@ func checkTuple(T ast.Tuple) ExprChecker {
 		}
 	})
 }
+
+// TODO: checkRecord
 
 

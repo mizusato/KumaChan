@@ -378,4 +378,18 @@ func (e E_FieldNotFound) DescribeError() richtext.Block {
 	)
 }
 
+type E_ExplicitTypeRequired struct {}
+func (E_ExplicitTypeRequired) DescribeError() richtext.Block {
+	return makeErrorDescBlock("explicit type cast expected")
+}
+
+type E_LambdaAssignedToIncompatible struct {
+	TypeName  string
+}
+func (e E_LambdaAssignedToIncompatible) DescribeError() richtext.Block {
+	return makeErrorDescBlock (
+		"lambda cannot be assigned to incompatible type", e.TypeName,
+	)
+}
+
 
