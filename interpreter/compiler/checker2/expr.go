@@ -60,19 +60,19 @@ type ExprChecker func
 	*checked.Expr, *typsys.InferringState, *source.Error)
 
 func assign(expr *checked.Expr) ExprChecker {
-	return ExprChecker(func(expected typsys.Type, s *typsys.InferringState, ctx ExprContext) (*checked.Expr, *typsys.InferringState, *source.Error) {
+	return ExprChecker(func(expected typsys.Type, s0 *typsys.InferringState, ctx ExprContext) (*checked.Expr, *typsys.InferringState, *source.Error) {
 		if expected == nil {
 			return expr, nil, nil
 		} else {
-			var assign_ctx = ctx.makeAssignContext(s)
-			var ok, s = typsys.Assign(expected, expr.Type, assign_ctx)
+			var assign_ctx = ctx.makeAssignContext(s0)
+			var ok, s1 = typsys.Assign(expected, expr.Type, assign_ctx)
 			if ok {
-				return expr, s, nil
+				return expr, s1, nil
 			} else {
 				return nil, nil, source.MakeError(expr.Info.Location,
 					E_NotAssignable {
-						From: typsys.DescribeType(expr.Type, s),
-						To:   typsys.DescribeType(expected, s),
+						From: typsys.DescribeType(expr.Type, s0),
+						To:   typsys.DescribeType(expected, s0),
 					})
 			}
 		}
@@ -94,6 +94,7 @@ func makeCheckContext(loc source.Location, s_ptr **typsys.InferringState, ctx Ex
 		exprContext: ctx.withLocalBindings(lm),
 	}
 }
+// TODO: consider describeType()
 func (cc checkContext) fork() checkContext {
 	var s = *(cc.inferring)
 	return checkContext {
@@ -107,24 +108,37 @@ func (cc checkContext) productPatternMatch(pattern ast.VariousPattern, in typsys
 	var lm = cc.exprContext.localBindingMap
 	return productPatternMatch(pattern, in, mod, lm)
 }
-func (cc checkContext) checkChildNode(expected typsys.Type, node ast.Expr) (*checked.Expr, *source.Error) {
+func (cc checkContext) checkChildExpr(expected typsys.Type, node ast.Expr) (*checked.Expr, *source.Error) {
 	var expr, s, err = check(node)(expected, *(cc.inferring), cc.exprContext)
 	if err != nil { return nil, err }
 	*(cc.inferring) = s
 	return expr, nil
 }
+func (cc checkContext) checkChildTerm(expected typsys.Type, node ast.VariousTerm) (*checked.Expr, *source.Error) {
+	return cc.checkChildExpr(expected, ast.WrapTermAsExpr(node))
+}
+func (cc checkContext) assignType(to typsys.Type, from typsys.Type) bool {
+	var a = typsys.MakeAssignContext(cc.exprContext.ModName, *(cc.inferring))
+	var ok, s = typsys.Assign(to, from, a)
+	if ok {
+		*(cc.inferring) = s
+		return true
+	} else {
+		return false
+	}
+}
 func (cc checkContext) assign(expected typsys.Type, t typsys.Type, content checked.ExprContent) (*checked.Expr, *typsys.InferringState, *source.Error) {
 	return assign(&checked.Expr {
-		Type: t,
-		Info: checked.ExprInfoFrom(cc.location),
-		Expr: content,
+		Type:    t,
+		Info:    checked.ExprInfoFrom(cc.location),
+		Content: content,
 	})(expected, *(cc.inferring), cc.exprContext)
 }
 func (cc checkContext) ok(t typsys.Type, content checked.ExprContent) (*checked.Expr, *typsys.InferringState, *source.Error) {
 	return &checked.Expr {
-		Type: t,
-		Info: checked.ExprInfoFrom(cc.location),
-		Expr: content,
+		Type:    t,
+		Info:    checked.ExprInfoFrom(cc.location),
+		Content: content,
 	}, *(cc.inferring), nil
 }
 func (cc checkContext) error(content source.ErrorContent) (*checked.Expr, *typsys.InferringState, *source.Error) {

@@ -8,9 +8,9 @@ import (
 
 
 type Expr struct {
-	Type typsys.Type
-	Info ExprInfo
-	Expr ExprContent
+	Type     typsys.Type
+	Info     ExprInfo
+	Content  ExprContent
 }
 type ExprInfo struct {
 	Location  source.Location
@@ -20,14 +20,14 @@ func ExprInfoFrom(loc source.Location) ExprInfo {
 }
 type ExprContent interface { implExpr() }
 
-func (FuncName) implExpr() {}
-type FuncName struct {
+func (FuncRef) implExpr() {}
+type FuncRef struct {
 	Name  name.FunctionName
 }
 
-func (LocalName) implExpr() {}
-type LocalName struct {
-	Name  string
+func (LocalRef) implExpr() {}
+type LocalRef struct {
+	Binding  *LocalBinding
 }
 
 func (Tuple) implExpr() {}
@@ -35,9 +35,19 @@ type Tuple struct {
 	Elements  [] *Expr
 }
 
+func (TupleUpdate) implExpr() {}
+type TupleUpdate struct {
+	Base      *Expr
+	Replaced  [] TupleUpdateElement
+}
+type TupleUpdateElement struct {
+	Index  uint
+	Value  *Expr
+}
+
 func (InteriorRef) implExpr() {}
 type InteriorRef struct {
-	Base     Expr
+	Base     *Expr
 	Index    uint
 	Kind     InteriorRefKind
 	Operand  InteriorRefOperand
@@ -60,6 +70,8 @@ type NumericLiteral struct {
 	Value  interface {}
 }
 
+
+// TODO: consider separate following types to another file
 
 type LocalBinding struct {
 	Name     string

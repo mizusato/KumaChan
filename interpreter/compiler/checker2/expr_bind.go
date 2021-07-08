@@ -43,7 +43,7 @@ func checkLambda(lambda ast.Lambda) ExprChecker {
 			}
 			var in, err1 = cc.productPatternMatch(lambda.Input, io.Input)
 			if err1 != nil { return cc.propagate(err1) }
-			var out, err2 = cc.checkChildNode(io.Output, lambda.Output)
+			var out, err2 = cc.checkChildExpr(io.Output, lambda.Output)
 			if err2 != nil { return cc.propagate(err2) }
 			var lambda_t = &typsys.NestedType { Content: io }
 			return cc.ok(lambda_t, checked.Lambda { In: in, Out: out })

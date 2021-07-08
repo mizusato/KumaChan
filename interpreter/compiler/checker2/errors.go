@@ -427,4 +427,42 @@ func (e E_TooManyEnumCases) DescribeError() richtext.Block {
 	return e.Describe("enum")
 }
 
+type E_DuplicateField struct {
+	FieldName  string
+}
+func (e E_DuplicateField) DescribeError() richtext.Block {
+	return makeErrorDescBlock (
+		"duplicate field", e.FieldName,
+	)
+}
+
+type E_UpdateOnNonRecord struct {
+	TypeName  string
+}
+func (e E_UpdateOnNonRecord) DescribeError() richtext.Block {
+	return makeErrorDescBlock (
+		"cannot perform update operation on non-record type", e.TypeName,
+	)
+}
+
+type E_RecordAssignedToIncompatible struct {
+	TypeName  string
+}
+func (e E_RecordAssignedToIncompatible) DescribeError() richtext.Block {
+	return makeErrorDescBlock (
+		"cannot assign record literal to incompatible type", e.TypeName,
+	)
+}
+
+type E_RecordSizeNotMatching struct {
+	Given     uint
+	Required  uint
+}
+func (e E_RecordSizeNotMatching) DescribeError() richtext.Block {
+	return makeErrorDescBlock (
+		"record size not matching: " +
+		fmt.Sprintf("%d required but %d given", e.Required, e.Given),
+	)
+}
+
 
