@@ -31,15 +31,25 @@ func makeErrorDescBlock(msg ...string) richtext.Block {
 	return b
 }
 
-type ImplErrorInfo struct {
+type ImplError struct {
 	Concrete   string
 	Interface  string
 	Method     string
 }
-func (info ImplErrorInfo) Describe(problem string) richtext.Block {
+func (e ImplError) Describe(problem string) richtext.Block {
 	return makeErrorDescBlock (
-		"type", info.Concrete, "cannot implement interface", info.Interface,
-		": method", info.Method, "not found:", problem,
+		"type", e.Concrete, "cannot implement interface", e.Interface,
+		": method", e.Method, "not found:", problem,
+	)
+}
+
+type SizeLimitError struct {
+	Given  uint
+	Limit  uint
+}
+func (e SizeLimitError) Describe(which string) richtext.Block {
+	return makeErrorDescBlock (
+		fmt.Sprintf("%s size limit exceeded (%d/%d)", which, e.Given, e.Limit),
 	)
 }
 
@@ -201,9 +211,11 @@ func (e E_BadImplemented) DescribeError() richtext.Block {
 	)
 }
 
-type E_TooManyTypeParameters struct {}
+type E_TooManyTypeParameters struct {
+	SizeLimitError
+}
 func (e E_TooManyTypeParameters) DescribeError() richtext.Block {
-	return makeErrorDescBlock("too many type parameters")
+	return e.Describe("type parameter list")
 }
 
 type E_InvalidVarianceOnParameters struct {
@@ -221,9 +233,11 @@ func (e E_InvalidVarianceOnParameters) DescribeError() richtext.Block {
 	return b
 }
 
-type E_TooManyImplemented struct {}
+type E_TooManyImplemented struct {
+	SizeLimitError
+}
 func (e E_TooManyImplemented) DescribeError() richtext.Block {
-	return makeErrorDescBlock("too many implemented interfaces")
+	return e.Describe("implemented type list")
 }
 
 type E_ImplementedIncompatibleParameters struct {
@@ -258,21 +272,21 @@ func (e E_FunctionConflictWithAlias) DescribeError() richtext.Block {
 }
 
 type E_ImplMethodNoSuchFunction struct {
-	ImplErrorInfo
+	ImplError
 }
 func (e E_ImplMethodNoSuchFunction) DescribeError() richtext.Block {
 	return e.Describe("no corresponding functions")
 }
 
 type E_ImplMethodNoneCompatible struct {
-	ImplErrorInfo
+	ImplError
 }
 func (e E_ImplMethodNoneCompatible) DescribeError() richtext.Block {
 	return e.Describe("none of corresponding functions compatible")
 }
 
 type E_ImplMethodDuplicateCompatible struct {
-	ImplErrorInfo
+	ImplError
 }
 func (e E_ImplMethodDuplicateCompatible) DescribeError() richtext.Block {
 	return e.Describe("multiple corresponding functions compatible")
@@ -390,6 +404,27 @@ func (e E_LambdaAssignedToIncompatible) DescribeError() richtext.Block {
 	return makeErrorDescBlock (
 		"lambda cannot be assigned to incompatible type", e.TypeName,
 	)
+}
+
+type E_TooManyTupleElements struct {
+	SizeLimitError
+}
+func (e E_TooManyTupleElements) DescribeError() richtext.Block {
+	return e.Describe("tuple")
+}
+
+type E_TooManyRecordFields struct {
+	SizeLimitError
+}
+func (e E_TooManyRecordFields) DescribeError() richtext.Block {
+	return e.Describe("record")
+}
+
+type E_TooManyEnumCases struct {
+	SizeLimitError
+}
+func (e E_TooManyEnumCases) DescribeError() richtext.Block {
+	return e.Describe("enum")
 }
 
 

@@ -116,7 +116,7 @@ func collectFunctions (
 				var expected = &typsys.NestedType {
 					Content: f.Signature.InputOutput,
 				}
-				var expr, _, err = CheckLambda(body)(expected, nil, ctx)
+				var expr, _, err = checkLambda(body)(expected, nil, ctx)
 				if err != nil { return nil, err }
 				return OrdinaryBody { Expr: expr }, nil
 			case ast.NativeRef:
@@ -202,7 +202,10 @@ func registerFunction (
 		var arity = len(decl.Params)
 		if arity > MaxTypeParameters {
 			return nil, source.MakeError(loc,
-				E_TooManyTypeParameters {})
+				E_TooManyTypeParameters { SizeLimitError {
+					Given: uint(arity),
+					Limit: MaxTypeParameters,
+				}})
 		}
 		var params = make([] typsys.Parameter, arity)
 		for i, p := range decl.Params {

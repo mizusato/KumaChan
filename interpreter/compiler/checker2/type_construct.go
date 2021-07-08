@@ -57,7 +57,10 @@ func newType(t ast.VariousType, ctx TypeConsContext) (typsys.Type, *source.Error
 		var num_args = uint(len(T.TypeArgs))
 		if num_args > MaxTypeParameters {
 			return nil, source.MakeError(T.Location,
-				E_TooManyTypeParameters {})
+				E_TooManyTypeParameters { SizeLimitError {
+					Given: num_args,
+					Limit: MaxTypeParameters,
+				}})
 		}
 		var n = name.TypeName { Name: NameFrom(T.Module, T.Item, ctx.ModInfo) }
 		if n.ModuleName == "" {
@@ -138,8 +141,14 @@ func newType(t ast.VariousType, ctx TypeConsContext) (typsys.Type, *source.Error
 func newTypeFromRepr(r ast.Repr, ctx TypeConsContext) (typsys.Type, *source.Error) {
 	switch R := r.(type) {
 	case ast.ReprTuple:
-		// TODO: quantity limit
 		var num_elements = uint(len(R.Elements))
+		if num_elements > MaxTupleSize {
+			return nil, source.MakeError(R.Location,
+				E_TooManyTupleElements { SizeLimitError {
+					Given: num_elements,
+					Limit: MaxTupleSize,
+				}})
+		}
 		if num_elements == 0 {
 			return typsys.UnitType {}, nil
 		} else {
@@ -153,8 +162,15 @@ func newTypeFromRepr(r ast.Repr, ctx TypeConsContext) (typsys.Type, *source.Erro
 			return &typsys.NestedType { Content: tuple }, nil
 		}
 	case ast.ReprRecord:
-		// TODO: quantity limit
-		var fields = make([] typsys.Field, len(R.Fields))
+		var num_fields = uint(len(R.Fields))
+		if num_fields > MaxRecordSize {
+			return nil, source.MakeError(R.Location,
+				E_TooManyRecordFields { SizeLimitError {
+					Given: num_fields,
+					Limit: MaxRecordSize,
+				}})
+		}
+		var fields = make([] typsys.Field, num_fields)
 		var index_map = make(map[string] uint)
 		for i, field := range R.Fields {
 			var index = uint(i)

@@ -7,6 +7,9 @@ import (
 )
 
 
+const MaxTupleSize = 8
+const MaxRecordSize = 64
+const MaxEnumSize = 64
 const MaxTypeParameters = 8
 const MaxImplemented = 8
 const Discarded = "_"

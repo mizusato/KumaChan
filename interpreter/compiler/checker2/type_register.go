@@ -128,9 +128,13 @@ func collectTypes (
 	if err != nil { return nil, nil, err } }
 	// ---------
 	{ var err = step2_fill_impl(func(def TypeDef) *source.Error {
-		if len(def.AstNode.Impl) > MaxImplemented {
+		var num_impl = uint(len(def.AstNode.Impl))
+		if num_impl > MaxImplemented {
 			return source.MakeError(def.Location,
-				E_TooManyImplemented {})
+				E_TooManyImplemented { SizeLimitError {
+					Given: num_impl,
+					Limit: MaxImplemented,
+				}})
 		}
 		var impl_names = make([] name.TypeName, len(def.AstNode.Impl))
 		for i, ref := range def.AstNode.Impl {
@@ -471,7 +475,10 @@ func registerType (
 			var arity = len(decl.Params)
 			if arity > MaxTypeParameters {
 				return nil, source.MakeError(loc,
-					E_TooManyTypeParameters {})
+					E_TooManyTypeParameters { SizeLimitError {
+						Given: uint(arity),
+						Limit: MaxTypeParameters,
+					}})
 			}
 			var params = make([] typsys.Parameter, arity)
 			for i, p := range decl.Params {
@@ -513,6 +520,14 @@ func registerType (
 	})()
 	var case_defs = make([] *typsys.TypeDef, len(enum.Cases))
 	if is_enum {
+		var num_cases = uint(len(enum.Cases))
+		if num_cases > MaxEnumSize {
+			return nil, source.MakeError(enum.Location,
+				E_TooManyEnumCases { SizeLimitError {
+					Given: num_cases,
+					Limit: MaxEnumSize,
+				}})
+		}
 		for i, c := range enum.Cases {
 			var ct, err = registerType(&c, sec, mi, reg, typsys.CaseInfo {
 				Enum:      def,

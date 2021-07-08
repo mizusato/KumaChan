@@ -52,7 +52,7 @@ func generateDispatchMapping (
 						ModuleName: con.Name.ModuleName,
 						ItemName:   field.Name,
 					}
-					var info = ImplErrorInfo {
+					var detail = ImplError {
 						Concrete:  con.Name.String(),
 						Interface: impl.Name.String(),
 						Method:    method_name,
@@ -60,7 +60,9 @@ func generateDispatchMapping (
 					var group, exists = functions[method_full_name]
 					if !(exists) {
 						return source.MakeError(con.Location,
-							E_ImplMethodNoSuchFunction { ImplErrorInfo: info })
+							E_ImplMethodNoSuchFunction {
+								ImplError: detail,
+							})
 					}
 					var method_f *Function = nil
 					var found = false
@@ -84,7 +86,7 @@ func generateDispatchMapping (
 						if found {
 							return source.MakeError(con.Location,
 								E_ImplMethodDuplicateCompatible {
-									ImplErrorInfo: info,
+									ImplError: detail,
 								})
 						}
 						method_f = f
@@ -93,7 +95,7 @@ func generateDispatchMapping (
 					if !(found) {
 						return source.MakeError(con.Location,
 							E_ImplMethodNoneCompatible {
-								ImplErrorInfo: info,
+								ImplError: detail,
 							})
 					}
 					methods[i] = method_f
