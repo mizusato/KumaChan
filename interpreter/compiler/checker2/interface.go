@@ -7,6 +7,7 @@ import (
 )
 
 
+// TODO: FieldGetter as method (report ambiguous when conflict with function)
 type DispatchMapping (map[ImplPair] ([] *Function))
 type ImplPair struct {
 	ConcreteType   *typsys.TypeDef
