@@ -63,10 +63,6 @@ func isValidFunctionItemName(name string) bool {
 type nominalType func
 	(TypeRegistry)(typsys.Type)
 
-func (nt nominalType) isEqualTo(t typsys.Type, reg TypeRegistry) bool {
-	return typsys.TypeOpEqual(t, nt(reg))
-}
-
 func makeCoreType(item_name string, args ...nominalType) nominalType {
 	return nominalType(func(reg TypeRegistry) typsys.Type {
 		var n = name.MakeTypeName(stdlib.Mod_core, item_name)

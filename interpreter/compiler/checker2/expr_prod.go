@@ -13,28 +13,6 @@ type ProductPatternMatching func
 	(in typsys.Type, mod string, lm localBindingMap) (
 	checked.ProductPatternInfo, *source.Error)
 
-func getFieldValue(item ast.FieldValue) ast.Expr {
-	var given_value, given = item.Value.(ast.Expr)
-	if given {
-		return given_value
-	} else {
-		return desugarOmittedFieldValue(item.Key)
-	}
-}
-
-func desugarOmittedFieldValue(key ast.Identifier) ast.Expr {
-	return ast.Expr {
-		Node: key.Node,
-		Term: ast.VariousTerm {
-			Node: key.Node,
-			Term: ast.InlineRef {
-				Node: key.Node,
-				Item: key,
-			},
-		},
-	}
-}
-
 func productPatternMatch(pattern ast.VariousPattern) ProductPatternMatching {
 	switch P := pattern.Pattern.(type) {
 	case ast.PatternTrivial:
@@ -169,6 +147,219 @@ func patternMatchRecord(pattern ast.PatternRecord) ProductPatternMatching {
 	})
 }
 
+func checkTuple(T ast.Tuple) ExprChecker {
+	return makeExprChecker(T.Location, func(cc *checkContext) checkResult {
+		var L = len(T.Elements)
+		if L == 0 {
+			return cc.assign(typsys.UnitType {}, checked.UnitValue {})
+		}
+		if L == 1 {
+			return cc.forwardToChildExpr(T.Elements[0])
+		}
+		if L > MaxTupleSize {
+			return cc.error(
+				E_TooManyTupleElements { SizeLimitError {
+					Given: uint(L),
+					Limit: MaxTupleSize,
+				}})
+		}
+		if cc.expected == nil {
+			var elements = make([] *checked.Expr, L)
+			var types = make([] typsys.Type, L)
+			for i := 0; i < L; i += 1 {
+				var el, err = cc.checkChildExpr(nil, T.Elements[i])
+				if err != nil { return cc.propagate(err) }
+				elements[i] = el
+				types[i] = el.Type
+			}
+			var tuple_t = &typsys.NestedType {
+				Content: typsys.Tuple { Elements: types },
+			}
+			return cc.assign(tuple_t, checked.Tuple { Elements: elements })
+		} else {
+			var tuple, is_tuple = getTuple(cc.expected)
+			if !(is_tuple) {
+				return cc.error(
+					E_TupleAssignedToIncompatible {
+						TypeName: cc.describeType(cc.expected),
+					})
+			}
+			var L_required = len(tuple.Elements)
+			if L != L_required {
+				return cc.error(
+					E_TupleSizeNotMatching {
+						Required: uint(L_required),
+						Given:    uint(L),
+					})
+			}
+			var elements = make([] *checked.Expr, L)
+			for i := 0; i < L; i += 1 {
+				var el, err = cc.checkChildExpr(tuple.Elements[i], T.Elements[i])
+				if err != nil { return cc.propagate(err) }
+				elements[i] = el
+			}
+			var tuple_t = &typsys.NestedType { Content: tuple }
+			return cc.assign(tuple_t, checked.Tuple { Elements: elements })
+		}
+	})
+}
+
+func checkRecord(R ast.Record) ExprChecker {
+	return makeExprChecker(R.Location, func(cc *checkContext) checkResult {
+		var num_fields = uint(len(R.Values))
+		if num_fields > MaxRecordSize {
+			return cc.error(
+				E_TooManyRecordFields { SizeLimitError {
+					Given: num_fields,
+					Limit: MaxRecordSize,
+				}})
+		}
+		if cc.expected == nil {
+			var update, has_update = R.Update.(ast.Update)
+			var mapping = make(map[string] uint)
+			var fields = make([] typsys.Field, num_fields)
+			var values = make([] *checked.Expr, num_fields)
+			for i, item := range R.Values {
+				var key = item.Key
+				var k = ast.Id2String(key)
+				var _, duplicate = mapping[k]
+				mapping[k] = uint(i)
+				if duplicate {
+					return cc.error(E_DuplicateField { FieldName: k })
+				}
+				var value = getFieldValue(item)
+				var value_expr, err = cc.checkChildExpr(nil, value)
+				if err != nil { return cc.propagate(err) }
+				values[i] = value_expr
+				fields[i] = typsys.Field {
+					Attr: attr.FieldAttrs {
+						Attrs: attr.Attrs { Location: item.Location },
+					},
+					Name: k,
+					Type: value_expr.Type,
+				}
+			}
+			if has_update {
+				var base, err = cc.checkChildExpr(nil, update.Base)
+				if err != nil { return cc.propagate(err) }
+				var base_record, ok = cc.unboxRecord(base)
+				if !(ok) {
+					return cc.error(E_UpdateOnNonRecord {
+						TypeName: cc.describeTypeOf(base),
+					})
+				}
+				var replaced = make([] checked.TupleUpdateElement, num_fields)
+				for i := uint(0); i < num_fields; i += 1 {
+					var field = fields[i]
+					var k = field.Name
+					var base_index, exists = base_record.FieldIndexMap[k]
+					if !(exists) {
+						return cc.error(E_FieldNotFound {
+							FieldName: k,
+							TypeName:  cc.describeTypeOf(base),
+						})
+					}
+					var base_field = base_record.Fields[base_index]
+					var err = cc.assignType(base_field.Type, field.Type)
+					if err != nil { return cc.propagate(err) }
+					replaced[i] = checked.TupleUpdateElement {
+						Index: base_index,
+						Value: values[i],
+					}
+				}
+				var record_t = &typsys.NestedType { Content: base_record }
+				var record = checked.TupleUpdate {
+					Base:     base,
+					Replaced: replaced,
+				}
+				return cc.assign(record_t, record)
+			} else {
+				var record_t = &typsys.NestedType {
+					Content: typsys.Record {
+						FieldIndexMap: mapping,
+						Fields:        fields,
+					},
+				}
+				var record = checked.Tuple {
+					Elements: values,
+				}
+				return cc.assign(record_t, record)
+			}
+		} else {
+			var _, has_update = R.Update.(ast.Update)
+			if has_update {
+				var R_term = ast.VariousTerm {
+					Node: R.Node,
+					Term: R,
+				}
+				return cc.forwardToChildTerm(R_term)
+			} else {
+				var expected_record, ok = getRecord(cc.expected)
+				if !(ok) {
+					return cc.error(E_RecordAssignedToIncompatible {
+						TypeName: cc.describeType(cc.expected),
+					})
+				}
+				var required_num_fields = uint(len(expected_record.Fields))
+				if num_fields != required_num_fields {
+					return cc.error(E_RecordSizeNotMatching {
+						Given:    num_fields,
+						Required: required_num_fields,
+					})
+				}
+				var occurred = make(map[string] struct{})
+				var values = make([] *checked.Expr, num_fields)
+				for i, item := range R.Values {
+					var k = ast.Id2String(R.Values[i].Key)
+					var _, duplicate = occurred[k]
+					occurred[k] = struct{}{}
+					if duplicate {
+						return cc.error(E_DuplicateField { FieldName: k })
+					}
+					var e_index, exists = expected_record.FieldIndexMap[k]
+					if !(exists) {
+						return cc.error(E_FieldNotFound {
+							FieldName: k,
+							TypeName:  cc.describeType(cc.expected),
+						})
+					}
+					var value = getFieldValue(item)
+					var value_expr, err = cc.checkChildExpr(nil, value)
+					if err != nil { return cc.propagate(err) }
+					values[e_index] = value_expr
+				}
+				var record_t = &typsys.NestedType {
+					Content: expected_record,
+				}
+				var record = checked.Tuple {
+					Elements: values,
+				}
+				return cc.assign(record_t, record)
+			}
+		}
+	})
+}
+
+func getFieldValue(item ast.FieldValue) ast.Expr {
+	var given_value, given = item.Value.(ast.Expr)
+	if given {
+		return given_value
+	} else {
+		return desugarOmittedFieldValue(item.Key)
+	}
+}
+func desugarOmittedFieldValue(key ast.Identifier) ast.Expr {
+	return ast.Expr {
+		Node: key.Node,
+		Term: ast.VariousTerm {
+			Node: key.Node,
+			Term: ast.InlineRef {
+				Node: key.Node,
+				Item: key,
+			},
+		},
+	}
+}
 func getTuple(t typsys.Type) (typsys.Tuple, bool) {
 	var nested, is_nested = t.(*typsys.NestedType)
 	if !(is_nested) { return typsys.Tuple {}, false }
@@ -214,196 +405,6 @@ func unboxRecord(t typsys.Type, mod string) (typsys.Record, bool) {
 			return typsys.Record {}, false
 		}
 	}
-}
-
-
-func checkTuple(T ast.Tuple) ExprChecker {
-	return ExprChecker(func(expected typsys.Type, s *typsys.InferringState, ctx ExprContext) (*checked.Expr, *typsys.InferringState, *source.Error) {
-		var cc = makeCheckContext(T.Location, &s, ctx, nil)
-		if expected == nil {
-			var L = len(T.Elements)
-			var elements = make([] *checked.Expr, L)
-			var types = make([] typsys.Type, L)
-			for i := 0; i < L; i += 1 {
-				var el, err = cc.checkChildExpr(nil, T.Elements[i])
-				if err != nil { return cc.propagate(err) }
-				elements[i] = el
-				types[i] = el.Type
-			}
-			var tuple_t = &typsys.NestedType {
-				Content: typsys.Tuple { Elements: types },
-			}
-			return cc.ok(tuple_t, checked.Tuple { Elements: elements })
-		} else {
-			var tuple, is_tuple = getTuple(expected)
-			if !(is_tuple) {
-				return cc.error(
-					E_TupleAssignedToIncompatible {
-						TypeName: cc.describeType(expected),
-					})
-			}
-			var L = len(T.Elements)
-			var L_required = len(tuple.Elements)
-			if L != L_required {
-				return cc.error(
-					E_TupleSizeNotMatching {
-						Required: uint(L_required),
-						Given:    uint(L),
-					})
-			}
-			var elements = make([] *checked.Expr, L)
-			for i := 0; i < L; i += 1 {
-				var el, err = cc.checkChildExpr(tuple.Elements[i], T.Elements[i])
-				if err != nil { return cc.propagate(err) }
-				elements[i] = el
-			}
-			var tuple_t = &typsys.NestedType { Content: tuple }
-			return cc.ok(tuple_t, checked.Tuple { Elements: elements })
-		}
-	})
-}
-
-func checkRecord(R ast.Record) ExprChecker {
-	return ExprChecker(func(expected typsys.Type, s *typsys.InferringState, ctx ExprContext) (*checked.Expr, *typsys.InferringState, *source.Error) {
-		var cc = makeCheckContext(R.Location, &s, ctx, nil)
-		var num_fields = uint(len(R.Values))
-		if num_fields > MaxRecordSize {
-			return nil, nil, source.MakeError(R.Location,
-				E_TooManyRecordFields { SizeLimitError {
-					Given: num_fields,
-					Limit: MaxRecordSize,
-				}})
-		}
-		if expected == nil {
-			var update, has_update = R.Update.(ast.Update)
-			var mapping = make(map[string] uint)
-			var fields = make([] typsys.Field, num_fields)
-			var values = make([] *checked.Expr, num_fields)
-			for i, item := range R.Values {
-				var key = item.Key
-				var k = ast.Id2String(key)
-				var _, duplicate = mapping[k]
-				mapping[k] = uint(i)
-				if duplicate {
-					return cc.error(E_DuplicateField { FieldName: k })
-				}
-				var value = getFieldValue(item)
-				var value_expr, err = cc.checkChildExpr(nil, value)
-				if err != nil { return cc.propagate(err) }
-				values[i] = value_expr
-				fields[i] = typsys.Field {
-					Attr: attr.FieldAttrs {
-						Attrs: attr.Attrs { Location: item.Location },
-					},
-					Name: k,
-					Type: value_expr.Type,
-				}
-			}
-			if has_update {
-				var base, err = cc.checkChildExpr(nil, update.Base)
-				if err != nil { return cc.propagate(err) }
-				var base_record, ok = unboxRecord(base.Type, ctx.ModName)
-				if !(ok) {
-					return cc.error(E_UpdateOnNonRecord {
-						TypeName: cc.describeType(base.Type),
-					})
-				}
-				var replaced = make([] checked.TupleUpdateElement, num_fields)
-				for i := uint(0); i < num_fields; i += 1 {
-					var field = fields[i]
-					var k = field.Name
-					var base_index, exists = base_record.FieldIndexMap[k]
-					if !(exists) {
-						return cc.error(E_FieldNotFound {
-							FieldName: k,
-							TypeName:  cc.describeType(base.Type),
-						})
-					}
-					var base_field = base_record.Fields[base_index]
-					if !(cc.assignType(base_field.Type, field.Type)) {
-						return cc.error(E_NotAssignable{
-							From: cc.describeType(base_field.Type),
-							To:   cc.describeType(field.Type),
-						})
-					}
-					replaced[i] = checked.TupleUpdateElement {
-						Index: base_index,
-						Value: values[i],
-					}
-				}
-				var record_t = &typsys.NestedType { Content: base_record }
-				var record = checked.TupleUpdate {
-					Base:     base,
-					Replaced: replaced,
-				}
-				return cc.ok(record_t, record)
-			} else {
-				var record_t = &typsys.NestedType {
-					Content: typsys.Record {
-						FieldIndexMap: mapping,
-						Fields:        fields,
-					},
-				}
-				var record = checked.Tuple {
-					Elements: values,
-				}
-				return cc.ok(record_t, record)
-			}
-		} else {
-			var _, has_update = R.Update.(ast.Update)
-			if has_update {
-				var R_term = ast.VariousTerm {
-					Node: R.Node,
-					Term: R,
-				}
-				var expr, err = cc.checkChildTerm(nil, R_term)
-				if err != nil { return cc.propagate(err) }
-				return cc.assign(expected, expr.Type, expr.Content)
-			} else {
-				var expected_record, ok = getRecord(expected)
-				if !(ok) {
-					return cc.error(E_RecordAssignedToIncompatible {
-						TypeName: cc.describeType(expected),
-					})
-				}
-				var required_num_fields = uint(len(expected_record.Fields))
-				if num_fields != required_num_fields {
-					return cc.error(E_RecordSizeNotMatching {
-						Given:    num_fields,
-						Required: required_num_fields,
-					})
-				}
-				var occurred = make(map[string] struct{})
-				var values = make([] *checked.Expr, num_fields)
-				for i, item := range R.Values {
-					var k = ast.Id2String(R.Values[i].Key)
-					var _, duplicate = occurred[k]
-					occurred[k] = struct{}{}
-					if duplicate {
-						return cc.error(E_DuplicateField { FieldName: k })
-					}
-					var e_index, exists = expected_record.FieldIndexMap[k]
-					if !(exists) {
-						return cc.error(E_FieldNotFound {
-							FieldName: k,
-							TypeName:  cc.describeType(expected),
-						})
-					}
-					var value = getFieldValue(item)
-					var value_expr, err = cc.checkChildExpr(nil, value)
-					if err != nil { return cc.propagate(err) }
-					values[e_index] = value_expr
-				}
-				var record_t = &typsys.NestedType {
-					Content: expected_record,
-				}
-				var record = checked.Tuple {
-					Elements: values,
-				}
-				return cc.ok(record_t, record)
-			}
-		}
-	})
 }
 
 

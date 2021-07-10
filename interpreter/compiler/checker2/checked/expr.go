@@ -20,14 +20,24 @@ func ExprInfoFrom(loc source.Location) ExprInfo {
 }
 type ExprContent interface { implExpr() }
 
+func (UnitValue) implExpr() {}
+type UnitValue struct {}
+
 func (FuncRef) implExpr() {}
 type FuncRef struct {
-	Name  name.FunctionName
+	Name      name.FunctionName
+	Implicit  [] *Expr
 }
 
 func (LocalRef) implExpr() {}
 type LocalRef struct {
 	Binding  *LocalBinding
+}
+
+func (Call) implExpr() {}
+type Call struct {
+	Callee    *Expr
+	Argument  *Expr
 }
 
 func (Tuple) implExpr() {}
