@@ -1,10 +1,11 @@
 package checker2
 
 import (
-	"kumachan/interpreter/lang/common/source"
 	"kumachan/interpreter/lang/ast"
+	"kumachan/interpreter/lang/common/source"
 	"kumachan/interpreter/compiler/checker2/typsys"
 	"kumachan/interpreter/compiler/checker2/checked"
+	"kumachan/interpreter/lang/common/name"
 )
 
 
@@ -13,10 +14,12 @@ type ExprContext struct {
 	*ModuleInfo
 	localBindingMap
 }
+// TODO: note: should filter out entities that are not imported in current mod
 type Registry struct {
 	Aliases    AliasRegistry
 	Types      TypeRegistry
 	Functions  FunctionRegistry
+	// TODO: function item name map
 }
 type localBindingMap (map[string] *checked.LocalBinding)
 
@@ -33,6 +36,51 @@ func (lm localBindingMap) add(binding *checked.LocalBinding) {
 func (lm localBindingMap) lookup(name string) (*checked.LocalBinding, bool) {
 	var binding, exists = lm[name]
 	return binding, exists
+}
+
+func (reg *Registry) lookupGlobal(n name.Name, mod string) (Ref, bool) {
+	var alias, is_alias = reg.Aliases[n]
+	if is_alias {
+		return reg.lookupGlobal(alias.To, mod)
+	} else {
+		if n.ModuleName == "" {
+			// TODO: core + mod + all imported
+		} else {
+			var functions, exists = reg.Functions[n]
+			if exists {
+				return FuncRefs { Functions: functions }, true
+			} else {
+				var def, exists = reg.Types[name.TypeName { Name: n }]
+				if exists {
+					return TypeRef { TypeDef: def }, true
+				} else {
+					return nil, false
+				}
+			}
+		}
+	}
+}
+
+func (reg *Registry) lookup(n name.Name, mod string, lm localBindingMap) (Ref, bool) {
+	if n.ModuleName == "" {
+		var binding, local_exists = lm[n.ItemName]
+		if local_exists {
+			var local = LocalRef { Binding: binding }
+			var global, global_exists = reg.lookupGlobal(n, mod)
+			if global_exists {
+				return RefWithLocalRef {
+					Ref:      global,
+					LocalRef: local,
+				}, true
+			} else {
+				return local, true
+			}
+		} else {
+			return reg.lookupGlobal(n, mod)
+		}
+	} else {
+		return reg.lookupGlobal(n, mod)
+	}
 }
 
 func (ctx ExprContext) withNewLocalScope() ExprContext {
@@ -74,6 +122,10 @@ func makeCheckContext (
 		inferring:   s,
 		exprContext: ctx,
 	}
+}
+
+func (cc *checkContext) lookupName(n name.Name) (Ref, *source.Error) {
+	// TODO
 }
 
 func (cc *checkContext) getType(t nominalType) typsys.Type {

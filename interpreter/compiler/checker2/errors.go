@@ -465,4 +465,14 @@ func (e E_RecordSizeNotMatching) DescribeError() richtext.Block {
 	)
 }
 
+type E_TypeNotCallable struct {
+	TypeName  string
+}
+func (e E_TypeNotCallable) DescribeError() richtext.Block {
+	return makeErrorDescBlock (
+		"type", e.TypeName,
+		"is not callable",
+	)
+}
+
 

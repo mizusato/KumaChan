@@ -3,6 +3,7 @@ package checker2
 import (
 	"kumachan/stdlib"
 	"kumachan/interpreter/lang/common/name"
+	"kumachan/interpreter/compiler/loader"
 	"kumachan/interpreter/compiler/checker2/typsys"
 )
 
@@ -12,6 +13,7 @@ const MaxRecordSize = 64
 const MaxEnumSize = 64
 const MaxTypeParameters = 8
 const MaxImplemented = 8
+const SelfModule = loader.SelfModule
 const Discarded = "_"
 
 var typeBadNames = [] string {

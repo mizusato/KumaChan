@@ -14,16 +14,19 @@ func NameFrom(id_mod ast.Identifier, id_item ast.Identifier, mi *ModuleInfo) nam
 	if ref_mod == "" {
 		var _, is_core_type = coreTypes[ref_item]
 		if is_core_type {
+			// TODO: do not handle core too early (postpone to ResolveXXX)
 			return name.MakeName(stdlib.Mod_core, ref_item)
 		} else {
-			return name.MakeName(mi.ModName, ref_item)
+			return name.MakeName("", ref_item)
 		}
+	} else if ref_mod == SelfModule {
+		return name.MakeName(mi.ModName, ref_item)
 	} else {
 		var imported, found = mi.ModImported[ref_mod]
 		if found {
 			return name.MakeName(imported.ModName, ref_item)
 		} else {
-			return name.MakeName(ref_mod, ref_item)
+			// TODO: should be an *source.Error
 		}
 	}
 }

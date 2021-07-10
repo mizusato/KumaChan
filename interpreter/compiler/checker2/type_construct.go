@@ -16,13 +16,18 @@ type TypeConsContext struct {
 	AliasReg  AliasRegistry
 	ParamVec  [] typsys.Parameter
 }
-func (ctx TypeConsContext) ResolveGlobalName(n name.TypeName) (TypeDef, string, bool) {
-	var alias, is_alias = ctx.AliasReg[n.Name]
-	if is_alias {
-		n = name.TypeName { Name: alias.To }
+func (ctx TypeConsContext) ResolveTypeDefName(n name.Name) (TypeDef, func()(string), bool) {
+	if n.ModuleName == "" {
+		n = name.MakeName(ctx.ModInfo.ModName, n.ItemName)
 	}
-	var desc = DescribeNameWithPossibleAlias(n.Name, alias.To)
-	var def, exists = ctx.TypeReg[n]
+	var alias, is_alias = ctx.AliasReg[n]
+	if is_alias {
+		n = alias.To
+	}
+	var desc = func()(string) {
+		return DescribeNameWithPossibleAlias(n, alias.To)
+	}
+	var def, exists = ctx.TypeReg[name.TypeName { Name: n }]
 	return def, desc, exists
 }
 
@@ -62,7 +67,7 @@ func newType(t ast.VariousType, ctx TypeConsContext) (typsys.Type, *source.Error
 					Limit: MaxTypeParameters,
 				}})
 		}
-		var n = name.TypeName { Name: NameFrom(T.Module, T.Item, ctx.ModInfo) }
+		var n = NameFrom(T.Module, T.Item, ctx.ModInfo)
 		if n.ModuleName == "" {
 			var item_name = n.ItemName
 			var special, is_special = newSpecialType(item_name)
@@ -83,10 +88,10 @@ func newType(t ast.VariousType, ctx TypeConsContext) (typsys.Type, *source.Error
 				return param, nil
 			}
 		}
-		var def, n_desc, exists = ctx.ResolveGlobalName(n)
+		var def, n_desc, exists = ctx.ResolveTypeDefName(n)
 		if !(exists) {
 			return nil, source.MakeError(T.Location, E_TypeNotFound {
-				Which: n_desc,
+				Which: n_desc(),
 			})
 		}
 		var arity = uint(len(def.Parameters))
@@ -103,7 +108,7 @@ func newType(t ast.VariousType, ctx TypeConsContext) (typsys.Type, *source.Error
 		if !(least_arity <= num_args && num_args <= arity) {
 			return nil, source.MakeError(T.Location,
 				E_TypeWrongParameterQuantity {
-					Which: n_desc,
+					Which: n_desc(),
 					Given: num_args,
 					Least: least_arity,
 					Total: arity,

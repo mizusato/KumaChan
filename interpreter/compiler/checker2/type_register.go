@@ -3,9 +3,9 @@ package checker2
 import (
 	"sort"
 	"encoding/json"
+	"kumachan/interpreter/lang/ast"
 	"kumachan/interpreter/lang/common/name"
 	"kumachan/interpreter/lang/common/source"
-	"kumachan/interpreter/lang/ast"
 	"kumachan/interpreter/lang/common/attr"
 	"kumachan/interpreter/compiler/checker2/typsys"
 	"kumachan/interpreter/compiler/loader"

@@ -17,7 +17,8 @@ func checkCall(callee ast.Expr, arg ast.Expr, loc source.Location) ExprChecker {
 			if err1 != nil { return cc.propagate(err1) }
 			var io, callable = cc.unboxLambda(callee_expr)
 			if !(callable) {
-				// TODO
+				return cc.error(
+					E_TypeNotCallable {})
 			}
 			var arg_expr, err2 = cc.checkChildExpr(io.Input, arg)
 			if err2 != nil { return cc.propagate(err2) }
