@@ -114,7 +114,7 @@ func checkInteger(I ast.IntegerLiteral) ExprChecker {
 					} else {
 						return cc.error(
 							E_IntegerOverflowUnderflow {
-								TypeName: typsys.DescribeType(expected, s),
+								TypeName: cc.describeType(expected),
 							})
 					}
 				}

@@ -9,6 +9,10 @@ import (
 )
 
 
+type ProductPatternMatching func
+	(in typsys.Type, mod string, lm localBindingMap) (
+	checked.ProductPatternInfo, *source.Error)
+
 func getFieldValue(item ast.FieldValue) ast.Expr {
 	var given_value, given = item.Value.(ast.Expr)
 	if given {
@@ -31,130 +35,138 @@ func desugarOmittedFieldValue(key ast.Identifier) ast.Expr {
 	}
 }
 
-func productPatternMatch(pattern ast.VariousPattern, in typsys.Type, mod string, lm localBindingMap) (checked.ProductPatternInfo, *source.Error) {
+func productPatternMatch(pattern ast.VariousPattern) ProductPatternMatching {
 	switch P := pattern.Pattern.(type) {
 	case ast.PatternTrivial:
-		return patternMatchTrivial(P, in, mod, lm)
+		return patternMatchTrivial(P)
 	case ast.PatternTuple:
-		return patternMatchTuple(P, in, mod, lm)
+		return patternMatchTuple(P)
 	case ast.PatternRecord:
-		return patternMatchRecord(P, in, mod, lm)
+		return patternMatchRecord(P)
 	default:
 		panic("impossible branch")
 	}
 }
 
-// TODO: extract common part of function signatures
-func patternMatchTrivial(pattern ast.PatternTrivial, in typsys.Type, mod string, lm localBindingMap) (checked.ProductPatternInfo, *source.Error) {
-	in = unboxWeak(in, mod)
-	var binding = &checked.LocalBinding {
-		Name:     ast.Id2String(pattern.Name),
-		Type:     in,
-		Location: pattern.Location,
-	}
-	lm.add(binding)
-	return checked.ProductPatternInfo([] checked.ProductPatternItemInfo { {
-		Binding: binding,
-		Index1:  0,
-	}}), nil
-}
-
-func patternMatchTuple(pattern ast.PatternTuple, in typsys.Type, mod string, lm localBindingMap) (checked.ProductPatternInfo, *source.Error) {
-	var tuple, ok = unboxTuple(in, mod)
-	if !(ok) {
-		return nil, source.MakeError(pattern.Location,
-			E_CannotMatchTuple {
-				TypeName: typsys.DescribeType(in, nil),
-			})
-	}
-	var L = len(tuple.Elements)
-	var L_required = len(pattern.Names)
-	if L != L_required {
-		return nil, source.MakeError(pattern.Location,
-			E_TupleSizeNotMatching {
-				Required: uint(L_required),
-				Given:    uint(L),
-			})
-	}
-	var occurred = make(map[string] struct{})
-	var info = make(checked.ProductPatternInfo, L)
-	for i := 0; i < L; i += 1 {
-		var id = pattern.Names[i]
-		var loc = id.Location
-		var name = ast.Id2String(id)
-		if name == Discarded {
-			continue
-		}
-		var _, exists = occurred[name]
-		occurred[name] = struct{}{}
-		if exists {
-			return nil, source.MakeError(loc,
-				E_DuplicateBinding {
-					BindingName: name,
-				})
-		}
-		var t = tuple.Elements[i]
+func patternMatchTrivial(pattern ast.PatternTrivial) ProductPatternMatching {
+	return ProductPatternMatching(func(in typsys.Type, mod string, lm localBindingMap) (checked.ProductPatternInfo, *source.Error) {
+		in = unboxWeak(in, mod)
 		var binding = &checked.LocalBinding {
-			Name:     name,
-			Type:     t,
-			Location: loc,
+			Name:     ast.Id2String(pattern.Name),
+			Type:     in,
+			Location: pattern.Location,
 		}
-		info[i] = checked.ProductPatternItemInfo {
+		lm.add(binding)
+		return checked.ProductPatternInfo([] checked.ProductPatternItemInfo { {
 			Binding: binding,
-			Index1:  uint(i + 1),
-		}
-	}
-	for _, item := range info {
-		lm.add(item.Binding)
-	}
-	return info, nil
+			Index1:  0,
+		}}), nil
+	})
 }
 
-func patternMatchRecord(pattern ast.PatternRecord, in typsys.Type, mod string, lm localBindingMap) (checked.ProductPatternInfo, *source.Error) {
-	var record, ok = unboxRecord(in, mod)
-	if !(ok) {
-		return nil, source.MakeError(pattern.Location,
-			E_CannotMatchRecord {
-				TypeName: typsys.DescribeType(in, nil),
-			})
-	}
-	var occurred = make(map[string] struct{})
-	var info = make(checked.ProductPatternInfo, len(pattern.FieldMaps))
-	for i, m := range pattern.FieldMaps {
-		var binding_name = ast.Id2String(m.ValueName)
-		var binding_loc = m.ValueName.Location
-		var field_name = ast.Id2String(m.FieldName)
-		var field_loc = m.FieldName.Location
-		var _, binding_exists = occurred[binding_name]
-		occurred[binding_name] = struct{}{}
-		if binding_exists {
-			return nil, source.MakeError(binding_loc,
-				E_DuplicateBinding {
-					BindingName: binding_name,
+func patternMatchTuple(pattern ast.PatternTuple) ProductPatternMatching {
+	return ProductPatternMatching(func(in typsys.Type, mod string, lm localBindingMap) (checked.ProductPatternInfo, *source.Error) {
+		var tuple, ok = unboxTuple(in, mod)
+		if !(ok) {
+			return nil, source.MakeError(pattern.Location,
+				E_CannotMatchTuple {
+					TypeName: typsys.DescribeType(in, nil),
 				})
 		}
-		var field_index, field_exists = record.FieldIndexMap[field_name]
-		if field_exists {
-			var field = record.Fields[field_index]
-			var t = field.Type
+		var L = len(tuple.Elements)
+		var L_required = len(pattern.Names)
+		if L != L_required {
+			return nil, source.MakeError(pattern.Location,
+				E_TupleSizeNotMatching {
+					Required: uint(L_required),
+					Given:    uint(L),
+				})
+		}
+		var occurred = make(map[string] struct{})
+		var info = make(checked.ProductPatternInfo, L)
+		for i := 0; i < L; i += 1 {
+			var id = pattern.Names[i]
+			var loc = id.Location
+			var name = ast.Id2String(id)
+			if name == Discarded {
+				continue
+			}
+			var _, exists = occurred[name]
+			occurred[name] = struct{}{}
+			if exists {
+				return nil, source.MakeError(loc,
+					E_DuplicateBinding {
+						BindingName: name,
+					})
+			}
+			var t = tuple.Elements[i]
 			var binding = &checked.LocalBinding {
-				Name:     binding_name,
+				Name:     name,
 				Type:     t,
-				Location: binding_loc,
+				Location: loc,
 			}
 			info[i] = checked.ProductPatternItemInfo {
 				Binding: binding,
-				Index1:  (1 + field_index),
+				Index1:  uint(i + 1),
 			}
-		} else {
-			return nil, source.MakeError(field_loc,
-				E_FieldNotFound {
-					FieldName: field_name,
-					TypeName:  typsys.DescribeType(in, nil),
+		}
+		for _, item := range info {
+			lm.add(item.Binding)
+		}
+		return info, nil
+	})
+}
+
+func patternMatchRecord(pattern ast.PatternRecord) ProductPatternMatching {
+	return ProductPatternMatching(func(in typsys.Type, mod string, lm localBindingMap) (checked.ProductPatternInfo, *source.Error) {
+		var record, ok = unboxRecord(in, mod)
+		if !(ok) {
+			return nil, source.MakeError(pattern.Location,
+				E_CannotMatchRecord {
+					TypeName: typsys.DescribeType(in, nil),
 				})
 		}
-	}
-	return info, nil
+		var occurred = make(map[string] struct{})
+		var info = make(checked.ProductPatternInfo, len(pattern.FieldMaps))
+		for i, m := range pattern.FieldMaps {
+			var binding_name = ast.Id2String(m.ValueName)
+			var binding_loc = m.ValueName.Location
+			var field_name = ast.Id2String(m.FieldName)
+			var field_loc = m.FieldName.Location
+			var _, binding_exists = occurred[binding_name]
+			occurred[binding_name] = struct{}{}
+			if binding_exists {
+				return nil, source.MakeError(binding_loc,
+					E_DuplicateBinding {
+						BindingName: binding_name,
+					})
+			}
+			var field_index, field_exists = record.FieldIndexMap[field_name]
+			if field_exists {
+				var field = record.Fields[field_index]
+				var t = field.Type
+				var binding = &checked.LocalBinding {
+					Name:     binding_name,
+					Type:     t,
+					Location: binding_loc,
+				}
+				info[i] = checked.ProductPatternItemInfo {
+					Binding: binding,
+					Index1:  (1 + field_index),
+				}
+			} else {
+				return nil, source.MakeError(field_loc,
+					E_FieldNotFound {
+						FieldName: field_name,
+						TypeName:  typsys.DescribeType(in, nil),
+					})
+			}
+		}
+		for _, item := range info {
+			lm.add(item.Binding)
+		}
+		return info, nil
+	})
 }
 
 func getTuple(t typsys.Type) (typsys.Tuple, bool) {
@@ -227,7 +239,7 @@ func checkTuple(T ast.Tuple) ExprChecker {
 			if !(is_tuple) {
 				return cc.error(
 					E_TupleAssignedToIncompatible {
-						TypeName: typsys.DescribeType(expected, s),
+						TypeName: cc.describeType(expected),
 					})
 			}
 			var L = len(T.Elements)
@@ -293,7 +305,7 @@ func checkRecord(R ast.Record) ExprChecker {
 				var base_record, ok = unboxRecord(base.Type, ctx.ModName)
 				if !(ok) {
 					return cc.error(E_UpdateOnNonRecord {
-						TypeName: typsys.DescribeType(base.Type, nil),
+						TypeName: cc.describeType(base.Type),
 					})
 				}
 				var replaced = make([] checked.TupleUpdateElement, num_fields)
@@ -304,14 +316,14 @@ func checkRecord(R ast.Record) ExprChecker {
 					if !(exists) {
 						return cc.error(E_FieldNotFound {
 							FieldName: k,
-							TypeName:  typsys.DescribeType(base.Type, nil),
+							TypeName:  cc.describeType(base.Type),
 						})
 					}
 					var base_field = base_record.Fields[base_index]
 					if !(cc.assignType(base_field.Type, field.Type)) {
 						return cc.error(E_NotAssignable{
-							From: typsys.DescribeType(base_field.Type, nil),
-							To:   typsys.DescribeType(field.Type, nil),
+							From: cc.describeType(base_field.Type),
+							To:   cc.describeType(field.Type),
 						})
 					}
 					replaced[i] = checked.TupleUpdateElement {
@@ -351,7 +363,7 @@ func checkRecord(R ast.Record) ExprChecker {
 				var expected_record, ok = getRecord(expected)
 				if !(ok) {
 					return cc.error(E_RecordAssignedToIncompatible {
-						TypeName: typsys.DescribeType(expected, s),
+						TypeName: cc.describeType(expected),
 					})
 				}
 				var required_num_fields = uint(len(expected_record.Fields))
@@ -374,7 +386,7 @@ func checkRecord(R ast.Record) ExprChecker {
 					if !(exists) {
 						return cc.error(E_FieldNotFound {
 							FieldName: k,
-							TypeName:  typsys.DescribeType(expected, s),
+							TypeName:  cc.describeType(expected),
 						})
 					}
 					var value = getFieldValue(item)

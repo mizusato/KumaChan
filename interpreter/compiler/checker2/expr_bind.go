@@ -38,7 +38,7 @@ func checkLambda(lambda ast.Lambda) ExprChecker {
 			var io, ok = getLambda(expected)
 			if !(ok) {
 				return cc.error(E_LambdaAssignedToIncompatible {
-					TypeName: typsys.DescribeType(expected, s),
+					TypeName: cc.describeType(expected),
 				})
 			}
 			var in, err1 = cc.productPatternMatch(lambda.Input, io.Input)

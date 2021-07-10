@@ -94,7 +94,9 @@ func makeCheckContext(loc source.Location, s_ptr **typsys.InferringState, ctx Ex
 		exprContext: ctx.withLocalBindings(lm),
 	}
 }
-// TODO: consider describeType()
+func (cc checkContext) describeType(t typsys.Type) string {
+	return typsys.DescribeType(t, *(cc.inferring))
+}
 func (cc checkContext) fork() checkContext {
 	var s = *(cc.inferring)
 	return checkContext {
@@ -106,7 +108,7 @@ func (cc checkContext) fork() checkContext {
 func (cc checkContext) productPatternMatch(pattern ast.VariousPattern, in typsys.Type) (checked.ProductPatternInfo, *source.Error) {
 	var mod = cc.exprContext.ModName
 	var lm = cc.exprContext.localBindingMap
-	return productPatternMatch(pattern, in, mod, lm)
+	return productPatternMatch(pattern)(in, mod, lm)
 }
 func (cc checkContext) checkChildExpr(expected typsys.Type, node ast.Expr) (*checked.Expr, *source.Error) {
 	var expr, s, err = check(node)(expected, *(cc.inferring), cc.exprContext)
