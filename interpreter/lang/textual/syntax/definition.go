@@ -93,7 +93,7 @@ var __ConditionalKeywords = [...] string {
     "@import", "@from",
     "@type", "@enum", "@interface", "@native",
     "@weak", "@protected", "@opaque",
-    "@export", "@function", "@const", "@do", "@alias",
+    "@export", "@function", "@const", "@method", "@do", "@alias",
     "@in", "@out", "@=", "@<", "@>",
     "@=>", "@exact", "@default", "@end", "@rec",
 }
