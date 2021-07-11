@@ -2,6 +2,10 @@ TODO
 
 ## Refinement
 
+- Lang: only const auto call with unit
+
+- Runtime: const early evaluation (-> func()(Value) returns the evaluated value)
+
 - Lang: string interpolation by implicit context "#{i} * #{j} = #{k}"
 
 - Lang: CPS: unit-input lambda instead of (a,k)  // e.g. considering assert()
