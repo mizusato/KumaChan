@@ -138,4 +138,27 @@ func TypeOpEqualFieldVec(u ([] Field), v ([] Field)) bool {
 	}
 }
 
+func TypeOpParameterReplace (
+	from  [] Parameter,
+	to    [] Parameter,
+	raw   Type,
+) Type {
+	if len(from) != len(to) {
+		panic("invalid argument")
+	}
+	return TypeOpMap(raw, func(t Type) (Type, bool) {
+		var p, is_parameter = t.(ParameterType)
+		if is_parameter {
+			for i := range from {
+				if p.Parameter == &(from[i]) {
+					return ParameterType { Parameter: &(to[i]) }, true
+				}
+			}
+			return nil, false
+		} else {
+			return nil, false
+		}
+	})
+}
+
 

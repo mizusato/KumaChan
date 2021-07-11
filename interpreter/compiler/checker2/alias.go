@@ -55,6 +55,7 @@ func registerAlias (
 		var alias, is_alias = stmt.Statement.(ast.Alias)
 		if !(is_alias) { return nil }
 		var from = name.MakeName(mod.Name, ast.Id2String(alias.Name))
+		// TODO: validate 'from' name
 		var to = NameFrom(alias.Module, alias.Item, mi)
 		var _, exists = reg[from]
 		if exists {

@@ -302,6 +302,15 @@ func (e E_ImplMethodDuplicateCompatible) DescribeError() richtext.Block {
 	return e.Describe("multiple corresponding functions compatible")
 }
 
+type E_ReceiverTypeNotFound struct {
+	TypeName  string
+}
+func (e E_ReceiverTypeNotFound) DescribeError() richtext.Block {
+	return makeErrorDescBlock (
+		"bad receiver: no such type: ", e.TypeName,
+	)
+}
+
 type E_IntegerNotRepresentableByFloatType struct {}
 func (e E_IntegerNotRepresentableByFloatType) DescribeError() richtext.Block {
 	return makeErrorDescBlock (

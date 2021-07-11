@@ -143,17 +143,19 @@ func registerFunctions (
 	types  TypeRegistry,
 ) source.Errors {
 	return traverseStatements(mod, mic, sc, mvs, func(stmt ast.VariousStatement, sec *source.Section, mi *ModuleInfo) *source.Error {
-		var decl *ast.DeclFunction
-		switch stmt := stmt.Statement.(type) {
-		case ast.DeclFunction:
-			decl = &stmt
-		case ast.DeclConst:
-			decl = desugarConst(&stmt)
-		default:
+		switch result := unifyFunction(stmt.Statement, mi, types).(type) {
+		case funcUnifySuccess:
+			var decl = result.decl
+			var _, err = registerFunction(decl, sec, mi, reg, al, types)
+			return err
+		case funcUnifyFailure:
+			var err = result.err
+			return err
+		case funcUnifyNonFunction:
 			return nil
+		default:
+			panic("impossible branch")
 		}
-		var _, err = registerFunction(decl, sec, mi, reg, al, types)
-		return err
 	})
 }
 
@@ -339,12 +341,94 @@ func desugarConst(decl *ast.DeclConst) *ast.DeclFunction {
 			Input:  unit_type,
 			Output: decl.Type,
 		},
-		Body:     ast.VariousBody {
+		Body: ast.VariousBody {
 			Node: value_node,
 			Body: body,
 		},
-		IsConst:  true,
+		Kind: ast.FK_Constant,
 	}
+}
+
+type funcUnifyResult interface { funcDesugarResult() }
+func (funcUnifySuccess) funcDesugarResult() {}
+type funcUnifySuccess struct {
+	decl  *ast.DeclFunction
+}
+func (funcUnifyFailure) funcDesugarResult() {}
+type funcUnifyFailure struct {
+	err *source.Error
+}
+func (funcUnifyNonFunction) funcDesugarResult() {}
+type funcUnifyNonFunction struct {}
+
+func unifyFunction(stmt ast.Statement, mi *ModuleInfo, types TypeRegistry) funcUnifyResult {
+	switch stmt := stmt.(type) {
+	case ast.DeclFunction:
+		return funcUnifySuccess { decl: &stmt }
+	case ast.DeclConst:
+		return funcUnifySuccess { decl: desugarConst(&stmt) }
+	case ast.DeclMethod:
+		var decl_, err = desugarMethod(&stmt, mi.ModName, types)
+		if err != nil {
+			return funcUnifyFailure { err: err }
+		}
+		return funcUnifySuccess { decl: decl_ }
+	default:
+		return funcUnifyNonFunction {}
+	}
+}
+
+func desugarMethod(decl *ast.DeclMethod, mod string, types TypeRegistry) (*ast.DeclFunction, *source.Error) {
+	var recv = decl.Receiver
+	var recv_item_name = ast.Id2String(recv)
+	var recv_name = name.MakeTypeName(mod, recv_item_name)
+	var recv_def, recv_def_exists = types[recv_name]
+	if !(recv_def_exists) {
+		return nil, source.MakeError(recv.Location,
+			E_ReceiverTypeNotFound {
+			TypeName: recv_name.String(),
+		})
+	}
+	var recv_params = recv_def.AstNode.Params
+	var recv_args = make([] ast.VariousType, len(recv_params))
+	var params = make([] ast.FuncTypeParam, len(recv_params))
+	for i, p := range recv_params {
+		recv_args[i] = ast.VariousType {
+			Node: recv.Node,
+			Type: ast.TypeRef {
+				Node: recv.Node,
+				Item: p.Name,
+			},
+		}
+		params[i] = ast.FuncTypeParam {
+			Node: p.Node,
+			Name: p.Name,
+		}
+	}
+	var recv_t = ast.VariousType {
+		Node: recv.Node,
+		Type: ast.TypeRef {
+			Node:     recv.Node,
+			Item:     recv,
+			TypeArgs: recv_args,
+		},
+	}
+	return &ast.DeclFunction {
+		Node:     decl.Node,
+		Docs:     decl.Docs,
+		Meta:     decl.Meta,
+		Public:   decl.Public,
+		Name:     decl.Name,
+		Params:   params,
+		Implicit: ast.ReprRecord {},
+		InOut:    ast.ReprFunc {
+			Node:   decl.Type.Node,
+			Input:  recv_t,
+			Output: decl.Type,
+		},
+		Body: decl.Body,
+		Kind: ast.FK_Method,
+	}, nil
 }
 
 

@@ -45,6 +45,7 @@ var coreTypes = (func() (map[string] struct{}) {
 })()
 
 func isValidTypeItemName(name string) bool {
+	// TODO: core type names all invalid
 	for _, bad := range typeBadNames {
 		if name == bad {
 			return false
@@ -53,6 +54,7 @@ func isValidTypeItemName(name string) bool {
 	return true
 }
 func isValidFunctionItemName(name string) bool {
+	// TODO: core type names all invalid
 	for _, bad := range functionBadNames {
 		if name == bad {
 			return false

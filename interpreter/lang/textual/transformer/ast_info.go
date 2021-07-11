@@ -49,6 +49,7 @@ var nodeRegistry = [] interface{} {
     Alias {},
     DeclConst {},
     VariousConstValue {},
+    DeclMethod {},
     DeclFunction {},
     FuncTypeParam {},
     VariousTypeBound {},

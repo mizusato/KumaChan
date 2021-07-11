@@ -65,6 +65,18 @@ type PredefinedValue struct {
     Value  interface {}
 }
 
+func (DeclMethod) Statement() {}
+type DeclMethod struct {
+    Node                    `part:"decl_method"`
+    Docs      [] Doc        `list_rec:"docs"`
+    Meta      Meta          `part:"meta"`
+    Public    bool          `option:"scope.@export"`
+    Name      Identifier    `part:"name"`
+    Receiver  Identifier    `part:"receiver.name"`
+    Type      VariousType   `part:"type"`
+    Body      VariousBody   `part:"body"`
+}
+
 func (impl DeclFunction) Statement() {}
 type DeclFunction struct {
     Node                         `part:"decl_func"`
@@ -76,8 +88,15 @@ type DeclFunction struct {
     Implicit  ReprRecord         `part_opt:"sig.implicit.repr_record"`
     InOut     ReprFunc           `part:"sig.repr_func"`
     Body      VariousBody        `part_opt:"body"`
-    IsConst   bool               // whether it is desugared from a ConstDecl
+    Kind      FuncKind
 }
+type FuncKind int
+
+const (
+    _            FuncKind  =  iota
+    FK_Constant  // desugared from a ConstDecl
+    FK_Method    // desugared from a MethodDecl
+)
 type FuncTypeParam struct {
     Node                        `part:"func_type_param"`
     Name     Identifier         `part:"name"`

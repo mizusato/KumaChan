@@ -1,6 +1,7 @@
 package checker2
 
 import (
+	"kumachan/interpreter/lang/ast"
 	"kumachan/interpreter/lang/common/name"
 	"kumachan/interpreter/lang/common/source"
 	"kumachan/interpreter/compiler/checker2/typsys"
@@ -106,30 +107,35 @@ func makeDispatchTable (
 			var method_f *Function = nil
 			var found = false
 			for _, f := range m_group {
-				if len(f.Signature.ImplicitContext.Fields) > 0 {
+				if f.AstNode.Kind != ast.FK_Method {
 					continue
 				}
+				var implicit = f.Signature.ImplicitContext
+				var params = f.Signature.TypeParameters
 				var io = f.Signature.InputOutput
-				var s0 = typsys.StartInferring(con.Parameters)
-				var ctx = typsys.MakeAssignContextWithoutSubtyping(s0)
-				var in_ok, s1 = typsys.Assign(io.Input, con_t, ctx)
-				if !(in_ok) {
-					continue
+				if len(implicit.Fields) > 0 {
+					panic("something went wrong")
 				}
-				typsys.ApplyNewInferringState(&ctx, s1)
-				var out_ok, s2 = typsys.Assign(method_t, io.Output, ctx)
-				if !(out_ok) {
-					continue
+				var in = typsys.TypeOpParameterReplace (
+					params, con.Parameters, io.Input,
+				)
+				var out = typsys.TypeOpParameterReplace (
+					params, con.Parameters, io.Output,
+				)
+				var ok = typsys.TypeOpEqualTypeVec (
+					[]typsys.Type { in,    out },
+					[]typsys.Type { con_t, method_t },
+				)
+				if ok {
+					if found {
+						return nil, source.MakeError(con.Location,
+							E_ImplMethodDuplicateCompatible {
+								ImplError: detail(),
+							})
+					}
+					found = true
+					method_f = f
 				}
-				typsys.ApplyNewInferringState(&ctx, s2)
-				if found {
-					return nil, source.MakeError(con.Location,
-						E_ImplMethodDuplicateCompatible {
-							ImplError: detail(),
-						})
-				}
-				method_f = f
-				found = true
 			}
 			if !(found) {
 				return nil, source.MakeError(con.Location,
