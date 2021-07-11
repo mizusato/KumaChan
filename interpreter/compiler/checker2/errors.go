@@ -271,11 +271,11 @@ func (e E_FunctionConflictWithAlias) DescribeError() richtext.Block {
 	)
 }
 
-type E_ImplMethodNoSuchFunction struct {
+type E_ImplMethodNoSuchFunctionOrField struct {
 	ImplError
 }
-func (e E_ImplMethodNoSuchFunction) DescribeError() richtext.Block {
-	return e.Describe("no corresponding functions")
+func (e E_ImplMethodNoSuchFunctionOrField) DescribeError() richtext.Block {
+	return e.Describe("no such function or field")
 }
 
 type E_ImplMethodNoneCompatible struct {

@@ -56,7 +56,7 @@ type Cell[T] protected {
 
 - Lang: consider { instance.method arg }, type A (I1, I2) { ... };
         (syntax obj.method also apply to concrete type
-            (precedence field > method for concrete type))
+            (report ambiguous when both field and method accessible))
 
 - Lang: consider curried function as method: &(Instance) => &(In) => Out
 
