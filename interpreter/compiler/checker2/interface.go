@@ -7,11 +7,19 @@ import (
 )
 
 
-// TODO: FieldGetter as method (report ambiguous when conflict with function)
-type DispatchMapping (map[ImplPair] ([] *Function))
+type DispatchMapping (map[ImplPair] ([] Method))
 type ImplPair struct {
 	ConcreteType   *typsys.TypeDef
 	InterfaceType  *typsys.TypeDef
+}
+type Method interface { method() }
+func (MethodFunction) method() {}
+type MethodFunction struct {
+	Function  *Function
+}
+func (MethodField) method() {}
+type MethodField struct {
+	Index  uint
 }
 
 func generateDispatchMapping (
@@ -45,7 +53,7 @@ func generateDispatchMapping (
 			for _, impl := range impls {
 				var interface_ = impl.Content.(*typsys.Interface)
 				var required = interface_.Methods.Fields
-				var methods = make([] *Function, len(required))
+				var methods = make([] Method, len(required))
 				for i, field := range required {
 					var method_name = field.Name
 					var method_t = methodConcreteType(con, impl, field.Type)
@@ -53,21 +61,39 @@ func generateDispatchMapping (
 						ModuleName: con.Name.ModuleName,
 						ItemName:   field.Name,
 					}
-					var detail = ImplError {
+					var detail = func() ImplError { return ImplError {
 						Concrete:  con.Name.String(),
 						Interface: impl.Name.String(),
 						Method:    method_name,
+					} }
+					var m_group, func_exists = functions[method_full_name]
+					var m_index, field_exists = (func() (*uint, bool) {
+						var record, is_record = getBoxedRecord(con)
+						if is_record {
+							var index, exists = record.FieldIndexMap[method_name]
+							return &index, exists
+						} else {
+							return nil, false
+						}
+					})()
+					if func_exists && field_exists {
+						return source.MakeError(con.Location,
+							E_ImplMethodAmbiguous {
+								ImplError: detail(),
+							})
 					}
-					var group, exists = functions[method_full_name]
-					if !(exists) {
+					if field_exists {
+						methods[i] = MethodField { Index: *m_index }
+					}
+					if !(func_exists) {
 						return source.MakeError(con.Location,
 							E_ImplMethodNoSuchFunction {
-								ImplError: detail,
+								ImplError: detail(),
 							})
 					}
 					var method_f *Function = nil
 					var found = false
-					for _, f := range group {
+					for _, f := range m_group {
 						if len(f.Signature.ImplicitContext.Fields) > 0 {
 							continue
 						}
@@ -87,7 +113,7 @@ func generateDispatchMapping (
 						if found {
 							return source.MakeError(con.Location,
 								E_ImplMethodDuplicateCompatible {
-									ImplError: detail,
+									ImplError: detail(),
 								})
 						}
 						method_f = f
@@ -96,10 +122,10 @@ func generateDispatchMapping (
 					if !(found) {
 						return source.MakeError(con.Location,
 							E_ImplMethodNoneCompatible {
-								ImplError: detail,
+								ImplError: detail(),
 							})
 					}
-					methods[i] = method_f
+					methods[i] = MethodFunction { Function: method_f }
 				}
 				var pair = ImplPair {
 					ConcreteType:  con,
@@ -113,6 +139,17 @@ func generateDispatchMapping (
 	}
 	if errs != nil { return nil, errs }
 	return mapping, nil
+}
+
+
+func getBoxedRecord(def *typsys.TypeDef) (typsys.Record, bool) {
+	var box, is_box = def.Content.(*typsys.Box)
+	if is_box {
+		var record, is_record = getRecord(box.InnerType)
+		return record, is_record
+	} else {
+		return typsys.Record {}, false
+	}
 }
 
 func getAllImpls (

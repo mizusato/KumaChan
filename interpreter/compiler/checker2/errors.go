@@ -39,7 +39,7 @@ type ImplError struct {
 func (e ImplError) Describe(problem string) richtext.Block {
 	return makeErrorDescBlock (
 		"type", e.Concrete, "cannot implement interface", e.Interface,
-		": method", e.Method, "not found:", problem,
+		": method", e.Method, "not available:", problem,
 	)
 }
 
@@ -283,6 +283,16 @@ type E_ImplMethodNoneCompatible struct {
 }
 func (e E_ImplMethodNoneCompatible) DescribeError() richtext.Block {
 	return e.Describe("none of corresponding functions compatible")
+}
+
+type E_ImplMethodAmbiguous struct {
+	ImplError
+}
+func (e E_ImplMethodAmbiguous) DescribeError() richtext.Block {
+	return e.Describe(
+		"ambiguous method implementation: " +
+		"corresponding field and function both exist",
+	)
 }
 
 type E_ImplMethodDuplicateCompatible struct {
