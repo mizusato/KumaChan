@@ -6,6 +6,8 @@ TODO
 
 - Runtime: const early evaluation (-> func()(Value) returns the evaluated value)
 
+- Runtime: native function -> cps form
+
 - Lang: string interpolation by implicit context "#{i} * #{j} = #{k}"
 
 - Lang: CPS: unit-input lambda instead of (a,k)  // e.g. considering assert()
@@ -38,8 +40,6 @@ type Cell[T] protected {
 \ buf := go { Reactive '' },
 
 - FlexList: consider refactor using balanced tree + inline index
-
-- VM: constant thunk
 
 - Code: AST node renaming
 

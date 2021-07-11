@@ -4,29 +4,35 @@ import (
 	"fmt"
 	"kumachan/interpreter/lang/ast"
 	"kumachan/interpreter/lang/common/name"
-	"kumachan/stdlib"
+	"kumachan/interpreter/lang/common/source"
 )
 
 
-func NameFrom(id_mod ast.Identifier, id_item ast.Identifier, mi *ModuleInfo) name.Name {
-	var ref_mod = ast.Id2String(id_mod)
-	var ref_item = ast.Id2String(id_item)
-	if ref_mod == "" {
-		var _, is_core_type = coreTypes[ref_item]
-		if is_core_type {
-			// TODO: do not handle core too early (postpone to ResolveXXX)
-			return name.MakeName(stdlib.Mod_core, ref_item)
+func NameFrom (
+	mod_node   ast.ModuleName,
+	item_node  ast.Identifier,
+	mi         *ModuleInfo,
+) (name.Name, *source.Error) {
+	var mod_node_not_empty = mod_node.NotEmpty
+	var mod = ast.Id2String(mod_node.Identifier)
+	var item = ast.Id2String(item_node)
+	if mod == "" {
+		if mod_node_not_empty {
+			return name.MakeName(CoreModule, item), nil
 		} else {
-			return name.MakeName("", ref_item)
+			return name.MakeName("", item), nil
 		}
-	} else if ref_mod == SelfModule {
-		return name.MakeName(mi.ModName, ref_item)
+	} else if mod == SelfModule {
+		return name.MakeName(mi.ModName, item), nil
 	} else {
-		var imported, found = mi.ModImported[ref_mod]
+		var imported, found = mi.ModImported[mod]
 		if found {
-			return name.MakeName(imported.ModName, ref_item)
+			return name.MakeName(imported.ModName, item), nil
 		} else {
-			// TODO: should be an *source.Error
+			return name.Name {}, source.MakeError(mod_node.Location,
+				E_ModuleNotFound {
+					ModuleName: mod,
+				})
 		}
 	}
 }

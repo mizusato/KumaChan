@@ -19,9 +19,14 @@ func (impl TypeRef) Maybe(TypeRef, MaybeTypeRef) {}
 func (impl TypeRef) Type()  {}
 type TypeRef struct {
     Node                       `part:"type_ref"`
-    Module    Identifier       `part_opt:"module_prefix.name"`
+    Module    ModuleName       `part:"module_prefix"`
     Item      Identifier       `part:"name"`
     TypeArgs  [] VariousType   `list_more:"type_args" item:"type"`
+}
+type ModuleName struct {
+    Node                     `part:"module_prefix"`
+    NotEmpty    bool         `option:"::"`
+    Identifier  Identifier   `part_opt:"name"`
 }
 
 func (impl TypeLiteral) Type()  {}

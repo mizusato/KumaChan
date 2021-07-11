@@ -55,6 +55,15 @@ func (e SizeLimitError) Describe(which string) richtext.Block {
 
 // ****************************************************************************
 
+type E_ModuleNotFound struct {
+	ModuleName  string
+}
+func (e E_ModuleNotFound) DescribeError() richtext.Block {
+	return makeErrorDescBlock (
+		"no such module: ", e.ModuleName,
+	)
+}
+
 type E_BlankTypeDefinition struct {}
 func (E_BlankTypeDefinition) DescribeError() richtext.Block {
 	return makeErrorDescBlock("blank type definition")
@@ -94,6 +103,15 @@ type E_InvalidMetadata struct {
 func (e E_InvalidMetadata) DescribeError() richtext.Block {
 	return makeErrorDescBlock (
 		fmt.Sprintf("invalid metadata: %s", e.Reason),
+	)
+}
+
+type E_InvalidAliasName struct {
+	Name  string
+}
+func (e E_InvalidAliasName) DescribeError() richtext.Block {
+	return makeErrorDescBlock (
+		fmt.Sprintf("invalid alias name: %s", strconv.Quote(e.Name)),
 	)
 }
 
@@ -282,7 +300,7 @@ type E_ImplMethodNoneCompatible struct {
 	ImplError
 }
 func (e E_ImplMethodNoneCompatible) DescribeError() richtext.Block {
-	return e.Describe("none of corresponding functions compatible")
+	return e.Describe("none of method functions compatible")
 }
 
 type E_ImplMethodAmbiguous struct {
@@ -291,7 +309,7 @@ type E_ImplMethodAmbiguous struct {
 func (e E_ImplMethodAmbiguous) DescribeError() richtext.Block {
 	return e.Describe(
 		"ambiguous method implementation: " +
-		"corresponding field and function both exist",
+		"corresponding field and method function both exist",
 	)
 }
 
@@ -299,7 +317,7 @@ type E_ImplMethodDuplicateCompatible struct {
 	ImplError
 }
 func (e E_ImplMethodDuplicateCompatible) DescribeError() richtext.Block {
-	return e.Describe("multiple corresponding functions compatible")
+	return e.Describe("multiple method functions compatible")
 }
 
 type E_ReceiverTypeNotFound struct {

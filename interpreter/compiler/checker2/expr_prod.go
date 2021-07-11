@@ -10,7 +10,7 @@ import (
 
 
 type ProductPatternMatching func
-	(in typsys.Type, mod string, lm localBindingMap) (
+	(in typsys.Type, mod string, lm LocalBindingMap) (
 	checked.ProductPatternInfo, *source.Error)
 
 func productPatternMatch(pattern ast.VariousPattern) ProductPatternMatching {
@@ -27,7 +27,7 @@ func productPatternMatch(pattern ast.VariousPattern) ProductPatternMatching {
 }
 
 func patternMatchTrivial(pattern ast.PatternTrivial) ProductPatternMatching {
-	return ProductPatternMatching(func(in typsys.Type, mod string, lm localBindingMap) (checked.ProductPatternInfo, *source.Error) {
+	return ProductPatternMatching(func(in typsys.Type, mod string, lm LocalBindingMap) (checked.ProductPatternInfo, *source.Error) {
 		in = unboxWeak(in, mod)
 		var binding = &checked.LocalBinding {
 			Name:     ast.Id2String(pattern.Name),
@@ -43,7 +43,7 @@ func patternMatchTrivial(pattern ast.PatternTrivial) ProductPatternMatching {
 }
 
 func patternMatchTuple(pattern ast.PatternTuple) ProductPatternMatching {
-	return ProductPatternMatching(func(in typsys.Type, mod string, lm localBindingMap) (checked.ProductPatternInfo, *source.Error) {
+	return ProductPatternMatching(func(in typsys.Type, mod string, lm LocalBindingMap) (checked.ProductPatternInfo, *source.Error) {
 		var tuple, ok = unboxTuple(in, mod)
 		if !(ok) {
 			return nil, source.MakeError(pattern.Location,
@@ -96,7 +96,7 @@ func patternMatchTuple(pattern ast.PatternTuple) ProductPatternMatching {
 }
 
 func patternMatchRecord(pattern ast.PatternRecord) ProductPatternMatching {
-	return ProductPatternMatching(func(in typsys.Type, mod string, lm localBindingMap) (checked.ProductPatternInfo, *source.Error) {
+	return ProductPatternMatching(func(in typsys.Type, mod string, lm LocalBindingMap) (checked.ProductPatternInfo, *source.Error) {
 		var record, ok = unboxRecord(in, mod)
 		if !(ok) {
 			return nil, source.MakeError(pattern.Location,

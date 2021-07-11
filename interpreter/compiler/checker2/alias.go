@@ -54,9 +54,16 @@ func registerAlias (
 	return traverseStatements(mod, mic, sc, mvs, func(stmt ast.VariousStatement, sec *source.Section, mi *ModuleInfo) *source.Error {
 		var alias, is_alias = stmt.Statement.(ast.Alias)
 		if !(is_alias) { return nil }
-		var from = name.MakeName(mod.Name, ast.Id2String(alias.Name))
-		// TODO: validate 'from' name
-		var to = NameFrom(alias.Module, alias.Item, mi)
+		var from_item = ast.Id2String(alias.Name)
+		if !(isValidAliasName(from_item)) {
+			return source.MakeError(alias.Name.Location,
+				E_InvalidAliasName {
+					Name: from_item,
+				})
+		}
+		var from = name.MakeName(mod.Name, from_item)
+		var to, err = NameFrom(alias.Module, alias.Item, mi)
+		if err != nil { return err }
 		var _, exists = reg[from]
 		if exists {
 			return source.MakeError(alias.Name.Location,

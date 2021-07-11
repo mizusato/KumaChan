@@ -8,11 +8,14 @@ import (
 )
 
 
+type nominalType  func(TypeRegistry) typsys.Type
+
 const MaxTupleSize = 8
 const MaxRecordSize = 64
 const MaxEnumSize = 64
 const MaxTypeParameters = 8
 const MaxImplemented = 8
+const CoreModule = stdlib.Mod_core
 const SelfModule = loader.SelfModule
 const Discarded = "_"
 
@@ -35,17 +38,7 @@ var coreChar = makeCoreType(stdlib.Char)
 var coreWord = makeCoreType(stdlib.Word)
 var coreByte = makeCoreType(stdlib.Byte)
 
-var coreTypes = (func() (map[string] struct{}) {
-	var set = make(map[string] struct{})
-	var list = stdlib.CoreTypeNames()
-	for _, name := range list {
-		set[name] = struct{}{}
-	}
-	return set
-})()
-
 func isValidTypeItemName(name string) bool {
-	// TODO: core type names all invalid
 	for _, bad := range typeBadNames {
 		if name == bad {
 			return false
@@ -54,7 +47,6 @@ func isValidTypeItemName(name string) bool {
 	return true
 }
 func isValidFunctionItemName(name string) bool {
-	// TODO: core type names all invalid
 	for _, bad := range functionBadNames {
 		if name == bad {
 			return false
@@ -62,10 +54,9 @@ func isValidFunctionItemName(name string) bool {
 	}
 	return true
 }
-
-
-type nominalType func
-	(TypeRegistry)(typsys.Type)
+func isValidAliasName(name string) bool {
+	return isValidFunctionItemName(name) && isValidTypeItemName(name)
+}
 
 func makeCoreType(item_name string, args ...nominalType) nominalType {
 	return nominalType(func(reg TypeRegistry) typsys.Type {

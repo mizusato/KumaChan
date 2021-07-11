@@ -35,7 +35,7 @@ func (impl Alias) Statement() {}
 type Alias struct {
     Node                 `part:"alias"`
     Name    Identifier   `part:"name"`
-    Module  Identifier   `part_opt:"alias_target.module_prefix.name"`
+    Module  ModuleName   `part:"alias_target.module_prefix"`
     Item    Identifier   `part:"alias_target.name"`
 }
 
@@ -168,7 +168,7 @@ type TypeParam struct {
 }
 type TypeDeclRef struct {
     Node                 `part:"type_decl_ref"`
-    Module  Identifier   `part_opt:"module_prefix.name"`
+    Module  ModuleName   `part:"module_prefix"`
     Item    Identifier   `part:"name"`
 }
 type MaybeTypeDef interface { Maybe(VariousTypeDef, MaybeTypeDef) }

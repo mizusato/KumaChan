@@ -12,74 +12,81 @@ import (
 type ExprContext struct {
 	*Registry
 	*ModuleInfo
-	localBindingMap
+	LocalBindingMap  LocalBindingMap
 }
-// TODO: note: should filter out entities that are not imported in current mod
 type Registry struct {
 	Aliases    AliasRegistry
 	Types      TypeRegistry
 	Functions  FunctionRegistry
-	// TODO: function item name map
 }
-type localBindingMap (map[string] *checked.LocalBinding)
+type LocalBindingMap (map[string] *checked.LocalBinding)
 
-func (lm localBindingMap) clone() localBindingMap {
-	var clone = make(localBindingMap)
+func (lm LocalBindingMap) clone() LocalBindingMap {
+	var clone = make(LocalBindingMap)
 	for k, v := range lm {
 		clone[k] = v
 	}
 	return clone
 }
-func (lm localBindingMap) add(binding *checked.LocalBinding) {
+func (lm LocalBindingMap) add(binding *checked.LocalBinding) {
 	lm[binding.Name] = binding
 }
-func (lm localBindingMap) lookup(name string) (*checked.LocalBinding, bool) {
+func (lm LocalBindingMap) lookup(name string) (*checked.LocalBinding, bool) {
 	var binding, exists = lm[name]
 	return binding, exists
 }
 
-func (reg *Registry) lookupGlobal(n name.Name, mod string) (Ref, bool) {
+func (reg *Registry) lookupFuncRefs(n name.Name, mod string) (FuncRefs, bool) {
 	var alias, is_alias = reg.Aliases[n]
 	if is_alias {
-		return reg.lookupGlobal(alias.To, mod)
+		return reg.lookupFuncRefs(alias.To, mod)
 	} else {
 		if n.ModuleName == "" {
-			// TODO: core + mod + all imported
+			return reg.lookupFuncRefs(name.MakeName(mod, n.ItemName), mod)
 		} else {
 			var functions, exists = reg.Functions[n]
 			if exists {
-				return FuncRefs { Functions: functions }, true
-			} else {
-				var def, exists = reg.Types[name.TypeName { Name: n }]
-				if exists {
-					return TypeRef { TypeDef: def }, true
+				if n.ModuleName == mod {
+					return FuncRefs { Functions: functions }, true
 				} else {
-					return nil, false
+					var exported = make([] *Function, 0)
+					for _, f := range functions {
+						if f.Exported {
+							exported = append(exported, f)
+						}
+					}
+					if len(exported) > 0 {
+						return FuncRefs { Functions: exported }, true
+					} else {
+						return FuncRefs {}, false
+					}
 				}
+			} else {
+				return FuncRefs {}, false
 			}
 		}
 	}
 }
 
-func (reg *Registry) lookup(n name.Name, mod string, lm localBindingMap) (Ref, bool) {
+func (reg *Registry) lookupRef(n name.Name, mod string, lm LocalBindingMap) (Ref, bool) {
 	if n.ModuleName == "" {
 		var binding, local_exists = lm[n.ItemName]
 		if local_exists {
 			var local = LocalRef { Binding: binding }
-			var global, global_exists = reg.lookupGlobal(n, mod)
-			if global_exists {
-				return RefWithLocalRef {
-					Ref:      global,
+			var f, f_exists = reg.lookupFuncRefs(n, mod)
+			if f_exists {
+				return LocalRefWithFuncRefs {
 					LocalRef: local,
+					FuncRefs: f,
 				}, true
 			} else {
 				return local, true
 			}
 		} else {
-			return reg.lookupGlobal(n, mod)
+			return reg.lookupFuncRefs(n, mod)
 		}
 	} else {
-		return reg.lookupGlobal(n, mod)
+		return reg.lookupFuncRefs(n, mod)
 	}
 }
 
@@ -87,7 +94,7 @@ func (ctx ExprContext) withNewLocalScope() ExprContext {
 	return ExprContext {
 		Registry:        ctx.Registry,
 		ModuleInfo:      ctx.ModuleInfo,
-		localBindingMap: ctx.localBindingMap.clone(),
+		LocalBindingMap: ctx.LocalBindingMap.clone(),
 	}
 }
 func (ctx ExprContext) makeAssignContext(s *typsys.InferringState) typsys.AssignContext {
@@ -124,8 +131,28 @@ func makeCheckContext (
 	}
 }
 
-func (cc *checkContext) lookupName(n name.Name) (Ref, *source.Error) {
-	// TODO
+func (cc *checkContext) resolveName(n name.Name, pivot typsys.Type) (Ref, bool) {
+	var lm = cc.exprContext.LocalBindingMap
+	if pivot == nil {
+		var ctx_mod = cc.exprContext.ModName
+		return cc.exprContext.lookupRef(n, ctx_mod, lm)
+	} else {
+		var pivot_mod, exists = (func() (string, bool) {
+			var nested, is_nested = pivot.(*typsys.NestedType)
+			if is_nested {
+				var ref, is_ref = nested.Content.(typsys.Ref)
+				if is_ref {
+					return ref.Def.Name.ModuleName, true
+				}
+			}
+			return "", false
+		})()
+		if exists {
+			return cc.exprContext.lookupRef(n, pivot_mod, lm)
+		} else {
+			return cc.resolveName(n, nil)
+		}
+	}
 }
 
 func (cc *checkContext) getType(t nominalType) typsys.Type {
@@ -154,6 +181,29 @@ func (cc *checkContext) assignType(to typsys.Type, from typsys.Type) *source.Err
 			From: cc.describeType(from),
 			To:   cc.describeType(to),
 		})
+	}
+}
+func (cc *checkContext) getCertainType(t typsys.Type, loc source.Location) (typsys.Type, *source.Error) {
+	var certain = true
+	var certain_t = typsys.TypeOpMap(t, func(t typsys.Type) (typsys.Type, bool) {
+		var pt, is_pt = t.(typsys.ParameterType)
+		if is_pt {
+			var v, ok = cc.inferring.GetCurrentValue(pt.Parameter)
+			if ok {
+				return v, true
+			} else {
+				certain = false
+				return nil, false
+			}
+		} else {
+			return nil, false
+		}
+	})
+	if certain {
+		return certain_t, nil
+	} else {
+		return nil, source.MakeError(loc,
+			E_ExplicitTypeRequired {})
 	}
 }
 
@@ -187,9 +237,11 @@ func (cc *checkContext) forwardToChildTerm(node ast.VariousTerm) checkResult {
 
 func (cc *checkContext) assign(t typsys.Type, content checked.ExprContent) checkResult {
 	if cc.expected == nil {
+		var certain_t, err = cc.getCertainType(t, cc.location)
+		if err != nil { return checkResult { err: err } }
 		var info = checked.ExprInfoFrom(cc.location)
 		var expr = &checked.Expr {
-			Type:    t,
+			Type:    certain_t,
 			Info:    info,
 			Content: content,
 		}
@@ -243,7 +295,7 @@ func makeCheckContextWithLocalScope (
 }
 func (cc *checkContextWithLocalScope) productPatternMatch(pattern ast.VariousPattern, in typsys.Type) (checked.ProductPatternInfo, *source.Error) {
 	var mod = cc.exprContext.ModName
-	var lm = cc.exprContext.localBindingMap
+	var lm = cc.exprContext.LocalBindingMap
 	return productPatternMatch(pattern)(in, mod, lm)
 }
 

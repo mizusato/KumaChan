@@ -77,6 +77,19 @@ func (s *InferringState) IsTargetType(T ParameterType, ok bool) bool {
 		return false
 	}
 }
+func (s *InferringState) GetCurrentValue(p *Parameter) (Type, bool) {
+	var _, is_being_inferred = s.targets[p]
+	if is_being_inferred {
+		var ps, exists = s.mapping[p]
+		if exists {
+			return ps.currentInferred, true
+		} else {
+			return nil, false
+		}
+	} else {
+		return ParameterType { Parameter: p }, true
+	}
+}
 
 type parameterInferringState struct {
 	constraint       inferredTypeConstraint

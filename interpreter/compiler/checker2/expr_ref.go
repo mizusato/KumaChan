@@ -7,11 +7,6 @@ import (
 
 type Ref interface { implRef() }
 
-func (TypeRef) implRef() {}
-type TypeRef struct {
-	TypeDef  TypeDef
-}
-
 func (FuncRefs) implRef() {}
 type FuncRefs struct {
 	Functions  [] *Function
@@ -22,10 +17,10 @@ type LocalRef struct {
 	Binding  *checked.LocalBinding
 }
 
-func (RefWithLocalRef) implRef() {}
-type RefWithLocalRef struct {
-	Ref       Ref
+func (LocalRefWithFuncRefs) implRef() {}
+type LocalRefWithFuncRefs struct {
 	LocalRef  LocalRef
+	FuncRefs  FuncRefs
 }
 
 

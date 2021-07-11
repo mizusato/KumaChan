@@ -67,7 +67,8 @@ func newType(t ast.VariousType, ctx TypeConsContext) (typsys.Type, *source.Error
 					Limit: MaxTypeParameters,
 				}})
 		}
-		var n = NameFrom(T.Module, T.Item, ctx.ModInfo)
+		var n, n_err = NameFrom(T.Module, T.Item, ctx.ModInfo)
+		if n_err != nil { return nil, n_err }
 		if n.ModuleName == "" {
 			var item_name = n.ItemName
 			var special, is_special = newSpecialType(item_name)

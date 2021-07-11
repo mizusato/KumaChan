@@ -14,6 +14,8 @@ import (
 
 
 /* IMPORTANT: this go file should be consistent with corresponding km files */
+const Mod_core = "core"
+const Mod_ui = "ui"
 var __ModuleDirectories = [] string {
 	"core", "time", "l10n",
 	"io", "os", "json", "net", "rpc", "image", "ui",
@@ -25,41 +27,6 @@ func GetDirectoryPath() string {
 	var exe_dir = filepath.Dir(exe_path)
 	var stdlib_dir = filepath.Join(exe_dir, "stdlib")
 	return stdlib_dir
-}
-
-const Mod_core = "core"
-const Mod_ui = "ui"
-var core_types = [] string {
-	// types.km
-	ProjRef, CaseRef, Bool, Yes, No,
-	Maybe, Some, None,
-	Result, Success, Failure,
-	Ordering, Smaller, Equal, Bigger,
-	Optional,
-	// numeric.km
-	Integer, Number,
-	Float, NormalFloat,
-	Complex, NormalComplex,
-	// error.km
-	Error,
-	// binary.km
-	Bit, Byte, Word, Dword, Qword, Bytes,
-	// containers.km
-	Seq, List, Heap, Set, Map, FlexList, FlexListKey,
-	// rx.km
-	Observable,
-	Async, Sync,
-	Source, Computed,
-	Sink, Bus, Reactive, ReactiveEntity,
-	ReactiveSnapshots, Mutex,
-	Mutable, Buffer, HashMap,
-	// string.km
-	Char, String, HardCodedString,
-}
-func CoreTypeNames() ([] string) {
-	var list = make([] string, 0)
-	list = append(list, core_types...)
-	return list
 }
 
 // types.km

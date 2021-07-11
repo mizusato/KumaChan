@@ -138,8 +138,10 @@ func collectTypes (
 		}
 		var impl_names = make([] name.TypeName, len(def.AstNode.Impl))
 		for i, ref := range def.AstNode.Impl {
+			var n, err = NameFrom(ref.Module, ref.Item, def.ModInfo)
+			if err != nil { return err }
 			impl_names[i] = name.TypeName {
-				Name: NameFrom(ref.Module, ref.Item, def.ModInfo),
+				Name: n,
 			}
 		}
 		var impl_defs = make([] *typsys.TypeDef, len(impl_names))
