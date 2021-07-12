@@ -38,7 +38,7 @@ func checkCall2(callee ast.Expr, arg ast.Expr, pivot *checked.Expr, loc source.L
 		if pivot == nil { panic("something went wrong") }
 		var ref, is_ref = getInlineRef(callee)
 		if is_ref {
-			// TODO
+			// TODO (use pivot.Type to lookup name)
 		} else {
 			var callee_expr, err1 = cc.checkChildExpr(nil, callee)
 			if err1 != nil { return cc.propagate(err1) }

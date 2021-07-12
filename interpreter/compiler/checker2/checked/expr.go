@@ -89,16 +89,26 @@ type LocalBinding struct {
 	Location source.Location
 }
 
-type ProductPatternInfo ([]ProductPatternItemInfo)
+type ProductPatternInfo ([] ProductPatternItemInfo)
 type ProductPatternItemInfo struct {
-	Binding *LocalBinding
-	Index1  uint // 0 = whole, 1 = .0
+	Binding  *LocalBinding
+	Index1   uint // 0 = whole, 1 = .0
 }
 
 func (Lambda) implExpr() {}
 type Lambda struct {
 	In   ProductPatternInfo
 	Out  *Expr
+}
+
+func (Block) implExpr() {}
+type Block struct {
+	LetList  [] Let
+	Return   *Expr
+}
+type Let struct {
+	Pattern  ProductPatternInfo
+	Value    *Expr
 }
 
 

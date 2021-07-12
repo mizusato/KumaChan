@@ -12,6 +12,7 @@ import (
 type ExprContext struct {
 	*Registry
 	*ModuleInfo
+	ParameterList    [] typsys.Parameter
 	LocalBindingMap  LocalBindingMap
 }
 type Registry struct {
@@ -164,6 +165,14 @@ func (cc *checkContext) describeType(t typsys.Type) string {
 func (cc *checkContext) describeTypeOf(expr *checked.Expr) string {
 	return cc.describeType(expr.Type)
 }
+func (cc *checkContext) typeConsContext() TypeConsContext {
+	return TypeConsContext {
+		ModInfo:  cc.exprContext.ModuleInfo,
+		TypeReg:  cc.exprContext.Registry.Types,
+		AliasReg: cc.exprContext.Registry.Aliases,
+		ParamVec: cc.exprContext.ParameterList,
+	}
+}
 
 func (cc *checkContext) forkInferring() *checkContext {
 	return makeCheckContext (
@@ -269,6 +278,17 @@ func (cc *checkContext) assign(t typsys.Type, content checked.ExprContent) check
 		}
 	}
 }
+func (cc *checkContext) assignFinalExpr(node ast.Expr, f func(*checked.Expr)(checked.ExprContent)) checkResult {
+	var expr, err = cc.checkChildExpr(cc.expected, node)
+	if err != nil { return checkResult { err: err } }
+	return checkResult {
+		expr: &checked.Expr {
+			Type:    expr.Type,
+			Info:    expr.Info,
+			Content: f(expr),
+		},
+	}
+}
 
 func (cc *checkContext) error(content source.ErrorContent) checkResult {
 	return checkResult { err: source.MakeError(cc.location, content) }
@@ -360,6 +380,8 @@ func checkTerm(term ast.VariousTerm) ExprChecker {
 		return checkRecord(T)
 	case ast.Lambda:
 		return checkLambda(T)
+	case ast.Block:
+		return checkBlock(T)
 	default:
 		// TODO
 	}

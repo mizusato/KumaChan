@@ -125,7 +125,7 @@ func (e E_InvalidTypeName) DescribeError() richtext.Block {
 }
 
 type E_TypeParametersOnCaseType struct {}
-func (e E_TypeParametersOnCaseType) DescribeError() richtext.Block {
+func (E_TypeParametersOnCaseType) DescribeError() richtext.Block {
 	return makeErrorDescBlock (
 		"cannot specify explicit type parameters on case types",
 	)
@@ -330,7 +330,7 @@ func (e E_ReceiverTypeNotFound) DescribeError() richtext.Block {
 }
 
 type E_IntegerNotRepresentableByFloatType struct {}
-func (e E_IntegerNotRepresentableByFloatType) DescribeError() richtext.Block {
+func (E_IntegerNotRepresentableByFloatType) DescribeError() richtext.Block {
 	return makeErrorDescBlock (
 		"integer literal is too big to be represented " +
 		"using a floating-point type",
@@ -347,7 +347,7 @@ func (e E_IntegerOverflowUnderflow) DescribeError() richtext.Block {
 }
 
 type E_FloatOverflowUnderflow struct {}
-func (e E_FloatOverflowUnderflow) DescribeError() richtext.Block {
+func (E_FloatOverflowUnderflow) DescribeError() richtext.Block {
 	return makeErrorDescBlock("float literal value too big")
 }
 
@@ -509,6 +509,13 @@ func (e E_TypeNotCallable) DescribeError() richtext.Block {
 	return makeErrorDescBlock (
 		"type", e.TypeName,
 		"is not callable",
+	)
+}
+
+type E_NonLambdaRecursive struct {}
+func (E_NonLambdaRecursive) DescribeError() richtext.Block {
+	return makeErrorDescBlock (
+		"non-lambda expression cannot be declared recursive",
 	)
 }
 
