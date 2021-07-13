@@ -214,128 +214,80 @@ func checkRecord(R ast.Record) ExprChecker {
 					Limit: MaxRecordSize,
 				}})
 		}
-		if cc.expected == nil {
-			var update, has_update = R.Update.(ast.Update)
-			var mapping = make(map[string] uint)
-			var fields = make([] typsys.Field, num_fields)
-			var values = make([] *checked.Expr, num_fields)
-			for i, item := range R.Values {
-				var key = item.Key
-				var k = ast.Id2String(key)
-				var _, duplicate = mapping[k]
-				mapping[k] = uint(i)
-				if duplicate {
-					return cc.error(E_DuplicateField { FieldName: k })
-				}
-				var value = getFieldValue(item)
-				var value_expr, err = cc.checkChildExpr(nil, value)
-				if err != nil { return cc.propagate(err) }
-				values[i] = value_expr
-				fields[i] = typsys.Field {
-					Attr: attr.FieldAttrs {
-						Attrs: attr.Attrs { Location: item.Location },
-					},
-					Name: k,
-					Type: value_expr.Type,
-				}
+		var update, has_update = R.Update.(ast.Update)
+		var mapping = make(map[string] uint)
+		var fields = make([] typsys.Field, num_fields)
+		var values = make([] *checked.Expr, num_fields)
+		for i, item := range R.Values {
+			var key = item.Key
+			var k = ast.Id2String(key)
+			var _, duplicate = mapping[k]
+			mapping[k] = uint(i)
+			if duplicate {
+				return cc.error(
+					E_DuplicateField {
+						FieldName: k,
+					})
 			}
-			if has_update {
-				var base, err = cc.checkChildExpr(nil, update.Base)
-				if err != nil { return cc.propagate(err) }
-				var base_record, ok = cc.unboxRecord(base)
-				if !(ok) {
-					return cc.error(E_UpdateOnNonRecord {
+			var value = getFieldValue(item)
+			var value_expr, err = cc.checkChildExpr(nil, value)
+			if err != nil { return cc.propagate(err) }
+			values[i] = value_expr
+			fields[i] = typsys.Field {
+				Attr: attr.FieldAttrs {
+					Attrs: attr.Attrs { Location: item.Location },
+				},
+				Name: k,
+				Type: value_expr.Type,
+			}
+		}
+		if has_update {
+			var base, err = cc.checkChildExpr(nil, update.Base)
+			if err != nil { return cc.propagate(err) }
+			var base_record, ok = cc.unboxRecord(base)
+			if !(ok) {
+				return cc.error(
+					E_UpdateOnNonRecord {
 						TypeName: cc.describeTypeOf(base),
 					})
-				}
-				var replaced = make([] checked.TupleUpdateElement, num_fields)
-				for i := uint(0); i < num_fields; i += 1 {
-					var field = fields[i]
-					var k = field.Name
-					var base_index, exists = base_record.FieldIndexMap[k]
-					if !(exists) {
-						return cc.error(E_FieldNotFound {
+			}
+			var replaced = make([] checked.TupleUpdateElement, num_fields)
+			for i := uint(0); i < num_fields; i += 1 {
+				var field = fields[i]
+				var k = field.Name
+				var base_index, exists = base_record.FieldIndexMap[k]
+				if !(exists) {
+					return cc.error(
+						E_FieldNotFound {
 							FieldName: k,
 							TypeName:  cc.describeTypeOf(base),
 						})
-					}
-					var base_field = base_record.Fields[base_index]
-					var err = cc.assignType(base_field.Type, field.Type)
-					if err != nil { return cc.propagate(err) }
-					replaced[i] = checked.TupleUpdateElement {
-						Index: base_index,
-						Value: values[i],
-					}
 				}
-				var record_t = &typsys.NestedType { Content: base_record }
-				var record = checked.TupleUpdate {
-					Base:     base,
-					Replaced: replaced,
+				var base_field = base_record.Fields[base_index]
+				var err = cc.assignType(base_field.Type, field.Type)
+				if err != nil { return cc.propagate(err) }
+				replaced[i] = checked.TupleUpdateElement {
+					Index: base_index,
+					Value: values[i],
 				}
-				return cc.assign(record_t, record)
-			} else {
-				var record_t = &typsys.NestedType {
-					Content: typsys.Record {
-						FieldIndexMap: mapping,
-						Fields:        fields,
-					},
-				}
-				var record = checked.Tuple {
-					Elements: values,
-				}
-				return cc.assign(record_t, record)
 			}
+			var record_t = &typsys.NestedType { Content: base_record }
+			var record_update = checked.TupleUpdate {
+				Base:     base,
+				Replaced: replaced,
+			}
+			return cc.assign(record_t, record_update)
 		} else {
-			var _, has_update = R.Update.(ast.Update)
-			if has_update {
-				var R_term = ast.VariousTerm {
-					Node: R.Node,
-					Term: R,
-				}
-				return cc.forwardToChildTerm(R_term)
-			} else {
-				var expected_record, ok = getRecord(cc.expected)
-				if !(ok) {
-					return cc.error(E_RecordAssignedToIncompatible {
-						TypeName: cc.describeType(cc.expected),
-					})
-				}
-				var required_num_fields = uint(len(expected_record.Fields))
-				if num_fields != required_num_fields {
-					return cc.error(E_RecordSizeNotMatching {
-						Given:    num_fields,
-						Required: required_num_fields,
-					})
-				}
-				var occurred = make(map[string] struct{})
-				var values = make([] *checked.Expr, num_fields)
-				for i, item := range R.Values {
-					var k = ast.Id2String(R.Values[i].Key)
-					var _, duplicate = occurred[k]
-					occurred[k] = struct{}{}
-					if duplicate {
-						return cc.error(E_DuplicateField { FieldName: k })
-					}
-					var e_index, exists = expected_record.FieldIndexMap[k]
-					if !(exists) {
-						return cc.error(E_FieldNotFound {
-							FieldName: k,
-							TypeName:  cc.describeType(cc.expected),
-						})
-					}
-					var value = getFieldValue(item)
-					var value_expr, err = cc.checkChildExpr(nil, value)
-					if err != nil { return cc.propagate(err) }
-					values[e_index] = value_expr
-				}
-				var record_t = &typsys.NestedType {
-					Content: expected_record,
-				}
-				var record = checked.Tuple {
-					Elements: values,
-				}
-				return cc.assign(record_t, record)
+			var record_t = &typsys.NestedType {
+				Content: typsys.Record {
+					FieldIndexMap: mapping,
+					Fields:        fields,
+				},
 			}
+			var record = checked.Tuple {
+				Elements: values,
+			}
+			return cc.assign(record_t, record)
 		}
 	})
 }
