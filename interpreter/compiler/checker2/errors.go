@@ -534,8 +534,32 @@ type E_ImplicitContextNotFound struct {
 }
 func (e E_ImplicitContextNotFound) DescribeError() richtext.Block {
 	var b = makeErrorDescBlankBlock()
-	b.WriteSpan("implicit context not available: ")
+	b.WriteSpan("implicit context not available: ", richtext.TAG_ERR_NORMAL)
 	b.AppendAllFrom(e.InnerError.Content.DescribeError())
+	return b
+}
+
+type E_InvalidFunctionCall struct {
+	Candidates  [] string
+}
+func (e E_InvalidFunctionCall) DescribeError() richtext.Block {
+	var b = makeErrorDescBlankBlock()
+	b.WriteLine("none of functions can be called:", richtext.TAG_ERR_NORMAL)
+	for _, candidate := range e.Candidates {
+		b.WriteLine(candidate, richtext.TAG_ERR_NOTE)
+	}
+	return b
+}
+
+type E_AmbiguousFunctionCall struct {
+	Options  [] string
+}
+func (e E_AmbiguousFunctionCall) DescribeError() richtext.Block {
+	var b = makeErrorDescBlankBlock()
+	b.WriteLine("callee not decidable within functions:", richtext.TAG_ERR_NORMAL)
+	for _, option := range e.Options {
+		b.WriteLine(option, richtext.TAG_ERR_NOTE)
+	}
 	return b
 }
 

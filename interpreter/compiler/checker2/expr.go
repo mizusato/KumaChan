@@ -341,6 +341,9 @@ func (cc *checkContext) propagate(err *source.Error) checkResult {
 	}
 	return checkResult { err: err }
 }
+func (cc *checkContext) confidentlyTrust(expr *checked.Expr) checkResult {
+	return checkResult { expr: expr }
+}
 
 type checkContextWithLocalScope struct {
 	*checkContext

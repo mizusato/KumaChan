@@ -1,6 +1,8 @@
 package checker2
 
 import (
+	"fmt"
+	"strings"
 	"encoding/json"
 	"kumachan/interpreter/lang/ast"
 	"kumachan/interpreter/lang/common/attr"
@@ -429,6 +431,52 @@ func desugarMethod(decl *ast.DeclMethod, mod string, types TypeRegistry) (*ast.D
 		Body: decl.Body,
 		Kind: ast.FK_Method,
 	}, nil
+}
+
+func describeFunctionSignature(sig FunctionSignature) string {
+	var param_desc_list = make([] string, len(sig.TypeParameters))
+	for i, p := range sig.TypeParameters {
+		param_desc_list[i] = (func() string {
+			if p.Bound.Kind != typsys.NullBound {
+				var kind_desc = (func() string {
+					switch p.Bound.Kind {
+					case typsys.SupBound, typsys.OpenTopBound:
+						return "<"
+					case typsys.InfBound, typsys.OpenBottomBound:
+						return ">"
+					default:
+						panic("impossible branch")
+					}
+				})()
+				var val_desc = typsys.DescribeType(p.Bound.Value, nil)
+				return fmt.Sprintf("%s %s %s", p.Name, kind_desc, val_desc)
+			} else {
+				return p.Name
+			}
+		})()
+	}
+	var params_desc = (func() string {
+		if len(param_desc_list) > 0 {
+			return fmt.Sprintf("[%s] ", strings.Join(param_desc_list, ", "))
+		} else {
+			return ""
+		}
+	})()
+	var implicit_desc = (func() string {
+		if len(sig.ImplicitContext.Fields) > 0 {
+			var implicit_t = &typsys.NestedType {
+				Content: sig.ImplicitContext,
+			}
+			return fmt.Sprintf("%s ", typsys.DescribeType(implicit_t, nil))
+		} else {
+			return ""
+		}
+	})()
+	var io_t = &typsys.NestedType {
+		Content: sig.InputOutput,
+	}
+	var io_desc = typsys.DescribeType(io_t, nil)
+	return fmt.Sprintf("%s%s%s", params_desc, implicit_desc, io_desc)
 }
 
 
