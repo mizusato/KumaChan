@@ -17,84 +17,113 @@ type overloadCandidate struct {
 	error     *source.Error
 }
 
-func checkCall1(callee ast.Expr, arg ast.Expr, loc source.Location) ExprChecker {
-	return makeExprChecker(loc, func(cc *checkContext) checkResult {
-		var call_certain = func() checkResult {
-			var callee_expr, err1 = cc.checkChildExpr(nil, callee)
-			if err1 != nil { return cc.propagate(err1) }
-			var io, callable = cc.unboxLambda(callee_expr)
-			if !(callable) {
-				return cc.error(
-					E_TypeNotCallable {})
-			}
-			var in = io.Input
-			var out = io.Output
-			var arg_expr, err2 = cc.checkChildExpr(in, arg)
-			if err2 != nil { return cc.propagate(err2) }
-			return cc.assign(out, checked.Call {
-				Callee:   callee_expr,
+func callExprWithArgGetter (
+	cc       *checkContext,
+	callee   ast.Expr,
+	get_arg  func(in typsys.Type) (*checked.Expr, *source.Error),
+) checkResult {
+	var callee_expr, err1 = cc.checkChildExpr(nil, callee)
+	if err1 != nil { return cc.propagate(err1) }
+	var io, callable = cc.unboxLambda(callee_expr)
+	if !(callable) {
+		return cc.propagate(source.MakeError(callee.Location,
+			E_TypeNotCallable {
+				TypeName: typsys.DescribeType(callee_expr.Type, nil),
+			}))
+	}
+	var in = io.Input
+	var out = io.Output
+	var arg_expr, err2 = get_arg(in)
+	if err2 != nil { return cc.propagate(err2) }
+	return cc.assign(out, checked.Call {
+		Callee:   callee_expr,
+		Argument: arg_expr,
+	})
+}
+
+func callExprWithArg(cc *checkContext, callee ast.Expr, arg ast.Expr) checkResult {
+	return callExprWithArgGetter(cc, callee, func(in typsys.Type) (*checked.Expr, *source.Error) {
+		return cc.checkChildExpr(in, arg)
+	})
+}
+
+func callExprWithCheckedArg(cc *checkContext, callee ast.Expr, arg *checked.Expr) checkResult {
+	return callExprWithArgGetter(cc, callee, func(in typsys.Type) (*checked.Expr, *source.Error) {
+		var err = cc.assignType(in, arg.Type)
+		if err != nil { return nil, err }
+		return arg, nil
+	})
+}
+
+func callFuncRefs (
+	cc        *checkContext,
+	callee    FuncRefs,
+	arg_expr  *checked.Expr,
+	loc       source.Location,
+	pivot     typsys.Type,
+) checkResult {
+	if len(callee.Functions) == 0 { panic("something went wrong") }
+	var ctx = cc.exprContext
+	var options = make([] overloadOption, 0)
+	var candidates = make([] overloadCandidate, 0)
+	for _, f := range callee.Functions {
+		var params = f.Signature.TypeParameters
+		var io = f.Signature.InputOutput
+		var in_t = io.Input
+		var out_t = io.Output
+		var result = cc.infer(params, out_t, func(s0 *typsys.InferringState) (checked.ExprContent, *typsys.InferringState, *source.Error) {
+			var a = typsys.MakeAssignContext(ctx.ModName, s0)
+			var ok, s1 = typsys.Assign(in_t, arg_expr.Type, a)
+			if !(ok) { return nil, nil, source.MakeError(arg_expr.Info.Location,
+				E_NotAssignable {
+					From: typsys.DescribeType(arg_expr.Type, nil),
+					To:   typsys.DescribeType(in_t, s0),
+				}) }
+			var f_expr, s2, err = makeFuncRef(f, s1, pivot, loc, ctx)
+			if err != nil { return nil, nil, err }
+			return checked.Call {
+				Callee:   f_expr,
 				Argument: arg_expr,
+			}, s2, nil
+		})
+		if result.err != nil {
+			candidates = append(candidates, overloadCandidate {
+				function: f,
+				error:    result.err,
+			})
+		} else {
+			options = append(options, overloadOption {
+				function: f,
+				value:    result.expr,
 			})
 		}
-		var call_overload = func(R FuncRefs) checkResult {
-			if len(R.Functions) == 0 { panic("something went wrong") }
-			var ctx = cc.exprContext
-			var arg_expr, arg_err = cc.checkChildExpr(nil, arg)
-			if arg_err != nil { return cc.propagate(arg_err) }
-			var options = make([] overloadOption, 0)
-			var candidates = make([] overloadCandidate, 0)
-			for _, f := range R.Functions {
-				var params = f.Signature.TypeParameters
-				var io = f.Signature.InputOutput
-				var in_t = io.Input
-				var out_t = io.Output
-				var result = cc.infer(params, out_t, func(s0 *typsys.InferringState) (checked.ExprContent, *typsys.InferringState, *source.Error) {
-					var a = typsys.MakeAssignContext(ctx.ModName, s0)
-					var ok, s1 = typsys.Assign(in_t, arg_expr.Type, a)
-					if !(ok) { return nil, nil, source.MakeError(arg.Location,
-						E_NotAssignable {
-							From: typsys.DescribeType(arg_expr.Type, nil),
-							To:   typsys.DescribeType(in_t, s0),
-						}) }
-					var f_expr, s2, err = makeFuncRef(f, s1, nil, loc, ctx)
-					if err != nil { return nil, nil, err }
-					return checked.Call {
-						Callee:   f_expr,
-						Argument: arg_expr,
-					}, s2, nil
-				})
-				if result.err != nil {
-					candidates = append(candidates, overloadCandidate {
-						function: f,
-						error:    result.err,
-					})
-				} else {
-					options = append(options, overloadOption {
-						function: f,
-						value:    result.expr,
-					})
-				}
-			}
-			var expr, err = decideOverload(options, candidates, loc)
-			if err != nil { return cc.propagate(err) }
-			return cc.confidentlyTrust(expr)
-		}
+	}
+	var expr, err = decideOverload(options, candidates, loc)
+	if err != nil { return cc.propagate(err) }
+	return cc.confidentlyTrust(expr)
+}
+
+func checkCall1(callee ast.Expr, arg ast.Expr, loc source.Location) ExprChecker {
+	return makeExprChecker(loc, func(cc *checkContext) checkResult {
 		var ref_node, is_ref = getInlineRef(callee)
 		if is_ref {
 			var ref, err = cc.resolveInlineRef(ref_node, nil)
 			if err != nil { return cc.propagate(err) }
 			switch R := ref.(type) {
 			case FuncRefs:
-				return call_overload(R)
+				var arg_expr, arg_err = cc.checkChildExpr(nil, arg)
+				if arg_err != nil { return cc.propagate(arg_err) }
+				return callFuncRefs(cc, R, arg_expr, loc, nil)
 			case LocalRef:
-				return call_certain()
+				return callExprWithArg(cc, callee, arg)
 			case LocalRefWithFuncRefs:
-				return call_certain()
+				// a local binding shadows global functions in a prefix call
+				return callExprWithArg(cc, callee, arg)
 			default:
 				panic("impossible branch")
 			}
 		} else {
-			return call_certain()
+			return callExprWithArg(cc, callee, arg)
 		}
 	})
 }
@@ -102,52 +131,39 @@ func checkCall1(callee ast.Expr, arg ast.Expr, loc source.Location) ExprChecker 
 func checkCall2(callee ast.Expr, arg ast.Expr, pivot *checked.Expr, loc source.Location) ExprChecker {
 	return makeExprChecker(loc, func(cc *checkContext) checkResult {
 		if pivot == nil { panic("something went wrong") }
-		var ref, is_ref = getInlineRef(callee)
+		var arg_expr, err = cc.checkChildExpr(nil, arg)
+		if err != nil { return cc.propagate(err) }
+		var pair_t = &typsys.NestedType {
+			Content: typsys.Tuple { Elements: [] typsys.Type {
+				pivot.Type,
+				arg_expr.Type,
+			} },
+		}
+		var pair = &checked.Expr {
+			Type:    pair_t,
+			Info:    checked.ExprInfoFrom(loc),
+			Content: checked.Tuple { Elements: [] *checked.Expr {
+				pivot,
+				arg_expr,
+			} },
+		}
+		var ref_node, is_ref = getInlineRef(callee)
 		if is_ref {
-			// TODO (use pivot.Type to lookup name)
+			var ref, err = cc.resolveInlineRef(ref_node, pivot.Type)
+			if err != nil { return cc.propagate(err) }
+			switch R := ref.(type) {
+			case FuncRefs:
+				return callFuncRefs(cc, R, pair, loc, pivot.Type)
+			case LocalRef:
+				return callExprWithCheckedArg(cc, callee, pair)
+			case LocalRefWithFuncRefs:
+				// global functions are preferred in a pipeline or infix call
+				return callFuncRefs(cc, R.FuncRefs, pair, loc, pivot.Type)
+			default:
+				panic("something went wrong")
+			}
 		} else {
-			var callee_expr, err1 = cc.checkChildExpr(nil, callee)
-			if err1 != nil { return cc.propagate(err1) }
-			var io, callable = cc.unboxLambda(callee_expr)
-			if !(callable) {
-				return cc.error(
-					E_TypeNotCallable {})
-			}
-			var in = io.Input
-			var out = io.Output
-			var tuple_exp, ok = getTuple(cc.expected)
-			if !(ok) {
-				// TODO
-			}
-			if len(tuple_exp.Elements) != 2 {
-				// TODO
-			}
-			var pivot_exp = tuple_exp.Elements[0]
-			var arg_exp = tuple_exp.Elements[1]
-			var err2 = cc.assignType(pivot_exp, pivot.Type)
-			if err2 != nil { return cc.propagate(err2) }
-			var arg_expr, err3 = cc.checkChildExpr(arg_exp, arg)
-			if err3 != nil { return cc.propagate(err3) }
-			var pair_t = &typsys.NestedType {
-				Content: typsys.Tuple { Elements: [] typsys.Type {
-					pivot.Type,
-					arg_expr.Type,
-				} },
-			}
-			var pair = &checked.Expr {
-				Type:    pair_t,
-				Info:    checked.ExprInfoFrom(loc),
-				Content: checked.Tuple { Elements: [] *checked.Expr {
-					pivot,
-					arg_expr,
-				} },
-			}
-			var err4 = cc.assignType(in, pair_t)
-			if err4 != nil { return cc.propagate(err4) }
-			return cc.assign(out, checked.Call {
-				Callee:   callee_expr,
-				Argument: pair,
-			})
+			return callExprWithCheckedArg(cc, callee, pair)
 		}
 	})
 }
