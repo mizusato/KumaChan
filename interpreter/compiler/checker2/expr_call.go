@@ -10,10 +10,7 @@ import (
 
 func checkCall1(callee ast.Expr, arg ast.Expr, loc source.Location) ExprChecker {
 	return makeExprChecker(loc, func(cc *checkContext) checkResult {
-		var ref, is_ref = getInlineRef(callee)
-		if is_ref {
-			// TODO
-		} else {
+		var call_certain = func() checkResult {
 			var callee_expr, err1 = cc.checkChildExpr(nil, callee)
 			if err1 != nil { return cc.propagate(err1) }
 			var io, callable = cc.unboxLambda(callee_expr)
@@ -29,6 +26,60 @@ func checkCall1(callee ast.Expr, arg ast.Expr, loc source.Location) ExprChecker 
 				Callee:   callee_expr,
 				Argument: arg_expr,
 			})
+		}
+		var call_overload = func(R FuncRefs) checkResult {
+			if len(R.Functions) == 0 { panic("something went wrong") }
+			var ctx = cc.exprContext
+			var results = make([] checkResult, len(R.Functions))
+			for i, f := range R.Functions {
+				var params = f.Signature.TypeParameters
+				var io = f.Signature.InputOutput
+				var in_t = io.Input
+				var out_t = io.Output
+				var result = cc.infer(params, out_t, func(s0 *typsys.InferringState) (checked.ExprContent, *typsys.InferringState, *source.Error) {
+					var arg_expr, s1, err1 = check(arg)(in_t, s0, ctx)
+					if err1 != nil { return nil, nil, err1 }
+					var f_expr, s2, err2 = makeFuncRef(f, s1, nil, loc, ctx)
+					if err2 != nil { return nil, nil, err2 }
+					return checked.Call {
+						Callee:   f_expr,
+						Argument: arg_expr,
+					}, s2, nil
+				})
+				results[i] = result
+			}
+			var ok_result *checkResult
+			for i, result := range results {
+				if result.err == nil {
+					if ok_result == nil {
+						ok_result = &(results[i])
+					} else {
+						break
+					}
+				}
+			}
+			if ok_result != nil {
+				return *ok_result
+			} else {
+				// TODO
+			}
+		}
+		var ref_node, is_ref = getInlineRef(callee)
+		if is_ref {
+			var ref, err = cc.resolveInlineRef(ref_node, nil)
+			if err != nil { return cc.propagate(err) }
+			switch R := ref.(type) {
+			case FuncRefs:
+				return call_overload(R)
+			case LocalRef:
+				return call_certain()
+			case LocalRefWithFuncRefs:
+				return call_certain()
+			default:
+				panic("impossible branch")
+			}
+		} else {
+			return call_certain()
 		}
 	})
 }

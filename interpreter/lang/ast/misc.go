@@ -56,7 +56,7 @@ type CpsBinding struct {
 func (impl InlineRef) Term() {}
 type InlineRef struct {
 	Node                       `part:"inline_ref"`
-	Module    Identifier       `part_opt:"module_prefix.name"`
+	Module    ModuleName       `part:"module_prefix"`
 	Item      Identifier       `part:"name"`
 	TypeArgs  [] VariousType   `list_more:"inline_type_args" item:"type"`
 }

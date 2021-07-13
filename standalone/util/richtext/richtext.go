@@ -39,6 +39,17 @@ func (b *Block) WriteSpan(content string, tags ...string) {
 func (b *Block) WriteLineFeed() {
 	b.Lines = append(b.Lines, Line { Spans: [] Span {} })
 }
+func (b *Block) AppendAllFrom(another Block) {
+	if len(another.Lines) == 0 {
+		return
+	} else if len(b.Lines) == 0 {
+		b.Lines = append(b.Lines, another.Lines...)
+	} else {
+		var last_line = &(b.Lines[len(b.Lines)-1])
+		last_line.Spans = append(last_line.Spans, another.Lines[0].Spans...)
+		b.Lines = append(b.Lines, another.Lines[1:]...)
+	}
+}
 
 type Line struct {
 	Spans  [] Span  `kmd:"spans"`

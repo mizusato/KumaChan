@@ -132,6 +132,19 @@ func makeCheckContext (
 	}
 }
 
+func (cc *checkContext) resolveInlineRef(node ast.InlineRef, pivot typsys.Type) (Ref, *source.Error) {
+	var n, err = NameFrom(node.Module, node.Item, cc.exprContext.ModuleInfo)
+	if err != nil { return nil, err }
+	var ref, found = cc.resolveName(n, pivot)
+	if found {
+		return ref, nil
+	} else {
+		return nil, source.MakeError(node.Location,
+			E_NoSuchBindingOrFunction {
+				Name: n.String(),
+			})
+	}
+}
 func (cc *checkContext) resolveName(n name.Name, pivot typsys.Type) (Ref, bool) {
 	var lm = cc.exprContext.LocalBindingMap
 	if pivot == nil {
@@ -192,28 +205,17 @@ func (cc *checkContext) assignType(to typsys.Type, from typsys.Type) *source.Err
 		})
 	}
 }
-func (cc *checkContext) getCertainType(t typsys.Type, loc source.Location) (typsys.Type, *source.Error) {
-	var certain = true
-	var certain_t = typsys.TypeOpMap(t, func(t typsys.Type) (typsys.Type, bool) {
-		var pt, is_pt = t.(typsys.ParameterType)
-		if is_pt {
-			var v, ok = cc.inferring.GetCurrentValue(pt.Parameter)
-			if ok {
-				return v, true
-			} else {
-				certain = false
-				return nil, false
-			}
-		} else {
-			return nil, false
-		}
-	})
-	if certain {
+func (cc *checkContext) requireCertainType(t typsys.Type, loc source.Location) (typsys.Type, *source.Error) {
+	var certain_t, ok = cc.getCertainType(t)
+	if ok {
 		return certain_t, nil
 	} else {
 		return nil, source.MakeError(loc,
 			E_ExplicitTypeRequired {})
 	}
+}
+func (cc *checkContext) getCertainType(t typsys.Type) (typsys.Type, bool) {
+	return typsys.TypeOpGetCertainType(t, cc.inferring)
 }
 
 func (cc *checkContext) unboxRecord(expr *checked.Expr) (typsys.Record, bool) {
@@ -233,6 +235,12 @@ func (cc *checkContext) checkChildTerm(expected typsys.Type, node ast.VariousTer
 	return cc.checkChildExpr(expected, ast.WrapTermAsExpr(node))
 }
 
+func (cc *checkContext) forward(checker ExprChecker) checkResult {
+	var expr, s, err = checker(cc.expected, cc.inferring, cc.exprContext)
+	if err != nil { return checkResult { err: err } }
+	cc.inferring = s
+	return checkResult { expr: expr }
+}
 func (cc *checkContext) forwardToChildExpr(node ast.Expr) checkResult {
 	var expr, err = cc.checkChildExpr(cc.expected, node)
 	return checkResult {
@@ -244,9 +252,43 @@ func (cc *checkContext) forwardToChildTerm(node ast.VariousTerm) checkResult {
 	return cc.forwardToChildExpr(ast.WrapTermAsExpr(node))
 }
 
+func (cc *checkContext) infer(params ([] typsys.Parameter), t typsys.Type, k func(*typsys.InferringState)(checked.ExprContent,*typsys.InferringState,*source.Error)) checkResult {
+	{ var cc = cc.forkInferring()
+	var s0 = typsys.StartInferring(params)
+	var expected_certain, expect_certain = cc.getCertainType(cc.expected)
+	if expect_certain {
+		var mod = cc.exprContext.ModName
+		var a0 = typsys.MakeAssignContext(mod, s0)
+		var ok, s1 = typsys.Assign(expected_certain, t, a0)
+		if !(ok) {
+			return cc.error(
+				E_NotAssignable {
+					From: typsys.DescribeType(t, s0),
+					To:   typsys.DescribeType(expected_certain, nil),
+				})
+		}
+		var content, _, err = k(s1)
+		if err != nil { return cc.propagate(err) }
+		var expr = &checked.Expr {
+			Type:    expected_certain,
+			Info:    checked.ExprInfoFrom(cc.location),
+			Content: content,
+		}
+		return checkResult { expr: expr }
+	} else {
+		var content, s1, err = k(s0)
+		if err != nil { return cc.propagate(err) }
+		var t_certain, ok = typsys.TypeOpGetCertainType(t, s1)
+		if !(ok) {
+			return cc.error(
+				E_ExplicitTypeRequired {})
+		}
+		return cc.assign(t_certain, content)
+	} }
+}
 func (cc *checkContext) assign(t typsys.Type, content checked.ExprContent) checkResult {
 	if cc.expected == nil {
-		var certain_t, err = cc.getCertainType(t, cc.location)
+		var certain_t, err = cc.requireCertainType(t, cc.location)
 		if err != nil { return checkResult { err: err } }
 		var info = checked.ExprInfoFrom(cc.location)
 		var expr = &checked.Expr {

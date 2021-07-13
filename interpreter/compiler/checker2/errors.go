@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"kumachan/standalone/util/richtext"
+	"kumachan/interpreter/lang/common/source"
 )
 
 
@@ -517,6 +518,25 @@ func (E_NonLambdaRecursive) DescribeError() richtext.Block {
 	return makeErrorDescBlock (
 		"non-lambda expression cannot be declared recursive",
 	)
+}
+
+type E_NoSuchBindingOrFunction struct {
+	Name  string
+}
+func (e E_NoSuchBindingOrFunction) DescribeError() richtext.Block {
+	return makeErrorDescBlock (
+		"no such binding or function: ", e.Name,
+	)
+}
+
+type E_ImplicitContextNotFound struct {
+	InnerError  *source.Error
+}
+func (e E_ImplicitContextNotFound) DescribeError() richtext.Block {
+	var b = makeErrorDescBlankBlock()
+	b.WriteSpan("implicit context not available: ")
+	b.AppendAllFrom(e.InnerError.Content.DescribeError())
+	return b
 }
 
 

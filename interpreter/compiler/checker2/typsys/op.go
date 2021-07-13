@@ -161,4 +161,27 @@ func TypeOpParameterReplace (
 	})
 }
 
+func TypeOpGetCertainType(t Type, s *InferringState) (Type, bool) {
+	var certain = true
+	var certain_t = TypeOpMap(t, func(t Type) (Type, bool) {
+		var pt, is_pt = t.(ParameterType)
+		if is_pt {
+			var v, ok = s.GetCurrentValue(pt.Parameter)
+			if ok {
+				return v, true
+			} else {
+				certain = false
+				return nil, false
+			}
+		} else {
+			return nil, false
+		}
+	})
+	if certain {
+		return certain_t, true
+	} else {
+		return nil, false
+	}
+}
+
 

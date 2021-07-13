@@ -85,10 +85,6 @@ export function > :
 | .&x |
 ||
 
-// when there isn't a func or var called NAME, try to interpret NAME as |NAME|
-{ Some x }
-None
-
 \ x := await foo,
 bar
 
