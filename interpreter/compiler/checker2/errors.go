@@ -5,12 +5,15 @@ import (
 	"strconv"
 	"strings"
 	"kumachan/standalone/util/richtext"
-	"kumachan/interpreter/lang/common/source"
 )
 
 
+const BlockClassError = "error"
+const BlockClassErrorContentItem = "error-content-item"
+
 func makeErrorDescBlankBlock() richtext.Block {
 	var b richtext.Block
+	b.AddClass(BlockClassError)
 	b.WriteSpan("Error: ", richtext.TAG_EM)
 	return b
 }
@@ -29,6 +32,11 @@ func makeErrorDescBlock(msg ...string) richtext.Block {
 			}
 		})())
 	}
+	return b
+}
+func makeEmptyErrorContentItemBlock() richtext.Block {
+	var b richtext.Block
+	b.AddClass(BlockClassErrorContentItem)
 	return b
 }
 
@@ -530,23 +538,30 @@ func (e E_NoSuchBindingOrFunction) DescribeError() richtext.Block {
 }
 
 type E_ImplicitContextNotFound struct {
-	InnerError  *source.Error
+	InnerError  richtext.Block
 }
 func (e E_ImplicitContextNotFound) DescribeError() richtext.Block {
 	var b = makeErrorDescBlankBlock()
 	b.WriteSpan("implicit context not available: ", richtext.TAG_ERR_NORMAL)
-	b.AppendAllFrom(e.InnerError.Content.DescribeError())
+	b.Append(e.InnerError)
 	return b
 }
 
 type E_InvalidFunctionCall struct {
-	Candidates  [] string
+	Candidates  [] OverloadCandidateDescription
+}
+type OverloadCandidateDescription struct {
+	Signature  string
+	Error      richtext.Block
 }
 func (e E_InvalidFunctionCall) DescribeError() richtext.Block {
 	var b = makeErrorDescBlankBlock()
 	b.WriteLine("none of functions can be called:", richtext.TAG_ERR_NORMAL)
 	for _, candidate := range e.Candidates {
-		b.WriteLine(candidate, richtext.TAG_ERR_NOTE)
+		var item = makeEmptyErrorContentItemBlock()
+		item.WriteLine(candidate.Signature, richtext.TAG_ERR_NOTE)
+		item.Append(candidate.Error)
+		b.Append(item)
 	}
 	return b
 }
@@ -558,7 +573,9 @@ func (e E_AmbiguousFunctionCall) DescribeError() richtext.Block {
 	var b = makeErrorDescBlankBlock()
 	b.WriteLine("callee not decidable within functions:", richtext.TAG_ERR_NORMAL)
 	for _, option := range e.Options {
-		b.WriteLine(option, richtext.TAG_ERR_NOTE)
+		var item = makeEmptyErrorContentItemBlock()
+		item.WriteLine(option, richtext.TAG_ERR_NOTE)
+		b.Append(item)
 	}
 	return b
 }

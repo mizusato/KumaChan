@@ -1,12 +1,10 @@
 package checker2
 
 import (
-	"fmt"
 	"kumachan/interpreter/lang/ast"
 	"kumachan/interpreter/lang/common/source"
 	"kumachan/interpreter/compiler/checker2/checked"
 	"kumachan/interpreter/compiler/checker2/typsys"
-	"kumachan/standalone/util/richtext"
 )
 
 
@@ -221,14 +219,13 @@ func describeOverloadOptions(options ([] overloadOption)) ([] string) {
 	}
 	return desc
 }
-func describeOverloadCandidates(candidates ([] overloadCandidate)) ([] string) {
-	// TODO: structure instead of string
-	var desc = make([] string, 0)
+func describeOverloadCandidates(candidates ([] overloadCandidate)) ([] OverloadCandidateDescription) {
+	var desc = make([] OverloadCandidateDescription, 0)
 	for i, candidate := range candidates {
-		var sig =  describeFunctionSignature(candidate.function.Signature)
-		var info_rich = candidate.error.Content.DescribeError().ToText()
-		var info = info_rich.RenderLinear(richtext.RenderOptionsLinear {})
-		desc[i] = fmt.Sprintf("%s %s", sig, info)
+		desc[i] = OverloadCandidateDescription {
+			Signature: describeFunctionSignature(candidate.function.Signature),
+			Error:     candidate.error.Content.DescribeError(),
+		}
 	}
 	return desc
 }

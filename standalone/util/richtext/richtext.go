@@ -12,11 +12,15 @@ func (t *Text) WriteText(another Text) {
 }
 
 type Block struct {
-	Indent  int64    `kmd:"indent"`
-	Lines   [] Line  `kmd:"lines"`
+	ClassList  [] string  `kmd:"class-list"`
+	Lines      [] Line    `kmd:"lines"`
+	Children   [] Block   `kmd:"children"`
 }
 func (b Block) ToText() Text {
 	return Text { Blocks: [] Block { b } }
+}
+func (b *Block) AddClass(classes ...string) {
+	b.ClassList = append(b.ClassList, classes...)
 }
 func (b *Block) WriteLine(content string, tags ...string) {
 	b.Lines = append(b.Lines, Line { [] Span { {
@@ -39,16 +43,8 @@ func (b *Block) WriteSpan(content string, tags ...string) {
 func (b *Block) WriteLineFeed() {
 	b.Lines = append(b.Lines, Line { Spans: [] Span {} })
 }
-func (b *Block) AppendAllFrom(another Block) {
-	if len(another.Lines) == 0 {
-		return
-	} else if len(b.Lines) == 0 {
-		b.Lines = append(b.Lines, another.Lines...)
-	} else {
-		var last_line = &(b.Lines[len(b.Lines)-1])
-		last_line.Spans = append(last_line.Spans, another.Lines[0].Spans...)
-		b.Lines = append(b.Lines, another.Lines[1:]...)
-	}
+func (b *Block) Append(another Block) {
+	b.Children = append(b.Children, another)
 }
 
 type Line struct {

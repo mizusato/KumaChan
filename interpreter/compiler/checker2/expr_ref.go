@@ -60,7 +60,7 @@ func makeFuncRef(f *Function, s *typsys.InferringState, pivot typsys.Type, loc s
 		var v, s_, err = checkName(field.Name, pivot, loc)(field.Type, s, ctx)
 		if err != nil { return nil, nil, source.MakeError(loc,
 			E_ImplicitContextNotFound {
-				InnerError: err,
+				InnerError: err.Content.DescribeError(),
 			}) }
 		s = s_
 		values[i] = v
