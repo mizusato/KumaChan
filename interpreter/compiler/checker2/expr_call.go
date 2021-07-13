@@ -41,6 +41,8 @@ func checkCall1(callee ast.Expr, arg ast.Expr, loc source.Location) ExprChecker 
 		var call_overload = func(R FuncRefs) checkResult {
 			if len(R.Functions) == 0 { panic("something went wrong") }
 			var ctx = cc.exprContext
+			var arg_expr, arg_err = cc.checkChildExpr(nil, arg)
+			if arg_err != nil { return cc.propagate(arg_err) }
 			var options = make([] overloadOption, 0)
 			var candidates = make([] overloadCandidate, 0)
 			for _, f := range R.Functions {
@@ -49,10 +51,15 @@ func checkCall1(callee ast.Expr, arg ast.Expr, loc source.Location) ExprChecker 
 				var in_t = io.Input
 				var out_t = io.Output
 				var result = cc.infer(params, out_t, func(s0 *typsys.InferringState) (checked.ExprContent, *typsys.InferringState, *source.Error) {
-					var arg_expr, s1, err1 = check(arg)(in_t, s0, ctx)
-					if err1 != nil { return nil, nil, err1 }
-					var f_expr, s2, err2 = makeFuncRef(f, s1, nil, loc, ctx)
-					if err2 != nil { return nil, nil, err2 }
+					var a = typsys.MakeAssignContext(ctx.ModName, s0)
+					var ok, s1 = typsys.Assign(in_t, arg_expr.Type, a)
+					if !(ok) { return nil, nil, source.MakeError(arg.Location,
+						E_NotAssignable {
+							From: typsys.DescribeType(arg_expr.Type, nil),
+							To:   typsys.DescribeType(in_t, s0),
+						}) }
+					var f_expr, s2, err = makeFuncRef(f, s1, nil, loc, ctx)
+					if err != nil { return nil, nil, err }
 					return checked.Call {
 						Callee:   f_expr,
 						Argument: arg_expr,
