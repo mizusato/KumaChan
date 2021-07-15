@@ -17,10 +17,46 @@ type overloadCandidate struct {
 	error     *source.Error
 }
 
+type ArgGetter  func(in typsys.Type) (*checked.Expr, *source.Error)
+
+func callLocalRefWithArgGetter (
+	cc       *checkContext,
+	ref      LocalRef,
+	params   [] typsys.Type,
+	ref_loc  source.Location,
+	get_arg  ArgGetter,
+) checkResult {
+	if len(params) > 0 {
+		return cc.propagate(source.MakeError(ref_loc,
+			E_TypeParametersOnLocalBindingRef {}))
+	}
+	var ref_type = ref.Binding.Type
+	var io, callable = cc.unboxLambdaFromType(ref_type)
+	if !(callable) {
+		return cc.propagate(source.MakeError(ref_loc,
+			E_TypeNotCallable {
+				TypeName: typsys.DescribeType(ref_type, nil),
+			}))
+	}
+	var in = io.Input
+	var out = io.Output
+	var ref_expr = &checked.Expr {
+		Type:    ref_type,
+		Info:    checked.ExprInfoFrom(ref_loc),
+		Content: checked.LocalRef { Binding: ref.Binding },
+	}
+	var arg_expr, err2 = get_arg(in)
+	if err2 != nil { return cc.propagate(err2) }
+	return cc.assign(out, checked.Call {
+		Callee:   ref_expr,
+		Argument: arg_expr,
+	})
+}
+
 func callExprWithArgGetter (
 	cc       *checkContext,
 	callee   ast.Expr,
-	get_arg  func(in typsys.Type) (*checked.Expr, *source.Error),
+	get_arg  ArgGetter,
 ) checkResult {
 	var callee_expr, err1 = cc.checkChildExpr(nil, callee)
 	if err1 != nil { return cc.propagate(err1) }
@@ -41,7 +77,7 @@ func callExprWithArgGetter (
 	})
 }
 
-func callExprWithArg(cc *checkContext, callee ast.Expr, arg ast.Expr) checkResult {
+func callExpr(cc *checkContext, callee ast.Expr, arg ast.Expr) checkResult {
 	return callExprWithArgGetter(cc, callee, func(in typsys.Type) (*checked.Expr, *source.Error) {
 		return cc.checkChildExpr(in, arg)
 	})
@@ -55,23 +91,38 @@ func callExprWithCheckedArg(cc *checkContext, callee ast.Expr, arg *checked.Expr
 	})
 }
 
+func callLocalRef(cc *checkContext, ref LocalRef, params ([] typsys.Type), ref_loc source.Location, arg ast.Expr) checkResult {
+	return callLocalRefWithArgGetter(cc, ref, params, ref_loc, func(in typsys.Type) (*checked.Expr, *source.Error) {
+		return cc.checkChildExpr(in, arg)
+	})
+}
+
+func callLocalRefWithCheckedArg(cc *checkContext, ref LocalRef, params ([] typsys.Type), ref_loc source.Location, arg *checked.Expr) checkResult {
+	return callLocalRefWithArgGetter(cc, ref, params, ref_loc, func(in typsys.Type) (*checked.Expr, *source.Error) {
+		var err = cc.assignType(in, arg.Type)
+		if err != nil { return nil, err }
+		return arg, nil
+	})
+}
+
 func callFuncRefs (
 	cc        *checkContext,
 	callee    FuncRefs,
+	params    [] typsys.Type,
 	arg_expr  *checked.Expr,
-	loc       source.Location,
 	pivot     typsys.Type,
 ) checkResult {
 	if len(callee.Functions) == 0 { panic("something went wrong") }
 	var ctx = cc.exprContext
+	var loc = cc.location
 	var options = make([] overloadOption, 0)
 	var candidates = make([] overloadCandidate, 0)
 	for _, f := range callee.Functions {
-		var params = f.Signature.TypeParameters
+		var params_def = f.Signature.TypeParameters
 		var io = f.Signature.InputOutput
 		var in_t = io.Input
 		var out_t = io.Output
-		var result = cc.infer(params, out_t, func(s0 *typsys.InferringState) (checked.ExprContent, *typsys.InferringState, *source.Error) {
+		var result = cc.infer(params_def, params, out_t, func(s0 *typsys.InferringState) (checked.ExprContent, *typsys.InferringState, *source.Error) {
 			var a = typsys.MakeAssignContext(ctx.ModName, s0)
 			var ok, s1 = typsys.Assign(in_t, arg_expr.Type, a)
 			if !(ok) { return nil, nil, source.MakeError(arg_expr.Info.Location,
@@ -107,23 +158,24 @@ func checkCall1(callee ast.Expr, arg ast.Expr, loc source.Location) ExprChecker 
 	return makeExprChecker(loc, func(cc *checkContext) checkResult {
 		var ref_node, is_ref = getInlineRef(callee)
 		if is_ref {
-			var ref, err = cc.resolveInlineRef(ref_node, nil)
+			var ref, params, err = cc.resolveInlineRef(ref_node, nil)
 			if err != nil { return cc.propagate(err) }
+			var ref_loc = ref_node.Location
 			switch R := ref.(type) {
 			case FuncRefs:
 				var arg_expr, arg_err = cc.checkChildExpr(nil, arg)
 				if arg_err != nil { return cc.propagate(arg_err) }
-				return callFuncRefs(cc, R, arg_expr, loc, nil)
+				return callFuncRefs(cc, R, params, arg_expr, nil)
 			case LocalRef:
-				return callExprWithArg(cc, callee, arg)
+				return callLocalRef(cc, R, params, ref_loc, arg)
 			case LocalRefWithFuncRefs:
 				// a local binding shadows global functions in a prefix call
-				return callExprWithArg(cc, callee, arg)
+				return callLocalRef(cc, R.LocalRef, params, ref_loc, arg)
 			default:
 				panic("impossible branch")
 			}
 		} else {
-			return callExprWithArg(cc, callee, arg)
+			return callExpr(cc, callee, arg)
 		}
 	})
 }
@@ -149,16 +201,17 @@ func checkCall2(callee ast.Expr, arg ast.Expr, pivot *checked.Expr, loc source.L
 		}
 		var ref_node, is_ref = getInlineRef(callee)
 		if is_ref {
-			var ref, err = cc.resolveInlineRef(ref_node, pivot.Type)
+			var ref, params, err = cc.resolveInlineRef(ref_node, pivot.Type)
 			if err != nil { return cc.propagate(err) }
+			var ref_loc = ref_node.Location
 			switch R := ref.(type) {
 			case FuncRefs:
-				return callFuncRefs(cc, R, pair, loc, pivot.Type)
+				return callFuncRefs(cc, R, params, pair, pivot.Type)
 			case LocalRef:
-				return callExprWithCheckedArg(cc, callee, pair)
+				return callLocalRefWithCheckedArg(cc, R, params, ref_loc, pair)
 			case LocalRefWithFuncRefs:
 				// global functions are preferred in a pipeline or infix call
-				return callFuncRefs(cc, R.FuncRefs, pair, loc, pivot.Type)
+				return callFuncRefs(cc, R.FuncRefs, params, pair, pivot.Type)
 			default:
 				panic("something went wrong")
 			}

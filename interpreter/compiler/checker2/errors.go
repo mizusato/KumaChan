@@ -580,4 +580,30 @@ func (e E_AmbiguousFunctionCall) DescribeError() richtext.Block {
 	return b
 }
 
+type E_TypeParametersOnLocalBindingRef struct {}
+func (E_TypeParametersOnLocalBindingRef) DescribeError() richtext.Block {
+	return makeErrorDescBlock (
+		"cannot specify type parameters on a local binding reference",
+	)
+}
+
+type E_TypeParametersExceededFunctionArity struct {
+	Arity  uint
+}
+func (e E_TypeParametersExceededFunctionArity) DescribeError() richtext.Block {
+	return makeErrorDescBlock (
+		"the quantity of specified type parameters exceeded " +
+		fmt.Sprintf("arity (%d)", e.Arity),
+	)
+}
+
+type E_InvalidTypeParameterOnFunction struct {
+	Index  uint
+}
+func (e E_InvalidTypeParameterOnFunction) DescribeError() richtext.Block {
+	return makeErrorDescBlock (
+		fmt.Sprintf("a specified type parameter is invalid (#%d)", e.Index),
+	)
+}
+
 

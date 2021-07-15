@@ -11,7 +11,6 @@ const TypeNameUnit = "unit"
 const TypeNameTop = "any"
 const TypeNameBottom = "never"
 
-// TODO: consider returning rich text
 func DescribeType(t Type, s *InferringState) string {
 	switch T := t.(type) {
 	case *UnknownType:

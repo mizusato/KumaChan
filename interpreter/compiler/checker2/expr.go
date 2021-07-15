@@ -132,14 +132,21 @@ func makeCheckContext (
 	}
 }
 
-func (cc *checkContext) resolveInlineRef(node ast.InlineRef, pivot typsys.Type) (Ref, *source.Error) {
+func (cc *checkContext) resolveInlineRef(node ast.InlineRef, pivot typsys.Type) (Ref, ([] typsys.Type), *source.Error) {
 	var n, err = NameFrom(node.Module, node.Item, cc.exprContext.ModuleInfo)
-	if err != nil { return nil, err }
+	if err != nil { return nil, nil, err }
 	var ref, found = cc.resolveName(n, pivot)
 	if found {
-		return ref, nil
+		var params = make([] typsys.Type, 0)
+		var cons_ctx = cc.typeConsContext()
+		for _, param_node := range node.TypeArgs {
+			var t, err = newType(param_node, cons_ctx)
+			if err != nil { return nil, nil, err }
+			params = append(params, t)
+		}
+		return ref, params, nil
 	} else {
-		return nil, source.MakeError(node.Location,
+		return nil, nil, source.MakeError(node.Location,
 			E_NoSuchBindingOrFunction {
 				Name: n.String(),
 			})
@@ -215,7 +222,11 @@ func (cc *checkContext) requireCertainType(t typsys.Type, loc source.Location) (
 	}
 }
 func (cc *checkContext) getCertainType(t typsys.Type) (typsys.Type, bool) {
-	return typsys.TypeOpGetCertainType(t, cc.inferring)
+	if t == nil {
+		return nil, false
+	} else {
+		return typsys.TypeOpGetCertainType(t, cc.inferring)
+	}
 }
 
 func (cc *checkContext) unboxRecord(expr *checked.Expr) (typsys.Record, bool) {
@@ -223,6 +234,9 @@ func (cc *checkContext) unboxRecord(expr *checked.Expr) (typsys.Record, bool) {
 }
 func (cc *checkContext) unboxLambda(expr *checked.Expr) (typsys.Lambda, bool) {
 	return unboxLambda(expr.Type, cc.exprContext.ModName)
+}
+func (cc *checkContext) unboxLambdaFromType(t typsys.Type) (typsys.Lambda, bool) {
+	return unboxLambda(t, cc.exprContext.ModName)
 }
 
 func (cc *checkContext) checkChildExpr(expected typsys.Type, node ast.Expr) (*checked.Expr, *source.Error) {
@@ -252,12 +266,39 @@ func (cc *checkContext) forwardToChildTerm(node ast.VariousTerm) checkResult {
 	return cc.forwardToChildExpr(ast.WrapTermAsExpr(node))
 }
 
-func (cc *checkContext) infer(params ([] typsys.Parameter), t typsys.Type, k func(*typsys.InferringState)(checked.ExprContent,*typsys.InferringState,*source.Error)) checkResult {
+func (cc *checkContext) infer (
+	pd  [] typsys.Parameter,
+	pv  [] typsys.Type,
+	t   typsys.Type,
+	k   func(*typsys.InferringState) (
+			checked.ExprContent,
+			*typsys.InferringState,
+			*source.Error,
+		),
+) checkResult {
+	if len(pv) > len(pd) {
+		return cc.error(
+			E_TypeParametersExceededFunctionArity {
+				Arity: uint(len(pd)),
+			})
+	}
 	{ var cc = cc.forkInferring()
-	var s0 = typsys.StartInferring(params)
+	var mod = cc.exprContext.ModName
+	var s0 = typsys.StartInferring(pd)
+	for i, v := range pv {
+		var pt = typsys.ParameterType { Parameter: &(pd[i]) }
+		var a = typsys.MakeAssignContext(mod, s0)
+		var ok, s0_ = typsys.Assign(pt, v, a)
+		if !(ok) {
+			return cc.error(
+				E_InvalidTypeParameterOnFunction {
+					Index: uint(i),
+				})
+		}
+		s0 = s0_
+	}
 	var expected_certain, expect_certain = cc.getCertainType(cc.expected)
 	if expect_certain {
-		var mod = cc.exprContext.ModName
 		var a0 = typsys.MakeAssignContext(mod, s0)
 		var ok, s1 = typsys.Assign(expected_certain, t, a0)
 		if !(ok) {
