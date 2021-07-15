@@ -29,9 +29,9 @@ type LocalRefWithFuncRefs struct {
 
 func checkInlineRef(I ast.InlineRef) ExprChecker {
 	return makeExprChecker(I.Location, func(cc *checkContext) checkResult {
-		var ref, err = cc.resolveInlineRef(I, nil)
+		var ref, params, err = cc.resolveInlineRef(I, nil)
 		if err != nil { return cc.propagate(err) }
-		return cc.forward(checkRef(ref))
+		return cc.forward(checkRef(ref, params))
 	})
 }
 
@@ -45,11 +45,11 @@ func checkName(name_ string, pivot typsys.Type, loc source.Location) ExprChecker
 					Name: n.String(),
 				})
 		}
-		return cc.forward(checkRef(ref))
+		return cc.forward(checkRef(ref, nil))
 	})
 }
 
-func checkRef(ref Ref) ExprChecker {
+func checkRef(ref Ref, params ([] typsys.Type)) ExprChecker {
 	// TODO
 }
 

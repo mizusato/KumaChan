@@ -58,6 +58,9 @@ func newParameterType(which string, params ([] typsys.Parameter)) (typsys.Type, 
 
 func newType(t ast.VariousType, ctx TypeConsContext) (typsys.Type, *source.Error) {
 	switch T := t.Type.(type) {
+	case ast.TypeBlank:
+		return nil, source.MakeError(T.Location,
+			E_BlankTypeExpr {})
 	case ast.TypeRef:
 		var num_args = uint(len(T.TypeArgs))
 		if num_args > MaxTypeParameters {

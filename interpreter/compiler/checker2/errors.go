@@ -238,6 +238,13 @@ func (e E_BadImplemented) DescribeError() richtext.Block {
 	)
 }
 
+type E_BlankTypeExpr struct {}
+func (E_BlankTypeExpr) DescribeError() richtext.Block {
+	return makeErrorDescBlock (
+		"blank type expression",
+	)
+}
+
 type E_TooManyTypeParameters struct {
 	SizeLimitError
 }
