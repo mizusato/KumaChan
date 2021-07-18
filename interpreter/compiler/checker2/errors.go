@@ -554,16 +554,18 @@ func (e E_ImplicitContextNotFound) DescribeError() richtext.Block {
 	return b
 }
 
-type E_InvalidFunctionCall struct {
+type E_InvalidFunctionUsage struct {
 	Candidates  [] OverloadCandidateDescription
 }
 type OverloadCandidateDescription struct {
 	Signature  string
 	Error      richtext.Block
 }
-func (e E_InvalidFunctionCall) DescribeError() richtext.Block {
+func (e E_InvalidFunctionUsage) DescribeError() richtext.Block {
 	var b = makeErrorDescBlankBlock()
-	b.WriteLine("none of functions can be called:", richtext.TAG_ERR_NORMAL)
+	b.WriteLine(
+		"none of functions can be called/assigned:",
+		richtext.TAG_ERR_NORMAL)
 	for _, candidate := range e.Candidates {
 		var item = makeEmptyErrorContentItemBlock()
 		item.WriteLine(candidate.Signature, richtext.TAG_ERR_NOTE)
@@ -573,12 +575,14 @@ func (e E_InvalidFunctionCall) DescribeError() richtext.Block {
 	return b
 }
 
-type E_AmbiguousFunctionCall struct {
+type E_AmbiguousFunctionUsage struct {
 	Options  [] string
 }
-func (e E_AmbiguousFunctionCall) DescribeError() richtext.Block {
+func (e E_AmbiguousFunctionUsage) DescribeError() richtext.Block {
 	var b = makeErrorDescBlankBlock()
-	b.WriteLine("callee not decidable within functions:", richtext.TAG_ERR_NORMAL)
+	b.WriteLine(
+		"callee/assignee not decidable within functions:",
+		richtext.TAG_ERR_NORMAL)
 	for _, option := range e.Options {
 		var item = makeEmptyErrorContentItemBlock()
 		item.WriteLine(option, richtext.TAG_ERR_NOTE)
@@ -594,13 +598,13 @@ func (E_TypeParametersOnLocalBindingRef) DescribeError() richtext.Block {
 	)
 }
 
-type E_TypeParametersExceededFunctionArity struct {
+type E_TypeParametersExceededArity struct {
 	Arity  uint
 }
-func (e E_TypeParametersExceededFunctionArity) DescribeError() richtext.Block {
+func (e E_TypeParametersExceededArity) DescribeError() richtext.Block {
 	return makeErrorDescBlock (
 		"the quantity of specified type parameters exceeded " +
-		fmt.Sprintf("arity (%d)", e.Arity),
+		fmt.Sprintf("the arity (%d)", e.Arity),
 	)
 }
 

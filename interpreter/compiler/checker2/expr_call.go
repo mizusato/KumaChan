@@ -228,7 +228,7 @@ func decideOverload (
 ) (*checked.Expr, *source.Error) {
 	if len(options) == 0 {
 		return nil, source.MakeError(location,
-			E_InvalidFunctionCall {
+			E_InvalidFunctionUsage {
 				Candidates: describeOverloadCandidates(candidates),
 			})
 	} else if len(options) == 1 {
@@ -241,7 +241,7 @@ func decideOverload (
 		var min_index, found = findUniqueMinimumNamedType(output_types)
 		if !(found) {
 			return nil, source.MakeError(location,
-				E_AmbiguousFunctionCall {
+				E_AmbiguousFunctionUsage {
 					Options: describeOverloadOptions(options),
 				})
 		}

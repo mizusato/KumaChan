@@ -278,7 +278,7 @@ func (cc *checkContext) infer (
 ) checkResult {
 	if len(pv) > len(pd) {
 		return cc.error(
-			E_TypeParametersExceededFunctionArity {
+			E_TypeParametersExceededArity {
 				Arity: uint(len(pd)),
 			})
 	}
